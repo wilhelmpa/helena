@@ -71,13 +71,24 @@ export default function ChatAgentMenu({
             aria-label={t('agents.switch', { agent: agent.name })}
             title={`${agent.name} · ${tr(currentRuntime)} · ${model ?? agent.model ?? t('composer.modelDefault')}`}
           >
-            <AgentAvatar name={agent.name} className="size-5 text-xl" />
-            <Orb state={status} motionEnabled={motionEnabled} />
-            <span className="hidden max-w-72 truncate text-foreground @md/composer:inline">
-              {agent.name} · {tr(currentRuntime)} ·{' '}
-              {model ?? agent.model ?? t('composer.modelDefault')}
-            </span>
-            <ChevronDown className="size-3.5 shrink-0" />
+            {pill ? (
+              <>
+                <Orb state={status} size="dot" />
+                <span
+                  className={styles.chipLabel}
+                >{`${homeName} · ${tr(currentRuntime)} · ${homeModel}`}</span>
+              </>
+            ) : (
+              <>
+                <AgentAvatar name={agent.name} className="size-5 text-xl" />
+                <Orb state={status} motionEnabled={motionEnabled} />
+                <span className="hidden max-w-72 truncate text-foreground @md/composer:inline">
+                  {agent.name} · {tr(currentRuntime)} ·{' '}
+                  {model ?? agent.model ?? t('composer.modelDefault')}
+                </span>
+                <ChevronDown className="size-3.5 shrink-0" />
+              </>
+            )}
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" side="top" className="max-h-96 w-72 overflow-y-auto">

@@ -531,7 +531,6 @@ export function SidebarProjectTree({
       {features.cycles && can('cycles', 'read') && (
         <TreeLink href={cyclesPath(projectKey)}>{t('cycles')}</TreeLink>
       )}
-
     </section>
   );
 }

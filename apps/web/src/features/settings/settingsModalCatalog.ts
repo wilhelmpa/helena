@@ -165,7 +165,10 @@ export function settingsModalSections(
   };
 }
 
-export function settingsModalRoute(pathname: string): { area: SettingsArea; slug: string } | null {
+export function settingsModalRoute(
+  pathname: string | null,
+): { area: SettingsArea; slug: string } | null {
+  if (!pathname) return null;
   const project = pathname.match(/^\/project\/[^/]+\/settings\/([^/]+)$/);
   if (project) return { area: 'project', slug: project[1]! };
   const projectExtra = pathname.match(/^\/project\/[^/]+\/(members|notifications|mcp)$/);

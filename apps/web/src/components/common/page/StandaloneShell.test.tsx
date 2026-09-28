@@ -46,8 +46,12 @@ mock.module('@/services/preferences.service', () => ({
 mock.module('@/components/layout/UserMenu', () => ({ default: () => null }));
 mock.module('@/components/locale-toggle', () => ({ LocaleToggle: () => null }));
 mock.module('@/components/theme-toggle', () => ({ ThemeToggle: () => null }));
+mock.module('@/features/settings/SettingsModal', () => ({ default: () => null }));
 mock.module('@/features/agent-runtime/components/EmergencyStop', () => ({
   EmergencyStopBanner: () => null,
+}));
+mock.module('@/lib/auth-client', () => ({
+  useSession: () => ({ data: { user: { role: 'user' } } }),
 }));
 
 // StandaloneShell has exactly two production callers: GodShell and AccountShell.
@@ -56,6 +60,9 @@ for (const route of ['/god/about', '/account/profile']) {
     opened.length = 0;
     mountedScopes.length = 0;
     const dom = new JSDOM('<div id="root"></div>', { url: `https://helena.test${route}` });
+    Object.defineProperty(dom.window, '__ITSAPLAN_ENV__', {
+      value: { apiUrl: 'http://api.test' },
+    });
     const globals = [
       'window',
       'document',

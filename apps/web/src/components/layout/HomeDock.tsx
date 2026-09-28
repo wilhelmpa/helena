@@ -58,7 +58,7 @@ export default function HomeDock({
                 <button
                   type="button"
                   aria-label="Weitere erstellen"
-                  className="create-dock-arrow fixed bottom-5 right-[84px] z-50 flex size-6 items-center justify-center rounded-full"
+                  className="create-dock-arrow fixed inset-e-[84px] bottom-5 z-50 flex size-6 items-center justify-center rounded-full"
                 >
                   <ChevronDown className="size-3" />
                 </button>
