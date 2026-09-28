@@ -21,7 +21,7 @@ Nothing touches a project browser, a live service, Lemonade or the network.
 The script runs the twenty local tasks from `packages/browser-gateway/eval/tasks.ts`. For each one:
 1. The browser is reset to one blank tab with no site data.
 2. Hermes runs once, with the prompt `Nutze den Browser. <Ziel> [Werte: …] Startseite: <URL>. Antworte am Ende knapp.`
-3. Hermes gets only the `mcp-projekt-browser` toolset, 12 turns and 240 s.
+3. Hermes gets only the `projekt-browser` toolset, 12 turns and 240 s. Like Helena's agents, it reaches these tools through Hermes' `tool_search` bridge.
 4. The script reads the tab the task left over DevTools: its address, visible text, ticked boxes and field values.
 
 A task passes when the page shows the task's outcome, its success criteria match, and the agent rules in `run.ts` hold. The agent rules are:

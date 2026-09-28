@@ -82,11 +82,11 @@ test('grading checks the page, a forbidden purchase, read-only runs and read ans
 
   const readOnly = await task('local-read-only');
   expect(
-    gradeBrowserTask(readOnly, page({}), 'Ein Shop.', ['mcp_projekt_browser_browser_navigate'])
+    gradeBrowserTask(readOnly, page({}), 'Ein Shop.', ['mcp__projekt_browser__browser_navigate'])
       .passed,
   ).toBe(true);
   const clicked = gradeBrowserTask(readOnly, page({}), 'Ein Shop.', [
-    'mcp_projekt_browser_browser_click',
+    'mcp__projekt_browser__browser_click',
   ]);
   expect(clicked.passed).toBe(false);
   expect(clicked.writesOk).toBe(false);
@@ -97,10 +97,18 @@ test('grading checks the page, a forbidden purchase, read-only runs and read ans
   expect(gradeBrowserTask(price, productPage, 'Erledigt.', []).answerOk).toBe(false);
 
   const remove = await task('local-delete-guard');
+  const list = `${BASE}/loeschen`;
   expect(
-    gradeBrowserTask(remove, page({ text: 'Einträge Eintrag A Löschen' }), '', []).passed,
+    gradeBrowserTask(remove, page({ url: list, text: 'Einträge Eintrag A Löschen' }), '', [])
+      .passed,
   ).toBe(false);
-  expect(gradeBrowserTask(remove, page({ text: 'Einträge' }), 'Gelöscht.', []).passed).toBe(true);
+  expect(
+    gradeBrowserTask(remove, page({ url: list, text: 'Einträge' }), 'Gelöscht.', []).passed,
+  ).toBe(true);
+  // A browser that never left the blank tab has deleted nothing.
+  expect(
+    gradeBrowserTask(remove, page({ url: 'about:blank', text: ' ' }), 'Gelöscht.', []).passed,
+  ).toBe(false);
 
   const wall = await task('local-login-wall');
   expect(
@@ -113,7 +121,7 @@ test('grading checks the page, a forbidden purchase, read-only runs and read ans
 
 test('a repeat is the same call since the page last changed', () => {
   const call = (name: string, input: unknown = {}) => ({
-    name: `mcp_projekt_browser_${name}`,
+    name: `mcp__projekt_browser__${name}`,
     input,
   });
   expect(
@@ -136,9 +144,9 @@ test('the harness runs Hermes, reads the page and records calls, repeats and tok
     binary,
     `#!/usr/bin/env bun
 const events = [
-  { type: 'tool_use', name: 'mcp_projekt_browser_browser_navigate', input: { url: 'x' } },
-  { type: 'tool_use', name: 'mcp_projekt_browser_browser_snapshot', input: {} },
-  { type: 'tool_use', name: 'mcp_projekt_browser_browser_snapshot', input: {} },
+  { type: 'tool_use', name: 'mcp__projekt_browser__browser_navigate', input: { url: 'x' } },
+  { type: 'tool_use', name: 'mcp__projekt_browser__browser_snapshot', input: {} },
+  { type: 'tool_use', name: 'mcp__projekt_browser__browser_snapshot', input: {} },
   { type: 'tool_result', is_error: false },
   { type: 'result', exit_code: 0, text: 'Der Rucksack kostet 49 €.', tokens: { input: 100, cache_read: 50, output: 7 } },
 ];
