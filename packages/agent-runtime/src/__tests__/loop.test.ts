@@ -418,3 +418,22 @@ describe('reflection', () => {
     expect(primary.doStreamCalls.length).toBe(4);
   });
 });
+
+test('a chat answer is not handed to a runtime that needs a task', async () => {
+  const { result, sink } = await run([{ text: 'Ich prüfe den Vertrag: sieht gut aus.' }], {
+    prompt: 'Prüfe den Vertrag.',
+    config: { kind: 'chat', escalation: { target: 'runtime:claude', taskKinds: ['recht'] } },
+  });
+  expect(result.status).toBe('success');
+  expect(sink.of('escalate')).toEqual([]);
+});
+
+test('tells an announcement from an answer', async () => {
+  const { isAnnouncement } = await import('../loop');
+  expect(isAnnouncement('Ich schaue mir die Seite an.')).toBe(true);
+  expect(isAnnouncement('Let me check the file.')).toBe(true);
+  expect(isAnnouncement('Ich prüfe den Vertrag: sieht gut aus.')).toBe(false);
+  expect(isAnnouncement('Ich habe die Datei angelegt.')).toBe(false);
+  expect(isAnnouncement('Ich schaue nach. Der Preis ist 49 €.')).toBe(false);
+  expect(isAnnouncement('Soll ich die Seite prüfen?')).toBe(false);
+});

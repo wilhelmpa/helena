@@ -248,6 +248,9 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
   ): Promise<LoopResult | 'switched' | null> => {
     const target = escalationTarget(config.escalation);
     if (!target || switchedTo) return null;
+    // A chat answer stays in its chat: a hand-over to Claude Code or Codex is a follow-up run
+    // on a task, which a chat does not have.
+    if (isRuntimeTarget(target) && kind === 'chat') return null;
     if (isRuntimeTarget(target)) {
       sink.emit({
         type: 'escalate',
@@ -783,10 +786,12 @@ const ANNOUNCEMENT =
 
 export function isAnnouncement(text: string): boolean {
   const trimmed = text.trim();
+  // One short sentence, nothing after a colon or a full stop, and no question.
   return (
     trimmed.length > 0 &&
-    trimmed.length < 220 &&
+    trimmed.length < 160 &&
     ANNOUNCEMENT.test(trimmed) &&
+    !/[.!:;]\s+\S/.test(trimmed) &&
     !/\?\s*$/.test(trimmed)
   );
 }
