@@ -45,7 +45,7 @@
       "queued": "Enviando {name}"
     },
     "to": "Para: {names}",
-    "cc": "Cc: {names}",
+    "cc": "CC: {names}",
     "bcc": "Cco: {names}",
     "remoteBlocked": "Las imágenes remotas están bloqueadas.",
     "showRemote": "Mostrarlas para este correo",
@@ -103,7 +103,7 @@
     "close": "Cerrar (el borrador se conserva)",
     "newMail": "Correo nuevo",
     "to": "Para",
-    "cc": "Cc",
+    "cc": "CC",
     "bcc": "Cco",
     "addCopies": "Añadir Cc y Cco",
     "subject": "Asunto",

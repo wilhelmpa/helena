@@ -73,8 +73,8 @@
     "homeHttpsOk": "HTTPS à la maison ({host}) : certificat valide encore {days, plural, one {# jour} other {# jours}}.",
     "homeHttpsExpiring": "HTTPS à la maison ({host}) : le certificat expire dans {days, plural, one {# jour} other {# jours}} ; le renouvellement n’a pas fonctionné.",
     "homeHttpsInvalid": "HTTPS à la maison ({host}) : {reason, select, expired {certificat expiré} name {le certificat n’est pas pour ce nom} untrusted {certificat non fiable} unreachable {injoignable} other {invalide}}.",
-    "localAiEviction": "Local AI was evicted from the GPU for over 30 seconds in the last five minutes. Available RAM: {available}.",
-    "localAiProbeSlow": "Local AI missed the five-second response limit three times in a row. Available RAM: {available}."
+    "localAiEviction": "L’IA locale a été évincée du GPU pendant plus de 30 secondes au cours des cinq dernières minutes. RAM disponible : {available}.",
+    "localAiProbeSlow": "L’IA locale a dépassé trois fois de suite la limite de réponse de cinq secondes. RAM disponible : {available}."
   },
   "overview": {
     "machine": "Machine",
@@ -94,12 +94,12 @@
     "swapUsed": "{used} sur {total}",
     "health": "État",
     "helper": "Assistant hôte {version}",
-    "localAiGuard": "Local AI guard",
-    "eviction": "GPU eviction (last 5 min)",
-    "probe": "Probe decision",
-    "notMeasured": "Not measured yet",
-    "restartLocalAi": "Restart local AI",
-    "restartDone": "Restart started; pinned models are being preloaded."
+    "localAiGuard": "Garde de l’IA locale",
+    "eviction": "Éviction du GPU (5 dernières min)",
+    "probe": "Décision de sonde",
+    "notMeasured": "Pas encore mesuré",
+    "restartLocalAi": "Redémarrer l’IA locale",
+    "restartDone": "Redémarrage lancé ; les modèles épinglés sont préchargés."
   },
   "disks": {
     "arrays": "Miroirs",

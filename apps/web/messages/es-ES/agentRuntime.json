@@ -50,22 +50,22 @@
       "workspace": "Tarea del espacio de trabajo",
       "digest": "Resumen"
     },
-    "results": "Results",
-    "noSummary": "No summary yet.",
-    "noOutputs": "No results reported yet.",
-    "steps": "Steps",
-    "noSteps": "No steps recorded yet.",
-    "rawProtocol": "Raw protocol",
+    "results": "Resultados",
+    "noSummary": "Aún no hay resumen.",
+    "noOutputs": "Aún no se han comunicado resultados.",
+    "steps": "Pasos",
+    "noSteps": "Aún no se han registrado pasos.",
+    "rawProtocol": "Protocolo sin procesar",
     "outputKind": {
-      "file": "File",
-      "preview": "Preview",
+      "file": "Archivo",
+      "preview": "Vista previa",
       "pr": "Pull request",
-      "screenshot": "Screenshot"
+      "screenshot": "Captura de pantalla"
     },
     "stepState": {
-      "running": "In progress",
-      "done": "Done",
-      "failed": "Failed"
+      "running": "En curso",
+      "done": "Hecho",
+      "failed": "Fallido"
     },
     "spent": "Consumo"
   },

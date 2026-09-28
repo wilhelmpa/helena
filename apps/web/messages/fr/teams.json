@@ -561,8 +561,8 @@
     "chatNeedsAgent": "Créez l'agent IA pour le tester ici.",
     "chatNeedsProject": "Rattachez l'agent IA à un projet pour le tester ici.",
     "triggerFieldsTitle": "Champs personnalisés qui démarrent une exécution",
-    "defaultProjectRole": "Default project role",
-    "noProjectInstructions": "No project-specific instructions",
+    "defaultProjectRole": "Rôle par défaut dans le projet",
+    "noProjectInstructions": "Aucune instruction propre au projet",
     "abilities": {
       "title": "Capacités",
       "hint": "Ce que l'agent peut faire dans Hermes : ensembles d'outils, serveurs MCP, compétences et mémoire",
@@ -800,8 +800,8 @@
       }
     },
     "chatTemplate": "Un modèle ne s’exécute pas. Ajoutez-le à un projet comme agent pour l’essayer ici.",
-    "allProjectsScope": "Project scope: all",
-    "allProjectsScopeHint": "May work in every current and future project of this team.",
+    "allProjectsScope": "Portée des projets : tous",
+    "allProjectsScopeHint": "Peut travailler dans tous les projets actuels et futurs de cette équipe.",
     "heartbeat": {
       "title": "Pulsation",
       "hint": "Vérifie à intervalle fixe s’il y a quelque chose à faire et ne lance une exécution qu’alors.",

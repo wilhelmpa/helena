@@ -35,14 +35,14 @@
     "test": "Testar conexão",
     "lastOk": "A conexão funciona",
     "lastError": "A conexão falhou",
-    "keySource": "Key source",
-    "keySourceStored": "Store a key in this connection",
-    "keySourceCredential": "Use an existing API key",
-    "keyCredential": "Original API key credential",
-    "chooseKeyCredential": "Choose an API key",
-    "keyCredentialHint": "Helena reads the current key from this credential for each request. Rotate it there once. Only API keys from this team and the same project (or the whole team) can be used. No key is copied or disclosed to agents.",
-    "keySourcesLoading": "Loading API keys…",
-    "keySourceUnavailable": "No matching API key is available, or the saved source is no longer accessible. Choose a valid source or check credentials."
+    "keySource": "Origem da chave",
+    "keySourceStored": "Armazenar uma chave nesta conexão",
+    "keySourceCredential": "Usar uma chave de API existente",
+    "keyCredential": "Credencial da chave de API original",
+    "chooseKeyCredential": "Escolha uma chave de API",
+    "keyCredentialHint": "A Helena lê a chave atual desta credencial a cada requisição. Faça a rotação uma única vez lá. Só podem ser usadas chaves de API desta equipe e do mesmo projeto (ou da equipe inteira). Nenhuma chave é copiada nem revelada aos agentes.",
+    "keySourcesLoading": "Carregando chaves de API…",
+    "keySourceUnavailable": "Nenhuma chave de API compatível está disponível, ou a origem salva não está mais acessível. Escolha uma origem válida ou verifique as credenciais."
   },
   "test": {
     "succeeded": "A conexão funciona · {models} · {ms} ms",

@@ -276,7 +276,7 @@
     "username": "Nome de usuário",
     "password": "Senha",
     "passwordPlaceholder": "Senha SMTP",
-    "timeout": "Timeout (s)",
+    "timeout": "Tempo limite (s)",
     "optional": "Opcional",
     "apiKey": "Chave de API",
     "teamNotifications": "Notificações de times",

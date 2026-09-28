@@ -63,7 +63,7 @@
     "failedUnits": "Servicios con fallo: {units}",
     "reboot": "Se recomienda reiniciar.",
     "started": "Actualización iniciada",
-    "rolledBack": "Rolled back"
+    "rolledBack": "Revertida"
   },
   "sources": {
     "hermes": "Hermes",
@@ -101,16 +101,16 @@
     },
     "save": "Guardar",
     "saved": "Guardado",
-    "componentModes": "Components",
-    "componentModesDescription": "Automatic updates apply only when risk is low and there are no breaking changes.",
+    "componentModes": "Componentes",
+    "componentModesDescription": "Las actualizaciones automáticas solo se aplican cuando el riesgo es bajo y no hay cambios incompatibles.",
     "risk": {
-      "low": "Low risk",
-      "medium": "Medium risk",
-      "high": "High risk",
-      "unknown": "Risk not yet known"
+      "low": "Riesgo bajo",
+      "medium": "Riesgo medio",
+      "high": "Riesgo alto",
+      "unknown": "Riesgo aún desconocido"
     },
     "mode": {
-      "auto": "Automatic",
+      "auto": "Automático",
       "manual": "Manual"
     }
   },
@@ -124,8 +124,8 @@
   "aptListsAt": "Fecha de las listas de paquetes: {time}",
   "aptNotRefreshed": "No hay una actualización correcta registrada de los metadatos APT",
   "unverified": "Estado sin verificar",
-  "autoApplied": "Applied automatically: {name}",
-  "autoRolledBack": "Rolled back",
-  "autoFailedShort": "Update failed",
-  "autoFailed": "Automatic update failed: {name}"
+  "autoApplied": "Aplicada automáticamente: {name}",
+  "autoRolledBack": "Revertida",
+  "autoFailedShort": "La actualización falló",
+  "autoFailed": "La actualización automática falló: {name}"
 }

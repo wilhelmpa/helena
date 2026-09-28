@@ -9,8 +9,8 @@
     "rateLimited": "Trop de tentatives. Attendez 15 minutes et réessayez.",
     "locked": "Le terminal reste verrouillé tant que vous n’avez pas confirmé votre identité.",
     "enterCode": "Saisir le code",
-    "setupRequired": "Complete authenticator setup in Account → Security first.",
-    "unavailable": "Terminal access could not be verified or saved. Please try again."
+    "setupRequired": "Terminez d’abord la configuration de l’application d’authentification dans Compte → Sécurité.",
+    "unavailable": "Impossible de vérifier ou d’enregistrer l’accès au terminal. Veuillez réessayer."
   },
   "grant": {
     "active": "Terminal autorisé jusqu'à {time}",
@@ -25,8 +25,8 @@
     "helena-dev-claude": "Développer Helena (Claude Code)",
     "helena-dev-codex": "Développer Helena (Codex)",
     "close": "Terminer la session",
-    "local-qwen36": "Qwen 3.6 local (Codex)",
-    "local-qwen38": "Qwen 3.8 local (Codex)"
+    "local-qwen36": "Qwen 3.6 en local (Codex)",
+    "local-qwen38": "Qwen 3.8 en local (Codex)"
   },
   "keys": {
     "esc": "Échap",

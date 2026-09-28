@@ -73,8 +73,8 @@
     "homeHttpsOk": "HTTPS en casa ({host}): certificado válido {days, plural, one {# día más} other {# días más}}.",
     "homeHttpsExpiring": "HTTPS en casa ({host}): el certificado caduca en {days, plural, one {# día} other {# días}}; la renovación no funcionó.",
     "homeHttpsInvalid": "HTTPS en casa ({host}): {reason, select, expired {certificado caducado} name {el certificado no es para este nombre} untrusted {certificado no fiable} unreachable {no accesible} other {no válido}}.",
-    "localAiEviction": "Local AI was evicted from the GPU for over 30 seconds in the last five minutes. Available RAM: {available}.",
-    "localAiProbeSlow": "Local AI missed the five-second response limit three times in a row. Available RAM: {available}."
+    "localAiEviction": "La IA local se desalojó de la GPU durante más de 30 segundos en los últimos cinco minutos. RAM disponible: {available}.",
+    "localAiProbeSlow": "La IA local superó tres veces seguidas el límite de respuesta de cinco segundos. RAM disponible: {available}."
   },
   "overview": {
     "machine": "Máquina",
@@ -94,12 +94,12 @@
     "swapUsed": "{used} de {total}",
     "health": "Estado",
     "helper": "Asistente del host {version}",
-    "localAiGuard": "Local AI guard",
-    "eviction": "GPU eviction (last 5 min)",
-    "probe": "Probe decision",
-    "notMeasured": "Not measured yet",
-    "restartLocalAi": "Restart local AI",
-    "restartDone": "Restart started; pinned models are being preloaded."
+    "localAiGuard": "Vigilancia de la IA local",
+    "eviction": "Desalojo de la GPU (últimos 5 min)",
+    "probe": "Decisión de prueba",
+    "notMeasured": "Aún sin medir",
+    "restartLocalAi": "Reiniciar la IA local",
+    "restartDone": "Reinicio iniciado; los modelos fijados se están precargando."
   },
   "disks": {
     "arrays": "Espejos",

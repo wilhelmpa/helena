@@ -30,8 +30,8 @@
       "description": "A ferramenta decide dos agentes e a etapa de fluxo de trabalho “Decisão”."
     },
     "browser": {
-      "label": "Optional browser stage",
-      "description": "Synthetic target selection for the native JEV stage. Enable this use case through the team first-stage policy; the existing project agent handles continuation."
+      "label": "Etapa opcional do navegador",
+      "description": "Seleção sintética de alvo para a etapa nativa do JEV. Ative este caso de uso primeiro pela política de primeira etapa da equipe; o agente do projeto existente cuida da continuação."
     }
   },
   "class": {
@@ -188,16 +188,16 @@
     }
   },
   "firstStage": {
-    "title": "Optional Jev first stage",
-    "hint": "Jev may answer small typed judgments first. When off, uncertain, unavailable or too slow, the existing decision path continues. Complex work keeps the assigned specialist; this does not change agents or model defaults.",
-    "connection": "Jev connection (changing it switches this stage off)",
-    "none": "None",
-    "timeout": "Maximum wait for Jev (milliseconds)",
-    "cloudHint": "Enable only the use cases whose input may be sent to Jev in the cloud. A passed evaluation is required. Their existing class switch and fallback still apply; local-only classes are excluded.",
-    "cooldown": "Jev is temporarily skipped after repeated service failures. The existing path remains available.",
-    "allow": "Allow Jev cloud first stage for {name}",
-    "evaluating": "Evaluating…",
-    "evaluateAgain": "Evaluate again",
-    "evaluate": "Evaluate before enabling"
+    "title": "Primeira etapa opcional do Jev",
+    "hint": "O Jev pode responder primeiro a pequenos julgamentos tipados. Quando está desligado, incerto, indisponível ou lento demais, o caminho de decisão existente continua. Trabalhos complexos ficam com o especialista designado; isso não altera agentes nem modelos padrão.",
+    "connection": "Conexão do Jev (alterá-la desliga esta etapa)",
+    "none": "Nenhuma",
+    "timeout": "Espera máxima pelo Jev (milissegundos)",
+    "cloudHint": "Ative apenas os casos de uso cuja entrada pode ser enviada ao Jev na nuvem. É preciso uma avaliação aprovada. O interruptor da classe e a alternativa existentes continuam valendo; classes somente locais ficam de fora.",
+    "cooldown": "O Jev é ignorado temporariamente após falhas repetidas do serviço. O caminho existente continua disponível.",
+    "allow": "Permitir a primeira etapa do Jev na nuvem para {name}",
+    "evaluating": "Avaliando…",
+    "evaluateAgain": "Avaliar novamente",
+    "evaluate": "Avaliar antes de ativar"
   }
 }
