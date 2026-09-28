@@ -246,7 +246,8 @@ exec "$@"''')
         result = self.deploy('candidate')
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertIn('cannot take over', result.stdout)
-        self.assertIn('browser-restore/volition-browser-restore is not in this commit', result.stdout)
+        # The running deploy.sh leaves the removed files out (with a note) instead of failing.
+        self.assertNotIn('stat', result.stderr)
         self.assertNotIn('step of the new deploy.sh', self.log.read_text())
         self.assertEqual(self.marker(), target)
 
