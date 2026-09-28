@@ -21,6 +21,7 @@ export default function BoardDisplayControl({
   onSettingsChange,
   customFields,
   issueTypes,
+  showLabel = false,
 }: {
   view: WorkItemsView;
   onViewChange: (view: WorkItemsView) => void;
@@ -28,6 +29,8 @@ export default function BoardDisplayControl({
   onSettingsChange: (settings: ViewSettings) => void;
   customFields: CustomField[];
   issueTypes: IssueType[];
+  // In a form (the view overlay) the trigger names itself instead of being an icon.
+  showLabel?: boolean;
 }) {
   const t = useTranslations('display');
   const [open, setOpen] = useState(false);
@@ -40,9 +43,14 @@ export default function BoardDisplayControl({
           type="button"
           aria-label={t('title')}
           title={t('title')}
-          className={cn(PAGE_CONTROL_CLASS, open && PAGE_CONTROL_ACTIVE_CLASS, 'ds-icon-only')}
+          className={cn(
+            PAGE_CONTROL_CLASS,
+            open && PAGE_CONTROL_ACTIVE_CLASS,
+            !showLabel && 'ds-icon-only',
+          )}
         >
           <SlidersHorizontal aria-hidden="true" />
+          {showLabel && <span>{t('title')}</span>}
         </button>
       </PopoverTrigger>
       <PopoverContent align="end" className="ds-display-popover">

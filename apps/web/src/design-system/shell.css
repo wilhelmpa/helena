@@ -1026,7 +1026,7 @@
 .ds-issue-overlay-body {
   min-height: 0;
   overflow-y: auto;
-  padding: 20px 24px 24px;
+  padding: var(--space-5);
 }
 .ds-overlay-body.is-flush {
   display: flex;

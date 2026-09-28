@@ -51,5 +51,11 @@
   },
   "saveAsNewShort": "Comme nouvelle vue",
   "filters": "Filtres",
-  "display": "Affichage"
+  "display": "Affichage",
+  "group": "Groupe",
+  "groupHint": "Le groupe sous lequel la vue apparaît dans la barre latérale.",
+  "noGroup": "Aucun groupe",
+  "displayHint": "Regroupement, tri et propriétés affichées.",
+  "deleteViewTitle": "Supprimer la vue « {name} » ?",
+  "deleteViewHint": "Les tâches restent ; seule la vue enregistrée disparaît."
 }

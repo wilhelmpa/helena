@@ -51,5 +51,11 @@
   },
   "saveAsNewShort": "Als neue Ansicht",
   "filters": "Filter",
-  "display": "Anzeige"
+  "display": "Anzeige",
+  "group": "Gruppe",
+  "groupHint": "Unter welcher Gruppe die Ansicht in der Seitenleiste steht.",
+  "noGroup": "Keine Gruppe",
+  "displayHint": "Gruppierung, Sortierung und angezeigte Eigenschaften.",
+  "deleteViewTitle": "Ansicht „{name}“ löschen?",
+  "deleteViewHint": "Die Aufgaben bleiben erhalten, nur die gespeicherte Ansicht verschwindet."
 }

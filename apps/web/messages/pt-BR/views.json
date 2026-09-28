@@ -51,5 +51,11 @@
   },
   "saveAsNewShort": "Como nova visualização",
   "filters": "Filtros",
-  "display": "Exibição"
+  "display": "Exibição",
+  "group": "Grupo",
+  "groupHint": "Em qual grupo a visualização fica na barra lateral.",
+  "noGroup": "Sem grupo",
+  "displayHint": "Agrupamento, ordenação e propriedades exibidas.",
+  "deleteViewTitle": "Excluir a visualização “{name}”?",
+  "deleteViewHint": "As tarefas continuam; só a visualização salva desaparece."
 }

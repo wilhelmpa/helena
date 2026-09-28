@@ -51,5 +51,11 @@
   },
   "saveAsNewShort": "另存为新视图",
   "filters": "筛选",
-  "display": "显示"
+  "display": "显示",
+  "group": "分组",
+  "groupHint": "视图在侧边栏中所属的分组。",
+  "noGroup": "无分组",
+  "displayHint": "分组、排序和显示的属性。",
+  "deleteViewTitle": "删除视图“{name}”？",
+  "deleteViewHint": "任务会保留，只删除已保存的视图。"
 }

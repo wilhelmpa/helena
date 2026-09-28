@@ -51,5 +51,11 @@
   },
   "saveAsNewShort": "As new view",
   "filters": "Filters",
-  "display": "Display"
+  "display": "Display",
+  "group": "Group",
+  "groupHint": "Which group the view sits under in the sidebar.",
+  "noGroup": "No group",
+  "displayHint": "Grouping, sorting and the properties shown.",
+  "deleteViewTitle": "Delete the view “{name}”?",
+  "deleteViewHint": "The tasks stay; only the saved view goes."
 }

@@ -731,3 +731,15 @@ body[data-modal-open='true'] [data-radix-popper-content-wrapper] {
     inset-inline-end: var(--space-4);
   }
 }
+
+/* A destructive action at the start of an overlay's footer, away from Save. */
+.ds-overlay-footer .ds-overlay-footer-start {
+  margin-inline-end: auto;
+}
+/* The view name: its icon and the field over the whole row. */
+.ds-view-name {
+  width: 100%;
+}
+.ds-view-name .ds-field {
+  flex: 1;
+}

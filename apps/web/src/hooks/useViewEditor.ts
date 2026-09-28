@@ -182,6 +182,7 @@ export function useViewEditor(
     setEditing(true);
     setDraftName(from?.name ?? '');
     setDraftIcon(from?.icon ?? null);
+    if (from) setDraftAreaId(from.folderId);
   }
 
   // Enter edit mode for a new view, drafted from what is on screen: the active
@@ -293,6 +294,7 @@ export function useViewEditor(
         input: {
           name: editing ? name || activeView.name : activeView.name,
           icon: editing ? draftIcon : activeView.icon,
+          folderId: editing ? draftAreaId : activeView.folderId,
           filters,
           display,
         },
@@ -369,6 +371,9 @@ export function useViewEditor(
     setDraftName,
     draftIcon,
     setDraftIcon,
+    // The group (a folder of views in the sidebar) the view is kept in.
+    draftAreaId,
+    setDraftAreaId,
     beginNewView,
     changeView,
     changeSettings,

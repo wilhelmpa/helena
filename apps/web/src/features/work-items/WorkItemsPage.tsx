@@ -23,8 +23,15 @@ import { Pencil, Plus } from 'lucide-react';
 import ViewIconPicker from '@/components/layout/ViewIconPicker';
 import FilterPills from '@/components/layout/FilterPills';
 import { PageActions, PageToolbar } from '@/components/layout/PageToolbar';
-import { Button, Overlay, Segmented, SettingsGroup, SettingsRow } from '@/design-system';
-import { Input } from '@/components/ui/input';
+import { Button, Overlay, Segmented, SettingsGroup, SettingsRow, TextField } from '@/design-system';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import ConfirmDialog from '@/components/common/overlay/ConfirmDialog';
 import { byKey } from '@/utils/messageKey';
 import { VIEWS, type WorkItemsView } from '@/utils/viewTypes';
 import { useViewsQuery } from '@/services/views.service';
@@ -55,6 +62,7 @@ export default function WorkItemsPage() {
   const { can } = usePermissions();
   const groupLabels = useGroupLabels();
   const features = useProjectFeatures();
+  const [deleting, setDeleting] = useState(false);
   const [timelineCollapseState, setTimelineCollapseState] = useState<TimelineCollapseState>({
     scope: '',
     groups: new Set(),
@@ -317,12 +325,11 @@ export default function WorkItemsPage() {
         >
           <div className="ds-overlay-form">
             <SettingsGroup>
-              <SettingsRow label={tCommon('name')} htmlFor="view-name">
-                <span className="ds-inline-unit">
+              <SettingsRow label={tCommon('name')} htmlFor="view-name" stacked>
+                <span className="ds-inline-unit ds-view-name">
                   <ViewIconPicker icon={editor.draftIcon} onChange={editor.setDraftIcon} />
-                  <Input
+                  <TextField
                     id="view-name"
-                    className="w-56"
                     value={editor.draftName}
                     placeholder={t('viewNamePlaceholder')}
                     autoFocus
@@ -333,15 +340,56 @@ export default function WorkItemsPage() {
                   />
                 </span>
               </SettingsRow>
+              {project.areas.length > 0 && (
+                <SettingsRow label={tViews('group')} description={tViews('groupHint')}>
+                  <Select
+                    value={editor.draftAreaId == null ? 'none' : String(editor.draftAreaId)}
+                    onValueChange={(value) =>
+                      editor.setDraftAreaId(value === 'none' ? null : Number(value))
+                    }
+                  >
+                    <SelectTrigger className="w-48" aria-label={tViews('group')}>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">{tViews('noGroup')}</SelectItem>
+                      {project.areas.map((area) => (
+                        <SelectItem key={area.id} value={String(area.id)}>
+                          {area.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </SettingsRow>
+              )}
               <SettingsRow label={t('layout')} stacked>
                 {layoutSwitch}
               </SettingsRow>
               <SettingsRow label={tViews('filters')} stacked>
                 <div className="ds-overlay-pills">{controls}</div>
               </SettingsRow>
-              <SettingsRow label={tViews('display')}>{display}</SettingsRow>
+              <SettingsRow label={tViews('display')} description={tViews('displayHint')}>
+                <BoardDisplayControl
+                  view={editor.view}
+                  onViewChange={editor.changeView}
+                  settings={settings}
+                  onSettingsChange={changeSettings}
+                  customFields={customFields}
+                  issueTypes={project.issueTypes}
+                  showLabel
+                />
+              </SettingsRow>
             </SettingsGroup>
             <div className="ds-overlay-footer">
+              {editor.activeView && can('views', 'delete') && (
+                <Button
+                  variant="danger"
+                  className="ds-overlay-footer-start"
+                  onClick={() => setDeleting(true)}
+                >
+                  {tViews('deleteView')}
+                </Button>
+              )}
               <Button variant="quiet" onClick={editor.cancelEdits}>
                 {tCommon('cancel')}
               </Button>
@@ -357,6 +405,21 @@ export default function WorkItemsPage() {
             </div>
           </div>
         </Overlay>
+      )}
+      {deleting && editor.activeView && (
+        <ConfirmDialog
+          title={tViews('deleteViewTitle', { name: editor.activeView.name })}
+          confirmLabel={tViews('deleteView')}
+          onConfirm={async () => {
+            const target = editor.activeView!;
+            setDeleting(false);
+            editor.cancelEdits();
+            await editor.deleteView(target);
+          }}
+          onClose={() => setDeleting(false)}
+        >
+          {tViews('deleteViewHint')}
+        </ConfirmDialog>
       )}
 
       <div className="ds-work-items-body">

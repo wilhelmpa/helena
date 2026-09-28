@@ -51,5 +51,11 @@
   },
   "saveAsNewShort": "Como vista nueva",
   "filters": "Filtros",
-  "display": "Visualización"
+  "display": "Visualización",
+  "group": "Grupo",
+  "groupHint": "En qué grupo aparece la vista en la barra lateral.",
+  "noGroup": "Sin grupo",
+  "displayHint": "Agrupación, orden y propiedades visibles.",
+  "deleteViewTitle": "¿Eliminar la vista «{name}»?",
+  "deleteViewHint": "Las tareas se mantienen; solo desaparece la vista guardada."
 }

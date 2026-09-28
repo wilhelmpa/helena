@@ -51,5 +51,11 @@
   },
   "saveAsNewShort": "Sebagai tampilan baru",
   "filters": "Filter",
-  "display": "Tampilan"
+  "display": "Tampilan",
+  "group": "Grup",
+  "groupHint": "Di grup mana tampilan berada di bilah samping.",
+  "noGroup": "Tanpa grup",
+  "displayHint": "Pengelompokan, pengurutan, dan properti yang ditampilkan.",
+  "deleteViewTitle": "Hapus tampilan “{name}”?",
+  "deleteViewHint": "Tugas tetap ada; hanya tampilan tersimpan yang hilang."
 }
