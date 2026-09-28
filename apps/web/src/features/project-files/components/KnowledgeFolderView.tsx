@@ -35,7 +35,7 @@ const creationIcons = {
   Doc: FileText,
   Leinwand: Network,
   Ordner: Folder,
-  'Datei hochladen': Upload,
+  'Datei hochladen': FileImage,
 };
 const isDoc = (name: string) => /\.(md|markdown)$/i.test(name);
 const isCanvas = (name: string) => /\.canvas$/i.test(name);
