@@ -78,6 +78,8 @@ export interface VoiceSettings {
   pauseMs: number;
   // Words the transcription should know, beyond Helena's own names.
   vocabulary: string[];
+  vocabularyAliases: VocabularyAlias[] | null;
+  suggestedAliases: VocabularyAlias[];
   // The local voice; null: the speech server's default.
   voice: string | null;
   speed: number;
@@ -91,10 +93,21 @@ export interface VoiceSettings {
   replyModels: { id: string; name: string; thinkingLevels: string[] }[];
 }
 
+export interface VocabularyAlias {
+  heard: string;
+  written: string;
+}
+
 export type VoiceSettingsPatch = Partial<
   Pick<
     VoiceSettings,
-    'pauseMs' | 'vocabulary' | 'voice' | 'speed' | 'replyModel' | 'replyThinkingLevel'
+    | 'pauseMs'
+    | 'vocabulary'
+    | 'vocabularyAliases'
+    | 'voice'
+    | 'speed'
+    | 'replyModel'
+    | 'replyThinkingLevel'
   >
 >;
 

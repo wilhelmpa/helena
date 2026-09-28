@@ -16,9 +16,15 @@ import { agentChatCatalog, aiAgent, db, getSetting, project, setSetting, user } 
 export const VOICE_SETTINGS_KEY = 'voice.settings';
 export const VOICE_GLOSSARY = ['Helena', 'TRADE', 'VERVE', 'Jev', 'Qwen', 'Alpaca'] as const;
 
+export interface VocabularyAlias {
+  heard: string;
+  written: string;
+}
+
 export interface VoiceSettings {
   pauseMs: number;
   vocabulary: string[];
+  vocabularyAliases: VocabularyAlias[] | null;
   voice: string | null;
   speed: number;
   replyModel: string | null;
@@ -31,11 +37,13 @@ export const VOICE_SETTINGS_LIMITS = {
   // Whisper reads at most 224 tokens of prompt; the rest would be cut anyway.
   vocabularyWords: 60,
   vocabularyWordLength: 60,
+  vocabularyAliases: 60,
 } as const;
 
 export const DEFAULT_VOICE_SETTINGS: VoiceSettings = {
   pauseMs: 600,
   vocabulary: [],
+  vocabularyAliases: null,
   voice: null,
   speed: 1,
   replyModel: null,
@@ -74,6 +82,25 @@ export function uniqueWords(words: Iterable<string>, limit: number): string[] {
   return out;
 }
 
+function normalizeAliases(raw: unknown): VocabularyAlias[] | null {
+  if (!Array.isArray(raw)) return null;
+  const seen = new Set<string>();
+  const aliases: VocabularyAlias[] = [];
+  for (const value of raw) {
+    if (!value || typeof value !== 'object') continue;
+    const entry = value as Record<string, unknown>;
+    const heard = word(entry.heard);
+    const written = word(entry.written);
+    if (!heard || !written || heard === written) continue;
+    const key = heard.toLocaleLowerCase('de-DE');
+    if (seen.has(key)) continue;
+    seen.add(key);
+    aliases.push({ heard, written });
+    if (aliases.length >= VOICE_SETTINGS_LIMITS.vocabularyAliases) break;
+  }
+  return aliases;
+}
+
 export function normalizeVoiceSettings(raw: unknown): VoiceSettings {
   const value = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
   const defaults = DEFAULT_VOICE_SETTINGS;
@@ -83,11 +110,41 @@ export function normalizeVoiceSettings(raw: unknown): VoiceSettings {
       Array.isArray(value.vocabulary) ? (value.vocabulary as unknown[]).map(String) : [],
       VOICE_SETTINGS_LIMITS.vocabularyWords,
     ),
+    vocabularyAliases: normalizeAliases(value.vocabularyAliases),
     voice: optionalText(value.voice, 120),
     speed: Math.round(clamp(value.speed, VOICE_SETTINGS_LIMITS.speed, defaults.speed) * 100) / 100,
     replyModel: optionalText(value.replyModel, 200),
     replyThinkingLevel: value.replyModel ? optionalText(value.replyThinkingLevel, 40) : null,
   };
+}
+
+export function suggestedAliases(names: string[]): VocabularyAlias[] {
+  const known = new Set(names);
+  return [
+    ...(known.has('Jev') ? [{ heard: 'Jeff', written: 'Jev' }] : []),
+    ...(known.has('VERVE')
+      ? ['Färfe', 'Ferfe', 'Verve'].map((heard) => ({ heard, written: 'VERVE' }))
+      : []),
+    ...(known.has('TRADE') ? [{ heard: 'Trade', written: 'TRADE' }] : []),
+  ];
+}
+
+export function correctVocabulary(text: string, aliases: VocabularyAlias[]): string {
+  if (!aliases.length) return text;
+  const replacements = new Map(
+    aliases.map(({ heard, written }) => [heard.toLocaleLowerCase('de-DE'), written]),
+  );
+  const escaped = [...replacements.keys()]
+    .sort((a, b) => b.length - a.length)
+    .map((heard) => heard.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+  const pattern = new RegExp(
+    `(?<![\\p{L}\\p{N}])(?:${escaped.join('|')})(?![\\p{L}\\p{N}])`,
+    'giu',
+  );
+  return text.replace(
+    pattern,
+    (heard) => replacements.get(heard.toLocaleLowerCase('de-DE')) ?? heard,
+  );
 }
 
 export async function readVoiceSettings(): Promise<VoiceSettings> {

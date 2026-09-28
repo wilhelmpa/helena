@@ -9,7 +9,14 @@ import { HttpError } from '#shared/lib';
 import { joinUrl } from '#modules/local-ai/eval-context';
 import { serverContext, serverType, taskClass } from '#modules/local-ai/service';
 import { isAgentUser } from '#modules/agents/core/service';
-import { helenaWords, readVoiceSettings, vocabularyPrompt, type VoiceSettings } from './settings';
+import {
+  correctVocabulary,
+  helenaWords,
+  readVoiceSettings,
+  suggestedAliases,
+  vocabularyPrompt,
+  type VocabularyAlias,
+} from './settings';
 import {
   confidentText,
   judgeTranscript,
@@ -140,19 +147,27 @@ export interface Transcription {
 
 // The words of one transcription's context: the owner's own and Helena's names, read once a
 // minute (a new agent or project is known a minute later).
-let vocabularyCache: { at: number; prompt: string | null; settings: VoiceSettings } | null = null;
+let vocabularyCache: { at: number; prompt: string | null; aliases: VocabularyAlias[] } | null =
+  null;
 const VOCABULARY_TTL_MS = 60_000;
 
-async function transcriptionContext(): Promise<{ prompt: string | null }> {
+async function transcriptionContext(): Promise<{
+  prompt: string | null;
+  aliases: VocabularyAlias[];
+}> {
   const now = Date.now();
   if (!vocabularyCache || now - vocabularyCache.at > VOCABULARY_TTL_MS) {
     const [settings, words] = await Promise.all([
       readVoiceSettings(),
       helenaWords().catch(() => ['Helena']),
     ]);
-    vocabularyCache = { at: now, settings, prompt: vocabularyPrompt(settings.vocabulary, words) };
+    vocabularyCache = {
+      at: now,
+      prompt: vocabularyPrompt(settings.vocabulary, words),
+      aliases: settings.vocabularyAliases ?? suggestedAliases(words),
+    };
   }
-  return { prompt: vocabularyCache.prompt };
+  return { prompt: vocabularyCache.prompt, aliases: vocabularyCache.aliases };
 }
 
 export function forgetVoiceVocabulary(): void {
@@ -253,7 +268,7 @@ export async function transcribe(input: {
     const heard = transcript.segments.length ? confidentText(transcript.segments) : transcript.text;
     const judged = judgeTranscript(heard, { language: input.language });
     return {
-      text: judged.text,
+      text: judged.dropped ? judged.text : correctVocabulary(judged.text, context.aliases),
       dropped: judged.dropped,
       model: route.modelId,
       durationMs: info.durationMs,

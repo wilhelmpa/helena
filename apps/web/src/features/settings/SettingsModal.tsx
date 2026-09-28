@@ -58,8 +58,11 @@ export default function SettingsModal({
   const teamId =
     currentTeamId ??
     (Number.isInteger(pathTeamId) && pathTeamId > 0 ? pathTeamId : (teams[0]?.id ?? null));
-  const sections = useMemo(() => settingsModalSections(projectKey, teamId), [projectKey, teamId]);
   const admin = session?.user.role === 'god';
+  const sections = useMemo(
+    () => settingsModalSections(projectKey, teamId, admin),
+    [projectKey, teamId, admin],
+  );
   const mounted = useSyncExternalStore(
     subscribeToMount,
     () => true,

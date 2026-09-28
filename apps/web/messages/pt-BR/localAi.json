@@ -217,6 +217,14 @@
     "title": "Voz no chat",
     "loading": "Carregando …",
     "failed": "Não foi possível carregar as configurações de voz.",
+    "aliases": {
+      "title": "Correções de palavras reconhecidas",
+      "hint": "Uma correção por linha: palavra reconhecida → grafia desejada. Apenas palavras inteiras são substituídas. As sugestões vêm dos nomes de projetos e agentes.",
+      "placeholder": "Jeff → Jev",
+      "invalid": "Cada linha precisa ter “reconhecida → escrita”.",
+      "reset": "Restaurar sugestões",
+      "save": "Salvar configurações de voz"
+    },
     "pause": {
       "title": "Pausa antes da resposta",
       "hint": "Quanto tempo você precisa ficar em silêncio até a Helena enviar sua frase. Mais curta responde mais rápido, mais longa interrompe você menos.",

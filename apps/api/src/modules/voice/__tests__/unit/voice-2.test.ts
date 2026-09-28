@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'bun:test';
 import { limitedPcm } from '../../service';
-import { normalizeVoiceSettings, vocabularyPrompt } from '../../settings';
+import {
+  correctVocabulary,
+  normalizeVoiceSettings,
+  suggestedAliases,
+  vocabularyPrompt,
+} from '../../settings';
 import { confidentText, judgeTranscript, otherLanguage } from '../../transcript';
 import {
   HAND_OVER_TOOL,
@@ -78,6 +83,7 @@ describe('voice settings', () => {
       pauseMs: 300,
       speed: 1.4,
       vocabulary: ['Verve', 'x'.repeat(60)],
+      vocabularyAliases: null,
       voice: null,
       replyModel: null,
       // No reasoning without a model.
@@ -91,6 +97,23 @@ describe('voice settings', () => {
       'Müller, Helena, TRADE, VERVE, Jev, Qwen, Alpaca.',
     );
     expect(vocabularyPrompt([], [])).toBe('Helena, TRADE, VERVE, Jev, Qwen, Alpaca.');
+  });
+
+  it('corrects only complete names and allows editing the defaults', () => {
+    const defaults = suggestedAliases(['Jev', 'VERVE', 'TRADE']);
+    expect(correctVocabulary('Jeff und Färfe, Ferfe, Verve und Trade.', defaults)).toBe(
+      'Jev und VERVE, VERVE, VERVE und TRADE.',
+    );
+    expect(correctVocabulary('Jefferson, Verveprojekt und Trader handeln.', defaults)).toBe(
+      'Jefferson, Verveprojekt und Trader handeln.',
+    );
+    expect(suggestedAliases(['Jev', 'Verve', 'Trading'])).toEqual([
+      { heard: 'Jeff', written: 'Jev' },
+    ]);
+    expect(
+      normalizeVoiceSettings({ vocabularyAliases: [{ heard: 'Planet', written: 'plane' }] })
+        .vocabularyAliases,
+    ).toEqual([{ heard: 'Planet', written: 'plane' }]);
   });
 });
 

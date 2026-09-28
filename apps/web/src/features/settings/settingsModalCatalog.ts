@@ -51,6 +51,7 @@ const projectLabels: Record<string, [string, string]> = {
 
 const accountLabels: Record<string, [string, string]> = {
   profile: ['Profil', 'Name, Bild und persönliche Angaben ändern.'],
+  voice: ['Sprache', 'Fachwörter und Korrekturen der Spracherkennung bearbeiten.'],
   preferences: ['Voreinstellungen', 'Sprache, Darstellung und Bedienung anpassen.'],
   notifications: ['Benachrichtigungen', 'Push-Nachrichten und Zustellung einstellen.'],
   accounts: ['Verbundene Konten', 'Externe Konten und Verbindungen verwalten.'],
@@ -98,6 +99,7 @@ const homeLabels: Record<string, [string, string]> = {
 export function settingsModalSections(
   projectKey: string | null,
   teamId: number | null,
+  admin: boolean,
 ): Record<SettingsArea, ModalSection[]> {
   const projectBase = projectKey ? `/project/${encodeURIComponent(projectKey)}` : '';
   const projectPrimary = [
@@ -142,12 +144,24 @@ export function settingsModalSections(
               : `/account/teams/${teamId}${slug === 'info' ? '' : `/${slug}`}`,
         }))
       : [],
-    account: ACCOUNT_SECTIONS.map(({ slug }) => ({
-      slug,
-      label: accountLabels[slug]?.[0] ?? slug,
-      description: accountLabels[slug]?.[1] ?? '',
-      href: `/account/${slug}`,
-    })),
+    account: ACCOUNT_SECTIONS.flatMap(({ slug }) => [
+      {
+        slug,
+        label: accountLabels[slug]?.[0] ?? slug,
+        description: accountLabels[slug]?.[1] ?? '',
+        href: `/account/${slug}`,
+      },
+      ...(admin && slug === 'preferences'
+        ? [
+            {
+              slug: 'voice',
+              label: accountLabels.voice[0],
+              description: accountLabels.voice[1],
+              href: '/account/voice',
+            },
+          ]
+        : []),
+    ]),
     admin: [
       ...GOD_SECTIONS.map(({ slug }) => ({
         slug,
@@ -177,7 +191,7 @@ export function settingsModalRoute(
   const team = pathname.match(/^\/account\/teams\/\d+(?:\/([^/]+))?$/);
   if (team) return { area: 'home', slug: team[1] ?? 'info' };
   const account = pathname.match(
-    /^\/account\/(profile|preferences|notifications|accounts|security|api-keys)$/,
+    /^\/account\/(profile|preferences|notifications|accounts|security|api-keys|voice)$/,
   );
   if (account) return { area: 'account', slug: account[1]! };
   const admin = pathname.match(/^\/god\/([^/]+)(?:\/.*)?$/);

@@ -217,6 +217,14 @@
     "title": "Sprache im Chat",
     "loading": "Lädt …",
     "failed": "Die Spracheinstellungen konnten nicht geladen werden.",
+    "aliases": {
+      "title": "Korrekturen für erkannte Wörter",
+      "hint": "Eine Zeile pro Korrektur: erkanntes Wort → gewünschte Schreibweise. Es werden nur ganze Wörter ersetzt. Die Vorschläge stammen aus Projekt- und Agentennamen.",
+      "placeholder": "Jeff → Jev",
+      "invalid": "Jede Zeile braucht „erkannt → geschrieben“.",
+      "reset": "Vorschläge wiederherstellen",
+      "save": "Sprache speichern"
+    },
     "pause": {
       "title": "Pause bis zur Antwort",
       "hint": "So lange musst du schweigen, bis Helena deinen Satz abschickt. Kürzer antwortet schneller, länger unterbricht dich seltener.",

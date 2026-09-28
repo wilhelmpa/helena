@@ -217,6 +217,14 @@
     "title": "Voice in the chat",
     "loading": "Loading …",
     "failed": "The voice settings could not be loaded.",
+    "aliases": {
+      "title": "Corrections for recognized words",
+      "hint": "One correction per line: recognized word → desired spelling. Only complete words are replaced. Suggestions come from project and agent names.",
+      "placeholder": "Jeff → Jev",
+      "invalid": "Each line needs “recognized → written”.",
+      "reset": "Restore suggestions",
+      "save": "Save voice settings"
+    },
     "pause": {
       "title": "Pause before the answer",
       "hint": "How long you have to be silent before Helena sends your sentence. Shorter answers faster, longer interrupts you less often.",
