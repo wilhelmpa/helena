@@ -222,13 +222,17 @@ export async function decideBudgetCard(
   };
   if (input.action === 'keep') return close('rejected', 'kept');
   if (!budget) throw new HttpError(409, 'The budget no longer exists');
-  if (budget.agentId != null) {
+  if (budget.agentId != null || budget.departmentId != null) {
     const membership = await requireTeamMembership(budget.teamId, { id: deciderUserId });
     if (!runsTeam(membership.role))
-      throw new HttpError(403, 'Only a team owner or manager can change an agent budget');
+      throw new HttpError(403, 'Only a team owner or manager can change a team budget');
   }
   const target: BudgetTarget =
-    budget.agentId != null ? { agentId: budget.agentId } : { projectId: budget.projectId! };
+    budget.agentId != null
+      ? { agentId: budget.agentId }
+      : budget.projectId != null
+        ? { projectId: budget.projectId }
+        : { departmentId: budget.departmentId! };
   if (input.action === 'once') {
     await close('approved', 'once');
     await continueOnce(budget.id);
@@ -236,7 +240,11 @@ export async function decideBudgetCard(
   }
   const [status] = (
     await budgetStatuses(
-      'agentId' in target ? { agentIds: [target.agentId] } : { projectIds: [target.projectId] },
+      'agentId' in target
+        ? { agentIds: [target.agentId] }
+        : 'projectId' in target
+          ? { projectIds: [target.projectId] }
+          : { departmentIds: [target.departmentId] },
     )
   ).filter((s) => s.id === budget.id);
   if (input.limit == null || input.limit <= (status?.used ?? 0)) {

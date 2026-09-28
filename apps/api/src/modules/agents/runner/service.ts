@@ -329,6 +329,7 @@ export async function claimRunnerRun(agent: RunnerAgent): Promise<RunnerRun | nu
         .from(agentRun)
         .where(and(eq(agentRun.agentId, agentId), eq(agentRun.status, 'pending')))
     ).map((row) => row.projectId),
+    agentId,
   );
   const notHeld =
     held.length > 0

@@ -1,0 +1,152 @@
+import { beforeEach, describe, expect, it } from 'bun:test';
+import {
+  agentRun,
+  approvalRequest,
+  db,
+  helenaGoalTask,
+  organizationAgentAssignment,
+  organizationDepartment,
+  organizationGoal,
+  organizationProjectAssignment,
+} from '@repo/db';
+import { eq } from 'drizzle-orm';
+import { authedApi } from '#tests/helpers/app';
+import { signUpTestUser } from '#tests/helpers/auth';
+import { createAgent } from '#tests/helpers/agents';
+import { resetDb } from '#tests/helpers/db';
+import { enforceBudgets, setBudgets } from '#modules/autopilot/budgets';
+import { recordUsage } from '../../service';
+
+describe('agent cost rollup and department throttle', () => {
+  beforeEach(resetDb);
+
+  it('attributes every runtime to its task, agent, project, goal and department and files a budget card', async () => {
+    const owner = await signUpTestUser({ name: 'Owner' });
+    const asOwner = authedApi(owner.cookie);
+    expect((await asOwner.projects.post({ key: 'MKT', name: 'Marketing' })).status).toBe(201);
+    const project = (await asOwner.projects({ projectKey: 'MKT' }).get()).data!;
+    const projectId = project.project.id;
+    const teamId = project.project.teamId;
+    const agent = (
+      await createAgent(asOwner, 'MKT', {
+        name: 'Worker',
+        username: 'worker',
+        kind: 'external',
+      })
+    ).data!.agent;
+    const issue = (
+      await asOwner.projects({ projectKey: 'MKT' }).issues.post({
+        title: 'Make plan',
+        columnId: project.columns[0]!.id,
+      })
+    ).data!;
+    const [department] = await db
+      .insert(organizationDepartment)
+      .values({ teamId, name: 'Volition' })
+      .returning();
+    const [goal] = await db
+      .insert(organizationGoal)
+      .values({ teamId, departmentId: department!.id, projectId, title: 'Grow' })
+      .returning();
+    await db.insert(organizationProjectAssignment).values({
+      teamId,
+      projectId,
+      departmentId: department!.id,
+    });
+    await db.insert(organizationAgentAssignment).values({
+      teamId,
+      agentId: agent.id,
+      departmentId: department!.id,
+    });
+    await db.insert(helenaGoalTask).values({
+      teamId,
+      issueId: issue.id,
+      goalId: goal!.id,
+      linkedByUserId: owner.userId,
+    });
+    for (const runtime of ['hermes', 'claude', 'codex']) {
+      const [run] = await db
+        .insert(agentRun)
+        .values({ agentId: agent.id, projectId, issueId: issue.id, prompt: runtime })
+        .returning({ id: agentRun.id });
+      await recordUsage({
+        agentId: agent.id,
+        projectId,
+        runId: run!.id,
+        kind: 'run',
+        spend: { runtime, model: 'unknown-test-model', inputTokens: 30, outputTokens: 10 },
+      });
+    }
+    await db.insert(agentRun).values({
+      agentId: agent.id,
+      projectId,
+      issueId: issue.id,
+      prompt: 'older run without ledger',
+      status: 'success',
+      model: 'unknown-test-model',
+      inputTokens: 5,
+      outputTokens: 5,
+      finishedAt: new Date(),
+    });
+    const usage = await asOwner.teams({ teamId })['agent-usage'].get({
+      query: { by: 'issue,agent,project,goal,department' },
+    });
+    expect(usage.status).toBe(200);
+    expect(usage.data?.rows).toHaveLength(1);
+    expect(usage.data?.rows[0]).toMatchObject({
+      issueId: issue.id,
+      agentId: agent.id,
+      projectId,
+      goalId: goal!.id,
+      departmentId: department!.id,
+      inputTokens: 95,
+      outputTokens: 35,
+      entries: 4,
+      unledgeredRuns: 1,
+      costEur: null,
+    });
+    expect(usage.data?.unpriced).toBe(true);
+    expect(usage.data?.total.costEur).toBeNull();
+
+    await setBudgets(
+      teamId,
+      { departmentId: department!.id },
+      [{ metric: 'tokens', period: 'day', limit: 100 }],
+      owner.userId,
+    );
+    const budgets = await asOwner
+      .teams({ teamId })
+      .organization.departments({ departmentId: department!.id })
+      .budgets.get();
+    expect(budgets.status).toBe(200);
+    expect(budgets.data?.[0]).toMatchObject({ used: 130, reached: true, scope: 'department' });
+    expect(await enforceBudgets(agent.id, projectId, issue.id)).toContain('Budget reached');
+    const cards = await db.select().from(approvalRequest).where(eq(approvalRequest.kind, 'budget'));
+    expect(cards).toHaveLength(1);
+    expect(cards[0]).toMatchObject({ projectId, agentId: agent.id, status: 'pending' });
+    const organization = await asOwner.teams({ teamId }).organization.get({ query: {} });
+    expect(organization.data?.agents.find((entry) => entry.id === agent.id)?.throttled).toBe(true);
+    const continued = await asOwner.approvals({ approvalId: cards[0]!.id }).budget.post({
+      action: 'once',
+    });
+    expect(continued.status).toBe(200);
+    expect(await enforceBudgets(agent.id, projectId, issue.id)).toBeNull();
+
+    await recordUsage({
+      agentId: agent.id,
+      projectId: null,
+      kind: 'chat',
+      spend: { runtime: 'claude', inputTokens: 1, outputTokens: 1, durationMs: 2_000 },
+    });
+    await setBudgets(
+      teamId,
+      { departmentId: department!.id },
+      [{ metric: 'time', period: 'day', limit: 1 }],
+      owner.userId,
+    );
+    expect(await enforceBudgets(agent.id, null, null)).toContain('Budget reached');
+    expect(
+      (await db.select().from(approvalRequest).where(eq(approvalRequest.kind, 'budget'))).length,
+    ).toBe(2);
+  });
+});

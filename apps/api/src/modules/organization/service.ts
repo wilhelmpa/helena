@@ -16,6 +16,7 @@ import { and, asc, eq, sql } from 'drizzle-orm';
 import { HttpError, iso, rethrowDuplicate } from '#shared/lib';
 import { isHomeAgent, notHomeAgent } from '#modules/agents/core/home-agent';
 import { agentTokenUsage, projectTokenUsage } from '#modules/agents/governance';
+import { budgetStatuses } from '#modules/autopilot/budgets';
 
 export type GoalStatus = 'planned' | 'active' | 'achieved' | 'paused';
 export type AgentTeamRole = 'coordinator' | 'specialist' | 'reviewer';
@@ -313,9 +314,14 @@ export async function getOrganization(teamId: number, projectId?: number) {
       .orderBy(asc(project.key)),
   ]);
 
-  const [agentUsage, projectUsage] = await Promise.all([
+  const [agentUsage, projectUsage, budgets] = await Promise.all([
     agentTokenUsage(agents.map((row) => row.id)),
     projectTokenUsage(projects.map((row) => row.id)),
+    budgetStatuses({
+      agentIds: agents.map((row) => row.id),
+      projectIds: projects.map((row) => row.id),
+      departmentIds: departments.map((row) => row.id),
+    }),
   ]);
   const projectsByAgent = new Map<number, typeof agentProjects>();
   for (const entry of agentProjects) {
@@ -328,6 +334,7 @@ export async function getOrganization(teamId: number, projectId?: number) {
     teamId,
     departments: departments.map((row) => ({
       ...row,
+      budgets: budgets.filter((budget) => budget.departmentId === row.id),
       createdAt: iso(row.createdAt),
       updatedAt: iso(row.updatedAt),
     })),
@@ -343,6 +350,26 @@ export async function getOrganization(teamId: number, projectId?: number) {
     })),
     agents: agents.map((row) => ({
       ...row,
+      budgets: budgets.filter((budget) => budget.agentId === row.id),
+      throttled: budgets.some(
+        (budget) =>
+          budget.reached &&
+          budget.graceRuns === 0 &&
+          (budget.agentId === row.id ||
+            (budget.departmentId != null &&
+              (budget.departmentId === row.departmentId ||
+                projects.some(
+                  (projectRow) =>
+                    projectRow.departmentId === budget.departmentId &&
+                    (projectsByAgent.get(row.id) ?? []).some(
+                      (agentProject) => agentProject.id === projectRow.id,
+                    ),
+                ))) ||
+            (budget.projectId != null &&
+              (projectsByAgent.get(row.id) ?? []).some(
+                (agentProject) => agentProject.id === budget.projectId,
+              ))),
+      ),
       kind: row.kind as 'external',
       // Root of the reporting chain. It carries no organization_agent_assignment row of
       // its own, so without this it would fall through to "unassigned" like a real orphan.

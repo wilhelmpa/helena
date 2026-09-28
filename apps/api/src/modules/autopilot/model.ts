@@ -58,9 +58,10 @@ export const LevelRulesSchema = t.Array(
 
 export const BudgetStatusSchema = t.Object({
   id: t.Number(),
-  scope: t.Union([t.Literal('agent'), t.Literal('project')]),
+  scope: t.Union([t.Literal('agent'), t.Literal('project'), t.Literal('department')]),
   agentId: t.Nullable(t.Number()),
   projectId: t.Nullable(t.Number()),
+  departmentId: t.Nullable(t.Number()),
   metric: Metric,
   period: Period,
   limit: t.Number(),

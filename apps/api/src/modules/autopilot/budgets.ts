@@ -1,4 +1,15 @@
-import { db, aiAgent, approvalRequest, helenaBudget, project, projectMember, user } from '@repo/db';
+import {
+  db,
+  aiAgent,
+  approvalRequest,
+  helenaBudget,
+  organizationAgentAssignment,
+  organizationDepartment,
+  organizationProjectAssignment,
+  project,
+  projectMember,
+  user,
+} from '@repo/db';
 import { and, eq, inArray, isNotNull, isNull, or, sql } from 'drizzle-orm';
 import { HttpError } from '#shared/lib';
 import { createComment } from '#modules/issues/activity';
@@ -24,9 +35,10 @@ export const WARN_RATIO = 0.8;
 
 export interface BudgetStatus {
   id: number;
-  scope: 'agent' | 'project';
+  scope: 'agent' | 'project' | 'department';
   agentId: number | null;
   projectId: number | null;
+  departmentId: number | null;
   metric: BudgetMetric;
   period: BudgetPeriod;
   limit: number;
@@ -58,9 +70,10 @@ function toStatus(row: BudgetRow, usage: UsageTotals | undefined): BudgetStatus 
   const limit = row.limitValue;
   return {
     id: row.id,
-    scope: row.agentId != null ? 'agent' : 'project',
+    scope: row.agentId != null ? 'agent' : row.projectId != null ? 'project' : 'department',
     agentId: row.agentId,
     projectId: row.projectId,
+    departmentId: row.departmentId,
     metric,
     period,
     limit,
@@ -80,10 +93,12 @@ function toStatus(row: BudgetRow, usage: UsageTotals | undefined): BudgetStatus 
 export async function budgetStatuses(targets: {
   agentIds?: number[];
   projectIds?: number[];
+  departmentIds?: number[];
 }): Promise<BudgetStatus[]> {
   const agentIds = targets.agentIds ?? [];
   const projectIds = targets.projectIds ?? [];
-  if (agentIds.length === 0 && projectIds.length === 0) return [];
+  const departmentIds = targets.departmentIds ?? [];
+  if (agentIds.length === 0 && projectIds.length === 0 && departmentIds.length === 0) return [];
   const rows = await db
     .select()
     .from(helenaBudget)
@@ -91,6 +106,7 @@ export async function budgetStatuses(targets: {
       or(
         agentIds.length > 0 ? inArray(helenaBudget.agentId, agentIds) : undefined,
         projectIds.length > 0 ? inArray(helenaBudget.projectId, projectIds) : undefined,
+        departmentIds.length > 0 ? inArray(helenaBudget.departmentId, departmentIds) : undefined,
       ),
     )
     .orderBy(helenaBudget.id);
@@ -101,19 +117,32 @@ export async function budgetStatuses(targets: {
   const wantProjects = [
     ...new Set(rows.flatMap((r) => (r.projectId != null ? [r.projectId] : []))),
   ];
+  const wantDepartments = [
+    ...new Set(rows.flatMap((r) => (r.departmentId != null ? [r.departmentId] : []))),
+  ];
   const needsDay = rows.some((r) => r.period === 'day');
-  const [agentMonth, agentDay, projectMonth, projectDay] = await Promise.all([
-    usageSince('agent', wantAgents, monthStart),
-    needsDay ? usageSince('agent', wantAgents, dayStart) : new Map<number, UsageTotals>(),
-    usageSince('project', wantProjects, monthStart),
-    needsDay ? usageSince('project', wantProjects, dayStart) : new Map<number, UsageTotals>(),
-  ]);
+  const [agentMonth, agentDay, projectMonth, projectDay, departmentMonth, departmentDay] =
+    await Promise.all([
+      usageSince('agent', wantAgents, monthStart),
+      needsDay ? usageSince('agent', wantAgents, dayStart) : new Map<number, UsageTotals>(),
+      usageSince('project', wantProjects, monthStart),
+      needsDay ? usageSince('project', wantProjects, dayStart) : new Map<number, UsageTotals>(),
+      usageSince('department', wantDepartments, monthStart),
+      needsDay
+        ? usageSince('department', wantDepartments, dayStart)
+        : new Map<number, UsageTotals>(),
+    ]);
   return rows.map((row) => {
     const byAgent = row.agentId != null;
+    const byProject = row.projectId != null;
     const usage =
       row.period === 'day'
-        ? (byAgent ? agentDay : projectDay).get((byAgent ? row.agentId : row.projectId)!)
-        : (byAgent ? agentMonth : projectMonth).get((byAgent ? row.agentId : row.projectId)!);
+        ? (byAgent ? agentDay : byProject ? projectDay : departmentDay).get(
+            (byAgent ? row.agentId : byProject ? row.projectId : row.departmentId)!,
+          )
+        : (byAgent ? agentMonth : byProject ? projectMonth : departmentMonth).get(
+            (byAgent ? row.agentId : byProject ? row.projectId : row.departmentId)!,
+          );
     return toStatus(row, usage);
   });
 }
@@ -137,9 +166,18 @@ function usedOf(metric: BudgetMetric, used: number, limit: number): string {
 
 // The reason an exhausted budget gives, in the words the pause reason and the comments use.
 // Starts with "Budget reached" so a pause it caused can be told apart.
-export function budgetReason(status: BudgetStatus, projectKey?: string | null): string {
+export function budgetReason(
+  status: BudgetStatus,
+  projectKey?: string | null,
+  departmentName?: string | null,
+): string {
   const periodText = status.period === 'day' ? 'Daily' : 'Monthly';
-  const of = status.scope === 'project' && projectKey ? ` of project ${projectKey}` : '';
+  const of =
+    status.scope === 'project' && projectKey
+      ? ` of project ${projectKey}`
+      : status.scope === 'department' && departmentName
+        ? ` of department ${departmentName}`
+        : '';
   const when = status.period === 'day' ? 'today (UTC)' : 'this month (UTC)';
   return (
     `${BUDGET_REASON_PREFIX}: ${periodText.toLowerCase()} ${METRIC_TEXT[status.metric]} budget${of}, ` +
@@ -172,6 +210,7 @@ export async function noticeRecipients(
 
 interface AgentFacts {
   id: number;
+  teamId: number;
   userId: string;
   ownerUserId: string | null;
   pausedAt: Date | null;
@@ -182,6 +221,7 @@ async function agentFacts(agentId: number): Promise<AgentFacts | null> {
   const [row] = await db
     .select({
       id: aiAgent.id,
+      teamId: aiAgent.teamId,
       userId: aiAgent.userId,
       ownerUserId: aiAgent.ownerUserId,
       pausedAt: aiAgent.pausedAt,
@@ -198,6 +238,44 @@ async function projectKeyOf(projectId: number): Promise<string | null> {
     .from(project)
     .where(eq(project.id, projectId));
   return row?.key ?? null;
+}
+
+// Project ownership wins; a project without an assignment follows the agent's department.
+async function departmentOfWork(
+  agentId: number,
+  projectId: number | null,
+): Promise<{ id: number; name: string } | null> {
+  const [row] = await db
+    .select({
+      id: organizationDepartment.id,
+      name: organizationDepartment.name,
+    })
+    .from(aiAgent)
+    .leftJoin(
+      organizationProjectAssignment,
+      projectId == null
+        ? sql`false`
+        : and(
+            eq(organizationProjectAssignment.projectId, projectId),
+            eq(organizationProjectAssignment.teamId, aiAgent.teamId),
+          ),
+    )
+    .leftJoin(
+      organizationAgentAssignment,
+      and(
+        eq(organizationAgentAssignment.agentId, aiAgent.id),
+        eq(organizationAgentAssignment.teamId, aiAgent.teamId),
+      ),
+    )
+    .leftJoin(
+      organizationDepartment,
+      eq(
+        organizationDepartment.id,
+        sql`coalesce(${organizationProjectAssignment.departmentId}, ${organizationAgentAssignment.departmentId})`,
+      ),
+    )
+    .where(eq(aiAgent.id, agentId));
+  return row?.id == null ? null : { id: row.id, name: row.name! };
 }
 
 // Pauses the agent unless it already is. True when this call paused it.
@@ -269,6 +347,7 @@ async function fileBudgetCard(
       periodStart: status.periodStart,
       agentId: status.agentId,
       projectId: status.projectId,
+      departmentId: status.departmentId,
     },
   });
 }
@@ -282,9 +361,11 @@ export async function enforceBudgets(
   projectId: number | null,
   issueId: number | null,
 ): Promise<string | null> {
+  const department = await departmentOfWork(agentId, projectId);
   const statuses = await budgetStatuses({
     agentIds: [agentId],
     projectIds: projectId == null ? [] : [projectId],
+    departmentIds: department == null ? [] : [department.id],
   });
   if (statuses.length === 0) return null;
   const agent = await agentFacts(agentId);
@@ -306,7 +387,7 @@ export async function enforceBudgets(
       body: [
         ...handles,
         `Heads-up: ${percent} % of my ${status.period === 'day' ? 'daily' : 'monthly'} ` +
-          `${METRIC_TEXT[status.metric]} budget${status.scope === 'project' && key ? ` of project ${key}` : ''} ` +
+          `${METRIC_TEXT[status.metric]} budget${status.scope === 'project' && key ? ` of project ${key}` : status.scope === 'department' && department ? ` of department ${department.name}` : ''} ` +
           `is used (${usedOf(status.metric, status.used, status.limit)}). ` +
           'I stop taking new work when it is used up.',
       ].join(' '),
@@ -319,14 +400,26 @@ export async function enforceBudgets(
   if (blocking.length === 0) return null;
 
   const first = blocking.find((status) => status.scope === 'agent') ?? blocking[0]!;
-  const reason = budgetReason(first, key);
+  const reason = budgetReason(first, key, department?.name);
   const paused = first.scope === 'agent' ? await pauseForBudget(agentId, reason) : false;
-  if (projectId == null) return reason;
+  // Home chats have no execution project, but their reached department budget still
+  // needs an Inbox card. Prefer the team's Home project, then its first project.
+  let noticeProjectId = projectId;
+  if (noticeProjectId == null) {
+    const [home] = await db
+      .select({ id: project.id })
+      .from(project)
+      .where(eq(project.teamId, agent.teamId))
+      .orderBy(sql`case when ${project.key} = 'HOME' then 0 else 1 end`, project.id)
+      .limit(1);
+    noticeProjectId = home?.id ?? null;
+  }
+  if (noticeProjectId == null) return reason;
   const filed = await claimOnce(first.id, 'reachedFor', new Date(first.periodStart));
-  if (filed) await fileBudgetCard(first, agentId, projectId, issueId, reason);
+  if (filed) await fileBudgetCard(first, agentId, noticeProjectId, issueId, reason);
   if ((paused || filed) && issueId != null) {
     const handles = await noticeRecipients(
-      projectId,
+      noticeProjectId,
       first.scope === 'agent' ? agent.ownerUserId : null,
     );
     await createComment({
@@ -351,7 +444,12 @@ export async function useGrace(
   projectId: number,
   runId: number,
 ): Promise<boolean> {
-  const statuses = await budgetStatuses({ agentIds: [agentId], projectIds: [projectId] });
+  const department = await departmentOfWork(agentId, projectId);
+  const statuses = await budgetStatuses({
+    agentIds: [agentId],
+    projectIds: [projectId],
+    departmentIds: department == null ? [] : [department.id],
+  });
   const exhausted = new Error('No budget grace remains');
   try {
     await db.transaction(async (tx) => {
@@ -383,16 +481,45 @@ export async function useGrace(
 
 // The projects whose budgets are used up without a run left to continue on, among the
 // given ones. A claim skips their runs, so the agent still works in its other projects.
-export async function heldProjects(projectIds: number[]): Promise<number[]> {
+export async function heldProjects(projectIds: number[], agentId?: number): Promise<number[]> {
   if (projectIds.length === 0) return [];
-  const statuses = await budgetStatuses({ projectIds });
-  return [
-    ...new Set(
-      statuses
-        .filter((status) => status.reached && status.graceRuns === 0)
-        .map((status) => status.projectId!),
-    ),
-  ];
+  const assignments = await db
+    .select({
+      projectId: organizationProjectAssignment.projectId,
+      departmentId: organizationProjectAssignment.departmentId,
+    })
+    .from(organizationProjectAssignment)
+    .where(inArray(organizationProjectAssignment.projectId, projectIds));
+  const agentDepartment =
+    agentId == null ? null : ((await departmentOfWork(agentId, null))?.id ?? null);
+  const departmentByProject = new Map(
+    projectIds.map((projectId) => [
+      projectId,
+      assignments.find((row) => row.projectId === projectId)?.departmentId ?? agentDepartment,
+    ]),
+  );
+  const statuses = await budgetStatuses({
+    projectIds,
+    departmentIds: [
+      ...new Set([...departmentByProject.values()].flatMap((id) => (id == null ? [] : [id]))),
+    ],
+  });
+  const held = new Set(
+    statuses
+      .filter((status) => status.scope === 'project' && status.reached && status.graceRuns === 0)
+      .map((status) => status.projectId!),
+  );
+  for (const [projectId, departmentId] of departmentByProject) {
+    if (
+      statuses.some(
+        (status) =>
+          status.departmentId === departmentId && status.reached && status.graceRuns === 0,
+      )
+    ) {
+      held.add(projectId);
+    }
+  }
+  return [...held];
 }
 
 // Whether a budget of the agent or of the project is used up for good right now. The
@@ -402,9 +529,11 @@ export async function budgetExhausted(
   projectId: number | null,
   runId?: number | null,
 ): Promise<BudgetStatus | null> {
+  const department = agentId == null ? null : await departmentOfWork(agentId, projectId);
   const statuses = await budgetStatuses({
     agentIds: agentId == null ? [] : [agentId],
     projectIds: projectId == null ? [] : [projectId],
+    departmentIds: department == null ? [] : [department.id],
   });
   return (
     statuses.find(
@@ -423,7 +552,7 @@ export interface BudgetInput {
   limit: number | null;
 }
 
-export type BudgetTarget = { agentId: number } | { projectId: number };
+export type BudgetTarget = { agentId: number } | { projectId: number } | { departmentId: number };
 
 // Sets the budgets named; the ones not named stay as they are. An agent whose budget
 // pause no longer holds takes work again, and a pending card of a budget that is no longer
@@ -438,7 +567,9 @@ export async function setBudgets(
     const where = and(
       'agentId' in target
         ? eq(helenaBudget.agentId, target.agentId)
-        : eq(helenaBudget.projectId, target.projectId),
+        : 'projectId' in target
+          ? eq(helenaBudget.projectId, target.projectId)
+          : eq(helenaBudget.departmentId, target.departmentId),
       eq(helenaBudget.metric, entry.metric),
       eq(helenaBudget.period, entry.period),
     );
@@ -454,7 +585,11 @@ export async function setBudgets(
     if (updated.length === 0) {
       await db.insert(helenaBudget).values({
         teamId,
-        ...('agentId' in target ? { agentId: target.agentId } : { projectId: target.projectId }),
+        ...('agentId' in target
+          ? { agentId: target.agentId }
+          : 'projectId' in target
+            ? { projectId: target.projectId }
+            : { departmentId: target.departmentId }),
         metric: entry.metric,
         period: entry.period,
         limitValue: entry.limit,
@@ -471,7 +606,11 @@ export async function settleBudgets(
   deciderUserId: string | null,
 ): Promise<void> {
   const statuses = await budgetStatuses(
-    'agentId' in target ? { agentIds: [target.agentId] } : { projectIds: [target.projectId] },
+    'agentId' in target
+      ? { agentIds: [target.agentId] }
+      : 'projectId' in target
+        ? { projectIds: [target.projectId] }
+        : { departmentIds: [target.departmentId] },
   );
   const open = await db
     .select({ id: approvalRequest.id, payload: approvalRequest.payload })
@@ -483,7 +622,10 @@ export async function settleBudgets(
     const belongs =
       'agentId' in target
         ? (card.payload as { agentId?: number | null })?.agentId === target.agentId
-        : (card.payload as { projectId?: number | null })?.projectId === target.projectId;
+        : 'projectId' in target
+          ? (card.payload as { projectId?: number | null })?.projectId === target.projectId
+          : (card.payload as { departmentId?: number | null })?.departmentId ===
+            target.departmentId;
     if (!belongs) continue;
     if (status && status.reached && status.graceRuns === 0) continue;
     await db

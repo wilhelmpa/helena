@@ -1415,6 +1415,13 @@
       "when": 1790583289919,
       "tag": "0202_agent_heartbeats",
       "breakpoints": true
+    },
+    {
+      "idx": 203,
+      "version": "7",
+      "when": 1790583305534,
+      "tag": "0203_department_budgets",
+      "breakpoints": true
     }
   ]
 }
