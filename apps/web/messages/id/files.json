@@ -1,4 +1,11 @@
 {
+  "fixedFolders": {
+    "Docs": "Dokumen",
+    "Files": "Berkas",
+    "Assets": "Lampiran",
+    "Boards": "Kanvas",
+    "Inbox": "Masuk"
+  },
   "title": "Berkas",
   "projectDescription": "Dokumen, lampiran, dan kode proyek ini",
   "roots": {
@@ -55,7 +62,7 @@
     "copyPath": "Salin jalur",
     "openInNotes": "Buka di Catatan",
     "openInCode": "Buka di VS Code",
-    "openInDocs": "Buka di Docs",
+    "openInDocs": "Buka di Pengetahuan",
     "linkToTask": "Tautkan ke tugas",
     "trash": "Pindahkan ke tempat sampah",
     "showInFolder": "Tampilkan di folder"
@@ -67,7 +74,7 @@
     "name": "Nama",
     "folderName": "Folder baru",
     "fileName": "Catatan.md",
-    "fileHint": "Berkas .md atau .txt. Catatan Markdown terbuka di Docs.",
+    "fileHint": "Berkas .md atau .txt. Markdown dibuka di Pengetahuan.",
     "create": "Buat",
     "save": "Simpan",
     "cancel": "Batal"

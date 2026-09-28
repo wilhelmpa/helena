@@ -59,7 +59,7 @@
     "previousVersion": "Vorherige Version",
     "nextVersion": "Nächste Version",
     "saveAsNote": "Als Notiz speichern",
-    "noteSaved": "Chat als Notiz in „Docs“ gespeichert.",
+    "noteSaved": "Chat als Notiz in Wissen gespeichert.",
     "noteSaveFailed": "Der Chat konnte nicht als Notiz gespeichert werden.",
     "noteQuestion": "Frage",
     "noteAnswer": "Antwort von {agent}",
@@ -79,8 +79,8 @@
     "stop": "Antwort stoppen",
     "attach": "Anhängen",
     "uploadFile": "Datei hochladen",
-    "fromVault": "Aus dem Vault wählen",
-    "vaultRoot": "Vault",
+    "fromVault": "Aus Wissen wählen",
+    "vaultRoot": "Wissen",
     "vaultEmpty": "Dieser Ordner ist leer.",
     "uploading": "Wird hochgeladen …",
     "uploadFailed": "Der Upload ist fehlgeschlagen.",
@@ -126,7 +126,7 @@
     "toggle": "Artefakt-Panel ein-/ausblenden",
     "code": "Code",
     "preview": "Vorschau",
-    "save": "Im Vault speichern",
+    "save": "In Wissen speichern",
     "saved": "Gespeichert unter {path}.",
     "writing": "Artefakt entsteht …"
   },
@@ -164,8 +164,7 @@
     "loading": "Anfrage wird geladen …"
   },
   "newChat": {
-    "title": "Neuer Chat mit {agent}",
-    "hint": "Den Agenten wählst du unten links im Eingabefeld – dort siehst du auch seinen Status."
+    "title": "Neuer Chat mit {agent}"
   },
   "agents": {
     "runtimeExternal": "Extern",

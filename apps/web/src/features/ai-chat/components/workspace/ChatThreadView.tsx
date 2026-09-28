@@ -18,7 +18,7 @@ import type { ChatAgentState } from '../../utils/agentPresence';
 import type { Artifact } from '../../utils/artifacts';
 import ChatHeader from './ChatHeader';
 import ChatMessageList from './ChatMessageList';
-import ChatComposer from './ChatComposer';
+import ChatComposer from '@/components/helena/Composer';
 import ChatNewChatIntro from './ChatNewChatIntro';
 import { HomeChatActivityCards, HomeChatHero, HomeChatMasthead } from './HomeChatLanding';
 import ChatRestoreError from './ChatRestoreError';
@@ -119,7 +119,7 @@ export default function ChatThreadView({
   const lastOwnMessage = plan.messages.findLast((message) => message.role === 'user');
   const state = states.get(agent.id);
   const empty = !plan.restoring && !plan.restoreFailed && plan.messages.length === 0;
-  const homeLanding = inPage && projectKey === null && empty;
+  const homeLanding = projectKey === null && empty && (inPage || pageContext != null);
   const activity = composerActivity(plan.messages, plan.status, state?.online ?? true);
   const tool = activeTool(plan.messages, plan.status);
   const choices = activity === 'answered' ? pendingChoices(plan.messages) : null;
@@ -262,6 +262,7 @@ export default function ChatThreadView({
             <ChatRestoreError onRetry={() => void plan.retryRestore()} />
           ) : homeLanding ? (
             <HomeChatHero
+              showTitle={inPage}
               orb={
                 <Orb
                   state={orbStatus}
@@ -355,7 +356,7 @@ export default function ChatThreadView({
           onUndo={plan.undo}
           onEditLast={lastOwnMessage ? () => setEditingId(lastOwnMessage.id) : undefined}
         />
-        {homeLanding && <HomeChatActivityCards />}
+        {homeLanding && inPage && <HomeChatActivityCards />}
       </div>
     </WebLinkScope>
   );

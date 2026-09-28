@@ -1,7 +1,6 @@
 {
   "working": "{count, plural, =0 {KEIN AGENT ARBEITET} one {# AGENT ARBEITET} other {# AGENTEN ARBEITEN}}",
   "title": "Was steht an?",
-  "hint": "Home kennt alle Projekte. Sprich oder schreib einfach.",
   "recent": "Läuft gerade",
   "finished": "Zuletzt fertig",
   "empty": "Keine aktuellen Agentenläufe.",

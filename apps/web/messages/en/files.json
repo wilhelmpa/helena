@@ -1,4 +1,11 @@
 {
+  "fixedFolders": {
+    "Docs": "Documents",
+    "Files": "Files",
+    "Assets": "Attachments",
+    "Boards": "Canvases",
+    "Inbox": "Incoming"
+  },
   "title": "Files",
   "projectDescription": "Documents, attachments and code of this project",
   "roots": {
@@ -55,7 +62,7 @@
     "copyPath": "Copy Helena link",
     "openInNotes": "SilverBullet",
     "openInCode": "Open in VS Code",
-    "openInDocs": "Open in Docs",
+    "openInDocs": "Open in Knowledge",
     "linkToTask": "Link to task",
     "trash": "Move to trash",
     "showInFolder": "Show in folder"
@@ -67,7 +74,7 @@
     "name": "Name",
     "folderName": "New folder",
     "fileName": "Note.md",
-    "fileHint": "A .md or .txt file. A Markdown note opens in Docs.",
+    "fileHint": "A .md or .txt file. Markdown opens in Knowledge.",
     "create": "Create",
     "save": "Save",
     "cancel": "Cancel"

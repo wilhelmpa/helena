@@ -1,4 +1,11 @@
 {
+  "fixedFolders": {
+    "Docs": "Dokumente",
+    "Files": "Dateien",
+    "Assets": "Anhänge",
+    "Boards": "Leinwände",
+    "Inbox": "Eingang"
+  },
   "title": "Dateien",
   "projectDescription": "Dokumente, Anhänge und Code dieses Projekts",
   "roots": {
@@ -55,7 +62,7 @@
     "copyPath": "Helena-Link kopieren",
     "openInNotes": "SilverBullet",
     "openInCode": "In VS Code öffnen",
-    "openInDocs": "In Docs öffnen",
+    "openInDocs": "In Wissen öffnen",
     "linkToTask": "Mit Aufgabe verknüpfen",
     "trash": "In den Papierkorb",
     "showInFolder": "Im Ordner zeigen"
@@ -67,7 +74,7 @@
     "name": "Name",
     "folderName": "Neuer Ordner",
     "fileName": "Notiz.md",
-    "fileHint": "Eine .md- oder .txt-Datei. Eine Markdown-Notiz öffnet sich in Docs.",
+    "fileHint": "Eine .md- oder .txt-Datei. Markdown öffnet sich in Wissen.",
     "create": "Erstellen",
     "save": "Speichern",
     "cancel": "Abbrechen"

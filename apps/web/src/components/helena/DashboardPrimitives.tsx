@@ -4,12 +4,16 @@ import { cn } from '@/lib/utils';
 import styles from './DashboardPrimitives.module.css';
 
 export function Card({
+  as: Element = 'section',
   variant = 'surface',
   className,
   ...props
-}: HTMLAttributes<HTMLElement> & { variant?: 'surface' | 'raised' | 'selected' }) {
+}: HTMLAttributes<HTMLElement> & {
+  as?: 'section' | 'article' | 'div';
+  variant?: 'surface' | 'raised' | 'selected';
+}) {
   return (
-    <section
+    <Element
       className={cn(styles.card, variant !== 'surface' && styles[variant], className)}
       {...props}
     />

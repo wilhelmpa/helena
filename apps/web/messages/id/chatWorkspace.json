@@ -59,7 +59,7 @@
     "previousVersion": "Versi sebelumnya",
     "nextVersion": "Versi berikutnya",
     "saveAsNote": "Simpan sebagai catatan",
-    "noteSaved": "Obrolan disimpan sebagai catatan di Docs.",
+    "noteSaved": "Obrolan disimpan sebagai catatan di Pengetahuan.",
     "noteSaveFailed": "Obrolan tidak bisa disimpan sebagai catatan.",
     "noteQuestion": "Pertanyaan",
     "noteAnswer": "Jawaban {agent}",
@@ -79,8 +79,8 @@
     "stop": "Hentikan jawaban",
     "attach": "Lampirkan",
     "uploadFile": "Unggah berkas",
-    "fromVault": "Pilih dari vault",
-    "vaultRoot": "Vault",
+    "fromVault": "Pilih dari Pengetahuan",
+    "vaultRoot": "Pengetahuan",
     "vaultEmpty": "Folder ini kosong.",
     "uploading": "Mengunggah…",
     "uploadFailed": "Unggahan gagal.",
@@ -126,7 +126,7 @@
     "toggle": "Tampilkan/sembunyikan panel artefak",
     "code": "Kode",
     "preview": "Pratinjau",
-    "save": "Simpan ke vault",
+    "save": "Simpan ke Pengetahuan",
     "saved": "Disimpan ke {path}.",
     "writing": "Menulis artefak…"
   },
@@ -164,8 +164,7 @@
     "loading": "Memuat permintaan…"
   },
   "newChat": {
-    "title": "Chat baru dengan {agent}",
-    "hint": "Pilih agen di kiri bawah kolom input — statusnya juga terlihat di sana."
+    "title": "Chat baru dengan {agent}"
   },
   "agents": {
     "runtimeExternal": "Eksternal",

@@ -1,4 +1,5 @@
 import { useAgentWorkStates } from '@/hooks/useAgentWorkStates';
+import { useSyncExternalStore } from 'react';
 
 export const HELENA_STATUSES = [
   'idle',
@@ -72,7 +73,16 @@ export interface AgentStatusOptions extends StatusSignals {
   chatId?: string | null;
 }
 
+const subscribeFixture = () => () => {};
+
+function statusFixture(): HelenaStatus | null {
+  if (process.env.NODE_ENV !== 'development') return null;
+  const value = new URLSearchParams(window.location.search).get('helenaStatus');
+  return HELENA_STATUSES.find((status) => status === value) ?? null;
+}
+
 export function useAgentStatus(agentId: number, options: AgentStatusOptions = {}): HelenaStatus {
+  const fixture = useSyncExternalStore(subscribeFixture, statusFixture, () => null);
   const work = useAgentWorkStates();
   const run =
     options.run !== undefined
@@ -80,5 +90,5 @@ export function useAgentStatus(agentId: number, options: AgentStatusOptions = {}
       : options.chatId === undefined
         ? work.get(agentId)
         : undefined;
-  return deriveStatus({ ...options, run });
+  return fixture ?? deriveStatus({ ...options, run });
 }

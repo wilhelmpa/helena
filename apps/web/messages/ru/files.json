@@ -1,4 +1,11 @@
 {
+  "fixedFolders": {
+    "Docs": "Документы",
+    "Files": "Файлы",
+    "Assets": "Вложения",
+    "Boards": "Холсты",
+    "Inbox": "Входящие"
+  },
   "title": "Файлы",
   "projectDescription": "Документы, вложения и код этого проекта",
   "roots": {
@@ -55,7 +62,7 @@
     "copyPath": "Копировать путь",
     "openInNotes": "Открыть в заметках",
     "openInCode": "Открыть в VS Code",
-    "openInDocs": "Открыть в Docs",
+    "openInDocs": "Открыть в Знаниях",
     "linkToTask": "Связать с задачей",
     "trash": "Переместить в корзину",
     "showInFolder": "Показать в папке"
@@ -67,7 +74,7 @@
     "name": "Имя",
     "folderName": "Новая папка",
     "fileName": "Заметка.md",
-    "fileHint": "Файл .md или .txt. Заметка Markdown открывается в Docs.",
+    "fileHint": "Файл .md или .txt. Markdown открывается в Знаниях.",
     "create": "Создать",
     "save": "Сохранить",
     "cancel": "Отмена"

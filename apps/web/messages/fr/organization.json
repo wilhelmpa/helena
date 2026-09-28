@@ -1,5 +1,5 @@
 {
-  "title": "Organization",
+  "title": "Équipe",
   "description": "Manage departments, goals, agent reporting lines, and project responsibilities.",
   "loading": "Loading organization…",
   "managerRequired": "Only team owners and managers can view and edit the organization.",

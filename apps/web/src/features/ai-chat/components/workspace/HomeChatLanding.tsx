@@ -71,12 +71,11 @@ export function HomeChatMasthead({ onOpenList }: { onOpenList?: () => void }) {
   );
 }
 
-export function HomeChatHero({ orb }: { orb: ReactNode }) {
+export function HomeChatHero({ orb, showTitle = true }: { orb: ReactNode; showTitle?: boolean }) {
   const t = useTranslations('homeChat');
   return (
     <div className={styles.hero}>
-      <h1>{t('title')}</h1>
-      <p className={styles.hint}>{t('hint')}</p>
+      {showTitle && <h1>{t('title')}</h1>}
       <div className={styles.orb}>{orb}</div>
     </div>
   );

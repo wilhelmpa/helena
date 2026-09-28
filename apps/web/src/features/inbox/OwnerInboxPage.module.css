@@ -90,15 +90,6 @@
   height: 10px;
   margin-top: 6px;
   flex: none;
-  border-radius: 50%;
-  background: #ef9f27;
-  box-shadow: 0 0 12px #ef9f27;
-  animation: pulse 1.8s ease-in-out infinite;
-}
-
-.danger {
-  background: #f4a3bf;
-  box-shadow: 0 0 12px #f4a3bf;
 }
 
 .cardContent {

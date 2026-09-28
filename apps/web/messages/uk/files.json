@@ -1,4 +1,11 @@
 {
+  "fixedFolders": {
+    "Docs": "Документи",
+    "Files": "Файли",
+    "Assets": "Вкладення",
+    "Boards": "Полотна",
+    "Inbox": "Вхідні"
+  },
   "title": "Файли",
   "projectDescription": "Документи, вкладення та код цього проєкту",
   "roots": {
@@ -55,7 +62,7 @@
     "copyPath": "Копіювати шлях",
     "openInNotes": "Відкрити в нотатках",
     "openInCode": "Відкрити у VS Code",
-    "openInDocs": "Відкрити в Docs",
+    "openInDocs": "Відкрити у Знаннях",
     "linkToTask": "Пов'язати із завданням",
     "trash": "Перемістити до кошика",
     "showInFolder": "Показати в папці"
@@ -67,7 +74,7 @@
     "name": "Назва",
     "folderName": "Нова папка",
     "fileName": "Нотатка.md",
-    "fileHint": "Файл .md або .txt. Нотатка Markdown відкривається в Docs.",
+    "fileHint": "Файл .md або .txt. Markdown відкривається у Знаннях.",
     "create": "Створити",
     "save": "Зберегти",
     "cancel": "Скасувати"

@@ -30,7 +30,6 @@ import {
   receiptsPath,
   projectPath,
   workflowsPath,
-  projectApprovalsPath,
   organizationPath,
 } from '@/utils/paths';
 import { homeNavigation } from './homeNavigation';
@@ -41,6 +40,8 @@ import { hasTreeContent } from './treeContent';
 import SidebarKnowledgeFolders from './SidebarKnowledgeFolders';
 import FileNewFolderDialog from '@/features/project-files/components/FileNewFolderDialog';
 import { useState } from 'react';
+import { useCrossProjectIssuesQuery } from '@/features/home/services/tasks.service';
+import { useMemberRoutines } from '@/features/routines/services/routines.service';
 
 function pathIsActive(pathname: string, href: string) {
   const path = href.split('?')[0]!;
@@ -188,7 +189,7 @@ function ApprovalBadge({
         id="you:inbox"
         label={t('sidebarInbox')}
         href={projectKey ? inboxPath(projectKey) : '/inbox'}
-        activePaths={[projectKey ? projectApprovalsPath(projectKey) : '/approvals']}
+        hasChildren={false}
         action={
           <>
             {badge > 0 && <span className="helena-tree-badge">{badge}</span>}
@@ -208,9 +209,7 @@ function ApprovalBadge({
           </>
         }
       >
-        <TreeLink href={projectKey ? projectApprovalsPath(projectKey) : '/approvals'} nested>
-          {t('approvals')}
-        </TreeLink>
+        {null}
       </TreeBranch>
     </>
   );
@@ -244,6 +243,12 @@ export function SidebarHomeTree({ teamId, isGod }: { teamId: number | null; isGo
   const homeRoot = params.get('root');
   const homePath = params.get('path');
   const homePathname = usePathname();
+  const tasksCount = useCrossProjectIssuesQuery({ page: 1, pageSize: 1 }, { stateType: 'open' });
+  const myTasksCount = useCrossProjectIssuesQuery(
+    { page: 1, pageSize: 1 },
+    { stateType: 'open', assignee: 'me' },
+  );
+  const schedulesCount = useMemberRoutines({ page: 1, pageSize: 1 });
   return (
     <section className="helena-sidebar-section">
       <h2>{t('sidebarProject')}</h2>
@@ -263,8 +268,18 @@ export function SidebarHomeTree({ teamId, isGod }: { teamId: number | null; isGo
           </TreeLink>
         )}
       </TreeBranch>
-      <TreeBranch id="home:tasks" label={t('workItems')} href="/tasks" defaultOpen>
-        <TreeLink href="/tasks?assignee=me" nested>
+      <TreeBranch
+        id="home:tasks"
+        label={t('workItems')}
+        href="/tasks"
+        defaultOpen
+        action={
+          tasksCount.data?.total ? (
+            <span className="helena-tree-badge">{tasksCount.data.total}</span>
+          ) : undefined
+        }
+      >
+        <TreeLink href="/tasks?assignee=me" nested badge={myTasksCount.data?.total}>
           {t('sidebarMyTasks')}
         </TreeLink>
         <TreeLink href="/tasks" nested>
@@ -310,9 +325,6 @@ export function SidebarHomeTree({ teamId, isGod }: { teamId: number | null; isGo
                       : 'sidebarTemplates',
                 )}
               </TreeLink>
-              <div className="helena-tree-children">
-                <SidebarKnowledgeFolders scope={{ kind: 'home', root }} canWrite={owner} />
-              </div>
             </div>
           ),
         )}
@@ -337,7 +349,7 @@ export function SidebarHomeTree({ teamId, isGod }: { teamId: number | null; isGo
         <TreeLink href={get('organization') ?? '/organization'} nested>
           {t('sidebarTeamDeciders')}
         </TreeLink>
-        <TreeLink href="/schedules" nested>
+        <TreeLink href="/schedules" nested badge={schedulesCount.data?.total}>
           {t('sidebarSchedules')}
         </TreeLink>
         <TreeLink href="/activity" nested>
@@ -480,7 +492,7 @@ export function SidebarProjectTree({
         id={`${projectKey}:auto`}
         label={t('sidebarAutomation')}
         href={can('ai_agents', 'read') ? aiAgentsPath(projectKey) : agentActivityPath(projectKey)}
-        hasChildren={can('ai_agents', 'read') || can('actions', 'read') || can('ai_agents', 'edit')}
+        hasChildren={can('ai_agents', 'read')}
         action={
           can('ai_agents', 'create') && (
             <Link
@@ -516,11 +528,6 @@ export function SidebarProjectTree({
         {can('ai_agents', 'read') && (
           <TreeLink href={agentActivityPath(projectKey)} nested>
             {t('sidebarHistory')}
-          </TreeLink>
-        )}
-        {can('actions', 'read') && (
-          <TreeLink href={workflowsPath(projectKey)} nested>
-            {t('workflows')}
           </TreeLink>
         )}
       </TreeBranch>
