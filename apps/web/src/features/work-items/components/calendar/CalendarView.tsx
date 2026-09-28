@@ -93,8 +93,8 @@ export default function CalendarView({
       onDragCancel={() => setActiveId(null)}
       onDragEnd={handleDragEnd}
     >
-      <div className="flex h-full flex-col sm:flex-row">
-        <div className="flex min-w-0 flex-1 flex-col p-2 sm:p-4">
+      <div className="ds-work-calendar flex h-full flex-col sm:flex-row">
+        <div className="flex min-w-0 flex-1 flex-col">
           <CalendarMonthNav cursor={cursor} onCursorChange={setCursor} />
 
           <div className="grid grid-cols-7 border-b pb-1 text-xs font-medium text-muted-foreground">

@@ -109,10 +109,13 @@ function Flow({
   const fit = useCallback(
     (animate: boolean): boolean => {
       if (!width || !height || nodes.length === 0) return false;
-      const internals = nodes.map((node) => flow.getInternalNode(node.id));
-      // Wait until React Flow has measured the nodes shown now.
-      if (internals.some((node) => !node?.measured.width)) return false;
-      const bounds = getNodesBounds(internals.filter((node) => node != null));
+      // The nodes React Flow has measured (a node it never lays out — hidden, off the
+      // ring — must not keep the chart from fitting at all).
+      const internals = nodes
+        .map((node) => flow.getInternalNode(node.id))
+        .filter((node): node is NonNullable<typeof node> => node != null && !!node.measured.width);
+      if (internals.length === 0) return false;
+      const bounds = getNodesBounds(internals);
       const minimum = view === 'ring' ? 0.3 : 0.5;
       const zoom = Math.min(
         1,
@@ -138,8 +141,8 @@ function Flow({
   // Fit again when the chart's place changes size (the page settling, the window), not
   // only on a new view: a fit into a stage that was still growing leaves the chart off.
   useEffect(() => {
-    const key = `${fitKey}:${Math.round(width)}x${Math.round(height)}`;
-    if (!initialized || !width || !height || fitted.current === key) return;
+    const key = `${fitKey}:${Math.round(width)}x${Math.round(height)}:${initialized ? 'all' : 'some'}`;
+    if (!width || !height || fitted.current === key) return;
     const sameView = fitted.current?.startsWith(`${fitKey}:`) ?? false;
     if (fit(fitted.current != null && !sameView)) fitted.current = key;
   }, [fit, fitKey, height, initialized, width]);

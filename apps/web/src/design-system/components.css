@@ -1698,3 +1698,20 @@ a.ds-run-card:hover {
     opacity: 1;
   }
 }
+
+/* Aufgaben → Tabelle: a card in the page gutter. */
+.ds-work-table {
+  height: 100%;
+  overflow: auto;
+  padding: var(--space-4) var(--page-pad-x);
+}
+.ds-work-table-card {
+  overflow: clip;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--surface-1);
+}
+.ds-work-calendar {
+  gap: var(--space-4);
+  padding: var(--space-4) var(--page-pad-x);
+}

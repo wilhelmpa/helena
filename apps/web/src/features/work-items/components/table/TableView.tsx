@@ -158,39 +158,43 @@ export default function TableView({
       onDragCancel={reorder.onDragCancel}
       onDragEnd={reorder.onDragEnd}
     >
-      <div ref={scrollRef} className="h-full overflow-y-auto">
-        <TableColumnHeader
-          columns={columns}
-          gridTemplate={gridTemplate}
-          minWidth={minWidth}
-          onResize={setWidth}
-          onResizeEnd={persistWidths}
-        />
+      {/* The table as a card in the page gutter (draft Aufgaben-table-*); the page area
+          scrolls, so the column heads stay stuck to its top. */}
+      <div ref={scrollRef} className="ds-work-table">
+        <div className="ds-work-table-card" style={{ minWidth }}>
+          <TableColumnHeader
+            columns={columns}
+            gridTemplate={gridTemplate}
+            minWidth={minWidth}
+            onResize={setWidth}
+            onResizeEnd={persistWidths}
+          />
 
-        <div
-          style={{
-            height: virtualizer.getTotalSize(),
-            position: 'relative',
-            width: '100%',
-            minWidth,
-          }}
-        >
-          {virtualizer.getVirtualItems().map((vi) => (
-            <div
-              key={vi.key}
-              data-index={vi.index}
-              ref={virtualizer.measureElement}
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                width: '100%',
-                transform: `translateY(${vi.start}px)`,
-              }}
-            >
-              {renderItem(items[vi.index])}
-            </div>
-          ))}
+          <div
+            style={{
+              height: virtualizer.getTotalSize(),
+              position: 'relative',
+              width: '100%',
+              minWidth,
+            }}
+          >
+            {virtualizer.getVirtualItems().map((vi) => (
+              <div
+                key={vi.key}
+                data-index={vi.index}
+                ref={virtualizer.measureElement}
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  transform: `translateY(${vi.start}px)`,
+                }}
+              >
+                {renderItem(items[vi.index])}
+              </div>
+            ))}
+          </div>
         </div>
         {hiddenGroups.length > 0 && (
           <div className="flex flex-wrap items-center gap-2 p-3 text-sm text-muted-foreground">
