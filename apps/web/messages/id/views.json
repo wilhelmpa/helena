@@ -49,5 +49,7 @@
     "week": "This week",
     "status": "By status"
   },
-  "saveAsNewShort": "Sebagai tampilan baru"
+  "saveAsNewShort": "Sebagai tampilan baru",
+  "filters": "Filter",
+  "display": "Tampilan"
 }

@@ -19,11 +19,12 @@ import {
   withoutHiddenSections,
   type ViewSettings,
 } from '@/utils/viewSettings';
-import { Check, Pencil, Plus, X } from 'lucide-react';
+import { Pencil, Plus } from 'lucide-react';
 import ViewIconPicker from '@/components/layout/ViewIconPicker';
 import FilterPills from '@/components/layout/FilterPills';
-import { PageActions, PageToolbar, type PageAction } from '@/components/layout/PageToolbar';
-import { Segmented } from '@/design-system';
+import { PageActions, PageToolbar } from '@/components/layout/PageToolbar';
+import { Button, Overlay, Segmented, SettingsGroup, SettingsRow } from '@/design-system';
+import { Input } from '@/components/ui/input';
 import { byKey } from '@/utils/messageKey';
 import { VIEWS, type WorkItemsView } from '@/utils/viewTypes';
 import { useViewsQuery } from '@/services/views.service';
@@ -236,52 +237,10 @@ export default function WorkItemsPage() {
     />
   );
 
-  // The edit bar's two actions: Save is the row's one filled button.
-  const editActions: PageAction[] = [
-    { id: 'cancel', label: tCommon('cancel'), icon: X, onClick: editor.cancelEdits },
-  ];
-
   return (
     <>
       <PageToolbar>
-        {editor.editing ? (
-          // The view edit bar (Edit view / New view): the name and icon of the view,
-          // the filter and display it will keep, and Cancel/Save. Save is the one
-          // write; it updates the active view or creates one from the live state.
-          <>
-            <ViewIconPicker icon={editor.draftIcon} onChange={editor.setDraftIcon} />
-            <input
-              value={editor.draftName}
-              placeholder={t('viewNamePlaceholder')}
-              aria-label={t('viewNamePlaceholder')}
-              autoFocus
-              onChange={(e) => editor.setDraftName(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && canSaveDraft) void editor.saveEdits();
-                if (e.key === 'Escape') editor.cancelEdits();
-              }}
-              className="ds-view-name-input"
-            />
-            {controls}
-            <span className="ds-toolbar-fill" />
-            {display}
-            {layoutSwitch}
-            <PageActions
-              actions={editActions}
-              primary={
-                canSaveView
-                  ? {
-                      id: 'save',
-                      label: tCommon('save'),
-                      icon: Check,
-                      disabled: !canSaveDraft,
-                      onClick: () => void editor.saveEdits(),
-                    }
-                  : undefined
-              }
-            />
-          </>
-        ) : (
+        {!editor.editing && (
           <>
             {controls}
             {(editor.changed || (!editor.activeView && editor.filters.conditions.length > 0)) && (
@@ -346,6 +305,59 @@ export default function WorkItemsPage() {
           </>
         )}
       </PageToolbar>
+      {editor.editing && (
+        // Edit view / New view (owner 28.09.): in the one overlay on the right — the name
+        // and icon, the layout, the filters and the display it keeps, Cancel and Save. The
+        // page behind shows the result live; Save is the one write.
+        <Overlay
+          label={editor.activeView ? t('editView') : tViews('newView')}
+          tabs={[{ id: 'view', label: editor.activeView ? t('editView') : tViews('newView') }]}
+          onClose={editor.cancelEdits}
+          className="ds-view-overlay"
+        >
+          <div className="ds-overlay-form">
+            <SettingsGroup>
+              <SettingsRow label={tCommon('name')} htmlFor="view-name">
+                <span className="ds-inline-unit">
+                  <ViewIconPicker icon={editor.draftIcon} onChange={editor.setDraftIcon} />
+                  <Input
+                    id="view-name"
+                    className="w-56"
+                    value={editor.draftName}
+                    placeholder={t('viewNamePlaceholder')}
+                    autoFocus
+                    onChange={(e) => editor.setDraftName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && canSaveDraft) void editor.saveEdits();
+                    }}
+                  />
+                </span>
+              </SettingsRow>
+              <SettingsRow label={t('layout')} stacked>
+                {layoutSwitch}
+              </SettingsRow>
+              <SettingsRow label={tViews('filters')} stacked>
+                <div className="ds-overlay-pills">{controls}</div>
+              </SettingsRow>
+              <SettingsRow label={tViews('display')}>{display}</SettingsRow>
+            </SettingsGroup>
+            <div className="ds-overlay-footer">
+              <Button variant="quiet" onClick={editor.cancelEdits}>
+                {tCommon('cancel')}
+              </Button>
+              {canSaveView && (
+                <Button
+                  variant="primary"
+                  disabled={!canSaveDraft}
+                  onClick={() => void editor.saveEdits()}
+                >
+                  {tCommon('save')}
+                </Button>
+              )}
+            </div>
+          </div>
+        </Overlay>
+      )}
 
       <div className="ds-work-items-body">
         <IssueLinksProvider issues={project.issues} enabled={settings.showLinks}>

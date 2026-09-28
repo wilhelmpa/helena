@@ -207,9 +207,10 @@
     "history": "Verlauf",
     "noHistory": "Noch kein Verlauf",
     "discard": "Ungespeicherte Änderungen verwerfen?",
-    "othersFiles": "{count, plural, one {# weitere Datei} other {# weitere Dateien}} in diesem Ordner →",
-    "othersKnowledge": "{count, plural, one {# Dokument oder Leinwand} other {# Dokumente und Leinwände}} in diesem Ordner →",
+    "othersFiles": "{count, plural, one {# Datei} other {# Dateien}} daneben →",
+    "othersKnowledge": "{count, plural, one {# Dokument oder Leinwand} other {# Dokumente und Leinwände}} daneben →",
     "openInPage": "Groß öffnen",
-    "download": "Herunterladen"
+    "download": "Herunterladen",
+    "searchFiles": "In Dateien suchen …"
   }
 }

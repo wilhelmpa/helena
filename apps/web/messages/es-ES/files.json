@@ -207,9 +207,10 @@
     "history": "Historial",
     "noHistory": "Aún sin historial",
     "discard": "¿Descartar los cambios sin guardar?",
-    "othersFiles": "{count, plural, one {# archivo más} other {# archivos más}} en esta carpeta →",
-    "othersKnowledge": "{count, plural, one {# documento o lienzo} other {# documentos y lienzos}} en esta carpeta →",
+    "othersFiles": "{count, plural, one {# archivo} other {# archivos}} al lado →",
+    "othersKnowledge": "{count, plural, one {# documento o lienzo} other {# documentos y lienzos}} al lado →",
     "openInPage": "Abrir en grande",
-    "download": "Descargar"
+    "download": "Descargar",
+    "searchFiles": "Buscar en archivos …"
   }
 }

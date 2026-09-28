@@ -563,3 +563,35 @@ body[data-modal-open='true'] [data-radix-popper-content-wrapper] {
   flex: 1;
   flex-direction: column;
 }
+
+/* A form in the overlay (edit a view): its groups, then Cancel and Save at the bottom,
+   always in reach. */
+.ds-overlay-form {
+  display: flex;
+  min-height: 100%;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+.ds-overlay-form > .ds-settings-group + .ds-settings-group {
+  margin-top: 0;
+}
+.ds-overlay-footer {
+  position: sticky;
+  bottom: -24px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  margin-top: auto;
+  margin-inline: -24px;
+  margin-bottom: -24px;
+  border-top: 1px solid var(--line);
+  background: var(--surface-1);
+  padding: 12px 24px;
+}
+.ds-overlay-pills {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}

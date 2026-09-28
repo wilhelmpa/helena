@@ -242,7 +242,7 @@ export default function KnowledgeListView({
           <KnowledgeSearch
             value={query}
             onChange={setQuery}
-            placeholder={t('searchPlaceholder')}
+            placeholder={kind === 'files' ? t('searchFiles') : t('searchPlaceholder')}
             inputRef={search}
           />
         }

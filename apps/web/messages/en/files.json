@@ -207,9 +207,10 @@
     "history": "History",
     "noHistory": "No history yet",
     "discard": "Discard unsaved changes?",
-    "othersFiles": "{count, plural, one {# more file} other {# more files}} in this folder →",
-    "othersKnowledge": "{count, plural, one {# doc or canvas} other {# docs and canvases}} in this folder →",
+    "othersFiles": "{count, plural, one {# file} other {# files}} alongside →",
+    "othersKnowledge": "{count, plural, one {# doc or canvas} other {# docs and canvases}} alongside →",
     "openInPage": "Open large",
-    "download": "Download"
+    "download": "Download",
+    "searchFiles": "Search files …"
   }
 }

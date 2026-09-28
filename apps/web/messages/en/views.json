@@ -49,5 +49,7 @@
     "week": "This week",
     "status": "By status"
   },
-  "saveAsNewShort": "As new view"
+  "saveAsNewShort": "As new view",
+  "filters": "Filters",
+  "display": "Display"
 }

@@ -49,5 +49,7 @@
     "week": "This week",
     "status": "By status"
   },
-  "saveAsNewShort": "Как новое представление"
+  "saveAsNewShort": "Как новое представление",
+  "filters": "Фильтры",
+  "display": "Отображение"
 }

@@ -207,9 +207,10 @@
     "history": "Riwayat",
     "noHistory": "Belum ada riwayat",
     "discard": "Buang perubahan yang belum disimpan?",
-    "othersFiles": "{count} berkas lain di folder ini →",
-    "othersKnowledge": "{count} dokumen dan kanvas di folder ini →",
+    "othersFiles": "{count} berkas lainnya →",
+    "othersKnowledge": "{count} dokumen dan kanvas lainnya →",
     "openInPage": "Buka besar",
-    "download": "Unduh"
+    "download": "Unduh",
+    "searchFiles": "Cari berkas …"
   }
 }

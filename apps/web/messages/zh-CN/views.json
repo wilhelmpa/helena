@@ -49,5 +49,7 @@
     "week": "This week",
     "status": "By status"
   },
-  "saveAsNewShort": "另存为新视图"
+  "saveAsNewShort": "另存为新视图",
+  "filters": "筛选",
+  "display": "显示"
 }

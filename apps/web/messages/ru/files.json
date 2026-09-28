@@ -207,9 +207,10 @@
     "history": "История",
     "noHistory": "Истории пока нет",
     "discard": "Отменить несохранённые изменения?",
-    "othersFiles": "Ещё файлов в этой папке: {count} →",
-    "othersKnowledge": "Документов и холстов в этой папке: {count} →",
+    "othersFiles": "Файлы рядом: {count} →",
+    "othersKnowledge": "Документы и холсты рядом: {count} →",
     "openInPage": "Открыть крупно",
-    "download": "Скачать"
+    "download": "Скачать",
+    "searchFiles": "Искать в файлах …"
   }
 }

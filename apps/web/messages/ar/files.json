@@ -207,9 +207,10 @@
     "history": "السجل",
     "noHistory": "لا يوجد سجل بعد",
     "discard": "تجاهل التغييرات غير المحفوظة؟",
-    "othersFiles": "{count} ملفات أخرى في هذا المجلد ←",
-    "othersKnowledge": "{count} مستندات ولوحات في هذا المجلد ←",
+    "othersFiles": "{count} ملفات بجانبها ←",
+    "othersKnowledge": "{count} مستندات ولوحات بجانبها ←",
     "openInPage": "فتح بحجم كبير",
-    "download": "تنزيل"
+    "download": "تنزيل",
+    "searchFiles": "البحث في الملفات …"
   }
 }

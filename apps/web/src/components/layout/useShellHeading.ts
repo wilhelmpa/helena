@@ -6,13 +6,7 @@ import type { Crumb } from '@/design-system';
 import type { ShellRoute } from '@/hooks/useShellRoute';
 import { useSettingsSectionText } from '@/hooks/useSectionLabels';
 import { SETTINGS_SECTIONS } from '@/utils/settingsSections';
-import {
-  dashboardsPath,
-  filesPath,
-  organizationPath,
-  projectPath,
-  settingsPath,
-} from '@/utils/paths';
+import { dashboardsPath, organizationPath, projectPath, settingsPath } from '@/utils/paths';
 import { projectColor } from '@/utils/projectColor';
 
 export type ShellHeading = { crumbs: Crumb[]; title: string; accent: string };
@@ -94,9 +88,11 @@ export function useShellHeading({
       : heading([project], t('dashboards'));
   if (sub === 'initiatives') return heading([project], t('sidebarGoals'));
   if (sub === 'files' || sub === 'docs' || sub === 'notes')
-    return heading([project], t('sidebarKnowledgeReceipts'));
-  if (sub === 'receipts')
-    return heading(area(t('sidebarKnowledgeReceipts'), filesPath(key)), t('receipts'));
+    return heading(
+      [project],
+      search?.get('kind') === 'files' ? t('sidebarFiles') : t('sidebarKnowledge'),
+    );
+  if (sub === 'receipts') return heading([project], t('receipts'));
   if (sub === 'inbox' || sub === 'approvals') return heading([project], t('sidebarInbox'));
   const automation = t('sidebarAutomation');
   if (sub === 'organization' || sub === 'ai-agents')

@@ -49,5 +49,7 @@
     "week": "This week",
     "status": "By status"
   },
-  "saveAsNewShort": "كعرض جديد"
+  "saveAsNewShort": "كعرض جديد",
+  "filters": "عوامل التصفية",
+  "display": "العرض"
 }
