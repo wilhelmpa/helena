@@ -18,8 +18,11 @@ import {
   ClassifyResponse,
   tradingProjectParams,
   strategyApprovalBody,
+  tradingDashboardQuery,
+  TradingDashboardResponse,
 } from './model';
 import { assertClassificationShape, classificationInput } from './classify-input';
+import { tradingDashboardData } from './dashboard';
 
 // The trading decisions as one agent tool (docs/helena-decisions/trading.md §6): sort a news
 // item, check a planned trade against one written rule, or route a task. The questions are
@@ -48,6 +51,19 @@ async function runOf(header: string | null, agentId: number | null): Promise<num
 export const tradingRoutes = new Elysia({ name: 'trading', detail: { tags: ['Trading'] } })
   .use(authContext)
   .use(guards)
+  .get(
+    '/projects/:projectKey/trading/dashboard',
+    ({ project, query }) =>
+      tradingDashboardData(project.id, project.teamId, query.period ?? 'today'),
+    {
+      permission: ['dashboards', 'read'],
+      feature: 'dashboards',
+      params: tradingProjectParams,
+      query: tradingDashboardQuery,
+      response: { 200: TradingDashboardResponse, ...commonErrors },
+      detail: { summary: 'Read the Trading dashboard from project data' },
+    },
+  )
   .post(
     '/projects/:projectKey/trading/strategies/approval',
     async ({ project, user, body, set }) => {

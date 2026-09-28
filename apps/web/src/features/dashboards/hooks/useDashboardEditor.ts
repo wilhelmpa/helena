@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { arrayMove } from '@dnd-kit/sortable';
 import { useTranslations } from 'next-intl';
 import type { Dashboard } from '@/lib/api/endpoints/dashboards';
+import type { DashboardWidget } from '@/extensions/dashboardWidgets';
 import {
   createWidget,
   defaultDashboardLayout,
@@ -56,6 +57,22 @@ export function useDashboardEditor(
     // react-grid-layout's compaction pulls it up to the first free slot.
     const bottom = layout.reduce((m, w) => Math.max(m, w.y + w.h), 0);
     edit([...layout, { ...createWidget(type), x: 0, y: bottom }]);
+  };
+  const addPluginWidget = (widget: DashboardWidget, label: string) => {
+    const bottom = layout.reduce((m, item) => Math.max(m, item.y + item.h), 0);
+    const size = widget.size ?? { w: 6, h: 6 };
+    edit([
+      ...layout,
+      {
+        ...createWidget('plugin'),
+        title: label,
+        config: { pluginWidgetId: widget.id },
+        x: 0,
+        y: bottom,
+        w: size.w,
+        h: size.h,
+      },
+    ]);
   };
   const removeWidget = (id: string) => edit(layout.filter((w) => w.id !== id));
   const updateWidget = (id: string, patch: Partial<Omit<WidgetInstance, 'id' | 'type'>>) =>
@@ -130,6 +147,7 @@ export function useDashboardEditor(
     dirty,
     saving: createM.isPending || updateM.isPending,
     addWidget,
+    addPluginWidget,
     removeWidget,
     updateWidget,
     applyGrid,

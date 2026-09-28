@@ -38,8 +38,9 @@ export default function WidgetFrame({
   // A saved layout is stored as an opaque jsonb blob, so its widget type is not
   // guaranteed to be in the catalog; fall back to the raw type instead of rendering
   // a key path.
-  const labelKey = `widgets.${widget.type}.label` as const;
-  const defaultTitle = t.has(labelKey) ? t(labelKey) : widget.type;
+  const labelKey = `widgets.${widget.type === 'plugin' ? 'stat' : widget.type}.label` as const;
+  const defaultTitle =
+    widget.type === 'plugin' ? 'Plugin-Widget' : t.has(labelKey) ? t(labelKey) : widget.type;
   const title = widget.title || defaultTitle;
   return (
     <Card className="flex h-full flex-col overflow-hidden p-5">

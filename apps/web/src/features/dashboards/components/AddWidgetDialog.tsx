@@ -1,7 +1,12 @@
 import { useMemo, useState } from 'react';
-import { Search, X } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { Puzzle, Search, X } from 'lucide-react';
+import { useLocale, useTranslations } from 'next-intl';
+import { resolveText } from '@helena/sdk/web';
 import type { WidgetType } from '@/utils/dashboardWidgets';
+import type { DashboardWidget } from '@/extensions/dashboardWidgets';
+import { pluginDashboardWidget } from '@/extensions/pluginDashboardWidgets';
+import { usePluginUiSlotsQuery } from '@/services/plugins.service';
+import { byKey } from '@/utils/messageKey';
 import { Input } from '@/components/ui/input';
 import {
   Dialog,
@@ -20,12 +25,24 @@ export default function AddWidgetDialog({
   open,
   onOpenChange,
   onAdd,
+  onAddPlugin,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onAdd: (type: WidgetType) => void;
+  onAddPlugin: (widget: DashboardWidget, label: string) => void;
 }) {
   const t = useTranslations('dashboards');
+  const translate = byKey(useTranslations());
+  const locale = useLocale();
+  const slots = usePluginUiSlotsQuery();
+  const plugins = (slots.data ?? [])
+    .map((slot) => pluginDashboardWidget(slot, 'project'))
+    .filter((widget): widget is DashboardWidget => widget !== null)
+    .map((widget) => ({
+      widget,
+      label: resolveText(widget.label, locale, (key) => translate(key)),
+    }));
   const [query, setQuery] = useState('');
 
   // Each group's types narrowed to the ones matching the query; empty groups are
@@ -86,11 +103,14 @@ export default function AddWidgetDialog({
         </div>
 
         <div className="max-h-[55vh] space-y-4 overflow-y-auto pe-1">
-          {groups.length === 0 && (
-            <p className="py-4 text-center text-sm text-muted-foreground">
-              {t('noWidgetMatches', { query: query.trim() })}
-            </p>
-          )}
+          {groups.length === 0 &&
+            !plugins.some((item) =>
+              item.label.toLowerCase().includes(query.trim().toLowerCase()),
+            ) && (
+              <p className="py-4 text-center text-sm text-muted-foreground">
+                {t('noWidgetMatches', { query: query.trim() })}
+              </p>
+            )}
           {groups.map((group) => (
             <div key={group.key} className="space-y-1.5">
               <h3 className="px-1 text-xs font-medium text-muted-foreground">
@@ -121,6 +141,33 @@ export default function AddWidgetDialog({
               </div>
             </div>
           ))}
+          {plugins.filter((item) => item.label.toLowerCase().includes(query.trim().toLowerCase()))
+            .length > 0 && (
+            <div className="space-y-1.5">
+              <h3 className="px-1 text-xs font-medium text-muted-foreground">
+                {t('widgetGroups.plugins')}
+              </h3>
+              <div className="grid gap-2 sm:grid-cols-2">
+                {plugins
+                  .filter((item) => item.label.toLowerCase().includes(query.trim().toLowerCase()))
+                  .map(({ widget, label }) => (
+                    <button
+                      key={widget.id}
+                      type="button"
+                      onClick={() => {
+                        onAddPlugin(widget, label);
+                        onOpenChange(false);
+                        setQuery('');
+                      }}
+                      className="flex items-start gap-3 rounded-lg border bg-card p-3 text-start transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                    >
+                      <Puzzle className="mt-0.5 size-5 shrink-0 text-muted-foreground" />
+                      <span className="text-sm font-medium">{label}</span>
+                    </button>
+                  ))}
+              </div>
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>

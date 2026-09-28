@@ -20,6 +20,7 @@ import {
   setProjectAssignment,
 } from '#modules/organization/service';
 import { createProject } from '#modules/projects/service';
+import { ensureTradingDashboard } from '#modules/trading/dashboard';
 import { createRoutine } from '#modules/routines/service';
 import { createViewFolder } from '#modules/views/service';
 import { describeChange, type BlueprintPlan, type BlueprintState, type Change } from './plan';
@@ -100,6 +101,7 @@ export async function applyBlueprintPlan(ctx: ApplyContext, plan: BlueprintPlan)
           teamId,
         );
         stale();
+        if (blueprint.name === 'trading') await ensureTradingDashboard(await projectId());
         break;
       case 'projectDepartment':
         await setProjectAssignment(teamId, await projectId(), {
@@ -281,5 +283,7 @@ export async function applyBlueprintPlan(ctx: ApplyContext, plan: BlueprintPlan)
   // Agent changes can queue another generation even when this plan has no knowledge
   // files. Do not report success while the runner descriptors are still unprovisioned.
   if (done > 0) await provisioned();
+  if (blueprint.name === 'trading' && (await fresh()).project)
+    await ensureTradingDashboard(await projectId());
   return done;
 }

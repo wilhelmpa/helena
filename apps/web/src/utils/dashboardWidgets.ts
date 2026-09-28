@@ -17,7 +17,8 @@ export type WidgetType =
   | 'agent_runs'
   | 'agent_health'
   | 'webhook_health'
-  | 'agent_workload';
+  | 'agent_workload'
+  | 'plugin';
 
 export type BreakdownBy = 'status' | 'priority' | 'type' | 'assignee' | 'delegate';
 
@@ -60,6 +61,7 @@ export interface WidgetConfig {
   runStatus?: 'pending' | 'success' | 'failed' | null;
   // agent_health and webhook_health — the window in days
   days?: number;
+  pluginWidgetId?: string;
 }
 
 export interface WidgetInstance {
@@ -93,6 +95,7 @@ export const WIDGET_DEFAULTS: Record<
   agent_health: { w: 3, h: 3, minH: 3, config: { days: 30 } },
   webhook_health: { w: 3, h: 3, minH: 3, config: { days: 30 } },
   agent_workload: { w: 6, h: 6, minH: 3, config: {} },
+  plugin: { w: 6, h: 6, minH: 2, config: {} },
 };
 
 // A fresh widget instance with a unique id and the type's default size/config.

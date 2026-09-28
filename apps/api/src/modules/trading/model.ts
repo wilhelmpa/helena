@@ -3,6 +3,30 @@ import { oneOf } from '#shared/schemas';
 
 export const tradingProjectParams = t.Object({ projectKey: t.String() });
 
+export const tradingDashboardQuery = t.Object({
+  period: t.Optional(t.Union([t.Literal('today'), t.Literal('week'), t.Literal('pilot')])),
+});
+
+export const TradingDashboardResponse = t.Object({
+  signals: t.Object({ count: t.Number(), note: t.Nullable(t.String()) }),
+  vetos: t.Object({ count: t.Number(), note: t.Nullable(t.String()) }),
+  hypotheticalPercent: t.Nullable(t.Number()),
+  decisions: t.Object({ total: t.Number(), safe: t.Number(), fallback: t.Number() }),
+  watchlist: t.Array(
+    t.Object({ symbol: t.String(), rsi: t.Number(), direction: t.String(), state: t.String() }),
+  ),
+  schedules: t.Array(
+    t.Object({
+      id: t.String(),
+      title: t.String(),
+      enabled: t.Boolean(),
+      status: t.Nullable(t.String()),
+      lastRunAt: t.Nullable(t.String()),
+      nextRunAt: t.Nullable(t.String()),
+    }),
+  ),
+});
+
 export const strategyApprovalBody = t.Object(
   {
     credentialId: t.Integer({ minimum: 1 }),

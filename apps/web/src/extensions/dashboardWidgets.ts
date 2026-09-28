@@ -43,6 +43,7 @@ export interface DashboardWidget {
   hiddenByDefault: boolean;
   view: DashboardWidgetView;
   pluginId: string;
+  size?: { w: number; h: number; minH?: number };
 }
 
 export const HOME_PLUGIN_ID = 'helena.home';

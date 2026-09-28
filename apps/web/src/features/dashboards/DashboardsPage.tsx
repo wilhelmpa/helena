@@ -35,6 +35,7 @@ import { DashboardTitle, MonoLabel } from '@/components/helena/DashboardPrimitiv
 import AddWidgetDialog from './components/AddWidgetDialog';
 import DashboardNameDialog from './components/DashboardNameDialog';
 import ConfirmDialog from '@/components/common/overlay/ConfirmDialog';
+import TradingDashboard from './components/TradingDashboard';
 
 // The dashboards section: one named dashboard over a grid of analytics widgets. The
 // dashboards are listed and chosen in the project tree only (no tab strip here, the
@@ -102,6 +103,22 @@ export default function DashboardsPage() {
   // Layout editing (add/move/resize/remove widgets, save) is a dashboards edit.
   const canEditLayout = can('dashboards', 'edit');
   const active = editor.isVirtual ? null : (list.find((d) => d.id === activeDashboardId) ?? null);
+  const isTradingDashboard = active?.layout.some((widget) =>
+    widget.config?.pluginWidgetId?.startsWith('plugin:helena.trading:'),
+  );
+  if (active && isTradingDashboard && !editing) {
+    return (
+      <TradingDashboard
+        dashboard={active}
+        projectKey={projectKey}
+        canEdit={canEditLayout}
+        onAddWidget={() => {
+          setEditing(true);
+          setAdding(true);
+        }}
+      />
+    );
+  }
 
   function saveLabel() {
     if (editor.saving) return tCommon('saving');
@@ -208,6 +225,7 @@ export default function DashboardsPage() {
         open={adding}
         onOpenChange={setAdding}
         onAdd={(type) => editor.addWidget(type)}
+        onAddPlugin={(widget, label) => editor.addPluginWidget(widget, label)}
       />
       <DashboardNameDialog
         key={renaming?.id ?? (nameDialog === 'new' ? 'new' : 'closed')}
