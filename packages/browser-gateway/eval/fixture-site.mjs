@@ -128,11 +128,15 @@ const routes = {
         '<label>Passwort <input name="pass" type="password" autocomplete="current-password"></label><button type="submit">Anmelden</button></form>',
     ),
   'GET /frame': () =>
-    page('Rahmen', '<iframe src="/frame-inner" width="500" height="200"></iframe><p id="r"></p>'),
+    page(
+      'Rahmen',
+      '<iframe src="/frame-inner" width="500" height="200"></iframe><p id="r"></p>',
+      "window.addEventListener('message', e => { if (e.origin === location.origin && e.data === 'confirmed') document.getElementById('r').textContent = 'Im Rahmen bestätigt'; });",
+    ),
   'GET /frame-inner': () =>
     page(
       'Innen',
-      "<button onclick=\"document.body.insertAdjacentHTML('beforeend','<p>Im Rahmen bestätigt</p>')\">Bestätigen</button>",
+      '<button onclick="parent.postMessage(\'confirmed\', location.origin)">Bestätigen</button>',
     ),
   'GET /shadow': () =>
     page(

@@ -37,6 +37,7 @@ interface EvalRow {
   set: string;
   status: string;
   correct: boolean;
+  falseDone: boolean;
   steps: number;
   decisions: number;
   inputTokens: number;
@@ -122,6 +123,7 @@ async function runOurs(
       mode: task.mode,
       maxSteps: task.maxSteps,
       allowIrreversible: false,
+      success: task.success,
     },
     {
       page: session.taskPage(),
@@ -247,6 +249,7 @@ async function main() {
               set: task.set,
               status: r.status,
               correct: statusOk && task.check(r.final),
+              falseDone: ['done', 'likely_done'].includes(r.status) && !task.check(r.final),
               steps: r.steps,
               decisions: r.decisions,
               inputTokens: r.inputTokens,
@@ -260,13 +263,14 @@ async function main() {
             const final = await finalPage(session);
             const statusOk = task.expectStatus
               ? task.expectStatus.includes(result.status)
-              : ['done', 'likely_done'].includes(result.status);
+              : result.status === 'done';
             rows.push({
               backend: backend.name,
               task: task.id,
               set: task.set,
               status: result.status,
               correct: statusOk && task.check(final),
+              falseDone: ['done', 'likely_done'].includes(result.status) && !task.check(final),
               steps: result.steps.length,
               decisions: result.usage.calls,
               inputTokens: result.usage.inputTokens,
@@ -284,6 +288,7 @@ async function main() {
             set: task.set,
             status: 'exception',
             correct: false,
+            falseDone: false,
             steps: 0,
             decisions: 0,
             inputTokens: 0,
@@ -308,6 +313,7 @@ async function main() {
   const summary = backends.map((backend) => {
     const mine = rows.filter((row) => row.backend === backend.name);
     const correct = mine.filter((row) => row.correct).length;
+    const falseDone = mine.filter((row) => row.falseDone).length;
     const time = mine.reduce((sum, row) => sum + row.durationMs, 0);
     const tokens = mine.reduce((sum, row) => sum + row.inputTokens, 0);
     const calls = mine.reduce((sum, row) => sum + row.decisions, 0);
@@ -315,6 +321,7 @@ async function main() {
     return {
       backend: backend.name,
       correct,
+      falseDone,
       tasks: mine.length,
       seconds: Math.round(time / 100) / 10,
       decisions: calls,
@@ -324,11 +331,11 @@ async function main() {
         : null,
     };
   });
-  console.log('\n| backend | correct | total time | decisions | input tokens | ms/decision |');
-  console.log('|---|---|---|---|---|---|');
+  console.log('\n| backend | success | false done | total time | calls | input tokens | ms/call |');
+  console.log('|---|---|---|---|---|---|---|');
   for (const s of summary) {
     console.log(
-      `| ${s.backend} | ${s.correct}/${s.tasks} | ${s.seconds} s | ${s.decisions} | ${s.inputTokens} | ${s.msPerDecision ?? '–'} |`,
+      `| ${s.backend} | ${s.correct}/${s.tasks} | ${s.falseDone} | ${s.seconds} s | ${s.decisions} | ${s.inputTokens} | ${s.msPerDecision ?? '–'} |`,
     );
   }
   if (out) {

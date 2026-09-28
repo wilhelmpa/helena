@@ -62,6 +62,32 @@ async function input(): Promise<RoundInput> {
 }
 
 describe('compatible speculative Jev heads', () => {
+  it('caps the state at forty visible candidates and four history entries', async () => {
+    const state = await input();
+    state.observation.text = 'x'.repeat(5000);
+    state.history = Array.from({ length: 10 }, (_, i) => ({ action: `action-${i}` }));
+    state.observation.elements.push(
+      ...Array.from({ length: 100 }, (_, i) => ({
+        i: i + 30,
+        id: i + 30,
+        frame: 0,
+        tag: 'button',
+        role: 'button',
+        text: `Choice ${i}`,
+        ...(i === 99 ? { offscreen: true } : {}),
+      })),
+    );
+    const request = jevRound(state).request;
+    const wire = request.state as {
+      page: { text: string; elements: { i: number }[] };
+      task: { history: unknown[] };
+    };
+    expect(wire.page.text.length).toBe(1800);
+    expect(wire.page.elements.length).toBeLessThanOrEqual(40);
+    expect(JSON.stringify(request.state).length).toBeLessThan(8000);
+    expect(wire.page.elements.some((e) => e.i === 129)).toBe(false);
+    expect(wire.task.history).toHaveLength(4);
+  });
   it('selects an observed native option in one request, including duplicate labels', async () => {
     const state = await input();
     let calls = 0;

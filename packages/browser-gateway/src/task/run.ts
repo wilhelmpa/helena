@@ -14,7 +14,7 @@ import type { GatewaySession, ToolOutput } from '../session-types.ts';
 import { taskSuccess } from './success.ts';
 import { brief, describe } from './policy-common.ts';
 import { jevPolicy } from './policy-jev.ts';
-import { readOnlyPage, runTask, type Authorization } from './loop.ts';
+import { readOnlyPage, runTask, runTaskPlan, type Authorization, type TaskDeps } from './loop.ts';
 import {
   answerOf,
   DecisionError,
@@ -23,11 +23,32 @@ import {
   type DecisionRequest,
 } from './systemone.ts';
 import type { DecisionPolicy } from './policy.ts';
-import type { PageElement, PolicyKind, TaskMode, TaskResult } from './types.ts';
+import type { PageElement, PolicyKind, TaskMode, TaskPlanStep, TaskResult } from './types.ts';
 
 // The snapshot an agent continues from after a hand-back (refs, capped).
 export const HANDBACK_SNAPSHOT_CHARS = 12_000;
 const MAX_VALUES = 30;
+
+export function taskPlan(value: unknown): TaskPlanStep[] | undefined {
+  if (value === undefined) return undefined;
+  if (!Array.isArray(value) || value.length < 1 || value.length > 12)
+    throw new Error('plan needs 1–12 verified steps.');
+  return value.map((entry: unknown) => {
+    if (!entry || typeof entry !== 'object' || Array.isArray(entry))
+      throw new Error('Each plan step needs goal and success.');
+    const step = entry as Record<string, unknown>;
+    if (
+      Object.keys(step).some((key) => !['goal', 'success'].includes(key)) ||
+      typeof step.goal !== 'string' ||
+      !step.goal.trim() ||
+      step.goal.length > 1000
+    )
+      throw new Error('Each plan step needs a short goal.');
+    const success = taskSuccess(step.success);
+    if (!success) throw new Error('Each plan step needs independent success criteria.');
+    return { goal: step.goal.trim(), success };
+  });
+}
 
 export class HelenaDecisionClient implements DecisionClient {
   #helena: HelenaClient;
@@ -216,6 +237,10 @@ export function formatTaskResult(
     lines.push(
       `- Stopped before: ${result.pending.operation} ${result.pending.element ?? ''}`.trimEnd(),
     );
+  if (result.completedPlanSteps !== undefined)
+    lines.push(
+      `- Verified plan steps: ${result.completedPlanSteps}; failed attempts: ${result.failedAttempts ?? 0}${result.handoffWholeTask ? '; standard agent handles the whole task' : ''}`,
+    );
   if (result.steps.length) {
     lines.push('### Steps');
     for (const step of result.steps) {
@@ -280,6 +305,14 @@ export async function runTaskTool(ctx: TaskContext): Promise<ToolOutput> {
   if (!goal) throw new Error('goal is required: the outcome, in plain words.');
   const values = taskValues(args.values);
   const success = taskSuccess(args.success);
+  const plan = taskPlan(args.plan);
+  const failedAttempts =
+    typeof args.failedAttempts === 'number' &&
+    Number.isInteger(args.failedAttempts) &&
+    args.failedAttempts >= 0 &&
+    args.failedAttempts <= 1
+      ? args.failedAttempts
+      : 0;
   const mode: TaskMode = str(args, 'mode') === 'read' ? 'read' : 'act';
   const rawSteps =
     typeof args.maxSteps === 'number' && Number.isFinite(args.maxSteps) ? args.maxSteps : 20;
@@ -293,33 +326,34 @@ export async function runTaskTool(ctx: TaskContext): Promise<ToolOutput> {
   try {
     const startUrl = str(args, 'startUrl');
     if (startUrl && ctx.navigate) await ctx.navigate(startUrl);
-    result = await runTask(
-      { goal, values, mode, maxSteps, allowIrreversible, success },
-      {
-        page: mode === 'read' ? readOnlyPage(ctx.session.taskPage()) : ctx.session.taskPage(),
-        client: new HelenaDecisionClient(ctx.helena, opened.taskToken),
-        policy: policyOf(opened.policy, opened.minConfidence),
-        authorize: authorizer(ctx, opened.taskToken),
-        holdsControl: ctx.holdsControl,
-        signal: controller.signal,
-        onProgress: (progress) => {
-          progressWrites = progressWrites.then(async () => {
-            if (progressController.signal.aborted) return;
-            const answer = await ctx.helena
-              .taskProgress(
-                {
-                  taskToken: opened.taskToken,
-                  step: progress.step,
-                  usage: progress.usage,
-                },
-                progressController.signal,
-              )
-              .catch(() => null);
-            if (answer?.cancelled) controller.abort();
-          });
-        },
+    const taskInput = { goal, values, mode, maxSteps, allowIrreversible, success };
+    const taskDeps: TaskDeps = {
+      page: mode === 'read' ? readOnlyPage(ctx.session.taskPage()) : ctx.session.taskPage(),
+      client: new HelenaDecisionClient(ctx.helena, opened.taskToken),
+      policy: policyOf(opened.policy, opened.minConfidence),
+      authorize: authorizer(ctx, opened.taskToken),
+      holdsControl: ctx.holdsControl,
+      signal: controller.signal,
+      onProgress: (progress) => {
+        progressWrites = progressWrites.then(async () => {
+          if (progressController.signal.aborted) return;
+          const answer = await ctx.helena
+            .taskProgress(
+              {
+                taskToken: opened.taskToken,
+                step: progress.step,
+                usage: progress.usage,
+              },
+              progressController.signal,
+            )
+            .catch(() => null);
+          if (answer?.cancelled) controller.abort();
+        });
       },
-    );
+    };
+    result = plan
+      ? await runTaskPlan({ ...taskInput, plan, failedAttempts }, taskDeps)
+      : await runTask(taskInput, taskDeps);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     result = {
@@ -337,7 +371,7 @@ export async function runTaskTool(ctx: TaskContext): Promise<ToolOutput> {
   // Give queued step records a bounded chance to finish, then abort/skip outstanding
   // writes. The full local history still accompanies finish and the handback.
   await boundedTaskWrite(() => progressWrites, progressController);
-  if (result.status === 'done' || result.status === 'likely_done') {
+  if (result.status === 'done') {
     const final = await boundedTaskWrite((signal) =>
       ctx.helena.taskProgress(
         { taskToken: opened.taskToken, step: null, usage: result.usage },

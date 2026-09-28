@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'bun:test';
 import { contactSite } from './fake-site';
-import { readOnlyPage, runTask, repeatsBlock, TaskActError, type TaskDeps } from './loop';
+import {
+  readOnlyPage,
+  runTask,
+  runTaskPlan,
+  repeatsBlock,
+  TaskActError,
+  type TaskDeps,
+} from './loop';
 import type { DecisionPolicy } from './policy';
 import { mockAnswers } from './mock-backend';
 import { jevPolicy, jevRound } from './policy-jev';
@@ -361,18 +368,115 @@ describe('repeatsBlock', () => {
 });
 
 describe('bounded execution and independent completion', () => {
-  it('legacy callers terminate as likely_done with page evidence', async () => {
+  it('verifies each planned step and aggregates actions', async () => {
+    const site = contactSite();
+    const result = await runTaskPlan(
+      {
+        ...contact,
+        plan: [
+          { goal: 'Öffne Kontakt', success: { url: 'https://site.test/kontakt' } },
+          {
+            goal: 'Fülle Name und E-Mail aus und sende das Formular',
+            success: { url: 'https://site.test/danke' },
+          },
+        ],
+      },
+      deps(site),
+    );
+    expect(result.status).toBe('done');
+    expect(result.completedPlanSteps).toBe(2);
+    expect(result.steps.map((s) => s.n)).toEqual(result.steps.map((_, i) => i + 1));
+    expect(site.url).toBe('/danke');
+  });
+
+  it('hands the whole plan back after a second failed attempt', async () => {
+    const site = contactSite();
+    const result = await runTaskPlan(
+      {
+        ...contact,
+        failedAttempts: 1,
+        plan: [{ goal: 'Öffne Kontakt', success: { url: 'https://site.test/never' } }],
+      },
+      deps(site, {
+        policy: {
+          ...jevPolicy,
+          round: async () => ({
+            operation: 'DONE',
+            element: null,
+            operationProbability: 1,
+            operationConfidence: 1,
+            targetProbability: 1,
+            done: 0.99,
+            error: null,
+            login: null,
+            blocked: null,
+            irreversible: null,
+            candidates: [],
+          }),
+        },
+      }),
+    );
+    expect(result.status).toBe('needs_agent');
+    expect(result.handoffWholeTask).toBe(true);
+    expect(result.failedAttempts).toBe(2);
+    expect(site.actions).toHaveLength(0);
+  });
+  it('legacy callers hand back instead of claiming completion', async () => {
     const result = await runTask({ ...contact, success: undefined }, deps());
-    expect(result.status).toBe('likely_done');
+    expect(result.status).toBe('needs_agent');
     expect(result.pageText).toBeDefined();
     expect(result.steps.length).toBeLessThan(contact.maxSteps);
   });
 
   it('a model completion claim cannot bypass fresh success criteria', async () => {
     const site = contactSite();
-    const client = scripted([() => ({ done: { noul: 0.99 } })]);
+    const claim = (request: DecisionRequest) => ({
+      done: { noul: 0.99 },
+      operation: {
+        type: 'choice',
+        choice: 'DONE',
+        probabilities: Object.fromEntries(
+          Object.keys(
+            (request.questions.operation as { criteria: Record<string, unknown> }).criteria,
+          ).map((key) => [key, key === 'DONE' ? 1 : 0]),
+        ),
+        confidence: 1,
+      },
+    });
+    const client = scripted([claim, claim]);
     const result = await runTask(contact, deps(site, { client }));
     expect(result.status).toBe('needs_agent');
+    expect(site.actions).toHaveLength(0);
+  });
+
+  it('a high first-round done score still performs the needed action', async () => {
+    const site = contactSite();
+    const client = scripted([() => ({ done: { noul: 0.99 } })]);
+    const result = await runTask(contact, deps(site, { client }));
+    expect(result.status).toBe('done');
+    expect(site.actions.length).toBeGreaterThan(0);
+  });
+
+  it('hands a login wall back even when ordinary form values were supplied', async () => {
+    const site = contactSite();
+    const policy: DecisionPolicy = {
+      ...jevPolicy,
+      round: async () => ({
+        operation: 'CLICK',
+        element: (await site.observe()).elements[0]!,
+        operationProbability: 1,
+        operationConfidence: 1,
+        targetProbability: 1,
+        done: 0,
+        error: null,
+        login: 0.9,
+        blocked: null,
+        irreversible: null,
+        candidates: [],
+      }),
+    };
+    const result = await runTask(contact, deps(site, { policy }));
+    expect(result.status).toBe('needs_login');
     expect(site.actions).toHaveLength(0);
   });
 

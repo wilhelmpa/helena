@@ -8,6 +8,7 @@
 
 import {
   NEXT_ACTION,
+  ACTION_RULES,
   OPERATION_LABELS,
   TARGET,
   brief,
@@ -27,10 +28,8 @@ import {
 import { answerOf } from './systemone.ts';
 import type { Operation, PageElement, Question } from './types.ts';
 
-// Choice questions accept at most 255 options; the state is capped too (32k tokens for the state
-// and the longest question).
-const MAX_TARGETS = 240;
-const MAX_STATE_ELEMENTS = 300;
+// Keep the decision state close to 1.5–3k tokens, including the target table.
+const MAX_TARGETS = 40;
 
 const HEADS = {
   CLICK: 'click_target',
@@ -40,31 +39,60 @@ const HEADS = {
 } as const;
 
 function stateOf(input: RoundInput, elements: PageElement[]) {
-  const { observation, goal, values, history, lastChange } = input;
+  const { observation, goal, values, history, lastChange, success } = input;
   const hasValues = Object.keys(values).length > 0;
   return {
     page: {
       url: observation.url,
       title: observation.title,
-      text: observation.text,
-      ...(observation.dialogs.length ? { dialogs: observation.dialogs } : {}),
+      text: observation.text.slice(0, 1800),
+      ...(observation.dialogs.length
+        ? { dialogs: observation.dialogs.slice(0, 2).map((d) => d.slice(0, 300)) }
+        : {}),
       ...(observation.jsDialog ? { browser_dialog: observation.jsDialog } : {}),
-      metrics: observation.metrics,
-      elements: elements.map(describe),
-      ...(observation.repeated ? { repeated_elements: observation.repeated } : {}),
+      elements: elements.map((e) => ({
+        i: e.i,
+        role: e.role,
+        label: (e.label || e.text || e.placeholder || e.name || e.near || '').slice(0, 60),
+        ...(e.value !== undefined && !e.credential ? { value: e.value.slice(0, 60) } : {}),
+        ...(e.options ? { options: e.options.slice(0, 4).map((v) => v.slice(0, 30)) } : {}),
+        ...(e.checked !== undefined ? { checked: e.checked } : {}),
+        ...(e.disabled ? { disabled: true } : {}),
+      })),
     },
     task: {
-      goal,
+      goal: goal.slice(0, 500),
+      ...(success
+        ? {
+            success: {
+              ...(success.url ? { url: success.url.slice(0, 200) } : {}),
+              ...(success.textIncludes
+                ? { textIncludes: success.textIncludes.map((s) => s.slice(0, 100)) }
+                : {}),
+              ...(success.fields
+                ? {
+                    fields: success.fields.map((f) => ({
+                      label: f.label.slice(0, 80),
+                      ...(f.value !== undefined ? { value: f.value.slice(0, 80) } : {}),
+                      ...(f.checked !== undefined ? { checked: f.checked } : {}),
+                    })),
+                  }
+                : {}),
+            },
+          }
+        : {}),
       ...(hasValues
         ? {
             values: Object.fromEntries(
-              Object.entries(values).map(([k, v]) => [k, v.slice(0, 200)]),
+              Object.entries(values)
+                .slice(0, 12)
+                .map(([k, v]) => [k, v.slice(0, 80)]),
             ),
           }
         : {}),
       // The typed values themselves stay out; the history names their keys.
-      history: history.slice(-12).map(({ text: _text, ...entry }) => entry),
-      ...(lastChange ? { last_change: lastChange } : {}),
+      history: history.slice(-4).map(({ text: _text, ...entry }) => entry),
+      ...(lastChange ? { last_change: JSON.stringify(lastChange).slice(0, 300) } : {}),
     },
   };
 }
@@ -72,19 +100,21 @@ function stateOf(input: RoundInput, elements: PageElement[]) {
 export function jevRound(input: RoundInput) {
   const { observation, goal, values, mode, round } = input;
   const hasValues = Object.keys(values).length > 0;
-  const targets = targetsFor(observation, mode, hasValues, input.excluded);
+  const visible = observation.elements.filter((e) => !e.covered && !e.offscreen);
+  const shortlist = scope(visible, goal, values, MAX_TARGETS);
+  const targets = targetsFor(
+    { ...observation, elements: shortlist },
+    mode,
+    hasValues,
+    input.excluded,
+  );
   for (const op of Object.keys(targets) as (keyof typeof targets)[]) {
     targets[op] = scope(targets[op], goal, values, MAX_TARGETS);
   }
   targets.SELECT = targets.SELECT.filter((element) =>
     element.options?.some((_, k) => (element.optionIndices?.[k] ?? k) !== element.selectedIndex),
   );
-  const offered = new Set(Object.values(targets).flat());
-  const context = observation.elements.filter((element) => !offered.has(element));
-  const stateElements = [
-    ...offered,
-    ...scope(context, goal, values, Math.max(0, MAX_STATE_ELEMENTS - offered.size)),
-  ].sort((a, b) => a.i - b.i);
+  const stateElements = shortlist.sort((a, b) => a.i - b.i);
   const ops = operationsFor(observation, targets);
   const withValues = hasValues ? ', with the given `task.values`' : '';
   const questions: Record<string, Question> = {
@@ -93,7 +123,7 @@ export function jevRound(input: RoundInput) {
       instructions: {
         question:
           'Which operation advances `task.goal` from the current `page` next, given what `task.history` already did?',
-        rules: NEXT_ACTION,
+        rules: ACTION_RULES,
       },
       criteria: Object.fromEntries(ops.map((op) => [op, OPERATION_LABELS[op]])),
     },
@@ -136,7 +166,7 @@ export function jevRound(input: RoundInput) {
       instructions: {
         question:
           'If the next operation is TYPE_TEXT, which of task.values belongs in the selected field? Prefer values not yet entered.',
-        rules: NEXT_ACTION,
+        rules: ACTION_RULES,
       },
       criteria: Object.fromEntries(Object.entries(values).map(([k, v]) => [k, v.slice(0, 200)])),
     };
@@ -158,11 +188,16 @@ export function jevRound(input: RoundInput) {
           if (optionIndex === element.selectedIndex || options.size >= MAX_TARGETS) continue;
           const key = `${element.i}:${optionIndex}`;
           options.set(key, { element, option, optionIndex });
-          criteria[key] = { element: element.i, option };
+          criteria[key] = {
+            element: element.i,
+            role: element.role,
+            label: brief(element),
+            option: option.slice(0, 60),
+          };
         }
       } else {
         options.set(String(element.i), { element });
-        criteria[String(element.i)] = null;
+        criteria[String(element.i)] = { role: element.role, label: brief(element) };
       }
     }
     choices[op] = options;
@@ -235,30 +270,6 @@ export const jevPolicy: DecisionPolicy = {
       irreversible: noul('irreversible'),
       candidates,
     };
-  },
-
-  async confirmDone(input: RoundInput, ask: Ask): Promise<number | null> {
-    const { observation, goal, history } = input;
-    const request = {
-      state: {
-        page: {
-          url: observation.url,
-          title: observation.title,
-          text: observation.text,
-          elements: observation.elements.slice(0, 150).map(describe),
-        },
-        task: { goal, history: history.slice(-12).map(({ text: _text, ...entry }) => entry) },
-      },
-      questions: {
-        complete: {
-          type: 'noul' as const,
-          instructions:
-            'Is everything `task.goal` asks for already finished on `page`, so that no further action (such as pressing a submit, search or continue button) is needed?',
-        },
-      },
-    };
-    const reply = await ask(request);
-    return answerOf(reply, 'complete', request.questions.complete, 'noul').noul;
   },
 
   async pickOption(input: RoundInput, element: PageElement, ask: Ask): Promise<string | null> {

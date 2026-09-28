@@ -26,6 +26,7 @@ import type {
   PageElement,
   PageObservation,
   TaskInput,
+  TaskPlanStep,
   TaskResult,
   TaskStatus,
   TaskStep,
@@ -50,6 +51,98 @@ export class TaskActError extends Error {
     super(message);
     this.code = code;
   }
+}
+
+// Each planner-provided step is independently verified before Jev sees the next one.
+// A handback stops the plan; a later caller can pass failedAttempts to escalate the whole task.
+export async function runTaskPlan(
+  input: TaskInput & { plan: TaskPlanStep[]; failedAttempts?: number },
+  deps: TaskDeps,
+): Promise<TaskResult> {
+  let completedPlanSteps = 0;
+  let remaining = Math.max(1, Math.min(60, Math.floor(input.maxSteps)));
+  let failedAttempts = Math.max(0, Math.min(2, input.failedAttempts ?? 0));
+  const started = (deps.now ?? Date.now)();
+  const steps: TaskStep[] = [];
+  const usage: TaskUsage = {
+    calls: 0,
+    inputTokens: 0,
+    outputTokens: 0,
+    decisionMs: 0,
+    model: null,
+  };
+  let last: TaskResult | undefined;
+  for (const planned of input.plan) {
+    const offset = steps.length;
+    const result = await runTask(
+      {
+        ...input,
+        goal: planned.goal,
+        success: planned.success,
+        maxSteps: remaining,
+        allowIrreversible: false,
+      },
+      {
+        ...deps,
+        onProgress: deps.onProgress
+          ? ({ step, usage: stepUsage }) =>
+              deps.onProgress!({
+                step: { ...step, n: step.n + offset },
+                usage: {
+                  calls: usage.calls + stepUsage.calls,
+                  inputTokens: usage.inputTokens + stepUsage.inputTokens,
+                  outputTokens: usage.outputTokens + stepUsage.outputTokens,
+                  decisionMs: usage.decisionMs + stepUsage.decisionMs,
+                  model: stepUsage.model ?? usage.model,
+                },
+              })
+          : undefined,
+      },
+    );
+    last = result;
+    steps.push(...result.steps.map((step) => ({ ...step, n: step.n + offset })));
+    remaining -= result.steps.length;
+    usage.calls += result.usage.calls;
+    usage.inputTokens += result.usage.inputTokens;
+    usage.outputTokens += result.usage.outputTokens;
+    usage.decisionMs += result.usage.decisionMs;
+    usage.model = result.usage.model ?? usage.model;
+    if (result.status !== 'done') {
+      if (!['cancelled', 'owner_took_over', 'needs_approval', 'denied'].includes(result.status))
+        failedAttempts += 1;
+      const handoffWholeTask = failedAttempts >= 2;
+      return {
+        ...result,
+        status: handoffWholeTask ? 'needs_agent' : result.status,
+        summary: handoffWholeTask
+          ? `Two failed attempts: the standard agent must handle the whole task. ${result.summary}`
+          : `Step ${completedPlanSteps + 1} failed verification or needs help. ${result.summary}`,
+        steps,
+        usage,
+        durationMs: (deps.now ?? Date.now)() - started,
+        completedPlanSteps,
+        failedAttempts,
+        handoffWholeTask,
+      };
+    }
+    completedPlanSteps += 1;
+    if (remaining <= 0 && completedPlanSteps < input.plan.length) break;
+  }
+  if (!last) throw new Error('plan needs at least one step');
+  return {
+    ...last,
+    status: completedPlanSteps === input.plan.length ? 'done' : 'needs_agent',
+    summary:
+      completedPlanSteps === input.plan.length
+        ? `Verified all ${completedPlanSteps} plan steps.`
+        : `Step budget exhausted after ${completedPlanSteps} verified steps. The standard agent must continue.`,
+    steps,
+    usage,
+    durationMs: (deps.now ?? Date.now)() - started,
+    completedPlanSteps,
+    failedAttempts,
+    handoffWholeTask: completedPlanSteps !== input.plan.length,
+  };
 }
 
 export interface TaskActInput {
@@ -240,8 +333,8 @@ export async function runTask(input: TaskInput, deps: TaskDeps): Promise<TaskRes
     await observe();
     if (!input.success)
       return finish(
-        'likely_done',
-        'The model considers the goal complete. No independent success criteria were supplied; verify the outcome from the snapshot before continuing.',
+        'needs_agent',
+        'No independent success criteria were supplied. Inspect the page before continuing.',
         extra,
       );
     if (
@@ -307,6 +400,7 @@ export async function runTask(input: TaskInput, deps: TaskDeps): Promise<TaskRes
           `The page shows a dialog ("${observation.jsDialog.slice(0, 120)}"); answer it with browser_handle_dialog.`,
         );
       }
+      if (input.success && matchesSuccess(observation, input.success)) return await complete();
       if (steps.length >= maxSteps)
         return finish('max_steps', `Stopped after ${maxSteps} steps without reaching the goal.`);
       if (usage.calls >= decisionBudget) {
@@ -319,6 +413,7 @@ export async function runTask(input: TaskInput, deps: TaskDeps): Promise<TaskRes
       const roundInput: RoundInput = {
         observation,
         goal: input.goal,
+        success: input.success,
         values: input.values,
         mode: input.mode,
         round,
@@ -342,42 +437,17 @@ export async function runTask(input: TaskInput, deps: TaskDeps): Promise<TaskRes
       }
       const decisionMs = now() - decisionStart;
       last = answer;
-      const hasValues = Object.keys(input.values).length > 0;
+      if (answer.operationConfidence < Math.max(0.5, policy.minTarget))
+        return finish(
+          'needs_agent',
+          'Jev is not confident in the next operation. Continue from the snapshot with the standard agent.',
+        );
       const op = answer.operation;
-      const done = answer.done;
       const guarded = op === 'CLICK' || op === 'PRESS_ENTER';
       round += 1;
 
-      // Is the goal reached? (jev-browser rules 5, 13, 22.)
-      if (done !== null) {
-        if (round > 1 && done >= 0.5 && done < 0.85 && op !== 'DONE') {
-          let confirm: number | null = null;
-          try {
-            confirm = await policy.confirmDone(roundInput, ask);
-          } catch {
-            confirm = null;
-          }
-          if (confirm !== null && confirm >= 0.65) return await complete();
-          if (confirm !== null && confirm >= 0.45) {
-            return await complete();
-          }
-          if ((answer.irreversible ?? 0) >= IRREVERSIBLE_AT && guarded) {
-            return await complete({
-              pending: {
-                operation: op,
-                element: brief(answer.element),
-                category: categoryOfStep(op, answer.element),
-              },
-            });
-          }
-        } else if (
-          done >= (round > 1 ? 0.5 : 0.9) &&
-          (done >= 0.85 || op === 'DONE' || round === 1)
-        ) {
-          return await complete();
-        }
-      }
-      if ((answer.login ?? 0) >= 0.7 && !hasValues) {
+      // Jev's completion score is a hint only. The independent criteria above own completion.
+      if ((answer.login ?? 0) >= 0.7) {
         return finish(
           'needs_login',
           'The page wants a sign-in. Use browser_login (a login granted in Zugänge) or browser_handover, then call browser_task again.',
@@ -395,22 +465,14 @@ export async function runTask(input: TaskInput, deps: TaskDeps): Promise<TaskRes
           await observe();
           continue;
         }
-        if (
-          round > 1 &&
-          (done ?? 0) >= 0.35 &&
-          (answer.error ?? 0) < 0.5 &&
-          (answer.blocked ?? 0) < 0.5
-        ) {
-          return await complete();
-        }
         return (answer.blocked ?? 0) >= 0.5
           ? finish(
               'blocked',
               'Something on the page stops progress (a captcha, access denied or an error page).',
             )
           : finish(
-              'stuck',
-              'Nothing on this page seems to lead toward the goal; continue with the step tools.',
+              'needs_agent',
+              'Jev claimed completion, but the success criteria were not verified. Inspect the page with the step tools.',
             );
       }
       if (op === 'BLOCKED' || (answer.blocked ?? 0) >= 0.85) {
