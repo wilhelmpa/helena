@@ -131,7 +131,8 @@
     "open": "Öffnen",
     "findProject": "Projekt suchen",
     "due": "Fällig",
-    "createMore": "Weitere anlegen"
+    "createMore": "Weitere anlegen",
+    "discardAndSwitch": "Eingaben verwerfen und Projekt wechseln?"
   },
   "attachments": {
     "title": "Anhänge",

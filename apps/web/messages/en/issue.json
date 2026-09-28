@@ -131,7 +131,8 @@
     "open": "Open",
     "findProject": "Find a project",
     "due": "Due",
-    "createMore": "Create more"
+    "createMore": "Create more",
+    "discardAndSwitch": "Discard your input and switch project?"
   },
   "attachments": {
     "title": "Attachments",

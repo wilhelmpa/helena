@@ -97,7 +97,12 @@
     "link": "Vincular",
     "linkPlaceholder": "Tarea, p. ej. VOL-12",
     "linkFailed": "Tarea no encontrada o no se puede vincular.",
-    "unlink": "Desvincular {task} del objetivo"
+    "unlink": "Desvincular {task} del objetivo",
+    "new": "Nuevo objetivo",
+    "create": "Crear objetivo",
+    "titlePlaceholder": "Título del objetivo",
+    "descriptionPlaceholder": "¿De qué trata y cómo sabrás que se ha logrado?",
+    "none": "Ninguno"
   },
   "agents": {
     "empty": "Este equipo no tiene agentes.",

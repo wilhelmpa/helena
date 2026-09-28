@@ -97,7 +97,12 @@
     "link": "ربط",
     "linkPlaceholder": "مهمة، مثل VOL-12",
     "linkFailed": "المهمة غير موجودة أو لا يمكن ربطها.",
-    "unlink": "فك ربط {task} بالهدف"
+    "unlink": "فك ربط {task} بالهدف",
+    "new": "هدف جديد",
+    "create": "إنشاء الهدف",
+    "titlePlaceholder": "عنوان الهدف",
+    "descriptionPlaceholder": "ما موضوعه، وكيف ستعرف أنه تحقق؟",
+    "none": "بلا"
   },
   "agents": {
     "empty": "لا يوجد وكلاء في هذا الفريق.",

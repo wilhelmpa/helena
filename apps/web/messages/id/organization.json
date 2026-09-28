@@ -97,7 +97,12 @@
     "link": "Tautkan",
     "linkPlaceholder": "Tugas, mis. VOL-12",
     "linkFailed": "Tugas tidak ditemukan atau tidak bisa ditautkan.",
-    "unlink": "Lepaskan {task} dari sasaran"
+    "unlink": "Lepaskan {task} dari sasaran",
+    "new": "Tujuan baru",
+    "create": "Buat tujuan",
+    "titlePlaceholder": "Judul tujuan",
+    "descriptionPlaceholder": "Tentang apa, dan bagaimana kamu tahu sudah tercapai?",
+    "none": "Tidak ada"
   },
   "agents": {
     "empty": "Tim ini tidak memiliki agen.",

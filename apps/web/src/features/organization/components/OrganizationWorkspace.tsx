@@ -93,7 +93,7 @@ export default function OrganizationWorkspace({
 
   return (
     <>
-      {tab !== 'structure' && toolbar}
+      {tab !== 'structure' && tab !== 'goals' && toolbar}
       {tab === 'departments' ? (
         <OrganizationDepartments
           teamId={organization.teamId}
@@ -101,6 +101,7 @@ export default function OrganizationWorkspace({
         />
       ) : tab === 'goals' ? (
         <OrganizationGoals
+          toolbarEnd={toolbarEnd}
           teamId={organization.teamId}
           goals={organization.goals}
           departments={organization.departments}

@@ -131,7 +131,8 @@
     "open": "Відкрити",
     "findProject": "Знайти проєкт",
     "due": "Термін",
-    "createMore": "Створити ще"
+    "createMore": "Створити ще",
+    "discardAndSwitch": "Скасувати введене й змінити проєкт?"
   },
   "attachments": {
     "title": "Вкладення",

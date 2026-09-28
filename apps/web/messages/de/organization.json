@@ -97,7 +97,12 @@
     "link": "Verknüpfen",
     "linkPlaceholder": "Aufgabe, z. B. VOL-12",
     "linkFailed": "Aufgabe nicht gefunden oder nicht verknüpfbar.",
-    "unlink": "{task} vom Ziel lösen"
+    "unlink": "{task} vom Ziel lösen",
+    "new": "Neues Ziel",
+    "create": "Ziel anlegen",
+    "titlePlaceholder": "Zieltitel",
+    "descriptionPlaceholder": "Worum geht es, woran erkennst du, dass es erreicht ist?",
+    "none": "Keine Angabe"
   },
   "agents": {
     "empty": "Dieses Team hat keine Agenten.",

@@ -97,7 +97,12 @@
     "link": "Vincular",
     "linkPlaceholder": "Tarefa, ex. VOL-12",
     "linkFailed": "Tarefa não encontrada ou não pode ser vinculada.",
-    "unlink": "Desvincular {task} da meta"
+    "unlink": "Desvincular {task} da meta",
+    "new": "Novo objetivo",
+    "create": "Criar objetivo",
+    "titlePlaceholder": "Título do objetivo",
+    "descriptionPlaceholder": "Do que se trata e como você saberá que foi alcançado?",
+    "none": "Nenhum"
   },
   "agents": {
     "empty": "Esta equipe não tem agentes.",

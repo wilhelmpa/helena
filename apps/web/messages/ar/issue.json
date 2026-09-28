@@ -131,7 +131,8 @@
     "open": "فتح",
     "findProject": "ابحث عن مشروع",
     "due": "الاستحقاق",
-    "createMore": "إنشاء المزيد"
+    "createMore": "إنشاء المزيد",
+    "discardAndSwitch": "هل تريد تجاهل ما أدخلته وتبديل المشروع؟"
   },
   "attachments": {
     "title": "المرفقات",

@@ -1406,6 +1406,9 @@ html[data-kiosk-display='dual'] [data-slot='alert-dialog-content'] {
 }
 .new-issue-title {
   color: var(--text);
+  font-size: 24px;
+  font-weight: 500;
+  letter-spacing: -0.03em;
 }
 .new-issue-title::placeholder {
   color: var(--text-3);

@@ -97,7 +97,12 @@
     "link": "Lier",
     "linkPlaceholder": "Tâche, ex. VOL-12",
     "linkFailed": "Tâche introuvable ou impossible à lier.",
-    "unlink": "Détacher {task} de l’objectif"
+    "unlink": "Détacher {task} de l’objectif",
+    "new": "Nouvel objectif",
+    "create": "Créer l'objectif",
+    "titlePlaceholder": "Titre de l'objectif",
+    "descriptionPlaceholder": "De quoi s'agit-il, et comment sauras-tu qu'il est atteint ?",
+    "none": "Aucun"
   },
   "agents": {
     "empty": "Cette équipe n’a aucun agent.",

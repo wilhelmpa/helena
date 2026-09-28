@@ -131,7 +131,8 @@
     "open": "Abrir",
     "findProject": "Buscar um projeto",
     "due": "Prazo",
-    "createMore": "Criar mais"
+    "createMore": "Criar mais",
+    "discardAndSwitch": "Descartar o que foi digitado e trocar de projeto?"
   },
   "attachments": {
     "title": "Anexos",

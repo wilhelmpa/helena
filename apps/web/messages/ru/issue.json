@@ -131,7 +131,8 @@
     "open": "Открыть",
     "findProject": "Найти проект",
     "due": "Срок",
-    "createMore": "Создать ещё"
+    "createMore": "Создать ещё",
+    "discardAndSwitch": "Отменить ввод и сменить проект?"
   },
   "attachments": {
     "title": "Вложения",

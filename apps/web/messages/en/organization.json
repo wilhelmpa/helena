@@ -97,7 +97,12 @@
     "link": "Link",
     "linkPlaceholder": "Task, e.g. VOL-12",
     "linkFailed": "Task not found or cannot be linked.",
-    "unlink": "Unlink {task} from the goal"
+    "unlink": "Unlink {task} from the goal",
+    "new": "New goal",
+    "create": "Create goal",
+    "titlePlaceholder": "Goal title",
+    "descriptionPlaceholder": "What is it about, and how will you know it is reached?",
+    "none": "None"
   },
   "agents": {
     "empty": "This team has no agents.",

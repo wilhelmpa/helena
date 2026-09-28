@@ -443,7 +443,7 @@ export default function NewIssueModal({
                   if (item.key === project.project.key) return;
                   if (
                     (title.trim() || description.trim()) &&
-                    !window.confirm('Eingaben verwerfen und Projekt wechseln?')
+                    !window.confirm(t('discardAndSwitch'))
                   )
                     return;
                   onProjectChange(item.key);

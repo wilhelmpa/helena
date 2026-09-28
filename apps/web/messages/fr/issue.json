@@ -131,7 +131,8 @@
     "open": "Ouvrir",
     "findProject": "Chercher un projet",
     "due": "Échéance",
-    "createMore": "En créer d'autres"
+    "createMore": "En créer d'autres",
+    "discardAndSwitch": "Abandonner la saisie et changer de projet ?"
   },
   "attachments": {
     "title": "Pièces jointes",

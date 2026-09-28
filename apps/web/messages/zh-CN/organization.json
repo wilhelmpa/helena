@@ -97,7 +97,12 @@
     "link": "关联",
     "linkPlaceholder": "任务，例如 VOL-12",
     "linkFailed": "找不到任务或无法关联。",
-    "unlink": "将 {task} 与目标解除关联"
+    "unlink": "将 {task} 与目标解除关联",
+    "new": "新目标",
+    "create": "创建目标",
+    "titlePlaceholder": "目标标题",
+    "descriptionPlaceholder": "目标是什么？如何判断已经达成？",
+    "none": "无"
   },
   "agents": {
     "empty": "此团队没有代理。",

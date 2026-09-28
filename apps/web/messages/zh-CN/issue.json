@@ -131,7 +131,8 @@
     "open": "打开",
     "findProject": "查找项目",
     "due": "截止",
-    "createMore": "继续创建"
+    "createMore": "继续创建",
+    "discardAndSwitch": "放弃输入并切换项目？"
   },
   "attachments": {
     "title": "附件",

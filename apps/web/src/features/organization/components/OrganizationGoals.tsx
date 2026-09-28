@@ -1,32 +1,36 @@
 'use client';
 
-import { useState, type CSSProperties } from 'react';
+import { useState, type CSSProperties, type ReactNode } from 'react';
 import { useTranslations } from 'next-intl';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Plus } from 'lucide-react';
 import { EmptyState } from '@/design-system';
+import { PageActions, PageToolbar, PageToolbarSpacer } from '@/components/layout/PageToolbar';
 import type {
   OrganizationDepartment,
   OrganizationGoal,
   OrganizationProject,
 } from '@/lib/api/endpoints/organization';
-import { useCreateGoal } from '../services/organization.service';
 import OrganizationGoalCard from './OrganizationGoalCard';
+import OrganizationGoalDialog from './OrganizationGoalDialog';
 
+// Helena › Ziele: the goals above the projects as their ladder, with "Neues Ziel" as the
+// page's one action in the toolbar (the create dialog), like a project's Ziele.
 export default function OrganizationGoals({
   teamId,
   goals,
   departments,
   projects,
+  toolbarEnd,
 }: {
+  // The page's own control at the end of the toolbar (the team on Helena's page).
+  toolbarEnd?: ReactNode;
   teamId: number;
   goals: OrganizationGoal[];
   departments: OrganizationDepartment[];
   projects: OrganizationProject[];
 }) {
   const t = useTranslations('organization');
-  const create = useCreateGoal(teamId);
-  const [title, setTitle] = useState('');
+  const [creating, setCreating] = useState(false);
   // The goals as their ladder (hub/pc-goal-ladder): each goal after its parent, indented
   // by its depth, with the chain of goals above it — so it reads what serves what.
   const byId = new Map(goals.map((goal) => [goal.id, goal]));
@@ -53,28 +57,27 @@ export default function OrganizationGoals({
 
   return (
     <div className="ds-goals">
-      <form
-        className="ds-goals-new"
-        onSubmit={(event) => {
-          event.preventDefault();
-          create.mutate(
-            { title },
-            {
-              onSuccess: () => setTitle(''),
-            },
-          );
-        }}
-      >
-        <Input
-          value={title}
-          maxLength={160}
-          placeholder={t('goals.newPlaceholder')}
-          onChange={(event) => setTitle(event.target.value)}
+      <PageToolbar>
+        <PageToolbarSpacer />
+        {toolbarEnd}
+        <PageActions
+          primary={{
+            id: 'new-goal',
+            label: t('goals.new'),
+            icon: Plus,
+            onClick: () => setCreating(true),
+          }}
         />
-        <Button type="submit" variant="outline" disabled={create.isPending || !title.trim()}>
-          {t('actions.add')}
-        </Button>
-      </form>
+      </PageToolbar>
+      {creating && (
+        <OrganizationGoalDialog
+          teamId={teamId}
+          goals={goals}
+          departments={departments}
+          projects={projects}
+          onClose={() => setCreating(false)}
+        />
+      )}
       {goals.length === 0 ? (
         <EmptyState>{t('goals.empty')}</EmptyState>
       ) : (

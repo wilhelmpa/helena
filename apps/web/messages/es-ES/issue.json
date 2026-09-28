@@ -131,7 +131,8 @@
     "open": "Abrir",
     "findProject": "Buscar un proyecto",
     "due": "Vence",
-    "createMore": "Crear más"
+    "createMore": "Crear más",
+    "discardAndSwitch": "¿Descartar lo escrito y cambiar de proyecto?"
   },
   "attachments": {
     "title": "Adjuntos",

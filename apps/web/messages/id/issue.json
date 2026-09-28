@@ -131,7 +131,8 @@
     "open": "Buka",
     "findProject": "Cari proyek",
     "due": "Jatuh tempo",
-    "createMore": "Buat lagi"
+    "createMore": "Buat lagi",
+    "discardAndSwitch": "Buang masukan dan ganti proyek?"
   },
   "attachments": {
     "title": "Lampiran",
