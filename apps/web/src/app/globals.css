@@ -299,6 +299,15 @@ body:has(.project-ai-agents-view) [class~='@container/page']::-webkit-scrollbar 
   --row-blocked: oklch(0.978 0.009 27);
   --row-blocked-hover: oklch(0.965 0.013 27);
   --kanban-card-selected: oklch(0.93 0.035 215);
+  --board-column-outline: oklch(0.85 0.006 80 / 0.35);
+  --board-highlight-outline: oklch(0.52 0.12 155 / 0.55);
+  --board-highlight-glow: oklch(0.52 0.12 155 / 0.12);
+  --board-hint-neutral-bg: oklch(0.92 0.006 80);
+  --board-hint-neutral-fg: oklch(0.35 0.008 65);
+  --board-hint-negative-bg: oklch(0.94 0.025 10);
+  --board-hint-negative-fg: oklch(0.48 0.12 10);
+  --board-hint-positive-bg: oklch(0.92 0.025 155);
+  --board-hint-positive-fg: oklch(0.42 0.1 155);
   --overlay-shadow: 0 10px 30px -10px rgb(45 35 25 / 0.16), 0 2px 6px -2px rgb(45 35 25 / 0.08);
   --pinned-column-shadow: 0 0 16px 0 rgb(45 35 25 / 0.1);
   /* A panel on a side edge casts to the side, so the glow has no offset. */
@@ -373,6 +382,15 @@ body:has(.project-ai-agents-view) [class~='@container/page']::-webkit-scrollbar 
   --row-blocked: #160e14;
   --row-blocked-hover: #1b1319;
   --kanban-card-selected: #26212d;
+  --board-column-outline: #ffffff08;
+  --board-highlight-outline: #7ee0b855;
+  --board-highlight-glow: #7ee0b822;
+  --board-hint-neutral-bg: #1c1a22;
+  --board-hint-neutral-fg: #cfc6da;
+  --board-hint-negative-bg: #3a1f2a;
+  --board-hint-negative-fg: #f4a3bf;
+  --board-hint-positive-bg: #10281f;
+  --board-hint-positive-fg: #7ee0b8;
   --overlay-shadow: 0 0 0 1px #ffffff12, 0 18px 40px #0006;
   --pinned-column-shadow: 0 0 18px 2px rgb(0 0 0 / 0.45);
   --side-panel-shadow: 0 0 28px 6px rgb(0 0 0 / 0.5);
@@ -690,6 +708,60 @@ html [data-sonner-toast][data-styled='true']:not(:focus-visible) {
 }
 .kanban-card:hover {
   background-color: var(--kanban-card-hover);
+}
+.board-card-highlight,
+.dark .board-card-highlight {
+  box-shadow:
+    0 0 0 1px var(--board-highlight-outline),
+    0 0 28px var(--board-highlight-glow);
+}
+.board-column-heading {
+  font: 500 10px/16px var(--font-mono);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+.board-card-title {
+  font-size: 20px;
+  line-height: 1.2;
+  font-weight: 520;
+  letter-spacing: -0.03em;
+}
+.board-card-value,
+.board-card-meta {
+  font: 400 11px/16px var(--font-mono);
+}
+.board-list-id {
+  font-size: 10px;
+}
+.board-card-id {
+  position: absolute;
+  right: 16px;
+  bottom: 5px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  line-height: 1;
+  color: var(--muted-foreground);
+  opacity: 0.38;
+}
+.board-hint {
+  display: inline-flex;
+  max-width: 100%;
+  align-items: center;
+  border-radius: 999px;
+  padding: 3px 9px;
+  font-family: var(--font-sans);
+  font-size: 11px;
+  line-height: 1.2;
+  background: var(--board-hint-neutral-bg);
+  color: var(--board-hint-neutral-fg);
+}
+.board-hint-negative {
+  background: var(--board-hint-negative-bg);
+  color: var(--board-hint-negative-fg);
+}
+.board-hint-positive {
+  background: var(--board-hint-positive-bg);
+  color: var(--board-hint-positive-fg);
 }
 /* Held up by another issue: a red-tinted card surface, faint enough to read as a
    shade of the card rather than an error. */

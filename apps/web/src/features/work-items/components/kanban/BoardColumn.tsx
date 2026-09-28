@@ -11,14 +11,12 @@ import type { PropertyKey } from '@/utils/viewSettings';
 import { usePermissions } from '@/hooks/usePermissions';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { GroupDot } from '../shared/GroupDot';
 import { BoardCard } from './BoardCard';
 import { CardDropSlot } from './CardDropSlot';
 import { DropLine } from '../shared/DropLine';
-import { SelectAllToggle } from './SelectAllToggle';
 import { useIsOverContainer } from '../../hooks/useIsOverContainer';
 import { useIncomingCount } from '../../hooks/useIncomingCount';
-import { COLUMN_WIDTH, PINNED_COLUMN } from '../../utils/kanban';
+import { PINNED_COLUMN } from '../../utils/kanban';
 import { wipAllows, wipFullColor, WIP_FULL_TINT, type WipState } from '../../utils/wipLimit';
 import { WipCount } from './WipCount';
 import InlineColumnCreate from './InlineColumnCreate';
@@ -110,28 +108,32 @@ export function BoardColumn({
   return (
     <div
       className={cn(
-        'group/column flex h-full shrink-0 flex-col rounded-md bg-kanban-column px-3 py-2 max-sm:snap-start',
+        'group/column flex h-full min-w-[260px] flex-1 basis-[260px] flex-col rounded-[18px] bg-kanban-column p-3 shadow-[0_0_0_1px_var(--board-column-outline)] max-sm:min-w-[calc(100vw-32px)] max-sm:flex-none max-sm:snap-start',
         pinned && PINNED_COLUMN,
         wip?.full && WIP_FULL_TINT[wipFullColor(wip)],
       )}
-      style={{ width: COLUMN_WIDTH }}
     >
-      <div className="mb-2 flex items-center justify-between" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-          <GroupDot group={group} />
-          {group.name}
+      <div
+        className="relative mb-1 flex min-h-4 items-center justify-between gap-1 px-1 pt-0.5"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="board-column-heading flex min-w-0 items-center gap-2 truncate text-muted-foreground">
+          <span
+            className="size-1.5 shrink-0 rounded-full"
+            style={{ backgroundColor: group.color ?? 'var(--muted-foreground)' }}
+          />
+          <span className="truncate">{group.name}</span>
           <WipCount filteredCount={issues.length} wip={wip} filtered={filtered} />
         </div>
-        <div className="flex items-center gap-1">
+        <div className="absolute end-0 top-0 z-10 flex shrink-0 items-center gap-0.5 bg-kanban-column ps-1 opacity-0 transition-opacity group-focus-within/column:opacity-100 group-hover/column:opacity-100">
           {!readOnly && (
             <>
-              <SelectAllToggle ids={issues.map((i) => i.id)} />
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="hidden size-6 text-muted-foreground md:inline-flex"
+                    className="hidden size-5 text-muted-foreground md:inline-flex"
                     onClick={onTogglePin}
                     aria-label={pinned ? t('unpin') : t('pin')}
                   >
@@ -145,7 +147,7 @@ export function BoardColumn({
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="size-6 text-muted-foreground"
+                    className="size-5 text-muted-foreground"
                     onClick={onCollapse}
                     aria-label={t('collapse')}
                   >
@@ -159,7 +161,7 @@ export function BoardColumn({
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="size-6 text-muted-foreground"
+                    className="size-5 text-muted-foreground"
                     onClick={onHide}
                     aria-label={t('hide')}
                   >
@@ -176,7 +178,7 @@ export function BoardColumn({
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="size-6 text-muted-foreground"
+                  className="size-5 text-muted-foreground"
                   onClick={() => setCreating(true)}
                   aria-label={t('newIssue')}
                 >
@@ -196,7 +198,7 @@ export function BoardColumn({
       <div
         ref={mergedRef}
         className={cn(
-          'min-h-0 flex-1 overflow-y-auto rounded-md',
+          'min-h-0 flex-1 overflow-y-auto rounded-[14px]',
           isOverColumn && 'bg-kanban-column-raised',
         )}
       >

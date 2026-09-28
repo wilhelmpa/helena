@@ -1,228 +1,90 @@
-import {
-  CalendarArrowUp,
-  CalendarClock,
-  Clock,
-  Hash,
-  RefreshCw,
-  Target,
-  Timer,
-} from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { useSession } from '@/lib/auth-client';
 import type { BoardIssue } from '@/lib/api/endpoints/issues';
+import type { ProjectDetail } from '@/lib/api/endpoints/projects';
 import { type Maps } from '@/utils/project';
-import { cn } from '@/lib/utils';
-import { formatDurationShort, formatShortDate, isDueOverdue } from '@/utils/dates';
-import { formatMinutes } from '@/utils/estimate';
-import type { DisplayProperty, PropertyKey } from '@/utils/viewSettings';
-import {
-  AssigneeAvatar,
-  DateBadge,
-  DelegateAvatar,
-  LabelBadge,
-  PriorityBadge,
-} from '@/features/issue/components/shared/IssueBadges';
-import { Badge } from '@/components/ui/badge';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { StateIcon } from '@/features/issue/components/shared/IssueIcons';
+import { usePriorityLabel } from '@/hooks/usePriorityLabel';
+import type { PropertyKey } from '@/utils/viewSettings';
+import { boardCardData } from '../../utils/boardCardData';
+import { AssigneeAvatar } from '@/features/issue/components/shared/IssueBadges';
+import { BoardHintPill } from '../shared/BoardHintPill';
 import { IssueIdentifier } from '../shared/IssueIdentifier';
 import { IssueCardLinks } from './IssueCardLinks';
 import { IssueCardSubtasks } from './IssueCardSubtasks';
+import { DelegateOrb } from './DelegateOrb';
 
-// One board card's content. Which properties render is driven by `properties`.
-// onOpen opens an issue the card links to; the drag preview passes none.
 export function IssueCardBody({
   issue,
+  project,
   maps,
   properties,
   onOpen,
+  readOnly,
 }: {
   issue: BoardIssue;
+  project: ProjectDetail;
   maps: Maps;
   properties: PropertyKey[];
   onOpen?: (id: number) => void;
+  readOnly?: boolean;
 }) {
-  const t = useTranslations('workItems');
-  const has = (p: DisplayProperty) => properties.includes(p);
-  const type = issue.typeId != null ? maps.typeById.get(issue.typeId) : undefined;
-  const assignee =
-    issue.assigneeUserId != null ? maps.assigneeById.get(issue.assigneeUserId) : undefined;
-  const delegate =
-    issue.delegateUserId != null ? maps.assigneeById.get(issue.delegateUserId) : undefined;
-  const initiative = issue.initiative ?? undefined;
-  const cycle = issue.cycle ?? undefined;
-  const column = maps.columnById.get(issue.columnId);
-  const metaShown =
-    has('statusAge') ||
-    (has('dueDate') && issue.dueDate) ||
-    (has('startDate') && issue.startDate) ||
-    (has('type') && type) ||
-    (has('initiative') && initiative) ||
-    (has('cycle') && cycle) ||
-    (has('estimatePoints') && issue.estimatePoints != null) ||
-    (has('estimateTime') && issue.estimateMinutes != null) ||
-    (has('labels') && issue.labelIds.length > 0);
-  const footerShown =
-    has('created') ||
-    has('updated') ||
-    (has('assignee') && assignee) ||
-    (has('delegate') && delegate);
+  const { data: session } = useSession();
+  const priorityLabel = usePriorityLabel();
+  const { importantValue, meta, labels } = boardCardData(
+    issue,
+    project,
+    maps,
+    properties,
+    priorityLabel,
+  );
+  const assignee = issue.assigneeUserId ? maps.assigneeById.get(issue.assigneeUserId) : undefined;
+  const delegate = issue.delegateUserId ? maps.assigneeById.get(issue.delegateUserId) : undefined;
+  const showAssignee = assignee && assignee.userId !== session?.user.id;
 
   return (
     <>
-      {(has('id') || (has('priority') && issue.priority)) && (
-        <div
-          className={cn('mb-1.5 flex items-center', has('id') ? 'justify-between' : 'justify-end')}
-        >
-          {has('id') && (
-            <IssueIdentifier
-              issue={issue}
-              className="text-xs text-muted-foreground"
-              onOpenParent={onOpen}
-            />
-          )}
-          {has('priority') && issue.priority && <PriorityBadge priority={issue.priority} />}
-        </div>
-      )}
-
-      <div className="mb-2 flex items-start gap-1.5">
-        {has('status') && column && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span className="mt-px inline-flex shrink-0">
-                <StateIcon stateType={column.stateType} color={column.color} className="size-3.5" />
-              </span>
-            </TooltipTrigger>
-            <TooltipContent>{column.name}</TooltipContent>
-          </Tooltip>
-        )}
-        {/* A long unbroken word (a URL, a path) breaks inside, so the two lines end in
-            an ellipsis instead of being cut off at the card's edge. */}
+      <div className="flex min-w-0 items-baseline justify-between gap-2">
         <span
           dir="auto"
-          className="line-clamp-2 min-w-0 text-sm leading-snug wrap-anywhere text-foreground"
+          className="board-card-title line-clamp-2 min-w-0 wrap-anywhere text-foreground"
         >
           {issue.title}
         </span>
+        {importantValue && (
+          <span className="board-card-value shrink-0 text-muted-foreground tabular-nums">
+            {importantValue}
+          </span>
+        )}
       </div>
 
-      {metaShown && (
-        <div className="flex min-h-[22px] flex-wrap items-center gap-1">
-          {has('statusAge') && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Badge
-                  variant="outline"
-                  className="rounded-full px-1.5 py-0.5 text-xs text-muted-foreground"
-                >
-                  <Timer className="size-2.5" />
-                  {formatDurationShort(issue.statusSince)}
-                </Badge>
-              </TooltipTrigger>
-              <TooltipContent>
-                {t('statusSince', { date: formatShortDate(issue.statusSince) })}
-              </TooltipContent>
-            </Tooltip>
-          )}
-          {has('startDate') && issue.startDate && (
-            <DateBadge
-              icon={<CalendarArrowUp className="size-2.5" />}
-              date={issue.startDate}
-              label={t('columns.startDate')}
-            />
-          )}
-          {has('dueDate') && issue.dueDate && (
-            <DateBadge
-              icon={<CalendarClock className="size-2.5" />}
-              date={issue.dueDate}
-              label={t('columns.dueDate')}
-              overdue={isDueOverdue(issue.dueDate, column?.stateType)}
-            />
-          )}
-          {has('type') && type && (
-            <Badge
-              variant="outline"
-              className="rounded-full px-1.5 py-0.5 text-xs text-muted-foreground"
-            >
-              <span
-                className="inline-block h-1.5 w-1.5 rounded-full"
-                style={{ backgroundColor: type.color }}
-              />
-              {type.name}
-            </Badge>
-          )}
-          {has('initiative') && initiative && (
-            <Badge
-              variant="outline"
-              className="max-w-full rounded-full px-1.5 py-0.5 text-xs text-muted-foreground"
-            >
-              <Target className="size-2.5 shrink-0" />
-              <span className="truncate">{initiative.title}</span>
-            </Badge>
-          )}
-          {has('cycle') && cycle && (
-            <Badge
-              variant="outline"
-              className="max-w-full rounded-full px-1.5 py-0.5 text-xs text-muted-foreground"
-            >
-              <RefreshCw className="size-2.5 shrink-0" />
-              <span className="truncate">{cycle.name}</span>
-            </Badge>
-          )}
-          {has('estimatePoints') && issue.estimatePoints != null && (
-            <Badge
-              variant="outline"
-              className="rounded-full px-1.5 py-0.5 text-xs text-muted-foreground"
-            >
-              <Hash className="size-2.5" />
-              {issue.estimatePoints}
-            </Badge>
-          )}
-          {has('estimateTime') && issue.estimateMinutes != null && (
-            <Badge
-              variant="outline"
-              className="rounded-full px-1.5 py-0.5 text-xs text-muted-foreground"
-            >
-              <Clock className="size-2.5" />
-              {formatMinutes(issue.estimateMinutes)}
-            </Badge>
-          )}
-          {has('labels') &&
-            issue.labelIds.map((id) => {
-              const label = maps.labelById.get(id);
-              if (!label) return null;
-              return <LabelBadge key={id} color={label.color} name={label.name} />;
-            })}
-        </div>
+      {meta.length > 0 && (
+        <div className="board-card-meta truncate text-muted-foreground">{meta.join(' · ')}</div>
       )}
 
-      {footerShown && (
-        <div className="mt-2 flex items-center justify-between gap-2">
-          <span className="text-xs text-muted-foreground/70">
-            {has('created') && t('createdOn', { date: formatShortDate(issue.createdAt) })}
-            {has('created') && has('updated') && ' · '}
-            {has('updated') && t('updatedOn', { date: formatShortDate(issue.updatedAt) })}
-          </span>
-          {/* Negative spacing so a delegate and an assignee shown together
-              overlap; the ring in the card color keeps them separated. */}
-          <div className="flex items-center -space-x-1.5">
-            {has('delegate') && delegate && (
-              <DelegateAvatar
-                name={delegate.name}
-                image={delegate.image}
-                className="ring-2 ring-[var(--kanban-card)]"
-              />
-            )}
-            {has('assignee') && assignee && (
-              <AssigneeAvatar
-                name={assignee.name}
-                image={assignee.image}
-                className="ring-2 ring-[var(--kanban-card)]"
-              />
-            )}
+      {(labels.length > 0 || showAssignee || delegate) && (
+        <div className="flex min-w-0 items-center gap-1.5">
+          <div className="flex min-w-0 flex-1 flex-wrap gap-1">
+            {labels.map((label) => (
+              <BoardHintPill key={label.id} name={label.name} />
+            ))}
           </div>
+          {delegate && (
+            <DelegateOrb
+              teamId={readOnly ? null : project.project.teamId}
+              projectId={project.project.id}
+              userId={delegate.userId}
+            />
+          )}
+          {showAssignee && (
+            <AssigneeAvatar name={assignee.name} image={assignee.image} className="size-5" />
+          )}
         </div>
       )}
 
+      {issue.parentId != null ? (
+        <IssueIdentifier issue={issue} className="board-card-id" onOpenParent={onOpen} />
+      ) : (
+        <span className="board-card-id">{issue.identifier}</span>
+      )}
       <IssueCardSubtasks issueId={issue.id} maps={maps} onOpen={onOpen} />
       <IssueCardLinks links={issue.links} maps={maps} onOpen={onOpen} />
     </>

@@ -11,6 +11,8 @@ import type { WorkItemsView } from '@/utils/viewTypes';
 import { useProjectFeatures } from '@/hooks/useProjectFeatures';
 import PropertyChip from '@/components/layout/PropertyChip';
 import TableProperties from '@/components/layout/TableProperties';
+import CustomFieldMenu from '@/components/layout/CustomFieldMenu';
+import { customFieldKey } from '@/utils/viewSettings';
 
 // The Display properties block. On the Table layout the chips are the column
 // list, sortable and extendable with custom fields; on Project they are plain
@@ -76,7 +78,26 @@ export default function DisplayPropertiesSection({
                 onClick={() => toggleProperty(p)}
               />
             ))}
+            {view === 'kanban' &&
+              customFields
+                .filter((field) => settings.properties.includes(customFieldKey(field.id)))
+                .map((field) => (
+                  <PropertyChip
+                    key={field.id}
+                    label={field.name}
+                    on
+                    onClick={() => toggleProperty(customFieldKey(field.id))}
+                  />
+                ))}
             {subtasksChip}
+            {view === 'kanban' && (
+              <CustomFieldMenu
+                customFields={customFields}
+                issueTypes={issueTypes}
+                selected={new Set(settings.properties)}
+                onToggle={toggleProperty}
+              />
+            )}
           </>
         )}
       </div>

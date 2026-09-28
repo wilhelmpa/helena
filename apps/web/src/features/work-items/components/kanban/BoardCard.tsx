@@ -49,6 +49,9 @@ export function BoardCard({
   // Every card that moves with the drag dims, not just the grabbed one.
   const { active } = useDndContext();
   const isDragging = draggedIds(active).includes(issue.id);
+  const highlighted =
+    issue.priority === 'urgent' ||
+    maps.columnById.get(issue.columnId)?.name.toLocaleLowerCase('de') === 'signal';
 
   // The browser still fires a click after a drag ends, which would open the issue
   // the moment it is dropped. Remember where the press started and ignore a click
@@ -94,15 +97,23 @@ export function BoardCard({
         className={cn(
           // select-none so a Shift/Cmd-click toggles selection without the browser
           // also starting a native text selection across cards.
-          'kanban-card cursor-grab rounded-md p-2 select-none sm:touch-none',
+          'kanban-card board-card relative flex cursor-grab flex-col gap-2 rounded-[14px] px-4 py-[14px] select-none sm:touch-none',
           isDragging && 'opacity-40',
           isBlocked(issue) && 'kanban-card-blocked',
+          highlighted && 'board-card-highlight',
           // Selected cards read as a primary-tinted fill, like Linear — no border,
           // no checkbox (see .kanban-card-selected in globals.css).
           selected && 'kanban-card-selected',
         )}
       >
-        <IssueCardBody issue={issue} maps={maps} properties={properties} onOpen={onOpen} />
+        <IssueCardBody
+          issue={issue}
+          project={project}
+          maps={maps}
+          properties={properties}
+          onOpen={onOpen}
+          readOnly={readOnly}
+        />
       </div>
     </IssueContextMenu>
   );

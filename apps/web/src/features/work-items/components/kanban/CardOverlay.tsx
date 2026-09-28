@@ -1,5 +1,6 @@
 import { DragOverlay } from '@dnd-kit/core';
 import type { BoardIssue } from '@/lib/api/endpoints/issues';
+import type { ProjectDetail } from '@/lib/api/endpoints/projects';
 import { type Maps } from '@/utils/project';
 import type { PropertyKey } from '@/utils/viewSettings';
 import { Badge } from '@/components/ui/badge';
@@ -13,12 +14,14 @@ export function CardOverlay({
   activeId,
   count,
   issues,
+  project,
   maps,
   properties,
 }: {
   activeId: number | null;
   count: number;
   issues: BoardIssue[];
+  project: ProjectDetail;
   maps: Maps;
   properties: PropertyKey[];
 }) {
@@ -42,8 +45,8 @@ export function CardOverlay({
               style={{ transform: `translate(${depth * 6}px, ${depth * 6}px)` }}
             />
           ))}
-          <div className="kanban-card relative rounded-md p-2 shadow-lg">
-            <IssueCardBody issue={issue} maps={maps} properties={properties} />
+          <div className="kanban-card board-card relative flex flex-col gap-2 rounded-[14px] px-4 py-[14px] shadow-lg">
+            <IssueCardBody issue={issue} project={project} maps={maps} properties={properties} />
             {count > 1 && (
               <Badge className="absolute -top-2 -right-2 rounded-full shadow">{count}</Badge>
             )}

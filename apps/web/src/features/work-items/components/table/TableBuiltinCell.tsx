@@ -4,11 +4,12 @@ import { type Maps } from '@/utils/project';
 import { formatDurationShort, formatShortDate, isDueOverdue } from '@/utils/dates';
 import { formatMinutes } from '@/utils/estimate';
 import { usePriorityLabel } from '@/hooks/usePriorityLabel';
+import { useSession } from '@/lib/auth-client';
+import { BoardHintPill } from '../shared/BoardHintPill';
 import {
   AssigneeAvatar,
   DateBadge,
   DelegateAvatar,
-  LabelBadge,
 } from '@/features/issue/components/shared/IssueBadges';
 import { PriorityIcon, StateIcon } from '@/features/issue/components/shared/IssueIcons';
 import { type TableColumn } from '../../utils/table';
@@ -26,6 +27,7 @@ export function TableBuiltinCell({
   maps: Maps;
 }) {
   const priorityLabel = usePriorityLabel();
+  const { data: session } = useSession();
   switch (column) {
     case 'status': {
       const col = maps.columnById.get(issue.columnId);
@@ -82,7 +84,11 @@ export function TableBuiltinCell({
         issue.assigneeUserId != null ? maps.assigneeById.get(issue.assigneeUserId) : undefined;
       return (
         <div className="flex justify-end">
-          {assignee ? <AssigneeAvatar name={assignee.name} image={assignee.image} /> : DASH}
+          {assignee && assignee.userId !== session?.user.id ? (
+            <AssigneeAvatar name={assignee.name} image={assignee.image} />
+          ) : (
+            DASH
+          )}
         </div>
       );
     }
@@ -112,7 +118,7 @@ export function TableBuiltinCell({
             ? issue.labelIds.map((id) => {
                 const label = maps.labelById.get(id);
                 if (!label) return null;
-                return <LabelBadge key={id} color={label.color} name={label.name} />;
+                return <BoardHintPill key={id} name={label.name} />;
               })
             : DASH}
         </div>

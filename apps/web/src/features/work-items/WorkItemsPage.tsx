@@ -14,6 +14,8 @@ import { qk } from '@/services/queryKeys';
 import { buildGroups, groupIssues } from '@/utils/project';
 import { countIssuesByColumn } from './utils/wipLimit';
 import {
+  customFieldKey,
+  defaultViewSettings,
   restoreHiddenSections,
   withoutHiddenSections,
   type ViewSettings,
@@ -98,7 +100,32 @@ export default function WorkItemsPage() {
   // With an optional section off, its property and grouping are left out of what
   // the layouts and the Display panel work with, and put back on the way out so the
   // stored display keeps them for when the section is on again.
-  const settings = withoutHiddenSections(editor.settings, features);
+  const baseSettings = withoutHiddenSections(editor.settings, features);
+  const watchlistFields = ['Preis', 'RSI', 'MACD']
+    .map((name) =>
+      customFields.find(
+        (field) => field.name.toLocaleLowerCase('de') === name.toLocaleLowerCase('de'),
+      ),
+    )
+    .filter((field) => field != null);
+  const oldDefaultProperties = defaultViewSettings('kanban').properties;
+  const watchlistDefault =
+    project.project.key.toUpperCase() === 'TRADE' &&
+    editor.activeView?.name.toLocaleLowerCase('de') === 'watchlist' &&
+    editor.view === 'kanban' &&
+    watchlistFields.length > 0 &&
+    baseSettings.properties.length === oldDefaultProperties.length &&
+    baseSettings.properties.every((property, index) => property === oldDefaultProperties[index]);
+  const settings = watchlistDefault
+    ? {
+        ...baseSettings,
+        properties: [
+          'id',
+          'labels',
+          ...watchlistFields.map((field) => customFieldKey(field.id)),
+        ] as ViewSettings['properties'],
+      }
+    : baseSettings;
   const changeSettings = (next: ViewSettings) =>
     editor.changeSettings(restoreHiddenSections(next, editor.settings, features));
 
