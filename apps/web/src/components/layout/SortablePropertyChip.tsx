@@ -26,12 +26,10 @@ export default function SortablePropertyChip({
       style={style}
       {...attributes}
       {...listeners}
-      className={cn(
-        'flex cursor-grab items-center rounded-full border border-primary bg-primary text-xs text-primary-foreground transition-colors',
-        isDragging && 'opacity-40',
-      )}
+      className={cn('ds-choice-chip is-sortable', isDragging && 'opacity-40')}
+      data-on="true"
     >
-      <button type="button" onClick={onClick} className="px-2 py-0.5">
+      <button type="button" onClick={onClick} aria-pressed>
         {label}
       </button>
     </span>

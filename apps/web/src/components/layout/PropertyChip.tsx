@@ -1,5 +1,5 @@
-import { cn } from '@/lib/utils';
-
+// A property to show or hide (Anzeige): a choice chip of the design system, lifted onto
+// surface-3 when shown — never a filled primary pill, which reads as a button.
 export default function PropertyChip({
   label,
   on,
@@ -10,16 +10,7 @@ export default function PropertyChip({
   onClick: () => void;
 }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        'rounded-full border px-2 py-0.5 text-xs transition-colors',
-        on
-          ? 'border-primary bg-primary text-primary-foreground'
-          : 'text-muted-foreground hover:bg-accent hover:text-foreground',
-      )}
-    >
+    <button type="button" onClick={onClick} aria-pressed={on} className="ds-choice-chip">
       {label}
     </button>
   );

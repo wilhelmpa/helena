@@ -33,7 +33,8 @@ export default function InboxPage() {
     return <p className="p-8 text-sm text-muted-foreground">{t('mailError')}</p>;
   const hasMail = (mailAccounts.data?.length ?? 0) > 0;
   const activeTab = hasMail ? tab : 'updates';
-  const tabs = (
+  // Without a mailbox there is only one tab, and one tab is no choice: no tab row then.
+  const tabs = hasMail ? (
     <PageTabs
       label={t('messages')}
       value={activeTab}
@@ -45,7 +46,7 @@ export default function InboxPage() {
         { value: 'updates', label: t('updates'), icon: Bell, count: unread || undefined },
       ]}
     />
-  );
+  ) : null;
   // This project or every project: a view of the same inbox, so a segment in the one
   // header row before the tabs (design-system §9), not a row of its own.
   const leading = (

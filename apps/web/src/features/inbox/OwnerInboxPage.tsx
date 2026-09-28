@@ -28,7 +28,7 @@ import { formatTime } from '@/utils/dates';
 import { projectColor } from '@/utils/projectColor';
 import Orb from '@/components/helena/Orb';
 import { useAgentStatus } from '@/utils/helenaStatus';
-import { Card, MonoLabel } from '@/components/helena/DashboardPrimitives';
+import { Card } from '@/components/helena/DashboardPrimitives';
 import { ProjectTag } from '@/components/helena/ProjectTag';
 import EmptyState from '@/components/helena/EmptyState';
 import PillButton from '@/components/helena/PillButton';
@@ -250,9 +250,8 @@ function OwnerInboxContent() {
   return (
     <main className={styles.main}>
       <div className={styles.content}>
-        <MonoLabel className={styles.eyebrow}>{t('eyebrow')}</MonoLabel>
         <div className={styles.headingRow}>
-          <h1>
+          <h2>
             {error && visible.length === 0 ? (
               t('title')
             ) : loading && visible.length === 0 ? (
@@ -261,12 +260,11 @@ function OwnerInboxContent() {
               t('allDone')
             ) : (
               <>
-                {t('headingCount', { count: visible.length })}
-                <br />
+                {t('headingCount', { count: visible.length })}{' '}
                 {t('needsYou', { count: visible.length })}
               </>
             )}
-          </h1>
+          </h2>
         </div>
         {error && <EmptyState className={styles.empty}>{t('loadError')}</EmptyState>}
         {error && visible.length === 0 ? null : loading && actions.length === 0 ? (
@@ -335,7 +333,7 @@ function OwnerInboxContent() {
 export default function OwnerInboxPage() {
   const t = useTranslations('inbox.owner');
   return (
-    <Shell globalHome globalTitle={t('title')} autoOpenGlobalChat={false} mobileHeaderOnly>
+    <Shell globalHome globalTitle={t('title')} autoOpenGlobalChat={false}>
       <OwnerInboxContent />
     </Shell>
   );
