@@ -122,9 +122,10 @@ class HalogenInstallTest(unittest.TestCase):
         self.assertIn('--cgroups=split', unit)
         self.assertIn('Delegate=yes', unit)
 
-    def test_unit_bounds_idle_cpu_and_keeps_one_info_log(self):
+    def test_unit_leaves_cpu_unbounded_and_keeps_one_info_log(self):
         unit = self.render('unit')
-        self.assertIn('CPUQuota=100%', unit)
+        # Halogen drives the GPU from one busy host thread; a quota halved decode speed.
+        self.assertNotIn('CPUQuota', unit)
         self.assertIn('--log-driver=none', unit)
         self.assertIn('StandardError=inherit', unit)
         self.assertIn('SyslogLevel=info', unit)

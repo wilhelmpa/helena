@@ -11,7 +11,6 @@ After=network-online.target nftables.service
 
 [Service]
 Type=simple
-CPUQuota=100%
 StandardOutput=journal
 StandardError=inherit
 SyslogLevel=info
