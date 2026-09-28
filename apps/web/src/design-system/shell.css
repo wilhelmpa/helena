@@ -683,15 +683,22 @@
   min-width: 0;
   align-items: center;
   gap: 2px;
+  /* Many tabs in a narrow panel: they shrink first, then scroll inside the track, so
+     none of them runs under the + button or out of the panel. */
+  overflow-x: auto;
+  scrollbar-width: none;
   border-radius: 10px;
   background: var(--surface-2);
   padding: 3px;
 }
+.ds-panel-tabs-track::-webkit-scrollbar {
+  display: none;
+}
 .ds-panel-tab {
   display: flex;
   height: 28px;
-  min-width: 0;
-  flex: none;
+  min-width: 64px;
+  flex: 0 1 auto;
   align-items: center;
   border-radius: var(--radius-field);
   color: var(--text-2);
@@ -716,7 +723,11 @@
   padding-inline-start: 10px;
   padding-inline-end: 4px;
 }
+.ds-panel-tab-select > :first-child:not(:last-child) {
+  flex: none;
+}
 .ds-panel-tab-select > span:last-child {
+  min-width: 0;
   max-width: 130px;
   overflow: hidden;
   text-overflow: ellipsis;

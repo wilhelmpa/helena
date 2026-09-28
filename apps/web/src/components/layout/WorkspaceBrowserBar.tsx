@@ -18,6 +18,7 @@ import { useBrowserControl } from '@/hooks/useBrowserControl';
 import { useCaptureWebPageMutation } from '@/services/everything.service';
 import type { BrowserView } from '@/hooks/useBrowserPreferences';
 import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import ProjectPreviewControl from '@/components/common/project-previews/ProjectPreviewControl';
 import WorkspaceBrowserBookmarks from './WorkspaceBrowserBookmarks';
 import WorkspaceBrowserControlStatus from './WorkspaceBrowserControlStatus';
@@ -147,19 +148,25 @@ export default function WorkspaceBrowserBar({
         loaded={colorModeLoaded}
         onModeChange={onColorModeChange}
       />
-      <Button
-        variant="ghost"
-        size="icon"
-        className="size-7 shrink-0 text-muted-foreground hover:text-foreground"
-        aria-label="Weitere Browser-Werkzeuge"
-        title="Weitere Browser-Werkzeuge"
-        aria-expanded={more}
-        onClick={() => setMore((value) => !value)}
-      >
-        <MoreHorizontal />
-      </Button>
-      {more && (
-        <div className="helena-browser-extras">
+      {/* The further tools open in a popover under the bar, wrapping to its width, so they
+          never squeeze the address or run out of a narrow panel, and stay above the live
+          view (the panel's content paints over its header). */}
+      <Popover open={more} onOpenChange={setMore}>
+        <PopoverTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-7 shrink-0 text-muted-foreground hover:text-foreground"
+            aria-label="Weitere Browser-Werkzeuge"
+            title="Weitere Browser-Werkzeuge"
+          >
+            <MoreHorizontal />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent
+          align="end"
+          className="helena-browser-extras flex w-auto max-w-[min(20rem,calc(100vw-2rem))] flex-wrap items-center gap-0.5 p-1"
+        >
           <Button
             variant="ghost"
             size="icon"
@@ -246,12 +253,12 @@ export default function WorkspaceBrowserBar({
           )}
           {view === 'live' && <WorkspaceBrowserStreamMenu />}
           {/* A phone keeps reload, the address, the tabs, "follow the agent" and the stream menu;
-          back, forward and the Live/Desktop switch need a wider panel. */}
-          <div className="contents max-sm:hidden @max-[40rem]/browserbar:hidden">
+          back, forward and the Live/Desktop switch need a wider screen. */}
+          <div className="contents max-sm:hidden">
             <WorkspaceBrowserViewSwitch view={view} onChange={onViewChange} />
           </div>
-        </div>
-      )}
+        </PopoverContent>
+      </Popover>
     </div>
   );
 }
