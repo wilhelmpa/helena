@@ -1,4 +1,11 @@
 {
+  "fixedFolders": {
+    "Docs": "Документы",
+    "Files": "Файлы",
+    "Assets": "Вложения",
+    "Boards": "Холсты",
+    "Inbox": "Входящие"
+  },
   "title": "Файлы",
   "projectDescription": "Документы, вложения и код этого проекта",
   "roots": {
@@ -53,9 +60,8 @@
     "rename": "Переименовать",
     "move": "Переместить",
     "copyPath": "Копировать путь",
-    "openInNotes": "Открыть в заметках",
     "openInCode": "Открыть в VS Code",
-    "openInDocs": "Открыть в Docs",
+    "openInDocs": "Открыть в Знаниях",
     "linkToTask": "Связать с задачей",
     "trash": "Переместить в корзину",
     "showInFolder": "Показать в папке"
@@ -67,7 +73,7 @@
     "name": "Имя",
     "folderName": "Новая папка",
     "fileName": "Заметка.md",
-    "fileHint": "Файл .md или .txt. Заметка Markdown открывается в Docs.",
+    "fileHint": "Файл .md или .txt. Markdown открывается в Знаниях.",
     "create": "Создать",
     "save": "Сохранить",
     "cancel": "Отмена"
@@ -117,9 +123,6 @@
     "original": "Shared original file",
     "save": "Save",
     "content": "File content",
-    "isolatedOrigin": "SilverBullet is not safely available on this connection. Use the Helena editor.",
-    "notesSlow": "SilverBullet is not responding. Use the editor or reload.",
-    "notesHelp": "If this connection needs sign-in or does not load, the Helena editor remains available.",
     "reload": "Reload",
     "discard": "Discard the unsaved draft?",
     "editor": "Helena editor",
@@ -130,11 +133,10 @@
     "searchScope": "Names and contents in {root}",
     "noResults": "No matches.",
     "refine": "First 50 matches. Refine your search.",
-    "boards": "Boards",
+    "boards": "Холсты",
     "references": "Sources and references",
     "author": "Edited by {author}",
     "run": "Run {run}",
-    "silverBullet": "SilverBullet",
     "formatted": "Formatted text",
     "source": "Markdown source",
     "sourceRequired": "This file contains Markdown the formatted editor cannot preserve. Edit the source to keep all content.",

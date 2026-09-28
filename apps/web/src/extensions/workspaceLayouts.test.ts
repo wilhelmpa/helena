@@ -13,11 +13,11 @@ describe('workspace layouts', () => {
     const layouts = workspaceLayouts.list().sort((a, b) => a.order - b.order);
     assert.deepEqual(
       layouts.map((layout) => layout.id),
-      ['standard', 'chat-left', 'chat-tool', 'two-tools', 'tool-full'],
+      ['standard', 'page-tool-half', 'chat-left', 'chat-tool', 'two-tools', 'tool-full'],
     );
     assert.deepEqual(
       layouts.filter((layout) => layout.optionalPanel).map((layout) => layout.id),
-      ['standard'],
+      ['standard', 'page-tool-half'],
     );
     for (const layout of layouts) assert.equal(layoutProblem(layout), null, layout.id);
   });

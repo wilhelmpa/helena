@@ -70,7 +70,6 @@
     "files_agent_code": "Агенти можуть читати свій код середовища виконання",
     "svc_exposure": "Служби Helena ізольовані systemd",
     "svc_tools_loopback": "Інструменти доступні лише через loopback",
-    "svc_notes": "Нотатки ізольовані",
     "net_voice_acl": "Голосові сервери доступні лише Helena"
   },
   "finding": {
@@ -192,9 +191,6 @@
     },
     "svc_tools_loopback": {
       "fail": "Інструменти доступні не лише через loopback."
-    },
-    "svc_notes": {
-      "fail": "Нотатки ізольовані не так, як задумано: {problems}"
     },
     "skipped": "Не перевірено",
     "net_voice_acl": {

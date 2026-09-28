@@ -4,8 +4,8 @@
 //
 //   bun apps/api/src/scripts/decisions-eval.ts \
 //     --classes router,mail,receipts,general \
-//     --backends '[{"name":"laya-typed","protocol":"systemone","url":"http://127.0.0.1:18792",
-//                  "keyFile":"~/agent-work/decisions/laya.key","model":"laya-typed-decisions"},
+//     --backends '[{"name":"jev","protocol":"systemone","url":"https://api.typesafe.ai",
+//                  "keyEnv":"TYPESAFE_KEY","model":"jev-latest"},
 //                 {"name":"qwen3.5-4b-logit","protocol":"openai-logprobs",
 //                  "url":"http://127.0.0.1:18793","keyFile":"…","model":"qwen"}]' \
 //     --out results.json [--concurrency 2] [--debias]

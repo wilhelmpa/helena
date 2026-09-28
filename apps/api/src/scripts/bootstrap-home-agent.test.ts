@@ -34,6 +34,8 @@ describe('Home agent bootstrap', () => {
     expect(rowsAfterFirst).toHaveLength(1);
     expect(rowsAfterFirst[0]).toMatchObject({
       username: 'master',
+      agentRole: 'home',
+      projectScope: 'all',
       kind: 'external',
       ownerUserId: owner.userId,
       runnerScope: 'owner',
@@ -66,6 +68,27 @@ describe('Home agent bootstrap', () => {
     expect(await db.$count(aiAgent, eq(aiAgent.username, 'master'))).toBe(1);
     const [afterRetry] = await db.select().from(aiAgent).where(eq(aiAgent.username, 'master'));
     expect(afterRetry!.runtimePolicy).toEqual(customizedPolicy);
+  });
+
+  it('keeps the Home role and all-project scope after a handle change', async () => {
+    const owner = await signUpTestUser({ name: 'Patrick' });
+    const first = await bootstrapHomeAgent();
+    if (first.status !== 'ready') throw new Error('Home agent was not provisioned');
+    const api = authedApi(owner.cookie);
+    const project = await api.projects.post({ key: 'MKT', name: 'Marketing' });
+    const agent = api
+      .teams({ teamId: project.data!.teamId })
+      ['ai-agents']({ agentId: first.agentId });
+    const renamed = await agent.patch({ username: 'renamed-home' });
+    expect(renamed.status).toBe(200);
+    expect(renamed.data).toMatchObject({ agentRole: 'home', projectScope: 'all' });
+    await api.projects.post({ key: 'OPS', name: 'Operations' });
+    expect((await agent.get()).data?.projects.map((item) => item.key).sort()).toEqual([
+      'MKT',
+      'OPS',
+    ]);
+    const retry = await bootstrapHomeAgent();
+    expect(retry.status === 'ready' && retry.agentId).toBe(first.agentId);
   });
 
   it('makes the coordinators of earlier projects report to the new Home agent', async () => {

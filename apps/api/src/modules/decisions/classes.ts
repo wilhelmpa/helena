@@ -122,7 +122,7 @@ export const BUILTIN_DECISION_CLASSES: DecisionClass[] = [
 // Two more kinds of decision backend, over any OpenAI-compatible server (llama.cpp's
 // llama-server, Lemonade): the "local logit" readout of a small language model, and a JSON
 // answer of any chat model (docs/helena-decisions/decisions.md §3.2). Both answer the same
-// System One questions as TypeSafe's Jev and Laya, so the browser's fast path can use them too.
+// System One questions as TypeSafe's Jev, so the browser's fast path can use them too.
 export const LOCAL_AI_URL = 'http://127.0.0.1:13305/api/v1';
 // The local AI's workhorse, which passed every class's eval by logit readout on 2026-09-25
 // (decisions.md §8); Lemonade's name for it.

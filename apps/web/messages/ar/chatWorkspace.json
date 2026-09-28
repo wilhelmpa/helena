@@ -59,7 +59,7 @@
     "previousVersion": "النسخة السابقة",
     "nextVersion": "النسخة التالية",
     "saveAsNote": "حفظ كملاحظة",
-    "noteSaved": "حُفظت المحادثة كملاحظة في Docs.",
+    "noteSaved": "حُفظت المحادثة كملاحظة في المعرفة.",
     "noteSaveFailed": "تعذّر حفظ المحادثة كملاحظة.",
     "noteQuestion": "السؤال",
     "noteAnswer": "إجابة {agent}",
@@ -79,8 +79,8 @@
     "stop": "إيقاف الإجابة",
     "attach": "إرفاق",
     "uploadFile": "رفع ملف",
-    "fromVault": "اختيار من الخزنة",
-    "vaultRoot": "الخزنة",
+    "fromVault": "اختيار من المعرفة",
+    "vaultRoot": "المعرفة",
     "vaultEmpty": "هذا المجلد فارغ.",
     "uploading": "جارٍ الرفع…",
     "uploadFailed": "فشل الرفع.",
@@ -126,7 +126,7 @@
     "toggle": "إظهار/إخفاء لوحة المُصنَّع",
     "code": "الكود",
     "preview": "المعاينة",
-    "save": "حفظ في الخزنة",
+    "save": "حفظ في المعرفة",
     "saved": "حُفظ في {path}.",
     "writing": "جارٍ كتابة العنصر…"
   },
@@ -164,19 +164,9 @@
     "loading": "جارٍ تحميل الطلب…"
   },
   "newChat": {
-    "title": "دردشة جديدة مع {agent}",
-    "hint": "اختر الوكيل أسفل يسار حقل الإدخال — وتظهر حالته هناك أيضًا."
+    "title": "دردشة جديدة مع {agent}"
   },
   "agents": {
-    "status": {
-      "running": "يعمل",
-      "waiting": "بانتظارك",
-      "ready": "جاهز",
-      "offline": "غير متصل",
-      "never": "لم يتصل قط",
-      "paused": "متوقف مؤقتًا",
-      "template": "قالب — أضفه إلى مشروع للدردشة معه"
-    },
     "runtimeExternal": "خارجي",
     "switch": "دردشة مع {agent} — ابدأ دردشة جديدة مع وكيل آخر",
     "newChatWith": "دردشة جديدة مع…"
@@ -204,12 +194,6 @@
     "stop": "إيقاف الإجابة",
     "jev": "Optional Jev first stage for this chat"
   },
-  "activity": {
-    "thinking": "{agent} يفكّر…",
-    "writing": "{agent} يكتب…",
-    "queued": "بانتظار {agent} — المشغّل الخاص به غير متصل. تبدأ الإجابة فور عودته.",
-    "usingTool": "{agent} يستخدم {tool} …"
-  },
   "session": {
     "copy": "نسخ معرّف الجلسة",
     "copied": "تم نسخ معرّف الجلسة",
@@ -222,15 +206,6 @@
     "interrupt": "مقاطعة",
     "end": "إنهاء",
     "heard": "«{text}»",
-    "phase": {
-      "starting": "جارٍ تشغيل الميكروفون …",
-      "listening": "أستمع إليك – تحدّث فقط.",
-      "hearing": "أسمعك …",
-      "transcribing": "أدوّن ما قلته …",
-      "thinking": "سيجيب {agent} بعد قليل …",
-      "speaking": "يتحدث {agent} – تحدّث لمقاطعته",
-      "speakingTap": "يتحدث {agent}"
-    },
     "where": {
       "listenLocal": "التعرّف على الكلام: Whisper على هذا الجهاز",
       "listenBrowser": "التعرّف على الكلام: المتصفح (يرسل Chrome وSafari التسجيل إلى Google أو Apple)",
@@ -271,5 +246,25 @@
     "scope": "Applies to the optional chat pre-decision. Team, class and privacy permissions still apply. On and Inherit follow the team setting.",
     "needsChat": "Start or open a chat first.",
     "usage": "Use /jev on, /jev off or /jev inherit. /jev shows the saved value."
+  },
+  "runtimePicker": {
+    "summary": "Agent default",
+    "runtime": "Runtime",
+    "model": "Model",
+    "reasoning": "Reasoning",
+    "hermes": "Hermes (Cloud)",
+    "claude": "Claude Code",
+    "codex": "Codex",
+    "local": "Local",
+    "localMissing": "Local model not loaded",
+    "unavailable": "Currently unavailable",
+    "change": "Change runtime…",
+    "title": "Change runtime",
+    "scope": "Applies to this agent (all chats). Confirming starts a new chat.",
+    "cancel": "Cancel",
+    "confirm": "Confirm and start new chat",
+    "via": "via",
+    "unknownRuntime": "Unknown runtime",
+    "unknownModel": "Unknown model"
   }
 }

@@ -96,12 +96,11 @@ export interface HomeNavigationItem {
 // The entries that need a single team to point at are left out without one. The
 // schedules read across every project, like the tasks, and need none. The workflows are
 // the team's library of templates. Home's Docs are the instance owner's own notes. The
-// chat is not an entry (owner, 2026-09-24): it lives in the tool panel, full screen from
-// there, and /chat stays reachable by link.
+// The dashboard has its own route; Home opens the chat.
 export function homeNavigation(teamId: number | null, _isOwner = false): HomeNavigationItem[] {
   const teamOnly = (items: HomeNavigationItem[]) => (teamId == null ? [] : items);
   return [
-    { id: 'overview', group: 'work', href: '/' },
+    { id: 'overview', group: 'work', href: '/dashboard' },
     { id: 'allWorkItems', group: 'work', href: tasksPath() },
     { id: 'inbox', group: 'work', href: globalInboxPath() },
     { id: 'files', group: 'work', href: homeFilesPath() },

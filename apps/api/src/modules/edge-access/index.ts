@@ -15,6 +15,8 @@ import {
   SignInEventsQuery,
 } from './model';
 import { EdgeAccessError } from './providers';
+import { decodeJwt } from 'jose';
+import { lanAccessCookies } from './lan';
 import {
   edgeAccessConfigured,
   edgeEntry,
@@ -157,32 +159,56 @@ export const edgeHomeRoutes = new Elysia({ name: 'edge-home', detail: { tags: ['
 // cloudflare/nginx-tunnel.conf): 204 when the edge provider signed the request, 403
 // otherwise. It answers 403 to a request without the tunnel marker too, so a location that
 // points here by mistake from the LAN entry refuses rather than waves through.
-export const edgeVerifyRoutes = new Elysia({ name: 'edge-verify' }).get(
-  '/auth/verify/edge',
-  async ({ request, set }) => {
-    set.headers['Cache-Control'] = 'no-store';
-    if (!edgeEntry(request.headers)) throw new HttpError(403, 'Edge entry required');
-    try {
-      const identity = await verifyEdgeRequest(request.headers);
-      if (identity.email) set.headers['X-Helena-Edge-Email'] = identity.email;
-      return noContent();
-    } catch (error) {
-      if (error instanceof EdgeAccessError) {
-        throw new HttpError(403, 'Edge assertion refused', `edge_${error.code}`);
+export const edgeVerifyRoutes = new Elysia({ name: 'edge-verify' })
+  .get(
+    '/auth/verify/edge',
+    async ({ request, set }) => {
+      set.headers['Cache-Control'] = 'no-store';
+      if (edgeEntry(request.headers) !== 'tunnel')
+        throw new HttpError(403, 'Tunnel entry required');
+      try {
+        const identity = await verifyEdgeRequest(request.headers);
+        if (identity.email) set.headers['X-Helena-Edge-Email'] = identity.email;
+        return noContent();
+      } catch (error) {
+        if (error instanceof EdgeAccessError) {
+          throw new HttpError(403, 'Edge assertion refused', `edge_${error.code}`);
+        }
+        throw error;
       }
-      throw error;
-    }
-  },
-  {
-    response: { 204: t.Void(), ...errors(403) },
-    detail: {
-      summary: 'Check the edge sign-in for the reverse proxy',
-      description:
-        '204 when the request carries a valid assertion of the configured edge provider ' +
-        '(Cloudflare Access), 403 otherwise. Used by nginx for the tunnel entry.',
     },
-  },
-);
+    {
+      response: { 204: t.Void(), ...errors(403) },
+      detail: {
+        summary: 'Check the edge sign-in for the reverse proxy',
+        description:
+          '204 when the request carries a valid assertion of the configured edge provider ' +
+          '(Cloudflare Access), 403 otherwise. Used by nginx for the tunnel entry.',
+      },
+    },
+  )
+  .get(
+    '/auth/verify/lan',
+    ({ request, set }) => {
+      set.headers['Cache-Control'] = 'no-store';
+      // The API-wide guard already checked the cookie JWT and the public Access path.
+      if (edgeEntry(request.headers) !== 'lan') throw new HttpError(403, 'LAN entry required');
+      // A browser timer closes all streams by reloading at the verified token's exp.
+      // decodeJwt is safe here because edgeGuard has already verified this exact cookie.
+      const expiresAt = decodeJwt(lanAccessCookies(request.headers.get('cookie')).assertion).exp;
+      if (expiresAt) set.headers['X-Helena-Access-Expires'] = String(expiresAt);
+      return noContent();
+    },
+    {
+      response: { 204: t.Void(), ...errors(403) },
+      detail: {
+        summary: 'Check the edge sign-in for the home network entry',
+        description:
+          '204 when a request that entered through the home network carries a valid edge assertion; ' +
+          'reports the assertion expiry in X-Helena-Access-Expires. 403 otherwise.',
+      },
+    },
+  );
 
 // Mounts the Administrator routes on the assembled app after its chain, like mountMcp: a typed
 // .use() here would push the app's type past TypeScript's instantiation limit (TS2589), and

@@ -16,6 +16,7 @@ import type { ChatListPaneProps } from './ChatListPane';
 // each a row in the sidebar's own shape (32px, 16px icon, sidebar-accent on hover).
 export default function ChatListPaneBody({
   projectKey,
+  agents,
   mode,
   onOpenChange,
   selectedThreadId,
@@ -30,9 +31,11 @@ export default function ChatListPaneBody({
   return (
     <div className="flex h-full min-h-0 min-w-0 flex-col text-sidebar-foreground">
       <div className="flex min-w-0 items-center gap-1 p-2 pb-0">
-        <ChatListRowButton icon={SquarePen} onClick={onNewChat} className="flex-1">
-          {t('list.newChat')}
-        </ChatListRowButton>
+        {agents.length > 0 && (
+          <ChatListRowButton icon={SquarePen} onClick={onNewChat} className="flex-1">
+            {t('list.newChat')}
+          </ChatListRowButton>
+        )}
         {/* In the drawer, its close button; the column beside the conversation has
             nothing to close. */}
         {mode === 'compact' && (

@@ -22,6 +22,7 @@ export interface PlanSendOptions {
   thinkingLevel?: string | null;
   // 'voice': said in the conversation mode; the answer is read aloud (features/voice).
   via?: 'voice';
+  context?: { projectKey: string | null; path: string };
 }
 
 // The answer a stream follows: which agent produces it, and the message it is stored as.
@@ -89,6 +90,7 @@ export class PlanChatTransport implements ChatTransport<PlanUIMessage> {
           : undefined,
       ...(send.model !== undefined && { model: send.model, thinkingLevel: send.thinkingLevel }),
       ...(send.via && { via: send.via }),
+      ...(send.context && { context: send.context }),
     });
     this.threadId = sent.threadId;
     const turn: PlanChunk = {

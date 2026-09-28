@@ -33,7 +33,7 @@
     "eval-failed": "Evaluation failed"
   },
   "jev": {
-    "label": "Jev / Laya (browser steps)",
+    "label": "Jev (browser steps)",
     "experimental": "Experimental",
     "connect": "Add a connection",
     "title": "TypeSafe / JEV",
@@ -185,7 +185,9 @@
   "updates": {
     "label": "Local AI",
     "hint": "Update through native/local-ai/install.sh, then evaluate again.",
-    "whisperBuildRequired": "Updating Whisper.cpp requires a pinned ROCm build and a successful speech test. Automatic installation is not available yet."
+    "whisperBuildRequired": "A verified Whisper build and speech proof are required before this update.",
+    "whisperMaintenanceRequired": "A Root-authorized voice maintenance window is required. Check again after it is opened.",
+    "whisperRecoveryRequired": "The previous Whisper update needs recovery before voice can resume."
   },
   "pickerMark": "local",
   "tile": {
@@ -215,6 +217,14 @@
     "title": "Voice in the chat",
     "loading": "Loading …",
     "failed": "The voice settings could not be loaded.",
+    "aliases": {
+      "title": "Corrections for recognized words",
+      "hint": "One correction per line: recognized word → desired spelling. Only complete words are replaced. Suggestions come from project and agent names.",
+      "placeholder": "Jeff → Jev",
+      "invalid": "Each line needs “recognized → written”.",
+      "reset": "Restore suggestions",
+      "save": "Save voice settings"
+    },
     "pause": {
       "title": "Pause before the answer",
       "hint": "How long you have to be silent before Helena sends your sentence. Shorter answers faster, longer interrupts you less often.",

@@ -168,7 +168,7 @@
     "cycles": "Cycle",
     "dashboards": "Dasbor",
     "documents": "Dokumen",
-    "notes": "Papan",
+    "notes": "Kanvas",
     "subtasks": "Subtugas",
     "checklists": "Daftar periksa",
     "issueStats": "Statistik issue"
@@ -278,13 +278,16 @@
     "agentTeam": "Tim agen",
     "autoArchive": "Arsip otomatis"
   },
-  "statusOrb": {
-    "idle": "Beristirahat",
+  "status": {
+    "idle": "Diam",
+    "listening": "Mendengarkan",
     "thinking": "Berpikir",
     "tool": "Menggunakan alat",
+    "speaking": "Berbicara",
     "waiting": "Menunggu Anda",
     "error": "Kesalahan",
-    "done": "Selesai",
-    "offline": "Offline"
+    "throttled": "Dibatasi",
+    "offline": "Offline",
+    "done": "Selesai"
   }
 }

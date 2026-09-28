@@ -193,7 +193,10 @@ fi
 # The update center's root helper runs its own copies of itself and of the runtime installer;
 # they follow the repository once installed (updates/install.sh).
 if [[ -x /usr/local/libexec/helena-update ]] &&
-  changed deployment/volition-stack/native/updates deployment/volition-stack/native/runtimes; then
+  changed deployment/volition-stack/native/updates deployment/volition-stack/native/runtimes \
+    deployment/volition-stack/native/local-ai/whisper_update.py \
+    deployment/volition-stack/native/local-ai/whisper_acceptance.py \
+    deployment/volition-stack/native/local-ai/whisper_ui.py; then
   "$live/deployment/volition-stack/native/updates/install.sh" --refresh
 fi
 
@@ -211,6 +214,11 @@ fi
 
 # A restart ends every open terminal session. The shell script and tmux.conf are read
 # for each new session, so only the router and the unit need one.
+if changed deployment/volition-stack/native/terminal/tmux.conf &&
+  [[ -f /usr/local/lib/volition-isolation/tmux.conf ]]; then
+  install -m 0644 "$live/deployment/volition-stack/native/terminal/tmux.conf" \
+    /usr/local/lib/volition-isolation/tmux.conf
+fi
 if changed deployment/volition-stack/native/terminal/project-terminal-router.mjs \
   deployment/volition-stack/native/systemd/volition-terminal.service; then
   install -m 0644 "$live/deployment/volition-stack/native/systemd/volition-terminal.service" /etc/systemd/system/
@@ -242,7 +250,8 @@ if changed deployment/volition-stack/native/nginx/project-terminal.conf; then
   nginx -t && systemctl reload nginx.service
 fi
 
-if changed deployment/volition-stack/native/owner-terminal; then
+if changed deployment/volition-stack/native/owner-terminal \
+  ':(exclude)deployment/volition-stack/native/owner-terminal/tmux.conf'; then
   "$live/deployment/volition-stack/native/owner-terminal/setup.sh"
   restart+=(volition-owner-terminal.service)
 fi

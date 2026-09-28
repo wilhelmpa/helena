@@ -10,6 +10,7 @@ import {
   FolderCog,
   Inbox,
   LayoutDashboard,
+  MessageCircle,
   Server,
   Shield,
   SquareKanban,
@@ -82,6 +83,15 @@ export function useNavigationCommands(
     items.push({ id, label, icon, keywords, run: () => router.push(href) });
   }
 
+  add('nav.home.chat', t('sidebarHomeChat'), <MessageCircle />, '/', 'home chat');
+  add(
+    'nav.home.dashboard',
+    `${t('sidebarHome')} · ${t('dashboards')}`,
+    <LayoutDashboard />,
+    '/dashboard',
+    'home overview dashboard',
+  );
+
   if (projectKey) {
     const key = projectKey;
     if (features.dashboards && can('dashboards', 'read'))
@@ -106,7 +116,7 @@ export function useNavigationCommands(
         t('workspace.files'),
         <Folder />,
         features.documents && can('documents', 'read') ? filesPath(key) : notesPath(key),
-        'files documents notes wiki boards canvas SilverBullet',
+        'files documents notes wiki boards canvas',
       );
     add('nav.code', t('workspace.code'), <Code2 />, codePath(key), 'code workspace editor');
     if (features.initiatives && can('initiatives', 'read'))
@@ -165,7 +175,7 @@ export function useNavigationCommands(
   } else {
     // The Home entries; Home's team settings are the project-settings entry below.
     for (const item of homeNavigation(homeTeamId, isGod)) {
-      if (item.id === 'teamSettings') continue;
+      if (item.id === 'teamSettings' || item.id === 'overview') continue;
       const Icon = HOME_NAVIGATION_ICONS[item.id];
       add(
         `nav.home.${item.id}`,

@@ -11,7 +11,7 @@ import LocalAiCard from './LocalAiCard';
 // Start → the figure tile "Lokale KI" (docs/helena-decisions/dashboard.md; local-ai-platform.md
 // §7.5), for the Administrator: An or Aus, the GPU's load and the model in memory, red while an
 // enabled server does not answer. A click opens the card with the master switch, the units,
-// the kinds of work and "Jev / Laya (experimentell)". Shown only once a model server is set
+// the kinds of work and "Jev (experimental)". Shown only once a model server is set
 // up; red problems go to "Braucht dich" (localAiProblems), not here.
 export default function LocalAiTile() {
   const t = useTranslations('localAi');

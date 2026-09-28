@@ -1,7 +1,6 @@
 import { Cell, Pie, PieChart } from 'recharts';
 import { useTranslations } from 'next-intl';
 import type { BreakdownBy, WidgetConfig } from '@/utils/dashboardWidgets';
-import { CHART_PALETTE } from '@/utils/chartSpec';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { usePriorityLabel } from '@/hooks/usePriorityLabel';
@@ -40,9 +39,15 @@ export default function BreakdownWidget({
   const chartData = items.map((i, idx) => ({
     name: label(i),
     value: i.count,
-    // Status and type carry their entity color; the other dimensions fall back to
-    // the shared chart palette.
-    fill: i.color ?? CHART_PALETTE[idx % CHART_PALETTE.length],
+    // Status and type carry their entity color; other dimensions use Helena tokens.
+    fill:
+      i.color ??
+      [
+        'var(--dashboard-project)',
+        'var(--dashboard-positive)',
+        'var(--dashboard-attention)',
+        'var(--status-waiting)',
+      ][idx % 4],
   }));
 
   function chart() {

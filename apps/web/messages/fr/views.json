@@ -39,5 +39,14 @@
   "areaFolderTaken": "Un autre domaine de ce projet utilise ce dossier.",
   "openFolder": "Ouvrir le dossier",
   "deleteView": "Supprimer la vue",
-  "deleteViewConfirm": "Supprimer « {name} » ? Les tâches restent, seule cette vue enregistrée disparaît."
+  "deleteViewConfirm": "Supprimer « {name} » ? Les tâches restent, seule cette vue enregistrée disparaît.",
+  "changed": "Changed",
+  "reset": "Reset",
+  "saveAsNew": "Save as new view",
+  "templates": {
+    "mine": "My tasks",
+    "open": "Open",
+    "week": "This week",
+    "status": "By status"
+  }
 }

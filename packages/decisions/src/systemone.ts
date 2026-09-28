@@ -5,7 +5,7 @@ import {
   type DecisionQuestion,
 } from '@helena/sdk';
 
-// The System One wire format (TypeSafe's Jev, also spoken by Laya): the one shape every
+// The System One wire format (TypeSafe's Jev): the one shape every
 // decision backend answers in Helena, whatever protocol it speaks underneath. A request is a
 // state and named questions; `choice` picks one of the `criteria` keys, `noul` gives the
 // probability of yes. Decision: docs/helena-decisions/decisions.md §3.

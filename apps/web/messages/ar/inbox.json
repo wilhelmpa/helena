@@ -38,14 +38,67 @@
     "automation": "Helena"
   },
   "hub": {
+    "scopeProject": "هذا المشروع",
+    "scopeAll": "الكل",
     "messages": "Messages",
     "updates": "Updates",
-    "loading": "Loading messages…"
+    "loading": "Loading messages…",
+    "mailLoading": "جارٍ تحميل صندوق البريد…",
+    "mailError": "تعذر تحميل صندوق البريد.",
+    "noProjectMailbox": "لم يتم إعداد صندوق بريد لهذا المشروع."
   },
   "mailFilter": {
     "read": "حالة القراءة",
     "attachments": "المرفقات",
     "any": "الكل",
     "reset": "إعادة تعيين عوامل التصفية"
+  },
+  "owner": {
+    "home": "HOME",
+    "anAgent": "وكيل",
+    "defaultAgent": "Helena",
+    "mentionedBy": "ذكرك {name}",
+    "approvalRequest": "يطلب {name} اتخاذ قرار.",
+    "workflowWaiting": "ينتظر سير العمل هذا قرارك.",
+    "proposalRequest": "يقترح {name} تغييرًا.",
+    "decide": "اتخاذ قرار",
+    "approve": "موافقة",
+    "reply": "رد",
+    "openDetails": "فتح التفاصيل",
+    "viewFailure": "عرض الخطأ",
+    "markRead": "وضع علامة كمقروء",
+    "dashboard": "لوحة المعلومات",
+    "history": "السجل",
+    "view": "عرض",
+    "now": "الآن",
+    "eyebrow": "أنت · INBOX",
+    "title": "Inbox",
+    "loadingTitle": "جارٍ تحميل Inbox.",
+    "allDone": "اكتمل كل شيء.",
+    "headingCount": "{count, plural, zero {لا توجد عناصر} one {عنصر واحد} two {عنصران} few {# عناصر} many {# عنصرًا} other {# عنصر}}",
+    "needsYou": "تحتاج إلى انتباهك.",
+    "project": "المشروع",
+    "all": "الكل",
+    "loadError": "تعذر تحميل بعض العناصر. يُرجى تحديث الصفحة.",
+    "loading": "جارٍ تحميل Inbox…",
+    "empty": "لا يوجد ما ينتظر انتباهك الآن.",
+    "toRead": "للقراءة",
+    "noCompletedRuns": "لا توجد عمليات تشغيل مكتملة بعد.",
+    "runCompleted": "{name} · اكتمل التشغيل",
+    "tags": {
+      "budget": "الميزانية",
+      "approval": "الموافقة",
+      "workflow": "سير العمل",
+      "proposal": "اقتراح",
+      "mention": "إشارة",
+      "system": "النظام",
+      "failure": "خطأ"
+    }
+  },
+  "groups": {
+    "approvals": "الموافقات",
+    "errors": "الأخطاء",
+    "mentions": "الإشارات",
+    "system": "النظام"
   }
 }

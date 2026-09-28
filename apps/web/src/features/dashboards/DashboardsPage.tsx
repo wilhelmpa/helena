@@ -1,12 +1,14 @@
 'use client';
 
-import { useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useEffect, useState, type CSSProperties } from 'react';
+import { useParams, usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { Check, LayoutTemplate, Pencil, Plus, Trash2, Undo2 } from 'lucide-react';
+import { Check, LayoutTemplate, Pencil, Plus, Target, Trash2, Undo2 } from 'lucide-react';
 import { useShell } from '@/context/shellContext';
 import { usePermissions } from '@/hooks/usePermissions';
-import { dashboardPath, dashboardsPath } from '@/utils/paths';
+import { dashboardPath, dashboardsPath, initiativesPath } from '@/utils/paths';
+import { projectColor } from '@/utils/projectColor';
+import { useProjectFeatures } from '@/hooks/useProjectFeatures';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   PageActions,
@@ -19,9 +21,9 @@ import type { Dashboard } from '@/lib/api/endpoints/dashboards';
 import { useDashboardsQuery } from '@/services/dashboards.service';
 import { useDashboardEditor } from './hooks/useDashboardEditor';
 import DashboardTabs from './components/DashboardTabs';
-import { cn } from '@/lib/utils';
-import { PAGE_GUTTER_CLASS } from '@/components/common/page/SectionPageView';
 import WidgetGrid from './components/WidgetGrid';
+import DashboardOverview from './components/DashboardOverview';
+import { DashboardTitle, MonoLabel } from '@/components/helena/DashboardPrimitives';
 import AddWidgetDialog from './components/AddWidgetDialog';
 import DashboardNameDialog from './components/DashboardNameDialog';
 import ConfirmDialog from '@/components/common/overlay/ConfirmDialog';
@@ -37,8 +39,11 @@ export default function DashboardsPage() {
   const tCommon = useTranslations('common');
   const { project } = useShell();
   const { can } = usePermissions();
+  const features = useProjectFeatures();
   const params = useParams<{ projectKey: string; dashboardId?: string }>();
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const projectKey = params.projectKey;
 
   const { data: dashboards, isLoading } = useDashboardsQuery(projectKey);
@@ -49,6 +54,14 @@ export default function DashboardsPage() {
   // The dashboard whose deletion waits for a yes, like every other delete.
   const [deleting, setDeleting] = useState<Dashboard | null>(null);
   const renaming = nameDialog && nameDialog !== 'new' ? nameDialog : null;
+
+  useEffect(() => {
+    if (searchParams.get('create') !== 'dashboard' || !can('dashboards', 'create')) return;
+    queueMicrotask(() => setNameDialog('new'));
+    const next = new URLSearchParams(searchParams.toString());
+    next.delete('create');
+    router.replace(`${pathname}${next.size ? `?${next}` : ''}`);
+  }, [searchParams, can, router, pathname]);
 
   const list = dashboards ?? [];
   const routeId = params.dashboardId ? Number(params.dashboardId) : null;
@@ -86,6 +99,15 @@ export default function DashboardsPage() {
   }
 
   const layoutActions: PageAction[] = [];
+  if (features.initiatives && can('initiatives', 'read')) {
+    layoutActions.push({
+      id: 'initiatives',
+      label: 'Ziele',
+      icon: Target,
+      href: initiativesPath(projectKey),
+      menuOnly: true,
+    });
+  }
   let primary: Omit<PageAction, 'menuOnly'> | undefined;
   if (canEditLayout && !editing) {
     layoutActions.push({
@@ -127,14 +149,16 @@ export default function DashboardsPage() {
   }
 
   return (
-    <div className="flex flex-1 flex-col overflow-hidden">
+    <div
+      className="flex flex-1 flex-col overflow-hidden"
+      style={{ '--dashboard-project': projectColor(projectKey) } as CSSProperties}
+    >
       <PageToolbar>
         <DashboardTabs
           dashboards={list}
           activeDashboardId={activeDashboardId}
           isVirtual={editor.isVirtual}
           onSelect={(id) => router.push(dashboardPath(projectKey, id))}
-          onNew={() => setNameDialog('new')}
           onRename={(d) => setNameDialog(d)}
           onDelete={setDeleting}
           onReorder={(dragged, target) => editor.reorderDashboards(dragged, target)}
@@ -151,7 +175,14 @@ export default function DashboardsPage() {
       </PageToolbar>
 
       <div className="flex-1 overflow-y-auto">
-        <div className={cn('w-full', PAGE_GUTTER_CLASS)}>
+        <div className="w-full space-y-5 px-4 py-6 md:px-9">
+          <header className="pt-2">
+            <MonoLabel className="text-[var(--dashboard-project)]">
+              {project.project.name} {'· Dashboard'}
+            </MonoLabel>
+            <DashboardTitle>{project.project.name}</DashboardTitle>
+          </header>
+          <DashboardOverview projectKey={projectKey} project={project} />
           <WidgetGrid projectKey={projectKey} project={project} editor={editor} editing={editing} />
         </div>
       </div>
@@ -214,8 +245,6 @@ function DashboardRowActions({
   const room = usePageToolbarRoom();
   const all = [...actions];
   if (!room.tabs) {
-    if (can('dashboards', 'create'))
-      all.push({ id: 'new', label: t('newDashboard'), icon: Plus, onClick: onNew, menuOnly: true });
     if (active && can('dashboards', 'edit'))
       all.push({
         id: 'rename',
@@ -233,5 +262,15 @@ function DashboardRowActions({
         menuOnly: true,
       });
   }
-  return <PageActions actions={all} primary={primary} />;
+  return (
+    <PageActions
+      actions={all}
+      primary={
+        primary ??
+        (can('dashboards', 'create')
+          ? { id: 'new', label: t('newDashboard'), icon: Plus, onClick: onNew }
+          : undefined)
+      }
+    />
+  );
 }

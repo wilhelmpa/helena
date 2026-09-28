@@ -9,14 +9,22 @@ import { HttpError } from '#shared/lib';
 import { joinUrl } from '#modules/local-ai/eval-context';
 import { serverContext, serverType, taskClass } from '#modules/local-ai/service';
 import { isAgentUser } from '#modules/agents/core/service';
-import { helenaWords, readVoiceSettings, vocabularyPrompt, type VoiceSettings } from './settings';
+import {
+  correctVocabulary,
+  helenaWords,
+  readVoiceSettings,
+  suggestedAliases,
+  vocabularyPrompt,
+  type VocabularyAlias,
+} from './settings';
 import {
   confidentText,
   judgeTranscript,
   type DropReason,
   type TranscriptSegment,
 } from './transcript';
-import { canonicalWav, readWav } from './wav';
+import { withTranscriptionAdmission } from './maintenance';
+import { readWav, whisperWav } from './wav';
 
 // Voice in the chat (docs/helena-decisions/voice.md): dictation and the conversation mode send
 // their recordings here, and the conversation mode's reading aloud asks here for audio. Both go
@@ -139,19 +147,27 @@ export interface Transcription {
 
 // The words of one transcription's context: the owner's own and Helena's names, read once a
 // minute (a new agent or project is known a minute later).
-let vocabularyCache: { at: number; prompt: string | null; settings: VoiceSettings } | null = null;
+let vocabularyCache: { at: number; prompt: string | null; aliases: VocabularyAlias[] } | null =
+  null;
 const VOCABULARY_TTL_MS = 60_000;
 
-async function transcriptionContext(): Promise<{ prompt: string | null }> {
+async function transcriptionContext(): Promise<{
+  prompt: string | null;
+  aliases: VocabularyAlias[];
+}> {
   const now = Date.now();
   if (!vocabularyCache || now - vocabularyCache.at > VOCABULARY_TTL_MS) {
     const [settings, words] = await Promise.all([
       readVoiceSettings(),
       helenaWords().catch(() => ['Helena']),
     ]);
-    vocabularyCache = { at: now, settings, prompt: vocabularyPrompt(settings.vocabulary, words) };
+    vocabularyCache = {
+      at: now,
+      prompt: vocabularyPrompt(settings.vocabulary, words),
+      aliases: settings.vocabularyAliases ?? suggestedAliases(words),
+    };
   }
-  return { prompt: vocabularyCache.prompt };
+  return { prompt: vocabularyCache.prompt, aliases: vocabularyCache.aliases };
 }
 
 export function forgetVoiceVocabulary(): void {
@@ -208,7 +224,7 @@ export async function transcribe(input: {
   const form = new FormData();
   form.append(
     'file',
-    new Blob([canonicalWav(input.audio, info)], { type: 'audio/wav' }),
+    new Blob([whisperWav(input.audio, info)], { type: 'audio/wav' }),
     'recording.wav',
   );
   form.append('model', route.model);
@@ -225,38 +241,40 @@ export async function transcribe(input: {
     form.append('response_format', 'json');
   }
   if (input.language) form.append('language', input.language);
-  const started = Date.now();
-  let response: Response;
-  try {
-    response = await fetch(joinUrl(route.server.baseUrl, '/audio/transcriptions'), {
-      method: 'POST',
-      headers: { accept: 'application/json', ...authorization(key) },
-      body: form,
-      redirect: 'error',
-      signal: AbortSignal.timeout(TRANSCRIBE_TIMEOUT_MS),
-    });
-  } catch {
-    throw new HttpError(502, 'The local transcription did not answer', 'voice-local-failed');
-  }
-  if (!response.ok) {
-    throw new HttpError(
-      502,
-      `The local transcription failed (HTTP ${response.status})`,
-      'voice-local-failed',
-    );
-  }
-  const transcript = transcriptOf(await response.json().catch(() => null));
-  if (!transcript)
-    throw new HttpError(502, 'The local transcription answered no text', 'voice-local-failed');
-  const heard = transcript.segments.length ? confidentText(transcript.segments) : transcript.text;
-  const judged = judgeTranscript(heard, { language: input.language });
-  return {
-    text: judged.text,
-    dropped: judged.dropped,
-    model: route.modelId,
-    durationMs: info.durationMs,
-    latencyMs: Date.now() - started,
-  };
+  return withTranscriptionAdmission(async () => {
+    const started = Date.now();
+    let response: Response;
+    try {
+      response = await fetch(joinUrl(route.server.baseUrl, '/audio/transcriptions'), {
+        method: 'POST',
+        headers: { accept: 'application/json', ...authorization(key) },
+        body: form,
+        redirect: 'error',
+        signal: AbortSignal.timeout(TRANSCRIBE_TIMEOUT_MS),
+      });
+    } catch {
+      throw new HttpError(502, 'The local transcription did not answer', 'voice-local-failed');
+    }
+    if (!response.ok) {
+      throw new HttpError(
+        502,
+        `The local transcription failed (HTTP ${response.status})`,
+        'voice-local-failed',
+      );
+    }
+    const transcript = transcriptOf(await response.json().catch(() => null));
+    if (!transcript)
+      throw new HttpError(502, 'The local transcription answered no text', 'voice-local-failed');
+    const heard = transcript.segments.length ? confidentText(transcript.segments) : transcript.text;
+    const judged = judgeTranscript(heard, { language: input.language });
+    return {
+      text: judged.dropped ? judged.text : correctVocabulary(judged.text, context.aliases),
+      dropped: judged.dropped,
+      model: route.modelId,
+      durationMs: info.durationMs,
+      latencyMs: Date.now() - started,
+    };
+  });
 }
 
 // ── Text to speech ───────────────────────────────────────────────────────────────────────

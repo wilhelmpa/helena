@@ -59,7 +59,7 @@
     "previousVersion": "Попередня версія",
     "nextVersion": "Наступна версія",
     "saveAsNote": "Зберегти як нотатку",
-    "noteSaved": "Чат збережено як нотатку в Docs.",
+    "noteSaved": "Чат збережено як нотатку в Знаннях.",
     "noteSaveFailed": "Не вдалося зберегти чат як нотатку.",
     "noteQuestion": "Питання",
     "noteAnswer": "Відповідь {agent}",
@@ -79,8 +79,8 @@
     "stop": "Зупинити відповідь",
     "attach": "Прикріпити",
     "uploadFile": "Завантажити файл",
-    "fromVault": "Вибрати зі сховища",
-    "vaultRoot": "Сховище",
+    "fromVault": "Вибрати зі Знань",
+    "vaultRoot": "Знання",
     "vaultEmpty": "Ця папка порожня.",
     "uploading": "Завантаження…",
     "uploadFailed": "Завантаження не вдалося.",
@@ -126,7 +126,7 @@
     "toggle": "Показати/приховати панель артефакту",
     "code": "Код",
     "preview": "Попередній перегляд",
-    "save": "Зберегти у сховище",
+    "save": "Зберегти у Знаннях",
     "saved": "Збережено в {path}.",
     "writing": "Артефакт пишеться…"
   },
@@ -164,19 +164,9 @@
     "loading": "Завантаження запиту…"
   },
   "newChat": {
-    "title": "Новий чат з {agent}",
-    "hint": "Агента можна обрати ліворуч унизу поля введення — там також видно його статус."
+    "title": "Новий чат з {agent}"
   },
   "agents": {
-    "status": {
-      "running": "Працює",
-      "waiting": "Чекає на вас",
-      "ready": "Готовий",
-      "offline": "Не в мережі",
-      "never": "Жодного разу не підключався",
-      "paused": "Призупинено",
-      "template": "Шаблон — додайте його до проєкту, щоб із ним спілкуватися"
-    },
     "runtimeExternal": "Зовнішній",
     "switch": "Чат з {agent} — почати новий чат з іншим агентом",
     "newChatWith": "Новий чат з…"
@@ -204,12 +194,6 @@
     "stop": "Зупинити відповідь",
     "jev": "Optional Jev first stage for this chat"
   },
-  "activity": {
-    "thinking": "{agent} думає…",
-    "writing": "{agent} пише…",
-    "queued": "Очікування {agent}: його ранер не в мережі. Відповідь почнеться, щойно він повернеться.",
-    "usingTool": "{agent} використовує {tool} …"
-  },
   "session": {
     "copy": "Скопіювати ID сесії",
     "copied": "ID сесії скопійовано",
@@ -222,15 +206,6 @@
     "interrupt": "Перервати",
     "end": "Завершити",
     "heard": "«{text}»",
-    "phase": {
-      "starting": "Вмикаю мікрофон …",
-      "listening": "Слухаю — просто говоріть.",
-      "hearing": "Чую вас …",
-      "transcribing": "Записую …",
-      "thinking": "{agent} зараз відповість …",
-      "speaking": "{agent} говорить — заговоріть, щоб перервати",
-      "speakingTap": "{agent} говорить"
-    },
     "where": {
       "listenLocal": "Розпізнавання мовлення: Whisper на цьому комп'ютері",
       "listenBrowser": "Розпізнавання мовлення: браузер (Chrome і Safari надсилають запис до Google або Apple)",
@@ -271,5 +246,25 @@
     "scope": "Applies to the optional chat pre-decision. Team, class and privacy permissions still apply. On and Inherit follow the team setting.",
     "needsChat": "Start or open a chat first.",
     "usage": "Use /jev on, /jev off or /jev inherit. /jev shows the saved value."
+  },
+  "runtimePicker": {
+    "summary": "Agent default",
+    "runtime": "Runtime",
+    "model": "Model",
+    "reasoning": "Reasoning",
+    "hermes": "Hermes (Cloud)",
+    "claude": "Claude Code",
+    "codex": "Codex",
+    "local": "Local",
+    "localMissing": "Local model not loaded",
+    "unavailable": "Currently unavailable",
+    "change": "Change runtime…",
+    "title": "Change runtime",
+    "scope": "Applies to this agent (all chats). Confirming starts a new chat.",
+    "cancel": "Cancel",
+    "confirm": "Confirm and start new chat",
+    "via": "via",
+    "unknownRuntime": "Unknown runtime",
+    "unknownModel": "Unknown model"
   }
 }

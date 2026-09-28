@@ -795,7 +795,9 @@
         "reasoning": "Reasoning"
       }
     },
-    "chatTemplate": "Eine Vorlage läuft nicht selbst. Füge sie einem Projekt als Agent hinzu, um ihn hier auszuprobieren."
+    "chatTemplate": "Eine Vorlage läuft nicht selbst. Füge sie einem Projekt als Agent hinzu, um ihn hier auszuprobieren.",
+    "allProjectsScope": "Projekt-Umfang: alle",
+    "allProjectsScopeHint": "Darf in allen aktuellen und künftigen Projekten dieses Teams arbeiten."
   },
   "members": {
     "roleSaved": "{name} ist jetzt {role}",

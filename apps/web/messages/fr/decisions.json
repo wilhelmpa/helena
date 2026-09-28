@@ -4,7 +4,7 @@
   "local": "local",
   "cloud": "cloud",
   "noTeam": "Choisissez d'abord une équipe.",
-  "noConnections": "Aucune connexion à un modèle de décision pour l'instant. Ajoutez-en une dans Accès (Laya sur ce serveur, l'IA locale ou Jev).",
+  "noConnections": "Aucune connexion à un modèle de décision pour l'instant. Ajoutez-en une dans Accès (l'IA locale ou Jev).",
   "toAccess": "Ouvrir Accès",
   "tabs": {
     "label": "Décisions",

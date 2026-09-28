@@ -1,14 +1,13 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { CheckCheck, Eye, ListFilter, Trash2 } from 'lucide-react';
+import { Ellipsis, Eye, ListFilter } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { NotificationFilters, NotificationType } from '@/lib/api/endpoints/notifications';
 import { cn } from '@/lib/utils';
 import {
   PAGE_CONTROL_ACTIVE_CLASS,
   PAGE_CONTROL_CLASS,
-  PageActions,
   PageToolbar,
   PageToolbarSpacer,
   usePageToolbarRoom,
@@ -18,20 +17,14 @@ import {
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuLabel,
+  DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
-const TYPES: NotificationType[] = [
-  'assigned',
-  'mentioned',
-  'commented',
-  'state_changed',
-  'approval_requested',
-];
+const TYPES: NotificationType[] = ['assigned', 'commented', 'state_changed'];
 
 // The notifications' controls in the page's header row (PageToolbar), after the page's
-// tabs (`leading`): the type filter, what to show (read, snoozed) and the bulk actions
-// in the "…" menu.
+// tabs (`leading`): filters for reading notifications. Owner actions live in /inbox.
 export default function InboxToolbar({
   leading,
   filters,
@@ -96,25 +89,13 @@ export default function InboxToolbar({
           {t('showSnoozed')}
         </DropdownMenuCheckboxItem>
       </ToolbarMenu>
-      <PageActions
-        actions={[
-          { id: 'read', label: t('markAllRead'), icon: CheckCheck, onClick: onMarkAllRead },
-          {
-            id: 'delete-read',
-            label: t('deleteAllRead'),
-            icon: Trash2,
-            onClick: onDeleteRead,
-            menuOnly: true,
-          },
-          {
-            id: 'delete-read-completed',
-            label: t('deleteAllReadCompleted'),
-            icon: Trash2,
-            onClick: onDeleteReadCompleted,
-            menuOnly: true,
-          },
-        ]}
-      />
+      <ToolbarMenu icon={Ellipsis} label={t('title')} count={0}>
+        <DropdownMenuItem onSelect={onMarkAllRead}>{t('markAllRead')}</DropdownMenuItem>
+        <DropdownMenuItem onSelect={onDeleteRead}>{t('deleteAllRead')}</DropdownMenuItem>
+        <DropdownMenuItem onSelect={onDeleteReadCompleted}>
+          {t('deleteAllReadCompleted')}
+        </DropdownMenuItem>
+      </ToolbarMenu>
     </PageToolbar>
   );
 }

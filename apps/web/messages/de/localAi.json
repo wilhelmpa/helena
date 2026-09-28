@@ -33,7 +33,7 @@
     "eval-failed": "Auswertung nicht bestanden"
   },
   "jev": {
-    "label": "Jev / Laya (Browser-Schritte)",
+    "label": "Jev (Browser-Schritte)",
     "experimental": "Experimentell",
     "connect": "Verbindung anlegen",
     "title": "TypeSafe / JEV",
@@ -185,7 +185,9 @@
   "updates": {
     "label": "Lokale KI",
     "hint": "Aktualisieren über native/local-ai/install.sh, danach neu auswerten.",
-    "whisperBuildRequired": "Ein Whisper.cpp-Update braucht einen gepinnten ROCm-Build und einen erfolgreichen Sprachtest. Die automatische Installation ist noch nicht verfügbar."
+    "whisperBuildRequired": "Dieses Update benötigt einen geprüften Whisper-Build und Sprachtest.",
+    "whisperMaintenanceRequired": "Ein von Root freigegebenes Voice-Wartungsfenster ist erforderlich. Danach erneut prüfen.",
+    "whisperRecoveryRequired": "Das vorige Whisper-Update benötigt eine Wiederherstellung, bevor Voice fortgesetzt werden kann."
   },
   "pickerMark": "lokal",
   "tile": {
@@ -215,6 +217,14 @@
     "title": "Sprache im Chat",
     "loading": "Lädt …",
     "failed": "Die Spracheinstellungen konnten nicht geladen werden.",
+    "aliases": {
+      "title": "Korrekturen für erkannte Wörter",
+      "hint": "Eine Zeile pro Korrektur: erkanntes Wort → gewünschte Schreibweise. Es werden nur ganze Wörter ersetzt. Die Vorschläge stammen aus Projekt- und Agentennamen.",
+      "placeholder": "Jeff → Jev",
+      "invalid": "Jede Zeile braucht „erkannt → geschrieben“.",
+      "reset": "Vorschläge wiederherstellen",
+      "save": "Sprache speichern"
+    },
     "pause": {
       "title": "Pause bis zur Antwort",
       "hint": "So lange musst du schweigen, bis Helena deinen Satz abschickt. Kürzer antwortet schneller, länger unterbricht dich seltener.",

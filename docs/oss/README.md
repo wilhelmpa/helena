@@ -47,7 +47,7 @@ no seat fees and no lock-in.
 | **Autopilot dial** | One setting per project and agent: *propose* · *act with approval* · *act and report* · *autonomous within budget*. Budgets in tokens, money and time. |
 | **Take over anywhere** | Browser, terminal, chat: you take control, hand it back, and the agent carries on. |
 | **Supervised learning** | Skills and memory an agent learns arrive as proposals with a diff. Accepted learning applies to every copy of a template. |
-| **Your knowledge stays yours** | A folder of Markdown files, versioned with git, edited in the notes (SilverBullet) and mirrored to your devices with Syncthing. |
+| **Your knowledge stays yours** | A folder of Markdown files, versioned with git, edited in Helena Docs and mirrored to your devices with Syncthing. |
 | **Bring your runtime** | Hermes Agent does the AI work (memory, skills, tools). Claude Code and Codex run with the same instructions, tools and rules. |
 | **No secrets in prompts** | Logins and keys never enter a prompt. The browser gateway fills them, TOTP runs through Helena, and one access centre holds every connection. |
 | **Routines in plain words** | "Every Monday at 9" becomes a schedule. A visual workflow builder covers the rest: agent steps, approvals, conditions, waits, actions. |

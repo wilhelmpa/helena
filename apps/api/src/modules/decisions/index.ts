@@ -7,6 +7,8 @@ import { requireProjectAccess, requireTeamMembership, requireUser } from '#share
 import { HttpError } from '#shared/lib';
 import { noContent } from '#shared/http';
 import { commonErrors, errors } from '#shared/responses';
+import { isHomeAgent } from '#modules/agents/core/home-agent';
+import { listProjects } from '#modules/projects/service';
 import { mcpTool } from '#mcp/generate';
 import { listTeams } from '#modules/teams/service';
 import { GENERAL_CLASS } from './classes';
@@ -19,12 +21,14 @@ import {
   DecisionEvalView,
   DecisionEvalsResponse,
   DecisionLogResponse,
+  AgentDecisionLogResponse,
   decideBody,
   decisionClassParams,
   decisionEvalParams,
   decisionEvalsQuery,
   decisionLogParams,
   decisionLogQuery,
+  agentDecisionLogQuery,
   decisionOutcomeBody,
   startDecisionEvalBody,
   updateDecisionClassBody,
@@ -216,7 +220,7 @@ export const decisionRoutes = new Elysia({
       detail: {
         summary: 'Decide a question among fixed options',
         description:
-          'Ask a small decision model (Jev, Laya or a local model, as the team configured the ' +
+          'Ask a small decision model (Jev or a local model, as the team configured the ' +
           'class "Allgemeine Entscheidungen") to pick one of the given options — or yes/no when ' +
           'no options are given — about the context. It answers in well under a second with a ' +
           'probability per option. Use it for classification and routing questions whose answer ' +
@@ -352,6 +356,60 @@ export const decisionRoutes = new Elysia({
         description:
           'Every question asked, newest first: the choice with its probability and confidence, ' +
           'the backend and model, the time, the cost, and a correction where one was made.',
+      },
+    },
+  )
+
+  .get(
+    '/teams/:teamId/decisions/agent-log',
+    async ({ user, params, query }) => {
+      const current = requireUser(user);
+      const [agent] = await db
+        .select({ teamId: aiAgent.teamId, agentRole: aiAgent.agentRole })
+        .from(aiAgent)
+        .where(eq(aiAgent.userId, current.id))
+        .limit(1);
+      if (!agent || agent.teamId !== params.teamId)
+        throw new HttpError(403, 'Only an agent of this team can read its decisions');
+
+      const from = query.from ? new Date(query.from) : undefined;
+      const to = query.to ? new Date(query.to) : undefined;
+      if (from && to && from > to) throw new HttpError(400, 'from must be before to');
+
+      let projectIds: number[] | undefined;
+      if (!isHomeAgent(agent.agentRole)) {
+        const projects = await listProjects(current.id, { mcpOnly: true, withPermissions: true });
+        const readable = projects.filter((project) => project.permissions?.work_items.read);
+        if (query.projectKey && !readable.some((project) => project.key === query.projectKey))
+          throw new HttpError(403, 'You do not have access to this project');
+        projectIds = readable.map((project) => project.id);
+      }
+
+      const log = await listDecisions(params.teamId, {
+        classId: query.classId,
+        projectKey: query.projectKey,
+        projectIds,
+        from,
+        to,
+        before: query.before,
+        limit: query.limit,
+      });
+      return {
+        items: log.items.map(({ inputText: _inputText, ...item }) => item),
+        nextBefore: log.nextBefore,
+      };
+    },
+    {
+      params: teamParams,
+      query: agentDecisionLogQuery,
+      response: { 200: AgentDecisionLogResponse, ...commonErrors },
+      detail: {
+        summary: 'List decisions visible to this agent',
+        description:
+          'Read decisions for your projects, newest first. Filter by ISO date-time range, class, ' +
+          'or project key. Home agents can read all decisions in their team. ' +
+          'Input text is excluded. Use nextBefore as before for the next page.',
+        ...mcpTool('list_decisions', { readOnlyHint: true }, 'read'),
       },
     },
   )

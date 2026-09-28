@@ -365,8 +365,8 @@
         size * 0.48,
       );
       const energy = (weights[1] + weights[3]) * (bands[0] * 0.025 + onset * 0.035);
-      glow.addColorStop(0, `rgba(${rgb},.012)`);
-      glow.addColorStop(0.58, `rgba(${rgb},${0.028 + energy})`);
+      glow.addColorStop(0, `rgba(${rgb},.48)`);
+      glow.addColorStop(0.58, `rgba(${rgb},${0.3 + energy})`);
       glow.addColorStop(1, `rgba(${rgb},0)`);
       h.fillStyle = glow;
       h.fillRect(0, 0, size, size);

@@ -3,7 +3,7 @@
 
 docs/helena-decisions/decisions.md §4.3. Before each prompt, the prompt text (only that) goes
 to Helena's decisions service (POST /model-router/prompt), which asks the configured decision
-model (Laya or a small local model on this machine, or Jev in the cloud) how hard the request
+model (a small local model on this machine or Jev in the cloud) how hard the request
 is and whether it depends on the earlier conversation. When a cheaper Claude tier covers it,
 Helena answers with a short factual note that Claude reads; the standing rule of what to do
 with such a note is in the owner's CLAUDE.md (the installer offers it). Nothing is enforced.

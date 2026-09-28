@@ -56,6 +56,7 @@ export type SpeechInputProps = Omit<
   // With engine "none": says why nothing can listen.
   onUnavailable?: () => void;
   onError?: (error: SpeechInputError, cause?: unknown) => void;
+  onTranscribed?: () => void;
   // Whether the microphone is in use by dictation (recording or transcribing).
   onBusyChange?: (busy: boolean) => void;
   labels: { start: string; stop: string; unavailable: string };
@@ -74,6 +75,7 @@ export function SpeechInput({
   recorder,
   onUnavailable,
   onError,
+  onTranscribed,
   onBusyChange,
   labels,
   className,
@@ -92,9 +94,9 @@ export function SpeechInput({
   // The field's text when dictation started, and what has been recognized for good since.
   const base = useRef('');
   const finals = useRef('');
-  const latest = useRef({ value, onChange, onError });
+  const latest = useRef({ value, onChange, onError, onTranscribed });
   useEffect(() => {
-    latest.current = { value, onChange, onError };
+    latest.current = { value, onChange, onError, onTranscribed };
   });
 
   useEffect(
@@ -162,8 +164,10 @@ export function SpeechInput({
     setProcessing(true);
     try {
       const text = await active.stop();
-      if (text) emit(appended(latest.current.value, text));
-      else latest.current.onError?.('nothing-heard');
+      if (text) {
+        emit(appended(latest.current.value, text));
+        latest.current.onTranscribed?.();
+      } else latest.current.onError?.('nothing-heard');
     } catch (error) {
       latest.current.onError?.('failed', error);
     } finally {

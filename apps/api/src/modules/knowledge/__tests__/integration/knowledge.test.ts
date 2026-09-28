@@ -224,18 +224,18 @@ describe('knowledge', () => {
       ]);
     });
 
-    it('stores a pasted image in the Assets folder beside the note and serves it', async () => {
+    it('stores a pasted image in the same folder as the note and serves it', async () => {
       const { asOwner } = await setup();
       const notePath = 'Projects/MKT/Docs/Note.md';
       await write(asOwner, notePath, 'Note');
       const file = new File([new Uint8Array([137, 80, 78, 71])], 'shot.png', { type: 'image/png' });
       const first = await asOwner.knowledge.assets.post({ file }, { query: { path: notePath } });
       const second = await asOwner.knowledge.assets.post({ file }, { query: { path: notePath } });
-      expect(first.data).toEqual({ path: 'Projects/MKT/Docs/Assets/shot.png' });
-      expect(second.data).toEqual({ path: 'Projects/MKT/Docs/Assets/shot 2.png' });
+      expect(first.data).toEqual({ path: 'Projects/MKT/Docs/shot.png' });
+      expect(second.data).toEqual({ path: 'Projects/MKT/Docs/shot 2.png' });
 
       const raw = await asOwner.knowledge.raw.get({
-        query: { path: 'Projects/MKT/Docs/Assets/shot.png' },
+        query: { path: 'Projects/MKT/Docs/shot.png' },
       });
       expect(raw.status).toBe(200);
       expect(raw.response.headers.get('content-type')).toBe('image/png');
@@ -426,6 +426,24 @@ describe('knowledge', () => {
       expect((await read(asHome, 'Private/Diary.md')).status).toBe(403);
       const root = await asHome.knowledge.folders.get({ query: {} });
       expect(root.data?.items.map((item) => item.name)).not.toContain('Private');
+    });
+
+    it('lets an all-project agent read project knowledge without entering Home or Private', async () => {
+      const { asOwner } = await setup();
+      const project = await asOwner.projects.post({ key: 'OPS', name: 'Operations' });
+      const teamId = project.data!.teamId;
+      await write(asOwner, 'Projects/OPS/Docs/Plan.md', 'Plan');
+      await write(asOwner, 'Home/Docs/Owner.md', 'Owner');
+      await write(asOwner, 'Private/Diary.md', 'Diary');
+      const created = await asOwner.teams({ teamId })['ai-agents'].post({
+        name: 'Global reader',
+        username: 'global-reader',
+        projectScope: 'all',
+      });
+      const asAgent = apiKeyApi(created.data!.apiKey!);
+      expect((await read(asAgent, 'Projects/OPS/Docs/Plan.md')).status).toBe(200);
+      expect((await read(asAgent, 'Home/Docs/Owner.md')).status).toBe(403);
+      expect((await read(asAgent, 'Private/Diary.md')).status).toBe(403);
     });
   });
 

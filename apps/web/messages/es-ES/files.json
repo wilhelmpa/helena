@@ -1,4 +1,11 @@
 {
+  "fixedFolders": {
+    "Docs": "Documentos",
+    "Files": "Archivos",
+    "Assets": "Adjuntos",
+    "Boards": "Lienzos",
+    "Inbox": "Entrada"
+  },
   "title": "Archivos",
   "projectDescription": "Documentos, adjuntos y código de este proyecto",
   "roots": {
@@ -53,9 +60,8 @@
     "rename": "Renombrar",
     "move": "Mover",
     "copyPath": "Copiar ruta",
-    "openInNotes": "Abrir en Notas",
     "openInCode": "Abrir en VS Code",
-    "openInDocs": "Abrir en Docs",
+    "openInDocs": "Abrir en Conocimiento",
     "linkToTask": "Vincular a una tarea",
     "trash": "Mover a la papelera",
     "showInFolder": "Mostrar en la carpeta"
@@ -67,7 +73,7 @@
     "name": "Nombre",
     "folderName": "Nueva carpeta",
     "fileName": "Nota.md",
-    "fileHint": "Un archivo .md o .txt. Una nota Markdown se abre en Docs.",
+    "fileHint": "Archivo .md o .txt. Markdown se abre en Conocimiento.",
     "create": "Crear",
     "save": "Guardar",
     "cancel": "Cancelar"
@@ -117,9 +123,6 @@
     "original": "Shared original file",
     "save": "Save",
     "content": "File content",
-    "isolatedOrigin": "SilverBullet is not safely available on this connection. Use the Helena editor.",
-    "notesSlow": "SilverBullet is not responding. Use the editor or reload.",
-    "notesHelp": "If this connection needs sign-in or does not load, the Helena editor remains available.",
     "reload": "Reload",
     "discard": "Discard the unsaved draft?",
     "editor": "Helena editor",
@@ -130,11 +133,10 @@
     "searchScope": "Names and contents in {root}",
     "noResults": "No matches.",
     "refine": "First 50 matches. Refine your search.",
-    "boards": "Boards",
+    "boards": "Lienzos",
     "references": "Sources and references",
     "author": "Edited by {author}",
     "run": "Run {run}",
-    "silverBullet": "SilverBullet",
     "formatted": "Formatted text",
     "source": "Markdown source",
     "sourceRequired": "This file contains Markdown the formatted editor cannot preserve. Edit the source to keep all content.",

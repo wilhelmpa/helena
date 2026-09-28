@@ -59,7 +59,7 @@
     "previousVersion": "Vorherige Version",
     "nextVersion": "Nächste Version",
     "saveAsNote": "Als Notiz speichern",
-    "noteSaved": "Chat als Notiz in „Docs“ gespeichert.",
+    "noteSaved": "Chat als Notiz in Wissen gespeichert.",
     "noteSaveFailed": "Der Chat konnte nicht als Notiz gespeichert werden.",
     "noteQuestion": "Frage",
     "noteAnswer": "Antwort von {agent}",
@@ -79,8 +79,8 @@
     "stop": "Antwort stoppen",
     "attach": "Anhängen",
     "uploadFile": "Datei hochladen",
-    "fromVault": "Aus dem Vault wählen",
-    "vaultRoot": "Vault",
+    "fromVault": "Aus Wissen wählen",
+    "vaultRoot": "Wissen",
     "vaultEmpty": "Dieser Ordner ist leer.",
     "uploading": "Wird hochgeladen …",
     "uploadFailed": "Der Upload ist fehlgeschlagen.",
@@ -126,7 +126,7 @@
     "toggle": "Artefakt-Panel ein-/ausblenden",
     "code": "Code",
     "preview": "Vorschau",
-    "save": "Im Vault speichern",
+    "save": "In Wissen speichern",
     "saved": "Gespeichert unter {path}.",
     "writing": "Artefakt entsteht …"
   },
@@ -164,19 +164,9 @@
     "loading": "Anfrage wird geladen …"
   },
   "newChat": {
-    "title": "Neuer Chat mit {agent}",
-    "hint": "Den Agenten wählst du unten links im Eingabefeld – dort siehst du auch seinen Status."
+    "title": "Neuer Chat mit {agent}"
   },
   "agents": {
-    "status": {
-      "running": "Arbeitet",
-      "waiting": "Wartet auf dich",
-      "ready": "Bereit",
-      "offline": "Offline",
-      "never": "Nie verbunden",
-      "paused": "Pausiert",
-      "template": "Vorlage – füge sie einem Projekt hinzu, um mit ihr zu chatten"
-    },
     "runtimeExternal": "Extern",
     "switch": "Chat mit {agent} – neuen Chat mit einem anderen Agenten beginnen",
     "newChatWith": "Neuer Chat mit …"
@@ -204,12 +194,6 @@
     "stop": "Antwort stoppen",
     "jev": "Optionale JEV-Vorstufe für diesen Chat"
   },
-  "activity": {
-    "thinking": "{agent} denkt nach …",
-    "writing": "{agent} schreibt …",
-    "queued": "Wartet auf {agent} – sein Runner ist offline. Die Antwort startet, sobald er wieder da ist.",
-    "usingTool": "{agent} nutzt {tool} …"
-  },
   "session": {
     "copy": "Session-ID kopieren",
     "copied": "Session-ID kopiert",
@@ -222,15 +206,6 @@
     "interrupt": "Unterbrechen",
     "end": "Beenden",
     "heard": "„{text}“",
-    "phase": {
-      "starting": "Mikrofon startet …",
-      "listening": "Ich höre zu – sprich einfach.",
-      "hearing": "Ich höre dich …",
-      "transcribing": "Schreibe mit …",
-      "thinking": "{agent} antwortet gleich …",
-      "speaking": "{agent} spricht – sprich, um zu unterbrechen",
-      "speakingTap": "{agent} spricht"
-    },
     "where": {
       "listenLocal": "Spracherkennung: Whisper auf diesem Rechner",
       "listenBrowser": "Spracherkennung: Browser (Chrome und Safari senden die Aufnahme an Google bzw. Apple)",
@@ -271,5 +246,25 @@
     "scope": "Gilt für die optionale Chat-Vorentscheidung. Team-, Klassen- und Datenschutzfreigaben gelten weiterhin. Ein und Erben folgen der Teamfreigabe.",
     "needsChat": "Starte oder öffne zuerst einen Chat.",
     "usage": "Verwende /jev on, /jev off oder /jev inherit. /jev zeigt den gespeicherten Wert."
+  },
+  "runtimePicker": {
+    "summary": "Agenten-Standard",
+    "runtime": "Ausführung",
+    "model": "Modell",
+    "reasoning": "Denktiefe",
+    "hermes": "Hermes (Cloud)",
+    "claude": "Claude Code",
+    "codex": "Codex",
+    "local": "Lokal",
+    "localMissing": "Lokales Modell nicht geladen",
+    "unavailable": "Derzeit nicht verfügbar",
+    "change": "Ausführung ändern…",
+    "title": "Ausführung ändern",
+    "scope": "Gilt für diesen Agenten (alle Chats). Nach der Bestätigung beginnt ein neuer Chat.",
+    "cancel": "Abbrechen",
+    "confirm": "Bestätigen und neuen Chat starten",
+    "via": "via",
+    "unknownRuntime": "Ausführung unbekannt",
+    "unknownModel": "Modell unbekannt"
   }
 }

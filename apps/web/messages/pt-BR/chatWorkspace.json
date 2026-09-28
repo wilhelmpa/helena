@@ -59,7 +59,7 @@
     "previousVersion": "Versão anterior",
     "nextVersion": "Próxima versão",
     "saveAsNote": "Salvar como nota",
-    "noteSaved": "Chat salvo como nota em Docs.",
+    "noteSaved": "Chat salvo como nota em Conhecimento.",
     "noteSaveFailed": "Não foi possível salvar o chat como nota.",
     "noteQuestion": "Pergunta",
     "noteAnswer": "Resposta de {agent}",
@@ -79,8 +79,8 @@
     "stop": "Parar a resposta",
     "attach": "Anexar",
     "uploadFile": "Enviar um arquivo",
-    "fromVault": "Escolher do vault",
-    "vaultRoot": "Vault",
+    "fromVault": "Escolher em Conhecimento",
+    "vaultRoot": "Conhecimento",
     "vaultEmpty": "Esta pasta está vazia.",
     "uploading": "Enviando…",
     "uploadFailed": "O envio falhou.",
@@ -126,7 +126,7 @@
     "toggle": "Mostrar/ocultar o painel de artefato",
     "code": "Código",
     "preview": "Prévia",
-    "save": "Salvar no vault",
+    "save": "Salvar em Conhecimento",
     "saved": "Salvo em {path}.",
     "writing": "Escrevendo o artefato…"
   },
@@ -164,19 +164,9 @@
     "loading": "Carregando o pedido…"
   },
   "newChat": {
-    "title": "Novo chat com {agent}",
-    "hint": "Escolha o agente no canto inferior esquerdo do campo de entrada — o status dele aparece ali."
+    "title": "Novo chat com {agent}"
   },
   "agents": {
-    "status": {
-      "running": "Trabalhando",
-      "waiting": "Aguardando você",
-      "ready": "Pronto",
-      "offline": "Offline",
-      "never": "Nunca conectado",
-      "paused": "Pausado",
-      "template": "Modelo — adicione a um projeto para conversar com ele"
-    },
     "runtimeExternal": "Externo",
     "switch": "Chat com {agent} — iniciar um novo chat com outro agente",
     "newChatWith": "Novo chat com…"
@@ -204,12 +194,6 @@
     "stop": "Parar a resposta",
     "jev": "Optional Jev first stage for this chat"
   },
-  "activity": {
-    "thinking": "{agent} está pensando…",
-    "writing": "{agent} está escrevendo…",
-    "queued": "Aguardando {agent} — o runner está offline. A resposta começa assim que ele voltar.",
-    "usingTool": "{agent} está usando {tool} …"
-  },
   "session": {
     "copy": "Copiar ID da sessão",
     "copied": "ID da sessão copiado",
@@ -222,15 +206,6 @@
     "interrupt": "Interromper",
     "end": "Encerrar",
     "heard": "“{text}”",
-    "phase": {
-      "starting": "Ligando o microfone …",
-      "listening": "Estou ouvindo – é só falar.",
-      "hearing": "Ouvindo você …",
-      "transcribing": "Anotando …",
-      "thinking": "{agent} vai responder já …",
-      "speaking": "{agent} está falando – fale para interromper",
-      "speakingTap": "{agent} está falando"
-    },
     "where": {
       "listenLocal": "Reconhecimento de fala: Whisper nesta máquina",
       "listenBrowser": "Reconhecimento de fala: o navegador (Chrome e Safari enviam a gravação ao Google ou à Apple)",
@@ -271,5 +246,25 @@
     "scope": "Applies to the optional chat pre-decision. Team, class and privacy permissions still apply. On and Inherit follow the team setting.",
     "needsChat": "Start or open a chat first.",
     "usage": "Use /jev on, /jev off or /jev inherit. /jev shows the saved value."
+  },
+  "runtimePicker": {
+    "summary": "Agent default",
+    "runtime": "Runtime",
+    "model": "Model",
+    "reasoning": "Reasoning",
+    "hermes": "Hermes (Cloud)",
+    "claude": "Claude Code",
+    "codex": "Codex",
+    "local": "Local",
+    "localMissing": "Local model not loaded",
+    "unavailable": "Currently unavailable",
+    "change": "Change runtime…",
+    "title": "Change runtime",
+    "scope": "Applies to this agent (all chats). Confirming starts a new chat.",
+    "cancel": "Cancel",
+    "confirm": "Confirm and start new chat",
+    "via": "via",
+    "unknownRuntime": "Unknown runtime",
+    "unknownModel": "Unknown model"
   }
 }

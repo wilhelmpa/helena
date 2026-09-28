@@ -54,7 +54,29 @@ export function useKeyboardShortcuts(opts: {
         onToggleCommand();
         return;
       }
+      if (matches(e, 'project.settings')) {
+        e.preventDefault();
+        onSettings();
+        return;
+      }
+      if (hasChat && matches(e, 'chat.toggle')) {
+        e.preventDefault();
+        onToggleChat();
+        return;
+      }
       if (isTypingTarget(e.target) || overlayOpen) return;
+
+      if (
+        hasProject &&
+        e.key.toLowerCase() === 'n' &&
+        e.shiftKey &&
+        (e.metaKey || e.ctrlKey) &&
+        !e.altKey
+      ) {
+        e.preventDefault();
+        onNewIssue();
+        return;
+      }
 
       if (hasProject) {
         for (const [id, view] of VIEW_HOTKEYS) {
@@ -78,16 +100,6 @@ export function useKeyboardShortcuts(opts: {
       if (matches(e, 'project.new')) {
         e.preventDefault();
         onNewProject();
-        return;
-      }
-      if (hasProject && matches(e, 'project.settings')) {
-        e.preventDefault();
-        onSettings();
-        return;
-      }
-      if (hasChat && matches(e, 'chat.toggle')) {
-        e.preventDefault();
-        onToggleChat();
         return;
       }
       if (onCycleLayout && matches(e, 'layout.cycle')) {

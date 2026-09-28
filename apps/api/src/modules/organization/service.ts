@@ -233,6 +233,7 @@ export async function getOrganization(teamId: number, projectId?: number) {
         userId: aiAgent.userId,
         name: user.name,
         username: aiAgent.username,
+        agentRole: aiAgent.agentRole,
         kind: aiAgent.kind,
         template: aiAgent.template,
         departmentId: organizationAgentAssignment.departmentId,
@@ -345,7 +346,7 @@ export async function getOrganization(teamId: number, projectId?: number) {
       kind: row.kind as 'external',
       // Root of the reporting chain. It carries no organization_agent_assignment row of
       // its own, so without this it would fall through to "unassigned" like a real orphan.
-      isHome: isHomeAgent(row.username),
+      isHome: isHomeAgent(row.agentRole),
       roleTitle: row.roleTitle ?? '',
       role: row.role as AgentTeamRole | null,
       capabilities: row.capabilities ?? [],

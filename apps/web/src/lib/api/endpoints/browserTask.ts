@@ -12,7 +12,7 @@ export interface DecisionBackendPreset {
   baseUrl: string;
   model: string;
   allowPrivateAddress: boolean;
-  keySource: 'local-laya' | 'local-ai' | null;
+  keySource: 'local-ai' | null;
   modelServer: string | null;
 }
 
@@ -22,7 +22,7 @@ export interface DecisionBackend {
   location: 'cloud' | 'local';
   defaultBaseUrl: string | null;
   defaultModel: string;
-  policy: 'jev' | 'laya';
+  policy: 'jev';
   protocol: 'systemone' | 'openai-logprobs' | 'openai-json';
   keyRequired: boolean;
   signupUrl: string | null;
@@ -43,7 +43,7 @@ export const testDecisionConnection = (teamId: number, credentialId: number) =>
   request<ConnectionTest>(`/teams/${teamId}/credentials/${credentialId}/test`, { method: 'POST' });
 
 export type BrowserControlMode = 'inherit' | 'standard' | 'decision';
-export type BrowserControlPolicy = 'auto' | 'jev' | 'laya';
+export type BrowserControlPolicy = 'auto' | 'jev';
 
 export interface BrowserControl {
   setting: {
@@ -56,7 +56,7 @@ export interface BrowserControl {
     enabled: boolean;
     source: 'project' | 'instance';
     label: string;
-    policy: 'jev' | 'laya';
+    policy: 'jev';
     credentialId: number | null;
     problem: 'connection_missing' | null;
   };

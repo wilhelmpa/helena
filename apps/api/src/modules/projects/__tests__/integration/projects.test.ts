@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach, beforeEach } from 'bun:test';
-import { aiAgent, db, projectProvisioningJob } from '@repo/db';
+import { aiAgent, db, project, projectProvisioningJob } from '@repo/db';
 import { eq } from 'drizzle-orm';
 import { authedApi, type Api } from '#tests/helpers/app';
 import { signUpTestUser } from '#tests/helpers/auth';
@@ -39,6 +39,22 @@ describe('projects', () => {
   afterEach(clearLimits);
 
   describe('create', () => {
+    it('marks the technical Home project as the instance root', async () => {
+      const { api } = await signUpClient();
+      const created = await api.projects.post({ key: 'HOME', name: 'Home' });
+      expect(created.status).toBe(201);
+      expect(created.data?.projectRole).toBe('home');
+      const other = await api.projects.post({ key: 'OPS', name: 'Operations' });
+      expect(other.data?.projectRole).toBe('project');
+      await expect(
+        db
+          .update(project)
+          .set({ projectRole: 'home' })
+          .where(eq(project.id, other.data!.id))
+          .execute(),
+      ).rejects.toThrow();
+    });
+
     it('creates a project and lists it for its owner', async () => {
       const { api } = await signUpClient();
 

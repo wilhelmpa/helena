@@ -191,6 +191,7 @@ const chatModel = t.Object({
 export const chatCatalogBody = t.Object({ models: t.Array(chatModel, { maxItems: 200 }) });
 
 export const ChatCatalogResponse = t.Object({
+  localModels: t.Optional(t.Array(chatModel)),
   models: t.Array(
     t.Composite([
       chatModel,
@@ -226,6 +227,12 @@ export const sendChatBody = t.Object({
     maxLength: CHAT_PROMPT_LIMIT,
     description: 'Message to send the agent.',
   }),
+  context: t.Optional(
+    t.Object({
+      projectKey: t.Nullable(t.String({ minLength: 1, maxLength: 64 })),
+      path: t.String({ minLength: 1, maxLength: 600 }),
+    }),
+  ),
   threadId: t.Optional(
     t.String({ description: 'Thread id of an earlier message, to continue that conversation.' }),
   ),

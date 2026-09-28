@@ -20,7 +20,7 @@ export default function RequireFeature({
   feature,
   children,
 }: {
-  feature: keyof ProjectFeatures;
+  feature: keyof ProjectFeatures | (keyof ProjectFeatures)[];
   children: ReactNode;
 }) {
   const t = useTranslations('common');
@@ -29,11 +29,12 @@ export default function RequireFeature({
   const { isOwner } = usePermissions();
   const params = useParams<{ projectKey: string }>();
 
-  if (features[feature]) return <>{children}</>;
+  const requested = Array.isArray(feature) ? feature : [feature];
+  if (requested.some((item) => features[item])) return <>{children}</>;
 
   return (
     <EmptyState
-      title={t('featureOffTitle', { feature: featureLabel(feature) })}
+      title={t('featureOffTitle', { feature: featureLabel(requested[0]!) })}
       description={t('featureOffHint')}
     >
       {isOwner && params.projectKey && (

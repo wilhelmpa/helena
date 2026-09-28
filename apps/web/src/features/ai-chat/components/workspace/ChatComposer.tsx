@@ -1,8 +1,8 @@
 'use client';
 
-import { useRef, useState, type KeyboardEvent } from 'react';
+import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { useTranslations } from 'next-intl';
-import { RefreshCw, Square } from 'lucide-react';
+import { Plus, RefreshCw, Square } from 'lucide-react';
 import { toast } from 'sonner';
 import type { AiAgent } from '@/lib/api/endpoints/agents';
 import type { ChatPrompt } from '@/lib/api/endpoints/chatPrompts';
@@ -17,12 +17,14 @@ import {
   PromptInputTools,
 } from '@/components/ai-elements/prompt-input';
 import { SpeechInput } from '@/components/ai-elements/speech-input';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Suggestion, Suggestions } from '@/components/ai-elements/suggestion';
 import { AgentContextSize } from '@/components/common/agent-chat/AgentContextSize';
 import ConversationBar from '@/features/voice/components/ConversationBar';
 import ConversationButton from '@/features/voice/components/ConversationButton';
 import { useDictation } from '@/features/voice/hooks/useDictation';
 import type { Conversation } from '@/features/voice/hooks/useConversation';
+import { listenDockVoice } from '@/features/voice/utils/dockVoice';
 import { useVaultUpload } from '../../hooks/useVaultUpload';
 import { useChatPrompts } from '../../hooks/useChatPrompts';
 import { useChatListMutations } from '../../hooks/useChatList';
@@ -44,7 +46,8 @@ import ChatModelPicker from './ChatModelPicker';
 import ChatRenameDialog from './ChatRenameDialog';
 import ChatPromptVariablesDialog from './ChatPromptVariablesDialog';
 import ChatComposerStatus from './ChatComposerStatus';
-import ChatAgentMenu from './ChatAgentMenu';
+import ChatAgentMenu from '@/components/helena/AgentPicker';
+import styles from './HomeChatLanding.module.css';
 
 interface PendingAttachment {
   path: string;
@@ -52,6 +55,7 @@ interface PendingAttachment {
 }
 
 export interface ChatComposerProps {
+  homeLanding?: boolean;
   scopeKey: string;
   agent: AiAgent;
   // Every agent a chat can be with, and how each is doing, for the picker at the
@@ -62,7 +66,6 @@ export interface ChatComposerProps {
   // What the answer is doing, or how it ended (see composerActivity), and the tool it
   // is running right now, if any.
   activity: ComposerActivity;
-  tool: string | null;
   // Messages written while an answer was still coming, waiting to go out in order.
   queue: QueuedMessage[];
   queuePaused: boolean;
@@ -78,6 +81,7 @@ export interface ChatComposerProps {
   onAutoSpeakChange: (on: boolean) => void;
   // The hands-free conversation mode (features/voice).
   conversation: Conversation;
+  dockSheet?: boolean;
   threadId: string | null;
   projectKey: string | null;
   // Where a new chat's text is kept while its agent is still being picked.
@@ -111,13 +115,13 @@ export interface ChatComposerProps {
 // library. Enter sends, Shift+Enter or ⌘/Ctrl+Enter breaks the line, Escape stops the
 // answer, ↑ in the empty field edits the last own message.
 export default function ChatComposer({
+  homeLanding = false,
   scopeKey,
   agent,
   agents,
   states,
   motionEnabled,
   activity,
-  tool,
   queue,
   queuePaused,
   onQueue,
@@ -127,6 +131,7 @@ export default function ChatComposer({
   autoSpeak,
   onAutoSpeakChange,
   conversation,
+  dockSheet = false,
   threadId,
   projectKey,
   draft,
@@ -146,6 +151,11 @@ export default function ChatComposer({
   onEditLast,
 }: ChatComposerProps) {
   const t = useTranslations('chatWorkspace');
+  const homeName = homeLanding && agent.name === 'Helena' ? 'Home' : agent.name;
+  useEffect(() => {
+    if (!dockSheet) return;
+    return listenDockVoice(() => void conversation.start());
+  }, [dockSheet, conversation]);
   const [value, setStoredValue] = useState(() => draft?.current ?? '');
   const setValue = (next: string) => {
     setStoredValue(next);
@@ -292,8 +302,8 @@ export default function ChatComposer({
   const showChoices = choices != null && !busy && queue.length === 0;
 
   return (
-    <div className="shrink-0 bg-background px-3 pt-2 pb-3">
-      <div className="relative mx-auto w-full max-w-3xl">
+    <div className={homeLanding ? styles.composer : 'shrink-0 bg-background px-3 pt-2 pb-3'}>
+      <div className={`relative mx-auto w-full ${homeLanding ? 'max-w-[760px]' : 'max-w-3xl'}`}>
         {commands.open && (
           <ChatSlashMenu
             items={commands.items}
@@ -309,11 +319,12 @@ export default function ChatComposer({
             composer's own width, which the tool panel or an open artifact narrows. */}
         <PromptInput
           className="@container/composer"
+          groupClassName={homeLanding ? styles.pill : undefined}
           onSubmit={() => void submit()}
           onFiles={(files) => void uploadFiles(files)}
         >
           <PromptInputHeader>
-            <ConversationBar conversation={conversation} agentName={agent.name} />
+            <ConversationBar conversation={conversation} />
             <ChatComposerQueue
               queue={queue}
               agentName={agent.name}
@@ -342,7 +353,6 @@ export default function ChatComposer({
             )}
             <ChatComposerStatus
               activity={activity}
-              tool={tool}
               agentName={agent.name}
               onReconnect={onReconnect}
               onContinue={onContinue}
@@ -376,22 +386,69 @@ export default function ChatComposer({
               onChange={(event) => setValue(event.target.value)}
               onKeyDown={onKeyDown}
               placeholder={
-                talking ? t('voice.placeholder') : t('composer.placeholder', { agent: agent.name })
+                talking ? t('voice.placeholder') : t('composer.placeholder', { agent: homeName })
               }
-              aria-label={t('composer.placeholder', { agent: agent.name })}
+              aria-label={t('composer.placeholder', { agent: homeName })}
               title={t('composer.hint')}
               maxLength={CHAT_PROMPT_LIMIT}
             />
           </PromptInputBody>
           <PromptInputFooter>
             <PromptInputTools className="overflow-hidden">
-              <ChatAttachPicker
-                scopeKey={scopeKey}
-                onUpload={() => fileInputRef.current?.click()}
-                onPickVaultFile={(path, name) =>
-                  setAttachments((current) => [...current, { path, name }])
-                }
-              />
+              {homeLanding && (
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <PromptInputButton
+                      tooltip={t('composer.attach')}
+                      aria-label={t('composer.attach')}
+                    >
+                      <Plus className="size-4" />
+                    </PromptInputButton>
+                  </PopoverTrigger>
+                  <PopoverContent
+                    side="top"
+                    align="start"
+                    className="flex w-auto items-center gap-1 p-2"
+                  >
+                    <ChatAttachPicker
+                      scopeKey={scopeKey}
+                      onUpload={() => fileInputRef.current?.click()}
+                      onPickVaultFile={(path, name) =>
+                        setAttachments((current) => [...current, { path, name }])
+                      }
+                    />
+                    {dictation.ready && !talking && (
+                      <SpeechInput
+                        value={value}
+                        onChange={setValue}
+                        maxLength={CHAT_PROMPT_LIMIT}
+                        engine={dictation.engine}
+                        recorder={dictation.recorder}
+                        onUnavailable={dictation.onUnavailable}
+                        onError={dictation.onError}
+                        onBusyChange={setDictating}
+                        labels={{
+                          start: dictation.local
+                            ? t('composer.dictateLocal')
+                            : t('composer.dictate'),
+                          stop: t('composer.stopDictation'),
+                          unavailable: t('composer.dictationUnavailable'),
+                        }}
+                      />
+                    )}
+                    <ChatAutoSpeakToggle on={autoSpeak} onChange={onAutoSpeakChange} />
+                  </PopoverContent>
+                </Popover>
+              )}
+              {!homeLanding && (
+                <ChatAttachPicker
+                  scopeKey={scopeKey}
+                  onUpload={() => fileInputRef.current?.click()}
+                  onPickVaultFile={(path, name) =>
+                    setAttachments((current) => [...current, { path, name }])
+                  }
+                />
+              )}
               <input
                 ref={fileInputRef}
                 type="file"
@@ -402,7 +459,7 @@ export default function ChatComposer({
                   event.target.value = '';
                 }}
               />
-              {dictation.ready && !talking && (
+              {!homeLanding && dictation.ready && !talking && (
                 <SpeechInput
                   value={value}
                   onChange={setValue}
@@ -411,6 +468,13 @@ export default function ChatComposer({
                   recorder={dictation.recorder}
                   onUnavailable={dictation.onUnavailable}
                   onError={dictation.onError}
+                  onTranscribed={() =>
+                    requestAnimationFrame(() => {
+                      const textarea = textareaRef.current;
+                      textarea?.focus();
+                      textarea?.setSelectionRange(textarea.value.length, textarea.value.length);
+                    })
+                  }
                   onBusyChange={setDictating}
                   labels={{
                     start: dictation.local ? t('composer.dictateLocal') : t('composer.dictate'),
@@ -419,23 +483,29 @@ export default function ChatComposer({
                   }}
                 />
               )}
-              <ChatAutoSpeakToggle on={autoSpeak} onChange={onAutoSpeakChange} />
+              {!homeLanding && <ChatAutoSpeakToggle on={autoSpeak} onChange={onAutoSpeakChange} />}
               <ChatAgentMenu
+                scopeKey={scopeKey}
                 agent={agent}
+                model={model}
                 agents={agents}
                 states={states}
                 motionEnabled={motionEnabled}
+                selectedModel={model}
+                pill={homeLanding}
                 onPick={onPickAgent}
               />
-              <ChatModelPicker
-                scopeKey={scopeKey}
-                agentId={agent.id}
-                model={model}
-                thinkingLevel={thinkingLevel}
-                onChange={onModelChange}
-                open={modelPickerOpen}
-                onOpenChange={setModelPickerOpen}
-              />
+              {!homeLanding && (
+                <ChatModelPicker
+                  scopeKey={scopeKey}
+                  agentId={agent.id}
+                  model={model}
+                  thinkingLevel={thinkingLevel}
+                  onChange={onModelChange}
+                  open={modelPickerOpen}
+                  onOpenChange={setModelPickerOpen}
+                />
+              )}
             </PromptInputTools>
             <PromptInputTools className="shrink-0">
               {threadId && contextTokens !== undefined && (
@@ -463,10 +533,10 @@ export default function ChatComposer({
                   label={busy ? t('composer.queue') : t('composer.send')}
                   disabled={upload.isPending}
                 />
-              ) : (conversation.ready && !dictating) || talking ? (
+              ) : ((homeLanding || conversation.ready) && !dictating) || talking ? (
                 // With nothing typed, the send button's place starts a conversation (the
                 // claude.ai/ChatGPT pattern); while one runs, it ends it.
-                <ConversationButton conversation={conversation} />
+                <ConversationButton conversation={conversation} homeLanding={homeLanding} />
               ) : (
                 !busy && <PromptInputSubmit label={t('composer.send')} disabled />
               )}

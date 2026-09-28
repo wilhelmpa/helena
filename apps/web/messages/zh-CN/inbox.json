@@ -38,14 +38,67 @@
     "automation": "Helena"
   },
   "hub": {
+    "scopeProject": "此项目",
+    "scopeAll": "全部",
     "messages": "Messages",
     "updates": "Updates",
-    "loading": "Loading messages…"
+    "loading": "Loading messages…",
+    "mailLoading": "正在加载邮箱…",
+    "mailError": "无法加载邮箱。",
+    "noProjectMailbox": "此项目尚未设置邮箱。"
   },
   "mailFilter": {
     "read": "阅读状态",
     "attachments": "附件",
     "any": "全部",
     "reset": "重置筛选"
+  },
+  "owner": {
+    "home": "HOME",
+    "anAgent": "一位代理",
+    "defaultAgent": "Helena",
+    "mentionedBy": "{name} 提到了你",
+    "approvalRequest": "{name} 请求你做出决定。",
+    "workflowWaiting": "此工作流正在等待你的决定。",
+    "proposalRequest": "{name} 建议进行更改。",
+    "decide": "决定",
+    "approve": "批准",
+    "reply": "回复",
+    "openDetails": "打开详情",
+    "viewFailure": "查看错误",
+    "markRead": "标记为已读",
+    "dashboard": "仪表板",
+    "history": "历史记录",
+    "view": "查看",
+    "now": "现在",
+    "eyebrow": "你 · INBOX",
+    "title": "Inbox",
+    "loadingTitle": "正在加载 Inbox。",
+    "allDone": "全部完成。",
+    "headingCount": "{count} 件事",
+    "needsYou": "需要你处理。",
+    "project": "项目",
+    "all": "全部",
+    "loadError": "部分条目无法加载。请刷新页面。",
+    "loading": "正在加载 Inbox…",
+    "empty": "目前没有待处理事项。",
+    "toRead": "待读",
+    "noCompletedRuns": "暂无已完成的运行。",
+    "runCompleted": "{name} · 运行已完成",
+    "tags": {
+      "budget": "预算",
+      "approval": "审批",
+      "workflow": "工作流",
+      "proposal": "提议",
+      "mention": "提及",
+      "system": "系统",
+      "failure": "错误"
+    }
+  },
+  "groups": {
+    "approvals": "审批",
+    "errors": "错误",
+    "mentions": "提及",
+    "system": "系统"
   }
 }

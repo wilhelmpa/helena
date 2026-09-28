@@ -33,9 +33,9 @@ export interface ResolveResult {
 export interface BrowserTaskSettingsWire {
   enabled: boolean;
   // The policy the loop uses and the confidence below which it hands a target back.
-  policy: 'jev' | 'laya';
+  policy: 'jev';
   minConfidence: number | null;
-  // What the live view and the agent may be told: "Jev (TypeSafe)", "Laya (lokal)".
+  // What the live view and the agent may be told: "Jev (TypeSafe)".
   label: string;
 }
 
@@ -44,7 +44,7 @@ export interface BrowserTaskSettingsWire {
 export interface TaskStartResult {
   taskId: number;
   taskToken: string;
-  policy: 'jev' | 'laya';
+  policy: 'jev';
   minConfidence: number | null;
   label: string;
   model: string;

@@ -38,7 +38,7 @@ function chatQuery(location: ChatLocation): string {
 export const chatPath = (key: string, location: ChatLocation = {}) =>
   `${projectPath(key)}/chat${chatQuery(location)}`;
 
-export const homeChatPath = (location: ChatLocation = {}) => `/chat${chatQuery(location)}`;
+export const homeChatPath = (location: ChatLocation = {}) => `/${chatQuery(location)}`;
 
 // The project's own approvals: the agent requests and workflow gates waiting for a
 // decision, narrowed to this one project (see the global approvalsPath for every
@@ -150,19 +150,13 @@ export const codePath = (key: string) => `${projectPath(key)}/code`;
 // The Docs of Home: the notes under Home/Docs in the vault.
 export const homeDocsPath = () => '/docs';
 
-// The Docs page that opens one note of the vault by its vault-relative path: the Docs of
-// its project for a path under Projects/<KEY>/, Home's Docs for any other.
+// A vault note opens in the one Wissen file browser for its root.
 export const vaultNotePath = (path: string) => {
   const [top, key, ...rest] = path.split('/');
   const project = top === 'Projects' && key;
   const relative = project ? rest.join('/') : [key, ...rest].filter(Boolean).join('/');
   const folder = relative.includes('/') ? relative.slice(0, relative.lastIndexOf('/')) : '';
-  if (project && /\.canvas$/i.test(relative))
-    return `${notesPath(key!)}&canvas=${encodeURIComponent(path)}`;
-  if (/\.md$/i.test(relative))
-    return project
-      ? `${projectPath(key!)}/docs?path=${encodeURIComponent(path)}`
-      : `${homeDocsPath()}?path=${encodeURIComponent(path)}`;
+  if (project && /\.canvas$/i.test(relative)) return filesPath(key!, folder, { file: relative });
   if (project) return filesPath(key!, folder, { file: relative });
   const root = top === 'Private' ? 'private' : top === 'Templates' ? 'templates' : 'home';
   return homeFilesPath(folder, { root, file: relative });

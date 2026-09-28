@@ -1,4 +1,11 @@
 {
+  "fixedFolders": {
+    "Docs": "المستندات",
+    "Files": "الملفات",
+    "Assets": "المرفقات",
+    "Boards": "اللوحات",
+    "Inbox": "الوارد"
+  },
   "title": "الملفات",
   "projectDescription": "مستندات هذا المشروع ومرفقاته وشيفرته",
   "roots": {
@@ -53,9 +60,8 @@
     "rename": "إعادة التسمية",
     "move": "نقل",
     "copyPath": "نسخ المسار",
-    "openInNotes": "فتح في الملاحظات",
     "openInCode": "فتح في VS Code",
-    "openInDocs": "فتح في المستندات",
+    "openInDocs": "فتح في المعرفة",
     "linkToTask": "ربط بمهمة",
     "trash": "نقل إلى سلة المهملات",
     "showInFolder": "إظهار في المجلد"
@@ -67,7 +73,7 @@
     "name": "الاسم",
     "folderName": "مجلد جديد",
     "fileName": "ملاحظة.md",
-    "fileHint": "ملف ‎.md أو ‎.txt. تُفتح ملاحظة Markdown في المستندات.",
+    "fileHint": "ملف ‎.md أو ‎.txt. يفتح Markdown في المعرفة.",
     "create": "إنشاء",
     "save": "حفظ",
     "cancel": "إلغاء"
@@ -117,9 +123,6 @@
     "original": "Shared original file",
     "save": "Save",
     "content": "File content",
-    "isolatedOrigin": "SilverBullet is not safely available on this connection. Use the Helena editor.",
-    "notesSlow": "SilverBullet is not responding. Use the editor or reload.",
-    "notesHelp": "If this connection needs sign-in or does not load, the Helena editor remains available.",
     "reload": "Reload",
     "discard": "Discard the unsaved draft?",
     "editor": "Helena editor",
@@ -130,11 +133,10 @@
     "searchScope": "Names and contents in {root}",
     "noResults": "No matches.",
     "refine": "First 50 matches. Refine your search.",
-    "boards": "Boards",
+    "boards": "لوحات فنية",
     "references": "Sources and references",
     "author": "Edited by {author}",
     "run": "Run {run}",
-    "silverBullet": "SilverBullet",
     "formatted": "Formatted text",
     "source": "Markdown source",
     "sourceRequired": "This file contains Markdown the formatted editor cannot preserve. Edit the source to keep all content.",

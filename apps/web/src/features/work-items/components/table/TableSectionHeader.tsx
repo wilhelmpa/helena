@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { ChevronDown, ChevronRight, Plus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { type IssueGroup } from '@/utils/project';
@@ -6,34 +7,37 @@ import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { GroupDot } from '../shared/GroupDot';
 import { TableDropZone } from './TableDropZone';
+import type { ProjectDetail } from '@/lib/api/endpoints/projects';
+import InlineColumnCreate from '../kanban/InlineColumnCreate';
 
 // A primary group header row. A drop onto it appends to the group's bucket
 // (disabled when sub-grouped, where issues live under sub-headers).
 export function TableSectionHeader({
   group,
+  project,
   count,
   collapsed,
   disabled,
   dropId,
   onDrop,
   onToggle,
-  onAddIssue,
   readOnly,
 }: {
   group: IssueGroup;
+  project: ProjectDetail;
   count: number;
   collapsed: boolean;
   disabled: boolean;
   dropId: string;
   onDrop: (issueId: number) => void;
   onToggle: () => void;
-  onAddIssue: () => void;
   // In a read-only share the add affordance is hidden.
   readOnly?: boolean;
 }) {
   const t = useTranslations('workItems');
   const { can } = usePermissions();
   const canCreateIssue = can('work_items', 'create') && !readOnly;
+  const [creating, setCreating] = useState(false);
   return (
     <TableDropZone
       id={dropId}
@@ -55,14 +59,22 @@ export function TableSectionHeader({
         {group.name}
         <span className="text-muted-foreground">{count}</span>
       </button>
-      {canCreateIssue && (
+      {creating && (
+        <InlineColumnCreate
+          project={project}
+          group={group}
+          onClose={() => setCreating(false)}
+          compact
+        />
+      )}
+      {canCreateIssue && !creating && (
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
               variant="ghost"
               size="icon"
               className="size-6 text-muted-foreground"
-              onClick={onAddIssue}
+              onClick={() => setCreating(true)}
               aria-label={t('newIssue')}
             >
               <Plus />

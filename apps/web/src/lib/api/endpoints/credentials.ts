@@ -4,9 +4,8 @@ import type { Grant } from './access';
 
 export type CredentialKind =
   'web_login' | 'api_key' | 'ssh_key' | 'secret' | 'runtime_login' | 'decision_model' | 'variable';
-// decision_model: where its key comes from — stored here, or the local Laya installation's key
-// file (docs/helena-decisions/browser-task.md §3.3).
-export type DecisionKeySource = 'stored' | 'credential' | 'local-laya' | 'local-ai';
+// decision_model: where its key comes from (docs/helena-decisions/browser-task.md §3.3).
+export type DecisionKeySource = 'stored' | 'credential' | 'local-ai';
 // What the page lists: the kinds above and MCP servers signed in with OAuth.
 export type ListedKind = CredentialKind | 'mcp_oauth';
 

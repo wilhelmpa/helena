@@ -53,7 +53,7 @@ export default function NewIssueBody({
 
   // In fullscreen the editor claims the leftover height; in compact it grows with
   // its content and scrolls once the dialog runs out of room.
-  const editorClass = cn('overflow-y-auto', fullscreen ? 'min-h-48 flex-1' : 'min-h-24');
+  const editorClass = cn('overflow-y-auto', fullscreen ? 'min-h-48 flex-1' : 'min-h-14');
 
   const descriptionEditor = (
     <MarkdownEditor

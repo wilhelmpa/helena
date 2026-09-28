@@ -1,4 +1,11 @@
 {
+  "fixedFolders": {
+    "Docs": "Dokumen",
+    "Files": "Berkas",
+    "Assets": "Lampiran",
+    "Boards": "Kanvas",
+    "Inbox": "Masuk"
+  },
   "title": "Berkas",
   "projectDescription": "Dokumen, lampiran, dan kode proyek ini",
   "roots": {
@@ -53,9 +60,8 @@
     "rename": "Ganti nama",
     "move": "Pindahkan",
     "copyPath": "Salin jalur",
-    "openInNotes": "Buka di Catatan",
     "openInCode": "Buka di VS Code",
-    "openInDocs": "Buka di Docs",
+    "openInDocs": "Buka di Pengetahuan",
     "linkToTask": "Tautkan ke tugas",
     "trash": "Pindahkan ke tempat sampah",
     "showInFolder": "Tampilkan di folder"
@@ -67,7 +73,7 @@
     "name": "Nama",
     "folderName": "Folder baru",
     "fileName": "Catatan.md",
-    "fileHint": "Berkas .md atau .txt. Catatan Markdown terbuka di Docs.",
+    "fileHint": "Berkas .md atau .txt. Markdown dibuka di Pengetahuan.",
     "create": "Buat",
     "save": "Simpan",
     "cancel": "Batal"
@@ -117,9 +123,6 @@
     "original": "Shared original file",
     "save": "Save",
     "content": "File content",
-    "isolatedOrigin": "SilverBullet is not safely available on this connection. Use the Helena editor.",
-    "notesSlow": "SilverBullet is not responding. Use the editor or reload.",
-    "notesHelp": "If this connection needs sign-in or does not load, the Helena editor remains available.",
     "reload": "Reload",
     "discard": "Discard the unsaved draft?",
     "editor": "Helena editor",
@@ -130,11 +133,10 @@
     "searchScope": "Names and contents in {root}",
     "noResults": "No matches.",
     "refine": "First 50 matches. Refine your search.",
-    "boards": "Boards",
+    "boards": "Kanvas",
     "references": "Sources and references",
     "author": "Edited by {author}",
     "run": "Run {run}",
-    "silverBullet": "SilverBullet",
     "formatted": "Formatted text",
     "source": "Markdown source",
     "sourceRequired": "This file contains Markdown the formatted editor cannot preserve. Edit the source to keep all content.",

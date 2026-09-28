@@ -49,7 +49,7 @@ export interface LabRunInput {
   backend: LabBackend;
   agentId: number;
   credentialId?: number | null;
-  policy?: 'auto' | 'jev' | 'laya';
+  policy?: 'auto' | 'jev';
   goal: string;
   values?: Record<string, string>;
   startUrl?: string | null;
@@ -110,7 +110,7 @@ export async function labAgents(
 ): Promise<{ id: number; name: string; username: string }[]> {
   const agents = scope.project
     ? await listAgents(scope.teamId, scope.project.id)
-    : (await listAgents(scope.teamId)).filter((agent) => isHomeAgent(agent.username));
+    : (await listAgents(scope.teamId)).filter((agent) => isHomeAgent(agent.agentRole));
   const out: { id: number; name: string; username: string }[] = [];
   for (const agent of agents) {
     if (await browserGatewayEnabledForAgent(agent.id, agent.teamId)) {
@@ -167,9 +167,7 @@ export async function labConnections(scope: LabScope) {
       hasKey:
         readable.keySource === 'credential'
           ? row.sourceHasKey === true
-          : readable.value === true ||
-            readable.keySource === 'local-laya' ||
-            readable.keySource === 'local-ai',
+          : readable.value === true || readable.keySource === 'local-ai',
       status: row.status,
     };
   });

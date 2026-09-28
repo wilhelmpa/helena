@@ -52,7 +52,12 @@ import {
 import { routeRequest, routesOfChatMessages } from '#modules/model-router/service';
 import type { AgUiEventBody, ChatMessageStatus } from './model';
 import { notifyChatAnswer } from './wake';
-import { questionText, imagePaths, type ChatAttachment } from './attachments';
+import {
+  questionText,
+  imagePaths,
+  type ChatAttachment,
+  type PublicChatAttachment,
+} from './attachments';
 import {
   buildTree,
   latestLeaf,
@@ -99,6 +104,7 @@ export type ChatCatalogModel = {
 // refused this account, which they leave out (model-availability).
 export type ChatCatalog = {
   models: ChatCatalogModel[];
+  localModels?: ChatCatalogModel[];
   unavailable: UnavailableCatalogModel[];
   updatedAt: string | null;
 };
@@ -371,7 +377,13 @@ export async function getThreadMessages(
       parentId: r.parentId == null ? null : String(r.parentId),
       siblingIds: siblingsOf(tree, r.id).map(String),
       agentId: r.agentId,
-      ...(r.attachments ? { attachments: r.attachments as ChatAttachment[] } : {}),
+      ...(r.attachments
+        ? {
+            attachments: (r.attachments as ChatAttachment[]).filter(
+              (attachment): attachment is PublicChatAttachment => attachment.kind !== 'page',
+            ),
+          }
+        : {}),
       ...(r.role === 'assistant' && {
         model: r.model,
         inputTokens: r.inputTokens,
@@ -379,6 +391,7 @@ export async function getThreadMessages(
         durationMs:
           r.startedAt && r.finishedAt ? r.finishedAt.getTime() - r.startedAt.getTime() : null,
         modelRoute: routes.get(r.id) ?? null,
+        modelCheck: r.modelCheck ?? null,
         ...localFallbackOf(r.modelCheck),
       }),
       ...(r.via === 'voice' ? { via: 'voice' as const } : {}),
@@ -1261,7 +1274,12 @@ export async function readChatCatalog(agentId: number): Promise<ChatCatalog> {
       .where(eq(aiAgent.id, agentId))
       .limit(1);
     const local = agent ? await localModelsFor(runtimeOfPolicy(agent.runtimePolicy)) : [];
-    return { models: local, unavailable: [], updatedAt: null };
+    return {
+      models: local,
+      localModels: await localModelsFor('hermes'),
+      unavailable: [],
+      updatedAt: null,
+    };
   }
   const runtime = runtimeOfPolicy(row.runtimePolicy);
   const annotated = annotateCatalog(
@@ -1272,6 +1290,7 @@ export async function readChatCatalog(agentId: number): Promise<ChatCatalog> {
   return {
     ...annotated,
     models: [...annotated.models, ...(await localModelsFor(runtime))],
+    localModels: await localModelsFor('hermes'),
     updatedAt: iso(row.updatedAt),
   };
 }
@@ -1542,7 +1561,11 @@ export async function finishMessage(
         .from(agentChatMessage)
         .where(eq(agentChatMessage.id, messageId))
     : [];
-  const check = withStoredFallback(modelCheckOf(result.runtime), stored?.modelCheck ?? null);
+  const reportedCheck = withStoredFallback(
+    modelCheckOf(result.runtime),
+    stored?.modelCheck ?? null,
+  );
+  const check = reportedCheck ? { ...reportedCheck, runtime } : null;
   // What the session really ran on wins over what the command named on its first line.
   const model = result.runtime?.used?.model ?? result.model;
   if (result.status === 'failed' && result.sessionLost)

@@ -33,7 +33,6 @@ import {
 } from './shared/agent-socket';
 import { HttpError } from './shared/lib';
 import { edgeGuard, edgeVerifyRoutes, mountSecurityRoutes } from './modules/edge-access';
-import { notesVerifyRoutes } from './modules/notes/verify';
 import { crossSiteRefusal } from './shared/cross-site';
 import { engineHookRoutes } from './modules/engine';
 import { ownerLocalInferenceRoutes } from './modules/owner-terminal/local-inference';
@@ -455,8 +454,6 @@ export const app = new Elysia()
     },
   )
   .use(edgeVerifyRoutes)
-  // The notes proxy's auth_request target (modules/notes/verify.ts).
-  .use(notesVerifyRoutes)
   // The owner-terminal proxy's auth_request target (see
   // deployment/volition-stack/native/owner-terminal/nginx-owner-terminal.conf).
   // Session, owner role and a live 12h grant are all checked here, on every request

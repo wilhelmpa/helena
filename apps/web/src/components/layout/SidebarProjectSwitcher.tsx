@@ -6,7 +6,7 @@ import { ChevronDown, Plus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { Project } from '@/lib/api/endpoints/projects';
 import { projectTree } from '@/utils/projectTree';
-import { runtimeEnv } from '@/utils/runtimeEnv';
+import { projectColor } from '@/utils/projectColor';
 import ProjectTreeGroup from './ProjectTreeGroup';
 import ProjectTreeItem from './ProjectTreeItem';
 import ProjectUngroupDropZone from './ProjectUngroupDropZone';
@@ -18,15 +18,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-
-const projectColors = ['#7ee0b8', '#f0997b', '#bdaaff', '#8dc7f3', '#e8cc83'];
-
-function projectColor(key: string) {
-  if (key.toUpperCase() === 'TRADE') return projectColors[0]!;
-  let hash = 0;
-  for (const char of key) hash = (hash * 31 + char.charCodeAt(0)) >>> 0;
-  return projectColors[hash % projectColors.length]!;
-}
 
 export default function SidebarProjectSwitcher({
   projects,
@@ -42,10 +33,9 @@ export default function SidebarProjectSwitcher({
   const t = useTranslations('nav');
   const newProjectT = useTranslations('newProject');
   const project = projects.find((item) => item.key === currentProjectKey);
-  const { groups, ungrouped } = projectTree(
-    projects.filter((item) => item.key !== runtimeEnv().workspace.homeChatProjectKey),
-  );
-  const color = project ? projectColor(project.key) : '#bdaaff';
+  const { groups, ungrouped } = projectTree(projects.filter((item) => item.projectRole !== 'home'));
+  const color =
+    project && project.projectRole !== 'home' ? projectColor(project.key) : projectColor(null);
   const [open, setOpen] = useState(false);
   const [dragging, setDragging] = useState(false);
   const select = (key: string) => {
@@ -66,16 +56,22 @@ export default function SidebarProjectSwitcher({
             style={{ background: color, boxShadow: `0 0 10px ${color}` }}
           />
           <span className="min-w-0 flex-1 truncate text-start">
-            {project?.name ?? t('sidebarHome')}
+            {project && project.projectRole !== 'home' ? project.name : t('sidebarHome')}
           </span>
-          <span className="helena-project-key">{project?.key ?? t('sidebarAll')}</span>
+          <span className="helena-project-key">
+            {project && project.projectRole !== 'home' ? project.key : t('sidebarAll')}
+          </span>
           <ChevronDown size={14} aria-hidden="true" />
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="max-h-[70vh] w-64 overflow-y-auto">
+      <DropdownMenuContent
+        data-project-switcher
+        align="start"
+        className="max-h-[70vh] w-64 overflow-y-auto"
+      >
         <DropdownMenuItem asChild>
-          <Link href="/chat">
-            <span className="helena-project-dot" style={{ background: '#bdaaff' }} />
+          <Link href="/">
+            <span className="helena-project-dot" style={{ background: projectColor(null) }} />
             {t('sidebarHomeAll')}
           </Link>
         </DropdownMenuItem>

@@ -10,6 +10,8 @@ const OPEN_KEY = 'workspace:panel:open';
 const TOOL_KEY = 'workspace:panel:tool';
 const MODE_KEY = 'workspace:panel:mode';
 const PROJECT_KEY = 'workspace:panel:project';
+const projectStorageKey = (prefix: string, projectKey: string | null) =>
+  `${prefix}:${projectKey ?? 'home'}`;
 
 // A project's own tool (its terminal, its code) closes when the project changes.
 const projectScoped = (tool: WorkspaceToolId) => panelTool(tool)?.projectScoped === true;
@@ -43,6 +45,8 @@ export function useWorkspacePanel({
   const [toolSession, setToolSession] = useState(0);
   const previousProjectKey = useRef(projectKey);
   const restored = useRef(false);
+  const toolKey = projectStorageKey(TOOL_KEY, projectKey);
+  const modeKey = projectStorageKey(MODE_KEY, projectKey);
 
   useEffect(() => {
     // Restore exactly once for this mounted shell. A delayed hydration effect must
@@ -58,11 +62,11 @@ export function useWorkspacePanel({
       window.history.replaceState(window.history.state, '', url);
       setActiveTool(linked);
       setOpenState(true);
-      write(TOOL_KEY, linked);
+      write(toolKey, linked);
       write(OPEN_KEY, 'open');
       if (projectScoped(linked)) write(PROJECT_KEY, projectKey ?? '');
       try {
-        setMode(localStorage.getItem(MODE_KEY) === 'push' ? 'push' : 'overlay');
+        setMode(localStorage.getItem(modeKey) === 'push' ? 'push' : 'overlay');
       } catch {
         // Storage off: the defaults stay.
       }
@@ -70,7 +74,7 @@ export function useWorkspacePanel({
     }
     try {
       const savedOpen = localStorage.getItem(OPEN_KEY);
-      const storedTool = localStorage.getItem(TOOL_KEY);
+      const storedTool = localStorage.getItem(toolKey) ?? localStorage.getItem(TOOL_KEY);
       const tool = isToolId(storedTool) ? storedTool : 'chat';
       const staleProjectTool =
         projectScoped(tool) && localStorage.getItem(PROJECT_KEY) !== (projectKey ?? '');
@@ -87,11 +91,15 @@ export function useWorkspacePanel({
       );
       if (staleProjectTool) write(OPEN_KEY, 'closed');
       if (isToolId(storedTool)) setActiveTool(storedTool);
-      setMode(localStorage.getItem(MODE_KEY) === 'push' ? 'push' : 'overlay');
+      setMode(
+        (localStorage.getItem(modeKey) ?? localStorage.getItem(MODE_KEY)) === 'push'
+          ? 'push'
+          : 'overlay',
+      );
     } catch {
       return;
     }
-  }, [defaultOpen, projectKey]);
+  }, [defaultOpen, modeKey, projectKey, toolKey]);
 
   useEffect(() => {
     if (previousProjectKey.current === projectKey) return;
@@ -105,16 +113,23 @@ export function useWorkspacePanel({
       window.history.replaceState(window.history.state, '', url);
       setActiveTool(linked);
       setOpenState(true);
-      write(TOOL_KEY, linked);
+      write(toolKey, linked);
       write(OPEN_KEY, 'open');
       if (projectScoped(linked)) write(PROJECT_KEY, projectKey ?? '');
       return;
+    }
+    try {
+      const storedTool = localStorage.getItem(toolKey);
+      setActiveTool(isToolId(storedTool) ? storedTool : 'chat');
+      setMode(localStorage.getItem(modeKey) === 'push' ? 'push' : 'overlay');
+    } catch {
+      setActiveTool('chat');
     }
     if (open && projectScoped(activeTool)) {
       setOpenState(false);
       write(OPEN_KEY, 'closed');
     }
-  }, [activeTool, open, projectKey]);
+  }, [activeTool, modeKey, open, projectKey, toolKey]);
 
   const setOpen = useCallback((next: boolean) => {
     setOpenState(next);
@@ -126,11 +141,11 @@ export function useWorkspacePanel({
       setActiveTool(tool);
       setToolSession((current) => current + 1);
       setOpenState(true);
-      write(TOOL_KEY, tool);
+      write(toolKey, tool);
       write(OPEN_KEY, 'open');
       if (projectScoped(tool)) write(PROJECT_KEY, projectKey ?? '');
     },
-    [projectKey],
+    [projectKey, toolKey],
   );
 
   const toggleTool = useCallback(
@@ -147,10 +162,18 @@ export function useWorkspacePanel({
   const toggleMode = useCallback(() => {
     setMode((current) => {
       const next = current === 'overlay' ? 'push' : 'overlay';
-      write(MODE_KEY, next);
+      write(modeKey, next);
       return next;
     });
-  }, []);
+  }, [modeKey]);
+
+  const chooseMode = useCallback(
+    (next: WorkspacePanelMode) => {
+      setMode(next);
+      write(modeKey, next);
+    },
+    [modeKey],
+  );
 
   return {
     open: pinned || open,
@@ -162,5 +185,6 @@ export function useWorkspacePanel({
     openTool,
     toggleTool,
     toggleMode,
+    chooseMode,
   };
 }

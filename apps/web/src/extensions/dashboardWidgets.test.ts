@@ -22,18 +22,18 @@ describe('dashboard widgets', () => {
     const list = dashboardWidgets.list().sort((a, b) => a.order - b.order);
     assert.deepEqual(
       list.filter((w) => w.kind === 'figure').map((w) => w.id),
-      ['waiting', 'agents', 'tasks', 'limits', 'system', 'local-ai', 'updates'],
+      ['agents', 'tasks', 'limits', 'system', 'local-ai', 'updates'],
     );
     assert.deepEqual(
       list.filter((w) => w.kind === 'section').map((w) => w.id),
-      ['needs-you', 'my-tasks', 'running', 'schedules', 'projects'],
+      ['running', 'needs-you', 'finished', 'my-tasks', 'schedules', 'projects'],
     );
     assert.deepEqual(
       list.filter((w) => w.audience === 'owner').map((w) => w.id),
       ['limits', 'system', 'local-ai', 'updates'],
     );
     assert.equal(dashboardWidgets.get('projects')?.width, 'full');
-    assert.equal(dashboardWidgets.pluginOf('waiting'), 'helena.home');
+    assert.equal(dashboardWidgets.pluginOf('agents'), 'helena.home');
   });
 
   it('refuses a widget the page could not lay out', () => {

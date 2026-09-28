@@ -795,7 +795,9 @@
         "reasoning": "рассуждение"
       }
     },
-    "chatTemplate": "Шаблон сам не запускается. Добавьте его в проект как агента, чтобы попробовать здесь."
+    "chatTemplate": "Шаблон сам не запускается. Добавьте его в проект как агента, чтобы попробовать здесь.",
+    "allProjectsScope": "Project scope: all",
+    "allProjectsScopeHint": "May work in every current and future project of this team."
   },
   "members": {
     "roleSaved": "{name} теперь {role}",

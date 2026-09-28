@@ -1,22 +1,51 @@
 'use client';
 
-import type { ReactNode } from 'react';
-import { useProjectFeatures } from '@/hooks/useProjectFeatures';
+import { useEffect } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { BookOpen, Code2, StickyNote } from 'lucide-react';
 import { WorkspacePageHeader } from '@/components/layout/WorkspaceHeader';
-import { PageTabs } from '@/components/layout/PageToolbar';
-import { PageToolbarNavigationProvider } from '@/context/pageToolbarNavigation';
 import { usePermissions } from '@/hooks/usePermissions';
+import { useProjectFeatures } from '@/hooks/useProjectFeatures';
 import type { ProjectFileRoot } from '@/lib/api/endpoints/projectFiles';
 import { filesPath } from '@/utils/paths';
+import NotesPage from '@/features/notes/NotesPage';
+import { useNoteBoardQuery } from '@/features/notes/services/noteBoards.service';
 import FileBrowser from './components/FileBrowser';
 import { useFileNavigationGuard } from './hooks/useFileNavigationGuard';
 
-// A project's files: its vault folder ("Wissen") and its workspace ("Code"). The root,
-// the folder and the open file are in the address.
-export default function ProjectFilesPage({ boards }: { boards?: ReactNode }) {
+function LegacyBoard({
+  projectKey,
+  id,
+  canvas,
+}: {
+  projectKey: string;
+  id: number | null;
+  canvas: string | null;
+}) {
+  const router = useRouter();
+  const board = useNoteBoardQuery(projectKey, id);
+  useEffect(() => {
+    const vaultPath = canvas || board.data?.vaultPath;
+    if (!vaultPath) return;
+    const prefix = `Projects/${projectKey}/`;
+    if (!vaultPath.startsWith(prefix)) return;
+    const relative = vaultPath.slice(prefix.length);
+    router.replace(
+      filesPath(projectKey, relative.split('/').slice(0, -1).join('/'), { file: relative }),
+    );
+  }, [board.data, canvas, projectKey, router]);
+  useEffect(() => {
+    if (id === null && !canvas) router.replace(filesPath(projectKey, 'Boards'));
+  }, [id, canvas, projectKey, router]);
+  if (id !== null && board.data && !board.data.vaultPath) return <NotesPage />;
+  return (
+    <div role="status" className="p-6 text-sm text-muted-foreground">
+      {'Leinwand wird geöffnet …'}
+    </div>
+  );
+}
+
+export default function ProjectFilesPage() {
   const t = useTranslations('files');
   const navigation = useFileNavigationGuard();
   const { projectKey } = useParams<{ projectKey: string }>();
@@ -24,8 +53,7 @@ export default function ProjectFilesPage({ boards }: { boards?: ReactNode }) {
   const router = useRouter();
   const { can } = usePermissions();
   const features = useProjectFeatures();
-  const boardsEnabled = features.notes && can('note_boards', 'read');
-  const boardView = params.get('view') === 'boards' && boardsEnabled;
+  const boardView = params.get('view') === 'boards';
   const root: ProjectFileRoot = params.get('root') === 'code' ? 'code' : 'vault';
   const path = params.get('path') ?? '';
   const go = (next: { root?: ProjectFileRoot; path?: string; file?: string | null }) => {
@@ -38,41 +66,35 @@ export default function ProjectFilesPage({ boards }: { boards?: ReactNode }) {
       }),
     );
   };
-
-  const tabs = (
-    <PageTabs
-      label={t('title')}
-      value={boardView ? 'boards' : root}
-      onChange={(next) =>
-        next === 'boards'
-          ? navigation.canLeave() && router.push(`${filesPath(projectKey)}?view=boards`)
-          : go({ root: next as ProjectFileRoot, path: '' })
-      }
-      items={[
-        { value: 'vault', label: t('roots.vault'), icon: BookOpen },
-        ...(boardsEnabled
-          ? [{ value: 'boards', label: t('unified.boards'), icon: StickyNote }]
-          : []),
-        { value: 'code', label: t('roots.code'), icon: Code2 },
-      ]}
-    />
-  );
-
+  if (!features.documents && features.notes) return <NotesPage />;
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-      <WorkspacePageHeader title={t('title')} />
-      <div className="flex min-h-0 flex-1 flex-col p-4">
+      {root === 'code' && <WorkspacePageHeader title={t('title')} />}
+      <div
+        className={
+          root === 'vault' ? 'flex min-h-0 flex-1 flex-col' : 'flex min-h-0 flex-1 flex-col p-4'
+        }
+      >
         {boardView ? (
-          <PageToolbarNavigationProvider navigation={tabs}>{boards}</PageToolbarNavigationProvider>
+          <LegacyBoard
+            projectKey={projectKey}
+            id={Number(params.get('board')) || null}
+            canvas={params.get('canvas')}
+          />
         ) : (
           <FileBrowser
             key={root}
-            leading={tabs}
             onDirtyChange={navigation.onDirty}
             scope={{ kind: 'project', projectKey, root }}
             path={path}
             selected={params.get('file')}
             sourceOnly={params.get('source') === '1'}
+            createRequest={params.get('create')}
+            onCreateHandled={() => {
+              const next = new URLSearchParams(params.toString());
+              next.delete('create');
+              router.replace(`${filesPath(projectKey)}${next.size ? `?${next}` : ''}`);
+            }}
             rootLabel={t(`roots.${root}`)}
             permissions={{
               create: can('documents', 'create'),

@@ -28,7 +28,6 @@ moduleMock('store', {
 moduleMock('markdown', { extractLinks: () => [], noteTitle: () => '', splitNote: () => ({}) });
 moduleMock('canvas', { canvasText: () => '' });
 moduleMock('extract', { isExtractable: () => false });
-moduleMock('writers', { writtenByNotes: () => false });
 mock.module('@repo/storage/mime', () => ({ mimeFromName: () => 'message/rfc822' }));
 const { indexVaultPaths } = await import('../../indexer');
 try {

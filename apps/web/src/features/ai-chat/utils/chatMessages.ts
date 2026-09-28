@@ -1,5 +1,5 @@
 import type { ModelRoute } from '@/lib/api/endpoints/decisions';
-import type { LocalFallback } from '@/lib/api/endpoints/agentRuntimeSync';
+import type { LocalFallback, ModelCheck } from '@/lib/api/endpoints/agentRuntimeSync';
 import type { DynamicToolUIPart, UIMessage } from 'ai';
 import type { AiChatAttachment, AiChatMessage } from '@/lib/api/endpoints/agentChat';
 
@@ -28,6 +28,7 @@ export interface PlanChatMetadata {
   errorModel?: string | null;
   // What the model router did for the answer (decisions.md §4).
   modelRoute?: ModelRoute | null;
+  modelCheck?: ModelCheck | null;
   // A local model was asked for and the configured one answered (local-ai-platform.md §6.3).
   localFallback?: LocalFallback;
   // Said in the conversation mode, or answered by Helena's voice reply (voice-2.md §4).
@@ -94,6 +95,7 @@ export function toUIMessage(message: AiChatMessage): PlanUIMessage {
       ...(message.errorCode && { errorCode: message.errorCode }),
       ...(message.errorModel !== undefined && { errorModel: message.errorModel }),
       ...(message.modelRoute ? { modelRoute: message.modelRoute } : {}),
+      ...(message.modelCheck ? { modelCheck: message.modelCheck } : {}),
       ...(message.localFallback ? { localFallback: message.localFallback } : {}),
       ...(message.via ? { via: message.via } : {}),
     },

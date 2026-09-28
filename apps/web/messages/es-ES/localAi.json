@@ -33,7 +33,7 @@
     "eval-failed": "Evaluación no superada"
   },
   "jev": {
-    "label": "Jev / Laya (pasos del navegador)",
+    "label": "Jev (pasos del navegador)",
     "experimental": "Experimental",
     "connect": "Añadir una conexión",
     "title": "TypeSafe / JEV",
@@ -185,7 +185,9 @@
   "updates": {
     "label": "IA local",
     "hint": "Actualizar con native/local-ai/install.sh y volver a evaluar.",
-    "whisperBuildRequired": "Actualizar Whisper.cpp requiere una compilación ROCm fijada y una prueba de voz correcta. La instalación automática aún no está disponible."
+    "whisperBuildRequired": "Esta actualización requiere una compilación de Whisper y una prueba de voz verificadas.",
+    "whisperMaintenanceRequired": "Se requiere una ventana de mantenimiento de voz autorizada por Root. Comprueba de nuevo cuando esté abierta.",
+    "whisperRecoveryRequired": "La actualización anterior de Whisper requiere recuperación antes de reanudar la voz."
   },
   "pickerMark": "local",
   "tile": {
@@ -215,6 +217,14 @@
     "title": "Voz en el chat",
     "loading": "Cargando …",
     "failed": "No se pudieron cargar los ajustes de voz.",
+    "aliases": {
+      "title": "Correcciones de palabras reconocidas",
+      "hint": "Una corrección por línea: palabra reconocida → escritura deseada. Solo se sustituyen palabras completas. Las sugerencias provienen de nombres de proyectos y agentes.",
+      "placeholder": "Jeff → Jev",
+      "invalid": "Cada línea debe tener «reconocida → escrita».",
+      "reset": "Restaurar sugerencias",
+      "save": "Guardar ajustes de voz"
+    },
     "pause": {
       "title": "Pausa antes de la respuesta",
       "hint": "Cuánto tiempo debes callar antes de que Helena envíe tu frase. Más corta responde antes; más larga te interrumpe menos.",

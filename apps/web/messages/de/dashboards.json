@@ -43,7 +43,7 @@
     },
     "pulse": {
       "label": "Puls",
-      "description": "Heatmap der täglichen Aktivität im GitHub-Stil"
+      "description": "Kompakter Verlauf der Aktivität"
     },
     "throughput": {
       "label": "Durchsatz",
@@ -208,5 +208,19 @@
     "unassigned": "Nicht zugewiesen"
   },
   "deleteDashboard": "Dashboard löschen",
-  "deleteDashboardConfirm": "„{name}“ mit seinen Widgets löschen? Die Aufgaben bleiben unberührt."
+  "deleteDashboardConfirm": "„{name}“ mit seinen Widgets löschen? Die Aufgaben bleiben unberührt.",
+  "overview": {
+    "openTasks": "Aufgaben offen",
+    "total": "{count} insgesamt",
+    "inProgress": "In Arbeit",
+    "projectTasks": "Aufgaben im Projekt",
+    "agentsWorking": "Agenten arbeiten",
+    "running": "Läuft gerade",
+    "needsYou": "Braucht dich",
+    "approvalsAndQuestions": "Freigaben und Rückfragen",
+    "finished": "Zuletzt fertig",
+    "noRunning": "Gerade läuft kein Agent.",
+    "nothingWaiting": "Gerade wartet nichts auf dich.",
+    "noFinished": "Noch kein Lauf abgeschlossen."
+  }
 }

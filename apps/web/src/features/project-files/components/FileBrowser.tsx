@@ -19,6 +19,10 @@ import FileDropOverlay from './FileDropOverlay';
 import FileFolderContent from './FileFolderContent';
 import FileToolbar from './FileToolbar';
 import FileViewerActions from './FileViewerActions';
+import ProjectKnowledgeViewer from './ProjectKnowledgeViewer';
+import KnowledgeFolderView from './KnowledgeFolderView';
+import KnowledgeCanvas from './KnowledgeCanvas';
+import FileCreateMenu from './FileCreateMenu';
 
 export interface FilePermissions {
   create: boolean;
@@ -40,6 +44,8 @@ export default function FileBrowser({
   onSelect,
   onDirtyChange,
   sourceOnly = false,
+  createRequest,
+  onCreateHandled,
 }: {
   // The page's own controls that lead the header toolbar (the project's Wissen/Code tabs).
   leading?: ReactNode;
@@ -52,6 +58,8 @@ export default function FileBrowser({
   onSelect: (file: string | null) => void;
   onDirtyChange?: (dirty: boolean) => void;
   sourceOnly?: boolean;
+  createRequest?: string | null;
+  onCreateHandled?: () => void;
 }) {
   const client = useQueryClient();
   const { onDirty, canLeave } = useFileNavigationGuard(onDirtyChange);
@@ -73,8 +81,17 @@ export default function FileBrowser({
     edit: permissions.edit && writable,
     delete: permissions.delete && writable,
   };
+  useEffect(() => {
+    if (!createRequest || !can.create) return;
+    if (createRequest !== 'doc' && createRequest !== 'folder') return;
+    queueMicrotask(() => {
+      setDialog({ kind: createRequest === 'doc' ? 'newFile' : 'newFolder' });
+      onCreateHandled?.();
+    });
+  }, [createRequest, can.create, onCreateHandled]);
   const actions = useFileActions({
     scope,
+    inlineMarkdown: scope.kind === 'home' || scope.root === 'vault',
     listing: listing.data,
     onNavigate: navigate,
     onSelect: select,
@@ -128,10 +145,15 @@ export default function FileBrowser({
   }, [selected, vaultRoot, listing.isPending, listing.data, onSelect]);
   const items = visibleItems(listing.data?.items ?? [], view.filter, view.sort);
   const viewing = selected ? listing.data?.items.find((item) => item.path === selected) : undefined;
+  const knowledge = scope.kind === 'home' || scope.root === 'vault';
 
   return (
     <div
-      className="relative flex min-h-0 flex-1 flex-col gap-3"
+      className={
+        knowledge && viewing
+          ? 'relative flex min-h-0 flex-1 flex-col'
+          : 'relative flex min-h-0 flex-1 flex-col gap-3'
+      }
       {...transfers.dropHandlers}
       onClickCapture={(event) => {
         const target = event.target as Element;
@@ -145,42 +167,92 @@ export default function FileBrowser({
         }
       }}
     >
-      <FileToolbar
-        leading={leading}
-        view={view}
-        canCreate={can.create}
-        codeUrl={folderCodeUrl}
-        uploading={transfers.uploading}
-        onUpload={transfers.sendFiles}
-        onNewFolder={() => setDialog({ kind: 'newFolder' })}
-        onNewFile={() => setDialog({ kind: 'newFile' })}
-      />
-      <FileBreadcrumbs
-        rootLabel={rootLabel}
-        path={path}
-        drag={transfers.drag}
-        onNavigate={navigate}
-      />
+      {!knowledge && (
+        <FileToolbar
+          leading={leading}
+          view={view}
+          canCreate={can.create}
+          codeUrl={folderCodeUrl}
+          uploading={transfers.uploading}
+          onUpload={transfers.sendFiles}
+          onNewFolder={() => setDialog({ kind: 'newFolder' })}
+          onNewFile={() => setDialog({ kind: 'newFile' })}
+        />
+      )}
+      {!knowledge && (
+        <FileBreadcrumbs
+          rootLabel={rootLabel}
+          path={path}
+          drag={transfers.drag}
+          onNavigate={navigate}
+        />
+      )}
       {viewing ? (
-        <UnifiedFileViewer
-          key={viewing.path}
+        knowledge && /\.canvas$/i.test(viewing.name) ? (
+          <KnowledgeCanvas
+            key={viewing.path}
+            scope={scope}
+            path={viewing.path}
+            name={viewing.name}
+            editable={can.edit}
+            item={viewing}
+            actions={actions}
+            can={can}
+          />
+        ) : knowledge ? (
+          <ProjectKnowledgeViewer
+            key={viewing.path}
+            scope={scope}
+            path={viewing.path}
+            item={viewing}
+            canEdit={can.edit}
+            canDelete={can.delete}
+            sourceOnly={sourceOnly}
+            actions={actions}
+            onDirty={onDirty}
+            file={{
+              name: viewing.name,
+              contentType: viewing.contentType,
+              sizeBytes: viewing.sizeBytes,
+              url: fileRawUrl(scope, viewing.path),
+              vaultPath: actions.vaultPath(viewing),
+            }}
+          />
+        ) : (
+          <UnifiedFileViewer
+            key={viewing.path}
+            scope={scope}
+            path={viewing.path}
+            canEdit={can.edit}
+            onDirty={onDirty}
+            sourceOnly={sourceOnly}
+            file={{
+              name: viewing.name,
+              contentType: viewing.contentType,
+              sizeBytes: viewing.sizeBytes,
+              url: fileRawUrl(scope, viewing.path),
+              vaultPath: actions.vaultPath(viewing),
+            }}
+            actions={<FileViewerActions item={viewing} actions={actions} />}
+            onClose={() => {
+              onSelect(null);
+              refresh();
+            }}
+          />
+        )
+      ) : knowledge ? (
+        <KnowledgeFolderView
           scope={scope}
-          path={viewing.path}
-          canEdit={can.edit}
-          onDirty={onDirty}
-          sourceOnly={sourceOnly}
-          file={{
-            name: viewing.name,
-            contentType: viewing.contentType,
-            sizeBytes: viewing.sizeBytes,
-            url: fileRawUrl(scope, viewing.path),
-            vaultPath: actions.vaultPath(viewing),
-          }}
-          actions={<FileViewerActions item={viewing} actions={actions} />}
-          onClose={() => {
-            onSelect(null);
-            refresh();
-          }}
+          path={path}
+          items={items}
+          actions={actions}
+          can={can}
+          drag={transfers.drag}
+          onOpen={actions.open}
+          onNewFile={() => setDialog({ kind: 'newFile' })}
+          onNewCanvas={() => setDialog({ kind: 'newCanvas' })}
+          onNewFolder={() => setDialog({ kind: 'newFolder' })}
+          onUpload={transfers.sendFiles}
         />
       ) : (
         <div className="min-h-0 flex-1 overflow-y-auto">
@@ -198,6 +270,17 @@ export default function FileBrowser({
               drag={transfers.drag}
               selected={selected}
               codeUrl={folderCodeUrl}
+              createAction={
+                can.create ? (
+                  <FileCreateMenu
+                    onNewFile={() => setDialog({ kind: 'newFile' })}
+                    onNewFolder={() => setDialog({ kind: 'newFolder' })}
+                    onUpload={transfers.sendFiles}
+                    projectKey={scope.kind === 'project' ? scope.projectKey : null}
+                    uploading={transfers.uploading}
+                  />
+                ) : undefined
+              }
             />
           )}
         </div>

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef } from 'react';
 import { useTranslations } from 'next-intl';
+import { useTheme } from 'next-themes';
 import WorkspaceFrame from '@/components/layout/WorkspaceFrame';
 import { useProjectProvisioningQuery } from '@/services/projects.service';
 import { runtimeEnv } from '@/utils/runtimeEnv';
@@ -10,6 +11,7 @@ import type { WorkspaceContentProps } from '@/extensions/panelTools';
 import OwnerTerminalPanel from './OwnerTerminalPanel';
 import { attachTerminalClipboard } from './utils/terminalClipboard';
 import { terminalClipboardToasts } from './utils/terminalClipboardToasts';
+import { attachTerminalTheme } from '@/utils/terminalTheme';
 
 // The "terminal" tool in the Werkzeug-Panel: the owner terminal in Home, the
 // existing project terminal (a plain iframe, unchanged) everywhere else. See
@@ -18,6 +20,7 @@ import { terminalClipboardToasts } from './utils/terminalClipboardToasts';
 export default function TerminalWorkspace({ projectKey }: WorkspaceContentProps) {
   const t = useTranslations('nav.workspace');
   const tTerminal = useTranslations('ownerTerminal');
+  const { resolvedTheme } = useTheme();
   const workspaceConfig = runtimeEnv().workspace;
   const provisioning = useProjectProvisioningQuery(projectKey);
   const area = useRef<HTMLDivElement | null>(null);
@@ -49,11 +52,15 @@ export default function TerminalWorkspace({ projectKey }: WorkspaceContentProps)
       pressToCopy: (keys) => tTerminal('clipboard.pressToCopy', { keys }),
     });
     const detach = frame ? attachTerminalClipboard(frame, notes.copied, notes.pending) : undefined;
+    const detachTheme = frame
+      ? attachTerminalTheme(frame, resolvedTheme === 'light' ? 'light' : 'dark')
+      : undefined;
     return () => {
       observer.disconnect();
       detach?.();
+      detachTheme?.();
     };
-  }, [projectKey, url, tTerminal]);
+  }, [projectKey, url, tTerminal, resolvedTheme]);
 
   if (!projectKey) return <OwnerTerminalPanel />;
   if (!url) return null;

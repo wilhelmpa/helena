@@ -12,11 +12,10 @@ import {
   LimitsTiles,
   SystemTile,
   TasksTile,
-  WaitingTile,
 } from '@/features/home/dashboard/tiles/HomeTiles';
-import NeedsYouSection from '@/features/home/dashboard/sections/NeedsYouSection';
 import TasksSection from '@/features/home/dashboard/sections/TasksSection';
-import AgentsSection from '@/features/home/dashboard/sections/AgentsSection';
+import NeedsYouSection from '@/features/home/dashboard/sections/NeedsYouSection';
+import AgentsSection, { FinishedSection } from '@/features/home/dashboard/sections/AgentsSection';
 import SchedulesSection from '@/features/home/dashboard/sections/SchedulesSection';
 import ProjectsSection from '@/features/home/dashboard/sections/ProjectsSection';
 import { BUILTIN_NEEDS_YOU_SOURCES } from '@/features/home/dashboard/sources';
@@ -32,12 +31,11 @@ import { localAiNeedsYouSource } from '@/features/local-ai/services/localAiProbl
 // adds its tile, section or red problems here: one import and one line, nothing in the page.
 //
 // Figures (the row at the top), in their default order:
-//   waiting · agents · tasks · limits (one tile per subscription) · system · local-ai · updates
+//   agents · tasks · limits (one tile per subscription) · system · local-ai · updates
 // Sections (below; half-width ones pair up in two columns):
-//   needs-you · my-tasks · running · schedules · projects (full width)
+//   my-tasks · running · schedules · projects (full width)
 
 const BUILTINS = [
-  homeWidget({ id: 'waiting', kind: 'figure', group: 'work', order: 10, component: WaitingTile }),
   homeWidget({ id: 'agents', kind: 'figure', group: 'agents', order: 20, component: AgentsTile }),
   homeWidget({ id: 'tasks', kind: 'figure', group: 'work', order: 30, component: TasksTile }),
   homeWidget({
@@ -77,7 +75,7 @@ const BUILTINS = [
     id: 'needs-you',
     kind: 'section',
     group: 'work',
-    order: 10,
+    order: 20,
     rows: 4,
     component: NeedsYouSection,
   }),
@@ -85,7 +83,7 @@ const BUILTINS = [
     id: 'my-tasks',
     kind: 'section',
     group: 'work',
-    order: 20,
+    order: 40,
     rows: 7,
     component: TasksSection,
   }),
@@ -93,9 +91,17 @@ const BUILTINS = [
     id: 'running',
     kind: 'section',
     group: 'agents',
-    order: 30,
+    order: 10,
     rows: 5,
     component: AgentsSection,
+  }),
+  homeWidget({
+    id: 'finished',
+    kind: 'section',
+    group: 'agents',
+    order: 30,
+    rows: 3,
+    component: FinishedSection,
   }),
   homeWidget({
     id: 'schedules',

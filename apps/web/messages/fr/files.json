@@ -1,4 +1,11 @@
 {
+  "fixedFolders": {
+    "Docs": "Documents",
+    "Files": "Fichiers",
+    "Assets": "Pièces jointes",
+    "Boards": "Toiles",
+    "Inbox": "Entrée"
+  },
   "title": "Fichiers",
   "projectDescription": "Documents, pièces jointes et code de ce projet",
   "roots": {
@@ -53,9 +60,8 @@
     "rename": "Renommer",
     "move": "Déplacer",
     "copyPath": "Copier le chemin",
-    "openInNotes": "Ouvrir dans Notes",
     "openInCode": "Ouvrir dans VS Code",
-    "openInDocs": "Ouvrir dans Docs",
+    "openInDocs": "Ouvrir dans Connaissances",
     "linkToTask": "Lier à une tâche",
     "trash": "Mettre à la corbeille",
     "showInFolder": "Afficher dans le dossier"
@@ -67,7 +73,7 @@
     "name": "Nom",
     "folderName": "Nouveau dossier",
     "fileName": "Note.md",
-    "fileHint": "Un fichier .md ou .txt. Une note Markdown s'ouvre dans Docs.",
+    "fileHint": "Fichier .md ou .txt. Markdown s’ouvre dans Connaissances.",
     "create": "Créer",
     "save": "Enregistrer",
     "cancel": "Annuler"
@@ -117,9 +123,6 @@
     "original": "Shared original file",
     "save": "Save",
     "content": "File content",
-    "isolatedOrigin": "SilverBullet is not safely available on this connection. Use the Helena editor.",
-    "notesSlow": "SilverBullet is not responding. Use the editor or reload.",
-    "notesHelp": "If this connection needs sign-in or does not load, the Helena editor remains available.",
     "reload": "Reload",
     "discard": "Discard the unsaved draft?",
     "editor": "Helena editor",
@@ -130,11 +133,10 @@
     "searchScope": "Names and contents in {root}",
     "noResults": "No matches.",
     "refine": "First 50 matches. Refine your search.",
-    "boards": "Boards",
+    "boards": "Toiles",
     "references": "Sources and references",
     "author": "Edited by {author}",
     "run": "Run {run}",
-    "silverBullet": "SilverBullet",
     "formatted": "Formatted text",
     "source": "Markdown source",
     "sourceRequired": "This file contains Markdown the formatted editor cannot preserve. Edit the source to keep all content.",

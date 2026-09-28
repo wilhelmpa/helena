@@ -1,0 +1,35 @@
+{
+  "name": "helena-themes",
+  "displayName": "Helena Themes",
+  "description": "Helena colors for code-server",
+  "publisher": "helena",
+  "version": "1.0.0",
+  "engines": { "vscode": "^1.96.0" },
+  "categories": ["Themes"],
+  "browser": "./theme-sync.js",
+  "extensionKind": ["ui"],
+  "activationEvents": ["onStartupFinished"],
+  "contributes": {
+    "themes": [
+      { "label": "Helena Dark", "uiTheme": "vs-dark", "path": "./themes/dark.json" },
+      { "label": "Helena Light", "uiTheme": "vs", "path": "./themes/light.json" }
+    ],
+    "iconThemes": [
+      { "id": "helena-minimal", "label": "Helena Minimal", "path": "./icons/icons.json" }
+    ],
+    "configurationDefaults": {
+      "workbench.colorTheme": "Helena Dark",
+      "workbench.iconTheme": "helena-minimal",
+      "workbench.preferredDarkColorTheme": "Helena Dark",
+      "workbench.preferredLightColorTheme": "Helena Light",
+      "editor.fontFamily": "JetBrains Mono, monospace",
+      "editor.fontSize": 13,
+      "editor.lineHeight": 19,
+      "terminal.integrated.fontFamily": "JetBrains Mono, monospace",
+      "terminal.integrated.fontSize": 13,
+      "terminal.integrated.lineHeight": 1.25,
+      "workbench.tree.indent": 16,
+      "workbench.tree.renderIndentGuides": "none"
+    }
+  }
+}

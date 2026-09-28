@@ -1,8 +1,7 @@
 // Reading the header of a WAV recording the chat's dictation or conversation mode uploads.
 // Lemonade's transcription endpoint takes WAV only (docs: "Only `wav` audio input is currently
 // supported"), so the browser records, decodes and encodes 16 kHz mono PCM itself, and the API
-// checks what arrived before it goes on: a RIFF/WAVE file with a PCM format chunk and one data
-// chunk, whose length gives the exact duration the limits are measured against.
+// checks the RIFF/WAVE structure and duration, then converts PCM to 16 kHz mono when needed.
 
 export interface WavInfo {
   sampleRate: number;
@@ -40,6 +39,89 @@ export function canonicalWav(bytes: Uint8Array, info: WavInfo): Uint8Array {
   view.setUint32(40, info.dataBytes, true);
   out.set(bytes.subarray(info.dataOffset, info.dataOffset + info.dataBytes), 44);
   return out;
+}
+
+export function whisperWav(bytes: Uint8Array, info: WavInfo): Uint8Array {
+  if (info.sampleRate === 16_000 && info.channels === 1 && info.bitsPerSample === 16)
+    return canonicalWav(bytes, info);
+
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  const bytesPerSample = info.bitsPerSample / 8;
+  const frames = info.dataBytes / (bytesPerSample * info.channels);
+  const mono = new Float32Array(frames);
+  for (let frame = 0; frame < frames; frame += 1) {
+    let sum = 0;
+    for (let channel = 0; channel < info.channels; channel += 1) {
+      const offset = info.dataOffset + (frame * info.channels + channel) * bytesPerSample;
+      let sample: number;
+      switch (info.bitsPerSample) {
+        case 8:
+          sample = (view.getUint8(offset) - 128) / 128;
+          break;
+        case 16:
+          sample = view.getInt16(offset, true) / 32768;
+          break;
+        case 24:
+          sample =
+            ((view.getUint8(offset) |
+              (view.getUint8(offset + 1) << 8) |
+              (view.getUint8(offset + 2) << 16)) <<
+              8) /
+            2147483648;
+          break;
+        default:
+          sample = view.getInt32(offset, true) / 2147483648;
+      }
+      sum += sample;
+    }
+    mono[frame] = sum / info.channels;
+  }
+
+  const targetRate = 16_000;
+  const length = Math.round((frames * targetRate) / info.sampleRate);
+  const output = new Uint8Array(44 + length * 2);
+  const header = new DataView(output.buffer);
+  for (const [offset, label] of [
+    [0, 'RIFF'],
+    [8, 'WAVE'],
+    [12, 'fmt '],
+    [36, 'data'],
+  ] as const)
+    for (let index = 0; index < 4; index += 1)
+      header.setUint8(offset + index, label.charCodeAt(index));
+  header.setUint32(4, 36 + length * 2, true);
+  header.setUint32(16, 16, true);
+  header.setUint16(20, 1, true);
+  header.setUint16(22, 1, true);
+  header.setUint32(24, targetRate, true);
+  header.setUint32(28, targetRate * 2, true);
+  header.setUint16(32, 2, true);
+  header.setUint16(34, 16, true);
+  header.setUint32(40, length * 2, true);
+
+  const cutoff = Math.min(1, targetRate / info.sampleRate);
+  const radius = 16 / cutoff;
+  for (let index = 0; index < length; index += 1) {
+    const center = (index * info.sampleRate) / targetRate;
+    let weighted = 0;
+    let weights = 0;
+    for (
+      let source = Math.max(0, Math.ceil(center - radius));
+      source <= Math.min(frames - 1, Math.floor(center + radius));
+      source += 1
+    ) {
+      const distance = source - center;
+      const phase = Math.PI * distance * cutoff;
+      const sinc = phase === 0 ? 1 : Math.sin(phase) / phase;
+      const window = 0.5 + 0.5 * Math.cos((Math.PI * distance) / radius);
+      const weight = cutoff * sinc * window;
+      weighted += mono[source]! * weight;
+      weights += weight;
+    }
+    const sample = Math.max(-1, Math.min(1, weights ? weighted / weights : 0));
+    header.setInt16(44 + index * 2, sample < 0 ? sample * 32768 : sample * 32767, true);
+  }
+  return output;
 }
 
 const PCM = 1;

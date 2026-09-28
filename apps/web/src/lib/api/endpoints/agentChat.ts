@@ -1,5 +1,5 @@
 import type { ModelRoute } from '@/lib/api/endpoints/decisions';
-import type { LocalFallback } from '@/lib/api/endpoints/agentRuntimeSync';
+import type { LocalFallback, ModelCheck } from '@/lib/api/endpoints/agentRuntimeSync';
 import { API_URL, ApiError, apiFailure, request } from '@/lib/api/core/client';
 import { pageQuery, type Page, type PageParams } from '@/lib/api/core/paging';
 import { EventSourceParserStream, type EventSourceMessage } from 'eventsource-parser/stream';
@@ -270,6 +270,7 @@ export interface AiChatMessage {
   errorModel?: string | null;
   // What the model router did for the answer (docs/helena-decisions/decisions.md §4).
   modelRoute?: ModelRoute | null;
+  modelCheck?: ModelCheck | null;
   // A local model was asked for and the configured one answered.
   localFallback?: LocalFallback;
   // Said in the conversation mode, or answered by Helena's voice reply.
@@ -329,6 +330,7 @@ export interface UnavailableChatModel {
 
 export interface AiChatCatalog {
   models: AiChatModel[];
+  localModels?: AiChatModel[];
   // Absent from an older server.
   unavailable?: UnavailableChatModel[];
   updatedAt: string | null;
@@ -336,6 +338,18 @@ export interface AiChatCatalog {
 
 export const getAiAgentChatCatalog = (scopeKey: string, agentId: number) =>
   request<AiChatCatalog>(agentChatBase(scopeKey, agentId) + '/chat/catalog');
+
+export const getAiAgentChatEvents = (
+  teamId: number,
+  agentId: number,
+  messageId: number,
+  after = 0,
+) =>
+  request<{
+    items: { id: number; event: AgUiEvent }[];
+    nextCursor: number | null;
+    hasMore: boolean;
+  }>(`${agentChatBase(`team:${teamId}`, agentId)}/chat/${messageId}/events?after=${after}`);
 
 // One page of the caller's own chat threads with an agent, newest first. `q` searches
 // them by title and message text instead, over every page.
@@ -410,6 +424,7 @@ export const sendAiAgentChat = (
     thinkingLevel?: string | null;
     // Said in the conversation mode: the agent answers short and speakable.
     via?: 'voice';
+    context?: { projectKey: string | null; path: string };
   },
 ) =>
   request<{ threadId: string; messageId: number; userMessageId: number }>(

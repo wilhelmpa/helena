@@ -6,7 +6,7 @@ import {
   integrationCredential,
   project,
 } from '@repo/db';
-import { and, desc, eq, gte, lt, sql } from 'drizzle-orm';
+import { and, desc, eq, gte, inArray, lt, lte, sql } from 'drizzle-orm';
 import { HttpError, iso } from '#shared/lib';
 import { connectionIsLocal, loadConnection } from '#modules/browser-task/connection';
 import { decisionClass, decisionClasses } from './classes';
@@ -315,8 +315,20 @@ export interface DecisionLogEntry {
 
 export async function listDecisions(
   teamId: number,
-  query: { classId?: string; status?: string; before?: number; limit?: number; subject?: string },
+  query: {
+    classId?: string;
+    agentId?: number;
+    status?: string;
+    before?: number;
+    limit?: number;
+    subject?: string;
+    projectKey?: string;
+    projectIds?: number[];
+    from?: Date;
+    to?: Date;
+  },
 ): Promise<{ items: DecisionLogEntry[]; nextBefore: number | null }> {
+  if (query.projectIds?.length === 0) return { items: [], nextBefore: null };
   const limit = Math.max(1, Math.min(200, query.limit ?? 50));
   const rows = await db
     .select({
@@ -331,9 +343,14 @@ export async function listDecisions(
       and(
         eq(helenaDecision.teamId, teamId),
         query.classId ? eq(helenaDecision.classId, query.classId) : undefined,
+        query.agentId ? eq(helenaDecision.agentId, query.agentId) : undefined,
         query.status ? eq(helenaDecision.status, query.status) : undefined,
         query.subject ? eq(helenaDecision.subject, query.subject) : undefined,
         query.before ? lt(helenaDecision.id, query.before) : undefined,
+        query.projectKey ? eq(project.key, query.projectKey) : undefined,
+        query.projectIds ? inArray(helenaDecision.projectId, query.projectIds) : undefined,
+        query.from ? gte(helenaDecision.createdAt, query.from) : undefined,
+        query.to ? lte(helenaDecision.createdAt, query.to) : undefined,
       ),
     )
     .orderBy(desc(helenaDecision.id))

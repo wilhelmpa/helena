@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { PanelHeaderSlotCtx } from '@/context/panelHeaderSlot';
 import { useTranslations } from 'next-intl';
+import { useTheme } from 'next-themes';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useBrowserPreferences } from '@/hooks/useBrowserPreferences';
 import type { WorkspacePanelMode } from '@/hooks/useWorkspacePanel';
@@ -16,9 +17,12 @@ import { usePanelToolLabel } from '@/extensions/pluginPanelTools';
 import { cn } from '@/lib/utils';
 import WorkspaceAreaHeader from './WorkspaceAreaHeader';
 import WorkspaceBrowserBar from './WorkspaceBrowserBar';
+import { useBrowserColorScheme } from './WorkspaceBrowserColorScheme';
 import WorkspaceBrowserLive from './WorkspaceBrowserLive';
 import WorkspaceFrame from './WorkspaceFrame';
 import WorkspacePanelHeader from './WorkspacePanelHeader';
+import WorkspaceTabBar from './WorkspaceTabBar';
+import type { useWorkspaceTabs } from '@/hooks/useWorkspaceTabs';
 import WorkspaceToolPicker from './WorkspaceToolPicker';
 import WorkspaceUnavailable from './WorkspaceUnavailable';
 
@@ -60,6 +64,12 @@ export default function WorkspacePanel({
   onPickTool,
   onCloseArea,
   onClose,
+  tabs,
+  activeTool,
+  layoutId,
+  onSelectTab,
+  onCloseTab,
+  onChooseLayout,
 }: {
   areas: PanelArea[];
   contextProjectKey: string | null;
@@ -76,6 +86,12 @@ export default function WorkspacePanel({
   onPickTool: (areaId: string, tool: WorkspaceToolId) => void;
   onCloseArea: (areaId: string) => void;
   onClose: () => void;
+  tabs: ReturnType<typeof useWorkspaceTabs>;
+  activeTool: string;
+  layoutId: string;
+  onSelectTab: (tool: string) => void;
+  onCloseTab: (key: string) => void;
+  onChooseLayout: (choice: 'side' | 'split' | 'full') => void;
 }) {
   const t = useTranslations('nav.workspace');
   const isMobile = useIsMobile();
@@ -120,6 +136,8 @@ export default function WorkspacePanel({
   const [advanced, setAdvanced] = useState(false);
   const browserPreferences = useBrowserPreferences();
   const browserBase = tools.browser.url ? browserControlBase(tools.browser.url) : null;
+  const { theme, resolvedTheme } = useTheme();
+  const browserColorScheme = useBrowserColorScheme(browserBase, theme, resolvedTheme);
   // The live view needs the browser router's control routes next to the VNC stream.
   const browserLive = browserPreferences.view === 'live' && browserBase !== null;
   const [frames, setFrames] = useState<
@@ -234,6 +252,16 @@ export default function WorkspacePanel({
       onViewChange={browserPreferences.setView}
       followAgent={browserPreferences.followAgent}
       onToggleFollowAgent={browserPreferences.toggleFollowAgent}
+      lossless={browserPreferences.lossless}
+      onToggleLossless={browserPreferences.toggleLossless}
+      externalUrl={visible.find((entry) => entry.id === 'browser')?.url ?? null}
+      onReloadFrame={() => {
+        const key = visible.find((entry) => entry.id === 'browser')?.key;
+        if (key) setFrameReloads((current) => ({ ...current, [key]: (current[key] ?? 0) + 1 }));
+      }}
+      colorMode={browserColorScheme.mode}
+      colorModeLoaded={browserColorScheme.loaded}
+      onColorModeChange={browserColorScheme.setMode}
     />
   ) : undefined;
 
@@ -277,9 +305,10 @@ export default function WorkspacePanel({
         <div
           key={`surface:${entry.area.id}`}
           aria-hidden="true"
+          data-panel-part={entry.area.main ? 'surface' : undefined}
           className={cn(
             'min-w-0 bg-background',
-            !full && 'border-s',
+            !full && 'border-s border-border/30',
             layer,
             overlay && 'shadow-[var(--side-panel-shadow)]',
           )}
@@ -291,25 +320,33 @@ export default function WorkspacePanel({
         entry.area.main ? (
           <div
             key={`header:${entry.area.id}`}
+            data-panel-part="header"
+            data-panel-tool={entry.id}
             className={cn('min-w-0', layer)}
             style={place(entry.area, '1')}
           >
+            <WorkspaceTabBar
+              tabs={tabs}
+              activeTool={activeTool}
+              browserBase={browserBase}
+              layoutId={layoutId}
+              onSelectTool={onSelectTab}
+              onCloseTab={onCloseTab}
+              onChooseLayout={onChooseLayout}
+              onClose={onClose}
+            />
             <WorkspacePanelHeader
               title={advanced ? t('advanced') : entry.label}
               advanced={advanced}
               canExpandChat={entry.id === 'chat' && !!entryOf('chat').advancedUrl}
-              canToggleBrowserLossless={
-                visible.some((shown) => shown.id === 'browser' && !!tools.browser.url) &&
-                browserPreferences.ready &&
-                !browserLive
-              }
+              canToggleBrowserLossless={false}
               browserLossless={browserPreferences.lossless}
-              externalUrl={entry.content ? null : entry.url}
+              externalUrl={entry.id === 'browser' || entry.content ? null : entry.url}
               isMobile={isMobile}
               full={full}
               mode={mode}
               closable={closable}
-              picker={isMobile ? null : picker(entry.area)}
+              picker={null}
               toolbar={entry.id === 'browser' ? browserBar : undefined}
               slotRef={slotRef(entry.area.id)}
               onToggleAdvanced={() => setAdvanced((current) => !current)}
@@ -323,6 +360,7 @@ export default function WorkspacePanel({
                 }))
               }
               onClose={onClose}
+              tabbed
             />
           </div>
         ) : (
@@ -354,6 +392,8 @@ export default function WorkspacePanel({
           // Kept in the list while hidden, so switching back or moving it never reloads it.
           <div
             key={frame.key}
+            data-panel-part={area?.main ? 'content' : undefined}
+            data-panel-tool={area?.main ? frame.tool : undefined}
             role="region"
             aria-label={frame.title}
             className={cn('flex min-h-0 min-w-0 flex-col', layer, !area && 'hidden')}
@@ -363,12 +403,14 @@ export default function WorkspacePanel({
               <WorkspaceBrowserLive
                 base={liveBase}
                 followAgent={browserPreferences.followAgent}
+                controlSlot={area ? slots[area.id] : null}
                 {...props}
               />
             ) : (
               <WorkspaceFrame
                 url={frame.url}
                 title={frame.title}
+                helenaCode={frame.tool === 'code'}
                 sandbox={frame.sandboxed ? 'allow-scripts allow-forms' : undefined}
                 {...props}
               />
@@ -383,6 +425,8 @@ export default function WorkspacePanel({
         return ToolContent ? (
           <div
             key={`${id}:${contextProjectKey ?? 'global'}`}
+            data-panel-part={area?.main ? 'content' : undefined}
+            data-panel-tool={area?.main ? id : undefined}
             role="region"
             aria-label={labels[id] ?? id}
             className={cn(
@@ -410,6 +454,7 @@ export default function WorkspacePanel({
         .map((entry) => (
           <div
             key={`unavailable:${entry.area.id}`}
+            data-panel-part={entry.area.main ? 'content' : undefined}
             className={cn('flex min-h-0 min-w-0', layer)}
             style={place(entry.area, '2')}
           >

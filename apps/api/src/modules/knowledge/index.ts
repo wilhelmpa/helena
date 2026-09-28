@@ -288,7 +288,7 @@ export const knowledgeRoutes = new Elysia({
       response: { 201: PathResponse, ...commonErrors, ...errors(409, 413) },
       detail: {
         summary: 'Add a file to a note',
-        description: "Stores the file in the Assets folder of the note's project.",
+        description: 'Stores the file beside the note.',
       },
     },
   )

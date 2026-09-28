@@ -27,7 +27,7 @@ import { getDefaultRoleId } from '#modules/roles/service';
 import { deleteAccount } from '#shared/account-deletion';
 import { runtimeFileKind } from '../runtime-files/paths';
 import { maxTurnsLimit, runBudgetSecondsLimit } from '../model';
-import { isHomeAgent, notHomeAgent } from './home-agent';
+import { notHomeAgent } from './home-agent';
 import { nextHeartbeatAt, validateHeartbeatClock, type HeartbeatClock } from './heartbeat-time';
 import { copyAgentBudgets, copyAgentLevel } from '#modules/autopilot/copy';
 import { agentModelRefusal } from '#modules/model-availability/service';
@@ -421,6 +421,8 @@ export interface AiAgentRow {
   name: string;
   username: string;
   kind: AgentKind;
+  agentRole: 'agent' | 'home';
+  projectScope: 'selected' | 'all';
   model: string | null;
   instructions: string | null;
   runtimePolicy: AgentRuntimePolicy;
@@ -490,6 +492,8 @@ function mapAgent(row: {
   name: string;
   username: string;
   kind: string;
+  agentRole: string;
+  projectScope: string;
   model: string | null;
   instructions: string | null;
   runtimePolicy: unknown;
@@ -533,6 +537,8 @@ function mapAgent(row: {
     name: row.name,
     username: row.username,
     kind: row.kind as AgentKind,
+    agentRole: row.agentRole as 'agent' | 'home',
+    projectScope: row.projectScope as 'selected' | 'all',
     model: row.model,
     instructions: row.instructions,
     runtimePolicy: normalizeRuntimePolicy(row.runtimePolicy),
@@ -584,6 +590,8 @@ const agentColumns = {
   name: user.name,
   username: aiAgent.username,
   kind: aiAgent.kind,
+  agentRole: aiAgent.agentRole,
+  projectScope: aiAgent.projectScope,
   model: aiAgent.model,
   instructions: aiAgent.instructions,
   runtimePolicy: aiAgent.runtimePolicy,
@@ -1016,6 +1024,11 @@ async function resolveTeamProjectIds(teamId: number, projectIds: number[]): Prom
   return rows.map((row) => row.id);
 }
 
+async function allTeamProjectIds(teamId: number): Promise<number[]> {
+  const rows = await db.select({ id: project.id }).from(project).where(eq(project.teamId, teamId));
+  return rows.map((row) => row.id);
+}
+
 export interface NewAgentInput {
   name: string;
   username: string;
@@ -1042,6 +1055,9 @@ export interface NewAgentInput {
   // The projects of the team the agent works in. Empty means it works in none yet:
   // it authenticates and reaches nothing until it is attached to one.
   projectIds?: number[];
+  projectScope?: 'selected' | 'all';
+  // Set only by the internal bootstrap, never by the public route.
+  agentRole?: 'agent' | 'home';
   // The project the agent is created in, in place of projectIds: it works in that
   // project only, as a specialist reporting to the project's coordinator.
   projectId?: number;
@@ -1150,13 +1166,23 @@ export async function createAgent(
 ): Promise<{ agent: AiAgentRow; apiKey: string }> {
   const userId = crypto.randomUUID();
   const email = `${userId}@agents.local`;
-  if (input.template && (input.projectId != null || (input.projectIds?.length ?? 0) > 0)) {
+  if (
+    input.template &&
+    (input.projectId != null || (input.projectIds?.length ?? 0) > 0 || input.projectScope === 'all')
+  ) {
     throw new HttpError(400, 'A template joins no project');
+  }
+  if (input.projectId != null && input.projectScope === 'all') {
+    throw new HttpError(400, 'A project specialist cannot have all-project scope');
   }
   await assertUsernameFree(teamId, input.username);
   const projectIds = await resolveTeamProjectIds(
     teamId,
-    input.projectId != null ? [input.projectId] : (input.projectIds ?? []),
+    input.projectScope === 'all'
+      ? await allTeamProjectIds(teamId)
+      : input.projectId != null
+        ? [input.projectId]
+        : (input.projectIds ?? []),
   );
   const coordinatorId =
     input.projectId != null ? await projectCoordinatorId(teamId, input.projectId) : null;
@@ -1187,6 +1213,8 @@ export async function createAgent(
           teamId,
           userId,
           username: input.username,
+          agentRole: input.agentRole ?? 'agent',
+          projectScope: input.projectScope ?? 'selected',
           kind: 'external',
           model: input.model ?? null,
           instructions: input.instructions ?? null,
@@ -1355,6 +1383,7 @@ export interface AgentPatch {
   // The projects the agent works in. Replaces the set, so a project left out is
   // detached.
   projectIds?: number[];
+  projectScope?: 'selected' | 'all';
   model?: string | null;
   instructions?: string | null;
   runtimePolicy?: AgentRuntimePolicy;
@@ -1383,12 +1412,15 @@ export async function updateAgent(
 ): Promise<AiAgentRow | null> {
   const agent = await getAgentById(id, teamId);
   if (!agent) return null;
-  if (patch.template && isHomeAgent(agent.username)) {
+  if (patch.template && agent.agentRole === 'home') {
     throw new HttpError(400, 'The Home agent cannot be a template');
   }
   const template = patch.template ?? agent.template;
   if (template && (patch.projectIds?.length ?? 0) > 0) {
     throw new HttpError(400, 'A template joins no project');
+  }
+  if (template && patch.projectScope === 'all') {
+    throw new HttpError(400, 'A template cannot have all-project scope');
   }
 
   // The display name lives on the bot user.
@@ -1457,6 +1489,12 @@ export async function updateAgent(
   if (patch.delegationDelaySec !== undefined) set.delegationDelaySec = patch.delegationDelaySec;
   if (patch.maxConcurrentChats !== undefined) set.maxConcurrentChats = patch.maxConcurrentChats;
   if (patch.template !== undefined) set.template = patch.template;
+  const projectScope = template
+    ? 'selected'
+    : (patch.projectScope ?? (patch.projectIds !== undefined ? 'selected' : agent.projectScope));
+  if (projectScope !== agent.projectScope) {
+    set.projectScope = projectScope;
+  }
   // The scope and its owner are one setting: 'owner' means the runs of the member who
   // chose it, so switching to it hands the agent to them.
   if (patch.runnerScope !== undefined) {
@@ -1477,7 +1515,11 @@ export async function updateAgent(
   // The projects go first, so a field trigger of a project the same call attaches is
   // kept rather than dropped as unknown.
   const previousProjectIds = agent.projects.map((p) => p.id);
-  const wanted = template ? [] : patch.projectIds;
+  const wanted = template
+    ? []
+    : projectScope === 'all' && (patch.projectScope !== undefined || patch.projectIds !== undefined)
+      ? await allTeamProjectIds(teamId)
+      : patch.projectIds;
   const projectIds =
     wanted !== undefined ? await setAgentProjects(agent, wanted) : previousProjectIds;
   if (patch.fieldTriggers !== undefined) {

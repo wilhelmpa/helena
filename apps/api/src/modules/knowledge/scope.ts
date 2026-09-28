@@ -89,14 +89,20 @@ export async function vaultScope(
     .from(userTable)
     .where(eq(userTable.id, caller.id));
   const [agent] = await db
-    .select({ username: aiAgent.username, teamId: aiAgent.teamId })
+    .select({
+      username: aiAgent.username,
+      teamId: aiAgent.teamId,
+      agentRole: aiAgent.agentRole,
+      projectScope: aiAgent.projectScope,
+    })
     .from(aiAgent)
     .where(eq(aiAgent.userId, caller.id));
-  const homeAgent = agent ? isHomeAgent(agent.username) : false;
+  const allProjects = agent?.projectScope === 'all';
+  const homeAgent = agent ? isHomeAgent(agent.agentRole) : false;
   const reachable = (row: ProjectFlags) =>
     row.documentsEnabled && (!viaMcp || (row.mcpEnabled && row.teamMcpEnabled));
   const projects = new Map<string, Access>();
-  if (homeAgent) {
+  if (allProjects) {
     for (const row of await teamProjects(agent.teamId)) {
       if (reachable(row)) projects.set(row.key, { read: true, write: false });
     }

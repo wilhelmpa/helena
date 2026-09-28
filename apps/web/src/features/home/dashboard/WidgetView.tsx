@@ -8,6 +8,7 @@ import { RowEmpty } from '@/components/common/page/RowList';
 import { byKey } from '@/utils/messageKey';
 import type { DashboardWidget } from '@/extensions/dashboardWidgets';
 import { DashboardSection, FigureTile, SkeletonRows } from './DashboardParts';
+import { Card } from '@/components/helena/DashboardPrimitives';
 
 // A widget's name in the reader's language: a built-in's from the message files, a
 // plugin's from the texts it brings.
@@ -70,9 +71,7 @@ export default function WidgetView({ widget }: { widget: DashboardWidget }) {
       />
     );
     return widget.kind === 'figure' ? (
-      <div className="min-w-0 overflow-hidden rounded-lg border border-sidebar-border bg-card">
-        {frame}
-      </div>
+      <Card className="min-w-0 overflow-hidden">{frame}</Card>
     ) : (
       <DashboardSection label={label(widget)}>{frame}</DashboardSection>
     );

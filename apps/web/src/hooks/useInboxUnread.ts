@@ -4,19 +4,17 @@ import { qk } from '@/services/queryKeys';
 import { revScope } from '@/utils/revScopes';
 import { useLiveRefresh } from './useLiveRefresh';
 
-// A project's unread notification count, for the sidebar badge and the inbox
-// header. Refetched by the inbox scope of the sync provider, so it needs no
-// interval of its own. Lives in the shared layer so both the sidebar and the inbox
-// feature can use it.
+// Unread notifications in one project, or across Home when both arguments are null.
+// Project counts refresh through the inbox revision scope; mutations invalidate Home.
 export function useInboxUnread(projectKey: string | null, projectId: number | null) {
   useLiveRefresh({
     scope: projectId != null ? revScope.inbox(projectId) : null,
-    targets: [qk.notificationsUnread(projectKey ?? '')],
+    targets: [qk.notificationsUnread(projectKey ?? 'global')],
   });
   return useQuery({
-    queryKey: qk.notificationsUnread(projectKey ?? ''),
-    queryFn: () => getUnreadCount(projectId as number),
-    enabled: projectKey != null && projectId != null,
+    queryKey: qk.notificationsUnread(projectKey ?? 'global'),
+    queryFn: () => getUnreadCount(projectId),
+    enabled: projectKey == null || projectId != null,
     select: (d) => d.unread,
   });
 }

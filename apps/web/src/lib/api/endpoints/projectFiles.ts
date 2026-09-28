@@ -128,6 +128,7 @@ export async function extractedText(vaultPath: string): Promise<string | null> {
 export const getFileReferences = (scope: FileScope, path: string) =>
   request<{
     author: string | null;
+    authorKind: 'agent' | 'user' | null;
     runId: number | null;
     links: { kind: string; title: string; href: string }[];
   }>(url(scope, '/references', { path }));

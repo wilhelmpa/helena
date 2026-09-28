@@ -123,7 +123,8 @@ entry_state() {
   [[ -s $entry_env && -s $entry_map ]] || { echo "missing (install.sh --apply entry-token)"; return; }
   local a b
   a=$(sed -n 's/^HELENA_EDGE_ENTRY_TOKEN=//p' "$entry_env" | sha256sum | cut -c1-12)
-  b=$(grep -o '"[0-9a-f]\{64\}"' "$entry_map" | tr -d '"' | sha256sum | cut -c1-12)
+  # The strict LAN entry shares the same proof but adds a second map key.
+  b=$(grep -o '"[0-9a-f]\{64\}"' "$entry_map" | tr -d '"' | sort -u | sha256sum | cut -c1-12)
   [[ $a == "$b" ]] || { echo "MISMATCH between nginx and the env file (install.sh --apply entry-token)"; return; }
   local unit missing=()
   for unit in $entry_units; do
@@ -132,18 +133,20 @@ entry_state() {
   ((${#missing[@]})) && echo "present, drop-in missing for ${missing[*]}" || echo "present (0600), loaded by $entry_units"
 }
 
-entry_map_text() { # entry_map_text TOKEN
-  printf '%s\n' \
-    "# Helena: the tunnel entry's proof for the web app (cloudflare/install.sh entry-token)." \
-    "# Secret: 0600 root. Sent only by the tunnel entry (127.0.0.1:$port), only to the web" \
-    "# app ($web_upstream); every other request and upstream gets an empty value (no header)." \
-    "# volatile: the auth subrequests (other upstream) share the request's variables; a cached" \
-    "# value from one of them must not decide the main request's header." \
-    "map \"\$server_addr:\$server_port:\$proxy_host\" \$helena_edge_entry_token {" \
-    "    volatile;" \
-    "    default \"\";" \
-    "    \"127.0.0.1:$port:$web_upstream\" \"$1\";" \
-    "}"
+entry_map_text() { # entry_map_text TOKEN [LAN_ADDRESS]
+  local lines=(
+    "# Helena: the checked entry's proof for the web app (cloudflare/install.sh entry-token)."
+    "# Secret: 0600 root. Sent by the tunnel entry and, when installed, strict LAN only to the web"
+    "# app ($web_upstream); every other request and upstream gets an empty value (no header)."
+    "# volatile: the auth subrequests (other upstream) share the request's variables; a cached"
+    "# value from one of them must not decide the main request's header."
+    "map \"\$server_addr:\$server_port:\$proxy_host\" \$helena_edge_entry_token {"
+    "    volatile;"
+    "    default \"\";"
+    "    \"127.0.0.1:$port:$web_upstream\" \"$1\";"
+  )
+  [[ -z ${2:-} ]] || lines+=("    \"$2:443:$web_upstream\" \"$1\";")
+  printf '%s\n' "${lines[@]}" "}"
 }
 
 # Writes the proof into nginx and the env file (a new one with --rotate or when missing),
@@ -168,9 +171,13 @@ entry_token() {
     changed=0
     say "new entry proof in $entry_env (0600 root; not printed)"
   fi
-  local rendered
+  local rendered lan_address=
+  # A proof rotation must keep the LAN key once the strict entry is installed.
+  if [[ -e $entry_map ]]; then
+    lan_address=$(sed -n "s|^[[:space:]]*\"\\([0-9.]*\\):443:$web_upstream\".*|\\1|p" "$entry_map" | head -1)
+  fi
   rendered=$(umask 077; mktemp /etc/nginx/conf.d/.helena-edge-entry.XXXXXX)
-  entry_map_text "$token" >"$rendered"
+  entry_map_text "$token" "$lan_address" >"$rendered"
   unset token
   if [[ -e $entry_map ]] && cmp -s "$rendered" "$entry_map"; then
     rm -f "$rendered"

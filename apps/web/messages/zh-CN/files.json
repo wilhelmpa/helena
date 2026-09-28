@@ -1,4 +1,11 @@
 {
+  "fixedFolders": {
+    "Docs": "文档",
+    "Files": "文件",
+    "Assets": "附件",
+    "Boards": "画布",
+    "Inbox": "收件"
+  },
   "title": "文件",
   "projectDescription": "此项目的文档、附件和代码",
   "roots": {
@@ -53,9 +60,8 @@
     "rename": "重命名",
     "move": "移动",
     "copyPath": "复制路径",
-    "openInNotes": "在笔记中打开",
     "openInCode": "在 VS Code 中打开",
-    "openInDocs": "在文档中打开",
+    "openInDocs": "在知识库中打开",
     "linkToTask": "关联到任务",
     "trash": "移到回收站",
     "showInFolder": "在文件夹中显示"
@@ -67,7 +73,7 @@
     "name": "名称",
     "folderName": "新建文件夹",
     "fileName": "笔记.md",
-    "fileHint": ".md 或 .txt 文件。Markdown 笔记会在文档中打开。",
+    "fileHint": ".md 或 .txt 文件。Markdown 在知识库中打开。",
     "create": "创建",
     "save": "保存",
     "cancel": "取消"
@@ -117,9 +123,6 @@
     "original": "Shared original file",
     "save": "Save",
     "content": "File content",
-    "isolatedOrigin": "SilverBullet is not safely available on this connection. Use the Helena editor.",
-    "notesSlow": "SilverBullet is not responding. Use the editor or reload.",
-    "notesHelp": "If this connection needs sign-in or does not load, the Helena editor remains available.",
     "reload": "Reload",
     "discard": "Discard the unsaved draft?",
     "editor": "Helena editor",
@@ -130,11 +133,10 @@
     "searchScope": "Names and contents in {root}",
     "noResults": "No matches.",
     "refine": "First 50 matches. Refine your search.",
-    "boards": "Boards",
+    "boards": "画布",
     "references": "Sources and references",
     "author": "Edited by {author}",
     "run": "Run {run}",
-    "silverBullet": "SilverBullet",
     "formatted": "Formatted text",
     "source": "Markdown source",
     "sourceRequired": "This file contains Markdown the formatted editor cannot preserve. Edit the source to keep all content.",

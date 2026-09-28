@@ -17,8 +17,8 @@ import { AGENT_ROUTING_EVAL } from './agent-routing';
 const SETS: [name: string, set: DecisionEvalSet, size: number][] = [
   ['browser', BROWSER_EVAL, 6],
   ['heartbeat precheck', HEARTBEAT_PRECHECK_EVAL, 60],
-  ['task triage', TASK_TRIAGE_EVAL, 10],
-  ['agent routing', AGENT_ROUTING_EVAL, 10],
+  ['task triage', TASK_TRIAGE_EVAL, 30],
+  ['agent routing', AGENT_ROUTING_EVAL, 30],
   ['router', ROUTER_EVAL, 40],
   ['mail', MAIL_EVAL, 46],
   ['receipts', RECEIPT_EVAL, 25],

@@ -38,14 +38,67 @@
     "automation": "Helena"
   },
   "hub": {
+    "scopeProject": "Este projeto",
+    "scopeAll": "Todos",
     "messages": "Messages",
     "updates": "Updates",
-    "loading": "Loading messages…"
+    "loading": "Loading messages…",
+    "mailLoading": "Carregando caixa de entrada…",
+    "mailError": "Não foi possível carregar a caixa de entrada.",
+    "noProjectMailbox": "Nenhuma caixa de entrada foi configurada para este projeto."
   },
   "mailFilter": {
     "read": "Status de leitura",
     "attachments": "Anexos",
     "any": "Todos",
     "reset": "Redefinir filtros"
+  },
+  "owner": {
+    "home": "HOME",
+    "anAgent": "Um agente",
+    "defaultAgent": "Helena",
+    "mentionedBy": "{name} mencionou você",
+    "approvalRequest": "{name} pede uma decisão.",
+    "workflowWaiting": "Este fluxo de trabalho aguarda sua decisão.",
+    "proposalRequest": "{name} sugere uma alteração.",
+    "decide": "Decidir",
+    "approve": "Aprovar",
+    "reply": "Responder",
+    "openDetails": "Abrir detalhes",
+    "viewFailure": "Ver erro",
+    "markRead": "Marcar como lido",
+    "dashboard": "Painel",
+    "history": "Histórico",
+    "view": "Ver",
+    "now": "Agora",
+    "eyebrow": "VOCÊ · INBOX",
+    "title": "Inbox",
+    "loadingTitle": "Carregando Inbox.",
+    "allDone": "Tudo concluído.",
+    "headingCount": "{count, plural, one {Uma coisa} other {# coisas}}",
+    "needsYou": "{count, plural, one {precisa de você.} other {precisam de você.}}",
+    "project": "Projeto",
+    "all": "Todos",
+    "loadError": "Não foi possível carregar alguns itens. Atualize a página.",
+    "loading": "Carregando Inbox…",
+    "empty": "Nada está esperando por você agora.",
+    "toRead": "PARA LER",
+    "noCompletedRuns": "Ainda não há execuções concluídas.",
+    "runCompleted": "{name} · Execução concluída",
+    "tags": {
+      "budget": "ORÇAMENTO",
+      "approval": "APROVAÇÃO",
+      "workflow": "FLUXO",
+      "proposal": "PROPOSTA",
+      "mention": "MENÇÃO",
+      "system": "SISTEMA",
+      "failure": "ERRO"
+    }
+  },
+  "groups": {
+    "approvals": "Aprovações",
+    "errors": "Erros",
+    "mentions": "Menções",
+    "system": "Sistema"
   }
 }

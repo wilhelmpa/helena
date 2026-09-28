@@ -1,7 +1,6 @@
 'use client';
 
-import { LocaleToggle } from '@/components/locale-toggle';
-import { ThemeToggle } from '@/components/theme-toggle';
+import { Settings } from 'lucide-react';
 import UserMenu from '@/components/layout/UserMenu';
 
 // The account row at the foot of the sidebar (docs/volition-design-helena-ui.md, owner
@@ -11,12 +10,19 @@ import UserMenu from '@/components/layout/UserMenu';
 // icon buttons — no outlined boxes, the sidebar's own hover fill. In icon mode the
 // three stack. Rendered only when the account's headerLayout preference is 'single';
 // see AppHeader/GodShell for the 'classic' fallback.
-export default function SidebarAccountRow() {
+export default function SidebarAccountRow({ onSettings }: { onSettings: () => void }) {
   return (
-    <div className="flex items-center gap-0.5 group-data-[collapsible=icon]:flex-col">
+    <div className="helena-sidebar-account group-data-[collapsible=icon]:flex-col">
       <UserMenu variant="row" />
-      <LocaleToggle variant="ghost" />
-      <ThemeToggle variant="ghost" />
+      <button
+        type="button"
+        className="helena-sidebar-settings"
+        aria-label="Einstellungen"
+        title="Einstellungen (⌘,)"
+        onClick={onSettings}
+      >
+        <Settings size={16} aria-hidden="true" />
+      </button>
     </div>
   );
 }

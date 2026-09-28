@@ -1,6 +1,7 @@
 import { Fragment, useEffect, useRef, useState } from 'react';
 import { useWebLinks } from '@/context/webLinks';
 import { webLinkKind } from '@/utils/webLinkNavigation';
+import { projectLinkTarget } from '@/utils/projectLinkTarget';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
@@ -140,7 +141,13 @@ export default function CommandPalette({
     onOpenChange(false);
     const kind = webLinkKind(hit.href, window.location.href);
     if (kind === 'web') webLinks?.open(hit.href, hit.projectKey);
-    else if (kind === 'native') router.push(hit.href);
+    else if (kind === 'native') {
+      if (projectLinkTarget(hit.href, currentProjectKey, window.location.origin)) {
+        window.dispatchEvent(new CustomEvent('helena:project-link', { detail: hit.href }));
+      } else {
+        router.push(hit.href);
+      }
+    }
   }
 
   function captureText(target: 'inbox' | 'journal') {

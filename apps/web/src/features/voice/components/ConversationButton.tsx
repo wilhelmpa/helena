@@ -1,16 +1,23 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { AudioLines } from 'lucide-react';
+import { AudioLines, Mic } from 'lucide-react';
 import { PromptInputButton } from '@/components/ai-elements/prompt-input';
 import { cn } from '@/lib/utils';
 import type { Conversation } from '../hooks/useConversation';
+import styles from './ConversationButton.module.css';
 
 // Starts the hands-free conversation (speak, hear the answer, speak again), or ends the one
 // running — a toggle, pressed while it runs. Sits in the send button's place while nothing is
 // typed. When nothing can listen here (plain http, "Nur lokal" while local AI is down) the click
 // says why.
-export default function ConversationButton({ conversation }: { conversation: Conversation }) {
+export default function ConversationButton({
+  conversation,
+  homeLanding = false,
+}: {
+  conversation: Conversation;
+  homeLanding?: boolean;
+}) {
   const t = useTranslations('chatWorkspace.voice');
   const active = conversation.phase !== 'off';
   const unavailable = conversation.listenerEngine === 'none';
@@ -21,14 +28,18 @@ export default function ConversationButton({ conversation }: { conversation: Con
       aria-pressed={active}
       onClick={active ? conversation.stop : conversation.start}
       className={cn(
-        'rounded-lg',
         active
           ? 'bg-accent text-foreground hover:text-foreground'
           : 'text-primary-foreground hover:text-primary-foreground',
+        homeLanding ? styles.homeMic : 'rounded-lg',
         unavailable && !active && 'opacity-60',
       )}
     >
-      <AudioLines className={cn('size-4', active && 'animate-pulse')} />
+      {homeLanding ? (
+        <Mic className={cn(active && 'animate-pulse')} />
+      ) : (
+        <AudioLines className={cn('size-4', active && 'animate-pulse')} />
+      )}
     </PromptInputButton>
   );
 }

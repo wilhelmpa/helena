@@ -27,13 +27,25 @@ export default function SidebarNavSubmenuCollapsible({
     items.some((item) => item.active),
   );
   return (
-    <Collapsible asChild open={open} onOpenChange={setOpen} className="group/collapsible">
+    <Collapsible
+      asChild
+      open={items.length > 0 && open}
+      onOpenChange={setOpen}
+      className="group/collapsible"
+    >
       <SidebarMenuItem>
         <CollapsibleTrigger asChild>
-          <SidebarMenuButton isActive={items.some((i) => i.active)}>
+          <SidebarMenuButton
+            isActive={false}
+            className={
+              items.some((i) => i.active) ? 'text-foreground hover:bg-transparent' : undefined
+            }
+          >
             <Icon />
             <span>{label}</span>
-            <ChevronRight className="ms-auto transition-transform group-data-[state=open]/collapsible:rotate-90" />
+            {items.length > 0 && (
+              <ChevronRight className="ms-auto transition-transform group-data-[state=open]/collapsible:rotate-90" />
+            )}
           </SidebarMenuButton>
         </CollapsibleTrigger>
         <CollapsibleContent>

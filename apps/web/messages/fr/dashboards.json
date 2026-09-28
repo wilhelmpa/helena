@@ -43,7 +43,7 @@
     },
     "pulse": {
       "label": "Pulsation",
-      "description": "Carte de chaleur de l'activité quotidienne, à la façon de GitHub"
+      "description": "Évolution compacte de l’activité"
     },
     "throughput": {
       "label": "Débit",
@@ -208,5 +208,19 @@
     "unassigned": "Non assignés"
   },
   "deleteDashboard": "Supprimer le tableau de bord",
-  "deleteDashboardConfirm": "Supprimer « {name} » et ses widgets ? Les tâches ne sont pas touchées."
+  "deleteDashboardConfirm": "Supprimer « {name} » et ses widgets ? Les tâches ne sont pas touchées.",
+  "overview": {
+    "openTasks": "Tâches ouvertes",
+    "total": "{count} au total",
+    "inProgress": "En cours",
+    "projectTasks": "Tâches du projet",
+    "agentsWorking": "Agents actifs",
+    "running": "En cours maintenant",
+    "needsYou": "Besoin de toi",
+    "approvalsAndQuestions": "Approbations et questions",
+    "finished": "Terminé récemment",
+    "noRunning": "Aucun agent ne travaille actuellement.",
+    "nothingWaiting": "Rien ne demande ton attention.",
+    "noFinished": "Aucune exécution terminée."
+  }
 }

@@ -4,7 +4,7 @@
   "local": "本地",
   "cloud": "云端",
   "noTeam": "请先选择一个团队。",
-  "noConnections": "还没有决策模型连接。请在“访问”中添加一个（本服务器上的 Laya、本地 AI 或 Jev）。",
+  "noConnections": "还没有决策模型连接。请在“访问”中添加一个（本地 AI 或 Jev）。",
   "toAccess": "打开“访问”",
   "tabs": {
     "label": "决策",

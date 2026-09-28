@@ -1,10 +1,10 @@
 import { Bot, History, MessageSquare, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
 import type { AiAgent } from '@/lib/api/endpoints/agents';
 import { AgentPausedBadge } from '@/components/common/agent-chat/AgentPausedBadge';
-import { AgentRunnerStatus } from '@/components/common/agent-chat/AgentRunnerStatus';
-import AgentStatusOrb from '@/components/common/agent-chat/AgentStatusOrb';
+import { AgentTemplateBadge } from '@/components/common/agent-chat/AgentTemplateBadge';
+import Orb from '@/components/helena/Orb';
 import { isRunnerOnline } from '@/components/common/agent-chat/runnerOnline';
-import { agentOrbState } from '@/utils/agentStatusOrb';
+import { useAgentStatus } from '@/utils/helenaStatus';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -45,6 +45,10 @@ export function TeamAiAgentRow({
 }) {
   const t = useTranslations('teams.agents');
   const can = useAgentCan();
+  const status = useAgentStatus(agent.id, {
+    run: work,
+    runtimeStatus: isRunnerOnline(agent) ? agent.runtimeState.status : 'offline',
+  });
   const canHistory = can('read');
   const hasMenu = canHistory || can('delete');
 
@@ -64,12 +68,7 @@ export function TeamAiAgentRow({
       <TableCell className="px-2 align-middle whitespace-normal">
         <div className="flex min-w-0 items-center gap-2">
           <Bot className="size-4 shrink-0 text-muted-foreground" />
-          {!agent.template && (
-            <AgentStatusOrb
-              state={agentOrbState(work, agent.runtimeState.status)}
-              online={isRunnerOnline(agent)}
-            />
-          )}
+          {!agent.template && <Orb state={status} />}
           <span className="truncate text-sm font-medium">{agent.name}</span>
           <span className="truncate text-xs text-muted-foreground max-md:hidden">
             @{agent.username}
@@ -105,7 +104,7 @@ export function TeamAiAgentRow({
       </TableCell>
       <TableCell className="px-2 align-middle whitespace-normal max-md:hidden">
         <div className="flex min-w-0 items-center gap-3">
-          <AgentRunnerStatus agent={agent} copyCount={copyCount} />
+          {agent.template && <AgentTemplateBadge copyCount={copyCount} />}
           <span className="truncate font-mono text-xs text-muted-foreground">
             {agent.apiKeyStart ? t('apiKeyValue', { start: agent.apiKeyStart }) : t('apiKey')}
           </span>

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { DragOverlay, closestCenter, type DragEndEvent, type DragStartEvent } from '@dnd-kit/core';
 import DndContext from '@/components/common/dnd/DndContext';
 import { SortableContext, horizontalListSortingStrategy } from '@dnd-kit/sortable';
-import { LayoutDashboard, Plus } from 'lucide-react';
+import { LayoutDashboard } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { Dashboard } from '@/lib/api/endpoints/dashboards';
 import { useStripSortSensors } from '@/lib/dnd';
@@ -12,7 +12,6 @@ import {
   PAGE_CONTROL_ACTIVE_CLASS,
   PAGE_CONTROL_CLASS,
   PageTabs,
-  PAGE_PRIMARY_CLASS,
   usePageToolbarRoom,
 } from '@/components/layout/PageToolbar';
 import DashboardTab from './DashboardTab';
@@ -27,7 +26,6 @@ export default function DashboardTabs({
   activeDashboardId,
   isVirtual,
   onSelect,
-  onNew,
   onRename,
   onDelete,
   onReorder,
@@ -36,7 +34,6 @@ export default function DashboardTabs({
   activeDashboardId: number | null;
   isVirtual: boolean;
   onSelect: (id: number) => void;
-  onNew: () => void;
   onRename: (d: Dashboard) => void;
   onDelete: (d: Dashboard) => void;
   onReorder: (draggedId: number, targetId: number) => void;
@@ -44,7 +41,6 @@ export default function DashboardTabs({
   const t = useTranslations('dashboards');
   const { can } = usePermissions();
   const room = usePageToolbarRoom();
-  const canCreate = can('dashboards', 'create');
   const canEdit = can('dashboards', 'edit');
   const canDelete = can('dashboards', 'delete');
   const sensors = useStripSortSensors();
@@ -64,7 +60,6 @@ export default function DashboardTabs({
           <LayoutDashboard aria-hidden="true" />
           {t('defaultName')}
         </span>
-        {canCreate && room.tabs && <NewDashboardButton onClick={onNew} />}
       </div>
     );
   }
@@ -119,17 +114,6 @@ export default function DashboardTabs({
           ) : null}
         </DragOverlay>
       </DndContext>
-      {canCreate && <NewDashboardButton onClick={onNew} />}
     </div>
-  );
-}
-
-function NewDashboardButton({ onClick }: { onClick: () => void }) {
-  const t = useTranslations('dashboards');
-  return (
-    <button type="button" onClick={onClick} className={cn(PAGE_CONTROL_CLASS, PAGE_PRIMARY_CLASS)}>
-      <Plus aria-hidden="true" />
-      {t('newDashboard')}
-    </button>
   );
 }

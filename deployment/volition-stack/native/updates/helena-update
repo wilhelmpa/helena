@@ -271,6 +271,34 @@ def whisper_status() -> dict:
         return unknown
 
 
+WHISPER_UI = Path('/usr/local/lib/helena-whisper-update/whisper_ui.py')
+
+
+def whisper_ui(action: str, *, version: str | None = None, database: str = 'itsaplan') -> dict:
+    if not WHISPER_UI.is_file():
+        return {"ok": False, "error": "The Whisper update bridge is not installed"}
+    command = ['/usr/bin/python3', '-E', '-s', str(WHISPER_UI), action]
+    if version is not None:
+        command += ['--version', version, '--database', database]
+    response = run(None, command, timeout=2400 if action == 'activate' else 30, check=False)
+    if len(response.stdout) > 65536:
+        raise UpdateError('Whisper update returned an oversized status')
+    answer = json.loads(response.stdout)
+    if not isinstance(answer, dict) or answer.get('ok') not in (True, False):
+        raise UpdateError('Whisper update returned invalid status')
+    return answer
+
+
+def whisper_readiness() -> dict:
+    try:
+        answer = whisper_ui('status')
+        if answer.get('ok') and isinstance(answer.get('result'), dict):
+            return answer['result']
+    except (OSError, ValueError, UpdateError, subprocess.TimeoutExpired):
+        pass
+    return {"version": "1.9.4", "ready": False, "code": "preparation-required"}
+
+
 def inventory(config: dict) -> dict:
     tools = {name: tool_version(path) for name, path in config["tools"].items()}
     for name, package in config["dpkgTools"].items():
@@ -281,7 +309,7 @@ def inventory(config: dict) -> dict:
         "runtimes": runtimes_status(config),
         "tools": tools,
         "hostToolApply": list(host_tools.TOOLS),
-        "voice": {"whisper": whisper_status()},
+        "voice": {"whisper": {**whisper_status(), "update": whisper_readiness()}},
         "system": {
             "rebootRequired": Path("/run/reboot-required").exists(),
             "failedUnits": failed_units(),
@@ -416,6 +444,10 @@ def perform(config: dict, request: dict) -> dict:
         elif action == "cli-runtime":
             result = apply_cli_runtime(config, str(request.get("runtime", "")),
                                        str(request.get("version", "")), log)
+        elif action == "whisper-ui":
+            if set(request) - {"id", "action", "version"} or request.get("version") != "1.9.4":
+                raise UpdateError("Whisper accepts only the prepared 1.9.4 target")
+            return whisper_ui('activate', version=request['version'], database=config['hostToolsDatabase'])
         elif action == "host-tool":
             if set(request) - {"id", "action", "tool", "version"}:
                 raise UpdateError("host-tool accepts only tool and version")
@@ -511,7 +543,9 @@ def serve(config: dict) -> list[dict]:
                 action = str(request.get("action"))[:32]
                 started = now()
                 write_status(status_dir, request_id,
-                             {"action": action, "state": "running", "startedAt": started})
+                             {"action": action, "state": "running", "startedAt": started,
+                              "log": "Checking baseline and candidate voice before activation; live speech proof and rollback follow."
+                              if action == "whisper-ui" else None})
                 answer = perform(config, request)
                 write_status(status_dir, request_id, {
                     "action": action, "state": "done" if answer["ok"] else "failed",

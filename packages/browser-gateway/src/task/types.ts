@@ -51,7 +51,7 @@ export const OPERATIONS = [
 export type Operation = (typeof OPERATIONS)[number];
 
 export type TaskMode = 'read' | 'act';
-export type PolicyKind = 'jev' | 'laya';
+export type PolicyKind = 'jev';
 
 export interface TaskSuccess {
   // All supplied criteria must match a fresh observation. Exact URL, visible text substrings,
@@ -151,7 +151,7 @@ export interface TaskResult {
   pending?: { operation: Operation; element: string | null; category?: ActionCategory };
 }
 
-// The System One wire format (TypeSafe's `/v1/systemone`, also spoken by Laya servers).
+// The System One wire format (TypeSafe's `/v1/systemone`).
 export type Question =
   | { type: 'noul'; instructions: unknown; criteria?: { true?: unknown; false?: unknown } }
   | { type: 'choice'; instructions: unknown; criteria: Record<string, unknown> }

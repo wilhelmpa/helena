@@ -1,4 +1,12 @@
-import { aiAgent, db, issueActivity, pipelineRun, pipelineRunStep, projectMember } from '@repo/db';
+import {
+  agentRun,
+  aiAgent,
+  db,
+  issueActivity,
+  pipelineRun,
+  pipelineRunStep,
+  projectMember,
+} from '@repo/db';
 import { and, desc, eq, inArray, isNotNull, ne, sql } from 'drizzle-orm';
 import { listColumns, type ColumnRow } from '#modules/columns/service';
 import {
@@ -25,8 +33,8 @@ import {
 
 // The work of a routine: every fire creates a task in the project's first unstarted
 // state, delegated to the agent, or reopens the routine's task and delegates it again.
-// While the routine's task is open (the one it names, or the one its newest earlier fire
-// created) the fire changes nothing and is recorded as skipped. The delegation goes
+// A new-task routine skips while its previous task is open. A scheduled reopen skips
+// while an agent is working on its task; a manual reopen always delegates it. The delegation goes
 // through the normal delegation path, so a coordinator of a project that runs agent
 // teams gets the task through its team. The agent's run is the routine's work for Lokale KI
 // (class `routines`): while that is on, it starts on the local model, with the agent's own
@@ -179,7 +187,21 @@ async function dispatch(
   const current = routineTaskId ? await getIssue(routineTaskId) : null;
   if (step.mode === 'reopen' && (!current || current.projectId !== project.id))
     throw new StepFailure('The task the routine reopens no longer exists');
-  if (current && !stored.commented && isOpenTask(current, columns))
+  const [activeRun] =
+    current && step.mode === 'reopen' && run.trigger === 'schedule' && !stored.commented
+      ? await db
+          .select({ id: agentRun.id })
+          .from(agentRun)
+          .where(
+            and(eq(agentRun.issueId, current.id), inArray(agentRun.status, ['pending', 'running'])),
+          )
+          .limit(1)
+      : [];
+  if (
+    current &&
+    !stored.commented &&
+    (step.mode === 'new' ? isOpenTask(current, columns) : !!activeRun)
+  )
     return finish(runId, step, at, project.id, {
       outcome: 'skipped',
       skipReason: 'task-open',

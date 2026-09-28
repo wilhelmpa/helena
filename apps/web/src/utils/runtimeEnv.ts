@@ -38,8 +38,6 @@ export interface WorkspaceRuntimeEnv {
   browserUrl: string;
   inboxUrl: string;
   connectionsUrl: string;
-  // Retained for persisted workspace compatibility; the separate Notes frontend is disabled.
-  notesUrl: string;
 }
 
 declare global {
@@ -81,7 +79,6 @@ const emptyWorkspace = (): WorkspaceRuntimeEnv => ({
   browserUrl: '',
   inboxUrl: '',
   connectionsUrl: '',
-  notesUrl: '',
 });
 
 export function appOrigins(): string[] {
@@ -120,7 +117,6 @@ export function serverRuntimeEnv(origin: string | null = null): RuntimeEnv {
       browserUrl: url('BROWSER_URL'),
       inboxUrl: url('INBOX_URL'),
       connectionsUrl: url('CONNECTIONS_URL'),
-      notesUrl: '',
     },
   };
 }

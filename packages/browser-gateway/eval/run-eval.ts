@@ -7,8 +7,7 @@
 //   node packages/browser-gateway/eval/run-eval.ts \
 //     --chromium /usr/bin/chromium --set local \
 //     --backends '[{"name":"mock","kind":"mock"},
-//                  {"name":"laya","kind":"systemone","url":"http://127.0.0.1:8791","keyEnv":"LAYA_KEY","model":"laya-browser-v10s","policy":"laya"},
-//                  {"name":"jev-browser@laya","kind":"jev-browser","url":"http://127.0.0.1:8791","keyEnv":"LAYA_KEY","model":"laya-browser-v10s"}]' \
+//                  {"name":"jev","kind":"systemone","url":"https://api.typesafe.ai","keyEnv":"TYPESAFE_KEY","model":"jev-latest"}]' \
 //     --out eval/results/2026-09-24.json
 //
 // The fixture site (eval/fixture-site.mjs) is started here for the "local" set.
@@ -20,7 +19,6 @@ import { PatchrightGatewaySession } from '../src/session.ts';
 import { runTask } from '../src/task/loop.ts';
 import { mockAnswers } from '../src/task/mock-backend.ts';
 import { jevPolicy } from '../src/task/policy-jev.ts';
-import { layaPolicy } from '../src/task/policy-laya.ts';
 import { DirectDecisionClient, replyOf, type DecisionClient } from '../src/task/systemone.ts';
 import type { TaskResult } from '../src/task/types.ts';
 import { PUBLIC_TASKS, localTasks, type EvalTask, type FinalPage } from './tasks.ts';
@@ -31,7 +29,6 @@ interface BackendConfig {
   url?: string;
   keyEnv?: string;
   model?: string;
-  policy?: 'jev' | 'laya';
 }
 
 interface EvalRow {
@@ -116,10 +113,7 @@ async function runOurs(
           key: backend.keyEnv ? process.env[backend.keyEnv] : null,
           model: backend.model ?? 'jev-latest',
         });
-  const policy =
-    (backend.policy ?? (backend.kind === 'mock' ? 'jev' : 'jev')) === 'laya'
-      ? layaPolicy
-      : jevPolicy;
+  const policy = jevPolicy;
   await session.navigate(task.startUrl);
   return runTask(
     {

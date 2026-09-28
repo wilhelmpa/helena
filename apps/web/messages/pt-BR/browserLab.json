@@ -15,19 +15,17 @@
     "body": "Standard funciona sem chave. Para o Jev, adicione um modelo de decisão em Acessos e conexões → Acessos, com uma destas opções:",
     "typesafe": "Console da TypeSafe: criar uma chave (Jev direto)",
     "vercel": "Vercel AI Gateway: uma chave do AI Gateway, modelo typesafe-ai/jev",
-    "laya": "Ou sem conta: \"Laya (local neste servidor)\" depois que o serviço Laya estiver instalado.",
     "toAccess": "Abrir Acessos"
   },
   "connection": {
     "service": "Serviço",
     "cloudNote": "O que a Helena manda decidir, como o texto visível de uma página ou um e-mail, vai para este serviço. Senhas e valores digitados, não.",
-    "localNote": "Um servidor seu (Laya ou outro servidor System One). A Helena só o acessa neste endereço.",
+    "localNote": "Um servidor System One seu. A Helena só o acessa neste endereço.",
     "localModelNote": "Um servidor compatível com OpenAI com logprobs (llama.cpp, Lemonade, vLLM). A Helena só o acessa neste endereço.",
     "address": "Endereço",
     "model": "Modelo",
     "allowPrivate": "Permitir este endereço local",
     "allowPrivateHint": "A Helena nunca chama endereços da sua rede. Isto permite exatamente este endereço, nada mais.",
-    "localKey": "A chave do serviço Laya local é lida do servidor; nada a preencher.",
     "localAiKey": "Endereço, chave e modelo vêm da IA local da Helena (Administrador → IA local, ative lá “Decisões”); nada para preencher aqui.",
     "key": "Chave",
     "keyHintTypesafe": "Em console.typesafe.ai → Keys.",
@@ -52,7 +50,6 @@
     "codes": {
       "ok": "funciona",
       "no_key": "nenhuma chave salva",
-      "no_local_key": "o serviço Laya local não está instalado (sem chave no servidor)",
       "key_refused": "o serviço recusou a chave",
       "address_not_allowed": "este endereço está na sua rede; permita-o primeiro para esta conexão"
     }
@@ -70,7 +67,7 @@
     "modes": {
       "inherit": "Como nos padrões",
       "standard": "Standard (como antes)",
-      "decision": "Modelo de decisão (Jev / Laya)"
+      "decision": "Modelo de decisão (Jev)"
     },
     "connectionMissing": "A conexão escolhida não existe mais. Os agentes trabalham como no Standard até você escolher outra.",
     "noConnection": "Nenhum modelo de decisão configurado ainda.",
@@ -81,8 +78,7 @@
     "policyHint": "Automático escolhe a forma que combina com o serviço.",
     "policies": {
       "auto": "Automático",
-      "jev": "Jev (uma solicitação por passo)",
-      "laya": "Laya (perguntas restritas e regras)"
+      "jev": "Jev (uma solicitação por passo)"
     },
     "threshold": "Confiança mínima",
     "thresholdHint": "Abaixo disso, a tarefa volta para o agente. Vazio usa o valor da própria forma.",
@@ -117,8 +113,7 @@
     "more": "Mais opções",
     "jevBrowserNote": "O jev-browser roda em um navegador próprio, sem os seus logins, para comparação. Ele precisa de um endereço inicial.",
     "run": "Executar",
-    "policyJev": "Jev",
-    "policyLaya": "Laya"
+    "policyJev": "Jev"
   },
   "run": {
     "as": "como {name}",

@@ -8,7 +8,7 @@ import { accessErrors, commonErrors, errors } from '#shared/responses';
 import { mcpTool } from '#mcp/generate';
 import { teamParams } from '#modules/teams/model';
 import { runsTeam } from '#modules/teams/service';
-import { isHomeAgent } from './home-agent';
+import { isHomeHandle } from './home-agent';
 import {
   listAgents,
   createAgent,
@@ -67,7 +67,7 @@ async function requireVisibleAgent(agentId: number, membership: TeamMembership) 
 
 // The Home agent is recognised by its handle, so no other agent may take it.
 function assertNotHomeHandle(username: string | undefined) {
-  if (username !== undefined && isHomeAgent(username)) {
+  if (username !== undefined && isHomeHandle(username)) {
     throw new HttpError(409, 'This username is reserved for the Home agent');
   }
 }
@@ -148,6 +148,9 @@ export const aiAgentRoutes = new Elysia({ name: 'ai-agents', detail: { tags: ['A
     '/teams/:teamId/ai-agents',
     async ({ membership, body, set, user }) => {
       assertNotHomeHandle(body.username);
+      if (body.projectScope === 'all' && !runsTeam(membership.role)) {
+        throw new HttpError(403, 'Only a team owner or manager may grant all projects');
+      }
       const projectIds = await resolveAgentProjects(
         membership,
         body.projectId != null ? [body.projectId] : body.projectIds,
@@ -230,7 +233,14 @@ export const aiAgentRoutes = new Elysia({ name: 'ai-agents', detail: { tags: ['A
     '/teams/:teamId/ai-agents/:agentId',
     async ({ params, membership, body, user }) => {
       const current = await requireVisibleAgent(params.agentId, membership);
-      if (!isHomeAgent(current.username)) assertNotHomeHandle(body.username);
+      if (current.agentRole !== 'home') assertNotHomeHandle(body.username);
+      if (
+        body.projectScope !== undefined &&
+        body.projectScope !== current.projectScope &&
+        !runsTeam(membership.role)
+      ) {
+        throw new HttpError(403, 'Only a team owner or manager may change project scope');
+      }
       const projectIds = await resolveAgentProjects(membership, body.projectIds, current.projects);
       const agent = await updateAgent(
         params.agentId,
@@ -260,11 +270,14 @@ export const aiAgentRoutes = new Elysia({ name: 'ai-agents', detail: { tags: ['A
     '/teams/:teamId/ai-agents/:agentId/projects',
     async ({ params, membership, body, user }) => {
       const current = await requireVisibleAgent(params.agentId, membership);
+      if (current.projectScope === 'all' && !runsTeam(membership.role)) {
+        throw new HttpError(403, 'Only a team owner or manager may change project scope');
+      }
       const projectIds = await resolveAgentProjects(membership, body.projectIds, current.projects);
       const agent = await updateAgent(
         params.agentId,
         membership.teamId,
-        { projectIds },
+        { projectIds, projectScope: 'selected' },
         requireUser(user).id,
       );
       if (!agent) throw new HttpError(404, 'Agent not found');

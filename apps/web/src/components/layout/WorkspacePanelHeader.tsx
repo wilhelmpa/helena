@@ -38,6 +38,7 @@ export default function WorkspacePanelHeader({
   onToggleFull,
   onReload,
   onClose,
+  tabbed = false,
 }: {
   title: string;
   advanced: boolean;
@@ -65,6 +66,7 @@ export default function WorkspacePanelHeader({
   onToggleFull: () => void;
   onReload: () => void;
   onClose: () => void;
+  tabbed?: boolean;
 }) {
   const t = useTranslations('nav.workspace');
   const tChat = useTranslations('aiChat');
@@ -73,7 +75,16 @@ export default function WorkspacePanelHeader({
   return (
     <div className={cn(WORKSPACE_PANEL_HEADER_CLASS, 'gap-1', picker ? 'ps-1.5 pe-3' : 'px-3')}>
       {picker}
-      {toolbar ?? (
+      {toolbar ? (
+        <>
+          {toolbar}
+          <div
+            ref={slotRef}
+            data-slot="panel-control-slot"
+            className="flex shrink-0 items-center empty:hidden"
+          />
+        </>
+      ) : (
         <>
           <div
             ref={slotRef}
@@ -135,7 +146,7 @@ export default function WorkspacePanelHeader({
           </Button>
         </>
       )}
-      {!isMobile && !full && closable && (
+      {!tabbed && !isMobile && !full && closable && (
         <Button
           variant="ghost"
           size="icon"
@@ -147,34 +158,35 @@ export default function WorkspacePanelHeader({
           {mode === 'push' ? <PinOff /> : <Pin />}
         </Button>
       )}
-      {full ? (
-        // The way back from "Werkzeug groß": named, since the header and the layout menu
-        // are covered.
-        <Button
-          variant="outline"
-          size="sm"
-          className="h-7 gap-1.5"
-          onClick={onToggleFull}
-          title={tLayout('backHint')}
-        >
-          <Minimize2 />
-          {tLayout('back')}
-        </Button>
-      ) : (
-        !isMobile && (
+      {!tabbed &&
+        (full ? (
+          // The way back from "Werkzeug groß": named, since the header and the layout menu
+          // are covered.
           <Button
-            variant="ghost"
-            size="icon"
-            className="size-7 text-muted-foreground hover:text-foreground"
+            variant="outline"
+            size="sm"
+            className="h-7 gap-1.5"
             onClick={onToggleFull}
-            title={tLayout('full')}
-            aria-label={tLayout('full')}
+            title={tLayout('backHint')}
           >
-            <Maximize2 />
+            <Minimize2 />
+            {tLayout('back')}
           </Button>
-        )
-      )}
-      {closable && !full && (
+        ) : (
+          !isMobile && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-7 text-muted-foreground hover:text-foreground"
+              onClick={onToggleFull}
+              title={tLayout('full')}
+              aria-label={tLayout('full')}
+            >
+              <Maximize2 />
+            </Button>
+          )
+        ))}
+      {!tabbed && closable && !full && (
         <Button
           variant="ghost"
           size="icon"

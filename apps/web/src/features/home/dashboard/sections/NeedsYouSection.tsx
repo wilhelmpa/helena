@@ -15,7 +15,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { ROW_CLASS, ROW_INTERACTIVE_CLASS, RowEmpty } from '@/components/common/page/RowList';
-import { approvalsPath, globalAgentActivityPath } from '@/utils/paths';
+import { globalAgentActivityPath, globalInboxPath } from '@/utils/paths';
 import { formatDurationShort } from '@/utils/dates';
 import { cn } from '@/lib/utils';
 import type { NeedsYouEntry } from '@/extensions/needsYouSources';
@@ -124,8 +124,8 @@ export default function NeedsYouSection() {
     <DashboardSection
       label={t('widgets.needs-you')}
       count={data.items.length}
-      href={approvalsPath()}
-      hrefLabel={tNav('approvals')}
+      href={globalInboxPath()}
+      hrefLabel={tNav('sidebarInbox')}
     >
       {data.isPending && shown.length === 0 ? (
         <SkeletonRows count={3} />

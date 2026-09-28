@@ -15,19 +15,17 @@
     "body": "Standard 无需密钥。要使用 Jev，请在“访问与连接”→“凭据”中添加一个决策模型，可选以下方式之一：",
     "typesafe": "TypeSafe 控制台：创建密钥（直连 Jev）",
     "vercel": "Vercel AI Gateway：AI Gateway 密钥，模型 typesafe-ai/jev",
-    "laya": "或无需账号：安装 Laya 服务后使用“Laya（本服务器本地）”。",
     "toAccess": "打开“访问”"
   },
   "connection": {
     "service": "服务",
     "cloudNote": "Helena 交给它决定的内容（例如页面上可见的文字或一封邮件）会发送到此服务。密码和输入的值不会。",
-    "localNote": "你自己的服务器（Laya 或其他 System One 服务器）。Helena 只通过此地址访问它。",
+    "localNote": "你自己的 System One 服务器。Helena 只通过此地址访问它。",
     "localModelNote": "兼容 OpenAI 且支持 logprobs 的服务器（llama.cpp、Lemonade、vLLM）。Helena 只通过此地址访问它。",
     "address": "地址",
     "model": "模型",
     "allowPrivate": "允许此本地地址",
     "allowPrivateHint": "Helena 通常从不访问你网络中的地址。这里只允许这一个地址。",
-    "localKey": "本地 Laya 服务的密钥从服务器读取，无需填写。",
     "localAiKey": "地址、密钥和模型来自 Helena 的本地 AI（管理员 → 本地 AI，在那里开启“决策”）；此处无需填写。",
     "key": "密钥",
     "keyHintTypesafe": "来自 console.typesafe.ai → Keys。",
@@ -52,7 +50,6 @@
     "codes": {
       "ok": "正常",
       "no_key": "未保存密钥",
-      "no_local_key": "本地 Laya 服务未安装（服务器上没有密钥）",
       "key_refused": "服务拒绝了该密钥",
       "address_not_allowed": "此地址位于你的网络中；请先为此连接允许它"
     }
@@ -70,7 +67,7 @@
     "modes": {
       "inherit": "与默认设置相同",
       "standard": "Standard（与以前相同）",
-      "decision": "决策模型（Jev / Laya）"
+      "decision": "决策模型（Jev）"
     },
     "connectionMissing": "所选连接已不存在。在你选择其他连接之前，智能体按 Standard 工作。",
     "noConnection": "尚未设置决策模型。",
@@ -81,8 +78,7 @@
     "policyHint": "“自动”会选择适合该服务的方式。",
     "policies": {
       "auto": "自动",
-      "jev": "Jev（每步一次请求）",
-      "laya": "Laya（窄问题加规则）"
+      "jev": "Jev（每步一次请求）"
     },
     "threshold": "最低置信度",
     "thresholdHint": "低于此值时任务交还给智能体。留空则使用该方式的默认值。",
@@ -117,8 +113,7 @@
     "more": "更多选项",
     "jevBrowserNote": "jev-browser 在自己的浏览器中运行，不带你的登录状态，用于对比。它需要起始地址。",
     "run": "运行",
-    "policyJev": "Jev",
-    "policyLaya": "Laya"
+    "policyJev": "Jev"
   },
   "run": {
     "as": "以 {name} 身份",

@@ -9,11 +9,13 @@ import {
   type ComponentProps,
   type ReactNode,
 } from 'react';
+import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import type { LucideIcon } from 'lucide-react';
 import { Check, ChevronDown, MoreHorizontal, Search, TextSearch, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
+import { useShellHeaderActionsSlot } from '@/context/shellHeaderSlot';
 import { ShellHeaderRow } from '@/components/layout/WorkspaceHeader';
 import {
   DropdownMenu,
@@ -25,6 +27,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { openSettingsModal } from '@/features/settings/settingsModalCatalog';
+import { Settings2 } from 'lucide-react';
 
 // The one pattern for everything a page offers (owner, 2026-09-24: "alles in eine
 // Reihe, ohne Funktionen zu verlieren, für alle Bereiche homogen"). A page puts its
@@ -78,6 +82,7 @@ const roomFor = (level: number, width: number): Room => ({
   tabs: level < 4,
 });
 const RoomCtx = createContext<Room>(roomFor(0, 0));
+const ToolbarScopeCtx = createContext(false);
 
 // For a page's own control in the toolbar (a sort menu, a select): whether it still has
 // room for its label (`actions`) or should show its icon alone.
@@ -116,7 +121,9 @@ export function PageToolbar({ children }: { children: ReactNode }) {
   return (
     <ShellHeaderRow className="gap-1 bg-background px-3">
       <div ref={setNode} className="flex min-w-0 flex-1 items-center gap-1 overflow-hidden">
-        <RoomCtx.Provider value={roomFor(level, width)}>{children}</RoomCtx.Provider>
+        <RoomCtx.Provider value={roomFor(level, width)}>
+          <ToolbarScopeCtx.Provider value>{children}</ToolbarScopeCtx.Provider>
+        </RoomCtx.Provider>
       </div>
     </ShellHeaderRow>
   );
@@ -276,7 +283,7 @@ export function PageSearch({
         }}
         placeholder={placeholder}
         aria-label={placeholder}
-        className="h-7 w-full min-w-0 rounded-md border border-sidebar-border bg-background ps-7 pe-2 text-sm outline-none placeholder:text-muted-foreground focus-visible:border-sidebar-ring focus-visible:ring-2 focus-visible:ring-sidebar-ring/30 [&::-webkit-search-cancel-button]:hidden"
+        className="h-7 w-full min-w-0 rounded-md border border-sidebar-border bg-background ps-7 pe-2 text-sm outline-none placeholder:text-muted-foreground focus-visible:border-sidebar-ring focus-visible:bg-accent/20 aria-invalid:border-destructive [&::-webkit-search-cancel-button]:hidden"
       />
     </div>
   );
@@ -414,9 +421,25 @@ export function PageActions({
 }) {
   const t = useTranslations('common');
   const room = useContext(RoomCtx);
-  const inRow = room.actions ? actions.filter((action) => !action.menuOnly) : [];
-  const inMenu = room.actions ? actions.filter((action) => action.menuOnly) : actions;
-  return (
+  const inToolbar = useContext(ToolbarScopeCtx);
+  const actionsSlot = useShellHeaderActionsSlot();
+  const visibleAction = primary
+    ? null
+    : room.actions
+      ? actions.find((action) => !action.menuOnly)
+      : null;
+  const inRow = visibleAction ? [visibleAction] : [];
+  const inMenu: PageAction[] = [
+    ...actions.filter((action) => action !== visibleAction),
+    {
+      id: 'settings-modal',
+      label: 'Einstellungen',
+      icon: Settings2,
+      onClick: () => openSettingsModal(),
+      menuOnly: true,
+    },
+  ];
+  const controls = (
     <div className="flex shrink-0 items-center gap-0.5">
       {inRow.map((action) => (
         <Tooltip key={action.id}>
@@ -465,6 +488,7 @@ export function PageActions({
       ) : null}
     </div>
   );
+  return inToolbar && actionsSlot ? createPortal(controls, actionsSlot) : controls;
 }
 
 // Also a TooltipTrigger's child: Radix passes its ref and its own handlers through

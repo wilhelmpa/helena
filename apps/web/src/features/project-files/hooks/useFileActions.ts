@@ -9,7 +9,7 @@ import {
 } from '@/lib/api/endpoints/projectFiles';
 import { copyText } from '@/utils/clipboard';
 import { runtimeEnv } from '@/utils/runtimeEnv';
-import { vaultNotePath } from '@/utils/paths';
+import { filesPath, vaultNotePath } from '@/utils/paths';
 import { codeFolderUrl } from '@/utils/workspaceTools';
 import { vaultFilePath } from '../utils/vaultFilePath';
 
@@ -23,12 +23,14 @@ export function useFileActions({
   onNavigate,
   onSelect,
   ask,
+  inlineMarkdown = false,
 }: {
   scope: FileScope;
   listing: FileList | undefined;
   onNavigate: (path: string) => void;
   onSelect: (path: string) => void;
   ask: (dialog: FileDialog, item: FileItem) => void;
+  inlineMarkdown?: boolean;
 }) {
   const t = useTranslations('files');
   const router = useRouter();
@@ -46,7 +48,11 @@ export function useFileActions({
     open(item: FileItem) {
       if (item.kind === 'folder') return onNavigate(item.path);
       const canonical = vaultPath(item);
-      if (canonical && (/\.md$/i.test(item.name) || (projectKey && /\.canvas$/i.test(item.name))))
+      if (
+        canonical &&
+        !inlineMarkdown &&
+        (/\.md$/i.test(item.name) || (projectKey && /\.canvas$/i.test(item.name)))
+      )
         return router.push(vaultNotePath(canonical));
       onSelect(item.path);
     },
@@ -58,8 +64,15 @@ export function useFileActions({
     async copyPath(item: FileItem) {
       try {
         const canonical = vaultPath(item);
+        const parent = item.path.includes('/')
+          ? item.path.slice(0, item.path.lastIndexOf('/'))
+          : '';
         await copyText(
-          canonical ? `${window.location.origin}${vaultNotePath(canonical)}` : absolutePath(item),
+          projectKey
+            ? `${window.location.origin}${filesPath(projectKey, item.kind === 'folder' ? item.path : parent, { file: item.kind === 'file' ? item.path : null })}`
+            : canonical
+              ? `${window.location.origin}${vaultNotePath(canonical)}`
+              : absolutePath(item),
         );
         toast.success(t('pathCopied'));
       } catch {

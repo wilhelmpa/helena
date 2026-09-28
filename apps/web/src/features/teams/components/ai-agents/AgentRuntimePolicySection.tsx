@@ -6,24 +6,11 @@ import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import type { AiChatModel, UnavailableChatModel } from '@/lib/api/endpoints/agentChat';
-import {
-  AGENT_RUNTIME_KINDS,
-  type AgentRuntimeConflict,
-  type AgentRuntimeKind,
-  type AiAgent,
-} from '@/lib/api/endpoints/agents';
+import type { AgentRuntimeConflict, AiAgent } from '@/lib/api/endpoints/agents';
 import AgentModelIssue from '@/features/model-availability/components/AgentModelIssue';
 import {
-  isUnverified,
   refusalOf,
   refusedModels,
   templateFallbackModel,
@@ -50,8 +37,6 @@ export default function AgentRuntimePolicySection({
   value,
   onChange,
   models,
-  modelsLoading,
-  modelsError,
   conflicts,
   unavailable = [],
   agent = null,
@@ -61,8 +46,6 @@ export default function AgentRuntimePolicySection({
   value: AgentFormValue;
   onChange: (patch: Partial<AgentFormValue>) => void;
   models: AiChatModel[];
-  modelsLoading: boolean;
-  modelsError: boolean;
   conflicts: AgentRuntimeConflict[];
   // Models the provider refused this account, which the list leaves out, and the agent
   // (for a template copy that fell back to the default).
@@ -70,8 +53,6 @@ export default function AgentRuntimePolicySection({
   agent?: AiAgent | null;
 }) {
   const t = useTranslations('teams.agents.runtimePolicy');
-  const tModel = useTranslations('modelAvailability');
-  const tLocal = useTranslations('localAi');
   const { teamId } = useAgentSection();
   const canEdit = useAgentCan()('edit');
   // The template library is already cached for the editor (AgentTemplateDriftSection).
@@ -92,11 +73,6 @@ export default function AgentRuntimePolicySection({
   const tFallback = useTranslations('agentRuntime.fallback');
   const fallbackId = useId();
   const policy = value.runtimePolicy;
-  const selectedModel = models.find((entry) => entry.id === value.model);
-  const unavailableModel = value.model.length > 0 && !selectedModel;
-  const unavailableReasoning =
-    policy.reasoningEffort != null &&
-    (!selectedModel || !selectedModel.thinkingLevels.includes(policy.reasoningEffort));
   const patchPolicy = (patch: Partial<typeof policy>) =>
     onChange({ runtimePolicy: { ...policy, ...patch } });
   const takeOverSoul = (content: string) =>
@@ -127,127 +103,6 @@ export default function AgentRuntimePolicySection({
       title={t('title')}
       hint={t('hint')}
     >
-      <div className="space-y-1.5">
-        <label htmlFor="agent-runtime-kind" className="text-sm font-medium">
-          {t('runtime')}
-        </label>
-        <Select
-          value={policy.runtime ?? 'hermes'}
-          // Another runtime has other models: the agent starts on the new runtime's own
-          // default until one of its models is chosen (its runner lists them once it runs).
-          onValueChange={(runtime) =>
-            onChange({
-              model: '',
-              runtimePolicy: {
-                ...policy,
-                runtime: runtime === 'hermes' ? undefined : (runtime as AgentRuntimeKind),
-                reasoningEffort: null,
-              },
-            })
-          }
-        >
-          <SelectTrigger id="agent-runtime-kind" className="w-full sm:w-1/2">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {AGENT_RUNTIME_KINDS.map((kind) => (
-              <SelectItem key={kind} value={kind}>
-                {t(`runtimeKind.${kind}`)}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <p className="text-xs text-muted-foreground">
-          {(policy.runtime ?? 'hermes') === 'hermes'
-            ? t('runtimeHermesHint')
-            : t('runtimeCliHint', { kind: policy.runtime ?? '' })}
-        </p>
-      </div>
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="space-y-1.5">
-          <label htmlFor="agent-runtime-model" className="text-sm font-medium">
-            {t('model')}
-          </label>
-          <Select
-            value={value.model || AGENT_DEFAULT}
-            onValueChange={selectModel}
-            disabled={modelsLoading}
-          >
-            <SelectTrigger id="agent-runtime-model" className="w-full">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={AGENT_DEFAULT}>{t('agentDefault')}</SelectItem>
-              {unavailableModel && (
-                <SelectItem value={value.model} disabled>
-                  {t('unavailable', { value: value.model })}
-                </SelectItem>
-              )}
-              {models.map((model) => (
-                <SelectItem key={model.id} value={model.id}>
-                  {model.name} · {model.id}
-                  {model.local && (
-                    <span className="ms-1.5 text-xs text-muted-foreground">
-                      {tLocal('pickerMark')}
-                    </span>
-                  )}
-                  {isUnverified(model) && (
-                    <span
-                      className="ms-1.5 text-xs text-muted-foreground"
-                      title={tModel('unverifiedHint')}
-                    >
-                      {tModel('unverified')}
-                    </span>
-                  )}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          <p className="text-xs text-muted-foreground">
-            {modelsLoading
-              ? t('modelsLoading')
-              : modelsError
-                ? t('modelsError')
-                : models.length === 0
-                  ? t('modelsEmpty')
-                  : t('modelsHint')}
-          </p>
-        </div>
-        <div className="space-y-1.5">
-          <label htmlFor="agent-runtime-reasoning" className="text-sm font-medium">
-            {t('reasoning')}
-          </label>
-          <Select
-            value={policy.reasoningEffort ?? AGENT_DEFAULT}
-            onValueChange={(effort) =>
-              patchPolicy({ reasoningEffort: effort === AGENT_DEFAULT ? null : effort })
-            }
-            disabled={modelsLoading || !selectedModel}
-          >
-            <SelectTrigger id="agent-runtime-reasoning" className="w-full">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={AGENT_DEFAULT}>
-                {t('agentDefault')}
-                {selectedModel?.thinkingDefault ? ` · ${selectedModel.thinkingDefault}` : ''}
-              </SelectItem>
-              {unavailableReasoning && policy.reasoningEffort && (
-                <SelectItem value={policy.reasoningEffort} disabled>
-                  {t('unavailable', { value: policy.reasoningEffort })}
-                </SelectItem>
-              )}
-              {selectedModel?.thinkingLevels.map((effort) => (
-                <SelectItem key={effort} value={effort}>
-                  {effort}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
       <AgentModelIssue
         teamId={teamId}
         refusal={refusalOf(value.model, refused)}

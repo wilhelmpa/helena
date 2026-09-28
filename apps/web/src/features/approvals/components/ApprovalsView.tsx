@@ -3,7 +3,10 @@
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { CircleCheckBig, FolderKanban, Hourglass } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import type { ApprovalListStatus } from '@/lib/api/endpoints/approvals';
+import type { ApprovalListStatus, ApprovalProject } from '@/lib/api/endpoints/approvals';
+import { ProjectGroup } from '@/components/helena/ProjectGroup';
+import { SectionLabel } from '@/components/common/page/RowList';
+import { EmptyState } from '@/components/common/page/EmptyState';
 import {
   PageSelect,
   PageTabs,
@@ -11,6 +14,8 @@ import {
   PageToolbarSpacer,
 } from '@/components/layout/PageToolbar';
 import { useApprovalProjects, usePendingApprovalCount } from '@/services/approvals.service';
+import { useApprovals } from '../services/approvals.service';
+import { usePipelineApprovals } from '@/services/pipelines.service';
 import ApprovalRequestList from './ApprovalRequestList';
 import RuntimeProposalList from './RuntimeProposalList';
 import WorkflowApprovalList from './WorkflowApprovalList';
@@ -22,6 +27,36 @@ import {
 // What a project filter holds for "every project".
 const ALL = 'all';
 
+function ApprovalProjectGroup({
+  project,
+  status,
+}: {
+  project: ApprovalProject;
+  status: ApprovalListStatus;
+}) {
+  const tNav = useTranslations('nav');
+  const requests = useApprovals(status, { page: 1, pageSize: 10 }, project.key);
+  const workflows = usePipelineApprovals().data ?? [];
+  const requestCount = requests.data?.total ?? 0;
+  const workflowCount =
+    status === 'pending' ? workflows.filter((item) => item.projectKey === project.key).length : 0;
+  const total = requestCount + workflowCount;
+  if (!total) return null;
+  return (
+    <ProjectGroup projectKey={project.key} projectName={project.name} count={total}>
+      <div className="space-y-4 px-4 py-4">
+        {requestCount > 0 && (
+          <section className="space-y-3">
+            <SectionLabel>{tNav('approvals')}</SectionLabel>
+            <ApprovalRequestList status={status} projectKey={project.key} quietWhenEmpty />
+          </section>
+        )}
+        {workflowCount > 0 && <WorkflowApprovalList projectKey={project.key} />}
+      </div>
+    </ProjectGroup>
+  );
+}
+
 // The approvals, open or decided, in the header row's tabs: the requests agents made
 // before acting outside Helena, and (open only) the workflow runs waiting at an approval.
 // The tab and the project filter live in the address (?status=decided&project=VOL), so a
@@ -29,6 +64,7 @@ const ALL = 'all';
 export default function ApprovalsView({ fixedProjectKey }: { fixedProjectKey?: string }) {
   const t = useTranslations('approvals');
   const tNav = useTranslations('nav');
+  const tCommon = useTranslations('common');
   const params = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -42,6 +78,8 @@ export default function ApprovalsView({ fixedProjectKey }: { fixedProjectKey?: s
   // show only while no project is chosen.
   const proposalCount = useProposalCount().data?.count ?? 0;
   const decidedProposals = useProposals('decided', status === 'decided' && !projectKey).data;
+  const allRequests = useApprovals(status, { page: 1, pageSize: 1 }, undefined);
+  const allWorkflows = usePipelineApprovals().data ?? [];
   const pending =
     (usePendingApprovalCount(projectKey).data?.count ?? 0) + (projectKey ? 0 : proposalCount);
 
@@ -80,26 +118,57 @@ export default function ApprovalsView({ fixedProjectKey }: { fixedProjectKey?: s
           />
         ) : null}
       </PageToolbar>
-      {status === 'pending' ? (
+      {!projectKey ? (
+        <div className="flex flex-1 flex-col gap-3">
+          {projects.map((project) => (
+            <ApprovalProjectGroup
+              key={`${status}:${project.key}`}
+              project={project}
+              status={status}
+            />
+          ))}
+          {(status === 'pending' ? proposalCount : (decidedProposals?.length ?? 0)) > 0 && (
+            <ProjectGroup
+              projectKey="SYS"
+              projectName={tCommon('system')}
+              count={status === 'pending' ? proposalCount : decidedProposals!.length}
+            >
+              <div className="px-4 py-4">
+                <RuntimeProposalList status={status} />
+              </div>
+            </ProjectGroup>
+          )}
+          {!allRequests.isPending &&
+            (allRequests.data?.total ?? 0) === 0 &&
+            (status === 'decided' || allWorkflows.length === 0) &&
+            (status === 'pending' ? proposalCount : (decidedProposals?.length ?? 0)) === 0 && (
+              <EmptyState title={t(`empty.${status}`)} description={t(`emptyHint.${status}`)} />
+            )}
+        </div>
+      ) : status === 'pending' ? (
         <div className="flex flex-1 flex-col gap-6">
-          <ApprovalRequestList
-            key={`pending:${projectKey ?? ''}`}
-            status="pending"
-            projectKey={projectKey}
-            quietWhenEmpty={!projectKey && proposalCount > 0}
-          />
+          <section className="space-y-3">
+            <SectionLabel>{tNav('approvals')}</SectionLabel>
+            <ApprovalRequestList
+              key={`pending:${projectKey ?? ''}`}
+              status="pending"
+              projectKey={projectKey}
+              quietWhenEmpty={!projectKey && proposalCount > 0}
+            />
+          </section>
           <WorkflowApprovalList projectKey={projectKey} />
-          {!projectKey && <RuntimeProposalList status="pending" />}
         </div>
       ) : (
         <div className="flex flex-1 flex-col gap-6">
-          <ApprovalRequestList
-            key={`decided:${projectKey ?? ''}`}
-            status="decided"
-            projectKey={projectKey}
-            quietWhenEmpty={!projectKey && (decidedProposals?.length ?? 0) > 0}
-          />
-          {!projectKey && <RuntimeProposalList status="decided" />}
+          <section className="space-y-3">
+            <SectionLabel>{tNav('approvals')}</SectionLabel>
+            <ApprovalRequestList
+              key={`decided:${projectKey ?? ''}`}
+              status="decided"
+              projectKey={projectKey}
+              quietWhenEmpty={!projectKey && (decidedProposals?.length ?? 0) > 0}
+            />
+          </section>
         </div>
       )}
     </>

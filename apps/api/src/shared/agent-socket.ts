@@ -54,11 +54,11 @@ export function hasApiKey(headers: Headers): boolean {
 // runs as Home and nowhere else; every other agent in a project it is a member of.
 export async function assertAgentOfProject(userId: string, slug: string): Promise<void> {
   const [agent] = await db
-    .select({ id: aiAgent.id, username: aiAgent.username })
+    .select({ id: aiAgent.id, username: aiAgent.username, agentRole: aiAgent.agentRole })
     .from(aiAgent)
     .where(eq(aiAgent.userId, userId));
   if (!agent) throw new HttpError(403, 'Only an agent key is accepted on the agent socket');
-  if (isHomeAgent(agent.username)) {
+  if (isHomeAgent(agent.agentRole)) {
     if (slug === HOME_SLUG) return;
     throw new HttpError(403, 'The agent key does not belong to this project');
   }

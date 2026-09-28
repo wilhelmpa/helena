@@ -24,12 +24,12 @@ import {
 } from '../services/browserTask.service';
 import { connectionLabel } from '../utils/lab';
 
-const POLICIES: BrowserControlPolicy[] = ['auto', 'jev', 'laya'];
+const POLICIES: BrowserControlPolicy[] = ['auto', 'jev'];
 
 // Administrator → Agenten-Laufzeit, "Browser-Steuerung (Voreinstellung)": what a project that
 // keeps "Wie in den Voreinstellungen" gets (docs/helena-decisions/browser-task.md §3.3). A
 // connection of one team applies to that team's projects.
-export function InstanceBrowserControlSection() {
+export function InstanceBrowserControlSection({ overrideCount }: { overrideCount?: number } = {}) {
   const t = useTranslations('browserLab.control');
   const control = useInstanceBrowserControlQuery();
   const update = useUpdateInstanceBrowserControl();
@@ -46,7 +46,7 @@ export function InstanceBrowserControlSection() {
       <SettingsCard className="divide-y divide-border/60">
         <SettingsRow
           title={t('mode')}
-          description={t('modeHint')}
+          description={`${t('modeHint')}${overrideCount === undefined ? '' : ` · in ${overrideCount} Projekten überschrieben`}`}
           control={
             <Select
               value={setting.mode}

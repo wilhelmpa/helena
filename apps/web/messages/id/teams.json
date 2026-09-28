@@ -795,7 +795,9 @@
         "reasoning": "penalaran"
       }
     },
-    "chatTemplate": "Templat tidak berjalan sendiri. Tambahkan ke proyek sebagai agen untuk mencobanya di sini."
+    "chatTemplate": "Templat tidak berjalan sendiri. Tambahkan ke proyek sebagai agen untuk mencobanya di sini.",
+    "allProjectsScope": "Project scope: all",
+    "allProjectsScopeHint": "May work in every current and future project of this team."
   },
   "members": {
     "roleSaved": "{name} sekarang menjadi {role}",

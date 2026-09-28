@@ -13,7 +13,6 @@ export default function ChatNewChatIntro({ agent }: { agent: AiAgent }) {
     <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-1 overflow-y-auto px-4 text-center">
       <span className="block aspect-square w-[min(20rem,55vw)] shrink-0" aria-hidden="true" />
       <p className="text-sm font-medium">{t('newChat.title', { agent: agent.name })}</p>
-      <p className="max-w-sm text-xs text-muted-foreground">{t('newChat.hint')}</p>
     </div>
   );
 }

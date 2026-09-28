@@ -33,7 +33,7 @@
     "eval-failed": "Evaluasi gagal"
   },
   "jev": {
-    "label": "Jev / Laya (langkah browser)",
+    "label": "Jev (langkah browser)",
     "experimental": "Eksperimental",
     "connect": "Tambahkan koneksi",
     "title": "TypeSafe / JEV",
@@ -185,7 +185,9 @@
   "updates": {
     "label": "AI lokal",
     "hint": "Perbarui lewat native/local-ai/install.sh, lalu evaluasi ulang.",
-    "whisperBuildRequired": "Pembaruan Whisper.cpp memerlukan build ROCm dengan versi tetap dan uji suara yang berhasil. Instalasi otomatis belum tersedia."
+    "whisperBuildRequired": "Pembaruan ini memerlukan build Whisper dan pengujian suara yang terverifikasi.",
+    "whisperMaintenanceRequired": "Diperlukan waktu pemeliharaan suara yang disetujui Root. Periksa lagi setelah dibuka.",
+    "whisperRecoveryRequired": "Pembaruan Whisper sebelumnya perlu dipulihkan sebelum suara dilanjutkan."
   },
   "pickerMark": "lokal",
   "tile": {
@@ -215,6 +217,14 @@
     "title": "Suara di chat",
     "loading": "Memuat …",
     "failed": "Pengaturan suara tidak dapat dimuat.",
+    "aliases": {
+      "title": "Koreksi kata yang dikenali",
+      "hint": "Satu koreksi per baris: kata yang dikenali → ejaan yang diinginkan. Hanya kata utuh yang diganti. Saran berasal dari nama proyek dan agen.",
+      "placeholder": "Jeff → Jev",
+      "invalid": "Setiap baris harus berisi “dikenali → ditulis”.",
+      "reset": "Pulihkan saran",
+      "save": "Simpan pengaturan suara"
+    },
     "pause": {
       "title": "Jeda sebelum jawaban",
       "hint": "Berapa lama kamu harus diam sebelum Helena mengirim kalimatmu. Lebih singkat menjawab lebih cepat, lebih lama jarang memotongmu.",

@@ -1,10 +1,15 @@
-import { isNewerVersion, type UpdateCandidate, type UpdateCheckContext } from '@helena/sdk';
+import {
+  isNewerVersion,
+  type UpdateCandidate,
+  type UpdateCheckContext,
+  type UpdateApplyRequest,
+} from '@helena/sdk';
+import { sendHelperRequest } from '../updates/helper';
 import { githubNewest } from '../updates/sources/vendors';
 
 const REPOSITORY = 'ggml-org/whisper.cpp';
 
-// Native voice is independent of the model-server registry. Until a pinned ROCm build
-// and transcription proof exist, this source reports status and never advertises apply.
+// The privileged helper binds readiness to the verified package and a short Root window.
 export async function whisperUpdateCandidate(
   context: UpdateCheckContext,
 ): Promise<UpdateCandidate | null> {
@@ -29,6 +34,20 @@ export async function whisperUpdateCandidate(
   } catch (failure) {
     error = failure instanceof Error ? failure.message : String(failure);
   }
+  const readiness = whisper.update as Record<string, unknown> | undefined;
+  const ready =
+    readiness?.ready === true &&
+    readiness.version === available &&
+    available === '1.9.4' &&
+    installed === '1.8.4' &&
+    typeof readiness.expiresAt === 'number' &&
+    readiness.expiresAt * 1000 > context.now.getTime();
+  const hint =
+    readiness?.code === 'recovery-required'
+      ? 'localAi.updates.whisperRecoveryRequired'
+      : readiness?.code === 'maintenance-required' || readiness?.code === 'ready'
+        ? 'localAi.updates.whisperMaintenanceRequired'
+        : 'localAi.updates.whisperBuildRequired';
   return {
     component: 'whisper-cpp',
     name: 'Whisper.cpp (STT)',
@@ -38,10 +57,28 @@ export async function whisperUpdateCandidate(
     security: false,
     sourceUrl: `https://github.com/${REPOSITORY}`,
     notesUrl: available ? `https://github.com/${REPOSITORY}/releases/tag/v${available}` : null,
-    group: 'local-ai',
-    applicable: false,
-    hint: { i18n: 'localAi.updates.whisperBuildRequired' },
+    applicable: ready,
+    hint: ready ? null : { i18n: hint },
     error,
-    data: { versionSource: installed ? 'running-executable-path' : null, state: whisper.state },
+    data: {
+      versionSource: installed ? 'running-executable-path' : null,
+      state: whisper.state,
+      readiness: readiness?.code ?? 'preparation-required',
+      expiresAt: readiness?.expiresAt ?? null,
+    },
   };
+}
+
+export async function applyWhisperUpdate(request: UpdateApplyRequest) {
+  if (
+    request.component !== 'whisper-cpp' ||
+    request.target !== '1.9.4' ||
+    request.candidate.component !== 'whisper-cpp' ||
+    request.candidate.available !== request.target ||
+    !request.candidate.applicable ||
+    (request.components?.length ?? 1) !== 1 ||
+    request.components?.some((entry) => entry.component !== 'whisper-cpp')
+  )
+    throw new Error('Only the verified Whisper package can be activated from Helena');
+  return { ref: await sendHelperRequest('whisper-ui', { version: request.target }) };
 }

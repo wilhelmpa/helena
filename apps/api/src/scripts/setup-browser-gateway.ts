@@ -53,7 +53,7 @@ export async function setupBrowserGateway(dryRun: boolean): Promise<SetupResult>
     const legacy = servers.find((row) => row.name === BROWSER_GATEWAY_LEGACY_MCP_SERVER_NAME);
 
     const agents = await db
-      .select({ id: aiAgent.id, username: aiAgent.username })
+      .select({ id: aiAgent.id, username: aiAgent.username, agentRole: aiAgent.agentRole })
       .from(aiAgent)
       .where(eq(aiAgent.teamId, teamId));
     const coordinators = new Set(
@@ -78,7 +78,7 @@ export async function setupBrowserGateway(dryRun: boolean): Promise<SetupResult>
       links.some((row) => row.agentId === agentId && row.serverId === serverId);
 
     for (const agent of agents) {
-      const why = isHomeAgent(agent.username)
+      const why = isHomeAgent(agent.agentRole)
         ? ('home' as const)
         : coordinators.has(agent.id)
           ? ('coordinator' as const)

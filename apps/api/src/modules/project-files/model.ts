@@ -83,6 +83,7 @@ export const FileItemsResponse = t.Array(FileItemResponse);
 
 export const FileReferencesResponse = t.Object({
   author: t.Nullable(t.String()),
+  authorKind: t.Nullable(t.Union([t.Literal('agent'), t.Literal('user')])),
   runId: t.Nullable(t.Number()),
   links: t.Array(t.Object({ kind: t.String(), title: t.String(), href: t.String() })),
 });

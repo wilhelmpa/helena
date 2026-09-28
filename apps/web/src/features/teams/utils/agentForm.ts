@@ -35,6 +35,7 @@ export interface AgentFormValue {
   // The projects of the team the agent works in. Its key reaches those and nothing
   // else, so an agent with none authenticates and sees no project.
   projectIds: number[];
+  projectScope: 'selected' | 'all';
   // The project a new agent is created in, which it then works in alone.
   projectId: number | null;
   template: boolean;
@@ -99,6 +100,7 @@ export function initialAgentValue(agent?: AiAgent, projectId?: number): AgentFor
     delegationDelayMin: String(Math.round((agent?.delegationDelaySec ?? 120) / 60)),
     maxConcurrentChats: String(agent?.maxConcurrentChats ?? 3),
     projectIds: (agent?.projects ?? []).map((project) => project.id),
+    projectScope: agent?.projectScope ?? 'selected',
     projectId: agent ? null : (projectId ?? null),
     template: agent?.template ?? false,
     runnerScope: agent?.runnerScope ?? 'team',
@@ -151,6 +153,7 @@ function configFields(v: AgentFormValue) {
   };
   return {
     projectIds: v.template ? [] : v.projectIds,
+    projectScope: v.template ? ('selected' as const) : v.projectScope,
     template: v.template,
     instructions: v.instructions.trim() || null,
     triggerOnMention: v.triggerOnMention,

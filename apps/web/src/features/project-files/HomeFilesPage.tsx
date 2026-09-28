@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import Shell from '@/components/layout/Shell';
-import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useSession } from '@/lib/auth-client';
 import type { FileScope } from '@/lib/api/endpoints/projectFiles';
@@ -12,10 +11,7 @@ import { useProjectQuery, useProjectsQuery } from '@/services/projects.service';
 import { homeFilesPath } from '@/utils/paths';
 import FileBrowser from './components/FileBrowser';
 import { useFileNavigationGuard } from './hooks/useFileNavigationGuard';
-import HomeFilesRoots, {
-  HomeFilesRootSelect,
-  type HomeFilesRoot,
-} from './components/HomeFilesRoots';
+import type { HomeFilesRoot } from './components/HomeFilesRoots';
 
 function currentRoot(root: string | null, project: string | null): HomeFilesRoot {
   if (root === 'private' || root === 'templates') return root;
@@ -44,7 +40,6 @@ export default function HomeFilesPage() {
   const projectKey = current.startsWith('project:') ? current.slice('project:'.length) : null;
   const { can } = usePermissions(useProjectQuery(projectKey).data);
   const path = params.get('path') ?? '';
-  const phone = useMediaQuery('(max-width: 767px)');
   const scope: FileScope = projectKey
     ? { kind: 'project', projectKey, root: 'vault' }
     : { kind: 'home', root: current as 'home' | 'private' | 'templates' };
@@ -64,26 +59,10 @@ export default function HomeFilesPage() {
 
   return (
     <Shell globalHome globalTitle={tNav('files')} autoOpenGlobalChat={false}>
-      <div className="flex h-full min-h-0 flex-col gap-4 p-4 md:flex-row">
-        <HomeFilesRoots
-          current={current}
-          owner={owner}
-          projects={projects}
-          onChange={(root) => go({ root, path: '', file: null })}
-        />
+      <div className="flex h-full min-h-0 flex-col p-4">
         <FileBrowser
           key={current}
           onDirtyChange={navigation.onDirty}
-          leading={
-            phone ? (
-              <HomeFilesRootSelect
-                current={current}
-                owner={owner}
-                projects={projects}
-                onChange={(root) => go({ root, path: '', file: null })}
-              />
-            ) : undefined
-          }
           scope={scope}
           path={path}
           selected={params.get('file')}

@@ -8,6 +8,7 @@ import type { FilePermissions } from './FileBrowser';
 import FileEmptyState from './FileEmptyState';
 import FileItems from './FileItems';
 import FileLoadError from './FileLoadError';
+import type { ReactNode } from 'react';
 
 // The open folder in whatever state its listing is: loading, refused, empty, or its
 // entries.
@@ -22,6 +23,7 @@ export default function FileFolderContent({
   drag,
   selected,
   codeUrl,
+  createAction,
 }: {
   listing: UseQueryResult<FileList>;
   items: FileItem[];
@@ -33,6 +35,7 @@ export default function FileFolderContent({
   drag: FileEntryDrag;
   selected: string | null;
   codeUrl: string;
+  createAction?: ReactNode;
 }) {
   const t = useTranslations('files');
   if (listing.isPending)
@@ -45,7 +48,7 @@ export default function FileFolderContent({
   return (
     <>
       {items.length === 0 ? (
-        <FileEmptyState filter={filter} canUpload={can.create} />
+        <FileEmptyState filter={filter} canUpload={can.create} action={createAction} />
       ) : (
         <FileItems
           items={items}

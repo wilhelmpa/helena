@@ -17,12 +17,11 @@ export const CREDENTIAL_KINDS = [
 
 // A decision_model ("Entscheidungsmodell (Jev)", docs/helena-decisions/browser-task.md §3.3) is
 // the connection the browser's fast path asks: a System One service (TypeSafe's Jev, Jev through
-// the Vercel AI Gateway, or a Jev-compatible server such as Laya), its address, its model and
+// the Vercel AI Gateway, or a Jev-compatible server), its address, its model and
 // its key. Helena itself calls it; no agent ever gets the key.
-// The key comes from Zugänge ('stored'), from the local Laya installation's key file
-// ('local-laya'), or with the address from a model server of Helena's local AI ('local-ai',
+// The key comes from Zugänge ('stored') or with the address from a model server of Helena's local AI ('local-ai',
 // named by `modelServer`; docs/helena-decisions/decisions.md §3.3).
-export const DECISION_KEY_SOURCES = ['stored', 'credential', 'local-laya', 'local-ai'] as const;
+export const DECISION_KEY_SOURCES = ['stored', 'credential', 'local-ai'] as const;
 export type DecisionKeySource = (typeof DECISION_KEY_SOURCES)[number];
 
 // The runtimes a runtime login signs in, and how. Codex takes an API key here; its

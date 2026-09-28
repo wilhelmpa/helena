@@ -38,7 +38,6 @@
   "readOnly": "Somente leitura",
   "updated": "Atualizado {time}",
   "truncated": "Esta nota é longa demais para ser editada aqui. Abra-a em Notas para alterá-la.",
-  "openInNotes": "Abrir em Notas",
   "download": "Baixar",
   "conflict": "Existe uma versão mais nova",
   "conflictNotice": "Esta nota foi alterada em outro lugar enquanto você a editava.",

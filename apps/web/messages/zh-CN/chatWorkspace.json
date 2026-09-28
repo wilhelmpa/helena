@@ -59,7 +59,7 @@
     "previousVersion": "上一个版本",
     "nextVersion": "下一个版本",
     "saveAsNote": "另存为笔记",
-    "noteSaved": "聊天已作为笔记保存到 Docs。",
+    "noteSaved": "聊天已作为笔记保存到知识库。",
     "noteSaveFailed": "无法将聊天保存为笔记。",
     "noteQuestion": "问题",
     "noteAnswer": "{agent} 的回答",
@@ -79,8 +79,8 @@
     "stop": "停止回答",
     "attach": "附加",
     "uploadFile": "上传文件",
-    "fromVault": "从保险库选择",
-    "vaultRoot": "保险库",
+    "fromVault": "从知识库选择",
+    "vaultRoot": "知识库",
     "vaultEmpty": "此文件夹为空。",
     "uploading": "正在上传…",
     "uploadFailed": "上传失败。",
@@ -126,7 +126,7 @@
     "toggle": "显示/隐藏产物面板",
     "code": "代码",
     "preview": "预览",
-    "save": "保存到保险库",
+    "save": "保存到知识库",
     "saved": "已保存到 {path}。",
     "writing": "正在生成工件…"
   },
@@ -164,19 +164,9 @@
     "loading": "正在加载请求…"
   },
   "newChat": {
-    "title": "与 {agent} 的新对话",
-    "hint": "在输入框左下角选择智能体——它的状态也显示在那里。"
+    "title": "与 {agent} 的新对话"
   },
   "agents": {
-    "status": {
-      "running": "工作中",
-      "waiting": "等待你处理",
-      "ready": "就绪",
-      "offline": "离线",
-      "never": "从未连接",
-      "paused": "已暂停",
-      "template": "模板——添加到项目后才能与其对话"
-    },
     "runtimeExternal": "外部",
     "switch": "正在与 {agent} 对话——与其他智能体开始新对话",
     "newChatWith": "新对话，对象…"
@@ -204,12 +194,6 @@
     "stop": "停止回答",
     "jev": "Optional Jev first stage for this chat"
   },
-  "activity": {
-    "thinking": "{agent} 正在思考…",
-    "writing": "{agent} 正在撰写…",
-    "queued": "正在等待 {agent}——它的运行器离线。运行器恢复后开始回答。",
-    "usingTool": "{agent} 正在使用 {tool} …"
-  },
   "session": {
     "copy": "复制会话 ID",
     "copied": "已复制会话 ID",
@@ -222,15 +206,6 @@
     "interrupt": "打断",
     "end": "结束",
     "heard": "“{text}”",
-    "phase": {
-      "starting": "正在打开麦克风 …",
-      "listening": "我在听——直接说吧。",
-      "hearing": "正在听你说 …",
-      "transcribing": "正在记录 …",
-      "thinking": "{agent} 马上回答 …",
-      "speaking": "{agent} 正在说话——开口即可打断",
-      "speakingTap": "{agent} 正在说话"
-    },
     "where": {
       "listenLocal": "语音识别：本机上的 Whisper",
       "listenBrowser": "语音识别：浏览器（Chrome 和 Safari 会把录音发送给 Google 或 Apple）",
@@ -271,5 +246,25 @@
     "scope": "Applies to the optional chat pre-decision. Team, class and privacy permissions still apply. On and Inherit follow the team setting.",
     "needsChat": "Start or open a chat first.",
     "usage": "Use /jev on, /jev off or /jev inherit. /jev shows the saved value."
+  },
+  "runtimePicker": {
+    "summary": "Agent default",
+    "runtime": "Runtime",
+    "model": "Model",
+    "reasoning": "Reasoning",
+    "hermes": "Hermes (Cloud)",
+    "claude": "Claude Code",
+    "codex": "Codex",
+    "local": "Local",
+    "localMissing": "Local model not loaded",
+    "unavailable": "Currently unavailable",
+    "change": "Change runtime…",
+    "title": "Change runtime",
+    "scope": "Applies to this agent (all chats). Confirming starts a new chat.",
+    "cancel": "Cancel",
+    "confirm": "Confirm and start new chat",
+    "via": "via",
+    "unknownRuntime": "Unknown runtime",
+    "unknownModel": "Unknown model"
   }
 }

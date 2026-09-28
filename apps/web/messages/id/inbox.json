@@ -38,14 +38,67 @@
     "automation": "Helena"
   },
   "hub": {
+    "scopeProject": "Proyek ini",
+    "scopeAll": "Semua",
     "messages": "Messages",
     "updates": "Updates",
-    "loading": "Loading messages…"
+    "loading": "Loading messages…",
+    "mailLoading": "Memuat kotak surat…",
+    "mailError": "Kotak surat tidak dapat dimuat.",
+    "noProjectMailbox": "Belum ada kotak surat untuk proyek ini."
   },
   "mailFilter": {
     "read": "Status baca",
     "attachments": "Lampiran",
     "any": "Semua",
     "reset": "Atur ulang filter"
+  },
+  "owner": {
+    "home": "HOME",
+    "anAgent": "Seorang agen",
+    "defaultAgent": "Helena",
+    "mentionedBy": "{name} menyebut Anda",
+    "approvalRequest": "{name} meminta keputusan.",
+    "workflowWaiting": "Alur kerja ini menunggu keputusan Anda.",
+    "proposalRequest": "{name} mengusulkan perubahan.",
+    "decide": "Putuskan",
+    "approve": "Setujui",
+    "reply": "Balas",
+    "openDetails": "Buka detail",
+    "viewFailure": "Lihat kesalahan",
+    "markRead": "Tandai sudah dibaca",
+    "dashboard": "Dasbor",
+    "history": "Riwayat",
+    "view": "Lihat",
+    "now": "Sekarang",
+    "eyebrow": "ANDA · INBOX",
+    "title": "Inbox",
+    "loadingTitle": "Memuat Inbox.",
+    "allDone": "Semua selesai.",
+    "headingCount": "{count} hal",
+    "needsYou": "memerlukan perhatian Anda.",
+    "project": "Proyek",
+    "all": "Semua",
+    "loadError": "Beberapa item tidak dapat dimuat. Muat ulang halaman.",
+    "loading": "Memuat Inbox…",
+    "empty": "Tidak ada yang menunggu Anda saat ini.",
+    "toRead": "UNTUK DIBACA",
+    "noCompletedRuns": "Belum ada proses yang selesai.",
+    "runCompleted": "{name} · Proses selesai",
+    "tags": {
+      "budget": "ANGGARAN",
+      "approval": "PERSETUJUAN",
+      "workflow": "ALUR KERJA",
+      "proposal": "USULAN",
+      "mention": "SEBUTAN",
+      "system": "SISTEM",
+      "failure": "KESALAHAN"
+    }
+  },
+  "groups": {
+    "approvals": "Persetujuan",
+    "errors": "Kesalahan",
+    "mentions": "Sebutan",
+    "system": "Sistem"
   }
 }

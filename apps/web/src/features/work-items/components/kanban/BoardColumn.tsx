@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { useDroppable } from '@dnd-kit/core';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { ChevronsRightLeft, EyeOff, Pin, PinOff, Plus } from 'lucide-react';
@@ -21,12 +21,7 @@ import { useIncomingCount } from '../../hooks/useIncomingCount';
 import { COLUMN_WIDTH, PINNED_COLUMN } from '../../utils/kanban';
 import { wipAllows, wipFullColor, WIP_FULL_TINT, type WipState } from '../../utils/wipLimit';
 import { WipCount } from './WipCount';
-
-// The add button sits under the last card, outside the measured cards. It carries
-// its own copy of the gap that CardDropSlot puts above a card (pt-2).
-const ADD_BUTTON_GAP = 8;
-// The height of an outline button (h-9).
-const ADD_BUTTON_HEIGHT = 36;
+import InlineColumnCreate from './InlineColumnCreate';
 
 // One flat-board column: a fixed header plus a vertically scrollable, virtualized
 // list of its cards. The DOM holds only the cards in the viewport and near it, so
@@ -41,7 +36,6 @@ export function BoardColumn({
   manualOrder,
   onMoveIssue,
   onOpenIssue,
-  onAddIssue,
   onHide,
   onCollapse,
   pinned,
@@ -63,7 +57,6 @@ export function BoardColumn({
   // into a position for each issue the drag carries.
   onMoveIssue: (issueIds: number[], group: IssueGroup, index: number) => void;
   onOpenIssue: (id: number) => void;
-  onAddIssue: () => void;
   onHide: () => void;
   onCollapse: () => void;
   pinned: boolean;
@@ -81,6 +74,7 @@ export function BoardColumn({
   const t = useTranslations('workItems');
   const { can } = usePermissions();
   const canCreateIssue = can('work_items', 'create') && !readOnly;
+  const [creating, setCreating] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   // A column with a full hard limit accepts no card from another column. It is not
   // a drop target during such a drag. Cards already in the column still reorder
@@ -183,7 +177,7 @@ export function BoardColumn({
                   variant="ghost"
                   size="icon"
                   className="size-6 text-muted-foreground"
-                  onClick={onAddIssue}
+                  onClick={() => setCreating(true)}
                   aria-label={t('newIssue')}
                 >
                   <Plus />
@@ -195,6 +189,10 @@ export function BoardColumn({
         </div>
       </div>
 
+      {creating && (
+        <InlineColumnCreate project={project} group={group} onClose={() => setCreating(false)} />
+      )}
+
       <div
         ref={mergedRef}
         className={cn(
@@ -204,7 +202,7 @@ export function BoardColumn({
       >
         <div
           style={{
-            height: cardsHeight + (canCreateIssue ? ADD_BUTTON_GAP + ADD_BUTTON_HEIGHT : 0),
+            height: cardsHeight,
             position: 'relative',
             width: '100%',
           }}
@@ -243,22 +241,6 @@ export function BoardColumn({
           })}
           {isOver && manualOrder && issues.length > 0 && (
             <DropLine style={{ top: cardsHeight + 3 }} />
-          )}
-          {canCreateIssue && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="invisible absolute left-0 w-full text-muted-foreground opacity-0 group-focus-within/column:visible group-focus-within/column:opacity-100 group-hover/column:visible group-hover/column:opacity-100"
-                  style={{ top: cardsHeight + ADD_BUTTON_GAP }}
-                  onClick={onAddIssue}
-                  aria-label={t('newIssue')}
-                >
-                  <Plus />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>{t('newIssue')}</TooltipContent>
-            </Tooltip>
           )}
         </div>
       </div>

@@ -25,7 +25,6 @@ beforeEach(() => {
       browserUrl: 'https://helena.test/browser/projects/home/vnc.html',
       inboxUrl: '',
       connectionsUrl: '',
-      notesUrl: '',
     },
   };
   requests = [];

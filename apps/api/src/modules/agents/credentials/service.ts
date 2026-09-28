@@ -174,7 +174,12 @@ function toEntry(row: EntryRow, grants: GrantEntry[]): CredentialEntry {
     baseUrl: kind === 'decision_model' ? (readable.baseUrl ?? null) : null,
     model: kind === 'decision_model' ? (readable.model ?? null) : null,
     allowPrivateAddress: kind === 'decision_model' && readable.allowPrivateAddress === true,
-    keySource: kind === 'decision_model' ? (readable.keySource ?? 'stored') : null,
+    keySource:
+      kind === 'decision_model'
+        ? readable.keySource === 'credential' || readable.keySource === 'local-ai'
+          ? readable.keySource
+          : 'stored'
+        : null,
     sourceCredentialId:
       kind === 'decision_model' && readable.keySource === 'credential'
         ? (readable.sourceCredentialId ?? null)

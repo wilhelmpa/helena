@@ -44,11 +44,11 @@ export const helenaBrowserTaskRun = pgTable(
     credentialId: integer('credential_id').references(() => integrationCredential.id, {
       onDelete: 'set null',
     }),
-    // "Jev (TypeSafe)", "Laya (lokal)", "Standard (Coder VOL)": what the owner reads.
+    // "Jev (TypeSafe)", "Standard (Coder VOL)": what the owner reads.
     backendLabel: text('backend_label').notNull().default(''),
     // 'typesafe' | 'vercel' | 'local' — gen_ai.provider.name of the tokens.
     provider: text('provider'),
-    // 'jev' | 'laya' — the loop's policy.
+    // The loop's policy.
     policy: text('policy'),
     // The model configured, and the one the backend reported (model_check-like provenance).
     modelConfigured: text('model_configured'),

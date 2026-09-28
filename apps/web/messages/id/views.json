@@ -39,5 +39,14 @@
   "areaFolderTaken": "Area lain di proyek ini sudah memakai folder ini.",
   "openFolder": "Buka folder",
   "deleteView": "Hapus tampilan",
-  "deleteViewConfirm": "Hapus “{name}”? Tugas tetap ada; hanya tampilan tersimpan ini yang dihapus."
+  "deleteViewConfirm": "Hapus “{name}”? Tugas tetap ada; hanya tampilan tersimpan ini yang dihapus.",
+  "changed": "Changed",
+  "reset": "Reset",
+  "saveAsNew": "Save as new view",
+  "templates": {
+    "mine": "My tasks",
+    "open": "Open",
+    "week": "This week",
+    "status": "By status"
+  }
 }

@@ -6,6 +6,7 @@ import { Pin } from 'lucide-react';
 import type { ChatListView, ChatSummary } from '@/lib/api/endpoints/agentChat';
 import { cn } from '@/lib/utils';
 import Avatar from '@/components/common/Avatar';
+import Orb from '@/components/helena/Orb';
 import ChatListItemMenu from './ChatListItemMenu';
 
 // Wraps the substrings of `text` matching `query` in <mark>, case-insensitively. Plain
@@ -71,13 +72,7 @@ export default function ChatListItem({
             {highlighted(title, highlightQuery)}
           </span>
           {chat.pinned && <Pin className="size-3 shrink-0 text-muted-foreground" />}
-          {chat.running && (
-            <span
-              className="size-1.5 shrink-0 animate-pulse rounded-full bg-status-running motion-reduce:animate-none"
-              aria-label={t('list.running')}
-              role="status"
-            />
-          )}
+          {chat.running && <Orb state="thinking" size="dot" />}
         </span>
         {chat.snippet && (
           <span dir="auto" className="line-clamp-1 ps-6 text-xs font-normal text-muted-foreground">

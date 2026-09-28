@@ -124,18 +124,6 @@ describe('paths', () => {
     expect(isSyncConflict('Projects/VOL/Docs/Plan.md')).toBe(false);
   });
 
-  it('leaves the notes’ settings page, libraries and temporary files out', () => {
-    expect(isIgnoredPath('CONFIG.md')).toBe(true);
-    expect(isIgnoredPath('Library/Std/Config.md')).toBe(true);
-    expect(isIgnoredPath('Library')).toBe(true);
-    expect(isIgnoredPath('Projects/VOL/Docs/.Plan.md.sb-write-4711-3')).toBe(true);
-    expect(isIgnoredPath('.sb-case-probe-4711-0')).toBe(true);
-    // Only at the vault root: a project's own CONFIG.md or Library folder is knowledge.
-    expect(isIgnoredPath('Projects/VOL/Docs/CONFIG.md')).toBe(false);
-    expect(isIgnoredPath('Projects/VOL/Library/Books.md')).toBe(false);
-    expect(isIgnoredPath('Projects/VOL/Docs/sb-write-notes.md')).toBe(false);
-  });
-
   it('leaves version control, Obsidian state, the trash and temporary files out', () => {
     expect(isIgnoredPath('.git/HEAD')).toBe(true);
     expect(isIgnoredPath('.obsidian/workspace.json')).toBe(true);

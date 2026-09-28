@@ -19,6 +19,7 @@ import type { DashboardEditor } from '../hooks/useDashboardEditor';
 import WidgetFrame from './WidgetFrame';
 import WidgetBody from './WidgetBody';
 import WidgetSettings, { hasWidgetSettings } from './WidgetSettings';
+import { Card } from '@/components/helena/DashboardPrimitives';
 
 // The dashboard body: a react-grid-layout board. Widgets are positioned and sized
 // by (x, y, w, h); in edit mode they drag by the header handle and resize from the
@@ -69,9 +70,7 @@ export default function WidgetGrid({
 
   if (layout.length === 0) {
     return (
-      <p className="rounded-lg border border-dashed py-16 text-center text-sm text-muted-foreground">
-        {t('noWidgets')}
-      </p>
+      <Card className="py-16 text-center text-sm text-muted-foreground">{t('noWidgets')}</Card>
     );
   }
 

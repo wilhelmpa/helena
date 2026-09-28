@@ -795,7 +795,9 @@
         "reasoning": "raisonnement"
       }
     },
-    "chatTemplate": "Un modèle ne s’exécute pas. Ajoutez-le à un projet comme agent pour l’essayer ici."
+    "chatTemplate": "Un modèle ne s’exécute pas. Ajoutez-le à un projet comme agent pour l’essayer ici.",
+    "allProjectsScope": "Project scope: all",
+    "allProjectsScopeHint": "May work in every current and future project of this team."
   },
   "members": {
     "roleSaved": "{name} est maintenant {role}",

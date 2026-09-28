@@ -1,4 +1,4 @@
-import { CircleDashed } from 'lucide-react';
+import { CircleDashed, RefreshCw } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { Assignee } from '@/lib/api/endpoints/projects';
 import Avatar from '@/components/common/Avatar';
@@ -26,6 +26,7 @@ export default function DelegateSelect({
   const agents = assignees.filter((a) => a.kind === 'agent');
   const delegate = agents.find((a) => a.userId === value);
   const toItem = useCandidatePickItem(assignees, value, onChange);
+  const currentItem = delegate ? toItem(delegate) : null;
 
   return (
     <PopoverPick
@@ -52,6 +53,20 @@ export default function DelegateSelect({
           onSelect: () => onChange(null),
         },
         ...agents.map(toItem),
+        ...(delegate
+          ? [
+              {
+                key: 'delegate-again',
+                search: `${t('delegateAgain')} ${delegate.name}`,
+                icon: <RefreshCw />,
+                label: t('delegateAgain'),
+                selected: false,
+                disabled: currentItem?.disabled,
+                tooltip: currentItem?.tooltip,
+                onSelect: () => onChange(delegate.userId),
+              },
+            ]
+          : []),
       ]}
     />
   );

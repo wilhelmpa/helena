@@ -327,6 +327,12 @@ const configFields = {
         "joins on the team's default role; set_member_role changes it per project.",
     }),
   ),
+  projectScope: t.Optional(
+    t.Union([t.Literal('selected'), t.Literal('all')], {
+      description:
+        "'all' attaches the agent to every project of its team, including future projects; only a team owner or manager may set it.",
+    }),
+  ),
   runnerScope: t.Optional(
     t.Union([t.Literal('owner'), t.Literal('team')], {
       description:
@@ -347,6 +353,8 @@ const configFields = {
 export const AiAgentResponse = t.Object({
   id: t.Number(),
   teamId: t.Number(),
+  agentRole: t.Union([t.Literal('agent'), t.Literal('home')]),
+  projectScope: t.Union([t.Literal('selected'), t.Literal('all')]),
   projects: t.Array(
     t.Object({
       id: t.Number(),
@@ -606,6 +614,7 @@ export const ChatMessagesResponse = t.Object({
       ),
       errorModel: t.Optional(t.Nullable(t.String())),
       modelRoute: t.Optional(t.Nullable(modelRoute)),
+      modelCheck: t.Optional(t.Nullable(modelCheck)),
       // A local model was asked for and the configured one answered (model check).
       localFallback: t.Optional(
         t.Object({

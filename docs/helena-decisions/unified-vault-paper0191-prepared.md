@@ -4,8 +4,8 @@ Prepared from `94a0f02ce8f6040e832b6a70722828c421607d0a`.
 No deployment, existing-object migration or live acceptance is implied by this preparation.
 
 The Files workspace is the single navigation entry for files, documents, Markdown and
-boards. Existing Docs and board URLs resolve to the workspace. SilverBullet opens the
-same canonical nonprivate originals on its isolated owner-only origin. Project members
+boards. Existing Docs and board URLs resolve to the workspace. Helena opens the
+same canonical originals in its native editor. Project members
 retain the native editor and existing project permissions. Ticket and own-chat references
 remain separately authorized. Existing same-project agent tools read and write these
 originals without a second store or additional project membership.
@@ -51,8 +51,6 @@ change. The previous journal entries and other snapshot tables remain unchanged;
 
 Root still needs the exact combined private PostgreSQL checks (including receipt pool /
 postcommit, attachment migration, ACL and rename), full gate and ordered deployment.
-Use `unified-vault-acceptance.md` for the actual UI → task/chat → agent → SilverBullet →
-agent original-byte cycle, cross-project denial, external Notes authentication, watcher
-provenance and restart checks. Existing-object migration remains separate: reviewed dry run,
-apply, repeated dry run, while retaining legacy objects and keys. A visible iframe or
-button alone does not establish successful authentication, editing or byte preservation.
+Use `unified-vault-acceptance.md` for the actual UI → task/chat → agent → device edit →
+agent original-byte cycle, cross-project denial, watcher provenance and restart checks. Existing-object migration remains separate: reviewed dry run,
+apply, repeated dry run, while retaining legacy objects and keys. The acceptance checks must establish editing and byte preservation.

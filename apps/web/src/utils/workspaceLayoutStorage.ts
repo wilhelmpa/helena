@@ -35,6 +35,10 @@ export function layoutStorageKey(context: LayoutContext): string {
   return `workspace:layout:${context}`;
 }
 
+export function projectLayoutStorageKey(context: LayoutContext, projectKey: string | null): string {
+  return `${layoutStorageKey(context)}:${projectKey ?? 'home'}`;
+}
+
 // The widths of the areas docked beside the page in one layout, by area id.
 export function dockWidthsKey(context: LayoutContext, layoutId: string): string {
   return `workspace:layout:${context}:widths:${layoutId}`;

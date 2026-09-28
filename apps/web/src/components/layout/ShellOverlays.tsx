@@ -1,10 +1,14 @@
 'use client';
 
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import type { ProjectDetail } from '@/lib/api/endpoints/projects';
-import { issuePath, projectPath } from '@/utils/paths';
+import { useProjectQuery, useProjectsQuery } from '@/services/projects.service';
+import { useCycleOptionsQuery } from '@/services/cycles.service';
+import { useViewFoldersQuery } from '@/services/views.service';
+import { dashboardsPath, issuePath } from '@/utils/paths';
 import type { useOverlays } from '@/hooks/useOverlays';
 import NewProjectModal from '@/components/layout/NewProjectModal';
 import NewTeamModal from '@/features/teams/components/NewTeamModal';
@@ -25,6 +29,19 @@ export default function ShellOverlays({
 }) {
   const router = useRouter();
   const t = useTranslations('issue.create');
+  const [creationProjectKey, setCreationProjectKey] = useState<string | null>(null);
+  const targetKey = creationProjectKey ?? projectKey;
+  const selectedScaffold = useProjectQuery(targetKey !== projectKey ? targetKey : null).data;
+  const selectedCycles =
+    useCycleOptionsQuery(selectedScaffold?.project.cyclesEnabled ? targetKey : null).data ?? [];
+  const selectedAreas = useViewFoldersQuery(targetKey !== projectKey ? targetKey : null).data ?? [];
+  const projects = useProjectsQuery().data ?? [];
+  const creationProject: ProjectDetail | null =
+    targetKey === projectKey
+      ? project
+      : selectedScaffold
+        ? { ...selectedScaffold, issues: [], plannedCycles: selectedCycles, areas: selectedAreas }
+        : null;
 
   return (
     <>
@@ -33,7 +50,7 @@ export default function ShellOverlays({
           onClose={() => overlays.setShowNewProject(false)}
           onCreated={(key) => {
             overlays.setShowNewProject(false);
-            router.push(projectPath(key));
+            router.push(dashboardsPath(key));
           }}
         />
       )}
@@ -47,13 +64,22 @@ export default function ShellOverlays({
         />
       )}
 
-      {project && overlays.newIssueDefaults != null && (
+      {creationProject && overlays.newIssueDefaults != null && (
         <NewIssueModal
-          project={project}
+          key={creationProject.project.key}
+          project={creationProject}
+          projects={projects}
+          onProjectChange={setCreationProjectKey}
           defaults={overlays.newIssueDefaults}
-          onClose={() => overlays.setNewIssueDefaults(null)}
-          onCreated={(created) => {
+          onClose={() => {
             overlays.setNewIssueDefaults(null);
+            setCreationProjectKey(null);
+          }}
+          onCreated={(created, keepOpen) => {
+            if (!keepOpen) {
+              overlays.setNewIssueDefaults(null);
+              setCreationProjectKey(null);
+            }
             // Wherever the task was started (a note, the board, the palette), it says
             // it exists and leads to it.
             toast.success(t('created', { identifier: created.identifier }), {

@@ -43,7 +43,7 @@
     },
     "pulse": {
       "label": "Pulse",
-      "description": "GitHub-style heatmap of daily activity"
+      "description": "Compact activity trend"
     },
     "throughput": {
       "label": "Throughput",
@@ -208,5 +208,19 @@
     "unassigned": "Unassigned"
   },
   "deleteDashboard": "Delete dashboard",
-  "deleteDashboardConfirm": "Delete “{name}” with its widgets? The tasks are not touched."
+  "deleteDashboardConfirm": "Delete “{name}” with its widgets? The tasks are not touched.",
+  "overview": {
+    "openTasks": "Open tasks",
+    "total": "{count} total",
+    "inProgress": "In progress",
+    "projectTasks": "Tasks in this project",
+    "agentsWorking": "Agents working",
+    "running": "Running now",
+    "needsYou": "Needs you",
+    "approvalsAndQuestions": "Approvals and questions",
+    "finished": "Recently finished",
+    "noRunning": "No agent is running right now.",
+    "nothingWaiting": "Nothing needs you right now.",
+    "noFinished": "No run has finished yet."
+  }
 }

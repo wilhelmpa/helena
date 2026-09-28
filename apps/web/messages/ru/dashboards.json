@@ -43,7 +43,7 @@
     },
     "pulse": {
       "label": "Пульс",
-      "description": "Тепловая карта ежедневной активности"
+      "description": "Краткая динамика активности"
     },
     "throughput": {
       "label": "Пропускная способность",
@@ -208,5 +208,19 @@
     "unassigned": "Без исполнителя"
   },
   "deleteDashboard": "Удалить дашборд",
-  "deleteDashboardConfirm": "Удалить «{name}» вместе с виджетами? Задачи это не затронет."
+  "deleteDashboardConfirm": "Удалить «{name}» вместе с виджетами? Задачи это не затронет.",
+  "overview": {
+    "openTasks": "Открытые задачи",
+    "total": "Всего {count}",
+    "inProgress": "В работе",
+    "projectTasks": "Задачи проекта",
+    "agentsWorking": "Агенты работают",
+    "running": "Сейчас выполняется",
+    "needsYou": "Нужно ваше решение",
+    "approvalsAndQuestions": "Согласования и вопросы",
+    "finished": "Недавно завершено",
+    "noRunning": "Сейчас ни один агент не работает.",
+    "nothingWaiting": "Сейчас ничего не требует вашего внимания.",
+    "noFinished": "Пока нет завершённых запусков."
+  }
 }

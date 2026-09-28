@@ -6,8 +6,7 @@ it is not a claim of deployment.
 
 ## Behavior
 
-- One **Dateien** navigation item at Home and in a project. Documents and SilverBullet notes
-  open there. Boards are a tab of the same project workspace; the former Docs/Boards routes
+- One **Dateien** navigation item at Home and in a project. Documents and notes open there. Boards are a tab of the same project workspace; the former Docs/Boards routes
   redirect with their selected document/board/canvas preserved. Private/Home/Templates and
   project roots retain their independent access rules.
 - Upload, nested-folder browsing, full-text search, text editing, preview/download, task links,
@@ -15,13 +14,11 @@ it is not a claim of deployment.
   PDF, image, audio/video and Office previews reuse the existing viewers; text extraction now
   reads the actual knowledge endpoint instead of the old `/vault/text` placeholder.
 - Owner correction, 2026-09-27: all ordinary file/note use stays inside Helena. The existing
-  native Markdown/source editor is the default for the same canonical SilverBullet vault.
+  native Markdown/source editor is the default for the same canonical vault.
   No separate Notes domain, iframe option or runtime URL mapping is required or offered.
   Existing service/data/configuration remain untouched; the unsafe same-origin guard remains.
-- This is shared-vault integration, not full SilverBullet frontend parity. Space Lua, inline
-  expressions, custom plugs/styles, virtual folder pages and offline/PWA behavior remain
-  explicitly outside this release; their source bytes are retained. See
-  `vault-within-helena-2026-09-27.md` for the upstream evidence and acceptance boundary.
+- This is shared-vault integration. Helena's native editor, Files viewer and agent tools
+  use the same original files. Syncthing mirrors them to devices.
 - Chat uploads and initiative uploads store original bytes in the project vault. A PDF stays a
   PDF, including scans; extracted Markdown is a read result, not a replacement for the original.
   Existing `upload_chat_attachment`, `read_chat_attachment`, `write_note`, `read_document`,
@@ -73,9 +70,7 @@ code cannot regain an original PDF that was already discarded; report any such c
 3. On the actual Helena origin, open Markdown directly in the native editor, edit it and
    read the same changed bytes via Helena/agent tools. Verify ETag conflict handling,
    canonical wiki links and persistence after reopening. No Notes domain or sign-in is needed.
-4. Confirm there is no SilverBullet iframe/menu offer even with legacy Notes runtime values.
-   Do not expose the stock SilverBullet frontend on Helena's origin. The existing isolated
-   service/data are preserved; a future full frontend integration needs separate acceptance.
+4. Confirm there is no separate Notes iframe or menu offer, including with saved legacy panels.
 5. With a permitted agent, create a uniquely named Markdown report and an original PDF/image,
    attach the report to a ticket without copying, find it in Dateien, edit it,
    rename it, then read the same content through the attachment ID and knowledge search.

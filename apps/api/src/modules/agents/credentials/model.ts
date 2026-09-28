@@ -32,7 +32,6 @@ const ListedKind = t.Union([
 const DecisionKeySource = t.Union([
   t.Literal('stored'),
   t.Literal('credential'),
-  t.Literal('local-laya'),
   t.Literal('local-ai'),
 ]);
 const LoginRuntime = t.Union([t.Literal('claude'), t.Literal('codex')]);

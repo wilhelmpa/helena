@@ -18,7 +18,6 @@ import { postAutopilotReport } from '#modules/autopilot/report';
 import type { AutopilotLevel } from '@helena/policy';
 import { agentRunConfig, loadThreadContext } from '../core/run-queue';
 import { recordAgentRunFinished, recordAgentRunStarted } from '../core/run-activity';
-import { isHomeAgent } from '../core/home-agent';
 import { normalizeRuntimePolicy } from '../core/service';
 import { parseLocalModelId, type RuntimeFailure } from '@helena/sdk';
 import { learnFromOutcome, routeOf, runtimeOfPolicy } from '#modules/model-availability/service';
@@ -79,6 +78,8 @@ export interface RunnerAgent {
   // the handle it is addressed by.
   userId: string;
   username: string;
+  agentRole: 'agent' | 'home';
+  projectScope: 'selected' | 'all';
   // The projects of the team the agent works in, and the operator's own instructions.
   // A chat names all of them in the system prompt; a run names the one it works in.
   projects: RunnerProject[];
@@ -103,6 +104,8 @@ export async function getRunnerAgent(userId: string): Promise<RunnerAgent | null
       teamId: aiAgent.teamId,
       userId: aiAgent.userId,
       username: aiAgent.username,
+      agentRole: aiAgent.agentRole,
+      projectScope: aiAgent.projectScope,
       instructions: aiAgent.instructions,
       model: aiAgent.model,
       runtimePolicy: aiAgent.runtimePolicy,
@@ -134,6 +137,8 @@ export async function getRunnerAgent(userId: string): Promise<RunnerAgent | null
   const policy = normalizeRuntimePolicy(row.runtimePolicy);
   return {
     ...row,
+    agentRole: row.agentRole as 'agent' | 'home',
+    projectScope: row.projectScope as 'selected' | 'all',
     projects,
     thinkingLevel: policy.reasoningEffort,
     maxTurns: policy.maxTurns ?? null,
@@ -565,7 +570,7 @@ const RESUME_PROMPT =
 // The Home agent and an agent of several projects share one working directory outside
 // any project, where an area folder does not exist.
 function worksInProjectWorkspace(agent: RunnerAgent): boolean {
-  return agent.projects.length === 1 && !isHomeAgent(agent.username);
+  return agent.projects.length === 1 && agent.projectScope === 'selected';
 }
 
 // What the agent is told about the run before the task itself: the project the run

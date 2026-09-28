@@ -43,7 +43,7 @@
     },
     "pulse": {
       "label": "Pulso",
-      "description": "Mapa de calor estilo GitHub da atividade diária"
+      "description": "Tendência compacta da atividade"
     },
     "throughput": {
       "label": "Vazão",
@@ -208,5 +208,19 @@
     "unassigned": "Não atribuídas"
   },
   "deleteDashboard": "Excluir painel",
-  "deleteDashboardConfirm": "Excluir “{name}” com seus widgets? As tarefas não são afetadas."
+  "deleteDashboardConfirm": "Excluir “{name}” com seus widgets? As tarefas não são afetadas.",
+  "overview": {
+    "openTasks": "Tarefas abertas",
+    "total": "{count} no total",
+    "inProgress": "Em andamento",
+    "projectTasks": "Tarefas do projeto",
+    "agentsWorking": "Agentes trabalhando",
+    "running": "Em execução",
+    "needsYou": "Precisa de você",
+    "approvalsAndQuestions": "Aprovações e perguntas",
+    "finished": "Concluído recentemente",
+    "noRunning": "Nenhum agente está trabalhando agora.",
+    "nothingWaiting": "Nada precisa de você agora.",
+    "noFinished": "Nenhuma execução concluída ainda."
+  }
 }

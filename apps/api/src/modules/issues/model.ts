@@ -597,7 +597,12 @@ export const updateIssueBody = t.Object({
     t.Nullable(t.String({ description: 'New assignee user id (a project member), or null.' })),
   ),
   delegateUserId: t.Optional(
-    t.Nullable(t.String({ description: 'New delegate user id (an AI agent), or null.' })),
+    t.Nullable(
+      t.String({
+        description:
+          'Delegate user id (an AI agent), or null. Send the current id again to explicitly hand the task back to that agent; this queues a run if none is active.',
+      }),
+    ),
   ),
   title: t.Optional(t.String({ minLength: 1, description: 'New title.' })),
   description: t.Optional(t.String({ description: 'New description.' })),

@@ -27,7 +27,7 @@ import TableCard from '@/components/common/page/TableCard';
 
 // The agents working in this project. The server leaves the Home agent out. Their role
 // and instructions here are project-specific fields of the membership.
-export default function ProjectAiAgents() {
+export default function ProjectAiAgents({ onNewAgent }: { onNewAgent: () => void }) {
   const t = useTranslations('settings.agents');
   const tTeam = useTranslations('teams.agents');
   const tChat = useTranslations('aiChat');
@@ -45,7 +45,16 @@ export default function ProjectAiAgents() {
   const shown = paging.slice(agents);
 
   if (query.isPending) return <ListSkeleton rows={3} rowClassName="h-12" />;
-  if (agents.length === 0) return <EmptyState title={t('empty')} description={t('emptyHint')} />;
+  if (agents.length === 0)
+    return (
+      <EmptyState title={t('emptyHint')} description="">
+        {can('ai_agents', 'create') && (
+          <Button size="sm" onClick={onNewAgent}>
+            {tTeam('newAgent')}
+          </Button>
+        )}
+      </EmptyState>
+    );
 
   return (
     <div className="space-y-4">

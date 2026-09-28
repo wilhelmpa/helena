@@ -516,6 +516,62 @@ describe('update center: checking', () => {
     expect(helperRequests.every((request) => request.action === 'inventory')).toBe(true);
   });
 
+  for (const succeeded of [true, false])
+    it(`records a prepared Whisper UI action and its ${succeeded ? 'live proof' : 'rollback failure'}`, async () => {
+      const { api } = await owner();
+      startFakeHelper((request) => {
+        if (request.action === 'inventory')
+          return {
+            state: 'done',
+            ok: true,
+            result: {
+              ...INVENTORY,
+              voice: {
+                whisper: {
+                  present: true,
+                  state: 'active',
+                  version: '1.8.4',
+                  versionSource: 'running-executable-path',
+                  update: {
+                    ready: true,
+                    code: 'ready',
+                    version: '1.9.4',
+                    expiresAt: Date.now() / 1000 + 120,
+                  },
+                },
+              },
+            },
+          };
+        if (request.action === 'whisper-ui')
+          return {
+            state: succeeded ? 'done' : 'failed',
+            ok: succeeded,
+            error: succeeded ? null : 'Whisper rollback requires Root recovery',
+            result: { phase: succeeded ? 'active' : 'restoring', speechVerified: succeeded },
+          };
+        return helperAnswers(request);
+      });
+      await runUpdateCheck({ only: 'local-ai' });
+      const whisper = (await rows()).find((row) => row.component === 'whisper-cpp')!;
+      expect(whisper.applicable).toBe(true);
+      const member = authedApi((await signUpTestUser({ name: 'Member' })).cookie);
+      expect(
+        (await member.god['update-center'].items({ itemId: whisper.id }).apply.post({})).status,
+      ).toBe(403);
+      const started = await api.god['update-center'].items({ itemId: whisper.id }).apply.post({});
+      expect(started.status).toBe(201);
+      await waitFor(async () => (await followActions()) > 0 || null);
+      const action = (await db.select().from(helenaUpdateAction))[0]!;
+      expect(action.state).toBe(succeeded ? 'done' : 'failed');
+      expect(action.result).toMatchObject({
+        phase: succeeded ? 'active' : 'restoring',
+        speechVerified: succeeded,
+      });
+      expect(helperRequests.find((request) => request.action === 'whisper-ui')).toMatchObject({
+        version: '1.9.4',
+      });
+    });
+
   it('exposes failed metadata refresh and retains previous APT candidates', async () => {
     const { api } = await owner();
     startFakeHelper(helperAnswers);

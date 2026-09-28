@@ -63,7 +63,12 @@ export async function knowledgeReach(caller: AuthUser, viaMcp: boolean): Promise
     .from(teamMember)
     .where(eq(teamMember.userId, caller.id));
   const [agent] = await db
-    .select({ username: aiAgent.username, teamId: aiAgent.teamId })
+    .select({
+      username: aiAgent.username,
+      teamId: aiAgent.teamId,
+      agentRole: aiAgent.agentRole,
+      projectScope: aiAgent.projectScope,
+    })
     .from(aiAgent)
     .where(eq(aiAgent.userId, caller.id));
   const [person] = await db
@@ -80,7 +85,7 @@ export async function knowledgeReach(caller: AuthUser, viaMcp: boolean): Promise
     if (instanceOwner) resources.add(HOME_VAULT_RESOURCE);
     teams.set(standing.teamId, resources);
   }
-  if (agent && isHomeAgent(agent.username)) {
+  if (agent?.projectScope === 'all') {
     const teamProjects = await db
       .select({
         id: project.id,
@@ -99,7 +104,7 @@ export async function knowledgeReach(caller: AuthUser, viaMcp: boolean): Promise
     }
     const own = teams.get(agent.teamId) ?? new Set<string>();
     own.add('documents');
-    own.add(HOME_VAULT_RESOURCE);
+    if (isHomeAgent(agent.agentRole)) own.add(HOME_VAULT_RESOURCE);
     teams.set(agent.teamId, own);
   }
   return { userId: caller.id, projects, teams };

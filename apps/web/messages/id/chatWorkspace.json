@@ -59,7 +59,7 @@
     "previousVersion": "Versi sebelumnya",
     "nextVersion": "Versi berikutnya",
     "saveAsNote": "Simpan sebagai catatan",
-    "noteSaved": "Obrolan disimpan sebagai catatan di Docs.",
+    "noteSaved": "Obrolan disimpan sebagai catatan di Pengetahuan.",
     "noteSaveFailed": "Obrolan tidak bisa disimpan sebagai catatan.",
     "noteQuestion": "Pertanyaan",
     "noteAnswer": "Jawaban {agent}",
@@ -79,8 +79,8 @@
     "stop": "Hentikan jawaban",
     "attach": "Lampirkan",
     "uploadFile": "Unggah berkas",
-    "fromVault": "Pilih dari vault",
-    "vaultRoot": "Vault",
+    "fromVault": "Pilih dari Pengetahuan",
+    "vaultRoot": "Pengetahuan",
     "vaultEmpty": "Folder ini kosong.",
     "uploading": "Mengunggah…",
     "uploadFailed": "Unggahan gagal.",
@@ -126,7 +126,7 @@
     "toggle": "Tampilkan/sembunyikan panel artefak",
     "code": "Kode",
     "preview": "Pratinjau",
-    "save": "Simpan ke vault",
+    "save": "Simpan ke Pengetahuan",
     "saved": "Disimpan ke {path}.",
     "writing": "Menulis artefak…"
   },
@@ -164,19 +164,9 @@
     "loading": "Memuat permintaan…"
   },
   "newChat": {
-    "title": "Chat baru dengan {agent}",
-    "hint": "Pilih agen di kiri bawah kolom input — statusnya juga terlihat di sana."
+    "title": "Chat baru dengan {agent}"
   },
   "agents": {
-    "status": {
-      "running": "Sedang bekerja",
-      "waiting": "Menunggu Anda",
-      "ready": "Siap",
-      "offline": "Offline",
-      "never": "Belum pernah terhubung",
-      "paused": "Dijeda",
-      "template": "Templat — tambahkan ke proyek untuk chat dengannya"
-    },
     "runtimeExternal": "Eksternal",
     "switch": "Chat dengan {agent} — mulai chat baru dengan agen lain",
     "newChatWith": "Chat baru dengan …"
@@ -204,12 +194,6 @@
     "stop": "Hentikan jawaban",
     "jev": "Optional Jev first stage for this chat"
   },
-  "activity": {
-    "thinking": "{agent} sedang berpikir…",
-    "writing": "{agent} sedang menulis…",
-    "queued": "Menunggu {agent} — runner-nya offline. Jawaban dimulai begitu runner kembali.",
-    "usingTool": "{agent} sedang memakai {tool} …"
-  },
   "session": {
     "copy": "Salin ID sesi",
     "copied": "ID sesi disalin",
@@ -222,15 +206,6 @@
     "interrupt": "Sela",
     "end": "Akhiri",
     "heard": "“{text}”",
-    "phase": {
-      "starting": "Menyalakan mikrofon …",
-      "listening": "Saya mendengarkan – bicara saja.",
-      "hearing": "Saya mendengar Anda …",
-      "transcribing": "Mencatat …",
-      "thinking": "{agent} akan segera menjawab …",
-      "speaking": "{agent} sedang berbicara – bicaralah untuk menyela",
-      "speakingTap": "{agent} sedang berbicara"
-    },
     "where": {
       "listenLocal": "Pengenalan suara: Whisper di mesin ini",
       "listenBrowser": "Pengenalan suara: browser (Chrome dan Safari mengirim rekaman ke Google atau Apple)",
@@ -271,5 +246,25 @@
     "scope": "Applies to the optional chat pre-decision. Team, class and privacy permissions still apply. On and Inherit follow the team setting.",
     "needsChat": "Start or open a chat first.",
     "usage": "Use /jev on, /jev off or /jev inherit. /jev shows the saved value."
+  },
+  "runtimePicker": {
+    "summary": "Agent default",
+    "runtime": "Runtime",
+    "model": "Model",
+    "reasoning": "Reasoning",
+    "hermes": "Hermes (Cloud)",
+    "claude": "Claude Code",
+    "codex": "Codex",
+    "local": "Local",
+    "localMissing": "Local model not loaded",
+    "unavailable": "Currently unavailable",
+    "change": "Change runtime…",
+    "title": "Change runtime",
+    "scope": "Applies to this agent (all chats). Confirming starts a new chat.",
+    "cancel": "Cancel",
+    "confirm": "Confirm and start new chat",
+    "via": "via",
+    "unknownRuntime": "Unknown runtime",
+    "unknownModel": "Unknown model"
   }
 }

@@ -121,27 +121,20 @@ describe('credential form', () => {
       notes: '',
       value: 'ts-key',
     });
-    // The local Laya preset reads its key on the server: nothing to enter, no value sent.
-    const laya = {
+    // A compatible server needs its address and may run without a key.
+    const compatible = {
       ...jev,
-      label: 'Laya',
+      label: 'Own server',
       provider: 'compatible',
       baseUrl: 'http://127.0.0.1:8791',
-      model: 'laya-browser',
-      keySource: 'local-laya' as const,
-      value: 'ignored',
+      model: 'jev-latest',
+      value: '',
     };
-    assert.equal(isCredentialFormValid(laya, null), true);
-    const sent = toNewCredential(laya);
-    assert.equal(sent.keySource, 'local-laya');
-    assert.equal('value' in sent, false);
-    // A compatible server needs its address; the local address allowance is its alone.
+    assert.equal(isCredentialFormValid(compatible, null), true);
+    assert.equal('value' in toNewCredential(compatible), false);
+    assert.equal(isCredentialFormValid({ ...compatible, baseUrl: ' ' }, null), false);
     assert.equal(
-      isCredentialFormValid({ ...laya, keySource: 'stored', baseUrl: ' ' }, null),
-      false,
-    );
-    assert.equal(
-      toNewCredential({ ...laya, provider: 'vercel', allowPrivateAddress: true })
+      toNewCredential({ ...compatible, provider: 'vercel', allowPrivateAddress: true })
         .allowPrivateAddress,
       false,
     );
@@ -255,11 +248,17 @@ describe('credential form', () => {
   });
 });
 
-function agent(id: number, username: string, projects: { id: number; name: string }[] = []) {
+function agent(
+  id: number,
+  username: string,
+  projects: { id: number; name: string }[] = [],
+  agentRole: 'agent' | 'home' = 'agent',
+) {
   return {
     id,
     name: username,
     username,
+    agentRole,
     kind: 'external',
     template: false,
     projects: projects.map((p) => ({
@@ -277,16 +276,19 @@ describe('grantable agents', () => {
   const ops = { id: 2, name: 'Ops' };
   const agents = [
     agent(5, 'writer', [mkt]),
-    agent(1, 'master', [mkt, ops]),
+    agent(1, 'renamed-home', [mkt, ops], 'home'),
     agent(3, 'hermes-mkt-coordinator', [mkt]),
     agent(4, 'hermes-ops-coordinator', [ops]),
     { ...agent(6, 'designer'), template: true } as AiAgent,
   ];
 
   it('names the Home agent, the coordinators and the project agents', () => {
-    assert.equal(agentRole({ username: 'master' }), 'home');
-    assert.equal(agentRole({ username: 'hermes-mkt-coordinator' }), 'coordinator');
-    assert.equal(agentRole({ username: 'writer' }), 'specialist');
+    assert.equal(agentRole({ username: 'renamed', agentRole: 'home' }), 'home');
+    assert.equal(
+      agentRole({ username: 'hermes-mkt-coordinator', agentRole: 'agent' }),
+      'coordinator',
+    );
+    assert.equal(agentRole({ username: 'writer', agentRole: 'agent' }), 'specialist');
   });
 
   it('groups the Home agent first, then each project with its coordinator ahead', () => {

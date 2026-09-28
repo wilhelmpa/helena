@@ -13,10 +13,11 @@ import SystemDetailsDialog from './SystemDetailsDialog';
 import WidgetView, { WidgetPlaceholder } from './WidgetView';
 import { columnsOf, sectionBlocks, type Arranged } from './layout';
 import { HomeDashboardProvider, useHomeDashboard, useHomeDashboardValue } from './useHomeDashboard';
+import { DashboardTitle, MonoLabel } from '@/components/helena/DashboardPrimitives';
 
 // The figure row: an auto-fit grid of tiles at least 160px wide that wraps to a second row
 // instead of scrolling; two columns on a phone.
-const FIGURE_ROW = 'grid grid-cols-2 gap-4 @lg:grid-cols-[repeat(auto-fit,minmax(10rem,1fr))]';
+const FIGURE_ROW = 'grid grid-cols-2 gap-[14px] @4xl:grid-cols-4';
 
 // A pair block of half-width sections: two columns on a wide screen (first, third, … left),
 // one column in the reader's order below that. The columns are `display: contents` when
@@ -58,7 +59,7 @@ function Sections({
     <>
       {blocks.map((block) =>
         block.kind === 'full' ? (
-          <div key={block.item.id} className="min-w-0">
+          <div key={block.item.id} id={block.item.id} className="min-w-0 scroll-mt-4">
             {render(block.item)}
           </div>
         ) : (
@@ -71,8 +72,8 @@ function Sections({
 
 // Start (owner, 2026-09-24, direction C "Kennzahlen und Heute"; docs/helena-decisions/
 // dashboard.md): the page toolbar holds today's date and "Anpassen"; a row of figure tiles
-// (what waits, who works, the reader's tasks, every plan limit, the system, updates …),
-// and below it the sections ("Braucht dich", "Meine Aufgaben", "Läuft gerade", "Als
+// (who works, the reader's tasks, every plan limit, the system, updates …),
+// and below it the sections ("Meine Aufgaben", "Läuft gerade", "Als
 // Nächstes", "Projekte"). Every tile and section is a widget of the registry
 // (extensions/dashboardWidgets); the reader hides and orders them in "Anpassen".
 export default function HomeDashboard() {
@@ -102,14 +103,26 @@ export default function HomeDashboard() {
           ]}
         />
       </PageToolbar>
-      <div className="@container flex w-full flex-col gap-4 p-4">
+      <div className="@container flex w-full flex-col gap-[14px] px-4 py-6 md:px-9">
+        <header className="mb-1">
+          <MonoLabel className="text-[var(--dashboard-project)]">{'Home · Dashboard'}</MonoLabel>
+          <DashboardTitle>{t('allProjects')}</DashboardTitle>
+        </header>
         <div className={FIGURE_ROW}>
           {figures
             .filter((entry) => entry.visible)
             .map((entry) => (
               // A figure widget renders its tiles straight into the row: one widget may
               // bring several (the plan limits, one per subscription) or none.
-              <Fragment key={entry.widget.id}>{render(entry.widget)}</Fragment>
+              <Fragment key={entry.widget.id}>
+                {entry.widget.id === 'system' ? (
+                  <div id="system" className="min-w-0 scroll-mt-4">
+                    {render(entry.widget)}
+                  </div>
+                ) : (
+                  render(entry.widget)
+                )}
+              </Fragment>
             ))}
         </div>
         <Sections sections={sections} render={render} />

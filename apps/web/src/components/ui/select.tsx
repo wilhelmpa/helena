@@ -2,6 +2,8 @@
 
 import * as React from 'react';
 import { cn } from '@/lib/utils';
+import { overlayPosition } from '@/components/common/overlay/overlayPosition';
+import OverlayPortal from '@/components/common/overlay/OverlayPortal';
 import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from 'lucide-react';
 import { Select as SelectPrimitive } from 'radix-ui';
 
@@ -30,7 +32,7 @@ function SelectTrigger({
       data-slot="select-trigger"
       data-size={size}
       className={cn(
-        "flex w-fit items-center justify-between gap-2 rounded-md border border-input bg-transparent px-2.5 py-1.5 text-sm whitespace-nowrap transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 data-[placeholder]:text-muted-foreground data-[size=default]:h-8 data-[size=sm]:h-7 *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-2 dark:bg-input/30 dark:hover:bg-input/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground",
+        "flex w-fit items-center justify-between gap-2 rounded-md border border-input bg-transparent px-2.5 py-1.5 text-sm whitespace-nowrap transition-colors outline-none focus-visible:border-ring focus-visible:bg-accent/20 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive data-[placeholder]:text-muted-foreground data-[size=default]:h-8 data-[size=sm]:h-7 *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-2 dark:bg-input/30 dark:hover:bg-input/50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground",
         className,
       )}
       {...props}
@@ -46,12 +48,12 @@ function SelectTrigger({
 function SelectContent({
   className,
   children,
-  position = 'item-aligned',
+  position = 'popper',
   align = 'center',
   ...props
 }: React.ComponentProps<typeof SelectPrimitive.Content>) {
   return (
-    <SelectPrimitive.Portal>
+    <OverlayPortal as={SelectPrimitive.Portal}>
       <SelectPrimitive.Content
         data-slot="select-content"
         className={cn(
@@ -62,6 +64,7 @@ function SelectContent({
         )}
         position={position}
         align={align}
+        {...overlayPosition}
         {...props}
       >
         <SelectScrollUpButton />
@@ -69,14 +72,14 @@ function SelectContent({
           className={cn(
             'p-1',
             position === 'popper' &&
-              'h-[var(--radix-select-trigger-height)] w-full min-w-[var(--radix-select-trigger-width)] scroll-my-1',
+              'min-h-[var(--radix-select-trigger-height)] w-full min-w-[var(--radix-select-trigger-width)] scroll-my-1',
           )}
         >
           {children}
         </SelectPrimitive.Viewport>
         <SelectScrollDownButton />
       </SelectPrimitive.Content>
-    </SelectPrimitive.Portal>
+    </OverlayPortal>
   );
 }
 

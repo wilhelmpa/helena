@@ -495,13 +495,13 @@ describe('one canonical project vault', () => {
     const { rename } = await import('node:fs/promises');
     await rename(path.join(vault, before), path.join(vault, after));
     await indexVaultPaths([before, after], { author: 'notes' });
-    await writeFile(path.join(vault, after), '# Changed in SilverBullet');
+    await writeFile(path.join(vault, after), '# Changed on a device');
     await indexVaultPaths([after], { author: 'notes' });
     expect((await api['chat-attachments']({ publicId: up.id }).get()).data!.text).toBe(
-      '# Changed in SilverBullet',
+      '# Changed on a device',
     );
     expect((await files.text.get({ query: { path: 'Docs/Renamed.md' } })).data!.content).toBe(
-      '# Changed in SilverBullet',
+      '# Changed on a device',
     );
   });
 

@@ -26,7 +26,7 @@ import { confidenceOf, connectionLabel } from '../utils/lab';
 import { browserLabPath } from '../utils/paths';
 
 const MODES: BrowserControlMode[] = ['inherit', 'standard', 'decision'];
-const POLICIES: BrowserControlPolicy[] = ['auto', 'jev', 'laya'];
+const POLICIES: BrowserControlPolicy[] = ['auto', 'jev'];
 
 // Projekt → Einstellungen → Browser, "Browser-Steuerung" (docs/helena-decisions/browser-task.md
 // §3.3): whether the project's agents drive the browser step by step with their own model
@@ -64,35 +64,55 @@ export function BrowserControlSection({
               : t('activeStandard', { source: t(`source.${effective.source}`) })
           }
           control={
-            <Select
-              value={setting.mode}
-              disabled={!editable}
-              onValueChange={(mode) => {
-                const next = mode as BrowserControlMode;
-                if (next === 'decision' && connections.length === 0) return;
-                update.mutate({
-                  mode: next,
-                  ...(next === 'decision' && setting.credentialId === null
-                    ? { credentialId: connections[0]!.id }
-                    : {}),
-                });
-              }}
-            >
-              <SelectTrigger className="w-64" aria-label={t('mode')}>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {MODES.map((mode) => (
-                  <SelectItem
-                    key={mode}
-                    value={mode}
-                    disabled={mode === 'decision' && connections.length === 0}
-                  >
-                    {t(`modes.${mode}`)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="flex flex-col items-end gap-1.5">
+              <div className="flex items-center gap-2">
+                {setting.mode !== 'inherit' && (
+                  <span
+                    className="size-1.5 rounded-full bg-brand"
+                    title="Home-Vorgabe überschrieben"
+                  />
+                )}
+                <Select
+                  value={setting.mode}
+                  disabled={!editable}
+                  onValueChange={(mode) => {
+                    const next = mode as BrowserControlMode;
+                    if (next === 'decision' && connections.length === 0) return;
+                    update.mutate({
+                      mode: next,
+                      ...(next === 'decision' && setting.credentialId === null
+                        ? { credentialId: connections[0]!.id }
+                        : {}),
+                    });
+                  }}
+                >
+                  <SelectTrigger className="w-64" aria-label={t('mode')}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {MODES.map((mode) => (
+                      <SelectItem
+                        key={mode}
+                        value={mode}
+                        disabled={mode === 'decision' && connections.length === 0}
+                      >
+                        {t(`modes.${mode}`)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {setting.mode !== 'inherit' && editable && (
+                <button
+                  type="button"
+                  className="text-xs text-brand hover:underline"
+                  disabled={update.isPending}
+                  onClick={() => update.mutate({ mode: 'inherit' })}
+                >
+                  {'Auf Home-Vorgabe zurücksetzen'}
+                </button>
+              )}
+            </div>
           }
         />
         {effective.problem === 'connection_missing' && (

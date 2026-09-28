@@ -1,14 +1,15 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { Bot, CircleCheck } from 'lucide-react';
-import { agentActivityForAgentPath, globalAgentActivityPath, issuePath } from '@/utils/paths';
+import { Bot } from 'lucide-react';
+import { globalAgentActivityPath } from '@/utils/paths';
 import { formatDurationShort } from '@/utils/dates';
-import Avatar from '@/components/common/Avatar';
-import StatusBadge from '@/components/common/page/StatusBadge';
+import Orb from '@/components/helena/Orb';
+import { useAgentStatus } from '@/utils/helenaStatus';
 import { RowEmpty, RowLink } from '@/components/common/page/RowList';
 import type { AgentActivityEntry } from '@/lib/api/endpoints/agentActivity';
-import { DashboardSection, SectionSubLabel, SkeletonRows } from '../DashboardParts';
+import { DashboardSection, SkeletonRows } from '../DashboardParts';
+import { MonoMeta } from '@/components/helena/DashboardPrimitives';
 import { useHomeActiveActivity, HOME_ACTIVE_STATUSES } from '../../services/homeKpis.service';
 
 const RUNNING_SHOWN = 5;
@@ -23,32 +24,50 @@ export function useAgentsNow(): {
 } {
   const activity = useHomeActiveActivity();
   const items = activity.data?.items ?? [];
+  const seen = new Set<number>();
   return {
-    running: items.filter((entry) => HOME_ACTIVE_STATUSES.has(entry.status) && entry.agent),
+    running: items.filter((entry) => {
+      if (!entry.agent || !HOME_ACTIVE_STATUSES.has(entry.status) || seen.has(entry.agent.id))
+        return false;
+      seen.add(entry.agent.id);
+      return true;
+    }),
     finished: items.filter((entry) => entry.status === 'success' && entry.agent),
     isPending: activity.isPending,
   };
 }
 
 // A row opens the task the agent works on, or else the agent's timeline.
-function entryHref(entry: AgentActivityEntry): string {
-  return entry.issue && entry.project
-    ? issuePath(entry.project.key, entry.issue.sequenceNumber)
-    : agentActivityForAgentPath(entry.agent!.id, entry.project?.key);
+function AgentRow({ entry, finished = false }: { entry: AgentActivityEntry; finished?: boolean }) {
+  const t = useTranslations('home');
+  const tActivity = useTranslations('agentActivity');
+  const status = useAgentStatus(entry.agent!.id, {
+    run: finished
+      ? 'done'
+      : entry.status === 'waiting' || entry.status === 'suspended'
+        ? 'waiting'
+        : 'running',
+  });
+  return (
+    <RowLink
+      href={globalAgentActivityPath()}
+      icon={<Orb state={status} size="small" />}
+      title={entry.agent!.name}
+      detail={entry.issue?.title ?? entry.project?.name ?? tActivity(`kinds.${entry.kind}`)}
+      trailing={
+        <MonoMeta>
+          {status === 'waiting' ? t('agents.waiting') : formatDurationShort(entry.at)}
+        </MonoMeta>
+      }
+    />
+  );
 }
-
-// A waiting or suspended entry reads as the amber "needs a decision"; everything else
-// that is open runs.
-const paused = (status: string) => status === 'waiting' || status === 'suspended';
 
 // "Läuft gerade": one row per agent at work (avatar, name, what it works on, since when),
 // then "Zuletzt fertig", the three latest finished answers and runs, compact.
 export default function AgentsSection() {
   const t = useTranslations('home');
-  const tActivity = useTranslations('agentActivity');
-  const { running, finished, isPending } = useAgentsNow();
-  const what = (entry: AgentActivityEntry) =>
-    entry.issue?.title ?? entry.project?.name ?? tActivity(`kinds.${entry.kind}`);
+  const { running, isPending } = useAgentsNow();
   return (
     <DashboardSection
       label={t('widgets.running')}
@@ -62,43 +81,32 @@ export default function AgentsSection() {
         <>
           {running.length === 0 && <RowEmpty icon={<Bot />}>{t('agents.empty')}</RowEmpty>}
           {running.slice(0, RUNNING_SHOWN).map((entry) => (
-            <RowLink
-              key={entry.id}
-              href={entryHref(entry)}
-              icon={<Avatar name={entry.agent!.name} className="size-5" />}
-              title={entry.agent!.name}
-              detail={what(entry)}
-              trailing={
-                <>
-                  <span className="text-xs text-muted-foreground tabular-nums">
-                    {paused(entry.status) ? t('agents.waiting') : formatDurationShort(entry.at)}
-                  </span>
-                  <StatusBadge status={paused(entry.status) ? 'waiting' : 'running'} dotOnly />
-                </>
-              }
-            />
+            <AgentRow key={entry.id} entry={entry} />
           ))}
-          {finished.length > 0 && (
-            <>
-              <SectionSubLabel>{t('agents.finished')}</SectionSubLabel>
-              {finished.slice(0, FINISHED_SHOWN).map((entry) => (
-                <RowLink
-                  key={entry.id}
-                  href={entryHref(entry)}
-                  className="h-7"
-                  icon={<CircleCheck className="size-3.5! text-status-success!" />}
-                  title={<span className="text-muted-foreground">{entry.agent!.name}</span>}
-                  detail={what(entry)}
-                  trailing={
-                    <span className="text-xs text-muted-foreground tabular-nums">
-                      {formatDurationShort(entry.at)}
-                    </span>
-                  }
-                />
-              ))}
-            </>
-          )}
         </>
+      )}
+    </DashboardSection>
+  );
+}
+
+export function FinishedSection() {
+  const t = useTranslations('home');
+  const { finished, isPending } = useAgentsNow();
+  return (
+    <DashboardSection
+      label={t('agents.finished')}
+      count={finished.length}
+      href={globalAgentActivityPath()}
+      hrefLabel={t('links.activity')}
+    >
+      {isPending ? (
+        <SkeletonRows count={3} />
+      ) : finished.length ? (
+        finished
+          .slice(0, FINISHED_SHOWN)
+          .map((entry) => <AgentRow key={entry.id} entry={entry} finished />)
+      ) : (
+        <p className="p-3 text-xs text-[var(--dashboard-muted)]">{t('agents.noFinished')}</p>
       )}
     </DashboardSection>
   );

@@ -99,13 +99,13 @@ export interface TuningOptions {
 
 const REFLECTION_DAYS = 30;
 
-// The team the tuning is for: the one given, or the one whose Home agent is @master.
+// The team the tuning is for: the one given, or the one with the Home agent.
 async function resolveTeam(teamId?: number): Promise<number> {
   if (teamId !== undefined) return teamId;
   const rows = await db
     .select({ teamId: aiAgent.teamId })
     .from(aiAgent)
-    .where(eq(aiAgent.username, 'master'));
+    .where(eq(aiAgent.agentRole, 'home'));
   if (rows.length !== 1) throw new Error('Name the team with --team <id>.');
   return rows[0]!.teamId;
 }

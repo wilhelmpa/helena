@@ -39,5 +39,14 @@
   "areaFolderTaken": "Эту папку уже использует другая область проекта.",
   "openFolder": "Открыть папку",
   "deleteView": "Удалить представление",
-  "deleteViewConfirm": "Удалить «{name}»? Задачи останутся, исчезнет только это сохранённое представление."
+  "deleteViewConfirm": "Удалить «{name}»? Задачи останутся, исчезнет только это сохранённое представление.",
+  "changed": "Changed",
+  "reset": "Reset",
+  "saveAsNew": "Save as new view",
+  "templates": {
+    "mine": "My tasks",
+    "open": "Open",
+    "week": "This week",
+    "status": "By status"
+  }
 }

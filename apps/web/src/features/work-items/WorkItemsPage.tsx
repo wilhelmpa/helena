@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
+import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useShell } from '@/context/shellContext';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -17,7 +18,8 @@ import {
   withoutHiddenSections,
   type ViewSettings,
 } from '@/utils/viewSettings';
-import { Check, Pencil, X } from 'lucide-react';
+import { CalendarDays, Check, Pencil, Plus, X } from 'lucide-react';
+import { cyclesPath } from '@/utils/paths';
 import ViewIconPicker from '@/components/layout/ViewIconPicker';
 import ViewFolderManager from '@/components/layout/ViewFolderManager';
 import { FilterControl } from '@/components/layout/FilterBar';
@@ -25,8 +27,11 @@ import {
   PageActions,
   PageToolbar,
   PageToolbarSpacer,
+  PAGE_CONTROL_CLASS,
+  PAGE_PRIMARY_CLASS,
   type PageAction,
 } from '@/components/layout/PageToolbar';
+import { cn } from '@/lib/utils';
 import { useViewFoldersQuery, useViewsQuery } from '@/services/views.service';
 import BoardDisplayControl from './components/BoardDisplayControl';
 import { IssueLinksProvider } from './context/useIssueLinks';
@@ -47,7 +52,9 @@ interface TimelineCollapseState {
 // come from the Shell through React context.
 export default function WorkItemsPage() {
   const t = useTranslations('workItems');
+  const tNav = useTranslations('nav');
   const tCommon = useTranslations('common');
+  const tViews = useTranslations('views');
   const { project, filteredProject, editor, customFields, onOpenIssue, onAddIssue } = useShell();
   const { can } = usePermissions();
   const groupLabels = useGroupLabels();
@@ -191,6 +198,12 @@ export default function WorkItemsPage() {
         customFields={customFields}
         issueTypes={project.issueTypes}
       />
+      {features.cycles && can('cycles', 'read') && (
+        <Link href={cyclesPath(projectKey)} className={PAGE_CONTROL_CLASS}>
+          <CalendarDays size={16} aria-hidden="true" />
+          {tNav('cycles')}
+        </Link>
+      )}
     </>
   );
 
@@ -238,23 +251,68 @@ export default function WorkItemsPage() {
           </>
         ) : (
           <>
-            {editor.activeView && can('views', 'edit') && (
-              <PageActions
-                actions={[
-                  {
-                    id: 'edit-view',
-                    label: t('editView'),
-                    icon: Pencil,
-                    onClick: () => editor.beginEditView(editor.activeView!),
-                  },
-                ]}
-              />
-            )}
             <PageToolbarSpacer />
             {can('views', 'edit') && (
               <ViewFolderManager projectKey={project.project.key} folders={folders} />
             )}
             {controls}
+            {editor.changed && (
+              <div className="flex shrink-0 items-center gap-1 text-xs text-muted-foreground">
+                <span>{tViews('changed')}</span>
+                {can('views', 'edit') && (
+                  <button
+                    type="button"
+                    onClick={() => void editor.saveEdits()}
+                    className={cn(PAGE_CONTROL_CLASS, PAGE_PRIMARY_CLASS, 'max-sm:px-1')}
+                  >
+                    {tCommon('save')}
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={editor.resetChanges}
+                  className={cn(PAGE_CONTROL_CLASS, 'max-sm:px-1')}
+                >
+                  {tViews('reset')}
+                </button>
+              </div>
+            )}
+            {can('views', 'create') && (
+              <button
+                type="button"
+                onClick={() => editor.beginNewView('current')}
+                aria-label={tViews('saveAsNew')}
+                title={tViews('saveAsNew')}
+                className={cn(PAGE_CONTROL_CLASS, 'max-sm:w-8 max-sm:justify-center max-sm:px-0')}
+              >
+                <Plus aria-hidden="true" />
+                <span className="hidden lg:inline">{tViews('saveAsNew')}</span>
+              </button>
+            )}
+            <PageActions
+              actions={
+                editor.activeView && !editor.changed && can('views', 'edit')
+                  ? [
+                      {
+                        id: 'edit-view',
+                        label: t('editView'),
+                        icon: Pencil,
+                        onClick: () => editor.beginEditView(editor.activeView!),
+                      },
+                    ]
+                  : []
+              }
+              primary={
+                can('work_items', 'create')
+                  ? {
+                      id: 'new-issue',
+                      label: t('newIssue'),
+                      icon: Plus,
+                      onClick: () => onAddIssue({}),
+                    }
+                  : undefined
+              }
+            />
           </>
         )}
       </PageToolbar>

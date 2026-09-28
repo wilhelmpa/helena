@@ -15,10 +15,8 @@ import {
 // Note templates and daily notes. The templates are Markdown files in Templates/ with the
 // variables {{title}}, {{date}}, {{time}} and {{date:FORMAT}} (a moment.js format); the daily
 // note is Home/Docs/Journal/YYYY-MM-DD.md, made from Templates/Tagesnotiz (Templates/Daily
-// note on an English instance) and tagged `journal`. The notes (SilverBullet) keep their
-// journal in the same folder (deployment/volition-stack/native/notes/CONFIG.md.in), so
-// Helena's daily note and the notes' "Journal: Today" are one file. Helena seeds the
-// templates once; the owner's changes to them win.
+// note on an English instance) and tagged `journal`. Helena seeds the templates once;
+// the owner's changes to them win.
 
 const SEEDED_KEY = 'knowledge.templatesSeeded';
 

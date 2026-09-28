@@ -1,4 +1,4 @@
-// The contract between the loop (loop.ts) and a decision policy (policy-jev.ts, policy-laya.ts):
+// The contract between the loop (loop.ts) and a decision policy (policy-jev.ts):
 // one round turns an observation into a planned action plus the signals the loop decides its
 // status on. A policy only asks questions and reads answers; the loop owns timing, guards,
 // budgets, Helena's policy and the browser.
@@ -17,8 +17,7 @@ import type {
 export interface HistoryEntry {
   action?: string;
   element?: string;
-  // The key of the value typed; `text` is the value itself, sent only to a local model
-  // (policy-laya.ts), never to a cloud backend or back to the agent.
+  // The key of the value typed; `text` stays local and is omitted from decision requests.
   value?: string;
   text?: string;
   option?: string;
@@ -44,7 +43,7 @@ export interface RoundAnswer {
   element: PageElement | null;
   // The key of the caller's values the round chose, when it chose one.
   valueKey?: string;
-  // The dropdown option the round chose together with its element (Laya's "i:k" targets).
+  // The dropdown option the round chose with its element.
   option?: string;
   optionIndex?: number;
   operationProbability: number;

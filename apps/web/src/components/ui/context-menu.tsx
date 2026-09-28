@@ -5,6 +5,8 @@ import { ContextMenu as ContextMenuPrimitive } from 'radix-ui';
 import { CheckIcon, ChevronRightIcon, CircleIcon } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
+import { overlayPosition } from '@/components/common/overlay/overlayPosition';
+import OverlayPortal from '@/components/common/overlay/OverlayPortal';
 
 function ContextMenu({ ...props }: React.ComponentProps<typeof ContextMenuPrimitive.Root>) {
   return <ContextMenuPrimitive.Root data-slot="context-menu" {...props} />;
@@ -71,11 +73,18 @@ function ContextMenuSubContent({
   ...props
 }: React.ComponentProps<typeof ContextMenuPrimitive.SubContent>) {
   return (
-    <ContextMenuPrimitive.SubContent
-      data-slot="context-menu-sub-content"
-      className={cn(MENU_SURFACE, className)}
-      {...props}
-    />
+    <OverlayPortal as={ContextMenuPrimitive.Portal}>
+      <ContextMenuPrimitive.SubContent
+        data-slot="context-menu-sub-content"
+        {...overlayPosition}
+        className={cn(
+          MENU_SURFACE,
+          'max-h-(--radix-context-menu-content-available-height) overflow-y-auto',
+          className,
+        )}
+        {...props}
+      />
+    </OverlayPortal>
   );
 }
 
@@ -84,9 +93,10 @@ function ContextMenuContent({
   ...props
 }: React.ComponentProps<typeof ContextMenuPrimitive.Content>) {
   return (
-    <ContextMenuPrimitive.Portal>
+    <OverlayPortal as={ContextMenuPrimitive.Portal}>
       <ContextMenuPrimitive.Content
         data-slot="context-menu-content"
+        {...overlayPosition}
         className={cn(
           MENU_SURFACE,
           'max-h-(--radix-context-menu-content-available-height) overflow-x-hidden overflow-y-auto',
@@ -94,7 +104,7 @@ function ContextMenuContent({
         )}
         {...props}
       />
-    </ContextMenuPrimitive.Portal>
+    </OverlayPortal>
   );
 }
 

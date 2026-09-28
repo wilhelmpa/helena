@@ -18,18 +18,17 @@ const config: WorkspaceRuntimeEnv = {
   browserUrl: 'https://browser.example.com/',
   inboxUrl: 'https://inbox.example.com/',
   connectionsUrl: '',
-  notesUrl: 'https://notes.example.com',
 };
 
 describe('workspaceTools', () => {
-  it('uses the global master agent outside a project', () => {
-    assert.equal(preferredAgentUsername(null), 'master');
+  it('uses the explicit Home role outside a project', () => {
+    assert.equal(preferredAgentUsername(null), '');
     assert.equal(workspaceTools(config, null).chat.url, '');
   });
 
-  it('anchors the native Home chat while preserving its master agent', () => {
+  it('anchors the native Home chat without choosing an agent by handle', () => {
     assert.equal(nativeChatProjectKey(config, null), 'PRIV');
-    assert.equal(preferredAgentUsername(null), 'master');
+    assert.equal(preferredAgentUsername(null), '');
     assert.equal(nativeChatProjectKey(config, 'verv'), 'VERV');
     assert.equal(preferredAgentUsername('VERV'), 'hermes-verve-coordinator');
   });
@@ -204,15 +203,6 @@ describe('workspaceTools', () => {
       'https://browser.example.com',
       'https://inbox.example.com',
     ]);
-  });
-
-  it('keeps legacy Notes panels inert even with a persisted external or same-origin URL', () => {
-    for (const notesUrl of ['https://notes.example.com', 'https://plan.example.com/notes', '']) {
-      const legacy = { ...config, notesUrl };
-      assert.equal(workspaceTools(legacy, 'VOL').notes.url, '');
-      assert.equal(workspaceTools(legacy, null).notes.url, '');
-      assert.ok(!workspaceFrameOrigins(legacy).includes('https://notes.example.com'));
-    }
   });
 
   it('does not expose non-http workspace URLs to an iframe', () => {

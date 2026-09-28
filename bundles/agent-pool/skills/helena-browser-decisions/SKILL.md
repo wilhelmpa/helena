@@ -1,6 +1,6 @@
 ---
 name: helena-browser-decisions
-description: Use Helena's native browser_task, browser_check and browser_choose with a configured Jev or Laya decision connection, including safe handback and observable completion checks.
+description: Use Helena's native browser_task, browser_check and browser_choose with a configured Jev decision connection, including safe handback and observable completion checks.
 ---
 
 # Browser decisions in Helena
@@ -15,6 +15,6 @@ Treat `likely_done` as unverified. On `needs_agent`, ambiguity, a repeated actio
 
 Confirm completion from an independent observation: the expected URL, a visible result, a changed field or an exact count computed from structured data. A second model assertion alone does not prove a count, sort order, submission or saved state. Check both what should change and what should stay unchanged after a write. Report the result, URL, timestamp and any unresolved status.
 
-Jev's `confidence`, the probability of a selected option, and Noul's `P(yes)` are different signals. Use the configured thresholds; do not substitute one for another or change them to make a task pass. Laya is a separate local model with its own measured behavior. A passing mock or Laya run does not prove a Jev run.
+Jev's `confidence`, the probability of a selected option, and Noul's `P(yes)` are different signals. Use the configured thresholds; do not substitute one for another or change them to make a task pass. A passing mock run does not prove a Jev provider run.
 
 Primary references: [TypeSafe API](https://docs.typesafe.ai/api), [confidence](https://docs.typesafe.ai/confidence), [model limitations](https://docs.typesafe.ai/model-jaggedness/jev-1.13), [browser-use reference implementation](https://github.com/browser-use/jev-ultrafast).

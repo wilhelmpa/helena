@@ -590,7 +590,9 @@ export const issueRoutes = new Elysia({ name: 'issues', detail: { tags: ['Issues
         summary: 'Update an issue',
         description:
           'Update an issue by its numeric id. Moving it into a column that is at a ' +
-          'hard WIP limit fails with 409 (code wip_limit_exceeded).',
+          'hard WIP limit fails with 409 (code wip_limit_exceeded). To give the issue ' +
+          'to its current agent again, send its delegateUserId again. A run is queued ' +
+          'only when that agent has no active run for the issue.',
         ...mcpTool('update_issue'),
       },
     },

@@ -165,7 +165,7 @@ export function isCredentialFormValid(
       return true;
     case 'decision_model':
       // A cloud service needs a key; a server of the owner's own may run without one, and a
-      // local installation (Laya, the local AI) brings its own address and key.
+      // local AI model server supplies its own address and key.
       return (
         value.provider !== '' &&
         ((value.keySource !== 'stored' && value.keySource !== 'credential') ||
@@ -244,9 +244,9 @@ export function toCredentialPatch(value: CredentialFormValue): CredentialInput {
 
 export type AgentRole = 'home' | 'coordinator' | 'specialist';
 
-// The Home agent is `master`, a project's coordinator `hermes-<slug>-coordinator`.
-export function agentRole(agent: Pick<AiAgent, 'username'>): AgentRole {
-  if (agent.username.toLowerCase() === 'master') return 'home';
+// The Home role is persisted; a project's coordinator uses the coordinator handle.
+export function agentRole(agent: Pick<AiAgent, 'username' | 'agentRole'>): AgentRole {
+  if (agent.agentRole === 'home') return 'home';
   return agent.username.endsWith('-coordinator') ? 'coordinator' : 'specialist';
 }
 

@@ -39,5 +39,14 @@
   "areaFolderTaken": "Otra área de este proyecto usa esta carpeta.",
   "openFolder": "Abrir carpeta",
   "deleteView": "Eliminar vista",
-  "deleteViewConfirm": "¿Eliminar «{name}»? Las tareas se quedan; solo desaparece esta vista guardada."
+  "deleteViewConfirm": "¿Eliminar «{name}»? Las tareas se quedan; solo desaparece esta vista guardada.",
+  "changed": "Changed",
+  "reset": "Reset",
+  "saveAsNew": "Save as new view",
+  "templates": {
+    "mine": "My tasks",
+    "open": "Open",
+    "week": "This week",
+    "status": "By status"
+  }
 }

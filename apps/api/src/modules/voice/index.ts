@@ -1,6 +1,7 @@
 import { Elysia } from 'elysia';
 import { requireGod, requireUser } from '#shared/access';
 import { authContext } from '#shared/auth-context';
+import { preferredLocale } from '#modules/user-preferences/service';
 import { errors } from '#shared/responses';
 import {
   TranscriptionResponse,
@@ -19,7 +20,13 @@ import {
   transcribe,
   voiceStatus,
 } from './service';
-import { helenaWords, readVoiceSettings, replyModelChoices, writeVoiceSettings } from './settings';
+import {
+  helenaWords,
+  readVoiceSettings,
+  replyModelChoices,
+  suggestedAliases,
+  writeVoiceSettings,
+} from './settings';
 // The voice reply answers spoken questions where switched on (it registers itself).
 import './reply';
 
@@ -56,7 +63,7 @@ export const voiceRoutes = new Elysia({ name: 'voice', detail: { tags: ['Voice']
       try {
         return await transcribe({
           audio: new Uint8Array(await body.file.arrayBuffer()),
-          language: body.language ?? null,
+          language: (await preferredLocale(current.id)).slice(0, 2),
         });
       } finally {
         release();
@@ -125,7 +132,13 @@ export const voiceRoutes = new Elysia({ name: 'voice', detail: { tags: ['Voice']
         speechVoices(),
         replyModelChoices(),
       ]);
-      return { ...settings, helenaWords: words, voices, replyModels };
+      return {
+        ...settings,
+        helenaWords: words,
+        suggestedAliases: suggestedAliases(words),
+        voices,
+        replyModels,
+      };
     },
     {
       response: { 200: VoiceSettingsResponse, ...errors(401, 403) },
@@ -150,7 +163,13 @@ export const voiceRoutes = new Elysia({ name: 'voice', detail: { tags: ['Voice']
         speechVoices(),
         replyModelChoices(),
       ]);
-      return { ...settings, helenaWords: words, voices, replyModels };
+      return {
+        ...settings,
+        helenaWords: words,
+        suggestedAliases: suggestedAliases(words),
+        voices,
+        replyModels,
+      };
     },
     {
       body: voiceSettingsBody,

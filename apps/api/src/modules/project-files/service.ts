@@ -45,7 +45,7 @@ import { contentTypeOf, serveFile, VIEWER_INLINE } from './serve';
 
 export { projectFilesSlug } from './roots';
 
-const TEXT_EXTENSIONS = new Set(['.md', '.markdown', '.txt']);
+const TEXT_EXTENSIONS = new Set(['.md', '.markdown', '.txt', '.canvas']);
 const MAX_TEXT_BYTES = 256 * 1024;
 const MAX_ITEMS = 1000;
 const MAX_NAME_ATTEMPTS = 1000;
@@ -76,7 +76,7 @@ function assertWritable(root: FileRoot) {
 function textPath(relative: string): string {
   const safe = relativePath(relative);
   if (!safe || !TEXT_EXTENSIONS.has(path.extname(safe).toLowerCase())) {
-    throw new HttpError(400, 'Only .txt, .md, and .markdown files are allowed');
+    throw new HttpError(400, 'Only .txt, .md, .markdown, and .canvas files are allowed');
   }
   return safe;
 }

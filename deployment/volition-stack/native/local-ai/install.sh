@@ -1,5 +1,5 @@
 #!/bin/sh
-# Helena local AI, step 2: one local endpoint for the GPU, the NPU and (through Laya) the CPU.
+# Helena local AI, step 2: one local endpoint for the GPU, the NPU and the CPU.
 # Lemonade Server (AMD, Apache-2.0) serves an OpenAI-compatible API on 127.0.0.1:13305 with
 # llama.cpp on the Radeon 8060S — ROCm first (our own HIP build for gfx1151 on AMD's ROCm
 # 10.0.0), Vulkan (RADV) as the measured comparison and fallback — and FastFlowLM on the XDNA2
@@ -44,7 +44,7 @@ VULKAN_TAR=llama-${LLAMA_TAG}-bin-ubuntu-vulkan-x64.tar.gz
 VULKAN_URL=https://github.com/ggml-org/llama.cpp/releases/download/${LLAMA_TAG}/${VULKAN_TAR}
 VULKAN_SHA256=69e26c5e577e1c17dec0b59d3146f008424297a2c64a92fa445365e264585667
 # ROCm 10.0.0 (AMD's TheRock release, stable channel; gfx1151 native) and PyTorch 2.13 for it, one
-# tree for the HIP build and Laya, every wheel hash-pinned in rocm-requirements.txt.
+# tree for the HIP build, every wheel hash-pinned in rocm-requirements.txt.
 ROCM_VERSION=10.0.0
 ROCM_INDEX=https://stable.repo.amd.com/rocm/whl-next/
 ROCM_PYTHON=/usr/bin/python3.13
@@ -65,7 +65,7 @@ KEY=${HELENA_AI_KEY_FILE:-$ETC/local-ai.key}
 PRELOAD=$ETC/local-ai-preload
 # The group the API reads the key through: on Kingston the API user's secrets group
 # `volition-plan-secrets` (there is no group `volition-plan`); after the rename helena-secrets.
-# HELENA_API_GROUP overrides it (same rule as native/laya/install.sh).
+# HELENA_API_GROUP overrides it.
 api_group() {
   if [ -n "${HELENA_API_GROUP:-}" ]; then echo "$HELENA_API_GROUP"; return; fi
   local group
@@ -77,7 +77,7 @@ api_group() {
 API_GROUP=$(api_group)
 LIB=/usr/local/lib/helena-ai
 OPT=$R/opt/helena-ai
-# The ROCm tree; native/laya/install.sh --rocm uses it too (a fixed path there).
+# The ROCm tree.
 ROCM_VENV=$OPT/rocm-${ROCM_VERSION}
 MODELS=$R/var/lib/helena-ai/models
 CACHE=$R/var/cache/helena-ai
@@ -206,7 +206,7 @@ rocm_root() { "$ROCM_VENV/bin/rocm-sdk" path --root; }
 # ROCm 10.0.0 as AMD publishes it for every distribution: the TheRock SDK wheels (core,
 # libraries with hipBLASLt and rocWMMA, devel with hipcc/clang, the gfx1151 device code) and
 # PyTorch built against them, in one venv owned by root. No /opt/rocm, no apt repository, no
-# second ROCm tree: llama.cpp is compiled against this one, Laya imports torch from it.
+# second ROCm tree: llama.cpp is compiled against this one.
 install_rocm() {
   if [ -x "$ROCM_VENV/bin/rocm-sdk" ] && [ "$("$ROCM_VENV/bin/rocm-sdk" version 2>/dev/null)" = "$ROCM_VERSION" ]; then
     say "have ROCm $ROCM_VERSION in $ROCM_VENV"
@@ -275,7 +275,7 @@ build_llama_hip() {
 
 # What ROCm needs, checked: the GPU as gfx1151, KFD offering the carve-out (kernel 7.x), a
 # HIP kernel through PyTorch, and llama.cpp seeing the ROCm device. As Lemonade's user.
-# A matrix product on the GPU through PyTorch (the Laya path), compared with the CPU's.
+# A matrix product on the GPU through PyTorch, compared with the CPU's.
 HIP_SMOKE='import torch
 a = torch.randn(1024, 1024)
 g = (a.cuda() @ a.cuda()).cpu()
@@ -336,7 +336,7 @@ install_all() {
   fi
 
   say "== the key (root:$API_GROUP 0640; never printed)"
-  # Helena's key directory (native/laya keeps its key here too); the key file itself is 0640.
+  # Helena's key directory; the key file itself is 0640.
   run install -d -m 0755 -o root -g root "$ETC"
   if [ ! -s "$KEY" ]; then
     if [ "$DRY_RUN" = 1 ]; then say "would create $KEY"; else
@@ -686,11 +686,11 @@ uninstall() {
   run apt-get purge -y lemonade-server fastflowlm || true
   run rm -rf "$LIB" "$OPT/llamacpp"
   if [ "$PURGE" = 1 ]; then
-    # Only this installer's files: /etc/helena also holds other keys (native/laya).
+    # Only this installer's files: /etc/helena also holds other keys.
     run rm -rf "$KEY" "$PRELOAD" "$MODELS" "$DOWNLOADS" "$CACHE" "$ROCM_VENV"
     run rmdir --ignore-fail-on-non-empty "$OPT"
   else
-    # The ROCm tree stays: Laya (--rocm) may use its PyTorch.
+    # The ROCm tree stays for local AI workloads.
     say "kept: $KEY, $MODELS, $DOWNLOADS, $ROCM_VENV (--purge removes them)"
   fi
   say "Local AI removed. Helena falls back to the configured models by itself."

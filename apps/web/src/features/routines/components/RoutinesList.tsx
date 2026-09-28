@@ -104,7 +104,19 @@ export function RoutinesList({
   return (
     <>
       {routines.length === 0 ? (
-        <EmptyState title={t('empty')} description={t('emptyHint')} />
+        <EmptyState title={t('emptyHint')} description="">
+          {can('ai_agents', 'create') && (
+            <Button
+              size="sm"
+              onClick={() => {
+                setIdempotencyKey(uuid());
+                setEditing('new');
+              }}
+            >
+              {t('newTitle')}
+            </Button>
+          )}
+        </EmptyState>
       ) : (
         <div className="flex flex-col gap-4">
           <RoutinesTable

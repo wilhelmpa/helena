@@ -52,6 +52,30 @@ describe('ai agents', () => {
     expect(res.data?.agent.runtimePolicy.memoryApproval).toBe(false);
   });
 
+  it('keeps an all-project agent attached to new projects and preserves selected scope on change', async () => {
+    const { asOwner, teamId } = await setup();
+    const created = await agents(asOwner, teamId).post({
+      name: 'Across projects',
+      username: 'across-projects',
+      projectScope: 'all',
+    });
+    expect(created.status).toBe(201);
+    expect(created.data?.agent.projectScope).toBe('all');
+    expect(created.data?.agent.projects.map((p) => p.key)).toEqual(['MKT']);
+
+    await asOwner.projects.post({ key: 'ENG', name: 'Engineering' });
+    const agentId = created.data!.agent.id;
+    const afterCreate = await agents(asOwner, teamId)({ agentId }).get();
+    expect(afterCreate.data?.projects.map((p) => p.key).sort()).toEqual(['ENG', 'MKT']);
+
+    const mkt = await projectIdOf(asOwner, 'MKT');
+    const narrowed = await agents(asOwner, teamId)({ agentId }).projects.put({ projectIds: [mkt] });
+    expect(narrowed.data?.projectScope).toBe('selected');
+    await asOwner.projects.post({ key: 'OPS', name: 'Operations' });
+    const afterNarrowing = await agents(asOwner, teamId)({ agentId }).get();
+    expect(afterNarrowing.data?.projects.map((p) => p.key)).toEqual(['MKT']);
+  });
+
   it('keeps explicit memory approval opt-in on a new agent', async () => {
     const { asOwner } = await setup();
     const res = await createAgent(asOwner, 'MKT', {
@@ -720,6 +744,25 @@ describe('ai agents', () => {
     });
     const asMember = await addProjectMember(asOwner, 'MKT', role.data!.id);
     const agent = agents(asMember, teamId)({ agentId: created.data!.agent.id });
+
+    expect((await agent.patch({ projectScope: 'all' })).status).toBe(403);
+    expect(
+      (
+        await agents(asMember, teamId).post({
+          name: 'Everywhere',
+          username: 'everywhere',
+          projectScope: 'all',
+        })
+      ).status,
+    ).toBe(403);
+    const allScoped = await agents(asOwner, teamId).post({
+      name: 'Global bot',
+      username: 'global-bot',
+      projectScope: 'all',
+    });
+    const asMemberAll = agents(asMember, teamId)({ agentId: allScoped.data!.agent.id });
+    expect((await asMemberAll.patch({ projectScope: 'selected' })).status).toBe(403);
+    expect((await asMemberAll.projects.put({ projectIds: [] })).status).toBe(403);
 
     // OPS is not a project of theirs, so they cannot put an agent there.
     expect((await agent.projects.put({ projectIds: [mkt, ops.data!.id] })).status).toBe(403);

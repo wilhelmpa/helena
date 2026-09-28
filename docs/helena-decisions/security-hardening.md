@@ -398,15 +398,6 @@ home name is unreachable.
 - `http://kingston-server.local` now answers 301 to the home name (LAN listeners); on loopback
   it stays http for local processes.
 
-### 5.1 The notes on an origin of their own (2026-09-26)
-The notes (SilverBullet on the vault, `notes-silverbullet.md`) answer on the home name's second
-port, `https://helena-home.volition.one:8446` (the same certificate; nftables `lan_tcp` has 8446),
-and through the tunnel on `helena-notes.volition.one`. Never under Helena's origin: a note may
-hold script. nginx asks the API (`/auth/verify/notes`: the owner's session at home, his Access
-identity through the tunnel), SilverBullet sits on a Unix socket without network, and the API
-refuses state-changing requests a page of another origin of the same site makes with the
-owner's cookie (Fetch Metadata, `apps/api/src/shared/cross-site.ts`). Audit: `svc.notes`.
-
 ## 6. Runbook (the last phase; orchestrator)
 
 Order as requested: audit → low-risk fixes → firewall with auto-rollback → SSH → units → HTTPS

@@ -12,7 +12,6 @@ import { SettingsResourceProvider } from './context/settingsPermission';
 import SettingsGeneral from './components/general/SettingsGeneral';
 import SettingsFeatures from './components/general/SettingsFeatures';
 import SettingsSetup from './components/general/SettingsSetup';
-import ProjectDangerZone from './components/general/ProjectDangerZone';
 import { useGeneralForm } from './hooks/useGeneralForm';
 import { useFeatureToggles } from './hooks/useFeatureToggles';
 
@@ -43,7 +42,6 @@ function GeneralPage({ project }: { project: ProjectDetail }) {
             <SettingsGeneral form={form} />
             <SettingsFeatures form={features} />
             <SettingsSetup project={project} />
-            <ProjectDangerZone project={project} />
           </div>
           {form.editable && (
             <UnsavedChangesBar

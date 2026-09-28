@@ -8,11 +8,11 @@ const options: LabOptions = {
   connections: [
     {
       id: 3,
-      label: 'Laya lokal',
+      label: 'Own server',
       provider: 'compatible',
-      model: 'laya-browser',
+      model: 'jev-latest',
       baseUrl: 'http://127.0.0.1:8791',
-      keySource: 'local-laya',
+      keySource: 'stored',
       hasKey: true,
       status: 'ok',
     },
@@ -45,13 +45,13 @@ describe('Browser 2.0 form', () => {
       goal: '  Suche nach Helena ',
       values: 'q: Helena',
       maxSteps: '99',
-      policy: 'laya',
+      policy: 'jev',
     });
     assert.deepEqual(body, {
       backend: 'decision',
       agentId: 7,
       credentialId: 3,
-      policy: 'laya',
+      policy: 'jev',
       goal: 'Suche nach Helena',
       values: { q: 'Helena' },
       startUrl: null,
@@ -93,7 +93,7 @@ describe('browser control settings', () => {
   });
 
   it('names a connection with its model', () => {
-    assert.equal(connectionLabel(options.connections[0]!), 'Laya lokal · laya-browser');
-    assert.equal(connectionLabel({ ...options.connections[0]!, model: null }), 'Laya lokal');
+    assert.equal(connectionLabel(options.connections[0]!), 'Own server · jev-latest');
+    assert.equal(connectionLabel({ ...options.connections[0]!, model: null }), 'Own server');
   });
 });

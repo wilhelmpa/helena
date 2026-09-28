@@ -17,6 +17,12 @@ import DocumentMarkdownEditor, {
 import DocumentPageTitle from './DocumentPageTitle';
 import DocumentToolbar from './DocumentToolbar';
 
+// Tiptap serializes a compact checklist with a blank line between its items.
+// It is the same list in Markdown; the untouched file remains the saved baseline.
+function comparableMarkdown(body: string) {
+  return body.replace(/(^\s*- \[[ xX]\] [^\n]+\n)\n(?=\s*- \[[ xX]\] )/gm, '$1');
+}
+
 // The note as the editor shows it. The editor works on image URLs the browser can
 // load; every body it reports is turned back into the note's own image links.
 export default function DocumentEditorCanvas({
@@ -35,6 +41,7 @@ export default function DocumentEditorCanvas({
   onBlur,
   onRename,
   onOpenWikilink,
+  embedded = false,
 }: {
   path: string;
   updatedAt: string;
@@ -51,6 +58,7 @@ export default function DocumentEditorCanvas({
   onBlur: () => void;
   onRename: (name: string) => Promise<void>;
   onOpenWikilink: (inner: string) => void;
+  embedded?: boolean;
 }) {
   const t = useTranslations('documents');
   const relativeTime = useRelativeTime();
@@ -71,7 +79,7 @@ export default function DocumentEditorCanvas({
       onEditorReady(instance);
       if (instance) {
         const body = noteBody(instance.storage.markdown.getMarkdown());
-        onLossless(body === loaded.body);
+        onLossless(comparableMarkdown(body) === comparableMarkdown(loaded.body));
         onLoaded(loaded.body);
       }
     },
@@ -84,14 +92,20 @@ export default function DocumentEditorCanvas({
 
   return (
     <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
-      {editable && (
+      {editable && !embedded && (
         <div className="sticky top-0 z-10 border-b bg-background/92 px-3 py-1.5 backdrop-blur-xl supports-[backdrop-filter]:bg-background/78 md:px-5">
           <div className="mx-auto w-full max-w-[920px]">
             <DocumentToolbar editor={editor} onUploadImage={upload.mutateAsync} />
           </div>
         </div>
       )}
-      <article className="mx-auto flex min-h-full w-full max-w-[860px] flex-col px-5 pt-10 pb-24 sm:px-8 md:pt-14 lg:px-14">
+      <article
+        className={
+          embedded
+            ? 'flex min-h-full w-full flex-col pb-24'
+            : 'mx-auto flex min-h-full w-full max-w-[860px] flex-col px-5 pt-10 pb-24 sm:px-8 md:pt-14 lg:px-14'
+        }
+      >
         {editable && (
           <input
             ref={imageInput}
@@ -110,24 +124,31 @@ export default function DocumentEditorCanvas({
             }}
           />
         )}
-        <header className="mb-9 border-b border-border/55 pb-8">
-          <DocumentPageTitle
-            name={noteName(path)}
-            editable={canRename}
-            autoFocus={focusTitle}
-            onRename={onRename}
-            onDone={(renaming) => {
-              if (renaming) requestBodyFocus();
-              else editor?.commands.focus('start');
-            }}
-          />
-          <p className="mt-3 text-xs text-muted-foreground/80">
-            {truncated ? t('truncated') : t('updated', { time: relativeTime(updatedAt) })}
-          </p>
-        </header>
+        {!embedded && (
+          <header className="mb-9 border-b border-border/55 pb-8">
+            <DocumentPageTitle
+              name={noteName(path)}
+              editable={canRename}
+              autoFocus={focusTitle}
+              onRename={onRename}
+              onDone={(renaming) => {
+                if (renaming) requestBodyFocus();
+                else editor?.commands.focus('start');
+              }}
+            />
+            <p className="mt-3 text-xs text-muted-foreground/80">
+              {truncated ? t('truncated') : t('updated', { time: relativeTime(updatedAt) })}
+            </p>
+          </header>
+        )}
         <DocumentMarkdownEditor
           key={loaded.revision}
           defaultValue={images.markdown}
+          wikilinkRoot={
+            path.startsWith('Projects/')
+              ? path.split('/').slice(0, 2).join('/')
+              : path.split('/')[0]
+          }
           editable={editable}
           placeholder={t('contentPlaceholder')}
           className="min-h-[58vh] flex-1 text-base leading-7"

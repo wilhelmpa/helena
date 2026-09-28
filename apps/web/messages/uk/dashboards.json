@@ -43,7 +43,7 @@
     },
     "pulse": {
       "label": "Пульс",
-      "description": "Теплова карта щоденної активності"
+      "description": "Стислий графік активності"
     },
     "throughput": {
       "label": "Пропускна здатність",
@@ -208,5 +208,19 @@
     "unassigned": "Без виконавця"
   },
   "deleteDashboard": "Видалити дашборд",
-  "deleteDashboardConfirm": "Видалити «{name}» разом з віджетами? Завдань це не торкнеться."
+  "deleteDashboardConfirm": "Видалити «{name}» разом з віджетами? Завдань це не торкнеться.",
+  "overview": {
+    "openTasks": "Відкриті завдання",
+    "total": "Усього {count}",
+    "inProgress": "У роботі",
+    "projectTasks": "Завдання проєкту",
+    "agentsWorking": "Агенти працюють",
+    "running": "Зараз виконується",
+    "needsYou": "Потребує тебе",
+    "approvalsAndQuestions": "Погодження та запитання",
+    "finished": "Нещодавно завершено",
+    "noRunning": "Зараз жоден агент не працює.",
+    "nothingWaiting": "Зараз нічого не потребує твоєї уваги.",
+    "noFinished": "Поки немає завершених запусків."
+  }
 }

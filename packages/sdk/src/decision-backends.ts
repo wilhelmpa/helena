@@ -2,7 +2,7 @@ import type { LocalizedText } from './text';
 
 // A decision backend (docs/helena-decisions/browser-task.md §3.3): a service that answers typed
 // questions over a state in the System One wire format (`POST /v1/systemone`, TypeSafe's Jev
-// protocol, also spoken by Laya servers). The browser gateway's fast path (browser_task) asks
+// protocol). The browser gateway's fast path (browser_task) asks
 // one; the owner picks it per project. Helena ships TypeSafe (Jev Cloud), the Vercel AI Gateway
 // and "any Jev-compatible server"; a plugin registers another (a hosted evaluation service, an
 // AI SDK evaluation model behind an adapter) the same way.
@@ -11,11 +11,11 @@ import type { LocalizedText } from './text';
 // policies suits its models. The owner's connection (address, model, key) is a credential of
 // kind `decision_model` in Zugänge, which names the type in its `provider` field.
 
-export type DecisionPolicyKind = 'jev' | 'laya';
+export type DecisionPolicyKind = 'jev';
 
 // How Helena talks to a backend. Every protocol answers the same System One questions
 // (`noul`, `choice`), so the browser loop and the decisions service ask any backend alike:
-// - `systemone`: POST /v1/systemone (TypeSafe's Jev, Laya, Jev-compatible servers);
+// - `systemone`: POST /v1/systemone (TypeSafe's Jev and compatible servers);
 // - `openai-logprobs`: an OpenAI-compatible chat completion of one token whose top log
 //   probabilities over the option labels are the answer (a small local LLM on llama.cpp or
 //   Lemonade: the "local logit" backend, SemIf-OpenJev's idea without its Python stack);
@@ -36,10 +36,8 @@ export interface DecisionBackendPreset {
   model: string;
   // The address is local or private and the owner allows it for this connection.
   allowPrivateAddress?: boolean;
-  // The key comes from the local installation's key file (Laya on this server), or from a
-  // model server of Helena's local AI (its address and key; `modelServer` names it), not
-  // from Zugänge.
-  keySource?: 'local-laya' | 'local-ai';
+  // A model server of Helena's local AI supplies its address and key.
+  keySource?: 'local-ai';
   modelServer?: string;
 }
 

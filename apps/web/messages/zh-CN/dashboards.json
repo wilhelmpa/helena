@@ -43,7 +43,7 @@
     },
     "pulse": {
       "label": "活跃度",
-      "description": "按天显示活动的 GitHub 风格热力图"
+      "description": "简洁的活动趋势"
     },
     "throughput": {
       "label": "吞吐量",
@@ -208,5 +208,19 @@
     "unassigned": "未指派"
   },
   "deleteDashboard": "删除仪表板",
-  "deleteDashboardConfirm": "删除“{name}”及其小组件？任务不受影响。"
+  "deleteDashboardConfirm": "删除“{name}”及其小组件？任务不受影响。",
+  "overview": {
+    "openTasks": "待办任务",
+    "total": "共 {count} 项",
+    "inProgress": "进行中",
+    "projectTasks": "项目中的任务",
+    "agentsWorking": "正在工作的代理",
+    "running": "正在运行",
+    "needsYou": "需要你处理",
+    "approvalsAndQuestions": "审批和问题",
+    "finished": "最近完成",
+    "noRunning": "当前没有代理正在运行。",
+    "nothingWaiting": "当前没有需要你处理的事项。",
+    "noFinished": "尚无已完成的运行。"
+  }
 }

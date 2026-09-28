@@ -24,6 +24,7 @@ export interface NeedsYouEntry {
   at: string;
   title: string;
   detail: string;
+  projectKey?: string | null;
   // Where its details are: a page, or (for what only Start shows) a dialog.
   href?: string;
   onSelect?: () => void;
