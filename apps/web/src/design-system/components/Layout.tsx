@@ -19,23 +19,60 @@ type BoxProps = Omit<HTMLAttributes<HTMLElement>, 'style'> & {
   pad?: Space;
   padX?: Space;
   padY?: Space;
+  // One side only (a header row that needs room above, a list that ends with a gap).
+  padTop?: Space;
+  padBottom?: Space;
+  padStart?: Space;
+  padEnd?: Space;
+  // Distance to the element before or after it, where no Stack around it gives one.
+  marginTop?: Space;
+  marginBottom?: Space;
   // Takes the remaining room of a flex parent and may shrink below its content.
   grow?: boolean;
   children?: ReactNode;
   style?: CSSProperties;
 };
 
-function boxStyle({ pad, padX, padY, grow }: BoxProps): CSSProperties {
+function boxStyle({
+  pad,
+  padX,
+  padY,
+  padTop,
+  padBottom,
+  padStart,
+  padEnd,
+  marginTop,
+  marginBottom,
+  grow,
+}: BoxProps): CSSProperties {
   return {
     ...(pad !== undefined ? { padding: space(pad) } : {}),
     ...(padX !== undefined ? { paddingInline: space(padX) } : {}),
     ...(padY !== undefined ? { paddingBlock: space(padY) } : {}),
+    ...(padTop !== undefined ? { paddingTop: space(padTop) } : {}),
+    ...(padBottom !== undefined ? { paddingBottom: space(padBottom) } : {}),
+    ...(padStart !== undefined ? { paddingInlineStart: space(padStart) } : {}),
+    ...(padEnd !== undefined ? { paddingInlineEnd: space(padEnd) } : {}),
+    ...(marginTop !== undefined ? { marginTop: space(marginTop) } : {}),
+    ...(marginBottom !== undefined ? { marginBottom: space(marginBottom) } : {}),
     ...(grow ? { flex: '1 1 0%', minWidth: 0, minHeight: 0 } : {}),
   };
 }
 
 function strip<T extends BoxProps>(props: T) {
-  const { pad: _pad, padX: _padX, padY: _padY, grow: _grow, ...rest } = props;
+  const {
+    pad: _pad,
+    padX: _padX,
+    padY: _padY,
+    padTop: _padTop,
+    padBottom: _padBottom,
+    padStart: _padStart,
+    padEnd: _padEnd,
+    marginTop: _marginTop,
+    marginBottom: _marginBottom,
+    grow: _grow,
+    ...rest
+  } = props;
   return rest;
 }
 
