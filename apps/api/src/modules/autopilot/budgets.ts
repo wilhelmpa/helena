@@ -463,6 +463,21 @@ export async function enforceBudgets(
   return reason;
 }
 
+// A heartbeat may be slowed before it queues more work. Project ownership takes
+// precedence over the agent's department, as it does for the hard stop.
+export async function heartbeatBudgetThrottled(
+  agentId: number,
+  projectId: number | null,
+): Promise<boolean> {
+  const department = projectId == null ? null : await departmentOfWork(agentId, projectId);
+  const statuses = await budgetStatuses({
+    agentIds: [agentId],
+    projectIds: projectId == null ? [] : [projectId],
+    departmentIds: department == null ? [] : [department.id],
+  });
+  return statuses.some((status) => !status.reached && status.ratio >= WARN_RATIO);
+}
+
 // A claimed run that started past a used-up budget on "continue once": the grace is spent
 // on it, and it finishes unhindered.
 export async function useGrace(

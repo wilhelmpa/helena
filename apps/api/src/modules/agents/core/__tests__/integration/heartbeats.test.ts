@@ -7,6 +7,9 @@ import {
   db,
   helenaDecision,
   helenaDecisionEval,
+  helenaBudget,
+  organizationDepartment,
+  organizationProjectAssignment,
   projectColumn,
 } from '@repo/db';
 import { eq } from 'drizzle-orm';
@@ -74,6 +77,48 @@ describe('agent heartbeats', () => {
     await recordUsage({
       agentId: agent.id,
       projectId: agent.projects[0]!.id,
+      kind: 'run',
+      spend: { model: 'test-model', inputTokens: 85, outputTokens: 0 },
+    });
+    await fireDueAgentHeartbeats(now);
+    const [after] = await db
+      .select({ next: aiAgent.heartbeatNextAt })
+      .from(aiAgent)
+      .where(eq(aiAgent.id, agent.id));
+    expect(after!.next?.toISOString()).toBe('2026-09-28T14:00:00.000Z');
+  });
+
+  it('slows an assigned task heartbeat for a department budget', async () => {
+    const { api, project, agent } = await setup();
+    const [department] = await db
+      .insert(organizationDepartment)
+      .values({
+        teamId: agent.teamId,
+        name: 'Growth',
+      })
+      .returning();
+    await db.insert(organizationProjectAssignment).values({
+      teamId: agent.teamId,
+      projectId: project.project.id,
+      departmentId: department!.id,
+    });
+    await db.insert(helenaBudget).values({
+      teamId: agent.teamId,
+      departmentId: department!.id,
+      metric: 'tokens',
+      period: 'day',
+      limitValue: 100,
+    });
+    const task = (
+      await api.projects({ projectKey: 'MKT' }).issues.post({
+        columnId: project.columns[0]!.id,
+        title: 'Prepare launch',
+      })
+    ).data!;
+    await api.issues({ issueId: task.id }).patch({ delegateUserId: agent.userId });
+    await recordUsage({
+      agentId: agent.id,
+      projectId: project.project.id,
       kind: 'run',
       spend: { model: 'test-model', inputTokens: 85, outputTokens: 0 },
     });

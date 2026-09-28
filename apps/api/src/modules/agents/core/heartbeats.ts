@@ -6,7 +6,7 @@ import { classSetting, decide } from '#modules/decisions/service';
 import { HEARTBEAT_PRECHECK_CLASS, LOCAL_DECISION_MODEL } from '#modules/decisions/classes';
 import { heartbeatPrecheckQuestions } from '#modules/decisions/questions';
 import { isBorderlineHeartbeat, type HeartbeatCandidate } from './heartbeat-precheck';
-import { budgetStatuses, WARN_RATIO } from '#modules/autopilot/budgets';
+import { heartbeatBudgetThrottled } from '#modules/autopilot/budgets';
 
 type Candidate = HeartbeatCandidate;
 
@@ -78,9 +78,7 @@ export async function fireDueAgentHeartbeats(now = new Date()): Promise<number> 
     .limit(100);
   let checked = 0;
   for (const { id } of due) {
-    const throttle = (await budgetStatuses({ agentIds: [id] })).some(
-      (status) => !status.reached && status.ratio >= WARN_RATIO,
-    );
+    const throttle = await heartbeatBudgetThrottled(id, null);
     const fired = await db.transaction(async (tx) => {
       const [current] = await tx.select().from(aiAgent).where(eq(aiAgent.id, id));
       if (
@@ -182,6 +180,25 @@ export async function fireDueAgentHeartbeats(now = new Date()): Promise<number> 
           `);
           candidate = (goals as unknown as Candidate[])[0];
         }
+      }
+      if (
+        candidate &&
+        !throttle &&
+        current.heartbeatIntervalMinutes != null &&
+        (await heartbeatBudgetThrottled(id, candidate.projectId))
+      ) {
+        await tx
+          .update(aiAgent)
+          .set({
+            heartbeatNextAt: nextHeartbeatAt(
+              {
+                ...current,
+                heartbeatIntervalMinutes: Math.min(10080, current.heartbeatIntervalMinutes * 2),
+              },
+              now,
+            ),
+          })
+          .where(eq(aiAgent.id, id));
       }
       const precheck =
         candidate && isBorderlineHeartbeat(candidate)
