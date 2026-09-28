@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
   browserLoops,
+  calledTools,
   buildPrompt,
   evaluateBrowserTask,
   gradeBrowserTask,
@@ -184,6 +185,23 @@ if (!process.env.HERMES_HOME) process.exit(3);
   } finally {
     await rm(directory, { recursive: true, force: true });
   }
+});
+
+test('calls through the tool_call bridge count as the tool they reached', () => {
+  expect(
+    calledTools([
+      { name: 'tool_search', input: { queries: ['browser'] } },
+      {
+        name: 'tool_call',
+        input: { calls: [{ name: 'mcp__projekt_browser__browser_click', arguments: {} }] },
+      },
+      { name: 'tool_call', input: { name: 'mcp__projekt_browser__browser_type' } },
+    ]),
+  ).toEqual([
+    'tool_search',
+    'mcp__projekt_browser__browser_click',
+    'mcp__projekt_browser__browser_type',
+  ]);
 });
 
 test('stream events without a tool name are ignored', () => {

@@ -158,6 +158,17 @@ export function toolEvents(output: string): ToolEvent[] {
   return events;
 }
 
+// The tools a run called, with the calls made through Hermes' tool_call bridge
+// ({calls: [{name, arguments}]} or {name, arguments}) named by the tool they reached.
+export function calledTools(events: ToolEvent[]): string[] {
+  return events.flatMap((event) => {
+    if (!event.name.endsWith('tool_call')) return [event.name];
+    const input = (event.input ?? {}) as { name?: unknown; calls?: unknown };
+    const calls = Array.isArray(input.calls) ? (input.calls as { name?: unknown }[]) : [input];
+    return calls.map((call) => (typeof call?.name === 'string' ? call.name : event.name));
+  });
+}
+
 // A repeated call is one with the same name and arguments as an earlier call since the page was
 // last changed: a second snapshot after a click is looking again, a second identical click is not.
 export function browserLoops(events: ToolEvent[]): number {
@@ -322,12 +333,7 @@ export async function evaluateBrowserTask(task: BrowserEvalTask, options: Evalua
   const page = await options.readPage().catch(() => null);
   const events = toolEvents(output.stdout);
   const answer = finalAnswer(output.stdout);
-  const grade = gradeBrowserTask(
-    task,
-    page,
-    answer,
-    events.map((event) => event.name),
-  );
+  const grade = gradeBrowserTask(task, page, answer, calledTools(events));
   const metrics = hermesMetrics(output.stdout);
   const stats = await readStats(options.statsFile, statsFrom);
   const snapshots = stats.filter((stat) => stat.ok && /snapshot|navigate|click/.test(stat.tool));
