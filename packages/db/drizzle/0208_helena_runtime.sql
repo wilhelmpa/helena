@@ -64,6 +64,7 @@ CREATE TABLE "helena_fact_entity_link" (
 );
 --> statement-breakpoint
 ALTER TABLE "agent_memory_revision" DROP CONSTRAINT "agent_memory_revision_file_check";--> statement-breakpoint
+ALTER TABLE "agent_run" DROP CONSTRAINT "agent_run_trigger_check";--> statement-breakpoint
 ALTER TABLE "helena_agent_session" ADD CONSTRAINT "helena_agent_session_agent_id_ai_agent_id_fk" FOREIGN KEY ("agent_id") REFERENCES "public"."ai_agent"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "helena_agent_session" ADD CONSTRAINT "helena_agent_session_team_id_team_id_fk" FOREIGN KEY ("team_id") REFERENCES "public"."team"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "helena_agent_session" ADD CONSTRAINT "helena_agent_session_project_id_project_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."project"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
@@ -84,4 +85,5 @@ CREATE INDEX "helena_fact_agent_idx" ON "helena_fact" USING btree ("agent_id");-
 CREATE INDEX "helena_fact_updated_idx" ON "helena_fact" USING btree ("updated_at");--> statement-breakpoint
 CREATE UNIQUE INDEX "helena_fact_entity_name_unique" ON "helena_fact_entity" USING btree ("team_id",coalesce("project_id", 0),"name_lower");--> statement-breakpoint
 CREATE INDEX "helena_fact_entity_link_entity_idx" ON "helena_fact_entity_link" USING btree ("entity_id");--> statement-breakpoint
-ALTER TABLE "agent_memory_revision" ADD CONSTRAINT "agent_memory_revision_file_check" CHECK ("agent_memory_revision"."file" IN ('MEMORY.md', 'USER.md') OR "agent_memory_revision"."file" ~ '^notes/[0-9]{4}-[0-9]{2}-[0-9]{2}[.]md$');
+ALTER TABLE "agent_memory_revision" ADD CONSTRAINT "agent_memory_revision_file_check" CHECK ("agent_memory_revision"."file" IN ('MEMORY.md', 'USER.md') OR "agent_memory_revision"."file" ~ '^notes/[0-9]{4}-[0-9]{2}-[0-9]{2}[.]md$');--> statement-breakpoint
+ALTER TABLE "agent_run" ADD CONSTRAINT "agent_run_trigger_check" CHECK ("agent_run"."trigger" IN ('mention', 'delegation', 'subtask', 'field', 'schedule', 'manual', 'approval', 'workspace', 'digest', 'heartbeat', 'escalation'));

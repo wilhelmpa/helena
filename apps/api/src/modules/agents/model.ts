@@ -25,6 +25,8 @@ export const agentRunTrigger = t.Union([
   t.Literal('field'),
   t.Literal('schedule'),
   t.Literal('heartbeat'),
+  // A task Helena's own loop handed to a bigger model (docs/helena-decisions/zentrale-laufzeit.md §9).
+  t.Literal('escalation'),
   t.Literal('manual'),
   t.Literal('approval'),
   // A job for the runner itself (a repository clone), whose prompt is the job as JSON.

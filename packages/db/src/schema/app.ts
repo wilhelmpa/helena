@@ -833,7 +833,7 @@ export const agentRun = pgTable(
     ),
     check(
       'agent_run_trigger_check',
-      sql`${t.trigger} IN ('mention', 'delegation', 'subtask', 'field', 'schedule', 'manual', 'approval', 'workspace', 'digest', 'heartbeat')`,
+      sql`${t.trigger} IN ('mention', 'delegation', 'subtask', 'field', 'schedule', 'manual', 'approval', 'workspace', 'digest', 'heartbeat', 'escalation')`,
     ),
     index('agent_run_due_idx').on(t.status, t.nextAttemptAt),
     index('agent_run_project_idx').on(t.projectId),

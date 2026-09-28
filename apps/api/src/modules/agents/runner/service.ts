@@ -32,6 +32,7 @@ import {
 import { routeRequest } from '#modules/model-router/service';
 import { DIGEST_SYSTEM_PROMPT } from '#modules/updates/digest-prompt';
 import { MAX_RUN_OUTPUT_BYTES, type reflectionBody } from './model';
+import { queueEscalation, type EscalationReport } from './escalation';
 import { recordUsage, type Spend } from '../usage/service';
 import { emergencyStopActive } from '#modules/emergency-stop/service';
 import {
@@ -788,6 +789,7 @@ export async function finishRun(
     spend?: Spend | null;
     runtime?: RunModelReport;
     failure?: RuntimeFailure;
+    escalation?: EscalationReport;
   },
   claim?: number,
 ): Promise<{ reflection: ReflectionRequest | null } | null> {
@@ -875,6 +877,16 @@ export async function finishRun(
   // "Handeln & berichten": what the run did without approval, on its task.
   await postAutopilotReport(runId);
   const paused = await enforceAgentLimits(agent.id, row.projectId, row.issueId);
+  // Helena's own loop handed the task to a bigger model: the follow-up run takes it from
+  // here, so this one reflects on nothing.
+  if (result.escalation && status === 'success') {
+    await queueEscalation(
+      agent.id,
+      { id: runId, projectId: row.projectId, issueId: row.issueId },
+      result.escalation,
+    );
+    return { reflection: null };
+  }
   return {
     reflection: await requestReflection(
       agent.id,

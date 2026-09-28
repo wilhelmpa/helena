@@ -236,4 +236,97 @@ describe("Helena's own runtime", () => {
       expect(removed.data!.status).toBe('removed');
     });
   });
+
+  describe('the runtime and its hand-over', () => {
+    const policy = (runtime: string, helena?: Record<string, unknown>) =>
+      ({
+        reasoningEffort: null,
+        toolAllow: [],
+        toolDeny: [],
+        mcpGrants: [],
+        files: [],
+        runtime,
+        ...(helena && { helena }),
+      }) as never;
+
+    it('knows the runtime helena only while HELENA_NATIVE_RUNTIME is on', async () => {
+      const owner = await signUpTestUser({ name: 'Owner' });
+      const asOwner = authedApi(owner.cookie);
+      await asOwner.projects.post({ key: 'MKT', name: 'Marketing' });
+      const before = process.env.HELENA_NATIVE_RUNTIME;
+      try {
+        delete process.env.HELENA_NATIVE_RUNTIME;
+        const off = await createAgent(asOwner, 'MKT', {
+          name: 'Off',
+          username: 'off',
+          runtimePolicy: policy('helena', { toolProfile: 'recherche' }),
+        });
+        expect(off.data!.agent.runtimePolicy.runtime).toBeUndefined();
+        process.env.HELENA_NATIVE_RUNTIME = 'on';
+        const on = await createAgent(asOwner, 'MKT', {
+          name: 'On',
+          username: 'on',
+          runtimePolicy: policy('helena', {
+            toolProfile: 'recherche',
+            escalation: { target: 'runtime:claude', taskKinds: ['recht'] },
+          }),
+        });
+        expect(on.data!.agent.runtimePolicy.runtime).toBe('helena');
+        const snapshot = await apiKeyApi(on.data!.apiKey!)['agent-runtime'].policy.get();
+        expect(snapshot.data!.helena).toEqual({
+          toolProfile: 'recherche',
+          escalation: { target: 'runtime:claude', taskKinds: ['recht'] },
+        });
+      } finally {
+        if (before === undefined) delete process.env.HELENA_NATIVE_RUNTIME;
+        else process.env.HELENA_NATIVE_RUNTIME = before;
+      }
+    });
+
+    it('queues the follow-up run on an agent of the project on Claude Code', async () => {
+      const owner = await signUpTestUser({ name: 'Owner' });
+      const asOwner = authedApi(owner.cookie);
+      const project = await asOwner.projects.post({ key: 'MKT', name: 'Marketing' });
+      const teamId = project.data!.teamId;
+      const view = await asOwner.projects({ projectKey: 'MKT' }).get();
+      const columnId = view.data!.columns[0]!.id;
+      const local = await createAgent(asOwner, 'MKT', {
+        name: 'Lokal',
+        username: 'lokal',
+        delegationDelaySec: 0,
+      });
+      const big = await createAgent(asOwner, 'MKT', {
+        name: 'Gross',
+        username: 'gross',
+        runtimePolicy: policy('claude'),
+      });
+      const issue = (
+        await asOwner
+          .projects({ projectKey: 'MKT' })
+          .issues.post({ columnId, title: 'Vertrag prüfen' })
+      ).data!;
+      await asOwner
+        .issues({ issueId: issue.id })
+        .patch({ delegateUserId: local.data!.agent.userId });
+      const asLocal = apiKeyApi(local.data!.apiKey!);
+      const claimed = (await asLocal['agent-runs'].claim.post()).data!.run!;
+      const reported = await asLocal['agent-runs']({ runId: claimed.id }).result.post({
+        status: 'success',
+        output: 'Übergeben an claude (task-kind).',
+        escalation: {
+          target: 'runtime:claude',
+          reason: 'task-kind',
+          detail: 'recht',
+          handover: 'Übergabe: Aufgabe Vertrag prüfen.',
+        },
+      });
+      expect(reported.status).toBe(200);
+      const runs = await asOwner
+        .teams({ teamId })
+        ['ai-agents']({ agentId: big.data!.agent.id })
+        .runs.get();
+      expect(runs.data!.items).toHaveLength(1);
+      expect(runs.data!.items[0]).toMatchObject({ trigger: 'escalation', issueId: issue.id });
+    });
+  });
 });
