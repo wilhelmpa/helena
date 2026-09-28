@@ -408,6 +408,18 @@
   gap: 8px;
   padding: 0 0 12px;
 }
+/* The wordmark does not fit 56px: the rail shows its first letter. */
+.ds-brand-mark {
+  display: none;
+}
+.ds-app[data-sidebar='rail']:not([data-sidebar-open='true']) .ds-brand-full {
+  display: none;
+}
+.ds-app[data-sidebar='rail']:not([data-sidebar-open='true']) .ds-brand-mark {
+  display: inline;
+  font-size: 13px;
+  letter-spacing: 0;
+}
 .ds-app[data-sidebar='rail']:not([data-sidebar-open='true']) .ds-project-switcher {
   justify-content: center;
   padding: 0;

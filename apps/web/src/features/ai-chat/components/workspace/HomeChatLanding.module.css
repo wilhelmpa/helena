@@ -295,6 +295,15 @@
     padding: 0 16px;
   }
 
+  /* A phone: the page header already says Helena; the date gives way. */
+  .location {
+    display: none;
+  }
+
+  .chatsLabel {
+    display: none;
+  }
+
   .working {
     font-size: 10px;
   }

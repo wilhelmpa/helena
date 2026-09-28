@@ -64,7 +64,7 @@ export function HomeChatMasthead({ onOpenList }: { onOpenList?: () => void }) {
             onClick={onOpenList}
             aria-label={t('history')}
           >
-            {t('chats')}
+            <span className={styles.chatsLabel}>{t('chats')}</span>
           </Button>
         )}
       </div>

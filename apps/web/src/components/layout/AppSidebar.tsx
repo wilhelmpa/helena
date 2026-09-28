@@ -94,7 +94,10 @@ export default function AppSidebar({
     <nav className="ds-sidebar" aria-label={t('sidebarProject')}>
       <div className="ds-sidebar-brand">
         <Link href="/" title={t('sidebarHome')}>
-          {APP_NAME.toUpperCase()}
+          <span className="ds-brand-full">{APP_NAME.toUpperCase()}</span>
+          <span className="ds-brand-mark" aria-hidden="true">
+            {APP_NAME.charAt(0).toUpperCase()}
+          </span>
         </Link>
         <span className="ds-sidebar-brand-tools">
           <time suppressHydrationWarning>{clock}</time>

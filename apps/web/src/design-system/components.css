@@ -682,6 +682,8 @@
   .ds-settings-row {
     flex-direction: column;
     align-items: stretch;
+    gap: var(--space-2);
+    padding-block: var(--space-3);
   }
 }
 
@@ -1793,7 +1795,11 @@ a.ds-run-card:hover {
 }
 @container (max-width: 520px) {
   .ds-extension-field {
-    width: 140px;
+    width: 100%;
+  }
+  .ds-settings-row-control:has(> .ds-extension-field),
+  .ds-settings-row-control:has(> .ds-inline-unit > .ds-extension-field) {
+    width: 100%;
   }
 }
 

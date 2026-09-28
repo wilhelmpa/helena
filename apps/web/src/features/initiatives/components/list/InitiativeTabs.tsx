@@ -6,6 +6,7 @@ import { useStripSortSensors } from '@/lib/dnd';
 import { cn } from '@/lib/utils';
 import type { InitiativesTab } from '@/utils/paths';
 import { PageTabs, usePageToolbarRoom } from '@/components/layout/PageToolbar';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 export type InitiativeTabItem = { value: InitiativesTab; label: string; count?: number };
 
@@ -27,8 +28,10 @@ export default function InitiativeTabs({
   onReorder: (from: InitiativesTab, to: InitiativesTab) => void;
 }) {
   const room = usePageToolbarRoom();
+  const mobile = useIsMobile();
   const sensors = useStripSortSensors();
-  if (!room.tabs) return <PageTabs items={items} value={value} onChange={onSelect} label={label} />;
+  if (!room.tabs || mobile)
+    return <PageTabs items={items} value={value} onChange={onSelect} label={label} folded />;
 
   const handleDragEnd = ({ active, over }: DragEndEvent) => {
     if (over && active.id !== over.id)

@@ -146,16 +146,19 @@ export function PageTabs<T extends string>({
   value,
   onChange,
   label,
+  folded = false,
 }: {
   items: PageTab<T>[];
   value: T;
   onChange?: (value: T) => void;
   // Accessible name of the tab group.
   label?: string;
+  // Always the dropdown (a phone: five tabs never fit beside the page's other controls).
+  folded?: boolean;
 }) {
   const room = useContext(RoomCtx);
   const current = items.find((item) => item.value === value) ?? items[0];
-  if (room.tabs) {
+  if (room.tabs && !folded) {
     return (
       // The same segment control as every view switch (design-system §9): one look, one
       // height for all tabs in the top bar.
