@@ -15,9 +15,11 @@ import InitiativeStatusSelect from '@/components/common/fields/InitiativeStatusS
 import MarkdownEditor from '@/components/common/editor/MarkdownEditor';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { MoreHorizontal } from 'lucide-react';
+import { Pill } from '@/components/common/fields/Pill';
 
-// An initiative's fields, laid out as the new-issue dialog is: title, description,
-// then the properties as pills. With `initiative` it edits that one, otherwise it
+// An initiative's fields ("Ziel"), laid out as a new task is: title, description, then
+// the few properties that matter as pills and the rest under "Mehr". With `initiative` it edits that one, otherwise it
 // creates one and — without onCreated — navigates to it.
 export default function InitiativeDialog({
   projectKey,
@@ -87,10 +89,16 @@ export default function InitiativeDialog({
     else router.push(initiativePath(projectKey, created.id));
   };
 
+  // The owner decided (28.09.): few fields up front — title, what for, status, owner and
+  // target — and the rest under "Mehr", like a new task.
+  const [moreOpen, setMoreOpen] = useState(
+    !!(initiative?.priority || initiative?.startDate || initiative?.labelIds.length),
+  );
+
   return (
     <Modal
       title={initiative ? t('form.editTitle') : t('newInitiative')}
-      scope={projectKey}
+      scope={project?.project.name.toUpperCase() ?? projectKey}
       onClose={onClose}
       onOpenAutoFocus={(event) => {
         event.preventDefault();
@@ -99,6 +107,8 @@ export default function InitiativeDialog({
       wide
       fullscreen={fullscreen}
       onToggleFullscreen={onToggleFullscreen}
+      createLayout
+      className="new-issue-sheet"
     >
       <div className={cn('flex min-h-0 flex-col', fullscreen && 'flex-1 overflow-hidden')}>
         <input
@@ -106,10 +116,16 @@ export default function InitiativeDialog({
           // `auto` once there is something to read, so a title keeps the script it
           // was typed in.
           dir={title ? 'auto' : undefined}
-          className="w-full bg-transparent text-base font-semibold outline-none placeholder:text-muted-foreground"
+          className="new-issue-title w-full min-w-0 bg-transparent text-2xl font-medium tracking-[-.03em] outline-none"
           placeholder={t('form.titlePlaceholder')}
           value={title}
           onChange={(e) => setTitle(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
+              e.preventDefault();
+              if (title.trim() && !saving) void submit();
+            }
+          }}
         />
         <div className={cn('flex min-h-0 flex-col overflow-hidden', fullscreen && 'flex-1')}>
           <MarkdownEditor
@@ -122,9 +138,8 @@ export default function InitiativeDialog({
           />
         </div>
 
-        <div className="mt-4 flex flex-wrap items-center gap-2">
+        <div className="new-issue-pills mt-2 flex flex-wrap items-center gap-2">
           <InitiativeStatusSelect value={status} onChange={setStatus} />
-
           {project?.assignees.some((a) => a.kind === 'member') && (
             <AssigneeSelect
               assignees={project.assignees}
@@ -133,34 +148,37 @@ export default function InitiativeDialog({
               placeholder={t('noOwner')}
             />
           )}
-
-          <PrioritySelect value={priority} onChange={setPriority} />
-
-          <DatePill
-            value={startDate}
-            placeholder={t('startDate')}
-            onChange={setStartDate}
-            disabled={latestStart ? { after: latestStart } : undefined}
-          />
-
           <DatePill
             value={targetDate}
             placeholder={t('targetDate')}
             onChange={setTargetDate}
             disabled={earliestTarget ? { before: earliestTarget } : undefined}
           />
-
-          {project && project.labels.length > 0 && (
-            <LabelsSelect
-              labels={project.labels}
-              groups={project.labelGroups}
-              value={labelIds}
-              onToggle={toggleLabel}
-            />
-          )}
+          <Pill onClick={() => setMoreOpen((open) => !open)} aria-expanded={moreOpen}>
+            {tCommon('more')} <MoreHorizontal />
+          </Pill>
         </div>
+        {moreOpen && (
+          <div className="new-issue-pills mt-2 flex flex-wrap items-center gap-2">
+            <PrioritySelect value={priority} onChange={setPriority} />
+            <DatePill
+              value={startDate}
+              placeholder={t('startDate')}
+              onChange={setStartDate}
+              disabled={latestStart ? { after: latestStart } : undefined}
+            />
+            {project && project.labels.length > 0 && (
+              <LabelsSelect
+                labels={project.labels}
+                groups={project.labelGroups}
+                value={labelIds}
+                onToggle={toggleLabel}
+              />
+            )}
+          </div>
+        )}
 
-        <div className="mt-4 flex justify-end gap-2">
+        <div className="new-issue-footer mt-5 flex flex-nowrap items-center justify-end gap-2 border-t">
           <Button variant="ghost" onClick={onClose}>
             {tCommon('cancel')}
           </Button>

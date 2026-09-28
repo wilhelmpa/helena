@@ -45,7 +45,8 @@
     "loading": "Loading messages…",
     "mailLoading": "Loading mailbox…",
     "mailError": "The mailbox could not be loaded.",
-    "noProjectMailbox": "No mailbox is set up for this project."
+    "noProjectMailbox": "No mailbox is set up for this project.",
+    "scope": "Scope"
   },
   "mailFilter": {
     "read": "Read status",

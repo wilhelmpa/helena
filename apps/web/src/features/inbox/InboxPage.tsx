@@ -6,6 +6,7 @@ import { Bell, MessageSquareText } from 'lucide-react';
 import { useShell } from '@/context/shellContext';
 import { useInboxUnread } from '@/hooks/useInboxUnread';
 import { PageTabs } from '@/components/layout/PageToolbar';
+import { Segmented } from '@/design-system';
 import InboxView from './components/InboxView';
 import MailInbox from './components/MailInbox';
 import { useProjectMailAccounts } from '@/services/mail.service';
@@ -45,46 +46,39 @@ export default function InboxPage() {
       ]}
     />
   );
+  // This project or every project: a view of the same inbox, so a segment in the one
+  // header row before the tabs (design-system §9), not a row of its own.
+  const leading = (
+    <>
+      <Segmented
+        label={t('scope')}
+        value={all ? 'all' : 'project'}
+        onChange={(next) => setAll(next === 'all')}
+        options={[
+          { value: 'project', label: t('scopeProject') },
+          { value: 'all', label: t('scopeAll') },
+        ]}
+      />
+      {tabs}
+    </>
+  );
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div
-        className="flex gap-1 border-b border-border p-2"
-        role="group"
-        aria-label="Inbox-Projekte"
-      >
-        <button
-          type="button"
-          className={`rounded-lg px-3 py-1.5 text-sm ${!all ? 'bg-accent' : ''}`}
-          aria-pressed={!all}
-          onClick={() => setAll(false)}
-        >
-          {t('scopeProject')}
-        </button>
-        <button
-          type="button"
-          className={`rounded-lg px-3 py-1.5 text-sm ${all ? 'bg-accent' : ''}`}
-          aria-pressed={all}
-          onClick={() => setAll(true)}
-        >
-          {t('scopeAll')}
-        </button>
-      </div>
-      {all && activeTab === 'messages' && <div className="border-b border-border p-2">{tabs}</div>}
       {all ? (
         activeTab === 'messages' ? (
-          <InboxWorkspace projectKey={null} />
+          <InboxWorkspace projectKey={null} page leading={leading} />
         ) : (
-          <InboxView project={null} leading={tabs} />
+          <InboxView project={null} leading={leading} />
         )
       ) : activeTab === 'messages' ? (
         <MailInbox
           teamId={project.project.teamId}
           projectId={project.project.id}
           toolbar
-          leading={tabs}
+          leading={leading}
         />
       ) : (
-        <InboxView key={project.project.key} project={project} leading={tabs} />
+        <InboxView key={project.project.key} project={project} leading={leading} />
       )}
     </div>
   );

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { useTranslations } from 'next-intl';
 import { Users } from 'lucide-react';
 import { PageSelect } from '@/components/layout/PageToolbar';
@@ -16,7 +16,8 @@ import { resolveInboxTeamId } from './inboxTeamScope';
 export default function InboxWorkspace({
   projectKey,
   page = false,
-}: WorkspaceContentProps & { page?: boolean }) {
+  leading,
+}: WorkspaceContentProps & { page?: boolean; leading?: ReactNode }) {
   const teamCopy = useTranslations('teams');
   const inboxCopy = useTranslations('inbox.hub');
   const teams = useTeamsQuery();
@@ -70,17 +71,22 @@ export default function InboxWorkspace({
           toolbar={page}
           leading={
             page && !projectKey && (teams.data?.length ?? 0) > 1 ? (
-              <PageSelect
-                label={teamCopy('info.team')}
-                icon={Users}
-                value={String(teamId)}
-                onChange={(value) => setTeamId(Number(value))}
-                options={(teams.data ?? []).map((team) => ({
-                  value: String(team.id),
-                  label: team.name,
-                }))}
-              />
-            ) : undefined
+              <>
+                {leading}
+                <PageSelect
+                  label={teamCopy('info.team')}
+                  icon={Users}
+                  value={String(teamId)}
+                  onChange={(value) => setTeamId(Number(value))}
+                  options={(teams.data ?? []).map((team) => ({
+                    value: String(team.id),
+                    label: team.name,
+                  }))}
+                />
+              </>
+            ) : (
+              leading
+            )
           }
         />
       )}

@@ -689,7 +689,7 @@
 }
 .ds-panel-tab {
   display: flex;
-  height: 28px;
+  height: 26px;
   min-width: 0;
   flex: none;
   align-items: center;
@@ -709,7 +709,7 @@
 }
 .ds-panel-tab-select {
   display: flex;
-  height: 28px;
+  height: 26px;
   min-width: 0;
   align-items: center;
   gap: 7px;
@@ -933,6 +933,11 @@
 }
 .ds-page-toolbar-row::-webkit-scrollbar {
   display: none;
+}
+/* One height in the top bar (owner 28.09.): pills, filter pills, segments, fields and
+   buttons all stand --control-h tall on one centre line. */
+.ds-page-toolbar-row :is(.ds-pill, .ds-filter-pill) {
+  height: var(--control-h);
 }
 .ds-page-toolbar-row > :not(.ds-toolbar-fill) {
   flex-shrink: 0;

@@ -1,7 +1,7 @@
 import { useTranslations } from 'next-intl';
 import DocumentMarkdownEditor from '@/components/common/editor/DocumentMarkdownEditor';
 import { useVaultWikilinkOpener } from '@/hooks/useVaultWikilinkOpener';
-import { Button } from '@/components/ui/button';
+import { Segmented } from '@/design-system';
 import { useVaultMarkdownSession } from '../hooks/useVaultMarkdownSession';
 import VaultMarkdownBoundary from './VaultMarkdownBoundary';
 import VaultMarkdownSource from './VaultMarkdownSource';
@@ -42,24 +42,16 @@ export default function VaultMarkdownContent({
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-2">
       {!sourceOnly && (
-        <div className="flex gap-2" role="group" aria-label={files('editor')}>
-          <Button
-            size="sm"
-            variant={mode === 'formatted' ? 'default' : 'outline'}
-            aria-pressed={mode === 'formatted'}
-            onClick={session.showFormatted}
-          >
-            {files('formatted')}
-          </Button>
-          <Button
-            size="sm"
-            variant={mode === 'source' ? 'default' : 'outline'}
-            aria-pressed={mode === 'source'}
-            onClick={session.showSource}
-          >
-            {files('source')}
-          </Button>
-        </div>
+        <Segmented
+          className="self-start"
+          label={files('editor')}
+          value={mode}
+          onChange={(next) => (next === 'source' ? session.showSource() : session.showFormatted())}
+          options={[
+            { value: 'formatted', label: files('formatted') },
+            { value: 'source', label: files('source') },
+          ]}
+        />
       )}
       {mode === 'source' ? (
         sourceEditor

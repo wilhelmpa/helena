@@ -45,7 +45,8 @@
     "loading": "Loading messages…",
     "mailLoading": "Memuat kotak surat…",
     "mailError": "Kotak surat tidak dapat dimuat.",
-    "noProjectMailbox": "Belum ada kotak surat untuk proyek ini."
+    "noProjectMailbox": "Belum ada kotak surat untuk proyek ini.",
+    "scope": "Cakupan"
   },
   "mailFilter": {
     "read": "Status baca",

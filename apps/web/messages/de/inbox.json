@@ -45,7 +45,8 @@
     "loading": "Nachrichten werden geladen…",
     "mailLoading": "Posteingang wird geladen …",
     "mailError": "Das Postfach konnte nicht geladen werden.",
-    "noProjectMailbox": "Für dieses Projekt ist kein Postfach eingerichtet."
+    "noProjectMailbox": "Für dieses Projekt ist kein Postfach eingerichtet.",
+    "scope": "Umfang"
   },
   "mailFilter": {
     "read": "Lesestatus",

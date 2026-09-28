@@ -45,7 +45,8 @@
     "loading": "Loading messages…",
     "mailLoading": "正在加载邮箱…",
     "mailError": "无法加载邮箱。",
-    "noProjectMailbox": "此项目尚未设置邮箱。"
+    "noProjectMailbox": "此项目尚未设置邮箱。",
+    "scope": "范围"
   },
   "mailFilter": {
     "read": "阅读状态",

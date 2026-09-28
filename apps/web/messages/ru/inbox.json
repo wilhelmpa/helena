@@ -45,7 +45,8 @@
     "loading": "Loading messages…",
     "mailLoading": "Загрузка почтового ящика…",
     "mailError": "Не удалось загрузить почтовый ящик.",
-    "noProjectMailbox": "Для этого проекта не настроен почтовый ящик."
+    "noProjectMailbox": "Для этого проекта не настроен почтовый ящик.",
+    "scope": "Охват"
   },
   "mailFilter": {
     "read": "Статус прочтения",

@@ -45,7 +45,8 @@
     "loading": "Loading messages…",
     "mailLoading": "Chargement de la boîte mail…",
     "mailError": "Impossible de charger la boîte mail.",
-    "noProjectMailbox": "Aucune boîte mail n’est configurée pour ce projet."
+    "noProjectMailbox": "Aucune boîte mail n’est configurée pour ce projet.",
+    "scope": "Portée"
   },
   "mailFilter": {
     "read": "Statut de lecture",

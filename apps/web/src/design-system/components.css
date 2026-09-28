@@ -711,7 +711,8 @@
   background: var(--surface-2);
   padding: 3px;
 }
-.ds-segmented > button {
+.ds-segmented > button,
+.ds-segmented > a {
   display: inline-flex;
   height: 26px;
   align-items: center;
@@ -722,15 +723,16 @@
   font-size: 12px;
   white-space: nowrap;
 }
-.ds-segmented > button:hover {
+.ds-segmented > :is(button, a):hover {
   color: var(--text);
 }
-.ds-segmented > button[aria-selected='true'] {
+.ds-segmented
+  > :is(button, a):is([aria-selected='true'], [aria-pressed='true'], [aria-current='page']) {
   background: var(--surface-1);
   color: var(--text);
   box-shadow: 0 1px 2px #0000001a;
 }
-.ds-segmented > button svg {
+.ds-segmented > :is(button, a) svg {
   width: 14px;
   height: 14px;
 }

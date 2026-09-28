@@ -45,7 +45,8 @@
     "loading": "Loading messages…",
     "mailLoading": "Cargando buzón…",
     "mailError": "No se pudo cargar el buzón.",
-    "noProjectMailbox": "No hay ningún buzón configurado para este proyecto."
+    "noProjectMailbox": "No hay ningún buzón configurado para este proyecto.",
+    "scope": "Alcance"
   },
   "mailFilter": {
     "read": "Estado de lectura",

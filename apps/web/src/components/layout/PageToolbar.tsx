@@ -157,7 +157,9 @@ export function PageTabs<T extends string>({
   const current = items.find((item) => item.value === value) ?? items[0];
   if (room.tabs) {
     return (
-      <nav aria-label={label} className="flex shrink-0 items-center gap-0.5">
+      // The same segment control as every view switch (design-system §9): one look, one
+      // height for all tabs in the top bar.
+      <nav aria-label={label} className="ds-segmented">
         {items.map((item) => (
           <PageTabButton
             key={item.value}
@@ -220,7 +222,7 @@ function PageTabButton<T extends string>({
   active: boolean;
   onSelect: () => void;
 }) {
-  const className = cn(PAGE_CONTROL_CLASS, 'h-7', active && PAGE_CONTROL_ACTIVE_CLASS);
+  const className = cn(active && PAGE_CONTROL_ACTIVE_CLASS);
   const inner = (
     <>
       {item.icon ? <item.icon aria-hidden="true" /> : null}
