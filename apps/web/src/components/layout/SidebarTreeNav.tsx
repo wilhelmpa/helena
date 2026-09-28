@@ -3,7 +3,7 @@
 import { type ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ChevronRight, Folder, Plus } from 'lucide-react';
+import { ChevronRight, Folder } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useProjectFeatures } from '@/hooks/useProjectFeatures';
@@ -38,6 +38,8 @@ import { homeNavigation } from './homeNavigation';
 import SidebarApprovalsRefresh from './SidebarApprovalsRefresh';
 import SidebarAreaNav from './SidebarAreaNav';
 import SidebarSavedViewItem from './SidebarSavedViewItem';
+import NewViewMenu from './NewViewMenu';
+import type { ViewTemplate } from '@/hooks/useViewEditor';
 
 function pathIsActive(pathname: string, href: string) {
   const path = href.split('?')[0]!;
@@ -267,12 +269,11 @@ export function SidebarProjectTree({
   onDeleteView,
 }: {
   projectKey: string;
-  onNewView: () => void;
+  onNewView: (template: ViewTemplate) => void;
   onEditView: (view: View) => void;
   onDeleteView: (view: View) => Promise<void>;
 }) {
   const t = useTranslations('nav');
-  const viewsT = useTranslations('views');
   const { can, isAdmin } = usePermissions();
   const features = useProjectFeatures();
   const { data: views = [] } = useViewsQuery(projectKey);
@@ -297,19 +298,7 @@ export function SidebarProjectTree({
         id={`${projectKey}:tasks`}
         label={t('workItems')}
         href={taskHref}
-        action={
-          can('views', 'create') && (
-            <button
-              type="button"
-              className="helena-tree-toggle"
-              aria-label={viewsT('newView')}
-              title={viewsT('newView')}
-              onClick={onNewView}
-            >
-              <Plus size={14} />
-            </button>
-          )
-        }
+        action={can('views', 'create') && <NewViewMenu onSelect={onNewView} />}
       >
         {views
           .filter((view) => view.folderId == null)

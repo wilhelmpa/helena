@@ -39,5 +39,14 @@
   "areaFolderTaken": "该项目的另一个区域已使用此文件夹。",
   "openFolder": "打开文件夹",
   "deleteView": "删除视图",
-  "deleteViewConfirm": "删除“{name}”？任务会保留，只删除这个已保存的视图。"
+  "deleteViewConfirm": "删除“{name}”？任务会保留，只删除这个已保存的视图。",
+  "changed": "Changed",
+  "reset": "Reset",
+  "saveAsNew": "Save as new view",
+  "templates": {
+    "mine": "My tasks",
+    "open": "Open",
+    "week": "This week",
+    "status": "By status"
+  }
 }

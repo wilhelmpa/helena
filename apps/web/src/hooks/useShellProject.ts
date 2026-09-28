@@ -12,6 +12,7 @@ import { applyFilters } from '@/utils/filters';
 import { withoutShownSubtasks } from '@/utils/subtasks';
 import { viewPath } from '@/utils/paths';
 import { useViewEditor } from '@/hooks/useViewEditor';
+import { useSession } from '@/lib/auth-client';
 
 function errorMessage(error: unknown): string | null {
   if (!error) return null;
@@ -23,6 +24,7 @@ function errorMessage(error: unknown): string | null {
 // from. Kept out of the Shell so it stays a composition of chrome and overlays.
 export function useShellProject(projectKey: string | null, activeViewId: number | null) {
   const router = useRouter();
+  const { data: session } = useSession();
 
   const projectsQuery = useProjectsQuery();
   const projects = useMemo(() => projectsQuery.data ?? [], [projectsQuery.data]);
@@ -62,6 +64,7 @@ export function useShellProject(projectKey: string | null, activeViewId: number 
     views,
     activeViewId,
     (id) => projectKey && router.push(viewPath(projectKey, id)),
+    session?.user.id ?? null,
   );
 
   // The project with the active filters applied to its issues: the active view's

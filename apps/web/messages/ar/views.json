@@ -39,5 +39,14 @@
   "areaFolderTaken": "يستخدم مجال آخر في هذا المشروع هذا المجلد.",
   "openFolder": "فتح المجلد",
   "deleteView": "حذف العرض",
-  "deleteViewConfirm": "حذف «{name}»؟ تبقى المهام، ويُحذف هذا العرض المحفوظ فقط."
+  "deleteViewConfirm": "حذف «{name}»؟ تبقى المهام، ويُحذف هذا العرض المحفوظ فقط.",
+  "changed": "Changed",
+  "reset": "Reset",
+  "saveAsNew": "Save as new view",
+  "templates": {
+    "mine": "My tasks",
+    "open": "Open",
+    "week": "This week",
+    "status": "By status"
+  }
 }

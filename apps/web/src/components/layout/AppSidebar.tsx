@@ -20,6 +20,7 @@ import SidebarAccountRow from '@/components/brand/SidebarAccountRow';
 import SidebarProjectSwitcher from './SidebarProjectSwitcher';
 import { SidebarHomeTree, SidebarPersonalNav, SidebarProjectTree } from './SidebarTreeNav';
 import { APP_NAME } from '@/utils/app';
+import type { ViewTemplate } from '@/hooks/useViewEditor';
 
 export default function AppSidebar({
   projects,
@@ -34,7 +35,7 @@ export default function AppSidebar({
   currentProjectKey: string | null;
   onSelectProject: (key: string) => void;
   onNewProject: () => void;
-  onNewView: () => void;
+  onNewView: (template: ViewTemplate) => void;
   onEditView: (view: View) => void;
   onDeleteView: (view: View) => Promise<void>;
 }) {

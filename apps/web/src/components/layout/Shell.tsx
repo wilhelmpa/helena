@@ -256,9 +256,9 @@ export default function Shell({
               currentProjectKey={projectKey}
               onSelectProject={(key) => router.push(navigation.projectDestination(key))}
               onNewProject={() => overlays.setShowNewProject(true)}
-              onNewView={() => {
+              onNewView={(template) => {
                 if (!projectKey) return;
-                editor.beginNewView();
+                editor.beginNewView(template);
                 if (!route.onBoard) router.push(projectPath(projectKey));
               }}
               onEditView={editor.beginEditView}
