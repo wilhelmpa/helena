@@ -4,6 +4,7 @@ import { useEffect, useRef, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { Search, X } from 'lucide-react';
 import { PageChromeCtx } from './pageChrome';
+import { useHydrated } from '@/hooks/useHydrated';
 
 // The one large modal (docs/design-system.md §3): 1200 × 800, full screen on a phone,
 // for an agent's settings; small (880 × 640) for Mein Konto. Tabs on top, the sections on the
@@ -48,6 +49,7 @@ export function Modal({
   size?: 'large' | 'small';
 }) {
   const dialog = useRef<HTMLElement>(null);
+  const hydrated = useHydrated();
   useEffect(() => {
     if (!open) return;
     const previous = document.body.style.overflow;
@@ -74,7 +76,9 @@ export function Modal({
     };
   }, [open, onClose]);
 
-  if (!open || typeof document === 'undefined') return null;
+  // A portal only after hydration: the server has no document, so the first client
+  // render must match its empty output (React #418 on a reload with the modal open).
+  if (!open || !hydrated) return null;
   return createPortal(
     <div className="ds-modal-layer">
       <div className="ds-modal-scrim" onClick={onClose} aria-hidden="true" />
