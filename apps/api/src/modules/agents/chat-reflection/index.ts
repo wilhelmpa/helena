@@ -6,7 +6,7 @@ import { guards } from '#shared/guards';
 import { authContext } from '#shared/auth-context';
 import { runnerAuth } from '../runner-auth';
 import { reflectionBody, reflectionSaved, runClaimQuery } from '../runner/model';
-import { getAgentById } from '../core/service';
+import { agentScopeOf, getAgentById } from '../core/service';
 import { claimChatReflection, finishChatReflection, listChatReflections } from './service';
 
 const ChatReflectionClaimResponse = t.Object({
@@ -102,7 +102,7 @@ export const chatReflectionListRoutes = new Elysia({
   .get(
     '/teams/:teamId/ai-agents/:agentId/chat-reflections',
     async ({ membership, params }) => {
-      if (!(await getAgentById(params.agentId, membership.teamId))) {
+      if (!(await getAgentById(params.agentId, membership.teamId, agentScopeOf(membership)))) {
         throw new HttpError(404, 'Agent not found');
       }
       return listChatReflections(params.agentId);

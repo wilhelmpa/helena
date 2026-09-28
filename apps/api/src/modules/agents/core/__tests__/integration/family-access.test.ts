@@ -59,6 +59,14 @@ it('keeps the family member inside ELLI/FAM and hides private owner agents even 
       (await asMember.teams({ teamId: fam.teamId })['ai-agents']({ agentId: agent.id }).get())
         .status,
     ).toBe(404);
+    expect(
+      (
+        await asMember
+          .teams({ teamId: fam.teamId })
+          ['ai-agents']({ agentId: agent.id })
+          ['chat-reflections'].get()
+      ).status,
+    ).toBe(404);
   }
   expect((await asMember.projects.get()).data!.map((project) => project.key).sort()).toEqual([
     'ELLI',

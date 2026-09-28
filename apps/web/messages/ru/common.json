@@ -289,5 +289,6 @@
     "throttled": "Ограничен",
     "offline": "Не в сети",
     "done": "Готово"
-  }
+  },
+  "switchPerson": "Switch person"
 }

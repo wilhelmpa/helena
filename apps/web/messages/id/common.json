@@ -289,5 +289,6 @@
     "throttled": "Dibatasi",
     "offline": "Offline",
     "done": "Selesai"
-  }
+  },
+  "switchPerson": "Switch person"
 }

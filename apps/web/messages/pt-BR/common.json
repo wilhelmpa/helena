@@ -289,5 +289,6 @@
     "throttled": "Limitado",
     "offline": "Offline",
     "done": "Concluído"
-  }
+  },
+  "switchPerson": "Switch person"
 }

@@ -289,5 +289,6 @@
     "throttled": "受限",
     "offline": "离线",
     "done": "完成"
-  }
+  },
+  "switchPerson": "Switch person"
 }
