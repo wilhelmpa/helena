@@ -386,11 +386,7 @@ export default function Shell({
                 </WorkspaceLayoutHost>
               </SidebarInset>
 
-              <HomeDock
-                open={workspaceOpen}
-                onOpen={workspaceLayout.openHome}
-                onNewIssue={canCreateIssue ? openNewIssue : undefined}
-              />
+              <HomeDock open={workspaceOpen} onOpen={workspaceLayout.openHome} />
               <ProjectLinkSheet currentProjectKey={projectKey} projects={projects} />
 
               <CommandLayer
@@ -425,11 +421,6 @@ export default function Shell({
                 projectKey={projectKey}
                 projectName={project?.project.name}
                 teamId={project?.project.teamId}
-                routeContent={
-                  ['settings', 'members', 'notifications', 'mcp'].includes(route.sub ?? '')
-                    ? children
-                    : undefined
-                }
               />
             </SidebarProvider>
           </ShellHeaderActionsSlotCtx.Provider>

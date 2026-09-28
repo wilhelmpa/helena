@@ -75,18 +75,27 @@ export function TeamAiAgentSheet({
   );
 }
 
+// One agent's settings inside the settings modal (openSettings({ scope: 'agent',
+// agentId })): the same tabs and form as the sheet, without the sheet's own header and
+// the test chat beside it (the modal has its own header, the chat lives in the panel).
+export function AgentSettingsBody({ agent }: { agent: AiAgent }) {
+  return <SheetBody key={agent.id} initialAgent={agent} initialRunId={null} inModal />;
+}
+
 function SheetBody({
   initialAgent,
   projectId,
   initialOpenSection,
   initialTab,
   initialRunId,
+  inModal = false,
 }: {
   initialAgent: AiAgent | null;
   projectId?: number;
   initialOpenSection?: string;
   initialTab?: string;
   initialRunId: number | null;
+  inModal?: boolean;
 }) {
   const t = useTranslations('teams.agents');
   const tCommon = useTranslations('common');
@@ -119,32 +128,34 @@ function SheetBody({
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="flex items-center gap-3 border-b border-border/60 px-4 pt-4 pb-3.5">
-        <div className="flex size-8 shrink-0 items-center justify-center rounded-md border border-sidebar-border bg-background text-muted-foreground ring-1 ring-border/60">
-          <Bot className="size-4.5" />
-        </div>
-        <div className="flex min-w-0 flex-1 items-center gap-2">
-          <div className="min-w-0">
-            <SheetTitle className="truncate text-sm">
-              {agent ? agent.name : t('newAgent')}
-            </SheetTitle>
-            <SheetDescription className="truncate text-xs">
-              {agent ? `@${agent.username}` : t('sheetSubtitle')}
-            </SheetDescription>
+      {!inModal && (
+        <div className="flex items-center gap-3 border-b border-border/60 px-4 pt-4 pb-3.5">
+          <div className="flex size-8 shrink-0 items-center justify-center rounded-md border border-sidebar-border bg-background text-muted-foreground ring-1 ring-border/60">
+            <Bot className="size-4.5" />
           </div>
+          <div className="flex min-w-0 flex-1 items-center gap-2">
+            <div className="min-w-0">
+              <SheetTitle className="truncate text-sm">
+                {agent ? agent.name : t('newAgent')}
+              </SheetTitle>
+              <SheetDescription className="truncate text-xs">
+                {agent ? `@${agent.username}` : t('sheetSubtitle')}
+              </SheetDescription>
+            </div>
+          </div>
+          <SheetClose asChild>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="size-8 shrink-0 text-muted-foreground hover:text-foreground"
+              aria-label={tCommon('close')}
+            >
+              <X className="size-4" />
+            </Button>
+          </SheetClose>
         </div>
-        <SheetClose asChild>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="size-8 shrink-0 text-muted-foreground hover:text-foreground"
-            aria-label={tCommon('close')}
-          >
-            <X className="size-4" />
-          </Button>
-        </SheetClose>
-      </div>
+      )}
 
       {agent && tabs.length > 0 && (
         <nav
@@ -187,7 +198,12 @@ function SheetBody({
       )}
 
       <div className={cn('flex min-h-0 flex-1', activeTab && 'hidden')}>
-        <div className="flex min-h-0 flex-1 basis-0 flex-col border-e border-border/60">
+        <div
+          className={cn(
+            'flex min-h-0 flex-1 basis-0 flex-col',
+            !inModal && 'border-e border-border/60',
+          )}
+        >
           <AgentSheetForm
             agent={agent}
             projectId={projectId}
@@ -197,8 +213,8 @@ function SheetBody({
           />
         </div>
 
-        <div className="flex min-h-0 flex-1 basis-0 flex-col">
-          {chatReady ? (
+        <div className={cn('flex min-h-0 flex-1 basis-0 flex-col', inModal && 'hidden')}>
+          {inModal ? null : chatReady ? (
             <AgentTestChat agent={agent} projectKey={chatProject.key} />
           ) : (
             <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-2 px-4 text-center">

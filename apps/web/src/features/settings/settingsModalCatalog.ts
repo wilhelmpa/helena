@@ -2,7 +2,7 @@ import { ACCOUNT_SECTIONS } from '@/utils/accountSections';
 import { GOD_SECTIONS } from '@/utils/godSections';
 import { SETTINGS_SECTIONS } from '@/utils/settingsSections';
 
-export type SettingsArea = 'project' | 'home' | 'account' | 'admin';
+export type SettingsArea = 'project' | 'home' | 'agent' | 'account' | 'admin';
 export type ModalSection = {
   slug: string;
   label: string;
@@ -133,6 +133,8 @@ export function settingsModalSections(
     project: projectKey
       ? [...projectPrimary.map(projectSection), ...projectExtra.map(projectSection)]
       : [],
+    // One section per agent, listed by the modal from the team's agents.
+    agent: [],
     home: teamId
       ? Object.entries(homeLabels).map(([slug, [label, description]]) => ({
           slug,
@@ -179,27 +181,80 @@ export function settingsModalSections(
   };
 }
 
-export function settingsModalRoute(
-  pathname: string | null,
-): { area: SettingsArea; slug: string } | null {
+// Where the modal stands: the area, its section and, where a section needs one, a
+// detail (a team id for Home, a tab for Administrator → Server, an agent id).
+export type SettingsLocation = { area: SettingsArea; slug: string; extra?: string };
+
+// The old settings URLs (bookmarks, mail links, links inside the pages). They never show
+// a page of their own any more: the modal opens over the page the user was on.
+export function settingsModalRoute(pathname: string | null): SettingsLocation | null {
   if (!pathname) return null;
   const project = pathname.match(/^\/project\/[^/]+\/settings\/([^/]+)$/);
   if (project) return { area: 'project', slug: project[1]! };
   const projectExtra = pathname.match(/^\/project\/[^/]+\/(members|notifications|mcp)$/);
   if (projectExtra) return { area: 'project', slug: projectExtra[1]! };
   if (pathname === '/account/teams') return { area: 'home', slug: 'teams' };
-  const team = pathname.match(/^\/account\/teams\/\d+(?:\/([^/]+))?$/);
-  if (team) return { area: 'home', slug: team[1] ?? 'info' };
+  const team = pathname.match(/^\/account\/teams\/(\d+)(?:\/([^/]+))?$/);
+  if (team) return { area: 'home', slug: team[2] ?? 'info', extra: team[1] };
   const account = pathname.match(
     /^\/account\/(profile|preferences|notifications|accounts|security|api-keys|voice)$/,
   );
   if (account) return { area: 'account', slug: account[1]! };
+  if (pathname === '/god/updates') return { area: 'admin', slug: 'server', extra: 'updates' };
+  const server = pathname.match(/^\/god\/server(?:\/([^/]+))?$/);
+  if (server) return { area: 'admin', slug: 'server', extra: server[1] };
   const admin = pathname.match(/^\/god\/([^/]+)(?:\/.*)?$/);
   if (admin) return { area: 'admin', slug: admin[1]! };
   return null;
 }
 
+// The modal lives in the URL as `?settings=<area>.<slug>[.<extra>]` on top of the page
+// that stays behind it, so a reload or a shared link reopens it there.
+export const SETTINGS_PARAM = 'settings';
+const AREAS: SettingsArea[] = ['project', 'home', 'agent', 'account', 'admin'];
+
+export function formatSettingsParam({ area, slug, extra }: SettingsLocation): string {
+  return [area, slug, extra].filter(Boolean).join('.');
+}
+
+export function parseSettingsParam(value: string | null | undefined): SettingsLocation | null {
+  if (!value) return null;
+  const [area, slug, ...rest] = value.split('.');
+  if (!AREAS.includes(area as SettingsArea) || !slug) return null;
+  const extra = rest.join('.');
+  return { area: area as SettingsArea, slug, ...(extra ? { extra } : {}) };
+}
+
+// `href` (a path with its query) with the modal set to `location`, or without it.
+export function withSettingsParam(href: string, location: SettingsLocation | null): string {
+  const url = new URL(href, 'http://helena.invalid');
+  if (location) url.searchParams.set(SETTINGS_PARAM, formatSettingsParam(location));
+  else url.searchParams.delete(SETTINGS_PARAM);
+  const query = url.searchParams.toString();
+  return `${url.pathname}${query ? `?${query}` : ''}${url.hash}`;
+}
+
 export const SETTINGS_MODAL_OPEN = 'helena:settings-open';
+
+// What to open. `scope` is the modal's area; `section` a section of it (the area's
+// default when left out). `agentId` opens one agent's settings (scope 'agent'),
+// `teamId` a team's Home settings, `tab` a tab of a section (Administrator → Server).
+export type OpenSettingsRequest = {
+  scope?: SettingsArea;
+  section?: string;
+  agentId?: number;
+  teamId?: number;
+  tab?: string;
+};
+
+// Opens the settings modal over the current page, from anywhere (a button, a menu, the
+// org chart): the page behind never navigates or re-renders a different route.
+//   openSettings({ scope: 'agent', agentId: 12 })
+//   openSettings({ scope: 'project', section: 'members' })
+export function openSettings(request: OpenSettingsRequest = {}) {
+  window.dispatchEvent(new CustomEvent(SETTINGS_MODAL_OPEN, { detail: request }));
+}
+
 export function openSettingsModal(area?: SettingsArea, slug?: string) {
-  window.dispatchEvent(new CustomEvent(SETTINGS_MODAL_OPEN, { detail: { area, slug } }));
+  openSettings({ scope: area, section: slug });
 }

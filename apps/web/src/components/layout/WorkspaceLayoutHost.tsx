@@ -10,11 +10,9 @@ import { layoutGeometry } from '@/utils/workspaceLayout';
 import { dockWidthsKey } from '@/utils/workspaceLayoutStorage';
 import { cn } from '@/lib/utils';
 import ResizeGrip from '@/components/common/ResizeGrip';
+import { SidePanelResizeHandle, useSidePanelWidth } from '@/components/helena/ResizableSidePanel';
 import WorkspacePanel, { type PanelArea } from './WorkspacePanel';
 
-const PANEL_DEFAULT_WIDTH = 620;
-const PANEL_MIN_WIDTH = 360;
-const PANEL_MAX_WIDTH = 1200;
 // Two tools side by side need about twice the room of one.
 const SPLIT_DEFAULT_WIDTH = 1180;
 const SPLIT_MIN_WIDTH = 720;
@@ -49,12 +47,16 @@ export default function WorkspaceLayoutHost({
   const { resolved, panel, phone, dual, context } = layout;
   const panelAreas = resolved.areas.filter((area) => area.side === 'panel');
   const split = panelAreas.length > 1;
-  const panelWidth = usePersistedWidth(
-    split ? 'workspace:panel:width:split' : 'workspace:panel:width',
-    split ? SPLIT_DEFAULT_WIDTH : PANEL_DEFAULT_WIDTH,
-    split ? SPLIT_MIN_WIDTH : PANEL_MIN_WIDTH,
-    split ? SPLIT_MAX_WIDTH : PANEL_MAX_WIDTH,
+  // One tool on the right has the shared side-panel width (the same as the previews);
+  // two tools side by side remember a width of their own.
+  const sideWidth = useSidePanelWidth();
+  const splitWidth = usePersistedWidth(
+    'workspace:panel:width:split',
+    SPLIT_DEFAULT_WIDTH,
+    SPLIT_MIN_WIDTH,
+    SPLIT_MAX_WIDTH,
   );
+  const panelWidth = split ? splitWidth : sideWidth;
   const docks = usePersistedWidths(
     dockWidthsKey(context, resolved.id),
     DOCK_DEFAULT_WIDTH,
@@ -87,6 +89,9 @@ export default function WorkspaceLayoutHost({
     !phone && !dual && !resolved.full && !geometry.panelFills && firstPanelArea
       ? geometry.column[firstPanelArea.id]
       : undefined;
+  // The standard layout's panel floats at the right edge (globals.css), so its handle
+  // floats with it on the panel's left edge instead of sitting in a grid column.
+  const floating = resolved.id === 'standard' && !split;
   const dockGrips = phone
     ? []
     : resolved.areas.filter((area) => area.side === 'page' && area.kind === 'tool' && !area.fill);
@@ -167,19 +172,30 @@ export default function WorkspaceLayoutHost({
         <ResizeGrip
           key={`grip:${area.id}`}
           label={t('resizeArea')}
-          className="row-span-full justify-self-start"
+          className="helena-resize-handle row-span-full justify-self-start"
           style={{ gridColumn: String(geometry.column[area.id]) }}
           onDrag={(deltaX) => docks.setWidth(area.id, docks.widthOf(area.id) + growth(deltaX))}
         />
       ))}
-      {panelGrip !== undefined && (
-        <ResizeGrip
-          label={tChat('resizePanel')}
-          className={cn('row-span-full justify-self-start', overlay && 'z-30')}
-          style={{ gridColumn: String(panelGrip) }}
-          onDrag={(deltaX) => panelWidth.setWidth(panelWidth.width + growth(deltaX))}
-        />
-      )}
+      {panelGrip !== undefined &&
+        (floating ? (
+          <SidePanelResizeHandle className="helena-panel-handle" />
+        ) : split ? (
+          <ResizeGrip
+            label={tChat('resizePanel')}
+            className={cn(
+              'helena-resize-handle row-span-full justify-self-start',
+              overlay && 'z-30',
+            )}
+            style={{ gridColumn: String(panelGrip) }}
+            onDrag={(deltaX) => panelWidth.setWidth(panelWidth.width + growth(deltaX))}
+          />
+        ) : (
+          <SidePanelResizeHandle
+            className={cn('row-span-full justify-self-start', overlay && 'z-30')}
+            style={{ gridColumn: String(panelGrip) }}
+          />
+        ))}
     </div>
   );
 }
