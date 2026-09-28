@@ -735,6 +735,21 @@
 .ds-overlay .ds-panel-tab-select {
   padding-inline-end: 10px;
 }
+/* Four tabs or more: the ones in the background show their icon alone, the open one keeps
+   its name — no row of one-letter stubs (owner 28.09.). */
+.ds-panel-tabs-track:has(> .ds-panel-tab:nth-child(4))
+  > .ds-panel-tab:not(:has([aria-selected='true'])):has(
+    .ds-panel-tab-select > :first-child:not(:last-child)
+  ) {
+  min-width: 0;
+}
+.ds-panel-tabs-track:has(> .ds-panel-tab:nth-child(4))
+  > .ds-panel-tab:not(:has([aria-selected='true']))
+  .ds-panel-tab-select
+  > :first-child:not(:last-child)
+  ~ span:last-child {
+  display: none;
+}
 .ds-panel-tab-close {
   display: flex;
   width: 22px;
@@ -1156,4 +1171,14 @@
 .organization-card[data-throttled='true'] {
   border-color: var(--status-throttled) !important;
   box-shadow: 0 0 24px color-mix(in srgb, var(--status-throttled) 45%, transparent) !important;
+}
+.ds-panel-tabs-track:has(> .ds-panel-tab:nth-child(4))
+  > .ds-panel-tab:not(:has([aria-selected='true'])):not(:hover)
+  .ds-panel-tab-close {
+  display: none;
+}
+.ds-panel-tabs-track:has(> .ds-panel-tab:nth-child(4))
+  > .ds-panel-tab:not(:has([aria-selected='true']))
+  .ds-panel-tab-select {
+  padding-inline-end: 10px;
 }
