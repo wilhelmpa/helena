@@ -64,11 +64,13 @@ function overBudget(agent: OrganizationAgent) {
 export default function OrganizationChart({
   organization,
   projectId,
+  toolbarStart,
   toolbarEnd,
 }: {
   organization: Organization;
   projectId?: number;
-  // The page's own control at the end of the toolbar (the team on Helena's Team page).
+  // The page's own controls at the start and end of the toolbar (Wer/Warum; the team).
+  toolbarStart?: ReactNode;
   toolbarEnd?: ReactNode;
 }) {
   const t = useTranslations('organization.chart');
@@ -433,6 +435,7 @@ export default function OrganizationChart({
   return (
     <div className="ds-org">
       <PageToolbar>
+        {toolbarStart}
         <Segmented
           value={view}
           onChange={(next) => setView(next)}

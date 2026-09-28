@@ -36,7 +36,11 @@
     "openInNewTab": "Открыть в новой вкладке",
     "area": "Область",
     "invalidUrl": "Некорректный веб-адрес (https://…).",
-    "more": "Ещё"
+    "more": "Ещё",
+    "why": "Зачем",
+    "cost": "Затраты",
+    "costUnpriced": "без цены",
+    "costTokens": "{tokens} токенов"
   },
   "menu": {
     "preview": "Предпросмотр",

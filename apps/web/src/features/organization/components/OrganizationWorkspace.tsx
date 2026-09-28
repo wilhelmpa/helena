@@ -1,10 +1,11 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { PageToolbar } from '@/components/layout/PageToolbar';
-import { More } from '@/design-system';
+import { More, Segmented } from '@/design-system';
+import OrganizationWhy from './OrganizationWhy';
 import type { Organization } from '@/lib/api/endpoints/organization';
 import OrganizationAgents from './OrganizationAgents';
 import OrganizationDepartments from './OrganizationDepartments';
@@ -34,6 +35,8 @@ export default function OrganizationWorkspace({
 }) {
   const tChart = useTranslations('organization.chart');
   const params = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
   const requested = params.get('tab');
   const tab: OrganizationView = VIEWS.find((item) => item === requested) ?? 'structure';
 
@@ -41,7 +44,40 @@ export default function OrganizationWorkspace({
   // is the org chart, Ziele the goals (?tab=goals). The other views of before are
   // entries of their own (Agentenpool, Einstellungen → Abteilungen / Projekte) and stay
   // reachable by their old ?tab= address.
-  const chart = <OrganizationChart organization={organization} toolbarEnd={toolbarEnd} />;
+  // Wer / Warum (hub/pc-goal-ladder): the chart shows who works, the why view what for.
+  // The why chains are a project's, so the switch is on a project's Team page.
+  const lens = projectKey && params.get('lens') === 'why' ? 'why' : 'who';
+  const setLens = (next: 'who' | 'why') => {
+    const query = new URLSearchParams(params.toString());
+    if (next === 'why') query.set('lens', 'why');
+    else query.delete('lens');
+    const search = query.toString();
+    router.replace(search ? `${pathname}?${search}` : pathname, { scroll: false });
+  };
+  const lensSwitch = projectKey ? (
+    <Segmented
+      value={lens}
+      onChange={setLens}
+      label={tChart('lens')}
+      options={[
+        { value: 'who', label: tChart('lensWho') },
+        { value: 'why', label: tChart('lensWhy') },
+      ]}
+    />
+  ) : null;
+  const chart =
+    lens === 'why' && projectKey ? (
+      <>
+        <PageToolbar>{lensSwitch}</PageToolbar>
+        <OrganizationWhy projectKey={projectKey} />
+      </>
+    ) : (
+      <OrganizationChart
+        organization={organization}
+        toolbarStart={lensSwitch}
+        toolbarEnd={toolbarEnd}
+      />
+    );
   const toolbar = toolbarEnd ? <PageToolbar>{toolbarEnd}</PageToolbar> : null;
 
   return (

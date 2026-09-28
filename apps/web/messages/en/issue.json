@@ -36,7 +36,11 @@
     "openInNewTab": "Open in new tab",
     "area": "Area",
     "invalidUrl": "Not a valid web address (https://…).",
-    "more": "More"
+    "more": "More",
+    "why": "Why",
+    "cost": "Cost",
+    "costUnpriced": "unpriced",
+    "costTokens": "{tokens} tokens"
   },
   "menu": {
     "preview": "Preview",

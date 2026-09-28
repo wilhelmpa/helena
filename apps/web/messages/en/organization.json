@@ -272,6 +272,12 @@
       "throttled": "Throttled",
       "error": "Error"
     },
-    "budgetUsed": "Budget {percent}% used"
+    "budgetUsed": "Budget {percent}% used",
+    "lens": "Lens",
+    "lensWho": "Who",
+    "lensWhy": "Why",
+    "whyEmpty": "No agent is working on a task of this project yet.",
+    "whyNoGoal": "No goal linked",
+    "noAgent": "No agent"
   }
 }

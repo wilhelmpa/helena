@@ -1362,3 +1362,29 @@ a.ds-run-card:hover {
   border-radius: 50%;
   background: var(--surface-1);
 }
+
+/* Task properties: the goal ladder ("Warum") and the cost of its runs. */
+.ds-why {
+  display: inline-flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 4px;
+  color: var(--text);
+  font-size: 13px;
+}
+.ds-why:hover {
+  color: var(--accent);
+}
+.ds-why-sep {
+  margin-inline-end: 4px;
+  color: var(--text-3);
+}
+.ds-issue-cost {
+  color: var(--text);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+.ds-issue-cost > span {
+  color: var(--text-3);
+}

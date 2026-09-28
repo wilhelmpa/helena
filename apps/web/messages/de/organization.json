@@ -272,6 +272,12 @@
       "throttled": "Gedrosselt",
       "error": "Fehler"
     },
-    "budgetUsed": "Budget zu {percent} % verbraucht"
+    "budgetUsed": "Budget zu {percent} % verbraucht",
+    "lens": "Sicht",
+    "lensWho": "Wer",
+    "lensWhy": "Warum",
+    "whyEmpty": "Noch arbeitet kein Agent an einer Aufgabe dieses Projekts.",
+    "whyNoGoal": "Kein Ziel verknüpft",
+    "noAgent": "Ohne Agent"
   }
 }

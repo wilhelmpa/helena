@@ -36,7 +36,11 @@
     "openInNewTab": "Abrir en una pestaña nueva",
     "area": "Área",
     "invalidUrl": "No es una dirección web válida (https://…).",
-    "more": "Más"
+    "more": "Más",
+    "why": "Por qué",
+    "cost": "Coste",
+    "costUnpriced": "sin precio",
+    "costTokens": "{tokens} tokens"
   },
   "menu": {
     "preview": "Previsualizar",

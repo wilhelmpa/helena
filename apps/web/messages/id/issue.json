@@ -36,7 +36,11 @@
     "openInNewTab": "Buka di tab baru",
     "area": "Area",
     "invalidUrl": "Bukan alamat web yang valid (https://…).",
-    "more": "Lainnya"
+    "more": "Lainnya",
+    "why": "Mengapa",
+    "cost": "Biaya",
+    "costUnpriced": "tanpa harga",
+    "costTokens": "{tokens} token"
   },
   "menu": {
     "preview": "Pratinjau",

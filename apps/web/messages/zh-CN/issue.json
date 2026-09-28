@@ -36,7 +36,11 @@
     "openInNewTab": "在新标签页中打开",
     "area": "区域",
     "invalidUrl": "不是有效的网址（https://…）。",
-    "more": "更多"
+    "more": "更多",
+    "why": "原因",
+    "cost": "成本",
+    "costUnpriced": "未定价",
+    "costTokens": "{tokens} 令牌"
   },
   "menu": {
     "preview": "预览",

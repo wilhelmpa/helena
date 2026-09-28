@@ -272,6 +272,12 @@
       "throttled": "已限流",
       "error": "错误"
     },
-    "budgetUsed": "预算已用 {percent}%"
+    "budgetUsed": "预算已用 {percent}%",
+    "lens": "视角",
+    "lensWho": "谁",
+    "lensWhy": "为何",
+    "whyEmpty": "尚无代理在处理此项目的任务。",
+    "whyNoGoal": "未关联目标",
+    "noAgent": "无代理"
   }
 }

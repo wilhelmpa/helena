@@ -28,6 +28,7 @@ import IssueCustomFieldControl from '../fields/IssueCustomFieldControl';
 import IssueCustomFieldBody from '../fields/IssueCustomFieldBody';
 import IssueWatchers from './IssueWatchers';
 import IssuePropertyRow from './IssuePropertyRow';
+import { IssueCostRow, IssueWhyRow } from './IssueWhyCost';
 import { type Embeddable } from '@/components/common/editor/attachmentEmbed';
 import { parseDate } from '@/utils/dates';
 import { cn } from '@/lib/utils';
@@ -340,7 +341,33 @@ export default function IssueProperties({
   }
   const pick = (keys: string[]) =>
     keys.flatMap((key) => (rowByKey.has(key) ? [rowByKey.get(key)] : []));
-  const main = pick(['state', 'priority', 'assignee', 'delegate', 'initiative', 'dueDate']);
+  // Why the task exists and what it cost come from their own queries, so they join the
+  // everyday rows only where the reader is signed in (never on the public shared page).
+  if (!readOnly) {
+    rowByKey.set(
+      'why',
+      <IssueWhyRow key="why" issueId={issue.id} projectKey={project.project.key} />,
+    );
+    rowByKey.set(
+      'cost',
+      <IssueCostRow
+        key="cost"
+        issueId={issue.id}
+        teamId={project.project.teamId}
+        projectId={project.project.id}
+      />,
+    );
+  }
+  const main = pick([
+    'state',
+    'priority',
+    'assignee',
+    'delegate',
+    'why',
+    'initiative',
+    'dueDate',
+    'cost',
+  ]);
   const custom = (groups.find((group) => group.key === 'groupCustom')?.rows ?? []).filter(Boolean);
   const labels = pick(['labels']);
   const more = pick([

@@ -272,6 +272,12 @@
       "throttled": "Limitado",
       "error": "Erro"
     },
-    "budgetUsed": "Orçamento {percent}% usado"
+    "budgetUsed": "Orçamento {percent}% usado",
+    "lens": "Visão",
+    "lensWho": "Quem",
+    "lensWhy": "Por quê",
+    "whyEmpty": "Nenhum agente trabalha ainda em uma tarefa deste projeto.",
+    "whyNoGoal": "Nenhuma meta vinculada",
+    "noAgent": "Sem agente"
   }
 }

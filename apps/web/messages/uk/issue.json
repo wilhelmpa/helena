@@ -36,7 +36,11 @@
     "openInNewTab": "Відкрити в новій вкладці",
     "area": "Область",
     "invalidUrl": "Недійсна вебадреса (https://…).",
-    "more": "Ще"
+    "more": "Ще",
+    "why": "Навіщо",
+    "cost": "Витрати",
+    "costUnpriced": "без ціни",
+    "costTokens": "{tokens} токенів"
   },
   "menu": {
     "preview": "Попередній перегляд",

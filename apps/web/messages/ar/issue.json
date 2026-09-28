@@ -36,7 +36,11 @@
     "openInNewTab": "فتح في تبويب جديد",
     "area": "المجال",
     "invalidUrl": "ليس عنوان ويب صالحًا (https://…).",
-    "more": "المزيد"
+    "more": "المزيد",
+    "why": "لماذا",
+    "cost": "التكلفة",
+    "costUnpriced": "بلا سعر",
+    "costTokens": "{tokens} رمز"
   },
   "menu": {
     "preview": "معاينة",

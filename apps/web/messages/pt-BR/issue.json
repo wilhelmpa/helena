@@ -36,7 +36,11 @@
     "openInNewTab": "Abrir em nova aba",
     "area": "Área",
     "invalidUrl": "Endereço web inválido (https://…).",
-    "more": "Mais"
+    "more": "Mais",
+    "why": "Por quê",
+    "cost": "Custo",
+    "costUnpriced": "sem preço",
+    "costTokens": "{tokens} tokens"
   },
   "menu": {
     "preview": "Visualizar",

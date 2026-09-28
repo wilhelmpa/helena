@@ -36,7 +36,11 @@
     "openInNewTab": "Ouvrir dans un nouvel onglet",
     "area": "Domaine",
     "invalidUrl": "Adresse web non valide (https://…).",
-    "more": "Plus"
+    "more": "Plus",
+    "why": "Pourquoi",
+    "cost": "Coût",
+    "costUnpriced": "sans prix",
+    "costTokens": "{tokens} jetons"
   },
   "menu": {
     "preview": "Aperçu",

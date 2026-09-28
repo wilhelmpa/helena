@@ -272,6 +272,12 @@
       "throttled": "مقيّد",
       "error": "خطأ"
     },
-    "budgetUsed": "استُهلك {percent}% من الميزانية"
+    "budgetUsed": "استُهلك {percent}% من الميزانية",
+    "lens": "العرض",
+    "lensWho": "من",
+    "lensWhy": "لماذا",
+    "whyEmpty": "لا يعمل أي وكيل على مهمة في هذا المشروع بعد.",
+    "whyNoGoal": "لا يوجد هدف مرتبط",
+    "noAgent": "بلا وكيل"
   }
 }

@@ -272,6 +272,12 @@
       "throttled": "Ralenti",
       "error": "Erreur"
     },
-    "budgetUsed": "Budget utilisé à {percent} %"
+    "budgetUsed": "Budget utilisé à {percent} %",
+    "lens": "Vue",
+    "lensWho": "Qui",
+    "lensWhy": "Pourquoi",
+    "whyEmpty": "Aucun agent ne travaille encore sur une tâche de ce projet.",
+    "whyNoGoal": "Aucun objectif lié",
+    "noAgent": "Sans agent"
   }
 }

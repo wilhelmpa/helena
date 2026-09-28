@@ -248,8 +248,15 @@ export const continueRun = (teamId: number, agentId: number, runId: number, inst
 // ---------------------------------------------------------------- usage
 
 export type UsageDimension = 'agent' | 'model' | 'project' | 'day' | 'kind';
+// Groupings the report does not show as columns but other views ask for (hub/pc-costs).
+export type UsageGrouping = UsageDimension | 'issue' | 'goal' | 'department';
 
 export interface UsageRow {
+  // Present when grouped by issue / goal (hub/pc-costs); absent from an older server.
+  issueId?: number | null;
+  issueTitle?: string | null;
+  goalId?: number | null;
+  goalTitle?: string | null;
   agentId: number | null;
   agentName: string | null;
   model: string | null;
@@ -271,19 +278,30 @@ export interface UsageRow {
 export interface UsageReport {
   from: string;
   to: string;
-  by: UsageDimension[];
+  by: UsageGrouping[];
   currency: 'EUR';
   unpriced: boolean;
   total: Omit<
     UsageRow,
-    'agentId' | 'agentName' | 'model' | 'provider' | 'projectId' | 'projectKey' | 'day' | 'kind'
+    | 'issueId'
+    | 'issueTitle'
+    | 'goalId'
+    | 'goalTitle'
+    | 'agentId'
+    | 'agentName'
+    | 'model'
+    | 'provider'
+    | 'projectId'
+    | 'projectKey'
+    | 'day'
+    | 'kind'
   >;
   rows: UsageRow[];
 }
 
 export const getAgentUsage = (
   teamId: number,
-  opts: { from?: string; to?: string; agentId?: number; projectId?: number; by: UsageDimension[] },
+  opts: { from?: string; to?: string; agentId?: number; projectId?: number; by: UsageGrouping[] },
 ) => {
   const params = new URLSearchParams({ by: opts.by.join(',') });
   if (opts.from) params.set('from', opts.from);
