@@ -162,6 +162,16 @@ function hostOf(url: string): string | null {
   }
 }
 
+// What an agent is told when its project browser cannot be used: a project browser that runs
+// on demand and did not start says so (the router's BrowserUnavailableError, code
+// BROWSER_UNAVAILABLE); anything else is the plain "not reachable".
+function unreachable(error: unknown, fallback = 'The project browser is not reachable.'): string {
+  const failure = error as { code?: unknown; message?: unknown } | null;
+  return failure?.code === 'BROWSER_UNAVAILABLE' && typeof failure.message === 'string'
+    ? failure.message
+    : fallback;
+}
+
 export class GatewayDispatcher {
   #ownSlug: string;
   #helena: HelenaClient;
@@ -317,8 +327,8 @@ export class GatewayDispatcher {
       let session: GatewaySession;
       try {
         session = await this.#sessions.get(slug);
-      } catch {
-        return { ok: false as const, error: 'The project browser is not reachable.' };
+      } catch (error) {
+        return { ok: false as const, error: unreachable(error) };
       }
       session.setHumanInput(resolved.settings.humanInput);
       // Design §8: keeps the network guard in sync with the project's current settings
@@ -543,8 +553,8 @@ export class GatewayDispatcher {
         ` Active tab: ${status.url}${status.title ? ` — "${status.title.slice(0, 120)}"` : ''}.` +
         ` Tabs: ${status.tabCount}. Dialog open: ${status.dialogOpen ? 'yes' : 'no'}.`;
       pageInfo = session.guard.redact(pageInfo);
-    } catch {
-      pageInfo = ' The project browser is not reachable right now.';
+    } catch (error) {
+      pageInfo = ` ${unreachable(error, 'The project browser is not reachable right now.')}`;
     }
     return { ok: true, content: `Controlled by: ${by}.${pageInfo}` };
   }

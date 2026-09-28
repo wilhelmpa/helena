@@ -208,10 +208,12 @@ describe("project browser provisioning", () => {
 });
 
 describe("project browser status", () => {
-  it("is active only while both project units are active", async () => {
+  it("is in order while running or stopped on demand, not when a unit failed", async () => {
     const answers = [
       { stdout: "active\nactive\n" },
-      Object.assign(new Error("Command failed"), { stdout: "active\ninactive\n", code: 3 }),
+      Object.assign(new Error("Command failed"), { stdout: "inactive\ninactive\n", code: 3 }),
+      Object.assign(new Error("Command failed"), { stdout: "active\nfailed\n", code: 3 }),
+      Object.assign(new Error("Command failed"), { code: 1 }),
     ];
     const seen = [];
     const active = createProjectBrowserStatus(config(), {
@@ -223,6 +225,8 @@ describe("project browser status", () => {
       },
     });
     assert.equal(await active("demo"), true);
+    assert.equal(await active("demo"), true);
+    assert.equal(await active("demo"), false);
     assert.equal(await active("demo"), false);
     assert.equal(await active("../demo"), false);
     assert.deepEqual(seen[0], [
@@ -231,6 +235,6 @@ describe("project browser status", () => {
       "volition-project-browser-kasm@demo.service",
       "volition-project-browser-chromium@demo.service",
     ]);
-    assert.equal(seen.length, 2);
+    assert.equal(seen.length, 4);
   });
 });

@@ -233,14 +233,27 @@ fi
 # policy; see setup.sh and 90-wilhelmpa's own comments for why. A restart here ends every
 # open owner-terminal session the same way the project terminal's does; the tmux sessions
 # behind them are unaffected and a reconnect finds them again after a fresh step-up.
-# Brings the provisioned project browsers (and Home's) back after a boot.
-if changed deployment/volition-stack/native/browser-restore; then
-  install -m 0755 "$live/deployment/volition-stack/native/browser-restore/volition-browser-restore" \
-    /usr/local/libexec/volition-browser-restore
-  install -m 0644 "$live/deployment/volition-stack/native/browser-restore/volition-project-browser-restore.service" \
-    /etc/systemd/system/volition-project-browser-restore.service
+# Project browsers run on demand (browser/project-browser-power.mjs): the router starts one
+# when it is used, stops it after the idle time and keeps the "immer an" ones running, after a
+# boot as well. The boot-time restore that started every provisioned browser is retired. The
+# polkit rule lets the router's user start and stop the browsers; the unit templates are
+# installed here so a changed display (Full HD) takes effect at a browser's next start, without
+# restarting a running one.
+if [[ -e /etc/systemd/system/volition-project-browser-restore.service ]]; then
+  systemctl disable volition-project-browser-restore.service >/dev/null 2>&1 || true
+  rm -f /etc/systemd/system/volition-project-browser-restore.service /usr/local/libexec/volition-browser-restore
   systemctl daemon-reload
-  systemctl enable volition-project-browser-restore.service >/dev/null
+fi
+if changed deployment/volition-stack/native/systemd/61-helena-browser-on-demand.rules; then
+  install -m 0644 -o root -g root "$live/deployment/volition-stack/native/systemd/61-helena-browser-on-demand.rules" \
+    /etc/polkit-1/rules.d/61-helena-browser-on-demand.rules
+fi
+browser_units=(volition-project-browser-kasm@.service volition-project-browser-chromium@.service volition-project-browser@.target)
+if changed "${browser_units[@]/#/deployment/volition-stack/native/systemd/}"; then
+  for unit in "${browser_units[@]}"; do
+    install -m 0644 "$live/deployment/volition-stack/native/systemd/$unit" /etc/systemd/system/
+  done
+  systemctl daemon-reload
 fi
 
 # The project terminal's nginx routes (the owner terminal's come with its setup.sh below).

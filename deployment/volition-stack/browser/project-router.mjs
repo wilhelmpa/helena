@@ -12,6 +12,7 @@ import {
   startWindowKeeper,
 } from "./project-browser-control.mjs";
 import { BrowserIdle } from "./project-browser-idle.mjs";
+import { BrowserPower, BrowserPowerSettings, BrowserUnavailableError, systemdBrowserUnits } from "./project-browser-power.mjs";
 import {
   joinScreencast,
   stopAllScreencasts,
@@ -226,7 +227,8 @@ async function readBookmarks(file) {
   }
 }
 
-async function handleControl(request, response, target, settingsRoot) {
+async function handleControl(request, response, target, settingsRoot, idle) {
+  const running = !idle || idle.running(target.slug);
   try {
     if (target.api === "color-scheme") {
       if (request.method === "GET") return sendJson(response, 200, await readColorScheme(settingsRoot, target.slug));
@@ -240,7 +242,8 @@ async function handleControl(request, response, target, settingsRoot) {
       const previous = await readColorScheme(settingsRoot, target.slug);
       const setting = { mode: body.mode ?? previous.mode, theme: body.theme, resolvedTheme: body.resolvedTheme };
       await writeColorScheme(settingsRoot, target.slug, setting);
-      await setBrowserColorScheme(target.cdpPort, effectiveColorScheme(setting));
+      // A stopped browser gets it when it starts (the window keeper's prepare).
+      if (running) await setBrowserColorScheme(target.cdpPort, effectiveColorScheme(setting));
       return sendJson(response, 200, setting);
     }
     if (target.api === "bookmarks") {
@@ -259,6 +262,8 @@ async function handleControl(request, response, target, settingsRoot) {
       return sendJson(response, 200, { tabs: await listTabs(target.cdpPort) });
     }
     if (target.api === "thumbnail" && request.method === "GET") {
+      // The overview never starts a browser to take its picture.
+      if (!running) throw new BrowserControlError(404, "The browser is not running");
       const jpeg = await browserThumbnail(target.cdpPort);
       if (!jpeg) throw new BrowserControlError(404, "No page to show");
       response.writeHead(200, {
@@ -354,6 +359,7 @@ async function handleUpgrade(root, request, socket, head, idle, trackOutbound, i
   if (target.api !== null) {
     if (target.api !== "screencast") return refuse(socket, "404 Not Found");
     if (!isSameOrigin(request)) return refuse(socket, "403 Forbidden");
+    if (idle && !idle.running(target.slug)) return startingScreencast(request, socket, head, target, idle, isStopping);
     // Wake before completing the handshake: the client sends its viewport as soon
     // as the socket opens, and the stream must already be listening for it.
     if (idle) {
@@ -392,6 +398,37 @@ async function handleUpgrade(root, request, socket, head, idle, trackOutbound, i
   socket.on("close", () => upstream.destroy());
 }
 
+// The live view of a browser that does not run yet (project browsers on demand): the viewer
+// is accepted at once and told {"type":"browser","state":"starting"}, so it shows "Browser
+// startet …" rather than waiting on a handshake; what it sends meanwhile (its viewport first)
+// is kept and handed to the stream once the browser runs ({"state":"running"}). A browser that
+// does not start is reported ({"state":"failed"}) and the connection closed; the view tries
+// again as after any dropped connection.
+function startingScreencast(request, socket, head, target, idle, isStopping) {
+  acceptWebSocket(request, socket, head, (connection) => {
+    const early = [];
+    const keep = (data, isBinary) => early.push([data, isBinary]);
+    connection.on("message", keep);
+    const send = (state) => {
+      if (connection.readyState === connection.OPEN) connection.send(JSON.stringify({ type: "browser", state }));
+    };
+    send("starting");
+    idle.record(target.slug, target.cdpPort);
+    void idle.wake(target.slug, { force: true }).then((ready) => {
+      connection.off("message", keep);
+      if (connection.readyState !== connection.OPEN || isStopping()) return connection.terminate();
+      if (ready === false) {
+        send("failed");
+        return connection.close(1013, "Browser did not start");
+      }
+      send("running");
+      idle.view(target.slug, target.cdpPort, connection);
+      joinScreencast(target.cdpPort, target.display, connection);
+      for (const [data, isBinary] of early) connection.emit("message", data, isBinary);
+    });
+  });
+}
+
 const routerResources = new WeakMap();
 
 export function createProjectBrowserRouter(options = {}) {
@@ -408,18 +445,39 @@ export function createProjectBrowserRouter(options = {}) {
       if (pathname.startsWith("/internal/gateway/")) return await handleGatewayTask(request, response, pathname);
       if (pathname === "/api/overview") {
         if (request.method !== "GET") throw new Error("Method denied");
-        return sendJson(response, 200, { browsers: await browserOverview(await listProjectBrowsers(root)) });
+        const browsers = (await listProjectBrowsers(root)).map((browser) => ({
+          ...browser,
+          power: options.idle?.power ? options.idle.power.state(browser.slug) : "running",
+        }));
+        return sendJson(response, 200, { browsers: await browserOverview(browsers) });
       }
       const target = await resolveProjectBrowser(root, request.url || "/");
       if (resources.stopping) return response.destroy();
       if (target.api !== null) {
-        if (request.method === "POST" && target.api !== "bookmarks" && target.api !== "viewport") {
-          await options.idle?.wake(target.slug);
+        // A toolbar action, and the toolbar's tab list (shown with the live view), use the
+        // browser: they start it when it does not run. The overview's picture, the bookmarks
+        // and the page size do not; a color scheme wakes a running browser's pages and is
+        // kept for a stopped one's next start.
+        const running = !options.idle || options.idle.running(target.slug);
+        const uses = (request.method === "POST" && !["bookmarks", "viewport"].includes(target.api) &&
+          (target.api !== "color-scheme" || running)) ||
+          (request.method === "GET" && target.api === "tabs");
+        if (uses && options.idle) {
+          options.idle.record(target.slug, target.cdpPort);
+          await options.idle.wake(target.slug);
         }
         if (resources.stopping) return response.destroy();
-        return await handleControl(request, response, target, settingsRoot);
+        return await handleControl(request, response, target, settingsRoot, options.idle);
       }
       if (request.method !== "GET" && request.method !== "HEAD") throw new Error("Method denied");
+      // The desktop view's page and files come from the browser's display: it has to run.
+      if (options.idle && !options.idle.running(target.slug)) {
+        options.idle.record(target.slug, target.cdpPort);
+        if (await options.idle.wake(target.slug) === false) {
+          response.writeHead(503, { "content-type": "text/plain", "cache-control": "no-store" });
+          return response.end("Browser unavailable");
+        }
+      }
       const upstream = http.request(
         {
           host: "127.0.0.1",
@@ -503,14 +561,34 @@ if (import.meta.main) {
   if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error("Invalid router port");
   const root = process.env.PROJECT_BROWSER_ROOT || "/var/lib/volition/project-browser/projects";
   const settingsRoot = process.env.STATE_DIRECTORY || "/var/lib/volition-browser-router";
+  // Project browsers on demand (project-browser-power.mjs): with PROJECT_BROWSER_ON_DEMAND=1
+  // (the router's unit) a browser runs only while it is used. Without it every provisioned
+  // browser is taken to run, as before.
+  let power = null;
+  let powerSettings = null;
+  if (process.env.PROJECT_BROWSER_ON_DEMAND === "1") {
+    power = new BrowserPower({
+      units: systemdBrowserUnits({ user: process.env.PROJECT_BROWSER_SYSTEMCTL_USER === "1" }),
+      log: (message) => console.log(message),
+    });
+    powerSettings = new BrowserPowerSettings({
+      file: path.join(settingsRoot, "power.json"),
+      log: (message) => console.error(message),
+    });
+    await powerSettings.load();
+    powerSettings.start();
+  }
   const idle = new BrowserIdle({
     listBrowsers: () => listProjectBrowsers(root),
+    power,
+    stopAfter: (slug) => powerSettings?.stopAfterMs(slug) ?? Infinity,
     log: (message) => console.error(message),
   });
   idle.start();
   const server = createProjectBrowserRouter({ root, settingsRoot, idle });
   const stopKeeper = startWindowKeeper({
     listBrowsers: () => listProjectBrowsers(root),
+    running: ({ slug }) => idle.running(slug),
     prepare: async ({ slug, cdpPort }) => {
       try { await fs.access(COLOR_SCHEME_FILE(settingsRoot, slug)); }
       catch (error) {
@@ -532,6 +610,11 @@ if (import.meta.main) {
       .then(({ startBrowserGateway }) =>
         startBrowserGateway({
           listBrowsers: () => listProjectBrowsers(root),
+          // Every tool call is a use of the browser: it starts it when it does not run.
+          ensureBrowser: async (slug, cdpPort) => {
+            idle.record(slug, cdpPort);
+            if (await idle.wake(slug) === false) throw new BrowserUnavailableError();
+          },
           log: (message) => console.log(message),
         }),
       )
@@ -548,6 +631,7 @@ if (import.meta.main) {
   }
   server.listen(port, "127.0.0.1", () => console.log("Project browser router ready on loopback"));
   const shutdown = () => {
+    powerSettings?.stop();
     void shutdownProjectBrowserRouter(server, { idle, stopKeeper, gateway }).then((clean) => {
       if (!clean) console.error("project browser router shutdown timed out");
       process.exit(clean ? 0 : 1);

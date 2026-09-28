@@ -38,15 +38,8 @@ import {
   ProjectBrowserLocks,
   SlugQueue,
 } from "../../../packages/browser-gateway/src/index.ts";
+import { readGatewayToken } from "./gateway-token.mjs";
 import * as screencast from "./project-browser-screencast.mjs";
-
-// A secret must be readable by its owner only. systemd's own credential directory is the
-// exception: on a native boot it presents LoadCredential files as 0440 (0400 inside a
-// container) and guards the directory itself, so group read is fine there.
-function secretModeMask(file) {
-  const dir = process.env.CREDENTIALS_DIRECTORY;
-  return dir && file.startsWith(`${dir}/`) ? 0o037 : 0o077;
-}
 
 const { setControlState, setHandover } = screencast;
 const DEFAULT_AGENT_VIEWPORT = { width: 1440, height: 900 };
@@ -85,18 +78,6 @@ export function socketDirectory(slug, root = SOCKET_ROOT) {
   return path.join(root, slug);
 }
 
-async function readToken() {
-  const tokenFile = process.env.BROWSER_GATEWAY_TOKEN_FILE;
-  if (!tokenFile) throw new Error("BROWSER_GATEWAY_TOKEN_FILE is not set");
-  const stat = await fs.lstat(tokenFile);
-  if (!stat.isFile() || stat.isSymbolicLink() || (stat.mode & secretModeMask(tokenFile)) !== 0) {
-    throw new Error("browser gateway token file has the wrong permissions");
-  }
-  const token = (await fs.readFile(tokenFile, "utf8")).trim();
-  if (token.length < 32) throw new Error("browser gateway token is too short");
-  return token;
-}
-
 // The group id of a group by name, from /etc/group; null when it does not exist.
 export async function groupId(name, groupFile = "/etc/group") {
   const content = await fs.readFile(groupFile, "utf8").catch(() => "");
@@ -110,28 +91,33 @@ export async function groupId(name, groupFile = "/etc/group") {
 // One long-lived patchright connection per project browser, reused across tool calls (a
 // fresh connectOverCDP per call would lose the session's SecretGuard, the one place the
 // secrets it typed are remembered for redaction, design §6), and connected again when the
-// browser went away.
+// browser went away. `ensure(slug, cdpPort)` runs first on every call: with project browsers
+// on demand it starts a stopped browser (and waits for it, within its start timeout) and
+// counts the call as a use, so the browser is not stopped under an agent.
 export class LiveSessions {
   #sessions = new Map();
   #connecting = new Map();
   #cdpPortOf;
   #connect;
+  #ensure;
 
-  constructor(cdpPortOf, connect) {
+  constructor(cdpPortOf, connect, ensure = async () => {}) {
     this.#cdpPortOf = cdpPortOf;
     this.#connect = connect;
+    this.#ensure = ensure;
   }
 
   async get(slug) {
+    const port = await this.#cdpPortOf(slug);
+    if (!port) throw new Error(`No project browser for ${slug}`);
+    await this.#ensure(slug, port);
     const cached = this.#sessions.get(slug);
     if (cached?.isConnected()) return cached;
     this.#sessions.delete(slug);
     let pending = this.#connecting.get(slug);
     if (!pending) {
       pending = (async () => {
-        const cdpPort = await this.#cdpPortOf(slug);
-        if (!cdpPort) throw new Error(`No project browser for ${slug}`);
-        const session = await this.#connect(slug, cdpPort);
+        const session = await this.#connect(slug, port);
         this.#sessions.set(slug, session);
         return session;
       })().finally(() => this.#connecting.delete(slug));
@@ -230,8 +216,8 @@ async function bindSocket(slug, dispatcher, gid) {
 // Starts the browser gateway inside the router process. `listBrowsers` is
 // project-router.mjs's listProjectBrowsers(root). Returns the lock registry (the live view's
 // Übernehmen/Zurückgeben act on it) and stop().
-export async function startBrowserGateway({ listBrowsers, log = () => {} }) {
-  const token = await readToken();
+export async function startBrowserGateway({ listBrowsers, ensureBrowser, log = () => {} }) {
+  const token = await readGatewayToken();
   const helena = new HelenaClient({ baseUrl: HELENA_URL, serviceToken: token });
   const locks = new ProjectBrowserLocks(120_000);
   const queue = new SlugQueue();
@@ -265,6 +251,7 @@ export async function startBrowserGateway({ listBrowsers, log = () => {} }) {
           return saved;
         },
       }),
+    ensureBrowser,
   );
   const servers = new Map(); // slug -> net.Server
   const dispatchers = new Map(); // slug -> GatewayDispatcher
