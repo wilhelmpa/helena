@@ -56,6 +56,36 @@ const timeframeMs: Record<z.infer<typeof timeframeSchema>, number> = {
   '1Week': 604_800_000,
 };
 
+// Bars of one regular US stock session (09:30-16:00, IEX) per timeframe. Stocks trade on five
+// days a week and only in the session, so a window of lookback x timeframe in calendar time
+// held too few bars for intraday timeframes (15-minute bars on a Monday reached back only into
+// Friday: "Fewer than 50 completed bars", found live 2026-09-28). Crypto trades around the clock.
+const sessionBars: Record<z.infer<typeof timeframeSchema>, number> = {
+  '1Min': 390,
+  '5Min': 78,
+  '15Min': 26,
+  '1Hour': 7,
+  '1Day': 1,
+  '1Week': 0.2,
+};
+
+export function lookbackStart(
+  symbol: string,
+  timeframe: z.infer<typeof timeframeSchema>,
+  lookback: number,
+  at: Date,
+): Date {
+  const day = 86_400_000;
+  if (symbol.includes('/')) {
+    return new Date(at.getTime() - timeframeMs[timeframe] * lookback * 1.2 - day);
+  }
+  const tradingDays = Math.ceil(lookback / sessionBars[timeframe]);
+  // Five trading days in seven calendar days, a tenth more for holidays, and four days so a
+  // weekend or a long holiday at either end cannot cut the window short.
+  const calendarDays = Math.ceil(((tradingDays * 7) / 5) * 1.1) + 4;
+  return new Date(at.getTime() - calendarDays * day);
+}
+
 async function indicatorBars(
   client: AlpacaPaperClient,
   symbol: string,
@@ -63,9 +93,15 @@ async function indicatorBars(
   lookback: number,
   at: Date,
 ): Promise<AlpacaBar[]> {
-  const start = new Date(at.getTime() - timeframeMs[timeframe] * lookback * 3).toISOString();
-  const bars = await client.bars({ symbol, timeframe, start, end: at.toISOString(), limit: 1000 });
-  if (bars.length === 1000)
+  const start = lookbackStart(symbol, timeframe, lookback, at).toISOString();
+  const bars = await client.bars({
+    symbol,
+    timeframe,
+    start,
+    end: at.toISOString(),
+    limit: 10_000,
+  });
+  if (bars.length === 10_000)
     throw new Error('Bar result may be truncated; choose a shorter lookback.');
   const completed = bars.filter(
     (bar) => new Date(bar.t).getTime() + timeframeMs[timeframe] <= at.getTime(),
