@@ -39,5 +39,14 @@
   "areaFolderTaken": "Ein anderer Bereich dieses Projekts verwendet diesen Ordner.",
   "openFolder": "Ordner öffnen",
   "deleteView": "Ansicht löschen",
-  "deleteViewConfirm": "„{name}“ löschen? Die Aufgaben bleiben, nur diese gespeicherte Ansicht verschwindet."
+  "deleteViewConfirm": "„{name}“ löschen? Die Aufgaben bleiben, nur diese gespeicherte Ansicht verschwindet.",
+  "changed": "geändert",
+  "reset": "Zurücksetzen",
+  "saveAsNew": "Als neue Ansicht speichern",
+  "templates": {
+    "mine": "Meine Aufgaben",
+    "open": "Offene",
+    "week": "Diese Woche",
+    "status": "Nach Status"
+  }
 }

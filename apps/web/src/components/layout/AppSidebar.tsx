@@ -20,6 +20,7 @@ import { SidebarHomeTree, SidebarPersonalNav, SidebarProjectTree } from './Sideb
 import { APP_NAME } from '@/utils/app';
 import { Search, MessageSquare, Globe2, Terminal, Code2, Mail } from 'lucide-react';
 import type { WorkspaceToolId } from '@/utils/workspaceTools';
+import type { ViewTemplate } from '@/hooks/useViewEditor';
 
 export default function AppSidebar({
   projects,
@@ -39,7 +40,7 @@ export default function AppSidebar({
   currentProjectKey: string | null;
   onSelectProject: (key: string) => void;
   onNewProject: () => void;
-  onNewView: () => void;
+  onNewView: (template: ViewTemplate) => void;
   onEditView: (view: View) => void;
   onDeleteView: (view: View) => Promise<void>;
   onOpenCommand: () => void;

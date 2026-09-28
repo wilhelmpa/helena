@@ -123,6 +123,7 @@ export function buildTableItems({
   } else if (!subgrouped) {
     const issuesByGroup = groupIssues(groups, sorted, settings.group);
     for (const group of groups) {
+      if (settings.hiddenGroups.includes(group.key)) continue;
       const issues = issuesByGroup.get(group.key) ?? [];
       if (!settings.showEmptyGroups && issues.length === 0) continue;
       items.push({
@@ -149,6 +150,7 @@ export function buildTableItems({
   } else {
     const nested = nestIssues(groups, subGroups, sorted, settings.group, settings.subgroup);
     for (const group of groups) {
+      if (settings.hiddenGroups.includes(group.key)) continue;
       const inner = nested.get(group.key)!;
       // The bucket a drop onto the collapsed group header appends to: every
       // sub-group's issues, in position order, so appending past the last one
@@ -167,6 +169,7 @@ export function buildTableItems({
       });
       if (collapsed.has(group.key)) continue;
       for (const sg of subGroups) {
+        if (settings.hiddenGroups.includes(sg.key)) continue;
         const issues = inner.get(sg.key) ?? [];
         if (!settings.showEmptyGroups && issues.length === 0) continue;
         const key = subgroupKey(group.key, sg.key);

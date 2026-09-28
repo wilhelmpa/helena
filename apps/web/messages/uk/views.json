@@ -39,5 +39,14 @@
   "areaFolderTaken": "Цю теку вже використовує інша область проєкту.",
   "openFolder": "Відкрити теку",
   "deleteView": "Видалити подання",
-  "deleteViewConfirm": "Видалити «{name}»? Завдання залишаться, зникне лише це збережене подання."
+  "deleteViewConfirm": "Видалити «{name}»? Завдання залишаться, зникне лише це збережене подання.",
+  "changed": "Changed",
+  "reset": "Reset",
+  "saveAsNew": "Save as new view",
+  "templates": {
+    "mine": "My tasks",
+    "open": "Open",
+    "week": "This week",
+    "status": "By status"
+  }
 }

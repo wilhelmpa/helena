@@ -28,8 +28,10 @@ import {
   PageToolbar,
   PageToolbarSpacer,
   PAGE_CONTROL_CLASS,
+  PAGE_PRIMARY_CLASS,
   type PageAction,
 } from '@/components/layout/PageToolbar';
+import { cn } from '@/lib/utils';
 import { useViewFoldersQuery, useViewsQuery } from '@/services/views.service';
 import BoardDisplayControl from './components/BoardDisplayControl';
 import { IssueLinksProvider } from './context/useIssueLinks';
@@ -52,6 +54,7 @@ export default function WorkItemsPage() {
   const t = useTranslations('workItems');
   const tNav = useTranslations('nav');
   const tCommon = useTranslations('common');
+  const tViews = useTranslations('views');
   const { project, filteredProject, editor, customFields, onOpenIssue, onAddIssue } = useShell();
   const { can } = usePermissions();
   const groupLabels = useGroupLabels();
@@ -253,9 +256,42 @@ export default function WorkItemsPage() {
               <ViewFolderManager projectKey={project.project.key} folders={folders} />
             )}
             {controls}
+            {editor.changed && (
+              <div className="flex shrink-0 items-center gap-1 text-xs text-muted-foreground">
+                <span>{tViews('changed')}</span>
+                {can('views', 'edit') && (
+                  <button
+                    type="button"
+                    onClick={() => void editor.saveEdits()}
+                    className={cn(PAGE_CONTROL_CLASS, PAGE_PRIMARY_CLASS, 'max-sm:px-1')}
+                  >
+                    {tCommon('save')}
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={editor.resetChanges}
+                  className={cn(PAGE_CONTROL_CLASS, 'max-sm:px-1')}
+                >
+                  {tViews('reset')}
+                </button>
+              </div>
+            )}
+            {can('views', 'create') && (
+              <button
+                type="button"
+                onClick={() => editor.beginNewView('current')}
+                aria-label={tViews('saveAsNew')}
+                title={tViews('saveAsNew')}
+                className={cn(PAGE_CONTROL_CLASS, 'max-sm:w-8 max-sm:justify-center max-sm:px-0')}
+              >
+                <Plus aria-hidden="true" />
+                <span className="hidden lg:inline">{tViews('saveAsNew')}</span>
+              </button>
+            )}
             <PageActions
               actions={
-                editor.activeView && can('views', 'edit')
+                editor.activeView && !editor.changed && can('views', 'edit')
                   ? [
                       {
                         id: 'edit-view',

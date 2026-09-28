@@ -42,6 +42,8 @@ import FileNewFolderDialog from '@/features/project-files/components/FileNewFold
 import { useState } from 'react';
 import { useCrossProjectIssuesQuery } from '@/features/home/services/tasks.service';
 import { useMemberRoutines } from '@/features/routines/services/routines.service';
+import NewViewMenu from './NewViewMenu';
+import type { ViewTemplate } from '@/hooks/useViewEditor';
 
 function pathIsActive(pathname: string, href: string) {
   const path = href.split('?')[0]!;
@@ -367,7 +369,7 @@ export function SidebarProjectTree({
   onDeleteView,
 }: {
   projectKey: string;
-  onNewView: () => void;
+  onNewView: (template: ViewTemplate) => void;
   onEditView: (view: View) => void;
   onDeleteView: (view: View) => Promise<void>;
 }) {
@@ -375,7 +377,6 @@ export function SidebarProjectTree({
   const [newKnowledgeFolder, setNewKnowledgeFolder] = useState(false);
   const pathname = usePathname();
   const knowledgePath = useSearchParams().get('path');
-  const viewsT = useTranslations('views');
   const { can, isAdmin } = usePermissions();
   const features = useProjectFeatures();
   const { data: views = [] } = useViewsQuery(projectKey);
@@ -428,19 +429,7 @@ export function SidebarProjectTree({
         href={taskHref}
         activePaths={[cyclesPath(projectKey)]}
         hasChildren={views.length > 0 || (can('views', 'read') && areas.length > 0)}
-        action={
-          can('views', 'create') && (
-            <button
-              type="button"
-              className="helena-tree-toggle helena-tree-create"
-              aria-label={viewsT('newView')}
-              title={viewsT('newView')}
-              onClick={onNewView}
-            >
-              <Plus size={14} />
-            </button>
-          )
-        }
+        action={can('views', 'create') && <NewViewMenu onSelect={onNewView} />}
       >
         {views
           .filter((view) => view.folderId == null)

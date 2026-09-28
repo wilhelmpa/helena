@@ -1,7 +1,16 @@
 import { useRef } from 'react';
+import { Eye } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import DndContext from '@/components/common/dnd/DndContext';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { buildGroups, buildMaps, sortIssues, type WorkItemsViewProps } from '@/utils/project';
+import {
+  buildGroups,
+  buildMaps,
+  groupDefaults,
+  groupIssues,
+  sortIssues,
+  type WorkItemsViewProps,
+} from '@/utils/project';
 import { usePersistedSet } from '@/hooks/usePersistedSet';
 import { useTableColumnWidths } from '../../hooks/useTableColumnWidths';
 import { useIssueReorder } from '../../hooks/useIssueReorder';
@@ -18,6 +27,7 @@ import { TableColumnHeader } from './TableColumnHeader';
 import { TableSectionHeader } from './TableSectionHeader';
 import { TableSubHeader } from './TableSubHeader';
 import { TableRow } from './TableRow';
+import { GroupDot } from '../shared/GroupDot';
 
 interface TableViewProps extends WorkItemsViewProps {
   // Which stored set of column widths this table uses: a saved view's own, the
@@ -30,10 +40,13 @@ export default function TableView({
   filters,
   customFields,
   settings,
+  onSettingsChange,
   onOpenIssue,
+  onAddIssue,
   readOnly,
   widthScope,
 }: TableViewProps) {
+  const t = useTranslations('workItems');
   const groupLabels = useGroupLabels();
   const reorder = useIssueReorder({ project, sort: settings.sort, readOnly });
   const collapsed = usePersistedSet(
@@ -48,6 +61,14 @@ export default function TableView({
   const sorted = sortIssues(project.issues, settings.sort, project);
   const groups = buildGroups(project, settings.group, groupLabels, filters);
   const subGroups = subgrouped ? buildGroups(project, settings.subgroup, groupLabels, filters) : [];
+  const groupedIssues = groupIssues(groups, sorted, settings.group);
+  const subgroupedIssues = subgrouped ? groupIssues(subGroups, sorted, settings.subgroup) : null;
+  const hiddenGroups = [...groups, ...subGroups].filter(
+    (group) =>
+      settings.hiddenGroups.includes(group.key) &&
+      (settings.showEmptyGroups ||
+        ((groupedIssues.get(group.key) ?? subgroupedIssues?.get(group.key))?.length ?? 0) > 0),
+  );
   const maps = buildMaps(project);
 
   const { columns, gridTemplate, minWidth, alignTop } = resolveColumns(
@@ -86,7 +107,6 @@ export default function TableView({
         const isCollapsed = collapsed.values.has(item.group.key);
         return (
           <TableSectionHeader
-            project={project}
             group={item.group}
             count={item.count}
             collapsed={isCollapsed}
@@ -94,6 +114,7 @@ export default function TableView({
             dropId={`sec:${item.dropKey}`}
             onDrop={(id) => reorder.moveIssue(id, item.assign, item.bucket, item.bucket.length)}
             onToggle={() => collapsed.toggle(item.group.key)}
+            onAddIssue={() => onAddIssue(groupDefaults(item.group.assign))}
             readOnly={readOnly}
           />
         );
@@ -173,6 +194,30 @@ export default function TableView({
             </div>
           ))}
         </div>
+        {hiddenGroups.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2 p-3 text-sm text-muted-foreground">
+            <span>{t('hiddenGroups')}</span>
+            {hiddenGroups.map((group) => (
+              <button
+                key={group.key}
+                type="button"
+                disabled={readOnly}
+                aria-label={`${t('show')} ${group.name}`}
+                className="flex items-center gap-1 rounded-md bg-accent/40 px-2 py-1 text-foreground hover:bg-accent"
+                onClick={() =>
+                  onSettingsChange({
+                    ...settings,
+                    hiddenGroups: settings.hiddenGroups.filter((key) => key !== group.key),
+                  })
+                }
+              >
+                <GroupDot group={group} />
+                {group.name}
+                <Eye className="size-3.5" />
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       <IssueDragOverlay issue={reorder.activeIssue} />

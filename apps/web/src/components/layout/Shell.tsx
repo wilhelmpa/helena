@@ -293,15 +293,14 @@ export default function Shell({
                 currentProjectKey={projectKey}
                 onSelectProject={(key) => router.push(navigation.projectDestination(key))}
                 onNewProject={() => overlays.setShowNewProject(true)}
-                onNewView={() => {
+                onNewView={(template) => {
                   if (!projectKey) return;
-                  editor.beginNewView();
+                  editor.beginNewView(template);
                   if (!route.onBoard) router.push(projectPath(projectKey));
                 }}
                 onEditView={editor.beginEditView}
                 onDeleteView={editor.deleteView}
                 onOpenCommand={() => overlays.setShowCommand(true)}
-                onSettings={() => firstSettingsHref && router.push(firstSettingsHref)}
                 onSelectTool={selectWorkspaceTool}
                 activeTool={workspaceOpen ? activeWorkspaceTool : null}
                 openTools={

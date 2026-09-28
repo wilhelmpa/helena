@@ -39,5 +39,14 @@
   "areaFolderTaken": "Another area of this project uses this folder.",
   "openFolder": "Open folder",
   "deleteView": "Delete view",
-  "deleteViewConfirm": "Delete “{name}”? The tasks stay; only this saved view goes."
+  "deleteViewConfirm": "Delete “{name}”? The tasks stay; only this saved view goes.",
+  "changed": "Changed",
+  "reset": "Reset",
+  "saveAsNew": "Save as new view",
+  "templates": {
+    "mine": "My tasks",
+    "open": "Open",
+    "week": "This week",
+    "status": "By status"
+  }
 }
