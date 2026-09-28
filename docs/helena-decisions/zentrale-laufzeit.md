@@ -407,3 +407,13 @@ Die zwei Browser-Fehlschläge:
 - `local-sort-default`: Der Agent endete mit einer Ankündigung („Ich schaue mir die Seite an.“). Dagegen gibt es seitdem den einmaligen Anstoß.
 
 Rohdaten auf Kingston: `~/agent-work/runtime-eval/{coding,browser}-helena-1.json`.
+
+### Klick-Abnahme (28.09., eigener Dev-Stack auf Kingston, Schalter an)
+
+- **Seiten:** Agent-Dialog → Einstellungen → Allgemein → Ausführung, sowie Agent-Dialog → Gedächtnis. Jeweils Desktop (1440×900) und Handy (390×844), hell und dunkel.
+- **Sichtbar:** Die Einstellungen der eigenen Laufzeit, der Auswahleintrag „Helena (lokal zuerst)“, 4 Fakten mit Vertrauen und „möglicher Widerspruch“ sowie die Tagesnotizen.
+- **Wirkung im echten Browser:**
+  - Schalter „Sicherheit“ und „Agent speichern“ ergeben `taskKinds: ["recht","sicherheit"]` in der API.
+  - Ein Klick auf „Stimmt“ an einem Fakt hebt das Vertrauen von 0,50 auf 0,70, die Anzeige zeigt 70 %.
+- **Konsole:** keine Fehler aus diesen Seiten. Einziger Eintrag ist ein 404 auf `/backend/auth/verify/lan`: Den liefert im Betrieb nginx, er fehlt in jedem Dev-Stack, auch auf `/dashboard` ohne Agent-Dialog.
+- **Belege:** Bildschirmfotos und Ausgabe unter `~/agent-work/runtime-eval/accept/`, Skripte `~/agent-work/runtime-accept.mjs` und `runtime-accept-save.mjs`.
