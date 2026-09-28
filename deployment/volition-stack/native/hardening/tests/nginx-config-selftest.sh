@@ -51,6 +51,8 @@ sed -e "s|@HOST@|$public|g" -e "s|@PORT@|18090|g" "$here/cloudflare/nginx-tunnel
 
 openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:prime256v1 -nodes -days 1 \
   -subj "/CN=$host" -keyout "$work/certs/privkey.pem" -out "$work/certs/fullchain.pem" 2>/dev/null
+# A live site that already serves HTTPS names the real certificate, which only root may read:
+# every certificate becomes the self-signed one.
 for f in "$work"/sites/*.conf "$work"/snippets/*.conf; do
   sed -i -e "s|/etc/nginx/snippets/|$work/snippets/|g" \
     -e 's|listen 80 default_server;|listen 127.0.0.1:18080 default_server;|' \
@@ -58,7 +60,10 @@ for f in "$work"/sites/*.conf "$work"/snippets/*.conf; do
     -e 's|listen 443 ssl default_server;|listen 127.0.0.1:18443 ssl default_server;|' \
     -e 's|listen \[::\]:443 ssl default_server;|listen [::1]:18443 ssl default_server;|' \
     -e 's|listen 127.0.0.1:8088;|listen 127.0.0.1:18088;|' \
-    -e 's|listen 80;|listen 127.0.0.1:18080;|' -e 's|listen \[::\]:80;|listen [::1]:18080;|' "$f"
+    -e 's|listen 80;|listen 127.0.0.1:18080;|' -e 's|listen \[::\]:80;|listen [::1]:18080;|' \
+    -e "s|ssl_certificate [^;]*;|ssl_certificate $work/certs/fullchain.pem;|" \
+    -e "s|ssl_certificate_key [^;]*;|ssl_certificate_key $work/certs/privkey.pem;|" \
+    -e "s|ssl_trusted_certificate [^;]*;|ssl_trusted_certificate $work/certs/fullchain.pem;|" "$f"
 done
 cat >"$work/nginx.conf" <<EOF
 pid $work/nginx.pid;

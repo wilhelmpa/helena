@@ -13,6 +13,22 @@ spec.loader.exec_module(module)
 TARGET = 'a' * 40
 
 
+def safe_temp_root():
+    # The drain refuses state below group- or world-writable directories (only /tmp itself is
+    # exempt), as it must when it runs as root. A TMPDIR under a shared, group-writable folder
+    # (the agents' ~/agent-work is 0774) would make every test fail on that guard instead of
+    # testing the drain, so use the first candidate whose whole chain passes the same rule.
+    for candidate in (tempfile.gettempdir(), os.environ.get('XDG_RUNTIME_DIR'), '/tmp'):
+        if not candidate:
+            continue
+        path = Path(candidate).resolve()
+        chain = (path, *path.parents)
+        if path.is_dir() and all(part == Path('/tmp') or not part.stat().st_mode & 0o022
+                                 for part in chain):
+            return str(path)
+    return '/tmp'
+
+
 class FakeSystem:
     def __init__(self, root):
         self.root, self.calls = root, []
@@ -70,7 +86,7 @@ class FakeSystem:
 
 class DrainTest(unittest.TestCase):
     def setUp(self):
-        self.temporary = tempfile.TemporaryDirectory(prefix='helena-drain-')
+        self.temporary = tempfile.TemporaryDirectory(prefix='helena-drain-', dir=safe_temp_root())
         self.addCleanup(self.temporary.cleanup)
         self.root = Path(self.temporary.name).resolve()
         self.system = FakeSystem(self.root)
