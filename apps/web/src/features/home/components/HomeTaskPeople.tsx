@@ -4,7 +4,7 @@ import Avatar from '@/components/common/Avatar';
 
 export default function HomeTaskPeople({ issue }: { issue: CrossProjectIssue }) {
   return (
-    <span className="flex shrink-0 items-center gap-1.5">
+    <span className="flex w-40 shrink-0 items-center justify-end gap-1.5 max-sm:w-auto">
       {issue.delegate && (
         <span
           className="flex max-w-28 items-center gap-1 rounded-sm border px-1 text-xs text-muted-foreground"

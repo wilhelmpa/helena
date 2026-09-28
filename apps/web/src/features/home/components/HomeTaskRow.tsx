@@ -34,11 +34,9 @@ export default function HomeTaskRow({ issue }: { issue: CrossProjectIssue }) {
         {colorDot(issue.stateColor)}
         <span className="truncate">{issue.stateName}</span>
       </span>
-      {issue.priority && (
-        <span className="hidden w-16 shrink-0 truncate text-xs text-muted-foreground lg:block">
-          {priorityLabel(issue.priority)}
-        </span>
-      )}
+      <span className="hidden w-16 shrink-0 truncate text-xs text-muted-foreground lg:block">
+        {issue.priority ? priorityLabel(issue.priority) : ''}
+      </span>
       <span
         className={cn(
           'w-24 shrink-0 text-end text-xs text-muted-foreground max-sm:w-auto',
