@@ -271,6 +271,7 @@
       "waiting": "Te espera",
       "throttled": "Limitado",
       "error": "Error"
-    }
+    },
+    "budgetUsed": "Presupuesto usado al {percent} %"
   }
 }

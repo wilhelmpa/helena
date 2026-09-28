@@ -797,7 +797,28 @@
     },
     "chatTemplate": "模板本身不会运行。将它作为智能体添加到项目后即可在这里试用。",
     "allProjectsScope": "Project scope: all",
-    "allProjectsScopeHint": "May work in every current and future project of this team."
+    "allProjectsScopeHint": "May work in every current and future project of this team.",
+    "heartbeat": {
+      "title": "心跳",
+      "hint": "按固定间隔检查是否有事可做，只有这时才启动运行。",
+      "every": "每 {minutes} 分钟",
+      "off": "关闭",
+      "interval": "间隔（分钟，留空为关闭）",
+      "intervalPlaceholder": "例如 30",
+      "from": "工作时间从",
+      "to": "到",
+      "timezone": "时区",
+      "days": "日期",
+      "instructions": "心跳指令",
+      "instructionsPlaceholder": "每次心跳时代理应检查什么？",
+      "last": "上次心跳",
+      "next": "下次心跳",
+      "history": "最近检查",
+      "outcome": {
+        "queued": "已启动运行",
+        "skipped": "无事可做"
+      }
+    }
   },
   "members": {
     "roleSaved": "{name} 现在是{role}",

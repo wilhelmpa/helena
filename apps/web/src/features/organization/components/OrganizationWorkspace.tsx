@@ -1,17 +1,10 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { Bot, Building2, FolderKanban, Globe2, Network, Target, Workflow } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import {
-  PageTabs,
-  PageActions,
-  PageToolbar,
-  PageToolbarSpacer,
-  type PageTab,
-} from '@/components/layout/PageToolbar';
-import { agentsPath, browserOverviewPath, pipelinesPath, workflowsPath } from '@/utils/paths';
+import { PageToolbar } from '@/components/layout/PageToolbar';
+import { More } from '@/design-system';
 import type { Organization } from '@/lib/api/endpoints/organization';
 import OrganizationAgents from './OrganizationAgents';
 import OrganizationDepartments from './OrganizationDepartments';
@@ -22,13 +15,14 @@ import OrganizationTree from './OrganizationTree';
 import OrganizationChart from '@/components/common/organization/OrganizationChart';
 import OrganizationProjectResources from './OrganizationProjectResources';
 
-type OrganizationTab =
-  'orchestration' | 'structure' | 'departments' | 'goals' | 'agents' | 'projects';
+const VIEWS = ['structure', 'departments', 'goals', 'agents', 'projects'] as const;
+type OrganizationView = (typeof VIEWS)[number];
 
-// The organization's views as the header row's tabs (Organigramm, Abteilungen, Ziele,
-// Agenten, Projekte; a project's page starts with its Orchestrierung). The open tab is
-// in the address (?tab=goals), so a link and the back button reach it. `toolbarEnd` is
-// the page's own control after the tabs (the team on the global page).
+// A team's organization: the org chart (Team), or with ?tab= one of its other views —
+// Ziele (goals) from the sidebar, and the old addresses of departments, agents and
+// projects. A project's page shows the chart narrowed to it, and under "Mehr" its
+// orchestration, resources and the plain tree. `toolbarEnd` is the page's own control at
+// the end of the toolbar (the team on Helena's page).
 export default function OrganizationWorkspace({
   organization,
   projectKey,
@@ -38,87 +32,22 @@ export default function OrganizationWorkspace({
   projectKey?: string;
   toolbarEnd?: ReactNode;
 }) {
-  const t = useTranslations('organization');
   const tChart = useTranslations('organization.chart');
-  const tNav = useTranslations('nav');
   const params = useSearchParams();
-  const router = useRouter();
-  const pathname = usePathname();
-
-  const tabs: PageTab<OrganizationTab>[] = [
-    ...(projectKey
-      ? [{ value: 'orchestration' as const, label: t('tabs.orchestration'), icon: Workflow }]
-      : []),
-    { value: 'structure', label: t('tabs.map'), icon: Network },
-    { value: 'departments', label: t('tabs.departments'), icon: Building2 },
-    { value: 'goals', label: t('tabs.goals'), icon: Target },
-    { value: 'agents', label: t('tabs.agents'), icon: Bot },
-    { value: 'projects', label: t('tabs.projects'), icon: FolderKanban },
-  ];
-  const fallback: OrganizationTab = projectKey ? 'orchestration' : 'structure';
   const requested = params.get('tab');
-  const tab = tabs.find((item) => item.value === requested)?.value ?? fallback;
+  const tab: OrganizationView = VIEWS.find((item) => item === requested) ?? 'structure';
 
-  const select = (next: OrganizationTab) => {
-    const query = new URLSearchParams(params.toString());
-    if (next === fallback) query.delete('tab');
-    else query.set('tab', next);
-    const search = query.toString();
-    router.replace(search ? `${pathname}?${search}` : pathname, { scroll: false });
-  };
+  // One page per sidebar entry (design-system §7): the entry picks what shows here — Team
+  // is the org chart, Ziele the goals (?tab=goals). The other views of before are
+  // entries of their own (Agentenpool, Einstellungen → Abteilungen / Projekte) and stay
+  // reachable by their old ?tab= address.
+  const chart = <OrganizationChart organization={organization} toolbarEnd={toolbarEnd} />;
+  const toolbar = toolbarEnd ? <PageToolbar>{toolbarEnd}</PageToolbar> : null;
 
   return (
     <>
-      <PageToolbar>
-        <PageTabs label={t('title')} items={tabs} value={tab} onChange={select} />
-        <PageToolbarSpacer />
-        {toolbarEnd}
-        <PageActions
-          actions={
-            projectKey
-              ? [
-                  {
-                    id: 'workflows',
-                    label: tNav('workflows'),
-                    icon: Workflow,
-                    href: workflowsPath(projectKey),
-                    menuOnly: true,
-                  },
-                ]
-              : [
-                  {
-                    id: 'agents',
-                    label: tNav('agentPool'),
-                    icon: Bot,
-                    href: agentsPath(),
-                    menuOnly: true,
-                  },
-                  {
-                    id: 'workflows',
-                    label: tNav('workflows'),
-                    icon: Workflow,
-                    href: pipelinesPath(),
-                    menuOnly: true,
-                  },
-                  {
-                    id: 'browser',
-                    label: tNav('workspace.browser'),
-                    icon: Globe2,
-                    href: browserOverviewPath(),
-                    menuOnly: true,
-                  },
-                ]
-          }
-        />
-      </PageToolbar>
-      {tab === 'orchestration' && projectKey ? (
-        <OrganizationOrchestration
-          teamId={organization.teamId}
-          project={organization.projects.find((project) => project.key === projectKey)}
-          agents={organization.agents}
-          projectKey={projectKey}
-        />
-      ) : tab === 'departments' ? (
+      {tab !== 'structure' && toolbar}
+      {tab === 'departments' ? (
         <OrganizationDepartments
           teamId={organization.teamId}
           departments={organization.departments}
@@ -143,15 +72,22 @@ export default function OrganizationWorkspace({
           departments={organization.departments}
         />
       ) : (
-        <div className="min-w-0">
-          <OrganizationChart organization={organization} />
-          <details className="organization-extra-details mt-6">
-            <summary>{tChart('moreDetails')}</summary>
-            <div className="mt-4">
+        <div className="ds-org">
+          {chart}
+          <div className="ds-org-more">
+            <More label={tChart('moreDetails')}>
+              {projectKey && (
+                <OrganizationOrchestration
+                  teamId={organization.teamId}
+                  project={organization.projects.find((project) => project.key === projectKey)}
+                  agents={organization.agents}
+                  projectKey={projectKey}
+                />
+              )}
               {projectKey ? <OrganizationProjectResources projectKey={projectKey} /> : null}
               <OrganizationTree organization={organization} />
-            </div>
-          </details>
+            </More>
+          </div>
         </div>
       )}
     </>

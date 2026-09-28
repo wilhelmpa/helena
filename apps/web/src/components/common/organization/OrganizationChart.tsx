@@ -1,10 +1,10 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useQueries, useQuery } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
-import { ChevronRight, Search } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 import type { Edge, Node } from '@xyflow/react';
 import type { Organization, OrganizationAgent } from '@/lib/api/endpoints/organization';
 import { listAgentActivity } from '@/lib/api/endpoints/agentActivity';
@@ -12,12 +12,11 @@ import { listDecisionLog } from '@/lib/api/endpoints/decisions';
 import { getProjectAutopilot } from '@/lib/api/endpoints/autopilot';
 import { listIssuesAcrossProjects } from '@/lib/api/endpoints/issues';
 import { useAiAgentsQuery } from '@/services/aiAgents.service';
-import { useTeamQuery } from '@/services/teams.service';
 import { qk } from '@/services/queryKeys';
 import { deriveStatus, type HelenaStatus, type StatusSignals } from '@/utils/helenaStatus';
-import { projectColor } from '@/utils/projectColor';
-import { AgentSectionProvider } from '@/features/teams/context/agentSection';
-import { TeamAiAgentSheet } from '@/features/teams/components/ai-agents/TeamAiAgentSheet';
+import { openAgent as openAgentDialog } from '@/features/settings/settingsModalCatalog';
+import { EmptyState, PillButton, Segmented, StatusDot } from '@/design-system';
+import { PageSearch, PageToolbar, PageToolbarSpacer } from '@/components/layout/PageToolbar';
 import OrganizationChartFlow, { type ChartHover } from './OrganizationChartFlow';
 import OrganizationHoverCard from './OrganizationHoverCard';
 import OrganizationTaskSheet from './OrganizationTaskSheet';
@@ -43,14 +42,6 @@ export type OrganizationChartView = 'tree' | 'ring';
 type Filter = 'all' | 'running' | 'waiting' | 'throttled' | 'error';
 
 const FILTERS: Filter[] = ['all', 'running', 'waiting', 'throttled', 'error'];
-const FILTER_DOT: Record<Filter, string> = {
-  all: 'var(--muted-foreground)',
-  running: 'var(--status-thinking)',
-  waiting: 'var(--status-waiting)',
-  throttled: 'var(--status-throttled)',
-  error: 'var(--status-error)',
-};
-
 function matchesFilter(status: HelenaStatus, filter: Filter) {
   if (filter === 'all') return true;
   if (filter === 'running') return status === 'thinking' || status === 'tool';
@@ -73,9 +64,12 @@ function overBudget(agent: OrganizationAgent) {
 export default function OrganizationChart({
   organization,
   projectId,
+  toolbarEnd,
 }: {
   organization: Organization;
   projectId?: number;
+  // The page's own control at the end of the toolbar (the team on Helena's Team page).
+  toolbarEnd?: ReactNode;
 }) {
   const t = useTranslations('organization.chart');
   const tNav = useTranslations('nav');
@@ -84,7 +78,6 @@ export default function OrganizationChart({
   const params = useSearchParams();
   const project = organization.projects.find((item) => item.id === projectId);
   const agentsQuery = useAiAgentsQuery(organization.teamId);
-  const permissions = useTeamQuery(organization.teamId).data?.permissions.ai_agents;
   const trustProjects = organization.projects.filter((item) =>
     projectId == null
       ? organization.agents.some((agent) =>
@@ -109,7 +102,6 @@ export default function OrganizationChart({
   });
 
   const [selectedId, setSelectedId] = useState<number | null>(null);
-  const [editingId, setEditingId] = useState<number | null>(null);
   const [openTask, setOpenTask] = useState<(RingTask & { projectKey: string }) | null>(null);
   const [hover, setHover] = useState<ChartHover | null>(null);
   const [collapsed, setCollapsed] = useState<Set<number>>(new Set());
@@ -154,7 +146,6 @@ export default function OrganizationChart({
     [agentsQuery.data],
   );
   const selected = agents.find((agent) => agent.id === selectedId) ?? null;
-  const editing = editingId == null ? null : (byId.get(editingId) ?? null);
 
   useEffect(() => {
     if (selectedId == null) return;
@@ -168,9 +159,6 @@ export default function OrganizationChart({
     return () => window.removeEventListener('keydown', onKey);
   }, [selectedId]);
 
-  const eyebrow =
-    `${project?.name ?? tNav('sidebarHome')} · ${tNav('sidebarAutomation')}`.toUpperCase();
-  const eyebrowColor = projectColor(project?.key ?? null);
   const entries = useMemo(() => activity.data?.items ?? [], [activity.data]);
   const usingTools = useOrganizationToolStates(organization.teamId, entries);
   const delegating = useMemo(
@@ -405,7 +393,8 @@ export default function OrganizationChart({
   const openAgent = (id: number) => {
     setHover(null);
     setSelectedId(id);
-    if (byId.has(id) && permissions) setEditingId(id);
+    // The agent's settings open in the agent dialog over the chart (design-system §3).
+    if (byId.has(id)) openAgentDialog(id, organization.teamId);
   };
   const onActivate = (node: Node) => {
     if (node.type === 'group') {
@@ -436,116 +425,55 @@ export default function OrganizationChart({
   };
 
   if (organizationChartAgents(organization.agents, projectId).length === 0)
-    return <p className="rounded-[18px] bg-card p-6 text-sm text-muted-foreground">{t('empty')}</p>;
+    return <EmptyState>{t('empty')}</EmptyState>;
 
   const crumbLabel = (crumb: (typeof scope.crumbs)[number]) =>
     crumb.focus.kind === 'root' && projectId == null ? tNav('sidebarHome') : crumb.label;
 
   return (
-    <div
-      className={`organization-chart min-w-0 xl:ps-7 xl:pe-4 ${projectId == null ? '' : 'project-organization-chart pt-[6px]'}`}
-    >
-      <section
-        className={`relative flex min-h-[560px] min-w-0 flex-col ${projectId == null ? 'h-[calc(100dvh-140px)]' : 'h-[calc(100dvh-48px)]'}`}
-        aria-label={tNav('sidebarTeamDeciders')}
-      >
-        <header className="mb-4 flex flex-wrap items-end justify-between gap-x-4 gap-y-3">
-          <div className="min-w-0">
-            <p
-              className="mb-[10px] font-mono text-[10px] font-medium tracking-[.23em]"
-              style={{ color: eyebrowColor }}
-            >
-              {eyebrow}
-            </p>
-            <h1 className="text-[30px] leading-[1.04] font-[520] tracking-[-.05em] sm:text-[38px]">
-              {tNav('sidebarTeamDeciders')}
-            </h1>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            {view === 'ring' && (
-              <button
-                type="button"
-                aria-pressed={showTasks}
-                onClick={() => setParams({ orgTasks: showTasks ? null : '1' })}
-                className={`flex min-h-[44px] cursor-pointer items-center gap-2 rounded-[13px] px-4 text-xs font-medium shadow-[0_0_0_1px_var(--border)] transition-colors ${showTasks ? 'bg-accent text-accent-foreground' : 'bg-muted text-muted-foreground hover:text-foreground'}`}
-              >
-                <span
-                  aria-hidden="true"
-                  className={`relative h-4 w-7 rounded-full transition-colors ${showTasks ? 'bg-brand' : 'bg-border'}`}
-                >
-                  <span
-                    className={`absolute top-0.5 size-3 rounded-full bg-background transition-[inset-inline-start] ${showTasks ? 'start-3.5' : 'start-0.5'}`}
-                  />
-                </span>
-                {t('tasksToggle')}
-              </button>
+    <div className="ds-org">
+      <PageToolbar>
+        <Segmented
+          value={view}
+          onChange={(next) => setView(next)}
+          label={t('viewLabel')}
+          options={[
+            { value: 'tree', label: t('viewTree') },
+            { value: 'ring', label: t('viewRing') },
+          ]}
+        />
+        {view === 'ring' && (
+          <PillButton
+            tone={showTasks ? 'active' : 'neutral'}
+            aria-pressed={showTasks}
+            onClick={() => setParams({ orgTasks: showTasks ? null : '1' })}
+          >
+            {t('tasksToggle')}
+          </PillButton>
+        )}
+        {FILTERS.map((item) => (
+          <PillButton
+            key={item}
+            tone={filter === item ? 'active' : 'neutral'}
+            aria-pressed={filter === item}
+            onClick={() => setFilter(item)}
+          >
+            {t(`filter.${item}`)}
+            <span className="ds-pill-count">{counts[item]}</span>
+            {item !== 'all' && counts[item] > 0 && (
+              <StatusDot
+                tone={item === 'running' ? 'working' : item === 'waiting' ? 'waiting' : 'error'}
+              />
             )}
-            <div
-              role="group"
-              aria-label={t('viewLabel')}
-              className="flex rounded-[13px] bg-muted p-1 shadow-[0_0_0_1px_var(--border)]"
-            >
-              {(['tree', 'ring'] as const).map((item) => (
-                <button
-                  key={item}
-                  type="button"
-                  aria-pressed={view === item}
-                  onClick={() => setView(item)}
-                  className={`min-h-9 cursor-pointer rounded-[10px] px-4 text-xs font-medium transition-colors ${view === item ? 'bg-accent text-accent-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
-                >
-                  {item === 'tree' ? t('viewTree') : t('viewRing')}
-                </button>
-              ))}
-            </div>
-          </div>
-        </header>
-        <div className="mb-3 flex flex-wrap items-center gap-2">
-          <div className="flex min-w-0 flex-1 flex-wrap gap-2">
-            {FILTERS.map((item) => (
-              <button
-                key={item}
-                type="button"
-                aria-pressed={filter === item}
-                onClick={() => setFilter(item)}
-                className={`flex min-h-[30px] cursor-pointer items-center gap-[7px] rounded-full border border-border px-3 text-xs font-medium whitespace-nowrap ${filter === item ? 'bg-accent text-accent-foreground' : 'bg-card text-muted-foreground hover:text-foreground'}`}
-              >
-                <span
-                  aria-hidden="true"
-                  className="size-1.5 rounded-full"
-                  style={{ background: FILTER_DOT[item] }}
-                />
-                {t(`filter.${item}`)}
-                <span className="text-muted-foreground tabular-nums">{counts[item]}</span>
-              </button>
-            ))}
-          </div>
-          <label className="relative flex w-full items-center sm:w-[220px]">
-            <span className="sr-only">{t('searchLabel')}</span>
-            <Search
-              aria-hidden="true"
-              className="pointer-events-none absolute start-3 size-3.5 text-muted-foreground"
-            />
-            <input
-              type="search"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === 'Escape' && search) {
-                  event.preventDefault();
-                  setSearch('');
-                }
-                if (event.key === 'Enter') {
-                  const first = agents.find(matches);
-                  if (first) setSelectedId(first.id);
-                }
-              }}
-              placeholder={t('searchPlaceholder')}
-              className="h-[34px] w-full rounded-full border border-border bg-card ps-8 pe-3 text-xs text-foreground outline-none placeholder:text-muted-foreground"
-            />
-          </label>
-        </div>
+          </PillButton>
+        ))}
+        <PageToolbarSpacer />
+        <PageSearch value={search} onChange={setSearch} placeholder={t('searchPlaceholder')} />
+        {toolbarEnd}
+      </PageToolbar>
+      <section className="ds-org-stage" aria-label={tNav('sidebarTeamDeciders')}>
         {scope.crumbs.length > 1 && (
-          <nav aria-label={t('levels')} className="mb-2">
+          <nav aria-label={t('levels')} className="ds-org-levels">
             <ol className="flex flex-wrap items-center gap-1 text-xs">
               {scope.crumbs.map((crumb, index) => {
                 const last = index === scope.crumbs.length - 1;
@@ -573,7 +501,7 @@ export default function OrganizationChart({
             </ol>
           </nav>
         )}
-        <div className="relative min-h-0 flex-1 overflow-hidden rounded-[18px]">
+        <div className="ds-org-canvas">
           <OrganizationChartFlow
             key={view}
             view={view}
@@ -609,7 +537,7 @@ export default function OrganizationChart({
           )}
         </div>
         {delegating.size > 0 && (
-          <p className="mt-2 font-mono text-[10px] tracking-[.09em] text-muted-foreground">
+          <p className="ds-org-foot">
             {t('delegation', {
               agents: agents
                 .filter((agent) => delegating.has(agent.id))
@@ -619,16 +547,6 @@ export default function OrganizationChart({
           </p>
         )}
       </section>
-      {permissions && (
-        <AgentSectionProvider teamId={organization.teamId} permissions={permissions}>
-          <TeamAiAgentSheet
-            open={editing != null}
-            agent={editing}
-            projectId={projectId}
-            onClose={() => setEditingId(null)}
-          />
-        </AgentSectionProvider>
-      )}
       {openTask && (
         <OrganizationTaskSheet
           projectKey={openTask.projectKey}

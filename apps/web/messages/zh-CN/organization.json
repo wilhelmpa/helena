@@ -271,6 +271,7 @@
       "waiting": "等待你",
       "throttled": "已限流",
       "error": "错误"
-    }
+    },
+    "budgetUsed": "预算已用 {percent}%"
   }
 }

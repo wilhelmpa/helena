@@ -271,6 +271,7 @@
       "waiting": "Waiting for you",
       "throttled": "Throttled",
       "error": "Error"
-    }
+    },
+    "budgetUsed": "Budget {percent}% used"
   }
 }

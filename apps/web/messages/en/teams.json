@@ -797,7 +797,28 @@
     },
     "chatTemplate": "A template does not run. Add it to a project as an agent to try it here.",
     "allProjectsScope": "Project scope: all",
-    "allProjectsScopeHint": "May work in every current and future project of this team."
+    "allProjectsScopeHint": "May work in every current and future project of this team.",
+    "heartbeat": {
+      "title": "Heartbeat",
+      "hint": "Checks at a fixed interval whether there is something to do and only then starts a run.",
+      "every": "every {minutes} min",
+      "off": "Off",
+      "interval": "Interval in minutes (empty = off)",
+      "intervalPlaceholder": "e.g. 30",
+      "from": "Working hours from",
+      "to": "to",
+      "timezone": "Time zone",
+      "days": "Days",
+      "instructions": "Heartbeat instruction",
+      "instructionsPlaceholder": "What should the agent check on each heartbeat?",
+      "last": "Last heartbeat",
+      "next": "Next heartbeat",
+      "history": "Recent checks",
+      "outcome": {
+        "queued": "Run started",
+        "skipped": "Nothing to do"
+      }
+    }
   },
   "members": {
     "roleSaved": "{name} is now {role}",

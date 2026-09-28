@@ -271,6 +271,7 @@
       "waiting": "Wartet auf dich",
       "throttled": "Gedrosselt",
       "error": "Fehler"
-    }
+    },
+    "budgetUsed": "Budget zu {percent} % verbraucht"
   }
 }

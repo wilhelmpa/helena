@@ -797,7 +797,28 @@
     },
     "chatTemplate": "Eine Vorlage läuft nicht selbst. Füge sie einem Projekt als Agent hinzu, um ihn hier auszuprobieren.",
     "allProjectsScope": "Projekt-Umfang: alle",
-    "allProjectsScopeHint": "Darf in allen aktuellen und künftigen Projekten dieses Teams arbeiten."
+    "allProjectsScopeHint": "Darf in allen aktuellen und künftigen Projekten dieses Teams arbeiten.",
+    "heartbeat": {
+      "title": "Herzschlag",
+      "hint": "Schaut in festen Abständen, ob es etwas zu tun gibt, und startet nur dann einen Lauf.",
+      "every": "alle {minutes} Min.",
+      "off": "Aus",
+      "interval": "Abstand in Minuten (leer = aus)",
+      "intervalPlaceholder": "z. B. 30",
+      "from": "Arbeitszeit von",
+      "to": "bis",
+      "timezone": "Zeitzone",
+      "days": "Tage",
+      "instructions": "Anweisung für den Herzschlag",
+      "instructionsPlaceholder": "Was soll der Agent bei jedem Herzschlag prüfen?",
+      "last": "Letzter Herzschlag",
+      "next": "Nächster Herzschlag",
+      "history": "Letzte Prüfungen",
+      "outcome": {
+        "queued": "Lauf gestartet",
+        "skipped": "Nichts zu tun"
+      }
+    }
   },
   "members": {
     "roleSaved": "{name} ist jetzt {role}",

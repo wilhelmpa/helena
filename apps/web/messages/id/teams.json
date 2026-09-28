@@ -797,7 +797,28 @@
     },
     "chatTemplate": "Templat tidak berjalan sendiri. Tambahkan ke proyek sebagai agen untuk mencobanya di sini.",
     "allProjectsScope": "Project scope: all",
-    "allProjectsScopeHint": "May work in every current and future project of this team."
+    "allProjectsScopeHint": "May work in every current and future project of this team.",
+    "heartbeat": {
+      "title": "Detak",
+      "hint": "Memeriksa pada interval tetap apakah ada yang perlu dikerjakan, dan hanya saat itu memulai run.",
+      "every": "tiap {minutes} mnt",
+      "off": "Mati",
+      "interval": "Interval dalam menit (kosong = mati)",
+      "intervalPlaceholder": "mis. 30",
+      "from": "Jam kerja dari",
+      "to": "sampai",
+      "timezone": "Zona waktu",
+      "days": "Hari",
+      "instructions": "Instruksi detak",
+      "instructionsPlaceholder": "Apa yang harus diperiksa agen pada setiap detak?",
+      "last": "Detak terakhir",
+      "next": "Detak berikutnya",
+      "history": "Pemeriksaan terakhir",
+      "outcome": {
+        "queued": "Run dimulai",
+        "skipped": "Tidak ada pekerjaan"
+      }
+    }
   },
   "members": {
     "roleSaved": "{name} sekarang menjadi {role}",

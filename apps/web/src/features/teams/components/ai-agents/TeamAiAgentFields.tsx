@@ -20,6 +20,7 @@ import AgentTemplateDriftSection from './AgentTemplateDriftSection';
 import AgentTemplateField from './AgentTemplateField';
 import { useTranslations } from 'next-intl';
 import RuntimePicker from '@/components/helena/RuntimePicker';
+import AgentHeartbeatSection from './AgentHeartbeatSection';
 
 // Which sections open when an existing agent is opened for editing, so the form reads
 // as a short list of sections instead of a wall of fields. Basics is not in it because
@@ -227,6 +228,16 @@ export default function TeamAiAgentFields({
     />
   );
 
+  const heartbeatSection = (
+    <AgentHeartbeatSection
+      key="heartbeat"
+      {...sectionProps('heartbeat')}
+      value={value}
+      onChange={onChange}
+      agent={agent}
+    />
+  );
+
   const skillsSection =
     skillsContent != null ? (
       <AgentFormSection
@@ -357,6 +368,7 @@ export default function TeamAiAgentFields({
     accessSection,
     environmentSection,
     triggersSection,
+    heartbeatSection,
     runnerSection,
   ];
 

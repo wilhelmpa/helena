@@ -271,6 +271,7 @@
       "waiting": "بانتظارك",
       "throttled": "مقيّد",
       "error": "خطأ"
-    }
+    },
+    "budgetUsed": "استُهلك {percent}% من الميزانية"
   }
 }

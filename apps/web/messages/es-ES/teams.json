@@ -797,7 +797,28 @@
     },
     "chatTemplate": "Una plantilla no se ejecuta. Añádela a un proyecto como agente para probarla aquí.",
     "allProjectsScope": "Project scope: all",
-    "allProjectsScopeHint": "May work in every current and future project of this team."
+    "allProjectsScopeHint": "May work in every current and future project of this team.",
+    "heartbeat": {
+      "title": "Latido",
+      "hint": "Comprueba a intervalos fijos si hay algo que hacer y solo entonces inicia una ejecución.",
+      "every": "cada {minutes} min",
+      "off": "Desactivado",
+      "interval": "Intervalo en minutos (vacío = desactivado)",
+      "intervalPlaceholder": "p. ej. 30",
+      "from": "Horario desde",
+      "to": "hasta",
+      "timezone": "Zona horaria",
+      "days": "Días",
+      "instructions": "Instrucción del latido",
+      "instructionsPlaceholder": "¿Qué debe comprobar el agente en cada latido?",
+      "last": "Último latido",
+      "next": "Próximo latido",
+      "history": "Últimas comprobaciones",
+      "outcome": {
+        "queued": "Ejecución iniciada",
+        "skipped": "Nada que hacer"
+      }
+    }
   },
   "members": {
     "roleSaved": "{name} es ahora {role}",

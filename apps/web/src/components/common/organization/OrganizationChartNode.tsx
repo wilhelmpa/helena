@@ -2,7 +2,9 @@
 
 import { Handle, Position, type Node, type NodeProps } from '@xyflow/react';
 import { useTranslations } from 'next-intl';
+import type { CSSProperties, ReactNode } from 'react';
 import Orb from '@/components/helena/Orb';
+import BudgetBar, { fullestBudget } from '@/components/helena/BudgetBar';
 import type { AiAgent } from '@/lib/api/endpoints/agents';
 import type { OrganizationAgent } from '@/lib/api/endpoints/organization';
 import { useAgentStatus, type StatusSignals } from '@/utils/helenaStatus';
@@ -47,6 +49,7 @@ export default function OrganizationChartNode({ data }: NodeProps<ChartAgentNode
     onToggle,
   } = data;
   const status = useChartAgentStatus(data);
+  const budget = fullestBudget(agent.budgets);
   const label = agent.isHome
     ? t('home')
     : agent.role === 'coordinator'
@@ -99,14 +102,16 @@ export default function OrganizationChartNode({ data }: NodeProps<ChartAgentNode
         aria-label={agent.name}
       >
         <span className="flex items-center gap-2 font-mono text-[10px] font-medium tracking-[.13em] text-muted-foreground">
-          <Orb
-            state={status}
-            size="small"
-            className={`organization-orb organization-orb-${status} ${agent.isHome ? 'organization-orb-home' : ''}`}
-          />
+          <HeartbeatRing agent={agent}>
+            <Orb
+              state={status}
+              size="small"
+              className={`organization-orb organization-orb-${status} ${agent.isHome ? 'organization-orb-home' : ''}`}
+            />
+          </HeartbeatRing>
           <span className="truncate">
             {label}
-            {statusWord ? ` · ${statusWord}` : ''}
+            {agent.throttled ? ` · ${t('throttled')}` : statusWord ? ` · ${statusWord}` : ''}
           </span>
         </span>
         <span
@@ -125,6 +130,13 @@ export default function OrganizationChartNode({ data }: NodeProps<ChartAgentNode
           <span className="mt-1 block truncate text-[11px] text-muted-foreground">
             {t('decider')}: {decider ?? t('noDecider')} · {effectiveTrust}
           </span>
+        )}
+        {budget && (
+          <BudgetBar
+            budget={budget}
+            className="organization-budget"
+            label={t('budgetUsed', { percent: Math.round(budget.ratio * 100) })}
+          />
         )}
       </button>
       {showCollapse && reportCount > 0 && (
@@ -151,5 +163,24 @@ export default function OrganizationChartNode({ data }: NodeProps<ChartAgentNode
         isConnectable={false}
       />
     </div>
+  );
+}
+
+// The heartbeat ring (hub/pc-heartbeats): around the orb of an agent with a heartbeat, a
+// thin ring that fills from its last beat to its next.
+function HeartbeatRing({ agent, children }: { agent: OrganizationAgent; children: ReactNode }) {
+  if (!agent.heartbeatIntervalMinutes) return <>{children}</>;
+  const last = agent.heartbeatLastAt ? Date.parse(agent.heartbeatLastAt) : null;
+  const next = agent.heartbeatNextAt ? Date.parse(agent.heartbeatNextAt) : null;
+  // eslint-disable-next-line react-hooks/purity -- a snapshot is enough; it moves on each refetch
+  const now = Date.now();
+  const beat = last != null && next != null && next > last ? (now - last) / (next - last) : 0;
+  return (
+    <span
+      className="ds-heartbeat-ring"
+      style={{ '--beat': Math.max(0, Math.min(1, beat)) } as CSSProperties}
+    >
+      {children}
+    </span>
   );
 }

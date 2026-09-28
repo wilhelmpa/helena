@@ -1275,3 +1275,90 @@ a.ds-run-card:hover {
 .ds-issue-overlay-body .ds-run .ds-detail-title {
   font-size: 20px;
 }
+
+/* The agent dialog's heartbeat group. */
+.ds-heartbeat {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.ds-heartbeat-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+@media (max-width: 700px) {
+  .ds-heartbeat-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.ds-heartbeat-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.ds-heartbeat-field > span {
+  color: var(--text-2);
+  font-size: 12px;
+}
+.ds-heartbeat-days {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.ds-heartbeat-history ul {
+  display: flex;
+  flex-direction: column;
+  margin-top: 6px;
+}
+.ds-heartbeat-history li {
+  display: grid;
+  grid-template-columns: 120px 90px minmax(0, 1fr);
+  gap: var(--space-3);
+  min-height: 28px;
+  align-items: center;
+  font-size: 12px;
+}
+.ds-heartbeat-reason {
+  overflow: hidden;
+  color: var(--text-3);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Budget bar (org chart nodes, agent dialog, departments). */
+.ds-budget {
+  position: relative;
+  display: block;
+  height: 3px;
+  overflow: hidden;
+  border-radius: 2px;
+  background: var(--surface-3);
+}
+.ds-budget-fill {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  border-radius: inherit;
+  background: var(--text-3);
+}
+.ds-budget[data-tone='warned'] .ds-budget-fill {
+  background: var(--status-waiting);
+}
+.ds-budget[data-tone='reached'] .ds-budget-fill {
+  background: var(--danger);
+}
+
+/* An agent with a heartbeat: a thin ring around its orb that fills up to the next beat. */
+.ds-heartbeat-ring {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 50%;
+  padding: 2px;
+  background: conic-gradient(var(--accent) calc(var(--beat, 0) * 1turn), var(--surface-3) 0);
+}
+.ds-heartbeat-ring > * {
+  border-radius: 50%;
+  background: var(--surface-1);
+}

@@ -797,7 +797,28 @@
     },
     "chatTemplate": "Шаблон сам не запускается. Добавьте его в проект как агента, чтобы попробовать здесь.",
     "allProjectsScope": "Project scope: all",
-    "allProjectsScopeHint": "May work in every current and future project of this team."
+    "allProjectsScopeHint": "May work in every current and future project of this team.",
+    "heartbeat": {
+      "title": "Пульс",
+      "hint": "Через равные промежутки проверяет, есть ли работа, и только тогда запускает прогон.",
+      "every": "каждые {minutes} мин",
+      "off": "Выкл.",
+      "interval": "Интервал в минутах (пусто = выкл.)",
+      "intervalPlaceholder": "напр. 30",
+      "from": "Рабочее время с",
+      "to": "до",
+      "timezone": "Часовой пояс",
+      "days": "Дни",
+      "instructions": "Инструкция для пульса",
+      "instructionsPlaceholder": "Что агенту проверять при каждом пульсе?",
+      "last": "Последний пульс",
+      "next": "Следующий пульс",
+      "history": "Последние проверки",
+      "outcome": {
+        "queued": "Прогон запущен",
+        "skipped": "Нечего делать"
+      }
+    }
   },
   "members": {
     "roleSaved": "{name} теперь {role}",

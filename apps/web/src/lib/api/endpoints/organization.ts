@@ -1,3 +1,4 @@
+import type { BudgetStatus } from './autopilot';
 import { request } from '@/lib/api/core/client';
 
 export type OrganizationGoalStatus = 'planned' | 'active' | 'achieved' | 'paused';
@@ -10,6 +11,8 @@ export interface OrganizationDepartment {
   description: string;
   parentId: number | null;
   position: number;
+  // The department's budgets with what its agents used (hub/pc-costs).
+  budgets?: BudgetStatus[];
   createdAt: string;
   updatedAt: string;
 }
@@ -121,6 +124,9 @@ export interface OrganizationAgent {
   // What the agent's runs used in every project of the team.
   tokensToday: number;
   tokensThisMonth: number;
+  // Its budgets and whether one is reached, so it takes no new work ("gedrosselt").
+  budgets?: BudgetStatus[];
+  throttled?: boolean;
 }
 
 export interface OrganizationProject {

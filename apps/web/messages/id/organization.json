@@ -271,6 +271,7 @@
       "waiting": "Menunggu Anda",
       "throttled": "Dibatasi",
       "error": "Galat"
-    }
+    },
+    "budgetUsed": "Anggaran terpakai {percent}%"
   }
 }

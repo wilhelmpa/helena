@@ -1017,3 +1017,53 @@
   max-width: none;
   padding: 0;
 }
+
+/* Every page body keeps the header's gutter (checklist 2): 32px, 16px below 900px. */
+.ds-section-page-col {
+  padding-inline: var(--page-pad-x);
+  padding-block: var(--space-5);
+}
+
+/* Team (the org chart): the chart fills the page under the toolbar (checklist 13). */
+.ds-org {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+}
+.ds-org-stage {
+  position: relative;
+  display: flex;
+  min-height: 480px;
+  flex: 1;
+  flex-direction: column;
+  height: calc(100dvh - var(--page-header-h) - var(--page-toolbar-h) - 2 * var(--space-5));
+}
+.ds-org-canvas {
+  position: relative;
+  min-height: 0;
+  flex: 1;
+  overflow: hidden;
+  border-radius: var(--radius-card);
+}
+.ds-org-levels {
+  margin-bottom: var(--space-2);
+}
+.ds-org-foot {
+  margin-top: var(--space-2);
+  color: var(--text-3);
+  font: 500 10px/16px var(--font-mono);
+  letter-spacing: 0.09em;
+}
+.ds-org-more {
+  margin-top: var(--space-5);
+}
+.ds-pill-count {
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
+}
+.organization-budget {
+  position: absolute;
+  inset-inline: 18px;
+  bottom: 8px;
+}

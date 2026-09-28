@@ -797,7 +797,28 @@
     },
     "chatTemplate": "Um modelo não é executado. Adicione-o a um projeto como agente para testá-lo aqui.",
     "allProjectsScope": "Project scope: all",
-    "allProjectsScopeHint": "May work in every current and future project of this team."
+    "allProjectsScopeHint": "May work in every current and future project of this team.",
+    "heartbeat": {
+      "title": "Pulsação",
+      "hint": "Verifica em intervalos fixos se há algo a fazer e só então inicia uma execução.",
+      "every": "a cada {minutes} min",
+      "off": "Desligado",
+      "interval": "Intervalo em minutos (vazio = desligado)",
+      "intervalPlaceholder": "ex.: 30",
+      "from": "Horário de",
+      "to": "até",
+      "timezone": "Fuso horário",
+      "days": "Dias",
+      "instructions": "Instrução da pulsação",
+      "instructionsPlaceholder": "O que o agente deve verificar a cada pulsação?",
+      "last": "Última pulsação",
+      "next": "Próxima pulsação",
+      "history": "Últimas verificações",
+      "outcome": {
+        "queued": "Execução iniciada",
+        "skipped": "Nada a fazer"
+      }
+    }
   },
   "members": {
     "roleSaved": "{name} agora é {role}",

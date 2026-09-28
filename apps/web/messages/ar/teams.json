@@ -797,7 +797,28 @@
     },
     "chatTemplate": "القالب لا يعمل بنفسه. أضفه إلى مشروع كوكيل لتجربته هنا.",
     "allProjectsScope": "Project scope: all",
-    "allProjectsScopeHint": "May work in every current and future project of this team."
+    "allProjectsScopeHint": "May work in every current and future project of this team.",
+    "heartbeat": {
+      "title": "النبض",
+      "hint": "يتحقق على فترات ثابتة مما إذا كان هناك ما يُفعل، ولا يبدأ تشغيلاً إلا عندها.",
+      "every": "كل {minutes} دقيقة",
+      "off": "إيقاف",
+      "interval": "الفاصل بالدقائق (فارغ = إيقاف)",
+      "intervalPlaceholder": "مثلاً 30",
+      "from": "ساعات العمل من",
+      "to": "إلى",
+      "timezone": "المنطقة الزمنية",
+      "days": "الأيام",
+      "instructions": "تعليمات النبض",
+      "instructionsPlaceholder": "ما الذي يجب أن يتحقق منه الوكيل في كل نبضة؟",
+      "last": "آخر نبضة",
+      "next": "النبضة التالية",
+      "history": "آخر عمليات التحقق",
+      "outcome": {
+        "queued": "بدأ التشغيل",
+        "skipped": "لا شيء للقيام به"
+      }
+    }
   },
   "members": {
     "roleSaved": "{name} الآن {role}",
