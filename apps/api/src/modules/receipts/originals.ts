@@ -1,4 +1,11 @@
-import { db, helenaReceipt, helenaReceiptMatch, helenaReceiptOriginalLink } from '@repo/db';
+import {
+  db,
+  helenaReceipt,
+  helenaReceiptMatch,
+  helenaReceiptOriginalLink,
+  helenaReceiptPairHistory,
+  helenaReceiptPairSuggestion,
+} from '@repo/db';
 import { and, eq, inArray, or, sql } from 'drizzle-orm';
 import { HttpError } from '#shared/lib';
 
@@ -100,12 +107,26 @@ export async function linkReceiptOriginalInTransaction(
     teamId: child.teamId,
     createdByUserId: userId,
   });
+  await tx
+    .update(helenaReceiptPairSuggestion)
+    .set({ status: 'ignored' })
+    .where(
+      and(
+        eq(helenaReceiptPairSuggestion.projectId, projectId),
+        eq(helenaReceiptPairSuggestion.status, 'pending'),
+        or(
+          inArray(helenaReceiptPairSuggestion.receiptId, [receiptId, primaryReceiptId]),
+          inArray(helenaReceiptPairSuggestion.candidateId, [receiptId, primaryReceiptId]),
+        ),
+      ),
+    );
 }
 
 export async function unlinkReceiptOriginal(
   projectId: number,
   receiptId: number,
   primaryReceiptId: number,
+  userId: string | null = null,
 ) {
   await db.transaction(async (tx) => {
     await lockReceiptProject(tx, projectId);
@@ -130,6 +151,14 @@ export async function unlinkReceiptOriginal(
           eq(helenaReceiptOriginalLink.primaryReceiptId, primaryReceiptId),
         ),
       );
+    await tx.insert(helenaReceiptPairHistory).values({
+      projectId,
+      teamId: link.teamId,
+      receiptId,
+      primaryReceiptId,
+      action: 'unlink',
+      createdByUserId: userId,
+    });
   });
 }
 

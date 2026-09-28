@@ -8,7 +8,7 @@ import {
   helenaBankTransaction,
   helenaReceipt,
   helenaReceiptMatch,
-  getSetting,
+  helenaReceiptPairHistory,
   mailAttachment,
   mailMessage,
   mailThread,
@@ -37,8 +37,10 @@ import {
   economicReceipt,
   assertUngroupedReceipt,
   linkReceiptOriginalInTransaction,
+  lockReceiptProject,
 } from './originals';
 import { mailOriginalPair } from './original-pair';
+import { autoMergeEnabled, inspectNewReceipts } from './dedup';
 import { receiptSourceLinks } from './source';
 import {
   inMonth,
@@ -161,23 +163,31 @@ export async function uploadReceipt(
   const relative = await writeUniqueFile(root, `Files/Belege/${month}`, name, bytes, {
     ref: `user:${userId}`,
   });
-  const [row] = await db
-    .insert(helenaReceipt)
-    .values({
-      teamId: project.teamId,
-      projectId: project.id,
-      source: 'upload',
-      vaultPath: joinPath(root.vaultPath ?? projectVaultPath(project.key), relative),
-      filename: path.basename(relative),
-      contentType: contentTypeOf(name),
-      size: bytes.length,
-      sha256,
-      createdByUserId: userId,
-      ...extractedColumns(facts),
-    })
-    .returning({ id: helenaReceipt.id });
-  await matchQuietly(row!.id);
-  return viewOf(row!.id);
+  const enabled = await autoMergeEnabled(project.teamId);
+  const id = await db.transaction(async (tx) => {
+    await lockReceiptProject(tx, project.id);
+    const [row] = await tx
+      .insert(helenaReceipt)
+      .values({
+        teamId: project.teamId,
+        projectId: project.id,
+        source: 'upload',
+        vaultPath: joinPath(root.vaultPath ?? projectVaultPath(project.key), relative),
+        filename: path.basename(relative),
+        contentType: contentTypeOf(name),
+        size: bytes.length,
+        sha256,
+        createdByUserId: userId,
+        ...extractedColumns(facts),
+      })
+      .onConflictDoNothing()
+      .returning({ id: helenaReceipt.id });
+    if (!row) throw new DuplicateReceipt((await existingBySha(project.id, sha256, tx))!);
+    await inspectNewReceipts(tx, project.id, [row.id], enabled, userId);
+    return row.id;
+  });
+  await matchQuietly(id);
+  return viewOf(id);
 }
 
 // The project-relative path of a file in the project's vault folder; a full vault path
@@ -205,23 +215,31 @@ export async function receiptFromVault(
     file.name,
     await ownIbans(project.id),
   );
-  const [row] = await db
-    .insert(helenaReceipt)
-    .values({
-      teamId: project.teamId,
-      projectId: project.id,
-      source: 'vault',
-      vaultPath: file.vaultPath,
-      filename: file.name,
-      contentType: file.contentType,
-      size: file.sizeBytes,
-      sha256: file.sha256,
-      createdByUserId: userId,
-      ...extractedColumns(facts),
-    })
-    .returning({ id: helenaReceipt.id });
-  await matchQuietly(row!.id);
-  return viewOf(row!.id);
+  const enabled = await autoMergeEnabled(project.teamId);
+  const id = await db.transaction(async (tx) => {
+    await lockReceiptProject(tx, project.id);
+    const [row] = await tx
+      .insert(helenaReceipt)
+      .values({
+        teamId: project.teamId,
+        projectId: project.id,
+        source: 'vault',
+        vaultPath: file.vaultPath,
+        filename: file.name,
+        contentType: file.contentType,
+        size: file.sizeBytes,
+        sha256: file.sha256,
+        createdByUserId: userId,
+        ...extractedColumns(facts),
+      })
+      .onConflictDoNothing()
+      .returning({ id: helenaReceipt.id });
+    if (!row) throw new DuplicateReceipt((await existingBySha(project.id, file.sha256, tx))!);
+    await inspectNewReceipts(tx, project.id, [row.id], enabled, userId);
+    return row.id;
+  });
+  await matchQuietly(id);
+  return viewOf(id);
 }
 
 export interface MailReceiptInput {
@@ -405,8 +423,7 @@ export async function prepareMailReceipts(
 
 /** Original attachments stay in Mail; a body receipt preserves the original RFC822 message. */
 export async function intakeMailReceipts(input: MailReceiptInput): Promise<number[]> {
-  const pairEnabled =
-    (await getSetting<boolean>(`receipts.original-pair-intake.team.${input.teamId}`)) === true;
+  const pairEnabled = await autoMergeEnabled(input.teamId);
   const stored = await db.transaction(async (tx) => {
     await tx.execute(sql`select pg_advisory_xact_lock(748220, ${input.projectId})`);
     return storeMailReceipts(input, tx, pairEnabled);
@@ -497,9 +514,15 @@ async function storeMailReceipts(
   const pair = mailOriginalPair(plans);
   const primaryId = pair ? newBySha.get(pair.invoiceSha256) : undefined;
   const supplementaryId = pair ? newBySha.get(pair.receiptSha256) : undefined;
+  const intakeDay = new Date().toISOString().slice(0, 10);
+  const invoiceDay =
+    plans.find((plan) => plan.sha256 === pair?.invoiceSha256)?.facts.invoiceDate ?? intakeDay;
+  const paymentDay =
+    plans.find((plan) => plan.sha256 === pair?.receiptSha256)?.facts.invoiceDate ?? intakeDay;
+  const pairDateFit = Math.abs(Date.parse(invoiceDay) - Date.parse(paymentDay)) <= 7 * 86_400_000;
   // Never recreate a deliberately detached relation on reimport/index repair. Both
   // originals must have been newly inserted in this very transaction.
-  if (pairEnabled && primaryId !== undefined && supplementaryId !== undefined)
+  if (pairEnabled && pairDateFit && primaryId !== undefined && supplementaryId !== undefined) {
     await linkReceiptOriginalInTransaction(
       executor,
       input.projectId,
@@ -507,6 +530,16 @@ async function storeMailReceipts(
       primaryId,
       input.actorUserId,
     );
+    await executor.insert(helenaReceiptPairHistory).values({
+      projectId: input.projectId,
+      teamId: input.teamId,
+      receiptId: supplementaryId,
+      primaryReceiptId: primaryId,
+      action: 'auto_link',
+      createdByUserId: input.actorUserId,
+    });
+  }
+  await inspectNewReceipts(executor, input.projectId, newIds, pairEnabled, input.actorUserId);
   return { ids: [...ids], newIds, indexPaths: [...indexPaths] };
 }
 
