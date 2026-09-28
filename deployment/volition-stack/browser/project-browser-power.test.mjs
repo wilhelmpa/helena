@@ -290,3 +290,30 @@ test("a browser stopped behind the router's back is started again on its next us
   assert.deepEqual(browsers.calls, [["start", "vol"]]);
   assert.equal(power.state("vol"), "running");
 });
+
+test("idle: a freshly started browser is not woken page by page, and a failed use is checked again", async () => {
+  const browsers = fakeBrowsers();
+  const power = new BrowserPower({ units: browsers.units, probe: browsers.probe, sleep: async () => {} });
+  const states = [];
+  let failing = false;
+  const idle = new BrowserIdle({
+    listBrowsers: async () => [{ slug: "vol", cdpPort: 19201 }],
+    lifecycle: async (_port, state) => {
+      states.push(state);
+      if (failing) throw new Error("Inspected target navigated or closed");
+      return 1;
+    },
+    power,
+    stopAfter: () => 15 * 60_000,
+  });
+  await idle.poll();
+  assert.equal(await idle.wake("vol", { force: true }), true);
+  assert.deepEqual(states, []);
+  // Stopped behind the router's back while a use fails: the next use starts it again at once.
+  browsers.alive.delete("vol");
+  failing = true;
+  assert.equal(await idle.wake("vol", { force: true }), false);
+  failing = false;
+  assert.equal(await idle.wake("vol", { force: true }), true);
+  assert.deepEqual(browsers.calls, [["start", "vol"], ["start", "vol"]]);
+});

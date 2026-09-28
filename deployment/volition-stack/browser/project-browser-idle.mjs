@@ -102,10 +102,9 @@ export class BrowserIdle {
           // one that stopped behind the router's back (project-browser-power.mjs).
           const since = this.power.since(browser.slug);
           await this.power.ensure(browser.slug, browser.port);
-          if (!running || this.power.since(browser.slug) !== since) {
-            // A browser just started has its pages active, but its visibility is to be set.
-            browser.frozen = start ? true : null;
-          }
+          // A browser just started has nothing frozen: its pages, still being restored, are
+          // left alone (a page closed or replaced meanwhile would fail the wake).
+          if (!running || this.power.since(browser.slug) !== since) browser.frozen = false;
         }
       }
       const idle = this.unused(browser) && this.now() - browser.lastActive >= this.idleMs;
@@ -120,6 +119,8 @@ export class BrowserIdle {
       return true;
     }).catch((error) => {
       this.log(`browser idle: ${error.message}`);
+      // A use that failed checks the browser again next time instead of trusting it runs.
+      if (start) this.power?.doubt(browser.slug);
       return false;
     });
     return browser.queue;

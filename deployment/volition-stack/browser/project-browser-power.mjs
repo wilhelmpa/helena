@@ -222,6 +222,12 @@ export class BrowserPower {
     });
   }
 
+  // After a failed use: the next use checks whether the browser still runs.
+  doubt(slug) {
+    const entry = this.#browsers.get(slug);
+    if (entry) entry.verifiedAt = -Infinity;
+  }
+
   forget(slug) {
     const entry = this.#browsers.get(slug);
     if (entry && entry.busy === 0) this.#browsers.delete(slug);
