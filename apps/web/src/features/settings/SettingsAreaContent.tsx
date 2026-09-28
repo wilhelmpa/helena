@@ -114,6 +114,10 @@ export default function SettingsAreaContent({
       return <VoicePage {...props} />;
     case 'server':
       return <ServerPage tab={extra ?? 'overview'} />;
+    case 'server-disks':
+    case 'server-backup':
+    case 'server-power':
+      return <ServerPage tab={slug.slice('server-'.length)} />;
     case 'updates':
       return <ServerPage tab="updates" />;
     case 'team-members':

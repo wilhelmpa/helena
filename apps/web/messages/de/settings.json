@@ -819,6 +819,18 @@
       "email": {
         "label": "E-Mail-Versand",
         "hint": ""
+      },
+      "server-disks": {
+        "label": "Platten & RAID",
+        "hint": "Platten, RAID und ihr Zustand."
+      },
+      "server-backup": {
+        "label": "Backup",
+        "hint": "Sicherungen, Aufbewahrung und Wiederherstellen."
+      },
+      "server-power": {
+        "label": "Leistung & Lüfter",
+        "hint": "Leistungsprofil, Lüfter und Temperaturen."
       }
     },
     "projectPath": "Projekt"

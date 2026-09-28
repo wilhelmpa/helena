@@ -819,6 +819,18 @@
       "email": {
         "label": "邮件发送",
         "hint": ""
+      },
+      "server-disks": {
+        "label": "磁盘与 RAID",
+        "hint": "Disks, RAID and their health."
+      },
+      "server-backup": {
+        "label": "备份",
+        "hint": "Backups, retention and restore."
+      },
+      "server-power": {
+        "label": "功耗与风扇",
+        "hint": "Power profile, fans and temperatures."
       }
     },
     "projectPath": "项目"

@@ -1,30 +1,19 @@
 'use client';
 
-import { Activity, Archive, Cpu, HardDrive, PackageCheck, RefreshCw } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
 import {
   PageActions,
-  PageTabs,
   PageToolbar,
   PageToolbarSpacer,
   type PageAction,
 } from '@/components/layout/PageToolbar';
-import { serverPath } from '@/utils/paths';
 import type { ServerTab } from '../utils/serverFormat';
 
-const ICONS = {
-  overview: Activity,
-  disks: HardDrive,
-  backup: Archive,
-  power: Cpu,
-  updates: PackageCheck,
-} as const;
-
-// The Server area's one header row: its tabs, then the tab's own actions (refresh first).
+// The toolbar of a server settings page: its actions (refresh first). Each former tab is
+// a page of Helena's settings of its own; `tab`/`tabs` stay for the callers.
 export default function ServerToolbar({
-  tab,
-  tabs,
   onRefresh,
   refreshing = false,
   actions = [],
@@ -56,16 +45,6 @@ export default function ServerToolbar({
   ];
   return (
     <PageToolbar>
-      <PageTabs
-        label={t('title')}
-        value={tab}
-        items={tabs.map((value) => ({
-          value,
-          label: t(`areas.${value}`),
-          icon: ICONS[value],
-          href: serverPath(value),
-        }))}
-      />
       <PageToolbarSpacer />
       {extra}
       <PageActions actions={all} primary={primary} />

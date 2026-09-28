@@ -301,4 +301,11 @@ export const inviteLink = (origin: string, token: string) => `${origin}/invite/$
 export const godPath = (section: string) => `/god/${section}`;
 
 // Administrator → Server, one route per tab (overview, disks, backup, power, updates).
-export const serverPath = (tab: string) => `/god/server/${tab}`;
+// A tab of the server's settings is a page of Helena's settings of its own (no page tabs):
+// the overview is /settings/server, updates /settings/updates, the rest /settings/server-<tab>.
+export const serverPath = (tab: string) =>
+  tab === 'overview'
+    ? '/settings/server'
+    : tab === 'updates'
+      ? '/settings/updates'
+      : `/settings/server-${tab}`;

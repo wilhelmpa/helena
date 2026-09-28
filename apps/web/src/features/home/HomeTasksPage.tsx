@@ -86,7 +86,11 @@ export default function HomeTasksPage() {
   };
 
   return (
-    <Shell globalHome globalTitle={tNav('allWorkItems')} autoOpenGlobalChat={false}>
+    <Shell
+      globalHome
+      globalTitle={filters.assignee === 'me' ? tNav('sidebarMyTasks') : tNav('sidebarOpenTasks')}
+      autoOpenGlobalChat={false}
+    >
       <SectionPageView title={tNav('allWorkItems')} wide>
         <HomeTasksToolbar
           projects={projects}

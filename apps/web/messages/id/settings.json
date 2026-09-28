@@ -819,6 +819,18 @@
       "email": {
         "label": "Pengiriman email",
         "hint": ""
+      },
+      "server-disks": {
+        "label": "Disk dan RAID",
+        "hint": "Disks, RAID and their health."
+      },
+      "server-backup": {
+        "label": "Cadangan",
+        "hint": "Backups, retention and restore."
+      },
+      "server-power": {
+        "label": "Daya dan kipas",
+        "hint": "Power profile, fans and temperatures."
       }
     },
     "projectPath": "Proyek"

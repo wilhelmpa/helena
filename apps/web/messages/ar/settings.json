@@ -819,6 +819,18 @@
       "email": {
         "label": "إرسال البريد",
         "hint": ""
+      },
+      "server-disks": {
+        "label": "الأقراص والـ RAID",
+        "hint": "Disks, RAID and their health."
+      },
+      "server-backup": {
+        "label": "النسخ الاحتياطي",
+        "hint": "Backups, retention and restore."
+      },
+      "server-power": {
+        "label": "الطاقة والمراوح",
+        "hint": "Power profile, fans and temperatures."
       }
     },
     "projectPath": "المشروع"

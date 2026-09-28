@@ -819,6 +819,18 @@
       "email": {
         "label": "Надсилання пошти",
         "hint": ""
+      },
+      "server-disks": {
+        "label": "Диски та RAID",
+        "hint": "Disks, RAID and their health."
+      },
+      "server-backup": {
+        "label": "Резервні копії",
+        "hint": "Backups, retention and restore."
+      },
+      "server-power": {
+        "label": "Живлення й вентилятори",
+        "hint": "Power profile, fans and temperatures."
       }
     },
     "projectPath": "Проєкт"

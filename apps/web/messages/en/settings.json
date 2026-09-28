@@ -819,6 +819,18 @@
       "email": {
         "label": "Email sending",
         "hint": ""
+      },
+      "server-disks": {
+        "label": "Disks & RAID",
+        "hint": "Disks, RAID and their health."
+      },
+      "server-backup": {
+        "label": "Backup",
+        "hint": "Backups, retention and restore."
+      },
+      "server-power": {
+        "label": "Power & fans",
+        "hint": "Power profile, fans and temperatures."
       }
     },
     "projectPath": "Project"

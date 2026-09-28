@@ -19,6 +19,7 @@ import { useOrganizationQuery } from './services/organization.service';
 // and kept in the address (?team=3).
 export default function OrganizationPage() {
   const t = useTranslations('organization');
+  const tNav = useTranslations('nav');
   const tCommon = useTranslations('common');
   const params = useSearchParams();
   const router = useRouter();
@@ -32,6 +33,8 @@ export default function OrganizationPage() {
   const teamId =
     manageableTeams.find((team) => team.id === requested)?.id ?? manageableTeams[0]?.id ?? null;
   const organization = useOrganizationQuery(teamId);
+  // The same page is Team (the chart) and, with ?tab=goals, Ziele — two sidebar entries.
+  const title = params.get('tab') === 'goals' ? tNav('sidebarGoals') : t('title');
 
   const selectTeam = (value: string) => {
     const query = new URLSearchParams(params.toString());
@@ -41,8 +44,8 @@ export default function OrganizationPage() {
   };
 
   return (
-    <Shell globalHome globalTitle={t('title')} autoOpenGlobalChat={false}>
-      <SectionPageView title={t('title')} wide>
+    <Shell globalHome globalTitle={title} autoOpenGlobalChat={false}>
+      <SectionPageView title={title} wide>
         {teams.isPending || (teamId != null && organization.isPending) ? (
           <ListSkeleton rows={6} rowClassName="h-8" />
         ) : manageableTeams.length === 0 ? (

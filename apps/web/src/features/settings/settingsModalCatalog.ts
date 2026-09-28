@@ -67,7 +67,10 @@ const SYSTEM: ModalSectionDef[] = [
   s('team-roles', 'system', { keywords: 'Rollen Rechte' }),
   s('projects', 'system'),
   s('team-notifications', 'system', { keywords: 'E-Mail Telegram Zustellung' }),
-  s('server', 'system', { keywords: 'Platten RAID Backup Leistung Lüfter' }),
+  s('server', 'system', { keywords: 'Server Übersicht Dienste' }),
+  s('server-disks', 'system', { keywords: 'Platten RAID SMART NVMe' }),
+  s('server-backup', 'system', { keywords: 'Backup restic Sicherung Wiederherstellen' }),
+  s('server-power', 'system', { keywords: 'Leistung Lüfter Profil Temperatur' }),
   s('updates', 'system', { keywords: 'Aktualisierung Version Update-Center' }),
   s('authentication', 'system', { keywords: 'Anmeldung Registrierung SSO' }),
   s('security', 'system', { keywords: 'Owner-Terminal Audit Härtung Cloudflare Heimnetz' }),
@@ -146,7 +149,9 @@ export function settingsModalRoute(pathname: string | null): SettingsLocation | 
   const server = pathname.match(/^\/god\/server(?:\/([^/]+))?$/);
   if (server) {
     if (server[1] === 'updates') return { area: 'admin', slug: 'updates' };
-    return { area: 'admin', slug: 'server', ...(server[1] ? { extra: server[1] } : {}) };
+    if (server[1] === 'disks' || server[1] === 'backup' || server[1] === 'power')
+      return { area: 'admin', slug: `server-${server[1]}` };
+    return { area: 'admin', slug: 'server' };
   }
   const admin = pathname.match(/^\/god\/([^/]+)(?:\/.*)?$/);
   if (admin) return GOD_SLUGS[admin[1]!] ?? { area: 'admin', slug: admin[1]! };

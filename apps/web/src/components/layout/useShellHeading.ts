@@ -1,6 +1,6 @@
 'use client';
 
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import type { Crumb } from '@/design-system';
 import type { ShellRoute } from '@/hooks/useShellRoute';
@@ -41,6 +41,7 @@ export function useShellHeading({
   const t = useTranslations('nav');
   const sectionText = useSettingsSectionText();
   const pathname = usePathname();
+  const search = useSearchParams();
 
   if (globalHome) {
     const home = t('sidebarHome');
@@ -50,7 +51,7 @@ export function useShellHeading({
         ? t('sidebarKnowledge')
         : /^\/(organization|agents|schedules|workflows|activity|browsers|decisions)(\/|$)/.test(
               pathname,
-            )
+            ) && search.get('tab') !== 'goals'
           ? t('sidebarAutomation')
           : /^\/(dashboard|system)(\/|$)/.test(pathname)
             ? t('dashboards')
@@ -123,7 +124,9 @@ export function useShellHeading({
         ? t('dangerZone')
         : known(section)
           ? sectionText(section).label
-          : t('projectSettings'),
+          : section === 'mail'
+            ? t('mail')
+            : t('projectSettings'),
     );
   if (sub === 'members') return heading(area(settings, general), t('members'));
   if (sub === 'notifications') return heading(area(settings, general), t('notifications'));
