@@ -141,5 +141,71 @@
     "source": "Markdown source",
     "sourceRequired": "This file contains Markdown the formatted editor cannot preserve. Edit the source to keep all content.",
     "sourceEditRejected": "This edit could not preserve the original line endings. Your previous text is unchanged. Try smaller edits."
+  },
+  "knowledge": {
+    "preview": "Попередній перегляд",
+    "details": "Подробиці",
+    "searchPlaceholder": "Шукати в знаннях …",
+    "searching": "Пошук …",
+    "noResults": "Нічого не знайдено.",
+    "loading": "Завантаження …",
+    "new": "Створити",
+    "more": "Інші дії",
+    "today": "Сьогодні",
+    "fromTemplate": "Із шаблону",
+    "trash": "Кошик",
+    "open": "Відкрити",
+    "card": "Картка",
+    "create": {
+      "doc": "Документ",
+      "canvas": "Полотно",
+      "folder": "Тека",
+      "upload": "Завантажити файл"
+    },
+    "filters": {
+      "all": "Усе",
+      "docs": "Документи",
+      "canvases": "Полотна",
+      "files": "Файли",
+      "agents": "Від агентів"
+    },
+    "columns": {
+      "name": "Назва",
+      "kind": "Тип",
+      "changed": "Змінено",
+      "match": "Фрагмент"
+    },
+    "kinds": {
+      "folder": "Тека",
+      "canvas": "Полотно",
+      "doc": "Документ",
+      "pdf": "PDF",
+      "image": "Зображення",
+      "file": "Файл"
+    },
+    "dropHint": "Перетягніть файли сюди або <pick>виберіть</pick>",
+    "entries": "{count, plural, one {# елемент} few {# елементи} many {# елементів} other {# елемента}}",
+    "subfolders": "{count, plural, one {# підтека — у дереві ліворуч} few {# підтеки — у дереві ліворуч} many {# підтек — у дереві ліворуч} other {# підтеки — у дереві ліворуч}}",
+    "emptyFolder": "Тека порожня. Створіть документ або перетягніть сюди файли.",
+    "emptyFolderWithSubfolders": "Тут немає файлів, лише підтеки. Відкрийте їх у дереві ліворуч.",
+    "emptyFilter": "Немає файлів цього типу.",
+    "emptyRecent": "Файлів ще немає. Створіть документ або перетягніть сюди файли.",
+    "recent": "Нещодавно змінені",
+    "topLevel": "Верхній рівень",
+    "loadingDoc": "Завантаження документа …",
+    "loadError": "Не вдалося завантажити документ.",
+    "linkNotFound": "Посилання не знайдено",
+    "linkFailed": "Не вдалося відкрити посилання",
+    "copyLink": "Копіювати посилання",
+    "source": "Вихідний текст",
+    "editor": "Редактор",
+    "unsaved": "не збережено",
+    "saved": "збережено",
+    "unknownTime": "невідомо",
+    "backlinks": "Посилання сюди",
+    "noBacklinks": "Немає посилань",
+    "history": "Історія",
+    "noHistory": "Історії ще немає",
+    "discard": "Скасувати незбережені зміни?"
   }
 }

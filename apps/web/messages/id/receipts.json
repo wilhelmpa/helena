@@ -3,7 +3,8 @@
     "open": "Terbuka",
     "review": "Tinjau",
     "matched": "Cocok",
-    "accounts": "Rekening"
+    "accounts": "Rekening",
+    "all": "Semua bukti"
   },
   "month": "Bulan",
   "allMonths": "Semua bulan",
@@ -184,5 +185,26 @@
     "confirmHint": "Tautkan hanya jika dokumen ini melengkapi transaksi yang sama tanpa jumlah tambahan. Kedua berkas dan datanya tetap disimpan.",
     "attach": "Tautkan sebagai dokumen pelengkap",
     "count": "{count} dokumen asli"
+  },
+  "new": "Baru",
+  "more": "Tindakan lain",
+  "status": {
+    "open": "terbuka",
+    "matched": "dicocokkan",
+    "ignored": "tidak perlu bukti"
+  },
+  "columns": {
+    "name": "Penerbit",
+    "detail": "Detail",
+    "amount": "Jumlah"
+  },
+  "emptyAll": "Belum ada bukti. Unggah satu atau seret ke sini.",
+  "dropHint": "Seret bukti ke sini atau <pick>pilih</pick>",
+  "preview": {
+    "loading": "Memuat berkas …",
+    "unavailable": "Berkas tidak tersedia",
+    "einvoice": "E-faktur (XML)",
+    "mail": "Bukti dari email",
+    "noPicture": "Tidak ada pratinjau untuk berkas ini"
   }
 }

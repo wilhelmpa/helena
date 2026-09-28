@@ -3,7 +3,8 @@
     "open": "Offen",
     "review": "Prüfen",
     "matched": "Zugeordnet",
-    "accounts": "Konten"
+    "accounts": "Konten",
+    "all": "Alle Belege"
   },
   "month": "Monat",
   "allMonths": "Alle Monate",
@@ -116,7 +117,7 @@
     "title": "Beleg",
     "loading": "Wird geladen …",
     "openFile": "Datei öffnen",
-    "inFiles": "In Dateien zeigen",
+    "inFiles": "In Wissen zeigen",
     "extract": "Erneut auslesen",
     "match": "Kontobewegung",
     "matchAgain": "Erneut zuordnen",
@@ -184,5 +185,26 @@
     "confirmHint": "Nur zuordnen, wenn dieses Original denselben Vorgang ergänzt und keinen zusätzlichen Betrag belegt. Beide Dateien und ihre Angaben bleiben erhalten.",
     "attach": "Als ergänzendes Original zuordnen",
     "count": "{count} Originale"
+  },
+  "new": "Neu",
+  "more": "Weitere Belegaktionen",
+  "status": {
+    "open": "offen",
+    "matched": "zugeordnet",
+    "ignored": "kein Beleg nötig"
+  },
+  "columns": {
+    "name": "Aussteller",
+    "detail": "Details",
+    "amount": "Betrag"
+  },
+  "emptyAll": "Noch keine Belege. Lade einen hoch oder zieh ihn hierher.",
+  "dropHint": "Belege hierher ziehen oder <pick>auswählen</pick>",
+  "preview": {
+    "loading": "Datei wird geladen …",
+    "unavailable": "Datei nicht verfügbar",
+    "einvoice": "E-Rechnung (XML)",
+    "mail": "Beleg aus einer Mail",
+    "noPicture": "Keine Vorschau für diese Datei"
   }
 }

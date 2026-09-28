@@ -289,5 +289,6 @@
     "throttled": "Limité",
     "offline": "Hors ligne",
     "done": "Terminé"
-  }
+  },
+  "resizeSidePanel": "Redimensionner le panneau latéral"
 }

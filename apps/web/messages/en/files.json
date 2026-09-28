@@ -141,5 +141,71 @@
     "source": "Markdown source",
     "sourceRequired": "This file contains Markdown the formatted editor cannot preserve. Edit the source to keep all content.",
     "sourceEditRejected": "This edit could not preserve the original line endings. Your previous text is unchanged. Try smaller edits."
+  },
+  "knowledge": {
+    "preview": "Preview",
+    "details": "Details",
+    "searchPlaceholder": "Search knowledge …",
+    "searching": "Searching …",
+    "noResults": "No matches.",
+    "loading": "Loading …",
+    "new": "New",
+    "more": "More knowledge actions",
+    "today": "Today",
+    "fromTemplate": "From template",
+    "trash": "Trash",
+    "open": "Open",
+    "card": "Card",
+    "create": {
+      "doc": "Doc",
+      "canvas": "Canvas",
+      "folder": "Folder",
+      "upload": "Upload file"
+    },
+    "filters": {
+      "all": "All",
+      "docs": "Documents",
+      "canvases": "Canvases",
+      "files": "Files",
+      "agents": "By agents"
+    },
+    "columns": {
+      "name": "Name",
+      "kind": "Kind",
+      "changed": "Changed",
+      "match": "Match"
+    },
+    "kinds": {
+      "folder": "Folder",
+      "canvas": "Canvas",
+      "doc": "Doc",
+      "pdf": "PDF",
+      "image": "Image",
+      "file": "File"
+    },
+    "dropHint": "Drop files here or <pick>choose</pick>",
+    "entries": "{count, plural, one {# entry} other {# entries}}",
+    "subfolders": "{count, plural, one {# subfolder, in the tree on the left} other {# subfolders, in the tree on the left}}",
+    "emptyFolder": "This folder is empty. Create a doc or drop files here.",
+    "emptyFolderWithSubfolders": "No files here, only subfolders. Open them in the tree on the left.",
+    "emptyFilter": "No files of this kind.",
+    "emptyRecent": "No files yet. Create a doc or drop files here.",
+    "recent": "Recently changed",
+    "topLevel": "Top level",
+    "loadingDoc": "Loading document …",
+    "loadError": "The document could not be loaded.",
+    "linkNotFound": "Link not found",
+    "linkFailed": "The link could not be opened",
+    "copyLink": "Copy link",
+    "source": "Source",
+    "editor": "Editor",
+    "unsaved": "unsaved",
+    "saved": "saved",
+    "unknownTime": "unknown",
+    "backlinks": "Links to here",
+    "noBacklinks": "No links",
+    "history": "History",
+    "noHistory": "No history yet",
+    "discard": "Discard unsaved changes?"
   }
 }

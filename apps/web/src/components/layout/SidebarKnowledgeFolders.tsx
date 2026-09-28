@@ -24,7 +24,7 @@ import {
 function folderUrl(scope: FileScope, path: string) {
   return scope.kind === 'project'
     ? filesPath(scope.projectKey, path)
-    : homeFilesPath(path, { root: scope.root === 'home' ? undefined : scope.root });
+    : homeFilesPath(path, { root: scope.root });
 }
 
 function FolderNode({
@@ -146,9 +146,12 @@ function FolderNode({
 export default function SidebarKnowledgeFolders({
   scope,
   canWrite = false,
+  depth = 0,
 }: {
   scope: FileScope;
   canWrite?: boolean;
+  // Indent of the first level (Home nests the folders under Home, Privat, Vorlagen).
+  depth?: number;
 }) {
   const listing = useFilesQuery(scope, '');
   return (
@@ -165,7 +168,7 @@ export default function SidebarKnowledgeFolders({
           scope={scope}
           path={folder.path}
           name={folder.name}
-          depth={0}
+          depth={depth}
           canWrite={canWrite}
         />
       )) ?? null

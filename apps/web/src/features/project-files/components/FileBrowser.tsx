@@ -1,5 +1,6 @@
 import { useState, useEffect, type ReactNode } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import { useTranslations } from 'next-intl';
 import { resolveVaultPath } from '@/lib/api/endpoints/knowledge';
 import UnifiedFileViewer from './UnifiedFileViewer';
 import VaultSearchResults from './VaultSearchResults';
@@ -20,9 +21,11 @@ import FileFolderContent from './FileFolderContent';
 import FileToolbar from './FileToolbar';
 import FileViewerActions from './FileViewerActions';
 import ProjectKnowledgeViewer from './ProjectKnowledgeViewer';
-import KnowledgeFolderView from './KnowledgeFolderView';
+import KnowledgeFolderView, { useKnowledgeCrumbs, vaultRootOf } from './KnowledgeFolderView';
+import KnowledgeRecentView from './KnowledgeRecentView';
 import KnowledgeCanvas from './KnowledgeCanvas';
 import FileCreateMenu from './FileCreateMenu';
+import FileItemMenu from './FileItemMenu';
 
 export interface FilePermissions {
   create: boolean;
@@ -144,6 +147,9 @@ export default function FileBrowser({
     };
   }, [selected, vaultRoot, listing.isPending, listing.data, onSelect]);
   const items = visibleItems(listing.data?.items ?? [], view.filter, view.sort);
+  const levelOne = scope.kind === 'project' && scope.root === 'vault' && !path;
+  const levelOneCrumbs = useKnowledgeCrumbs(scope, [], (folder) => navigate(folder), true);
+  const k = useTranslations('files.knowledge');
   const viewing = selected ? listing.data?.items.find((item) => item.path === selected) : undefined;
   const knowledge = scope.kind === 'home' || scope.root === 'vault';
 
@@ -240,8 +246,24 @@ export default function FileBrowser({
             }}
           />
         )
+      ) : levelOne ? (
+        <KnowledgeRecentView
+          sources={[{ root: vaultRootOf(scope), scope }]}
+          crumbs={levelOneCrumbs}
+          title={k('recent')}
+          can={can}
+          onOpen={(entry) => actions.open(entry.item)}
+          onCreate={(kind) =>
+            setDialog({
+              kind: kind === 'doc' ? 'newFile' : kind === 'canvas' ? 'newCanvas' : 'newFolder',
+            })
+          }
+          onUpload={transfers.sendFiles}
+          menuFor={(entry) => <FileItemMenu item={entry.item} actions={actions} can={can} />}
+        />
       ) : knowledge ? (
         <KnowledgeFolderView
+          loading={listing.isPending}
           scope={scope}
           path={path}
           items={items}

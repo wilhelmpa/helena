@@ -2268,9 +2268,21 @@ html[data-kiosk-display='dual'] [data-slot='alert-dialog-content'] {
   flex: 1;
 }
 
-/* The approved Wissen document uses the canvas from the top edge of the desktop shell. */
-@media (min-width: 1024px) {
+/* Wissen and Belege carry their own page head (eyebrow path, title, actions), so the shell's
+   header gives way wherever the sidebar is visible; on a phone only its menu button stays. */
+@media (min-width: 768px) {
   html:has([data-project-knowledge]) [data-app-header] {
+    display: none;
+  }
+}
+@media (max-width: 767px) {
+  html:has([data-project-knowledge]) [data-app-header] {
+    min-height: 0;
+    padding-top: 12px;
+    padding-bottom: 0;
+    border-bottom: 0;
+  }
+  html:has([data-project-knowledge]) [data-app-header] > div:first-of-type {
     display: none;
   }
 }

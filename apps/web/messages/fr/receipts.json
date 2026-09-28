@@ -3,7 +3,8 @@
     "open": "Ouverts",
     "review": "À vérifier",
     "matched": "Associés",
-    "accounts": "Comptes"
+    "accounts": "Comptes",
+    "all": "Tous les justificatifs"
   },
   "month": "Mois",
   "allMonths": "Tous les mois",
@@ -184,5 +185,26 @@
     "confirmHint": "Associez uniquement si cet original complète la même opération sans montant supplémentaire. Les deux fichiers et leurs données sont conservés.",
     "attach": "Associer comme original complémentaire",
     "count": "{count} originaux"
+  },
+  "new": "Nouveau",
+  "more": "Autres actions",
+  "status": {
+    "open": "ouvert",
+    "matched": "rapproché",
+    "ignored": "aucun justificatif requis"
+  },
+  "columns": {
+    "name": "Émetteur",
+    "detail": "Détails",
+    "amount": "Montant"
+  },
+  "emptyAll": "Pas encore de justificatifs. Téléversez-en un ou déposez-le ici.",
+  "dropHint": "Déposez des justificatifs ici ou <pick>choisissez</pick>",
+  "preview": {
+    "loading": "Chargement du fichier …",
+    "unavailable": "Fichier indisponible",
+    "einvoice": "Facture électronique (XML)",
+    "mail": "Justificatif issu d’un e-mail",
+    "noPicture": "Pas d’aperçu pour ce fichier"
   }
 }

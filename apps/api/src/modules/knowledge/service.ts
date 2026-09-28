@@ -242,6 +242,44 @@ export async function listTree(scope: VaultScope, root: string) {
   return { root, items };
 }
 
+// The files below a folder, newest first (Wissen "Zuletzt geändert"): notes and every
+// other file across all subfolders, read from disk, with their titles from the index.
+const MAX_RECENT_SCAN = 20_000;
+export async function listRecent(scope: VaultScope, root: string, limit: number) {
+  await assertNoSymlink(root);
+  const paths = (await walkVault(root))
+    .filter((relative) => canAccess(scope, relative, 'read') && !isIgnoredPath(relative))
+    .slice(0, MAX_RECENT_SCAN);
+  const files: { relative: string; size: number; mtime: Date }[] = [];
+  for (let start = 0; start < paths.length; start += 200) {
+    const chunk = paths.slice(start, start + 200);
+    const infos = await Promise.all(
+      chunk.map((relative) => lstat(absoluteVaultPath(relative)).catch(() => null)),
+    );
+    infos.forEach((info, index) => {
+      if (info?.isFile())
+        files.push({ relative: chunk[index]!, size: info.size, mtime: info.mtime });
+    });
+  }
+  files.sort(
+    (a, b) => b.mtime.getTime() - a.mtime.getTime() || a.relative.localeCompare(b.relative),
+  );
+  const shown = files.slice(0, limit);
+  const indexed = await titlesBelow(root);
+  return {
+    root,
+    items: shown.map(({ relative, size, mtime }) => ({
+      path: relative,
+      name: baseName(relative),
+      kind: isNotePath(relative) ? ('note' as const) : ('file' as const),
+      title: indexed.get(relative)?.title || baseName(relative).replace(/\.md$/i, ''),
+      mime: mimeFromName(relative),
+      sizeBytes: size,
+      updatedAt: iso(mtime),
+    })),
+  };
+}
+
 export async function listFolder(scope: VaultScope, folder: string) {
   await assertNoSymlink(folder);
   let entries;

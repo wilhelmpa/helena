@@ -141,5 +141,71 @@
     "source": "Markdown source",
     "sourceRequired": "This file contains Markdown the formatted editor cannot preserve. Edit the source to keep all content.",
     "sourceEditRejected": "This edit could not preserve the original line endings. Your previous text is unchanged. Try smaller edits."
+  },
+  "knowledge": {
+    "preview": "预览",
+    "details": "详情",
+    "searchPlaceholder": "在知识库中搜索 …",
+    "searching": "正在搜索 …",
+    "noResults": "没有结果。",
+    "loading": "正在加载 …",
+    "new": "新建",
+    "more": "更多操作",
+    "today": "今天",
+    "fromTemplate": "从模板创建",
+    "trash": "回收站",
+    "open": "打开",
+    "card": "卡片",
+    "create": {
+      "doc": "文档",
+      "canvas": "画布",
+      "folder": "文件夹",
+      "upload": "上传文件"
+    },
+    "filters": {
+      "all": "全部",
+      "docs": "文档",
+      "canvases": "画布",
+      "files": "文件",
+      "agents": "来自智能体"
+    },
+    "columns": {
+      "name": "名称",
+      "kind": "类型",
+      "changed": "修改时间",
+      "match": "匹配内容"
+    },
+    "kinds": {
+      "folder": "文件夹",
+      "canvas": "画布",
+      "doc": "文档",
+      "pdf": "PDF",
+      "image": "图片",
+      "file": "文件"
+    },
+    "dropHint": "将文件拖到此处或<pick>选择</pick>",
+    "entries": "{count, plural, other {# 项}}",
+    "subfolders": "{count, plural, other {# 个子文件夹，位于左侧树中}}",
+    "emptyFolder": "此文件夹为空。新建文档或将文件拖到此处。",
+    "emptyFolderWithSubfolders": "这里没有文件，只有子文件夹。请在左侧树中打开。",
+    "emptyFilter": "没有此类文件。",
+    "emptyRecent": "还没有文件。新建文档或将文件拖到此处。",
+    "recent": "最近修改",
+    "topLevel": "顶层",
+    "loadingDoc": "正在加载文档 …",
+    "loadError": "无法加载文档。",
+    "linkNotFound": "未找到链接",
+    "linkFailed": "无法打开链接",
+    "copyLink": "复制链接",
+    "source": "源文本",
+    "editor": "编辑器",
+    "unsaved": "未保存",
+    "saved": "已保存",
+    "unknownTime": "未知",
+    "backlinks": "链接到此处",
+    "noBacklinks": "没有链接",
+    "history": "历史",
+    "noHistory": "暂无历史",
+    "discard": "放弃未保存的更改？"
   }
 }

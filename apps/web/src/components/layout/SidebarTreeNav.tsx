@@ -3,7 +3,15 @@
 import { type ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { ChevronRight, Plus } from 'lucide-react';
+import {
+  CheckCheck,
+  ChevronRight,
+  CircleDot,
+  Landmark,
+  ListChecks,
+  Plus,
+  ReceiptText,
+} from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useProjectFeatures } from '@/hooks/useProjectFeatures';
@@ -43,6 +51,7 @@ import { useState } from 'react';
 import { useCrossProjectIssuesQuery } from '@/features/home/services/tasks.service';
 import { useMemberRoutines } from '@/features/routines/services/routines.service';
 import NewViewMenu from './NewViewMenu';
+import { useReceiptSummaryQuery } from '@/features/receipts/services/receipts.service';
 import type { ViewTemplate } from '@/hooks/useViewEditor';
 
 function pathIsActive(pathname: string, href: string) {
@@ -293,6 +302,9 @@ export function SidebarHomeTree({ teamId, isGod }: { teamId: number | null; isGo
         label={t('sidebarKnowledge')}
         href="/files"
         activePaths={['/docs']}
+        activeOverride={
+          homePathname === '/files' && !homeRoot && !homePath && !params.get('file')
+        }
         defaultOpen
         action={
           owner && (
@@ -313,11 +325,7 @@ export function SidebarHomeTree({ teamId, isGod }: { teamId: number | null; isGo
               <TreeLink
                 href={homeFilesPath('', { root })}
                 nested
-                activeOverride={
-                  homePathname === '/files' &&
-                  (homeRoot ?? (owner ? 'home' : 'templates')) === root &&
-                  !homePath
-                }
+                activeOverride={homePathname === '/files' && homeRoot === root && !homePath}
               >
                 {t(
                   root === 'home'
@@ -327,6 +335,11 @@ export function SidebarHomeTree({ teamId, isGod }: { teamId: number | null; isGo
                       : 'sidebarTemplates',
                 )}
               </TreeLink>
+              <SidebarKnowledgeFolders
+                scope={{ kind: 'home', root }}
+                canWrite={owner}
+                depth={1}
+              />
             </div>
           ),
         )}
@@ -359,6 +372,42 @@ export function SidebarHomeTree({ teamId, isGod }: { teamId: number | null; isGo
         </TreeLink>
       </TreeBranch>
     </section>
+  );
+}
+
+// Belege in the Wissen tree: the node itself is every receipt, its children the views
+// (open, to review, matched, accounts) — the page shows no second row of tabs for them.
+function SidebarReceiptsNode({ projectKey }: { projectKey: string }) {
+  const t = useTranslations('receipts');
+  const nav = useTranslations('nav');
+  const summary = useReceiptSummaryQuery(projectKey, undefined, true).data;
+  const views = [
+    {
+      view: 'open',
+      Icon: CircleDot,
+      badge: summary ? summary.receipts.open + summary.transactions.open : undefined,
+    },
+    { view: 'review', Icon: ListChecks, badge: summary?.proposals },
+    { view: 'matched', Icon: CheckCheck, badge: undefined },
+    { view: 'accounts', Icon: Landmark, badge: undefined },
+  ] as const;
+  return (
+    <div>
+      <div className="helena-tree-parent">
+        <TreeLink href={receiptsPath(projectKey)} nested>
+          <ReceiptText size={14} className="me-2 inline shrink-0 text-muted-foreground" />
+          {nav('receipts')}
+        </TreeLink>
+      </div>
+      {views.map(({ view, Icon, badge }) => (
+        <div key={view} className="helena-tree-parent" style={{ paddingInlineStart: 16 }}>
+          <TreeLink href={`${receiptsPath(projectKey)}?view=${view}`} nested badge={badge}>
+            <Icon size={14} className="me-2 inline shrink-0 text-muted-foreground" />
+            {t(`tabs.${view}`)}
+          </TreeLink>
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -478,11 +527,7 @@ export function SidebarProjectTree({
             scope={{ kind: 'project', projectKey, root: 'vault' }}
             canWrite={can('documents', 'edit')}
           />
-          {isAdmin && (
-            <TreeLink href={receiptsPath(projectKey)} nested>
-              {t('receipts')}
-            </TreeLink>
-          )}
+          {isAdmin && <SidebarReceiptsNode projectKey={projectKey} />}
         </TreeBranch>
       )}
       {newKnowledgeFolder && (

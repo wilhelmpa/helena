@@ -141,5 +141,71 @@
     "source": "Markdown source",
     "sourceRequired": "This file contains Markdown the formatted editor cannot preserve. Edit the source to keep all content.",
     "sourceEditRejected": "This edit could not preserve the original line endings. Your previous text is unchanged. Try smaller edits."
+  },
+  "knowledge": {
+    "preview": "Предпросмотр",
+    "details": "Подробности",
+    "searchPlaceholder": "Искать в знаниях …",
+    "searching": "Поиск …",
+    "noResults": "Ничего не найдено.",
+    "loading": "Загрузка …",
+    "new": "Создать",
+    "more": "Другие действия",
+    "today": "Сегодня",
+    "fromTemplate": "Из шаблона",
+    "trash": "Корзина",
+    "open": "Открыть",
+    "card": "Карточка",
+    "create": {
+      "doc": "Документ",
+      "canvas": "Холст",
+      "folder": "Папка",
+      "upload": "Загрузить файл"
+    },
+    "filters": {
+      "all": "Все",
+      "docs": "Документы",
+      "canvases": "Холсты",
+      "files": "Файлы",
+      "agents": "От агентов"
+    },
+    "columns": {
+      "name": "Название",
+      "kind": "Тип",
+      "changed": "Изменено",
+      "match": "Фрагмент"
+    },
+    "kinds": {
+      "folder": "Папка",
+      "canvas": "Холст",
+      "doc": "Документ",
+      "pdf": "PDF",
+      "image": "Изображение",
+      "file": "Файл"
+    },
+    "dropHint": "Перетащите файлы сюда или <pick>выберите</pick>",
+    "entries": "{count, plural, one {# элемент} few {# элемента} many {# элементов} other {# элемента}}",
+    "subfolders": "{count, plural, one {# подпапка — в дереве слева} few {# подпапки — в дереве слева} many {# подпапок — в дереве слева} other {# подпапки — в дереве слева}}",
+    "emptyFolder": "Папка пуста. Создайте документ или перетащите сюда файлы.",
+    "emptyFolderWithSubfolders": "Здесь нет файлов, только подпапки. Откройте их в дереве слева.",
+    "emptyFilter": "Нет файлов этого типа.",
+    "emptyRecent": "Файлов пока нет. Создайте документ или перетащите сюда файлы.",
+    "recent": "Недавно изменённые",
+    "topLevel": "Верхний уровень",
+    "loadingDoc": "Загрузка документа …",
+    "loadError": "Не удалось загрузить документ.",
+    "linkNotFound": "Ссылка не найдена",
+    "linkFailed": "Не удалось открыть ссылку",
+    "copyLink": "Копировать ссылку",
+    "source": "Исходный текст",
+    "editor": "Редактор",
+    "unsaved": "не сохранено",
+    "saved": "сохранено",
+    "unknownTime": "неизвестно",
+    "backlinks": "Ссылки сюда",
+    "noBacklinks": "Нет ссылок",
+    "history": "История",
+    "noHistory": "Истории пока нет",
+    "discard": "Отменить несохранённые изменения?"
   }
 }

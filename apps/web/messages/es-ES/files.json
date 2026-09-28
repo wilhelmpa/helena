@@ -141,5 +141,71 @@
     "source": "Markdown source",
     "sourceRequired": "This file contains Markdown the formatted editor cannot preserve. Edit the source to keep all content.",
     "sourceEditRejected": "This edit could not preserve the original line endings. Your previous text is unchanged. Try smaller edits."
+  },
+  "knowledge": {
+    "preview": "Vista previa",
+    "details": "Detalles",
+    "searchPlaceholder": "Buscar en el conocimiento …",
+    "searching": "Buscando …",
+    "noResults": "Sin resultados.",
+    "loading": "Cargando …",
+    "new": "Nuevo",
+    "more": "Más acciones",
+    "today": "Hoy",
+    "fromTemplate": "Desde plantilla",
+    "trash": "Papelera",
+    "open": "Abrir",
+    "card": "Tarjeta",
+    "create": {
+      "doc": "Doc",
+      "canvas": "Lienzo",
+      "folder": "Carpeta",
+      "upload": "Subir archivo"
+    },
+    "filters": {
+      "all": "Todo",
+      "docs": "Documentos",
+      "canvases": "Lienzos",
+      "files": "Archivos",
+      "agents": "De agentes"
+    },
+    "columns": {
+      "name": "Nombre",
+      "kind": "Tipo",
+      "changed": "Modificado",
+      "match": "Coincidencia"
+    },
+    "kinds": {
+      "folder": "Carpeta",
+      "canvas": "Lienzo",
+      "doc": "Doc",
+      "pdf": "PDF",
+      "image": "Imagen",
+      "file": "Archivo"
+    },
+    "dropHint": "Arrastra archivos aquí o <pick>elige</pick>",
+    "entries": "{count, plural, one {# elemento} other {# elementos}}",
+    "subfolders": "{count, plural, one {# subcarpeta, en el árbol de la izquierda} other {# subcarpetas, en el árbol de la izquierda}}",
+    "emptyFolder": "Esta carpeta está vacía. Crea un doc o arrastra archivos aquí.",
+    "emptyFolderWithSubfolders": "Aquí no hay archivos, solo subcarpetas. Ábrelas en el árbol de la izquierda.",
+    "emptyFilter": "No hay archivos de este tipo.",
+    "emptyRecent": "Aún no hay archivos. Crea un doc o arrastra archivos aquí.",
+    "recent": "Modificados recientemente",
+    "topLevel": "Nivel superior",
+    "loadingDoc": "Cargando documento …",
+    "loadError": "No se pudo cargar el documento.",
+    "linkNotFound": "Enlace no encontrado",
+    "linkFailed": "No se pudo abrir el enlace",
+    "copyLink": "Copiar enlace",
+    "source": "Código fuente",
+    "editor": "Editor",
+    "unsaved": "sin guardar",
+    "saved": "guardado",
+    "unknownTime": "desconocido",
+    "backlinks": "Enlaces hacia aquí",
+    "noBacklinks": "Sin enlaces",
+    "history": "Historial",
+    "noHistory": "Aún sin historial",
+    "discard": "¿Descartar los cambios sin guardar?"
   }
 }

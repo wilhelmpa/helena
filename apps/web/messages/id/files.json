@@ -141,5 +141,71 @@
     "source": "Markdown source",
     "sourceRequired": "This file contains Markdown the formatted editor cannot preserve. Edit the source to keep all content.",
     "sourceEditRejected": "This edit could not preserve the original line endings. Your previous text is unchanged. Try smaller edits."
+  },
+  "knowledge": {
+    "preview": "Pratinjau",
+    "details": "Detail",
+    "searchPlaceholder": "Cari di pengetahuan …",
+    "searching": "Mencari …",
+    "noResults": "Tidak ada hasil.",
+    "loading": "Memuat …",
+    "new": "Baru",
+    "more": "Tindakan lain",
+    "today": "Hari ini",
+    "fromTemplate": "Dari templat",
+    "trash": "Sampah",
+    "open": "Buka",
+    "card": "Kartu",
+    "create": {
+      "doc": "Doc",
+      "canvas": "Kanvas",
+      "folder": "Folder",
+      "upload": "Unggah berkas"
+    },
+    "filters": {
+      "all": "Semua",
+      "docs": "Dokumen",
+      "canvases": "Kanvas",
+      "files": "Berkas",
+      "agents": "Dari agen"
+    },
+    "columns": {
+      "name": "Nama",
+      "kind": "Jenis",
+      "changed": "Diubah",
+      "match": "Cuplikan"
+    },
+    "kinds": {
+      "folder": "Folder",
+      "canvas": "Kanvas",
+      "doc": "Doc",
+      "pdf": "PDF",
+      "image": "Gambar",
+      "file": "Berkas"
+    },
+    "dropHint": "Seret berkas ke sini atau <pick>pilih</pick>",
+    "entries": "{count, plural, other {# entri}}",
+    "subfolders": "{count, plural, other {# subfolder, di pohon sebelah kiri}}",
+    "emptyFolder": "Folder ini kosong. Buat doc atau seret berkas ke sini.",
+    "emptyFolderWithSubfolders": "Tidak ada berkas di sini, hanya subfolder. Buka di pohon sebelah kiri.",
+    "emptyFilter": "Tidak ada berkas jenis ini.",
+    "emptyRecent": "Belum ada berkas. Buat doc atau seret berkas ke sini.",
+    "recent": "Baru diubah",
+    "topLevel": "Tingkat teratas",
+    "loadingDoc": "Memuat dokumen …",
+    "loadError": "Dokumen tidak dapat dimuat.",
+    "linkNotFound": "Tautan tidak ditemukan",
+    "linkFailed": "Tautan tidak dapat dibuka",
+    "copyLink": "Salin tautan",
+    "source": "Sumber",
+    "editor": "Editor",
+    "unsaved": "belum disimpan",
+    "saved": "tersimpan",
+    "unknownTime": "tidak diketahui",
+    "backlinks": "Tautan ke sini",
+    "noBacklinks": "Tidak ada tautan",
+    "history": "Riwayat",
+    "noHistory": "Belum ada riwayat",
+    "discard": "Buang perubahan yang belum disimpan?"
   }
 }
