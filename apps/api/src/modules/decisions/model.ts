@@ -170,6 +170,15 @@ export const decisionLogQuery = t.Object({
   limit: t.Optional(t.Numeric({ minimum: 1, maximum: 200 })),
 });
 
+export const agentDecisionLogQuery = t.Object({
+  classId: t.Optional(t.String({ maxLength: 120 })),
+  projectKey: t.Optional(t.String({ maxLength: 32 })),
+  from: t.Optional(t.String({ format: 'date-time' })),
+  to: t.Optional(t.String({ format: 'date-time' })),
+  before: t.Optional(t.Numeric({ minimum: 1 })),
+  limit: t.Optional(t.Numeric({ minimum: 1, maximum: 200 })),
+});
+
 export const DecisionLogEntry = t.Object({
   id: t.Number(),
   classId: t.String(),
@@ -202,6 +211,11 @@ export const DecisionLogEntry = t.Object({
 
 export const DecisionLogResponse = t.Object({
   items: t.Array(DecisionLogEntry),
+  nextBefore: t.Nullable(t.Number()),
+});
+
+export const AgentDecisionLogResponse = t.Object({
+  items: t.Array(t.Omit(DecisionLogEntry, ['inputText'])),
   nextBefore: t.Nullable(t.Number()),
 });
 
