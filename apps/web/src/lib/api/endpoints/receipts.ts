@@ -333,3 +333,13 @@ export const setReceiptOriginalLink = (
     method: attach ? 'PUT' : 'DELETE',
     body: json({ primaryReceiptId }),
   });
+
+// Automatic linking of the same receipt found twice (an invoice mail and its upload), a
+// setting of the team that applies to all its projects (apps/api/src/modules/receipts/dedup).
+export const getReceiptDedup = (teamId: number) =>
+  request<{ autoMerge: boolean }>(`/teams/${teamId}/receipt-dedup`);
+export const setReceiptDedup = (teamId: number, autoMerge: boolean) =>
+  request<{ autoMerge: boolean }>(`/teams/${teamId}/receipt-dedup`, {
+    method: 'PUT',
+    body: JSON.stringify({ autoMerge }),
+  });

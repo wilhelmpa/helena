@@ -528,7 +528,13 @@ export default function OrganizationChart({
               setSelectedId(null);
               setHover(null);
             }}
-            onHover={setHover}
+            // The same card keeps its hover: a re-render of the chart must not start a
+            // new one (a loop of hover → render → hover made the chart flicker, O19).
+            onHover={(next) =>
+              setHover((current) =>
+                current && next && current.node.id === next.node.id ? current : next,
+              )
+            }
             label={view === 'tree' ? t('viewTree') : t('viewRing')}
           />
           {hover && (

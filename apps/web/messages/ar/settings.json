@@ -682,7 +682,8 @@
       "you": "أنت",
       "allProjects": "كل المشاريع",
       "system": "النظام",
-      "development": "التطوير"
+      "development": "التطوير",
+      "advanced": "متقدم"
     },
     "sections": {
       "profile": {
@@ -730,12 +731,12 @@
         "hint": "المهارات التي يمكن للوكلاء استخدامها."
       },
       "tools": {
-        "label": "الأدوات",
-        "hint": "أدوات الوكلاء ومن يحق له استخدامها."
+        "label": "الأدوات و MCP",
+        "hint": "خوادم MCP والأدوات التي يستخدمها الوكلاء ومن يحق له استخدامها."
       },
       "mcps": {
-        "label": "خوادم MCP",
-        "hint": "خوادم MCP التي يمكن للوكلاء ربطها."
+        "label": "Helena للتطبيقات الخارجية",
+        "hint": "كيف تصل عملاء MCP مثل Claude Desktop إلى Helena."
       },
       "plugins": {
         "label": "الإضافات",
@@ -836,6 +837,14 @@
       "ui": {
         "label": "مكونات الواجهة",
         "hint": "كل مكوّن في إطار الواجهة بكل أشكاله، فاتحًا وداكنًا."
+      },
+      "organization": {
+        "label": "المؤسسة",
+        "hint": "الأشخاص والحسابات والفرق والأدوار والمشاريع والأقسام."
+      },
+      "channels": {
+        "label": "الإشعارات والقنوات",
+        "hint": "كيف ترسل Helena الرسائل عبر البريد و Telegram."
       }
     },
     "projectPath": "المشروع"
@@ -876,7 +885,11 @@
     "instanceWide": "لكل المشاريع",
     "memoryLabel": "الذاكرة دون موافقة",
     "memoryHint": "يمكن للوكلاء حفظ الذكريات مباشرة.",
-    "perAgent": "لكل وكيل"
+    "perAgent": "لكل وكيل",
+    "overridden": "يتجاوز الافتراضي",
+    "resetToDefault": "إعادة إلى الافتراضي",
+    "levelOverridden": "الافتراضي لكل المشاريع هو المستوى {level}؛ هذا المشروع مختلف.",
+    "levelDefault": "مثل الافتراضي لكل المشاريع."
   },
   "defaults": {
     "adminOnly": "لا يغيّر هذه الإعدادات الافتراضية لكل المشاريع إلا المسؤول."
@@ -922,5 +935,56 @@
     "emptySentence": "Nothing here yet. Create the first one.",
     "light": "Light",
     "dark": "Dark"
+  },
+  "organization": {
+    "label": "المؤسسة",
+    "tabs": {
+      "people": "الأشخاص",
+      "accounts": "الحسابات",
+      "teams": "الفرق",
+      "roles": "الأدوار",
+      "projects": "المشاريع",
+      "departments": "الأقسام"
+    }
+  },
+  "channels": {
+    "label": "القناة",
+    "tabs": {
+      "email": "البريد",
+      "telegram": "Telegram"
+    },
+    "email": {
+      "installation": "مرسل التثبيت",
+      "installationHint": "تمر عبره تسجيلات الدخول والدعوات والإشعارات.",
+      "team": "مرسل خاص بالفريق"
+    },
+    "telegram": {
+      "installation": "بوت التثبيت",
+      "installationHint": "تربط به حساب Telegram الخاص بك وتصلك الإشعارات عبره.",
+      "team": "بوت خاص بالفريق"
+    }
+  },
+  "knowledge": {
+    "receiptsTitle": "الإيصالات",
+    "autoMerge": "دمج الإيصالات المكررة تلقائيًا",
+    "autoMergeHint": "يصبح الإيصال نفسه من البريد والرفع واحدًا. ينطبق على كل مشاريع الفريق.",
+    "intake": "إيصالات من رسائل الفواتير",
+    "intakeHint": "يأخذ مصنّف البريد مرفقات PDF و XML كإيصالات؛ يُضبط في المقرِّر.",
+    "intakeOn": "مفعّل · غيّره في المقرِّر",
+    "intakeOff": "متوقف · غيّره في المقرِّر",
+    "intakeOpen": "اضبطه في المقرِّر",
+    "managerOnly": "يضبطه مسؤول الفريق.",
+    "saved": "تم الحفظ"
+  },
+  "projectAccess": {
+    "create": "إضافة وصول",
+    "credentialsTitle": "الوصول في هذا المشروع",
+    "empty": "لم يُمنح أي وصول لهذا المشروع بعد.",
+    "allAgents": "كل وكلاء المشروع",
+    "notGranted": "لم يُمنح أحد بعد",
+    "ownProject": "هذا المشروع فقط",
+    "grants": "الأذونات",
+    "environmentTitle": "متغيرات البيئة",
+    "environmentHint": "ما يحصل عليه وكلاء هذا المشروع كمتغيرات من وصولهم."
   }
 }

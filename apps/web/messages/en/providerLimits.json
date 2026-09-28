@@ -71,5 +71,6 @@
     "limited": "{provider}: limit reached",
     "limitedUntil": "{provider}: limit reached, free again in {time}",
     "stale": "{provider}: limits out of date (read {time} ago)"
-  }
+  },
+  "agentsOn": "Agents on this account:"
 }

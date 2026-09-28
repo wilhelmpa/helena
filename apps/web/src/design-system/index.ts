@@ -15,11 +15,13 @@ export { Segmented } from './components/Segmented';
 export type { SegmentOption } from './components/Segmented';
 export type { PillTone } from './components/Pill';
 export { TextField, TextArea, Field, SearchField } from './components/Field';
+export { Switch } from '@/components/ui/switch';
 export { Card } from './components/Card';
 export { Section, MonoLabel, EmptyState } from './components/Section';
 export { Box, Stack, Inline, Grid, Text } from './components/Layout';
 export type { Space, TextSize, TextTone } from './components/Layout';
 export { ActionMenu, Tip } from './components/ActionMenu';
+export { NameList } from './components/NameList';
 export type { ActionMenuItem } from './components/ActionMenu';
 export { List, ListGroup, ListRow } from './components/List';
 export { Table, Th, Tr, Td } from './components/Table';
@@ -35,6 +37,7 @@ export { SettingsGroup, SettingsRow } from './components/SettingsGroup';
 export * from './components/Menu';
 export { PageHeader, PageToolbarRow, PageBody } from './layout/Page';
 export { Page } from './layout/PageTemplate';
+export { LocalChrome } from './layout/LocalChrome';
 export type { PageVariant } from './layout/PageTemplate';
 export {
   PageToolbar,

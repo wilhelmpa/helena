@@ -294,5 +294,8 @@
   "resizeSidePanel": "Змінити ширину бічної панелі",
   "advanced": "Додатково",
   "switchPerson": "Змінити користувача",
-  "searchSettings": "Знайти налаштування …"
+  "searchSettings": "Знайти налаштування …",
+  "nameList": {
+    "more": "ще {count}"
+  }
 }

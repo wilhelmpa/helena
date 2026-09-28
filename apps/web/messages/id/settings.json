@@ -682,7 +682,8 @@
       "you": "Kamu",
       "allProjects": "Semua proyek",
       "system": "Sistem",
-      "development": "Pengembangan"
+      "development": "Pengembangan",
+      "advanced": "Lanjutan"
     },
     "sections": {
       "profile": {
@@ -730,12 +731,12 @@
         "hint": "Keterampilan yang dapat dipakai agen."
       },
       "tools": {
-        "label": "Alat",
-        "hint": "Alat agen dan siapa yang boleh memakainya."
+        "label": "Alat & MCP",
+        "hint": "Server MCP dan alat yang dipakai agen, dan siapa yang boleh memakainya."
       },
       "mcps": {
-        "label": "Server MCP",
-        "hint": "Server MCP yang dapat dihubungkan agen."
+        "label": "Helena untuk aplikasi eksternal",
+        "hint": "Cara klien MCP seperti Claude Desktop mengakses Helena."
       },
       "plugins": {
         "label": "Plugin",
@@ -836,6 +837,14 @@
       "ui": {
         "label": "Komponen UI",
         "hint": "Setiap komponen kerangka UI beserta variannya, terang dan gelap."
+      },
+      "organization": {
+        "label": "Organisasi",
+        "hint": "Orang, akun, tim, peran, proyek, dan departemen."
+      },
+      "channels": {
+        "label": "Notifikasi & kanal",
+        "hint": "Cara Helena mengirim pesan lewat email dan Telegram."
       }
     },
     "projectPath": "Proyek"
@@ -876,7 +885,11 @@
     "instanceWide": "Untuk semua proyek",
     "memoryLabel": "Memori tanpa persetujuan",
     "memoryHint": "Agen boleh menyimpan ingatan secara langsung.",
-    "perAgent": "Per agen"
+    "perAgent": "Per agen",
+    "overridden": "Menimpa bawaan",
+    "resetToDefault": "Kembalikan ke bawaan",
+    "levelOverridden": "Bawaan untuk semua proyek adalah level {level}; proyek ini berbeda.",
+    "levelDefault": "Sama dengan bawaan semua proyek."
   },
   "defaults": {
     "adminOnly": "Hanya administrator yang mengubah bawaan untuk semua proyek ini."
@@ -922,5 +935,56 @@
     "emptySentence": "Nothing here yet. Create the first one.",
     "light": "Light",
     "dark": "Dark"
+  },
+  "organization": {
+    "label": "Organisasi",
+    "tabs": {
+      "people": "Orang",
+      "accounts": "Akun",
+      "teams": "Tim",
+      "roles": "Peran",
+      "projects": "Proyek",
+      "departments": "Departemen"
+    }
+  },
+  "channels": {
+    "label": "Kanal",
+    "tabs": {
+      "email": "Email",
+      "telegram": "Telegram"
+    },
+    "email": {
+      "installation": "Pengirim instalasi",
+      "installationHint": "Masuk, undangan, dan notifikasi dikirim lewat pengirim ini.",
+      "team": "Pengirim khusus tim"
+    },
+    "telegram": {
+      "installation": "Bot instalasi",
+      "installationHint": "Hubungkan akun Telegram-mu ke bot ini; notifikasi datang lewat bot ini.",
+      "team": "Bot khusus tim"
+    }
+  },
+  "knowledge": {
+    "receiptsTitle": "Bukti",
+    "autoMerge": "Gabungkan bukti ganda otomatis",
+    "autoMergeHint": "Bukti yang sama dari email dan unggahan menjadi satu. Berlaku untuk semua proyek tim.",
+    "intake": "Bukti dari email tagihan",
+    "intakeHint": "Pengelompok email mengambil lampiran PDF dan XML sebagai bukti; diatur di pemutus.",
+    "intakeOn": "Aktif · ubah di pemutus",
+    "intakeOff": "Nonaktif · ubah di pemutus",
+    "intakeOpen": "Atur di pemutus",
+    "managerOnly": "Diatur oleh admin tim.",
+    "saved": "Tersimpan"
+  },
+  "projectAccess": {
+    "create": "Tambah akses",
+    "credentialsTitle": "Akses di proyek ini",
+    "empty": "Belum ada akses yang diberikan ke proyek ini.",
+    "allAgents": "Semua agen proyek",
+    "notGranted": "Belum ada yang diberi akses",
+    "ownProject": "Hanya proyek ini",
+    "grants": "Izin",
+    "environmentTitle": "Variabel lingkungan",
+    "environmentHint": "Yang diterima agen proyek ini sebagai variabel dari aksesnya."
   }
 }

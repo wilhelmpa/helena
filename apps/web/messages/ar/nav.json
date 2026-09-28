@@ -275,5 +275,7 @@
   "adminOnly": "يرى المسؤول فقط هذه الإعدادات.",
   "sidebarTerminals": "الطرفيات",
   "sidebarFiles": "الملفات",
-  "settingsExtensions": "الإضافات"
+  "settingsExtensions": "الإضافات",
+  "settingsAutopilotExecution": "الطيار الآلي والتنفيذ",
+  "settingsProjectAccess": "إدارة الوصول"
 }

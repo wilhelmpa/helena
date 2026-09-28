@@ -294,5 +294,8 @@
   "resizeSidePanel": "调整侧边面板宽度",
   "advanced": "高级",
   "switchPerson": "切换用户",
-  "searchSettings": "搜索设置 …"
+  "searchSettings": "搜索设置 …",
+  "nameList": {
+    "more": "另外 {count} 个"
+  }
 }

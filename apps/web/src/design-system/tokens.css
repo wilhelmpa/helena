@@ -156,6 +156,8 @@
   --page-pad-x: 32px;
   --page-pad-bottom: 48px;
   --reading-w: 760px;
+  /* Mono labels and column heads: small caps, calm spacing (owner, O44). */
+  --label-tracking: 0.12em;
   --ease: cubic-bezier(0.2, 0, 0, 1);
   --dur: 0.2s;
 

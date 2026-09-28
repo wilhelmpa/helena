@@ -275,5 +275,7 @@
   "adminOnly": "Ці налаштування бачить лише адміністратор.",
   "sidebarTerminals": "Термінали",
   "sidebarFiles": "Файли",
-  "settingsExtensions": "Розширення"
+  "settingsExtensions": "Розширення",
+  "settingsAutopilotExecution": "Автопілот і виконання",
+  "settingsProjectAccess": "Керування доступами"
 }

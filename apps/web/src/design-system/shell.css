@@ -596,6 +596,8 @@
   flex: 1;
   overflow-x: hidden;
   overflow-y: auto;
+  /* A scrollbar that comes and goes must not change the page width (O19). */
+  scrollbar-gutter: stable;
 }
 .ds-page > .ds-page-scroll > .ds-page-body {
   display: flex;

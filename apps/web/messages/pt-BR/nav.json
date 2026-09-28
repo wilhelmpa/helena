@@ -275,5 +275,7 @@
   "adminOnly": "Só o administrador vê estas configurações.",
   "sidebarTerminals": "Terminais",
   "sidebarFiles": "Arquivos",
-  "settingsExtensions": "Extensões"
+  "settingsExtensions": "Extensões",
+  "settingsAutopilotExecution": "Piloto automático e execução",
+  "settingsProjectAccess": "Gerenciar acessos"
 }

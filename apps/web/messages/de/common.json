@@ -294,5 +294,8 @@
   "resizeSidePanel": "Breite des Seitenfelds ändern",
   "advanced": "Erweitert",
   "switchPerson": "Person wechseln",
-  "searchSettings": "Einstellung suchen …"
+  "searchSettings": "Einstellung suchen …",
+  "nameList": {
+    "more": "+{count} weitere"
+  }
 }

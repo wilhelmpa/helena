@@ -294,5 +294,8 @@
   "resizeSidePanel": "Ubah lebar panel samping",
   "advanced": "Lanjutan",
   "switchPerson": "Ganti orang",
-  "searchSettings": "Cari pengaturan …"
+  "searchSettings": "Cari pengaturan …",
+  "nameList": {
+    "more": "+{count} lainnya"
+  }
 }

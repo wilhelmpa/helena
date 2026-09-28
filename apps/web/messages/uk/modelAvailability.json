@@ -32,7 +32,8 @@
     "replace": "Перевести",
     "replaced": "{count, plural, =0 {Жоден агент її не використовував.} one {Переведено # агента.} few {Переведено # агентів.} many {Переведено # агентів.} other {Переведено # агента.}}",
     "agentDefault": "За замовчуванням агента",
-    "seen": "востаннє {time}"
+    "seen": "востаннє {time}",
+    "usedByLabel": "Використовують"
   },
   "deadLogin": "{model} працює через {account, select, chatgpt {вхід ChatGPT} claude {вхід Claude} other {вхід}} Hermes, який {state, select, invalid {недійсний} other {закінчився}} – знову увійдіть у Hermes або виберіть модель іншого провайдера.",
   "deadLoginDefault": "Модель агента за замовчуванням працює через {account, select, chatgpt {вхід ChatGPT} claude {вхід Claude} other {вхід}} Hermes, який {state, select, invalid {недійсний} other {закінчився}} – знову увійдіть у Hermes."

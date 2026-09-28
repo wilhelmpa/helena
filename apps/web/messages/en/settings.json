@@ -682,7 +682,8 @@
       "you": "You",
       "allProjects": "All projects",
       "system": "System",
-      "development": "Development"
+      "development": "Development",
+      "advanced": "Advanced"
     },
     "sections": {
       "profile": {
@@ -730,12 +731,12 @@
         "hint": "Skills agents can use."
       },
       "tools": {
-        "label": "Tools",
-        "hint": "Agent tools and who may use them."
+        "label": "Tools & MCP",
+        "hint": "The MCP servers and tools agents use, and who may use them."
       },
       "mcps": {
-        "label": "MCP servers",
-        "hint": "MCP servers agents can connect."
+        "label": "Helena for external apps",
+        "hint": "How MCP clients such as Claude Desktop reach Helena."
       },
       "plugins": {
         "label": "Plugins",
@@ -836,6 +837,14 @@
       "ui": {
         "label": "UI building blocks",
         "hint": "Every building block of the UI framework with its variants, light and dark."
+      },
+      "organization": {
+        "label": "Organisation",
+        "hint": "People, accounts, teams, roles, projects and departments."
+      },
+      "channels": {
+        "label": "Notifications & channels",
+        "hint": "How Helena delivers messages by email and Telegram."
       }
     },
     "projectPath": "Project"
@@ -876,7 +885,11 @@
     "instanceWide": "For all projects",
     "memoryLabel": "Memory without approval",
     "memoryHint": "Agents may store memories directly.",
-    "perAgent": "Per agent"
+    "perAgent": "Per agent",
+    "overridden": "Overrides default",
+    "resetToDefault": "Reset to default",
+    "levelOverridden": "The default for all projects is level {level}; this project differs.",
+    "levelDefault": "Same as the default for all projects."
   },
   "defaults": {
     "adminOnly": "Only the administrator changes these defaults for all projects."
@@ -922,5 +935,56 @@
     "emptySentence": "Nothing here yet. Create the first one.",
     "light": "Light",
     "dark": "Dark"
+  },
+  "organization": {
+    "label": "Organisation",
+    "tabs": {
+      "people": "People",
+      "accounts": "Accounts",
+      "teams": "Teams",
+      "roles": "Roles",
+      "projects": "Projects",
+      "departments": "Departments"
+    }
+  },
+  "channels": {
+    "label": "Channel",
+    "tabs": {
+      "email": "Email",
+      "telegram": "Telegram"
+    },
+    "email": {
+      "installation": "Sender of the installation",
+      "installationHint": "Sign-ins, invites and notifications go through it.",
+      "team": "The team’s own sender"
+    },
+    "telegram": {
+      "installation": "Bot of the installation",
+      "installationHint": "You connect your Telegram account to it; notifications come through it.",
+      "team": "The team’s own bot"
+    }
+  },
+  "knowledge": {
+    "receiptsTitle": "Receipts",
+    "autoMerge": "Merge duplicate receipts automatically",
+    "autoMergeHint": "The same receipt from mail and upload becomes one. Applies to all projects of the team.",
+    "intake": "Receipts from invoice mails",
+    "intakeHint": "The mail classifier takes PDF and XML attachments as receipts; set in the decider.",
+    "intakeOn": "On · change in the decider",
+    "intakeOff": "Off · change in the decider",
+    "intakeOpen": "Set in the decider",
+    "managerOnly": "Set by a team admin.",
+    "saved": "Saved"
+  },
+  "projectAccess": {
+    "create": "Add access",
+    "credentialsTitle": "Access in this project",
+    "empty": "No access has been granted to this project yet.",
+    "allAgents": "All agents of the project",
+    "notGranted": "Nobody granted yet",
+    "ownProject": "This project only",
+    "grants": "Grants",
+    "environmentTitle": "Environment variables",
+    "environmentHint": "What this project’s agents receive as variables from their access."
   }
 }

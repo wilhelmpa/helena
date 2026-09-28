@@ -142,7 +142,7 @@ export function KnowledgeListHead({
   trailing: string;
 }) {
   return (
-    <div className="grid grid-cols-[28px_minmax(0,1fr)_minmax(0,190px)_120px] gap-3 px-3.5 font-mono text-[10px] font-medium tracking-[.23em] text-muted-foreground/80 uppercase max-sm:grid-cols-[22px_minmax(0,1fr)_auto]">
+    <div className="ds-column-heads grid grid-cols-[28px_minmax(0,1fr)_minmax(0,190px)_120px] gap-3 px-3.5 font-mono uppercase max-sm:grid-cols-[22px_minmax(0,1fr)_auto]">
       <span />
       <span>{name}</span>
       <span className="max-sm:hidden">{kind}</span>

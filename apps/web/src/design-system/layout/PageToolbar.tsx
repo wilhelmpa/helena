@@ -100,10 +100,17 @@ export function PageToolbar({ children }: { children: ReactNode }) {
   }, [node]);
   // More room: start over from the full toolbar (the step below folds it again as far
   // as it has to). Layout effects run before paint, so no step is ever seen.
+  // Only a real gain of room (a wider window, a closed panel) starts over: a few pixels
+  // (a scrollbar coming and going, a hover card) must not fold and unfold the row in a
+  // loop — that was the hover flicker on Team and Aufgaben (owner, O19).
   const lastWidth = useRef(0);
   useLayoutEffect(() => {
-    if (width > lastWidth.current) setLevel(0);
-    lastWidth.current = width;
+    if (width > lastWidth.current + 24) {
+      setLevel(0);
+      lastWidth.current = width;
+    } else if (width < lastWidth.current) {
+      lastWidth.current = width;
+    }
   }, [width]);
   // After a render that may have changed the width of what is in the row: still
   // overflowing, fold one more piece. Bounded by LEVELS, so it settles after at most

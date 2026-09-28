@@ -294,5 +294,8 @@
   "resizeSidePanel": "تغيير عرض اللوحة الجانبية",
   "advanced": "متقدم",
   "switchPerson": "تبديل الشخص",
-  "searchSettings": "ابحث في الإعدادات …"
+  "searchSettings": "ابحث في الإعدادات …",
+  "nameList": {
+    "more": "+{count} أخرى"
+  }
 }

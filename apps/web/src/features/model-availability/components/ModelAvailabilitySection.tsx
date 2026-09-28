@@ -24,6 +24,7 @@ import {
   useModelAvailability,
   useReplaceModel,
 } from '../services/modelAvailability.service';
+import { NameList } from '@/design-system';
 
 const AGENT_DEFAULT = '__agent_default__';
 
@@ -103,9 +104,8 @@ function FindingRow({ entry }: { entry: ModelAvailabilityEntry }) {
         (entry.agents.length > 0 ? (
           <>
             <p className="text-xs" dir="auto">
-              {t('admin.usedBy', {
-                agents: entry.agents.map((agent) => `@${agent.username}`).join(', '),
-              })}
+              {t('admin.usedByLabel')}{' '}
+              <NameList names={entry.agents.map((agent) => `@${agent.username}`)} />
             </p>
             <ReplaceControl entry={entry} />
           </>

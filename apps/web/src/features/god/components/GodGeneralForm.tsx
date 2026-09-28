@@ -11,7 +11,6 @@ import type { EngineSettingsAdmin, RunResumeSettings } from '@/lib/api/endpoints
 import { useUpdateInstanceRunResumeSettings } from '../services/god.service';
 import GodEngineSettings from './GodEngineSettings';
 import GodSectionPage from './GodSectionPage';
-import GodAboutSection from './GodAboutSection';
 import GodProjectDefaultsSettings from './GodProjectDefaultsSettings';
 
 export default function GodGeneralForm({
@@ -81,7 +80,6 @@ export default function GodGeneralForm({
         </SettingsCard>
       </SettingsSection>
       <GodEngineSettings settings={engine} />
-      <GodAboutSection />
     </GodSectionPage>
   );
 }

@@ -32,7 +32,8 @@
     "replace": "Umstellen",
     "replaced": "{count, plural, =0 {Kein Agent war darauf eingestellt.} one {# Agent umgestellt.} other {# Agenten umgestellt.}}",
     "agentDefault": "Agenten-Standard",
-    "seen": "zuletzt {time}"
+    "seen": "zuletzt {time}",
+    "usedByLabel": "Genutzt von"
   },
   "deadLogin": "{model} läuft über die {account, select, chatgpt {ChatGPT-Anmeldung} claude {Claude-Anmeldung} other {Anmeldung}} von Hermes, die {state, select, invalid {ungültig} other {abgelaufen}} ist – melde Hermes neu an oder wähle ein Modell eines anderen Anbieters.",
   "deadLoginDefault": "Der Agenten-Standard läuft über die {account, select, chatgpt {ChatGPT-Anmeldung} claude {Claude-Anmeldung} other {Anmeldung}} von Hermes, die {state, select, invalid {ungültig} other {abgelaufen}} ist – melde Hermes neu an."

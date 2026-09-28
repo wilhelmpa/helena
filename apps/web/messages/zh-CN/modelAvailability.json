@@ -32,7 +32,8 @@
     "replace": "切换",
     "replaced": "{count, plural, =0 {没有智能体在使用它。} other {已切换 # 个智能体。}}",
     "agentDefault": "智能体默认模型",
-    "seen": "最近 {time}"
+    "seen": "最近 {time}",
+    "usedByLabel": "使用者"
   },
   "deadLogin": "{model} 通过 Hermes 的{account, select, chatgpt {ChatGPT 登录} claude {Claude 登录} other {登录}}运行，而该登录{state, select, invalid {已失效} other {已过期}}——请重新登录 Hermes，或选择其他提供方的模型。",
   "deadLoginDefault": "智能体默认模型通过 Hermes 的{account, select, chatgpt {ChatGPT 登录} claude {Claude 登录} other {登录}}运行，而该登录{state, select, invalid {已失效} other {已过期}}——请重新登录 Hermes。"

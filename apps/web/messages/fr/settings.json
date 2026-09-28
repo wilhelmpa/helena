@@ -682,7 +682,8 @@
       "you": "Toi",
       "allProjects": "Tous les projets",
       "system": "Système",
-      "development": "Développement"
+      "development": "Développement",
+      "advanced": "Avancé"
     },
     "sections": {
       "profile": {
@@ -730,12 +731,12 @@
         "hint": "Compétences que les agents peuvent utiliser."
       },
       "tools": {
-        "label": "Outils",
-        "hint": "Outils des agents et qui peut les utiliser."
+        "label": "Outils et MCP",
+        "hint": "Les serveurs MCP et outils des agents, et qui peut les utiliser."
       },
       "mcps": {
-        "label": "Serveurs MCP",
-        "hint": "Serveurs MCP que les agents peuvent connecter."
+        "label": "Helena pour les apps externes",
+        "hint": "Comment des clients MCP comme Claude Desktop accèdent à Helena."
       },
       "plugins": {
         "label": "Extensions",
@@ -836,6 +837,14 @@
       "ui": {
         "label": "Composants d’interface",
         "hint": "Chaque composant du framework d’interface avec ses variantes, clair et sombre."
+      },
+      "organization": {
+        "label": "Organisation",
+        "hint": "Personnes, comptes, équipes, rôles, projets et départements."
+      },
+      "channels": {
+        "label": "Notifications et canaux",
+        "hint": "Comment Helena envoie les messages par e-mail et Telegram."
       }
     },
     "projectPath": "Projet"
@@ -876,7 +885,11 @@
     "instanceWide": "Pour tous les projets",
     "memoryLabel": "Mémoire sans validation",
     "memoryHint": "Les agents peuvent enregistrer des souvenirs directement.",
-    "perAgent": "Par agent"
+    "perAgent": "Par agent",
+    "overridden": "Remplace le réglage par défaut",
+    "resetToDefault": "Revenir au réglage par défaut",
+    "levelOverridden": "Le réglage de tous les projets est le niveau {level} ; ce projet diffère.",
+    "levelDefault": "Comme le réglage de tous les projets."
   },
   "defaults": {
     "adminOnly": "Seul l'administrateur modifie ces valeurs pour tous les projets."
@@ -922,5 +935,56 @@
     "emptySentence": "Nothing here yet. Create the first one.",
     "light": "Light",
     "dark": "Dark"
+  },
+  "organization": {
+    "label": "Organisation",
+    "tabs": {
+      "people": "Personnes",
+      "accounts": "Comptes",
+      "teams": "Équipes",
+      "roles": "Rôles",
+      "projects": "Projets",
+      "departments": "Départements"
+    }
+  },
+  "channels": {
+    "label": "Canal",
+    "tabs": {
+      "email": "E-mail",
+      "telegram": "Telegram"
+    },
+    "email": {
+      "installation": "Expéditeur de l’installation",
+      "installationHint": "Connexions, invitations et notifications passent par lui.",
+      "team": "Expéditeur propre à l’équipe"
+    },
+    "telegram": {
+      "installation": "Bot de l’installation",
+      "installationHint": "Tu y connectes ton compte Telegram ; les notifications passent par lui.",
+      "team": "Bot propre à l’équipe"
+    }
+  },
+  "knowledge": {
+    "receiptsTitle": "Justificatifs",
+    "autoMerge": "Fusionner automatiquement les justificatifs en double",
+    "autoMergeHint": "Le même justificatif issu d’un e-mail et d’un envoi n’en fait plus qu’un. Vaut pour tous les projets de l’équipe.",
+    "intake": "Justificatifs issus des e-mails de facture",
+    "intakeHint": "Le classeur d’e-mails reprend les pièces jointes PDF et XML comme justificatifs ; réglé dans le décideur.",
+    "intakeOn": "Activé · modifier dans le décideur",
+    "intakeOff": "Désactivé · modifier dans le décideur",
+    "intakeOpen": "Régler dans le décideur",
+    "managerOnly": "Réglé par un administrateur de l’équipe.",
+    "saved": "Enregistré"
+  },
+  "projectAccess": {
+    "create": "Ajouter un accès",
+    "credentialsTitle": "Accès dans ce projet",
+    "empty": "Aucun accès n’a encore été accordé à ce projet.",
+    "allAgents": "Tous les agents du projet",
+    "notGranted": "Personne n’y a encore accès",
+    "ownProject": "Ce projet uniquement",
+    "grants": "Autorisations",
+    "environmentTitle": "Variables d’environnement",
+    "environmentHint": "Ce que les agents de ce projet reçoivent comme variables de leurs accès."
   }
 }

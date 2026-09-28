@@ -275,5 +275,7 @@
   "adminOnly": "只有管理员能看到这些设置。",
   "sidebarTerminals": "终端",
   "sidebarFiles": "文件",
-  "settingsExtensions": "扩展"
+  "settingsExtensions": "扩展",
+  "settingsAutopilotExecution": "自动驾驶与执行",
+  "settingsProjectAccess": "管理访问"
 }

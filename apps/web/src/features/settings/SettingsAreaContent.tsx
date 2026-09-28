@@ -19,6 +19,7 @@ const account: Record<string, ComponentType<Props>> = {
   accounts: page(() => import('@/features/account/AccountAccountsPage')),
   security: page(() => import('@/features/account/AccountSecurityPage')),
   'api-keys': page(() => import('@/features/api-keys/ApiKeysPage')),
+  hotkeys: page(() => import('@/features/god/GodHotkeysPage')),
 };
 
 const God = {
@@ -62,6 +63,8 @@ const Devices = dynamic(() =>
   import('@/features/devices/DevicesPage').then((module) => module.DevicesContent),
 );
 const UiGallery = dynamic(() => import('@/features/ui-gallery/UiGallery'));
+const Organization = dynamic(() => import('./OrganizationSettings'));
+const Channels = dynamic(() => import('./ChannelsSettings'));
 const Catalog = dynamic(() =>
   import('@/features/home/HomeTeamSectionPage').then((module) => module.HomeTeamSectionContent),
 );
@@ -88,10 +91,14 @@ export default function SettingsAreaContent({
   const { area, slug, extra } = location;
   const props: Props = { teamId: Number(extra) || teamId || 0, extra };
   if (area === 'account') {
-    const Page = account[slug];
-    return Page ? <Page {...props} /> : null;
+    const Section = account[slug];
+    return Section ? <Section {...props} /> : null;
   }
   switch (slug) {
+    case 'organization':
+      return <Organization teamId={teamId ?? 0} tab={extra} />;
+    case 'channels':
+      return <Channels teamId={teamId ?? 0} tab={extra} />;
     case 'defaults':
       return <Stack parts={[HomeDefaultsPage, God.general]} props={props} />;
     case 'agents':
@@ -137,8 +144,8 @@ export default function SettingsAreaContent({
     case 'ui':
       return <UiGallery />;
     default: {
-      const Page = (God as Record<string, ComponentType<Props>>)[slug];
-      return Page ? <Page {...props} /> : null;
+      const Section = (God as Record<string, ComponentType<Props>>)[slug];
+      return Section ? <Section {...props} /> : null;
     }
   }
 }

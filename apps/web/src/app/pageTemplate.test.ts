@@ -68,6 +68,17 @@ function usesTemplate(file: string, depth: number, seen: Set<string>): boolean {
   // Follow the page's own components only (features, files next to it), not the shared
   // building blocks a page happens to use somewhere inside.
   if (depth === 0) return false;
+  // A file that picks one of several pages at run time (a map of dynamic imports, as the
+  // settings pages are): every page it can pick must use the template.
+  const dynamicTargets = [...source.matchAll(/dynamic\(\s*\(\)\s*=>\s*import\('([^']+)'\)/g)].map(
+    (match) => match[1]!,
+  );
+  if (dynamicTargets.length > 1 && /pages\[|\w+\[slug/.test(source)) {
+    return dynamicTargets.every((spec) => {
+      const resolved = resolveImport(spec, file);
+      return resolved ? usesTemplate(resolved, Math.max(depth - 1, 1), new Set(seen)) : false;
+    });
+  }
   // The components this file renders (JSX tags), resolved through its imports.
   const rendered = new Set([...source.matchAll(/<([A-Z]\w*)/g)].map((match) => match[1]!));
   const specs: string[] = [];

@@ -32,7 +32,8 @@
     "replace": "Move",
     "replaced": "{count, plural, =0 {No agent was set to it.} one {# agent moved.} other {# agents moved.}}",
     "agentDefault": "Agent default",
-    "seen": "last {time}"
+    "seen": "last {time}",
+    "usedByLabel": "Used by"
   },
   "deadLogin": "{model} runs through Hermes' {account, select, chatgpt {ChatGPT login} claude {Claude login} other {login}}, which {state, select, invalid {is invalid} other {has expired}} – sign Hermes in again or choose a model of another provider.",
   "deadLoginDefault": "The agent default runs through Hermes' {account, select, chatgpt {ChatGPT login} claude {Claude login} other {login}}, which {state, select, invalid {is invalid} other {has expired}} – sign Hermes in again."

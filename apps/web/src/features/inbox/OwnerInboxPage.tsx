@@ -251,22 +251,24 @@ function OwnerInboxContent() {
   return (
     <Page>
       <div className={styles.content}>
-        <div className={styles.headingRow}>
-          <h2>
-            {error && visible.length === 0 ? (
-              t('title')
-            ) : loading && visible.length === 0 ? (
-              t('loadingTitle')
-            ) : visible.length === 0 ? (
-              t('allDone')
-            ) : (
-              <>
-                {t('headingCount', { count: visible.length })}{' '}
-                {t('needsYou', { count: visible.length })}
-              </>
-            )}
-          </h2>
-        </div>
+        {visible.length > 0 && (
+          <div className={styles.headingRow}>
+            <h2>
+              {error && visible.length === 0 ? (
+                t('title')
+              ) : loading && visible.length === 0 ? (
+                t('loadingTitle')
+              ) : visible.length === 0 ? (
+                t('allDone')
+              ) : (
+                <>
+                  {t('headingCount', { count: visible.length })}{' '}
+                  {t('needsYou', { count: visible.length })}
+                </>
+              )}
+            </h2>
+          </div>
+        )}
         {error && (
           <EmptyState icon={<CircleAlert />} fill={false}>
             {t('loadError')}

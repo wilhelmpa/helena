@@ -43,17 +43,28 @@ export default function GodPluginsPage() {
       </GodSectionPage>
     );
 
+  // Only real extensions (owner, 28.09.): a built-in module of Helena — Autopilot, Server,
+  // Lokale KI, Updates … — has its own settings page and is not listed here. A built-in
+  // plugin that adds to projects (its own project settings, a dashboard or panel slot,
+  // like Trading) is an extension and stays.
   const installed = data.plugins.filter(
-    (plugin) => plugin.source === 'builtin' || plugin.status === 'loaded',
+    (plugin) =>
+      (plugin.source === 'external' && plugin.status === 'loaded') ||
+      (plugin.source === 'builtin' &&
+        (projects.data?.[plugin.id] != null || providesUi(plugin.provides))),
   );
   const found = data.plugins.filter((plugin) => plugin.source === 'external');
 
   return (
     <GodSectionPage slug="plugins">
       <SettingsGroup title={t('installedTitle')} description={t('installedDescription')}>
-        {installed.map((plugin) => (
-          <PluginRow key={plugin.id} plugin={plugin} projects={projects.data?.[plugin.id]} />
-        ))}
+        {installed.length === 0 ? (
+          <SettingsRow label={t('installedTitle')} description={t('none')} />
+        ) : (
+          installed.map((plugin) => (
+            <PluginRow key={plugin.id} plugin={plugin} projects={projects.data?.[plugin.id]} />
+          ))
+        )}
       </SettingsGroup>
 
       <SettingsGroup title={t('externalTitle')} description={t('externalDescription')}>
@@ -104,6 +115,10 @@ export default function GodPluginsPage() {
       </SettingsGroup>
     </GodSectionPage>
   );
+}
+
+function providesUi(provides: Record<string, string[]>): boolean {
+  return (provides.uiSlots?.length ?? 0) > 0;
 }
 
 const PROBLEMS = ['external-off', 'not-approved', 'version-changed', 'files-changed'];

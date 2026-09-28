@@ -66,6 +66,7 @@ import { useMemberRoutines, useRoutines } from '@/features/routines/services/rou
 import NewViewMenu from './NewViewMenu';
 import { projectSettingsPages } from '@/features/settings/projectSettingsPages';
 import {
+  FOLDED_SETTINGS_GROUPS,
   HELENA_SETTINGS,
   HELENA_SETTINGS_GROUPS,
   helenaSettingsPath,
@@ -311,7 +312,6 @@ export function SidebarProjectTree({
       group.items.map((item) => ({ id: `settings:${group.id}:${item.slug}`, href: item.href })),
     ),
     { id: 'settings:general', href: settingsPath(projectKey, 'danger-zone') },
-    { id: 'settings:settingsAgents:autopilot', href: settingsPath(projectKey, 'budgets') },
   ];
   // A file of a folder: the folder row marks itself (SidebarKnowledgeFolders).
   const folderOpen =
@@ -718,6 +718,7 @@ export function SidebarHomeTree({
               key={group}
               label={tSettings(`groups.${group}` as never)}
               storageKey={`helena:settings:${group}`}
+              defaultOpen={!FOLDED_SETTINGS_GROUPS.includes(group)}
               containsActive={within(`settings:${group}:`)}
             >
               {HELENA_SETTINGS.filter((item) => item.group === group).map((item) => (

@@ -4,12 +4,18 @@ import { useTranslations } from 'next-intl';
 import { useNotificationSettingsQuery, useTeam } from '@/services/teams.service';
 import SectionPageView from '@/components/common/page/SectionPageView';
 import ListSkeleton from '@/components/common/skeleton/ListSkeleton';
-import TeamNotificationProviders from './TeamNotificationProviders';
+import TeamNotificationProviders, { type NotificationTab } from './TeamNotificationProviders';
 
 // The notification providers of a team: the email (SMTP or Resend) and Telegram bot
 // credentials every project of the team delivers through. Only the team owner reads
 // or changes them, so anyone else gets a notice instead.
-export default function TeamNotificationsSection({ teamId }: { teamId: number }) {
+export default function TeamNotificationsSection({
+  teamId,
+  channel,
+}: {
+  teamId: number;
+  channel?: NotificationTab;
+}) {
   const t = useTranslations('teams');
   const team = useTeam(teamId);
   const canManage = team?.role === 'owner';
@@ -22,7 +28,7 @@ export default function TeamNotificationsSection({ teamId }: { teamId: number })
       ) : !data ? (
         <ListSkeleton rows={3} rowClassName="h-12" />
       ) : (
-        <TeamNotificationProviders teamId={teamId} settings={data} />
+        <TeamNotificationProviders teamId={teamId} settings={data} channel={channel} />
       )}
     </SectionPageView>
   );

@@ -71,5 +71,6 @@
     "limited": "{provider}: batas tercapai",
     "limitedUntil": "{provider}: batas tercapai, bebas lagi dalam {time}",
     "stale": "{provider}: batas usang (dibaca {time} lalu)"
-  }
+  },
+  "agentsOn": "Agen di akun ini:"
 }
