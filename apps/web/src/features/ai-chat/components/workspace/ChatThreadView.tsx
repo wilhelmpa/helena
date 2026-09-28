@@ -237,8 +237,10 @@ export default function ChatThreadView({
   return (
     <WebLinkScope projectKey={scopeKey.startsWith('team:') ? null : scopeKey}>
       <div className="flex h-full min-h-0 flex-col">
-        {inPage && projectKey === null && (
-          <HomeChatMasthead onOpenList={homeLanding ? onOpenList : undefined} />
+        {/* The start page's masthead; a conversation has its own header row instead, so
+            the page never shows two headers. */}
+        {inPage && projectKey === null && homeLanding && (
+          <HomeChatMasthead onOpenList={onOpenList} />
         )}
         {!homeLanding && (
           <ChatHeader
