@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useGroupLabels } from '@/hooks/useGroupLabels';
 import { usePriorityLabel } from '@/hooks/usePriorityLabel';
 import {
@@ -28,6 +29,7 @@ export default function ListView({
 }: WorkItemsViewProps) {
   const groupLabels = useGroupLabels();
   const priorityLabel = usePriorityLabel();
+  const tColumns = useTranslations('workItems.columns');
   const maps = buildMaps(project);
   const groups = buildGroups(project, settings.group, groupLabels, filters);
   const sorted = sortIssues(project.issues, settings.sort, project);
@@ -60,6 +62,7 @@ export default function ListView({
                 maps,
                 properties,
                 priorityLabel,
+                tColumns('statusAge'),
               );
               const assignee = issue.assigneeUserId
                 ? maps.assigneeById.get(issue.assigneeUserId)
