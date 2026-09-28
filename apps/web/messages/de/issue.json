@@ -419,6 +419,7 @@
     "you": "Du",
     "members": "Mitglieder",
     "delegateTo": "Delegieren an…",
+    "delegateAgain": "Erneut an Agent geben",
     "delegateOwnedBy": "Läuft nur für {name}",
     "delegateOwnedByOther": "Läuft nur für seinen Inhaber",
     "noDelegate": "Nicht delegiert",

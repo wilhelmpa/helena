@@ -115,6 +115,48 @@ describe('agent run history', () => {
     expect(res.data!.items[0]).toMatchObject({ trigger: 'delegation', issueId: issue.id });
   });
 
+  it('starts another run when explicitly delegated to the same agent after its run finishes', async () => {
+    const { asOwner, columnId, teamId } = await setup();
+    const created = await createAgent(asOwner, 'MKT', {
+      name: 'Design Bot',
+      username: 'design',
+      kind: 'external',
+      triggerOnAssign: true,
+      delegationDelaySec: 0,
+    });
+    const agent = created.data!.agent;
+    const asRunner = apiKeyApi(created.data!.apiKey!);
+    const issue = (await createIssue(asOwner, columnId)).data!;
+    const task = asOwner.issues({ issueId: issue.id });
+    const history = () => agents(asOwner, teamId)({ agentId: agent.id }).runs.get();
+
+    expect((await task.patch({ delegateUserId: agent.userId })).status).toBe(200);
+    expect((await task.patch({ delegateUserId: agent.userId })).status).toBe(200);
+    expect((await history()).data!.items).toHaveLength(1);
+
+    const claimed = (await asRunner['agent-runs'].claim.post()).data!.run!;
+    expect(claimed.issueId).toBe(issue.id);
+    await task.patch({ delegateUserId: agent.userId });
+    expect((await history()).data!.items).toHaveLength(1);
+
+    expect(
+      (await asRunner['agent-runs']({ runId: claimed.id }).result.post({ status: 'success' }))
+        .status,
+    ).toBe(200);
+    const repeated = await Promise.all([
+      task.patch({ delegateUserId: agent.userId }),
+      task.patch({ delegateUserId: agent.userId }),
+    ]);
+    expect(repeated.map((response) => response.status)).toEqual([200, 200]);
+    const runs = (await history()).data!.items;
+    expect(runs).toHaveLength(2);
+    expect(runs[0]).toMatchObject({ trigger: 'delegation', issueId: issue.id, status: 'pending' });
+    expect(runs[1]).toMatchObject({ id: claimed.id, status: 'success' });
+
+    await task.patch({ title: 'Review correction' });
+    expect((await history()).data!.items).toHaveLength(2);
+  });
+
   it('keeps final-state changes of a delegated subtask in one pending parent run', async () => {
     const { asOwner, columnId, teamId } = await setup();
     const coordinator = await createRunAgent(asOwner, 'Coordinator', 'coordinator');

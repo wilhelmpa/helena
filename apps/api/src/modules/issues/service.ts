@@ -1412,8 +1412,9 @@ export async function updateIssue(
           },
           by,
         );
-        await enqueueDelegateRun(after, actor, opts?.delegation);
       }
+      if (patch.delegateUserId && patch.delegateUserId === after.delegateUserId)
+        await enqueueDelegateRun(after, actor, opts?.delegation);
       if (before.columnId !== after.columnId) {
         await emitWebhookEvent(
           after.projectId,
@@ -1429,8 +1430,8 @@ export async function updateIssue(
   return after;
 }
 
-// If an issue's new delegate is an agent that reacts to delegation, queue a run so it
-// can act on the issue. Skipped when the agent delegated to itself (an agent setting
+// If an issue is explicitly delegated to an agent that reacts to delegation, queue a run
+// so it can act on the issue. Skipped when the agent delegated to itself (an agent setting
 // itself off). The run is executed later, by the agent's runner, so the write is never
 // blocked on it. A coordinator of a project that runs the
 // agent-team workflow gets the issue through the engine instead, as the lead of its team.

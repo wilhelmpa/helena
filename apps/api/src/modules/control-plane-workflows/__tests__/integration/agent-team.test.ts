@@ -610,6 +610,7 @@ describe('agent team runs', () => {
     expect((await start(key)).data!.runId).toBe(key);
     // Delegating the task to the coordinator while its team works starts nothing new.
     await asOwner.issues({ issueId: task.id }).patch({ delegateUserId: coordinator.userId });
+    await asOwner.issues({ issueId: task.id }).patch({ delegateUserId: coordinator.userId });
     expect(await teamRuns(task.id)).toHaveLength(1);
     expect((await start('not-a-uuid')).status).toBe(400);
   });

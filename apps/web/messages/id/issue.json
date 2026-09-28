@@ -419,6 +419,7 @@
     "you": "Anda",
     "members": "Anggota",
     "delegateTo": "Delegasikan ke…",
+    "delegateAgain": "Delegasikan lagi ke agen",
     "delegateOwnedBy": "Hanya berjalan untuk {name}",
     "delegateOwnedByOther": "Hanya berjalan untuk pemiliknya",
     "noDelegate": "Tanpa delegasi",

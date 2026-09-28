@@ -419,6 +419,7 @@
     "you": "You",
     "members": "Members",
     "delegateTo": "Delegate to…",
+    "delegateAgain": "Give to agent again",
     "delegateOwnedBy": "Only runs for {name}",
     "delegateOwnedByOther": "Runs only for its owner",
     "noDelegate": "No delegate",

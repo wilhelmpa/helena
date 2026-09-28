@@ -419,6 +419,7 @@
     "you": "أنت",
     "members": "الأعضاء",
     "delegateTo": "التفويض إلى…",
+    "delegateAgain": "إعادة إسنادها إلى الوكيل",
     "delegateOwnedBy": "بيشتغل لـ {name} بس",
     "delegateOwnedByOther": "بيشتغل لمالكه بس",
     "noDelegate": "بلا مفوَّض",
