@@ -6,6 +6,9 @@
   "version": "1.0.0",
   "engines": { "vscode": "^1.96.0" },
   "categories": ["Themes"],
+  "browser": "./theme-sync.js",
+  "extensionKind": ["ui"],
+  "activationEvents": ["onStartupFinished"],
   "contributes": {
     "themes": [
       { "label": "Helena Dark", "uiTheme": "vs-dark", "path": "./themes/dark.json" },

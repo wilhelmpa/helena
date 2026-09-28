@@ -80,8 +80,10 @@ export function attachTerminalTheme(frame: HTMLIFrameElement, mode: 'dark' | 'li
       style.dataset.helenaMode = mode;
     }
     const term = win.wetty_term;
-    if (!term || term === current) return;
-    term.options.theme = theme;
+    if (!term) return;
+    const isNewTerminal = term !== current;
+    if (isNewTerminal || term.options.theme !== theme) term.options.theme = theme;
+    if (!isNewTerminal) return;
     term.options.fontFamily = 'Helena JetBrains Mono, monospace';
     term.options.fontSize = 13;
     term.options.lineHeight = 1.25;

@@ -48,6 +48,11 @@ test('Wetty gets the Helena ANSI palette and terminal dimensions in both modes',
     assert.match(dom.window.document.head.innerHTML, /background:#faf9f7/);
     assert.equal(term.resizeTermCalls, 2);
     detachLight();
+
+    const detachDarkAgain = attachTerminalTheme(frame, 'dark');
+    assert.deepEqual(term.options.theme, terminalThemes.dark);
+    assert.equal(term.resizeTermCalls, 3);
+    detachDarkAgain();
   } finally {
     globalThis.window = previousWindow;
     dom.window.close();

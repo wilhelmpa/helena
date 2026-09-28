@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react';
 import { useTheme } from 'next-themes';
 import { cn } from '@/lib/utils';
+import { attachCodeTheme } from '@/utils/codeTheme';
 
 export default function WorkspaceFrame({
   url,
@@ -25,6 +26,11 @@ export default function WorkspaceFrame({
   const frame = useRef<HTMLIFrameElement>(null);
   const { resolvedTheme } = useTheme();
   const previousReloadToken = useRef(reloadToken);
+
+  useEffect(() => {
+    if (!helenaCode) return;
+    return attachCodeTheme(url, resolvedTheme === 'light' ? 'light' : 'dark');
+  }, [helenaCode, resolvedTheme, url]);
 
   useEffect(() => {
     if (previousReloadToken.current === reloadToken) return;

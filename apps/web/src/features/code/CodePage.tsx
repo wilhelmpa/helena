@@ -48,7 +48,7 @@ export default function CodePage() {
       )}
       <div className="flex min-h-0 flex-1 overflow-hidden">
         {code.url ? (
-          <WorkspaceFrame url={code.url} title={t('code')} active />
+          <WorkspaceFrame url={code.url} title={t('code')} active helenaCode />
         ) : (
           <WorkspaceUnavailable tool={t('code')} />
         )}
