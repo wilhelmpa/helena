@@ -1778,6 +1778,26 @@ export const agentRunEvent = pgTable(
   (t) => [index('agent_run_event_run_idx').on(t.runId, t.id)],
 );
 
+export const agentRunOutput = pgTable(
+  'agent_run_output',
+  {
+    id: serial('id').primaryKey(),
+    runId: integer('run_id')
+      .notNull()
+      .references(() => agentRun.id, { onDelete: 'cascade' }),
+    kind: text('kind').notNull(),
+    title: text('title').notNull(),
+    target: text('target').notNull(),
+    source: text('source').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    check('agent_run_output_kind_check', sql`${t.kind} IN ('file', 'preview', 'pr', 'screenshot')`),
+    check('agent_run_output_source_check', sql`${t.source} IN ('reported', 'inferred')`),
+    uniqueIndex('agent_run_output_unique_idx').on(t.runId, t.kind, t.target),
+  ],
+);
+
 // A change the owner decides on before it takes effect, raised by an agent's runtime rather
 // than by the agent asking: a memory write Hermes staged (memory.write_approval), an update
 // of Hermes itself. Listed with the approvals; approving one has the runner carry it out.

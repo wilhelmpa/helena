@@ -31,6 +31,8 @@ import TranscriptMessages from './TranscriptMessages';
 import RuntimeError from './RuntimeError';
 import ModelFailureNote from '@/features/model-availability/components/ModelFailureNote';
 import { knownFailure } from '@/features/model-availability/utils/modelFailure';
+import RunResults from './RunResults';
+import RunSteps from './RunSteps';
 
 type View = 'timeline' | 'transcript' | 'logs';
 
@@ -156,84 +158,89 @@ export default function RunView({
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-3 border-b border-border/60 px-4 py-2">
-        <nav className="flex items-center gap-0.5" aria-label={t('views')}>
-          {views.map((item) => (
-            <button
-              key={item.value}
-              type="button"
-              aria-pressed={view === item.value}
-              onClick={() => setView(item.value)}
-              className={cn(
-                PAGE_CONTROL_CLASS,
-                'h-7',
-                view === item.value && PAGE_CONTROL_ACTIVE_CLASS,
-              )}
-            >
-              <item.icon aria-hidden="true" />
-              {item.label}
-            </button>
-          ))}
-        </nav>
-        <div className="ms-auto">
+      <div className="min-h-0 flex-1 space-y-6 overflow-y-auto px-4 py-4">
+        <div className="mx-auto max-w-3xl space-y-3">
+          <RunResults run={run} />
           <SpendChips rows={run.usage} />
         </div>
-      </div>
-
-      <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
-        {view === 'timeline' && (
-          <div className="mx-auto max-w-3xl space-y-4">
-            {run.continuedFromRunId && (
+        <div className="mx-auto max-w-3xl">
+          <RunSteps events={events} />
+        </div>
+        <section aria-labelledby="run-protocol-title" className="mx-auto max-w-3xl space-y-4">
+          <h2 id="run-protocol-title" className="text-sm font-semibold">
+            {t('rawProtocol')}
+          </h2>
+          <nav className="flex flex-wrap items-center gap-0.5" aria-label={t('views')}>
+            {views.map((item) => (
               <button
+                key={item.value}
                 type="button"
-                className="text-xs text-muted-foreground hover:text-foreground hover:underline"
-                onClick={() => onOpenRun(run.continuedFromRunId!)}
+                aria-pressed={view === item.value}
+                onClick={() => setView(item.value)}
+                className={cn(
+                  PAGE_CONTROL_CLASS,
+                  'h-7',
+                  view === item.value && PAGE_CONTROL_ACTIVE_CLASS,
+                )}
               >
-                {t('continuesRun', { id: run.continuedFromRunId })}
+                <item.icon aria-hidden="true" />
+                {item.label}
               </button>
-            )}
-            <TranscriptMessages
-              messages={timeline ? [promptMessage, timeline] : [promptMessage]}
-              streaming={live}
-              projectKey={run.projectKey}
-            />
-            {loaded && !timeline && !live && (
-              <p className="text-sm text-muted-foreground">{t('noTimeline')}</p>
-            )}
-            {!live && run.output && !timeline && (
-              <div className="rounded-md bg-card p-3 text-sm whitespace-pre-wrap">{run.output}</div>
-            )}
-            {run.status === 'failed' && knownFailure(run.failure) ? (
-              <ModelFailureNote
-                failure={run.failure}
-                error={run.lastError}
-                className="text-sm text-destructive"
+            ))}
+          </nav>
+          {view === 'timeline' && (
+            <div className="mx-auto max-w-3xl space-y-4">
+              {run.continuedFromRunId && (
+                <button
+                  type="button"
+                  className="text-xs text-muted-foreground hover:text-foreground hover:underline"
+                  onClick={() => onOpenRun(run.continuedFromRunId!)}
+                >
+                  {t('continuesRun', { id: run.continuedFromRunId })}
+                </button>
+              )}
+              <TranscriptMessages
+                messages={timeline ? [promptMessage, timeline] : [promptMessage]}
+                streaming={live}
+                projectKey={run.projectKey}
               />
-            ) : (
-              run.status === 'failed' &&
-              run.lastError && <p className="text-sm text-destructive">{run.lastError}</p>
-            )}
-            {run.blockedQuestion && (
-              <div className="rounded-md border border-border/60 bg-card p-3 text-sm">
-                <p className="text-xs font-medium text-muted-foreground">{t('blocked')}</p>
-                <p className="mt-1 whitespace-pre-wrap">{run.blockedQuestion}</p>
-              </div>
-            )}
-            {run.modelCheck && <AgentRunModel check={run.modelCheck} />}
-            {run.modelRoute && <ModelRouteLine route={run.modelRoute} />}
-            {run.reflection && <ReflectionBlock reflection={run.reflection} />}
-          </div>
-        )}
-        {view === 'transcript' && (
-          <RunTranscript
-            projectKey={run.projectKey}
-            teamId={teamId}
-            agentId={agentId}
-            sessionId={run.sessionId}
-            live={live}
-          />
-        )}
-        {view === 'logs' && <RunLogs teamId={teamId} agentId={agentId} sessionId={run.sessionId} />}
+              {loaded && !timeline && !live && (
+                <p className="text-sm text-muted-foreground">{t('noTimeline')}</p>
+              )}
+              {run.status === 'failed' && knownFailure(run.failure) ? (
+                <ModelFailureNote
+                  failure={run.failure}
+                  error={run.lastError}
+                  className="text-sm text-destructive"
+                />
+              ) : (
+                run.status === 'failed' &&
+                run.lastError && <p className="text-sm text-destructive">{run.lastError}</p>
+              )}
+              {run.blockedQuestion && (
+                <div className="rounded-md border border-border/60 bg-card p-3 text-sm">
+                  <p className="text-xs font-medium text-muted-foreground">{t('blocked')}</p>
+                  <p className="mt-1 whitespace-pre-wrap">{run.blockedQuestion}</p>
+                </div>
+              )}
+              {run.modelCheck && <AgentRunModel check={run.modelCheck} />}
+              {run.modelRoute && <ModelRouteLine route={run.modelRoute} />}
+              {run.reflection && <ReflectionBlock reflection={run.reflection} />}
+            </div>
+          )}
+          {view === 'transcript' && (
+            <RunTranscript
+              projectKey={run.projectKey}
+              teamId={teamId}
+              agentId={agentId}
+              sessionId={run.sessionId}
+              live={live}
+            />
+          )}
+          {view === 'logs' && (
+            <RunLogs teamId={teamId} agentId={agentId} sessionId={run.sessionId} />
+          )}
+        </section>
       </div>
 
       {continuing && (

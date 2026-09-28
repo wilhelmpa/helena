@@ -48,6 +48,23 @@
       "approval": "Решение по согласованию",
       "workspace": "Задание рабочей области",
       "digest": "Сводка"
+    },
+    "results": "Results",
+    "noSummary": "No summary yet.",
+    "noOutputs": "No results reported yet.",
+    "steps": "Steps",
+    "noSteps": "No steps recorded yet.",
+    "rawProtocol": "Raw protocol",
+    "outputKind": {
+      "file": "File",
+      "preview": "Preview",
+      "pr": "Pull request",
+      "screenshot": "Screenshot"
+    },
+    "stepState": {
+      "running": "In progress",
+      "done": "Done",
+      "failed": "Failed"
     }
   },
   "sessions": {

@@ -8,6 +8,7 @@ import { emergencyStopActive } from '#modules/emergency-stop/service';
 import { priceRows } from '../usage/service';
 import { reflectionView, type ReflectionView } from '../runner/reflection';
 import type { ModelCheck } from '../runtime-sync/model-check';
+import { inferredOutputs, listRunOutputs, saveRunOutputs } from './outputs';
 
 // A run's timeline: the AG-UI events its runner read from the command's output, redacted on
 // the runner, stored while the run runs. The run view reads them live and replays them later;
@@ -61,6 +62,19 @@ export async function appendRunEvents(
     await db
       .insert(agentRunEvent)
       .values(kept.map((payload) => ({ runId, claim: claim ?? held.claims, payload })));
+    if (kept.some((event) => (event as { type?: string })?.type === 'TOOL_CALL_RESULT')) {
+      const recent = await db
+        .select({ payload: agentRunEvent.payload })
+        .from(agentRunEvent)
+        .where(eq(agentRunEvent.runId, runId))
+        .orderBy(sql`${agentRunEvent.id} DESC`)
+        .limit(200);
+      await saveRunOutputs(
+        runId,
+        inferredOutputs(recent.reverse().map((row) => row.payload)),
+        'inferred',
+      );
+    }
   }
   return (await emergencyStopActive()) ? { canceled: false, hold: true } : { canceled: false };
 }
@@ -107,6 +121,7 @@ export interface RunDetail {
   issueTitle: string | null;
   prompt: string;
   output: string | null;
+  outputs: Awaited<ReturnType<typeof listRunOutputs>>;
   lastError: string | null;
   attempts: number;
   resumes: number;
@@ -199,6 +214,7 @@ export async function getRunDetail(
     issueTitle: row.issueTitle ?? null,
     prompt: run.prompt,
     output: run.output,
+    outputs: await listRunOutputs(runId),
     lastError: run.lastError,
     attempts: run.attempts,
     resumes: run.resumes,

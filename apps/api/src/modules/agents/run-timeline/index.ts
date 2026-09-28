@@ -4,6 +4,7 @@ import { authContext } from '#shared/auth-context';
 import { HttpError } from '#shared/lib';
 import { commonErrors, errors } from '#shared/responses';
 import { runnerAuth } from '../runner-auth';
+import { mcpTool } from '#mcp/generate';
 import { agentForPerson } from '../people-access';
 import {
   ContinueRunResponse,
@@ -16,8 +17,11 @@ import {
   runEventsQuery,
   runEventsRunnerParams,
   runEventsRunnerQuery,
+  reportOutputBody,
+  ReportOutputResponse,
 } from './model';
 import { appendRunEvents, continueRun, getRunDetail, listRunEvents } from './service';
+import { reportRunOutput } from './outputs';
 import { maskForTeam } from '../credentials/env';
 
 // A run as a timeline: the runner sends what the command writes while it runs, a person
@@ -49,6 +53,29 @@ export const runTimelineRoutes = new Elysia({
         description:
           "What the run's command wrote, as AG-UI events, redacted by the runner. Answers " +
           'like a heartbeat whether the command is to stop.',
+      },
+    },
+  )
+
+  .post(
+    '/agent-runs/:runId/outputs',
+    async ({ agent, params, body, request }) =>
+      reportRunOutput(
+        agent.id,
+        params.runId,
+        await maskForTeam(agent.teamId, body),
+        request.headers,
+      ),
+    {
+      runnerAgent: true,
+      params: runEventsRunnerParams,
+      body: reportOutputBody,
+      response: { 200: ReportOutputResponse, ...commonErrors, ...errors(400) },
+      detail: {
+        summary: 'Report a run output',
+        description:
+          'Attach one result to your active run: a file path, preview URL, pull request URL, or screenshot path or URL. The run ID is in ITSAPLAN_RUN_ID.',
+        ...mcpTool('report_output'),
       },
     },
   )

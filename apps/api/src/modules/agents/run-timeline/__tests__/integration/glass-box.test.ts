@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'bun:test';
 import { db, agentChatThread, agentUsage, aiAgent } from '@repo/db';
 import { eq, sql } from 'drizzle-orm';
-import { apiKeyApi, authedApi, type Api } from '#tests/helpers/app';
+import { apiKeyApi, app, authedApi, type Api } from '#tests/helpers/app';
 import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
 import { createAgent } from '#tests/helpers/agents';
@@ -30,6 +30,7 @@ async function setup() {
     teamId: view.data!.project.teamId,
     projectId: view.data!.project.id,
     agent,
+    apiKey: created.data!.apiKey!,
     asRunner: apiKeyApi(created.data!.apiKey!),
   };
 }
@@ -222,6 +223,105 @@ describe('runtime requests', () => {
 describe('run timeline and usage', () => {
   beforeEach(async () => {
     await resetDb();
+  });
+
+  it('reports outputs through MCP and infers file and PR results from tool calls', async () => {
+    const { asOwner, asRunner, apiKey, teamId, agent, columnId } = await setup();
+    await queueRun(asOwner, columnId, agent.username);
+    const run = (await asRunner['agent-runs'].claim.post()).data!.run!;
+    const mcp = await app.handle(
+      new Request('http://localhost/mcp', {
+        method: 'POST',
+        headers: {
+          authorization: `Bearer ${apiKey}`,
+          'content-type': 'application/json',
+          accept: 'application/json, text/event-stream',
+        },
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'tools/call',
+          params: {
+            name: 'report_output',
+            arguments: {
+              runId: run.id,
+              kind: 'preview',
+              title: 'Preview',
+              target: 'https://preview.example.test/page',
+            },
+          },
+        }),
+      }),
+    );
+    expect(mcp.status).toBe(200);
+    const body = await mcp.text();
+    expect(body).toContain('"ok":true');
+    const events = [
+      { type: 'TOOL_CALL_START', toolCallId: 'file', toolCallName: 'Write' },
+      { type: 'TOOL_CALL_ARGS', toolCallId: 'file', delta: '{"file_path":"docs/result.md"}' },
+      { type: 'TOOL_CALL_RESULT', toolCallId: 'file', content: 'Wrote file' },
+      { type: 'TOOL_CALL_START', toolCallId: 'patch', toolCallName: 'functions.apply_patch' },
+      {
+        type: 'TOOL_CALL_ARGS',
+        toolCallId: 'patch',
+        delta: JSON.stringify({
+          patch: '*** Begin Patch\n*** Add File: docs/codex.md\n*** End Patch',
+        }),
+      },
+      { type: 'TOOL_CALL_RESULT', toolCallId: 'patch', content: 'Patch applied' },
+      { type: 'TOOL_CALL_START', toolCallId: 'pr', toolCallName: 'terminal' },
+      { type: 'TOOL_CALL_ARGS', toolCallId: 'pr', delta: '{"command":"gh pr create"}' },
+      {
+        type: 'TOOL_CALL_RESULT',
+        toolCallId: 'pr',
+        content: 'https://github.com/example/repo/pull/42',
+      },
+    ];
+    const ack = await asRunner['agent-runs']({ runId: run.id }).events.post(
+      { events },
+      { query: { claim: run.claim } },
+    );
+    expect(ack.status).toBe(200);
+    const detail = await agentRoute(asOwner, teamId, agent.id).runs({ runId: run.id }).get();
+    expect(detail.status).toBe(200);
+    expect(detail.data!.outputs).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ kind: 'preview', title: 'Preview', source: 'reported' }),
+        expect.objectContaining({ kind: 'file', target: 'docs/result.md', source: 'inferred' }),
+        expect.objectContaining({ kind: 'file', target: 'docs/codex.md', source: 'inferred' }),
+        expect.objectContaining({ kind: 'pr', target: 'https://github.com/example/repo/pull/42' }),
+      ]),
+    );
+    const invalid = await asRunner['agent-runs']({ runId: run.id }).outputs.post({
+      kind: 'preview',
+      title: 'Unsafe',
+      target: 'javascript:alert(1)',
+    });
+    expect(invalid.status).toBe(400);
+    const screenshot = await asRunner['agent-runs']({ runId: run.id }).outputs.post({
+      kind: 'screenshot',
+      title: 'Landing page',
+      target: 'screenshots/landing.png',
+    });
+    expect(screenshot.status).toBe(200);
+    await asRunner['agent-runs']({ runId: run.id }).result.post(
+      { status: 'success', output: 'Landing page ready' },
+      { query: { claim: run.claim } },
+    );
+    const finished = await agentRoute(asOwner, teamId, agent.id).runs({ runId: run.id }).get();
+    expect(finished.data).toMatchObject({
+      output: 'Landing page ready',
+      outputs: expect.arrayContaining([
+        expect.objectContaining({ kind: 'preview' }),
+        expect.objectContaining({ kind: 'screenshot', target: 'screenshots/landing.png' }),
+      ]),
+    });
+    const late = await asRunner['agent-runs']({ runId: run.id }).outputs.post({
+      kind: 'file',
+      title: 'Too late',
+      target: 'docs/late.md',
+    });
+    expect(late.status).toBe(404);
   });
 
   it('stores the events of a run, records its spend and sums it by model', async () => {

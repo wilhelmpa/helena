@@ -48,6 +48,23 @@
       "approval": "Décision d'approbation",
       "workspace": "Tâche d’espace de travail",
       "digest": "Résumé"
+    },
+    "results": "Results",
+    "noSummary": "No summary yet.",
+    "noOutputs": "No results reported yet.",
+    "steps": "Steps",
+    "noSteps": "No steps recorded yet.",
+    "rawProtocol": "Raw protocol",
+    "outputKind": {
+      "file": "File",
+      "preview": "Preview",
+      "pr": "Pull request",
+      "screenshot": "Screenshot"
+    },
+    "stepState": {
+      "running": "In progress",
+      "done": "Done",
+      "failed": "Failed"
     }
   },
   "sessions": {
