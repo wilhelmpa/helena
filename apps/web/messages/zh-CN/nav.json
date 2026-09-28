@@ -218,7 +218,8 @@
       "chat-left": "聊天在左",
       "chat-tool": "聊天 + 工具",
       "two-tools": "两个工具",
-      "tool-full": "工具全屏"
+      "tool-full": "工具全屏",
+      "page-tool-half": "平分 50/50"
     },
     "tools": "工具",
     "pickTool": "{tool} · 更换工具",
@@ -234,5 +235,16 @@
   "sidebarAllProjects": "All projects",
   "sidebarSystem": "System",
   "sidebarHomeAgent": "Home agent",
-  "sidebarGlobalStandards": "Global standards"
+  "sidebarGlobalStandards": "Global standards",
+  "panelTabs": {
+    "tabs": "Tools",
+    "addTab": "Add tab",
+    "browserTab": "Browser tab",
+    "side": "Side panel",
+    "split": "Split 50/50",
+    "full": "Full screen",
+    "close": "Close panel",
+    "closeTab": "Close {tab}",
+    "reloadView": "Reload view"
+  }
 }

@@ -218,7 +218,8 @@
       "chat-left": "Чат ліворуч",
       "chat-tool": "Чат + інструмент",
       "two-tools": "Два інструменти",
-      "tool-full": "Інструмент на весь екран"
+      "tool-full": "Інструмент на весь екран",
+      "page-tool-half": "Розділено 50/50"
     },
     "tools": "Інструменти",
     "pickTool": "{tool} · змінити інструмент",
@@ -234,5 +235,16 @@
   "sidebarAllProjects": "All projects",
   "sidebarSystem": "System",
   "sidebarHomeAgent": "Home agent",
-  "sidebarGlobalStandards": "Global standards"
+  "sidebarGlobalStandards": "Global standards",
+  "panelTabs": {
+    "tabs": "Tools",
+    "addTab": "Add tab",
+    "browserTab": "Browser tab",
+    "side": "Side panel",
+    "split": "Split 50/50",
+    "full": "Full screen",
+    "close": "Close panel",
+    "closeTab": "Close {tab}",
+    "reloadView": "Reload view"
+  }
 }

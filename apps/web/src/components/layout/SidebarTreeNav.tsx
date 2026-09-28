@@ -10,7 +10,6 @@ import { useProjectFeatures } from '@/hooks/useProjectFeatures';
 import { usePersistedBoolean } from '@/hooks/usePersistedBoolean';
 import { useInboxUnread } from '@/hooks/useInboxUnread';
 import { useOwnerInbox } from '@/features/inbox/useOwnerInbox';
-import { useProjectSettingsNavItems } from '@/hooks/useProjectSettingsNavItems';
 import { usePendingApprovalCount } from '@/services/approvals.service';
 import { usePipelineApprovals } from '@/services/pipelines.service';
 import { useViewFoldersQuery, useViewsQuery } from '@/services/views.service';
@@ -345,58 +344,6 @@ export function SidebarHomeTree({ teamId, isGod }: { teamId: number | null; isGo
           {t('sidebarHistory')}
         </TreeLink>
       </TreeBranch>
-      <TreeBranch
-        id="home:settings"
-        label={t('settings')}
-        href={get('teamSettings') ?? '/account/preferences'}
-        activePaths={[
-          '/skills',
-          '/tools',
-          '/mcps',
-          '/access',
-          '/decisions',
-          '/devices',
-          '/god/general',
-        ]}
-        defaultOpen
-      >
-        {isGod && (
-          <TreeLink href="/agents?agent=home" nested>
-            {t('sidebarHomeAgent')}
-          </TreeLink>
-        )}
-        {isGod && (
-          <TreeLink href="/god/general" nested>
-            {t('sidebarGlobalStandards')}
-          </TreeLink>
-        )}
-        {home
-          .filter((item) => item.group === 'globalSettings')
-          .map((item) => (
-            <TreeLink key={item.id} href={item.href} nested>
-              {t(item.id)}
-            </TreeLink>
-          ))}
-        {teamId == null && (
-          <>
-            <TreeLink href="/skills" nested>
-              {t('skills')}
-            </TreeLink>
-            <TreeLink href="/tools" nested>
-              {t('tools')}
-            </TreeLink>
-            <TreeLink href="/mcps" nested>
-              {t('mcps')}
-            </TreeLink>
-            <TreeLink href="/decisions" nested>
-              {t('decisions')}
-            </TreeLink>
-            <TreeLink href="/account/teams" nested>
-              {t('teamSettings')}
-            </TreeLink>
-          </>
-        )}
-      </TreeBranch>
     </section>
   );
 }
@@ -424,8 +371,6 @@ export function SidebarProjectTree({
   const { data: dashboards = [] } = useDashboardsQuery(
     features.dashboards && can('dashboards', 'read') ? projectKey : null,
   );
-  const settings = useProjectSettingsNavItems(projectKey);
-  const first = settings.find((item) => item.key === 'general') ?? settings[0];
   const taskHref = projectPath(projectKey);
 
   return (
@@ -586,11 +531,7 @@ export function SidebarProjectTree({
       {features.cycles && can('cycles', 'read') && (
         <TreeLink href={cyclesPath(projectKey)}>{t('cycles')}</TreeLink>
       )}
-      {first && (
-        <TreeLink href={first.href} activeOverride={settings.some((item) => item.active)}>
-          {t('settings')}
-        </TreeLink>
-      )}
+
     </section>
   );
 }

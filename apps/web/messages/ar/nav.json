@@ -218,7 +218,8 @@
       "chat-left": "الدردشة على الجانب",
       "chat-tool": "دردشة + أداة",
       "two-tools": "أداتان",
-      "tool-full": "الأداة بالحجم الكامل"
+      "tool-full": "الأداة بالحجم الكامل",
+      "page-tool-half": "تقسيم 50/50"
     },
     "tools": "الأدوات",
     "pickTool": "{tool} · تغيير الأداة",
@@ -234,5 +235,16 @@
   "sidebarAllProjects": "All projects",
   "sidebarSystem": "System",
   "sidebarHomeAgent": "Home agent",
-  "sidebarGlobalStandards": "Global standards"
+  "sidebarGlobalStandards": "Global standards",
+  "panelTabs": {
+    "tabs": "Tools",
+    "addTab": "Add tab",
+    "browserTab": "Browser tab",
+    "side": "Side panel",
+    "split": "Split 50/50",
+    "full": "Full screen",
+    "close": "Close panel",
+    "closeTab": "Close {tab}",
+    "reloadView": "Reload view"
+  }
 }

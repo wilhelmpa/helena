@@ -40,12 +40,12 @@ export default function HomeDock({
   );
   if (pathname === '/' || open) return null;
   return (
-    <div className="helena-home-dock-actions">
+    <>
       {onNewIssue && (
         <div className="relative">
           <button
             type="button"
-            className="helena-home-dock-create"
+            className="helena-home-dock-plus"
             aria-label={tIssue('newIssue')}
             title={tIssue('newIssue')}
             onClick={onNewIssue}
@@ -58,7 +58,7 @@ export default function HomeDock({
                 <button
                   type="button"
                   aria-label="Weitere erstellen"
-                  className="create-dock-arrow absolute -end-1 -bottom-1 flex size-6 items-center justify-center rounded-full"
+                  className="create-dock-arrow fixed bottom-5 right-[84px] z-50 flex size-6 items-center justify-center rounded-full"
                 >
                   <ChevronDown className="size-3" />
                 </button>
@@ -106,6 +106,6 @@ export default function HomeDock({
       >
         <Orb state={status} size="medium" />
       </button>
-    </div>
+    </>
   );
 }

@@ -40,7 +40,6 @@ import ProjectLinkSheet from '@/components/layout/ProjectLinkSheet';
 import { useTranslations } from 'next-intl';
 import { isTypingTarget } from '@/utils/hotkeys';
 import { requestDockVoice } from '@/features/voice/utils/dockVoice';
-import { STANDARD_LAYOUT_ID } from '@/extensions/workspaceLayouts';
 
 // The layout for /project/:projectKey and its children (the work items view and the
 // settings pages). It owns the project data, the view editor and the
@@ -146,7 +145,7 @@ export default function Shell({
 
   useProjectRouteSync({ projects, projectsLoaded, projectKey, allowEmpty: globalHome });
 
-  const selectWorkspaceTool = workspaceLayout.selectTool;
+  const selectWorkspaceTool = workspaceLayout.activateTab;
   const {
     activeTool: activeWorkspaceTool,
     open: workspaceOpen,
@@ -164,6 +163,7 @@ export default function Shell({
   // The settings sections the member may open; the hotkey lands on the first of
   // them, the same entry the sidebar links to.
   const { firstHref: firstSettingsHref } = useSettingsNavGroups(projectKey, project);
+  const settingsHref = firstSettingsHref ?? '/account/preferences';
 
   // Only the work items routes: a cycle or an initiative board carries its own
   // filters and merges them itself.
@@ -178,19 +178,17 @@ export default function Shell({
 
   const openNewIssue = () => addIssue({});
 
-  const openHomeDock = () => {
-    if (workspaceLayout.chosenId !== STANDARD_LAYOUT_ID) {
-      workspaceLayout.setLayout(STANDARD_LAYOUT_ID);
-    }
-    workspacePanel.setOverlay();
-    workspacePanel.openTool('chat');
-  };
   const toggleCoordinatorChat = () => {
     if (workspaceOpen && activeWorkspaceTool === 'chat') workspacePanel.setOpen(false);
-    else openHomeDock();
+    else workspaceLayout.openHome();
   };
   useEffect(() => {
     const close = (event: KeyboardEvent) => {
+      if (
+        event.defaultPrevented ||
+        (event.target instanceof Element && event.target.closest('[role="menu"], [role="dialog"]'))
+      )
+        return;
       if (
         event.key === 'Escape' &&
         !overlays.anyOpen &&
@@ -235,7 +233,7 @@ export default function Shell({
     onNewIssue: () => canCreateIssue && openNewIssue(),
     onNewInitiative: () => canCreateInitiative && overlays.setShowNewInitiative(true),
     onNewProject: () => overlays.setShowNewProject(true),
-    onSettings: () => firstSettingsHref && router.push(firstSettingsHref),
+    onSettings: () => router.push(settingsHref),
     onToggleChat: toggleCoordinatorChat,
     onCycleLayout: workspaceLayout.phone ? undefined : workspaceLayout.cycle,
   });
@@ -308,6 +306,14 @@ export default function Shell({
                 onOpenCommand={() => overlays.setShowCommand(true)}
                 onSelectTool={selectWorkspaceTool}
                 activeTool={workspaceOpen ? activeWorkspaceTool : null}
+                openTools={
+                  workspaceOpen
+                    ? workspaceLayout.tabs.saved
+                        .map((key) => (key.startsWith('browser:') ? 'browser' : key.slice(5)))
+                        .filter((key, index, all) => all.indexOf(key) === index)
+                    : []
+                }
+                onSettings={() => router.push(settingsHref)}
               />
               <SidebarInset className="min-w-0">
                 <AppHeader
@@ -364,11 +370,7 @@ export default function Shell({
                   </div>
                 )}
 
-                <WorkspaceLayoutHost
-                  layout={workspaceLayout}
-                  projectKey={projectKey}
-                  projectName={project?.project.name}
-                >
+                <WorkspaceLayoutHost layout={workspaceLayout} projectKey={projectKey}>
                   <ShellBody
                     forbidden={forbidden}
                     hasProject={!!project}
@@ -384,8 +386,8 @@ export default function Shell({
               </SidebarInset>
 
               <HomeDock
-                open={workspaceLayout.resolved.shownTools.includes('chat')}
-                onOpen={openHomeDock}
+                open={workspaceOpen}
+                onOpen={workspaceLayout.openHome}
                 onNewIssue={canCreateIssue ? openNewIssue : undefined}
               />
               <ProjectLinkSheet currentProjectKey={projectKey} projects={projects} />

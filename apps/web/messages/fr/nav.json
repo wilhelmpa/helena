@@ -218,7 +218,8 @@
       "chat-left": "Chat à gauche",
       "chat-tool": "Chat + outil",
       "two-tools": "Deux outils",
-      "tool-full": "Outil en grand"
+      "tool-full": "Outil en grand",
+      "page-tool-half": "Partagé 50/50"
     },
     "tools": "Outils",
     "pickTool": "{tool} · changer d’outil",
@@ -234,5 +235,16 @@
   "sidebarAllProjects": "All projects",
   "sidebarSystem": "System",
   "sidebarHomeAgent": "Home agent",
-  "sidebarGlobalStandards": "Global standards"
+  "sidebarGlobalStandards": "Global standards",
+  "panelTabs": {
+    "tabs": "Tools",
+    "addTab": "Add tab",
+    "browserTab": "Browser tab",
+    "side": "Side panel",
+    "split": "Split 50/50",
+    "full": "Full screen",
+    "close": "Close panel",
+    "closeTab": "Close {tab}",
+    "reloadView": "Reload view"
+  }
 }

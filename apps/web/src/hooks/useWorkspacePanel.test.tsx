@@ -137,3 +137,20 @@ test('a cross-project internal browser link opens its source panel in a preserve
     t.cleanup();
   }
 });
+
+test('the selected tool is restored separately for each project', () => {
+  const t = setup();
+  try {
+    act(() => t.root().render(<Probe projectKey="TRADE" />));
+    act(() => panel.openTool('terminal'));
+    act(() => t.root().render(<Probe projectKey="VOL" />));
+    assert.equal(panel.activeTool, 'chat');
+    act(() => panel.openTool('browser'));
+    act(() => t.root().render(<Probe projectKey="TRADE" />));
+    assert.equal(panel.activeTool, 'terminal');
+    act(() => t.root().render(<Probe projectKey="VOL" />));
+    assert.equal(panel.activeTool, 'browser');
+  } finally {
+    t.cleanup();
+  }
+});

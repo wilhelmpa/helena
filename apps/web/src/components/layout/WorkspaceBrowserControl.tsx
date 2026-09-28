@@ -15,20 +15,34 @@ export default function WorkspaceBrowserControl({
   onTakeOver,
   onHandBack,
   busy,
+  inline = false,
 }: {
   control: LiveControlState;
   onTakeOver: () => void;
   onHandBack: () => void;
   busy: boolean;
+  inline?: boolean;
 }) {
   const t = useTranslations('nav.workspace.browserBar');
   const relativeTime = useRelativeTime();
   if (control.by === 'free') return null;
   if (!control.locked) {
     return control.by === 'agent' ? (
-      <div className="pointer-events-none absolute start-2 top-2 flex h-7 items-center gap-1.5 rounded-md bg-background/85 px-2 text-xs text-muted-foreground shadow-sm">
-        <Bot className="size-3.5" />
-        {t('controlAgent')}
+      <div
+        className={
+          inline
+            ? 'flex items-center gap-1.5 text-[11px] text-[#ff912e]'
+            : 'pointer-events-none absolute start-2 top-2 flex h-7 items-center gap-1.5 rounded-md bg-background/85 px-2 text-xs text-muted-foreground shadow-sm'
+        }
+      >
+        {inline ? (
+          <span className="size-1.5 rounded-full bg-[#ff912e]" />
+        ) : (
+          <Bot className="size-3.5" />
+        )}
+        {inline
+          ? `${control.agentName ?? t('controlledByAgentGeneric')} steuert`
+          : t('controlAgent')}
       </div>
     ) : null;
   }
@@ -36,25 +50,37 @@ export default function WorkspaceBrowserControl({
   return (
     <div
       data-live-dialog
-      className="absolute start-2 top-2 flex h-8 max-w-[calc(100%-1rem)] items-center gap-2 rounded-md bg-background/90 ps-2 pe-1 text-xs text-muted-foreground shadow-sm"
+      className={
+        inline
+          ? 'flex max-w-60 items-center gap-1.5 text-[11px] text-[#ff912e]'
+          : 'absolute start-2 top-2 flex h-8 max-w-[calc(100%-1rem)] items-center gap-2 rounded-md bg-background/90 ps-2 pe-1 text-xs text-muted-foreground shadow-sm'
+      }
     >
       {control.by === 'agent' ? (
-        <Bot className="size-3.5 shrink-0" />
+        inline ? (
+          <span className="size-1.5 shrink-0 rounded-full bg-[#ff912e]" />
+        ) : (
+          <Bot className="size-3.5 shrink-0" />
+        )
       ) : (
         <Hand className="size-3.5 shrink-0" />
       )}
       <span className="min-w-0 truncate">
         {control.by === 'agent' ? (
-          <>
-            {t('controlPrefix')}{' '}
-            <strong className="font-medium text-foreground">
-              {control.agentName ?? t('controlledByAgentGeneric')}
-            </strong>
-          </>
+          inline ? (
+            `${control.agentName ?? t('controlledByAgentGeneric')} steuert`
+          ) : (
+            <>
+              {t('controlPrefix')}{' '}
+              <strong className="font-medium text-foreground">
+                {control.agentName ?? t('controlledByAgentGeneric')}
+              </strong>
+            </>
+          )
         ) : (
           <strong className="font-medium text-foreground">{t('youControl')}</strong>
         )}
-        {since && <> · {since}</>}
+        {since && !inline && <> · {since}</>}
       </span>
       {control.by === 'agent' ? (
         <Button

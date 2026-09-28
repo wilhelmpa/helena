@@ -1,13 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
+import { useSession } from '@/lib/auth-client';
 import type { Project } from '@/lib/api/endpoints/projects';
 import type { View } from '@/lib/api/endpoints/views';
-import { useSession } from '@/lib/auth-client';
-import { godPath } from '@/utils/paths';
-import { GOD_SECTIONS } from '@/utils/godSections';
 import { useSidebarSide } from '@/hooks/useSidebarSide';
 import {
   Sidebar,
@@ -15,6 +12,7 @@ import {
   SidebarFooter,
   SidebarHeader,
   SidebarRail,
+  useSidebar,
 } from '@/components/ui/sidebar';
 import SidebarAccountRow from '@/components/brand/SidebarAccountRow';
 import SidebarProjectSwitcher from './SidebarProjectSwitcher';
@@ -34,6 +32,8 @@ export default function AppSidebar({
   onOpenCommand,
   onSelectTool,
   activeTool,
+  openTools,
+  onSettings,
 }: {
   projects: Project[];
   currentProjectKey: string | null;
@@ -45,18 +45,21 @@ export default function AppSidebar({
   onOpenCommand: () => void;
   onSelectTool: (tool: WorkspaceToolId) => void;
   activeTool: WorkspaceToolId | null;
+  openTools: string[];
+  onSettings: () => void;
 }) {
   const t = useTranslations('nav');
   const locale = useLocale();
   const side = useSidebarSide();
+  const sidebar = useSidebar();
   const teamIds = [...new Set(projects.map((project) => project.teamId))];
   const homeTeamId = teamIds.length === 1 ? teamIds[0]! : null;
+  const [clock, setClock] = useState('');
   const { data: session } = useSession();
   const [mounted, setMounted] = useState(false);
-  const [clock, setClock] = useState('');
+  useEffect(() => setMounted(true), []);
 
   useEffect(() => {
-    setMounted(true);
     const updateClock = () =>
       setClock(
         new Intl.DateTimeFormat(locale, {
@@ -127,20 +130,18 @@ export default function AppSidebar({
                 title={label}
                 aria-label={label}
                 aria-pressed={activeTool === id}
-                onClick={() => onSelectTool(id)}
+                onClick={() => {
+                  onSelectTool(id);
+                  if (sidebar.isMobile) sidebar.setOpenMobile(false);
+                }}
               >
                 <Icon size={16} />
-                {activeTool === id && <i />}
+                {openTools.includes(id) && <i />}
               </button>
             ))}
           </div>
         </div>
-        {mounted && session?.user.role === 'god' && (
-          <Link href={godPath(GOD_SECTIONS[0]!.slug)} className="helena-sidebar-admin">
-            {t('godMode')}
-          </Link>
-        )}
-        <SidebarAccountRow />
+        <SidebarAccountRow onSettings={onSettings} />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>
