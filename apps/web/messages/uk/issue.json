@@ -419,6 +419,7 @@
     "you": "Ви",
     "members": "Учасники",
     "delegateTo": "Делегувати…",
+    "delegateAgain": "Знову передати агенту",
     "delegateOwnedBy": "Працює лише для {name}",
     "delegateOwnedByOther": "Працює лише для свого власника",
     "noDelegate": "Без делегата",
