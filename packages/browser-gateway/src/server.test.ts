@@ -200,6 +200,37 @@ describe('GatewayDispatcher: project scoping', () => {
   });
 });
 
+describe('GatewayDispatcher: project browsers on demand', () => {
+  it("tells the agent a browser that did not start, in the router's own words", async () => {
+    const failure = Object.assign(
+      new Error('The project browser did not start in time. Try again in a moment.'),
+      { code: 'BROWSER_UNAVAILABLE' },
+    );
+    const sessions: SessionProvider = {
+      get: mock(async () => {
+        throw failure;
+      }),
+    };
+    const gateway = dispatcher({ sessions });
+    expect(
+      await gateway.handle({ tool: 'browser_snapshot', agentKey: 'k', args: {} }),
+    ).toEqual({ ok: false, error: failure.message });
+    const status = await gateway.handle({ tool: 'browser_status', agentKey: 'k', args: {} });
+    expect(status.ok && status.content).toContain('did not start in time');
+  });
+
+  it('keeps the plain answer for any other failure', async () => {
+    const sessions: SessionProvider = {
+      get: mock(async () => {
+        throw new Error('ECONNREFUSED 127.0.0.1:19201');
+      }),
+    };
+    expect(
+      await dispatcher({ sessions }).handle({ tool: 'browser_snapshot', agentKey: 'k', args: {} }),
+    ).toEqual({ ok: false, error: 'The project browser is not reachable.' });
+  });
+});
+
 describe('GatewayDispatcher: control lock', () => {
   it('a page action takes control by itself when the browser is free', async () => {
     const locks = new ProjectBrowserLocks(120_000);

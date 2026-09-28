@@ -70,4 +70,22 @@ describe("browser gateway glue", () => {
     assert.equal(connects, 2);
     await assert.rejects(new LiveSessions(async () => undefined, async () => session).get("x"), /No project browser/);
   });
+
+  it("has the browser started (and counted as used) before every call, and passes a failed start on", async () => {
+    const ensured = [];
+    const session = { isConnected: () => true };
+    let connects = 0;
+    const sessions = new LiveSessions(
+      async () => 19201,
+      async () => { connects++; return session; },
+      async (slug, port) => { ensured.push([slug, port]); },
+    );
+    await sessions.get("vol");
+    await sessions.get("vol");
+    assert.deepEqual(ensured, [["vol", 19201], ["vol", 19201]]);
+    assert.equal(connects, 1);
+    const failure = Object.assign(new Error("The project browser did not start in time."), { code: "BROWSER_UNAVAILABLE" });
+    const failing = new LiveSessions(async () => 19202, async () => session, async () => { throw failure; });
+    await assert.rejects(failing.get("fam"), (error) => error === failure);
+  });
 });
