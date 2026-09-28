@@ -84,6 +84,21 @@ Layout-Klassen ohne Werte (`flex`, `grid`, `items-center`, `min-w-0`, `flex-1`, 
 
 Plugin-Slots (Dashboard-Widgets, Panel-Werkzeuge, Einstellungsseiten eines Projekts) rendern mit denselben Bausteinen. Ein Plugin bringt Daten und Aktionen, keine eigene Optik; Beispiel: das Trading-Dashboard (`TradingDashboard.tsx`) nutzt `Page`, `PageTabs`, `PageActions`, `Stack`, `Grid split`.
 
-## 8. Abnahme
+## 8. Plätze für neue Funktionen (Owner, 28.09.: nur integriert, eine Quelle der Wahrheit)
+
+Funktionen nach dem Vorbild von Hermes, OpenClaw und Paperclip bekommen keine eigene Oberfläche. Sie gehen in bestehende Seiten, gebaut mit diesem Framework, und zuerst gilt: Braucht sie überhaupt eine sichtbare Einstellung?
+
+| Funktion | Ort | Baustein |
+|---|---|---|
+| Budgets, Drossel, harter Stopp | Projekt › Einstellungen › Agenten › **Autopilot & Ausführung** (Überschreibung, markiert, „Auf Vorgabe zurücksetzen“); Vorgabe unter **Vorgaben für Projekte** | `SettingsGroup` „Budgets“ (vorhanden) |
+| Dauerhafte Anweisungen | Projekt › **Autopilot & Ausführung** (neue Gruppe „Anweisungen“); für Helena unter **Vorgaben für Projekte** | `SettingsGroup` + `TextArea` |
+| Eskalation | **Agenten und Modelle** (zentrale Regeln, `LocalAiEscalationSection` zieht dorthin, sobald ein Lauf sie befolgt); Agent-Detail nur „Festlegung für diesen Agenten“ | `SettingsGroup` |
+| Telegram-Kanal | **Benachrichtigungen & Kanäle** › Telegram | vorhanden |
+| Heartbeat, Gedächtnis, Fakten, Skills pro Agent | Agent-Detail (Agent-Dialog) | `DetailView`, `SettingsGroup` |
+| Skills, Selbstlernen | **Skills** (Katalog) | vorhanden |
+| Ziel-Leiter | Ziele-Seite und Aufgabendetail | `DetailGroup` |
+| Sitzungssuche | globale Suche (⌘K) | Befehlspalette |
+
+## 9. Abnahme
 
 Pro Paket eine Klick-Abnahme im echten Browser über alle betroffenen Seiten: hell und dunkel, Desktop 1440 und Handy 375, Konsole ohne Fehler. Was nicht funktioniert, wird repariert oder verschwindet aus der UI.
