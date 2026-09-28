@@ -21,6 +21,10 @@ export const DEFAULT_IDLE_MINUTES = 15;
 export const START_TIMEOUT_MS = 45_000;
 const PROBE_TIMEOUT_MS = 1_000;
 const PROBE_INTERVAL_MS = 250;
+// A browser known to run is taken at its word this long; after that a use checks it again
+// (one DevTools request), so a browser stopped or crashed behind the router's back is
+// started rather than failing the use until the next poll.
+const VERIFY_MS = 5_000;
 const SYSTEMCTL_TIMEOUT_MS = 60_000;
 const SETTINGS_REFRESH_MS = 60_000;
 const SLUG = /^[a-z0-9][a-z0-9-]{0,31}$/;
@@ -96,6 +100,7 @@ export class BrowserPower {
     now = Date.now,
     startTimeoutMs = START_TIMEOUT_MS,
     probeIntervalMs = PROBE_INTERVAL_MS,
+    verifyMs = VERIFY_MS,
     log = () => {},
   }) {
     if (!units || typeof units.start !== "function" || typeof units.stop !== "function") {
@@ -107,13 +112,14 @@ export class BrowserPower {
     this.now = now;
     this.startTimeoutMs = startTimeoutMs;
     this.probeIntervalMs = probeIntervalMs;
+    this.verifyMs = verifyMs;
     this.log = log;
   }
 
   #entry(slug) {
     let entry = this.#browsers.get(slug);
     if (!entry) {
-      entry = { state: "unknown", queue: Promise.resolve(), busy: 0, since: this.now() };
+      entry = { state: "unknown", queue: Promise.resolve(), busy: 0, since: this.now(), verifiedAt: -Infinity };
       this.#browsers.set(slug, entry);
     }
     return entry;
@@ -122,6 +128,11 @@ export class BrowserPower {
   #set(entry, state) {
     if (entry.state !== state) entry.since = this.now();
     entry.state = state;
+    if (state === "running") entry.verifiedAt = this.now();
+  }
+
+  #fresh(entry) {
+    return entry.state === "running" && this.now() - entry.verifiedAt < this.verifyMs;
   }
 
   #enqueue(entry, operation) {
@@ -161,9 +172,9 @@ export class BrowserPower {
   // rejects with BrowserUnavailableError when it does not within the start timeout.
   ensure(slug, port) {
     const entry = this.#entry(slug);
-    if (entry.state === "running" && entry.busy === 0) return Promise.resolve();
+    if (this.#fresh(entry) && entry.busy === 0) return Promise.resolve();
     return this.#enqueue(entry, async () => {
-      if (entry.state === "running") return;
+      if (this.#fresh(entry)) return;
       if (await this.probe(port)) {
         this.#set(entry, "running");
         return;

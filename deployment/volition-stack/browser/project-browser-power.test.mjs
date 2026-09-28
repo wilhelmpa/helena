@@ -270,3 +270,23 @@ test("settings: Helena's answer wins, is kept for the next start, and names who 
     await fs.rm(directory, { recursive: true, force: true });
   }
 });
+
+test("a browser stopped behind the router's back is started again on its next use", async () => {
+  let time = 0;
+  const browsers = fakeBrowsers();
+  browsers.alive.add("vol");
+  const power = new BrowserPower({ units: browsers.units, probe: browsers.probe, now: () => time, sleep: async () => {} });
+  await power.observe("vol", 19201);
+  assert.equal(power.state("vol"), "running");
+  // Stopped by someone else (a deploy, an admin): the router still thinks it runs.
+  browsers.alive.delete("vol");
+  // Within the verification window a use trusts the state (no request per use)…
+  time = 1_000;
+  await power.ensure("vol", 19201);
+  assert.deepEqual(browsers.calls, []);
+  // …after it, the next use checks and starts the browser.
+  time = 10_000;
+  await power.ensure("vol", 19201);
+  assert.deepEqual(browsers.calls, [["start", "vol"]]);
+  assert.equal(power.state("vol"), "running");
+});
