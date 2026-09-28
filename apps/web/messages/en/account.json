@@ -157,7 +157,7 @@
       "work-items": "Tasks",
       "inbox": "Inbox",
       "dashboard": "Dashboards",
-      "initiatives": "Initiatives"
+      "initiatives": "Goals"
     },
     "showStats": "Show stats",
     "showStatsDescription": "Whether the stats section starts expanded when you open an issue.",

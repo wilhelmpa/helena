@@ -67,7 +67,7 @@
         "new": "Nouveau ticket"
       },
       "initiative": {
-        "new": "Nouvelle initiative"
+        "new": "Nouvel objectif"
       },
       "view": {
         "kanban": "Affichage tableau",
@@ -164,7 +164,7 @@
   "pickColor": "Choisir une couleur",
   "new": "Nouveau",
   "features": {
-    "initiatives": "Initiatives",
+    "initiatives": "Objectifs",
     "cycles": "Cycles",
     "dashboards": "Tableaux de bord",
     "documents": "Docs",

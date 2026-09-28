@@ -157,7 +157,7 @@
       "work-items": "Tickets",
       "inbox": "Boîte de réception",
       "dashboard": "Tableaux de bord",
-      "initiatives": "Initiatives"
+      "initiatives": "Objectifs"
     },
     "showStats": "Afficher les statistiques",
     "showStatsDescription": "Si la section des statistiques est développée à l'ouverture d'un ticket.",

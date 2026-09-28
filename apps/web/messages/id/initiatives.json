@@ -1,8 +1,8 @@
 {
-  "title": "Inisiatif",
-  "newInitiative": "Inisiatif baru",
-  "notFound": "Inisiatif tidak ditemukan.",
-  "options": "Opsi inisiatif",
+  "title": "Sasaran",
+  "newInitiative": "Sasaran baru",
+  "notFound": "Sasaran tidak ditemukan.",
+  "options": "Opsi sasaran",
   "showDescription": "Tampilkan deskripsi",
   "noDescription": "Tidak ada deskripsi.",
   "noOwner": "Tanpa pemilik",
@@ -13,21 +13,21 @@
   "noActivity": "Belum ada aktivitas.",
   "noIssuesLinked": "Belum ada issue yang ditautkan.",
   "inProgress": "Sedang berjalan",
-  "emptyTitle": "Belum ada inisiatif",
-  "emptyDescription": "Inisiatif mengelompokkan issue terkait di bawah satu tujuan.",
-  "emptyTabDescription": "Inisiatif berpindah antar-tab saat statusnya berubah.",
+  "emptyTitle": "Belum ada sasaran",
+  "emptyDescription": "Sasaran mengelompokkan tugas terkait.",
+  "emptyTabDescription": "Sasaran berpindah antar-tab saat statusnya berubah.",
   "emptyTab": {
-    "active": "Tidak ada inisiatif aktif",
-    "planned": "Tidak ada inisiatif terencana",
-    "proposed": "Tidak ada inisiatif yang diusulkan",
-    "completed": "Tidak ada inisiatif yang selesai"
+    "active": "Tidak ada sasaran aktif",
+    "planned": "Tidak ada sasaran terencana",
+    "proposed": "Tidak ada sasaran yang diusulkan",
+    "completed": "Tidak ada sasaran yang selesai"
   },
   "tabs": {
     "active": "Aktif",
     "planned": "Terencana",
     "proposed": "Diusulkan",
     "completed": "Selesai",
-    "all": "Semua inisiatif"
+    "all": "Semua sasaran"
   },
   "detailTabs": {
     "overview": "Ringkasan",
@@ -94,10 +94,10 @@
   },
   "form": {
     "titlePlaceholder": "Peluncuran Q3",
-    "descriptionPlaceholder": "Tentang apakah inisiatif ini?",
-    "create": "Buat inisiatif",
+    "descriptionPlaceholder": "Tentang apakah sasaran ini?",
+    "create": "Buat sasaran",
     "creating": "Membuat…",
-    "editTitle": "Ubah inisiatif",
+    "editTitle": "Ubah sasaran",
     "save": "Simpan perubahan"
   },
   "pagination": {
@@ -106,15 +106,15 @@
     "next": "Halaman berikutnya"
   },
   "select": {
-    "label": "Inisiatif",
-    "search": "Tautkan ke inisiatif…",
-    "empty": "Tidak ada inisiatif.",
-    "none": "Tanpa inisiatif",
-    "create": "Buat inisiatif"
+    "label": "Sasaran",
+    "search": "Tautkan ke sasaran…",
+    "empty": "Tidak ada sasaran.",
+    "none": "Tanpa sasaran",
+    "create": "Buat sasaran"
   },
   "feed": {
     "system": "Sistem",
-    "createdInitiative": "membuat inisiatif",
+    "createdInitiative": "membuat sasaran",
     "createdIssue": "membuat issue",
     "renamed": "mengubah nama menjadi “{title}”",
     "descriptionUpdated": "memperbarui deskripsi",
@@ -140,9 +140,9 @@
     "typeSet": "mengatur tipe ke {type}",
     "typeRemoved": "menghapus tipe",
     "linked": "ditautkan ke {name}",
-    "unlinked": "dilepas tautannya dari inisiatif",
+    "unlinked": "dilepas tautannya dari sasaran",
     "linkedIssue": "menautkan <issue>tugas</issue> ke {name}",
-    "unlinkedIssue": "melepas tautan <issue>tugas</issue> dari inisiatif",
+    "unlinkedIssue": "melepas tautan <issue>tugas</issue> dari sasaran",
     "createdIssueNamed": "membuat <issue>tugas</issue>"
   },
   "attachments": {
@@ -158,6 +158,6 @@
     "downloadFile": "Unduh {name}",
     "deleteFile": "Hapus {name}"
   },
-  "deleteTitle": "Hapus inisiatif",
-  "deleteConfirm": "Hapus “{name}”? Tugas tetap ada di proyek, tanpa inisiatif ini."
+  "deleteTitle": "Hapus sasaran",
+  "deleteConfirm": "Hapus “{name}”? Tugas tetap ada di proyek, tanpa sasaran ini."
 }

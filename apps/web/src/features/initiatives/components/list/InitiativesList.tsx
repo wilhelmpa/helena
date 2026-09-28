@@ -52,7 +52,7 @@ export default function InitiativesList({
       return (
         <EmptyState title={t(`emptyTab.${statusTab}`)} description={t('emptyTabDescription')} />
       );
-    // "Neue Initiative" is the toolbar's primary action, so the empty state does not
+    // "Neues Ziel" is the toolbar's primary action, so the empty state does not
     // repeat it.
     return <EmptyState title={t('emptyTitle')} description={t('emptyDescription')} />;
   }

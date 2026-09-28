@@ -1,8 +1,8 @@
 {
-  "title": "Initiatives",
-  "newInitiative": "New initiative",
-  "notFound": "Initiative not found.",
-  "options": "Initiative options",
+  "title": "Goals",
+  "newInitiative": "New goal",
+  "notFound": "Goal not found.",
+  "options": "Goal options",
   "showDescription": "Show description",
   "noDescription": "No description.",
   "noOwner": "No owner",
@@ -13,21 +13,21 @@
   "noActivity": "No activity yet.",
   "noIssuesLinked": "No issues linked yet.",
   "inProgress": "In progress",
-  "emptyTitle": "No initiatives yet",
-  "emptyDescription": "An initiative groups related issues under one goal.",
-  "emptyTabDescription": "Initiatives move between tabs as their status changes.",
+  "emptyTitle": "No goals yet",
+  "emptyDescription": "A goal groups related tasks.",
+  "emptyTabDescription": "Goals move between tabs as their status changes.",
   "emptyTab": {
-    "active": "No active initiatives",
-    "planned": "No planned initiatives",
-    "proposed": "No proposed initiatives",
-    "completed": "No completed initiatives"
+    "active": "No active goals",
+    "planned": "No planned goals",
+    "proposed": "No proposed goals",
+    "completed": "No completed goals"
   },
   "tabs": {
     "active": "Active",
     "planned": "Planned",
     "proposed": "Proposed",
     "completed": "Completed",
-    "all": "All initiatives"
+    "all": "All goals"
   },
   "detailTabs": {
     "overview": "Overview",
@@ -94,10 +94,10 @@
   },
   "form": {
     "titlePlaceholder": "Q3 Launch",
-    "descriptionPlaceholder": "What is this initiative about?",
-    "create": "Create initiative",
+    "descriptionPlaceholder": "What is this goal about?",
+    "create": "Create goal",
     "creating": "Creating…",
-    "editTitle": "Edit initiative",
+    "editTitle": "Edit goal",
     "save": "Save changes"
   },
   "pagination": {
@@ -106,15 +106,15 @@
     "next": "Next page"
   },
   "select": {
-    "label": "Initiative",
-    "search": "Link to initiative…",
-    "empty": "No initiatives.",
-    "none": "No initiative",
-    "create": "Create initiative"
+    "label": "Goal",
+    "search": "Link to goal…",
+    "empty": "No goals.",
+    "none": "No goal",
+    "create": "Create goal"
   },
   "feed": {
     "system": "System",
-    "createdInitiative": "created the initiative",
+    "createdInitiative": "created the goal",
     "createdIssue": "created the issue",
     "renamed": "renamed to “{title}”",
     "descriptionUpdated": "updated the description",
@@ -140,9 +140,9 @@
     "typeSet": "set type to {type}",
     "typeRemoved": "removed type",
     "linked": "linked to {name}",
-    "unlinked": "unlinked from the initiative",
+    "unlinked": "unlinked from the goal",
     "linkedIssue": "linked <issue>the task</issue> to {name}",
-    "unlinkedIssue": "unlinked <issue>the task</issue> from the initiative",
+    "unlinkedIssue": "unlinked <issue>the task</issue> from the goal",
     "createdIssueNamed": "created <issue>the task</issue>"
   },
   "attachments": {
@@ -158,6 +158,6 @@
     "downloadFile": "Download {name}",
     "deleteFile": "Delete {name}"
   },
-  "deleteTitle": "Delete initiative",
-  "deleteConfirm": "Delete “{name}”? Its tasks stay in the project, without this initiative."
+  "deleteTitle": "Delete goal",
+  "deleteConfirm": "Delete “{name}”? Its tasks stay in the project, without this goal."
 }

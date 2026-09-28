@@ -26,7 +26,7 @@
     "delegate": "Delegiert an",
     "priority": "Priorität",
     "type": "Typ",
-    "initiative": "Initiative",
+    "initiative": "Ziel",
     "cycle": "Zyklus",
     "area": "Bereich"
   },
@@ -37,7 +37,7 @@
     "type": "Typ",
     "assignee": "Zuständig",
     "delegate": "Delegiert an",
-    "initiative": "Initiative",
+    "initiative": "Ziel",
     "cycle": "Zyklus",
     "labels": "Labels",
     "estimatePoints": "Story Points",

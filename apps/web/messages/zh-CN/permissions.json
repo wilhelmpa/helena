@@ -3,7 +3,7 @@
   "grantedCount": "已授予 {count, plural, other {# 项权限}}",
   "resources": {
     "work_items": "工作项",
-    "initiatives": "计划",
+    "initiatives": "目标",
     "cycles": "周期",
     "dashboards": "仪表盘",
     "documents": "Docs",

@@ -67,7 +67,7 @@
         "new": "Nova issue"
       },
       "initiative": {
-        "new": "Nova iniciativa"
+        "new": "Novo objetivo"
       },
       "view": {
         "kanban": "Layout de quadro",
@@ -164,7 +164,7 @@
   "pickColor": "Escolher cor",
   "new": "Novo",
   "features": {
-    "initiatives": "Iniciativas",
+    "initiatives": "Objetivos",
     "cycles": "Ciclos",
     "dashboards": "Dashboards",
     "documents": "Docs",

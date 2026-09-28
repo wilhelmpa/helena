@@ -26,7 +26,7 @@
     "delegate": "Delegado",
     "priority": "Prioridad",
     "type": "Tipo",
-    "initiative": "Iniciativa",
+    "initiative": "Objetivo",
     "cycle": "Ciclo",
     "area": "Área"
   },
@@ -37,7 +37,7 @@
     "type": "Tipo",
     "assignee": "Asignatario",
     "delegate": "Delegado",
-    "initiative": "Iniciativa",
+    "initiative": "Objetivo",
     "cycle": "Ciclo",
     "labels": "Etiquetas",
     "estimatePoints": "Puntos de historia",

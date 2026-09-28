@@ -72,4 +72,14 @@ describe('Helena language on main surfaces', () => {
       }
     }
   });
+
+  it('calls initiatives "Ziele" in every German namespace', () => {
+    for (const file of readdirSync(new URL('de/', root))) {
+      if (!file.endsWith('.json')) continue;
+      const namespace = file.slice(0, -'.json'.length);
+      for (const [path, value] of strings(messages('de', namespace), namespace)) {
+        assert.doesNotMatch(value, /Initiativ/i, path);
+      }
+    }
+  });
 });

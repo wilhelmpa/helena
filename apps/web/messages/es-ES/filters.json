@@ -23,9 +23,9 @@
     "upcoming": "Próximos ciclos"
   },
   "initiativeStatus": {
-    "active": "Iniciativas activas",
-    "planned": "Iniciativas planificadas",
-    "proposed": "Iniciativas propuestas"
+    "active": "Objetivos activos",
+    "planned": "Objetivos planificados",
+    "proposed": "Objetivos propuestos"
   },
   "fields": {
     "status": "Estado",
@@ -34,7 +34,7 @@
     "delegate": "Delegado",
     "priority": "Prioridad",
     "type": "Tipo",
-    "initiative": "Iniciativa",
+    "initiative": "Objetivo",
     "cycle": "Ciclo",
     "labels": "Etiquetas",
     "dueDate": "Fecha de vencimiento",
@@ -47,7 +47,7 @@
     "assignee": "Sin asignar",
     "delegate": "Sin delegado",
     "type": "Sin tipo",
-    "initiative": "Sin iniciitiva",
+    "initiative": "Sin objetivo",
     "cycle": "Sin ciclo",
     "member": "Sin valor",
     "area": "Sin área"

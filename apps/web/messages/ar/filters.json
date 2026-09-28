@@ -23,9 +23,9 @@
     "upcoming": "الدورات القادمة"
   },
   "initiativeStatus": {
-    "active": "المبادرات النشطة",
-    "planned": "المبادرات المخطَّطة",
-    "proposed": "المبادرات المقترحة"
+    "active": "الأهداف النشطة",
+    "planned": "الأهداف المخطَّطة",
+    "proposed": "الأهداف المقترحة"
   },
   "fields": {
     "status": "الحالة",
@@ -34,7 +34,7 @@
     "delegate": "المفوَّض",
     "priority": "الأولوية",
     "type": "النوع",
-    "initiative": "المبادرة",
+    "initiative": "الهدف",
     "cycle": "الدورة",
     "labels": "الوسوم",
     "dueDate": "تاريخ الاستحقاق",
@@ -47,7 +47,7 @@
     "assignee": "بلا مسؤول",
     "delegate": "بلا مفوَّض",
     "type": "بلا نوع",
-    "initiative": "بلا مبادرة",
+    "initiative": "بلا هدف",
     "cycle": "بلا دورة",
     "member": "بدون قيمة",
     "area": "بلا مجال"

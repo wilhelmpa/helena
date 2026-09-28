@@ -67,7 +67,7 @@
         "new": "Issue baru"
       },
       "initiative": {
-        "new": "Inisiatif baru"
+        "new": "Sasaran baru"
       },
       "view": {
         "kanban": "Tata letak papan",
@@ -164,7 +164,7 @@
   "pickColor": "Pilih warna",
   "new": "Baru",
   "features": {
-    "initiatives": "Inisiatif",
+    "initiatives": "Sasaran",
     "cycles": "Cycle",
     "dashboards": "Dasbor",
     "documents": "Dokumen",

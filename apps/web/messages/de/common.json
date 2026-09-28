@@ -67,7 +67,7 @@
         "new": "Neue Aufgabe"
       },
       "initiative": {
-        "new": "Neue Initiative"
+        "new": "Neues Ziel"
       },
       "view": {
         "kanban": "Board-Layout",
@@ -164,7 +164,7 @@
   "pickColor": "Farbe auswählen",
   "new": "Neu",
   "features": {
-    "initiatives": "Initiativen",
+    "initiatives": "Ziele",
     "cycles": "Zyklen",
     "dashboards": "Dashboards",
     "documents": "Dokumente",

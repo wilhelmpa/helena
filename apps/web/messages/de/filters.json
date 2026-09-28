@@ -23,9 +23,9 @@
     "upcoming": "Anstehende Zyklen"
   },
   "initiativeStatus": {
-    "active": "Aktive Initiativen",
-    "planned": "Geplante Initiativen",
-    "proposed": "Vorgeschlagene Initiativen"
+    "active": "Aktive Ziele",
+    "planned": "Geplante Ziele",
+    "proposed": "Vorgeschlagene Ziele"
   },
   "fields": {
     "status": "Status",
@@ -34,7 +34,7 @@
     "delegate": "Delegiert an",
     "priority": "Priorität",
     "type": "Typ",
-    "initiative": "Initiative",
+    "initiative": "Ziel",
     "cycle": "Zyklus",
     "labels": "Labels",
     "dueDate": "Fälligkeitsdatum",
@@ -47,7 +47,7 @@
     "assignee": "Nicht zugewiesen",
     "delegate": "Nicht delegiert",
     "type": "Kein Typ",
-    "initiative": "Keine Initiative",
+    "initiative": "Kein Ziel",
     "cycle": "Kein Zyklus",
     "member": "Kein Wert",
     "area": "Kein Bereich"

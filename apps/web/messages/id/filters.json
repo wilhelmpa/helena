@@ -23,9 +23,9 @@
     "upcoming": "Cycle mendatang"
   },
   "initiativeStatus": {
-    "active": "Inisiatif aktif",
-    "planned": "Inisiatif terencana",
-    "proposed": "Inisiatif yang diusulkan"
+    "active": "Sasaran aktif",
+    "planned": "Sasaran terencana",
+    "proposed": "Sasaran yang diusulkan"
   },
   "fields": {
     "status": "Status",
@@ -34,7 +34,7 @@
     "delegate": "Delegasi",
     "priority": "Prioritas",
     "type": "Tipe",
-    "initiative": "Inisiatif",
+    "initiative": "Sasaran",
     "cycle": "Cycle",
     "labels": "Label",
     "dueDate": "Tenggat waktu",
@@ -47,7 +47,7 @@
     "assignee": "Tanpa penerima tugas",
     "delegate": "Tanpa delegasi",
     "type": "Tanpa tipe",
-    "initiative": "Tanpa inisiatif",
+    "initiative": "Tanpa sasaran",
     "cycle": "Tanpa cycle",
     "member": "Tanpa nilai",
     "area": "Tanpa area"

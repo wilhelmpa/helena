@@ -26,7 +26,7 @@
     "delegate": "Délégué",
     "priority": "Priorité",
     "type": "Type",
-    "initiative": "Initiative",
+    "initiative": "Objectif",
     "cycle": "Cycle",
     "area": "Domaine"
   },
@@ -37,7 +37,7 @@
     "type": "Type",
     "assignee": "Responsable",
     "delegate": "Délégué",
-    "initiative": "Initiative",
+    "initiative": "Objectif",
     "cycle": "Cycle",
     "labels": "Étiquettes",
     "estimatePoints": "Story points",

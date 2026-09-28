@@ -1,8 +1,8 @@
 {
-  "title": "Initiatives",
-  "newInitiative": "Nouvelle initiative",
-  "notFound": "Initiative introuvable.",
-  "options": "Options de l'initiative",
+  "title": "Objectifs",
+  "newInitiative": "Nouvel objectif",
+  "notFound": "Objectif introuvable.",
+  "options": "Options de l'objectif",
   "showDescription": "Afficher la description",
   "noDescription": "Aucune description.",
   "noOwner": "Aucun responsable",
@@ -13,21 +13,21 @@
   "noActivity": "Aucune activité pour l'instant.",
   "noIssuesLinked": "Aucun ticket lié pour l'instant.",
   "inProgress": "En cours",
-  "emptyTitle": "Aucune initiative pour l'instant",
-  "emptyDescription": "Une initiative regroupe des tickets liés autour d'un même objectif.",
-  "emptyTabDescription": "Les initiatives changent d'onglet à mesure que leur statut évolue.",
+  "emptyTitle": "Aucun objectif pour l'instant",
+  "emptyDescription": "Un objectif regroupe des tâches liées.",
+  "emptyTabDescription": "Les objectifs changent d'onglet à mesure que leur statut évolue.",
   "emptyTab": {
-    "active": "Aucune initiative en cours",
-    "planned": "Aucune initiative planifiée",
-    "proposed": "Aucune initiative proposée",
-    "completed": "Aucune initiative terminée"
+    "active": "Aucun objectif en cours",
+    "planned": "Aucun objectif planifié",
+    "proposed": "Aucun objectif proposé",
+    "completed": "Aucun objectif terminé"
   },
   "tabs": {
     "active": "En cours",
     "planned": "Planifiées",
     "proposed": "Proposées",
     "completed": "Terminées",
-    "all": "Toutes les initiatives"
+    "all": "Tous les objectifs"
   },
   "detailTabs": {
     "overview": "Vue d'ensemble",
@@ -94,10 +94,10 @@
   },
   "form": {
     "titlePlaceholder": "Lancement T3",
-    "descriptionPlaceholder": "De quoi parle cette initiative ?",
-    "create": "Créer l'initiative",
+    "descriptionPlaceholder": "De quoi parle cet objectif ?",
+    "create": "Créer l'objectif",
     "creating": "Création…",
-    "editTitle": "Modifier l'initiative",
+    "editTitle": "Modifier l'objectif",
     "save": "Enregistrer les modifications"
   },
   "pagination": {
@@ -106,15 +106,15 @@
     "next": "Page suivante"
   },
   "select": {
-    "label": "Initiative",
-    "search": "Lier à une initiative…",
-    "empty": "Aucune initiative.",
-    "none": "Aucune initiative",
-    "create": "Créer une initiative"
+    "label": "Objectif",
+    "search": "Lier à un objectif…",
+    "empty": "Aucun objectif.",
+    "none": "Aucun objectif",
+    "create": "Créer un objectif"
   },
   "feed": {
     "system": "Système",
-    "createdInitiative": "a créé l'initiative",
+    "createdInitiative": "a créé l'objectif",
     "createdIssue": "a créé le ticket",
     "renamed": "a renommé en « {title} »",
     "descriptionUpdated": "a mis à jour la description",
@@ -140,9 +140,9 @@
     "typeSet": "a défini le type sur {type}",
     "typeRemoved": "a retiré le type",
     "linked": "a lié à {name}",
-    "unlinked": "a délié de l'initiative",
+    "unlinked": "a délié de l'objectif",
     "linkedIssue": "a lié <issue>la tâche</issue> à {name}",
-    "unlinkedIssue": "a délié <issue>la tâche</issue> de l’initiative",
+    "unlinkedIssue": "a délié <issue>la tâche</issue> de l’objectif",
     "createdIssueNamed": "a créé <issue>la tâche</issue>"
   },
   "attachments": {
@@ -158,6 +158,6 @@
     "downloadFile": "Télécharger {name}",
     "deleteFile": "Supprimer {name}"
   },
-  "deleteTitle": "Supprimer l’initiative",
-  "deleteConfirm": "Supprimer « {name} » ? Les tâches restent dans le projet, sans cette initiative."
+  "deleteTitle": "Supprimer l’objectif",
+  "deleteConfirm": "Supprimer « {name} » ? Les tâches restent dans le projet, sans cet objectif."
 }

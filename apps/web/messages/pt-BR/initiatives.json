@@ -1,8 +1,8 @@
 {
-  "title": "Iniciativas",
-  "newInitiative": "Nova iniciativa",
-  "notFound": "Iniciativa não encontrada.",
-  "options": "Opções da iniciativa",
+  "title": "Objetivos",
+  "newInitiative": "Novo objetivo",
+  "notFound": "Objetivo não encontrado.",
+  "options": "Opções do objetivo",
   "showDescription": "Mostrar descrição",
   "noDescription": "Sem descrição.",
   "noOwner": "Sem dono",
@@ -13,21 +13,21 @@
   "noActivity": "Nenhuma atividade ainda.",
   "noIssuesLinked": "Nenhuma issue vinculada ainda.",
   "inProgress": "Em andamento",
-  "emptyTitle": "Nenhuma iniciativa ainda",
-  "emptyDescription": "Uma iniciativa agrupa issues relacionadas sob um objetivo.",
-  "emptyTabDescription": "As iniciativas mudam de aba conforme seu status muda.",
+  "emptyTitle": "Nenhum objetivo ainda",
+  "emptyDescription": "Um objetivo agrupa tarefas relacionadas.",
+  "emptyTabDescription": "Os objetivos mudam de aba conforme seu status muda.",
   "emptyTab": {
-    "active": "Nenhuma iniciativa ativa",
-    "planned": "Nenhuma iniciativa planejada",
-    "proposed": "Nenhuma iniciativa proposta",
-    "completed": "Nenhuma iniciativa concluída"
+    "active": "Nenhum objetivo ativo",
+    "planned": "Nenhum objetivo planejado",
+    "proposed": "Nenhum objetivo proposto",
+    "completed": "Nenhum objetivo concluído"
   },
   "tabs": {
     "active": "Ativas",
     "planned": "Planejadas",
     "proposed": "Propostas",
     "completed": "Concluídas",
-    "all": "Todas as iniciativas"
+    "all": "Todos os objetivos"
   },
   "detailTabs": {
     "overview": "Visão geral",
@@ -94,10 +94,10 @@
   },
   "form": {
     "titlePlaceholder": "Lançamento do T3",
-    "descriptionPlaceholder": "Sobre o que é esta iniciativa?",
-    "create": "Criar iniciativa",
+    "descriptionPlaceholder": "Sobre o que é este objetivo?",
+    "create": "Criar objetivo",
     "creating": "Criando…",
-    "editTitle": "Editar iniciativa",
+    "editTitle": "Editar objetivo",
     "save": "Salvar alterações"
   },
   "pagination": {
@@ -106,15 +106,15 @@
     "next": "Próxima página"
   },
   "select": {
-    "label": "Iniciativa",
-    "search": "Vincular à iniciativa…",
-    "empty": "Nenhuma iniciativa.",
-    "none": "Nenhuma iniciativa",
-    "create": "Criar iniciativa"
+    "label": "Objetivo",
+    "search": "Vincular ao objetivo…",
+    "empty": "Nenhum objetivo.",
+    "none": "Nenhum objetivo",
+    "create": "Criar objetivo"
   },
   "feed": {
     "system": "Sistema",
-    "createdInitiative": "criou a iniciativa",
+    "createdInitiative": "criou o objetivo",
     "createdIssue": "criou a issue",
     "renamed": "renomeou para “{title}”",
     "descriptionUpdated": "atualizou a descrição",
@@ -140,9 +140,9 @@
     "typeSet": "definiu o tipo para {type}",
     "typeRemoved": "removeu o tipo",
     "linked": "vinculou a {name}",
-    "unlinked": "desvinculou da iniciativa",
+    "unlinked": "desvinculou do objetivo",
     "linkedIssue": "vinculou <issue>a tarefa</issue> a {name}",
-    "unlinkedIssue": "desvinculou <issue>a tarefa</issue> da iniciativa",
+    "unlinkedIssue": "desvinculou <issue>a tarefa</issue> do objetivo",
     "createdIssueNamed": "criou <issue>a tarefa</issue>"
   },
   "attachments": {
@@ -158,6 +158,6 @@
     "downloadFile": "Baixar {name}",
     "deleteFile": "Excluir {name}"
   },
-  "deleteTitle": "Excluir iniciativa",
-  "deleteConfirm": "Excluir “{name}”? As tarefas ficam no projeto, sem esta iniciativa."
+  "deleteTitle": "Excluir objetivo",
+  "deleteConfirm": "Excluir “{name}”? As tarefas ficam no projeto, sem este objetivo."
 }

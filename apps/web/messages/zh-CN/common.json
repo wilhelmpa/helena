@@ -67,7 +67,7 @@
         "new": "新建工作项"
       },
       "initiative": {
-        "new": "新建计划"
+        "new": "新建目标"
       },
       "view": {
         "kanban": "看板布局",
@@ -164,7 +164,7 @@
   "pickColor": "选择颜色",
   "new": "新建",
   "features": {
-    "initiatives": "计划",
+    "initiatives": "目标",
     "cycles": "周期",
     "dashboards": "仪表盘",
     "documents": "Docs",

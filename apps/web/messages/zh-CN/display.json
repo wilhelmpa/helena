@@ -26,7 +26,7 @@
     "delegate": "执行代理",
     "priority": "优先级",
     "type": "类型",
-    "initiative": "计划",
+    "initiative": "目标",
     "cycle": "周期",
     "area": "区域"
   },
@@ -37,7 +37,7 @@
     "type": "类型",
     "assignee": "负责人",
     "delegate": "执行代理",
-    "initiative": "计划",
+    "initiative": "目标",
     "cycle": "周期",
     "labels": "标签",
     "estimatePoints": "故事点",

@@ -3,7 +3,7 @@
   "grantedCount": "{count, plural, one {# izin} other {# izin}} diberikan",
   "resources": {
     "work_items": "Item pekerjaan",
-    "initiatives": "Inisiatif",
+    "initiatives": "Sasaran",
     "cycles": "Cycle",
     "dashboards": "Dasbor",
     "documents": "Dokumen",

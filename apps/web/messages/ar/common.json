@@ -67,7 +67,7 @@
         "new": "مهمة جديدة"
       },
       "initiative": {
-        "new": "مبادرة جديدة"
+        "new": "هدف جديد"
       },
       "view": {
         "kanban": "تخطيط اللوحة",
@@ -164,7 +164,7 @@
   "pickColor": "اختيار لون",
   "new": "جديد",
   "features": {
-    "initiatives": "المبادرات",
+    "initiatives": "الأهداف",
     "cycles": "الدورات",
     "dashboards": "لوحات المعلومات",
     "documents": "Docs",

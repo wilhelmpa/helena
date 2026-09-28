@@ -3,7 +3,7 @@
   "grantedCount": "{count, plural, one {# permission} other {# permissions}} granted",
   "resources": {
     "work_items": "Tasks",
-    "initiatives": "Initiatives",
+    "initiatives": "Goals",
     "cycles": "Cycles",
     "dashboards": "Dashboards",
     "documents": "Docs",

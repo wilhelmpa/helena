@@ -26,7 +26,7 @@
     "delegate": "Делегат",
     "priority": "Приоритет",
     "type": "Тип",
-    "initiative": "Инициатива",
+    "initiative": "Цель",
     "cycle": "Цикл",
     "area": "Область"
   },
@@ -37,7 +37,7 @@
     "type": "Тип",
     "assignee": "Исполнитель",
     "delegate": "Делегат",
-    "initiative": "Инициатива",
+    "initiative": "Цель",
     "cycle": "Цикл",
     "labels": "Метки",
     "estimatePoints": "Стори-поинты",

@@ -23,9 +23,9 @@
     "upcoming": "Upcoming cycles"
   },
   "initiativeStatus": {
-    "active": "Active initiatives",
-    "planned": "Planned initiatives",
-    "proposed": "Proposed initiatives"
+    "active": "Active goals",
+    "planned": "Planned goals",
+    "proposed": "Proposed goals"
   },
   "fields": {
     "status": "State",
@@ -34,7 +34,7 @@
     "delegate": "Delegate",
     "priority": "Priority",
     "type": "Type",
-    "initiative": "Initiative",
+    "initiative": "Goal",
     "cycle": "Cycle",
     "labels": "Labels",
     "dueDate": "Due date",
@@ -47,7 +47,7 @@
     "assignee": "No assignee",
     "delegate": "No delegate",
     "type": "No type",
-    "initiative": "No initiative",
+    "initiative": "No goal",
     "cycle": "No cycle",
     "member": "No value",
     "area": "No area"

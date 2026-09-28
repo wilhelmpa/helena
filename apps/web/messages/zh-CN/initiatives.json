@@ -1,8 +1,8 @@
 {
-  "title": "计划",
-  "newInitiative": "新建计划",
-  "notFound": "未找到计划。",
-  "options": "计划选项",
+  "title": "目标",
+  "newInitiative": "新建目标",
+  "notFound": "未找到目标。",
+  "options": "目标选项",
   "showDescription": "显示描述",
   "noDescription": "暂无描述。",
   "noOwner": "无负责人",
@@ -13,21 +13,21 @@
   "noActivity": "暂无活动记录。",
   "noIssuesLinked": "暂无关联工作项。",
   "inProgress": "进行中",
-  "emptyTitle": "暂无计划",
-  "emptyDescription": "计划将相关工作项归入同一目标。",
-  "emptyTabDescription": "计划会随状态变更显示在不同标签页中。",
+  "emptyTitle": "暂无目标",
+  "emptyDescription": "目标将相关任务归为一组。",
+  "emptyTabDescription": "目标会随状态变更显示在不同标签页中。",
   "emptyTab": {
-    "active": "暂无进行中的计划",
-    "planned": "暂无已规划的计划",
-    "proposed": "暂无提议中的计划",
-    "completed": "暂无已完成的计划"
+    "active": "暂无进行中的目标",
+    "planned": "暂无已规划的目标",
+    "proposed": "暂无提议中的目标",
+    "completed": "暂无已完成的目标"
   },
   "tabs": {
     "active": "进行中",
     "planned": "已规划",
     "proposed": "提议中",
     "completed": "已完成",
-    "all": "所有计划"
+    "all": "所有目标"
   },
   "detailTabs": {
     "overview": "概览",
@@ -94,10 +94,10 @@
   },
   "form": {
     "titlePlaceholder": "第三季度发布",
-    "descriptionPlaceholder": "此计划的目标是什么？",
-    "create": "新建计划",
+    "descriptionPlaceholder": "此目标是关于什么的？",
+    "create": "新建目标",
     "creating": "正在创建…",
-    "editTitle": "编辑计划",
+    "editTitle": "编辑目标",
     "save": "保存更改"
   },
   "pagination": {
@@ -106,15 +106,15 @@
     "next": "下一页"
   },
   "select": {
-    "label": "计划",
-    "search": "关联计划…",
-    "empty": "暂无计划。",
-    "none": "无计划",
-    "create": "新建计划"
+    "label": "目标",
+    "search": "关联目标…",
+    "empty": "暂无目标。",
+    "none": "无目标",
+    "create": "新建目标"
   },
   "feed": {
     "system": "系统",
-    "createdInitiative": "创建了计划",
+    "createdInitiative": "创建了目标",
     "createdIssue": "创建了工作项",
     "renamed": "重命名为“{title}”",
     "descriptionUpdated": "更新了描述",
@@ -140,9 +140,9 @@
     "typeSet": "将类型设为 {type}",
     "typeRemoved": "移除了类型",
     "linked": "关联至 {name}",
-    "unlinked": "取消了与此计划的关联",
+    "unlinked": "取消了与此目标的关联",
     "linkedIssue": "将 <issue>任务</issue> 关联至 {name}",
-    "unlinkedIssue": "取消了 <issue>任务</issue> 与此计划的关联",
+    "unlinkedIssue": "取消了 <issue>任务</issue> 与此目标的关联",
     "createdIssueNamed": "创建了 <issue>任务</issue>"
   },
   "attachments": {
@@ -158,6 +158,6 @@
     "downloadFile": "下载 {name}",
     "deleteFile": "删除 {name}"
   },
-  "deleteTitle": "删除计划",
-  "deleteConfirm": "删除“{name}”？任务会留在项目中，只是不再属于此计划。"
+  "deleteTitle": "删除目标",
+  "deleteConfirm": "删除“{name}”？任务会留在项目中，只是不再属于此目标。"
 }

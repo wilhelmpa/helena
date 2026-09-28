@@ -3,7 +3,7 @@
   "grantedCount": "Предоставлено {count, plural, one {# право} few {# права} many {# прав} other {# права}}",
   "resources": {
     "work_items": "Задачи",
-    "initiatives": "Инициативы",
+    "initiatives": "Цели",
     "cycles": "Циклы",
     "dashboards": "Дашборды",
     "documents": "Docs",

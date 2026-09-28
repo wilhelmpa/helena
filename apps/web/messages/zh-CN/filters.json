@@ -23,9 +23,9 @@
     "upcoming": "即将开始的周期"
   },
   "initiativeStatus": {
-    "active": "进行中的计划",
-    "planned": "已规划的计划",
-    "proposed": "提议中的计划"
+    "active": "进行中的目标",
+    "planned": "已规划的目标",
+    "proposed": "提议中的目标"
   },
   "fields": {
     "status": "状态",
@@ -34,7 +34,7 @@
     "delegate": "执行代理",
     "priority": "优先级",
     "type": "类型",
-    "initiative": "计划",
+    "initiative": "目标",
     "cycle": "周期",
     "labels": "标签",
     "dueDate": "截止日期",
@@ -47,7 +47,7 @@
     "assignee": "无负责人",
     "delegate": "无执行代理",
     "type": "无类型",
-    "initiative": "无计划",
+    "initiative": "无目标",
     "cycle": "无周期",
     "member": "无值",
     "area": "无区域"

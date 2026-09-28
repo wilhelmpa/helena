@@ -67,7 +67,7 @@
         "new": "Новая задача"
       },
       "initiative": {
-        "new": "Новая инициатива"
+        "new": "Новая цель"
       },
       "view": {
         "kanban": "Вид «Доска»",
@@ -164,7 +164,7 @@
   "pickColor": "Выбрать цвет",
   "new": "Новый",
   "features": {
-    "initiatives": "Инициативы",
+    "initiatives": "Цели",
     "cycles": "Циклы",
     "dashboards": "Дашборды",
     "documents": "Docs",

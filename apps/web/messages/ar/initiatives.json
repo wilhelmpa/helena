@@ -1,8 +1,8 @@
 {
-  "title": "المبادرات",
-  "newInitiative": "مبادرة جديدة",
-  "notFound": "لم يتم العثور على المبادرة.",
-  "options": "خيارات المبادرة",
+  "title": "الأهداف",
+  "newInitiative": "هدف جديد",
+  "notFound": "لم يتم العثور على الهدف.",
+  "options": "خيارات الهدف",
   "showDescription": "إظهار الوصف",
   "noDescription": "لا يوجد وصف.",
   "noOwner": "لا يوجد مالك",
@@ -13,21 +13,21 @@
   "noActivity": "لا يوجد نشاط بعد.",
   "noIssuesLinked": "لا توجد مهام مرتبطة بعد.",
   "inProgress": "قيد التنفيذ",
-  "emptyTitle": "لا توجد مبادرات بعد",
-  "emptyDescription": "المبادرة بتجمّع المهام المرتبطة ببعضها تحت هدف واحد.",
-  "emptyTabDescription": "المبادرات بتتنقل بين علامات التبويب لوحدها لما حالتها تتغير.",
+  "emptyTitle": "لا توجد أهداف بعد",
+  "emptyDescription": "الهدف بيجمّع المهام المرتبطة ببعضها.",
+  "emptyTabDescription": "الأهداف بتتنقل بين علامات التبويب لوحدها لما حالتها تتغير.",
   "emptyTab": {
-    "active": "لا توجد مبادرات نشطة",
-    "planned": "لا توجد مبادرات مخطّطة",
-    "proposed": "لا توجد مبادرات مقترحة",
-    "completed": "لا توجد مبادرات مكتملة"
+    "active": "لا توجد أهداف نشطة",
+    "planned": "لا توجد أهداف مخطّطة",
+    "proposed": "لا توجد أهداف مقترحة",
+    "completed": "لا توجد أهداف مكتملة"
   },
   "tabs": {
     "active": "نشطة",
     "planned": "مخطّطة",
     "proposed": "مقترحة",
     "completed": "مكتملة",
-    "all": "كل المبادرات"
+    "all": "كل الأهداف"
   },
   "detailTabs": {
     "overview": "نظرة عامة",
@@ -94,10 +94,10 @@
   },
   "form": {
     "titlePlaceholder": "إطلاق الربع الثالث",
-    "descriptionPlaceholder": "المبادرة دي عن إيه؟",
-    "create": "إنشاء مبادرة",
+    "descriptionPlaceholder": "الهدف ده عن إيه؟",
+    "create": "إنشاء هدف",
     "creating": "جارٍ الإنشاء…",
-    "editTitle": "تعديل المبادرة",
+    "editTitle": "تعديل الهدف",
     "save": "حفظ التغييرات"
   },
   "pagination": {
@@ -106,15 +106,15 @@
     "next": "الصفحة التالية"
   },
   "select": {
-    "label": "المبادرة",
-    "search": "الربط بمبادرة…",
-    "empty": "لا توجد مبادرات.",
-    "none": "بلا مبادرة",
-    "create": "إنشاء مبادرة"
+    "label": "الهدف",
+    "search": "الربط بهدف…",
+    "empty": "لا توجد أهداف.",
+    "none": "بلا هدف",
+    "create": "إنشاء هدف"
   },
   "feed": {
     "system": "النظام",
-    "createdInitiative": "أنشأ المبادرة",
+    "createdInitiative": "أنشأ الهدف",
     "createdIssue": "أنشأ المهمة",
     "renamed": "أعاد التسمية إلى “{title}”",
     "descriptionUpdated": "حدّث الوصف",
@@ -140,9 +140,9 @@
     "typeSet": "عيّن النوع إلى {type}",
     "typeRemoved": "أزال النوع",
     "linked": "ربط بـ {name}",
-    "unlinked": "ألغى الربط بالمبادرة",
+    "unlinked": "ألغى الربط بالهدف",
     "linkedIssue": "ربط <issue>المهمة</issue> بـ {name}",
-    "unlinkedIssue": "ألغى ربط <issue>المهمة</issue> بالمبادرة",
+    "unlinkedIssue": "ألغى ربط <issue>المهمة</issue> بالهدف",
     "createdIssueNamed": "أنشأ <issue>المهمة</issue>"
   },
   "attachments": {
@@ -158,6 +158,6 @@
     "downloadFile": "تنزيل {name}",
     "deleteFile": "حذف {name}"
   },
-  "deleteTitle": "حذف المبادرة",
-  "deleteConfirm": "حذف «{name}»؟ تبقى المهام في المشروع، لكن دون هذه المبادرة."
+  "deleteTitle": "حذف الهدف",
+  "deleteConfirm": "حذف «{name}»؟ تبقى المهام في المشروع، لكن دون هذا الهدف."
 }

@@ -1,8 +1,8 @@
 {
-  "title": "Initiativen",
-  "newInitiative": "Neue Initiative",
-  "notFound": "Initiative nicht gefunden.",
-  "options": "Optionen der Initiative",
+  "title": "Ziele",
+  "newInitiative": "Neues Ziel",
+  "notFound": "Ziel nicht gefunden.",
+  "options": "Optionen des Ziels",
   "showDescription": "Beschreibung anzeigen",
   "noDescription": "Keine Beschreibung.",
   "noOwner": "Keine verantwortliche Person",
@@ -13,21 +13,21 @@
   "noActivity": "Noch keine Aktivität.",
   "noIssuesLinked": "Noch keine Aufgaben verknüpft.",
   "inProgress": "In Arbeit",
-  "emptyTitle": "Noch keine Initiativen",
-  "emptyDescription": "Eine Initiative bündelt zusammengehörige Aufgaben unter einem gemeinsamen Ziel.",
-  "emptyTabDescription": "Initiativen wechseln den Tab, sobald sich ihr Status ändert.",
+  "emptyTitle": "Noch keine Ziele",
+  "emptyDescription": "Ein Ziel bündelt zusammengehörige Aufgaben.",
+  "emptyTabDescription": "Ziele wechseln den Tab, sobald sich ihr Status ändert.",
   "emptyTab": {
-    "active": "Keine aktiven Initiativen",
-    "planned": "Keine geplanten Initiativen",
-    "proposed": "Keine vorgeschlagenen Initiativen",
-    "completed": "Keine abgeschlossenen Initiativen"
+    "active": "Keine aktiven Ziele",
+    "planned": "Keine geplanten Ziele",
+    "proposed": "Keine vorgeschlagenen Ziele",
+    "completed": "Keine abgeschlossenen Ziele"
   },
   "tabs": {
     "active": "Aktiv",
     "planned": "Geplant",
     "proposed": "Vorgeschlagen",
     "completed": "Abgeschlossen",
-    "all": "Alle Initiativen"
+    "all": "Alle Ziele"
   },
   "detailTabs": {
     "overview": "Übersicht",
@@ -94,10 +94,10 @@
   },
   "form": {
     "titlePlaceholder": "Q3-Launch",
-    "descriptionPlaceholder": "Worum geht es bei dieser Initiative?",
-    "create": "Initiative erstellen",
+    "descriptionPlaceholder": "Worum geht es bei diesem Ziel?",
+    "create": "Ziel erstellen",
     "creating": "Wird erstellt…",
-    "editTitle": "Initiative bearbeiten",
+    "editTitle": "Ziel bearbeiten",
     "save": "Änderungen speichern"
   },
   "pagination": {
@@ -106,15 +106,15 @@
     "next": "Nächste Seite"
   },
   "select": {
-    "label": "Initiative",
-    "search": "Mit Initiative verknüpfen…",
-    "empty": "Keine Initiativen.",
-    "none": "Keine Initiative",
-    "create": "Initiative erstellen"
+    "label": "Ziel",
+    "search": "Mit Ziel verknüpfen…",
+    "empty": "Keine Ziele.",
+    "none": "Kein Ziel",
+    "create": "Ziel erstellen"
   },
   "feed": {
     "system": "System",
-    "createdInitiative": "hat die Initiative erstellt",
+    "createdInitiative": "hat das Ziel erstellt",
     "createdIssue": "hat die Aufgabe erstellt",
     "renamed": "hat in „{title}“ umbenannt",
     "descriptionUpdated": "hat die Beschreibung aktualisiert",
@@ -140,9 +140,9 @@
     "typeSet": "hat den Typ auf {type} gesetzt",
     "typeRemoved": "hat den Typ entfernt",
     "linked": "hat mit {name} verknüpft",
-    "unlinked": "hat die Verknüpfung zur Initiative entfernt",
+    "unlinked": "hat die Verknüpfung zum Ziel entfernt",
     "linkedIssue": "hat <issue>die Aufgabe</issue> mit {name} verknüpft",
-    "unlinkedIssue": "hat <issue>die Aufgabe</issue> von der Initiative gelöst",
+    "unlinkedIssue": "hat <issue>die Aufgabe</issue> vom Ziel gelöst",
     "createdIssueNamed": "hat <issue>die Aufgabe</issue> erstellt"
   },
   "attachments": {
@@ -158,6 +158,6 @@
     "downloadFile": "{name} herunterladen",
     "deleteFile": "{name} löschen"
   },
-  "deleteTitle": "Initiative löschen",
-  "deleteConfirm": "„{name}“ löschen? Die Aufgaben bleiben im Projekt, nur ohne diese Initiative."
+  "deleteTitle": "Ziel löschen",
+  "deleteConfirm": "„{name}“ löschen? Die Aufgaben bleiben im Projekt, nur ohne dieses Ziel."
 }

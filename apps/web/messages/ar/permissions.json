@@ -3,7 +3,7 @@
   "grantedCount": "{count, plural, zero {مفيش صلاحيات ممنوحة} one {صلاحية واحدة ممنوحة} two {صلاحيتين ممنوحين} few {# صلاحيات ممنوحة} many {# صلاحية ممنوحة} other {# صلاحية ممنوحة}}",
   "resources": {
     "work_items": "عناصر العمل (work items)",
-    "initiatives": "المبادرات (initiatives)",
+    "initiatives": "الأهداف",
     "cycles": "الدورات (cycles)",
     "dashboards": "لوحات المعلومات",
     "documents": "Docs",

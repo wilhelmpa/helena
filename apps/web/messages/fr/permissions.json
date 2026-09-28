@@ -3,7 +3,7 @@
   "grantedCount": "{count, plural, one {# permission accordée} other {# permissions accordées}}",
   "resources": {
     "work_items": "Tickets",
-    "initiatives": "Initiatives",
+    "initiatives": "Objectifs",
     "cycles": "Cycles",
     "dashboards": "Tableaux de bord",
     "documents": "Docs",
