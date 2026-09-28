@@ -1347,7 +1347,7 @@ html[data-kiosk-display='dual'] [data-slot='alert-dialog-content'] {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 8px 14px;
+  padding: 0 8px 22px;
   color: #d5cfdf;
   font-size: 11px;
   font-weight: 650;
@@ -1522,7 +1522,7 @@ html[data-kiosk-display='dual'] [data-slot='alert-dialog-content'] {
 }
 
 .helena-sidebar-footer {
-  margin: 0 12px 14px;
+  margin: 0 12px 2px;
   padding: 0;
 }
 .helena-sidebar-tools {

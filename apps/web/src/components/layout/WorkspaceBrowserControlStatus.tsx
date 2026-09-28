@@ -38,8 +38,10 @@ export default function WorkspaceBrowserControlStatus({ base }: { base: string }
         }
       };
       socket.onclose = () => {
-        setControl(FREE_CONTROL);
-        if (!stopped) retry = setTimeout(connect, 3000);
+        if (!stopped) {
+          setControl(FREE_CONTROL);
+          retry = setTimeout(connect, 3000);
+        }
       };
     };
     connect();
