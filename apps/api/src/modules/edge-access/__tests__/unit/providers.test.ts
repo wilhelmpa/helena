@@ -88,10 +88,11 @@ describe('Cloudflare Access provider', () => {
 });
 
 describe('edgeEntry', () => {
-  it('treats any non-empty marker as the tunnel', () => {
+  it('recognises the strict LAN marker and treats unknown markers as tunnel', () => {
     expect(edgeEntry(new Headers())).toBeNull();
     expect(edgeEntry(new Headers({ 'x-helena-entry': ' ' }))).toBeNull();
     expect(edgeEntry(new Headers({ 'x-helena-entry': 'tunnel' }))).toBe('tunnel');
-    expect(edgeEntry(new Headers({ 'x-helena-entry': 'lan' }))).toBe('tunnel');
+    expect(edgeEntry(new Headers({ 'x-helena-entry': 'lan' }))).toBe('lan');
+    expect(edgeEntry(new Headers({ 'x-helena-entry': 'unknown' }))).toBe('tunnel');
   });
 });

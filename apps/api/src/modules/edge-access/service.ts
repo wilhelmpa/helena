@@ -8,19 +8,20 @@ import {
   type EdgeAccessConfig,
   type EdgeIdentity,
 } from './providers';
+import { verifyLanAccess } from './lan';
 
-// nginx's tunnel entry (the server block cloudflared connects to) sets this header on every
-// request it forwards, and only that entry does. Its presence is what makes the api demand
-// the edge provider's proof. A request without it is a LAN or local one and is handled as
-// before; a request that sets it itself only ever makes itself stricter.
+// Both checked nginx entries set this header. The tunnel requires its edge assertion;
+// strict LAN requires a cookie assertion plus the online public Access check. A request
+// without the marker belongs to the older local/internal paths and is handled as before;
+// a client that sets it itself only makes its own request stricter.
 export const EDGE_ENTRY_HEADER = 'x-helena-entry';
 
-export type EdgeEntry = 'tunnel';
+export type EdgeEntry = 'tunnel' | 'lan';
 
-// Any non-empty value counts as the tunnel: an unknown value is not a way around the check.
+// Unknown non-empty values take the tunnel path: none can avoid a check.
 export function edgeEntry(headers: Headers): EdgeEntry | null {
   const value = headers.get(EDGE_ENTRY_HEADER);
-  return value && value.trim() ? 'tunnel' : null;
+  return value && value.trim() ? (value === 'lan' ? 'lan' : 'tunnel') : null;
 }
 
 // ── Settings (Administrator → Sicherheit → Zugang von außen) ────────────────────
@@ -138,9 +139,11 @@ export async function verifyEdgeRequest(headers: Headers): Promise<EdgeIdentity>
 
 // The API-wide guard throws the shared HTTP error when edge verification fails.
 export async function edgeGuard(request: Request): Promise<null> {
-  if (!edgeEntry(request.headers)) return null;
+  const entry = edgeEntry(request.headers);
+  if (!entry) return null;
   try {
-    await verifyEdgeRequest(request.headers);
+    if (entry === 'lan') await verifyLanAccess(request.headers, verifyEdgeRequest);
+    else await verifyEdgeRequest(request.headers);
     return null;
   } catch (error) {
     const code = error instanceof EdgeAccessError ? error.code : 'invalid_assertion';
