@@ -17,6 +17,7 @@ import {
   projectBySlug,
 } from './service';
 import { DEFAULT_BROWSER_GATEWAY_SETTINGS } from './model';
+import { browserPowerForRouter } from './power';
 import { recordBrowserGatewayEvent } from './events';
 import { fileHandoverCard, resolveHandoverCard } from './handover';
 import { MAX_DOWNLOAD_BYTES, saveDownload } from './downloads';
@@ -220,6 +221,17 @@ export const agentBrowserGatewayInternalRoutes = new Elysia({
       const refused = await denied(request);
       if (refused) return refused;
       return privateJson({ schemaVersion: 1, projects: await browserGatewayPolicies() });
+    },
+    { detail: { hide: true } },
+  )
+  // Project browsers on demand: the router's idle time and the browsers it keeps running
+  // (power.ts), by slug.
+  .get(
+    '/internal/browser-gateway/power',
+    async ({ request }) => {
+      const refused = await denied(request);
+      if (refused) return refused;
+      return privateJson(await browserPowerForRouter());
     },
     { detail: { hide: true } },
   )
