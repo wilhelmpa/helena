@@ -157,6 +157,11 @@ export async function runtimePolicySnapshot(agentRef: RunnerAgent) {
     // Local AI, while it is on (docs/helena-decisions/local-ai-platform.md): part of the
     // revision, so switching it on or off rewrites every profile.
     localAi,
+    // Helena's own loop (docs/helena-decisions/zentrale-laufzeit.md): its role's tools and
+    // when it hands a task to a bigger model.
+    ...(agent.runtimePolicy.runtime === 'helena' && {
+      helena: agent.runtimePolicy.helena ?? {},
+    }),
     actions,
   };
   // Prefix the digest so API clients consistently keep this as an opaque string.

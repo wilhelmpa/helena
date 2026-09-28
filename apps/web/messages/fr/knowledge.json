@@ -5,7 +5,10 @@
     "vault": "Notes et fichiers",
     "mail": "E-mails",
     "chat": "Chats",
-    "run": "Exécutions d’agents"
+    "run": "Exécutions d’agents",
+    "agentSession": "Sessions des agents",
+    "agentMemory": "Mémoire des agents",
+    "fact": "Faits"
   },
   "capture": {
     "inbox": "Boîte de réception",

@@ -5,7 +5,10 @@
     "vault": "Notes & files",
     "mail": "Mail",
     "chat": "Chats",
-    "run": "Agent runs"
+    "run": "Agent runs",
+    "agentSession": "Agent sessions",
+    "agentMemory": "Agent memory",
+    "fact": "Facts"
   },
   "capture": {
     "inbox": "Inbox",

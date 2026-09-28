@@ -100,6 +100,11 @@
     "command": {
       "exec": "/bin/sh"
     },
+    "helena": {
+      "exec": "/usr/local/bin/node",
+      "fixedArgs": ["/srv/volition/source/plan/packages/runner/dist/cli.js", "helena-agent"],
+      "readOnly": ["/srv/volition/source/plan/packages/runner/dist"]
+    },
     "profile-helper": {
       "exec": "/usr/local/bin/node",
       "fixedArgs": ["/srv/volition/source/plan/packages/runner/dist/cli.js", "profile-helper"],

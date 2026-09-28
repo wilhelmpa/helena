@@ -36,7 +36,7 @@ export async function memoryBaseline(
       content: agentMemoryRevision.content,
     })
     .from(agentMemoryRevision)
-    .where(eq(agentMemoryRevision.agentId, agentId))
+    .where(and(eq(agentMemoryRevision.agentId, agentId), inArray(agentMemoryRevision.file, FILES)))
     .orderBy(agentMemoryRevision.file, desc(agentMemoryRevision.id));
   return rows.map((row) => ({ ...row, file: row.file as MemoryFile }));
 }

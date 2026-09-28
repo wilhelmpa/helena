@@ -113,6 +113,24 @@ export const RuntimePolicySnapshotResponse = t.Object({
       description: 'Which of the skills that ship with Hermes the profile carries.',
     }),
   }),
+  helena: t.Optional(
+    t.Object(
+      {
+        toolProfile: t.Optional(t.String()),
+        escalation: t.Optional(
+          t.Object({
+            mode: t.Optional(t.String()),
+            target: t.Optional(t.Nullable(t.String())),
+            taskKinds: t.Optional(t.Array(t.String())),
+            confidenceBelow: t.Optional(t.Number()),
+            onFailure: t.Optional(t.Boolean()),
+          }),
+        ),
+        browserBudgetSeconds: t.Optional(t.Number()),
+      },
+      { description: "Settings of Helena's own loop, for an agent on the runtime helena." },
+    ),
+  ),
   localAi: t.Nullable(
     t.Object(
       {

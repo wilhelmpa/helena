@@ -1,0 +1,167 @@
+import { t } from 'elysia';
+
+// Request and response shapes of Helena's own agent loop (runtime `helena`): its sessions and
+// memory, reached with the agent's own key, and the fact store every runtime reaches through
+// Helena's MCP server.
+
+export const sessionParams = t.Object({ sessionId: t.String({ minLength: 36, maxLength: 36 }) });
+
+export const createSessionBody = t.Object({
+  kind: t.Union([t.Literal('run'), t.Literal('chat'), t.Literal('reflection')]),
+  model: t.Optional(t.Nullable(t.String({ maxLength: 200 }))),
+  runId: t.Optional(t.Nullable(t.Integer({ minimum: 1 }))),
+  threadId: t.Optional(t.Nullable(t.String({ maxLength: 200 }))),
+});
+
+export const SessionIdResponse = t.Object({ id: t.String() });
+
+export const SessionResponse = t.Object({
+  id: t.String(),
+  summary: t.Nullable(t.String()),
+  compactedThrough: t.Integer(),
+  items: t.Array(
+    t.Object({
+      seq: t.Integer(),
+      step: t.Integer(),
+      message: t.Unknown({ description: 'An AI SDK ModelMessage' }),
+    }),
+  ),
+});
+
+export const appendItemsBody = t.Object({
+  items: t.Array(
+    t.Object({
+      seq: t.Integer({ minimum: 1 }),
+      step: t.Integer({ minimum: 0 }),
+      message: t.Unknown(),
+      text: t.String({ maxLength: 40_000 }),
+    }),
+    { maxItems: 200 },
+  ),
+});
+
+export const compactionBody = t.Object({
+  summary: t.String({ minLength: 1, maxLength: 40_000 }),
+  compactedThrough: t.Integer({ minimum: 0 }),
+});
+
+export const OkResponse = t.Object({ ok: t.Boolean() });
+
+export const MemoryStateResponse = t.Object({
+  files: t.Array(t.Object({ file: t.String(), content: t.String(), sha256: t.String() })),
+  notes: t.Array(t.Object({ day: t.String(), content: t.String() })),
+  approval: t.Boolean(),
+});
+
+export const noteBody = t.Object({ text: t.String({ minLength: 1, maxLength: 4000 }) });
+
+export const memoryProposalBody = t.Object({
+  file: t.Union([t.Literal('MEMORY.md'), t.Literal('USER.md')]),
+  content: t.String({ maxLength: 20_000 }),
+  reason: t.Optional(t.String({ maxLength: 1000 })),
+});
+
+export const MemoryProposalResponse = t.Object({
+  status: t.Union([t.Literal('applied'), t.Literal('pending')]),
+});
+
+export const NotesResponse = t.Array(
+  t.Object({ day: t.String(), content: t.String(), updatedAt: t.String() }),
+);
+
+const factView = t.Object({
+  id: t.Integer(),
+  content: t.String(),
+  category: t.String(),
+  tags: t.Array(t.String()),
+  entities: t.Array(t.String()),
+  trust: t.Number(),
+  project: t.Nullable(t.String()),
+  confirmations: t.Integer(),
+  helpful: t.Integer(),
+  unhelpful: t.Integer(),
+  contradictedBy: t.Nullable(t.Integer()),
+  updatedAt: t.String(),
+  score: t.Optional(t.Number()),
+});
+
+export const FactListResponse = t.Array(factView);
+
+export const factStoreBody = t.Object({
+  action: t.Union(
+    [
+      t.Literal('add'),
+      t.Literal('search'),
+      t.Literal('probe'),
+      t.Literal('related'),
+      t.Literal('reason'),
+      t.Literal('contradict'),
+      t.Literal('update'),
+      t.Literal('remove'),
+      t.Literal('list'),
+    ],
+    {
+      description:
+        'add: keep a fact (content, optional entities/category/tags/project). search: hybrid search (query). ' +
+        'probe: facts about an entity. related: facts connected to an entity. reason: facts about all of several entities. ' +
+        'contradict: pairs of facts that may contradict each other. update/remove: a fact by id. list: by trust.',
+    },
+  ),
+  content: t.Optional(t.String({ maxLength: 2000, description: 'The fact, one short sentence.' })),
+  entities: t.Optional(
+    t.Array(t.String({ maxLength: 80 }), {
+      maxItems: 12,
+      description: 'Names the fact is about (people, projects, products, places).',
+    }),
+  ),
+  entity: t.Optional(t.String({ maxLength: 80 })),
+  category: t.Optional(t.String({ maxLength: 40 })),
+  tags: t.Optional(t.Array(t.String({ maxLength: 40 }), { maxItems: 12 })),
+  query: t.Optional(t.String({ maxLength: 500 })),
+  id: t.Optional(t.Integer({ minimum: 1 })),
+  project: t.Optional(
+    t.String({ maxLength: 20, description: 'The project key the fact belongs to.' }),
+  ),
+  limit: t.Optional(t.Integer({ minimum: 1, maximum: 50 })),
+  minTrust: t.Optional(t.Number({ minimum: 0, maximum: 1 })),
+});
+
+export const FactStoreResponse = t.Object({
+  status: t.Optional(t.String()),
+  fact: t.Optional(factView),
+  facts: t.Optional(t.Array(factView)),
+  contradicts: t.Optional(
+    t.Array(
+      t.Object({
+        id: t.Integer(),
+        content: t.String(),
+        shared: t.Array(t.String()),
+        score: t.Number(),
+      }),
+    ),
+  ),
+  contradictions: t.Optional(
+    t.Array(t.Object({ a: factView, b: factView, shared: t.Array(t.String()), score: t.Number() })),
+  ),
+  semantic: t.Optional(t.Boolean()),
+  id: t.Optional(t.Integer()),
+});
+
+export const factParams = t.Object({ factId: t.Numeric() });
+export const teamFactParams = t.Object({ teamId: t.Numeric(), factId: t.Numeric() });
+
+export const factFeedbackBody = t.Object({
+  helpful: t.Boolean({ description: 'Whether the fact helped: trust +0.05, or −0.10 when not.' }),
+});
+
+export const FactFeedbackResponse = t.Object({
+  id: t.Integer(),
+  oldTrust: t.Number(),
+  trust: t.Number(),
+});
+
+export const factCorrectionBody = t.Object({
+  content: t.Optional(t.String({ minLength: 1, maxLength: 500 })),
+  trust: t.Optional(t.Number({ minimum: 0, maximum: 1 })),
+  category: t.Optional(t.String({ maxLength: 40 })),
+});

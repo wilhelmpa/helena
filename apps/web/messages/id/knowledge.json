@@ -5,7 +5,10 @@
     "vault": "Catatan & berkas",
     "mail": "Email",
     "chat": "Obrolan",
-    "run": "Eksekusi agen"
+    "run": "Eksekusi agen",
+    "agentSession": "Sesi agen",
+    "agentMemory": "Memori agen",
+    "fact": "Fakta"
   },
   "capture": {
     "inbox": "Kotak masuk",
