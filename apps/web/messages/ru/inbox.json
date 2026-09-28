@@ -94,7 +94,8 @@
       "mention": "УПОМИНАНИЕ",
       "system": "СИСТЕМА",
       "failure": "ОШИБКА"
-    }
+    },
+    "otherProjects": "Другие проекты"
   },
   "groups": {
     "approvals": "Согласования",

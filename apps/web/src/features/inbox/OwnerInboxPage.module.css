@@ -2,8 +2,8 @@
   flex: 1;
   min-width: 0;
   overflow-y: auto;
-  background: #050507;
-  color: #eeeaf6;
+  background: var(--bg);
+  color: var(--text);
   padding: 56px 48px 28px;
   font-family: InterVariable, ui-sans-serif, system-ui, sans-serif;
   line-height: normal;
@@ -17,7 +17,7 @@
 .eyebrow,
 .reads h2 {
   margin: 0;
-  color: #8d7fa5;
+  color: var(--text-3);
   font:
     500 10px 'JetBrains Mono Variable',
     ui-monospace,
@@ -41,48 +41,14 @@
   font-weight: 520;
 }
 
-.segments {
-  display: flex;
-  max-width: 100%;
-  overflow-x: auto;
-  gap: 2px;
-  padding: 4px;
-  border-radius: 13px;
-  background: #111014;
-  box-shadow: 0 0 0 1px #ffffff0c;
-}
-
-.segments button {
-  flex: none;
-  border: 0;
-  min-height: 34px;
-  padding: 0 12px;
-  border-radius: 10px;
-  background: transparent;
-  color: #8f879a;
-  font-size: 12px;
-  font-weight: 500;
-  cursor: pointer;
-}
-
-.segments button[aria-pressed='true'] {
-  background: #26212d;
-  color: #f3edf9;
-}
-.segments button:hover {
-  color: #f3edf9;
-}
-
 .card {
   display: flex;
   gap: 16px;
   margin-bottom: 14px;
   padding: 20px 22px;
-  border-radius: 20px;
-  background: #0e0d11;
-  box-shadow:
-    0 0 0 1px #ffffff0c,
-    0 12px 30px #0004;
+  border-radius: 16px;
+  background: var(--surface-1);
+  box-shadow: var(--shadow-card);
 }
 
 .dot {
@@ -111,13 +77,13 @@
 }
 .card p {
   margin: 0;
-  color: #96909f;
+  color: var(--text-2);
   font-size: 13px;
   line-height: 1.6;
   overflow-wrap: anywhere;
 }
 .time {
-  color: #6f687a;
+  color: var(--text-3);
   font:
     400 10px 'JetBrains Mono Variable',
     ui-monospace,
@@ -147,14 +113,21 @@
   text-decoration: none;
 }
 .primary {
-  background: #e7dbfa;
-  border: 1px solid #e7dbfa;
-  color: #201b29;
+  border: 0;
+  background: var(--primary-bg);
+  color: var(--primary-fg);
+}
+.primary:hover {
+  background: var(--primary-bg-hover);
 }
 .secondary {
-  background: #141217;
-  border: 1px solid #ffffff12;
-  color: #cfc6da;
+  border: 0;
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--line-strong);
+  color: var(--text);
+}
+.secondary:hover {
+  background: var(--surface-2);
 }
 .actions button:disabled {
   opacity: 0.5;
@@ -164,34 +137,34 @@
   margin-top: 18px;
 }
 .detail article {
-  background: #141217;
+  background: var(--surface-2);
 }
 
 .reads {
   margin-top: 36px;
   padding-top: 18px;
-  border-top: 1px solid #ffffff0a;
+  border-top: 1px solid var(--line);
 }
 .reads h2 {
   margin-bottom: 14px;
-  color: #6f687a;
+  color: var(--text-3);
 }
 .readRow {
   display: flex;
   align-items: center;
   gap: 12px;
   min-height: 44px;
-  margin-bottom: 14px;
+  margin-bottom: 6px;
   padding: 8px 16px;
-  border-radius: 14px;
-  background: #09080b;
-  color: #cfc6da;
+  border-radius: 12px;
+  background: var(--surface-1);
+  box-shadow: var(--shadow-card);
+  color: var(--text);
   font-size: 13px;
   text-decoration: none;
 }
 .readRow:hover {
-  background: #141217;
-  color: #f3edf9;
+  background: var(--surface-2);
 }
 .readRow span:first-child {
   min-width: 54px;
@@ -209,7 +182,7 @@
   white-space: nowrap;
 }
 .readRow time {
-  color: #6f687a;
+  color: var(--text-3);
   font:
     400 10px 'JetBrains Mono Variable',
     ui-monospace,
@@ -218,7 +191,7 @@
 }
 .empty {
   padding: 22px;
-  color: #96909f;
+  color: var(--text-2);
   font-size: 13px;
 }
 
@@ -245,9 +218,6 @@
     font-size: 36px;
     margin-bottom: 18px;
   }
-  .segments {
-    width: max-content;
-  }
   .card {
     gap: 12px;
     padding: 18px 16px;
@@ -257,4 +227,25 @@
     overflow: hidden;
     text-overflow: ellipsis;
   }
+}
+
+/* One group per project (owner 28.09.: hierarchical by project), Helena first. */
+.group {
+  margin-bottom: 26px;
+}
+.groupHead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 10px 4px;
+  color: var(--text-2);
+  font-size: 12px;
+}
+.groupHead strong {
+  color: var(--text);
+  font-weight: 520;
+}
+.groupCount {
+  color: var(--text-3);
+  font-variant-numeric: tabular-nums;
 }

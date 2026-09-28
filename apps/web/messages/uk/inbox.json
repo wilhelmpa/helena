@@ -94,7 +94,8 @@
       "mention": "ЗГАДКА",
       "system": "СИСТЕМА",
       "failure": "ПОМИЛКА"
-    }
+    },
+    "otherProjects": "Інші проєкти"
   },
   "groups": {
     "approvals": "Погодження",

@@ -94,7 +94,8 @@
       "mention": "ERWÄHNUNG",
       "system": "SYSTEM",
       "failure": "FEHLER"
-    }
+    },
+    "otherProjects": "Weitere Projekte"
   },
   "groups": {
     "approvals": "Freigaben",

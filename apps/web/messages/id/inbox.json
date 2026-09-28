@@ -94,7 +94,8 @@
       "mention": "SEBUTAN",
       "system": "SISTEM",
       "failure": "KESALAHAN"
-    }
+    },
+    "otherProjects": "Proyek lain"
   },
   "groups": {
     "approvals": "Persetujuan",

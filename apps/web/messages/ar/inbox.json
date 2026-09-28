@@ -94,7 +94,8 @@
       "mention": "إشارة",
       "system": "النظام",
       "failure": "خطأ"
-    }
+    },
+    "otherProjects": "مشاريع أخرى"
   },
   "groups": {
     "approvals": "الموافقات",

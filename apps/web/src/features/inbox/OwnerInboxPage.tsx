@@ -214,16 +214,36 @@ function InboxCard({ item }: { item: OwnerInboxItem }) {
   );
 }
 
+const HOME = '__helena';
+
 function OwnerInboxContent() {
   const t = useTranslations('inbox.owner');
   const { actions, reads, projects, loading, error } = useOwnerInbox();
   const params = useSearchParams();
-  const [filter, setFilter] = useState<string>(() => params.get('project') ?? 'all');
+  // ?project=KEY (a project's Inbox link) narrows it to that project.
+  const filter = params.get('project') ?? 'all';
   const selected =
     filter === 'all' || projects.length === 0 || projects.some((project) => project.key === filter)
       ? filter
       : 'all';
   const visible = actions.filter((item) => selected === 'all' || item.projectKey === selected);
+  // Hierarchical by project (owner 28.09.): what is Helena's first, then each project in
+  // the sidebar's order.
+  const groups = [
+    { key: HOME, name: t('home'), items: visible.filter((item) => !item.projectKey) },
+    ...projects.map((project) => ({
+      key: project.key,
+      name: project.name,
+      items: visible.filter((item) => item.projectKey === project.key),
+    })),
+    {
+      key: 'other',
+      name: t('otherProjects'),
+      items: visible.filter(
+        (item) => item.projectKey && !projects.some((project) => project.key === item.projectKey),
+      ),
+    },
+  ].filter((group) => group.items.length > 0);
   const visibleReads = reads
     .filter((item) => selected === 'all' || item.project?.key === selected)
     .slice(0, 5);
@@ -247,20 +267,6 @@ function OwnerInboxContent() {
               </>
             )}
           </h1>
-          <div className={styles.segments} role="group" aria-label={t('project')}>
-            <button aria-pressed={selected === 'all'} onClick={() => setFilter('all')}>
-              {t('all')}
-            </button>
-            {projects.map((project) => (
-              <button
-                key={project.key}
-                aria-pressed={selected === project.key}
-                onClick={() => setFilter(project.key)}
-              >
-                {project.name}
-              </button>
-            ))}
-          </div>
         </div>
         {error && <EmptyState className={styles.empty}>{t('loadError')}</EmptyState>}
         {error && visible.length === 0 ? null : loading && actions.length === 0 ? (
@@ -268,7 +274,18 @@ function OwnerInboxContent() {
         ) : visible.length === 0 ? (
           <EmptyState className={styles.empty}>{t('empty')}</EmptyState>
         ) : (
-          visible.map((item) => <InboxCard key={item.key} item={item} />)
+          groups.map((group) => (
+            <section key={group.key} className={styles.group} aria-label={group.name}>
+              <h2 className={styles.groupHead}>
+                {group.key !== HOME ? <ProjectTag projectKey={group.key} plain /> : null}
+                <strong>{group.name}</strong>
+                <span className={styles.groupCount}>{group.items.length}</span>
+              </h2>
+              {group.items.map((item) => (
+                <InboxCard key={item.key} item={item} />
+              ))}
+            </section>
+          ))
         )}
         <section className={styles.reads} aria-labelledby="reads-heading">
           <h2 id="reads-heading">{t('toRead')}</h2>

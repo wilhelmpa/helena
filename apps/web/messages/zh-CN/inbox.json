@@ -94,7 +94,8 @@
       "mention": "提及",
       "system": "系统",
       "failure": "错误"
-    }
+    },
+    "otherProjects": "其他项目"
   },
   "groups": {
     "approvals": "审批",

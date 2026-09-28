@@ -94,7 +94,8 @@
       "mention": "MENCIÓN",
       "system": "SISTEMA",
       "failure": "ERROR"
-    }
+    },
+    "otherProjects": "Otros proyectos"
   },
   "groups": {
     "approvals": "Aprobaciones",

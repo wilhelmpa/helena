@@ -5,12 +5,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { useStripSortSensors } from '@/lib/dnd';
 import { cn } from '@/lib/utils';
 import type { InitiativesTab } from '@/utils/paths';
-import {
-  PAGE_CONTROL_ACTIVE_CLASS,
-  PAGE_CONTROL_CLASS,
-  PageTabs,
-  usePageToolbarRoom,
-} from '@/components/layout/PageToolbar';
+import { PageTabs, usePageToolbarRoom } from '@/components/layout/PageToolbar';
 
 export type InitiativeTabItem = { value: InitiativesTab; label: string; count?: number };
 
@@ -41,7 +36,7 @@ export default function InitiativeTabs({
   };
 
   return (
-    <nav aria-label={label} className="flex shrink-0 items-center gap-0.5">
+    <nav aria-label={label} className="ds-segmented">
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext
           items={items.map((item) => item.value)}
@@ -84,12 +79,7 @@ function SortableTab({
       type="button"
       aria-current={active ? 'page' : undefined}
       style={{ transform: CSS.Transform.toString(transform), transition }}
-      className={cn(
-        PAGE_CONTROL_CLASS,
-        'h-7',
-        active && PAGE_CONTROL_ACTIVE_CLASS,
-        isDragging && 'z-10 cursor-grabbing',
-      )}
+      className={cn(isDragging && 'z-10 cursor-grabbing')}
       {...pointerListeners}
       onClick={onSelect}
     >
