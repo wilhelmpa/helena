@@ -14,6 +14,7 @@ every 30 seconds, without an error loop."""
 from __future__ import annotations
 
 import os
+import fcntl
 import signal
 import threading
 
@@ -27,6 +28,52 @@ ABSENT_TICK = 30.0
 # worst while the fans are fixed low.
 BLIND_SECONDS = 30.0
 RYZENADJ_RECHECK = 300.0
+GPU_HOLD_SECONDS = 10.0
+IDLE_RELEASE_SECONDS = 300.0
+
+
+def build_slot_active(host: Host, marker_dir: str | None) -> bool:
+    if not marker_dir:
+        return False
+    for name in ('test.1', 'test.2', 'server.1'):
+        if not host.exists(f'{marker_dir}/{name}.owner'):
+            continue
+        try:
+            with open(host.path(f'{marker_dir}/{name}.lock'), 'rb') as lock:
+                try:
+                    fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                except BlockingIOError:
+                    return True
+                finally:
+                    fcntl.flock(lock, fcntl.LOCK_UN)
+        except OSError:
+            continue
+    return False
+
+
+def profile_step(state: dict, *, now: float, gpu_busy: int | None, build_active: bool,
+                 mode: str) -> tuple[dict, str]:
+    state = dict(state)
+    if mode != 'auto':
+        state.update(highSince=None, lastDemandAt=None, profile=mode)
+        return state, mode
+    high = gpu_busy is not None and gpu_busy > 50
+    if high:
+        if state.get('highSince') is None:
+            state['highSince'] = now
+    else:
+        state['highSince'] = None
+    demand = build_active or (high and now - state['highSince'] > GPU_HOLD_SECONDS)
+    if demand:
+        state['lastDemandAt'] = now
+    profile = state.get('profile') or 'balanced'
+    if demand:
+        profile = 'performance'
+    elif profile == 'performance' and (state.get('lastDemandAt') is None or
+                                        now - state['lastDemandAt'] >= IDLE_RELEASE_SECONDS):
+        profile = 'balanced'
+    state['profile'] = profile
+    return state, profile
 
 
 def guard_needed(fans: dict | None) -> bool:
@@ -96,20 +143,16 @@ def public_state(state: dict) -> dict:
         'lastTemperatureC': state.get('lastTemperatureC'),
         'available': bool(state.get('available')),
         'updatedAt': iso(state.get('updatedAt')),
+        'profile': state.get('profile'),
+        'thermalWarnSince': iso(state.get('thermalWarnSince')),
+        'throttling': bool(state.get('throttling')),
     }
 
 
 def restore(host: Host, config: Config, settings: dict, log) -> None:
-    """Applies the owner's last profile and fans (boot, or the driver appeared)."""
+    """Applies the owner's fan choice when the EC driver appears."""
     desired = settings.get('power') or {}
-    profile = desired.get('profile')
     fans = desired.get('fans')
-    if profile:
-        try:
-            power.set_profile(host, config.power, profile)
-            log(f'restored the power profile {profile}')
-        except HostError as error:
-            log(f'could not restore the power profile: {error.message}')
     if isinstance(fans, dict) and fans.get('mode') in ('auto', 'fixed'):
         try:
             mode, level = power.validate_fans(fans.get('mode'), fans.get('level'))
@@ -127,6 +170,20 @@ class Guard:
         self.state: dict = {'active': False, 'available': False}
         self.stop = threading.Event()
         self.last_ryzenadj_check = 0.0
+
+    def update_profile(self, settings: dict) -> None:
+        desired = settings.get('power') or {}
+        marker_dir = self.config.power.get('heavyMarkerDir')
+        build_active = build_slot_active(self.host, marker_dir)
+        gpu_busy = self.host.read_int(self.config.power.get('gpuBusyPath'))
+        previous = self.state.get('profile')
+        next_state, profile = profile_step(self.state, now=self.host.now(), gpu_busy=gpu_busy,
+                                           build_active=build_active, mode=desired.get('mode') or 'auto')
+        if profile != previous:
+            power.set_profile(self.host, self.config.power, profile, desired.get('tctlLimit', 90))
+            self.log(f'power profile: {profile}')
+            self.last_ryzenadj_check = self.host.now()
+        self.state = next_state
 
     def write_state(self) -> None:
         self.state['updatedAt'] = self.host.now()
@@ -148,8 +205,25 @@ class Guard:
                 self.state.update(available=False, active=False)
                 self.write_state()
             return ABSENT_TICK
+        self.update_profile(settings)
         fans = (settings.get('power') or {}).get('fans')
         temperature = power.cpu_temperature(host, config.power)
+        ec_temperature = host.read_int(f"{config.power.get('ecRoot')}/temp1/temp")
+        tctl = next((sensor['celsius'] for sensor in power.read_temperatures(host)
+                     if sensor['sensor'] == 'k10temp' and sensor.get('label') == 'Tctl'), None)
+        if tctl is not None and tctl >= 95 and ec_temperature is not None and ec_temperature >= 95:
+            if self.state.get('thermalWarnSince') is None:
+                self.state['thermalWarnSince'] = host.now()
+        else:
+            self.state['thermalWarnSince'] = None
+        throttle = host.read_int('/sys/devices/system/cpu/cpu0/thermal_throttle/package_throttle_count')
+        previous_throttle = self.state.get('throttleCount')
+        was_throttling = bool(self.state.get('throttling'))
+        if throttle is not None and previous_throttle is not None and throttle > previous_throttle:
+            self.state['throttleLastIncreaseAt'] = host.now()
+        last_increase = self.state.get('throttleLastIncreaseAt')
+        self.state['throttling'] = last_increase is not None and host.now() - last_increase < 300
+        self.state['throttleCount'] = throttle
         before = bool(self.state.get('active'))
         self.state, action = guard_step(self.state, temperature=temperature, now=host.now(),
                                         fans=fans, limits=settings.get('guard') or {})
@@ -165,7 +239,7 @@ class Guard:
             self.log(f'CPU cool again ({temperature} °C): fans back to {level}')
             events.record(config.state_dir, source='guard', severity='info', code='FansRestored',
                           message=f'{temperature} °C', at=host.now())
-        if action or before != bool(self.state.get('active')) or \
+        if action or before != bool(self.state.get('active')) or was_throttling != bool(self.state.get('throttling')) or \
                 host.now() - (self.state.get('updatedAt') or 0) > 60:
             self.write_state()
         self.recheck_ryzenadj(settings)
@@ -178,11 +252,13 @@ class Guard:
         if now - self.last_ryzenadj_check < RYZENADJ_RECHECK:
             return
         self.last_ryzenadj_check = now
-        profile = (settings.get('power') or {}).get('profile')
+        profile = self.state.get('profile') or 'balanced'
         if profile not in power.PROFILE_LAYERS:
             return
         try:
             override = power.validate_override(profile, (self.config.power.get('overrides') or {}).get(profile))
+            if profile == 'performance':
+                override = {**(override or {}), 'tctl': (settings.get('power') or {}).get('tctlLimit', 90)}
         except HostError:
             return
         if not override:
@@ -190,7 +266,8 @@ class Guard:
         info = power.read_ryzenadj(self.host, self.config.power, fresh=True) or {}
         if not info.get('available'):
             return
-        expected = {'stapm': 'stapmLimitW', 'fast': 'fastLimitW', 'slow': 'slowLimitW'}
+        expected = {'stapm': 'stapmLimitW', 'fast': 'fastLimitW', 'slow': 'slowLimitW',
+                    'tctl': 'tctlLimitC'}
         drift = any(key in override and info.get(field) is not None
                     and abs(info[field] * 1000 - override[key]) > 1000
                     for key, field in expected.items())

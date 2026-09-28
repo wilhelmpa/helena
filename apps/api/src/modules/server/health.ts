@@ -20,12 +20,14 @@ const BACKUP_LATE_MS: Record<BackupStatus['schedule']['frequency'], number | nul
   every6h: 14 * 3_600_000,
   daily: 36 * 3_600_000,
 };
-const CPU_WARM_C = 85;
 const CPU_HOT_C = 95;
+const CPU_CRITICAL_C = 100;
+const CPU_HOT_MS = 10 * 60_000;
 
 export function storageHealth(
   storage: StorageStatus,
   events?: HostEvents | null,
+  warningTimes?: Map<string, number>,
 ): HostHealthItem[] {
   const items: HostHealthItem[] = [];
   for (const array of storage.arrays) {
@@ -79,6 +81,9 @@ export function storageHealth(
     const label = disk.letter ?? disk.kname;
     const smart = disk.smart;
     const id = `disk:${label}`;
+    const warningTime = smart?.warningTempTime;
+    const previousWarningTime = warningTimes?.get(disk.kname);
+    if (warningTime != null && warningTimes) warningTimes.set(disk.kname, warningTime);
     if (!smart || smart.error) {
       items.push({ id, state: 'unknown', code: 'diskUnknown', values: { disk: label } });
       continue;
@@ -87,7 +92,11 @@ export function storageHealth(
       smart.availableSpare !== null &&
       smart.availableSpareThreshold !== null &&
       smart.availableSpare <= smart.availableSpareThreshold;
-    if (smart.failing || smart.criticalWarning) {
+    if (
+      smart.failing ||
+      smart.criticalWarning ||
+      (warningTime != null && previousWarningTime != null && warningTime > previousWarningTime)
+    ) {
       items.push({ id, state: 'critical', code: 'diskFailing', values: { disk: label } });
     } else if (spareLow) {
       items.push({
@@ -360,20 +369,27 @@ export function powerHealth(power: PowerStatus): HostHealthItem[] {
     }
   }
   const temperature = power.cpuTemperatureC;
-  if (power.guard.state.active) {
-    items.push({
-      id: 'fans:guard',
-      state: 'attention',
-      code: 'fansRaised',
-      values: { temperature: power.guard.state.peakC ?? temperature ?? 0 },
-      since: power.guard.state.engagedAt ?? null,
-    });
-  }
+  const tctl = power.temperatures.find(
+    (sensor) => sensor.sensor === 'k10temp' && sensor.label === 'Tctl',
+  )?.celsius;
+  const ec = power.ec?.temperatureC;
+  const since = power.guard.state.thermalWarnSince;
+  const hotLongEnough =
+    tctl != null &&
+    tctl >= CPU_HOT_C &&
+    ec != null &&
+    ec >= CPU_HOT_C &&
+    since != null &&
+    Date.now() - Date.parse(since) >= CPU_HOT_MS;
+  const fansAtMax = power.fans?.mode === 'fixed' && power.fans.level === 5;
+  const critical =
+    (temperature != null && temperature >= CPU_CRITICAL_C) ||
+    (power.guard.state.throttling === true && !fansAtMax);
   if (temperature !== null) {
     items.push({
       id: 'cpu:temperature',
-      state: temperature >= CPU_HOT_C ? 'critical' : temperature >= CPU_WARM_C ? 'attention' : 'ok',
-      code: temperature >= CPU_WARM_C ? 'cpuHot' : 'cpuTemperature',
+      state: critical ? 'critical' : hotLongEnough ? 'attention' : 'ok',
+      code: critical || hotLongEnough ? 'cpuHot' : 'cpuTemperature',
       values: { temperature: Math.round(temperature) },
     });
   }

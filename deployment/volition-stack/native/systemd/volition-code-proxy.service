@@ -1,0 +1,7 @@
+[Unit]
+Description=Volition code workspace on-demand proxy
+Requires=volition-code.service
+After=volition-code.service
+
+[Service]
+ExecStart=/lib/systemd/systemd-socket-proxyd --exit-idle-time=5min 127.0.0.1:18443

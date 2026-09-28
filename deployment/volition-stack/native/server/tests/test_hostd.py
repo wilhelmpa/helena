@@ -7,6 +7,7 @@ driver, hwmon, power-profiles-daemon, ryzenadj and restic. Run:
 from __future__ import annotations
 
 import json
+import fcntl
 import os
 import shutil
 import socket
@@ -334,7 +335,8 @@ class PowerTests(HostTest):
         result = power.set_profile(self.host, config, 'performance')
         self.assertEqual(self.sleeps, [1.5])
         self.assertEqual(self.runner.called('/usr/local/sbin/ryzenadj'),
-                         [['/usr/local/sbin/ryzenadj', '--stapm-limit=100000', '--fast-limit=130000']])
+                         [['/usr/local/sbin/ryzenadj', '--stapm-limit=100000', '--fast-limit=130000',
+                           '--tctl-temp=90']])
         self.assertTrue(result['layers']['ryzenadj']['ok'])
         with self.assertRaises(HostError):
             power.validate_override('saver', {'stapm': 60000})  # quiet allows 54 W
@@ -364,6 +366,64 @@ class PowerTests(HostTest):
 class GuardTests(HostTest):
     LIMITS = {'limit': 90, 'holdSeconds': 5, 'releaseBelow': 80, 'releaseSeconds': 120}
     LOW = {'mode': 'fixed', 'level': 1}
+
+    def test_gpu_load_build_marker_and_idle_release(self):
+        state, profile = guard.profile_step({}, now=0, gpu_busy=51, build_active=False, mode='auto')
+        self.assertEqual(profile, 'balanced')
+        state, profile = guard.profile_step(state, now=10, gpu_busy=51, build_active=False, mode='auto')
+        self.assertEqual(profile, 'balanced')
+        state, profile = guard.profile_step(state, now=11, gpu_busy=51, build_active=False, mode='auto')
+        self.assertEqual(profile, 'performance')
+        state, profile = guard.profile_step(state, now=12, gpu_busy=0, build_active=False, mode='auto')
+        self.assertEqual(profile, 'performance')
+        state, profile = guard.profile_step(state, now=311, gpu_busy=0, build_active=False, mode='auto')
+        self.assertEqual(profile, 'balanced')
+        state, profile = guard.profile_step(state, now=312, gpu_busy=None, build_active=True, mode='auto')
+        self.assertEqual(profile, 'performance')
+        _, profile = guard.profile_step(state, now=313, gpu_busy=90, build_active=True, mode='balanced')
+        self.assertEqual(profile, 'balanced')
+
+    def test_build_slot_ignores_a_stale_owner_marker(self):
+        marker_dir = '/run/helena-heavy'
+        self.write(f'{marker_dir}/test.1.owner', 'old')
+        self.write(f'{marker_dir}/test.1.lock', '')
+        self.assertFalse(guard.build_slot_active(self.host, marker_dir))
+        with open(self.host.path(f'{marker_dir}/test.1.lock'), 'rb') as lock:
+            fcntl.flock(lock, fcntl.LOCK_EX)
+            self.assertTrue(guard.build_slot_active(self.host, marker_dir))
+
+    def test_fake_sysfs_switches_to_performance_and_applies_temperature_limit(self):
+        PowerTests.ec(self)
+        self.write('/sys/kernel/ryzen_smu_drv/pm_table', '')
+        self.runner.on('/usr/bin/powerprofilesctl', 'set')
+        self.runner.on('/usr/local/sbin/ryzenadj')
+        self.write('/sys/class/drm/card0/device/gpu_busy_percent', '60')
+        worker = guard.Guard(self.host, self.config, lambda _: None)
+        worker.tick()
+        self.clock[0] += 12
+        worker.tick()
+        self.assertEqual(self.read('/sys/class/ec_su_axb35/apu/power_mode'), 'performance')
+        self.assertIn(['/usr/local/sbin/ryzenadj', '--tctl-temp=90'], self.runner.calls)
+        self.write('/sys/class/drm/card0/device/gpu_busy_percent', '0')
+        self.clock[0] += 301
+        worker.tick()
+        self.assertEqual(self.read('/sys/class/ec_su_axb35/apu/power_mode'), 'balanced')
+
+    def test_warning_timer_needs_both_hot_sensors(self):
+        PowerTests.ec(self)
+        worker = guard.Guard(self.host, self.config, lambda _: None)
+        self.write('/sys/class/hwmon/hwmon3/temp1_input', '96000\n')
+        worker.tick()
+        self.assertIsNone(worker.state.get('thermalWarnSince'))
+        self.write('/sys/class/ec_su_axb35/temp1/temp', '96\n')
+        worker.tick()
+        first = worker.state['thermalWarnSince']
+        self.clock[0] += 600
+        worker.tick()
+        self.assertEqual(worker.state['thermalWarnSince'], first)
+        self.write('/sys/class/ec_su_axb35/temp1/temp', '94\n')
+        worker.tick()
+        self.assertIsNone(worker.state.get('thermalWarnSince'))
 
     def step(self, state, temperature, now, fans=None):
         return guard.guard_step(state, temperature=temperature, now=now, fans=fans or self.LOW, limits=self.LIMITS)
@@ -730,6 +790,10 @@ class ServiceTests(HostTest):
             dispatch('SetGuard', {'limit': 99}, {'name': 'x'})
         with self.assertRaises(VarlinkError):
             dispatch('SetGuard', {'limit': 85, 'actor': 'x' * 200}, {'name': 'x'})
+        with self.assertRaises(VarlinkError):
+            dispatch('SetPowerPolicy', {'mode': 'turbo'}, {'name': 'x'})
+        with self.assertRaises(VarlinkError):
+            dispatch('SetPowerPolicy', {'mode': 'performance', 'tctlLimit': 101}, {'name': 'x'})
 
     def test_changes_are_audited_without_secrets(self):
         dispatch = self.dispatcher()

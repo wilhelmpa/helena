@@ -33,6 +33,7 @@ method SetBootNextReserve(actor: ?string) -> (result: object)
 method ClearBootNext(actor: ?string) -> (result: object)
 method PowerStatus(fresh: ?bool) -> (result: object)
 method SetPowerProfile(profile: string, actor: ?string) -> (result: object)
+method SetPowerPolicy(mode: string, tctlLimit: ?int, actor: ?string) -> (result: object)
 method SetFans(mode: string, level: ?int, actor: ?string) -> (result: object)
 method SetGuard(limit: int, actor: ?string) -> (result: object)
 method BackupStatus() -> (result: object)
@@ -118,11 +119,30 @@ def power_status(ctx: Context, params: dict) -> dict:
 
 
 def set_power_profile(ctx: Context, params: dict) -> dict:
-    result = power.set_profile(ctx.host, ctx.config.power, params['profile'])
     settings = load_settings(ctx.config)
+    result = power.set_profile(ctx.host, ctx.config.power, params['profile'], settings['power']['tctlLimit'])
     settings['power']['profile'] = params['profile']
+    settings['power']['mode'] = params['profile']
     save_settings(ctx.config, settings)
     return result
+
+
+def set_power_policy(ctx: Context, params: dict) -> dict:
+    mode = params['mode']
+    limit = params.get('tctlLimit')
+    if mode not in ('auto', 'balanced', 'performance'):
+        raise HostError('InvalidParameter', 'mode must be auto, balanced or performance', parameter='mode')
+    if limit is not None and (not isinstance(limit, int) or isinstance(limit, bool) or not 60 <= limit <= 100):
+        raise HostError('InvalidParameter', 'tctlLimit must be 60–100', parameter='tctlLimit')
+    settings = load_settings(ctx.config)
+    if limit is not None:
+        settings['power']['tctlLimit'] = limit
+    settings['power']['mode'] = mode
+    profile = 'balanced' if mode == 'auto' else mode
+    result = power.set_profile(ctx.host, ctx.config.power, profile, settings['power']['tctlLimit'])
+    settings['power']['profile'] = profile
+    save_settings(ctx.config, settings)
+    return {**result, 'mode': mode, 'tctlLimit': settings['power']['tctlLimit']}
 
 
 def set_fans(ctx: Context, params: dict) -> dict:
@@ -215,6 +235,7 @@ METHODS: dict[str, Method] = {
                             _p(actor='?string'), mutating=True),
     'PowerStatus': Method(power_status, _p(fresh='?bool')),
     'SetPowerProfile': Method(set_power_profile, _p(profile='string', actor='?string'), mutating=True),
+    'SetPowerPolicy': Method(set_power_policy, _p(mode='string', tctlLimit='?int', actor='?string'), mutating=True),
     'SetFans': Method(set_fans, _p(mode='string', level='?int', actor='?string'), mutating=True),
     'SetGuard': Method(set_guard, _p(limit='int', actor='?string'), mutating=True),
     'BackupStatus': Method(backup_status, {}),

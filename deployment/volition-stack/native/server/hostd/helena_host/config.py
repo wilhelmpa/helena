@@ -45,6 +45,8 @@ DEFAULT_CONFIG: dict = {
         # helper never writes into the EC, even when the module is loaded.
         'ecBoards': ['AXB35-02'],
         'ryzenadjPath': '/usr/local/sbin/ryzenadj',
+        'gpuBusyPath': '/sys/class/drm/card0/device/gpu_busy_percent',
+        'heavyMarkerDir': '/run/helena-heavy',
         # Optional ryzenadj limits per profile ({"stapm": mW, "fast": mW, "slow": mW,
         # "tctl": °C}), applied after the EC mode, which resets them. null: the EC mode's own
         # limits stay (the default). Never above the EC mode's own limits (power.py).
@@ -84,7 +86,7 @@ DEFAULT_SETTINGS: dict = {
     },
     # The profile and the fans as the owner last chose them; null until a first choice (the
     # installer of the fan control writes "fixed 5", the owner's first wish).
-    'power': {'profile': None, 'fans': None},
+    'power': {'profile': 'balanced', 'mode': 'auto', 'tctlLimit': 90, 'fans': None},
     'guard': {'limit': 90, 'holdSeconds': 5, 'releaseBelow': 80, 'releaseSeconds': 120},
 }
 

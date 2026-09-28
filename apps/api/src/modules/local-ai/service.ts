@@ -863,6 +863,7 @@ export interface LocalModelChoice {
 // it once, and waits no longer than the timeout before its configured model takes over.
 const ANSWER_FRESH_MS = 15_000;
 const ANSWER_TIMEOUT_MS = 2_000;
+const VOICE_START_TIMEOUT_MS = 300_000;
 const answers = new Map<number, { up: boolean; at: number }>();
 
 export async function serverAnswers(server: ModelServerRow, now = Date.now()): Promise<boolean> {
@@ -875,7 +876,10 @@ export async function serverAnswers(server: ModelServerRow, now = Date.now()): P
   if (type) {
     try {
       const key = await readModelServerKey(server);
-      up = (await type.status(serverContext(server, key, ANSWER_TIMEOUT_MS))).reachable;
+      const timeout = ['whisper-cpp', 'qwentts-cpp'].includes(server.kind)
+        ? VOICE_START_TIMEOUT_MS
+        : ANSWER_TIMEOUT_MS;
+      up = (await type.status(serverContext(server, key, timeout))).reachable;
     } catch {
       up = false;
     }

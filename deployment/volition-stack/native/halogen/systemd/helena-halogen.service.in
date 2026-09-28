@@ -1,0 +1,57 @@
+# Helena local AI: Halogen (native/halogen/install.sh renders this file; edit the template, not
+# the installed copy). A closed inference engine (peonist-ai, free to use, no telemetry) in a
+# container, pinned by digest, serving Qwen3.8-Flash-Next OpenAI-compatibly on the loopback.
+# Tunables (slots, context, token cap, thinking default) live in /etc/helena/halogen.conf.
+# Decision: docs/helena-decisions/halogen.md.
+[Unit]
+Description=Helena local AI: Halogen (Qwen3.8-Flash-Next)
+Documentation=file:///srv/volition/source/plan/deployment/volition-stack/native/halogen/README.md
+Wants=network-online.target
+After=network-online.target nftables.service
+
+[Service]
+Type=simple
+CPUQuota=100%
+StandardOutput=journal
+StandardError=inherit
+SyslogLevel=info
+LogFilterPatterns=~.*(GET|HEAD) /(metrics|v1/models)([ ?]|$).*
+Environment=HALOGEN_IMAGE=@IMAGE@
+Environment=HALOGEN_PORT=@PORT@
+Environment=HALOGEN_QUIET_PORT=@QUIET_PORT@
+EnvironmentFile=@CONF@
+# The container opens no connection of its own: the firewall table must be loaded (it drops
+# every connection the container's network starts, and lets only Helena's users reach the port).
+ExecStartPre=/usr/sbin/nft list table inet helena_halogen
+ExecStartPre=-/usr/bin/podman rm -f halogen
+# --pull=never: an image arrives only through install.sh, never on its own.
+# Two published ports, one server: the second address carries the agent turns that must not
+# think (Hermes tells providers apart by their address; ModelServerType.noThinkingBaseUrl).
+# --cgroups=split puts the container into this unit's cgroup, so its memory is the unit's.
+ExecStart=/usr/bin/podman run --rm --name halogen --replace --pull=never --log-driver=none \
+  --cgroups=split --network @NETWORK@ \
+  -p 127.0.0.1:${HALOGEN_PORT}:8731 -p 127.0.0.1:${HALOGEN_QUIET_PORT}:8731 \
+  --device /dev/kfd --device /dev/dri --ipc=host --ulimit memlock=-1:-1 \
+  -v @MODELS@:/models:ro \
+  -v @GGUF_REPO@:/gguf:ro \
+  -v @CACHE@:/cache \
+  -e HALOGEN_TOKENIZER=/models/tokenizer \
+  -e HALOGEN_CHECKPOINT=/gguf/snapshots/@GGUF_REVISION@/@GGUF_FILE@ \
+  -e HALOGEN_MTP_HEAD=/models/@MTP_HEAD@ \
+  -e HALOGEN_GGUF_CACHE=/cache \
+  -e HALOGEN_KV_SLOTS -e HALOGEN_KV_POOL_POSITIONS -e HALOGEN_MAX_TOK \
+  -e HALOGEN_REASONING_EFFORT -e HALOGEN_ENABLE_THINKING \
+  -e HALOGEN_TEMPERATURE -e HALOGEN_TOP_P -e HALOGEN_TOP_K \
+  ${HALOGEN_IMAGE}
+# Active only once the model answers (the weights take minutes to map after a boot).
+ExecStartPost=@LIB@/wait-healthy ${HALOGEN_PORT}
+ExecStop=/usr/bin/podman stop -t 60 halogen
+KillMode=mixed
+Delegate=yes
+Restart=on-failure
+RestartSec=20
+TimeoutStartSec=900
+TimeoutStopSec=90
+
+[Install]
+WantedBy=multi-user.target

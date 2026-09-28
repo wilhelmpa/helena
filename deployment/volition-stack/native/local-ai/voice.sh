@@ -49,6 +49,8 @@ QWENTTS_GGML_SHA256=38edb3eefde696e90df4d5d52637d7ecbab35e0f669f2414ac7e3687d86e
 
 STT_PORT=13306
 TTS_PORT=13307
+STT_BACKEND_PORT=14306
+TTS_BACKEND_PORT=14307
 VOICE_USER=helena-voice
 # The model each server loads (a name of voice-models.tsv).
 STT_MODEL=${HELENA_VOICE_STT_MODEL:-whisper-large-v3-turbo-german}
@@ -277,15 +279,18 @@ Nice=-2"
 [Unit]
 Description=Helena voice: speech recognition (whisper.cpp, GPU)
 After=network.target
+StopWhenUnneeded=yes
 
 [Service]
 ExecStart=$(whisper_bin)/whisper-server --model $(model_path "$STT_MODEL") --language de \\
-  --host 127.0.0.1 --port $STT_PORT --request-path /v1 --inference-path /audio/transcriptions \\
+  --host 127.0.0.1 --port $STT_BACKEND_PORT --request-path /v1 --inference-path /audio/transcriptions \\
   --threads 4 --flash-attn --suppress-nst --no-timestamps --vad --vad-model $(model_path "$VAD_MODEL")
+ExecStartPost=+/usr/bin/curl --fail --silent --output /dev/null --retry 240 --retry-connrefused --retry-delay 1 --max-time 2 http://127.0.0.1:$STT_BACKEND_PORT/v1/health
 ReadOnlyPaths=$MODELS
 # ROCm's libraries are mapped into the process and count; the weights themselves are in VRAM.
 MemoryHigh=3G
 MemoryMax=6G
+TimeoutStartSec=5min
 $common
 
 [Install]
@@ -298,12 +303,13 @@ EOF
 [Unit]
 Description=Helena voice: speech (Qwen3-TTS, GPU)
 After=network.target
+StopWhenUnneeded=yes
 
 [Service]
 ExecStart=$(qwentts_bin)/tts-server --model $(model_path "$TTS_MODEL") --codec $(model_path "$TTS_CODEC") \\
-  --alias qwen3-tts --host 127.0.0.1 --port $TTS_PORT --lang German --no-fa
+  --alias qwen3-tts --host 127.0.0.1 --port $TTS_BACKEND_PORT --lang German --no-fa
 # As root (+): the firewall voice ACL lets only root and the API user reach the port.
-ExecStartPost=+$LIB/voice-register-voices $TTS_PORT $VOICES
+ExecStartPost=+$LIB/voice-register-voices $TTS_BACKEND_PORT $VOICES
 ReadOnlyPaths=$MODELS $VOICES
 MemoryHigh=3G
 MemoryMax=6G
@@ -313,6 +319,29 @@ $common
 [Install]
 WantedBy=multi-user.target
 EOF
+  for kind in stt tts; do
+    if [ "$kind" = stt ]; then port=$STT_PORT; backend=$STT_BACKEND_PORT; else port=$TTS_PORT; backend=$TTS_BACKEND_PORT; fi
+    put "$UNITS/helena-voice-$kind-proxy.socket" 0644 root:root <<EOF
+[Unit]
+Description=Helena voice $kind on-demand socket
+
+[Socket]
+ListenStream=127.0.0.1:$port
+NoDelay=yes
+
+[Install]
+WantedBy=sockets.target
+EOF
+    put "$UNITS/helena-voice-$kind-proxy.service" 0644 root:root <<EOF
+[Unit]
+Description=Helena voice $kind on-demand proxy
+Requires=helena-voice-$kind.service
+After=helena-voice-$kind.service
+
+[Service]
+ExecStart=/lib/systemd/systemd-socket-proxyd --exit-idle-time=5min 127.0.0.1:$backend
+EOF
+  done
   put "$LIB/voice-register-voices" 0755 root:root < "$here/voice-register-voices"
 }
 
@@ -397,7 +426,8 @@ install_all() {
   build_qwentts
   write_units
   run systemctl daemon-reload
-  run systemctl enable --now helena-voice-stt.service helena-voice-tts.service
+  run systemctl disable --now helena-voice-stt.service helena-voice-tts.service
+  run systemctl enable --now helena-voice-stt-proxy.socket helena-voice-tts-proxy.socket
   if [ "$DRY_RUN" = 0 ]; then
     wait_health "$STT_PORT" /v1/health || die "helena-voice-stt does not answer (journalctl -u helena-voice-stt)"
     wait_health "$TTS_PORT" /health || die "helena-voice-tts does not answer (journalctl -u helena-voice-tts)"
@@ -407,8 +437,12 @@ install_all() {
 }
 
 uninstall() {
+  run systemctl disable --now helena-voice-stt-proxy.socket helena-voice-tts-proxy.socket 2>/dev/null || true
+  run systemctl stop helena-voice-stt-proxy.service helena-voice-tts-proxy.service 2>/dev/null || true
   run systemctl disable --now helena-voice-stt.service helena-voice-tts.service 2>/dev/null || true
-  run rm -f "$UNITS/helena-voice-stt.service" "$UNITS/helena-voice-tts.service" "$LIB/voice-register-voices"
+  run rm -f "$UNITS/helena-voice-stt.service" "$UNITS/helena-voice-tts.service" \
+    "$UNITS/helena-voice-stt-proxy.socket" "$UNITS/helena-voice-tts-proxy.socket" \
+    "$UNITS/helena-voice-stt-proxy.service" "$UNITS/helena-voice-tts-proxy.service" "$LIB/voice-register-voices"
   run systemctl daemon-reload
   run rm -rf "$BIN"
   if [ "$PURGE" = 1 ]; then

@@ -87,6 +87,7 @@ export interface SmartFacts {
   availableSpareThreshold: number | null;
   mediaErrors: number | null;
   criticalWarning: number | null;
+  warningTempTime?: number | null;
   unsafeShutdowns: number | null;
   dataWrittenBytes: number | null;
   reallocatedSectors: number | null;
@@ -236,6 +237,8 @@ export interface PowerStatus {
   profile: PowerProfile | 'mixed' | null;
   desired: {
     profile?: PowerProfile | null;
+    mode?: 'auto' | PowerProfile;
+    tctlLimit?: number;
     fans?: { mode: 'auto' | 'fixed'; level: number | null } | null;
   };
   ec: {
@@ -300,6 +303,9 @@ export interface PowerStatus {
       lastTemperatureC?: number | null;
       available?: boolean;
       updatedAt?: string | null;
+      profile?: PowerProfile | null;
+      thermalWarnSince?: string | null;
+      throttling?: boolean;
     };
   };
 }
