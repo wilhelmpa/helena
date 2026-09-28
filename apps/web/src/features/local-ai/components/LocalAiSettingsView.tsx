@@ -66,7 +66,6 @@ import {
   type ServerForm,
 } from '../utils/serverForm';
 import LocalAiCard from './LocalAiCard';
-import LocalAiEscalationSection from './LocalAiEscalationSection';
 import LocalAiJudgeSection from './LocalAiJudgeSection';
 import LocalModelRow from './LocalModelRow';
 import VoiceSettingsSection from '@/features/voice/components/VoiceSettingsSection';
@@ -93,7 +92,8 @@ export default function LocalAiSettingsView() {
           <ServersSection settings={data} />
           <ClassesSection settings={data} />
           <LocalAiJudgeSection />
-          <LocalAiEscalationSection />
+          {/* The escalation rules (LocalAiEscalationSection) are stored and tested, but no run
+              follows them yet: the section is mounted with Phase 2, when escalate() is wired. */}
           <VoiceSettingsSection />
         </>
       )}
@@ -161,7 +161,7 @@ function ServerCard({ server, settings }: { server: ModelServer; settings: Local
           {server.status?.reachable && server.status.load && (
             <ServerLoadLine load={server.status.load} />
           )}
-          {server.status?.error && (
+          {server.enabled && server.status?.error && (
             <p className="text-xs text-destructive">{server.status.error}</p>
           )}
         </div>
@@ -198,7 +198,8 @@ function ServerCard({ server, settings }: { server: ModelServer; settings: Local
           <Trash2 />
         </Button>
       </div>
-      {server.models.length > 0 && (
+      {/* A switched-off server's models are in no picker: not listed either. */}
+      {server.enabled && server.models.length > 0 && (
         <ul className="divide-y text-sm">
           {server.models.map((model) => (
             <LocalModelRow key={model.id} server={server} model={model} />

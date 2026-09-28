@@ -417,10 +417,34 @@ export async function readVocabulary(path: string): Promise<Record<string, unkno
   return vocab;
 }
 
-async function halogenHealth(context: ModelServerContext): Promise<Record<string, unknown>> {
-  const body = await json(await context.fetch('//health'));
-  return body && typeof body === 'object' ? (body as Record<string, unknown>) : {};
+// Halogen's /health probes its engine, and while the engine is deep in a long prompt it may
+// answer only after seconds: its description is asked briefly and is optional. Whether the
+// server answers at all is what /v1/models says (at once, busy or not).
+export const HALOGEN_HEALTH_WAIT_MS = 1_500;
+
+async function halogenHealth(
+  context: ModelServerContext,
+  waitMs = HALOGEN_HEALTH_WAIT_MS,
+): Promise<Record<string, unknown> | null> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const late = new Promise<null>((resolve) => {
+    timer = setTimeout(() => resolve(null), waitMs);
+  });
+  const asked = context
+    .fetch('//health')
+    .then(json)
+    .then((body) => (body && typeof body === 'object' ? (body as Record<string, unknown>) : {}))
+    .catch(() => null);
+  try {
+    return await Promise.race([asked, late]);
+  } finally {
+    clearTimeout(timer);
+  }
 }
+
+// What Halogen serves whatever its /health says: chat, tools (qwen-xml tool calls) and thinking
+// control. Vision only when /health says its tower is loaded.
+const HALOGEN_BASE_CAPABILITIES: LocalModelCapability[] = ['chat', 'tools', 'reasoning'];
 
 // Halogen (peonist-ai; native/halogen/install.sh): one model, OpenAI-compatible under /v1, no
 // key (the firewall lets only Helena's users reach it), `GET /health` describing what it serves
@@ -435,10 +459,11 @@ export const halogenServer: ModelServerType = {
   async models(context) {
     const [listed, health] = await Promise.all([
       context.fetch('/models').then(json),
-      halogenHealth(context).catch(() => ({}) as Record<string, unknown>),
+      halogenHealth(context),
     ]);
-    const up = health.status === 'ok';
-    const capabilities = halogenCapabilities(health);
+    // Listed means served; a /health that says otherwise (loading) wins.
+    const up = health === null || health.status === 'ok';
+    const capabilities = health ? halogenCapabilities(health) : HALOGEN_BASE_CAPABILITIES;
     return entries(listed)
       .map((entry) => {
         const id = text(entry.id);
@@ -448,7 +473,7 @@ export const halogenServer: ModelServerType = {
           // Halogen runs on the GPU (ROCm); it serves no other device.
           unit: 'gpu',
           capabilities,
-          contextLength: number(entry.context_length) ?? number(health.slot_ctx),
+          contextLength: number(entry.context_length) ?? number(health?.slot_ctx),
           loaded: up,
           backend: 'halogen',
         });
@@ -458,9 +483,11 @@ export const halogenServer: ModelServerType = {
   async status(context) {
     const started = Date.now();
     try {
-      const health = await halogenHealth(context);
+      const listed = entries(await json(await context.fetch('/models')));
       const latencyMs = Date.now() - started;
-      if (health.status !== 'ok') throw new Error(`status ${String(health.status ?? 'unknown')}`);
+      const health = await halogenHealth(context);
+      if (health && health.status !== 'ok')
+        throw new Error(`status ${String(health.status ?? 'unknown')}`);
       const metrics = await context
         .fetch('//metrics')
         .then((response) => (response.ok ? response.text() : ''))
@@ -470,15 +497,18 @@ export const halogenServer: ModelServerType = {
       const [memory, gpu] = local
         ? await Promise.all([readBytes(`${HALOGEN_CGROUP}/memory.current`), gpuBusy()])
         : [null, null];
-      const version = (health.version ?? {}) as Record<string, unknown>;
-      const model = text(health.model);
+      const version = (health?.version ?? {}) as Record<string, unknown>;
+      const models = health?.model ? [text(health.model)] : listed.map((entry) => text(entry.id));
       return {
         reachable: true,
+        // Unknown while /health is slow (the engine is busy); the last check's stays shown.
         version: text(version.engine) ?? text(version.api),
         latencyMs,
         error: null,
-        loaded: model ? [{ id: model, unit: 'gpu', backend: 'halogen' }] : [],
-        load: halogenLoad(health, metrics, memory, gpu),
+        loaded: models
+          .filter((id): id is string => id !== null)
+          .map((id) => ({ id, unit: 'gpu' as const, backend: 'halogen' })),
+        load: halogenLoad(health ?? {}, metrics, memory, gpu),
       };
     } catch (error) {
       return unreachable(error);

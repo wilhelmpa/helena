@@ -173,6 +173,25 @@ describe('Halogen', () => {
     expect(gone.error).toBe('HTTP 404');
   });
 
+  it('counts as up while its engine is too busy to describe itself', async () => {
+    const context = fakeContext(ROUTES);
+    const fetch = context.fetch.bind(context);
+    context.fetch = async (path, init) =>
+      path === '//health' ? new Promise<Response>(() => undefined) : fetch(path, init);
+    const started = Date.now();
+    const status = await halogenServer.status(context);
+    expect(Date.now() - started).toBeLessThan(3_000);
+    expect(status.reachable).toBe(true);
+    expect(status.version).toBeNull();
+    expect(status.loaded).toEqual([
+      { id: 'halogen-qwen3.8-flash-next', unit: 'gpu', backend: 'halogen' },
+    ]);
+    expect(status.load?.outputTokensPerSecond).toBe(40);
+    const models = await halogenServer.models(context);
+    expect(models[0]!.capabilities).toEqual(['chat', 'tools', 'reasoning']);
+    expect(models[0]!.loaded).toBe(true);
+  });
+
   it('keeps its status when /metrics is missing', async () => {
     const { 'http://127.0.0.1:8731/metrics': _metrics, ...rest } = ROUTES;
     const status = await halogenServer.status(fakeContext(rest));

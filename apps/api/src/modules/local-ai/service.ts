@@ -177,6 +177,11 @@ export async function checkServer(server: ModelServerRow): Promise<ModelServerRo
       }
     }
   }
+  // A server that answers without saying its version this time (Halogen while its engine is
+  // busy) keeps the version it said before.
+  if (status.reachable && !status.version && server.status?.version) {
+    status = { ...status, version: server.status.version };
+  }
   // What the Administrator said its chat models can do, over what Helena derived (also for the
   // models it keeps while the server does not answer).
   if (type?.capabilitiesConfigurable) {
