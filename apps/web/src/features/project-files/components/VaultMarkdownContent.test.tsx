@@ -745,14 +745,14 @@ it('opens Markdown inline from the project file list in the Docs editor', async 
   await render({ browser: true });
   await until(
     () =>
-      !![...document.querySelectorAll('button')].find((node) =>
-        node.textContent?.includes('00-Start.md'),
+      !![...document.querySelectorAll('button')].find(
+        (node) => node.textContent?.trim() === '00-Start',
       ),
   );
-  const file = [...document.querySelectorAll<HTMLButtonElement>('button')].find((node) =>
-    node.textContent?.includes('00-Start.md'),
+  const file = [...document.querySelectorAll<HTMLButtonElement>('button')].find(
+    (node) => node.textContent?.trim() === '00-Start',
   )!;
-  await act(async () => file.click());
+  await act(async () => file.dispatchEvent(new window.MouseEvent('dblclick', { bubbles: true })));
   await until(() => !!document.querySelector('[data-file-preview] .tiptap'));
   assert.deepEqual(navigations, []);
   assert.equal(content, original);

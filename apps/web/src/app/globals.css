@@ -13,7 +13,7 @@
 /* Streamdown renders an agent's Markdown (components/agent-message): its word fade-in,
    and the Tailwind classes its components carry, which live in its package. */
 @import 'streamdown/styles.css';
-@import './status-tokens.css';
+@import './helena-tokens.css';
 @source '../../node_modules/streamdown/dist/*.js';
 
 body:has(.project-ai-agents-view) [data-app-header] {
@@ -316,23 +316,6 @@ body:has(.project-ai-agents-view) [class~='@container/page']::-webkit-scrollbar 
   --helena-gold: #ffd700;
   --helena-amber: #ffbf00;
   --helena-bronze: #cd7f32;
-}
-
-/* Shared Helena dashboard tokens. */
-:root {
-  --dashboard-surface: #0e0d11;
-  --dashboard-raised: #111014;
-  --dashboard-selected: #26212d;
-  --dashboard-label: #8b8595;
-  --dashboard-muted: #88808f;
-  --dashboard-ink: #eeeaf6;
-  --dashboard-project: #bdaaff;
-  --dashboard-positive: #7ee0b8;
-  --dashboard-attention: #f4a3bf;
-  --dashboard-track: #1a1820;
-  --project-trade: #7ee0b8;
-  --project-verve: #f0997b;
-  --project-vol: #bdaaff;
 }
 
 .dark {
@@ -1587,13 +1570,13 @@ html[data-kiosk-display='dual'] [data-slot='alert-dialog-content'] {
   color: var(--project-tag-color);
 }
 .helena-project-tag[data-project='TRADE'] {
-  --project-tag-color: #7ee0b8;
+  --project-tag-color: var(--project-trade);
 }
 .helena-project-tag[data-project='VERVE'] {
-  --project-tag-color: #f0997b;
+  --project-tag-color: var(--project-verve);
 }
 .helena-project-tag[data-project='VOL'] {
-  --project-tag-color: #bdaaff;
+  --project-tag-color: var(--project-vol);
 }
 .helena-other-inbox-dot {
   width: 6px;

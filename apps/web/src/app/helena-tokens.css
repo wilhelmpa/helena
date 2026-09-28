@@ -16,4 +16,19 @@
   --status-danger: var(--status-error);
   --status-danger-foreground: var(--brand-foreground);
   --status-idle-foreground: var(--brand-foreground);
+  --dashboard-surface: #0e0d11;
+  --dashboard-raised: #111014;
+  --dashboard-selected: #26212d;
+  --dashboard-label: #8b8595;
+  --dashboard-muted: #88808f;
+  --dashboard-ink: #eeeaf6;
+  --dashboard-project: #bdaaff;
+  --dashboard-positive: #7ee0b8;
+  --dashboard-attention: #f4a3bf;
+  --dashboard-track: #1a1820;
+  --project-trade: #7ee0b8;
+  --project-verve: #f0997b;
+  --project-vol: #bdaaff;
+  --project-color-4: #8dc7f3;
+  --project-color-5: #e8cc83;
 }

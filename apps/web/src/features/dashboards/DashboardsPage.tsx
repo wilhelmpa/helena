@@ -7,6 +7,7 @@ import { Check, LayoutTemplate, Pencil, Plus, Target, Trash2, Undo2 } from 'luci
 import { useShell } from '@/context/shellContext';
 import { usePermissions } from '@/hooks/usePermissions';
 import { dashboardPath, dashboardsPath, initiativesPath } from '@/utils/paths';
+import { projectColor } from '@/utils/projectColor';
 import { useProjectFeatures } from '@/hooks/useProjectFeatures';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -148,19 +149,10 @@ export default function DashboardsPage() {
     }
   }
 
-  const projectColor =
-    projectKey.toUpperCase() === 'TRADE'
-      ? 'var(--project-trade)'
-      : projectKey.toUpperCase() === 'VERVE'
-        ? 'var(--project-verve)'
-        : projectKey.toUpperCase() === 'VOL'
-          ? 'var(--project-vol)'
-          : 'var(--brand)';
-
   return (
     <div
       className="flex flex-1 flex-col overflow-hidden"
-      style={{ '--dashboard-project': projectColor } as CSSProperties}
+      style={{ '--dashboard-project': projectColor(projectKey) } as CSSProperties}
     >
       <PageToolbar>
         <DashboardTabs

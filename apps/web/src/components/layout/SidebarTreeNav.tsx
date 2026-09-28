@@ -417,7 +417,7 @@ export function SidebarProjectTree({
   const pathname = usePathname();
   const knowledgePath = useSearchParams().get('path');
   const viewsT = useTranslations('views');
-  const { can } = usePermissions();
+  const { can, isAdmin } = usePermissions();
   const features = useProjectFeatures();
   const { data: views = [] } = useViewsQuery(projectKey);
   const { data: areas = [] } = useViewFoldersQuery(projectKey);
@@ -445,6 +445,11 @@ export function SidebarProjectTree({
                 aria-label="Neues Dashboard"
                 title="Neues Dashboard"
               >
+                <Plus size={14} />
+              </Link>
+            )
+          }
+        >
           {dashboards.map((dashboard) => (
             <TreeLink key={dashboard.id} href={dashboardPath(projectKey, dashboard.id)} nested>
               {dashboard.name}

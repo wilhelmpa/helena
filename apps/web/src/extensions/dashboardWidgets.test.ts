@@ -26,7 +26,7 @@ describe('dashboard widgets', () => {
     );
     assert.deepEqual(
       list.filter((w) => w.kind === 'section').map((w) => w.id),
-      ['my-tasks', 'running', 'schedules', 'projects'],
+      ['running', 'needs-you', 'finished', 'my-tasks', 'schedules', 'projects'],
     );
     assert.deepEqual(
       list.filter((w) => w.audience === 'owner').map((w) => w.id),

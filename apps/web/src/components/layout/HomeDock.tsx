@@ -55,7 +55,11 @@ export default function HomeDock({
           {projectKey && (
             <Popover>
               <PopoverTrigger asChild>
-                <button type="button" aria-label="Weitere erstellen" className="create-dock-arrow absolute -end-1 -bottom-1 flex size-6 items-center justify-center rounded-full">
+                <button
+                  type="button"
+                  aria-label="Weitere erstellen"
+                  className="create-dock-arrow absolute -end-1 -bottom-1 flex size-6 items-center justify-center rounded-full"
+                >
                   <ChevronDown className="size-3" />
                 </button>
               </PopoverTrigger>
@@ -63,10 +67,18 @@ export default function HomeDock({
                 {[
                   { label: 'Doc', href: `${filesPath(projectKey)}?create=doc` },
                   { label: 'Leinwand', href: `${notesPath(projectKey)}&create=canvas` },
-                  { label: 'Zeitplan', href: `${aiTeamPath(projectKey, 'schedules')}?create=schedule` },
+                  {
+                    label: 'Zeitplan',
+                    href: `${aiTeamPath(projectKey, 'schedules')}?create=schedule`,
+                  },
                   { label: 'Agent', href: `${aiAgentsPath(projectKey)}?create=agent` },
                 ].map((option) => (
-                  <button key={option.label} type="button" onClick={() => router.push(option.href)} className="flex h-9 w-full items-center rounded-md px-3 text-start text-sm hover:bg-accent">
+                  <button
+                    key={option.label}
+                    type="button"
+                    onClick={() => router.push(option.href)}
+                    className="flex h-9 w-full items-center rounded-md px-3 text-start text-sm hover:bg-accent"
+                  >
                     {option.label}
                   </button>
                 ))}

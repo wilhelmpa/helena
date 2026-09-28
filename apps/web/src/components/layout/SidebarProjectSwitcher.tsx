@@ -34,7 +34,8 @@ export default function SidebarProjectSwitcher({
   const newProjectT = useTranslations('newProject');
   const project = projects.find((item) => item.key === currentProjectKey);
   const { groups, ungrouped } = projectTree(projects.filter((item) => item.projectRole !== 'home'));
-  const color = project && project.projectRole !== 'home' ? projectColor(project.key) : '#bdaaff';
+  const color =
+    project && project.projectRole !== 'home' ? projectColor(project.key) : projectColor(null);
   const [open, setOpen] = useState(false);
   const [dragging, setDragging] = useState(false);
   const select = (key: string) => {
@@ -70,7 +71,7 @@ export default function SidebarProjectSwitcher({
       >
         <DropdownMenuItem asChild>
           <Link href="/">
-            <span className="helena-project-dot" style={{ background: '#bdaaff' }} />
+            <span className="helena-project-dot" style={{ background: projectColor(null) }} />
             {t('sidebarHomeAll')}
           </Link>
         </DropdownMenuItem>

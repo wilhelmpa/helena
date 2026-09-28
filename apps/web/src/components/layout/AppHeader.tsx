@@ -47,7 +47,10 @@ export default function AppHeader({
     // sidebar's hover fill and a 16px icon, a hairline between the groups.
     <header
       data-app-header=""
-      className={cn('relative flex min-h-[104px] shrink-0 items-end gap-3 border-b border-sidebar-border px-4 pt-6 pb-4 sm:px-9', className)}
+      className={cn(
+        'relative flex min-h-[104px] shrink-0 items-end gap-3 border-b border-sidebar-border px-4 pt-6 pb-4 sm:px-9',
+        className,
+      )}
     >
       <SidebarTrigger className="md:hidden" />
       <div ref={titleRef} className="flex max-w-[min(26rem,45vw)] min-w-0 shrink flex-col gap-2">

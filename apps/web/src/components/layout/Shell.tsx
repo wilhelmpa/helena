@@ -311,7 +311,9 @@ export default function Shell({
               />
               <SidebarInset className="min-w-0">
                 <AppHeader
-                  className={mobileHeaderOnly ? 'md:hidden' : hideHeaderOnDesktop ? 'lg:hidden' : undefined}
+                  className={
+                    mobileHeaderOnly ? 'md:hidden' : hideHeaderOnDesktop ? 'lg:hidden' : undefined
+                  }
                   title={
                     globalHome ? (
                       globalTitle ? (

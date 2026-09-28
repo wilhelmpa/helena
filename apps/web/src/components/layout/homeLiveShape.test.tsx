@@ -23,7 +23,7 @@ test('Home navigation and project switcher work with no HOME project row', () =>
         ['overview', 'allWorkItems', 'files', 'schedules', 'organization'].includes(item.id),
       )
       .map((item) => item.href),
-    ['/', '/tasks', '/files', '/organization', '/schedules'],
+    ['/dashboard', '/tasks', '/files', '/organization', '/schedules'],
   );
   const html = renderToStaticMarkup(
     <NextIntlClientProvider

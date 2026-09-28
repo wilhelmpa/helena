@@ -59,7 +59,11 @@ export default function AppSidebar({
     setMounted(true);
     const updateClock = () =>
       setClock(
-        new Intl.DateTimeFormat(locale, { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date()),
+        new Intl.DateTimeFormat(locale, {
+          hour: '2-digit',
+          minute: '2-digit',
+          hourCycle: 'h23',
+        }).format(new Date()),
       );
     updateClock();
     const timer = window.setInterval(updateClock, 30_000);

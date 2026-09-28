@@ -110,7 +110,7 @@ test('real picker and upload hook hand canonical paths to the composer and its c
         'Projects/VOL',
         '/project/VOL/files?path=Files%2Fproof&file=Files%2Fproof%2FCycle.md',
       ],
-      ['team:1', 'Home', '/docs?path=Home%2FFiles%2Fproof%2FCycle.md'],
+      ['team:1', 'Home', '/files?root=home&path=Files%2Fproof&file=Files%2Fproof%2FCycle.md'],
     ]) {
       let picked: string | undefined;
       await render(

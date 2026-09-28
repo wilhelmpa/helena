@@ -44,7 +44,11 @@ export default function OrganizationChartNode({ data }: NodeProps<ChartAgentNode
     tool: state === 'tool',
     runtimeStatus: agent.runtimeState.status,
   });
-  const label = agent.isHome ? t('home') : agent.role === 'coordinator' ? t('coordinator') : agent.name;
+  const label = agent.isHome
+    ? t('home')
+    : agent.role === 'coordinator'
+      ? t('coordinator')
+      : agent.name;
   const model = settings?.model ?? t('standardModel');
   const reasoning = settings?.runtimePolicy.reasoningEffort ?? t('default');
   const trust = settings?.autopilotLevel;

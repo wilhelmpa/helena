@@ -1,4 +1,10 @@
-const COLORS = ['#7ee0b8', '#f0997b', '#bdaaff', '#8dc7f3', '#e8cc83'];
+const COLORS = [
+  'var(--project-trade)',
+  'var(--project-verve)',
+  'var(--project-vol)',
+  'var(--project-color-4)',
+  'var(--project-color-5)',
+];
 
 export function projectColor(key: string | null) {
   if (!key) return COLORS[2]!;
