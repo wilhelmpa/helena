@@ -266,12 +266,16 @@ export default function WorkItemsPage() {
                   <button
                     type="button"
                     onClick={() => void editor.saveEdits()}
-                    className={cn(PAGE_CONTROL_CLASS, PAGE_PRIMARY_CLASS)}
+                    className={cn(PAGE_CONTROL_CLASS, PAGE_PRIMARY_CLASS, 'max-sm:px-1')}
                   >
                     {tCommon('save')}
                   </button>
                 )}
-                <button type="button" onClick={editor.resetChanges} className={PAGE_CONTROL_CLASS}>
+                <button
+                  type="button"
+                  onClick={editor.resetChanges}
+                  className={cn(PAGE_CONTROL_CLASS, 'max-sm:px-1')}
+                >
                   {tViews('reset')}
                 </button>
               </div>
@@ -282,7 +286,11 @@ export default function WorkItemsPage() {
                 onClick={() => editor.beginNewView('current')}
                 aria-label={tViews('saveAsNew')}
                 title={tViews('saveAsNew')}
-                className={cn(PAGE_CONTROL_CLASS, PAGE_PRIMARY_CLASS)}
+                className={cn(
+                  PAGE_CONTROL_CLASS,
+                  PAGE_PRIMARY_CLASS,
+                  'max-sm:w-8 max-sm:justify-center max-sm:px-0',
+                )}
               >
                 <Plus aria-hidden="true" />
                 <span className="hidden lg:inline">{tViews('saveAsNew')}</span>

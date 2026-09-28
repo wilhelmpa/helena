@@ -40,8 +40,16 @@ export function clearViewDraft(key: string): void {
 }
 
 export function viewDraftChanged(saved: ViewDraft, draft: ViewDraft): boolean {
+  const filterShape = (filters: FilterSet) =>
+    filters.conditions.map((condition) => [
+      condition.id,
+      condition.field,
+      condition.op,
+      condition.values,
+    ]);
   return (
-    JSON.stringify(saved.filters.conditions) !== JSON.stringify(draft.filters.conditions) ||
-    JSON.stringify(saved.display) !== JSON.stringify(draft.display)
+    JSON.stringify(filterShape(saved.filters)) !== JSON.stringify(filterShape(draft.filters)) ||
+    JSON.stringify(normalizeSavedDisplay(saved.display)) !==
+      JSON.stringify(normalizeSavedDisplay(draft.display))
   );
 }

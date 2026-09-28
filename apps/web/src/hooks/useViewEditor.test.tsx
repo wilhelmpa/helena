@@ -7,6 +7,7 @@ import { JSDOM } from 'jsdom';
 import { NextIntlClientProvider } from 'next-intl';
 import type { View } from '@/lib/api/endpoints/views';
 import { defaultViewSettings } from '@/utils/viewSettings';
+import { viewDraftChanged } from '@/utils/viewDraft';
 import messages from '../../messages/en/views.json';
 
 const { mock } = createRequire(import.meta.url)('bun:test') as {
@@ -209,4 +210,19 @@ test('filters on All survive reload for the same user', () => {
   } finally {
     app.cleanup();
   }
+});
+
+test('saved JSON key order does not leave a view marked as changed', () => {
+  const filters = {
+    conditions: [{ id: 'c0', field: 'priority', op: 'is' as const, values: ['high'] }],
+  };
+  const display = { layout: 'kanban' as const, ...defaultViewSettings('kanban') };
+  const reordered = Object.fromEntries(Object.entries(display).reverse()) as typeof display;
+  const dbFilters = {
+    conditions: [{ values: ['high'], op: 'is' as const, field: 'priority', id: 'c0' }],
+  };
+  assert.equal(
+    viewDraftChanged({ filters: dbFilters, display: reordered }, { filters, display }),
+    false,
+  );
 });
