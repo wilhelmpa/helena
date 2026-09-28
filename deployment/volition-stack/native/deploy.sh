@@ -441,14 +441,20 @@ if [[ -e /etc/systemd/system/volition-project-browser-restore.service ]]; then
   rm -f /etc/systemd/system/volition-project-browser-restore.service /usr/local/libexec/volition-browser-restore
   systemctl daemon-reload
 fi
-if changed deployment/volition-stack/native/systemd/61-helena-browser-on-demand.rules; then
-  install -m 0644 -o root -g root "$live/deployment/volition-stack/native/systemd/61-helena-browser-on-demand.rules" \
-    /etc/polkit-1/rules.d/61-helena-browser-on-demand.rules
+browser_rule=deployment/volition-stack/native/systemd/61-helena-browser-on-demand.rules
+if changed "$browser_rule"; then
+  if [[ -f $live/$browser_rule ]]; then
+    install -m 0644 -o root -g root "$live/$browser_rule" /etc/polkit-1/rules.d/61-helena-browser-on-demand.rules
+  else
+    rm -f /etc/polkit-1/rules.d/61-helena-browser-on-demand.rules
+  fi
 fi
 browser_units=(volition-project-browser-kasm@.service volition-project-browser-chromium@.service volition-project-browser@.target)
 if changed "${browser_units[@]/#/deployment/volition-stack/native/systemd/}"; then
   for unit in "${browser_units[@]}"; do
-    install -m 0644 "$live/deployment/volition-stack/native/systemd/$unit" /etc/systemd/system/
+    if [[ -f $live/deployment/volition-stack/native/systemd/$unit ]]; then
+      install -m 0644 "$live/deployment/volition-stack/native/systemd/$unit" /etc/systemd/system/
+    fi
   done
   systemctl daemon-reload
 fi
