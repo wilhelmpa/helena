@@ -13,8 +13,9 @@ export function knowledgeFolderLabel(
   name: string,
   translate?: (key: FixedFolderKey) => string,
 ): string {
-  if (name in fixedFolders && translate) return translate(name as FixedFolderKey);
-  return fixedFolders[name] ?? name;
+  if (!Object.hasOwn(fixedFolders, name)) return name;
+  if (translate) return translate(name as FixedFolderKey);
+  return fixedFolders[name]!;
 }
 
 export function compareKnowledgeFolders(a: string, b: string): number {
@@ -26,4 +27,11 @@ export function compareKnowledgeFolders(a: string, b: string): number {
     return first - second;
   }
   return a.localeCompare(b, 'de');
+}
+
+export function isDirectChildFolder(item: { kind: string; path: string }, parent: string): boolean {
+  if (item.kind !== 'folder') return false;
+  const prefix = parent ? `${parent}/` : '';
+  if (!item.path.startsWith(prefix)) return false;
+  return !item.path.slice(prefix.length).includes('/');
 }

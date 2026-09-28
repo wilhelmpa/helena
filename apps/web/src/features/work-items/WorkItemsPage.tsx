@@ -248,9 +248,14 @@ export default function WorkItemsPage() {
           </>
         ) : (
           <>
+            <PageToolbarSpacer />
+            {can('views', 'edit') && (
+              <ViewFolderManager projectKey={project.project.key} folders={folders} />
+            )}
+            {controls}
             <PageActions
-              actions={[
-                ...(editor.activeView && can('views', 'edit')
+              actions={
+                editor.activeView && can('views', 'edit')
                   ? [
                       {
                         id: 'edit-view',
@@ -259,24 +264,19 @@ export default function WorkItemsPage() {
                         onClick: () => editor.beginEditView(editor.activeView!),
                       },
                     ]
-                  : []),
-              ]}
+                  : []
+              }
+              primary={
+                can('work_items', 'create')
+                  ? {
+                      id: 'new-issue',
+                      label: t('newIssue'),
+                      icon: Plus,
+                      onClick: () => onAddIssue({}),
+                    }
+                  : undefined
+              }
             />
-            <PageToolbarSpacer />
-            {can('views', 'edit') && (
-              <ViewFolderManager projectKey={project.project.key} folders={folders} />
-            )}
-            {controls}
-            {can('work_items', 'create') && (
-              <PageActions
-                primary={{
-                  id: 'new-issue',
-                  label: t('newIssue'),
-                  icon: Plus,
-                  onClick: () => onAddIssue({}),
-                }}
-              />
-            )}
           </>
         )}
       </PageToolbar>

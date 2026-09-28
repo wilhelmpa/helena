@@ -15,7 +15,11 @@ import {
 import { ENTRY_TYPE, isEntryDrag, moveTarget } from '@/features/project-files/utils/fileDrag';
 import FileNewFolderDialog from '@/features/project-files/components/FileNewFolderDialog';
 import { filesPath, homeFilesPath } from '@/utils/paths';
-import { compareKnowledgeFolders, knowledgeFolderLabel } from '@/utils/knowledgeFolders';
+import {
+  compareKnowledgeFolders,
+  isDirectChildFolder,
+  knowledgeFolderLabel,
+} from '@/utils/knowledgeFolders';
 
 function folderUrl(scope: FileScope, path: string) {
   return scope.kind === 'project'
@@ -51,7 +55,7 @@ function FolderNode({
   const listing = useFilesQuery(scope, path);
   const move = useMoveFile(scope);
   const upload = useUploadFiles(scope);
-  const children = listing.data?.items.filter((item) => item.kind === 'folder') ?? [];
+  const children = listing.data?.items.filter((item) => isDirectChildFolder(item, path)) ?? [];
   const open = expanded ?? isAncestor;
   const drop = (event: DragEvent<HTMLDivElement>) => {
     if (!canWrite) return;
@@ -75,7 +79,7 @@ function FolderNode({
   return (
     <div>
       <div
-        className={`helena-tree-parent group ${over ? 'bg-accent' : ''}`}
+        className={`helena-tree-parent group relative ${over ? 'bg-[#26212d]' : ''}`}
         style={{ paddingInlineStart: depth * 16 }}
         onDragOver={(event) => {
           if (!canWrite) return;
@@ -89,7 +93,8 @@ function FolderNode({
         {children.length > 0 && (
           <button
             type="button"
-            className="helena-tree-toggle"
+            className="helena-tree-toggle knowledge-folder-toggle"
+            style={{ insetInlineStart: depth * 16 }}
             aria-label={`${open ? 'Schließen' : 'Öffnen'}: ${name}`}
             aria-expanded={open}
             onClick={() => setExpanded(!open)}
@@ -120,7 +125,7 @@ function FolderNode({
       </div>
       {open &&
         [...children]
-          .sort((a, b) => a.name.localeCompare(b.name))
+          .sort((a, b) => a.name.localeCompare(b.name, 'de'))
           .map((child) => (
             <FolderNode
               key={child.path}
@@ -148,11 +153,11 @@ export default function SidebarKnowledgeFolders({
   const listing = useFilesQuery(scope, '');
   return (
     listing.data?.items
-      .filter((item) => item.kind === 'folder')
+      .filter((item) => isDirectChildFolder(item, ''))
       .sort((a, b) =>
         scope.kind === 'project'
           ? compareKnowledgeFolders(a.name, b.name)
-          : a.name.localeCompare(b.name),
+          : a.name.localeCompare(b.name, 'de'),
       )
       .map((folder) => (
         <FolderNode

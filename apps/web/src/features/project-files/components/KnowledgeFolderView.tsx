@@ -17,6 +17,7 @@ import { getVaultDocument, searchKnowledge } from '@/lib/api/endpoints/knowledge
 import {
   fileRawUrl,
   getFileReferences,
+  listFiles,
   readFileText,
   type FileItem,
   type FileScope,
@@ -34,7 +35,7 @@ const creationIcons = {
   Doc: FileText,
   Leinwand: Network,
   Ordner: Folder,
-  'Datei hochladen': Upload,
+  'Datei hochladen': FileImage,
 };
 const isDoc = (name: string) => /\.(md|markdown)$/i.test(name);
 const isCanvas = (name: string) => /\.canvas$/i.test(name);
@@ -233,10 +234,15 @@ export default function KnowledgeFolderView({
   }, []);
   const shown = items
     .filter((item, index) => {
-      if (filter === 'Dokumente') return isDoc(item.name);
-      if (filter === 'Leinwände') return isCanvas(item.name);
+      if (filter === 'Dokumente')
+        return isDoc(item.name) || (item.kind === 'folder' && item.name === 'Docs');
+      if (filter === 'Leinwände')
+        return isCanvas(item.name) || (item.kind === 'folder' && item.name === 'Boards');
       if (filter === 'Dateien')
-        return item.kind === 'file' && !isDoc(item.name) && !isCanvas(item.name);
+        return (
+          (item.kind === 'folder' && item.name === 'Files') ||
+          (item.kind === 'file' && !isDoc(item.name) && !isCanvas(item.name))
+        );
       if (filter === 'Von Agenten') {
         return item.kind === 'file' && authors[index]?.data?.authorKind === 'agent';
       }
@@ -246,7 +252,7 @@ export default function KnowledgeFolderView({
       const rank = (item: FileItem) =>
         item.kind === 'folder' ? 0 : isCanvas(item.name) ? 1 : isDoc(item.name) ? 2 : 3;
       return (
-        (a.kind === 'folder' && b.kind === 'folder' && scope.kind === 'project' && !path
+        (scope.kind === 'project' && !path && a.kind === 'folder' && b.kind === 'folder'
           ? compareKnowledgeFolders(a.name, b.name)
           : 0) ||
         rank(a) - rank(b) ||
@@ -258,6 +264,11 @@ export default function KnowledgeFolderView({
     items.find((item) => item.path === selectedPath) ??
     shown.find((item) => item.kind === 'file') ??
     shown[0];
+  const folderCount = useQuery({
+    queryKey: ['knowledge-folder-count', scope, selected?.path],
+    queryFn: () => listFiles(scope, selected!.path),
+    enabled: selected?.kind === 'folder',
+  });
   const label =
     scope.kind === 'project'
       ? project.data?.project.name || scope.projectKey
@@ -279,7 +290,7 @@ export default function KnowledgeFolderView({
             </p>
             <h1 className="m-0 text-[38px] leading-[1.04] font-[520] tracking-[-.05em]">
               {scope.kind === 'project' && path && !path.includes('/')
-                ? knowledgeFolderLabel(path.split('/').at(-1) || label, fixed)
+                ? knowledgeFolderLabel(path, fixed)
                 : path.split('/').at(-1) || label}
             </h1>
           </div>
@@ -306,16 +317,20 @@ export default function KnowledgeFolderView({
                 </button>
                 {menuOpen && (
                   <div className="absolute inset-e-0 top-10 z-20 w-44 rounded-xl border border-[#ffffff16] bg-[#111014] p-1 shadow-xl">
-                    {creationKinds.map((name) => (
-                      <button
-                        key={name}
-                        type="button"
-                        onClick={() => create(name)}
-                        className="block w-full rounded-lg px-3 py-2 text-start text-xs hover:bg-[#26212d]"
-                      >
-                        {name}
-                      </button>
-                    ))}
+                    {creationKinds.map((name) => {
+                      const Icon = creationIcons[name];
+                      return (
+                        <button
+                          key={name}
+                          type="button"
+                          onClick={() => create(name)}
+                          className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-start text-xs hover:bg-[#26212d]"
+                        >
+                          <Icon size={15} strokeWidth={1.6} />
+                          {name}
+                        </button>
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -449,14 +464,12 @@ export default function KnowledgeFolderView({
                     key={item.path}
                     {...drag.source(item)}
                     {...(item.kind === 'folder' ? drag.target(item.path) : {})}
-                    className={`group relative grid min-h-9 grid-cols-[28px_minmax(0,1fr)_190px_110px] items-center gap-3 rounded-xl px-3.5 max-sm:grid-cols-[22px_minmax(0,1fr)] ${selected?.path === item.path ? 'bg-[#26212d] shadow-[0_2px_6px_#0004,inset_0_1px_#ffffff0c]' : 'hover:bg-[#111014]'}`}
+                    className={`group relative grid min-h-11 grid-cols-[28px_minmax(0,1fr)_190px_110px] items-center gap-3 rounded-xl px-3.5 max-sm:grid-cols-[22px_minmax(0,1fr)] ${selected?.path === item.path ? 'bg-[#26212d] shadow-[0_2px_6px_#0004,inset_0_1px_#ffffff0c]' : 'hover:bg-[#111014]'}`}
                   >
                     <Icon size={18} strokeWidth={1.6} className="text-[#8b8595]" />
                     <button
                       type="button"
-                      onClick={() =>
-                        item.kind === 'folder' ? onOpen(item) : setSelectedPath(item.path)
-                      }
+                      onClick={() => setSelectedPath(item.path)}
                       onDoubleClick={() => onOpen(item)}
                       className="min-w-0 truncate text-start text-[13px]"
                     >
@@ -520,6 +533,32 @@ export default function KnowledgeFolderView({
               Öffnen
             </button>
           </>
+        )}
+        {selected?.kind === 'folder' && (
+          <div className="rounded-2xl bg-[#0e0d11] p-5 shadow-[0_0_0_1px_#ffffff0c]">
+            <Folder size={22} strokeWidth={1.5} className="mb-4 text-[#8b8595]" />
+            <p className="m-0 text-base text-[#eeeaf6]">
+              {scope.kind === 'project' && !path
+                ? knowledgeFolderLabel(selected.name, fixed)
+                : selected.name}
+            </p>
+            <p className="mt-2 text-xs text-[#88808f]">
+              {folderCount.data
+                ? `${folderCount.data.items.length}${folderCount.data.truncated ? '+' : ''}`
+                : '…'}{' '}
+              Einträge
+            </p>
+            <p className="mt-1 text-xs text-[#88808f]">
+              Zuletzt geändert: {selected.updatedAt ? relativeTime(selected.updatedAt) : '—'}
+            </p>
+            <button
+              type="button"
+              onClick={() => onOpen(selected)}
+              className="mt-4 h-8 w-full rounded-full bg-[#e7dbfa] text-xs font-medium text-[#201b29]"
+            >
+              Öffnen
+            </button>
+          </div>
         )}
         {can.create && (
           <div className="mt-2 flex flex-col gap-1.5">
