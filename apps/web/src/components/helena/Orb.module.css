@@ -35,8 +35,9 @@
 .offline {
   --orb-color: var(--status-offline);
 }
+/* Done is at rest: no green (owner — colour only while something happens). */
 .done {
-  --orb-color: var(--status-done);
+  --orb-color: var(--status-idle);
 }
 .dot {
   width: 0.375rem;

@@ -135,9 +135,13 @@ function Flow({
     [flow, height, nodes, reduced, view, width],
   );
 
+  // Fit again when the chart's place changes size (the page settling, the window), not
+  // only on a new view: a fit into a stage that was still growing leaves the chart off.
   useEffect(() => {
-    if (!initialized || !width || !height || fitted.current === fitKey) return;
-    if (fit(fitted.current != null)) fitted.current = fitKey;
+    const key = `${fitKey}:${Math.round(width)}x${Math.round(height)}`;
+    if (!initialized || !width || !height || fitted.current === key) return;
+    const sameView = fitted.current?.startsWith(`${fitKey}:`) ?? false;
+    if (fit(fitted.current != null && !sameView)) fitted.current = key;
   }, [fit, fitKey, height, initialized, width]);
 
   useEffect(

@@ -36,7 +36,7 @@ export default function IssueViewPage() {
 
   return (
     <div {...scrollRestorationProps} className="flex-1 overflow-y-auto">
-      <div className="flex flex-col p-4">
+      <div className="ds-issue-page">
         {issueQuery.data ? (
           <IssueDetailContent
             project={project}

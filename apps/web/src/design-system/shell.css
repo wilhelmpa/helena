@@ -544,7 +544,9 @@
   padding: 0 var(--page-pad-x);
 }
 .ds-page-toolbar:empty,
-.ds-page-toolbar:not(:has(> :not(:empty))) {
+.ds-page-toolbar:not(:has(> :not(:empty))),
+/* Only dividers left (a page put its spacer, nothing else): no row. */
+.ds-page-toolbar:not(:has(button, input, select, textarea, a, [role], label)) {
   display: none;
 }
 .ds-page-body {

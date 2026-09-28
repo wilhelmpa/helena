@@ -31,7 +31,6 @@ import { useDashboardsQuery } from '@/services/dashboards.service';
 import { useDashboardEditor } from './hooks/useDashboardEditor';
 import WidgetGrid from './components/WidgetGrid';
 import DashboardOverview from './components/DashboardOverview';
-import { DashboardTitle, MonoLabel } from '@/components/helena/DashboardPrimitives';
 import AddWidgetDialog from './components/AddWidgetDialog';
 import DashboardNameDialog from './components/DashboardNameDialog';
 import ConfirmDialog from '@/components/common/overlay/ConfirmDialog';
@@ -195,13 +194,8 @@ export default function DashboardsPage() {
       </PageToolbar>
 
       <div className="flex-1 overflow-y-auto">
-        <div className="w-full space-y-5 px-4 py-6 md:px-9">
-          <header className="pt-2">
-            <MonoLabel className="text-[var(--dashboard-project)]">
-              {project.project.name} {'· Dashboard'}
-            </MonoLabel>
-            <DashboardTitle>{project.project.name}</DashboardTitle>
-          </header>
+        {/* The page's header names the dashboard; the body starts with its figures. */}
+        <div className="ds-dashboard-body">
           <DashboardOverview projectKey={projectKey} project={project} />
           <WidgetGrid projectKey={projectKey} project={project} editor={editor} editing={editing} />
         </div>

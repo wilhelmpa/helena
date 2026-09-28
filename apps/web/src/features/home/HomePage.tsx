@@ -7,7 +7,7 @@ import HomeDashboard from './dashboard/HomeDashboard';
 export default function HomePage() {
   const t = useTranslations('nav');
   return (
-    <Shell globalHome globalTitle={t('dashboards')} autoOpenGlobalChat={false}>
+    <Shell globalHome globalTitle={t('sidebarAllProjects')} autoOpenGlobalChat={false}>
       <div className="h-full overflow-y-auto pe-(--workspace-overlay-inset)">
         <HomeDashboard />
       </div>

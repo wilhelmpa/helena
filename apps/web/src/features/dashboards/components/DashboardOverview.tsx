@@ -22,7 +22,8 @@ const APPROVAL_PAGE = { page: 1, pageSize: 3 };
 
 function ActivityRow({ entry, projectKey }: { entry: AgentActivityEntry; projectKey: string }) {
   const status = useAgentStatus(entry.agent!.id, {
-    run: WAITING.has(entry.status) ? 'waiting' : WORKING.has(entry.status) ? 'running' : 'done',
+    // A finished run shows the quiet orb: colour only while something happens.
+    run: WAITING.has(entry.status) ? 'waiting' : WORKING.has(entry.status) ? 'running' : undefined,
   });
   const href = entry.issue
     ? issuePath(projectKey, entry.issue.sequenceNumber)
@@ -119,23 +120,13 @@ export default function DashboardOverview({
           value={open.length}
           note={t('total', { count: issues.length })}
         />
-        <Tile
-          label={t('inProgress')}
-          value={started.length}
-          note={t('projectTasks')}
-          tone="positive"
-        />
-        <Tile
-          label={t('agentsWorking')}
-          value={working.length}
-          note={t('running')}
-          tone="positive"
-        />
+        <Tile label={t('inProgress')} value={started.length} note={t('projectTasks')} />
+        <Tile label={t('agentsWorking')} value={working.length} note={t('running')} />
         <Tile
           label={t('needsYou')}
           value={needs}
           note={t('approvalsAndQuestions')}
-          tone="attention"
+          tone={needs > 0 ? 'attention' : 'default'}
         />
       </div>
       <div className="grid gap-[14px] xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">

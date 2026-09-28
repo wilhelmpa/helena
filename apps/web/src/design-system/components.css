@@ -1665,3 +1665,27 @@ a.ds-run-card:hover {
   flex-direction: column;
   gap: var(--space-4);
 }
+/* A task as a page: the page gutter like every page body. */
+.ds-issue-page {
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-5) var(--page-pad-x);
+}
+/* A property's value never wraps its pill (Beobachtende, long names). */
+.ds-issue-prop-value {
+  min-width: 0;
+}
+.ds-issue-prop-value button,
+.ds-issue-prop-value [data-slot='button'] {
+  white-space: nowrap;
+}
+.ds-run .ds-more-toggle {
+  margin-inline-start: -8px;
+}
+.ds-dashboard-body {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding: var(--space-5) var(--page-pad-x);
+}

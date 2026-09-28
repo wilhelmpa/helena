@@ -13,7 +13,6 @@ import SystemDetailsDialog from './SystemDetailsDialog';
 import WidgetView, { WidgetPlaceholder } from './WidgetView';
 import { columnsOf, sectionBlocks, type Arranged } from './layout';
 import { HomeDashboardProvider, useHomeDashboard, useHomeDashboardValue } from './useHomeDashboard';
-import { DashboardTitle, MonoLabel } from '@/components/helena/DashboardPrimitives';
 
 // The figure row: an auto-fit grid of tiles at least 160px wide that wraps to a second row
 // instead of scrolling; two columns on a phone.
@@ -103,11 +102,8 @@ export default function HomeDashboard() {
           ]}
         />
       </PageToolbar>
-      <div className="@container flex w-full flex-col gap-[14px] px-4 py-6 md:px-9">
-        <header className="mb-1">
-          <MonoLabel className="text-[var(--dashboard-project)]">{'Helena · Dashboard'}</MonoLabel>
-          <DashboardTitle>{t('allProjects')}</DashboardTitle>
-        </header>
+      {/* The page's header names it (Helena / Alle Projekte); the body starts with figures. */}
+      <div className="ds-dashboard-body @container">
         <div className={FIGURE_ROW}>
           {figures
             .filter((entry) => entry.visible)
