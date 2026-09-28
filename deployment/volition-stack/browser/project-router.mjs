@@ -135,6 +135,12 @@ export async function listProjectBrowsers(root) {
   return browsers;
 }
 
+// Whether a project browser runs; without project browsers on demand (an idle without
+// power, or none) every browser is taken to run.
+function browserRuns(idle, slug) {
+  return typeof idle?.running !== "function" || idle.running(slug);
+}
+
 function sendJson(response, status, body) {
   response.writeHead(status, { "content-type": "application/json", "cache-control": "no-store" });
   response.end(JSON.stringify(body));
@@ -228,7 +234,7 @@ async function readBookmarks(file) {
 }
 
 async function handleControl(request, response, target, settingsRoot, idle) {
-  const running = !idle || idle.running(target.slug);
+  const running = browserRuns(idle, target.slug);
   try {
     if (target.api === "color-scheme") {
       if (request.method === "GET") return sendJson(response, 200, await readColorScheme(settingsRoot, target.slug));
@@ -359,7 +365,7 @@ async function handleUpgrade(root, request, socket, head, idle, trackOutbound, i
   if (target.api !== null) {
     if (target.api !== "screencast") return refuse(socket, "404 Not Found");
     if (!isSameOrigin(request)) return refuse(socket, "403 Forbidden");
-    if (idle && !idle.running(target.slug)) return startingScreencast(request, socket, head, target, idle, isStopping);
+    if (idle && !browserRuns(idle, target.slug)) return startingScreencast(request, socket, head, target, idle, isStopping);
     // Wake before completing the handshake: the client sends its viewport as soon
     // as the socket opens, and the stream must already be listening for it.
     if (idle) {
@@ -458,12 +464,12 @@ export function createProjectBrowserRouter(options = {}) {
         // browser: they start it when it does not run. The overview's picture, the bookmarks
         // and the page size do not; a color scheme wakes a running browser's pages and is
         // kept for a stopped one's next start.
-        const running = !options.idle || options.idle.running(target.slug);
+        const running = browserRuns(options.idle, target.slug);
         const uses = (request.method === "POST" && !["bookmarks", "viewport"].includes(target.api) &&
           (target.api !== "color-scheme" || running)) ||
           (request.method === "GET" && target.api === "tabs");
         if (uses && options.idle) {
-          options.idle.record(target.slug, target.cdpPort);
+          options.idle.record?.(target.slug, target.cdpPort);
           await options.idle.wake(target.slug);
         }
         if (resources.stopping) return response.destroy();
@@ -471,8 +477,8 @@ export function createProjectBrowserRouter(options = {}) {
       }
       if (request.method !== "GET" && request.method !== "HEAD") throw new Error("Method denied");
       // The desktop view's page and files come from the browser's display: it has to run.
-      if (options.idle && !options.idle.running(target.slug)) {
-        options.idle.record(target.slug, target.cdpPort);
+      if (options.idle && !browserRuns(options.idle, target.slug)) {
+        options.idle.record?.(target.slug, target.cdpPort);
         if (await options.idle.wake(target.slug) === false) {
           response.writeHead(503, { "content-type": "text/plain", "cache-control": "no-store" });
           return response.end("Browser unavailable");
