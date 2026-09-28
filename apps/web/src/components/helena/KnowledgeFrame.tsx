@@ -11,17 +11,13 @@ import {
 } from 'react';
 import Link from 'next/link';
 import { Search } from 'lucide-react';
-import { useTranslations } from 'next-intl';
-import { MonoLabel } from '@/components/helena/DashboardPrimitives';
-import ResizableSidePanel from '@/components/helena/ResizableSidePanel';
-import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { cn } from '@/lib/utils';
 import { PageToolbar, PageToolbarSpacer } from '@/components/layout/PageToolbar';
 
 // One page pattern for Wissen and Belege (docs/ui-system.md §8, WissenOrdner.dc.html):
 // the sidebar tree picks the place, the page shows a header (mono eyebrow with the path,
-// title, search, "+ Neu"), filter pills, the list, and the preview of the selected entry
-// in a resizable panel on the right (under the list on narrow screens).
+// title, search, "+ Neu"), the list, and nothing on the right: a file opens in the main
+// area or in the overlay (owner 28.09.).
 
 export interface KnowledgeCrumb {
   label: string;
@@ -277,8 +273,6 @@ export default function KnowledgeFrame({
   pills,
   children,
   footer,
-  preview,
-  previewLabel,
   frameProps,
 }: {
   crumbs: KnowledgeCrumb[];
@@ -288,19 +282,8 @@ export default function KnowledgeFrame({
   pills?: ReactNode;
   children: ReactNode;
   footer?: ReactNode;
-  preview?: ReactNode;
-  previewLabel?: string;
   frameProps?: Record<string, unknown>;
 }) {
-  const t = useTranslations('files.knowledge');
-  const wide = useMediaQuery('(min-width: 1024px)');
-  const label = previewLabel ?? t('preview');
-  const previewBody = preview ? (
-    <div className="flex min-h-0 flex-1 flex-col gap-3.5">
-      <MonoLabel>{label}</MonoLabel>
-      {preview}
-    </div>
-  ) : null;
   // The page's header (the shell) names the place; its search, filters and "+ Neu" sit in
   // the toolbar row like on every page, and a deeper folder shows its path over the list.
   return (
@@ -319,16 +302,6 @@ export default function KnowledgeFrame({
         {children}
         {footer}
       </section>
-      {previewBody &&
-        (wide ? (
-          <ResizableSidePanel label={label} reserve={480}>
-            <div className="ds-knowledge-preview">{previewBody}</div>
-          </ResizableSidePanel>
-        ) : (
-          <aside aria-label={label} className="ds-knowledge-preview is-stacked">
-            {previewBody}
-          </aside>
-        ))}
     </div>
   );
 }

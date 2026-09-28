@@ -47,6 +47,7 @@ import { filesPath, receiptsPath } from '@/utils/paths';
 import { AccountsTab } from './components/AccountsTab';
 import { ImportDialog } from './components/ImportDialog';
 import ReceiptPreview from './components/ReceiptPreview';
+import { Overlay } from '@/design-system/layout/Overlay';
 import { ReviewTab } from './components/ReviewTab';
 import { receiptIcon, receiptSignedCents } from './components/ReceiptRows';
 import {
@@ -83,8 +84,8 @@ function matchesSearch(item: ReviewItem, q: string): boolean {
 
 // A project's receipts (Belege, docs/helena-decisions/decisions.md §7) in the Wissen
 // pattern (docs/ui-system.md §13): the sidebar tree picks the view (all, open, to review,
-// matched, accounts), the page lists it, and the selected receipt shows on the right —
-// its file and its detail — without a second row of tabs. Finance data: the page is for
+// matched, accounts), the page lists it, and a receipt opens in the overlay on the right
+// (owner 28.09.) — its file and its detail — without a second row of tabs. Finance data: the page is for
 // the project's administrators only, as its routes are.
 export default function ReceiptsPage() {
   const t = useTranslations('receipts');
@@ -101,7 +102,9 @@ export default function ReceiptsPage() {
 
   const [month, setMonth] = useState<string>(ALL_MONTHS);
   const [search, setSearch] = useState('');
+  // The receipt open in the overlay, and the row the arrow keys stand on.
   const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [cursorId, setCursorId] = useState<number | null>(null);
   const [importFor, setImportFor] = useState<{ accountId: number | null } | null>(null);
   const [exporting, setExporting] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
@@ -138,15 +141,13 @@ export default function ReceiptsPage() {
   const imports = useImportsQuery(projectKey, enabled && view === 'accounts');
 
   const receipts: Receipt[] = listed.data ?? [];
-  const selected =
-    view === 'review' || view === 'accounts'
-      ? selectedId
-      : (receipts.find((receipt) => receipt.id === selectedId)?.id ?? receipts[0]?.id ?? null);
-  const selectedIndex = receipts.findIndex((receipt) => receipt.id === selected);
+  const selected = view === 'accounts' ? null : selectedId;
+  const cursor = selectedId ?? cursorId;
+  const selectedIndex = receipts.findIndex((receipt) => receipt.id === cursor);
   const { ref: listRef, onKeyDown: onListKeyDown } = useListKeyboard({
     count: receipts.length,
     selected: selectedIndex,
-    onSelect: (index) => setSelectedId(receipts[index]?.id ?? null),
+    onSelect: (index) => setCursorId(receipts[index]?.id ?? null),
     onOpen: (index) => setSelectedId(receipts[index]?.id ?? null),
   });
 
@@ -272,8 +273,11 @@ export default function ReceiptsPage() {
             {formatCents(cents, receipt.currency, locale)}
           </span>
         }
-        selected={selected === receipt.id}
-        onClick={() => setSelectedId(receipt.id)}
+        selected={cursor === receipt.id}
+        onClick={() => {
+          setCursorId(receipt.id);
+          setSelectedId(receipt.id);
+        }}
       />
     );
   };
@@ -511,21 +515,25 @@ export default function ReceiptsPage() {
             </button>
           )
         }
-        preview={
-          selected !== null && view !== 'accounts' ? (
-            <ReceiptPreview
-              key={selected}
-              projectKey={projectKey}
-              receiptId={selected}
-              onOpenReceipt={setSelectedId}
-              onDeleted={() => setSelectedId(null)}
-            />
-          ) : undefined
-        }
-        previewLabel={t('detail.title')}
       >
         {body}
       </KnowledgeFrame>
+      {selected !== null && (
+        <Overlay
+          label={t('detail.title')}
+          tabs={[{ id: 'receipt', label: t('detail.title') }]}
+          onClose={() => setSelectedId(null)}
+          className="ds-receipt-overlay"
+        >
+          <ReceiptPreview
+            key={selected}
+            projectKey={projectKey}
+            receiptId={selected}
+            onOpenReceipt={setSelectedId}
+            onDeleted={() => setSelectedId(null)}
+          />
+        </Overlay>
+      )}
       <input
         ref={fileInput}
         type="file"

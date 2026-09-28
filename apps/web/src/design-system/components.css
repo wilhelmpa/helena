@@ -1497,17 +1497,6 @@ a.ds-run-card:hover {
 .ds-knowledge-others:hover {
   color: var(--accent);
 }
-.ds-knowledge-preview {
-  display: flex;
-  min-height: 0;
-  flex: 1;
-  flex-direction: column;
-  overflow-y: auto;
-  padding: var(--space-5) var(--space-5) var(--space-5) var(--space-4);
-}
-.ds-knowledge-preview.is-stacked {
-  padding: 0 var(--page-pad-x) var(--space-6);
-}
 @media (max-width: 1023px) {
   .ds-knowledge {
     flex-direction: column;
@@ -1558,20 +1547,6 @@ a.ds-run-card:hover {
   border-color: var(--accent);
   background: var(--surface-2);
   color: var(--text);
-}
-.ds-knowledge-new-item {
-  display: flex;
-  min-height: 34px;
-  align-items: center;
-  gap: 10px;
-  border-radius: var(--radius-field);
-  padding: 0 10px;
-  color: var(--text);
-  font-size: 13px;
-  text-align: start;
-}
-.ds-knowledge-new-item:hover {
-  background: var(--surface-2);
 }
 .ds-canvas-thumb-node {
   position: absolute;

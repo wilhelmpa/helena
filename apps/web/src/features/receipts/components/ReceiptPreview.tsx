@@ -64,7 +64,7 @@ function ReceiptDocument({ projectKey, receipt }: { projectKey: string; receipt:
   );
 }
 
-// The selected receipt in the right-hand panel: its file, its name and amount, and the
+// The open receipt in the overlay on the right: its file, its name and amount, and the
 // full detail (fields, originals, match, extracted text, delete) that used to be a sheet.
 export default function ReceiptPreview({
   projectKey,
