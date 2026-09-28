@@ -82,5 +82,23 @@ manager (same ExecStart; `User=` and the system sandbox dropped, `RestrictAddres
 KasmVNC fails with "Address already in use" when it may also bind IPv6), own state root, display
 :901, ports 47201/47401, the real router with on-demand on (`~/agent-work/bod/{setup.sh,e2e.mjs}`).
 
-See the report of the branch for the numbers (start latency, idle stop, restored tabs, memory
-4K vs Full HD, stopped = 0).
+| What | Result |
+|---|---|
+| Live view opens a stopped browser | told "starting" after 5 ms; DevTools up after 0.5–0.8 s; first frame after 0.9 s (2 restored tabs) to 5.9 s (12 restored tabs) |
+| Idle stop (bed: 1 min) | both units inactive 65–70 s after the last viewer left; overview says `stopped`; memory 0 |
+| Restart after the stop | all tabs back (2/2, 12/12, same URLs), first frame 0.6 s / 6.3 s |
+| Toolbar tab list on a stopped browser | starts it, 200 after 0.5 s (2 tabs) / 6.9 s (12 tabs) |
+| Display (Xvnc) PSS, unwatched | 3840x2160: 62 / 77 / 96 MiB · 1920x1080: 22 / 40 / 16 MiB |
+| Display (Xvnc) PSS, watched at 1440x900 CSS, factor 2 | 3840x2160: 123 / 118 / 124 MiB · 1920x1080: 45 / 69 / 69 MiB |
+| Chromium PSS | 44–913 MiB, dominated by the pages and how long they ran, not by the display size (same window size in both) |
+| CPU of a running, unwatched browser (frozen pages) | 0.7–2 % of one core |
+| A stopped browser | 0 MiB, 0 processes, 0 CPU |
+
+Sharpness and click accuracy on the Full HD display (`HELENA_PROOF_SCREEN=1920x1080 node
+project-browser-resize-x11-proof.mjs`): views 620x632, 1280x680, 800x632, 1440x900, 1720x1000
+and back all gave JPEG frames of exactly view × 2 and 5/5 clicks (corners and centre) within
+1 CSS pixel, the same as on 3200x2000.
+
+Live, read-only, before: nine browsers ≈ 1.2 GB PSS (Chromium 44–127 MiB each, displays 56–100
+MiB each). With on demand, an unused browser costs nothing; the Full HD display saves about
+40–55 MiB per running browser on top.
