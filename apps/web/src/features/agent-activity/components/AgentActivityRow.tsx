@@ -59,7 +59,7 @@ export default function AgentActivityRow({
   const task = activityTask(entry);
 
   return (
-    <li className="flex items-start gap-2 px-3 py-2 text-sm sm:items-center">
+    <li className="ds-activity-row">
       <Icon className="mt-0.5 size-4 shrink-0 text-muted-foreground sm:mt-0" />
       <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-0.5">
         <span className="font-medium">{entry.agent?.name ?? entry.workflowId}</span>

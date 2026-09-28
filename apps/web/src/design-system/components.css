@@ -1520,3 +1520,32 @@ a.ds-run-card:hover {
   max-height: 520px;
   aspect-ratio: 3 / 4;
 }
+
+/* Verlauf: one row per run, chat answer or workflow run. */
+.ds-activity-list {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--surface-1);
+}
+.ds-activity-row {
+  display: flex;
+  min-height: 44px;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 6px var(--space-3);
+  font-size: 13px;
+}
+.ds-activity-row + .ds-activity-row {
+  border-top: 1px solid var(--line);
+}
+.ds-activity-row:hover {
+  background: var(--surface-2);
+}
+@media (max-width: 640px) {
+  .ds-activity-row {
+    align-items: flex-start;
+  }
+}

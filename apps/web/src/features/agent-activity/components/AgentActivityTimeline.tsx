@@ -76,7 +76,7 @@ export default function AgentActivityTimeline({
       ) : items.length === 0 ? (
         <EmptyState title={t('empty')} description={t('emptyHint')} />
       ) : (
-        <ol className="divide-y overflow-hidden rounded-lg border bg-card">
+        <ol className="ds-activity-list">
           {items.map((entry) => (
             <AgentActivityRow key={entry.id} entry={entry} showProject={projectKey == null} />
           ))}
