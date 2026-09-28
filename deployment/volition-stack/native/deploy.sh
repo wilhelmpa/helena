@@ -436,10 +436,20 @@ fi
 # polkit rule lets the router's user start and stop the browsers; the unit templates are
 # installed here so a changed display (Full HD) takes effect at a browser's next start, without
 # restarting a running one.
-if [[ -e /etc/systemd/system/volition-project-browser-restore.service ]]; then
-  systemctl disable volition-project-browser-restore.service >/dev/null 2>&1 || true
-  rm -f /etc/systemd/system/volition-project-browser-restore.service /usr/local/libexec/volition-browser-restore
-  systemctl daemon-reload
+# On the way back (a rollback to a commit that still has it) the restore is installed again.
+if changed deployment/volition-stack/native/browser-restore; then
+  if [[ -d $live/deployment/volition-stack/native/browser-restore ]]; then
+    install -m 0755 "$live/deployment/volition-stack/native/browser-restore/volition-browser-restore" \
+      /usr/local/libexec/volition-browser-restore
+    install -m 0644 "$live/deployment/volition-stack/native/browser-restore/volition-project-browser-restore.service" \
+      /etc/systemd/system/volition-project-browser-restore.service
+    systemctl daemon-reload
+    systemctl enable volition-project-browser-restore.service >/dev/null
+  else
+    systemctl disable volition-project-browser-restore.service >/dev/null 2>&1 || true
+    rm -f /etc/systemd/system/volition-project-browser-restore.service /usr/local/libexec/volition-browser-restore
+    systemctl daemon-reload
+  fi
 fi
 browser_rule=deployment/volition-stack/native/systemd/61-helena-browser-on-demand.rules
 if changed "$browser_rule"; then
