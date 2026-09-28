@@ -16,6 +16,7 @@ import {
   type DropReason,
   type TranscriptSegment,
 } from './transcript';
+import { withTranscriptionAdmission } from './maintenance';
 import { readWav, whisperWav } from './wav';
 
 // Voice in the chat (docs/helena-decisions/voice.md): dictation and the conversation mode send
@@ -225,38 +226,40 @@ export async function transcribe(input: {
     form.append('response_format', 'json');
   }
   if (input.language) form.append('language', input.language);
-  const started = Date.now();
-  let response: Response;
-  try {
-    response = await fetch(joinUrl(route.server.baseUrl, '/audio/transcriptions'), {
-      method: 'POST',
-      headers: { accept: 'application/json', ...authorization(key) },
-      body: form,
-      redirect: 'error',
-      signal: AbortSignal.timeout(TRANSCRIBE_TIMEOUT_MS),
-    });
-  } catch {
-    throw new HttpError(502, 'The local transcription did not answer', 'voice-local-failed');
-  }
-  if (!response.ok) {
-    throw new HttpError(
-      502,
-      `The local transcription failed (HTTP ${response.status})`,
-      'voice-local-failed',
-    );
-  }
-  const transcript = transcriptOf(await response.json().catch(() => null));
-  if (!transcript)
-    throw new HttpError(502, 'The local transcription answered no text', 'voice-local-failed');
-  const heard = transcript.segments.length ? confidentText(transcript.segments) : transcript.text;
-  const judged = judgeTranscript(heard, { language: input.language });
-  return {
-    text: judged.text,
-    dropped: judged.dropped,
-    model: route.modelId,
-    durationMs: info.durationMs,
-    latencyMs: Date.now() - started,
-  };
+  return withTranscriptionAdmission(async () => {
+    const started = Date.now();
+    let response: Response;
+    try {
+      response = await fetch(joinUrl(route.server.baseUrl, '/audio/transcriptions'), {
+        method: 'POST',
+        headers: { accept: 'application/json', ...authorization(key) },
+        body: form,
+        redirect: 'error',
+        signal: AbortSignal.timeout(TRANSCRIBE_TIMEOUT_MS),
+      });
+    } catch {
+      throw new HttpError(502, 'The local transcription did not answer', 'voice-local-failed');
+    }
+    if (!response.ok) {
+      throw new HttpError(
+        502,
+        `The local transcription failed (HTTP ${response.status})`,
+        'voice-local-failed',
+      );
+    }
+    const transcript = transcriptOf(await response.json().catch(() => null));
+    if (!transcript)
+      throw new HttpError(502, 'The local transcription answered no text', 'voice-local-failed');
+    const heard = transcript.segments.length ? confidentText(transcript.segments) : transcript.text;
+    const judged = judgeTranscript(heard, { language: input.language });
+    return {
+      text: judged.text,
+      dropped: judged.dropped,
+      model: route.modelId,
+      durationMs: info.durationMs,
+      latencyMs: Date.now() - started,
+    };
+  });
 }
 
 // ── Text to speech ───────────────────────────────────────────────────────────────────────

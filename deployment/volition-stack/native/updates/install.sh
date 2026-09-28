@@ -38,6 +38,11 @@ run() { if [ "$DRY_RUN" = 1 ]; then echo "would: $*"; else "$@"; fi; }
 copy_programs() {
   run install -m 0755 -o root -g root "$here/helena-update" /usr/local/libexec/helena-update
   run install -m 0644 -o root -g root "$here/host_tools.py" /usr/local/libexec/host_tools.py
+  run install -d -m 0755 -o root -g root /usr/local/lib/helena-whisper-update
+  for module in whisper_update.py whisper_acceptance.py whisper_ui.py; do
+    run install -m 0644 -o root -g root "$here/../local-ai/$module" /usr/local/lib/helena-whisper-update/
+  done
+  run install -d -m 0770 -o "$api_user" -g "$(id -gn "$api_user")" "$spool/voice-requests"
   # The runtime installer runs as root: its copy, pins, lockfiles and key are root's, so
   # nobody who can write the checkout changes what root executes.
   run install -d -m 0755 -o root -g root "$share" "$share/keys" "$share/npm"

@@ -185,7 +185,9 @@
   "updates": {
     "label": "الذكاء الاصطناعي المحلي",
     "hint": "حدّث عبر native/local-ai/install.sh ثم أعد التقييم.",
-    "whisperBuildRequired": "يتطلب تحديث Whisper.cpp بناء ROCm بإصدار مثبت واختبار كلام ناجحًا. التثبيت التلقائي غير متاح بعد."
+    "whisperBuildRequired": "يتطلب هذا التحديث إصدار Whisper واختبار كلام تم التحقق منهما.",
+    "whisperMaintenanceRequired": "يلزم فتح نافذة صيانة صوتية معتمدة من مسؤول النظام ثم التحقق مجددًا.",
+    "whisperRecoveryRequired": "يتطلب تحديث Whisper السابق استعادة قبل استئناف الصوت."
   },
   "pickerMark": "محلي",
   "tile": {

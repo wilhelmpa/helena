@@ -8,7 +8,8 @@ import type {
   UpdateSource,
 } from '@helena/sdk';
 import { serverContext } from './service';
-import { whisperUpdateCandidate } from './whisper-update';
+import { helperProgress } from '../updates/sources/cli-runtimes';
+import { applyWhisperUpdate, whisperUpdateCandidate } from './whisper-update';
 
 // Local AI in the extension points of other features (docs/helena-decisions/local-ai-platform.md
 // §9), both registered by the `helena.local-ai` plugin: an update source for Administrator →
@@ -168,13 +169,14 @@ async function installedRevision(server: ModelServerRow, model: string): Promise
 
 const HINT: LocalizedText = { i18n: 'localAi.updates.hint' };
 
-// Check only: Lemonade, FastFlowLM and the models are updated through native/local-ai/install.sh
-// with new pins, and a model is evaluated again before the owner switches to it.
+// Only the separately prepared Whisper package supports apply; models and other software remain check-only.
 export const localAiUpdateSource: UpdateSource = {
   id: 'local-ai',
   label: { i18n: 'localAi.updates.label' },
   kind: 'tool',
   order: 60,
+  apply: applyWhisperUpdate,
+  progress: (ref) => helperProgress(ref),
   hosts: ['github.com', 'huggingface.co'],
   async check(context: UpdateCheckContext): Promise<UpdateCandidate[]> {
     const servers = (await listModelServers()).filter((server) => server.enabled);

@@ -193,7 +193,10 @@ fi
 # The update center's root helper runs its own copies of itself and of the runtime installer;
 # they follow the repository once installed (updates/install.sh).
 if [[ -x /usr/local/libexec/helena-update ]] &&
-  changed deployment/volition-stack/native/updates deployment/volition-stack/native/runtimes; then
+  changed deployment/volition-stack/native/updates deployment/volition-stack/native/runtimes \
+    deployment/volition-stack/native/local-ai/whisper_update.py \
+    deployment/volition-stack/native/local-ai/whisper_acceptance.py \
+    deployment/volition-stack/native/local-ai/whisper_ui.py; then
   "$live/deployment/volition-stack/native/updates/install.sh" --refresh
 fi
 

@@ -185,7 +185,9 @@
   "updates": {
     "label": "IA locale",
     "hint": "Mettre à jour via native/local-ai/install.sh, puis réévaluer.",
-    "whisperBuildRequired": "La mise à jour de Whisper.cpp nécessite une compilation ROCm épinglée et un test vocal réussi. L’installation automatique n’est pas encore disponible."
+    "whisperBuildRequired": "Cette mise à jour exige une compilation Whisper et un test vocal vérifiés.",
+    "whisperMaintenanceRequired": "Une fenêtre de maintenance vocale autorisée par Root est nécessaire. Vérifiez à nouveau après son ouverture.",
+    "whisperRecoveryRequired": "La mise à jour Whisper précédente nécessite une récupération avant la reprise de la voix."
   },
   "pickerMark": "local",
   "tile": {
