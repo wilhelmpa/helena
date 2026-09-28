@@ -26,6 +26,9 @@ Environment=PROJECT_BROWSER_ROUTER_PORT=6082
 RuntimeDirectory=volition-browser
 RuntimeDirectoryMode=0711
 RuntimeDirectoryPreserve=yes
+# Per-project page color preferences live outside the read-only browser profiles.
+StateDirectory=volition-browser-router
+StateDirectoryMode=0700
 ExecStart=/usr/local/bin/node /srv/volition/source/plan/deployment/volition-stack/browser/project-router.mjs
 Restart=always
 RestartSec=2

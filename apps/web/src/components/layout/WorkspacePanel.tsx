@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { PanelHeaderSlotCtx } from '@/context/panelHeaderSlot';
 import { useTranslations } from 'next-intl';
+import { useTheme } from 'next-themes';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useBrowserPreferences } from '@/hooks/useBrowserPreferences';
 import type { WorkspacePanelMode } from '@/hooks/useWorkspacePanel';
@@ -16,6 +17,7 @@ import { usePanelToolLabel } from '@/extensions/pluginPanelTools';
 import { cn } from '@/lib/utils';
 import WorkspaceAreaHeader from './WorkspaceAreaHeader';
 import WorkspaceBrowserBar from './WorkspaceBrowserBar';
+import { useBrowserColorScheme } from './WorkspaceBrowserColorScheme';
 import WorkspaceBrowserLive from './WorkspaceBrowserLive';
 import WorkspaceFrame from './WorkspaceFrame';
 import WorkspacePanelHeader from './WorkspacePanelHeader';
@@ -120,6 +122,8 @@ export default function WorkspacePanel({
   const [advanced, setAdvanced] = useState(false);
   const browserPreferences = useBrowserPreferences();
   const browserBase = tools.browser.url ? browserControlBase(tools.browser.url) : null;
+  const { theme, resolvedTheme } = useTheme();
+  const browserColorScheme = useBrowserColorScheme(browserBase, theme, resolvedTheme);
   // The live view needs the browser router's control routes next to the VNC stream.
   const browserLive = browserPreferences.view === 'live' && browserBase !== null;
   const [frames, setFrames] = useState<
@@ -234,6 +238,9 @@ export default function WorkspacePanel({
       onViewChange={browserPreferences.setView}
       followAgent={browserPreferences.followAgent}
       onToggleFollowAgent={browserPreferences.toggleFollowAgent}
+      colorMode={browserColorScheme.mode}
+      colorModeLoaded={browserColorScheme.loaded}
+      onColorModeChange={browserColorScheme.setMode}
     />
   ) : undefined;
 

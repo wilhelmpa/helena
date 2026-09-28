@@ -85,6 +85,9 @@
     "unavailableDescription": "Ein Admin kann diesen Workspace für die Instanz verbinden.",
     "mail": "Verfassen",
     "browserBar": {
+      "colorScheme": "Farbschema",
+      "colorSchemeHelena": "Wie Helena",
+      "colorSchemeLight": "Immer hell",
       "address": "Adresse",
       "back": "Zurück",
       "forward": "Vorwärts",

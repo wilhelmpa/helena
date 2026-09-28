@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import fs from "node:fs/promises";
 import http from "node:http";
 import net from "node:net";
@@ -7,6 +8,7 @@ import {
   controlBrowser,
   listTabs,
   readJsonBody,
+  setBrowserColorScheme,
   startWindowKeeper,
 } from "./project-browser-control.mjs";
 import { BrowserIdle } from "./project-browser-idle.mjs";
@@ -24,6 +26,37 @@ import { acceptWebSocket } from "./websocket.mjs";
 const SLUG = /^[a-z0-9][a-z0-9-]{0,31}$/;
 const ROUTE = /^\/projects\/([a-z0-9][a-z0-9-]{0,31})(\/.*)?$/;
 const HOP_HEADERS = new Set(["connection", "keep-alive", "proxy-authenticate", "proxy-authorization", "te", "trailer", "transfer-encoding", "upgrade"]);
+const COLOR_SCHEME_FILE = (root, slug) => path.join(root, `${slug}-color-scheme.json`);
+
+async function readColorScheme(root, slug) {
+  try {
+    const saved = JSON.parse(await fs.readFile(COLOR_SCHEME_FILE(root, slug), "utf8"));
+    return {
+      mode: saved.mode === "light" ? "light" : "helena",
+      theme: ["light", "dark", "system"].includes(saved.theme) ? saved.theme : "system",
+      resolvedTheme: saved.resolvedTheme === "dark" ? "dark" : "light",
+    };
+  } catch (error) {
+    if (error?.code === "ENOENT") return { mode: "helena", theme: "system", resolvedTheme: "light" };
+    throw error;
+  }
+}
+
+function effectiveColorScheme(setting) {
+  return setting.mode === "light" ? "light" :
+    setting.theme === "system" ? setting.resolvedTheme : setting.theme;
+}
+
+async function writeColorScheme(root, slug, setting) {
+  const file = COLOR_SCHEME_FILE(root, slug);
+  const temporary = `${file}.${randomUUID()}.tmp`;
+  try {
+    await fs.writeFile(temporary, JSON.stringify(setting), { mode: 0o600 });
+    await fs.rename(temporary, file);
+  } finally {
+    await fs.rm(temporary, { force: true });
+  }
+}
 
 async function privateState(root, slug) {
   if (!path.isAbsolute(root) || !SLUG.test(slug)) throw new Error("Invalid browser route");
@@ -193,8 +226,23 @@ async function readBookmarks(file) {
   }
 }
 
-async function handleControl(request, response, target) {
+async function handleControl(request, response, target, settingsRoot) {
   try {
+    if (target.api === "color-scheme") {
+      if (request.method === "GET") return sendJson(response, 200, await readColorScheme(settingsRoot, target.slug));
+      if (request.method !== "POST") throw new BrowserControlError(405, "Method not allowed");
+      const body = await readJsonBody(request);
+      if (!["light", "dark", "system"].includes(body.theme) ||
+          !["light", "dark"].includes(body.resolvedTheme) ||
+          (body.mode !== undefined && !["helena", "light"].includes(body.mode))) {
+        throw new BrowserControlError(400, "Invalid color scheme");
+      }
+      const previous = await readColorScheme(settingsRoot, target.slug);
+      const setting = { mode: body.mode ?? previous.mode, theme: body.theme, resolvedTheme: body.resolvedTheme };
+      await writeColorScheme(settingsRoot, target.slug, setting);
+      await setBrowserColorScheme(target.cdpPort, effectiveColorScheme(setting));
+      return sendJson(response, 200, setting);
+    }
     if (target.api === "bookmarks") {
       const file = path.join(target.projectRoot, "bookmarks.json");
       if (request.method === "POST") {
@@ -348,6 +396,7 @@ const routerResources = new WeakMap();
 
 export function createProjectBrowserRouter(options = {}) {
   const root = options.root ?? "/var/lib/volition/project-browser/projects";
+  const settingsRoot = options.settingsRoot ?? process.env.STATE_DIRECTORY ?? root;
   const resources = { sockets: new Set(), outbound: new Set(), stopping: false, shutdown: null };
   const trackOutbound = (connection) => {
     resources.outbound.add(connection);
@@ -368,7 +417,7 @@ export function createProjectBrowserRouter(options = {}) {
           await options.idle?.wake(target.slug);
         }
         if (resources.stopping) return response.destroy();
-        return await handleControl(request, response, target);
+        return await handleControl(request, response, target, settingsRoot);
       }
       if (request.method !== "GET" && request.method !== "HEAD") throw new Error("Method denied");
       const upstream = http.request(
@@ -453,14 +502,24 @@ if (import.meta.main) {
   const port = Number(process.env.PROJECT_BROWSER_ROUTER_PORT || 6082);
   if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error("Invalid router port");
   const root = process.env.PROJECT_BROWSER_ROOT || "/var/lib/volition/project-browser/projects";
+  const settingsRoot = process.env.STATE_DIRECTORY || "/var/lib/volition-browser-router";
   const idle = new BrowserIdle({
     listBrowsers: () => listProjectBrowsers(root),
     log: (message) => console.error(message),
   });
   idle.start();
-  const server = createProjectBrowserRouter({ root, idle });
+  const server = createProjectBrowserRouter({ root, settingsRoot, idle });
   const stopKeeper = startWindowKeeper({
     listBrowsers: () => listProjectBrowsers(root),
+    prepare: async ({ slug, cdpPort }) => {
+      try { await fs.access(COLOR_SCHEME_FILE(settingsRoot, slug)); }
+      catch (error) {
+        if (error?.code === "ENOENT") return;
+        throw error;
+      }
+      const setting = await readColorScheme(settingsRoot, slug);
+      await setBrowserColorScheme(cdpPort, effectiveColorScheme(setting));
+    },
     log: (message) => console.log(message),
   });
   // The gateway (design §3) runs in this same process, so it shares the router's view of

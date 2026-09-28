@@ -84,6 +84,9 @@
     "unavailableDescription": "Administrator dapat menghubungkan ruang kerja ini untuk instans.",
     "mail": "Tulis",
     "browserBar": {
+      "colorScheme": "Skema warna halaman",
+      "colorSchemeHelena": "Ikuti Helena",
+      "colorSchemeLight": "Selalu terang",
       "address": "Alamat",
       "back": "Kembali",
       "forward": "Maju",

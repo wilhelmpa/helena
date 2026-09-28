@@ -111,6 +111,10 @@ function fakeBrowser(tabs = [{ id: PAGE, visible: true }], { scale = 2, rejectFi
   });
   // lastInput is the time of the last trusted input the router's activity world reports.
   const browser = { server, commands, connections: 0, lastInput: 0 };
+  browser.addTab = (tab) => {
+    tabs.push(tab);
+    pageStates.set(tab.id, { emulation: null, emulatedFrom: null, resizedWhileEmulated: false, stale: null });
+  };
   // Leaves the page at an old size, as a clear after a resize does.
   browser.makeStale = (size) => {
     pageStates.get(PAGE).stale = size;
@@ -250,6 +254,47 @@ function upgradeStatus(port, path, headers) {
 }
 
 describe("project browser router", () => {
+  it("emulates Helena's scheme on open and new tabs, with a persistent always-light override", async () => {
+    const tabs = [{ id: PAGE, visible: true }, { id: BEHIND, visible: false }];
+    const browser = fakeBrowser(tabs);
+    upstream = browser.server;
+    const cdpPort = await listen(upstream);
+    await state("demo", 16000, cdpPort);
+    router = createProjectBrowserRouter({ root });
+    const base = `http://127.0.0.1:${await listen(router)}/projects/demo/api`;
+    const post = (body) => fetch(`${base}/color-scheme`, {
+      method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body),
+    });
+
+    assert.equal((await post({ theme: "system", resolvedTheme: "dark", mode: "helena" })).status, 200);
+    assert.deepEqual(browser.sent("Emulation.setEmulatedMedia").map((command) => command.sessionId).sort(),
+      [`S-${PAGE}`, `S-${BEHIND}`].sort());
+    assert(browser.sent("Emulation.setEmulatedMedia").every((command) =>
+      command.params.features[0].value === "dark"));
+    assert.equal(browser.sent("Emulation.setDeviceMetricsOverride").length, 0);
+
+    const third = "C".repeat(32);
+    browser.addTab({ id: third, visible: false });
+    assert.equal((await fetch(`${base}/tabs`)).status, 200);
+    assert(browser.sent("Emulation.setEmulatedMedia").some((command) =>
+      command.sessionId === `S-${third}` && command.params.features[0].value === "dark"));
+
+    assert.equal((await post({ theme: "dark", resolvedTheme: "dark", mode: "light" })).status, 200);
+    assert(browser.sent("Emulation.setEmulatedMedia").slice(-3).every((command) =>
+      command.params.features[0].value === "light"));
+    assert.deepEqual(await (await fetch(`${base}/color-scheme`)).json(),
+      { mode: "light", theme: "dark", resolvedTheme: "dark" });
+    assert.equal((await post({ theme: "dark", resolvedTheme: "dark", mode: "helena" })).status, 200);
+    assert(browser.sent("Emulation.setEmulatedMedia").slice(-3).every((command) =>
+      command.params.features[0].value === "dark"));
+    assert.equal((await post({ theme: "system", resolvedTheme: "light" })).status, 200);
+    assert(browser.sent("Emulation.setEmulatedMedia").slice(-3).every((command) =>
+      command.params.features[0].value === "light"));
+    assert.equal((await post({ theme: "unknown", resolvedTheme: "dark" })).status, 400);
+    assert.equal((await fetch(`${base}/color-scheme`, { method: "POST", body: "mode=light" })).status, 415);
+    assert.equal((await fs.stat(path.join(root, "demo-color-scheme.json"))).mode & 0o077, 0);
+  });
+
   it("classifies browser credentials as private for HTTP and WebSocket forwarding", () => {
     assert.equal(isPrivateGatewayHeader("Cookie"), true);
     assert.equal(isPrivateGatewayHeader("Authorization"), true);

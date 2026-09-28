@@ -84,6 +84,9 @@
     "unavailableDescription": "管理员可以为此实例连接该工作区。",
     "mail": "撰写",
     "browserBar": {
+      "colorScheme": "页面配色",
+      "colorSchemeHelena": "跟随 Helena",
+      "colorSchemeLight": "始终浅色",
       "address": "地址",
       "back": "后退",
       "forward": "前进",

@@ -84,6 +84,9 @@
     "unavailableDescription": "Un administrador puede conectar este espacio de trabajo a la instancia.",
     "mail": "Redactar",
     "browserBar": {
+      "colorScheme": "Esquema de color",
+      "colorSchemeHelena": "Como Helena",
+      "colorSchemeLight": "Siempre claro",
       "address": "Dirección",
       "back": "Atrás",
       "forward": "Adelante",

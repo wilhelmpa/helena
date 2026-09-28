@@ -11,6 +11,7 @@ import type { BrowserView } from '@/hooks/useBrowserPreferences';
 import { Button } from '@/components/ui/button';
 import ProjectPreviewControl from '@/components/common/project-previews/ProjectPreviewControl';
 import WorkspaceBrowserBookmarks from './WorkspaceBrowserBookmarks';
+import WorkspaceBrowserColorScheme, { type BrowserColorMode } from './WorkspaceBrowserColorScheme';
 import WorkspaceBrowserStreamMenu from './WorkspaceBrowserStreamMenu';
 import WorkspaceBrowserTabs from './WorkspaceBrowserTabs';
 import WorkspaceBrowserViewSwitch from './WorkspaceBrowserViewSwitch';
@@ -25,6 +26,9 @@ export default function WorkspaceBrowserBar({
   onViewChange,
   followAgent,
   onToggleFollowAgent,
+  colorMode,
+  colorModeLoaded,
+  onColorModeChange,
 }: {
   base: string;
   // The project whose Inbox a saved page goes to; Home's without one.
@@ -33,6 +37,9 @@ export default function WorkspaceBrowserBar({
   onViewChange: (view: BrowserView) => void;
   followAgent: boolean;
   onToggleFollowAgent: () => void;
+  colorMode: BrowserColorMode;
+  colorModeLoaded: boolean;
+  onColorModeChange: (mode: BrowserColorMode) => void;
 }) {
   const t = useTranslations('nav.workspace.browserBar');
   const tKnowledge = useTranslations('knowledge.capture');
@@ -167,6 +174,11 @@ export default function WorkspaceBrowserBar({
         </Button>
       )}
       {view === 'live' && <WorkspaceBrowserStreamMenu />}
+      <WorkspaceBrowserColorScheme
+        mode={colorMode}
+        loaded={colorModeLoaded}
+        onModeChange={onColorModeChange}
+      />
       {/* A phone keeps reload, the address, the tabs, "follow the agent" and the stream menu;
           back, forward and the Live/Desktop switch need a wider panel. */}
       <div className="contents max-sm:hidden @max-[40rem]/browserbar:hidden">
