@@ -270,16 +270,16 @@
     "used": "{percent} % utilisé",
     "budget": {
       "tokens": {
-        "day": "Tokens budget today",
-        "month": "Tokens budget this month"
+        "day": "Budget (jetons) aujourd'hui",
+        "month": "Budget (jetons) ce mois-ci"
       },
       "cost": {
-        "day": "Cost budget today",
-        "month": "Cost budget this month"
+        "day": "Budget (coût) aujourd'hui",
+        "month": "Budget (coût) ce mois-ci"
       },
       "time": {
-        "day": "Run time budget today",
-        "month": "Run time budget this month"
+        "day": "Budget (durée) aujourd'hui",
+        "month": "Budget (durée) ce mois-ci"
       }
     }
   }

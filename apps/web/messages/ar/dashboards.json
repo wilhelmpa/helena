@@ -270,16 +270,16 @@
     "used": "استُهلك {percent}%",
     "budget": {
       "tokens": {
-        "day": "Tokens budget today",
-        "month": "Tokens budget this month"
+        "day": "ميزانية (الرموز) اليوم",
+        "month": "ميزانية (الرموز) هذا الشهر"
       },
       "cost": {
-        "day": "Cost budget today",
-        "month": "Cost budget this month"
+        "day": "ميزانية (التكلفة) اليوم",
+        "month": "ميزانية (التكلفة) هذا الشهر"
       },
       "time": {
-        "day": "Run time budget today",
-        "month": "Run time budget this month"
+        "day": "ميزانية (الوقت) اليوم",
+        "month": "ميزانية (الوقت) هذا الشهر"
       }
     }
   }
