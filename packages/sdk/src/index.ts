@@ -244,6 +244,8 @@ export {
   skillMarkdownName,
   validateBundle,
   type BundleAgent,
+  type BundleBudget,
+  type BundleDepartment,
   type BundleMcpServer,
   type BundleOffer,
   type BundleSkill,

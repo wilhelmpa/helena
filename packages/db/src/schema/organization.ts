@@ -2,6 +2,7 @@ import { sql } from 'drizzle-orm';
 import {
   check,
   type AnyPgColumn,
+  boolean,
   date,
   index,
   integer,
@@ -13,7 +14,7 @@ import {
   timestamp,
   uniqueIndex,
 } from 'drizzle-orm/pg-core';
-import { aiAgent, initiative, issue, project, team } from './app';
+import { agentSkill, aiAgent, initiative, issue, project, team } from './app';
 import { user } from './auth';
 
 export const organizationDepartment = pgTable(
@@ -29,6 +30,7 @@ export const organizationDepartment = pgTable(
     name: text('name').notNull(),
     description: text('description').notNull().default(''),
     position: integer('position').notNull().default(0),
+    skillsRestricted: boolean('skills_restricted').notNull().default(false),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
@@ -39,6 +41,22 @@ export const organizationDepartment = pgTable(
       'organization_department_not_self_parent_check',
       sql`${t.parentId} IS NULL OR ${t.parentId} <> ${t.id}`,
     ),
+  ],
+);
+
+export const organizationDepartmentSkill = pgTable(
+  'organization_department_skill',
+  {
+    departmentId: integer('department_id')
+      .notNull()
+      .references(() => organizationDepartment.id, { onDelete: 'cascade' }),
+    skillId: integer('skill_id')
+      .notNull()
+      .references(() => agentSkill.id, { onDelete: 'cascade' }),
+  },
+  (t) => [
+    primaryKey({ columns: [t.departmentId, t.skillId] }),
+    index('organization_department_skill_skill_idx').on(t.skillId),
   ],
 );
 

@@ -48,6 +48,71 @@ const agent = z
   })
   .strict();
 
+const budget = z
+  .object({
+    metric: z.enum(['tokens', 'cost', 'time']),
+    period: z.enum(['day', 'month']),
+    limit: z.number().positive(),
+  })
+  .strict();
+
+const department = z
+  .object({
+    name: z.string(),
+    description: z.string(),
+    restrictedSkills: z.boolean(),
+    allowedSkills: z.array(z.string()),
+    budgets: z.array(budget),
+    agents: z.array(
+      z
+        .object({
+          name: z.string(),
+          role: z.enum(['coordinator', 'specialist', 'reviewer']).nullable(),
+          reportsTo: z.string().nullable(),
+          projects: z.array(z.string()),
+          heartbeat: z
+            .object({
+              intervalMinutes: z.number().int().nullable(),
+              timezone: z.string(),
+              days: z.array(z.number().int()),
+              start: z.string(),
+              end: z.string(),
+              instructions: z.string(),
+            })
+            .strict(),
+          budgets: z.array(budget),
+        })
+        .strict(),
+    ),
+    goals: z.array(
+      z
+        .object({
+          title: z.string(),
+          description: z.string(),
+          status: z.enum(['planned', 'active', 'achieved', 'paused']),
+          targetDate: z.string().nullable(),
+          parent: z.string().nullable(),
+          project: z.string().nullable(),
+        })
+        .strict(),
+    ),
+    routines: z.array(
+      z
+        .object({
+          key: z.string(),
+          project: z.string(),
+          agent: z.string(),
+          title: z.string(),
+          instructions: z.string(),
+          cron: z.string(),
+          timezone: z.string(),
+          catchUp: z.enum(['skip', 'once']),
+        })
+        .strict(),
+    ),
+  })
+  .strict();
+
 export const templateBundleSchema = z
   .object({
     format: z.literal(BUNDLE_FORMAT),
@@ -70,6 +135,7 @@ export const templateBundleSchema = z
     ),
     mcpServers: z.record(z.string(), mcpServer),
     agents: z.array(agent),
+    department: department.optional(),
   })
   .strict() satisfies z.ZodType<TemplateBundle>;
 

@@ -642,11 +642,13 @@ export async function importBundle(
   log: SyncLog,
   teamId: number,
   bundle: TemplateBundle,
+  options: { skipAgents?: boolean } = {},
 ): Promise<{ skillIds: Map<string, number>; serverIds: Map<string, number> }> {
   log.log(`\n== Bundle ${bundle.name} ${bundle.version}: skills ==`);
   const skillIds = await importSkills(log, teamId, bundle.skills);
   log.log('\n== MCP servers ==');
   const serverIds = await importMcpServers(log, teamId, bundle.mcpServers);
+  if (options.skipAgents) return { skillIds, serverIds };
   log.log('\n== Agent templates ==');
   const agents = await log.api<AgentRow[]>('GET', `/teams/${teamId}/ai-agents`);
   const org = await log.api<Organization>('GET', `/teams/${teamId}/organization`);
@@ -675,6 +677,9 @@ export async function importBundle(
 export interface ExportOptions {
   // Which templates, by handle; all of the team's templates when omitted.
   agents?: string[];
+  workingAgents?: boolean;
+  extraSkills?: string[];
+  includeMcpServers?: boolean;
   // A bundle that already describes some of them: its metadata, descriptions,
   // licenses and attributions are reused (the team does not store them).
   known?: TemplateBundle;
@@ -740,7 +745,11 @@ export async function exportBundle(
   const org = await log.api<Organization>('GET', `/teams/${teamId}/organization`);
   const wanted = options.agents?.map((handle) => handle.toLowerCase());
   const templates = agents
-    .filter((row) => row.template && (!wanted || wanted.includes(row.username.toLowerCase())))
+    .filter(
+      (row) =>
+        row.template !== (options.workingAgents === true) &&
+        (!wanted || wanted.includes(row.username.toLowerCase())),
+    )
     .sort((a, b) => a.username.localeCompare(b.username));
 
   const skills = new Map<number, BundleSkill>();
@@ -759,10 +768,10 @@ export async function exportBundle(
         );
       }
     }
-    const serverRows = await log.api<McpServerRow[]>(
-      'GET',
-      `/teams/${teamId}/ai-agents/${row.id}/mcp-servers`,
-    );
+    const serverRows =
+      options.includeMcpServers === false
+        ? []
+        : await log.api<McpServerRow[]>('GET', `/teams/${teamId}/ai-agents/${row.id}/mcp-servers`);
     for (const server of serverRows) {
       if (server.env.length > 0 || server.headers.length > 0)
         log.warn(
@@ -782,7 +791,7 @@ export async function exportBundle(
       name: row.username,
       description:
         knownAgents.get(row.username)?.description ?? (assignment?.roleTitle || row.name),
-      instructions: (row.instructions ?? '').trim(),
+      instructions: (row.instructions ?? '').trim() || 'Follow your assigned project instructions.',
       model: row.model,
       effort: policy.reasoningEffort,
       maxTurns: policy.maxTurns ?? null,
@@ -797,6 +806,18 @@ export async function exportBundle(
         triggers: { mention: row.triggerOnMention, assign: row.triggerOnAssign },
       },
     });
+  }
+  if (options.extraSkills?.length) {
+    const library = await log.api<SkillRow[]>('GET', `/teams/${teamId}/agent-skills/options`);
+    for (const name of options.extraSkills) {
+      const row = library.find((skill) => skill.name === name);
+      if (!row) throw new Error(`Skill ${name} is missing`);
+      if (!skills.has(row.id))
+        skills.set(
+          row.id,
+          await exportSkill(log, teamId, row, { license, author: author.name }, knownSkills),
+        );
+    }
   }
   log.log(
     `Exported ${out.length} template(s), ${skills.size} skill(s), ${Object.keys(mcpServers).length} MCP server(s).`,

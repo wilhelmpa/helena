@@ -79,6 +79,53 @@ export interface BundleAgent {
   };
 }
 
+export interface BundleBudget {
+  metric: 'tokens' | 'cost' | 'time';
+  period: 'day' | 'month';
+  limit: number;
+}
+
+export interface BundleDepartment {
+  name: string;
+  description: string;
+  restrictedSkills: boolean;
+  allowedSkills: string[];
+  budgets: BundleBudget[];
+  agents: {
+    name: string;
+    role: 'coordinator' | 'specialist' | 'reviewer' | null;
+    reportsTo: string | null;
+    projects: string[];
+    heartbeat: {
+      intervalMinutes: number | null;
+      timezone: string;
+      days: number[];
+      start: string;
+      end: string;
+      instructions: string;
+    };
+    budgets: BundleBudget[];
+  }[];
+  goals: {
+    title: string;
+    description: string;
+    status: 'planned' | 'active' | 'achieved' | 'paused';
+    targetDate: string | null;
+    parent: string | null;
+    project: string | null;
+  }[];
+  routines: {
+    key: string;
+    project: string;
+    agent: string;
+    title: string;
+    instructions: string;
+    cron: string;
+    timezone: string;
+    catchUp: 'skip' | 'once';
+  }[];
+}
+
 export interface TemplateBundle {
   format: typeof BUNDLE_FORMAT;
   formatVersion: typeof BUNDLE_FORMAT_VERSION;
@@ -94,6 +141,8 @@ export interface TemplateBundle {
   skills: BundleSkill[];
   mcpServers: Record<string, BundleMcpServer>;
   agents: BundleAgent[];
+  // Uses the same agent and skill entries for a working department roster.
+  department?: BundleDepartment;
 }
 
 // The licenses a bundle skill may carry: what fits Helena's AGPL-3.0.
@@ -215,7 +264,68 @@ export function validateBundle(bundle: TemplateBundle): string[] {
   for (const agent of bundle.agents) {
     if (handles.has(agent.name.toLowerCase())) problems.push(`agent ${agent.name}: listed twice`);
     handles.add(agent.name.toLowerCase());
-    validateAgent(agent, bundle, skills, capabilities, problems);
+    validateAgent(agent, bundle, skills, bundle.department ? new Map() : capabilities, problems);
+  }
+  if (bundle.department) {
+    const department = bundle.department;
+    if (!department.name.trim() || department.name.length > 80)
+      problems.push('department name must have 1–80 characters');
+    if (department.description.length > 1000) problems.push('department description is too long');
+    for (const skill of department.allowedSkills) {
+      if (!skills.has(skill)) problems.push(`department skill ${skill} is not in the bundle`);
+    }
+    const roster = new Set(department.agents.map((agent) => agent.name));
+    if (roster.size !== department.agents.length) problems.push('department agents listed twice');
+    for (const member of department.agents) {
+      if (!handles.has(member.name.toLowerCase()))
+        problems.push(`department agent ${member.name} is not in the bundle`);
+      if (member.reportsTo && !roster.has(member.reportsTo))
+        problems.push(`department agent ${member.name}: unknown manager ${member.reportsTo}`);
+      if (member.reportsTo === member.name)
+        problems.push(`department agent ${member.name} reports to itself`);
+      const seen = new Set<string>();
+      let manager = member.reportsTo;
+      while (manager) {
+        if (seen.has(manager) || manager === member.name) {
+          problems.push(`department agent ${member.name}: reporting cycle`);
+          break;
+        }
+        seen.add(manager);
+        manager = department.agents.find((entry) => entry.name === manager)?.reportsTo ?? null;
+      }
+      if (
+        member.heartbeat.intervalMinutes !== null &&
+        (member.heartbeat.intervalMinutes < 5 || member.heartbeat.intervalMinutes > 10080)
+      )
+        problems.push(`department agent ${member.name}: heartbeat interval`);
+      for (const budget of member.budgets)
+        if (!(budget.limit > 0)) problems.push(`agent ${member.name}: budget limit`);
+    }
+    for (const budget of department.budgets)
+      if (!(budget.limit > 0)) problems.push('department budget limit');
+    const goals = new Set(department.goals.map((goal) => goal.title));
+    if (goals.size !== department.goals.length)
+      problems.push('department goals have duplicate titles');
+    for (const goal of department.goals) {
+      if (goal.parent && !goals.has(goal.parent))
+        problems.push(`goal ${goal.title}: unknown parent`);
+      if (goal.parent === goal.title) problems.push(`goal ${goal.title}: self parent`);
+      const seen = new Set<string>();
+      let parent = goal.parent;
+      while (parent) {
+        if (seen.has(parent) || parent === goal.title) {
+          problems.push(`goal ${goal.title}: hierarchy cycle`);
+          break;
+        }
+        seen.add(parent);
+        parent = department.goals.find((entry) => entry.title === parent)?.parent ?? null;
+      }
+    }
+    for (const routine of department.routines) {
+      if (!roster.has(routine.agent)) problems.push(`routine ${routine.key}: unknown agent`);
+      if (!/^\S+\s+\S+\s+\S+\s+\S+\s+\S+$/.test(routine.cron))
+        problems.push(`routine ${routine.key}: invalid cron`);
+    }
   }
   return problems;
 }

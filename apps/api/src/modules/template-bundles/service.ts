@@ -7,6 +7,7 @@ import { getMcpApp } from '#mcp/app-ref';
 import { HttpError } from '#shared/lib';
 import { host, registries } from '#shared/helena';
 import { SyncLog, exportBundle, importBundle, type Transport } from './sync';
+import { exportDepartmentBundle, importDepartmentBundle } from './department';
 
 // Template bundles in the API ("Vorlagen importieren/exportieren"): importing a bundle
 // into a team and exporting a team's templates, with the caller's own rights, and the
@@ -105,6 +106,45 @@ export async function exportTemplateBundle(
     ...(options.displayName ? { displayName: options.displayName } : {}),
     ...(options.version ? { version: options.version } : {}),
   });
+}
+
+export async function exportDepartmentTemplate(
+  teamId: number,
+  departmentId: number,
+  caller: CallerHeaders,
+): Promise<TemplateBundle> {
+  const log = new SyncLog(inProcessTransport(caller), { dryRun: true, update: false });
+  const bundle = await exportDepartmentBundle(log, teamId, departmentId);
+  try {
+    return checkBundle(bundle);
+  } catch (error) {
+    throw new HttpError(400, error instanceof Error ? error.message : String(error));
+  }
+}
+
+export async function importDepartmentTemplate(
+  teamId: number,
+  userId: string,
+  caller: CallerHeaders,
+  input: { bundle: unknown; dryRun?: boolean; update?: boolean },
+): Promise<BundleReport> {
+  let bundle: TemplateBundle;
+  try {
+    bundle = checkBundle(input.bundle);
+  } catch (error) {
+    throw new HttpError(400, error instanceof Error ? error.message : String(error));
+  }
+  if (!bundle.department) throw new HttpError(400, 'Bundle has no department');
+  const log = new SyncLog(inProcessTransport(caller), {
+    dryRun: input.dryRun === true,
+    update: input.update === true,
+  });
+  try {
+    await importDepartmentBundle(log, teamId, userId, bundle);
+  } catch (error) {
+    log.warn(`Stopped: ${error instanceof Error ? error.message : String(error)}`);
+  }
+  return report(log);
 }
 
 export interface BundleOfferView {
