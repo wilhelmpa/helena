@@ -676,19 +676,151 @@
     "noResults": "No setting found.",
     "tabs": {
       "account": "My account",
-      "helena": "Helena",
       "admin": "Administrator"
     },
     "groups": {
-      "instance": "Instance",
-      "team": "Team",
-      "agents": "Agents",
-      "management": "Management"
+      "you": "You",
+      "allProjects": "All projects",
+      "system": "System"
     },
     "sections": {
-      "defaults": "Defaults for all projects",
-      "defaultsHint": "A project can override single values.",
-      "voice": "Speech recognition"
-    }
+      "profile": {
+        "label": "Profile",
+        "hint": "Name, picture and email."
+      },
+      "preferences": {
+        "label": "Appearance",
+        "hint": "Light, dark or system, language, time zone and shortcuts."
+      },
+      "notifications": {
+        "label": "Notifications",
+        "hint": ""
+      },
+      "security": {
+        "label": "Security",
+        "hint": ""
+      },
+      "accounts": {
+        "label": "Linked accounts",
+        "hint": ""
+      },
+      "api-keys": {
+        "label": "API keys",
+        "hint": ""
+      },
+      "defaults": {
+        "label": "Project defaults",
+        "hint": "Applies to all projects; a project can override single values."
+      },
+      "agents": {
+        "label": "Agents and models",
+        "hint": "Runtimes, their sign-ins, models, fallbacks and prices."
+      },
+      "local-ai": {
+        "label": "Local AI",
+        "hint": ""
+      },
+      "decisions": {
+        "label": "Deciders",
+        "hint": ""
+      },
+      "skills": {
+        "label": "Skills",
+        "hint": ""
+      },
+      "tools": {
+        "label": "Tools",
+        "hint": ""
+      },
+      "mcps": {
+        "label": "MCP servers",
+        "hint": ""
+      },
+      "plugins": {
+        "label": "Plugins",
+        "hint": ""
+      },
+      "access": {
+        "label": "Access & connections",
+        "hint": "Google, email accounts, web logins, keys, SSH and OAuth."
+      },
+      "devices": {
+        "label": "Devices & sync",
+        "hint": ""
+      },
+      "structure": {
+        "label": "Departments",
+        "hint": ""
+      },
+      "voice": {
+        "label": "Speech and voice",
+        "hint": ""
+      },
+      "users": {
+        "label": "Users",
+        "hint": ""
+      },
+      "teams": {
+        "label": "Teams",
+        "hint": ""
+      },
+      "team-members": {
+        "label": "Team members",
+        "hint": ""
+      },
+      "team-roles": {
+        "label": "Roles",
+        "hint": ""
+      },
+      "projects": {
+        "label": "Projects",
+        "hint": ""
+      },
+      "team-notifications": {
+        "label": "Notification channels",
+        "hint": ""
+      },
+      "server": {
+        "label": "Server",
+        "hint": "Overview, disks & RAID, backup, power & fans."
+      },
+      "updates": {
+        "label": "Updates",
+        "hint": ""
+      },
+      "authentication": {
+        "label": "Sign-in",
+        "hint": ""
+      },
+      "auth-provider": {
+        "label": "Identity providers",
+        "hint": ""
+      },
+      "scim": {
+        "label": "SCIM",
+        "hint": ""
+      },
+      "storage": {
+        "label": "Storage",
+        "hint": ""
+      },
+      "knowledge": {
+        "label": "Knowledge & search",
+        "hint": ""
+      },
+      "hotkeys": {
+        "label": "Shortcuts",
+        "hint": ""
+      },
+      "telegram": {
+        "label": "Telegram",
+        "hint": ""
+      },
+      "email": {
+        "label": "Email sending",
+        "hint": ""
+      }
+    },
+    "projectPath": "Project"
   }
 }

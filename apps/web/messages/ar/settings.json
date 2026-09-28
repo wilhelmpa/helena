@@ -676,19 +676,151 @@
     "noResults": "لم يتم العثور على إعداد.",
     "tabs": {
       "account": "حسابي",
-      "helena": "Helena",
       "admin": "المسؤول"
     },
     "groups": {
-      "instance": "المثيل",
-      "team": "الفريق",
-      "agents": "الوكلاء",
-      "management": "الإدارة"
+      "you": "أنت",
+      "allProjects": "كل المشاريع",
+      "system": "النظام"
     },
     "sections": {
-      "defaults": "الإعدادات الافتراضية لكل المشاريع",
-      "defaultsHint": "يمكن للمشروع تجاوز قيم منفردة.",
-      "voice": "التعرف على الكلام"
-    }
+      "profile": {
+        "label": "الملف الشخصي",
+        "hint": "الاسم والصورة والبريد."
+      },
+      "preferences": {
+        "label": "المظهر",
+        "hint": "السمة واللغة والمنطقة الزمنية والاختصارات."
+      },
+      "notifications": {
+        "label": "الإشعارات",
+        "hint": ""
+      },
+      "security": {
+        "label": "الأمان",
+        "hint": ""
+      },
+      "accounts": {
+        "label": "الحسابات المرتبطة",
+        "hint": ""
+      },
+      "api-keys": {
+        "label": "مفاتيح API",
+        "hint": ""
+      },
+      "defaults": {
+        "label": "الإعدادات الافتراضية للمشاريع",
+        "hint": "ينطبق على كل المشاريع؛ يمكن للمشروع تجاوز القيم."
+      },
+      "agents": {
+        "label": "الوكلاء والنماذج",
+        "hint": "بيئات التشغيل والتسجيلات والنماذج والبدائل والأسعار."
+      },
+      "local-ai": {
+        "label": "الذكاء الاصطناعي المحلي",
+        "hint": ""
+      },
+      "decisions": {
+        "label": "أدوات القرار",
+        "hint": ""
+      },
+      "skills": {
+        "label": "المهارات",
+        "hint": ""
+      },
+      "tools": {
+        "label": "الأدوات",
+        "hint": ""
+      },
+      "mcps": {
+        "label": "خوادم MCP",
+        "hint": ""
+      },
+      "plugins": {
+        "label": "الإضافات",
+        "hint": ""
+      },
+      "access": {
+        "label": "الوصول والاتصالات",
+        "hint": "Google والبريد وتسجيلات الويب والمفاتيح وSSH وOAuth."
+      },
+      "devices": {
+        "label": "الأجهزة والمزامنة",
+        "hint": ""
+      },
+      "structure": {
+        "label": "الأقسام",
+        "hint": ""
+      },
+      "voice": {
+        "label": "الكلام والصوت",
+        "hint": ""
+      },
+      "users": {
+        "label": "المستخدمون",
+        "hint": ""
+      },
+      "teams": {
+        "label": "الفرق",
+        "hint": ""
+      },
+      "team-members": {
+        "label": "أعضاء الفريق",
+        "hint": ""
+      },
+      "team-roles": {
+        "label": "الأدوار",
+        "hint": ""
+      },
+      "projects": {
+        "label": "المشاريع",
+        "hint": ""
+      },
+      "team-notifications": {
+        "label": "قنوات الإشعارات",
+        "hint": ""
+      },
+      "server": {
+        "label": "الخادم",
+        "hint": "نظرة عامة، الأقراص، النسخ الاحتياطي، الأداء والمراوح."
+      },
+      "updates": {
+        "label": "التحديثات",
+        "hint": ""
+      },
+      "authentication": {
+        "label": "تسجيل الدخول",
+        "hint": ""
+      },
+      "auth-provider": {
+        "label": "مزودو الهوية",
+        "hint": ""
+      },
+      "scim": {
+        "label": "SCIM",
+        "hint": ""
+      },
+      "storage": {
+        "label": "التخزين",
+        "hint": ""
+      },
+      "knowledge": {
+        "label": "المعرفة والبحث",
+        "hint": ""
+      },
+      "hotkeys": {
+        "label": "الاختصارات",
+        "hint": ""
+      },
+      "telegram": {
+        "label": "Telegram",
+        "hint": ""
+      },
+      "email": {
+        "label": "إرسال البريد",
+        "hint": ""
+      }
+    },
+    "projectPath": "المشروع"
   }
 }

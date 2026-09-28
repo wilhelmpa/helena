@@ -676,19 +676,151 @@
     "noResults": "未找到设置。",
     "tabs": {
       "account": "我的账户",
-      "helena": "Helena",
       "admin": "管理员"
     },
     "groups": {
-      "instance": "实例",
-      "team": "团队",
-      "agents": "智能体",
-      "management": "管理"
+      "you": "你",
+      "allProjects": "所有项目",
+      "system": "系统"
     },
     "sections": {
-      "defaults": "所有项目的默认值",
-      "defaultsHint": "项目可以覆盖单个值。",
-      "voice": "语音识别"
-    }
+      "profile": {
+        "label": "个人资料",
+        "hint": "姓名、头像和邮箱。"
+      },
+      "preferences": {
+        "label": "外观",
+        "hint": "主题、语言、时区和快捷键。"
+      },
+      "notifications": {
+        "label": "通知",
+        "hint": ""
+      },
+      "security": {
+        "label": "安全",
+        "hint": ""
+      },
+      "accounts": {
+        "label": "关联账户",
+        "hint": ""
+      },
+      "api-keys": {
+        "label": "API 密钥",
+        "hint": ""
+      },
+      "defaults": {
+        "label": "项目默认值",
+        "hint": "适用于所有项目；项目可覆盖单个值。"
+      },
+      "agents": {
+        "label": "智能体与模型",
+        "hint": "运行时、登录、模型、备用和价格。"
+      },
+      "local-ai": {
+        "label": "本地 AI",
+        "hint": ""
+      },
+      "decisions": {
+        "label": "决策器",
+        "hint": ""
+      },
+      "skills": {
+        "label": "技能",
+        "hint": ""
+      },
+      "tools": {
+        "label": "工具",
+        "hint": ""
+      },
+      "mcps": {
+        "label": "MCP 服务器",
+        "hint": ""
+      },
+      "plugins": {
+        "label": "插件",
+        "hint": ""
+      },
+      "access": {
+        "label": "访问与连接",
+        "hint": "Google、邮箱、网页登录、密钥、SSH 和 OAuth。"
+      },
+      "devices": {
+        "label": "设备与同步",
+        "hint": ""
+      },
+      "structure": {
+        "label": "部门",
+        "hint": ""
+      },
+      "voice": {
+        "label": "语音与声音",
+        "hint": ""
+      },
+      "users": {
+        "label": "用户",
+        "hint": ""
+      },
+      "teams": {
+        "label": "团队",
+        "hint": ""
+      },
+      "team-members": {
+        "label": "团队成员",
+        "hint": ""
+      },
+      "team-roles": {
+        "label": "角色",
+        "hint": ""
+      },
+      "projects": {
+        "label": "项目",
+        "hint": ""
+      },
+      "team-notifications": {
+        "label": "通知渠道",
+        "hint": ""
+      },
+      "server": {
+        "label": "服务器",
+        "hint": "概览、磁盘与 RAID、备份、性能与风扇。"
+      },
+      "updates": {
+        "label": "更新",
+        "hint": ""
+      },
+      "authentication": {
+        "label": "登录",
+        "hint": ""
+      },
+      "auth-provider": {
+        "label": "身份提供商",
+        "hint": ""
+      },
+      "scim": {
+        "label": "SCIM",
+        "hint": ""
+      },
+      "storage": {
+        "label": "存储",
+        "hint": ""
+      },
+      "knowledge": {
+        "label": "知识与搜索",
+        "hint": ""
+      },
+      "hotkeys": {
+        "label": "快捷键",
+        "hint": ""
+      },
+      "telegram": {
+        "label": "Telegram",
+        "hint": ""
+      },
+      "email": {
+        "label": "邮件发送",
+        "hint": ""
+      }
+    },
+    "projectPath": "项目"
   }
 }

@@ -1,93 +1,136 @@
 'use client';
 
 import dynamic from 'next/dynamic';
+import type { ComponentType } from 'react';
 import type { SettingsLocation } from './settingsModalCatalog';
 
-// The sections of Mein Konto, Helena and Administrator as they show inside the settings
-// modal: the same components their old pages rendered, so nothing is lost and no page
-// behind the modal has to change.
-const account = {
-  profile: dynamic(() => import('@/features/account/AccountProfilePage')),
-  preferences: dynamic(() => import('@/features/account/AccountPreferencesPage')),
-  notifications: dynamic(() => import('@/features/push/AccountNotificationsPage')),
-  accounts: dynamic(() => import('@/features/account/AccountAccountsPage')),
-  security: dynamic(() => import('@/features/account/AccountSecurityPage')),
-  'api-keys': dynamic(() => import('@/features/api-keys/ApiKeysPage')),
-  voice: dynamic(() => import('@/features/voice/components/AccountVoicePage')),
+// The sections of the global settings modal (Mein Konto, Helena, Administrator; see
+// docs/einstellungen-struktur.md) as they show inside it: the same components their old
+// pages rendered, so nothing is lost.
+type Props = { teamId: number; extra?: string };
+const page = (load: () => Promise<{ default: ComponentType<never> }>) =>
+  dynamic(load as () => Promise<{ default: ComponentType<Props> }>) as ComponentType<Props>;
+
+const account: Record<string, ComponentType<Props>> = {
+  profile: page(() => import('@/features/account/AccountProfilePage')),
+  preferences: page(() => import('@/features/account/AccountPreferencesPage')),
+  notifications: page(() => import('@/features/push/AccountNotificationsPage')),
+  accounts: page(() => import('@/features/account/AccountAccountsPage')),
+  security: page(() => import('@/features/account/AccountSecurityPage')),
+  'api-keys': page(() => import('@/features/api-keys/ApiKeysPage')),
 };
 
-const admin = {
-  users: dynamic(() => import('@/features/god/GodUsersPage')),
-  teams: dynamic(() => import('@/features/god/GodTeamsPage')),
-  projects: dynamic(() => import('@/features/god/GodProjectsPage')),
-  general: dynamic(() => import('@/features/god/GodGeneralPage')),
-  'agent-runtime': dynamic(() => import('@/features/god/GodAgentRuntimePage')),
-  authentication: dynamic(() => import('@/features/god/GodAuthenticationPage')),
-  hotkeys: dynamic(() => import('@/features/god/GodHotkeysPage')),
-  security: dynamic(() => import('@/features/god/GodSecurityPage')),
-  storage: dynamic(() => import('@/features/god/GodStoragePage')),
-  knowledge: dynamic(() => import('@/features/god/GodKnowledgePage')),
-  plugins: dynamic(() => import('@/features/god/GodPluginsPage')),
-  'model-prices': dynamic(() => import('@/features/god/GodModelPricesPage')),
-  'local-ai': dynamic(() => import('@/features/god/GodLocalAiPage')),
-  telegram: dynamic(() => import('@/features/god/GodTelegramPage')),
-  email: dynamic(() => import('@/features/god/GodEmailPage')),
-  'auth-provider': dynamic(() => import('@/features/god/GodAuthProviderPage')),
-  scim: dynamic(() => import('@/features/god/GodScimPage')),
+const God = {
+  users: page(() => import('@/features/god/GodUsersPage')),
+  teams: page(() => import('@/features/god/GodTeamsPage')),
+  projects: page(() => import('@/features/god/GodProjectsPage')),
+  general: page(() => import('@/features/god/GodGeneralPage')),
+  runtime: page(() => import('@/features/god/GodAgentRuntimePage')),
+  authentication: page(() => import('@/features/god/GodAuthenticationPage')),
+  hotkeys: page(() => import('@/features/god/GodHotkeysPage')),
+  security: page(() => import('@/features/god/GodSecurityPage')),
+  storage: page(() => import('@/features/god/GodStoragePage')),
+  knowledge: page(() => import('@/features/god/GodKnowledgePage')),
+  plugins: page(() => import('@/features/god/GodPluginsPage')),
+  prices: page(() => import('@/features/god/GodModelPricesPage')),
+  localAi: page(() => import('@/features/god/GodLocalAiPage')),
+  telegram: page(() => import('@/features/god/GodTelegramPage')),
+  email: page(() => import('@/features/god/GodEmailPage')),
+  authProvider: page(() => import('@/features/god/GodAuthProviderPage')),
+  scim: page(() => import('@/features/god/GodScimPage')),
 };
 const ServerPage = dynamic(() => import('@/features/server/ServerPage'));
+const HomeDefaultsPage = page(() => import('@/features/settings/HomeDefaultsPage'));
+const VoicePage = page(() => import('@/features/voice/components/AccountVoicePage'));
+const TeamMembers = page(() => import('@/features/teams/components/members/TeamMembersSection'));
+const TeamRoles = page(() => import('@/features/teams/components/roles/TeamRolesSection'));
+const TeamProjects = page(() => import('@/features/teams/components/projects/TeamProjectsSection'));
+const TeamNotifications = page(
+  () => import('@/features/teams/components/notifications/TeamNotificationsSection'),
+);
+const Structure = page(
+  () => import('@/features/organization/components/OrganizationStructureSettings'),
+);
+const Decisions = dynamic(() =>
+  import('@/features/decisions/DecisionsPage').then((module) => module.DecisionsContent),
+);
+const Access = dynamic(() =>
+  import('@/features/access/AccessCenterPage').then((module) => module.AccessCenterContent),
+);
+const Devices = dynamic(() =>
+  import('@/features/devices/DevicesPage').then((module) => module.DevicesContent),
+);
+const Catalog = dynamic(() =>
+  import('@/features/home/HomeTeamSectionPage').then((module) => module.HomeTeamSectionContent),
+);
 
-const team = {
-  info: dynamic(() => import('@/features/teams/components/info/TeamInfoSection')),
-  projects: dynamic(() => import('@/features/teams/components/projects/TeamProjectsSection')),
-  roles: dynamic(() => import('@/features/teams/components/roles/TeamRolesSection')),
-  members: dynamic(() => import('@/features/teams/components/members/TeamMembersSection')),
-  mcp: dynamic(() => import('@/features/teams/components/mcp/TeamMcpSection')),
-  notifications: dynamic(
-    () => import('@/features/teams/components/notifications/TeamNotificationsSection'),
-  ),
-  integrations: dynamic(
-    () => import('@/features/teams/components/integrations/TeamIntegrationsSection'),
-  ),
-  'ai-agents': dynamic(() => import('@/features/teams/components/ai-agents/TeamAiAgentsSection')),
-  'agent-skills': dynamic(
-    () => import('@/features/teams/components/agent-skills/TeamAgentSkillsSection'),
-  ),
-  'agent-tools': dynamic(
-    () => import('@/features/teams/components/agent-tools/TeamAgentToolsSection'),
-  ),
-};
-const HomeDefaultsPage = dynamic(() => import('@/features/settings/HomeDefaultsPage'));
-const ManageTeamsIndex = dynamic(() => import('@/features/teams/ManageTeamsIndex'));
+// Sections that are several of the old pages together, one after the other.
+function Stack({ parts, props }: { parts: ComponentType<Props>[]; props: Props }) {
+  return (
+    <div className="ds-stack">
+      {parts.map((Part, index) => (
+        <Part key={index} {...props} />
+      ))}
+    </div>
+  );
+}
 
 export default function SettingsAreaContent({
   location,
   teamId,
 }: {
   location: SettingsLocation;
-  // The team a Home section shows when the location names none.
+  // The team a team section shows when the location names none.
   teamId: number | null;
 }) {
   const { area, slug, extra } = location;
+  const props: Props = { teamId: Number(extra) || teamId || 0, extra };
   if (area === 'account') {
-    const Page = account[slug as keyof typeof account];
-    return Page ? <Page /> : null;
+    const Page = account[slug];
+    return Page ? <Page {...props} /> : null;
   }
-  if (area === 'admin') {
-    if (slug === 'server') return <ServerPage tab={extra ?? 'overview'} />;
-    const Page = admin[slug as keyof typeof admin];
-    return Page ? <Page /> : null;
+  switch (slug) {
+    case 'defaults':
+      return <Stack parts={[HomeDefaultsPage, God.general]} props={props} />;
+    case 'agents':
+      return <Stack parts={[God.runtime, God.prices]} props={props} />;
+    case 'local-ai':
+      return <God.localAi {...props} />;
+    case 'decisions':
+      return <Decisions />;
+    case 'skills':
+    case 'tools':
+    case 'mcps':
+      return <Catalog section={slug} />;
+    case 'plugins':
+      return <God.plugins {...props} />;
+    case 'access':
+      return <Access tab={(extra as 'google') ?? 'google'} />;
+    case 'devices':
+      return <Devices />;
+    case 'structure':
+      return <Structure {...props} />;
+    case 'voice':
+      return <VoicePage {...props} />;
+    case 'server':
+      return <ServerPage tab={extra ?? 'overview'} />;
+    case 'updates':
+      return <ServerPage tab="updates" />;
+    case 'team-members':
+      return props.teamId ? <TeamMembers {...props} /> : null;
+    case 'team-roles':
+      return props.teamId ? <TeamRoles {...props} /> : null;
+    case 'team-notifications':
+      return props.teamId ? <TeamNotifications {...props} /> : null;
+    case 'projects':
+      return (
+        <Stack parts={props.teamId ? [God.projects, TeamProjects] : [God.projects]} props={props} />
+      );
+    case 'auth-provider':
+      return <God.authProvider {...props} />;
+    default: {
+      const Page = (God as Record<string, ComponentType<Props>>)[slug];
+      return Page ? <Page {...props} /> : null;
+    }
   }
-  // Helena: the instance's defaults and the team.
-  if (slug === 'defaults') return <HomeDefaultsPage />;
-  if (slug === 'ai') return <admin.general />;
-  if (slug === 'local-ai') {
-    const LocalAi = admin['local-ai'];
-    return <LocalAi />;
-  }
-  if (slug === 'updates') return <ServerPage tab="updates" />;
-  if (slug === 'teams') return teamId ? <team.info teamId={teamId} /> : <ManageTeamsIndex />;
-  const id = Number(extra) || teamId;
-  const Section = team[slug as keyof typeof team];
-  return Section && id ? <Section teamId={id} /> : null;
 }

@@ -51,5 +51,8 @@
     "cycle": "Kein Zyklus",
     "member": "Kein Wert",
     "area": "Kein Bereich"
-  }
+  },
+  "filter": "Filter",
+  "searchProperty": "Eigenschaft suchen …",
+  "noProperty": "Keine Eigenschaft gefunden."
 }

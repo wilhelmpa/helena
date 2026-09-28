@@ -676,19 +676,151 @@
     "noResults": "Налаштувань не знайдено.",
     "tabs": {
       "account": "Мій обліковий запис",
-      "helena": "Helena",
       "admin": "Адміністратор"
     },
     "groups": {
-      "instance": "Екземпляр",
-      "team": "Команда",
-      "agents": "Агенти",
-      "management": "Керування"
+      "you": "Ви",
+      "allProjects": "Усі проєкти",
+      "system": "Система"
     },
     "sections": {
-      "defaults": "Типові значення для всіх проєктів",
-      "defaultsHint": "Проєкт може перевизначити окремі значення.",
-      "voice": "Розпізнавання мовлення"
-    }
+      "profile": {
+        "label": "Профіль",
+        "hint": "Імʼя, фото та пошта."
+      },
+      "preferences": {
+        "label": "Вигляд",
+        "hint": "Тема, мова, часовий пояс і скорочення."
+      },
+      "notifications": {
+        "label": "Сповіщення",
+        "hint": ""
+      },
+      "security": {
+        "label": "Безпека",
+        "hint": ""
+      },
+      "accounts": {
+        "label": "Повʼязані облікові записи",
+        "hint": ""
+      },
+      "api-keys": {
+        "label": "API-ключі",
+        "hint": ""
+      },
+      "defaults": {
+        "label": "Типові значення проєктів",
+        "hint": "Для всіх проєктів; проєкт може перевизначити значення."
+      },
+      "agents": {
+        "label": "Агенти й моделі",
+        "hint": "Середовища, входи, моделі, резерви й ціни."
+      },
+      "local-ai": {
+        "label": "Локальний ШІ",
+        "hint": ""
+      },
+      "decisions": {
+        "label": "Вирішувачі",
+        "hint": ""
+      },
+      "skills": {
+        "label": "Навички",
+        "hint": ""
+      },
+      "tools": {
+        "label": "Інструменти",
+        "hint": ""
+      },
+      "mcps": {
+        "label": "MCP-сервери",
+        "hint": ""
+      },
+      "plugins": {
+        "label": "Розширення",
+        "hint": ""
+      },
+      "access": {
+        "label": "Доступи й підключення",
+        "hint": "Google, пошта, веб-входи, ключі, SSH і OAuth."
+      },
+      "devices": {
+        "label": "Пристрої й синхронізація",
+        "hint": ""
+      },
+      "structure": {
+        "label": "Відділи",
+        "hint": ""
+      },
+      "voice": {
+        "label": "Мовлення й голос",
+        "hint": ""
+      },
+      "users": {
+        "label": "Користувачі",
+        "hint": ""
+      },
+      "teams": {
+        "label": "Команди",
+        "hint": ""
+      },
+      "team-members": {
+        "label": "Учасники команди",
+        "hint": ""
+      },
+      "team-roles": {
+        "label": "Ролі",
+        "hint": ""
+      },
+      "projects": {
+        "label": "Проєкти",
+        "hint": ""
+      },
+      "team-notifications": {
+        "label": "Канали сповіщень",
+        "hint": ""
+      },
+      "server": {
+        "label": "Сервер",
+        "hint": "Огляд, диски й RAID, резервні копії, потужність і вентилятори."
+      },
+      "updates": {
+        "label": "Оновлення",
+        "hint": ""
+      },
+      "authentication": {
+        "label": "Вхід",
+        "hint": ""
+      },
+      "auth-provider": {
+        "label": "Постачальники ідентичності",
+        "hint": ""
+      },
+      "scim": {
+        "label": "SCIM",
+        "hint": ""
+      },
+      "storage": {
+        "label": "Сховище",
+        "hint": ""
+      },
+      "knowledge": {
+        "label": "Знання й пошук",
+        "hint": ""
+      },
+      "hotkeys": {
+        "label": "Скорочення",
+        "hint": ""
+      },
+      "telegram": {
+        "label": "Telegram",
+        "hint": ""
+      },
+      "email": {
+        "label": "Надсилання пошти",
+        "hint": ""
+      }
+    },
+    "projectPath": "Проєкт"
   }
 }

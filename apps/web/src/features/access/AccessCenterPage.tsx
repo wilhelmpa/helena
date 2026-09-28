@@ -40,7 +40,7 @@ function useCallbackNotice(tab: AccessTab) {
   }, [params, router, tab]);
 }
 
-export default function AccessCenterPage({ tab }: { tab: AccessTab }) {
+export function AccessCenterContent({ tab }: { tab: AccessTab }) {
   const t = useTranslations('access');
   useCallbackNotice(tab);
   const tNav = useTranslations('nav');
@@ -78,9 +78,16 @@ export default function AccessCenterPage({ tab }: { tab: AccessTab }) {
     );
   }
 
+  return body;
+}
+
+// The old /access pages: the same content, now in the settings modal (Helena › Zugänge &
+// Verbindungen); the route opens the modal there.
+export default function AccessCenterPage({ tab }: { tab: AccessTab }) {
+  const t = useTranslations('access');
   return (
     <Shell globalHome globalTitle={t('title')} autoOpenGlobalChat={false}>
-      {body}
+      <AccessCenterContent tab={tab} />
     </Shell>
   );
 }

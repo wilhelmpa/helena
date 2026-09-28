@@ -51,5 +51,8 @@
     "cycle": "无周期",
     "member": "无值",
     "area": "无区域"
-  }
+  },
+  "filter": "筛选",
+  "searchProperty": "搜索属性 …",
+  "noProperty": "未找到属性。"
 }

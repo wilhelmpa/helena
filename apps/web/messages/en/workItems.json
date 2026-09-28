@@ -157,5 +157,6 @@
     "loadFailed": "The tasks could not be loaded.",
     "loadFailedHint": "The server did not answer. Try again in a moment."
   },
-  "viewNotFound": "This view no longer exists. Showing all tasks."
+  "viewNotFound": "This view no longer exists. Showing all tasks.",
+  "layout": "Layout"
 }

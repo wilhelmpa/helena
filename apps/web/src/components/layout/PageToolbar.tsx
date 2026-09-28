@@ -50,16 +50,11 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 
 // The shared look of a 32px header control; exported for the few page-specific
 // controls (a select, a sort menu) that are not one of the pieces below.
-export const PAGE_CONTROL_CLASS =
-  'inline-flex h-8 shrink-0 items-center gap-1.5 rounded-md px-2 text-sm text-muted-foreground transition-colors hover:bg-sidebar-accent/60 hover:text-foreground focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 [&_svg]:size-4 [&_svg]:shrink-0';
-export const PAGE_CONTROL_ACTIVE_CLASS =
-  'bg-sidebar-accent font-medium text-foreground hover:bg-sidebar-accent';
+export const PAGE_CONTROL_CLASS = 'ds-page-control';
+export const PAGE_CONTROL_ACTIVE_CLASS = 'is-active';
 // The look of every "New …" of a page (its primary action), the same on every page:
-// a quiet outlined button on the sidebar's surface, so it reads as a button without the
-// weight of a dark fill. Also for page-specific primaries (one that opens a menu) and the
-// "New …" at the end of a tab strip (new view, new dashboard).
-export const PAGE_PRIMARY_CLASS =
-  'ms-1 border border-sidebar-border bg-card px-2.5 font-medium text-foreground hover:bg-sidebar-accent hover:text-foreground';
+// outlined, a plus, text colour (owner, 28.09.: "behält den Live-Stil").
+export const PAGE_PRIMARY_CLASS = 'ds-page-primary';
 
 // How far the toolbar has given way to fit its room: 0 shows everything in full, then
 // one piece at a time folds — the search into an icon, the secondary actions into the
@@ -117,8 +112,8 @@ export function PageToolbar({ children }: { children: ReactNode }) {
     if (node.scrollWidth > node.clientWidth + 1) setLevel(level + 1);
   }, [node, level, width, children]);
   return (
-    <ShellHeaderRow className="gap-1 bg-background px-3">
-      <div ref={setNode} className="flex min-w-0 flex-1 items-center gap-1 overflow-hidden">
+    <ShellHeaderRow className="ds-page-toolbar-standalone">
+      <div ref={setNode} className="ds-page-toolbar-row">
         <RoomCtx.Provider value={roomFor(level, width)}>
           <ToolbarScopeCtx.Provider value>{children}</ToolbarScopeCtx.Provider>
         </RoomCtx.Provider>

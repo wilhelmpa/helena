@@ -48,5 +48,6 @@
     "open": "Open",
     "week": "This week",
     "status": "By status"
-  }
+  },
+  "saveAsNewShort": "另存为新视图"
 }

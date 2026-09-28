@@ -51,5 +51,8 @@
     "cycle": "Tanpa cycle",
     "member": "Tanpa nilai",
     "area": "Tanpa area"
-  }
+  },
+  "filter": "Filter",
+  "searchProperty": "Cari properti …",
+  "noProperty": "Properti tidak ditemukan."
 }

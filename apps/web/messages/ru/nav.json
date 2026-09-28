@@ -268,5 +268,6 @@
   "themeLight": "Светлая",
   "themeDark": "Тёмная",
   "dangerZone": "Опасная зона",
-  "mail": "Почта"
+  "mail": "Почта",
+  "settingsExecution": "Исполнение по умолчанию"
 }

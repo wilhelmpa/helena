@@ -14,14 +14,14 @@ import DevicesServerCard from './components/DevicesServerCard';
 import DevicesUnavailable from './components/DevicesUnavailable';
 import { useDeviceSyncStatus } from './services/deviceSync.service';
 
-export default function DevicesPage() {
+export function DevicesContent() {
   const t = useTranslations('devices');
   const status = useDeviceSyncStatus();
   const data = status.data;
   const forbidden = status.error instanceof ApiError && status.error.status === 403;
 
   return (
-    <Shell globalHome globalTitle={t('title')} autoOpenGlobalChat={false}>
+    <>
       <SectionPageView title={t('title')}>
         <div className="flex flex-col gap-4">
           {status.isError ? (
@@ -45,6 +45,15 @@ export default function DevicesPage() {
           )}
         </div>
       </SectionPageView>
+    </>
+  );
+}
+
+export default function DevicesPage() {
+  const t = useTranslations('devices');
+  return (
+    <Shell globalHome globalTitle={t('title')} autoOpenGlobalChat={false}>
+      <DevicesContent />
     </Shell>
   );
 }

@@ -436,7 +436,7 @@ export default function Shell({
               />
 
               <ShellOverlays project={project} projectKey={projectKey} overlays={overlays} />
-              <SettingsModal />
+              <SettingsModal projectKey={projectKey} projectName={project?.project.name ?? null} />
               <AgentDialog />
             </SidebarProvider>
           </ShellHeaderActionsSlotCtx.Provider>

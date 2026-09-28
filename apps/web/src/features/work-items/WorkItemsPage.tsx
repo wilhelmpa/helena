@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useShell } from '@/context/shellContext';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -20,21 +19,14 @@ import {
   withoutHiddenSections,
   type ViewSettings,
 } from '@/utils/viewSettings';
-import { CalendarDays, Check, Pencil, Plus, X } from 'lucide-react';
-import { cyclesPath } from '@/utils/paths';
+import { Check, Pencil, Plus, X } from 'lucide-react';
 import ViewIconPicker from '@/components/layout/ViewIconPicker';
-import ViewFolderManager from '@/components/layout/ViewFolderManager';
-import { FilterControl } from '@/components/layout/FilterBar';
-import {
-  PageActions,
-  PageToolbar,
-  PageToolbarSpacer,
-  PAGE_CONTROL_CLASS,
-  PAGE_PRIMARY_CLASS,
-  type PageAction,
-} from '@/components/layout/PageToolbar';
-import { cn } from '@/lib/utils';
-import { useViewFoldersQuery, useViewsQuery } from '@/services/views.service';
+import FilterPills from '@/components/layout/FilterPills';
+import { PageActions, PageToolbar, type PageAction } from '@/components/layout/PageToolbar';
+import { Segmented } from '@/design-system';
+import { byKey } from '@/utils/messageKey';
+import { VIEWS, type WorkItemsView } from '@/utils/viewTypes';
+import { useViewsQuery } from '@/services/views.service';
 import BoardDisplayControl from './components/BoardDisplayControl';
 import { IssueLinksProvider } from './context/useIssueLinks';
 import { SubtasksProvider } from './context/useSubtasks';
@@ -54,9 +46,9 @@ interface TimelineCollapseState {
 // come from the Shell through React context.
 export default function WorkItemsPage() {
   const t = useTranslations('workItems');
-  const tNav = useTranslations('nav');
   const tCommon = useTranslations('common');
   const tViews = useTranslations('views');
+  const tLayouts = byKey(useTranslations('display.layouts'));
   const { project, filteredProject, editor, customFields, onOpenIssue, onAddIssue } = useShell();
   const { can } = usePermissions();
   const groupLabels = useGroupLabels();
@@ -73,8 +65,6 @@ export default function WorkItemsPage() {
     scope: project ? revScope.board(project.project.id) : null,
     targets: [qk.boardIssues(projectKey)],
   });
-
-  const { data: folders = [] } = useViewFoldersQuery(projectKey || null);
 
   // The address names a view that no longer exists (deleted, or a stale link): say so
   // and show the whole board under its own address, instead of the board under a dead
@@ -209,29 +199,38 @@ export default function WorkItemsPage() {
     }
   }
 
+  // The toolbar (docs/design-system.md §9, draft Aufgaben-*): the filters as pills, the
+  // "changed" state of a saved view, then the display options and the layout switch.
+  const layoutSwitch = (
+    <Segmented<WorkItemsView>
+      label={t('layout')}
+      value={editor.view}
+      onChange={editor.changeView}
+      options={VIEWS.map(({ value, icon: Icon }) => ({
+        value,
+        label: tLayouts(value),
+        icon: <Icon aria-hidden="true" />,
+      }))}
+    />
+  );
+  const display = (
+    <BoardDisplayControl
+      view={editor.view}
+      onViewChange={editor.changeView}
+      settings={settings}
+      onSettingsChange={changeSettings}
+      customFields={customFields}
+      issueTypes={project.issueTypes}
+    />
+  );
   const controls = (
-    <>
-      <FilterControl
-        filters={editor.filters}
-        onChange={editor.changeFilters}
-        project={project}
-        customFields={customFields}
-      />
-      <BoardDisplayControl
-        view={editor.view}
-        onViewChange={editor.changeView}
-        settings={settings}
-        onSettingsChange={changeSettings}
-        customFields={customFields}
-        issueTypes={project.issueTypes}
-      />
-      {features.cycles && can('cycles', 'read') && (
-        <Link href={cyclesPath(projectKey)} className={PAGE_CONTROL_CLASS}>
-          <CalendarDays size={16} aria-hidden="true" />
-          {tNav('cycles')}
-        </Link>
-      )}
-    </>
+    <FilterPills
+      filters={editor.filters}
+      saved={editor.activeView?.filters ?? null}
+      onChange={editor.changeFilters}
+      project={project}
+      customFields={customFields}
+    />
   );
 
   // The edit bar's two actions: Save is the row's one filled button.
@@ -258,9 +257,12 @@ export default function WorkItemsPage() {
                 if (e.key === 'Enter' && canSaveDraft) void editor.saveEdits();
                 if (e.key === 'Escape') editor.cancelEdits();
               }}
-              className="h-7 min-w-24 flex-1 rounded-md bg-transparent px-1.5 text-sm font-medium outline-none placeholder:font-normal placeholder:text-muted-foreground focus-visible:bg-sidebar-accent/40"
+              className="ds-view-name-input"
             />
             {controls}
+            <span className="ds-toolbar-fill" />
+            {display}
+            {layoutSwitch}
             <PageActions
               actions={editActions}
               primary={
@@ -278,44 +280,41 @@ export default function WorkItemsPage() {
           </>
         ) : (
           <>
-            <PageToolbarSpacer />
-            {can('views', 'edit') && (
-              <ViewFolderManager projectKey={project.project.key} folders={folders} />
-            )}
             {controls}
-            {editor.changed && (
-              <div className="flex shrink-0 items-center gap-1 text-xs text-muted-foreground">
-                <span>{tViews('changed')}</span>
-                {can('views', 'edit') && (
+            {(editor.changed || (!editor.activeView && editor.filters.conditions.length > 0)) && (
+              <span className="ds-changed">
+                {editor.changed && (
+                  <>
+                    <span className="ds-changed-dot" aria-hidden="true" />
+                    {tViews('changed')}
+                    <button type="button" onClick={editor.resetChanges}>
+                      {tViews('reset')}
+                    </button>
+                    {can('views', 'edit') && (
+                      <button
+                        type="button"
+                        className="is-save"
+                        onClick={() => void editor.saveEdits()}
+                      >
+                        {tCommon('save')}
+                      </button>
+                    )}
+                  </>
+                )}
+                {can('views', 'create') && (
                   <button
                     type="button"
-                    onClick={() => void editor.saveEdits()}
-                    className={cn(PAGE_CONTROL_CLASS, PAGE_PRIMARY_CLASS, 'max-sm:px-1')}
+                    className="is-new"
+                    onClick={() => editor.beginNewView('current')}
                   >
-                    {tCommon('save')}
+                    {tViews('saveAsNewShort')}
                   </button>
                 )}
-                <button
-                  type="button"
-                  onClick={editor.resetChanges}
-                  className={cn(PAGE_CONTROL_CLASS, 'max-sm:px-1')}
-                >
-                  {tViews('reset')}
-                </button>
-              </div>
+              </span>
             )}
-            {can('views', 'create') && (
-              <button
-                type="button"
-                onClick={() => editor.beginNewView('current')}
-                aria-label={tViews('saveAsNew')}
-                title={tViews('saveAsNew')}
-                className={cn(PAGE_CONTROL_CLASS, 'max-sm:w-8 max-sm:justify-center max-sm:px-0')}
-              >
-                <Plus aria-hidden="true" />
-                <span className="hidden lg:inline">{tViews('saveAsNew')}</span>
-              </button>
-            )}
+            <span className="ds-toolbar-fill" />
+            {display}
+            {layoutSwitch}
             <PageActions
               actions={
                 editor.activeView && !editor.changed && can('views', 'edit')
@@ -325,6 +324,7 @@ export default function WorkItemsPage() {
                         label: t('editView'),
                         icon: Pencil,
                         onClick: () => editor.beginEditView(editor.activeView!),
+                        menuOnly: true,
                       },
                     ]
                   : []
@@ -344,7 +344,7 @@ export default function WorkItemsPage() {
         )}
       </PageToolbar>
 
-      <div className="relative flex-1 overflow-hidden">
+      <div className="ds-work-items-body">
         <IssueLinksProvider issues={project.issues} enabled={settings.showLinks}>
           <SubtasksProvider
             issues={project.issues}

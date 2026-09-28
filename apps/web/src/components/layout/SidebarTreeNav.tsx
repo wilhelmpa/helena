@@ -45,9 +45,6 @@ import {
   homeFilesPath,
   inboxPath,
   initiativesPath,
-  mcpServerPath,
-  membersPath,
-  notificationsPath,
   organizationPath,
   projectPath,
   receiptsPath,
@@ -64,6 +61,7 @@ import FileNewFolderDialog from '@/features/project-files/components/FileNewFold
 import { useCrossProjectIssuesQuery } from '@/features/home/services/tasks.service';
 import { useMemberRoutines, useRoutines } from '@/features/routines/services/routines.service';
 import NewViewMenu from './NewViewMenu';
+import { projectSettingsPages } from '@/features/settings/projectSettingsPages';
 import type { ViewTemplate } from '@/hooks/useViewEditor';
 
 // The sidebar tree (docs/design-system.md §6–§7, drafts ui-entwurf/Navigation-*): the
@@ -215,63 +213,33 @@ export function SidebarProjectTree({
       .filter((view) => view.folderId === folderId)
       .sort((a, b) => a.position - b.position || a.id - b.id);
 
-  // Settings, grouped as in §7: Allgemein · Mitglieder · Benachrichtigungen, then Arbeit,
-  // Agenten, Integrationen with their sections.
-  const settingsGroups: {
-    id: string;
-    label: string;
-    items: { slug: string; href: string; label: string }[];
-  }[] = [
-    {
-      id: 'work',
-      label: t('settingsWork'),
-      items: [
-        'states',
-        'issue-types',
-        'labels',
-        'custom-fields',
-        'issue-templates',
-        'configuration',
-        'actions',
-      ].map((slug) => ({
-        slug,
-        href: settingsPath(projectKey, slug),
-        label: sectionText(slug).label,
-      })),
-    },
-    {
-      id: 'agents',
-      label: t('settingsAgents'),
-      items: ['autopilot', 'network', 'environment', 'browser'].map((slug) => ({
-        slug,
-        href: settingsPath(projectKey, slug),
-        label: sectionText(slug).label,
-      })),
-    },
-    {
-      id: 'integrations',
-      label: t('settingsIntegrations'),
-      items: [
-        { slug: 'mcp', href: mcpServerPath(projectKey), label: t('mcpServer') },
-        {
-          slug: 'webhooks',
-          href: settingsPath(projectKey, 'webhooks'),
-          label: sectionText('webhooks').label,
-        },
-        { slug: 'git', href: settingsPath(projectKey, 'git'), label: sectionText('git').label },
-        { slug: 'mail', href: settingsPath(projectKey, 'mail'), label: t('mail') },
-      ],
-    },
-  ];
-  const settingsTop = [
-    {
-      slug: 'general',
-      href: settingsPath(projectKey, 'general'),
-      label: sectionText('general').label,
-    },
-    { slug: 'members', href: membersPath(projectKey), label: t('members') },
-    { slug: 'notifications', href: notificationsPath(projectKey), label: t('notifications') },
-  ];
+  // Settings (docs/einstellungen-struktur.md): Allgemein · Mitglieder ·
+  // Benachrichtigungen, Arbeit ▸, Agenten ▸, Wissen & Belege, Mail, Integrationen ▸.
+  const settingsPages = projectSettingsPages(projectKey);
+  const pageLabel = (page: (typeof settingsPages)[number]) =>
+    page.labelKey ? t(page.labelKey as never) : sectionText(page.slug).label;
+  const settingsGroups = ['settingsWork', 'settingsAgents', 'settingsIntegrations'].map(
+    (group) => ({
+      id: group,
+      label: t(group as never),
+      items: settingsPages.filter((page) => page.group === group),
+    }),
+  );
+  const settingsTop = settingsPages.filter((page) => !page.group);
+  const settingsOrder: (
+    | { kind: 'page'; page: (typeof settingsPages)[number] }
+    | { kind: 'group'; group: (typeof settingsGroups)[number] }
+  )[] = [];
+  for (const page of settingsPages) {
+    if (!page.group) settingsOrder.push({ kind: 'page', page });
+    else if (
+      !settingsOrder.some((entry) => entry.kind === 'group' && entry.group.id === page.group)
+    )
+      settingsOrder.push({
+        kind: 'group',
+        group: settingsGroups.find((group) => group.id === page.group)!,
+      });
+  }
 
   // Every row the tree can mark, with the pages it stands for.
   const candidates: NavCandidate[] = [
@@ -321,6 +289,7 @@ export function SidebarProjectTree({
       group.items.map((item) => ({ id: `settings:${group.id}:${item.slug}`, href: item.href })),
     ),
     { id: 'settings:general', href: settingsPath(projectKey, 'danger-zone') },
+    { id: 'settings:settingsAgents:autopilot', href: settingsPath(projectKey, 'budgets') },
   ];
   // A file of a folder: the folder row marks itself (SidebarKnowledgeFolders).
   const folderOpen = location.pathname === filesPath(projectKey) && location.search.has('path');
@@ -375,7 +344,9 @@ export function SidebarProjectTree({
         href={projectPath(projectKey)}
         icon={<ListTodo />}
         active={is('tasks')}
-        actions={can('views', 'create') && <NewViewMenu onSelect={onNewView} />}
+        actions={
+          can('views', 'create') && <NewViewMenu projectKey={projectKey} onSelect={onNewView} />
+        }
       >
         {topViews.length > 0 || areas.length > 0 ? (
           <>
@@ -507,32 +478,33 @@ export function SidebarProjectTree({
         />
       </TreeItem>
       <TreeItem id="settings" label={t('settings')} icon={<Settings2 />}>
-        {settingsTop.map((item) => (
-          <TreeItem
-            key={item.slug}
-            label={item.label}
-            href={item.href}
-            active={is(`settings:${item.slug}`)}
-          />
-        ))}
-        {settingsGroups.map((group) => (
-          <TreeItem
-            key={group.id}
-            label={group.label}
-            storageKey={`${projectKey}:settings:${group.id}`}
-            defaultOpen={false}
-            containsActive={within(`settings:${group.id}:`)}
-          >
-            {group.items.map((item) => (
-              <TreeItem
-                key={item.slug}
-                label={item.label}
-                href={item.href}
-                active={is(`settings:${group.id}:${item.slug}`)}
-              />
-            ))}
-          </TreeItem>
-        ))}
+        {settingsOrder.map((entry) =>
+          entry.kind === 'page' ? (
+            <TreeItem
+              key={entry.page.slug}
+              label={pageLabel(entry.page)}
+              href={entry.page.href}
+              active={is(`settings:${entry.page.slug}`)}
+            />
+          ) : (
+            <TreeItem
+              key={entry.group.id}
+              label={entry.group.label}
+              storageKey={`${projectKey}:settings:${entry.group.id}`}
+              defaultOpen={false}
+              containsActive={within(`settings:${entry.group.id}:`)}
+            >
+              {entry.group.items.map((item) => (
+                <TreeItem
+                  key={item.slug}
+                  label={pageLabel(item)}
+                  href={item.href}
+                  active={is(`settings:${entry.group.id}:${item.slug}`)}
+                />
+              ))}
+            </TreeItem>
+          ),
+        )}
       </TreeItem>
     </Tree>
   );

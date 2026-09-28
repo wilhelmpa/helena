@@ -51,5 +51,8 @@
     "cycle": "Sem ciclo",
     "member": "Sem valor",
     "area": "Sem área"
-  }
+  },
+  "filter": "Filtro",
+  "searchProperty": "Buscar propriedade …",
+  "noProperty": "Nenhuma propriedade encontrada."
 }

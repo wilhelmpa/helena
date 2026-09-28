@@ -157,5 +157,6 @@
     "loadFailed": "No se pudieron cargar las tareas.",
     "loadFailedHint": "El servidor no respondió. Vuelve a intentarlo en un momento."
   },
-  "viewNotFound": "Esta vista ya no existe. Se muestran todas las tareas."
+  "viewNotFound": "Esta vista ya no existe. Se muestran todas las tareas.",
+  "layout": "Diseño"
 }

@@ -4,6 +4,8 @@ import { useCallback, useEffect, useMemo, useState, type MouseEvent } from 'reac
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useSession } from '@/lib/auth-client';
+import { useSettingsSectionText } from '@/hooks/useSectionLabels';
+import { projectSettingsPages } from './projectSettingsPages';
 import { useTeamsQuery } from '@/services/teams.service';
 import { ShellHeaderActionsSlotCtx, ShellHeaderSlotCtx } from '@/context/shellHeaderSlot';
 import { Modal, ModalNavGroup, ModalNavItem, type ModalTab } from '@/design-system';
@@ -38,9 +40,17 @@ function currentHref() {
 // browser's own history, so the page behind never navigates, reloads or re-renders:
 // closing it leaves everything as it was, filters included. Old settings URLs
 // (/account/…, /god/…) open it over the page the user came from.
-export default function SettingsModal() {
+export default function SettingsModal({
+  projectKey = null,
+  projectName = null,
+}: {
+  // The project the page behind belongs to: the search also finds its settings pages.
+  projectKey?: string | null;
+  projectName?: string | null;
+}) {
   const t = useTranslations('settings.modal');
-  const tAll = useTranslations();
+  const tNav = useTranslations('nav');
+  const sectionText = useSettingsSectionText();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -53,13 +63,9 @@ export default function SettingsModal() {
   const sections = useMemo(() => settingsModalSections(admin), [admin]);
   const [search, setSearch] = useState('');
 
-  const tabs = useMemo<SettingsArea[]>(
-    () => (admin ? ['account', 'helena', 'admin'] : ['account', 'helena']),
-    [admin],
-  );
-  const label = (def: ModalSectionDef) => tAll(`${def.label[0]}.${def.label[1]}` as never);
-  const description = (def: ModalSectionDef) =>
-    def.description ? tAll(`${def.description[0]}.${def.description[1]}` as never) : '';
+  const tabs = useMemo<SettingsArea[]>(() => (admin ? ['account', 'admin'] : ['account']), [admin]);
+  const label = (def: ModalSectionDef) => t(`sections.${def.slug}.label` as never);
+  const description = (def: ModalSectionDef) => t(`sections.${def.slug}.hint` as never);
   const groupLabel = (group: string) => t(`groups.${group}` as never);
 
   // Moves the modal to `next` (null closes it) without touching the page behind.
@@ -113,15 +119,13 @@ export default function SettingsModal() {
     function handleOpen(event: Event) {
       const detail = (event as CustomEvent<OpenSettingsRequest | undefined>).detail ?? {};
       let area: SettingsArea =
-        detail.scope === 'home' || detail.scope === 'project'
-          ? 'helena'
-          : detail.scope === 'account' || detail.scope === 'helena' || detail.scope === 'admin'
-            ? detail.scope
-            : 'account';
+        detail.scope === 'home' || detail.scope === 'helena' || detail.scope === 'admin'
+          ? 'admin'
+          : 'account';
       if (!tabs.includes(area)) area = 'account';
       const known = sections[area].some((item) => item.slug === detail.section);
       const slug = known && detail.section ? detail.section : DEFAULT_SECTION[area];
-      const extra = area === 'helena' && detail.teamId != null ? String(detail.teamId) : detail.tab;
+      const extra = detail.teamId != null ? String(detail.teamId) : detail.tab;
       setSearch('');
       go({ area, slug, ...(extra ? { extra } : {}) });
     }
@@ -173,6 +177,17 @@ export default function SettingsModal() {
       )
     : [];
 
+  // The project's own settings pages (docs/einstellungen-struktur.md: the search finds
+  // every level); a click opens the page and closes the modal.
+  const projectResults =
+    query && projectKey
+      ? projectSettingsPages(projectKey).filter((page) =>
+          `${page.group ? tNav(page.group as never) : ''} ${page.labelKey ? tNav(page.labelKey as never) : sectionText(page.slug).label} ${page.keywords}`
+            .toLocaleLowerCase()
+            .includes(query),
+        )
+      : [];
+
   const areaTabs: ModalTab[] = tabs.map((area) => ({ id: area, label: t(`tabs.${area}`) }));
   const current = sections[activeArea];
   const groups = [...new Set(current.map((item) => item.group ?? ''))];
@@ -194,22 +209,42 @@ export default function SettingsModal() {
       testId="settings-modal"
       nav={
         query ? (
-          results.length > 0 ? (
-            results.map(({ item, area }) => (
-              <ModalNavItem
-                key={`${area}:${item.slug}`}
-                active={area === activeArea && item.slug === activeSlug}
-                path={[t(`tabs.${area}`), item.group ? groupLabel(item.group) : null]
-                  .filter(Boolean)
-                  .join(' › ')}
-                onClick={() => {
-                  setSearch('');
-                  go({ area, slug: item.slug });
-                }}
-              >
-                {label(item)}
-              </ModalNavItem>
-            ))
+          results.length + projectResults.length > 0 ? (
+            <>
+              {projectResults.map((page) => (
+                <ModalNavItem
+                  key={`project:${page.slug}`}
+                  path={[
+                    `${t('projectPath')} ${projectName ?? projectKey}`,
+                    page.group ? tNav(page.group as never) : null,
+                  ]
+                    .filter(Boolean)
+                    .join(' › ')}
+                  onClick={() => {
+                    setSearch('');
+                    go(null);
+                    window.setTimeout(() => router.push(page.href), 0);
+                  }}
+                >
+                  {page.labelKey ? tNav(page.labelKey as never) : sectionText(page.slug).label}
+                </ModalNavItem>
+              ))}
+              {results.map(({ item, area }) => (
+                <ModalNavItem
+                  key={`${area}:${item.slug}`}
+                  active={area === activeArea && item.slug === activeSlug}
+                  path={[t(`tabs.${area}`), item.group ? groupLabel(item.group) : null]
+                    .filter(Boolean)
+                    .join(' › ')}
+                  onClick={() => {
+                    setSearch('');
+                    go({ area, slug: item.slug });
+                  }}
+                >
+                  {label(item)}
+                </ModalNavItem>
+              ))}
+            </>
           ) : (
             <p className="ds-modal-empty">{t('noResults')}</p>
           )

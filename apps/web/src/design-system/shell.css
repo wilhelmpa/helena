@@ -901,3 +901,76 @@
   padding: 0 6px;
   letter-spacing: 0;
 }
+
+/* Controls of the page toolbar and header (PageToolbar): one 32px control look. */
+.ds-page-toolbar-row {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  align-items: center;
+  gap: 6px;
+  overflow: hidden;
+}
+.ds-page-toolbar-standalone {
+  height: var(--page-toolbar-h);
+  gap: 6px;
+  padding: 0 var(--page-pad-x);
+}
+.ds-page-control {
+  display: inline-flex;
+  height: var(--control-h);
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  border-radius: var(--radius-field);
+  padding: 0 8px;
+  color: var(--text-2);
+  font-size: 13px;
+  white-space: nowrap;
+  transition:
+    background-color 0.2s,
+    color 0.2s;
+}
+.ds-page-control svg {
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+.ds-page-control:hover,
+.ds-page-control[data-state='open'] {
+  background: var(--surface-2);
+  color: var(--text);
+}
+.ds-page-control.is-active {
+  background: var(--surface-3);
+  color: var(--text);
+}
+.ds-page-control:disabled {
+  pointer-events: none;
+  opacity: 0.5;
+}
+.ds-page-control.ds-page-primary,
+.ds-page-primary {
+  height: var(--control-h);
+  gap: 8px;
+  padding: 0 12px;
+  background: var(--surface-1);
+  color: var(--text);
+  box-shadow: inset 0 0 0 1px var(--line-strong);
+  font-weight: 500;
+}
+.ds-page-control.ds-page-primary:hover,
+.ds-page-primary:hover {
+  background: var(--surface-2);
+}
+.ds-page-control.ds-icon-only {
+  width: var(--control-h);
+  justify-content: center;
+  padding: 0;
+}
+[data-slot='popover-content'].ds-display-popover {
+  max-height: 70vh;
+  width: 320px;
+  overflow-y: auto;
+  padding: 12px;
+}

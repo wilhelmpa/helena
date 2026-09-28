@@ -1,151 +1,112 @@
-import { ACCOUNT_SECTIONS } from '@/utils/accountSections';
-import { GOD_SECTIONS } from '@/utils/godSections';
+// The global settings modal (docs/einstellungen-struktur.md): three levels only — a
+// project's settings are pages in its sidebar; the modal has "Mein Konto" (me) and
+// "Administrator" (the owner, who owns Home: everything for all projects, then the
+// system). An agent's settings open in the agent dialog (AgentDialog).
 
-// The global settings modal (docs/design-system.md §3, §7): only settings that are not a
-// project's — three tabs, "Mein Konto", "Helena" (the instance and its team: defaults for
-// all projects, people, integrations, the agents' skills and tools, local AI, updates)
-// and "Administrator" (admins). Project settings are pages in the sidebar; an agent's
-// settings open in the agent dialog (AgentDialog).
+export type SettingsArea = 'account' | 'admin';
 
-export type SettingsArea = 'account' | 'helena' | 'admin';
-
-// A section of the modal: its slug and where its label comes from.
+// A section of the modal: its slug, its label and one-line description (i18n, under
+// `settings.modal.sections.<key>`), its group in the section list, whether only admins
+// see it, and extra words the search finds it by.
 export type ModalSectionDef = {
   slug: string;
-  // i18n: [namespace, key] of the label, and optionally of a one-line description.
-  label: [string, string];
-  description?: [string, string];
-  // Only for admins.
+  group: string;
   admin?: boolean;
-  // Extra words the search finds it by.
   keywords?: string;
-  // A group heading inside the tab.
-  group?: string;
 };
 
-const HELENA_SECTIONS: ModalSectionDef[] = [
-  {
-    slug: 'defaults',
-    label: ['settings', 'modal.sections.defaults'],
-    description: ['settings', 'modal.sections.defaultsHint'],
-    group: 'instance',
-    keywords: 'Autopilot Ausführung Browser-Steuerung Vorgabe Standard KI',
-  },
-  {
-    slug: 'ai',
-    label: ['sections', 'god.general.label'],
-    description: ['sections', 'god.general.description'],
-    admin: true,
-    group: 'instance',
-    keywords: 'Standardwerte neue Projekte Autopilot-Stufe',
-  },
-  {
-    slug: 'local-ai',
-    label: ['sections', 'god.local-ai.label'],
-    description: ['sections', 'god.local-ai.description'],
-    admin: true,
-    group: 'instance',
-    keywords: 'Qwen GPU NPU Lemonade Modelle Sprache Whisper',
-  },
-  {
-    slug: 'updates',
-    label: ['sections', 'god.updates.label'],
-    description: ['sections', 'god.updates.description'],
-    admin: true,
-    group: 'instance',
-    keywords: 'Aktualisierung Hermes Claude Codex Version',
-  },
-  {
-    slug: 'info',
-    label: ['teams', 'sections.info.title'],
-    description: ['teams', 'sections.info.description'],
-    group: 'team',
-  },
-  {
-    slug: 'members',
-    label: ['teams', 'sections.members.title'],
-    description: ['teams', 'sections.members.description'],
-    group: 'team',
-    keywords: 'Einladung Personen',
-  },
-  {
-    slug: 'roles',
-    label: ['teams', 'sections.roles.title'],
-    description: ['teams', 'sections.roles.description'],
-    group: 'team',
-  },
-  {
-    slug: 'projects',
-    label: ['teams', 'sections.projects.title'],
-    description: ['teams', 'sections.projects.description'],
-    group: 'team',
-  },
-  {
-    slug: 'notifications',
-    label: ['teams', 'sections.notifications.title'],
-    description: ['teams', 'sections.notifications.description'],
-    group: 'team',
-    keywords: 'E-Mail Telegram',
-  },
-  {
-    slug: 'integrations',
-    label: ['teams', 'sections.integrations.title'],
-    description: ['teams', 'sections.integrations.description'],
-    group: 'agents',
-    keywords: 'Zugangsdaten Schlüssel',
-  },
-  {
-    slug: 'agent-skills',
-    label: ['teams', 'sections.agentSkills.title'],
-    description: ['teams', 'sections.agentSkills.description'],
-    group: 'agents',
-  },
-  {
-    slug: 'agent-tools',
-    label: ['teams', 'sections.agentTools.title'],
-    description: ['teams', 'sections.agentTools.description'],
-    group: 'agents',
-  },
-  {
-    slug: 'mcp',
-    label: ['teams', 'sections.mcp.title'],
-    description: ['teams', 'sections.mcp.description'],
-    group: 'agents',
-  },
+const s = (slug: string, group: string, extra: Partial<ModalSectionDef> = {}): ModalSectionDef => ({
+  slug,
+  group,
+  ...extra,
+});
+
+// docs/einstellungen-struktur.md: every setting in exactly one place, by "who does it
+// apply to" — me (Mein Konto), all projects (Helena), the server (Administrator). A
+// project's own settings are pages in its sidebar.
+const ACCOUNT: ModalSectionDef[] = [
+  s('profile', 'you', { keywords: 'Name Avatar E-Mail Bild' }),
+  s('preferences', 'you', {
+    keywords: 'Hell Dunkel System Theme Sprache Zeitzone Tastenkürzel Darstellung',
+  }),
+  s('notifications', 'you', { keywords: 'Push Handy Mail' }),
+  s('security', 'you', { keywords: 'Passwort 2FA Passkey Sitzungen Heimzugang' }),
+  s('accounts', 'you', { keywords: 'Google GitHub verknüpft' }),
+  s('api-keys', 'you', { keywords: 'Token Schlüssel' }),
 ];
 
-// Administrator: the instance pages (/god/*) that are not in the Helena tab.
-const ADMIN_MOVED = new Set(['general', 'local-ai']);
+// Administrator, part 1: everything that applies to all projects (the owner owns Home).
+const ALL_PROJECTS: ModalSectionDef[] = [
+  s('defaults', 'allProjects', {
+    keywords: 'Autopilot Budget Ausführung Gedächtnis Vorgabe neue Projekte Browser-Steuerung',
+  }),
+  s('agents', 'allProjects', {
+    keywords: 'Claude Code Codex Hermes Laufzeit Anmeldung Modell Fallback Not-Aus Preise',
+  }),
+  s('local-ai', 'allProjects', { keywords: 'Qwen GPU NPU Lemonade Vorladen Schutz Klassen' }),
+  s('decisions', 'allProjects', { keywords: 'Entscheider Jev Schwelle Router Protokoll' }),
+  s('skills', 'allProjects', { keywords: 'Skill Fähigkeit Bibliothek' }),
+  s('tools', 'allProjects', { keywords: 'Werkzeug Tool MCP-Server Agent' }),
+  s('mcps', 'allProjects', { keywords: 'MCP Server Bibliothek' }),
+  s('plugins', 'allProjects', { keywords: 'Erweiterung Plugin' }),
+  s('access', 'allProjects', {
+    keywords:
+      'Google E-Mail-Konten Web-Logins API-Schlüssel SSH OAuth Zugänge Verbindungen Protokoll',
+  }),
+  s('devices', 'allProjects', { keywords: 'Geräte Syncthing Sync Obsidian' }),
+  s('structure', 'allProjects', { keywords: 'Abteilungen Struktur Projekte zuordnen' }),
+  s('voice', 'allProjects', { keywords: 'Sprache Stimme Vokabular Diktat Whisper' }),
+];
+
+// Administrator, part 2: the system.
+const SYSTEM: ModalSectionDef[] = [
+  s('users', 'system'),
+  s('teams', 'system'),
+  s('team-members', 'system', { keywords: 'Mitglieder Einladung' }),
+  s('team-roles', 'system', { keywords: 'Rollen Rechte' }),
+  s('projects', 'system'),
+  s('team-notifications', 'system', { keywords: 'E-Mail Telegram Zustellung' }),
+  s('server', 'system', { keywords: 'Platten RAID Backup Leistung Lüfter' }),
+  s('updates', 'system', { keywords: 'Aktualisierung Version Update-Center' }),
+  s('authentication', 'system', { keywords: 'Anmeldung Registrierung SSO' }),
+  s('security', 'system', { keywords: 'Owner-Terminal Audit Härtung Cloudflare Heimnetz' }),
+  s('auth-provider', 'system', { keywords: 'Identitätsanbieter OIDC' }),
+  s('scim', 'system'),
+  s('storage', 'system', { keywords: 'Upload Grenzen Kontingent' }),
+  s('knowledge', 'system', { keywords: 'Index Suche Quellen' }),
+  s('hotkeys', 'system', { keywords: 'Tastenkürzel' }),
+  s('telegram', 'system'),
+  s('email', 'system', { keywords: 'SMTP Versand' }),
+];
 
 export function settingsModalSections(admin: boolean): Record<SettingsArea, ModalSectionDef[]> {
-  return {
-    account: [
-      ...ACCOUNT_SECTIONS.map(({ slug }): ModalSectionDef => ({
-        slug,
-        label: ['sections', `account.${slug}`],
-      })),
-      ...(admin
-        ? [{ slug: 'voice', label: ['settings', 'modal.sections.voice'] as [string, string] }]
-        : []),
-    ],
-    helena: HELENA_SECTIONS.filter((section) => admin || !section.admin),
-    admin: admin
-      ? GOD_SECTIONS.filter(({ slug }) => !ADMIN_MOVED.has(slug)).map(
-          ({ slug, group }): ModalSectionDef => ({
-            slug,
-            label: ['sections', `god.${slug}.label`],
-            description: ['sections', `god.${slug}.description`],
-            group,
-          }),
-        )
-      : [],
-  };
+  return { account: ACCOUNT, admin: admin ? [...ALL_PROJECTS, ...SYSTEM] : [] };
 }
 
 export const DEFAULT_SECTION: Record<SettingsArea, string> = {
   account: 'profile',
-  helena: 'defaults',
-  admin: 'users',
+  admin: 'defaults',
+};
+
+const TEAM_SLUGS: Record<string, SettingsLocation> = {
+  info: { area: 'admin', slug: 'teams' },
+  members: { area: 'admin', slug: 'team-members' },
+  roles: { area: 'admin', slug: 'team-roles' },
+  projects: { area: 'admin', slug: 'projects' },
+  notifications: { area: 'admin', slug: 'team-notifications' },
+  integrations: { area: 'admin', slug: 'access', extra: 'credentials' },
+  mcp: { area: 'admin', slug: 'mcps' },
+  'agent-skills': { area: 'admin', slug: 'skills' },
+  'agent-tools': { area: 'admin', slug: 'tools' },
+  'ai-agents': { area: 'admin', slug: 'agents' },
+};
+const GOD_SLUGS: Record<string, SettingsLocation> = {
+  general: { area: 'admin', slug: 'defaults' },
+  'agent-runtime': { area: 'admin', slug: 'agents' },
+  'model-prices': { area: 'admin', slug: 'agents' },
+  'local-ai': { area: 'admin', slug: 'local-ai' },
+  plugins: { area: 'admin', slug: 'plugins' },
+  updates: { area: 'admin', slug: 'updates' },
 };
 
 // Where the modal stands: the tab, its section and, where a section needs one, a detail
@@ -157,34 +118,34 @@ export type SettingsLocation = { area: SettingsArea; slug: string; extra?: strin
 // settings are pages of their own and are not listed here.
 export function settingsModalRoute(pathname: string | null): SettingsLocation | null {
   if (!pathname) return null;
-  if (pathname === '/account/teams') return { area: 'helena', slug: 'info' };
+  if (pathname === '/account/teams') return { area: 'admin', slug: 'teams' };
   const team = pathname.match(/^\/account\/teams\/(\d+)(?:\/([^/]+))?$/);
-  if (team) {
-    const slug = team[2] ?? 'info';
-    // The team's agents moved to Automatisierung → Team; the modal shows the team there.
-    return { area: 'helena', slug: slug === 'ai-agents' ? 'info' : slug, extra: team[1] };
-  }
+  if (team) return TEAM_SLUGS[team[2] ?? 'info'] ?? { area: 'admin', slug: 'teams' };
+  if (pathname === '/account/voice') return { area: 'admin', slug: 'voice' };
   const account = pathname.match(
-    /^\/account\/(profile|preferences|notifications|accounts|security|api-keys|voice)$/,
+    /^\/account\/(profile|preferences|notifications|accounts|security|api-keys)$/,
   );
   if (account) return { area: 'account', slug: account[1]! };
-  if (pathname === '/god/updates') return { area: 'helena', slug: 'updates' };
-  if (pathname === '/god/general') return { area: 'helena', slug: 'ai' };
-  if (pathname === '/god/local-ai') return { area: 'helena', slug: 'local-ai' };
+  const access = pathname.match(/^\/access(?:\/([^/]+))?$/);
+  if (access) return { area: 'admin', slug: 'access', ...(access[1] ? { extra: access[1] } : {}) };
+  if (pathname === '/decisions') return { area: 'admin', slug: 'decisions' };
+  if (pathname === '/devices') return { area: 'admin', slug: 'devices' };
+  if (pathname === '/skills' || pathname === '/tools' || pathname === '/mcps')
+    return { area: 'admin', slug: pathname.slice(1) };
   const server = pathname.match(/^\/god\/server(?:\/([^/]+))?$/);
   if (server) {
-    if (server[1] === 'updates') return { area: 'helena', slug: 'updates' };
-    return { area: 'admin', slug: 'server', extra: server[1] };
+    if (server[1] === 'updates') return { area: 'admin', slug: 'updates' };
+    return { area: 'admin', slug: 'server', ...(server[1] ? { extra: server[1] } : {}) };
   }
   const admin = pathname.match(/^\/god\/([^/]+)(?:\/.*)?$/);
-  if (admin) return { area: 'admin', slug: admin[1]! };
+  if (admin) return GOD_SLUGS[admin[1]!] ?? { area: 'admin', slug: admin[1]! };
   return null;
 }
 
 // The modal lives in the URL as `?settings=<area>.<slug>[.<extra>]` on top of the page
 // that stays behind it, so a reload or a shared link reopens it there.
 export const SETTINGS_PARAM = 'settings';
-const AREAS: SettingsArea[] = ['account', 'helena', 'admin'];
+const AREAS: SettingsArea[] = ['account', 'admin'];
 
 export function formatSettingsParam({ area, slug, extra }: SettingsLocation): string {
   return [area, slug, extra].filter(Boolean).join('.');
@@ -193,8 +154,8 @@ export function formatSettingsParam({ area, slug, extra }: SettingsLocation): st
 export function parseSettingsParam(value: string | null | undefined): SettingsLocation | null {
   if (!value) return null;
   const [rawArea, slug, ...rest] = value.split('.');
-  // Links from before the tabs were named: "home" is now "helena".
-  const area = rawArea === 'home' ? 'helena' : rawArea;
+  // Links from before the tabs were merged: "home" and "helena" are now Administrator.
+  const area = rawArea === 'home' || rawArea === 'helena' ? 'admin' : rawArea;
   if (!AREAS.includes(area as SettingsArea) || !slug) return null;
   const extra = rest.join('.');
   return { area: area as SettingsArea, slug, ...(extra ? { extra } : {}) };
@@ -217,7 +178,7 @@ export const AGENT_PARAM = 'agent';
 // when left out); `teamId` a team's Helena settings; `tab` a tab of a section
 // (Administrator → Server). `scope: 'agent'` with `agentId` opens the agent dialog.
 export type OpenSettingsRequest = {
-  scope?: SettingsArea | 'agent' | 'home' | 'project';
+  scope?: SettingsArea | 'agent' | 'home' | 'helena' | 'project';
   section?: string;
   agentId?: number;
   teamId?: number;
@@ -236,7 +197,10 @@ export function openSettings(request: OpenSettingsRequest = {}) {
   window.dispatchEvent(new CustomEvent(SETTINGS_MODAL_OPEN, { detail: request }));
 }
 
-export function openSettingsModal(area?: SettingsArea | 'home' | 'project', slug?: string) {
+export function openSettingsModal(
+  area?: SettingsArea | 'home' | 'helena' | 'project',
+  slug?: string,
+) {
   openSettings({ scope: area, section: slug });
 }
 

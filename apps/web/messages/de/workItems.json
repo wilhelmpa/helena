@@ -157,5 +157,6 @@
     "loadFailed": "Die Aufgaben konnten nicht geladen werden.",
     "loadFailedHint": "Der Server hat nicht geantwortet. Versuche es gleich noch einmal."
   },
-  "viewNotFound": "Diese Ansicht gibt es nicht mehr. Alle Aufgaben werden gezeigt."
+  "viewNotFound": "Diese Ansicht gibt es nicht mehr. Alle Aufgaben werden gezeigt.",
+  "layout": "Darstellung"
 }

@@ -31,9 +31,8 @@ const STATUSES = ['decided', 'unsure', 'timeout', 'error', 'no_backend'] as cons
 // Home → Entscheidungen (docs/helena-decisions/decisions.md): the typed decisions
 // Helena asks — which model answers each kind, with which threshold, whether it passed its
 // eval and is on —, the model router's switches, and the log of every decision.
-export default function DecisionsPage({ tab: initial = 'classes' }: { tab?: DecisionsTab }) {
+export function DecisionsContent({ tab: initial = 'classes' }: { tab?: DecisionsTab }) {
   const t = useTranslations('decisions');
-  const tNav = useTranslations('nav');
   const teams = useTeamsQuery();
   const teamList = teams.data ?? [];
   const [chosenTeam, setChosenTeam] = useState<string | null>(null);
@@ -45,7 +44,7 @@ export default function DecisionsPage({ tab: initial = 'classes' }: { tab?: Deci
   const data = classes.data;
 
   return (
-    <Shell globalHome globalTitle={tNav('decisions')} autoOpenGlobalChat={false}>
+    <>
       <PageToolbar>
         <PageTabs<DecisionsTab>
           label={t('tabs.label')}
@@ -144,6 +143,17 @@ export default function DecisionsPage({ tab: initial = 'classes' }: { tab?: Deci
           </div>
         )}
       </SectionPageView>
+    </>
+  );
+}
+
+// The old /decisions page: the same content, now at home in the settings modal
+// (Helena › Entscheider); the route opens the modal there.
+export default function DecisionsPage({ tab }: { tab?: DecisionsTab }) {
+  const tNav = useTranslations('nav');
+  return (
+    <Shell globalHome globalTitle={tNav('decisions')} autoOpenGlobalChat={false}>
+      <DecisionsContent tab={tab} />
     </Shell>
   );
 }

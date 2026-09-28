@@ -7,6 +7,8 @@ export type { StatusDotTone } from './components/StatusDot';
 export { Button, ButtonLink, IconButton } from './components/Button';
 export type { ButtonVariant } from './components/Button';
 export { Pill, PillButton } from './components/Pill';
+export { Segmented } from './components/Segmented';
+export type { SegmentOption } from './components/Segmented';
 export type { PillTone } from './components/Pill';
 export { TextField, TextArea, Field, SearchField } from './components/Field';
 export { Card } from './components/Card';

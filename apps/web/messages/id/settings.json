@@ -676,19 +676,151 @@
     "noResults": "Tidak ada pengaturan ditemukan.",
     "tabs": {
       "account": "Akun saya",
-      "helena": "Helena",
       "admin": "Administrator"
     },
     "groups": {
-      "instance": "Instans",
-      "team": "Tim",
-      "agents": "Agen",
-      "management": "Manajemen"
+      "you": "Kamu",
+      "allProjects": "Semua proyek",
+      "system": "Sistem"
     },
     "sections": {
-      "defaults": "Bawaan untuk semua proyek",
-      "defaultsHint": "Proyek dapat menimpa nilai tertentu.",
-      "voice": "Pengenalan suara"
-    }
+      "profile": {
+        "label": "Profil",
+        "hint": "Nama, gambar, dan email."
+      },
+      "preferences": {
+        "label": "Tampilan",
+        "hint": "Terang, gelap atau sistem, bahasa, zona waktu, dan pintasan."
+      },
+      "notifications": {
+        "label": "Notifikasi",
+        "hint": ""
+      },
+      "security": {
+        "label": "Keamanan",
+        "hint": ""
+      },
+      "accounts": {
+        "label": "Akun tertaut",
+        "hint": ""
+      },
+      "api-keys": {
+        "label": "Kunci API",
+        "hint": ""
+      },
+      "defaults": {
+        "label": "Bawaan proyek",
+        "hint": "Berlaku untuk semua proyek; proyek dapat menimpa nilai."
+      },
+      "agents": {
+        "label": "Agen dan model",
+        "hint": "Runtime, login, model, cadangan, dan harga."
+      },
+      "local-ai": {
+        "label": "AI lokal",
+        "hint": ""
+      },
+      "decisions": {
+        "label": "Pemutus",
+        "hint": ""
+      },
+      "skills": {
+        "label": "Skill",
+        "hint": ""
+      },
+      "tools": {
+        "label": "Alat",
+        "hint": ""
+      },
+      "mcps": {
+        "label": "Server MCP",
+        "hint": ""
+      },
+      "plugins": {
+        "label": "Plugin",
+        "hint": ""
+      },
+      "access": {
+        "label": "Akses & koneksi",
+        "hint": "Google, email, login web, kunci, SSH, dan OAuth."
+      },
+      "devices": {
+        "label": "Perangkat & sinkron",
+        "hint": ""
+      },
+      "structure": {
+        "label": "Departemen",
+        "hint": ""
+      },
+      "voice": {
+        "label": "Ucapan dan suara",
+        "hint": ""
+      },
+      "users": {
+        "label": "Pengguna",
+        "hint": ""
+      },
+      "teams": {
+        "label": "Tim",
+        "hint": ""
+      },
+      "team-members": {
+        "label": "Anggota tim",
+        "hint": ""
+      },
+      "team-roles": {
+        "label": "Peran",
+        "hint": ""
+      },
+      "projects": {
+        "label": "Proyek",
+        "hint": ""
+      },
+      "team-notifications": {
+        "label": "Saluran notifikasi",
+        "hint": ""
+      },
+      "server": {
+        "label": "Server",
+        "hint": "Ringkasan, disk & RAID, cadangan, daya & kipas."
+      },
+      "updates": {
+        "label": "Pembaruan",
+        "hint": ""
+      },
+      "authentication": {
+        "label": "Masuk",
+        "hint": ""
+      },
+      "auth-provider": {
+        "label": "Penyedia identitas",
+        "hint": ""
+      },
+      "scim": {
+        "label": "SCIM",
+        "hint": ""
+      },
+      "storage": {
+        "label": "Penyimpanan",
+        "hint": ""
+      },
+      "knowledge": {
+        "label": "Pengetahuan & pencarian",
+        "hint": ""
+      },
+      "hotkeys": {
+        "label": "Pintasan",
+        "hint": ""
+      },
+      "telegram": {
+        "label": "Telegram",
+        "hint": ""
+      },
+      "email": {
+        "label": "Pengiriman email",
+        "hint": ""
+      }
+    },
+    "projectPath": "Proyek"
   }
 }

@@ -670,3 +670,238 @@
 .helena-project-tag[data-project='VOL'] {
   --project-tag-color: var(--project-vol);
 }
+
+/* ── Segment control ─────────────────────────────────────────────────────── */
+.ds-segmented {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 2px;
+  border-radius: 10px;
+  background: var(--surface-2);
+  padding: 3px;
+}
+.ds-segmented > button {
+  display: inline-flex;
+  height: 26px;
+  align-items: center;
+  gap: 6px;
+  border-radius: var(--radius-field);
+  padding: 0 12px;
+  color: var(--text-2);
+  font-size: 12px;
+  white-space: nowrap;
+}
+.ds-segmented > button:hover {
+  color: var(--text);
+}
+.ds-segmented > button[aria-selected='true'] {
+  background: var(--surface-1);
+  color: var(--text);
+  box-shadow: 0 1px 2px #0000001a;
+}
+.ds-segmented > button svg {
+  width: 14px;
+  height: 14px;
+}
+@media (max-width: 700px) {
+  .ds-segmented > button > span:not(:only-child) {
+    display: none;
+  }
+  .ds-segmented > button {
+    padding: 0 8px;
+  }
+}
+
+/* ── Filter pills (toolbar) ──────────────────────────────────────────────── */
+.ds-filter-pills {
+  display: flex;
+  min-width: 0;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 8px;
+  overflow: hidden;
+}
+.ds-filter-pill {
+  display: inline-flex;
+  height: 28px;
+  max-width: 260px;
+  flex: none;
+  align-items: center;
+  border-radius: var(--radius-pill);
+  background: var(--surface-2);
+  color: var(--text-2);
+  font-size: 12px;
+  white-space: nowrap;
+}
+.ds-filter-pill[data-tone='active'] {
+  background: var(--surface-3);
+  color: var(--text);
+}
+.ds-filter-pill-label {
+  min-width: 0;
+  overflow: hidden;
+  padding: 0 12px;
+  text-overflow: ellipsis;
+}
+.ds-filter-pill[data-tone='active'] .ds-filter-pill-label {
+  padding-inline-end: 4px;
+}
+.ds-filter-pill-remove {
+  display: flex;
+  width: 20px;
+  height: 20px;
+  align-items: center;
+  justify-content: center;
+  margin-inline-end: 4px;
+  border-radius: 50%;
+  color: var(--text-3);
+}
+.ds-filter-pill-remove:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+.ds-filter-add {
+  padding: 0 12px;
+}
+.ds-filter-add:hover {
+  color: var(--text);
+}
+[data-slot='popover-content'].ds-filter-menu {
+  width: 252px;
+  padding: 6px;
+}
+.ds-filter-search {
+  width: 100%;
+  height: 32px;
+  border: 0;
+  border-radius: var(--radius-field);
+  background: var(--surface-2);
+  padding: 0 10px;
+  color: var(--text);
+  font-size: 13px;
+}
+.ds-filter-fields {
+  display: flex;
+  max-height: 320px;
+  flex-direction: column;
+  gap: 1px;
+  overflow-y: auto;
+  padding-top: 6px;
+}
+.ds-filter-fields button {
+  display: flex;
+  height: 32px;
+  flex: none;
+  align-items: center;
+  border-radius: var(--radius-field);
+  padding: 0 10px;
+  color: var(--text);
+  font-size: 13px;
+  text-align: start;
+}
+.ds-filter-fields button:hover {
+  background: var(--surface-2);
+}
+.ds-filter-none {
+  padding: 8px 10px;
+  color: var(--text-3);
+  font-size: 12px;
+}
+[data-slot='popover-content'].ds-filter-editor {
+  width: min(34rem, calc(100vw - 16px));
+  padding: 6px;
+}
+
+/* A page's "changed" state of a saved view: ● geändert · Zurücksetzen · Speichern ·
+   Als neue Ansicht. */
+.ds-changed {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+  margin-inline-start: 8px;
+  color: var(--text-2);
+  font-size: 12px;
+}
+.ds-changed-dot {
+  width: 6px;
+  height: 6px;
+  margin-inline-end: 4px;
+  border-radius: 50%;
+  background: var(--status-waiting);
+}
+.ds-changed button {
+  height: 28px;
+  border-radius: var(--radius-field);
+  padding: 0 8px;
+  color: var(--text-2);
+  font-size: 12px;
+}
+.ds-changed button:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+.ds-changed button.is-save {
+  background: var(--surface-1);
+  color: var(--text);
+  box-shadow: inset 0 0 0 1px var(--line-strong);
+}
+.ds-changed button.is-new {
+  color: var(--accent);
+}
+
+/* A plain list of choices inside a popover (menu without Radix menu items). */
+[data-slot='popover-content'].ds-menu-list {
+  display: flex;
+  width: 240px;
+  flex-direction: column;
+  gap: 1px;
+  padding: 6px;
+}
+.ds-menu-list > button {
+  display: flex;
+  height: 32px;
+  align-items: center;
+  border-radius: var(--radius-field);
+  padding: 0 10px;
+  color: var(--text);
+  font-size: 13px;
+  text-align: start;
+}
+.ds-menu-list > button:hover {
+  background: var(--surface-2);
+}
+.ds-menu-list > hr {
+  margin: 4px 0;
+  border: 0;
+  border-top: 1px solid var(--line);
+}
+.ds-toolbar-fill {
+  flex: 1;
+}
+.ds-view-name-input {
+  height: 28px;
+  min-width: 96px;
+  flex: 1;
+  border: 0;
+  border-radius: var(--radius-field);
+  background: var(--surface-2);
+  padding: 0 10px;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 500;
+}
+.ds-work-items-body {
+  position: relative;
+  min-height: 0;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* A vertical stack of sections with the section gap. */
+.ds-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}

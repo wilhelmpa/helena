@@ -676,19 +676,151 @@
     "noResults": "No se encontró ningún ajuste.",
     "tabs": {
       "account": "Mi cuenta",
-      "helena": "Helena",
       "admin": "Administrador"
     },
     "groups": {
-      "instance": "Instancia",
-      "team": "Equipo",
-      "agents": "Agentes",
-      "management": "Gestión"
+      "you": "Tú",
+      "allProjects": "Todos los proyectos",
+      "system": "Sistema"
     },
     "sections": {
-      "defaults": "Valores por defecto de todos los proyectos",
-      "defaultsHint": "Un proyecto puede sobrescribir valores sueltos.",
-      "voice": "Reconocimiento de voz"
-    }
+      "profile": {
+        "label": "Perfil",
+        "hint": "Nombre, imagen y correo."
+      },
+      "preferences": {
+        "label": "Apariencia",
+        "hint": "Claro, oscuro o sistema, idioma, zona horaria y atajos."
+      },
+      "notifications": {
+        "label": "Notificaciones",
+        "hint": ""
+      },
+      "security": {
+        "label": "Seguridad",
+        "hint": ""
+      },
+      "accounts": {
+        "label": "Cuentas vinculadas",
+        "hint": ""
+      },
+      "api-keys": {
+        "label": "Claves API",
+        "hint": ""
+      },
+      "defaults": {
+        "label": "Valores de los proyectos",
+        "hint": "Vale para todos los proyectos; un proyecto puede sobrescribir valores."
+      },
+      "agents": {
+        "label": "Agentes y modelos",
+        "hint": "Entornos, sus accesos, modelos, alternativas y precios."
+      },
+      "local-ai": {
+        "label": "IA local",
+        "hint": ""
+      },
+      "decisions": {
+        "label": "Decisores",
+        "hint": ""
+      },
+      "skills": {
+        "label": "Skills",
+        "hint": ""
+      },
+      "tools": {
+        "label": "Herramientas",
+        "hint": ""
+      },
+      "mcps": {
+        "label": "Servidores MCP",
+        "hint": ""
+      },
+      "plugins": {
+        "label": "Extensiones",
+        "hint": ""
+      },
+      "access": {
+        "label": "Accesos y conexiones",
+        "hint": "Google, correo, accesos web, claves, SSH y OAuth."
+      },
+      "devices": {
+        "label": "Dispositivos y sincronización",
+        "hint": ""
+      },
+      "structure": {
+        "label": "Departamentos",
+        "hint": ""
+      },
+      "voice": {
+        "label": "Voz y habla",
+        "hint": ""
+      },
+      "users": {
+        "label": "Usuarios",
+        "hint": ""
+      },
+      "teams": {
+        "label": "Equipos",
+        "hint": ""
+      },
+      "team-members": {
+        "label": "Miembros del equipo",
+        "hint": ""
+      },
+      "team-roles": {
+        "label": "Roles",
+        "hint": ""
+      },
+      "projects": {
+        "label": "Proyectos",
+        "hint": ""
+      },
+      "team-notifications": {
+        "label": "Canales de notificación",
+        "hint": ""
+      },
+      "server": {
+        "label": "Servidor",
+        "hint": "Resumen, discos y RAID, copia, energía y ventiladores."
+      },
+      "updates": {
+        "label": "Actualizaciones",
+        "hint": ""
+      },
+      "authentication": {
+        "label": "Inicio de sesión",
+        "hint": ""
+      },
+      "auth-provider": {
+        "label": "Proveedores de identidad",
+        "hint": ""
+      },
+      "scim": {
+        "label": "SCIM",
+        "hint": ""
+      },
+      "storage": {
+        "label": "Almacenamiento",
+        "hint": ""
+      },
+      "knowledge": {
+        "label": "Conocimiento y búsqueda",
+        "hint": ""
+      },
+      "hotkeys": {
+        "label": "Atajos",
+        "hint": ""
+      },
+      "telegram": {
+        "label": "Telegram",
+        "hint": ""
+      },
+      "email": {
+        "label": "Envío de correo",
+        "hint": ""
+      }
+    },
+    "projectPath": "Proyecto"
   }
 }

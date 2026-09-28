@@ -30,14 +30,14 @@ const navKeys = {
   skills: 'skills',
 } as const;
 
-export default function HomeTeamSectionPage({ section }: { section: HomeTeamSection }) {
+export function HomeTeamSectionContent({ section }: { section: HomeTeamSection }) {
   const t = useTranslations('nav');
   const teams = useTeamsQuery();
   const teamId = soleTeamId(teams.data);
   const Section = sections[section];
 
   return (
-    <Shell globalHome globalTitle={t(navKeys[section])} autoOpenGlobalChat={false}>
+    <>
       {teams.isPending ? (
         <div className="p-4">
           <ListSkeleton rows={3} rowClassName="h-12" />
@@ -53,6 +53,15 @@ export default function HomeTeamSectionPage({ section }: { section: HomeTeamSect
       ) : (
         <Section teamId={teamId} />
       )}
+    </>
+  );
+}
+
+export default function HomeTeamSectionPage({ section }: { section: HomeTeamSection }) {
+  const t = useTranslations('nav');
+  return (
+    <Shell globalHome globalTitle={t(navKeys[section])} autoOpenGlobalChat={false}>
+      <HomeTeamSectionContent section={section} />
     </Shell>
   );
 }

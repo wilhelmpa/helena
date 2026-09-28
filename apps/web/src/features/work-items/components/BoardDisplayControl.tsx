@@ -6,13 +6,8 @@ import type { IssueType } from '@/lib/api/endpoints/issueTypes';
 import type { ViewSettings } from '@/utils/viewSettings';
 import type { WorkItemsView } from '@/utils/viewTypes';
 import { cn } from '@/lib/utils';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import {
-  PAGE_CONTROL_ACTIVE_CLASS,
-  PAGE_CONTROL_CLASS,
-  usePageToolbarRoom,
-} from '@/components/layout/PageToolbar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/design-system';
+import { PAGE_CONTROL_ACTIVE_CLASS, PAGE_CONTROL_CLASS } from '@/components/layout/PageToolbar';
 import DisplaySettingsBody from '@/components/layout/DisplaySettingsBody';
 
 // A board's display settings (layout switcher plus the layout's options) as one
@@ -35,35 +30,22 @@ export default function BoardDisplayControl({
   issueTypes: IssueType[];
 }) {
   const t = useTranslations('display');
-  const room = usePageToolbarRoom();
   const [open, setOpen] = useState(false);
-  const trigger = (
-    <button
-      type="button"
-      aria-label={t('title')}
-      className={cn(
-        PAGE_CONTROL_CLASS,
-        open && PAGE_CONTROL_ACTIVE_CLASS,
-        !room.actions && 'w-8 justify-center px-0',
-      )}
-    >
-      <SlidersHorizontal aria-hidden="true" />
-      {room.actions ? <span>{t('title')}</span> : null}
-    </button>
-  );
+  // An icon beside the layout switch: grouping, shown properties and the layout's own
+  // options (the layout itself is the switch next to it).
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      {room.actions ? (
-        <PopoverTrigger asChild>{trigger}</PopoverTrigger>
-      ) : (
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <PopoverTrigger asChild>{trigger}</PopoverTrigger>
-          </TooltipTrigger>
-          <TooltipContent>{t('title')}</TooltipContent>
-        </Tooltip>
-      )}
-      <PopoverContent align="end" className="max-h-[70vh] w-80 overflow-y-auto p-3">
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          aria-label={t('title')}
+          title={t('title')}
+          className={cn(PAGE_CONTROL_CLASS, open && PAGE_CONTROL_ACTIVE_CLASS, 'ds-icon-only')}
+        >
+          <SlidersHorizontal aria-hidden="true" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="ds-display-popover">
         <DisplaySettingsBody
           view={view}
           onViewChange={onViewChange}
@@ -71,6 +53,7 @@ export default function BoardDisplayControl({
           onSettingsChange={onSettingsChange}
           customFields={customFields}
           issueTypes={issueTypes}
+          showLayout={false}
         />
       </PopoverContent>
     </Popover>

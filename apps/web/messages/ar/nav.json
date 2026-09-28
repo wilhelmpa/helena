@@ -268,5 +268,6 @@
   "themeLight": "فاتح",
   "themeDark": "داكن",
   "dangerZone": "منطقة الخطر",
-  "mail": "البريد"
+  "mail": "البريد",
+  "settingsExecution": "التنفيذ الافتراضي"
 }

@@ -676,19 +676,151 @@
     "noResults": "Keine Einstellung gefunden.",
     "tabs": {
       "account": "Mein Konto",
-      "helena": "Helena",
       "admin": "Administrator"
     },
     "groups": {
-      "instance": "Instanz",
-      "team": "Team",
-      "agents": "Agenten",
-      "management": "Verwaltung"
+      "you": "Du",
+      "allProjects": "Alle Projekte",
+      "system": "System"
     },
     "sections": {
-      "defaults": "Vorgaben für alle Projekte",
-      "defaultsHint": "Ein Projekt kann einzelne Werte überschreiben.",
-      "voice": "Spracherkennung"
-    }
+      "profile": {
+        "label": "Profil",
+        "hint": "Name, Bild und E-Mail."
+      },
+      "preferences": {
+        "label": "Darstellung",
+        "hint": "Hell, dunkel oder System, Sprache, Zeitzone und Tastenkürzel."
+      },
+      "notifications": {
+        "label": "Benachrichtigungen",
+        "hint": ""
+      },
+      "security": {
+        "label": "Sicherheit",
+        "hint": ""
+      },
+      "accounts": {
+        "label": "Verknüpfte Konten",
+        "hint": ""
+      },
+      "api-keys": {
+        "label": "API-Schlüssel",
+        "hint": ""
+      },
+      "defaults": {
+        "label": "Vorgaben für Projekte",
+        "hint": "Gilt für alle Projekte; ein Projekt kann einzelne Werte überschreiben."
+      },
+      "agents": {
+        "label": "Agenten und Modelle",
+        "hint": "Laufzeiten, ihre Anmeldungen, Modelle, Fallbacks und Preise."
+      },
+      "local-ai": {
+        "label": "Lokale KI",
+        "hint": ""
+      },
+      "decisions": {
+        "label": "Entscheider",
+        "hint": ""
+      },
+      "skills": {
+        "label": "Skills",
+        "hint": ""
+      },
+      "tools": {
+        "label": "Tools",
+        "hint": ""
+      },
+      "mcps": {
+        "label": "MCP-Server",
+        "hint": ""
+      },
+      "plugins": {
+        "label": "Erweiterungen",
+        "hint": ""
+      },
+      "access": {
+        "label": "Zugänge & Verbindungen",
+        "hint": "Google, E-Mail-Konten, Web-Logins, Schlüssel, SSH und OAuth."
+      },
+      "devices": {
+        "label": "Geräte & Sync",
+        "hint": ""
+      },
+      "structure": {
+        "label": "Abteilungen",
+        "hint": ""
+      },
+      "voice": {
+        "label": "Sprache und Stimme",
+        "hint": ""
+      },
+      "users": {
+        "label": "Benutzer",
+        "hint": ""
+      },
+      "teams": {
+        "label": "Teams",
+        "hint": ""
+      },
+      "team-members": {
+        "label": "Teammitglieder",
+        "hint": ""
+      },
+      "team-roles": {
+        "label": "Rollen",
+        "hint": ""
+      },
+      "projects": {
+        "label": "Projekte",
+        "hint": ""
+      },
+      "team-notifications": {
+        "label": "Benachrichtigungswege",
+        "hint": ""
+      },
+      "server": {
+        "label": "Server",
+        "hint": "Übersicht, Platten & RAID, Backup, Leistung & Lüfter."
+      },
+      "updates": {
+        "label": "Updates",
+        "hint": ""
+      },
+      "authentication": {
+        "label": "Anmeldung",
+        "hint": ""
+      },
+      "auth-provider": {
+        "label": "Identitätsanbieter",
+        "hint": ""
+      },
+      "scim": {
+        "label": "SCIM",
+        "hint": ""
+      },
+      "storage": {
+        "label": "Speicher",
+        "hint": ""
+      },
+      "knowledge": {
+        "label": "Wissen & Suche",
+        "hint": ""
+      },
+      "hotkeys": {
+        "label": "Tastenkürzel",
+        "hint": ""
+      },
+      "telegram": {
+        "label": "Telegram",
+        "hint": ""
+      },
+      "email": {
+        "label": "E-Mail-Versand",
+        "hint": ""
+      }
+    },
+    "projectPath": "Projekt"
   }
 }

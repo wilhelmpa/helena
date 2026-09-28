@@ -676,19 +676,151 @@
     "noResults": "Настройки не найдены.",
     "tabs": {
       "account": "Мой аккаунт",
-      "helena": "Helena",
       "admin": "Администратор"
     },
     "groups": {
-      "instance": "Экземпляр",
-      "team": "Команда",
-      "agents": "Агенты",
-      "management": "Управление"
+      "you": "Вы",
+      "allProjects": "Все проекты",
+      "system": "Система"
     },
     "sections": {
-      "defaults": "Значения по умолчанию для всех проектов",
-      "defaultsHint": "Проект может переопределить отдельные значения.",
-      "voice": "Распознавание речи"
-    }
+      "profile": {
+        "label": "Профиль",
+        "hint": "Имя, фото и почта."
+      },
+      "preferences": {
+        "label": "Оформление",
+        "hint": "Тема, язык, часовой пояс и сочетания клавиш."
+      },
+      "notifications": {
+        "label": "Уведомления",
+        "hint": ""
+      },
+      "security": {
+        "label": "Безопасность",
+        "hint": ""
+      },
+      "accounts": {
+        "label": "Связанные аккаунты",
+        "hint": ""
+      },
+      "api-keys": {
+        "label": "API-ключи",
+        "hint": ""
+      },
+      "defaults": {
+        "label": "Значения для проектов",
+        "hint": "Для всех проектов; проект может переопределить значения."
+      },
+      "agents": {
+        "label": "Агенты и модели",
+        "hint": "Среды, входы, модели, резервы и цены."
+      },
+      "local-ai": {
+        "label": "Локальный ИИ",
+        "hint": ""
+      },
+      "decisions": {
+        "label": "Решатели",
+        "hint": ""
+      },
+      "skills": {
+        "label": "Навыки",
+        "hint": ""
+      },
+      "tools": {
+        "label": "Инструменты",
+        "hint": ""
+      },
+      "mcps": {
+        "label": "MCP-серверы",
+        "hint": ""
+      },
+      "plugins": {
+        "label": "Расширения",
+        "hint": ""
+      },
+      "access": {
+        "label": "Доступы и подключения",
+        "hint": "Google, почта, веб-входы, ключи, SSH и OAuth."
+      },
+      "devices": {
+        "label": "Устройства и синхронизация",
+        "hint": ""
+      },
+      "structure": {
+        "label": "Отделы",
+        "hint": ""
+      },
+      "voice": {
+        "label": "Речь и голос",
+        "hint": ""
+      },
+      "users": {
+        "label": "Пользователи",
+        "hint": ""
+      },
+      "teams": {
+        "label": "Команды",
+        "hint": ""
+      },
+      "team-members": {
+        "label": "Участники команды",
+        "hint": ""
+      },
+      "team-roles": {
+        "label": "Роли",
+        "hint": ""
+      },
+      "projects": {
+        "label": "Проекты",
+        "hint": ""
+      },
+      "team-notifications": {
+        "label": "Каналы уведомлений",
+        "hint": ""
+      },
+      "server": {
+        "label": "Сервер",
+        "hint": "Обзор, диски и RAID, резервные копии, мощность и вентиляторы."
+      },
+      "updates": {
+        "label": "Обновления",
+        "hint": ""
+      },
+      "authentication": {
+        "label": "Вход",
+        "hint": ""
+      },
+      "auth-provider": {
+        "label": "Поставщики удостоверений",
+        "hint": ""
+      },
+      "scim": {
+        "label": "SCIM",
+        "hint": ""
+      },
+      "storage": {
+        "label": "Хранилище",
+        "hint": ""
+      },
+      "knowledge": {
+        "label": "Знания и поиск",
+        "hint": ""
+      },
+      "hotkeys": {
+        "label": "Сочетания клавиш",
+        "hint": ""
+      },
+      "telegram": {
+        "label": "Telegram",
+        "hint": ""
+      },
+      "email": {
+        "label": "Отправка почты",
+        "hint": ""
+      }
+    },
+    "projectPath": "Проект"
   }
 }

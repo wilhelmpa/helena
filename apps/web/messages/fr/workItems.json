@@ -157,5 +157,6 @@
     "loadFailed": "Impossible de charger les tâches.",
     "loadFailedHint": "Le serveur n’a pas répondu. Réessaie dans un instant."
   },
-  "viewNotFound": "Cette vue n’existe plus. Toutes les tâches sont affichées."
+  "viewNotFound": "Cette vue n’existe plus. Toutes les tâches sont affichées.",
+  "layout": "Disposition"
 }

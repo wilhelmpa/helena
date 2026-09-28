@@ -19,7 +19,10 @@ export default function DisplaySettingsBody({
   onSettingsChange,
   customFields,
   issueTypes,
+  showLayout = true,
 }: {
+  // The layout tabs; off where the page shows its own layout switch (Aufgaben).
+  showLayout?: boolean;
   view: WorkItemsView;
   onViewChange: (view: WorkItemsView) => void;
   settings: ViewSettings;
@@ -31,7 +34,7 @@ export default function DisplaySettingsBody({
 
   return (
     <div className="space-y-2">
-      <DisplayLayoutTabs view={view} onViewChange={onViewChange} />
+      {showLayout && <DisplayLayoutTabs view={view} onViewChange={onViewChange} />}
 
       <DisplayGroupingRows
         view={view}
