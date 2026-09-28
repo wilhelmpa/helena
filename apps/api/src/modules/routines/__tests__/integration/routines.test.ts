@@ -8,10 +8,12 @@ import {
   it,
   setDefaultTimeout,
 } from 'bun:test';
+import { createServer } from 'node:http';
 import { DBOS } from '@dbos-inc/dbos-sdk';
 import {
   agentRun,
   db,
+  helenaDecisionEval,
   helenaSchedule,
   issue as issueTable,
   issueActivity,
@@ -42,6 +44,7 @@ import {
   planFire,
   recordScheduleRun,
 } from '#modules/engine/schedules';
+import { HEARTBEAT_PRECHECK_CLASS, LOCAL_DECISION_MODEL } from '#modules/decisions/classes';
 
 // A run takes a few hops through the engine's queues (see helpers/engine.ts).
 setDefaultTimeout(30_000);
@@ -143,6 +146,88 @@ afterEach(async () => {
 });
 
 describe('routines', () => {
+  it('uses the evaluated precheck class for one borderline scheduled task', async () => {
+    const { asOwner, agent, teamId, columnId } = await setup();
+    const created = (await routines(asOwner).post(routineBody(agent.id, { gateSource: 'audit' })))
+      .data!;
+    const baseline = new Date(Date.now() - 60_000);
+    const previous = await recordScheduleRun(await scheduleRow(created.id), baseline, 'schedule');
+    await db
+      .update(pipelineRun)
+      .set({ status: 'succeeded', finishedAt: baseline })
+      .where(eq(pipelineRun.id, previous.runId));
+    await asOwner.projects({ projectKey: 'MKT' }).issues.post({
+      columnId,
+      title: 'Optionale Aufgabe ohne Frist',
+      priority: 'low',
+    });
+
+    const server = createServer(async (request, response) => {
+      let raw = '';
+      for await (const chunk of request) raw += chunk.toString();
+      const body = JSON.parse(raw) as { messages: { content: string }[] };
+      const user = JSON.parse(body.messages[1]!.content) as {
+        options: { letter: string; option: string }[];
+      };
+      const top = user.options.map((entry) => ({
+        token: entry.letter,
+        prob: entry.option.startsWith('no:') ? 0.99 : 0.01,
+      }));
+      response.writeHead(200, { 'content-type': 'application/json' });
+      response.end(
+        JSON.stringify({
+          model: LOCAL_DECISION_MODEL,
+          choices: [{ logprobs: { content: [{ token: top[0]!.token, top_probs: top }] } }],
+          usage: { prompt_tokens: 20, completion_tokens: 1 },
+        }),
+      );
+    });
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+    try {
+      const credential = await asOwner.teams({ teamId }).credentials.post({
+        kind: 'decision_model',
+        label: 'Local Qwen test double',
+        provider: 'local-logit',
+        baseUrl: `http://127.0.0.1:${(server.address() as { port: number }).port}`,
+        model: LOCAL_DECISION_MODEL,
+        allowPrivateAddress: true,
+        value: 'codex72-test-key',
+      });
+      expect(credential.status).toBe(201);
+      await db.insert(helenaDecisionEval).values({
+        teamId,
+        classId: HEARTBEAT_PRECHECK_CLASS,
+        credentialId: credential.data!.id,
+        backendLabel: 'test double',
+        threshold: 0.8,
+        questions: 60,
+        answered: 60,
+        correct: 60,
+        correctAnswered: 60,
+        precision: 1,
+        coverage: 1,
+        accuracy: 1,
+        passed: true,
+        finishedAt: new Date(),
+      });
+      const enabled = await asOwner
+        .teams({ teamId })
+        .decisions.classes({ classId: HEARTBEAT_PRECHECK_CLASS })
+        .patch({ credentialId: credential.data!.id, enabled: true });
+      expect(enabled.status).toBe(200);
+
+      const at = new Date();
+      const runId = await planFire(created.id, at.toISOString(), at.getTime());
+      expect(runId).not.toBeNull();
+      const [run] = await db.select().from(pipelineRun).where(eq(pipelineRun.id, runId!));
+      expect(run.input).toMatchObject({
+        gate: { source: 'audit', recommendation: 'skip', status: 'decided' },
+      });
+    } finally {
+      server.close();
+    }
+  });
+
   it('records an empty audit in shadow mode and skips only after owner activation', async () => {
     const { asOwner, agent } = await setup();
     const created = (
