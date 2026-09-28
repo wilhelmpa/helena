@@ -1,0 +1,44 @@
+#!/usr/sbin/nft -f
+# Helena local AI: Halogen's firewall. Rendered by deployment/volition-stack/native/halogen/
+# install.sh from helena-halogen.nft.in; do not edit the installed copy by hand.
+# Decision: docs/helena-decisions/halogen.md §4.
+#
+# 1. The container opens no connection: its network (@SUBNET@, podman network
+#    "@NETWORK@", no DNS) may answer, never start one — not to the internet, not to the LAN,
+#    not to this machine.
+# 2. Halogen has no key. Its ports on the loopback are for Helena's own users: root, the API,
+#    the runner, the owner's shell (evals, Claude Code, Codex), and the forwarder of the agents
+#    in isolation. Anyone else gets a reset, before netavark's DNAT turns the loopback address
+#    into the container's.
+#
+# The first two lines replace the table atomically, so a reload never leaves a gap.
+table inet helena_halogen
+delete table inet helena_halogen
+
+table inet helena_halogen {
+	set halogen_ports {
+		type inet_service
+		elements = { @PORTS@ }
+	}
+	set halogen_uids {
+		typeof meta skuid
+		elements = { @UIDS@ }
+	}
+
+	# Before netavark's nat (priority -100): the destination is still 127.0.0.1:<port>.
+	chain output {
+		type filter hook output priority -150; policy accept;
+		ip daddr 127.0.0.0/8 tcp dport @halogen_ports meta skuid != @halogen_uids counter reject with tcp reset comment "helena:acl-halogen"
+		ip6 daddr ::1 tcp dport @halogen_ports counter reject with tcp reset comment "helena:acl-halogen6"
+	}
+
+	chain forward {
+		type filter hook forward priority filter - 5; policy accept;
+		ip saddr @SUBNET@ ct state new counter drop comment "helena:halogen-no-egress"
+	}
+
+	chain input {
+		type filter hook input priority filter - 5; policy accept;
+		ip saddr @SUBNET@ ct state new counter drop comment "helena:halogen-no-host"
+	}
+}

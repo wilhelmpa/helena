@@ -718,7 +718,7 @@
       },
       "local-ai": {
         "label": "IA local",
-        "hint": "Modelos en este servidor: activar, tareas, precarga."
+        "hint": "Modelos en este equipo: servidores, tipos de trabajo, evaluador."
       },
       "browser": {
         "label": "Navegador",

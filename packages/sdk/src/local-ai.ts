@@ -81,6 +81,45 @@ export interface ModelServerLoad {
   cpuPercent: number | null;
   vramGb: number | null;
   memoryGb: number | null;
+  // What a server that counts its own work says (Halogen's /health and /metrics): answer and
+  // prompt speed over its recent requests, its conversation slots and how many are busy, the
+  // requests waiting, and how full its KV cache is. Absent where a server does not say.
+  outputTokensPerSecond?: number | null;
+  promptTokensPerSecond?: number | null;
+  slots?: number | null;
+  busySlots?: number | null;
+  queued?: number | null;
+  kvUsagePercent?: number | null;
+}
+
+// What the Administrator set for a server beyond its address and key.
+export interface ModelServerOptions {
+  // What its chat models can do beyond chatting (`tools`, `reasoning`, `vision`), for a server
+  // whose API does not say (a plain OpenAI-compatible server lists ids only). Set, it replaces
+  // what Helena derived for every chat model of the server; null or absent: derived.
+  capabilities?: LocalModelCapability[] | null;
+  // The tokenizer's vocabulary (a Hugging Face `vocab.json`) for servers that take
+  // `logit_bias` by token id only (Halogen): the typed decisions look their option letters up
+  // there. Below /var/lib; null or absent: the type's default.
+  tokenizerFile?: string | null;
+}
+
+// The capabilities an Administrator may set for a server's chat models.
+export const CONFIGURABLE_CAPABILITIES: readonly LocalModelCapability[] = [
+  'tools',
+  'reasoning',
+  'vision',
+];
+
+// A chat model with the capabilities the Administrator set for its server: chat, plus exactly
+// the configured ones. Models that are not chat models (embeddings, speech) keep theirs.
+export function withConfiguredCapabilities(
+  model: LocalModel,
+  configured: readonly LocalModelCapability[] | null | undefined,
+): LocalModel {
+  if (!configured || !model.capabilities.includes('chat')) return model;
+  const extra = CONFIGURABLE_CAPABILITIES.filter((entry) => configured.includes(entry));
+  return { ...model, capabilities: ['chat', ...extra] };
 }
 
 // What a model server type gets to reach its server. `fetch` is bounded by a timeout and
@@ -89,7 +128,11 @@ export interface ModelServerContext {
   baseUrl: string;
   // Whether a key is configured; the key itself stays in `fetch`.
   hasKey: boolean;
+  // What the Administrator set for the server (absent from older callers).
+  options?: ModelServerOptions;
   signal?: AbortSignal;
+  // `path` is appended to the base URL; a path starting with `//` is taken from the server's
+  // root instead (`//health` for `http://host:port/health` when the base is …/v1).
   fetch(path: string, init?: { method?: 'GET' | 'POST'; body?: unknown }): Promise<Response>;
 }
 
@@ -114,6 +157,16 @@ export interface ModelServerType {
   // The voices its speech model offers (names for `/audio/speech`'s `voice`), for the owner to
   // pick one. Absent: the server offers no choice Helena knows how to list.
   voices?(context: ModelServerContext): Promise<string[]>;
+  // Where its key comes from when installed the standard way: `none` for a server without one
+  // (Halogen: loopback, guarded by the firewall). Absent: the installer's key file.
+  defaultKeySource?: 'file' | 'none';
+  // Whether the Administrator sets what its chat models can do (ModelServerOptions
+  // .capabilities): true for servers whose API does not say.
+  capabilitiesConfigurable?: boolean;
+  // The token id of each text that is exactly one token of its model's tokenizer, else null.
+  // For servers that take `logit_bias` by token id only (the typed decisions' letters).
+  // Absent: the server takes the text itself as a `logit_bias` key (llama.cpp, Lemonade).
+  tokenIds?(context: ModelServerContext, texts: string[]): Promise<(number | null)[]>;
 }
 
 export interface ModelServerAudio {

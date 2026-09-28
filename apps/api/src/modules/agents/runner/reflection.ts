@@ -45,8 +45,9 @@ const FOCUS: Record<ReflectionReason, string> = {
     'You came back to work that needed another pass. Keep what the feedback taught you ' +
     'about how this work is wanted, so the first pass is right next time.',
   complex:
-    'The task took many steps. Keep the procedure that worked, so the next task of this ' +
-    'kind takes fewer.',
+    'The task took many steps. Keep a procedure only if it was not obvious, so the next task ' +
+    'of this kind takes fewer: what you had to find out, not the look-up, change and confirm ' +
+    'any task has. Where the steps were obvious, save nothing.',
 };
 
 export function reflectionPrompt(reason: ReflectionReason): string {
@@ -67,6 +68,10 @@ export function reflectionPrompt(reason: ReflectionReason): string {
     'Leave the skills in the plan-managed category alone: Helena manages them and puts back any ' +
       'change. Do not save details of this one task, secrets, missing tools or other setup ' +
       'problems, or anything you are not sure of.',
+    'Most tasks teach nothing new. A task that went as expected in a few ordinary steps (look ' +
+      'something up, change a field, confirm) needs no memory and no skill, however many ' +
+      'steps it took: then save nothing. Save only what you would not know next time without ' +
+      'it.',
     'If nothing is worth keeping, answer "Nothing to save." Otherwise answer with one short ' +
       'line per thing you saved.',
   ].join('\n\n');

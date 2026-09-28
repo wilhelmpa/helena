@@ -718,7 +718,7 @@
       },
       "local-ai": {
         "label": "AI lokal",
-        "hint": "Model di server ini: aktif, tugas, pramuat."
+        "hint": "Model di mesin ini: server, jenis pekerjaan, penilai."
       },
       "browser": {
         "label": "Browser",

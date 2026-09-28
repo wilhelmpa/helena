@@ -6,12 +6,18 @@ import {
   checkModelServer,
   createModelServer,
   deleteModelServer,
+  getEscalation,
+  getLocalAiJudge,
   getLocalAiSettings,
   getLocalAiStatus,
   runLocalAiEval,
+  updateEscalation,
+  updateLocalAiJudge,
   updateLocalAiPolicy,
   updateModelOptions,
   updateModelServer,
+  type EscalationPatch,
+  type JudgePatch,
   type LocalAiSettings,
   type LocalModelStartOptions,
   type PolicyPatch,
@@ -120,5 +126,32 @@ export function useRunLocalAiEval() {
     mutationFn: ({ classId, modelId }: { classId: string; modelId: string }) =>
       runLocalAiEval(classId, modelId),
     onSuccess: () => invalidate(),
+  });
+}
+
+export const localAiJudgeKey = ['localAi', 'judge'] as const;
+export const escalationKey = ['localAi', 'escalation'] as const;
+
+export function useLocalAiJudge() {
+  return useQuery({ queryKey: localAiJudgeKey, queryFn: getLocalAiJudge, retry: false });
+}
+
+export function useUpdateLocalAiJudge() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (patch: JudgePatch) => updateLocalAiJudge(patch),
+    onSuccess: (judge) => qc.setQueryData(localAiJudgeKey, judge),
+  });
+}
+
+export function useEscalation() {
+  return useQuery({ queryKey: escalationKey, queryFn: getEscalation, retry: false });
+}
+
+export function useUpdateEscalation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (patch: EscalationPatch) => updateEscalation(patch),
+    onSuccess: (settings) => qc.setQueryData(escalationKey, settings),
   });
 }

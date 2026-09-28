@@ -24,7 +24,8 @@
     "settings": "Configurações",
     "unitSwitch": "Usar a {unit}",
     "vram": "{used} de {total}",
-    "noModel": "Nenhum modelo carregado"
+    "noModel": "Nenhum modelo carregado",
+    "gtt": "{used} de {total} (GTT)"
   },
   "blockers": {
     "not-wired": "Ainda não conectado",
@@ -89,7 +90,7 @@
   },
   "servers": {
     "title": "Servidores de modelos",
-    "description": "Lemonade nesta máquina (GPU e NPU) ou outro servidor compatível com OpenAI. Seus modelos aparecem em todo seletor de modelos enquanto a IA local estiver ligada.",
+    "description": "Halogen ou Lemonade nesta máquina, ou outro servidor compatível com OpenAI. Seus modelos aparecem em todos os seletores de modelo enquanto a IA local estiver ligada.",
     "add": "Adicionar servidor",
     "none": "Nenhum servidor ainda. Instale a IA local com native/local-ai/install.sh e adicione-o aqui.",
     "reachable": "Acessível · {version}",
@@ -116,7 +117,28 @@
     "keyFile": "Arquivo de chave (em /etc/helena)",
     "key": "Chave",
     "cancel": "Cancelar",
-    "save": "Adicionar"
+    "save": "Adicionar",
+    "edit": "Editar servidor",
+    "editTitle": "Editar {name}",
+    "saveChanges": "Salvar",
+    "keyKept": "A chave salva é mantida",
+    "contextLength": "Contexto em tokens (para os agentes)",
+    "capabilities": {
+      "title": "Capacidades dos modelos de chat",
+      "own": "Definidas aqui",
+      "derived": "Do servidor",
+      "tools": "Ferramentas",
+      "reasoning": "Raciocínio",
+      "vision": "Imagens"
+    },
+    "load": {
+      "speed": "{output} tokens/s de saída, {prompt} tokens/s de entrada",
+      "slots": "{busy} de {slots} vagas ocupadas, {queued} aguardando",
+      "memory": "{gb} GB de memória",
+      "kv": "Cache KV {percent} %",
+      "gpu": "GPU {percent} %"
+    },
+    "disabled": "Desligado"
   },
   "presets": {
     "title": "Predefinição",
@@ -132,6 +154,7 @@
   },
   "serverTypes": {
     "lemonade": "Lemonade Server (GPU + NPU)",
+    "halogen": "Halogen (Qwen3.8-Flash-Next, GPU)",
     "openaiCompatible": "Servidor compatível com OpenAI",
     "whisperCpp": "whisper.cpp (reconhecimento de fala, GPU)",
     "qwenTts": "Qwen3-TTS (voz, GPU)"
@@ -187,7 +210,8 @@
     "hint": "Atualize com native/local-ai/install.sh e avalie de novo.",
     "whisperBuildRequired": "Esta atualização exige uma compilação do Whisper e um teste de voz verificados.",
     "whisperMaintenanceRequired": "É necessária uma janela de manutenção de voz autorizada pelo Root. Verifique novamente após a abertura.",
-    "whisperRecoveryRequired": "A atualização anterior do Whisper precisa de recuperação antes de retomar a voz."
+    "whisperRecoveryRequired": "A atualização anterior do Whisper precisa de recuperação antes de retomar a voz.",
+    "halogenHint": "Nova versão: registre o digest e a versão em native/halogen/install.sh, instale e reinicie o Halogen."
   },
   "pickerMark": "local",
   "tile": {
@@ -301,5 +325,61 @@
       "contextNeedsParallel": "Defina primeiro os slots paralelos.",
       "contextTotal": "Slots paralelos vezes contexto por slot pode somar no máximo 1048576 tokens."
     }
+  },
+  "judge": {
+    "title": "Avaliador",
+    "description": "O modelo que pontua os textos da avaliação \"Deutsch-Texte\". Um programa não consegue verificá-los.",
+    "kind": "Tipo",
+    "kinds": {
+      "run": "Execução em um modelo de assinatura",
+      "endpoint": "Endpoint compatível com OpenAI",
+      "off": "Desligado"
+    },
+    "model": "Modelo",
+    "agent": "Agente para a execução",
+    "agentAuto": "Automático (Home)",
+    "reasoning": "Raciocínio",
+    "reasoningLevels": {
+      "low": "Pouco",
+      "medium": "Médio",
+      "high": "Muito"
+    },
+    "baseUrl": "Endereço (…/v1)",
+    "key": "Chave",
+    "keyKept": "A chave salva é mantida",
+    "save": "Salvar"
+  },
+  "escalation": {
+    "title": "Escalonamento",
+    "description": "Quando um modelo de assinatura forte assume no lugar do local: trabalho difícil, respostas incertas, falhas.",
+    "draft": "Rascunho – ainda não ativo",
+    "enabled": "Escalonamento ligado",
+    "defaultModel": "Modelo padrão",
+    "model": "Modelo",
+    "kinds": {
+      "coding": "Programação maior",
+      "architecture": "Arquitetura",
+      "security": "Segurança",
+      "legal": "Direito e contratos",
+      "external-text": "Textos externos"
+    },
+    "uncertainty": "Decisão incerta",
+    "threshold": "abaixo de",
+    "failure": "Após uma falha",
+    "localAttempts": "Tentativas locais",
+    "failures": {
+      "tests-failed": "Testes vermelhos",
+      "loop": "Loop",
+      "timeout": "Tempo limite",
+      "error": "Erro"
+    },
+    "pinsNone": "Nenhuma escolha fixa para agentes, projetos ou tarefas.",
+    "pins": "{count} escolhas fixas para agentes, projetos ou tarefas."
+  },
+  "classGroups": {
+    "none": "Nenhum tipo de trabalho pronto ainda: primeiro passe em uma avaliação.",
+    "active": "Roda localmente",
+    "ready": "Pronto",
+    "more": "Mais tipos de trabalho ({count})"
   }
 }

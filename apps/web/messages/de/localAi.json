@@ -24,7 +24,8 @@
     "settings": "Einstellungen",
     "unitSwitch": "{unit} nutzen",
     "vram": "{used} von {total}",
-    "noModel": "Kein Modell geladen"
+    "noModel": "Kein Modell geladen",
+    "gtt": "{used} von {total} (GTT)"
   },
   "blockers": {
     "not-wired": "Noch nicht angebunden",
@@ -89,7 +90,7 @@
   },
   "servers": {
     "title": "Modell-Server",
-    "description": "Lemonade auf diesem Rechner (GPU und NPU) oder ein anderer OpenAI-kompatibler Server. Seine Modelle stehen in jeder Modellauswahl, solange die lokale KI an ist.",
+    "description": "Halogen oder Lemonade auf diesem Rechner, oder ein anderer OpenAI-kompatibler Server. Seine Modelle stehen in jeder Modellauswahl, solange die lokale KI an ist.",
     "add": "Server hinzufügen",
     "none": "Noch kein Server. Lokale KI mit native/local-ai/install.sh einrichten, dann hier hinzufügen.",
     "reachable": "Erreichbar · {version}",
@@ -116,7 +117,28 @@
     "keyFile": "Schlüsseldatei (unter /etc/helena)",
     "key": "Schlüssel",
     "cancel": "Abbrechen",
-    "save": "Hinzufügen"
+    "save": "Hinzufügen",
+    "edit": "Server bearbeiten",
+    "editTitle": "{name} bearbeiten",
+    "saveChanges": "Speichern",
+    "keyKept": "Gespeicherter Schlüssel bleibt",
+    "contextLength": "Kontext in Token (für die Agenten)",
+    "capabilities": {
+      "title": "Fähigkeiten der Chat-Modelle",
+      "own": "Selbst festgelegt",
+      "derived": "Vom Server",
+      "tools": "Werkzeuge",
+      "reasoning": "Denken",
+      "vision": "Bilder"
+    },
+    "load": {
+      "speed": "{output} Token/s Ausgabe, {prompt} Token/s Einlesen",
+      "slots": "{busy} von {slots} Plätzen belegt, {queued} warten",
+      "memory": "{gb} GB Speicher",
+      "kv": "KV-Cache {percent} %",
+      "gpu": "GPU {percent} %"
+    },
+    "disabled": "Aus"
   },
   "presets": {
     "title": "Voreinstellung",
@@ -132,6 +154,7 @@
   },
   "serverTypes": {
     "lemonade": "Lemonade Server (GPU + NPU)",
+    "halogen": "Halogen (Qwen3.8-Flash-Next, GPU)",
     "openaiCompatible": "OpenAI-kompatibler Server",
     "whisperCpp": "whisper.cpp (Spracherkennung, GPU)",
     "qwenTts": "Qwen3-TTS (Stimme, GPU)"
@@ -187,7 +210,8 @@
     "hint": "Aktualisieren über native/local-ai/install.sh, danach neu auswerten.",
     "whisperBuildRequired": "Dieses Update benötigt einen geprüften Whisper-Build und Sprachtest.",
     "whisperMaintenanceRequired": "Ein von Root freigegebenes Voice-Wartungsfenster ist erforderlich. Danach erneut prüfen.",
-    "whisperRecoveryRequired": "Das vorige Whisper-Update benötigt eine Wiederherstellung, bevor Voice fortgesetzt werden kann."
+    "whisperRecoveryRequired": "Das vorige Whisper-Update benötigt eine Wiederherstellung, bevor Voice fortgesetzt werden kann.",
+    "halogenHint": "Neue Version: Digest und Version in native/halogen/install.sh eintragen, install, dann Halogen neu starten."
   },
   "pickerMark": "lokal",
   "tile": {
@@ -301,5 +325,61 @@
       "contextNeedsParallel": "Lege dafür zuerst die Parallel-Slots fest.",
       "contextTotal": "Parallel-Slots mal Kontext je Slot darf höchstens 1048576 Token ergeben."
     }
+  },
+  "judge": {
+    "title": "Bewerter",
+    "description": "Das Modell, das die Texte der Auswertung „Deutsch-Texte“ bewertet. Ein Programm kann sie nicht prüfen.",
+    "kind": "Art",
+    "kinds": {
+      "run": "Lauf auf einem Abo-Modell",
+      "endpoint": "OpenAI-kompatibler Endpunkt",
+      "off": "Aus"
+    },
+    "model": "Modell",
+    "agent": "Agent für den Lauf",
+    "agentAuto": "Automatisch (Home)",
+    "reasoning": "Denken",
+    "reasoningLevels": {
+      "low": "Wenig",
+      "medium": "Mittel",
+      "high": "Viel"
+    },
+    "baseUrl": "Adresse (…/v1)",
+    "key": "Schlüssel",
+    "keyKept": "Gespeicherter Schlüssel bleibt",
+    "save": "Speichern"
+  },
+  "escalation": {
+    "title": "Eskalation",
+    "description": "Wann ein starkes Abo-Modell statt des lokalen übernimmt: schwere Arbeit, unsichere Antworten, Fehlschläge.",
+    "draft": "Entwurf – noch nicht aktiv",
+    "enabled": "Eskalation an",
+    "defaultModel": "Standardmodell",
+    "model": "Modell",
+    "kinds": {
+      "coding": "Größere Programmierarbeit",
+      "architecture": "Architektur",
+      "security": "Sicherheit",
+      "legal": "Recht und Verträge",
+      "external-text": "Texte nach außen"
+    },
+    "uncertainty": "Unsichere Entscheidung",
+    "threshold": "unter",
+    "failure": "Nach Fehlschlag",
+    "localAttempts": "Lokale Versuche",
+    "failures": {
+      "tests-failed": "Tests rot",
+      "loop": "Schleife",
+      "timeout": "Zeitgrenze",
+      "error": "Fehler"
+    },
+    "pinsNone": "Keine Festlegungen für Agenten, Projekte oder Aufgaben.",
+    "pins": "{count} Festlegungen für Agenten, Projekte oder Aufgaben."
+  },
+  "classGroups": {
+    "none": "Noch keine Art von Arbeit bereit: erst eine Auswertung bestehen.",
+    "active": "Läuft lokal",
+    "ready": "Bereit",
+    "more": "Weitere Arten von Arbeit ({count})"
   }
 }

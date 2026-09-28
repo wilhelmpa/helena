@@ -1,7 +1,16 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { FlaskConical, LoaderCircle, Plus, RefreshCw, Trash2 } from 'lucide-react';
+import {
+  ChevronDown,
+  ChevronRight,
+  FlaskConical,
+  LoaderCircle,
+  Pencil,
+  Plus,
+  RefreshCw,
+  Trash2,
+} from 'lucide-react';
 import { useFormatter, useLocale, useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import ListSkeleton from '@/components/common/skeleton/ListSkeleton';
@@ -10,6 +19,8 @@ import SettingsSection from '@/components/common/page/SettingsSection';
 import StatusBadge from '@/components/common/page/StatusBadge';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import {
   Dialog,
   DialogContent,
@@ -27,13 +38,14 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import type {
+  ConfigurableCapability,
   LocalAiClass,
   LocalAiEval,
   LocalAiMode,
   LocalAiPreset,
   LocalAiSettings,
   ModelServer,
-  ServerInput,
+  ServerLoad,
 } from '@/lib/api/endpoints/localAi';
 import { formatDateTime } from '@/utils/dates';
 import {
@@ -45,8 +57,16 @@ import {
   useUpdateLocalAiPolicy,
   useUpdateModelServer,
 } from '../services/localAi.service';
-import { resolveLabel, shortModel } from '../utils/localAi';
+import { groupClasses, resolveLabel, shortModel } from '../utils/localAi';
+import {
+  CAPABILITIES,
+  loadFacts,
+  newServerForm,
+  serverInput,
+  type ServerForm,
+} from '../utils/serverForm';
 import LocalAiCard from './LocalAiCard';
+import LocalAiJudgeSection from './LocalAiJudgeSection';
 import LocalModelRow from './LocalModelRow';
 import VoiceSettingsSection from '@/features/voice/components/VoiceSettingsSection';
 
@@ -58,27 +78,25 @@ const AUTO = '__auto__';
 // card, the model servers and their models, each kind of work with its mode, model and eval,
 // and the presets. The owner decides; a class leaves "Aus" only once its eval passed.
 export default function LocalAiSettingsView() {
-  const t = useTranslations('localAi');
   const settings = useLocalAiSettings();
   const data = settings.data;
   useFinishedEvalToasts(data);
 
   return (
     <div className="flex flex-col gap-6">
-      <LocalAiCard />
+      {/* As wide as the settings groups below it. */}
+      <div className="ds-settings-section">
+        <LocalAiCard showClasses={false} />
+      </div>
       {!data ? (
         <ListSkeleton rows={3} rowClassName="h-12" />
       ) : (
         <>
           <ServersSection settings={data} />
-          <PresetSection settings={data} />
-          <SettingsSection title={t('classesTitle')} description={t('classesDescription')}>
-            <SettingsCard className="divide-y">
-              {data.classes.map((entry) => (
-                <ClassRow key={entry.id} entry={entry} settings={data} />
-              ))}
-            </SettingsCard>
-          </SettingsSection>
+          <ClassesSection settings={data} />
+          <LocalAiJudgeSection />
+          {/* The escalation rules (LocalAiEscalationSection) are stored and tested, but no run
+              follows them yet: the section is mounted with Phase 2, when escalate() is wired. */}
           <VoiceSettingsSection />
         </>
       )}
@@ -103,15 +121,18 @@ function ServersSection({ settings }: { settings: LocalAiSettings }) {
       {settings.servers.length === 0 ? (
         <SettingsCard className="p-4 text-sm text-muted-foreground">{t('none')}</SettingsCard>
       ) : (
-        settings.servers.map((server) => <ServerCard key={server.id} server={server} />)
+        settings.servers.map((server) => (
+          <ServerCard key={server.id} server={server} settings={settings} />
+        ))
       )}
-      <ServerDialog open={adding} onOpenChange={setAdding} settings={settings} />
+      {adding && <ServerDialog open onOpenChange={setAdding} settings={settings} />}
     </SettingsSection>
   );
 }
 
-function ServerCard({ server }: { server: ModelServer }) {
+function ServerCard({ server, settings }: { server: ModelServer; settings: LocalAiSettings }) {
   const t = useTranslations('localAi.servers');
+  const [editing, setEditing] = useState(false);
   const check = useCheckModelServer();
   const update = useUpdateModelServer();
   const remove = useDeleteModelServer();
@@ -119,64 +140,116 @@ function ServerCard({ server }: { server: ModelServer }) {
   const reachable = server.status?.reachable ?? false;
   return (
     <SettingsCard className="divide-y">
-      <div className="flex flex-wrap items-center gap-3 px-4 py-3">
+      {/* On a phone the controls go under the server's lines instead of squeezing them. */}
+      <div className="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center">
         <div className="min-w-0 flex-1 space-y-0.5">
           <div className="flex items-center gap-2 font-medium">
             {server.name}
-            <StatusBadge status={reachable ? 'success' : 'danger'} className="text-xs">
-              {!reachable
-                ? t('unreachable')
-                : server.status?.version
-                  ? t('reachable', { version: server.status.version })
-                  : t('reachableBare')}
+            <StatusBadge
+              status={!server.enabled ? 'idle' : reachable ? 'success' : 'danger'}
+              className="text-xs"
+            >
+              {!server.enabled
+                ? t('disabled')
+                : !reachable
+                  ? t('unreachable')
+                  : server.status?.version
+                    ? t('reachable', { version: server.status.version })
+                    : t('reachableBare')}
             </StatusBadge>
           </div>
           <p className="truncate text-xs text-muted-foreground" dir="ltr">
             {server.baseUrl} · {server.provider} · {t(`keys.${server.key}`)} ·{' '}
             {t('context', { tokens: server.contextLength })}
           </p>
-          {server.status?.error && (
+          {server.status?.reachable && server.status.load && (
+            <ServerLoadLine load={server.status.load} />
+          )}
+          {server.enabled && server.status?.error && (
             <p className="text-xs text-destructive">{server.status.error}</p>
           )}
         </div>
-        <Switch
-          aria-label={t('enabled')}
-          checked={server.enabled}
-          disabled={update.isPending}
-          onCheckedChange={(enabled) =>
-            update.mutate({ id: server.id, input: { enabled } }, { onError })
-          }
-        />
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={check.isPending}
-          onClick={() => check.mutate(server.id, { onError })}
-        >
-          {check.isPending ? <LoaderCircle className="animate-spin" /> : <RefreshCw />}
-          {t('check')}
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          aria-label={t('remove')}
-          disabled={remove.isPending}
-          onClick={() => {
-            if (window.confirm(t('removeConfirm', { name: server.name })))
-              remove.mutate(server.id, { onError });
-          }}
-        >
-          <Trash2 />
-        </Button>
+        <div className="flex shrink-0 items-center gap-2">
+          <Switch
+            aria-label={t('enabled')}
+            checked={server.enabled}
+            disabled={update.isPending}
+            onCheckedChange={(enabled) =>
+              update.mutate({ id: server.id, input: { enabled } }, { onError })
+            }
+          />
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={check.isPending}
+            onClick={() => check.mutate(server.id, { onError })}
+          >
+            {check.isPending ? <LoaderCircle className="animate-spin" /> : <RefreshCw />}
+            {t('check')}
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label={t('edit')}
+            onClick={() => setEditing(true)}
+          >
+            <Pencil />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label={t('remove')}
+            disabled={remove.isPending}
+            onClick={() => {
+              if (window.confirm(t('removeConfirm', { name: server.name })))
+                remove.mutate(server.id, { onError });
+            }}
+          >
+            <Trash2 />
+          </Button>
+        </div>
       </div>
-      {server.models.length > 0 && (
+      {/* A switched-off server's models are in no picker: not listed either. */}
+      {server.enabled && server.models.length > 0 && (
         <ul className="divide-y text-sm">
           {server.models.map((model) => (
             <LocalModelRow key={model.id} server={server} model={model} />
           ))}
         </ul>
       )}
+      {editing && (
+        <ServerDialog open onOpenChange={setEditing} settings={settings} server={server} />
+      )}
     </SettingsCard>
+  );
+}
+
+// How busy a server is, where it counts its own work (Halogen): speed, slots, memory, cache.
+function ServerLoadLine({ load }: { load: ServerLoad }) {
+  const t = useTranslations('localAi.servers.load');
+  const format = useFormatter();
+  const facts = loadFacts(load);
+  if (facts.length === 0) return null;
+  const number = (value: number) => format.number(value, { maximumFractionDigits: 1 });
+  return (
+    <p className="text-xs text-muted-foreground">
+      {facts
+        .map((fact) => {
+          switch (fact.kind) {
+            case 'speed':
+              return t('speed', { output: number(fact.output), prompt: number(fact.prompt ?? 0) });
+            case 'slots':
+              return t('slots', { busy: fact.busy, slots: fact.slots, queued: fact.queued });
+            case 'memory':
+              return t('memory', { gb: number(fact.gb) });
+            case 'kv':
+              return t('kv', { percent: number(fact.percent) });
+            case 'gpu':
+              return t('gpu', { percent: number(fact.percent) });
+          }
+        })
+        .join(' · ')}
+    </p>
   );
 }
 
@@ -184,53 +257,74 @@ function ServerDialog({
   open,
   onOpenChange,
   settings,
+  server,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   settings: LocalAiSettings;
+  // Set: the dialog changes this server (its short name and kind stay).
+  server?: ModelServer;
 }) {
   const t = useTranslations('localAi.servers');
   const tRoot = useTranslations('localAi');
   const locale = useLocale();
   const create = useCreateModelServer();
-  const lemonade = settings.serverTypes.find((type) => type.id === 'lemonade');
-  const [form, setForm] = useState<ServerInput>({
-    slug: settings.servers.length === 0 ? 'local' : '',
-    kind: 'lemonade',
-    name: '',
-    baseUrl: lemonade?.defaultBaseUrl ?? 'http://127.0.0.1:13305/api/v1',
-    keySource: 'file',
-    keyFile: '/etc/helena/local-ai.key',
-    key: '',
-  });
-  const set = (patch: Partial<ServerInput>) => setForm((current) => ({ ...current, ...patch }));
+  const update = useUpdateModelServer();
+  const pending = create.isPending || update.isPending;
+  const initial = (): ServerForm =>
+    server
+      ? {
+          slug: server.slug,
+          kind: server.kind,
+          name: server.name,
+          baseUrl: server.baseUrl,
+          keySource: server.keySource,
+          keyFile: server.keyFile ?? '/etc/helena/local-ai.key',
+          key: '',
+          contextLength: String(server.contextLength),
+          capabilities: server.options.capabilities,
+        }
+      : newServerForm(settings, 'lemonade');
+  // Mounted only while open (see its callers), so each opening starts from the server as it is.
+  const [form, setForm] = useState<ServerForm>(initial);
+  const set = (patch: Partial<ServerForm>) => setForm((current) => ({ ...current, ...patch }));
+  const type = settings.serverTypes.find((entry) => entry.id === form.kind);
+  const save = () => {
+    const input = serverInput(form, type?.capabilitiesConfigurable === true, server !== undefined);
+    const done = {
+      onSuccess: () => onOpenChange(false),
+      onError: (error: Error) => toast.error(error.message),
+    };
+    if (server) update.mutate({ id: server.id, input }, done);
+    else create.mutate(input, done);
+  };
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{t('add')}</DialogTitle>
+          <DialogTitle>{server ? t('editTitle', { name: server.name }) : t('add')}</DialogTitle>
         </DialogHeader>
         <div className="space-y-3 text-sm">
           <label className="block space-y-1">
             <span className="text-xs text-muted-foreground">{t('kind')}</span>
             <Select
               value={form.kind}
+              disabled={server !== undefined}
               onValueChange={(kind) =>
-                set({
-                  kind,
-                  baseUrl:
-                    settings.serverTypes.find((type) => type.id === kind)?.defaultBaseUrl ??
-                    form.baseUrl,
-                })
+                setForm((current) => ({
+                  ...newServerForm(settings, kind),
+                  slug: current.slug,
+                  name: current.name,
+                }))
               }
             >
               <SelectTrigger className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {settings.serverTypes.map((type) => (
-                  <SelectItem key={type.id} value={type.id}>
-                    {resolveLabel(type.label, locale, (key) => tRoot(key as never))}
+                {settings.serverTypes.map((entry) => (
+                  <SelectItem key={entry.id} value={entry.id}>
+                    {resolveLabel(entry.label, locale, (key) => tRoot(key as never))}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -238,18 +332,31 @@ function ServerDialog({
           </label>
           <label className="block space-y-1">
             <span className="text-xs text-muted-foreground">{t('slug')}</span>
-            <Input value={form.slug ?? ''} onChange={(e) => set({ slug: e.target.value })} />
+            <Input
+              value={form.slug}
+              disabled={server !== undefined}
+              onChange={(e) => set({ slug: e.target.value })}
+            />
           </label>
           <label className="block space-y-1">
             <span className="text-xs text-muted-foreground">{t('name')}</span>
-            <Input value={form.name ?? ''} onChange={(e) => set({ name: e.target.value })} />
+            <Input value={form.name} onChange={(e) => set({ name: e.target.value })} />
           </label>
           <label className="block space-y-1">
             <span className="text-xs text-muted-foreground">{t('baseUrl')}</span>
             <Input
               dir="ltr"
-              value={form.baseUrl ?? ''}
+              value={form.baseUrl}
               onChange={(e) => set({ baseUrl: e.target.value })}
+            />
+          </label>
+          <label className="block space-y-1">
+            <span className="text-xs text-muted-foreground">{t('contextLength')}</span>
+            <Input
+              dir="ltr"
+              inputMode="numeric"
+              value={form.contextLength}
+              onChange={(e) => set({ contextLength: e.target.value.replace(/[^0-9]/g, '') })}
             />
           </label>
           <label className="block space-y-1">
@@ -257,7 +364,7 @@ function ServerDialog({
             <Select
               value={form.keySource}
               onValueChange={(keySource) =>
-                set({ keySource: keySource as ServerInput['keySource'] })
+                set({ keySource: keySource as ServerForm['keySource'] })
               }
             >
               <SelectTrigger className="w-full">
@@ -277,7 +384,7 @@ function ServerDialog({
               <span className="text-xs text-muted-foreground">{t('keyFile')}</span>
               <Input
                 dir="ltr"
-                value={form.keyFile ?? ''}
+                value={form.keyFile}
                 onChange={(e) => set({ keyFile: e.target.value })}
               />
             </label>
@@ -288,30 +395,26 @@ function ServerDialog({
               <Input
                 type="password"
                 autoComplete="off"
-                value={form.key ?? ''}
+                placeholder={server?.keySource === 'stored' ? t('keyKept') : undefined}
+                value={form.key}
                 onChange={(e) => set({ key: e.target.value })}
               />
             </label>
+          )}
+          {type?.capabilitiesConfigurable && (
+            <CapabilitiesField
+              value={form.capabilities}
+              onChange={(capabilities) => set({ capabilities })}
+            />
           )}
         </div>
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
             {t('cancel')}
           </Button>
-          <Button
-            disabled={create.isPending}
-            onClick={() =>
-              create.mutate(
-                { ...form, name: form.name || undefined },
-                {
-                  onSuccess: () => onOpenChange(false),
-                  onError: (error: Error) => toast.error(error.message),
-                },
-              )
-            }
-          >
-            {create.isPending && <LoaderCircle className="animate-spin" />}
-            {t('save')}
+          <Button disabled={pending} onClick={save}>
+            {pending && <LoaderCircle className="animate-spin" />}
+            {server ? t('saveChanges') : t('save')}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -319,12 +422,70 @@ function ServerDialog({
   );
 }
 
-function PresetSection({ settings }: { settings: LocalAiSettings }) {
-  const t = useTranslations('localAi.presets');
-  const update = useUpdateLocalAiPolicy();
+// What a server's chat models can do: what Helena reads from the server (the default), or
+// what the Administrator sets, for a server whose API does not say.
+function CapabilitiesField({
+  value,
+  onChange,
+}: {
+  value: ConfigurableCapability[] | null;
+  onChange: (value: ConfigurableCapability[] | null) => void;
+}) {
+  const t = useTranslations('localAi.servers.capabilities');
+  const own = value !== null;
   return (
-    <SettingsSection title={t('title')} description={t('description')}>
-      <SettingsCard className="p-4">
+    <div className="space-y-2">
+      <label className="flex items-center justify-between gap-3">
+        <span className="text-xs text-muted-foreground">{t('title')}</span>
+        <span className="flex items-center gap-2 text-xs">
+          {own ? t('own') : t('derived')}
+          <Switch
+            aria-label={t('own')}
+            checked={own}
+            onCheckedChange={(on) => onChange(on ? ['tools'] : null)}
+          />
+        </span>
+      </label>
+      {own && (
+        <div className="flex flex-wrap gap-4">
+          {CAPABILITIES.map((capability) => (
+            <label key={capability} className="flex items-center gap-2">
+              <Checkbox
+                checked={value.includes(capability)}
+                onCheckedChange={(checked) =>
+                  onChange(
+                    checked === true
+                      ? CAPABILITIES.filter(
+                          (entry) => entry === capability || value.includes(entry),
+                        )
+                      : value.filter((entry) => entry !== capability),
+                  )
+                }
+              />
+              {t(capability)}
+            </label>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// The kinds of work: those that run locally now and those ready to switch on, each with its
+// model, mode and eval; the rest (waiting for an eval, not wired yet, experimental) folded
+// away. The preset switches them at once.
+function ClassesSection({ settings }: { settings: LocalAiSettings }) {
+  const t = useTranslations('localAi');
+  const update = useUpdateLocalAiPolicy();
+  const [open, setOpen] = useState(false);
+  const groups = groupClasses(settings.classes);
+  const rows = (entries: LocalAiClass[]) =>
+    entries.map((entry) => <ClassRow key={entry.id} entry={entry} settings={settings} />);
+  return (
+    <SettingsSection
+      title={t('classesTitle')}
+      description={t('classesDescription')}
+      action={
         <Select
           value={settings.policy.preset}
           onValueChange={(preset) =>
@@ -334,20 +495,65 @@ function PresetSection({ settings }: { settings: LocalAiSettings }) {
             )
           }
         >
-          <SelectTrigger className="w-full sm:w-72">
+          <SelectTrigger className="w-40" aria-label={t('presets.title')}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
             {PRESETS.map((preset) => (
               <SelectItem key={preset} value={preset}>
-                {t(preset)}
+                {t(`presets.${preset}`)}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
-        <p className="mt-2 text-xs text-muted-foreground">{t(`${settings.policy.preset}Hint`)}</p>
+      }
+    >
+      <SettingsCard className="divide-y">
+        {groups.active.length + groups.ready.length === 0 ? (
+          <p className="px-4 py-3 text-sm text-muted-foreground">{t('classGroups.none')}</p>
+        ) : (
+          <>
+            {groups.active.length > 0 && (
+              <GroupHead label={t('classGroups.active')} count={groups.active.length} />
+            )}
+            {rows(groups.active)}
+            {groups.ready.length > 0 && (
+              <GroupHead label={t('classGroups.ready')} count={groups.ready.length} />
+            )}
+            {rows(groups.ready)}
+          </>
+        )}
+        {groups.more.length > 0 && (
+          <Collapsible open={open} onOpenChange={setOpen}>
+            <CollapsibleTrigger asChild>
+              <button
+                type="button"
+                className="flex w-full items-center gap-2 px-4 py-2 text-start text-xs text-muted-foreground hover:bg-accent"
+              >
+                {open ? (
+                  <ChevronDown className="size-3.5" />
+                ) : (
+                  <ChevronRight className="size-3.5" />
+                )}
+                {t('classGroups.more', { count: groups.more.length })}
+              </button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="divide-y border-t">
+              {rows(groups.more)}
+            </CollapsibleContent>
+          </Collapsible>
+        )}
       </SettingsCard>
+      <p className="text-xs text-muted-foreground">{t(`presets.${settings.policy.preset}Hint`)}</p>
     </SettingsSection>
+  );
+}
+
+function GroupHead({ label, count }: { label: string; count: number }) {
+  return (
+    <div className="flex items-center gap-2 px-4 pt-3 pb-1">
+      <span className="ds-mono-label">{`${label} · ${count}`}</span>
+    </div>
   );
 }
 

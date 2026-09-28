@@ -5,6 +5,7 @@ import {
   askByLogprobs,
   readAnswer,
   type OpenAiCompatibleServer,
+  type TokenIds,
 } from '@helena/decisions';
 import { isPrivateIp, pinnedFetch, UrlNotAllowedError } from '@repo/net';
 import { db, integrationCredential, openCredential } from '@repo/db';
@@ -110,6 +111,8 @@ export interface ModelServerAccess {
   key: string | null;
   // The model the local AI routes this work to; the connection's own model otherwise.
   model?: string | null;
+  // For a server that takes `logit_bias` by token id only (Halogen): the model's token ids.
+  tokenIds?: TokenIds;
 }
 
 let modelServerResolver: ((slug: string) => Promise<ModelServerAccess | null>) | null = null;
@@ -123,7 +126,7 @@ export function useModelServerResolver(
 // The address a call goes to: the connection's own, or its local AI model server's.
 async function addressOf(
   connection: DecisionConnection,
-): Promise<{ baseUrl: string; key: string | null; model?: string | null }> {
+): Promise<{ baseUrl: string; key: string | null; model?: string | null; tokenIds?: TokenIds }> {
   if (connection.keySource === 'local-ai') {
     const server = modelServerResolver
       ? await modelServerResolver(connection.modelServer ?? 'local')
@@ -135,6 +138,7 @@ async function addressOf(
       baseUrl: server.baseUrl.replace(/\/+$/, '').replace(/\/v1$/, ''),
       key: server.key,
       model: server.model ?? null,
+      ...(server.tokenIds && { tokenIds: server.tokenIds }),
     };
   }
   return { baseUrl: connection.baseUrl, key: await keyOf(connection) };
@@ -341,11 +345,12 @@ export function describeFailure(error: unknown): { status: number; message: stri
 // `<base><path>` through the pinned fetch, with the key as a Bearer token.
 function openAiServer(
   connection: DecisionConnection,
-  address: { baseUrl: string; key: string | null; model?: string | null },
+  address: { baseUrl: string; key: string | null; model?: string | null; tokenIds?: TokenIds },
 ): OpenAiCompatibleServer {
   const fetcher = guardedFetch(privateHosts(connection, address.baseUrl));
   return {
     model: address.model || connection.model,
+    ...(address.tokenIds && { tokenIds: address.tokenIds }),
     async post(path, body, signal) {
       const res = await fetcher(systemOneUrl(address.baseUrl, path), {
         method: 'POST',

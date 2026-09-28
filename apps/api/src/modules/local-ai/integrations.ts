@@ -72,6 +72,85 @@ export function newerInFamily(repo: string, candidates: string[]): string | null
   return best?.id ?? null;
 }
 
+// ── Halogen ────────────────────────────────────────────────────────────────────────────
+
+// native/halogen/install.sh pins the image by digest; its version is what Halogen's /health
+// reports (the server's status). Newer versions are the image's tags on ghcr.io; the changelog
+// is the repository's CHANGELOG.md. Check only: taking one is a new pin and a restart
+// (the owner's click, in the maintenance window).
+export const HALOGEN_IMAGE = 'peonist-ai/halogen-flash-server';
+const HALOGEN_REPOSITORY = 'https://github.com/peonist-ai/halogen-flash-server';
+const HALOGEN_CHANGELOG =
+  'https://raw.githubusercontent.com/peonist-ai/halogen-flash-server/main/CHANGELOG.md';
+
+// The newest release among an image's tags (`0.14.2`; not `latest`, not a prerelease).
+export function newestReleaseTag(tags: string[]): string | null {
+  let best: string | null = null;
+  for (const tag of tags) {
+    if (!/^v?\d+(\.\d+)*$/.test(tag)) continue;
+    const plainTag = tag.replace(/^v/, '');
+    if (!best || newer(plainTag, best)) best = plainTag;
+  }
+  return best;
+}
+
+// The changelog's sections of the versions after `installed` up to `available`
+// (`## 0.14.2` headings), newest first.
+export function changelogBetween(
+  changelog: string,
+  installed: string | null,
+  available: string,
+): string | null {
+  const sections = changelog.split(/^(?=## )/m).filter((part) => part.startsWith('## '));
+  const picked = sections.filter((section) => {
+    const version = /^## \[?v?(\d+(?:\.\d+)*)/.exec(section)?.[1];
+    if (!version) return false;
+    return !newer(version, available) && (installed === null || newer(version, installed));
+  });
+  return picked.length > 0 ? picked.join('').trim().slice(0, 20_000) : null;
+}
+
+export async function halogenCandidate(
+  server: ModelServerRow,
+  context: UpdateCheckContext,
+): Promise<UpdateCandidate> {
+  const installed = plain(server.status?.version);
+  try {
+    const token = await context.fetchJson<{ token?: string }>(
+      `https://ghcr.io/token?scope=repository:${HALOGEN_IMAGE}:pull`,
+    );
+    const list = await context.fetchJson<{ tags?: string[] }>(
+      `https://ghcr.io/v2/${HALOGEN_IMAGE}/tags/list`,
+      { headers: token.token ? { authorization: `Bearer ${token.token}` } : {} },
+    );
+    const available = newestReleaseTag(list.tags ?? []);
+    return {
+      component: 'halogen',
+      name: 'Halogen (Qwen3.8-Flash-Next)',
+      installed,
+      available,
+      updateAvailable: newer(available, installed),
+      security: false,
+      sourceUrl: HALOGEN_REPOSITORY,
+      notesUrl: `${HALOGEN_REPOSITORY}/blob/main/CHANGELOG.md`,
+      group: 'local-ai',
+      applicable: false,
+      hint: { i18n: 'localAi.updates.halogenHint' },
+    };
+  } catch (error) {
+    return {
+      component: 'halogen',
+      name: 'Halogen (Qwen3.8-Flash-Next)',
+      installed,
+      available: null,
+      updateAvailable: false,
+      security: false,
+      applicable: false,
+      error: String(error).slice(0, 200),
+    };
+  }
+}
+
 // ── The update source ──────────────────────────────────────────────────────────────────
 
 interface HfModel {
@@ -177,7 +256,15 @@ export const localAiUpdateSource: UpdateSource = {
   order: 60,
   apply: applyWhisperUpdate,
   progress: (ref) => helperProgress(ref),
-  hosts: ['github.com', 'huggingface.co'],
+  hosts: ['github.com', 'huggingface.co', 'ghcr.io', 'raw.githubusercontent.com'],
+  async releaseNotes(candidate, context) {
+    if (candidate.component !== 'halogen' || !candidate.available) return null;
+    return changelogBetween(
+      await context.fetchText(HALOGEN_CHANGELOG, { maxBytes: 256 * 1024 }),
+      candidate.installed,
+      candidate.available,
+    );
+  },
   async check(context: UpdateCheckContext): Promise<UpdateCandidate[]> {
     const servers = (await listModelServers()).filter((server) => server.enabled);
     const whisper = await whisperUpdateCandidate(context);
@@ -193,6 +280,8 @@ export const localAiUpdateSource: UpdateSource = {
         return null;
       }
     };
+    for (const server of servers.filter((entry) => entry.kind === 'halogen'))
+      candidates.push(await halogenCandidate(server, context));
     const lemonade = servers.find((server) => server.kind === 'lemonade');
     if (lemonade) {
       const installed = plain(lemonade.status?.version);

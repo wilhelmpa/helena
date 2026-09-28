@@ -3,6 +3,7 @@ import {
   LocalDecisionConnectionError,
   useModelServerResolver,
 } from '#modules/browser-task/connection';
+import { serverTokenIds } from '#modules/local-ai/service';
 import { LOCAL_AI_DECISIONS_CLASS } from './local-ai-class';
 import { useDecisionGate } from './service';
 
@@ -28,7 +29,11 @@ export function useLocalAiForDecisions(): void {
     if (slug !== 'local' && slug !== server.slug) {
       throw new LocalDecisionConnectionError('route-changed');
     }
-    return { baseUrl: server.baseUrl, key: await readModelServerKey(server), model };
+    const key = await readModelServerKey(server);
+    // A server that takes logit_bias by token id only (Halogen) looks the letters up in its
+    // model's tokenizer; the others take the letters themselves.
+    const tokenIds = serverTokenIds(server, key);
+    return { baseUrl: server.baseUrl, key, model, ...(tokenIds && { tokenIds }) };
   });
   // "Nur lokal" for decisions: nothing of them leaves the machine, the fallback included.
   useDecisionGate(async ({ local }) => {

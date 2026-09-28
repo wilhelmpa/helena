@@ -718,7 +718,7 @@
       },
       "local-ai": {
         "label": "Lokale KI",
-        "hint": "Modelle auf diesem Server: an/aus, Aufgaben, Vorladen."
+        "hint": "Modelle auf diesem Rechner: Server, Arten von Arbeit, Bewerter."
       },
       "browser": {
         "label": "Browser",

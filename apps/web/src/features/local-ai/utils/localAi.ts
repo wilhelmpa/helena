@@ -84,3 +84,32 @@ export function classToggle(entry: Pick<LocalAiClass, 'mode' | 'blocker' | 'expe
 export function percent(value: number | null | undefined): string {
   return value == null ? '–' : `${Math.round(value)} %`;
 }
+
+// The GPU's memory as the card shows it. With a small BIOS carve-out (UMA 512 MB, since
+// 28 Sept 2026) the models live in GTT, system memory the GPU maps: then GTT is what counts.
+export function gpuMemory(gpu: {
+  vramUsedBytes: number | null;
+  vramTotalBytes: number | null;
+  gttUsedBytes: number | null;
+  gttTotalBytes: number | null;
+}): { used: number | null; total: number; kind: 'vram' | 'gtt' } | null {
+  const vram = gpu.vramTotalBytes;
+  const gtt = gpu.gttTotalBytes;
+  if (gtt != null && (vram == null || vram < 4 * 1024 ** 3))
+    return { used: gpu.gttUsedBytes, total: gtt, kind: 'gtt' };
+  if (vram != null) return { used: gpu.vramUsedBytes, total: vram, kind: 'vram' };
+  return null;
+}
+
+// The kinds of work on the settings page: those that run locally now, those ready to switch
+// on, and the rest (waiting for an eval, not wired yet, experimental) folded away.
+export function groupClasses<T extends Pick<LocalAiClass, 'mode' | 'blocker' | 'experimental'>>(
+  classes: T[],
+): { active: T[]; ready: T[]; more: T[] } {
+  const active = classes.filter((entry) => entry.mode !== 'off');
+  const ready = classes.filter(
+    (entry) => entry.mode === 'off' && entry.blocker === null && !entry.experimental,
+  );
+  const more = classes.filter((entry) => !active.includes(entry) && !ready.includes(entry));
+  return { active, ready, more };
+}

@@ -1,0 +1,15 @@
+# Helena local AI: the files Halogen reads, each pinned to a repository revision and its SHA-256
+# (native/halogen/install.sh). kind: head = the MTP draft head, tokenizer = the tokenizer the
+# engine and Helena's decisions read (vocab.json: token ids for logit_bias), weights = the GGUF
+# checkpoint (Hugging Face cache layout below /var/lib/helena-ai/models/hub; 94 GB, a download
+# needs the owner's OK first). Tab-separated: kind repo revision path bytes sha256
+head	peonist-ai/halogen-qwen3.8-flash-next	aea24edbbea1e889df62b62f9d40a8b4e574671c	qwen38-flash-next-mtp.hgn	1523566720	0f50e9626df98168e7c6e0cc264e2a92b5184dd885a175a06628d979b5edceeb
+tokenizer	peonist-ai/halogen-qwen3.8-flash-next	aea24edbbea1e889df62b62f9d40a8b4e574671c	tokenizer/chat_template.jinja	8952	c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041
+tokenizer	peonist-ai/halogen-qwen3.8-flash-next	aea24edbbea1e889df62b62f9d40a8b4e574671c	tokenizer/generation_config.json	202	e70c136c1b78ddc1fb0905bac8e733a4dc448d4f852a5dd75143fffc70be550e
+tokenizer	peonist-ai/halogen-qwen3.8-flash-next	aea24edbbea1e889df62b62f9d40a8b4e574671c	tokenizer/merges.txt	3353259	a9d356d7bdf1ef4949e3e748e95b8e10ad9d4e2e838eddc38a0a7b6b94d1db8d
+tokenizer	peonist-ai/halogen-qwen3.8-flash-next	aea24edbbea1e889df62b62f9d40a8b4e574671c	tokenizer/tokenizer.json	12809320	0997f410c57a1f4e53b09e4be8f4a172d90edd9564368fb0847030937229b9f3
+tokenizer	peonist-ai/halogen-qwen3.8-flash-next	aea24edbbea1e889df62b62f9d40a8b4e574671c	tokenizer/tokenizer_config.json	17928	b11349aafa7cdc6a320767cf7ceb29ed82f7eda5d65e8e0819e76f0ce947bf27
+tokenizer	peonist-ai/halogen-qwen3.8-flash-next	aea24edbbea1e889df62b62f9d40a8b4e574671c	tokenizer/vocab.json	6722759	ce99b4cb2983d118806ce0a8b777a35b093e2000a503ebde25853284c9dfa003
+weights	unsloth/Qwen3.8-Flash-Next-GGUF	38bb39ee97821de2c9009abb7e93950eec396e66	UD-IQ4_XS/Qwen3.8-Flash-Next-UD-IQ4_XS-00001-of-00003.gguf	10946624	5ce89370720f8bf90890f439361282104c1aa1482d4013bb9a50923e758e71a4
+weights	unsloth/Qwen3.8-Flash-Next-GGUF	38bb39ee97821de2c9009abb7e93950eec396e66	UD-IQ4_XS/Qwen3.8-Flash-Next-UD-IQ4_XS-00002-of-00003.gguf	49835229856	577a38a2392b40ca2193cea502e1d92f60b8cd370675d308e0ec21885d9daaa7
+weights	unsloth/Qwen3.8-Flash-Next-GGUF	38bb39ee97821de2c9009abb7e93950eec396e66	UD-IQ4_XS/Qwen3.8-Flash-Next-UD-IQ4_XS-00003-of-00003.gguf	43836407744	d4634e6d84f0ebb0940be15c90d3790bf6464e3dea3a1cddc567dc0e83ad8833
