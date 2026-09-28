@@ -209,6 +209,8 @@ export default function SettingsModal({
         aria-label="Einstellungen"
         className="settings-modal dark"
         data-testid="settings-modal"
+        data-settings-area={activeArea}
+        data-settings-section={activeSlug}
       >
         <header className="settings-modal-header">
           <div className="settings-modal-tabs" role="tablist" aria-label="Einstellungsbereich">
@@ -312,7 +314,10 @@ export default function SettingsModal({
                 ) : null}
               </ShellHeaderSlotCtx.Provider>
             </div>
-            {!(activeArea === 'project' && activeSlug === 'agents') && (
+            {((activeArea === 'project' &&
+              ['general', 'autopilot', 'budgets', 'browser'].includes(activeSlug)) ||
+              (activeArea === 'home' && ['defaults', 'info'].includes(activeSlug)) ||
+              (activeArea === 'account' && activeSlug === 'profile')) && (
               <p className="settings-modal-save-note">{'Änderungen werden sofort gespeichert.'}</p>
             )}
           </div>

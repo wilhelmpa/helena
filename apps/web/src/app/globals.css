@@ -2351,7 +2351,7 @@ html[data-kiosk-display='dual'] [data-slot='alert-dialog-content'] {
   min-height: 0;
   flex: 1;
 }
-.settings-modal-existing > div > header {
+.settings-modal-existing > div > div:first-child:has(h1) {
   height: auto;
   min-height: 0;
   flex: none;
@@ -2359,10 +2359,10 @@ html[data-kiosk-display='dual'] [data-slot='alert-dialog-content'] {
   background: transparent;
   padding: 0;
 }
-.settings-modal-existing > div > header h1 {
+.settings-modal-existing > div > div:first-child h1 {
   display: none;
 }
-.settings-modal-existing > div > header > div {
+.settings-modal-existing > div > div:first-child:has(h1) > div {
   justify-content: flex-end;
 }
 .settings-modal-existing [class*='@container/page'] {
@@ -2373,6 +2373,11 @@ html[data-kiosk-display='dual'] [data-slot='alert-dialog-content'] {
 }
 .settings-modal-existing [class*='WorkspaceHeader'] {
   background: transparent;
+}
+.settings-modal[data-settings-area='admin'][data-settings-section='users']
+  .settings-modal-existing
+  table {
+  min-width: 860px;
 }
 .settings-modal-summary {
   width: 100%;
@@ -2537,14 +2542,28 @@ body[data-settings-modal-open='true']
   }
   .settings-modal-nav {
     width: 100%;
+    height: 52px;
+    flex: none;
     flex-direction: row;
+    align-items: center;
     overflow-x: auto;
     overflow-y: hidden;
     padding: 8px 12px;
     box-shadow: 0 1px 0 #ffffff0a;
   }
   .settings-modal-nav button {
+    height: 34px;
+    flex: none;
     white-space: nowrap;
+  }
+  .settings-modal-more {
+    display: flex;
+    flex: none;
+    align-items: center;
+    margin-top: 0;
+  }
+  .settings-modal-more button {
+    width: auto;
   }
   .settings-modal-pane {
     padding: 20px 16px max(16px, env(safe-area-inset-bottom));

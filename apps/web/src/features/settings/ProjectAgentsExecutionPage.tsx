@@ -11,7 +11,7 @@ import {
   useSetProjectBudgets,
   useSetProjectLevel,
 } from '@/services/autopilot.service';
-import { inputToLimit, limitToInput } from '@/features/autopilot/utils/autopilotFormat';
+import { inputToLimit } from '@/features/autopilot/utils/autopilotFormat';
 
 function Row({
   label,
@@ -50,7 +50,8 @@ export default function ProjectAgentsExecutionPage() {
   const dayCost = autopilot.data?.budgets.find(
     (item) => item.metric === 'cost' && item.period === 'day',
   );
-  const budgetValue = budgetDraft ?? limitToInput('cost', dayCost?.limit);
+  const budgetValue =
+    budgetDraft ?? (dayCost?.limit == null ? '' : dayCost.limit.toFixed(2).replace('.', ','));
 
   async function saveBudget() {
     if (budgetDraft === null) return;
