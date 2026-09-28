@@ -892,40 +892,40 @@
       "allSettings": "Усі налаштування"
     },
     "helenaRuntime": {
-      "toolProfile": "Tools",
+      "toolProfile": "Інструменти",
       "profile": {
-        "assistent": "Assistant",
-        "recherche": "Research with browser",
-        "coder-lite": "Simple coding",
-        "voll": "All tools"
+        "assistent": "Асистент",
+        "recherche": "Пошук із браузером",
+        "coder-lite": "Просте програмування",
+        "voll": "Усі інструменти"
       },
       "profileHint": {
-        "assistent": "Tasks, comments, knowledge, memory and facts. The agent finds more tools when it needs them.",
-        "recherche": "Like Assistant, plus the project browser directly.",
-        "coder-lite": "Like Assistant, plus files and shell in the working folder.",
-        "voll": "All of Helena's tools directly. Needs the most context."
+        "assistent": "Завдання, коментарі, знання, пам’ять і факти. Інші інструменти агент знаходить сам.",
+        "recherche": "Як Асистент, плюс браузер проєкту.",
+        "coder-lite": "Як Асистент, плюс файли й оболонка в робочій теці.",
+        "voll": "Усі інструменти Helena одразу. Потребує найбільше контексту."
       },
-      "browserBudget": "Browser time per task (seconds)",
-      "browserBudgetHint": "After that the agent gets no browser tools and answers with what it has.",
-      "escalationTarget": "Hand over to a large model",
+      "browserBudget": "Час браузера на завдання (секунди)",
+      "browserBudgetHint": "Потім агент не має інструментів браузера й відповідає тим, що має.",
+      "escalationTarget": "Передати великій моделі",
       "target": {
-        "none": "Never hand over",
-        "claude": "Claude Code (subscription)",
-        "codex": "Codex (subscription)"
+        "none": "Ніколи",
+        "claude": "Claude Code (підписка)",
+        "codex": "Codex (підписка)"
       },
-      "escalationHint": "An agent of this project on the chosen runtime takes the task over as a follow-up run, with the history so far.",
-      "taskKinds": "Always hand over for",
+      "escalationHint": "Агент цього проєкту з обраним виконанням продовжує завдання окремим запуском, з історією.",
+      "taskKinds": "Завжди передавати при",
       "kind": {
-        "programmierung-gross": "Larger coding work",
-        "architektur": "Architecture",
-        "sicherheit": "Security",
-        "recht": "Legal and contracts",
-        "aussenkommunikation": "Texts for outsiders"
+        "programmierung-gross": "Великому програмуванні",
+        "architektur": "Архітектурі",
+        "sicherheit": "Безпеці",
+        "recht": "Праві та договорах",
+        "aussenkommunikation": "Зовнішніх текстах"
       },
-      "onFailure": "Hand over after a failure (loop, red tests, time limit)",
-      "confidence": "Hand over below confidence (%)",
-      "confidenceOff": "off",
-      "confidenceHint": "Before the start the decision model judges whether a small model is enough. Leave empty: do not ask."
+      "onFailure": "Передати після збою (цикл, червоні тести, ліміт часу)",
+      "confidence": "Передати нижче впевненості (%)",
+      "confidenceOff": "вимк.",
+      "confidenceHint": "Перед початком модель рішень оцінює, чи вистачить малої моделі. Порожньо: не питати."
     }
   },
   "members": {

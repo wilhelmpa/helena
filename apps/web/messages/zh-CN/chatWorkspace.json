@@ -273,6 +273,6 @@
     "webhookUrl": "地址（HTTPS）",
     "webhookSecretEnv": "存放签名密钥的变量",
     "webhookHint": "Helena 按 Standard Webhooks 签名调用该地址。请在“访问”中把密钥（whsec_…）作为环境变量提供给代理。",
-    "helena": "Helena (local first)"
+    "helena": "Helena（本地优先）"
   }
 }

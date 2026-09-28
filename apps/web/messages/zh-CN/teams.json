@@ -892,40 +892,40 @@
       "allSettings": "全部设置"
     },
     "helenaRuntime": {
-      "toolProfile": "Tools",
+      "toolProfile": "工具",
       "profile": {
-        "assistent": "Assistant",
-        "recherche": "Research with browser",
-        "coder-lite": "Simple coding",
-        "voll": "All tools"
+        "assistent": "助理",
+        "recherche": "带浏览器的调研",
+        "coder-lite": "简单编程",
+        "voll": "全部工具"
       },
       "profileHint": {
-        "assistent": "Tasks, comments, knowledge, memory and facts. The agent finds more tools when it needs them.",
-        "recherche": "Like Assistant, plus the project browser directly.",
-        "coder-lite": "Like Assistant, plus files and shell in the working folder.",
-        "voll": "All of Helena's tools directly. Needs the most context."
+        "assistent": "任务、评论、知识、记忆和事实。其余工具由智能体按需查找。",
+        "recherche": "同助理，另加项目浏览器。",
+        "coder-lite": "同助理，另加工作目录中的文件和命令行。",
+        "voll": "直接提供 Helena 的全部工具。需要最多上下文。"
       },
-      "browserBudget": "Browser time per task (seconds)",
-      "browserBudgetHint": "After that the agent gets no browser tools and answers with what it has.",
-      "escalationTarget": "Hand over to a large model",
+      "browserBudget": "每个任务的浏览器时间（秒）",
+      "browserBudgetHint": "之后智能体不再有浏览器工具，并用已有信息回答。",
+      "escalationTarget": "交给大模型",
       "target": {
-        "none": "Never hand over",
-        "claude": "Claude Code (subscription)",
-        "codex": "Codex (subscription)"
+        "none": "从不",
+        "claude": "Claude Code（订阅）",
+        "codex": "Codex（订阅）"
       },
-      "escalationHint": "An agent of this project on the chosen runtime takes the task over as a follow-up run, with the history so far.",
-      "taskKinds": "Always hand over for",
+      "escalationHint": "本项目中使用所选执行方式的智能体会以后续运行接手任务，并带上已有记录。",
+      "taskKinds": "以下情况总是交出",
       "kind": {
-        "programmierung-gross": "Larger coding work",
-        "architektur": "Architecture",
-        "sicherheit": "Security",
-        "recht": "Legal and contracts",
-        "aussenkommunikation": "Texts for outsiders"
+        "programmierung-gross": "较大的编程工作",
+        "architektur": "架构",
+        "sicherheit": "安全",
+        "recht": "法律与合同",
+        "aussenkommunikation": "对外文本"
       },
-      "onFailure": "Hand over after a failure (loop, red tests, time limit)",
-      "confidence": "Hand over below confidence (%)",
-      "confidenceOff": "off",
-      "confidenceHint": "Before the start the decision model judges whether a small model is enough. Leave empty: do not ask."
+      "onFailure": "失败后交出（循环、测试失败、超时）",
+      "confidence": "低于置信度时交出（%）",
+      "confidenceOff": "关闭",
+      "confidenceHint": "开始前由决策模型判断小模型是否足够。留空：不询问。"
     }
   },
   "members": {

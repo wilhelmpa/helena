@@ -49,7 +49,7 @@
       "approval": "Решение по согласованию",
       "workspace": "Задание рабочей области",
       "digest": "Сводка",
-      "escalation": "Hand-over"
+      "escalation": "Передача"
     },
     "results": "Результаты",
     "noSummary": "Сводки пока нет.",

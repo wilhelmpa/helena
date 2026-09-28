@@ -49,7 +49,7 @@
       "approval": "Рішення щодо погодження",
       "workspace": "Завдання робочої області",
       "digest": "Підсумок",
-      "escalation": "Hand-over"
+      "escalation": "Передача"
     },
     "results": "Результати",
     "noSummary": "Підсумку ще немає.",

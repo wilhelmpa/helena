@@ -49,7 +49,7 @@
       "approval": "审批决定",
       "workspace": "工作区任务",
       "digest": "摘要",
-      "escalation": "Hand-over"
+      "escalation": "交接"
     },
     "results": "结果",
     "noSummary": "暂无摘要。",

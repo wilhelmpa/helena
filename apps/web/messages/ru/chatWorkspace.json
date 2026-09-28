@@ -273,6 +273,6 @@
     "webhookUrl": "Адрес (HTTPS)",
     "webhookSecretEnv": "Переменная с ключом подписи",
     "webhookHint": "Helena вызывает адрес с подписью по Standard Webhooks. Передайте агенту ключ (whsec_…) как переменную окружения в разделе «Доступы».",
-    "helena": "Helena (local first)"
+    "helena": "Helena (сначала локально)"
   }
 }

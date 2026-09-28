@@ -273,6 +273,6 @@
     "webhookUrl": "Endereço (HTTPS)",
     "webhookSecretEnv": "Variável com a chave de assinatura",
     "webhookHint": "A Helena chama o endereço assinado conforme Standard Webhooks. Dê a chave (whsec_…) ao agente como variável de ambiente em Acessos.",
-    "helena": "Helena (local first)"
+    "helena": "Helena (local primeiro)"
   }
 }

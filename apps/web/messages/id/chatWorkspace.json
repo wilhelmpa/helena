@@ -273,6 +273,6 @@
     "webhookUrl": "Alamat (HTTPS)",
     "webhookSecretEnv": "Variabel berisi kunci tanda tangan",
     "webhookHint": "Helena memanggil alamat dengan tanda tangan Standard Webhooks. Berikan kunci (whsec_…) ke agen sebagai variabel lingkungan di Akses.",
-    "helena": "Helena (local first)"
+    "helena": "Helena (lokal dulu)"
   }
 }

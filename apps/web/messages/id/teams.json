@@ -892,40 +892,40 @@
       "allSettings": "Semua pengaturan"
     },
     "helenaRuntime": {
-      "toolProfile": "Tools",
+      "toolProfile": "Alat",
       "profile": {
-        "assistent": "Assistant",
-        "recherche": "Research with browser",
-        "coder-lite": "Simple coding",
-        "voll": "All tools"
+        "assistent": "Asisten",
+        "recherche": "Riset dengan peramban",
+        "coder-lite": "Pemrograman sederhana",
+        "voll": "Semua alat"
       },
       "profileHint": {
-        "assistent": "Tasks, comments, knowledge, memory and facts. The agent finds more tools when it needs them.",
-        "recherche": "Like Assistant, plus the project browser directly.",
-        "coder-lite": "Like Assistant, plus files and shell in the working folder.",
-        "voll": "All of Helena's tools directly. Needs the most context."
+        "assistent": "Tugas, komentar, pengetahuan, memori, dan fakta. Agen menemukan alat lain bila perlu.",
+        "recherche": "Seperti Asisten, ditambah peramban proyek.",
+        "coder-lite": "Seperti Asisten, ditambah berkas dan shell di folder kerja.",
+        "voll": "Semua alat Helena langsung. Butuh konteks paling banyak."
       },
-      "browserBudget": "Browser time per task (seconds)",
-      "browserBudgetHint": "After that the agent gets no browser tools and answers with what it has.",
-      "escalationTarget": "Hand over to a large model",
+      "browserBudget": "Waktu peramban per tugas (detik)",
+      "browserBudgetHint": "Setelah itu agen tidak punya alat peramban dan menjawab dengan apa yang ada.",
+      "escalationTarget": "Serahkan ke model besar",
       "target": {
-        "none": "Never hand over",
-        "claude": "Claude Code (subscription)",
-        "codex": "Codex (subscription)"
+        "none": "Jangan pernah",
+        "claude": "Claude Code (langganan)",
+        "codex": "Codex (langganan)"
       },
-      "escalationHint": "An agent of this project on the chosen runtime takes the task over as a follow-up run, with the history so far.",
-      "taskKinds": "Always hand over for",
+      "escalationHint": "Agen proyek ini dengan eksekusi terpilih mengambil alih tugas sebagai lanjutan, dengan riwayatnya.",
+      "taskKinds": "Selalu serahkan untuk",
       "kind": {
-        "programmierung-gross": "Larger coding work",
-        "architektur": "Architecture",
-        "sicherheit": "Security",
-        "recht": "Legal and contracts",
-        "aussenkommunikation": "Texts for outsiders"
+        "programmierung-gross": "Pemrograman besar",
+        "architektur": "Arsitektur",
+        "sicherheit": "Keamanan",
+        "recht": "Hukum dan kontrak",
+        "aussenkommunikation": "Teks untuk pihak luar"
       },
-      "onFailure": "Hand over after a failure (loop, red tests, time limit)",
-      "confidence": "Hand over below confidence (%)",
-      "confidenceOff": "off",
-      "confidenceHint": "Before the start the decision model judges whether a small model is enough. Leave empty: do not ask."
+      "onFailure": "Serahkan setelah gagal (putaran, tes merah, batas waktu)",
+      "confidence": "Serahkan di bawah keyakinan (%)",
+      "confidenceOff": "mati",
+      "confidenceHint": "Sebelum mulai, model keputusan menilai apakah model kecil cukup. Kosong: jangan tanya."
     }
   },
   "members": {

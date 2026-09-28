@@ -185,7 +185,7 @@
       "approval": "dijalankan setelah keputusan persetujuan",
       "workspace": "menjalankan tugas ruang kerja",
       "digest": "menulis ringkasan",
-      "escalation": "took over a hand-over"
+      "escalation": "mengambil alih serah terima"
     }
   },
   "agentHealth": {

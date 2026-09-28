@@ -185,7 +185,7 @@
       "approval": "在审批决定后运行",
       "workspace": "执行了工作区任务",
       "digest": "写了摘要",
-      "escalation": "took over a hand-over"
+      "escalation": "接手了一次交接"
     }
   },
   "agentHealth": {

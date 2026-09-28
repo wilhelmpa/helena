@@ -185,7 +185,7 @@
       "approval": "запущений після рішення щодо погодження",
       "workspace": "виконав завдання робочої області",
       "digest": "написав підсумок",
-      "escalation": "took over a hand-over"
+      "escalation": "прийняв передачу"
     }
   },
   "agentHealth": {

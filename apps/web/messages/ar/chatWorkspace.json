@@ -273,6 +273,6 @@
     "webhookUrl": "العنوان (HTTPS)",
     "webhookSecretEnv": "المتغير الذي يحمل مفتاح التوقيع",
     "webhookHint": "تستدعي Helena العنوان موقّعًا وفق Standard Webhooks. أعطِ الوكيل المفتاح (whsec_…) كمتغير بيئة ضمن الوصول.",
-    "helena": "Helena (local first)"
+    "helena": "Helena (المحلي أولًا)"
   }
 }

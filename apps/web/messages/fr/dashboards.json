@@ -185,7 +185,7 @@
       "approval": "lancée après une décision d'approbation",
       "workspace": "a exécuté une tâche d’espace de travail",
       "digest": "a écrit un résumé",
-      "escalation": "took over a hand-over"
+      "escalation": "a repris une transmission"
     }
   },
   "agentHealth": {
