@@ -2,7 +2,8 @@
 // for pages, features and plugins. Tokens (tokens.css: colours light/dark, spacing,
 // radii, type), layout (Page template, toolbar, panel, overlay, modal), building blocks
 // (Card, List, Table, Pill/Badge, Tabs, Button, Field, EmptyState, Dialog, Menu) and
-// patterns (SettingsGroup/Row, FilterBar, DetailView). Pages and features import only
+// patterns (SettingsGroup/Row, DetailView; the FilterBar of project data lives in
+// components/layout because it reads the project). Pages and features import only
 // from here; eslint rejects free colours, spacing, radii and type sizes in them.
 export { Tree, TreeItem, TreeGap, TreeAction, useTreeLevel } from './components/Tree';
 export type { TreeItemProps } from './components/Tree';
@@ -53,7 +54,6 @@ export {
 } from './layout/PageToolbar';
 export type { PageTab, PageAction, PageSelectOption } from './layout/PageToolbar';
 export { default as Dialog, useModalFullscreen } from '@/components/common/overlay/Modal';
-export { default as FilterBar } from '@/components/layout/FilterBar';
 export type { Crumb } from './layout/Page';
 export { SidePanel } from './layout/SidePanel';
 export { Overlay } from './layout/Overlay';
@@ -72,11 +72,10 @@ export type { PageChrome } from './layout/pageChrome';
 export type { ModalTab } from './layout/Modal';
 export { pickActive, matchScore } from './nav/activeMatch';
 export type { NavCandidate, NavLocation } from './nav/activeMatch';
-// The status and agent pieces (ui-system.md §2), one implementation each.
+// The status pieces (ui-system.md §2), one implementation each. The chat's Composer and
+// AgentPicker read the API and stay in components/helena, outside the framework.
 export { default as Orb } from '@/components/helena/Orb';
 export { default as StatusPill } from '@/components/helena/StatusPill';
 export { ProjectTag } from '@/components/helena/ProjectTag';
 export { Tile } from '@/components/helena/DashboardPrimitives';
 export { default as RuntimePicker } from '@/components/helena/RuntimePicker';
-export { default as AgentPicker } from '@/components/helena/AgentPicker';
-export { default as Composer } from '@/components/helena/Composer';

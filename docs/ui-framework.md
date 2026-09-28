@@ -13,8 +13,8 @@ Es gibt einen einzigen Einstieg: `@/design-system` (`apps/web/src/design-system/
 | Tokens | `tokens.css`: Farben hell/dunkel, Abstände `--space-1…7`, Radien `--radius-sm/md/lg/xl/full`, Seitenmaße. Tailwind liest dieselben Werte (`globals.css` `@theme`). |
 | Layout | `Page` (Seitenschablone), `PageToolbar`, `PageTabs`/`Tabs`, `PageSearch`, `PageSelect`, `PageActions`, `SidePanel`, `Overlay`, `Modal`, `Dialog` |
 | Anordnung | `Stack`, `Inline`, `Grid`, `Box` (Abstände nur aus der Skala), `Text` (Schriftgrößen und Töne) |
-| Bausteine | `Card`, `List`/`ListGroup`/`ListRow`, `Table`/`Th`/`Tr`/`Td`, `Pill`/`Badge`, `PillButton`, `Segmented`, `Button`/`ButtonLink`/`IconButton`, `TextField`/`TextArea`/`SearchField`/`Field`, `EmptyState`, `Menu…`, `ActionMenu`, `Tip`, `StatusDot`, `StatusPill`, `Orb` |
-| Muster | `SettingsGroup`/`SettingsRow`, `FilterBar`, `DetailView`/`DetailHeader`/`DetailGroup`/`PropertyGrid`, `Section`, `MonoLabel` |
+| Bausteine | `Card`, `List`/`ListGroup`/`ListRow`, `Table`/`Th`/`Tr`/`Td`, `Pill`/`Badge`, `PillButton`, `Segmented`, `Button`/`ButtonLink`/`IconButton`, `TextField`/`TextArea`/`SearchField`/`Field`, `Switch`, `EmptyState`, `Menu…`, `ActionMenu`, `Tip`, `NameList`, `StatusDot`, `StatusPill`, `Orb`, `LocalChrome` |
+| Muster | `SettingsGroup`/`SettingsRow`, `FilterBar` (in `@/components/layout/FilterBar`, liest Projektdaten), `DetailView`/`DetailHeader`/`DetailGroup`/`PropertyGrid`, `Section`, `MonoLabel` |
 
 Die **Galerie** zeigt jeden Baustein mit allen Varianten, hell und dunkel nebeneinander: Helena › Einstellungen › Entwicklung › UI-Bausteine (`/settings/ui`). Sie ist lebende Doku und Abnahmefläche für Screenshots.
 
@@ -102,3 +102,5 @@ Funktionen nach dem Vorbild von Hermes, OpenClaw und Paperclip bekommen keine ei
 ## 9. Abnahme
 
 Pro Paket eine Klick-Abnahme im echten Browser über alle betroffenen Seiten: hell und dunkel, Desktop 1440 und Handy 375, Konsole ohne Fehler. Was nicht funktioniert, wird repariert oder verschwindet aus der UI.
+
+Der Einstieg `@/design-system` ist reine Darstellung: Er zieht keinen API-Client, keine Dienste und keine Datenhooks nach sich (Test `design-system/barrel.test.ts`). Komponenten, die Daten lesen (Composer, Agentenwahl, FilterBar mit Projektdaten), liegen außerhalb und bauen selbst auf dem Framework auf.
