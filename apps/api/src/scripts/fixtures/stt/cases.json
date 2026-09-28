@@ -1,0 +1,136 @@
+[
+  {
+    "id": "01",
+    "text": "Helena, öffne das Projekt TRADE um neun Uhr dreißig.",
+    "terms": ["Helena", "TRADE"]
+  },
+  {
+    "id": "02",
+    "text": "Im Projekt VERVE sind heute vierzehn Aufgaben offen.",
+    "terms": ["VERVE"]
+  },
+  { "id": "03", "text": "Jev prüft um acht Uhr fünfzehn den nächsten Termin.", "terms": ["Jev"] },
+  {
+    "id": "04",
+    "text": "Qwen soll die letzten sieben Nachrichten zusammenfassen.",
+    "terms": ["Qwen"]
+  },
+  {
+    "id": "05",
+    "text": "Alpaca startet morgen um zehn Uhr eine neue Auswertung.",
+    "terms": ["Alpaca"]
+  },
+  {
+    "id": "06",
+    "text": "Helena, erinnere mich in fünfundvierzig Minuten an den Anruf.",
+    "terms": ["Helena"]
+  },
+  {
+    "id": "07",
+    "text": "Der TRADE Bericht enthält dreiundzwanzig offene Positionen.",
+    "terms": ["TRADE"]
+  },
+  {
+    "id": "08",
+    "text": "VERVE benötigt bis siebzehn Uhr die neue Projektübersicht.",
+    "terms": ["VERVE"]
+  },
+  { "id": "09", "text": "Jev hat um zwölf Uhr fünf die Freigabe bestätigt.", "terms": ["Jev"] },
+  {
+    "id": "10",
+    "text": "Qwen verarbeitet zweiunddreißig Dokumente im Wissensspeicher.",
+    "terms": ["Qwen"]
+  },
+  { "id": "11", "text": "Alpaca soll fünf Termine für Dienstag vorschlagen.", "terms": ["Alpaca"] },
+  {
+    "id": "12",
+    "text": "Helena, plane den Rückruf für sechzehn Uhr vierzig ein.",
+    "terms": ["Helena"]
+  },
+  {
+    "id": "13",
+    "text": "TRADE meldet einen Gewinn von einhundertzwanzig Euro.",
+    "terms": ["TRADE"]
+  },
+  {
+    "id": "14",
+    "text": "VERVE hat am achtundzwanzigsten September zwei Meilensteine erreicht.",
+    "terms": ["VERVE"]
+  },
+  { "id": "15", "text": "Jev legt sechs Dateien im Projektordner ab.", "terms": ["Jev"] },
+  {
+    "id": "16",
+    "text": "Qwen antwortet auf die Frage nach der Samplerate.",
+    "terms": ["Qwen", "Samplerate"]
+  },
+  {
+    "id": "17",
+    "text": "Alpaca vergleicht die Wortfehlerrate von drei Modellen.",
+    "terms": ["Alpaca", "Wortfehlerrate"]
+  },
+  {
+    "id": "18",
+    "text": "Helena, setze die Besprechung auf elf Uhr fünfundfünfzig.",
+    "terms": ["Helena"]
+  },
+  {
+    "id": "19",
+    "text": "Der VAD Nachlauf beträgt dreihundertzwanzig Millisekunden.",
+    "terms": ["VAD"]
+  },
+  {
+    "id": "20",
+    "text": "Whisper transkribiert sechzehntausend Samples pro Sekunde.",
+    "terms": ["Whisper"]
+  },
+  {
+    "id": "21",
+    "text": "Die NPU und die GPU liefern unterschiedliche Ergebnisse.",
+    "terms": ["NPU", "GPU"]
+  },
+  {
+    "id": "22",
+    "text": "Im Composer kann ich das Transkript vor dem Senden korrigieren.",
+    "terms": ["Composer", "Transkript"]
+  },
+  {
+    "id": "23",
+    "text": "Die Runtime von Jev startet um dreizehn Uhr zwanzig.",
+    "terms": ["Runtime", "Jev"]
+  },
+  {
+    "id": "24",
+    "text": "Bitte synchronisiere das Glossar mit dem Projekt TRADE.",
+    "terms": ["Glossar", "TRADE"]
+  },
+  {
+    "id": "25",
+    "text": "VERVE hat heute eine Latenz von siebenhundert Millisekunden.",
+    "terms": ["VERVE", "Latenz"]
+  },
+  {
+    "id": "26",
+    "text": "Qwen und Alpaca prüfen gemeinsam neunundvierzig Einträge.",
+    "terms": ["Qwen", "Alpaca"]
+  },
+  {
+    "id": "27",
+    "text": "Helena, zeige die Aufgaben bis achtzehn Uhr dreißig.",
+    "terms": ["Helena"]
+  },
+  {
+    "id": "28",
+    "text": "Das Whisper Modell erkennt den Begriff Resampling nicht zuverlässig.",
+    "terms": ["Whisper", "Resampling"]
+  },
+  {
+    "id": "29",
+    "text": "Jev notiert drei Komma fünf Prozent für TRADE.",
+    "terms": ["Jev", "TRADE"]
+  },
+  {
+    "id": "30",
+    "text": "VERVE und Helena besprechen morgen um sieben Uhr fünfundvierzig den Bericht.",
+    "terms": ["VERVE", "Helena"]
+  }
+]

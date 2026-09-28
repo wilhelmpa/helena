@@ -1,6 +1,7 @@
 import { Elysia } from 'elysia';
 import { requireGod, requireUser } from '#shared/access';
 import { authContext } from '#shared/auth-context';
+import { preferredLocale } from '#modules/user-preferences/service';
 import { errors } from '#shared/responses';
 import {
   TranscriptionResponse,
@@ -56,7 +57,7 @@ export const voiceRoutes = new Elysia({ name: 'voice', detail: { tags: ['Voice']
       try {
         return await transcribe({
           audio: new Uint8Array(await body.file.arrayBuffer()),
-          language: body.language ?? null,
+          language: (await preferredLocale(current.id)).slice(0, 2),
         });
       } finally {
         release();

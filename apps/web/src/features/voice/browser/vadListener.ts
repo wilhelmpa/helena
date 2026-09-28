@@ -32,14 +32,14 @@ export interface EarEvents {
   onError?(reason: 'blocked' | 'missing' | 'failed' | 'network'): void;
 }
 
-// How the detector decides (vad-web's FrameProcessor, frames of 32 ms). The pause that ends a
-// turn is the owner's setting (Sprache → "Pause bis zur Antwort", default 0.6 s; it was a fixed
-// 0.8 s): long enough for a breath inside a sentence, short enough to feel like a conversation.
-// 400 ms are kept before the detector was sure (320 cut the first syllable of a quiet start).
-const detector = (pauseMs: number) => ({
+// vad-web includes the silence before SpeechEnd in the returned audio. Keep an extra 320 ms
+// after the configured pause so quiet final syllables remain in the utterance.
+export const VAD_TAIL_MS = 320;
+
+export const detector = (pauseMs: number) => ({
   positiveSpeechThreshold: 0.5,
   negativeSpeechThreshold: 0.35,
-  redemptionMs: pauseMs,
+  redemptionMs: pauseMs + VAD_TAIL_MS,
   preSpeechPadMs: 400,
   minSpeechMs: 250,
 });
@@ -109,7 +109,7 @@ export async function startVadEar(
     throw microphoneError(error);
   }
   return {
-    pauseMs,
+    pauseMs: NORMAL.redemptionMs,
     setGuarded(on) {
       vad.setOptions(on ? GUARDED : NORMAL);
     },

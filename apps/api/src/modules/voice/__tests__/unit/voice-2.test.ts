@@ -88,9 +88,9 @@ describe('voice settings', () => {
 
   it('puts the owner’s words before Helena’s', () => {
     expect(vocabularyPrompt(['Müller'], ['Helena', 'müller', 'Verve'])).toBe(
-      'Müller, Helena, Verve.',
+      'Müller, Helena, TRADE, VERVE, Jev, Qwen, Alpaca.',
     );
-    expect(vocabularyPrompt([], [])).toBeNull();
+    expect(vocabularyPrompt([], [])).toBe('Helena, TRADE, VERVE, Jev, Qwen, Alpaca.');
   });
 });
 

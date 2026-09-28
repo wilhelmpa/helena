@@ -16,7 +16,7 @@ import {
   type DropReason,
   type TranscriptSegment,
 } from './transcript';
-import { canonicalWav, readWav } from './wav';
+import { readWav, whisperWav } from './wav';
 
 // Voice in the chat (docs/helena-decisions/voice.md): dictation and the conversation mode send
 // their recordings here, and the conversation mode's reading aloud asks here for audio. Both go
@@ -208,7 +208,7 @@ export async function transcribe(input: {
   const form = new FormData();
   form.append(
     'file',
-    new Blob([canonicalWav(input.audio, info)], { type: 'audio/wav' }),
+    new Blob([whisperWav(input.audio, info)], { type: 'audio/wav' }),
     'recording.wav',
   );
   form.append('model', route.model);

@@ -290,7 +290,7 @@ describe('the ear on the GPU (whisper.cpp)', () => {
     });
     // The owner's words first, then Helena's.
     expect(form.prompt!.startsWith('Steuerberater Müller, Helena')).toBe(true);
-    expect(form.prompt).toContain('Verve');
+    expect(form.prompt).toContain('VERVE');
 
     // A segment Whisper itself doubts is speech is dropped; the confident one stays.
     whisperReply = {
