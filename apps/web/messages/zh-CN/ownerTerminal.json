@@ -9,8 +9,8 @@
     "rateLimited": "尝试次数过多,请等待 15 分钟后再试。",
     "locked": "在你确认身份之前，终端保持锁定。",
     "enterCode": "输入验证码",
-    "setupRequired": "Complete authenticator setup in Account → Security first.",
-    "unavailable": "Terminal access could not be verified or saved. Please try again."
+    "setupRequired": "请先在“账户 → 安全”中完成身份验证器设置。",
+    "unavailable": "无法验证或保存终端访问。请重试。"
   },
   "grant": {
     "active": "终端已授权至 {time}",
@@ -25,8 +25,8 @@
     "helena-dev-claude": "开发 Helena(Claude Code)",
     "helena-dev-codex": "开发 Helena(Codex)",
     "close": "结束会话",
-    "local-qwen36": "Qwen 3.6 local (Codex)",
-    "local-qwen38": "Qwen 3.8 local (Codex)"
+    "local-qwen36": "Qwen 3.6 本地（Codex）",
+    "local-qwen38": "Qwen 3.8 本地（Codex）"
   },
   "keys": {
     "esc": "Esc",

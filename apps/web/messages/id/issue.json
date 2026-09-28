@@ -243,8 +243,8 @@
     "title": "Statistik",
     "compact": "Ringkas",
     "timeline": "Linimasa",
-    "leadTime": "Lead time",
-    "cycleTime": "Cycle time",
+    "leadTime": "Waktu tunggu",
+    "cycleTime": "Waktu siklus",
     "unknownStatus": "Status tidak diketahui"
   },
   "customFields": {

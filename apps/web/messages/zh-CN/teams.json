@@ -561,8 +561,8 @@
     "chatNeedsAgent": "创建 AI 代理后即可在此测试。",
     "chatNeedsProject": "将 AI 代理加入项目后即可在此测试。",
     "triggerFieldsTitle": "触发运行的自定义字段",
-    "defaultProjectRole": "Default project role",
-    "noProjectInstructions": "No project-specific instructions",
+    "defaultProjectRole": "默认项目角色",
+    "noProjectInstructions": "无项目专属指令",
     "abilities": {
       "title": "能力",
       "hint": "代理在 Hermes 中能做的事：工具集、MCP 服务器、技能和记忆",
@@ -800,8 +800,8 @@
       }
     },
     "chatTemplate": "模板本身不会运行。将它作为智能体添加到项目后即可在这里试用。",
-    "allProjectsScope": "Project scope: all",
-    "allProjectsScopeHint": "May work in every current and future project of this team.",
+    "allProjectsScope": "项目范围：全部",
+    "allProjectsScopeHint": "可以在此团队当前及未来的所有项目中工作。",
     "heartbeat": {
       "title": "心跳",
       "hint": "按固定间隔检查是否有事可做，只有这时才启动运行。",

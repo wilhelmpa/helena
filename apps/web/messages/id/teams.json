@@ -561,8 +561,8 @@
     "chatNeedsAgent": "Buat agen AI untuk mengujinya di sini.",
     "chatNeedsProject": "Lampirkan agen AI ke sebuah proyek untuk mengujinya di sini.",
     "triggerFieldsTitle": "Bidang kustom yang memulai eksekusi",
-    "defaultProjectRole": "Default project role",
-    "noProjectInstructions": "No project-specific instructions",
+    "defaultProjectRole": "Peran proyek bawaan",
+    "noProjectInstructions": "Tidak ada instruksi khusus proyek",
     "abilities": {
       "title": "Kemampuan",
       "hint": "Apa yang dapat dilakukan agen di Hermes: toolset, server MCP, keahlian, dan memori",
@@ -800,8 +800,8 @@
       }
     },
     "chatTemplate": "Templat tidak berjalan sendiri. Tambahkan ke proyek sebagai agen untuk mencobanya di sini.",
-    "allProjectsScope": "Project scope: all",
-    "allProjectsScopeHint": "May work in every current and future project of this team.",
+    "allProjectsScope": "Cakupan proyek: semua",
+    "allProjectsScopeHint": "Boleh bekerja di semua proyek tim ini, saat ini maupun yang akan datang.",
     "heartbeat": {
       "title": "Detak",
       "hint": "Memeriksa pada interval tetap apakah ada yang perlu dikerjakan, dan hanya saat itu memulai run.",

@@ -488,7 +488,7 @@
       "status_changed": "状态变更",
       "label_added": "添加标签",
       "schedule": "计划",
-      "webhook": "webhook",
+      "webhook": "Webhook",
       "mail_received": "收到邮件",
       "routine": "计划",
       "delegation": "委派给协调者"

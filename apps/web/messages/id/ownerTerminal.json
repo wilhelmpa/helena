@@ -9,8 +9,8 @@
     "rateLimited": "Terlalu banyak percobaan. Tunggu 15 menit lalu coba lagi.",
     "locked": "Terminal tetap terkunci sampai Anda mengonfirmasi bahwa itu Anda.",
     "enterCode": "Masukkan kode",
-    "setupRequired": "Complete authenticator setup in Account → Security first.",
-    "unavailable": "Terminal access could not be verified or saved. Please try again."
+    "setupRequired": "Selesaikan penyiapan autentikator di Akun → Keamanan terlebih dahulu.",
+    "unavailable": "Akses terminal tidak dapat diverifikasi atau disimpan. Silakan coba lagi."
   },
   "grant": {
     "active": "Terminal diizinkan hingga {time}",
@@ -25,8 +25,8 @@
     "helena-dev-claude": "Kembangkan Helena (Claude Code)",
     "helena-dev-codex": "Kembangkan Helena (Codex)",
     "close": "Akhiri sesi",
-    "local-qwen36": "Qwen 3.6 local (Codex)",
-    "local-qwen38": "Qwen 3.8 local (Codex)"
+    "local-qwen36": "Qwen 3.6 lokal (Codex)",
+    "local-qwen38": "Qwen 3.8 lokal (Codex)"
   },
   "keys": {
     "esc": "Esc",
