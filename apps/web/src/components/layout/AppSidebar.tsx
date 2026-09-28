@@ -18,7 +18,8 @@ import SidebarAccountRow from '@/components/brand/SidebarAccountRow';
 import SidebarProjectSwitcher from './SidebarProjectSwitcher';
 import { SidebarHomeTree, SidebarPersonalNav, SidebarProjectTree } from './SidebarTreeNav';
 import { APP_NAME } from '@/utils/app';
-import { Search, MessageSquare, Globe2, Terminal, Code2, Mail } from 'lucide-react';
+import { Search, Globe2, Terminal, Code2, Mail } from 'lucide-react';
+import HomeOrb from '@/components/helena/HomeOrb';
 import type { WorkspaceToolId } from '@/utils/workspaceTools';
 import type { ViewTemplate } from '@/hooks/useViewEditor';
 
@@ -118,7 +119,7 @@ export default function AppSidebar({
           <div>
             {(
               [
-                ['chat', MessageSquare, 'Chat'],
+                ['chat', null, 'Chat'],
                 ['browser', Globe2, 'Browser'],
                 ['terminal', Terminal, 'Terminal'],
                 ['code', Code2, 'Code'],
@@ -136,7 +137,7 @@ export default function AppSidebar({
                   if (sidebar.isMobile) sidebar.setOpenMobile(false);
                 }}
               >
-                <Icon size={16} />
+                {Icon ? <Icon size={16} /> : <HomeOrb size="small" className="helena-tool-orb" />}
                 {openTools.includes(id) && <i />}
               </button>
             ))}

@@ -3,11 +3,10 @@
 import { type ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { ChevronRight, Plus } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useProjectFeatures } from '@/hooks/useProjectFeatures';
-import { usePersistedBoolean } from '@/hooks/usePersistedBoolean';
 import { useInboxUnread } from '@/hooks/useInboxUnread';
 import { useOwnerInbox } from '@/features/inbox/useOwnerInbox';
 import { usePendingApprovalCount } from '@/services/approvals.service';
@@ -44,6 +43,18 @@ import { useCrossProjectIssuesQuery } from '@/features/home/services/tasks.servi
 import { useMemberRoutines } from '@/features/routines/services/routines.service';
 import NewViewMenu from './NewViewMenu';
 import type { ViewTemplate } from '@/hooks/useViewEditor';
+
+// A saved view without filters in the board or list layout shows the same as the
+// "Aufgaben" entry itself, so the tree does not list it a second time (it stays in the
+// page's own view tabs).
+function showsAllTasks(view: View) {
+  const layout = (view.display as { layout?: string } | null)?.layout ?? 'kanban';
+  return (
+    view.folderId == null &&
+    !view.filters?.conditions?.length &&
+    (layout === 'kanban' || layout === 'table')
+  );
+}
 
 function pathIsActive(pathname: string, href: string) {
   const path = href.split('?')[0]!;
@@ -96,55 +107,41 @@ function TreeLink({
   );
 }
 
+// A level-1 entry of the tree. It IS the "all" choice of its area (owner, 28.09.): a
+// click shows the whole area and marks exactly this row. Its children are always shown
+// (no chevrons, nothing to fold); while one of them is the open page only the child is
+// marked and this row just reads brighter (CSS: .helena-tree-branch:has(...)).
 function TreeBranch({
-  id,
   label,
   href,
   action,
   hasChildren,
   activePaths = [],
-  defaultOpen = false,
   activeOverride,
   children,
 }: {
-  id: string;
   label: string;
   href: string;
   action?: ReactNode;
   hasChildren?: boolean;
+  // Pages of this area without an entry of their own; the row is marked on them too.
   activePaths?: string[];
-  defaultOpen?: boolean;
   activeOverride?: boolean;
   children: ReactNode;
 }) {
   const pathname = usePathname();
-  const [open, setOpen] = usePersistedBoolean(
-    `sidebar:tree:${id}`,
-    defaultOpen ||
-      pathIsActive(pathname, href) ||
-      activePaths.some((path) => pathIsActive(pathname, path)),
-  );
+  const active =
+    activeOverride ?? (activePaths.some((path) => pathIsActive(pathname, path)) ? true : undefined);
   const expandable = hasChildren ?? hasTreeContent(children);
   return (
     <div className="helena-tree-branch">
       <div className="helena-tree-parent">
-        <TreeLink href={href} activeOverride={activeOverride}>
+        <TreeLink href={href} activeOverride={active}>
           {label}
         </TreeLink>
         {action}
-        {expandable && (
-          <button
-            type="button"
-            className="helena-tree-toggle"
-            aria-label={label}
-            aria-expanded={open}
-            onClick={() => setOpen(!open)}
-          >
-            <ChevronRight size={14} className={open ? 'rotate-90' : ''} />
-          </button>
-        )}
       </div>
-      {expandable && open && <div className="helena-tree-children">{children}</div>}
+      {expandable && <div className="helena-tree-children">{children}</div>}
     </div>
   );
 }
@@ -188,7 +185,6 @@ function ApprovalBadge({
         <SidebarApprovalsRefresh key={teamId} teamId={teamId} />
       ))}
       <TreeBranch
-        id="you:inbox"
         label={t('sidebarInbox')}
         href={projectKey ? inboxPath(projectKey) : '/inbox'}
         hasChildren={false}
@@ -245,6 +241,7 @@ export function SidebarHomeTree({ teamId, isGod }: { teamId: number | null; isGo
   const homeRoot = params.get('root');
   const homePath = params.get('path');
   const homePathname = usePathname();
+  const defaultHomeRoot = owner ? 'home' : 'templates';
   const tasksCount = useCrossProjectIssuesQuery({ page: 1, pageSize: 1 }, { stateType: 'open' });
   const myTasksCount = useCrossProjectIssuesQuery(
     { page: 1, pageSize: 1 },
@@ -254,13 +251,7 @@ export function SidebarHomeTree({ teamId, isGod }: { teamId: number | null; isGo
   return (
     <section className="helena-sidebar-section">
       <h2>{t('sidebarProject')}</h2>
-      <TreeBranch
-        id="home:dashboard"
-        label={t('dashboards')}
-        href="/"
-        activePaths={['/system']}
-        defaultOpen
-      >
+      <TreeBranch label={t('dashboards')} href="/" activePaths={['/system']}>
         <TreeLink href="/dashboard" nested>
           {t('sidebarAllProjects')}
         </TreeLink>
@@ -271,10 +262,8 @@ export function SidebarHomeTree({ teamId, isGod }: { teamId: number | null; isGo
         )}
       </TreeBranch>
       <TreeBranch
-        id="home:tasks"
         label={t('workItems')}
         href="/tasks"
-        defaultOpen
         action={
           tasksCount.data?.total ? (
             <span className="helena-tree-badge">{tasksCount.data.total}</span>
@@ -284,16 +273,16 @@ export function SidebarHomeTree({ teamId, isGod }: { teamId: number | null; isGo
         <TreeLink href="/tasks?assignee=me" nested badge={myTasksCount.data?.total}>
           {t('sidebarMyTasks')}
         </TreeLink>
-        <TreeLink href="/tasks" nested>
-          {t('sidebarOpenTasks')}
-        </TreeLink>
       </TreeBranch>
       <TreeBranch
-        id="home:files"
         label={t('sidebarKnowledge')}
         href="/files"
-        activePaths={['/docs']}
-        defaultOpen
+        activeOverride={
+          homePathname.startsWith('/docs') ||
+          (homePathname === '/files' &&
+            (homeRoot ?? defaultHomeRoot) === defaultHomeRoot &&
+            !homePath)
+        }
         action={
           owner && (
             <button
@@ -307,29 +296,17 @@ export function SidebarHomeTree({ teamId, isGod }: { teamId: number | null; isGo
           )
         }
       >
-        {(owner ? (['home', 'private', 'templates'] as const) : (['templates'] as const)).map(
-          (root) => (
-            <div key={root}>
-              <TreeLink
-                href={homeFilesPath('', { root })}
-                nested
-                activeOverride={
-                  homePathname === '/files' &&
-                  (homeRoot ?? (owner ? 'home' : 'templates')) === root &&
-                  !homePath
-                }
-              >
-                {t(
-                  root === 'home'
-                    ? 'sidebarHome'
-                    : root === 'private'
-                      ? 'sidebarPrivate'
-                      : 'sidebarTemplates',
-                )}
-              </TreeLink>
-            </div>
-          ),
-        )}
+        {(owner ? (['private', 'templates'] as const) : []).map((root) => (
+          <div key={root}>
+            <TreeLink
+              href={homeFilesPath('', { root })}
+              nested
+              activeOverride={homePathname === '/files' && homeRoot === root && !homePath}
+            >
+              {t(root === 'private' ? 'sidebarPrivate' : 'sidebarTemplates')}
+            </TreeLink>
+          </div>
+        ))}
       </TreeBranch>
       {newFolder && (
         <FileNewFolderDialog
@@ -342,15 +319,10 @@ export function SidebarHomeTree({ teamId, isGod }: { teamId: number | null; isGo
         />
       )}
       <TreeBranch
-        id="home:auto"
         label={t('sidebarAutomation')}
         href={get('organization') ?? '/agents'}
         activePaths={['/agents', '/schedules', '/activity', '/workflows', '/browsers']}
-        defaultOpen
       >
-        <TreeLink href={get('organization') ?? '/organization'} nested>
-          {t('sidebarTeamDeciders')}
-        </TreeLink>
         <TreeLink href="/schedules" nested badge={schedulesCount.data?.total}>
           {t('sidebarSchedules')}
         </TreeLink>
@@ -391,7 +363,6 @@ export function SidebarProjectTree({
       <h2>{t('sidebarProject')}</h2>
       {features.dashboards && can('dashboards', 'read') && (
         <TreeBranch
-          id={`${projectKey}:dashboard`}
           label={t('dashboards')}
           href={dashboardsPath(projectKey)}
           hasChildren={
@@ -424,15 +395,17 @@ export function SidebarProjectTree({
         </TreeBranch>
       )}
       <TreeBranch
-        id={`${projectKey}:tasks`}
         label={t('workItems')}
         href={taskHref}
         activePaths={[cyclesPath(projectKey)]}
-        hasChildren={views.length > 0 || (can('views', 'read') && areas.length > 0)}
+        hasChildren={
+          views.some((view) => view.folderId == null && !showsAllTasks(view)) ||
+          (can('views', 'read') && areas.length > 0)
+        }
         action={can('views', 'create') && <NewViewMenu onSelect={onNewView} />}
       >
         {views
-          .filter((view) => view.folderId == null)
+          .filter((view) => view.folderId == null && !showsAllTasks(view))
           .sort((a, b) => a.position - b.position || a.id - b.id)
           .map((view) => (
             <SidebarSavedViewItem
@@ -456,7 +429,6 @@ export function SidebarProjectTree({
       {((features.documents && can('documents', 'read')) ||
         (features.notes && can('note_boards', 'read'))) && (
         <TreeBranch
-          id={`${projectKey}:files`}
           label={isAdmin ? `${t('sidebarKnowledge')} & ${t('receipts')}` : t('sidebarKnowledge')}
           href={filesPath(projectKey)}
           activePaths={isAdmin ? [receiptsPath(projectKey)] : []}
@@ -493,7 +465,6 @@ export function SidebarProjectTree({
         />
       )}
       <TreeBranch
-        id={`${projectKey}:auto`}
         label={t('sidebarAutomation')}
         href={can('ai_agents', 'read') ? aiAgentsPath(projectKey) : agentActivityPath(projectKey)}
         hasChildren={can('ai_agents', 'read')}
@@ -518,9 +489,6 @@ export function SidebarProjectTree({
       >
         {can('ai_agents', 'read') && (
           <>
-            <TreeLink href={aiAgentsPath(projectKey)} nested>
-              {t('sidebarTeamDeciders')}
-            </TreeLink>
             <TreeLink href={aiTeamPath(projectKey, 'schedules')} nested>
               {t('sidebarSchedules')}
             </TreeLink>

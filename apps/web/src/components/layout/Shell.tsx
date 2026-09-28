@@ -386,11 +386,7 @@ export default function Shell({
                 </WorkspaceLayoutHost>
               </SidebarInset>
 
-              <HomeDock
-                open={workspaceOpen}
-                onOpen={workspaceLayout.openHome}
-                onNewIssue={canCreateIssue ? openNewIssue : undefined}
-              />
+              <HomeDock open={workspaceOpen} onOpen={workspaceLayout.openHome} />
               <ProjectLinkSheet currentProjectKey={projectKey} projects={projects} />
 
               <CommandLayer
