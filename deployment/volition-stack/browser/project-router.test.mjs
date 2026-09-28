@@ -1130,6 +1130,89 @@ describe("project browser router", () => {
     assert.equal(await status, 101);
   });
 
+  it("tells a live view that a stopped browser starts and hands it what it sent meanwhile", async () => {
+    const browser = fakeBrowser();
+    upstream = browser.server;
+    await state("demo", 16000, await listen(upstream));
+    let runs = false;
+    let releaseStart = null;
+    const idle = {
+      running: () => runs,
+      record() {},
+      wake: () => new Promise((resolve) => {
+        releaseStart = () => {
+          runs = true;
+          resolve(true);
+        };
+      }),
+      view() {},
+    };
+    router = createProjectBrowserRouter({ root, idle });
+    const viewer = new WebSocket(`ws://127.0.0.1:${await listen(router)}/projects/demo/api/screencast`);
+    viewer.binaryType = "arraybuffer";
+    const received = [];
+    viewer.addEventListener("message", (event) => received.push(event.data));
+    // The client sends its size as soon as it opens, while the browser still starts.
+    viewer.addEventListener("open", () => {
+      viewer.send(JSON.stringify({ type: "hidden", hidden: false }));
+      viewer.send(JSON.stringify({ type: "viewport", width: 800, height: 600, dpr: 1 }));
+    });
+    await until(() => received.includes(JSON.stringify({ type: "browser", state: "starting" })));
+    await until(() => releaseStart !== null);
+    await new Promise((resolve) => setTimeout(resolve, 30));
+    assert.ok(!received.some((message) => message instanceof ArrayBuffer));
+    releaseStart();
+    await until(() => received.some((message) => message instanceof ArrayBuffer));
+    assert.ok(received.includes(JSON.stringify({ type: "browser", state: "running" })));
+    const frame = Buffer.from(received.find((message) => message instanceof ArrayBuffer));
+    assert.deepEqual([frame.readUInt16BE(1), frame.readUInt16BE(3)], [800, 513]);
+    viewer.close();
+  });
+
+  it("reports a browser that did not start to the live view and closes it", async () => {
+    await state("demo", 16000, 19201);
+    router = createProjectBrowserRouter({
+      root,
+      idle: { running: () => false, record() {}, wake: async () => false, view() {} },
+    });
+    const viewer = new WebSocket(`ws://127.0.0.1:${await listen(router)}/projects/demo/api/screencast`);
+    const received = [];
+    let closed = null;
+    viewer.addEventListener("message", (event) => received.push(event.data));
+    viewer.addEventListener("close", (event) => { closed = event.code; });
+    await until(() => closed !== null);
+    assert.equal(closed, 1013);
+    assert.deepEqual(received, [
+      JSON.stringify({ type: "browser", state: "starting" }),
+      JSON.stringify({ type: "browser", state: "failed" }),
+    ]);
+  });
+
+  it("neither pictures nor lists a stopped browser in the overview, and its tab list starts it", async () => {
+    await state("demo", 16000, 19201);
+    const woken = [];
+    router = createProjectBrowserRouter({
+      root,
+      idle: {
+        running: () => false,
+        power: { state: () => "stopped" },
+        record() {},
+        wake: async (slug) => { woken.push(slug); return false; },
+      },
+    });
+    const base = `http://127.0.0.1:${await listen(router)}`;
+    const overview = await (await fetch(`${base}/api/overview`)).json();
+    assert.equal(overview.browsers.length, 1);
+    assert.equal(overview.browsers[0].power, "stopped");
+    assert.equal(overview.browsers[0].reachable, false);
+    assert.equal((await fetch(`${base}/projects/demo/api/thumbnail`)).status, 404);
+    assert.deepEqual(woken, []);
+    await fetch(`${base}/projects/demo/api/tabs`);
+    assert.deepEqual(woken, ["demo"]);
+    // The desktop view's page needs the display: a browser that does not start answers 503.
+    assert.equal((await fetch(`${base}/projects/demo/vnc.html`)).status, 503);
+  });
+
   it("rejects a stream handshake when an existing page could not be awakened", async () => {
     await state("demo", 16000, 19201);
     router = createProjectBrowserRouter({ root, idle: { record() {}, wake: async () => false } });
