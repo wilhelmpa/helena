@@ -322,5 +322,55 @@
       "contextNeedsParallel": "Defina primeiro os slots paralelos.",
       "contextTotal": "Slots paralelos vezes contexto por slot pode somar no máximo 1048576 tokens."
     }
+  },
+  "judge": {
+    "title": "Avaliador",
+    "description": "O modelo que pontua os textos da avaliação \"Deutsch-Texte\". Um programa não consegue verificá-los.",
+    "kind": "Tipo",
+    "kinds": {
+      "run": "Execução em um modelo de assinatura",
+      "endpoint": "Endpoint compatível com OpenAI",
+      "off": "Desligado"
+    },
+    "model": "Modelo",
+    "agent": "Agente para a execução",
+    "agentAuto": "Automático (Home)",
+    "reasoning": "Raciocínio",
+    "reasoningLevels": {
+      "low": "Pouco",
+      "medium": "Médio",
+      "high": "Muito"
+    },
+    "baseUrl": "Endereço (…/v1)",
+    "key": "Chave",
+    "keyKept": "A chave salva é mantida",
+    "save": "Salvar"
+  },
+  "escalation": {
+    "title": "Escalonamento",
+    "description": "Quando um modelo de assinatura forte assume no lugar do local: trabalho difícil, respostas incertas, falhas.",
+    "draft": "Rascunho – ainda não ativo",
+    "enabled": "Escalonamento ligado",
+    "defaultModel": "Modelo padrão",
+    "model": "Modelo",
+    "kinds": {
+      "coding": "Programação maior",
+      "architecture": "Arquitetura",
+      "security": "Segurança",
+      "legal": "Direito e contratos",
+      "external-text": "Textos externos"
+    },
+    "uncertainty": "Decisão incerta",
+    "threshold": "abaixo de",
+    "failure": "Após uma falha",
+    "localAttempts": "Tentativas locais",
+    "failures": {
+      "tests-failed": "Testes vermelhos",
+      "loop": "Loop",
+      "timeout": "Tempo limite",
+      "error": "Erro"
+    },
+    "pinsNone": "Nenhuma escolha fixa para agentes, projetos ou tarefas.",
+    "pins": "{count} escolhas fixas para agentes, projetos ou tarefas."
   }
 }

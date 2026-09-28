@@ -322,5 +322,55 @@
       "contextNeedsParallel": "Set the parallel slots first.",
       "contextTotal": "Parallel slots times context per slot may be at most 1048576 tokens."
     }
+  },
+  "judge": {
+    "title": "Judge",
+    "description": "The model that scores the texts of the \"Deutsch-Texte\" eval. A program cannot check them.",
+    "kind": "Kind",
+    "kinds": {
+      "run": "Run on a subscription model",
+      "endpoint": "OpenAI-compatible endpoint",
+      "off": "Off"
+    },
+    "model": "Model",
+    "agent": "Agent for the run",
+    "agentAuto": "Automatic (Home)",
+    "reasoning": "Thinking",
+    "reasoningLevels": {
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High"
+    },
+    "baseUrl": "Address (…/v1)",
+    "key": "Key",
+    "keyKept": "The stored key stays",
+    "save": "Save"
+  },
+  "escalation": {
+    "title": "Escalation",
+    "description": "When a strong subscription model takes over from the local one: hard work, unsure answers, failures.",
+    "draft": "Draft – not active yet",
+    "enabled": "Escalation on",
+    "defaultModel": "Default model",
+    "model": "Model",
+    "kinds": {
+      "coding": "Larger programming work",
+      "architecture": "Architecture",
+      "security": "Security",
+      "legal": "Law and contracts",
+      "external-text": "Texts for outside"
+    },
+    "uncertainty": "Unsure decision",
+    "threshold": "below",
+    "failure": "After a failure",
+    "localAttempts": "Local attempts",
+    "failures": {
+      "tests-failed": "Tests red",
+      "loop": "Loop",
+      "timeout": "Time limit",
+      "error": "Error"
+    },
+    "pinsNone": "No fixed choices for agents, projects or tasks.",
+    "pins": "{count} fixed choices for agents, projects or tasks."
   }
 }

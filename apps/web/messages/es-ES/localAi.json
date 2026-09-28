@@ -322,5 +322,55 @@
       "contextNeedsParallel": "Define primero los slots paralelos.",
       "contextTotal": "Slots paralelos por contexto por slot no puede superar 1048576 tokens."
     }
+  },
+  "judge": {
+    "title": "Evaluador",
+    "description": "El modelo que puntúa los textos de la evaluación «Deutsch-Texte». Un programa no puede comprobarlos.",
+    "kind": "Tipo",
+    "kinds": {
+      "run": "Ejecución en un modelo de suscripción",
+      "endpoint": "Endpoint compatible con OpenAI",
+      "off": "Desactivado"
+    },
+    "model": "Modelo",
+    "agent": "Agente para la ejecución",
+    "agentAuto": "Automático (Home)",
+    "reasoning": "Razonamiento",
+    "reasoningLevels": {
+      "low": "Poco",
+      "medium": "Medio",
+      "high": "Mucho"
+    },
+    "baseUrl": "Dirección (…/v1)",
+    "key": "Clave",
+    "keyKept": "La clave guardada se mantiene",
+    "save": "Guardar"
+  },
+  "escalation": {
+    "title": "Escalado",
+    "description": "Cuándo un modelo de suscripción potente sustituye al local: trabajo difícil, respuestas inseguras, fallos.",
+    "draft": "Borrador: aún no activo",
+    "enabled": "Escalado activado",
+    "defaultModel": "Modelo por defecto",
+    "model": "Modelo",
+    "kinds": {
+      "coding": "Programación extensa",
+      "architecture": "Arquitectura",
+      "security": "Seguridad",
+      "legal": "Derecho y contratos",
+      "external-text": "Textos externos"
+    },
+    "uncertainty": "Decisión insegura",
+    "threshold": "por debajo de",
+    "failure": "Tras un fallo",
+    "localAttempts": "Intentos locales",
+    "failures": {
+      "tests-failed": "Pruebas en rojo",
+      "loop": "Bucle",
+      "timeout": "Límite de tiempo",
+      "error": "Error"
+    },
+    "pinsNone": "Sin elecciones fijas para agentes, proyectos o tareas.",
+    "pins": "{count} elecciones fijas para agentes, proyectos o tareas."
   }
 }

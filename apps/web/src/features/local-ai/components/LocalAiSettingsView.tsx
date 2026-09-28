@@ -56,6 +56,8 @@ import {
   type ServerForm,
 } from '../utils/serverForm';
 import LocalAiCard from './LocalAiCard';
+import LocalAiEscalationSection from './LocalAiEscalationSection';
+import LocalAiJudgeSection from './LocalAiJudgeSection';
 import LocalModelRow from './LocalModelRow';
 import VoiceSettingsSection from '@/features/voice/components/VoiceSettingsSection';
 
@@ -88,6 +90,8 @@ export default function LocalAiSettingsView() {
               ))}
             </SettingsCard>
           </SettingsSection>
+          <LocalAiJudgeSection />
+          <LocalAiEscalationSection />
           <VoiceSettingsSection />
         </>
       )}

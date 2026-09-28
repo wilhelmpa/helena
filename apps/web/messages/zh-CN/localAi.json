@@ -322,5 +322,55 @@
       "contextNeedsParallel": "请先设置并行槽位。",
       "contextTotal": "并行槽位乘以每槽上下文不得超过 1048576 个词元。"
     }
+  },
+  "judge": {
+    "title": "评审模型",
+    "description": "为“Deutsch-Texte”评测的文本打分的模型。程序无法检查这些文本。",
+    "kind": "类型",
+    "kinds": {
+      "run": "在订阅模型上运行",
+      "endpoint": "OpenAI 兼容端点",
+      "off": "关闭"
+    },
+    "model": "模型",
+    "agent": "运行所用代理",
+    "agentAuto": "自动（Home）",
+    "reasoning": "思考",
+    "reasoningLevels": {
+      "low": "少",
+      "medium": "中",
+      "high": "多"
+    },
+    "baseUrl": "地址（…/v1）",
+    "key": "密钥",
+    "keyKept": "保留已保存的密钥",
+    "save": "保存"
+  },
+  "escalation": {
+    "title": "升级",
+    "description": "何时由强大的订阅模型接替本地模型：困难工作、不确定的回答、失败。",
+    "draft": "草稿——尚未生效",
+    "enabled": "升级已开启",
+    "defaultModel": "默认模型",
+    "model": "模型",
+    "kinds": {
+      "coding": "较大的编程工作",
+      "architecture": "架构",
+      "security": "安全",
+      "legal": "法律与合同",
+      "external-text": "对外文本"
+    },
+    "uncertainty": "不确定的决定",
+    "threshold": "低于",
+    "failure": "失败后",
+    "localAttempts": "本地尝试次数",
+    "failures": {
+      "tests-failed": "测试失败",
+      "loop": "循环",
+      "timeout": "超时",
+      "error": "错误"
+    },
+    "pinsNone": "没有针对代理、项目或任务的固定选择。",
+    "pins": "{count} 个针对代理、项目或任务的固定选择。"
   }
 }

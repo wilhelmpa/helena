@@ -322,5 +322,55 @@
       "contextNeedsParallel": "Définis d’abord les slots parallèles.",
       "contextTotal": "Slots parallèles fois contexte par slot ne doit pas dépasser 1048576 tokens."
     }
+  },
+  "judge": {
+    "title": "Évaluateur",
+    "description": "Le modèle qui note les textes de l’évaluation « Deutsch-Texte ». Un programme ne peut pas les vérifier.",
+    "kind": "Type",
+    "kinds": {
+      "run": "Exécution sur un modèle d’abonnement",
+      "endpoint": "Point d’accès compatible OpenAI",
+      "off": "Désactivé"
+    },
+    "model": "Modèle",
+    "agent": "Agent pour l’exécution",
+    "agentAuto": "Automatique (Home)",
+    "reasoning": "Réflexion",
+    "reasoningLevels": {
+      "low": "Faible",
+      "medium": "Moyenne",
+      "high": "Élevée"
+    },
+    "baseUrl": "Adresse (…/v1)",
+    "key": "Clé",
+    "keyKept": "La clé enregistrée est conservée",
+    "save": "Enregistrer"
+  },
+  "escalation": {
+    "title": "Escalade",
+    "description": "Quand un modèle d’abonnement puissant remplace le modèle local : travail difficile, réponses incertaines, échecs.",
+    "draft": "Brouillon – pas encore actif",
+    "enabled": "Escalade activée",
+    "defaultModel": "Modèle par défaut",
+    "model": "Modèle",
+    "kinds": {
+      "coding": "Programmation importante",
+      "architecture": "Architecture",
+      "security": "Sécurité",
+      "legal": "Droit et contrats",
+      "external-text": "Textes vers l’extérieur"
+    },
+    "uncertainty": "Décision incertaine",
+    "threshold": "sous",
+    "failure": "Après un échec",
+    "localAttempts": "Essais locaux",
+    "failures": {
+      "tests-failed": "Tests en rouge",
+      "loop": "Boucle",
+      "timeout": "Délai",
+      "error": "Erreur"
+    },
+    "pinsNone": "Aucun choix fixe pour les agents, projets ou tâches.",
+    "pins": "{count} choix fixes pour les agents, projets ou tâches."
   }
 }

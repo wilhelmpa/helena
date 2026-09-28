@@ -274,3 +274,62 @@ export const runLocalAiEval = (classId: string, modelId: string) =>
   });
 
 export const getLocalAiEval = (id: number) => request<LocalAiEval>(`/god/local-ai/evals/${id}`);
+
+// The judge of the evals a program cannot check (Deutsch-Texte): a text-only run of a Hermes
+// agent on a subscription model, an OpenAI-compatible endpoint with a stored key, or off.
+export type JudgeKind = 'off' | 'run' | 'endpoint';
+
+export interface LocalAiJudge {
+  kind: JudgeKind;
+  model: string | null;
+  reasoning: string | null;
+  agentId: number | null;
+  baseUrl: string | null;
+  // An endpoint key is stored (never shown).
+  hasKey: boolean;
+  agents: { id: number; username: string; name: string }[];
+}
+
+export type JudgePatch = Partial<Omit<LocalAiJudge, 'hasKey' | 'agents'>> & {
+  key?: string | null;
+};
+
+export const getLocalAiJudge = () => request<LocalAiJudge>('/god/local-ai/judge');
+
+export const updateLocalAiJudge = (patch: JudgePatch) =>
+  request<LocalAiJudge>('/god/local-ai/judge', { method: 'PUT', body: JSON.stringify(patch) });
+
+// The escalation rules (Phase 2 draft, not yet acted on): when a strong model takes over.
+export type EscalationKind = 'coding' | 'architecture' | 'security' | 'legal' | 'external-text';
+export type EscalationFailure = 'tests-failed' | 'loop' | 'timeout' | 'error';
+
+export interface EscalationPin {
+  scope: 'agent' | 'project' | 'task';
+  id: number;
+  mode: 'auto' | 'local' | 'strong';
+  model: string | null;
+}
+
+export interface EscalationSettings {
+  enabled: boolean;
+  defaultModel: string;
+  kinds: { kind: EscalationKind; enabled: boolean; model: string | null }[];
+  uncertainty: { enabled: boolean; threshold: number; model: string | null };
+  failure: {
+    enabled: boolean;
+    on: EscalationFailure[];
+    localAttempts: number;
+    model: string | null;
+  };
+  pins: EscalationPin[];
+}
+
+export type EscalationPatch = Partial<Omit<EscalationSettings, 'uncertainty' | 'failure'>> & {
+  uncertainty?: Partial<EscalationSettings['uncertainty']>;
+  failure?: Partial<EscalationSettings['failure']>;
+};
+
+export const getEscalation = () => request<EscalationSettings>('/god/escalation');
+
+export const updateEscalation = (patch: EscalationPatch) =>
+  request<EscalationSettings>('/god/escalation', { method: 'PUT', body: JSON.stringify(patch) });

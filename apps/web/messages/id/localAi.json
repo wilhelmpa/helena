@@ -322,5 +322,55 @@
       "contextNeedsParallel": "Atur slot paralel terlebih dahulu.",
       "contextTotal": "Slot paralel dikali konteks per slot paling banyak 1048576 token."
     }
+  },
+  "judge": {
+    "title": "Penilai",
+    "description": "Model yang menilai teks evaluasi \"Deutsch-Texte\". Program tidak dapat memeriksanya.",
+    "kind": "Jenis",
+    "kinds": {
+      "run": "Jalankan pada model langganan",
+      "endpoint": "Endpoint kompatibel OpenAI",
+      "off": "Mati"
+    },
+    "model": "Model",
+    "agent": "Agen untuk jalankan",
+    "agentAuto": "Otomatis (Home)",
+    "reasoning": "Penalaran",
+    "reasoningLevels": {
+      "low": "Sedikit",
+      "medium": "Sedang",
+      "high": "Banyak"
+    },
+    "baseUrl": "Alamat (…/v1)",
+    "key": "Kunci",
+    "keyKept": "Kunci yang tersimpan tetap dipakai",
+    "save": "Simpan"
+  },
+  "escalation": {
+    "title": "Eskalasi",
+    "description": "Kapan model langganan yang kuat mengambil alih dari model lokal: pekerjaan sulit, jawaban tidak pasti, kegagalan.",
+    "draft": "Draf – belum aktif",
+    "enabled": "Eskalasi aktif",
+    "defaultModel": "Model bawaan",
+    "model": "Model",
+    "kinds": {
+      "coding": "Pemrograman besar",
+      "architecture": "Arsitektur",
+      "security": "Keamanan",
+      "legal": "Hukum dan kontrak",
+      "external-text": "Teks untuk pihak luar"
+    },
+    "uncertainty": "Keputusan tidak pasti",
+    "threshold": "di bawah",
+    "failure": "Setelah gagal",
+    "localAttempts": "Percobaan lokal",
+    "failures": {
+      "tests-failed": "Tes merah",
+      "loop": "Perulangan",
+      "timeout": "Batas waktu",
+      "error": "Galat"
+    },
+    "pinsNone": "Tidak ada pilihan tetap untuk agen, proyek, atau tugas.",
+    "pins": "{count} pilihan tetap untuk agen, proyek, atau tugas."
   }
 }
