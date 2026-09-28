@@ -720,6 +720,10 @@
         "label": "AI lokal",
         "hint": "Model di server ini: aktif, tugas, pramuat."
       },
+      "browser": {
+        "label": "Browser",
+        "hint": "Browser proyek sesuai kebutuhan: waktu diam dan yang selalu aktif."
+      },
       "decisions": {
         "label": "Pemutus",
         "hint": "Keputusan cepat: jenis, ambang, log."

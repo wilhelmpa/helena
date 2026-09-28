@@ -22,5 +22,27 @@
     "failed": "O navegador não conseguiu fazer isso."
   },
   "linkScopeMissing": "O projeto de origem deste link é desconhecido. Abra primeiro o projeto ou a conversa.",
-  "linkBrowserUnavailable": "O navegador interno deste projeto não está configurado."
+  "linkBrowserUnavailable": "O navegador interno deste projeto não está configurado.",
+  "stopped": "Pausado",
+  "stoppedHint": "Inicia ao abrir",
+  "starting": "Iniciando…",
+  "power": {
+    "saved": "Salvo",
+    "idleTitle": "Navegadores de projeto",
+    "idle": "Parar após inatividade de",
+    "idleHint": "Um navegador que ninguém está vendo e que nenhum agente usa é parado após esse tempo. Ele inicia de novo em segundos na próxima vez que for aberto ou que um agente o usar; abas e logins são mantidos.",
+    "minutes": "{count, plural, one {# minuto} other {# minutos}}",
+    "never": "Nunca (sempre ligado)",
+    "alwaysOnTitle": "Sempre ligado",
+    "alwaysOnFor": "Manter o navegador de {name} sempre ligado",
+    "home": "Helena",
+    "state": {
+      "running": "Em execução",
+      "starting": "Iniciando…",
+      "stopping": "Parando…",
+      "stopped": "Pausado — inicia ao abrir",
+      "unknown": "Estado desconhecido",
+      "none": "Ainda sem navegador"
+    }
+  }
 }

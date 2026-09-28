@@ -28,7 +28,9 @@ ExecStartPre=/usr/local/libexec/volition-wait-for-x
 # new-tab page (Google, per the managed policy). An "about:blank" here added one more blank tab
 # on every start (owner, 2026-09-24: "immer ganz viele about:blank-Tabs").
 # Restart=always: closing the last tab ends Chromium with status 0, and the project browser
-# must come back anyway.
+# must come back anyway. The router starts and stops the browser on demand
+# (../../browser/project-browser-power.mjs): an explicit stop is not restarted, and Chromium,
+# ended with SIGTERM, keeps its session for --restore-last-session.
 ExecStart=/usr/bin/chromium --ozone-platform=x11 --force-device-scale-factor=2 --user-data-dir=${PROJECT_BROWSER_PROFILE} --disk-cache-dir=${PROJECT_BROWSER_CACHE} --remote-debugging-address=127.0.0.1 --remote-debugging-port=${PROJECT_BROWSER_CDP_PORT} --no-first-run --no-default-browser-check --restore-last-session --hide-crash-restore-bubble
 Restart=always
 RestartSec=2

@@ -11,6 +11,10 @@ import { setControlState } from "./project-browser-screencast.mjs";
 import { createProjectBrowserRouter, shutdownProjectBrowserRouter } from "./project-router.mjs";
 
 // Explicit native proof: its own CPU Chromium, display, router and synthetic page only.
+// HELENA_PROOF_SCREEN (default 3200x2000) is the display's size in pixels: 1920x1080 proves the
+// project browsers' Full HD display (volition-project-browser-kasm@.service), where a page
+// larger than 960x540 CSS pixels at factor 2 has a window larger than the screen.
+const [screenWidth, screenHeight] = (process.env.HELENA_PROOF_SCREEN || "3200x2000").split("x").map(Number);
 const directory = await mkdtemp(path.join(os.tmpdir(), "helena-resize-proof-"));
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const emit = (value) => console.log(JSON.stringify(value));
@@ -42,7 +46,7 @@ function jpegSize(buffer) {
 
 const page = createServer((_request, response) => {
   response.writeHead(200, { "Content-Type": "text/html" });
-  response.end("<title>Helena synthetic resize proof</title><style>body{margin:0}button{position:fixed;left:10px;top:10px;width:100px;height:40px}</style><button onclick='window.clicks++'>Fixture</button><script>window.clicks=0;window.ticks=0;setInterval(()=>{document.body.style.background=++window.ticks%2?'steelblue':'seagreen'},80)</script>");
+  response.end("<title>Helena synthetic resize proof</title><style>body{margin:0}button{position:fixed;left:10px;top:10px;width:100px;height:40px}</style><button onclick='window.clicks++'>Fixture</button><script>window.clicks=0;window.ticks=0;window.points=[];addEventListener('mousedown',(e)=>window.points.push([e.clientX,e.clientY]));setInterval(()=>{document.body.style.background=++window.ticks%2?'steelblue':'seagreen'},80)</script>");
 });
 let xserver, chromium, connection, router, idle, stopKeeper, viewer;
 let phase = "setup";
@@ -56,7 +60,7 @@ const hardDeadline = setTimeout(() => {
 }, 90_000);
 try {
   const url = `http://127.0.0.1:${await listen(page)}/`;
-  xserver = spawn("Xvfb", ["-displayfd", "3", "-screen", "0", "3200x2000x24", "-nolisten", "tcp"],
+  xserver = spawn("Xvfb", ["-displayfd", "3", "-screen", "0", `${screenWidth}x${screenHeight}x24`, "-nolisten", "tcp"],
     { stdio: ["ignore", "ignore", "ignore", "pipe"] });
   children.push(xserver);
   let display;
@@ -159,10 +163,26 @@ try {
     assert.equal(bounds.width, width + crop.width);
     assert.equal(bounds.height, height + crop.height);
     assert.deepEqual((await targets()).map((value) => value.targetId), [target.targetId]);
-    emit({ phase, requested: [width, height], actual, bounds, crop, jpegPixels: matching.at(-1).pixels, freshFrames: matching.length, tabs: 1 });
+    // Click accuracy (docs/volition-design-browser-perfekt.md §5.3): corners and centre land on
+    // the CSS pixel asked for, also where the window is larger than the display.
+    const targetsToClick = [[3, 3], [Math.floor(width / 2), Math.floor(height / 2)], [width - 4, height - 4], [width - 4, 3], [3, height - 4]];
+    await evaluate("window.points.length = 0");
+    for (const [x, y] of targetsToClick) {
+      socket.send(JSON.stringify({ type: "mouse", event: "click", x, y, button: "left" }));
+    }
+    const points = await until(async () => {
+      const value = await evaluate("window.points");
+      return value?.length >= targetsToClick.length ? value : null;
+    }, `${phase} clicks`);
+    for (const [index, [x, y]] of targetsToClick.entries()) {
+      const [clientX, clientY] = points[index];
+      assert.ok(Math.abs(clientX - x) <= 1 && Math.abs(clientY - y) <= 1, `${phase}: click ${x},${y} landed at ${clientX},${clientY}`);
+    }
+    emit({ phase, screen: [screenWidth, screenHeight], requested: [width, height], actual, bounds, crop, jpegPixels: matching.at(-1).pixels, freshFrames: matching.length, clicks: points.length, tabs: 1 });
   }
   viewer = await connect();
-  for (const [name, width, height] of [["initial", 620, 632], ["maximize", 1280, 680], ["wider-panel", 800, 632], ["restore", 620, 632]]) {
+  for (const [name, width, height] of [["initial", 620, 632], ["maximize", 1280, 680], ["wider-panel", 800, 632],
+    ["agent-size", 1440, 900], ["retina-full", 1720, 1000], ["restore", 620, 632]]) {
     phase = name;
     await resize(width, height);
   }

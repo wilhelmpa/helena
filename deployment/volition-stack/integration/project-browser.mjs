@@ -184,6 +184,10 @@ async function stopProjectBrowserUnits(config, execute, slug) {
   }
 }
 
+// Whether a project's browser is in order, for the worker's reconciliation (a project whose
+// browser is not is provisioned again). The browser runs on demand: the browser router starts
+// it when it is used and stops it after it was idle (../browser/project-browser-power.mjs), so a
+// stopped browser is in order; only a failed display or Chromium is not.
 export function createProjectBrowserStatus(config, options = {}) {
   const execute = options.execute;
   if (typeof execute !== "function") throw new Error("Project browser command runner is required");
@@ -191,8 +195,9 @@ export function createProjectBrowserStatus(config, options = {}) {
   return async function projectBrowserActive(slug) {
     if (!PROJECT_SLUG.test(slug)) return false;
     const systemctlPrefix = config.projectBrowserSystemctlUser !== false ? ["--user"] : [];
+    let stdout;
     try {
-      const { stdout } = await execute(
+      ({ stdout } = await execute(
         config.systemctlBin,
         [
           ...systemctlPrefix,
@@ -201,12 +206,14 @@ export function createProjectBrowserStatus(config, options = {}) {
           `volition-project-browser-chromium@${slug}.service`,
         ],
         { timeout: 10_000, maxBuffer: 4_096, encoding: "utf8" },
-      );
-      return stdout.split("\n").filter(Boolean).every((line) => line.trim() === "active");
-    } catch {
-      // systemctl is-active exits non-zero when a unit is not active.
-      return false;
+      ));
+    } catch (error) {
+      // systemctl is-active exits non-zero when a unit is not active, and still prints the
+      // states; without them the question went unanswered.
+      stdout = typeof error?.stdout === "string" ? error.stdout : null;
     }
+    const states = stdout?.split("\n").map((line) => line.trim()).filter(Boolean) ?? [];
+    return states.length === 2 && states.every((state) => state !== "failed");
   };
 }
 

@@ -6,8 +6,20 @@ import type { LiveControlState, LiveHandover } from './browserLive';
 export const BROWSER_ROUTER_BASE = '/browser';
 export const HOME_BROWSER_SLUG = 'home';
 
+// The slug a project's browser goes by (the deployment's projectSlug: the key in lower case,
+// VERV's browser is "verve").
+export function browserSlug(projectKey: string): string {
+  return projectKey === 'VERV' ? 'verve' : projectKey.toLowerCase();
+}
+
+// Whether a project browser runs: project browsers run on demand, the router starts one when
+// it is used and stops it after the idle time. "unknown" until the router has looked.
+export type BrowserPower = 'running' | 'starting' | 'stopping' | 'stopped' | 'unknown';
+
 export interface RouterBrowserState {
   slug: string;
+  // Missing from a router without project browsers on demand: then it runs.
+  power?: BrowserPower;
   reachable: boolean;
   url: string | null;
   title: string | null;

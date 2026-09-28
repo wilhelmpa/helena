@@ -142,7 +142,10 @@
       "bookmarks": "书签",
       "bookmarkPage": "将此页加入书签",
       "removeBookmark": "移除书签",
-      "noBookmarks": "还没有书签"
+      "noBookmarks": "还没有书签",
+      "browserStarting": "正在启动浏览器…",
+      "browserStartingShort": "正在启动浏览器…",
+      "browserStartFailed": "浏览器未能启动，正在重试…"
     },
     "browserPreviews": {
       "title": "预览",

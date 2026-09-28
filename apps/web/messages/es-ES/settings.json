@@ -720,6 +720,10 @@
         "label": "IA local",
         "hint": "Modelos en este servidor: activar, tareas, precarga."
       },
+      "browser": {
+        "label": "Navegador",
+        "hint": "Navegadores de proyecto bajo demanda: tiempo de inactividad y los que siguen siempre activos."
+      },
       "decisions": {
         "label": "Decisores",
         "hint": "Decisiones rápidas: tipos, umbrales, registro."

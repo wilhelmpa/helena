@@ -142,7 +142,10 @@
       "bookmarks": "Marcadores",
       "bookmarkPage": "Guardar esta página",
       "removeBookmark": "Quitar marcador",
-      "noBookmarks": "Aún no hay marcadores"
+      "noBookmarks": "Aún no hay marcadores",
+      "browserStarting": "Iniciando el navegador…",
+      "browserStartingShort": "Iniciando el navegador…",
+      "browserStartFailed": "El navegador no se ha iniciado. Reintentando…"
     },
     "browserPreviews": {
       "title": "Vistas previas",

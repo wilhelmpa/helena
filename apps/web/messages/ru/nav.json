@@ -142,7 +142,10 @@
       "bookmarks": "Закладки",
       "bookmarkPage": "Добавить страницу в закладки",
       "removeBookmark": "Удалить закладку",
-      "noBookmarks": "Закладок пока нет"
+      "noBookmarks": "Закладок пока нет",
+      "browserStarting": "Запуск браузера…",
+      "browserStartingShort": "Запуск браузера…",
+      "browserStartFailed": "Браузер не запустился. Повторная попытка…"
     },
     "browserPreviews": {
       "title": "Предпросмотр",

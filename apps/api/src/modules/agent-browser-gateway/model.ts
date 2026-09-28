@@ -102,3 +102,21 @@ export const updateBrowserGatewaySettingsBody = t.Object({
     }),
   ),
 });
+
+// Project browsers on demand (power.ts): the idle time after which the browser router stops an
+// unused project browser (0: never), and the browsers it keeps running.
+export const BrowserPowerSettingsSchema = t.Object({
+  idleMinutes: t.Integer({
+    minimum: 0,
+    maximum: 1440,
+    description:
+      'Minutes a project browser may stay unwatched and unused by agents before it is ' +
+      'stopped; it starts again on its next use. 0 never stops one.',
+  }),
+  alwaysOnProjectIds: t.Array(t.Integer({ minimum: 1 }), {
+    description: 'Projects whose browser is kept running ("immer an").',
+  }),
+  homeAlwaysOn: t.Boolean({ description: "Whether Home's own browser is kept running." }),
+});
+
+export const BrowserPowerPatchSchema = t.Partial(BrowserPowerSettingsSchema);

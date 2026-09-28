@@ -554,7 +554,7 @@ def service_smoke(units: list[str]) -> None:
 
 def kasm_dropin(current: Path) -> str:
     return ("[Service]\nExecStart=\nExecStart=" + str(current / "bin/Xvnc") +
-            " ${PROJECT_BROWSER_DISPLAY} -geometry 3840x2160 -depth 24 -auth ${PROJECT_BROWSER_XAUTHORITY}"
+            " ${PROJECT_BROWSER_DISPLAY} -geometry 1920x1080 -depth 24 -auth ${PROJECT_BROWSER_XAUTHORITY}"
             " -interface 127.0.0.1 -websocketPort ${PROJECT_BROWSER_NOVNC_PORT} -rfbport 0 -localhost"
             " -nolisten tcp -httpd " + str(current / "usr/share/kasmvnc/www") +
             " -SecurityTypes None -DisableBasicAuth -AcceptSetDesktopSize -udpFullFrameFrequency 0 -publicIP 127.0.0.1\n")

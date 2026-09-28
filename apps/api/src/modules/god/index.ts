@@ -95,6 +95,14 @@ import {
 } from '#modules/settings/service';
 import { getUpdateStatus } from '#modules/settings/updates';
 import {
+  getBrowserPowerSettings,
+  setBrowserPowerSettings,
+} from '#modules/agent-browser-gateway/power';
+import {
+  BrowserPowerPatchSchema,
+  BrowserPowerSettingsSchema,
+} from '#modules/agent-browser-gateway/model';
+import {
   HotkeyCombosSchema,
   ProjectDefaultsSchema,
   ProjectDefaultsPatchSchema,
@@ -482,6 +490,28 @@ export const godRoutes = new Elysia({ name: 'god', detail: { tags: ['God'] } })
     detail: {
       summary: 'Update the run-resume limit',
       description: 'Update how many times a run may resume its coding agent session.',
+    },
+  })
+
+  .get('/god/browser-power', () => getBrowserPowerSettings(), {
+    response: { 200: BrowserPowerSettingsSchema, ...errors(401, 403) },
+    detail: {
+      summary: 'Get when project browsers run',
+      description:
+        'Project browsers run on demand: a browser starts when its live view opens or an ' +
+        'agent uses it, and stops after the idle time without use. The projects listed, and ' +
+        "Home's browser when set, are kept running.",
+    },
+  })
+
+  .put('/god/browser-power', ({ body }) => setBrowserPowerSettings(body), {
+    body: BrowserPowerPatchSchema,
+    response: { 200: BrowserPowerSettingsSchema, ...errors(400, 401, 403) },
+    detail: {
+      summary: 'Update when project browsers run',
+      description:
+        'Update the idle time after which an unused project browser stops (0: never) and ' +
+        'which browsers are kept running. The browser router applies it within a minute.',
     },
   })
 

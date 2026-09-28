@@ -439,6 +439,7 @@ export const qk = {
   instanceProjectDefaults: ['instanceProjectDefaults'] as const,
   instanceStorageSettings: ['instanceStorageSettings'] as const,
   instanceRunResumeSettings: ['instanceRunResumeSettings'] as const,
+  instanceBrowserPowerSettings: ['instanceBrowserPowerSettings'] as const,
   instanceEngineSettings: ['instanceEngineSettings'] as const,
   // Plugins: the Administrator's list and decisions, and the UI slots of loaded plugins.
   plugins: ['plugins'] as const,

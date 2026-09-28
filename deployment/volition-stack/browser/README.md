@@ -8,6 +8,27 @@ Each Helena project gets one persistent Chromium on its own KasmVNC display. Pro
 the state to the project trash. Directories use mode `0700`; `runtime.json`, `runtime.env` and
 `Xauthority` use mode `0600`.
 
+## On demand
+
+A project browser runs only while it is used (`project-browser-power.mjs`, with
+`PROJECT_BROWSER_ON_DEMAND=1` in the router's unit). The router starts
+`volition-project-browser@<slug>.target` (and its two units by name) when a live view opens,
+the toolbar or the desktop view asks for it, or an agent calls a browser tool through the
+gateway; the live view is told `{"type":"browser","state":"starting"}` at once and shows
+"Browser startet …". `BrowserIdle` (`project-browser-idle.mjs`) stops the target once nobody
+watched it, no agent held its lock and nothing used it for the idle time — Helena →
+Einstellungen → Browser, 15 minutes by default, 0 never — and starts and keeps the projects
+marked "immer an" running, also after a boot (the router is enabled; the old boot-time restore
+of every browser is retired). Chromium ends on systemd's SIGTERM like on a shutdown and keeps its
+session for `--restore-last-session`, so the tabs come back; logins stay in the profile. The
+router reads the settings from Helena (`GET /internal/browser-gateway/power`, with the gateway's
+token) every minute and keeps a copy in its state directory (`power.json`); without Helena and a
+copy, `PROJECT_BROWSER_IDLE_MINUTES` and `PROJECT_BROWSER_ALWAYS_ON` apply. The polkit rule
+`../native/systemd/61-helena-browser-on-demand.rules` lets the router's user start and stop
+exactly these units. The overview (`/api/overview`) reports each browser's `power` and never
+starts one; a stopped browser's tile says "Pausiert". Provisioning counts a stopped browser as in
+order and only a failed unit as broken (`createProjectBrowserStatus`).
+
 This directory holds the router and the display wait helper:
 
 | File | Use |
@@ -50,8 +71,11 @@ ws://kingston-server.local/browser/projects/<slug>/api/screencast
 ```
 
 Chromium runs at device scale factor 2 on its display (`--force-device-scale-factor=2` in its
-unit; the Xvnc display is 3840x2160, so a window filling the screen still shows a 1920x1080 CSS
-pixel page). A page is drawn with two display pixels per CSS pixel, so a viewer on a
+unit; the Xvnc display is 1920x1080 — it was 3840x2160 — and the window keeper sizes windows to
+the live view's or the agent's page, not to the display: a window larger than the display is
+drawn in full, which `project-browser-resize-x11-proof.mjs` with `HELENA_PROOF_SCREEN=1920x1080`
+proves for sharpness and click accuracy, and the video path grows the display to the area it
+grabs). A page is drawn with two display pixels per CSS pixel, so a viewer on a
 high-density screen gets its frames one to one, while window sizes, the screen and CDP input stay
 in CSS pixels (DIP). The window keeper reads the factor from the windows it measures
 (`readWindowSizes`), so a Chromium started without the flag is kept at factor 1, sharp only at

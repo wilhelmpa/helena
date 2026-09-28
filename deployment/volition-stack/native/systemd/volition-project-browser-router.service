@@ -19,6 +19,10 @@ User=volition-hermes
 Group=volition
 Environment=PROJECT_BROWSER_ROOT=/var/lib/volition/project-browser/projects
 Environment=PROJECT_BROWSER_ROUTER_PORT=6082
+# Project browsers on demand (../../browser/project-browser-power.mjs): the router starts a
+# project's browser target when it is used and stops it after the idle time set in Helena. The
+# polkit rule 61-helena-browser-on-demand.rules lets this unit's user start and stop the targets.
+Environment=PROJECT_BROWSER_ON_DEMAND=1
 # The browser gateway's sockets, one directory per project browser (browser-gateway-server.mjs).
 # Kept across restarts: the isolation launcher binds a project's directory into its running
 # agent units, which a directory created anew would leave behind. The gateway itself starts
