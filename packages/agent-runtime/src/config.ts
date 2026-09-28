@@ -44,7 +44,9 @@ export interface Limits {
   runBudgetSeconds?: number;
   firstChunkSeconds?: number;
   chunkSeconds?: number;
-  // Compress once the context passes this many tokens (default 60 % of the window).
+  stepSeconds?: number;
+  maxOutputTokens?: number;
+  // Compress at this token count (default: at most 12,000, or 60 % of the window).
   compressAtTokens?: number;
 }
 
@@ -98,8 +100,10 @@ export const DEFAULTS = {
   maxTurns: 40,
   runBudgetSeconds: 1800,
   chatBudgetSeconds: 900,
-  firstChunkSeconds: 120,
-  chunkSeconds: 60,
+  firstChunkSeconds: 30,
+  chunkSeconds: 30,
+  stepSeconds: 60,
+  maxOutputTokens: 4096,
   toolTimeoutSeconds: 120,
   shellTimeoutSeconds: 300,
   browserBudgetSeconds: 240,

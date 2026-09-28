@@ -30,27 +30,7 @@ import type { AgentTool, PolicyQuestion } from './tools/types';
 // loop's own), its memory and skills in the system prompt, and the session store.
 
 // Helena's own tools every role carries directly; the rest are found with find_tools.
-export const CORE_HELENA_TOOLS = [
-  'get_issue',
-  'get_issue_by_number',
-  'get_issue_why',
-  'list_issues',
-  'search_issues',
-  'create_issue',
-  'update_issue',
-  'add_comment',
-  'mark_issue_blocked',
-  'request_approval',
-  'report_output',
-  'list_projects',
-  'search_knowledge',
-  'read_knowledge',
-  'write_note',
-  'capture_note',
-  'decide',
-  'fact_store',
-  'fact_feedback',
-];
+export const CORE_HELENA_TOOLS = ['search_knowledge'];
 
 const LOOP_TOOLS = ['clarify', 'find_tools', 'load_skill', 'memory', 'search_sessions'];
 const FILE_TOOL_NAMES = FILE_TOOLS.map((entry) => entry.name);
@@ -64,11 +44,13 @@ export function directTools(
   const names = new Set<string>();
   for (const entry of all) {
     if (LOOP_TOOLS.includes(entry.name) || core.includes(entry.name)) names.add(entry.name);
-    if (profile === 'voll') names.add(entry.name);
-    if ((profile === 'recherche' || profile === 'voll') && entry.kind === 'browser')
+    if (
+      (profile === 'recherche' || profile === 'voll') &&
+      ['browser_navigate', 'browser_snapshot'].includes(entry.name)
+    )
       names.add(entry.name);
     if (
-      profile === 'coder-lite' &&
+      (profile === 'coder-lite' || profile === 'voll') &&
       (FILE_TOOL_NAMES.includes(entry.name) || entry.name === 'shell')
     ) {
       names.add(entry.name);
@@ -231,6 +213,7 @@ export async function runAgent(input: AgentRunInput): Promise<LoopResult> {
       instructions: config.instructions,
       runContext: input.runContext,
       memory,
+      query: input.prompt,
       skills,
       serverInstructions,
       workdir: config.workdir,

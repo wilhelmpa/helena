@@ -1,3 +1,4 @@
+import { memorySection } from '../prompt';
 import type { SkillEntry } from '../config';
 import type { HelenaApi } from '../helena-client';
 import { error, text, type AgentTool } from './types';
@@ -131,11 +132,12 @@ const MEMORY_RULE =
 export function memoryTool(api: HelenaApi): AgentTool {
   return {
     name: 'memory',
-    description: `Your long-term memory in Helena. action "read" shows MEMORY.md, USER.md and the recent daily notes; "note" adds a line to today's note; "propose" replaces MEMORY.md or USER.md (the owner may review it). ${MEMORY_RULE}`,
+    description: `Your long-term memory in Helena. action "read" searches MEMORY.md, USER.md and recent daily notes with query (bounded excerpts); "note" adds a line to today's note; "propose" replaces MEMORY.md or USER.md (the owner may review it). ${MEMORY_RULE}`,
     inputSchema: {
       type: 'object',
       properties: {
         action: { type: 'string', enum: ['read', 'note', 'propose'] },
+        query: { type: 'string', description: 'Words to find in memory and daily notes' },
         file: { type: 'string', enum: ['MEMORY.md', 'USER.md'] },
         content: { type: 'string' },
         reason: { type: 'string' },
@@ -146,11 +148,7 @@ export function memoryTool(api: HelenaApi): AgentTool {
       const action = text(input.action);
       if (action === 'read') {
         const state = await api.memory();
-        const parts = [
-          ...state.files.map((file) => `## ${file.file}\n${file.content || '(empty)'}`),
-          ...state.notes.map((note) => `## notes/${note.day}.md\n${note.content}`),
-        ];
-        return { text: parts.join('\n\n') || '(no memory yet)' };
+        return { text: memorySection(state, text(input.query), 6000) || '(no matching memory)' };
       }
       const content = text(input.content).trim();
       if (!content) return error('No content.');

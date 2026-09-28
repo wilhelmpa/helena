@@ -65,14 +65,15 @@ export interface LoopResult {
 }
 
 class StepAbort extends Error {
-  constructor(readonly why: 'first-chunk' | 'chunk' | 'budget' | 'aborted') {
+  constructor(readonly why: 'first-chunk' | 'chunk' | 'step-timeout' | 'budget' | 'aborted') {
     super(why);
   }
 }
 
 // Provider errors after which the same step goes to the next model of the chain.
 function isProviderFailure(error: unknown): boolean {
-  if (error instanceof StepAbort) return error.why === 'first-chunk' || error.why === 'chunk';
+  if (error instanceof StepAbort)
+    return ['first-chunk', 'chunk', 'step-timeout'].includes(error.why);
   const text = error instanceof Error ? `${error.name} ${error.message}` : String(error);
   return /ECONNREFUSED|ECONNRESET|ETIMEDOUT|fetch failed|socket|5\d\d|overloaded|unavailable|APICallError|RetryError|timed? ?out/i.test(
     text,
@@ -118,6 +119,7 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
       (kind === 'chat' ? DEFAULTS.chatBudgetSeconds : DEFAULTS.runBudgetSeconds)) * 1000;
   const maxTurns = config.limits?.maxTurns ?? DEFAULTS.maxTurns;
   const firstChunkMs = (config.limits?.firstChunkSeconds ?? DEFAULTS.firstChunkSeconds) * 1000;
+  const stepMs = (config.limits?.stepSeconds ?? DEFAULTS.stepSeconds) * 1000;
   const chunkMs = (config.limits?.chunkSeconds ?? DEFAULTS.chunkSeconds) * 1000;
   const toolTimeoutMs = (config.tools?.toolTimeoutSeconds ?? DEFAULTS.toolTimeoutSeconds) * 1000;
   let browserLeftMs = (config.tools?.browserBudgetSeconds ?? DEFAULTS.browserBudgetSeconds) * 1000;
@@ -328,7 +330,8 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
   let lastText = '';
   let turns = 0;
   const contextOf = () => chain[0]!.contextLength;
-  const compressAt = () => config.limits?.compressAtTokens ?? Math.floor(contextOf() * 0.6);
+  const compressAt = () =>
+    config.limits?.compressAtTokens ?? Math.min(12_000, Math.floor(contextOf() * 0.6));
   let lastInputTokens = 0;
 
   for (;;) {
@@ -539,7 +542,11 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
           ? { type: 'error-text', value: limited }
           : { type: 'text', value: limited },
       });
-      for (const name of result.output.activate ?? []) if (toolsByName.has(name)) active.add(name);
+      for (const name of result.output.activate ?? []) {
+        if (!toolsByName.has(name)) continue;
+        active.delete(name);
+        active.add(name);
+      }
       if (result.output.endTurn) {
         endTurn = true;
         if (call.name === 'clarify')
@@ -553,6 +560,8 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
       if (verdict === 'loop') looping = true;
       if (endTurn) break;
     }
+    const deferred = [...active].filter((name) => !input.direct.has(name));
+    for (const name of deferred.slice(0, -8)) active.delete(name);
     const stepMessages: ModelMessage[] = [
       { role: 'assistant', content: assistantContent },
       { role: 'tool', content: results },
@@ -591,6 +600,20 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
 
   // ── helpers that need the loop's state ──
 
+  function turnOptions(model: ResolvedModel, compressing = false) {
+    if (
+      !model.local ||
+      config.reasoning ||
+      model.providerOptions[model.provider]?.reasoningEffort === 'none'
+    )
+      return model.providerOptions;
+    const effort = !compressing && watch?.lastTests() === false ? 'medium' : 'low';
+    return {
+      ...model.providerOptions,
+      [model.provider]: { ...model.providerOptions[model.provider], reasoningEffort: effort },
+    };
+  }
+
   async function callModel(
     model: ResolvedModel,
     messages: ModelMessage[],
@@ -607,6 +630,7 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
     const onAbort = () => stop('aborted');
     input.signal.addEventListener('abort', onAbort, { once: true });
     let watchdog = setTimeout(() => stop('first-chunk'), Math.min(firstChunkMs, leftMs));
+    const stepTimer = setTimeout(() => stop('step-timeout'), stepMs);
     const budgetTimer = setTimeout(() => stop('budget'), Math.max(leftMs, 1));
     const bump = () => {
       clearTimeout(watchdog);
@@ -630,8 +654,9 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
         messages,
         tools,
         abortSignal: controller.signal,
-        maxRetries: 1,
-        providerOptions: model.providerOptions as never,
+        maxRetries: 0,
+        maxOutputTokens: config.limits?.maxOutputTokens ?? DEFAULTS.maxOutputTokens,
+        providerOptions: turnOptions(model) as never,
         onError: ({ error }) => {
           streamError ??= error;
         },
@@ -693,6 +718,7 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
     } finally {
       clearTimeout(watchdog);
       clearTimeout(budgetTimer);
+      clearTimeout(stepTimer);
       input.signal.removeEventListener('abort', onAbort);
     }
     if (why) throw new StepAbort(why);
@@ -807,16 +833,24 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
       .slice(-120_000);
     const result = await generateText({
       model: chain[0]!.model,
-      providerOptions: chain[0]!.providerOptions as never,
+      providerOptions: turnOptions(chain[0]!, true) as never,
+      maxOutputTokens: 1500,
       instructions:
         'Fasse den bisherigen Verlauf einer Agenten-Sitzung knapp zusammen: Aufgabe, Entscheidungen, Ergebnisse von Werkzeugen, geänderte Dateien, offene Punkte. Keine Geheimnisse. Deutsch, höchstens 400 Wörter.',
       prompt: `${summary ? `Frühere Zusammenfassung:\n${summary}\n\n` : ''}Verlauf:\n${transcript}`,
       abortSignal: AbortSignal.any([
         input.signal,
-        AbortSignal.timeout(Math.max(1, Math.floor(budgetMs - (now() - started)))),
+        AbortSignal.timeout(
+          Math.max(1, Math.min(stepMs, Math.floor(budgetMs - (now() - started)))),
+        ),
       ]),
-      maxRetries: 1,
+      maxRetries: 0,
     });
+    spend.inputTokens += result.usage.inputTokens ?? 0;
+    spend.outputTokens += result.usage.outputTokens ?? 0;
+    spend.cacheReadTokens += result.usage.inputTokenDetails?.cacheReadTokens ?? 0;
+    spend.cacheWriteTokens += result.usage.inputTokenDetails?.cacheWriteTokens ?? 0;
+    spend.reasoningTokens += result.usage.outputTokenDetails?.reasoningTokens ?? 0;
     const next = result.text.trim();
     if (!next) return;
     summary = next;

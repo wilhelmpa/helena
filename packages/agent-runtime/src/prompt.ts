@@ -5,8 +5,12 @@ import type { MemoryState } from './helena-client';
 // run's own context the runner hands over, the loop's working rules, the memory Helena keeps
 // for the agent, the index of its skills and what its tool servers say about their use.
 
-const MEMORY_CHARS = 12_000;
-const NOTE_CHARS = 3_000;
+const MEMORY_CHARS = 3_000;
+const COMMON_WORDS = new Set(
+  'the and for with this that from have please use can der die das und für mit den dem des ein eine einer einem einen ist sind auf aus von zum zur bitte nutze'.split(
+    ' ',
+  ),
+);
 
 const RULES = [
   '## Arbeitsweise',
@@ -22,19 +26,44 @@ function cut(value: string, limit: number): string {
   return value.length <= limit ? value : `${value.slice(0, limit)}\n… (gekürzt)`;
 }
 
-export function memorySection(memory: MemoryState | null): string {
+export function memorySection(
+  memory: MemoryState | null,
+  query = '',
+  limit = MEMORY_CHARS,
+): string {
   if (!memory) return '';
+  const terms = new Set(
+    (query.toLowerCase().match(/[\p{L}\p{N}_-]{3,}/gu) ?? []).filter(
+      (word) => !COMMON_WORDS.has(word),
+    ),
+  );
+  const sources = [
+    ...memory.files.map((file) => ({ title: file.file, content: file.content })),
+    ...memory.notes.map((note) => ({ title: `notes/${note.day}.md`, content: note.content })),
+  ];
+  const matches = sources
+    .flatMap(({ title, content }) =>
+      content
+        .split(/\n+/)
+        .filter((line) => line.trim())
+        .map((line) => {
+          const words = new Set(line.toLowerCase().match(/[\p{L}\p{N}_-]{3,}/gu) ?? []);
+          const score = [...terms].filter((term) => words.has(term)).length;
+          return { title, line, score };
+        }),
+    )
+    .filter((entry) => !query.trim() || entry.score > 0)
+    .sort((a, b) => b.score - a.score);
+  if (matches.length === 0) return '';
   const parts: string[] = [];
-  for (const file of memory.files) {
-    if (file.content.trim())
-      parts.push(`### ${file.file}\n${cut(file.content.trim(), MEMORY_CHARS)}`);
+  let remaining = limit - 120;
+  for (const { title, line } of matches) {
+    if (remaining <= 0) break;
+    const part = `### ${title}\n${line.trim()}`.slice(0, remaining);
+    parts.push(part);
+    remaining -= part.length + 2;
   }
-  for (const note of memory.notes) {
-    if (note.content.trim())
-      parts.push(`### Notiz ${note.day}\n${cut(note.content.trim(), NOTE_CHARS)}`);
-  }
-  if (parts.length === 0) return '';
-  return `## Dein Gedächtnis\n${parts.join('\n\n')}`;
+  return `## Relevant memory excerpts\n${parts.join('\n\n')}\nUse memory with a query for other details.`;
 }
 
 export function skillIndex(skills: SkillEntry[]): string {
@@ -49,6 +78,7 @@ export function buildSystemPrompt(input: {
   instructions?: string;
   runContext?: string;
   memory: MemoryState | null;
+  query?: string;
   skills: SkillEntry[];
   serverInstructions: { server: string; text: string }[];
   workdir: string;
@@ -60,7 +90,7 @@ export function buildSystemPrompt(input: {
     input.runContext?.trim() ?? '',
     RULES,
     `Arbeitsordner: ${input.workdir}\nHeute: ${now.toISOString().slice(0, 10)}`,
-    memorySection(input.memory),
+    memorySection(input.memory, input.query),
     skillIndex(input.skills),
     ...input.serverInstructions.map(
       (entry) => `## Hinweise zu ${entry.server}\n${cut(entry.text.trim(), 6000)}`,

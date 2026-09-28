@@ -41,9 +41,6 @@ export const defaultModelFactory: ModelFactory = (server, modelId, env) => {
   })(modelId);
 };
 
-// Reasoning levels Helena knows; `none` and `off` switch a local model's thinking off.
-const NO_THINKING = new Set(['none', 'off', 'minimal']);
-
 export function resolveModel(
   id: string,
   servers: ModelServer[],
@@ -58,15 +55,17 @@ export function resolveModel(
     throw new Error(`the key of ${provider} is not in the environment`);
   }
   const providerOptions: Record<string, Record<string, unknown>> = {};
-  if (server.kind === 'openai-compatible' && server.thinkingSwitch) {
-    // The OpenAI-compatible provider spreads its own options into the request body.
+  if (server.kind === 'openai-compatible') {
+    const effort =
+      server.thinking === false || reasoning === 'off'
+        ? 'none'
+        : reasoning || (server.local ? 'low' : undefined);
     providerOptions[server.provider] = {
-      chat_template_kwargs: {
-        enable_thinking: server.thinking !== false && !NO_THINKING.has(reasoning ?? ''),
-      },
+      ...(effort && { reasoningEffort: effort }),
+      ...(server.thinkingSwitch && {
+        chat_template_kwargs: { enable_thinking: effort !== 'none' },
+      }),
     };
-  } else if (server.kind === 'openai-compatible' && reasoning && !NO_THINKING.has(reasoning)) {
-    providerOptions[server.provider] = { reasoningEffort: reasoning };
   }
   return {
     id,

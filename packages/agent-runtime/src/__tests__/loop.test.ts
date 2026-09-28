@@ -556,3 +556,55 @@ test('central timeout rules receive a first-token timeout', async () => {
   expect(result.status).toBe('escalated');
   expect(sink.of('escalate')[0]!.target).toBe('runtime:codex/gpt-6-sol');
 });
+
+test('a model step has a total deadline independent of the first-token limit', async () => {
+  const began = Date.now();
+  const { result } = await run([{ hang: true }], {
+    config: { limits: { firstChunkSeconds: 10, stepSeconds: 0.05 } },
+  });
+  expect(result.status).toBe('failed');
+  expect(Date.now() - began).toBeLessThan(500);
+});
+
+test('a failed test raises automatic reasoning for the next step', async () => {
+  const { primary } = await run([
+    { calls: [{ name: 'shell', input: { command: 'bun test missing.test.ts' } }] },
+    { text: 'The test failed.' },
+  ]);
+  expect(primary.doStreamCalls[0]!.providerOptions?.local).toMatchObject({
+    reasoningEffort: 'low',
+  });
+  expect(primary.doStreamCalls[1]!.providerOptions?.local).toMatchObject({
+    reasoningEffort: 'medium',
+  });
+});
+
+test('discovery keeps at most eight deferred schemas and preserves the stored history', async () => {
+  const extraTools: AgentTool[] = Array.from({ length: 18 }, (_, index) => ({
+    name: `group${Math.floor(index / 6)}_tool${index}`,
+    description: 'A deferred tool',
+    readOnly: true,
+    inputSchema: { type: 'object', properties: {} },
+    execute: async () => ({ text: 'ok' }),
+  }));
+  const { primary, sessions, result, sink } = await run(
+    [
+      { calls: [{ name: 'find_tools', input: { query: 'group0' } }] },
+      { calls: [{ name: 'find_tools', input: { query: 'group1' } }] },
+      {
+        calls: [
+          { name: 'find_tools', input: { query: 'group2' } },
+          { name: 'group0_tool4', input: {} },
+        ],
+      },
+      { text: 'Done.' },
+    ],
+    { extraTools, config: { tools: { profile: 'assistent' } } },
+  );
+  const names = primary.doStreamCalls.at(-1)!.tools!.map((entry) => entry.name);
+  expect(names).toContain('group2_tool17');
+  expect(names).not.toContain('group0_tool0');
+  expect(names.filter((name) => name.startsWith('group'))).toHaveLength(8);
+  expect(sink.of('tool-result').at(-1)!.output).toBe('ok');
+  expect((await sessions.load(result.sessionId))!.items).toHaveLength(8);
+});
