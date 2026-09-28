@@ -698,11 +698,10 @@ describe('ai agents', () => {
       });
       const asMember = await addProjectMember(asOwner, 'MKT', role.data!.id);
 
+      // The project coordinator runs owner-scoped (on the owner's runner), so a shared
+      // project does not expose it to another member (family access, item 11).
       const list = await agents(asMember, teamId).get();
-      expect(list.data?.map((a) => a.username).sort()).toEqual([
-        'hermes-mkt-coordinator',
-        'mkt-bot',
-      ]);
+      expect(list.data?.map((a) => a.username).sort()).toEqual(['mkt-bot']);
 
       const hidden = agents(asMember, teamId)({ agentId: theirs.data!.agent.id });
       expect((await hidden.get()).status).toBe(404);

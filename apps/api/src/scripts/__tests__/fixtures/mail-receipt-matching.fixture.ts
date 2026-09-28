@@ -32,6 +32,8 @@ const tables = {
   helenaBankTransaction: table('transaction'),
   helenaReceiptMatch: table('match'),
   helenaReceiptOriginalLink: table('originalLink'),
+  helenaReceiptPairHistory: table('pairHistory'),
+  helenaReceiptPairSuggestion: table('pairSuggestion'),
 };
 const db = {
   select: (fields?: Record<string, unknown>) => {
@@ -156,6 +158,12 @@ moduleMock('receipts/views', {
   inMonth: () => true,
   receiptDetailView: () => ({}),
   receiptViews: () => [],
+});
+// Pair and duplicate detection has its own tests (receipts/__tests__/integration/dedup.test.ts);
+// this fixture checks only which receipts intake hands on to matching.
+moduleMock('receipts/dedup', {
+  autoMergeEnabled: async () => true,
+  inspectNewReceipts: async () => [],
 });
 moduleMock('receipts/source', {
   receiptSourceLinks: () => assert.fail('Source links must not be rendered during intake'),

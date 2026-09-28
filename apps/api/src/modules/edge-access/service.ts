@@ -142,17 +142,21 @@ export async function verifyEdgeRequest(headers: Headers): Promise<EdgeIdentity>
 export async function edgeGuard(request: Request): Promise<null> {
   const entry = edgeEntry(request.headers);
   if (!entry) return null;
-  let identity: EdgeIdentity;
+  let identity: EdgeIdentity | null = null;
   try {
-    identity =
-      entry === 'lan'
-        ? await verifyLanAccess(request.headers, verifyEdgeRequest)
-        : await verifyEdgeRequest(request.headers);
+    if (entry === 'lan') await verifyLanAccess(request.headers, verifyEdgeRequest);
+    else identity = await verifyEdgeRequest(request.headers);
   } catch (error) {
     const code = error instanceof EdgeAccessError ? error.code : 'invalid_assertion';
     throw new HttpError(403, 'Access from outside needs the edge sign-in', `edge_${code}`);
   }
-  if (request.headers.has('cookie') && new URL(request.url).pathname !== '/api/auth/sign-out') {
+  // The tunnel entry binds the Helena session to the Access identity (family access,
+  // item 11). The strict LAN entry keeps its two Access gates without that binding.
+  if (
+    identity &&
+    request.headers.has('cookie') &&
+    new URL(request.url).pathname !== '/api/auth/sign-out'
+  ) {
     // An API-key header cannot disable the binding of an interactive cookie.
     // Verify only the cookie here; service requests without cookies stay independent.
     const cookieHeaders = new Headers(request.headers);

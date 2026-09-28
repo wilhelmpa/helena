@@ -65,6 +65,8 @@ const tables = {
   helenaBankTransaction: table('transaction'),
   helenaReceiptMatch: table('match'),
   helenaReceiptOriginalLink: table('originalLink'),
+  helenaReceiptPairHistory: table('pairHistory'),
+  helenaReceiptPairSuggestion: table('pairSuggestion'),
 };
 const executor = {
   select: (fields?: Record<string, unknown>) => {
@@ -235,6 +237,20 @@ moduleMock('receipts/views', {
   inMonth: () => true,
   receiptDetailView: () => ({}),
   receiptViews: () => [],
+});
+// Pair and duplicate detection has its own tests (receipts/__tests__/integration/dedup.test.ts);
+// here it only has to run inside the intake transaction, on the receipts it just stored.
+moduleMock('receipts/dedup', {
+  autoMergeEnabled: async () => {
+    assert.notEqual(transactionContext.getStore(), true, 'Setting read inside intake transaction');
+    return true;
+  },
+  inspectNewReceipts: async (_tx: unknown, projectId: number, newIds: number[]) => {
+    assert.equal(transactionContext.getStore(), true, 'Pair detection outside intake transaction');
+    assert.equal(projectId, target.id);
+    for (const id of newIds) assert.ok(receipts.some((receipt) => receipt.id === id));
+    return [];
+  },
 });
 moduleMock('receipts/source', {
   receiptSourceLinks: () => assert.fail('Source links must not be rendered during intake'),

@@ -212,7 +212,9 @@ export async function classifyMessage(
   const outcome = await decide({
     teamId,
     classId: MAIL_CLASS,
-    localOnly: true,
+    // No request-wide localOnly here: the class connection is the owner's choice (the
+    // local Qwen logit connection), and the optional Jev first stage only runs with the
+    // owner's explicit per-use-case cloud approval (docs/helena-decisions/jev-strategie.md).
     context: mailContext({
       fromName: message.message.fromName,
       fromAddress: message.message.fromAddress,
