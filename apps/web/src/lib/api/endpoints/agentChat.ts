@@ -410,6 +410,7 @@ export const sendAiAgentChat = (
     thinkingLevel?: string | null;
     // Said in the conversation mode: the agent answers short and speakable.
     via?: 'voice';
+    context?: { projectKey: string | null; path: string };
   },
 ) =>
   request<{ threadId: string; messageId: number; userMessageId: number }>(

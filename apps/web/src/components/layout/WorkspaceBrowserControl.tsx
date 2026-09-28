@@ -52,7 +52,7 @@ export default function WorkspaceBrowserControl({
       data-live-dialog
       className={
         inline
-          ? 'flex max-w-44 items-center gap-1.5 text-[11px] text-[#ff912e]'
+          ? 'flex max-w-60 items-center gap-1.5 text-[11px] text-[#ff912e]'
           : 'absolute start-2 top-2 flex h-8 max-w-[calc(100%-1rem)] items-center gap-2 rounded-md bg-background/90 ps-2 pe-1 text-xs text-muted-foreground shadow-sm'
       }
     >
@@ -80,7 +80,7 @@ export default function WorkspaceBrowserControl({
         ) : (
           <strong className="font-medium text-foreground">{t('youControl')}</strong>
         )}
-        {since && <> · {since}</>}
+        {since && !inline && <> · {since}</>}
       </span>
       {control.by === 'agent' ? (
         <Button

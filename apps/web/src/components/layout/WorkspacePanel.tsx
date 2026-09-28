@@ -62,7 +62,6 @@ export default function WorkspacePanel({
   onPickTool,
   onCloseArea,
   onClose,
-  dockSheet = false,
   tabs,
   activeTool,
   layoutId,
@@ -85,7 +84,6 @@ export default function WorkspacePanel({
   onPickTool: (areaId: string, tool: WorkspaceToolId) => void;
   onCloseArea: (areaId: string) => void;
   onClose: () => void;
-  dockSheet?: boolean;
   tabs: ReturnType<typeof useWorkspaceTabs>;
   activeTool: string;
   layoutId: string;
@@ -250,6 +248,13 @@ export default function WorkspacePanel({
       onViewChange={browserPreferences.setView}
       followAgent={browserPreferences.followAgent}
       onToggleFollowAgent={browserPreferences.toggleFollowAgent}
+      lossless={browserPreferences.lossless}
+      onToggleLossless={browserPreferences.toggleLossless}
+      externalUrl={visible.find((entry) => entry.id === 'browser')?.url ?? null}
+      onReloadFrame={() => {
+        const key = visible.find((entry) => entry.id === 'browser')?.key;
+        if (key) setFrameReloads((current) => ({ ...current, [key]: (current[key] ?? 0) + 1 }));
+      }}
     />
   ) : undefined;
 
@@ -287,14 +292,6 @@ export default function WorkspacePanel({
 
   return (
     <>
-      {dockSheet && (
-        <button
-          type="button"
-          className="helena-home-scrim"
-          aria-label="Home schließen"
-          onClick={onClose}
-        />
-      )}
       {visible.map((entry) => (
         // The area's surface under its header and view: the border to its neighbour and,
         // over the page, the panel's shadow.
@@ -302,7 +299,6 @@ export default function WorkspacePanel({
           key={`surface:${entry.area.id}`}
           aria-hidden="true"
           data-panel-part={entry.area.main ? 'surface' : undefined}
-          data-dock-part={dockSheet && entry.area.main ? 'surface' : undefined}
           className={cn(
             'min-w-0 bg-background',
             !full && 'border-s',
@@ -319,7 +315,6 @@ export default function WorkspacePanel({
             key={`header:${entry.area.id}`}
             data-panel-part="header"
             data-panel-tool={entry.id}
-            data-dock-part={dockSheet ? 'header' : undefined}
             className={cn('min-w-0', layer)}
             style={place(entry.area, '1')}
           >
@@ -337,13 +332,9 @@ export default function WorkspacePanel({
               title={advanced ? t('advanced') : entry.label}
               advanced={advanced}
               canExpandChat={entry.id === 'chat' && !!entryOf('chat').advancedUrl}
-              canToggleBrowserLossless={
-                visible.some((shown) => shown.id === 'browser' && !!tools.browser.url) &&
-                browserPreferences.ready &&
-                !browserLive
-              }
+              canToggleBrowserLossless={false}
               browserLossless={browserPreferences.lossless}
-              externalUrl={entry.content ? null : entry.url}
+              externalUrl={entry.id === 'browser' || entry.content ? null : entry.url}
               isMobile={isMobile}
               full={full}
               mode={mode}
@@ -428,7 +419,6 @@ export default function WorkspacePanel({
             key={`${id}:${contextProjectKey ?? 'global'}`}
             data-panel-part={area?.main ? 'content' : undefined}
             data-panel-tool={area?.main ? id : undefined}
-            data-dock-part={dockSheet && area?.main ? 'content' : undefined}
             role="region"
             aria-label={labels[id] ?? id}
             className={cn(

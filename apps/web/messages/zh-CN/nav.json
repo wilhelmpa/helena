@@ -1,7 +1,7 @@
 {
-  "dockContext": "HOME · 上下文",
   "projectLinkHint": "此内容属于其他项目。",
   "openInProject": "在项目中打开",
+  "dockContext": "HOME · 上下文",
   "dockOpen": "打开 Home (⌘J)",
   "sidebarMyTasks": "My tasks",
   "sidebarOpenTasks": "All open",
@@ -215,11 +215,11 @@
     "commandPlaceholder": "选择布局…",
     "layouts": {
       "standard": "标准",
-      "page-tool-half": "平分 50/50",
       "chat-left": "聊天在左",
       "chat-tool": "聊天 + 工具",
       "two-tools": "两个工具",
-      "tool-full": "工具全屏"
+      "tool-full": "工具全屏",
+      "page-tool-half": "平分 50/50"
     },
     "tools": "工具",
     "pickTool": "{tool} · 更换工具",
@@ -240,6 +240,7 @@
     "split": "Split 50/50",
     "full": "Full screen",
     "close": "Close panel",
-    "closeTab": "Close {tab}"
+    "closeTab": "Close {tab}",
+    "reloadView": "Reload view"
   }
 }

@@ -1,7 +1,7 @@
 {
-  "dockContext": "HOME · KONTEKS",
   "projectLinkHint": "Konten ini milik proyek lain.",
   "openInProject": "Buka di proyek",
+  "dockContext": "HOME · KONTEKS",
   "dockOpen": "Buka Home (⌘J)",
   "sidebarMyTasks": "My tasks",
   "sidebarOpenTasks": "All open",
@@ -215,11 +215,11 @@
     "commandPlaceholder": "Pilih tata letak…",
     "layouts": {
       "standard": "Standar",
-      "page-tool-half": "Terbagi 50/50",
       "chat-left": "Chat di kiri",
       "chat-tool": "Chat + alat",
       "two-tools": "Dua alat",
-      "tool-full": "Alat layar penuh"
+      "tool-full": "Alat layar penuh",
+      "page-tool-half": "Terbagi 50/50"
     },
     "tools": "Alat",
     "pickTool": "{tool} · ganti alat",
@@ -240,6 +240,7 @@
     "split": "Split 50/50",
     "full": "Full screen",
     "close": "Close panel",
-    "closeTab": "Close {tab}"
+    "closeTab": "Close {tab}",
+    "reloadView": "Reload view"
   }
 }

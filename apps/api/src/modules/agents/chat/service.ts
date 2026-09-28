@@ -52,7 +52,12 @@ import {
 import { routeRequest, routesOfChatMessages } from '#modules/model-router/service';
 import type { AgUiEventBody, ChatMessageStatus } from './model';
 import { notifyChatAnswer } from './wake';
-import { questionText, imagePaths, type ChatAttachment } from './attachments';
+import {
+  questionText,
+  imagePaths,
+  type ChatAttachment,
+  type PublicChatAttachment,
+} from './attachments';
 import {
   buildTree,
   latestLeaf,
@@ -371,7 +376,13 @@ export async function getThreadMessages(
       parentId: r.parentId == null ? null : String(r.parentId),
       siblingIds: siblingsOf(tree, r.id).map(String),
       agentId: r.agentId,
-      ...(r.attachments ? { attachments: r.attachments as ChatAttachment[] } : {}),
+      ...(r.attachments
+        ? {
+            attachments: (r.attachments as ChatAttachment[]).filter(
+              (attachment): attachment is PublicChatAttachment => attachment.kind !== 'page',
+            ),
+          }
+        : {}),
       ...(r.role === 'assistant' && {
         model: r.model,
         inputTokens: r.inputTokens,

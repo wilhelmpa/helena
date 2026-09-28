@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
+import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useShell } from '@/context/shellContext';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -26,6 +27,7 @@ import {
   PageActions,
   PageToolbar,
   PageToolbarSpacer,
+  PAGE_CONTROL_CLASS,
   type PageAction,
 } from '@/components/layout/PageToolbar';
 import { useViewFoldersQuery, useViewsQuery } from '@/services/views.service';
@@ -193,6 +195,12 @@ export default function WorkItemsPage() {
         customFields={customFields}
         issueTypes={project.issueTypes}
       />
+      {features.cycles && can('cycles', 'read') && (
+        <Link href={cyclesPath(projectKey)} className={PAGE_CONTROL_CLASS}>
+          <CalendarDays size={16} aria-hidden="true" />
+          {tNav('cycles')}
+        </Link>
+      )}
     </>
   );
 
@@ -249,17 +257,6 @@ export default function WorkItemsPage() {
                         label: t('editView'),
                         icon: Pencil,
                         onClick: () => editor.beginEditView(editor.activeView!),
-                      },
-                    ]
-                  : []),
-                ...(features.cycles && can('cycles', 'read')
-                  ? [
-                      {
-                        id: 'cycles',
-                        label: tNav('cycles'),
-                        icon: CalendarDays,
-                        href: cyclesPath(projectKey),
-                        menuOnly: true,
                       },
                     ]
                   : []),

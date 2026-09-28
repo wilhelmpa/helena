@@ -62,7 +62,6 @@ export default function WorkspaceLayoutHost({
     DOCK_MAX_WIDTH,
   );
   const overlay = resolved.closable && (phone || panel.mode === 'overlay');
-  const dockSheet = false;
   const geometry = layoutGeometry({
     resolved,
     overlay,
@@ -156,7 +155,6 @@ export default function WorkspaceLayoutHost({
           if (resolved.full) layout.choosePanelLayout('side');
           panel.setOpen(false);
         }}
-        dockSheet={dockSheet}
         tabs={layout.tabs}
         activeTool={panel.activeTool}
         layoutId={layout.chosenId}

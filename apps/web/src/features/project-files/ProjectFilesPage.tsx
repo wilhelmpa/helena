@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 import { useProjectFeatures } from '@/hooks/useProjectFeatures';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { BookOpen, Code2, ReceiptText, StickyNote } from 'lucide-react';
+import { BookOpen, ReceiptText, StickyNote } from 'lucide-react';
 import { WorkspacePageHeader } from '@/components/layout/WorkspaceHeader';
 import { PageTabs } from '@/components/layout/PageToolbar';
 import { PageToolbarNavigationProvider } from '@/context/pageToolbarNavigation';
@@ -54,7 +54,6 @@ export default function ProjectFilesPage({ boards }: { boards?: ReactNode }) {
         ...(boardsEnabled
           ? [{ value: 'boards', label: t('unified.boards'), icon: StickyNote }]
           : []),
-        { value: 'code', label: t('roots.code'), icon: Code2 },
         ...(isAdmin
           ? [
               {

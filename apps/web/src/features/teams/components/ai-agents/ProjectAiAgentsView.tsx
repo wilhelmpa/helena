@@ -17,6 +17,7 @@ import ProjectAgentTemplateDialog from './ProjectAgentTemplateDialog';
 import ProjectAiAgents from './ProjectAiAgents';
 import { TeamAiAgentSheet } from './TeamAiAgentSheet';
 import { workflowsPath } from '@/utils/paths';
+import { usePermissions } from '@/hooks/usePermissions';
 
 const section = AI_AGENTS_SECTION;
 
@@ -36,6 +37,7 @@ export default function ProjectAiAgentsView({
   const [fromTemplate, setFromTemplate] = useState(false);
   const tSettings = useTranslations('settings.agents');
   const hasTemplates = (useAiAgentsQuery(teamId).data ?? []).some((agent) => agent.template);
+  const { can } = usePermissions();
 
   return (
     <SectionPageView title={sectionText.label} wide>
@@ -53,13 +55,17 @@ export default function ProjectAiAgentsView({
                   },
                 ]
               : []),
-            {
-              id: 'workflows',
-              label: tNav('workflows'),
-              icon: Workflow,
-              href: workflowsPath(projectKey),
-              menuOnly: true,
-            },
+            ...(can('actions', 'read')
+              ? [
+                  {
+                    id: 'workflows',
+                    label: tNav('workflows'),
+                    icon: Workflow,
+                    href: workflowsPath(projectKey),
+                    menuOnly: true,
+                  },
+                ]
+              : []),
           ]}
           primary={
             permissions?.create

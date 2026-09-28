@@ -5,7 +5,7 @@ tags: [trading, strategie-labor]
 ---
 # Strategie-Labor
 
-Wie aus einer Idee eine geprüfte Strategie wird – und wie sie sich verbessert. Ausführlich im Skill `strategie-labor`; das Board „Strategie-Labor“ zeigt den Stand.
+Wie aus einer Idee eine geprüfte Strategie wird – und wie sie sich verbessert. Ausführlich im Skill `strategie-labor`; die Leinwand „Strategie-Labor“ zeigt den Stand.
 
 ## Kreislauf
 1. **Idee** – Hypothese in einem Satz, mit Begründung und Quelle ([[Trading-Research]], [[Trading-Reviews]]).

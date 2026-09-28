@@ -16,10 +16,11 @@ export default function HomeDock({
 }: {
   open: boolean;
   onOpen: () => void;
-  onNewIssue: () => void;
+  onNewIssue?: () => void;
 }) {
   const pathname = usePathname();
   const t = useTranslations('nav');
+  const tIssue = useTranslations('workItems');
   const home = useChatWorkspaceScope(null);
   const status = useAgentStatus(home.agents[0]?.id ?? 0);
   const hold = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -36,15 +37,17 @@ export default function HomeDock({
   if (pathname === '/' || open) return null;
   return (
     <>
-      <button
-        type="button"
-        className="helena-home-dock-plus"
-        aria-label="Neue Aufgabe (C)"
-        title="Neue Aufgabe (C)"
-        onClick={onNewIssue}
-      >
-        <Plus size={24} />
-      </button>
+      {onNewIssue && (
+        <button
+          type="button"
+          className="helena-home-dock-plus"
+          aria-label={tIssue('newIssue')}
+          title={tIssue('newIssue')}
+          onClick={onNewIssue}
+        >
+          <Plus size={24} />
+        </button>
+      )}
       <button
         type="button"
         className="helena-home-dock"

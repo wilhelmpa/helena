@@ -65,7 +65,7 @@ import {
   trashChat,
   updateChat,
 } from './threads';
-import { resolveAttachments } from './attachments';
+import { resolveAttachments, resolvePageContext } from './attachments';
 import { maskForTeam } from '../credentials/env';
 
 // Chatting with an external agent: the member's side (send a message, follow the
@@ -335,7 +335,10 @@ export const agentChatRoutes = new Elysia({ name: 'agent-chat', detail: { tags: 
         prompt: body.prompt,
         threadId: body.threadId,
         parentId: body.parentId,
-        attachments: await resolveAttachments(caller, body.attachments ?? {}),
+        attachments: [
+          ...(await resolveAttachments(caller, body.attachments ?? {})),
+          ...(await resolvePageContext(caller, body.context)),
+        ],
         model: body.model,
         thinkingLevel: body.thinkingLevel,
         via: body.via ?? null,

@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import type { Project } from '@/lib/api/endpoints/projects';
+import { projectLinkTarget } from '@/utils/projectLinkTarget';
 
 // A normal link never changes the selected project. The explicit button is the only
 // way out of the current project, just like choosing one in the switcher.
@@ -28,6 +29,11 @@ export default function ProjectLinkSheet({
   const [target, setTarget] = useState<{ href: string; key: string } | null>(null);
 
   useEffect(() => {
+    const onRequest = (event: Event) => {
+      const href = (event as CustomEvent<string>).detail;
+      const target = projectLinkTarget(href, currentProjectKey, window.location.origin);
+      if (target) setTarget(target);
+    };
     const onClick = (event: MouseEvent) => {
       if (
         event.defaultPrevented ||
@@ -40,18 +46,22 @@ export default function ProjectLinkSheet({
         return;
       const anchor = (event.target as Element | null)?.closest('a[href]');
       if (!anchor || anchor.closest('[data-project-switcher]')) return;
-      const url = new URL(anchor.getAttribute('href')!, window.location.href);
-      if (url.origin !== window.location.origin) return;
-      const match = /^\/project\/([^/]+)/.exec(url.pathname);
-      if (!match) return;
-      const key = decodeURIComponent(match[1]!);
-      if (key === currentProjectKey) return;
+      const target = projectLinkTarget(
+        anchor.getAttribute('href')!,
+        currentProjectKey,
+        window.location.origin,
+      );
+      if (!target) return;
       event.preventDefault();
       event.stopPropagation();
-      setTarget({ href: `${url.pathname}${url.search}${url.hash}`, key });
+      setTarget(target);
     };
     document.addEventListener('click', onClick, true);
-    return () => document.removeEventListener('click', onClick, true);
+    window.addEventListener('helena:project-link', onRequest);
+    return () => {
+      document.removeEventListener('click', onClick, true);
+      window.removeEventListener('helena:project-link', onRequest);
+    };
   }, [currentProjectKey]);
 
   const name = projects.find((project) => project.key === target?.key)?.name ?? target?.key;

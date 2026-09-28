@@ -1,7 +1,7 @@
 {
-  "dockContext": "HOME · CONTEXTE",
   "projectLinkHint": "Ce contenu appartient à un autre projet.",
   "openInProject": "Ouvrir dans le projet",
+  "dockContext": "HOME · CONTEXTE",
   "dockOpen": "Ouvrir Home (⌘J)",
   "sidebarMyTasks": "My tasks",
   "sidebarOpenTasks": "All open",
@@ -215,11 +215,11 @@
     "commandPlaceholder": "Choisir une disposition…",
     "layouts": {
       "standard": "Standard",
-      "page-tool-half": "Partagé 50/50",
       "chat-left": "Chat à gauche",
       "chat-tool": "Chat + outil",
       "two-tools": "Deux outils",
-      "tool-full": "Outil en grand"
+      "tool-full": "Outil en grand",
+      "page-tool-half": "Partagé 50/50"
     },
     "tools": "Outils",
     "pickTool": "{tool} · changer d’outil",
@@ -240,6 +240,7 @@
     "split": "Split 50/50",
     "full": "Full screen",
     "close": "Close panel",
-    "closeTab": "Close {tab}"
+    "closeTab": "Close {tab}",
+    "reloadView": "Reload view"
   }
 }

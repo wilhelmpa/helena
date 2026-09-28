@@ -81,6 +81,7 @@ function TreeBranch({
   href,
   action,
   activePaths = [],
+  hasChildren = true,
   children,
 }: {
   id: string;
@@ -88,6 +89,7 @@ function TreeBranch({
   href: string;
   action?: ReactNode;
   activePaths?: string[];
+  hasChildren?: boolean;
   children: ReactNode;
 }) {
   const pathname = usePathname();
@@ -100,24 +102,33 @@ function TreeBranch({
       <div className="helena-tree-parent">
         <TreeLink href={href}>{label}</TreeLink>
         {action}
-        <button
-          type="button"
-          className="helena-tree-toggle"
-          aria-label={label}
-          aria-expanded={open}
-          onClick={() => setOpen(!open)}
-        >
-          <ChevronRight size={14} className={open ? 'rotate-90' : ''} />
-        </button>
+        {hasChildren && (
+          <button
+            type="button"
+            className="helena-tree-toggle"
+            aria-label={label}
+            aria-expanded={open}
+            onClick={() => setOpen(!open)}
+          >
+            <ChevronRight size={14} className={open ? 'rotate-90' : ''} />
+          </button>
+        )}
       </div>
-      {open && <div className="helena-tree-children">{children}</div>}
+      {hasChildren && open && <div className="helena-tree-children">{children}</div>}
     </div>
   );
 }
 
-function OtherProjectUnread({ project }: { project: Project }) {
+function OtherProjectUnread({
+  project,
+  pipelineCount,
+}: {
+  project: Project;
+  pipelineCount: number;
+}) {
   const unread = useInboxUnread(project.key, project.id).data ?? 0;
-  return unread > 0 ? (
+  const approvals = usePendingApprovalCount(project.key).data?.count ?? 0;
+  return unread + approvals + pipelineCount > 0 ? (
     <span className="helena-other-inbox-dot" aria-label="Andere Projekte haben neue Einträge" />
   ) : null;
 }
@@ -132,11 +143,15 @@ function ApprovalBadge({
   projects: Project[];
 }) {
   const t = useTranslations('nav');
-  const pending = usePendingApprovalCount().data?.count ?? 0;
-  const pipelines = usePipelineApprovals().data?.length ?? 0;
+  const pending = usePendingApprovalCount(projectKey ?? undefined).data?.count ?? 0;
+  const pipelineApprovals = usePipelineApprovals().data ?? [];
+  const pipelines = projectKey
+    ? pipelineApprovals.filter((item) => item.projectKey === projectKey).length
+    : pipelineApprovals.length;
   const proposals = useProposalCount().data?.count ?? 0;
   const project = projects.find((item) => item.key === projectKey);
   const projectUnread = useInboxUnread(project?.key ?? null, project?.id ?? null).data ?? 0;
+  const badge = projectKey ? projectUnread + pending + pipelines : pending + pipelines + proposals;
   return (
     <>
       {teamIds.map((teamId) => (
@@ -146,22 +161,27 @@ function ApprovalBadge({
         id="you:inbox"
         label={t('sidebarInbox')}
         href={projectKey ? inboxPath(projectKey) : '/inbox'}
-        activePaths={['/approvals']}
+        activePaths={[projectKey ? projectApprovalsPath(projectKey) : '/approvals']}
         action={
           <>
-            {(projectKey ? projectUnread : pending + pipelines + proposals) > 0 && (
-              <span className="helena-tree-badge">
-                {projectKey ? projectUnread : pending + pipelines + proposals}
-              </span>
-            )}
+            {badge > 0 && <span className="helena-tree-badge">{badge}</span>}
             {projectKey &&
               projects
                 .filter((item) => item.key !== projectKey)
-                .map((item) => <OtherProjectUnread key={item.key} project={item} />)}
+                .map((item) => (
+                  <OtherProjectUnread
+                    key={item.key}
+                    project={item}
+                    pipelineCount={
+                      pipelineApprovals.filter((approval) => approval.projectKey === item.key)
+                        .length
+                    }
+                  />
+                ))}
           </>
         }
       >
-        <TreeLink href="/approvals" nested>
+        <TreeLink href={projectKey ? projectApprovalsPath(projectKey) : '/approvals'} nested>
           {t('approvals')}
         </TreeLink>
       </TreeBranch>
@@ -277,6 +297,7 @@ export function SidebarProjectTree({
           id={`${projectKey}:dashboard`}
           label={t('dashboards')}
           href={dashboardsPath(projectKey)}
+          hasChildren={dashboards.length > 0}
         >
           {dashboards.map((dashboard) => (
             <TreeLink key={dashboard.id} href={dashboardPath(projectKey, dashboard.id)} nested>
@@ -289,6 +310,7 @@ export function SidebarProjectTree({
         id={`${projectKey}:tasks`}
         label={t('workItems')}
         href={taskHref}
+        hasChildren={views.length > 0 || (can('views', 'read') && areas.length > 0)}
         action={
           can('views', 'create') && (
             <button
@@ -331,6 +353,7 @@ export function SidebarProjectTree({
           id={`${projectKey}:files`}
           label={t('sidebarKnowledge')}
           href={filesPath(projectKey)}
+          hasChildren={folders?.items.some((item) => item.kind === 'folder') ?? false}
         >
           {folders?.items
             .filter((item) => item.kind === 'folder')
@@ -346,6 +369,7 @@ export function SidebarProjectTree({
         id={`${projectKey}:auto`}
         label={t('sidebarAutomation')}
         href={can('ai_agents', 'read') ? aiAgentsPath(projectKey) : agentActivityPath(projectKey)}
+        hasChildren={can('ai_agents', 'read') || can('ai_agents', 'edit')}
         activePaths={[
           organizationPath(projectKey),
           aiTeamPath(projectKey, 'schedules'),

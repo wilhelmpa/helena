@@ -49,7 +49,6 @@ export function useKeyboardShortcuts(opts: {
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
-      if (document.body.dataset.settingsModalOpen === 'true') return;
       if (matches(e, 'palette.toggle')) {
         e.preventDefault();
         onToggleCommand();

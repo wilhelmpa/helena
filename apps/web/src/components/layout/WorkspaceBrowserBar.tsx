@@ -2,7 +2,16 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, ArrowRight, Bot, BrainCircuit, MoreHorizontal, RotateCw } from 'lucide-react';
+import {
+  ArrowLeft,
+  ArrowRight,
+  Bot,
+  BrainCircuit,
+  ExternalLink,
+  ImageIcon,
+  MoreHorizontal,
+  RotateCw,
+} from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import { useBrowserControl } from '@/hooks/useBrowserControl';
@@ -25,6 +34,10 @@ export default function WorkspaceBrowserBar({
   onViewChange,
   followAgent,
   onToggleFollowAgent,
+  lossless,
+  onToggleLossless,
+  externalUrl,
+  onReloadFrame,
 }: {
   base: string;
   // The project whose Inbox a saved page goes to; Home's without one.
@@ -33,8 +46,14 @@ export default function WorkspaceBrowserBar({
   onViewChange: (view: BrowserView) => void;
   followAgent: boolean;
   onToggleFollowAgent: () => void;
+  lossless: boolean;
+  onToggleLossless: () => void;
+  externalUrl: string | null;
+  onReloadFrame: () => void;
 }) {
   const t = useTranslations('nav.workspace.browserBar');
+  const tWorkspace = useTranslations('nav.workspace');
+  const tPanel = useTranslations('nav.panelTabs');
   const tKnowledge = useTranslations('knowledge.capture');
   const router = useRouter();
   const { active, act } = useBrowserControl(base);
@@ -140,6 +159,44 @@ export default function WorkspaceBrowserBar({
           >
             <RotateCw />
           </Button>
+          {view !== 'live' && (
+            <Button
+              variant={lossless ? 'secondary' : 'ghost'}
+              size="icon"
+              className="size-7 shrink-0"
+              onClick={onToggleLossless}
+              title={tWorkspace('browserLossless')}
+              aria-label={tWorkspace('browserLossless')}
+              aria-pressed={lossless}
+            >
+              <ImageIcon />
+            </Button>
+          )}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-7 shrink-0"
+            onClick={onReloadFrame}
+            title={tPanel('reloadView')}
+            aria-label={tPanel('reloadView')}
+          >
+            <RotateCw />
+          </Button>
+          {externalUrl && (
+            <Button variant="ghost" size="icon" className="size-7 shrink-0" asChild>
+              <a
+                href={externalUrl}
+                target="_blank"
+                rel="noreferrer"
+                title={tWorkspace('openExternal', { tool: tWorkspace('browser') })}
+              >
+                <ExternalLink />
+                <span className="sr-only">
+                  {tWorkspace('openExternal', { tool: tWorkspace('browser') })}
+                </span>
+              </a>
+            </Button>
+          )}
           {projectKey && (
             <ProjectPreviewControl
               projectKey={projectKey}

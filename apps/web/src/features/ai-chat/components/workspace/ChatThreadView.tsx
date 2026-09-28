@@ -271,9 +271,9 @@ export default function ChatThreadView({
             aria-hidden={!orbVisible}
             className="pointer-events-none absolute z-10 aspect-square transition-[top,left,transform,width,opacity] duration-[600ms] ease-in-out motion-reduce:transition-none"
             style={{
-              width: empty ? 'min(20rem, 55vw)' : '7rem',
+              width: empty ? (pageContext ? '12rem' : 'min(20rem, 55vw)') : '7rem',
               left: empty ? '50%' : 'max(1rem, calc((100% - 48rem) / 2))',
-              top: empty ? 'calc(50% - 1.5rem)' : 'calc(100% - 3.5rem)',
+              top: empty ? (pageContext ? '8.5rem' : 'calc(50% - 1.5rem)') : 'calc(100% - 3.5rem)',
               transform: empty ? 'translate(-50%, -50%)' : 'translate(0, -50%)',
               opacity: orbVisible ? 1 : 0,
               ['--orb-size' as string]: '100%',

@@ -262,12 +262,15 @@ export function useWorkspaceLayout({
     (key: string) => {
       tabs.close(key);
       if (key === `tool:${panel.activeTool}`) {
-        const next = tabs.saved.find((entry) => entry !== key && entry.startsWith('tool:'));
-        if (next) openTool(next.slice(5));
-        else panel.setOpen(false);
+        const next = tabs.saved.find((entry) => entry !== key);
+        if (next) openTool(next.startsWith('browser:') ? 'browser' : next.slice(5));
+        else {
+          if (chosen.id !== STANDARD_LAYOUT_ID) setLayout(STANDARD_LAYOUT_ID);
+          panel.setOpen(false);
+        }
       }
     },
-    [openTool, panel, tabs],
+    [chosen.id, openTool, panel, setLayout, tabs],
   );
 
   const choosePanelLayout = useCallback(

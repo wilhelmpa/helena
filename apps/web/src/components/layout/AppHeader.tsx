@@ -3,11 +3,7 @@ import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import type { HeaderExtraStore } from '@/utils/headerExtraStore';
 import type { HeaderLayout } from '@/lib/api/endpoints/userPreferences';
 import { cn } from '@/lib/utils';
-import { Separator } from '@/components/ui/separator';
 import { SidebarTrigger } from '@/components/ui/sidebar';
-import { ThemeToggle } from '@/components/theme-toggle';
-import { LocaleToggle } from '@/components/locale-toggle';
-import UserMenu from '@/components/layout/UserMenu';
 import ShellHeaderExtra from '@/components/layout/ShellHeaderExtra';
 
 export default function AppHeader({
@@ -51,15 +47,8 @@ export default function AppHeader({
       data-app-header=""
       className="relative flex min-h-[104px] shrink-0 items-end gap-3 border-b border-sidebar-border px-4 pt-6 pb-4 sm:px-9"
     >
-      <SidebarTrigger />
-      <Separator orientation="vertical" className="h-4" />
-      <div
-        ref={titleRef}
-        className={cn(
-          'flex min-w-0 shrink flex-col gap-2',
-          single ? 'max-w-[min(26rem,45vw)] shrink' : 'hidden max-w-40 shrink-0 2xl:block',
-        )}
-      >
+      <SidebarTrigger className="md:hidden" />
+      <div ref={titleRef} className="flex max-w-[min(26rem,45vw)] min-w-0 shrink flex-col gap-2">
         <span className="truncate font-mono text-[10px] font-medium tracking-[.17em] text-[#7ee0b8] uppercase">
           {eyebrow}
         </span>
@@ -79,16 +68,6 @@ export default function AppHeader({
           )}
         />
       )}
-
-      <div className="ms-auto flex shrink-0 items-center gap-0.5">
-        {!single && (
-          <>
-            <LocaleToggle />
-            <ThemeToggle />
-            <UserMenu />
-          </>
-        )}
-      </div>
     </header>
   );
 }
