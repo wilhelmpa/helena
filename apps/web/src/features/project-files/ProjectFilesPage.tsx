@@ -47,12 +47,11 @@ function LegacyBoard({
 
 export default function ProjectFilesPage() {
   const t = useTranslations('files');
-  const tNav = useTranslations('nav');
   const navigation = useFileNavigationGuard();
   const { projectKey } = useParams<{ projectKey: string }>();
   const params = useSearchParams();
   const router = useRouter();
-  const { can, isAdmin } = usePermissions();
+  const { can } = usePermissions();
   const features = useProjectFeatures();
   const boardView = params.get('view') === 'boards';
   const root: ProjectFileRoot = params.get('root') === 'code' ? 'code' : 'vault';
@@ -90,6 +89,12 @@ export default function ProjectFilesPage() {
             path={path}
             selected={params.get('file')}
             sourceOnly={params.get('source') === '1'}
+            createRequest={params.get('create')}
+            onCreateHandled={() => {
+              const next = new URLSearchParams(params.toString());
+              next.delete('create');
+              router.replace(`${filesPath(projectKey)}${next.size ? `?${next}` : ''}`);
+            }}
             rootLabel={t(`roots.${root}`)}
             permissions={{
               create: can('documents', 'create'),

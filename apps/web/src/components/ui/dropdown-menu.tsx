@@ -5,6 +5,8 @@ import { DropdownMenu as DropdownMenuPrimitive } from 'radix-ui';
 import { CheckIcon, ChevronRightIcon } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
+import { overlayPosition } from '@/components/common/overlay/overlayPosition';
+import OverlayPortal from '@/components/common/overlay/OverlayPortal';
 
 function DropdownMenu({ ...props }: React.ComponentProps<typeof DropdownMenuPrimitive.Root>) {
   return <DropdownMenuPrimitive.Root data-slot="dropdown-menu" {...props} />;
@@ -52,10 +54,11 @@ function DropdownMenuContent({
     dialogsAtOpen.current = document.querySelectorAll(OPEN_DIALOGS).length;
   }, []);
   return (
-    <DropdownMenuPrimitive.Portal>
+    <OverlayPortal as={DropdownMenuPrimitive.Portal}>
       <DropdownMenuPrimitive.Content
         data-slot="dropdown-menu-content"
         sideOffset={sideOffset}
+        {...overlayPosition}
         className={cn(
           MENU_SURFACE,
           'max-h-(--radix-dropdown-menu-content-available-height) overflow-x-hidden overflow-y-auto',
@@ -70,7 +73,7 @@ function DropdownMenuContent({
         }}
         {...props}
       />
-    </DropdownMenuPrimitive.Portal>
+    </OverlayPortal>
   );
 }
 
@@ -181,9 +184,10 @@ function DropdownMenuSubContent({
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.SubContent>) {
   return (
-    <DropdownMenuPrimitive.Portal>
+    <OverlayPortal as={DropdownMenuPrimitive.Portal}>
       <DropdownMenuPrimitive.SubContent
         data-slot="dropdown-menu-sub-content"
+        {...overlayPosition}
         className={cn(
           MENU_SURFACE,
           'max-h-(--radix-dropdown-menu-content-available-height) overflow-x-hidden overflow-y-auto',
@@ -191,7 +195,7 @@ function DropdownMenuSubContent({
         )}
         {...props}
       />
-    </DropdownMenuPrimitive.Portal>
+    </OverlayPortal>
   );
 }
 

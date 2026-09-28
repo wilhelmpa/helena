@@ -1,13 +1,7 @@
 import { useRef } from 'react';
 import DndContext from '@/components/common/dnd/DndContext';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import {
-  buildGroups,
-  buildMaps,
-  groupDefaults,
-  sortIssues,
-  type WorkItemsViewProps,
-} from '@/utils/project';
+import { buildGroups, buildMaps, sortIssues, type WorkItemsViewProps } from '@/utils/project';
 import { usePersistedSet } from '@/hooks/usePersistedSet';
 import { useTableColumnWidths } from '../../hooks/useTableColumnWidths';
 import { useIssueReorder } from '../../hooks/useIssueReorder';
@@ -37,7 +31,6 @@ export default function TableView({
   customFields,
   settings,
   onOpenIssue,
-  onAddIssue,
   readOnly,
   widthScope,
 }: TableViewProps) {
@@ -93,6 +86,7 @@ export default function TableView({
         const isCollapsed = collapsed.values.has(item.group.key);
         return (
           <TableSectionHeader
+            project={project}
             group={item.group}
             count={item.count}
             collapsed={isCollapsed}
@@ -100,7 +94,6 @@ export default function TableView({
             dropId={`sec:${item.dropKey}`}
             onDrop={(id) => reorder.moveIssue(id, item.assign, item.bucket, item.bucket.length)}
             onToggle={() => collapsed.toggle(item.group.key)}
-            onAddIssue={() => onAddIssue(groupDefaults(item.group.assign))}
             readOnly={readOnly}
           />
         );

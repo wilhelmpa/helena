@@ -14,14 +14,6 @@ import AgentActivityRow from '@/features/agent-activity/components/AgentActivity
 import InboxListItem from './InboxListItem';
 import { groupNotifications, NOTIFICATION_GROUP_ORDER } from '../notificationGroups';
 
-const TYPE_ORDER: NotificationType[] = [
-  'approval_requested',
-  'mentioned',
-  'assigned',
-  'commented',
-  'state_changed',
-];
-
 // The scrollable notification list. Empty and loading states render in place. New
 // pages load automatically when the bottom sentinel scrolls into view; selection
 // and paging are owned by the page.

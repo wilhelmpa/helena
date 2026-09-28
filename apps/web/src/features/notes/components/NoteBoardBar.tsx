@@ -1,7 +1,8 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Plus } from 'lucide-react';
 import { usePermissions } from '@/hooks/usePermissions';
 import { PageActions, PageToolbar, PageToolbarSpacer } from '@/components/layout/PageToolbar';
@@ -34,11 +35,22 @@ export default function NoteBoardBar({
 }) {
   // 'create' to open the new-board dialog, an MRU entry to rename, or null (closed).
   const [dialog, setDialog] = useState<'create' | MruEntry | null>(null);
+  const router = useRouter();
+  const pathname = usePathname();
+  const params = useSearchParams();
   const t = useTranslations('notes');
   const navigation = usePageToolbarNavigation();
   const renaming = dialog && typeof dialog === 'object' ? dialog : null;
   const { can } = usePermissions();
   const canCreate = can('note_boards', 'create');
+
+  useEffect(() => {
+    if (params.get('create') !== 'canvas' || !canCreate) return;
+    queueMicrotask(() => setDialog('create'));
+    const next = new URLSearchParams(params.toString());
+    next.delete('create');
+    router.replace(`${pathname}?${next}`);
+  }, [params, canCreate, router, pathname]);
 
   // A stable remount key for the name dialog so its input resets per open.
   function dialogKey() {

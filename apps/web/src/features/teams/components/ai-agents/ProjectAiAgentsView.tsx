@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useEffect, useState } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Copy, Plus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useTeamQuery } from '@/services/teams.service';
@@ -18,8 +19,6 @@ import { AgentSectionProvider } from '../../context/agentSection';
 import ProjectAgentTemplateDialog from './ProjectAgentTemplateDialog';
 import ProjectAiAgents from './ProjectAiAgents';
 import { TeamAiAgentSheet } from './TeamAiAgentSheet';
-import { workflowsPath } from '@/utils/paths';
-import { usePermissions } from '@/hooks/usePermissions';
 
 const section = AI_AGENTS_SECTION;
 
@@ -36,6 +35,9 @@ export default function ProjectAiAgentsView({
   const permissions = useTeamQuery(teamId).data?.permissions.ai_agents;
   const [creating, setCreating] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
+  const router = useRouter();
+  const pathname = usePathname();
+  const params = useSearchParams();
   const [fromTemplate, setFromTemplate] = useState(false);
   const tSettings = useTranslations('settings.agents');
   const agentQuery = useAiAgentsQuery(teamId);
@@ -45,6 +47,14 @@ export default function ProjectAiAgentsView({
     queryFn: () => getOrganization(teamId),
   });
   const editing = agentQuery.data?.find((agent) => agent.id === editingId) ?? null;
+
+  useEffect(() => {
+    if (params.get('create') !== 'agent' || !permissions?.create) return;
+    queueMicrotask(() => setCreating(true));
+    const next = new URLSearchParams(params.toString());
+    next.delete('create');
+    router.replace(`${pathname}${next.size ? `?${next}` : ''}`);
+  }, [params, permissions?.create, router, pathname]);
 
   return (
     <SectionPageView title={tNav('sidebarTeamDeciders')} wide>
@@ -100,7 +110,7 @@ export default function ProjectAiAgentsView({
                 </PageToolbar>
               )}
               <div className="mt-4">
-                <ProjectAiAgents />
+                <ProjectAiAgents onNewAgent={() => setCreating(true)} />
               </div>
             </details>
             <TeamAiAgentSheet

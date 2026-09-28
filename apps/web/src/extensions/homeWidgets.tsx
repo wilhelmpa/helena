@@ -14,6 +14,7 @@ import {
   TasksTile,
 } from '@/features/home/dashboard/tiles/HomeTiles';
 import TasksSection from '@/features/home/dashboard/sections/TasksSection';
+import NeedsYouSection from '@/features/home/dashboard/sections/NeedsYouSection';
 import AgentsSection, { FinishedSection } from '@/features/home/dashboard/sections/AgentsSection';
 import SchedulesSection from '@/features/home/dashboard/sections/SchedulesSection';
 import ProjectsSection from '@/features/home/dashboard/sections/ProjectsSection';

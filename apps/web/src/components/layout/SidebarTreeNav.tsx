@@ -99,6 +99,7 @@ function TreeBranch({
   label,
   href,
   action,
+  hasChildren,
   activePaths = [],
   defaultOpen = false,
   activeOverride,
@@ -108,6 +109,7 @@ function TreeBranch({
   label: string;
   href: string;
   action?: ReactNode;
+  hasChildren?: boolean;
   activePaths?: string[];
   defaultOpen?: boolean;
   activeOverride?: boolean;
@@ -120,7 +122,7 @@ function TreeBranch({
       pathIsActive(pathname, href) ||
       activePaths.some((path) => pathIsActive(pathname, path)),
   );
-  const expandable = hasTreeContent(children);
+  const expandable = hasChildren ?? hasTreeContent(children);
   return (
     <div className="helena-tree-branch">
       <div className="helena-tree-parent">
@@ -435,7 +437,14 @@ export function SidebarProjectTree({
           label={t('dashboards')}
           href={dashboardsPath(projectKey)}
           hasChildren={dashboards.length > 0}
-        >
+          action={
+            can('dashboards', 'create') && (
+              <Link
+                href={`${dashboardsPath(projectKey)}?create=dashboard`}
+                className="helena-tree-toggle helena-tree-create"
+                aria-label="Neues Dashboard"
+                title="Neues Dashboard"
+              >
           {dashboards.map((dashboard) => (
             <TreeLink key={dashboard.id} href={dashboardPath(projectKey, dashboard.id)} nested>
               {dashboard.name}
@@ -452,7 +461,7 @@ export function SidebarProjectTree({
           can('views', 'create') && (
             <button
               type="button"
-              className="helena-tree-toggle knowledge-folder-add"
+              className="helena-tree-toggle helena-tree-create"
               aria-label={viewsT('newView')}
               title={viewsT('newView')}
               onClick={onNewView}
@@ -517,24 +526,23 @@ export function SidebarProjectTree({
           onClose={() => setNewKnowledgeFolder(false)}
         />
       )}
-      {features.dashboards && can('dashboards', 'read') && (
-        <TreeBranch
-          id={`${projectKey}:dashboard`}
-          label={t('dashboards')}
-          href={dashboardsPath(projectKey)}
-        >
-          {dashboards.map((dashboard) => (
-            <TreeLink key={dashboard.id} href={dashboardPath(projectKey, dashboard.id)} nested>
-              {dashboard.name}
-            </TreeLink>
-          ))}
-        </TreeBranch>
-      )}
       <TreeBranch
         id={`${projectKey}:auto`}
         label={t('sidebarAutomation')}
         href={can('ai_agents', 'read') ? aiAgentsPath(projectKey) : agentActivityPath(projectKey)}
-        hasChildren={can('ai_agents', 'read') || can('ai_agents', 'edit')}
+        hasChildren={can('ai_agents', 'read') || can('actions', 'read') || can('ai_agents', 'edit')}
+        action={
+          can('ai_agents', 'create') && (
+            <Link
+              href={`${aiTeamPath(projectKey, 'schedules')}?create=schedule`}
+              className="helena-tree-toggle helena-tree-create"
+              aria-label="Neuer Zeitplan"
+              title="Neuer Zeitplan"
+            >
+              <Plus size={14} />
+            </Link>
+          )
+        }
         activePaths={[
           organizationPath(projectKey),
           aiTeamPath(projectKey, 'schedules'),

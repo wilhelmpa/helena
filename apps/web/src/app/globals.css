@@ -1921,24 +1921,160 @@ html[data-kiosk-display='dual'] [data-slot='alert-dialog-content'] {
   }
 }
 
-/* Fields use their own border and inner surface for focus. This also covers the
-   few native search/filter controls that do not use the UI components yet. */
+/* The base controls keep their resting border when focused or invalid. */
 :is(
-  input:not([type='checkbox']):not([type='radio']):not([type='file']),
-  textarea,
-  select,
+  [data-slot='input'],
+  [data-slot='textarea'],
+  [data-slot='input-group'],
   [data-slot='select-trigger']
-):focus-visible {
-  --tw-ring-shadow: 0 0 #0000;
+) {
+  min-width: 0;
+  max-width: 100%;
+}
+:is(
+  [data-slot='input'],
+  [data-slot='textarea'],
+  [data-slot='input-group'],
+  [data-slot='select-trigger']
+):is(:focus, :focus-visible, :focus-within, [aria-invalid='true'], :has([aria-invalid='true'])) {
+  border-color: var(--input);
   outline: none;
-  border-color: var(--ring);
-  background-color: color-mix(in srgb, var(--accent) 20%, var(--background));
-}
-:is(input, textarea, select, [data-slot='select-trigger'])[aria-invalid='true'] {
+  box-shadow: none;
   --tw-ring-shadow: 0 0 #0000;
-  border-color: var(--destructive);
 }
-[data-slot='input-group-control']:focus-visible {
-  background: transparent;
-  border-color: transparent;
+:is(input, textarea, [contenteditable='true']):is(:focus, :focus-visible, [aria-invalid='true']) {
+  outline: none;
+  box-shadow: none;
+  --tw-ring-shadow: 0 0 #0000;
+}
+:is(div, label)[class*='focus-within:ring']:has(
+    :is(input, textarea, [contenteditable='true']):focus
+  ) {
+  box-shadow: none;
+  --tw-ring-shadow: 0 0 #0000;
+}
+:is(div, label)[class*='focus-within:border']:has(
+    :is(input, textarea, [contenteditable='true']):focus
+  ) {
+  border-color: var(--input);
+}
+:is(button, a):focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--ring);
+  --tw-ring-shadow: 0 0 #0000;
+}
+.helena-project-switcher:focus-visible,
+.helena-tree-link:focus-visible,
+.helena-tree-toggle:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px #ae8bcf;
+}
+.helena-tree-branch:not(:hover, :focus-within) .helena-tree-create {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.new-issue-sheet .md-content {
+  min-height: 48px;
+  padding: 0;
+  color: #96919f;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.create-dock {
+  z-index: 60;
+  background: #e7dbfa;
+  color: #201b29;
+  box-shadow: 0 10px 30px #0008;
+}
+.create-dock > button {
+  font-size: 26px;
+}
+.create-dock-arrow {
+  background: #e7dbfa;
+  box-shadow: 0 2px 8px #0008;
+}
+.new-issue-title {
+  color: #eeeaf6;
+}
+.new-issue-title::placeholder {
+  color: #6f687a;
+}
+.new-issue-running {
+  color: #ff912e;
+}
+.new-issue-running-dot,
+.new-issue-project-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  flex: none;
+}
+.new-issue-running-dot {
+  background: #ff912e;
+}
+.new-issue-project-dot {
+  background: #7ee0b8;
+}
+.new-issue-footer {
+  border-color: #ffffff0a;
+  padding-top: 14px;
+}
+.new-issue-more-label {
+  color: #96919f;
+}
+.new-issue-shortcut {
+  color: #6f687a;
+  font-size: 10px;
+}
+.new-issue-submit {
+  background: #e7dbfa;
+  color: #201b29;
+}
+.new-issue-submit:hover {
+  background: #d8c6f4;
+}
+.new-issue-sheet .md-content p.is-editor-empty:first-child::before {
+  color: #6f687a;
+}
+.new-issue-pills > button,
+.new-issue-pills > [data-slot='popover-trigger'],
+.new-issue-pills > [data-slot='dropdown-menu-trigger'] {
+  min-height: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 999px;
+  background: #141217;
+  box-shadow: inset 0 0 0 1px #ffffff10;
+  color: #cfc6da;
+  font-size: 12px;
+  font-weight: 500;
+}
+.new-issue-sheet input[type='checkbox'] {
+  appearance: none;
+  position: relative;
+  width: 30px;
+  height: 18px;
+  flex: none;
+  border-radius: 999px;
+  background: #26212d;
+  cursor: pointer;
+}
+.new-issue-sheet input[type='checkbox']::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #6f687a;
+  transition: transform 0.2s;
+}
+.new-issue-sheet input[type='checkbox']:checked {
+  background: #e7dbfa;
+}
+.new-issue-sheet input[type='checkbox']:checked::after {
+  transform: translateX(12px);
+  background: #201b29;
 }

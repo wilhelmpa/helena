@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, type CSSProperties } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useEffect, useState, type CSSProperties } from 'react';
+import { useParams, usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Check, LayoutTemplate, Pencil, Plus, Target, Trash2, Undo2 } from 'lucide-react';
 import { useShell } from '@/context/shellContext';
@@ -42,6 +42,8 @@ export default function DashboardsPage() {
   const features = useProjectFeatures();
   const params = useParams<{ projectKey: string; dashboardId?: string }>();
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const projectKey = params.projectKey;
 
   const { data: dashboards, isLoading } = useDashboardsQuery(projectKey);
@@ -52,6 +54,14 @@ export default function DashboardsPage() {
   // The dashboard whose deletion waits for a yes, like every other delete.
   const [deleting, setDeleting] = useState<Dashboard | null>(null);
   const renaming = nameDialog && nameDialog !== 'new' ? nameDialog : null;
+
+  useEffect(() => {
+    if (searchParams.get('create') !== 'dashboard' || !can('dashboards', 'create')) return;
+    queueMicrotask(() => setNameDialog('new'));
+    const next = new URLSearchParams(searchParams.toString());
+    next.delete('create');
+    router.replace(`${pathname}${next.size ? `?${next}` : ''}`);
+  }, [searchParams, can, router, pathname]);
 
   const list = dashboards ?? [];
   const routeId = params.dashboardId ? Number(params.dashboardId) : null;
@@ -158,7 +168,6 @@ export default function DashboardsPage() {
           activeDashboardId={activeDashboardId}
           isVirtual={editor.isVirtual}
           onSelect={(id) => router.push(dashboardPath(projectKey, id))}
-          onNew={() => setNameDialog('new')}
           onRename={(d) => setNameDialog(d)}
           onDelete={setDeleting}
           onReorder={(dragged, target) => editor.reorderDashboards(dragged, target)}
@@ -245,8 +254,6 @@ function DashboardRowActions({
   const room = usePageToolbarRoom();
   const all = [...actions];
   if (!room.tabs) {
-    if (can('dashboards', 'create'))
-      all.push({ id: 'new', label: t('newDashboard'), icon: Plus, onClick: onNew, menuOnly: true });
     if (active && can('dashboards', 'edit'))
       all.push({
         id: 'rename',
@@ -264,5 +271,15 @@ function DashboardRowActions({
         menuOnly: true,
       });
   }
-  return <PageActions actions={all} primary={primary} />;
+  return (
+    <PageActions
+      actions={all}
+      primary={
+        primary ??
+        (can('dashboards', 'create')
+          ? { id: 'new', label: t('newDashboard'), icon: Plus, onClick: onNew }
+          : undefined)
+      }
+    />
+  );
 }

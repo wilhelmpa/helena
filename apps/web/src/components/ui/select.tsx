@@ -2,6 +2,8 @@
 
 import * as React from 'react';
 import { cn } from '@/lib/utils';
+import { overlayPosition } from '@/components/common/overlay/overlayPosition';
+import OverlayPortal from '@/components/common/overlay/OverlayPortal';
 import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from 'lucide-react';
 import { Select as SelectPrimitive } from 'radix-ui';
 
@@ -46,12 +48,12 @@ function SelectTrigger({
 function SelectContent({
   className,
   children,
-  position = 'item-aligned',
+  position = 'popper',
   align = 'center',
   ...props
 }: React.ComponentProps<typeof SelectPrimitive.Content>) {
   return (
-    <SelectPrimitive.Portal>
+    <OverlayPortal as={SelectPrimitive.Portal}>
       <SelectPrimitive.Content
         data-slot="select-content"
         className={cn(
@@ -62,6 +64,7 @@ function SelectContent({
         )}
         position={position}
         align={align}
+        {...overlayPosition}
         {...props}
       >
         <SelectScrollUpButton />
@@ -69,14 +72,14 @@ function SelectContent({
           className={cn(
             'p-1',
             position === 'popper' &&
-              'h-[var(--radix-select-trigger-height)] w-full min-w-[var(--radix-select-trigger-width)] scroll-my-1',
+              'min-h-[var(--radix-select-trigger-height)] w-full min-w-[var(--radix-select-trigger-width)] scroll-my-1',
           )}
         >
           {children}
         </SelectPrimitive.Viewport>
         <SelectScrollDownButton />
       </SelectPrimitive.Content>
-    </SelectPrimitive.Portal>
+    </OverlayPortal>
   );
 }
 

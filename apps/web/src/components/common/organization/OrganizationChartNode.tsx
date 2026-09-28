@@ -2,17 +2,17 @@
 
 import { Handle, Position, type Node, type NodeProps } from '@xyflow/react';
 import { useTranslations } from 'next-intl';
-import AgentStatusOrb from '@/components/common/agent-chat/AgentStatusOrb';
+import Orb from '@/components/helena/Orb';
 import type { AiAgent } from '@/lib/api/endpoints/agents';
 import type { OrganizationAgent } from '@/lib/api/endpoints/organization';
-import type { AgentOrbState } from '@/utils/agentStatusOrb';
+import { useAgentStatus, type HelenaStatus } from '@/utils/helenaStatus';
 
 export type ChartAgentNode = Node<
   {
     agent: OrganizationAgent;
     settings: AiAgent | null;
     trustLabel: string | null;
-    state: AgentOrbState;
+    state: HelenaStatus;
     decider: string | null;
     selected: boolean;
     reportCount: number;
@@ -39,22 +39,12 @@ export default function OrganizationChartNode({ data }: NodeProps<ChartAgentNode
     onSelect,
     onToggle,
   } = data;
-  const stateLabel = t(
-    state === 'thinking'
-      ? 'thinking'
-      : state === 'tool'
-        ? 'tool'
-        : state === 'waiting'
-          ? 'waiting'
-          : state === 'error'
-            ? 'error'
-            : 'idle',
-  );
-  const label = agent.isHome
-    ? t('home')
-    : agent.role === 'coordinator'
-      ? `${t('coordinator')} · ${stateLabel}`
-      : stateLabel;
+  const status = useAgentStatus(agent.id, {
+    run: state === 'thinking' || state === 'tool' ? 'running' : state,
+    tool: state === 'tool',
+    runtimeStatus: agent.runtimeState.status,
+  });
+  const label = agent.isHome ? t('home') : agent.role === 'coordinator' ? t('coordinator') : agent.name;
   const model = settings?.model ?? t('standardModel');
   const reasoning = settings?.runtimePolicy.reasoningEffort ?? t('default');
   const trust = settings?.autopilotLevel;
@@ -68,16 +58,7 @@ export default function OrganizationChartNode({ data }: NodeProps<ChartAgentNode
   ]
     .filter(Boolean)
     .join(' · ');
-  const statusColor =
-    state === 'waiting'
-      ? '#ef9f27'
-      : state === 'error'
-        ? '#f4a3bf'
-        : agent.isHome
-          ? '#bdaaff'
-          : state === 'idle'
-            ? '#6f687a'
-            : '#29e8b5';
+  const statusColor = `var(--status-${status})`;
   return (
     <div
       className={`group relative rounded-[18px] border bg-[#111014] px-[18px] text-start shadow-[0_8px_22px_#0003] ${leader ? 'h-[92px] w-[280px] pt-2 pb-4' : 'h-[112px] w-[242px] pt-[14px] pb-4'} ${selected ? 'border-[#ae8bcf] ring-[3px] ring-[#ad8bd822]' : 'border-[#ffffff0f]'}`}
@@ -98,9 +79,9 @@ export default function OrganizationChartNode({ data }: NodeProps<ChartAgentNode
           className="flex items-center gap-2 font-mono text-[10px] font-medium tracking-[.13em]"
           style={{ color: statusColor }}
         >
-          <AgentStatusOrb
-            state={state}
-            online={agent.runtimeState.status === 'online'}
+          <Orb
+            state={status}
+            size="small"
             className={`organization-orb organization-orb-${state} ${agent.isHome ? 'organization-orb-home' : ''}`}
           />
           {label}

@@ -5,6 +5,7 @@ import Avatar from '@/components/common/Avatar';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
+import { Popover, PopoverAnchor, PopoverContent } from '@/components/ui/popover';
 import { useCreateComment, useUpdateComment } from '../../services/comments.service';
 import { useTranslations } from 'next-intl';
 
@@ -194,7 +195,7 @@ export default function CommentComposer({
           title={t('commentAs', { name: authorName })}
         />
         <div className="relative min-w-0 flex-1">
-          <div className="overflow-hidden rounded-lg border bg-muted/20 shadow-xs transition-[border-color,box-shadow] focus-within:border-ring focus-within:ring-[3px] focus-within:ring-ring/30">
+          <div className="overflow-hidden rounded-lg border bg-muted/20 shadow-xs">
             <Textarea
               ref={taRef}
               // `auto` once there is something to read, so a comment keeps the
@@ -238,42 +239,55 @@ export default function CommentComposer({
           </div>
 
           {menu && matches.length > 0 && (
-            <ul className="absolute top-full right-0 left-0 z-20 mt-1 max-h-64 overflow-y-auto rounded-md border bg-popover p-1 text-popover-foreground shadow-md">
-              {matches.map((a, i) => (
-                <li key={a.userId}>
-                  <button
-                    type="button"
-                    // Keep the textarea focused so the caret survives the click.
-                    onMouseDown={(e) => {
-                      e.preventDefault();
-                      selectMention(a);
-                    }}
-                    onMouseEnter={() => setActive(i)}
-                    className={`flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm ${
-                      i === active ? 'bg-accent text-accent-foreground' : ''
-                    }`}
-                  >
-                    {a.kind === 'agent' ? (
-                      <Bot className="size-4 shrink-0" />
-                    ) : (
-                      <User className="size-4 shrink-0" />
-                    )}
-                    <span className="truncate">{a.name}</span>
-                    <span className="flex-1 truncate text-xs text-muted-foreground">
-                      @{a.username}
-                    </span>
-                    {a.kind === 'agent' && (
-                      <span className="text-xs text-muted-foreground uppercase">agent</span>
-                    )}
-                    {a.paused && (
-                      <span className="text-xs text-amber-700 dark:text-amber-400">
-                        {t('agentPaused')}
-                      </span>
-                    )}
-                  </button>
-                </li>
-              ))}
-            </ul>
+            <Popover open>
+              <PopoverAnchor asChild>
+                <span aria-hidden="true" className="absolute inset-x-0 bottom-0 h-px" />
+              </PopoverAnchor>
+              <PopoverContent
+                side="bottom"
+                align="start"
+                sideOffset={4}
+                onOpenAutoFocus={(event) => event.preventDefault()}
+                className="max-h-64 w-[var(--radix-popover-trigger-width)] max-w-[calc(100vw-16px)] p-1"
+              >
+                <ul role="listbox">
+                  {matches.map((a, i) => (
+                    <li key={a.userId}>
+                      <button
+                        type="button"
+                        // Keep the textarea focused so the caret survives the click.
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          selectMention(a);
+                        }}
+                        onMouseEnter={() => setActive(i)}
+                        className={`flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm ${
+                          i === active ? 'bg-accent text-accent-foreground' : ''
+                        }`}
+                      >
+                        {a.kind === 'agent' ? (
+                          <Bot className="size-4 shrink-0" />
+                        ) : (
+                          <User className="size-4 shrink-0" />
+                        )}
+                        <span className="truncate">{a.name}</span>
+                        <span className="flex-1 truncate text-xs text-muted-foreground">
+                          @{a.username}
+                        </span>
+                        {a.kind === 'agent' && (
+                          <span className="text-xs text-muted-foreground uppercase">agent</span>
+                        )}
+                        {a.paused && (
+                          <span className="text-xs text-amber-700 dark:text-amber-400">
+                            {t('agentPaused')}
+                          </span>
+                        )}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </PopoverContent>
+            </Popover>
           )}
         </div>
       </div>
