@@ -30,6 +30,12 @@ const embedModel = argument('embed-model');
 const only = argument('classes')?.split(',').filter(Boolean) ?? null;
 const jsonOut = argument('json');
 const thinkingArgument = argument('thinking');
+const judgeBase = argument('judge-base') ?? process.env.LOCAL_AI_JUDGE_BASE_URL;
+const judgeModel = argument('judge-model') ?? process.env.LOCAL_AI_JUDGE_MODEL ?? 'claude-opus-4-6';
+const judgeKeyFile = argument('judge-key-file');
+const judgeKey = judgeKeyFile
+  ? readFileSync(judgeKeyFile, 'utf8').trim()
+  : (process.env.LOCAL_AI_JUDGE_API_KEY ?? null);
 if (thinkingArgument && !(LOCAL_AI_THINKING as readonly string[]).includes(thinkingArgument)) {
   console.error(`--thinking must be one of ${LOCAL_AI_THINKING.join(', ')}`);
   process.exit(2);
@@ -49,6 +55,7 @@ interface Row {
   threshold: number;
   thinking: LocalAiThinking | null;
   result: LocalAiEvalResult | null;
+  score100: number | null;
   error: string | null;
   seconds: number;
 }
@@ -64,8 +71,17 @@ for (const entry of BUILTIN_TASK_CLASSES) {
   let result: LocalAiEvalResult | null = null;
   let error: string | null = null;
   try {
+    const judge = judgeBase
+      ? openAiEvalContext({ baseUrl: judgeBase, key: judgeKey, model: judgeModel })
+      : null;
     result = await entry.evaluate(
-      openAiEvalContext({ baseUrl: base, key, model: target, thinking: thinking ?? 'off' }),
+      openAiEvalContext({
+        baseUrl: base,
+        key,
+        model: target,
+        thinking: thinking ?? 'off',
+        judge: judge?.chat,
+      }),
     );
   } catch (caught) {
     error = caught instanceof Error ? caught.message : String(caught);
@@ -76,6 +92,7 @@ for (const entry of BUILTIN_TASK_CLASSES) {
     threshold: entry.threshold ?? 0.8,
     thinking,
     result,
+    score100: entry.id === 'deutsch-texte' && result ? Math.round(result.score * 100) : null,
     error,
     seconds: (Date.now() - started) / 1000,
   });

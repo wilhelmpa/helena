@@ -144,6 +144,7 @@ Rollback: Lokale KI → Transkription/Vorlesen back to their previous model or "
 | `/etc/helena/local-ai.key` | root:volition-plan 0640 | the key (API reads it; Lemonade gets it as a systemd credential) |
 | `/usr/local/lib/helena-ai/` | root | `lemond-start`, `lemonade-defaults.json`, the installer's copy and `models.tsv` for `helena-ai-preload.service` |
 | `/etc/helena/local-ai-preload` | root 0644 | the models loaded and pinned when Lemonade starts (`models preload set`) |
+| `/var/lib/helena-ai/config/model-options.json` | API user, world readable | per-model backend, MTP/DFlash and slot settings saved by `PUT /god/local-ai/servers/:id/models/:model/options`; `models load <id>` and preloads read these on every load |
 | `/etc/systemd/system/helena-ai-preload.service` | root | loads them after `lemond` starts |
 | `/opt/helena-ai/llamacpp/{rocm,vulkan}-b11166/` | root | llama.cpp: our HIP build for gfx1151, the Vulkan build |
 | `/opt/helena-ai/rocm-10.0.0/` | root | ROCm 10.0.0 + PyTorch 2.13 venv (8 GB), shared by local AI workloads |
