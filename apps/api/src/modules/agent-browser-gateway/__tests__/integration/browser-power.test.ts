@@ -19,7 +19,7 @@ beforeAll(() => {
   process.env.BROWSER_GATEWAY_TOKEN_FILE = file;
 });
 
-function routerRead(token: string | undefined = GATEWAY_TOKEN) {
+function routerRead(token = GATEWAY_TOKEN) {
   return app.handle(
     new Request('http://localhost/internal/browser-gateway/power', {
       headers: token ? { authorization: `Bearer ${token}` } : {},
@@ -81,7 +81,8 @@ describe('browser power settings', () => {
       homeAlwaysOn: true,
     });
 
-    expect((await routerRead(undefined)).status).toBe(401);
+    // '' rather than undefined, which would take the default: no Authorization header at all.
+    expect((await routerRead('')).status).toBe(401);
     expect((await routerRead('x'.repeat(48))).status).toBe(401);
     const res = await routerRead();
     expect(res.status).toBe(200);
