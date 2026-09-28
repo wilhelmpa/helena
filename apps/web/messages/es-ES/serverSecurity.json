@@ -61,6 +61,7 @@
     "sys_updates": "Las actualizaciones de seguridad se instalan solas",
     "sys_reboot": "Ningún reinicio pendiente tras actualizaciones",
     "sys_journald": "Registros limitados y guardados de forma persistente",
+    "sys_memory_guards": "La protección de memoria para la IA, los servicios y el desarrollo está activa",
     "sys_services": "Ningún servicio innecesario activo",
     "sys_shells": "Cuentas de servicio sin shell de inicio de sesión",
     "sys_secure_boot": "Secure Boot activado",
@@ -164,6 +165,9 @@
     },
     "sys_journald": {
       "warn": "El tamaño de los registros no está limitado."
+    },
+    "sys_memory_guards": {
+      "warn": "Falta la protección de memoria o difiere de los valores configurados."
     },
     "sys_services": {
       "warn": "Hay servicios en marcha que no hacen falta."

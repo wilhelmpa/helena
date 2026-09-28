@@ -61,6 +61,7 @@
     "sys_updates": "Les mises à jour de sécurité s’installent automatiquement",
     "sys_reboot": "Aucun redémarrage en attente après les mises à jour",
     "sys_journald": "Journaux limités et conservés durablement",
+    "sys_memory_guards": "La protection mémoire de l’IA, des services et du développement est active",
     "sys_services": "Aucun service inutile actif",
     "sys_shells": "Comptes de service sans shell de connexion",
     "sys_secure_boot": "Secure Boot activé",
@@ -164,6 +165,9 @@
     },
     "sys_journald": {
       "warn": "La taille des journaux n’est pas limitée."
+    },
+    "sys_memory_guards": {
+      "warn": "La protection mémoire manque ou diffère des valeurs définies."
     },
     "sys_services": {
       "warn": "Des services inutiles sont en cours d’exécution."

@@ -37,6 +37,30 @@ Only root and the users in `callers` may connect (peer credentials). Every metho
 parameters against a fixed schema; unknown parameters are refused. Changes are written to
 `/var/lib/helena/hostd/audit.log` and the journal, never with a secret.
 
+## Memory guards
+
+`memory-guards.sh` is an explicit installer step for systemd resource controls. It protects
+`system.slice` (11G), `lemond.service` (7G), the API, web, worker and Hermes runner (512M each),
+and PostgreSQL 17 (1G) with `MemoryLow`. It limits the development account's `user-UID.slice`
+with `MemoryHigh=12G` and `MemoryMax=15G`; the UID is resolved from `HELENA_DEV_USER` (default
+`wilhelmpa`). The existing `lemond.service` `MemoryHigh=11G` and `MemoryMax=12G` remain in force.
+The controls protect local AI under memory pressure and cap development workloads.
+
+```sh
+./install.sh --dry-run --owner wilhelmpa memory-guards
+sudo ./install.sh --owner wilhelmpa memory-guards
+./memory-guards.sh check
+```
+
+`apply` uses persistent `systemctl set-property` values and changes only mismatches. It installs
+the check at `/usr/local/libexec/helena-memory-guards` for `hardening/audit.sh`, which reports
+`sys.memory_guards` as a warning when the step is absent or a value differs. Run this step after
+the named services exist. Override values with `HELENA_MEMORY_SYSTEM_LOW`,
+`HELENA_MEMORY_LEMOND_LOW`, `HELENA_MEMORY_SERVICE_LOW`, `HELENA_MEMORY_POSTGRES_LOW`,
+`HELENA_MEMORY_DEV_HIGH`, `HELENA_MEMORY_DEV_MAX`, or the PostgreSQL unit with
+`HELENA_POSTGRES_UNIT`. Use the same overrides for `check` and for the hourly audit service if
+the installed values differ from the defaults.
+
 ## Storage safeguards
 
 Added after 2026-09-25, when the Samsung of the RAID fell off the PCIe bus. Decision and

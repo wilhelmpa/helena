@@ -61,6 +61,7 @@
     "sys_updates": "Atualizações de segurança instalam sozinhas",
     "sys_reboot": "Nenhuma reinicialização pendente após atualizações",
     "sys_journald": "Logs limitados e guardados de forma persistente",
+    "sys_memory_guards": "A proteção de memória para IA, serviços e desenvolvimento está ativa",
     "sys_services": "Nenhum serviço desnecessário ativo",
     "sys_shells": "Contas de serviço sem shell de login",
     "sys_secure_boot": "Secure Boot ativo",
@@ -164,6 +165,9 @@
     },
     "sys_journald": {
       "warn": "O tamanho dos logs não está limitado."
+    },
+    "sys_memory_guards": {
+      "warn": "A proteção de memória está ausente ou difere dos valores configurados."
     },
     "sys_services": {
       "warn": "Há serviços em execução que não são necessários."

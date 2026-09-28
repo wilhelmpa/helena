@@ -61,6 +61,7 @@
     "sys_updates": "Sicherheitsupdates kommen automatisch",
     "sys_reboot": "Kein Neustart nach Updates ausstehend",
     "sys_journald": "Protokolle begrenzt und dauerhaft gespeichert",
+    "sys_memory_guards": "Speicherschutz für KI, Dienste und Entwicklung ist aktiv",
     "sys_services": "Keine unnötigen Dienste aktiv",
     "sys_shells": "Dienstkonten ohne Login-Shell",
     "sys_secure_boot": "Secure Boot aktiv",
@@ -164,6 +165,9 @@
     },
     "sys_journald": {
       "warn": "Die Größe der Protokolle ist nicht begrenzt."
+    },
+    "sys_memory_guards": {
+      "warn": "Der Speicherschutz fehlt oder weicht von den festgelegten Werten ab."
     },
     "sys_services": {
       "warn": "Es laufen Dienste, die nicht gebraucht werden."

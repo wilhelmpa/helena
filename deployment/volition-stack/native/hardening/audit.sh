@@ -57,6 +57,8 @@ ISOLATION_LIB=${HELENA_ISOLATION_LIB:-/usr/local/lib/volition-isolation}
 API_UNITS=${HELENA_API_UNITS:-volition-plan-api volition-plan-web volition-plan-worker}
 TUNNEL_UNIT=${HELENA_TUNNEL_UNIT:-helena-cloudflared}
 NGINX_TUNNEL_SITE=${HELENA_NGINX_TUNNEL_SITE:-/etc/nginx/sites-enabled/helena-tunnel.conf}
+MEMORY_GUARDS=${HELENA_MEMORY_INSTALL_PATH:-/usr/local/libexec/helena-memory-guards}
+
 is_root=0; [[ $EUID -eq 0 ]] && is_root=1
 results=()
 
@@ -125,6 +127,16 @@ check_tunnel_acl() { # check_tunnel_acl RULESET
     record tunnel.acl tunnel high pass "port $TUNNEL_PORT only for the tunnel user ($TUNNEL_USER)"
   fi
 }
+check_memory_guards() {
+  local detail
+  if [[ ! -x $MEMORY_GUARDS ]]; then
+    record sys.memory_guards system medium warn "memory guards installer not applied"
+  elif detail=$("$MEMORY_GUARDS" check 2>&1); then
+    record sys.memory_guards system medium pass "memory guards match"
+  else
+    record sys.memory_guards system medium warn "${detail%%$'\n'*}"
+  fi
+}
 # The self-tests run one check each (in a private namespace with fakes).
 case "${HELENA_AUDIT_ONLY:-}" in
   auth.sudo)
@@ -133,6 +145,10 @@ case "${HELENA_AUDIT_ONLY:-}" in
     exit 0 ;;
   tunnel.acl)
     [[ $is_root -eq 1 ]] && check_tunnel_acl "$(nft list ruleset 2>/dev/null)" || need_root tunnel.acl tunnel high
+    printf '%s\n' "${results[@]}"
+    exit 0 ;;
+  sys.memory_guards)
+    check_memory_guards
     printf '%s\n' "${results[@]}"
     exit 0 ;;
 esac
@@ -475,6 +491,7 @@ else
 fi
 
 # ── System ─────────────────────────────────────────────────────────────────────
+check_memory_guards
 if [[ $(timedatectl show -p NTPSynchronized --value 2>/dev/null) == yes ]]; then
   record sys.time system high pass "NTP synchronised"
 else
