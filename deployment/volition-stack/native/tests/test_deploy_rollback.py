@@ -1,11 +1,16 @@
 """deploy.sh end to end against a fixture: a git repository standing in for the live checkout,
 stubs for systemctl, curl and runuser, and the release/state folders in a temporary directory.
-It runs as root in a user namespace of its own (unshare -r), so nothing on the host is touched.
+It runs as root in a user and mount namespace of its own (unshare -rm), with the system folders it
+installs into laid over by folders of the fixture, so nothing on the host is touched.
 
 What it proves: a deployment that passes writes the marker; one whose checks fail, or whose
 migration fails, rolls back to the last good commit (checkout, marker, previous web release)
 and exits 2; the rolled-back commit is refused next time without --retry; --expect refuses a
-different commit before anything changes; --no-rollback leaves the failed state for a person.
+different commit before anything changes; --no-rollback leaves the failed state for a person;
+after the checkout the deploy.sh of the commit now checked out takes over (forward and back),
+so a release that changes deploy.sh and removes what the old one installed deploys cleanly.
+
+deploy.sh is part of the fixture, as on a server: it runs from the fixture's checkout.
 """
 import os
 from pathlib import Path
@@ -21,7 +26,7 @@ NATIVE = 'deployment/volition-stack/native'
 def userns_available():
     if not shutil.which('unshare'):
         return False
-    return subprocess.run(['unshare', '-r', 'true'], capture_output=True).returncode == 0
+    return subprocess.run(['unshare', '-rm', 'true'], capture_output=True).returncode == 0
 
 
 @unittest.skipUnless(userns_available(), 'needs unprivileged user namespaces (unshare -r)')
@@ -51,6 +56,10 @@ class DeployRollbackTest(unittest.TestCase):
                    'mkdir -p "$HELENA_WEB_RELEASES/r-$c"\n'
                    'ln -sfn "$HELENA_WEB_RELEASES/r-$c" "$HELENA_WEB_RELEASES/current"\n'
                    'echo "web-release $*" >> "$TEST_LOG"\n', 0o755)
+        # What the deploy.sh of this repository installs when it changes, as on a server.
+        self.write(f'{NATIVE}/browser-restore/volition-browser-restore', '#!/bin/sh\n', 0o755)
+        self.write(f'{NATIVE}/browser-restore/volition-project-browser-restore.service', '[Unit]\n')
+        self.write(f'{NATIVE}/deploy.sh', DEPLOY.read_text(), 0o755)
         self.write('apps/web/page.tsx', 'v1\n')
         self.write('apps/api/src/app.ts', 'v1\n')
         self.good = self.commit()
@@ -94,11 +103,15 @@ exec "$@"''')
         path.write_text('#!/bin/bash\n' + body.strip() + '\n')
         path.chmod(0o755)
 
-    def candidate(self, *paths):
+    def candidate(self, *paths, deploy=None, remove=()):
         branch_head = self.git('rev-parse', 'HEAD')
         self.git('checkout', '-q', '-b', 'candidate')
         for path in paths:
             self.write(path, 'v2\n')
+        if deploy is not None:
+            self.write(f'{NATIVE}/deploy.sh', deploy, 0o755)
+        for path in remove:
+            shutil.rmtree(self.live / path)
         target = self.commit('candidate')
         self.git('checkout', '-q', 'main')
         self.assertEqual(self.git('rev-parse', 'HEAD'), branch_head)
@@ -118,7 +131,17 @@ exec "$@"''')
             'GIT_CONFIG_VALUE_0': '*',
             **env,
         }
-        return subprocess.run(['unshare', '-r', 'bash', str(DEPLOY), '--allow-inflight', *args],
+        script = self.live / NATIVE / 'deploy.sh'
+        # What deploy.sh installs into the system goes to folders of the fixture: a mount
+        # namespace of its own lays them over the real ones.
+        binds = []
+        for target in ('/usr/local/libexec', '/etc/systemd/system'):
+            stand_in = self.root / 'system' / target.strip('/')
+            stand_in.mkdir(parents=True, exist_ok=True)
+            binds.append(f'mount --bind {stand_in} {target}')
+        wrapper = ' && '.join(binds) + ' && exec bash "$@"'
+        return subprocess.run(['unshare', '-rm', 'bash', '-c', wrapper, 'deploy',
+                               str(script), '--allow-inflight', *args],
                               text=True, capture_output=True, env=environment, timeout=120)
 
     def marker(self):
@@ -182,6 +205,50 @@ exec "$@"''')
         self.assertEqual(result.returncode, 3, result.stdout + result.stderr)
         self.assertEqual(self.git('rev-parse', 'HEAD'), target)
         self.assertEqual(self.marker(), self.good)
+
+    # A deploy.sh with one more step, as a release that adds a deployment step has it.
+    def new_deploy(self, takes_over=True):
+        text = DEPLOY.read_text()
+        anchor = '"$live/deployment/volition-stack/native/vault-setup.sh"\n'
+        self.assertEqual(text.count(anchor), 1)
+        text = text.replace(anchor, anchor + 'echo "step of the new deploy.sh" >> "$TEST_LOG"\n')
+        if not takes_over:
+            text = text.replace('# helena-deploy: continues-in-target v1\n', '')
+        return text
+
+    def test_the_new_deploy_script_runs_the_new_steps_and_the_old_ones_are_gone(self):
+        target = self.candidate('apps/api/src/app.ts', deploy=self.new_deploy(),
+                                remove=[f'{NATIVE}/browser-restore'])
+        result = self.deploy('candidate')
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn('continuing with the deploy.sh of ' + target, result.stdout)
+        self.assertEqual(self.log.read_text().count('step of the new deploy.sh'), 1)
+        self.assertNotIn('stat', result.stderr)
+        self.assertEqual(self.marker(), target)
+
+    def test_the_way_back_runs_in_the_deploy_script_of_the_good_commit(self):
+        target = self.candidate('apps/api/src/app.ts', deploy=self.new_deploy(),
+                                remove=[f'{NATIVE}/browser-restore'])
+        result = self.deploy('candidate', TEST_BAD=target)
+        self.assertEqual(result.returncode, 2, result.stdout + result.stderr)
+        self.assertIn('continuing with the deploy.sh of ' + self.good, result.stdout)
+        # The new step ran on the way there only.
+        self.assertEqual(self.log.read_text().count('step of the new deploy.sh'), 1)
+        self.assertEqual(self.git('rev-parse', 'HEAD'), self.good)
+        self.assertEqual(self.marker(), self.good)
+        self.assertTrue((self.live / NATIVE / 'browser-restore').is_dir())
+        # The good commit's restore is installed again on the way back.
+        self.assertTrue((self.root / 'system/usr/local/libexec/volition-browser-restore').exists())
+
+    def test_a_deploy_script_that_cannot_take_over_leaves_missing_files_out(self):
+        target = self.candidate('apps/api/src/app.ts', deploy=self.new_deploy(takes_over=False),
+                                remove=[f'{NATIVE}/browser-restore'])
+        result = self.deploy('candidate')
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn('cannot take over', result.stdout)
+        self.assertIn('browser-restore/volition-browser-restore is not in this commit', result.stdout)
+        self.assertNotIn('step of the new deploy.sh', self.log.read_text())
+        self.assertEqual(self.marker(), target)
 
 
 if __name__ == '__main__':
