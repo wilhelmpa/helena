@@ -234,6 +234,7 @@
 
 .pill :global([data-align='block-end']) {
   width: auto;
+  min-width: 0;
   grid-column: 2;
   gap: 10px;
   padding: 0;
@@ -266,6 +267,9 @@
 }
 
 .chip {
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
   height: 38px;
   padding: 0 14px;
   border-radius: 99px;
@@ -282,6 +286,9 @@
 }
 
 .chipLabel {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
   color: #cfc6da;
   font-size: 12px;
   font-weight: 500;
