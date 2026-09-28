@@ -532,6 +532,15 @@ export const WHISPER_CPP_DEFAULT_BASE_URL = 'http://127.0.0.1:13306/v1';
 // weights it loaded is the installer's (voice.sh, models.tsv).
 export const WHISPER_CPP_MODEL = 'whisper';
 
+async function voiceUnit(context: ModelServerContext, service: 'stt' | 'tts'): Promise<LocalAiUnit> {
+  const port = service === 'stt' ? 13306 : 13307;
+  if (!new RegExp(`^http://(?:127\\.0\\.0\\.1|localhost):${port}(?:/|$)`).test(context.baseUrl)) return 'gpu';
+  try {
+    const unit = await readFile(`/etc/systemd/system/helena-voice-${service}.service`, 'utf8');
+    return /^ExecStart=.*-cpu\//m.test(unit) ? 'cpu' : 'gpu';
+  } catch { return 'gpu'; }
+}
+
 // whisper.cpp's own server (MIT, ggml-org/whisper.cpp examples/server): one model, loaded at
 // start, `GET /health`, and the OpenAI transcription fields including `prompt`, `temperature`
 // and `verbose_json` with each segment's confidence. No key of its own: it listens on loopback
@@ -542,6 +551,7 @@ export const whisperCppServer: ModelServerType = {
   defaultBaseUrl: WHISPER_CPP_DEFAULT_BASE_URL,
   audio: { transcriptionContext: true, speechPcmRate: null, speechLanguage: false },
   async models(context) {
+    const unit = await voiceUnit(context, 'stt');
     const up = await context
       .fetch('/health')
       .then((response) => response.ok)
@@ -550,7 +560,7 @@ export const whisperCppServer: ModelServerType = {
       id: WHISPER_CPP_MODEL,
       name: 'Whisper (whisper.cpp)',
       // voice.sh builds it for the GPU (HIP); a CPU build would say so in its server's name.
-      unit: 'gpu',
+      unit,
       capabilities: ['transcription'],
       contextLength: null,
       loaded: up,
@@ -560,6 +570,7 @@ export const whisperCppServer: ModelServerType = {
   async status(context) {
     const started = Date.now();
     try {
+      const unit = await voiceUnit(context, 'stt');
       const response = await context.fetch('/health');
       // 503 while the model loads: reachable, not ready.
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -568,7 +579,7 @@ export const whisperCppServer: ModelServerType = {
         version: null,
         latencyMs: Date.now() - started,
         error: null,
-        loaded: [{ id: WHISPER_CPP_MODEL, unit: 'gpu', backend: 'whisper.cpp' }],
+        loaded: [{ id: WHISPER_CPP_MODEL, unit, backend: 'whisper.cpp' }],
       };
     } catch (error) {
       return unreachable(error);
@@ -592,9 +603,10 @@ export const qwenTtsServer: ModelServerType = {
   defaultBaseUrl: QWEN_TTS_DEFAULT_BASE_URL,
   audio: { transcriptionContext: false, speechPcmRate: 24_000, speechLanguage: true },
   async models(context) {
+    const unit = await voiceUnit(context, 'tts');
     return openAiModels(await json(await context.fetch('/models'))).map((model) => ({
       ...model,
-      unit: 'gpu' as const,
+      unit,
       capabilities: ['speech' as const],
       loaded: true,
     }));
@@ -602,13 +614,14 @@ export const qwenTtsServer: ModelServerType = {
   async status(context) {
     const started = Date.now();
     try {
+      const unit = await voiceUnit(context, 'tts');
       const models = openAiModels(await json(await context.fetch('/models')));
       return {
         reachable: true,
         version: null,
         latencyMs: Date.now() - started,
         error: null,
-        loaded: models.map(({ id }) => ({ id, unit: 'gpu' as const, backend: 'qwentts.cpp' })),
+        loaded: models.map(({ id }) => ({ id, unit, backend: 'qwentts.cpp' })),
       };
     } catch (error) {
       return unreachable(error);

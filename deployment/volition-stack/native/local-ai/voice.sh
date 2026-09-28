@@ -57,6 +57,10 @@ STT_MODEL=${HELENA_VOICE_STT_MODEL:-whisper-large-v3-turbo-german}
 TTS_MODEL=${HELENA_VOICE_TTS_MODEL:-qwen3-tts-0.6b-base}
 VAD_MODEL=whisper-vad-silero
 TTS_CODEC=qwen3-tts-tokenizer
+STT_BACKEND=${HELENA_VOICE_STT_BACKEND:-cpu}
+TTS_BACKEND=${HELENA_VOICE_TTS_BACKEND:-rocm}
+case "$STT_BACKEND" in cpu|rocm) ;; *) echo "voice.sh: HELENA_VOICE_STT_BACKEND must be cpu or rocm" >&2; exit 2 ;; esac
+case "$TTS_BACKEND" in cpu|rocm) ;; *) echo "voice.sh: HELENA_VOICE_TTS_BACKEND must be cpu or rocm" >&2; exit 2 ;; esac
 
 R=${HELENA_AI_TEST_ROOT:-}
 OPT=$R/opt/helena-ai
@@ -191,8 +195,17 @@ hip_cmake() {
       "-DCMAKE_BUILD_RPATH=$root/lib" "$@"
 }
 
+voice_cmake() {
+  src=$1; shift
+  if [ "$1" = rocm ]; then shift; hip_cmake "$src" "$@"; else
+    shift
+    run cmake -S "$src" -B "$src/build" -G Ninja -DCMAKE_BUILD_TYPE=Release \
+      -DBUILD_SHARED_LIBS=OFF -DGGML_HIP=OFF "$@"
+  fi
+}
+
 build_whisper() {
-  dest=$BIN/whisper-$WHISPER_VERSION
+  dest=$BIN/whisper-$WHISPER_VERSION-$STT_BACKEND
   if [ -x "$dest/whisper-server" ]; then say "have $dest"; return; fi
   fetch "$WHISPER_SRC_URL" "$WHISPER_SRC" "$WHISPER_SRC_SHA256"
   check_commit "$WHISPER_SRC" "$WHISPER_COMMIT"
@@ -200,8 +213,8 @@ build_whisper() {
   run rm -rf "$src"
   run install -d -m 0755 "$src"
   run tar --no-same-owner -xzf "$DOWNLOADS/$WHISPER_SRC" -C "$src" --strip-components=1
-  hip_cmake "$src" -DWHISPER_BUILD_TESTS=OFF -DWHISPER_SDL2=OFF -DWHISPER_CURL=OFF
-  # Four jobs, as for llama.cpp: each HIP unit takes 2–3 GB, and Helena keeps running.
+  voice_cmake "$src" "$STT_BACKEND" -DWHISPER_BUILD_TESTS=OFF -DWHISPER_SDL2=OFF -DWHISPER_CURL=OFF
+  # Four jobs; HIP builds otherwise compete with Helena for host memory.
   run env PATH="$ROCM_VENV/bin:$PATH" cmake --build "$src/build" -j 4 --target whisper-server whisper-cli
   run install -d -m 0755 "$dest"
   run install -m 0755 "$src/build/bin/whisper-server" "$src/build/bin/whisper-cli" "$dest/"
@@ -209,7 +222,7 @@ build_whisper() {
 }
 
 build_qwentts() {
-  dest=$BIN/qwentts-$(echo "$QWENTTS_COMMIT" | cut -c1-9)
+  dest=$BIN/qwentts-$(echo "$QWENTTS_COMMIT" | cut -c1-9)-$TTS_BACKEND
   if [ -x "$dest/tts-server" ]; then say "have $dest"; return; fi
   fetch "$QWENTTS_SRC_URL" "$QWENTTS_SRC" "$QWENTTS_SRC_SHA256"
   fetch "$QWENTTS_GGML_URL" "$QWENTTS_GGML_SRC" "$QWENTTS_GGML_SHA256"
@@ -220,7 +233,7 @@ build_qwentts() {
   run install -d -m 0755 "$src" "$src/ggml"
   run tar --no-same-owner -xzf "$DOWNLOADS/$QWENTTS_SRC" -C "$src" --strip-components=1
   run tar --no-same-owner -xzf "$DOWNLOADS/$QWENTTS_GGML_SRC" -C "$src/ggml" --strip-components=1
-  hip_cmake "$src"
+  voice_cmake "$src" "$TTS_BACKEND"
   run env PATH="$ROCM_VENV/bin:$PATH" cmake --build "$src/build" -j 4 --target tts-server qwen-tts qwen-codec
   run install -d -m 0755 "$dest"
   for tool in tts-server qwen-tts qwen-codec; do
@@ -229,8 +242,8 @@ build_qwentts() {
   run rm -rf "$src"
 }
 
-whisper_bin() { echo "$BIN/whisper-$WHISPER_VERSION"; }
-qwentts_bin() { echo "$BIN/qwentts-$(echo "$QWENTTS_COMMIT" | cut -c1-9)"; }
+whisper_bin() { echo "$BIN/whisper-$WHISPER_VERSION-$STT_BACKEND"; }
+qwentts_bin() { echo "$BIN/qwentts-$(echo "$QWENTTS_COMMIT" | cut -c1-9)-$TTS_BACKEND"; }
 
 # ── Units ────────────────────────────────────────────────────────────────────────────────
 
@@ -241,14 +254,9 @@ ensure_user() {
 }
 
 write_units() {
-  # The lines both services share: the GPU (render, video), ROCm's settings as for llama.cpp,
-  # loopback only, a read-only system, a memory ceiling for the host side (the weights live
-  # in VRAM).
+  # Both services use loopback and a read-only system; GPU device access is backend-specific.
   common="User=$VOICE_USER
 Group=$VOICE_USER
-SupplementaryGroups=render video
-Environment=HSA_ENABLE_SDMA=0
-Environment=ROCBLAS_USE_HIPBLASLT=1
 NoNewPrivileges=yes
 CapabilityBoundingSet=
 PrivateTmp=yes
@@ -267,41 +275,54 @@ RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK
 IPAddressDeny=any
 IPAddressAllow=localhost
 DevicePolicy=closed
-DeviceAllow=/dev/kfd rw
-DeviceAllow=char-drm rw
 Restart=always
 RestartSec=3
 Nice=-2"
+  stt_gpu=
+  tts_gpu=
+  stt_args='--threads 12 --no-gpu'
+  if [ "$STT_BACKEND" = rocm ]; then stt_args='--threads 4'; fi
+  if [ "$STT_BACKEND" = rocm ]; then stt_gpu='SupplementaryGroups=render video
+Environment=HSA_ENABLE_SDMA=0
+Environment=ROCBLAS_USE_HIPBLASLT=1
+DeviceAllow=/dev/kfd rw
+DeviceAllow=char-drm rw'; fi
+  if [ "$TTS_BACKEND" = rocm ]; then tts_gpu='SupplementaryGroups=render video
+Environment=HSA_ENABLE_SDMA=0
+Environment=ROCBLAS_USE_HIPBLASLT=1
+DeviceAllow=/dev/kfd rw
+DeviceAllow=char-drm rw'; fi
   put "$UNITS/helena-voice-stt.service" 0644 root:root <<EOF
-# Helena's ear (native/local-ai/voice.sh): whisper.cpp on the GPU, German Whisper.
+# Helena's ear (native/local-ai/voice.sh): whisper.cpp ($STT_BACKEND), German Whisper.
 # The owner's words go nowhere but this machine; only root and Helena's API may connect
 # (firewall ACL \`voice\`).
 [Unit]
-Description=Helena voice: speech recognition (whisper.cpp, GPU)
+Description=Helena voice: speech recognition (whisper.cpp, $STT_BACKEND)
 After=network.target
 StopWhenUnneeded=yes
 
 [Service]
 ExecStart=$(whisper_bin)/whisper-server --model $(model_path "$STT_MODEL") --language de \\
   --host 127.0.0.1 --port $STT_BACKEND_PORT --request-path /v1 --inference-path /audio/transcriptions \\
-  --threads 4 --flash-attn --suppress-nst --no-timestamps --vad --vad-model $(model_path "$VAD_MODEL")
+  $stt_args --flash-attn --suppress-nst --no-timestamps --vad --vad-model $(model_path "$VAD_MODEL")
 ExecStartPost=+/usr/bin/curl --fail --silent --output /dev/null --retry 240 --retry-connrefused --retry-delay 1 --max-time 2 http://127.0.0.1:$STT_BACKEND_PORT/v1/health
 ReadOnlyPaths=$MODELS
-# ROCm's libraries are mapped into the process and count; the weights themselves are in VRAM.
+# Host-side memory ceiling; the actual requirement depends on backend and load.
 MemoryHigh=3G
 MemoryMax=6G
 TimeoutStartSec=5min
 $common
+$stt_gpu
 
 [Install]
 WantedBy=multi-user.target
 EOF
   put "$UNITS/helena-voice-tts.service" 0644 root:root <<EOF
-# Helena's voice (native/local-ai/voice.sh): Qwen3-TTS on the GPU, streaming as it speaks.
-# Without flash attention: the setting measured on gfx1151 (first audio ~40 ms, 4x real time).
+# Helena's voice (native/local-ai/voice.sh): Qwen3-TTS ($TTS_BACKEND), streaming as it speaks.
+# ROCm without flash attention was measured on gfx1151; CPU latency is not measured yet.
 # The voices in $VOICES are registered once it answers (they live in its memory only).
 [Unit]
-Description=Helena voice: speech (Qwen3-TTS, GPU)
+Description=Helena voice: speech (Qwen3-TTS, $TTS_BACKEND)
 After=network.target
 StopWhenUnneeded=yes
 
@@ -315,6 +336,7 @@ MemoryHigh=3G
 MemoryMax=6G
 TimeoutStartSec=5min
 $common
+$tts_gpu
 
 [Install]
 WantedBy=multi-user.target
@@ -412,7 +434,9 @@ status() {
 }
 
 install_all() {
-  [ -x "$ROCM_VENV/bin/rocm-sdk" ] || [ "$DRY_RUN" = 1 ] || die "ROCm is missing: run install.sh install first"
+  if [ "$STT_BACKEND" = rocm ] || [ "$TTS_BACKEND" = rocm ]; then
+    [ -x "$ROCM_VENV/bin/rocm-sdk" ] || [ "$DRY_RUN" = 1 ] || die "ROCm is missing: run install.sh install first"
+  fi
   command -v g++ >/dev/null || [ "$DRY_RUN" = 1 ] || die "g++ is missing"
   ensure_user
   run install -d -m 0755 "$DATA"

@@ -146,7 +146,7 @@ class HalogenInstallTest(unittest.TestCase):
 
     def test_settings_keep_what_ran_live(self):
         conf = (HERE.parent / 'halogen.conf').read_text()
-        self.assertIn('HALOGEN_KV_SLOTS=2', conf)
+        self.assertIn('HALOGEN_KV_SLOTS=4', conf)
         self.assertIn('HALOGEN_KV_POOL_POSITIONS=262144', conf)
         self.assertIn('HALOGEN_MAX_TOK=16384', conf)
         self.assertIn('HALOGEN_REASONING_EFFORT=medium', conf)

@@ -18,7 +18,7 @@ LoadCredential=api-key:/etc/helena/local-ai.key
 User=lemonade
 Group=lemonade
 SupplementaryGroups=render video
-Environment=ROCBLAS_USE_HIPBLASLT=1
+@ROCBLAS@
 ReadOnlyPaths=/var/lib/helena-ai/models
 # ROCm's libraries are mapped into the process and count; the weights are small.
 MemoryHigh=3G
@@ -41,7 +41,7 @@ RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK
 IPAddressDeny=any
 IPAddressAllow=localhost
 DevicePolicy=closed
-DeviceAllow=/dev/kfd rw
+@GPU_DEVICE@
 DeviceAllow=char-drm rw
 Restart=always
 RestartSec=5
