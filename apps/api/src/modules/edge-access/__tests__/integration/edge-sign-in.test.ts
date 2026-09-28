@@ -1,6 +1,6 @@
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'bun:test';
 import { desc, eq } from 'drizzle-orm';
-import { trustedOrigins } from '@repo/auth';
+import { pruneExpiredSessions, trustedOrigins } from '@repo/auth';
 import { db } from '@repo/db';
 import { helenaSignInEvent, session, user, aiAgent } from '@repo/db/schema';
 import { app } from '#tests/helpers/app';
@@ -333,6 +333,62 @@ describe('the Cloudflare sign-in', () => {
       ipAddress: '192.168.2.40',
       userAgent: 'lan-test',
     });
+  });
+
+  it('lets a LAN session nobody uses expire within the hour, and keeps one that is used', async () => {
+    const owner = await signUpTestUser({ email: 'owner@example.com' });
+    const token = 'test-only-local-owner-token-'.padEnd(64, 'y');
+    process.env.HELENA_LOCAL_SIGN_IN_MODE = 'single-user';
+    process.env.LOCAL_SINGLE_USER_TOKEN = token;
+    process.env.LOCAL_SINGLE_USER_EMAIL = 'owner@example.com';
+    const lanSignIn = () =>
+      call(
+        '/api/auth/sign-in/local-owner',
+        { 'x-volition-local-access': token, origin: ORIGIN, 'user-agent': 'lan-test' },
+        { method: 'POST' },
+      );
+    try {
+      const unused = await lanSignIn();
+      const used = await lanSignIn();
+      expect(unused.status).toBe(200);
+      expect(used.status).toBe(200);
+      const hour = Date.now() + 3600_000;
+      const rows = await db
+        .select({ token: session.token, expiresAt: session.expiresAt })
+        .from(session)
+        .where(eq(session.userId, owner.userId));
+      const mine = rows.filter((row) => row.expiresAt.getTime() <= hour + 5_000);
+      expect(mine).toHaveLength(2);
+
+      // The browser that goes on: its first request extends the session to the full lifetime.
+      const cookie = used.headers
+        .getSetCookie()
+        .find((value) => value.startsWith('better-auth.session_token='))!
+        .split(';')[0]!;
+      const current = await call('/api/auth/get-session', { cookie, origin: ORIGIN });
+      expect(current.status).toBe(200);
+      const after = await db
+        .select({ expiresAt: session.expiresAt })
+        .from(session)
+        .where(eq(session.userId, owner.userId));
+      // The sign-up's session and the used one; the unused one still ends within the hour.
+      const long = after.filter((row) => row.expiresAt.getTime() > Date.now() + 6 * 86_400_000);
+      expect(long).toHaveLength(2);
+      expect(after.filter((row) => row.expiresAt.getTime() <= hour + 5_000)).toHaveLength(1);
+
+      // The janitor removes the unused one once it has expired, and nothing else.
+      expect(await pruneExpiredSessions(new Date(hour + 60_000))).toBe(1);
+      const left = await db
+        .select({ expiresAt: session.expiresAt })
+        .from(session)
+        .where(eq(session.userId, owner.userId));
+      expect(left.every((row) => row.expiresAt.getTime() > hour + 60_000)).toBe(true);
+      expect(left).toHaveLength(2);
+    } finally {
+      delete process.env.HELENA_LOCAL_SIGN_IN_MODE;
+      delete process.env.LOCAL_SINGLE_USER_TOKEN;
+      delete process.env.LOCAL_SINGLE_USER_EMAIL;
+    }
   });
 });
 

@@ -82,6 +82,21 @@ describe('local session bootstrap', () => {
       assert.equal(await localOwnerSession(request('/', headers)), null);
     assert.equal(calls, 0);
   });
+  it('signs in on the page load only, not on its prefetches and fetches', async () => {
+    const notPageLoads: Record<string, string>[] = [
+      { 'sec-fetch-dest': 'empty' },
+      { 'sec-fetch-dest': 'script' },
+      { 'sec-fetch-dest': 'document', 'sec-purpose': 'prefetch' },
+      { purpose: 'prefetch' },
+      { rsc: '1' },
+      { 'next-router-prefetch': '1' },
+    ];
+    for (const headers of notPageLoads)
+      assert.equal(await localOwnerSession(request('/', headers)), null);
+    assert.equal(calls, 0);
+    assert.notEqual(await localOwnerSession(request('/', { 'sec-fetch-dest': 'document' })), null);
+    assert.equal(calls, 1);
+  });
   it('fails closed when the backend rejects or does not return a session', async () => {
     for (const response of [new Response('{}', { status: 403 }), new Response('{}')]) {
       globalThis.fetch = (async () => response) as typeof fetch;
