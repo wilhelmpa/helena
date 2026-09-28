@@ -19,6 +19,7 @@ import { checkLocalAiGuard } from '#modules/local-ai/guard';
 import { followActions } from '#modules/updates/service';
 import { processPushDeliveries } from '@helena/push';
 import { checkAlerts } from '#modules/push/alerts';
+import { pruneExpiredSessions } from '@repo/auth';
 
 const [RUN_JANITOR, RESUME_JANITOR, ENGINE_MAINTENANCE, RUNTIME_JANITOR] = JANITOR_JOBS;
 
@@ -78,6 +79,15 @@ export function startBackgroundJobs(): void {
     () => intEnv('HELENA_POLICY_LOG_PRUNE_INTERVAL_MS', 86_400_000),
   );
   startLoop('local-ai-guard', checkLocalAiGuard, () => 60_000);
+  // Expired sign-in sessions, which better-auth only removes when they are used again.
+  startLoop(
+    'session-prune',
+    async () => {
+      const removed = await pruneExpiredSessions();
+      if (removed > 0) console.log(`[background] removed ${removed} expired sessions`);
+    },
+    () => intEnv('HELENA_SESSION_PRUNE_INTERVAL_MS', 3_600_000),
+  );
   if (process.env.HELENA_ENGINE?.trim().toLowerCase() === 'off') return;
   // Launches the engine and tries again while the database does not answer.
   const launcher = startLoop(

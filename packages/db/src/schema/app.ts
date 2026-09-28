@@ -825,6 +825,10 @@ export const agentRun = pgTable(
     ),
     finishedAt: timestamp('finished_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    // A run is never deleted to tidy up: a finished run that should leave the lists (a
+    // failure that was dealt with, a test) is archived. Lists and counts leave archived runs
+    // out unless asked for them; the history and the statistics keep them.
+    archivedAt: timestamp('archived_at', { withTimezone: true }),
   },
   (t) => [
     check(
@@ -839,6 +843,36 @@ export const agentRun = pgTable(
     index('agent_run_project_idx').on(t.projectId),
     // The token ceilings sum an agent's runs of the current day and month.
     index('agent_run_agent_finished_idx').on(t.agentId, t.finishedAt),
+  ],
+);
+
+// Every agent_run row that is deleted anyway, kept whole. A run goes when its agent, its
+// project or its ticket is deleted (the foreign keys cascade), or when someone deletes it
+// by hand; a trigger on agent_run (migration 0208) copies the row here first, so failures
+// and counts stay honest (code audit 2026-09-28: ~120 of 293 runs were gone). Nothing
+// reads it in the product yet: counts over all runs ever made union agent_run with it.
+export const helenaAgentRunTombstone = pgTable(
+  'helena_agent_run_tombstone',
+  {
+    runId: integer('run_id').primaryKey(),
+    agentId: integer('agent_id'),
+    projectId: integer('project_id'),
+    issueId: integer('issue_id'),
+    status: text('status').notNull(),
+    trigger: text('trigger').notNull(),
+    lastError: text('last_error'),
+    failure: jsonb('failure'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull(),
+    finishedAt: timestamp('finished_at', { withTimezone: true }),
+    // The whole row as it was (to_jsonb), columns added later included.
+    row: jsonb('row').notNull(),
+    deletedAt: timestamp('deleted_at', { withTimezone: true }).notNull().defaultNow(),
+    // The database role and application that deleted it.
+    deletedBy: text('deleted_by'),
+  },
+  (t) => [
+    index('helena_agent_run_tombstone_project_idx').on(t.projectId),
+    index('helena_agent_run_tombstone_agent_idx').on(t.agentId, t.finishedAt),
   ],
 );
 

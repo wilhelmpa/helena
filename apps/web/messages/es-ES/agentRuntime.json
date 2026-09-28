@@ -67,7 +67,12 @@
       "done": "Hecho",
       "failed": "Fallido"
     },
-    "spent": "Consumo"
+    "spent": "Consumo",
+    "archive": "Archivar",
+    "unarchive": "Restaurar",
+    "archived": "Archivada",
+    "showArchived": "Mostrar archivadas",
+    "archiveFailed": "No se pudo archivar la ejecución."
   },
   "sessions": {
     "search": "Buscar en todas las sesiones",
