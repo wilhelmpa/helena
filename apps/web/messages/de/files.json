@@ -141,5 +141,71 @@
     "source": "Markdown-Quelltext",
     "sourceRequired": "Diese Datei enthält Markdown, das der formatierte Editor nicht erhalten kann. Bearbeite den Quelltext, damit alle Inhalte erhalten bleiben.",
     "sourceEditRejected": "Diese Änderung konnte nicht unter Erhalt der ursprünglichen Zeilenenden übernommen werden. Der vorherige Text bleibt erhalten. Versuche kleinere Änderungen."
+  },
+  "knowledge": {
+    "preview": "Vorschau",
+    "details": "Details",
+    "searchPlaceholder": "In Wissen suchen …",
+    "searching": "Suche …",
+    "noResults": "Keine Treffer.",
+    "loading": "Wird geladen …",
+    "new": "Neu",
+    "more": "Weitere Wissensaktionen",
+    "today": "Heute",
+    "fromTemplate": "Aus Vorlage",
+    "trash": "Papierkorb",
+    "open": "Öffnen",
+    "card": "Karte",
+    "create": {
+      "doc": "Doc",
+      "canvas": "Leinwand",
+      "folder": "Ordner",
+      "upload": "Datei hochladen"
+    },
+    "filters": {
+      "all": "Alles",
+      "docs": "Dokumente",
+      "canvases": "Leinwände",
+      "files": "Dateien",
+      "agents": "Von Agenten"
+    },
+    "columns": {
+      "name": "Name",
+      "kind": "Art",
+      "changed": "Geändert",
+      "match": "Fundstelle"
+    },
+    "kinds": {
+      "folder": "Ordner",
+      "canvas": "Leinwand",
+      "doc": "Doc",
+      "pdf": "PDF",
+      "image": "Bild",
+      "file": "Datei"
+    },
+    "dropHint": "Dateien hierher ziehen oder <pick>auswählen</pick>",
+    "entries": "{count, plural, one {# Eintrag} other {# Einträge}}",
+    "subfolders": "{count, plural, one {# Unterordner, im Baum links} other {# Unterordner, im Baum links}}",
+    "emptyFolder": "Dieser Ordner ist leer. Leg ein Doc an oder zieh Dateien hierher.",
+    "emptyFolderWithSubfolders": "Hier liegen keine Dateien, nur Unterordner. Öffne sie im Baum links.",
+    "emptyFilter": "Keine Dateien dieser Art.",
+    "emptyRecent": "Noch keine Dateien. Leg ein Doc an oder zieh Dateien hierher.",
+    "recent": "Zuletzt geändert",
+    "topLevel": "Oberste Ebene",
+    "loadingDoc": "Dokument wird geladen …",
+    "loadError": "Dokument konnte nicht geladen werden.",
+    "linkNotFound": "Verknüpfung nicht gefunden",
+    "linkFailed": "Verknüpfung konnte nicht geöffnet werden",
+    "copyLink": "Link kopieren",
+    "source": "Quelltext",
+    "editor": "Editor",
+    "unsaved": "ungespeichert",
+    "saved": "gespeichert",
+    "unknownTime": "unbekannt",
+    "backlinks": "Verweise hierher",
+    "noBacklinks": "Keine Verweise",
+    "history": "Verlauf",
+    "noHistory": "Noch kein Verlauf",
+    "discard": "Ungespeicherte Änderungen verwerfen?"
   }
 }

@@ -1,5 +1,5 @@
 'use client';
-/* eslint-disable no-restricted-syntax, better-tailwindcss/no-restricted-classes, react/jsx-no-literals -- Der freigegebene Wissen-Entwurf verlangt genau diese Farben, Maße und Texte. */
+/* eslint-disable better-tailwindcss/no-restricted-classes -- Der freigegebene Wissen-Entwurf verlangt diese Schriftgrößen (Titel 44 px, Text 15 px). */
 
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
@@ -31,6 +31,12 @@ import type { ViewerFile } from '@/components/common/files/FileViewer';
 import WebLinkScope from '@/components/common/WebLinkScope';
 import { useRelativeTime } from '@/context/relativeTimeContext';
 import { getFileReferences, type FileItem, type FileScope } from '@/lib/api/endpoints/projectFiles';
+import { KnowledgeEyebrow, type KnowledgeCrumb } from '@/components/helena/KnowledgeFrame';
+import { MonoLabel } from '@/components/helena/DashboardPrimitives';
+import ResizableSidePanel from '@/components/helena/ResizableSidePanel';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { useProjectQuery } from '@/services/projects.service';
+import { knowledgeFolderLabel } from '@/utils/knowledgeFolders';
 import { filesScopeKey } from '@/services/files.service';
 import {
   useBacklinksQuery,
@@ -48,30 +54,31 @@ import type { FileActions } from '../hooks/useFileActions';
 import VaultTextEditor from './VaultTextEditor';
 import styles from './ProjectKnowledgeViewer.module.css';
 
-const mono = "font-['JetBrains_Mono',ui-monospace,monospace]";
-
 function MarkdownBody({
   path,
   editable,
   onDirty,
   onSaveReady,
+  onLossless,
 }: {
   path: string;
   editable: boolean;
   onDirty: (dirty: boolean) => void;
   onSaveReady: (save: (() => Promise<boolean>) | null) => void;
+  onLossless: (lossless: boolean) => void;
 }) {
+  const t = useTranslations('files.knowledge');
   const query = useVaultNoteQuery(path);
   if (query.isPending)
     return (
-      <p role="status" className="text-sm text-[#88808f]">
-        Dokument wird geladen …
+      <p role="status" className="text-sm text-muted-foreground">
+        {t('loadingDoc')}
       </p>
     );
   if (!query.data)
     return (
-      <p role="alert" className="text-sm text-[#f4a3bf]">
-        Dokument konnte nicht geladen werden.
+      <p role="alert" className="text-sm text-destructive">
+        {t('loadError')}
       </p>
     );
   return (
@@ -81,6 +88,7 @@ function MarkdownBody({
       editable={editable}
       onDirty={onDirty}
       onSaveReady={onSaveReady}
+      onLossless={onLossless}
     />
   );
 }
@@ -90,12 +98,15 @@ function MarkdownEditor({
   editable,
   onDirty,
   onSaveReady,
+  onLossless,
 }: {
   document: NonNullable<ReturnType<typeof useVaultNoteQuery>['data']>;
   editable: boolean;
   onDirty: (dirty: boolean) => void;
   onSaveReady: (save: (() => Promise<boolean>) | null) => void;
+  onLossless: (lossless: boolean) => void;
 }) {
+  const t = useTranslations('files.knowledge');
   const note = useNoteDraft(document);
   const router = useRouter();
   const [editor, setEditor] = useState<Editor | null>(null);
@@ -109,7 +120,7 @@ function MarkdownEditor({
     if (!target) return;
     try {
       const result = await resolveWikilink(document.path, target);
-      if (!result.path) return void toast('Verknüpfung nicht gefunden');
+      if (!result.path) return void toast(t('linkNotFound'));
       const parts = result.path.split('/');
       if (parts[0] === 'Projects' && parts[1]) {
         const relative = parts.slice(2).join('/');
@@ -117,7 +128,7 @@ function MarkdownEditor({
       } else if (/\.md$/i.test(result.path)) void openWikilink(inner);
       else window.open(vaultFileUrl(result.path), '_blank', 'noopener');
     } catch {
-      toast.error('Verknüpfung konnte nicht geöffnet werden');
+      toast.error(t('linkFailed'));
     }
   };
   useEffect(() => onDirty(note.dirty), [note.dirty, onDirty]);
@@ -138,7 +149,10 @@ function MarkdownEditor({
       focusTitle={false}
       onEditorReady={setEditor}
       onLoaded={note.ready}
-      onLossless={setLossless}
+      onLossless={(value) => {
+        setLossless(value);
+        onLossless(value);
+      }}
       onEdit={note.edit}
       onBlur={() => void note.save()}
       onRename={async () => {}}
@@ -170,8 +184,16 @@ export default function ProjectKnowledgeViewer({
 }) {
   const router = useRouter();
   const relativeTime = useRelativeTime();
+  const k = useTranslations('files.knowledge');
+  const fixed = useTranslations('files.fixedFolders');
+  const roots = useTranslations('files.roots');
+  const unified = useTranslations('files.unified');
   const dirtyRef = useRef(false);
   const [dirty, setDirty] = useState(false);
+  // The formatted editor cannot keep every Markdown construct: such a file opens in the
+  // source editor straight away, editable, instead of a formatted read-only view.
+  const [lossy, setLossy] = useState(false);
+  const source = sourceOnly || lossy;
   const saveRef = useRef<(() => Promise<boolean>) | null>(null);
   const reportDirty = useCallback(
     (dirty: boolean) => {
@@ -184,25 +206,27 @@ export default function ProjectKnowledgeViewer({
   const onSaveReady = useCallback((save: (() => Promise<boolean>) | null) => {
     saveRef.current = save;
   }, []);
+  const onLossless = useCallback((lossless: boolean) => setLossy(!lossless), []);
   useEffect(() => () => onDirty(false), [onDirty]);
   useEffect(() => {
-    if (!sourceOnly) return;
+    if (!source) return;
     const guard = (event: MouseEvent) => {
       const anchor = (event.target as Element).closest('a[href]');
       if (!anchor || anchor.closest('[data-file-preview]') || !dirtyRef.current) return;
-      if (window.confirm('Ungespeicherte Änderungen verwerfen?')) return;
+      if (window.confirm(k('discard'))) return;
       event.preventDefault();
       event.stopPropagation();
     };
     document.addEventListener('click', guard, true);
     return () => document.removeEventListener('click', guard, true);
-  }, [sourceOnly]);
+  }, [source, k]);
   const t = useTranslations('files.actions');
   const canonical = actions.vaultPath(item) ?? '';
   const markdown = /\.md$/i.test(item.name);
   const note = useVaultNoteQuery(markdown ? canonical : null);
   const backlinks = useBacklinksQuery(canonical);
   const history = useNoteHistoryQuery(canonical, !!canonical);
+  const project = useProjectQuery(scope.kind === 'project' ? scope.projectKey : null);
   const references = useQuery({
     queryKey: [...filesScopeKey(scope), 'references', path],
     queryFn: () => getFileReferences(scope, path),
@@ -212,18 +236,16 @@ export default function ProjectKnowledgeViewer({
   const datedTitle = /^(.*?)\s+(\d{1,2}\.\s+.+)$/.exec(title);
   const tags = note.data ? noteTags(note.data.frontmatter) : [];
   const code = actions.codeUrl(item);
-  const changeSource = async (source: boolean) => {
-    if (source && saveRef.current && !(await saveRef.current())) return;
-    if (!source && dirtyRef.current && !window.confirm('Ungespeicherte Änderungen verwerfen?'))
-      return;
+  const changeSource = async (next: boolean) => {
+    if (next && saveRef.current && !(await saveRef.current())) return;
+    if (!next && dirtyRef.current && !window.confirm(k('discard'))) return;
     const url = new URL(window.location.href);
-    if (source) url.searchParams.set('source', '1');
+    if (next) url.searchParams.set('source', '1');
     else url.searchParams.delete('source');
     router.push(url.pathname + url.search);
   };
   const openBacklink = async (href: string) => {
-    if (sourceOnly && dirtyRef.current && !window.confirm('Ungespeicherte Änderungen verwerfen?'))
-      return;
+    if (source && dirtyRef.current && !window.confirm(k('discard'))) return;
     if (saveRef.current && !(await saveRef.current())) return;
     router.push(href);
   };
@@ -234,30 +256,51 @@ export default function ProjectKnowledgeViewer({
       : vaultNotePath(linkedPath);
   };
   const projectKey = scope.kind === 'project' ? scope.projectKey : null;
+  const wide = useMediaQuery('(min-width: 1024px)');
+  const folder = (target: string): FileItem => ({
+    name: target.split('/').at(-1) ?? target,
+    path: target,
+    kind: 'folder',
+    contentType: null,
+    sizeBytes: null,
+    updatedAt: null,
+  });
+  const segments = path.split('/').slice(0, -1);
+  // The same path eyebrow as the folder list: project · Wissen / folder / …, each a link.
+  const crumbs: KnowledgeCrumb[] = [
+    {
+      label:
+        scope.kind === 'project'
+          ? project.data?.project.name || scope.projectKey
+          : roots(scope.root),
+    },
+    { label: roots('vault'), onSelect: () => actions.open(folder('')) },
+    ...segments.map((segment, index) => ({
+      label:
+        scope.kind === 'project' && index === 0 ? knowledgeFolderLabel(segment, fixed) : segment,
+      onSelect: () => actions.open(folder(segments.slice(0, index + 1).join('/'))),
+    })),
+  ];
   const head: ReactNode = (
     <>
       <div className="flex items-center justify-between gap-3">
-        <p
-          className={`${mono} min-w-0 truncate text-[10px] font-medium tracking-[.23em] text-[#7ee0b8] uppercase`}
-        >
-          WISSEN / {path.split('/').slice(0, -1).join(' / ') || 'DATEIEN'}
-        </p>
+        <KnowledgeEyebrow crumbs={crumbs} />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
               variant="ghost"
               size="icon"
               aria-label={t('more', { name: item.name })}
-              className="size-9 shrink-0 rounded-full border border-[#ffffff12] bg-[#0e0d11] text-[#96919f]"
+              className="size-9 shrink-0 rounded-full border border-input bg-card text-muted-foreground"
             >
               <MoreHorizontal className="size-4" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            {markdown && (
+            {markdown && !lossy && (
               <DropdownMenuItem onSelect={() => void changeSource(!sourceOnly)}>
                 <FileCode2 />
-                {sourceOnly ? 'Editor' : 'Quelltext'}
+                {sourceOnly ? k('editor') : k('source')}
               </DropdownMenuItem>
             )}
             <DropdownMenuItem asChild>
@@ -268,7 +311,7 @@ export default function ProjectKnowledgeViewer({
             </DropdownMenuItem>
             <DropdownMenuItem onSelect={() => void actions.copyPath(item)}>
               <ClipboardCopy />
-              Link kopieren
+              {k('copyLink')}
             </DropdownMenuItem>
             {projectKey && (
               <DropdownMenuItem onSelect={() => actions.ask('link', item)}>
@@ -307,7 +350,7 @@ export default function ProjectKnowledgeViewer({
         </DropdownMenu>
       </div>
       <h1
-        className="mt-[22px] mb-3 text-[44px] leading-[1.06] font-[520] tracking-[-.055em] text-[#eeeaf6] max-sm:text-[34px]"
+        className="mt-[22px] mb-3 text-[44px] leading-[1.06] font-[520] tracking-[-.055em] break-words text-foreground max-sm:text-[34px]"
         dir="auto"
       >
         {datedTitle ? (
@@ -320,23 +363,60 @@ export default function ProjectKnowledgeViewer({
           title
         )}
       </h1>
-      <div className="flex flex-wrap items-center gap-2.5 text-xs text-[#88808f]">
-        <span className="size-[7px] rounded-full bg-[#bdaaff]" />
+      <div className="flex flex-wrap items-center gap-2.5 text-xs text-muted-foreground">
+        <span className="size-[7px] rounded-full bg-brand" />
         <span>
-          {references.data?.author || history.data?.[0]?.authorName || 'Wissen'} ·{' '}
-          {item.updatedAt ? relativeTime(item.updatedAt) : 'unbekannt'}
-          {markdown && !sourceOnly ? (dirty ? ' · ungespeichert' : ' · gespeichert') : ''}
+          {[
+            references.data?.author || history.data?.[0]?.authorName || roots('vault'),
+            item.updatedAt ? relativeTime(item.updatedAt) : k('unknownTime'),
+            markdown && !source ? (dirty ? k('unsaved') : k('saved')) : null,
+          ]
+            .filter(Boolean)
+            .join(' · ')}
         </span>
         <span className="grow" />
         {tags.map((tag) => (
           <span
             key={tag}
-            className="rounded-full bg-[#111014] px-2.5 py-[3px] text-[11px] text-[#cfc6da]"
+            className="rounded-full bg-muted px-2.5 py-[3px] text-xs text-foreground/80"
           >
-            #{tag}
+            {`#${tag}`}
           </span>
         ))}
       </div>
+    </>
+  );
+  const details = (
+    <>
+      <section className="flex flex-col gap-2">
+        <MonoLabel>{k('backlinks')}</MonoLabel>
+        {backlinks.data?.length ? (
+          backlinks.data.map((link) => (
+            <button
+              type="button"
+              key={link.path}
+              onClick={() => void openBacklink(backlinkHref(link.path))}
+              className="block w-full rounded-xl bg-card px-3 py-2.5 text-start text-xs text-foreground/85 hover:bg-muted"
+            >
+              {link.title}
+            </button>
+          ))
+        ) : (
+          <p className="text-xs text-muted-foreground">{k('noBacklinks')}</p>
+        )}
+      </section>
+      <section className="flex flex-col gap-2">
+        <MonoLabel>{k('history')}</MonoLabel>
+        {history.data?.length ? (
+          history.data.slice(0, 5).map((revision) => (
+            <p key={revision.commit} className="text-xs leading-[1.7] text-muted-foreground">
+              {`${relativeTime(revision.committedAt)} · ${revision.authorName}: ${revision.message}`}
+            </p>
+          ))
+        ) : (
+          <p className="text-xs text-muted-foreground">{k('noHistory')}</p>
+        )}
+      </section>
     </>
   );
   return (
@@ -344,80 +424,62 @@ export default function ProjectKnowledgeViewer({
       <div
         data-file-preview
         data-project-knowledge
-        className="flex min-h-0 min-w-0 flex-1 gap-10 overflow-y-auto px-9 ps-16 pt-[26px] pb-6 max-lg:gap-6 max-md:px-5 max-sm:px-4"
+        className="flex min-h-0 min-w-0 flex-1 overflow-hidden bg-background text-foreground"
       >
-        <article className="max-w-[740px] min-w-0 flex-1">
-          {head}
-          <div className={`${styles.prose} mt-[30px] text-[15px] leading-[1.75] text-[#d9d3e3]`}>
-            {markdown ? (
-              sourceOnly ? (
-                <VaultTextEditor
-                  scope={scope}
-                  path={path}
-                  canEdit={canEdit}
-                  onDirty={reportDirty}
-                  vaultPath={canonical}
-                  beforeNavigate={() => true}
-                  sourceOnly
-                />
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto px-9 ps-16 pt-[26px] pb-6 max-lg:ps-9 max-md:px-5 max-sm:px-4">
+          <article className="w-full max-w-[740px] min-w-0">
+            {head}
+            <div
+              className={`${styles.prose} mt-[30px] text-[15px] leading-[1.75] text-foreground/90`}
+            >
+              {markdown ? (
+                source ? (
+                  <>
+                    {lossy && !sourceOnly && (
+                      <p
+                        role="note"
+                        className="mb-3 rounded-xl bg-muted px-3 py-2 text-xs text-muted-foreground"
+                      >
+                        {unified('sourceRequired')}
+                      </p>
+                    )}
+                    <VaultTextEditor
+                      scope={scope}
+                      path={path}
+                      canEdit={canEdit}
+                      onDirty={reportDirty}
+                      vaultPath={canonical}
+                      beforeNavigate={() => true}
+                      sourceOnly
+                    />
+                  </>
+                ) : (
+                  <MarkdownBody
+                    path={canonical}
+                    editable={canEdit}
+                    onDirty={reportDirty}
+                    onSaveReady={onSaveReady}
+                    onLossless={onLossless}
+                  />
+                )
               ) : (
-                <MarkdownBody
-                  path={canonical}
-                  editable={canEdit}
-                  onDirty={reportDirty}
-                  onSaveReady={onSaveReady}
-                />
-              )
-            ) : (
-              <FileViewerContent file={file} />
-            )}
-          </div>
-        </article>
-        <aside className="w-[250px] shrink-0 space-y-[22px] pt-[58px] max-lg:w-[190px] max-md:hidden">
-          <section className="space-y-2">
-            <h2
-              className={`${mono} text-[10px] leading-3 font-medium tracking-[.23em] text-[#6f687a]`}
-            >
-              VERWEISE HIERHER
-            </h2>
-            {backlinks.data?.length ? (
-              backlinks.data.map((link) => (
-                <button
-                  type="button"
-                  key={link.path}
-                  onClick={() => void openBacklink(backlinkHref(link.path))}
-                  className="block w-full rounded-xl bg-[#0e0d11] px-3 py-2.5 text-start text-xs text-[#cfc6da]"
-                >
-                  {link.title}
-                </button>
-              ))
-            ) : (
-              <p className="text-xs text-[#88808f]">Keine Verweise</p>
-            )}
-          </section>
-          <section className="space-y-2">
-            <h2
-              className={`${mono} text-[10px] leading-3 font-medium tracking-[.23em] text-[#6f687a]`}
-            >
-              VERLAUF
-            </h2>
-            {history.data?.length ? (
-              history.data.slice(0, 5).map((revision) => (
-                <p key={revision.commit} className="text-xs leading-[1.7] text-[#88808f]">
-                  {new Date(revision.committedAt).toLocaleString('de-DE', {
-                    day: 'numeric',
-                    month: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}{' '}
-                  {revision.authorName}: {revision.message}
-                </p>
-              ))
-            ) : (
-              <p className="text-xs text-[#88808f]">Noch kein Verlauf</p>
-            )}
-          </section>
-        </aside>
+                <FileViewerContent file={file} />
+              )}
+            </div>
+          </article>
+          {!wide && (
+            <aside className="mt-10 flex max-w-[740px] flex-col gap-[22px] border-t border-border pt-6">
+              {details}
+            </aside>
+          )}
+        </div>
+        {wide && (
+          <ResizableSidePanel label={k('details')} reserve={520}>
+            <div className="flex min-h-0 flex-1 flex-col gap-[22px] overflow-y-auto ps-6 pe-9 pt-[84px] pb-6">
+              {details}
+            </div>
+          </ResizableSidePanel>
+        )}
       </div>
     </WebLinkScope>
   );

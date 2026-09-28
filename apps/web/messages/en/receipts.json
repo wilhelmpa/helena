@@ -3,7 +3,8 @@
     "open": "Open",
     "review": "Review",
     "matched": "Matched",
-    "accounts": "Accounts"
+    "accounts": "Accounts",
+    "all": "All receipts"
   },
   "month": "Month",
   "allMonths": "All months",
@@ -184,5 +185,26 @@
     "confirmHint": "Assign only if this original supports the same transaction without an additional amount. Both files and their facts are preserved.",
     "attach": "Attach as supplementary original",
     "count": "{count} originals"
+  },
+  "new": "New",
+  "more": "More receipt actions",
+  "status": {
+    "open": "open",
+    "matched": "matched",
+    "ignored": "no receipt needed"
+  },
+  "columns": {
+    "name": "Issuer",
+    "detail": "Details",
+    "amount": "Amount"
+  },
+  "emptyAll": "No receipts yet. Upload one or drop it here.",
+  "dropHint": "Drop receipts here or <pick>choose</pick>",
+  "preview": {
+    "loading": "Loading file …",
+    "unavailable": "File not available",
+    "einvoice": "E-invoice (XML)",
+    "mail": "Receipt from a mail",
+    "noPicture": "No preview for this file"
   }
 }

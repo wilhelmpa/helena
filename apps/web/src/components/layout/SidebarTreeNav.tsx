@@ -34,6 +34,7 @@ import { usePipelineApprovals } from '@/services/pipelines.service';
 import { useViewFoldersQuery, useViewsQuery } from '@/services/views.service';
 import type { View } from '@/lib/api/endpoints/views';
 import { useDashboardsQuery } from '@/services/dashboards.service';
+import { useReceiptSummaryQuery } from '@/features/receipts/services/receipts.service';
 import type { Project } from '@/lib/api/endpoints/projects';
 import {
   agentActivityPath,
@@ -275,7 +276,20 @@ export function SidebarProjectTree({
             without: ['path', 'file'],
             also: [`${projectPath(projectKey)}/docs`, `${projectPath(projectKey)}/notes`],
           },
-          ...(isAdmin ? [{ id: 'knowledge:receipts', href: receiptsPath(projectKey) }] : []),
+          ...(isAdmin
+            ? [
+                {
+                  id: 'knowledge:receipts',
+                  href: receiptsPath(projectKey),
+                  without: ['view'],
+                  exact: true,
+                },
+                ...RECEIPT_VIEWS.map((view) => ({
+                  id: `knowledge:receipts:${view}`,
+                  href: `${receiptsPath(projectKey)}?view=${view}`,
+                })),
+              ]
+            : []),
         ]
       : []),
     ...(showAgents
@@ -425,10 +439,10 @@ export function SidebarProjectTree({
             canWrite={can('documents', 'edit')}
           />
           {isAdmin && (
-            <TreeItem
-              label={t('receipts')}
-              href={receiptsPath(projectKey)}
+            <SidebarReceiptsItem
+              projectKey={projectKey}
               active={is('knowledge:receipts')}
+              activeView={RECEIPT_VIEWS.find((view) => is(`knowledge:receipts:${view}`)) ?? null}
             />
           )}
         </TreeItem>
@@ -720,6 +734,48 @@ export function SidebarHomeTree({
         </TreeItem>
       )}
     </Tree>
+  );
+}
+
+// Belege in the Wissen tree (hub/fix-wissen): the entry is every receipt, its children
+// the views — open, to review, matched, accounts — with their counts; the page shows no
+// second row of tabs for them.
+const RECEIPT_VIEWS = ['open', 'review', 'matched', 'accounts'] as const;
+
+function SidebarReceiptsItem({
+  projectKey,
+  active,
+  activeView,
+}: {
+  projectKey: string;
+  active: boolean;
+  activeView: (typeof RECEIPT_VIEWS)[number] | null;
+}) {
+  const t = useTranslations('nav');
+  const tReceipts = useTranslations('receipts');
+  const summary = useReceiptSummaryQuery(projectKey, undefined, true).data;
+  const counts: Partial<Record<(typeof RECEIPT_VIEWS)[number], number>> = summary
+    ? { open: summary.receipts.open + summary.transactions.open, review: summary.proposals }
+    : {};
+  return (
+    <TreeItem
+      label={t('receipts')}
+      href={receiptsPath(projectKey)}
+      active={active}
+      containsActive={activeView != null}
+      storageKey={`${projectKey}:receipts`}
+      defaultOpen={false}
+    >
+      {RECEIPT_VIEWS.map((view) => (
+        <TreeItem
+          key={view}
+          label={tReceipts(`tabs.${view}`)}
+          href={`${receiptsPath(projectKey)}?view=${view}`}
+          active={activeView === view}
+          count={counts[view] || null}
+        />
+      ))}
+    </TreeItem>
   );
 }
 

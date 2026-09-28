@@ -3,7 +3,8 @@
     "open": "Em aberto",
     "review": "Revisar",
     "matched": "Associados",
-    "accounts": "Contas"
+    "accounts": "Contas",
+    "all": "Todos os comprovantes"
   },
   "month": "Mês",
   "allMonths": "Todos os meses",
@@ -184,5 +185,26 @@
     "confirmHint": "Associe apenas se este original complementar a mesma operação sem valor adicional. Ambos os arquivos e seus dados são preservados.",
     "attach": "Vincular como original complementar",
     "count": "{count} originais"
+  },
+  "new": "Novo",
+  "more": "Mais ações",
+  "status": {
+    "open": "em aberto",
+    "matched": "conciliado",
+    "ignored": "sem comprovante necessário"
+  },
+  "columns": {
+    "name": "Emissor",
+    "detail": "Detalhes",
+    "amount": "Valor"
+  },
+  "emptyAll": "Ainda não há comprovantes. Envie um ou arraste-o para cá.",
+  "dropHint": "Arraste comprovantes para cá ou <pick>escolha</pick>",
+  "preview": {
+    "loading": "Carregando arquivo …",
+    "unavailable": "Arquivo indisponível",
+    "einvoice": "Nota eletrônica (XML)",
+    "mail": "Comprovante de um e-mail",
+    "noPicture": "Sem pré-visualização para este arquivo"
   }
 }

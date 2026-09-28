@@ -141,5 +141,71 @@
     "source": "Markdown source",
     "sourceRequired": "This file contains Markdown the formatted editor cannot preserve. Edit the source to keep all content.",
     "sourceEditRejected": "This edit could not preserve the original line endings. Your previous text is unchanged. Try smaller edits."
+  },
+  "knowledge": {
+    "preview": "Aperçu",
+    "details": "Détails",
+    "searchPlaceholder": "Rechercher dans le savoir …",
+    "searching": "Recherche …",
+    "noResults": "Aucun résultat.",
+    "loading": "Chargement …",
+    "new": "Nouveau",
+    "more": "Autres actions",
+    "today": "Aujourd’hui",
+    "fromTemplate": "Depuis un modèle",
+    "trash": "Corbeille",
+    "open": "Ouvrir",
+    "card": "Carte",
+    "create": {
+      "doc": "Doc",
+      "canvas": "Toile",
+      "folder": "Dossier",
+      "upload": "Téléverser un fichier"
+    },
+    "filters": {
+      "all": "Tout",
+      "docs": "Documents",
+      "canvases": "Toiles",
+      "files": "Fichiers",
+      "agents": "Par des agents"
+    },
+    "columns": {
+      "name": "Nom",
+      "kind": "Type",
+      "changed": "Modifié",
+      "match": "Passage"
+    },
+    "kinds": {
+      "folder": "Dossier",
+      "canvas": "Toile",
+      "doc": "Doc",
+      "pdf": "PDF",
+      "image": "Image",
+      "file": "Fichier"
+    },
+    "dropHint": "Déposez des fichiers ici ou <pick>choisissez</pick>",
+    "entries": "{count, plural, one {# élément} other {# éléments}}",
+    "subfolders": "{count, plural, one {# sous-dossier, dans l’arborescence à gauche} other {# sous-dossiers, dans l’arborescence à gauche}}",
+    "emptyFolder": "Ce dossier est vide. Créez un doc ou déposez des fichiers ici.",
+    "emptyFolderWithSubfolders": "Aucun fichier ici, seulement des sous-dossiers. Ouvrez-les dans l’arborescence à gauche.",
+    "emptyFilter": "Aucun fichier de ce type.",
+    "emptyRecent": "Pas encore de fichiers. Créez un doc ou déposez des fichiers ici.",
+    "recent": "Modifiés récemment",
+    "topLevel": "Niveau supérieur",
+    "loadingDoc": "Chargement du document …",
+    "loadError": "Impossible de charger le document.",
+    "linkNotFound": "Lien introuvable",
+    "linkFailed": "Impossible d’ouvrir le lien",
+    "copyLink": "Copier le lien",
+    "source": "Source",
+    "editor": "Éditeur",
+    "unsaved": "non enregistré",
+    "saved": "enregistré",
+    "unknownTime": "inconnu",
+    "backlinks": "Liens vers cette page",
+    "noBacklinks": "Aucun lien",
+    "history": "Historique",
+    "noHistory": "Pas encore d’historique",
+    "discard": "Abandonner les modifications non enregistrées ?"
   }
 }

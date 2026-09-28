@@ -3,7 +3,8 @@
     "open": "Pendientes",
     "review": "Revisar",
     "matched": "Asignados",
-    "accounts": "Cuentas"
+    "accounts": "Cuentas",
+    "all": "Todos los comprobantes"
   },
   "month": "Mes",
   "allMonths": "Todos los meses",
@@ -184,5 +185,26 @@
     "confirmHint": "Asigne solo si este original documenta la misma operación sin un importe adicional. Se conservan ambos archivos y sus datos.",
     "attach": "Vincular como original complementario",
     "count": "{count} originales"
+  },
+  "new": "Nuevo",
+  "more": "Más acciones",
+  "status": {
+    "open": "pendiente",
+    "matched": "conciliado",
+    "ignored": "no necesita comprobante"
+  },
+  "columns": {
+    "name": "Emisor",
+    "detail": "Detalles",
+    "amount": "Importe"
+  },
+  "emptyAll": "Aún no hay comprobantes. Sube uno o arrástralo aquí.",
+  "dropHint": "Arrastra comprobantes aquí o <pick>elige</pick>",
+  "preview": {
+    "loading": "Cargando archivo …",
+    "unavailable": "Archivo no disponible",
+    "einvoice": "Factura electrónica (XML)",
+    "mail": "Comprobante de un correo",
+    "noPicture": "Sin vista previa para este archivo"
   }
 }

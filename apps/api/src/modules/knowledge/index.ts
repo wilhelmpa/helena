@@ -27,6 +27,8 @@ import {
   SearchResponse,
   TrashListResponse,
   treeQuery,
+  recentQuery,
+  RecentResponse,
   TreeResponse,
   uploadAssetBody,
   uploadAssetQuery,
@@ -43,6 +45,7 @@ import {
   listConflicts,
   listFolder,
   listTrashed,
+  listRecent,
   listTree,
   movePath,
   noteHistory,
@@ -151,6 +154,20 @@ export const knowledgeRoutes = new Elysia({
         description:
           'List the notes that link to a note or file of the knowledge vault (`path`), or to a task (`task`, e.g. "VOL-12" for notes containing [[VOL-12]]).',
         ...mcpTool('backlinks'),
+      },
+    },
+  )
+  .get(
+    '/knowledge/recent',
+    ({ scope, paths, query }) => vaultCall(() => listRecent(scope, paths.root, query.limit ?? 50)),
+    {
+      vault: { action: 'read', fields: ['root'] },
+      query: recentQuery,
+      response: { 200: RecentResponse, ...commonErrors },
+      detail: {
+        summary: 'List the latest files',
+        description:
+          'The files below a folder of the knowledge vault, newest first: notes and every other file across all subfolders.',
       },
     },
   )

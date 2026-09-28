@@ -3,7 +3,8 @@
     "open": "待处理",
     "review": "待审核",
     "matched": "已匹配",
-    "accounts": "银行账户"
+    "accounts": "银行账户",
+    "all": "全部凭证"
   },
   "month": "月份",
   "allMonths": "所有月份",
@@ -184,5 +185,26 @@
     "confirmHint": "仅在此原件证明同一交易且不产生额外金额时关联。两个文件及其数据均会保留。",
     "attach": "关联为补充原件",
     "count": "{count} 个原件"
+  },
+  "new": "新建",
+  "more": "更多操作",
+  "status": {
+    "open": "未匹配",
+    "matched": "已匹配",
+    "ignored": "无需凭证"
+  },
+  "columns": {
+    "name": "开具方",
+    "detail": "详情",
+    "amount": "金额"
+  },
+  "emptyAll": "还没有凭证。上传一个或拖到此处。",
+  "dropHint": "将凭证拖到此处或<pick>选择</pick>",
+  "preview": {
+    "loading": "正在加载文件 …",
+    "unavailable": "文件不可用",
+    "einvoice": "电子发票（XML）",
+    "mail": "来自邮件的凭证",
+    "noPicture": "此文件无预览"
   }
 }

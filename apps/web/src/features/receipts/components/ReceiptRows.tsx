@@ -1,13 +1,15 @@
 'use client';
 
-import type { ReactNode } from 'react';
+import { createElement, type ReactNode } from 'react';
 import {
   ArrowDownLeft,
   ArrowUpRight,
   FileCode2,
-  FileText,
-  Image as ImageIcon,
+  FileImage,
+  FileType2,
   Mail,
+  ReceiptText,
+  type LucideIcon,
 } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
@@ -37,11 +39,19 @@ export function Money({ cents, currency }: { cents: number | null; currency: str
   );
 }
 
+// One icon per kind of receipt file: e-invoice (XML), PDF, image, mail body, other.
+export function receiptIcon(
+  receipt: Pick<Receipt, 'einvoice' | 'source' | 'contentType'>,
+): LucideIcon {
+  if (receipt.einvoice) return FileCode2;
+  if (/^image\//.test(receipt.contentType)) return FileImage;
+  if (receipt.contentType === 'application/pdf') return FileType2;
+  if (receipt.source === 'mail') return Mail;
+  return ReceiptText;
+}
+
 function ReceiptIcon({ receipt }: { receipt: Receipt }) {
-  if (receipt.einvoice) return <FileCode2 aria-hidden="true" />;
-  if (receipt.source === 'mail') return <Mail aria-hidden="true" />;
-  if (/^image\//.test(receipt.contentType)) return <ImageIcon aria-hidden="true" />;
-  return <FileText aria-hidden="true" />;
+  return createElement(receiptIcon(receipt), { 'aria-hidden': true });
 }
 
 export function MethodBadge({ method }: { method: MatchMethod }) {

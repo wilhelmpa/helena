@@ -110,6 +110,22 @@ const query = (params: Record<string, string | number | undefined>) => {
 export const getVaultTree = (root: string) =>
   request<VaultTree>(`/knowledge/tree?${query({ root })}`);
 
+// The files below a folder, newest first, across all subfolders (Wissen "Zuletzt geändert").
+export interface RecentVaultFile {
+  path: string;
+  name: string;
+  kind: 'note' | 'file';
+  title: string;
+  mime: string | null;
+  sizeBytes: number | null;
+  updatedAt: string | null;
+}
+
+export const listRecentVaultFiles = (root: string, limit = 50) =>
+  request<{ root: string; items: RecentVaultFile[] }>(
+    `/knowledge/recent?${query({ root, limit })}`,
+  );
+
 export const listVaultFolder = (path: string) =>
   request<{ path: string; items: VaultFolderItem[] }>(`/knowledge/folders?${query({ path })}`);
 

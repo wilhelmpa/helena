@@ -29,6 +29,11 @@ export const treeQuery = t.Object({
   root: vaultPath('The folder whose notes and folders to list, e.g. "Projects/VOL/Docs".'),
 });
 
+export const recentQuery = t.Object({
+  root: vaultPath('The folder whose files to list, newest first, e.g. "Projects/VOL".'),
+  limit: t.Optional(t.Numeric({ minimum: 1, maximum: 200, default: 50 })),
+});
+
 export const searchQuery = t.Object({
   q: t.String({ minLength: 1, maxLength: 200, description: 'Words to search for.' }),
   folder: t.Optional(
@@ -121,6 +126,21 @@ export const TreeResponse = t.Object({
       name: t.String(),
       kind: t.Union([t.Literal('note'), t.Literal('folder')]),
       title: t.String(),
+      updatedAt: t.Nullable(t.String()),
+    }),
+  ),
+});
+
+export const RecentResponse = t.Object({
+  root: t.String(),
+  items: t.Array(
+    t.Object({
+      path: t.String(),
+      name: t.String(),
+      kind: t.Union([t.Literal('note'), t.Literal('file')]),
+      title: t.String(),
+      mime: t.Nullable(t.String()),
+      sizeBytes: t.Nullable(t.Number()),
       updatedAt: t.Nullable(t.String()),
     }),
   ),

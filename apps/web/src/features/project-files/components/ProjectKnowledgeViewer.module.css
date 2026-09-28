@@ -1,8 +1,9 @@
-/* Values from Wissen.dc.html; these rules apply only to the embedded Docs canvas. */
+/* Values from Wissen.dc.html; these rules apply only to the embedded Docs canvas. Colors are
+   theme tokens, so the document reads the same in light and dark. */
 .prose :global(.md-content) {
   font-size: 15px;
   line-height: 1.75;
-  color: #d9d3e3;
+  color: color-mix(in srgb, var(--foreground) 88%, transparent);
 }
 .prose :global(.md-content h1),
 .prose :global(.md-content h2) {
@@ -10,11 +11,11 @@
   font-weight: 520;
   line-height: 1.4;
   letter-spacing: -0.02em;
-  color: #eeeaf6;
+  color: var(--foreground);
 }
 .prose :global(.md-content .tableWrapper) {
   border-radius: 16px;
-  box-shadow: 0 0 0 1px #ffffff0c;
+  box-shadow: 0 0 0 1px var(--border);
 }
 .prose :global(.md-content table) {
   width: 100%;
@@ -30,8 +31,8 @@
 }
 .prose :global(.md-content th) {
   padding: 10px 16px;
-  background: #111014;
-  color: #8b8595;
+  background: var(--muted);
+  color: var(--muted-foreground);
   font:
     500 10px 'JetBrains Mono',
     ui-monospace,
@@ -41,15 +42,15 @@
 }
 .prose :global(.md-content td) {
   padding: 11px 16px;
-  background: #0a090d;
-  color: #96919f;
+  background: var(--kanban-column);
+  color: var(--muted-foreground);
 }
 .prose :global(.md-content td:first-child p) {
   width: max-content;
   border-radius: 99px;
   padding: 1px 8px;
-  background: #26212d;
-  color: #e7dbfa;
+  background: var(--accent);
+  color: var(--accent-foreground);
   font-size: 12px;
 }
 .prose :global(.md-content td:nth-child(2)) {
@@ -61,5 +62,5 @@
 .prose :global(.md-content th),
 .prose :global(.md-content td) {
   border: 0;
-  border-bottom: 1px solid #ffffff08;
+  border-bottom: 1px solid var(--border);
 }

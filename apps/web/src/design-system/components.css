@@ -1388,3 +1388,135 @@ a.ds-run-card:hover {
 .ds-issue-cost > span {
   color: var(--text-3);
 }
+
+/* Wissen & Belege (hub/fix-wissen): list on the page, preview docked at the right. */
+.ds-knowledge {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  overflow: hidden;
+}
+.ds-knowledge-main {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-4);
+  overflow-y: auto;
+  padding: var(--space-5) var(--page-pad-x);
+}
+.ds-knowledge-path {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 6px;
+  color: var(--text-3);
+  font: 500 10px/16px var(--font-mono);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+.ds-knowledge-preview {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  overflow-y: auto;
+  padding: var(--space-5) var(--space-5) var(--space-5) var(--space-4);
+}
+.ds-knowledge-preview.is-stacked {
+  padding: 0 var(--page-pad-x) var(--space-6);
+}
+@media (max-width: 1023px) {
+  .ds-knowledge {
+    flex-direction: column;
+    overflow-y: auto;
+  }
+  .ds-knowledge-main {
+    overflow: visible;
+  }
+}
+.ds-knowledge-search {
+  width: 240px;
+}
+.ds-knowledge-search input {
+  min-width: 0;
+  flex: 1;
+  background: transparent;
+  color: var(--text);
+  font-size: 13px;
+  outline: none;
+}
+.ds-knowledge-search kbd {
+  color: var(--text-3);
+  font: 10px var(--font-mono);
+}
+@media (max-width: 700px) {
+  .ds-knowledge-search {
+    width: auto;
+    flex: 1;
+  }
+}
+
+/* Drop zone under a list (Wissen, Belege). */
+.ds-dropzone {
+  display: flex;
+  min-height: 64px;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: auto;
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius-card);
+  padding: 0 var(--space-4);
+  color: var(--text-3);
+  font-size: 12px;
+}
+.ds-dropzone[data-dropping='true'] {
+  border-color: var(--accent);
+  background: var(--surface-2);
+  color: var(--text);
+}
+.ds-knowledge-new-item {
+  display: flex;
+  min-height: 34px;
+  align-items: center;
+  gap: 10px;
+  border-radius: var(--radius-field);
+  padding: 0 10px;
+  color: var(--text);
+  font-size: 13px;
+  text-align: start;
+}
+.ds-knowledge-new-item:hover {
+  background: var(--surface-2);
+}
+.ds-canvas-thumb-node {
+  position: absolute;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+  border-radius: var(--radius-field);
+  background: var(--surface-2);
+  padding: 6px 8px;
+  color: var(--text);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ds-preview-frame {
+  position: relative;
+  width: 100%;
+  min-height: 200px;
+  max-height: 420px;
+  aspect-ratio: 3 / 2;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--surface-1);
+}
+.ds-preview-frame.is-portrait {
+  min-height: 220px;
+  max-height: 520px;
+  aspect-ratio: 3 / 4;
+}

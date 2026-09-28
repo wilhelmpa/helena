@@ -141,5 +141,71 @@
     "source": "Markdown source",
     "sourceRequired": "This file contains Markdown the formatted editor cannot preserve. Edit the source to keep all content.",
     "sourceEditRejected": "This edit could not preserve the original line endings. Your previous text is unchanged. Try smaller edits."
+  },
+  "knowledge": {
+    "preview": "معاينة",
+    "details": "التفاصيل",
+    "searchPlaceholder": "ابحث في المعرفة …",
+    "searching": "جارٍ البحث …",
+    "noResults": "لا توجد نتائج.",
+    "loading": "جارٍ التحميل …",
+    "new": "جديد",
+    "more": "إجراءات أخرى",
+    "today": "اليوم",
+    "fromTemplate": "من قالب",
+    "trash": "المهملات",
+    "open": "فتح",
+    "card": "بطاقة",
+    "create": {
+      "doc": "مستند",
+      "canvas": "لوحة",
+      "folder": "مجلد",
+      "upload": "رفع ملف"
+    },
+    "filters": {
+      "all": "الكل",
+      "docs": "المستندات",
+      "canvases": "اللوحات",
+      "files": "الملفات",
+      "agents": "من الوكلاء"
+    },
+    "columns": {
+      "name": "الاسم",
+      "kind": "النوع",
+      "changed": "آخر تعديل",
+      "match": "المقطع"
+    },
+    "kinds": {
+      "folder": "مجلد",
+      "canvas": "لوحة",
+      "doc": "مستند",
+      "pdf": "PDF",
+      "image": "صورة",
+      "file": "ملف"
+    },
+    "dropHint": "اسحب الملفات إلى هنا أو <pick>اخترها</pick>",
+    "entries": "{count, plural, zero {لا عناصر} one {عنصر واحد} two {عنصران} few {# عناصر} many {# عنصرًا} other {# عنصر}}",
+    "subfolders": "{count, plural, zero {لا مجلدات فرعية} one {مجلد فرعي واحد في الشجرة يسارًا} two {مجلدان فرعيان في الشجرة يسارًا} few {# مجلدات فرعية في الشجرة يسارًا} many {# مجلدًا فرعيًا في الشجرة يسارًا} other {# مجلد فرعي في الشجرة يسارًا}}",
+    "emptyFolder": "هذا المجلد فارغ. أنشئ مستندًا أو اسحب الملفات إلى هنا.",
+    "emptyFolderWithSubfolders": "لا توجد ملفات هنا، بل مجلدات فرعية فقط. افتحها من الشجرة.",
+    "emptyFilter": "لا توجد ملفات من هذا النوع.",
+    "emptyRecent": "لا توجد ملفات بعد. أنشئ مستندًا أو اسحب الملفات إلى هنا.",
+    "recent": "المعدّلة مؤخرًا",
+    "topLevel": "المستوى الأعلى",
+    "loadingDoc": "جارٍ تحميل المستند …",
+    "loadError": "تعذّر تحميل المستند.",
+    "linkNotFound": "الرابط غير موجود",
+    "linkFailed": "تعذّر فتح الرابط",
+    "copyLink": "نسخ الرابط",
+    "source": "النص المصدر",
+    "editor": "المحرر",
+    "unsaved": "غير محفوظ",
+    "saved": "محفوظ",
+    "unknownTime": "غير معروف",
+    "backlinks": "روابط إلى هنا",
+    "noBacklinks": "لا روابط",
+    "history": "السجل",
+    "noHistory": "لا يوجد سجل بعد",
+    "discard": "تجاهل التغييرات غير المحفوظة؟"
   }
 }

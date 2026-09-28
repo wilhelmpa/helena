@@ -141,5 +141,71 @@
     "source": "Markdown source",
     "sourceRequired": "This file contains Markdown the formatted editor cannot preserve. Edit the source to keep all content.",
     "sourceEditRejected": "This edit could not preserve the original line endings. Your previous text is unchanged. Try smaller edits."
+  },
+  "knowledge": {
+    "preview": "Pré-visualização",
+    "details": "Detalhes",
+    "searchPlaceholder": "Pesquisar no conhecimento …",
+    "searching": "Pesquisando …",
+    "noResults": "Nenhum resultado.",
+    "loading": "Carregando …",
+    "new": "Novo",
+    "more": "Mais ações",
+    "today": "Hoje",
+    "fromTemplate": "A partir de modelo",
+    "trash": "Lixeira",
+    "open": "Abrir",
+    "card": "Cartão",
+    "create": {
+      "doc": "Doc",
+      "canvas": "Tela",
+      "folder": "Pasta",
+      "upload": "Enviar arquivo"
+    },
+    "filters": {
+      "all": "Tudo",
+      "docs": "Documentos",
+      "canvases": "Telas",
+      "files": "Arquivos",
+      "agents": "De agentes"
+    },
+    "columns": {
+      "name": "Nome",
+      "kind": "Tipo",
+      "changed": "Alterado",
+      "match": "Trecho"
+    },
+    "kinds": {
+      "folder": "Pasta",
+      "canvas": "Tela",
+      "doc": "Doc",
+      "pdf": "PDF",
+      "image": "Imagem",
+      "file": "Arquivo"
+    },
+    "dropHint": "Arraste arquivos para cá ou <pick>escolha</pick>",
+    "entries": "{count, plural, one {# item} other {# itens}}",
+    "subfolders": "{count, plural, one {# subpasta, na árvore à esquerda} other {# subpastas, na árvore à esquerda}}",
+    "emptyFolder": "Esta pasta está vazia. Crie um doc ou arraste arquivos para cá.",
+    "emptyFolderWithSubfolders": "Não há arquivos aqui, só subpastas. Abra-as na árvore à esquerda.",
+    "emptyFilter": "Nenhum arquivo deste tipo.",
+    "emptyRecent": "Ainda não há arquivos. Crie um doc ou arraste arquivos para cá.",
+    "recent": "Alterados recentemente",
+    "topLevel": "Nível superior",
+    "loadingDoc": "Carregando documento …",
+    "loadError": "Não foi possível carregar o documento.",
+    "linkNotFound": "Link não encontrado",
+    "linkFailed": "Não foi possível abrir o link",
+    "copyLink": "Copiar link",
+    "source": "Código-fonte",
+    "editor": "Editor",
+    "unsaved": "não salvo",
+    "saved": "salvo",
+    "unknownTime": "desconhecido",
+    "backlinks": "Links para cá",
+    "noBacklinks": "Nenhum link",
+    "history": "Histórico",
+    "noHistory": "Ainda sem histórico",
+    "discard": "Descartar as alterações não salvas?"
   }
 }

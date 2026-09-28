@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'bun:test';
-import { mkdir, mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, symlink, utimes, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { apiKeyApi, app, authedApi, type Api } from '#tests/helpers/app';
@@ -172,6 +172,38 @@ describe('knowledge', () => {
         ['A.md', 'note'],
         ['image.png', 'file'],
       ]);
+    });
+
+    it('lists the latest files below a folder, newest first, across subfolders', async () => {
+      const { asOwner } = await setup();
+      await write(asOwner, 'Projects/MKT/Docs/Old.md', '# Old');
+      await write(asOwner, 'Projects/MKT/Reports/Week.md', '---\ntitle: Weekly\n---\nw');
+      await mkdir(path.join(root(), 'Projects/MKT/Files/Empty'), { recursive: true });
+      await writeFile(path.join(root(), 'Projects/MKT/Files/chart.png'), 'png');
+      const at = (seconds: number) => new Date(Date.UTC(2026, 8, 20, 12, 0, seconds));
+      await utimes(path.join(root(), 'Projects/MKT/Docs/Old.md'), at(1), at(1));
+      await utimes(path.join(root(), 'Projects/MKT/Files/chart.png'), at(2), at(2));
+      await utimes(path.join(root(), 'Projects/MKT/Reports/Week.md'), at(3), at(3));
+
+      const recent = await asOwner.knowledge.recent.get({ query: { root: 'Projects/MKT' } });
+      expect(recent.status).toBe(200);
+      expect(recent.data?.items.map((item) => [item.path, item.kind, item.title])).toEqual([
+        ['Projects/MKT/Reports/Week.md', 'note', 'Weekly'],
+        ['Projects/MKT/Files/chart.png', 'file', 'chart.png'],
+        ['Projects/MKT/Docs/Old.md', 'note', 'Old'],
+      ]);
+      expect(recent.data?.items[1]).toMatchObject({ mime: 'image/png', sizeBytes: 3 });
+
+      const limited = await asOwner.knowledge.recent.get({
+        query: { root: 'Projects/MKT', limit: 1 },
+      });
+      expect(limited.data?.items.map((item) => item.path)).toEqual([
+        'Projects/MKT/Reports/Week.md',
+      ]);
+      const stranger = authedApi((await signUpTestUser()).cookie);
+      expect(
+        (await stranger.knowledge.recent.get({ query: { root: 'Projects/MKT' } })).status,
+      ).toBe(403);
     });
 
     it('moves, trashes and restores a note, and resolves its old path', async () => {
