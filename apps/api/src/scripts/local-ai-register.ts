@@ -5,7 +5,12 @@
 //
 //   sudo systemd-run --wait --pipe --collect --uid=volition-plan \
 //     -p EnvironmentFile=/etc/volition/plan.env -p WorkingDirectory=/srv/volition/source/plan \
-//     /usr/local/bin/bun apps/api/src/scripts/local-ai-register.ts [--kind halogen]
+//     /usr/local/bin/bun apps/api/src/scripts/local-ai-register.ts [--kind halogen | --embeddings]
+//
+// --embeddings: the server `local` (Lemonade until now) becomes the embedding server of
+// native/local-ai/embed.sh (127.0.0.1:13308, same key, same model name), so the vectors in the
+// index, which are named `helena-local/Qwen3-Embedding-0.6B-GGUF`, stay valid. Its other models
+// leave the list; the classes that pointed at them fall back to their configured models.
 import { modelServerBySlug } from '@repo/db';
 import { host } from '#shared/helena';
 import { LOCAL_AI_PLUGIN_ID, LOCAL_AI_PROVIDES, localAiPlugin } from '#modules/local-ai/plugin';
@@ -14,13 +19,18 @@ import {
   DEFAULT_SERVER_SLUG,
   createServer,
   refreshServer,
+  updateServer,
 } from '#modules/local-ai/service';
 import {
   HALOGEN,
   HALOGEN_DEFAULT_BASE_URL,
   LEMONADE,
   LEMONADE_DEFAULT_BASE_URL,
+  OPENAI_COMPATIBLE,
 } from '#modules/local-ai/server-types';
+
+// native/local-ai/embed.sh.
+const EMBEDDINGS_BASE_URL = 'http://127.0.0.1:13308/v1';
 
 const kind = process.argv.includes('--kind')
   ? process.argv[process.argv.indexOf('--kind') + 1]
@@ -37,6 +47,26 @@ await host.load(localAiPlugin, {
   sdk: '^0.1.0',
   provides: LOCAL_AI_PROVIDES,
 });
+
+if (process.argv.includes('--embeddings')) {
+  const current = await modelServerBySlug(DEFAULT_SERVER_SLUG);
+  const input = {
+    kind: OPENAI_COMPATIBLE,
+    name: 'Embeddings (Qwen3-Embedding-0.6B)',
+    baseUrl: EMBEDDINGS_BASE_URL,
+    keySource: 'file' as const,
+    keyFile: DEFAULT_KEY_FILE,
+  };
+  const server = current
+    ? await updateServer(current.id, input)
+    : await createServer({ slug: DEFAULT_SERVER_SLUG, ...input });
+  console.log(
+    `${current ? 'changed' : 'registered'} ${server.name}: ${server.status?.reachable ? 'reachable' : `not reachable (${server.status?.error ?? 'unknown'})`}`,
+  );
+  for (const model of server.models)
+    console.log(`  ${model.modelId}  ${model.capabilities.join(',')}`);
+  process.exit(0);
+}
 
 // Halogen has no key (loopback, the firewall lets only Helena's users in). Its KV pool (262,144
 // positions) is shared by its conversation slots: agents are told half of it, so two long

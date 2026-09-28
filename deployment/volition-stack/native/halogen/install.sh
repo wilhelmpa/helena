@@ -307,7 +307,9 @@ install_all() {
 }
 
 status() {
-  say "unit:          $(systemctl is-enabled helena-halogen 2>/dev/null || echo 'not installed'), $(systemctl is-active helena-halogen 2>/dev/null || true)"
+  enabled=$(systemctl is-enabled helena-halogen 2>/dev/null) || true
+  active=$(systemctl is-active helena-halogen 2>/dev/null) || true
+  say "unit:          ${enabled:-not installed}, ${active:-inactive}"
   if [ -f "$UNIT" ]; then
     pinned=$(sed -n 's/^Environment=HALOGEN_IMAGE=//p' "$UNIT")
     if [ "$pinned" = "$IMAGE" ]; then say "image:         $HALOGEN_VERSION ($IMAGE_DIGEST)"; else say "image:         unit pins ${pinned:-nothing}; installer pins $HALOGEN_VERSION: re-run install"; fi
