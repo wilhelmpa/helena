@@ -93,6 +93,7 @@ function TreeBranch({
   href,
   action,
   activePaths = [],
+  defaultOpen = false,
   children,
 }: {
   id: string;
@@ -100,12 +101,15 @@ function TreeBranch({
   href: string;
   action?: ReactNode;
   activePaths?: string[];
+  defaultOpen?: boolean;
   children: ReactNode;
 }) {
   const pathname = usePathname();
   const [open, setOpen] = usePersistedBoolean(
     `sidebar:tree:${id}`,
-    pathIsActive(pathname, href) || activePaths.some((path) => pathIsActive(pathname, path)),
+    defaultOpen ||
+      pathIsActive(pathname, href) ||
+      activePaths.some((path) => pathIsActive(pathname, path)),
   );
   return (
     <div className="helena-tree-branch">
@@ -174,7 +178,13 @@ export function SidebarHomeTree({ teamId, isGod }: { teamId: number | null; isGo
   return (
     <section className="helena-sidebar-section">
       <h2>{t('sidebarProject')}</h2>
-      <TreeBranch id="home:dashboard" label={t('dashboards')} href="/" activePaths={['/system']}>
+      <TreeBranch
+        id="home:dashboard"
+        label={t('dashboards')}
+        href="/"
+        activePaths={['/system']}
+        defaultOpen
+      >
         <TreeLink href="/" nested>
           {t('sidebarAllProjects')}
         </TreeLink>
@@ -184,7 +194,7 @@ export function SidebarHomeTree({ teamId, isGod }: { teamId: number | null; isGo
           </TreeLink>
         )}
       </TreeBranch>
-      <TreeBranch id="home:tasks" label={t('workItems')} href="/tasks">
+      <TreeBranch id="home:tasks" label={t('workItems')} href="/tasks" defaultOpen>
         <TreeLink href="/tasks?assignee=me" nested>
           {t('sidebarMyTasks')}
         </TreeLink>
@@ -197,6 +207,7 @@ export function SidebarHomeTree({ teamId, isGod }: { teamId: number | null; isGo
         label={t('sidebarKnowledge')}
         href="/files"
         activePaths={['/docs']}
+        defaultOpen
       >
         <TreeLink href={homeFilesPath('', { root: 'home' })} nested>
           {t('sidebarHome')}
@@ -213,6 +224,7 @@ export function SidebarHomeTree({ teamId, isGod }: { teamId: number | null; isGo
         label={t('sidebarAutomation')}
         href={get('organization') ?? '/agents'}
         activePaths={['/agents', '/schedules', '/activity', '/workflows', '/browsers']}
+        defaultOpen
       >
         <TreeLink href={get('organization') ?? '/organization'} nested>
           {t('sidebarTeamDeciders')}
@@ -248,6 +260,7 @@ export function SidebarHomeTree({ teamId, isGod }: { teamId: number | null; isGo
           '/devices',
           '/god/general',
         ]}
+        defaultOpen
       >
         {isGod && (
           <TreeLink href="/agents?agent=home" nested>
