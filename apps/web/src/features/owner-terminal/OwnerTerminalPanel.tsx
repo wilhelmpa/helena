@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { arrayMove } from '@dnd-kit/sortable';
 import { useTranslations } from 'next-intl';
+import { useTheme } from 'next-themes';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 import type { OwnerTerminalKind } from '@/lib/api/endpoints/owner-terminal';
@@ -18,6 +19,7 @@ import TerminalTabBar from './components/TerminalTabBar';
 import MobileKeyBar from './components/MobileKeyBar';
 import { attachTerminalClipboard } from './utils/terminalClipboard';
 import { terminalClipboardToasts } from './utils/terminalClipboardToasts';
+import { attachTerminalTheme } from '@/utils/terminalTheme';
 
 export interface OpenTerminalTab {
   kind: OwnerTerminalKind;
@@ -63,6 +65,7 @@ function nextName(tabs: OpenTerminalTab[], kind: OwnerTerminalKind): string {
 export default function OwnerTerminalPanel() {
   const t = useTranslations('ownerTerminal');
   const isMobile = useIsMobile();
+  const { resolvedTheme } = useTheme();
   const grant = useOwnerTerminalGrantQuery();
   const [tabs, setTabs] = useState<OpenTerminalTab[]>(DEFAULT_TABS);
   const [activeKey, setActiveKey] = useState('shell:main');
@@ -122,6 +125,14 @@ export default function OwnerTerminalPanel() {
     return () => cleanups.forEach((cleanup) => cleanup());
   }, [tabs, grant.data?.active, t]);
 
+  useEffect(() => {
+    if (!grant.data?.active) return;
+    const cleanups = Object.values(frames.current)
+      .filter((frame): frame is HTMLIFrameElement => !!frame)
+      .map((frame) => attachTerminalTheme(frame, resolvedTheme === 'light' ? 'light' : 'dark'));
+    return () => cleanups.forEach((cleanup) => cleanup());
+  }, [tabs, grant.data?.active, resolvedTheme]);
+
   if (grant.isLoading) return null;
   if (!grant.data?.active) return <StepUpDialog onSuccess={() => grant.refetch()} />;
 
@@ -180,7 +191,7 @@ export default function OwnerTerminalPanel() {
               title={`${t(`kinds.${tab.kind}`)} ${tab.name}`}
               loading="lazy"
               className={cn(
-                'absolute inset-0 h-full w-full border-0 bg-background',
+                'absolute inset-0 h-full w-full rounded-b-xl border-0 bg-background',
                 key !== activeKey && 'pointer-events-none invisible',
               )}
               allow="clipboard-read; clipboard-write"

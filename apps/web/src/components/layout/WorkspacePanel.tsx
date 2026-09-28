@@ -279,7 +279,7 @@ export default function WorkspacePanel({
           aria-hidden="true"
           className={cn(
             'min-w-0 bg-background',
-            !full && 'border-s',
+            !full && 'border-s border-border/30',
             layer,
             overlay && 'shadow-[var(--side-panel-shadow)]',
           )}
@@ -369,6 +369,7 @@ export default function WorkspacePanel({
               <WorkspaceFrame
                 url={frame.url}
                 title={frame.title}
+                helenaCode={frame.tool === 'code'}
                 sandbox={frame.sandboxed ? 'allow-scripts allow-forms' : undefined}
                 {...props}
               />
