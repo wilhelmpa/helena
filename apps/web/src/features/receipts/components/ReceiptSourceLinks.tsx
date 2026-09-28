@@ -72,7 +72,7 @@ export default function ReceiptSourceLinks({
         </Button>
       ))}
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-3xl">
+        <DialogContent size="large" className="max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{t('sourceArchivedMail')}</DialogTitle>
             <DialogDescription>{t('sourceArchiveReadOnly')}</DialogDescription>

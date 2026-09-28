@@ -39,5 +39,10 @@
   "unavailable": "No se pudo cargar la actividad.",
   "filterKind": "Tipo",
   "filterAgent": "Agente",
-  "unavailableHint": "El servidor no respondió. Vuelve a intentarlo en un momento."
+  "unavailableHint": "El servidor no respondió. Vuelve a intentarlo en un momento.",
+  "filterStatus": "Estado",
+  "allStatuses": "Todos los estados",
+  "statusRunning": "En curso",
+  "noneRunning": "Ahora no hay nada en curso.",
+  "noneRunningHint": "Pon el estado en «Todos los estados» para ver todo el historial."
 }

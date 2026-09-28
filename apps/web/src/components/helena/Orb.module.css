@@ -60,6 +60,21 @@
   background: transparent;
   box-shadow: none;
 }
+/* The particle orb draws in the middle ~70% of its box; on a light ground it glows on
+   its stage (tokens: --orb-stage), in dark on the page itself. */
+.large::before {
+  position: absolute;
+  inset: 15%;
+  border-radius: 50%;
+  background: var(--orb-stage);
+  box-shadow: var(--orb-stage-shadow);
+  content: '';
+  opacity: 0;
+  transition: opacity 400ms ease;
+}
+.large.ready::before {
+  opacity: 1;
+}
 .large voice-orb {
   position: absolute;
   inset: 0;
@@ -70,27 +85,48 @@
 .large.ready voice-orb {
   opacity: 1;
 }
+/* Without WebGL, with reduced motion or in a hidden tab: the same orb as a still sphere in
+   the colour of the state — lit from the top left like the small orbs, a soft glow around
+   it; no blurred blob (owner, 28.09.). It breathes slowly while something happens. */
 .static {
   display: block;
-  width: 68%;
-  height: 68%;
-  margin: 16%;
+  width: 58%;
+  height: 58%;
+  margin: 21%;
   border-radius: 50%;
   background: radial-gradient(
-    circle,
-    color-mix(in srgb, var(--orb-color) 85%, white) 0%,
-    var(--orb-color) 22%,
-    color-mix(in srgb, var(--orb-color), transparent 35%) 48%,
-    transparent 78%
+    circle at 36% 30%,
+    color-mix(in srgb, var(--orb-color) 22%, white) 0%,
+    color-mix(in srgb, var(--orb-color) 80%, white) 18%,
+    var(--orb-color) 48%,
+    color-mix(in srgb, var(--orb-color), black 42%) 100%
   );
-  filter: blur(0.8rem);
-  box-shadow: 0 0 5rem color-mix(in srgb, var(--orb-color), transparent 45%);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--orb-color), transparent 72%),
+    0 0 2.5rem color-mix(in srgb, var(--orb-color), transparent 52%),
+    0 0 6rem color-mix(in srgb, var(--orb-color), transparent 78%),
+    inset 0 -0.6rem 1.6rem color-mix(in srgb, var(--orb-color), black 35%);
 }
-.tool {
+.large:is(.listening, .thinking, .tool, .speaking, .waiting) .static {
+  animation: breathe 3.2s ease-in-out infinite;
+}
+@keyframes breathe {
+  50% {
+    transform: scale(1.045);
+    box-shadow:
+      0 0 0 1px color-mix(in srgb, var(--orb-color), transparent 72%),
+      0 0 3.5rem color-mix(in srgb, var(--orb-color), transparent 40%),
+      0 0 7rem color-mix(in srgb, var(--orb-color), transparent 70%),
+      inset 0 -0.6rem 1.6rem color-mix(in srgb, var(--orb-color), black 35%);
+  }
+}
+/* The ring of a small orb: using a tool, or waiting for you. The large orb says it by its
+   colour and motion alone. */
+.orb:not(.large).tool {
   outline: 1px solid var(--status-thinking);
   outline-offset: 2px;
 }
-.waiting {
+.orb:not(.large).waiting {
   outline: 1px solid var(--status-waiting);
   outline-offset: 2px;
 }
@@ -110,6 +146,7 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .orb,
+  .large .static,
   .large voice-orb {
     animation: none !important;
     transition: none;

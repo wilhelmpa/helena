@@ -49,7 +49,7 @@ export default function StepUpDialog({ onSuccess }: { onSuccess: () => void }) {
 
   return (
     <Dialog open onOpenChange={setOpen}>
-      <DialogContent className="sm:max-w-sm" onInteractOutside={(event) => event.preventDefault()}>
+      <DialogContent size="small" onInteractOutside={(event) => event.preventDefault()}>
         <DialogHeader>
           <DialogTitle>{t('title')}</DialogTitle>
         </DialogHeader>

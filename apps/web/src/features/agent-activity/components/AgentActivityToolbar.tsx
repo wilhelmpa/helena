@@ -1,4 +1,4 @@
-import { Bot, ListFilter } from 'lucide-react';
+import { Activity, Bot, ListFilter } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { AiAgent } from '@/lib/api/endpoints/agents';
 import type {
@@ -17,10 +17,15 @@ const ANY = 'any';
 export default function AgentActivityToolbar({
   filters,
   onChange,
+  running,
+  onRunning,
   agents,
 }: {
   filters: Filters;
   onChange: (filters: Filters) => void;
+  // Only entries still at work (?status=running).
+  running: boolean;
+  onRunning: (running: boolean) => void;
   agents: AiAgent[];
 }) {
   const t = useTranslations('agentActivity');
@@ -28,6 +33,17 @@ export default function AgentActivityToolbar({
   return (
     <PageToolbar>
       <PageToolbarSpacer />
+      <PageSelect<string>
+        label={t('filterStatus')}
+        icon={Activity}
+        value={running ? 'running' : ANY}
+        defaultValue={ANY}
+        onChange={(value) => onRunning(value === 'running')}
+        options={[
+          { value: ANY, label: t('allStatuses') },
+          { value: 'running', label: t('statusRunning') },
+        ]}
+      />
       <PageSelect<string>
         label={t('filterKind')}
         icon={ListFilter}

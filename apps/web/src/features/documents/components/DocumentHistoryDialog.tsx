@@ -33,7 +33,7 @@ export default function DocumentHistoryDialog({
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-h-[min(86vh,760px)] overflow-hidden p-0 sm:max-w-5xl">
+      <DialogContent size="xlarge" className="max-h-[min(86vh,760px)] overflow-hidden p-0">
         <DialogHeader className="border-b px-4 py-4 pe-12 text-start">
           <DialogTitle className="flex items-center gap-2">
             <History className="size-4 text-muted-foreground" />

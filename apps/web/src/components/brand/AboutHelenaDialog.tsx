@@ -14,7 +14,10 @@ export default function AboutHelenaDialog({ onClose }: { onClose: () => void }) 
   const t = useTranslations('nav');
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="gap-0 overflow-hidden p-0 sm:max-w-md [&>[data-slot=dialog-close]]:text-helena-ink-muted [&>[data-slot=dialog-close]]:hover:bg-white/10 [&>[data-slot=dialog-close]]:hover:text-helena-ink-foreground">
+      <DialogContent
+        size="small"
+        className="gap-0 overflow-hidden p-0 [&>[data-slot=dialog-close]]:text-helena-ink-muted [&>[data-slot=dialog-close]]:hover:bg-white/10 [&>[data-slot=dialog-close]]:hover:text-helena-ink-foreground"
+      >
         <BrandHero className="px-6 pt-10 pb-8" />
         <div className="flex flex-col gap-2 p-4">
           <DialogTitle>{t('about')}</DialogTitle>

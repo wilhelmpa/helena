@@ -1,5 +1,6 @@
 'use client';
 
+import { projectSettingsPages } from '@/features/settings/projectSettingsPages';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import type { Crumb } from '@/design-system';
@@ -113,17 +114,20 @@ export function useShellHeading({
   if (sub === 'api') return heading([project], t('api'));
   const settings = t('settings');
   const general = settingsPath(key, 'general');
-  if (section)
+  if (section) {
+    // A page the sidebar names itself (Erweiterungen, Standard-Ausführung …) keeps that name.
+    const listed = projectSettingsPages(key).find((page) => page.slug === section)?.labelKey;
     return heading(
       area(settings, general),
       section === 'danger-zone'
         ? t('dangerZone')
-        : known(section)
-          ? sectionText(section).label
-          : section === 'mail'
-            ? t('mail')
+        : listed
+          ? t(listed as never)
+          : known(section)
+            ? sectionText(section).label
             : t('projectSettings'),
     );
+  }
   if (sub === 'members') return heading(area(settings, general), t('members'));
   if (sub === 'notifications') return heading(area(settings, general), t('notifications'));
   if (sub === 'mcp') return heading(area(settings, general), t('mcpServer'));

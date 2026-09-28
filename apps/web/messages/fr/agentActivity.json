@@ -39,5 +39,10 @@
   "unavailable": "L’activité n’a pas pu être chargée.",
   "filterKind": "Type",
   "filterAgent": "Agent",
-  "unavailableHint": "Le serveur n’a pas répondu. Réessaie dans un instant."
+  "unavailableHint": "Le serveur n’a pas répondu. Réessaie dans un instant.",
+  "filterStatus": "État",
+  "allStatuses": "Tous les états",
+  "statusRunning": "En cours",
+  "noneRunning": "Rien n'est en cours pour l'instant.",
+  "noneRunningHint": "Choisis « Tous les états » pour voir tout l'historique."
 }

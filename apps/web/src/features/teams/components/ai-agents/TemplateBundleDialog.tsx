@@ -80,7 +80,7 @@ export function TemplateBundleImportDialog({
   const ready = !!file || !!offer;
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>{t('importTitle')}</DialogTitle>
         </DialogHeader>

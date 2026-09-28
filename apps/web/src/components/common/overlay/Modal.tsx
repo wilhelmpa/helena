@@ -16,12 +16,9 @@ import { useTranslations } from 'next-intl';
 // across the app: callers render `{show && <Modal .../>}`, so the dialog is
 // always open while mounted and onClose fires when Radix requests a close
 // (overlay click or Escape).
-// Width step: default, wide, or "xl" for a two-column body.
-const MAX_WIDTH = {
-  false: 'sm:max-w-[440px]',
-  true: 'sm:max-w-[640px]',
-  xl: 'sm:max-w-[860px]',
-} as const;
+// Width step (components/ui/dialog.tsx): default small, wide large, "xl" for a
+// two-column body.
+const SIZE = { false: 'small', true: 'large', xl: 'xlarge' } as const;
 
 const CONTROL_CLASS = 'size-8 text-muted-foreground hover:bg-sidebar-accent hover:text-foreground';
 
@@ -83,6 +80,7 @@ export default function Modal({
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent
+        size={SIZE[`${wide}`]}
         showCloseButton={false}
         onOpenAutoFocus={onOpenAutoFocus}
         className={cn(
@@ -96,7 +94,7 @@ export default function Modal({
             : // A flex column, not the grid DialogContent defaults to: an auto grid
               // row keeps its content height under a capped container, so the body
               // never shrinks and never scrolls.
-              cn('flex max-h-[85vh] flex-col overflow-hidden', MAX_WIDTH[`${wide}`]),
+              'flex max-h-[85vh] flex-col overflow-hidden',
           createLayout && 'ds-create-dialog translate-y-0 gap-0',
           className,
         )}
@@ -152,7 +150,7 @@ export default function Modal({
         {/* After the body: Radix focuses the first tabbable node on open, which
             should be a field of the body, not a control. */}
         {!createLayout && (
-          <div className="absolute end-2.5 top-2.5 flex items-center gap-0.5">
+          <div className="ds-dialog-tools">
             {onToggleFullscreen && (
               <Button
                 variant="ghost"

@@ -39,13 +39,21 @@ function DialogOverlay({
   );
 }
 
+// The width steps of every dialog (docs/design-system.md, owner 28.09.: "feste
+// Breiten-Stufen"): small 440 (a question, a name), medium 560 (a form), large 720 (a
+// list, a picker), xlarge 960 (two columns, a comparison). Padding, gaps and the head
+// (title and close on one centre line) are the same for all: `.ds-dialog` in overlays.css.
+export type DialogSize = 'small' | 'medium' | 'large' | 'xlarge';
+
 function DialogContent({
   className,
   children,
   showCloseButton = true,
+  size = 'medium',
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   showCloseButton?: boolean;
+  size?: DialogSize;
 }) {
   const t = useTranslations('common');
   return (
@@ -53,12 +61,11 @@ function DialogContent({
       <DialogOverlay />
       <DialogPrimitive.Content
         data-slot="dialog-content"
+        data-size={size}
         className={cn(
-          // Padding/gap follow the 4px scale (docs/volition-design-helena-ui.md
-          // "Spacing"): p-4 card padding, gap-3 between header/body/footer. The
-          // shadow is not shadow-lg — [data-slot='dialog-content'] in globals.css
-          // sets --modal-shadow instead, which wins over this utility.
-          'fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-3 rounded-lg border bg-card p-4 duration-200 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 sm:max-w-lg',
+          // Width, padding and gaps come from `.ds-dialog` (overlays.css, a layer below
+          // the utilities, so a caller's p-0 or full-screen classes still win).
+          'ds-dialog fixed top-[50%] left-[50%] z-50 grid translate-x-[-50%] translate-y-[-50%] duration-200 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95',
           className,
         )}
         {...props}
@@ -67,8 +74,9 @@ function DialogContent({
         {showCloseButton && (
           <DialogPrimitive.Close
             data-slot="dialog-close"
-            // A 32px ghost button like every other icon control, not a bare glyph.
-            className="absolute top-2.5 right-2.5 flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:outline-none disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
+            // A 32px ghost button like every other icon control, on the title's centre
+            // line (`.ds-dialog-close` in overlays.css).
+            className="ds-dialog-close flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-foreground focus-visible:outline-none disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
           >
             <XIcon />
             <span className="sr-only">{t('close')}</span>
@@ -83,7 +91,7 @@ function DialogHeader({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
       data-slot="dialog-header"
-      className={cn('flex flex-col gap-1 text-center sm:pe-8 sm:text-left', className)}
+      className={cn('flex flex-col gap-1 text-start', className)}
       {...props}
     />
   );
@@ -103,7 +111,7 @@ function DialogTitle({ className, ...props }: React.ComponentProps<typeof Dialog
   return (
     <DialogPrimitive.Title
       data-slot="dialog-title"
-      className={cn('text-md leading-snug font-semibold', className)}
+      className={cn('font-medium', className)}
       {...props}
     />
   );

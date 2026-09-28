@@ -29,7 +29,7 @@ export default function DashboardNameDialog({
   const [name, setName] = useState(initial);
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="sm:max-w-sm">
+      <DialogContent size="small">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>

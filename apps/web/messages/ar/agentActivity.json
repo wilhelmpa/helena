@@ -39,5 +39,10 @@
   "unavailable": "تعذّر تحميل النشاط.",
   "filterKind": "النوع",
   "filterAgent": "الوكيل",
-  "unavailableHint": "لم يستجب الخادم. حاول مرة أخرى بعد قليل."
+  "unavailableHint": "لم يستجب الخادم. حاول مرة أخرى بعد قليل.",
+  "filterStatus": "الحالة",
+  "allStatuses": "كل الحالات",
+  "statusRunning": "قيد التشغيل الآن",
+  "noneRunning": "لا شيء قيد التشغيل الآن.",
+  "noneRunningHint": "اضبط الحالة على «كل الحالات» لعرض السجل كاملًا."
 }

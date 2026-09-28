@@ -126,7 +126,7 @@ export default function ModelPriceDialog({
 
   return (
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent size="small">
         <DialogHeader>
           <DialogTitle>{t('dialogTitle')}</DialogTitle>
           <DialogDescription>{t('dialogHint')}</DialogDescription>

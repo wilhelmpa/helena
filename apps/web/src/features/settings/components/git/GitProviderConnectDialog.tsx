@@ -51,7 +51,7 @@ export default function GitProviderConnectDialog({
   const label = GIT_PROVIDER_CONFIG[provider].label;
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent size="small">
         <form onSubmit={(event) => void submit(event)} className="space-y-4">
           <DialogHeader>
             <DialogTitle>{t('nativeConnectTitle', { provider: label })}</DialogTitle>

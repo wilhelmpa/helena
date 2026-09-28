@@ -62,7 +62,7 @@ export default function DocumentConflictDialog({
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="flex max-h-[90vh] flex-col gap-4 sm:max-w-5xl">
+      <DialogContent size="xlarge" className="flex max-h-[90vh] flex-col gap-4">
         <DialogHeader className="text-start">
           <DialogTitle>{t('conflictTitle')}</DialogTitle>
           <DialogDescription>{t('conflictDescription')}</DialogDescription>

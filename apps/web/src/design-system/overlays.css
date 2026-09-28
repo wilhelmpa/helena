@@ -654,3 +654,80 @@ body[data-modal-open='true'] [data-radix-popper-content-wrapper] {
   font-family: var(--font-mono);
   font-size: 12px;
 }
+
+/* ── Dialogs (components/ui/dialog.tsx, alert-dialog.tsx, common/overlay/Modal) ──────────
+   One frame for every dialog (owner 28.09.: "einheitliches Padding/Margin, feste
+   Breiten-Stufen, Titel und Schließen auf einer Mittellinie, keine doppelten Abstände"):
+   24px padding on every side, 16px between head, body and footer, the head's first line
+   32px high so the 32px close button (24px from the top and the end) sits on the title's
+   centre line. In a layer below the utilities, so a caller's p-0 / full screen still wins. */
+@layer components {
+  .ds-dialog {
+    --ds-dialog-w: 560px;
+    width: min(var(--ds-dialog-w), calc(100vw - 32px));
+    max-width: none;
+    max-height: calc(100dvh - 48px);
+    gap: var(--space-4);
+    padding: var(--space-5);
+  }
+  .ds-dialog[data-size='small'] {
+    --ds-dialog-w: 440px;
+  }
+  .ds-dialog[data-size='large'] {
+    --ds-dialog-w: 720px;
+  }
+  .ds-dialog[data-size='xlarge'] {
+    --ds-dialog-w: 960px;
+  }
+  .ds-dialog :is([data-slot='dialog-header'], [data-slot='alert-dialog-header']) {
+    min-height: 32px;
+    justify-content: center;
+  }
+  .ds-dialog:has(> .ds-dialog-close) [data-slot='dialog-header'] {
+    padding-inline-end: 40px;
+  }
+  .ds-dialog:has(> .ds-dialog-tools) [data-slot='dialog-header'] {
+    padding-inline-end: 80px;
+  }
+  .ds-dialog :is([data-slot='dialog-footer'], [data-slot='alert-dialog-footer']) {
+    padding-top: var(--space-2);
+  }
+}
+.ds-dialog :is([data-slot='dialog-title'], [data-slot='alert-dialog-title']) {
+  color: var(--text);
+  font-size: 18px;
+  font-weight: 520;
+  line-height: 32px;
+  letter-spacing: -0.01em;
+}
+.ds-dialog :is([data-slot='dialog-description'], [data-slot='alert-dialog-description']) {
+  color: var(--text-2);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.ds-dialog-close,
+.ds-dialog-tools {
+  position: absolute;
+  top: var(--space-5);
+  inset-inline-end: var(--space-5);
+}
+.ds-dialog-tools {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+/* A dialog whose body runs edge to edge (p-0) keeps its close button inside the corner. */
+.ds-dialog.p-0 > :is(.ds-dialog-close, .ds-dialog-tools) {
+  top: var(--space-3);
+  inset-inline-end: var(--space-3);
+}
+@media (max-width: 640px) {
+  .ds-dialog {
+    padding: var(--space-4);
+  }
+  .ds-dialog-close,
+  .ds-dialog-tools {
+    top: var(--space-4);
+    inset-inline-end: var(--space-4);
+  }
+}

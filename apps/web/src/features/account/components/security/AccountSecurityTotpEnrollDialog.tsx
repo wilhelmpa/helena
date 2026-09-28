@@ -64,7 +64,7 @@ export default function AccountSecurityTotpEnrollDialog({
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-sm">
+      <DialogContent size="small">
         <DialogHeader>
           <DialogTitle>{t('totpEnrollTitle')}</DialogTitle>
         </DialogHeader>

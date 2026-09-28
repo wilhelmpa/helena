@@ -11,6 +11,7 @@ import { useAgentActivityFeed } from '../services/agentActivity.service';
 import AgentActivityToolbar from './AgentActivityToolbar';
 import AgentActivityLiveRefresh from './AgentActivityLiveRefresh';
 import AgentActivityRow from './AgentActivityRow';
+import { ACTIVE_ACTIVITY_STATUSES } from '../utils/runningLink';
 
 // One sync request reads at most 20 scopes for the whole screen, two per project here.
 const WATCHED_PROJECTS = 6;
@@ -47,10 +48,16 @@ export default function AgentActivityTimeline({
   const filters = activityFiltersFromSearch(new URLSearchParams(searchParams.toString()));
   const feed = useAgentActivityFeed(projectKey, filters);
   const pages = feed.data?.pages ?? [];
-  const items = pages.flatMap((page) => page.items);
+  // ?status=running (the "N Agenten arbeiten" link): only what is still at work.
+  const running = searchParams.get('status') === 'running';
+  const items = pages
+    .flatMap((page) => page.items)
+    .filter((entry) => !running || ACTIVE_ACTIVITY_STATUSES.has(entry.status));
 
-  const setFilters = (next: Filters) => {
+  const setFilters = (next: Filters, nextRunning = running) => {
     const params = new URLSearchParams(searchParams.toString());
+    if (nextRunning) params.set('status', 'running');
+    else params.delete('status');
     if (next.agentId) params.set('agent', String(next.agentId));
     else params.delete('agent');
     if (next.kind) params.set('kind', next.kind);
@@ -64,7 +71,13 @@ export default function AgentActivityTimeline({
       {projectIds.slice(0, WATCHED_PROJECTS).map((projectId) => (
         <AgentActivityLiveRefresh key={projectId} projectId={projectId} projectKey={projectKey} />
       ))}
-      <AgentActivityToolbar filters={filters} onChange={setFilters} agents={agents} />
+      <AgentActivityToolbar
+        filters={filters}
+        onChange={setFilters}
+        running={running}
+        onRunning={(next) => setFilters(filters, next)}
+        agents={agents}
+      />
       {feed.isPending ? (
         <ListSkeleton rows={6} rowClassName="h-14" />
       ) : feed.isError ? (
@@ -74,7 +87,10 @@ export default function AgentActivityTimeline({
           </Button>
         </EmptyState>
       ) : items.length === 0 ? (
-        <EmptyState title={t('empty')} description={t('emptyHint')} />
+        <EmptyState
+          title={running ? t('noneRunning') : t('empty')}
+          description={running ? t('noneRunningHint') : t('emptyHint')}
+        />
       ) : (
         <ol className="ds-activity-list">
           {items.map((entry) => (

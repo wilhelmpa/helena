@@ -110,7 +110,7 @@ export default function IssueDevelopmentCreateDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-xl">
+      <DialogContent size="large">
         <DialogHeader>
           <DialogTitle>{t('createPullRequest')}</DialogTitle>
           <DialogDescription>{t('createPullRequestDescription')}</DialogDescription>

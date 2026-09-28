@@ -78,7 +78,7 @@ export default function GitRepositoryPickerDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-xl">
+      <DialogContent size="large">
         <DialogHeader>
           <DialogTitle>{t('nativeChooseRepositories')}</DialogTitle>
           <DialogDescription>

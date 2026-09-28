@@ -9,7 +9,13 @@ import { listApprovals } from '@/lib/api/endpoints/approvals';
 import { usePermissions } from '@/hooks/usePermissions';
 import { usePendingApprovalCount } from '@/services/approvals.service';
 import { qk } from '@/services/queryKeys';
-import { agentActivityForAgentPath, issuePath, projectApprovalsPath } from '@/utils/paths';
+import {
+  agentActivityForAgentPath,
+  inboxPath,
+  issuePath,
+  projectApprovalsPath,
+} from '@/utils/paths';
+import { runningActivityHref } from '@/features/agent-activity/utils/runningLink';
 import { formatDurationShort } from '@/utils/dates';
 import { useAgentStatus } from '@/utils/helenaStatus';
 import Orb from '@/components/helena/Orb';
@@ -121,8 +127,14 @@ export default function DashboardOverview({
           note={t('total', { count: issues.length })}
         />
         <Tile label={t('inProgress')} value={started.length} note={t('projectTasks')} />
-        <Tile label={t('agentsWorking')} value={working.length} note={t('running')} />
         <Tile
+          label={t('agentsWorking')}
+          value={working.length}
+          note={t('running')}
+          href={runningActivityHref(working, projectKey)}
+        />
+        <Tile
+          href={inboxPath(projectKey)}
           label={t('needsYou')}
           value={needs}
           note={t('approvalsAndQuestions')}

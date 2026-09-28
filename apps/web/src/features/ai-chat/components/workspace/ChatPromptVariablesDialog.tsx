@@ -34,7 +34,7 @@ export default function ChatPromptVariablesDialog({
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-sm">
+      <DialogContent size="small">
         <DialogHeader>
           <DialogTitle>{prompt.title}</DialogTitle>
         </DialogHeader>

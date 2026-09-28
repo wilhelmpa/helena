@@ -88,7 +88,7 @@ export default function DepartmentTemplateImportDialog({
   const canImport = file !== null && shown?.dryRun === true && !run.isPending;
   return (
     <Dialog open={open} onOpenChange={close}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>{t('importTemplate')}</DialogTitle>
           <DialogDescription>{t('importTemplateHint')}</DialogDescription>

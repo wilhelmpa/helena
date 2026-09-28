@@ -1819,3 +1819,18 @@ a.ds-run-card:hover {
   flex-direction: column;
   gap: 2px;
 }
+
+/* The chat composer of a conversation (Helena chat, a project's chat, the panel chat): the
+   same card as the start page's composer on whatever surface it sits on — no band of the
+   page ground behind it (owner, 28.09.: "schwarzer Hintergrund"). */
+.ds-chat-composer {
+  background: transparent;
+}
+.ds-chat-composer [data-slot='input-group'] {
+  border-color: transparent;
+  border-radius: var(--radius-panel);
+  background: var(--surface-1);
+  box-shadow:
+    0 0 0 1px var(--line-strong),
+    var(--shadow-raised);
+}

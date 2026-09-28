@@ -39,5 +39,10 @@
   "unavailable": "Die Aktivität konnte nicht geladen werden.",
   "filterKind": "Art",
   "filterAgent": "Agent",
-  "unavailableHint": "Der Server hat nicht geantwortet. Versuche es gleich noch einmal."
+  "unavailableHint": "Der Server hat nicht geantwortet. Versuche es gleich noch einmal.",
+  "filterStatus": "Zustand",
+  "allStatuses": "Alle Zustände",
+  "statusRunning": "Läuft gerade",
+  "noneRunning": "Gerade läuft nichts.",
+  "noneRunningHint": "Stell den Zustand auf „Alle Zustände“, um den ganzen Verlauf zu sehen."
 }

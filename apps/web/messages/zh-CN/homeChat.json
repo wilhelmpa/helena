@@ -5,5 +5,7 @@
   "finished": "Recently finished",
   "empty": "No recent agent runs.",
   "history": "Open chat history",
-  "activity": "Open agent activity"
+  "activity": "Open agent activity",
+  "workingOpen": "打开正在进行的运行",
+  "chats": "对话"
 }

@@ -33,7 +33,7 @@ export default function ChatVaultFilePicker({
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent size="small">
         <DialogHeader>
           <DialogTitle>{t('composer.fromVault')}</DialogTitle>
         </DialogHeader>

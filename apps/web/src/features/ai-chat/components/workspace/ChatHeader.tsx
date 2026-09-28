@@ -235,7 +235,7 @@ export default function ChatHeader({
   }
 
   return (
-    <WorkspaceHeader className="h-10 gap-1 border-sidebar-border bg-background px-2">
+    <WorkspaceHeader className="h-10 gap-1 border-sidebar-border bg-transparent px-2">
       {compact && (
         <Button
           variant="ghost"

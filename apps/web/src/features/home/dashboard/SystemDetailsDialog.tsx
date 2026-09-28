@@ -14,8 +14,9 @@ export default function SystemDetailsDialog() {
   return (
     <Dialog open={open} onOpenChange={(next) => (next ? undefined : closeSystemDetails())}>
       <DialogContent
+        size="large"
         aria-describedby={undefined}
-        className="max-h-[85vh] overflow-y-auto sm:max-w-3xl"
+        className="max-h-[85vh] overflow-y-auto"
       >
         <DialogTitle>{t('title')}</DialogTitle>
         <HomeSystemHealth />

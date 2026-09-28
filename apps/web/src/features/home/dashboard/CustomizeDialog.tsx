@@ -166,7 +166,7 @@ export default function CustomizeDialog({
   const order = [...figures, ...sections].map((entry) => entry.widget.id);
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-md">
+      <DialogContent size="small" className="max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{t('title')}</DialogTitle>
           <DialogDescription>{t('description')}</DialogDescription>

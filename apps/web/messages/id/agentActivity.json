@@ -39,5 +39,10 @@
   "unavailable": "Aktivitas tidak dapat dimuat.",
   "filterKind": "Jenis",
   "filterAgent": "Agen",
-  "unavailableHint": "Server tidak merespons. Coba lagi sebentar lagi."
+  "unavailableHint": "Server tidak merespons. Coba lagi sebentar lagi.",
+  "filterStatus": "Keadaan",
+  "allStatuses": "Semua keadaan",
+  "statusRunning": "Sedang berjalan",
+  "noneRunning": "Saat ini tidak ada yang berjalan.",
+  "noneRunningHint": "Atur keadaan ke “Semua keadaan” untuk melihat seluruh riwayat."
 }

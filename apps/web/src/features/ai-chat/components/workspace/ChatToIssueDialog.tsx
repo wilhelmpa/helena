@@ -73,7 +73,7 @@ export default function ChatToIssueDialog({
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>{t('issue.dialogTitle')}</DialogTitle>
         </DialogHeader>

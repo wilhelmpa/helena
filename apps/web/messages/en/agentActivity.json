@@ -39,5 +39,10 @@
   "unavailable": "The activity could not be loaded.",
   "filterKind": "Kind",
   "filterAgent": "Agent",
-  "unavailableHint": "The server did not answer. Try again in a moment."
+  "unavailableHint": "The server did not answer. Try again in a moment.",
+  "filterStatus": "State",
+  "allStatuses": "All states",
+  "statusRunning": "Running now",
+  "noneRunning": "Nothing is running right now.",
+  "noneRunningHint": "Set the state to “All states” to see the whole history."
 }

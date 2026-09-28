@@ -50,7 +50,7 @@ export default function ConfirmDialog({
 
   return (
     <AlertDialog open onOpenChange={(open) => !open && !busy && onClose()}>
-      <AlertDialogContent className="sm:max-w-[440px]">
+      <AlertDialogContent size="small">
         <AlertDialogHeader>
           <AlertDialogTitle>{title}</AlertDialogTitle>
         </AlertDialogHeader>

@@ -64,6 +64,10 @@
   --orb-mid: #bdaaff;
   --orb-lo: #6c5aa8;
   --orb-edge: #d9d2f5;
+  /* The disc the particle orb glows on: its particles add light, which a light ground
+     would swallow, so on light the orb sits on a small night sky. */
+  --orb-stage: radial-gradient(circle at 50% 42%, #2c2638 0%, #17141d 62%, #110f16 100%);
+  --orb-stage-shadow: 0 10px 30px #1a172033, 0 0 0 1px #1a17201f;
 }
 
 [data-theme='dark'] {
@@ -116,6 +120,8 @@
   --orb-mid: #bdaaff;
   --orb-lo: #6c5aa8;
   --orb-edge: #1b1622;
+  --orb-stage: none;
+  --orb-stage-shadow: none;
 }
 
 :root {

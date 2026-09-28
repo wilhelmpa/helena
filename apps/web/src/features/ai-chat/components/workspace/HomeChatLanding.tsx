@@ -1,18 +1,21 @@
 'use client';
 
 import Link from 'next/link';
-import { PanelLeft } from 'lucide-react';
+import { MessagesSquare } from 'lucide-react';
+import { Button } from '@/design-system';
 import { useLocale, useTranslations } from 'next-intl';
 import { useSyncExternalStore, type ReactNode } from 'react';
-import type { AgentActivityEntry } from '@/lib/api/endpoints/agentActivity';
 import {
   useHomeActiveActivity,
   HOME_ACTIVE_STATUSES,
 } from '@/features/home/services/homeKpis.service';
 import { formatDurationShort } from '@/utils/dates';
 import { projectColor } from '@/utils/projectColor';
-import { agentActivityForAgentPath, globalAgentActivityPath, issuePath } from '@/utils/paths';
-import { RUN_PARAM } from '@/features/agent-runtime/runOverlay';
+import { globalAgentActivityPath } from '@/utils/paths';
+import {
+  activityEntryHref as activityHref,
+  runningActivityHref,
+} from '@/features/agent-activity/utils/runningLink';
 import styles from './HomeChatLanding.module.css';
 
 const subscribe = () => () => {};
@@ -29,24 +32,14 @@ function useHomeDate() {
   );
 }
 
-function activityHref(entry: AgentActivityEntry): string {
-  if (entry.issue && entry.project) return issuePath(entry.project.key, entry.issue.sequenceNumber);
-  // A run without a task opens in the run overlay over Helena.
-  if (entry.kind === 'agent-run' && entry.agent && entry.id.startsWith('run:'))
-    return `/?${RUN_PARAM}=${entry.agent.id}.${entry.id.slice(4)}`;
-  if (entry.agent) return agentActivityForAgentPath(entry.agent.id, entry.project?.key);
-  return globalAgentActivityPath();
-}
-
 export function HomeChatMasthead({ onOpenList }: { onOpenList?: () => void }) {
   const t = useTranslations('homeChat');
   const today = useHomeDate();
   const activity = useHomeActiveActivity();
-  const working = new Set(
-    (activity.data?.items ?? [])
-      .filter((entry) => HOME_ACTIVE_STATUSES.has(entry.status) && entry.agent)
-      .map((entry) => entry.agent!.id),
-  ).size;
+  const active = (activity.data?.items ?? []).filter(
+    (entry) => HOME_ACTIVE_STATUSES.has(entry.status) && entry.agent,
+  );
+  const working = new Set(active.map((entry) => entry.agent!.id)).size;
 
   return (
     <div className={styles.masthead}>
@@ -56,19 +49,23 @@ export function HomeChatMasthead({ onOpenList }: { onOpenList?: () => void }) {
         <span>{today?.toLocaleUpperCase() ?? ''}</span>
       </div>
       <div className={styles.mastheadRight}>
-        <span className={styles.working}>
+        <Link
+          href={runningActivityHref(active, null)}
+          className={styles.working}
+          title={t('workingOpen')}
+        >
           <span className={working ? styles.pulse : styles.quietDot} />
           {t('working', { count: working })}
-        </span>
+        </Link>
         {onOpenList && (
-          <button
-            type="button"
+          <Button
+            size="small"
+            icon={<MessagesSquare size={14} aria-hidden="true" />}
             onClick={onOpenList}
-            className={styles.history}
             aria-label={t('history')}
           >
-            <PanelLeft size={17} aria-hidden="true" />
-          </button>
+            {t('chats')}
+          </Button>
         )}
       </div>
     </div>

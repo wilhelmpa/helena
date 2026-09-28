@@ -302,7 +302,7 @@ export default function ChatComposer({
   const showChoices = choices != null && !busy && queue.length === 0;
 
   return (
-    <div className={homeLanding ? styles.composer : 'shrink-0 bg-background px-3 pt-2 pb-3'}>
+    <div className={homeLanding ? styles.composer : 'ds-chat-composer shrink-0 px-3 pt-2 pb-3'}>
       <div className={`relative mx-auto w-full ${homeLanding ? 'max-w-[760px]' : 'max-w-3xl'}`}>
         {commands.open && (
           <ChatSlashMenu

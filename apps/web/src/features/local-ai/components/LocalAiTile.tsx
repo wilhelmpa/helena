@@ -43,8 +43,9 @@ export default function LocalAiTile() {
       />
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent
+          size="large"
           aria-describedby={undefined}
-          className="max-h-[85vh] overflow-y-auto sm:max-w-2xl"
+          className="max-h-[85vh] overflow-y-auto"
         >
           {/* The card names itself; the dialog's title is for screen readers. */}
           <DialogTitle className="sr-only">{t('title')}</DialogTitle>

@@ -21,7 +21,6 @@ export default function EditorImagePicker({
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent
-        className="sm:max-w-lg"
         // Leaving focus in the editor also keeps the cursor the pick inserts at.
         onOpenAutoFocus={(e) => e.preventDefault()}
       >

@@ -58,7 +58,7 @@ export default function ApplyUpdateDialog({
 
   return (
     <AlertDialog open onOpenChange={(open) => !open && !busy && onClose()}>
-      <AlertDialogContent className="sm:max-w-[480px]">
+      <AlertDialogContent size="small">
         <AlertDialogHeader>
           <AlertDialogTitle>
             {group

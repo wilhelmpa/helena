@@ -36,7 +36,8 @@ export default function ProjectPreviewControl({
         </Button>
       </DialogTrigger>
       <DialogContent
-        className="max-h-[85dvh] overflow-y-auto sm:max-w-2xl"
+        size="large"
+        className="max-h-[85dvh] overflow-y-auto"
         aria-describedby={undefined}
       >
         <DialogHeader>

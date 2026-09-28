@@ -43,7 +43,7 @@ export default function SnapshotBrowser({
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="flex max-h-[90vh] flex-col sm:max-w-2xl">
+      <DialogContent size="large" className="flex max-h-[90vh] flex-col">
         <DialogHeader>
           <DialogTitle>{t('title', { snapshot: snapshot.slice(0, 8) })}</DialogTitle>
           <DialogDescription>{t('explain')}</DialogDescription>
