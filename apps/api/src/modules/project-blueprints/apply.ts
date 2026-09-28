@@ -171,6 +171,20 @@ export async function applyBlueprintPlan(ctx: ApplyContext, plan: BlueprintPlan)
       case 'projectBrowser':
         await enableProjectBrowser(teamId, (await agent(change.handle)).id);
         break;
+      case 'agentProfile': {
+        const found = await agent(change.handle);
+        await updateAgent(
+          found.id,
+          teamId,
+          {
+            ...(change.model ? { model: change.model } : {}),
+            ...(change.runnerScope ? { runnerScope: change.runnerScope } : {}),
+          },
+          ownerUserId,
+        );
+        stale();
+        break;
+      }
       case 'memoryApprovalOff': {
         const found = await agent(change.handle);
         const full = await getAgentById(found.id, teamId);

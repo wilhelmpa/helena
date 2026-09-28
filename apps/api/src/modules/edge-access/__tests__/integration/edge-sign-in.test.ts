@@ -2,7 +2,7 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from
 import { desc, eq } from 'drizzle-orm';
 import { trustedOrigins } from '@repo/auth';
 import { db } from '@repo/db';
-import { helenaSignInEvent, session } from '@repo/db/schema';
+import { helenaSignInEvent, session, user, aiAgent } from '@repo/db/schema';
 import { app } from '#tests/helpers/app';
 import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
@@ -158,7 +158,7 @@ describe('the Cloudflare sign-in', () => {
     expect(((await me.json()) as { authenticated: boolean }).authenticated).toBe(true);
   });
 
-  it('refuses an identity that is not the owner, has no account, or is not allowed', async () => {
+  it('refuses unverified members, missing accounts and identities outside the allowlist', async () => {
     const owner = await signUpTestUser({ email: 'owner@example.com' });
     await signUpTestUser({ email: 'member@example.com' });
     await settings(owner.cookie, {
@@ -185,6 +185,97 @@ describe('the Cloudflare sign-in', () => {
     const reasons = (await events()).map((event) => [event.identity, event.reason]);
     expect(reasons).toContainEqual(['member@example.com', 'not_eligible']);
     expect(reasons).toContainEqual(['ghost@example.com', 'no_account']);
+  });
+
+  it('authenticates the verified member identity without promoting or creating accounts', async () => {
+    const owner = await signUpTestUser({ email: 'owner@example.com' });
+    const member = await signUpTestUser({ email: 'member@example.com' });
+    await db.update(user).set({ emailVerified: true }).where(eq(user.id, member.userId));
+    await settings(owner.cookie, {
+      teamDomain: TEAM,
+      audiences: [AUD],
+      allowedEmails: [owner.email, member.email],
+      signIn: true,
+    });
+    const response = await signIn(await sign({ email: member.email }));
+    expect(response.status).toBe(200);
+    const memberAssertion = await sign({ email: member.email });
+    const extraHeadersList: Record<string, string>[] = [
+      {},
+      { 'x-api-key': '' },
+      { 'x-api-key': 'not-a-key' },
+    ];
+    for (const extraHeaders of extraHeadersList) {
+      const mixed = await call('/me', {
+        ...extraHeaders,
+        cookie: owner.cookie,
+        'x-helena-entry': 'tunnel',
+        'cf-access-jwt-assertion': memberAssertion,
+      });
+      expect(mixed.status).toBe(401);
+    }
+    expect(
+      (
+        await call('/me', {
+          cookie: member.cookie,
+          'x-helena-entry': 'tunnel',
+          'cf-access-jwt-assertion': memberAssertion,
+        })
+      ).status,
+    ).toBe(200);
+    const [event] = await events();
+    expect(event).toMatchObject({ outcome: 'ok', userId: member.userId, identity: member.email });
+    const [account] = await db
+      .select({ role: user.role })
+      .from(user)
+      .where(eq(user.id, member.userId));
+    expect(account?.role).toBe('user');
+    await db.update(user).set({ active: false }).where(eq(user.id, member.userId));
+    expect((await signIn(await sign({ email: member.email }))).status).toBe(403);
+  });
+
+  it('never authenticates an agent bot as a person', async () => {
+    const owner = await signUpTestUser({ email: 'owner@example.com' });
+    const member = await signUpTestUser({ email: 'bot@example.com' });
+    await db.update(user).set({ emailVerified: true }).where(eq(user.id, member.userId));
+    const team = await call('/teams', { cookie: owner.cookie });
+    const teams = (await team.json()) as { id: number }[];
+    await db.insert(aiAgent).values({
+      teamId: teams[0]!.id,
+      userId: member.userId,
+      username: 'fake-bot',
+      kind: 'external',
+    });
+    await settings(owner.cookie, {
+      teamDomain: TEAM,
+      audiences: [AUD],
+      allowedEmails: [member.email],
+      signIn: true,
+    });
+    const response = await signIn(await sign({ email: member.email }));
+    expect(response.status).toBe(403);
+    expect(response.headers.getSetCookie().some((c) => c.includes('session_token='))).toBe(false);
+  });
+
+  it('refuses network-only owner login once another person exists, even with a legacy switch', async () => {
+    await signUpTestUser({ email: 'owner@example.com' });
+    await signUpTestUser({ email: 'member@example.com' });
+    process.env.LOCAL_SINGLE_USER_EMAIL = 'owner@example.com';
+    process.env.LOCAL_SINGLE_USER_TOKEN = PROOF;
+    process.env.HELENA_LOCAL_SIGN_IN_MODE = 'single-user';
+    try {
+      const response = await call(
+        '/api/auth/sign-in/local-owner',
+        { origin: ORIGIN, 'x-volition-local-access': PROOF },
+        { method: 'POST' },
+      );
+      expect(response.status).toBe(403);
+      expect(response.headers.getSetCookie()).toEqual([]);
+    } finally {
+      delete process.env.LOCAL_SINGLE_USER_EMAIL;
+      delete process.env.LOCAL_SINGLE_USER_TOKEN;
+      delete process.env.HELENA_LOCAL_SIGN_IN_MODE;
+    }
   });
 
   it('lists the sign-ins for the owner only', async () => {
@@ -214,6 +305,7 @@ describe('the Cloudflare sign-in', () => {
   it('writes the LAN owner sign-in to the same trail', async () => {
     const owner = await signUpTestUser({ email: 'owner@example.com' });
     const token = 'test-only-local-owner-token-'.padEnd(64, 'y');
+    process.env.HELENA_LOCAL_SIGN_IN_MODE = 'single-user';
     process.env.LOCAL_SINGLE_USER_TOKEN = token;
     process.env.LOCAL_SINGLE_USER_EMAIL = 'owner@example.com';
     try {
@@ -229,6 +321,7 @@ describe('the Cloudflare sign-in', () => {
       );
       expect(response.status).toBe(200);
     } finally {
+      delete process.env.HELENA_LOCAL_SIGN_IN_MODE;
       delete process.env.LOCAL_SINGLE_USER_TOKEN;
       delete process.env.LOCAL_SINGLE_USER_EMAIL;
     }

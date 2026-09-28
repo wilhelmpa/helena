@@ -1,49 +1,43 @@
-# Kingston local single-user mode
+# Personal sign-in on the home network
 
-Plan automatically creates a normal Better Auth session for the existing configured
-owner when opening `http://kingston-server.local`. No password is stored for this.
-Anyone with access to this LAN entry can use the owner's account, terminal, and tools.
+Helena uses each person's own session on the LAN and kiosk. Without a session, choose a
+saved name or enter an account and authenticate with a password, passkey or configured
+identity provider. Saved names contain no session or permissions. A valid personal session
+opens Home automatically; switching person signs out and returns to the chooser.
 
-This mode is disabled by default. The Kingston installer is explicitly enabled with:
+The server default is `HELENA_LOCAL_SIGN_IN_MODE=personal`, including when the variable is
+absent. Historical `LOCAL_SINGLE_USER_*` settings alone do not authenticate anyone.
+
+After deploying the family access change, apply the personal mode through the normal ops
+account, from the deployed checkout, after checking for in-flight work:
 
 ```sh
-sudo python3 deployment/volition-stack/native/local-owner/configure.py owner@example.com
+sudo python3 deployment/volition-stack/native/local-owner/configure.py --personal
 ```
 
-To replace the capability (for example after it showed up in a log or a transcript), run
-`sudo python3 deployment/volition-stack/native/local-owner/configure.py --rotate`; without an
-address it keeps the configured owner.
+The script preserves the existing hostname, writes personal mode to the API and web
+environment and removes the network capability from the LAN and kiosk maps. It does not
+print the retained rollback token. It validates nginx and restarts API/web when needed.
+Revoke existing owner sessions during this cutover: older automatic LAN sessions are
+ordinary sessions and cannot reliably be distinguished from password sessions. Confirm the
+owner's working password or passkey first. Do not invite another person before cutover.
 
-On a native boot the machine's own LAN address is inside the home network too, so nginx never
-treats a connection from the machine itself as the owner. The kiosk on its own screens reaches
-nginx on `127.0.0.1:8088` instead, which nftables opens to the kiosk user alone
-(`kiosk/helena-kiosk.nft`, installed by `kiosk/install.sh`).
+`--single-user` is an explicit compatibility mode for a genuinely single-person instance.
+Both API and web require this value. The API also refuses it whenever more than one human
+account exists, even when the other account is inactive. Agent bot users do not count.
+This mode is inappropriate for a shared family installation. A token rotation without
+`--single-user` keeps personal sign-in as the safe default.
 
-The home network over IPv6 counts too: the geo includes `/etc/nginx/helena-owner-networks.conf`,
-which `helena-lan6-sync` (hardening; NetworkManager dispatcher + 5-minute timer) keeps current:
-the /64s this machine has on its LAN interface (never link-local or loopback; a ULA only when the
-LAN interface has one) and every address of this machine itself as never the owner. A re-run of
-this script keeps the include; it restarts the API and web only when their environment changed.
-`hardening/apply.sh owner-lan6` installs the sync and adds the include once.
+Existing host protections remain: nginx overwrites incoming capability headers, strips
+capabilities on the public backend, and the tunnel uses its own listener and verified Access
+assertion. In compatibility mode, only the exact LAN listener and non-self LAN sources get a
+capability; kiosk access also requires its UID firewall guard. No capability reaches a browser.
 
-The desktop Caddy route must continue limiting this hostname to the home LAN.
-Debian Nginx injects a random capability only for the exact hostname and the home LAN
-(192.168.2.0/24 and the home IPv6 /64s), only on a LAN-facing listener and never from a link-local source
-(`/etc/nginx/conf.d/helena-local-owner-guard.conf`); never from loopback, where the
-Cloudflare tunnel arrives. With `--https-host helena-home.volition.one` the sign-in moves to
-https on port 443 under the home network's own name (see `cloudflare/lan_https.py` and
-docs/helena-decisions/security-hardening.md §5); the public name stays behind Cloudflare Access. Incoming capability headers are overwritten;
-external backend requests have the header stripped. The Next server and auth API
-both verify it. Neither the capability nor a password is sent to the browser.
-The API still validates normal sessions, including account deactivation.
+Cloudflare sign-in requires its entry proof, a valid assertion, an explicit identity allowlist
+and an existing active human account. Members additionally require a verified account email.
+It creates no account or membership. A browser's Helena identity must match its Access identity;
+a mismatch requires fresh sign-in. Service API keys retain their existing independent flow.
 
-The four `LOCAL_SINGLE_USER_*` variables are server-only. Nginx and systemd read
-root-only configuration under `/etc`, excluded from Git. The public hostname does
-not automatically sign in. Before adding any public tunnel that overrides the Host
-header to `kingston-server.local`, disable this mode or use a separate authenticated
-virtual host. A trusted local proxy must never carry untrusted traffic to this host.
-
-To disable, remove both `50-local-owner.conf` systemd drop-ins, run `systemctl
-daemon-reload`, and restart `volition-plan-api` and `volition-plan-web`.
-Remove the Nginx capability directives/map and root-only environment file afterward.
-Existing sessions remain ordinary valid sessions until signed out or revoked.
+For rollout, account and project grants and the real two-person acceptance, see
+`docs/helena-decisions/family-access-item11.md`. No downloads or new authentication service
+are needed.

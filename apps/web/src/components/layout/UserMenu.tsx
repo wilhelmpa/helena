@@ -2,11 +2,21 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { Info, Languages, LogOut, Moon, OctagonX, Play, Sun, UserRound } from 'lucide-react';
+import {
+  Info,
+  Languages,
+  LogOut,
+  Moon,
+  OctagonX,
+  Play,
+  Sun,
+  UserRound,
+  UsersRound,
+} from 'lucide-react';
 import { toast } from 'sonner';
 import { useLocale, useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
+import { rememberPerson } from '@/utils/rememberedPeople';
 import { signOut, useSession } from '@/lib/auth-client';
 import { ACCOUNT_SECTIONS, accountPath } from '@/utils/accountSections';
 import { useAccountSectionLabel } from '@/hooks/useSectionLabels';
@@ -55,7 +65,6 @@ export default function UserMenu({ variant = 'avatar' }: { variant?: 'avatar' | 
   const { resolvedTheme, setTheme } = useTheme();
   const updatePreferences = useUpdateAccountPreferences();
   const sectionLabel = useAccountSectionLabel();
-  const router = useRouter();
   const tStop = useTranslations('agentRuntime.emergencyStop');
   const { data: session, isPending } = useSession();
   // The owner's "Not-Aus" sits in this menu; its confirmation lives outside the menu,
@@ -71,6 +80,10 @@ export default function UserMenu({ variant = 'avatar' }: { variant?: 'avatar' | 
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
+  useEffect(() => {
+    if (session?.user) rememberPerson(session.user);
+  }, [session?.user]);
+
   if (!mounted || isPending)
     return (
       <Skeleton
@@ -83,8 +96,26 @@ export default function UserMenu({ variant = 'avatar' }: { variant?: 'avatar' | 
   const role = (user as { role?: string }).role ?? 'user';
   const image = (user as { image?: string | null }).image ?? null;
 
+  function openPersonalSignIn() {
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- Drop the previous person's query cache.
+    window.location.assign('/login?switch=1');
+  }
+
+  async function onSwitchPerson() {
+    const result = await signOut();
+    if (result.error) {
+      toast.error(result.error.message || tCommon('genericError'));
+      return;
+    }
+    openPersonalSignIn();
+  }
+
   async function onSignOut() {
-    await signOut();
+    const result = await signOut();
+    if (result.error) {
+      toast.error(result.error.message || tCommon('genericError'));
+      return;
+    }
     const logoutUrl = runtimeEnv().logoutUrl;
     if (logoutUrl) {
       try {
@@ -97,8 +128,7 @@ export default function UserMenu({ variant = 'avatar' }: { variant?: 'avatar' | 
         // Invalid deployment configuration falls back to the local login page.
       }
     }
-    router.push('/login');
-    router.refresh();
+    openPersonalSignIn();
   }
 
   return (
@@ -206,6 +236,10 @@ export default function UserMenu({ variant = 'avatar' }: { variant?: 'avatar' | 
             </>
           )}
           <DropdownMenuSeparator />
+          <DropdownMenuItem onSelect={onSwitchPerson}>
+            <UsersRound />
+            {tCommon('switchPerson')}
+          </DropdownMenuItem>
           <DropdownMenuItem onSelect={onSignOut}>
             <LogOut />
             {tCommon('signOut')}

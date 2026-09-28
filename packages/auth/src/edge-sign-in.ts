@@ -23,7 +23,7 @@ const recordSignIn = async (event: SignInEvent) =>
 //     (signature from the team's keys, audience, issuer, expiry) and that the sign-in is on
 //     and the identity is on the explicit allow list. It registers itself as the verifier;
 //     without it (a process that did not load the api) every attempt is refused.
-//  3. The identity is an account that may sign in this way (the owner for now), active.
+//  3. The identity is an account that may sign in this way (an existing verified human account), active.
 // The session lasts at most a day and never longer than the Access session behind it, and
 // it is not extended on use: the next day, Access decides again.
 
@@ -76,8 +76,8 @@ export function setEdgeSignInVerifier(next: EdgeSignInVerifier | null): void {
   verifier = next;
 }
 
-// Who may sign in this way. The owner for now; a role setting can widen it later.
-export const EDGE_SIGN_IN_ROLES: readonly string[] = ['god'];
+// Who may sign in this way. Existing human accounts only; membership is never changed by signing in.
+export const EDGE_SIGN_IN_ROLES: readonly string[] = ['god', 'user'];
 
 // A session never outlives this, whatever the provider's session says.
 export const EDGE_SESSION_MAX_MS = 24 * 3600_000;
@@ -136,6 +136,13 @@ export function edgeSignIn() {
           if (!found) return refuse('no_account', named);
           const account = found.user as typeof found.user & { role?: string; active?: boolean };
           if (!account.role || !EDGE_SIGN_IN_ROLES.includes(account.role)) {
+            return refuse('not_eligible', { ...named, userId: account.id });
+          }
+          const { isHumanAccount } = await import('./human-account');
+          if (
+            !(await isHumanAccount(account.id)) ||
+            (account.role !== 'god' && !account.emailVerified)
+          ) {
             return refuse('not_eligible', { ...named, userId: account.id });
           }
           if (account.active === false)

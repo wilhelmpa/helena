@@ -291,5 +291,6 @@
     "offline": "Offline",
     "done": "Selesai"
   },
-  "resizeSidePanel": "Ubah lebar panel samping"
+  "resizeSidePanel": "Ubah lebar panel samping",
+  "switchPerson": "Ganti orang"
 }

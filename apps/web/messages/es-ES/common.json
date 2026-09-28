@@ -291,5 +291,6 @@
     "offline": "Sin conexión",
     "done": "Terminado"
   },
-  "resizeSidePanel": "Cambiar el ancho del panel lateral"
+  "resizeSidePanel": "Cambiar el ancho del panel lateral",
+  "switchPerson": "Cambiar de persona"
 }

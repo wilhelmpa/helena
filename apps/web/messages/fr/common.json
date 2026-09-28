@@ -291,5 +291,6 @@
     "offline": "Hors ligne",
     "done": "Terminé"
   },
-  "resizeSidePanel": "Redimensionner le panneau latéral"
+  "resizeSidePanel": "Redimensionner le panneau latéral",
+  "switchPerson": "Changer de personne"
 }

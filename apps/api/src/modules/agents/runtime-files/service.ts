@@ -1,8 +1,14 @@
 import { aiAgent, db } from '@repo/db';
-import { and, eq, sql } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 
 import { HttpError } from '#shared/lib';
-import { getAgentById, normalizeRuntimePolicy, type AgentRuntimePolicy } from '../core/service';
+import {
+  getAgentById,
+  normalizeRuntimePolicy,
+  type AgentRuntimePolicy,
+  type AgentScope,
+  agentVisibility,
+} from '../core/service';
 import { runtimeFileKind } from './paths';
 
 export type AgentRuntimeFile = AgentRuntimePolicy['files'][number];
@@ -22,7 +28,7 @@ function validatePath(path: string): { path: string; kind: AgentRuntimeFile['kin
 export async function listAgentRuntimeFiles(
   agentId: number,
   teamId: number,
-  visibleTo?: string,
+  visibleTo?: AgentScope,
 ): Promise<AgentRuntimeFile[] | null> {
   const agent = await getAgentById(agentId, teamId, visibleTo);
   if (!agent) return null;
@@ -32,22 +38,14 @@ export async function listAgentRuntimeFiles(
 async function mutateAgentRuntimeFiles(
   agentId: number,
   teamId: number,
-  visibleTo: string | undefined,
+  visibleTo: AgentScope | undefined,
   mutate: (files: AgentRuntimeFile[]) => AgentRuntimeFile[],
 ): Promise<AgentRuntimeFile[] | null> {
   return db.transaction(async (tx) => {
     const [row] = await tx
       .select({ runtimePolicy: aiAgent.runtimePolicy })
       .from(aiAgent)
-      .where(
-        and(
-          eq(aiAgent.id, agentId),
-          eq(aiAgent.teamId, teamId),
-          visibleTo == null
-            ? undefined
-            : sql`exists (select 1 from project_member pm join project_member mine on mine.project_id = pm.project_id and mine.user_id = ${visibleTo} where pm.user_id = ${aiAgent.userId})`,
-        ),
-      )
+      .where(and(eq(aiAgent.id, agentId), eq(aiAgent.teamId, teamId), agentVisibility(visibleTo)))
       .for('update');
     if (!row) return null;
     const policy = normalizeRuntimePolicy(row.runtimePolicy);
@@ -63,7 +61,7 @@ async function mutateAgentRuntimeFiles(
 export async function upsertAgentRuntimeFile(
   agentId: number,
   teamId: number,
-  visibleTo: string | undefined,
+  visibleTo: AgentScope | undefined,
   path: string,
   content: string,
 ): Promise<AgentRuntimeFile[] | null> {
@@ -79,7 +77,7 @@ export async function upsertAgentRuntimeFile(
 export async function deleteAgentRuntimeFile(
   agentId: number,
   teamId: number,
-  visibleTo: string | undefined,
+  visibleTo: AgentScope | undefined,
   path: string,
 ): Promise<AgentRuntimeFile[] | null> {
   validatePath(path);

@@ -32,6 +32,8 @@ export const DEFAULT_BLUEPRINT_SECTIONS: BlueprintSection[] = BLUEPRINT_SECTIONS
 );
 
 export interface StateAgent {
+  model?: string | null;
+  runnerScope?: string;
   id: number;
   userId: string;
   username: string;
@@ -87,6 +89,7 @@ export interface BlueprintState {
 }
 
 export type Change =
+  | { kind: 'agentProfile'; handle: string; model?: string; runnerScope?: 'owner' | 'team' }
   | { kind: 'project'; key: string; name: string; description: string }
   | { kind: 'projectDepartment'; department: string; departmentId: number }
   | { kind: 'projectInstructions'; to: string }
@@ -279,6 +282,7 @@ export function planBlueprint(
     if (wanted?.assignment)
       assign(plan, coordinator, current?.assignment ?? null, wanted.assignment, !current);
     if (department) setDepartment(plan, coordinator, current, department);
+    profile(plan, coordinator, current, wanted, key);
     if (current?.memoryApproval)
       plan.changes.push({ kind: 'memoryApprovalOff', handle: coordinator });
 
@@ -302,6 +306,7 @@ export function planBlueprint(
         });
         continue;
       }
+      profile(plan, handle, copy ?? template, agent, key);
       const skills = copy ? copy.skills : (template?.skills ?? []);
       addSkills(plan, state, handle, skills, agent.skills ?? []);
       assign(plan, handle, copy?.assignment ?? null, agent.assignment, !copy);
@@ -526,6 +531,8 @@ export function describeChange(change: Change): string {
       return `[AREA] "${change.name}"${change.folder ? ` (${change.folder}/)` : ''}`;
     case 'coordinatorInstructions':
       return `[AGENT] @${change.handle}: instructions (${change.to.length} characters)`;
+    case 'agentProfile':
+      return `[AGENT] @${change.handle}: ${change.model ? `model ${change.model}` : ''} ${change.runnerScope ? `scope ${change.runnerScope}` : ''}`.trim();
     case 'copy':
       return `[AGENT] copy @${change.template} into the project as @${change.handle}`;
     case 'skills':
@@ -558,4 +565,31 @@ export function describeChange(change: Change): string {
     case 'tools':
       return `[TOOLS] @${change.handle}: ${change.toolKeys.join(', ')} with "${change.credentialLabel}"`;
   }
+}
+
+function profile(
+  plan: BlueprintPlan,
+  handle: string,
+  current: StateAgent | undefined,
+  wanted: { model?: string; runnerScope?: 'owner' | 'team' } | undefined,
+  projectKey: string,
+) {
+  if (wanted?.runnerScope === 'team' && current?.projectKeys.some((key) => key !== projectKey)) {
+    plan.blockers.push(
+      `@${handle} also works outside ${projectKey}; refusing to widen its runner scope`,
+    );
+    return;
+  }
+  const model = wanted?.model && wanted.model !== current?.model ? wanted.model : undefined;
+  const runnerScope =
+    wanted?.runnerScope && wanted.runnerScope !== current?.runnerScope
+      ? wanted.runnerScope
+      : undefined;
+  if (model || runnerScope)
+    plan.changes.push({
+      kind: 'agentProfile',
+      handle,
+      ...(model ? { model } : {}),
+      ...(runnerScope ? { runnerScope } : {}),
+    });
 }

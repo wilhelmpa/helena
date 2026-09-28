@@ -1,3 +1,4 @@
+import { getSessionFromHeaders } from '@repo/auth';
 import { getSetting, setSetting } from '@repo/db';
 import { HttpError } from '#shared/lib';
 import {
@@ -105,7 +106,7 @@ export async function setEdgeAccessSettings(patch: EdgeAccessPatch): Promise<Edg
   if (next.allowedEmails.some((email) => !/^[^\s@]+@[^\s@]+$/.test(email))) {
     throw new HttpError(400, 'An allowed identity must be an email address');
   }
-  // The Cloudflare sign-in turns an Access login into the owner's session: only with the
+  // The Cloudflare sign-in opens a session for the verified identity: only with the
   // provider set up and the identities named here, never "whoever Access lets in".
   if (next.signIn && (cleared || next.allowedEmails.length === 0)) {
     throw new HttpError(
@@ -141,12 +142,29 @@ export async function verifyEdgeRequest(headers: Headers): Promise<EdgeIdentity>
 export async function edgeGuard(request: Request): Promise<null> {
   const entry = edgeEntry(request.headers);
   if (!entry) return null;
+  let identity: EdgeIdentity;
   try {
-    if (entry === 'lan') await verifyLanAccess(request.headers, verifyEdgeRequest);
-    else await verifyEdgeRequest(request.headers);
-    return null;
+    identity =
+      entry === 'lan'
+        ? await verifyLanAccess(request.headers, verifyEdgeRequest)
+        : await verifyEdgeRequest(request.headers);
   } catch (error) {
     const code = error instanceof EdgeAccessError ? error.code : 'invalid_assertion';
     throw new HttpError(403, 'Access from outside needs the edge sign-in', `edge_${code}`);
   }
+  if (request.headers.has('cookie') && new URL(request.url).pathname !== '/api/auth/sign-out') {
+    // An API-key header cannot disable the binding of an interactive cookie.
+    // Verify only the cookie here; service requests without cookies stay independent.
+    const cookieHeaders = new Headers(request.headers);
+    cookieHeaders.delete('x-api-key');
+    const session = await getSessionFromHeaders(cookieHeaders);
+    if (session && normalizeEmail(session.user.email) !== identity.email) {
+      throw new HttpError(
+        401,
+        'Sign in with the current Access identity',
+        'edge_identity_mismatch',
+      );
+    }
+  }
+  return null;
 }

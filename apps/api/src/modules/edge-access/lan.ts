@@ -118,15 +118,19 @@ export function setLanOnlineVerifierForTests(value: typeof verifyPublicAccess | 
   onlineVerifier = value ?? verifyPublicAccess;
 }
 
-export async function verifyLanAccess(
+// Returns what the assertion check returned (the Access identity), so the caller can bind
+// the session to it exactly as on the tunnel entry.
+export async function verifyLanAccess<T>(
   headers: Headers,
-  verifyAssertion: (headers: Headers) => Promise<unknown>,
-): Promise<void> {
+  verifyAssertion: (headers: Headers) => Promise<T>,
+): Promise<T> {
   const cookies = lanAccessCookies(headers.get('cookie'));
   // Ignore any client-supplied assertion: only the unambiguous application cookie counts.
-  await verifyAssertion(new Headers({ 'cf-access-jwt-assertion': cookies.assertion }));
+  const identity = await verifyAssertion(
+    new Headers({ 'cf-access-jwt-assertion': cookies.assertion }),
+  );
   try {
-    if (await onlineVerifier(cookies.onlineCookie)) return;
+    if (await onlineVerifier(cookies.onlineCookie)) return identity;
   } catch {
     // DNS, TLS, timeout and upstream failures all fail closed.
   }
