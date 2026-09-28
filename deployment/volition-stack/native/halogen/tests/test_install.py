@@ -170,7 +170,11 @@ class HalogenInstallTest(unittest.TestCase):
         result = run('render', 'nft', root=self.root,
                      env={'HELENA_HALOGEN_USERS': 'root no-such-user-helena'})
         uids = re.search(r'elements = \{ ([0-9, ]+) \}', result.stdout.split('halogen_uids')[1]).group(1)
-        self.assertEqual([u.strip() for u in uids.split(',')], ['0'])
+        expected = ['0']
+        forwarder = subprocess.run(['id', '-u', 'helena-halogen-fwd'], capture_output=True, text=True)
+        if forwarder.returncode == 0:
+            expected.append(forwarder.stdout.strip())
+        self.assertEqual([u.strip() for u in uids.split(',')], expected)
 
     # ── install ───────────────────────────────────────────────────────────────────────────
 

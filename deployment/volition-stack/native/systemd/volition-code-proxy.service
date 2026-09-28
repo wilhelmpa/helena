@@ -1,6 +1,6 @@
 [Unit]
 Description=Volition code workspace on-demand proxy
-Requires=volition-code.service
+Wants=volition-code.service
 After=volition-code.service
 
 [Service]
