@@ -2,9 +2,10 @@
   "title": "Affichage",
   "layouts": {
     "kanban": "Kanban",
+    "list": "Liste",
     "table": "Liste",
-    "timeline": "Chronologie",
-    "calendar": "Calendrier"
+    "calendar": "Calendrier",
+    "timeline": "Chronologie"
   },
   "sortFields": {
     "manual": "Manuel",

@@ -31,11 +31,12 @@
     "groupPeople": "Personen",
     "groupPlanning": "Planung",
     "groupLabels": "Labels",
-    "groupCustom": "Benutzerdefinierte Felder",
+    "groupCustom": "Felder",
     "empty": "Leer",
     "openInNewTab": "In neuem Tab öffnen",
     "area": "Bereich",
-    "invalidUrl": "Keine gültige Webadresse (https://…)."
+    "invalidUrl": "Keine gültige Webadresse (https://…).",
+    "more": "Mehr"
   },
   "menu": {
     "preview": "Vorschau",

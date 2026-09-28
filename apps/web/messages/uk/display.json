@@ -2,9 +2,10 @@
   "title": "Відображення",
   "layouts": {
     "kanban": "Канбан",
+    "list": "Список",
     "table": "Таблиця",
-    "timeline": "Таймлайн",
-    "calendar": "Календар"
+    "calendar": "Календар",
+    "timeline": "Таймлайн"
   },
   "sortFields": {
     "manual": "Вручну",

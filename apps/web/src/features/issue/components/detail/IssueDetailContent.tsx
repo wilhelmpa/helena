@@ -1,12 +1,9 @@
 import WebLinkScope from '@/components/common/WebLinkScope';
-import { type CSSProperties, useRef, useState } from 'react';
-import { Direction } from 'radix-ui';
+import { useRef, useState } from 'react';
 import type { ProjectDetail } from '@/lib/api/endpoints/projects';
 import type { IssueDetail as IssueDetailRow } from '@/lib/api/endpoints/issues';
 import { usePermissions } from '@/hooks/usePermissions';
-import { usePersistedWidth } from '@/hooks/usePersistedWidth';
 import { useProjectFeatures } from '@/hooks/useProjectFeatures';
-import ResizeGrip from '@/components/common/ResizeGrip';
 import { useIssueDetail } from '../../hooks/useIssueDetail';
 import { usePersistedOpen, usePersistedOpenGroups } from '../../hooks/usePersistedOpen';
 import { useFilePaste } from '../../hooks/useFilePaste';
@@ -28,12 +25,6 @@ import MarkdownEditor from '@/components/common/editor/MarkdownEditor';
 import IssueCustomFieldBody from '../fields/IssueCustomFieldBody';
 import IssueProperties from './IssueProperties';
 import IssueActionsBar from '../actions/IssueActionsBar';
-import {
-  PROPERTIES_MAX_W,
-  PROPERTIES_MIN_W,
-  PROPERTIES_W,
-  propertiesWidthKey,
-} from '../../utils/propertiesWidth';
 import { useTranslations } from 'next-intl';
 
 // The body of a issue — title, description, markdown custom fields, the
@@ -63,9 +54,7 @@ export default function IssueDetailContent({
   layout?: 'panel' | 'page' | 'split';
 }) {
   const t = useTranslations('issue');
-  const tCommon = useTranslations('common');
   const tEditor = useTranslations('issue.editor');
-  const direction = Direction.useDirection();
   const {
     issue,
     fieldDefs,
@@ -88,12 +77,6 @@ export default function IssueDetailContent({
   useFilePaste(canEdit && issue ? (files) => void attachFiles(files) : null);
   const properties = usePersistedOpen('issue-properties-open');
   const propertyGroups = usePersistedOpenGroups('issue-property-groups-closed');
-  const { width: propertiesWidth, setWidth: setPropertiesWidth } = usePersistedWidth(
-    propertiesWidthKey(project.project.key),
-    PROPERTIES_W,
-    PROPERTIES_MIN_W,
-    PROPERTIES_MAX_W,
-  );
   // A replaced attachment keeps its URL, so an <img> already in an editor is
   // never requested again. Counting the replacements remounts the editors, which
   // builds the element anew and lets the raw route revalidate it.
@@ -104,6 +87,7 @@ export default function IssueDetailContent({
 
   const heading = (
     <>
+      <span className="ds-issue-key">{issue.identifier}</span>
       <div className="flex items-start gap-2">
         {issue.archivedAt && (
           <span className="mt-1 shrink-0 rounded border border-border px-1.5 py-0.5 text-xs font-medium text-muted-foreground uppercase">
@@ -118,7 +102,7 @@ export default function IssueDetailContent({
             // Laid out by the script the title is written in, not the interface
             // language, so an Arabic title reads correctly in an English session.
             dir="auto"
-            className="field-sizing-content min-w-0 flex-1 resize-none bg-transparent text-base font-semibold outline-none placeholder:text-muted-foreground"
+            className="ds-issue-title field-sizing-content"
             rows={1}
             placeholder={t('titlePlaceholder')}
             defaultValue={issue.title}
@@ -136,7 +120,7 @@ export default function IssueDetailContent({
             }}
           />
         ) : (
-          <h1 dir="auto" className="min-w-0 flex-1 text-base font-semibold">
+          <h1 dir="auto" className="ds-issue-title">
             {issue.title}
           </h1>
         )}
@@ -251,26 +235,7 @@ export default function IssueDetailContent({
       groupsOpen={propertyGroups}
     />
   );
-  // In a sidebar the section follows the actions row, which needs less room above
-  // it than the content block it follows in a single column.
-  const sidebarProperties = renderProperties('mt-3 pt-4');
-
   const actions = <IssueActionsBar project={project} issue={issue} onDeleted={onDeleted} />;
-
-  // The sidebar grows towards the content, so the pointer moving away from the
-  // edge the panel sits on is what widens it.
-  const propertiesGrip = (
-    <ResizeGrip
-      label={tCommon('resizePropertiesPanel')}
-      className="absolute inset-y-0 start-0 -ms-3"
-      onDrag={(deltaX) =>
-        setPropertiesWidth(propertiesWidth + (direction === 'rtl' ? deltaX : -deltaX))
-      }
-    />
-  );
-  // The dragged width reaches the layout as a variable, since the two blocks it
-  // sizes only take it from the breakpoint where the sidebar exists.
-  const propertiesWidthVar = { '--issue-properties-w': `${propertiesWidth}px` } as CSSProperties;
 
   // A feed entry stores the author's name, not their picture, so the uploaded avatar
   // comes from the project's candidate list by actor id. An author who is no longer a
@@ -304,60 +269,38 @@ export default function IssueDetailContent({
   );
 
   if (layout === 'page') {
-    // From xl the issue content sits at the start edge and the actions with
-    // Properties are fixed to the end edge (out of flow), so they never shift the
-    // content; the end margin reserves their width so the two do not overlap.
-    // Below xl there is no room for two columns, so Properties are shown inside the
-    // content column instead, under the description. The actions are the page's
-    // header row (IssueActionsBar variant 'toolbar').
+    // Two columns (docs/design-system.md §9, draft Aufgabe-detail-*): the task on the
+    // left — title, description, sections, history — and its properties in a column of
+    // 320px on the right, a line between them. Below 1100px the column moves under the
+    // content. The actions are the page's header row (IssueActionsBar variant 'toolbar').
     return (
       <WebLinkScope projectKey={project.project.key}>
         <IssueActionsBar project={project} issue={issue} variant="toolbar" onDeleted={onDeleted} />
-        <div className="max-w-3xl xl:me-(--issue-properties-w)" style={propertiesWidthVar}>
-          {heading}
-          <div className="xl:hidden">{renderProperties()}</div>
-          {sections}
-          {activity}
-        </div>
-        <aside
-          className="hidden xl:fixed xl:end-6 xl:top-16 xl:block xl:w-(--issue-properties-w)"
-          style={propertiesWidthVar}
-        >
-          {propertiesGrip}
-          <div className="max-h-[calc(100vh-5.5rem)] overflow-y-auto">
-            {renderProperties('mt-0 border-t-0 pt-0')}
+        <div className="ds-detail-2col">
+          <div className="ds-detail-main">
+            {heading}
+            {sections}
+            {activity}
           </div>
-        </aside>
+          <aside className="ds-detail-aside">{renderProperties()}</aside>
+        </div>
       </WebLinkScope>
     );
   }
 
   if (layout === 'split') {
-    // Two columns in normal flow: content on the left, Properties as a right
-    // sidebar. Unlike 'page' the sidebar is not viewport-fixed, so it stays inside
-    // a narrower host (the inbox detail pane) without overlapping the content.
-    // The breakpoint is the pane's own width, not the viewport's. The container
-    // wraps the flex row rather than being it — an element cannot query itself.
+    // The same two columns inside a narrower host (the inbox pane), measured on the
+    // host's own width.
     return (
       <WebLinkScope projectKey={project.project.key}>
-        <div className="@container">
-          <div className="flex gap-6">
-            <div className="min-w-0 flex-1">
-              <div className="@3xl:hidden">{actions}</div>
-              {heading}
-              <div className="@3xl:hidden">{renderProperties()}</div>
-              {sections}
-              {activity}
-            </div>
-            <aside
-              className="relative hidden w-(--issue-properties-w) shrink-0 @3xl:block"
-              style={propertiesWidthVar}
-            >
-              {propertiesGrip}
-              {actions}
-              {sidebarProperties}
-            </aside>
+        <div className="ds-detail-2col is-contained">
+          <div className="ds-detail-main">
+            {actions}
+            {heading}
+            {sections}
+            {activity}
           </div>
+          <aside className="ds-detail-aside">{renderProperties()}</aside>
         </div>
       </WebLinkScope>
     );
@@ -369,7 +312,7 @@ export default function IssueDetailContent({
   // sticky child to the first screen of the scroll.
   return (
     <WebLinkScope projectKey={project.project.key}>
-      <div>
+      <div className="ds-detail-main">
         {heading}
         {renderProperties()}
         {sections}

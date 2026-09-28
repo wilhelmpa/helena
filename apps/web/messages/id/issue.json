@@ -31,11 +31,12 @@
     "groupPeople": "Orang",
     "groupPlanning": "Perencanaan",
     "groupLabels": "Label",
-    "groupCustom": "Bidang kustom",
+    "groupCustom": "Kolom",
     "empty": "Kosong",
     "openInNewTab": "Buka di tab baru",
     "area": "Area",
-    "invalidUrl": "Bukan alamat web yang valid (https://…)."
+    "invalidUrl": "Bukan alamat web yang valid (https://…).",
+    "more": "Lainnya"
   },
   "menu": {
     "preview": "Pratinjau",

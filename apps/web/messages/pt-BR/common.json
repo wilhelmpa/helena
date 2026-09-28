@@ -73,7 +73,8 @@
         "kanban": "Layout de quadro",
         "table": "Layout de tabela",
         "timeline": "Layout de linha do tempo",
-        "calendar": "Layout de calendário"
+        "calendar": "Layout de calendário",
+        "list": "Layout de lista"
       },
       "board": {
         "select-all": "Selecionar todas as issues no quadro"

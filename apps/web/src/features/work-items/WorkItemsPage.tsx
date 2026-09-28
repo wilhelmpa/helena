@@ -34,6 +34,7 @@ import KanbanBoard from './components/kanban/KanbanBoard';
 import TableView from './components/table/TableView';
 import TimelineView from './components/timeline/TimelineView';
 import CalendarView from './components/calendar/CalendarView';
+import ListView from './components/list/ListView';
 
 interface TimelineCollapseState {
   scope: string;
@@ -194,6 +195,8 @@ export default function WorkItemsPage() {
         );
       case 'calendar':
         return <CalendarView {...viewProps} />;
+      case 'list':
+        return <ListView {...viewProps} />;
       default:
         return <KanbanBoard {...viewProps} />;
     }

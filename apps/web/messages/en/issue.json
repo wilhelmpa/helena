@@ -31,11 +31,12 @@
     "groupPeople": "People",
     "groupPlanning": "Planning",
     "groupLabels": "Labels",
-    "groupCustom": "Custom fields",
+    "groupCustom": "Fields",
     "empty": "Empty",
     "openInNewTab": "Open in new tab",
     "area": "Area",
-    "invalidUrl": "Not a valid web address (https://…)."
+    "invalidUrl": "Not a valid web address (https://…).",
+    "more": "More"
   },
   "menu": {
     "preview": "Preview",

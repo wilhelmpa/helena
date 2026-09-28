@@ -2,9 +2,10 @@
   "title": "显示",
   "layouts": {
     "kanban": "看板",
+    "list": "列表",
     "table": "表格",
-    "timeline": "时间线",
-    "calendar": "日历"
+    "calendar": "日历",
+    "timeline": "时间线"
   },
   "sortFields": {
     "manual": "手动",

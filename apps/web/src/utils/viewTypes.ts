@@ -1,4 +1,4 @@
-import { CalendarDays, Columns3, GanttChart, Table2, type LucideIcon } from 'lucide-react';
+import { CalendarDays, Columns3, GanttChart, List, Table2, type LucideIcon } from 'lucide-react';
 import type { HotkeyId } from '@/utils/hotkeys';
 
 // Shared view-domain types used by both project.ts (sorting) and viewSettings.ts
@@ -29,16 +29,17 @@ export interface Sort {
 
 // The project's four display modes. Which mode is active is a global preference
 // (see App); each mode's settings are stored per project (see viewSettings).
-export type WorkItemsView = 'kanban' | 'table' | 'timeline' | 'calendar';
+export type WorkItemsView = 'kanban' | 'list' | 'table' | 'timeline' | 'calendar';
 
 // Each layout names its hotkey id rather than a key, so the switcher, the global
 // key layer and the command palette all read the same binding (see lib/hotkeys).
 // The name of a layout is a message under `display.layouts`.
 export const VIEWS: { value: WorkItemsView; icon: LucideIcon; hotkey: HotkeyId }[] = [
   { value: 'kanban', icon: Columns3, hotkey: 'view.kanban' },
+  { value: 'list', icon: List, hotkey: 'view.list' },
   { value: 'table', icon: Table2, hotkey: 'view.table' },
-  { value: 'timeline', icon: GanttChart, hotkey: 'view.timeline' },
   { value: 'calendar', icon: CalendarDays, hotkey: 'view.calendar' },
+  { value: 'timeline', icon: GanttChart, hotkey: 'view.timeline' },
 ];
 
 // Fields the project can be ordered by, in the order shown in the menu. The name

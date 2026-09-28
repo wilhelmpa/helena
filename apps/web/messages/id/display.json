@@ -2,9 +2,10 @@
   "title": "Tampilan",
   "layouts": {
     "kanban": "Kanban",
+    "list": "Daftar",
     "table": "Tabel",
-    "timeline": "Linimasa",
-    "calendar": "Kalender"
+    "calendar": "Kalender",
+    "timeline": "Linimasa"
   },
   "sortFields": {
     "manual": "Manual",

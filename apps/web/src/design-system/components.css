@@ -905,3 +905,198 @@
   flex-direction: column;
   gap: var(--space-6);
 }
+
+/* ── Task properties (IssueProperties): mono-label groups, label/value grid ── */
+.ds-issue-props {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+.ds-issue-props > section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.ds-issue-prop-grid {
+  display: grid;
+  grid-template-columns: minmax(0, min(40%, 110px)) minmax(0, 1fr);
+  align-items: center;
+  gap: 2px var(--space-3);
+}
+.ds-issue-prop-grid.is-single {
+  grid-template-columns: minmax(0, 1fr);
+}
+.ds-issue-prop-grid.is-single > .ds-issue-prop-label {
+  display: none;
+}
+.ds-issue-prop-label {
+  overflow: hidden;
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  color: var(--text-3);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ds-issue-prop-value {
+  min-width: 0;
+  color: var(--text);
+  font-size: 13px;
+}
+.ds-issue-props .ds-more-toggle {
+  align-self: flex-start;
+}
+
+/* ── Detail layouts (§9): two columns, content | 320px properties ───────── */
+.ds-detail-2col {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  align-items: start;
+  gap: 0;
+}
+.ds-detail-main {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding-inline-end: var(--space-6);
+}
+.ds-detail-aside {
+  min-width: 0;
+  border-inline-start: 1px solid var(--line);
+  padding-inline-start: var(--space-6);
+}
+@media (max-width: 1099px) {
+  .ds-detail-2col {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-6);
+  }
+  .ds-detail-main {
+    padding-inline-end: 0;
+  }
+  .ds-detail-aside {
+    border-inline-start: 0;
+    border-top: 1px solid var(--line);
+    padding-inline-start: 0;
+    padding-top: var(--space-5);
+  }
+}
+.ds-detail-2col.is-contained {
+  container-type: inline-size;
+}
+.ds-issue-key {
+  color: var(--text-3);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+}
+.ds-issue-title {
+  min-width: 0;
+  flex: 1;
+  resize: none;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font-size: 24px;
+  font-weight: 520;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+.ds-issue-title::placeholder {
+  color: var(--text-3);
+}
+.ds-detail-main .md-content {
+  font-size: 15px;
+}
+
+/* ── Aufgaben: list layout (draft Aufgaben-list-*) ────────────────────────── */
+.ds-issue-list {
+  height: 100%;
+  overflow-y: auto;
+  padding: 16px var(--page-pad-x) var(--page-pad-bottom);
+}
+.ds-issue-list-group + .ds-issue-list-group {
+  margin-top: 12px;
+}
+.ds-issue-list-head {
+  display: flex;
+  height: 32px;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  color: var(--text-2);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+.ds-issue-list-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--text-3);
+}
+.ds-issue-list-count {
+  color: var(--text-3);
+}
+.ds-issue-list-row {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  height: 40px;
+  align-items: center;
+  gap: 14px;
+  border-radius: 10px;
+  padding: 0 12px;
+  text-align: start;
+  transition: background-color 0.15s;
+}
+.ds-issue-list-row:hover,
+.ds-issue-list-row[data-state='open'] {
+  background: var(--surface-2);
+}
+.ds-issue-list-key {
+  width: 64px;
+  flex: none;
+  color: var(--text-3);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+.ds-issue-list-title {
+  min-width: 80px;
+  max-width: 40%;
+  flex: none;
+  overflow: hidden;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 520;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ds-issue-list-meta {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  color: var(--text-2);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ds-issue-list-end {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+}
+@media (max-width: 700px) {
+  .ds-issue-list-meta {
+    display: none;
+  }
+  .ds-issue-list-title {
+    max-width: none;
+    flex: 1;
+  }
+}

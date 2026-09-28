@@ -205,6 +205,7 @@ const DEFAULT_PROPERTIES: Record<WorkItemsView, DisplayProperty[]> = {
     'created',
     'updated',
   ],
+  list: ['id', 'labels', 'assignee'],
   table: ['priority', 'labels', 'startDate', 'dueDate', 'assignee'],
   timeline: [],
   calendar: [],

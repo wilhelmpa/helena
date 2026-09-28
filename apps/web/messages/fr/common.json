@@ -73,7 +73,8 @@
         "kanban": "Affichage tableau",
         "table": "Affichage liste",
         "timeline": "Affichage chronologique",
-        "calendar": "Affichage calendrier"
+        "calendar": "Affichage calendrier",
+        "list": "Disposition liste"
       },
       "board": {
         "select-all": "Sélectionner tous les tickets du tableau"

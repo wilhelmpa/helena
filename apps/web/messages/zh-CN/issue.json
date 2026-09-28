@@ -31,11 +31,12 @@
     "groupPeople": "人员",
     "groupPlanning": "规划",
     "groupLabels": "标签",
-    "groupCustom": "自定义字段",
+    "groupCustom": "字段",
     "empty": "空",
     "openInNewTab": "在新标签页中打开",
     "area": "区域",
-    "invalidUrl": "不是有效的网址（https://…）。"
+    "invalidUrl": "不是有效的网址（https://…）。",
+    "more": "更多"
   },
   "menu": {
     "preview": "预览",

@@ -31,11 +31,12 @@
     "groupPeople": "Люди",
     "groupPlanning": "Планирование",
     "groupLabels": "Метки",
-    "groupCustom": "Свои поля",
+    "groupCustom": "Поля",
     "empty": "Пусто",
     "openInNewTab": "Открыть в новой вкладке",
     "area": "Область",
-    "invalidUrl": "Некорректный веб-адрес (https://…)."
+    "invalidUrl": "Некорректный веб-адрес (https://…).",
+    "more": "Ещё"
   },
   "menu": {
     "preview": "Предпросмотр",

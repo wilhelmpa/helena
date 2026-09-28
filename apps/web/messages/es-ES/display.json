@@ -2,9 +2,10 @@
   "title": "Visualización",
   "layouts": {
     "kanban": "Kanban",
+    "list": "Lista",
     "table": "Tabla",
-    "timeline": "Cronología",
-    "calendar": "Calendario"
+    "calendar": "Calendario",
+    "timeline": "Cronología"
   },
   "sortFields": {
     "manual": "Manual",

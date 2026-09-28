@@ -2,9 +2,10 @@
   "title": "Anzeige",
   "layouts": {
     "kanban": "Board",
+    "list": "Liste",
     "table": "Tabelle",
-    "timeline": "Zeitachse",
-    "calendar": "Kalender"
+    "calendar": "Kalender",
+    "timeline": "Zeitstrahl"
   },
   "sortFields": {
     "manual": "Manuell",

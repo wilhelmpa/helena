@@ -31,11 +31,12 @@
     "groupPeople": "الأشخاص",
     "groupPlanning": "التخطيط",
     "groupLabels": "الوسوم",
-    "groupCustom": "حقول مخصصة",
+    "groupCustom": "الحقول",
     "empty": "فارغ",
     "openInNewTab": "فتح في تبويب جديد",
     "area": "المجال",
-    "invalidUrl": "ليس عنوان ويب صالحًا (https://…)."
+    "invalidUrl": "ليس عنوان ويب صالحًا (https://…).",
+    "more": "المزيد"
   },
   "menu": {
     "preview": "معاينة",

@@ -31,11 +31,12 @@
     "groupPeople": "Personnes",
     "groupPlanning": "Planification",
     "groupLabels": "Étiquettes",
-    "groupCustom": "Champs personnalisés",
+    "groupCustom": "Champs",
     "empty": "Vide",
     "openInNewTab": "Ouvrir dans un nouvel onglet",
     "area": "Domaine",
-    "invalidUrl": "Adresse web non valide (https://…)."
+    "invalidUrl": "Adresse web non valide (https://…).",
+    "more": "Plus"
   },
   "menu": {
     "preview": "Aperçu",

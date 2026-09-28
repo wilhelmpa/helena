@@ -73,7 +73,8 @@
         "kanban": "Disposición kanban",
         "table": "Disposición de tabla",
         "timeline": "Disposición de cronología",
-        "calendar": "Disposición de calendario"
+        "calendar": "Disposición de calendario",
+        "list": "Diseño de lista"
       },
       "board": {
         "select-all": "Seleccionar todos los tickets del tablero"

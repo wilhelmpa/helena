@@ -31,11 +31,12 @@
     "groupPeople": "Personas",
     "groupPlanning": "Planificación",
     "groupLabels": "Etiquetas",
-    "groupCustom": "Campos personalizados",
+    "groupCustom": "Campos",
     "empty": "Vacío",
     "openInNewTab": "Abrir en una pestaña nueva",
     "area": "Área",
-    "invalidUrl": "No es una dirección web válida (https://…)."
+    "invalidUrl": "No es una dirección web válida (https://…).",
+    "more": "Más"
   },
   "menu": {
     "preview": "Previsualizar",

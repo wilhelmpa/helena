@@ -1,4 +1,5 @@
-import { Fragment, type ReactNode } from 'react';
+import { type ReactNode } from 'react';
+import { ChevronDown, ChevronRight } from 'lucide-react';
 import { RefreshCw, Target } from 'lucide-react';
 import type { CustomField } from '@/lib/api/endpoints/customFields';
 import type { ProjectDetail } from '@/lib/api/endpoints/projects';
@@ -26,9 +27,7 @@ import IssueTimeTracking from '../fields/IssueTimeTracking';
 import IssueCustomFieldControl from '../fields/IssueCustomFieldControl';
 import IssueCustomFieldBody from '../fields/IssueCustomFieldBody';
 import IssueWatchers from './IssueWatchers';
-import IssueSectionHeading from './IssueSectionHeading';
 import IssuePropertyRow from './IssuePropertyRow';
-import IssuePropertyGroupHeading from './IssuePropertyGroupHeading';
 import { type Embeddable } from '@/components/common/editor/attachmentEmbed';
 import { parseDate } from '@/utils/dates';
 import { cn } from '@/lib/utils';
@@ -51,7 +50,6 @@ export default function IssueProperties({
   readOnly,
   className,
   open,
-  onToggle,
   groupsOpen,
 }: {
   project: ProjectDetail;
@@ -328,40 +326,66 @@ export default function IssueProperties({
     },
   ];
 
-  const visibleGroups = groups
-    .map((group) => ({ ...group, rows: group.rows.filter(Boolean) }))
-    .filter((group) => group.rows.length > 0);
+  // The detail's properties (docs/design-system.md §4 DetailView, draft
+  // Aufgabe-detail-*): the everyday ones under EIGENSCHAFTEN, the project's own fields
+  // under KENNWERTE, the labels, and the rarely used ones folded under "Mehr" — never
+  // more than about eight rows in view.
+  const rowByKey = new Map<string, ReactNode>();
+  for (const group of groups) {
+    if (group.key === 'groupCustom') continue;
+    for (const row of group.rows) {
+      if (row && typeof row === 'object' && 'key' in row && row.key != null)
+        rowByKey.set(String(row.key), row);
+    }
+  }
+  const pick = (keys: string[]) =>
+    keys.flatMap((key) => (rowByKey.has(key) ? [rowByKey.get(key)] : []));
+  const main = pick(['state', 'priority', 'assignee', 'delegate', 'initiative', 'dueDate']);
+  const custom = (groups.find((group) => group.key === 'groupCustom')?.rows ?? []).filter(Boolean);
+  const labels = pick(['labels']);
+  const more = pick([
+    'type',
+    'watching',
+    'area',
+    'cycle',
+    'estimatePoints',
+    'estimateTime',
+    'timeTracking',
+    'startDate',
+  ]);
+  const moreOpen = groupsOpen.isOpen('more');
 
   return (
-    // Collapsed, the heading row is all there is, so the section pulls itself up
-    // against the one below it.
-    <div className={cn('mt-4 border-t pt-4', !open && '-mb-2', className)}>
-      <IssueSectionHeading
-        label={t('properties')}
-        open={open}
-        onToggle={onToggle}
-        className={cn('h-7', open && 'mb-3')}
-      />
-      {open && (
-        // The name column takes a share of whatever room the section has, capped at
-        // the width long names need, so a narrow sidebar leaves the controls enough
-        // space instead of pushing them out of it.
-        <div className="grid grid-cols-[minmax(0,min(40%,180px))_minmax(0,1fr)] items-start gap-x-2 gap-y-2.5">
-          {visibleGroups.map((group, i) => {
-            const groupOpen = groupsOpen.isOpen(group.key);
-            return (
-              <Fragment key={group.key}>
-                <IssuePropertyGroupHeading
-                  label={t(group.key)}
-                  className={cn(i > 0 && 'mt-2')}
-                  open={groupOpen}
-                  onToggle={() => groupsOpen.toggle(group.key)}
-                />
-                {groupOpen && group.rows}
-              </Fragment>
-            );
-          })}
-        </div>
+    <div className={cn('ds-issue-props', className)} data-open={open ? 'true' : 'false'}>
+      <section>
+        <h3 className="ds-mono-label">{t('properties')}</h3>
+        <div className="ds-issue-prop-grid">{main}</div>
+      </section>
+      {custom.length > 0 && (
+        <section>
+          <h3 className="ds-mono-label">{t('groupCustom')}</h3>
+          <div className="ds-issue-prop-grid">{custom}</div>
+        </section>
+      )}
+      {labels.length > 0 && (
+        <section>
+          <h3 className="ds-mono-label">{t('labels')}</h3>
+          <div className="ds-issue-prop-grid is-single">{labels}</div>
+        </section>
+      )}
+      {more.length > 0 && (
+        <section>
+          <button
+            type="button"
+            className="ds-more-toggle"
+            aria-expanded={moreOpen}
+            onClick={() => groupsOpen.toggle('more')}
+          >
+            {t('more')}
+            {moreOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+          </button>
+          {moreOpen && <div className="ds-issue-prop-grid">{more}</div>}
+        </section>
       )}
     </div>
   );

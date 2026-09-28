@@ -11,10 +11,10 @@ export default function IssuePropertyRow({
 }) {
   return (
     <>
-      <div className="truncate pt-1.5 text-sm text-muted-foreground" title={label}>
+      <div className="ds-issue-prop-label" title={label}>
         {label}
       </div>
-      <div className="min-w-0">{children}</div>
+      <div className="ds-issue-prop-value">{children}</div>
     </>
   );
 }

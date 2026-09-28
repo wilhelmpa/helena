@@ -11,6 +11,7 @@ export type HotkeyId =
   | 'palette.toggle'
   | 'sidebar.toggle'
   | 'view.kanban'
+  | 'view.list'
   | 'view.table'
   | 'view.timeline'
   | 'view.calendar'
@@ -77,6 +78,7 @@ export const HOTKEYS: HotkeyDef[] = [
   { id: 'view.table', group: 'workItems', combo: '2', scope: 'app' },
   { id: 'view.timeline', group: 'workItems', combo: '3', scope: 'app' },
   { id: 'view.calendar', group: 'workItems', combo: '4', scope: 'app' },
+  { id: 'view.list', group: 'workItems', combo: '5', scope: 'app' },
   {
     id: 'board.select-all',
     group: 'workItems',

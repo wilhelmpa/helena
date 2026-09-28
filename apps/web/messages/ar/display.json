@@ -2,9 +2,10 @@
   "title": "العرض",
   "layouts": {
     "kanban": "كانبان",
+    "list": "قائمة",
     "table": "جدول",
-    "timeline": "خط زمني",
-    "calendar": "تقويم"
+    "calendar": "تقويم",
+    "timeline": "خط زمني"
   },
   "sortFields": {
     "manual": "يدوي",

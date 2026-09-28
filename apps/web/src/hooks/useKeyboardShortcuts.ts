@@ -9,6 +9,7 @@ const VIEW_HOTKEYS: [HotkeyId, WorkItemsView][] = [
   ['view.table', 'table'],
   ['view.timeline', 'timeline'],
   ['view.calendar', 'calendar'],
+  ['view.list', 'list'],
 ];
 
 // The global keyboard layer. Which combination runs what is declared in

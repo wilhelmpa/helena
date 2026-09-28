@@ -73,7 +73,8 @@
         "kanban": "看板布局",
         "table": "表格布局",
         "timeline": "时间线布局",
-        "calendar": "日历布局"
+        "calendar": "日历布局",
+        "list": "列表布局"
       },
       "board": {
         "select-all": "选择看板中的所有工作项"

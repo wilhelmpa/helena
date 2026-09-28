@@ -73,7 +73,8 @@
         "kanban": "Board layout",
         "table": "Table layout",
         "timeline": "Timeline layout",
-        "calendar": "Calendar layout"
+        "calendar": "Calendar layout",
+        "list": "List layout"
       },
       "board": {
         "select-all": "Select all issues on the board"

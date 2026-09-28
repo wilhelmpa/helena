@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, type CSSProperties } from 'react';
 import { Maximize2, X } from 'lucide-react';
 import type { ProjectDetail } from '@/lib/api/endpoints/projects';
 import type { IssueDetail as IssueDetailRow } from '@/lib/api/endpoints/issues';
@@ -6,7 +6,7 @@ import IssueDetailContent from './IssueDetailContent';
 import IssueActionsBar from '../actions/IssueActionsBar';
 import { useExitOnEscape } from '@/hooks/useExitOnEscape';
 import { useExitOnClickOutside } from '../../hooks/useExitOnClickOutside';
-import { Button } from '@/components/ui/button';
+import { SidePanelResizeHandle, useSidePanelWidth } from '@/design-system';
 import { useTranslations } from 'next-intl';
 
 // The issue detail as a side panel over the project, at the end edge. Expand opens the
@@ -27,63 +27,62 @@ export default function IssueDetail({
   const t = useTranslations('issue');
   const tCommon = useTranslations('common');
   const [issue, setIssue] = useState<IssueDetailRow | null>(null);
-  const panelRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLElement>(null);
 
   useExitOnEscape(onClose);
   useExitOnClickOutside(panelRef, onClose);
 
+  const { width } = useSidePanelWidth();
+  const title = issue ? `${issue.identifier} · ${issue.title}` : '';
+
+  // The task in the one overlay on the right (docs/design-system.md §9): the same width,
+  // handle, spacing and head as the tool panel — a segment tab naming the task, its
+  // actions, full screen (the two-column page) and close.
   return (
-    <div
-      // Above the floating chat button (z-40), which sits in the corner the panel's
-      // last-comment bubble uses.
-      className="pointer-events-none fixed inset-0 z-50 flex"
+    <aside
+      ref={panelRef}
+      aria-label={title || t('openAsPage')}
+      className="ds-side-panel ds-issue-overlay"
+      data-open="true"
+      data-full="false"
+      style={{ '--ds-panel-w': `${width}px` } as CSSProperties}
     >
-      {/* No padding at the top: the sticky header carries it, so it can sit flush
-          against the panel edge with nothing showing above it. */}
-      <div
-        ref={panelRef}
-        className="pointer-events-auto ms-auto flex h-full w-full flex-col overflow-y-auto border-s border-sidebar-border bg-card px-4 pt-[env(safe-area-inset-top)] pb-[max(1rem,env(safe-area-inset-bottom))] shadow-(--side-panel-shadow) sm:w-[720px] sm:max-w-[92vw]"
-      >
-        {/* The header stays at the top while the body scrolls under it. Negative
-            margins cancel the panel padding so its translucent, blurred backdrop
-            spans the full panel width. */}
-        {/* One 48px row like every panel head: the task's key in mono on the left, its
-            actions, "open as page" and close as 32px buttons on the right. */}
-        <div className="sticky top-0 z-10 -mx-4 mb-3 flex h-12 shrink-0 items-center justify-between gap-2 border-b border-sidebar-border bg-card/85 px-4 backdrop-blur-md sm:-mx-6">
-          <span className="font-mono text-xs text-muted-foreground">{issue?.identifier ?? ''}</span>
-          <div className="flex items-center gap-1">
-            {issue && (
-              <>
-                <IssueActionsBar
-                  project={project}
-                  issue={issue}
-                  variant="header"
-                  onDeleted={onClose}
-                />
-                <div className="mx-1 h-4 w-px bg-border" />
-              </>
-            )}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="size-8 text-muted-foreground hover:bg-sidebar-accent hover:text-foreground"
-              onClick={() => onExpand(issue?.sequenceNumber ?? null)}
-              title={t('openAsPage')}
-            >
-              <Maximize2 />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="size-8 text-muted-foreground hover:bg-sidebar-accent hover:text-foreground"
-              onClick={onClose}
-              title={tCommon('close')}
-            >
-              <X />
-            </Button>
+      <SidePanelResizeHandle />
+      <div className="ds-panel-head">
+        <div className="ds-panel-tabs">
+          <div className="ds-panel-tabs-track">
+            <div className="ds-panel-tab">
+              <span className="ds-panel-tab-select" role="tab" aria-selected="true">
+                <span>{title}</span>
+              </span>
+            </div>
           </div>
         </div>
-
+        <div className="ds-panel-head-tools">
+          {issue && (
+            <IssueActionsBar project={project} issue={issue} variant="header" onDeleted={onClose} />
+          )}
+          <button
+            type="button"
+            className="ds-icon-button"
+            onClick={() => onExpand(issue?.sequenceNumber ?? null)}
+            title={t('openAsPage')}
+            aria-label={t('openAsPage')}
+          >
+            <Maximize2 size={15} />
+          </button>
+          <button
+            type="button"
+            className="ds-icon-button"
+            onClick={onClose}
+            title={tCommon('close')}
+            aria-label={tCommon('close')}
+          >
+            <X size={16} />
+          </button>
+        </div>
+      </div>
+      <div className="ds-issue-overlay-body">
         <IssueDetailContent
           project={project}
           issueId={issueId}
@@ -91,6 +90,6 @@ export default function IssueDetail({
           onDeleted={onClose}
         />
       </div>
-    </div>
+    </aside>
   );
 }
