@@ -2,6 +2,7 @@
 
 import dynamic from 'next/dynamic';
 import type { ComponentType } from 'react';
+import { isAccessTab } from '@/utils/paths';
 import type { SettingsLocation } from './settingsModalCatalog';
 
 // The sections of the global settings modal (Mein Konto, Helena, Administrator; see
@@ -105,7 +106,7 @@ export default function SettingsAreaContent({
     case 'plugins':
       return <God.plugins {...props} />;
     case 'access':
-      return <Access tab={(extra as 'google') ?? 'google'} />;
+      return <Access tab={extra && isAccessTab(extra) ? extra : 'google'} />;
     case 'devices':
       return <Devices />;
     case 'structure':

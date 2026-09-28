@@ -51,9 +51,11 @@ export const ACCESS_TABS = ['google', 'mail', 'credentials', 'connections', 'log
 export type AccessTab = (typeof ACCESS_TABS)[number];
 export const isAccessTab = (value: string): value is AccessTab =>
   (ACCESS_TABS as readonly string[]).includes(value);
-export const accessPath = (tab: AccessTab = 'google') => `/access/${tab}`;
+// The area is a page of Helena's settings; its tab lives in `?tab=`, so a tab switches in
+// place. The old /access/<tab> addresses redirect here with their query.
+export const accessPath = (tab: AccessTab = 'google') => `/settings/access?tab=${tab}`;
 // The area itself, which opens its first tab; the sidebar entry is active on every tab.
-export const accessRootPath = () => '/access';
+export const accessRootPath = () => '/settings/access';
 
 export const connectionsPath = () => accessPath('connections');
 
@@ -71,7 +73,7 @@ export const skillsPath = () => '/skills';
 export const credentialsPath = () => accessPath('credentials');
 // "Anmeldungen" in Zugänge, with an agent's row marked.
 export const accessLoginsPath = (agentId?: number) =>
-  agentId === undefined ? credentialsPath() : `${credentialsPath()}?agent=${agentId}`;
+  agentId === undefined ? credentialsPath() : `${credentialsPath()}&agent=${agentId}`;
 
 export const devicesPath = () => '/devices';
 
