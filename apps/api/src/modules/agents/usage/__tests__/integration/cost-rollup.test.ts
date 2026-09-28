@@ -77,6 +77,17 @@ describe('agent cost rollup and department throttle', () => {
         spend: { runtime, model: 'unknown-test-model', inputTokens: 30, outputTokens: 10 },
       });
     }
+    await db.insert(agentRun).values({
+      agentId: agent.id,
+      projectId,
+      issueId: issue.id,
+      prompt: 'older run without ledger',
+      status: 'success',
+      model: 'unknown-test-model',
+      inputTokens: 5,
+      outputTokens: 5,
+      finishedAt: new Date(),
+    });
     const usage = await asOwner.teams({ teamId })['agent-usage'].get({
       query: { by: 'issue,agent,project,goal,department' },
     });
@@ -88,9 +99,10 @@ describe('agent cost rollup and department throttle', () => {
       projectId,
       goalId: goal!.id,
       departmentId: department!.id,
-      inputTokens: 90,
-      outputTokens: 30,
-      entries: 3,
+      inputTokens: 95,
+      outputTokens: 35,
+      entries: 4,
+      unledgeredRuns: 1,
       costEur: null,
     });
     expect(usage.data?.unpriced).toBe(true);
@@ -107,7 +119,7 @@ describe('agent cost rollup and department throttle', () => {
       .organization.departments({ departmentId: department!.id })
       .budgets.get();
     expect(budgets.status).toBe(200);
-    expect(budgets.data?.[0]).toMatchObject({ used: 120, reached: true, scope: 'department' });
+    expect(budgets.data?.[0]).toMatchObject({ used: 130, reached: true, scope: 'department' });
     expect(await enforceBudgets(agent.id, projectId, issue.id)).toContain('Budget reached');
     const cards = await db.select().from(approvalRequest).where(eq(approvalRequest.kind, 'budget'));
     expect(cards).toHaveLength(1);

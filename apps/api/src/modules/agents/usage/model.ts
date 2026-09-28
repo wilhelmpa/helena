@@ -34,6 +34,7 @@ const totals = {
   reasoningTokens: t.Number(),
   durationMs: t.Number(),
   entries: t.Number(),
+  unledgeredRuns: t.Number(),
 };
 
 export const UsageResponse = t.Object({

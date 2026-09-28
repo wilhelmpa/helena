@@ -164,6 +164,7 @@ export interface UsageFilter {
 }
 
 export interface UsageRow extends UsageTotals {
+  unledgeredRuns: number;
   issueId: number | null;
   issueTitle: string | null;
   agentId: number | null;
@@ -197,6 +198,8 @@ function whereOf(filter: UsageFilter): SQL {
 }
 
 const DAY = sql<string>`to_char(date_trunc('day', ${agentUsage.occurredAt} AT TIME ZONE 'UTC'), 'YYYY-MM-DD')`;
+const RUN_DAY = sql<string>`to_char(date_trunc('day', ${agentRun.finishedAt} AT TIME ZONE 'UTC'), 'YYYY-MM-DD')`;
+const RUN_MODEL = sql<string>`coalesce(${agentRun.model}, ${aiAgent.model})`;
 const parentIssue = alias(issue, 'usage_parent_issue');
 const parentGoal = alias(helenaGoalTask, 'usage_parent_goal');
 const GOAL_ID = sql<number>`coalesce(${helenaGoalTask.goalId}, ${parentGoal.goalId})`;
@@ -233,6 +236,7 @@ export async function usageBy(
       reasoningTokens: sql<number>`sum(${agentUsage.reasoningTokens})::float8`,
       durationMs: sql<number>`coalesce(sum(${agentUsage.durationMs}), 0)::float8`,
       entries: sql<number>`count(*)::int`,
+      unledgeredRuns: sql<number>`0::int`,
     })
     .from(agentUsage)
     .innerJoin(aiAgent, eq(aiAgent.id, agentUsage.agentId))
@@ -266,9 +270,78 @@ export async function usageBy(
       agentUsage.provider,
     )
     .orderBy(desc(sql`sum(${agentUsage.inputTokens} + ${agentUsage.outputTokens})`));
+  // Old or non-reporting runners still contribute their run totals. A run with any
+  // ledger row is excluded, so the two sources never charge the same run twice.
+  const unledgered = await db
+    .select({
+      issueId: by.has('issue') ? issue.id : sql<null>`null::int`,
+      issueTitle: by.has('issue') ? issue.title : sql<null>`null::text`,
+      agentId: by.has('agent') ? agentRun.agentId : sql<null>`null::int`,
+      agentName: by.has('agent') ? user.name : sql<null>`null::text`,
+      projectId: by.has('project') ? agentRun.projectId : sql<null>`null::int`,
+      projectKey: by.has('project') ? project.key : sql<null>`null::text`,
+      goalId: by.has('goal') ? organizationGoal.id : sql<null>`null::int`,
+      goalTitle: by.has('goal') ? organizationGoal.title : sql<null>`null::text`,
+      departmentId: by.has('department') ? organizationDepartment.id : sql<null>`null::int`,
+      departmentName: by.has('department') ? organizationDepartment.name : sql<null>`null::text`,
+      day: by.has('day') ? RUN_DAY : sql<null>`null::text`,
+      kind: by.has('kind') ? sql<string>`'run'` : sql<null>`null::text`,
+      model: RUN_MODEL,
+      provider: sql<null>`null::text`,
+      inputTokens: sql<number>`coalesce(sum(${agentRun.inputTokens}), 0)::float8`,
+      outputTokens: sql<number>`coalesce(sum(${agentRun.outputTokens}), 0)::float8`,
+      cacheReadTokens: sql<number>`0::float8`,
+      cacheWriteTokens: sql<number>`0::float8`,
+      reasoningTokens: sql<number>`0::float8`,
+      durationMs: sql<number>`coalesce(sum(extract(epoch from ${agentRun.finishedAt} - coalesce(${agentRun.claimedAt}, ${agentRun.startedAt})) * 1000), 0)::float8`,
+      entries: sql<number>`count(*)::int`,
+      unledgeredRuns: sql<number>`count(*)::int`,
+    })
+    .from(agentRun)
+    .innerJoin(aiAgent, eq(aiAgent.id, agentRun.agentId))
+    .leftJoin(issue, eq(issue.id, agentRun.issueId))
+    .leftJoin(parentIssue, eq(parentIssue.id, issue.parentId))
+    .leftJoin(helenaGoalTask, eq(helenaGoalTask.issueId, issue.id))
+    .leftJoin(parentGoal, eq(parentGoal.issueId, parentIssue.id))
+    .leftJoin(organizationGoal, eq(organizationGoal.id, GOAL_ID))
+    .leftJoin(
+      organizationProjectAssignment,
+      eq(organizationProjectAssignment.projectId, agentRun.projectId),
+    )
+    .leftJoin(
+      organizationAgentAssignment,
+      eq(organizationAgentAssignment.agentId, agentRun.agentId),
+    )
+    .leftJoin(organizationDepartment, eq(organizationDepartment.id, DEPARTMENT_ID))
+    .leftJoin(user, eq(user.id, aiAgent.userId))
+    .leftJoin(project, eq(project.id, agentRun.projectId))
+    .where(
+      and(
+        eq(aiAgent.teamId, filter.teamId),
+        gte(agentRun.finishedAt, filter.from),
+        lt(agentRun.finishedAt, filter.to),
+        filter.agentId === undefined ? undefined : eq(agentRun.agentId, filter.agentId),
+        filter.projectId === undefined ? undefined : eq(agentRun.projectId, filter.projectId),
+        filter.projectIds === undefined
+          ? undefined
+          : filter.projectIds.length === 0
+            ? sql`false`
+            : inArray(agentRun.projectId, filter.projectIds),
+        sql`NOT EXISTS (SELECT 1 FROM agent_usage u WHERE u.run_id = ${agentRun.id})`,
+      ),
+    )
+    .groupBy(
+      ...(by.has('issue') ? [issue.id, issue.title] : []),
+      ...(by.has('agent') ? [agentRun.agentId, user.name] : []),
+      ...(by.has('project') ? [agentRun.projectId, project.key] : []),
+      ...(by.has('goal') ? [organizationGoal.id, organizationGoal.title] : []),
+      ...(by.has('department') ? [organizationDepartment.id, organizationDepartment.name] : []),
+      ...(by.has('day') ? [RUN_DAY] : []),
+      RUN_MODEL,
+    );
   const module = await priceModule();
   const priced = await Promise.all(
-    rows.map(async (row) => {
+    [...rows, ...unledgered].map(async (row) => {
       const price =
         module && row.model ? await module.price(row.model, row.provider).catch(() => null) : null;
       return { ...row, costEur: costOf(row, price) };
@@ -300,6 +373,7 @@ export async function usageBy(
       'reasoningTokens',
       'durationMs',
       'entries',
+      'unledgeredRuns',
     ] as const) {
       into[field] += row[field];
     }

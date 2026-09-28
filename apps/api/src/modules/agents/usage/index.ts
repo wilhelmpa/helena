@@ -38,6 +38,7 @@ function sum(rows: UsageRow[]) {
     reasoningTokens: 0,
     durationMs: 0,
     entries: 0,
+    unledgeredRuns: 0,
     costEur: null as number | null,
   };
   for (const row of rows) {
@@ -48,6 +49,7 @@ function sum(rows: UsageRow[]) {
     total.reasoningTokens += row.reasoningTokens;
     total.durationMs += row.durationMs;
     total.entries += row.entries;
+    total.unledgeredRuns += row.unledgeredRuns;
     if (row.costEur !== null) total.costEur = (total.costEur ?? 0) + row.costEur;
   }
   if (unpriced(rows)) total.costEur = null;
@@ -115,8 +117,9 @@ export const agentUsageRoutes = new Elysia({
         summary: 'Read what the agents spent',
         description:
           'Tokens (OpenTelemetry GenAI counts) and cost in euro of the runs, chat answers and ' +
-          "reflections of the team's agents, summed by the chosen dimensions. The last 30 days " +
-          'unless a range is given.',
+          "reflections of the team's agents, summed by the chosen dimensions. Finished runs " +
+          'without a ledger row are included from their run totals and counted as unledgeredRuns. ' +
+          'The last 30 days unless a range is given.',
       },
     },
   );
