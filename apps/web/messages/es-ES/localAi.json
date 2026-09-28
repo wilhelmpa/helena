@@ -208,7 +208,8 @@
     "hint": "Actualizar con native/local-ai/install.sh y volver a evaluar.",
     "whisperBuildRequired": "Esta actualización requiere una compilación de Whisper y una prueba de voz verificadas.",
     "whisperMaintenanceRequired": "Se requiere una ventana de mantenimiento de voz autorizada por Root. Comprueba de nuevo cuando esté abierta.",
-    "whisperRecoveryRequired": "La actualización anterior de Whisper requiere recuperación antes de reanudar la voz."
+    "whisperRecoveryRequired": "La actualización anterior de Whisper requiere recuperación antes de reanudar la voz.",
+    "halogenHint": "Nueva versión: anota su digest y versión en native/halogen/install.sh, instala y reinicia Halogen."
   },
   "pickerMark": "local",
   "tile": {

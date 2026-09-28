@@ -165,7 +165,9 @@ export const initiativeRoutes = new Elysia({
       response: { 200: InitiativePageResponse, ...commonErrors },
       detail: {
         summary: 'List initiatives',
-        description: "List a project's initiatives, filtered, sorted and paged.",
+        description:
+          "List a project's initiatives, filtered, sorted and paged. Initiatives are the " +
+          'project goals Helena shows as „Ziele“ (the team-wide goals are list_goals).',
         ...mcpTool('list_initiatives'),
       },
     },
@@ -215,7 +217,9 @@ export const initiativeRoutes = new Elysia({
       response: { 201: InitiativeResponse, ...commonErrors },
       detail: {
         summary: 'Create an initiative',
-        description: 'Create an initiative in a project.',
+        description:
+          'Create an initiative in a project: a project goal, shown in Helena as „Ziel“ ' +
+          '(the owner asks for „Ziele“ of a project with this).',
         ...mcpTool('create_initiative'),
       },
     },

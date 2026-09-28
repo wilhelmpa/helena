@@ -208,7 +208,8 @@
     "hint": "حدّث عبر native/local-ai/install.sh ثم أعد التقييم.",
     "whisperBuildRequired": "يتطلب هذا التحديث إصدار Whisper واختبار كلام تم التحقق منهما.",
     "whisperMaintenanceRequired": "يلزم فتح نافذة صيانة صوتية معتمدة من مسؤول النظام ثم التحقق مجددًا.",
-    "whisperRecoveryRequired": "يتطلب تحديث Whisper السابق استعادة قبل استئناف الصوت."
+    "whisperRecoveryRequired": "يتطلب تحديث Whisper السابق استعادة قبل استئناف الصوت.",
+    "halogenHint": "إصدار جديد: أدخل الـ digest والإصدار في native/halogen/install.sh، ثم install، ثم أعد تشغيل Halogen."
   },
   "pickerMark": "محلي",
   "tile": {

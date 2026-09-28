@@ -208,7 +208,8 @@
     "hint": "Mettre à jour via native/local-ai/install.sh, puis réévaluer.",
     "whisperBuildRequired": "Cette mise à jour exige une compilation Whisper et un test vocal vérifiés.",
     "whisperMaintenanceRequired": "Une fenêtre de maintenance vocale autorisée par Root est nécessaire. Vérifiez à nouveau après son ouverture.",
-    "whisperRecoveryRequired": "La mise à jour Whisper précédente nécessite une récupération avant la reprise de la voix."
+    "whisperRecoveryRequired": "La mise à jour Whisper précédente nécessite une récupération avant la reprise de la voix.",
+    "halogenHint": "Nouvelle version : inscrire son digest et sa version dans native/halogen/install.sh, installer, puis redémarrer Halogen."
   },
   "pickerMark": "local",
   "tile": {

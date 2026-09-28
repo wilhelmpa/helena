@@ -208,7 +208,8 @@
     "hint": "Оновіть через native/local-ai/install.sh, потім перевірте знову.",
     "whisperBuildRequired": "Для оновлення потрібні перевірена збірка Whisper та успішний мовленнєвий тест.",
     "whisperMaintenanceRequired": "Потрібне вікно обслуговування голосу, дозволене Root. Повторіть перевірку після його відкриття.",
-    "whisperRecoveryRequired": "Попереднє оновлення Whisper потребує відновлення перед поновленням голосу."
+    "whisperRecoveryRequired": "Попереднє оновлення Whisper потребує відновлення перед поновленням голосу.",
+    "halogenHint": "Нова версія: внести digest і версію в native/halogen/install.sh, виконати install і перезапустити Halogen."
   },
   "pickerMark": "локально",
   "tile": {

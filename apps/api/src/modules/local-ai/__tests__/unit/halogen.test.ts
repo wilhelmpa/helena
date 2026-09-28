@@ -13,6 +13,12 @@ import {
   readVocabulary,
 } from '../../server-types';
 import { checkOptions, runtimeLocalAi, serverUrl } from '../../service';
+import {
+  changelogBetween,
+  halogenCandidate as halogenCandidateFor,
+  localAiUpdateSource,
+  newestReleaseTag,
+} from '../../integrations';
 import { defaultLocalAiPolicy, type ModelServerRow } from '@repo/db';
 import { host } from '#shared/helena';
 
@@ -296,5 +302,81 @@ describe('capabilities the Administrator sets', () => {
         models: [{ id: 'halogen-qwen3.8-flash-next', contextLength: null, vision: true }],
       },
     ]);
+  });
+});
+
+describe('Halogen in the update center', () => {
+  it('finds the newest release tag, never latest or a prerelease', () => {
+    expect(newestReleaseTag(['0.9.1', 'latest', '0.14.2', '0.14.10', '0.15.0-rc1', '0.2.0'])).toBe(
+      '0.14.10',
+    );
+    expect(newestReleaseTag(['latest'])).toBeNull();
+  });
+
+  it('gives the changelog of the versions after the installed one', () => {
+    const changelog = [
+      '# Changelog',
+      '',
+      '## 0.15.0',
+      'New drafter.',
+      '## 0.14.3',
+      'Fix A.',
+      '## 0.14.2',
+      'Fix B.',
+      '## 0.14.1',
+      'Fix C.',
+      '',
+    ].join('\n');
+    expect(changelogBetween(changelog, '0.14.2', '0.14.3')).toBe('## 0.14.3\nFix A.');
+    expect(changelogBetween(changelog, '0.14.1', '0.15.0')).toContain('## 0.14.2\nFix B.');
+    expect(changelogBetween(changelog, '0.15.0', '0.15.0')).toBeNull();
+  });
+
+  it('reads the tags from ghcr.io with an anonymous token, check only', async () => {
+    const asked: { url: string; headers?: Record<string, string> }[] = [];
+    const context = {
+      now: new Date(),
+      log: console,
+      manual: true,
+      inventory: async () => null,
+      fetchText: async () => '',
+      async fetchJson<T>(url: string, options?: { headers?: Record<string, string> }) {
+        asked.push({ url, headers: options?.headers });
+        if (url.startsWith('https://ghcr.io/token')) return { token: 'anon' } as T;
+        return { tags: ['0.14.1', '0.14.2', '0.15.0', 'latest'] } as T;
+      },
+    };
+    const servers = [
+      {
+        id: 3,
+        slug: 'halogen',
+        kind: 'halogen',
+        name: 'Halogen',
+        baseUrl: 'http://127.0.0.1:8731/v1',
+        keySource: 'none',
+        keyFile: null,
+        enabled: true,
+        contextLength: 131072,
+        options: {},
+        models: [],
+        status: { reachable: true, version: '0.14.2', latencyMs: 3, error: null, loaded: [] },
+        checkedAt: new Date(),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    ];
+    const candidate = await halogenCandidateFor(servers[0]!, context as never);
+    expect(candidate).toMatchObject({
+      component: 'halogen',
+      installed: '0.14.2',
+      available: '0.15.0',
+      updateAvailable: true,
+      applicable: false,
+    });
+    expect(asked[1]).toEqual({
+      url: 'https://ghcr.io/v2/peonist-ai/halogen-flash-server/tags/list',
+      headers: { authorization: 'Bearer anon' },
+    });
+    expect(localAiUpdateSource.hosts).toContain('ghcr.io');
   });
 });

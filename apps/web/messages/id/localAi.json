@@ -208,7 +208,8 @@
     "hint": "Perbarui lewat native/local-ai/install.sh, lalu evaluasi ulang.",
     "whisperBuildRequired": "Pembaruan ini memerlukan build Whisper dan pengujian suara yang terverifikasi.",
     "whisperMaintenanceRequired": "Diperlukan waktu pemeliharaan suara yang disetujui Root. Periksa lagi setelah dibuka.",
-    "whisperRecoveryRequired": "Pembaruan Whisper sebelumnya perlu dipulihkan sebelum suara dilanjutkan."
+    "whisperRecoveryRequired": "Pembaruan Whisper sebelumnya perlu dipulihkan sebelum suara dilanjutkan.",
+    "halogenHint": "Versi baru: isi digest dan versinya di native/halogen/install.sh, jalankan install, lalu mulai ulang Halogen."
   },
   "pickerMark": "lokal",
   "tile": {
