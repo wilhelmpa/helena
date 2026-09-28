@@ -76,6 +76,12 @@ describe('dashboard widgets', () => {
       pluginDashboardWidget({ ...slot, options: { ...slot.options, surfaces: ['project'] } }),
       null,
     );
+    const project = pluginDashboardWidget(
+      { ...slot, options: { ...slot.options, surfaces: ['project'], size: { w: 8, h: 6 } } },
+      'project',
+    );
+    assert.equal(project?.id, 'plugin:acme:weather');
+    assert.deepEqual(project?.size, { w: 8, h: 6 });
   });
 });
 

@@ -10,7 +10,7 @@ import WidgetDaysSettings from './widgets/WidgetDaysSettings';
 
 // Widget types with nothing to configure. The header hides its settings button for
 // them, so the popover is never empty.
-const WITHOUT_SETTINGS: WidgetType[] = ['agent_workload'];
+const WITHOUT_SETTINGS: WidgetType[] = ['agent_workload', 'plugin'];
 
 export function hasWidgetSettings(type: WidgetType): boolean {
   return !WITHOUT_SETTINGS.includes(type);

@@ -20,7 +20,10 @@ export function pluginWidgetId(pluginId: string, id: string): string {
 
 // A plugin's slot as a Start widget, or null when it is not one (another surface, no
 // frame, options Helena does not know).
-export function pluginDashboardWidget(slot: UiSlotDescriptor): DashboardWidget | null {
+export function pluginDashboardWidget(
+  slot: UiSlotDescriptor,
+  surface: 'home' | 'project' = 'home',
+): DashboardWidget | null {
   if (slot.slot !== 'dashboard-widget' || slot.render?.kind !== 'frame') return null;
   const options = slot.options as {
     group?: unknown;
@@ -30,8 +33,21 @@ export function pluginDashboardWidget(slot: UiSlotDescriptor): DashboardWidget |
     width?: unknown;
     rows?: unknown;
     hiddenByDefault?: unknown;
+    size?: unknown;
   };
-  if (!Array.isArray(options.surfaces) || !options.surfaces.includes('home')) return null;
+  if (!Array.isArray(options.surfaces) || !options.surfaces.includes(surface)) return null;
+  const size = options.size as { w?: unknown; h?: unknown; minH?: unknown } | undefined;
+  if (
+    surface === 'project' &&
+    (!size ||
+      !Number.isInteger(size.w) ||
+      !Number.isInteger(size.h) ||
+      Number(size.w) < 2 ||
+      Number(size.w) > 12 ||
+      Number(size.h) < 2 ||
+      (size.minH !== undefined && (!Number.isInteger(size.minH) || Number(size.minH) < 2)))
+  )
+    return null;
   return {
     id: pluginWidgetId(slot.pluginId, slot.id),
     label: slot.label,
@@ -47,6 +63,7 @@ export function pluginDashboardWidget(slot: UiSlotDescriptor): DashboardWidget |
     hiddenByDefault: options.hiddenByDefault === true,
     view: { kind: 'frame', url: pluginFrameUrl(slot.pluginId, slot.render.src) },
     pluginId: slot.pluginId,
+    size: surface === 'project' ? (size as DashboardWidget['size']) : undefined,
   };
 }
 

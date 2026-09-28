@@ -1,0 +1,26 @@
+.trading {
+  --trading-bg: #050507;
+  --trading-text: #eeeaf6;
+  --trading-strong: #f3edf9;
+  --trading-green: #7ee0b8;
+  --trading-pink: #f4a3bf;
+  --trading-lavender: #bdaaff;
+  --trading-working: #29e8b5;
+  --trading-card: #0e0d11;
+  --trading-surface: #111014;
+  --trading-raised: #141217;
+  --trading-selected: #26212d;
+  --trading-bar: #1a1820;
+  --trading-label: #8b8595;
+  --trading-muted: #88808f;
+  --trading-hint: #6f687a;
+  --trading-soft: #96919f;
+  --trading-secondary: #cfc6da;
+  --trading-inactive: #8f879a;
+  --trading-card-line: #ffffff0c;
+  --trading-button-line: #ffffff12;
+}
+
+:global(body:has([data-trading-dashboard]) [data-app-header]) {
+  display: none;
+}

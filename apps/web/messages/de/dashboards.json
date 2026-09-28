@@ -26,7 +26,8 @@
   "showRows": "{count} anzeigen",
   "widgetGroups": {
     "issues": "Aufgaben",
-    "agents": "KI-Agenten & Webhooks"
+    "agents": "KI-Agenten & Webhooks",
+    "plugins": "Plugins"
   },
   "widgets": {
     "stat": {
@@ -207,5 +208,36 @@
     "unassigned": "Nicht zugewiesen"
   },
   "deleteDashboard": "Dashboard löschen",
-  "deleteDashboardConfirm": "„{name}“ mit seinen Widgets löschen? Die Aufgaben bleiben unberührt."
+  "deleteDashboardConfirm": "„{name}“ mit seinen Widgets löschen? Die Aufgaben bleiben unberührt.",
+  "trading": {
+    "eyebrow": "TRADING · DASHBOARD · VOM PLUGIN",
+    "title": "Trading",
+    "today": "Heute",
+    "week": "Woche",
+    "pilot": "Pilot",
+    "addWidget": "Widget hinzufügen",
+    "loading": "Lädt …",
+    "dataError": "Dashboard-Daten konnten nicht geladen werden.",
+    "noData": "noch keine Daten",
+    "signalsToday": "SIGNALE HEUTE",
+    "signalsWeek": "SIGNALE DIESE WOCHE",
+    "signalsPilot": "SIGNALE IM PILOT",
+    "vetos": "JEV-VETOS",
+    "hypothetical": "HÄTTE-ERGEBNIS",
+    "decisions": "ENTSCHEIDUNGEN",
+    "paperPeriod": "Papier, im Zeitraum",
+    "decisionsNote": "{safe} sicher · {fallback} an Rückfall",
+    "watchlistToday": "WATCHLIST · RSI UND MACD HEUTE",
+    "watchlistWeek": "WATCHLIST · RSI UND MACD DIESE WOCHE",
+    "watchlistPilot": "WATCHLIST · RSI UND MACD IM PILOT",
+    "rsiNote": "Balken: RSI von 0 bis 100. Ab 70 gilt ein Titel als überkauft, die Strategie kauft dann nicht.",
+    "rsiLabel": "RSI",
+    "takt": "TAKT",
+    "last": "letzter",
+    "next": "nächster",
+    "unavailable": "Plugin-Widget nicht verfügbar.",
+    "vetoState": "Veto",
+    "signalState": "Signal",
+    "period": "Zeitraum"
+  }
 }

@@ -26,7 +26,8 @@
   "showRows": "Show {count}",
   "widgetGroups": {
     "issues": "Issues",
-    "agents": "AI agents & webhooks"
+    "agents": "AI agents & webhooks",
+    "plugins": "Plugins"
   },
   "widgets": {
     "stat": {
@@ -207,5 +208,36 @@
     "unassigned": "Unassigned"
   },
   "deleteDashboard": "Delete dashboard",
-  "deleteDashboardConfirm": "Delete “{name}” with its widgets? The tasks are not touched."
+  "deleteDashboardConfirm": "Delete “{name}” with its widgets? The tasks are not touched.",
+  "trading": {
+    "eyebrow": "TRADING · DASHBOARD · FROM PLUGIN",
+    "title": "Trading",
+    "today": "Today",
+    "week": "Week",
+    "pilot": "Pilot",
+    "addWidget": "Add widget",
+    "loading": "Loading …",
+    "dataError": "Dashboard data could not be loaded.",
+    "noData": "no data yet",
+    "signalsToday": "SIGNALS TODAY",
+    "signalsWeek": "SIGNALS THIS WEEK",
+    "signalsPilot": "SIGNALS IN PILOT",
+    "vetos": "JEV VETOS",
+    "hypothetical": "HYPOTHETICAL RESULT",
+    "decisions": "DECISIONS",
+    "paperPeriod": "Paper, in this period",
+    "decisionsNote": "{safe} confident · {fallback} to fallback",
+    "watchlistToday": "WATCHLIST · RSI AND MACD TODAY",
+    "watchlistWeek": "WATCHLIST · RSI AND MACD THIS WEEK",
+    "watchlistPilot": "WATCHLIST · RSI AND MACD IN PILOT",
+    "rsiNote": "Bars: RSI from 0 to 100. Above 70 a stock is overbought, so the strategy does not buy.",
+    "rsiLabel": "RSI",
+    "takt": "CADENCE",
+    "last": "last",
+    "next": "next",
+    "unavailable": "Plugin widget unavailable.",
+    "vetoState": "Veto",
+    "signalState": "Signal",
+    "period": "Period"
+  }
 }
