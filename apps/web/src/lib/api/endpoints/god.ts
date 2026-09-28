@@ -463,6 +463,24 @@ export const updateInstanceRunResumeSettings = (body: RunResumeSettings) =>
     body: JSON.stringify(body),
   });
 
+// Project browsers on demand: a project's browser starts when its live view opens or an
+// agent uses it, and stops after `idleMinutes` without use (0: never). The projects listed,
+// and Home's browser when set, are kept running.
+export interface BrowserPowerSettings {
+  idleMinutes: number;
+  alwaysOnProjectIds: number[];
+  homeAlwaysOn: boolean;
+}
+
+export const getInstanceBrowserPowerSettings = () =>
+  request<BrowserPowerSettings>('/god/browser-power');
+
+export const updateInstanceBrowserPowerSettings = (patch: Partial<BrowserPowerSettings>) =>
+  request<BrowserPowerSettings>('/god/browser-power', {
+    method: 'PUT',
+    body: JSON.stringify(patch),
+  });
+
 export const getInstanceStorageSettings = () => request<StorageSettings>('/god/storage-settings');
 
 export const updateInstanceStorageSettings = (patch: StorageSettingsPatch) =>

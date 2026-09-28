@@ -13,6 +13,7 @@ each step in a maintenance window, after the RAID resync (`cat /proc/mdstat` sho
 | `models.tsv` | every model with repository commit and SHA-256 of each file |
 | `voice.sh` | Helena's voice on the GPU (hub/voice-2, `docs/helena-decisions/voice-2.md`): whisper.cpp (German Whisper) on `127.0.0.1:13306` and qwentts.cpp (Qwen3-TTS) on `127.0.0.1:13307`, built for gfx1151 on the ROCm tree above; voices designed or cloned; see "Voice" |
 | `voice-models.tsv`, `voice-register-voices` | the voice models (commit + SHA-256) and the start hook that registers the voices |
+| `embed.sh` | the embedding model alone (`helena-embed`, llama-server b11166, Qwen3-Embedding-0.6B on `127.0.0.1:13308` with the local AI key) for when Lemonade is stopped (Halogen holds the GPU, `native/halogen/`); same model name, so the index's vectors stay valid |
 | `tests/` | `python3 -m unittest discover -s deployment/volition-stack/native/local-ai/tests` |
 
 ## Order

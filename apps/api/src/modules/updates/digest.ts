@@ -272,6 +272,9 @@ export async function queueDigestRun(
   agent: DigestAgent,
   prompt: string,
   choice: { model: string | null; reasoning: string | null },
+  // Another text-only run than a summary (the local AI judge: `judge`), with its own system
+  // prompt at the claim and never a local model.
+  workClass: string = WORK_CLASS.summaries,
 ): Promise<number> {
   // The engine's built-ins bring the default policy (an API without the engine running too).
   registerBuiltins();
@@ -301,7 +304,7 @@ export async function queueDigestRun(
       // Lokale KI takes summaries.
       model: choice.model,
       reasoning: choice.reasoning ?? own.reasoningEffort ?? null,
-      workClass: WORK_CLASS.summaries,
+      workClass,
       // One answer, no tool loop: a turn or two is enough, and a short budget stops a model
       // that talks on.
       maxTurns: 3,

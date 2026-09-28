@@ -22,5 +22,27 @@
     "failed": "浏览器无法执行该操作。"
   },
   "linkScopeMissing": "无法确定此链接的来源项目。请先打开相应项目或聊天。",
-  "linkBrowserUnavailable": "尚未配置此项目的内部浏览器。"
+  "linkBrowserUnavailable": "尚未配置此项目的内部浏览器。",
+  "stopped": "已暂停",
+  "stoppedHint": "打开时启动",
+  "starting": "正在启动…",
+  "power": {
+    "saved": "已保存",
+    "idleTitle": "项目浏览器",
+    "idle": "空闲多久后停止",
+    "idleHint": "无人查看且没有智能体使用的浏览器会在此时间后停止。下次打开或智能体使用时会在几秒内重新启动；标签页和登录状态都会保留。",
+    "minutes": "{count, plural, other {# 分钟}}",
+    "never": "从不（始终开启）",
+    "alwaysOnTitle": "始终开启",
+    "alwaysOnFor": "让 {name} 的浏览器始终开启",
+    "home": "Helena",
+    "state": {
+      "running": "运行中",
+      "starting": "正在启动…",
+      "stopping": "正在停止…",
+      "stopped": "已暂停——打开时启动",
+      "unknown": "状态未知",
+      "none": "尚未设置浏览器"
+    }
+  }
 }

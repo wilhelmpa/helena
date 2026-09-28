@@ -67,7 +67,12 @@
       "done": "تم",
       "failed": "فشل"
     },
-    "spent": "الاستهلاك"
+    "spent": "الاستهلاك",
+    "archive": "أرشفة",
+    "unarchive": "استعادة",
+    "archived": "مؤرشف",
+    "showArchived": "إظهار المؤرشفة",
+    "archiveFailed": "تعذّرت أرشفة التشغيل."
   },
   "sessions": {
     "search": "البحث في كل الجلسات",

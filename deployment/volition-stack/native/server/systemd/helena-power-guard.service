@@ -1,7 +1,10 @@
 [Unit]
 Description=Helena power guard (restores the fan and power choice, raises the fans when the CPU runs hot)
 Documentation=file:/usr/local/lib/helena/hostd/README.md
-After=systemd-modules-load.service power-profiles-daemon.service
+# Not After=power-profiles-daemon.service: that daemon orders itself after multi-user.target,
+# which waits for this unit, so every shutdown hit an ordering cycle (28.09.). It is D-Bus
+# activated: powerprofilesctl starts it and waits for it.
+After=systemd-modules-load.service
 
 [Service]
 Type=simple

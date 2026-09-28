@@ -103,8 +103,9 @@ class ConfigTest(unittest.TestCase):
     def test_reads_the_shipped_configuration(self):
         config = common.load_config(str(config_file(self.dir)), require_root=False)
         self.assertEqual(config.user_prefix, 'vp-')
-        self.assertEqual(config.forwards, {'egress': 3128, 'plan': 3000, 'localai': 13305})
-        self.assertEqual(config.optional_sockets, ('localai',))
+        self.assertEqual(config.forwards, {'egress': 3128, 'plan': 3000, 'localai': 13305,
+                                           'halogen': 8731, 'halogenquiet': 8733})
+        self.assertEqual(config.optional_sockets, ('localai', 'halogen', 'halogenquiet'))
         self.assertEqual(set(config.runtimes), {'hermes', 'claude', 'codex', 'command', 'profile-helper'})
         self.assertIn('/srv/volition/source/plan/packages/runner/dist', config.runtimes['claude'].read_only)
         self.assertIn('/var/lib/volition', config.hide)
@@ -535,6 +536,10 @@ class LauncherRequestTest(unittest.TestCase):
         props = self.worker.sandbox_properties(
             'alpha', checked['account'], [checked['workspace']], [], checked['limits'])
         self.assertIn('BindReadOnlyPaths=-/run/volition-agents/helena-ai.sock', props)
+        # Halogen (native/halogen/install.sh) the same way: its API and its address for turns
+        # without thinking, both optional.
+        self.assertIn('BindReadOnlyPaths=-/run/volition-agents/helena-halogen-8731.sock', props)
+        self.assertIn('BindReadOnlyPaths=-/run/volition-agents/helena-halogen-8733.sock', props)
         self.assertIn('BindReadOnlyPaths=/run/volition-agents/egress.sock', props)
         self.assertIn('BindReadOnlyPaths=/run/volition-agents/plan.sock', props)
 

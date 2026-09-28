@@ -340,6 +340,7 @@ export {
   type RuntimeLoginState,
 } from './runtime-logins';
 export {
+  CONFIGURABLE_CAPABILITIES,
   LOCAL_AI_MODES,
   LOCAL_AI_PRIORITIES,
   LOCAL_AI_THINKING,
@@ -358,6 +359,7 @@ export {
   median,
   normalizeLocalModel,
   parseLocalModelId,
+  withConfiguredCapabilities,
   type LocalAiChatAnswer,
   type LocalAiChatRequest,
   type LocalAiEvalCaseResult,
@@ -373,6 +375,7 @@ export {
   type ModelServerAudio,
   type ModelServerContext,
   type ModelServerLoad,
+  type ModelServerOptions,
   type ModelServerStatus,
   type ModelServerType,
   type HermesHelperTask,

@@ -31,6 +31,7 @@ import {
 } from '../runtime-sync/model-check';
 import { routeRequest } from '#modules/model-router/service';
 import { DIGEST_SYSTEM_PROMPT } from '#modules/updates/digest-prompt';
+import { JUDGE_SYSTEM_PROMPT, JUDGE_WORK_CLASS } from '#modules/local-ai/judge-prompt';
 import { MAX_RUN_OUTPUT_BYTES, type reflectionBody } from './model';
 import { recordUsage, type Spend } from '../usage/service';
 import { emergencyStopActive } from '#modules/emergency-stop/service';
@@ -531,7 +532,9 @@ export async function claimRunnerRun(agent: RunnerAgent): Promise<RunnerRun | nu
           ? RESUME_PROMPT
           : framePrompt(forPrompt),
     systemPrompt: digest
-      ? DIGEST_SYSTEM_PROMPT
+      ? row.workClass === JUDGE_WORK_CLASS
+        ? JUDGE_SYSTEM_PROMPT
+        : DIGEST_SYSTEM_PROMPT
       : buildSystemPrompt(
           agent,
           { key: row.projectKey, name: row.projectName, description: row.projectDescription },

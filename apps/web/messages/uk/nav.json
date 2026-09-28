@@ -142,7 +142,10 @@
       "bookmarks": "Закладки",
       "bookmarkPage": "Додати сторінку до закладок",
       "removeBookmark": "Видалити закладку",
-      "noBookmarks": "Закладок ще немає"
+      "noBookmarks": "Закладок ще немає",
+      "browserStarting": "Запуск браузера…",
+      "browserStartingShort": "Запуск браузера…",
+      "browserStartFailed": "Браузер не запустився. Повторна спроба…"
     },
     "browserPreviews": {
       "title": "Попередній перегляд",

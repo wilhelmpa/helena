@@ -93,12 +93,33 @@ class NetworksTests(unittest.TestCase):
           {"family":"inet6","local":"fe80::58","prefixlen":64,"scope":"link"}]},
           {"ifname":"virbr0","addr_info":[{"family":"inet6","local":"2003:c3:aaaa:bbbb::1",
            "prefixlen":64,"scope":"global"}]}]''')
-        v6, _ = sync.firewall_networks(fixture, [])
+        v6, _ = sync.firewall_networks(fixture, [], [{'dst': 'default', 'dev': 'eno1'}])
         self.assertEqual(v6, ['2003:c3:3333:4444::/64'])
         self.assertIn('fe80::/10, fc00::/7', sync.nft_script(v6, []))
         prefixes, own = sync.owner_networks(fixture, 'eno1')
         self.assertNotIn('2003:c3:1111:2222::/64', prefixes)
         self.assertIn('2003:c3:1111:2222::58/128', own)
+
+    def test_a_prefix_inside_the_base_networks_is_not_added_twice(self):
+        # 28.09.: a unique-local /64 next to fc00::/7 made nft refuse the whole update.
+        elements = sync.lan6_elements(['2003:c3:1::/64', 'fd8b:8432:f6fb:1::/64', 'fe80::/64',
+                                       '2003:c3:1::/64', '2003:c3:2::/56', '2003:c3:2:1::/64'])
+        self.assertEqual(elements, ['fe80::/10', 'fc00::/7', '2003:c3:1::/64', '2003:c3:2::/56'])
+        script = sync.nft_script(['fd8b:8432:f6fb:1::/64'], [])
+        self.assertIn('add element inet helena_hardening lan6 { fe80::/10, fc00::/7 }', script)
+
+    def test_the_lan_interface_follows_the_default_route(self):
+        links = [dict(LINKS[1], ifname='enp3s0')] + LINKS[2:]
+        routes6 = [{'dst': 'default', 'gateway': 'fe80::1', 'dev': 'enp3s0'}]
+        v6, v4 = sync.firewall_networks(links, [{'dst': 'default', 'dev': 'enp3s0'}], routes6)
+        self.assertEqual(v6, ['2003:c3:172e:f989::/64'])
+        self.assertEqual(v4, ['192.168.2.0/24'])
+
+    def test_without_a_default_route_the_sets_stay(self):
+        v6, v4 = sync.firewall_networks(LINKS, [], [])
+        self.assertIsNone(v6)
+        self.assertEqual(v4, [])
+        self.assertEqual(sync.nft_script(v6, v4).strip(), '')
 
     def test_the_include(self):
         text = sync.render_nginx(['2003:c3:172e:f989::/64'], ['192.168.2.58/32', f'{GUA}/128'], 'eno1')

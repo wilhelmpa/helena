@@ -50,6 +50,9 @@ const ALL_PROJECTS: ModalSectionDef[] = [
     keywords: 'Claude Code Codex Hermes Laufzeit Anmeldung Modell Fallback Not-Aus Preise',
   }),
   s('local-ai', 'allProjects', { keywords: 'Qwen GPU NPU Lemonade Vorladen Schutz Klassen' }),
+  s('browser', 'allProjects', {
+    keywords: 'Projekt-Browser Leerlauf immer an Chromium Speicher starten beenden',
+  }),
   s('decisions', 'allProjects', { keywords: 'Entscheider Jev Schwelle Router Protokoll' }),
   s('skills', 'allProjects', { keywords: 'Skill Fähigkeit Bibliothek' }),
   s('tools', 'allProjects', { keywords: 'Werkzeug Tool MCP MCP-Server Agent Integration' }),

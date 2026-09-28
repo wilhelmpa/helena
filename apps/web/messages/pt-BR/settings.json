@@ -720,7 +720,11 @@
       },
       "local-ai": {
         "label": "IA local",
-        "hint": "Modelos neste servidor: ligar, tarefas, pré-carga."
+        "hint": "Modelos nesta máquina: servidores, tipos de trabalho, avaliador."
+      },
+      "browser": {
+        "label": "Navegador",
+        "hint": "Navegadores de projeto sob demanda: tempo ocioso e os que ficam sempre ligados."
       },
       "decisions": {
         "label": "Decisores",

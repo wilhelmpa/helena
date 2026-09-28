@@ -11,8 +11,10 @@ import {
   LocalAiSettings,
   LocalAiStatus,
   ModelServer,
+  JudgeView,
   ServerKeysResponse,
   evalBody,
+  judgeBody,
   evalParams,
   modelOptionsBody,
   policyBody,
@@ -32,6 +34,7 @@ import {
   updateServer,
   updateModelOptions,
 } from './service';
+import { judgeView, writeJudge } from './judge';
 
 // Local AI (docs/helena-decisions/local-ai-platform.md): the owner's model servers, the
 // policy that sends background work there first, the evals that gate each kind of work, the
@@ -210,6 +213,38 @@ export const localAiRoutes = new Elysia({
         summary: 'Read an eval',
         description: 'Its status, and once it is `done` its score, latency and failed cases.',
       },
+    },
+  )
+
+  .get(
+    '/god/local-ai/judge',
+    async ({ user }) => {
+      requireGod(user);
+      return judgeView();
+    },
+    {
+      response: { 200: JudgeView, ...errors(401, 403) },
+      detail: {
+        summary: 'Read the judge of the local AI evals',
+        description:
+          'The model that scores the evals a program cannot check (Deutsch-Texte): a text-only ' +
+          'run of a Hermes agent on a subscription model (the default, gpt-6-sol), an ' +
+          'OpenAI-compatible endpoint with a stored key, or off. Never the key itself.',
+      },
+    },
+  )
+
+  .put(
+    '/god/local-ai/judge',
+    async ({ user, body }) => {
+      requireGod(user);
+      await writeJudge(body);
+      return judgeView();
+    },
+    {
+      body: judgeBody,
+      response: { 200: JudgeView, ...errors(400, 401, 403) },
+      detail: { summary: 'Set the judge of the local AI evals' },
     },
   )
 

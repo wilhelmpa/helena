@@ -1,0 +1,1 @@
+ALTER TABLE "helena_model_server" ADD COLUMN "options" jsonb DEFAULT '{}'::jsonb NOT NULL;

@@ -28,6 +28,7 @@ import {
   listAiAgents,
   getAiAgent,
   listAgentRuns,
+  setAgentRunArchived,
   createAiAgent,
   copyAiAgentTemplate,
   updateAiAgent,
@@ -81,13 +82,27 @@ export function useAiAgentQuery(teamId: number | null, agentId: number | null) {
 
 // An agent's triggered run history for the runs sidebar, paginated 25 at a time. Only
 // fetched when agentId is set, so the query runs when the sidebar opens.
-export function useAgentRuns(teamId: number | null, agentId: number | null) {
+export function useAgentRuns(
+  teamId: number | null,
+  agentId: number | null,
+  includeArchived = false,
+) {
   return useInfiniteQuery({
-    queryKey: qk.agentRuns(teamId ?? 0, agentId ?? 0),
-    queryFn: ({ pageParam }) => listAgentRuns(teamId!, agentId!, pageParam),
+    queryKey: [...qk.agentRuns(teamId ?? 0, agentId ?? 0), includeArchived ? 'all' : 'open'],
+    queryFn: ({ pageParam }) => listAgentRuns(teamId!, agentId!, pageParam, includeArchived),
     initialPageParam: undefined as number | undefined,
     getNextPageParam: (last) => last.nextCursor ?? undefined,
     enabled: teamId != null && agentId != null,
+  });
+}
+
+// Archives a finished run out of the run list, or brings it back. Runs are never deleted.
+export function useSetAgentRunArchived(teamId: number | null, agentId: number | null) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ runId, archived }: { runId: number; archived: boolean }) =>
+      setAgentRunArchived(teamId!, agentId!, runId, archived),
+    onSettled: () => qc.invalidateQueries({ queryKey: qk.agentRuns(teamId ?? 0, agentId ?? 0) }),
   });
 }
 

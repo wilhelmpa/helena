@@ -1,0 +1,17 @@
+// Project browsers on demand (deployment/volition-stack/browser/project-browser-power.mjs):
+// the browser router starts a project's browser target when it is used and stops it after
+// the idle time set in Helena. The router runs as volition-browser with agent isolation, as
+// volition-hermes without it; either may start and stop exactly a project's browser: its
+// target and its KasmVNC and Chromium units (PartOf the target), nothing else.
+polkit.addRule(function(action, subject) {
+  if (action.id !== "org.freedesktop.systemd1.manage-units") return polkit.Result.NOT_HANDLED;
+  if (subject.user !== "volition-browser" && subject.user !== "volition-hermes") return polkit.Result.NOT_HANDLED;
+  var unit = action.lookup("unit") || "";
+  var verb = action.lookup("verb") || "";
+  if ((verb === "start" || verb === "stop") &&
+      (/^volition-project-browser@[a-z0-9][a-z0-9-]{0,31}\.target$/.test(unit) ||
+       /^volition-project-browser-(kasm|chromium)@[a-z0-9][a-z0-9-]{0,31}\.service$/.test(unit))) {
+    return polkit.Result.YES;
+  }
+  return polkit.Result.NOT_HANDLED;
+});

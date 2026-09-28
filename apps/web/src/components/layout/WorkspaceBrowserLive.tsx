@@ -89,6 +89,7 @@ export default function WorkspaceBrowserLive({
 
   const {
     status,
+    browserStart,
     mode,
     playback,
     hasFrame,
@@ -152,7 +153,9 @@ export default function WorkspaceBrowserLive({
   }, [active, dpr, layout, setViewport]);
 
   const connecting = !hasFrame;
-  const reconnecting = status === 'reconnecting' && hasFrame;
+  // A browser that was stopped while nobody used it starts again: said over the last frame.
+  const starting = browserStart === 'starting' && hasFrame;
+  const reconnecting = status === 'reconnecting' && hasFrame && !starting;
 
   return (
     <div
@@ -249,6 +252,15 @@ export default function WorkspaceBrowserLive({
           </div>
         )}
       </div>
+      {starting && (
+        <div
+          aria-live="polite"
+          className={cn(BADGE_CLASS, 'start-1/2 bottom-3 -translate-x-1/2 gap-1.5')}
+        >
+          <Loader2 className="size-3 animate-spin" />
+          {t('browserStartingShort')}
+        </div>
+      )}
       {reconnecting && (
         <div
           aria-live="polite"
@@ -263,7 +275,13 @@ export default function WorkspaceBrowserLive({
           aria-live="polite"
           className="absolute inset-0 flex items-center justify-center bg-background/80 p-4 text-center text-sm text-muted-foreground"
         >
-          {status === 'reconnecting' ? t('reconnecting') : t('connecting')}
+          {browserStart === 'starting'
+            ? t('browserStarting')
+            : browserStart === 'failed'
+              ? t('browserStartFailed')
+              : status === 'reconnecting'
+                ? t('reconnecting')
+                : t('connecting')}
         </div>
       )}
     </div>

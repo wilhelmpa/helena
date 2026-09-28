@@ -143,7 +143,10 @@
       "bookmarks": "Lesezeichen",
       "bookmarkPage": "Diese Seite merken",
       "removeBookmark": "Lesezeichen entfernen",
-      "noBookmarks": "Noch keine Lesezeichen"
+      "noBookmarks": "Noch keine Lesezeichen",
+      "browserStarting": "Browser startet …",
+      "browserStartingShort": "Browser startet …",
+      "browserStartFailed": "Der Browser ist nicht gestartet. Neuer Versuch …"
     },
     "browserPreviews": {
       "title": "Vorschau",

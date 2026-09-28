@@ -28,13 +28,30 @@ export async function setPageLifecycle(port, state) {
   return changed;
 }
 
+// Who uses a project browser (live viewers, the gateway's control lock, the last action) and
+// what follows from it: pages are frozen after IDLE_MS without use and woken on the next use.
+// With `power` (project-browser-power.mjs) the browser also runs only on demand: a use starts
+// it (wake, view, lock), `stopAfter(slug)` ms without use stop it (Infinity: "immer an", which
+// the poll also starts), and nothing here touches a browser that does not run. Without
+// `power` every browser is taken to run, as before.
 export class BrowserIdle {
-  constructor({ listBrowsers, lifecycle = setPageLifecycle, releaseVisibility = releasePageVisibility, now = Date.now, idleMs = IDLE_MS, log = () => {} }) {
+  constructor({
+    listBrowsers,
+    lifecycle = setPageLifecycle,
+    releaseVisibility = releasePageVisibility,
+    now = Date.now,
+    idleMs = IDLE_MS,
+    power = null,
+    stopAfter = () => Infinity,
+    log = () => {},
+  }) {
     this.listBrowsers = listBrowsers;
     this.lifecycle = lifecycle;
     this.releaseVisibility = releaseVisibility;
     this.now = now;
     this.idleMs = idleMs;
+    this.power = power;
+    this.stopAfter = stopAfter;
     this.log = log;
     this.browsers = new Map();
     this.timer = null;
@@ -43,7 +60,7 @@ export class BrowserIdle {
   record(slug, port = null) {
     let browser = this.browsers.get(slug);
     if (!browser) {
-      browser = { port, viewers: 0, locked: false, lastActive: this.now(), lastFreeze: 0, frozen: null, queue: Promise.resolve() };
+      browser = { slug, port, viewers: 0, locked: false, lastActive: this.now(), lastFreeze: 0, frozen: null, queue: Promise.resolve() };
       this.browsers.set(slug, browser);
     } else if (port !== null && port !== browser.port) {
       browser.port = port;
@@ -53,10 +70,44 @@ export class BrowserIdle {
     return browser;
   }
 
-  transition(browser) {
+  // Whether nobody watches or holds the browser.
+  unused(browser) {
+    return browser.viewers === 0 && !browser.locked;
+  }
+
+  // Whether the browser is to be stopped now: unused for its stop time.
+  due(browser) {
+    return this.unused(browser) && this.now() - browser.lastActive >= this.stopAfter(browser.slug);
+  }
+
+  // One step towards what the browser's use asks for. `start`: a use that needs the browser
+  // running (a viewer, a toolbar action, an agent); the poll passes false and never starts a
+  // browser, except one kept running ("immer an").
+  transition(browser, start = false) {
     browser.queue = browser.queue.then(async () => {
       if (browser.port === null) return true;
-      const idle = browser.viewers === 0 && !browser.locked && this.now() - browser.lastActive >= this.idleMs;
+      if (this.power) {
+        const keep = this.stopAfter(browser.slug) === Infinity;
+        if (!start && !keep && this.due(browser)) {
+          if (this.power.state(browser.slug) !== "stopped") {
+            await this.power.stop(browser.slug, () => this.due(browser));
+            browser.frozen = null;
+          }
+          return true;
+        }
+        const running = this.power.running(browser.slug);
+        if (!running && !start && !keep) return true;
+        if (start || !running) {
+          // A use checks a browser known to run once it has not for a few seconds, and starts
+          // one that stopped behind the router's back (project-browser-power.mjs).
+          const since = this.power.since(browser.slug);
+          await this.power.ensure(browser.slug, browser.port);
+          // A browser just started has nothing frozen: its pages, still being restored, are
+          // left alone (a page closed or replaced meanwhile would fail the wake).
+          if (!running || this.power.since(browser.slug) !== since) browser.frozen = false;
+        }
+      }
+      const idle = this.unused(browser) && this.now() - browser.lastActive >= this.idleMs;
       if (idle && (!browser.frozen || this.now() - browser.lastFreeze >= 60_000)) {
         const count = await this.lifecycle(browser.port, "frozen");
         browser.frozen = count > 0;
@@ -68,6 +119,8 @@ export class BrowserIdle {
       return true;
     }).catch((error) => {
       this.log(`browser idle: ${error.message}`);
+      // A use that failed checks the browser again next time instead of trusting it runs.
+      if (start) this.power?.doubt(browser.slug);
       return false;
     });
     return browser.queue;
@@ -76,8 +129,16 @@ export class BrowserIdle {
   async poll() {
     const found = await this.listBrowsers();
     const wanted = new Set(found.map((browser) => browser.slug));
-    for (const browser of found) await this.transition(this.record(browser.slug, browser.cdpPort));
-    for (const slug of this.browsers.keys()) if (!wanted.has(slug)) this.browsers.delete(slug);
+    for (const { slug, cdpPort } of found) {
+      const browser = this.record(slug, cdpPort);
+      if (this.power) await this.power.observe(slug, cdpPort);
+      await this.transition(browser);
+    }
+    for (const slug of this.browsers.keys()) {
+      if (wanted.has(slug)) continue;
+      this.browsers.delete(slug);
+      this.power?.forget(slug);
+    }
   }
 
   start() {
@@ -87,13 +148,20 @@ export class BrowserIdle {
     }, CHECK_MS);
   }
 
+  // A use of the browser: starts it when it does not run and wakes its pages. Resolves to
+  // whether it is ready (false: it did not start, or its pages could not be woken).
   wake(slug, { force = false } = {}) {
     const browser = this.record(slug);
     // A restarted router cannot know whether Chromium is still frozen. A first
     // wake must send "active" even when this process has never frozen it.
     if (force || browser.frozen === null) browser.frozen = true;
     browser.lastActive = this.now();
-    return this.transition(browser);
+    return this.transition(browser, true);
+  }
+
+  // Whether the browser runs (always true without `power`).
+  running(slug) {
+    return !this.power || this.power.running(slug);
   }
 
   view(slug, port, socket) {
@@ -112,7 +180,7 @@ export class BrowserIdle {
 
   releaseWhenUnused(browser) {
     browser.queue = browser.queue.then(async () => {
-      if (!browser.viewers && !browser.locked) {
+      if (!browser.viewers && !browser.locked && this.running(browser.slug)) {
         browser.frozen = null;
         await this.releaseVisibility(browser.port);
       }
@@ -129,12 +197,17 @@ export class BrowserIdle {
     }
   }
 
+  // Router shutdown: leaves every running browser's pages active and visible, and starts or
+  // stops none (the browsers outlive the router).
   async stop() {
     clearInterval(this.timer);
     const waking = [];
-    for (const [slug, browser] of this.browsers) {
+    for (const browser of this.browsers.values()) {
       browser.locked = true;
-      waking.push(this.wake(slug).finally(() => this.releaseVisibility(browser.port)));
+      if (!this.running(browser.slug)) continue;
+      if (browser.frozen === null) browser.frozen = true;
+      browser.lastActive = this.now();
+      waking.push(this.transition(browser).finally(() => this.releaseVisibility(browser.port)));
     }
     await Promise.all(waking);
   }

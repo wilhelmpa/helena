@@ -42,6 +42,7 @@ const God = {
   scim: page(() => import('@/features/god/GodScimPage')),
 };
 const ServerPage = dynamic(() => import('@/features/server/ServerPage'));
+const BrowserPower = dynamic(() => import('@/features/browser-gateway/BrowserPowerSettingsPage'));
 const HomeDefaultsPage = page(() => import('@/features/settings/HomeDefaultsPage'));
 const VoicePage = page(() => import('@/features/voice/components/AccountVoicePage'));
 const TeamMembers = page(() => import('@/features/teams/components/members/TeamMembersSection'));
@@ -105,6 +106,8 @@ export default function SettingsAreaContent({
       return <Stack parts={[God.runtime, God.prices]} props={props} />;
     case 'local-ai':
       return <God.localAi {...props} />;
+    case 'browser':
+      return <BrowserPower />;
     case 'decisions':
       return <Decisions />;
     case 'skills':

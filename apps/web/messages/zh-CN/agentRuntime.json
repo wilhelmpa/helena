@@ -67,7 +67,12 @@
       "done": "已完成",
       "failed": "失败"
     },
-    "spent": "消耗"
+    "spent": "消耗",
+    "archive": "归档",
+    "unarchive": "恢复",
+    "archived": "已归档",
+    "showArchived": "显示已归档",
+    "archiveFailed": "无法归档此运行。"
   },
   "sessions": {
     "search": "搜索所有会话",

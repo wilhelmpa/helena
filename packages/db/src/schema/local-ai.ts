@@ -17,7 +17,7 @@ import {
   timestamp,
   uniqueIndex,
 } from 'drizzle-orm/pg-core';
-import type { LocalModel, ModelServerStatus } from '@helena/sdk';
+import type { LocalModel, ModelServerOptions, ModelServerStatus } from '@helena/sdk';
 import { user } from './auth';
 
 export const helenaModelServer = pgTable(
@@ -39,6 +39,9 @@ export const helenaModelServer = pgTable(
     enabled: boolean('enabled').notNull().default(true),
     // The context window Hermes is told the server serves (Hermes needs at least 64k).
     contextLength: integer('context_length').notNull().default(65536),
+    // What the Administrator set beyond address and key (@helena/sdk ModelServerOptions): the
+    // capabilities of its chat models where the server does not say, the tokenizer file.
+    options: jsonb('options').$type<ModelServerOptions>().notNull().default({}),
     // What Helena last read: the models and the status, and when.
     models: jsonb('models').$type<LocalModel[]>().notNull().default([]),
     status: jsonb('status').$type<ModelServerStatus | null>(),

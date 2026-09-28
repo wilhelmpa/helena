@@ -22,5 +22,27 @@
     "failed": "Peramban tidak dapat melakukannya."
   },
   "linkScopeMissing": "Proyek asal tautan ini tidak diketahui. Buka proyek atau percakapannya terlebih dahulu.",
-  "linkBrowserUnavailable": "Browser internal untuk proyek ini belum dikonfigurasi."
+  "linkBrowserUnavailable": "Browser internal untuk proyek ini belum dikonfigurasi.",
+  "stopped": "Dijeda",
+  "stoppedHint": "Mulai saat dibuka",
+  "starting": "Memulai…",
+  "power": {
+    "saved": "Tersimpan",
+    "idleTitle": "Browser proyek",
+    "idle": "Hentikan setelah diam selama",
+    "idleHint": "Browser yang tidak dilihat siapa pun dan tidak dipakai agen dihentikan setelah waktu ini. Browser mulai lagi dalam hitungan detik saat dibuka berikutnya atau dipakai agen; tab dan login tetap tersimpan.",
+    "minutes": "{count, plural, other {# menit}}",
+    "never": "Tidak pernah (selalu aktif)",
+    "alwaysOnTitle": "Selalu aktif",
+    "alwaysOnFor": "Biarkan browser {name} selalu aktif",
+    "home": "Helena",
+    "state": {
+      "running": "Berjalan",
+      "starting": "Memulai…",
+      "stopping": "Menghentikan…",
+      "stopped": "Dijeda — mulai saat dibuka",
+      "unknown": "Status tidak diketahui",
+      "none": "Belum ada browser"
+    }
+  }
 }

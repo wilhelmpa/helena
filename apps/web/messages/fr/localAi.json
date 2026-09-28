@@ -24,7 +24,8 @@
     "settings": "Réglages",
     "unitSwitch": "Utiliser le {unit}",
     "vram": "{used} sur {total}",
-    "noModel": "Aucun modèle chargé"
+    "noModel": "Aucun modèle chargé",
+    "gtt": "{used} sur {total} (GTT)"
   },
   "blockers": {
     "not-wired": "Pas encore raccordé",
@@ -89,7 +90,7 @@
   },
   "servers": {
     "title": "Serveurs de modèles",
-    "description": "Lemonade sur cette machine (GPU et NPU) ou un autre serveur compatible OpenAI. Ses modèles apparaissent dans chaque sélecteur de modèle tant que l'IA locale est activée.",
+    "description": "Halogen ou Lemonade sur cette machine, ou un autre serveur compatible OpenAI. Ses modèles figurent dans chaque choix de modèle tant que l’IA locale est activée.",
     "add": "Ajouter un serveur",
     "none": "Aucun serveur. Installez l'IA locale avec native/local-ai/install.sh, puis ajoutez-le ici.",
     "reachable": "Joignable · {version}",
@@ -116,7 +117,28 @@
     "keyFile": "Fichier de clé (sous /etc/helena)",
     "key": "Clé",
     "cancel": "Annuler",
-    "save": "Ajouter"
+    "save": "Ajouter",
+    "edit": "Modifier le serveur",
+    "editTitle": "Modifier {name}",
+    "saveChanges": "Enregistrer",
+    "keyKept": "La clé enregistrée est conservée",
+    "contextLength": "Contexte en jetons (pour les agents)",
+    "capabilities": {
+      "title": "Capacités des modèles de chat",
+      "own": "Définies ici",
+      "derived": "Du serveur",
+      "tools": "Outils",
+      "reasoning": "Réflexion",
+      "vision": "Images"
+    },
+    "load": {
+      "speed": "{output} jetons/s en sortie, {prompt} jetons/s en entrée",
+      "slots": "{busy} sur {slots} emplacements occupés, {queued} en attente",
+      "memory": "{gb} Go de mémoire",
+      "kv": "Cache KV {percent} %",
+      "gpu": "GPU {percent} %"
+    },
+    "disabled": "Désactivé"
   },
   "presets": {
     "title": "Préréglage",
@@ -132,6 +154,7 @@
   },
   "serverTypes": {
     "lemonade": "Lemonade Server (GPU + NPU)",
+    "halogen": "Halogen (Qwen3.8-Flash-Next, GPU)",
     "openaiCompatible": "Serveur compatible OpenAI",
     "whisperCpp": "whisper.cpp (reconnaissance vocale, GPU)",
     "qwenTts": "Qwen3-TTS (voix, GPU)"
@@ -187,7 +210,8 @@
     "hint": "Mettre à jour via native/local-ai/install.sh, puis réévaluer.",
     "whisperBuildRequired": "Cette mise à jour exige une compilation Whisper et un test vocal vérifiés.",
     "whisperMaintenanceRequired": "Une fenêtre de maintenance vocale autorisée par Root est nécessaire. Vérifiez à nouveau après son ouverture.",
-    "whisperRecoveryRequired": "La mise à jour Whisper précédente nécessite une récupération avant la reprise de la voix."
+    "whisperRecoveryRequired": "La mise à jour Whisper précédente nécessite une récupération avant la reprise de la voix.",
+    "halogenHint": "Nouvelle version : inscrire son digest et sa version dans native/halogen/install.sh, installer, puis redémarrer Halogen."
   },
   "pickerMark": "local",
   "tile": {
@@ -301,5 +325,61 @@
       "contextNeedsParallel": "Définis d’abord les slots parallèles.",
       "contextTotal": "Slots parallèles fois contexte par slot ne doit pas dépasser 1048576 tokens."
     }
+  },
+  "judge": {
+    "title": "Évaluateur",
+    "description": "Le modèle qui note les textes de l’évaluation « Deutsch-Texte ». Un programme ne peut pas les vérifier.",
+    "kind": "Type",
+    "kinds": {
+      "run": "Exécution sur un modèle d’abonnement",
+      "endpoint": "Point d’accès compatible OpenAI",
+      "off": "Désactivé"
+    },
+    "model": "Modèle",
+    "agent": "Agent pour l’exécution",
+    "agentAuto": "Automatique (Home)",
+    "reasoning": "Réflexion",
+    "reasoningLevels": {
+      "low": "Faible",
+      "medium": "Moyenne",
+      "high": "Élevée"
+    },
+    "baseUrl": "Adresse (…/v1)",
+    "key": "Clé",
+    "keyKept": "La clé enregistrée est conservée",
+    "save": "Enregistrer"
+  },
+  "escalation": {
+    "title": "Escalade",
+    "description": "Quand un modèle d’abonnement puissant remplace le modèle local : travail difficile, réponses incertaines, échecs.",
+    "draft": "Brouillon – pas encore actif",
+    "enabled": "Escalade activée",
+    "defaultModel": "Modèle par défaut",
+    "model": "Modèle",
+    "kinds": {
+      "coding": "Programmation importante",
+      "architecture": "Architecture",
+      "security": "Sécurité",
+      "legal": "Droit et contrats",
+      "external-text": "Textes vers l’extérieur"
+    },
+    "uncertainty": "Décision incertaine",
+    "threshold": "sous",
+    "failure": "Après un échec",
+    "localAttempts": "Essais locaux",
+    "failures": {
+      "tests-failed": "Tests en rouge",
+      "loop": "Boucle",
+      "timeout": "Délai",
+      "error": "Erreur"
+    },
+    "pinsNone": "Aucun choix fixe pour les agents, projets ou tâches.",
+    "pins": "{count} choix fixes pour les agents, projets ou tâches."
+  },
+  "classGroups": {
+    "none": "Aucun type de travail n’est prêt : réussir d’abord une évaluation.",
+    "active": "Tourne en local",
+    "ready": "Prêt",
+    "more": "Autres types de travail ({count})"
   }
 }

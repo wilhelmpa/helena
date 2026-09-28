@@ -142,7 +142,10 @@
       "bookmarks": "الإشارات المرجعية",
       "bookmarkPage": "إضافة هذه الصفحة إلى الإشارات المرجعية",
       "removeBookmark": "إزالة الإشارة المرجعية",
-      "noBookmarks": "لا توجد إشارات مرجعية بعد"
+      "noBookmarks": "لا توجد إشارات مرجعية بعد",
+      "browserStarting": "جارٍ تشغيل المتصفح…",
+      "browserStartingShort": "جارٍ تشغيل المتصفح…",
+      "browserStartFailed": "لم يبدأ المتصفح. جارٍ المحاولة مرة أخرى…"
     },
     "browserPreviews": {
       "title": "المعاينات",

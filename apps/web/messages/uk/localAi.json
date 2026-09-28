@@ -24,7 +24,8 @@
     "settings": "Налаштування",
     "unitSwitch": "Використовувати {unit}",
     "vram": "{used} з {total}",
-    "noModel": "Модель не завантажена"
+    "noModel": "Модель не завантажена",
+    "gtt": "{used} з {total} (GTT)"
   },
   "blockers": {
     "not-wired": "Ще не під'єднано",
@@ -89,7 +90,7 @@
   },
   "servers": {
     "title": "Сервери моделей",
-    "description": "Lemonade на цій машині (GPU і NPU) або інший сервер, сумісний з OpenAI. Його моделі видно в кожному виборі моделі, поки локальний ШІ увімкнений.",
+    "description": "Halogen або Lemonade на цій машині чи інший OpenAI-сумісний сервер. Його моделі є в кожному виборі моделі, поки локальний ШІ увімкнено.",
     "add": "Додати сервер",
     "none": "Серверів ще немає. Встановіть локальний ШІ за допомогою native/local-ai/install.sh і додайте його тут.",
     "reachable": "Доступний · {version}",
@@ -116,7 +117,28 @@
     "keyFile": "Файл ключа (у /etc/helena)",
     "key": "Ключ",
     "cancel": "Скасувати",
-    "save": "Додати"
+    "save": "Додати",
+    "edit": "Змінити сервер",
+    "editTitle": "Змінити {name}",
+    "saveChanges": "Зберегти",
+    "keyKept": "Збережений ключ залишиться",
+    "contextLength": "Контекст у токенах (для агентів)",
+    "capabilities": {
+      "title": "Можливості чат-моделей",
+      "own": "Задано тут",
+      "derived": "Від сервера",
+      "tools": "Інструменти",
+      "reasoning": "Міркування",
+      "vision": "Зображення"
+    },
+    "load": {
+      "speed": "{output} токенів/с виведення, {prompt} токенів/с введення",
+      "slots": "зайнято {busy} з {slots} слотів, очікують {queued}",
+      "memory": "{gb} ГБ пам’яті",
+      "kv": "KV-кеш {percent} %",
+      "gpu": "GPU {percent} %"
+    },
+    "disabled": "Вимкнено"
   },
   "presets": {
     "title": "Передустановка",
@@ -132,6 +154,7 @@
   },
   "serverTypes": {
     "lemonade": "Lemonade Server (GPU + NPU)",
+    "halogen": "Halogen (Qwen3.8-Flash-Next, GPU)",
     "openaiCompatible": "Сервер, сумісний з OpenAI",
     "whisperCpp": "whisper.cpp (розпізнавання мовлення, GPU)",
     "qwenTts": "Qwen3-TTS (голос, GPU)"
@@ -187,7 +210,8 @@
     "hint": "Оновіть через native/local-ai/install.sh, потім перевірте знову.",
     "whisperBuildRequired": "Для оновлення потрібні перевірена збірка Whisper та успішний мовленнєвий тест.",
     "whisperMaintenanceRequired": "Потрібне вікно обслуговування голосу, дозволене Root. Повторіть перевірку після його відкриття.",
-    "whisperRecoveryRequired": "Попереднє оновлення Whisper потребує відновлення перед поновленням голосу."
+    "whisperRecoveryRequired": "Попереднє оновлення Whisper потребує відновлення перед поновленням голосу.",
+    "halogenHint": "Нова версія: внести digest і версію в native/halogen/install.sh, виконати install і перезапустити Halogen."
   },
   "pickerMark": "локально",
   "tile": {
@@ -301,5 +325,61 @@
       "contextNeedsParallel": "Спершу задай паралельні слоти.",
       "contextTotal": "Паралельні слоти, помножені на контекст на слот, не можуть перевищувати 1048576 токенів."
     }
+  },
+  "judge": {
+    "title": "Оцінювач",
+    "description": "Модель, яка оцінює тексти тесту «Deutsch-Texte». Програма не може їх перевірити.",
+    "kind": "Вид",
+    "kinds": {
+      "run": "Запуск на моделі за підпискою",
+      "endpoint": "OpenAI-сумісний endpoint",
+      "off": "Вимкнено"
+    },
+    "model": "Модель",
+    "agent": "Агент для запуску",
+    "agentAuto": "Автоматично (Home)",
+    "reasoning": "Міркування",
+    "reasoningLevels": {
+      "low": "Мало",
+      "medium": "Середньо",
+      "high": "Багато"
+    },
+    "baseUrl": "Адреса (…/v1)",
+    "key": "Ключ",
+    "keyKept": "Збережений ключ залишиться",
+    "save": "Зберегти"
+  },
+  "escalation": {
+    "title": "Ескалація",
+    "description": "Коли сильна модель за підпискою замінює локальну: складна робота, невпевнені відповіді, збої.",
+    "draft": "Чернетка — ще не активно",
+    "enabled": "Ескалацію ввімкнено",
+    "defaultModel": "Модель за замовчуванням",
+    "model": "Модель",
+    "kinds": {
+      "coding": "Велика розробка",
+      "architecture": "Архітектура",
+      "security": "Безпека",
+      "legal": "Право й договори",
+      "external-text": "Тексти назовні"
+    },
+    "uncertainty": "Невпевнене рішення",
+    "threshold": "нижче",
+    "failure": "Після збою",
+    "localAttempts": "Локальні спроби",
+    "failures": {
+      "tests-failed": "Тести червоні",
+      "loop": "Цикл",
+      "timeout": "Ліміт часу",
+      "error": "Помилка"
+    },
+    "pinsNone": "Немає закріплень для агентів, проєктів чи завдань.",
+    "pins": "Закріплень для агентів, проєктів чи завдань: {count}."
+  },
+  "classGroups": {
+    "none": "Поки жоден вид роботи не готовий: спершу пройдіть оцінювання.",
+    "active": "Працює локально",
+    "ready": "Готово",
+    "more": "Інші види роботи ({count})"
   }
 }

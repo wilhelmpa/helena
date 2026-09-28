@@ -12,9 +12,16 @@
 // names one for all (to compare). `--json -` writes the JSON to stdout and the lines to
 // stderr, so a caller that may write where this user may not (bench.sh as root) redirects it.
 // The key is read from the file and never printed.
+//
+// The judge of Deutsch-Texte: an OpenAI-compatible endpoint (--judge-base, --judge-key-file,
+// --judge-model), or the owner's logged-in CLI (--judge-cli claude|codex --judge-model opus):
+//   bun apps/api/src/scripts/local-ai-eval.ts --base http://127.0.0.1:8731/v1 \
+//     --model halogen-qwen3.8-flash-next --classes deutsch-texte --judge-cli claude --judge-model opus
 import { readFileSync, writeFileSync } from 'node:fs';
 import { LOCAL_AI_THINKING, type LocalAiEvalResult, type LocalAiThinking } from '@helena/sdk';
+import { tmpdir } from 'node:os';
 import { openAiEvalContext } from '../modules/local-ai/eval-context';
+import { cliJudge } from '../modules/local-ai/judge-cli';
 import { BUILTIN_TASK_CLASSES } from '../modules/local-ai/task-classes';
 
 function argument(name: string): string | null {
@@ -32,6 +39,11 @@ const jsonOut = argument('json');
 const thinkingArgument = argument('thinking');
 const judgeBase = argument('judge-base') ?? process.env.LOCAL_AI_JUDGE_BASE_URL;
 const judgeModel = argument('judge-model') ?? process.env.LOCAL_AI_JUDGE_MODEL ?? 'claude-opus-4-6';
+const judgeCli = argument('judge-cli');
+if (judgeCli && judgeCli !== 'claude' && judgeCli !== 'codex') {
+  console.error('--judge-cli must be claude or codex');
+  process.exit(2);
+}
 const judgeKeyFile = argument('judge-key-file');
 const judgeKey = judgeKeyFile
   ? readFileSync(judgeKeyFile, 'utf8').trim()
@@ -71,9 +83,17 @@ for (const entry of BUILTIN_TASK_CLASSES) {
   let result: LocalAiEvalResult | null = null;
   let error: string | null = null;
   try {
-    const judge = judgeBase
-      ? openAiEvalContext({ baseUrl: judgeBase, key: judgeKey, model: judgeModel })
-      : null;
+    const judge = judgeCli
+      ? {
+          chat: cliJudge(
+            judgeCli as 'claude' | 'codex',
+            judgeModel,
+            process.env.TMPDIR ?? tmpdir(),
+          ),
+        }
+      : judgeBase
+        ? openAiEvalContext({ baseUrl: judgeBase, key: judgeKey, model: judgeModel })
+        : null;
     result = await entry.evaluate(
       openAiEvalContext({
         baseUrl: base,

@@ -81,6 +81,7 @@ function server(fields: Partial<ModelServerRow> = {}): ModelServerRow {
     keyFile: null,
     enabled: true,
     contextLength: 65536,
+    options: {},
     models: [
       model('Qwen3.6-35B-A3B-GGUF', { loaded: true }),
       model('Qwen3-Embedding-0.6B-GGUF', { capabilities: ['embeddings'] }),

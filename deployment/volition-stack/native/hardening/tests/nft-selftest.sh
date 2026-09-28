@@ -113,12 +113,14 @@ PY
 ip addr add 10.20.30.5/24 dev eno1
 ip addr del 192.168.2.58/24 dev eno1
 ip route add default via 10.20.30.1 dev eno1
-ip -6 addr add 2001:db8:1:2::5/64 dev eno1 nodad
+# A real global prefix: the sync takes only is_global /64s, and the documentation range
+# 2001:db8::/32 is not global (that made this check fail since it was written).
+ip -6 addr add 2003:c3:1:2::5/64 dev eno1 nodad
 python3 -I "$2" --firewall-only
 lan4=$(nft list set inet helena_hardening lan4 | tr -d '\n\t ')
 lan6=$(nft list set inet helena_hardening lan6 | tr -d '\n\t ')
 case "$lan4" in *10.20.30.0/24*) echo "PASS network sync: lan4 follows the new network" ;; *) echo "FAIL network sync: $lan4"; exit 1 ;; esac
-case "$lan6" in *2001:db8:1:2::/64*) echo "PASS network sync: lan6 has the machine's /64" ;; *) echo "FAIL network sync: $lan6"; exit 1 ;; esac
+case "$lan6" in *2003:c3:1:2::/64*) echo "PASS network sync: lan6 has the machine's /64" ;; *) echo "FAIL network sync: $lan6"; exit 1 ;; esac
 kill "$peer" "$server" 2>/dev/null || true
 nft list table inet helena_hardening | grep -c 'helena:' | sed 's/^/rules with helena markers: /'
 INNER

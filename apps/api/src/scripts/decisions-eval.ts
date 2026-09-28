@@ -9,6 +9,11 @@
 //                 {"name":"qwen3.5-4b-logit","protocol":"openai-logprobs",
 //                  "url":"http://127.0.0.1:18793","keyFile":"…","model":"qwen"}]' \
 //     --out results.json [--concurrency 2] [--debias]
+//
+// A backend on a server that takes logit_bias by token id only (Halogen) names its tokenizer:
+//   {"name":"flash-logit","protocol":"openai-logprobs","url":"http://127.0.0.1:8731",
+//    "model":"halogen-qwen3.8-flash-next",
+//    "tokenizer":"/var/lib/helena-halogen/models/tokenizer/vocab.json"}
 import { readFile, writeFile } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { systemOneUrl, type DecisionEvalSet, type DecisionQuestion } from '@helena/sdk';
@@ -17,6 +22,7 @@ import {
   askByLogprobs,
   readAnswer,
   runDecisionEval,
+  singleTokenIds,
   toSystemOne,
   type EvalReport,
   type OpenAiCompatibleServer,
@@ -34,6 +40,8 @@ interface Backend {
   keyFile?: string;
   model: string;
   debias?: boolean;
+  // A Hugging Face vocab.json: logit_bias by token id (Halogen) instead of by text.
+  tokenizer?: string;
 }
 
 const SETS: Record<string, { set: DecisionEvalSet; threshold: number }> = {
@@ -67,13 +75,23 @@ async function postJson(url: string, key: string | null, body: unknown, signal?:
   return res.json();
 }
 
-async function asker(backend: Backend, debias: boolean) {
+// `concurrency` bounds the requests of the whole eval: the cases at a time, and the questions of
+// one case at a time (1 keeps a single request in flight on a shared local server).
+async function asker(backend: Backend, debias: boolean, concurrency: number) {
   const key = await keyOf(backend);
   const base = backend.url.replace(/\/+$/, '');
   const server: OpenAiCompatibleServer = {
     model: backend.model,
     debias: debias || backend.debias === true,
+    concurrency,
     post: (path, body, signal) => postJson(systemOneUrl(base, path), key, body, signal),
+    ...(backend.tokenizer && {
+      tokenIds: async (texts: string[]) =>
+        singleTokenIds(
+          JSON.parse(await readFile(backend.tokenizer!, 'utf8')) as Record<string, unknown>,
+          texts,
+        ),
+    }),
   };
   return async (context: string, questions: Record<string, DecisionQuestion>) => {
     const started = performance.now();
@@ -134,7 +152,7 @@ async function main() {
     report: EvalReport;
   }[] = [];
   for (const backend of backends) {
-    const ask = await asker(backend, debias);
+    const ask = await asker(backend, debias, concurrency);
     for (const name of classes) {
       const entry = SETS[name];
       if (!entry) throw new Error(`unknown class ${name}`);

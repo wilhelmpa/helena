@@ -18,10 +18,14 @@ User=volition-hermes
 Group=volition
 EnvironmentFile=/var/lib/volition/project-browser/projects/%i/runtime.env
 ExecStartPre=/usr/bin/test -s ${PROJECT_BROWSER_XAUTHORITY}
-# 3840x2160 display pixels: Chromium draws at device scale factor 2 (see the Chromium unit),
-# so a window filling the screen still shows a page 1920x1080 CSS pixels large, as the agent
-# worked at before. The desktop (VNC) view resizes the display to its panel.
-ExecStart=/usr/bin/Xvnc ${PROJECT_BROWSER_DISPLAY} -geometry 3840x2160 -depth 24 -auth ${PROJECT_BROWSER_XAUTHORITY} -interface 127.0.0.1 -websocketPort ${PROJECT_BROWSER_NOVNC_PORT} -rfbport 0 -localhost -nolisten tcp -httpd /usr/share/kasmvnc/www -SecurityTypes None -DisableBasicAuth -AcceptSetDesktopSize -udpFullFrameFrequency 0 -publicIP 127.0.0.1
+# 1920x1080 display pixels (Full HD; 3840x2160 before, a quarter of the framebuffer now).
+# Chromium draws at device scale factor 2 (see the Chromium unit), and its windows are sized to
+# the live view's or the agent's page (window keeper, ../../browser/project-browser-control.mjs),
+# not to the display: a window larger than the display is still drawn in full, so the live
+# view's frames stay one to one and clicks exact (project-browser-resize-x11-proof.mjs with
+# HELENA_PROOF_SCREEN=1920x1080), and the video path grows the display to the page it grabs
+# (fitScreen, project-browser-video.mjs). The desktop (VNC) view resizes the display to its panel.
+ExecStart=/usr/bin/Xvnc ${PROJECT_BROWSER_DISPLAY} -geometry 1920x1080 -depth 24 -auth ${PROJECT_BROWSER_XAUTHORITY} -interface 127.0.0.1 -websocketPort ${PROJECT_BROWSER_NOVNC_PORT} -rfbport 0 -localhost -nolisten tcp -httpd /usr/share/kasmvnc/www -SecurityTypes None -DisableBasicAuth -AcceptSetDesktopSize -udpFullFrameFrequency 0 -publicIP 127.0.0.1
 Restart=on-failure
 RestartSec=2
 TimeoutStopSec=20

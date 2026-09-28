@@ -14,15 +14,20 @@ const THUMBNAIL_TTL_MS = 5_000;
 const TIMEOUT_MS = 5_000;
 const thumbnails = new Map(); // cdpPort -> { at, jpeg }
 
-// One entry per project browser: its slug, the tab in front, and the gateway's state.
+// One entry per project browser: its slug, whether it runs (`power`: "running", "starting",
+// "stopping", "stopped" or "unknown", from project-browser-power.mjs; a browser not asked about
+// counts as running), the tab in front, and the gateway's state. A browser that does not run is
+// not asked for its tabs: the overview never starts one.
 export async function browserOverview(browsers) {
   return Promise.all(
-    browsers.map(async ({ slug, cdpPort }) => {
-      const tabs = await listTabs(cdpPort).catch(() => null);
+    browsers.map(async ({ slug, cdpPort, power = "running" }) => {
+      const asleep = power !== "running" && power !== "unknown";
+      const tabs = asleep ? null : await listTabs(cdpPort).catch(() => null);
       const front = tabs?.find((tab) => tab.active) ?? tabs?.[0] ?? null;
       const { control, handover } = controlStateOf(cdpPort);
       return {
         slug,
+        power,
         reachable: tabs !== null,
         url: front?.url ?? null,
         title: front?.title ?? null,

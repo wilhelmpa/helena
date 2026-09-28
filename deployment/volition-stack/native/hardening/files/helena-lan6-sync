@@ -3,7 +3,7 @@
 
 1. The firewall's home networks (nft sets inet helena_hardening lan4, lan6), when the
    hardening firewall is loaded: the IPv4 prefix of the default-route interface; link-local,
-   unique-local plus eno1's active /64s. The provider changes the IPv6
+   unique-local plus the LAN interface's active /64s. The provider changes the IPv6
    prefix, and a new router can change the IPv4 network; without this the home network's
    clients (SSH included) would be dropped.
 2. The owner sign-in's networks for nginx (/etc/nginx/helena-owner-networks.conf, included in
@@ -80,22 +80,25 @@ def lan_interface(routes6: list[dict], routes4: list[dict]) -> str | None:
     return None
 
 
-def firewall_networks(links: list[dict], routes4: list[dict]) -> tuple[list[str], list[str]]:
-    """lan6: the /64s of every global IPv6 address; lan4: the IPv4 networks of the default
-    route's interface (empty when there is none: never emptied on a link flap)."""
+def firewall_networks(links: list[dict], routes4: list[dict],
+                      routes6: list[dict] | None = None) -> tuple[list[str] | None, list[str]]:
+    """lan6: the active global /64s of the LAN interface (the default route's, IPv6 first);
+    lan4: the IPv4 networks of the IPv4 default route's interface. Each is None/empty when
+    there is no such route, and the set then stays as it is: never emptied on a link flap."""
     v6, v4 = set(), set()
+    dev6 = lan_interface(routes6 or [], routes4)
     dev4 = lan_interface([], routes4)
     for link in links:
         for address in link.get('addr_info') or []:
             if not _active(address) or address.get('scope') != 'global':
                 continue
-            if (address.get('family') == 'inet6' and link.get('ifname') == 'eno1'
+            if (address.get('family') == 'inet6' and link.get('ifname') == dev6
                     and address.get('prefixlen') == 64
                     and ipaddress.ip_address(address['local']).is_global):
                 v6.add(str(ipaddress.ip_interface(f"{address['local']}/64").network))
             elif address.get('family') == 'inet' and link.get('ifname') == dev4:
                 v4.add(str(ipaddress.ip_interface(f"{address['local']}/{address['prefixlen']}").network))
-    return sorted(v6), sorted(v4)
+    return (sorted(v6) if dev6 else None), sorted(v4)
 
 
 def owner_networks(links: list[dict], lan_dev: str | None) -> tuple[list[str], list[str]]:
@@ -130,9 +133,25 @@ def render_nginx(prefixes: list[str], own: list[str], lan_dev: str | None) -> st
     return '\n'.join(lines) + '\n'
 
 
-def nft_script(v6: list[str], v4: list[str]) -> str:
-    lines = ['flush set inet helena_hardening lan6',
-             'add element inet helena_hardening lan6 { fe80::/10, fc00::/7' + ''.join(f', {n}' for n in v6) + ' }']
+# Always in lan6: link-local and unique-local.
+LAN6_BASE = ('fe80::/10', 'fc00::/7')
+
+
+def lan6_elements(v6: list[str]) -> list[str]:
+    """LAN6_BASE plus the prefixes it does not already cover, each once. The set has
+    `flags interval`: nft refuses the whole update ("conflicting intervals specified") when one
+    element lies inside another, e.g. a unique-local /64 inside fc00::/7 (28.09.: 39 failed runs)."""
+    base = [ipaddress.ip_network(n) for n in LAN6_BASE]
+    extra = [ipaddress.ip_network(n, strict=False) for n in v6]
+    extra = [n for n in extra if n.version == 6 and not any(n.subnet_of(b) for b in base)]
+    return [*LAN6_BASE, *(str(n) for n in ipaddress.collapse_addresses(extra))]
+
+
+def nft_script(v6: list[str] | None, v4: list[str]) -> str:
+    lines = []
+    if v6 is not None:
+        lines += ['flush set inet helena_hardening lan6',
+                  'add element inet helena_hardening lan6 { ' + ', '.join(lan6_elements(v6)) + ' }']
     if v4:
         lines += ['flush set inet helena_hardening lan4',
                   'add element inet helena_hardening lan4 { ' + ', '.join(v4) + ' }']
@@ -141,10 +160,13 @@ def nft_script(v6: list[str], v4: list[str]) -> str:
 
 # ── Changing it ──────────────────────────────────────────────────────────────────────────
 
-def sync_firewall(v6: list[str], v4: list[str], *, dry_run: bool) -> int:
+def sync_firewall(v6: list[str] | None, v4: list[str], *, dry_run: bool) -> int:
     if run(['nft', 'list', 'table', *NFT_TABLE.split()]).returncode != 0:
         return 0  # the hardening firewall is not loaded
     script = nft_script(v6, v4)
+    if not script.strip():
+        log('no default route: the firewall sets stay as they are')
+        return 0
     if dry_run:
         log('firewall (dry run):\n' + script.rstrip())
         return 0
@@ -217,7 +239,7 @@ def main(argv: list[str]) -> int:
     status = 0
     dry_run = '--dry-run' in argv
     if '--nginx-only' not in argv:
-        status |= sync_firewall(*firewall_networks(links, routes4), dry_run=dry_run)
+        status |= sync_firewall(*firewall_networks(links, routes4, routes6), dry_run=dry_run)
     if '--firewall-only' not in argv:
         status |= sync_nginx(text, dry_run=dry_run, reload='--no-reload' not in argv)
     return status

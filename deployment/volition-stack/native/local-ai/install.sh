@@ -523,11 +523,17 @@ models_load() {
 
 # ── Models loaded at start (helena-ai-preload.service) ──────────────────────────────────
 
-# The GPU's memory, from the amdgpu driver; the carve-out's size when none is found.
+# The GPU's memory, from the amdgpu driver; the carve-out's size when none is found. With a
+# small BIOS carve-out (UMA 512 MB, since 28 Sept 2026) the models live in GTT, system memory
+# the GPU maps, sized by ttm.pages_limit on the kernel line: then GTT is the budget.
 vram_total() {
   for card in "$R"/sys/class/drm/card*/device; do
     [ "$(cat "$card/vendor" 2>/dev/null)" = 0x1002 ] || continue
-    total=$(cat "$card/mem_info_vram_total" 2>/dev/null) && [ -n "$total" ] && { echo "$total"; return; }
+    total=$(cat "$card/mem_info_vram_total" 2>/dev/null) && [ -n "$total" ] || continue
+    if [ "$total" -lt 4294967296 ]; then
+      gtt=$(cat "$card/mem_info_gtt_total" 2>/dev/null) && [ -n "$gtt" ] && [ "$gtt" -gt "$total" ] && total=$gtt
+    fi
+    echo "$total"; return
   done
   echo "$VRAM_FALLBACK"
 }

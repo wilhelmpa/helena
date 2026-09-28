@@ -720,7 +720,11 @@
       },
       "local-ai": {
         "label": "Local AI",
-        "hint": "Models on this server: on/off, tasks, preloading."
+        "hint": "Models on this machine: servers, kinds of work, judge."
+      },
+      "browser": {
+        "label": "Browser",
+        "hint": "Project browsers on demand: idle time and the ones kept always on."
       },
       "decisions": {
         "label": "Deciders",

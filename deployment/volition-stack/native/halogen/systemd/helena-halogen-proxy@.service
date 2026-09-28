@@ -1,0 +1,20 @@
+# The other half of helena-halogen-proxy@.socket: systemd's own socket proxy to Halogen. A fixed
+# system user, not a dynamic one: the firewall (helena-halogen.nft) lets only named users reach
+# Halogen's port, and this is one of them.
+[Unit]
+Description=Helena Halogen forwarder for isolated agents (port %i)
+Requires=helena-halogen-proxy@%i.socket
+After=helena-halogen-proxy@%i.socket helena-halogen.service
+
+[Service]
+ExecStart=/usr/lib/systemd/systemd-socket-proxyd --exit-idle-time=10min 127.0.0.1:%i
+User=helena-halogen-fwd
+Group=helena-halogen-fwd
+PrivateTmp=yes
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+CapabilityBoundingSet=
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+IPAddressDeny=any
+IPAddressAllow=localhost

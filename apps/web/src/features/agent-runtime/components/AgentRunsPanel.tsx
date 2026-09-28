@@ -1,12 +1,15 @@
 'use client';
 
-import { LoaderCircle } from 'lucide-react';
+import { useState } from 'react';
+import { Archive, ArchiveRestore, LoaderCircle } from 'lucide-react';
+import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 import type { AgentRun } from '@/lib/api/endpoints/agents';
-import { useAgentRuns } from '@/services/aiAgents.service';
+import { useAgentRuns, useSetAgentRunArchived } from '@/services/aiAgents.service';
 import { useRelativeTime } from '@/context/relativeTimeContext';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
 import ListSkeleton from '@/components/common/skeleton/ListSkeleton';
 import { compactTokens } from '@/utils/agentUsage';
 import AutopilotLevelBadge from '@/features/autopilot/components/AutopilotLevelBadge';
@@ -50,18 +53,62 @@ function RunList({
 }) {
   const t = useTranslations('agentRuntime.runs');
   const tCommon = useTranslations('common');
-  const query = useAgentRuns(teamId, agentId);
+  // Runs are never deleted: a finished one is archived out of this list, and the switch
+  // shows the archived ones again.
+  const [showArchived, setShowArchived] = useState(false);
+  const query = useAgentRuns(teamId, agentId, showArchived);
+  const archive = useSetAgentRunArchived(teamId, agentId);
   const runs = query.data?.pages.flatMap((page) => page.items) ?? [];
+  const toggle = (
+    <label className="mb-3 flex items-center justify-end gap-2 text-xs text-muted-foreground">
+      {t('showArchived')}
+      <Switch size="sm" checked={showArchived} onCheckedChange={setShowArchived} />
+    </label>
+  );
   if (query.isPending) return <ListSkeleton rows={5} className="p-4" rowClassName="h-11" />;
-  if (runs.length === 0) return <p className="p-4 text-sm text-muted-foreground">{t('empty')}</p>;
+  if (runs.length === 0)
+    return (
+      <div className="p-4">
+        {toggle}
+        <p className="text-sm text-muted-foreground">{t('empty')}</p>
+      </div>
+    );
   return (
     <div className="min-h-0 flex-1 overflow-y-auto p-4">
+      {toggle}
       <ul className="divide-y divide-border/50 overflow-hidden rounded-md bg-card">
-        {runs.map((run) => (
-          <li key={run.id}>
-            <RunRow run={run} onOpen={() => onOpen(run.id)} />
-          </li>
-        ))}
+        {runs.map((run) => {
+          const archived = Boolean(run.archivedAt);
+          return (
+            <li key={run.id} className="flex items-center">
+              <div className="min-w-0 flex-1">
+                <RunRow run={run} onOpen={() => onOpen(run.id)} />
+              </div>
+              {run.status !== 'pending' && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="me-1 size-8 shrink-0 text-muted-foreground"
+                  title={archived ? t('unarchive') : t('archive')}
+                  aria-label={archived ? t('unarchive') : t('archive')}
+                  disabled={archive.isPending}
+                  onClick={() =>
+                    archive.mutate(
+                      { runId: run.id, archived: !archived },
+                      { onError: () => toast.error(t('archiveFailed')) },
+                    )
+                  }
+                >
+                  {archived ? (
+                    <ArchiveRestore className="size-4" />
+                  ) : (
+                    <Archive className="size-4" />
+                  )}
+                </Button>
+              )}
+            </li>
+          );
+        })}
       </ul>
       {query.hasNextPage && (
         <Button
@@ -112,6 +159,11 @@ export function RunRow({ run, onOpen }: { run: AgentRun; onOpen: () => void }) {
       </Badge>
       <span className="min-w-0 flex-1 truncate">{subject}</span>
       <AutopilotLevelBadge level={run.autopilotLevel} />
+      {run.archivedAt && (
+        <Badge variant="outline" className="shrink-0 text-muted-foreground">
+          {t('archived')}
+        </Badge>
+      )}
       {run.blockedQuestion && (
         <Badge variant="outline" className="shrink-0 border-status-waiting/50 text-status-waiting">
           {t('blocked')}

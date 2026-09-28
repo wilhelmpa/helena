@@ -68,6 +68,23 @@ const CHAT_REFLECTION_POLL_MS = 60_000;
 
 type Log = (message: string) => void;
 
+// How often a wait checks whether the runner is stopping.
+const STOP_CHECK_MS = 250;
+
+// A wait between polls that ends as soon as the runner is stopping. The feeds' idle waits
+// (up to a minute for chat reflections) used to hold a stopped runner past its unit's
+// TimeoutStopSec, so systemd killed it with SIGKILL instead of letting it hand its runs back
+// (journal, 2026-09-28 18:57 and 19:33). `stopping` is read each time: SIGINT, SIGTERM, a
+// descriptor reload and a failed feed all set it without telling the waits.
+async function pause(state: { readonly stopping: boolean }, ms: number): Promise<void> {
+  const end = Date.now() + ms;
+  while (!state.stopping) {
+    const left = end - Date.now();
+    if (left <= 0) return;
+    await sleep(Math.min(left, STOP_CHECK_MS));
+  }
+}
+
 // Shared by every agent the runner serves. `stopping` ends the claiming; `releasing` says
 // the runs in flight are handed back instead of finished; `stops` holds the controllers
 // that kill the commands of those runs. Chat answers in flight are left to finish.
@@ -417,7 +434,7 @@ async function drain<T>(
         log(`claim failed: ${String(err)}`);
         // Backing off here and not in onEmpty: a claim that waits on the server returns
         // instantly when it fails, and retrying it at that rate would hammer both sides.
-        await sleep(ERROR_BACKOFF_MS);
+        await pause(state, ERROR_BACKOFF_MS);
         continue;
       }
       if (!item) {
@@ -477,7 +494,7 @@ async function publishCatalog(
     } catch (err) {
       if (err instanceof RequestError && (err.status === 401 || err.status === 403)) return;
       log(`publishing the model catalog failed: ${String(err)}`);
-      await sleep(CATALOG_RETRY_MS);
+      await pause(state, CATALOG_RETRY_MS);
     }
   }
 }
@@ -537,7 +554,7 @@ async function serve(shared: State, config: RunnerConfig): Promise<void> {
         }
       },
       async () => {
-        await sleep(config.pollIntervalMs);
+        await pause(state, config.pollIntervalMs);
         return true;
       },
     ),
@@ -597,7 +614,7 @@ async function serve(shared: State, config: RunnerConfig): Promise<void> {
       },
       async () => {
         if (!chatReflectionsSupported) return false;
-        await sleep(CHAT_REFLECTION_POLL_MS);
+        await pause(state, CHAT_REFLECTION_POLL_MS);
         return true;
       },
     ),

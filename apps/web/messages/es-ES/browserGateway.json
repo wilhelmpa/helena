@@ -22,5 +22,27 @@
     "failed": "El navegador no pudo hacerlo."
   },
   "linkScopeMissing": "No se conoce el proyecto de origen de este enlace. Abre primero su proyecto o chat.",
-  "linkBrowserUnavailable": "El navegador interno de este proyecto no está configurado."
+  "linkBrowserUnavailable": "El navegador interno de este proyecto no está configurado.",
+  "stopped": "En pausa",
+  "stoppedHint": "Se inicia al abrirlo",
+  "starting": "Iniciando…",
+  "power": {
+    "saved": "Guardado",
+    "idleTitle": "Navegadores de proyecto",
+    "idle": "Detener tras una inactividad de",
+    "idleHint": "Un navegador que nadie mira y que ningún agente usa se detiene tras este tiempo. Vuelve a iniciarse en segundos la próxima vez que se abra o que un agente lo use; las pestañas y los inicios de sesión se conservan.",
+    "minutes": "{count, plural, one {# minuto} other {# minutos}}",
+    "never": "Nunca (siempre activo)",
+    "alwaysOnTitle": "Siempre activo",
+    "alwaysOnFor": "Mantener siempre activo el navegador de {name}",
+    "home": "Helena",
+    "state": {
+      "running": "En marcha",
+      "starting": "Iniciando…",
+      "stopping": "Deteniendo…",
+      "stopped": "En pausa: se inicia al abrirlo",
+      "unknown": "Estado desconocido",
+      "none": "Aún no hay navegador"
+    }
+  }
 }

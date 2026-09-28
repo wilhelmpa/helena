@@ -26,10 +26,21 @@ function baseUrl(): URL {
   return url;
 }
 
+// A key must be readable by its owner only. systemd's own credential directory is the
+// exception: on a native boot it presents LoadCredential files as 0440 (0400 inside a
+// container) and guards the directory itself, so group read is fine there. Without this the
+// live API (LoadCredential=syncthing_api_key) took Syncthing for "not set up" (28.09.).
+function secretModeMask(file: string): number {
+  const dir = process.env.CREDENTIALS_DIRECTORY;
+  return dir && file.startsWith(`${dir}/`) ? 0o037 : 0o077;
+}
+
 async function apiKey(): Promise<string> {
   const file = process.env.SYNCTHING_API_KEY_FILE?.trim() || '/run/secrets/syncthing_api_key';
   const stat = await lstat(file).catch(() => null);
-  if (!stat?.isFile() || (stat.mode & 0o077) !== 0) throw new SyncthingUnavailable('unconfigured');
+  if (!stat?.isFile() || (stat.mode & secretModeMask(file)) !== 0) {
+    throw new SyncthingUnavailable('unconfigured');
+  }
   const key = (await readFile(file, 'utf8').catch(() => '')).trim();
   if (key.length < 32 || key.length > 256) throw new SyncthingUnavailable('unconfigured');
   return key;

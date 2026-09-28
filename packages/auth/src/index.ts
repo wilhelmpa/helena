@@ -764,6 +764,7 @@ export async function getSessionFromHeaders(
 }
 
 export { RateLimitedError, resetKeyRateLimitForTests } from './key-rate-limit';
+export { pruneExpiredSessions } from './session-prune';
 
 // The Cloudflare sign-in's seam: apps/api registers the edge-access check as its verifier.
 export {

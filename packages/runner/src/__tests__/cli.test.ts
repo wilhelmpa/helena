@@ -110,7 +110,54 @@ function alive(pid: number): boolean {
   }
 }
 
+// No work anywhere: every feed ends up in its idle wait, the chat reflections' a minute long.
+async function idlePlan() {
+  const requests: string[] = [];
+  const server: Server = createServer((request, response) => {
+    const path = request.url ?? '';
+    requests.push(path);
+    response.setHeader('content-type', 'application/json');
+    const answer = (body: unknown, delayMs = 0) =>
+      setTimeout(() => response.end(JSON.stringify(body)), delayMs);
+    if (path === '/agent-runs/claim') return answer({ run: null });
+    if (path === '/agent-chat-reflections/claim') return answer({ reflection: null });
+    // The server holds these claims; a short hold keeps the loop from spinning.
+    if (path === '/agent-runtime/requests/claim') return answer({ request: null }, 200);
+    if (path === '/agent-chats/claim') {
+      response.statusCode = 404;
+      return answer({});
+    }
+    response.statusCode = 204;
+    response.end();
+  });
+  await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+  cleanup.push(() => new Promise((resolve) => server.close(() => resolve())));
+  const address = server.address();
+  if (!address || typeof address === 'string') throw new Error('test server did not bind');
+  return { url: `http://127.0.0.1:${address.port}`, requests };
+}
+
 describe('runner process', () => {
+  it("stops at once while its feeds wait for work (well within the unit's TimeoutStopSec)", async () => {
+    const { url, requests } = await idlePlan();
+    const { child, exited } = await startRunner(url, 'true');
+    await until(() => requests.includes('/agent-chat-reflections/claim'));
+    await sleep(300);
+    const stopped = Date.now();
+    child.kill('SIGTERM');
+    expect(await Promise.race([exited, sleep(5_000).then(() => 'timeout')])).toBe(0);
+    expect(Date.now() - stopped).toBeLessThan(3_000);
+  }, 15_000);
+
+  it('finishes a SIGINT drain at once when nothing is in flight', async () => {
+    const { url, requests } = await idlePlan();
+    const { child, exited } = await startRunner(url, 'true');
+    await until(() => requests.includes('/agent-chat-reflections/claim'));
+    await sleep(300);
+    child.kill('SIGINT');
+    expect(await Promise.race([exited, sleep(5_000).then(() => 'timeout')])).toBe(0);
+  }, 15_000);
+
   it('hands a run back and kills its command when it is stopped', async () => {
     const { url, requests } = await plan([queuedRun(1)]);
     const { dir, child, exited } = await startRunner(url, 'echo $$ > "$DIR/pid"; exec sleep 30');

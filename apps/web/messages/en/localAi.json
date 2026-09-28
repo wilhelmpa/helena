@@ -24,7 +24,8 @@
     "settings": "Settings",
     "unitSwitch": "Use the {unit}",
     "vram": "{used} of {total}",
-    "noModel": "No model loaded"
+    "noModel": "No model loaded",
+    "gtt": "{used} of {total} (GTT)"
   },
   "blockers": {
     "not-wired": "Not connected yet",
@@ -89,7 +90,7 @@
   },
   "servers": {
     "title": "Model servers",
-    "description": "Lemonade on this machine (GPU and NPU) or another OpenAI-compatible server. Its models appear in every model picker while local AI is on.",
+    "description": "Halogen or Lemonade on this machine, or another OpenAI-compatible server. Its models are in every model picker while local AI is on.",
     "add": "Add server",
     "none": "No server yet. Install local AI with native/local-ai/install.sh, then add it here.",
     "reachable": "Reachable · {version}",
@@ -116,7 +117,28 @@
     "keyFile": "Key file (below /etc/helena)",
     "key": "Key",
     "cancel": "Cancel",
-    "save": "Add"
+    "save": "Add",
+    "edit": "Edit server",
+    "editTitle": "Edit {name}",
+    "saveChanges": "Save",
+    "keyKept": "The stored key stays",
+    "contextLength": "Context in tokens (for the agents)",
+    "capabilities": {
+      "title": "What the chat models can do",
+      "own": "Set here",
+      "derived": "From the server",
+      "tools": "Tools",
+      "reasoning": "Thinking",
+      "vision": "Images"
+    },
+    "load": {
+      "speed": "{output} tokens/s out, {prompt} tokens/s in",
+      "slots": "{busy} of {slots} slots busy, {queued} waiting",
+      "memory": "{gb} GB memory",
+      "kv": "KV cache {percent} %",
+      "gpu": "GPU {percent} %"
+    },
+    "disabled": "Off"
   },
   "presets": {
     "title": "Preset",
@@ -132,6 +154,7 @@
   },
   "serverTypes": {
     "lemonade": "Lemonade Server (GPU + NPU)",
+    "halogen": "Halogen (Qwen3.8-Flash-Next, GPU)",
     "openaiCompatible": "OpenAI-compatible server",
     "whisperCpp": "whisper.cpp (speech recognition, GPU)",
     "qwenTts": "Qwen3-TTS (voice, GPU)"
@@ -187,7 +210,8 @@
     "hint": "Update through native/local-ai/install.sh, then evaluate again.",
     "whisperBuildRequired": "A verified Whisper build and speech proof are required before this update.",
     "whisperMaintenanceRequired": "A Root-authorized voice maintenance window is required. Check again after it is opened.",
-    "whisperRecoveryRequired": "The previous Whisper update needs recovery before voice can resume."
+    "whisperRecoveryRequired": "The previous Whisper update needs recovery before voice can resume.",
+    "halogenHint": "New version: put its digest and version in native/halogen/install.sh, install, then restart Halogen."
   },
   "pickerMark": "local",
   "tile": {
@@ -301,5 +325,61 @@
       "contextNeedsParallel": "Set the parallel slots first.",
       "contextTotal": "Parallel slots times context per slot may be at most 1048576 tokens."
     }
+  },
+  "judge": {
+    "title": "Judge",
+    "description": "The model that scores the texts of the \"Deutsch-Texte\" eval. A program cannot check them.",
+    "kind": "Kind",
+    "kinds": {
+      "run": "Run on a subscription model",
+      "endpoint": "OpenAI-compatible endpoint",
+      "off": "Off"
+    },
+    "model": "Model",
+    "agent": "Agent for the run",
+    "agentAuto": "Automatic (Home)",
+    "reasoning": "Thinking",
+    "reasoningLevels": {
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High"
+    },
+    "baseUrl": "Address (…/v1)",
+    "key": "Key",
+    "keyKept": "The stored key stays",
+    "save": "Save"
+  },
+  "escalation": {
+    "title": "Escalation",
+    "description": "When a strong subscription model takes over from the local one: hard work, unsure answers, failures.",
+    "draft": "Draft – not active yet",
+    "enabled": "Escalation on",
+    "defaultModel": "Default model",
+    "model": "Model",
+    "kinds": {
+      "coding": "Larger programming work",
+      "architecture": "Architecture",
+      "security": "Security",
+      "legal": "Law and contracts",
+      "external-text": "Texts for outside"
+    },
+    "uncertainty": "Unsure decision",
+    "threshold": "below",
+    "failure": "After a failure",
+    "localAttempts": "Local attempts",
+    "failures": {
+      "tests-failed": "Tests red",
+      "loop": "Loop",
+      "timeout": "Time limit",
+      "error": "Error"
+    },
+    "pinsNone": "No fixed choices for agents, projects or tasks.",
+    "pins": "{count} fixed choices for agents, projects or tasks."
+  },
+  "classGroups": {
+    "none": "No kind of work is ready yet: pass an eval first.",
+    "active": "Runs locally",
+    "ready": "Ready",
+    "more": "More kinds of work ({count})"
   }
 }

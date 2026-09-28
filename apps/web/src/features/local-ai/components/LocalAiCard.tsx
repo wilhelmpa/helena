@@ -18,6 +18,7 @@ import {
   UNITS,
   classToggle,
   gib,
+  gpuMemory,
   localShare,
   percent,
   resolveLabel,
@@ -32,7 +33,14 @@ export const LOCAL_AI_SETTINGS_HREF = '/god/local-ai';
 // and what runs right now. Self-contained (its own queries), so the dashboard's widget
 // registry (hub/dashboard) mounts it as it is; the detailed settings are one link away.
 // Off, Helena works exactly as without local AI: every agent on its configured model.
-export default function LocalAiCard({ className }: { className?: string }) {
+export default function LocalAiCard({
+  className,
+  showClasses = true,
+}: {
+  className?: string;
+  // The settings page lists the kinds of work itself, with their models and evals.
+  showClasses?: boolean;
+}) {
   const t = useTranslations('localAi');
   const locale = useLocale();
   const status = useLocalAiStatus();
@@ -53,7 +61,9 @@ export default function LocalAiCard({ className }: { className?: string }) {
           ? { status: 'danger', label: t('card.serverDown') }
           : { status: 'success', label: t('card.on') };
   const share = data ? localShare(data.usage) : null;
-  const classes = (settings.data?.classes ?? []).filter((entry) => !entry.experimental);
+  const classes = showClasses
+    ? (settings.data?.classes ?? []).filter((entry) => !entry.experimental)
+    : [];
 
   return (
     <section
@@ -166,7 +176,7 @@ function UnitTile({
   const entry = status.units[unit];
   const state = unitState(status, unit);
   const loaded = entry.loaded.map((model) => shortModel(model.modelId));
-  const gpu = unit === 'gpu' ? status.units.gpu : null;
+  const memory = unit === 'gpu' ? gpuMemory(status.units.gpu) : null;
   return (
     <div className="flex min-w-0 flex-col gap-1 rounded-md border px-3 py-2">
       <div className="flex items-center gap-2">
@@ -184,9 +194,12 @@ function UnitTile({
       </div>
       <div className="flex items-center gap-2 text-xs text-muted-foreground">
         <span>{percent(entry.busyPercent)}</span>
-        {gpu && gpu.vramTotalBytes != null && (
+        {memory && (
           <span>
-            {t('card.vram', { used: gib(gpu.vramUsedBytes), total: gib(gpu.vramTotalBytes) })}
+            {t(memory.kind === 'gtt' ? 'card.gtt' : 'card.vram', {
+              used: gib(memory.used),
+              total: gib(memory.total),
+            })}
           </span>
         )}
       </div>

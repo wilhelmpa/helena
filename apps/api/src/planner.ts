@@ -65,6 +65,7 @@ import { pluginAdminRoutes, pluginSlotRoutes, projectExtensionRoutes } from './m
 import { templateBundleRoutes } from './modules/template-bundles';
 import { modelAvailabilityRoutes } from './modules/model-availability';
 import { localAiRoutes } from './modules/local-ai';
+import { escalationRoutes } from './modules/escalation';
 import { voiceRoutes } from './modules/voice';
 import { agentRunnerRoutes } from './modules/agents/runner';
 import { agentChatRoutes } from './modules/agents/chat';
@@ -135,6 +136,7 @@ const plannerOperations = new Elysia({ name: 'planner-operations' })
   .use(templateBundleRoutes)
   .use(modelAvailabilityRoutes)
   .use(localAiRoutes)
+  .use(escalationRoutes)
   .use(voiceRoutes);
 
 // Administrator → Server and its Updates tab, as one plugin: one more link in the chain below

@@ -145,7 +145,10 @@
       "bookmarks": "Bookmarks",
       "bookmarkPage": "Bookmark this page",
       "removeBookmark": "Remove bookmark",
-      "noBookmarks": "No bookmarks yet"
+      "noBookmarks": "No bookmarks yet",
+      "browserStarting": "Starting the browser…",
+      "browserStartingShort": "Starting the browser…",
+      "browserStartFailed": "The browser did not start. Trying again…"
     },
     "browserPreviews": {
       "title": "Previews",
