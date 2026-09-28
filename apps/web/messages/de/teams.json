@@ -39,7 +39,7 @@
       "description": "Wiederverwendbare Anweisungen, die Agenten bei Bedarf laden."
     },
     "agentTools": {
-      "title": "Tools",
+      "title": "Werkzeuge",
       "description": "MCP-Server, die die Hermes-Agenten des Teams starten, und Tools mit Zugangsdaten einer Integration."
     },
     "agents": {
@@ -237,7 +237,7 @@
     "deleteMessage": "Zugangsdaten für {integration} löschen? Agenten und Tools, die sie nutzen, funktionieren erst wieder, wenn du neue hinzufügst.",
     "groups": {
       "tool": {
-        "title": "Tools",
+        "title": "Werkzeuge",
         "hint": "Integrationen, die ein Agent als Tools aufrufen kann"
       }
     },
@@ -296,7 +296,7 @@
     "add": "Tool hinzufügen",
     "delete": "Tool löschen",
     "back": "Zurück zu den Tools",
-    "tool": "Tool",
+    "tool": "Werkzeug",
     "scopes": "Scopes",
     "noScopes": "Keine Scopes",
     "empty": "Noch keine Tools",
@@ -405,7 +405,7 @@
       "modelsError": "Der Modellkatalog des Runners ist vorübergehend nicht verfügbar.",
       "modelsEmpty": "Der verbundene Runner hat noch keine Modelle veröffentlicht.",
       "modelsHint": "Vom verbundenen Runner-Anbieter veröffentlichte Modelle.",
-      "reasoning": "Reasoning",
+      "reasoning": "Denktiefe",
       "maxConcurrentChats": "Parallele Chats",
       "maxConcurrentChatsHint": "Wie viele Chats dieses Agenten ein Mitglied gleichzeitig antworten lassen kann. Weitere Nachrichten werden abgelehnt, bis einer fertig ist.",
       "mcpGrants": "MCP-Freigaben",
@@ -501,7 +501,7 @@
     "goToSkills": "Zu den Skills",
     "searchSkills": "Skills suchen",
     "noDescription": "Keine Beschreibung",
-    "tools": "Tools",
+    "tools": "Werkzeuge",
     "toolsHint": "Externe Integrationen, die der Agent aufrufen kann",
     "noTools": "Keine Tools eingerichtet",
     "noToolsHint": "Richte ein Tool ein und aktiviere es dann hier.",
@@ -566,7 +566,7 @@
       "title": "Fähigkeiten",
       "hint": "Was der Agent in Hermes tun kann: Toolsets, MCP-Server, Skills und Gedächtnis",
       "notReported": "Der Runner hat noch nicht gemeldet, was der Agent kann.",
-      "toolsets": "Toolsets",
+      "toolsets": "Werkzeugsätze",
       "toolsetsHint": "Deaktiviere ein Toolset und speichere, damit der Agent es in Chats und Läufen nicht mehr nutzt.",
       "templateToolsetsHint": "Gilt für jede Kopie dieser Vorlage. Deaktiviere ein Toolset und speichere, damit die Kopien es in Chats und Läufen nicht nutzen.",
       "toolsetsReadOnly": "Nur Mitglieder, die Agenten bearbeiten dürfen, können Toolsets deaktivieren.",
@@ -714,7 +714,7 @@
       "resetDone": "{group} auf die Vorlage zurückgesetzt",
       "groups": {
         "skills": "Skills",
-        "tools": "Tools",
+        "tools": "Werkzeuge",
         "mcpServers": "MCP-Server",
         "approvals": "Freigabe-Regeln",
         "instructions": "Anweisungen",

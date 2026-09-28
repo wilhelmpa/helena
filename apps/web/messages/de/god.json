@@ -100,7 +100,7 @@
       "views": "Ansichten",
       "agents": "KI-Agenten",
       "skills": "Skills",
-      "tools": "Tools"
+      "tools": "Werkzeuge"
     },
     "members": "Mitglieder",
     "noMembersTitle": "Keine Mitglieder",
@@ -133,7 +133,7 @@
       "members": "Mitglieder",
       "agents": "KI-Agenten",
       "skills": "Skills",
-      "tools": "Tools",
+      "tools": "Werkzeuge",
       "roles": "Projektrollen"
     },
     "projects": "Projekte",
