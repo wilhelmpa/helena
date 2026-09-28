@@ -48,6 +48,8 @@ test('Home navigation and project switcher work with no HOME project row', () =>
     </NextIntlClientProvider>,
   );
   assert.match(html, /Home/);
-  assert.match(html, /Alle/);
+  // The switcher shows the dot, the name and the arrow only, no key like "ALLE"
+  // (docs/design-system.md §8).
+  assert.doesNotMatch(html, /Alle/);
   assert.doesNotMatch(html, /Marketing/);
 });

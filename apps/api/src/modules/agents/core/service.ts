@@ -27,7 +27,7 @@ import { getDefaultRoleId } from '#modules/roles/service';
 import { deleteAccount } from '#shared/account-deletion';
 import { runtimeFileKind } from '../runtime-files/paths';
 import { maxTurnsLimit, runBudgetSecondsLimit } from '../model';
-import { isHomeAgent, notHomeAgent } from './home-agent';
+import { notHomeAgent } from './home-agent';
 import { nextHeartbeatAt, validateHeartbeatClock, type HeartbeatClock } from './heartbeat-time';
 import { copyAgentBudgets, copyAgentLevel } from '#modules/autopilot/copy';
 import { agentModelRefusal } from '#modules/model-availability/service';
