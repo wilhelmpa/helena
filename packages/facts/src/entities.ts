@@ -6,6 +6,8 @@
 
 const PATTERNS = [
   /\b(\p{Lu}[\p{Ll}\d]+(?:\s+\p{Lu}[\p{Ll}\d]+)+)\b/gu,
+  // Capitalised compounds with a hyphen (Deploy-Tag, E-Mail-Konto).
+  /\b(\p{Lu}[\p{L}\d]*(?:-[\p{L}\d]+)+)\b/gu,
   /"([^"\n]{2,60})"/g,
   /„([^“\n]{2,60})“/g,
   /\b([A-Z][A-Z0-9]{1,9}-\d+)\b/g,
@@ -14,6 +16,9 @@ const PATTERNS = [
 ];
 
 const STOP = new Set(['ich', 'du', 'er', 'sie', 'es', 'wir', 'ihr', 'ok', 'ja', 'nein']);
+// Words that open a sentence or a noun phrase and are no part of a name.
+const LEADING =
+  /^(der|die|das|den|dem|des|ein|eine|einer|einen|einem|eines|kein|keine|mein|meine|dein|unser|unsere|jeder|jede|jedes|dieser|diese|dieses|the|a|an|this|that|our|my)\s+/i;
 
 export function extractEntities(text: string, given: string[] = []): string[] {
   const found: string[] = [...given];
@@ -22,7 +27,13 @@ export function extractEntities(text: string, given: string[] = []): string[] {
   }
   const unique = new Map<string, string>();
   for (const raw of found) {
-    const name = raw.trim().replace(/[.,;:]+$/, '');
+    let name = raw.trim().replace(/[.,;:]+$/, '');
+    // "Der Owner" is the owner; a single capitalised word left over is no name (German
+    // capitalises every noun), unless it was given or has capitals or digits inside.
+    if (LEADING.test(name)) {
+      name = name.replace(LEADING, '');
+      if (!/\s/.test(name) && !given.includes(name) && !/\p{Ll}\p{Lu}|\d|-/u.test(name)) continue;
+    }
     if (name.length < 2 || name.length > 80 || STOP.has(name.toLowerCase())) continue;
     if (!unique.has(name.toLowerCase())) unique.set(name.toLowerCase(), name);
   }

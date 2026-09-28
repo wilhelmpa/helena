@@ -134,6 +134,13 @@ describe('entities and the guard', () => {
     expect(entities).not.toContain('Server');
   });
 
+  test('drops leading articles and keeps hyphenated names', () => {
+    const entities = extractEntities('Der Deploy-Tag ist Montag, sagt Der Owner.');
+    expect(entities).toContain('Deploy-Tag');
+    expect(entities.some((name) => /^der\b/i.test(name))).toBe(false);
+    expect(entities).not.toContain('Owner');
+  });
+
   test('refuses secrets and long texts', () => {
     expect(refuseFact('Der API-Key ist sk-ant-abcdefghijklmnopqrstuvwx')).not.toBeNull();
     expect(refuseFact('password: hunter22')).not.toBeNull();
