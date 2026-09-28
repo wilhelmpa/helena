@@ -41,6 +41,7 @@ PrivateTmp=yes
 ProtectHome=yes
 ProtectSystem=strict
 ReadWritePaths=/var/lib/volition/plan /srv/volition/vault
+ReadWritePaths=-/var/lib/helena-ai/config
 RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK
 TasksMax=infinity
 

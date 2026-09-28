@@ -41,6 +41,14 @@ import { HttpError, iso } from '#shared/lib';
 import { joinUrl, openAiEvalContext } from './eval-context';
 import { LEMONADE, LEMONADE_DEFAULT_BASE_URL } from './server-types';
 import { localAiGuard } from './guard';
+import {
+  readModelOptions,
+  saveModelOptions,
+  validateModelOptions,
+  type LocalModelOptions,
+} from './model-options';
+import { CODING_TASKS } from '../../scripts/agentic-coding/tasks';
+import { evaluateCodingTask } from '../../scripts/agentic-coding/run';
 
 // Local AI in the API (docs/helena-decisions/local-ai-platform.md): the model servers, their
 // status and models, the policy (master switch, units, task classes), the evals that gate a
@@ -180,7 +188,7 @@ export interface ServerInput {
   contextLength?: number;
 }
 
-function serverView(row: ModelServerRow) {
+function serverView(row: ModelServerRow, options: Record<string, LocalModelOptions> = {}) {
   const key: 'file' | 'stored' | 'none' | 'invalid' =
     row.keySource === 'none'
       ? 'none'
@@ -201,7 +209,11 @@ function serverView(row: ModelServerRow) {
     enabled: row.enabled,
     contextLength: row.contextLength,
     provider: localProviderName(row.slug),
-    models: row.models.map((model) => ({ ...model, modelId: localModelId(row.slug, model.id) })),
+    models: row.models.map((model) => ({
+      ...model,
+      modelId: localModelId(row.slug, model.id),
+      startOptions: row.kind === LEMONADE ? (options[model.id] ?? null) : null,
+    })),
     status: row.status,
     checkedAt: row.checkedAt ? iso(row.checkedAt) : null,
   };
@@ -210,7 +222,26 @@ function serverView(row: ModelServerRow) {
 export type ServerView = ReturnType<typeof serverView>;
 
 export async function listServers(): Promise<ServerView[]> {
-  return (await listModelServers()).map(serverView);
+  const [servers, options] = await Promise.all([listModelServers(), readModelOptions()]);
+  return servers.map((server) => serverView(server, options));
+}
+
+export async function updateModelOptions(
+  serverId: number,
+  modelName: string,
+  options: LocalModelOptions,
+) {
+  const server = (await listModelServers()).find((row) => row.id === serverId);
+  if (!server || server.kind !== LEMONADE) throw new HttpError(404, 'No Lemonade server');
+  if (!server.models.some((model) => model.id === modelName))
+    throw new HttpError(404, 'The server does not list this model');
+  try {
+    validateModelOptions(options);
+  } catch (error) {
+    throw new HttpError(400, error instanceof Error ? error.message : String(error));
+  }
+  await saveModelOptions(modelName, options);
+  return options;
 }
 
 function checkContext(value: number | undefined): number | undefined {
@@ -316,7 +347,7 @@ export async function refreshServer(id: number): Promise<ServerView> {
 // (60 s). So it runs in the background, like the decision evals: the request answers 202 with
 // the eval's row, `running`, and its score comes in on the row. An eval that has not finished
 // after this long was cut off (the API restarted) and no longer holds its class and model.
-export const EVAL_STALE_MS = 30 * 60_000;
+export const EVAL_STALE_MS = 90 * 60_000;
 
 export type EvalStatus = 'running' | 'done' | 'stale';
 
@@ -333,12 +364,34 @@ async function evaluateInto(
   let values: Partial<typeof helenaLocalAiEval.$inferInsert>;
   try {
     const key = await readModelServerKey(server);
+    const judgeBase = process.env.LOCAL_AI_JUDGE_BASE_URL;
+    const judge = judgeBase
+      ? openAiEvalContext({
+          baseUrl: judgeBase,
+          key: process.env.LOCAL_AI_JUDGE_API_KEY ?? null,
+          model: process.env.LOCAL_AI_JUDGE_MODEL ?? 'claude-opus-4-6',
+        })
+      : null;
     const result = await entry.evaluate!(
       openAiEvalContext({
         baseUrl: server.baseUrl,
         key,
         model: model.id,
         thinking: entry.thinking ?? 'off',
+        judge: judge?.chat,
+        runCodingTask:
+          entry.id === 'agentic-coding'
+            ? async (id) => {
+                const task = CODING_TASKS.find((item) => item.id === id);
+                if (!task) throw new Error(`Unknown coding task ${id}`);
+                return evaluateCodingTask(
+                  task,
+                  model.id,
+                  localProviderName(server.slug),
+                  process.env.LOCAL_AI_EVAL_HERMES_BIN ?? 'hermes',
+                );
+              }
+            : undefined,
       }),
     );
     values = {
@@ -346,7 +399,7 @@ async function evaluateInto(
       passed: result.score >= threshold,
       cases: result.cases.length,
       details: result.cases
-        .filter((item) => !item.passed)
+        .filter((item) => entry.id === 'agentic-coding' || !item.passed)
         .slice(0, 20)
         .map((item) => ({ id: item.id, detail: item.detail?.slice(0, 200) ?? null })),
       latencyMsP50: result.latencyMsP50 === null ? null : Math.round(result.latencyMsP50),
@@ -447,6 +500,7 @@ function evalView(row: typeof helenaLocalAiEval.$inferSelect, slug: string, now 
     modelId: localModelId(slug, row.model),
     status,
     score: row.score,
+    score100: row.classId === 'deutsch-texte' ? Math.round(row.score * 100) : null,
     threshold: row.threshold,
     passed: row.passed,
     cases: row.cases,
@@ -1080,15 +1134,16 @@ export async function localAiStatus() {
 // ── The settings page ──────────────────────────────────────────────────────────────────
 
 export async function localAiSettings() {
-  const [policy, servers, evals, running] = await Promise.all([
+  const [policy, servers, evals, running, options] = await Promise.all([
     readLocalAiPolicy(),
     listModelServers(),
     latestEvals(),
     evalsInProgress(),
+    readModelOptions(),
   ]);
   return {
     policy,
-    servers: servers.map(serverView),
+    servers: servers.map((server) => serverView(server, options)),
     serverTypes: serverTypes().map((type) => ({
       id: type.id,
       label: type.label,

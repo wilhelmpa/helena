@@ -9,6 +9,8 @@ import {
   evaluateTriage,
 } from './evals';
 import { VOICE_REPLY_THRESHOLD, evaluateVoiceReply } from '#modules/voice/reply-eval';
+import { evaluateGermanTexts } from './german-texts-eval';
+import { evaluateAgenticCoding } from './agentic-coding-eval';
 
 // The kinds of work local AI may take (docs/helena-decisions/local-ai-platform.md §6), as
 // the built-in plugin `helena.local-ai` registers them. Background work and automation only:
@@ -35,6 +37,34 @@ const description = (id: string) => ({ i18n: `localAi.classes.${id}.description`
 const PREFER_ONLY: readonly LocalAiMode[] = ['off', 'prefer'];
 
 export const BUILTIN_TASK_CLASSES: LocalAiTaskClass[] = [
+  {
+    id: 'agentic-coding',
+    label: 'Agentic Coding',
+    description: 'Twelve disposable TypeScript and Python repositories solved with Hermes tools',
+    unit: 'gpu',
+    capability: 'tools',
+    priority: 'batch',
+    thinking: 'low',
+    inMasterDefault: false,
+    wired: false,
+    experimental: true,
+    evaluate: evaluateAgenticCoding,
+    threshold: 0.75,
+  },
+  {
+    id: 'deutsch-texte',
+    label: 'Deutsche Texte',
+    description: 'Support replies, daily briefings and mail summaries judged by a second model',
+    unit: 'gpu',
+    capability: 'chat',
+    priority: 'batch',
+    thinking: 'off',
+    inMasterDefault: false,
+    wired: false,
+    experimental: true,
+    evaluate: evaluateGermanTexts,
+    threshold: 0.8,
+  },
   {
     id: 'embeddings',
     label: label('embeddings'),

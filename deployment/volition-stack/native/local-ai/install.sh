@@ -63,6 +63,7 @@ ETC=$R/etc/helena
 KEY=${HELENA_AI_KEY_FILE:-$ETC/local-ai.key}
 # The models loaded and pinned whenever Lemonade starts (`models preload set`).
 PRELOAD=$ETC/local-ai-preload
+MODEL_OPTIONS=$R/var/lib/helena-ai/config/model-options.json
 # The group the API reads the key through: on Kingston the API user's secrets group
 # `volition-plan-secrets` (there is no group `volition-plan`); after the rename helena-secrets.
 # HELENA_API_GROUP overrides it.
@@ -363,6 +364,7 @@ install_all() {
   lemonade_config | put "$LIB/lemonade-defaults.json" 0644 root:root
   put "$DROPIN" 0644 root:root < "$here/systemd/lemond-helena.conf"
   run install -d -m 0750 "$MODELS"
+  run install -d -m 0775 -o root -g volition "$(dirname "$MODEL_OPTIONS")"
   run systemctl daemon-reload
 
   say "== packages"
@@ -412,6 +414,7 @@ install_preload_unit() {
   run install -d -m 0755 "$LIB"
   run install -m 0755 "$here/install.sh" "$LIB/install.sh"
   run install -m 0644 "$CATALOG" "$LIB/models.tsv"
+  run install -m 0644 "$here/model-options.py" "$LIB/model-options.py"
   put "$PRELOAD_SERVICE" 0644 root:root < "$here/systemd/helena-ai-preload.service"
   run systemctl daemon-reload
   run systemctl enable helena-ai-preload.service
@@ -511,17 +514,8 @@ models_load() {
   [ -n "$line" ] || die "no model $name in models.tsv"
   ctx=$(echo "$line" | cut -f11)
   backend=$(echo "$line" | cut -f12)
-  body="{\"model_name\":\"$name\",\"ctx_size\":${ctx:-65536},\"save_options\":true"
-  [ -z "$pin" ] || body="$body,\"pinned\":true"
-  [ -z "$backend" ] || [ "$backend" = - ] || body="$body,\"llamacpp_backend\":\"$backend\""
-  # Per model, so Lemonade's own recipe cannot replace it: some recipes add their own
-  # --chat-template-kwargs (Qwen3.6: {"preserve_thinking":true}), which dropped our global
-  # "thinking off unless asked" (found live 2026-09-25). Lemonade splits these args like a
-  # shell, so the JSON sits in single quotes.
-  if [ "$(echo "$line" | cut -f2)" = gguf ]; then
-    body="$body,\"llamacpp_args\":\"--load-mode none --chat-template-kwargs '{\\\"enable_thinking\\\":false,\\\"preserve_thinking\\\":true}'\""
-  fi
-  body="$body}"
+  kind=$(echo "$line" | cut -f2)
+  body=$(python3 "$here/model-options.py" "$name" "$kind" "$ctx" "$backend" "$pin" "$MODEL_OPTIONS") || die "invalid saved options for $name"
   if [ "$DRY_RUN" = 1 ]; then say "would POST /load $body"; return; fi
   API_TIMEOUT=600 api /load -X POST -H 'content-type: application/json' -d "$body"
   say ""
@@ -688,6 +682,7 @@ uninstall() {
   if [ "$PURGE" = 1 ]; then
     # Only this installer's files: /etc/helena also holds other keys.
     run rm -rf "$KEY" "$PRELOAD" "$MODELS" "$DOWNLOADS" "$CACHE" "$ROCM_VENV"
+    run rm -f "$MODEL_OPTIONS"
     run rmdir --ignore-fail-on-non-empty "$OPT"
   else
     # The ROCm tree stays for local AI workloads.
