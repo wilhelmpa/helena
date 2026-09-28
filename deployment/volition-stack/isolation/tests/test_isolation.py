@@ -105,7 +105,12 @@ class ConfigTest(unittest.TestCase):
         self.assertEqual(config.user_prefix, 'vp-')
         self.assertEqual(config.forwards, {'egress': 3128, 'plan': 3000, 'localai': 13305})
         self.assertEqual(config.optional_sockets, ('localai',))
-        self.assertEqual(set(config.runtimes), {'hermes', 'claude', 'codex', 'command', 'profile-helper'})
+        self.assertEqual(
+            set(config.runtimes), {'hermes', 'claude', 'codex', 'command', 'helena', 'profile-helper'})
+        # Helena's own loop is a subcommand of the runner bundle, which it only reads.
+        helena = config.runtimes['helena']
+        self.assertEqual(helena.fixed_args[1:], ('helena-agent',))
+        self.assertEqual(helena.read_only, ('/srv/volition/source/plan/packages/runner/dist',))
         self.assertIn('/srv/volition/source/plan/packages/runner/dist', config.runtimes['claude'].read_only)
         self.assertIn('/var/lib/volition', config.hide)
         self.assertIn('/etc/volition', config.inaccessible)
