@@ -889,7 +889,8 @@
     "overridden": "覆盖默认值",
     "resetToDefault": "恢复默认",
     "levelOverridden": "所有项目的默认级别为 {level}；此项目不同。",
-    "levelDefault": "与所有项目的默认值相同。"
+    "levelDefault": "与所有项目的默认值相同。",
+    "autopilotTitle": "自动驾驶"
   },
   "defaults": {
     "adminOnly": "只有管理员可以更改这些适用于所有项目的默认值。"

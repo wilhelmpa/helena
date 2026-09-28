@@ -889,7 +889,8 @@
     "overridden": "Overrides default",
     "resetToDefault": "Reset to default",
     "levelOverridden": "The default for all projects is level {level}; this project differs.",
-    "levelDefault": "Same as the default for all projects."
+    "levelDefault": "Same as the default for all projects.",
+    "autopilotTitle": "Autopilot"
   },
   "defaults": {
     "adminOnly": "Only the administrator changes these defaults for all projects."

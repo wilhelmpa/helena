@@ -889,7 +889,8 @@
     "overridden": "Substitui o padrão",
     "resetToDefault": "Voltar ao padrão",
     "levelOverridden": "O padrão para todos os projetos é o nível {level}; este projeto é diferente.",
-    "levelDefault": "Igual ao padrão de todos os projetos."
+    "levelDefault": "Igual ao padrão de todos os projetos.",
+    "autopilotTitle": "Piloto automático"
   },
   "defaults": {
     "adminOnly": "Só o administrador altera estes padrões para todos os projetos."

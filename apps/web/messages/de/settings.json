@@ -889,7 +889,8 @@
     "overridden": "Überschreibt Vorgabe",
     "resetToDefault": "Auf Vorgabe zurücksetzen",
     "levelOverridden": "Die Vorgabe für alle Projekte ist Stufe {level}; dieses Projekt weicht davon ab.",
-    "levelDefault": "Wie die Vorgabe für alle Projekte."
+    "levelDefault": "Wie die Vorgabe für alle Projekte.",
+    "autopilotTitle": "Autopilot"
   },
   "defaults": {
     "adminOnly": "Diese Vorgaben für alle Projekte ändert nur der Administrator."

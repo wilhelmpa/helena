@@ -889,7 +889,8 @@
     "overridden": "Anula el valor predeterminado",
     "resetToDefault": "Restablecer el predeterminado",
     "levelOverridden": "El valor para todos los proyectos es el nivel {level}; este proyecto es distinto.",
-    "levelDefault": "Igual que el valor para todos los proyectos."
+    "levelDefault": "Igual que el valor para todos los proyectos.",
+    "autopilotTitle": "Piloto automático"
   },
   "defaults": {
     "adminOnly": "Solo el administrador cambia estos valores para todos los proyectos."

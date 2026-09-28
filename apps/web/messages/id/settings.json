@@ -889,7 +889,8 @@
     "overridden": "Menimpa bawaan",
     "resetToDefault": "Kembalikan ke bawaan",
     "levelOverridden": "Bawaan untuk semua proyek adalah level {level}; proyek ini berbeda.",
-    "levelDefault": "Sama dengan bawaan semua proyek."
+    "levelDefault": "Sama dengan bawaan semua proyek.",
+    "autopilotTitle": "Autopilot"
   },
   "defaults": {
     "adminOnly": "Hanya administrator yang mengubah bawaan untuk semua proyek ini."

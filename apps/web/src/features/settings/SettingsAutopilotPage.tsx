@@ -132,7 +132,7 @@ function AutopilotPage({ projectKey }: { projectKey: string }) {
             <ListSkeleton rows={6} rowClassName="h-10" />
           ) : (
             <Stack gap={6}>
-              <SettingsGroup title={t('levelTitle')}>
+              <SettingsGroup title={tExecution('autopilotTitle')}>
                 <SettingsRow
                   label={t('levelTitle')}
                   description={

@@ -889,7 +889,8 @@
     "overridden": "Remplace le réglage par défaut",
     "resetToDefault": "Revenir au réglage par défaut",
     "levelOverridden": "Le réglage de tous les projets est le niveau {level} ; ce projet diffère.",
-    "levelDefault": "Comme le réglage de tous les projets."
+    "levelDefault": "Comme le réglage de tous les projets.",
+    "autopilotTitle": "Pilote automatique"
   },
   "defaults": {
     "adminOnly": "Seul l'administrateur modifie ces valeurs pour tous les projets."

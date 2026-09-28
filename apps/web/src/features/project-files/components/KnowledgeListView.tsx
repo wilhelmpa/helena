@@ -5,7 +5,17 @@ import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useQueries } from '@tanstack/react-query';
-import { FileImage, FileText, Folder, Network, Plus, Upload, type LucideIcon } from 'lucide-react';
+import {
+  FileImage,
+  FileText,
+  Folder,
+  FolderOpen,
+  Network,
+  Plus,
+  SearchX,
+  Upload,
+  type LucideIcon,
+} from 'lucide-react';
 import {
   Menu as DropdownMenu,
   MenuContent as DropdownMenuContent,
@@ -41,6 +51,7 @@ import {
 import type { FilePermissions } from './FileBrowser';
 import FileViewer from '@/components/common/files/FileViewer';
 import { Button } from '@/components/ui/button';
+import { EmptyState as FrameworkEmptyState } from '@/design-system';
 
 // The query of the same folder in the other list (Wissen ↔ Dateien).
 function otherKindQuery(params: URLSearchParams | null, kind: KnowledgeListKind) {
@@ -296,11 +307,13 @@ export default function KnowledgeListView({
         }
       >
         {note && !searching && <p className="-mt-2 px-3.5 text-xs text-muted-foreground">{note}</p>}
-        <KnowledgeListHead
-          name={t('columns.name')}
-          kind={searching ? t('columns.match') : t('columns.kind')}
-          trailing={t('columns.changed')}
-        />
+        {(pending || shown.length > 0) && (
+          <KnowledgeListHead
+            name={t('columns.name')}
+            kind={searching ? t('columns.match') : t('columns.kind')}
+            trailing={t('columns.changed')}
+          />
+        )}
         {/* Arrow keys move through the rows; the rows themselves are buttons. */}
         {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions */}
         <div
@@ -314,9 +327,9 @@ export default function KnowledgeListView({
             </p>
           )}
           {!pending && shown.length === 0 && (
-            <p className="px-3.5 py-3 text-sm text-muted-foreground">
+            <FrameworkEmptyState icon={searching ? <SearchX /> : <FolderOpen />}>
               {searching ? t('noResults') : fromAgents ? t('emptyFilter') : emptyText}
-            </p>
+            </FrameworkEmptyState>
           )}
           {shown.map((entry, index) => {
             const kind = knowledgeKind(entry.item);
