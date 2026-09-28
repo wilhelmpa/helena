@@ -199,7 +199,15 @@ export const edgeVerifyRoutes = new Elysia({ name: 'edge-verify' })
       if (expiresAt) set.headers['X-Helena-Access-Expires'] = String(expiresAt);
       return noContent();
     },
-    { response: { 204: t.Void(), ...errors(403) } },
+    {
+      response: { 204: t.Void(), ...errors(403) },
+      detail: {
+        summary: 'Check the edge sign-in for the home network entry',
+        description:
+          '204 when a request that entered through the home network carries a valid edge assertion; ' +
+          'reports the assertion expiry in X-Helena-Access-Expires. 403 otherwise.',
+      },
+    },
   );
 
 // Mounts the Administrator routes on the assembled app after its chain, like mountMcp: a typed
