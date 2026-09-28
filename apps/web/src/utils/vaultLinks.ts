@@ -2,7 +2,7 @@ import { vaultNotePath } from './paths';
 
 // Links from a vault file to the other places that open it.
 
-// The Docs page opens a note of the vault by its vault-relative path.
+// The file browser opens a note by its vault-relative path.
 export const docsFileUrl = (_projectKey: string, vaultPath: string) => vaultNotePath(vaultPath);
 
 // The project a vault path belongs to: Projects/<KEY>/... .

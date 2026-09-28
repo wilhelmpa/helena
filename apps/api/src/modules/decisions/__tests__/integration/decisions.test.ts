@@ -1928,7 +1928,7 @@ describe('agent decision log', () => {
     expect(first.structuredContent.data.items[0]).toMatchObject({
       projectKey: 'PRIV',
       backend: 'compatible',
-      model: 'laya-test',
+      model: 'mock-test',
       probabilities: { '0': 0.94 },
     });
     expect(first.structuredContent.data.items[0]).not.toHaveProperty('inputText');

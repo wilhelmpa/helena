@@ -286,7 +286,7 @@ export const decisionRoutes = new Elysia({
     async ({ user, params, query }) => {
       const current = requireUser(user);
       const [agent] = await db
-        .select({ teamId: aiAgent.teamId, username: aiAgent.username })
+        .select({ teamId: aiAgent.teamId, agentRole: aiAgent.agentRole })
         .from(aiAgent)
         .where(eq(aiAgent.userId, current.id))
         .limit(1);
@@ -298,7 +298,7 @@ export const decisionRoutes = new Elysia({
       if (from && to && from > to) throw new HttpError(400, 'from must be before to');
 
       let projectIds: number[] | undefined;
-      if (!isHomeAgent(agent.username)) {
+      if (!isHomeAgent(agent.agentRole)) {
         const projects = await listProjects(current.id, { mcpOnly: true, withPermissions: true });
         const readable = projects.filter((project) => project.permissions?.work_items.read);
         if (query.projectKey && !readable.some((project) => project.key === query.projectKey))
