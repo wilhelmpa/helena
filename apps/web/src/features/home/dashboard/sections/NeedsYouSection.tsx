@@ -23,6 +23,7 @@ import { DashboardSection, SkeletonRows } from '../DashboardParts';
 import type { NeedsYouKind } from '../needsYou';
 import { useHomeDashboardContext } from '../useHomeDashboard';
 import { useNeedsYou } from '../useNeedsYou';
+import { Text } from '@/design-system';
 
 const SHOWN = 6;
 
@@ -80,9 +81,9 @@ function NeedsYouRow({ entry, onDismiss }: { entry: NeedsYouEntry; onDismiss?: (
         >
           {entry.title}
         </span>
-        <span className="min-w-0 flex-1 truncate text-xs text-muted-foreground" dir="auto">
+        <Text as="span" size="xs" tone="muted" className="min-w-0 flex-1 truncate" dir="auto">
           {entry.detail}
-        </span>
+        </Text>
         {time && (
           <span
             className={cn(

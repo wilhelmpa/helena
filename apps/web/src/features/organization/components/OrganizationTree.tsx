@@ -6,6 +6,7 @@ import { useAgentWorkStates } from '@/hooks/useAgentWorkStates';
 import { buildOrganizationTree } from '../organizationTree';
 import OrganizationDepartmentNode from './OrganizationDepartmentNode';
 import OrganizationSummary from './OrganizationSummary';
+import { Stack, Text } from '@/design-system';
 
 export default function OrganizationTree({ organization }: { organization: Organization }) {
   const t = useTranslations('organization');
@@ -13,16 +14,16 @@ export default function OrganizationTree({ organization }: { organization: Organ
   const work = useAgentWorkStates();
   if (tree.length === 0) {
     return (
-      <p className="rounded-md border bg-card px-3 py-2 text-sm text-muted-foreground">
+      <Text as="p" size="sm" tone="muted" className="rounded-md border bg-card px-3 py-2">
         {t('map.empty')}
-      </p>
+      </Text>
     );
   }
   return (
-    <div className="space-y-3 pb-6">
+    <Stack gap={3} padBottom={5}>
       <OrganizationSummary agents={organization.agents} />
       <div className="overflow-x-auto">
-        <ul className="min-w-0 space-y-2">
+        <Stack as="ul" gap={2} className="min-w-0">
           {tree.map((node) => (
             <OrganizationDepartmentNode
               key={node.department?.id ?? node.kind}
@@ -30,8 +31,8 @@ export default function OrganizationTree({ organization }: { organization: Organ
               work={work}
             />
           ))}
-        </ul>
+        </Stack>
       </div>
-    </div>
+    </Stack>
   );
 }

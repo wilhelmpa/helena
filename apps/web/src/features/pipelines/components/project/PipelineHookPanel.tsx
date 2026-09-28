@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { API_URL } from '@/lib/api/core/client';
 import { usePipelineHook, usePipelineHookControl } from '@/services/engine.service';
 import { formatDateTime } from '@/utils/dates';
+import { Inline, Stack, Text } from '@/design-system';
 
 // The address a sender posts to for a workflow with a webhook trigger, in this project.
 // Its secret is shown once, when the address is created or given a new secret; a sender
@@ -32,14 +33,16 @@ export default function PipelineHookPanel({
   const create = async () => setSecret((await control.create.mutateAsync()).secret);
 
   return (
-    <div className="space-y-3 rounded-md border bg-background p-3">
-      <div className="flex flex-wrap items-center gap-2">
+    <Stack gap={3} pad={3} className="rounded-md border bg-background">
+      <Inline gap={2} wrap>
         <Webhook className="size-4 text-muted-foreground" />
-        <span className="text-sm font-medium">{t('title')}</span>
+        <Text as="span" size="sm" className="font-medium">
+          {t('title')}
+        </Text>
         {current?.lastUsedAt && (
-          <span className="text-xs text-muted-foreground">
+          <Text as="span" size="xs" tone="muted">
             {t('lastUsed', { time: formatDateTime(current.lastUsedAt) })}
-          </span>
+          </Text>
         )}
         {editable && current && (
           <span className="ms-auto flex gap-1">
@@ -58,7 +61,7 @@ export default function PipelineHookPanel({
             </Button>
           </span>
         )}
-      </div>
+      </Inline>
       {current ? (
         <CopyableValue title={t('url')} value={`${API_URL}${current.url}`} copyLabel={t('copy')} />
       ) : editable ? (
@@ -71,7 +74,9 @@ export default function PipelineHookPanel({
           {t('create')}
         </Button>
       ) : (
-        <p className="text-xs text-muted-foreground">{t('none')}</p>
+        <Text as="p" size="xs" tone="muted">
+          {t('none')}
+        </Text>
       )}
       {secret && (
         <CopyableValue
@@ -95,11 +100,11 @@ export default function PipelineHookPanel({
           }}
           onClose={() => setConfirm(null)}
         >
-          <p className="text-sm text-muted-foreground">
+          <Text as="p" size="sm" tone="muted">
             {confirm === 'renew' ? t('renewMessage') : t('deleteMessage')}
-          </p>
+          </Text>
         </ConfirmDialog>
       )}
-    </div>
+    </Stack>
   );
 }

@@ -516,14 +516,9 @@
   },
   "src/features/agent-activity/components/AgentActivityRow.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 11
+      "count": 7
     },
     "no-restricted-imports": {
-      "count": 1
-    }
-  },
-  "src/features/agent-activity/components/AgentActivityTimeline.tsx": {
-    "better-tailwindcss/no-restricted-classes": {
       "count": 1
     }
   },
@@ -1201,7 +1196,7 @@
   },
   "src/features/dashboards/components/AddWidgetDialog.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 27
+      "count": 19
     },
     "jsx-a11y/no-autofocus": {
       "count": 1
@@ -1217,17 +1212,12 @@
   },
   "src/features/dashboards/components/DashboardOverview.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 34
-    }
-  },
-  "src/features/dashboards/components/ProjectPluginWidget.tsx": {
-    "better-tailwindcss/no-restricted-classes": {
-      "count": 2
+      "count": 26
     }
   },
   "src/features/dashboards/components/WidgetFrame.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 12
+      "count": 10
     },
     "no-restricted-imports": {
       "count": 2
@@ -1243,17 +1233,17 @@
       "count": 1
     },
     "better-tailwindcss/no-restricted-classes": {
-      "count": 11
+      "count": 4
     }
   },
   "src/features/dashboards/components/widgets/ActivityFeedWidgetSettings.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 2
+      "count": 1
     }
   },
   "src/features/dashboards/components/widgets/AgentHealthWidget.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 9
+      "count": 5
     }
   },
   "src/features/dashboards/components/widgets/AgentRunsWidget.tsx": {
@@ -1261,12 +1251,12 @@
       "count": 1
     },
     "better-tailwindcss/no-restricted-classes": {
-      "count": 13
+      "count": 5
     }
   },
   "src/features/dashboards/components/widgets/AgentRunsWidgetSettings.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 2
+      "count": 1
     }
   },
   "src/features/dashboards/components/widgets/AgentWorkloadWidget.tsx": {
@@ -1274,17 +1264,17 @@
       "count": 6
     },
     "better-tailwindcss/no-restricted-classes": {
-      "count": 13
+      "count": 10
     }
   },
   "src/features/dashboards/components/widgets/BreakdownWidget.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 12
+      "count": 6
     }
   },
   "src/features/dashboards/components/widgets/BreakdownWidgetSettings.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 5
+      "count": 4
     }
   },
   "src/features/dashboards/components/widgets/LimitSelect.tsx": {
@@ -1294,22 +1284,22 @@
   },
   "src/features/dashboards/components/widgets/PulseWidget.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 5
+      "count": 3
     }
   },
   "src/features/dashboards/components/widgets/PulseWidgetSettings.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 5
+      "count": 4
     }
   },
   "src/features/dashboards/components/widgets/RecentIssuesWidget.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 12
+      "count": 6
     }
   },
   "src/features/dashboards/components/widgets/RecentIssuesWidgetSettings.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 7
+      "count": 4
     }
   },
   "src/features/dashboards/components/widgets/StatWidget.tsx": {
@@ -1319,7 +1309,7 @@
   },
   "src/features/dashboards/components/widgets/ThroughputWidget.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 6
+      "count": 3
     }
   },
   "src/features/dashboards/components/widgets/ThroughputWidgetSettings.tsx": {
@@ -1329,7 +1319,7 @@
   },
   "src/features/dashboards/components/widgets/WebhookHealthWidget.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 9
+      "count": 5
     }
   },
   "src/features/dashboards/components/widgets/WidgetDaysSettings.tsx": {
@@ -1807,47 +1797,47 @@
   },
   "src/features/home/components/HomeTaskPeople.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 5
+      "count": 4
     }
   },
   "src/features/home/components/HomeTaskRow.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 11
+      "count": 7
     }
   },
   "src/features/home/components/home/HomeAgentSync.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 10
+      "count": 3
     }
   },
   "src/features/home/components/home/HomeEngineState.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 4
+      "count": 1
     }
   },
   "src/features/home/components/home/HomeJanitorState.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 4
+      "count": 1
     }
   },
   "src/features/home/components/home/HomeLogins.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 21
+      "count": 8
     }
   },
   "src/features/home/components/home/HomeProjectCard.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 14
+      "count": 9
     }
   },
   "src/features/home/components/home/HomeServiceState.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 4
+      "count": 1
     }
   },
   "src/features/home/components/home/HomeSystemHealth.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 13
+      "count": 7
     },
     "react-hooks/set-state-in-effect": {
       "count": 1
@@ -1855,12 +1845,12 @@
   },
   "src/features/home/components/tasks/HomeTaskList.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 4
+      "count": 1
     }
   },
   "src/features/home/dashboard/CustomizeDialog.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 13
+      "count": 12
     }
   },
   "src/features/home/dashboard/DashboardParts.tsx": {
@@ -1870,7 +1860,7 @@
   },
   "src/features/home/dashboard/HomeDashboard.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 4
+      "count": 3
     }
   },
   "src/features/home/dashboard/SystemDetailsDialog.tsx": {
@@ -1885,17 +1875,17 @@
   },
   "src/features/home/dashboard/sections/AgentsSection.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 3
+      "count": 1
     }
   },
   "src/features/home/dashboard/sections/DashboardTaskRow.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 2
+      "count": 1
     }
   },
   "src/features/home/dashboard/sections/NeedsYouSection.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 5
+      "count": 4
     }
   },
   "src/features/home/dashboard/sections/ProjectsSection.tsx": {
@@ -1903,19 +1893,14 @@
       "count": 2
     }
   },
-  "src/features/home/dashboard/sections/SchedulesSection.tsx": {
-    "better-tailwindcss/no-restricted-classes": {
-      "count": 1
-    }
-  },
   "src/features/inbox/InboxPage.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 4
+      "count": 2
     }
   },
   "src/features/inbox/InboxWorkspace.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 10
+      "count": 7
     },
     "react-hooks/set-state-in-effect": {
       "count": 1
@@ -1923,17 +1908,17 @@
   },
   "src/features/inbox/components/InboxDetail.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 3
+      "count": 1
     }
   },
   "src/features/inbox/components/InboxDetailHeader.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 6
+      "count": 3
     }
   },
   "src/features/inbox/components/InboxList.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 11
+      "count": 7
     }
   },
   "src/features/inbox/components/InboxListItem.tsx": {
@@ -1941,7 +1926,7 @@
       "count": 1
     },
     "better-tailwindcss/no-restricted-classes": {
-      "count": 11
+      "count": 7
     },
     "no-restricted-imports": {
       "count": 3
@@ -1963,7 +1948,7 @@
   },
   "src/features/inbox/components/InboxToolbar.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 3
+      "count": 2
     },
     "no-restricted-imports": {
       "count": 1
@@ -1976,22 +1961,22 @@
   },
   "src/features/inbox/components/MailAttachmentChips.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 8
+      "count": 2
     }
   },
   "src/features/inbox/components/MailClassificationCard.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 18
+      "count": 11
     }
   },
   "src/features/inbox/components/MailDraftChips.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 7
+      "count": 5
     }
   },
   "src/features/inbox/components/MailFilterBar.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 4
+      "count": 1
     }
   },
   "src/features/inbox/components/MailHtmlFrame.tsx": {
@@ -2001,42 +1986,42 @@
   },
   "src/features/inbox/components/MailInbox.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 2
+      "count": 1
     }
   },
   "src/features/inbox/components/MailMessageCard.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 18
+      "count": 8
     }
   },
   "src/features/inbox/components/MailReadingPane.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 8
+      "count": 2
     }
   },
   "src/features/inbox/components/MailThreadHeader.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 16
+      "count": 11
     }
   },
   "src/features/inbox/components/MailThreadList.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 6
+      "count": 3
     }
   },
   "src/features/inbox/components/MailThreadRow.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 19
+      "count": 15
     }
   },
   "src/features/inbox/components/MailThreadToolbar.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 6
+      "count": 3
     }
   },
   "src/features/inbox/components/ProjectPickerDialog.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 7
+      "count": 5
     },
     "jsx-a11y/no-autofocus": {
       "count": 1
@@ -2049,22 +2034,17 @@
   },
   "src/features/initiatives/InitiativeDetailPage.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 3
+      "count": 2
     }
   },
   "src/features/initiatives/components/detail/InitiativeActiveWork.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 7
-    }
-  },
-  "src/features/initiatives/components/detail/InitiativeActivityFeed.tsx": {
-    "better-tailwindcss/no-restricted-classes": {
-      "count": 2
+      "count": 6
     }
   },
   "src/features/initiatives/components/detail/InitiativeAttachments.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 20
+      "count": 9
     }
   },
   "src/features/initiatives/components/detail/InitiativeFeedRow.tsx": {
@@ -2072,22 +2052,22 @@
       "count": 1
     },
     "better-tailwindcss/no-restricted-classes": {
-      "count": 3
+      "count": 2
     }
   },
   "src/features/initiatives/components/detail/InitiativeHeader.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 5
+      "count": 2
     }
   },
   "src/features/initiatives/components/detail/InitiativeOverview.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 8
+      "count": 4
     }
   },
   "src/features/initiatives/components/detail/InitiativeProgress.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 5
+      "count": 3
     }
   },
   "src/features/initiatives/components/detail/InitiativeStateBreakdown.tsx": {
@@ -2095,7 +2075,7 @@
       "count": 1
     },
     "better-tailwindcss/no-restricted-classes": {
-      "count": 6
+      "count": 3
     },
     "no-restricted-syntax": {
       "count": 5
@@ -2103,32 +2083,27 @@
   },
   "src/features/initiatives/components/detail/InitiativeTimeline.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 9
-    }
-  },
-  "src/features/initiatives/components/detail/InitiativeTimelineMeter.tsx": {
-    "better-tailwindcss/no-restricted-classes": {
       "count": 2
     }
   },
-  "src/features/initiatives/components/list/InitiativeTabs.tsx": {
+  "src/features/initiatives/components/detail/InitiativeTimelineMeter.tsx": {
     "better-tailwindcss/no-restricted-classes": {
       "count": 1
     }
   },
   "src/features/initiatives/components/list/InitiativesPagination.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 8
+      "count": 2
     }
   },
   "src/features/initiatives/components/shared/HealthBadge.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 2
+      "count": 1
     }
   },
   "src/features/initiatives/components/shared/HealthInfoPopover.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 24
+      "count": 14
     },
     "no-restricted-imports": {
       "count": 1
@@ -2916,17 +2891,17 @@
   },
   "src/features/members/components/invites/InviteRow.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 12
+      "count": 11
     }
   },
   "src/features/members/components/invites/InvitesManager.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 5
+      "count": 2
     }
   },
   "src/features/members/components/members/MemberAddDialog.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 15
+      "count": 2
     }
   },
   "src/features/members/components/members/MemberAgentBadge.tsx": {
@@ -2934,17 +2909,12 @@
       "count": 4
     }
   },
-  "src/features/members/components/members/MemberDescription.tsx": {
-    "better-tailwindcss/no-restricted-classes": {
-      "count": 2
-    }
-  },
   "src/features/members/components/members/MemberDescriptionDialog.tsx": {
     "better-tailwindcss/enforce-logical-properties": {
       "count": 1
     },
     "better-tailwindcss/no-restricted-classes": {
-      "count": 19
+      "count": 11
     },
     "jsx-a11y/no-autofocus": {
       "count": 1
@@ -2955,7 +2925,7 @@
   },
   "src/features/members/components/members/MemberPicker.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 5
+      "count": 4
     },
     "no-restricted-imports": {
       "count": 1
@@ -2973,7 +2943,7 @@
   },
   "src/features/members/components/members/MemberRow.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 23
+      "count": 16
     },
     "no-restricted-imports": {
       "count": 1
@@ -2981,7 +2951,7 @@
   },
   "src/features/members/components/members/MembersList.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 21
+      "count": 19
     }
   },
   "src/features/model-availability/components/AgentModelIssue.tsx": {
@@ -3101,152 +3071,152 @@
   },
   "src/features/organization/components/DepartmentSkillPicker.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 13
+      "count": 11
     }
   },
   "src/features/organization/components/DepartmentSkills.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 5
+      "count": 2
     }
   },
   "src/features/organization/components/DepartmentTemplateImportDialog.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 8
+      "count": 2
     }
   },
   "src/features/organization/components/DepartmentTemplateReport.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 5
+      "count": 3
     }
   },
   "src/features/organization/components/OrganizationAgentCard.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 29
+      "count": 16
     }
   },
   "src/features/organization/components/OrganizationAgentGovernance.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 11
+      "count": 6
     }
   },
   "src/features/organization/components/OrganizationAgentNode.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 12
+      "count": 7
     }
   },
   "src/features/organization/components/OrganizationAgentPause.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 3
+      "count": 1
     }
   },
   "src/features/organization/components/OrganizationAgentProjectInstruction.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 4
+      "count": 2
     }
   },
   "src/features/organization/components/OrganizationAgents.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 5
+      "count": 4
     }
   },
   "src/features/organization/components/OrganizationDepartmentCard.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 14
+      "count": 8
     }
   },
   "src/features/organization/components/OrganizationDepartmentNode.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 21
+      "count": 7
     }
   },
   "src/features/organization/components/OrganizationDepartments.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 8
+      "count": 4
     }
   },
   "src/features/organization/components/OrganizationGoalCard.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 26
+      "count": 16
     }
   },
   "src/features/organization/components/OrganizationGoalDialog.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 5
+      "count": 1
     }
   },
   "src/features/organization/components/OrganizationGoalNode.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 8
+      "count": 2
     }
   },
   "src/features/organization/components/OrganizationGoalProgress.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 30
+      "count": 5
     }
   },
   "src/features/organization/components/OrganizationOrchestration.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 3
+      "count": 2
     }
   },
   "src/features/organization/components/OrganizationOrchestrationAgentUsage.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 7
+      "count": 1
     }
   },
   "src/features/organization/components/OrganizationOrchestrationBudget.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 10
+      "count": 4
     }
   },
   "src/features/organization/components/OrganizationOrchestrationFlow.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 14
+      "count": 8
     }
   },
   "src/features/organization/components/OrganizationOrchestrationPolicy.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 19
+      "count": 11
     }
   },
   "src/features/organization/components/OrganizationOrchestrationTeam.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 20
+      "count": 9
     }
   },
   "src/features/organization/components/OrganizationOrchestrationUsage.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 14
+      "count": 9
     }
   },
   "src/features/organization/components/OrganizationProjectCard.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 12
+      "count": 6
     }
   },
   "src/features/organization/components/OrganizationProjectResources.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 21
+      "count": 11
     }
   },
   "src/features/organization/components/OrganizationProjects.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 5
+      "count": 4
     }
   },
   "src/features/organization/components/OrganizationSummary.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 6
+      "count": 3
     }
   },
   "src/features/organization/components/OrganizationTokenUsage.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 3
+      "count": 1
     }
   },
   "src/features/organization/components/OrganizationTree.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 7
+      "count": 3
     }
   },
   "src/features/owner-terminal/OwnerTerminalPanel.tsx": {
@@ -3294,14 +3264,9 @@
       "count": 1
     }
   },
-  "src/features/pipelines/HomePipelinesPage.tsx": {
-    "better-tailwindcss/no-restricted-classes": {
-      "count": 2
-    }
-  },
   "src/features/pipelines/ProjectPipelinesPanel.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 16
+      "count": 8
     }
   },
   "src/features/pipelines/components/PipelineIssueList.tsx": {
@@ -3311,7 +3276,7 @@
   },
   "src/features/pipelines/components/editor/PipelineAddStep.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 5
+      "count": 3
     },
     "no-restricted-imports": {
       "count": 1
@@ -3319,7 +3284,7 @@
   },
   "src/features/pipelines/components/editor/PipelineAgentStepForm.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 2
+      "count": 1
     },
     "react/jsx-no-literals": {
       "count": 1
@@ -3327,32 +3292,32 @@
   },
   "src/features/pipelines/components/editor/PipelineApprovalStepForm.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 2
+      "count": 1
     }
   },
   "src/features/pipelines/components/editor/PipelineBuilder.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 8
+      "count": 4
     }
   },
   "src/features/pipelines/components/editor/PipelineCard.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 6
+      "count": 2
     }
   },
   "src/features/pipelines/components/editor/PipelineConditionLanes.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 11
+      "count": 5
     }
   },
   "src/features/pipelines/components/editor/PipelineConditionStepForm.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 4
+      "count": 3
     }
   },
   "src/features/pipelines/components/editor/PipelineDecisionStepForm.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 4
+      "count": 2
     }
   },
   "src/features/pipelines/components/editor/PipelineEditorActions.tsx": {
@@ -3365,22 +3330,22 @@
   },
   "src/features/pipelines/components/editor/PipelineEditorLoader.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 3
+      "count": 1
     }
   },
   "src/features/pipelines/components/editor/PipelineField.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 3
+      "count": 1
     }
   },
   "src/features/pipelines/components/editor/PipelineIssueSummary.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 8
+      "count": 1
     }
   },
   "src/features/pipelines/components/editor/PipelineMetaFields.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 7
+      "count": 2
     }
   },
   "src/features/pipelines/components/editor/PipelineNamesInput.tsx": {
@@ -3390,68 +3355,38 @@
   },
   "src/features/pipelines/components/editor/PipelinePluginFields.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 2
+      "count": 1
     }
   },
   "src/features/pipelines/components/editor/PipelineRoleRow.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 7
+      "count": 4
     },
     "react/jsx-no-literals": {
       "count": 1
     }
   },
-  "src/features/pipelines/components/editor/PipelineRolesCard.tsx": {
-    "better-tailwindcss/no-restricted-classes": {
-      "count": 1
-    }
-  },
   "src/features/pipelines/components/editor/PipelineRunsTab.tsx": {
-    "better-tailwindcss/no-restricted-classes": {
-      "count": 10
-    }
-  },
-  "src/features/pipelines/components/editor/PipelineStepCard.tsx": {
-    "better-tailwindcss/no-restricted-classes": {
-      "count": 12
-    }
-  },
-  "src/features/pipelines/components/editor/PipelineStepDetails.tsx": {
-    "better-tailwindcss/no-restricted-classes": {
-      "count": 3
-    }
-  },
-  "src/features/pipelines/components/editor/PipelineStepInspector.tsx": {
     "better-tailwindcss/no-restricted-classes": {
       "count": 6
     }
   },
-  "src/features/pipelines/components/editor/PipelineStepLane.tsx": {
+  "src/features/pipelines/components/editor/PipelineStepCard.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 1
+      "count": 9
     }
   },
-  "src/features/pipelines/components/editor/PipelineStepsCard.tsx": {
-    "better-tailwindcss/no-restricted-classes": {
-      "count": 1
-    }
-  },
-  "src/features/pipelines/components/editor/PipelineTestRunForm.tsx": {
-    "better-tailwindcss/no-restricted-classes": {
-      "count": 10
-    }
-  },
-  "src/features/pipelines/components/editor/PipelineTestRunResult.tsx": {
-    "better-tailwindcss/no-restricted-classes": {
-      "count": 1
-    }
-  },
-  "src/features/pipelines/components/editor/PipelineTriggerCard.tsx": {
+  "src/features/pipelines/components/editor/PipelineStepDetails.tsx": {
     "better-tailwindcss/no-restricted-classes": {
       "count": 2
     }
   },
-  "src/features/pipelines/components/editor/PipelineTriggerFields.tsx": {
+  "src/features/pipelines/components/editor/PipelineTestRunForm.tsx": {
+    "better-tailwindcss/no-restricted-classes": {
+      "count": 6
+    }
+  },
+  "src/features/pipelines/components/editor/PipelineTriggerCard.tsx": {
     "better-tailwindcss/no-restricted-classes": {
       "count": 1
     }
@@ -3464,14 +3399,9 @@
       "count": 1
     }
   },
-  "src/features/pipelines/components/editor/PipelineVersionView.tsx": {
-    "better-tailwindcss/no-restricted-classes": {
-      "count": 3
-    }
-  },
   "src/features/pipelines/components/editor/PipelineVersionsTab.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 5
+      "count": 2
     }
   },
   "src/features/pipelines/components/editor/PipelineWaitStepForm.tsx": {
@@ -3481,37 +3411,37 @@
   },
   "src/features/pipelines/components/library/PipelineBuiltinList.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 8
+      "count": 3
     }
   },
   "src/features/pipelines/components/library/PipelineLibrary.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 3
+      "count": 1
     }
   },
   "src/features/pipelines/components/library/PipelineTemplateList.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 11
+      "count": 6
     }
   },
   "src/features/pipelines/components/library/PipelineTemplateRow.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 8
+      "count": 3
     }
   },
   "src/features/pipelines/components/project/PipelineHookPanel.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 9
+      "count": 2
     }
   },
   "src/features/pipelines/components/project/PipelineProjectRow.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 16
+      "count": 7
     }
   },
   "src/features/pipelines/components/project/PipelineRoleMapping.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 5
+      "count": 2
     },
     "react/jsx-no-literals": {
       "count": 1
@@ -3519,7 +3449,7 @@
   },
   "src/features/pipelines/components/project/WorkflowRunLimitSettings.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 7
+      "count": 2
     },
     "react-hooks/set-state-in-effect": {
       "count": 1
@@ -3527,7 +3457,7 @@
   },
   "src/features/pipelines/components/project/WorkflowSigningSecretSettings.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 8
+      "count": 2
     }
   },
   "src/features/pipelines/hooks/usePipelineDraft.ts": {
@@ -3746,11 +3676,6 @@
       "count": 15
     }
   },
-  "src/features/routines/HomeRoutinesPage.tsx": {
-    "better-tailwindcss/no-restricted-classes": {
-      "count": 1
-    }
-  },
   "src/features/routines/components/RoutineActionsMenu.tsx": {
     "no-restricted-imports": {
       "count": 2
@@ -3758,7 +3683,7 @@
   },
   "src/features/routines/components/RoutineAgentField.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 9
+      "count": 2
     }
   },
   "src/features/routines/components/RoutineCronInput.tsx": {
@@ -3768,60 +3693,45 @@
   },
   "src/features/routines/components/RoutineDialog.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 14
+      "count": 6
     },
     "jsx-a11y/no-autofocus": {
       "count": 1
     }
   },
-  "src/features/routines/components/RoutineField.tsx": {
+  "src/features/routines/components/RoutineGateField.tsx": {
     "better-tailwindcss/no-restricted-classes": {
       "count": 1
     }
   },
-  "src/features/routines/components/RoutineGateField.tsx": {
-    "better-tailwindcss/no-restricted-classes": {
-      "count": 2
-    }
-  },
   "src/features/routines/components/RoutineItem.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 11
+      "count": 5
     }
   },
   "src/features/routines/components/RoutineLastRun.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 10
+      "count": 2
     }
   },
   "src/features/routines/components/RoutineMentions.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 11
+      "count": 8
     }
   },
   "src/features/routines/components/RoutineModeField.tsx": {
-    "better-tailwindcss/no-restricted-classes": {
-      "count": 3
-    }
-  },
-  "src/features/routines/components/RoutineNextRuns.tsx": {
     "better-tailwindcss/no-restricted-classes": {
       "count": 1
     }
   },
   "src/features/routines/components/RoutineRow.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 26
-    }
-  },
-  "src/features/routines/components/RoutineRunsDialog.tsx": {
-    "better-tailwindcss/no-restricted-classes": {
-      "count": 3
+      "count": 20
     }
   },
   "src/features/routines/components/RoutineSuggestionsInput.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 3
+      "count": 2
     },
     "no-restricted-imports": {
       "count": 1
@@ -3829,18 +3739,10 @@
   },
   "src/features/routines/components/RoutineTaskField.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 2
-    }
-  },
-  "src/features/routines/components/RoutineTimezoneInput.tsx": {
-    "better-tailwindcss/no-restricted-classes": {
       "count": 1
     }
   },
   "src/features/routines/components/RoutinesList.tsx": {
-    "better-tailwindcss/no-restricted-classes": {
-      "count": 2
-    },
     "react-hooks/set-state-in-effect": {
       "count": 1
     }

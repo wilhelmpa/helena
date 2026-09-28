@@ -8,6 +8,7 @@ import { compactTokens } from '@/utils/agentUsage';
 import { formatDate } from '@/utils/dates';
 import { revScope } from '@/utils/revScopes';
 import { useAgentUsageQuery } from '../services/organization.service';
+import { Stack, Text } from '@/design-system';
 
 // The tokens the project's agent runs used this month, and per task closed this month
 // that agents worked on.
@@ -22,19 +23,23 @@ export default function OrganizationOrchestrationUsage({ projectKey }: { project
   const data = usage.data;
 
   return (
-    <section className="space-y-3 rounded-md border bg-card p-4">
+    <Stack as="section" gap={3} pad={4} className="rounded-md border bg-card">
       <div>
         <h2 className="text-md font-medium">{t('title')}</h2>
         {data && (
-          <p className="text-xs text-muted-foreground">
+          <Text as="p" size="xs" tone="muted">
             {t('description', { since: formatDate(data.since.slice(0, 10)) })}
-          </p>
+          </Text>
         )}
       </div>
       {usage.isPending ? (
-        <p className="text-sm text-muted-foreground">{t('loading')}</p>
+        <Text as="p" size="sm" tone="muted">
+          {t('loading')}
+        </Text>
       ) : !data ? (
-        <p className="text-sm text-muted-foreground">{t('unavailable')}</p>
+        <Text as="p" size="sm" tone="muted">
+          {t('unavailable')}
+        </Text>
       ) : (
         <dl className="grid grid-cols-2 gap-3">
           <div>
@@ -60,6 +65,6 @@ export default function OrganizationOrchestrationUsage({ projectKey }: { project
           </div>
         </dl>
       )}
-    </section>
+    </Stack>
   );
 }

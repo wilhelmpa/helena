@@ -11,6 +11,7 @@ import { formatInZone } from '../utils/schedulePreview';
 import { RoutineActionsMenu, type RoutineActions } from './RoutineActionsMenu';
 import { RoutineLastRun } from './RoutineLastRun';
 import { RoutineMentionsLine } from './RoutineMentions';
+import { Inline, Stack, Text } from '@/design-system';
 
 // One routine on a phone, where the table has no room: the same facts stacked in one
 // row of the list — title and switch, agent and project, when it runs, how it last ran.
@@ -26,8 +27,8 @@ export function RoutineItem({
   const t = useTranslations('routines');
   const describe = useCronDescription();
   return (
-    <li className="flex flex-col gap-1.5 px-3 py-2.5 text-sm">
-      <div className="flex items-center gap-2">
+    <Stack as="li" gap={2} padX={3} padY={3} className="text-sm">
+      <Inline gap={2}>
         <p dir="auto" className="min-w-0 flex-1 truncate font-medium" title={routine.instructions}>
           {showProject ? (
             <Link
@@ -52,7 +53,7 @@ export function RoutineItem({
           </StatusBadge>
         )}
         {actions && <RoutineActionsMenu actions={actions} />}
-      </div>
+      </Inline>
       <p
         className={cn(
           'flex min-w-0 items-center gap-1 text-xs',
@@ -70,20 +71,20 @@ export function RoutineItem({
           </Link>
         )}
       </p>
-      <RoutineMentionsLine mentions={routine.mentions} className="" />
-      <p className="flex min-w-0 items-center gap-1 text-xs text-muted-foreground">
+      <RoutineMentionsLine mentions={routine.mentions} />
+      <Text as="p" size="xs" tone="muted" className="flex min-w-0 items-center gap-1">
         <Clock className="size-3.5 shrink-0" />
         <span className="truncate text-foreground" title={routine.cron}>
           {describe(routine.cron) ?? routine.cron}
         </span>
-      </p>
-      <p className="ps-4.5 text-xs text-muted-foreground tabular-nums">
+      </Text>
+      <Text as="p" size="xs" tone="muted" className="ps-4.5 tabular-nums">
         {routine.nextRunAt
           ? t('nextRunAt', { time: formatInZone(routine.nextRunAt, routine.timezone) })
           : t('paused')}{' '}
         · {routine.timezone}
-      </p>
+      </Text>
       <RoutineLastRun routine={routine} canEdit={actions?.canEdit ?? false} />
-    </li>
+    </Stack>
   );
 }

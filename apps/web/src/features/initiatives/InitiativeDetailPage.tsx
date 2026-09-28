@@ -20,6 +20,7 @@ import InitiativeIssuesBoard, {
 import InitiativeOverview from './components/detail/InitiativeOverview';
 import InitiativeProgress from './components/detail/InitiativeProgress';
 import { Page } from '@/design-system';
+import { Text } from '@/design-system';
 
 // One initiative: its title, properties and description (Overview), how it is going
 // (Progress) and the work items board over its linked issues (Issues). Each tab is
@@ -94,7 +95,9 @@ export default function InitiativeDetailPage({ tab = 'overview' }: { tab?: Initi
       {query.isLoading ? (
         <PageSkeleton className="mx-0 max-w-none" />
       ) : !initiative ? (
-        <p className="p-4 text-sm text-muted-foreground">{t('notFound')}</p>
+        <Text as="p" size="sm" tone="muted" className="p-4">
+          {t('notFound')}
+        </Text>
       ) : tab === 'issues' ? (
         <InitiativeIssuesBoard initiativeId={initiative.id} board={board} />
       ) : (

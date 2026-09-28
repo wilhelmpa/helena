@@ -13,6 +13,7 @@ import PipelineApprovalCard from '@/features/approvals/components/PipelineApprov
 import AgentActivityRow from '@/features/agent-activity/components/AgentActivityRow';
 import InboxListItem from './InboxListItem';
 import { groupNotifications, NOTIFICATION_GROUP_ORDER } from '../notificationGroups';
+import { Box, Stack } from '@/design-system';
 
 // The scrollable notification list. Empty and loading states render in place. New
 // pages load automatically when the bottom sentinel scrolls into view; selection
@@ -92,9 +93,12 @@ export default function InboxList({
     errorActivities.length === 0
   ) {
     return (
-      <div className="flex h-full items-center justify-center px-4 text-center text-sm text-muted-foreground">
+      <Box
+        padX={4}
+        className="flex h-full items-center justify-center text-center text-sm text-muted-foreground"
+      >
         {t('empty')}
-      </div>
+      </Box>
     );
   }
   return (
@@ -123,7 +127,7 @@ export default function InboxList({
                 {t(`groups.${kind}`)} · {count}
               </h3>
               {kind === 'approvals' && (
-                <div className="space-y-3 px-3 pb-2">
+                <Stack gap={3} padX={3} padBottom={2}>
                   {projectRequests.map((request) => (
                     <ApprovalRequestCard key={request.id} request={request} />
                   ))}
@@ -133,7 +137,7 @@ export default function InboxList({
                       approval={approval}
                     />
                   ))}
-                </div>
+                </Stack>
               )}
               {kind === 'errors' && (
                 <ul>

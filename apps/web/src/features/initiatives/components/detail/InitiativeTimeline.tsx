@@ -7,6 +7,7 @@ import { formatDate } from '@/utils/dates';
 import HealthBadge from '../shared/HealthBadge';
 import HealthInfoPopover from '../shared/HealthInfoPopover';
 import InitiativeTimelineMeter from './InitiativeTimelineMeter';
+import { Inline, Stack, Text } from '@/design-system';
 
 // The initiative's schedule and pace: health, start/target dates, days remaining,
 // and two bars comparing elapsed time against work done. The gap between the bars
@@ -40,15 +41,15 @@ export default function InitiativeTimeline({ initiative }: { initiative: Initiat
 
   return (
     <div>
-      <div className="mb-2.5 flex items-center justify-between gap-2">
-        <div className="flex items-center gap-1">
+      <Inline gap={2} marginBottom={3} justify="between">
+        <Inline gap={1}>
           <h4 className="text-xs font-medium text-muted-foreground">{t('title')}</h4>
           <HealthInfoPopover />
-        </div>
+        </Inline>
         <HealthBadge health={initiative.health} />
-      </div>
+      </Inline>
 
-      <dl className="mb-3 flex flex-col gap-1.5 text-sm">
+      <Stack as="dl" gap={2} marginBottom={3} className="text-sm">
         {startDate && (
           <div className="flex justify-between">
             <dt className="text-muted-foreground">{t('started')}</dt>
@@ -67,15 +68,17 @@ export default function InitiativeTimeline({ initiative }: { initiative: Initiat
             <dd className={daysLeft < 0 ? 'text-destructive' : ''}>{remaining(daysLeft)}</dd>
           </div>
         )}
-      </dl>
+      </Stack>
 
       {targetDate ? (
-        <div className="flex flex-col gap-2.5">
+        <Stack gap={3}>
           <InitiativeTimelineMeter label={t('timeElapsed')} pct={elapsed ?? 0} />
           <InitiativeTimelineMeter label={t('workDone')} pct={work} />
-        </div>
+        </Stack>
       ) : (
-        <p className="text-sm text-muted-foreground">{t('noTargetDate')}</p>
+        <Text as="p" size="sm" tone="muted">
+          {t('noTargetDate')}
+        </Text>
       )}
     </div>
   );

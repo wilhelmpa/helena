@@ -3,6 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 import { usagePercent } from '../utils/tokenCeilings';
+import { Inline, Stack } from '@/design-system';
 
 // The tokens used in one period against its ceiling, with a bar once a ceiling is set.
 export default function OrganizationTokenUsage({
@@ -18,15 +19,15 @@ export default function OrganizationTokenUsage({
   const percent = usagePercent(used, ceiling);
 
   return (
-    <div className="space-y-1">
-      <div className="flex items-baseline justify-between gap-2 text-xs">
+    <Stack gap={1}>
+      <Inline gap={2} justify="between" className="items-baseline text-xs">
         <span className="text-muted-foreground">{label}</span>
         <span className="tabular-nums">
           {ceiling == null
             ? `${t('used', { used })} · ${t('noCeiling')}`
             : t('usedOfCeiling', { used, ceiling })}
         </span>
-      </div>
+      </Inline>
       {percent != null && (
         <div className="h-1.5 overflow-hidden rounded-full bg-muted">
           <div
@@ -42,6 +43,6 @@ export default function OrganizationTokenUsage({
           />
         </div>
       )}
-    </div>
+    </Stack>
   );
 }

@@ -17,6 +17,7 @@ import { cn } from '@/lib/utils';
 import { useIssueSearchQuery } from '@/services/issues.service';
 import { useTeamProjectOptionsQuery } from '@/services/teams.service';
 import PipelineField from './PipelineField';
+import { Box, Stack, Text } from '@/design-system';
 
 // The task a test run works on, found by search. A template can run in any project of
 // the team, so its project is picked first.
@@ -40,7 +41,7 @@ export default function PipelineTestRunForm({
   const hits = query.trim() ? (search.data ?? []) : [];
 
   return (
-    <div className="space-y-4">
+    <Stack gap={4}>
       {pipeline.projectId === null && (
         <PipelineField label={t('project')}>
           <Select
@@ -73,9 +74,9 @@ export default function PipelineTestRunForm({
           />
           <ul className="max-h-60 overflow-y-auto rounded-md border">
             {hits.length === 0 ? (
-              <li className="px-3 py-2 text-sm text-muted-foreground">
+              <Box as="li" padX={3} padY={2} className="text-sm text-muted-foreground">
                 {query.trim() ? t('noMatches') : t('typeToSearch')}
-              </li>
+              </Box>
             ) : (
               hits.map((hit) => (
                 <li key={hit.id}>
@@ -87,9 +88,9 @@ export default function PipelineTestRunForm({
                     )}
                     onClick={() => setPicked(hit.id)}
                   >
-                    <span className="shrink-0 font-mono text-xs text-muted-foreground" dir="ltr">
+                    <Text as="span" size="xs" tone="muted" className="shrink-0 font-mono" dir="ltr">
                       {hit.identifier}
-                    </span>
+                    </Text>
                     <span className="truncate" dir="auto">
                       {hit.title}
                     </span>
@@ -105,6 +106,6 @@ export default function PipelineTestRunForm({
           {t('start')}
         </Button>
       </div>
-    </div>
+    </Stack>
   );
 }

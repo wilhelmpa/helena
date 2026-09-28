@@ -17,6 +17,7 @@ import { Button } from '@/design-system';
 import type { BundleReport } from '@/lib/api/endpoints/templateBundles';
 import { useImportDepartmentTemplate } from '../services/organization.service';
 import DepartmentTemplateReport from './DepartmentTemplateReport';
+import { Inline, Stack, Text } from '@/design-system';
 
 type Shown = { report: BundleReport; dryRun: boolean };
 
@@ -93,7 +94,7 @@ export default function DepartmentTemplateImportDialog({
           <DialogTitle>{t('importTemplate')}</DialogTitle>
           <DialogDescription>{t('importTemplateHint')}</DialogDescription>
         </DialogHeader>
-        <div className="flex flex-col gap-4">
+        <Stack gap={4}>
           <input
             ref={input}
             type="file"
@@ -101,7 +102,7 @@ export default function DepartmentTemplateImportDialog({
             className="hidden"
             onChange={(event) => void pick(event.target.files)}
           />
-          <div className="flex flex-wrap items-center gap-3">
+          <Inline gap={3} wrap>
             <Button
               size="small"
               icon={<FileUp aria-hidden />}
@@ -111,17 +112,19 @@ export default function DepartmentTemplateImportDialog({
               {t('templateChooseFile')}
             </Button>
             {file && (
-              <span className="min-w-0 flex-1 truncate text-xs text-muted-foreground" dir="auto">
+              <Text as="span" size="xs" tone="muted" className="min-w-0 flex-1 truncate" dir="auto">
                 {t('templateFile', { name: file.name })}
-              </span>
+              </Text>
             )}
-          </div>
-          <div className="flex items-center justify-between gap-3">
+          </Inline>
+          <Inline gap={3} justify="between">
             <div className="min-w-0">
               <label htmlFor={`${id}-update`} className="text-sm">
                 {t('templateUpdate')}
               </label>
-              <p className="text-xs text-muted-foreground">{t('templateUpdateHint')}</p>
+              <Text as="p" size="xs" tone="muted">
+                {t('templateUpdateHint')}
+              </Text>
             </div>
             <Switch
               id={`${id}-update`}
@@ -135,16 +138,16 @@ export default function DepartmentTemplateImportDialog({
                 }
               }}
             />
-          </div>
+          </Inline>
           {run.isPending ? (
-            <p className="flex items-center gap-2 text-xs text-muted-foreground">
+            <Text as="p" size="xs" tone="muted" className="flex items-center gap-2">
               <LoaderCircle className="size-4 animate-spin" aria-hidden />
               {run.variables?.dryRun === false ? t('templateImporting') : t('templateChecking')}
-            </p>
+            </Text>
           ) : shown ? (
             <DepartmentTemplateReport report={shown.report} dryRun={shown.dryRun} />
           ) : null}
-        </div>
+        </Stack>
         <DialogFooter>
           <Button variant="ghost" onClick={() => close(false)}>
             {imported ? tCommon('close') : tCommon('cancel')}

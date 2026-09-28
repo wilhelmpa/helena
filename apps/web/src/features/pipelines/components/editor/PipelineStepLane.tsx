@@ -10,6 +10,7 @@ import { usePipelineEditor } from '../../context/pipelineEditor';
 import { moveStep, type LaneRef } from '../../utils/editorState';
 import PipelineAddStep from './PipelineAddStep';
 import PipelineStepCard from './PipelineStepCard';
+import { Stack } from '@/design-system';
 
 // The steps of one lane in run order. Each lane sorts on its own, so a drag reorders
 // steps within the lane and never moves one into another lane. Whether the lane can be
@@ -52,7 +53,7 @@ function SortableLane({
   return (
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
       <SortableContext items={steps.map((step) => step.id)} strategy={verticalListSortingStrategy}>
-        <ol className="space-y-1">
+        <Stack as="ol" gap={1}>
           {steps.map((step, index) => (
             <Fragment key={step.id}>
               {editable && index > 0 && (
@@ -68,7 +69,7 @@ function SortableLane({
               <PipelineAddStep lane={lane} index={steps.length} />
             </li>
           )}
-        </ol>
+        </Stack>
       </SortableContext>
     </DndContext>
   );

@@ -3,6 +3,7 @@ import type { JanitorHealth } from '@/lib/api/endpoints/god';
 import { formatDurationShort } from '@/utils/dates';
 import StatusBadge from '@/components/common/page/StatusBadge';
 import { healthStatus, janitorSummary } from '../../utils/systemHealth';
+import { Inline, Text } from '@/design-system';
 
 // One janitor loop of the health overview: whether it is still running on schedule,
 // when it last ran, and what it cleaned up that run. A report, like a service's state:
@@ -11,13 +12,16 @@ export default function HomeJanitorState({ health }: { health: JanitorHealth }) 
   const t = useTranslations('god.systemHealth');
   const summary = janitorSummary(health);
   return (
-    <li
-      className="flex h-8 min-w-0 items-center gap-2 px-2 text-sm"
+    <Inline
+      as="li"
+      gap={2}
+      padX={2}
+      className="h-8 min-w-0 text-sm"
       title={health.error ?? undefined}
     >
       <StatusBadge status={healthStatus(health.state)} dotOnly />
       <span className="min-w-0 truncate">{t(`janitor.${health.job}`)}</span>
-      <span className="ms-auto shrink-0 text-end text-xs text-muted-foreground">
+      <Text as="span" size="xs" tone="muted" className="ms-auto shrink-0 text-end">
         {summary ? (
           <>
             {t('janitorRan', { time: formatDurationShort(summary.ranAt) })}
@@ -31,7 +35,7 @@ export default function HomeJanitorState({ health }: { health: JanitorHealth }) 
         ) : (
           t('janitorNeverRan')
         )}
-      </span>
-    </li>
+      </Text>
+    </Inline>
   );
 }

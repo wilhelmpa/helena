@@ -5,6 +5,7 @@ import { ChevronLeft, Maximize2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { issuePath } from '@/utils/paths';
+import { Inline, Text } from '@/design-system';
 
 export default function InboxDetailHeader({
   projectKey,
@@ -22,16 +23,16 @@ export default function InboxDetailHeader({
   const openLabel = tIssue('openAsPage');
 
   return (
-    <div className="flex h-11 shrink-0 items-center gap-2 border-b px-4 xl:px-10">
+    <Inline gap={2} padX={4} className="h-11 shrink-0 border-b xl:px-10">
       {isMobile && (
         <Button variant="ghost" size="sm" className="-ms-2 gap-1.5" onClick={onBack}>
           <ChevronLeft aria-hidden="true" className="size-4 rtl:rotate-180" />
           {t('backToList')}
         </Button>
       )}
-      <span className="min-w-0 flex-1 truncate text-xs text-muted-foreground">
+      <Text as="span" size="xs" tone="muted" className="min-w-0 flex-1 truncate">
         {projectKey}-{issueSeq}
-      </span>
+      </Text>
       <Button
         asChild
         variant="ghost"
@@ -42,6 +43,6 @@ export default function InboxDetailHeader({
           <Maximize2 aria-hidden="true" />
         </Link>
       </Button>
-    </div>
+    </Inline>
   );
 }

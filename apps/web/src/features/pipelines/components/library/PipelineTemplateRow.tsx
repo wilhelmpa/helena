@@ -12,6 +12,7 @@ import { useDeletePipeline } from '@/services/pipelines.service';
 import { pipelinePath } from '@/utils/paths';
 import { usePipelineLabels } from '../../hooks/usePipelineLabels';
 import { stepCount } from '../../utils/editorState';
+import { Inline, Text } from '@/design-system';
 
 export default function PipelineTemplateRow({
   pipeline,
@@ -26,7 +27,14 @@ export default function PipelineTemplateRow({
   const [deleting, setDeleting] = useState(false);
 
   return (
-    <li className="flex items-start gap-2 px-3 py-2.5 transition-colors hover:bg-accent">
+    <Inline
+      as="li"
+      gap={2}
+      padX={3}
+      padY={3}
+      align="start"
+      className="transition-colors hover:bg-accent"
+    >
       <Link href={pipelinePath(pipeline.id)} className="min-w-0 flex-1 space-y-1 text-sm">
         <span className="block font-medium" dir="auto">
           {pipeline.name}
@@ -36,11 +44,11 @@ export default function PipelineTemplateRow({
             {pipeline.description}
           </span>
         )}
-        <span className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+        <Text as="span" size="xs" tone="muted" className="flex flex-wrap items-center gap-2">
           <Badge variant="outline">{labels.trigger(pipeline.definition.trigger)}</Badge>
           <span>{t('steps', { count: stepCount(pipeline.definition.steps) })}</span>
           <span>{t('version', { version: pipeline.version })}</span>
-        </span>
+        </Text>
       </Link>
       {canDelete && (
         <Button
@@ -64,11 +72,11 @@ export default function PipelineTemplateRow({
           }}
           onClose={() => setDeleting(false)}
         >
-          <p className="text-sm text-muted-foreground">
+          <Text as="p" size="sm" tone="muted">
             {t('deleteConfirm', { name: pipeline.name })}
-          </p>
+          </Text>
         </ConfirmDialog>
       )}
-    </li>
+    </Inline>
   );
 }

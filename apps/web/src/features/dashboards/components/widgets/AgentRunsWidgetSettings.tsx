@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/select';
 import { STATUS_FILTER } from './AgentRunsWidget';
 import LimitSelect from './LimitSelect';
+import { Inline } from '@/design-system';
 
 // The run status filter and the row count.
 export default function AgentRunsWidgetSettings({
@@ -22,7 +23,7 @@ export default function AgentRunsWidgetSettings({
   const status = config.runStatus ?? null;
   const limit = config.limit ?? 20;
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <Inline gap={2} wrap>
       <Select
         value={status ?? 'all'}
         onValueChange={(v) =>
@@ -41,6 +42,6 @@ export default function AgentRunsWidgetSettings({
         </SelectContent>
       </Select>
       <LimitSelect value={limit} onChange={(next) => onConfigChange({ limit: next })} />
-    </div>
+    </Inline>
   );
 }

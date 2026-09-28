@@ -13,6 +13,7 @@ import { qk } from '@/services/queryKeys';
 import { useTeamProjectOptionsQuery } from '@/services/teams.service';
 import { revScope } from '@/utils/revScopes';
 import { ALL_RUNS as ALL, useRunFilters } from './PipelineRunsFilter';
+import { Stack, Text } from '@/design-system';
 
 // The runs of the workflow, newest first. A template runs in every project of the team,
 // so its runs can be narrowed to one; the list stays live for that project. The filters
@@ -42,27 +43,27 @@ export default function PipelineRunsTab({
     targets: [qk.anyPipelineRuns],
   });
   return (
-    <div className="space-y-4">
+    <Stack gap={4}>
       {runs.isPending ? (
         <ListSkeleton rows={3} rowClassName="h-24" />
       ) : runs.isError ? (
-        <p className="rounded-md border bg-card px-3 py-2 text-sm text-destructive">
+        <Text as="p" size="sm" tone="danger" className="rounded-md border bg-card px-3 py-2">
           {t('loadFailed')}
-        </p>
+        </Text>
       ) : runs.data.items.length === 0 ? (
-        <p className="rounded-md border bg-card px-3 py-2 text-sm text-muted-foreground">
+        <Text as="p" size="sm" tone="muted" className="rounded-md border bg-card px-3 py-2">
           {t('empty')}
-        </p>
+        </Text>
       ) : (
         <>
-          <div className="space-y-3">
+          <Stack gap={3}>
             {runs.data.items.map((run) => (
               <PipelineRunTimeline key={run.id} run={run} canEdit={canEdit} showIssue />
             ))}
-          </div>
+          </Stack>
           <ListPager paging={paging} total={runs.data.total} />
         </>
       )}
-    </div>
+    </Stack>
   );
 }

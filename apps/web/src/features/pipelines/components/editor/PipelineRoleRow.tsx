@@ -16,6 +16,7 @@ import { usePipelineEditor } from '../../context/pipelineEditor';
 import { removeRole, updateRole } from '../../utils/editorState';
 import { roleIssues } from '../../utils/issueDisplay';
 import PipelineIssueList from '../PipelineIssueList';
+import { Box, Stack } from '@/design-system';
 
 const MATCH_TYPES = ['coordinator', 'capability', 'template', 'none'] as const;
 
@@ -35,7 +36,7 @@ export default function PipelineRoleRow({ role }: { role: PipelineRole }) {
 
   if (!editable)
     return (
-      <li className="flex flex-wrap items-baseline gap-x-3 py-2 text-sm">
+      <Box as="li" padY={2} className="flex flex-wrap items-baseline gap-x-3 text-sm">
         <span className="font-medium" dir="auto">
           {role.name}
         </span>
@@ -44,11 +45,15 @@ export default function PipelineRoleRow({ role }: { role: PipelineRole }) {
           {role.match.type === 'capability' && `: ${role.match.capability}`}
         </span>
         <PipelineIssueList issues={own} className="w-full" />
-      </li>
+      </Box>
     );
 
   return (
-    <li className="grid items-start gap-2 py-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]">
+    <Box
+      as="li"
+      padY={2}
+      className="grid items-start gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]"
+    >
       <Input
         value={role.name}
         maxLength={80}
@@ -56,7 +61,7 @@ export default function PipelineRoleRow({ role }: { role: PipelineRole }) {
         aria-label={t('name')}
         onChange={(event) => set({ ...role, name: event.target.value })}
       />
-      <div className="space-y-2">
+      <Stack gap={2}>
         <Select
           value={role.match.type}
           onValueChange={(type) => set({ ...role, match: matchOf(type as RoleMatch['type']) })}
@@ -101,7 +106,7 @@ export default function PipelineRoleRow({ role }: { role: PipelineRole }) {
             </SelectContent>
           </Select>
         )}
-      </div>
+      </Stack>
       <Button
         variant="ghost"
         size="icon-sm"
@@ -113,6 +118,6 @@ export default function PipelineRoleRow({ role }: { role: PipelineRole }) {
         <Trash2 />
       </Button>
       <PipelineIssueList issues={own} className="sm:col-span-3" />
-    </li>
+    </Box>
   );
 }

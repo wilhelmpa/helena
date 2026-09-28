@@ -11,6 +11,7 @@ import type { AgentActivityEntry } from '@/lib/api/endpoints/agentActivity';
 import { DashboardSection, SkeletonRows } from '../DashboardParts';
 import { MonoMeta } from '@/components/helena/DashboardPrimitives';
 import { useHomeActiveActivity, HOME_ACTIVE_STATUSES } from '../../services/homeKpis.service';
+import { Text } from '@/design-system';
 
 const RUNNING_SHOWN = 5;
 const FINISHED_SHOWN = 3;
@@ -106,7 +107,9 @@ export function FinishedSection() {
           .slice(0, FINISHED_SHOWN)
           .map((entry) => <AgentRow key={entry.id} entry={entry} finished />)
       ) : (
-        <p className="p-3 text-xs text-[var(--dashboard-muted)]">{t('agents.noFinished')}</p>
+        <Text as="p" size="xs" tone="muted" className="p-3">
+          {t('agents.noFinished')}
+        </Text>
       )}
     </DashboardSection>
   );

@@ -9,6 +9,7 @@ import {
 } from '../organizationTree';
 import OrganizationAgentNode from './OrganizationAgentNode';
 import OrganizationGoalNode from './OrganizationGoalNode';
+import { Box, Inline, Stack, Text } from '@/design-system';
 
 // Only the 'unassigned' bucket is a real problem (a genuine orphan with no manager and
 // no template flag): it gets the red treatment. 'none' (no department, but placed in
@@ -43,9 +44,13 @@ export default function OrganizationDepartmentNode({
         : t('map.noDepartment'));
   const isWarning = node.kind === 'unassigned';
   return (
-    <li className="relative ps-5 before:absolute before:start-0 before:top-0 before:h-4 before:w-4 before:rounded-es-md before:border-s before:border-b before:border-sidebar-border">
+    <Box
+      as="li"
+      padStart={5}
+      className="relative before:absolute before:start-0 before:top-0 before:h-4 before:w-4 before:rounded-es-md before:border-s before:border-b before:border-sidebar-border"
+    >
       <section>
-        <div className="flex h-8 items-center gap-2 px-2">
+        <Inline gap={2} padX={2} className="h-8">
           <Icon
             className={cn(
               'size-4 shrink-0 text-muted-foreground',
@@ -53,9 +58,9 @@ export default function OrganizationDepartmentNode({
             )}
           />
           <h3 className={cn('text-sm font-medium', isWarning && 'text-status-danger')}>{label}</h3>
-          <span className="font-mono text-xs text-muted-foreground tabular-nums">
+          <Text as="span" size="xs" tone="muted" className="font-mono tabular-nums">
             {countAgents(node)}
-          </span>
+          </Text>
           {(node.kind === 'unassigned' || node.department?.description) && (
             <span
               className={cn(
@@ -66,7 +71,7 @@ export default function OrganizationDepartmentNode({
               {node.kind === 'unassigned' ? t('map.unassignedHint') : node.department?.description}
             </span>
           )}
-        </div>
+        </Inline>
         {node.agents.length > 0 && (
           <ul
             className={cn(
@@ -80,20 +85,20 @@ export default function OrganizationDepartmentNode({
           </ul>
         )}
         {node.goals.length > 0 && (
-          <div className="ms-4 mt-1 border-s border-sidebar-border ps-4">
-            <p className="flex h-8 items-center text-xs font-medium text-muted-foreground">
+          <Box marginTop={1} padStart={4} className="ms-4 border-s border-sidebar-border">
+            <Text as="p" size="xs" tone="muted" className="flex h-8 items-center font-medium">
               {t('tabs.goals')}
-            </p>
-            <ul className="space-y-1">
+            </Text>
+            <Stack as="ul" gap={1}>
               {node.goals.map((goal) => (
                 <OrganizationGoalNode key={goal.goal.id} node={goal} />
               ))}
-            </ul>
-          </div>
+            </Stack>
+          </Box>
         )}
       </section>
       {node.children.length > 0 && (
-        <ul className="ms-4 space-y-2 border-s border-sidebar-border pt-2">
+        <Stack as="ul" gap={2} padTop={2} className="ms-4 border-s border-sidebar-border">
           {node.children.map((child) => (
             <OrganizationDepartmentNode
               key={child.department?.id ?? child.kind}
@@ -101,9 +106,9 @@ export default function OrganizationDepartmentNode({
               work={work}
             />
           ))}
-        </ul>
+        </Stack>
       )}
-    </li>
+    </Box>
   );
 }
 
@@ -124,16 +129,16 @@ function PlainRoots({
         <OrganizationAgentNode key={agent.agent.id} node={agent} work={work} />
       ))}
       {node.goals.length > 0 && (
-        <li className="ms-4 mt-1 border-s border-sidebar-border ps-4">
-          <p className="flex h-8 items-center text-xs font-medium text-muted-foreground">
+        <Box as="li" marginTop={1} padStart={4} className="ms-4 border-s border-sidebar-border">
+          <Text as="p" size="xs" tone="muted" className="flex h-8 items-center font-medium">
             {t('tabs.goals')}
-          </p>
-          <ul className="space-y-1">
+          </Text>
+          <Stack as="ul" gap={1}>
             {node.goals.map((goal) => (
               <OrganizationGoalNode key={goal.goal.id} node={goal} />
             ))}
-          </ul>
-        </li>
+          </Stack>
+        </Box>
       )}
     </>
   );

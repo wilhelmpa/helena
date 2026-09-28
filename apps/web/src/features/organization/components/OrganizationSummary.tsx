@@ -4,6 +4,7 @@ import { Bot, Network, UsersRound } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { OrganizationAgent } from '@/lib/api/endpoints/organization';
 import { organizationAgentRole } from '../organizationTree';
+import { Box, Inline, Text } from '@/design-system';
 
 export default function OrganizationSummary({ agents }: { agents: OrganizationAgent[] }) {
   const t = useTranslations('organization');
@@ -21,14 +22,16 @@ export default function OrganizationSummary({ agents }: { agents: OrganizationAg
 
   // Plain figures in one line, like Home's KPI row: a count, not a control, so no frame.
   return (
-    <div className="flex flex-wrap items-center gap-x-5 gap-y-1 px-2">
+    <Box padX={2} className="flex flex-wrap items-center gap-x-5 gap-y-1">
       {cards.map(({ key, value, icon: Icon }) => (
-        <div key={key} className="flex h-8 items-center gap-2 text-sm">
+        <Inline gap={2} key={key} className="h-8 text-sm">
           <Icon className="size-4 text-muted-foreground" />
-          <span className="text-md font-semibold tabular-nums">{value}</span>
+          <Text as="span" size="md" className="font-semibold tabular-nums">
+            {value}
+          </Text>
           <span className="text-muted-foreground">{t(`summary.${key}`)}</span>
-        </div>
+        </Inline>
       ))}
-    </div>
+    </Box>
   );
 }

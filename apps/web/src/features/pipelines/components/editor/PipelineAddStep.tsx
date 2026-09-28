@@ -26,6 +26,7 @@ import {
   uniqueStepId,
   type LaneRef,
 } from '../../utils/editorState';
+import { Text } from '@/design-system';
 
 // Adds a step of a chosen kind at a position of a lane and selects it. `compact` is
 // the small button between two steps; the full one ends a lane.
@@ -110,7 +111,9 @@ export default function PipelineAddStep({
                   <Icon className="mt-0.5" />
                   <span className="flex flex-col">
                     <span>{t(`kinds.${kind}`)}</span>
-                    <span className="text-xs text-muted-foreground">{t(`kindHints.${kind}`)}</span>
+                    <Text as="span" size="xs" tone="muted">
+                      {t(`kindHints.${kind}`)}
+                    </Text>
                   </span>
                 </DropdownMenuItem>
               );
@@ -131,9 +134,9 @@ export default function PipelineAddStep({
                     <span className="flex flex-col">
                       <span>{plugins.text(entry.info.label) || entry.type}</span>
                       {entry.info.description && (
-                        <span className="text-xs text-muted-foreground">
+                        <Text as="span" size="xs" tone="muted">
                           {plugins.text(entry.info.description)}
-                        </span>
+                        </Text>
                       )}
                     </span>
                   </DropdownMenuItem>

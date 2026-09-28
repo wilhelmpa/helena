@@ -16,6 +16,7 @@ import MemberProvisionedBadge from '@/components/common/MemberProvisionedBadge';
 import MemberRoleControl from './MemberRoleControl';
 import MemberDescription from './MemberDescription';
 import MemberDescriptionDialog from './MemberDescriptionDialog';
+import { Inline, Stack, Text } from '@/design-system';
 
 // One member's row in the members list: identity, role control, and the actions
 // (edit description, leave or revoke access). Acting on someone else's membership
@@ -55,18 +56,20 @@ export default function MemberRow({
   return (
     <TableRow className="group/item">
       <TableCell className="px-3 py-3 align-top whitespace-normal">
-        <div className="flex min-w-0 flex-col gap-0.5">
-          <div className="flex min-w-0 items-center gap-2.5">
+        <Stack gap={1} className="min-w-0">
+          <Inline gap={3} className="min-w-0">
             <Avatar name={displayName} image={member.image} className="size-8 shrink-0" />
-            <div className="flex min-w-0 flex-col gap-0.5">
-              <span className="flex items-center gap-2 text-sm font-medium">
+            <Stack gap={1} className="min-w-0">
+              <Text as="span" size="sm" className="flex items-center gap-2 font-medium">
                 <span className="truncate">{displayName}</span>
                 {self && (
-                  <span className="text-xs font-normal text-muted-foreground">{t('you')}</span>
+                  <Text as="span" size="xs" tone="muted" className="font-normal">
+                    {t('you')}
+                  </Text>
                 )}
                 {provisioned && <MemberProvisionedBadge />}
-              </span>
-              <span className="flex items-center gap-1.5 truncate text-xs text-muted-foreground">
+              </Text>
+              <Text as="span" size="xs" tone="muted" className="flex items-center gap-1.5 truncate">
                 {member.isAgent ? (
                   <MemberAgentBadge />
                 ) : (
@@ -80,11 +83,11 @@ export default function MemberRow({
                     <span className="truncate">{member.email}</span>
                   </>
                 )}
-              </span>
-            </div>
-          </div>
+              </Text>
+            </Stack>
+          </Inline>
           <MemberDescription member={member} />
-        </div>
+        </Stack>
       </TableCell>
       <TableCell className="px-3 pt-4 pb-3 align-top whitespace-normal">
         <MemberRoleControl
@@ -104,7 +107,7 @@ export default function MemberRow({
         {formatDateTime(member.createdAt)}
       </TableCell>
       <TableCell className="px-3 pt-3 pb-2 align-top">
-        <div className="flex items-center justify-end gap-1">
+        <Inline gap={1} justify="end">
           {canEditDescription && (
             <MemberDescriptionDialog projectKey={projectKey} member={member} self={self} />
           )}
@@ -125,7 +128,7 @@ export default function MemberRow({
               <TooltipContent>{isLastOwner ? t('lastOwner') : removeLabel}</TooltipContent>
             </Tooltip>
           )}
-        </div>
+        </Inline>
       </TableCell>
     </TableRow>
   );

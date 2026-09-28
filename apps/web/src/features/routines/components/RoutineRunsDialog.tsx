@@ -8,6 +8,7 @@ import ListSkeleton from '@/components/common/skeleton/ListSkeleton';
 import { usePaging } from '@/hooks/usePaging';
 import type { Routine } from '@/lib/api/endpoints/routines';
 import { useRoutineRuns } from '../services/routines.service';
+import { Stack, Text } from '@/design-system';
 
 // The runs of a routine, newest first: when each was due, what it did and, for one that
 // failed, why. A member who may edit routines cancels a run or retries a failed one.
@@ -34,16 +35,20 @@ export function RoutineRunsDialog({
       {runs.isPending ? (
         <ListSkeleton rows={3} rowClassName="h-20" />
       ) : runs.isError ? (
-        <p className="text-sm text-destructive">{t('historyFailed')}</p>
+        <Text as="p" size="sm" tone="danger">
+          {t('historyFailed')}
+        </Text>
       ) : runs.data.items.length === 0 ? (
-        <p className="text-sm text-muted-foreground">{t('noRunsShort')}</p>
+        <Text as="p" size="sm" tone="muted">
+          {t('noRunsShort')}
+        </Text>
       ) : (
-        <div className="space-y-3">
+        <Stack gap={3}>
           {runs.data.items.map((run) => (
             <PipelineRunTimeline key={run.id} run={run} canEdit={canEdit} showIssue />
           ))}
           <ListPager paging={paging} total={runs.data.total} />
-        </div>
+        </Stack>
       )}
     </Modal>
   );

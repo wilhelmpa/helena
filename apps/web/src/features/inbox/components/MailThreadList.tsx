@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 import type { MailThreadRow as Row } from '@/lib/api/endpoints/mail';
 import { cn } from '@/lib/utils';
 import MailThreadRow from './MailThreadRow';
+import { Text } from '@/design-system';
 
 const ROW_HEIGHT = 76;
 
@@ -58,11 +59,17 @@ export default function MailThreadList({
   return (
     <div ref={scrollRef} className={cn('min-h-0 flex-col overflow-y-auto', className)}>
       {loading ? (
-        <p className="p-4 text-sm text-muted-foreground">{t('loading')}</p>
+        <Text as="p" size="sm" tone="muted" className="p-4">
+          {t('loading')}
+        </Text>
       ) : error ? (
-        <p className="p-4 text-sm text-destructive">{t('loadError')}</p>
+        <Text as="p" size="sm" tone="danger" className="p-4">
+          {t('loadError')}
+        </Text>
       ) : rows.length === 0 ? (
-        <p className="p-4 text-sm text-muted-foreground">{t('empty')}</p>
+        <Text as="p" size="sm" tone="muted" className="p-4">
+          {t('empty')}
+        </Text>
       ) : (
         <div className="relative w-full" style={{ height: virtualizer.getTotalSize() }}>
           {items.map((item) => {

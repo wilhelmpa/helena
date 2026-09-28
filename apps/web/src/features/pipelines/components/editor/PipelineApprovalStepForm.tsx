@@ -15,6 +15,7 @@ import { fieldIssues } from '../../utils/issueDisplay';
 import PipelineField from './PipelineField';
 import PipelineNumberInput from './PipelineNumberInput';
 import PipelineTemplateText from './PipelineTemplateText';
+import { Text } from '@/design-system';
 
 // An approval step: what the approver checks, and on a rejection either the end of the
 // run or a way back to a step the run passed on its way here.
@@ -78,7 +79,9 @@ export default function PipelineApprovalStepForm({
             issues={issuesOf('onReject.stepId')}
           >
             {targets.length === 0 ? (
-              <p className="text-xs text-muted-foreground">{t('noEarlierSteps')}</p>
+              <Text as="p" size="xs" tone="muted">
+                {t('noEarlierSteps')}
+              </Text>
             ) : (
               <Select
                 value={reject.stepId || undefined}

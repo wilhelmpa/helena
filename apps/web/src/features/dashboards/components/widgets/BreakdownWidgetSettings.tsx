@@ -2,6 +2,7 @@ import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 import type { WidgetConfig } from '@/utils/dashboardWidgets';
 import { BY_OPTIONS } from './BreakdownWidget';
+import { Inline } from '@/design-system';
 
 // The dimension the counts are grouped by.
 export default function BreakdownWidgetSettings({
@@ -14,7 +15,7 @@ export default function BreakdownWidgetSettings({
   const t = useTranslations('dashboards.breakdown');
   const by = config.by ?? 'status';
   return (
-    <div className="flex flex-wrap gap-1">
+    <Inline gap={1} wrap align="stretch">
       {BY_OPTIONS.map((option) => (
         <button
           key={option}
@@ -30,6 +31,6 @@ export default function BreakdownWidgetSettings({
           {t(`by.${option}`)}
         </button>
       ))}
-    </div>
+    </Inline>
   );
 }

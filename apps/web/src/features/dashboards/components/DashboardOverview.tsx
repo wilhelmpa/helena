@@ -20,6 +20,7 @@ import { formatDurationShort } from '@/utils/dates';
 import { useAgentStatus } from '@/utils/helenaStatus';
 import Orb from '@/components/helena/Orb';
 import { Card, MonoLabel, MonoMeta, Tile } from '@/components/helena/DashboardPrimitives';
+import { Stack, Text } from '@/design-system';
 
 const OPEN = new Set(['backlog', 'unstarted', 'started']);
 const WORKING = new Set(['running', 'streaming']);
@@ -66,7 +67,7 @@ function OverviewCard({
         <MonoLabel>{label}</MonoLabel>
         <MonoMeta>{count}</MonoMeta>
       </div>
-      <div className="flex flex-col gap-2">{children}</div>
+      <Stack gap={2}>{children}</Stack>
     </Card>
   );
 }
@@ -119,7 +120,7 @@ export default function DashboardOverview({
   const needs = (approvalCount.data?.count ?? 0) + waitingWithoutApproval.length;
 
   return (
-    <div className="space-y-4">
+    <Stack gap={4}>
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-[14px]">
         <Tile
           label={t('openTasks')}
@@ -148,7 +149,9 @@ export default function DashboardOverview({
               .slice(0, 4)
               .map((entry) => <ActivityRow key={entry.id} entry={entry} projectKey={projectKey} />)
           ) : (
-            <p className="py-5 text-xs text-[var(--dashboard-muted)]">{t('noRunning')}</p>
+            <Text as="p" size="xs" tone="muted" className="py-5">
+              {t('noRunning')}
+            </Text>
           )}
         </OverviewCard>
         <div className="flex min-w-0 flex-col gap-[14px]">
@@ -167,7 +170,9 @@ export default function DashboardOverview({
               <ActivityRow key={entry.id} entry={entry} projectKey={projectKey} />
             ))}
             {!needs && (
-              <p className="py-5 text-xs text-[var(--dashboard-muted)]">{t('nothingWaiting')}</p>
+              <Text as="p" size="xs" tone="muted" className="py-5">
+                {t('nothingWaiting')}
+              </Text>
             )}
           </OverviewCard>
           <OverviewCard label={t('finished')} count={finished.length}>
@@ -178,11 +183,13 @@ export default function DashboardOverview({
                   <ActivityRow key={entry.id} entry={entry} projectKey={projectKey} />
                 ))
             ) : (
-              <p className="py-5 text-xs text-[var(--dashboard-muted)]">{t('noFinished')}</p>
+              <Text as="p" size="xs" tone="muted" className="py-5">
+                {t('noFinished')}
+              </Text>
             )}
           </OverviewCard>
         </div>
       </div>
-    </div>
+    </Stack>
   );
 }

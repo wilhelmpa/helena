@@ -10,6 +10,7 @@ import TradingKpis from './TradingKpis';
 import TradingWatchlist from './TradingWatchlist';
 import TradingTakt from './TradingTakt';
 import styles from './TradingDashboard.module.css';
+import { Text } from '@/design-system';
 
 export default function ProjectPluginWidget({
   widget,
@@ -29,9 +30,19 @@ export default function ProjectPluginWidget({
     queryFn: () => getTradingDashboard(projectKey, 'today'),
     enabled: trading,
   });
-  if (!pluginWidget) return <p className="text-xs text-muted-foreground">{t('unavailable')}</p>;
+  if (!pluginWidget)
+    return (
+      <Text as="p" size="xs" tone="muted">
+        {t('unavailable')}
+      </Text>
+    );
   if (trading) {
-    if (!data.data) return <p className="text-xs text-muted-foreground">{t('loading')}</p>;
+    if (!data.data)
+      return (
+        <Text as="p" size="xs" tone="muted">
+          {t('loading')}
+        </Text>
+      );
     if (pluginWidget.id.endsWith(':kpis'))
       return (
         <div className={styles.trading}>

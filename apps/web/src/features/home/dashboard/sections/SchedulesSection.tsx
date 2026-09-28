@@ -9,6 +9,7 @@ import { useNow } from '@/features/provider-limits/hooks/useNow';
 import { formatDateTime, formatDuration } from '@/utils/dates';
 import { schedulesPath } from '@/utils/paths';
 import { DashboardSection, SkeletonRows } from '../DashboardParts';
+import { Text } from '@/design-system';
 
 const PAGE = { page: 1, pageSize: 50 };
 const SHOWN = 4;
@@ -47,8 +48,11 @@ export default function SchedulesSection() {
             title={routine.title}
             detail={[routine.projectKey, routine.agent?.name].filter(Boolean).join(' · ')}
             trailing={
-              <span
-                className="text-xs text-muted-foreground tabular-nums"
+              <Text
+                as="span"
+                size="xs"
+                tone="muted"
+                className="tabular-nums"
                 title={formatDateTime(routine.nextRunAt!)}
               >
                 {now === null
@@ -56,7 +60,7 @@ export default function SchedulesSection() {
                   : t('in', {
                       time: formatDuration(Math.max(0, Date.parse(routine.nextRunAt!) - now)),
                     })}
-              </span>
+              </Text>
             }
           />
         ))

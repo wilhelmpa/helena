@@ -21,6 +21,7 @@ import {
   getMailClassification,
 } from '@/lib/api/endpoints/mailTriage';
 import { cn } from '@/lib/utils';
+import { Inline, Stack, Text } from '@/design-system';
 
 const key = (threadId: number) => ['mail-classification', threadId] as const;
 
@@ -70,7 +71,7 @@ export function MailClassificationCard({ threadId }: { threadId: number }) {
   const classification = query.data?.classification ?? null;
   if (!classification) {
     return (
-      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+      <Inline gap={2} className="text-xs text-muted-foreground">
         <Button
           type="button"
           variant="ghost"
@@ -81,7 +82,7 @@ export function MailClassificationCard({ threadId }: { threadId: number }) {
           <Split />
           {t('classify')}
         </Button>
-      </div>
+      </Inline>
     );
   }
   const answers = classification.answers;
@@ -89,8 +90,13 @@ export function MailClassificationCard({ threadId }: { threadId: number }) {
   const suggested = classification.actions.filter((action) => action.note === 'suggested');
 
   return (
-    <div className="flex flex-col gap-2 rounded-md border border-sidebar-border bg-card px-3 py-2 text-sm">
-      <div className="flex flex-wrap items-center gap-2">
+    <Stack
+      gap={2}
+      padX={3}
+      padY={2}
+      className="rounded-md border border-sidebar-border bg-card text-sm"
+    >
+      <Inline gap={2} wrap>
         <Split className="size-4 text-muted-foreground" aria-hidden />
         <Select
           value={classification.category ?? ''}
@@ -153,13 +159,13 @@ export function MailClassificationCard({ threadId }: { threadId: number }) {
           {classification.needsReply ? t('needsReply') : t('noReply')}
         </button>
         {classification.status !== 'classified' && (
-          <span className="text-xs text-muted-foreground">
+          <Text as="span" size="xs" tone="muted">
             {classification.status === 'failed' ? t('failed') : t('unsure')}
-          </span>
+          </Text>
         )}
-      </div>
+      </Inline>
       {suggested.length > 0 && (
-        <div className="flex flex-wrap items-center gap-2">
+        <Inline gap={2} wrap>
           {suggested.some((action) => action.kind === 'task') && (
             <Button
               type="button"
@@ -184,8 +190,8 @@ export function MailClassificationCard({ threadId }: { threadId: number }) {
               {t('handToAgent')}
             </Button>
           )}
-        </div>
+        </Inline>
       )}
-    </div>
+    </Stack>
   );
 }

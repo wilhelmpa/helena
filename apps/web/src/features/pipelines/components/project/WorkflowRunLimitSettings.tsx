@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { usePipelineRunLimit, useSetPipelineRunLimit } from '@/services/pipelines.service';
+import { Inline, Stack, Text } from '@/design-system';
 
 const MIN = 1;
 const MAX = 1000;
@@ -47,12 +48,14 @@ export default function WorkflowRunLimitSettings({
   }
 
   return (
-    <div className="flex flex-col gap-2 border-b pb-6 sm:flex-row sm:items-center sm:gap-3">
+    <Stack gap={2} padBottom={5} className="border-b sm:flex-row sm:items-center sm:gap-3">
       <div className="min-w-0 flex-1">
         <h3 className="text-sm font-medium">{t('title')}</h3>
-        <p className="text-xs text-muted-foreground">{t('hint')}</p>
+        <Text as="p" size="xs" tone="muted">
+          {t('hint')}
+        </Text>
       </div>
-      <div className="flex shrink-0 items-center gap-2">
+      <Inline gap={2} className="shrink-0">
         <Input
           id={INPUT_ID}
           type="number"
@@ -65,7 +68,9 @@ export default function WorkflowRunLimitSettings({
           aria-label={t('title')}
           className="h-8 w-20"
         />
-        <span className="text-xs text-muted-foreground">{t('perHour')}</span>
+        <Text as="span" size="xs" tone="muted">
+          {t('perHour')}
+        </Text>
         {editable && (
           <Button
             size="sm"
@@ -76,7 +81,7 @@ export default function WorkflowRunLimitSettings({
             {t('save')}
           </Button>
         )}
-      </div>
-    </div>
+      </Inline>
+    </Stack>
   );
 }

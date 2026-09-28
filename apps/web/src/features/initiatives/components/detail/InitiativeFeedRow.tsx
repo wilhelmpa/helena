@@ -21,6 +21,7 @@ import { formatDate } from '@/utils/dates';
 import { issuePath } from '@/utils/paths';
 import { usePriorityLabel } from '@/hooks/usePriorityLabel';
 import { STATUS_META } from '@/utils/initiativeMeta';
+import { Inline } from '@/design-system';
 
 const ICON: Record<string, typeof CircleDot> = {
   created: CirclePlus,
@@ -127,7 +128,7 @@ export default function InitiativeFeedRow({
     linkSentence = t.rich('createdIssueNamed', { issue: () => issueLink });
   }
   return (
-    <li className="flex items-center gap-2.5 text-xs">
+    <Inline as="li" gap={3} className="text-xs">
       <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
         <Icon className="size-3" />
       </span>
@@ -141,6 +142,6 @@ export default function InitiativeFeedRow({
         )}
         <span className="ml-1.5">· {relativeTime(item.createdAt)}</span>
       </span>
-    </li>
+    </Inline>
   );
 }

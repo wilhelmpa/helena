@@ -9,6 +9,7 @@ import { usePipelineEditor } from '../../context/pipelineEditor';
 import { addRole } from '../../utils/editorState';
 import PipelineCard from './PipelineCard';
 import PipelineRoleRow from './PipelineRoleRow';
+import { Text } from '@/design-system';
 
 export default function PipelineRolesCard() {
   const t = useTranslations('pipelines.roles');
@@ -28,7 +29,9 @@ export default function PipelineRolesCard() {
       }
     >
       {definition.roles.length === 0 ? (
-        <p className="text-sm text-muted-foreground">{t('empty')}</p>
+        <Text as="p" size="sm" tone="muted">
+          {t('empty')}
+        </Text>
       ) : (
         <ul className="divide-y">
           {definition.roles.map((role) => (

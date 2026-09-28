@@ -7,6 +7,7 @@ import Modal from '@/components/common/overlay/Modal';
 import { Input } from '@/components/ui/input';
 import type { Project } from '@/lib/api/endpoints/projects';
 import { cn } from '@/lib/utils';
+import { Stack, Text } from '@/design-system';
 
 // Picks the project a thread is filed under (or Home) by typing and Enter.
 export default function ProjectPickerDialog({
@@ -43,7 +44,7 @@ export default function ProjectPickerDialog({
 
   return (
     <Modal title={title} description={description} onClose={onClose}>
-      <div className="flex flex-col gap-2">
+      <Stack gap={2}>
         <Input
           autoFocus
           value={filter}
@@ -68,7 +69,9 @@ export default function ProjectPickerDialog({
                 {option.id == null ? (
                   <Home className="size-4 text-muted-foreground" />
                 ) : (
-                  <span className="w-12 font-mono text-xs text-muted-foreground">{option.key}</span>
+                  <Text as="span" size="xs" tone="muted" className="w-12 font-mono">
+                    {option.key}
+                  </Text>
                 )}
                 <span className="flex-1 truncate">{option.name}</span>
                 {option.id === currentProjectId && <Check className="size-4" />}
@@ -76,7 +79,7 @@ export default function ProjectPickerDialog({
             </li>
           ))}
         </ul>
-      </div>
+      </Stack>
     </Modal>
   );
 }

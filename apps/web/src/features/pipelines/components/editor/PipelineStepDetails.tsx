@@ -3,6 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { isPluginStep, type PipelineStep } from '@/lib/api/endpoints/pipelines';
 import { useStepSummary } from '../../hooks/useStepSummary';
+import { Stack } from '@/design-system';
 
 // A step as a reader sees it: its name, what it does and the texts it works with.
 export default function PipelineStepDetails({ step }: { step: PipelineStep }) {
@@ -43,7 +44,7 @@ export default function PipelineStepDetails({ step }: { step: PipelineStep }) {
       rows.push([key, typeof value === 'string' ? value : JSON.stringify(value)]);
 
   return (
-    <dl className="space-y-3">
+    <Stack as="dl" gap={3}>
       {rows.map(([label, value]) => (
         <div key={label}>
           <dt className="text-xs text-muted-foreground">{label}</dt>
@@ -52,6 +53,6 @@ export default function PipelineStepDetails({ step }: { step: PipelineStep }) {
           </dd>
         </div>
       ))}
-    </dl>
+    </Stack>
   );
 }

@@ -1,5 +1,6 @@
 import { useTranslations } from 'next-intl';
 import { formatInZone, nextRuns } from '../utils/schedulePreview';
+import { Text } from '@/design-system';
 
 // The next times a cron fires in its zone, as the form is filled in.
 export function RoutineNextRuns({ cron, timezone }: { cron: string; timezone: string }) {
@@ -7,8 +8,8 @@ export function RoutineNextRuns({ cron, timezone }: { cron: string; timezone: st
   const runs = nextRuns(cron, timezone);
   if (runs.length === 0) return null;
   return (
-    <p className="text-xs text-muted-foreground">
+    <Text as="p" size="xs" tone="muted">
       {t('nextRuns', { runs: runs.map((run) => formatInZone(run, timezone)).join(' · ') })}
-    </p>
+    </Text>
   );
 }

@@ -12,6 +12,7 @@ import {
   type ChartConfig,
 } from '@/components/ui/chart';
 import { useThroughputQuery } from '../../services/analytics.service';
+import { Stack, Text } from '@/design-system';
 
 const SERIES_COLOR = { created: 'var(--dashboard-project)', closed: 'var(--dashboard-positive)' };
 
@@ -39,7 +40,11 @@ export default function ThroughputWidget({
   function chart() {
     if (isLoading) return <Skeleton className="h-[180px] w-full" />;
     if (chartData.length === 0) {
-      return <p className="py-6 text-center text-sm text-muted-foreground">{t('empty')}</p>;
+      return (
+        <Text as="p" size="sm" tone="muted" className="py-6 text-center">
+          {t('empty')}
+        </Text>
+      );
     }
     // Recharts draws to absolute SVG coordinates and does not read the document
     // direction, so a mirrored chart would put its axes and series out of step with
@@ -59,9 +64,11 @@ export default function ThroughputWidget({
   }
 
   return (
-    <div className="space-y-3">
-      <p className="text-xs text-muted-foreground">{t('lastWeeks', { weeks })}</p>
+    <Stack gap={3}>
+      <Text as="p" size="xs" tone="muted">
+        {t('lastWeeks', { weeks })}
+      </Text>
       {chart()}
-    </div>
+    </Stack>
   );
 }

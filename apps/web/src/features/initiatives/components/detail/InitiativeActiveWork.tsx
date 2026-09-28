@@ -6,6 +6,7 @@ import type { ProjectDetail } from '@/lib/api/endpoints/projects';
 import { useShell } from '@/context/shellContext';
 import { StateIcon } from '@/features/issue/components/shared/IssueIcons';
 import Avatar from '@/components/common/Avatar';
+import { Box } from '@/design-system';
 
 // The initiative's issues currently in progress (state group 'started'), listed so
 // the overview shows what is actively being worked on, not just the counts.
@@ -32,7 +33,7 @@ export default function InitiativeActiveWork({
   const assignees = new Map(project.assignees.map((a) => [a.userId, a]));
 
   return (
-    <div className="mt-8">
+    <Box marginTop={6}>
       <h3 className="mb-3 text-xs font-medium text-muted-foreground">
         {t('inProgress')} <span className="tabular-nums">· {rows.length}</span>
       </h3>
@@ -68,6 +69,6 @@ export default function InitiativeActiveWork({
           );
         })}
       </ul>
-    </div>
+    </Box>
   );
 }

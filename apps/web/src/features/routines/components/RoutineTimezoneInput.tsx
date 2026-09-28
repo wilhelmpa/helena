@@ -2,6 +2,7 @@ import { useId } from 'react';
 import { useTranslations } from 'next-intl';
 import { DEFAULT_TIMEZONE, isTimeZone } from '../utils/schedulePreview';
 import { RoutineSuggestionsInput, type InputSuggestion } from './RoutineSuggestionsInput';
+import { Text } from '@/design-system';
 
 // Every IANA zone the browser knows, offered as the name is typed.
 const ZONES: InputSuggestion[] = [
@@ -37,9 +38,9 @@ export function RoutineTimezoneInput({
         aria-invalid={!valid}
         aria-describedby={messageId}
       />
-      <span id={messageId} className="block text-xs text-destructive" aria-live="polite">
+      <Text as="span" size="xs" tone="danger" id={messageId} className="block" aria-live="polite">
         {valid ? null : t('invalidTimezone')}
-      </span>
+      </Text>
     </>
   );
 }

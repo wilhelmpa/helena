@@ -9,6 +9,7 @@ import { EMPTY_FILTER_SET, applyFilters, isActiveFilterSet, type FilterSet } fro
 import type { WidgetConfig } from '@/utils/dashboardWidgets';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useActivityFeedQuery } from '../../services/analytics.service';
+import { Inline, Stack, Text } from '@/design-system';
 
 // The actions that get their own verb phrase, as messages under
 // `dashboards.activityFeed.verbs`. Each phrase ends where the issue link follows,
@@ -93,20 +94,24 @@ export default function ActivityFeedWidget({
   function feed() {
     if (isLoading) {
       return (
-        <div className="space-y-2">
+        <Stack gap={2}>
           {Array.from({ length: 5 }).map((_, i) => (
             <Skeleton key={i} className="h-8 w-full" />
           ))}
-        </div>
+        </Stack>
       );
     }
     if (items.length === 0) {
-      return <p className="py-4 text-center text-sm text-muted-foreground">{t('empty')}</p>;
+      return (
+        <Text as="p" size="sm" tone="muted" className="py-4 text-center">
+          {t('empty')}
+        </Text>
+      );
     }
     return (
-      <ul className="space-y-2">
+      <Stack as="ul" gap={2}>
         {items.map((a) => (
-          <li key={a.id} className="flex items-start gap-2 text-sm">
+          <Inline as="li" gap={2} align="start" key={a.id} className="text-sm">
             <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-muted-foreground/40" />
             <div className="min-w-0 flex-1">
               <span className="text-foreground/80">{actorName(a.actorName, t('automation'))}</span>{' '}
@@ -114,20 +119,22 @@ export default function ActivityFeedWidget({
               <Link href={issuePath(projectKey, a.issueSequence)} className="hover:underline">
                 {projectKey}-{a.issueSequence}
               </Link>
-              <span className="ml-1 text-xs text-muted-foreground/70">
+              <Text as="span" size="xs" tone="faint" className="ml-1">
                 {formatDateTime(a.createdAt)}
-              </span>
+              </Text>
             </div>
-          </li>
+          </Inline>
         ))}
-      </ul>
+      </Stack>
     );
   }
 
   return (
-    <div className="space-y-3">
-      <p className="text-xs text-muted-foreground">{caption}</p>
+    <Stack gap={3}>
+      <Text as="p" size="xs" tone="muted">
+        {caption}
+      </Text>
       {feed()}
-    </div>
+    </Stack>
   );
 }

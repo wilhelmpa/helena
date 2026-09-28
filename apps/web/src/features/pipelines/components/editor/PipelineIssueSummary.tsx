@@ -4,6 +4,7 @@ import { useTranslations } from 'next-intl';
 import { usePipelineEditor } from '../../context/pipelineEditor';
 import { splitIssues } from '../../utils/issueDisplay';
 import PipelineIssueList from '../PipelineIssueList';
+import { Stack, Text } from '@/design-system';
 
 // Every problem of the draft above the builder. A problem of a step selects it.
 export default function PipelineIssueSummary() {
@@ -13,22 +14,26 @@ export default function PipelineIssueSummary() {
   if (issues.length === 0) return null;
 
   return (
-    <div className="space-y-3 rounded-md border bg-card p-4">
+    <Stack gap={3} pad={4} className="rounded-md border bg-card">
       {blocking.length > 0 && (
-        <div className="space-y-1.5">
-          <p className="text-sm font-medium text-destructive">
+        <Stack gap={2}>
+          <Text as="p" size="sm" tone="danger" className="font-medium">
             {t('issuesTitle', { count: blocking.length })}
-          </p>
+          </Text>
           <PipelineIssueList issues={blocking} onSelect={select} />
-        </div>
+        </Stack>
       )}
       {warnings.length > 0 && (
-        <div className="space-y-1.5">
-          <p className="text-sm font-medium">{t('warningsTitle', { count: warnings.length })}</p>
-          <p className="text-xs text-muted-foreground">{t('warningsHint')}</p>
+        <Stack gap={2}>
+          <Text as="p" size="sm" className="font-medium">
+            {t('warningsTitle', { count: warnings.length })}
+          </Text>
+          <Text as="p" size="xs" tone="muted">
+            {t('warningsHint')}
+          </Text>
           <PipelineIssueList issues={warnings} onSelect={select} />
-        </div>
+        </Stack>
       )}
-    </div>
+    </Stack>
   );
 }

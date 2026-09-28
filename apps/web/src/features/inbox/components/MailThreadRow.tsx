@@ -5,6 +5,7 @@ import { CircleAlert, Paperclip, Reply, Sparkles, Star } from 'lucide-react';
 import type { MailThreadRow as Row } from '@/lib/api/endpoints/mail';
 import { cn } from '@/lib/utils';
 import { mailListDate } from '../utils/mailDates';
+import { Text } from '@/design-system';
 
 export default function MailThreadRow({
   row,
@@ -41,7 +42,9 @@ export default function MailThreadRow({
         <span dir="auto" className={cn('min-w-0 flex-1 truncate', row.unread && 'font-semibold')}>
           {row.fromName || row.fromAddress}
           {row.messageCount > 1 && (
-            <span className="ms-1 text-xs text-muted-foreground">{row.messageCount}</span>
+            <Text as="span" size="xs" tone="muted" className="ms-1">
+              {row.messageCount}
+            </Text>
           )}
         </span>
         {triage?.priority === 'high' && (
@@ -63,18 +66,18 @@ export default function MailThreadRow({
             className="size-3.5 shrink-0 text-muted-foreground"
           />
         )}
-        <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
+        <Text as="span" size="xs" tone="muted" className="shrink-0 tabular-nums">
           {mailListDate(row.lastMessageAt)}
-        </span>
+        </Text>
       </span>
       <span dir="auto" className={cn('truncate ps-4', row.unread && 'font-medium')}>
         {row.subject || t('noSubject')}
       </span>
-      <span className="flex items-center gap-1.5 ps-4 text-xs text-muted-foreground">
+      <Text as="span" size="xs" tone="muted" className="flex items-center gap-1.5 ps-4">
         {showProject && (
-          <span className="shrink-0 rounded-sm border px-1 font-mono text-xs leading-4">
+          <Text as="span" size="xs" className="shrink-0 rounded-sm border px-1 font-mono leading-4">
             {row.projectKey ?? t('home')}
-          </span>
+          </Text>
         )}
         {triage?.category && (
           <span className="shrink-0 rounded-sm border px-1 leading-4">
@@ -90,7 +93,7 @@ export default function MailThreadRow({
         <span dir="auto" className="truncate">
           {row.snippet}
         </span>
-      </span>
+      </Text>
     </button>
   );
 }

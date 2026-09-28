@@ -10,6 +10,7 @@ import type { OrganizationDepartment } from '@/lib/api/endpoints/organization';
 import { useCreateDepartment } from '../services/organization.service';
 import DepartmentTemplateImportDialog from './DepartmentTemplateImportDialog';
 import OrganizationDepartmentCard from './OrganizationDepartmentCard';
+import { Inline, Stack, Text } from '@/design-system';
 
 export default function OrganizationDepartments({
   teamId,
@@ -24,10 +25,13 @@ export default function OrganizationDepartments({
   const [importing, setImporting] = useState(false);
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <form
-          className="flex max-w-xl min-w-0 flex-1 gap-2"
+    <Stack gap={4}>
+      <Inline gap={3} justify="between" wrap>
+        <Inline
+          as="form"
+          gap={2}
+          align="stretch"
+          className="max-w-xl min-w-0 flex-1"
           onSubmit={(event) => {
             event.preventDefault();
             create.mutate(
@@ -47,20 +51,20 @@ export default function OrganizationDepartments({
           <Button type="submit" variant="outline" disabled={create.isPending || !name.trim()}>
             {t('actions.add')}
           </Button>
-        </form>
+        </Inline>
         <ActionButton icon={<FileUp aria-hidden />} onClick={() => setImporting(true)}>
           {t('departments.importTemplate')}
         </ActionButton>
-      </div>
+      </Inline>
       <DepartmentTemplateImportDialog
         teamId={teamId}
         open={importing}
         onOpenChange={setImporting}
       />
       {departments.length === 0 ? (
-        <p className="rounded-md border bg-card px-3 py-2 text-sm text-muted-foreground">
+        <Text as="p" size="sm" tone="muted" className="rounded-md border bg-card px-3 py-2">
           {t('departments.empty')}
-        </p>
+        </Text>
       ) : (
         <div className="grid gap-3 xl:grid-cols-2">
           {departments.map((department) => (
@@ -73,6 +77,6 @@ export default function OrganizationDepartments({
           ))}
         </div>
       )}
-    </div>
+    </Stack>
   );
 }

@@ -10,6 +10,7 @@ import { useDeleteDepartment, useUpdateDepartment } from '../services/organizati
 import DepartmentBudgets from './DepartmentBudgets';
 import DepartmentSkills from './DepartmentSkills';
 import DepartmentTemplateExport from './DepartmentTemplateExport';
+import { Inline, Stack, Text } from '@/design-system';
 
 export default function OrganizationDepartmentCard({
   teamId,
@@ -28,8 +29,11 @@ export default function OrganizationDepartmentCard({
   const [parentId, setParentId] = useState(department.parentId?.toString() ?? '');
 
   return (
-    <form
-      className="space-y-3 rounded-md border bg-card p-4"
+    <Stack
+      as="form"
+      gap={3}
+      pad={4}
+      className="rounded-md border bg-card"
       onSubmit={(event) => {
         event.preventDefault();
         update.mutate({
@@ -40,13 +44,15 @@ export default function OrganizationDepartmentCard({
     >
       <div className="grid gap-3 md:grid-cols-2">
         <label className="space-y-1 text-sm">
-          <span className="block text-xs text-muted-foreground">{t('fields.name')}</span>
+          <Text as="span" size="xs" tone="muted" className="block">
+            {t('fields.name')}
+          </Text>
           <Input value={name} maxLength={80} onChange={(event) => setName(event.target.value)} />
         </label>
         <label className="space-y-1 text-sm">
-          <span className="block text-xs text-muted-foreground">
+          <Text as="span" size="xs" tone="muted" className="block">
             {t('fields.parentDepartment')}
-          </span>
+          </Text>
           <select
             className="ds-field ds-select-native w-full"
             value={parentId}
@@ -64,7 +70,9 @@ export default function OrganizationDepartmentCard({
         </label>
       </div>
       <label className="space-y-1 text-sm">
-        <span className="block text-xs text-muted-foreground">{t('fields.description')}</span>
+        <Text as="span" size="xs" tone="muted" className="block">
+          {t('fields.description')}
+        </Text>
         <Textarea
           value={description}
           maxLength={1000}
@@ -73,7 +81,7 @@ export default function OrganizationDepartmentCard({
       </label>
       <DepartmentBudgets teamId={teamId} department={department} />
       <DepartmentSkills teamId={teamId} department={department} />
-      <div className="flex flex-wrap items-center justify-end gap-2">
+      <Inline gap={2} justify="end" wrap>
         <DepartmentTemplateExport teamId={teamId} department={department} />
         <span className="flex-1" />
         <Button
@@ -94,7 +102,7 @@ export default function OrganizationDepartmentCard({
         >
           {t('actions.save')}
         </Button>
-      </div>
-    </form>
+      </Inline>
+    </Stack>
   );
 }

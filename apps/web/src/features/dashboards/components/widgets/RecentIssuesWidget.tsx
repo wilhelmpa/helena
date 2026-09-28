@@ -8,6 +8,7 @@ import { usePriorityLabel } from '@/hooks/usePriorityLabel';
 import { EMPTY_FILTER_SET, applyFilters, isActiveFilterSet, type FilterSet } from '@/utils/filters';
 import type { WidgetConfig } from '@/utils/dashboardWidgets';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Stack, Text } from '@/design-system';
 
 // Recent issues filtered by the same board filter set (status, assignee, priority,
 // labels, dates, custom fields) and sorted by created or updated time. Both the
@@ -55,13 +56,17 @@ export default function RecentIssuesWidget({
     .join(' · ');
 
   return (
-    <div className="space-y-3">
-      <p className="text-xs text-muted-foreground">{caption}</p>
+    <Stack gap={3}>
+      <Text as="p" size="xs" tone="muted">
+        {caption}
+      </Text>
 
       {issues.length === 0 ? (
-        <p className="py-4 text-center text-sm text-muted-foreground">{t('empty')}</p>
+        <Text as="p" size="sm" tone="muted" className="py-4 text-center">
+          {t('empty')}
+        </Text>
       ) : (
-        <ul className="space-y-0.5">
+        <Stack as="ul" gap={1}>
           {issues.map((issue) => {
             const column = columnById.get(issue.columnId);
             return (
@@ -80,19 +85,19 @@ export default function RecentIssuesWidget({
                   </span>
                   <span className="min-w-0 flex-1 truncate">{issue.title}</span>
                   {issue.priority && (
-                    <span className="shrink-0 text-xs text-muted-foreground">
+                    <Text as="span" size="xs" tone="muted" className="shrink-0">
                       {priorityLabel(issue.priority)}
-                    </span>
+                    </Text>
                   )}
-                  <span className="shrink-0 text-xs text-muted-foreground">
+                  <Text as="span" size="xs" tone="muted" className="shrink-0">
                     {formatShortDate(sort === 'updated' ? issue.updatedAt : issue.createdAt)}
-                  </span>
+                  </Text>
                 </Link>
               </li>
             );
           })}
-        </ul>
+        </Stack>
       )}
-    </div>
+    </Stack>
   );
 }
