@@ -74,14 +74,33 @@ export const runtimePolicy = t.Object({
     }),
   ),
   runtime: t.Optional(
-    t.Union([t.Literal('hermes'), t.Literal('claude'), t.Literal('codex')], {
-      description:
-        'Which runtime runs the agent. Unset is Hermes. The server provisions a runtime for ' +
-        'an agent of one project whichever it is, and its runner serves it with that ' +
-        "preset: Claude Code and Codex get the agent's instructions, skills, MCP servers, " +
-        'tools, model and reasoning from Helena, and their login from a runtime login ' +
-        '(credential kind runtime_login) granted to the agent.',
+    t.Union(
+      [
+        t.Literal('hermes'),
+        t.Literal('claude'),
+        t.Literal('codex'),
+        t.Literal('command'),
+        t.Literal('webhook'),
+      ],
+      {
+        description:
+          'Which runtime runs the agent. Unset is Hermes. The server provisions a runtime for ' +
+          'an agent of one project whichever it is. Command runs a workspace script; Webhook ' +
+          'posts a signed request to an external service. Claude Code and Codex also receive ' +
+          'managed instructions, skills, tools, models and granted runtime logins.',
+      },
+    ),
+  ),
+  commandScript: t.Optional(
+    t.String({
+      minLength: 1,
+      maxLength: 256,
+      pattern: '^(?!/)(?!.*(?:^|/)\\.\\.?(?:/|$))[A-Za-z0-9_./-]+$',
     }),
+  ),
+  webhookUrl: t.Optional(t.String({ minLength: 1, maxLength: 2048, pattern: '^https://[^\\s]+$' })),
+  webhookSecretEnv: t.Optional(
+    t.String({ minLength: 1, maxLength: 128, pattern: '^[A-Z_][A-Z0-9_]*$' }),
   ),
   reflection: t.Optional(
     t.Union([t.Literal('off'), t.Literal('failure'), t.Literal('complex')], {

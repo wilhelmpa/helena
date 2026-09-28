@@ -115,6 +115,9 @@ export interface RuntimePolicySnapshot {
   model?: string | null;
   runtimePolicy: {
     files: RuntimePolicyFile[];
+    commandScript?: string;
+    webhookUrl?: string;
+    webhookSecretEnv?: string;
     // The Hermes toolsets and MCP servers of the Hermes configuration the agent may not use.
     toolDeny?: string[];
   };

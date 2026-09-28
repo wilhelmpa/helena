@@ -219,10 +219,12 @@ export async function perform(
     // The answer itself, where the command prints an event stream (Claude Code, Codex).
     output: mask.text(answer.text() ?? outcome.output),
     usage: outcome.usage ?? usage.value(),
-    spend: spend.value({
-      model: run.model,
-      provider: modelProvider(config, run.model, run.thinkingLevel) ?? null,
-    }),
+    spend:
+      outcome.spend ??
+      spend.value({
+        model: run.model,
+        provider: modelProvider(config, run.model, run.thinkingLevel) ?? null,
+      }),
     ...(sessionId && { sessionId }),
     ...(runtime && { runtime }),
   };

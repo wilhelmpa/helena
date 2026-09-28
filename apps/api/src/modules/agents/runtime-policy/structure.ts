@@ -43,6 +43,8 @@ const SUB_AGENTS: Record<AgentRuntimeKind, string[]> = {
     'They are not Helena agents, and Helena does not show them.',
   ],
   codex: [],
+  command: [],
+  webhook: [],
 };
 
 export function coordinatorSection(input: {

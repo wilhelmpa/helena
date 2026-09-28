@@ -1,4 +1,5 @@
 import { CliRuntimeAdapter } from './cli-runtime';
+import { ExternalRuntimeAdapter } from './external-runtime';
 import type { RunnerConfig } from './config';
 import { hermesPolicySynchronizer, type RuntimePolicyClient } from './policy';
 import type { RuntimeAdapter } from './runtime';
@@ -14,6 +15,9 @@ export function runtimeAdapter(
   if (config.agent === 'hermes') return hermesPolicySynchronizer(config, client);
   if (config.agent === 'claude' || config.agent === 'codex') {
     return new CliRuntimeAdapter(config.agent, config, client);
+  }
+  if (config.agent === 'command' || config.agent === 'webhook') {
+    return new ExternalRuntimeAdapter(config.agent, config, client);
   }
   // A plugin runtime (@helena/sdk RuntimeType) brings its own profile adapter.
   const type = runtimeOf(config.agent);

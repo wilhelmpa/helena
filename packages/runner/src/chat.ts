@@ -117,10 +117,12 @@ export async function answer(
   ).finally(() => clearInterval(flushing));
   await limits?.end();
   if (stop.signal.aborted) return;
-  const spent = spend.value({
-    model: message.model,
-    provider: modelProvider(config, message.model, message.thinkingLevel) ?? null,
-  });
+  const spent =
+    outcome.spend ??
+    spend.value({
+      model: message.model,
+      provider: modelProvider(config, message.model, message.thinkingLevel) ?? null,
+    });
   const uses = logins.uses();
   if (uses.length > 0) {
     await client.reportLoginUses({ messageId: message.id }, uses).catch(() => {});
@@ -147,7 +149,7 @@ export async function answer(
     await stream.finish(outcome.output);
     await report({
       status: 'success',
-      usage: stream.contextUsage(),
+      usage: outcome.usage ?? stream.contextUsage(),
       spend: spent,
       ...(stream.model() && { model: stream.model()! }),
       ...(runtime && { runtime }),
@@ -171,7 +173,7 @@ export async function answer(
   await report({
     status: 'failed',
     error,
-    usage: stream.contextUsage(),
+    usage: outcome.usage ?? stream.contextUsage(),
     spend: spent,
     ...(stream.model() && { model: stream.model()! }),
     ...(runtime && { runtime }),

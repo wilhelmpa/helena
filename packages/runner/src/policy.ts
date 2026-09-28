@@ -133,6 +133,15 @@ export interface MemoryProposal {
 
 export interface RuntimePolicyClient {
   runtimePolicy(): Promise<RuntimePolicySnapshot>;
+  decideRuntime?(question: {
+    runtime: 'command' | 'webhook';
+    tool: string;
+    runId?: number;
+    messageId?: number;
+    command?: string;
+    workspace?: string;
+    mcp?: { server: string; action: 'send' };
+  }): Promise<{ outcome: string; message: string }>;
   reportRuntimeStatus(status: RuntimeStatus): Promise<void>;
   mcpSecrets(work?: WorkRef): Promise<Record<string, string>>;
   // The keys of the local model servers the profile names (local AI).

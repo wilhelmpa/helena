@@ -263,12 +263,12 @@ describe('Project agent bootstrap', () => {
     expect(await bootstrapProjectAgent(project.id, agent.id)).toBeNull();
   });
 
-  it('gives an agent set to run on Claude Code or Codex a runtime of that kind', async () => {
+  it('gives an agent the selected runtime in its provisioning descriptor', async () => {
     const { api, project, agent } = await setup();
     const route = api.teams({ teamId: project.teamId })['ai-agents']({ agentId: agent.id });
     const policy = (await route.get()).data!.runtimePolicy;
     expect((await bootstrapProjectAgent(project.id, agent.id))?.runtime).toBe('hermes');
-    for (const runtime of ['claude', 'codex'] as const) {
+    for (const runtime of ['claude', 'codex', 'command', 'webhook'] as const) {
       const patched = await route.patch({ runtimePolicy: { ...policy, runtime } });
       expect(patched.data!.runtimePolicy.runtime).toBe(runtime);
       const answer = await bootstrapProjectAgent(project.id, agent.id);

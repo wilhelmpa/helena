@@ -51,6 +51,102 @@ describe('agent runner queue', () => {
     await resetDb();
   });
 
+  it('delivers command and webhook settings through the existing agent queue', async () => {
+    const { asOwner, asRunner, agent, columnId, teamId } = await setup();
+    const route = asOwner.teams({ teamId })['ai-agents']({ agentId: agent.id });
+    const base = (await route.get()).data!.runtimePolicy;
+    for (const runtimePolicy of [
+      { ...base, runtime: 'command' as const, commandScript: 'scripts/review.sh' },
+      {
+        ...base,
+        runtime: 'webhook' as const,
+        webhookUrl: 'https://worker.example/agent',
+        webhookSecretEnv: 'AGENT_SIGNING_SECRET',
+      },
+    ]) {
+      expect((await route.patch({ runtimePolicy })).status).toBe(200);
+      const policy = await asRunner['agent-runtime'].policy.get();
+      expect(policy.status).toBe(200);
+      expect(policy.data!.runtimePolicy.runtime).toBe(runtimePolicy.runtime);
+      if (runtimePolicy.runtime === 'command') {
+        expect(policy.data!.runtimePolicy.commandScript).toBe('scripts/review.sh');
+      } else {
+        expect(policy.data!.runtimePolicy).toMatchObject({
+          webhookUrl: 'https://worker.example/agent',
+          webhookSecretEnv: 'AGENT_SIGNING_SECRET',
+        });
+      }
+      await queueRun(asOwner, columnId, agent.username);
+      const run = (await asRunner['agent-runs'].claim.post()).data!.run!;
+      expect(run.trigger).toBe('mention');
+      const decision = await asRunner['agent-policy'].decide.post(
+        runtimePolicy.runtime === 'command'
+          ? { runtime: 'command', tool: 'shell', runId: run.id, command: './scripts/review.sh' }
+          : {
+              runtime: 'webhook',
+              tool: 'send',
+              runId: run.id,
+              mcp: { server: 'external-webhook', action: 'send' },
+            },
+      );
+      expect(decision.status).toBe(200);
+      expect(decision.data!.outcome).toBe('allow');
+      for (const level of [0, 1, 2] as const) {
+        expect(
+          (await asOwner.projects({ projectKey: 'MKT' }).autopilot.put({ level })).status,
+        ).toBe(200);
+        const restricted = await asRunner['agent-policy'].decide.post(
+          runtimePolicy.runtime === 'command'
+            ? { runtime: 'command', tool: 'shell', runId: run.id, command: './scripts/review.sh' }
+            : {
+                runtime: 'webhook',
+                tool: 'send',
+                runId: run.id,
+                mcp: { server: 'external-webhook', action: 'send' },
+              },
+        );
+        expect(restricted.status).toBe(200);
+        expect(restricted.data!.outcome === 'allow').toBe(
+          runtimePolicy.runtime === 'command' && level === 2,
+        );
+      }
+      expect(
+        (await asOwner.projects({ projectKey: 'MKT' }).autopilot.put({ level: 3 })).status,
+      ).toBe(200);
+      expect(
+        (
+          await asRunner['agent-runs']({ runId: run.id }).result.post({
+            status: 'success',
+            output: 'reviewed',
+          })
+        ).status,
+      ).toBe(200);
+    }
+    expect(
+      (
+        await route.patch({
+          runtimePolicy: {
+            ...base,
+            runtime: 'command',
+            commandScript: '../outside.sh',
+          },
+        })
+      ).status,
+    ).toBe(400);
+    expect(
+      (
+        await route.patch({
+          runtimePolicy: {
+            ...base,
+            runtime: 'webhook',
+            webhookUrl: 'http://localhost/agent',
+            webhookSecretEnv: 'AGENT_SIGNING_SECRET',
+          },
+        })
+      ).status,
+    ).toBe(400);
+  });
+
   it('claims a queued run with its issue and prompt', async () => {
     const { asOwner, asRunner, agent, columnId } = await setup();
     const issue = await queueRun(asOwner, columnId, agent.username);

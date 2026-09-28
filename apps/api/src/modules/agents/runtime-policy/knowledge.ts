@@ -50,6 +50,8 @@ const LOOK_AT_FILE: Record<AgentRuntimeKind, string> = {
   hermes: 'your vision tool',
   claude: 'your Read tool',
   codex: 'view_image',
+  command: 'your script',
+  webhook: 'your service',
 };
 
 // What an agent is told about the knowledge vault in its SOUL.md: where knowledge goes,

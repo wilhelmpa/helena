@@ -33,6 +33,7 @@
         "@helena/policy": "workspace:*",
         "@helena/push": "workspace:*",
         "@helena/sdk": "workspace:*",
+        "@helena/trading": "workspace:*",
         "@modelcontextprotocol/sdk": "^1.30.0",
         "@repo/agent-naming": "workspace:*",
         "@repo/agent-tools": "workspace:*",
@@ -527,6 +528,7 @@
         "itsaplan-runner": "./dist/cli.js",
       },
       "dependencies": {
+        "@repo/net": "workspace:*",
         "@secretlint/core": "13.0.5",
         "@secretlint/secretlint-rule-preset-recommend": "13.0.5",
       },

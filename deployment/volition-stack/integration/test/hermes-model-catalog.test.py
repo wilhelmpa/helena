@@ -316,6 +316,20 @@ class CliRuntimeCatalogTest(RuntimeFixture, unittest.TestCase):
         # The profile is the project user's: the catalog creates nothing in it.
         self.assertFalse((self.home / 'profiles' / 'alpha_21').exists())
 
+    def test_serves_command_and_webhook_without_model_catalogs(self):
+        self.os.environ.pop('AGENT_ISOLATION', None)
+        for agent_id, runtime in ((21, 'command'), (22, 'webhook')):
+            descriptor = self.descriptors / f'alpha_{agent_id}.json'
+            data = self.json.loads(descriptor.read_text())
+            data['runtime'] = runtime
+            descriptor.write_text(self.json.dumps(data))
+        agents = self.entries()
+        self.assertEqual(agents['claude-coder']['agent'], 'command')
+        self.assertEqual(agents['codex-coder']['agent'], 'webhook')
+        self.assertEqual(agents['claude-coder']['models'], [])
+        self.assertEqual(agents['codex-coder']['models'], [])
+        self.assertNotIn('CODEX_HOME', agents['codex-coder']['env'])
+
     def test_leaves_out_a_descriptor_with_an_unknown_runtime(self):
         self.os.environ.pop('AGENT_ISOLATION', None)
         path = self.descriptors / 'alpha_21.json'

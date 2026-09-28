@@ -23,7 +23,7 @@ export interface AgentIsolation {
   slug: string;
   profile: string;
   agentId: number | null;
-  // The agent's own runtime (config `agent`: hermes, claude, codex). The launcher gives the
+  // The agent's own runtime (config `agent`). The launcher gives the
   // profile helper of a Claude Code or Codex agent no Hermes login views, which would cover
   // the agent's own login in its profile (.codex is a Codex agent's CODEX_HOME).
   runtime?: string;

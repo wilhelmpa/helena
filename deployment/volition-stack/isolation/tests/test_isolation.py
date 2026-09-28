@@ -105,7 +105,7 @@ class ConfigTest(unittest.TestCase):
         self.assertEqual(config.user_prefix, 'vp-')
         self.assertEqual(config.forwards, {'egress': 3128, 'plan': 3000, 'localai': 13305})
         self.assertEqual(config.optional_sockets, ('localai',))
-        self.assertEqual(set(config.runtimes), {'hermes', 'claude', 'codex', 'profile-helper'})
+        self.assertEqual(set(config.runtimes), {'hermes', 'claude', 'codex', 'command', 'profile-helper'})
         self.assertIn('/srv/volition/source/plan/packages/runner/dist', config.runtimes['claude'].read_only)
         self.assertIn('/var/lib/volition', config.hide)
         self.assertIn('/etc/volition', config.inaccessible)
@@ -456,6 +456,19 @@ class LauncherRequestTest(unittest.TestCase):
         self.assertEqual(checked['home'], str(self.dir / 'profiles/alpha'))
         self.assertEqual(checked['cwd'], str(self.dir / 'workspaces/alpha/src'))
         self.assertEqual(checked['vault_rw'], [str(self.dir / 'vault/Projects/ALPHA')])
+
+    def test_command_script_stays_a_regular_file_in_the_project_workspace(self):
+        script = self.dir / 'workspaces/alpha/src/review.sh'
+        script.write_text('echo reviewed\n')
+        checked = self.worker.check_run({**self.base, 'runtime': 'command', 'args': ['-eu', str(script)]})
+        self.assertEqual(checked['args'], ['-eu', str(script)])
+        self.assertIn('exactly one script', self.refused(runtime='command', args=['-eu']))
+        outside = self.dir / 'workspaces/beta/foreign.sh'
+        outside.write_text('echo foreign\n')
+        self.assertIn('outside the workspace', self.refused(runtime='command', args=['-eu', str(outside)]))
+        script.unlink()
+        script.symlink_to(outside)
+        self.assertIn('unavailable or linked', self.refused(runtime='command', args=['-eu', str(script)]))
 
     def test_refuses_what_is_not_the_project(self):
         self.assertIn('does not belong', self.refused(profile='beta'))
