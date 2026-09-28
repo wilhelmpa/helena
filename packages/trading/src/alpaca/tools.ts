@@ -578,6 +578,16 @@ export function alpacaPaperTools(deps: PaperToolDeps = {}): AgentTool<unknown>[]
           timeframe: query.timeframe,
           barCount: bars.length,
           asOf: bars.at(-1)!.t,
+          // The last completed bar itself: agents need the price next to the indicators
+          // (TRADE-24 left "Kurs" empty without it, 2026-09-28).
+          lastBar: {
+            time: bars.at(-1)!.t,
+            open: bars.at(-1)!.o,
+            high: bars.at(-1)!.h,
+            low: bars.at(-1)!.l,
+            close: bars.at(-1)!.c,
+            volume: bars.at(-1)!.v,
+          },
           source: query.symbol.includes('/')
             ? 'Alpaca US crypto paper market data'
             : 'Alpaca IEX paper market data, split-adjusted',
