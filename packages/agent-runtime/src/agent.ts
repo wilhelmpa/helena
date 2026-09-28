@@ -1,6 +1,7 @@
 import { DEFAULTS, type AgentRuntimeConfig, type ToolProfile } from './config';
 import type { EventSink } from './events';
 import { HelenaClient, type HelenaApi, type MemoryState } from './helena-client';
+import { uncertaintyEscalation, type Escalation } from './escalation';
 import { runLoop, type LoopResult } from './loop';
 import { modelChain, resolveModel, type ModelFactory, type ResolvedModel } from './models';
 import { buildSystemPrompt } from './prompt';
@@ -234,7 +235,52 @@ export async function runAgent(input: AgentRunInput): Promise<LoopResult> {
       workdir: config.workdir,
     });
 
+    // The decision service's view of the task (Helena's `decide` tool), asked only where the
+    // owner set a confidence threshold for the hand-over.
+    const decider = tools.find((entry) => entry.name === 'decide');
+    const escalation = config.escalation;
+    const uncertainty =
+      decider &&
+      escalation?.target &&
+      (escalation.mode ?? 'auto') === 'auto' &&
+      escalation.confidenceBelow !== undefined
+        ? async (): Promise<Escalation | null> => {
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), 15_000);
+            try {
+              const answer = await decider.execute(
+                {
+                  question:
+                    'Can a small local model finish this task on its own with tools, or does it need a large model (hard coding, architecture, security, legal, text for outsiders)?',
+                  options: [
+                    { id: 'small', label: 'small model is enough' },
+                    { id: 'large', label: 'needs a large model' },
+                  ],
+                  context: input.prompt.slice(0, 6000),
+                },
+                { workdir: config.workdir, signal: controller.signal, env: input.env },
+              );
+              const parsed = JSON.parse(answer.text) as {
+                status?: string;
+                choice?: string | null;
+                confidence?: number;
+              };
+              // Undecided: the loop tries itself; a failure still hands the task over.
+              if (parsed.status !== 'decided') return null;
+              return uncertaintyEscalation(escalation, {
+                label: parsed.choice === 'large' ? 'hard' : 'easy',
+                confidence: typeof parsed.confidence === 'number' ? parsed.confidence : 1,
+              });
+            } catch {
+              return null;
+            } finally {
+              clearTimeout(timer);
+            }
+          }
+        : undefined;
+
     return await runLoop({
+      ...(uncertainty && { uncertainty }),
       config,
       prompt: input.prompt,
       system,

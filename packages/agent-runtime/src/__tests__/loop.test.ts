@@ -322,3 +322,35 @@ describe('announcements', () => {
     expect(sink.of('tool-call').length).toBe(1);
   });
 });
+
+describe('the decision service', () => {
+  const decide = (answer: object): AgentTool => ({
+    name: 'decide',
+    description: 'Decide a question among fixed options',
+    readOnly: true,
+    inputSchema: { type: 'object', properties: {} },
+    execute: async () => ({ text: JSON.stringify(answer) }),
+  });
+
+  test('hands a task the decision service calls large to the bigger model', async () => {
+    const { result, sink } = await run([{ text: 'nie' }], {
+      extraTools: [decide({ status: 'decided', choice: 'large', confidence: 0.93 })],
+      config: { escalation: { target: 'runtime:codex', confidenceBelow: 0.8 } },
+    });
+    expect(result.status).toBe('escalated');
+    expect(sink.of('escalate')[0]).toMatchObject({ reason: 'uncertain', target: 'runtime:codex' });
+  });
+
+  test('keeps a task the decision service calls small, and one it cannot decide', async () => {
+    for (const answer of [
+      { status: 'decided', choice: 'small', confidence: 0.95 },
+      { status: 'unsure', choice: null, confidence: 0.4 },
+    ]) {
+      const { result } = await run([{ text: 'Erledigt.' }], {
+        extraTools: [decide(answer)],
+        config: { escalation: { target: 'runtime:codex', confidenceBelow: 0.8 } },
+      });
+      expect(result.status).toBe('success');
+    }
+  });
+});

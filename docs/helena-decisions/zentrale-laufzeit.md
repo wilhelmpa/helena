@@ -355,3 +355,33 @@ helena_fact_entity_link      fact_id, entity_id
 9. Abnahme-Suite (Coding und Browser über die neue Laufzeit).
 
 Stand der Umsetzung: siehe Abschnitt „Umsetzungsstand“ am Ende (wird mit jedem Commit fortgeschrieben).
+
+## Umsetzungsstand (28.09.2026, Zweig `hub/zentrale-laufzeit`, nicht live)
+
+Alles liegt hinter dem Schalter `HELENA_NATIVE_RUNTIME=on` (Standard aus). Ohne Schalter verwirft die API `runtime: 'helena'`, und der Agent läuft auf Hermes.
+
+| Schritt | Stand | Wo |
+|---|---|---|
+| Kernschleife: Tool-Calls, Streaming, Abbruch (SIGINT, Exit 130), Zeitgrenzen (Lauf, erstes Token, Chunk, Werkzeug, Browser gesamt), Schleifenerkennung, „nur angekündigt“-Anstoß | fertig | `packages/agent-runtime/src/loop.ts` |
+| Werkzeuge: Helena-MCP (HTTP), Browser-Gateway direkt (stdio), Dateien, Shell, `clarify`, `find_tools`, `load_skill`, `memory`, `search_sessions`; Policy vor jedem nicht-lesenden Aufruf | fertig | `packages/agent-runtime/src/tools/*`, `agent.ts` |
+| Sitzungen in Postgres, Resume nach Runner-Neustart (`--resume`, „Session not found“ → Chat wird neu gerahmt) | fertig | `helena_agent_session*`, `/agent-runtime/sessions*` |
+| Gedächtnis: `MEMORY.md`/`USER.md` als Revisionen mit Freigabe, Tagesnotizen `notes/<Datum>.md`, Flush bei Kompression | fertig; nächtliche Konsolidierung („Träumen“) noch offen | `apps/api/.../native-runtime/memory.ts` |
+| Faktenspeicher (Holographic-Prinzip): add/search/probe/related/reason/contradict/update/remove/list, `fact_feedback`, Vertrauen, Widerspruch mit Verfall, Secret-Sperre, Projekt-ACL; hybride Suche über den Wissens-Index (Volltext + Embeddings), HRR für die Beziehungsabfragen | fertig | `packages/facts`, `native-runtime/facts.ts`, Wissensquellen `fact`, `agent-memory`, `agent-session` |
+| Gedächtnis-Editor: Fakten (bearbeiten, „Stimmt“, entfernen) und Tagesnotizen | fertig | `AgentFactsPanel.tsx` |
+| Rückfall-Kette (Anbieterfehler → nächstes Modell) und Eskalation (Aufgabenart, Festlegung, Schleife, 80 % Budget, rote Tests, ungültige Aufrufe; API-Modell in der Schleife oder Folge-Lauf `trigger: 'escalation'` für Claude Code/Codex) | fertig; Unsicherheit fragt Helenas `decide`-Werkzeug, nur wenn `confidenceBelow` gesetzt ist | `escalation.ts`, `runner/escalation.ts` |
+| Verbrauch ins Ledger (`spend`-Event → `agent_usage`, Laufzeit `helena`) | fertig | `runner/src/spend.ts` |
+| Runner-Integration: Preset `helena`, `cli.js helena-agent`, JSON-Aufgabe mit Konfiguration (`RunSettings.input`), Adapter, Parser `helena-jsonl`, Launcher-Preset, Katalog, Koordinator | fertig | `packages/runner/src/helena-runtime.ts`, `launcher.json` |
+| Abnahme-Suite: Coding- und Browser-Eval mit `--runtime helena` | fertig und gelaufen | `apps/api/src/scripts/agentic-{coding,browser}` |
+
+### Messungen mit echtem Halogen (Qwen3.8-Flash-Next, eine Anfrage gleichzeitig)
+
+| Eval | Neue Laufzeit | Maßstab Hermes + Flash (Plan, 28.09.) |
+|---|---|---|
+| Programmieren, 12 Aufgaben | **12/12**, Ø 43 s je Aufgabe, 85 gültige Aufrufe, 1 Wiederholung, 1 Abbruch an der Schrittgrenze (Tests trotzdem grün), ≈ 13.500 Eingabe-Tokens je Aufgabe | 12/12, Ø ≈ 54 s |
+| Browser, 20 Aufgaben | **18/20 streng**, 130 von 133 Aufrufen gültig, **0 Fehler durch eine Werkzeug-Brücke**, 1 Gateway-Fehler, Ø 34,5 s | 17/20 streng, 11 von 112 Aufrufen scheiterten an der `tool_call`-Brücke |
+
+Die zwei Browser-Fehlschläge:
+- `local-login-wall`: Der Agent bat korrekt um Anmeldung, wartete aber per `browser_handover` bis zur Zeitgrenze.
+- `local-sort-default`: Der Agent endete mit einer Ankündigung („Ich schaue mir die Seite an.“). Dagegen gibt es seitdem den einmaligen Anstoß.
+
+Rohdaten auf Kingston: `~/agent-work/runtime-eval/{coding,browser}-helena-1.json`.
