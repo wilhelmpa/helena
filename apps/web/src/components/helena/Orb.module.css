@@ -90,34 +90,30 @@
    it; no blurred blob (owner, 28.09.). It breathes slowly while something happens. */
 .static {
   display: block;
-  width: 58%;
-  height: 58%;
-  margin: 21%;
+  width: 46%;
+  height: 46%;
+  margin: 27%;
   border-radius: 50%;
   background: radial-gradient(
     circle at 36% 30%,
-    color-mix(in srgb, var(--orb-color) 22%, white) 0%,
-    color-mix(in srgb, var(--orb-color) 80%, white) 18%,
-    var(--orb-color) 48%,
-    color-mix(in srgb, var(--orb-color), black 42%) 100%
+    color-mix(in srgb, var(--orb-color) 8%, white) 0%,
+    color-mix(in srgb, var(--orb-color) 55%, white) 24%,
+    var(--orb-color) 62%,
+    color-mix(in srgb, var(--orb-color), #120f18 28%) 100%
   );
   box-shadow:
-    0 0 0 1px color-mix(in srgb, var(--orb-color), transparent 72%),
-    0 0 2.5rem color-mix(in srgb, var(--orb-color), transparent 52%),
-    0 0 6rem color-mix(in srgb, var(--orb-color), transparent 78%),
-    inset 0 -0.6rem 1.6rem color-mix(in srgb, var(--orb-color), black 35%);
+    0 0 2rem color-mix(in srgb, var(--orb-color), transparent 40%),
+    0 0 6rem color-mix(in srgb, var(--orb-color), transparent 70%);
 }
 .large:is(.listening, .thinking, .tool, .speaking, .waiting) .static {
   animation: breathe 3.2s ease-in-out infinite;
 }
 @keyframes breathe {
   50% {
-    transform: scale(1.045);
+    transform: scale(1.05);
     box-shadow:
-      0 0 0 1px color-mix(in srgb, var(--orb-color), transparent 72%),
-      0 0 3.5rem color-mix(in srgb, var(--orb-color), transparent 40%),
-      0 0 7rem color-mix(in srgb, var(--orb-color), transparent 70%),
-      inset 0 -0.6rem 1.6rem color-mix(in srgb, var(--orb-color), black 35%);
+      0 0 3rem color-mix(in srgb, var(--orb-color), transparent 30%),
+      0 0 8rem color-mix(in srgb, var(--orb-color), transparent 62%);
   }
 }
 /* The ring of a small orb: using a tool, or waiting for you. The large orb says it by its

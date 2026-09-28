@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Plus } from 'lucide-react';
+import { ArrowDownUp, Plus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useShell } from '@/context/shellContext';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -10,7 +10,12 @@ import { useInitiativeCountsQuery, useInitiativesQuery } from '@/services/initia
 import { INITIATIVE_SORTS, type InitiativeSort } from '@/lib/api/endpoints/initiatives';
 import { initiativesTabPath, type InitiativesTab } from '@/utils/paths';
 import { WorkspacePageHeader } from '@/components/layout/WorkspaceHeader';
-import { PageActions, PageToolbar, PageToolbarSpacer } from '@/components/layout/PageToolbar';
+import {
+  PageActions,
+  PageSelect,
+  PageToolbar,
+  PageToolbarSpacer,
+} from '@/components/layout/PageToolbar';
 import InitiativesList from './components/list/InitiativesList';
 import InitiativesPagination from './components/list/InitiativesPagination';
 import InitiativeDialog from '@/components/common/overlay/InitiativeDialog';
@@ -81,11 +86,16 @@ export default function InitiativesPage({ tab }: { tab: InitiativesTab }) {
     pushQuery(params);
   };
 
-  // Re-selecting the sorted column flips its direction; a new column sorts ascending.
-  const changeSort = (key: InitiativeSort) => {
+  // The sort of the toolbar's choice; the target date runs soonest first, the rest A–Z.
+  const changeSort = (key: InitiativeSort | 'default') => {
     const params = new URLSearchParams(searchParams);
-    params.set('sort', key);
-    params.set('dir', sort === key && sortDir === 'asc' ? 'desc' : 'asc');
+    if (key === 'default') {
+      params.delete('sort');
+      params.delete('dir');
+    } else {
+      params.set('sort', key);
+      params.set('dir', 'asc');
+    }
     params.delete('page');
     pushQuery(params);
   };
@@ -110,6 +120,20 @@ export default function InitiativesPage({ tab }: { tab: InitiativesTab }) {
           onReorder={reorder}
         />
         <PageToolbarSpacer />
+        <PageSelect<InitiativeSort | 'default'>
+          label={t('sortBy')}
+          icon={ArrowDownUp}
+          value={sort ?? 'default'}
+          defaultValue="default"
+          onChange={changeSort}
+          options={[
+            { value: 'default', label: t('sortDefault') },
+            { value: 'title', label: t('columns.name') },
+            { value: 'priority', label: t('columns.priority') },
+            { value: 'owner', label: t('columns.owner') },
+            { value: 'targetDate', label: t('columns.target') },
+          ]}
+        />
         <PageActions
           primary={
             canCreate
@@ -129,9 +153,6 @@ export default function InitiativesPage({ tab }: { tab: InitiativesTab }) {
         project={project}
         isLoading={query.isLoading}
         statusTab={activeTab.value === 'all' ? undefined : activeTab.value}
-        sort={sort}
-        dir={dir}
-        onSort={changeSort}
       />
 
       <InitiativesPagination page={page} pageSize={PAGE_SIZE} total={total} onPage={changePage} />

@@ -159,5 +159,7 @@
     "deleteFile": "Supprimer {name}"
   },
   "deleteTitle": "Supprimer l’objectif",
-  "deleteConfirm": "Supprimer « {name} » ? Les tâches restent dans le projet, sans cet objectif."
+  "deleteConfirm": "Supprimer « {name} » ? Les tâches restent dans le projet, sans cet objectif.",
+  "sortBy": "Trier",
+  "sortDefault": "Ordre personnalisé"
 }

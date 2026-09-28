@@ -159,5 +159,7 @@
     "deleteFile": "Excluir {name}"
   },
   "deleteTitle": "Excluir objetivo",
-  "deleteConfirm": "Excluir “{name}”? As tarefas ficam no projeto, sem este objetivo."
+  "deleteConfirm": "Excluir “{name}”? As tarefas ficam no projeto, sem este objetivo.",
+  "sortBy": "Ordenar",
+  "sortDefault": "Ordem própria"
 }

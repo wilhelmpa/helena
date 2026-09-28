@@ -159,5 +159,7 @@
     "deleteFile": "{name} löschen"
   },
   "deleteTitle": "Ziel löschen",
-  "deleteConfirm": "„{name}“ löschen? Die Aufgaben bleiben im Projekt, nur ohne dieses Ziel."
+  "deleteConfirm": "„{name}“ löschen? Die Aufgaben bleiben im Projekt, nur ohne dieses Ziel.",
+  "sortBy": "Sortieren",
+  "sortDefault": "Eigene Reihenfolge"
 }

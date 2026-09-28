@@ -159,5 +159,7 @@
     "deleteFile": "حذف {name}"
   },
   "deleteTitle": "حذف الهدف",
-  "deleteConfirm": "حذف «{name}»؟ تبقى المهام في المشروع، لكن دون هذا الهدف."
+  "deleteConfirm": "حذف «{name}»؟ تبقى المهام في المشروع، لكن دون هذا الهدف.",
+  "sortBy": "ترتيب",
+  "sortDefault": "الترتيب الخاص"
 }

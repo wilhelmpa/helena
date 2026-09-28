@@ -1834,3 +1834,102 @@ a.ds-run-card:hover {
     0 0 0 1px var(--line-strong),
     var(--shadow-raised);
 }
+
+/* Ziele (features/initiatives): the goals of a project as one framed list. */
+.ds-goal-list-pad {
+  padding: 0 var(--page-pad-x) var(--page-pad-bottom);
+}
+.ds-goal-list {
+  overflow: hidden;
+  border-radius: var(--radius-card);
+  background: var(--surface-1);
+  box-shadow: var(--shadow-card);
+}
+.ds-goal-list > li + li {
+  border-top: 1px solid var(--line);
+}
+.ds-goal-row {
+  display: grid;
+  min-height: 56px;
+  align-items: center;
+  grid-template-columns: 8px minmax(0, 1fr) 160px 132px;
+  gap: var(--space-4);
+  padding: var(--space-2) var(--space-4);
+  color: var(--text);
+}
+.ds-goal-row:hover {
+  background: var(--surface-2);
+}
+.ds-goal-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.ds-goal-main {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+.ds-goal-title {
+  overflow: hidden;
+  font-size: 13px;
+  font-weight: 520;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ds-goal-meta {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px var(--space-3);
+  color: var(--text-3);
+  font-size: 12px;
+}
+.ds-goal-owner {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.ds-goal-progress {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.ds-goal-bar {
+  position: relative;
+  height: 6px;
+  flex: 1;
+  overflow: hidden;
+  border-radius: var(--radius-pill);
+  background: var(--surface-3);
+}
+.ds-goal-bar > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent);
+}
+.ds-goal-count {
+  min-width: 36px;
+  color: var(--text-2);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-align: end;
+}
+.ds-goal-health {
+  display: flex;
+  justify-content: flex-end;
+}
+@media (max-width: 900px) {
+  .ds-goal-list-pad {
+    padding: 0 var(--space-4) var(--space-6);
+  }
+  .ds-goal-row {
+    grid-template-columns: 8px minmax(0, 1fr) 96px;
+  }
+  .ds-goal-health {
+    display: none;
+  }
+}

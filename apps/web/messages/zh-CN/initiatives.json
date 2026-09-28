@@ -159,5 +159,7 @@
     "deleteFile": "删除 {name}"
   },
   "deleteTitle": "删除目标",
-  "deleteConfirm": "删除“{name}”？任务会留在项目中，只是不再属于此目标。"
+  "deleteConfirm": "删除“{name}”？任务会留在项目中，只是不再属于此目标。",
+  "sortBy": "排序",
+  "sortDefault": "自定义顺序"
 }

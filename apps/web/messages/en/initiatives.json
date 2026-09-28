@@ -159,5 +159,7 @@
     "deleteFile": "Delete {name}"
   },
   "deleteTitle": "Delete goal",
-  "deleteConfirm": "Delete “{name}”? Its tasks stay in the project, without this goal."
+  "deleteConfirm": "Delete “{name}”? Its tasks stay in the project, without this goal.",
+  "sortBy": "Sort",
+  "sortDefault": "Own order"
 }

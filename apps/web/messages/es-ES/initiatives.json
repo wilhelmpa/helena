@@ -159,5 +159,7 @@
     "deleteFile": "Eliminar {name}"
   },
   "deleteTitle": "Eliminar objetivo",
-  "deleteConfirm": "¿Eliminar «{name}»? Las tareas se quedan en el proyecto, sin este objetivo."
+  "deleteConfirm": "¿Eliminar «{name}»? Las tareas se quedan en el proyecto, sin este objetivo.",
+  "sortBy": "Ordenar",
+  "sortDefault": "Orden propio"
 }

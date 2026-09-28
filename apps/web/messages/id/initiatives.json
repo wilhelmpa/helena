@@ -159,5 +159,7 @@
     "deleteFile": "Hapus {name}"
   },
   "deleteTitle": "Hapus sasaran",
-  "deleteConfirm": "Hapus “{name}”? Tugas tetap ada di proyek, tanpa sasaran ini."
+  "deleteConfirm": "Hapus “{name}”? Tugas tetap ada di proyek, tanpa sasaran ini.",
+  "sortBy": "Urutkan",
+  "sortDefault": "Urutan sendiri"
 }
