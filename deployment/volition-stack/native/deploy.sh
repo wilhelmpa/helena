@@ -163,6 +163,9 @@ ff_done=0
 prev_web=''
 on_failure() {
   local status=$? line=${1:-?}
+  # errtrace hands the trap to command substitutions too: a failure inside one only ends that
+  # subshell, and the script itself sees it fail and comes here once.
+  [[ $BASHPID == "$$" ]] || exit "$status"
   trap - ERR
   set +e
   echo "deploy.sh: step failed (exit $status, line $line)" >&2
