@@ -1,0 +1,15 @@
+{
+  "description": "Synthetic scoring fixture; no model or provider is contacted.",
+  "fallbackCaseIds": [
+    "fed-surprise-hike",
+    "exchange-hack",
+    "peer-profit-warning",
+    "token-unlock-unrelated",
+    "nwe-insider-buy",
+    "us-holiday"
+  ],
+  "overrides": {
+    "klx-cfo-resigns": { "direction": { "choice": "positive", "confidence": 0.93 } },
+    "eth-upgrade-on-schedule": { "event": { "choice": "crypto", "confidence": 0.55 } }
+  }
+}
