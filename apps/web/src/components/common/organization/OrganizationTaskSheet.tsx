@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import IssueDetail from '@/features/issue/components/detail/IssueDetail';
 import type { ProjectDetail } from '@/lib/api/endpoints/projects';
@@ -9,17 +9,23 @@ import { useBoardIssuesQuery, useProjectQuery } from '@/services/projects.servic
 import { useViewFoldersQuery } from '@/services/views.service';
 import { issuePath } from '@/utils/paths';
 
-// A task from the org chart's task ring, as the usual issue side panel on top of the
-// chart (composed like the Shell's project, hooks/useShellProject). The chart behind it
-// stays as it is; only "open as page" navigates.
+// A task of any project as the usual issue side panel over the current page (composed
+// like the Shell's project, hooks/useShellProject): from the org chart's task ring, and
+// from a link into another project (ProjectLinkSheet). The page behind stays as it is;
+// only "open as page" navigates. A link names the task by its number (`sequenceNumber`);
+// when that task is not on the project's board, `onMissing` is called.
 export default function OrganizationTaskSheet({
   projectKey,
-  issueId,
+  issueId: givenId,
+  sequenceNumber,
   onClose,
+  onMissing,
 }: {
   projectKey: string;
-  issueId: number;
+  issueId?: number;
+  sequenceNumber?: number;
   onClose: () => void;
+  onMissing?: () => void;
 }) {
   const router = useRouter();
   const scaffold = useProjectQuery(projectKey).data ?? null;
@@ -38,7 +44,13 @@ export default function OrganizationTaskSheet({
         : null,
     [scaffold, issues, cycles, areas],
   );
-  if (!project) return null;
+  const issueId =
+    givenId ?? issues?.issues.find((issue) => issue.sequenceNumber === sequenceNumber)?.id ?? null;
+  const missing = givenId == null && issues != null && issueId == null;
+  useEffect(() => {
+    if (missing) onMissing?.();
+  }, [missing, onMissing]);
+  if (!project || issueId == null) return null;
   return (
     <IssueDetail
       project={project}

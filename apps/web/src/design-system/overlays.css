@@ -633,3 +633,24 @@ body[data-modal-open='true'] [data-radix-popper-content-wrapper] {
 .ds-create-dialog-esc:hover {
   color: var(--text);
 }
+
+/* A link into another project (components/layout/ProjectLinkSheet): what it is, where it
+   leads, and the one way there. */
+.ds-project-link-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.ds-project-link-hint {
+  color: var(--text-2);
+  font-size: 13px;
+}
+.ds-project-link-path {
+  overflow-wrap: anywhere;
+  border-radius: var(--radius-field);
+  background: var(--surface-2);
+  padding: var(--space-2) var(--space-3);
+  color: var(--text-2);
+  font-family: var(--font-mono);
+  font-size: 12px;
+}

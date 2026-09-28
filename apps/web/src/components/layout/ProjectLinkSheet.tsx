@@ -1,22 +1,20 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet';
-import { Button } from '@/components/ui/button';
+import { ArrowUpRight } from 'lucide-react';
+import { Button, Overlay } from '@/design-system';
+import OrganizationTaskSheet from '@/components/common/organization/OrganizationTaskSheet';
 import type { Project } from '@/lib/api/endpoints/projects';
-import { projectLinkTarget } from '@/utils/projectLinkTarget';
+import { projectLinkTarget, type ProjectLinkTarget } from '@/utils/projectLinkTarget';
 
-// A normal link never changes the selected project. The explicit button is the only
-// way out of the current project, just like choosing one in the switcher.
+// A normal link never changes the selected project (docs/ui-system.md §8). A link to a
+// task of another project opens that task in the overlay over the current page; any other
+// page of another project opens a small overlay that names it and offers "Im Projekt
+// öffnen", the explicit way out of the current project like the switcher. Helena's pages
+// cannot be framed (X-Frame-Options DENY, frame-ancestors 'none'), so nothing is embedded:
+// an iframe here showed the browser's "refused to connect" page.
 export default function ProjectLinkSheet({
   currentProjectKey,
   projects,
@@ -26,7 +24,7 @@ export default function ProjectLinkSheet({
 }) {
   const router = useRouter();
   const t = useTranslations('nav');
-  const [target, setTarget] = useState<{ href: string; key: string } | null>(null);
+  const [target, setTarget] = useState<ProjectLinkTarget | null>(null);
 
   useEffect(() => {
     const onRequest = (event: Event) => {
@@ -64,39 +62,47 @@ export default function ProjectLinkSheet({
     };
   }, [currentProjectKey]);
 
-  const name = projects.find((project) => project.key === target?.key)?.name ?? target?.key;
+  const close = useCallback(() => setTarget(null), []);
+  // A task that is not on its project's board: the page overlay instead.
+  const noTask = useCallback(
+    () => setTarget((current) => (current ? { href: current.href, key: current.key } : null)),
+    [],
+  );
+  if (!target) return null;
+  if (target.issue != null)
+    return (
+      <OrganizationTaskSheet
+        key={target.href}
+        projectKey={target.key}
+        sequenceNumber={target.issue}
+        onClose={close}
+        onMissing={noTask}
+      />
+    );
+
+  const name = projects.find((project) => project.key === target.key)?.name ?? target.key;
+  const open = () => {
+    router.push(target.href);
+    close();
+  };
   return (
-    <Sheet
-      open={target != null}
-      onOpenChange={(open) => {
-        if (!open) setTarget(null);
-      }}
+    <Overlay
+      label={name}
+      tabs={[{ id: 'project', label: name }]}
+      onClose={close}
+      onFullscreen={open}
+      closeOnOutsideClick
+      className="ds-project-link"
     >
-      <SheetContent className="w-full sm:max-w-[440px]">
-        <SheetHeader>
-          <SheetTitle>{name}</SheetTitle>
-          <SheetDescription>{target?.href}</SheetDescription>
-        </SheetHeader>
-        <div className="px-4 text-sm text-muted-foreground">{t('projectLinkHint')}</div>
-        {target && (
-          <iframe
-            title={name ?? target.key}
-            src={target.href}
-            sandbox="allow-same-origin"
-            className="min-h-0 flex-1 border-0 bg-background"
-          />
-        )}
-        <SheetFooter>
-          <Button
-            onClick={() => {
-              if (target) router.push(target.href);
-              setTarget(null);
-            }}
-          >
+      <div className="ds-project-link-body" data-project-link>
+        <p className="ds-project-link-hint">{t('projectLinkHint')}</p>
+        <code className="ds-project-link-path">{target.href}</code>
+        <div>
+          <Button variant="primary" icon={<ArrowUpRight size={14} />} onClick={open}>
             {t('openInProject')}
           </Button>
-        </SheetFooter>
-      </SheetContent>
-    </Sheet>
+        </div>
+      </div>
+    </Overlay>
   );
 }

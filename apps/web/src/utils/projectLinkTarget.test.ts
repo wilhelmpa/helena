@@ -13,7 +13,14 @@ describe('project links', () => {
     assert.deepEqual(projectLinkTarget('/project/OTHER/issue/4?from=inbox', 'TRADE', origin), {
       key: 'OTHER',
       href: '/project/OTHER/issue/4?from=inbox',
+      issue: 4,
     });
+  });
+
+  it('names the task of a task link, and no task for other pages', () => {
+    assert.equal(projectLinkTarget('/project/OTHER/issue/12', null, origin)?.issue, 12);
+    assert.equal(projectLinkTarget('/project/OTHER/activity', null, origin)?.issue, undefined);
+    assert.equal(projectLinkTarget('/project/OTHER/issue/12/x', null, origin)?.issue, undefined);
   });
 
   it('leaves external and Home URLs alone', () => {
