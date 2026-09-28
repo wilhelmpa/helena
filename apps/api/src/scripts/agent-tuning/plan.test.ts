@@ -749,7 +749,7 @@ describe('the target of this installation', () => {
       ]),
     ];
     for (const text of texts) {
-      expect(text).not.toMatch(/\bPlan\b|It's a Plan|Itsaplan/);
+      expect(text).not.toMatch(/\bPlan\b|It.s a Plan|Itsaplan/);
     }
   });
 });

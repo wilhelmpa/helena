@@ -67,7 +67,12 @@
       "done": "Done",
       "failed": "Failed"
     },
-    "spent": "Spent"
+    "spent": "Spent",
+    "archive": "Archive",
+    "unarchive": "Restore",
+    "archived": "Archived",
+    "showArchived": "Show archived",
+    "archiveFailed": "The run could not be archived."
   },
   "sessions": {
     "search": "Search every session",

@@ -98,7 +98,7 @@ purpose (§6 makes it unnecessary).
   (local-ai-platform.md §6.7), so the provider for turns without thinking needs a second address;
   Lemonade has `/api/v1` and `/v1`, Halogen gets a second published port.
 - Configurable capabilities (`ModelServerType.capabilitiesConfigurable`, stored in
-  `helena_model_server.options`, migration 0208): for `openai-compatible` and `halogen`, the
+  `helena_model_server.options`, migration 0209): for `openai-compatible` and `halogen`, the
   Administrator sets tools/reasoning/vision for the server's chat models; null = derived.
   `withConfiguredCapabilities()` applies them at every check, also to the models kept while the
   server is down.

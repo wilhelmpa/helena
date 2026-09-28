@@ -886,6 +886,9 @@ describe('ai agents', () => {
     expect(untagged).toEqual([
       'GET /teams/:teamId/ai-agents/:agentId/heartbeats',
       'GET /teams/:teamId/ai-agents/:agentId/runs',
+      // Archiving a run tidies the owner's run history; agents get no tool for it.
+      'POST /teams/:teamId/ai-agents/:agentId/runs/:runId/archive',
+      'POST /teams/:teamId/ai-agents/:agentId/runs/:runId/unarchive',
       'GET /teams/:teamId/ai-agents/:agentId/threads',
       'PUT /teams/:teamId/ai-agents/:agentId/threads/:threadId/favorite',
       'DELETE /teams/:teamId/ai-agents/:agentId/threads/:threadId/favorite',

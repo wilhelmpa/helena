@@ -24,7 +24,9 @@ import {
 } from './service';
 import { resetCopyToTemplate } from './template-sync';
 import {
+  AgentRunArchiveResponse,
   AgentRunPageResponse,
+  agentRunParams,
   AiAgentListResponse,
   AiAgentResponse,
   ChatMessagesResponse,
@@ -46,7 +48,7 @@ import {
   teamThreadParams,
   updateAgentBody,
 } from './model';
-import { listAgentRuns } from './run-queue';
+import { listAgentRuns, setAgentRunArchived } from './run-queue';
 import { listAgentHeartbeats } from './heartbeats';
 import { addFavorite, removeFavorite } from '../chat-favorites';
 import {
@@ -105,6 +107,24 @@ async function resolveAgentProjects(
 //
 // Chatting with an agent stays under :projectKey as well: a chat acts inside one
 // project, which is what the permission check is bound to.
+
+// Archive or bring back a run, bounded like the run history: the agent must be visible to
+// the reader, and a reader who does not run the team reaches only their projects' runs.
+async function archiveRun(
+  params: { agentId: number; runId: number },
+  membership: TeamMembership,
+  archived: boolean,
+) {
+  await requireVisibleAgent(params.agentId, membership);
+  const projectIds = runsTeam(membership.role)
+    ? undefined
+    : await memberProjectIds(membership.teamId, membership.userId);
+  const result = await setAgentRunArchived(params.agentId, params.runId, archived, projectIds);
+  if (result === 'not-found') throw new HttpError(404, 'Run not found');
+  if (result === 'pending') throw new HttpError(409, 'A pending run cannot be archived');
+  return result;
+}
+
 export const aiAgentRoutes = new Elysia({ name: 'ai-agents', detail: { tags: ['AI Agents'] } })
   .use(authContext)
   .use(guards)
@@ -369,6 +389,7 @@ export const aiAgentRoutes = new Elysia({ name: 'ai-agents', detail: { tags: ['A
         before: query.before,
         limit: query.limit,
         projectIds,
+        includeArchived: query.includeArchived,
       });
     },
     {
@@ -380,7 +401,38 @@ export const aiAgentRoutes = new Elysia({ name: 'ai-agents', detail: { tags: ['A
         summary: 'List agent runs',
         description:
           "List an agent's triggered runs. An owner or a manager of the team sees them all; " +
-          'anyone else only the runs that happened in a project they belong to.',
+          'anyone else only the runs that happened in a project they belong to. Archived runs are left out unless includeArchived is set.',
+      },
+    },
+  )
+
+  // Runs are never deleted to tidy up: a finished run is archived instead, which takes it
+  // out of the run history and the activity feed and keeps it for the statistics.
+  .post(
+    '/teams/:teamId/ai-agents/:agentId/runs/:runId/archive',
+    ({ params, membership }) => archiveRun(params, membership, true),
+    {
+      params: agentRunParams,
+      teamPermission: ['ai_agents', 'edit'],
+      response: { 200: AgentRunArchiveResponse, ...commonErrors },
+      detail: {
+        summary: 'Archive an agent run',
+        description:
+          'Take a finished run out of the lists without deleting it. A pending run cannot be ' +
+          'archived (409).',
+      },
+    },
+  )
+  .post(
+    '/teams/:teamId/ai-agents/:agentId/runs/:runId/unarchive',
+    ({ params, membership }) => archiveRun(params, membership, false),
+    {
+      params: agentRunParams,
+      teamPermission: ['ai_agents', 'edit'],
+      response: { 200: AgentRunArchiveResponse, ...commonErrors },
+      detail: {
+        summary: 'Bring back an archived agent run',
+        description: 'Show an archived run in the lists again.',
       },
     },
   )

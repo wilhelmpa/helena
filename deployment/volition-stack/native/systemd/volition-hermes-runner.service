@@ -24,7 +24,12 @@ Restart=always
 RestartSec=5
 RestartSteps=5
 RestartMaxDelaySec=60
-TimeoutStopSec=45
+# SIGTERM hands the runs in flight back: their commands get SIGINT and 5 s, then the runner
+# reports the hand-backs and exits. A chat claim the server holds (up to 25 s, 35 s client
+# deadline) is the longest thing it may still wait for; 90 s leaves room for that, so a stop
+# never ends in SIGKILL and runs lost to their leases. (A deployment drain replaces this
+# with SIGINT and no timeout: runner-drain/.)
+TimeoutStopSec=90
 KillMode=mixed
 UMask=0077
 NoNewPrivileges=yes

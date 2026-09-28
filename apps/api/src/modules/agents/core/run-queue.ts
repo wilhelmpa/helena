@@ -1,7 +1,7 @@
 import type { RuntimeFailure } from '@helena/sdk';
 import { routesOfRuns, type RouteView } from '#modules/model-router/service';
 import { db, agentRun, issue, project } from '@repo/db';
-import { and, desc, eq, inArray, lt, sql } from 'drizzle-orm';
+import { and, desc, eq, inArray, isNull, lt, ne, sql } from 'drizzle-orm';
 import { intEnv, iso } from '#shared/lib';
 import type { AgentRunTrigger } from '../model';
 import { reflectionView, type ReflectionView } from '../runner/reflection';
@@ -171,6 +171,8 @@ export interface AgentRunRow {
   failure: RuntimeFailure | null;
   nextAttemptAt: string;
   createdAt: string;
+  // When the run was archived (it then leaves the lists); null when it is not.
+  archivedAt: string | null;
 }
 
 // The size of a run's context as its DTO carries it. The field is left out where there
@@ -198,7 +200,7 @@ export interface AgentRunPage {
 // reads every project — only a caller who runs the team passes nothing.
 export async function listAgentRuns(
   agentId: number,
-  opts: { before?: number; limit?: number; projectIds?: number[] } = {},
+  opts: { before?: number; limit?: number; projectIds?: number[]; includeArchived?: boolean } = {},
 ): Promise<AgentRunPage> {
   if (opts.projectIds?.length === 0) return { items: [], nextCursor: null };
   const limit = Math.min(Math.max(opts.limit ?? 25, 1), 50);
@@ -222,6 +224,7 @@ export async function listAgentRuns(
       finishedAt: agentRun.finishedAt,
       nextAttemptAt: agentRun.nextAttemptAt,
       createdAt: agentRun.createdAt,
+      archivedAt: agentRun.archivedAt,
       issueSeq: issue.sequenceNumber,
       issueTitle: issue.title,
       projectKey: project.key,
@@ -234,6 +237,7 @@ export async function listAgentRuns(
         eq(agentRun.agentId, agentId),
         opts.projectIds ? inArray(agentRun.projectId, opts.projectIds) : undefined,
         opts.before ? lt(agentRun.id, opts.before) : undefined,
+        opts.includeArchived ? undefined : isNull(agentRun.archivedAt),
       ),
     )
     .orderBy(desc(agentRun.id))
@@ -262,7 +266,36 @@ export async function listAgentRuns(
       failure: (r.failure as RuntimeFailure | null) ?? null,
       nextAttemptAt: iso(r.nextAttemptAt),
       createdAt: iso(r.createdAt),
+      archivedAt: r.archivedAt ? iso(r.archivedAt) : null,
     })),
     nextCursor: hasMore ? page[page.length - 1].id : null,
   };
+}
+
+// Archives a finished run of the agent, or brings it back. Runs are never deleted to tidy
+// up the lists (a deleted run took its failure with it, and the statistics lied): an
+// archived run leaves the run history and the activity feed, and stays in the database for
+// the counts. A pending run is still work in the queue, so it cannot be archived. The run
+// must be in one of `projectIds` when they are given, the same bound as the history.
+// Returns 'not-found' or 'pending' instead of a row when it cannot.
+export async function setAgentRunArchived(
+  agentId: number,
+  runId: number,
+  archived: boolean,
+  projectIds?: number[],
+): Promise<'not-found' | 'pending' | { archivedAt: string | null }> {
+  if (projectIds?.length === 0) return 'not-found';
+  const where = and(
+    eq(agentRun.id, runId),
+    eq(agentRun.agentId, agentId),
+    projectIds ? inArray(agentRun.projectId, projectIds) : undefined,
+  );
+  const [row] = await db
+    .update(agentRun)
+    .set({ archivedAt: archived ? sql`coalesce(${agentRun.archivedAt}, now())` : null })
+    .where(and(where, ne(agentRun.status, 'pending')))
+    .returning({ archivedAt: agentRun.archivedAt });
+  if (row) return { archivedAt: row.archivedAt ? iso(row.archivedAt) : null };
+  const [exists] = await db.select({ status: agentRun.status }).from(agentRun).where(where);
+  return exists ? 'pending' : 'not-found';
 }

@@ -67,7 +67,12 @@
       "done": "Terminé",
       "failed": "Échec"
     },
-    "spent": "Consommation"
+    "spent": "Consommation",
+    "archive": "Archiver",
+    "unarchive": "Restaurer",
+    "archived": "Archivée",
+    "showArchived": "Afficher les archivées",
+    "archiveFailed": "L'exécution n'a pas pu être archivée."
   },
   "sessions": {
     "search": "Rechercher dans toutes les sessions",

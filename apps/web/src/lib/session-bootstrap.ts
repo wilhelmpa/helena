@@ -17,11 +17,19 @@ export function sameSecret(expected: string | undefined, supplied: string | null
 }
 
 // A page load in this browser: not a cross-site request, not a request from another origin,
-// a GET.
+// a GET, and the page itself rather than a prefetch or a fetch the page makes. Each of those
+// would sign in on its own before the first cookie arrived, and every sign-in is a session
+// (a browser without a cookie fired several at once). A client that names no destination
+// (curl, an older browser) still counts as a page load.
 export function ownNavigation(request: NextRequest, origin: string): boolean {
   if (request.headers.get('sec-fetch-site') === 'cross-site') return false;
   const requestOrigin = request.headers.get('origin');
   if (requestOrigin && requestOrigin !== origin) return false;
+  const destination = request.headers.get('sec-fetch-dest');
+  if (destination && destination !== 'document') return false;
+  const purpose = request.headers.get('sec-purpose') ?? request.headers.get('purpose') ?? '';
+  if (purpose.includes('prefetch')) return false;
+  if (request.headers.has('rsc') || request.headers.has('next-router-prefetch')) return false;
   return request.method === 'GET';
 }
 

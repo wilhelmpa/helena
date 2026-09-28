@@ -67,7 +67,12 @@
       "done": "Selesai",
       "failed": "Gagal"
     },
-    "spent": "Pemakaian"
+    "spent": "Pemakaian",
+    "archive": "Arsipkan",
+    "unarchive": "Pulihkan",
+    "archived": "Diarsipkan",
+    "showArchived": "Tampilkan yang diarsipkan",
+    "archiveFailed": "Eksekusi tidak dapat diarsipkan."
   },
   "sessions": {
     "search": "Cari di semua sesi",
