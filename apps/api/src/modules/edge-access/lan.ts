@@ -25,7 +25,7 @@ for (const [subnet, prefix] of [
 
 // Parsing is deliberately stricter than a browser's cookie parser: nginx must never
 // choose one assertion while the API verifies another one.
-function lanAccessCookies(raw: string | null) {
+export function lanAccessCookies(raw: string | null) {
   if (!raw || Buffer.byteLength(raw) > 8192) {
     throw new EdgeAccessError('invalid_assertion', 'Missing or oversized Access cookies');
   }

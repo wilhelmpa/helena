@@ -15,6 +15,8 @@ import {
   SignInEventsQuery,
 } from './model';
 import { EdgeAccessError } from './providers';
+import { decodeJwt } from 'jose';
+import { lanAccessCookies } from './lan';
 import {
   edgeAccessConfigured,
   edgeEntry,
@@ -191,6 +193,10 @@ export const edgeVerifyRoutes = new Elysia({ name: 'edge-verify' })
       set.headers['Cache-Control'] = 'no-store';
       // The API-wide guard already checked the cookie JWT and the public Access path.
       if (edgeEntry(request.headers) !== 'lan') throw new HttpError(403, 'LAN entry required');
+      // A browser timer closes all streams by reloading at the verified token's exp.
+      // decodeJwt is safe here because edgeGuard has already verified this exact cookie.
+      const expiresAt = decodeJwt(lanAccessCookies(request.headers.get('cookie')).assertion).exp;
+      if (expiresAt) set.headers['X-Helena-Access-Expires'] = String(expiresAt);
       return noContent();
     },
     { response: { 204: t.Void(), ...errors(403) } },

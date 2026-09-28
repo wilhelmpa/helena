@@ -42,19 +42,19 @@ class StrictLanRender(unittest.TestCase):
         self.assertNotIn('X-Volition-Local-Access $helena_owner_capability', self.site)
 
     def test_public_callbacks_have_one_fixed_upstream_and_strict_tls(self):
-        self.assertIn('location ~ ^/cdn-cgi/access/(login|authorized|logout)$', self.site)
-        self.assertIn('location /cdn-cgi/access/ { return 404; }', self.site)
+        self.assertIn('location ^~ /cdn-cgi/', self.site)
+        self.assertIn('error_page 403 = @helena_public_edge;', self.site)
+        self.assertIn('location @helena_public_edge', self.site)
         self.assertIn('resolver 1.1.1.1 1.0.0.1 ipv6=off', self.site)
         self.assertIn('proxy_ssl_verify on;', self.site)
         self.assertIn('proxy_ssl_name helena.volition.one;', self.site)
         self.assertIn('proxy_pass https://$helena_public_host$request_uri;', self.site)
-        callback = self.site.split('location ~ ^/cdn-cgi/access/', 1)[1].split('    }', 1)[0]
+        callback = self.site.split('location ^~ /cdn-cgi/', 1)[1].split('    }', 1)[0]
         for header in ('Cf-Access-Client-Id', 'Cf-Access-Client-Secret',
                        'Cf-Connecting-IP', 'X-Volition-Local-Access',
                        'X-Helena-Edge-Entry', 'X-Forwarded-For'):
             self.assertIn(f'proxy_set_header {header} "";', callback)
-        self.assertIn('error_page 403 = @helena_lan_login;', self.site)
-        self.assertIn('return 302 /cdn-cgi/access/login?redirect_url=%2F;', self.site)
+        self.assertEqual(self.site.count('proxy_pass https://$helena_public_host$request_uri;'), 2)
         self.assertIn('access_log off;', self.site)
 
     def test_old_site_and_entry_map_are_extended_once(self):
@@ -258,8 +258,8 @@ http {{
                 sock.bind(('127.0.0.1', 0))
                 return sock.getsockname()[1]
 
-        api_port, web_port, tool_port, nginx_port = (
-            free_port(), free_port(), free_port(), free_port())
+        api_port, web_port, tool_port, edge_port, nginx_port = (
+            free_port(), free_port(), free_port(), free_port(), free_port())
 
         class Upstream(http.server.BaseHTTPRequestHandler):
             def do_GET(self):
@@ -297,11 +297,27 @@ http {{
             def log_message(self, *_args):
                 pass
 
+        class PublicEdge(http.server.BaseHTTPRequestHandler):
+            def do_GET(self):
+                data = json.dumps({
+                    'path': self.path,
+                    'host': self.headers.get('Host'),
+                    'entry': self.headers.get('X-Helena-Entry'),
+                }).encode()
+                self.send_response(200)
+                self.send_header('Content-Length', str(len(data)))
+                self.end_headers()
+                self.wfile.write(data)
+
+            def log_message(self, *_args):
+                pass
+
         api = http.server.ThreadingHTTPServer(('127.0.0.1', api_port), Upstream)
         web = http.server.ThreadingHTTPServer(('127.0.0.1', web_port), Upstream)
         tool = http.server.ThreadingHTTPServer(('127.0.0.1', tool_port), Upstream)
+        edge = http.server.ThreadingHTTPServer(('127.0.0.1', edge_port), PublicEdge)
         threads = [threading.Thread(target=server.serve_forever, daemon=True)
-                   for server in (api, web, tool)]
+                   for server in (api, web, tool, edge)]
         for thread in threads:
             thread.start()
         process = None
@@ -333,6 +349,8 @@ http {{
                 site = site.replace('127.0.0.1:6082', f'127.0.0.1:{tool_port}')
                 site = site.replace('http://unix:/run/volition-owner-terminal/term.sock:',
                                     f'http://127.0.0.1:{tool_port}')
+                site = site.replace('https://$helena_public_host$request_uri',
+                                    f'http://127.0.0.1:{edge_port}$request_uri')
                 (root / 'strict.conf').write_text(site)
                 (root / 'nginx.conf').write_text(f'''pid {root}/nginx.pid;
 daemon off;
@@ -372,11 +390,15 @@ http {{
                                 raise
                             time.sleep(.05)
 
-                self.assertEqual(get('/')[0], 403)
-                self.assertTrue(
-                    get('/', extra={'Sec-Fetch-Mode': 'navigate'})[2].endswith(
-                        '/cdn-cgi/access/login?redirect_url=%2F'))
-                self.assertEqual(get('/backend/anything')[0], 403)
+                for path, cookie in (('/', ''), ('/', 'CF_Authorization=expired'),
+                                     ('/backend/anything', ''),
+                                     ('/cdn-cgi/access/login?next=one', '')):
+                    status, body, _ = get(path, cookie)
+                    self.assertEqual(status, 200)
+                    forwarded = json.loads(body)
+                    self.assertEqual(forwarded['path'], path)
+                    self.assertEqual(forwarded['host'], 'helena.volition.one')
+                    self.assertIsNone(forwarded['entry'])
                 connection = http.client.HTTPSConnection('127.0.0.1', nginx_port,
                                                          context=context, timeout=2)
                 connection.putrequest('GET', '/', skip_host=True)
@@ -386,9 +408,9 @@ http {{
                 connection.endheaders()
                 duplicate = connection.getresponse()
                 duplicate.read()
-                self.assertEqual(duplicate.status, 403)
+                self.assertEqual(duplicate.status, 200)
                 connection.close()
-                self.assertEqual(get('/browser', 'CF_Authorization=valid')[0], 403)
+                self.assertEqual(get('/browser', 'CF_Authorization=valid')[0], 200)
                 status, body, _ = get('/browser/',
                                       'CF_Authorization=valid; CF_Binding=b; session=valid')
                 self.assertEqual(status, 200)
@@ -400,7 +422,8 @@ http {{
                 self.assertEqual(status, 200)
                 self.assertEqual(json.loads(body)['X-Owner-Terminal-Token'],
                                  'synthetic-owner-token')
-                self.assertEqual(get('/cdn-cgi/access/unknown')[0], 404)
+                self.assertEqual(json.loads(get('/cdn-cgi/access/unknown')[1])['path'],
+                                 '/cdn-cgi/access/unknown')
                 forged = {'X-Helena-Entry': 'tunnel', 'X-Helena-Edge-Entry': 'forged',
                           'Cf-Access-Jwt-Assertion': 'forged',
                           'X-Volition-Local-Access': 'forged',
@@ -429,7 +452,7 @@ http {{
             if process is not None:
                 process.terminate()
                 process.wait(timeout=3)
-            for server in (api, web, tool):
+            for server in (api, web, tool, edge):
                 server.shutdown()
                 server.server_close()
 

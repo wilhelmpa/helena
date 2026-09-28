@@ -256,6 +256,20 @@ describe('edge access (the internet tunnel entry)', () => {
     expect(response.headers.get('cache-control')).toBe('no-store');
   });
 
+  it('gives a checked LAN browser the Access expiry for stream reload', async () => {
+    const owner = await signUpTestUser();
+    await configure(owner.cookie);
+    setLanOnlineVerifierForTests(async () => true);
+    const response = await call('/auth/verify/lan', {
+      'x-helena-entry': 'lan',
+      cookie: `${owner.cookie}; CF_Authorization=${await sign()}; CF_Binding=binding`,
+    });
+    expect(response.status).toBe(204);
+    expect(Number(response.headers.get('x-helena-access-expires'))).toBeGreaterThan(
+      Math.floor(Date.now() / 1000),
+    );
+  });
+
   it('keeps Helena session and owner-terminal checks after valid LAN Access', async () => {
     const owner = await signUpTestUser();
     await configure(owner.cookie);

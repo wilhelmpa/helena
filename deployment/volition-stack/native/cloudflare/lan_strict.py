@@ -73,9 +73,10 @@ def render(tunnel: str, certs: pathlib.Path, snippet: pathlib.Path = SNIPPET) ->
         if server.count(anchor) != 1:
             raise ValueError(f'auth subrequest {location} changed')
         server = server.replace(anchor, anchor + '        proxy_cache off;\n', 1)
-    # Access callbacks must use the public edge even though this hostname resolves to LAN.
-    # Unknown /cdn-cgi/access paths are deliberately refused until individually reviewed.
-    access = '''    location ~ ^/cdn-cgi/access/(login|authorized|logout)$ {
+    # The variable proxy_pass forces nginx to resolve the public name with its own
+    # resolver. The host DNS may point the same name straight back to this vhost.
+    access = '''    error_page 403 = @helena_public_edge;
+    location ^~ /cdn-cgi/ {
         auth_request off;
         proxy_cache off;
         access_log off;
@@ -120,14 +121,50 @@ def render(tunnel: str, certs: pathlib.Path, snippet: pathlib.Path = SNIPPET) ->
         proxy_set_header X-Rewrite-URL "";
         proxy_set_header Forwarded "";
     }
-    location /cdn-cgi/access/ { return 404; }
-    location @helena_lan_login {
+    location @helena_public_edge {
         internal;
         auth_request off;
-        if ($http_sec_fetch_mode = navigate) {
-            return 302 /cdn-cgi/access/login?redirect_url=%2F;
-        }
-        return 403;
+        proxy_cache off;
+        access_log off;
+        error_log /dev/null crit;
+        proxy_pass https://$helena_public_host$request_uri;
+        proxy_ssl_server_name on;
+        proxy_ssl_name helena.volition.one;
+        proxy_ssl_verify on;
+        proxy_ssl_trusted_certificate /etc/ssl/certs/ca-certificates.crt;
+        proxy_ssl_verify_depth 3;
+        proxy_connect_timeout 3s;
+        proxy_read_timeout 300s;
+        proxy_set_header Host helena.volition.one;
+        proxy_set_header Authorization "";
+        proxy_set_header X-Helena-Entry "";
+        proxy_set_header X-Helena-Edge-Entry "";
+        proxy_set_header X-Helena-Edge-Email "";
+        proxy_set_header Cf-Access-Jwt-Assertion "";
+        proxy_set_header Cf-Access-Authenticated-User-Email "";
+        proxy_set_header Cf-Access-Authenticated-User-Id "";
+        proxy_set_header Cf-Access-Client-Id "";
+        proxy_set_header Cf-Access-Client-Secret "";
+        proxy_set_header Cf-Connecting-IP "";
+        proxy_set_header True-Client-IP "";
+        proxy_set_header CF-Ray "";
+        proxy_set_header CF-IPCountry "";
+        proxy_set_header X-Volition-Local-Access "";
+        proxy_set_header X-Volition-Agent-Project "";
+        proxy_set_header X-Volition-Agent-Unit "";
+        proxy_set_header X-Owner-Terminal-Token "";
+        proxy_set_header X-Forwarded-For "";
+        proxy_set_header X-Real-IP "";
+        proxy_set_header X-Forwarded-Host "";
+        proxy_set_header X-Forwarded-Proto "";
+        proxy_set_header X-Forwarded-Port "";
+        proxy_set_header X-Forwarded-Prefix "";
+        proxy_set_header X-Forwarded-User "";
+        proxy_set_header X-Forwarded-Email "";
+        proxy_set_header X-Forwarded-Client-Cert "";
+        proxy_set_header X-Original-URI "";
+        proxy_set_header X-Rewrite-URL "";
+        proxy_set_header Forwarded "";
     }
 '''
     server = server.replace('    server_name helena.volition.one;\n',
@@ -135,9 +172,6 @@ def render(tunnel: str, certs: pathlib.Path, snippet: pathlib.Path = SNIPPET) ->
                             '    set $helena_public_host helena.volition.one;\n' + access, 1)
     if '    location / {\n' not in server:
         raise ValueError('tunnel web location missing')
-    server = server.replace('    location / {\n',
-                            '    location / {\n'
-                            '        error_page 403 = @helena_lan_login;\n', 1)
     return ('''# Direct LAN TLS entry. Every application path uses the local and public Access gate.
 # The assertion map is volatile: tool requests must not inherit a subrequest's token.
 map "$server_name:$proxy_host" $helena_lan_assertion {
