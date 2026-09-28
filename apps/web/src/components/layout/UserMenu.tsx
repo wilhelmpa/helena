@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ChevronsUpDown, Info, LogOut, OctagonX, Play } from 'lucide-react';
+import { ChevronsUpDown, Info, LogOut, OctagonX, Play, Settings2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 import { signOut, useSession } from '@/lib/auth-client';
@@ -24,6 +24,7 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { EmergencyStopDialog } from '@/features/agent-runtime/components/EmergencyStop';
+import { openSettingsModal } from '@/features/settings/settingsModalCatalog';
 import {
   useEmergencyStop,
   useSetEmergencyStop,
@@ -134,6 +135,10 @@ export default function UserMenu({ variant = 'avatar' }: { variant?: 'avatar' | 
             </span>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
+          <DropdownMenuItem onSelect={() => openSettingsModal('account', 'profile')}>
+            <Settings2 />
+            {'Einstellungen'}
+          </DropdownMenuItem>
           {ACCOUNT_SECTIONS.map(({ slug, icon: Icon }) => (
             <DropdownMenuItem key={slug} asChild>
               <Link href={accountPath(slug)}>

@@ -67,8 +67,8 @@ export const HOTKEYS: HotkeyDef[] = [
   {
     id: 'project.settings',
     group: 'general',
-    combo: 's',
-    scope: 'app',
+    combo: 'mod+,',
+    scope: 'global',
   },
   { id: 'chat.toggle', group: 'general', combo: 'c', scope: 'app' },
   // The next workspace layout (hooks/useWorkspaceLayout).

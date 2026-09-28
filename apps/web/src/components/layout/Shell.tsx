@@ -12,7 +12,6 @@ import type { IssueOpenMode } from '@/lib/api/endpoints/userPreferences';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { useOverlays } from '@/hooks/useOverlays';
 import { usePermissions } from '@/hooks/usePermissions';
-import { useSettingsNavGroups } from '@/hooks/useSettingsNavGroups';
 import { useShellProject } from '@/hooks/useShellProject';
 import { useShellRoute } from '@/hooks/useShellRoute';
 import { useProjectRouteSync } from '@/hooks/useProjectRouteSync';
@@ -37,6 +36,9 @@ import ShellHeaderTitle from '@/components/layout/ShellHeaderTitle';
 import HeaderCrumbs from '@/components/layout/HeaderCrumbs';
 import ShellOverlays from '@/components/layout/ShellOverlays';
 import WorkspaceLayoutHost from '@/components/layout/WorkspaceLayoutHost';
+import WorkItemsPage from '@/features/work-items/WorkItemsPage';
+import SettingsModal from '@/features/settings/SettingsModal';
+import { openSettingsModal } from '@/features/settings/settingsModalCatalog';
 import { useTranslations } from 'next-intl';
 
 // The layout for /project/:projectKey and its children (the work items view and the
@@ -155,10 +157,6 @@ export default function Shell({
     }
   }, [activeWorkspaceTool, routedTool, setWorkspaceOpen, workspaceOpen]);
 
-  // The settings sections the member may open; the hotkey lands on the first of
-  // them, the same entry the sidebar links to.
-  const { firstHref: firstSettingsHref } = useSettingsNavGroups(projectKey, project);
-
   // Only the work items routes: a cycle or an initiative board carries its own
   // filters and merges them itself.
   const filterDefaults = route.onBoard
@@ -194,7 +192,7 @@ export default function Shell({
     onNewIssue: () => canCreateIssue && openNewIssue(),
     onNewInitiative: () => canCreateInitiative && overlays.setShowNewInitiative(true),
     onNewProject: () => overlays.setShowNewProject(true),
-    onSettings: () => firstSettingsHref && router.push(firstSettingsHref),
+    onSettings: () => openSettingsModal('project', 'general'),
     onToggleChat: toggleCoordinatorChat,
     onCycleLayout: workspaceLayout.phone ? undefined : workspaceLayout.cycle,
   });
@@ -327,7 +325,11 @@ export default function Shell({
                   projectCount={projects.length}
                   allowNoProject={globalHome}
                 >
-                  {children}
+                  {['settings', 'members', 'notifications', 'mcp'].includes(route.sub ?? '') ? (
+                    <WorkItemsPage />
+                  ) : (
+                    children
+                  )}
                 </ShellBody>
               </WorkspaceLayoutHost>
             </SidebarInset>
@@ -354,6 +356,15 @@ export default function Shell({
             />
 
             <ShellOverlays project={project} projectKey={projectKey} overlays={overlays} />
+            <SettingsModal
+              projectKey={projectKey}
+              projectName={project?.project.name}
+              routeContent={
+                ['settings', 'members', 'notifications', 'mcp'].includes(route.sub ?? '')
+                  ? children
+                  : undefined
+              }
+            />
           </SidebarProvider>
         </ShellHeaderSlotCtx.Provider>
       </ShellCtx.Provider>

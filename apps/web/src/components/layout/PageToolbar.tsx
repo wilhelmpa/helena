@@ -11,7 +11,7 @@ import {
 } from 'react';
 import Link from 'next/link';
 import type { LucideIcon } from 'lucide-react';
-import { Check, ChevronDown, MoreHorizontal, Search, TextSearch, X } from 'lucide-react';
+import { Check, ChevronDown, MoreHorizontal, Search, Settings2, TextSearch, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 import { ShellHeaderRow } from '@/components/layout/WorkspaceHeader';
@@ -25,6 +25,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { openSettingsModal } from '@/features/settings/settingsModalCatalog';
 
 // The one pattern for everything a page offers (owner, 2026-09-24: "alles in eine
 // Reihe, ohne Funktionen zu verlieren, für alle Bereiche homogen"). A page puts its
@@ -415,7 +416,16 @@ export function PageActions({
   const t = useTranslations('common');
   const room = useContext(RoomCtx);
   const inRow = room.actions ? actions.filter((action) => !action.menuOnly) : [];
-  const inMenu = room.actions ? actions.filter((action) => action.menuOnly) : actions;
+  const inMenu: PageAction[] = [
+    ...(room.actions ? actions.filter((action) => action.menuOnly) : actions),
+    {
+      id: 'settings-modal',
+      label: 'Einstellungen',
+      icon: Settings2,
+      onClick: () => openSettingsModal(),
+      menuOnly: true,
+    },
+  ];
   return (
     <div className="flex shrink-0 items-center gap-0.5">
       {inRow.map((action) => (
