@@ -32,7 +32,7 @@ const SECURITY_HEADERS = [
 const nextConfig: NextConfig = {
   // Native LAN development is reverse-proxied through Nginx. Next otherwise
   // blocks its own HMR/client resources and leaves the server-rendered UI inert.
-  allowedDevOrigins: ['kingston-server.local', 'kingston-server'],
+  allowedDevOrigins: ['kingston-server.local', 'kingston-server', '127.0.0.1'],
   // standalone build for a lean docker image.
   output: 'standalone',
   poweredByHeader: false,
