@@ -24,6 +24,7 @@ import { api, authedApi, type Api } from '#tests/helpers/app';
 import { signUpTestUser } from '#tests/helpers/auth';
 import { createAgent } from '#tests/helpers/agents';
 import {
+  finishAgentRun,
   resetEngineDb,
   startEngine,
   stopEngineRuns,
@@ -47,7 +48,7 @@ setDefaultTimeout(30_000);
 
 // Routines on the Helena engine: Helena keeps them (helena_schedule) and the engine's
 // tick fires them. Every fire creates a task delegated to the agent
-// or reopens the routine's task, and is skipped while the routine's task is open. Ported
+// or reopens the routine's task, and skips a scheduled reopen while an agent run is active. Ported
 // from the agent-routine workflow tests of the Mastra control plane and the routine
 // dispatch tests of its bridge.
 
@@ -509,9 +510,81 @@ describe('routines', () => {
     });
     const runs = await db.select().from(agentRun).where(eq(agentRun.issueId, task.id));
     expect(runs.map((run) => run.workClass)).toEqual(['routines']);
-    // The task is open now: the next fire leaves it alone.
+    // A manual fire uses the same task even while its agent run is pending.
     const again = (await routines(asOwner)({ routineId: created.id }).run.post()).data!;
-    await waitForStatus(again.runId, 'skipped');
+    const repeated = await waitForStatus(again.runId, 'succeeded');
+    expect(repeated.result).toMatchObject({ outcome: 'reopened', taskId: task.id });
+    expect(await db.select().from(agentRun).where(eq(agentRun.issueId, task.id))).toHaveLength(1);
+  });
+
+  it('runs now on an initially open task without creating another task', async () => {
+    const { asOwner, agent, columnId } = await setup();
+    const task = (
+      await asOwner.projects({ projectKey: 'MKT' }).issues.post({ columnId, title: 'Backups' })
+    ).data!;
+    const created = (
+      await routines(asOwner).post(routineBody(agent.id, { mode: 'reopen', taskId: task.id }))
+    ).data!;
+    const fire = (await routines(asOwner)({ routineId: created.id }).run.post()).data!;
+    const run = await waitForStatus(fire.runId, 'succeeded');
+    expect(run).toMatchObject({
+      issueId: task.id,
+      result: { outcome: 'reopened', skipReason: null, taskId: task.id },
+    });
+    expect(await db.select().from(issueTable)).toHaveLength(1);
+    expect(await db.select().from(agentRun).where(eq(agentRun.issueId, task.id))).toHaveLength(1);
+  });
+
+  it('runs an open task on schedule unless an agent run is active and records the skip reason', async () => {
+    const { asOwner, agent, columnId } = await setup();
+    const task = (
+      await asOwner.projects({ projectKey: 'MKT' }).issues.post({ columnId, title: 'Backups' })
+    ).data!;
+    const created = (
+      await routines(asOwner).post(
+        routineBody(agent.id, {
+          mode: 'reopen',
+          taskId: task.id,
+          cron: '0 9 * * *',
+          timezone: 'UTC',
+        }),
+      )
+    ).data!;
+    const monday = new Date('2026-09-21T09:00:00.000Z');
+    const first = await fire(created.id, monday);
+    expect(first).toMatchObject({
+      status: 'succeeded',
+      issueId: task.id,
+      result: { outcome: 'reopened', skipReason: null },
+    });
+    const tuesday = new Date('2026-09-22T09:00:00.000Z');
+    const skipped = await fire(created.id, tuesday);
+    expect(skipped).toMatchObject({
+      status: 'skipped',
+      issueId: task.id,
+      result: { outcome: 'skipped', skipReason: 'task-open' },
+    });
+    expect((await routines(asOwner).get({ query: {} })).data!.items[0]!.lastRun).toMatchObject({
+      status: 'skipped',
+      skipReason: 'task-open',
+    });
+    const history = (await routines(asOwner)({ routineId: created.id }).runs.get({ query: {} }))
+      .data!;
+    expect(history.items[0]).toMatchObject({
+      status: 'skipped',
+      result: { outcome: 'skipped', skipReason: 'task-open' },
+    });
+    const [pending] = await db.select().from(agentRun).where(eq(agentRun.issueId, task.id));
+    await finishAgentRun(pending!.id, {});
+    const wednesday = new Date('2026-09-23T09:00:00.000Z');
+    const resumed = await fire(created.id, wednesday);
+    expect(resumed).toMatchObject({
+      status: 'succeeded',
+      issueId: task.id,
+      result: { outcome: 'reopened', skipReason: null },
+    });
+    expect(await db.select().from(issueTable)).toHaveLength(1);
+    expect(await db.select().from(agentRun).where(eq(agentRun.issueId, task.id))).toHaveLength(2);
   });
 
   it('fires each time once, and records a fire that comes too late as missed', async () => {
