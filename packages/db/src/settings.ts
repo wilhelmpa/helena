@@ -21,6 +21,12 @@ function ensureListener(): void {
   });
 }
 
+// Forgets every cached setting. Tests call it after they wipe app_setting
+// with raw SQL, which bypasses setSetting and so never reaches the cache.
+export function clearSettingsCache(): void {
+  cache.clear();
+}
+
 export async function getSetting<T>(key: string): Promise<T | null> {
   ensureListener();
   const cached = cache.get(key);
