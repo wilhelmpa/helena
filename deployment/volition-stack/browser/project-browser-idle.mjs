@@ -95,12 +95,17 @@ export class BrowserIdle {
           }
           return true;
         }
-        if (!this.power.running(browser.slug)) {
-          if (!start && !keep) return true;
+        const running = this.power.running(browser.slug);
+        if (!running && !start && !keep) return true;
+        if (start || !running) {
+          // A use checks a browser known to run once it has not for a few seconds, and starts
+          // one that stopped behind the router's back (project-browser-power.mjs).
+          const since = this.power.since(browser.slug);
           await this.power.ensure(browser.slug, browser.port);
-          // A browser just started has its pages active; a restarted router cannot know.
-          browser.frozen = null;
-          if (start) browser.frozen = true;
+          if (!running || this.power.since(browser.slug) !== since) {
+            // A browser just started has its pages active, but its visibility is to be set.
+            browser.frozen = start ? true : null;
+          }
         }
       }
       const idle = this.unused(browser) && this.now() - browser.lastActive >= this.idleMs;
