@@ -843,6 +843,24 @@
       },
       "general": "Allgemein",
       "generalHint": "Name, Anweisungen und womit der Agent arbeitet."
+    },
+    "overview": {
+      "capabilities": "Fähigkeiten",
+      "noCapabilities": "Noch keine Fähigkeiten beschrieben. In den Einstellungen unter „Allgemein“ ergänzen.",
+      "status": "Zustand",
+      "heartbeat": "Herzschlag",
+      "heartbeatEvery": "alle {minutes} Min.",
+      "heartbeatOff": "aus",
+      "heartbeatNext": "Nächster Takt um {time}",
+      "budget": "Budget",
+      "budgetOf": "{used} von {limit}",
+      "noBudget": "keins",
+      "model": "Modell",
+      "why": "Warum",
+      "noWhy": "kein Ziel verknüpft",
+      "latestResults": "Letzte Ergebnisse",
+      "noResults": "Noch keine Läufe.",
+      "allSettings": "Alle Einstellungen"
     }
   },
   "members": {

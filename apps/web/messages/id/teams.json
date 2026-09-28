@@ -843,6 +843,24 @@
       },
       "general": "Umum",
       "generalHint": "Nama, instruksi, dan dengan apa agen bekerja."
+    },
+    "overview": {
+      "capabilities": "Kemampuan",
+      "noCapabilities": "Belum ada kemampuan yang dijelaskan. Tambahkan di pengaturan pada “Umum”.",
+      "status": "Status",
+      "heartbeat": "Detak",
+      "heartbeatEvery": "setiap {minutes} mnt",
+      "heartbeatOff": "mati",
+      "heartbeatNext": "Detak berikutnya pukul {time}",
+      "budget": "Anggaran",
+      "budgetOf": "{used} dari {limit}",
+      "noBudget": "tidak ada",
+      "model": "Model",
+      "why": "Mengapa",
+      "noWhy": "tidak ada tujuan terkait",
+      "latestResults": "Hasil terbaru",
+      "noResults": "Belum ada proses.",
+      "allSettings": "Semua pengaturan"
     }
   },
   "members": {

@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   getProjectGoalContext,
   getProjectWhyChains,
@@ -19,6 +19,16 @@ export function useProjectWhyChains(projectKey: string | null) {
     queryFn: () => getProjectWhyChains(projectKey!),
     enabled: projectKey != null,
     refetchInterval: 15000,
+  });
+}
+// The why chains of several projects at once (Helena's Team page, over every project).
+export function useProjectsWhyChains(projectKeys: string[]) {
+  return useQueries({
+    queries: projectKeys.map((projectKey) => ({
+      queryKey: ['project-why-chains', projectKey],
+      queryFn: () => getProjectWhyChains(projectKey),
+      refetchInterval: 15000,
+    })),
   });
 }
 export function useSetProjectPoolGoal(projectKey: string) {

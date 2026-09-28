@@ -396,7 +396,7 @@ export default function OrganizationChart({
     setHover(null);
     setSelectedId(id);
     // The agent's settings open in the agent dialog over the chart (design-system §3).
-    if (byId.has(id)) openAgentDialog(id, organization.teamId);
+    if (byId.has(id)) openAgentDialog(id, organization.teamId, 'overview');
   };
   const onActivate = (node: Node) => {
     if (node.type === 'group') {

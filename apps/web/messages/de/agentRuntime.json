@@ -6,7 +6,8 @@
     "sessions": "Sitzungen",
     "memory": "Gedächtnis",
     "usage": "Verbrauch",
-    "runtime": "Laufzeit"
+    "runtime": "Laufzeit",
+    "overview": "Übersicht"
   },
   "runs": {
     "empty": "Noch keine Läufe.",

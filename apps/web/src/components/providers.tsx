@@ -34,7 +34,23 @@ function errorMessage(
   return fallback;
 }
 
+// A hidden tab pauses every CSS animation (orbits, halos, heartbeat rings; docs/
+// paperclip-assimilation.md §5). Canvas and WebGL pause themselves.
+function usePauseAnimationsWhenHidden() {
+  useEffect(() => {
+    const root = document.documentElement;
+    const sync = () => {
+      if (document.hidden) root.dataset.pageHidden = 'true';
+      else delete root.dataset.pageHidden;
+    };
+    sync();
+    document.addEventListener('visibilitychange', sync);
+    return () => document.removeEventListener('visibilitychange', sync);
+  }, []);
+}
+
 export function Providers({ children }: { children: ReactNode }) {
+  usePauseAnimationsWhenHidden();
   const t = useTranslations('common');
   // Radix reads the direction from this context, not from the CSS: without it a
   // menu keeps left-to-right arrow-key navigation and alignment even once the

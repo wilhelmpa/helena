@@ -221,6 +221,7 @@ export function openSettingsModal(
 
 // An agent's settings in the large agent dialog over the current page (org chart, team
 // list, chat): the page behind stays as it is.
-export function openAgent(agentId: number, teamId?: number) {
-  window.dispatchEvent(new CustomEvent(AGENT_DIALOG_OPEN, { detail: { agentId, teamId } }));
+// `tab` picks the tab it opens on (the org chart opens the overview).
+export function openAgent(agentId: number, teamId?: number, tab?: string) {
+  window.dispatchEvent(new CustomEvent(AGENT_DIALOG_OPEN, { detail: { agentId, teamId, tab } }));
 }

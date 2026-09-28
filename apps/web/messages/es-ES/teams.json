@@ -843,6 +843,24 @@
       },
       "general": "General",
       "generalHint": "Nombre, instrucciones y con qué trabaja el agente."
+    },
+    "overview": {
+      "capabilities": "Capacidades",
+      "noCapabilities": "Aún no se han descrito capacidades. Añádelas en los ajustes, en «General».",
+      "status": "Estado",
+      "heartbeat": "Latido",
+      "heartbeatEvery": "cada {minutes} min",
+      "heartbeatOff": "desactivado",
+      "heartbeatNext": "Próximo latido a las {time}",
+      "budget": "Presupuesto",
+      "budgetOf": "{used} de {limit}",
+      "noBudget": "ninguno",
+      "model": "Modelo",
+      "why": "Por qué",
+      "noWhy": "sin objetivo vinculado",
+      "latestResults": "Últimos resultados",
+      "noResults": "Aún no hay ejecuciones.",
+      "allSettings": "Todos los ajustes"
     }
   },
   "members": {

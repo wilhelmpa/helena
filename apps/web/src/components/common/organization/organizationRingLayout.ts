@@ -1,3 +1,5 @@
+import type { BudgetStatus } from '@/lib/api/endpoints/autopilot';
+import { fullestBudget } from '@/components/helena/BudgetBar';
 import type { Edge, Node } from '@xyflow/react';
 import type {
   OrganizationAgent,
@@ -26,6 +28,10 @@ export interface RingGroup {
   tag: string;
   accent: string;
   members: number[];
+  // The department's fullest budget (hub/pc-costs), as a bar on its circle.
+  budget?: BudgetStatus | null;
+  // A budget of the department is used up, or one of its agents takes no new work.
+  throttled?: boolean;
 }
 
 export interface RingTask {
@@ -224,6 +230,7 @@ export function organizationRingLayout({
         order: string;
         keys: Set<string>;
         heads: OrganizationAgent[];
+        budget: BudgetStatus | null;
       }
     >();
     for (const head of heads) {
@@ -248,6 +255,7 @@ export function organizationRingLayout({
             : `2:${head.name}`,
         keys: new Set<string>(),
         heads: [],
+        budget: department ? fullestBudget(department.budgets) : null,
       };
       if (project) entry.keys.add(project.key);
       entry.heads.push(head);
@@ -269,6 +277,9 @@ export function organizationRingLayout({
             tag: [...entry.keys].sort().join(' · '),
             accent: entry.accent ?? palette[index % palette.length]!,
             members: members.map((member) => member.id),
+            budget: entry.budget,
+            throttled:
+              (entry.budget?.ratio ?? 0) >= 1 || members.some((member) => member.throttled),
           },
         });
       });

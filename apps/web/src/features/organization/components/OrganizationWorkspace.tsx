@@ -3,7 +3,7 @@
 import type { ReactNode } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { PageToolbar } from '@/components/layout/PageToolbar';
+import { PageToolbar, PageToolbarSpacer } from '@/components/layout/PageToolbar';
 import { More, Segmented } from '@/design-system';
 import OrganizationWhy from './OrganizationWhy';
 import type { Organization } from '@/lib/api/endpoints/organization';
@@ -45,8 +45,11 @@ export default function OrganizationWorkspace({
   // entries of their own (Agentenpool, Einstellungen → Abteilungen / Projekte) and stay
   // reachable by their old ?tab= address.
   // Wer / Warum (hub/pc-goal-ladder): the chart shows who works, the why view what for.
-  // The why chains are a project's, so the switch is on a project's Team page.
-  const lens = projectKey && params.get('lens') === 'why' ? 'why' : 'who';
+  // On a project's Team page its chains, on Helena's every project's.
+  const lens = params.get('lens') === 'why' ? 'why' : 'who';
+  const whyProjects = projectKey
+    ? organization.projects.filter((project) => project.key === projectKey)
+    : organization.projects;
   const setLens = (next: 'who' | 'why') => {
     const query = new URLSearchParams(params.toString());
     if (next === 'why') query.set('lens', 'why');
@@ -54,7 +57,7 @@ export default function OrganizationWorkspace({
     const search = query.toString();
     router.replace(search ? `${pathname}?${search}` : pathname, { scroll: false });
   };
-  const lensSwitch = projectKey ? (
+  const lensSwitch = (
     <Segmented
       value={lens}
       onChange={setLens}
@@ -64,12 +67,20 @@ export default function OrganizationWorkspace({
         { value: 'why', label: tChart('lensWhy') },
       ]}
     />
-  ) : null;
+  );
   const chart =
-    lens === 'why' && projectKey ? (
+    lens === 'why' ? (
       <>
-        <PageToolbar>{lensSwitch}</PageToolbar>
-        <OrganizationWhy projectKey={projectKey} />
+        <PageToolbar>
+          {lensSwitch}
+          {toolbarEnd && (
+            <>
+              <PageToolbarSpacer />
+              {toolbarEnd}
+            </>
+          )}
+        </PageToolbar>
+        <OrganizationWhy projects={whyProjects} />
       </>
     ) : (
       <OrganizationChart

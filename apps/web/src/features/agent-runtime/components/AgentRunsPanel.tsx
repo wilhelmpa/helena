@@ -78,7 +78,7 @@ function RunList({
   );
 }
 
-function RunRow({ run, onOpen }: { run: AgentRun; onOpen: () => void }) {
+export function RunRow({ run, onOpen }: { run: AgentRun; onOpen: () => void }) {
   const t = useTranslations('agentRuntime.runs');
   const tModel = useTranslations('modelAvailability');
   const relativeTime = useRelativeTime();

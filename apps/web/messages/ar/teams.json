@@ -843,6 +843,24 @@
       },
       "general": "عام",
       "generalHint": "الاسم والتعليمات وما يعمل به الوكيل."
+    },
+    "overview": {
+      "capabilities": "القدرات",
+      "noCapabilities": "لم تُوصف أي قدرات بعد. أضفها في الإعدادات ضمن «عام».",
+      "status": "الحالة",
+      "heartbeat": "النبض",
+      "heartbeatEvery": "كل {minutes} دقيقة",
+      "heartbeatOff": "متوقف",
+      "heartbeatNext": "النبضة التالية في {time}",
+      "budget": "الميزانية",
+      "budgetOf": "{used} من {limit}",
+      "noBudget": "لا يوجد",
+      "model": "النموذج",
+      "why": "لماذا",
+      "noWhy": "لا هدف مرتبط",
+      "latestResults": "أحدث النتائج",
+      "noResults": "لا توجد تشغيلات بعد.",
+      "allSettings": "كل الإعدادات"
     }
   },
   "members": {

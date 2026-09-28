@@ -1,7 +1,9 @@
 'use client';
 
 import { Handle, Position, type Node, type NodeProps } from '@xyflow/react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
+import BudgetBar from '@/components/helena/BudgetBar';
+import { formatBudgetAmount } from '@/features/autopilot/utils/autopilotFormat';
 import Orb from '@/components/helena/Orb';
 import type { OrganizationDepartment } from '@/lib/api/endpoints/organization';
 import { useChartAgentStatus, type ChartAgentData } from './OrganizationChartNode';
@@ -101,6 +103,7 @@ export type RingGroupNode = Node<{ group: RingGroup; dimmed: boolean }, 'group'>
 // A department, or a project, on the inner ring. A click opens its own ring.
 export function OrganizationRingGroup({ data }: NodeProps<RingGroupNode>) {
   const t = useTranslations('organization.chart');
+  const locale = useLocale();
   const { group, dimmed } = data;
   return (
     <div
@@ -111,6 +114,7 @@ export function OrganizationRingGroup({ data }: NodeProps<RingGroupNode>) {
         type="button"
         aria-label={t('openLevel', { name: group.label })}
         title={t('openLevel', { name: group.label })}
+        data-throttled={group.throttled ? 'true' : undefined}
         className="organization-ring-group flex size-full cursor-pointer flex-col items-center justify-center gap-0.5 rounded-full border bg-card px-2 text-center text-card-foreground transition-transform duration-200 hover:scale-[1.04] focus-visible:outline-2 focus-visible:outline-brand motion-reduce:transition-none motion-reduce:hover:scale-100"
         style={{
           borderColor: `color-mix(in srgb, ${group.accent} 55%, transparent)`,
@@ -129,8 +133,17 @@ export function OrganizationRingGroup({ data }: NodeProps<RingGroupNode>) {
           {group.label}
         </span>
         <span className="font-mono text-[9px] text-muted-foreground">
-          {t('agentCount', { count: group.members.length })}
+          {group.budget
+            ? formatBudgetAmount(group.budget.metric, group.budget.used, locale)
+            : t('agentCount', { count: group.members.length })}
         </span>
+        {group.budget && (
+          <BudgetBar
+            budget={group.budget}
+            className="organization-ring-budget"
+            label={t('budgetUsed', { percent: Math.round(group.budget.ratio * 100) })}
+          />
+        )}
       </button>
     </div>
   );

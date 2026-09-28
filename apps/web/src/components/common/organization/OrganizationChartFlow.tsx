@@ -117,8 +117,27 @@ function Flow({
         .map((node) => flow.getInternalNode(node.id))
         .filter((node): node is NonNullable<typeof node> => node != null && !!node.measured.width);
       if (internals.length === 0) return false;
-      const bounds = getNodesBounds(internals);
-      const minimum = view === 'ring' ? 0.3 : 0.5;
+      const nodeBounds = getNodesBounds(internals);
+      // The ring always fits whole (owner 28.09.: no overflow, no labels cut, no
+      // scrolling): its orbits count into the bounds and it may shrink as far as needed.
+      // A tall tree keeps a readable zoom and is shown from its top.
+      const outer = view === 'ring' && orbits.length ? Math.max(...orbits) : 0;
+      const bounds = outer
+        ? (() => {
+            // The orbits are drawn around the flow's origin, where the hub sits.
+            const cx = 0;
+            const cy = 0;
+            const x = Math.min(nodeBounds.x, cx - outer);
+            const y = Math.min(nodeBounds.y, cy - outer);
+            return {
+              x,
+              y,
+              width: Math.max(nodeBounds.x + nodeBounds.width, cx + outer) - x,
+              height: Math.max(nodeBounds.y + nodeBounds.height, cy + outer) - y,
+            };
+          })()
+        : nodeBounds;
+      const minimum = view === 'ring' ? 0.1 : 0.5;
       const zoom = Math.min(
         1,
         Math.max(
@@ -137,7 +156,7 @@ function Flow({
       void flow.setViewport({ x, y, zoom }, { duration: animate && !reduced ? 320 : 0 });
       return true;
     },
-    [flow, height, nodes, reduced, view, width],
+    [flow, height, nodes, orbits, reduced, view, width],
   );
 
   // Fit again when the chart's place changes size (the page settling, the window), not
@@ -227,7 +246,7 @@ function Flow({
         // The first fit is React Flow's own (it knows when the nodes are measured); later
         // fits on a new view or a resized stage come from the effect above.
         fitView
-        fitViewOptions={{ padding: 0.08, minZoom: view === 'ring' ? 0.3 : 0.5, maxZoom: 1 }}
+        fitViewOptions={{ padding: 0.08, minZoom: view === 'ring' ? 0.1 : 0.5, maxZoom: 1 }}
         nodes={nodes}
         edges={edges}
         nodeTypes={nodeTypes}
@@ -267,7 +286,7 @@ function Flow({
         onMoveStart={() => onHover(null)}
         onPaneClick={onPaneClick}
         zoomOnDoubleClick={false}
-        minZoom={0.15}
+        minZoom={0.08}
         maxZoom={1.6}
         colorMode={resolvedTheme === 'dark' ? 'dark' : 'light'}
         style={{ background: 'transparent' }}

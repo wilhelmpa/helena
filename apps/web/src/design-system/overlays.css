@@ -323,6 +323,78 @@ body[data-modal-open='true'] [data-radix-popper-content-wrapper] {
 .ds-agent-overlay-main.is-single {
   grid-template-columns: minmax(0, 1fr);
 }
+.ds-agent-overlay-main[hidden] {
+  display: none;
+}
+/* The overview tab (org chart click): what the agent can do, its state and latest results. */
+.ds-agent-overview {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 20px;
+  overflow-y: auto;
+  padding: 24px 28px 32px;
+}
+.ds-agent-overview > * {
+  width: 100%;
+  max-width: 760px;
+}
+.ds-agent-overview > .ds-button {
+  width: auto;
+  align-self: flex-start;
+}
+.ds-agent-overview-head {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.ds-agent-overview-about {
+  margin: 0;
+  color: var(--text-2);
+  font-size: 13px;
+  line-height: 1.6;
+}
+.ds-agent-overview-caps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.ds-agent-overview-caps li {
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--text-2);
+  font-size: 12px;
+}
+.ds-agent-overview-value {
+  color: var(--text);
+  font-size: 13px;
+  text-align: end;
+}
+.ds-agent-overview-budget {
+  width: 140px;
+}
+.ds-agent-overview-results {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.ds-agent-overview-runs {
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+  border-radius: 14px;
+  background: var(--surface-1);
+  box-shadow: var(--shadow-card);
+  list-style: none;
+}
+.ds-agent-overview-runs li + li {
+  border-top: 1px solid var(--line);
+}
 .ds-agent-nav {
   display: flex;
   min-height: 0;

@@ -16,17 +16,20 @@ import {
 } from '@/features/teams/components/ai-agents/agentFormPages';
 import { useAgentStatus } from '@/utils/helenaStatus';
 import AgentSettingsModalContent from './AgentSettingsModalContent';
+import AgentOverview from './AgentOverview';
 import { AGENT_DIALOG_OPEN, AGENT_PARAM } from './settingsModalCatalog';
 
 let pushedEntry = false;
 
-function hrefWith(agentId: number | null) {
+function hrefWith(agentId: number | null, tab?: string) {
   const url = new URL(window.location.href);
-  if (agentId == null) {
-    url.searchParams.delete(AGENT_PARAM);
-    url.searchParams.delete('agentTab');
-    url.searchParams.delete('agentRunId');
-  } else url.searchParams.set(AGENT_PARAM, String(agentId));
+  url.searchParams.delete('agentTab');
+  url.searchParams.delete('agentRunId');
+  if (agentId == null) url.searchParams.delete(AGENT_PARAM);
+  else {
+    url.searchParams.set(AGENT_PARAM, String(agentId));
+    if (tab) url.searchParams.set('agentTab', tab);
+  }
   return `${url.pathname}${url.search}${url.hash}`;
 }
 
@@ -66,8 +69,8 @@ export default function AgentDialog() {
   const agents = useAiAgentsQuery(fromUrl != null ? teamId : null).data ?? [];
   const agent = agents.find((entry) => entry.id === fromUrl);
 
-  const go = useCallback((agentId: number | null) => {
-    const href = hrefWith(agentId);
+  const go = useCallback((agentId: number | null, tab?: string) => {
+    const href = hrefWith(agentId, tab);
     if (agentId == null && pushedEntry) {
       pushedEntry = false;
       window.history.back();
@@ -83,10 +86,11 @@ export default function AgentDialog() {
 
   useEffect(() => {
     function onOpen(event: Event) {
-      const detail = (event as CustomEvent<{ agentId: number; teamId?: number }>).detail;
+      const detail = (event as CustomEvent<{ agentId: number; teamId?: number; tab?: string }>)
+        .detail;
       if (!detail) return;
       if (detail.teamId) setTeamHint(detail.teamId);
-      go(detail.agentId);
+      go(detail.agentId, detail.tab);
     }
     window.addEventListener(AGENT_DIALOG_OPEN, onOpen);
     return () => window.removeEventListener(AGENT_DIALOG_OPEN, onOpen);
@@ -101,7 +105,7 @@ export default function AgentDialog() {
   if (fromUrl == null || teamId == null) return null;
   return (
     <AgentDialogFrame
-      key={fromUrl}
+      key={`${fromUrl}:${params.get('agentTab') ?? ''}`}
       teamId={teamId}
       agentId={fromUrl}
       agent={agent ?? null}
@@ -114,6 +118,7 @@ export default function AgentDialog() {
 }
 
 const SETTINGS_TAB = 'settings';
+const OVERVIEW_TAB = 'overview';
 
 // An agent's settings in the one overlay on the right (owner 28.09.: the same overlay as
 // a task, a run and a file preview): the tabs Einstellungen, Läufe, Gedächtnis,
@@ -141,12 +146,15 @@ function AgentDialogFrame({
   const tPages = useTranslations('teams.agents.pages');
   const [tab, setTab] = useState(initialTab);
   const [page, setPage] = useState<AgentFormPageId>('general');
+  // A run picked in the overview opens on the runs tab.
+  const [pickedRun, setPickedRun] = useState<number | null>(null);
   const permissions = useTeamQuery(teamId).data?.permissions;
   const pages = agentFormPages(agent, {
     skills: permissions?.agent_skills.edit ?? false,
     tools: permissions?.agent_tools.edit ?? false,
   });
   const tabs = [
+    { value: OVERVIEW_TAB, label: tTabs('overview') },
     { value: SETTINGS_TAB, label: tTabs('settings') },
     ...agentTabsFor(agent).map((entry) => ({ value: entry.id, label: tTabs(entry.label) })),
   ];
@@ -173,7 +181,21 @@ function AgentDialogFrame({
                 detail={agent?.username ? `@${agent.username}` : ''}
               />
             </div>
-            <div className={`ds-agent-overlay-main ${tab === SETTINGS_TAB ? '' : 'is-single'}`}>
+            {tab === OVERVIEW_TAB && (
+              <AgentOverview
+                teamId={teamId}
+                agent={agent}
+                onSettings={() => setTab(SETTINGS_TAB)}
+                onRun={(id) => {
+                  setPickedRun(id);
+                  setTab('runs');
+                }}
+              />
+            )}
+            <div
+              className={`ds-agent-overlay-main ${tab === SETTINGS_TAB ? '' : 'is-single'}`}
+              hidden={tab === OVERVIEW_TAB}
+            >
               {tab === SETTINGS_TAB && (
                 <nav className="ds-agent-nav" aria-label={tTabs('settings')}>
                   {groups.map((group) => (
@@ -198,10 +220,11 @@ function AgentDialogFrame({
               )}
               <div className="ds-agent-dialog-body">
                 <AgentSettingsModalContent
+                  key={pickedRun ?? 'run'}
                   teamId={teamId}
                   agentId={agentId}
-                  tab={initialTab}
-                  runId={runId}
+                  tab={pickedRun ? 'runs' : initialTab}
+                  runId={pickedRun ?? runId}
                 />
               </div>
             </div>

@@ -843,6 +843,24 @@
       },
       "general": "General",
       "generalHint": "Name, instructions and what the agent runs on."
+    },
+    "overview": {
+      "capabilities": "Capabilities",
+      "noCapabilities": "No capabilities described yet. Add them in the settings under “General”.",
+      "status": "State",
+      "heartbeat": "Heartbeat",
+      "heartbeatEvery": "every {minutes} min",
+      "heartbeatOff": "off",
+      "heartbeatNext": "Next beat at {time}",
+      "budget": "Budget",
+      "budgetOf": "{used} of {limit}",
+      "noBudget": "none",
+      "model": "Model",
+      "why": "Why",
+      "noWhy": "no goal linked",
+      "latestResults": "Latest results",
+      "noResults": "No runs yet.",
+      "allSettings": "All settings"
     }
   },
   "members": {

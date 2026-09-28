@@ -135,3 +135,10 @@ body {
 [class*='focus-within:border-ring']:focus-within {
   border-color: var(--line) !important;
 }
+
+/* A hidden tab pauses every animation (components/providers.tsx). */
+html[data-page-hidden] *,
+html[data-page-hidden] *::before,
+html[data-page-hidden] *::after {
+  animation-play-state: paused !important;
+}

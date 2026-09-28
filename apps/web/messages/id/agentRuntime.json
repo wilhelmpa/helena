@@ -6,7 +6,8 @@
     "sessions": "Sesi",
     "memory": "Memori",
     "usage": "Pemakaian",
-    "runtime": "Runtime"
+    "runtime": "Runtime",
+    "overview": "Ringkasan"
   },
   "runs": {
     "empty": "Belum ada run.",

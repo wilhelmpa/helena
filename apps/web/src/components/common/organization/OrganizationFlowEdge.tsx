@@ -64,6 +64,10 @@ export default function OrganizationFlowEdge({
           sourcePosition,
           targetPosition,
           borderRadius: 10,
+          // One bus per parent (owner 28.09.): straight down, then every line to the
+          // same level runs along one shared height just below the parent, then down to
+          // each child — never a separate midpoint per child.
+          centerY: targetY > sourceY + 40 ? sourceY + 24 : undefined,
         })[0];
   const color = active ? 'var(--status-listening)' : (data?.accent ?? 'var(--org-edge)');
   return (

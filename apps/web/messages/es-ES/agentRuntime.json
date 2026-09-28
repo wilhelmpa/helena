@@ -6,7 +6,8 @@
     "sessions": "Sesiones",
     "memory": "Memoria",
     "usage": "Consumo",
-    "runtime": "Runtime"
+    "runtime": "Runtime",
+    "overview": "Resumen"
   },
   "runs": {
     "empty": "Todavía no hay ejecuciones.",

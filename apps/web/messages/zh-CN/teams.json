@@ -843,6 +843,24 @@
       },
       "general": "常规",
       "generalHint": "名称、指令以及代理的运行方式。"
+    },
+    "overview": {
+      "capabilities": "能力",
+      "noCapabilities": "尚未描述能力。请在设置的“常规”中添加。",
+      "status": "状态",
+      "heartbeat": "心跳",
+      "heartbeatEvery": "每 {minutes} 分钟",
+      "heartbeatOff": "关闭",
+      "heartbeatNext": "下次心跳 {time}",
+      "budget": "预算",
+      "budgetOf": "{used} / {limit}",
+      "noBudget": "无",
+      "model": "模型",
+      "why": "为何",
+      "noWhy": "未关联目标",
+      "latestResults": "最近结果",
+      "noResults": "暂无运行。",
+      "allSettings": "全部设置"
     }
   },
   "members": {

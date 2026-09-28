@@ -1118,3 +1118,12 @@
     display: none;
   }
 }
+.organization-ring-budget {
+  width: 56px;
+  margin-top: 3px;
+}
+.organization-ring-group[data-throttled='true'],
+.organization-card[data-throttled='true'] {
+  border-color: var(--status-throttled) !important;
+  box-shadow: 0 0 24px color-mix(in srgb, var(--status-throttled) 45%, transparent) !important;
+}

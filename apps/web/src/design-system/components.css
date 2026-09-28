@@ -1358,6 +1358,31 @@ a.ds-run-card:hover {
   padding: 2px;
   background: conic-gradient(var(--accent) calc(var(--beat, 0) * 1turn), var(--surface-3) 0);
 }
+.ds-heartbeat-ring[data-due='true']::after {
+  position: absolute;
+  inset: -1px;
+  border: 2px solid var(--accent);
+  border-radius: 50%;
+  content: '';
+  pointer-events: none;
+  animation: ds-heartbeat-swing 1.6s ease-out infinite;
+}
+@keyframes ds-heartbeat-swing {
+  0% {
+    opacity: 0.7;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.45);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ds-heartbeat-ring[data-due='true']::after {
+    animation: none;
+    opacity: 0.6;
+  }
+}
 .ds-heartbeat-ring > * {
   border-radius: 50%;
   background: var(--surface-1);

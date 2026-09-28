@@ -6,7 +6,8 @@
     "sessions": "Sessions",
     "memory": "Memory",
     "usage": "Usage",
-    "runtime": "Runtime"
+    "runtime": "Runtime",
+    "overview": "Overview"
   },
   "runs": {
     "empty": "No runs yet.",

@@ -843,6 +843,24 @@
       },
       "general": "Общее",
       "generalHint": "Имя, инструкции и на чём работает агент."
+    },
+    "overview": {
+      "capabilities": "Возможности",
+      "noCapabilities": "Возможности ещё не описаны. Добавьте их в настройках в разделе «Общее».",
+      "status": "Состояние",
+      "heartbeat": "Пульс",
+      "heartbeatEvery": "каждые {minutes} мин",
+      "heartbeatOff": "выключен",
+      "heartbeatNext": "Следующий такт в {time}",
+      "budget": "Бюджет",
+      "budgetOf": "{used} из {limit}",
+      "noBudget": "нет",
+      "model": "Модель",
+      "why": "Зачем",
+      "noWhy": "цель не связана",
+      "latestResults": "Последние результаты",
+      "noResults": "Запусков пока нет.",
+      "allSettings": "Все настройки"
     }
   },
   "members": {

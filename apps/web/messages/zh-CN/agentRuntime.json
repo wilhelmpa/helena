@@ -6,7 +6,8 @@
     "sessions": "会话",
     "memory": "记忆",
     "usage": "用量",
-    "runtime": "运行时"
+    "runtime": "运行时",
+    "overview": "概览"
   },
   "runs": {
     "empty": "暂无运行。",

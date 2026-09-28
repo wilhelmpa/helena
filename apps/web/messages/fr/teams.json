@@ -843,6 +843,24 @@
       },
       "general": "Général",
       "generalHint": "Nom, consignes et ce avec quoi l’agent travaille."
+    },
+    "overview": {
+      "capabilities": "Compétences",
+      "noCapabilities": "Aucune compétence décrite. Ajoutez-les dans les réglages, sous « Général ».",
+      "status": "État",
+      "heartbeat": "Battement",
+      "heartbeatEvery": "toutes les {minutes} min",
+      "heartbeatOff": "désactivé",
+      "heartbeatNext": "Prochain battement à {time}",
+      "budget": "Budget",
+      "budgetOf": "{used} sur {limit}",
+      "noBudget": "aucun",
+      "model": "Modèle",
+      "why": "Pourquoi",
+      "noWhy": "aucun objectif lié",
+      "latestResults": "Derniers résultats",
+      "noResults": "Aucune exécution pour l’instant.",
+      "allSettings": "Tous les réglages"
     }
   },
   "members": {
