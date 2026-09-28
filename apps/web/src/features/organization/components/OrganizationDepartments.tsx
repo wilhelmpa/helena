@@ -1,16 +1,16 @@
 'use client';
 
 import { useState } from 'react';
-import { FileUp } from 'lucide-react';
+import { Building2, FileUp } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
-import { Button as ActionButton } from '@/design-system';
+import { Button as ActionButton, EmptyState } from '@/design-system';
 import { Input } from '@/components/ui/input';
 import type { OrganizationDepartment } from '@/lib/api/endpoints/organization';
 import { useCreateDepartment } from '../services/organization.service';
 import DepartmentTemplateImportDialog from './DepartmentTemplateImportDialog';
 import OrganizationDepartmentCard from './OrganizationDepartmentCard';
-import { Inline, Stack, Text } from '@/design-system';
+import { Inline, Stack } from '@/design-system';
 
 export default function OrganizationDepartments({
   teamId,
@@ -62,11 +62,11 @@ export default function OrganizationDepartments({
         onOpenChange={setImporting}
       />
       {departments.length === 0 ? (
-        <Text as="p" size="sm" tone="muted" className="rounded-md border bg-card px-3 py-2">
+        <EmptyState icon={<Building2 />} fill={false}>
           {t('departments.empty')}
-        </Text>
+        </EmptyState>
       ) : (
-        <div className="grid gap-3 xl:grid-cols-2">
+        <Stack gap={2}>
           {departments.map((department) => (
             <OrganizationDepartmentCard
               key={department.id}
@@ -75,7 +75,7 @@ export default function OrganizationDepartments({
               departments={departments}
             />
           ))}
-        </div>
+        </Stack>
       )}
     </Stack>
   );

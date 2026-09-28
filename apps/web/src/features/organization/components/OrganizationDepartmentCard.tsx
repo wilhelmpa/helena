@@ -10,7 +10,9 @@ import { useDeleteDepartment, useUpdateDepartment } from '../services/organizati
 import DepartmentBudgets from './DepartmentBudgets';
 import DepartmentSkills from './DepartmentSkills';
 import DepartmentTemplateExport from './DepartmentTemplateExport';
-import { Inline, Stack, Text } from '@/design-system';
+import { Card, Inline, More, Stack, Text } from '@/design-system';
+import { Pencil } from 'lucide-react';
+import ConfirmDialog from '@/components/common/overlay/ConfirmDialog';
 
 export default function OrganizationDepartmentCard({
   teamId,
@@ -27,6 +29,33 @@ export default function OrganizationDepartmentCard({
   const [name, setName] = useState(department.name);
   const [description, setDescription] = useState(department.description);
   const [parentId, setParentId] = useState(department.parentId?.toString() ?? '');
+  // One line per department (owner, O33: every department an open form was hard to take
+  // in); the form, and under "Mehr" its budgets and skills, open on request.
+  const [open, setOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const parent = departments.find((candidate) => candidate.id === department.parentId);
+
+  if (!open)
+    return (
+      <Card>
+        <Inline gap={3} justify="between">
+          <Stack gap={1} className="min-w-0">
+            <Text weight="medium" truncate>
+              {department.name}
+            </Text>
+            {(parent || department.description) && (
+              <Text size="xs" tone="muted" truncate>
+                {[parent?.name, department.description].filter(Boolean).join(' · ')}
+              </Text>
+            )}
+          </Stack>
+          <Button type="button" variant="outline" size="sm" onClick={() => setOpen(true)}>
+            <Pencil aria-hidden="true" />
+            {t('actions.edit')}
+          </Button>
+        </Inline>
+      </Card>
+    );
 
   return (
     <Stack
@@ -36,10 +65,13 @@ export default function OrganizationDepartmentCard({
       className="rounded-md border bg-card"
       onSubmit={(event) => {
         event.preventDefault();
-        update.mutate({
-          id: department.id,
-          input: { name, description, parentId: parentId ? Number(parentId) : null },
-        });
+        update.mutate(
+          {
+            id: department.id,
+            input: { name, description, parentId: parentId ? Number(parentId) : null },
+          },
+          { onSuccess: () => setOpen(false) },
+        );
       }}
     >
       <div className="grid gap-3 md:grid-cols-2">
@@ -79,8 +111,12 @@ export default function OrganizationDepartmentCard({
           onChange={(event) => setDescription(event.target.value)}
         />
       </label>
-      <DepartmentBudgets teamId={teamId} department={department} />
-      <DepartmentSkills teamId={teamId} department={department} />
+      <More label={t('departments.budgetsAndSkills')}>
+        <Stack gap={4}>
+          <DepartmentBudgets teamId={teamId} department={department} />
+          <DepartmentSkills teamId={teamId} department={department} />
+        </Stack>
+      </More>
       <Inline gap={2} justify="end" wrap>
         <DepartmentTemplateExport teamId={teamId} department={department} />
         <span className="flex-1" />
@@ -90,9 +126,12 @@ export default function OrganizationDepartmentCard({
           size="sm"
           className="text-destructive hover:text-destructive"
           disabled={remove.isPending}
-          onClick={() => remove.mutate(department.id)}
+          onClick={() => setDeleting(true)}
         >
           {t('actions.delete')}
+        </Button>
+        <Button type="button" variant="ghost" size="sm" onClick={() => setOpen(false)}>
+          {t('actions.close')}
         </Button>
         <Button
           type="submit"
@@ -103,6 +142,19 @@ export default function OrganizationDepartmentCard({
           {t('actions.save')}
         </Button>
       </Inline>
+      {deleting && (
+        <ConfirmDialog
+          title={t('departments.deleteTitle', { name: department.name })}
+          confirmLabel={t('actions.delete')}
+          onConfirm={async () => {
+            await remove.mutateAsync(department.id);
+            setDeleting(false);
+          }}
+          onClose={() => setDeleting(false)}
+        >
+          {t('departments.deleteHint')}
+        </ConfirmDialog>
+      )}
     </Stack>
   );
 }

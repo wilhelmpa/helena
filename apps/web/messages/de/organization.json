@@ -38,7 +38,9 @@
     "save": "Speichern",
     "delete": "Löschen",
     "clearAssignment": "Zuweisung entfernen",
-    "saveInstructions": "Anweisungen speichern"
+    "saveInstructions": "Anweisungen speichern",
+    "edit": "Bearbeiten",
+    "close": "Schließen"
   },
   "departments": {
     "newPlaceholder": "Neue Abteilung",
@@ -69,7 +71,10 @@
     "skillsNone": "Die Skill-Bibliothek ist noch leer.",
     "skillsNoMatch": "Kein Skill passt.",
     "skillsEmptyWarning": "Ohne gewählte Skills nutzen die Agenten dieser Abteilung gar keine.",
-    "skillsSaved": "Skills von {name} gespeichert"
+    "skillsSaved": "Skills von {name} gespeichert",
+    "budgetsAndSkills": "Budgets und Skills",
+    "deleteTitle": "Abteilung „{name}“ löschen?",
+    "deleteHint": "Ihre Projekte bleiben erhalten und stehen danach ohne Abteilung."
   },
   "goals": {
     "newPlaceholder": "Neues Ziel",
@@ -141,7 +146,8 @@
   },
   "projects": {
     "empty": "Dieses Team hat keine Projekte.",
-    "instructionsPlaceholder": "Beschreibe den Auftrag des Projekts und die Arbeitsanweisungen."
+    "instructionsPlaceholder": "Beschreibe den Auftrag des Projekts und die Arbeitsanweisungen.",
+    "assignmentSaved": "Abteilung gespeichert"
   },
   "map": {
     "empty": "Noch keine Organisationsstruktur.",

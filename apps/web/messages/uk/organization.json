@@ -38,7 +38,9 @@
     "save": "Зберегти",
     "delete": "Видалити",
     "clearAssignment": "Зняти призначення",
-    "saveInstructions": "Зберегти інструкції"
+    "saveInstructions": "Зберегти інструкції",
+    "edit": "Редагувати",
+    "close": "Закрити"
   },
   "departments": {
     "newPlaceholder": "Новий відділ",
@@ -69,7 +71,10 @@
     "skillsNone": "Бібліотека навичок поки порожня.",
     "skillsNoMatch": "Жодна навичка не підходить.",
     "skillsEmptyWarning": "Без вибраних навичок агенти цього відділу не використовують жодної.",
-    "skillsSaved": "Навички відділу {name} збережено"
+    "skillsSaved": "Навички відділу {name} збережено",
+    "budgetsAndSkills": "Бюджети й навички",
+    "deleteTitle": "Видалити відділ «{name}»?",
+    "deleteHint": "Його проєкти залишаться без відділу."
   },
   "goals": {
     "newPlaceholder": "Нова ціль",
@@ -141,7 +146,8 @@
   },
   "projects": {
     "empty": "У цій команді немає проєктів.",
-    "instructionsPlaceholder": "Опишіть мандат проєкту та робочі інструкції."
+    "instructionsPlaceholder": "Опишіть мандат проєкту та робочі інструкції.",
+    "assignmentSaved": "Відділ збережено"
   },
   "map": {
     "empty": "Структури організації ще немає.",

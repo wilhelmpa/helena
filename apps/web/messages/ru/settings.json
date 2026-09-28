@@ -894,7 +894,12 @@
     "resetToDefault": "Сбросить к значению по умолчанию",
     "levelOverridden": "Для всех проектов по умолчанию уровень {level}; этот проект отличается.",
     "levelDefault": "Как значение по умолчанию для всех проектов.",
-    "autopilotTitle": "Автопилот"
+    "autopilotTitle": "Автопилот",
+    "instructionsTitle": "Инструкции",
+    "instructionsHint": "Действуют для каждого агента проекта.",
+    "instructionsLabel": "Инструкции проекта",
+    "instructionsPlaceholder": "Опишите задачи проекта и правила работы.",
+    "instructionsSaved": "Инструкции сохранены"
   },
   "defaults": {
     "adminOnly": "Эти значения для всех проектов меняет только администратор."

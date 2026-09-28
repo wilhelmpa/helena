@@ -894,7 +894,12 @@
     "resetToDefault": "Revenir au réglage par défaut",
     "levelOverridden": "Le réglage de tous les projets est le niveau {level} ; ce projet diffère.",
     "levelDefault": "Comme le réglage de tous les projets.",
-    "autopilotTitle": "Pilote automatique"
+    "autopilotTitle": "Pilote automatique",
+    "instructionsTitle": "Instructions",
+    "instructionsHint": "S’appliquent à chaque agent de ce projet.",
+    "instructionsLabel": "Instructions du projet",
+    "instructionsPlaceholder": "Décrivez la mission du projet et ses consignes de fonctionnement.",
+    "instructionsSaved": "Instructions enregistrées"
   },
   "defaults": {
     "adminOnly": "Seul l'administrateur modifie ces valeurs pour tous les projets."

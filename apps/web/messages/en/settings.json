@@ -894,7 +894,12 @@
     "resetToDefault": "Reset to default",
     "levelOverridden": "The default for all projects is level {level}; this project differs.",
     "levelDefault": "Same as the default for all projects.",
-    "autopilotTitle": "Autopilot"
+    "autopilotTitle": "Autopilot",
+    "instructionsTitle": "Instructions",
+    "instructionsHint": "Apply to every agent of this project.",
+    "instructionsLabel": "Project instructions",
+    "instructionsPlaceholder": "Describe the project's mandate and operating instructions.",
+    "instructionsSaved": "Instructions saved"
   },
   "defaults": {
     "adminOnly": "Only the administrator changes these defaults for all projects."

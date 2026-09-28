@@ -38,7 +38,9 @@
     "save": "Salvar",
     "delete": "Excluir",
     "clearAssignment": "Remover atribuição",
-    "saveInstructions": "Salvar instruções"
+    "saveInstructions": "Salvar instruções",
+    "edit": "Editar",
+    "close": "Fechar"
   },
   "departments": {
     "newPlaceholder": "Novo departamento",
@@ -69,7 +71,10 @@
     "skillsNone": "A biblioteca de skills ainda está vazia.",
     "skillsNoMatch": "Nenhuma skill corresponde.",
     "skillsEmptyWarning": "Sem skills escolhidas, os agentes deste departamento não usam nenhuma.",
-    "skillsSaved": "Skills de {name} salvas"
+    "skillsSaved": "Skills de {name} salvas",
+    "budgetsAndSkills": "Orçamentos e skills",
+    "deleteTitle": "Excluir o departamento “{name}”?",
+    "deleteHint": "Os projetos continuam e ficam sem departamento."
   },
   "goals": {
     "newPlaceholder": "Nova meta",
@@ -141,7 +146,8 @@
   },
   "projects": {
     "empty": "Esta equipe não tem projetos.",
-    "instructionsPlaceholder": "Descreva a missão do projeto e as instruções de operação."
+    "instructionsPlaceholder": "Descreva a missão do projeto e as instruções de operação.",
+    "assignmentSaved": "Departamento salvo"
   },
   "map": {
     "empty": "Ainda não há estrutura organizacional.",

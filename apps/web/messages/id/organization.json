@@ -38,7 +38,9 @@
     "save": "Simpan",
     "delete": "Hapus",
     "clearAssignment": "Hapus penugasan",
-    "saveInstructions": "Simpan instruksi"
+    "saveInstructions": "Simpan instruksi",
+    "edit": "Ubah",
+    "close": "Tutup"
   },
   "departments": {
     "newPlaceholder": "Departemen baru",
@@ -69,7 +71,10 @@
     "skillsNone": "Pustaka skill masih kosong.",
     "skillsNoMatch": "Tidak ada skill yang cocok.",
     "skillsEmptyWarning": "Tanpa skill yang dipilih, agen departemen ini tidak memakai skill apa pun.",
-    "skillsSaved": "Skill {name} disimpan"
+    "skillsSaved": "Skill {name} disimpan",
+    "budgetsAndSkills": "Anggaran dan skill",
+    "deleteTitle": "Hapus departemen “{name}”?",
+    "deleteHint": "Proyeknya tetap ada dan tidak lagi punya departemen."
   },
   "goals": {
     "newPlaceholder": "Sasaran baru",
@@ -141,7 +146,8 @@
   },
   "projects": {
     "empty": "Tim ini tidak memiliki proyek.",
-    "instructionsPlaceholder": "Jelaskan mandat proyek dan instruksi operasionalnya."
+    "instructionsPlaceholder": "Jelaskan mandat proyek dan instruksi operasionalnya.",
+    "assignmentSaved": "Departemen tersimpan"
   },
   "map": {
     "empty": "Belum ada struktur organisasi.",

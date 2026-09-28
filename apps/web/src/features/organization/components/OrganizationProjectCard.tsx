@@ -1,16 +1,15 @@
 'use client';
 
-import { useState } from 'react';
+import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
 import type { OrganizationDepartment, OrganizationProject } from '@/lib/api/endpoints/organization';
-import {
-  useClearProjectAssignment,
-  useSetProjectAssignment,
-} from '../services/organization.service';
-import { Inline, Stack, Text } from '@/design-system';
+import { useSetProjectAssignment } from '../services/organization.service';
+import { Inline, ListRow, Text } from '@/design-system';
 
+// One project in Organisation › Abteilungen: its name and the department it belongs to,
+// chosen right in the row and saved at once (owner, O33: no form per project). The
+// project's standing instructions for its agents live in the project's own settings
+// (Projekt › Einstellungen › Agenten › Autopilot & Ausführung).
 export default function OrganizationProjectCard({
   teamId,
   project,
@@ -22,43 +21,36 @@ export default function OrganizationProjectCard({
 }) {
   const t = useTranslations('organization');
   const save = useSetProjectAssignment(teamId);
-  const clear = useClearProjectAssignment(teamId);
-  const [departmentId, setDepartmentId] = useState(project.departmentId?.toString() ?? '');
-  const [instructions, setInstructions] = useState(project.instructions);
-
   return (
-    <Stack
-      as="form"
-      gap={3}
-      pad={4}
-      className="rounded-md border bg-card"
-      onSubmit={(event) => {
-        event.preventDefault();
-        save.mutate({
-          id: project.id,
-          input: {
-            departmentId: departmentId ? Number(departmentId) : null,
-            instructions,
-          },
-        });
-      }}
-    >
-      <div>
-        <h3 className="text-md font-medium" dir="auto">
-          {project.name}
-        </h3>
-        <Text as="p" size="xs" tone="muted">
-          {project.key}
-        </Text>
-      </div>
-      <label className="space-y-1 text-sm">
-        <Text as="span" size="xs" tone="muted" className="block">
-          {t('fields.department')}
-        </Text>
+    <ListRow
+      title={
+        <Inline as="span" gap={2}>
+          <Text weight="medium" truncate dir="auto">
+            {project.name}
+          </Text>
+          <Text size="xs" tone="faint" mono>
+            {project.key}
+          </Text>
+        </Inline>
+      }
+      meta={
         <select
-          className="ds-field ds-select-native w-full"
-          value={departmentId}
-          onChange={(event) => setDepartmentId(event.target.value)}
+          className="ds-field ds-select-native"
+          aria-label={t('fields.department')}
+          value={project.departmentId?.toString() ?? ''}
+          disabled={save.isPending}
+          onChange={(event) =>
+            save.mutate(
+              {
+                id: project.id,
+                input: {
+                  departmentId: event.target.value ? Number(event.target.value) : null,
+                  instructions: project.instructions,
+                },
+              },
+              { onSuccess: () => toast.success(t('projects.assignmentSaved')) },
+            )
+          }
         >
           <option value="">{t('values.none')}</option>
           {departments.map((department) => (
@@ -67,32 +59,7 @@ export default function OrganizationProjectCard({
             </option>
           ))}
         </select>
-      </label>
-      <label className="space-y-1 text-sm">
-        <Text as="span" size="xs" tone="muted" className="block">
-          {t('fields.projectInstructions')}
-        </Text>
-        <Textarea
-          value={instructions}
-          maxLength={4000}
-          placeholder={t('projects.instructionsPlaceholder')}
-          onChange={(event) => setInstructions(event.target.value)}
-        />
-      </label>
-      <Inline gap={2} justify="end" align="stretch">
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          disabled={clear.isPending}
-          onClick={() => clear.mutate(project.id)}
-        >
-          {t('actions.clearAssignment')}
-        </Button>
-        <Button type="submit" variant="outline" size="sm" disabled={save.isPending}>
-          {t('actions.save')}
-        </Button>
-      </Inline>
-    </Stack>
+      }
+    />
   );
 }

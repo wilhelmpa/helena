@@ -894,7 +894,12 @@
     "resetToDefault": "Kembalikan ke bawaan",
     "levelOverridden": "Bawaan untuk semua proyek adalah level {level}; proyek ini berbeda.",
     "levelDefault": "Sama dengan bawaan semua proyek.",
-    "autopilotTitle": "Autopilot"
+    "autopilotTitle": "Autopilot",
+    "instructionsTitle": "Instruksi",
+    "instructionsHint": "Berlaku untuk setiap agen proyek ini.",
+    "instructionsLabel": "Instruksi proyek",
+    "instructionsPlaceholder": "Jelaskan mandat proyek dan instruksi operasionalnya.",
+    "instructionsSaved": "Instruksi tersimpan"
   },
   "defaults": {
     "adminOnly": "Hanya administrator yang mengubah bawaan untuk semua proyek ini."

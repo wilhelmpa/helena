@@ -1764,7 +1764,6 @@ a.ds-run-card:hover {
   width: 100%;
   flex-direction: column;
   gap: var(--space-5);
-  padding: var(--space-5) var(--page-pad-x);
 }
 /* Touch screens have no hover: a list row's "…" stays visible, after the date. */
 @media (hover: none) {

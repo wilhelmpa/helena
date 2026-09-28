@@ -894,7 +894,12 @@
     "resetToDefault": "Restablecer el predeterminado",
     "levelOverridden": "El valor para todos los proyectos es el nivel {level}; este proyecto es distinto.",
     "levelDefault": "Igual que el valor para todos los proyectos.",
-    "autopilotTitle": "Piloto automático"
+    "autopilotTitle": "Piloto automático",
+    "instructionsTitle": "Instrucciones",
+    "instructionsHint": "Valen para cada agente de este proyecto.",
+    "instructionsLabel": "Instrucciones del proyecto",
+    "instructionsPlaceholder": "Describe el mandato del proyecto y sus instrucciones de funcionamiento.",
+    "instructionsSaved": "Instrucciones guardadas"
   },
   "defaults": {
     "adminOnly": "Solo el administrador cambia estos valores para todos los proyectos."

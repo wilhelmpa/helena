@@ -1,9 +1,11 @@
 'use client';
 
+import { FolderKanban } from 'lucide-react';
+
 import { useTranslations } from 'next-intl';
 import type { OrganizationDepartment, OrganizationProject } from '@/lib/api/endpoints/organization';
 import OrganizationProjectCard from './OrganizationProjectCard';
-import { Text } from '@/design-system';
+import { EmptyState, List } from '@/design-system';
 
 export default function OrganizationProjects({
   teamId,
@@ -18,14 +20,14 @@ export default function OrganizationProjects({
 
   if (projects.length === 0) {
     return (
-      <Text as="p" size="sm" tone="muted" className="rounded-md border bg-card px-3 py-2">
+      <EmptyState icon={<FolderKanban />} fill={false}>
         {t('projects.empty')}
-      </Text>
+      </EmptyState>
     );
   }
 
   return (
-    <div className="grid gap-3 xl:grid-cols-2">
+    <List label={t('fields.department')}>
       {projects.map((project) => (
         <OrganizationProjectCard
           key={project.id}
@@ -34,6 +36,6 @@ export default function OrganizationProjects({
           departments={departments}
         />
       ))}
-    </div>
+    </List>
   );
 }

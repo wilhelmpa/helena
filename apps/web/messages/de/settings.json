@@ -894,7 +894,12 @@
     "resetToDefault": "Auf Vorgabe zurücksetzen",
     "levelOverridden": "Die Vorgabe für alle Projekte ist Stufe {level}; dieses Projekt weicht davon ab.",
     "levelDefault": "Wie die Vorgabe für alle Projekte.",
-    "autopilotTitle": "Autopilot"
+    "autopilotTitle": "Autopilot",
+    "instructionsTitle": "Anweisungen",
+    "instructionsHint": "Gelten für jeden Agenten dieses Projekts.",
+    "instructionsLabel": "Projektanweisungen",
+    "instructionsPlaceholder": "Beschreibe den Auftrag des Projekts und die Arbeitsanweisungen.",
+    "instructionsSaved": "Anweisungen gespeichert"
   },
   "defaults": {
     "adminOnly": "Diese Vorgaben für alle Projekte ändert nur der Administrator."

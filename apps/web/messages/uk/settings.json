@@ -894,7 +894,12 @@
     "resetToDefault": "Скинути до типового",
     "levelOverridden": "Типово для всіх проєктів рівень {level}; цей проєкт відрізняється.",
     "levelDefault": "Як типове для всіх проєктів.",
-    "autopilotTitle": "Автопілот"
+    "autopilotTitle": "Автопілот",
+    "instructionsTitle": "Інструкції",
+    "instructionsHint": "Діють для кожного агента проєкту.",
+    "instructionsLabel": "Інструкції проєкту",
+    "instructionsPlaceholder": "Опишіть мандат проєкту та робочі інструкції.",
+    "instructionsSaved": "Інструкції збережено"
   },
   "defaults": {
     "adminOnly": "Ці значення для всіх проєктів змінює лише адміністратор."

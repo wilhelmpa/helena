@@ -894,7 +894,12 @@
     "resetToDefault": "Voltar ao padrão",
     "levelOverridden": "O padrão para todos os projetos é o nível {level}; este projeto é diferente.",
     "levelDefault": "Igual ao padrão de todos os projetos.",
-    "autopilotTitle": "Piloto automático"
+    "autopilotTitle": "Piloto automático",
+    "instructionsTitle": "Instruções",
+    "instructionsHint": "Valem para cada agente deste projeto.",
+    "instructionsLabel": "Instruções do projeto",
+    "instructionsPlaceholder": "Descreva a missão do projeto e as instruções de operação.",
+    "instructionsSaved": "Instruções salvas"
   },
   "defaults": {
     "adminOnly": "Só o administrador altera estes padrões para todos os projetos."

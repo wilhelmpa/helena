@@ -19,7 +19,13 @@ import {
   SettingsRow,
   Stack,
   Text,
+  TextArea,
 } from '@/design-system';
+import { useTeam } from '@/services/teams.service';
+import {
+  useOrganizationQuery,
+  useSetProjectAssignment,
+} from '@/features/organization/services/organization.service';
 import { helenaSettingsPath } from './settingsModalCatalog';
 import { useSettingsSectionText } from '@/hooks/useSectionLabels';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -217,6 +223,11 @@ function AutopilotPage({ projectKey }: { projectKey: string }) {
                 </SettingsRow>
               </SettingsGroup>
 
+              {/* Standing instructions for every agent of the project (owner, 28.09.: they
+                  belong to Projekt › Agenten; they were a form per project under
+                  Organisation › Abteilungen). */}
+              <ProjectInstructions projectKey={projectKey} />
+
               <Section title={t('agentsTitle')}>
                 <AutopilotAgentList
                   agents={data.agents}
@@ -232,5 +243,65 @@ function AutopilotPage({ projectKey }: { projectKey: string }) {
         </RequirePermission>
       </SettingsResourceProvider>
     </SectionPageView>
+  );
+}
+
+function ProjectInstructions({ projectKey }: { projectKey: string }) {
+  const tExecution = useTranslations('settings.execution');
+  const tCommon = useTranslations('common');
+  const { project } = useShell();
+  const teamId = project?.project.teamId ?? null;
+  const team = useTeam(teamId ?? 0);
+  const canManage = team != null && team.role !== 'member';
+  const organization = useOrganizationQuery(teamId);
+  const entry = organization.data?.projects.find((item) => item.key === projectKey);
+  const save = useSetProjectAssignment(teamId ?? 0);
+  const [draft, setDraft] = useState<string | null>(null);
+  if (!entry) return null;
+  const value = draft ?? entry.instructions;
+  return (
+    <SettingsGroup
+      title={tExecution('instructionsTitle')}
+      description={tExecution('instructionsHint')}
+    >
+      <SettingsRow label={tExecution('instructionsLabel')} htmlFor="project-instructions" stacked>
+        <Stack gap={2}>
+          <TextArea
+            id="project-instructions"
+            rows={4}
+            maxLength={4000}
+            value={value}
+            disabled={!canManage || save.isPending}
+            placeholder={tExecution('instructionsPlaceholder')}
+            onChange={(event) => setDraft(event.target.value)}
+          />
+          {canManage && (
+            <Inline justify="end">
+              <Button
+                size="small"
+                variant="quiet"
+                disabled={draft === null || draft === entry.instructions || save.isPending}
+                onClick={() =>
+                  save.mutate(
+                    {
+                      id: entry.id,
+                      input: { departmentId: entry.departmentId, instructions: value },
+                    },
+                    {
+                      onSuccess: () => {
+                        setDraft(null);
+                        toast.success(tExecution('instructionsSaved'));
+                      },
+                    },
+                  )
+                }
+              >
+                {save.isPending ? tCommon('saving') : tCommon('save')}
+              </Button>
+            </Inline>
+          )}
+        </Stack>
+      </SettingsRow>
+    </SettingsGroup>
   );
 }

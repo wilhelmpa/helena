@@ -894,7 +894,12 @@
     "resetToDefault": "إعادة إلى الافتراضي",
     "levelOverridden": "الافتراضي لكل المشاريع هو المستوى {level}؛ هذا المشروع مختلف.",
     "levelDefault": "مثل الافتراضي لكل المشاريع.",
-    "autopilotTitle": "الطيار الآلي"
+    "autopilotTitle": "الطيار الآلي",
+    "instructionsTitle": "التعليمات",
+    "instructionsHint": "تنطبق على كل وكيل في هذا المشروع.",
+    "instructionsLabel": "تعليمات المشروع",
+    "instructionsPlaceholder": "صف مهمة المشروع وتعليمات تشغيله.",
+    "instructionsSaved": "تم حفظ التعليمات"
   },
   "defaults": {
     "adminOnly": "لا يغيّر هذه الإعدادات الافتراضية لكل المشاريع إلا المسؤول."
