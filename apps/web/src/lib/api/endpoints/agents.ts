@@ -282,6 +282,9 @@ export interface AgentRun {
   failure?: RunFailure | null;
   nextAttemptAt: string;
   createdAt: string;
+  // When the run was archived (it then leaves the list unless asked for); absent from an
+  // older server.
+  archivedAt?: string | null;
 }
 
 export interface AgentRunPage {
@@ -413,9 +416,28 @@ export const regenerateAiAgentKey = (teamId: number, agentId: number) =>
 export const deleteAiAgent = (teamId: number, agentId: number) =>
   request<void>(`/teams/${teamId}/ai-agents/${agentId}`, { method: 'DELETE' });
 
-export const listAgentRuns = (teamId: number, agentId: number, before?: number) =>
+export const listAgentRuns = (
+  teamId: number,
+  agentId: number,
+  before?: number,
+  includeArchived = false,
+) =>
   request<AgentRunPage>(
-    `/teams/${teamId}/ai-agents/${agentId}/runs?limit=25${before ? `&before=${before}` : ''}`,
+    `/teams/${teamId}/ai-agents/${agentId}/runs?limit=25${before ? `&before=${before}` : ''}${
+      includeArchived ? '&includeArchived=true' : ''
+    }`,
+  );
+
+// Runs are never deleted: a finished one is archived out of the list, and can come back.
+export const setAgentRunArchived = (
+  teamId: number,
+  agentId: number,
+  runId: number,
+  archived: boolean,
+) =>
+  request<{ archivedAt: string | null }>(
+    `/teams/${teamId}/ai-agents/${agentId}/runs/${runId}/${archived ? 'archive' : 'unarchive'}`,
+    { method: 'POST' },
   );
 
 export interface AgentHeartbeatEvent {

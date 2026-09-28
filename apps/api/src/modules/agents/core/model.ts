@@ -529,6 +529,13 @@ export const AgentRunResponse = t.Object({
   failure: t.Nullable(runFailure),
   nextAttemptAt: t.String(),
   createdAt: t.String(),
+  archivedAt: t.Optional(
+    t.Nullable(
+      t.String({
+        description: 'When the run was archived: it then leaves the lists. Null when not.',
+      }),
+    ),
+  ),
 });
 
 // One page of an agent's runs (AgentRunPage from run-queue).
@@ -713,6 +720,19 @@ export const setAgentProjectsBody = t.Object({
 export const runsQuery = t.Object({
   before: t.Optional(t.Numeric()),
   limit: t.Optional(t.Numeric()),
+  includeArchived: t.Optional(
+    t.BooleanString({ description: 'Include archived runs (left out by default).' }),
+  ),
+});
+
+export const agentRunParams = t.Object({
+  teamId: t.Numeric(),
+  agentId: t.Numeric({ description: 'Agent id from list_ai_agents.' }),
+  runId: t.Numeric({ description: 'Run id from the run history.' }),
+});
+
+export const AgentRunArchiveResponse = t.Object({
+  archivedAt: t.Nullable(t.String()),
 });
 
 export const renameThreadBody = t.Object({

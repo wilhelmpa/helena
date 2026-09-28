@@ -10,7 +10,7 @@ import {
   teamMember,
   user,
 } from '@repo/db';
-import { and, desc, eq, exists, inArray, sql, type AnyColumn, type SQL } from 'drizzle-orm';
+import { and, desc, eq, exists, inArray, isNull, sql, type AnyColumn, type SQL } from 'drizzle-orm';
 import { num } from '#shared/lib';
 import { closings } from '#modules/analytics/service';
 import { agentRunStatus as runStatus } from '#modules/pipelines/runs';
@@ -88,6 +88,8 @@ async function agentRunEntries(
       and(
         inArray(agentRun.projectId, projectIds),
         filters.agentId ? eq(agentRun.agentId, filters.agentId) : undefined,
+        // An archived run was dealt with; it stays in the counts, not in the feed.
+        isNull(agentRun.archivedAt),
         olderThan(key, filters.cursor),
       ),
     )

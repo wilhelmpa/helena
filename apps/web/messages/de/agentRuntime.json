@@ -67,7 +67,12 @@
       "done": "Fertig",
       "failed": "Fehlgeschlagen"
     },
-    "spent": "Verbrauch"
+    "spent": "Verbrauch",
+    "archive": "Archivieren",
+    "unarchive": "Zurückholen",
+    "archived": "Archiviert",
+    "showArchived": "Archivierte anzeigen",
+    "archiveFailed": "Der Lauf konnte nicht archiviert werden."
   },
   "sessions": {
     "search": "Alle Sitzungen durchsuchen",
