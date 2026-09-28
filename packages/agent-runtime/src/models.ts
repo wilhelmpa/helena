@@ -61,7 +61,9 @@ export function resolveModel(
   if (server.kind === 'openai-compatible' && server.thinkingSwitch) {
     // The OpenAI-compatible provider spreads its own options into the request body.
     providerOptions[server.provider] = {
-      chat_template_kwargs: { enable_thinking: !NO_THINKING.has(reasoning ?? '') },
+      chat_template_kwargs: {
+        enable_thinking: server.thinking !== false && !NO_THINKING.has(reasoning ?? ''),
+      },
     };
   } else if (server.kind === 'openai-compatible' && reasoning && !NO_THINKING.has(reasoning)) {
     providerOptions[server.provider] = { reasoningEffort: reasoning };

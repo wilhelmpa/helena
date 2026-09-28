@@ -557,6 +557,7 @@
         "itsaplan-runner": "./dist/cli.js",
       },
       "dependencies": {
+        "@helena/agent-runtime": "workspace:*",
         "@repo/net": "workspace:*",
         "@secretlint/core": "13.0.5",
         "@secretlint/secretlint-rule-preset-recommend": "13.0.5",

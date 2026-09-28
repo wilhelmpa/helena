@@ -45,6 +45,8 @@ export interface Task {
   // The names of the environment variables Helena delivered for this work (their values are
   // in `env`), which a runtime that filters its tool processes' environment lets through.
   delivered?: string[];
+  // What the runtime adapter adds to a task read as JSON (promptVia `stdin-json`).
+  input?: Record<string, unknown>;
 }
 
 export interface Outcome {
@@ -237,9 +239,13 @@ function spawnArgs(
   present: string[] = [],
 ): [string, string[]] {
   if (!preset) return ['sh', ['-c', config.command ?? '']];
-  return [
-    preset.bin,
-    presetArgv(preset, task.sessionId ?? null, task.systemPrompt, config.args, task.prompt, {
+  const argv = presetArgv(
+    preset,
+    task.sessionId ?? null,
+    task.systemPrompt,
+    config.args,
+    task.prompt,
+    {
       provider: modelProvider(config, task.model, task.thinkingLevel),
       model: runtimeModel(task.model),
       thinkingLevel: task.thinkingLevel,
@@ -251,8 +257,14 @@ function spawnArgs(
       autopilotLevel: task.autopilotLevel,
       policyHook: task.autopilotLevel == null ? null : policyHookCommand(),
       toolEnv: task.delivered?.length ? { delivered: task.delivered, present } : null,
-    }),
-  ];
+    },
+  );
+  // A subcommand of this runner's own bundle (Helena's own loop) runs on the same Node with the
+  // same script; the isolation launcher's preset names both itself.
+  if ((preset as { runnerSubcommand?: boolean }).runnerSubcommand && process.argv[1]) {
+    return [process.execPath, [process.argv[1], preset.bin, ...argv]];
+  }
+  return [preset.bin, argv];
 }
 
 // The names in the environment the command starts with (the launcher and the sandbox add
@@ -388,6 +400,19 @@ function stdinText(preset: CliCommand | undefined, task: Task, command = false):
   }
   if (!preset) return task.prompt;
   if (preset.promptVia === 'arg') return '';
+  if (preset.promptVia === 'stdin-json') {
+    return JSON.stringify({
+      prompt: task.prompt,
+      systemPrompt: task.systemPrompt,
+      sessionId: task.sessionId ?? null,
+      model: task.model ?? null,
+      thinkingLevel: task.thinkingLevel ?? null,
+      maxTurns: task.maxTurns ?? null,
+      runBudgetSeconds: task.runBudgetSeconds ?? null,
+      autopilotLevel: task.autopilotLevel ?? null,
+      ...task.input,
+    });
+  }
   return presetPrompt(preset, task.systemPrompt, task.prompt);
 }
 

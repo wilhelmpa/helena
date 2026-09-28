@@ -5,6 +5,7 @@ import {
   type CliRuntimeType,
   type RuntimeType,
   type RuntimeCapabilities,
+  type RuntimeStreamEvent,
   type RuntimeStreamParser,
 } from '@helena/sdk';
 import { PRESETS, PRESET_NAMES, type PresetName } from './presets';
@@ -23,6 +24,7 @@ const LABELS: Record<PresetName, string> = {
   antigravity: 'Antigravity',
   copilot: 'GitHub Copilot CLI',
   hermes: 'Hermes',
+  helena: 'Helena',
   command: 'Command',
   webhook: 'Webhook',
 };
@@ -80,6 +82,14 @@ const CAPABILITIES: Record<PresetName, RuntimeCapabilities> = {
     images: true,
     toolsets: true,
   },
+  helena: {
+    sessions: true,
+    chat: true,
+    systemPrompt: true,
+    modelSelection: true,
+    mcp: true,
+    isolation: true,
+  },
   command: {
     sessions: false,
     chat: true,
@@ -109,8 +119,31 @@ export function builtinRuntimes(): CliRuntimeType[] {
     capabilities: CAPABILITIES[name],
     command: PRESETS[name],
     classifyFailure: classifyProviderFailure,
+    // Helena's own loop writes the events every runtime is read into, one per line.
+    ...(name === 'helena' && { parser: () => helenaStreamParser }),
   }));
 }
+
+const HELENA_EVENTS = new Set([
+  'session',
+  'model',
+  'text',
+  'thinking',
+  'tool-call',
+  'tool-result',
+  'usage',
+  'result',
+  'spend',
+  'escalate',
+]);
+
+// helena-jsonl: each line is already a RuntimeStreamEvent.
+export const helenaStreamParser: RuntimeStreamParser = {
+  line(value) {
+    const event = value as RuntimeStreamEvent;
+    return typeof event.type === 'string' && HELENA_EVENTS.has(event.type) ? [event] : [];
+  },
+};
 
 export const runtimes = createRegistry<RuntimeType>('runtime');
 for (const adapter of builtinRuntimes()) runtimes.register(adapter, BUILTIN_RUNTIMES_PLUGIN);

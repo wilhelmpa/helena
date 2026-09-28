@@ -157,7 +157,8 @@ export async function main(
   let options: CliOptions;
   try {
     options = parseArgs(argv);
-    if (!options.config) throw new Error('--config is required');
+    if (!options.config && !options.stdinJson)
+      throw new Error('--config or --stdin-json is required');
   } catch (error) {
     process.stderr.write(
       `helena-agent: ${error instanceof Error ? error.message : String(error)}\n`,
@@ -170,17 +171,25 @@ export async function main(
   process.once('SIGINT', stop);
   process.once('SIGTERM', stop);
   try {
-    const config = parseConfig(JSON.parse(await readFile(options.config, 'utf8')));
-    const task = taskFrom(io.stdin ?? (await readStdin()), options);
+    const stdin = io.stdin ?? (await readStdin());
+    const task = taskFrom(stdin, options);
+    // The runner hands the configuration inside the task's JSON (RunSettings.input); an eval
+    // names a file.
+    const raw = options.config
+      ? JSON.parse(await readFile(options.config, 'utf8'))
+      : (JSON.parse(stdin) as { config?: unknown }).config;
+    const config = parseConfig(raw);
+    const env = io.env ?? process.env;
+    const kind = options.kind ?? (env.ITSAPLAN_TRIGGER === 'chat' ? 'chat' : null);
     if (!task.prompt) throw new Error('no task on stdin');
     const result = await runAgent({
-      config: applyTask(config, task, options.kind),
+      config: applyTask(config, task, kind),
       prompt: task.prompt,
       runContext: task.systemPrompt,
       sessionId: task.sessionId,
       labels: task.labels,
       sink,
-      env: io.env ?? process.env,
+      env,
       signal: controller.signal,
     });
     return result.exitCode;

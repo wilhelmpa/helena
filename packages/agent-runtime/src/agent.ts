@@ -94,10 +94,12 @@ export interface AgentRunInput {
 function helenaOf(input: AgentRunInput): HelenaApi | null {
   if (input.helena !== undefined) return input.helena;
   const config = input.config.helena;
-  if (!config?.url) return null;
+  // An isolated agent reaches Helena through its unit's forwarder, named in ITSAPLAN_URL.
+  const url = input.env.ITSAPLAN_URL || config?.url;
+  if (!config || !url) return null;
   const key = input.env[config.apiKeyEnv ?? 'ITSAPLAN_API_KEY'];
   if (!key) return null;
-  return new HelenaClient(config.url, key, {
+  return new HelenaClient(url, key, {
     runId: Number(input.env.ITSAPLAN_RUN_ID) || null,
     messageId: Number(input.env.ITSAPLAN_MESSAGE_ID) || null,
   });

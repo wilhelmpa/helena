@@ -30,6 +30,7 @@ import { reflect } from './reflect';
 import { runtimeUpdate } from './update';
 import { perform, reportUntilTaken, type Performed } from './run';
 import { runPolicyHook } from './policy-hook';
+import { helenaAgentMain } from '@helena/agent-runtime';
 import type { RuntimeAdapter } from './runtime';
 import { applySshKeys, sshDir, type SshKey } from './ssh';
 import {
@@ -782,6 +783,12 @@ async function main(): Promise<void> {
   if (process.argv[2] === 'limits-report') return limitsReport(process.argv.slice(3));
   if (process.argv[2] === 'limits-probe') return limitsProbe(process.argv.slice(3));
   if (process.argv[2] === 'policy-hook') return policyHook();
+  // Helena's own agent loop, one command (runtime `helena`, presets.ts), started by this
+  // runner or, for an isolated agent, by the launcher in the project's sandbox.
+  if (process.argv[2] === 'helena-agent') {
+    process.exitCode = await helenaAgentMain(process.argv.slice(3));
+    return;
+  }
   const cli = parseArgv(process.argv.slice(2));
   const configPath =
     cli.configPath ?? process.env.ITSAPLAN_RUNNER_CONFIG ?? './itsaplan-runner.json';

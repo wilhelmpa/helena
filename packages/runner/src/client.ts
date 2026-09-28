@@ -364,6 +364,8 @@ export class Client {
       // Why it failed, where the runtime's words say: Helena records a model the provider
       // does not serve this account and retries nothing that cannot pass.
       failure?: RuntimeFailure;
+      // The task Helena's own loop handed to a bigger model: Helena starts the follow-up run.
+      escalation?: { target: string; reason: string; detail: string | null; handover: string };
     },
   ): Promise<ReflectionRequest | null> {
     const res = await this.post(`/agent-runs/${runId}/result${claimQuery(claim)}`, result);

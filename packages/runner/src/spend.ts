@@ -96,6 +96,8 @@ export class SpendReader {
         return this.readCodex(line);
       case 'opencode-json':
         return this.readOpencode(line);
+      case 'helena-jsonl':
+        return this.readHelena(line);
       default:
         return;
     }
@@ -146,6 +148,21 @@ export class SpendReader {
       cacheReadTokens: num(usage.cached_input_tokens),
       reasoningTokens: num(usage.reasoning_output_tokens),
     });
+  }
+
+  // Helena's own loop sums its calls itself on one spend line, in the GenAI counts.
+  private readHelena(line: Line): void {
+    if (line.type === 'model') this.model = str(line.id) ?? this.model;
+    if (line.type !== 'spend') return;
+    this.model = str(line.model) ?? this.model;
+    this.add({
+      inputTokens: num(line.inputTokens),
+      outputTokens: num(line.outputTokens),
+      cacheReadTokens: num(line.cacheReadTokens),
+      cacheWriteTokens: num(line.cacheWriteTokens),
+      reasoningTokens: num(line.reasoningTokens),
+    });
+    if (typeof line.durationMs === 'number') this.reportedDuration = line.durationMs;
   }
 
   private readOpencode(line: Line): void {

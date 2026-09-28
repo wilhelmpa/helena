@@ -176,6 +176,7 @@ export type {
   RuntimeAction,
   RuntimeCompression,
   RuntimeHermesSettings,
+  RuntimeHelenaSettings,
   RuntimeLearning,
   RuntimeMcpServer,
   RuntimeMcpValue,

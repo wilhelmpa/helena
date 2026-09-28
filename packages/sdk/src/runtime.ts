@@ -69,7 +69,23 @@ export type RuntimeStreamEvent =
   | { type: 'tool-result'; id: string; output: string; isError?: boolean }
   // The context size of the last model call: tokens read (cache included) and written.
   | { type: 'usage'; inputTokens: number; outputTokens: number }
-  | { type: 'result'; text: string; exitCode?: number };
+  | { type: 'result'; text: string; exitCode?: number; error?: string; reason?: string }
+  // What the whole command spent, summed over its model calls (OpenTelemetry GenAI counts),
+  // for a runtime that reports its own totals (Helena's own loop).
+  | {
+      type: 'spend';
+      model: string | null;
+      provider: string | null;
+      inputTokens: number;
+      outputTokens: number;
+      cacheReadTokens?: number;
+      cacheWriteTokens?: number;
+      reasoningTokens?: number;
+      durationMs?: number;
+    }
+  // The command handed the task to a bigger model it does not drive itself; Helena starts
+  // that one with the hand-over (docs/helena-decisions/zentrale-laufzeit.md §9).
+  | { type: 'escalate'; target: string; reason: string; detail?: string; handover: string };
 
 // Reads one JSON line of a CLI's output (already parsed) into events.
 export interface RuntimeStreamParser {
@@ -81,7 +97,9 @@ export interface CliCommand {
   // The name of the output format the runner reads; a plugin runtime with a format of its
   // own supplies `parser` and names it after itself.
   outputFormat: string;
-  promptVia: 'stdin' | 'arg';
+  // `stdin-json`: the task, its context and its settings as one JSON object on stdin, with
+  // what the runtime adapter adds (RunSettings.input).
+  promptVia: 'stdin' | 'arg' | 'stdin-json';
   systemPromptFlag?: string;
   // The arguments before the operator's own, given null for a fresh session.
   head: (sessionId: string | null) => string[];

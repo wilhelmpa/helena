@@ -103,6 +103,7 @@ export async function answer(
       },
       hooks: hermes?.hooks,
       delivered: hermes?.delivered?.names,
+      ...(hermes?.input && { input: hermes.input }),
     },
     {
       onData: (chunk) => {

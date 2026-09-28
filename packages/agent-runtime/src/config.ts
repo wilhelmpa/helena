@@ -17,6 +17,8 @@ export interface ModelServer {
   contextLength?: number | null;
   // Local model servers (Qwen templates) switch thinking with chat_template_kwargs.
   thinkingSwitch?: boolean;
+  // false: the turns on this server never think (Helena's `<provider>--nothink`).
+  thinking?: boolean;
   // Whether it is on this machine (price 0, no subscription).
   local?: boolean;
 }
@@ -116,6 +118,8 @@ export function parseConfig(value: unknown): AgentRuntimeConfig {
   if (typeof value.model !== 'string' || !value.model.includes('/')) {
     fail('model must be "<provider>/<model>"');
   }
+  // Without one, the folder the command was started in (the runner starts it in the run's).
+  if (value.workdir === undefined || value.workdir === null) value.workdir = process.cwd();
   if (typeof value.workdir !== 'string' || !value.workdir.startsWith('/')) {
     fail('workdir must be absolute');
   }

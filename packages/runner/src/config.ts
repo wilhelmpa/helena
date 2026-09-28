@@ -73,6 +73,7 @@ const OUTPUT_FORMATS = [
   'antigravity-stream-json',
   'copilot-json',
   'hermes-stream-json',
+  'helena-jsonl',
 ] as const;
 
 // The formats agui.ts reads itself, plus the name of any plugin runtime's own format,
