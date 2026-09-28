@@ -1,7 +1,7 @@
 import { randomInt } from 'node:crypto';
 import { db, defaultMemberPermissions } from '@repo/db';
 import { eq, sql, type SQL } from 'drizzle-orm';
-import { betterAuth } from 'better-auth';
+import { betterAuth, type BetterAuthOptions } from 'better-auth';
 import { createAuthMiddleware, APIError } from 'better-auth/api';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { passkey } from '@better-auth/passkey';
@@ -24,6 +24,7 @@ import { oidcProfileLabel } from './oidc-profile';
 import { localOwner } from './local-owner';
 import { edgeSignIn } from './edge-sign-in';
 import { consumeKeyRequest, RateLimitedError } from './key-rate-limit';
+import { throttleApiKeyWrites } from './api-key-write-throttle';
 import { sessionCookieDomain } from './cookie-domain';
 
 // Frontend origins allowed to call the auth handler. Mandatory config: cookies, the
@@ -284,21 +285,24 @@ export const auth = betterAuth({
     },
   },
 
-  database: drizzleAdapter(db, {
-    provider: 'pg',
-    schema: {
-      user: schema.user,
-      session: schema.session,
-      account: schema.account,
-      verification: schema.verification,
-      passkey: schema.passkey,
-      apikey: schema.apikey,
-      twoFactor: schema.twoFactor,
-      oauthApplication: schema.oauthApplication,
-      oauthAccessToken: schema.oauthAccessToken,
-      oauthConsent: schema.oauthConsent,
-    },
-  }),
+  database: (options: BetterAuthOptions) =>
+    throttleApiKeyWrites(
+      drizzleAdapter(db, {
+        provider: 'pg',
+        schema: {
+          user: schema.user,
+          session: schema.session,
+          account: schema.account,
+          verification: schema.verification,
+          passkey: schema.passkey,
+          apikey: schema.apikey,
+          twoFactor: schema.twoFactor,
+          oauthApplication: schema.oauthApplication,
+          oauthAccessToken: schema.oauthAccessToken,
+          oauthConsent: schema.oauthConsent,
+        },
+      })(options),
+    ),
 
   emailAndPassword: {
     enabled: true,

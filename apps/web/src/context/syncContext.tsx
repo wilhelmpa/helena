@@ -19,7 +19,7 @@ import { getRevs } from '@/lib/api/endpoints/sync';
 //
 // Polling pauses while the tab is in the background — TanStack does not refetch on
 // an interval there — and stops when nothing is registered.
-const POLL_MS = 8000;
+const POLL_MS = 20_000;
 
 export interface ScopeWatcher {
   scope: string;

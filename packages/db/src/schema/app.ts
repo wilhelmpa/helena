@@ -413,7 +413,7 @@ export const projectMember = pgTable(
     primaryKey({ columns: [t.projectId, t.userId] }),
     check('project_member_role_check', sql`${t.role} IN ('owner', 'member')`),
     check('project_member_source_check', sql`${t.source} IN ('invite', 'scim')`),
-    index('project_member_user_idx').on(t.userId),
+    index('project_member_user_project_idx').on(t.userId, t.projectId),
   ],
 );
 

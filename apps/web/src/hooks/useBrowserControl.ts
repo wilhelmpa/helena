@@ -8,7 +8,7 @@ import {
 
 // How often the tab list is read while the toolbar is shown, so an agent's navigation
 // shows up in the address field. The live view also refreshes it when the tab changes.
-const TABS_REFRESH_MS = 2_000;
+const TABS_REFRESH_MS = 10_000;
 
 export function useBrowserControl(base: string) {
   const queryClient = useQueryClient();
