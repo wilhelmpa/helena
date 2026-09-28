@@ -1,9 +1,9 @@
 {
   "title": "Browser 2.0",
-  "homeBrowser": "Home 浏览器",
+  "homeBrowser": "Helena 浏览器",
   "which": "浏览器",
   "noBrowser": "没有可测试的浏览器",
-  "noBrowserHint": "这里既没有 Home 浏览器，也没有项目浏览器。",
+  "noBrowserHint": "这里既没有 Helena 浏览器，也没有项目浏览器。",
   "noAgents": "此浏览器的智能体都没有项目浏览器。请在智能体的工具中开启。",
   "tabs": {
     "label": "浏览器",

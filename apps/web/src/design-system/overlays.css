@@ -28,6 +28,15 @@
   color: var(--text);
   box-shadow: var(--shadow-panel);
 }
+.ds-modal.is-small {
+  width: min(880px, calc(100vw - 48px));
+  height: min(640px, calc(100dvh - 48px));
+}
+.ds-modal-title {
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 560;
+}
 .ds-modal-head {
   display: flex;
   min-height: 64px;
@@ -197,7 +206,8 @@
   .ds-modal-layer {
     padding: 0;
   }
-  .ds-modal {
+  .ds-modal,
+  .ds-modal.is-small {
     width: 100vw;
     height: 100dvh;
     border-radius: 0;

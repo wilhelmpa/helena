@@ -1,6 +1,6 @@
 'use client';
 
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { ArrowLeft, Plug } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { godPath } from '@/utils/paths';
@@ -34,7 +34,6 @@ export default function GodSidebar() {
   const t = useTranslations('nav');
   const god = useGodSectionText();
   const pathname = usePathname();
-  const router = useRouter();
   const side = useSidebarSide();
   const { headerLayout } = useAccountPreferences();
   // Administrator → Server only where the host offers something (not in a container
@@ -103,7 +102,7 @@ export default function GodSidebar() {
         {headerLayout === 'single' && (
           <>
             <SidebarSeparator />
-            <SidebarAccountRow onSettings={() => router.push('/account')} />
+            <SidebarAccountRow />
           </>
         )}
       </SidebarFooter>

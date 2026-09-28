@@ -1,6 +1,6 @@
 {
   "title": "Dispositivos",
-  "description": "Syncthing mantiene al día las notas y archivos de Home, de los proyectos y de Private/ como una carpeta normal en tu Mac y tu teléfono: directamente en casa y mediante relés cifrados fuera de ella.",
+  "description": "Syncthing mantiene al día las notas y archivos de Helena, de los proyectos y de Private/ como una carpeta normal en tu Mac y tu teléfono: directamente en casa y mediante relés cifrados fuera de ella.",
   "loadError": "No se pudo leer el estado de la sincronización.",
   "ownerOnly": "Solo el propietario de la instancia gestiona los dispositivos.",
   "unavailable": {

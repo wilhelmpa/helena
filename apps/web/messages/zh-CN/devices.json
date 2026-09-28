@@ -1,6 +1,6 @@
 {
   "title": "设备",
-  "description": "Syncthing 将 Home、各项目和 Private/ 中的笔记与文件作为普通文件夹同步到你的 Mac 和手机上：在家时直接同步，外出时通过加密中继同步。",
+  "description": "Syncthing 将 Helena、各项目和 Private/ 中的笔记与文件作为普通文件夹同步到你的 Mac 和手机上：在家时直接同步，外出时通过加密中继同步。",
   "loadError": "无法读取同步状态。",
   "ownerOnly": "只有实例所有者可以管理设备。",
   "unavailable": {

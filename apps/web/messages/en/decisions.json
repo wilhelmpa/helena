@@ -95,7 +95,7 @@
       "auto": "Automatically"
     },
     "project": "Project",
-    "projectHint": "Suggest the project, or move mail filed under Home there at once.",
+    "projectHint": "Suggest the project, or move mail filed under Helena there at once.",
     "task": "Task",
     "taskHint": "When a mail asks for something to be done: suggest a task in its project, or create it.",
     "agent": "Hand to an agent",

@@ -15,7 +15,7 @@
     },
     "project": "项目",
     "allProjects": "所有项目",
-    "home": "Home",
+    "home": "Helena",
     "unread": "未读",
     "withAttachments": "有附件",
     "compose": "写邮件",
@@ -34,7 +34,7 @@
     "loadError": "无法加载该对话。",
     "noSubject": "(无主题)",
     "moveHint": "移动到另一个项目 (m)",
-    "home": "Home",
+    "home": "Helena",
     "account": "通过 {address}",
     "suggestion": "分类系统建议将这段对话归入 {project}。",
     "acceptSuggestion": "移动过去",
@@ -76,7 +76,7 @@
     "title": "移动到项目",
     "description": "该对话及其在 Vault 中的附件，以及可以读取它的智能体，都会跟随项目一起移动。",
     "done": "对话已移动",
-    "home": "Home",
+    "home": "Helena",
     "filter": "查找项目"
   },
   "compose": {
@@ -131,7 +131,7 @@
     "projectIntro": "邮件归入此项目的账户。",
     "loadError": "无法加载账户。",
     "empty": "还没有邮件账户。",
-    "home": "Home",
+    "home": "Helena",
     "status": {
       "off": "已关闭",
       "noPassword": "缺少密码",

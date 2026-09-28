@@ -1,6 +1,6 @@
 'use client';
 
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { ACCOUNT_SECTIONS, accountPath } from '@/utils/accountSections';
@@ -37,7 +37,6 @@ export default function AccountSidebar() {
   const tNav = useTranslations('nav');
   const sectionLabel = useAccountSectionLabel();
   const pathname = usePathname();
-  const router = useRouter();
   const side = useSidebarSide();
   const { headerLayout } = useAccountPreferences();
   const { data: teams } = useTeamsQuery();
@@ -116,9 +115,7 @@ export default function AccountSidebar() {
         {headerLayout === 'single' && (
           <>
             <SidebarSeparator />
-            <SidebarAccountRow
-              onSettings={() => router.push(accountPath(ACCOUNT_SECTIONS[0]!.slug))}
-            />
+            <SidebarAccountRow />
           </>
         )}
       </SidebarFooter>

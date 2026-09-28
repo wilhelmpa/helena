@@ -1,6 +1,6 @@
 {
   "title": "Appareils",
-  "description": "Syncthing tient à jour les notes et fichiers de Home, des projets et de Private/ sous forme de dossier ordinaire sur votre Mac et votre téléphone : directement à la maison, via des relais chiffrés en déplacement.",
+  "description": "Syncthing tient à jour les notes et fichiers de Helena, des projets et de Private/ sous forme de dossier ordinaire sur votre Mac et votre téléphone : directement à la maison, via des relais chiffrés en déplacement.",
   "loadError": "Impossible de lire l'état de la synchronisation.",
   "ownerOnly": "Seul le propriétaire de l'instance gère les appareils.",
   "unavailable": {

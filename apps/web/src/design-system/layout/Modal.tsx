@@ -6,7 +6,7 @@ import { Search, X } from 'lucide-react';
 import { PageChromeCtx } from './pageChrome';
 
 // The one large modal (docs/design-system.md §3): 1200 × 800, full screen on a phone,
-// for the global settings and for an agent's settings. Tabs on top, the sections on the
+// for an agent's settings; small (880 × 640) for Mein Konto. Tabs on top, the sections on the
 // left, a search with results and their path. The page behind never changes: the modal
 // only lies over it, and Esc closes it.
 
@@ -27,6 +27,7 @@ export function Modal({
   children,
   header,
   testId,
+  size = 'large',
 }: {
   open: boolean;
   label: string;
@@ -43,6 +44,8 @@ export function Modal({
   // Replaces the tab row (the agent dialog shows the agent instead).
   header?: ReactNode;
   testId?: string;
+  // 'small': Mein Konto (the only settings that still open as a modal).
+  size?: 'large' | 'small';
 }) {
   const dialog = useRef<HTMLElement>(null);
   useEffect(() => {
@@ -80,7 +83,7 @@ export function Modal({
         role="dialog"
         aria-modal="true"
         aria-label={label}
-        className="ds-modal"
+        className={size === 'small' ? 'ds-modal is-small' : 'ds-modal'}
         data-testid={testId}
       >
         <header className="ds-modal-head">

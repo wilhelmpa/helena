@@ -273,7 +273,7 @@ export default function KnowledgeFolderView({
     scope.kind === 'project'
       ? project.data?.project.name || scope.projectKey
       : scope.root === 'home'
-        ? 'Home'
+        ? 'Helena'
         : scope.root === 'private'
           ? 'Privat'
           : 'Vorlagen';

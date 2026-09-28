@@ -1,26 +1,23 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState, type MouseEvent } from 'react';
+import { useCallback, useEffect, type MouseEvent } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useSession } from '@/lib/auth-client';
-import { useSettingsSectionText } from '@/hooks/useSectionLabels';
-import { projectSettingsPages } from './projectSettingsPages';
 import { useTeamsQuery } from '@/services/teams.service';
 import { ShellHeaderActionsSlotCtx, ShellHeaderSlotCtx } from '@/context/shellHeaderSlot';
-import { Modal, ModalNavGroup, ModalNavItem, type ModalTab } from '@/design-system';
+import { Modal, ModalNavItem } from '@/design-system';
 import SettingsAreaContent from './SettingsAreaContent';
 import {
   DEFAULT_SECTION,
+  HELENA_SETTINGS,
   SETTINGS_MODAL_OPEN,
   SETTINGS_PARAM,
+  helenaSettingsPath,
   parseSettingsParam,
   settingsModalRoute,
   settingsModalSections,
   withSettingsParam,
-  type ModalSectionDef,
   type OpenSettingsRequest,
-  type SettingsArea,
   type SettingsLocation,
 } from './settingsModalCatalog';
 
@@ -34,39 +31,31 @@ function currentHref() {
   return `${window.location.pathname}${window.location.search}${window.location.hash}`;
 }
 
-// The global settings (docs/design-system.md §3, §7): one large modal over the page the
-// user is on, with the tabs Mein Konto, Helena and Administrator and a search over every
-// setting. Where it stands lives in the URL (`?settings=area.slug`), set with the
-// browser's own history, so the page behind never navigates, reloads or re-renders:
-// closing it leaves everything as it was, filters included. Old settings URLs
-// (/account/…, /god/…) open it over the page the user came from.
-export default function SettingsModal({
-  projectKey = null,
-  projectName = null,
-}: {
-  // The project the page behind belongs to: the search also finds its settings pages.
-  projectKey?: string | null;
-  projectName?: string | null;
-}) {
+function pageOf(location: SettingsLocation) {
+  const known = HELENA_SETTINGS.some((item) => item.slug === location.slug);
+  return helenaSettingsPath(known ? location.slug : DEFAULT_SECTION.admin, location.extra);
+}
+
+// Mein Konto (docs/einstellungen-struktur.md, „Endgültig“): the only settings that still
+// open as a modal — small, over the page the user is on, from the avatar and name at the
+// bottom left. Where it stands lives in the URL (`?settings=account.<slug>`), set with the
+// browser's own history, so the page behind never navigates or reloads.
+//
+// It also sends the old places of the other settings to their pages: `?settings=admin.x`
+// (and the tabs that were merged into it) and the old addresses (/god/…, /access,
+// /account/teams/…) go to Helena's settings (/settings/<slug>), `?settings=project.x` to
+// the project's settings page, and the old account pages open Mein Konto over the page
+// the user came from.
+export default function SettingsModal() {
   const t = useTranslations('settings.modal');
-  const tNav = useTranslations('nav');
-  const sectionText = useSettingsSectionText();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const router = useRouter();
   const legacy = settingsModalRoute(pathname);
-  const location = legacy ? null : parseSettingsParam(searchParams.get(SETTINGS_PARAM));
-  const { data: session } = useSession();
-  const teams = useTeamsQuery().data ?? [];
-  const admin = session?.user.role === 'god';
-  const teamId = teams[0]?.id ?? null;
-  const sections = useMemo(() => settingsModalSections(admin), [admin]);
-  const [search, setSearch] = useState('');
-
-  const tabs = useMemo<SettingsArea[]>(() => (admin ? ['account', 'admin'] : ['account']), [admin]);
-  const label = (def: ModalSectionDef) => t(`sections.${def.slug}.label` as never);
-  const description = (def: ModalSectionDef) => t(`sections.${def.slug}.hint` as never);
-  const groupLabel = (group: string) => t(`groups.${group}` as never);
+  const param = parseSettingsParam(searchParams.get(SETTINGS_PARAM));
+  const location = legacy ? null : param?.area === 'account' ? param : null;
+  const teamId = useTeamsQuery().data?.[0]?.id ?? null;
+  const sections = settingsModalSections(false).account;
 
   // Moves the modal to `next` (null closes it) without touching the page behind.
   const go = useCallback((next: SettingsLocation | null) => {
@@ -87,8 +76,8 @@ export default function SettingsModal({
     window.history.replaceState(null, '', href);
   }, []);
 
-  // Remember the last page that is not an old settings URL: that page stays behind the
-  // modal when such a URL is opened.
+  // Remember the last page that is not an old settings URL: that page stays behind Mein
+  // Konto when an old account URL is opened.
   const queryString = searchParams.toString();
   useEffect(() => {
     if (legacy) return;
@@ -98,12 +87,24 @@ export default function SettingsModal({
     );
   }, [legacy, pathname, queryString]);
 
+  // An old settings address.
   useEffect(() => {
     if (!legacy) return;
+    if (legacy.area === 'admin') {
+      router.replace(pageOf(legacy));
+      return;
+    }
     let back = sessionStorage.getItem(returnKey);
     if (!back || settingsModalRoute(back.split(/[?#]/)[0] ?? '')) back = '/';
     router.replace(withSettingsParam(back, legacy), { scroll: false });
   }, [legacy, router]);
+
+  // `?settings=admin.<slug>` (and home/helena): the page of Helena's settings.
+  const legacyAdmin = !legacy && param?.area === 'admin' ? param : null;
+  useEffect(() => {
+    if (legacyAdmin) router.replace(pageOf(legacyAdmin));
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on its text
+  }, [legacyAdmin?.slug, legacyAdmin?.extra, router]);
 
   // `?settings=project.<slug>` from before project settings became pages: the page.
   const legacyProject = searchParams.get(SETTINGS_PARAM)?.startsWith('project.');
@@ -118,30 +119,24 @@ export default function SettingsModal({
   useEffect(() => {
     function handleOpen(event: Event) {
       const detail = (event as CustomEvent<OpenSettingsRequest | undefined>).detail ?? {};
-      let area: SettingsArea =
-        detail.scope === 'home' || detail.scope === 'helena' || detail.scope === 'admin'
-          ? 'admin'
-          : 'account';
-      if (!tabs.includes(area)) area = 'account';
-      const known = sections[area].some((item) => item.slug === detail.section);
-      const slug = known && detail.section ? detail.section : DEFAULT_SECTION[area];
-      const extra = detail.teamId != null ? String(detail.teamId) : detail.tab;
-      setSearch('');
-      go({ area, slug, ...(extra ? { extra } : {}) });
+      if (detail.scope && detail.scope !== 'account') {
+        const extra = detail.teamId != null ? String(detail.teamId) : detail.tab;
+        router.push(
+          pageOf({ area: 'admin', slug: detail.section ?? DEFAULT_SECTION.admin, extra }),
+        );
+        return;
+      }
+      const known = sections.some((item) => item.slug === detail.section);
+      go({ area: 'account', slug: known ? detail.section! : DEFAULT_SECTION.account });
     }
     window.addEventListener(SETTINGS_MODAL_OPEN, handleOpen);
     return () => window.removeEventListener(SETTINGS_MODAL_OPEN, handleOpen);
-  }, [go, sections, tabs]);
+  }, [go, router, sections]);
 
   const close = useCallback(() => go(null), [go]);
-  const activeArea = location && tabs.includes(location.area) ? location.area : null;
-  const activeSlug = location?.slug ?? '';
-  const activeDef = activeArea
-    ? sections[activeArea].find((item) => item.slug === activeSlug)
-    : undefined;
 
-  // A link inside a section to another settings page (a server tab, "→ Zugänge") moves
-  // the modal instead of navigating the page behind it.
+  // A link inside Mein Konto to another account section moves the modal; a link to one of
+  // Helena's settings closes it and opens that page.
   function keepLinksInModal(event: MouseEvent<HTMLElement>) {
     if (
       event.defaultPrevented ||
@@ -159,136 +154,45 @@ export default function SettingsModal({
     const target = settingsModalRoute(url.pathname);
     if (!target) return;
     event.preventDefault();
-    go(target);
+    if (target.area === 'account') {
+      go(target);
+      return;
+    }
+    go(null);
+    window.setTimeout(() => router.push(pageOf(target)), 0);
   }
 
-  if (!location || !activeArea) return null;
-
-  const query = search.trim().toLocaleLowerCase();
-  const results = query
-    ? tabs.flatMap((area) =>
-        sections[area]
-          .filter((item) =>
-            `${label(item)} ${description(item)} ${item.keywords ?? ''}`
-              .toLocaleLowerCase()
-              .includes(query),
-          )
-          .map((item) => ({ item, area })),
-      )
-    : [];
-
-  // The project's own settings pages (docs/einstellungen-struktur.md: the search finds
-  // every level); a click opens the page and closes the modal.
-  const projectResults =
-    query && projectKey
-      ? projectSettingsPages(projectKey).filter((page) =>
-          `${page.group ? tNav(page.group as never) : ''} ${page.labelKey ? tNav(page.labelKey as never) : sectionText(page.slug).label} ${page.keywords}`
-            .toLocaleLowerCase()
-            .includes(query),
-        )
-      : [];
-
-  const areaTabs: ModalTab[] = tabs.map((area) => ({ id: area, label: t(`tabs.${area}`) }));
-  const current = sections[activeArea];
-  const groups = [...new Set(current.map((item) => item.group ?? ''))];
+  if (!location) return null;
+  const activeSlug = location.slug;
+  const label = (slug: string) => t(`sections.${slug}.label` as never);
+  const description = (slug: string) => t(`sections.${slug}.hint` as never);
 
   return (
     <Modal
       open
-      label={t('title')}
+      size="small"
+      label={t('tabs.account')}
       onClose={close}
-      tabs={areaTabs}
-      activeTab={activeArea}
-      onTab={(id) => {
-        setSearch('');
-        go({ area: id as SettingsArea, slug: DEFAULT_SECTION[id as SettingsArea] });
-      }}
-      search={search}
-      onSearch={setSearch}
-      searchPlaceholder={t('search')}
       testId="settings-modal"
-      nav={
-        query ? (
-          results.length + projectResults.length > 0 ? (
-            <>
-              {projectResults.map((page) => (
-                <ModalNavItem
-                  key={`project:${page.slug}`}
-                  path={[
-                    `${t('projectPath')} ${projectName ?? projectKey}`,
-                    page.group ? tNav(page.group as never) : null,
-                  ]
-                    .filter(Boolean)
-                    .join(' › ')}
-                  onClick={() => {
-                    setSearch('');
-                    go(null);
-                    window.setTimeout(() => router.push(page.href), 0);
-                  }}
-                >
-                  {page.labelKey ? tNav(page.labelKey as never) : sectionText(page.slug).label}
-                </ModalNavItem>
-              ))}
-              {results.map(({ item, area }) => (
-                <ModalNavItem
-                  key={`${area}:${item.slug}`}
-                  active={area === activeArea && item.slug === activeSlug}
-                  path={[t(`tabs.${area}`), item.group ? groupLabel(item.group) : null]
-                    .filter(Boolean)
-                    .join(' › ')}
-                  onClick={() => {
-                    setSearch('');
-                    go({ area, slug: item.slug });
-                  }}
-                >
-                  {label(item)}
-                </ModalNavItem>
-              ))}
-            </>
-          ) : (
-            <p className="ds-modal-empty">{t('noResults')}</p>
-          )
-        ) : (
-          groups.map((group) =>
-            group ? (
-              <ModalNavGroup key={group} label={groupLabel(group)}>
-                {current
-                  .filter((item) => item.group === group)
-                  .map((item) => (
-                    <ModalNavItem
-                      key={item.slug}
-                      active={item.slug === activeSlug}
-                      onClick={() => go({ area: activeArea, slug: item.slug })}
-                    >
-                      {label(item)}
-                    </ModalNavItem>
-                  ))}
-              </ModalNavGroup>
-            ) : (
-              current
-                .filter((item) => !item.group)
-                .map((item) => (
-                  <ModalNavItem
-                    key={item.slug}
-                    active={item.slug === activeSlug}
-                    onClick={() => go({ area: activeArea, slug: item.slug })}
-                  >
-                    {label(item)}
-                  </ModalNavItem>
-                ))
-            ),
-          )
-        )
-      }
+      header={<h2 className="ds-modal-title">{t('tabs.account')}</h2>}
+      nav={sections.map((item) => (
+        <ModalNavItem
+          key={item.slug}
+          active={item.slug === activeSlug}
+          onClick={() => go({ area: 'account', slug: item.slug })}
+        >
+          {label(item.slug)}
+        </ModalNavItem>
+      ))}
     >
       <div
         onClickCapture={keepLinksInModal}
-        data-settings-area={activeArea}
+        data-settings-area="account"
         data-settings-section={activeSlug}
       >
         <header className="ds-modal-pane-head">
-          <h2>{activeDef ? label(activeDef) : t('title')}</h2>
-          {activeDef && description(activeDef) && <p>{description(activeDef)}</p>}
+          <h2>{label(activeSlug)}</h2>
+          {description(activeSlug) && <p>{description(activeSlug)}</p>}
         </header>
         <div className="ds-modal-pane-body settings-modal-existing">
           <ShellHeaderSlotCtx.Provider value={null}>

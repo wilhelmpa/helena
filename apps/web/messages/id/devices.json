@@ -1,6 +1,6 @@
 {
   "title": "Perangkat",
-  "description": "Syncthing menjaga catatan dan berkas Home, proyek, dan Private/ tetap terbaru sebagai folder biasa di Mac dan ponsel Anda: langsung saat di rumah, lewat relay terenkripsi saat bepergian.",
+  "description": "Syncthing menjaga catatan dan berkas Helena, proyek, dan Private/ tetap terbaru sebagai folder biasa di Mac dan ponsel Anda: langsung saat di rumah, lewat relay terenkripsi saat bepergian.",
   "loadError": "Status sinkronisasi tidak dapat dibaca.",
   "ownerOnly": "Hanya pemilik instans yang mengelola perangkat.",
   "unavailable": {

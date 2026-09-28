@@ -10,6 +10,7 @@ import {
   ListTodo,
   Plus,
   Settings2,
+  SquareTerminal,
   Target,
   Workflow,
 } from 'lucide-react';
@@ -62,6 +63,11 @@ import { useCrossProjectIssuesQuery } from '@/features/home/services/tasks.servi
 import { useMemberRoutines, useRoutines } from '@/features/routines/services/routines.service';
 import NewViewMenu from './NewViewMenu';
 import { projectSettingsPages } from '@/features/settings/projectSettingsPages';
+import {
+  HELENA_SETTINGS,
+  HELENA_SETTINGS_GROUPS,
+  helenaSettingsPath,
+} from '@/features/settings/settingsModalCatalog';
 import type { ViewTemplate } from '@/hooks/useViewEditor';
 
 // The sidebar tree (docs/design-system.md §6–§7, drafts ui-entwurf/Navigation-*): the
@@ -524,6 +530,7 @@ export function SidebarHomeTree({
   projects: Project[];
 }) {
   const t = useTranslations('nav');
+  const tSettings = useTranslations('settings.modal');
   const owner = isGod;
   const home = homeNavigation(teamId);
   const get = (id: string) => home.find((item) => item.id === id)?.href;
@@ -562,14 +569,25 @@ export function SidebarHomeTree({
     { id: 'automation:pool', href: '/agents' },
     { id: 'automation:schedules', href: '/schedules' },
     { id: 'automation:workflows', href: '/workflows' },
-    { id: 'automation:history', href: '/activity', also: ['/browsers', '/decisions'] },
+    { id: 'automation:history', href: '/activity', also: ['/browsers'] },
+    ...(owner ? [{ id: 'terminals', href: '/terminals' }] : []),
+    ...(owner
+      ? HELENA_SETTINGS.map((item) => ({
+          id: `settings:${item.group}:${item.slug}`,
+          href: helenaSettingsPath(item.slug),
+        }))
+      : []),
   ];
   const folderOpen = location.pathname === '/files' && location.search.has('path');
   let activeId = pickActive(candidates, location);
   // /files without a root is the root the user sees first.
   if (activeId === 'knowledge' && roots.length > 0) activeId = `knowledge:${currentRoot}`;
+  // Helena's own knowledge is "Wissen" itself; Privat and Vorlagen are its children.
+  if (activeId === 'knowledge:home') activeId = 'knowledge';
   const activeSection = folderOpen ? 'knowledge' : sectionOf(activeId);
   const is = (id: string) => activeId === id;
+  const within = (prefix: string) => activeId?.startsWith(prefix) ?? false;
+  const settingLabel = (slug: string) => tSettings(`sections.${slug}.label` as never);
 
   return (
     <Tree label={t('sidebarProject')} activeSection={activeSection}>
@@ -619,6 +637,7 @@ export function SidebarHomeTree({
         label={t('sidebarKnowledge')}
         href={rootHref(roots[0])}
         icon={<FolderOpen />}
+        active={is('knowledge')}
         actions={
           owner && (
             <TreeAction label={t('sidebarNewFolder')} onClick={() => setNewFolder(true)}>
@@ -627,24 +646,21 @@ export function SidebarHomeTree({
           )
         }
       >
-        {roots.map((root) => (
-          <TreeItem
-            key={root}
-            label={t(
-              root === 'home'
-                ? 'sidebarHome'
-                : root === 'private'
-                  ? 'sidebarPrivate'
-                  : 'sidebarTemplates',
-            )}
-            href={rootHref(root)}
-            active={is(`knowledge:${root}`)}
-            containsActive={folderOpen && currentRoot === root}
-            storageKey={`home:knowledge:${root}`}
-          >
-            <SidebarKnowledgeFolders scope={{ kind: 'home', root }} canWrite={owner} />
-          </TreeItem>
-        ))}
+        {owner && <SidebarKnowledgeFolders scope={{ kind: 'home', root: 'home' }} canWrite />}
+        {roots
+          .filter((root) => root !== 'home')
+          .map((root) => (
+            <TreeItem
+              key={root}
+              label={t(root === 'private' ? 'sidebarPrivate' : 'sidebarTemplates')}
+              href={rootHref(root)}
+              active={is(`knowledge:${root}`)}
+              containsActive={folderOpen && currentRoot === root}
+              storageKey={`home:knowledge:${root}`}
+            >
+              <SidebarKnowledgeFolders scope={{ kind: 'home', root }} canWrite={owner} />
+            </TreeItem>
+          ))}
       </TreeItem>
       {newFolder && (
         <FileNewFolderDialog
@@ -673,6 +689,36 @@ export function SidebarHomeTree({
         <TreeItem label={t('workflows')} href="/workflows" active={is('automation:workflows')} />
         <TreeItem label={t('sidebarHistory')} href="/activity" active={is('automation:history')} />
       </TreeItem>
+      {owner && (
+        <TreeItem
+          id="terminals"
+          label={t('sidebarTerminals')}
+          href="/terminals"
+          icon={<SquareTerminal />}
+          active={is('terminals')}
+        />
+      )}
+      {owner && (
+        <TreeItem id="settings" label={t('settings')} icon={<Settings2 />}>
+          {HELENA_SETTINGS_GROUPS.map((group) => (
+            <TreeItem
+              key={group}
+              label={tSettings(`groups.${group}` as never)}
+              storageKey={`helena:settings:${group}`}
+              containsActive={within(`settings:${group}:`)}
+            >
+              {HELENA_SETTINGS.filter((item) => item.group === group).map((item) => (
+                <TreeItem
+                  key={item.slug}
+                  label={settingLabel(item.slug)}
+                  href={helenaSettingsPath(item.slug)}
+                  active={is(`settings:${group}:${item.slug}`)}
+                />
+              ))}
+            </TreeItem>
+          ))}
+        </TreeItem>
+      )}
     </Tree>
   );
 }

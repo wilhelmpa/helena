@@ -15,7 +15,7 @@
     },
     "project": "Proyek",
     "allProjects": "Semua proyek",
-    "home": "Home",
+    "home": "Helena",
     "unread": "Belum dibaca",
     "withAttachments": "Dengan lampiran",
     "compose": "Tulis",
@@ -34,7 +34,7 @@
     "loadError": "Percakapan tidak dapat dimuat.",
     "noSubject": "(tanpa subjek)",
     "moveHint": "Pindahkan ke proyek lain (m)",
-    "home": "Home",
+    "home": "Helena",
     "account": "via {address}",
     "suggestion": "Triage menyarankan agar percakapan ini disimpan di {project}.",
     "acceptSuggestion": "Pindahkan ke sana",
@@ -76,7 +76,7 @@
     "title": "Pindahkan ke proyek",
     "description": "Percakapan, lampirannya di Vault, dan agen yang boleh membacanya ikut berpindah ke proyek.",
     "done": "Percakapan dipindahkan",
-    "home": "Home",
+    "home": "Helena",
     "filter": "Cari proyek"
   },
   "compose": {
@@ -131,7 +131,7 @@
     "projectIntro": "Akun yang emailnya disimpan di proyek ini.",
     "loadError": "Akun tidak dapat dimuat.",
     "empty": "Belum ada akun email.",
-    "home": "Home",
+    "home": "Helena",
     "status": {
       "off": "Dimatikan",
       "noPassword": "Kata sandi belum diisi",

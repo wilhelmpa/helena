@@ -151,7 +151,7 @@ export default function ChatComposer({
   onEditLast,
 }: ChatComposerProps) {
   const t = useTranslations('chatWorkspace');
-  const homeName = homeLanding && agent.name === 'Helena' ? 'Home' : agent.name;
+  const homeName = agent.name;
   useEffect(() => {
     if (!dockSheet) return;
     return listenDockVoice(() => void conversation.start());

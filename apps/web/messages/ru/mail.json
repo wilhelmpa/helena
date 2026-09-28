@@ -15,7 +15,7 @@
     },
     "project": "Проект",
     "allProjects": "Все проекты",
-    "home": "Home",
+    "home": "Helena",
     "unread": "Непрочитанные",
     "withAttachments": "С вложением",
     "compose": "Написать",
@@ -34,7 +34,7 @@
     "loadError": "Не удалось загрузить цепочку.",
     "noSubject": "(без темы)",
     "moveHint": "Переместить в другой проект (m)",
-    "home": "Home",
+    "home": "Helena",
     "account": "через {address}",
     "suggestion": "Триаж предлагает отнести эту цепочку к проекту {project}.",
     "acceptSuggestion": "Переместить туда",
@@ -76,7 +76,7 @@
     "title": "Переместить в проект",
     "description": "Цепочка, её вложения в Vault и агенты, которые могут её читать, следуют за проектом.",
     "done": "Цепочка перемещена",
-    "home": "Home",
+    "home": "Helena",
     "filter": "Найти проект"
   },
   "compose": {
@@ -131,7 +131,7 @@
     "projectIntro": "Аккаунты, чья почта попадает в этот проект.",
     "loadError": "Не удалось загрузить аккаунты.",
     "empty": "Почтовых аккаунтов пока нет.",
-    "home": "Home",
+    "home": "Helena",
     "status": {
       "off": "Выключен",
       "noPassword": "Пароль не задан",

@@ -15,7 +15,7 @@
     },
     "project": "Proyecto",
     "allProjects": "Todos los proyectos",
-    "home": "Home",
+    "home": "Helena",
     "unread": "No leídos",
     "withAttachments": "Con adjunto",
     "compose": "Redactar",
@@ -34,7 +34,7 @@
     "loadError": "No se ha podido cargar la conversación.",
     "noSubject": "(sin asunto)",
     "moveHint": "Mover a otro proyecto (m)",
-    "home": "Home",
+    "home": "Helena",
     "account": "a través de {address}",
     "suggestion": "El triaje sugiere archivar esta conversación en {project}.",
     "acceptSuggestion": "Mover ahí",
@@ -76,7 +76,7 @@
     "title": "Mover a un proyecto",
     "description": "La conversación, sus adjuntos en el Vault y los agentes que puedan leerla siguen al proyecto.",
     "done": "Conversación movida",
-    "home": "Home",
+    "home": "Helena",
     "filter": "Buscar un proyecto"
   },
   "compose": {
@@ -131,7 +131,7 @@
     "projectIntro": "Las cuentas cuyo correo se archiva en este proyecto.",
     "loadError": "No se han podido cargar las cuentas.",
     "empty": "Aún no hay ninguna cuenta de correo.",
-    "home": "Home",
+    "home": "Helena",
     "status": {
       "off": "Desactivada",
       "noPassword": "Falta la contraseña",

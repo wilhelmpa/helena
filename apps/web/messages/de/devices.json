@@ -1,6 +1,6 @@
 {
   "title": "Geräte",
-  "description": "Syncthing hält die Notizen und Dateien von Home, den Projekten und Private/ als gewöhnlichen Ordner auf Mac und Telefon aktuell: zu Hause direkt, unterwegs über verschlüsselte Relays.",
+  "description": "Syncthing hält die Notizen und Dateien von Helena, den Projekten und Private/ als gewöhnlichen Ordner auf Mac und Telefon aktuell: zu Hause direkt, unterwegs über verschlüsselte Relays.",
   "loadError": "Der Synchronisationsstatus konnte nicht gelesen werden.",
   "ownerOnly": "Nur der Eigentümer der Instanz verwaltet die Geräte.",
   "unavailable": {

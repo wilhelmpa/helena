@@ -15,7 +15,7 @@
     },
     "project": "Projekt",
     "allProjects": "Alle Projekte",
-    "home": "Home",
+    "home": "Helena",
     "unread": "Ungelesen",
     "withAttachments": "Mit Anhang",
     "compose": "Verfassen",
@@ -34,7 +34,7 @@
     "loadError": "Der Verlauf konnte nicht geladen werden.",
     "noSubject": "(kein Betreff)",
     "moveHint": "In ein anderes Projekt verschieben (m)",
-    "home": "Home",
+    "home": "Helena",
     "account": "über {address}",
     "suggestion": "Die Triage schlägt vor, diesen Verlauf unter {project} abzulegen.",
     "acceptSuggestion": "Dorthin verschieben",
@@ -76,7 +76,7 @@
     "title": "In Projekt verschieben",
     "description": "Der Verlauf, seine Anhänge im Vault und die Agenten, die ihn lesen dürfen, folgen dem Projekt.",
     "done": "Verlauf verschoben",
-    "home": "Home",
+    "home": "Helena",
     "filter": "Projekt suchen"
   },
   "compose": {
@@ -131,7 +131,7 @@
     "projectIntro": "Die Konten, deren Mails in diesem Projekt abgelegt werden.",
     "loadError": "Die Konten konnten nicht geladen werden.",
     "empty": "Noch kein E-Mail-Konto.",
-    "home": "Home",
+    "home": "Helena",
     "status": {
       "off": "Ausgeschaltet",
       "noPassword": "Passwort fehlt",

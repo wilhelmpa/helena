@@ -3,17 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import {
-  Info,
-  Languages,
-  LogOut,
-  Moon,
-  OctagonX,
-  Play,
-  Settings2,
-  Sun,
-  UserRound,
-} from 'lucide-react';
+import { Info, Languages, LogOut, Moon, OctagonX, Play, Sun, UserRound } from 'lucide-react';
 import { toast } from 'sonner';
 import { useLocale, useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
@@ -147,16 +137,12 @@ export default function UserMenu({ variant = 'avatar' }: { variant?: 'avatar' | 
             </span>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onSelect={() => openSettingsModal()}>
-            <Settings2 />
-            {t('settings')}
+          <DropdownMenuItem onSelect={() => openSettingsModal('account', 'profile')}>
+            <UserRound />
+            {t('account')}
           </DropdownMenuItem>
           {variant === 'row' && (
             <>
-              <DropdownMenuItem onSelect={() => openSettingsModal('account', 'profile')}>
-                <UserRound />
-                {t('account')}
-              </DropdownMenuItem>
               <DropdownMenuSub>
                 <DropdownMenuSubTrigger>
                   <Languages />

@@ -171,7 +171,7 @@
     "timezoneServer": "Die des Servers verwenden",
     "savedTimezone": "Zeitzone gespeichert.",
     "autopilotDefault": "Standard-Autopilot-Stufe",
-    "autopilotDefaultHint": "Gilt für neue Projekte und Home-Agenten ohne eigene Stufe. Bestehende Projekt- und Agenteneinstellungen bleiben erhalten."
+    "autopilotDefaultHint": "Gilt für neue Projekte und Helena-Agenten ohne eigene Stufe. Bestehende Projekt- und Agenteneinstellungen bleiben erhalten."
   },
   "authentication": {
     "saved": "Authentifizierungseinstellungen gespeichert",

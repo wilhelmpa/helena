@@ -53,7 +53,7 @@ export default function ChatAgentMenu({
   const homeModel = opusVersion
     ? `Opus ${opusVersion[1]}.${opusVersion[2]}`
     : modelId || 'Standard';
-  const homeName = agent.name === 'Helena' ? 'Home' : agent.name;
+  const homeName = agent.name;
   const status = useAgentStatus(agent.id, {
     run: state?.label,
     runtimeStatus: state?.online === false ? 'offline' : agent.runtimeState.status,

@@ -54,7 +54,9 @@ export function useShellHeading({
           ? t('sidebarAutomation')
           : /^\/(dashboard|system)(\/|$)/.test(pathname)
             ? t('dashboards')
-            : null;
+            : /^\/settings(\/|$)/.test(pathname)
+              ? t('settings')
+              : null;
     const title = globalTitle ?? home;
     return {
       crumbs: [{ label: home, href: '/' }, ...(area && area !== title ? [{ label: area }] : [])],

@@ -344,7 +344,6 @@ export default function Shell({
                 onOpenCommand={() => overlays.setShowCommand(true)}
                 onSelectTool={selectWorkspaceTool}
                 activeTool={workspaceOpen ? activeWorkspaceTool : null}
-                onSettings={() => openSettingsModal()}
                 rail={sidebarMode === 'rail' && !sidebarOverlay}
                 onToggleRail={() =>
                   medium
@@ -437,7 +436,7 @@ export default function Shell({
               />
 
               <ShellOverlays project={project} projectKey={projectKey} overlays={overlays} />
-              <SettingsModal projectKey={projectKey} projectName={project?.project.name ?? null} />
+              <SettingsModal />
               <AgentDialog />
               <RunOverlay />
             </SidebarProvider>

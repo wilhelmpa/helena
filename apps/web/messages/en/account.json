@@ -52,7 +52,7 @@
     "passkeyFallback": "Passkey",
     "passkeysLoadFailed": "Could not load passkeys.",
     "totpTitle": "Authenticator app",
-    "totpDescription": "The code the owner terminal asks for every time it opens (Home -> Terminal).",
+    "totpDescription": "The code the owner terminal asks for every time it opens (Helena -> Terminal).",
     "totpStatusEnabled": "Enabled.",
     "totpStatusDisabled": "Not set up.",
     "totpPasswordLabel": "Password",
@@ -178,7 +178,7 @@
     "showChatByDefault": "Show the chat by default",
     "showChatByDefaultDescription": "The chat panel opens with a project page. Close it any time from its header or the chat icon.",
     "chatAnimation": "Animate chat status",
-    "chatAnimationDescription": "Show the animated status orb in Home and project chats. Turn off to show a static indicator."
+    "chatAnimationDescription": "Show the animated status orb in Helena and project chats. Turn off to show a static indicator."
   },
   "shell": {
     "title": "Account"

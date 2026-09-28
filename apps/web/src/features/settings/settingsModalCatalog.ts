@@ -1,7 +1,8 @@
-// The global settings modal (docs/einstellungen-struktur.md): three levels only — a
-// project's settings are pages in its sidebar; the modal has "Mein Konto" (me) and
-// "Administrator" (the owner, who owns Home: everything for all projects, then the
-// system). An agent's settings open in the agent dialog (AgentDialog).
+// The settings (docs/einstellungen-struktur.md, „Endgültig“ 28.09.): settings are a
+// sidebar entry with pages everywhere — a project's own under the project, the settings
+// for all projects and the system under Helena ("Admin", /settings/<slug>). Only
+// "Mein Konto" opens as a small modal, from the avatar and name at the bottom left. An
+// agent's settings open in the agent dialog (AgentDialog).
 
 export type SettingsArea = 'account' | 'admin';
 
@@ -80,7 +81,16 @@ const SYSTEM: ModalSectionDef[] = [
 ];
 
 export function settingsModalSections(admin: boolean): Record<SettingsArea, ModalSectionDef[]> {
-  return { account: ACCOUNT, admin: admin ? [...ALL_PROJECTS, ...SYSTEM] : [] };
+  return { account: ACCOUNT, admin: admin ? HELENA_SETTINGS : [] };
+}
+
+// Helena's settings pages, in the order of its sidebar: "Alle Projekte", then "System".
+export const HELENA_SETTINGS: ModalSectionDef[] = [...ALL_PROJECTS, ...SYSTEM];
+export const HELENA_SETTINGS_GROUPS = ['allProjects', 'system'] as const;
+
+// The page of one of Helena's settings; `extra` is a tab of it (Server → Backup) or a team.
+export function helenaSettingsPath(slug: string, extra?: string) {
+  return `/settings/${slug}${extra ? `?tab=${encodeURIComponent(extra)}` : ''}`;
 }
 
 export const DEFAULT_SECTION: Record<SettingsArea, string> = {
@@ -113,9 +123,10 @@ const GOD_SLUGS: Record<string, SettingsLocation> = {
 // (a team id in Helena, a tab of Administrator → Server).
 export type SettingsLocation = { area: SettingsArea; slug: string; extra?: string };
 
-// The old settings URLs (bookmarks, mail links, links inside the pages): the account,
-// team and administrator pages open the modal over the page the user was on. Project
-// settings are pages of their own and are not listed here.
+// The old settings URLs (bookmarks, mail links, links inside the pages): an account page
+// opens Mein Konto over the page the user was on, a team or administrator page is now a
+// page of Helena's settings (helenaSettingsPath). Project settings are pages of their own
+// and are not listed here.
 export function settingsModalRoute(pathname: string | null): SettingsLocation | null {
   if (!pathname) return null;
   if (pathname === '/account/teams') return { area: 'admin', slug: 'teams' };
@@ -154,7 +165,7 @@ export function formatSettingsParam({ area, slug, extra }: SettingsLocation): st
 export function parseSettingsParam(value: string | null | undefined): SettingsLocation | null {
   if (!value) return null;
   const [rawArea, slug, ...rest] = value.split('.');
-  // Links from before the tabs were merged: "home" and "helena" are now Administrator.
+  // Links from before: "home", "helena" and "admin" are now Helena's settings pages.
   const area = rawArea === 'home' || rawArea === 'helena' ? 'admin' : rawArea;
   if (!AREAS.includes(area as SettingsArea) || !slug) return null;
   const extra = rest.join('.');
@@ -174,9 +185,9 @@ export const SETTINGS_MODAL_OPEN = 'helena:settings-open';
 export const AGENT_DIALOG_OPEN = 'helena:agent-open';
 export const AGENT_PARAM = 'agent';
 
-// What to open. `scope` is the modal's tab; `section` a section of it (the tab's default
-// when left out); `teamId` a team's Helena settings; `tab` a tab of a section
-// (Administrator → Server). `scope: 'agent'` with `agentId` opens the agent dialog.
+// What to open. `scope: 'account'` opens Mein Konto (at `section`); the other scopes open
+// a page of Helena's settings (`section`, its `tab` or `teamId`); `scope: 'agent'` with
+// `agentId` opens the agent dialog.
 export type OpenSettingsRequest = {
   scope?: SettingsArea | 'agent' | 'home' | 'helena' | 'project';
   section?: string;
@@ -185,8 +196,7 @@ export type OpenSettingsRequest = {
   tab?: string;
 };
 
-// Opens the settings modal over the current page, from anywhere: the page behind never
-// navigates or re-renders another route.
+// Opens Mein Konto over the current page, or goes to a page of Helena's settings.
 //   openSettings({ scope: 'account', section: 'security' })
 //   openSettings({ scope: 'agent', agentId: 12 })   → the agent dialog
 export function openSettings(request: OpenSettingsRequest = {}) {

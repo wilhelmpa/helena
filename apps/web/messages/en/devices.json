@@ -1,6 +1,6 @@
 {
   "title": "Devices",
-  "description": "Syncthing keeps the notes and files of Home, the projects and Private/ up to date as a plain folder on your Mac and phone: directly at home, through encrypted relays on the road.",
+  "description": "Syncthing keeps the notes and files of Helena, the projects and Private/ up to date as a plain folder on your Mac and phone: directly at home, through encrypted relays on the road.",
   "loadError": "The sync status could not be read.",
   "ownerOnly": "Only the instance owner manages the devices.",
   "unavailable": {

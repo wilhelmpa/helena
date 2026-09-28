@@ -1,9 +1,9 @@
 {
   "title": "Browser 2.0",
-  "homeBrowser": "Home-Browser",
+  "homeBrowser": "Helena-Browser",
   "which": "Browser",
   "noBrowser": "Kein Browser zum Testen",
-  "noBrowserHint": "Hier läuft weder der Home-Browser noch ein Projekt-Browser.",
+  "noBrowserHint": "Hier läuft weder der Helena-Browser noch ein Projekt-Browser.",
   "noAgents": "Kein Agent dieses Browsers hat den Projekt-Browser. Schalte ihn in den Werkzeugen des Agenten ein.",
   "tabs": {
     "label": "Browser",

@@ -178,7 +178,7 @@
     "showChatByDefault": "Tampilkan obrolan secara bawaan",
     "showChatByDefaultDescription": "Panel obrolan terbuka bersama halaman proyek. Tutup kapan saja dari bilah judul atau ikon obrolan.",
     "chatAnimation": "Animasikan status chat",
-    "chatAnimationDescription": "Tampilkan orb status animasi di chat Home dan proyek. Jika dimatikan, indikator tetap statis."
+    "chatAnimationDescription": "Tampilkan orb status animasi di chat Helena dan proyek. Jika dimatikan, indikator tetap statis."
   },
   "shell": {
     "title": "Akun"

@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
 import { ChevronDown, Plus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { Project } from '@/lib/api/endpoints/projects';
@@ -19,6 +18,9 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
+// The project switcher (docs/einstellungen-struktur.md, „Endgültig“): only real projects.
+// Helena is no entry here — the logo HELENA opens it — and in Helena the switcher shows
+// "Helena" as the place the user is in.
 export default function SidebarProjectSwitcher({
   projects,
   currentProjectKey,
@@ -62,13 +64,6 @@ export default function SidebarProjectSwitcher({
         align="start"
         className="max-h-[70vh] w-64 overflow-y-auto"
       >
-        <DropdownMenuItem asChild>
-          <Link href="/">
-            <span className="ds-menu-dot" style={{ background: projectColor(null) }} />
-            {t('sidebarHomeAll')}
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
         <ul className="space-y-1 px-1">
           {groups.map((group) => (
             <ProjectTreeGroup

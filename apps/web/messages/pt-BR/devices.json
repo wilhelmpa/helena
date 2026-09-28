@@ -1,6 +1,6 @@
 {
   "title": "Dispositivos",
-  "description": "O Syncthing mantém as notas e arquivos do Home, dos projetos e do Private/ atualizados como uma pasta comum no seu Mac e no seu celular: diretamente em casa e por relays criptografados fora dela.",
+  "description": "O Syncthing mantém as notas e arquivos do Helena, dos projetos e do Private/ atualizados como uma pasta comum no seu Mac e no seu celular: diretamente em casa e por relays criptografados fora dela.",
   "loadError": "Não foi possível ler o status da sincronização.",
   "ownerOnly": "Somente o proprietário da instância gerencia os dispositivos.",
   "unavailable": {

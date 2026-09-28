@@ -39,7 +39,6 @@ export default function AppSidebar({
   onOpenCommand,
   onSelectTool,
   activeTool,
-  onSettings,
   rail,
   onToggleRail,
   onNavigate,
@@ -54,7 +53,6 @@ export default function AppSidebar({
   onOpenCommand: () => void;
   onSelectTool: (tool: WorkspaceToolId) => void;
   activeTool: WorkspaceToolId | null;
-  onSettings: () => void;
   rail: boolean;
   onToggleRail: () => void;
   // A tool was picked (closes the overlay sidebar on a narrow window; a followed link
@@ -163,7 +161,7 @@ export default function AppSidebar({
           </button>
         ))}
       </div>
-      <SidebarAccountRow onSettings={onSettings} />
+      <SidebarAccountRow />
     </nav>
   );
 }

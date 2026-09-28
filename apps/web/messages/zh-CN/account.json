@@ -178,7 +178,7 @@
     "showChatByDefault": "默认显示聊天",
     "showChatByDefaultDescription": "打开项目页面时同时打开聊天面板。可随时通过面板标题栏或聊天图标关闭。",
     "chatAnimation": "动态显示聊天状态",
-    "chatAnimationDescription": "在 Home 和项目聊天中显示动态状态球。关闭后显示静态指示器。"
+    "chatAnimationDescription": "在 Helena 和项目聊天中显示动态状态球。关闭后显示静态指示器。"
   },
   "shell": {
     "title": "账户"

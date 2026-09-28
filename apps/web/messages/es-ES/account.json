@@ -178,7 +178,7 @@
     "showChatByDefault": "Mostrar el chat por defecto",
     "showChatByDefaultDescription": "El panel de chat se abre con una página de proyecto. Ciérralo cuando quiera desde su cabecera o el icono de chat.",
     "chatAnimation": "Animar el estado del chat",
-    "chatAnimationDescription": "Muestra el orbe de estado animado en los chats de Home y proyectos. Desactivado, el indicador es estático."
+    "chatAnimationDescription": "Muestra el orbe de estado animado en los chats de Helena y proyectos. Desactivado, el indicador es estático."
   },
   "shell": {
     "title": "Cuenta"

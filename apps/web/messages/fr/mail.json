@@ -15,7 +15,7 @@
     },
     "project": "Projet",
     "allProjects": "Tous les projets",
-    "home": "Home",
+    "home": "Helena",
     "unread": "Non lus",
     "withAttachments": "Avec pièce jointe",
     "compose": "Nouveau message",
@@ -34,7 +34,7 @@
     "loadError": "La conversation n'a pas pu être chargée.",
     "noSubject": "(sans objet)",
     "moveHint": "Déplacer vers un autre projet (m)",
-    "home": "Home",
+    "home": "Helena",
     "account": "via {address}",
     "suggestion": "Le triage propose de classer cette conversation dans {project}.",
     "acceptSuggestion": "Déplacer",
@@ -76,7 +76,7 @@
     "title": "Déplacer vers un projet",
     "description": "La conversation, ses pièces jointes dans le Vault et les agents qui peuvent la lire suivent le projet.",
     "done": "Conversation déplacée",
-    "home": "Home",
+    "home": "Helena",
     "filter": "Rechercher un projet"
   },
   "compose": {
@@ -131,7 +131,7 @@
     "projectIntro": "Les comptes dont les e-mails sont classés dans ce projet.",
     "loadError": "Les comptes n'ont pas pu être chargés.",
     "empty": "Aucun compte e-mail pour le moment.",
-    "home": "Home",
+    "home": "Helena",
     "status": {
       "off": "Désactivé",
       "noPassword": "Mot de passe manquant",

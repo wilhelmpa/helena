@@ -15,7 +15,7 @@
     },
     "project": "Project",
     "allProjects": "All projects",
-    "home": "Home",
+    "home": "Helena",
     "unread": "Unread",
     "withAttachments": "With attachment",
     "compose": "Compose",
@@ -34,7 +34,7 @@
     "loadError": "The thread could not be loaded.",
     "noSubject": "(no subject)",
     "moveHint": "Move to another project (m)",
-    "home": "Home",
+    "home": "Helena",
     "account": "via {address}",
     "suggestion": "The triage suggests filing this thread under {project}.",
     "acceptSuggestion": "Move there",
@@ -76,7 +76,7 @@
     "title": "Move to project",
     "description": "The thread, its attachments in the vault and the agents that may read it follow the project.",
     "done": "Thread moved",
-    "home": "Home",
+    "home": "Helena",
     "filter": "Find a project"
   },
   "compose": {
@@ -131,7 +131,7 @@
     "projectIntro": "The accounts whose mail is filed under this project.",
     "loadError": "The accounts could not be loaded.",
     "empty": "No mail account yet.",
-    "home": "Home",
+    "home": "Helena",
     "status": {
       "off": "Switched off",
       "noPassword": "Password missing",

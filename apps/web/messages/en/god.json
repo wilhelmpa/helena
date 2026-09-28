@@ -171,7 +171,7 @@
     "timezoneServer": "Use the server's",
     "savedTimezone": "Time zone saved.",
     "autopilotDefault": "Default Autopilot level",
-    "autopilotDefaultHint": "Used for new projects and Home agents without their own level. Existing project and agent levels stay unchanged."
+    "autopilotDefaultHint": "Used for new projects and Helena agents without their own level. Existing project and agent levels stay unchanged."
   },
   "authentication": {
     "saved": "Authentication settings saved",

@@ -69,7 +69,7 @@ export function BrowserControlSection({
                 {setting.mode !== 'inherit' && (
                   <span
                     className="size-1.5 rounded-full bg-brand"
-                    title="Home-Vorgabe überschrieben"
+                    title="Helena-Vorgabe überschrieben"
                   />
                 )}
                 <Select

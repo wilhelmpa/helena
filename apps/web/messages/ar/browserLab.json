@@ -1,9 +1,9 @@
 {
   "title": "Browser 2.0",
-  "homeBrowser": "متصفح Home",
+  "homeBrowser": "متصفح Helena",
   "which": "المتصفح",
   "noBrowser": "لا يوجد متصفح للاختبار",
-  "noBrowserHint": "لا يتوفر هنا متصفح Home ولا متصفح أي مشروع.",
+  "noBrowserHint": "لا يتوفر هنا متصفح Helena ولا متصفح أي مشروع.",
   "noAgents": "لا يملك أي وكيل في هذا المتصفح متصفح المشروع. فعّله من أدوات الوكيل.",
   "tabs": {
     "label": "المتصفح",
