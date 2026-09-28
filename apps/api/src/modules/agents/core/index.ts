@@ -345,17 +345,19 @@ export const aiAgentRoutes = new Elysia({ name: 'ai-agents', detail: { tags: ['A
 
   .get(
     '/teams/:teamId/ai-agents/:agentId/heartbeats',
-    async ({ params, membership }) => {
+    async ({ params, membership, query }) => {
       await requireVisibleAgent(params.agentId, membership);
       return listAgentHeartbeats(
         params.agentId,
         runsTeam(membership.role)
           ? undefined
           : await memberProjectIds(membership.teamId, membership.userId),
+        query.includeIdle ?? false,
       );
     },
     {
       params: agentParams,
+      query: t.Object({ includeIdle: t.Optional(t.Boolean()) }),
       teamPermission: ['ai_agents', 'read'],
       response: {
         200: t.Array(

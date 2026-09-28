@@ -1,11 +1,12 @@
 import { agentHeartbeatEvent, agentRun, aiAgent, db, helenaDecision } from '@repo/db';
-import { and, asc, eq, inArray, isNull, lte, or, sql } from 'drizzle-orm';
+import { and, asc, eq, inArray, isNull, lte, ne, or, sql } from 'drizzle-orm';
 import { enqueueAgentRun } from './run-queue';
 import { isHeartbeatWorkTime, nextHeartbeatAt } from './heartbeat-time';
 import { classSetting, decide } from '#modules/decisions/service';
 import { HEARTBEAT_PRECHECK_CLASS, LOCAL_DECISION_MODEL } from '#modules/decisions/classes';
 import { heartbeatPrecheckQuestions } from '#modules/decisions/questions';
 import { isBorderlineHeartbeat, type HeartbeatCandidate } from './heartbeat-precheck';
+import { heartbeatBudgetThrottled } from '#modules/autopilot/budgets';
 
 type Candidate = HeartbeatCandidate;
 
@@ -77,6 +78,7 @@ export async function fireDueAgentHeartbeats(now = new Date()): Promise<number> 
     .limit(100);
   let checked = 0;
   for (const { id } of due) {
+    const throttle = await heartbeatBudgetThrottled(id, null);
     const fired = await db.transaction(async (tx) => {
       const [current] = await tx.select().from(aiAgent).where(eq(aiAgent.id, id));
       if (
@@ -87,7 +89,15 @@ export async function fireDueAgentHeartbeats(now = new Date()): Promise<number> 
         current.template
       )
         return false;
-      const nextAt = nextHeartbeatAt(current, now);
+      const nextAt = nextHeartbeatAt(
+        throttle && current.heartbeatIntervalMinutes != null
+          ? {
+              ...current,
+              heartbeatIntervalMinutes: Math.min(10080, current.heartbeatIntervalMinutes * 2),
+            }
+          : current,
+        now,
+      );
       const [claimed] = await tx
         .update(aiAgent)
         .set({ heartbeatLastAt: now, heartbeatNextAt: nextAt })
@@ -171,6 +181,25 @@ export async function fireDueAgentHeartbeats(now = new Date()): Promise<number> 
           candidate = (goals as unknown as Candidate[])[0];
         }
       }
+      if (
+        candidate &&
+        !throttle &&
+        current.heartbeatIntervalMinutes != null &&
+        (await heartbeatBudgetThrottled(id, candidate.projectId))
+      ) {
+        await tx
+          .update(aiAgent)
+          .set({
+            heartbeatNextAt: nextHeartbeatAt(
+              {
+                ...current,
+                heartbeatIntervalMinutes: Math.min(10080, current.heartbeatIntervalMinutes * 2),
+              },
+              now,
+            ),
+          })
+          .where(eq(aiAgent.id, id));
+      }
       const precheck =
         candidate && isBorderlineHeartbeat(candidate)
           ? await precheckHeartbeat({
@@ -230,7 +259,11 @@ export async function fireDueAgentHeartbeats(now = new Date()): Promise<number> 
   return checked;
 }
 
-export async function listAgentHeartbeats(agentId: number, projectIds?: number[]) {
+export async function listAgentHeartbeats(
+  agentId: number,
+  projectIds?: number[],
+  includeIdle = false,
+) {
   if (projectIds?.length === 0) return [];
   const rows = await db
     .select({
@@ -245,6 +278,7 @@ export async function listAgentHeartbeats(agentId: number, projectIds?: number[]
     .where(
       and(
         eq(agentHeartbeatEvent.agentId, agentId),
+        includeIdle ? undefined : ne(agentHeartbeatEvent.reason, 'no work'),
         projectIds
           ? or(
               inArray(agentHeartbeatEvent.projectId, projectIds),

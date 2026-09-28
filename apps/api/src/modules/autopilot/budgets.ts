@@ -3,6 +3,7 @@ import {
   aiAgent,
   approvalRequest,
   helenaBudget,
+  notification,
   organizationAgentAssignment,
   organizationDepartment,
   organizationProjectAssignment,
@@ -350,6 +351,31 @@ async function fileBudgetCard(
       departmentId: status.departmentId,
     },
   });
+  if (issueId != null) {
+    const agent = await agentFacts(agentId);
+    const members = await db
+      .select({
+        userId: projectMember.userId,
+        role: projectMember.role,
+      })
+      .from(projectMember)
+      .where(eq(projectMember.projectId, projectId));
+    const preferred = members.find((member) => member.userId === agent?.ownerUserId);
+    const recipients = preferred
+      ? [preferred]
+      : members.filter((member) => member.role === 'owner');
+    if (recipients.length > 0)
+      await db.insert(notification).values(
+        recipients.map((recipient) => ({
+          userId: recipient.userId,
+          projectId,
+          issueId,
+          sourceActivityId: null,
+          type: 'approval_requested',
+          actorUserId: agent?.userId ?? null,
+        })),
+      );
+  }
 }
 
 // The budgets of the agent and the project that hold its work back now: reached, and not
@@ -435,6 +461,21 @@ export async function enforceBudgets(
     });
   }
   return reason;
+}
+
+// A heartbeat may be slowed before it queues more work. Project ownership takes
+// precedence over the agent's department, as it does for the hard stop.
+export async function heartbeatBudgetThrottled(
+  agentId: number,
+  projectId: number | null,
+): Promise<boolean> {
+  const department = projectId == null ? null : await departmentOfWork(agentId, projectId);
+  const statuses = await budgetStatuses({
+    agentIds: [agentId],
+    projectIds: projectId == null ? [] : [projectId],
+    departmentIds: department == null ? [] : [department.id],
+  });
+  return statuses.some((status) => !status.reached && status.ratio >= WARN_RATIO);
 }
 
 // A claimed run that started past a used-up budget on "continue once": the grace is spent

@@ -1,4 +1,4 @@
-import { agentRun, aiAgent, db } from '@repo/db';
+import { agentRun, aiAgent, db, issueWorkClaim } from '@repo/db';
 import { and, eq } from 'drizzle-orm';
 import { maxTurnsLimit, runBudgetSecondsLimit } from '#modules/agents/model';
 import { runLimit } from '#modules/agents/core/service';
@@ -169,11 +169,15 @@ export async function stepRunStatus(runId: number): Promise<StepRunStatus> {
 // Cancels a queued or running agent run. A runner holding it learns of the cancel from
 // its next heartbeat; a finished run keeps its outcome.
 export async function cancelStepRun(runId: number): Promise<void> {
-  const [row] = await db
-    .update(agentRun)
-    .set({ status: 'canceled', finishedAt: new Date() })
-    .where(and(eq(agentRun.id, runId), eq(agentRun.status, 'pending')))
-    .returning({ projectId: agentRun.projectId });
+  const row = await db.transaction(async (tx) => {
+    const [canceled] = await tx
+      .update(agentRun)
+      .set({ status: 'canceled', finishedAt: new Date() })
+      .where(and(eq(agentRun.id, runId), eq(agentRun.status, 'pending')))
+      .returning({ projectId: agentRun.projectId });
+    if (canceled) await tx.delete(issueWorkClaim).where(eq(issueWorkClaim.runId, runId));
+    return canceled;
+  });
   if (row) await bumpControlPlaneRevision(row.projectId);
 }
 

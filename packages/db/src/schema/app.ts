@@ -876,6 +876,23 @@ export const helenaAgentRunTombstone = pgTable(
   ],
 );
 
+// One execution lease per task, shared by heartbeats, routines and delegated runs.
+// The run claim number fences an old runner after its lease expires.
+export const issueWorkClaim = pgTable(
+  'issue_work_claim',
+  {
+    issueId: integer('issue_id')
+      .primaryKey()
+      .references(() => issue.id, { onDelete: 'cascade' }),
+    runId: integer('run_id')
+      .notNull()
+      .references(() => agentRun.id, { onDelete: 'cascade' }),
+    claim: integer('claim').notNull(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  },
+  (t) => [index('issue_work_claim_expiry_idx').on(t.expiresAt)],
+);
+
 // What the egress proxy of isolated agents (deployment/volition-stack/isolation) let
 // through or refused, summed per unit, destination and decision over a short window. It
 // names hosts and counts bytes; it never holds what was sent. The agent and the run come

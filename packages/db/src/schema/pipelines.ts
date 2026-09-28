@@ -108,6 +108,7 @@ export const helenaSchedule = pgTable(
     // 'once' runs the newest missed time once. Older missed times never run.
     catchUp: text('catch_up').notNull().default('skip'),
     enabled: boolean('enabled').notNull().default(true),
+    precheckEnabled: boolean('precheck_enabled').notNull().default(true),
     gateMode: text('gate_mode').notNull().default('shadow'),
     gateSource: text('gate_source').notNull().default('none'),
     gateApprovedBy: text('gate_approved_by').references(() => user.id, { onDelete: 'set null' }),

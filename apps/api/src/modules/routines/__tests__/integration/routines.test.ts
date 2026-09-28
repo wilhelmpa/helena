@@ -146,6 +146,43 @@ afterEach(async () => {
 });
 
 describe('routines', () => {
+  it('skips an unfinished prior task before starting a scheduled run and allows opt-out', async () => {
+    const { asOwner, agent, columnId } = await setup();
+    const created = (await routines(asOwner).post(routineBody(agent.id))).data!;
+    expect(created.precheckEnabled).toBe(true);
+    const task = (
+      await asOwner.projects({ projectKey: 'MKT' }).issues.post({
+        columnId,
+        title: 'Unfinished report',
+      })
+    ).data!;
+    const prior = await recordScheduleRun(
+      await scheduleRow(created.id),
+      new Date(Date.now() - 86_400_000),
+      'manual',
+    );
+    await db
+      .update(pipelineRun)
+      .set({ status: 'succeeded', issueId: task.id, finishedAt: new Date() })
+      .where(eq(pipelineRun.id, prior.runId));
+    const due = new Date();
+    expect(await planFire(created.id, due.toISOString(), due.getTime())).toBeNull();
+    const [skipped] = await db
+      .select()
+      .from(pipelineRun)
+      .where(and(eq(pipelineRun.scheduleId, created.id), eq(pipelineRun.scheduledFor, due)));
+    expect(skipped?.result).toEqual({ outcome: 'skipped', skipReason: 'no-work' });
+    const runRoute = routines(asOwner)({ routineId: created.id }).runs;
+    expect((await runRoute.get({ query: {} })).data?.total).toBe(1);
+    expect((await runRoute.get({ query: { includeIdle: true } })).data?.total).toBe(2);
+    const changed = await routines(asOwner)({ routineId: created.id }).patch({
+      precheckEnabled: false,
+    });
+    expect(changed.data?.precheckEnabled).toBe(false);
+    const next = new Date(due.getTime() + 60_000);
+    expect(await planFire(created.id, next.toISOString(), next.getTime())).not.toBeNull();
+  });
+
   it('uses the evaluated precheck class for one borderline scheduled task', async () => {
     const { asOwner, agent, teamId, columnId } = await setup();
     const created = (await routines(asOwner).post(routineBody(agent.id, { gateSource: 'audit' })))
@@ -632,6 +669,7 @@ describe('routines', () => {
           taskId: task.id,
           cron: '0 9 * * *',
           timezone: 'UTC',
+          precheckEnabled: false,
         }),
       )
     ).data!;
