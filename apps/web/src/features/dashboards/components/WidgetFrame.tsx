@@ -9,6 +9,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Card, MonoLabel } from '@/components/helena/DashboardPrimitives';
 
 // A widget box on the sidebar's surface (owner, 2026-09-24: boxes like the sidebar):
 // a quiet 13px header (title + edit affordances), then the body. Widget settings live in a
@@ -41,7 +42,7 @@ export default function WidgetFrame({
   const defaultTitle = t.has(labelKey) ? t(labelKey) : widget.type;
   const title = widget.title || defaultTitle;
   return (
-    <section className="flex h-full flex-col rounded-lg border bg-card p-3">
+    <Card className="flex h-full flex-col overflow-hidden p-5">
       <header className="mb-3 flex h-7 shrink-0 items-center gap-2">
         {movable && (
           <button
@@ -61,7 +62,9 @@ export default function WidgetFrame({
             className="min-w-0 flex-1 rounded-md bg-transparent px-1 py-0.5 text-sm font-medium text-foreground outline-none placeholder:text-muted-foreground/60 focus:bg-accent"
           />
         ) : (
-          <h3 className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">{title}</h3>
+          <h3 className="min-w-0 flex-1 truncate">
+            <MonoLabel>{title}</MonoLabel>
+          </h3>
         )}
         {editing && settings && (
           <Popover>
@@ -104,6 +107,6 @@ export default function WidgetFrame({
           sizes itself to this width would otherwise lose the room to the scrollbar,
           fit less, become shorter, and take the scrollbar away again. */}
       <div className="min-h-0 flex-1 [scrollbar-gutter:stable] overflow-y-auto">{children}</div>
-    </section>
+    </Card>
   );
 }

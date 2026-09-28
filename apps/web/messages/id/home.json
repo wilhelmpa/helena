@@ -1,4 +1,5 @@
 {
+  "allProjects": "Semua proyek",
   "in": "dalam {time}",
   "widgetFailed": "Sedang tidak tersedia",
   "customize": {
@@ -23,6 +24,7 @@
     "needs-you": "Butuh Anda",
     "my-tasks": "Tugas saya",
     "running": "Sedang berjalan",
+    "finished": "Baru selesai",
     "schedules": "Berikutnya",
     "projects": "Proyek"
   },
@@ -60,7 +62,8 @@
   "agents": {
     "empty": "Saat ini tidak ada agen yang bekerja.",
     "waiting": "menunggu",
-    "finished": "Baru selesai"
+    "finished": "Baru selesai",
+    "noFinished": "Belum ada proses yang selesai."
   },
   "tasks": {
     "empty": "Tidak ada tugas terbuka untuk Anda."

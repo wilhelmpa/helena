@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/chart';
 import { useThroughputQuery } from '../../services/analytics.service';
 
-const SERIES_COLOR = { created: '#6366f1', closed: '#22c55e' };
+const SERIES_COLOR = { created: 'var(--dashboard-project)', closed: 'var(--dashboard-positive)' };
 
 // Created vs closed issues per week, as grouped bars. "Closed" is an issue entering
 // the completed state it is still in; see the analytics store. The window is a

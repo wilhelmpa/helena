@@ -1,4 +1,5 @@
 {
+  "allProjects": "كل المشاريع",
   "in": "خلال {time}",
   "widgetFailed": "غير متاح حاليًا",
   "customize": {
@@ -23,6 +24,7 @@
     "needs-you": "يحتاجك",
     "my-tasks": "مهامي",
     "running": "قيد التشغيل الآن",
+    "finished": "أُنجز مؤخرًا",
     "schedules": "التالي",
     "projects": "المشاريع"
   },
@@ -60,7 +62,8 @@
   "agents": {
     "empty": "لا يعمل أي وكيل الآن.",
     "waiting": "بانتظار",
-    "finished": "أُنجز مؤخرًا"
+    "finished": "أُنجز مؤخرًا",
+    "noFinished": "لم تكتمل أي عملية بعد."
   },
   "tasks": {
     "empty": "لا توجد مهام مفتوحة مُسندة إليك."

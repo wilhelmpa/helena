@@ -43,7 +43,7 @@
     },
     "pulse": {
       "label": "Pulse",
-      "description": "Heatmap aktivitas harian gaya GitHub"
+      "description": "Tren aktivitas ringkas"
     },
     "throughput": {
       "label": "Throughput",
@@ -207,5 +207,19 @@
     "unassigned": "Belum ditugaskan"
   },
   "deleteDashboard": "Hapus dasbor",
-  "deleteDashboardConfirm": "Hapus “{name}” beserta widgetnya? Tugas tidak tersentuh."
+  "deleteDashboardConfirm": "Hapus “{name}” beserta widgetnya? Tugas tidak tersentuh.",
+  "overview": {
+    "openTasks": "Tugas terbuka",
+    "total": "{count} total",
+    "inProgress": "Sedang dikerjakan",
+    "projectTasks": "Tugas dalam proyek",
+    "agentsWorking": "Agen bekerja",
+    "running": "Sedang berjalan",
+    "needsYou": "Perlu kamu",
+    "approvalsAndQuestions": "Persetujuan dan pertanyaan",
+    "finished": "Baru selesai",
+    "noRunning": "Tidak ada agen yang sedang bekerja.",
+    "nothingWaiting": "Tidak ada yang menunggu kamu.",
+    "noFinished": "Belum ada proses yang selesai."
+  }
 }
