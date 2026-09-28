@@ -733,7 +733,11 @@ async function requestReflection(
     .from(aiAgent)
     .where(eq(aiAgent.id, agentId));
   if (!agent) return null;
-  const reason = reflectionReason(normalizeRuntimePolicy(agent.runtimePolicy), {
+  const policy = normalizeRuntimePolicy(agent.runtimePolicy);
+  // Helena's own loop reflects inside its command, only after a checked success
+  // (docs/helena-decisions/zentrale-laufzeit.md §8.4).
+  if (policy.runtime === 'helena') return null;
+  const reason = reflectionReason(policy, {
     status: run.status,
     toolCalls: report.toolCalls ?? 0,
     rework: await isRework(agentId, runId, run.issueId),

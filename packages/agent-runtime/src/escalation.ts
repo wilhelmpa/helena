@@ -76,6 +76,7 @@ export class FailureWatch {
   private sameInRow = 0;
   private invalidSteps = 0;
   private redTests = 0;
+  private testsRan = false;
   private warned = false;
 
   constructor(
@@ -97,7 +98,10 @@ export class FailureWatch {
     const signature = JSON.stringify([name, input]);
     this.sameInRow = signature === this.lastSignature ? this.sameInRow + 1 : 1;
     this.lastSignature = signature;
-    if (output.test) this.redTests = output.exitCode === 0 ? 0 : this.redTests + 1;
+    if (output.test) {
+      this.testsRan = true;
+      this.redTests = output.exitCode === 0 ? 0 : this.redTests + 1;
+    }
     let repeated: number;
     if (output.changed) {
       this.seen.clear();
@@ -122,6 +126,11 @@ export class FailureWatch {
   step(invalidCalls: number): boolean {
     this.invalidSteps = invalidCalls > 0 ? this.invalidSteps + 1 : 0;
     return this.invalidSteps >= this.limits.invalidSteps;
+  }
+
+  // The last test run's verdict: true green, false red, null when no test ran.
+  lastTests(): boolean | null {
+    return this.testsRan ? this.redTests === 0 : null;
   }
 
   testsFailing(): boolean {

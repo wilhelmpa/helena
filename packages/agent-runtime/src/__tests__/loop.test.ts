@@ -354,3 +354,67 @@ describe('the decision service', () => {
     }
   });
 });
+
+describe('reflection', () => {
+  function helenaStub() {
+    const notes: string[] = [];
+    const helena: HelenaApi = {
+      decide: async () => ({ allowed: true, message: '' }),
+      createSession: async () => 'unused',
+      loadSession: async () => null,
+      appendItems: async () => {},
+      compact: async () => {},
+      memory: async () => ({ files: [], notes: [], approval: false }),
+      note: async (text) => {
+        notes.push(text);
+      },
+      proposeMemory: async () => ({ status: 'applied' }),
+      searchSessions: async () => [],
+    };
+    return { helena, notes };
+  }
+
+  test('after a successful run with real work, the loop keeps what it learned', async () => {
+    const { helena, notes } = helenaStub();
+    const { result, sink } = await run(
+      [
+        { calls: [{ name: 'list_files', input: {} }] },
+        { calls: [{ name: 'write_file', input: { path: 'x.txt', content: '1' } }] },
+        { calls: [{ name: 'read_file', input: { path: 'x.txt' } }] },
+        { text: 'Datei angelegt.' },
+        // The reflection:
+        {
+          calls: [
+            { name: 'memory', input: { action: 'note', content: 'x.txt liegt im Arbeitsordner' } },
+          ],
+        },
+        { text: 'nichts weiter' },
+      ],
+      { helena, config: { policy: 'allow' } },
+    );
+    expect(result.status).toBe('success');
+    expect(notes).toEqual(['x.txt liegt im Arbeitsordner']);
+    const closing = sink.events.slice(-2);
+    expect(closing[0]).toMatchObject({ type: 'spend', steps: 6, toolCalls: 4 });
+    expect(closing[1]).toMatchObject({ type: 'result', text: 'Datei angelegt.', exitCode: 0 });
+    // The reflection's own words never reach the answer.
+    expect(sink.text()).not.toContain('nichts weiter');
+  });
+
+  test('a run whose tests stayed red learns nothing', async () => {
+    const { helena, notes } = helenaStub();
+    const { result, primary } = await run(
+      [
+        { calls: [{ name: 'shell', input: { command: 'bun test nowhere.test.ts; exit 1' } }] },
+        { calls: [{ name: 'list_files', input: {} }] },
+        { calls: [{ name: 'read_file', input: { path: 'missing' } }] },
+        { text: 'Tests rot, bitte prüfen.' },
+        { calls: [{ name: 'memory', input: { action: 'note', content: 'nie' } }] },
+      ],
+      { helena },
+    );
+    expect(result.status).toBe('success');
+    expect(notes).toEqual([]);
+    expect(primary.doStreamCalls.length).toBe(4);
+  });
+});

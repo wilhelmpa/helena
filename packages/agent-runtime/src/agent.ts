@@ -2,7 +2,8 @@ import { DEFAULTS, type AgentRuntimeConfig, type ToolProfile } from './config';
 import type { EventSink } from './events';
 import { HelenaClient, type HelenaApi, type MemoryState } from './helena-client';
 import { uncertaintyEscalation, type Escalation } from './escalation';
-import { runLoop, type LoopResult } from './loop';
+import { resultEvent, runLoop, type LoopResult } from './loop';
+import { MemorySink, type SpendEvent } from './events';
 import { modelChain, resolveModel, type ModelFactory, type ResolvedModel } from './models';
 import { buildSystemPrompt } from './prompt';
 import {
@@ -279,7 +280,9 @@ export async function runAgent(input: AgentRunInput): Promise<LoopResult> {
           }
         : undefined;
 
-    return await runLoop({
+    const sessions = storeOf(input, helena);
+    const policy = policyOf(config, helena);
+    const result = await runLoop({
       ...(uncertainty && { uncertainty }),
       config,
       prompt: input.prompt,
@@ -290,14 +293,95 @@ export async function runAgent(input: AgentRunInput): Promise<LoopResult> {
       escalationModel,
       tools,
       direct,
-      sessions: storeOf(input, helena),
+      sessions,
       sink: input.sink,
-      policy: policyOf(config, helena),
+      policy,
       env: input.env,
       signal: input.signal,
+      deferFinal: true,
       ...(helena && { note: (text: string) => helena.note(text) }),
     });
+    // Reflection with a success check (§8.4): only after a run that did real work, succeeded
+    // and whose last tests (if any ran) were green. Its tokens count to the run.
+    if (helena && shouldReflect(config, result) && !input.signal.aborted) {
+      const reflection = await runLoop({
+        config: {
+          ...config,
+          kind: 'reflection',
+          escalation: { mode: 'never' },
+          limits: { maxTurns: 4, runBudgetSeconds: 120 },
+          tools: { ...config.tools, profile: 'assistent' },
+        },
+        prompt: reflectionPrompt(input.prompt, result),
+        system: REFLECTION_SYSTEM,
+        sessionId: null,
+        // The model the run ended on first.
+        models: [...chain].sort(
+          (a, b) => Number(b.id === result.spend.model) - Number(a.id === result.spend.model),
+        ),
+        tools: tools.filter((entry) => REFLECTION_TOOLS.includes(entry.name)),
+        direct: new Set(REFLECTION_TOOLS),
+        sessions,
+        sink: new MemorySink(),
+        policy,
+        env: input.env,
+        signal: input.signal,
+        deferFinal: true,
+      }).catch((error: unknown) => {
+        process.stderr.write(`helena-agent: reflection failed: ${String(error)}\n`);
+        return null;
+      });
+      if (reflection) addSpend(result.spend, reflection.spend);
+    }
+    input.sink.emit(result.spend);
+    input.sink.emit(resultEvent(result));
+    return result;
   } finally {
     await Promise.all(connections.map((connection) => connection.close()));
   }
+}
+
+// ── reflection ──
+
+const REFLECTION_TOOLS = ['memory', 'fact_store', 'fact_feedback'];
+const REFLECTION_MIN_TOOL_CALLS = 3;
+
+const REFLECTION_SYSTEM = [
+  'Du blickst auf einen gerade erfolgreich erledigten Auftrag zurück.',
+  'Halte nur fest, was nicht offensichtlich ist und bei späteren Aufträgen hilft: wie etwas hier geht, wo etwas liegt, was der Owner bevorzugt, was nicht funktioniert hat.',
+  'Kurze Fakten mit fact_store (action add, mit den Namen, um die es geht), eine Zeile Verlauf mit memory (action note).',
+  'Nie ein Geheimnis, einen Schlüssel oder ein Passwort. Keinen Code, keine Wiederholung der Aufgabe.',
+  'Wenn es nichts Neues gibt, antworte nur mit "nichts".',
+].join('\n');
+
+export function shouldReflect(config: AgentRuntimeConfig, result: LoopResult): boolean {
+  return (
+    config.memory?.enabled !== false &&
+    config.kind !== 'reflection' &&
+    result.status === 'success' &&
+    result.spend.toolCalls >= REFLECTION_MIN_TOOL_CALLS &&
+    result.testsGreen !== false
+  );
+}
+
+function reflectionPrompt(task: string, result: LoopResult): string {
+  return [
+    `Auftrag:\n${task.slice(0, 4000)}`,
+    `Benutzte Werkzeuge: ${result.toolsUsed.join(', ') || 'keine'}`,
+    result.testsGreen === true ? 'Die Tests am Ende waren grün.' : '',
+    `Ergebnis:\n${result.text.slice(0, 3000)}`,
+  ]
+    .filter(Boolean)
+    .join('\n\n');
+}
+
+function addSpend(total: SpendEvent, extra: SpendEvent): void {
+  total.inputTokens += extra.inputTokens;
+  total.outputTokens += extra.outputTokens;
+  total.cacheReadTokens += extra.cacheReadTokens;
+  total.cacheWriteTokens += extra.cacheWriteTokens;
+  total.reasoningTokens += extra.reasoningTokens;
+  total.steps += extra.steps;
+  total.toolCalls += extra.toolCalls;
+  total.durationMs += extra.durationMs;
 }

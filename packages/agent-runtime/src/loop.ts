@@ -7,7 +7,7 @@ import {
   preflightEscalation,
   type Escalation,
 } from './escalation';
-import type { EventSink, SpendEvent } from './events';
+import type { EventSink, ResultEvent, SpendEvent } from './events';
 import type { Decision } from './helena-client';
 import type { ResolvedModel } from './models';
 import type { SessionItem, SessionStore } from './session';
@@ -41,6 +41,8 @@ export interface LoopInput {
   uncertainty?: () => Promise<Escalation | null>;
   // A durable note for the agent's memory (the flush before a compression).
   note?: (text: string) => Promise<void>;
+  // The caller writes the closing spend and result lines itself (after a reflection).
+  deferFinal?: boolean;
   now?: () => number;
 }
 
@@ -49,8 +51,15 @@ export interface LoopResult {
   text: string;
   exitCode: number;
   reason?: string;
+  // The words the runner reads a failure by ("Session not found").
+  error?: string;
   sessionId: string;
   steps: number;
+  // What the command spent; emitted already, unless the caller deferred the closing lines.
+  spend: SpendEvent;
+  // The verdict of the last test run of the command (null: none ran), and the tools it called.
+  testsGreen: boolean | null;
+  toolsUsed: string[];
 }
 
 class StepAbort extends Error {
@@ -123,14 +132,38 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
   if (sessionId) {
     const stored = await sessions.load(sessionId);
     if (!stored) {
-      sink.emit({
-        type: 'result',
+      const lost = {
+        status: 'failed' as const,
         text: '',
         exitCode: 1,
         reason: 'error',
         error: 'Session not found',
-      });
-      return { status: 'failed', text: '', exitCode: 1, reason: 'error', sessionId, steps: 0 };
+      };
+      if (!input.deferFinal) sink.emit(resultEvent(lost));
+      return {
+        status: 'failed',
+        text: '',
+        exitCode: 1,
+        reason: 'error',
+        error: 'Session not found',
+        sessionId,
+        steps: 0,
+        spend: {
+          type: 'spend',
+          model: null,
+          provider: null,
+          inputTokens: 0,
+          outputTokens: 0,
+          cacheReadTokens: 0,
+          cacheWriteTokens: 0,
+          reasoningTokens: 0,
+          durationMs: 0,
+          steps: 0,
+          toolCalls: 0,
+        },
+        testsGreen: null,
+        toolsUsed: [],
+      };
     }
     entries = stored.items;
     summary = stored.summary;
@@ -169,18 +202,24 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
     steps: 0,
     toolCalls: 0,
   };
-  const finish = (result: Omit<LoopResult, 'sessionId' | 'steps'>): LoopResult => {
+  const toolsUsed = new Set<string>();
+  let watch: FailureWatch | null = null;
+  const finish = (
+    result: Omit<LoopResult, 'sessionId' | 'steps' | 'spend' | 'testsGreen' | 'toolsUsed'>,
+  ): LoopResult => {
     spend.durationMs = now() - started;
-    sink.emit(spend);
-    sink.emit({
-      type: 'result',
-      text: result.text,
-      exitCode: result.exitCode,
-      ...(result.reason && { reason: result.reason }),
-      ...(result.exitCode !== 0 &&
-        result.status !== 'escalated' && { error: result.reason ?? 'failed' }),
-    });
-    return { ...result, sessionId: sessionId!, steps: spend.steps };
+    if (!input.deferFinal) {
+      sink.emit(spend);
+      sink.emit(resultEvent(result));
+    }
+    return {
+      ...result,
+      sessionId: sessionId!,
+      steps: spend.steps,
+      spend,
+      testsGreen: watch?.lastTests() ?? null,
+      toolsUsed: [...toolsUsed],
+    };
   };
 
   // ── hand-over ──
@@ -254,7 +293,7 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
     if (escalated && escalated !== 'switched') return escalated;
   }
 
-  const watch = new FailureWatch();
+  watch = new FailureWatch();
   let nudged = false;
   let lastText = '';
   let turns = 0;
@@ -438,6 +477,7 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
     let warning: string | null = null;
     for (const call of outcome.calls) {
       spend.toolCalls += 1;
+      toolsUsed.add(call.name);
       const inputJson = JSON.stringify(call.input ?? {});
       sink.emit({ type: 'tool-call', id: call.id, name: call.name, input: inputJson });
       const result = await runTool(call);
@@ -466,7 +506,7 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
         if (call.name === 'clarify')
           clarifyText = String((call.input as { question?: unknown })?.question ?? '');
       }
-      const verdict = watch.call(call.name, call.input ?? {}, result.output);
+      const verdict = watch!.call(call.name, call.input ?? {}, result.output);
       if (verdict === 'warn') {
         warning =
           '(Helena) Du wiederholst Aufrufe, die nichts ändern. Geh anders vor oder beende den Zug mit dem, was du hast.';
@@ -486,12 +526,12 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
       if (clarifyText) sink.emit({ type: 'text', delta: `\n\n${clarifyText}` });
       return finish({ status: 'waiting', text, exitCode: 0 });
     }
-    const invalidFailure = watch.step(invalid);
+    const invalidFailure = watch!.step(invalid);
     const failure: Escalation | null = looping
       ? { reason: 'failure', detail: 'loop' }
       : invalidFailure
         ? { reason: 'failure', detail: 'invalid-tool-calls' }
-        : watch.testsFailing()
+        : watch!.testsFailing()
           ? { reason: 'failure', detail: 'tests-red' }
           : null;
     if (failure) {
@@ -749,6 +789,23 @@ export function isAnnouncement(text: string): boolean {
     ANNOUNCEMENT.test(trimmed) &&
     !/\?\s*$/.test(trimmed)
   );
+}
+
+export function resultEvent(result: {
+  status: LoopResult['status'];
+  text: string;
+  exitCode: number;
+  reason?: string;
+  error?: string;
+}): ResultEvent {
+  return {
+    type: 'result',
+    text: result.text,
+    exitCode: result.exitCode,
+    ...(result.reason && { reason: result.reason }),
+    ...(result.exitCode !== 0 &&
+      result.status !== 'escalated' && { error: result.error ?? result.reason ?? 'failed' }),
+  };
 }
 
 function renderForSummary(message: ModelMessage): string {
