@@ -267,3 +267,78 @@ export const helenaReceiptOriginalLink = pgTable(
     index('helena_receipt_original_primary_idx').on(t.primaryReceiptId),
   ],
 );
+
+export const helenaReceiptPairSuggestion = pgTable(
+  'helena_receipt_pair_suggestion',
+  {
+    id: serial('id').primaryKey(),
+    projectId: integer('project_id')
+      .notNull()
+      .references(() => project.id, { onDelete: 'cascade' }),
+    teamId: integer('team_id')
+      .notNull()
+      .references(() => team.id, { onDelete: 'cascade' }),
+    receiptId: integer('receipt_id')
+      .notNull()
+      .references(() => helenaReceipt.id, { onDelete: 'cascade' }),
+    candidateId: integer('candidate_id')
+      .notNull()
+      .references(() => helenaReceipt.id, { onDelete: 'cascade' }),
+    kind: text('kind').notNull(),
+    status: text('status').notNull().default('pending'),
+    reason: text('reason').notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    check('helena_receipt_pair_suggestion_distinct', sql`${t.receiptId} <> ${t.candidateId}`),
+    check('helena_receipt_pair_suggestion_kind', sql`${t.kind} IN ('pair', 'duplicate')`),
+    check(
+      'helena_receipt_pair_suggestion_status',
+      sql`${t.status} IN ('pending', 'linked', 'ignored')`,
+    ),
+    foreignKey({
+      columns: [t.receiptId, t.projectId, t.teamId],
+      foreignColumns: [helenaReceipt.id, helenaReceipt.projectId, helenaReceipt.teamId],
+    }).onDelete('cascade'),
+    foreignKey({
+      columns: [t.candidateId, t.projectId, t.teamId],
+      foreignColumns: [helenaReceipt.id, helenaReceipt.projectId, helenaReceipt.teamId],
+    }).onDelete('cascade'),
+    uniqueIndex('helena_receipt_pair_suggestion_pair_idx').on(t.receiptId, t.candidateId),
+    index('helena_receipt_pair_suggestion_project_idx').on(t.projectId, t.status),
+  ],
+);
+
+export const helenaReceiptPairHistory = pgTable(
+  'helena_receipt_pair_history',
+  {
+    id: serial('id').primaryKey(),
+    projectId: integer('project_id')
+      .notNull()
+      .references(() => project.id, { onDelete: 'cascade' }),
+    teamId: integer('team_id')
+      .notNull()
+      .references(() => team.id, { onDelete: 'cascade' }),
+    receiptId: integer('receipt_id')
+      .notNull()
+      .references(() => helenaReceipt.id, { onDelete: 'cascade' }),
+    primaryReceiptId: integer('primary_receipt_id')
+      .notNull()
+      .references(() => helenaReceipt.id, { onDelete: 'cascade' }),
+    action: text('action').notNull(),
+    createdByUserId: text('created_by_user_id').references(() => user.id, { onDelete: 'set null' }),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    check('helena_receipt_pair_history_action', sql`${t.action} IN ('auto_link', 'unlink')`),
+    foreignKey({
+      columns: [t.receiptId, t.projectId, t.teamId],
+      foreignColumns: [helenaReceipt.id, helenaReceipt.projectId, helenaReceipt.teamId],
+    }).onDelete('cascade'),
+    foreignKey({
+      columns: [t.primaryReceiptId, t.projectId, t.teamId],
+      foreignColumns: [helenaReceipt.id, helenaReceipt.projectId, helenaReceipt.teamId],
+    }).onDelete('cascade'),
+    index('helena_receipt_pair_history_project_idx').on(t.projectId, t.createdAt.desc()),
+  ],
+);

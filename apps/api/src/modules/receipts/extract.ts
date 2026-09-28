@@ -228,6 +228,7 @@ export async function extractReceiptFile(
     else problems.push(extraction.reason);
   }
   const fromText = text ? factsFromText(text, [...ownIbans]) : null;
+  const originalEvidence = completeNativePdf && text ? originalDocumentEvidence(text) : null;
   if (method === 'none' && text?.trim()) method = extension === '.pdf' ? 'text' : 'ocr';
 
   const details: ReceiptDetails = invoice?.details ?? {
@@ -237,17 +238,19 @@ export async function extractReceiptFile(
     paymentMeansCode: fromText?.directDebit ? '59' : null,
     einvoice: null,
   };
-  const noFacts = !invoice && !fromText?.grossCents && !fromText?.invoiceNumber;
+  const noFacts =
+    !invoice && !fromText?.grossCents && !fromText?.invoiceNumber && !originalEvidence;
   if (noFacts && method !== 'none' && !problems.length) problems.push('no_facts');
   return {
-    originalEvidence: completeNativePdf && text ? originalDocumentEvidence(text) : null,
+    originalEvidence,
     issuer: invoice?.issuer ?? fromText?.issuer ?? null,
-    invoiceNumber: invoice?.invoiceNumber ?? fromText?.invoiceNumber ?? null,
+    invoiceNumber:
+      invoice?.invoiceNumber ?? fromText?.invoiceNumber ?? originalEvidence?.invoiceNumber ?? null,
     invoiceDate: invoice?.invoiceDate ?? fromText?.invoiceDate ?? null,
     dueDate: invoice?.dueDate ?? fromText?.dueDate ?? null,
-    grossCents: invoice?.grossCents ?? fromText?.grossCents ?? null,
+    grossCents: invoice?.grossCents ?? fromText?.grossCents ?? originalEvidence?.grossCents ?? null,
     vatCents: invoice?.vatCents ?? fromText?.vatCents ?? null,
-    currency: invoice?.currency ?? fromText?.currency ?? null,
+    currency: invoice?.currency ?? fromText?.currency ?? originalEvidence?.currency ?? null,
     iban: invoice?.iban ?? fromText?.iban ?? null,
     direction: invoice?.direction ?? fromText?.direction ?? 'incoming',
     extraction: method,
