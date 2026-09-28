@@ -262,6 +262,7 @@ export default function TeamAiAgentFields({
         runtime={value.runtimePolicy.runtime ?? 'hermes'}
         model={value.model || null}
         reasoning={value.runtimePolicy.reasoningEffort}
+        external
         models={[
           ...((value.runtimePolicy.runtime ?? 'hermes') ===
           (agent?.runtimePolicy.runtime ?? 'hermes')
@@ -285,6 +286,65 @@ export default function TeamAiAgentFields({
           })
         }
       />
+      {value.runtimePolicy.runtime === 'command' && (
+        <label className="mt-3 block space-y-1.5">
+          <span className="text-sm font-medium">{tRuntime('commandScript')}</span>
+          <Input
+            dir="ltr"
+            value={value.runtimePolicy.commandScript ?? ''}
+            placeholder="scripts/review.sh"
+            onChange={(event) =>
+              onChange({
+                runtimePolicy: {
+                  ...value.runtimePolicy,
+                  commandScript: event.target.value || undefined,
+                },
+              })
+            }
+          />
+          <span className="block text-xs text-muted-foreground">
+            {tRuntime('commandScriptHint')}
+          </span>
+        </label>
+      )}
+      {value.runtimePolicy.runtime === 'webhook' && (
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          <label className="block space-y-1.5">
+            <span className="text-sm font-medium">{tRuntime('webhookUrl')}</span>
+            <Input
+              dir="ltr"
+              type="url"
+              value={value.runtimePolicy.webhookUrl ?? ''}
+              placeholder="https://"
+              onChange={(event) =>
+                onChange({
+                  runtimePolicy: {
+                    ...value.runtimePolicy,
+                    webhookUrl: event.target.value || undefined,
+                  },
+                })
+              }
+            />
+          </label>
+          <label className="block space-y-1.5">
+            <span className="text-sm font-medium">{tRuntime('webhookSecretEnv')}</span>
+            <Input
+              dir="ltr"
+              value={value.runtimePolicy.webhookSecretEnv ?? ''}
+              placeholder="WEBHOOK_SECRET"
+              onChange={(event) =>
+                onChange({
+                  runtimePolicy: {
+                    ...value.runtimePolicy,
+                    webhookSecretEnv: event.target.value || undefined,
+                  },
+                })
+              }
+            />
+          </label>
+          <p className="text-xs text-muted-foreground sm:col-span-2">{tRuntime('webhookHint')}</p>
+        </div>
+      )}
     </div>,
     basicsSection,
     projectsSection,

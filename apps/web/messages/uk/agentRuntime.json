@@ -65,7 +65,8 @@
       "running": "In progress",
       "done": "Done",
       "failed": "Failed"
-    }
+    },
+    "spent": "Витрати"
   },
   "sessions": {
     "search": "Шукати в усіх сесіях",

@@ -65,7 +65,8 @@
       "running": "In progress",
       "done": "Done",
       "failed": "Failed"
-    }
+    },
+    "spent": "Расход"
   },
   "sessions": {
     "search": "Искать во всех сессиях",

@@ -1108,3 +1108,162 @@
     display: none;
   }
 }
+
+/* ── Run (Gläserner Lauf) ────────────────────────────────────────────────── */
+.ds-run {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-4);
+  overflow-y: auto;
+  padding: var(--space-5) var(--page-pad-x);
+}
+.ds-issue-overlay-body > .ds-run {
+  padding: var(--space-4);
+}
+.ds-run > .ds-detail {
+  width: 100%;
+  max-width: 880px;
+  margin-inline: auto;
+}
+.ds-run-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  color: var(--text-2);
+  font-size: 12px;
+}
+.ds-run-back:hover,
+.ds-run-continues:hover {
+  color: var(--text);
+}
+.ds-run-title-link:hover {
+  text-decoration: underline;
+}
+.ds-run-session span {
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+.ds-run-continues {
+  align-self: flex-start;
+  color: var(--text-3);
+  font-size: 12px;
+}
+.ds-run-results {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.ds-run-summary {
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+.ds-run-note {
+  color: var(--text-3);
+  font-size: 13px;
+}
+.ds-run-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: var(--space-2);
+}
+.ds-run-card {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--surface-1);
+  padding: var(--space-3);
+  color: var(--text-2);
+}
+a.ds-run-card:hover {
+  background: var(--surface-2);
+}
+.ds-run-card-icon {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  flex: none;
+  place-items: center;
+  border-radius: var(--radius-field);
+  background: var(--surface-2);
+  color: var(--text);
+}
+.ds-run-card-text {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+}
+.ds-run-card-title {
+  overflow: hidden;
+  color: var(--text);
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ds-run-error {
+  color: var(--status-error);
+  font-size: 13px;
+}
+.ds-run-blocked {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border-radius: var(--radius-card);
+  background: var(--surface-2);
+  padding: var(--space-3);
+  font-size: 13px;
+}
+.ds-run-blocked p {
+  white-space: pre-wrap;
+}
+.ds-run-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.ds-run-steps li {
+  display: flex;
+  min-height: 28px;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+.ds-run-steps li svg {
+  flex: none;
+  color: var(--text-3);
+}
+.ds-run-steps li[data-state='done'] svg {
+  color: var(--status-done);
+}
+.ds-run-steps li[data-state='failed'] svg {
+  color: var(--status-error);
+}
+.ds-run-steps li[data-state='running'] svg {
+  color: var(--status-thinking);
+}
+.ds-run-raw {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+.ds-run-log {
+  overflow-x: auto;
+  border-radius: var(--radius-card);
+  background: var(--surface-2);
+  padding: var(--space-3);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}

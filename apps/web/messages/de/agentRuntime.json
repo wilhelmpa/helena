@@ -65,7 +65,8 @@
       "running": "Läuft",
       "done": "Fertig",
       "failed": "Fehlgeschlagen"
-    }
+    },
+    "spent": "Verbrauch"
   },
   "sessions": {
     "search": "Alle Sitzungen durchsuchen",

@@ -2,6 +2,7 @@ import { Check, Circle, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { AgUiEvent } from '@/lib/api/endpoints/agentChat';
 
+// A run's steps as a checklist: each tool it called, done, failed or still running.
 export default function RunSteps({ events }: { events: AgUiEvent[] }) {
   const t = useTranslations('agentRuntime.runs');
   const steps = new Map<string, { name: string; state: 'running' | 'done' | 'failed' }>();
@@ -14,27 +15,19 @@ export default function RunSteps({ events }: { events: AgUiEvent[] }) {
       if (step) step.state = event.metadata?.isError || event.isError ? 'failed' : 'done';
     }
   }
+  if (!steps.size) return <p className="ds-run-note">{t('noSteps')}</p>;
   return (
-    <section aria-labelledby="run-steps-title" className="space-y-3">
-      <h2 id="run-steps-title" className="text-sm font-semibold">
-        {t('steps')}
-      </h2>
-      {steps.size ? (
-        <ol className="space-y-2">
-          {[...steps.entries()].map(([id, step]) => {
-            const Icon = step.state === 'done' ? Check : step.state === 'failed' ? X : Circle;
-            return (
-              <li key={id} className="flex items-center gap-2 text-sm">
-                <Icon aria-hidden="true" className="size-4 shrink-0" />
-                <span>{step.name}</span>
-                <span className="sr-only">{t(`stepState.${step.state}`)}</span>
-              </li>
-            );
-          })}
-        </ol>
-      ) : (
-        <p className="text-sm text-muted-foreground">{t('noSteps')}</p>
-      )}
-    </section>
+    <ol className="ds-run-steps">
+      {[...steps.entries()].map(([id, step]) => {
+        const Icon = step.state === 'done' ? Check : step.state === 'failed' ? X : Circle;
+        return (
+          <li key={id} data-state={step.state}>
+            <Icon aria-hidden="true" size={14} />
+            <span dir="ltr">{step.name}</span>
+            <span className="sr-only">{t(`stepState.${step.state}`)}</span>
+          </li>
+        );
+      })}
+    </ol>
   );
 }

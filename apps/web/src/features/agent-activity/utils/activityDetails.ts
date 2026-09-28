@@ -1,8 +1,10 @@
 import type { AgentActivityEntry } from '@/lib/api/endpoints/agentActivity';
-import { agentsPath, aiTeamPath, issuePath, workflowRunPath, workflowsPath } from '@/utils/paths';
+import { aiTeamPath, issuePath, workflowRunPath, workflowsPath } from '@/utils/paths';
 
 export type ActivityTarget =
-  { kind: 'page'; href: string } | { kind: 'chat'; agentId: number; threadId: string };
+  | { kind: 'page'; href: string }
+  | { kind: 'chat'; agentId: number; threadId: string }
+  | { kind: 'run'; agentId: number; runId: number };
 
 // The task an entry belongs to, as a link.
 export function activityTask(entry: AgentActivityEntry): { href: string; label: string } | null {
@@ -14,7 +16,7 @@ export function activityTask(entry: AgentActivityEntry): { href: string; label: 
 }
 
 // Where an entry's details are: the conversation of a chat answer, the glass-box view on
-// the agent's page for a run of an agent, the agent-team run on the Workflows page, a
+// overlay for a run of an agent, the agent-team run on the Workflows page, a
 // routine's on the Schedules page and a workflow's on the Workflows page.
 export function activityDetails(entry: AgentActivityEntry): ActivityTarget | null {
   if (entry.kind === 'chat')
@@ -22,10 +24,7 @@ export function activityDetails(entry: AgentActivityEntry): ActivityTarget | nul
       ? { kind: 'chat', agentId: entry.agent.id, threadId: entry.threadId }
       : null;
   if (entry.kind === 'agent-run' && entry.agent && entry.id.startsWith('run:'))
-    return {
-      kind: 'page',
-      href: `${agentsPath()}?agent=${entry.agent.id}&tab=runs&run=${entry.id.slice(4)}`,
-    };
+    return { kind: 'run', agentId: entry.agent.id, runId: Number(entry.id.slice(4)) };
   if (!entry.project || !entry.workflowRunId) return null;
   if (entry.workflowId === 'agent-team')
     return {

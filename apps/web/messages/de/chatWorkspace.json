@@ -265,6 +265,13 @@
     "confirm": "Bestätigen und neuen Chat starten",
     "via": "via",
     "unknownRuntime": "Ausführung unbekannt",
-    "unknownModel": "Modell unbekannt"
+    "unknownModel": "Modell unbekannt",
+    "command": "Befehl",
+    "webhook": "Webhook",
+    "commandScript": "Skript im Projekt",
+    "commandScriptHint": "Pfad relativ zum Projektordner. Das Skript bekommt die Aufgabe als JSON und läuft im abgeschotteten Bereich des Projekts; seine Ausgabe ist das Ergebnis.",
+    "webhookUrl": "Adresse (HTTPS)",
+    "webhookSecretEnv": "Variable mit dem Signaturschlüssel",
+    "webhookHint": "Helena ruft die Adresse signiert nach Standard Webhooks auf. Den Schlüssel (whsec_…) gibst du dem Agenten unter Zugänge als Umgebungsvariable."
   }
 }

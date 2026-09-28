@@ -12,9 +12,13 @@ import { AgentSettingsBody } from '@/features/teams/components/ai-agents/TeamAiA
 export default function AgentSettingsModalContent({
   teamId,
   agentId,
+  tab,
+  runId,
 }: {
   teamId: number;
   agentId: number;
+  tab?: string;
+  runId?: number | null;
 }) {
   const t = useTranslations('teams');
   const permissions = useTeamQuery(teamId).data?.permissions.ai_agents;
@@ -27,7 +31,7 @@ export default function AgentSettingsModalContent({
   return (
     <AgentSectionProvider teamId={teamId} permissions={permissions}>
       <div className="flex min-h-[520px] flex-col">
-        <AgentSettingsBody agent={agent} />
+        <AgentSettingsBody agent={agent} tab={tab} runId={runId} />
       </div>
     </AgentSectionProvider>
   );

@@ -15,6 +15,7 @@ import PipelineApprovalCard from '@/features/approvals/components/PipelineApprov
 import ProposalCard from '@/features/agent-runtime/components/ProposalCard';
 import SystemDetailsDialog from '@/features/home/dashboard/SystemDetailsDialog';
 import { openSystemDetails } from '@/features/home/dashboard/systemDetails';
+import { openRun } from '@/features/agent-runtime/runOverlay';
 import { activityDetails } from '@/features/agent-activity/utils/activityDetails';
 import {
   agentActivityPath,
@@ -285,7 +286,16 @@ function OwnerInboxContent() {
                       ? agentActivityPath(entry.project.key)
                       : globalAgentActivityPath();
               return (
-                <Link key={entry.id} href={href} className={styles.readRow}>
+                <Link
+                  key={entry.id}
+                  href={href}
+                  className={styles.readRow}
+                  onClick={(event) => {
+                    if (target?.kind !== 'run') return;
+                    event.preventDefault();
+                    openRun(target.agentId, target.runId);
+                  }}
+                >
                   <span style={{ color: projectColor(entry.project?.key ?? null) }}>
                     {entry.project?.key.toUpperCase() ?? t('home')}
                   </span>

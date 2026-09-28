@@ -38,11 +38,8 @@ describe('agent activity links', () => {
     assert.equal(activityDetails({ ...chat, threadId: null }), null);
   });
 
-  test("opens an agent's run in the glass-box view on the agent's page", () => {
-    assert.deepEqual(activityDetails(base), {
-      kind: 'page',
-      href: '/agents?agent=7&tab=runs&run=1',
-    });
+  test("opens an agent's run in the run overlay", () => {
+    assert.deepEqual(activityDetails(base), { kind: 'run', agentId: 7, runId: 1 });
     assert.equal(activityDetails({ ...base, agent: null }), null);
   });
 

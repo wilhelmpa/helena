@@ -265,6 +265,13 @@
     "confirm": "Confirm and start new chat",
     "via": "via",
     "unknownRuntime": "Unknown runtime",
-    "unknownModel": "Unknown model"
+    "unknownModel": "Unknown model",
+    "command": "命令",
+    "webhook": "Webhook",
+    "commandScript": "项目中的脚本",
+    "commandScriptHint": "相对于项目文件夹的路径。脚本以 JSON 接收任务，在项目的隔离区域运行；其输出即为结果。",
+    "webhookUrl": "地址（HTTPS）",
+    "webhookSecretEnv": "存放签名密钥的变量",
+    "webhookHint": "Helena 按 Standard Webhooks 签名调用该地址。请在“访问”中把密钥（whsec_…）作为环境变量提供给代理。"
   }
 }

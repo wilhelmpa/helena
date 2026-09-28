@@ -265,6 +265,13 @@
     "confirm": "Confirm and start new chat",
     "via": "via",
     "unknownRuntime": "Unknown runtime",
-    "unknownModel": "Unknown model"
+    "unknownModel": "Unknown model",
+    "command": "Command",
+    "webhook": "Webhook",
+    "commandScript": "Script in the project",
+    "commandScriptHint": "Path relative to the project folder. The script gets the task as JSON and runs in the project's isolated area; its output is the result.",
+    "webhookUrl": "Address (HTTPS)",
+    "webhookSecretEnv": "Variable holding the signing key",
+    "webhookHint": "Helena calls the address signed per Standard Webhooks. Give the agent the key (whsec_…) as an environment variable under Access."
   }
 }

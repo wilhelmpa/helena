@@ -3,15 +3,22 @@
 import { ModelRouteLine } from '@/features/decisions/components/ModelRouteLine';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Copy, History, LoaderCircle, Play, ScrollText, Waypoints } from 'lucide-react';
+import { ArrowLeft, Copy, Play } from 'lucide-react';
 import { useFormatter, useTranslations } from 'next-intl';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import Modal from '@/components/common/overlay/Modal';
 import ListSkeleton from '@/components/common/skeleton/ListSkeleton';
-import { PAGE_CONTROL_ACTIVE_CLASS, PAGE_CONTROL_CLASS } from '@/components/layout/PageToolbar';
-import { cn } from '@/lib/utils';
+import {
+  DetailGroup,
+  DetailHeader,
+  DetailView,
+  More,
+  Pill,
+  Segmented,
+  StatusDot,
+  type PillTone,
+} from '@/design-system';
 import type { PlanUIMessage } from '@/features/ai-chat/utils/chatMessages';
 import { copyText } from '@/utils/clipboard';
 import { formatElapsed } from '@/utils/agentUsage';
@@ -36,11 +43,20 @@ import RunSteps from './RunSteps';
 
 type View = 'timeline' | 'transcript' | 'logs';
 
-// "Gläserner Lauf": one run of an agent as a timeline — its task, what the model reasoned,
-// every tool call with its arguments and result, and its answer — live while the run runs
-// and as a replay afterwards, with the model, tokens, time and cost it took. The full
-// transcript of its session and the runtime's log lines of that session sit beside it, and
-// "continue from here" resumes its session with a new instruction.
+const TONES: Record<string, PillTone> = {
+  pending: 'accent',
+  success: 'neutral',
+  failed: 'danger',
+  canceled: 'neutral',
+};
+
+// "Gläserner Lauf" (docs/design-system.md §4, owner P6 "Ergebnis zuerst"): one run of an
+// agent in the detail pattern — its task as the title with status and time, then what it
+// delivered first (its closing answer and the result cards: file, preview, PR,
+// screenshot), then its steps as a checklist, what it spent, and at the very end, folded,
+// the raw protocol (the timeline of model and tool events, the session's transcript and
+// the runtime's log). Live while the run runs; "Ab hier fortsetzen" resumes its session.
+// It shows the same on the agent's Läufe tab and in the overlay over Verlauf.
 export default function RunView({
   teamId,
   agentId,
@@ -51,7 +67,8 @@ export default function RunView({
   teamId: number;
   agentId: number;
   runId: number;
-  onBack: () => void;
+  // The list it was opened from; absent in the overlay.
+  onBack?: () => void;
   onOpenRun: (runId: number) => void;
 }) {
   const t = useTranslations('agentRuntime.runs');
@@ -79,169 +96,156 @@ export default function RunView({
 
   const started = run.startedAt ? new Date(run.startedAt) : null;
   const ended = run.finishedAt ? new Date(run.finishedAt) : null;
-  const views: { value: View; label: string; icon: typeof Waypoints }[] = [
-    { value: 'timeline', label: t('timeline'), icon: Waypoints },
-    { value: 'transcript', label: t('transcript'), icon: ScrollText },
-    { value: 'logs', label: t('logs'), icon: History },
-  ];
   const promptMessage: PlanUIMessage = {
     id: `task-${run.id}`,
     role: 'user',
     parts: [{ type: 'text', text: run.prompt, state: 'done' }],
     metadata: { createdAt: run.startedAt ?? run.createdAt },
   };
+  const title = run.issueIdentifier ? (
+    <Link href={issueIdentifierPath(run.issueIdentifier)} className="ds-run-title-link">
+      <span className="ds-issue-key">{run.issueIdentifier}</span>
+      {run.issueTitle ? ` ${run.issueTitle}` : ''}
+    </Link>
+  ) : (
+    t(`trigger.${run.trigger}`)
+  );
+  const meta = [
+    started ? format.dateTime(started, { dateStyle: 'medium', timeStyle: 'short' }) : '',
+    started && ended ? formatElapsed(ended.getTime() - started.getTime()) : '',
+    run.resumes > 0 ? t('resumed', { count: run.resumes }) : '',
+  ]
+    .filter(Boolean)
+    .join(' · ');
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
-      <div className="flex flex-wrap items-center gap-2 border-b border-border/60 px-4 py-2">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="size-8"
-          onClick={onBack}
-          aria-label={t('back')}
-        >
-          <ArrowLeft className="size-4 rtl:rotate-180" />
-        </Button>
-        <Badge
-          variant={run.status === 'failed' ? 'destructive' : 'secondary'}
-          className="capitalize"
-        >
-          {live ? (
-            <span className="inline-flex items-center gap-1">
-              <LoaderCircle className="size-3 animate-spin" />
-              {t('running')}
-            </span>
-          ) : (
-            t(`status.${run.status}`)
-          )}
-        </Badge>
-        <span className="min-w-0 truncate text-sm font-medium">
-          {run.issueIdentifier ? (
-            <Link href={issueIdentifierPath(run.issueIdentifier)} className="hover:underline">
-              {run.issueIdentifier}
-              {run.issueTitle ? ` · ${run.issueTitle}` : ''}
-            </Link>
-          ) : (
-            t(`trigger.${run.trigger}`)
-          )}
-        </span>
-        <span className="text-xs text-muted-foreground">
-          {started ? format.dateTime(started, { dateStyle: 'medium', timeStyle: 'short' }) : ''}
-          {started && ended ? ` · ${formatElapsed(ended.getTime() - started.getTime())}` : ''}
-          {run.resumes > 0 ? ` · ${t('resumed', { count: run.resumes })}` : ''}
-        </span>
-        <div className="ms-auto flex items-center gap-1">
-          {run.sessionId && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-8 gap-1.5 font-mono text-xs"
-              onClick={() => void copyText(run.sessionId!)}
-              title={t('copySession')}
-            >
-              <Copy className="size-3.5" />
-              {run.sessionId.slice(0, 18)}
-            </Button>
-          )}
-          {!live && run.sessionId && (
-            <Button
-              size="sm"
-              variant="outline"
-              className="h-8 gap-1.5"
-              onClick={() => setContinuing(true)}
-            >
-              <Play className="size-3.5" />
-              {t('continue')}
-            </Button>
-          )}
-        </div>
-      </div>
-
-      <div className="min-h-0 flex-1 space-y-6 overflow-y-auto px-4 py-4">
-        <div className="mx-auto max-w-3xl space-y-3">
-          <RunResults run={run} />
-          <SpendChips rows={run.usage} />
-        </div>
-        <div className="mx-auto max-w-3xl">
-          <RunSteps events={events} />
-        </div>
-        <section aria-labelledby="run-protocol-title" className="mx-auto max-w-3xl space-y-4">
-          <h2 id="run-protocol-title" className="text-sm font-semibold">
-            {t('rawProtocol')}
-          </h2>
-          <nav className="flex flex-wrap items-center gap-0.5" aria-label={t('views')}>
-            {views.map((item) => (
-              <button
-                key={item.value}
-                type="button"
-                aria-pressed={view === item.value}
-                onClick={() => setView(item.value)}
-                className={cn(
-                  PAGE_CONTROL_CLASS,
-                  'h-7',
-                  view === item.value && PAGE_CONTROL_ACTIVE_CLASS,
-                )}
-              >
-                <item.icon aria-hidden="true" />
-                {item.label}
-              </button>
-            ))}
-          </nav>
-          {view === 'timeline' && (
-            <div className="mx-auto max-w-3xl space-y-4">
-              {run.continuedFromRunId && (
+    <div className="ds-run">
+      {onBack && (
+        <button type="button" className="ds-run-back" onClick={onBack}>
+          <ArrowLeft size={14} className="rtl:rotate-180" aria-hidden="true" />
+          {t('back')}
+        </button>
+      )}
+      <DetailView>
+        <DetailHeader
+          title={title}
+          status={
+            <Pill tone={TONES[run.status] ?? 'neutral'}>
+              {live ? t('running') : t(`status.${run.status}`)}
+              {live && <StatusDot tone="working" />}
+            </Pill>
+          }
+          meta={meta}
+          actions={
+            <>
+              {run.sessionId && (
                 <button
                   type="button"
-                  className="text-xs text-muted-foreground hover:text-foreground hover:underline"
-                  onClick={() => onOpenRun(run.continuedFromRunId!)}
+                  className="ds-page-control ds-run-session"
+                  onClick={() => void copyText(run.sessionId!)}
+                  title={t('copySession')}
                 >
-                  {t('continuesRun', { id: run.continuedFromRunId })}
+                  <Copy size={14} aria-hidden="true" />
+                  <span dir="ltr">{run.sessionId.slice(0, 12)}</span>
                 </button>
               )}
-              <TranscriptMessages
-                messages={timeline ? [promptMessage, timeline] : [promptMessage]}
-                streaming={live}
-                projectKey={run.projectKey}
-              />
-              {loaded && !timeline && !live && (
-                <p className="text-sm text-muted-foreground">{t('noTimeline')}</p>
+              {!live && run.sessionId && (
+                <button
+                  type="button"
+                  className="ds-page-control ds-page-primary"
+                  onClick={() => setContinuing(true)}
+                >
+                  <Play size={14} aria-hidden="true" />
+                  {t('continue')}
+                </button>
               )}
-              {run.status === 'failed' && knownFailure(run.failure) ? (
-                <ModelFailureNote
-                  failure={run.failure}
-                  error={run.lastError}
-                  className="text-sm text-destructive"
-                />
-              ) : (
-                run.status === 'failed' &&
-                run.lastError && <p className="text-sm text-destructive">{run.lastError}</p>
-              )}
-              {run.blockedQuestion && (
-                <div className="rounded-md border border-border/60 bg-card p-3 text-sm">
-                  <p className="text-xs font-medium text-muted-foreground">{t('blocked')}</p>
-                  <p className="mt-1 whitespace-pre-wrap">{run.blockedQuestion}</p>
-                </div>
-              )}
-              {run.modelCheck && <AgentRunModel check={run.modelCheck} />}
-              {run.modelRoute && <ModelRouteLine route={run.modelRoute} />}
-              {run.reflection && <ReflectionBlock reflection={run.reflection} />}
+            </>
+          }
+        />
+
+        {run.continuedFromRunId && (
+          <button
+            type="button"
+            className="ds-run-continues"
+            onClick={() => onOpenRun(run.continuedFromRunId!)}
+          >
+            {t('continuesRun', { id: run.continuedFromRunId })}
+          </button>
+        )}
+
+        <DetailGroup title={t('results')}>
+          <RunResults run={run} />
+          {run.status === 'failed' && knownFailure(run.failure) ? (
+            <ModelFailureNote
+              failure={run.failure}
+              error={run.lastError}
+              className="ds-run-error"
+            />
+          ) : (
+            run.status === 'failed' &&
+            run.lastError && <p className="ds-run-error">{run.lastError}</p>
+          )}
+          {run.blockedQuestion && (
+            <div className="ds-run-blocked">
+              <span className="ds-mono-label">{t('blocked')}</span>
+              <p>{run.blockedQuestion}</p>
             </div>
           )}
-          {view === 'transcript' && (
-            <RunTranscript
-              projectKey={run.projectKey}
-              teamId={teamId}
-              agentId={agentId}
-              sessionId={run.sessionId}
-              live={live}
-            />
-          )}
-          {view === 'logs' && (
-            <RunLogs teamId={teamId} agentId={agentId} sessionId={run.sessionId} />
-          )}
-        </section>
-      </div>
+        </DetailGroup>
+
+        <DetailGroup title={t('steps')}>
+          <RunSteps events={events} />
+        </DetailGroup>
+
+        <DetailGroup title={t('spent')}>
+          <SpendChips rows={run.usage} />
+          {run.modelCheck && <AgentRunModel check={run.modelCheck} />}
+          {run.modelRoute && <ModelRouteLine route={run.modelRoute} />}
+        </DetailGroup>
+
+        {run.reflection && (
+          <DetailGroup>
+            <ReflectionBlock reflection={run.reflection} />
+          </DetailGroup>
+        )}
+
+        <More label={t('rawProtocol')}>
+          <Segmented
+            value={view}
+            onChange={setView}
+            label={t('views')}
+            options={[
+              { value: 'timeline', label: t('timeline') },
+              { value: 'transcript', label: t('transcript') },
+              { value: 'logs', label: t('logs') },
+            ]}
+          />
+          <div className="ds-run-raw">
+            {view === 'timeline' && (
+              <>
+                <TranscriptMessages
+                  messages={timeline ? [promptMessage, timeline] : [promptMessage]}
+                  streaming={live}
+                  projectKey={run.projectKey}
+                />
+                {loaded && !timeline && !live && <p className="ds-run-note">{t('noTimeline')}</p>}
+              </>
+            )}
+            {view === 'transcript' && (
+              <RunTranscript
+                projectKey={run.projectKey}
+                teamId={teamId}
+                agentId={agentId}
+                sessionId={run.sessionId}
+                live={live}
+              />
+            )}
+            {view === 'logs' && (
+              <RunLogs teamId={teamId} agentId={agentId} sessionId={run.sessionId} />
+            )}
+          </div>
+        </More>
+      </DetailView>
 
       {continuing && (
         <ContinueDialog
@@ -278,14 +282,12 @@ function RunTranscript({
     () => (transcript.data ? transcriptToMessages(transcript.data) : []),
     [transcript.data],
   );
-  if (!sessionId) return <p className="text-sm text-muted-foreground">{t('noSession')}</p>;
+  if (!sessionId) return <p className="ds-run-note">{t('noSession')}</p>;
   if (transcript.isPending) return <ListSkeleton rows={4} rowClassName="h-10" />;
   if (transcript.error) return <RuntimeError error={transcript.error} />;
   return (
-    <div className="mx-auto max-w-3xl space-y-3">
-      {transcript.data?.truncated && (
-        <p className="text-xs text-muted-foreground">{t('truncated')}</p>
-      )}
+    <div className="ds-stack">
+      {transcript.data?.truncated && <p className="ds-run-note">{t('truncated')}</p>}
       <TranscriptMessages projectKey={projectKey} messages={messages} streaming={live} />
     </div>
   );
@@ -302,16 +304,12 @@ function RunLogs({
 }) {
   const t = useTranslations('agentRuntime.runs');
   const logs = useRuntimeLogs(teamId, agentId, { sessionId, lines: 500 }, sessionId != null);
-  if (!sessionId) return <p className="text-sm text-muted-foreground">{t('noSession')}</p>;
+  if (!sessionId) return <p className="ds-run-note">{t('noSession')}</p>;
   if (logs.isPending) return <ListSkeleton rows={4} rowClassName="h-6" />;
   if (logs.error) return <RuntimeError error={logs.error} />;
-  if (!logs.data?.lines.length)
-    return <p className="text-sm text-muted-foreground">{t('noLogs')}</p>;
+  if (!logs.data?.lines.length) return <p className="ds-run-note">{t('noLogs')}</p>;
   return (
-    <pre
-      dir="ltr"
-      className="overflow-x-auto rounded-md bg-card p-3 font-mono text-xs leading-relaxed whitespace-pre-wrap"
-    >
+    <pre dir="ltr" className="ds-run-log">
       {logs.data.lines.join('\n')}
     </pre>
   );

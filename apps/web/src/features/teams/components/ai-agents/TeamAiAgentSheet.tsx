@@ -78,8 +78,19 @@ export function TeamAiAgentSheet({
 // One agent's settings inside the settings modal (openSettings({ scope: 'agent',
 // agentId })): the same tabs and form as the sheet, without the sheet's own header and
 // the test chat beside it (the modal has its own header, the chat lives in the panel).
-export function AgentSettingsBody({ agent }: { agent: AiAgent }) {
-  return <SheetBody key={agent.id} initialAgent={agent} initialRunId={null} inModal />;
+export function AgentSettingsBody({
+  agent,
+  tab,
+  runId = null,
+}: {
+  agent: AiAgent;
+  // A tab to open first (e.g. 'runs') and a run to open in it.
+  tab?: string;
+  runId?: number | null;
+}) {
+  return (
+    <SheetBody key={agent.id} initialAgent={agent} initialTab={tab} initialRunId={runId} inModal />
+  );
 }
 
 function SheetBody({

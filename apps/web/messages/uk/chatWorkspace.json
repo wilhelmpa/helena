@@ -265,6 +265,13 @@
     "confirm": "Confirm and start new chat",
     "via": "via",
     "unknownRuntime": "Unknown runtime",
-    "unknownModel": "Unknown model"
+    "unknownModel": "Unknown model",
+    "command": "Команда",
+    "webhook": "Вебхук",
+    "commandScript": "Скрипт у проєкті",
+    "commandScriptHint": "Шлях відносно теки проєкту. Скрипт отримує завдання як JSON і працює в ізольованій області проєкту; його вивід — результат.",
+    "webhookUrl": "Адреса (HTTPS)",
+    "webhookSecretEnv": "Змінна з ключем підпису",
+    "webhookHint": "Helena викликає адресу з підписом за Standard Webhooks. Передайте агенту ключ (whsec_…) як змінну середовища в розділі «Доступи»."
   }
 }

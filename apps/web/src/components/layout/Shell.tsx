@@ -34,6 +34,7 @@ import ShellOverlays from '@/components/layout/ShellOverlays';
 import WorkspaceLayoutHost from '@/components/layout/WorkspaceLayoutHost';
 import SettingsModal from '@/features/settings/SettingsModal';
 import AgentDialog from '@/features/settings/AgentDialog';
+import RunOverlay from '@/features/agent-runtime/components/RunOverlay';
 import { openSettingsModal } from '@/features/settings/settingsModalCatalog';
 import HomeDock from '@/components/layout/HomeDock';
 import ProjectLinkSheet from '@/components/layout/ProjectLinkSheet';
@@ -438,6 +439,7 @@ export default function Shell({
               <ShellOverlays project={project} projectKey={projectKey} overlays={overlays} />
               <SettingsModal projectKey={projectKey} projectName={project?.project.name ?? null} />
               <AgentDialog />
+              <RunOverlay />
             </SidebarProvider>
           </ShellHeaderActionsSlotCtx.Provider>
         </ShellHeaderSlotCtx.Provider>

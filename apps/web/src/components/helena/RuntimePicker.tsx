@@ -24,6 +24,7 @@ export default function RuntimePicker({
   models,
   unavailable = [],
   disabled = false,
+  external = false,
   onChange,
 }: {
   runtime: AgentRuntimeKind;
@@ -32,6 +33,9 @@ export default function RuntimePicker({
   models: AiChatModel[];
   unavailable?: UnavailableChatModel[];
   disabled?: boolean;
+  // Also offer "Befehl" (a checked script of the project) and "Webhook" (a signed call to
+  // an outside service); only an agent's own settings do, never a chat.
+  external?: boolean;
   onChange: (runtime: AgentRuntimeKind, model: string | null, reasoning: string | null) => void;
 }) {
   const t = useTranslations('chatWorkspace.runtimePicker');
@@ -44,6 +48,9 @@ export default function RuntimePicker({
       : !entry.local && !entry.id.startsWith('helena-'),
   );
   const selected = runtimeModels.find((entry) => entry.id === model);
+  const withoutModel = runtime === 'command' || runtime === 'webhook';
+  const options: RuntimeChoice[] = ['claude', 'codex', 'local', 'hermes'];
+  if (external || withoutModel) options.push('command', 'webhook');
   const selectRuntime = (next: RuntimeChoice) => {
     if (next === 'local') {
       onChange('hermes', localModels[0]?.id ?? null, null);
@@ -65,7 +72,7 @@ export default function RuntimePicker({
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {(['claude', 'codex', 'local', 'hermes'] as const).map((option) => {
+            {options.map((option) => {
               const reason =
                 option === 'local' && localModels.length === 0 ? t('localMissing') : null;
               return (
@@ -83,66 +90,72 @@ export default function RuntimePicker({
           </SelectContent>
         </Select>
       </div>
-      <div className="space-y-1.5">
-        <span className="text-sm font-medium">{t('model')}</span>
-        <Select
-          value={model ?? '__default__'}
-          onValueChange={(value) => onChange(runtime, value === '__default__' ? null : value, null)}
-          disabled={disabled}
-        >
-          <SelectTrigger aria-label={t('model')}>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="__default__">{t('summary')}</SelectItem>
-            {model && !selected && (
-              <SelectItem value={model} disabled>
-                {model} ·{' '}
-                {unavailable.find((entry) => entry.id === model)?.detail ?? t('unavailable')}
-              </SelectItem>
-            )}
-            {unavailable
-              .filter((entry) => entry.id !== model)
-              .map((entry) => (
-                <SelectItem
-                  key={entry.id}
-                  value={entry.id}
-                  disabled
-                  title={entry.detail ?? undefined}
-                >
-                  {entry.id} · {entry.detail ?? t('unavailable')}
+      {!withoutModel && (
+        <div className="space-y-1.5">
+          <span className="text-sm font-medium">{t('model')}</span>
+          <Select
+            value={model ?? '__default__'}
+            onValueChange={(value) =>
+              onChange(runtime, value === '__default__' ? null : value, null)
+            }
+            disabled={disabled}
+          >
+            <SelectTrigger aria-label={t('model')}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__default__">{t('summary')}</SelectItem>
+              {model && !selected && (
+                <SelectItem value={model} disabled>
+                  {model} ·{' '}
+                  {unavailable.find((entry) => entry.id === model)?.detail ?? t('unavailable')}
+                </SelectItem>
+              )}
+              {unavailable
+                .filter((entry) => entry.id !== model)
+                .map((entry) => (
+                  <SelectItem
+                    key={entry.id}
+                    value={entry.id}
+                    disabled
+                    title={entry.detail ?? undefined}
+                  >
+                    {entry.id} · {entry.detail ?? t('unavailable')}
+                  </SelectItem>
+                ))}
+              {runtimeModels.map((entry) => (
+                <SelectItem key={entry.id} value={entry.id}>
+                  {entry.name}
                 </SelectItem>
               ))}
-            {runtimeModels.map((entry) => (
-              <SelectItem key={entry.id} value={entry.id}>
-                {entry.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-      <div className="space-y-1.5">
-        <span className="text-sm font-medium">{t('reasoning')}</span>
-        <Select
-          value={reasoning ?? '__default__'}
-          onValueChange={(value) =>
-            onChange(runtime, model, value === '__default__' ? null : value)
-          }
-          disabled={disabled || !selected}
-        >
-          <SelectTrigger aria-label={t('reasoning')}>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="__default__">{t('summary')}</SelectItem>
-            {selected?.thinkingLevels.map((level) => (
-              <SelectItem key={level} value={level}>
-                {level}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+      {!withoutModel && (
+        <div className="space-y-1.5">
+          <span className="text-sm font-medium">{t('reasoning')}</span>
+          <Select
+            value={reasoning ?? '__default__'}
+            onValueChange={(value) =>
+              onChange(runtime, model, value === '__default__' ? null : value)
+            }
+            disabled={disabled || !selected}
+          >
+            <SelectTrigger aria-label={t('reasoning')}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__default__">{t('summary')}</SelectItem>
+              {selected?.thinkingLevels.map((level) => (
+                <SelectItem key={level} value={level}>
+                  {level}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
     </div>
   );
 }

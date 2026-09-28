@@ -65,7 +65,8 @@
       "running": "In progress",
       "done": "Done",
       "failed": "Failed"
-    }
+    },
+    "spent": "Consommation"
   },
   "sessions": {
     "search": "Rechercher dans toutes les sessions",

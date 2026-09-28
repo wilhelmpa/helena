@@ -65,7 +65,8 @@
       "running": "In progress",
       "done": "Done",
       "failed": "Failed"
-    }
+    },
+    "spent": "消耗"
   },
   "sessions": {
     "search": "搜索所有会话",

@@ -65,7 +65,8 @@
       "running": "In progress",
       "done": "Done",
       "failed": "Failed"
-    }
+    },
+    "spent": "Spent"
   },
   "sessions": {
     "search": "Search every session",

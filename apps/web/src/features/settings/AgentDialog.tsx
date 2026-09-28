@@ -15,8 +15,11 @@ let pushedEntry = false;
 
 function hrefWith(agentId: number | null) {
   const url = new URL(window.location.href);
-  if (agentId == null) url.searchParams.delete(AGENT_PARAM);
-  else url.searchParams.set(AGENT_PARAM, String(agentId));
+  if (agentId == null) {
+    url.searchParams.delete(AGENT_PARAM);
+    url.searchParams.delete('agentTab');
+    url.searchParams.delete('agentRunId');
+  } else url.searchParams.set(AGENT_PARAM, String(agentId));
   return `${url.pathname}${url.search}${url.hash}`;
 }
 
@@ -82,6 +85,12 @@ export default function AgentDialog() {
     return () => window.removeEventListener(AGENT_DIALOG_OPEN, onOpen);
   }, [go]);
 
+  // The old agent page linked a tab and a run as `tab`/`run` (/agents?agent=7&tab=runs&run=1).
+  const legacy = (key: string) =>
+    typeof window !== 'undefined' && window.location.pathname.startsWith('/agents')
+      ? params.get(key)
+      : null;
+
   if (fromUrl == null || teamId == null) return null;
   return (
     <Modal
@@ -100,7 +109,12 @@ export default function AgentDialog() {
       <ShellHeaderSlotCtx.Provider value={null}>
         <ShellHeaderActionsSlotCtx.Provider value={null}>
           <div className="ds-agent-dialog-body">
-            <AgentSettingsModalContent teamId={teamId} agentId={fromUrl} />
+            <AgentSettingsModalContent
+              teamId={teamId}
+              agentId={fromUrl}
+              tab={params.get('agentTab') ?? legacy('tab') ?? undefined}
+              runId={Number(params.get('agentRunId') ?? legacy('run')) || null}
+            />
           </div>
         </ShellHeaderActionsSlotCtx.Provider>
       </ShellHeaderSlotCtx.Provider>

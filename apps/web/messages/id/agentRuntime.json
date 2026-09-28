@@ -65,7 +65,8 @@
       "running": "In progress",
       "done": "Done",
       "failed": "Failed"
-    }
+    },
+    "spent": "Pemakaian"
   },
   "sessions": {
     "search": "Cari di semua sesi",

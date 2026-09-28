@@ -265,6 +265,13 @@
     "confirm": "Confirm and start new chat",
     "via": "via",
     "unknownRuntime": "Unknown runtime",
-    "unknownModel": "Unknown model"
+    "unknownModel": "Unknown model",
+    "command": "Comando",
+    "webhook": "Webhook",
+    "commandScript": "Script do projeto",
+    "commandScriptHint": "Caminho relativo à pasta do projeto. O script recebe a tarefa em JSON e roda na área isolada do projeto; a saída é o resultado.",
+    "webhookUrl": "Endereço (HTTPS)",
+    "webhookSecretEnv": "Variável com a chave de assinatura",
+    "webhookHint": "A Helena chama o endereço assinado conforme Standard Webhooks. Dê a chave (whsec_…) ao agente como variável de ambiente em Acessos."
   }
 }

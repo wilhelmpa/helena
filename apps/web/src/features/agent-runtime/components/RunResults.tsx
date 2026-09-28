@@ -1,65 +1,62 @@
 import { ExternalLink, File, GitPullRequest, Image, Monitor } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { RunDetail } from '@/lib/api/endpoints/agentRuntime';
-import { Card } from '@/components/helena/Card';
 
 const icons = { file: File, preview: Monitor, pr: GitPullRequest, screenshot: Image };
 
+// What a run delivered, first (owner P6): its closing answer, then one card per result it
+// reported or that was found — a file, a preview, a pull request, a screenshot. A card
+// with a web address opens it.
 export default function RunResults({ run }: { run: RunDetail }) {
   const t = useTranslations('agentRuntime.runs');
   return (
-    <section aria-labelledby="run-results-title" className="space-y-3">
-      <h2 id="run-results-title" className="text-sm font-semibold">
-        {t('results')}
-      </h2>
+    <div className="ds-run-results">
       {run.output ? (
-        <p className="text-sm whitespace-pre-wrap" dir="auto">
+        <p className="ds-run-summary" dir="auto">
           {run.output}
         </p>
       ) : (
-        <p className="text-sm text-muted-foreground">{t('noSummary')}</p>
+        <p className="ds-run-note">{t('noSummary')}</p>
       )}
       {run.outputs.length > 0 ? (
-        <div className="grid gap-2 sm:grid-cols-2">
+        <div className="ds-run-cards">
           {run.outputs.map((output) => {
             const Icon = icons[output.kind];
             const link = /^https?:\/\//i.test(output.target);
             const content = (
               <>
-                <Icon aria-hidden="true" className="size-4 shrink-0" />
-                <span className="min-w-0 flex-1">
-                  <span className="block text-xs text-muted-foreground">
-                    {t(`outputKind.${output.kind}`)}
-                  </span>
-                  <span className="block truncate text-sm font-medium" title={output.target}>
+                <span className="ds-run-card-icon">
+                  <Icon aria-hidden="true" size={16} />
+                </span>
+                <span className="ds-run-card-text">
+                  <span className="ds-mono-label">{t(`outputKind.${output.kind}`)}</span>
+                  <span className="ds-run-card-title" title={output.target}>
                     {output.title}
                   </span>
                 </span>
-                {link && <ExternalLink aria-hidden="true" className="size-4 shrink-0" />}
+                {link && <ExternalLink aria-hidden="true" size={14} />}
               </>
             );
-            const className = 'flex min-w-0 flex-row items-center gap-3 p-3';
             return link ? (
-              <Card key={output.id} className={className}>
-                <a
-                  className="flex min-w-0 flex-1 items-center gap-3"
-                  href={output.target}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  {content}
-                </a>
-              </Card>
-            ) : (
-              <Card key={output.id} className={className}>
+              <a
+                key={output.id}
+                className="ds-run-card"
+                href={output.target}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
                 {content}
-              </Card>
+              </a>
+            ) : (
+              <div key={output.id} className="ds-run-card">
+                {content}
+              </div>
             );
           })}
         </div>
       ) : (
-        <p className="text-sm text-muted-foreground">{t('noOutputs')}</p>
+        <p className="ds-run-note">{t('noOutputs')}</p>
       )}
-    </section>
+    </div>
   );
 }

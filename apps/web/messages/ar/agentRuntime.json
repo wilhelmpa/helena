@@ -65,7 +65,8 @@
       "running": "In progress",
       "done": "Done",
       "failed": "Failed"
-    }
+    },
+    "spent": "الاستهلاك"
   },
   "sessions": {
     "search": "البحث في كل الجلسات",
