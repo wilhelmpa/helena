@@ -21,6 +21,7 @@ import { Button } from '@/components/ui/button';
 import ProjectPreviewControl from '@/components/common/project-previews/ProjectPreviewControl';
 import WorkspaceBrowserBookmarks from './WorkspaceBrowserBookmarks';
 import WorkspaceBrowserControlStatus from './WorkspaceBrowserControlStatus';
+import WorkspaceBrowserColorScheme, { type BrowserColorMode } from './WorkspaceBrowserColorScheme';
 import WorkspaceBrowserStreamMenu from './WorkspaceBrowserStreamMenu';
 import WorkspaceBrowserViewSwitch from './WorkspaceBrowserViewSwitch';
 
@@ -38,6 +39,9 @@ export default function WorkspaceBrowserBar({
   onToggleLossless,
   externalUrl,
   onReloadFrame,
+  colorMode,
+  colorModeLoaded,
+  onColorModeChange,
 }: {
   base: string;
   // The project whose Inbox a saved page goes to; Home's without one.
@@ -50,6 +54,9 @@ export default function WorkspaceBrowserBar({
   onToggleLossless: () => void;
   externalUrl: string | null;
   onReloadFrame: () => void;
+  colorMode: BrowserColorMode;
+  colorModeLoaded: boolean;
+  onColorModeChange: (mode: BrowserColorMode) => void;
 }) {
   const t = useTranslations('nav.workspace.browserBar');
   const tWorkspace = useTranslations('nav.workspace');
@@ -135,6 +142,11 @@ export default function WorkspaceBrowserBar({
         />
       </form>
       {view !== 'live' && <WorkspaceBrowserControlStatus base={base} />}
+      <WorkspaceBrowserColorScheme
+        mode={colorMode}
+        loaded={colorModeLoaded}
+        onModeChange={onColorModeChange}
+      />
       <Button
         variant="ghost"
         size="icon"

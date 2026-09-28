@@ -9,7 +9,7 @@
 // high-density screen gets frames one to one, and window sizes, the screen and CDP input are
 // in CSS pixels (DIP) all the same. The keeper reads the factor from the window it measures
 // (readWindowSizes), so a Chromium started without the flag is kept at factor 1, as before.
-// The pages are not emulated, except while a page too small for the agent's screenshots at
+// Page dimensions are not emulated, except while a page too small for the agent's screenshots at
 // factor 2 is pinned to factor 1 (see BrowserLink.pin). The earlier emulation of ratio 2 with
 // Emulation.setDeviceMetricsOverride's scale halved the position of every CDP mouse event
 // (measured on the bench: a click at 400,300 reached the page at 200,150), the viewer's and
@@ -215,6 +215,8 @@ export class BrowserLink {
     // to. A page this link has never touched may still be emulated by another DevTools client,
     // so only an explicit entry here, not its absence, says what the page is at.
     this.pins = new Map();
+    this.colorSchemes = new Map();
+    this.colorScheme = null;
     // The tab strip and toolbar of the window last fitted, in DIP, and the display pixels
     // per DIP the browser draws at.
     this.chrome = null;
@@ -233,6 +235,7 @@ export class BrowserLink {
         this.connection = connection;
         this.sessions.clear();
         this.pins.clear();
+        this.colorSchemes.clear();
         this.captureTarget = null;
         this.chrome = null;
         this.scale = 1;
@@ -252,7 +255,7 @@ export class BrowserLink {
     return run;
   }
 
-  async send(targetId, method, params, valid = () => true) {
+  async mediaSession(targetId, valid = () => true) {
     const connection = await this.open();
     if (!valid()) return SKIPPED_COMMAND;
     let sessionId = this.sessions.get(targetId);
@@ -261,6 +264,20 @@ export class BrowserLink {
       this.sessions.set(targetId, sessionId);
     }
     if (!valid()) return SKIPPED_COMMAND;
+    if (this.colorScheme && this.colorSchemes.get(targetId) !== this.colorScheme) {
+      const scheme = this.colorScheme;
+      await connection.send("Emulation.setEmulatedMedia", {
+        features: [{ name: "prefers-color-scheme", value: scheme }],
+      }, sessionId);
+      this.colorSchemes.set(targetId, scheme);
+    }
+    return { connection, sessionId };
+  }
+
+  async send(targetId, method, params, valid = () => true) {
+    const session = await this.mediaSession(targetId, valid);
+    if (session === SKIPPED_COMMAND) return SKIPPED_COMMAND;
+    const { connection, sessionId } = session;
     return connection.send(method, params, sessionId);
   }
 
@@ -326,6 +343,7 @@ export class BrowserLink {
   keep(targetIds) {
     for (const id of this.sessions.keys()) if (!targetIds.has(id)) this.sessions.delete(id);
     for (const id of this.pins.keys()) if (!targetIds.has(id)) this.pins.delete(id);
+    for (const id of this.colorSchemes.keys()) if (!targetIds.has(id)) this.colorSchemes.delete(id);
   }
 
   close() {
@@ -366,6 +384,21 @@ function linkFor(port) {
     links.set(port, link);
   }
   return link;
+}
+
+// The media preference is independent of the viewport emulation used for agent screenshots.
+// Apply it to open pages now; BrowserLink.send applies it to newly attached pages later.
+export async function setBrowserColorScheme(port, scheme) {
+  if (scheme !== "light" && scheme !== "dark") throw new BrowserControlError(400, "Invalid color scheme");
+  const link = linkFor(port);
+  link.colorScheme = scheme;
+  return link.serial(async () => {
+    const connection = await link.open();
+    const { targetInfos = [] } = await connection.send("Target.getTargets");
+    const pages = targetInfos.filter((target) => target.type === "page");
+    link.keep(new Set(pages.map((page) => page.targetId)));
+    await Promise.all(pages.map((page) => link.mediaSession(page.targetId)));
+  });
 }
 
 // The title browser-harness puts in front of the tab the agent works in, while its session is
@@ -750,8 +783,9 @@ async function fitWindowsNow(link) {
 
 // Runs fitWindows for every project browser once per interval. A browser that cannot be
 // reached is tried again on the next pass with a new connection.
-export function startWindowKeeper({ listBrowsers, intervalMs = 1_000, log = () => {} }) {
+export function startWindowKeeper({ listBrowsers, prepare, intervalMs = 1_000, log = () => {} }) {
   const lastErrors = new Map();
+  const prepared = new Set();
   let stopped = false;
   let running = false;
 
@@ -769,11 +803,17 @@ export function startWindowKeeper({ listBrowsers, intervalMs = 1_000, log = () =
           screenRequested.delete(port);
           calibrationAllowed.delete(port);
           calibrationVersions.delete(port);
+          prepared.delete(port);
         }
       }
-      for (const { cdpPort } of current) {
+      for (const browser of current) {
+        const { cdpPort } = browser;
         const link = linkFor(cdpPort);
         try {
+          if (!prepared.has(cdpPort)) {
+            await prepare?.(browser);
+            prepared.add(cdpPort);
+          }
           await fitWindows(link);
           lastErrors.delete(cdpPort);
         } catch (error) {

@@ -88,6 +88,9 @@
     "unavailableDescription": "Адміністратор може підключити цей робочий простір до інстансу.",
     "mail": "Написати",
     "browserBar": {
+      "colorScheme": "Колірна схема",
+      "colorSchemeHelena": "Як у Helena",
+      "colorSchemeLight": "Завжди світла",
       "address": "Адреса",
       "back": "Назад",
       "forward": "Вперед",

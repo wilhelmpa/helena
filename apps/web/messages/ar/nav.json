@@ -88,6 +88,9 @@
     "unavailableDescription": "يمكن للمسؤول ربط مساحة العمل هذه بالنسخة.",
     "mail": "إنشاء رسالة",
     "browserBar": {
+      "colorScheme": "مظهر الصفحات",
+      "colorSchemeHelena": "مثل هيلينا",
+      "colorSchemeLight": "فاتح دائمًا",
       "address": "العنوان",
       "back": "رجوع",
       "forward": "تقدم",

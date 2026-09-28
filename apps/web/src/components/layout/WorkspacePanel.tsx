@@ -255,6 +255,9 @@ export default function WorkspacePanel({
         const key = visible.find((entry) => entry.id === 'browser')?.key;
         if (key) setFrameReloads((current) => ({ ...current, [key]: (current[key] ?? 0) + 1 }));
       }}
+      colorMode={browserColorScheme.mode}
+      colorModeLoaded={browserColorScheme.loaded}
+      onColorModeChange={browserColorScheme.setMode}
     />
   ) : undefined;
 

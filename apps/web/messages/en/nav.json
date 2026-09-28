@@ -91,6 +91,9 @@
     "unavailableDescription": "An administrator can connect this workspace for the instance.",
     "mail": "Compose",
     "browserBar": {
+      "colorScheme": "Page color scheme",
+      "colorSchemeHelena": "Like Helena",
+      "colorSchemeLight": "Always light",
       "address": "Address",
       "back": "Back",
       "forward": "Forward",

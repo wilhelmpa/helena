@@ -88,6 +88,9 @@
     "unavailableDescription": "Um administrador pode conectar este espaço de trabalho à instância.",
     "mail": "Escrever",
     "browserBar": {
+      "colorScheme": "Esquema de cores",
+      "colorSchemeHelena": "Como Helena",
+      "colorSchemeLight": "Sempre claro",
       "address": "Endereço",
       "back": "Voltar",
       "forward": "Avançar",
