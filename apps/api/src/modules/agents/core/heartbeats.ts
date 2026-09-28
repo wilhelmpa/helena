@@ -3,7 +3,7 @@ import { and, asc, eq, inArray, isNull, lte, ne, or, sql } from 'drizzle-orm';
 import { enqueueAgentRun } from './run-queue';
 import { isHeartbeatWorkTime, nextHeartbeatAt } from './heartbeat-time';
 import { classSetting, decide } from '#modules/decisions/service';
-import { HEARTBEAT_PRECHECK_CLASS, LOCAL_DECISION_MODEL } from '#modules/decisions/classes';
+import { HEARTBEAT_PRECHECK_CLASS } from '#modules/decisions/classes';
 import { heartbeatPrecheckQuestions } from '#modules/decisions/questions';
 import { isBorderlineHeartbeat, type HeartbeatCandidate } from './heartbeat-precheck';
 import { heartbeatBudgetThrottled } from '#modules/autopilot/budgets';
@@ -37,7 +37,7 @@ async function precheckHeartbeat(input: {
     });
     const answer = outcome.answers.work;
     const recommendsSkip =
-      outcome.model === LOCAL_DECISION_MODEL && answer?.decided && answer.choice === 'no';
+      outcome.status === 'decided' && answer?.decided && answer.choice === 'no';
     const [first] = outcome.credentialId
       ? await db
           .select({ createdAt: helenaDecision.createdAt })

@@ -1461,15 +1461,22 @@
     {
       "idx": 209,
       "version": "7",
-      "when": 1790623828130,
+      "when": 1790626673728,
       "tag": "0209_paperclip_building_blocks",
       "breakpoints": true
     },
     {
       "idx": 210,
       "version": "7",
-      "when": 1790620000000,
+      "when": 1790626687034,
       "tag": "0210_openclaw_building_blocks",
+      "breakpoints": true
+    },
+    {
+      "idx": 211,
+      "version": "7",
+      "when": 1790627564327,
+      "tag": "0211_telegram_pairing_identity",
       "breakpoints": true
     }
   ]

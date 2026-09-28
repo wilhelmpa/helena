@@ -30,6 +30,8 @@ import {
 // Freigaben to raise the budget or let the work continue once. Replaces the token ceilings
 // of governance.ts, whose values the migration copied here.
 
+type Database = typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0];
+
 export type BudgetRow = typeof helenaBudget.$inferSelect;
 
 export const WARN_RATIO = 0.8;
@@ -218,8 +220,8 @@ interface AgentFacts {
   pauseReason: string | null;
 }
 
-async function agentFacts(agentId: number): Promise<AgentFacts | null> {
-  const [row] = await db
+async function agentFacts(agentId: number, database: Database = db): Promise<AgentFacts | null> {
+  const [row] = await database
     .select({
       id: aiAgent.id,
       teamId: aiAgent.teamId,
@@ -280,8 +282,12 @@ async function departmentOfWork(
 }
 
 // Pauses the agent unless it already is. True when this call paused it.
-export async function pauseForBudget(agentId: number, reason: string): Promise<boolean> {
-  const rows = await db
+export async function pauseForBudget(
+  agentId: number,
+  reason: string,
+  database: Database = db,
+): Promise<boolean> {
+  const rows = await database
     .update(aiAgent)
     .set({ pausedAt: new Date(), pauseReason: reason })
     .where(and(eq(aiAgent.id, agentId), isNull(aiAgent.pausedAt)))
@@ -294,9 +300,10 @@ async function claimOnce(
   id: number,
   column: 'warnedFor' | 'reachedFor',
   start: Date,
+  database: Database = db,
 ): Promise<boolean> {
   const target = column === 'warnedFor' ? helenaBudget.warnedFor : helenaBudget.reachedFor;
-  const rows = await db
+  const rows = await database
     .update(helenaBudget)
     .set({ [column]: start, updatedAt: new Date() })
     .where(
@@ -317,8 +324,9 @@ async function fileBudgetCard(
   projectId: number,
   issueId: number | null,
   reason: string,
+  database: Database,
 ): Promise<void> {
-  const [pending] = await db
+  const [pending] = await database
     .select({ id: approvalRequest.id })
     .from(approvalRequest)
     .where(
@@ -329,7 +337,7 @@ async function fileBudgetCard(
       ),
     );
   if (pending) return;
-  await db.insert(approvalRequest).values({
+  await database.insert(approvalRequest).values({
     projectId,
     agentId,
     issueId,
@@ -352,8 +360,8 @@ async function fileBudgetCard(
     },
   });
   if (issueId != null) {
-    const agent = await agentFacts(agentId);
-    const members = await db
+    const agent = await agentFacts(agentId, database);
+    const members = await database
       .select({
         userId: projectMember.userId,
         role: projectMember.role,
@@ -365,7 +373,7 @@ async function fileBudgetCard(
       ? [preferred]
       : members.filter((member) => member.role === 'owner');
     if (recipients.length > 0)
-      await db.insert(notification).values(
+      await database.insert(notification).values(
         recipients.map((recipient) => ({
           userId: recipient.userId,
           projectId,
@@ -427,7 +435,6 @@ export async function enforceBudgets(
 
   const first = blocking.find((status) => status.scope === 'agent') ?? blocking[0]!;
   const reason = budgetReason(first, key, department?.name);
-  const paused = first.scope === 'agent' ? await pauseForBudget(agentId, reason) : false;
   // Home chats have no execution project, but their reached department budget still
   // needs an Inbox card. Prefer the team's Home project, then its first project.
   let noticeProjectId = projectId;
@@ -440,9 +447,16 @@ export async function enforceBudgets(
       .limit(1);
     noticeProjectId = home?.id ?? null;
   }
-  if (noticeProjectId == null) return reason;
-  const filed = await claimOnce(first.id, 'reachedFor', new Date(first.periodStart));
-  if (filed) await fileBudgetCard(first, agentId, noticeProjectId, issueId, reason);
+  if (noticeProjectId == null) {
+    if (first.scope === 'agent') await pauseForBudget(agentId, reason);
+    return reason;
+  }
+  const { paused, filed } = await db.transaction(async (tx) => {
+    const filed = await claimOnce(first.id, 'reachedFor', new Date(first.periodStart), tx);
+    const paused = first.scope === 'agent' ? await pauseForBudget(agentId, reason, tx) : false;
+    if (filed) await fileBudgetCard(first, agentId, noticeProjectId, issueId, reason, tx);
+    return { paused, filed };
+  });
   if ((paused || filed) && issueId != null) {
     const handles = await noticeRecipients(
       noticeProjectId,
@@ -495,7 +509,17 @@ export async function useGrace(
   try {
     await db.transaction(async (tx) => {
       for (const status of statuses.filter((s) => s.reached).sort((a, b) => a.id - b.id)) {
-        if (status.graceRunIds.includes(runId)) continue;
+        const [current] = await tx
+          .select()
+          .from(helenaBudget)
+          .where(eq(helenaBudget.id, status.id))
+          .for('update');
+        if (!current) continue;
+        if (
+          sameStart(current.graceFor, new Date(status.periodStart)) &&
+          current.graceRunIds?.includes(runId)
+        )
+          continue;
         const rows = await tx
           .update(helenaBudget)
           .set({
@@ -578,10 +602,7 @@ export async function budgetExhausted(
   });
   return (
     statuses.find(
-      (status) =>
-        status.reached &&
-        status.graceRuns === 0 &&
-        !(runId != null && status.graceRunIds.includes(runId)),
+      (status) => status.reached && !(runId != null && status.graceRunIds.includes(runId)),
     ) ?? null
   );
 }
@@ -702,8 +723,10 @@ export async function continueOnce(budgetId: number): Promise<BudgetRow> {
     .update(helenaBudget)
     .set({
       graceFor: start,
-      graceRuns: sameStart(row.graceFor, start) ? sql`${helenaBudget.graceRuns} + 1` : 1,
-      graceRunIds: sameStart(row.graceFor, start) ? row.graceRunIds : [],
+      graceRuns: sql`CASE WHEN ${helenaBudget.graceFor} = ${start.toISOString()}::timestamptz
+        THEN ${helenaBudget.graceRuns} + 1 ELSE 1 END`,
+      graceRunIds: sql`CASE WHEN ${helenaBudget.graceFor} = ${start.toISOString()}::timestamptz
+        THEN ${helenaBudget.graceRunIds} ELSE '[]'::jsonb END`,
       // Reached again after that run, the budget files a new card.
       reachedFor: null,
       updatedAt: new Date(),

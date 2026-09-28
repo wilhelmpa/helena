@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'bun:test';
+import { describe, expect, it, spyOn } from 'bun:test';
 import { randomUUID } from 'node:crypto';
 import {
   db,
@@ -54,7 +54,9 @@ describe('Telegram channel with fake Bot API', () => {
 
     const userId = randomUUID();
     await db.insert(user).values({ id: userId, name: 'Tester', email: `${userId}@example.test` });
+    const pairingId = randomUUID();
     await db.insert(userTelegramAccount).values({
+      pairingId,
       userId,
       chatId: String(telegramId),
       telegramUserId: String(telegramId),
@@ -74,6 +76,7 @@ describe('Telegram channel with fake Bot API', () => {
       .insert(telegramChannelEvent)
       .values({
         botId: '99',
+        pairingId,
         updateId: updateId + 1,
         userId,
         kind: 'message',
@@ -148,4 +151,53 @@ describe('Telegram channel with fake Bot API', () => {
     await db.delete(helenaAlert).where(eq(helenaAlert.key, alertKey));
     await db.delete(user).where(eq(user.id, userId));
   });
+});
+
+it('continues delivery after a blocked chat and never logs the token from errors', async () => {
+  const ids = [randomUUID(), randomUUID()];
+  const chats = ids.map((_, i) => String(Math.floor(Math.random() * 100_000_000) + i + 1));
+  for (const [i, id] of ids.entries()) {
+    const pairingId = randomUUID();
+    await db.insert(user).values({ id, name: 'Delivery tester', email: `${id}@example.test` });
+    await db.insert(userTelegramAccount).values({
+      userId: id,
+      pairingId,
+      chatId: chats[i],
+      telegramUserId: chats[i],
+      linkedAt: new Date(),
+    });
+    await db.insert(telegramChannelEvent).values({
+      botId: id,
+      pairingId,
+      updateId: 1,
+      userId: id,
+      kind: 'message',
+      state: 'done',
+      responseText: 'Hello',
+    });
+  }
+  const logged: unknown[][] = [];
+  const logger = spyOn(console, 'error').mockImplementation((...args) => {
+    logged.push(args);
+  });
+  const bot = createBot('fake:token');
+  const delivered: string[] = [];
+  bot.api.config.use(async (_next, method, payload) => {
+    if (method === 'sendMessage') {
+      const chat = String((payload as { chat_id: string }).chat_id);
+      if (chat === chats[0])
+        throw new Error('https://api.telegram.org/botfake:token/sendMessage failed');
+      delivered.push(chat);
+    }
+    return { ok: true, result: true } as never;
+  });
+  try {
+    await deliverPending(bot);
+    expect(delivered).toContain(chats[1]!);
+    expect(logged.length).toBeGreaterThan(0);
+    expect(JSON.stringify(logged)).not.toContain('fake:token');
+  } finally {
+    logger.mockRestore();
+    for (const id of ids) await db.delete(user).where(eq(user.id, id));
+  }
 });

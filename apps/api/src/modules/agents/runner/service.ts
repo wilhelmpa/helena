@@ -666,6 +666,37 @@ export function heldBy(agentId: number, runId: number, claim: number | undefined
   );
 }
 
+type RunTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+async function lockHeldRun(
+  tx: RunTransaction,
+  agentId: number,
+  runId: number,
+  claim: number | undefined,
+) {
+  const [run] = await tx
+    .select({ issueId: agentRun.issueId })
+    .from(agentRun)
+    .where(heldBy(agentId, runId, claim))
+    .for('update');
+  if (!run) return null;
+  if (run.issueId != null) {
+    const [lease] = await tx
+      .select({ id: issueWorkClaim.issueId })
+      .from(issueWorkClaim)
+      .where(
+        and(
+          eq(issueWorkClaim.issueId, run.issueId),
+          eq(issueWorkClaim.runId, runId),
+          claim === undefined ? undefined : eq(issueWorkClaim.claim, claim),
+        ),
+      )
+      .for('update');
+    if (!lease) return null;
+  }
+  return run;
+}
+
 // Extends a claimed run's lease while the runner is still working on it. A command
 // can outlive the lease by far, so the runner sends this periodically; without it the
 // run would be handed to another runner mid-flight. A lease that ran out is extended as
@@ -679,10 +710,7 @@ export async function heartbeatRun(
 ): Promise<RunAck | null> {
   await touchRunner(agentId);
   const rows = await db.transaction(async (tx) => {
-    const [run] = await tx
-      .select({ issueId: agentRun.issueId })
-      .from(agentRun)
-      .where(heldBy(agentId, runId, claim));
+    const run = await lockHeldRun(tx, agentId, runId, claim);
     if (!run) return [];
     if (run.issueId != null) {
       const renewed = await tx
@@ -725,12 +753,15 @@ export async function reportRunSession(
   claim: number | undefined,
   sessionId: string,
 ): Promise<boolean> {
-  const rows = await db
-    .update(agentRun)
-    .set({ sessionId })
-    .where(heldBy(agentId, runId, claim))
-    .returning({ id: agentRun.id });
-  return rows.length > 0;
+  return db.transaction(async (tx) => {
+    if (!(await lockHeldRun(tx, agentId, runId, claim))) return false;
+    const rows = await tx
+      .update(agentRun)
+      .set({ sessionId })
+      .where(heldBy(agentId, runId, claim))
+      .returning({ id: agentRun.id });
+    return rows.length > 0;
+  });
 }
 
 // Hands a claimed run back to the queue without spending the attempt, for a runner that
@@ -740,6 +771,7 @@ export async function reportRunSession(
 export async function releaseRun(agentId: number, runId: number, claim: number): Promise<boolean> {
   await touchRunner(agentId);
   return db.transaction(async (tx) => {
+    if (!(await lockHeldRun(tx, agentId, runId, claim))) return false;
     const rows = await tx
       .update(agentRun)
       .set({ attempts: sql`${agentRun.attempts} - 1`, nextAttemptAt: sql`now()` })
@@ -886,6 +918,7 @@ export async function finishRun(
   );
   const blocked = sql`${agentRun.blockedQuestion} IS NOT NULL`;
   const rows = await db.transaction(async (tx) => {
+    if (!(await lockHeldRun(tx, agent.id, runId, claim))) return [];
     const finished = await tx
       .update(agentRun)
       .set({

@@ -1,6 +1,9 @@
+import { randomUUID } from 'node:crypto';
 import { and, eq, gt, ne, isNull, isNotNull, inArray, or, asc, sql } from 'drizzle-orm';
 import {
   db,
+  projectMember,
+  user,
   userTelegramAccount,
   telegramChannelEvent,
   telegramApprovalNotice,
@@ -29,50 +32,58 @@ export type ConfirmLinkResult =
 // unknown, already-used, or expired code — the user is told to start again either
 // way. 'taken' means this Telegram account is already linked to someone else.
 export async function confirmTelegramLink(input: ConfirmLinkInput): Promise<ConfirmLinkResult> {
-  const rows = await db
-    .select({ userId: userTelegramAccount.userId })
-    .from(userTelegramAccount)
-    .where(
-      and(
-        eq(userTelegramAccount.linkCode, input.code),
-        gt(userTelegramAccount.linkCodeExpiresAt, new Date()),
-      ),
+  if (!/^[1-9][0-9]*$/.test(input.telegramUserId) || input.chatId !== input.telegramUserId)
+    return { ok: false, reason: 'invalid' };
+  return db.transaction(async (tx) => {
+    await tx.execute(
+      sql`SELECT pg_advisory_xact_lock(hashtextextended(${`telegram-pair:${input.telegramUserId}`}, 0))`,
     );
-  const pending = rows[0];
-  if (!pending) return { ok: false, reason: 'invalid' };
+    const rows = await tx
+      .select({ userId: userTelegramAccount.userId })
+      .from(userTelegramAccount)
+      .where(
+        and(
+          eq(userTelegramAccount.linkCode, input.code),
+          gt(userTelegramAccount.linkCodeExpiresAt, new Date()),
+        ),
+      );
+    const pending = rows[0];
+    if (!pending) return { ok: false, reason: 'invalid' };
 
-  const conflict = await db
-    .select({ userId: userTelegramAccount.userId })
-    .from(userTelegramAccount)
-    .where(
-      and(
-        eq(userTelegramAccount.telegramUserId, input.telegramUserId),
-        ne(userTelegramAccount.userId, pending.userId),
-      ),
-    );
-  if (conflict.length > 0) return { ok: false, reason: 'taken' };
+    const conflict = await tx
+      .select({ userId: userTelegramAccount.userId })
+      .from(userTelegramAccount)
+      .where(
+        and(
+          eq(userTelegramAccount.telegramUserId, input.telegramUserId),
+          ne(userTelegramAccount.userId, pending.userId),
+        ),
+      );
+    if (conflict.length > 0) return { ok: false, reason: 'taken' };
 
-  const linked = await db
-    .update(userTelegramAccount)
-    .set({
-      chatId: input.chatId,
-      telegramUserId: input.telegramUserId,
-      currentThreadId: null,
-      username: input.username,
-      firstName: input.firstName,
-      linkedAt: new Date(),
-      linkCode: null,
-      linkCodeExpiresAt: null,
-    })
-    .where(
-      and(
-        eq(userTelegramAccount.userId, pending.userId),
-        eq(userTelegramAccount.linkCode, input.code),
-        gt(userTelegramAccount.linkCodeExpiresAt, new Date()),
-      ),
-    )
-    .returning({ userId: userTelegramAccount.userId });
-  return linked[0] ? { ok: true, userId: linked[0].userId } : { ok: false, reason: 'invalid' };
+    const linked = await tx
+      .update(userTelegramAccount)
+      .set({
+        chatId: input.chatId,
+        telegramUserId: input.telegramUserId,
+        pairingId: randomUUID(),
+        currentThreadId: null,
+        username: input.username,
+        firstName: input.firstName,
+        linkedAt: new Date(),
+        linkCode: null,
+        linkCodeExpiresAt: null,
+      })
+      .where(
+        and(
+          eq(userTelegramAccount.userId, pending.userId),
+          eq(userTelegramAccount.linkCode, input.code),
+          gt(userTelegramAccount.linkCodeExpiresAt, new Date()),
+        ),
+      )
+      .returning({ userId: userTelegramAccount.userId });
+    return linked[0] ? { ok: true, userId: linked[0].userId } : { ok: false, reason: 'invalid' };
+  });
 }
 
 export async function linkedUser(telegramUserId: string, chatId: string): Promise<string | null> {
@@ -88,16 +99,26 @@ export async function linkedUser(telegramUserId: string, chatId: string): Promis
   return row?.userId ?? null;
 }
 
+interface Sender {
+  telegramUserId: string;
+  chatId: string;
+}
+
 export async function queueTelegramMessage(
   botId: string,
   updateId: number,
   userId: string,
   message: string,
+  sender: Sender,
 ): Promise<void> {
-  await db
-    .insert(telegramChannelEvent)
-    .values({ botId, updateId, userId, kind: 'message', text: message })
-    .onConflictDoNothing({ target: [telegramChannelEvent.botId, telegramChannelEvent.updateId] });
+  await db.execute(sql`
+    INSERT INTO telegram_channel_event (bot_id, update_id, user_id, kind, text, pairing_id)
+    SELECT ${botId}, ${updateId}, user_id, 'message', ${message}, pairing_id
+    FROM user_telegram_account
+    WHERE user_id = ${userId} AND telegram_user_id = ${sender.telegramUserId}
+      AND chat_id = ${sender.chatId} AND linked_at IS NOT NULL
+    ON CONFLICT (bot_id, update_id) DO NOTHING
+  `);
 }
 
 export async function queueTelegramDecision(
@@ -106,24 +127,23 @@ export async function queueTelegramDecision(
   userId: string,
   approvalId: number,
   approved: boolean,
+  sender: Sender,
 ): Promise<boolean> {
-  const [notice] = await db
-    .select({ id: telegramApprovalNotice.id })
-    .from(telegramApprovalNotice)
-    .innerJoin(approvalRequest, eq(approvalRequest.id, telegramApprovalNotice.approvalId))
-    .where(
-      and(
-        eq(telegramApprovalNotice.approvalId, approvalId),
-        eq(telegramApprovalNotice.userId, userId),
-        eq(approvalRequest.status, 'pending'),
-      ),
-    );
-  if (!notice) return false;
-  await db
-    .insert(telegramChannelEvent)
-    .values({ botId, updateId, userId, kind: 'decision', approvalId, approved })
-    .onConflictDoNothing({ target: [telegramChannelEvent.botId, telegramChannelEvent.updateId] });
-  return true;
+  const rows = await db.execute(sql`
+    INSERT INTO telegram_channel_event (bot_id, update_id, user_id, kind, approval_id, approved, pairing_id)
+    SELECT ${botId}, ${updateId}, t.user_id, 'decision', a.id, ${approved}, t.pairing_id
+    FROM telegram_approval_notice n
+    JOIN approval_request a ON a.id = n.approval_id AND a.status = 'pending' AND a.kind <> 'budget'
+    JOIN project_member pm ON pm.project_id = a.project_id AND pm.user_id = n.user_id AND pm.role = 'owner'
+    JOIN user_telegram_account t ON t.user_id = n.user_id
+    WHERE n.approval_id = ${approvalId} AND n.user_id = ${userId}
+      AND t.telegram_user_id = ${sender.telegramUserId} AND t.chat_id = ${sender.chatId}
+      AND t.linked_at IS NOT NULL
+      AND NOT EXISTS (SELECT 1 FROM ai_agent agent WHERE agent.user_id = t.user_id)
+    ON CONFLICT (bot_id, update_id) DO NOTHING
+    RETURNING id
+  `);
+  return rows.length > 0;
 }
 
 export async function pendingTelegramReplies() {
@@ -141,6 +161,8 @@ export async function pendingTelegramReplies() {
     .where(
       and(
         eq(telegramChannelEvent.state, 'done'),
+        isNotNull(userTelegramAccount.telegramUserId),
+        eq(userTelegramAccount.pairingId, telegramChannelEvent.pairingId),
         isNull(telegramChannelEvent.deliveredAt),
         or(
           isNotNull(telegramChannelEvent.responseText),
@@ -171,7 +193,23 @@ export async function pendingApprovalNotices() {
     .from(telegramApprovalNotice)
     .innerJoin(approvalRequest, eq(approvalRequest.id, telegramApprovalNotice.approvalId))
     .innerJoin(userTelegramAccount, eq(userTelegramAccount.userId, telegramApprovalNotice.userId))
-    .where(and(isNull(telegramApprovalNotice.sentAt), eq(approvalRequest.status, 'pending')))
+    .innerJoin(
+      projectMember,
+      and(
+        eq(projectMember.projectId, approvalRequest.projectId),
+        eq(projectMember.userId, userTelegramAccount.userId),
+        eq(projectMember.role, 'owner'),
+      ),
+    )
+    .where(
+      and(
+        isNull(telegramApprovalNotice.sentAt),
+        eq(approvalRequest.status, 'pending'),
+        ne(approvalRequest.kind, 'budget'),
+        isNotNull(userTelegramAccount.telegramUserId),
+        isNotNull(userTelegramAccount.linkedAt),
+      ),
+    )
     .limit(20);
 }
 
@@ -200,6 +238,7 @@ export async function pendingAlertNotices() {
       source: helenaAlert.source,
     })
     .from(telegramAlertNotice)
+    .innerJoin(user, and(eq(user.id, telegramAlertNotice.userId), eq(user.role, 'god')))
     .innerJoin(userTelegramAccount, eq(userTelegramAccount.userId, telegramAlertNotice.userId))
     .innerJoin(
       helenaAlert,
@@ -211,6 +250,8 @@ export async function pendingAlertNotices() {
     .where(
       and(
         isNull(telegramAlertNotice.sentAt),
+        isNotNull(userTelegramAccount.telegramUserId),
+        isNotNull(userTelegramAccount.linkedAt),
         eq(telegramAlertNotice.status, 'pending'),
         isNull(helenaAlert.resolvedAt),
         isNotNull(helenaAlert.notifiedAt),
@@ -242,6 +283,11 @@ export async function decideAlertNotice(
         eq(telegramAlertNotice.id, id),
         eq(telegramAlertNotice.userId, userId),
         eq(telegramAlertNotice.status, 'pending'),
+        sql`EXISTS (SELECT 1 FROM "user" u JOIN user_telegram_account t ON t.user_id = u.id
+          WHERE u.id = ${userId} AND u.role = 'god' AND t.telegram_user_id IS NOT NULL
+            AND t.chat_id IS NOT NULL AND t.linked_at IS NOT NULL)`,
+        sql`EXISTS (SELECT 1 FROM helena_alert a WHERE a.key = ${telegramAlertNotice.alertKey}
+          AND a.opened_at = ${telegramAlertNotice.alertOpenedAt} AND a.resolved_at IS NULL)`,
       ),
     )
     .returning({ id: telegramAlertNotice.id });

@@ -88,3 +88,53 @@ describe('confirmTelegramLink', () => {
     expect(result).toEqual({ ok: false, reason: 'invalid' });
   });
 });
+
+it('redeems one code only once under concurrent pairing requests', async () => {
+  const { code } = await pendingLink();
+  const base = Math.floor(Math.random() * 100_000_000) + 1;
+  const results = await Promise.all(
+    Array.from({ length: 12 }, (_, i) =>
+      confirmTelegramLink({
+        code,
+        chatId: String(base + i),
+        telegramUserId: String(base + i),
+        username: null,
+        firstName: null,
+      }),
+    ),
+  );
+  expect(results.filter((result) => result.ok)).toHaveLength(1);
+});
+
+it('serializes competing codes for the same Telegram identity without errors', async () => {
+  const pending = await Promise.all(Array.from({ length: 12 }, () => pendingLink()));
+  const chatId = String(Math.floor(Math.random() * 100_000_000) + 1);
+  const results = await Promise.all(
+    pending.map(({ code }) =>
+      confirmTelegramLink({
+        code,
+        chatId,
+        telegramUserId: chatId,
+        username: null,
+        firstName: null,
+      }),
+    ),
+  );
+  expect(results.filter((result) => result.ok)).toHaveLength(1);
+  expect(results.filter((result) => !result.ok && result.reason === 'taken')).toHaveLength(11);
+});
+
+it('rejects pairing a group or a chat belonging to another identity', async () => {
+  const { code } = await pendingLink();
+  for (const chatId of ['-123', '456']) {
+    expect(
+      await confirmTelegramLink({
+        code,
+        chatId,
+        telegramUserId: '123',
+        username: null,
+        firstName: null,
+      }),
+    ).toEqual({ ok: false, reason: 'invalid' });
+  }
+});

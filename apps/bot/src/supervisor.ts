@@ -16,7 +16,7 @@ let current: { token: string; bot: Bot } | null = null;
 let stopped = false;
 let timer: ReturnType<typeof setTimeout> | null = null;
 let deliveryTimer: ReturnType<typeof setInterval> | null = null;
-let deliveryRunning = false;
+let deliveryTask: Promise<void> | null = null;
 
 export interface SupervisorHandle {
   stop: () => Promise<void>;
@@ -43,8 +43,9 @@ async function stopCurrent(): Promise<void> {
   current = null;
   if (deliveryTimer) clearInterval(deliveryTimer);
   deliveryTimer = null;
-  deliveryRunning = false;
-  await bot.stop();
+  await deliveryTask;
+  deliveryTask = null;
+  if (bot.isRunning()) await bot.stop();
 }
 
 async function loop(): Promise<void> {
@@ -82,12 +83,11 @@ async function reconcile(): Promise<void> {
   const entry = { token: settings.botToken, bot };
   current = entry;
   deliveryTimer = setInterval(() => {
-    if (deliveryRunning) return;
-    deliveryRunning = true;
-    void deliverPending(bot)
+    if (deliveryTask) return;
+    deliveryTask = deliverPending(bot)
       .catch(() => console.error('[bot] delivery tick failed'))
       .finally(() => {
-        deliveryRunning = false;
+        deliveryTask = null;
       });
   }, 2_000);
   // bot.start() resolves only when the bot stops, so it is not awaited here. It
@@ -101,8 +101,10 @@ async function reconcile(): Promise<void> {
     })
     .catch(() => {
       console.error('[bot] polling stopped');
-      if (deliveryTimer) clearInterval(deliveryTimer);
-      deliveryTimer = null;
-      if (current === entry) current = null;
+      if (current === entry) {
+        if (deliveryTimer) clearInterval(deliveryTimer);
+        deliveryTimer = null;
+        current = null;
+      }
     });
 }

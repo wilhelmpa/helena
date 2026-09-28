@@ -7,6 +7,7 @@ import { cancelStepRun, queueStepRun } from '#modules/engine/agent-runs';
 import { registerBuiltins } from '#modules/engine/builtin/index';
 import { agentRun, db, issueWorkClaim, organizationProjectAssignment } from '@repo/db';
 import { expireExhaustedRuns } from '../../service';
+import { eq, sql } from 'drizzle-orm';
 
 // The runner queue: a process on the operator's machine authenticates with the
 // external agent's API key, claims one run at a time, and reports the result. Runs
@@ -110,6 +111,52 @@ describe('agent runner queue', () => {
         )
       ).status,
     ).toBe(404);
+  });
+
+  it('serializes heartbeat and release without deadlocking or retaining a task lease', async () => {
+    const { asOwner, asRunner, agent, columnId } = await setup();
+    await queueRun(asOwner, columnId, agent.username);
+    for (let i = 0; i < 8; i++) {
+      const run = (await asRunner['agent-runs'].claim.post()).data!.run!;
+      expect(run).toBeTruthy();
+      const results = await Promise.all([
+        asRunner['agent-runs']({ runId: run.id }).heartbeat.post(undefined, {
+          query: { claim: run.claim },
+        }),
+        asRunner['agent-runs']({ runId: run.id }).release.post({}, { query: { claim: run.claim } }),
+      ]);
+      expect(results.map((result) => result.status)).toEqual([200, 204]);
+      expect(await db.select().from(issueWorkClaim)).toHaveLength(0);
+    }
+  });
+
+  it('fences the previous runner after another agent takes its expired task lease', async () => {
+    const { asOwner, asRunner, agent, columnId, projectId } = await setup();
+    const issue = await queueRun(asOwner, columnId, agent.username);
+    const first = (await asRunner['agent-runs'].claim.post()).data!.run!;
+    const second = (
+      await createAgent(asOwner, 'MKT', { name: 'Second', username: 'second', kind: 'external' })
+    ).data!;
+    const secondRunner = apiKeyApi(second.apiKey!);
+    await db
+      .insert(agentRun)
+      .values({ agentId: second.agent.id, projectId, issueId: issue.id, prompt: 'Take over' });
+    await db.update(issueWorkClaim).set({ expiresAt: sql`now() - interval '1 second'` });
+    const takeover = (await secondRunner['agent-runs'].claim.post()).data!.run!;
+    expect(takeover).toBeTruthy();
+    const beat = await asRunner['agent-runs']({ runId: first.id }).heartbeat.post(undefined, {
+      query: { claim: first.claim },
+    });
+    expect(beat.data).toEqual({ canceled: true });
+    const result = await asRunner['agent-runs']({ runId: first.id }).result.post(
+      { status: 'success' },
+      { query: { claim: first.claim } },
+    );
+    expect(result.status).toBe(404);
+    const [lease] = await db.select().from(issueWorkClaim);
+    expect(lease.runId).toBe(takeover.id);
+    const [old] = await db.select().from(agentRun).where(eq(agentRun.id, first.id));
+    expect(old.status).toBe('pending');
   });
 
   it('delivers command and webhook settings through the existing agent queue', async () => {

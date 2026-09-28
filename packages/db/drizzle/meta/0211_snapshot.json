@@ -1,6 +1,6 @@
 {
-  "id": "e0efc133-7d70-4a2f-8eca-d58b074888f9",
-  "prevId": "a7d6cb3e-41b6-4403-a5b5-e5ea587a235b",
+  "id": "d696f93f-9324-45e4-a2a0-bf2e61f9ad14",
+  "prevId": "e0efc133-7d70-4a2f-8eca-d58b074888f9",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -14843,6 +14843,12 @@
           "primaryKey": false,
           "notNull": true
         },
+        "pairing_id": {
+          "name": "pairing_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
         "update_id": {
           "name": "update_id",
           "type": "integer",
@@ -15320,6 +15326,13 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false
+        },
+        "pairing_id": {
+          "name": "pairing_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "gen_random_uuid()"
         },
         "selected_agent_id": {
           "name": "selected_agent_id",

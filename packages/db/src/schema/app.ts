@@ -1560,6 +1560,7 @@ export const userTelegramAccount = pgTable(
       .references(() => user.id, { onDelete: 'cascade' }),
     chatId: text('chat_id'),
     telegramUserId: text('telegram_user_id'),
+    pairingId: uuid('pairing_id').notNull().defaultRandom(),
     selectedAgentId: integer('selected_agent_id').references(() => aiAgent.id, {
       onDelete: 'set null',
     }),
@@ -1594,6 +1595,7 @@ export const telegramChannelEvent = pgTable(
   {
     id: serial('id').primaryKey(),
     botId: text('bot_id').notNull(),
+    pairingId: uuid('pairing_id'),
     updateId: integer('update_id').notNull(),
     userId: text('user_id')
       .notNull()

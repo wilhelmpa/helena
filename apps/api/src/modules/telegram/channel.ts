@@ -1,5 +1,6 @@
 import {
   aiAgent,
+  approvalRequest,
   db,
   getInstanceBotConfig,
   isInstanceBotUsable,
@@ -11,13 +12,7 @@ import {
 } from '@repo/db';
 import { and, eq, inArray, sql } from 'drizzle-orm';
 import { sendMessage } from '#modules/agents/chat/service';
-import {
-  getApproval,
-  decideApprovalRequest,
-  projectsWithPermission,
-  DECIDE_PERMISSION,
-} from '#modules/approvals/service';
-import { isAgentUser } from '#modules/agents/core/service';
+import { getApproval, decideApprovalRequest } from '#modules/approvals/service';
 import { HttpError } from '#shared/lib';
 
 export async function selectTelegramTarget(
@@ -76,8 +71,8 @@ export async function selectTelegramTarget(
   return { agentId, projectId: target?.id ?? null };
 }
 
-async function targetFor(userId: string) {
-  const [account] = await db
+async function targetFor(userId: string, tx: Tx) {
+  const [account] = await tx
     .select({
       selectedAgentId: userTelegramAccount.selectedAgentId,
       selectedProjectId: userTelegramAccount.selectedProjectId,
@@ -88,7 +83,7 @@ async function targetFor(userId: string) {
   if (!account) return null;
   let agentId = account.selectedAgentId;
   if (agentId === null) {
-    const [home] = await db
+    const [home] = await tx
       .select({ id: aiAgent.id })
       .from(aiAgent)
       .where(and(eq(aiAgent.ownerUserId, userId), eq(aiAgent.agentRole, 'home')))
@@ -98,12 +93,12 @@ async function targetFor(userId: string) {
   }
   if (agentId === null) return null;
   if (account.selectedProjectId !== null) {
-    const [selectedAgent] = await db
+    const [selectedAgent] = await tx
       .select({ userId: aiAgent.userId })
       .from(aiAgent)
       .where(eq(aiAgent.id, agentId));
     if (!selectedAgent) return null;
-    const members = await db
+    const members = await tx
       .select({ userId: projectMember.userId })
       .from(projectMember)
       .where(
@@ -114,7 +109,7 @@ async function targetFor(userId: string) {
       );
     if (members.length !== 2) return null;
   }
-  const [agent] = await db
+  const [agent] = await tx
     .select({
       maxConcurrentChats: aiAgent.maxConcurrentChats,
       role: aiAgent.agentRole,
@@ -135,6 +130,8 @@ async function targetFor(userId: string) {
   };
 }
 
+type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
 interface ClaimedEvent {
   id: number;
   userId: string;
@@ -142,10 +139,11 @@ interface ClaimedEvent {
   text: string | null;
   approvalId: number | null;
   approved: boolean | null;
+  pairingId: string | null;
 }
 
-async function claimEvent(): Promise<ClaimedEvent | null> {
-  const rows = await db.execute(sql`
+async function claimEvent(tx: Tx): Promise<ClaimedEvent | null> {
+  const rows = await tx.execute(sql`
     UPDATE telegram_channel_event e
     SET state = 'processing', claimed_at = now()
     WHERE e.id = (
@@ -164,32 +162,50 @@ async function claimEvent(): Promise<ClaimedEvent | null> {
         )
       ORDER BY q.id FOR UPDATE SKIP LOCKED LIMIT 1
     )
-    RETURNING e.id, e.user_id AS "userId", e.kind, e.text, e.approval_id AS "approvalId", e.approved
+    RETURNING e.id, e.user_id AS "userId", e.kind, e.text, e.approval_id AS "approvalId", e.approved, e.pairing_id AS "pairingId"
   `);
   return (rows as unknown as ClaimedEvent[])[0] ?? null;
 }
 
 async function processEvent(
   event: ClaimedEvent,
+  tx: Tx,
 ): Promise<{ answerMessageId?: number; responseText?: string }> {
+  if (!event.pairingId) return { responseText: 'Telegram pairing is no longer valid.' };
+  const [paired] = await tx
+    .select({ id: userTelegramAccount.userId })
+    .from(userTelegramAccount)
+    .where(
+      and(
+        eq(userTelegramAccount.userId, event.userId),
+        sql`${userTelegramAccount.chatId} IS NOT NULL`,
+        sql`${userTelegramAccount.telegramUserId} IS NOT NULL`,
+        eq(userTelegramAccount.pairingId, event.pairingId),
+      ),
+    )
+    .for('update');
+  if (!paired) return { responseText: 'Telegram pairing is no longer valid.' };
   if (event.kind === 'message') {
-    const target = await targetFor(event.userId);
+    const target = await targetFor(event.userId, tx);
     if (!target || !event.text)
       return { responseText: 'Choose an agent in Helena settings before chatting.' };
-    const sent = await sendMessage({
-      agentId: target.agentId,
-      userId: event.userId,
-      projectId: target.projectId,
-      prompt: event.text,
-      threadId: target.threadId ?? undefined,
-      maxConcurrentChats: target.maxConcurrentChats,
-    });
+    const sent = await sendMessage(
+      {
+        agentId: target.agentId,
+        userId: event.userId,
+        projectId: target.projectId,
+        prompt: event.text,
+        threadId: target.threadId ?? undefined,
+        maxConcurrentChats: target.maxConcurrentChats,
+      },
+      tx,
+    );
     if (!sent)
       return {
         responseText:
           'The selected chat is unavailable. Choose the agent again in Helena settings.',
       };
-    await db
+    await tx
       .update(userTelegramAccount)
       .set({ currentThreadId: sent.threadId })
       .where(eq(userTelegramAccount.userId, event.userId));
@@ -197,15 +213,29 @@ async function processEvent(
   }
   if (!event.approvalId || event.approved === null)
     return { responseText: 'Invalid approval decision.' };
-  if (await isAgentUser(event.userId))
-    return { responseText: 'Only a person can decide an approval.' };
-  const approval = await getApproval(event.approvalId);
+  const [agentUser] = await tx
+    .select({ id: aiAgent.id })
+    .from(aiAgent)
+    .where(eq(aiAgent.userId, event.userId));
+  if (agentUser) return { responseText: 'Only a person can decide an approval.' };
+  const approval = await getApproval(event.approvalId, tx);
   if (!approval) return { responseText: 'Approval no longer exists.' };
-  const allowed = await projectsWithPermission(event.userId, DECIDE_PERMISSION);
-  if (!allowed.some((item) => item.id === approval.projectId))
-    return { responseText: 'Approval is not available to this account.' };
+  const [owner] = await tx
+    .select({ id: projectMember.userId })
+    .from(projectMember)
+    .where(
+      and(
+        eq(projectMember.projectId, approval.projectId),
+        eq(projectMember.userId, event.userId),
+        eq(projectMember.role, 'owner'),
+      ),
+    )
+    .for('share');
+  if (!owner) return { responseText: 'Approval is not available to this account.' };
+  if (approval.kind === 'budget')
+    return { responseText: 'Decide budget requests in Helena Approvals.' };
   try {
-    await decideApprovalRequest(event.approvalId, event.userId, { approved: event.approved });
+    await decideApprovalRequest(event.approvalId, event.userId, { approved: event.approved }, tx);
   } catch (error) {
     if (error instanceof HttpError && error.status === 409)
       return { responseText: 'Approval was already decided.' };
@@ -216,27 +246,32 @@ async function processEvent(
 
 export async function processTelegramEvents(): Promise<void> {
   for (let i = 0; i < 20; i++) {
-    const event = await claimEvent();
-    if (!event) break;
-    try {
-      const result = await processEvent(event);
-      await db
-        .update(telegramChannelEvent)
-        .set({ state: 'done', ...result })
-        .where(eq(telegramChannelEvent.id, event.id));
-    } catch (error) {
-      if (error instanceof HttpError && (error.status === 409 || error.status === 429)) {
-        await db
+    const processed = await db.transaction(async (tx) => {
+      const event = await claimEvent(tx);
+      if (!event) return false;
+      try {
+        // The queue result and its chat or approval commit together, including after a restart.
+        await tx.transaction(async (work) => {
+          const result = await processEvent(event, work);
+          await work
+            .update(telegramChannelEvent)
+            .set({ state: 'done', ...result })
+            .where(eq(telegramChannelEvent.id, event.id));
+        });
+      } catch (error) {
+        const retry = error instanceof HttpError && (error.status === 409 || error.status === 429);
+        await tx
           .update(telegramChannelEvent)
-          .set({ state: 'pending' })
-          .where(eq(telegramChannelEvent.id, event.id));
-      } else {
-        await db
-          .update(telegramChannelEvent)
-          .set({ state: 'done', responseText: 'Helena could not process this request.' })
+          .set(
+            retry
+              ? { state: 'pending' }
+              : { state: 'done', responseText: 'Helena could not process this request.' },
+          )
           .where(eq(telegramChannelEvent.id, event.id));
       }
-    }
+      return true;
+    });
+    if (!processed) break;
   }
 }
 
@@ -249,8 +284,20 @@ export async function enqueueTelegramApproval(
   const linked = await db
     .select({ userId: userTelegramAccount.userId })
     .from(userTelegramAccount)
+    .innerJoin(approvalRequest, eq(approvalRequest.id, approvalId))
+    .innerJoin(
+      projectMember,
+      and(
+        eq(projectMember.projectId, approvalRequest.projectId),
+        eq(projectMember.userId, userTelegramAccount.userId),
+        eq(projectMember.role, 'owner'),
+      ),
+    )
     .where(
       and(
+        sql`${userTelegramAccount.telegramUserId} IS NOT NULL`,
+        sql`${userTelegramAccount.linkedAt} IS NOT NULL`,
+        sql`${approvalRequest.kind} <> 'budget'`,
         inArray(userTelegramAccount.userId, userIds),
         sql`${userTelegramAccount.chatId} IS NOT NULL`,
       ),

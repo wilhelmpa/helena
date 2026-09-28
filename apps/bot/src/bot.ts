@@ -59,7 +59,10 @@ export function createBot(token: string): Bot {
     }
     const text = ctx.message.text.trim();
     if (text.length === 0 || text.length > 32_000) return;
-    await queueTelegramMessage(String(ctx.me.id), ctx.update.update_id, userId, text);
+    await queueTelegramMessage(String(ctx.me.id), ctx.update.update_id, userId, text, {
+      telegramUserId: String(ctx.from.id),
+      chatId: String(ctx.chat.id),
+    });
   });
 
   bot.on('message', (ctx) => {
@@ -92,6 +95,7 @@ export function createBot(token: string): Bot {
       userId,
       Number(match[1]),
       match[2] === 'yes',
+      { telegramUserId: String(ctx.from.id), chatId: String(chatId) },
     );
     await ctx.answerCallbackQuery({
       text: queued ? 'Decision received.' : 'Approval is unavailable.',
@@ -106,59 +110,71 @@ export function createBot(token: string): Bot {
 
 export async function deliverPending(bot: Bot): Promise<void> {
   for (const notice of await pendingApprovalNotices()) {
-    if (!notice.chatId) continue;
-    await bot.api.sendMessage(
-      notice.chatId,
-      `Approval #${notice.approvalId}: ${notice.action}\n${notice.details}`.slice(0, 4000),
-      {
-        reply_markup: {
-          inline_keyboard: [
-            [
-              { text: 'Approve', callback_data: `approval:${notice.approvalId}:yes` },
-              { text: 'Reject', callback_data: `approval:${notice.approvalId}:no` },
+    try {
+      if (!notice.chatId) continue;
+      await bot.api.sendMessage(
+        notice.chatId,
+        `Approval #${notice.approvalId}: ${notice.action}\n${notice.details}`.slice(0, 4000),
+        {
+          reply_markup: {
+            inline_keyboard: [
+              [
+                { text: 'Approve', callback_data: `approval:${notice.approvalId}:yes` },
+                { text: 'Reject', callback_data: `approval:${notice.approvalId}:no` },
+              ],
             ],
-          ],
+          },
         },
-      },
-    );
-    await markNoticeSent(notice.id);
+      );
+      await markNoticeSent(notice.id);
+    } catch {
+      console.error('[bot] delivery failed');
+    }
   }
   for (const alert of await pendingAlertNotices()) {
-    if (!alert.chatId) continue;
-    await bot.api.sendMessage(
-      alert.chatId,
-      `Helena needs you: ${alertSummary(alert.source)}`.slice(0, 4000),
-      {
-        reply_markup: {
-          inline_keyboard: [
-            [
-              { text: 'Acknowledge', callback_data: `alert:${alert.id}:ack` },
-              { text: 'Dismiss', callback_data: `alert:${alert.id}:dismiss` },
+    try {
+      if (!alert.chatId) continue;
+      await bot.api.sendMessage(
+        alert.chatId,
+        `Helena needs you: ${alertSummary(alert.source)}`.slice(0, 4000),
+        {
+          reply_markup: {
+            inline_keyboard: [
+              [
+                { text: 'Acknowledge', callback_data: `alert:${alert.id}:ack` },
+                { text: 'Dismiss', callback_data: `alert:${alert.id}:dismiss` },
+              ],
             ],
-          ],
+          },
         },
-      },
-    );
-    await markAlertSent(alert.id);
+      );
+      await markAlertSent(alert.id);
+    } catch {
+      console.error('[bot] delivery failed');
+    }
   }
   for (const reply of await pendingTelegramReplies()) {
-    if (!reply.chatId) continue;
-    if (
-      reply.answerStatus &&
-      reply.answerStatus !== 'success' &&
-      reply.answerStatus !== 'failed' &&
-      reply.answerStatus !== 'canceled'
-    )
-      continue;
-    const text =
-      reply.responseText ??
-      (reply.answerStatus === 'failed' || reply.answerStatus === 'canceled'
-        ? 'Helena could not answer this message.'
-        : reply.content);
-    if (!text) continue;
-    for (let offset = 0; offset < text.length; offset += 3500) {
-      await bot.api.sendMessage(reply.chatId, text.slice(offset, offset + 3500));
+    try {
+      if (!reply.chatId) continue;
+      if (
+        reply.answerStatus &&
+        reply.answerStatus !== 'success' &&
+        reply.answerStatus !== 'failed' &&
+        reply.answerStatus !== 'canceled'
+      )
+        continue;
+      const text =
+        reply.responseText ??
+        (reply.answerStatus === 'failed' || reply.answerStatus === 'canceled'
+          ? 'Helena could not answer this message.'
+          : reply.content);
+      if (!text) continue;
+      for (let offset = 0; offset < text.length; offset += 3500) {
+        await bot.api.sendMessage(reply.chatId, text.slice(offset, offset + 3500));
+      }
+      await markReplyDelivered(reply.eventId);
+    } catch {
+      console.error('[bot] delivery failed');
     }
-    await markReplyDelivered(reply.eventId);
   }
 }

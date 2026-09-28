@@ -18,7 +18,7 @@ import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
 import { createAgent } from '#tests/helpers/agents';
 import { fireDueAgentHeartbeats } from '../../heartbeats';
-import { HEARTBEAT_PRECHECK_CLASS, LOCAL_DECISION_MODEL } from '#modules/decisions/classes';
+import { HEARTBEAT_PRECHECK_CLASS } from '#modules/decisions/classes';
 import { recordUsage } from '#modules/agents/usage/service';
 
 const now = new Date('2026-09-28T12:00:00.000Z');
@@ -215,7 +215,8 @@ describe('agent heartbeats', () => {
     expect(await db.select().from(agentHeartbeatEvent)).toMatchObject([{ reason: 'new comment' }]);
   });
 
-  it('records an evaluated local no and skips one low backlog task', async () => {
+  it('uses the configured local model and starts work when its precheck fails', async () => {
+    const model = 'local-flash-test';
     const { api, project, agent } = await setup();
     const issue = (
       await api.projects({ projectKey: 'MKT' }).issues.post({
@@ -231,7 +232,14 @@ describe('agent heartbeats', () => {
       .where(eq(projectColumn.id, project.columns[0].id));
 
     let noProbability = 0.99;
+    let failure: 'http' | 'malformed' | 'timeout' | null = null;
     const server = createServer(async (request, response) => {
+      if (failure === 'timeout') return;
+      if (failure) {
+        response.writeHead(failure === 'http' ? 503 : 200, { 'content-type': 'application/json' });
+        response.end(failure === 'http' ? '{}' : '{');
+        return;
+      }
       let raw = '';
       for await (const chunk of request) raw += chunk.toString();
       const body = JSON.parse(raw) as { messages: { content: string }[] };
@@ -245,7 +253,7 @@ describe('agent heartbeats', () => {
       response.writeHead(200, { 'content-type': 'application/json' });
       response.end(
         JSON.stringify({
-          model: LOCAL_DECISION_MODEL,
+          model,
           choices: [{ logprobs: { content: [{ token: top[0]!.token, top_probs: top }] } }],
           usage: { prompt_tokens: 20, completion_tokens: 1 },
         }),
@@ -256,10 +264,10 @@ describe('agent heartbeats', () => {
       const port = (server.address() as { port: number }).port;
       const credential = await api.teams({ teamId: agent.teamId }).credentials.post({
         kind: 'decision_model',
-        label: 'Local Qwen test double',
+        label: 'Local Flash test double',
         provider: 'local-logit',
         baseUrl: `http://127.0.0.1:${port}`,
-        model: LOCAL_DECISION_MODEL,
+        model,
         allowPrivateAddress: true,
         value: 'codex72-test-key',
       });
@@ -323,7 +331,20 @@ describe('agent heartbeats', () => {
           event.reason.includes('precheck unsure: no'),
         ),
       ).toBe(true);
+      const timeoutSetting = await api
+        .teams({ teamId: agent.teamId })
+        .decisions.classes({ classId: HEARTBEAT_PRECHECK_CLASS })
+        .patch({ timeoutMs: 200 });
+      expect(timeoutSetting.status).toBe(200);
+      for (const mode of ['http', 'malformed', 'timeout'] as const) {
+        failure = mode;
+        await db.delete(agentRun);
+        await db.update(aiAgent).set({ heartbeatNextAt: now }).where(eq(aiAgent.id, agent.id));
+        expect(await fireDueAgentHeartbeats(now)).toBe(1);
+        expect(await db.select().from(agentRun)).toHaveLength(1);
+      }
     } finally {
+      server.closeAllConnections();
       server.close();
     }
   });

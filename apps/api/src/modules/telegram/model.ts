@@ -19,8 +19,8 @@ export const TelegramLinkStartResponse = t.Object({
 });
 
 export const TelegramTargetBody = t.Object({
-  agentId: t.Nullable(t.Number({ minimum: 1 })),
-  projectKey: t.Nullable(t.String()),
+  agentId: t.Nullable(t.Integer({ minimum: 1, maximum: 2_147_483_647 })),
+  projectKey: t.Nullable(t.String({ minLength: 1 })),
 });
 
 export const TelegramTargetResponse = t.Object({

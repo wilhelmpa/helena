@@ -18,7 +18,13 @@ import { createRole } from '#tests/helpers/roles';
 import { autopilotPolicyDecider, decideBrowserTool } from '#modules/autopilot/adapters';
 import { actionApproved, decide } from '#modules/autopilot/engine';
 import type { ActionCategory } from '@helena/sdk';
-import { budgetStatuses, continueOnce, enforceBudgets, useGrace } from '#modules/autopilot/budgets';
+import {
+  budgetStatuses,
+  budgetExhausted,
+  continueOnce,
+  enforceBudgets,
+  useGrace,
+} from '#modules/autopilot/budgets';
 import { autopilotPolicyEvaluator } from '#modules/autopilot/evaluator';
 
 // Helena's Autopilot: one level per project (with an optional per-agent level), one policy
@@ -428,6 +434,114 @@ describe('budgets', () => {
     expect(after!.graceRuns).toBe(0);
     expect(after!.graceRunIds).toHaveLength(1);
     expect(await useGrace(s.agent.id, s.projectId, after!.graceRunIds[0]!)).toBe(true);
+  });
+
+  it('does not let unconsumed grace bypass the hard stop for other work', async () => {
+    const s = await exhaustedBudget();
+    await continueOnce(s.budget.id);
+    expect(await budgetExhausted(s.agent.id, s.projectId, s.run.id)).not.toBeNull();
+    const reservations = await Promise.all(
+      Array.from({ length: 24 }, (_, i) => useGrace(s.agent.id, s.projectId, s.run.id + 1 + i)),
+    );
+    expect(reservations.filter(Boolean)).toHaveLength(1);
+    const [after] = await budgetStatuses({ agentIds: [s.agent.id] });
+    const winner = after!.graceRunIds[0]!;
+    expect(await budgetExhausted(s.agent.id, s.projectId, winner)).toBeNull();
+    expect(await budgetExhausted(s.agent.id, s.projectId, s.run.id)).not.toBeNull();
+    const stops = await Promise.all(
+      Array.from({ length: 12 }, () => enforceBudgets(s.agent.id, s.projectId, s.issue.id)),
+    );
+    expect(stops.every((reason) => reason?.startsWith('Budget reached'))).toBe(true);
+  });
+
+  it('allows one independent task across agents sharing an exhausted project budget', async () => {
+    const s = await setup();
+    await s.asOwner.projects({ projectKey: 'MKT' }).autopilot.budgets.put({
+      budgets: [{ metric: 'tokens', period: 'day', limit: 10 }],
+    });
+    const first = await startRun(s);
+    await finish(s, first.run.id, 20, 0);
+    const card = (await s.asOwner.approvals.get({ query: {} })).data!.items.find(
+      (item) => item.kind === 'budget',
+    )!;
+    const other = (
+      await createAgent(s.asOwner, 'MKT', {
+        name: 'Other',
+        username: 'other',
+        kind: 'external',
+      })
+    ).data!;
+    const otherRunner = apiKeyApi(other.apiKey!);
+    for (let i = 0; i < 12; i++) {
+      const task = (
+        await s.asOwner.projects({ projectKey: 'MKT' }).issues.post({
+          columnId: s.columnId,
+          title: `Independent task ${i}`,
+        })
+      ).data!;
+      await db.insert(agentRun).values({
+        agentId: i % 2 ? other.agent.id : s.agent.id,
+        projectId: s.projectId,
+        issueId: task.id,
+        prompt: 'Work',
+      });
+    }
+    const stopped = await Promise.all([
+      s.asRunner['agent-runs'].claim.post(),
+      otherRunner['agent-runs'].claim.post(),
+    ]);
+    expect(stopped.every((result) => result.status === 200 && result.data!.run === null)).toBe(
+      true,
+    );
+    expect(
+      (await s.asOwner.approvals({ approvalId: card.id }).budget.post({ action: 'once' })).status,
+    ).toBe(200);
+    const claimed = await Promise.all(
+      Array.from({ length: 12 }, (_, i) =>
+        (i % 2 ? otherRunner : s.asRunner)['agent-runs'].claim.post(),
+      ),
+    );
+    expect(claimed.every((result) => result.status === 200)).toBe(true);
+    expect(claimed.filter((result) => result.data!.run !== null)).toHaveLength(1);
+    const [budget] = await budgetStatuses({ projectIds: [s.projectId] });
+    expect(budget!.graceRuns).toBe(0);
+    expect(budget!.graceRunIds).toHaveLength(1);
+  });
+
+  it('retries the owner card after its insert fails', async () => {
+    const s = await exhaustedBudget();
+    await db.delete(approvalRequest);
+    await db
+      .update(aiAgent)
+      .set({ pausedAt: null, pauseReason: null })
+      .where(eq(aiAgent.id, s.agent.id));
+    await db.execute(sql`UPDATE helena_budget SET reached_for = NULL`);
+    await db.execute(sql`CREATE FUNCTION test_budget_card_failure() RETURNS trigger LANGUAGE plpgsql AS $$
+      BEGIN RAISE EXCEPTION 'Test card write failed'; END $$`);
+    await db.execute(sql`CREATE TRIGGER test_budget_card_failure BEFORE INSERT ON approval_request
+      FOR EACH ROW EXECUTE FUNCTION test_budget_card_failure()`);
+    try {
+      await expect(enforceBudgets(s.agent.id, s.projectId, s.issue.id)).rejects.toThrow();
+      const [agent] = await db.select().from(aiAgent).where(eq(aiAgent.id, s.agent.id));
+      expect(agent.pausedAt).toBeNull();
+    } finally {
+      await db.execute(sql`DROP TRIGGER test_budget_card_failure ON approval_request`);
+      await db.execute(sql`DROP FUNCTION test_budget_card_failure()`);
+    }
+    expect(await enforceBudgets(s.agent.id, s.projectId, s.issue.id)).toContain('Budget reached');
+    expect(await db.select().from(approvalRequest)).toHaveLength(1);
+  });
+
+  it('reserves grace idempotently when the same run is retried concurrently', async () => {
+    const s = await exhaustedBudget();
+    await continueOnce(s.budget.id);
+    const results = await Promise.all(
+      Array.from({ length: 12 }, () => useGrace(s.agent.id, s.projectId, s.run.id + 1)),
+    );
+    expect(results.every(Boolean)).toBe(true);
+    const [after] = await budgetStatuses({ agentIds: [s.agent.id] });
+    expect(after!.graceRuns).toBe(0);
+    expect(after!.graceRunIds).toEqual([s.run.id + 1]);
   });
 
   it('hands only one queued run to competing claim requests after continue once', async () => {
