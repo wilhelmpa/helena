@@ -3,11 +3,26 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ChevronsUpDown, Info, LogOut, OctagonX, Play } from 'lucide-react';
+import {
+  ChevronsUpDown,
+  Info,
+  LogOut,
+  OctagonX,
+  Play,
+  Languages,
+  Moon,
+  Sun,
+  Settings,
+} from 'lucide-react';
 import { toast } from 'sonner';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
+import { useTheme } from 'next-themes';
 import { signOut, useSession } from '@/lib/auth-client';
 import { ACCOUNT_SECTIONS, accountPath } from '@/utils/accountSections';
+import { godPath } from '@/utils/paths';
+import { GOD_SECTIONS } from '@/utils/godSections';
+import { LOCALES, LOCALE_FLAGS, LOCALE_LABELS, type Locale } from '@/i18n/locales';
+import { useUpdateAccountPreferences } from '@/services/preferences.service';
 import { useAccountSectionLabel } from '@/hooks/useSectionLabels';
 import { runtimeEnv } from '@/utils/runtimeEnv';
 import Avatar from '@/components/common/Avatar';
@@ -19,6 +34,9 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -44,6 +62,9 @@ export default function UserMenu({ variant = 'avatar' }: { variant?: 'avatar' | 
   // The instance role in words ('god' is the Administrator), never the raw value.
   const tUsers = useTranslations('god.users');
   const tCommon = useTranslations('common');
+  const locale = useLocale();
+  const { resolvedTheme, setTheme } = useTheme();
+  const preferences = useUpdateAccountPreferences();
   const sectionLabel = useAccountSectionLabel();
   const router = useRouter();
   const tStop = useTranslations('agentRuntime.emergencyStop');
@@ -142,9 +163,43 @@ export default function UserMenu({ variant = 'avatar' }: { variant?: 'avatar' | 
               </Link>
             </DropdownMenuItem>
           ))}
+          <DropdownMenuSub>
+            <DropdownMenuSubTrigger>
+              <Languages />
+              {tCommon('language')}
+            </DropdownMenuSubTrigger>
+            <DropdownMenuSubContent>
+              {LOCALES.map((value) => (
+                <DropdownMenuItem
+                  key={value}
+                  onSelect={() => preferences.mutate({ locale: value })}
+                >
+                  <span aria-hidden>{LOCALE_FLAGS[value]}</span>
+                  {LOCALE_LABELS[value]}
+                  {value === (locale as Locale) && <span className="ms-auto">✓</span>}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuSubContent>
+          </DropdownMenuSub>
+          <DropdownMenuItem
+            onSelect={() => {
+              const next = resolvedTheme === 'dark' ? 'light' : 'dark';
+              setTheme(next);
+              preferences.mutate({ theme: next });
+            }}
+          >
+            {resolvedTheme === 'dark' ? <Sun /> : <Moon />}
+            {tCommon('toggleTheme')}
+          </DropdownMenuItem>
           {role === 'god' && (
             <>
               <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <Link href={godPath(GOD_SECTIONS[0]!.slug)}>
+                  <Settings />
+                  {t('godMode')}
+                </Link>
+              </DropdownMenuItem>
               {emergencyStop?.active ? (
                 <DropdownMenuItem
                   onSelect={() =>

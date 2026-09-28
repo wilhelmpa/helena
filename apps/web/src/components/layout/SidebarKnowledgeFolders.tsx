@@ -14,6 +14,7 @@ import {
 import { ENTRY_TYPE, isEntryDrag, moveTarget } from '@/features/project-files/utils/fileDrag';
 import FileNewFolderDialog from '@/features/project-files/components/FileNewFolderDialog';
 import { filesPath, homeFilesPath } from '@/utils/paths';
+import { compareKnowledgeFolders, knowledgeFolderLabel } from '@/utils/knowledgeFolders';
 
 function folderUrl(scope: FileScope, path: string) {
   return scope.kind === 'project'
@@ -100,7 +101,9 @@ function FolderNode({
           aria-current={current ? 'page' : undefined}
         >
           <Folder size={14} className="me-2 inline shrink-0 text-muted-foreground" />
-          <span className="truncate">{name}</span>
+          <span className="truncate">
+            {scope.kind === 'project' ? knowledgeFolderLabel(name) : name}
+          </span>
         </Link>
         {canWrite && (
           <button
@@ -114,16 +117,18 @@ function FolderNode({
         )}
       </div>
       {open &&
-        children.map((child) => (
-          <FolderNode
-            key={child.path}
-            scope={scope}
-            path={child.path}
-            name={child.name}
-            depth={depth + 1}
-            canWrite={canWrite}
-          />
-        ))}
+        [...children]
+          .sort((a, b) => compareKnowledgeFolders(a.name, b.name))
+          .map((child) => (
+            <FolderNode
+              key={child.path}
+              scope={scope}
+              path={child.path}
+              name={child.name}
+              depth={depth + 1}
+              canWrite={canWrite}
+            />
+          ))}
       {newFolder && (
         <FileNewFolderDialog scope={scope} folder={path} onClose={() => setNewFolder(false)} />
       )}
@@ -142,6 +147,7 @@ export default function SidebarKnowledgeFolders({
   return (
     listing.data?.items
       .filter((item) => item.kind === 'folder')
+      .sort((a, b) => compareKnowledgeFolders(a.name, b.name))
       .map((folder) => (
         <FolderNode
           key={folder.path}

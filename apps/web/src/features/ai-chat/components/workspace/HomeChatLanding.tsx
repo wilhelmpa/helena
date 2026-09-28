@@ -76,7 +76,6 @@ export function HomeChatHero({ orb }: { orb: ReactNode }) {
   return (
     <div className={styles.hero}>
       <h1>{t('title')}</h1>
-      <p className={styles.hint}>{t('hint')}</p>
       <div className={styles.orb}>{orb}</div>
     </div>
   );

@@ -1621,8 +1621,11 @@ html[data-kiosk-display='dual'] [data-slot='alert-dialog-content'] {
   }
 }
 .helena-tree-toggle:hover {
-  background: #26212d;
   color: #f3edf9;
+}
+.helena-tree-create:hover,
+.knowledge-folder-add:hover {
+  background: #26212d;
 }
 .knowledge-folder-add {
   opacity: 0;

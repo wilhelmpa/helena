@@ -24,10 +24,17 @@ import type { FileActions } from '../hooks/useFileActions';
 import type { FileEntryDrag } from '../hooks/useFileEntryDrag';
 import type { FilePermissions } from './FileBrowser';
 import FileItemMenu from './FileItemMenu';
+import { compareKnowledgeFolders, knowledgeFolderLabel } from '@/utils/knowledgeFolders';
 
 type Kind = 'Alles' | 'Docs' | 'Leinwände' | 'Dateien' | 'Von Agenten';
 const pills: Kind[] = ['Alles', 'Docs', 'Leinwände', 'Dateien', 'Von Agenten'];
 const creationKinds = ['Doc', 'Leinwand', 'Ordner', 'Datei hochladen'] as const;
+const creationIcons = {
+  Doc: FileText,
+  Leinwand: Network,
+  Ordner: Folder,
+  'Datei hochladen': Upload,
+};
 const isDoc = (name: string) => /\.(md|markdown)$/i.test(name);
 const isCanvas = (name: string) => /\.canvas$/i.test(name);
 const isImage = (name: string) => /\.(png|jpe?g|gif|webp|svg|avif)$/i.test(name);
@@ -237,6 +244,9 @@ export default function KnowledgeFolderView({
       const rank = (item: FileItem) =>
         item.kind === 'folder' ? 0 : isCanvas(item.name) ? 1 : isDoc(item.name) ? 2 : 3;
       return (
+        (a.kind === 'folder' && b.kind === 'folder' && scope.kind === 'project'
+          ? compareKnowledgeFolders(a.name, b.name)
+          : 0) ||
         rank(a) - rank(b) ||
         (a.updatedAt ?? '').localeCompare(b.updatedAt ?? '') ||
         a.name.localeCompare(b.name, 'de')
@@ -266,7 +276,9 @@ export default function KnowledgeFolderView({
               {label} · WISSEN
             </p>
             <h1 className="m-0 text-[38px] leading-[1.04] font-[520] tracking-[-.05em]">
-              {path.split('/').at(-1) || label}
+              {scope.kind === 'project'
+                ? knowledgeFolderLabel(path.split('/').at(-1) || label)
+                : path.split('/').at(-1) || label}
             </h1>
           </div>
           <div className="flex items-center gap-2">
@@ -435,7 +447,7 @@ export default function KnowledgeFolderView({
                     key={item.path}
                     {...drag.source(item)}
                     {...(item.kind === 'folder' ? drag.target(item.path) : {})}
-                    className={`group relative grid min-h-11 grid-cols-[28px_minmax(0,1fr)_190px_110px] items-center gap-3 rounded-xl px-3.5 max-sm:grid-cols-[22px_minmax(0,1fr)] ${selected?.path === item.path ? 'bg-[#26212d] shadow-[0_2px_6px_#0004,inset_0_1px_#ffffff0c]' : 'hover:bg-[#111014]'}`}
+                    className={`group relative grid min-h-9 grid-cols-[28px_minmax(0,1fr)_190px_110px] items-center gap-3 rounded-xl px-3.5 max-sm:grid-cols-[22px_minmax(0,1fr)] ${selected?.path === item.path ? 'bg-[#26212d] shadow-[0_2px_6px_#0004,inset_0_1px_#ffffff0c]' : 'hover:bg-[#111014]'}`}
                   >
                     <Icon size={18} strokeWidth={1.6} className="text-[#8b8595]" />
                     <button
@@ -446,9 +458,11 @@ export default function KnowledgeFolderView({
                       onDoubleClick={() => onOpen(item)}
                       className="min-w-0 truncate text-start text-[13px]"
                     >
-                      {isDoc(item.name) || isCanvas(item.name)
-                        ? item.name.replace(/\.(md|markdown|canvas)$/i, '')
-                        : item.name}
+                      {item.kind === 'folder' && scope.kind === 'project'
+                        ? knowledgeFolderLabel(item.name)
+                        : isDoc(item.name) || isCanvas(item.name)
+                          ? item.name.replace(/\.(md|markdown|canvas)$/i, '')
+                          : item.name}
                     </button>
                     <span className="truncate text-xs text-[#88808f] max-sm:hidden">{art}</span>
                     <span className="text-end font-mono text-[11px] text-[#6f687a] max-sm:hidden">
@@ -508,17 +522,20 @@ export default function KnowledgeFolderView({
         {can.create && (
           <div className="mt-2 flex flex-col gap-1.5">
             <p className="font-mono text-[10px] tracking-[.23em] text-[#6f687a]">NEU</p>
-            {creationKinds.map((name) => (
-              <button
-                key={name}
-                type="button"
-                onClick={() => create(name)}
-                className="flex min-h-[34px] items-center gap-2.5 rounded-[10px] px-2.5 text-start text-[13px] text-[#cfc6da] hover:bg-[#111014]"
-              >
-                <FileText size={16} strokeWidth={1.6} className="text-[#8b8595]" />
-                {name}
-              </button>
-            ))}
+            {creationKinds.map((name) => {
+              const Icon = creationIcons[name];
+              return (
+                <button
+                  key={name}
+                  type="button"
+                  onClick={() => create(name)}
+                  className="flex min-h-[34px] items-center gap-2.5 rounded-[10px] px-2.5 text-start text-[13px] text-[#cfc6da] hover:bg-[#111014]"
+                >
+                  <Icon size={16} strokeWidth={1.6} className="text-[#8b8595]" />
+                  {name}
+                </button>
+              );
+            })}
           </div>
         )}
       </aside>

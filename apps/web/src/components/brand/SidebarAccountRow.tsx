@@ -1,7 +1,5 @@
 'use client';
 
-import { LocaleToggle } from '@/components/locale-toggle';
-import { ThemeToggle } from '@/components/theme-toggle';
 import UserMenu from '@/components/layout/UserMenu';
 
 // The account row at the foot of the sidebar (docs/volition-design-helena-ui.md, owner
@@ -13,10 +11,8 @@ import UserMenu from '@/components/layout/UserMenu';
 // see AppHeader/GodShell for the 'classic' fallback.
 export default function SidebarAccountRow() {
   return (
-    <div className="flex items-center gap-0.5 group-data-[collapsible=icon]:flex-col">
+    <div className="flex min-w-0 flex-1 items-center">
       <UserMenu variant="row" />
-      <LocaleToggle variant="ghost" />
-      <ThemeToggle variant="ghost" />
     </div>
   );
 }

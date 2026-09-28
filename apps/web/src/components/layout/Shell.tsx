@@ -306,6 +306,7 @@ export default function Shell({
                 onEditView={editor.beginEditView}
                 onDeleteView={editor.deleteView}
                 onOpenCommand={() => overlays.setShowCommand(true)}
+                onSettings={() => firstSettingsHref && router.push(firstSettingsHref)}
                 onSelectTool={selectWorkspaceTool}
                 activeTool={workspaceOpen ? activeWorkspaceTool : null}
               />

@@ -1,13 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import type { Project } from '@/lib/api/endpoints/projects';
 import type { View } from '@/lib/api/endpoints/views';
 import { useSession } from '@/lib/auth-client';
-import { godPath } from '@/utils/paths';
-import { GOD_SECTIONS } from '@/utils/godSections';
 import { useSidebarSide } from '@/hooks/useSidebarSide';
 import {
   Sidebar,
@@ -20,7 +17,7 @@ import SidebarAccountRow from '@/components/brand/SidebarAccountRow';
 import SidebarProjectSwitcher from './SidebarProjectSwitcher';
 import { SidebarHomeTree, SidebarPersonalNav, SidebarProjectTree } from './SidebarTreeNav';
 import { APP_NAME } from '@/utils/app';
-import { Search, MessageSquare, Globe2, Terminal, Code2, Mail } from 'lucide-react';
+import { Search, MessageSquare, Globe2, Terminal, Code2, Mail, Settings } from 'lucide-react';
 import type { WorkspaceToolId } from '@/utils/workspaceTools';
 
 export default function AppSidebar({
@@ -32,6 +29,7 @@ export default function AppSidebar({
   onEditView,
   onDeleteView,
   onOpenCommand,
+  onSettings,
   onSelectTool,
   activeTool,
 }: {
@@ -43,6 +41,7 @@ export default function AppSidebar({
   onEditView: (view: View) => void;
   onDeleteView: (view: View) => Promise<void>;
   onOpenCommand: () => void;
+  onSettings: () => void;
   onSelectTool: (tool: WorkspaceToolId) => void;
   activeTool: WorkspaceToolId | null;
 }) {
@@ -135,12 +134,18 @@ export default function AppSidebar({
             ))}
           </div>
         </div>
-        {mounted && session?.user.role === 'god' && (
-          <Link href={godPath(GOD_SECTIONS[0]!.slug)} className="helena-sidebar-admin">
-            {t('godMode')}
-          </Link>
-        )}
-        <SidebarAccountRow />
+        <div className="flex items-center gap-1">
+          <SidebarAccountRow />
+          <button
+            type="button"
+            aria-label={t('settings')}
+            title={t('settings')}
+            onClick={onSettings}
+            className="grid size-8 shrink-0 place-items-center rounded-md text-muted-foreground hover:bg-sidebar-accent hover:text-foreground"
+          >
+            <Settings size={16} />
+          </button>
+        </div>
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

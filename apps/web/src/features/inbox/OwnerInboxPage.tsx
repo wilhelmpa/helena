@@ -25,6 +25,8 @@ import {
 } from '@/utils/paths';
 import { formatTime } from '@/utils/dates';
 import { projectColor } from '@/utils/projectColor';
+import Orb from '@/components/helena/Orb';
+import { useAgentStatus } from '@/utils/helenaStatus';
 import styles from './OwnerInboxPage.module.css';
 
 function InboxCard({ item }: { item: OwnerInboxItem }) {
@@ -34,6 +36,15 @@ function InboxCard({ item }: { item: OwnerInboxItem }) {
   const stepDecision = useDecidePipelineApproval();
   const mentionRead = useSetNotificationRead(item.projectKey ?? '');
   const isError = item.kind === 'problem' || item.kind === 'failure';
+  const agentId =
+    item.kind === 'approval'
+      ? item.approval.agentId
+      : item.kind === 'proposal'
+        ? (item.proposal.agentId ?? 0)
+        : 0;
+  const status = useAgentStatus(agentId, {
+    run: isError ? 'failed' : item.kind === 'mention' ? 'idle' : 'waiting',
+  });
   const project = item.projectKey?.toUpperCase() ?? t('home');
   const tag =
     item.kind === 'approval'
@@ -84,7 +95,7 @@ function InboxCard({ item }: { item: OwnerInboxItem }) {
 
   return (
     <article className={styles.card}>
-      <span className={`${styles.dot} ${isError ? styles.danger : ''}`} aria-hidden />
+      <Orb state={status} size="dot" className={styles.dot} />
       <div className={styles.cardContent}>
         <span className={styles.tag} style={{ color: projectColor(item.projectKey) }}>
           {project} · {tag}
