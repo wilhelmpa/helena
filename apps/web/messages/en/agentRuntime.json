@@ -43,6 +43,7 @@
       "delegation": "Delegated task",
       "field": "Field change",
       "schedule": "Scheduled task",
+      "heartbeat": "Heartbeat",
       "manual": "Manual task",
       "approval": "Approval decision",
       "workspace": "Workspace job",

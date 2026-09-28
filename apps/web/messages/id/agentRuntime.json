@@ -43,6 +43,7 @@
       "delegation": "Tugas delegasi",
       "field": "Perubahan bidang",
       "schedule": "Tugas terjadwal",
+      "heartbeat": "Denyut berkala",
       "manual": "Tugas manual",
       "approval": "Keputusan persetujuan",
       "workspace": "Tugas ruang kerja",

@@ -24,6 +24,7 @@ export const agentRunTrigger = t.Union([
   t.Literal('subtask'),
   t.Literal('field'),
   t.Literal('schedule'),
+  t.Literal('heartbeat'),
   t.Literal('manual'),
   t.Literal('approval'),
   // A job for the runner itself (a repository clone), whose prompt is the job as JSON.

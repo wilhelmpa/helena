@@ -35,7 +35,8 @@ export async function enqueueAgentRun(
     issueId: number | null;
     sourceActivityId: number | null;
     prompt: string;
-    trigger?: 'mention' | 'delegation' | 'subtask' | 'field' | 'approval' | 'workspace';
+    trigger?:
+      'mention' | 'delegation' | 'subtask' | 'field' | 'approval' | 'workspace' | 'heartbeat';
     // Seconds the run stays unclaimable after it is queued, so the issue can still be
     // edited before the agent reads it.
     delaySeconds?: number;

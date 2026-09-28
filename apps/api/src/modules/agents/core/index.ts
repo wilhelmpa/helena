@@ -47,6 +47,7 @@ import {
   updateAgentBody,
 } from './model';
 import { listAgentRuns } from './run-queue';
+import { listAgentHeartbeats } from './heartbeats';
 import { addFavorite, removeFavorite } from '../chat-favorites';
 import {
   listThreads,
@@ -306,6 +307,37 @@ export const aiAgentRoutes = new Elysia({ name: 'ai-agents', detail: { tags: ['A
         // Rotating invalidates the previous key, which cannot be recovered.
         ...mcpTool('regenerate_ai_agent_key', { destructiveHint: true }, 'credentials'),
       },
+    },
+  )
+
+  .get(
+    '/teams/:teamId/ai-agents/:agentId/heartbeats',
+    async ({ params, membership }) => {
+      await requireVisibleAgent(params.agentId, membership);
+      return listAgentHeartbeats(
+        params.agentId,
+        runsTeam(membership.role)
+          ? undefined
+          : await memberProjectIds(membership.teamId, membership.userId),
+      );
+    },
+    {
+      params: agentParams,
+      teamPermission: ['ai_agents', 'read'],
+      response: {
+        200: t.Array(
+          t.Object({
+            id: t.Number(),
+            projectId: t.Nullable(t.Number()),
+            checkedAt: t.String(),
+            outcome: t.String(),
+            reason: t.String(),
+            runId: t.Nullable(t.Number()),
+          }),
+        ),
+        ...commonErrors,
+      },
+      detail: { summary: 'List agent heartbeat checks' },
     },
   )
 

@@ -191,6 +191,14 @@ export interface AiAgent {
   // Run triggers.
   triggerOnMention: boolean;
   triggerOnAssign: boolean;
+  heartbeatIntervalMinutes: number | null;
+  heartbeatTimezone: string;
+  heartbeatDays: number[];
+  heartbeatStart: string;
+  heartbeatEnd: string;
+  heartbeatInstructions: string;
+  heartbeatLastAt: string | null;
+  heartbeatNextAt: string | null;
   // The member custom fields that start a run when the agent is set into one, each
   // with the seconds its run waits before the agent may pick it up.
   fieldTriggers: AgentFieldTriggerRead[];
@@ -241,7 +249,7 @@ export type AgentRunStatus = 'pending' | 'success' | 'failed' | 'canceled';
 export interface AgentRun {
   id: number;
   status: AgentRunStatus;
-  trigger: 'mention' | 'delegation' | 'field' | 'schedule' | 'manual' | 'approval';
+  trigger: 'mention' | 'delegation' | 'field' | 'schedule' | 'heartbeat' | 'manual' | 'approval';
   issueId: number | null;
   issueIdentifier: string | null;
   issueTitle: string | null;
@@ -281,6 +289,12 @@ export interface NewAiAgentInput {
   runtimePolicy?: AgentRuntimePolicy;
   triggerOnMention?: boolean;
   triggerOnAssign?: boolean;
+  heartbeatIntervalMinutes?: number | null;
+  heartbeatTimezone?: string;
+  heartbeatDays?: number[];
+  heartbeatStart?: string;
+  heartbeatEnd?: string;
+  heartbeatInstructions?: string;
   fieldTriggers?: AgentFieldTrigger[];
   delegationDelaySec?: number;
   maxConcurrentChats?: number;
@@ -300,6 +314,12 @@ export interface AiAgentPatch {
   runtimePolicy?: AgentRuntimePolicy;
   triggerOnMention?: boolean;
   triggerOnAssign?: boolean;
+  heartbeatIntervalMinutes?: number | null;
+  heartbeatTimezone?: string;
+  heartbeatDays?: number[];
+  heartbeatStart?: string;
+  heartbeatEnd?: string;
+  heartbeatInstructions?: string;
   fieldTriggers?: AgentFieldTrigger[];
   delegationDelaySec?: number;
   maxConcurrentChats?: number;
@@ -387,3 +407,15 @@ export const listAgentRuns = (teamId: number, agentId: number, before?: number) 
   request<AgentRunPage>(
     `/teams/${teamId}/ai-agents/${agentId}/runs?limit=25${before ? `&before=${before}` : ''}`,
   );
+
+export interface AgentHeartbeatEvent {
+  id: number;
+  projectId: number | null;
+  checkedAt: string;
+  outcome: 'queued' | 'skipped';
+  reason: string;
+  runId: number | null;
+}
+
+export const listAgentHeartbeats = (teamId: number, agentId: number) =>
+  request<AgentHeartbeatEvent[]>(`/teams/${teamId}/ai-agents/${agentId}/heartbeats`);

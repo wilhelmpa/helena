@@ -580,6 +580,14 @@ export const aiAgent = pgTable(
     // trigger_on_assign is set.
     triggerOnMention: boolean('trigger_on_mention').notNull().default(true),
     triggerOnAssign: boolean('trigger_on_assign').notNull().default(false),
+    heartbeatIntervalMinutes: integer('heartbeat_interval_minutes'),
+    heartbeatTimezone: text('heartbeat_timezone').notNull().default('UTC'),
+    heartbeatDays: jsonb('heartbeat_days').notNull().default([1, 2, 3, 4, 5]).$type<number[]>(),
+    heartbeatStart: text('heartbeat_start').notNull().default('09:00'),
+    heartbeatEnd: text('heartbeat_end').notNull().default('17:00'),
+    heartbeatInstructions: text('heartbeat_instructions').notNull().default(''),
+    heartbeatLastAt: timestamp('heartbeat_last_at', { withTimezone: true }),
+    heartbeatNextAt: timestamp('heartbeat_next_at', { withTimezone: true }),
     // How long a delegation run waits before it becomes claimable, which leaves time
     // to keep editing the issue after delegating it. Applies to delegation only: a
     // mention is a question already asked, and its author waits for the reply.
@@ -653,6 +661,10 @@ export const aiAgent = pgTable(
     ),
     check('ai_agent_runner_scope_check', sql`${t.runnerScope} IN ('owner', 'team')`),
     check(
+      'ai_agent_heartbeat_interval_check',
+      sql`${t.heartbeatIntervalMinutes} IS NULL OR ${t.heartbeatIntervalMinutes} BETWEEN 5 AND 10080`,
+    ),
+    check(
       'ai_agent_delegation_delay_check',
       sql`${t.delegationDelaySec} >= 0 AND ${t.delegationDelaySec} <= 86400`,
     ),
@@ -666,6 +678,26 @@ export const aiAgent = pgTable(
       'ai_agent_template_no_source_check',
       sql`NOT (${t.template} AND ${t.sourceTemplateId} IS NOT NULL)`,
     ),
+  ],
+);
+
+// A cheap heartbeat check leaves one record whether it queued a model run or skipped it.
+export const agentHeartbeatEvent = pgTable(
+  'agent_heartbeat_event',
+  {
+    id: serial('id').primaryKey(),
+    agentId: integer('agent_id')
+      .notNull()
+      .references(() => aiAgent.id, { onDelete: 'cascade' }),
+    projectId: integer('project_id').references(() => project.id, { onDelete: 'set null' }),
+    checkedAt: timestamp('checked_at', { withTimezone: true }).notNull().defaultNow(),
+    outcome: text('outcome').notNull(),
+    reason: text('reason').notNull(),
+    runId: integer('run_id'),
+  },
+  (t) => [
+    check('agent_heartbeat_event_outcome_check', sql`${t.outcome} IN ('queued', 'skipped')`),
+    index('agent_heartbeat_event_agent_idx').on(t.agentId, t.checkedAt.desc()),
   ],
 );
 
@@ -779,7 +811,7 @@ export const agentRun = pgTable(
     ),
     check(
       'agent_run_trigger_check',
-      sql`${t.trigger} IN ('mention', 'delegation', 'subtask', 'field', 'schedule', 'manual', 'approval', 'workspace', 'digest')`,
+      sql`${t.trigger} IN ('mention', 'delegation', 'subtask', 'field', 'schedule', 'manual', 'approval', 'workspace', 'digest', 'heartbeat')`,
     ),
     index('agent_run_due_idx').on(t.status, t.nextAttemptAt),
     index('agent_run_project_idx').on(t.projectId),

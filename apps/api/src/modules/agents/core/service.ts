@@ -28,6 +28,7 @@ import { deleteAccount } from '#shared/account-deletion';
 import { runtimeFileKind } from '../runtime-files/paths';
 import { maxTurnsLimit, runBudgetSecondsLimit } from '../model';
 import { isHomeAgent, notHomeAgent } from './home-agent';
+import { nextHeartbeatAt, validateHeartbeatClock, type HeartbeatClock } from './heartbeat-time';
 import { copyAgentBudgets, copyAgentLevel } from '#modules/autopilot/copy';
 import { agentModelRefusal } from '#modules/model-availability/service';
 import {
@@ -427,6 +428,14 @@ export interface AiAgentRow {
   // Run triggers.
   triggerOnMention: boolean;
   triggerOnAssign: boolean;
+  heartbeatIntervalMinutes: number | null;
+  heartbeatTimezone: string;
+  heartbeatDays: number[];
+  heartbeatStart: string;
+  heartbeatEnd: string;
+  heartbeatInstructions: string;
+  heartbeatLastAt: string | null;
+  heartbeatNextAt: string | null;
   // The member custom fields the agent also reacts to: being set into one of them
   // starts a run the way being made an issue's delegate does. Each field carries its
   // own delay, so a field can start at once while another leaves time to edit.
@@ -487,6 +496,14 @@ function mapAgent(row: {
   runtimeState: unknown;
   triggerOnMention: boolean;
   triggerOnAssign: boolean;
+  heartbeatIntervalMinutes: number | null;
+  heartbeatTimezone: string;
+  heartbeatDays: number[];
+  heartbeatStart: string;
+  heartbeatEnd: string;
+  heartbeatInstructions: string;
+  heartbeatLastAt: Date | null;
+  heartbeatNextAt: Date | null;
   fieldTriggers: FieldTriggerRead[];
   delegationDelaySec: number;
   maxConcurrentChats: number;
@@ -522,6 +539,14 @@ function mapAgent(row: {
     runtimeState: normalizeRuntimeState(row.runtimeState),
     triggerOnMention: row.triggerOnMention,
     triggerOnAssign: row.triggerOnAssign,
+    heartbeatIntervalMinutes: row.heartbeatIntervalMinutes,
+    heartbeatTimezone: row.heartbeatTimezone,
+    heartbeatDays: row.heartbeatDays,
+    heartbeatStart: row.heartbeatStart,
+    heartbeatEnd: row.heartbeatEnd,
+    heartbeatInstructions: row.heartbeatInstructions,
+    heartbeatLastAt: row.heartbeatLastAt ? iso(row.heartbeatLastAt) : null,
+    heartbeatNextAt: row.heartbeatNextAt ? iso(row.heartbeatNextAt) : null,
     fieldTriggers: row.fieldTriggers,
     delegationDelaySec: row.delegationDelaySec,
     maxConcurrentChats: row.maxConcurrentChats,
@@ -565,6 +590,14 @@ const agentColumns = {
   runtimeState: aiAgent.runtimeState,
   triggerOnMention: aiAgent.triggerOnMention,
   triggerOnAssign: aiAgent.triggerOnAssign,
+  heartbeatIntervalMinutes: aiAgent.heartbeatIntervalMinutes,
+  heartbeatTimezone: aiAgent.heartbeatTimezone,
+  heartbeatDays: aiAgent.heartbeatDays,
+  heartbeatStart: aiAgent.heartbeatStart,
+  heartbeatEnd: aiAgent.heartbeatEnd,
+  heartbeatInstructions: aiAgent.heartbeatInstructions,
+  heartbeatLastAt: aiAgent.heartbeatLastAt,
+  heartbeatNextAt: aiAgent.heartbeatNextAt,
   fieldTriggers: sql<
     FieldTriggerRead[]
   >`(select coalesce(json_agg(json_build_object('fieldId', ${agentFieldTrigger.fieldId}, 'name', ${customField.name}, 'delaySec', ${agentFieldTrigger.delaySec}) order by ${customField.name}), '[]'::json) from ${agentFieldTrigger} join ${customField} on ${customField.id} = ${agentFieldTrigger.fieldId} where ${agentFieldTrigger.agentId} = ${aiAgent.id})`,
@@ -996,6 +1029,12 @@ export interface NewAgentInput {
   // runs no one drains.
   triggerOnMention?: boolean;
   triggerOnAssign?: boolean;
+  heartbeatIntervalMinutes?: number | null;
+  heartbeatTimezone?: string;
+  heartbeatDays?: number[];
+  heartbeatStart?: string;
+  heartbeatEnd?: string;
+  heartbeatInstructions?: string;
   // The member custom fields that start a run when the agent is set into one.
   fieldTriggers?: FieldTrigger[];
   delegationDelaySec?: number;
@@ -1125,6 +1164,18 @@ export async function createAgent(
   // default role, changed per project from the project's member list afterwards.
   const roleId = await getDefaultRoleId(teamId);
 
+  const clock: HeartbeatClock = {
+    heartbeatIntervalMinutes: input.heartbeatIntervalMinutes ?? null,
+    heartbeatTimezone: input.heartbeatTimezone ?? 'UTC',
+    heartbeatDays: input.heartbeatDays ?? [1, 2, 3, 4, 5],
+    heartbeatStart: input.heartbeatStart ?? '09:00',
+    heartbeatEnd: input.heartbeatEnd ?? '17:00',
+  };
+  try {
+    validateHeartbeatClock(clock);
+  } catch (error) {
+    throw new HttpError(400, String(error));
+  }
   const agentId = await db.transaction(async (tx) => {
     await tx
       .insert(user)
@@ -1142,6 +1193,9 @@ export async function createAgent(
           runtimePolicy: normalizeRuntimePolicy(input.runtimePolicy),
           triggerOnMention: input.triggerOnMention ?? false,
           triggerOnAssign: input.triggerOnAssign ?? false,
+          ...clock,
+          heartbeatInstructions: input.heartbeatInstructions ?? '',
+          heartbeatNextAt: input.template ? null : nextHeartbeatAt(clock, new Date()),
           delegationDelaySec: input.delegationDelaySec,
           maxConcurrentChats: input.maxConcurrentChats,
           ownerUserId: input.ownerUserId ?? null,
@@ -1306,6 +1360,12 @@ export interface AgentPatch {
   runtimePolicy?: AgentRuntimePolicy;
   triggerOnMention?: boolean;
   triggerOnAssign?: boolean;
+  heartbeatIntervalMinutes?: number | null;
+  heartbeatTimezone?: string;
+  heartbeatDays?: number[];
+  heartbeatStart?: string;
+  heartbeatEnd?: string;
+  heartbeatInstructions?: string;
   fieldTriggers?: FieldTrigger[];
   delegationDelaySec?: number;
   maxConcurrentChats?: number;
@@ -1366,6 +1426,34 @@ export async function updateAgent(
     set.runtimePolicy = normalizeRuntimePolicy(patch.runtimePolicy);
   if (patch.triggerOnMention !== undefined) set.triggerOnMention = patch.triggerOnMention;
   if (patch.triggerOnAssign !== undefined) set.triggerOnAssign = patch.triggerOnAssign;
+  const clock: HeartbeatClock = {
+    heartbeatIntervalMinutes:
+      patch.heartbeatIntervalMinutes === undefined
+        ? agent.heartbeatIntervalMinutes
+        : patch.heartbeatIntervalMinutes,
+    heartbeatTimezone: patch.heartbeatTimezone ?? agent.heartbeatTimezone,
+    heartbeatDays: patch.heartbeatDays ?? agent.heartbeatDays,
+    heartbeatStart: patch.heartbeatStart ?? agent.heartbeatStart,
+    heartbeatEnd: patch.heartbeatEnd ?? agent.heartbeatEnd,
+  };
+  try {
+    validateHeartbeatClock(clock);
+  } catch (error) {
+    throw new HttpError(400, String(error));
+  }
+  if (
+    clock.heartbeatIntervalMinutes !== agent.heartbeatIntervalMinutes ||
+    clock.heartbeatTimezone !== agent.heartbeatTimezone ||
+    clock.heartbeatDays.join(',') !== agent.heartbeatDays.join(',') ||
+    clock.heartbeatStart !== agent.heartbeatStart ||
+    clock.heartbeatEnd !== agent.heartbeatEnd ||
+    template !== agent.template
+  ) {
+    Object.assign(set, clock);
+    set.heartbeatNextAt = template ? null : nextHeartbeatAt(clock, new Date());
+  }
+  if (patch.heartbeatInstructions !== undefined)
+    set.heartbeatInstructions = patch.heartbeatInstructions;
   if (patch.delegationDelaySec !== undefined) set.delegationDelaySec = patch.delegationDelaySec;
   if (patch.maxConcurrentChats !== undefined) set.maxConcurrentChats = patch.maxConcurrentChats;
   if (patch.template !== undefined) set.template = patch.template;
@@ -1474,6 +1562,12 @@ export async function copyTemplateIntoProject(
       : template.runtimePolicy,
     triggerOnMention: template.triggerOnMention,
     triggerOnAssign: template.triggerOnAssign,
+    heartbeatIntervalMinutes: template.heartbeatIntervalMinutes,
+    heartbeatTimezone: template.heartbeatTimezone,
+    heartbeatDays: template.heartbeatDays,
+    heartbeatStart: template.heartbeatStart,
+    heartbeatEnd: template.heartbeatEnd,
+    heartbeatInstructions: template.heartbeatInstructions,
     delegationDelaySec: template.delegationDelaySec,
     maxConcurrentChats: template.maxConcurrentChats,
     runnerScope: template.runnerScope,

@@ -174,6 +174,7 @@
       "field": "se ha ejecutado por un campo de",
       "manual": "se ha ejecutado manualmente",
       "schedule": "se ha ejecutado por programado",
+      "heartbeat": "se ejecutó por pulso",
       "approval": "se ha ejecutado tras una decisión de aprobación",
       "workspace": "ejecutó una tarea del espacio de trabajo",
       "digest": "escribió un resumen"
