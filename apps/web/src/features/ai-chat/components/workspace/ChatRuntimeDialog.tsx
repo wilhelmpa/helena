@@ -50,8 +50,8 @@ export default function ChatRuntimeDialog({
         },
       },
     });
-    onClose();
     onConfirmed();
+    onClose();
   }
 
   return (
