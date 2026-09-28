@@ -1,4 +1,4 @@
-import { and, eq, ne } from 'drizzle-orm';
+import { and, eq, ne, isNull } from 'drizzle-orm';
 import { agentRun, aiAgent, db, projectMember } from '@repo/db';
 import { enqueueAgentRun } from '../core/run-queue';
 import { normalizeRuntimePolicy } from '../core/service';
@@ -32,7 +32,15 @@ async function targetAgent(
       .select({ id: aiAgent.id })
       .from(aiAgent)
       .innerJoin(projectMember, eq(projectMember.userId, aiAgent.userId))
-      .where(and(eq(aiAgent.id, id), eq(projectMember.projectId, projectId)));
+      .where(
+        and(
+          eq(aiAgent.id, id),
+          ne(aiAgent.id, fromAgentId),
+          eq(aiAgent.template, false),
+          isNull(aiAgent.pausedAt),
+          eq(projectMember.projectId, projectId),
+        ),
+      );
     return row?.id ?? null;
   }
   const runtime = /^runtime:(claude|codex)(?:\/.*)?$/.exec(target)?.[1];
@@ -41,7 +49,14 @@ async function targetAgent(
     .select({ id: aiAgent.id, runtimePolicy: aiAgent.runtimePolicy })
     .from(aiAgent)
     .innerJoin(projectMember, eq(projectMember.userId, aiAgent.userId))
-    .where(and(eq(projectMember.projectId, projectId), ne(aiAgent.id, fromAgentId)))
+    .where(
+      and(
+        eq(projectMember.projectId, projectId),
+        ne(aiAgent.id, fromAgentId),
+        eq(aiAgent.template, false),
+        isNull(aiAgent.pausedAt),
+      ),
+    )
     .orderBy(aiAgent.id);
   return (
     candidates.find(
@@ -62,6 +77,7 @@ export async function queueEscalation(
     return { runId: null, error };
   }
   const runId = await enqueueAgentRun({
+    model: /^runtime:(?:claude|codex)\/(.+)$/.exec(report.target)?.[1] ?? null,
     agentId: target,
     projectId: run.projectId,
     issueId: run.issueId,

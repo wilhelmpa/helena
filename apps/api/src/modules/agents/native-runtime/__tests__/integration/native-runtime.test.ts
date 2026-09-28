@@ -39,11 +39,15 @@ describe("Helena's own runtime", () => {
 
   describe('sessions', () => {
     it('keeps a session the agent resumes, each message once', async () => {
-      const { asAgent, asOther } = await setup();
+      const { asAgent, asOther, asOwner, agentId } = await setup();
+      const sent = await asOwner
+        .projects({ projectKey: 'MKT' })
+        ['ai-agents']({ agentId })
+        .chat.post({ prompt: 'Memory test' });
       const created = await asAgent['agent-runtime'].sessions.post({
         kind: 'chat',
         model: 'helena-halogen/flash',
-        threadId: 't-1',
+        threadId: sent.data!.threadId,
       });
       expect(created.status).toBe(200);
       const sessionId = created.data!.id;
@@ -273,9 +277,9 @@ describe("Helena's own runtime", () => {
         });
         expect(on.data!.agent.runtimePolicy.runtime).toBe('helena');
         const snapshot = await apiKeyApi(on.data!.apiKey!)['agent-runtime'].policy.get();
-        expect(snapshot.data!.helena).toEqual({
+        expect(snapshot.data!.helena).toMatchObject({
           toolProfile: 'recherche',
-          escalation: { target: 'runtime:claude', taskKinds: ['recht'] },
+          escalation: { target: 'runtime:claude', mode: 'auto', central: { enabled: false } },
         });
       } finally {
         if (before === undefined) delete process.env.HELENA_NATIVE_RUNTIME;

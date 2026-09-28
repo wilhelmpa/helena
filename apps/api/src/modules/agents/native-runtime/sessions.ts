@@ -1,5 +1,13 @@
 import { and, asc, eq, sql } from 'drizzle-orm';
-import { agentRun, db, helenaAgentSession, helenaAgentSessionItem, project } from '@repo/db';
+import {
+  agentRun,
+  agentChatThread,
+  agentChatMessage,
+  db,
+  helenaAgentSession,
+  helenaAgentSessionItem,
+  project,
+} from '@repo/db';
 import { agentSessionSource, reindexItems } from '@helena/knowledge';
 import { HttpError } from '#shared/lib';
 import type { RunnerAgent } from '../runner/service';
@@ -27,13 +35,26 @@ export async function createSession(
       .select({ projectId: agentRun.projectId, agentId: agentRun.agentId })
       .from(agentRun)
       .where(eq(agentRun.id, input.runId));
-    // A run of another agent is not this session's.
-    if (run?.agentId === agent.id) {
-      projectId = run.projectId;
-      runId = input.runId;
-    }
+    if (run?.agentId !== agent.id) throw new HttpError(404, 'Run not found');
+    projectId = run.projectId;
+    runId = input.runId;
   }
-  if (projectId === null && agent.projects.length === 1 && agent.agentRole !== 'home') {
+  if (input.threadId !== null) {
+    const [thread] = await db
+      .select({ projectId: agentChatThread.projectId })
+      .from(agentChatThread)
+      .innerJoin(agentChatMessage, eq(agentChatMessage.threadId, agentChatThread.id))
+      .where(and(eq(agentChatThread.id, input.threadId), eq(agentChatMessage.agentId, agent.id)))
+      .limit(1);
+    if (!thread) throw new HttpError(404, 'Chat not found');
+    projectId = thread.projectId;
+  }
+  if (
+    input.threadId === null &&
+    projectId === null &&
+    agent.projects.length === 1 &&
+    agent.agentRole !== 'home'
+  ) {
     projectId = await projectIdOf(agent.projects[0]!.key, agent.teamId);
   }
   const [row] = await db

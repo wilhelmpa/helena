@@ -1,7 +1,7 @@
 import { DEFAULTS, type AgentRuntimeConfig, type ToolProfile } from './config';
 import type { EventSink } from './events';
 import { HelenaClient, type HelenaApi, type MemoryState } from './helena-client';
-import { uncertaintyEscalation, type Escalation } from './escalation';
+import { centralEscalation, uncertaintyEscalation, type Escalation } from './escalation';
 import { resultEvent, runLoop, type LoopResult } from './loop';
 import { MemorySink, type SpendEvent } from './events';
 import { modelChain, resolveModel, type ModelFactory, type ResolvedModel } from './models';
@@ -242,9 +242,9 @@ export async function runAgent(input: AgentRunInput): Promise<LoopResult> {
     const escalation = config.escalation;
     const uncertainty =
       decider &&
-      escalation?.target &&
+      (escalation?.target || escalation?.central?.enabled) &&
       (escalation.mode ?? 'auto') === 'auto' &&
-      escalation.confidenceBelow !== undefined
+      (escalation.confidenceBelow !== undefined || escalation.central?.uncertainty.enabled)
         ? async (): Promise<Escalation | null> => {
             const controller = new AbortController();
             const timer = setTimeout(() => controller.abort(), 15_000);
@@ -268,6 +268,15 @@ export async function runAgent(input: AgentRunInput): Promise<LoopResult> {
               };
               // Undecided: the loop tries itself; a failure still hands the task over.
               if (parsed.status !== 'decided') return null;
+              if (escalation.central)
+                return centralEscalation(
+                  escalation,
+                  input.prompt,
+                  input.env,
+                  undefined,
+                  1,
+                  parsed.choice === 'large' ? 0 : (parsed.confidence ?? 1),
+                );
               return uncertaintyEscalation(escalation, {
                 label: parsed.choice === 'large' ? 'hard' : 'easy',
                 confidence: typeof parsed.confidence === 'number' ? parsed.confidence : 1,
@@ -291,6 +300,19 @@ export async function runAgent(input: AgentRunInput): Promise<LoopResult> {
       labels: input.labels,
       models: chain,
       escalationModel,
+      resolveEscalationModel: (target) => {
+        try {
+          return resolveModel(
+            target,
+            config.servers,
+            config.reasoning,
+            input.env,
+            input.modelFactory,
+          );
+        } catch {
+          return null;
+        }
+      },
       tools,
       direct,
       sessions,

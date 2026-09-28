@@ -1,0 +1,454 @@
+import { systemJob } from '#modules/engine/system-jobs';
+import { cancelMessage, readEvents } from '../../../chat/service';
+import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
+import { eq, sql } from 'drizzle-orm';
+import {
+  agentChatMessage,
+  aiAgent,
+  setSetting,
+  agentMemoryRevision,
+  agentProposal,
+  db,
+  helenaAgentSession,
+  helenaFact,
+} from '@repo/db';
+import { apiKeyApi, authedApi } from '#tests/helpers/app';
+import { signUpTestUser } from '#tests/helpers/auth';
+import { resetDb } from '#tests/helpers/db';
+import { createAgent } from '#tests/helpers/agents';
+import { addNote, memoryState, proposeMemory } from '../../memory';
+import { consolidateAgentMemory, consolidateNotes } from '../../consolidation';
+import { decideMemoryProposal } from '../../../memory/service';
+import { reportRuntimeState } from '../../../runtime-policy/service';
+import {
+  agentMemorySource,
+  agentSessionSource,
+  factSource,
+  reindexItems,
+  searchKnowledgeIndex,
+  useEmbedder,
+  embedPending,
+  semanticRetriever,
+  saveSemanticSetting,
+} from '@helena/knowledge';
+
+async function setup() {
+  const owner = await signUpTestUser({ name: 'Owner' });
+  const api = authedApi(owner.cookie);
+  const project = (await api.projects.post({ key: 'MEM', name: 'Memory' })).data!;
+  const other = (await api.projects.post({ key: 'OTH', name: 'Other' })).data!;
+  const created = (
+    await createAgent(api, 'MEM', {
+      name: 'Native',
+      username: 'native',
+      kind: 'external',
+      runtimePolicy: {
+        reasoningEffort: null,
+        toolAllow: [],
+        toolDeny: [],
+        mcpGrants: [],
+        files: [],
+        runtime: 'helena',
+        memoryApproval: true,
+      },
+    })
+  ).data!;
+  const target = (
+    await createAgent(api, 'MEM', {
+      name: 'Coder',
+      username: 'coder',
+      kind: 'external',
+      runtimePolicy: {
+        reasoningEffort: null,
+        toolAllow: [],
+        toolDeny: [],
+        mcpGrants: [],
+        files: [],
+        runtime: 'codex',
+      },
+    })
+  ).data!;
+  return {
+    owner,
+    api,
+    project,
+    other,
+    agent: created.agent,
+    runner: apiKeyApi(created.apiKey!),
+    target,
+    targetRunner: apiKeyApi(target.apiKey!),
+  };
+}
+
+describe('native runtime hardening', () => {
+  beforeEach(resetDb);
+  afterEach(() => useEmbedder(null));
+  it('does not roll back approved native memory from a stale runner inventory', async () => {
+    const { agent, owner } = await setup();
+    await proposeMemory(agent.id, 'MEMORY.md', 'Approved revision');
+    const [proposal] = await db.select().from(agentProposal);
+    await decideMemoryProposal(proposal!.id, true, owner.userId, null);
+    await reportRuntimeState(agent.id, {
+      adapter: 'helena',
+      status: 'online',
+      appliedRevision: null,
+      capabilities: [],
+      detail: null,
+      inventory: {
+        toolsets: [],
+        mcpServers: [],
+        skills: [],
+        memory: [{ file: 'MEMORY.md', content: 'Stale inventory', truncated: false }],
+      },
+    });
+    expect((await memoryState(agent.id)).files[0]!.content).toBe('Approved revision\n');
+    expect(await db.select().from(agentMemoryRevision)).toHaveLength(1);
+  });
+  it('consolidates past notes once and applies the approved database revision', async () => {
+    const { agent, owner } = await setup();
+    await addNote(agent.id, 'Use concise answers.', new Date('2026-09-26T12:00:00Z'));
+    await addNote(agent.id, 'Use concise answers.', new Date('2026-09-27T12:00:00Z'));
+    await addNote(agent.id, 'Today remains a note.', new Date('2026-09-28T12:00:00Z'));
+    const now = new Date('2026-09-28T01:00:00Z');
+    const result = await consolidateAgentMemory(agent.id, now);
+    expect(result?.status).toBe('pending');
+    expect(result?.duplicates).toBe(1);
+    expect((await memoryState(agent.id)).files).toHaveLength(0);
+    await consolidateAgentMemory(agent.id, now);
+    const proposals = await db.select().from(agentProposal);
+    expect(proposals).toHaveLength(1);
+    await decideMemoryProposal(proposals[0]!.id, true, owner.userId, null);
+    expect((await memoryState(agent.id)).files[0]!.content).toBe('- Use concise answers.\n');
+    expect((await consolidateAgentMemory(agent.id, now))?.status).toBe('unchanged');
+  });
+  it('checks persisted facts within the agent project scope before consolidating', async () => {
+    const { agent, runner, project, other } = await setup();
+    await runner['agent-facts'].post({
+      action: 'add',
+      content: 'Deploy-Tag ist Montag',
+      entities: ['Deploy-Tag'],
+    });
+    await db.insert(helenaFact).values({
+      teamId: project.teamId,
+      projectId: other.id,
+      content: 'Foreign project note',
+      category: 'memory',
+    });
+    const yesterday = new Date('2026-09-27T12:00:00Z');
+    await addNote(agent.id, 'Deploy-Tag ist Montag', yesterday);
+    await addNote(agent.id, 'Deploy-Tag ist Freitag', yesterday);
+    await addNote(agent.id, 'Foreign project note', yesterday);
+    const result = await consolidateAgentMemory(agent.id, new Date('2026-09-28T01:00:00Z'));
+    expect(result).toMatchObject({
+      duplicates: 1,
+      conflicts: 1,
+      content: '- Foreign project note',
+      status: 'pending',
+    });
+  });
+
+  it('transports updated central rules in the native snapshot', async () => {
+    const { runner } = await setup();
+    const before = (await runner['agent-runtime'].policy.get()).data!;
+    await setSetting('helena.escalation', { enabled: true, defaultModel: 'gpt-6-sol' });
+    const after = (await runner['agent-runtime'].policy.get()).data!;
+    expect(after.revision).not.toBe(before.revision);
+    expect(after.helena?.escalation?.central).toMatchObject({
+      enabled: true,
+      defaultModel: 'gpt-6-sol',
+    });
+  });
+
+  it('registers the nightly engine job and records one consolidation step per native agent', async () => {
+    const { agent, owner } = await setup();
+    await addNote(agent.id, 'A durable nightly note.', new Date('2026-09-27T12:00:00Z'));
+    const job = systemJob('helena.memory-consolidation')!;
+    expect(await job.schedule()).toEqual({
+      enabled: true,
+      cron: '0 3 * * *',
+      timezone: 'Europe/Berlin',
+    });
+    const steps: string[] = [];
+    await job.run({
+      trigger: 'schedule',
+      scheduledFor: new Date('2026-09-28T01:00:00Z'),
+      step: async (name, fn) => {
+        steps.push(name);
+        return fn();
+      },
+      sleep: async () => {},
+    });
+    expect(steps).toEqual(['date', 'agents', `memory:${agent.id}`]);
+    const [proposal] = await db.select().from(agentProposal);
+    await decideMemoryProposal(proposal!.id, false, owner.userId, 'Not durable');
+    await consolidateAgentMemory(agent.id, new Date('2026-09-28T01:00:00Z'));
+    expect((await memoryState(agent.id)).files).toHaveLength(0);
+    const [rejected] = await db.select().from(agentProposal);
+    expect(rejected!.status).toBe('rejected');
+  });
+
+  it('serializes concurrent daily notes without losing either line', async () => {
+    const { agent } = await setup();
+    await Promise.all([addNote(agent.id, 'Alpha line'), addNote(agent.id, 'Beta line')]);
+    const state = await memoryState(agent.id);
+    expect(state.notes.at(-1)!.content).toContain('Alpha line');
+    expect(state.notes.at(-1)!.content).toContain('Beta line');
+  });
+
+  it('rejects foreign chat and run references when creating sessions', async () => {
+    const { api, agent, runner, targetRunner } = await setup();
+    const sent = await api
+      .projects({ projectKey: 'MEM' })
+      ['ai-agents']({ agentId: agent.id })
+      .chat.post({ prompt: 'Private work' });
+    expect(
+      (
+        await targetRunner['agent-runtime'].sessions.post({
+          kind: 'chat',
+          threadId: sent.data!.threadId,
+        })
+      ).status,
+    ).toBe(404);
+    expect(
+      (await runner['agent-runtime'].sessions.post({ kind: 'run', runId: 999999 })).status,
+    ).toBe(404);
+  });
+
+  it('rejects approval against a stale baseline', async () => {
+    const { agent, owner } = await setup();
+    await proposeMemory(agent.id, 'MEMORY.md', '- proposed');
+    const [proposal] = await db.select().from(agentProposal);
+    await db.insert(agentMemoryRevision).values({
+      agentId: agent.id,
+      file: 'MEMORY.md',
+      content: '- edited',
+      sha256: 'newer',
+      source: 'owner',
+    });
+    await expect(decideMemoryProposal(proposal!.id, true, owner.userId, null)).rejects.toThrow(
+      'Memory changed',
+    );
+    expect((await memoryState(agent.id)).files[0]!.content).toBe('- edited');
+  });
+  it('filters duplicates and possible contradictions against facts', () => {
+    const fact = {
+      id: 1,
+      content: 'Deploy-Tag ist Montag',
+      entities: ['Deploy-Tag'],
+      category: 'memory',
+      trust: 0.9,
+      updatedAt: new Date(),
+      hrr: null,
+    };
+    const result = consolidateNotes(
+      '',
+      ['- 12:00 Deploy-Tag ist Montag\n- 12:01 Deploy-Tag ist Freitag'],
+      [fact],
+    );
+    expect(result).toMatchObject({ duplicates: 1, conflicts: 1, content: '' });
+  });
+  it('hands a chat to Codex once with its project, context and requested model', async () => {
+    const { api, owner, agent, runner, target, targetRunner, project } = await setup();
+    expect(
+      (
+        await api
+          .projects({ projectKey: 'MEM' })
+          ['ai-agents']({ agentId: agent.id })
+          .chat.post({ prompt: 'Implement this task.' })
+      ).status,
+    ).toBe(200);
+    const claimed = (await runner['agent-chats'].claim.post()).data!.message!;
+    const body = {
+      status: 'success' as const,
+      escalation: {
+        target: 'runtime:codex/gpt-6-sol',
+        reason: 'task-kind',
+        detail: 'coding',
+        handover: 'Continue implementation with recorded context.',
+      },
+    };
+    const endpoint = runner['agent-chats']({ messageId: claimed.id });
+    expect((await endpoint.result.post(body, { query: { claim: claimed.attempts } })).status).toBe(
+      204,
+    );
+    expect((await endpoint.result.post(body, { query: { claim: claimed.attempts } })).status).toBe(
+      204,
+    );
+    const messages = await db.select().from(agentChatMessage);
+    expect(messages.filter((message) => message.agentId === target.agent.id)).toHaveLength(2);
+    expect(messages.some((message) => message.content.includes('Handover to runtime:codex'))).toBe(
+      true,
+    );
+    const followup = (await targetRunner['agent-chats'].claim.post()).data!.message!;
+    expect(followup.projectId).toBe(project.id);
+    expect(followup.model).toBe('gpt-6-sol');
+    expect(followup.prompt).toContain('recorded context');
+    expect(followup.sessionId).toBeNull();
+    expect(await readEvents(followup.id, agent.id, owner.userId)).not.toBeNull();
+    expect(await cancelMessage(followup.id, agent.id, owner.userId)).toBe(true);
+    const [canceled] = await db
+      .select()
+      .from(agentChatMessage)
+      .where(eq(agentChatMessage.id, followup.id));
+    expect(canceled!.status).toBe('canceled');
+  });
+  it('hands a Home chat only to a target with all-project scope', async () => {
+    const { api, runner, agent, project, target, targetRunner } = await setup();
+    const chat = api.teams({ teamId: project.teamId })['ai-agents']({ agentId: agent.id }).chat;
+    const report = {
+      status: 'success' as const,
+      escalation: {
+        target: 'runtime:codex',
+        reason: 'failure',
+        detail: null,
+        handover: 'Continue Home work.',
+      },
+    };
+    await chat.post({ prompt: 'Home task' });
+    let claimed = (await runner['agent-chats'].claim.post()).data!.message!;
+    await runner['agent-chats']({ messageId: claimed.id }).result.post(report);
+    const [failed] = await db
+      .select()
+      .from(agentChatMessage)
+      .where(eq(agentChatMessage.id, claimed.id));
+    expect(failed!.status).toBe('failed');
+    await db.update(aiAgent).set({ projectScope: 'all' }).where(eq(aiAgent.id, target.agent.id));
+    await chat.post({ prompt: 'Another Home task' });
+    claimed = (await runner['agent-chats'].claim.post()).data!.message!;
+    await runner['agent-chats']({ messageId: claimed.id }).result.post(report);
+    const followup = (await targetRunner['agent-chats'].claim.post()).data!.message!;
+    expect(followup.projectId).toBeNull();
+    expect(followup.prompt).toContain('Continue Home work');
+  });
+
+  it('reports a missing target without creating a follow-up', async () => {
+    const { api, agent, runner } = await setup();
+    await api
+      .projects({ projectKey: 'MEM' })
+      ['ai-agents']({ agentId: agent.id })
+      .chat.post({ prompt: 'Continue.' });
+    const claimed = (await runner['agent-chats'].claim.post()).data!.message!;
+    const report = {
+      status: 'success' as const,
+      escalation: { target: 'runtime:claude', reason: 'failure', detail: null, handover: 'Work' },
+    };
+    const endpoint = runner['agent-chats']({ messageId: claimed.id });
+    expect(
+      (await endpoint.result.post(report, { query: { claim: claimed.attempts } })).status,
+    ).toBe(204);
+    expect(
+      (await endpoint.result.post(report, { query: { claim: claimed.attempts } })).status,
+    ).toBe(204);
+    const [answer] = await db
+      .select()
+      .from(agentChatMessage)
+      .where(eq(agentChatMessage.id, claimed.id));
+    expect(answer!.status).toBe('failed');
+    expect(answer!.content).toContain('Handover failed');
+  });
+  it('pages sessions sharing a timestamp and latest memory revisions without omissions', async () => {
+    const { agent, project } = await setup();
+    await db.insert(helenaAgentSession).values(
+      [0, 1, 2].map(() => ({
+        agentId: agent.id,
+        teamId: project.teamId,
+        projectId: project.id,
+        kind: 'run',
+        updatedAt: sql`'2026-09-20T10:00:00.123456Z'::timestamptz`,
+      })),
+    );
+    let cursor: string | null = null;
+    const ids: string[] = [];
+    do {
+      const page = await agentSessionSource.list({ cursor, since: null, limit: 1 });
+      ids.push(...page.items.map((item) => item.id));
+      cursor = page.cursor;
+    } while (cursor);
+    expect(new Set(ids).size).toBe(3);
+    await addNote(agent.id, 'First note', new Date('2026-09-20T10:00:00Z'));
+    await addNote(agent.id, 'Second note', new Date('2026-09-21T10:00:00Z'));
+    await addNote(agent.id, 'First note updated', new Date('2026-09-20T12:00:00Z'));
+    const first = await agentMemorySource.list({ cursor: null, since: null, limit: 1 });
+    const second = await agentMemorySource.list({ cursor: first.cursor, since: null, limit: 1 });
+    expect(new Set([...first.items, ...second.items].map((item) => item.id)).size).toBe(2);
+  });
+  it('indexes the three sources with project and private ACL in hybrid search', async () => {
+    const { agent, project, other } = await setup();
+    const facts = await db
+      .insert(helenaFact)
+      .values(
+        [project.id, other.id].map((projectId) => ({
+          teamId: project.teamId,
+          projectId,
+          agentId: agent.id,
+          content: 'Quartz searchable fact',
+          category: 'memory',
+        })),
+      )
+      .returning();
+    await addNote(agent.id, 'Quartz private memory');
+    const memory = (await agentMemorySource.list({ cursor: null, since: null, limit: 50 })).items;
+    const sessions = await db
+      .insert(helenaAgentSession)
+      .values(
+        [project.id, other.id].map((projectId) => ({
+          teamId: project.teamId,
+          projectId,
+          agentId: agent.id,
+          kind: 'run',
+          summary: 'Quartz session',
+        })),
+      )
+      .returning();
+    await reindexItems(
+      factSource,
+      facts.map((fact) => String(fact.id)),
+    );
+    await reindexItems(
+      agentMemorySource,
+      memory.map((item) => item.id),
+    );
+    await reindexItems(
+      agentSessionSource,
+      sessions.map((session) => session.id),
+    );
+    const reach = {
+      userId: agent.userId,
+      projects: new Map([[project.id, new Set(['ai_agents'])]]),
+      teams: new Map<number, Set<string>>(),
+    };
+    const embedder = {
+      id: 'fixture-quartz',
+      dims: 3,
+      embed: async (texts: string[]) => texts.map(() => [1, 0, 0]),
+    };
+    useEmbedder(embedder);
+    await saveSemanticSetting({ enabled: true, model: embedder.id });
+    expect(await embedPending(embedder)).toBeGreaterThan(0);
+    const semantic = await semanticRetriever();
+    const result = await searchKnowledgeIndex(
+      reach,
+      { q: 'Quartz', limit: 20, collapse: false },
+      semantic ?? undefined,
+    );
+    expect(result.items.every((item) => item.matched.includes('meaning'))).toBe(true);
+    expect(result.items.map((item) => item.source).sort()).toEqual([
+      'agent-memory',
+      'agent-session',
+      'fact',
+    ]);
+    expect(result.items.every((item) => item.projectId !== other.id)).toBe(true);
+    const stranger = await searchKnowledgeIndex(
+      { userId: 'stranger', projects: new Map(), teams: new Map() },
+      { q: 'Quartz', limit: 20 },
+      semantic ?? undefined,
+    );
+    expect(stranger.items).toHaveLength(0);
+    expect(await factSource.get(String(facts[0]!.id))).not.toBeNull();
+    await db
+      .update(helenaFact)
+      .set({ deletedAt: new Date() })
+      .where(eq(helenaFact.id, facts[0]!.id));
+    expect(await factSource.get(String(facts[0]!.id))).toBeNull();
+  });
+});

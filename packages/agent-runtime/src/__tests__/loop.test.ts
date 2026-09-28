@@ -419,13 +419,13 @@ describe('reflection', () => {
   });
 });
 
-test('a chat answer is not handed to a runtime that needs a task', async () => {
+test('a chat emits the runtime handover for its follow-up agent', async () => {
   const { result, sink } = await run([{ text: 'Ich prüfe den Vertrag: sieht gut aus.' }], {
     prompt: 'Prüfe den Vertrag.',
     config: { kind: 'chat', escalation: { target: 'runtime:claude', taskKinds: ['recht'] } },
   });
-  expect(result.status).toBe('success');
-  expect(sink.of('escalate')).toEqual([]);
+  expect(result.status).toBe('escalated');
+  expect(sink.of('escalate')[0]!.target).toBe('runtime:claude');
 });
 
 test('tells an announcement from an answer', async () => {
@@ -436,4 +436,123 @@ test('tells an announcement from an answer', async () => {
   expect(isAnnouncement('Ich habe die Datei angelegt.')).toBe(false);
   expect(isAnnouncement('Ich schaue nach. Der Preis ist 49 €.')).toBe(false);
   expect(isAnnouncement('Soll ich die Seite prüfen?')).toBe(false);
+});
+
+for (const escalation of [
+  { target: 'runtime:codex', mode: 'never' as const },
+  { target: 'runtime:codex', onFailure: false },
+]) {
+  test(`failure escalation respects ${JSON.stringify(escalation)}`, async () => {
+    const { result, sink } = await run([{ error: 'connection refused' }], {
+      config: { escalation },
+    });
+    expect(result.status).toBe('failed');
+    expect(sink.of('escalate')).toHaveLength(0);
+  });
+}
+
+test('an unreachable policy API denies a real write', async () => {
+  const { HelenaClient } = await import('../helena-client');
+  const { sink, dir } = await run(
+    [
+      { calls: [{ name: 'write_file', input: { path: 'forbidden.txt', content: 'bad' } }] },
+      { text: 'Blocked.' },
+    ],
+    {
+      config: { policy: 'helena', memory: { enabled: false } },
+      helena: new HelenaClient('http://127.0.0.1:1', 'fixture'),
+    },
+  );
+  expect(sink.of('tool-result')[0]!.output).toContain('BLOCKED');
+  await expect(readFile(join(dir, 'forbidden.txt'))).rejects.toThrow();
+});
+
+test('central rules select kind-specific targets and task pins override agent pins', async () => {
+  const { normalizeEscalation } = await import('@helena/sdk');
+  const central = normalizeEscalation({ enabled: true });
+  const { result, sink } = await run([{ text: 'unused' }], {
+    prompt: 'Review security',
+    config: { escalation: { central, agentId: 7 } },
+  });
+  expect(result.status).toBe('escalated');
+  expect(sink.of('escalate')[0]!.target).toBe('runtime:claude/claude-opus-5-5');
+  const { centralEscalation } = await import('../escalation');
+  central.pins = [
+    { scope: 'agent', id: 7, mode: 'strong', model: null },
+    { scope: 'task', id: 42, mode: 'local', model: null },
+  ];
+  expect(
+    centralEscalation({ central, agentId: 7 }, 'Review security', { ITSAPLAN_ISSUE_ID: '42' }),
+  ).toBeNull();
+  central.enabled = false;
+  expect(
+    centralEscalation({ central, agentId: 7, mode: 'always' }, 'Review security', {}),
+  ).toBeNull();
+});
+
+test('hands over at eighty percent of the wall-clock budget', async () => {
+  const { runLoop } = await import('../loop');
+  const { resolveModel } = await import('../models');
+  const dir = await workdir();
+  const cfg = config(dir, {
+    limits: { runBudgetSeconds: 10 },
+    escalation: { target: 'runtime:codex' },
+  });
+  const sink = new MemorySink();
+  let reads = 0;
+  const model = resolveModel(
+    'local/flash',
+    cfg.servers,
+    null,
+    {},
+    factoryOf({ 'local/flash': scriptedModel([{ text: 'unused' }]) }),
+  );
+  const result = await runLoop({
+    config: cfg,
+    prompt: 'Task',
+    system: '',
+    sessionId: null,
+    models: [model],
+    tools: [],
+    direct: new Set(),
+    sessions: new MemorySessionStore(),
+    sink,
+    policy: async () => ({ allowed: true, message: '' }),
+    env: {},
+    signal: new AbortController().signal,
+    now: () => (reads++ === 0 ? 0 : 8000),
+  });
+  expect(result.status).toBe('escalated');
+  expect(sink.of('escalate')[0]!.detail).toBe('budget-80');
+});
+
+test('a slow policy cannot start a write after the run budget expired', async () => {
+  const { HelenaClient } = await import('../helena-client');
+  const helena = new HelenaClient('http://127.0.0.1:1', 'fixture');
+  helena.decide = async () => {
+    await new Promise((resolve) => setTimeout(resolve, 150));
+    return { allowed: true, message: '' };
+  };
+  const began = Date.now();
+  const { result, dir } = await run(
+    [{ calls: [{ name: 'write_file', input: { path: 'too-late.txt', content: 'late' } }] }],
+    {
+      helena,
+      config: { policy: 'helena', memory: { enabled: false }, limits: { runBudgetSeconds: 0.05 } },
+    },
+  );
+  expect(result.status).toBe('failed');
+  expect(Date.now() - began).toBeLessThan(140);
+  await new Promise((resolve) => setTimeout(resolve, 170));
+  await expect(readFile(join(dir, 'too-late.txt'))).rejects.toThrow();
+});
+
+test('central timeout rules receive a first-token timeout', async () => {
+  const { normalizeEscalation } = await import('@helena/sdk');
+  const central = normalizeEscalation({ enabled: true, failure: { on: ['timeout'] } });
+  const { result, sink } = await run([{ hang: true }], {
+    config: { limits: { firstChunkSeconds: 0.05 }, escalation: { central } },
+  });
+  expect(result.status).toBe('escalated');
+  expect(sink.of('escalate')[0]!.target).toBe('runtime:codex/gpt-6-sol');
 });

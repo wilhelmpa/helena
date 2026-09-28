@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { and, desc, eq, inArray } from 'drizzle-orm';
-import { agentMemoryRevision, db } from '@repo/db';
+import { agentMemoryRevision, aiAgent, db } from '@repo/db';
 import { looksSecret } from '@helena/facts';
 import { agentMemorySource, reindexItems } from '@helena/knowledge';
 import { HttpError } from '#shared/lib';
@@ -38,8 +38,10 @@ function timeOf(date: Date, timeZone = process.env.TZ || 'Europe/Berlin'): strin
   );
 }
 
-async function latest(agentId: number, file: string): Promise<string> {
-  const [row] = await db
+type Executor = typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+async function latest(agentId: number, file: string, executor: Executor = db): Promise<string> {
+  const [row] = await executor
     .select({ content: agentMemoryRevision.content })
     .from(agentMemoryRevision)
     .where(and(eq(agentMemoryRevision.agentId, agentId), eq(agentMemoryRevision.file, file)))
@@ -48,8 +50,8 @@ async function latest(agentId: number, file: string): Promise<string> {
   return row?.content ?? '';
 }
 
-function reindexLater(ids: string[]): void {
-  void reindexItems(agentMemorySource, ids).catch((error: unknown) => {
+async function reindexMemory(ids: string[]): Promise<void> {
+  await reindexItems(agentMemorySource, ids).catch((error: unknown) => {
     console.error('[helena-runtime] memory reindex failed', error);
   });
 }
@@ -84,18 +86,21 @@ export async function addNote(agentId: number, text: string, now = new Date()): 
   if (!line) throw new HttpError(400, 'The note is empty');
   if (looksSecret(line)) throw new HttpError(400, 'The note looks like it holds a secret');
   const file = noteFile(now);
-  const before = await latest(agentId, file);
-  let content = `${before}${before && !before.endsWith('\n') ? '\n' : ''}- ${timeOf(now)} ${line}\n`;
-  // A day's note keeps its newest lines when it grows past the limit.
-  if (content.length > NOTE_LIMIT) content = content.slice(content.length - NOTE_LIMIT);
-  await db.insert(agentMemoryRevision).values({
-    agentId,
-    file,
-    content,
-    sha256: sha256(content),
-    source: 'agent',
+  await db.transaction(async (tx) => {
+    await tx.select({ id: aiAgent.id }).from(aiAgent).where(eq(aiAgent.id, agentId)).for('update');
+    const before = await latest(agentId, file, tx);
+    let content = `${before}${before && !before.endsWith('\n') ? '\n' : ''}- ${timeOf(now)} ${line}\n`;
+    // A day's note keeps its newest lines when it grows past the limit.
+    if (content.length > NOTE_LIMIT) content = content.slice(content.length - NOTE_LIMIT);
+    await tx.insert(agentMemoryRevision).values({
+      agentId,
+      file,
+      content,
+      sha256: sha256(content),
+      source: 'agent',
+    });
   });
-  reindexLater([`${agentId}:${file}`]);
+  await reindexMemory([`${agentId}:${file}`]);
 }
 
 // A new MEMORY.md or USER.md from the agent: a proposal while its memory writes wait for the
@@ -104,6 +109,7 @@ export async function proposeMemory(
   agentId: number,
   file: MemoryFile,
   content: string,
+  expectedSha256?: string,
 ): Promise<{ status: 'applied' | 'pending' }> {
   const text = content.trim();
   if (text.length > MEMORY_LIMIT) {
@@ -111,23 +117,31 @@ export async function proposeMemory(
   }
   if (looksSecret(text)) throw new HttpError(400, 'The memory looks like it holds a secret');
   const body = `${text}\n`;
-  const baseline = (await memoryBaseline(agentId)).find((entry) => entry.file === file);
-  if (baseline?.sha256 === sha256(body)) return { status: 'applied' };
-  if (await memoryApproval(agentId)) {
-    await recordMemoryProposals(agentId, [
-      { file, content: body, sha256: sha256(body), baseSha256: baseline?.sha256 ?? sha256('') },
-    ]);
-    return { status: 'pending' };
-  }
-  await db.insert(agentMemoryRevision).values({
-    agentId,
-    file,
-    content: body,
-    sha256: sha256(body),
-    source: 'agent',
+  const result = await db.transaction(async (tx): Promise<{ status: 'applied' | 'pending' }> => {
+    await tx.select({ id: aiAgent.id }).from(aiAgent).where(eq(aiAgent.id, agentId)).for('update');
+    const baseline = (await memoryBaseline(agentId, tx)).find((entry) => entry.file === file);
+    if (expectedSha256 !== undefined && (baseline?.sha256 ?? sha256('')) !== expectedSha256)
+      throw new HttpError(409, 'Memory changed during consolidation');
+    if (baseline?.sha256 === sha256(body)) return { status: 'applied' };
+    if (await memoryApproval(agentId)) {
+      await recordMemoryProposals(
+        agentId,
+        [{ file, content: body, sha256: sha256(body), baseSha256: baseline?.sha256 ?? sha256('') }],
+        tx,
+      );
+      return { status: 'pending' };
+    }
+    await tx.insert(agentMemoryRevision).values({
+      agentId,
+      file,
+      content: body,
+      sha256: sha256(body),
+      source: 'agent',
+    });
+    return { status: 'applied' };
   });
-  reindexLater([`${agentId}:${file}`]);
-  return { status: 'applied' };
+  if (result.status === 'applied') await reindexMemory([`${agentId}:${file}`]);
+  return result;
 }
 
 // The notes of an agent, newest day first, for the memory editor.

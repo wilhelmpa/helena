@@ -35,6 +35,7 @@ export async function enqueueAgentRun(
     issueId: number | null;
     sourceActivityId: number | null;
     prompt: string;
+    model?: string | null;
     trigger?:
       | 'mention'
       | 'delegation'
@@ -103,6 +104,7 @@ export async function enqueueAgentRun(
         issueId: input.issueId,
         sourceActivityId: input.sourceActivityId,
         prompt: input.prompt,
+        model: input.model ?? null,
         trigger: input.trigger ?? (input.sourceActivityId == null ? 'delegation' : 'mention'),
         nextAttemptAt: delay > 0 ? sql`now() + make_interval(secs => ${delay})` : undefined,
         workClass: input.workClass ?? null,

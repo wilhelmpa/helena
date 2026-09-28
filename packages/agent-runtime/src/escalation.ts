@@ -1,3 +1,8 @@
+import {
+  escalate as decideEscalation,
+  type EscalationFailure,
+  type EscalationKind,
+} from '@helena/sdk';
 import type { EscalationSettings } from './config';
 import type { EscalationReason } from './events';
 
@@ -10,6 +15,7 @@ import type { EscalationReason } from './events';
 export interface Escalation {
   reason: EscalationReason;
   detail: string;
+  target?: string;
 }
 
 export function escalationTarget(settings: EscalationSettings | undefined): string | null {
@@ -136,4 +142,76 @@ export class FailureWatch {
   testsFailing(): boolean {
     return this.redTests >= this.limits.redTests;
   }
+}
+
+export function runtimeTarget(model: string): string {
+  if (model.startsWith('claude-')) return `runtime:claude/${model}`;
+  if (/^(gpt-|o[1-9])/.test(model)) return `runtime:codex/${model}`;
+  return model;
+}
+
+export function centralEscalation(
+  settings: EscalationSettings,
+  task: string,
+  env: Record<string, string | undefined>,
+  failure?: string,
+  attempts = 1,
+  confidence?: number,
+): Escalation | null {
+  const rules = settings.central;
+  if (!rules) return null;
+  const kinds: EscalationKind[] = [];
+  const words: Record<EscalationKind, RegExp> = {
+    coding: /\b(code|coding|programmier|refactor|implement|bug|migration)/i,
+    architecture: /\b(architektur|architecture)/i,
+    security: /\b(security|sicherheit|schwachstelle|cve-)/i,
+    legal: /\b(legal|recht|vertrag|dsgvo|agb)/i,
+    'external-text': /\b(newsletter|pressemitteilung|kundenmail|public post)/i,
+  };
+  for (const kind of Object.keys(words) as EscalationKind[])
+    if (words[kind].test(task)) kinds.push(kind);
+  const mapped: EscalationFailure | null = !failure
+    ? null
+    : failure === 'tests-failed' || failure === 'tests-red'
+      ? 'tests-failed'
+      : failure === 'loop'
+        ? 'loop'
+        : /budget|chunk|timeout/.test(failure)
+          ? 'timeout'
+          : 'error';
+  const decision = decideEscalation(rules, {
+    agentId: settings.agentId ?? null,
+    projectId: Number(env.ITSAPLAN_PROJECT_ID) || null,
+    taskId: Number(env.ITSAPLAN_ISSUE_ID) || null,
+    kinds: failure ? [] : kinds,
+    failure: mapped,
+    localAttempts: attempts,
+    confidence,
+  });
+  // An agent's dialog supplies only a pin; the central switch and narrower task pin lead.
+  const hasPin = rules.pins.some(
+    (pin) =>
+      (pin.scope === 'task' && pin.id === Number(env.ITSAPLAN_ISSUE_ID)) ||
+      (pin.scope === 'agent' && pin.id === settings.agentId),
+  );
+  if (rules.enabled && !hasPin && settings.mode === 'never') return null;
+  if (rules.enabled && !hasPin && settings.mode === 'always')
+    return {
+      reason: 'pinned',
+      detail: 'agent',
+      target: settings.target ?? runtimeTarget(rules.defaultModel),
+    };
+  if (!decision.model) return null;
+  return {
+    reason:
+      decision.reason === 'kind'
+        ? 'task-kind'
+        : decision.reason === 'failed'
+          ? 'failure'
+          : decision.reason === 'uncertain'
+            ? 'uncertain'
+            : 'pinned',
+    detail: decision.detail ?? decision.reason,
+    target: runtimeTarget(decision.model),
+  };
 }

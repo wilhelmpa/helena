@@ -152,3 +152,60 @@ describe('chat report recovery', () => {
     expect(stop.signal.aborted).toBe(false);
   }, 15_000);
 });
+
+it('reports a native chat handover as a successful transfer with its context', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'helena-chat-handover-'));
+  cleanup.push(() => rm(dir, { recursive: true, force: true }));
+  const reports: Record<string, unknown>[] = [];
+  const events: AgUiEvent[] = [];
+  const server = createServer(async (request, response) => {
+    let raw = '';
+    for await (const chunk of request) raw += chunk;
+    if (request.url?.includes('/result')) reports.push(JSON.parse(raw));
+    if (request.url?.includes('/events')) events.push(...JSON.parse(raw).events);
+    response.setHeader('content-type', 'application/json');
+    response.end('{"canceled":false}');
+  });
+  await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+  cleanup.push(() => new Promise<void>((resolve) => server.close(() => resolve())));
+  const address = server.address();
+  if (!address || typeof address === 'string') throw new Error('Missing fixture port');
+  const config: RunnerConfig = {
+    name: 'handover',
+    url: `http://127.0.0.1:${address.port}`,
+    apiKey: 'fixture',
+    command: `printf '%s\\n' '{"type":"session","id":"native-session"}' '{"type":"escalate","target":"runtime:codex/gpt-6-sol","reason":"failure","detail":"budget-80","handover":"Resume the verified work."}' '{"type":"result","text":"Handed over","exitCode":3}'; exit 3`,
+    args: [],
+    cwd: dir,
+    env: {},
+    concurrency: 1,
+    pollIntervalMs: 1000,
+    timeoutMs: 5000,
+    outputFormat: 'helena-jsonl',
+    models: [],
+  };
+  await answer(
+    config,
+    new Client(config),
+    {
+      id: 7,
+      attempts: 1,
+      threadId: 'thread',
+      prompt: 'Task',
+      systemPrompt: '',
+      sessionId: null,
+      model: null,
+      thinkingLevel: null,
+    },
+    new AbortController(),
+    null,
+  );
+  expect(reports).toHaveLength(1);
+  expect(events.filter((event) => event.type === 'TEXT_MESSAGE_CONTENT')).toEqual([
+    expect.objectContaining({ delta: 'Handed over' }),
+  ]);
+  expect(reports[0]).toMatchObject({
+    status: 'success',
+    escalation: { target: 'runtime:codex/gpt-6-sol', handover: 'Resume the verified work.' },
+  });
+});

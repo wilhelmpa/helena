@@ -432,3 +432,5 @@ export {
   type DecisionQuestion,
   type DecisionStatus,
 } from './decisions';
+
+export * from './escalation';

@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, gt, inArray, isNull, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gt, inArray, isNull, or, sql } from 'drizzle-orm';
 import {
   agentMemoryRevision,
   aiAgent,
@@ -29,8 +29,14 @@ import { cursorId, iso, nextCursor, numericIds, pageLimit, routes } from './comm
 // catches up after downtime.
 
 const SESSION_TEXT_LIMIT = 200_000;
+const sessionUpdated = sql`date_trunc('milliseconds', ${helenaAgentSession.updatedAt})`;
 
-async function sessionRows(ids: string[] | null, afterUpdated?: Date | null, limit?: number) {
+async function sessionRows(
+  ids: string[] | null,
+  afterUpdated?: Date | null,
+  limit?: number,
+  afterId?: string,
+) {
   const query = db
     .select({
       id: helenaAgentSession.id,
@@ -54,10 +60,20 @@ async function sessionRows(ids: string[] | null, afterUpdated?: Date | null, lim
     .where(
       and(
         ids ? inArray(helenaAgentSession.id, ids) : undefined,
-        afterUpdated ? gt(helenaAgentSession.updatedAt, afterUpdated) : undefined,
+        afterUpdated
+          ? or(
+              gt(sessionUpdated, afterUpdated.toISOString()),
+              afterId
+                ? and(
+                    eq(sessionUpdated, afterUpdated.toISOString()),
+                    gt(helenaAgentSession.id, afterId),
+                  )
+                : undefined,
+            )
+          : undefined,
       ),
     )
-    .orderBy(asc(helenaAgentSession.updatedAt));
+    .orderBy(asc(sessionUpdated), asc(helenaAgentSession.id));
   return limit ? query.limit(limit) : query;
 }
 
@@ -116,12 +132,16 @@ export const agentSessionSource: KnowledgeSource = {
   async list(ctx) {
     const limit = pageLimit(ctx);
     // Sessions change as they grow, so they page by their change time (the cursor).
-    const after = ctx.cursor ? new Date(ctx.cursor) : (ctx.since ?? null);
-    const rows = await sessionRows(null, after, limit);
+    const [timestamp, afterId] = ctx.cursor?.split('|') ?? [];
+    const after = timestamp ? new Date(timestamp) : (ctx.since ?? null);
+    const rows = await sessionRows(null, after, limit, afterId);
     const items = await Promise.all(rows.map(sessionItem));
     return {
       items,
-      cursor: rows.length < limit ? null : rows[rows.length - 1]!.updatedAt.toISOString(),
+      cursor:
+        rows.length < limit
+          ? null
+          : `${rows[rows.length - 1]!.updatedAt.toISOString()}|${rows[rows.length - 1]!.id}`,
     };
   },
   async get(id) {
@@ -175,7 +195,7 @@ export const agentMemorySource: KnowledgeSource = {
   async list(ctx) {
     const limit = pageLimit(ctx);
     // One entry per agent and file: the newest revision's id pages through them.
-    const rows = await db
+    const latest = db
       .selectDistinctOn([agentMemoryRevision.agentId, agentMemoryRevision.file], {
         id: agentMemoryRevision.id,
         agentId: agentMemoryRevision.agentId,
@@ -189,7 +209,8 @@ export const agentMemorySource: KnowledgeSource = {
         ),
       )
       .orderBy(agentMemoryRevision.agentId, agentMemoryRevision.file, desc(agentMemoryRevision.id))
-      .limit(limit);
+      .as('latest_memory');
+    const rows = await db.select().from(latest).orderBy(asc(latest.id)).limit(limit);
     const items = (await Promise.all(rows.map((row) => memoryItem(row.agentId, row.file)))).filter(
       (item): item is KnowledgeItem => item !== null,
     );

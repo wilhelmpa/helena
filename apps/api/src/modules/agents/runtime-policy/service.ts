@@ -1,3 +1,4 @@
+import { readEscalation } from '#modules/escalation/service';
 import { createHash } from 'node:crypto';
 import { db, aiAgent } from '@repo/db';
 import { eq } from 'drizzle-orm';
@@ -160,7 +161,15 @@ export async function runtimePolicySnapshot(agentRef: RunnerAgent) {
     // Helena's own loop (docs/helena-decisions/zentrale-laufzeit.md): its role's tools and
     // when it hands a task to a bigger model.
     ...(agent.runtimePolicy.runtime === 'helena' && {
-      helena: agent.runtimePolicy.helena ?? {},
+      helena: {
+        ...agent.runtimePolicy.helena,
+        escalation: {
+          mode: agent.runtimePolicy.helena?.escalation?.mode ?? 'auto',
+          target: agent.runtimePolicy.helena?.escalation?.target,
+          agentId: agent.id,
+          central: await readEscalation(),
+        },
+      },
     }),
     actions,
   };
@@ -429,7 +438,9 @@ export async function reportRuntimeState(
   const done = await completeRuntimeActions(agentId, actions);
   await completeMemoryWrites(agentId, done, actions);
   await recordMemoryProposals(agentId, memoryProposals);
-  await recordObservedMemory(agentId, value.inventory);
+  // Native memory lives in this database. Its runner inventory is a snapshot and may
+  // predate an approval or a completed owner write; it must never replace that revision.
+  if (value.adapter !== 'helena') await recordObservedMemory(agentId, value.inventory);
   return value;
 }
 

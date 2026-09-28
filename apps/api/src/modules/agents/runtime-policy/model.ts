@@ -1,3 +1,4 @@
+import { EscalationSettings as EscalationResponse } from '#modules/escalation/model';
 import { t } from 'elysia';
 
 import { runtimeConflict, runtimeInventory, runtimePolicy, runtimeState } from '../core/model';
@@ -124,6 +125,8 @@ export const RuntimePolicySnapshotResponse = t.Object({
             taskKinds: t.Optional(t.Array(t.String())),
             confidenceBelow: t.Optional(t.Number()),
             onFailure: t.Optional(t.Boolean()),
+            agentId: t.Optional(t.Number()),
+            central: t.Optional(EscalationResponse),
           }),
         ),
         browserBudgetSeconds: t.Optional(t.Number()),

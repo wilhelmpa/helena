@@ -5,6 +5,7 @@ import { execute, modelProvider } from './execute';
 import { LoginUseReader } from './logins';
 import type { HermesRunSettings } from './policy';
 import { SpendReader } from './spend';
+import { EscalationReader } from './agui';
 import { observeLimits } from './limits/context';
 import { reportUntilTaken, runRedactor, withInstructions } from './run';
 import { runModelReport, type RuntimeAdapter } from './runtime';
@@ -80,6 +81,7 @@ export async function answer(
     config.outputFormat,
     config.command ? null : (config.agent ?? null),
   );
+  const escalation = new EscalationReader(config.outputFormat);
   const outcome = await execute(
     { ...config, args: [...config.args, ...(hermes?.args ?? [])] },
     {
@@ -93,6 +95,7 @@ export async function answer(
       autopilotLevel: message.autopilotLevel ?? null,
       env: {
         ITSAPLAN_TRIGGER: 'chat',
+        ITSAPLAN_PROJECT_ID: String(message.projectId ?? ''),
         // No run: the header Helena's MCP server gets it in stays empty.
         ITSAPLAN_RUN_ID: '',
         ITSAPLAN_SYSTEM_PROMPT: message.systemPrompt,
@@ -109,6 +112,7 @@ export async function answer(
       onData: (chunk) => {
         stream.write(chunk);
         spend.write(chunk);
+        escalation.write(chunk);
         logins.write(chunk);
         limits?.write(chunk);
       },
@@ -146,10 +150,14 @@ export async function answer(
   // The context size is read after the stream is closed, which is where the last line of
   // the output is parsed. An answer that failed reports it too: what the command read
   // before it broke is still the size of its session's context.
-  if (outcome.status === 'success') {
+  const handedOver = escalation.value();
+  if (outcome.status === 'success' || (handedOver && outcome.status === 'failed')) {
     await stream.finish(outcome.output);
     await report({
       status: 'success',
+      ...(handedOver && {
+        escalation: { ...handedOver, handover: mask.text(handedOver.handover) },
+      }),
       usage: outcome.usage ?? stream.contextUsage(),
       spend: spent,
       ...(stream.model() && { model: stream.model()! }),

@@ -19,6 +19,7 @@ export const RunnerRunResponse = t.Object({
   }),
   issueId: t.Nullable(t.Number()),
   issueIdentifier: t.Nullable(t.String()),
+  projectId: t.Number(),
   sourceActivityId: t.Nullable(t.Number()),
   model: t.Nullable(t.String()),
   thinkingLevel: t.Nullable(t.String()),

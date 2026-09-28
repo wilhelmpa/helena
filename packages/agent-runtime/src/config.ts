@@ -67,6 +67,8 @@ export interface EscalationSettings {
   confidenceBelow?: number;
   // Hand over after a failure (loop, budget, repeated invalid calls, red tests).
   onFailure?: boolean;
+  central?: import('@helena/sdk').EscalationSettings;
+  agentId?: number;
 }
 
 export interface AgentRuntimeConfig {

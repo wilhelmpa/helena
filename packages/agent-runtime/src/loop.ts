@@ -2,6 +2,7 @@ import { generateText, jsonSchema, streamText, tool, type ModelMessage, type Too
 import { DEFAULTS, type AgentRuntimeConfig } from './config';
 import {
   escalationTarget,
+  centralEscalation,
   FailureWatch,
   isRuntimeTarget,
   preflightEscalation,
@@ -10,7 +11,7 @@ import {
 import type { EventSink, ResultEvent, SpendEvent } from './events';
 import type { Decision } from './helena-client';
 import type { ResolvedModel } from './models';
-import type { SessionItem, SessionStore } from './session';
+import { messageText, type SessionItem, type SessionStore } from './session';
 import type { AgentTool, PolicyQuestion, ToolOutput } from './tools/types';
 
 // Helena's agent loop. One model call per step through the AI SDK (streaming, the tools
@@ -29,6 +30,7 @@ export interface LoopInput {
   models: ResolvedModel[];
   // The model a hand-over switches to when the escalation target is one this loop drives.
   escalationModel?: ResolvedModel | null;
+  resolveEscalationModel?: (target: string) => ResolvedModel | null;
   // Every tool the agent may use; `direct` names the ones the model sees from the start.
   tools: AgentTool[];
   direct: Set<string>;
@@ -234,23 +236,45 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
       .map((part) => `- ${part.toolName} ${JSON.stringify(part.input).slice(0, 200)}`);
     return [
       `Übergabe von Helenas lokaler Laufzeit (${chain[0]!.id}), Grund: ${escalation.reason} (${escalation.detail}).`,
-      `Aufgabe:\n${input.prompt}`,
+      `Aufgabe:\n${input.prompt.slice(0, 6000)}`,
+      summary ? `Zusammenfassung:\n${summary.slice(0, 3000)}` : '',
+      `Verlauf:\n${entries
+        .slice(-10)
+        .map((entry) => `${entry.message.role}: ${messageText(entry.message)}`)
+        .join('\n')
+        .slice(-6000)}`,
       calls.length ? `Bisherige Schritte (letzte ${calls.length}):\n${calls.join('\n')}` : '',
       lastText ? `Letzter Stand:\n${lastText.slice(0, 3000)}` : '',
     ]
       .filter(Boolean)
-      .join('\n\n');
+      .join('\n\n')
+      .slice(0, 20_000);
   };
   let switchedTo: string | null = null;
+  let failureAttempts = 0;
   const escalate = async (
     escalation: Escalation,
     lastText: string,
   ): Promise<LoopResult | 'switched' | null> => {
-    const target = escalationTarget(config.escalation);
-    if (!target || switchedTo) return null;
-    // A chat answer stays in its chat: a hand-over to Claude Code or Codex is a follow-up run
-    // on a task, which a chat does not have.
-    if (isRuntimeTarget(target) && kind === 'chat') return null;
+    if (config.escalation?.central && escalation.reason === 'failure') {
+      const central = centralEscalation(
+        config.escalation,
+        input.prompt,
+        input.env,
+        escalation.detail,
+        ++failureAttempts,
+      );
+      if (!central) return null;
+      escalation = central;
+    }
+    const target = escalation.target ?? escalationTarget(config.escalation);
+    if (
+      !target ||
+      switchedTo ||
+      (!config.escalation?.central && config.escalation?.mode === 'never')
+    )
+      return null;
+    if (escalation.reason === 'failure' && config.escalation?.onFailure === false) return null;
     if (isRuntimeTarget(target)) {
       sink.emit({
         type: 'escalate',
@@ -269,7 +293,8 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
     const next =
       input.escalationModel?.id === target
         ? input.escalationModel
-        : input.models.find((model) => model.id === target);
+        : (input.models.find((model) => model.id === target) ??
+          input.resolveEscalationModel?.(target));
     if (!next) return null;
     switchedTo = target;
     chain = [next];
@@ -288,7 +313,9 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
 
   // ── before the first step ──
   const pre =
-    preflightEscalation(config.escalation, input.prompt, input.labels) ??
+    (config.escalation?.central
+      ? centralEscalation(config.escalation, input.prompt, input.env)
+      : preflightEscalation(config.escalation, input.prompt, input.labels)) ??
     (await input.uncertainty?.().catch(() => null)) ??
     null;
   if (pre) {
@@ -396,11 +423,20 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
         return finish({ status: 'failed', text: lastText, exitCode: 130, reason: 'aborted' });
       }
       const escalated = await escalate(
-        { reason: 'failure', detail: 'model-unavailable' },
+        {
+          reason: 'failure',
+          detail: lastError instanceof StepAbort ? lastError.why : 'model-unavailable',
+        },
         lastText,
       );
       if (escalated === 'switched') continue;
       if (escalated) return escalated;
+      if (
+        config.escalation?.central?.enabled &&
+        failureAttempts < config.escalation.central.failure.localAttempts &&
+        now() - started < budgetMs
+      )
+        continue;
       return finish({
         status: 'failed',
         text: lastText,
@@ -704,27 +740,36 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
       };
     }
     const question = entry.readOnly ? null : (entry.question?.(args) ?? null);
-    if (question) {
-      const decision = await input.policy(question);
-      if (!decision.allowed) return { output: { text: decision.message, isError: true } };
-    }
     const timeout = Math.min(
       entry.timeoutMs ?? toolTimeoutMs,
       entry.kind === 'browser' ? browserLeftMs : Number.POSITIVE_INFINITY,
-      Math.max(budgetMs - (now() - started), 1_000),
+      Math.max(budgetMs - (now() - started), 1),
     );
     const controller = new AbortController();
     const onAbort = () => controller.abort();
+    if (input.signal.aborted) controller.abort();
     input.signal.addEventListener('abort', onAbort, { once: true });
     const began = now();
     let timer: ReturnType<typeof setTimeout> | undefined;
     try {
       const output = await Promise.race([
-        entry.execute(args, {
-          workdir: config.workdir,
-          signal: controller.signal,
-          env: input.env,
-          hasTool: (name) => toolsByName.has(name),
+        (async (): Promise<ToolOutput> => {
+          if (question) {
+            const decision = await input.policy(question);
+            if (!decision.allowed) return { text: decision.message, isError: true };
+          }
+          controller.signal.throwIfAborted();
+          return entry.execute(args, {
+            workdir: config.workdir,
+            signal: controller.signal,
+            env: input.env,
+            hasTool: (name) => toolsByName.has(name),
+          });
+        })(),
+        new Promise<ToolOutput>((resolve) => {
+          const aborted = () => resolve({ text: 'The tool was stopped.', isError: true });
+          if (controller.signal.aborted) aborted();
+          else controller.signal.addEventListener('abort', aborted, { once: true });
         }),
         new Promise<ToolOutput>((resolve) => {
           timer = setTimeout(() => {
@@ -766,7 +811,10 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
       instructions:
         'Fasse den bisherigen Verlauf einer Agenten-Sitzung knapp zusammen: Aufgabe, Entscheidungen, Ergebnisse von Werkzeugen, geänderte Dateien, offene Punkte. Keine Geheimnisse. Deutsch, höchstens 400 Wörter.',
       prompt: `${summary ? `Frühere Zusammenfassung:\n${summary}\n\n` : ''}Verlauf:\n${transcript}`,
-      abortSignal: input.signal,
+      abortSignal: AbortSignal.any([
+        input.signal,
+        AbortSignal.timeout(Math.max(1, Math.floor(budgetMs - (now() - started)))),
+      ]),
       maxRetries: 1,
     });
     const next = result.text.trim();

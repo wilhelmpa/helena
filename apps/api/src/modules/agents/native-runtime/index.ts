@@ -1,3 +1,4 @@
+import './consolidation';
 import { Elysia } from 'elysia';
 import { guards } from '#shared/guards';
 import { authContext } from '#shared/auth-context';

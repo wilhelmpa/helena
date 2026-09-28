@@ -165,6 +165,7 @@ export interface RunnerRun {
   // The issue's human-readable key ("MKT-42"), so the runner can name the work in its
   // log. Null for a run with no issue, or a deleted one.
   issueIdentifier: string | null;
+  projectId: number;
   // The human comment that started the run. The external runner attaches its final
   // answer to it so the issue feed keeps the exchange threaded.
   sourceActivityId: number | null;
@@ -545,6 +546,7 @@ export async function claimRunnerRun(agent: RunnerAgent): Promise<RunnerRun | nu
     claim: row.claim,
     issueId: row.issueId,
     issueIdentifier: row.issueIdentifier,
+    projectId: row.projectId,
     sourceActivityId: row.sourceActivityId,
     model,
     thinkingLevel,

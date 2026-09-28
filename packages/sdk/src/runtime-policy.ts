@@ -121,6 +121,8 @@ export interface RuntimeHelenaSettings {
     taskKinds?: string[];
     confidenceBelow?: number;
     onFailure?: boolean;
+    central?: import('./escalation').EscalationSettings;
+    agentId?: number;
   };
   browserBudgetSeconds?: number;
 }
