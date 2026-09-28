@@ -136,16 +136,33 @@ helena_agent_session         id uuid pk, agent_id fk, team_id, project_id null, 
                              summary text null (letzte Kompression), compacted_through int
 helena_agent_session_item    id bigserial, session_id fk, seq int (unique je Sitzung), step int,
                              role 'system'|'user'|'assistant'|'tool', content jsonb (AI-SDK ModelMessage),
-                             text tsvector (Volltext für die Sitzungssuche), tokens int, created_at
+                             text (lesbarer Text für den Wissens-Index), tokens int, created_at
 helena_fact                  id serial, team_id, project_id null (null = teamweit/Home), agent_id null,
                              content, category, tags, trust real (0..1, Start 0.5), helpful_count,
                              unhelpful_count, confirmations, retrieval_count, contradicted_by null fk,
-                             hrr bytea (Phasenvektor float32, dim 1024), search tsvector, source jsonb
+                             hrr bytea (Phasenvektor float32, dim 1024), source jsonb
                              (run/chat/session), created_at, updated_at, deleted_at
 helena_fact_entity           id, team_id, project_id null, name, name_lower (unique je Bereich)
 helena_fact_entity_link      fact_id, entity_id
 ```
 
+- **Vektoren und Volltext: keine eigene Vektor-Tabelle, sondern das vorhandene Wissens-System** (`packages/knowledge`, `knowledge_item`/`knowledge_chunk`). Drei neue `KnowledgeSource`s des SDK:
+  - `fact` (ein Fakt = ein Item),
+  - `agent-memory` (neueste Revision je Gedächtnisdatei bzw. Tagesnotiz),
+  - `agent-session` (Sitzungen der nativen Laufzeit, gruppiert je Sitzung).
+
+  **Folgen:**
+  - Der vorhandene Indexer schneidet und bettet beim Schreiben ein (Ereignis `fact.changed` bzw. `agent-memory.changed` → `reindexItems`).
+  - Eingebettet wird mit dem aktiven Embedder:
+    - die Local-AI-Route der Klasse `embeddings`, also Qwen3-Embedding-0.6B auf dem eigenen kleinen Embedding-Server aus `hub/halogen-integration`;
+    - sonst der In-Prozess-Embedder;
+    - läuft keiner, bleibt die Suche Volltext und der Indexer versucht es später wieder.
+  - Mit pgvector legt der Indexer `knowledge_chunk.embedding_vec` samt HNSW-Index an (`ensureVectorIndex`), ohne pgvector rechnet er über `real[]`.
+  - **Modellwechsel:** Jeder Vektor trägt die Modell-ID. Ein anderes Modell bettet neu ein (`embedPending`), und eine andere Dimension ersetzt die Spalte samt Index.
+  - **Projekt-ACL auch in der Vektorsuche:** Volltext- und Vektorkandidaten laufen beide durch `readableItems(reach)` (`reach.ts`).
+    - `scope` eines Fakts: `project` + `permission: 'ai_agents'`, bzw. `team` für teamweite Home-Fakten.
+    - Gedächtnis und Sitzungen sind `project` des Agenten, beim Home-Agenten `team`.
+    - Die Reichweite eines Agenten ist die seines Agenten-Benutzers, also genau seine Projekt-Mitgliedschaften.
 - **Gedächtnis:** keine neue Tabelle.
   - `agent_memory_revision.file` nimmt zusätzlich `notes/JJJJ-MM-TT.md` auf.
   - Die neueste Revision je Datei ist der aktuelle Stand. So zeigt der vorhandene Editor Versionen, Quelle (Agent, Owner) und Vorschläge.
@@ -175,10 +192,14 @@ helena_fact_entity_link      fact_id, entity_id
   - Faktvektor = bündel(binde(Text, ROLLE_INHALT), binde(Entität_i, ROLLE_ENTITÄT) …).
   - Gespeichert als float32 in `hrr bytea` (4 KB je Fakt). Berechnet wird in der API im Prozess.
   - Für ≤ 5.000 Fakten je Bereich reicht ein Scan. pgvector ist bei Bedarf möglich: [cos θ, sin θ]/√d ergibt ein Skalarprodukt gleich der Phasen-Ähnlichkeit. Vorerst nicht nötig.
-- **Suche:**
-  - Volltext-Kandidaten (Postgres `websearch_to_tsquery`, Konfiguration `simple` plus `german`), dreifaches Limit.
-  - Neu gewichtet: 0,4 × FTS-Rang + 0,3 × Jaccard + 0,3 × HRR-Ähnlichkeit. Das Ergebnis mal Vertrauen, mal zeitlicher Verfall 0,5^(Alter/Halbwertszeit, Standard 90 Tage).
+- **Suche (hybrid, Owner-Präzisierung: mit Vektorspeicherung):**
+  - Kandidaten liefert `searchKnowledgeIndex` für die Quelle `fact`. Das ist Volltext (tsvector `german` + `simple`) **plus** Vektorähnlichkeit der Embeddings, fusioniert per RRF, beides ACL-gefiltert. Geholt wird das dreifache Limit.
+  - Neu gewichtet in `@helena/facts`: 0,5 × RRF-Rang (normiert) + 0,2 × Jaccard + 0,3 × HRR-Ähnlichkeit. Das Ergebnis mal Vertrauen, mal zeitlicher Verfall 0,5^(Alter/Halbwertszeit, Standard 90 Tage).
   - Nur Fakten mit Vertrauen ≥ 0,3.
+  - Ohne Embedder bleibt die Fusion reiner Volltext. Das ist der Rückfall, falls der Embedding-Server nicht läuft.
+- **Einbettung beim Schreiben:**
+  - `add`/`update` schreiben den Fakt und lösen `reindexItems('fact', [id])` aus. Die Einbettung läuft asynchron im Indexer; bis sie steht, findet der Volltext den Fakt.
+  - Die Schnittstelle ist austauschbar: Der Embedder ist die vorhandene `EmbeddingRoute` (`useEmbeddingRoute`) und nicht fest verdrahtet.
 - **Weitere Abfragen:**
   - `probe(entität)`: Fakten, in denen die Entität eine Rolle spielt (Lösen des Rollen-Schlüssels, Vergleich mit dem Inhaltsvektor).
   - `related(entität)`: strukturell verbundene Fakten.
@@ -221,7 +242,7 @@ helena_fact_entity_link      fact_id, entity_id
 
 ### 8.5 Sitzungssuche und Kompression
 
-- **Werkzeug `search_sessions(query)`:** Volltext über `helena_agent_session_item.text`. Treffer aus Sitzungen desselben Agenten, beim Home-Agenten alle, mit Auszug und Verweis.
+- **Werkzeug `search_sessions(query)`:** hybride Wissenssuche (Volltext + Vektor, ACL) über die Quelle `agent-session`, dazu die vorhandenen Quellen `chat` und `run`. So findet die Suche auch Hermes-, Claude- und Codex-Verläufe. Treffer mit Auszug und Verweis.
 - **Kompression:**
   - Ab 60 % des Kontextfensters des Modells (Halogen: 262k, Standard-Schwelle 128k) kommt zuerst der Gedächtnis-Flush.
   - Dann fasst das lokale Modell die Nachrichten vor den letzten 6 Schritten zusammen.
