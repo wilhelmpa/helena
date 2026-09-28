@@ -166,6 +166,7 @@ describe('voice', () => {
 
   it('transcribes on the local model with the key kept in the API', async () => {
     const { owner, asOwner } = await setup();
+    expect((await asOwner.account.preferences.patch({ locale: 'de' })).status).toBe(200);
     await asOwner.god['local-ai'].policy.patch({ enabled: true });
     // Transcription is in the master switch's first set.
     const status = (await asOwner.voice.get()).data!;
@@ -178,21 +179,21 @@ describe('voice', () => {
     // Reading aloud is not: the voice has to speak the owner's language.
     expect(status.speech).toMatchObject({ mode: 'off', local: false, reason: 'class-off' });
 
-    const answer = await upload(owner.cookie, wav(2.5), 'de');
+    // The saved locale determines the language even if the client sends another one.
+    const answer = await upload(owner.cookie, wav(2.5), 'en');
     expect(answer.status).toBe(200);
     expect(await answer.json()).toMatchObject({
       text: 'Hallo Home, wie spät ist es?',
       model: 'helena-local/whisper-v3-turbo-FLM',
       durationMs: 2500,
     });
-    expect(received).toEqual([
+    expect(received[0]?.fileType).toMatch(/^audio\/(x-)?wav$/);
+    expect(received).toMatchObject([
       {
         path: '/api/v1/audio/transcriptions',
         auth: `Bearer ${KEY}`,
         model: 'whisper-v3-turbo-FLM',
         language: 'de',
-        // Bun's multipart names WAV by its extension.
-        fileType: expect.stringMatching(/^audio\/(x-)?wav$/),
         fileBytes: 44 + 80000,
       },
     ]);
