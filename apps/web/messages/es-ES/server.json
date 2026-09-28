@@ -63,6 +63,8 @@
     "cpuTemperature": "CPU {temperature}.",
     "fansFixed": "Ventiladores en el nivel {level}.",
     "fansAuto": "Ventiladores en automático.",
+    "fanModuleMissing": "Falta el módulo de ventiladores para el kernel en ejecución.",
+    "fanSensorsUnreadable": "No se pueden leer los valores de los ventiladores.",
     "memoryPressure": "Memoria escasa: solo quedan {available} libres.",
     "memoryOk": "Memoria: {available} libres.",
     "healthFailed": "No se pudo leer el estado.",

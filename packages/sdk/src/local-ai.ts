@@ -203,6 +203,17 @@ export interface LocalAiEvalContext {
   model: string;
   signal?: AbortSignal;
   chat(request: LocalAiChatRequest): Promise<LocalAiChatAnswer>;
+  judge?(request: LocalAiChatRequest): Promise<LocalAiChatAnswer>;
+  runCodingTask?(id: string): Promise<{
+    testsPassed: boolean;
+    validToolCalls: number;
+    toolCalls: number;
+    loops: number;
+    aborted: boolean;
+    durationMs: number;
+    inputTokens: number;
+    outputTokens: number;
+  }>;
   embed(texts: string[]): Promise<{ vectors: number[][]; latencyMs: number }>;
 }
 

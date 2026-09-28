@@ -16,6 +16,7 @@ import { swagger } from '@elysiajs/swagger';
 import { Elysia } from 'elysia';
 import { planner } from './planner';
 import { tooManyRequests } from './shared/rate-limit';
+import { privateNetworkPreflightAllowed } from './shared/private-network';
 import { mountMcp } from './mcp/mount';
 import { gitWebhookRoutes } from './modules/git/webhook';
 import { scimRoutes } from './modules/scim';
@@ -73,6 +74,12 @@ export const app = new Elysia()
   // shared/agent-socket.ts) never reaches the host's control plane or the sign-in flows,
   // whatever the route would say about its credential.
   .onRequest(async ({ request, set }) => {
+    // Chrome's Private Network Access (shared/private-network.ts): the preflight of the
+    // home probe from the public name to the home name. The CORS plugin below answers the
+    // preflight and carries this header along.
+    if (privateNetworkPreflightAllowed(request)) {
+      set.headers['access-control-allow-private-network'] = 'true';
+    }
     // A request that came in through the internet tunnel (nginx marks it) passes only with
     // the edge sign-in's proof (Cloudflare Access), whatever else it carries. See
     // modules/edge-access and docs/helena-decisions/security-hardening.md.

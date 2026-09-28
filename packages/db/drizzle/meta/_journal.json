@@ -1443,6 +1443,13 @@
       "when": 1790595863885,
       "tag": "0206_receipt_pair_intake",
       "breakpoints": true
+    },
+    {
+      "idx": 207,
+      "version": "7",
+      "when": 1790600603846,
+      "tag": "0207_department_skills",
+      "breakpoints": true
     }
   ]
 }

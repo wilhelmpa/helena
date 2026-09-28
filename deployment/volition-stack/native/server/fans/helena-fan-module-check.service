@@ -1,0 +1,12 @@
+[Unit]
+Description=Build and load Helena's EC fan module for the running kernel
+After=systemd-modules-load.service
+Before=helena-power-guard.service
+ConditionPathExists=/etc/modules-load.d/helena-fan-control.conf
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/helena-fan-module-check
+
+[Install]
+WantedBy=multi-user.target

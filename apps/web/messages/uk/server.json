@@ -63,6 +63,8 @@
     "cpuTemperature": "CPU {temperature}.",
     "fansFixed": "Вентилятори на рівні {level}.",
     "fansAuto": "Вентилятори в автоматичному режимі.",
+    "fanModuleMissing": "Модуль вентиляторів відсутній для поточного ядра.",
+    "fanSensorsUnreadable": "Показники вентиляторів недоступні.",
     "memoryPressure": "Мало пам’яті: вільно лише {available}.",
     "memoryOk": "Пам’ять: вільно {available}.",
     "healthFailed": "Не вдалося прочитати стан.",

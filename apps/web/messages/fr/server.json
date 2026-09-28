@@ -63,6 +63,8 @@
     "cpuTemperature": "CPU {temperature}.",
     "fansFixed": "Ventilateurs au niveau {level}.",
     "fansAuto": "Ventilateurs en automatique.",
+    "fanModuleMissing": "Module des ventilateurs absent pour le noyau en cours.",
+    "fanSensorsUnreadable": "Les valeurs des ventilateurs sont illisibles.",
     "memoryPressure": "Mémoire juste : plus que {available} de libre.",
     "memoryOk": "Mémoire : {available} de libre.",
     "healthFailed": "L’état n’a pas pu être lu.",

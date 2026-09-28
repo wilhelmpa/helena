@@ -21,6 +21,18 @@ export const LocalModel = t.Object({
   loaded: t.Boolean(),
   backend: t.Nullable(t.String()),
   checkpoint: t.Optional(t.Nullable(t.String({ description: '`<org>/<repo>:<file>`' }))),
+  startOptions: t.Optional(
+    t.Nullable(
+      t.Object({
+        backend: t.Nullable(t.Union([t.Literal('rocm'), t.Literal('vulkan')])),
+        specType: t.Nullable(t.Union([t.Literal('draft-mtp'), t.Literal('draft-dflash')])),
+        draftModel: t.Nullable(t.String()),
+        draftTokens: t.Nullable(t.Number()),
+        parallel: t.Nullable(t.Number()),
+        contextPerSlot: t.Nullable(t.Number()),
+      }),
+    ),
+  ),
 });
 
 const load = t.Nullable(
@@ -73,6 +85,7 @@ export const EvalResult = t.Object({
       'score is in, `stale` when it was cut off (the API restarted) and never finished',
   }),
   score: t.Number(),
+  score100: t.Nullable(t.Number({ description: 'German text judge score on a 0–100 scale' })),
   threshold: t.Number(),
   passed: t.Boolean(),
   cases: t.Number(),
@@ -266,6 +279,15 @@ export const evalParams = t.Object({ id: t.Numeric() });
 export const evalBody = t.Object({
   classId: t.String({ maxLength: 48 }),
   modelId: t.String({ maxLength: 300 }),
+});
+
+export const modelOptionsBody = t.Object({
+  backend: t.Nullable(t.Union([t.Literal('rocm'), t.Literal('vulkan')])),
+  specType: t.Nullable(t.Union([t.Literal('draft-mtp'), t.Literal('draft-dflash')])),
+  draftModel: t.Nullable(t.String()),
+  draftTokens: t.Nullable(t.Number()),
+  parallel: t.Nullable(t.Number()),
+  contextPerSlot: t.Nullable(t.Number()),
 });
 
 export const ServerKeysResponse = t.Object({

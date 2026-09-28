@@ -575,9 +575,9 @@ describe('kinds of work that run as an agent turn', () => {
     expect(classModes({ modes: ['only'] })).toEqual(['off', 'only']);
   });
 
-  it('are wired except triage, which the decisions service covers', () => {
+  it('keep standalone eval classes outside automatic routing', () => {
     const wired = BUILTIN_TASK_CLASSES.filter((entry) => !entry.wired).map((entry) => entry.id);
-    expect(wired).toEqual(['triage']);
+    expect(wired).toEqual(['agentic-coding', 'deutsch-texte', 'triage']);
   });
 
   it('need an eval of their current version', () => {
@@ -589,6 +589,7 @@ describe('kinds of work that run as an agent turn', () => {
       classId: 'summaries',
       modelId: 'helena-local/Q',
       score: passed ? 1 : 0,
+      score100: null,
       threshold: 0.75,
       passed,
       cases: 4,

@@ -17,6 +17,7 @@ import {
   BUNDLE_FORMAT_VERSION,
   BUNDLE_MANIFEST,
   type BundleAgent,
+  type BundleDepartment,
   type BundleMcpServer,
   type BundleSkill,
   type TemplateBundle,
@@ -31,6 +32,7 @@ interface Manifest {
   description: string;
   license: string;
   author: { name: string; url?: string };
+  department?: BundleDepartment;
   skills: { name: string; github: string; license: string; attribution: string }[];
 }
 
@@ -126,6 +128,7 @@ export function readBundleDir(dir: string): TemplateBundle {
     skills,
     mcpServers,
     agents,
+    ...(manifest.department ? { department: manifest.department } : {}),
   };
 }
 
@@ -183,6 +186,7 @@ export function writeBundleDir(bundle: TemplateBundle, dir: string): void {
     description: bundle.description,
     license: bundle.license,
     author: bundle.author,
+    ...(bundle.department ? { department: bundle.department } : {}),
     skills: bundle.skills.flatMap((skill) =>
       skill.source.type === 'github'
         ? [

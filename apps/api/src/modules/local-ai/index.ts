@@ -14,6 +14,7 @@ import {
   ServerKeysResponse,
   evalBody,
   evalParams,
+  modelOptionsBody,
   policyBody,
   serverBody,
   serverParams,
@@ -29,6 +30,7 @@ import {
   startEval,
   updatePolicy,
   updateServer,
+  updateModelOptions,
 } from './service';
 
 // Local AI (docs/helena-decisions/local-ai-platform.md): the owner's model servers, the
@@ -154,6 +156,20 @@ export const localAiRoutes = new Elysia({
       params: serverParams,
       response: { 200: ModelServer, ...errors(401, 403, 404) },
       detail: { summary: "Read a server's status and models now" },
+    },
+  )
+
+  .put(
+    '/god/local-ai/servers/:id/models/:model/options',
+    ({ user, params, body }) => {
+      requireGod(user);
+      return updateModelOptions(params.id, params.model, body);
+    },
+    {
+      params: t.Object({ id: t.Numeric(), model: t.String({ maxLength: 300 }) }),
+      body: modelOptionsBody,
+      response: { 200: modelOptionsBody, ...errors(400, 401, 403, 404) },
+      detail: { summary: 'Save Lemonade start options for a model' },
     },
   )
 

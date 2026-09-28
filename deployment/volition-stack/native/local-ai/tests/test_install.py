@@ -209,6 +209,34 @@ class InstallScriptTest(unittest.TestCase):
         finally:
             listed.unlink(missing_ok=True)
 
+    def test_saved_model_options_are_used_by_one_load(self):
+        options = Path(ROOT, 'var/lib/helena-ai/config/model-options.json')
+        options.parent.mkdir(parents=True, exist_ok=True)
+        options.write_text(json.dumps({'Qwen3.6-35B-A3B-MTP-GGUF': {
+            'backend': 'vulkan', 'specType': 'draft-mtp', 'draftTokens': 2,
+            'parallel': 2, 'contextPerSlot': 65536,
+        }}))
+        try:
+            out = dry('models', 'load', 'Qwen3.6-35B-A3B-MTP-GGUF')
+            body = json.loads(out.split('would POST /load ', 1)[1])
+            self.assertEqual(body['llamacpp_backend'], 'vulkan')
+            self.assertEqual(body['ctx_size'], 131072)
+            self.assertIn('--spec-type draft-mtp --spec-draft-n-max 2 -np 2 --kv-unified-per-slot 65536', body['llamacpp_args'])
+            other = json.loads(dry('models', 'load', 'Qwen3.6-35B-A3B-GGUF').split('would POST /load ', 1)[1])
+            self.assertNotIn('--spec-type', other['llamacpp_args'])
+            options.write_text(json.dumps({'Qwen3.8-27B-GGUF': {
+                'specType': 'draft-dflash',
+                'draftModel': '/var/lib/helena-ai/models/draft.gguf',
+                'draftTokens': 4,
+            }}))
+            dflash = json.loads(dry('models', 'load', 'Qwen3.8-27B-GGUF').split('would POST /load ', 1)[1])
+            self.assertIn('--spec-type draft-dflash --spec-draft-n-max 4 --spec-draft-model /var/lib/helena-ai/models/draft.gguf', dflash['llamacpp_args'])
+            options.write_text(json.dumps({'Qwen3.6-35B-A3B-MTP-GGUF': {'specType': '; touch /tmp/x'}}))
+            invalid = run('--dry-run', 'models', 'load', 'Qwen3.6-35B-A3B-MTP-GGUF')
+            self.assertNotEqual(invalid.returncode, 0)
+        finally:
+            options.unlink(missing_ok=True)
+
     def test_a_manual_load_does_not_pin(self):
         out = dry('models', 'load', 'Qwen3.6-35B-A3B-MTP-GGUF')
         self.assertIn('"save_options":true', out)

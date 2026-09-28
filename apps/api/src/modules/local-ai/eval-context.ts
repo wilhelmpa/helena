@@ -36,6 +36,8 @@ export function openAiEvalContext(options: {
   thinking?: LocalAiThinking;
   signal?: AbortSignal;
   timeoutMs?: number;
+  judge?: (request: LocalAiChatRequest) => Promise<LocalAiChatAnswer>;
+  runCodingTask?: LocalAiEvalContext['runCodingTask'];
 }): LocalAiEvalContext {
   const post = async (path: string, body: unknown) => {
     const response = await fetch(joinUrl(options.baseUrl, path), {
@@ -54,6 +56,8 @@ export function openAiEvalContext(options: {
   return {
     model: options.model,
     signal: options.signal,
+    judge: options.judge,
+    runCodingTask: options.runCodingTask,
     async chat(request: LocalAiChatRequest): Promise<LocalAiChatAnswer> {
       const started = Date.now();
       const body = (await post('/chat/completions', {

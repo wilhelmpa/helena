@@ -354,6 +354,9 @@ def status(host: Host, power_config: dict, settings: dict, guard_state: dict | N
         except HostError:
             overrides[profile] = None
     return {
+        'fanControlExpected': (board_name(host) in (power_config.get('ecBoards') or [])
+                               and host.exists('/etc/modules-load.d/helena-fan-control.conf')),
+        'fanModuleLoaded': host.exists('/sys/module/ec_su_axb35'),
         'available': {
             'ec': ec is not None,
             'os': ppd is not None,

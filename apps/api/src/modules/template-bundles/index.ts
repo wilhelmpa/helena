@@ -3,9 +3,13 @@ import { authContext } from '#shared/auth-context';
 import { guards } from '#shared/guards';
 import { accessErrors, commonErrors, errors } from '#shared/responses';
 import { teamParams } from '#modules/teams/model';
+import { requireUser } from '#shared/access';
+import { mcpTool } from '#mcp/generate';
 import {
   bundleOffers,
   exportTemplateBundle,
+  exportDepartmentTemplate,
+  importDepartmentTemplate,
   importTemplateBundle,
   type CallerHeaders,
 } from './service';
@@ -105,6 +109,43 @@ export const templateBundleRoutes = new Elysia({
         summary: "Export the team's agent templates as a template bundle",
         description:
           'Reads the templates, their skills and MCP servers into one TemplateBundle document (no secrets, ids or people).',
+      },
+    },
+  )
+  .get(
+    '/teams/:teamId/template-bundles/departments/:departmentId/export',
+    ({ membership, params, request }) =>
+      exportDepartmentTemplate(membership.teamId, params.departmentId, callerOf(request)),
+    {
+      params: t.Object({ teamId: t.Numeric(), departmentId: t.Numeric() }),
+      teamManager: true,
+      response: { 200: t.Unknown(), ...commonErrors },
+      detail: {
+        summary: 'Export a department as a template bundle',
+        description:
+          'Export agents, roles, reporting lines, heartbeats, routines, goals, skills and budgets without credentials.',
+        ...mcpTool('export_department_template', { readOnlyHint: true }),
+      },
+    },
+  )
+  .post(
+    '/teams/:teamId/template-bundles/departments/import',
+    ({ membership, user, request, body }) =>
+      importDepartmentTemplate(membership.teamId, requireUser(user).id, callerOf(request), body),
+    {
+      params: teamParams,
+      teamManager: true,
+      body: t.Object({
+        bundle: t.Unknown(),
+        dryRun: t.Optional(t.Boolean()),
+        update: t.Optional(t.Boolean()),
+      }),
+      response: { 200: BundleReport, ...commonErrors },
+      detail: {
+        summary: 'Preview or import a department template bundle',
+        description:
+          'Dry run reports changes without writes. Import creates missing resources and leaves existing differences unless update is requested.',
+        ...mcpTool('import_department_template'),
       },
     },
   );

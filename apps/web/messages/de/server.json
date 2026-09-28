@@ -63,6 +63,8 @@
     "cpuTemperature": "CPU {temperature}.",
     "fansFixed": "Lüfter auf Stufe {level}.",
     "fansAuto": "Lüfter automatisch.",
+    "fanModuleMissing": "Lüftermodul fehlt für den laufenden Kernel.",
+    "fanSensorsUnreadable": "Lüfterwerte sind nicht lesbar.",
     "memoryPressure": "Arbeitsspeicher knapp: nur noch {available} frei.",
     "memoryOk": "Arbeitsspeicher: {available} frei.",
     "localAiEviction": "Lokale KI wurde in den letzten fünf Minuten über 30 Sekunden aus der GPU verdrängt. Freier RAM: {available}.",

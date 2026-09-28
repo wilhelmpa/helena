@@ -3,6 +3,7 @@ import { and, eq, inArray, sql } from 'drizzle-orm';
 import { iso, rethrowDuplicate, HttpError } from '#shared/lib';
 import { putObject, getObjectText, deleteObjects } from '#shared/s3';
 import { onTemplateRelevantChange } from '../core/template-sync';
+import { allowedSkillIds, assertAllowedSkills } from '#modules/organization/skills';
 import { parseFrontmatter, isDisallowedRef } from './skill-format';
 
 // Data access for the team skill library, shared by every project the team owns. A
@@ -364,6 +365,7 @@ function runtimeReferencePath(path: string): boolean {
 }
 
 export async function listAgentRuntimeSkills(agentId: number): Promise<RuntimeSkillBundle[]> {
+  const allowed = await allowedSkillIds(agentId);
   const rows = await db
     .select({
       id: agentSkill.id,
@@ -377,21 +379,26 @@ export async function listAgentRuntimeSkills(agentId: number): Promise<RuntimeSk
     .where(eq(agentSkillLink.agentId, agentId))
     .orderBy(agentSkill.id);
   return Promise.all(
-    rows.map(async (row) => {
-      const refs = (Array.isArray(row.files) ? (row.files as SkillRef[]) : []).filter((file) =>
-        runtimeReferencePath(file.path),
-      );
-      return {
-        id: row.id,
-        slug: `plan-${row.id}`,
-        name: row.name,
-        description: row.description,
-        markdown: await getObjectText(skillMdKey(row.s3Prefix)),
-        files: await Promise.all(
-          refs.map(async (file) => ({ path: file.path, content: await getObjectText(file.s3Key) })),
-        ),
-      };
-    }),
+    rows
+      .filter((row) => !allowed || allowed.has(row.id))
+      .map(async (row) => {
+        const refs = (Array.isArray(row.files) ? (row.files as SkillRef[]) : []).filter((file) =>
+          runtimeReferencePath(file.path),
+        );
+        return {
+          id: row.id,
+          slug: `plan-${row.id}`,
+          name: row.name,
+          description: row.description,
+          markdown: await getObjectText(skillMdKey(row.s3Prefix)),
+          files: await Promise.all(
+            refs.map(async (file) => ({
+              path: file.path,
+              content: await getObjectText(file.s3Key),
+            })),
+          ),
+        };
+      }),
   );
 }
 
@@ -413,6 +420,8 @@ export async function setAgentSkills(
             .from(agentSkill)
             .where(and(eq(agentSkill.teamId, teamId), inArray(agentSkill.id, unique)))
         ).map((r) => r.id);
+
+  await assertAllowedSkills(agentId, valid);
 
   await db.transaction(async (tx) => {
     await tx.delete(agentSkillLink).where(eq(agentSkillLink.agentId, agentId));
