@@ -64,6 +64,11 @@ export const profileBody = t.Object({
   profile: t.Union([t.Literal('saver'), t.Literal('balanced'), t.Literal('performance')]),
 });
 
+export const powerPolicyBody = t.Object({
+  mode: t.Union([t.Literal('auto'), t.Literal('balanced'), t.Literal('performance')]),
+  tctlLimit: t.Optional(t.Integer({ minimum: 60, maximum: 100 })),
+});
+
 export const fansBody = t.Union([
   t.Object({ mode: t.Literal('auto') }),
   t.Object({ mode: t.Literal('fixed'), level: t.Integer({ minimum: 1, maximum: 5 }) }),

@@ -196,12 +196,25 @@ describe('Administrator → Server', () => {
       ...healthy,
       SetFans: (parameters) => ({ mode: parameters.mode, level: parameters.level, applied: true }),
       SetPowerProfile: (parameters) => ({ profile: parameters.profile, layers: {} }),
+      SetPowerPolicy: (parameters) => ({ mode: parameters.mode, tctlLimit: parameters.tctlLimit }),
       SetGuard: (parameters) => ({ limit: parameters.limit }),
     });
     const { god } = await setup();
     const api = god.interactive;
     expect((await api.god.server.power.fans.put({ mode: 'fixed', level: 3 })).status).toBe(200);
     expect((await api.god.server.power.profile.put({ profile: 'saver' })).status).toBe(200);
+    expect((await api.god.server.power.policy.put({ mode: 'auto', tctlLimit: 88 })).status).toBe(
+      200,
+    );
+    expect(calls.find((call) => call.method === 'SetPowerPolicy')!.parameters).toEqual({
+      mode: 'auto',
+      tctlLimit: 88,
+      actor: 'root@example.com',
+    });
+    expect(
+      (await api.god.server.power.policy.put({ mode: 'performance', tctlLimit: 101 } as never))
+        .status,
+    ).toBe(400);
     expect((await api.god.server.power.guard.put({ limit: 85 })).status).toBe(200);
     expect(calls.find((call) => call.method === 'SetFans')!.parameters).toEqual({
       mode: 'fixed',

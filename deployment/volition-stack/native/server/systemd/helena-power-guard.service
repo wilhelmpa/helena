@@ -21,6 +21,7 @@ NoNewPrivileges=yes
 PrivateTmp=yes
 PrivateNetwork=yes
 ProtectHome=yes
+BindReadOnlyPaths=-/home/wilhelmpa/agent-work/.heavy:/run/helena-heavy
 ProtectSystem=strict
 ReadWritePaths=/var/lib/helena/hostd
 ProtectKernelModules=yes

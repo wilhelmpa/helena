@@ -97,6 +97,8 @@ async function helperAvailability(): Promise<HostAvailability> {
 
 const label = (key: string): LocalizedText => ({ i18n: `server.capabilities.${key}` });
 
+const nvmeWarningTimes = new Map<string, number>();
+
 export const BUILTIN_HOST_CAPABILITIES: HostCapability[] = [
   {
     id: 'helena.server.system',
@@ -124,7 +126,7 @@ export const BUILTIN_HOST_CAPABILITIES: HostCapability[] = [
         storageStatus(),
         hostEvents().catch(() => null),
       ]);
-      return storageHealth(storage, events);
+      return storageHealth(storage, events, nvmeWarningTimes);
     },
   },
   {

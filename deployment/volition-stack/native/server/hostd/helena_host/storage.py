@@ -186,6 +186,7 @@ def parse_smart(data: dict) -> dict:
         'availableSpareThreshold': None,
         'mediaErrors': None,
         'criticalWarning': None,
+        'warningTempTime': None,
         'unsafeShutdowns': None,
         'dataWrittenBytes': None,
         'reallocatedSectors': None,
@@ -201,6 +202,7 @@ def parse_smart(data: dict) -> dict:
             'availableSpareThreshold': nvme.get('available_spare_threshold'),
             'mediaErrors': nvme.get('media_errors'),
             'criticalWarning': nvme.get('critical_warning'),
+            'warningTempTime': nvme.get('warning_temp_time'),
             'unsafeShutdowns': nvme.get('unsafe_shutdowns'),
             'errorLogEntries': nvme.get('num_err_log_entries'),
             # One NVMe data unit is 1000 sectors of 512 bytes.

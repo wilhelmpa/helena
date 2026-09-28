@@ -58,8 +58,12 @@ class VoiceScriptTest(unittest.TestCase):
 
     def test_units_listen_on_loopback_in_a_sandbox(self):
         out = dry('install')
-        for port in ('13306', '13307'):
+        for port in ('14306', '14307'):
             self.assertIn(f'--host 127.0.0.1 --port {port}', out)
+        for port in ('13306', '13307'):
+            self.assertIn(f'ListenStream=127.0.0.1:{port}', out)
+        self.assertEqual(out.count('StopWhenUnneeded=yes'), 2)
+        self.assertEqual(out.count('--exit-idle-time=5min'), 2)
         self.assertIn('--language de', out)
         self.assertIn('--vad --vad-model', out)
         self.assertIn('--request-path /v1 --inference-path /audio/transcriptions', out)

@@ -122,6 +122,14 @@ class HalogenInstallTest(unittest.TestCase):
         self.assertIn('--cgroups=split', unit)
         self.assertIn('Delegate=yes', unit)
 
+    def test_unit_bounds_idle_cpu_and_keeps_one_info_log(self):
+        unit = self.render('unit')
+        self.assertIn('CPUQuota=100%', unit)
+        self.assertIn('--log-driver=none', unit)
+        self.assertIn('StandardError=inherit', unit)
+        self.assertIn('SyslogLevel=info', unit)
+        self.assertIn('LogFilterPatterns=~.*(GET|HEAD) /(metrics|v1/models)', unit)
+
     def test_unit_reads_the_pinned_weights_head_and_tokenizer(self):
         unit = self.render('unit')
         self.assertIn(

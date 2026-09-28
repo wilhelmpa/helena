@@ -51,7 +51,7 @@ table inet helena_hardening {
 	}
 	set tool_ports {
 		type inet_service
-		elements = { 8443, 8444 }
+		elements = { 8443, 8444, 18443 }
 	}
 	set tool_uids {
 		typeof meta skuid
@@ -69,7 +69,7 @@ table inet helena_hardening {
 	# key of their own; only Helena's API (and root) may reach them.
 	set voice_ports {
 		type inet_service
-		elements = { 13306, 13307 }
+		elements = { 13306, 13307, 14306, 14307 }
 	}
 	set voice_uids {
 		typeof meta skuid

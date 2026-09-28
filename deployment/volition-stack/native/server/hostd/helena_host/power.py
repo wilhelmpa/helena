@@ -295,11 +295,13 @@ def apply_ryzenadj(host: Host, power_config: dict, override: dict) -> None:
 
 # ── Profiles ─────────────────────────────────────────────────────────────────────────────
 
-def set_profile(host: Host, power_config: dict, profile: object) -> dict:
+def set_profile(host: Host, power_config: dict, profile: object, tctl_limit: int = 90) -> dict:
     if profile not in PROFILE_LAYERS:
         raise HostError('InvalidParameter', 'profile must be saver, balanced or performance', parameter='profile')
     layers = PROFILE_LAYERS[profile]
     override = validate_override(profile, (power_config.get('overrides') or {}).get(profile))
+    if profile == 'performance':
+        override = {**(override or {}), 'tctl': tctl_limit}
     results: dict = {}
     with power_lock:
         if ec_available(host, power_config):

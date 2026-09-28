@@ -185,7 +185,7 @@ else
   # Helena's voice servers (native/local-ai/voice.sh) have no key: installed, they need the ACL.
   if [[ -e /etc/systemd/system/helena-voice-stt.service || -e /etc/systemd/system/helena-voice-tts.service ]]; then
     if grep -q 'helena:acl-voice' <<<"$nft_rules"; then
-      record net.voice_acl network high pass "the voice servers (13306, 13307) answer only Helena's API"
+      record net.voice_acl network high pass "the voice servers (13306/7, 14306/7) answer only Helena's API"
     else
       record net.voice_acl network high fail "every local user reaches the voice servers (13306, 13307): apply.sh firewall"
     fi
@@ -642,7 +642,7 @@ exposed_tools() {
   ss -H -ltn 2>/dev/null | awk '{print $4}' | while read -r addr; do
     local port=${addr##*:} host=${addr%:*}
     case "$port" in
-      3000|3001|6082|8384|8443|8444|9222|1920[0-9]|192[1-9][0-9]|1608[0-9]|1609[0-9]|"$TUNNEL_PORT") ;;
+      3000|3001|6082|8384|8443|8444|18443|13306|13307|14306|14307|9222|1920[0-9]|192[1-9][0-9]|1608[0-9]|1609[0-9]|"$TUNNEL_PORT") ;;
       *) continue ;;
     esac
     case "$host" in

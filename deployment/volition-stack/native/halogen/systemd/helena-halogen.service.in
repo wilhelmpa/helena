@@ -11,6 +11,11 @@ After=network-online.target nftables.service
 
 [Service]
 Type=simple
+CPUQuota=100%
+StandardOutput=journal
+StandardError=inherit
+SyslogLevel=info
+LogFilterPatterns=~.*(GET|HEAD) /(metrics|v1/models)([ ?]|$).*
 Environment=HALOGEN_IMAGE=@IMAGE@
 Environment=HALOGEN_PORT=@PORT@
 Environment=HALOGEN_QUIET_PORT=@QUIET_PORT@
@@ -23,7 +28,7 @@ ExecStartPre=-/usr/bin/podman rm -f halogen
 # Two published ports, one server: the second address carries the agent turns that must not
 # think (Hermes tells providers apart by their address; ModelServerType.noThinkingBaseUrl).
 # --cgroups=split puts the container into this unit's cgroup, so its memory is the unit's.
-ExecStart=/usr/bin/podman run --rm --name halogen --replace --pull=never \
+ExecStart=/usr/bin/podman run --rm --name halogen --replace --pull=never --log-driver=none \
   --cgroups=split --network @NETWORK@ \
   -p 127.0.0.1:${HALOGEN_PORT}:8731 -p 127.0.0.1:${HALOGEN_QUIET_PORT}:8731 \
   --device /dev/kfd --device /dev/dri --ipc=host --ulimit memlock=-1:-1 \

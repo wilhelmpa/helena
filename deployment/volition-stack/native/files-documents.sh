@@ -36,6 +36,20 @@ if ! cmp -s "$here/systemd/volition-code.service.d/vault.conf" "$dropin"; then
   systemctl try-restart volition-code.service
 fi
 
+code_units_changed=0
+for relative in volition-code.service.d/on-demand.conf volition-code-proxy.socket volition-code-proxy.service; do
+  target=/etc/systemd/system/$relative
+  if ! cmp -s "$here/systemd/$relative" "$target"; then
+    install -D -m 0644 "$here/systemd/$relative" "$target"
+    code_units_changed=1
+  fi
+done
+if [[ $code_units_changed == 1 ]]; then
+  systemctl disable --now volition-code.service
+  systemctl daemon-reload
+fi
+systemctl enable --now volition-code-proxy.socket
+
 unit=volition-plan-attachments-to-vault.service
 if ! cmp -s "$here/systemd/$unit" "/etc/systemd/system/$unit"; then
   install -m 0644 "$here/systemd/$unit" /etc/systemd/system/

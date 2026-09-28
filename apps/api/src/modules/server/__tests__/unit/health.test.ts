@@ -73,6 +73,24 @@ describe('storage health', () => {
     expect(withSmart({ temperatureC: 72 })).toMatchObject({ state: 'attention', code: 'diskHot' });
   });
 
+  it('treats a rising NVMe warning-temperature counter as critical', () => {
+    const base = storage();
+    const times = new Map<string, number>();
+    const disk = base.disks[1]!;
+    const withTime = (warningTempTime: number) =>
+      storageHealth(
+        {
+          ...base,
+          disks: [{ ...disk, smart: { ...disk.smart!, warningTempTime } }],
+        },
+        null,
+        times,
+      );
+    expect(byId(withTime(12), 'disk:B')).toMatchObject({ state: 'ok' });
+    expect(byId(withTime(13), 'disk:B')).toMatchObject({ state: 'critical' });
+    expect(byId(withTime(13), 'disk:B')).toMatchObject({ state: 'ok' });
+  });
+
   it('ESPs out of step are amber, and unseen critical events red', () => {
     const base = storage();
     const items = storageHealth(
@@ -304,11 +322,40 @@ describe('power and system health', () => {
         guard: { limit: 90, state: { active: true, peakC: 97, engagedAt: '2026-09-24T20:00:00Z' } },
       }),
     );
-    expect(byId(hot, 'cpu:temperature')).toMatchObject({ state: 'critical', code: 'cpuHot' });
-    expect(byId(hot, 'fans:guard')).toMatchObject({
-      state: 'attention',
-      values: { temperature: 97 },
+    expect(byId(hot, 'cpu:temperature')).toMatchObject({ state: 'ok' });
+  });
+
+  it('requires both sustained sensors for attention and treats 100 C or uncooled throttling as critical', () => {
+    const since = new Date(Date.now() - 601_000).toISOString();
+    const reading = power({
+      cpuTemperatureC: 96,
+      ec: { ...power().ec!, temperatureC: 96 },
+      temperatures: [{ sensor: 'k10temp', id: 'hwmon3/temp1', label: 'Tctl', celsius: 96 }],
+      guard: { limit: 90, state: { active: false, thermalWarnSince: since } },
     });
+    expect(byId(powerHealth(reading), 'cpu:temperature')).toMatchObject({ state: 'attention' });
+    expect(
+      byId(
+        powerHealth({
+          ...reading,
+          guard: { state: { active: false, thermalWarnSince: new Date().toISOString() } },
+        }),
+        'cpu:temperature',
+      ),
+    ).toMatchObject({ state: 'ok' });
+    expect(
+      byId(powerHealth({ ...reading, cpuTemperatureC: 100 }), 'cpu:temperature'),
+    ).toMatchObject({ state: 'critical' });
+    expect(
+      byId(
+        powerHealth({
+          ...reading,
+          fans: { mode: 'fixed', level: 4 },
+          guard: { state: { active: false, throttling: true } },
+        }),
+        'cpu:temperature',
+      ),
+    ).toMatchObject({ state: 'critical' });
   });
 
   it('reports a missing fan module and unreadable fan readings as critical', () => {

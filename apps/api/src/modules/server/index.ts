@@ -19,6 +19,7 @@ import {
   guardBody,
   listQuery,
   profileBody,
+  powerPolicyBody,
   restoreBody,
   restoreParams,
   seenBody,
@@ -337,6 +338,26 @@ export const serverRoutes = new Elysia({ name: 'server', detail: { tags: ['Serve
     {
       response: { 200: HostReading, ...WRITE_ERRORS },
       detail: { summary: 'Cancel a pending one-time boot of the reserve disk' },
+    },
+  )
+  .put(
+    '/god/server/power/policy',
+    async ({ user, request, body }) => {
+      const current = await owner(user, request);
+      const result = await call(() =>
+        hostd(
+          'SetPowerPolicy',
+          { mode: body.mode, tctlLimit: body.tctlLimit, actor: actorOf(current) },
+          30_000,
+        ),
+      );
+      invalidate('power');
+      return result;
+    },
+    {
+      body: powerPolicyBody,
+      response: { 200: HostReading, ...WRITE_ERRORS },
+      detail: { summary: 'Set automatic or fixed power policy and performance temperature limit' },
     },
   )
   .put(
