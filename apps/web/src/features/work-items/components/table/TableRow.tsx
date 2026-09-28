@@ -93,7 +93,7 @@ export function TableRow({
             onClick();
           }}
           className={cn(
-            'relative grid cursor-grab gap-3 border-b py-2 pr-4 text-sm transition-colors sm:touch-none',
+            'relative grid min-h-11 cursor-grab gap-3 border-b border-border/50 py-0 pr-4 font-mono text-xs transition-colors sm:touch-none',
             isBlocked(issue) ? 'row-blocked' : 'hover:bg-accent/40',
             alignTop ? 'items-start' : 'items-center',
             indented ? 'pl-9' : 'pl-4',
@@ -106,11 +106,11 @@ export function TableRow({
             {showId && (
               <IssueIdentifier
                 issue={issue}
-                className="text-xs text-muted-foreground tabular-nums"
+                className="board-list-id text-muted-foreground/60 tabular-nums"
                 onOpenParent={onOpenIssue}
               />
             )}
-            <span dir="auto" className="truncate text-foreground">
+            <span dir="auto" className="truncate font-sans text-sm font-medium text-foreground">
               {issue.title}
             </span>
             <SubtaskProgress

@@ -87,7 +87,7 @@ export default function TableView({
   const virtualizer = useVirtualizer({
     count: items.length,
     getScrollElement: () => scrollRef.current,
-    estimateSize: () => 40,
+    estimateSize: (index) => (items[index].kind === 'row' ? 44 : 40),
     overscan: 12,
     getItemKey: (index) => {
       const it = items[index];

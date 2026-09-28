@@ -269,6 +269,7 @@ export default function SwimlaneBoard({
         activeId={dnd.activeId}
         count={dnd.activeCount}
         issues={project.issues}
+        project={project}
         maps={maps}
         properties={settings.properties}
       />

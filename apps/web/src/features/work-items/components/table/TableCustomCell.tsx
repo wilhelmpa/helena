@@ -4,7 +4,7 @@ import type { Issue } from '@/lib/api/endpoints/issues';
 import { type Maps } from '@/utils/project';
 import { formatDateTimeRange, formatShortDate } from '@/utils/dates';
 import Avatar from '@/components/common/Avatar';
-import { colorDot } from '@/components/common/fields/colorDot';
+import { BoardHintPill } from '../shared/BoardHintPill';
 import { MarkdownCell } from './MarkdownCell';
 
 const DASH = <span className="text-muted-foreground/40">—</span>;
@@ -36,10 +36,7 @@ export function TableCustomCell({
     return (
       <div className="flex min-w-0 flex-wrap items-center gap-1 text-xs">
         {options.map((o) => (
-          <span key={o.id} className="flex min-w-0 items-center gap-1">
-            {colorDot(o.color)}
-            <span className="truncate">{o.value}</span>
-          </span>
+          <BoardHintPill key={o.id} name={o.value} />
         ))}
       </div>
     );
@@ -97,6 +94,13 @@ export function TableCustomCell({
   // MarkdownEditor used in the issue detail (tiptap-markdown breaks:true).
   if (field.fieldType === 'markdown') {
     return <MarkdownCell value={String(raw)} />;
+  }
+  if (field.fieldType === 'number' && typeof raw === 'number') {
+    return (
+      <div className="truncate font-mono text-xs text-muted-foreground tabular-nums">
+        {new Intl.NumberFormat('de-DE', { maximumFractionDigits: 2 }).format(raw)}
+      </div>
+    );
   }
   return <div className="truncate text-xs text-muted-foreground">{preview(raw)}</div>;
 }

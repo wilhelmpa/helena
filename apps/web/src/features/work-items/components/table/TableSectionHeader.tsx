@@ -5,7 +5,6 @@ import { type IssueGroup } from '@/utils/project';
 import { usePermissions } from '@/hooks/usePermissions';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { GroupDot } from '../shared/GroupDot';
 import { TableDropZone } from './TableDropZone';
 import type { ProjectDetail } from '@/lib/api/endpoints/projects';
 import InlineColumnCreate from '../kanban/InlineColumnCreate';
@@ -43,19 +42,22 @@ export function TableSectionHeader({
       id={dropId}
       disabled={disabled}
       onDrop={onDrop}
-      className="flex items-center justify-between bg-muted/40 px-4 py-1.5"
+      className="group/section flex items-center justify-between bg-muted/40 px-4 py-1.5"
     >
       <button
         type="button"
         onClick={onToggle}
-        className="flex items-center gap-2 text-sm font-medium text-foreground"
+        className="board-column-heading flex items-center gap-2 text-muted-foreground"
       >
         {collapsed ? (
           <ChevronRight className="size-3.5 text-muted-foreground" />
         ) : (
           <ChevronDown className="size-3.5 text-muted-foreground" />
         )}
-        <GroupDot group={group} />
+        <span
+          className="size-1.5 rounded-full"
+          style={{ backgroundColor: group.color ?? 'var(--muted-foreground)' }}
+        />
         {group.name}
         <span className="text-muted-foreground">{count}</span>
       </button>
@@ -73,7 +75,7 @@ export function TableSectionHeader({
             <Button
               variant="ghost"
               size="icon"
-              className="size-6 text-muted-foreground"
+              className="size-6 text-muted-foreground opacity-0 group-focus-within/section:opacity-100 group-hover/section:opacity-100"
               onClick={() => setCreating(true)}
               aria-label={t('newIssue')}
             >

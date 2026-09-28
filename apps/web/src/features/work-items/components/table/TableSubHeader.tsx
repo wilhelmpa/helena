@@ -1,6 +1,5 @@
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { type IssueGroup } from '@/utils/project';
-import { GroupDot } from '../shared/GroupDot';
 import { TableDropZone } from './TableDropZone';
 
 // A sub-group header row (only present when sub-grouped). A drop onto it appends
@@ -29,10 +28,13 @@ export function TableSubHeader({
       <button
         type="button"
         onClick={onToggle}
-        className="flex items-center gap-2 text-xs font-medium text-muted-foreground"
+        className="board-column-heading flex items-center gap-2 text-muted-foreground"
       >
         {collapsed ? <ChevronRight className="size-3" /> : <ChevronDown className="size-3" />}
-        <GroupDot group={sub} />
+        <span
+          className="size-1.5 rounded-full"
+          style={{ backgroundColor: sub.color ?? 'var(--muted-foreground)' }}
+        />
         {sub.name}
         <span className="text-muted-foreground/70">{count}</span>
       </button>
