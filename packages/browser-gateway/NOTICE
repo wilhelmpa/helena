@@ -8,8 +8,7 @@ Atomic observed guards, speculative operation/target questions, bounded completi
 uncertain-mutation handling adapted into Helena; no additional upstream runtime is installed.
 Used in: src/task/page-script.ts (node identities, page key, guards), src/task/policy-common.ts
 (the NEXT_ACTION and TARGET rule texts, operation labels), src/task/policy-jev.ts,
-src/task/policy-laya.ts (operation and target questions), src/task/loop.ts (freshness and
-occlusion guards), src/task/systemone.ts (answer validation).
+src/task/loop.ts (freshness and occlusion guards), src/task/systemone.ts (answer validation).
 
 MIT License
 
@@ -62,16 +61,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SO
 laya-browser-agent — https://github.com/ChenneyZhuang/laya-browser-agent
 Copyright Chenney Zhuang. Licensed under the Apache License, Version 2.0
 (http://www.apache.org/licenses/LICENSE-2.0).
-Used in: src/task/policy-common.ts (goal-aware scope, script grounding), src/task/policy-laya.ts
-(scope of 25 elements, confidence gate, value matching), src/task/loop.ts (toggle guard),
-src/task/systemone.ts (answer validation), deployment/volition-stack/native/laya/
-helena_laya_serve.py (coarse-to-fine choice chunking). Changes: ported to TypeScript and Python
-wrapper code of Helena's own; no files copied.
-
-------------------------------------------------------------------------------------------
-Laya — https://github.com/NandhaKishorM/laya, weights cklxx/laya-browser
-Copyright Convai Innovations; cklxx. Licensed under the Apache License, Version 2.0.
-Not bundled: installed on the owner's request by deployment/volition-stack/native/laya/install.sh.
+Used in: src/task/policy-common.ts (goal-aware scope, script grounding),
+src/task/loop.ts (toggle guard), src/task/systemone.ts (answer validation).
+Changes: ported to TypeScript; no files copied.
 
 ------------------------------------------------------------------------------------------
 TypeSafe System One wire format and @typesafe-ai/sdk (MIT, © 2026 TypeSafe) — used by Helena's

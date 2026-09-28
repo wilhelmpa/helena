@@ -38,7 +38,6 @@
   "readOnly": "Schreibgeschützt",
   "updated": "Aktualisiert {time}",
   "truncated": "Diese Notiz ist zu lang, um sie hier zu bearbeiten. Öffne sie zum Ändern in den Notizen.",
-  "openInNotes": "In Notizen öffnen",
   "download": "Herunterladen",
   "conflict": "Es gibt eine neuere Version",
   "conflictNotice": "Diese Notiz wurde woanders geändert, während du sie bearbeitet hast.",

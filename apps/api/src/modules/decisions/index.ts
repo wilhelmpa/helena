@@ -137,7 +137,7 @@ export const decisionRoutes = new Elysia({
       detail: {
         summary: 'Decide a question among fixed options',
         description:
-          'Ask a small decision model (Jev, Laya or a local model, as the team configured the ' +
+          'Ask a small decision model (Jev or a local model, as the team configured the ' +
           'class "Allgemeine Entscheidungen") to pick one of the given options — or yes/no when ' +
           'no options are given — about the context. It answers in well under a second with a ' +
           'probability per option. Use it for classification and routing questions whose answer ' +

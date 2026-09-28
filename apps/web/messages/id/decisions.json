@@ -4,7 +4,7 @@
   "local": "lokal",
   "cloud": "cloud",
   "noTeam": "Pilih tim terlebih dahulu.",
-  "noConnections": "Belum ada koneksi model keputusan. Tambahkan di Akses (Laya di server ini, AI lokal, atau Jev).",
+  "noConnections": "Belum ada koneksi model keputusan. Tambahkan di Akses (AI lokal, atau Jev).",
   "toAccess": "Buka Akses",
   "tabs": {
     "label": "Keputusan",

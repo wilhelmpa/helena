@@ -101,7 +101,6 @@ beforeEach(async () => {
       browserUrl: '',
       inboxUrl: '',
       connectionsUrl: '',
-      notesUrl: '',
     },
   };
   for (const name of globals)

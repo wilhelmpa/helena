@@ -22,10 +22,6 @@ TypeSafe explicitly documents weaknesses with arithmetic, exact counts, dates an
 | `browser-use/jev-ultrafast` | Reference for operation and speculative target questions; a separate text model provides typing text | [Author repository](https://github.com/browser-use/jev-ultrafast); its browser harness and benchmark are not a Helena production test |
 | `Ying-Kai-Liao/jev-browser` | Pinned comparison package at `e35ab134f65033d29c528132d92bf06e8d6adcb5`; isolated lab profile, not the project browser | [Author repository](https://github.com/Ying-Kai-Liao/jev-browser); useful observable subgoals/handback contract, author-reported results are not our measurements |
 | `@jkudish/jev-browser` MCP preset | Separate third-party integration, not the pinned comparison package | Do not select it as a replacement for native browser control; its `npx` preset can fetch code and launches a separate integration |
-| Laya browser v10s | Existing local checkpoint with dedicated `laya` policy | Helena fixture set **10/10**, public set **3/10**, September 24; no implication about Jev |
-| Laya browser v17s | Possible future evaluation candidate only | Current [author model card](https://huggingface.co/cklxx/laya-browser) describes v3 input formatting, trained head length and chunking; short tasks improve but long forms remain weak. No update or performance claim for Helena |
-
-The actual stored Laya public run took 75.2 seconds for ten tasks, 36 decisions and 74,712 input tokens, averaging 1,021ms per decision. The local fixture run took 20.3 seconds, 29 decisions, averaging 300ms. Files: `packages/browser-gateway/eval/results/2026-09-24-{local,public}-laya-rules.json`. Earlier `*-all-backends.json` also names `jev-browser@laya`: that is the wrapper running **Laya**, not the TypeSafe service. None of the four committed result files establishes TypeSafe performance.
 
 Use the configured planning agent (owner default `gpt-6-luna`) to formulate goals, provide public typing values and handle ambiguity. Jev is the narrow decision model. Do not replace the planner with Jev or add a second text provider merely because a public demo uses one. Existing individual agent templates can contain model overrides; template sync must preserve deliberate owner choices and report discrepancies.
 
@@ -47,10 +43,10 @@ The generic class gate requires a passing evaluation for its chosen connection. 
 | Generic parser silently replaced missing/invalid probabilities with zero and renormalized | Require exactly all offered keys, finite unit probabilities, total within 0.02 of one and a valid maximum-probability choice; only rounding drift is normalized. Preserve existing Helena confidence semantics |
 | Eval direct client appended `/v1` twice for a versioned base | Native direct eval client accepts root or `/v1` base, covered by request-URL tests. Configure the documented root for the separate upstream wrapper |
 | Confusing metric attribution | SDK comment names Helena's own measure; skills explain the three different signals |
-| Public browser quality unknown for TypeSafe | Actual provider pilot remains open until owner key is entered; neither mocks nor Laya results satisfy it |
+| Public browser quality unknown for TypeSafe | Actual provider pilot remains open until owner key is entered; mock results do not satisfy it |
 | API option/context limits | Main target choices are capped at 240 and values at 30. Dropdown option selection can still exceed the provider's 255-option limit. Large pages can exceed token budget despite character/element caps. Failures hand back; test large dropdowns and context before widening pilot |
 | Generic news privacy boundary | News class permits cloud and its prompt mentions open positions. Agent skill requires public/minimal context; this is not schema-enforced removal of arbitrary text. Do not submit account/private-position data |
-| Local model assumptions | Browser-tuned Laya is not proven for trading rules/routing. Existing local logit/JSON backends need their own German class evals; no model installation is included |
+| Local model assumptions | Local logit/JSON backends need their own German class evals; no model installation is included |
 
 Caller compatibility: `apps/api/src/modules/browser-task/connection.ts` preserves TypeSafe answers and all existing OpenAI adapters produce confidence. `task/run.ts` reports a malformed browser result as `backend_error`. `apps/api/src/modules/decisions/service.ts` catches parser failures and returns an error/fallback outcome; only a valid decided answer is actionable. Full API integration gate remains the root orchestrator's responsibility.
 
@@ -88,7 +84,7 @@ Required evidence before marking the integration ready:
 - [ ] Root integration/full test, deploy and template-sync preview; report any customized-template drift.
 - [ ] Owner key stored; direct TypeSafe probe records exact model, usage and latency.
 - [ ] Native browser pilot: English and German search; one-field form on a synthetic page; dropdown; repeated labels; navigation race; no-results; false-done; missing value; login/captcha handback; budget exhaustion; injected page instructions; read-only refusal; unauthorized project/domain. Zero unintended side effects and zero false success reports in the acceptance set; report actual coverage and failures.
-- [ ] Compare identical tasks against ordinary step tools and local Laya separately, with end-to-end time, decision-call time, tokens, handback rate and ground truth. Provider claims are not acceptance results.
+- [ ] Compare identical tasks against ordinary step tools, with end-to-end time, decision-call time, tokens, handback rate and ground truth. Provider claims are not acceptance results.
 - [ ] Trading news evaluation on held-out German public examples, including negation, stale/repeated news, conflicting reports and injected instructions; class precision/coverage thresholds met. Private classes reject cloud.
 - [ ] Deterministic order reservations, concurrent/retry behavior, strategy version gate, exits and stale-data handling pass independent tests and operational proof. Read-only broker proof is recorded separately from order readiness.
 - [ ] A chosen draft strategy has reproducible data, chronological tests, costs, versioned authorization and sufficient paper observations under the repaired gates. No current profitability claim.

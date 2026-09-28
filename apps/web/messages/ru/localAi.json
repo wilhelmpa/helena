@@ -33,7 +33,7 @@
     "eval-failed": "Проверка не пройдена"
   },
   "jev": {
-    "label": "Jev / Laya (шаги в браузере)",
+    "label": "Jev (шаги в браузере)",
     "experimental": "Экспериментально",
     "connect": "Добавить подключение",
     "title": "TypeSafe / JEV",

@@ -488,7 +488,6 @@ it('uses actual file scope in the unified viewer and retains canonical task/chat
     () => !!document.querySelector('.tiptap') && !!document.querySelector('a[href="/RES-12"]'),
   );
   assert.equal(document.querySelector('iframe'), null);
-  assert.ok(!document.body.textContent?.includes(files.unified.silverBullet));
   const source = document.querySelector('a[href="https://example.test/source"]');
   assert.ok(source);
   assert.equal(webLinkScope(source, 'WRONG'), 'RES');
@@ -714,7 +713,7 @@ it('reattaches only exact trailing LF bytes and never trims spaces or normalizes
   assert.notEqual(preserveMarkdownEnding('body\r\n', 'body'), 'body\r\n');
 });
 
-it('preserves SilverBullet-specific source as data without running page expressions', async () => {
+it('preserves executable-looking source as data without running page expressions', async () => {
   const before =
     '# Synthetic note\n\n```space-lua\njs.window.fixtureExecuted = true\n```\n\n${js.window.fixtureExecuted = true}\n';
   content = before;

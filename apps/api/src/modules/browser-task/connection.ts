@@ -1,4 +1,3 @@
-import { lstat, readFile } from 'node:fs/promises';
 import { TypeSafeClient, APITimeoutError } from '@typesafe-ai/sdk';
 import { SYSTEM_ONE_MODELS_PATH, systemOneUrl, type DecisionBackendType } from '@helena/sdk';
 import {
@@ -51,11 +50,6 @@ export interface SystemOneReply {
   providerCostUsd: number | null;
 }
 
-// The key file of the local Laya service (install.sh writes it, root:volition-plan-secrets 0640).
-export function localLayaKeyFile(): string {
-  return process.env.HELENA_LAYA_KEY_FILE?.trim() || '/etc/helena/laya.key';
-}
-
 export async function loadConnection(credentialId: number): Promise<DecisionConnection | null> {
   const [row] = await db
     .select({
@@ -76,6 +70,11 @@ export async function loadConnection(credentialId: number): Promise<DecisionConn
   const readable = (row.redacted ?? {}) as Record<string, unknown>;
   const backend = decisionBackend(readable.provider as string | undefined);
   if (!backend || typeof readable.baseUrl !== 'string') return null;
+  if (
+    readable.keySource !== undefined &&
+    !['stored', 'credential', 'local-ai'].includes(String(readable.keySource))
+  )
+    return null;
   return {
     credentialId: row.id,
     teamId: row.teamId,
@@ -87,9 +86,7 @@ export async function loadConnection(credentialId: number): Promise<DecisionConn
       typeof readable.model === 'string' && readable.model ? readable.model : backend.defaultModel,
     allowPrivateAddress: readable.allowPrivateAddress === true,
     keySource:
-      readable.keySource === 'local-laya' ||
-      readable.keySource === 'local-ai' ||
-      readable.keySource === 'credential'
+      readable.keySource === 'local-ai' || readable.keySource === 'credential'
         ? readable.keySource
         : 'stored',
     sourceCredentialId:
@@ -187,7 +184,7 @@ async function safeAddress(connection: DecisionConnection) {
 // not loopback or private. A class whose input may not go to the cloud refuses such a one.
 export function connectionIsLocal(connection: DecisionConnection): boolean {
   if (connection.backend.location === 'cloud') return false;
-  if (connection.keySource === 'local-ai' || connection.keySource === 'local-laya') return true;
+  if (connection.keySource === 'local-ai') return true;
   let host: string;
   try {
     host = new URL(connection.baseUrl).hostname.replace(/^\[|\]$/g, '').toLowerCase();
@@ -221,17 +218,6 @@ async function keyOf(connection: DecisionConnection): Promise<string | null> {
       );
     } catch {
       throw new DecisionConnectionError(409, DECISION_SOURCE_UNAVAILABLE);
-    }
-  }
-  if (connection.keySource === 'local-laya') {
-    const file = localLayaKeyFile();
-    try {
-      const stat = await lstat(file);
-      if (!stat.isFile() || stat.isSymbolicLink()) return null;
-      const key = (await readFile(file, 'utf8')).trim();
-      return key || null;
-    } catch {
-      return null;
     }
   }
   const [row] = await db
@@ -467,9 +453,6 @@ export async function testConnection(connection: DecisionConnection): Promise<Co
   const key = address.key;
   if (!key && connection.backend.keyRequired) {
     return { ok: false, message: 'no_key', models: [], latencyMs: null };
-  }
-  if (!key && connection.keySource === 'local-laya') {
-    return { ok: false, message: 'no_local_key', models: [], latencyMs: null };
   }
   const started = performance.now();
   let models: string[] = [];

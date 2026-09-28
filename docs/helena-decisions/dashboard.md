@@ -171,7 +171,7 @@ export default function LocalAiTile() {
       status={on ? 'running' : undefined}
       progress={on ? { percent: status.data.load, className: 'bg-status-running' } : null}
       sub={on ? t('load', { percent: status.data.load }) : t('offHint')}
-      onSelect={openLocalAiCard}                     // its card with the switches, incl. "Jev / Laya (experimentell)"
+      onSelect={openLocalAiCard}                     // its card with the switches, incl. "Jev (experimentell)"
     />
   );
 }

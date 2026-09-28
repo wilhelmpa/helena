@@ -33,7 +33,7 @@
     "eval-failed": "Evaluasi gagal"
   },
   "jev": {
-    "label": "Jev / Laya (langkah browser)",
+    "label": "Jev (langkah browser)",
     "experimental": "Eksperimental",
     "connect": "Tambahkan koneksi",
     "title": "TypeSafe / JEV",

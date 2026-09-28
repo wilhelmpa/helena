@@ -24,7 +24,7 @@ import {
 } from '../services/browserTask.service';
 import { connectionLabel } from '../utils/lab';
 
-const POLICIES: BrowserControlPolicy[] = ['auto', 'jev', 'laya'];
+const POLICIES: BrowserControlPolicy[] = ['auto', 'jev'];
 
 // Administrator → Agenten-Laufzeit, "Browser-Steuerung (Voreinstellung)": what a project that
 // keeps "Wie in den Voreinstellungen" gets (docs/helena-decisions/browser-task.md §3.3). A

@@ -4,7 +4,7 @@
   "local": "lokal",
   "cloud": "Cloud",
   "noTeam": "Wähle zuerst ein Team.",
-  "noConnections": "Noch keine Verbindung zu einem Entscheidungsmodell. Lege eine unter Zugänge an (Laya auf diesem Server, die lokale KI oder Jev).",
+  "noConnections": "Noch keine Verbindung zu einem Entscheidungsmodell. Lege eine unter Zugänge an (die lokale KI oder Jev).",
   "toAccess": "Zu den Zugängen",
   "tabs": {
     "label": "Entscheidungen",

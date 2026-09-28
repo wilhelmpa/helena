@@ -26,8 +26,7 @@ export function localized(label: LocalizedLabel, locale: string): string {
   return label[locale] ?? label[locale.split('-')[0]!] ?? label.en ?? Object.values(label)[0] ?? '';
 }
 
-// The choice as the select shows it: a kind of service, or one of its presets ("Laya (lokal
-// auf diesem Server)").
+// The choice as the select shows it: a kind of service or one of its presets.
 function choiceOf(value: CredentialFormValue): string {
   return value.keySource === 'stored' || value.keySource === 'credential'
     ? value.provider
@@ -53,7 +52,7 @@ export function CredentialDecisionModelFields({
   const backends = useDecisionBackendsQuery().data?.backends ?? [];
   const test = useTestDecisionConnection(teamId);
   const backend: DecisionBackend | undefined = backends.find((b) => b.id === value.provider);
-  const local = value.keySource === 'local-ai' || value.keySource === 'local-laya';
+  const local = value.keySource === 'local-ai';
   const sources = useDecisionKeySourcesQuery(
     teamId,
     value.projectId,
@@ -205,7 +204,7 @@ export function CredentialDecisionModelFields({
         </div>
       ) : local ? (
         <p className="rounded-md border border-sidebar-border bg-card px-3 py-2 text-sm text-muted-foreground">
-          {value.keySource === 'local-ai' ? t('localAiKey') : t('localKey')}
+          {t('localAiKey')}
         </p>
       ) : (
         <CredentialSecretInput

@@ -33,7 +33,7 @@
     "eval-failed": "评估未通过"
   },
   "jev": {
-    "label": "Jev / Laya（浏览器步骤）",
+    "label": "Jev（浏览器步骤）",
     "experimental": "实验性",
     "connect": "添加连接",
     "title": "TypeSafe / JEV",

@@ -116,7 +116,7 @@ export function useNavigationCommands(
         t('workspace.files'),
         <Folder />,
         features.documents && can('documents', 'read') ? filesPath(key) : notesPath(key),
-        'files documents notes wiki boards canvas SilverBullet',
+        'files documents notes wiki boards canvas',
       );
     add('nav.code', t('workspace.code'), <Code2 />, codePath(key), 'code workspace editor');
     if (features.initiatives && can('initiatives', 'read'))

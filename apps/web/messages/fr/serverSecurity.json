@@ -70,7 +70,6 @@
     "files_agent_code": "Les agents peuvent lire leur code d'exécution",
     "svc_exposure": "Services Helena isolés par systemd",
     "svc_tools_loopback": "Outils accessibles seulement via loopback",
-    "svc_notes": "Notes protégées",
     "net_voice_acl": "Serveurs vocaux accessibles uniquement à Helena"
   },
   "finding": {
@@ -192,9 +191,6 @@
     },
     "svc_tools_loopback": {
       "fail": "Des outils sont joignables au-delà de la boucle locale."
-    },
-    "svc_notes": {
-      "fail": "Les notes ne sont pas protégées comme prévu : {problems}"
     },
     "skipped": "Non vérifié",
     "net_voice_acl": {

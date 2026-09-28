@@ -160,7 +160,6 @@ export function LabForm({
                 <SelectContent>
                   <SelectItem value="auto">{t('policyAuto')}</SelectItem>
                   <SelectItem value="jev">{t('policyJev')}</SelectItem>
-                  <SelectItem value="laya">{t('policyLaya')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>

@@ -70,7 +70,6 @@
     "files_agent_code": "Os agentes conseguem ler o código de execução",
     "svc_exposure": "Serviços da Helena isolados pelo systemd",
     "svc_tools_loopback": "Ferramentas acessíveis só por loopback",
-    "svc_notes": "Notas protegidas",
     "net_voice_acl": "Servidores de voz acessíveis só para a Helena"
   },
   "finding": {
@@ -192,9 +191,6 @@
     },
     "svc_tools_loopback": {
       "fail": "Ferramentas podem ser acessadas além do loopback."
-    },
-    "svc_notes": {
-      "fail": "As notas não estão protegidas como previsto: {problems}"
     },
     "skipped": "Não verificado",
     "net_voice_acl": {

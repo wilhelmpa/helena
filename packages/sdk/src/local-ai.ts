@@ -16,7 +16,7 @@ import type { LocalizedText } from './text';
 // Decision: docs/helena-decisions/local-ai-platform.md.
 
 // Where a model runs: the iGPU (llama.cpp through Vulkan/ROCm), the NPU (FastFlowLM) or the
-// CPU (Laya, small encoders).
+// CPU (small encoders).
 export type LocalAiUnit = 'gpu' | 'npu' | 'cpu';
 
 export const LOCAL_AI_UNITS: readonly LocalAiUnit[] = ['gpu', 'npu', 'cpu'];

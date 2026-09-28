@@ -4,7 +4,7 @@
   "local": "local",
   "cloud": "cloud",
   "noTeam": "Choose a team first.",
-  "noConnections": "No decision model connection yet. Add one in Access (Laya on this server, the local AI, or Jev).",
+  "noConnections": "No decision model connection yet. Add one in Access (the local AI, or Jev).",
   "toAccess": "Open Access",
   "tabs": {
     "label": "Decisions",

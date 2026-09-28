@@ -2,7 +2,7 @@ import { t } from 'elysia';
 
 export { projectKeyParams as browserTaskProjectParams } from '../issues/model';
 
-const Policy = t.Union([t.Literal('auto'), t.Literal('jev'), t.Literal('laya')]);
+const Policy = t.Union([t.Literal('auto'), t.Literal('jev')]);
 const Confidence = t.Nullable(t.Number({ minimum: 0, maximum: 1 }));
 
 export const BrowserControlResponse = t.Object({
@@ -16,7 +16,7 @@ export const BrowserControlResponse = t.Object({
     enabled: t.Boolean(),
     source: t.Union([t.Literal('project'), t.Literal('instance')]),
     label: t.String(),
-    policy: t.Union([t.Literal('jev'), t.Literal('laya')]),
+    policy: t.Literal('jev'),
     credentialId: t.Nullable(t.Number()),
     problem: t.Nullable(t.Literal('connection_missing')),
   }),
@@ -53,7 +53,7 @@ export const DecisionBackendsResponse = t.Object({
       location: t.Union([t.Literal('cloud'), t.Literal('local')]),
       defaultBaseUrl: t.Nullable(t.String()),
       defaultModel: t.String(),
-      policy: t.Union([t.Literal('jev'), t.Literal('laya')]),
+      policy: t.Literal('jev'),
       protocol: t.Union([
         t.Literal('systemone'),
         t.Literal('openai-logprobs'),
@@ -68,7 +68,7 @@ export const DecisionBackendsResponse = t.Object({
           baseUrl: t.String(),
           model: t.String(),
           allowPrivateAddress: t.Boolean(),
-          keySource: t.Nullable(t.Union([t.Literal('local-laya'), t.Literal('local-ai')])),
+          keySource: t.Nullable(t.Literal('local-ai')),
           modelServer: t.Nullable(t.String()),
         }),
       ),
@@ -91,7 +91,7 @@ export const ConnectionsResponse = t.Object({ connections: t.Array(ConnectionSum
 
 export const ConnectionTestResponse = t.Object({
   ok: t.Boolean(),
-  // A code the web words ('ok', 'no_key', 'no_local_key', 'key_refused', 'address_not_allowed')
+  // A code the web words ('ok', 'no_key', 'key_refused', 'address_not_allowed')
   // or the service's own words.
   message: t.String(),
   models: t.Array(t.String()),

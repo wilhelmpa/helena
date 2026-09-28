@@ -45,7 +45,7 @@ is wrong.
 | **Runner** | Claims queued runs and chat messages for the agents it serves. Writes each agent's complete runtime profile from Helena (instructions, SOUL, skills, tools, MCP grants, model, reasoning, approval guard), starts the runtime, streams AG-UI events back, reports tokens and results | Decide what runs. It only executes what Helena queued |
 | **Hermes Agent** | The AI work: the tool loop, memory, skills, sessions, sub-agents | Schedule business work; hold its own configuration |
 | **Browser router + gateway** | A persistent browser profile per project, the live view (CDP screencast) with takeover, and agent browsing through the gateway. Logins are filled from Helena's access centre, so the model never sees a password | Store passwords itself |
-| **Vault** | The knowledge: Markdown and files on disk, the source of truth. Helena keeps an index; the notes (SilverBullet, on an origin of their own) edit the same files, Syncthing mirrors them to devices | |
+| **Vault** | The knowledge: Markdown and files on disk, the source of truth. Helena keeps an index; Helena Docs edits the same files, Syncthing mirrors them to devices | |
 
 ## Principles
 

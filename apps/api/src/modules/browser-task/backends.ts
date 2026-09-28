@@ -6,12 +6,9 @@ import { DECISIONS_BACKENDS } from '#modules/decisions/classes';
 // The decision backends Helena ships (docs/helena-decisions/browser-task.md §3.3), registered as
 // the internal plugin "helena.browser-task" at the framework's extension point
 // (@helena/sdk decisionBackends): TypeSafe's Jev directly, Jev through the Vercel AI Gateway, and
-// any server speaking the same protocol (Laya on this machine, or on another host).
+// any server speaking the same protocol.
 
 export const BROWSER_TASK_PLUGIN_ID = 'helena.browser-task';
-
-// The port helena-laya.service listens on (deployment/volition-stack/native/laya/install.sh).
-export const LOCAL_LAYA_URL = 'http://127.0.0.1:8791';
 
 export const BUILTIN_DECISION_BACKENDS: DecisionBackendType[] = [
   {
@@ -44,18 +41,8 @@ export const BUILTIN_DECISION_BACKENDS: DecisionBackendType[] = [
     },
     location: 'local',
     defaultBaseUrl: null,
-    defaultModel: 'laya-browser-v10s',
-    presets: [
-      {
-        id: 'local-laya',
-        label: { en: 'Laya (local, on this server)', de: 'Laya (lokal auf diesem Server)' },
-        baseUrl: LOCAL_LAYA_URL,
-        model: 'laya-browser-v10s',
-        allowPrivateAddress: true,
-        keySource: 'local-laya',
-      },
-    ],
-    policy: 'laya',
+    defaultModel: 'jev-latest',
+    policy: 'jev',
     keyRequired: false,
     providerName: 'local',
   },

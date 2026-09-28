@@ -46,7 +46,7 @@ export const DEFAULT_INSTANCE_CONTROL: BrowserControlDefaults = {
 };
 
 function policyOf(value: unknown): BrowserControlPolicy {
-  return value === 'jev' || value === 'laya' ? value : 'auto';
+  return value === 'jev' ? value : 'auto';
 }
 
 function confidenceOf(value: unknown): number | null {

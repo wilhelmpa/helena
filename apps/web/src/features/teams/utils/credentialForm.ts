@@ -165,7 +165,7 @@ export function isCredentialFormValid(
       return true;
     case 'decision_model':
       // A cloud service needs a key; a server of the owner's own may run without one, and a
-      // local installation (Laya, the local AI) brings its own address and key.
+      // local AI model server supplies its own address and key.
       return (
         value.provider !== '' &&
         ((value.keySource !== 'stored' && value.keySource !== 'credential') ||

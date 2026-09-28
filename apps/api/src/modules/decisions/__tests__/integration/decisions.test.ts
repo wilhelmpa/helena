@@ -114,7 +114,7 @@ beforeAll(async () => {
       response.writeHead(200, { 'content-type': 'application/json' });
       response.end(
         JSON.stringify({
-          model: 'laya-test',
+          model: 'mock-test',
           answers: out,
           usage: { input_tokens: 50, output_tokens: 0 },
         }),
@@ -193,10 +193,10 @@ async function receiptRetryDeadline<T>(work: Promise<T>): Promise<T> {
 async function connection(asOwner: Api, teamId: number, overrides: Record<string, unknown> = {}) {
   const res = await asOwner.teams({ teamId }).credentials.post({
     kind: 'decision_model',
-    label: 'Laya (Test)',
+    label: 'Own server (Test)',
     provider: 'compatible',
     baseUrl: systemOneUrl,
-    model: 'laya-test',
+    model: 'mock-test',
     allowPrivateAddress: true,
     value: KEY,
     ...overrides,

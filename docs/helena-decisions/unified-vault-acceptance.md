@@ -22,9 +22,9 @@ the private server stopped on completion. No live request, real document or prov
 | Old links | `/docs?path=...`, project `/docs?path=...`, `/notes/<boardId>` redirect to Files; `vaultNotePath` retains project, folder, selected file and canvas. |
 | Same bytes | `project-files/service.ts`, `attachments/project-vault.ts`, `chat-attachments` and initiative attachments use the canonical vault; `link_attachment` creates a reference without copying. |
 | Agent paths | `read_document`, `write_note`, `search_knowledge`, `upload_chat_attachment`, `read_chat_attachment` and `link_attachment` are existing MCP routes. The API integration `unified-vault.test.ts` exercises the actual `/mcp` JSON output. |
-| Access | Project guards plus `knowledge/scope.ts`; Private is excluded from agents and SilverBullet. `references.ts` filters task access and own conversations separately from file access. Chat selection must use the same vault scope. |
+| Access | Project guards plus `knowledge/scope.ts`; Private is excluded from agents. `references.ts` filters task access and own conversations separately from file access. Chat selection must use the same vault scope. |
 | Changes and rename | ETag/sha conflict checks, `moveEntries`/`vault_move`, project-bound attachment references and watcher indexing. Include Home/project-chat file metadata in rename coverage. |
-| Shared vault | All normal file/note use stays in Helena. Native editor and agent tools share the original vault bytes. The existing isolated SilverBullet service is retained, but its frontend and domain are not a release prerequisite; full frontend parity remains open. |
+| Shared vault | All normal file/note use stays in Helena. Native editor and agent tools share the original vault bytes. Syncthing devices share the same vault. |
 | Migration | Journal `0189` defaults → `0190` mail triage Claim → `0191` paper intents → `0192` unified Vault; snapshot `0192.prevId = 0191.id`. `attachments-to-vault.ts` keeps legacy objects for rollback. |
 
 Before the shared gate, include the two narrow review fixes: chat attachment selection must
@@ -90,7 +90,7 @@ the steps below are native Helena actions; the Python helper never writes to the
 | Ticket | Link `Cycle.md` and `original.pdf` to the synthetic task via **Mit Aufgabe verknüpfen**. Record task id/identifier, attachment publicIds and canonical `vaultPath`. From the task preview use **Im Ordner anzeigen**; it must select that file in Dateien. Raw attachment SHA256 must equal the Files raw SHA256, with `linked=true`; no second live file appears. |
 | Agent read/write | In a fresh authorized project-agent chat, attach the existing `Cycle.md` using the file picker. Ask it to use `read_document` on the full manifest path, then `write_note` with the returned `expectedSha` and exact `expected/agent.md` content. It also creates the exact `Agent-artifact.md` in the same proof folder via `write_note`, with `expected/Agent-artifact.md` content. No terminal file copy, new store, email, web fetch or unrelated tool is needed. Verify actual tool calls/results, not the assistant's assertion. Run `verify ... --stage agent`. |
 | Agent artifact | Use existing `link_attachment` with the synthetic task id and project-relative `Files/<RUN>/Agent-artifact.md`. `read_document`/`search_knowledge` must find this unique marker, and the result must point at the full canonical path. Verify `vault_entry.last_author` identifies the agent; record run id only if the genuine call carries one. Chat-only actions need not have a run id. |
-| Second native edit | In the same Helena file viewer append exactly `Stage: silverbullet` plus LF to match the **unchanged historical fixture bytes** in `expected/silverbullet.md`; this marker/stage name is not evidence of SilverBullet execution. Verify raw bytes with `verify ... --stage silverbullet`, reopen the native editor and call agent `read_document` again. Confirm search and the actual user provenance, not `notes` provenance. The real SilverBullet frontend edit/watch cycle is explicitly deferred, not passed. |
+| Device edit | Append exactly `Stage: device` plus LF in the same Helena file viewer to match `expected/device.md`. Verify raw bytes with `verify ... --stage device`, reopen the native editor and call agent `read_document` again. Confirm search and the actual user provenance. |
 | Rename | In Dateien rename only `Cycle.md` to `Renamed.md`. Run `verify ... --stage renamed`; the old active path must be absent. Follow the previously saved Docs link and old chat attachment link: both must resolve to the renamed file. Task attachment publicIds remain stable, their current paths change. The renamed file's References must still show the reader's project/Home chats and synthetic task. Message text and other-project file references remain unchanged. |
 | Reopen | Close and reopen the workspace; reload Helena. Files, PDF/PNG, note and artifact remain reachable and editable. Run `verify ... --stage restart` as a persistence checkpoint before any restart. |
 | Restart | In root's normal no-in-flight maintenance window, restart only the services required by the release (API/worker when relevant), not Chromium/profiles or models. Reopen the same saved links and repeat raw/agent/search reads. Run `verify ... --stage restart` again. A successful pre-restart check is not restart proof. |
@@ -120,14 +120,11 @@ exact requested content; never edit the manifest to turn a mismatch into a pass.
   record that live step as open; do not create a person's account or pretend Owner tested denial.
 - A documents-only reader cannot see the synthetic task title without task access and cannot
   see another user's chat title. A non-owner may use the native file editor under the existing
-  project permissions, but must not receive the whole-vault SilverBullet UI/auth grant.
+  project permissions, under the same project file permissions.
 - A normal project member cannot attach the owner's Home note through a chat. Authorized
   template reading remains available; Private paths and hidden paths stay denied to agents.
 - On the actual Helena hostname, verify Markdown opens directly in the native editor and
-  no Notes-domain iframe or separate Notes action is offered. Legacy runtime mappings and
-  saved Notes panels must not re-enable it. Do not create a DNS/Cloudflare route or relax the
-  existing same-origin/frame guard. The stock SilverBullet frontend's own origin/auth/CSP
-  and external-editor cycle are deferred, not release checks passed by this native UI.
+  no separate Notes iframe or action is offered. Saved Notes panels remain inert.
 
 ## Narrow metadata proof and retention
 

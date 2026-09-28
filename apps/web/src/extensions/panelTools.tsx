@@ -51,8 +51,7 @@ export interface PanelTool {
   projectScoped: boolean;
   view: PanelToolView;
   pluginId: string;
-  // Whether this page's origin has the tool at all (the notes: only where the deployment
-  // names an address for this origin). Asked in the browser only; without it, always.
+  // Whether this page's origin has the tool at all. Asked in the browser only; without it, always.
   available?: () => boolean;
 }
 

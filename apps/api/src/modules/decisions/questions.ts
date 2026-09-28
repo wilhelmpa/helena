@@ -18,7 +18,7 @@ export function routineGateQuestions() {
 // The questions Helena's own decision classes ask (docs/helena-decisions/decisions.md §4–§7).
 // The live features and the evals build them here, so an eval measures exactly what the
 // feature asks. Questions and options are in English: the decision models read English best
-// (TypeSafe names it; Laya's typed-decisions checkpoint is English only); the content they are
+// (TypeSafe names it); the content they are
 // about (a prompt, a mail, a receipt) stays in whatever language it came in.
 
 // ── The model router ──────────────────────────────────────────────────────────────────────
