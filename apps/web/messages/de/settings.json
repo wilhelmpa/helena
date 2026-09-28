@@ -694,19 +694,19 @@
       },
       "notifications": {
         "label": "Benachrichtigungen",
-        "hint": ""
+        "hint": "Push aufs Handy und Mails an dich."
       },
       "security": {
         "label": "Sicherheit",
-        "hint": ""
+        "hint": "Passwort, zweiter Faktor, Passkeys und Sitzungen."
       },
       "accounts": {
         "label": "Verknüpfte Konten",
-        "hint": ""
+        "hint": "Mit deinem Konto verknüpfte Anbieter."
       },
       "api-keys": {
         "label": "API-Schlüssel",
-        "hint": ""
+        "hint": "Schlüssel, mit denen Programme in deinem Namen zugreifen."
       },
       "defaults": {
         "label": "Vorgaben für Projekte",
@@ -718,27 +718,27 @@
       },
       "local-ai": {
         "label": "Lokale KI",
-        "hint": ""
+        "hint": "Modelle auf diesem Server: an/aus, Aufgaben, Vorladen."
       },
       "decisions": {
         "label": "Entscheider",
-        "hint": ""
+        "hint": "Schnelle Entscheidungen: Arten, Schwellen, Protokoll."
       },
       "skills": {
         "label": "Skills",
-        "hint": ""
+        "hint": "Fähigkeiten, die Agenten nutzen können."
       },
       "tools": {
         "label": "Tools",
-        "hint": ""
+        "hint": "Werkzeuge der Agenten und wer sie nutzen darf."
       },
       "mcps": {
         "label": "MCP-Server",
-        "hint": ""
+        "hint": "MCP-Server, die Agenten anbinden können."
       },
       "plugins": {
         "label": "Erweiterungen",
-        "hint": ""
+        "hint": "Erweiterungen von Helena."
       },
       "access": {
         "label": "Zugänge & Verbindungen",
@@ -746,39 +746,39 @@
       },
       "devices": {
         "label": "Geräte & Sync",
-        "hint": ""
+        "hint": "Geräte, die Notizen und Dateien synchron halten."
       },
       "structure": {
         "label": "Abteilungen",
-        "hint": ""
+        "hint": "Abteilungen über den Projekten."
       },
       "voice": {
         "label": "Sprache und Stimme",
-        "hint": ""
+        "hint": "Standardsprache, Stimme und Vokabular."
       },
       "users": {
         "label": "Benutzer",
-        "hint": ""
+        "hint": "Alle Konten dieser Installation."
       },
       "teams": {
         "label": "Teams",
-        "hint": ""
+        "hint": "Die Teams und ihre Daten."
       },
       "team-members": {
         "label": "Teammitglieder",
-        "hint": ""
+        "hint": "Wer zum Team gehört, und Einladungen."
       },
       "team-roles": {
         "label": "Rollen",
-        "hint": ""
+        "hint": "Rollen und was sie dürfen."
       },
       "projects": {
         "label": "Projekte",
-        "hint": ""
+        "hint": "Alle Projekte verwalten."
       },
       "team-notifications": {
         "label": "Benachrichtigungswege",
-        "hint": ""
+        "hint": "Wie das Team Benachrichtigungen zustellt."
       },
       "server": {
         "label": "Server",
@@ -786,39 +786,39 @@
       },
       "updates": {
         "label": "Updates",
-        "hint": ""
+        "hint": "Neue Versionen prüfen und einspielen."
       },
       "authentication": {
         "label": "Anmeldung",
-        "hint": ""
+        "hint": "Wie man sich anmeldet und registriert."
       },
       "auth-provider": {
         "label": "Identitätsanbieter",
-        "hint": ""
+        "hint": "Anmeldung über einen Identitätsanbieter."
       },
       "scim": {
         "label": "SCIM",
-        "hint": ""
+        "hint": "Benutzer automatisch aus einem Verzeichnis anlegen."
       },
       "storage": {
         "label": "Speicher",
-        "hint": ""
+        "hint": "Upload-Grenzen und Speicherplatz."
       },
       "knowledge": {
         "label": "Wissen & Suche",
-        "hint": ""
+        "hint": "Suchindex und Wissensquellen."
       },
       "hotkeys": {
         "label": "Tastenkürzel",
-        "hint": ""
+        "hint": "Tastenkürzel der ganzen App."
       },
       "telegram": {
         "label": "Telegram",
-        "hint": ""
+        "hint": "Benachrichtigungen über Telegram."
       },
       "email": {
         "label": "E-Mail-Versand",
-        "hint": ""
+        "hint": "Mailversand dieser Installation."
       },
       "server-disks": {
         "label": "Platten & RAID",

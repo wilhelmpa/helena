@@ -694,19 +694,19 @@
       },
       "notifications": {
         "label": "通知",
-        "hint": ""
+        "hint": "推送到手机和发给你的邮件。"
       },
       "security": {
         "label": "安全",
-        "hint": ""
+        "hint": "密码、第二因素、通行密钥和会话。"
       },
       "accounts": {
         "label": "关联账户",
-        "hint": ""
+        "hint": "与你账户关联的提供方。"
       },
       "api-keys": {
         "label": "API 密钥",
-        "hint": ""
+        "hint": "让程序以你的身份访问的密钥。"
       },
       "defaults": {
         "label": "项目默认值",
@@ -718,27 +718,27 @@
       },
       "local-ai": {
         "label": "本地 AI",
-        "hint": ""
+        "hint": "此服务器上的模型：开关、任务、预加载。"
       },
       "decisions": {
         "label": "决策器",
-        "hint": ""
+        "hint": "快速决策：类型、阈值、日志。"
       },
       "skills": {
         "label": "技能",
-        "hint": ""
+        "hint": "代理可使用的技能。"
       },
       "tools": {
         "label": "工具",
-        "hint": ""
+        "hint": "代理工具以及谁可以使用。"
       },
       "mcps": {
         "label": "MCP 服务器",
-        "hint": ""
+        "hint": "代理可连接的 MCP 服务器。"
       },
       "plugins": {
         "label": "插件",
-        "hint": ""
+        "hint": "Helena 的扩展。"
       },
       "access": {
         "label": "访问与连接",
@@ -746,39 +746,39 @@
       },
       "devices": {
         "label": "设备与同步",
-        "hint": ""
+        "hint": "同步笔记和文件的设备。"
       },
       "structure": {
         "label": "部门",
-        "hint": ""
+        "hint": "项目之上的部门。"
       },
       "voice": {
         "label": "语音与声音",
-        "hint": ""
+        "hint": "默认语言、语音和词汇。"
       },
       "users": {
         "label": "用户",
-        "hint": ""
+        "hint": "此安装的所有账户。"
       },
       "teams": {
         "label": "团队",
-        "hint": ""
+        "hint": "团队及其信息。"
       },
       "team-members": {
         "label": "团队成员",
-        "hint": ""
+        "hint": "团队成员与邀请。"
       },
       "team-roles": {
         "label": "角色",
-        "hint": ""
+        "hint": "角色及其权限。"
       },
       "projects": {
         "label": "项目",
-        "hint": ""
+        "hint": "管理所有项目。"
       },
       "team-notifications": {
         "label": "通知渠道",
-        "hint": ""
+        "hint": "团队如何发送通知。"
       },
       "server": {
         "label": "服务器",
@@ -786,39 +786,39 @@
       },
       "updates": {
         "label": "更新",
-        "hint": ""
+        "hint": "检查并应用新版本。"
       },
       "authentication": {
         "label": "登录",
-        "hint": ""
+        "hint": "如何登录与注册。"
       },
       "auth-provider": {
         "label": "身份提供商",
-        "hint": ""
+        "hint": "通过身份提供方登录。"
       },
       "scim": {
         "label": "SCIM",
-        "hint": ""
+        "hint": "从目录自动创建用户。"
       },
       "storage": {
         "label": "存储",
-        "hint": ""
+        "hint": "上传限制与存储。"
       },
       "knowledge": {
         "label": "知识与搜索",
-        "hint": ""
+        "hint": "搜索索引与知识来源。"
       },
       "hotkeys": {
         "label": "快捷键",
-        "hint": ""
+        "hint": "整个应用的键盘快捷键。"
       },
       "telegram": {
         "label": "Telegram",
-        "hint": ""
+        "hint": "通过 Telegram 通知。"
       },
       "email": {
         "label": "邮件发送",
-        "hint": ""
+        "hint": "此安装的邮件发送。"
       },
       "server-disks": {
         "label": "磁盘与 RAID",

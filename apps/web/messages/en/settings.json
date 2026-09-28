@@ -694,19 +694,19 @@
       },
       "notifications": {
         "label": "Notifications",
-        "hint": ""
+        "hint": "Push to your phone and mails to you."
       },
       "security": {
         "label": "Security",
-        "hint": ""
+        "hint": "Password, second factor, passkeys and sessions."
       },
       "accounts": {
         "label": "Linked accounts",
-        "hint": ""
+        "hint": "Providers linked to your account."
       },
       "api-keys": {
         "label": "API keys",
-        "hint": ""
+        "hint": "Keys that let programs act as you."
       },
       "defaults": {
         "label": "Project defaults",
@@ -718,27 +718,27 @@
       },
       "local-ai": {
         "label": "Local AI",
-        "hint": ""
+        "hint": "Models on this server: on/off, tasks, preloading."
       },
       "decisions": {
         "label": "Deciders",
-        "hint": ""
+        "hint": "Quick decisions: kinds, thresholds, log."
       },
       "skills": {
         "label": "Skills",
-        "hint": ""
+        "hint": "Skills agents can use."
       },
       "tools": {
         "label": "Tools",
-        "hint": ""
+        "hint": "Agent tools and who may use them."
       },
       "mcps": {
         "label": "MCP servers",
-        "hint": ""
+        "hint": "MCP servers agents can connect."
       },
       "plugins": {
         "label": "Plugins",
-        "hint": ""
+        "hint": "Extensions of Helena."
       },
       "access": {
         "label": "Access & connections",
@@ -746,39 +746,39 @@
       },
       "devices": {
         "label": "Devices & sync",
-        "hint": ""
+        "hint": "Devices that keep notes and files in sync."
       },
       "structure": {
         "label": "Departments",
-        "hint": ""
+        "hint": "Departments above the projects."
       },
       "voice": {
         "label": "Speech and voice",
-        "hint": ""
+        "hint": "Default language, voice and vocabulary."
       },
       "users": {
         "label": "Users",
-        "hint": ""
+        "hint": "All accounts of this installation."
       },
       "teams": {
         "label": "Teams",
-        "hint": ""
+        "hint": "The teams and their details."
       },
       "team-members": {
         "label": "Team members",
-        "hint": ""
+        "hint": "Who belongs to the team, and invitations."
       },
       "team-roles": {
         "label": "Roles",
-        "hint": ""
+        "hint": "Roles and what they may do."
       },
       "projects": {
         "label": "Projects",
-        "hint": ""
+        "hint": "Manage all projects."
       },
       "team-notifications": {
         "label": "Notification channels",
-        "hint": ""
+        "hint": "How the team delivers notifications."
       },
       "server": {
         "label": "Server",
@@ -786,39 +786,39 @@
       },
       "updates": {
         "label": "Updates",
-        "hint": ""
+        "hint": "Check and apply new versions."
       },
       "authentication": {
         "label": "Sign-in",
-        "hint": ""
+        "hint": "How people sign in and register."
       },
       "auth-provider": {
         "label": "Identity providers",
-        "hint": ""
+        "hint": "Sign-in through an identity provider."
       },
       "scim": {
         "label": "SCIM",
-        "hint": ""
+        "hint": "Create users from a directory automatically."
       },
       "storage": {
         "label": "Storage",
-        "hint": ""
+        "hint": "Upload limits and storage."
       },
       "knowledge": {
         "label": "Knowledge & search",
-        "hint": ""
+        "hint": "Search index and knowledge sources."
       },
       "hotkeys": {
         "label": "Shortcuts",
-        "hint": ""
+        "hint": "Keyboard shortcuts of the whole app."
       },
       "telegram": {
         "label": "Telegram",
-        "hint": ""
+        "hint": "Notifications through Telegram."
       },
       "email": {
         "label": "Email sending",
-        "hint": ""
+        "hint": "Mail delivery of this installation."
       },
       "server-disks": {
         "label": "Disks & RAID",

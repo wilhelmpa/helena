@@ -694,19 +694,19 @@
       },
       "notifications": {
         "label": "Notificações",
-        "hint": ""
+        "hint": "Push no celular e e-mails para você."
       },
       "security": {
         "label": "Segurança",
-        "hint": ""
+        "hint": "Senha, segundo fator, passkeys e sessões."
       },
       "accounts": {
         "label": "Contas vinculadas",
-        "hint": ""
+        "hint": "Provedores vinculados à sua conta."
       },
       "api-keys": {
         "label": "Chaves de API",
-        "hint": ""
+        "hint": "Chaves que permitem a programas agir por você."
       },
       "defaults": {
         "label": "Padrões dos projetos",
@@ -718,27 +718,27 @@
       },
       "local-ai": {
         "label": "IA local",
-        "hint": ""
+        "hint": "Modelos neste servidor: ligar, tarefas, pré-carga."
       },
       "decisions": {
         "label": "Decisores",
-        "hint": ""
+        "hint": "Decisões rápidas: tipos, limites, registro."
       },
       "skills": {
         "label": "Skills",
-        "hint": ""
+        "hint": "Habilidades que os agentes podem usar."
       },
       "tools": {
         "label": "Ferramentas",
-        "hint": ""
+        "hint": "Ferramentas dos agentes e quem pode usá-las."
       },
       "mcps": {
         "label": "Servidores MCP",
-        "hint": ""
+        "hint": "Servidores MCP que os agentes podem conectar."
       },
       "plugins": {
         "label": "Extensões",
-        "hint": ""
+        "hint": "Extensões da Helena."
       },
       "access": {
         "label": "Acessos e conexões",
@@ -746,39 +746,39 @@
       },
       "devices": {
         "label": "Dispositivos e sincronização",
-        "hint": ""
+        "hint": "Dispositivos que sincronizam notas e arquivos."
       },
       "structure": {
         "label": "Departamentos",
-        "hint": ""
+        "hint": "Departamentos acima dos projetos."
       },
       "voice": {
         "label": "Fala e voz",
-        "hint": ""
+        "hint": "Idioma, voz e vocabulário padrão."
       },
       "users": {
         "label": "Usuários",
-        "hint": ""
+        "hint": "Todas as contas desta instalação."
       },
       "teams": {
         "label": "Equipes",
-        "hint": ""
+        "hint": "As equipes e seus dados."
       },
       "team-members": {
         "label": "Membros da equipe",
-        "hint": ""
+        "hint": "Quem faz parte da equipe e convites."
       },
       "team-roles": {
         "label": "Funções",
-        "hint": ""
+        "hint": "Papéis e o que podem fazer."
       },
       "projects": {
         "label": "Projetos",
-        "hint": ""
+        "hint": "Gerenciar todos os projetos."
       },
       "team-notifications": {
         "label": "Canais de notificação",
-        "hint": ""
+        "hint": "Como a equipe entrega notificações."
       },
       "server": {
         "label": "Servidor",
@@ -786,39 +786,39 @@
       },
       "updates": {
         "label": "Atualizações",
-        "hint": ""
+        "hint": "Verificar e aplicar novas versões."
       },
       "authentication": {
         "label": "Login",
-        "hint": ""
+        "hint": "Como entrar e se cadastrar."
       },
       "auth-provider": {
         "label": "Provedores de identidade",
-        "hint": ""
+        "hint": "Entrar por um provedor de identidade."
       },
       "scim": {
         "label": "SCIM",
-        "hint": ""
+        "hint": "Criar usuários de um diretório automaticamente."
       },
       "storage": {
         "label": "Armazenamento",
-        "hint": ""
+        "hint": "Limites de envio e armazenamento."
       },
       "knowledge": {
         "label": "Conhecimento e busca",
-        "hint": ""
+        "hint": "Índice de busca e fontes de conhecimento."
       },
       "hotkeys": {
         "label": "Atalhos",
-        "hint": ""
+        "hint": "Atalhos de teclado do app inteiro."
       },
       "telegram": {
         "label": "Telegram",
-        "hint": ""
+        "hint": "Notificações pelo Telegram."
       },
       "email": {
         "label": "Envio de e-mail",
-        "hint": ""
+        "hint": "Envio de e-mail desta instalação."
       },
       "server-disks": {
         "label": "Discos e RAID",
