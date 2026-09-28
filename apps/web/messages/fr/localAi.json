@@ -194,7 +194,12 @@
   "problems": {
     "serverDown": "IA locale : {name} ne répond pas",
     "evalFailed": "IA locale : « {class} » a échoué à l’évaluation",
-    "evalFailedDetail": "{model} – le modèle configuré répond jusqu’à ce qu’une évaluation réussisse"
+    "evalFailedDetail": "{model} – le modèle configuré répond jusqu’à ce qu’une évaluation réussisse",
+    "guard": {
+      "eviction": "Local AI is being evicted from the GPU",
+      "probe": "Local AI is answering too slowly",
+      "detail": "Available RAM: {available}. Largest memory users: {consumers}."
+    }
   },
   "thinking": {
     "off": "sans réflexion",

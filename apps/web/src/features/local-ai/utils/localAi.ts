@@ -46,6 +46,7 @@ export function unitState(status: LocalAiStatus, unit: LocalAiUnit): UnitState {
   const entry = status.units[unit];
   if (!entry.allowed) return 'off';
   if (!entry.present) return 'missing';
+  if (unit === 'gpu') return 'idle';
   if ((entry.busyPercent ?? 0) >= 5) return 'busy';
   return 'idle';
 }

@@ -194,7 +194,12 @@
   "problems": {
     "serverDown": "AI lokal: {name} tidak menjawab",
     "evalFailed": "AI lokal: “{class}” gagal dalam evaluasi",
-    "evalFailedDetail": "{model} – model yang diatur menjawab sampai evaluasi lulus"
+    "evalFailedDetail": "{model} – model yang diatur menjawab sampai evaluasi lulus",
+    "guard": {
+      "eviction": "Local AI is being evicted from the GPU",
+      "probe": "Local AI is answering too slowly",
+      "detail": "Available RAM: {available}. Largest memory users: {consumers}."
+    }
   },
   "thinking": {
     "off": "tanpa berpikir",

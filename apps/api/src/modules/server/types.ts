@@ -1,6 +1,7 @@
 // What helena-hostd answers (helena_host/*.py), as the API passes it on. The helper builds
 // these shapes for Helena; they are camelCase and carry numbers and states, never a path to
 // a secret or a secret.
+import type { LocalAiGuard } from '#modules/local-ai/guard-state';
 
 export interface HostdCapabilities {
   version: string;
@@ -34,6 +35,18 @@ export interface HostSystemStatus {
     gttTotalBytes: number | null;
     gttUsedBytes: number | null;
   } | null;
+  gpuProcesses?:
+    | {
+        gpu: string;
+        pid: number;
+        name: string;
+        evictedTimeMs: number;
+        evictedMs5m: number | null;
+      }[]
+    | null;
+  memoryConsumers?: { pid: number; name: string; rssBytes: number }[];
+  localAiPreloadRunning?: boolean;
+  guard?: LocalAiGuard;
   efi: boolean;
 }
 

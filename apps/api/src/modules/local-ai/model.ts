@@ -159,6 +159,15 @@ const loadedEntry = t.Object({
 });
 
 export const LocalAiStatus = t.Object({
+  guard: t.Object({
+    checkedAt: t.Nullable(t.String()),
+    probeAt: t.Nullable(t.String()),
+    probeMs: t.Nullable(t.Number()),
+    probeFailures: t.Number(),
+    problem: t.Nullable(t.Union([t.Literal('eviction'), t.Literal('probe')])),
+    availableBytes: t.Nullable(t.Number()),
+    consumers: t.Array(t.Object({ pid: t.Number(), name: t.String(), rssBytes: t.Number() })),
+  }),
   enabled: t.Boolean(),
   units: t.Object({
     gpu: t.Object({

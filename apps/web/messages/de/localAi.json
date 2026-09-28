@@ -192,6 +192,11 @@
     "offSub": "Alles wie eingestellt"
   },
   "problems": {
+    "guard": {
+      "eviction": "Lokale KI wird aus der GPU verdrängt",
+      "probe": "Lokale KI antwortet zu langsam",
+      "detail": "Freier RAM: {available}. Größte Speicherverbraucher: {consumers}."
+    },
     "serverDown": "Lokale KI: {name} antwortet nicht",
     "evalFailed": "Lokale KI: „{class}“ hat die Auswertung nicht bestanden",
     "evalFailedDetail": "{model} – bis eine Auswertung besteht, antwortet das eingestellte Modell"

@@ -13,6 +13,7 @@ import {
 } from '@helena/sdk';
 import { registries } from '#shared/helena';
 import { HostdError, hostd } from './hostd';
+import { localAiGuard } from '#modules/local-ai/guard';
 import { backupHealth, powerHealth, storageHealth, systemHealth } from './health';
 import type {
   BackupStatus,
@@ -58,7 +59,11 @@ export function invalidate(...keys: CacheKey[]): void {
 export const hostCapabilities = (fresh = false) =>
   cached('capabilities', () => hostd<HostdCapabilities>('Capabilities', {}, 5_000), fresh);
 export const systemStatus = (fresh = false) =>
-  cached('system', () => hostd<HostSystemStatus>('SystemStatus'), fresh);
+  cached(
+    'system',
+    async () => ({ ...(await hostd<HostSystemStatus>('SystemStatus')), guard: localAiGuard() }),
+    fresh,
+  );
 export const storageStatus = (fresh = false) =>
   cached(
     'storage',

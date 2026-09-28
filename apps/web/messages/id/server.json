@@ -70,7 +70,9 @@
     "localAiServerDown": "AI lokal: {name} tidak menjawab",
     "homeHttpsOk": "HTTPS di rumah ({host}): sertifikat masih berlaku {days} hari.",
     "homeHttpsExpiring": "HTTPS di rumah ({host}): sertifikat kedaluwarsa dalam {days} hari; perpanjangan tidak berhasil.",
-    "homeHttpsInvalid": "HTTPS di rumah ({host}): {reason, select, expired {sertifikat kedaluwarsa} name {sertifikat bukan untuk nama ini} untrusted {sertifikat tidak tepercaya} unreachable {tidak dapat dijangkau} other {tidak valid}}."
+    "homeHttpsInvalid": "HTTPS di rumah ({host}): {reason, select, expired {sertifikat kedaluwarsa} name {sertifikat bukan untuk nama ini} untrusted {sertifikat tidak tepercaya} unreachable {tidak dapat dijangkau} other {tidak valid}}.",
+    "localAiEviction": "Local AI was evicted from the GPU for over 30 seconds in the last five minutes. Available RAM: {available}.",
+    "localAiProbeSlow": "Local AI missed the five-second response limit three times in a row. Available RAM: {available}."
   },
   "overview": {
     "machine": "Mesin",
@@ -89,7 +91,13 @@
     "swap": "Swap",
     "swapUsed": "{used} dari {total}",
     "health": "Kondisi",
-    "helper": "Helper host {version}"
+    "helper": "Helper host {version}",
+    "localAiGuard": "Local AI guard",
+    "eviction": "GPU eviction (last 5 min)",
+    "probe": "Probe decision",
+    "notMeasured": "Not measured yet",
+    "restartLocalAi": "Restart local AI",
+    "restartDone": "Restart started; pinned models are being preloaded."
   },
   "disks": {
     "arrays": "Mirror",

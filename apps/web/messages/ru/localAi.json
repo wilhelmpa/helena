@@ -194,7 +194,12 @@
   "problems": {
     "serverDown": "Локальный ИИ: {name} не отвечает",
     "evalFailed": "Локальный ИИ: «{class}» не прошёл оценку",
-    "evalFailedDetail": "{model} — пока оценка не пройдена, отвечает настроенная модель"
+    "evalFailedDetail": "{model} — пока оценка не пройдена, отвечает настроенная модель",
+    "guard": {
+      "eviction": "Local AI is being evicted from the GPU",
+      "probe": "Local AI is answering too slowly",
+      "detail": "Available RAM: {available}. Largest memory users: {consumers}."
+    }
   },
   "thinking": {
     "off": "без размышлений",

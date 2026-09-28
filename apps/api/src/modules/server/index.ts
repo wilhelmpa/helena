@@ -5,6 +5,7 @@ import { HttpError } from '#shared/lib';
 import { commonErrors, errors } from '#shared/responses';
 import { requireInteractiveOwner } from '#modules/connections/interactive';
 import { HostdError, hostd } from './hostd';
+import { restartLocalAi } from '#modules/local-ai/guard';
 import {
   HostReading,
   PasswordResponse,
@@ -118,6 +119,19 @@ export const serverRoutes = new Elysia({ name: 'server', detail: { tags: ['Serve
       response: { 200: HostReading, ...READ_ERRORS },
       detail: {
         summary: 'Read the machine: board, CPU, uptime, memory and the GPU share of it',
+      },
+    },
+  )
+  .post(
+    '/god/server/local-ai/restart',
+    async ({ user, request }) => {
+      const actor = actorOf(await owner(user, request));
+      return call(() => restartLocalAi(actor));
+    },
+    {
+      response: { 200: HostReading, ...WRITE_ERRORS },
+      detail: {
+        summary: 'Restart local AI and preload pinned models while no runs or chats are active',
       },
     },
   )

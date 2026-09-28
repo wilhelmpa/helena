@@ -24,6 +24,7 @@ interface io.helena.hostd
 
 method Capabilities() -> (result: object)
 method SystemStatus() -> (result: object)
+method RestartLocalAi(actor: ?string) -> (result: object)
 method StorageStatus(fresh: ?bool) -> (result: object)
 method StartRaidCheck(array: string, actor: ?string) -> (result: object)
 method StopRaidCheck(array: string, actor: ?string) -> (result: object)
@@ -175,6 +176,17 @@ def storage_status(ctx: Context, params: dict) -> dict:
                           state_dir=ctx.config.state_dir)
 
 
+def restart_local_ai(ctx: Context, _: dict) -> dict:
+    tool = ctx.host.which('systemctl')
+    if not tool:
+        raise HostError('NotAvailable', 'systemd is not available')
+    for unit in ('lemond.service', 'helena-ai-preload.service'):
+        result = ctx.host.run([tool, 'restart', '--no-block', unit], timeout=15)
+        if result.returncode != 0:
+            raise HostError('CommandFailed', f'{unit} could not be restarted')
+    return {'restarted': True}
+
+
 storage_lock = threading.Lock()
 
 
@@ -187,7 +199,8 @@ def _locked(lock: threading.Lock, fn: Callable[[Context, dict], dict]) -> Callab
 
 METHODS: dict[str, Method] = {
     'Capabilities': Method(capabilities, {}),
-    'SystemStatus': Method(lambda ctx, _: system.status(ctx.host), {}),
+    'SystemStatus': Method(lambda ctx, _: system.status(ctx.host, ctx.config.state_dir), {}),
+    'RestartLocalAi': Method(restart_local_ai, _p(actor='?string'), mutating=True),
     'StorageStatus': Method(storage_status, _p(fresh='?bool')),
     'StartRaidCheck': Method(_locked(storage_lock, lambda ctx, p: storage.start_check(ctx.host, p['array'])),
                              _p(array='string', actor='?string'), mutating=True),

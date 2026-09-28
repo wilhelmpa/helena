@@ -3,12 +3,19 @@
 import Link from 'next/link';
 import { useQueryClient } from '@tanstack/react-query';
 import { useLocale, useTranslations } from 'next-intl';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
 import { resolveText } from '@helena/sdk/web';
 import { byKey } from '@/utils/messageKey';
 import ListSkeleton from '@/components/common/skeleton/ListSkeleton';
 import { formatDuration } from '@/utils/dates';
 import { serverPath } from '@/utils/paths';
-import { serverKeys, useServerOverview, useServerSystem } from '../services/server.service';
+import {
+  serverKeys,
+  useRestartLocalAi,
+  useServerOverview,
+  useServerSystem,
+} from '../services/server.service';
 import { formatMemory, isServerTab, orderedHealth, type ServerTab } from '../utils/serverFormat';
 import { CardHeader, Fact, Facts, HealthLine, ServerSections } from './ServerParts';
 import ServerToolbar from './ServerToolbar';
@@ -23,6 +30,7 @@ export default function OverviewTab({ tabs }: { tabs: ServerTab[] }) {
   const qc = useQueryClient();
   const overview = useServerOverview();
   const system = useServerSystem();
+  const restart = useRestartLocalAi();
   const data = system.data;
   const refreshing = overview.isFetching || system.isFetching;
 
@@ -100,6 +108,48 @@ export default function OverviewTab({ tabs }: { tabs: ServerTab[] }) {
             </Facts>
           ) : (
             <ListSkeleton rows={2} />
+          )}
+        </section>
+
+        <section className="space-y-3 rounded-lg border border-sidebar-border bg-card p-4 xl:col-span-2">
+          <CardHeader title={t('overview.localAiGuard')}>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={restart.isPending || !data?.guard?.problem}
+              onClick={() =>
+                restart.mutate(undefined, {
+                  onSuccess: () => toast.success(t('overview.restartDone')),
+                  onError: (error) => toast.error(error.message),
+                })
+              }
+            >
+              {t('overview.restartLocalAi')}
+            </Button>
+          </CardHeader>
+          {data ? (
+            <Facts>
+              {!data.gpuProcesses?.length && (
+                <Fact label={t('overview.eviction')}>{t('overview.notMeasured')}</Fact>
+              )}
+              {(data.gpuProcesses ?? []).map((process) => (
+                <Fact
+                  key={`${process.gpu}:${process.pid}`}
+                  label={`${t('overview.eviction')} · GPU ${process.gpu} · ${process.name || process.pid}`}
+                >
+                  {process.evictedMs5m == null
+                    ? t('overview.notMeasured')
+                    : `${(process.evictedMs5m / 1000).toFixed(1)} s`}
+                </Fact>
+              ))}
+              <Fact label={t('overview.probe')}>
+                {data.guard?.probeMs == null
+                  ? t('overview.notMeasured')
+                  : `${(data.guard.probeMs / 1000).toFixed(1)} s`}
+              </Fact>
+            </Facts>
+          ) : (
+            <ListSkeleton rows={1} />
           )}
         </section>
 

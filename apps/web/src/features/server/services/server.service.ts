@@ -14,6 +14,7 @@ import {
   getServerOverview,
   getServerPower,
   getServerSystem,
+  restartLocalAi,
   listSnapshotFolder,
   markServerEventsSeen,
   removeBackupTarget,
@@ -49,6 +50,14 @@ export const serverKeys = {
   folder: (snapshot: string, path: string) => ['server', 'folder', snapshot, path] as const,
   restore: (id: string) => ['server', 'restore', id] as const,
 };
+
+export function useRestartLocalAi() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: restartLocalAi,
+    onSuccess: () => qc.invalidateQueries({ queryKey: serverKeys.all }),
+  });
+}
 
 export function useServerOverview(enabled = true) {
   return useQuery({

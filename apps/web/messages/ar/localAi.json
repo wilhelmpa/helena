@@ -194,7 +194,12 @@
   "problems": {
     "serverDown": "الذكاء الاصطناعي المحلي: {name} لا يستجيب",
     "evalFailed": "الذكاء الاصطناعي المحلي: „{class}“ لم يجتز التقييم",
-    "evalFailedDetail": "{model} – يجيب النموذج المُعدّ حتى ينجح تقييم"
+    "evalFailedDetail": "{model} – يجيب النموذج المُعدّ حتى ينجح تقييم",
+    "guard": {
+      "eviction": "Local AI is being evicted from the GPU",
+      "probe": "Local AI is answering too slowly",
+      "detail": "Available RAM: {available}. Largest memory users: {consumers}."
+    }
   },
   "thinking": {
     "off": "دون تفكير",

@@ -70,7 +70,9 @@
     "localAiServerDown": "本地 AI：{name} 无响应",
     "homeHttpsOk": "家庭 HTTPS（{host}）：证书还有 {days} 天有效。",
     "homeHttpsExpiring": "家庭 HTTPS（{host}）：证书将在 {days} 天后过期；续期没有成功。",
-    "homeHttpsInvalid": "家庭 HTTPS（{host}）：{reason, select, expired {证书已过期} name {证书不适用于此名称} untrusted {证书不受信任} unreachable {无法访问} other {无效}}。"
+    "homeHttpsInvalid": "家庭 HTTPS（{host}）：{reason, select, expired {证书已过期} name {证书不适用于此名称} untrusted {证书不受信任} unreachable {无法访问} other {无效}}。",
+    "localAiEviction": "Local AI was evicted from the GPU for over 30 seconds in the last five minutes. Available RAM: {available}.",
+    "localAiProbeSlow": "Local AI missed the five-second response limit three times in a row. Available RAM: {available}."
   },
   "overview": {
     "machine": "机器",
@@ -89,7 +91,13 @@
     "swap": "交换空间",
     "swapUsed": "{used} / {total}",
     "health": "健康状态",
-    "helper": "主机助手 {version}"
+    "helper": "主机助手 {version}",
+    "localAiGuard": "Local AI guard",
+    "eviction": "GPU eviction (last 5 min)",
+    "probe": "Probe decision",
+    "notMeasured": "Not measured yet",
+    "restartLocalAi": "Restart local AI",
+    "restartDone": "Restart started; pinned models are being preloaded."
   },
   "disks": {
     "arrays": "镜像",

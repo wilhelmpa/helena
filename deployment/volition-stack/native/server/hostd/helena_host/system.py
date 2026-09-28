@@ -8,13 +8,115 @@ from __future__ import annotations
 import os
 import platform
 import re
+import json
+import subprocess
 
-from .common import Host
+from .common import Host, atomic_write_json, file_lock, json_load_file
 
 # Pressure: less than this share of the RAM available, or tasks stalled on memory for more
 # than this share of the last minute.
 LOW_AVAILABLE_SHARE = 0.10
 PSI_SOME_AVG60 = 10.0
+EVICTION_WINDOW_SECONDS = 300
+
+
+def _gpu_entries(value: object, gpu: str = '0'):
+    if isinstance(value, list):
+        for item in value:
+            yield from _gpu_entries(item, gpu)
+    elif isinstance(value, dict):
+        keys = {str(key).lower(): item for key, item in value.items()}
+        if ('evicted_time' in keys or 'evicted time' in keys) and ('pid' in keys or 'process_id' in keys):
+            yield gpu, keys
+        else:
+            gpu = str(keys.get('gpu', gpu))
+            for item in value.values():
+                yield from _gpu_entries(item, gpu)
+
+
+def gpu_processes(host: Host, state_dir: str | None) -> list[dict] | None:
+    tool = host.which('amd-smi')
+    if not tool and host.exists('/opt/helena-ai/rocm-10.0.0/bin/amd-smi'):
+        tool = host.path('/opt/helena-ai/rocm-10.0.0/bin/amd-smi')
+    if not tool:
+        return None
+    try:
+        result = host.run([tool, 'process', '--json'], timeout=5)
+        if result.returncode != 0:
+            return None
+        entries = list(_gpu_entries(json.loads(result.stdout)))
+    except (OSError, ValueError, TimeoutError, subprocess.TimeoutExpired):
+        return None
+    now = host.now()
+    counters = {}
+    for gpu, entry in entries:
+        try:
+            pid = int(entry.get('pid', entry.get('process_id')))
+            raw = entry.get('evicted_time', entry.get('evicted time'))
+            match = re.match(r'^\s*(\d+(?:\.\d+)?)\s*(ms|s|min)?\s*$', str(raw), re.I)
+            if pid <= 0 or not match:
+                continue
+            factor = {'ms': 1, 's': 1000, 'min': 60_000}[(match.group(2) or 'ms').lower()]
+            counter = int(float(match.group(1)) * factor)
+            counters[f'{gpu}:{pid}'] = (gpu, pid, counter, str(entry.get('name', entry.get('process_name', '')))[:80])
+        except (TypeError, ValueError):
+            continue
+    if not state_dir:
+        return [{'gpu': gpu, 'pid': pid, 'name': name, 'evictedTimeMs': counter, 'evictedMs5m': None}
+                for gpu, pid, counter, name in counters.values()]
+    os.makedirs(state_dir, mode=0o700, exist_ok=True)
+    path = os.path.join(state_dir, 'gpu-eviction.json')
+    with file_lock(os.path.join(state_dir, 'gpu-eviction.lock')):
+        previous = json_load_file(path, {})
+        previous = previous if isinstance(previous, dict) else {}
+        history = previous.get('history', {})
+        history = history if isinstance(history, dict) else {}
+        result = []
+        next_history = {}
+        for key, (gpu, pid, counter, name) in counters.items():
+            samples = history.get(key, [])
+            valid = []
+            for sample in samples if isinstance(samples, list) else []:
+                if not isinstance(sample, (list, tuple)) or len(sample) != 2:
+                    continue
+                at, value = sample
+                if (isinstance(at, (int, float)) and isinstance(value, int)
+                        and now - EVICTION_WINDOW_SECONDS <= at <= now and value <= counter):
+                    valid.append((float(at), value))
+            samples = valid
+            baseline = samples[0][1] if samples else None
+            samples.append((now, counter))
+            next_history[key] = samples[-301:]
+            result.append({'gpu': gpu, 'pid': pid, 'name': name, 'evictedTimeMs': counter,
+                           'evictedMs5m': counter - baseline if baseline is not None else None})
+        atomic_write_json(path, {'history': next_history})
+    return result
+
+
+def memory_consumers(host: Host) -> list[dict]:
+    result = []
+    for pid in host.listdir('/proc'):
+        if not pid.isdigit():
+            continue
+        text = host.read(f'/proc/{pid}/status', 4096) or ''
+        name = re.search(r'^Name:\s*(.+)$', text, re.M)
+        rss = re.search(r'^VmRSS:\s*(\d+)\s*kB', text, re.M)
+        if rss:
+            result.append({'pid': int(pid), 'name': (name.group(1) if name else '?')[:80],
+                           'rssBytes': int(rss.group(1)) * 1024})
+    return sorted(result, key=lambda item: item['rssBytes'], reverse=True)[:5]
+
+
+def preload_running(host: Host) -> bool:
+    tool = host.which('systemctl')
+    if not tool:
+        return False
+    try:
+        result = host.run([tool, 'show', '--property=ActiveState', '--value',
+                           'helena-ai-preload.service'], timeout=3)
+        return result.returncode == 0 and result.stdout.strip() == 'activating'
+    except (OSError, subprocess.TimeoutExpired):
+        return False
 
 
 def meminfo(host: Host) -> dict[str, int]:
@@ -58,7 +160,7 @@ def gpu_memory(host: Host) -> dict | None:
     return None
 
 
-def status(host: Host) -> dict:
+def status(host: Host, state_dir: str | None = None) -> dict:
     info = meminfo(host)
     psi = pressure(host)
     total = info.get('MemTotal')
@@ -107,5 +209,8 @@ def status(host: Host) -> dict:
             'underPressure': under_pressure,
         },
         'gpuMemory': gpu_memory(host),
+        'gpuProcesses': gpu_processes(host, state_dir),
+        'memoryConsumers': memory_consumers(host),
+        'localAiPreloadRunning': preload_running(host),
         'efi': host.exists('/sys/firmware/efi'),
     }

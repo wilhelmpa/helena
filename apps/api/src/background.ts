@@ -15,6 +15,7 @@ import { pruneRunEvents } from '#modules/agents/run-timeline/service';
 import { scheduleLimitProbes } from '#modules/provider-limits/service';
 import { prunePolicyDecisions } from '#modules/autopilot/engine';
 import { checkAllServers } from '#modules/local-ai/service';
+import { checkLocalAiGuard } from '#modules/local-ai/guard';
 import { followActions } from '#modules/updates/service';
 import { processPushDeliveries } from '@helena/push';
 import { checkAlerts } from '#modules/push/alerts';
@@ -76,6 +77,7 @@ export function startBackgroundJobs(): void {
     async () => void (await prunePolicyDecisions()),
     () => intEnv('HELENA_POLICY_LOG_PRUNE_INTERVAL_MS', 86_400_000),
   );
+  startLoop('local-ai-guard', checkLocalAiGuard, () => 60_000);
   if (process.env.HELENA_ENGINE?.trim().toLowerCase() === 'off') return;
   // Launches the engine and tries again while the database does not answer.
   const launcher = startLoop(

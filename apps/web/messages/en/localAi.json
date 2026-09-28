@@ -194,7 +194,12 @@
   "problems": {
     "serverDown": "Local AI: {name} does not answer",
     "evalFailed": "Local AI: “{class}” failed its eval",
-    "evalFailedDetail": "{model} – the configured model answers until an eval passes"
+    "evalFailedDetail": "{model} – the configured model answers until an eval passes",
+    "guard": {
+      "eviction": "Local AI is being evicted from the GPU",
+      "probe": "Local AI is answering too slowly",
+      "detail": "Available RAM: {available}. Largest memory users: {consumers}."
+    }
   },
   "thinking": {
     "off": "no thinking",

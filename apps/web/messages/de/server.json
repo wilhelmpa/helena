@@ -65,6 +65,8 @@
     "fansAuto": "Lüfter automatisch.",
     "memoryPressure": "Arbeitsspeicher knapp: nur noch {available} frei.",
     "memoryOk": "Arbeitsspeicher: {available} frei.",
+    "localAiEviction": "Lokale KI wurde in den letzten fünf Minuten über 30 Sekunden aus der GPU verdrängt. Freier RAM: {available}.",
+    "localAiProbeSlow": "Lokale KI hat dreimal hintereinander nicht innerhalb von fünf Sekunden geantwortet. Freier RAM: {available}.",
     "healthFailed": "Der Zustand konnte nicht gelesen werden.",
     "localAiServerUp": "Lokale KI: {name} ist erreichbar",
     "localAiServerDown": "Lokale KI: {name} antwortet nicht",
@@ -73,6 +75,12 @@
     "homeHttpsInvalid": "HTTPS zu Hause ({host}): {reason, select, expired {Zertifikat abgelaufen} name {Zertifikat gilt nicht für diesen Namen} untrusted {Zertifikat nicht vertrauenswürdig} unreachable {nicht erreichbar} other {ungültig}}."
   },
   "overview": {
+    "localAiGuard": "Wächter für lokale KI",
+    "eviction": "GPU-Verdrängung (letzte 5 Min.)",
+    "probe": "Probe-Entscheidung",
+    "notMeasured": "Noch nicht gemessen",
+    "restartLocalAi": "Lokale KI neu starten",
+    "restartDone": "Neustart gestartet; gepinnte Modelle werden vorgeladen.",
     "machine": "Maschine",
     "board": "Board",
     "cpu": "Prozessor",
