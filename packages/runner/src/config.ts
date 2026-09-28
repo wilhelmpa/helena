@@ -87,13 +87,11 @@ export function presetOf(config: Pick<RunnerConfig, 'agent' | 'command'>): CliCo
 
 const DEFAULTS = {
   concurrency: 1,
-  pollIntervalMs: 3000,
+  pollIntervalMs: 15_000,
   timeoutMs: 30 * 60 * 1000,
 };
 
-// An empty poll is three writes on the server (the lease sweep, the presence stamp, and
-// the claim itself), so asking faster than once a second costs the instance more than it
-// saves its operator.
+// An empty poll writes a lease sweep, presence stamp, and claim on the server.
 const MIN_POLL_INTERVAL_MS = 1000;
 
 function textOf(value: unknown): string | undefined {

@@ -85,6 +85,25 @@ describe('api keys', () => {
     expect(me.data).toEqual({ authenticated: false });
   });
 
+  it('records key use at most once during a burst', async () => {
+    const user = await signUpTestUser();
+    const created = await auth.api.createApiKey({ body: { userId: user.userId, name: 'burst' } });
+
+    expect((await apiKeyApi(created.key).projects.get()).status).toBe(200);
+    const [first] = await db
+      .select({ lastRequest: apikey.lastRequest, updatedAt: apikey.updatedAt })
+      .from(apikey)
+      .where(eq(apikey.id, created.id));
+    expect(first?.lastRequest).toBeTruthy();
+
+    expect((await apiKeyApi(created.key).projects.get()).status).toBe(200);
+    const [second] = await db
+      .select({ lastRequest: apikey.lastRequest, updatedAt: apikey.updatedAt })
+      .from(apikey)
+      .where(eq(apikey.id, created.id));
+    expect(second).toEqual(first);
+  });
+
   it('refuses creating a key from a key', async () => {
     const user = await signUpTestUser();
     const created = await auth.api.createApiKey({ body: { userId: user.userId, name: 'ci' } });

@@ -174,7 +174,7 @@ priority over both. An `agents` entry has priority over all three, for the field
 | `cwd`            | `ITSAPLAN_CWD`              | where you start it | Working directory for the command                                      |
 | `env`            |                             | `{}`               | Extra variables for the command                                        |
 | `concurrency`    | `ITSAPLAN_CONCURRENCY`      | `1`                | Tasks at once, per agent. Queued runs and chat answers count apart     |
-| `pollIntervalMs` | `ITSAPLAN_POLL_INTERVAL_MS` | `3000`             | Wait after an empty queue. Minimum 1000                                |
+| `pollIntervalMs` | `ITSAPLAN_POLL_INTERVAL_MS` | `15000`            | Wait after an empty queue. Minimum 1000                                |
 | `timeoutMs`      | `ITSAPLAN_TIMEOUT_MS`       | `1800000`          | Time before the runner stops a task                                    |
 | `outputFormat`   | `ITSAPLAN_OUTPUT_FORMAT`    | the preset's       | How the runner reads a chat answer                                     |
 | `models`         |                             | `[]`               | Models and reasoning levels available in the chat selector             |
