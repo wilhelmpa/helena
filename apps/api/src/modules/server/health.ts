@@ -335,6 +335,30 @@ export function backupHealth(backup: BackupStatus, now: number = Date.now()): Ho
 
 export function powerHealth(power: PowerStatus): HostHealthItem[] {
   const items: HostHealthItem[] = [];
+  if (power.fanControlExpected) {
+    if (!power.fanModuleLoaded) {
+      items.push({
+        id: 'fans:hardware',
+        state: 'critical',
+        code: 'fanModuleMissing',
+        text: {
+          de: 'Lüftermodul fehlt für den laufenden Kernel.',
+          en: 'Fan module missing for the running kernel.',
+        },
+      });
+    } else if (
+      !power.ec ||
+      power.ec.fans.length !== 3 ||
+      power.ec.fans.some((fan) => fan.rpm === null)
+    ) {
+      items.push({
+        id: 'fans:hardware',
+        state: 'critical',
+        code: 'fanSensorsUnreadable',
+        text: { de: 'Lüfterwerte sind nicht lesbar.', en: 'Fan readings are unavailable.' },
+      });
+    }
+  }
   const temperature = power.cpuTemperatureC;
   if (power.guard.state.active) {
     items.push({
@@ -353,7 +377,7 @@ export function powerHealth(power: PowerStatus): HostHealthItem[] {
       values: { temperature: Math.round(temperature) },
     });
   }
-  if (power.fans) {
+  if (power.fans && !items.some((item) => item.id === 'fans:hardware')) {
     items.push({
       id: 'fans',
       state: 'ok',

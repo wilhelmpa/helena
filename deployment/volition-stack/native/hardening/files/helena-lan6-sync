@@ -3,7 +3,7 @@
 
 1. The firewall's home networks (nft sets inet helena_hardening lan4, lan6), when the
    hardening firewall is loaded: the IPv4 prefix of the default-route interface; link-local,
-   unique-local plus the /64s it has global IPv6 addresses in. The provider changes the IPv6
+   unique-local plus eno1's active /64s. The provider changes the IPv6
    prefix, and a new router can change the IPv4 network; without this the home network's
    clients (SSH included) would be dropped.
 2. The owner sign-in's networks for nginx (/etc/nginx/helena-owner-networks.conf, included in
@@ -62,7 +62,14 @@ def read_ip() -> tuple[list[dict], list[dict], list[dict]]:
 
 
 def _usable(address: dict) -> bool:
-    return not any(address.get(flag) for flag in ('tentative', 'dadfailed'))
+    flags = address.get('flags') or []
+    return not any(address.get(flag) or flag in flags for flag in ('tentative', 'dadfailed'))
+
+
+def _active(address: dict) -> bool:
+    flags = address.get('flags') or []
+    return (_usable(address) and not (address.get('deprecated') or 'deprecated' in flags)
+            and address.get('preferred_life_time') not in (0, '0'))
 
 
 def lan_interface(routes6: list[dict], routes4: list[dict]) -> str | None:
@@ -80,9 +87,11 @@ def firewall_networks(links: list[dict], routes4: list[dict]) -> tuple[list[str]
     dev4 = lan_interface([], routes4)
     for link in links:
         for address in link.get('addr_info') or []:
-            if not _usable(address) or address.get('scope') != 'global':
+            if not _active(address) or address.get('scope') != 'global':
                 continue
-            if address.get('family') == 'inet6' and address.get('prefixlen') == 64:
+            if (address.get('family') == 'inet6' and link.get('ifname') == 'eno1'
+                    and address.get('prefixlen') == 64
+                    and ipaddress.ip_address(address['local']).is_global):
                 v6.add(str(ipaddress.ip_interface(f"{address['local']}/64").network))
             elif address.get('family') == 'inet' and link.get('ifname') == dev4:
                 v4.add(str(ipaddress.ip_interface(f"{address['local']}/{address['prefixlen']}").network))
@@ -101,7 +110,7 @@ def owner_networks(links: list[dict], lan_dev: str | None) -> tuple[list[str], l
                 continue
             own.add(str(ipaddress.ip_network(f'{ip}/{ip.max_prefixlen}')))
             if (ip.version == 6 and link.get('ifname') == lan_dev and address.get('prefixlen') == 64
-                    and address.get('scope') == 'global'):
+                    and address.get('scope') == 'global' and _active(address)):
                 # A unique-local prefix counts only because it is on the LAN interface.
                 prefixes.add(str(ipaddress.ip_interface(f'{ip}/64').network))
     key = lambda network: (ipaddress.ip_network(network).version, ipaddress.ip_network(network))  # noqa: E731
