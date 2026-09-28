@@ -1,0 +1,903 @@
+/* The app frame (docs/design-system.md §3, §6, §7, §9; drafts ui-entwurf/Shell*,
+   Navigation-*): sidebar, page header and toolbar, page body, the one overlay panel on
+   the right and the orb dock. Colours from tokens.css only. */
+
+/* ── App grid ────────────────────────────────────────────────────────────── */
+.ds-app {
+  --ds-sidebar-now: var(--sidebar-w);
+  display: grid;
+  width: 100%;
+  height: 100svh;
+  grid-template-columns: var(--ds-sidebar-now) minmax(0, 1fr);
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--text);
+}
+.ds-app[data-sidebar='rail'] {
+  --ds-sidebar-now: var(--sidebar-rail-w);
+}
+.ds-app[data-sidebar='hidden'] {
+  --ds-sidebar-now: 0px;
+}
+.ds-main {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--bg);
+}
+.ds-page-content {
+  position: relative;
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ── Sidebar ─────────────────────────────────────────────────────────────── */
+.ds-sidebar {
+  position: relative;
+  z-index: 40;
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--surface-1);
+  box-shadow: 1px 0 0 var(--line);
+  padding: 16px 12px 12px;
+  padding-top: max(16px, env(safe-area-inset-top));
+  padding-bottom: max(12px, env(safe-area-inset-bottom));
+}
+.ds-sidebar-brand {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 8px 12px;
+}
+.ds-sidebar-brand > a {
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.14em;
+}
+.ds-sidebar-brand-tools {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-3);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.09em;
+}
+.ds-sidebar-search {
+  display: flex;
+  width: 26px;
+  height: 26px;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-field);
+  color: var(--text-3);
+}
+.ds-sidebar-search:hover {
+  background: var(--surface-3);
+  color: var(--text);
+}
+.ds-project-switcher {
+  display: flex;
+  width: 100%;
+  height: 42px;
+  flex: none;
+  align-items: center;
+  gap: 10px;
+  border-radius: var(--radius-card);
+  background: var(--surface-2);
+  padding: 0 12px;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 500;
+  text-align: start;
+}
+.ds-project-switcher:hover,
+.ds-project-switcher[data-state='open'] {
+  background: var(--surface-3);
+}
+.ds-project-switcher > .ds-project-dot {
+  width: 8px;
+  height: 8px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--ds-project, var(--accent));
+}
+.ds-project-switcher > span:nth-child(2) {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ds-project-switcher > svg {
+  flex: none;
+  color: var(--text-3);
+}
+.ds-sidebar-scroll {
+  min-height: 0;
+  flex: 1;
+  overflow-x: hidden;
+  overflow-y: auto;
+  margin: 0 -12px;
+  padding: 0 12px;
+  scrollbar-width: none;
+}
+.ds-sidebar-scroll::-webkit-scrollbar {
+  display: none;
+}
+.ds-sidebar-label {
+  display: block;
+  padding: 14px 12px 6px;
+  color: var(--text-3);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+.ds-sidebar-label:first-child {
+  padding-top: 10px;
+}
+
+/* ── Tree (sidebar and every other tree) ─────────────────────────────────── */
+.ds-tree {
+  display: flex;
+  flex-direction: column;
+}
+.ds-tree-gap {
+  height: 12px;
+}
+.ds-tree-line {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.ds-tree-row {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  height: 32px;
+  flex: 1;
+  align-items: center;
+  border-radius: 10px;
+  padding-inline-start: calc(12px + var(--ds-tree-level, 0) * 16px);
+  padding-inline-end: 12px;
+  color: var(--text);
+  font-size: 13px;
+  text-align: start;
+  transition:
+    background-color 0.2s,
+    color 0.2s;
+}
+.ds-tree-row[data-level]:not([data-level='0']) {
+  color: var(--text-2);
+}
+.ds-tree-row:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+.ds-tree-row.is-active,
+.ds-tree-row.is-active:hover {
+  background: var(--surface-3);
+  color: var(--text);
+}
+.ds-tree-row.is-drop-target {
+  background: var(--accent-soft);
+}
+.ds-tree-icon {
+  display: none;
+}
+.ds-tree-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ds-tree-chevron {
+  display: flex;
+  width: 16px;
+  height: 16px;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  margin-inline-start: 4px;
+  border-radius: 4px;
+  color: var(--text-3);
+}
+.ds-tree-chevron:hover {
+  color: var(--text);
+}
+.ds-tree-fill {
+  flex: 1;
+}
+.ds-tree-count {
+  flex: none;
+  color: var(--text-3);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+/* The row's own "+" / "…": at the end, before the count, only on hover or focus. */
+.ds-tree-actions {
+  position: absolute;
+  inset-inline-end: 8px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.ds-tree-line:is(:hover, :focus-within) > .ds-tree-actions,
+.ds-tree-actions:has([data-state='open']) {
+  opacity: 1;
+}
+.ds-tree-line:is(:hover, :focus-within) > .ds-tree-row .ds-tree-count {
+  visibility: hidden;
+}
+@media (hover: none) {
+  .ds-tree-actions {
+    opacity: 1;
+  }
+}
+.ds-tree-action {
+  display: flex;
+  width: 22px;
+  height: 22px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  background: var(--surface-2);
+  color: var(--text-2);
+}
+.ds-tree-action:hover,
+.ds-tree-action[data-state='open'] {
+  background: var(--surface-3);
+  color: var(--text);
+}
+.ds-tree-action svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* ── Sidebar foot: tools and account ─────────────────────────────────────── */
+.ds-sidebar-tools {
+  display: flex;
+  gap: 6px;
+  padding: 0 4px 12px;
+}
+.ds-sidebar-tools button {
+  display: flex;
+  height: 38px;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  border-radius: 11px;
+  background: var(--surface-2);
+  color: var(--text-2);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+.ds-sidebar-tools button:hover {
+  color: var(--text);
+}
+.ds-sidebar-tools button[aria-pressed='true'] {
+  background: var(--surface-3);
+  color: var(--text);
+}
+.ds-tool-orb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 35% 30%,
+    var(--orb-hi),
+    var(--orb-mid) 40%,
+    var(--orb-lo) 85%
+  );
+}
+.ds-tool-orb[data-status='thinking'],
+.ds-tool-orb[data-status='tool'] {
+  background: radial-gradient(circle at 35% 30%, #ffd0a0, var(--status-thinking) 40%, #9e6bde 85%);
+}
+.ds-tool-orb[data-status='listening'] {
+  background: radial-gradient(circle at 35% 30%, #c9fff0, var(--status-listening) 45%, #1d7f6a 90%);
+}
+.ds-tool-orb[data-status='speaking'] {
+  background: radial-gradient(circle at 35% 30%, #ffd1e8, var(--status-speaking) 45%, #8a2a60 90%);
+}
+.ds-sidebar-account {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-top: 1px solid var(--line);
+  padding-top: 8px;
+}
+.ds-sidebar-account > button:first-child {
+  display: flex;
+  min-width: 0;
+  height: 40px;
+  flex: 1;
+  align-items: center;
+  gap: 10px;
+  border-radius: 10px;
+  padding: 0 8px;
+  color: var(--text-2);
+  font-size: 13px;
+  text-align: start;
+}
+.ds-sidebar-account > button:first-child:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+.ds-sidebar-account > button:first-child > span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ds-avatar {
+  display: flex;
+  width: 24px;
+  height: 24px;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 50%;
+  background: var(--surface-3);
+  color: var(--text);
+  font-size: 10px;
+  font-weight: 650;
+}
+.ds-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.ds-sidebar-settings {
+  display: flex;
+  width: 34px;
+  height: 34px;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  color: var(--text-3);
+}
+.ds-sidebar-settings:hover {
+  background: var(--surface-3);
+  color: var(--text);
+}
+
+/* The rail (collapsed sidebar, 56px): icons of the level-1 rows and the tools. */
+.ds-app[data-sidebar='rail']:not([data-sidebar-open='true']) .ds-sidebar {
+  padding-inline: 8px;
+}
+.ds-app[data-sidebar='rail']:not([data-sidebar-open='true'])
+  :is(
+    .ds-sidebar-brand-tools time,
+    .ds-project-switcher > :not(.ds-project-dot),
+    .ds-sidebar-label,
+    .ds-tree-label,
+    .ds-tree-count,
+    .ds-tree-chevron,
+    .ds-tree-actions,
+    .ds-tree-children,
+    .ds-sidebar-account > button:first-child > span:last-child,
+    .ds-sidebar-settings
+  ) {
+  display: none;
+}
+.ds-app[data-sidebar='rail']:not([data-sidebar-open='true']) .ds-sidebar-brand {
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 0 12px;
+}
+.ds-app[data-sidebar='rail']:not([data-sidebar-open='true']) .ds-project-switcher {
+  justify-content: center;
+  padding: 0;
+}
+.ds-app[data-sidebar='rail']:not([data-sidebar-open='true']) .ds-tree-row {
+  justify-content: center;
+  padding: 0;
+}
+.ds-app[data-sidebar='rail']:not([data-sidebar-open='true']) .ds-tree-row:not([data-level='0']) {
+  display: none;
+}
+.ds-app[data-sidebar='rail']:not([data-sidebar-open='true']) .ds-tree-icon {
+  display: flex;
+  color: var(--text-2);
+}
+.ds-app[data-sidebar='rail']:not([data-sidebar-open='true']) .ds-tree-icon svg {
+  width: 16px;
+  height: 16px;
+}
+.ds-app[data-sidebar='rail']:not([data-sidebar-open='true']) .ds-tree-gap {
+  height: 8px;
+}
+.ds-app[data-sidebar='rail']:not([data-sidebar-open='true']) .ds-sidebar-tools {
+  flex-direction: column;
+  padding: 0 0 8px;
+}
+.ds-app[data-sidebar='rail']:not([data-sidebar-open='true']) .ds-sidebar-tools button {
+  height: 36px;
+  flex: none;
+}
+.ds-app[data-sidebar='rail']:not([data-sidebar-open='true'])
+  .ds-sidebar-account
+  > button:first-child {
+  justify-content: center;
+  padding: 0;
+}
+
+/* Below 900px the sidebar is an overlay, opened from the page header. */
+.ds-sidebar-scrim {
+  display: none;
+}
+@media (max-width: 899px) {
+  .ds-app .ds-sidebar {
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 70;
+    width: min(var(--sidebar-w), 86vw);
+    transform: translateX(-102%);
+    transition: transform 0.25s var(--ease);
+    box-shadow: var(--shadow-panel);
+  }
+  .ds-app[data-sidebar-open='true'] .ds-sidebar {
+    transform: none;
+  }
+  .ds-app[data-sidebar-open='true'] .ds-sidebar-scrim {
+    position: fixed;
+    inset: 0;
+    z-index: 69;
+    display: block;
+    background: var(--scrim);
+  }
+}
+
+/* ── Page header and toolbar ─────────────────────────────────────────────── */
+.ds-page-header {
+  display: flex;
+  height: var(--page-header-h);
+  flex: none;
+  align-items: center;
+  gap: var(--space-4);
+  border-bottom: 1px solid var(--line);
+  padding: 0 var(--page-pad-x);
+}
+.ds-page-heading {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  align-items: baseline;
+  gap: 10px;
+}
+.ds-page-crumbs {
+  display: flex;
+  min-width: 0;
+  flex-shrink: 1;
+  align-items: baseline;
+  gap: 0;
+  overflow: hidden;
+  color: var(--ds-crumb, var(--accent));
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.ds-page-crumbs a:hover {
+  color: var(--text);
+}
+.ds-page-crumb-slash {
+  padding-inline-start: 10px;
+  color: var(--text-3);
+  letter-spacing: 0;
+}
+.ds-page-title {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text);
+  font-size: 18px;
+  font-weight: 520 !important;
+  letter-spacing: -0.01em !important;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ds-page-actions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--space-2);
+}
+.ds-page-actions:empty {
+  display: none;
+}
+.ds-page-menu-button {
+  display: none;
+}
+@media (max-width: 899px) {
+  .ds-page-menu-button {
+    display: flex;
+    margin-inline-start: -8px;
+  }
+}
+.ds-page-toolbar {
+  position: relative;
+  display: flex;
+  height: var(--page-toolbar-h);
+  flex: none;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0 var(--page-pad-x);
+}
+.ds-page-toolbar:empty,
+.ds-page-toolbar:not(:has(> :not(:empty))) {
+  display: none;
+}
+.ds-page-body {
+  min-width: 0;
+  padding: var(--page-pad-top) var(--page-pad-x) var(--page-pad-bottom);
+}
+.ds-page-body.is-bleed {
+  padding: 0;
+}
+.ds-page-body.is-reading > * {
+  max-width: var(--reading-w);
+  margin-inline: auto;
+}
+@media (max-width: 899px) {
+  :root {
+    --page-pad-x: 16px;
+    --page-pad-top: 16px;
+  }
+}
+
+/* ── The one overlay on the right (tools, chat, previews) ────────────────── */
+.ds-side-panel {
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  bottom: 12px;
+  z-index: 50;
+  display: grid;
+  width: var(--ds-panel-w, 480px);
+  max-width: calc(100vw - 24px);
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr);
+  overflow: visible;
+  border-radius: var(--radius-panel);
+  background: var(--surface-1);
+  box-shadow: var(--shadow-panel);
+}
+.ds-side-panel[data-open='false'] {
+  display: none;
+}
+.ds-side-panel[data-full='true'] {
+  top: 12px;
+  left: 12px;
+  width: auto;
+  max-width: none;
+}
+.ds-side-panel > :not(.ds-side-panel-handle) {
+  min-width: 0;
+  min-height: 0;
+}
+.ds-side-panel [data-panel-part='content'] {
+  overflow: hidden;
+  border-radius: 0 0 var(--radius-panel) var(--radius-panel);
+}
+.ds-side-panel-handle {
+  position: absolute !important;
+  top: 0;
+  bottom: 0;
+  left: -6px;
+  z-index: 2;
+  display: flex;
+  width: 12px;
+  align-items: center;
+  justify-content: center;
+  cursor: col-resize;
+  background: transparent !important;
+}
+.ds-side-panel-handle::after {
+  content: '';
+  width: 4px;
+  height: 44px;
+  border-radius: 4px;
+  background: var(--text-3);
+  opacity: 0.7;
+  transition:
+    background-color 0.2s,
+    opacity 0.2s,
+    height 0.2s;
+}
+.ds-side-panel-handle:hover::after,
+.ds-side-panel-handle:active::after {
+  height: 72px;
+  background: var(--accent);
+  opacity: 1;
+}
+@media (max-width: 767px) {
+  .ds-side-panel,
+  .ds-side-panel[data-full='true'] {
+    inset: 0;
+    width: 100vw;
+    max-width: none;
+    border-radius: 0;
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .ds-side-panel-handle {
+    display: none !important;
+  }
+}
+
+/* Panel head: segment tabs on the left, full screen and close on the right. */
+.ds-panel-head {
+  display: flex;
+  height: 56px;
+  align-items: center;
+  gap: var(--space-2);
+  border-bottom: 1px solid var(--line);
+  padding: 0 10px 0 12px;
+}
+.ds-panel-tabs {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  align-items: center;
+  gap: 2px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.ds-panel-tabs::-webkit-scrollbar {
+  display: none;
+}
+.ds-panel-tabs-track {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 2px;
+  border-radius: 10px;
+  background: var(--surface-2);
+  padding: 3px;
+}
+.ds-panel-tab {
+  display: flex;
+  height: 28px;
+  min-width: 0;
+  flex: none;
+  align-items: center;
+  border-radius: var(--radius-field);
+  color: var(--text-2);
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.ds-panel-tab:hover {
+  color: var(--text);
+}
+.ds-panel-tab:has([aria-selected='true']) {
+  background: var(--surface-1);
+  color: var(--text);
+  box-shadow: 0 1px 2px #0000001a;
+}
+.ds-panel-tab-select {
+  display: flex;
+  height: 28px;
+  min-width: 0;
+  align-items: center;
+  gap: 7px;
+  padding-inline-start: 10px;
+  padding-inline-end: 4px;
+}
+.ds-panel-tab-select > span:last-child {
+  max-width: 130px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ds-panel-tab-close {
+  display: flex;
+  width: 22px;
+  height: 22px;
+  align-items: center;
+  justify-content: center;
+  margin-inline-end: 3px;
+  border-radius: 6px;
+  color: var(--text-3);
+  opacity: 0;
+}
+.ds-panel-tab:is(:hover, :focus-within) .ds-panel-tab-close,
+.ds-panel-tab:has([aria-selected='true']) .ds-panel-tab-close {
+  opacity: 1;
+}
+.ds-panel-tab-close:hover {
+  background: var(--surface-3);
+  color: var(--text);
+}
+.ds-panel-head-tools {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 2px;
+}
+/* The tool's own bar under the head (browser address, chat thread): only when the
+   tool puts something into it, so the chat never shows a second title row. */
+.ds-panel-subbar {
+  display: flex;
+  height: 44px;
+  align-items: center;
+  gap: 4px;
+  border-bottom: 1px solid var(--line);
+  padding: 0 12px;
+}
+.ds-panel-subbar:not(:has(button, a, input, select, [data-slot='panel-header-slot']:not(:empty))) {
+  display: none;
+}
+
+/* ── The orb dock (bottom right) ─────────────────────────────────────────── */
+.ds-dock {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  bottom: max(24px, calc(env(safe-area-inset-bottom) + 12px));
+  z-index: 45;
+  display: flex;
+  width: 64px;
+  height: 64px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: transparent;
+  --orb-size: 64px;
+}
+.ds-dock:focus-visible {
+  background: transparent !important;
+  box-shadow: 0 0 0 2px var(--accent);
+}
+.ds-dock > span {
+  pointer-events: none;
+}
+
+/* Installed app without a title bar (display_override): header and sidebar head are the
+   title bar; their controls stay clickable. */
+@media (display-mode: window-controls-overlay) {
+  .ds-sidebar-brand,
+  .ds-page-header {
+    -webkit-app-region: drag;
+    app-region: drag;
+  }
+  .ds-sidebar-brand :is(a, button),
+  .ds-page-header
+    :is(
+      a,
+      button,
+      input,
+      select,
+      [role='button'],
+      [role='tab'],
+      [tabindex],
+      [data-slot='app-header-page']
+    ) {
+    -webkit-app-region: no-drag;
+    app-region: no-drag;
+  }
+  .ds-page-header {
+    padding-inline-end: max(
+      var(--page-pad-x),
+      calc(100vw - env(titlebar-area-x, 0px) - env(titlebar-area-width, 100vw))
+    );
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ds-tree-row,
+  .ds-app .ds-sidebar {
+    transition: none;
+  }
+}
+.ds-fav-star {
+  display: inline;
+  margin-inline-start: 6px;
+  fill: currentColor;
+  color: var(--status-waiting);
+  vertical-align: -1px;
+}
+.ds-other-inbox-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-inline-start: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  vertical-align: 2px;
+}
+.ds-other-inbox-dot ~ .ds-other-inbox-dot {
+  display: none;
+}
+.ds-sidebar-rail-toggle {
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.ds-sidebar:is(:hover, :focus-within) .ds-sidebar-rail-toggle,
+.ds-app[data-sidebar='rail'] .ds-sidebar-rail-toggle {
+  opacity: 1;
+}
+@media (max-width: 899px) {
+  .ds-sidebar-rail-toggle {
+    display: none !important;
+  }
+}
+
+/* The rail opened as an overlay (900–1099px, or from the rail's toggle). */
+@media (min-width: 900px) {
+  .ds-app[data-sidebar='rail'][data-sidebar-open='true'] .ds-sidebar {
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 70;
+    width: var(--sidebar-w);
+    box-shadow: var(--shadow-panel);
+  }
+  .ds-app[data-sidebar='rail'][data-sidebar-open='true'] .ds-sidebar-scrim {
+    position: fixed;
+    inset: 0;
+    z-index: 69;
+    display: block;
+    background: var(--scrim);
+  }
+}
+.ds-shell-error {
+  border-bottom: 1px solid var(--line);
+  background: var(--danger-soft);
+  padding: 8px var(--page-pad-x);
+  color: var(--danger);
+  font-size: 13px;
+}
+.ds-menu-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  flex: none;
+  border-radius: 50%;
+}
+.ds-side-panel [data-panel-part='surface'] {
+  display: none;
+}
+.ds-side-panel [data-panel-part='header'] {
+  grid-row: 1;
+  grid-column: 1;
+}
+.ds-side-panel [data-panel-part='content'],
+.ds-side-panel [role='region'] {
+  grid-row: 2;
+  grid-column: 1;
+}
+/* The Home chat names the page it was opened on (ui-system.md §8). */
+.helena-home-context {
+  padding: 12px 16px 0;
+  color: var(--text-3);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+.helena-home-context strong {
+  color: var(--accent);
+  font-weight: 500;
+}
+.ds-page-crumb-sep {
+  padding: 0 6px;
+  letter-spacing: 0;
+}

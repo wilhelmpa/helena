@@ -1,0 +1,127 @@
+/* Base rules of the design system (docs/design-system.md): the page ground, focus, fields
+   on touch screens and the scrollbars. Colours come from tokens.css only. */
+
+html,
+body {
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* Focus (owner, 28.09.): text fields show no ring, border or outline of any kind when
+   focused or invalid; the caret is enough. Buttons, links and tree rows show keyboard
+   focus only (:focus-visible), as a quiet surface — never a ring that gets clipped. */
+:is(input, textarea, select, [contenteditable='true'], [contenteditable=''], .ProseMirror),
+:is(input, textarea, select, [contenteditable='true'], [contenteditable=''], .ProseMirror):is(
+  :focus,
+  :focus-visible,
+  [aria-invalid='true']
+) {
+  outline: none !important;
+  box-shadow: none;
+  --tw-ring-shadow: 0 0 #0000;
+  --tw-ring-offset-shadow: 0 0 #0000;
+}
+:is([data-slot='input'], [data-slot='textarea'], [data-slot='select-trigger']):is(
+  :focus,
+  :focus-visible,
+  :focus-within,
+  [aria-invalid='true'],
+  :has([aria-invalid='true'])
+) {
+  border-color: transparent !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+/* The input group (the chat composer) keeps its own shadow; only the ring goes. */
+[data-slot='input-group']:is(:focus-within, [aria-invalid='true'], :has([aria-invalid='true'])) {
+  border-color: transparent !important;
+  outline: none !important;
+  --tw-ring-shadow: 0 0 #0000 !important;
+  --tw-ring-offset-shadow: 0 0 #0000 !important;
+}
+/* Wrappers that draw a ring or border around a focused field (focus-within:…). */
+:is(div, label, form)[class*='focus-within:']:has(:is(input, textarea, [contenteditable]):focus) {
+  border-color: transparent !important;
+  outline: none !important;
+  --tw-ring-shadow: 0 0 #0000 !important;
+  --tw-ring-offset-shadow: 0 0 #0000 !important;
+}
+:is(
+  button,
+  a,
+  summary,
+  [role='button'],
+  [role='tab'],
+  [role='menuitem'],
+  [role='option'],
+  [role='treeitem'],
+  [tabindex='0']:not(input, textarea, [contenteditable])
+):focus {
+  outline: none;
+}
+:is(
+  button,
+  a,
+  summary,
+  [role='button'],
+  [role='tab'],
+  [role='treeitem'],
+  [tabindex='0']:not(
+    input,
+    textarea,
+    [contenteditable],
+    [role='menu'],
+    [role='dialog'],
+    [role='listbox']
+  )
+):focus-visible {
+  outline: none;
+  box-shadow: none;
+  --tw-ring-shadow: 0 0 #0000;
+  background-color: var(--surface-3);
+}
+/* A primary button keeps its fill when focused by keyboard; a soft halo marks it. */
+:is(
+  .ds-button[data-variant='primary'],
+  [data-slot='button'][data-variant='default']
+):focus-visible {
+  background-color: var(--primary-bg-hover);
+}
+
+/* Touch screens: text fields at 16px, so iOS never zooms into a field (no zoom lock). */
+@media (pointer: coarse) {
+  :is(
+    input:not([type='checkbox'], [type='radio'], [type='range']),
+    textarea,
+    select,
+    [contenteditable='true']
+  ) {
+    font-size: 16px !important;
+  }
+}
+
+/* Thin scrollbars on every scroll region. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+}
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background-color: var(--line-strong);
+  border-radius: 9999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background-color: var(--text-3);
+}
+
+::selection {
+  background-color: color-mix(in srgb, var(--accent) 24%, transparent);
+}

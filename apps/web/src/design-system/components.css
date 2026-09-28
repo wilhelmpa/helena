@@ -1,0 +1,672 @@
+/* Content building blocks of the design system (docs/design-system.md §4). Sizes from the
+   scales in tokens.css; colours from tokens only. */
+
+/* ── Buttons ─────────────────────────────────────────────────────────────── */
+.ds-button {
+  display: inline-flex;
+  height: var(--control-h);
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  border-radius: var(--radius-pill);
+  padding: 0 var(--space-3);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+  transition:
+    background-color var(--dur),
+    color var(--dur),
+    box-shadow var(--dur);
+}
+.ds-button svg {
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+.ds-button[data-size='small'] {
+  height: 28px;
+  padding: 0 10px;
+  font-size: 12px;
+}
+.ds-button[data-variant='primary'] {
+  background: var(--primary-bg);
+  color: var(--primary-fg);
+}
+.ds-button[data-variant='primary']:hover {
+  background: var(--primary-bg-hover);
+}
+.ds-button[data-variant='quiet'] {
+  background: transparent;
+  color: var(--text);
+  box-shadow: inset 0 0 0 1px var(--line-strong);
+}
+.ds-button[data-variant='quiet']:hover {
+  background: var(--surface-2);
+}
+.ds-button[data-variant='ghost'] {
+  background: transparent;
+  color: var(--text-2);
+}
+.ds-button[data-variant='ghost']:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+.ds-button[data-variant='danger'] {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+.ds-button:disabled {
+  pointer-events: none;
+  opacity: 0.5;
+}
+.ds-icon-button {
+  display: inline-flex;
+  width: var(--control-h);
+  height: var(--control-h);
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-field);
+  color: var(--text-2);
+  transition:
+    background-color var(--dur),
+    color var(--dur);
+}
+.ds-icon-button[data-size='small'] {
+  width: 28px;
+  height: 28px;
+}
+.ds-icon-button svg {
+  width: 16px;
+  height: 16px;
+}
+.ds-icon-button:hover,
+.ds-icon-button[aria-pressed='true'],
+.ds-icon-button[data-state='open'] {
+  background: var(--surface-3);
+  color: var(--text);
+}
+@media (pointer: coarse) {
+  .ds-button {
+    height: 40px;
+  }
+  .ds-icon-button {
+    width: 40px;
+    height: 40px;
+  }
+}
+
+/* ── Pills ───────────────────────────────────────────────────────────────── */
+.ds-pill {
+  display: inline-flex;
+  height: 28px;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-2);
+  padding: 0 var(--space-3);
+  color: var(--text-2);
+  font-size: 12px;
+  white-space: nowrap;
+}
+.ds-pill svg {
+  width: 14px;
+  height: 14px;
+}
+.ds-pill[data-tone='active'] {
+  background: var(--surface-3);
+  color: var(--text);
+}
+.ds-pill[data-tone='accent'] {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.ds-pill[data-tone='success'] {
+  background: color-mix(in srgb, var(--status-done) 14%, transparent);
+  color: var(--status-done);
+}
+.ds-pill[data-tone='warning'] {
+  background: color-mix(in srgb, var(--status-waiting) 16%, transparent);
+  color: var(--status-waiting);
+}
+.ds-pill[data-tone='danger'] {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+.ds-pill-button:hover {
+  background: var(--surface-3);
+  color: var(--text);
+}
+
+/* ── Fields ──────────────────────────────────────────────────────────────── */
+.ds-field {
+  width: 100%;
+  min-width: 0;
+  height: var(--control-h);
+  border: 0;
+  border-radius: var(--radius-field);
+  background: var(--surface-2);
+  padding: 0 var(--space-3);
+  color: var(--text);
+  font-size: 13px;
+}
+.ds-field-area {
+  height: auto;
+  min-height: 96px;
+  padding: var(--space-2) var(--space-3);
+  line-height: 1.55;
+  resize: vertical;
+}
+.ds-field:focus {
+  background: color-mix(in srgb, var(--surface-2) 70%, var(--surface-3));
+}
+.ds-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.ds-field-label {
+  color: var(--text-2);
+  font-size: 12px;
+}
+.ds-field-hint {
+  color: var(--text-3);
+  font-size: 12px;
+}
+.ds-field-error {
+  color: var(--danger);
+  font-size: 12px;
+}
+.ds-search {
+  display: inline-flex;
+  height: var(--control-h);
+  min-width: 0;
+  align-items: center;
+  gap: var(--space-2);
+  border-radius: var(--radius-field);
+  background: var(--surface-2);
+  padding: 0 var(--space-3);
+  color: var(--text-3);
+}
+.ds-search svg {
+  width: 14px;
+  height: 14px;
+  flex: none;
+}
+.ds-search input {
+  min-width: 0;
+  flex: 1;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font-size: 13px;
+}
+.ds-search input::-webkit-search-cancel-button {
+  display: none;
+}
+
+/* ── Card, section, labels, empty ────────────────────────────────────────── */
+.ds-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  border-radius: var(--radius-card);
+  background: var(--surface-1);
+  padding: var(--space-4);
+  box-shadow: var(--shadow-card);
+}
+.ds-card.is-interactive {
+  cursor: pointer;
+  transition: background-color var(--dur);
+}
+.ds-card.is-interactive:hover {
+  background: var(--surface-2);
+}
+.ds-card.is-selected {
+  background: var(--surface-3);
+}
+.ds-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+.ds-card-title {
+  min-width: 0;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 520;
+}
+.ds-card-meta {
+  color: var(--text-3);
+  font-size: 12px;
+}
+.ds-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+.ds-section + .ds-section {
+  margin-top: var(--space-6);
+}
+.ds-section-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+.ds-section-title {
+  color: var(--text);
+  font-size: 18px;
+  font-weight: 520;
+  letter-spacing: -0.01em;
+}
+.ds-section-description {
+  margin-top: 4px;
+  color: var(--text-2);
+  font-size: 13px;
+}
+.ds-mono-label {
+  color: var(--text-3);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+.ds-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-4) 0;
+  color: var(--text-2);
+  font-size: 13px;
+}
+
+/* ── Status dot (after the text, never before) ───────────────────────────── */
+.ds-status-dot {
+  width: 7px;
+  height: 7px;
+  flex: none;
+  border-radius: 50%;
+  margin-inline-start: 6px;
+}
+.ds-status-dot[data-tone='working'] {
+  background: var(--status-thinking);
+  animation: ds-pulse 1.4s ease-in-out infinite;
+}
+.ds-status-dot[data-tone='waiting'] {
+  background: var(--status-waiting);
+}
+.ds-status-dot[data-tone='error'] {
+  background: var(--danger);
+}
+@keyframes ds-pulse {
+  50% {
+    opacity: 0.45;
+  }
+}
+
+/* ── List ────────────────────────────────────────────────────────────────── */
+.ds-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.ds-list-row {
+  position: relative;
+  display: flex;
+  min-height: 36px;
+  align-items: center;
+  border-radius: var(--radius-card);
+  transition: background-color var(--dur);
+}
+.ds-list-row:hover {
+  background: var(--surface-2);
+}
+.ds-list-row.is-selected {
+  background: var(--surface-3);
+}
+.ds-list-main {
+  display: flex;
+  min-width: 0;
+  min-height: 36px;
+  flex: 1;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 6px var(--space-3);
+  color: var(--text);
+  font-size: 13px;
+  text-align: start;
+}
+.ds-list-icon {
+  display: flex;
+  width: 16px;
+  flex: none;
+  justify-content: center;
+  color: var(--text-3);
+}
+.ds-list-icon svg {
+  width: 16px;
+  height: 16px;
+}
+.ds-list-text {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+}
+.ds-list-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ds-list-subtitle {
+  overflow: hidden;
+  color: var(--text-3);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ds-list-meta {
+  flex: none;
+  color: var(--text-3);
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+.ds-list-actions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 2px;
+  padding-inline-end: var(--space-2);
+  opacity: 0;
+  transition: opacity var(--dur);
+}
+.ds-list-row:is(:hover, :focus-within) .ds-list-actions {
+  opacity: 1;
+}
+@media (hover: none) {
+  .ds-list-actions {
+    opacity: 1;
+  }
+}
+.ds-list-group + .ds-list-group {
+  margin-top: var(--space-4);
+}
+.ds-list-group-head {
+  display: flex;
+  height: 28px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--space-3);
+}
+.ds-list-group-head > button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--text-3);
+}
+.ds-list-group-count {
+  color: var(--text-3);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+/* ── Table ───────────────────────────────────────────────────────────────── */
+.ds-table-wrap {
+  overflow-x: auto;
+}
+.ds-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 13px;
+}
+.ds-th {
+  height: 32px;
+  padding: 0 var(--space-3);
+  color: var(--text-3);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-align: start;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.ds-td {
+  height: var(--row-table);
+  padding: 0 var(--space-3);
+  border-top: 1px solid var(--line);
+  color: var(--text);
+}
+.ds-tr:hover .ds-td {
+  background: var(--surface-2);
+}
+.ds-tr.is-selected .ds-td {
+  background: var(--surface-3);
+}
+@media (max-width: 900px) {
+  .ds-table thead {
+    display: none;
+  }
+  .ds-table,
+  .ds-table tbody,
+  .ds-tr,
+  .ds-td {
+    display: block;
+    width: 100%;
+  }
+  .ds-tr {
+    margin-bottom: var(--space-2);
+    border-radius: var(--radius-card);
+    background: var(--surface-1);
+    padding: var(--space-2) 0;
+    box-shadow: var(--shadow-card);
+  }
+  .ds-td {
+    display: flex;
+    height: auto;
+    min-height: 32px;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    border: 0;
+  }
+  .ds-td[data-label]::before {
+    content: attr(data-label);
+    color: var(--text-3);
+    font-size: 12px;
+  }
+}
+
+/* ── Detail view ─────────────────────────────────────────────────────────── */
+.ds-detail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+.ds-detail-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+.ds-detail-titles {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 6px;
+}
+.ds-detail-title-row {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+.ds-detail-title {
+  color: var(--text);
+  font-size: 24px;
+  font-weight: 520;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+.ds-detail-meta {
+  color: var(--text-3);
+  font-size: 12px;
+}
+.ds-detail-actions {
+  display: flex;
+  flex: none;
+  gap: var(--space-2);
+}
+.ds-detail-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.ds-detail-group-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.ds-props {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 2px var(--space-5);
+}
+@media (max-width: 700px) {
+  .ds-props {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.ds-prop {
+  display: grid;
+  min-height: 36px;
+  grid-template-columns: 128px minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-3);
+}
+.ds-prop dt {
+  color: var(--text-3);
+  font-size: 12px;
+}
+.ds-prop dd {
+  min-width: 0;
+  color: var(--text);
+  font-size: 13px;
+}
+.ds-more-toggle {
+  display: inline-flex;
+  height: 28px;
+  align-items: center;
+  gap: 6px;
+  border-radius: var(--radius-field);
+  padding: 0 var(--space-2);
+  color: var(--text-2);
+  font-size: 12px;
+}
+.ds-more-toggle:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+.ds-more-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding-top: var(--space-3);
+}
+
+/* ── Settings ────────────────────────────────────────────────────────────── */
+.ds-settings-group {
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--radius-card);
+  background: var(--surface-1);
+  box-shadow: var(--shadow-card);
+}
+.ds-settings-group + .ds-settings-group {
+  margin-top: var(--space-5);
+}
+.ds-settings-group-head {
+  padding: var(--space-4) var(--space-4) var(--space-2);
+}
+.ds-settings-group-head h3 {
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 520;
+}
+.ds-settings-group-head p {
+  margin-top: 2px;
+  color: var(--text-2);
+  font-size: 12px;
+}
+.ds-settings-rows {
+  display: flex;
+  flex-direction: column;
+}
+.ds-settings-row {
+  display: flex;
+  min-height: 56px;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-5);
+  padding: var(--space-2) var(--space-4);
+}
+.ds-settings-row + .ds-settings-row {
+  border-top: 1px solid var(--line);
+}
+.ds-settings-row-text {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+.ds-settings-row-text > :first-child {
+  color: var(--text);
+  font-size: 13px;
+}
+.ds-settings-row-text p {
+  color: var(--text-2);
+  font-size: 12px;
+}
+.ds-settings-row.is-danger .ds-settings-row-text > :first-child {
+  color: var(--danger);
+}
+.ds-settings-row-control {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--space-2);
+}
+.ds-settings-group > .ds-more {
+  padding: 0 var(--space-4) var(--space-3);
+}
+@media (max-width: 600px) {
+  .ds-settings-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+/* ── Project tag (ProjectTag) ────────────────────────────────────────────── */
+.helena-project-tag {
+  --project-tag-color: var(--accent);
+  background: color-mix(in srgb, var(--project-tag-color) 15%, transparent);
+  color: var(--project-tag-color);
+}
+.helena-project-tag[data-project='TRADE'] {
+  --project-tag-color: var(--project-trade);
+}
+.helena-project-tag[data-project='VERVE'] {
+  --project-tag-color: var(--project-verve);
+}
+.helena-project-tag[data-project='VOL'] {
+  --project-tag-color: var(--project-vol);
+}

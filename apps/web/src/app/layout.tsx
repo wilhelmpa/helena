@@ -56,7 +56,7 @@ export default async function RootLayout({
         <link rel="manifest" href="/manifest.webmanifest" crossOrigin="use-credentials" />
         <RuntimeEnvScript />
         <ThemeProvider
-          attribute="class"
+          attribute="data-theme"
           defaultTheme="system"
           enableSystem
           disableTransitionOnChange

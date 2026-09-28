@@ -1,0 +1,257 @@
+/* Helena design tokens (docs/design-system.md §1–2). The ONLY file that holds colour
+   values. Light and dark are switched by one mechanism: `data-theme` on <html>
+   (next-themes, attribute="data-theme"). Everything else — the shadcn variables the
+   generated primitives read, the status colours, the project colours, shadows — is
+   derived from the five surfaces and three text levels below, so a surface is right in
+   both themes or wrong in both. Features and routes never write a colour themselves
+   (eslint: helena/no-raw-design-values). */
+
+:root,
+[data-theme='light'] {
+  color-scheme: light;
+
+  /* Surfaces: five clearly separated steps. */
+  --bg: #f6f5f8;
+  --surface-1: #ffffff;
+  --surface-2: #f0eef3;
+  --surface-3: #e6e3eb;
+  --line: #1a17200f;
+  --line-strong: #1a17201c;
+
+  /* Text. */
+  --text: #17151c;
+  --text-2: #5d5767;
+  --text-3: #8b8594;
+
+  /* Accent, links, the primary button. */
+  --accent: #6d4fd8;
+  --accent-fg: #ffffff;
+  --accent-soft: #6d4fd81a;
+  --primary-bg: #2a2433;
+  --primary-fg: #ffffff;
+  --primary-bg-hover: #3a3345;
+
+  /* Status (ui-system.md §1), darkened for a light ground (contrast ≥ 3:1). */
+  --status-idle: #6f68c8;
+  --status-listening: #0f9d77;
+  --status-thinking: #d4650b;
+  --status-speaking: #cf2c7d;
+  --status-waiting: #b27a12;
+  --status-error: #c4512b;
+  --status-throttled: color-mix(in srgb, #c4512b 55%, transparent);
+  --status-offline: #8b8594;
+  --status-done: #1b9466;
+  --danger: #c23a64;
+  --danger-soft: #c23a6414;
+
+  /* Project colours. */
+  --project-home: #6d4fd8;
+  --project-trade: #1b9466;
+  --project-verve: #c4512b;
+  --project-vol: #6d4fd8;
+  --project-color-4: #2b7fbf;
+  --project-color-5: #a0791a;
+
+  /* Depth. Cards: surface-1 + 1px line + a soft shadow; no hard borders. */
+  --shadow-card: 0 0 0 1px var(--line), 0 1px 2px #1a172008, 0 4px 14px #1a172008;
+  --shadow-raised: 0 0 0 1px var(--line), 0 8px 24px #1a172014;
+  --shadow-overlay: 0 0 0 1px var(--line-strong), 0 12px 32px #1a17201f;
+  --shadow-panel: 0 0 0 1px var(--line-strong), 0 24px 60px #1a172024;
+  --scrim: #17151c33;
+
+  /* Orb (dock, sidebar tool, panel tab): the idle look, lighter for a light ground. */
+  --orb-hi: #ffffff;
+  --orb-mid: #bdaaff;
+  --orb-lo: #6c5aa8;
+  --orb-edge: #d9d2f5;
+}
+
+[data-theme='dark'] {
+  color-scheme: dark;
+
+  --bg: #0b0a0e;
+  --surface-1: #141218;
+  --surface-2: #1c1a21;
+  --surface-3: #26232d;
+  --line: #ffffff14;
+  --line-strong: #ffffff1f;
+
+  --text: #eeeaf6;
+  --text-2: #a8a2b3;
+  --text-3: #76707f;
+
+  --accent: #bdaaff;
+  --accent-fg: #201b29;
+  --accent-soft: #bdaaff1f;
+  --primary-bg: #e7dbfa;
+  --primary-fg: #201b29;
+  --primary-bg-hover: #f3edf9;
+
+  --status-idle: #9e99de;
+  --status-listening: #29e8b5;
+  --status-thinking: #ff912e;
+  --status-speaking: #f5459e;
+  --status-waiting: #f4c46a;
+  --status-error: #f0997b;
+  --status-throttled: color-mix(in srgb, #f0997b 55%, transparent);
+  --status-offline: #5c5766;
+  --status-done: #7ee0b8;
+  --danger: #f4a3bf;
+  --danger-soft: #f4a3bf1a;
+
+  --project-home: #bdaaff;
+  --project-trade: #7ee0b8;
+  --project-verve: #f0997b;
+  --project-vol: #bdaaff;
+  --project-color-4: #8dc7f3;
+  --project-color-5: #e8cc83;
+
+  --shadow-card: 0 0 0 1px var(--line), 0 1px 0 #ffffff08, 0 8px 24px #00000059;
+  --shadow-raised: 0 0 0 1px var(--line), 0 12px 32px #00000073;
+  --shadow-overlay: 0 0 0 1px var(--line-strong), 0 18px 40px #00000080;
+  --shadow-panel: 0 0 0 1px var(--line-strong), 0 24px 60px #0000004d;
+  --scrim: #00000080;
+
+  --orb-hi: #efe8ff;
+  --orb-mid: #bdaaff;
+  --orb-lo: #6c5aa8;
+  --orb-edge: #1b1622;
+}
+
+:root {
+  /* Scales (px): spacing 4 · 8 · 12 · 16 · 24 · 32 · 48; radii 8 · 12 · 16 · pill. */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --radius-field: 8px;
+  --radius-card: 12px;
+  --radius-panel: 16px;
+  --radius-pill: 999px;
+  --row-tree: 36px;
+  --row-table: 40px;
+  --control-h: 32px;
+  --sidebar-w: 248px;
+  --sidebar-rail-w: 56px;
+  --page-header-h: 56px;
+  --page-toolbar-h: 44px;
+  --page-pad-top: 24px;
+  --page-pad-x: 32px;
+  --page-pad-bottom: 48px;
+  --reading-w: 760px;
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+  --dur: 0.2s;
+
+  /* Status aliases older code reads. */
+  --status-running: var(--status-thinking);
+  --status-success: var(--status-done);
+  --status-danger: var(--status-error);
+  --status-running-foreground: var(--primary-fg);
+  --status-waiting-foreground: var(--primary-fg);
+  --status-success-foreground: var(--primary-fg);
+  --status-danger-foreground: var(--primary-fg);
+  --status-idle-foreground: var(--primary-fg);
+
+  /* The shadcn variables the generated primitives (components/ui) read, derived from
+     the tokens above so they follow the theme without a second palette. Note: shadcn's
+     `--accent` is a hover surface; here `--accent` is the accent colour and the Tailwind
+     `accent` utility maps to --surface-2 instead (globals.css @theme). */
+  --background: var(--bg);
+  --foreground: var(--text);
+  --card: var(--surface-1);
+  --card-foreground: var(--text);
+  --popover: var(--surface-1);
+  --popover-foreground: var(--text);
+  --primary: var(--primary-bg);
+  --primary-foreground: var(--primary-fg);
+  --secondary: var(--surface-2);
+  --secondary-foreground: var(--text);
+  --muted: var(--surface-2);
+  --muted-foreground: var(--text-2);
+  --accent-foreground: var(--text);
+  --brand: var(--accent);
+  --brand-foreground: var(--accent-fg);
+  --brand-subtle: var(--surface-3);
+  --destructive: var(--danger);
+  --destructive-foreground: var(--primary-fg);
+  --warning: var(--status-waiting);
+  --success: var(--status-done);
+  --border: var(--line);
+  --input: var(--line-strong);
+  --ring: var(--accent);
+  --chart-1: var(--accent);
+  --chart-2: var(--project-trade);
+  --chart-3: var(--project-verve);
+  --chart-4: var(--status-waiting);
+  --chart-5: var(--danger);
+  --radius: 0.5rem;
+  --sidebar: var(--surface-1);
+  --sidebar-foreground: var(--text);
+  --sidebar-primary: var(--primary-bg);
+  --sidebar-primary-foreground: var(--primary-fg);
+  --sidebar-accent: var(--surface-3);
+  --sidebar-accent-foreground: var(--text);
+  --sidebar-border: var(--line);
+  --sidebar-ring: var(--accent);
+  --priority-low: var(--text-3);
+  --priority-medium: var(--status-waiting);
+  --priority-high: var(--status-thinking);
+  --priority-urgent: var(--danger);
+  --kanban-column: transparent;
+  --kanban-column-raised: var(--surface-2);
+  --kanban-column-wip-destructive: var(--danger-soft);
+  --kanban-column-wip-warning: color-mix(in srgb, var(--status-waiting) 10%, transparent);
+  --kanban-card: var(--surface-1);
+  --kanban-card-hover: var(--surface-2);
+  --kanban-card-blocked: color-mix(in srgb, var(--danger) 8%, var(--surface-1));
+  --kanban-card-blocked-hover: color-mix(in srgb, var(--danger) 12%, var(--surface-1));
+  --row-blocked: color-mix(in srgb, var(--danger) 6%, transparent);
+  --row-blocked-hover: color-mix(in srgb, var(--danger) 10%, transparent);
+  --kanban-card-selected: var(--surface-3);
+  --board-column-outline: var(--line);
+  --board-highlight-outline: color-mix(in srgb, var(--status-done) 55%, transparent);
+  --board-highlight-glow: color-mix(in srgb, var(--status-done) 14%, transparent);
+  --board-hint-neutral-bg: var(--surface-2);
+  --board-hint-neutral-fg: var(--text-2);
+  --board-hint-negative-bg: var(--danger-soft);
+  --board-hint-negative-fg: var(--danger);
+  --board-hint-positive-bg: color-mix(in srgb, var(--status-done) 14%, transparent);
+  --board-hint-positive-fg: var(--status-done);
+  --overlay-shadow: var(--shadow-overlay);
+  --pinned-column-shadow: var(--shadow-raised);
+  --side-panel-shadow: var(--shadow-panel);
+  --modal-shadow: var(--shadow-panel);
+  --chat-tabs-shadow: 0 1px 0 var(--line);
+  --chat-composer-shadow: var(--shadow-card);
+
+  /* The Helena mark's own colours (packages/brand), for the brand surfaces. */
+  --helena-gold: #9a7000;
+  --helena-amber: #a85a00;
+  --helena-bronze: #8a4516;
+  --helena-amber-on-ink: #ffbf00;
+  --helena-ink: #141414;
+  --helena-ink-foreground: #eee6d8;
+  --helena-ink-muted: #a39a8a;
+
+  /* Dashboard primitives (components/helena/DashboardPrimitives). */
+  --dashboard-surface: var(--surface-1);
+  --dashboard-raised: var(--surface-2);
+  --dashboard-selected: var(--surface-3);
+  --dashboard-label: var(--text-3);
+  --dashboard-muted: var(--text-2);
+  --dashboard-ink: var(--text);
+  --dashboard-project: var(--accent);
+  --dashboard-positive: var(--status-done);
+  --dashboard-attention: var(--danger);
+  --dashboard-track: var(--surface-3);
+}
+
+[data-theme='dark'],
+.helena-on-ink {
+  --helena-gold: #ffd700;
+  --helena-amber: #ffbf00;
+  --helena-bronze: #cd7f32;
+}

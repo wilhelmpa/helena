@@ -184,6 +184,21 @@ export default [
                 'No arbitrary text size or row/control height here (text-[13px], h-[37px], …) — that scale lives in components/ui and components/common only. See docs/volition-design-helena-ui.md.',
             },
             {
+              // docs/design-system.md: no arbitrary values in features and routes — sizes,
+              // spacing and colours come from the design system (@/design-system,
+              // tokens.css). p-[12px], bg-[#111], w-[372px], text-[var(--x)] …
+              pattern: '^(?:[^:\\s]+:)*!?-?[a-z][a-z0-9-]*-\\[[^\\]]+\\](?:/[0-9]+)?$',
+              message:
+                'No arbitrary Tailwind values here — use a design-system building block or token (docs/design-system.md).',
+            },
+            {
+              // A page has no container width of its own: PageBody is full width, reading
+              // text is centred by PageBody reading (docs/design-system.md §3).
+              pattern: '^(?:[^:\\s]+:)*!?max-w-(?:screen(?:-[a-z0-9]+)?|prose|[2-7]xl)$',
+              message:
+                'No own max-w container here — pages use PageBody (docs/design-system.md §3).',
+            },
+            {
               // The one type scale (globals.css): 12 xs · 13 sm (the sidebar's row text,
               // the standard) · 14 md · 16 base · 20 xl · 24 2xl · 30 3xl, in regular,
               // medium and semibold. 18px (text-lg), anything from 36px up, and the
@@ -193,6 +208,25 @@ export default [
               message:
                 'Off the type scale — use text-xs/sm/md/base/xl/2xl/3xl and font-normal/medium/semibold. See the scale in globals.css.',
             },
+          ],
+        },
+      ],
+      // Menus, popovers and tooltips come from the design system (one menu building
+      // block: portal, collision, max height — docs/design-system.md §4).
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: '@dnd-kit/core',
+              importNames: ['DndContext'],
+              message: 'Use DndContext from @/components/common/dnd/DndContext.',
+            },
+            ...['dropdown-menu', 'context-menu', 'popover', 'tooltip', 'card'].map((name) => ({
+              name: `@/components/ui/${name}`,
+              message:
+                'Import this building block from @/design-system (docs/design-system.md §4).',
+            })),
           ],
         },
       ],
