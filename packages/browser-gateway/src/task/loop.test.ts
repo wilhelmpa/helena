@@ -4,7 +4,6 @@ import { readOnlyPage, runTask, repeatsBlock, TaskActError, type TaskDeps } from
 import type { DecisionPolicy } from './policy';
 import { mockAnswers } from './mock-backend';
 import { jevPolicy, jevRound } from './policy-jev';
-import { layaPolicy, layaRound } from './policy-laya';
 import { replyOf, type DecisionClient, type DecisionRequest } from './systemone';
 import type { TaskInput } from './types';
 
@@ -257,27 +256,15 @@ describe('runTask with the Jev policy', () => {
     expect(round.ops).not.toContain('PRESS_ENTER');
     expect(round.targets.CLICK).toHaveLength(0);
     expect(round.request.questions.irreversible).toBeUndefined();
-    const laya = layaRound({
-      observation: await site.observe(),
-      goal: 'nichts anklicken, nur lesen',
-      values: {},
-      mode: 'read',
-      round: 0,
-      history: [],
-      excluded: new Set(),
-    });
-    expect(laya.targets.CLICK).toHaveLength(0);
-    expect(laya.targets.TYPE_TEXT).toHaveLength(0);
   });
 
-  // Found live 2026-09-25: Browser 2.0, mode read, goal "nichts anklicken", Laya clicked twice.
   it('in read mode never carries out a write, whatever the policy answers', async () => {
     const site = contactSite();
     const observation = await site.observe();
     const link = observation.elements.find((element) => element.href) ?? observation.elements[0]!;
     // A policy that ignores what it was offered and always clicks.
     const clicky: DecisionPolicy = {
-      ...layaPolicy,
+      ...jevPolicy,
       async round() {
         return {
           operation: 'CLICK',
@@ -363,57 +350,6 @@ describe('runTask with the Jev policy', () => {
       deps(site, { client }),
     );
     expect(site.actions.some((action) => action.element?.i === 1)).toBe(false);
-  });
-});
-
-describe('runTask with the Laya policy', () => {
-  it('sends the jev-ultrafast format the browser checkpoint was trained on', async () => {
-    const site = contactSite();
-    site.url = '/kontakt';
-    const round = layaRound({
-      observation: await site.observe(),
-      goal: contact.goal,
-      values: contact.values,
-      mode: 'act',
-      round: 0,
-      history: [
-        {
-          action: 'type_text',
-          element: 'textbox "Name"',
-          value: 'name',
-          text: 'Ada Lovelace',
-          page_changed: true,
-        },
-      ],
-      excluded: new Set(),
-    });
-    const state = round.request.state as {
-      page: { text: string };
-      recent_actions: { text: string }[];
-    };
-    expect(Object.keys(round.request.questions)).toEqual(
-      expect.arrayContaining(['operation', 'click_target', 'type_text_target']),
-    );
-    const click = round.request.questions.click_target as {
-      criteria: Record<string, { element: string }>;
-    };
-    expect(Object.values(click.criteria)[0]!.element).toMatch(/^\[\d+\] /);
-    // Dropdown options are targets of their own ("i:k").
-    const select = round.request.questions.select_target;
-    expect(
-      select === undefined ||
-        Object.keys((select as { criteria: object }).criteria).every((k) => /^\d+:\d+$/.test(k)),
-    ).toBe(true);
-    // A local model gets the typed text in its history (it never leaves the machine).
-    expect(state.recent_actions[0]!.text).toBe('Ada Lovelace');
-    expect(state.page.text.length).toBeLessThanOrEqual(1200);
-  });
-
-  it('completes the contact task on the mock', async () => {
-    const site = contactSite();
-    const result = await runTask(contact, deps(site, { policy: layaPolicy }));
-    expect(['done', 'likely_done']).toContain(result.status);
-    expect(site.url).toBe('/danke');
   });
 });
 

@@ -3,7 +3,7 @@
 A `decision_model` can explicitly select an existing `api_key` with
 `keySource: "credential"` and `sourceCredentialId`. Helena reads the original key for
 each call; rotating it there takes effect without synchronizing a second copy.
-Existing direct keys (`stored`), local Laya and local AI remain supported. There is
+Existing direct keys (`stored`) and local AI remain supported. There is
 no schema migration and no automatic conversion of existing credentials.
 
 Only the existing credential managers can select a source. The source must belong

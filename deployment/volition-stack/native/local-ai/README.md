@@ -98,10 +98,6 @@ Check that no agent run or chat answer is in flight before every reboot or servi
    decision doc §5; losers are removed (`rm -rf /var/lib/helena-ai/models/hub/models--<repo>`).
    In Helena, run the evals of each class on the chosen model (Lokale KI → "Auswerten"), then
    the owner switches local AI on.
-9. **Laya on the GPU** (optional; `native/laya/install.sh`, merged from hub/browser-task):
-   `sudo native/laya/install.sh install --rocm` (decision doc §4.6): Laya's venv uses
-   the ROCm tree of step 6 through a `.pth` line, no second PyTorch.
-
 ## Voice (hub/voice-2)
 
 After step 6 (ROCm is there), in a quiet moment (no deploy, no full test: the two HIP builds take
@@ -138,7 +134,7 @@ Rollback: Lokale KI → Transkription/Vorlesen back to their previous model or "
   GRUB's "Advanced options", then `rollback`.
 - Local AI: switch the master off in Helena (instant; agents back on their models), or
   `sudo ./install.sh uninstall` (`--purge` also removes key, models, downloads and the ROCm tree,
-  which plain `uninstall` keeps for Laya). ROCm alone: `sudo ./install.sh --no-rocm install`
+  which plain `uninstall` keeps for other local AI workloads). ROCm alone: `sudo ./install.sh --no-rocm install`
   (Lemonade back on Vulkan).
 
 ## What stays where
@@ -150,7 +146,7 @@ Rollback: Lokale KI → Transkription/Vorlesen back to their previous model or "
 | `/etc/helena/local-ai-preload` | root 0644 | the models loaded and pinned when Lemonade starts (`models preload set`) |
 | `/etc/systemd/system/helena-ai-preload.service` | root | loads them after `lemond` starts |
 | `/opt/helena-ai/llamacpp/{rocm,vulkan}-b11166/` | root | llama.cpp: our HIP build for gfx1151, the Vulkan build |
-| `/opt/helena-ai/rocm-10.0.0/` | root | ROCm 10.0.0 + PyTorch 2.13 venv (8 GB), shared with Laya |
+| `/opt/helena-ai/rocm-10.0.0/` | root | ROCm 10.0.0 + PyTorch 2.13 venv (8 GB), shared by local AI workloads |
 | `/var/lib/helena-ai/models/hub/` | lemonade | pinned models (Hugging Face cache layout) |
 | `/var/lib/helena-ai/kernel/` | root | verify reports, rollback firmware |
 | `/etc/systemd/system/lemond.service.d/helena.conf` | root | loopback, key, limits, no network |

@@ -140,7 +140,7 @@ async function setup() {
 async function connection(asOwner: Api, teamId: number, overrides: Record<string, unknown> = {}) {
   const res = await asOwner.teams({ teamId }).credentials.post({
     kind: 'decision_model',
-    label: 'Laya (Test)',
+    label: 'Own server (Test)',
     provider: 'compatible',
     baseUrl: `${backendUrl}/v1/systemone`,
     model: 'mock-1',
@@ -723,8 +723,8 @@ describe('browser control and the task routes', () => {
     ).json()) as { browserTask: unknown };
     expect(resolved.browserTask).toMatchObject({
       enabled: true,
-      policy: 'laya',
-      label: 'Laya (Test)',
+      policy: 'jev',
+      label: 'Own server (Test)',
     });
 
     const started = await internal('/internal/browser-gateway/task/start', {
@@ -738,7 +738,7 @@ describe('browser control and the task routes', () => {
     });
     expect(started.status).toBe(200);
     const task = (await started.json()) as { taskToken: string; policy: string; model: string };
-    expect(task).toMatchObject({ policy: 'laya', model: 'mock-1' });
+    expect(task).toMatchObject({ policy: 'jev', model: 'mock-1' });
 
     const answer = await internal('/internal/browser-gateway/systemone', {
       taskToken: task.taskToken,
@@ -952,7 +952,7 @@ describe('Browser 2.0', () => {
       goal: 'Öffne die Kontakt-Seite',
     });
     expect(run.status).toBe(200);
-    expect(run.data).toMatchObject({ backend: 'decision', status: 'error', policy: 'laya' });
+    expect(run.data).toMatchObject({ backend: 'decision', status: 'error', policy: 'jev' });
   });
 
   it('keeps router response bodies and service tokens out of Browserlab errors', async () => {

@@ -251,8 +251,7 @@ export const agentBrowserGatewayInternalRoutes = new Elysia({
         browserTask: lab
           ? {
               enabled: lab.backend === 'decision',
-              policy:
-                lab.policy === 'laya' ? 'laya' : lab.policy === 'jev' ? 'jev' : control.policy,
+              policy: lab.policy === 'jev' ? 'jev' : control.policy,
               minConfidence: control.minConfidence,
               label: lab.backendLabel,
             }

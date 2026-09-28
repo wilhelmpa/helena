@@ -26,7 +26,7 @@ import { confidenceOf, connectionLabel } from '../utils/lab';
 import { browserLabPath } from '../utils/paths';
 
 const MODES: BrowserControlMode[] = ['inherit', 'standard', 'decision'];
-const POLICIES: BrowserControlPolicy[] = ['auto', 'jev', 'laya'];
+const POLICIES: BrowserControlPolicy[] = ['auto', 'jev'];
 
 // Projekt → Einstellungen → Browser, "Browser-Steuerung" (docs/helena-decisions/browser-task.md
 // §3.3): whether the project's agents drive the browser step by step with their own model

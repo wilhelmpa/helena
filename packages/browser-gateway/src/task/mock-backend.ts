@@ -111,8 +111,7 @@ function overlap(a: string, b: Set<string>): number {
   return score;
 }
 
-// The element an option key names: Jev format keeps elements in the state and uses their number,
-// Laya format puts the description into the option itself.
+// The element an option key names: Jev keeps elements in the state and uses their number.
 function elementText(
   state: StateLike,
   key: string,
@@ -143,18 +142,7 @@ export function mockAnswers(body: {
   const state = (body.state ?? {}) as StateLike;
   const questions = body.questions ?? {};
   const pageText = `${state.page?.text ?? ''}`;
-  // Jev format: the values are in the state; Laya format: in the goal ("Values to use: k: v; …").
-  const layaGoal = Object.values(questions)
-    .map((question) => (question.instructions as { goal?: string } | undefined)?.goal)
-    .find((goal): goal is string => typeof goal === 'string');
   const values: Record<string, string> = state.task?.values ?? {};
-  const listed = layaGoal?.match(/Values to use: (.*)$/m)?.[1];
-  if (listed) {
-    for (const pair of listed.split('; ')) {
-      const at = pair.indexOf(': ');
-      if (at > 0) values[pair.slice(0, at)] = pair.slice(at + 2);
-    }
-  }
   const typedAlready = new Set(
     [
       ...(state.page?.elements ?? []).map((element) => String(element.value ?? '')),

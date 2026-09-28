@@ -62,7 +62,6 @@ function NoKey() {
             {t('vercel')}
           </a>
         </li>
-        <li className="text-muted-foreground">{t('laya')}</li>
       </ul>
       <Button asChild variant="outline" size="sm">
         <Link href={accessPath('credentials')}>

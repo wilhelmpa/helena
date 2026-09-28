@@ -12,8 +12,7 @@ dependency installs, PostgreSQL instances, GPU work or deployment were performed
 The unified Files viewer uses the existing document Markdown editor for vault
 Markdown. The native editor displays and follows wiki links and preserves their
 canonical vault targets. Its source is shared with the existing Documents editor;
-TXT keeps the plain-text editor. SilverBullet continues to edit the same vault
-originals. The source/task/chat references remain in the same viewer and continue
+TXT keeps the plain-text editor. Helena edits the canonical vault originals. The source/task/chat references remain in the same viewer and continue
 to use the existing scoped references API.
 
 The source note path comes from the actual file scope and relative path. The
@@ -32,7 +31,7 @@ The editor is keyed by canonical vault path, so identical relative paths and
 original hashes in two projects cannot carry a draft across projects.
 
 The existing viewer discard check covers wiki navigation and internal task/chat
-links as well as switching to SilverBullet or closing. Server permissions remain
+links as well as closing the viewer. Server permissions remain
 authoritative; this change adds no API, schema, grant or separate document store.
 
 ## Review correction prepared during the freeze
@@ -105,7 +104,7 @@ fetch responses; they did not call a live Helena or provider endpoint.
 
 - First completed targeted run: **46 passed, 0 failed**, six Web test files. This
   included six new React/TipTap tests plus existing editor, wiki, image, route and
-  SilverBullet-link regressions.
+  vault-link regressions.
 - The subsequent types/lint run found a missing `sizeBytes` in a new test fixture,
   an accessibility role for the keyboard container, a new render-time ref write,
   and four older editor lint findings exposed by moving its source out of the old
@@ -132,6 +131,6 @@ responsibility. No editor live acceptance is claimed by this private test report
 
 The live acceptance should open a canonical Research note in the unified native
 editor, follow a wiki link and return, verify source/task/chat destinations and
-project context, edit one original and read the same bytes via SilverBullet and an
+project context, edit one original and read the same bytes via the Files API and an
 authorized agent, then demonstrate unauthorized-project denial. Synthetic UI tests
 do not establish the backend ACL or live deployment proof.

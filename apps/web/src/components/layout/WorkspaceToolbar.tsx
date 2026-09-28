@@ -15,7 +15,7 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 // The header's tool buttons: the panel tools the registry puts in the header
-// (extensions/panelTools.tsx; chat, terminal, code, notes, browser, mail and plugins' tools),
+// (extensions/panelTools.tsx; chat, terminal, code, browser, mail and plugins' tools),
 // 32px icon buttons with the sidebar's hover and active fill, each with a tooltip. On a
 // phone only the pinned tool (chat) stays in the row and the rest open from one overflow
 // menu, so the single-row header never wraps or scrolls sideways.

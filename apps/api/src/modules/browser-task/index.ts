@@ -123,7 +123,7 @@ export const browserTaskRoutes = new Elysia({
         summary: 'List the kinds of decision model service',
         description:
           'The System One services a decision model connection can name (TypeSafe Jev, the ' +
-          'Vercel AI Gateway, a Jev-compatible server such as Laya), with their defaults.',
+          'Vercel AI Gateway, a Jev-compatible server), with their defaults.',
       },
     },
   )

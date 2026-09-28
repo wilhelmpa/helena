@@ -23,13 +23,8 @@ done <<'EOF'
 .git
 // Helena's trash stays on each device.
 /.trash
-// A desktop editor's settings folder (Obsidian's, from before the notes) never syncs: the
-// notes in Helena are the editor, and a device must not bring such a folder back.
+// A desktop editor's settings folder must not be brought back from another device.
 /.obsidian
-// The notes (SilverBullet) write a note as a hidden sibling first and rename it over the
-// note, and probe the vault root once on start.
-.*.sb-write-*
-.sb-case-probe-*
 // Temporary and system files. (?d) lets Syncthing delete them with their directory.
 (?d).DS_Store
 (?d)._*

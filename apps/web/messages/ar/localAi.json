@@ -33,7 +33,7 @@
     "eval-failed": "لم يجتز التقييم"
   },
   "jev": {
-    "label": "Jev / Laya (خطوات المتصفح)",
+    "label": "Jev (خطوات المتصفح)",
     "experimental": "تجريبي",
     "connect": "إضافة اتصال",
     "title": "TypeSafe / JEV",

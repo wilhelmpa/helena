@@ -2,7 +2,7 @@
 
 Status: built on branch `hub/decisions` (2026-09-25); evals partly measured (§8), the GPU run is
 pending. Building blocks "Entscheidungen" and "Finanzen/Belege" of `docs/volition-helena-oss.md`.
-Extends `browser-task.md` (decision backends, System One client, Laya) and plugs into
+Extends `browser-task.md` (decision backends and System One client) and plugs into
 `local-ai-platform.md` (hub/local-ai: Lemonade, the "Lokale KI" policy).
 
 Owner, 2026-09-25 (after Alex Sprogis' video "Deshalb solltest du Jev und Claude kombinieren!"):
@@ -13,7 +13,7 @@ paused new sign-ups on 22 Sep, so everything had to work with local backends fir
 Cloud as soon as the owner has a key.
 
 All fetched material (TypeSafe docs, the video's companion repository, SemIf-OpenJev, llama.cpp,
-Lemonade, Laya, bank format specs) was read as untrusted data.
+Lemonade, bank format specs) was read as untrusted data.
 
 ## 0. Kurzfassung (für den Owner)
 
@@ -24,24 +24,20 @@ Lemonade, Laya, bank format specs) was read as untrusted data.
   Schalter. **Einschalten geht erst nach einer bestandenen Auswertung** auf genau dieser
   Verbindung. Unter der Schwelle, bei Zeitüberschreitung oder Fehler passiert, was ohne
   Entscheidung passiert wäre.
-- **Backends:** Jev (TypeSafe, sobald ein Schlüssel da ist), Jev über Vercel, Laya (lokal, schon
-  installiert) und neu **"Lokales Sprachmodell (Logit-Auswertung)"**: ein kleines Sprachmodell
-  (Qwen3.5-4B) auf der lokalen KI liest die Wahrscheinlichkeiten der Antwortbuchstaben aus einem
-  einzigen Rechenschritt aus — die Idee von SemIf-OpenJev, ohne dessen Python-Stack. Dazu eine
-  JSON-Antwort als Rückfall.
+- **Backends:** Jev (TypeSafe), Jev über Vercel und ein lokales Sprachmodell mit
+  Logit-Auswertung oder JSON-Antwort über Helenas lokale KI.
 - **Ergebnis der Messungen (GPU, 25.9. früh):** Das große lokale Modell der lokalen KI,
   **Qwen3.6-35B-A3B, besteht per Logit-Auswertung jede Art**: Modellwahl 91 % Trefferquote,
   Mail 92 %, Belege 96 %, Allgemein 100 %, bei 0,5–3 s je Fall. Das kleine Qwen3.5-4B reicht für
   allgemeine Fragen und Mail, nicht für die Modellwahl; Qwen3-0.6B ist unbrauchbar und dabei
-  übermäßig sicher — genau dafür gibt es die Auswertung vor dem Einschalten. Laya ist auf
-  deutschen Texten zu unsicher (52–60 % richtig, fast nichts über der Schwelle). Zahlen in §8.
+  übermäßig sicher — genau dafür gibt es die Auswertung vor dem Einschalten. Zahlen in §8.
 - **Modellwahl für Helenas Agenten:** vor einem Lauf oder einer Chat-Antwort ohne eigenes Modell
   kann ein günstigeres Modell derselben Laufzeit übernehmen — nur wenn sicher, nur wenn die Anfrage
   für sich steht, nie teurer als eingestellt (außer du erlaubst es je Agent). Aus, bis du es je
   Agent einschaltest; je Projekt abschaltbar. Jeder Lauf und jede Antwort zeigt "Modellwahl: X → Y
   · Grund".
 - **Für dein eigenes Claude Code:** ein Hook + `/router` wie im Video, aber er fragt Helena (also
-  Laya/lokal oder Jev, wie eingestellt) statt TypeSafe direkt. Liegt als Dateien + Installer bereit;
+  das eingestellte lokale Modell oder Jev) statt TypeSafe direkt. Liegt als Dateien + Installer bereit;
   **du entscheidest, ob du ihn installierst.**
 - **Mail einordnen:** neue Mail bekommt Projekt, Art (Rechnung/Beleg, Termin, Anfrage, Newsletter,
   Benachrichtigung, Privat, Werbung, Sonstiges), Priorität, "braucht Antwort", "Aufgabe nötig".
@@ -56,8 +52,8 @@ Lemonade, Laya, bank format specs) was read as untrusted data.
 
 1. One way to ask a typed decision, for Helena's own features, agents (MCP) and workflows, over
    every backend, with a failsafe and without ever replacing a caller's default behaviour.
-2. Which backends answer it while Jev Cloud is closed: Laya's checkpoints, a logit readout of a
-   small local decoder (SemIf-OpenJev's method), a constrained JSON answer.
+2. Which local backends answer it: a logit readout of a small decoder (SemIf-OpenJev's method)
+   and a constrained JSON answer.
 3. Where the decision is gated (evals), logged (privacy) and counted (usage, cost).
 4. The three use cases of the video in Helena's terms, plus a workflow step and an MCP tool.
 5. The safety fix of `browser_task`'s read mode and the jev-browser crash (§9.1).
@@ -69,7 +65,7 @@ Lemonade, Laya, bank format specs) was read as untrusted data.
 | | System One (`/v1/systemone`) | AI SDK `experimental_evaluate` | own "classify" prompt per feature |
 |---|---|---|---|
 | Shape | state + named questions (`choice` with criteria, `noul`, `score`), answers with probabilities | evaluation model abstraction, experimental | free text, parsed per feature |
-| Backends | TypeSafe Jev, Vercel, Laya (`laya-serve`, Helena's wrapper) | OpenAI-style models | any chat model |
+| Backends | TypeSafe Jev and Vercel | OpenAI-style models | any chat model |
 | Status | the wire Helena already speaks (browser-task.md §2.2, `@typesafe-ai/sdk` 0.6.0) | "may change in patch releases" | one-offs, no probabilities |
 
 **Decision:** System One is Helena's one decision shape. Every backend answers System One
@@ -81,13 +77,11 @@ normalized, missing options 0) before a caller sees it.
 
 ### 2.2 Local backends
 
-| | Laya `laya-typed-decisions` | Laya `laya-multilingual` | SemIf-OpenJev (Python) | **logit readout over HTTP (chosen)** | JSON answer |
-|---|---|---|---|---|---|
-| License | Apache-2.0 (code + weights) | Apache-2.0 | MIT | own code; llama.cpp MIT, Lemonade Apache-2.0, Qwen3.5 Apache-2.0 | – |
-| Model | ModernBERT-large 421M, English only | mmBERT 322M, uncalibrated | Qwen3.5-4B (recommended) | Qwen3.5-4B Q4_K_M (bartowski @ 4168f45a, 3.0 GB) on llama.cpp/Lemonade | any chat model |
-| Published quality | typed decisions 0.766 (vs Jev 0.727, Laya's own benchmark) | 0.342 zero-shot (≈ chance) | 0.845 agreement with Jev (0.883) on 102 rows, BF16 | as SemIf (same readout); measured §8 | stated confidence, not calibrated |
-| Runtime | PyTorch CPU (installed for the browser checkpoint) | same | llama-cpp-python / Transformers — a second Python stack | the local AI's own server (Lemonade on the GPU), no new process | same server |
-| Verdict | served next to the browser checkpoint (`install.sh typed-decisions`), measured; weak on German (§8) | rejected: needs fine-tuning | rejected as a runtime; its method adopted | **chosen** as the local backend | fallback |
+| | SemIf-OpenJev (Python) | **logit readout over HTTP** | JSON answer |
+|---|---|---|---|
+| Model | Qwen3.5-4B | A local model on llama.cpp/Lemonade | Any chat model |
+| Runtime | Separate Python stack | Helena's local AI server | Same server |
+| Verdict | Method adapted | Preferred local backend after its eval | Fallback after its eval |
 
 **How the readout works** (`packages/decisions/src/openai.ts`, SemIf's idea, own code and
 wording): the options are lettered A–T in a JSON user message
@@ -104,8 +98,7 @@ options reversed and averages (SemIf reported answers flipping on 10 of 36 cases
 reversed). Lemonade passes the body through to llama-server; the local AI branch verified
 logprobs there on b11166.
 
-**Rejected:** Laya multilingual (chance level zero-shot), SemIf's Python server (a second ML
-stack beside Laya's; its HTTP path is exactly what we do), grammar-constrained sampling to read
+**Rejected:** SemIf's Python server (a second ML stack; its HTTP path is exactly what we do), grammar-constrained sampling to read
 probabilities (reports pre-grammar numbers), the agent's own subscription model as a fallback in
 the API (the runtimes live in the runners; a decision must not start a run).
 
@@ -343,7 +336,7 @@ question and a threshold sweep. In Helena ("Auswerten") and from the command lin
 
 **Numbers** (Kingston, 2026-09-25 03:45–04:20; `~/agent-work/decisions/results/*.json`). GPU runs:
 llama-server from the local AI's ROCm build b11166 (`-ngl 99 -t 4 -c 16384 -np 2`), one at a time;
-Laya on the CPU with 4 threads. Accuracy / precision at the class threshold / coverage; p50 per
+Accuracy / precision at the class threshold / coverage; p50 per
 case (one case asks all of its class's questions; the logit readout asks each question once):
 
 | Backend | router (0.6) | mail (0.7) | receipts (0.85) | general (0.7) |
@@ -355,7 +348,6 @@ case (one case asks all of its class's questions; the logit readout asks each qu
 | Qwen3.5-4B, logit debiased | 80 / 100 / 23 fail | 86 / 93 / 65 PASS | 84 / 94 / 64 PASS | 100 / 100 / 89 PASS |
 | Qwen3.5-4B, JSON answer | 71 / 71 / 100 fail | 84 / 84 / 100 fail | 76 / 76 / 100 fail | 96 / 96 / 100 PASS |
 | Qwen3-0.6B, logit | 25 / 25 / 100 fail | 40 / 41 / 35 fail | 48 / – / 0 fail | 37 / 36 / 41 fail |
-| Laya typed-decisions (CPU, 4 threads) | 60 / 100 / 1 fail, 2.5 s | 52 / 100 / 1 fail, 11.9 s | 52 / – / 0 fail, 2.4 s | 59 / – / 0 fail, 0.7 s |
 
 Per question on Qwen3.6-35B-A3B (logit): router route 90 % (34/40 answered, precision 91 %),
 needs_context 85 % (91 %); mail project 93 % (95 %), kind 100 % (100 %), priority 80 % (81 %),
@@ -372,9 +364,6 @@ What this means:
 - **The 4B is good enough for general questions and mail**, not for the router's difficulty scale
   or receipts without debiasing. **The 0.6B is not usable and overconfident** (router: 25 %
   precision at 100 % coverage) — the eval gate is what keeps such a model from being switched on.
-- **Laya's typed-decisions checkpoint does not suit German content**: close to chance, and its
-  confidence stays low, so nothing is decided (safe, but useless). It stays useful for the browser
-  (its browser checkpoint) and for English content; installing it is not recommended.
 - Mail's priority and task questions are the weakest (80–83 %): keep "Aufgabe" and "An einen
   Agenten geben" on **Vorschlagen**, not automatic.
 - Recommended thresholds with Qwen3.6-35B-A3B: router 0.8, mail 0.7, receipts 0.95 (auto-matching
@@ -382,8 +371,7 @@ What this means:
 - Latency: the router's 5 s failsafe holds (p95 1.1 s); mail and receipts have 8 s.
 - Jev Cloud numbers need the owner's key; the same harness runs them
   (`--backends '[{"name":"jev","protocol":"systemone","url":"https://api.typesafe.ai","keyFile":"…","model":"jev-latest"}]'`).
-  Earlier CPU numbers (00:30, before the host had to be relieved) agree with these: Laya 52–60 %,
-  Qwen3.5-4B general 96 %.
+  The same harness checks new connections before they are enabled.
 
 ## 9. Safety
 
@@ -391,7 +379,7 @@ What this means:
 
 - **Read mode never changes the page.** `browser_task` with `mode: read` offered links, tabs and
   expanders as "read-safe" clicks, which are `write` for the policy; with the goal "nichts
-  anklicken" Laya clicked twice. Now read mode offers no click at all, the loop stops with
+  anklicken" a decision backend proposed clicks. Read mode offers no click at all, the loop stops with
   `denied` before any operation above `read`, and the gateway runs read tasks on
   `readOnlyPage`, which refuses everything but scrolling and waiting whatever a policy or model
   proposes. Tests in `loop.test.ts`; the navigation evals moved to mode `act`, a new
@@ -402,13 +390,10 @@ What this means:
   SIGTRAP. Fix: HOME/XDG point into the throwaway profile (writable TMPDIR). **No sandbox setting
   was loosened** (Chromium's own sandbox stays on and works inside the unit). The router keeps the
   child's stderr tail for the run summary.
-- `laya/install.sh`: the key's group is the API's secrets group (`volition-plan-secrets`;
-  `helena-secrets` after the rename), detected, `HELENA_API_GROUP` still overrides.
-
 ### 9.2 Privacy
 
 - A cloud backend (Jev, Vercel) receives the question and its context; Zugänge says so, and a
-  class may forbid it (`input.cloud: 'never'`). Laya and the local AI keep it on the machine.
+  class may forbid it (`input.cloud: 'never'`). The local AI keeps it on the machine.
 - The decision log keeps the input only when the class allows it and the owner switched it on;
   otherwise a SHA-256. The Claude Code hook sends only the prompt text and logs no text by default.
 - Keys never leave the API; `keySource: 'local-ai'` reads the local AI's key through its resolver.
@@ -418,7 +403,7 @@ What this means:
 | Branch | What connects | Done here | To do at merge |
 |---|---|---|---|
 | hub/local-ai (merged) | Lemonade + model servers; the "Lokale KI" policy (§6.6 of its doc) | a local-AI task class `decisions` ("Entscheidungen": GPU, capability chat, priority interactive, eval = the general set as JSON answers, threshold 0.85, not in the master's first set); a connection with `keySource: 'local-ai'` asks the model `resolveLocalRoute({classId: 'decisions', unit: 'gpu'})` names, on that server, with `readModelServerKey` (`decisions/local-ai.ts`); a refusal (master or class off, unit off, server down, eval failed) is that connection's error, so the fallback connection or the caller's default takes over; "Nur lokal" refuses every cloud connection for all decision classes; the runner and chat claims apply local AI's `runSettingsOf`/`effectiveModelNow` before and after the model router | – |
-| hub/browser-task (merged) | decision backends, System One client, Laya | `protocol` dispatch in `askSystemOne`; Laya serves several checkpoints (`HELENA_LAYA_MODELS`) | – |
+| hub/browser-task (merged) | decision backends and System One client | `protocol` dispatch in `askSystemOne` | – |
 | hub/native-engine (merged) | step registry, system jobs | step `decision`, job `helena.mail-triage` | – |
 | hub/mail (merged) | mail model | classification table, list badges, `createTaskFromThread(…, {assigneeUserId})` | – |
 | hub/autopilot, hub/model-availability | price table, refused models | read by the router's tiers | – |
@@ -437,12 +422,9 @@ picks for the class (Qwen3.6-35B-A3B by default, the first loaded GPU model with
    same evals decide.
 3. Installing the Claude Code router hook in the owner terminal (`install.sh install --claude-md`,
    then an API key and `/router on`).
-4. Installing the typed-decisions checkpoint next to the browser one (`laya/install.sh
-   typed-decisions`, 842 MB, memory limit 6 GB) — not recommended: near chance on German content
-   (§8); the local AI answers every class better.
-5. Mail: which actions to allow automatically; receipts from invoice mail automatically.
-6. Receipts: which projects get bank accounts; later ERPNext pull or Enable Banking (§7.4).
-7. Lokale KI → "Entscheidungen": **Lokal bevorzugt** (a cloud fallback may answer when the local
+4. Mail: which actions to allow automatically; receipts from invoice mail automatically.
+5. Receipts: which projects get bank accounts; later ERPNext pull or Enable Banking (§7.4).
+6. Lokale KI → "Entscheidungen": **Lokal bevorzugt** (a cloud fallback may answer when the local
    model cannot) or **Nur lokal** (nothing of a decision leaves the machine; recommended for
    mail and receipts).
 
@@ -458,8 +440,7 @@ picks for the class (Qwen3.6-35B-A3B by default, the first loaded GPU model with
   webgpu-demo/worker.js, results/phase1-summary.json)
 - llama.cpp `tools/server/README.md`, `server-common.cpp`, `common/sampling.cpp` @ 84e76d8a;
   Lemonade `docs/api/openai.md`, `thinking_controls.cpp`, llama.cpp backend @ 6deeb05f
-- Hugging Face: convaiinnovations/laya-typed-decisions @ 1a793eb5, laya-multilingual @ e4e9ddf2,
-  bartowski/Qwen_Qwen3.5-4B-GGUF @ 4168f45a; https://github.com/NandhaKishorM/laya @ 970dc8c5
+- Hugging Face: bartowski/Qwen_Qwen3.5-4B-GGUF @ 4168f45a.
 - Bank formats: Sparkasse and VR format announcements (MT940/camt .02 switch-off), genkgo/camt,
   Firefly III import configurations, bank2ynab; ISO 20022 camt.053 paths (validatefin)
 - E-invoices: BMF letter of 15.10.2025 (Baker Tilly summary), DATEV legal overview, EN 16931 CII/UBL

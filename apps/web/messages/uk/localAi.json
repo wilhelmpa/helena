@@ -33,7 +33,7 @@
     "eval-failed": "Перевірку не пройдено"
   },
   "jev": {
-    "label": "Jev / Laya (кроки в браузері)",
+    "label": "Jev (кроки в браузері)",
     "experimental": "Експериментально",
     "connect": "Додати підключення",
     "title": "TypeSafe / JEV",

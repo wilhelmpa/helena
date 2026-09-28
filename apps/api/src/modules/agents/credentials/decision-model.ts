@@ -15,7 +15,7 @@ const BUILTIN = {
     model: 'typesafe-ai/jev',
     keyRequired: true,
   },
-  compatible: { baseUrl: null, model: 'laya-browser-v10s', keyRequired: false },
+  compatible: { baseUrl: null, model: 'jev-latest', keyRequired: false },
 } as const;
 
 let registered: (
@@ -95,8 +95,10 @@ export function composeDecisionModel(fields: CredentialFields, current: Current)
     fields.allowPrivateAddress ??
     (current.readable.allowPrivateAddress as boolean | undefined) ??
     false;
+  const savedSource = current.readable.keySource;
   const keySource: DecisionKeySource =
-    fields.keySource ?? (current.readable.keySource as DecisionKeySource | undefined) ?? 'stored';
+    fields.keySource ??
+    (savedSource === 'credential' || savedSource === 'local-ai' ? savedSource : 'stored');
   const sourceCredentialId =
     keySource === 'credential'
       ? fields.sourceCredentialId === undefined

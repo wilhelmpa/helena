@@ -46,7 +46,7 @@ export function useDecisionBackendsQuery() {
   });
 }
 
-const TEST_CODES = ['ok', 'no_key', 'no_local_key', 'key_refused', 'address_not_allowed'] as const;
+const TEST_CODES = ['ok', 'no_key', 'key_refused', 'address_not_allowed'] as const;
 type TestCode = (typeof TEST_CODES)[number];
 const isTestCode = (message: string): message is TestCode =>
   (TEST_CODES as readonly string[]).includes(message);

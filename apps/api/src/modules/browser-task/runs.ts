@@ -51,7 +51,7 @@ export async function taskByToken(token: unknown): Promise<TaskRow | null> {
 export interface OpenTask {
   taskId: number;
   taskToken: string;
-  policy: 'jev' | 'laya';
+  policy: 'jev';
   minConfidence: number | null;
   label: string;
   model: string;
@@ -139,7 +139,7 @@ export async function openLabTask(
   return {
     taskId: row.id,
     taskToken: labToken,
-    policy: (row.policy as 'jev' | 'laya' | null) ?? control.policy,
+    policy: row.policy === 'jev' ? 'jev' : control.policy,
     minConfidence: control.minConfidence,
     label: row.backendLabel,
     model: row.modelConfigured ?? connection.model,

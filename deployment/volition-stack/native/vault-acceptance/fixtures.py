@@ -11,7 +11,7 @@ import struct
 import sys
 import zlib
 
-STAGES = ("upload", "ui", "agent", "silverbullet", "renamed", "restart")
+STAGES = ("upload", "ui", "agent", "device", "renamed", "restart")
 
 
 def png_chunk(kind, data):
@@ -57,8 +57,8 @@ def fixture(project, run):
     contents = {"upload": base.encode()}
     for previous, stage in zip(STAGES, STAGES[1:4]):
         contents[stage] = contents[previous] + f"Stage: {stage}\n".encode()
-    contents["renamed"] = contents["silverbullet"]
-    contents["restart"] = contents["silverbullet"]
+    contents["renamed"] = contents["device"]
+    contents["restart"] = contents["device"]
     binaries = {"original.pdf": pdf(run), "original.png": PNG}
     artifact = f"# Helena synthetic agent artifact\n\nMarker: {run}\nProject: {project}\nSource: [[{folder}/Cycle]]\n".encode()
     manifest = {"version": 1, "project": project, "run": run, "folder": folder,

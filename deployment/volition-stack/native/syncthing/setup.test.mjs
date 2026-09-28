@@ -79,8 +79,6 @@ test('writes the ignore patterns once and no editor settings', async () => {
     '.git',
     '/.trash',
     '/.obsidian',
-    '.*.sb-write-*',
-    '.sb-case-probe-*',
     '(?d).DS_Store',
   ]) {
     assert.ok(ignore.split('\n').includes(pattern), `missing pattern: ${pattern}`);

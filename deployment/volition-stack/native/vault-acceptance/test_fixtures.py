@@ -36,7 +36,7 @@ class FixturesTest(unittest.TestCase):
 
     def test_complete_cycle_and_no_overwrite(self):
         self.assertTrue(verify(self.work, self.vault, "absent")["success"])
-        for stage in ("upload", "ui", "agent", "silverbullet", "renamed", "restart"):
+        for stage in ("upload", "ui", "agent", "device", "renamed", "restart"):
             self.put(stage)
             self.assertTrue(verify(self.work, self.vault, stage)["success"])
         with self.assertRaises(FileExistsError):

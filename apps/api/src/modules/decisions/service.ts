@@ -129,7 +129,7 @@ export function effectiveTimeout(cls: DecisionClass, setting: ClassSetting): num
 }
 
 // Whether a connection may answer a class right now. Helena's local AI registers a gate
-// (its master switch and the "Jev / Laya" switch, hub/local-ai); without one every local
+// (its master switch and the decision-model switch, hub/local-ai); without one every local
 // connection is allowed. Returns why not, or null.
 export type DecisionGate = (input: {
   teamId: number;

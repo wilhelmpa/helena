@@ -33,7 +33,7 @@
     "eval-failed": "Evaluation failed"
   },
   "jev": {
-    "label": "Jev / Laya (browser steps)",
+    "label": "Jev (browser steps)",
     "experimental": "Experimental",
     "connect": "Add a connection",
     "title": "TypeSafe / JEV",

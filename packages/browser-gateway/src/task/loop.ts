@@ -2,8 +2,7 @@
 // Helena's policy → act, until the goal is reached or something only the calling agent (or the
 // owner) can resolve comes up. The statuses and their thresholds are jev-browser's (MIT, © Ying-Kai
 // Liao; NOTES.md rules 5, 9, 11–16, 22–24), the freshness and occlusion guards jev-ultrafast's
-// (MIT, © Browser Use), the confidence gate and toggle guard laya-browser-agent's (Apache-2.0,
-// © Chenney Zhuang). See NOTICE.
+// (MIT, © Browser Use). See NOTICE.
 //
 // Pure logic over injected dependencies: the browser (TaskPage), the decision backend
 // (DecisionClient), Helena's policy (authorize) and the control lock (holdsControl), so every
@@ -171,7 +170,6 @@ export async function runTask(input: TaskInput, deps: TaskDeps): Promise<TaskRes
   const sequence: string[] = [];
   let waits = 0;
   let retriedEmpty = false;
-  let lowConfidence = 0;
   let round = 0;
   let previous: PageObservation | null = null;
   let last: RoundAnswer | null = null;
@@ -351,7 +349,7 @@ export async function runTask(input: TaskInput, deps: TaskDeps): Promise<TaskRes
       round += 1;
 
       // Is the goal reached? (jev-browser rules 5, 13, 22.)
-      if (policy.kind === 'jev' && done !== null) {
+      if (done !== null) {
         if (round > 1 && done >= 0.5 && done < 0.85 && op !== 'DONE') {
           let confirm: number | null = null;
           try {
@@ -379,14 +377,6 @@ export async function runTask(input: TaskInput, deps: TaskDeps): Promise<TaskRes
           return await complete();
         }
       }
-      // A small model calls a sign-in wall done; its policy reports the wall (policy-laya.ts).
-      if (policy.kind === 'laya' && (answer.login ?? 0) >= 0.7 && !hasValues) {
-        return finish(
-          'needs_login',
-          'The page wants a sign-in. Use browser_login (a login granted in Zugänge) or browser_handover, then call browser_task again.',
-        );
-      }
-      if (policy.kind === 'laya' && op === 'DONE') return await complete();
       if ((answer.login ?? 0) >= 0.7 && !hasValues) {
         return finish(
           'needs_login',
@@ -424,7 +414,7 @@ export async function runTask(input: TaskInput, deps: TaskDeps): Promise<TaskRes
             );
       }
       if (op === 'BLOCKED' || (answer.blocked ?? 0) >= 0.85) {
-        return (answer.blocked ?? 0) >= 0.5 || policy.kind === 'laya'
+        return (answer.blocked ?? 0) >= 0.5
           ? finish(
               'blocked',
               'Something on the page stops progress (a captcha, access denied or an error page). browser_handover asks the owner.',
@@ -466,15 +456,10 @@ export async function runTask(input: TaskInput, deps: TaskDeps): Promise<TaskRes
       if (targeted && !element)
         return finish('stuck', `The model chose ${op} but no element for it.`);
       if (targeted && answer.targetProbability < policy.minTarget) {
-        lowConfidence += 1;
-        if (policy.kind === 'jev' || lowConfidence >= 2) {
-          return finish(
-            'needs_agent',
-            'The model is not sure which element to use; pick one of the candidates with the step tools.',
-          );
-        }
-        await observe();
-        continue;
+        return finish(
+          'needs_agent',
+          'The model is not sure which element to use; pick one of the candidates with the step tools.',
+        );
       }
       if (
         op === 'CLICK' &&
@@ -483,7 +468,7 @@ export async function runTask(input: TaskInput, deps: TaskDeps): Promise<TaskRes
         element.checked === true &&
         !wantsOff(input.goal)
       ) {
-        // laya-browser-agent's toggle guard: a click on a control already in the requested state
+        // A click on a control already in the requested state
         // would undo it.
         excluded.add(element.i);
         history.push({ event: `left ${brief(element)} as it is: already checked` });

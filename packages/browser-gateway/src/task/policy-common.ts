@@ -1,8 +1,5 @@
-// What both decision policies share: which operations and elements a round may offer, how an
-// element is described to a model, how a goal is grounded in the page (for a small local model),
-// and the wording of the rules. The rule texts are jev-ultrafast's (jev_ultrafast/questions.py,
-// MIT, © Browser Use), because the browser-tuned Laya checkpoint was trained on exactly these
-// (cklxx/laya-browser, "v3" format); see NOTICE.
+// Shared browser decision rules and target selection. The rule texts follow jev-ultrafast
+// (jev_ultrafast/questions.py, MIT, © Browser Use); see NOTICE.
 
 import type { ActionCategory } from '../agent-tool.ts';
 import { contractActionCategory } from '../contract-action.ts';
@@ -42,8 +39,7 @@ export const OPERATION_LABELS: Record<Operation, string> = {
 // In mode `read` the task never changes the page: every click, typing, selecting and Enter is a
 // `write` (or more) for Helena's policy, so none is offered — only scrolling, waiting and the
 // answer. The loop and the gateway's read-only page refuse them again (loop.ts, run.ts), so a
-// model that names an operation it was not offered still changes nothing (found live
-// 2026-09-25: "nichts anklicken" in read mode, Laya clicked twice).
+// model that names an operation it was not offered still changes nothing.
 
 function usable(element: PageElement): boolean {
   return !element.disabled && !element.file && !element.credential;
@@ -247,8 +243,7 @@ export function overlapScore(
 }
 
 // At most `limit` elements, the best grounded first, the rest in page order. For a goal not
-// written in Latin script, elements in another script are removed entirely (reordering alone did
-// nothing in laya-browser-agent's measurements).
+// written in Latin script, elements in another script are removed entirely.
 export function scope(
   elements: PageElement[],
   goal: string,

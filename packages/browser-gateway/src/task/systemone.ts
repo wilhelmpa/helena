@@ -1,4 +1,4 @@
-// Talking to a System One model (TypeSafe Jev, or a Jev-compatible server such as Laya): the
+// Talking to a System One model (TypeSafe Jev or a compatible server): the
 // client interface the loop calls, and the checks every answer passes before anything acts on it.
 // The checks follow jev-ultrafast's validate_choice (MIT, © Browser Use) and laya-browser-agent's
 // decider (Apache-2.0, © Chenney Zhuang): the choice is one of the offered options, the

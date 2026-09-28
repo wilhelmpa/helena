@@ -15,19 +15,17 @@
     "body": "Standard berfungsi tanpa kunci. Untuk Jev, tambahkan model keputusan di Akses & koneksi → Akses, dengan salah satu ini:",
     "typesafe": "Konsol TypeSafe: buat kunci (Jev langsung)",
     "vercel": "Vercel AI Gateway: kunci AI Gateway, model typesafe-ai/jev",
-    "laya": "Atau tanpa akun: \"Laya (lokal di server ini)\" setelah layanan Laya terpasang.",
     "toAccess": "Buka Akses"
   },
   "connection": {
     "service": "Layanan",
     "cloudNote": "Yang diputuskan untuk Helena, seperti teks halaman yang terlihat atau email, dikirim ke layanan ini. Kata sandi dan nilai yang diketik tidak.",
-    "localNote": "Server milik Anda sendiri (Laya atau server System One lain). Helena hanya menjangkaunya di alamat ini.",
+    "localNote": "Server System One milik Anda sendiri. Helena hanya menjangkaunya di alamat ini.",
     "localModelNote": "Server yang kompatibel dengan OpenAI dengan logprobs (llama.cpp, Lemonade, vLLM). Helena hanya menjangkaunya di alamat ini.",
     "address": "Alamat",
     "model": "Model",
     "allowPrivate": "Izinkan alamat lokal ini",
     "allowPrivateHint": "Helena tidak pernah memanggil alamat di jaringan Anda. Ini mengizinkan tepat alamat ini, tidak lebih.",
-    "localKey": "Kunci layanan Laya lokal dibaca dari server; tidak ada yang perlu diisi.",
     "localAiKey": "Alamat, kunci, dan model berasal dari AI lokal Helena (Administrator → AI lokal, aktifkan „Keputusan“ di sana); tidak ada yang perlu diisi di sini.",
     "key": "Kunci",
     "keyHintTypesafe": "Dari console.typesafe.ai → Keys.",
@@ -52,7 +50,6 @@
     "codes": {
       "ok": "berfungsi",
       "no_key": "tidak ada kunci tersimpan",
-      "no_local_key": "layanan Laya lokal belum terpasang (tidak ada kunci di server)",
       "key_refused": "layanan menolak kunci",
       "address_not_allowed": "alamat ini ada di jaringan Anda; izinkan dulu untuk koneksi ini"
     }
@@ -70,7 +67,7 @@
     "modes": {
       "inherit": "Seperti di pengaturan bawaan",
       "standard": "Standard (seperti sebelumnya)",
-      "decision": "Model keputusan (Jev / Laya)"
+      "decision": "Model keputusan (Jev)"
     },
     "connectionMissing": "Koneksi yang dipilih sudah tidak ada. Agen bekerja seperti Standard sampai Anda memilih yang lain.",
     "noConnection": "Belum ada model keputusan.",
@@ -81,8 +78,7 @@
     "policyHint": "Otomatis memilih cara yang cocok dengan layanan.",
     "policies": {
       "auto": "Otomatis",
-      "jev": "Jev (satu permintaan per langkah)",
-      "laya": "Laya (pertanyaan sempit dan aturan)"
+      "jev": "Jev (satu permintaan per langkah)"
     },
     "threshold": "Keyakinan minimum",
     "thresholdHint": "Di bawahnya, tugas kembali ke agen. Kosong memakai nilai bawaan cara tersebut.",
@@ -117,8 +113,7 @@
     "more": "Opsi lainnya",
     "jevBrowserNote": "jev-browser berjalan di browsernya sendiri tanpa login Anda, sebagai pembanding. Perlu alamat awal.",
     "run": "Jalankan",
-    "policyJev": "Jev",
-    "policyLaya": "Laya"
+    "policyJev": "Jev"
   },
   "run": {
     "as": "sebagai {name}",

@@ -3,8 +3,7 @@
 Status: accepted for the platform and the Helena integration; the model choice per task class is
 decided by the evals in the maintenance window (§5, §7). Date: 2026-09-24. Branch: `hub/local-ai`.
 Supersedes the platform parts of `local-models-strix-halo.md` (which assumed a separate Strix Halo
-box on Ubuntu). Its analysis of Jev, Laya and the browser fast path stays valid and is owned by
-hub/browser-task.
+box on Ubuntu). The browser fast path is described in `browser-task.md`.
 
 ## 0. Kurzfassung (für den Owner)
 
@@ -18,7 +17,7 @@ hub/browser-task.
   eigene Downloads. Darunter llama.cpp auf der GPU und FastFlowLM auf der NPU.
 - **ROCm ist der Standard auf der GPU** („eher ROCm richtig“): AMDs **ROCm 10.0.0** (TheRock,
   gfx1151 wird nativ unterstützt, kein Trick mit `HSA_OVERRIDE`) als **ein** Baum für llama.cpp
-  und PyTorch (Laya), jede Datei per Hash festgelegt (≈ 2,1 GB Download, 8 GB auf der Platte).
+  und PyTorch, jede Datei per Hash festgelegt (≈ 2,1 GB Download, 8 GB auf der Platte).
   llama.cpp bauen wir dafür selbst (b11166, HIP für gfx1151, Flash-Attention über rocWMMA);
   Lemonades eigenes ROCm-llama.cpp hätte ein zweites, älteres ROCm mitgebracht. **Vulkan** bleibt
   als gemessener Vergleich und Rückfall. Gemessen (kleines Modell, 6.12): ROCm liest lange
@@ -34,7 +33,7 @@ hub/browser-task.
   entscheiden; wer verliert, wird wieder gelöscht.
 - **In Helena:** Lokale Modelle stehen in jeder Modellauswahl (markiert „lokal“, Preis 0), solange
   die lokale KI an ist. Die Karte „Lokale KI“ hat einen Hauptschalter, Schalter je Einheit (GPU,
-  NPU, CPU) und je Art von Arbeit, und einen eigenen Schalter „Jev / Laya (experimentell)“.
+  NPU, CPU) und je Art von Arbeit, und einen eigenen Schalter „Jev (experimentell)“.
   **Lokale KI ersetzt nie ein eingestelltes Modell:** Sie wird zuerst versucht, und das eingestellte
   Modell antwortet, sobald sie aus, nicht erreichbar, zu langsam oder falsch ist. Hauptschalter aus
   heißt: alles sofort wie heute, keine lokale Konfiguration bleibt in den Agentenprofilen.
@@ -190,8 +189,8 @@ only, no rocWMMA flash attention).
 
 | Option | Verdict |
 |---|---|
-| **AMD ROCm 10.0.0 "TheRock" wheels** from `stable.repo.amd.com/rocm/whl-next/` into one venv `/opt/helena-ai/rocm-10.0.0` (Python 3.13 from Debian): `rocm-sdk-core` (414.7 MB), `-libraries` (143.3 MB, rocBLAS, hipBLAS, **hipBLASLt**), `-devel` (598.0 MB, clang/hipcc, CMake configs, rocWMMA headers), `-device-gfx1151` (173.7 MB), `torch 2.13.0+rocm10.0.0` (202.6 MB), `amd-torch-device-gfx1151` (50.1 MB), `triton` (427.4 MB), cmake 4.1.2, ninja 1.13.0 | **Chosen.** One tree for the llama.cpp build **and** PyTorch (Laya): the same HIP runtime, the same device libraries. AMD's own stable channel, gfx1151 native. Every file hash-pinned (`rocm-requirements.txt`, 20 packages, installed with `--require-hashes`; AMD's index publishes no hashes of its own). ≈ 2.1 GB download, 8.0 GB installed (measured). No `/opt/rocm`, no apt source, nothing in the system's library path; `uninstall` keeps it for Laya, `--purge` removes it. |
-| AMD ROCm 10.0.0 for Debian 13 (apt, `amdrocm10.0-gfx1151`, ~675 MB download, 5.6 GB installed) | Rejected for now: PyTorch for ROCm 10 exists only as wheels bundling the SDK wheels, so Laya would bring the same ROCm a second time; an apt source and packages outside Helena's pins. |
+| **AMD ROCm 10.0.0 "TheRock" wheels** from `stable.repo.amd.com/rocm/whl-next/` into one venv `/opt/helena-ai/rocm-10.0.0` (Python 3.13 from Debian): `rocm-sdk-core` (414.7 MB), `-libraries` (143.3 MB, rocBLAS, hipBLAS, **hipBLASLt**), `-devel` (598.0 MB, clang/hipcc, CMake configs, rocWMMA headers), `-device-gfx1151` (173.7 MB), `torch 2.13.0+rocm10.0.0` (202.6 MB), `amd-torch-device-gfx1151` (50.1 MB), `triton` (427.4 MB), cmake 4.1.2, ninja 1.13.0 | **Chosen.** One tree for the llama.cpp build **and** PyTorch: the same HIP runtime, the same device libraries. AMD's own stable channel, gfx1151 native. Every file hash-pinned (`rocm-requirements.txt`, 20 packages, installed with `--require-hashes`; AMD's index publishes no hashes of its own). ≈ 2.1 GB download, 8.0 GB installed (measured). No `/opt/rocm`, no apt source, nothing in the system's library path; `uninstall` keeps it for other local AI workloads, `--purge` removes it. |
+| AMD ROCm 10.0.0 for Debian 13 (apt, `amdrocm10.0-gfx1151`, ~675 MB download, 5.6 GB installed) | Rejected for now: PyTorch for ROCm 10 exists only as wheels bundling the SDK wheels, so an additional PyTorch installation would duplicate ROCm; an apt source and packages outside Helena's pins. |
 | Lemonade's TheRock 7.14.0 runtime + its llama.cpp b10820 | Rejected: an older ROCm, and again not the one PyTorch uses. |
 | repo.radeon.com apt (7.0–7.2) | Rejected: jammy/noble only. |
 | Debian's own ROCm (HIP 5.7) | Rejected: too old for gfx1151. |
@@ -286,29 +285,6 @@ itself; `AMD_VULKAN_ICD` stays unset).
   the owner as a host service; "Powered by FastFlowLM" in the docs.
 - NPU models live in system RAM (not VRAM): budget ~6 GB (§5.3).
 
-### 4.6 PyTorch-ROCm for Laya (`native/laya/install.sh install --rocm`)
-
-hub/browser-task's Laya installer (merged into the hub) sets up `/opt/helena/laya/venv` with
-PyTorch 2.14.0 **CPU** and `laya==0.3.20` (Apache-2.0, needs `torch>=2.0`). Its `--rocm` option
-(built here, on the merged file) uses **the same ROCm tree** as llama.cpp instead of a second one:
-
-- a `.pth` line puts `/opt/helena-ai/rocm-10.0.0`'s site-packages behind Laya's own, and a uv
-  override (`torch; sys_platform == "never"`) keeps `torch` out of Laya's resolution, so nothing
-  downloads a second PyTorch/ROCm; a CPU torch of an earlier install is removed first;
-- a drop-in `helena-laya.service.d/rocm.conf`: `HELENA_LAYA_DEVICE=cuda` (ROCm's PyTorch calls
-  the GPU `cuda`), `PrivateDevices=no` with `DevicePolicy=closed` and only `/dev/kfd` +
-  `/dev/dri/renderD128`, groups render/video, memory 6G/8G (ROCm's mapped libraries count);
-- `helena_laya_serve.py` reads `HELENA_LAYA_DEVICE` and falls back to the CPU when PyTorch sees no
-  GPU; `status` prints `torch.version.hip`; `install` without `--rocm` returns to the CPU.
-
-Verified on Kingston in `~/agent-work` (2026-09-25, 6.12, no install): Laya's venv 159 MB with no
-torch of its own, `torch 2.13.0+rocm10.0.0` from the shared tree, `cuda` available; the server from
-this branch loaded the pinned `laya-browser` v10s checkpoint on the GPU in 3.7 s (CPU 8.9 s) and
-answered the installer's probe identically (`CLICK` 0.9712 on both). Latency per decision was ~6 s
-on both devices while other agents' tests held the load at 20–34 — inconclusive, and a sign the
-time goes outside the forward pass (reported to hub/browser-task). The CPU stays the default until
-a quiet measurement shows the GPU faster; the GPU is one flag away.
-
 ## 5. Models
 
 ### 5.1 What the evidence says (late September 2026)
@@ -341,7 +317,7 @@ models crawl at 4–5 t/s, and prompt processing is the bottleneck for long cont
 | **Heavy** (nightly reflection, hard summaries) | Qwen3.8-27B UD-Q4_K_XL, 128k | on demand (LRU) | ≈ 26 GiB |
 | Embeddings | Qwen3-Embedding-0.6B Q8_0 (1024 dims) | kept loaded | ≈ 0.7 GiB |
 | Comparison only | gpt-oss-120b (63.4 GB), Mistral Small 4 (75 GB) | exclusive, during the evals | ≤ 80 GiB, alone |
-| **Sum in normal operation** | | | **≈ 54 GiB of 96**, room for the ROCm/Laya experiments |
+| **Sum in normal operation** | | | **≈ 54 GiB of 96**, room for additional local AI workloads |
 
 Mistral Small 4 and gpt-oss-120b cannot stay next to the workhorse with useful context; they are
 measured alone and only win if they beat the workhorse clearly on the evals (then they replace it
@@ -385,8 +361,7 @@ All pinned in `native/local-ai/models.tsv` (commit + SHA-256 of every file):
 | Qwen3-0.6B-GGUF (smoke test) | unsloth/Qwen3-0.6B-GGUF @ 50968a44 | 0.4 GB |
 
 Plus the software: kernel 188 MB, firmware 16 MB, XRT 5 MB, Lemonade 3.9 MB, FastFlowLM 44 MB,
-llama.cpp Vulkan 31 MB + source 38 MB, ROCm 10.0.0 with PyTorch ≈ 2.1 GB (8.0 GB installed; Laya
-shares it). Losers are deleted after
+llama.cpp Vulkan 31 MB + source 38 MB, ROCm 10.0.0 with PyTorch ≈ 2.1 GB (8.0 GB installed; local AI workloads share it). Losers are deleted after
 the evals. Timing: only in the maintenance window (a 60–75 GB read now would thrash the page cache
 of the live system).
 
@@ -542,7 +517,7 @@ const result = await resolveLocalRoute({ classId: 'mail-classify', unit: 'npu', 
   server's first loaded model with the capability) decides the real unit, and a unit the owner
   switched off refuses (`unit-off`).
 - **Fallback is the caller's** and follows `mode`: a refusal with `off`/`prefer` means "use your
-  configured path now" (cloud model, Jev Cloud, Laya — whatever the consumer had); with `only` it
+  configured path now" (cloud model, Jev Cloud — whatever the consumer had); with `only` it
   means "wait, never leave the machine". After a route, an error, a timeout or an unusable answer
   in `prefer` also goes to the configured path; in `only` it retries later.
 - The master switch off answers `master-off` for every class at once: nothing local runs, and
@@ -551,7 +526,7 @@ const result = await resolveLocalRoute({ classId: 'mail-classify', unit: 'npu', 
   model updated and evaluated again), that class stops routing to it (`eval-failed`; Hermes'
   helpers leave the profile) while its switch stays on, and the card says why. A passing eval
   brings it back. Start lists it as a red problem ("Braucht dich").
-- The **Jev / Laya (experimentell)** switch on the card is separate from the classes: it sets
+- The **Jev (experimentell)** switch on the card is separate from the classes: it sets
   hub/browser-task's instance "Browser-Steuerung" (`PUT /god/browser-control`). A decisions backend
   that wants the same switch reads that setting; it does not add a second one.
 - Admin routes (owner only): `GET /god/local-ai` (policy, classes, servers, the newest finished
@@ -793,7 +768,7 @@ an event `helena.local-ai.busy` on the bus is the hook.
 `LocalAiCard` (self-contained: its own queries, owner only) — master switch, GPU/NPU/CPU tiles
 (state, load, VRAM, loaded models, a switch each), the wired classes with their switch or the
 reason they cannot be switched on, the tokens that stayed local, the server's latency, a link to
-the settings. **"Jev / Laya (experimentell)"** is a separate switch, off by default, never part of
+the settings. **"Jev (experimentell)"** is a separate switch, off by default, never part of
 the master switch: it sets the instance default of hub/browser-task's "Browser-Steuerung"
 (`PUT /god/browser-control`, decision model with the configured or the first connection of the
 owner's team; off = "Standard"); projects on "Wie in den Voreinstellungen" follow it. Without a
@@ -803,7 +778,7 @@ the card and Administrator → Browser-Steuerung show the same state.
 **On Start** (hub/dashboard's contract, `docs/helena-decisions/dashboard.md`): a figure tile
 "Lokale KI" (owner, group `system`, order 55): An/Aus, the GPU's load as a bar, the model in
 memory or "Server nicht erreichbar" in red; a click opens this card in a dialog (master switch,
-units, kinds of work, Jev / Laya). Hidden until a model server is set up. Red problems go to
+units, kinds of work, Jev). Hidden until a model server is set up. Red problems go to
 "Braucht dich" through a `needsYouSources` entry (order 18, after the machine's and the host
 audit's), only while local AI is on: an enabled server that does not answer, and a switched-on
 class whose model failed its newest eval (§6.6). Both link to Administrator → Lokale KI.
@@ -830,7 +805,7 @@ only; nothing runs with `trust_remote_code`.
 | hub/update-center (merged) | `UpdateSource` `local-ai`, check only: Lemonade and FastFlowLM versions (GitHub Atom feeds), each model's installed revision vs its repository's newest, a newer model of the same family (Qwen3.6 → Qwen3.7), and the watch list (`MODEL_WATCH`: Qwen Flash-Next, Qwen4 MoE) as "neues Modell verfügbar"; switching stays an owner click after a new eval | registered by `helena.local-ai` (`provides.updateSources`) | – |
 | hub/server-admin (merged) | `HostCapability` `local-ai` on the overview and the `server-section` with the card (§7.5) | registered by `helena.local-ai` (API) and `extensions/serverSections` (web); messages `server.health.localAiServerUp/Down` in 10 locales | its fan installer builds DKMS for the running kernel only: `kernel.sh dkms` after it |
 | hub/dashboard | the figure tile and the red problems (§7.5) | merged into this branch with the tile; click-checked (tile off/on/down, dialog, both problems, phone) | – (migration renumbered to 0179) |
-| hub/browser-task (merged) | the Jev toggle uses its instance setting; Laya `--rocm` (§4.6) | the toggle uses its queries (`useInstanceBrowserControlQuery`, same cache as its page); `--rocm` built into its merged installer and server | its owner reviews the Laya change |
+| hub/browser-task (merged) | the Jev toggle uses its instance setting | the toggle uses its queries (`useInstanceBrowserControlQuery`, same cache as its page) | – |
 | hub/decisions | `decide()` with a local "logit readout" backend on this endpoint | the interface of §6.6 (class registration, `resolveLocalRoute`, the endpoint, logprobs verified) | it registers its own classes (router, mail, receipts); no decision classes here |
 | hub/second-brain (merged) | the local embedding route | `useEmbeddingRoute(localAiEmbeddingRoute)` in API and worker | the owner's pgvector/embedding decision (§5.4) |
 
@@ -874,9 +849,7 @@ Lemonade's source at v2026.39.1 (`src/cpp/server/backends/llamacpp/llamacpp_serv
 TheRock runtime paths, the gfx1151 CWSR check, request forwarding);
 github.com/lemonade-sdk/llamacpp-rocm; ggml-org/llama.cpp releases b10825/b11166 and b11166's
 `CMakeLists.txt`/`cmake/build-info.cmake`; AMD's wheel index `stable.repo.amd.com/rocm/whl-next/`
-(file sizes by HEAD); PyPI `laya` 0.3.20 metadata; hub/browser-task `native/laya/install.sh` at
-`0046e9f0`;
-local-llm-benchmarks.dev; kyuz0.github.io/amd-strix-halo-toolboxes; slb350.github.io/strix-benchmarks;
+(file sizes by HEAD); local-llm-benchmarks.dev; kyuz0.github.io/amd-strix-halo-toolboxes; slb350.github.io/strix-benchmarks;
 kyuz0 terminal-bench-mini; euroeval.com (German, 2026-09-20); sleepingrobots.com Lemonade NPU on
 Strix Halo; hogeheer499-commits/strix-halo-guide; Hugging Face API for every pinned repository;
 Hermes Agent docs (providers, configuration, fallback providers) in `/srv/volition/source/hermes`.

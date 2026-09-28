@@ -14,7 +14,6 @@ import type { GatewaySession, ToolOutput } from '../session-types.ts';
 import { taskSuccess } from './success.ts';
 import { brief, describe } from './policy-common.ts';
 import { jevPolicy } from './policy-jev.ts';
-import { layaPolicy } from './policy-laya.ts';
 import { readOnlyPage, runTask, type Authorization } from './loop.ts';
 import {
   answerOf,
@@ -52,8 +51,8 @@ export class HelenaDecisionClient implements DecisionClient {
   }
 }
 
-export function policyOf(kind: PolicyKind, minConfidence: number | null): DecisionPolicy {
-  const base = kind === 'laya' ? layaPolicy : jevPolicy;
+export function policyOf(_kind: PolicyKind, minConfidence: number | null): DecisionPolicy {
+  const base = jevPolicy;
   return minConfidence !== null && minConfidence > 0 && minConfidence < 1
     ? { ...base, minTarget: minConfidence }
     : base;

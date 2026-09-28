@@ -121,27 +121,20 @@ describe('credential form', () => {
       notes: '',
       value: 'ts-key',
     });
-    // The local Laya preset reads its key on the server: nothing to enter, no value sent.
-    const laya = {
+    // A compatible server needs its address and may run without a key.
+    const compatible = {
       ...jev,
-      label: 'Laya',
+      label: 'Own server',
       provider: 'compatible',
       baseUrl: 'http://127.0.0.1:8791',
-      model: 'laya-browser',
-      keySource: 'local-laya' as const,
-      value: 'ignored',
+      model: 'jev-latest',
+      value: '',
     };
-    assert.equal(isCredentialFormValid(laya, null), true);
-    const sent = toNewCredential(laya);
-    assert.equal(sent.keySource, 'local-laya');
-    assert.equal('value' in sent, false);
-    // A compatible server needs its address; the local address allowance is its alone.
+    assert.equal(isCredentialFormValid(compatible, null), true);
+    assert.equal('value' in toNewCredential(compatible), false);
+    assert.equal(isCredentialFormValid({ ...compatible, baseUrl: ' ' }, null), false);
     assert.equal(
-      isCredentialFormValid({ ...laya, keySource: 'stored', baseUrl: ' ' }, null),
-      false,
-    );
-    assert.equal(
-      toNewCredential({ ...laya, provider: 'vercel', allowPrivateAddress: true })
+      toNewCredential({ ...compatible, provider: 'vercel', allowPrivateAddress: true })
         .allowPrivateAddress,
       false,
     );

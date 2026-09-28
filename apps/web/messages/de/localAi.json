@@ -33,7 +33,7 @@
     "eval-failed": "Auswertung nicht bestanden"
   },
   "jev": {
-    "label": "Jev / Laya (Browser-Schritte)",
+    "label": "Jev (Browser-Schritte)",
     "experimental": "Experimentell",
     "connect": "Verbindung anlegen",
     "title": "TypeSafe / JEV",

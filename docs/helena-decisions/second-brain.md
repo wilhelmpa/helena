@@ -1,16 +1,18 @@
 # Decision: the second brain (knowledge, files, search, capture)
 
-Status: decided 2026-09-24 (package K "Second Brain", branch `hub/second-brain`). **Update 2026-09-26:** the owner chose SilverBullet as the notes UI and removed Obsidian (`notes-silverbullet.md`). Where this document names Obsidian as a client (§1 last paragraph, §2 boards "visible to Obsidian", §7 daily notes kept in `.obsidian/*.json`), it is history: the notes run SilverBullet on an origin of their own, and the daily note and templates no longer read or write `.obsidian/` (§7 below, as amended). Owner rules: "die beste Lösung, muss nicht Obsidian sein", §3b "Standards statt Eigenbau", Hermes + Postgres stay the only runtime dependencies, AGPL-compatible licenses only. Facts below were checked on 2026-09-24 against the projects' repositories, npm, Debian and Hugging Face.
+The shared vault stores Markdown, files and boards. Helena's native Docs editor, Files viewer,
+agents and Syncthing devices use the same files. The owner requires portable files, one derived
+index, and AGPL-compatible dependencies.
 
 ## What already existed (and stays)
 
-Knowledge concept D1–D5 (`docs/volition-konzept-wissen-zugaenge-mail.md`) is built: the vault (`PROJECT_VAULT_ROOT`) is the truth; Helena Docs (TipTap) edit Markdown files in it; `vault_entry` / `vault_link` / `vault_move` are a derived index with German full-text search; the vault is a git repository (Private/ its own); the worker's watcher indexes outside edits and commits them as `extern`; PDFs, scans and office files are extracted (poppler, tesseract, pandoc); Syncthing syncs to Obsidian; mail attachments and task attachments are vault files; agents have `search_knowledge`, `read_document`, `write_note`, `list_folder`, `backlinks`. This package builds on that instead of replacing it.
+Knowledge concept D1–D5 (`docs/volition-konzept-wissen-zugaenge-mail.md`) is built: the vault (`PROJECT_VAULT_ROOT`) is the truth; Helena Docs (TipTap) edit Markdown files in it; `vault_entry` / `vault_link` / `vault_move` are a derived index with German full-text search; the vault is a git repository (Private/ its own); the worker's watcher indexes outside edits and commits them as `extern`; PDFs, scans and office files are extracted (poppler, tesseract, pandoc); Syncthing syncs to devices; mail attachments and task attachments are vault files; agents have `search_knowledge`, `read_document`, `write_note`, `list_folder`, `backlinks`. This package builds on that instead of replacing it.
 
 ## 1. Storage format: plain Markdown + frontmatter in the vault
 
 | Option | License | Shape | Verdict |
 |---|---|---|---|
-| **Markdown + YAML frontmatter files (today)** | — | Files; any editor (Obsidian, VS Code, Logseq file graphs, SilverBullet, agents' file tools) | **Keep.** Portable, diffable in git, agents work natively on files, no lock-in. |
+| **Markdown + YAML frontmatter files (today)** | — | Files; any editor (Helena, desktop editors, agents' file tools) | **Keep.** Portable, diffable in git, agents work natively on files, no lock-in. |
 | AFFiNE | Mixed: MIT, backend under an "Enterprise Edition" license (production use needs a subscription) | NestJS + Postgres + Redis, Yjs blocks in Postgres | Rejected: license, second service, block store instead of files. |
 | Docmost | AGPL-3.0 core + enterprise folders | NestJS + Postgres + Redis + Hocuspocus; ProseMirror JSON + Yjs + tsvector in Postgres | Rejected: second app with its own users/ACL, DB is the truth. Its storage pattern (Yjs + JSON + text) informs §4. |
 | SiYuan | AGPL-3.0 | Go kernel, `.sy` JSON block trees | Rejected: not Markdown files, second service. |
@@ -18,10 +20,9 @@ Knowledge concept D1–D5 (`docs/volition-konzept-wissen-zugaenge-mail.md`) is b
 | Logseq | AGPL-3.0 | Desktop app; file graphs are Markdown, the new DB graphs are SQLite (beta) | Not a server. Its journals convention is supported as a client pattern. |
 | AppFlowy | AGPL-3.0 client; self-host cloud archived 2026-09-11 for a commercial codebase | Flutter/Rust, CRDT | Rejected. |
 | Outline | BUSL-1.1 | Postgres, Markdown export "lossy" | Excluded by license. |
-| SilverBullet | MIT | Markdown files, Rust server | Good client for the same vault, not embedded. |
 | Anytype, Joplin Server | Source-available / personal-use | — | Excluded by license. |
 
-Embedding any of these would add a second service, a second user/ACL model and a second truth; none is needed for what Helena lacks (a cross-tool index and capture). Obsidian, Logseq (file graphs), SilverBullet, VS Code and Syncthing stay optional clients of the same folder.
+Embedding any of these would add a second service, a second user/ACL model and a second truth; none is needed for what Helena lacks (a cross-tool index and capture). Desktop editors and Syncthing can use the same folder.
 
 ## 2. Links, graph and boards
 

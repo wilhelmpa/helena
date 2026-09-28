@@ -49,7 +49,7 @@ export interface LabRunInput {
   backend: LabBackend;
   agentId: number;
   credentialId?: number | null;
-  policy?: 'auto' | 'jev' | 'laya';
+  policy?: 'auto' | 'jev';
   goal: string;
   values?: Record<string, string>;
   startUrl?: string | null;
@@ -167,9 +167,7 @@ export async function labConnections(scope: LabScope) {
       hasKey:
         readable.keySource === 'credential'
           ? row.sourceHasKey === true
-          : readable.value === true ||
-            readable.keySource === 'local-laya' ||
-            readable.keySource === 'local-ai',
+          : readable.value === true || readable.keySource === 'local-ai',
       status: row.status,
     };
   });

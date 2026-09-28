@@ -18,7 +18,6 @@ const config: WorkspaceRuntimeEnv = {
   browserUrl: 'https://browser.example.com/',
   inboxUrl: 'https://inbox.example.com/',
   connectionsUrl: '',
-  notesUrl: 'https://notes.example.com',
 };
 
 describe('workspaceTools', () => {
@@ -204,15 +203,6 @@ describe('workspaceTools', () => {
       'https://browser.example.com',
       'https://inbox.example.com',
     ]);
-  });
-
-  it('keeps legacy Notes panels inert even with a persisted external or same-origin URL', () => {
-    for (const notesUrl of ['https://notes.example.com', 'https://plan.example.com/notes', '']) {
-      const legacy = { ...config, notesUrl };
-      assert.equal(workspaceTools(legacy, 'VOL').notes.url, '');
-      assert.equal(workspaceTools(legacy, null).notes.url, '');
-      assert.ok(!workspaceFrameOrigins(legacy).includes('https://notes.example.com'));
-    }
   });
 
   it('does not expose non-http workspace URLs to an iframe', () => {

@@ -81,7 +81,7 @@ See the pinned [performance report](https://github.com/browser-use/jev-ultrafast
 
 Offline regressions cover shared speculative rules, selected versus unused malformed heads,
 SELECT indices, independent completion, authorization-time staleness, uncertain mutation,
-failed post-action observation and bounded WAIT. The existing Jev and Laya suites remain.
+failed post-action observation and bounded WAIT. The Jev suite remains.
 Opt-in native Chromium tests use an already installed binary and a private disposable profile:
 
 ```sh
