@@ -5,7 +5,7 @@
   justify-content: space-between;
   gap: 12px;
   padding: 26px 48px 0;
-  color: #96919f;
+  color: var(--text-2);
   font-size: 11px;
   letter-spacing: 0.13em;
 }
@@ -19,12 +19,12 @@
 }
 
 .location strong {
-  color: #d5cfdf;
+  color: var(--text);
   font-weight: 650;
 }
 
 .working {
-  color: #8b8595;
+  color: var(--text-3);
   font-family: 'JetBrains Mono Variable', ui-monospace, monospace;
   font-size: 10px;
   font-weight: 500;
@@ -38,8 +38,8 @@
   height: 7px;
   flex: none;
   border-radius: 50%;
-  background: #1d9e75;
-  box-shadow: 0 0 8px #29e8b5;
+  background: var(--status-done);
+  box-shadow: 0 0 8px var(--status-listening);
 }
 
 .pulse {
@@ -47,7 +47,7 @@
 }
 
 .quietDot {
-  background: #6f687a;
+  background: var(--text-3);
   box-shadow: none;
 }
 
@@ -60,7 +60,7 @@
   height: 32px;
   place-items: center;
   border-radius: 9px;
-  color: #96919f;
+  color: var(--text-2);
   opacity: 0;
 }
 
@@ -70,8 +70,8 @@
 }
 
 .history:hover {
-  background: #141217;
-  color: #eeeaf6;
+  background: var(--surface-2);
+  color: var(--text);
 }
 
 .hero {
@@ -87,7 +87,7 @@
 
 .hero h1 {
   margin: 0;
-  color: #f3edf9;
+  color: var(--text);
   font-size: clamp(38px, 5vw, 56px);
   font-weight: 520;
   letter-spacing: -0.03em;
@@ -97,7 +97,7 @@
 
 .hint {
   margin: 14px 0 0;
-  color: #96909f;
+  color: var(--text-2);
   font-size: 14px;
   line-height: 1.6;
 }
@@ -134,13 +134,13 @@
   gap: 6px;
   padding: 14px 16px;
   border-radius: 16px;
-  background: #0c0b0f;
-  box-shadow: 0 0 0 1px #ffffff0a;
+  background: var(--surface-1);
+  box-shadow: 0 0 0 1px var(--line);
 }
 
 .card:hover,
 .emptyCard:hover {
-  background: #141217;
+  background: var(--surface-2);
 }
 
 .cardTag {
@@ -166,7 +166,7 @@
 
 .cardTitle {
   overflow: hidden;
-  color: #eeeaf6;
+  color: var(--text);
   font-size: 13px;
   line-height: 1.25;
   text-overflow: ellipsis;
@@ -175,7 +175,7 @@
 
 .cardMeta {
   overflow: hidden;
-  color: #88808f;
+  color: var(--text-3);
   font-size: 11px;
   line-height: 1.2;
   text-overflow: ellipsis;
@@ -184,12 +184,12 @@
 
 .emptyCard {
   grid-column: 1 / -1;
-  color: #eeeaf6;
+  color: var(--text);
   font-size: 13px;
 }
 
 .emptyCard span {
-  color: #88808f;
+  color: var(--text-3);
   font-size: 11px;
 }
 
@@ -212,9 +212,9 @@
   padding: 8px 8px 8px 20px;
   border: 0;
   border-radius: 22px;
-  background: #111014;
+  background: var(--surface-1);
   box-shadow:
-    0 0 0 1px #ffffff12,
+    0 0 0 1px var(--line-strong),
     0 18px 40px #0006;
 }
 
@@ -254,12 +254,12 @@
 }
 
 .composer :global([data-slot='input-group-control']) {
-  color: #eeeaf6;
+  color: var(--text);
   font-size: 15px;
 }
 
 .composer :global([data-slot='input-group-control']::placeholder) {
-  color: #88808f;
+  color: var(--text-3);
 }
 
 .composer :global([data-slot='input-group-addon'] button[aria-pressed]) {
@@ -273,8 +273,8 @@
   height: 38px;
   padding: 0 14px;
   border-radius: 99px;
-  background: #141217;
-  box-shadow: 0 0 0 1px #ffffff12;
+  background: var(--surface-2);
+  box-shadow: 0 0 0 1px var(--line-strong);
 }
 
 .chipDot {
@@ -282,14 +282,14 @@
   height: 7px;
   flex: none;
   border-radius: 50%;
-  background: #7ee0b8;
+  background: var(--status-done);
 }
 
 .chipLabel {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
-  color: #cfc6da;
+  color: var(--text-2);
   font-size: 12px;
   font-weight: 500;
   white-space: nowrap;

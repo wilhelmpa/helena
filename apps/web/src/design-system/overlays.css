@@ -595,3 +595,41 @@ body[data-modal-open='true'] [data-radix-popper-content-wrapper] {
   align-items: center;
   gap: 6px;
 }
+
+/* The create dialog (new task, new goal): centred high on the page, the page's surface,
+   the project and the action as a mono eyebrow, Esc on the right. Theme tokens, so it
+   reads in light and dark. */
+.ds-create-dialog {
+  top: 120px;
+  width: min(640px, calc(100vw - 24px));
+  max-width: none;
+  border: 0;
+  border-radius: 20px;
+  background: var(--surface-1);
+  box-shadow: var(--shadow-raised);
+  padding: 22px 24px 16px;
+}
+@media (max-width: 639px) {
+  .ds-create-dialog {
+    top: 5vh;
+  }
+}
+.ds-create-dialog-eyebrow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--text-3);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.23em;
+}
+.ds-create-dialog-esc {
+  color: var(--text-3);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0;
+}
+.ds-create-dialog-esc:hover {
+  color: var(--text);
+}

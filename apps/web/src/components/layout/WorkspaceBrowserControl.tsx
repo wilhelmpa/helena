@@ -31,12 +31,12 @@ export default function WorkspaceBrowserControl({
       <div
         className={
           inline
-            ? 'flex items-center gap-1.5 text-[11px] text-[#ff912e]'
+            ? 'flex items-center gap-1.5 text-[11px] text-status-running'
             : 'pointer-events-none absolute start-2 top-2 flex h-7 items-center gap-1.5 rounded-md bg-background/85 px-2 text-xs text-muted-foreground shadow-sm'
         }
       >
         {inline ? (
-          <span className="size-1.5 rounded-full bg-[#ff912e]" />
+          <span className="size-1.5 rounded-full bg-status-running" />
         ) : (
           <Bot className="size-3.5" />
         )}
@@ -52,13 +52,13 @@ export default function WorkspaceBrowserControl({
       data-live-dialog
       className={
         inline
-          ? 'flex max-w-60 items-center gap-1.5 text-[11px] text-[#ff912e]'
+          ? 'flex max-w-60 items-center gap-1.5 text-[11px] text-status-running'
           : 'absolute start-2 top-2 flex h-8 max-w-[calc(100%-1rem)] items-center gap-2 rounded-md bg-background/90 ps-2 pe-1 text-xs text-muted-foreground shadow-sm'
       }
     >
       {control.by === 'agent' ? (
         inline ? (
-          <span className="size-1.5 shrink-0 rounded-full bg-[#ff912e]" />
+          <span className="size-1.5 shrink-0 rounded-full bg-status-running" />
         ) : (
           <Bot className="size-3.5 shrink-0" />
         )

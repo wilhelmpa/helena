@@ -68,25 +68,25 @@ const borderColors = ['#645274', '#395e50', '#65483d', '#6b562b'];
 function CanvasCard({ id, data }: NodeProps<CardNode>) {
   return (
     <div
-      className="group h-full w-full rounded-[17px] border bg-[#111014] px-4 py-3.5 shadow-[0_5px_18px_#0005]"
+      className="group h-full w-full rounded-[17px] border bg-card px-4 py-3.5 shadow-sm"
       style={{ borderColor: data.color }}
     >
       <Handle
         type="target"
         position={Position.Left}
         id="left"
-        className="!size-1.5 !border-0 !bg-[#8b8595] !opacity-0 group-hover:!opacity-100"
+        className="!size-1.5 !border-0 !bg-muted-foreground !opacity-0 group-hover:!opacity-100"
       />
       <Handle
         type="target"
         position={Position.Top}
         id="top"
-        className="!size-1.5 !border-0 !bg-[#8b8595] !opacity-0 group-hover:!opacity-100"
+        className="!size-1.5 !border-0 !bg-muted-foreground !opacity-0 group-hover:!opacity-100"
       />
       {data.href ? (
         <Link
           href={data.href}
-          className="nodrag block truncate text-[14px] font-medium text-[#eeeaf6] hover:text-[#bdaaff]"
+          className="nodrag block truncate text-[14px] font-medium text-foreground hover:text-brand"
         >
           {data.title}
         </Link>
@@ -96,31 +96,31 @@ function CanvasCard({ id, data }: NodeProps<CardNode>) {
           readOnly={!data.editable}
           value={data.title}
           onChange={(event) => data.edit(id, 'title', event.target.value)}
-          className="nodrag w-full bg-transparent text-[14px] font-medium text-[#eeeaf6] outline-none"
+          className="nodrag w-full bg-transparent text-[14px] font-medium text-foreground outline-none"
         />
       )}
       {data.href ? (
-        <p className="mt-1 text-xs text-[#96919f]">{data.body}</p>
+        <p className="mt-1 text-xs text-muted-foreground">{data.body}</p>
       ) : (
         <textarea
           aria-label="Kartentext"
           readOnly={!data.editable}
           value={data.body}
           onChange={(event) => data.edit(id, 'body', event.target.value)}
-          className="nodrag nowheel mt-1 h-[42px] w-full resize-none bg-transparent text-xs leading-[1.6] text-[#96919f] outline-none"
+          className="nodrag nowheel mt-1 h-[42px] w-full resize-none bg-transparent text-xs leading-[1.6] text-muted-foreground outline-none"
         />
       )}
       <Handle
         type="source"
         position={Position.Right}
         id="right"
-        className="!size-1.5 !border-0 !bg-[#8b8595] !opacity-0 group-hover:!opacity-100"
+        className="!size-1.5 !border-0 !bg-muted-foreground !opacity-0 group-hover:!opacity-100"
       />
       <Handle
         type="source"
         position={Position.Bottom}
         id="bottom"
-        className="!size-1.5 !border-0 !bg-[#8b8595] !opacity-0 group-hover:!opacity-100"
+        className="!size-1.5 !border-0 !bg-muted-foreground !opacity-0 group-hover:!opacity-100"
       />
     </div>
   );
@@ -398,24 +398,24 @@ function CanvasSurface({
     <div
       data-knowledge-canvas
       data-project-knowledge
-      className="relative min-h-0 flex-1 overflow-hidden bg-[#050507] text-[#eeeaf6]"
+      className="relative min-h-0 flex-1 overflow-hidden bg-background text-foreground"
     >
       <div className="pointer-events-none absolute inset-s-9 top-6 z-10 max-sm:inset-s-4">
-        <p className="font-mono text-[10px] tracking-[.23em] text-[#7ee0b8]">
+        <p className="font-mono text-[10px] tracking-[.23em] text-muted-foreground">
           WISSEN / {path.split('/').slice(0, -1).join(' / ').toUpperCase() || 'LEINWÄNDE'}
         </p>
         <h1 className="mt-2 text-[27px] font-[520] tracking-[-.03em]">
           {name.replace(/\.canvas$/i, '')}
         </h1>
       </div>
-      <div className="absolute inset-e-9 top-8 z-10 flex items-center gap-2 text-xs text-[#8b8595] max-sm:inset-s-4 max-sm:inset-e-auto max-sm:top-28">
-        <span className="rounded-full bg-[#111014] px-3 py-2">
+      <div className="absolute inset-e-9 top-8 z-10 flex items-center gap-2 text-xs text-muted-foreground max-sm:inset-s-4 max-sm:inset-e-auto max-sm:top-28">
+        <span className="rounded-full bg-card px-3 py-2">
           {nodes.length} Karten · {edges.length} Verbindungen
         </span>
         <button
           type="button"
           onClick={() => void actions.copyPath(item)}
-          className="rounded-full border border-[#ffffff12] bg-[#111014] px-3 py-2 text-[#cfc6da]"
+          className="rounded-full border border-border bg-card px-3 py-2 text-foreground"
         >
           Teilen
         </button>
@@ -445,11 +445,11 @@ function CanvasSurface({
         nodesConnectable={editable && tool === 'Verbinden'}
         defaultViewport={{ x: 0, y: 0, zoom: 1 }}
         proOptions={{ hideAttribution: true }}
-        className="!bg-[#050507]"
+        className="!bg-background"
       >
         <Background variant={BackgroundVariant.Dots} gap={22} size={1} color="#24202b" />
       </ReactFlow>
-      <div className="absolute inset-s-1/2 bottom-6 z-10 flex max-w-[calc(100%-20px)] -translate-x-1/2 items-center gap-1 overflow-x-auto rounded-2xl border border-[#ffffff0d] bg-[#111014] p-1.5 text-xs text-[#96919f] shadow-[0_8px_28px_#0008]">
+      <div className="absolute inset-s-1/2 bottom-6 z-10 flex max-w-[calc(100%-20px)] -translate-x-1/2 items-center gap-1 overflow-x-auto rounded-2xl border border-border bg-card p-1.5 text-xs text-muted-foreground shadow-md">
         {['Auswählen', 'Karte', 'Doc einfügen', 'Aufgabe einfügen', 'Verbinden'].map((label) => (
           <button
             key={label}
@@ -467,12 +467,12 @@ function CanvasSurface({
                 }
               }
             }}
-            className={`shrink-0 rounded-xl px-3 py-2 ${tool === label ? 'bg-[#26212d] text-[#eeeaf6]' : 'hover:text-[#eeeaf6]'}`}
+            className={`shrink-0 rounded-xl px-3 py-2 ${tool === label ? 'bg-accent text-foreground' : 'hover:text-foreground'}`}
           >
             {label}
           </button>
         ))}
-        <span className="mx-2 h-6 w-px bg-[#ffffff14]" />
+        <span className="mx-2 h-6 w-px bg-border" />
         <button
           type="button"
           aria-label="Verkleinern"

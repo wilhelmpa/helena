@@ -128,7 +128,7 @@ export default function WorkspaceBrowserBar({
           placeholder={t('address')}
           dir="ltr"
           spellCheck={false}
-          className="h-8 w-full rounded-full border-0 bg-[#111014] px-3 font-mono text-xs text-[#96919f] outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+          className="h-8 w-full rounded-full border-0 bg-muted px-3 font-mono text-xs text-muted-foreground outline-none focus:text-foreground"
           value={draft ?? active?.url ?? ''}
           onChange={(event) => setDraft(event.target.value)}
           onFocus={(event) => event.currentTarget.select()}

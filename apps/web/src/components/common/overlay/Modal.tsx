@@ -97,29 +97,20 @@ export default function Modal({
               // row keeps its content height under a capped container, so the body
               // never shrinks and never scrolls.
               cn('flex max-h-[85vh] flex-col overflow-hidden', MAX_WIDTH[`${wide}`]),
-          createLayout &&
-            'top-[120px] w-[min(640px,calc(100vw-24px))] max-w-none translate-y-0 gap-0 rounded-[22px] border border-[#ffffff14] bg-[#0e0d11] px-6 pt-[22px] pb-4 shadow-[0_40px_100px_#000d] max-sm:top-[5vh]',
+          createLayout && 'ds-create-dialog translate-y-0 gap-0',
           className,
         )}
       >
         <DialogHeader className={createLayout ? 'mb-1.5' : undefined}>
           <DialogTitle
-            className={
-              createLayout
-                ? 'flex items-center justify-between font-mono text-[10px] font-medium tracking-[.23em] text-[#7ee0b8]'
-                : 'flex items-center gap-2'
-            }
+            className={createLayout ? 'ds-create-dialog-eyebrow' : 'flex items-center gap-2'}
           >
             {createLayout ? (
               <>
                 <span>
                   {scope} · {title.toUpperCase()}
                 </span>
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="font-mono text-[10px] font-normal tracking-normal text-[#6f687a]"
-                >
+                <button type="button" onClick={onClose} className="ds-create-dialog-esc">
                   {'ESC'}
                 </button>
               </>
