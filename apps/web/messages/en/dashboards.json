@@ -184,7 +184,8 @@
       "heartbeat": "ran on heartbeat",
       "approval": "ran after an approval decision",
       "workspace": "ran a workspace job",
-      "digest": "wrote a summary"
+      "digest": "wrote a summary",
+      "escalation": "took over a hand-over"
     }
   },
   "agentHealth": {

@@ -48,7 +48,8 @@
       "manual": "Ручная задача",
       "approval": "Решение по согласованию",
       "workspace": "Задание рабочей области",
-      "digest": "Сводка"
+      "digest": "Сводка",
+      "escalation": "Hand-over"
     },
     "results": "Результаты",
     "noSummary": "Сводки пока нет.",

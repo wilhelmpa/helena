@@ -48,7 +48,8 @@
       "manual": "Tarefa manual",
       "approval": "Decisão de aprovação",
       "workspace": "Tarefa do espaço de trabalho",
-      "digest": "Resumo"
+      "digest": "Resumo",
+      "escalation": "Hand-over"
     },
     "results": "Resultados",
     "noSummary": "Ainda não há resumo.",

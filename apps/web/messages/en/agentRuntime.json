@@ -48,7 +48,8 @@
       "manual": "Manual task",
       "approval": "Approval decision",
       "workspace": "Workspace job",
-      "digest": "Summary"
+      "digest": "Summary",
+      "escalation": "Hand-over"
     },
     "results": "Results",
     "noSummary": "No summary yet.",

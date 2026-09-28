@@ -48,7 +48,8 @@
       "manual": "手动任务",
       "approval": "审批决定",
       "workspace": "工作区任务",
-      "digest": "摘要"
+      "digest": "摘要",
+      "escalation": "Hand-over"
     },
     "results": "结果",
     "noSummary": "暂无摘要。",

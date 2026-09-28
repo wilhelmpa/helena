@@ -6,6 +6,7 @@ import { isMcpRequest } from '#shared/mcp-request';
 import { commonErrors, errors } from '#shared/responses';
 import { mcpTool } from '#mcp/generate';
 import { runnerAuth } from '../runner-auth';
+import { nativeRuntimeEnabled } from '../core/service';
 import { agentParams } from '../model';
 import { agentForPerson } from '../people-access';
 import { correctFact, factCaller, factFeedback, factStore, listFactsForOwner } from './facts';
@@ -27,6 +28,7 @@ import {
   noteBody,
   NotesResponse,
   OkResponse,
+  RuntimesResponse,
   SessionIdResponse,
   SessionResponse,
   sessionParams,
@@ -135,6 +137,19 @@ export const nativeRuntimeRoutes = new Elysia({
 
   .use(authContext)
   .use(guards)
+  // Whether an agent can be put on Helena's own loop here (the switch HELENA_NATIVE_RUNTIME):
+  // the agent editor offers it only then.
+  .get(
+    '/agent-runtimes',
+    ({ user }) => {
+      requireUser(user);
+      return { helena: nativeRuntimeEnabled() };
+    },
+    {
+      response: { 200: RuntimesResponse, ...errors(401) },
+      detail: { summary: 'List the optional runtimes this instance offers' },
+    },
+  )
   .post(
     '/agent-facts',
     async ({ user, request, body }) => {

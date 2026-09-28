@@ -48,7 +48,8 @@
       "manual": "Tugas manual",
       "approval": "Keputusan persetujuan",
       "workspace": "Tugas ruang kerja",
-      "digest": "Ringkasan"
+      "digest": "Ringkasan",
+      "escalation": "Hand-over"
     },
     "results": "Hasil",
     "noSummary": "Belum ada ringkasan.",

@@ -48,7 +48,8 @@
       "manual": "مهمة يدوية",
       "approval": "قرار موافقة",
       "workspace": "مهمة مساحة العمل",
-      "digest": "ملخص"
+      "digest": "ملخص",
+      "escalation": "Hand-over"
     },
     "results": "النتائج",
     "noSummary": "لا يوجد ملخص بعد.",

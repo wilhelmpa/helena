@@ -298,6 +298,7 @@ export const qk = {
     ['aiAgents', teamId, agentId, 'run', runId] as const,
   memoryRevisions: (teamId: number, agentId: number) =>
     ['aiAgents', teamId, agentId, 'memory-revisions'] as const,
+  agentRuntimes: ['agentRuntimes'] as const,
   agentFacts: (teamId: number, agentId: number) => ['aiAgents', teamId, agentId, 'facts'] as const,
   agentNotes: (teamId: number, agentId: number) => ['aiAgents', teamId, agentId, 'notes'] as const,
   agentSpend: (teamId: number, params: unknown) => ['agentSpend', teamId, params] as const,

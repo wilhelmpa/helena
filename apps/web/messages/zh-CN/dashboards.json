@@ -184,7 +184,8 @@
       "heartbeat": "按心跳检查运行",
       "approval": "在审批决定后运行",
       "workspace": "执行了工作区任务",
-      "digest": "写了摘要"
+      "digest": "写了摘要",
+      "escalation": "took over a hand-over"
     }
   },
   "agentHealth": {

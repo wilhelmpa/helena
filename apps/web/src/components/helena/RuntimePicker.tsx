@@ -17,6 +17,24 @@ export function runtimeChoice(runtime: AgentRuntimeKind, model: string | null): 
   return runtime === 'hermes' && model?.startsWith('helena-local/') ? 'local' : runtime;
 }
 
+// The runtimes the picker offers: Helena's own loop only where the instance switched it on
+// (or the agent already runs on it), command and webhook only in an agent's own settings.
+export function runtimeOptions({
+  runtime,
+  external,
+  helena,
+}: {
+  runtime: AgentRuntimeKind;
+  external: boolean;
+  helena: boolean;
+}): RuntimeChoice[] {
+  const options: RuntimeChoice[] = ['claude', 'codex', 'local', 'hermes'];
+  if (helena || runtime === 'helena') options.push('helena');
+  if (external || runtime === 'command' || runtime === 'webhook')
+    options.push('command', 'webhook');
+  return options;
+}
+
 export default function RuntimePicker({
   runtime,
   model,
@@ -25,6 +43,7 @@ export default function RuntimePicker({
   unavailable = [],
   disabled = false,
   external = false,
+  helena = false,
   onChange,
 }: {
   runtime: AgentRuntimeKind;
@@ -36,6 +55,8 @@ export default function RuntimePicker({
   // Also offer "Befehl" (a checked script of the project) and "Webhook" (a signed call to
   // an outside service); only an agent's own settings do, never a chat.
   external?: boolean;
+  // Also offer Helena's own loop (only where the instance switched it on).
+  helena?: boolean;
   onChange: (runtime: AgentRuntimeKind, model: string | null, reasoning: string | null) => void;
 }) {
   const t = useTranslations('chatWorkspace.runtimePicker');
@@ -45,15 +66,21 @@ export default function RuntimePicker({
   const runtimeModels = availableModels.filter((entry) =>
     choice === 'local'
       ? entry.id.startsWith('helena-local/')
-      : !entry.local && !entry.id.startsWith('helena-'),
+      : choice === 'helena'
+        ? entry.local || entry.id.startsWith('helena-')
+        : !entry.local && !entry.id.startsWith('helena-'),
+  );
+  const helenaModels = availableModels.filter(
+    (entry) => entry.local || entry.id.startsWith('helena-'),
   );
   const selected = runtimeModels.find((entry) => entry.id === model);
   const withoutModel = runtime === 'command' || runtime === 'webhook';
-  const options: RuntimeChoice[] = ['claude', 'codex', 'local', 'hermes'];
-  if (external || withoutModel) options.push('command', 'webhook');
+  const options = runtimeOptions({ runtime, external, helena });
   const selectRuntime = (next: RuntimeChoice) => {
     if (next === 'local') {
       onChange('hermes', localModels[0]?.id ?? null, null);
+    } else if (next === 'helena') {
+      onChange('helena', helenaModels[0]?.id ?? null, null);
     } else {
       onChange(next, null, null);
     }
@@ -74,7 +101,10 @@ export default function RuntimePicker({
           <SelectContent>
             {options.map((option) => {
               const reason =
-                option === 'local' && localModels.length === 0 ? t('localMissing') : null;
+                (option === 'local' && localModels.length === 0) ||
+                (option === 'helena' && helenaModels.length === 0)
+                  ? t('localMissing')
+                  : null;
               return (
                 <SelectItem
                   key={option}

@@ -272,6 +272,7 @@
     "commandScriptHint": "Jalur relatif ke folder proyek. Skrip menerima tugas sebagai JSON dan berjalan di area terisolasi proyek; keluarannya adalah hasil.",
     "webhookUrl": "Alamat (HTTPS)",
     "webhookSecretEnv": "Variabel berisi kunci tanda tangan",
-    "webhookHint": "Helena memanggil alamat dengan tanda tangan Standard Webhooks. Berikan kunci (whsec_…) ke agen sebagai variabel lingkungan di Akses."
+    "webhookHint": "Helena memanggil alamat dengan tanda tangan Standard Webhooks. Berikan kunci (whsec_…) ke agen sebagai variabel lingkungan di Akses.",
+    "helena": "Helena (local first)"
   }
 }

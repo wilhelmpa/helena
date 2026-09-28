@@ -165,3 +165,7 @@ export const factCorrectionBody = t.Object({
   trust: t.Optional(t.Number({ minimum: 0, maximum: 1 })),
   category: t.Optional(t.String({ maxLength: 40 })),
 });
+
+export const RuntimesResponse = t.Object({
+  helena: t.Boolean({ description: "Whether Helena's own agent loop can run an agent here." }),
+});

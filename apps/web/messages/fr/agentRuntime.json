@@ -48,7 +48,8 @@
       "manual": "Tâche manuelle",
       "approval": "Décision d'approbation",
       "workspace": "Tâche d’espace de travail",
-      "digest": "Résumé"
+      "digest": "Résumé",
+      "escalation": "Hand-over"
     },
     "results": "Résultats",
     "noSummary": "Pas encore de résumé.",

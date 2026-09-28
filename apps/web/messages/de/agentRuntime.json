@@ -48,7 +48,8 @@
       "manual": "Manuelle Aufgabe",
       "approval": "Freigabe-Entscheidung",
       "workspace": "Arbeitsbereich-Auftrag",
-      "digest": "Zusammenfassung"
+      "digest": "Zusammenfassung",
+      "escalation": "Übergabe"
     },
     "results": "Ergebnisse",
     "noSummary": "Noch keine Zusammenfassung.",

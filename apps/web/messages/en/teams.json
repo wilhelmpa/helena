@@ -890,6 +890,42 @@
       "latestResults": "Latest results",
       "noResults": "No runs yet.",
       "allSettings": "All settings"
+    },
+    "helenaRuntime": {
+      "toolProfile": "Tools",
+      "profile": {
+        "assistent": "Assistant",
+        "recherche": "Research with browser",
+        "coder-lite": "Simple coding",
+        "voll": "All tools"
+      },
+      "profileHint": {
+        "assistent": "Tasks, comments, knowledge, memory and facts. The agent finds more tools when it needs them.",
+        "recherche": "Like Assistant, plus the project browser directly.",
+        "coder-lite": "Like Assistant, plus files and shell in the working folder.",
+        "voll": "All of Helena's tools directly. Needs the most context."
+      },
+      "browserBudget": "Browser time per task (seconds)",
+      "browserBudgetHint": "After that the agent gets no browser tools and answers with what it has.",
+      "escalationTarget": "Hand over to a large model",
+      "target": {
+        "none": "Never hand over",
+        "claude": "Claude Code (subscription)",
+        "codex": "Codex (subscription)"
+      },
+      "escalationHint": "An agent of this project on the chosen runtime takes the task over as a follow-up run, with the history so far.",
+      "taskKinds": "Always hand over for",
+      "kind": {
+        "programmierung-gross": "Larger coding work",
+        "architektur": "Architecture",
+        "sicherheit": "Security",
+        "recht": "Legal and contracts",
+        "aussenkommunikation": "Texts for outsiders"
+      },
+      "onFailure": "Hand over after a failure (loop, red tests, time limit)",
+      "confidence": "Hand over below confidence (%)",
+      "confidenceOff": "off",
+      "confidenceHint": "Before the start the decision model judges whether a small model is enough. Leave empty: do not ask."
     }
   },
   "members": {

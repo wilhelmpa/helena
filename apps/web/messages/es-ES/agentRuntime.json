@@ -48,7 +48,8 @@
       "manual": "Tarea manual",
       "approval": "Decisión de aprobación",
       "workspace": "Tarea del espacio de trabajo",
-      "digest": "Resumen"
+      "digest": "Resumen",
+      "escalation": "Hand-over"
     },
     "results": "Resultados",
     "noSummary": "Aún no hay resumen.",
