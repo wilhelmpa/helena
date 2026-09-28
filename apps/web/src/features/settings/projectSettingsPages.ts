@@ -1,7 +1,7 @@
 import { mcpServerPath, membersPath, notificationsPath, settingsPath } from '@/utils/paths';
 
 // A project's settings pages in the order of the sidebar (docs/einstellungen-struktur.md):
-// Allgemein · Mitglieder · Benachrichtigungen, Arbeit ▸, Agenten ▸, Wissen & Belege, Mail,
+// Allgemein · Mitglieder · Benachrichtigungen, Arbeit ▸, Agenten ▸, Wissen & Belege, Mail, Erweiterungen,
 // Integrationen ▸. `group` and `labelKey` are keys under `nav`; without a labelKey the
 // label is the section's own (sections.settings).
 export type ProjectSettingsPage = {
@@ -59,6 +59,12 @@ export function projectSettingsPages(projectKey: string): ProjectSettingsPage[] 
       'sidebarKnowledgeReceipts',
     ),
     page('mail', undefined, 'Postfach Triage Zeiten', 'mail'),
+    page(
+      'extensions',
+      undefined,
+      'Erweiterung Plugin Verbindung Grenzen Limits Handel',
+      'settingsExtensions',
+    ),
     page('mcp', 'settingsIntegrations', 'MCP', 'mcpServer', mcpServerPath(projectKey)),
     page('webhooks', 'settingsIntegrations', 'Webhooks'),
     page('git', 'settingsIntegrations', 'Repositorys Git GitHub'),

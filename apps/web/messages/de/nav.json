@@ -272,5 +272,6 @@
   "settingsExecution": "Standard-Ausführung",
   "adminOnly": "Nur der Administrator sieht diese Einstellungen.",
   "sidebarTerminals": "Terminals",
-  "sidebarFiles": "Dateien"
+  "sidebarFiles": "Dateien",
+  "settingsExtensions": "Erweiterungen"
 }

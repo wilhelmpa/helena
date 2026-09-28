@@ -223,7 +223,7 @@ export function SidebarProjectTree({
       .sort((a, b) => a.position - b.position || a.id - b.id);
 
   // Settings (docs/einstellungen-struktur.md): Allgemein · Mitglieder ·
-  // Benachrichtigungen, Arbeit ▸, Agenten ▸, Wissen & Belege, Mail, Integrationen ▸.
+  // Benachrichtigungen, Arbeit ▸, Agenten ▸, Wissen & Belege, Mail, Erweiterungen, Integrationen ▸.
   const settingsPages = projectSettingsPages(projectKey);
   const pageLabel = (page: (typeof settingsPages)[number]) =>
     page.labelKey ? t(page.labelKey as never) : sectionText(page.slug).label;

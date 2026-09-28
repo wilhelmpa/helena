@@ -460,6 +460,37 @@
       "not-approved": "Not approved yet.",
       "version-changed": "Approved at another version: approve this one.",
       "files-changed": "Its files changed since it was approved: check and approve again."
+    },
+    "loadFailed": "The extensions could not be loaded.",
+    "installedTitle": "Installed",
+    "installedDescription": "What Helena has loaded, with version and status. An extension's settings for a project are in that project's settings under Extensions.",
+    "externalSwitch": "Load external plugins",
+    "restartTitle": "Restart",
+    "inProjects": "Set up in",
+    "kinds": {
+      "runtimes": "runtimes",
+      "connectors": "connections",
+      "tools": "tools",
+      "stepTypes": "workflow steps",
+      "triggerTypes": "triggers",
+      "policies": "policies",
+      "uiSlots": "UI parts",
+      "knowledgeSources": "knowledge sources",
+      "captureTargets": "capture targets",
+      "bundles": "template bundles",
+      "hostCapabilities": "server functions",
+      "profileContributions": "profile additions",
+      "usageLimitSources": "limit sources",
+      "runtimeLoginSources": "sign-in sources",
+      "modelServers": "model servers",
+      "localAiTaskClasses": "local AI task classes",
+      "updateSources": "update sources",
+      "decisionBackends": "deciders",
+      "decisionClasses": "decision classes",
+      "notificationCategories": "notification kinds",
+      "alertSources": "alert sources",
+      "events": "events",
+      "mcpServers": "MCP servers"
     }
   }
 }

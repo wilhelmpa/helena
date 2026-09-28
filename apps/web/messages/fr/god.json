@@ -460,6 +460,37 @@
       "not-approved": "Pas encore approuvé.",
       "version-changed": "Approuvé pour une autre version : approuvez celle-ci.",
       "files-changed": "Ses fichiers ont changé depuis l'approbation : vérifiez et approuvez à nouveau."
+    },
+    "loadFailed": "Impossible de charger les extensions.",
+    "installedTitle": "Installées",
+    "installedDescription": "Ce que Helena a chargé, avec version et statut. Les réglages d'une extension pour un projet se trouvent dans les réglages de ce projet, sous Extensions.",
+    "externalSwitch": "Charger les plugins externes",
+    "restartTitle": "Redémarrage",
+    "inProjects": "Réglée dans",
+    "kinds": {
+      "runtimes": "environnements d'exécution",
+      "connectors": "connexions",
+      "tools": "outils",
+      "stepTypes": "étapes de workflow",
+      "triggerTypes": "déclencheurs",
+      "policies": "règles",
+      "uiSlots": "éléments d'interface",
+      "knowledgeSources": "sources de connaissances",
+      "captureTargets": "cibles de capture",
+      "bundles": "paquets de modèles",
+      "hostCapabilities": "fonctions du serveur",
+      "profileContributions": "ajouts au profil",
+      "usageLimitSources": "sources de limites",
+      "runtimeLoginSources": "sources de connexion",
+      "modelServers": "serveurs de modèles",
+      "localAiTaskClasses": "classes de tâches d'IA locale",
+      "updateSources": "sources de mises à jour",
+      "decisionBackends": "moteurs de décision",
+      "decisionClasses": "classes de décision",
+      "notificationCategories": "types de notification",
+      "alertSources": "sources d'alertes",
+      "events": "événements",
+      "mcpServers": "serveurs MCP"
     }
   }
 }

@@ -460,6 +460,37 @@
       "not-approved": "Ещё не разрешён.",
       "version-changed": "Разрешён для другой версии: разрешите эту.",
       "files-changed": "Его файлы изменились после разрешения: проверьте и разрешите снова."
+    },
+    "loadFailed": "Не удалось загрузить расширения.",
+    "installedTitle": "Установленные",
+    "installedDescription": "Что Helena сейчас загрузила, с версией и статусом. Настройки расширения для проекта находятся в настройках этого проекта в разделе «Расширения».",
+    "externalSwitch": "Загружать внешние плагины",
+    "restartTitle": "Перезапуск",
+    "inProjects": "Настроено в",
+    "kinds": {
+      "runtimes": "среды выполнения",
+      "connectors": "подключения",
+      "tools": "инструменты",
+      "stepTypes": "шаги процессов",
+      "triggerTypes": "триггеры",
+      "policies": "правила",
+      "uiSlots": "элементы интерфейса",
+      "knowledgeSources": "источники знаний",
+      "captureTargets": "цели сохранения",
+      "bundles": "пакеты шаблонов",
+      "hostCapabilities": "функции сервера",
+      "profileContributions": "дополнения профиля",
+      "usageLimitSources": "источники лимитов",
+      "runtimeLoginSources": "источники входа",
+      "modelServers": "серверы моделей",
+      "localAiTaskClasses": "классы задач локального ИИ",
+      "updateSources": "источники обновлений",
+      "decisionBackends": "механизмы решений",
+      "decisionClasses": "классы решений",
+      "notificationCategories": "виды уведомлений",
+      "alertSources": "источники предупреждений",
+      "events": "события",
+      "mcpServers": "серверы MCP"
     }
   }
 }

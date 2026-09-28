@@ -272,5 +272,6 @@
   "settingsExecution": "Eksekusi bawaan",
   "adminOnly": "Hanya administrator yang melihat pengaturan ini.",
   "sidebarTerminals": "Terminal",
-  "sidebarFiles": "Berkas"
+  "sidebarFiles": "Berkas",
+  "settingsExtensions": "Ekstensi"
 }

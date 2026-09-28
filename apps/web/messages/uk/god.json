@@ -460,6 +460,37 @@
       "not-approved": "Ще не дозволено.",
       "version-changed": "Дозволено для іншої версії: дозвольте цю.",
       "files-changed": "Його файли змінилися після дозволу: перевірте й дозвольте знову."
+    },
+    "loadFailed": "Не вдалося завантажити розширення.",
+    "installedTitle": "Встановлені",
+    "installedDescription": "Що Helena зараз завантажила, з версією та статусом. Налаштування розширення для проєкту є в налаштуваннях цього проєкту в розділі «Розширення».",
+    "externalSwitch": "Завантажувати зовнішні плагіни",
+    "restartTitle": "Перезапуск",
+    "inProjects": "Налаштовано в",
+    "kinds": {
+      "runtimes": "середовища виконання",
+      "connectors": "підключення",
+      "tools": "інструменти",
+      "stepTypes": "кроки процесів",
+      "triggerTypes": "тригери",
+      "policies": "правила",
+      "uiSlots": "елементи інтерфейсу",
+      "knowledgeSources": "джерела знань",
+      "captureTargets": "цілі збереження",
+      "bundles": "пакети шаблонів",
+      "hostCapabilities": "функції сервера",
+      "profileContributions": "доповнення профілю",
+      "usageLimitSources": "джерела лімітів",
+      "runtimeLoginSources": "джерела входу",
+      "modelServers": "сервери моделей",
+      "localAiTaskClasses": "класи завдань локального ШІ",
+      "updateSources": "джерела оновлень",
+      "decisionBackends": "механізми рішень",
+      "decisionClasses": "класи рішень",
+      "notificationCategories": "види сповіщень",
+      "alertSources": "джерела попереджень",
+      "events": "події",
+      "mcpServers": "сервери MCP"
     }
   }
 }

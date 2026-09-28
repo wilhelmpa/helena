@@ -834,5 +834,19 @@
       }
     },
     "projectPath": "Projekt"
+  },
+  "extensions": {
+    "title": "Erweiterungen",
+    "none": "Dieses Projekt nutzt keine Erweiterung mit eigenen Einstellungen. Eine Verbindung einer Erweiterung legst du in Zugänge an und gibst sie dem Projekt frei.",
+    "adminOnly": "Die Erweiterungen eines Projekts stellen seine Owner und die Owner und Manager des Teams ein.",
+    "loadFailed": "Die Erweiterungen ließen sich nicht laden.",
+    "from": "Aus der Erweiterung {name} {version}",
+    "saved": "{name} gespeichert",
+    "secretHint": "Geheim, wird nie angezeigt. Ändern in",
+    "toAccess": "Zugänge",
+    "secretSet": "gesetzt",
+    "secretMissing": "fehlt",
+    "required": "Dieser Wert ist nötig.",
+    "number": "Bitte eine Zahl eingeben."
   }
 }

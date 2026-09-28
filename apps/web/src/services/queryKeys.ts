@@ -443,6 +443,8 @@ export const qk = {
   // Plugins: the Administrator's list and decisions, and the UI slots of loaded plugins.
   plugins: ['plugins'] as const,
   pluginUiSlots: ['pluginUiSlots'] as const,
+  pluginProjects: ['pluginProjects'] as const,
+  projectExtensions: (key: string) => ['projectExtensions', key] as const,
   // The services around Plan and the agent runs that wait or overran (Home, god only).
   systemHealth: ['systemHealth'] as const,
   // The upload limits as read by the upload UI (open to any signed-in user).

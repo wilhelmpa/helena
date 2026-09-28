@@ -272,5 +272,6 @@
   "settingsExecution": "Типове виконання",
   "adminOnly": "Ці налаштування бачить лише адміністратор.",
   "sidebarTerminals": "Термінали",
-  "sidebarFiles": "Файли"
+  "sidebarFiles": "Файли",
+  "settingsExtensions": "Розширення"
 }

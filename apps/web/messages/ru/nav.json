@@ -272,5 +272,6 @@
   "settingsExecution": "Исполнение по умолчанию",
   "adminOnly": "Эти настройки видит только администратор.",
   "sidebarTerminals": "Терминалы",
-  "sidebarFiles": "Файлы"
+  "sidebarFiles": "Файлы",
+  "settingsExtensions": "Расширения"
 }

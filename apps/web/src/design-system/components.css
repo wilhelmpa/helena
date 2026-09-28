@@ -1783,3 +1783,39 @@ a.ds-run-card:hover {
   display: flex;
   justify-content: flex-end;
 }
+
+/* An inline link in running text (a settings row's sentence, a hint). */
+.ds-link {
+  color: var(--accent);
+}
+.ds-link:hover {
+  text-decoration: underline;
+}
+
+/* A value field at the end of a settings row (Erweiterungen): one width for every row. */
+.ds-extension-field {
+  width: 220px;
+}
+@container (max-width: 520px) {
+  .ds-extension-field {
+    width: 140px;
+  }
+}
+
+/* Helena › Einstellungen › Erweiterungen: an extension's name with its version, and its
+   lines of detail under it. */
+.ds-plugin-name {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+.ds-plugin-version {
+  color: var(--text-3);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+.ds-plugin-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}

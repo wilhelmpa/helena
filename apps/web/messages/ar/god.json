@@ -460,6 +460,37 @@
       "not-approved": "لم يُعتمد بعد.",
       "version-changed": "اعتُمد إصدار آخر: اعتمد هذا الإصدار.",
       "files-changed": "تغيّرت ملفاتها منذ الاعتماد: افحصها واعتمدها من جديد."
+    },
+    "loadFailed": "تعذر تحميل الإضافات.",
+    "installedTitle": "المثبتة",
+    "installedDescription": "ما حمّلته Helena حاليًا مع الإصدار والحالة. إعدادات الإضافة لمشروع ما موجودة في إعدادات ذلك المشروع ضمن الإضافات.",
+    "externalSwitch": "تحميل الإضافات الخارجية",
+    "restartTitle": "إعادة التشغيل",
+    "inProjects": "مضبوطة في",
+    "kinds": {
+      "runtimes": "بيئات التشغيل",
+      "connectors": "اتصالات",
+      "tools": "أدوات",
+      "stepTypes": "خطوات سير العمل",
+      "triggerTypes": "مشغلات",
+      "policies": "سياسات",
+      "uiSlots": "أجزاء الواجهة",
+      "knowledgeSources": "مصادر المعرفة",
+      "captureTargets": "أهداف الحفظ",
+      "bundles": "حزم القوالب",
+      "hostCapabilities": "وظائف الخادم",
+      "profileContributions": "إضافات الملف الشخصي",
+      "usageLimitSources": "مصادر الحدود",
+      "runtimeLoginSources": "مصادر تسجيل الدخول",
+      "modelServers": "خوادم النماذج",
+      "localAiTaskClasses": "فئات مهام الذكاء المحلي",
+      "updateSources": "مصادر التحديث",
+      "decisionBackends": "محركات القرار",
+      "decisionClasses": "فئات القرار",
+      "notificationCategories": "أنواع الإشعارات",
+      "alertSources": "مصادر التنبيهات",
+      "events": "أحداث",
+      "mcpServers": "خوادم MCP"
     }
   }
 }

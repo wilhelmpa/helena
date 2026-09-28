@@ -460,6 +460,37 @@
       "not-approved": "Noch nicht freigegeben.",
       "version-changed": "Für eine andere Version freigegeben: diese freigeben.",
       "files-changed": "Seine Dateien haben sich seit der Freigabe geändert: prüfen und neu freigeben."
+    },
+    "loadFailed": "Die Erweiterungen ließen sich nicht laden.",
+    "installedTitle": "Installiert",
+    "installedDescription": "Was Helena gerade geladen hat, mit Version und Status. Einstellungen einer Erweiterung für ein Projekt stehen in dessen Einstellungen unter Erweiterungen.",
+    "externalSwitch": "Externe Plugins laden",
+    "restartTitle": "Neustart",
+    "inProjects": "Eingestellt in",
+    "kinds": {
+      "runtimes": "Ausführungen",
+      "connectors": "Verbindungen",
+      "tools": "Werkzeuge",
+      "stepTypes": "Workflow-Schritte",
+      "triggerTypes": "Auslöser",
+      "policies": "Regeln",
+      "uiSlots": "Oberflächen",
+      "knowledgeSources": "Wissensquellen",
+      "captureTargets": "Ablageziele",
+      "bundles": "Vorlagen-Pakete",
+      "hostCapabilities": "Server-Funktionen",
+      "profileContributions": "Profil-Beiträge",
+      "usageLimitSources": "Limit-Quellen",
+      "runtimeLoginSources": "Anmelde-Quellen",
+      "modelServers": "Modell-Server",
+      "localAiTaskClasses": "Aufgabenklassen der lokalen KI",
+      "updateSources": "Update-Quellen",
+      "decisionBackends": "Entscheider",
+      "decisionClasses": "Entscheidungsklassen",
+      "notificationCategories": "Benachrichtigungsarten",
+      "alertSources": "Warnquellen",
+      "events": "Ereignisse",
+      "mcpServers": "MCP-Server"
     }
   }
 }

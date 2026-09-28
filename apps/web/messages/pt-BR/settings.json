@@ -834,5 +834,19 @@
       }
     },
     "projectPath": "Projeto"
+  },
+  "extensions": {
+    "title": "Extensões",
+    "none": "Este projeto não usa nenhuma extensão com configurações próprias. Adicione a conexão de uma extensão em Acessos e conceda-a ao projeto.",
+    "adminOnly": "As extensões de um projeto são configuradas pelos proprietários dele e pelos proprietários e gerentes da equipe.",
+    "loadFailed": "Não foi possível carregar as extensões.",
+    "from": "Da extensão {name} {version}",
+    "saved": "{name} salvo",
+    "secretHint": "Secreto, nunca exibido. Altere em",
+    "toAccess": "Acessos",
+    "secretSet": "definido",
+    "secretMissing": "ausente",
+    "required": "Este valor é obrigatório.",
+    "number": "Digite um número."
   }
 }

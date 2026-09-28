@@ -460,6 +460,37 @@
       "not-approved": "Belum disetujui.",
       "version-changed": "Disetujui untuk versi lain: setujui versi ini.",
       "files-changed": "Berkasnya berubah sejak disetujui: periksa dan setujui lagi."
+    },
+    "loadFailed": "Ekstensi tidak dapat dimuat.",
+    "installedTitle": "Terpasang",
+    "installedDescription": "Yang sedang dimuat Helena, beserta versi dan status. Pengaturan ekstensi untuk sebuah proyek ada di pengaturan proyek itu di bagian Ekstensi.",
+    "externalSwitch": "Muat plugin eksternal",
+    "restartTitle": "Mulai ulang",
+    "inProjects": "Diatur di",
+    "kinds": {
+      "runtimes": "runtime",
+      "connectors": "koneksi",
+      "tools": "alat",
+      "stepTypes": "langkah alur kerja",
+      "triggerTypes": "pemicu",
+      "policies": "kebijakan",
+      "uiSlots": "bagian antarmuka",
+      "knowledgeSources": "sumber pengetahuan",
+      "captureTargets": "target simpan",
+      "bundles": "paket templat",
+      "hostCapabilities": "fungsi server",
+      "profileContributions": "tambahan profil",
+      "usageLimitSources": "sumber batas",
+      "runtimeLoginSources": "sumber masuk",
+      "modelServers": "server model",
+      "localAiTaskClasses": "kelas tugas AI lokal",
+      "updateSources": "sumber pembaruan",
+      "decisionBackends": "mesin keputusan",
+      "decisionClasses": "kelas keputusan",
+      "notificationCategories": "jenis notifikasi",
+      "alertSources": "sumber peringatan",
+      "events": "peristiwa",
+      "mcpServers": "server MCP"
     }
   }
 }

@@ -272,5 +272,6 @@
   "settingsExecution": "Ejecución por defecto",
   "adminOnly": "Solo el administrador ve estos ajustes.",
   "sidebarTerminals": "Terminales",
-  "sidebarFiles": "Archivos"
+  "sidebarFiles": "Archivos",
+  "settingsExtensions": "Extensiones"
 }

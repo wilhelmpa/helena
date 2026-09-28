@@ -272,5 +272,6 @@
   "settingsExecution": "التنفيذ الافتراضي",
   "adminOnly": "يرى المسؤول فقط هذه الإعدادات.",
   "sidebarTerminals": "الطرفيات",
-  "sidebarFiles": "الملفات"
+  "sidebarFiles": "الملفات",
+  "settingsExtensions": "الإضافات"
 }

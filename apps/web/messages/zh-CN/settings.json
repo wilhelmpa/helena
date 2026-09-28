@@ -834,5 +834,19 @@
       }
     },
     "projectPath": "项目"
+  },
+  "extensions": {
+    "title": "扩展",
+    "none": "此项目没有使用带有自身设置的扩展。请在“访问”中添加扩展的连接并授权给此项目。",
+    "adminOnly": "项目的扩展由项目所有者以及团队的所有者和管理者设置。",
+    "loadFailed": "无法加载扩展。",
+    "from": "来自扩展 {name} {version}",
+    "saved": "已保存 {name}",
+    "secretHint": "机密，从不显示。请在此更改：",
+    "toAccess": "访问",
+    "secretSet": "已设置",
+    "secretMissing": "缺失",
+    "required": "此值为必填项。",
+    "number": "请输入数字。"
   }
 }

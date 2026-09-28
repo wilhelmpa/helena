@@ -834,5 +834,19 @@
       }
     },
     "projectPath": "Proyek"
+  },
+  "extensions": {
+    "title": "Ekstensi",
+    "none": "Proyek ini tidak memakai ekstensi dengan pengaturan sendiri. Tambahkan koneksi ekstensi di Akses dan berikan ke proyek.",
+    "adminOnly": "Ekstensi proyek diatur oleh pemilik proyek serta pemilik dan manajer tim.",
+    "loadFailed": "Ekstensi tidak dapat dimuat.",
+    "from": "Dari ekstensi {name} {version}",
+    "saved": "{name} disimpan",
+    "secretHint": "Rahasia, tidak pernah ditampilkan. Ubah di",
+    "toAccess": "Akses",
+    "secretSet": "diatur",
+    "secretMissing": "belum ada",
+    "required": "Nilai ini wajib diisi.",
+    "number": "Masukkan angka."
   }
 }

@@ -460,6 +460,37 @@
       "not-approved": "尚未批准。",
       "version-changed": "批准的是其他版本：请批准此版本。",
       "files-changed": "批准后其文件已更改：请检查并重新批准。"
+    },
+    "loadFailed": "无法加载扩展。",
+    "installedTitle": "已安装",
+    "installedDescription": "Helena 当前已加载的内容及其版本和状态。扩展针对某个项目的设置位于该项目设置中的“扩展”下。",
+    "externalSwitch": "加载外部插件",
+    "restartTitle": "重启",
+    "inProjects": "已在以下项目设置",
+    "kinds": {
+      "runtimes": "运行时",
+      "connectors": "连接",
+      "tools": "工具",
+      "stepTypes": "工作流步骤",
+      "triggerTypes": "触发器",
+      "policies": "策略",
+      "uiSlots": "界面组件",
+      "knowledgeSources": "知识来源",
+      "captureTargets": "采集目标",
+      "bundles": "模板包",
+      "hostCapabilities": "服务器功能",
+      "profileContributions": "配置文件补充",
+      "usageLimitSources": "限额来源",
+      "runtimeLoginSources": "登录来源",
+      "modelServers": "模型服务器",
+      "localAiTaskClasses": "本地 AI 任务类别",
+      "updateSources": "更新来源",
+      "decisionBackends": "决策引擎",
+      "decisionClasses": "决策类别",
+      "notificationCategories": "通知类型",
+      "alertSources": "告警来源",
+      "events": "事件",
+      "mcpServers": "MCP 服务器"
     }
   }
 }

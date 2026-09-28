@@ -834,5 +834,19 @@
       }
     },
     "projectPath": "Project"
+  },
+  "extensions": {
+    "title": "Extensions",
+    "none": "This project uses no extension with settings of its own. Add an extension's connection in Access and grant it to the project.",
+    "adminOnly": "A project's extensions are set by its owners and the team's owners and managers.",
+    "loadFailed": "The extensions could not be loaded.",
+    "from": "From the {name} extension {version}",
+    "saved": "{name} saved",
+    "secretHint": "Secret, never shown. Change it in",
+    "toAccess": "Access",
+    "secretSet": "set",
+    "secretMissing": "missing",
+    "required": "This value is required.",
+    "number": "Enter a number."
   }
 }
