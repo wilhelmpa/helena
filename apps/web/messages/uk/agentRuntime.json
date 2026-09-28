@@ -50,22 +50,22 @@
       "workspace": "Завдання робочої області",
       "digest": "Підсумок"
     },
-    "results": "Results",
-    "noSummary": "No summary yet.",
-    "noOutputs": "No results reported yet.",
-    "steps": "Steps",
-    "noSteps": "No steps recorded yet.",
-    "rawProtocol": "Raw protocol",
+    "results": "Результати",
+    "noSummary": "Підсумку ще немає.",
+    "noOutputs": "Результатів ще не надіслано.",
+    "steps": "Кроки",
+    "noSteps": "Кроків ще не записано.",
+    "rawProtocol": "Сирий протокол",
     "outputKind": {
-      "file": "File",
-      "preview": "Preview",
+      "file": "Файл",
+      "preview": "Попередній перегляд",
       "pr": "Pull request",
-      "screenshot": "Screenshot"
+      "screenshot": "Знімок екрана"
     },
     "stepState": {
-      "running": "In progress",
-      "done": "Done",
-      "failed": "Failed"
+      "running": "Виконується",
+      "done": "Готово",
+      "failed": "Помилка"
     },
     "spent": "Витрати"
   },

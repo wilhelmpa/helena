@@ -35,14 +35,14 @@
     "test": "Проверить подключение",
     "lastOk": "Подключение работает",
     "lastError": "Подключение не удалось",
-    "keySource": "Key source",
-    "keySourceStored": "Store a key in this connection",
-    "keySourceCredential": "Use an existing API key",
-    "keyCredential": "Original API key credential",
-    "chooseKeyCredential": "Choose an API key",
-    "keyCredentialHint": "Helena reads the current key from this credential for each request. Rotate it there once. Only API keys from this team and the same project (or the whole team) can be used. No key is copied or disclosed to agents.",
-    "keySourcesLoading": "Loading API keys…",
-    "keySourceUnavailable": "No matching API key is available, or the saved source is no longer accessible. Choose a valid source or check credentials."
+    "keySource": "Источник ключа",
+    "keySourceStored": "Сохранить ключ в этом подключении",
+    "keySourceCredential": "Использовать существующий API-ключ",
+    "keyCredential": "Исходный API-ключ",
+    "chooseKeyCredential": "Выберите API-ключ",
+    "keyCredentialHint": "Helena читает текущий ключ из этих учётных данных при каждом запросе. Меняйте ключ только там. Можно использовать только API-ключи этой команды и того же проекта (или всей команды). Ключ не копируется и не раскрывается агентам.",
+    "keySourcesLoading": "Загрузка API-ключей…",
+    "keySourceUnavailable": "Подходящего API-ключа нет, или сохранённый источник больше недоступен. Выберите действующий источник или проверьте учётные данные."
   },
   "test": {
     "succeeded": "Подключение работает · {models} · {ms} мс",

@@ -63,7 +63,7 @@
     "failedUnits": "خدمات فاشلة: {units}",
     "reboot": "يُنصح بإعادة التشغيل.",
     "started": "بدأ التحديث",
-    "rolledBack": "Rolled back"
+    "rolledBack": "تم التراجع"
   },
   "sources": {
     "hermes": "Hermes",
@@ -101,17 +101,17 @@
     },
     "save": "حفظ",
     "saved": "تم الحفظ",
-    "componentModes": "Components",
-    "componentModesDescription": "Automatic updates apply only when risk is low and there are no breaking changes.",
+    "componentModes": "المكوّنات",
+    "componentModesDescription": "تُطبَّق التحديثات التلقائية فقط عندما تكون المخاطر منخفضة ولا توجد تغييرات جذرية.",
     "risk": {
-      "low": "Low risk",
-      "medium": "Medium risk",
-      "high": "High risk",
-      "unknown": "Risk not yet known"
+      "low": "مخاطر منخفضة",
+      "medium": "مخاطر متوسطة",
+      "high": "مخاطر عالية",
+      "unknown": "المخاطر غير معروفة بعد"
     },
     "mode": {
-      "auto": "Automatic",
-      "manual": "Manual"
+      "auto": "تلقائي",
+      "manual": "يدوي"
     }
   },
   "home": {
@@ -124,8 +124,8 @@
   "aptListsAt": "وقت قوائم الحزم: {time}",
   "aptNotRefreshed": "لا يوجد تحديث ناجح مسجل لبيانات APT",
   "unverified": "الحالة غير مؤكدة",
-  "autoApplied": "Applied automatically: {name}",
-  "autoRolledBack": "Rolled back",
-  "autoFailedShort": "Update failed",
-  "autoFailed": "Automatic update failed: {name}"
+  "autoApplied": "طُبّق تلقائيًا: {name}",
+  "autoRolledBack": "تم التراجع",
+  "autoFailedShort": "فشل التحديث",
+  "autoFailed": "فشل التحديث التلقائي: {name}"
 }

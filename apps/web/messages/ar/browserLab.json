@@ -35,14 +35,14 @@
     "test": "اختبار الاتصال",
     "lastOk": "الاتصال يعمل",
     "lastError": "فشل الاتصال",
-    "keySource": "Key source",
-    "keySourceStored": "Store a key in this connection",
-    "keySourceCredential": "Use an existing API key",
-    "keyCredential": "Original API key credential",
-    "chooseKeyCredential": "Choose an API key",
-    "keyCredentialHint": "Helena reads the current key from this credential for each request. Rotate it there once. Only API keys from this team and the same project (or the whole team) can be used. No key is copied or disclosed to agents.",
-    "keySourcesLoading": "Loading API keys…",
-    "keySourceUnavailable": "No matching API key is available, or the saved source is no longer accessible. Choose a valid source or check credentials."
+    "keySource": "مصدر المفتاح",
+    "keySourceStored": "تخزين مفتاح في هذا الاتصال",
+    "keySourceCredential": "استخدام مفتاح API موجود",
+    "keyCredential": "بيانات اعتماد مفتاح API الأصلية",
+    "chooseKeyCredential": "اختر مفتاح API",
+    "keyCredentialHint": "تقرأ Helena المفتاح الحالي من بيانات الاعتماد هذه في كل طلب. غيّره هناك مرة واحدة فقط. لا يمكن استخدام إلا مفاتيح API من هذا الفريق ومن المشروع نفسه (أو من الفريق كله). لا يُنسخ أي مفتاح ولا يُكشف للوكلاء.",
+    "keySourcesLoading": "جارٍ تحميل مفاتيح API…",
+    "keySourceUnavailable": "لا يتوفر مفتاح API مطابق، أو لم يعد المصدر المحفوظ متاحًا. اختر مصدرًا صالحًا أو تحقق من بيانات الاعتماد."
   },
   "test": {
     "succeeded": "الاتصال يعمل · {models} · {ms} ms",

@@ -63,7 +63,7 @@
     "failedUnits": "Службы с ошибкой: {units}",
     "reboot": "Рекомендуется перезагрузка.",
     "started": "Обновление запущено",
-    "rolledBack": "Rolled back"
+    "rolledBack": "Откачено"
   },
   "sources": {
     "hermes": "Hermes",
@@ -101,17 +101,17 @@
     },
     "save": "Сохранить",
     "saved": "Сохранено",
-    "componentModes": "Components",
-    "componentModesDescription": "Automatic updates apply only when risk is low and there are no breaking changes.",
+    "componentModes": "Компоненты",
+    "componentModesDescription": "Автоматические обновления устанавливаются, только если риск низкий и нет несовместимых изменений.",
     "risk": {
-      "low": "Low risk",
-      "medium": "Medium risk",
-      "high": "High risk",
-      "unknown": "Risk not yet known"
+      "low": "Низкий риск",
+      "medium": "Средний риск",
+      "high": "Высокий риск",
+      "unknown": "Риск пока неизвестен"
     },
     "mode": {
-      "auto": "Automatic",
-      "manual": "Manual"
+      "auto": "Автоматически",
+      "manual": "Вручную"
     }
   },
   "home": {
@@ -124,8 +124,8 @@
   "aptListsAt": "Дата списков пакетов: {time}",
   "aptNotRefreshed": "Успешное обновление метаданных APT не зарегистрировано",
   "unverified": "Статус не подтверждён",
-  "autoApplied": "Applied automatically: {name}",
-  "autoRolledBack": "Rolled back",
-  "autoFailedShort": "Update failed",
-  "autoFailed": "Automatic update failed: {name}"
+  "autoApplied": "Установлено автоматически: {name}",
+  "autoRolledBack": "Откачено",
+  "autoFailedShort": "Обновление не удалось",
+  "autoFailed": "Автоматическое обновление не удалось: {name}"
 }

@@ -1,11 +1,11 @@
 {
-  "working": "{count, plural, =0 {NO AGENTS WORKING} one {# AGENT WORKING} other {# AGENTS WORKING}}",
-  "title": "What is next?",
-  "recent": "Running now",
-  "finished": "Recently finished",
-  "empty": "No recent agent runs.",
-  "history": "Open chat history",
-  "activity": "Open agent activity",
+  "working": "{count, plural, =0 {لا يعمل أي وكيل} zero {لا يعمل أي وكيل} one {وكيل واحد يعمل} two {وكيلان يعملان} few {# وكلاء يعملون} many {# وكيلًا يعملون} other {# وكيل يعملون}}",
+  "title": "ما التالي؟",
+  "recent": "قيد التشغيل الآن",
+  "finished": "انتهت مؤخرًا",
+  "empty": "لا توجد تشغيلات حديثة للوكلاء.",
+  "history": "فتح سجل المحادثات",
+  "activity": "فتح نشاط الوكلاء",
   "workingOpen": "فتح التشغيلات الجارية",
   "chats": "المحادثات"
 }

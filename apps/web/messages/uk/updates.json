@@ -63,7 +63,7 @@
     "failedUnits": "Служби з помилкою: {units}",
     "reboot": "Рекомендується перезавантаження.",
     "started": "Оновлення запущено",
-    "rolledBack": "Rolled back"
+    "rolledBack": "Відкочено"
   },
   "sources": {
     "hermes": "Hermes",
@@ -101,17 +101,17 @@
     },
     "save": "Зберегти",
     "saved": "Збережено",
-    "componentModes": "Components",
-    "componentModesDescription": "Automatic updates apply only when risk is low and there are no breaking changes.",
+    "componentModes": "Компоненти",
+    "componentModesDescription": "Автоматичні оновлення застосовуються лише за низького ризику й без несумісних змін.",
     "risk": {
-      "low": "Low risk",
-      "medium": "Medium risk",
-      "high": "High risk",
-      "unknown": "Risk not yet known"
+      "low": "Низький ризик",
+      "medium": "Середній ризик",
+      "high": "Високий ризик",
+      "unknown": "Ризик ще невідомий"
     },
     "mode": {
-      "auto": "Automatic",
-      "manual": "Manual"
+      "auto": "Автоматично",
+      "manual": "Вручну"
     }
   },
   "home": {
@@ -124,8 +124,8 @@
   "aptListsAt": "Дата списків пакетів: {time}",
   "aptNotRefreshed": "Успішне оновлення метаданих APT не зареєстровано",
   "unverified": "Стан не підтверджено",
-  "autoApplied": "Applied automatically: {name}",
-  "autoRolledBack": "Rolled back",
-  "autoFailedShort": "Update failed",
-  "autoFailed": "Automatic update failed: {name}"
+  "autoApplied": "Застосовано автоматично: {name}",
+  "autoRolledBack": "Відкочено",
+  "autoFailedShort": "Оновлення не вдалося",
+  "autoFailed": "Автоматичне оновлення не вдалося: {name}"
 }

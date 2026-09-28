@@ -50,22 +50,22 @@
       "workspace": "Задание рабочей области",
       "digest": "Сводка"
     },
-    "results": "Results",
-    "noSummary": "No summary yet.",
-    "noOutputs": "No results reported yet.",
-    "steps": "Steps",
-    "noSteps": "No steps recorded yet.",
-    "rawProtocol": "Raw protocol",
+    "results": "Результаты",
+    "noSummary": "Сводки пока нет.",
+    "noOutputs": "Результатов пока нет.",
+    "steps": "Шаги",
+    "noSteps": "Шаги пока не записаны.",
+    "rawProtocol": "Исходный протокол",
     "outputKind": {
-      "file": "File",
-      "preview": "Preview",
-      "pr": "Pull request",
-      "screenshot": "Screenshot"
+      "file": "Файл",
+      "preview": "Предпросмотр",
+      "pr": "Запрос на слияние",
+      "screenshot": "Снимок экрана"
     },
     "stepState": {
-      "running": "In progress",
-      "done": "Done",
-      "failed": "Failed"
+      "running": "Выполняется",
+      "done": "Готово",
+      "failed": "Ошибка"
     },
     "spent": "Расход"
   },

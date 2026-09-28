@@ -9,8 +9,8 @@
     "rateLimited": "محاولات كثيرة جدًا. انتظر 15 دقيقة وحاول مرة أخرى.",
     "locked": "تبقى الطرفية مقفلة حتى تؤكد أنك أنت.",
     "enterCode": "إدخال الرمز",
-    "setupRequired": "Complete authenticator setup in Account → Security first.",
-    "unavailable": "Terminal access could not be verified or saved. Please try again."
+    "setupRequired": "أكمل إعداد تطبيق المصادقة أولًا في الحساب ← الأمان.",
+    "unavailable": "تعذّر التحقق من الوصول إلى الطرفية أو حفظه. يرجى المحاولة مرة أخرى."
   },
   "grant": {
     "active": "الطرفية مصرَّحة حتى {time}",
@@ -25,8 +25,8 @@
     "helena-dev-claude": "تطوير Helena (Claude Code)",
     "helena-dev-codex": "تطوير Helena (Codex)",
     "close": "إنهاء الجلسة",
-    "local-qwen36": "Qwen 3.6 local (Codex)",
-    "local-qwen38": "Qwen 3.8 local (Codex)"
+    "local-qwen36": "Qwen 3.6 محلي (Codex)",
+    "local-qwen38": "Qwen 3.8 محلي (Codex)"
   },
   "keys": {
     "esc": "Esc",

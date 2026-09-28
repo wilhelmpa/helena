@@ -50,22 +50,22 @@
       "workspace": "مهمة مساحة العمل",
       "digest": "ملخص"
     },
-    "results": "Results",
-    "noSummary": "No summary yet.",
-    "noOutputs": "No results reported yet.",
-    "steps": "Steps",
-    "noSteps": "No steps recorded yet.",
-    "rawProtocol": "Raw protocol",
+    "results": "النتائج",
+    "noSummary": "لا يوجد ملخص بعد.",
+    "noOutputs": "لم يتم الإبلاغ عن نتائج بعد.",
+    "steps": "الخطوات",
+    "noSteps": "لم تُسجَّل خطوات بعد.",
+    "rawProtocol": "البروتوكول الخام",
     "outputKind": {
-      "file": "File",
-      "preview": "Preview",
-      "pr": "Pull request",
-      "screenshot": "Screenshot"
+      "file": "ملف",
+      "preview": "معاينة",
+      "pr": "طلب سحب (Pull request)",
+      "screenshot": "لقطة شاشة"
     },
     "stepState": {
-      "running": "In progress",
-      "done": "Done",
-      "failed": "Failed"
+      "running": "قيد التنفيذ",
+      "done": "تم",
+      "failed": "فشل"
     },
     "spent": "الاستهلاك"
   },

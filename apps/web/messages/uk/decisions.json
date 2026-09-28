@@ -30,8 +30,8 @@
       "description": "Інструмент decide в агентів і крок робочого процесу «Рішення»."
     },
     "browser": {
-      "label": "Optional browser stage",
-      "description": "Synthetic target selection for the native JEV stage. Enable this use case through the team first-stage policy; the existing project agent handles continuation."
+      "label": "Необов’язковий браузерний етап",
+      "description": "Синтетичний вибір цілі для нативного етапу JEV. Спершу ввімкніть цей сценарій через політику першого етапу команди; продовження виконує наявний агент проєкту."
     }
   },
   "class": {
@@ -188,16 +188,16 @@
     }
   },
   "firstStage": {
-    "title": "Optional Jev first stage",
-    "hint": "Jev may answer small typed judgments first. When off, uncertain, unavailable or too slow, the existing decision path continues. Complex work keeps the assigned specialist; this does not change agents or model defaults.",
-    "connection": "Jev connection (changing it switches this stage off)",
-    "none": "None",
-    "timeout": "Maximum wait for Jev (milliseconds)",
-    "cloudHint": "Enable only the use cases whose input may be sent to Jev in the cloud. A passed evaluation is required. Their existing class switch and fallback still apply; local-only classes are excluded.",
-    "cooldown": "Jev is temporarily skipped after repeated service failures. The existing path remains available.",
-    "allow": "Allow Jev cloud first stage for {name}",
-    "evaluating": "Evaluating…",
-    "evaluateAgain": "Evaluate again",
-    "evaluate": "Evaluate before enabling"
+    "title": "Необов’язковий перший етап Jev",
+    "hint": "Jev може першим відповідати на невеликі типізовані судження. Якщо етап вимкнено, Jev не впевнений, недоступний або надто повільний, рішення йде наявним шляхом. Складну роботу й далі виконує призначений спеціаліст; агенти й типові моделі не змінюються.",
+    "connection": "Підключення Jev (його зміна вимикає цей етап)",
+    "none": "Немає",
+    "timeout": "Максимальне очікування Jev (мілісекунди)",
+    "cloudHint": "Увімкніть лише ті сценарії, вхідні дані яких можна надсилати в Jev у хмарі. Потрібна пройдена оцінка. Їхній наявний перемикач класу й резерв і далі діють; класи лише для локальної обробки виключено.",
+    "cooldown": "Після повторних збоїв сервісу Jev тимчасово пропускається. Наявний шлях лишається доступним.",
+    "allow": "Дозволити хмарний перший етап Jev для {name}",
+    "evaluating": "Оцінювання…",
+    "evaluateAgain": "Оцінити знову",
+    "evaluate": "Оцінити перед увімкненням"
   }
 }
