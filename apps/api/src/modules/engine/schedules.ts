@@ -3,13 +3,16 @@ import { DBOS } from '@dbos-inc/dbos-sdk';
 import { Cron } from 'croner';
 import {
   db,
+  agentRun,
   helenaSchedule,
+  issue,
   pipeline,
   pipelineRun,
   pipelineVersion,
   projectPipeline,
+  projectColumn,
 } from '@repo/db';
-import { and, eq, lt } from 'drizzle-orm';
+import { and, desc, eq, inArray, isNotNull, isNull, lt, ne } from 'drizzle-orm';
 import { HttpError } from '#shared/lib';
 import { getMembership } from '#modules/members/service';
 import { bumpControlPlaneRevision } from '#modules/sync/service';
@@ -276,6 +279,22 @@ export async function planFire(scheduleId: string, scheduledAtIso: string, now =
     .select({ status: pipelineRun.status, input: pipelineRun.input })
     .from(pipelineRun)
     .where(eq(pipelineRun.id, runId));
+  if (row.kind === 'routine' && row.precheckEnabled && run?.status === 'pending') {
+    const noWork = await routineHasNoWork(row, runId);
+    if (noWork) {
+      await db
+        .update(pipelineRun)
+        .set({
+          status: 'skipped',
+          result: { outcome: 'skipped', skipReason: 'no-work' },
+          finishedAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .where(and(eq(pipelineRun.id, runId), eq(pipelineRun.status, 'pending')));
+      await bumpControlPlaneRevision(row.projectId);
+      return null;
+    }
+  }
   if (
     row.kind === 'routine' &&
     run?.status === 'pending' &&
@@ -316,4 +335,46 @@ export async function planFire(scheduleId: string, scheduledAtIso: string, now =
     if (skip) return null;
   }
   return run?.status === 'pending' ? runId : null;
+}
+
+// A routine's due fire is itself work unless it would repeat an unfinished task.
+// This cheap check runs before the engine starts a delegate step or an agent model.
+async function routineHasNoWork(row: ScheduleRow, runId: string): Promise<boolean> {
+  if (row.mode === 'reopen') {
+    if (row.taskId == null) return false;
+    const [active] = await db
+      .select({ id: agentRun.id })
+      .from(agentRun)
+      .where(and(eq(agentRun.issueId, row.taskId), eq(agentRun.status, 'pending')))
+      .limit(1);
+    return Boolean(active);
+  }
+  const [previous] = await db
+    .select({ issueId: pipelineRun.issueId })
+    .from(pipelineRun)
+    .where(
+      and(
+        eq(pipelineRun.scheduleId, row.id),
+        isNotNull(pipelineRun.issueId),
+        inArray(pipelineRun.status, ['succeeded', 'skipped']),
+        ne(pipelineRun.id, runId),
+      ),
+    )
+    .orderBy(desc(pipelineRun.scheduledFor), desc(pipelineRun.createdAt))
+    .limit(1);
+  if (!previous?.issueId) return false;
+  const [task] = await db
+    .select({ id: issue.id })
+    .from(issue)
+    .innerJoin(projectColumn, eq(projectColumn.id, issue.columnId))
+    .where(
+      and(
+        eq(issue.id, previous.issueId),
+        eq(issue.projectId, row.projectId),
+        isNull(issue.archivedAt),
+        inArray(projectColumn.stateType, ['backlog', 'unstarted', 'started']),
+      ),
+    )
+    .limit(1);
+  return Boolean(task);
 }

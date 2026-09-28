@@ -16,6 +16,7 @@ import { defaultProjectGoal, projectPoolGoals } from './scope';
 import type { GoalStatus } from '#modules/goals/scope';
 
 export interface IssueWhy {
+  department: { id: number; name: string } | null;
   goal: { id: number; title: string; path: string[] } | null;
   initiative: { id: number; title: string } | null;
   parents: { id: number; identifier: string; title: string }[];
@@ -97,7 +98,11 @@ export async function issueWhy(issueId: number): Promise<IssueWhy | null> {
         ),
       ),
     db
-      .select({ id: organizationDepartment.id, parentId: organizationDepartment.parentId })
+      .select({
+        id: organizationDepartment.id,
+        parentId: organizationDepartment.parentId,
+        name: organizationDepartment.name,
+      })
       .from(organizationDepartment)
       .where(eq(organizationDepartment.teamId, target.teamId)),
     db.select().from(organizationGoal).where(eq(organizationGoal.teamId, target.teamId)),
@@ -152,12 +157,15 @@ export async function issueWhy(issueId: number): Promise<IssueWhy | null> {
     }
   }
   const goal = goalId == null ? null : (byGoal.get(goalId) ?? null);
+  const departmentId = goal?.departmentId ?? assignment[0]?.departmentId ?? null;
+  const department = departments.find((row) => row.id === departmentId) ?? null;
   const ref = (row: typeof first) => ({
     id: row.id,
     identifier: `${target.key}-${row.sequenceNumber}`,
     title: row.title,
   });
   return {
+    department: department ? { id: department.id, name: department.name } : null,
     goal: goal ? { id: goal.id, title: goal.title, path: goal.path } : null,
     initiative: selectedInitiative
       ? { id: selectedInitiative.id, title: selectedInitiative.title }
@@ -171,6 +179,7 @@ export async function issueWhy(issueId: number): Promise<IssueWhy | null> {
 export function issueWhySection(why: IssueWhy | null): string {
   if (!why) return '';
   const chain = [
+    ...(why.department ? [why.department.name] : []),
     ...(why.goal ? [...why.goal.path, why.goal.title] : []),
     ...(why.initiative ? [why.initiative.title] : []),
     ...why.parents.map((parent) => `${parent.identifier} ${parent.title}`),

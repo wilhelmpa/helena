@@ -2,6 +2,7 @@ import {
   db,
   aiAgent,
   agentRun,
+  issueWorkClaim,
   organizationProjectAssignment,
   project,
   projectMember,
@@ -248,6 +249,13 @@ export async function expireExhaustedRuns(agentId?: number): Promise<number> {
       issueId: agentRun.issueId,
       agentUserId: sql<string>`(SELECT user_id FROM ai_agent a WHERE a.id = ${agentRun.agentId})`,
     });
+  if (rows.length > 0)
+    await db.delete(issueWorkClaim).where(
+      inArray(
+        issueWorkClaim.runId,
+        rows.map((row) => row.id),
+      ),
+    );
   for (const row of rows) await recordAgentRunFinished(row, 'failed', row.lastError);
   return rows.length;
 }
@@ -288,6 +296,13 @@ export async function expireResumeLimitedRuns(): Promise<number> {
       issueId: agentRun.issueId,
       agentUserId: sql<string>`(SELECT user_id FROM ai_agent a WHERE a.id = ${agentRun.agentId})`,
     });
+  if (rows.length > 0)
+    await db.delete(issueWorkClaim).where(
+      inArray(
+        issueWorkClaim.runId,
+        rows.map((row) => row.id),
+      ),
+    );
   for (const row of rows) await recordAgentRunFinished(row, 'failed', row.lastError);
   return rows.length;
 }
@@ -340,7 +355,11 @@ export async function claimRunnerRun(agent: RunnerAgent): Promise<RunnerRun | nu
         )})`
       : sql``;
   const claimable = sql`q.status = 'pending' AND q.next_attempt_at <= now()
-    AND (q.session_id IS NULL OR q.resumes < ${maxResumes})${notHeld}`;
+    AND (q.session_id IS NULL OR q.resumes < ${maxResumes})${notHeld}
+    AND (q.issue_id IS NULL OR NOT EXISTS (
+      SELECT 1 FROM issue_work_claim c
+      WHERE c.issue_id = q.issue_id AND c.expires_at > now()
+    ))`;
   const [next] = await db
     .select({ projectId: agentRun.projectId, issueId: agentRun.issueId })
     .from(agentRun)
@@ -351,12 +370,35 @@ export async function claimRunnerRun(agent: RunnerAgent): Promise<RunnerRun | nu
         lte(agentRun.nextAttemptAt, sql`now()`),
         sql`(${agentRun.sessionId} IS NULL OR ${agentRun.resumes} < ${maxResumes})`,
         held.length > 0 ? notInArray(agentRun.projectId, held) : undefined,
+        sql`(${agentRun.issueId} IS NULL OR NOT EXISTS (
+          SELECT 1 FROM issue_work_claim c
+          WHERE c.issue_id = ${agentRun.issueId} AND c.expires_at > now()
+        ))`,
       ),
     )
     .orderBy(asc(agentRun.nextAttemptAt), asc(agentRun.id))
     .limit(1);
   if (!next || (await enforceAgentLimits(agentId, next.projectId, next.issueId))) return null;
   const rows = await db.execute(sql`
+    WITH candidate AS (
+      SELECT q.id, q.issue_id, q.claims
+      FROM agent_run q
+      WHERE q.agent_id = ${agentId} AND ${claimable}
+      ORDER BY q.next_attempt_at, q.id
+      FOR UPDATE SKIP LOCKED
+      LIMIT 1
+    ), issue_claim AS (
+      INSERT INTO issue_work_claim (issue_id, run_id, claim, expires_at)
+      SELECT issue_id, id, claims + 1,
+        now() + make_interval(secs => ${agentRunConfig.leaseSeconds()})
+      FROM candidate WHERE issue_id IS NOT NULL
+      ON CONFLICT (issue_id) DO UPDATE SET
+        run_id = excluded.run_id,
+        claim = excluded.claim,
+        expires_at = excluded.expires_at
+      WHERE issue_work_claim.expires_at <= now()
+      RETURNING run_id
+    ), claimed_run AS (
     UPDATE agent_run r
     SET attempts = r.attempts + 1,
         claims = r.claims + 1,
@@ -364,13 +406,9 @@ export async function claimRunnerRun(agent: RunnerAgent): Promise<RunnerRun | nu
         started_at = coalesce(r.started_at, now()),
         resumes = CASE WHEN r.session_id IS NOT NULL THEN r.resumes + 1 ELSE r.resumes END,
         next_attempt_at = now() + make_interval(secs => ${agentRunConfig.leaseSeconds()})
-    WHERE r.id = (
-      SELECT id FROM agent_run q
-      WHERE q.agent_id = ${agentId} AND ${claimable}
-      ORDER BY q.next_attempt_at, q.id
-      FOR UPDATE SKIP LOCKED
-      LIMIT 1
-    )
+    WHERE r.id = (SELECT id FROM candidate)
+      AND ((SELECT issue_id FROM candidate) IS NULL
+        OR EXISTS (SELECT 1 FROM issue_claim))
     RETURNING
       r.id,
       r.trigger,
@@ -416,10 +454,14 @@ export async function claimRunnerRun(agent: RunnerAgent): Promise<RunnerRun | nu
          FROM issue_activity a JOIN "user" u ON u.id = a.actor_user_id
          LEFT JOIN ai_agent ag ON ag.user_id = u.id
          WHERE a.id = r.source_activity_id) AS "requesterUsername"
+    ) SELECT * FROM claimed_run
   `);
   const row = (rows as unknown as ClaimedRow[])[0];
   if (!row) return null;
   if (!(await useGrace(agent.id, row.projectId, row.id))) {
+    await db
+      .delete(issueWorkClaim)
+      .where(and(eq(issueWorkClaim.runId, row.id), eq(issueWorkClaim.claim, row.claim)));
     await db
       .update(agentRun)
       .set({
@@ -499,7 +541,7 @@ export async function claimRunnerRun(agent: RunnerAgent): Promise<RunnerRun | nu
     const routed = await routeRequest({
       teamId: agent.teamId,
       agentId: agent.id,
-      projectId: next.projectId,
+      projectId: row.projectId,
       configuredModel: model,
       thinkingLevel,
       text: [row.issueTitle, row.prompt].filter(Boolean).join('\n\n'),
@@ -613,6 +655,12 @@ export function heldBy(agentId: number, runId: number, claim: number | undefined
     eq(agentRun.agentId, agentId),
     eq(agentRun.status, 'pending'),
     claim === undefined ? undefined : eq(agentRun.claims, claim),
+    sql`(${agentRun.issueId} IS NULL OR EXISTS (
+      SELECT 1 FROM issue_work_claim c
+      WHERE c.issue_id = ${agentRun.issueId}
+        AND c.run_id = ${runId}
+        ${claim === undefined ? sql`` : sql`AND c.claim = ${claim}`}
+    ))`,
   );
 }
 
@@ -628,11 +676,32 @@ export async function heartbeatRun(
   claim?: number,
 ): Promise<RunAck | null> {
   await touchRunner(agentId);
-  const rows = await db
-    .update(agentRun)
-    .set({ nextAttemptAt: sql`now() + make_interval(secs => ${agentRunConfig.leaseSeconds()})` })
-    .where(heldBy(agentId, runId, claim))
-    .returning({ id: agentRun.id });
+  const rows = await db.transaction(async (tx) => {
+    const [run] = await tx
+      .select({ issueId: agentRun.issueId })
+      .from(agentRun)
+      .where(heldBy(agentId, runId, claim));
+    if (!run) return [];
+    if (run.issueId != null) {
+      const renewed = await tx
+        .update(issueWorkClaim)
+        .set({ expiresAt: sql`now() + make_interval(secs => ${agentRunConfig.leaseSeconds()})` })
+        .where(
+          and(
+            eq(issueWorkClaim.issueId, run.issueId),
+            eq(issueWorkClaim.runId, runId),
+            claim === undefined ? undefined : eq(issueWorkClaim.claim, claim),
+          ),
+        )
+        .returning({ issueId: issueWorkClaim.issueId });
+      if (renewed.length === 0) return [];
+    }
+    return tx
+      .update(agentRun)
+      .set({ nextAttemptAt: sql`now() + make_interval(secs => ${agentRunConfig.leaseSeconds()})` })
+      .where(heldBy(agentId, runId, claim))
+      .returning({ id: agentRun.id });
+  });
   if (rows.length > 0)
     return (await emergencyStopActive()) ? { canceled: false, hold: true } : { canceled: false };
   const [row] = await db
@@ -668,12 +737,18 @@ export async function reportRunSession(
 // no longer holds the run.
 export async function releaseRun(agentId: number, runId: number, claim: number): Promise<boolean> {
   await touchRunner(agentId);
-  const rows = await db
-    .update(agentRun)
-    .set({ attempts: sql`${agentRun.attempts} - 1`, nextAttemptAt: sql`now()` })
-    .where(heldBy(agentId, runId, claim))
-    .returning({ id: agentRun.id });
-  return rows.length > 0;
+  return db.transaction(async (tx) => {
+    const rows = await tx
+      .update(agentRun)
+      .set({ attempts: sql`${agentRun.attempts} - 1`, nextAttemptAt: sql`now()` })
+      .where(heldBy(agentId, runId, claim))
+      .returning({ id: agentRun.id });
+    if (rows.length === 0) return false;
+    await tx
+      .delete(issueWorkClaim)
+      .where(and(eq(issueWorkClaim.runId, runId), eq(issueWorkClaim.claim, claim)));
+    return true;
+  });
 }
 
 export interface ReflectionRequest {
@@ -808,29 +883,42 @@ export async function finishRun(
     own?.modelCheck ?? null,
   );
   const blocked = sql`${agentRun.blockedQuestion} IS NOT NULL`;
-  const rows = await db
-    .update(agentRun)
-    .set({
-      status: sql`CASE WHEN ${blocked} THEN 'success' ELSE ${result.status} END`,
-      output: result.output ?? null,
-      lastError: sql`CASE WHEN ${blocked} THEN NULL ELSE ${error}::text END`,
-      inputTokens: result.usage?.inputTokens ?? null,
-      outputTokens: result.usage?.outputTokens ?? null,
-      // The session the run ended in (a compression moves it to a new id), which "continue
-      // from here" resumes.
-      ...(result.sessionId && { sessionId: result.sessionId }),
-      ...(check && { modelCheck: check }),
-      failure: result.status === 'failed' ? (result.failure ?? null) : null,
-      finishedAt: new Date(),
-    })
-    .where(heldBy(agent.id, runId, claim))
-    .returning({
-      issueId: agentRun.issueId,
-      projectId: agentRun.projectId,
-      status: agentRun.status,
-      trigger: agentRun.trigger,
-      lastError: agentRun.lastError,
-    });
+  const rows = await db.transaction(async (tx) => {
+    const finished = await tx
+      .update(agentRun)
+      .set({
+        status: sql`CASE WHEN ${blocked} THEN 'success' ELSE ${result.status} END`,
+        output: result.output ?? null,
+        lastError: sql`CASE WHEN ${blocked} THEN NULL ELSE ${error}::text END`,
+        inputTokens: result.usage?.inputTokens ?? null,
+        outputTokens: result.usage?.outputTokens ?? null,
+        // The session the run ended in (a compression moves it to a new id), which "continue
+        // from here" resumes.
+        ...(result.sessionId && { sessionId: result.sessionId }),
+        ...(check && { modelCheck: check }),
+        failure: result.status === 'failed' ? (result.failure ?? null) : null,
+        finishedAt: new Date(),
+      })
+      .where(heldBy(agent.id, runId, claim))
+      .returning({
+        issueId: agentRun.issueId,
+        projectId: agentRun.projectId,
+        status: agentRun.status,
+        trigger: agentRun.trigger,
+        lastError: agentRun.lastError,
+      });
+    if (finished.length > 0) {
+      await tx
+        .delete(issueWorkClaim)
+        .where(
+          and(
+            eq(issueWorkClaim.runId, runId),
+            claim === undefined ? undefined : eq(issueWorkClaim.claim, claim),
+          ),
+        );
+    }
+    return finished;
+  });
   const row = rows[0];
   if (!row) return null;
   const status = row.status as 'success' | 'failed';

@@ -3,6 +3,7 @@ import {
   aiAgent,
   approvalRequest,
   helenaBudget,
+  notification,
   organizationAgentAssignment,
   organizationDepartment,
   organizationProjectAssignment,
@@ -350,6 +351,31 @@ async function fileBudgetCard(
       departmentId: status.departmentId,
     },
   });
+  if (issueId != null) {
+    const agent = await agentFacts(agentId);
+    const members = await db
+      .select({
+        userId: projectMember.userId,
+        role: projectMember.role,
+      })
+      .from(projectMember)
+      .where(eq(projectMember.projectId, projectId));
+    const preferred = members.find((member) => member.userId === agent?.ownerUserId);
+    const recipients = preferred
+      ? [preferred]
+      : members.filter((member) => member.role === 'owner');
+    if (recipients.length > 0)
+      await db.insert(notification).values(
+        recipients.map((recipient) => ({
+          userId: recipient.userId,
+          projectId,
+          issueId,
+          sourceActivityId: null,
+          type: 'approval_requested',
+          actorUserId: agent?.userId ?? null,
+        })),
+      );
+  }
 }
 
 // The budgets of the agent and the project that hold its work back now: reached, and not

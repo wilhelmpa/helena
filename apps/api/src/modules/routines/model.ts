@@ -76,6 +76,7 @@ const routineFields = {
   ),
   gateMode: t.Optional(t.Union([t.Literal('off'), t.Literal('shadow'), t.Literal('active')])),
   gateSource: t.Optional(t.Union([t.Literal('none'), t.Literal('mail'), t.Literal('audit')])),
+  precheckEnabled: t.Optional(t.Boolean()),
 };
 
 export const createRoutineBody = t.Object(
@@ -97,7 +98,10 @@ export const updateRoutineBody = t.Partial(
   { additionalProperties: false },
 );
 
-export const routinePageQuery = t.Object(pageQueryFields);
+export const routinePageQuery = t.Object({
+  ...pageQueryFields,
+  includeIdle: t.Optional(t.Boolean()),
+});
 
 // Why a mention starts no run of an agent (MentionRefusal).
 const mentionReason = oneOf(
@@ -159,6 +163,7 @@ export const RoutineResponse = t.Object({
   catchUp: t.Union([t.Literal('skip'), t.Literal('once')]),
   gateMode: t.Union([t.Literal('off'), t.Literal('shadow'), t.Literal('active')]),
   gateSource: t.Union([t.Literal('none'), t.Literal('mail'), t.Literal('audit')]),
+  precheckEnabled: t.Boolean(),
   enabled: t.Boolean(),
   nextRunAt: t.Nullable(t.String()),
   lastRun: t.Nullable(
@@ -170,7 +175,7 @@ export const RoutineResponse = t.Object({
       }),
       outcome: t.Nullable(oneOf(['created', 'reopened', 'skipped'])),
       skipReason: t.Nullable(
-        oneOf(['task-open', 'missed', 'gate'], {
+        oneOf(['task-open', 'missed', 'gate', 'no-work'], {
           description:
             "'task-open': the routine's task was still open; 'missed': the run started too late.",
         }),

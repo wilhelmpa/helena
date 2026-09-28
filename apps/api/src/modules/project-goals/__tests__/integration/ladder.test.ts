@@ -56,13 +56,14 @@ describe('effective task goal ladder', () => {
     const inherited = await why.get();
     expect(inherited.status).toBe(200);
     expect(inherited.data).toMatchObject({
+      department: { id: department.id, name: 'Growth' },
       goal: { id: linkedGoal.id, title: 'Grow signups', path: ['Grow reach'] },
       initiative: { id: initiative.id, title: 'Launch campaign' },
       parents: [{ id: parent.id, title: 'Prepare launch' }],
       source: 'initiative',
     });
     expect(issueWhySection(inherited.data!)).toContain(
-      'Grow reach → Grow signups → Launch campaign → MKT-1 Prepare launch → MKT-2 Write copy',
+      'Growth → Grow reach → Grow signups → Launch campaign → MKT-1 Prepare launch → MKT-2 Write copy',
     );
     const context = await api.projects({ projectKey: 'MKT' })['goal-context'].get();
     expect(context.data!.goals.find((goal) => goal.id === linkedGoal.id)?.progress?.total).toBe(2);
