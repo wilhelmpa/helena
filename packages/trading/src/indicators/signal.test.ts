@@ -97,6 +97,9 @@ describe('macd-rsi-atr v1', () => {
     expect(values.indicators.rsi14.latest).toBeCloseTo(checkSignal(bars, 100_000).rsi, 10);
     expect(values.indicators.rsi14.history).toHaveLength(5);
     expect(values.source).toContain('IEX');
+    expect((values as unknown as { lastBar: { close: number } }).lastBar.close).toBe(
+      bars.at(-1)!.c,
+    );
     const result = (await signal.handler(
       { strategie: STRATEGY, symbol: 'SPY', riskPercent: 0.5 },
       ctx,
