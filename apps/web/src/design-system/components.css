@@ -1633,3 +1633,35 @@ a.ds-run-card:hover {
     margin-inline-start: calc(var(--ds-goal-depth, 0) * 12px);
   }
 }
+
+/* A settings group (SettingsSection): title and one sentence over its card, one column,
+   at most 880px (design-system §4). */
+.ds-settings-section {
+  display: flex;
+  width: 100%;
+  max-width: 880px;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.ds-settings-section-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+.ds-settings-section-head h3 {
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 560;
+}
+.ds-settings-section-head p {
+  margin-top: 2px;
+  color: var(--text-3);
+  font-size: 12px;
+}
+.ds-settings-section-body {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--space-4);
+}

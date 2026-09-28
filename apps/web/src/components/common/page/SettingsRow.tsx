@@ -35,8 +35,8 @@ export default function SettingsRow({
         })
       : control;
   return (
-    <div className="flex items-center justify-between gap-4 px-4 py-3">
-      <div className="max-w-2xl space-y-0.5">
+    <div className="flex min-h-14 items-center justify-between gap-4 px-4 py-3 max-sm:flex-col max-sm:items-stretch">
+      <div className="min-w-0 flex-1 space-y-0.5">
         <div id={`${id}-title`} className="text-sm font-medium">
           {title}
         </div>
@@ -50,7 +50,7 @@ export default function SettingsRow({
           </Alert>
         )}
       </div>
-      {named}
+      <div className="shrink-0">{named}</div>
     </div>
   );
 }

@@ -140,7 +140,7 @@ export function BrowserControlSection({
                   disabled={!editable}
                   onValueChange={(id) => update.mutate({ credentialId: Number(id) })}
                 >
-                  <SelectTrigger className="w-60" aria-label={t('connection')}>
+                  <SelectTrigger className="w-60 shrink-0" aria-label={t('connection')}>
                     <SelectValue placeholder={t('chooseConnection')} />
                   </SelectTrigger>
                   <SelectContent>
@@ -164,7 +164,7 @@ export function BrowserControlSection({
                     update.mutate({ policy: policy as BrowserControlPolicy })
                   }
                 >
-                  <SelectTrigger className="w-60" aria-label={t('policy')}>
+                  <SelectTrigger className="w-60 shrink-0" aria-label={t('policy')}>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>

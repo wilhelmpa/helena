@@ -282,16 +282,18 @@
   align-items: center;
   justify-content: center;
   border-radius: 11px;
-  background: var(--surface-2);
+  background: transparent;
   color: var(--text-2);
-  box-shadow: inset 0 0 0 1px var(--line);
 }
 .ds-sidebar-tools button:hover {
+  background: var(--surface-2);
   color: var(--text);
 }
+/* Only the chosen tool has a surface (owner, as live). */
 .ds-sidebar-tools button[aria-pressed='true'] {
   background: var(--surface-3);
   color: var(--text);
+  box-shadow: inset 0 0 0 1px var(--line);
 }
 .ds-tool-orb {
   width: 14px;
@@ -1066,4 +1068,14 @@
   position: absolute;
   inset-inline: 18px;
   bottom: 8px;
+}
+.ds-org-canvas > .organization-flow {
+  position: absolute;
+  inset: 0;
+  width: auto;
+  height: auto;
+}
+/* A single tab without a close button (a task or a run in the overlay): even padding. */
+.ds-panel-tab-select:only-child {
+  padding-inline-end: 10px;
 }

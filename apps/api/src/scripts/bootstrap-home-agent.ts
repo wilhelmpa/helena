@@ -238,7 +238,7 @@ export async function bootstrapHomeAgent(): Promise<HomeAgentBootstrapResult> {
   }
 
   const created = await createAgent(owner.teamId, {
-    name: 'Home',
+    name: 'Helena',
     username: HOME_AGENT_USERNAME,
     agentRole: 'home',
     projectScope: 'all',

@@ -60,7 +60,7 @@ export function InstanceBrowserControlSection({ overrideCount }: { overrideCount
                 });
               }}
             >
-              <SelectTrigger className="w-60" aria-label={t('mode')}>
+              <SelectTrigger className="w-60 shrink-0" aria-label={t('mode')}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -81,7 +81,7 @@ export function InstanceBrowserControlSection({ overrideCount }: { overrideCount
                 value={teamId === null ? undefined : String(teamId)}
                 onValueChange={(id) => setChosenTeam(Number(id))}
               >
-                <SelectTrigger className="w-60" aria-label={t('team')}>
+                <SelectTrigger className="w-60 shrink-0" aria-label={t('team')}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -116,7 +116,7 @@ export function InstanceBrowserControlSection({ overrideCount }: { overrideCount
                     value={setting.credentialId === null ? undefined : String(setting.credentialId)}
                     onValueChange={(id) => update.mutate({ credentialId: Number(id) })}
                   >
-                    <SelectTrigger className="w-60" aria-label={t('connection')}>
+                    <SelectTrigger className="w-60 shrink-0" aria-label={t('connection')}>
                       <SelectValue placeholder={t('chooseConnection')} />
                     </SelectTrigger>
                     <SelectContent>
@@ -139,7 +139,7 @@ export function InstanceBrowserControlSection({ overrideCount }: { overrideCount
                       update.mutate({ policy: policy as BrowserControlPolicy })
                     }
                   >
-                    <SelectTrigger className="w-60" aria-label={t('policy')}>
+                    <SelectTrigger className="w-60 shrink-0" aria-label={t('policy')}>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
