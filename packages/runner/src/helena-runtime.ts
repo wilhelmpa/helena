@@ -249,7 +249,15 @@ export class HelenaRuntimeAdapter implements RuntimeAdapter {
             origin: 'plan' as const,
             pinned: false,
           })),
-          memory: [],
+          // The loop reads its memory from Helena itself; reported as it is there, the memory
+          // editor shows and edits it like any agent's.
+          memory: (snapshot.memoryWrites?.baseline ?? []).map((entry) => ({
+            file: entry.file,
+            content: entry.content,
+            truncated: false,
+            sha256: entry.sha256,
+            chars: entry.content.length,
+          })),
           cronJobs: 0,
         },
         profile: this.profile(applied),

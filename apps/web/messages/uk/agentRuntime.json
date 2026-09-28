@@ -104,6 +104,21 @@
       "agent": "Агент (погоджено)",
       "owner": "Змінено тут",
       "observed": "Знайдено в середовищі виконання"
+    },
+    "facts": {
+      "title": "{count, plural, one {# факт} few {# факти} many {# фактів} other {# факту}}",
+      "trust": "{value} %",
+      "trustHint": "Довіра: підтверджено {confirmations}×, корисно {helpful}×",
+      "contradicted": "можлива суперечність",
+      "edit": "Змінити",
+      "confirm": "Правильно",
+      "remove": "Вилучити",
+      "save": "Зберегти",
+      "cancel": "Скасувати"
+    },
+    "notes": {
+      "title": "Щоденні нотатки",
+      "lines": "{count, plural, one {# запис} few {# записи} many {# записів} other {# запису}}"
     }
   },
   "proposals": {

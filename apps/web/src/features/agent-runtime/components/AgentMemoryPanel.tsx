@@ -12,6 +12,7 @@ import AgentMemoryFiles from '@/features/teams/components/ai-agents/AgentMemoryF
 import { useRuntimeActionsQuery } from '@/features/teams/services/agentLearning.service';
 import { canActOnLearning } from '@/features/teams/utils/agentLearning';
 import { useMemoryRevisions, useProposals } from '../services/agentRuntime.service';
+import { AgentFactsSection, AgentNotesSection } from './AgentFactsPanel';
 import ProposalCard from './ProposalCard';
 import TextDiff from './TextDiff';
 
@@ -56,6 +57,8 @@ export default function AgentMemoryPanel({
       ) : (
         <p className="text-sm text-muted-foreground">{t('notReported')}</p>
       )}
+      <AgentFactsSection teamId={teamId} agentId={agent.id} canEdit={canEdit} />
+      <AgentNotesSection teamId={teamId} agentId={agent.id} />
       <MemoryHistory teamId={teamId} agentId={agent.id} />
     </div>
   );

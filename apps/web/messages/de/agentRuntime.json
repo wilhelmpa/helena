@@ -104,6 +104,21 @@
       "agent": "Agent (freigegeben)",
       "owner": "Hier bearbeitet",
       "observed": "In der Laufzeit vorgefunden"
+    },
+    "facts": {
+      "title": "{count, plural, one {# Fakt} other {# Fakten}}",
+      "trust": "{value} %",
+      "trustHint": "Vertrauen: {confirmations}× bestätigt, {helpful}× hilfreich",
+      "contradicted": "möglicher Widerspruch",
+      "edit": "Bearbeiten",
+      "confirm": "Stimmt",
+      "remove": "Entfernen",
+      "save": "Speichern",
+      "cancel": "Abbrechen"
+    },
+    "notes": {
+      "title": "Tagesnotizen",
+      "lines": "{count, plural, one {# Eintrag} other {# Einträge}}"
     }
   },
   "proposals": {

@@ -104,6 +104,21 @@
       "agent": "Agen (disetujui)",
       "owner": "Diedit di sini",
       "observed": "Ditemukan di runtime"
+    },
+    "facts": {
+      "title": "{count, plural, other {# fakta}}",
+      "trust": "{value} %",
+      "trustHint": "Kepercayaan: dikonfirmasi {confirmations}×, membantu {helpful}×",
+      "contradicted": "kemungkinan bertentangan",
+      "edit": "Ubah",
+      "confirm": "Benar",
+      "remove": "Hapus",
+      "save": "Simpan",
+      "cancel": "Batal"
+    },
+    "notes": {
+      "title": "Catatan harian",
+      "lines": "{count, plural, other {# entri}}"
     }
   },
   "proposals": {

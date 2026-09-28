@@ -104,6 +104,21 @@
       "agent": "الوكيل (معتمد)",
       "owner": "عُدِّل هنا",
       "observed": "وُجد في بيئة التشغيل"
+    },
+    "facts": {
+      "title": "{count, plural, zero {لا حقائق} one {حقيقة واحدة} two {حقيقتان} few {# حقائق} many {# حقيقة} other {# حقيقة}}",
+      "trust": "{value} %",
+      "trustHint": "الثقة: مؤكدة {confirmations}×، مفيدة {helpful}×",
+      "contradicted": "تناقض محتمل",
+      "edit": "تعديل",
+      "confirm": "صحيح",
+      "remove": "إزالة",
+      "save": "حفظ",
+      "cancel": "إلغاء"
+    },
+    "notes": {
+      "title": "الملاحظات اليومية",
+      "lines": "{count, plural, zero {لا إدخالات} one {إدخال واحد} two {إدخالان} few {# إدخالات} many {# إدخالًا} other {# إدخال}}"
     }
   },
   "proposals": {
