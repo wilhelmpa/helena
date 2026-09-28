@@ -4,6 +4,7 @@ import { and, eq, like, lt, ne, sql } from 'drizzle-orm';
 import { engineExecutorId, engineRunning } from './dbos';
 import { signalFinishedAgentRuns, startLostRuns } from './runs';
 import { fireDueSchedules } from './schedules';
+import { fireDueAgentHeartbeats } from '#modules/agents/core/heartbeats';
 import { fireDueSystemJobs } from './system-jobs';
 
 // The engine's own background passes, run by the api's background jobs. The quick pass
@@ -34,6 +35,7 @@ export async function engineTick(): Promise<void> {
   await recordServiceCheck('engine', null);
   await recordServiceCheck(`engine:${engineExecutorId()}`, null);
   await fireDueSchedules();
+  await fireDueAgentHeartbeats();
   await fireDueSystemJobs();
   await signalFinishedAgentRuns();
   await startLostRuns();

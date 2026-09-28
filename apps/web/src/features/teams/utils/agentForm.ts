@@ -17,6 +17,12 @@ export interface AgentFormValue {
   runtimePolicy: AgentRuntimePolicy;
   triggerOnMention: boolean;
   triggerOnAssign: boolean;
+  heartbeatIntervalMinutes: string;
+  heartbeatTimezone: string;
+  heartbeatDays: number[];
+  heartbeatStart: string;
+  heartbeatEnd: string;
+  heartbeatInstructions: string;
   // The member custom fields that start a run when the agent is set into one, each
   // with its own wait.
   fieldTriggers: FormFieldTrigger[];
@@ -80,6 +86,13 @@ export function initialAgentValue(agent?: AiAgent, projectId?: number): AgentFor
     },
     triggerOnMention: agent?.triggerOnMention ?? true,
     triggerOnAssign: agent?.triggerOnAssign ?? false,
+    heartbeatIntervalMinutes:
+      agent?.heartbeatIntervalMinutes == null ? '' : String(agent.heartbeatIntervalMinutes),
+    heartbeatTimezone: agent?.heartbeatTimezone ?? 'UTC',
+    heartbeatDays: agent?.heartbeatDays ?? [1, 2, 3, 4, 5],
+    heartbeatStart: agent?.heartbeatStart ?? '09:00',
+    heartbeatEnd: agent?.heartbeatEnd ?? '17:00',
+    heartbeatInstructions: agent?.heartbeatInstructions ?? '',
     fieldTriggers: (agent?.fieldTriggers ?? []).map((trigger) => ({
       fieldId: trigger.fieldId,
       delayMin: String(Math.round(trigger.delaySec / 60)),
@@ -112,6 +125,12 @@ export function maxConcurrentChatsFromInput(value: string): number {
   return Math.min(n, 20);
 }
 
+function heartbeatIntervalFromInput(value: string): number | null {
+  if (!value.trim()) return null;
+  const minutes = Number(value);
+  return Number.isFinite(minutes) ? Math.max(5, Math.min(10080, Math.round(minutes))) : null;
+}
+
 // The config shared by the create input and the edit patch: the projects, the run
 // triggers, the instructions, the scope of the runs the runner receives, and the model
 // and runtime policy the runner projects into the agent's runtime.
@@ -139,6 +158,12 @@ function configFields(v: AgentFormValue) {
     instructions: v.instructions.trim() || null,
     triggerOnMention: v.triggerOnMention,
     triggerOnAssign: v.triggerOnAssign,
+    heartbeatIntervalMinutes: heartbeatIntervalFromInput(v.heartbeatIntervalMinutes),
+    heartbeatTimezone: v.heartbeatTimezone.trim(),
+    heartbeatDays: v.heartbeatDays,
+    heartbeatStart: v.heartbeatStart,
+    heartbeatEnd: v.heartbeatEnd,
+    heartbeatInstructions: v.heartbeatInstructions,
     fieldTriggers: v.fieldTriggers.map((trigger) => ({
       fieldId: trigger.fieldId,
       delaySec: delaySecFromMinutes(trigger.delayMin),

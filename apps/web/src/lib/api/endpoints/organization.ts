@@ -99,6 +99,9 @@ export interface OrganizationAgent {
   role: AgentTeamRole | null;
   capabilities: string[];
   runtimeAgentId: string | null;
+  heartbeatIntervalMinutes?: number | null;
+  heartbeatLastAt?: string | null;
+  heartbeatNextAt?: string | null;
   runtimeState: {
     adapter: string | null;
     status: 'offline' | 'online' | 'degraded';

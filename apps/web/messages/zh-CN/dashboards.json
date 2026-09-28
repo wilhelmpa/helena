@@ -177,6 +177,7 @@
       "field": "因以下工作项的字段而运行：",
       "manual": "手动运行",
       "schedule": "按定时任务运行",
+      "heartbeat": "按心跳检查运行",
       "approval": "在审批决定后运行",
       "workspace": "执行了工作区任务",
       "digest": "写了摘要"

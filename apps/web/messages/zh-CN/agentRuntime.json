@@ -43,6 +43,7 @@
       "delegation": "委派的任务",
       "field": "字段变更",
       "schedule": "计划任务",
+      "heartbeat": "心跳检查",
       "manual": "手动任务",
       "approval": "审批决定",
       "workspace": "工作区任务",

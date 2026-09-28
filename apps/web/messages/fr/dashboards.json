@@ -177,6 +177,7 @@
       "field": "lancée sur un champ de",
       "manual": "lancée manuellement",
       "schedule": "lancée par planification",
+      "heartbeat": "exécuté par battement",
       "approval": "lancée après une décision d'approbation",
       "workspace": "a exécuté une tâche d’espace de travail",
       "digest": "a écrit un résumé"

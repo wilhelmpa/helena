@@ -43,6 +43,7 @@
       "delegation": "Tarefa delegada",
       "field": "Alteração de campo",
       "schedule": "Tarefa agendada",
+      "heartbeat": "Pulso",
       "manual": "Tarefa manual",
       "approval": "Decisão de aprovação",
       "workspace": "Tarefa do espaço de trabalho",

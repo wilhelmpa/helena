@@ -177,6 +177,7 @@
       "field": "lief nach Feldänderung in",
       "manual": "lief manuell",
       "schedule": "lief nach Zeitplan",
+      "heartbeat": "lief beim Heartbeat",
       "approval": "lief nach einer Freigabe-Entscheidung",
       "workspace": "lief als Arbeitsbereich-Auftrag",
       "digest": "schrieb eine Zusammenfassung"

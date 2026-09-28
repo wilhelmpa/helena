@@ -282,6 +282,14 @@ const configFields = {
     }),
   ),
   triggerOnAssign: t.Optional(t.Boolean({ description: 'Run when assigned to an issue.' })),
+  heartbeatIntervalMinutes: t.Optional(t.Nullable(t.Integer({ minimum: 5, maximum: 10080 }))),
+  heartbeatTimezone: t.Optional(t.String({ minLength: 1, maxLength: 100 })),
+  heartbeatDays: t.Optional(
+    t.Array(t.Integer({ minimum: 0, maximum: 6 }), { minItems: 1, maxItems: 7 }),
+  ),
+  heartbeatStart: t.Optional(t.String({ pattern: '^([01][0-9]|2[0-3]):[0-5][0-9]$' })),
+  heartbeatEnd: t.Optional(t.String({ pattern: '^([01][0-9]|2[0-3]):[0-5][0-9]$' })),
+  heartbeatInstructions: t.Optional(t.String({ maxLength: 16000 })),
   fieldTriggers: t.Optional(
     t.Array(
       t.Object({
@@ -370,6 +378,14 @@ export const AiAgentResponse = t.Object({
   runtimeState,
   triggerOnMention: t.Boolean(),
   triggerOnAssign: t.Boolean(),
+  heartbeatIntervalMinutes: t.Nullable(t.Number()),
+  heartbeatTimezone: t.String(),
+  heartbeatDays: t.Array(t.Number()),
+  heartbeatStart: t.String(),
+  heartbeatEnd: t.String(),
+  heartbeatInstructions: t.String(),
+  heartbeatLastAt: t.Nullable(t.String()),
+  heartbeatNextAt: t.Nullable(t.String()),
   fieldTriggers: t.Array(t.Object({ fieldId: t.Number(), name: t.String(), delaySec: t.Number() })),
   delegationDelaySec: t.Number(),
   maxConcurrentChats: t.Number(),

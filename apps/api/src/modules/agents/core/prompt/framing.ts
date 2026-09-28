@@ -46,7 +46,7 @@ export interface RunForPrompt {
 // text and applies even when a schedule's task prompt is vague.
 export function runModePreamble(trigger: RunForPrompt['trigger']): string {
   const lines = ['## Run mode'];
-  if (trigger === 'schedule' || trigger === 'manual') {
+  if (trigger === 'schedule' || trigger === 'manual' || trigger === 'heartbeat') {
     lines.push(
       'This run was started automatically on a schedule, not by a person. No human is',
       'watching it and no one will answer questions. Complete the task with your tools,',
@@ -69,7 +69,7 @@ export function runModePreamble(trigger: RunForPrompt['trigger']): string {
 }
 
 export function framePrompt(run: RunForPrompt): string {
-  if (run.trigger === 'schedule' || run.trigger === 'manual') {
+  if (run.trigger === 'schedule' || run.trigger === 'manual' || run.trigger === 'heartbeat') {
     return `Carry out the following task:\n\n${run.prompt}`;
   }
   const ref = run.issueIdentifier ?? `#${run.issueId}`;

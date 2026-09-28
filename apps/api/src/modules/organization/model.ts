@@ -154,6 +154,9 @@ const OrganizationAgentResponse = t.Object({
   role: t.Nullable(agentTeamRole),
   capabilities: t.Array(t.String()),
   runtimeAgentId: t.Nullable(t.String()),
+  heartbeatIntervalMinutes: t.Nullable(t.Number()),
+  heartbeatLastAt: t.Nullable(t.String()),
+  heartbeatNextAt: t.Nullable(t.String()),
   runtimeState: t.Object({
     adapter: t.Nullable(t.String()),
     status: t.Union([t.Literal('offline'), t.Literal('online'), t.Literal('degraded')]),
