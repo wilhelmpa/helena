@@ -470,7 +470,11 @@ export function createProjectBrowserRouter(options = {}) {
           (request.method === "GET" && target.api === "tabs");
         if (uses && options.idle) {
           options.idle.record?.(target.slug, target.cdpPort);
-          await options.idle.wake(target.slug);
+          const ready = await options.idle.wake(target.slug);
+          // A browser that should have started and did not is not asked anything.
+          if (ready === false && !browserRuns(options.idle, target.slug)) {
+            return sendJson(response, 503, { error: "The browser did not start" });
+          }
         }
         if (resources.stopping) return response.destroy();
         return await handleControl(request, response, target, settingsRoot, options.idle);

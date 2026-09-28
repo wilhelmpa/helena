@@ -1170,7 +1170,7 @@ describe("project browser router", () => {
   });
 
   it("reports a browser that did not start to the live view and closes it", async () => {
-    await state("demo", 16000, 19201);
+    await state("demo", 16000, 1);
     router = createProjectBrowserRouter({
       root,
       idle: { running: () => false, record() {}, wake: async () => false, view() {} },
@@ -1189,7 +1189,11 @@ describe("project browser router", () => {
   });
 
   it("neither pictures nor lists a stopped browser in the overview, and its tab list starts it", async () => {
-    await state("demo", 16000, 19201);
+    // A port nothing listens on: a stopped browser's DevTools.
+    const closed = http.createServer();
+    const unused = await listen(closed);
+    await new Promise((resolve) => closed.close(resolve));
+    await state("demo", 16000, unused);
     const woken = [];
     router = createProjectBrowserRouter({
       root,
@@ -1207,7 +1211,7 @@ describe("project browser router", () => {
     assert.equal(overview.browsers[0].reachable, false);
     assert.equal((await fetch(`${base}/projects/demo/api/thumbnail`)).status, 404);
     assert.deepEqual(woken, []);
-    await fetch(`${base}/projects/demo/api/tabs`);
+    assert.equal((await fetch(`${base}/projects/demo/api/tabs`)).status, 503);
     assert.deepEqual(woken, ["demo"]);
     // The desktop view's page needs the display: a browser that does not start answers 503.
     assert.equal((await fetch(`${base}/projects/demo/vnc.html`)).status, 503);
