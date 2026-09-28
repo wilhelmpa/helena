@@ -485,7 +485,12 @@ async function evaluateInto(
 
 // Starts the eval of a class on a local model and answers its row, still `running`. One eval
 // of a class and model at a time.
-export async function startEval(input: { classId: string; modelId: string; userId: string }) {
+export async function startEval(input: {
+  classId: string;
+  modelId: string;
+  // Who asked; null for a maintenance script.
+  userId: string | null;
+}) {
   const entry = taskClass(input.classId);
   if (!entry) throw new HttpError(404, 'No such task class');
   if (!entry.evaluate) throw new HttpError(400, 'This task class has no eval yet');
