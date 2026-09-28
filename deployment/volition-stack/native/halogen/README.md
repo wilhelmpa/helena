@@ -3,6 +3,12 @@
 Decision and reasons: `docs/helena-decisions/halogen.md`. An optional host service like Lemonade:
 Helena works unchanged without it (every class falls back to its configured model).
 
+Host memory policy, measured limits, kernel research and maintenance steps:
+[kernel.md](kernel.md). `install` writes and applies the scoped sysctl/THP files;
+`status` compares installed files and runtime values. The unit enables weight mlock
+at its next start, including with an existing settings file; that file can override it.
+Kernel boot arguments remain a separate manual decision.
+
 | File | What it is |
 |---|---|
 | `install.sh` | status, install (image by digest, MTP head and tokenizer, settings, network, firewall, unit, forwarders), weights check/pull, verify, cache status/clear, uninstall |

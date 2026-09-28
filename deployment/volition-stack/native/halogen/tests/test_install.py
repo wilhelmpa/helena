@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import os
+import pwd
 import re
 import shutil
 import subprocess
@@ -257,6 +258,96 @@ class HalogenInstallTest(unittest.TestCase):
         result = run('install', root=self.root)
         self.assertNotEqual(result.returncode, 0)
         self.assertEqual(list(Path(self.root).iterdir()), [])
+
+    def test_host_policy_install_is_scoped_and_dry_run_does_not_write(self):
+        out = self.dry('install')
+        for path in ('etc/sysctl.d/60-helena-halogen.conf', 'etc/tmpfiles.d/60-helena-thp.conf'):
+            self.assertIn(f'would write {self.root}/{path} (0644 root:root)', out)
+            self.assertFalse(Path(self.root, path).exists())
+        self.assertIn(f'would: sysctl -p {self.root}/etc/sysctl.d/60-helena-halogen.conf', out)
+        self.assertIn(f'would: systemd-tmpfiles --create {self.root}/etc/tmpfiles.d/60-helena-thp.conf', out)
+        for forbidden in ('sysctl --system', 'update-grub', 'compact_memory', 'drop_caches'):
+            self.assertNotIn(forbidden, out)
+        self.assertNotIn('would: systemctl restart helena-halogen', out)
+
+    def test_weights_lock_default_survives_existing_settings_file(self):
+        unit = self.render('unit')
+        self.assertIn('LimitMEMLOCK=infinity', unit)
+        self.assertIn('--ulimit memlock=-1:-1', unit)
+        self.assertIn('Environment=HALOGEN_WEIGHTS_LOCK=1', unit)
+        self.assertIn('-e HALOGEN_WEIGHTS_LOCK', unit)
+        self.assertLess(unit.index('Environment=HALOGEN_WEIGHTS_LOCK=1'), unit.index('EnvironmentFile='))
+        conf = Path(self.root, 'etc/helena/halogen.conf')
+        conf.parent.mkdir(parents=True)
+        conf.write_text('HALOGEN_WEIGHTS_LOCK=0\n')
+        out = self.dry('install')
+        self.assertIn(f'have {conf}', out)
+        self.assertNotIn(f'would write {conf}', out)
+        self.assertEqual(conf.read_text(), 'HALOGEN_WEIGHTS_LOCK=0\n')
+
+    def test_status_detects_persisted_and_runtime_drift_independently(self):
+        def place(path, text):
+            target = Path(self.root, path)
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text(text)
+            return target
+
+        stub = place('bin/readonly-stub', '#!/bin/sh\nexit 0\n')
+        stub.chmod(0o755)
+        for name in ('systemctl', 'nft', 'curl'):
+            Path(self.root, 'bin', name).symlink_to(stub)
+        env = {'PATH': str(stub.parent) + os.pathsep + os.environ['PATH']}
+        for filename, folder in (('60-helena-halogen.conf', 'sysctl.d'), ('60-helena-thp.conf', 'tmpfiles.d')):
+            place(f'etc/{folder}/{filename}', (HERE.parent / filename).read_text())
+        for key, value in (('compaction_proactiveness', '0'), ('min_free_kbytes', '1048576'), ('swappiness', '10')):
+            place(f'proc/sys/vm/{key}', value + '\n')
+        for setting in ('enabled', 'defrag'):
+            place(f'sys/kernel/mm/transparent_hugepage/{setting}', 'always [madvise] never\n')
+        place('proc/cmdline', 'quiet ttm.pages_limit=31457280 amdgpu.noretry=0 iommu=pt\n')
+        for name in ('memory.high', 'memory.max'):
+            place('sys/fs/cgroup/system.slice/helena-halogen.service/' + name, 'max\n')
+        place('proc/123/comm', 'flash_serve\n')
+        place('proc/123/cgroup', '0::/system.slice/helena-halogen.service/libpod-payload-test\n')
+        place('proc/123/status', 'VmLck:\t75000000 kB\n')
+        place('proc/123/limits', 'Max locked memory         unlimited            unlimited            bytes\n')
+        good = run('status', root=self.root, env=env)
+        self.assertEqual(good.returncode, 0, good.stderr)
+        self.assertNotIn('DRIFT', good.stdout)
+        self.assertIn('engine.memlock.soft:hard=unlimited:unlimited', good.stdout)
+        place('proc/sys/vm/swappiness', '60\n')
+        place('sys/kernel/mm/transparent_hugepage/defrag', '[always] madvise never\n')
+        place('proc/cmdline', 'iommu=pt-other ttm.pages_limit=314572800\n')
+        place('proc/123/status', 'VmLck:\t0 kB\n')
+        place('proc/123/limits', 'Max locked memory         8388608              8388608              bytes\n')
+        place('sys/fs/cgroup/system.slice/helena-halogen.service/memory.high', '1000000\n')
+        bad = run('status', root=self.root, env=env)
+        self.assertEqual(bad.returncode, 0, bad.stderr)
+        for message in ('vm.swappiness=60; expected 10', 'THP.defrag=always; expected madvise',
+                        'kernel cmdline lacks iommu=pt', 'kernel cmdline lacks ttm.pages_limit=31457280',
+                        'weights not confirmed mlocked', 'engine.memlock.soft:hard=8388608:8388608',
+                        'memory.high=1000000; expected max'):
+            self.assertIn(message, bad.stdout)
+        self.assertIn('60-helena-halogen.conf current', bad.stdout)
+        persisted = place('etc/sysctl.d/60-helena-halogen.conf', 'vm.swappiness = 60\n')
+        drift = run('status', root=self.root, env=env)
+        self.assertIn(f'{persisted} missing or differs', drift.stdout)
+        self.assertEqual(persisted.read_text(), 'vm.swappiness = 60\n')
+        persisted.unlink()
+        Path(self.root, 'sys/kernel/mm/transparent_hugepage/enabled').unlink()
+        shutil.rmtree(Path(self.root, 'proc/123'))
+        missing = run('status', root=self.root, env=env)
+        self.assertEqual(missing.returncode, 0, missing.stderr)
+        self.assertIn(f'{persisted} missing or differs', missing.stdout)
+        self.assertIn('THP.enabled=unavailable; expected madvise', missing.stdout)
+        self.assertIn('engine:        unavailable', missing.stdout)
+
+    def test_uninstall_retains_host_policy_even_with_purge(self):
+        out = self.dry('--purge', 'uninstall')
+        self.assertIn('kept host policy:', out)
+        for line in out.splitlines():
+            if line.startswith('would: rm'):
+                self.assertNotIn('60-helena-halogen.conf', line)
+                self.assertNotIn('60-helena-thp.conf', line)
 
 
 class ProxyUnitsTest(unittest.TestCase):
