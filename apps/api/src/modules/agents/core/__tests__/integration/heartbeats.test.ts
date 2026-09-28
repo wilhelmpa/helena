@@ -1,11 +1,21 @@
 import { beforeEach, describe, expect, it } from 'bun:test';
-import { agentHeartbeatEvent, agentRun, aiAgent, db } from '@repo/db';
+import { createServer } from 'node:http';
+import {
+  agentHeartbeatEvent,
+  agentRun,
+  aiAgent,
+  db,
+  helenaDecision,
+  helenaDecisionEval,
+  projectColumn,
+} from '@repo/db';
 import { eq } from 'drizzle-orm';
 import { authedApi } from '#tests/helpers/app';
 import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
 import { createAgent } from '#tests/helpers/agents';
 import { fireDueAgentHeartbeats } from '../../heartbeats';
+import { HEARTBEAT_PRECHECK_CLASS, LOCAL_DECISION_MODEL } from '#modules/decisions/classes';
 
 const now = new Date('2026-09-28T12:00:00.000Z');
 
@@ -131,5 +141,118 @@ describe('agent heartbeats', () => {
       .where(eq(aiAgent.id, agent.id));
     await fireDueAgentHeartbeats(now);
     expect(await db.select().from(agentHeartbeatEvent)).toMatchObject([{ reason: 'new comment' }]);
+  });
+
+  it('records an evaluated local no and skips one low backlog task', async () => {
+    const { api, project, agent } = await setup();
+    const issue = (
+      await api.projects({ projectKey: 'MKT' }).issues.post({
+        columnId: project.columns[0].id,
+        title: 'Optionales Aufräumen bei Gelegenheit',
+        priority: 'low',
+      })
+    ).data!;
+    await api.issues({ issueId: issue.id }).patch({ delegateUserId: agent.userId });
+    await db
+      .update(projectColumn)
+      .set({ stateType: 'backlog' })
+      .where(eq(projectColumn.id, project.columns[0].id));
+
+    let noProbability = 0.99;
+    const server = createServer(async (request, response) => {
+      let raw = '';
+      for await (const chunk of request) raw += chunk.toString();
+      const body = JSON.parse(raw) as { messages: { content: string }[] };
+      const user = JSON.parse(body.messages[1]!.content) as {
+        options: { letter: string; option: string }[];
+      };
+      const top = user.options.map((entry) => ({
+        token: entry.letter,
+        prob: entry.option.startsWith('no:') ? noProbability : 1 - noProbability,
+      }));
+      response.writeHead(200, { 'content-type': 'application/json' });
+      response.end(
+        JSON.stringify({
+          model: LOCAL_DECISION_MODEL,
+          choices: [{ logprobs: { content: [{ token: top[0]!.token, top_probs: top }] } }],
+          usage: { prompt_tokens: 20, completion_tokens: 1 },
+        }),
+      );
+    });
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+    try {
+      const port = (server.address() as { port: number }).port;
+      const credential = await api.teams({ teamId: agent.teamId }).credentials.post({
+        kind: 'decision_model',
+        label: 'Local Qwen test double',
+        provider: 'local-logit',
+        baseUrl: `http://127.0.0.1:${port}`,
+        model: LOCAL_DECISION_MODEL,
+        allowPrivateAddress: true,
+        value: 'codex72-test-key',
+      });
+      expect(credential.status).toBe(201);
+      await db.insert(helenaDecisionEval).values({
+        teamId: agent.teamId,
+        classId: HEARTBEAT_PRECHECK_CLASS,
+        credentialId: credential.data!.id,
+        backendLabel: 'test double',
+        threshold: 0.8,
+        questions: 60,
+        answered: 60,
+        correct: 60,
+        correctAnswered: 60,
+        precision: 1,
+        coverage: 1,
+        accuracy: 1,
+        passed: true,
+        finishedAt: new Date(),
+      });
+      const enabled = await api
+        .teams({ teamId: agent.teamId })
+        .decisions.classes({ classId: HEARTBEAT_PRECHECK_CLASS })
+        .patch({ credentialId: credential.data!.id, enabled: true });
+      expect(enabled.status).toBe(200);
+      expect(await fireDueAgentHeartbeats(now)).toBe(1);
+      expect(await db.select().from(agentRun)).toHaveLength(1);
+      expect((await db.select().from(agentHeartbeatEvent))[0]?.reason).toContain(
+        'precheck decided: no',
+      );
+      expect((await db.select().from(agentHeartbeatEvent))[0]?.reason).toContain('[shadow]');
+      expect(await db.select().from(helenaDecision)).toMatchObject([
+        { classId: HEARTBEAT_PRECHECK_CLASS },
+      ]);
+
+      await db.delete(agentRun);
+      await db
+        .update(helenaDecision)
+        .set({ createdAt: new Date(now.getTime() - 8 * 24 * 60 * 60_000) })
+        .where(eq(helenaDecision.classId, HEARTBEAT_PRECHECK_CLASS));
+      await api
+        .teams({ teamId: agent.teamId })
+        .decisions.classes({ classId: HEARTBEAT_PRECHECK_CLASS })
+        .patch({ config: { heartbeatMode: 'active' } });
+      await db.update(aiAgent).set({ heartbeatNextAt: now }).where(eq(aiAgent.id, agent.id));
+      expect(await fireDueAgentHeartbeats(now)).toBe(1);
+      expect(await db.select().from(agentRun)).toHaveLength(0);
+      expect(
+        (await db.select().from(agentHeartbeatEvent)).some(
+          (event) => event.reason.includes('precheck decided: no') && event.outcome === 'skipped',
+        ),
+      ).toBe(true);
+
+      // The same low-priority task must run when the model cannot decide confidently.
+      noProbability = 0.55;
+      await db.update(aiAgent).set({ heartbeatNextAt: now }).where(eq(aiAgent.id, agent.id));
+      expect(await fireDueAgentHeartbeats(now)).toBe(1);
+      expect(await db.select().from(agentRun)).toHaveLength(1);
+      expect(
+        (await db.select().from(agentHeartbeatEvent)).some((event) =>
+          event.reason.includes('precheck unsure: no'),
+        ),
+      ).toBe(true);
+    } finally {
+      server.close();
+    }
   });
 });
