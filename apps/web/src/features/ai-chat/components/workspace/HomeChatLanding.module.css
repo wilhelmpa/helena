@@ -239,6 +239,19 @@
   padding: 0;
 }
 
+@container composer (max-width: 600px) {
+  .pill {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+    padding: 8px 8px 8px 14px;
+  }
+
+  .pill :global([data-slot='input-group-control']),
+  .pill :global([data-align='block-end']) {
+    grid-column: 1;
+  }
+}
+
 .composer :global([data-slot='input-group-control']) {
   color: #eeeaf6;
   font-size: 15px;
