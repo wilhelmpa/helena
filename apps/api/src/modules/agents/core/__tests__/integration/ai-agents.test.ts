@@ -885,6 +885,7 @@ describe('ai agents', () => {
     // These owner UI/history/runtime routes intentionally stay out of agent tools.
     // Keep the exact list so accidental exposure or loss of an MCP tag fails this test.
     expect(untagged).toEqual([
+      'GET /teams/:teamId/ai-agents/:agentId/heartbeats',
       'GET /teams/:teamId/ai-agents/:agentId/runs',
       'GET /teams/:teamId/ai-agents/:agentId/threads',
       'PUT /teams/:teamId/ai-agents/:agentId/threads/:threadId/favorite',
