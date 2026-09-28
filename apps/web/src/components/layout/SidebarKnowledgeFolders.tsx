@@ -75,7 +75,7 @@ function FolderNode({
   return (
     <div>
       <div
-        className={`helena-tree-parent group ${over ? 'bg-[#26212d]' : ''}`}
+        className={`helena-tree-parent group ${over ? 'bg-accent' : ''}`}
         style={{ paddingInlineStart: depth * 16 }}
         onDragOver={(event) => {
           if (!canWrite) return;
