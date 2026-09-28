@@ -6,7 +6,6 @@ import { ChevronDown, Plus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { Project } from '@/lib/api/endpoints/projects';
 import { projectTree } from '@/utils/projectTree';
-import { runtimeEnv } from '@/utils/runtimeEnv';
 import { projectColor } from '@/utils/projectColor';
 import ProjectTreeGroup from './ProjectTreeGroup';
 import ProjectTreeItem from './ProjectTreeItem';
@@ -34,10 +33,8 @@ export default function SidebarProjectSwitcher({
   const t = useTranslations('nav');
   const newProjectT = useTranslations('newProject');
   const project = projects.find((item) => item.key === currentProjectKey);
-  const { groups, ungrouped } = projectTree(
-    projects.filter((item) => item.key !== runtimeEnv().workspace.homeChatProjectKey),
-  );
-  const color = project ? projectColor(project.key) : '#bdaaff';
+  const { groups, ungrouped } = projectTree(projects.filter((item) => item.projectRole !== 'home'));
+  const color = project && project.projectRole !== 'home' ? projectColor(project.key) : '#bdaaff';
   const [open, setOpen] = useState(false);
   const [dragging, setDragging] = useState(false);
   const select = (key: string) => {
@@ -58,9 +55,11 @@ export default function SidebarProjectSwitcher({
             style={{ background: color, boxShadow: `0 0 10px ${color}` }}
           />
           <span className="min-w-0 flex-1 truncate text-start">
-            {project?.name ?? t('sidebarHome')}
+            {project && project.projectRole !== 'home' ? project.name : t('sidebarHome')}
           </span>
-          <span className="helena-project-key">{project?.key ?? t('sidebarAll')}</span>
+          <span className="helena-project-key">
+            {project && project.projectRole !== 'home' ? project.key : t('sidebarAll')}
+          </span>
           <ChevronDown size={14} aria-hidden="true" />
         </button>
       </DropdownMenuTrigger>

@@ -12,7 +12,6 @@ import { and, asc, eq, sql } from 'drizzle-orm';
 import { HttpError } from '#shared/lib';
 import { projectSlug } from '#shared/agent-socket';
 import { enqueueAgentRun } from '#modules/agents/core/run-queue';
-import { HOME_AGENT_USERNAME } from '#modules/agents/core/home-agent';
 import { projectRoot } from '#modules/project-files/roots';
 
 // "Repo in Bereichsordner klonen": the owner picks an SSH key, a project area and a
@@ -167,7 +166,7 @@ export async function startClone(
 // that works in several, and the Home agent last.
 function cloneAgentRank() {
   return sql`case
-    when lower(${aiAgent.username}) = ${HOME_AGENT_USERNAME} then 3
+    when ${aiAgent.agentRole} = 'home' then 3
     when exists (select 1 from ${organizationAgentAssignment} oa where oa.agent_id = ${aiAgent.id} and oa.role = 'coordinator') then 0
     when (select count(*) from ${projectMember} pm where pm.user_id = ${aiAgent.userId}) = 1 then 1
     else 2

@@ -157,6 +157,7 @@ export async function pickDigestAgent(settings: UpdateSettings): Promise<DigestA
     .select({
       id: aiAgent.id,
       username: aiAgent.username,
+      agentRole: aiAgent.agentRole,
       userId: aiAgent.userId,
       runtimeState: aiAgent.runtimeState,
       lastSeenAt: aiAgent.lastSeenAt,
@@ -181,7 +182,7 @@ export async function pickDigestAgent(settings: UpdateSettings): Promise<DigestA
   });
   const chosen =
     hermes.find((row) => row.id === settings.agentId) ??
-    hermes.find((row) => isHomeAgent(row.username)) ??
+    hermes.find((row) => isHomeAgent(row.agentRole)) ??
     hermes[0];
   if (!chosen) return null;
   const [membership] = await db

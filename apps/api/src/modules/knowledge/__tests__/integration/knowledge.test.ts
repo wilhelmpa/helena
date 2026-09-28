@@ -427,6 +427,24 @@ describe('knowledge', () => {
       const root = await asHome.knowledge.folders.get({ query: {} });
       expect(root.data?.items.map((item) => item.name)).not.toContain('Private');
     });
+
+    it('lets an all-project agent read project knowledge without entering Home or Private', async () => {
+      const { asOwner } = await setup();
+      const project = await asOwner.projects.post({ key: 'OPS', name: 'Operations' });
+      const teamId = project.data!.teamId;
+      await write(asOwner, 'Projects/OPS/Docs/Plan.md', 'Plan');
+      await write(asOwner, 'Home/Docs/Owner.md', 'Owner');
+      await write(asOwner, 'Private/Diary.md', 'Diary');
+      const created = await asOwner.teams({ teamId })['ai-agents'].post({
+        name: 'Global reader',
+        username: 'global-reader',
+        projectScope: 'all',
+      });
+      const asAgent = apiKeyApi(created.data!.apiKey!);
+      expect((await read(asAgent, 'Projects/OPS/Docs/Plan.md')).status).toBe(200);
+      expect((await read(asAgent, 'Home/Docs/Owner.md')).status).toBe(403);
+      expect((await read(asAgent, 'Private/Diary.md')).status).toBe(403);
+    });
   });
 
   describe('history', () => {

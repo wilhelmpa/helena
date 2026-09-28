@@ -137,7 +137,9 @@ export default function TeamAiAgentFields({
       {value.projectId == null && (
         <AgentTemplateField
           checked={value.template}
-          onChange={(template) => onChange({ template })}
+          onChange={(template) =>
+            onChange({ template, projectScope: template ? 'selected' : value.projectScope })
+          }
         />
       )}
       {agent && <AgentTemplateDriftSection agent={agent} />}

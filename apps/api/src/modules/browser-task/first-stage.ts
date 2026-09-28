@@ -56,7 +56,7 @@ async function connectionVersion(connection: DecisionConnection): Promise<string
 async function callerAllowed(caller: Caller): Promise<boolean> {
   if (!caller.agentId || (!caller.chatMessageId && !caller.runId)) return false;
   const [agent] = await db
-    .select({ userId: aiAgent.userId, username: aiAgent.username })
+    .select({ userId: aiAgent.userId, username: aiAgent.username, agentRole: aiAgent.agentRole })
     .from(aiAgent)
     .innerJoin(user, eq(user.id, aiAgent.userId))
     .where(
@@ -64,7 +64,7 @@ async function callerAllowed(caller: Caller): Promise<boolean> {
     );
   if (!agent || !(await browserGatewayEnabledForAgent(caller.agentId, caller.teamId))) return false;
   if (caller.projectId === null) {
-    if (!isHomeAgent(agent.username)) return false;
+    if (!isHomeAgent(agent.agentRole)) return false;
   } else {
     const [membership] = await db
       .select({ id: project.id })

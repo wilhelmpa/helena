@@ -93,7 +93,7 @@ export default function AppSidebar({
             onDeleteView={onDeleteView}
           />
         ) : (
-          <SidebarHomeTree teamId={homeTeamId} />
+          <SidebarHomeTree teamId={homeTeamId} isGod={mounted && session?.user.role === 'god'} />
         )}
       </SidebarContent>
       <SidebarFooter className="helena-sidebar-footer">

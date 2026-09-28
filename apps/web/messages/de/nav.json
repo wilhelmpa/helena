@@ -226,5 +226,9 @@
     "resizeArea": "Breite ändern"
   },
   "receipts": "Belege",
-  "browserLab": "Browser 2.0"
+  "browserLab": "Browser 2.0",
+  "sidebarAllProjects": "Alle Projekte",
+  "sidebarSystem": "System",
+  "sidebarHomeAgent": "Home-Agent",
+  "sidebarGlobalStandards": "Globale Standards"
 }

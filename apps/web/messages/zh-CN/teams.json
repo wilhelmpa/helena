@@ -795,7 +795,9 @@
         "reasoning": "推理"
       }
     },
-    "chatTemplate": "模板本身不会运行。将它作为智能体添加到项目后即可在这里试用。"
+    "chatTemplate": "模板本身不会运行。将它作为智能体添加到项目后即可在这里试用。",
+    "allProjectsScope": "Project scope: all",
+    "allProjectsScopeHint": "May work in every current and future project of this team."
   },
   "members": {
     "roleSaved": "{name} 现在是{role}",

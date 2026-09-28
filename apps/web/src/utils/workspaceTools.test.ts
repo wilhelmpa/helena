@@ -22,14 +22,14 @@ const config: WorkspaceRuntimeEnv = {
 };
 
 describe('workspaceTools', () => {
-  it('uses the global master agent outside a project', () => {
-    assert.equal(preferredAgentUsername(null), 'master');
+  it('uses the explicit Home role outside a project', () => {
+    assert.equal(preferredAgentUsername(null), '');
     assert.equal(workspaceTools(config, null).chat.url, '');
   });
 
-  it('anchors the native Home chat while preserving its master agent', () => {
+  it('anchors the native Home chat without choosing an agent by handle', () => {
     assert.equal(nativeChatProjectKey(config, null), 'PRIV');
-    assert.equal(preferredAgentUsername(null), 'master');
+    assert.equal(preferredAgentUsername(null), '');
     assert.equal(nativeChatProjectKey(config, 'verv'), 'VERV');
     assert.equal(preferredAgentUsername('VERV'), 'hermes-verve-coordinator');
   });

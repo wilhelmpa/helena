@@ -6,12 +6,17 @@ import { sql } from 'drizzle-orm';
 // a project leave it out.
 export const HOME_AGENT_USERNAME = 'master';
 
-export function isHomeAgent(username: string): boolean {
+export function isHomeAgent(role: string): boolean {
+  return role === 'home';
+}
+
+// Only the mention address is reserved by name. Access decisions use agentRole.
+export function isHomeHandle(username: string): boolean {
   return username.toLowerCase() === HOME_AGENT_USERNAME;
 }
 
 // isHomeAgent as a condition on a query that reads ai_agent. A row without an agent,
 // such as a person's membership read through a left join, passes.
 export function notHomeAgent() {
-  return sql`coalesce(lower(${aiAgent.username}), '') <> ${HOME_AGENT_USERNAME}`;
+  return sql`coalesce(${aiAgent.agentRole}, 'agent') <> 'home'`;
 }

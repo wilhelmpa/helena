@@ -46,8 +46,11 @@ export default function TeamAiAgents() {
   useEffect(() => {
     const requested = searchParams.get('agent');
     if (!requested || agentsQuery.isPending) return;
-    const id = Number(requested);
-    if (agents.some((a) => a.id === id)) {
+    const id =
+      requested === 'home'
+        ? agents.find((agent) => agent.agentRole === 'home')?.id
+        : Number(requested);
+    if (id != null && agents.some((a) => a.id === id)) {
       setEditingId(id);
       setOpenSection(searchParams.get('section') ?? undefined);
       setOpenTab(searchParams.get('tab') ?? undefined);

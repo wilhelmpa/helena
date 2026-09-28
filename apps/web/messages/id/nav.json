@@ -226,5 +226,9 @@
     "resizeArea": "Ubah lebar"
   },
   "receipts": "Bukti",
-  "browserLab": "Browser 2.0"
+  "browserLab": "Browser 2.0",
+  "sidebarAllProjects": "All projects",
+  "sidebarSystem": "System",
+  "sidebarHomeAgent": "Home agent",
+  "sidebarGlobalStandards": "Global standards"
 }

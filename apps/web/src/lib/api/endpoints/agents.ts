@@ -177,6 +177,8 @@ export type TemplateFieldGroup =
 export interface AiAgent {
   id: number;
   teamId: number;
+  agentRole: 'agent' | 'home';
+  projectScope: 'selected' | 'all';
   // The projects of the team the agent works in. One key reaches every one of them.
   projects: AgentProject[];
   userId: string;
@@ -285,6 +287,7 @@ export interface NewAiAgentInput {
   delegationDelaySec?: number;
   maxConcurrentChats?: number;
   projectIds?: number[];
+  projectScope?: 'selected' | 'all';
   // The project the agent is created in, in place of projectIds: it works there only,
   // as a specialist reporting to the project's coordinator.
   projectId?: number;
@@ -304,6 +307,7 @@ export interface AiAgentPatch {
   delegationDelaySec?: number;
   maxConcurrentChats?: number;
   projectIds?: number[];
+  projectScope?: 'selected' | 'all';
   runnerScope?: 'owner' | 'team';
   template?: boolean;
 }

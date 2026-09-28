@@ -795,7 +795,9 @@
         "reasoning": "reasoning"
       }
     },
-    "chatTemplate": "A template does not run. Add it to a project as an agent to try it here."
+    "chatTemplate": "A template does not run. Add it to a project as an agent to try it here.",
+    "allProjectsScope": "Project scope: all",
+    "allProjectsScopeHint": "May work in every current and future project of this team."
   },
   "members": {
     "roleSaved": "{name} is now {role}",

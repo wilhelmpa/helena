@@ -15,7 +15,6 @@ import {
 } from '@repo/db';
 import { and, asc, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
 import { HttpError } from '#shared/lib';
-import { isHomeAgent } from '#modules/agents/core/home-agent';
 import {
   departmentsWithAncestors,
   goalPath,
@@ -43,11 +42,17 @@ interface CallerAgent {
   id: number;
   userId: string;
   username: string;
+  projectScope: string;
 }
 
 async function callerAgent(caller: GoalCaller): Promise<CallerAgent | null> {
   const [row] = await db
-    .select({ id: aiAgent.id, userId: aiAgent.userId, username: aiAgent.username })
+    .select({
+      id: aiAgent.id,
+      userId: aiAgent.userId,
+      username: aiAgent.username,
+      projectScope: aiAgent.projectScope,
+    })
     .from(aiAgent)
     .where(and(eq(aiAgent.userId, caller.userId), eq(aiAgent.teamId, caller.teamId)));
   return row ?? null;
@@ -107,7 +112,7 @@ async function agentReach(
 async function readableGoals(caller: GoalCaller) {
   const goals = await teamGoals(caller.teamId);
   const agent = await callerAgent(caller);
-  if (!agent || isHomeAgent(agent.username)) return { goals, visible: null, agent };
+  if (!agent || agent.projectScope === 'all') return { goals, visible: null, agent };
   const reach = await agentReach(caller.teamId, agent.userId);
   return { goals, visible: visibleGoalIds(goals, { all: false, ...reach }), agent };
 }
@@ -618,12 +623,13 @@ export async function activeGoalsForAgent(agent: {
   teamId: number;
   userId: string;
   username: string;
+  projectScope: string;
 }): Promise<SoulGoal[]> {
   const goals = await teamGoals(agent.teamId);
   const active = goals.filter((goal) => goal.status === 'active');
   if (active.length === 0) return [];
   const byId = new Map(goals.map((goal) => [goal.id, goal]));
-  const home = isHomeAgent(agent.username);
+  const home = agent.projectScope === 'all';
   const reach = home ? null : await agentReach(agent.teamId, agent.userId);
   const concerning = reach
     ? active.filter((goal) =>

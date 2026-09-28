@@ -795,7 +795,9 @@
         "reasoning": "الاستدلال"
       }
     },
-    "chatTemplate": "القالب لا يعمل بنفسه. أضفه إلى مشروع كوكيل لتجربته هنا."
+    "chatTemplate": "القالب لا يعمل بنفسه. أضفه إلى مشروع كوكيل لتجربته هنا.",
+    "allProjectsScope": "Project scope: all",
+    "allProjectsScopeHint": "May work in every current and future project of this team."
   },
   "members": {
     "roleSaved": "{name} الآن {role}",

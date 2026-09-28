@@ -24,9 +24,11 @@ export function useChatWorkspaceScope(projectKey: string | null) {
   const desiredUsername = preferredAgentUsername(projectKey);
   const agents = useMemo(() => {
     const usable = (agentsQuery.data ?? []).filter((agent) => !agent.template);
-    const desired = usable.find((agent) => agent.username === desiredUsername);
+    const desired = projectKey
+      ? usable.find((agent) => agent.username === desiredUsername)
+      : usable.find((agent) => agent.agentRole === 'home');
     return desired ? [desired, ...usable.filter((agent) => agent.id !== desired.id)] : usable;
-  }, [agentsQuery.data, desiredUsername]);
+  }, [agentsQuery.data, desiredUsername, projectKey]);
   const scopeKey = projectKey ?? (homeTeamId == null ? null : `team:${homeTeamId}`);
   const loading = teams.isLoading || project.isLoading || agentsQuery.isLoading;
 

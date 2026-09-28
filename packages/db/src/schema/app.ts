@@ -123,50 +123,62 @@ export const teamMember = pgTable(
 // issues. next_sequence is the atomic counter behind each issue's human
 // identifier (e.g. "MKT-42"): incrementing it under a row lock keeps concurrent
 // creates from colliding.
-export const project = pgTable('project', {
-  id: serial('id').primaryKey(),
-  teamId: integer('team_id')
-    .notNull()
-    .references(() => team.id, { onDelete: 'cascade' }),
-  key: text('key').notNull().unique(),
-  name: text('name').notNull(),
-  description: text('description').notNull().default(''),
-  nextSequence: integer('next_sequence').notNull().default(1),
-  // Whether this project is in the team's MCP reach. Managed from the team's MCP
-  // settings, not from the project, and only counts while team.mcp_enabled is on.
-  // The starting value is the instance-wide project default set in god mode.
-  mcpEnabled: boolean('mcp_enabled').notNull().default(false),
-  // Optional sections of the app, toggled per project in Settings -> Features. All
-  // on by default. Turning one off only hides its UI; the rows it owns stay and
-  // come back with it.
-  initiativesEnabled: boolean('initiatives_enabled').notNull().default(true),
-  dashboardsEnabled: boolean('dashboards_enabled').notNull().default(true),
-  documentsEnabled: boolean('documents_enabled').notNull().default(true),
-  notesEnabled: boolean('notes_enabled').notNull().default(true),
-  cyclesEnabled: boolean('cycles_enabled').notNull().default(true),
-  subtasksEnabled: boolean('subtasks_enabled').notNull().default(true),
-  checklistsEnabled: boolean('checklists_enabled').notNull().default(true),
-  issueStatsEnabled: boolean('issue_stats_enabled').notNull().default(true),
-  // Which kinds of estimate the issues of this project carry, set in Settings ->
-  // Configuration. Both off by default; turning one off hides its UI and keeps the
-  // values, which show again when it is turned back on.
-  pointsEstimateEnabled: boolean('points_estimate_enabled').notNull().default(false),
-  timeEstimateEnabled: boolean('time_estimate_enabled').notNull().default(false),
-  // Whether members log the time they spend on the issues of this project, set in
-  // the same place. Independent of the time estimate: a team can log time without
-  // estimating first. Turning it off hides the entries and keeps them.
-  timeLoggingEnabled: boolean('time_logging_enabled').notNull().default(false),
-  // Deprecated: the project's budgets live in helena_budget since the Autopilot
-  // migration, which copied this value there. Nothing reads or writes it any more; the
-  // column goes with the rename step.
-  monthlyTokenCeiling: bigint('monthly_token_ceiling', { mode: 'number' }),
-  // How independently the agents of this project act (Helena's Autopilot): 0 they only
-  // propose, 1 consequential actions need approval, 2 they act and report and only
-  // outward or risky actions need approval, 3 autonomous within the budget. An agent may
-  // carry a stricter level of its own (ai_agent.autopilot_level).
-  autopilotLevel: smallint('autopilot_level').notNull().default(3),
-  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-});
+export const project = pgTable(
+  'project',
+  {
+    id: serial('id').primaryKey(),
+    teamId: integer('team_id')
+      .notNull()
+      .references(() => team.id, { onDelete: 'cascade' }),
+    key: text('key').notNull().unique(),
+    name: text('name').notNull(),
+    // The instance's one Home root is a project with a distinct role. Other projects
+    // retain their ordinary project permissions and lifecycle.
+    projectRole: text('project_role').notNull().default('project'),
+    description: text('description').notNull().default(''),
+    nextSequence: integer('next_sequence').notNull().default(1),
+    // Whether this project is in the team's MCP reach. Managed from the team's MCP
+    // settings, not from the project, and only counts while team.mcp_enabled is on.
+    // The starting value is the instance-wide project default set in god mode.
+    mcpEnabled: boolean('mcp_enabled').notNull().default(false),
+    // Optional sections of the app, toggled per project in Settings -> Features. All
+    // on by default. Turning one off only hides its UI; the rows it owns stay and
+    // come back with it.
+    initiativesEnabled: boolean('initiatives_enabled').notNull().default(true),
+    dashboardsEnabled: boolean('dashboards_enabled').notNull().default(true),
+    documentsEnabled: boolean('documents_enabled').notNull().default(true),
+    notesEnabled: boolean('notes_enabled').notNull().default(true),
+    cyclesEnabled: boolean('cycles_enabled').notNull().default(true),
+    subtasksEnabled: boolean('subtasks_enabled').notNull().default(true),
+    checklistsEnabled: boolean('checklists_enabled').notNull().default(true),
+    issueStatsEnabled: boolean('issue_stats_enabled').notNull().default(true),
+    // Which kinds of estimate the issues of this project carry, set in Settings ->
+    // Configuration. Both off by default; turning one off hides its UI and keeps the
+    // values, which show again when it is turned back on.
+    pointsEstimateEnabled: boolean('points_estimate_enabled').notNull().default(false),
+    timeEstimateEnabled: boolean('time_estimate_enabled').notNull().default(false),
+    // Whether members log the time they spend on the issues of this project, set in
+    // the same place. Independent of the time estimate: a team can log time without
+    // estimating first. Turning it off hides the entries and keeps them.
+    timeLoggingEnabled: boolean('time_logging_enabled').notNull().default(false),
+    // Deprecated: the project's budgets live in helena_budget since the Autopilot
+    // migration, which copied this value there. Nothing reads or writes it any more; the
+    // column goes with the rename step.
+    monthlyTokenCeiling: bigint('monthly_token_ceiling', { mode: 'number' }),
+    // How independently the agents of this project act (Helena's Autopilot): 0 they only
+    // propose, 1 consequential actions need approval, 2 they act and report and only
+    // outward or risky actions need approval, 3 autonomous within the budget. An agent may
+    // carry a stricter level of its own (ai_agent.autopilot_level).
+    autopilotLevel: smallint('autopilot_level').notNull().default(3),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    check('project_role_check', sql`${t.projectRole} IN ('project', 'home')`),
+    uniqueIndex('project_one_home_uq')
+      .on(t.projectRole)
+      .where(sql`${t.projectRole} = 'home'`),
+  ],
+);
 
 // Durable handoff to the external project provisioner. A row is inserted in the
 // same transaction as its project, then claimed and delivered by the worker. The
@@ -568,6 +580,11 @@ export const aiAgent = pgTable(
       .notNull()
       .references(() => user.id, { onDelete: 'cascade' }),
     username: text('username').notNull(),
+    // Home is an explicit identity; its handle remains a mention address only.
+    agentRole: text('agent_role').notNull().default('agent'),
+    // Membership rows still enforce the per-project permission matrix. `all` keeps
+    // the agent attached when another project of its team is created.
+    projectScope: text('project_scope').notNull().default('selected'),
     // Always 'external': the one kind left once the in-process runtime was removed.
     // Kept so the rows and the clients that name it read the same shape.
     kind: text('kind').notNull(),
@@ -645,6 +662,11 @@ export const aiAgent = pgTable(
   },
   (t) => [
     uniqueIndex('ai_agent_team_username_uq').on(t.teamId, sql`lower(${t.username})`),
+    check('ai_agent_role_check', sql`${t.agentRole} IN ('agent', 'home')`),
+    check('ai_agent_project_scope_check', sql`${t.projectScope} IN ('selected', 'all')`),
+    uniqueIndex('ai_agent_one_home_uq')
+      .on(t.agentRole)
+      .where(sql`${t.agentRole} = 'home'`),
     unique().on(t.userId),
     check('ai_agent_kind_check', sql`${t.kind} = 'external'`),
     check(

@@ -21,6 +21,7 @@ describe('coordinatorSection', () => {
     const text = coordinatorSection({
       projectKeys: ['MKT'],
       manager: 'master',
+      managerIsHome: true,
       specialists: ['writer', 'designer-mkt'],
     });
     expect(text).toContain('of MKT and report to the Home agent (@master).');
@@ -78,7 +79,13 @@ describe('memberSection', () => {
   });
 
   it('names the Home agent as such and words a reviewer', () => {
-    const text = memberSection({ ...base, role: 'reviewer', manager: 'master', peers: [] });
+    const text = memberSection({
+      ...base,
+      role: 'reviewer',
+      manager: 'master',
+      managerIsHome: true,
+      peers: [],
+    });
     expect(text).toContain('You review the work of the agent team of VOL');
     expect(text).toContain('report to the Home agent (@master)');
     expect(text).not.toContain("team's other members");
