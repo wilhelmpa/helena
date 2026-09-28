@@ -25,6 +25,14 @@
 # and runner bundle restored instead of built. The database is not rolled back: a migration is
 # one transaction, so a failed one changed nothing; one that succeeded stays (its backup is
 # named in the journal of volition-plan-migrate).
+#
+# Once the checkout moved (forward, or back), the rest runs in the deploy.sh of the commit now
+# checked out: this script execs that one with --continue, so a release that adds, changes or
+# removes a deployment step deploys with its own steps. (Bash keeps reading the file it
+# started from, and a checkout replaces the file: before, a release's steps first ran one
+# release later, against a tree that no longer had what they installed.) The line below says
+# a deploy.sh can take over like that; one without it (an older commit) is not execed.
+# helena-deploy: continues-in-target v1
 set -Eeuo pipefail
 umask 022
 
@@ -42,6 +50,8 @@ retry=0
 # Set only when the script runs itself for the way back (internal).
 rollback_to=''
 rollback_of=''
+# Set when the deploy.sh of the checked-out commit takes over after the checkout (internal).
+continue_run=0
 while (($# > 0)); do
   case $1 in
     --expect) expect=$2; shift 2 ;;
@@ -51,6 +61,7 @@ while (($# > 0)); do
     --no-rollback) rollback_enabled=0; shift ;;
     --retry) retry=1; shift ;;
     --rollback-to) rollback_to=$2; rollback_of=$3; shift 3 ;;
+    --continue) continue_run=1; shift ;;
     -*) echo "deploy.sh: unknown option $1" >&2; exit 1 ;;
     *) branch=$1; shift ;;
   esac
@@ -80,7 +91,7 @@ state_dir=${HELENA_DEPLOY_STATE:-/var/lib/volition/deploy}
 install -d -m 0755 "$state_dir"
 [[ ! -L "$state_dir/deploy.lock" ]] || { echo "deploy.sh: unexpected lock symlink" >&2; exit 1; }
 # The way back runs with the lock its failed deployment still holds (the same open file).
-[[ -n $rollback_to ]] || exec 9>>"$state_dir/deploy.lock"
+[[ -n $rollback_to ]] || ((continue_run)) || exec 9>>"$state_dir/deploy.lock"
 flock -n 9 || { echo "deploy.sh: another deployment is active" >&2; exit 1; }
 rollback_dir=$state_dir/rollback
 install -d -m 0700 "$rollback_dir"
@@ -88,9 +99,14 @@ deployed=$(cat "$state_dir/deployed" 2>/dev/null || true)
 head=$(as_owner git -C "$live" rev-parse HEAD)
 if [[ -n $rollback_to ]]; then
   # The way back: from the failed target (still checked out) to the last good commit.
-  [[ $head == "$rollback_of" ]] || { echo "deploy.sh: rollback expected $rollback_of checked out, found $head" >&2; exit 3; }
+  if ((continue_run == 0)) && [[ $head != "$rollback_of" ]]; then
+    echo "deploy.sh: rollback expected $rollback_of checked out, found $head" >&2; exit 3
+  fi
   before=$rollback_of
   branch=$rollback_to
+elif ((continue_run)); then
+  # Taking over after the checkout: the commit the deployment started from.
+  before=${HELENA_DEPLOY_CONT_BEFORE:?deploy.sh: --continue is internal}
 elif [[ -n $deployed ]] && as_owner git -C "$live" merge-base --is-ancestor "$deployed" "$head"; then
   before=$deployed
 else
@@ -106,7 +122,7 @@ inflight() {
               AND next_attempt_at > now())
          + (SELECT count(*) FROM agent_chat_message WHERE status = 'streaming')"
 }
-if [[ -z $rollback_to ]] && ((allow_inflight == 0)); then
+if [[ -z $rollback_to ]] && ((allow_inflight == 0 && continue_run == 0)); then
   waited=0
   while :; do
     busy=$(inflight) || { echo "deploy.sh: could not read the running agent work (--allow-inflight to skip)" >&2; exit 1; }
@@ -183,13 +199,47 @@ on_failure() {
   fi
   echo "deploy.sh: rolling back to $before" >&2
   exec env HELENA_DEPLOY_PREV_WEB="$prev_web" HELENA_DEPLOY_RUNNER_AFFECTED="$runner_affected" \
-    "$self" --rollback-to "$before" "$after"
+    bash "$self" --rollback-to "$before" "$after"
+}
+
+# Right after the checkout: the deploy.sh of the commit now checked out does the rest (see
+# the top), with what this run knows: where it started, the target, the options.
+continue_in_target() {
+  ((continue_run == 0)) || return 0
+  local script=$live/deployment/volition-stack/native/deploy.sh
+  if ! grep -qxF '# helena-deploy: continues-in-target v1' "$script" 2>/dev/null; then
+    echo "NOTE: the deploy.sh of $after cannot take over; this one goes on"
+    return 0
+  fi
+  echo "continuing with the deploy.sh of $after"
+  local args=(--continue)
+  ((rollback_enabled)) || args+=(--no-rollback)
+  [[ -z $web_artifact ]] || args+=(--web-artifact "$web_artifact")
+  if [[ -n $rollback_to ]]; then
+    args+=(--rollback-to "$rollback_to" "$rollback_of")
+  else
+    args+=(--expect "$after" "$after")
+  fi
+  trap - ERR
+  exec env HELENA_DEPLOY_CONT_BEFORE="$before" bash "$script" "${args[@]}"
+}
+
+# An install from the checkout whose source this commit no longer has is left out, instead
+# of failing the deployment (a release that removes a step's files, deployed by a deploy.sh
+# that cannot hand over yet).
+install_from_checkout() {
+  local source=${*: -2:1}
+  if [[ ! -e $source ]]; then
+    echo "NOTE: ${source#"$live"/} is not in this commit; not installed"
+    return 0
+  fi
+  install "$@"
 }
 after=$(as_owner git -C "$live" rev-parse --verify "$branch^{commit}")
 if [[ -n ${expect:-} && $after != "$expect" ]]; then
   echo "deploy.sh: $branch is $after, not the expected $expect" >&2; exit 1
 fi
-if [[ -z ${rollback_to:-} && ${retry:-0} != 1 && -n ${state_dir:-} ]] &&
+if [[ -z ${rollback_to:-} && ${retry:-0} != 1 && ${continue_run:-0} != 1 && -n ${state_dir:-} ]] &&
   grep -qxF "$after" "$state_dir/rolled-back" 2>/dev/null; then
   echo "deploy.sh: $after was rolled back before; fix it or pass --retry" >&2; exit 1
 fi
@@ -217,12 +267,14 @@ if changed packages/runner packages/sdk bun.lock \
   runner_affected=true
 fi
 runner_drain="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/runner-drain/runner-drain.py"
-if $runner_affected && [[ -z ${rollback_to:-} ]]; then
+if $runner_affected && [[ -z ${rollback_to:-} && ${continue_run:-0} != 1 ]]; then
   # This happens before checkout, migration, build installation or API restart.
   if declare -F hold_bootstrap_timer >/dev/null; then hold_bootstrap_timer; fi
   python3 "$runner_drain" drain --target "$after" --before "$before"
 fi
-if [[ -n ${rollback_to:-} ]]; then
+if [[ ${continue_run:-0} == 1 ]]; then
+  : # The deploy.sh that started moved the checkout already.
+elif [[ -n ${rollback_to:-} ]]; then
   # The way back to the last good commit; the tree was verified clean above.
   as_owner git -C "$live" reset --keep --quiet "$after"
 else
@@ -232,6 +284,7 @@ ff_done=1
 if declare -F on_failure >/dev/null; then
   trap 'on_failure $LINENO' ERR
 fi
+if declare -F continue_in_target >/dev/null; then continue_in_target; fi
 
 if changed bun.lock; then
   echo "installing dependencies"
@@ -302,7 +355,7 @@ fi
 plan_units=(volition-plan-api.service volition-plan-worker.service volition-plan-web.service)
 if changed "${plan_units[@]/#/deployment/volition-stack/native/systemd/}"; then
   for unit in "${plan_units[@]}"; do
-    install -m 0644 "$live/deployment/volition-stack/native/systemd/$unit" /etc/systemd/system/
+    install_from_checkout -m 0644 "$live/deployment/volition-stack/native/systemd/$unit" /etc/systemd/system/
   done
   systemctl daemon-reload
   restart+=("${plan_units[@]}")
@@ -360,7 +413,7 @@ fi
 
 for unit in volition-hermes-runner.service volition-provisioning.service; do
   if changed "deployment/volition-stack/native/systemd/$unit"; then
-    install -m 0644 "$live/deployment/volition-stack/native/systemd/$unit" /etc/systemd/system/
+    install_from_checkout -m 0644 "$live/deployment/volition-stack/native/systemd/$unit" /etc/systemd/system/
     systemctl daemon-reload
     restart+=("$unit")
   fi
@@ -369,12 +422,12 @@ done
 # The runner's start script runs an installed copy of the catalog script, which writes the
 # runner config from the Hermes profile. The start script itself is installed the same way.
 if changed deployment/volition-stack/integration/scripts/volition-hermes-catalog.py; then
-  install -m 0755 "$live/deployment/volition-stack/integration/scripts/volition-hermes-catalog.py" \
+  install_from_checkout -m 0755 "$live/deployment/volition-stack/integration/scripts/volition-hermes-catalog.py" \
     /usr/local/libexec/volition-hermes-catalog.py
   restart+=(volition-hermes-runner.service)
 fi
 if changed deployment/volition-stack/integration/scripts/volition-hermes-runner; then
-  install -m 0755 "$live/deployment/volition-stack/integration/scripts/volition-hermes-runner" \
+  install_from_checkout -m 0755 "$live/deployment/volition-stack/integration/scripts/volition-hermes-runner" \
     /usr/local/libexec/volition-hermes-runner
   restart+=(volition-hermes-runner.service)
 fi
@@ -405,7 +458,8 @@ fi
 
 # Refresh the installed audit without installing/enabling its timer or applying hardening.
 audit_script=deployment/volition-stack/native/hardening/audit.sh
-if [[ -f /usr/local/libexec/helena-security-audit ]] && changed "$audit_script"; then
+if [[ -f /usr/local/libexec/helena-security-audit ]] && changed "$audit_script" &&
+  [[ -f $live/$audit_script ]]; then
   install -m 0755 -o root -g root "$live/$audit_script" /usr/local/libexec/helena-security-audit
 fi
 
@@ -413,12 +467,12 @@ fi
 # for each new session, so only the router and the unit need one.
 if changed deployment/volition-stack/native/terminal/tmux.conf &&
   [[ -f /usr/local/lib/volition-isolation/tmux.conf ]]; then
-  install -m 0644 "$live/deployment/volition-stack/native/terminal/tmux.conf" \
+  install_from_checkout -m 0644 "$live/deployment/volition-stack/native/terminal/tmux.conf" \
     /usr/local/lib/volition-isolation/tmux.conf
 fi
 if changed deployment/volition-stack/native/terminal/project-terminal-router.mjs \
   deployment/volition-stack/native/systemd/volition-terminal.service; then
-  install -m 0644 "$live/deployment/volition-stack/native/systemd/volition-terminal.service" /etc/systemd/system/
+  install_from_checkout -m 0644 "$live/deployment/volition-stack/native/systemd/volition-terminal.service" /etc/systemd/system/
   systemctl daemon-reload
   restart+=(volition-terminal.service)
 fi
@@ -471,7 +525,7 @@ fi
 
 # The project terminal's nginx routes (the owner terminal's come with its setup.sh below).
 if changed deployment/volition-stack/native/nginx/project-terminal.conf; then
-  install -m 0644 -o root -g root "$live/deployment/volition-stack/native/nginx/project-terminal.conf" \
+  install_from_checkout -m 0644 -o root -g root "$live/deployment/volition-stack/native/nginx/project-terminal.conf" \
     /etc/nginx/snippets/volition-project-terminal.conf
   nginx -t && systemctl reload nginx.service
 fi
@@ -487,7 +541,7 @@ fi
 # keep no passwords: logins come from Plan through Hermes' vault.
 chromium_policy=deployment/volition-stack/native/chromium/volition-project-browser.json
 if changed "$chromium_policy"; then
-  install -D -m 0644 "$live/$chromium_policy" /etc/chromium/policies/managed/volition-project-browser.json
+  install_from_checkout -D -m 0644 "$live/$chromium_policy" /etc/chromium/policies/managed/volition-project-browser.json
 fi
 
 # The browser gateway's MCP shim is a build of packages/browser-gateway, installed outside the
@@ -500,7 +554,7 @@ fi
 # The router runs from this checkout; its unit is installed from here as well.
 if changed deployment/volition-stack/browser packages/browser-gateway \
   deployment/volition-stack/native/systemd/volition-project-browser-router.service; then
-  install -m 0644 "$live/deployment/volition-stack/native/systemd/volition-project-browser-router.service" /etc/systemd/system/
+  install_from_checkout -m 0644 "$live/deployment/volition-stack/native/systemd/volition-project-browser-router.service" /etc/systemd/system/
   systemctl daemon-reload
   restart+=(volition-project-browser-router.service)
 fi
