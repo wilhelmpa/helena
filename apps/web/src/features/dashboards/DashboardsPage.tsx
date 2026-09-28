@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type CSSProperties } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Check, LayoutTemplate, Pencil, Plus, Trash2, Undo2 } from 'lucide-react';
@@ -19,9 +19,9 @@ import type { Dashboard } from '@/lib/api/endpoints/dashboards';
 import { useDashboardsQuery } from '@/services/dashboards.service';
 import { useDashboardEditor } from './hooks/useDashboardEditor';
 import DashboardTabs from './components/DashboardTabs';
-import { cn } from '@/lib/utils';
-import { PAGE_GUTTER_CLASS } from '@/components/common/page/SectionPageView';
 import WidgetGrid from './components/WidgetGrid';
+import DashboardOverview from './components/DashboardOverview';
+import { DashboardTitle, MonoLabel } from '@/components/helena/DashboardPrimitives';
 import AddWidgetDialog from './components/AddWidgetDialog';
 import DashboardNameDialog from './components/DashboardNameDialog';
 import ConfirmDialog from '@/components/common/overlay/ConfirmDialog';
@@ -126,8 +126,20 @@ export default function DashboardsPage() {
     }
   }
 
+  const projectColor =
+    projectKey.toUpperCase() === 'TRADE'
+      ? 'var(--project-trade)'
+      : projectKey.toUpperCase() === 'VERVE'
+        ? 'var(--project-verve)'
+        : projectKey.toUpperCase() === 'VOL'
+          ? 'var(--project-vol)'
+          : 'var(--brand)';
+
   return (
-    <div className="flex flex-1 flex-col overflow-hidden">
+    <div
+      className="flex flex-1 flex-col overflow-hidden"
+      style={{ '--dashboard-project': projectColor } as CSSProperties}
+    >
       <PageToolbar>
         <DashboardTabs
           dashboards={list}
@@ -151,7 +163,14 @@ export default function DashboardsPage() {
       </PageToolbar>
 
       <div className="flex-1 overflow-y-auto">
-        <div className={cn('w-full', PAGE_GUTTER_CLASS)}>
+        <div className="w-full space-y-5 px-4 py-6 md:px-9">
+          <header className="pt-2">
+            <MonoLabel className="text-[var(--dashboard-project)]">
+              {project.project.name} {'· Dashboard'}
+            </MonoLabel>
+            <DashboardTitle>{project.project.name}</DashboardTitle>
+          </header>
+          <DashboardOverview projectKey={projectKey} project={project} />
           <WidgetGrid projectKey={projectKey} project={project} editor={editor} editing={editing} />
         </div>
       </div>

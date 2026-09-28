@@ -286,5 +286,17 @@
     "error": "Fehler",
     "done": "Fertig",
     "offline": "Offline"
+  },
+  "status": {
+    "idle": "Ruht",
+    "listening": "Hört",
+    "thinking": "Denkt",
+    "tool": "Nutzt Werkzeug",
+    "speaking": "Spricht",
+    "waiting": "Wartet auf dich",
+    "error": "Fehler",
+    "throttled": "Gedrosselt",
+    "offline": "Aus",
+    "done": "Fertig"
   }
 }

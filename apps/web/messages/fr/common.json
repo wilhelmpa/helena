@@ -286,5 +286,17 @@
     "error": "Erreur",
     "done": "Terminé",
     "offline": "Hors ligne"
+  },
+  "status": {
+    "idle": "Au repos",
+    "listening": "Écoute",
+    "thinking": "Réfléchit",
+    "tool": "Utilise un outil",
+    "speaking": "Parle",
+    "waiting": "Attend votre réponse",
+    "error": "Erreur",
+    "throttled": "Limité",
+    "offline": "Hors ligne",
+    "done": "Terminé"
   }
 }

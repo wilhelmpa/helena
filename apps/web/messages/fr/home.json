@@ -1,4 +1,5 @@
 {
+  "allProjects": "Tous les projets",
   "in": "dans {time}",
   "widgetFailed": "Indisponible pour le moment",
   "customize": {
@@ -23,6 +24,7 @@
     "needs-you": "A besoin de vous",
     "my-tasks": "Mes tâches",
     "running": "En cours",
+    "finished": "Terminé récemment",
     "schedules": "À venir",
     "projects": "Projets"
   },
@@ -60,7 +62,8 @@
   "agents": {
     "empty": "Aucun agent ne travaille en ce moment.",
     "waiting": "en attente",
-    "finished": "Terminé récemment"
+    "finished": "Terminé récemment",
+    "noFinished": "Aucune exécution terminée."
   },
   "tasks": {
     "empty": "Aucune tâche ouverte ne vous est assignée."

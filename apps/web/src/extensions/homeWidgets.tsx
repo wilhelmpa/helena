@@ -16,7 +16,7 @@ import {
 } from '@/features/home/dashboard/tiles/HomeTiles';
 import NeedsYouSection from '@/features/home/dashboard/sections/NeedsYouSection';
 import TasksSection from '@/features/home/dashboard/sections/TasksSection';
-import AgentsSection from '@/features/home/dashboard/sections/AgentsSection';
+import AgentsSection, { FinishedSection } from '@/features/home/dashboard/sections/AgentsSection';
 import SchedulesSection from '@/features/home/dashboard/sections/SchedulesSection';
 import ProjectsSection from '@/features/home/dashboard/sections/ProjectsSection';
 import { BUILTIN_NEEDS_YOU_SOURCES } from '@/features/home/dashboard/sources';
@@ -77,7 +77,7 @@ const BUILTINS = [
     id: 'needs-you',
     kind: 'section',
     group: 'work',
-    order: 10,
+    order: 20,
     rows: 4,
     component: NeedsYouSection,
   }),
@@ -85,7 +85,7 @@ const BUILTINS = [
     id: 'my-tasks',
     kind: 'section',
     group: 'work',
-    order: 20,
+    order: 40,
     rows: 7,
     component: TasksSection,
   }),
@@ -93,9 +93,17 @@ const BUILTINS = [
     id: 'running',
     kind: 'section',
     group: 'agents',
-    order: 30,
+    order: 10,
     rows: 5,
     component: AgentsSection,
+  }),
+  homeWidget({
+    id: 'finished',
+    kind: 'section',
+    group: 'agents',
+    order: 30,
+    rows: 3,
+    component: FinishedSection,
   }),
   homeWidget({
     id: 'schedules',

@@ -43,7 +43,7 @@
     },
     "pulse": {
       "label": "النبض",
-      "description": "خريطة حرارية بتوريك النشاط اليومي، بشكل زي اللي في GitHub"
+      "description": "اتجاه النشاط المختصر"
     },
     "throughput": {
       "label": "الإنتاجية",
@@ -207,5 +207,19 @@
     "unassigned": "غير مُسندة"
   },
   "deleteDashboard": "حذف لوحة المعلومات",
-  "deleteDashboardConfirm": "حذف «{name}» مع أدواته؟ لا تتأثر المهام."
+  "deleteDashboardConfirm": "حذف «{name}» مع أدواته؟ لا تتأثر المهام.",
+  "overview": {
+    "openTasks": "المهام المفتوحة",
+    "total": "{count} إجمالاً",
+    "inProgress": "قيد التنفيذ",
+    "projectTasks": "مهام المشروع",
+    "agentsWorking": "الوكلاء يعملون",
+    "running": "يعمل الآن",
+    "needsYou": "يحتاجك",
+    "approvalsAndQuestions": "الموافقات والأسئلة",
+    "finished": "اكتمل مؤخراً",
+    "noRunning": "لا يعمل أي وكيل الآن.",
+    "nothingWaiting": "لا شيء يحتاج إلى تدخلك الآن.",
+    "noFinished": "لم تكتمل أي عملية بعد."
+  }
 }

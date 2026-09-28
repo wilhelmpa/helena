@@ -286,5 +286,17 @@
     "error": "Kesalahan",
     "done": "Selesai",
     "offline": "Offline"
+  },
+  "status": {
+    "idle": "Diam",
+    "listening": "Mendengarkan",
+    "thinking": "Berpikir",
+    "tool": "Menggunakan alat",
+    "speaking": "Berbicara",
+    "waiting": "Menunggu Anda",
+    "error": "Kesalahan",
+    "throttled": "Dibatasi",
+    "offline": "Offline",
+    "done": "Selesai"
   }
 }

@@ -286,5 +286,17 @@
     "error": "Erro",
     "done": "Concluído",
     "offline": "Offline"
+  },
+  "status": {
+    "idle": "Em repouso",
+    "listening": "Ouvindo",
+    "thinking": "Pensando",
+    "tool": "Usando uma ferramenta",
+    "speaking": "Falando",
+    "waiting": "Aguardando você",
+    "error": "Erro",
+    "throttled": "Limitado",
+    "offline": "Offline",
+    "done": "Concluído"
   }
 }

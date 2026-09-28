@@ -286,5 +286,17 @@
     "error": "خطأ",
     "done": "اكتمل",
     "offline": "غير متصل"
+  },
+  "status": {
+    "idle": "في وضع السكون",
+    "listening": "يستمع",
+    "thinking": "يفكر",
+    "tool": "يستخدم أداة",
+    "speaking": "يتحدث",
+    "waiting": "ينتظرك",
+    "error": "خطأ",
+    "throttled": "مقيّد",
+    "offline": "غير متصل",
+    "done": "مكتمل"
   }
 }

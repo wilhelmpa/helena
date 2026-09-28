@@ -72,7 +72,7 @@ export default function RecentIssuesWidget({
                 >
                   <span
                     className="size-2.5 shrink-0 rounded-full"
-                    style={{ backgroundColor: column?.color ?? '#6b7280' }}
+                    style={{ backgroundColor: column?.color ?? 'var(--dashboard-label)' }}
                     title={column?.name}
                   />
                   <span className="shrink-0 text-muted-foreground tabular-nums">

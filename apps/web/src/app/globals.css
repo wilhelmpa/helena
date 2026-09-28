@@ -199,7 +199,7 @@
      neutral, quieter than muted-foreground so it recedes next to the others. */
   --status-running: var(--brand);
   --status-running-foreground: var(--brand-foreground);
-  --status-waiting: var(--warning);
+  --status-waiting: #f4c46a;
   --status-waiting-foreground: oklch(0.99 0 0);
   --status-success: var(--success);
   --status-success-foreground: oklch(0.99 0 0);
@@ -258,6 +258,32 @@
   --helena-bronze: #cd7f32;
 }
 
+/* Shared Helena dashboard and agent status tokens. */
+:root {
+  --status-idle: #9e99de;
+  --status-listening: #29e8b5;
+  --status-thinking: #ff912e;
+  --status-speaking: #f5459e;
+  --status-waiting: #f4c46a;
+  --status-error: #f0997b;
+  --status-throttled: color-mix(in srgb, #f0997b 55%, transparent);
+  --status-offline: #5c5766;
+  --status-done: #7ee0b8;
+  --dashboard-surface: #0e0d11;
+  --dashboard-raised: #111014;
+  --dashboard-selected: #26212d;
+  --dashboard-label: #8b8595;
+  --dashboard-muted: #88808f;
+  --dashboard-ink: #eeeaf6;
+  --dashboard-project: #bdaaff;
+  --dashboard-positive: #7ee0b8;
+  --dashboard-attention: #f4a3bf;
+  --dashboard-track: #1a1820;
+  --project-trade: #7ee0b8;
+  --project-verve: #f0997b;
+  --project-vol: #bdaaff;
+}
+
 .dark {
   --background: #050507;
   --foreground: #eeeaf6;
@@ -282,13 +308,13 @@
   --success: #29e8b5;
   --status-running: #29e8b5;
   --status-running-foreground: #201b29;
-  --status-waiting: var(--warning);
+  --status-waiting: #f4c46a;
   --status-waiting-foreground: #201b29;
   --status-success: var(--success);
   --status-success-foreground: #201b29;
   --status-danger: var(--destructive);
   --status-danger-foreground: var(--destructive-foreground);
-  --status-idle: #96919f;
+  --status-idle: #9e99de;
   --status-idle-foreground: #201b29;
   --border: #ffffff0c;
   --input: #ffffff12;
