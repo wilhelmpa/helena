@@ -1599,3 +1599,37 @@ a.ds-run-card:hover {
   color: var(--text-2);
   font-variant-numeric: tabular-nums;
 }
+
+/* Ziele: the goals as their ladder. */
+.ds-goals {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+.ds-goals-new {
+  display: flex;
+  max-width: 560px;
+  gap: var(--space-2);
+}
+.ds-goals-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.ds-goal {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-inline-start: calc(var(--ds-goal-depth, 0) * 24px);
+}
+.ds-goal-chain {
+  color: var(--text-3);
+  font: 500 10px/16px var(--font-mono);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+@media (max-width: 700px) {
+  .ds-goal {
+    margin-inline-start: calc(var(--ds-goal-depth, 0) * 12px);
+  }
+}

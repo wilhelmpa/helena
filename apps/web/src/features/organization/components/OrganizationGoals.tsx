@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type CSSProperties } from 'react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { EmptyState } from '@/design-system';
 import type {
   OrganizationDepartment,
   OrganizationGoal,
@@ -26,11 +27,34 @@ export default function OrganizationGoals({
   const t = useTranslations('organization');
   const create = useCreateGoal(teamId);
   const [title, setTitle] = useState('');
+  // The goals as their ladder (hub/pc-goal-ladder): each goal after its parent, indented
+  // by its depth, with the chain of goals above it — so it reads what serves what.
+  const byId = new Map(goals.map((goal) => [goal.id, goal]));
+  const chainOf = (goal: OrganizationGoal) => {
+    const chain: string[] = [];
+    let parent = goal.parentGoalId != null ? byId.get(goal.parentGoalId) : undefined;
+    while (parent && chain.length < 8) {
+      chain.unshift(parent.title);
+      parent = parent.parentGoalId != null ? byId.get(parent.parentGoalId) : undefined;
+    }
+    return chain;
+  };
+  const ordered: { goal: OrganizationGoal; depth: number }[] = [];
+  const visit = (parentId: number | null, depth: number) => {
+    for (const goal of goals) {
+      const parent =
+        goal.parentGoalId != null && byId.has(goal.parentGoalId) ? goal.parentGoalId : null;
+      if (parent !== parentId || ordered.some((item) => item.goal.id === goal.id)) continue;
+      ordered.push({ goal, depth });
+      visit(goal.id, depth + 1);
+    }
+  };
+  visit(null, 0);
 
   return (
-    <div className="space-y-4">
+    <div className="ds-goals">
       <form
-        className="flex max-w-xl gap-2"
+        className="ds-goals-new"
         onSubmit={(event) => {
           event.preventDefault();
           create.mutate(
@@ -52,22 +76,26 @@ export default function OrganizationGoals({
         </Button>
       </form>
       {goals.length === 0 ? (
-        <p className="rounded-lg border bg-card px-3 py-2 text-sm text-muted-foreground">
-          {t('goals.empty')}
-        </p>
+        <EmptyState>{t('goals.empty')}</EmptyState>
       ) : (
-        <div className="grid gap-3 xl:grid-cols-2">
-          {goals.map((goal) => (
-            <OrganizationGoalCard
-              // A goal changed on the server (a status the owner accepted from a proposal)
-              // opens its form anew with the new values instead of the old ones.
+        <div className="ds-goals-list">
+          {ordered.map(({ goal, depth }) => (
+            <div
               key={`${goal.id}:${goal.updatedAt}`}
-              teamId={teamId}
-              goal={goal}
-              goals={goals}
-              departments={departments}
-              projects={projects}
-            />
+              className="ds-goal"
+              style={{ '--ds-goal-depth': depth } as CSSProperties}
+            >
+              {chainOf(goal).length > 0 && (
+                <span className="ds-goal-chain">{chainOf(goal).join(' › ')}</span>
+              )}
+              <OrganizationGoalCard
+                teamId={teamId}
+                goal={goal}
+                goals={goals}
+                departments={departments}
+                projects={projects}
+              />
+            </div>
           ))}
         </div>
       )}
