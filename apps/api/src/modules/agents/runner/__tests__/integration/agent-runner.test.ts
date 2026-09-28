@@ -5,8 +5,9 @@ import { resetDb } from '#tests/helpers/db';
 import { createAgent, projectIdOf, teamOf } from '#tests/helpers/agents';
 import { cancelStepRun, queueStepRun } from '#modules/engine/agent-runs';
 import { registerBuiltins } from '#modules/engine/builtin/index';
-import { db, organizationProjectAssignment } from '@repo/db';
+import { agentRun, db, issueWorkClaim, organizationProjectAssignment } from '@repo/db';
 import { expireExhaustedRuns } from '../../service';
+import { eq, sql } from 'drizzle-orm';
 
 // The runner queue: a process on the operator's machine authenticates with the
 // external agent's API key, claims one run at a time, and reports the result. Runs
@@ -49,6 +50,113 @@ registerBuiltins();
 describe('agent runner queue', () => {
   beforeEach(async () => {
     await resetDb();
+  });
+
+  it('allows only one agent to claim a task across concurrent runner polls', async () => {
+    const { asOwner, asRunner, agent, columnId, projectId } = await setup();
+    const second = (
+      await createAgent(asOwner, 'MKT', {
+        name: 'Second Bot',
+        username: 'second',
+        kind: 'external',
+      })
+    ).data!;
+    const secondRunner = apiKeyApi(second.apiKey!);
+    const issue = (
+      await asOwner.projects({ projectKey: 'MKT' }).issues.post({
+        columnId,
+        title: 'One shared task',
+      })
+    ).data!;
+    await db.insert(agentRun).values([
+      { agentId: agent.id, projectId, issueId: issue.id, prompt: 'First' },
+      { agentId: second.agent.id, projectId, issueId: issue.id, prompt: 'Second' },
+    ]);
+    const polls = await Promise.all([
+      asRunner['agent-runs'].claim.post(),
+      secondRunner['agent-runs'].claim.post(),
+    ]);
+    expect(polls.map((poll) => poll.status)).toEqual([200, 200]);
+    const claimed = polls.map((poll) => poll.data!.run).filter((run) => run != null);
+    expect(claimed).toHaveLength(1);
+    const [lease] = await db.select().from(issueWorkClaim);
+    expect(lease).toMatchObject({
+      issueId: issue.id,
+      runId: claimed[0]!.id,
+      claim: claimed[0]!.claim,
+    });
+    const winner = polls[0]!.data!.run ? asRunner : secondRunner;
+    const loser = polls[0]!.data!.run ? secondRunner : asRunner;
+    expect(
+      (
+        await winner['agent-runs']({ runId: claimed[0]!.id }).release.post(
+          {},
+          {
+            query: { claim: claimed[0]!.claim },
+          },
+        )
+      ).status,
+    ).toBe(204);
+    expect(await db.select().from(issueWorkClaim)).toHaveLength(0);
+    const secondClaim = (await loser['agent-runs'].claim.post()).data!.run!;
+    expect(secondClaim.issueId).toBe(issue.id);
+    await db.update(issueWorkClaim).set({ expiresAt: new Date(Date.now() - 1_000) });
+    const recovered = (await winner['agent-runs'].claim.post()).data!.run!;
+    expect(recovered.issueId).toBe(issue.id);
+    expect(
+      (
+        await loser['agent-runs']({ runId: secondClaim.id }).result.post(
+          { status: 'success' },
+          { query: { claim: secondClaim.claim } },
+        )
+      ).status,
+    ).toBe(404);
+  });
+
+  it('serializes heartbeat and release without deadlocking or retaining a task lease', async () => {
+    const { asOwner, asRunner, agent, columnId } = await setup();
+    await queueRun(asOwner, columnId, agent.username);
+    for (let i = 0; i < 8; i++) {
+      const run = (await asRunner['agent-runs'].claim.post()).data!.run!;
+      expect(run).toBeTruthy();
+      const results = await Promise.all([
+        asRunner['agent-runs']({ runId: run.id }).heartbeat.post(undefined, {
+          query: { claim: run.claim },
+        }),
+        asRunner['agent-runs']({ runId: run.id }).release.post({}, { query: { claim: run.claim } }),
+      ]);
+      expect(results.map((result) => result.status)).toEqual([200, 204]);
+      expect(await db.select().from(issueWorkClaim)).toHaveLength(0);
+    }
+  });
+
+  it('fences the previous runner after another agent takes its expired task lease', async () => {
+    const { asOwner, asRunner, agent, columnId, projectId } = await setup();
+    const issue = await queueRun(asOwner, columnId, agent.username);
+    const first = (await asRunner['agent-runs'].claim.post()).data!.run!;
+    const second = (
+      await createAgent(asOwner, 'MKT', { name: 'Second', username: 'second', kind: 'external' })
+    ).data!;
+    const secondRunner = apiKeyApi(second.apiKey!);
+    await db
+      .insert(agentRun)
+      .values({ agentId: second.agent.id, projectId, issueId: issue.id, prompt: 'Take over' });
+    await db.update(issueWorkClaim).set({ expiresAt: sql`now() - interval '1 second'` });
+    const takeover = (await secondRunner['agent-runs'].claim.post()).data!.run!;
+    expect(takeover).toBeTruthy();
+    const beat = await asRunner['agent-runs']({ runId: first.id }).heartbeat.post(undefined, {
+      query: { claim: first.claim },
+    });
+    expect(beat.data).toEqual({ canceled: true });
+    const result = await asRunner['agent-runs']({ runId: first.id }).result.post(
+      { status: 'success' },
+      { query: { claim: first.claim } },
+    );
+    expect(result.status).toBe(404);
+    const [lease] = await db.select().from(issueWorkClaim);
+    expect(lease.runId).toBe(takeover.id);
+    const [old] = await db.select().from(agentRun).where(eq(agentRun.id, first.id));
+    expect(old.status).toBe('pending');
   });
 
   it('delivers command and webhook settings through the existing agent queue', async () => {
@@ -477,18 +585,29 @@ describe('agent runner queue', () => {
       maxTurns: 200,
       runBudgetSeconds: 7_200,
     });
-    expect((await asRunner['agent-runs'].claim.post()).data!.run).toMatchObject({
+    const baseline = (await asRunner['agent-runs'].claim.post()).data!.run!;
+    expect(baseline).toMatchObject({
       trigger: 'manual',
       maxTurns: 200,
       runBudgetSeconds: 7_200,
     });
+    await asRunner['agent-runs']({ runId: baseline.id }).result.post({ status: 'success' });
 
     await queueRun(asOwner, columnId, agent.username);
-    expect((await asRunner['agent-runs'].claim.post()).data!.run).toMatchObject({
+    const initial = (await asRunner['agent-runs'].claim.post()).data!.run!;
+    expect(initial).toMatchObject({
       trigger: 'mention',
       maxTurns: null,
       runBudgetSeconds: null,
     });
+    expect(
+      (
+        await asRunner['agent-runs']({ runId: initial.id }).result.post({
+          status: 'success',
+        })
+      ).status,
+    ).toBe(200);
+    expect(await db.select().from(issueWorkClaim)).toHaveLength(0);
 
     const policy = { reasoningEffort: null, toolAllow: [], toolDeny: [], mcpGrants: [], files: [] };
     expect(
@@ -512,10 +631,12 @@ describe('agent runner queue', () => {
       prompt: 'Complete the assignment.',
       maxTurns: 20,
     });
-    expect((await asRunner['agent-runs'].claim.post()).data!.run).toMatchObject({
+    const stage = (await asRunner['agent-runs'].claim.post()).data!.run!;
+    expect(stage).toMatchObject({
       maxTurns: 20,
       runBudgetSeconds: 60,
     });
+    await asRunner['agent-runs']({ runId: stage.id }).result.post({ status: 'success' });
     await queueRun(asOwner, columnId, agent.username);
     expect((await asRunner['agent-runs'].claim.post()).data!.run).toMatchObject({
       trigger: 'mention',
@@ -696,6 +817,7 @@ describe('agent runner queue', () => {
     const run = (await asRunner['agent-runs'].claim.post()).data!.run!;
 
     await cancelStepRun(run.id);
+    expect(await db.select().from(issueWorkClaim)).toHaveLength(0);
 
     const beat = await asRunner['agent-runs']({ runId: run.id }).heartbeat.post();
     expect(beat.status).toBe(200);

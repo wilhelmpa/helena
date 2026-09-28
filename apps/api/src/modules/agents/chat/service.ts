@@ -74,6 +74,7 @@ import {
   localCatalogModelsNow,
 } from '#modules/local-ai/service';
 import type { RuntimeFailure } from '@helena/sdk';
+import { activeOrderContext } from '#modules/standing-orders/service';
 import {
   annotateCatalog,
   learnFromOutcome,
@@ -656,20 +657,23 @@ async function scopedThread(tx: Tx, threadId: string, userId: string, projectId:
 //
 // Null when the thread named is not the caller's. A paused agent takes no message: the
 // member would wait for an answer that does not come.
-export async function sendMessage(input: {
-  agentId: number;
-  userId: string;
-  projectId: number | null;
-  prompt: string;
-  threadId?: string;
-  parentId?: number | null;
-  attachments?: ChatAttachment[];
-  model?: string | null;
-  thinkingLevel?: string | null;
-  // 'voice': said in the conversation mode (docs/helena-decisions/voice-2.md).
-  via?: 'voice' | null;
-  maxConcurrentChats: number;
-}): Promise<{ threadId: string; messageId: number; userMessageId: number } | null> {
+export async function sendMessage(
+  input: {
+    agentId: number;
+    userId: string;
+    projectId: number | null;
+    prompt: string;
+    threadId?: string;
+    parentId?: number | null;
+    attachments?: ChatAttachment[];
+    model?: string | null;
+    thinkingLevel?: string | null;
+    // 'voice': said in the conversation mode (docs/helena-decisions/voice-2.md).
+    via?: 'voice' | null;
+    maxConcurrentChats: number;
+  },
+  database: typeof db | Tx = db,
+): Promise<{ threadId: string; messageId: number; userMessageId: number } | null> {
   const { agentId, userId, prompt } = input;
   await assertNotPaused(agentId);
   await assertProjectNotHeld(input.projectId);
@@ -681,7 +685,7 @@ export async function sendMessage(input: {
     input.via === 'voice' && answerer
       ? await answerer.available(agentId).catch(() => false)
       : false;
-  const sent = await db.transaction(async (tx) => {
+  const sent = await database.transaction(async (tx) => {
     await assertSendRate(tx, agentId, userId);
     await assertConcurrencyLimit(tx, agentId, userId, input.maxConcurrentChats);
     let threadId = input.threadId;
@@ -1161,7 +1165,7 @@ async function claimMessage(agent: RunnerAgent): Promise<ClaimedChat | null> {
     id: row.id,
     threadId: row.threadId,
     prompt: earlier.length > 0 ? frameChatPrompt(earlier, asked, agent.id) : asked,
-    systemPrompt: '',
+    systemPrompt: await activeOrderContext(row.projectId, agent.id),
     attempts: row.attempts,
     sessionId,
     ...settings,

@@ -74,13 +74,14 @@ export interface RoutineRow {
   catchUp: CatchUp;
   gateMode: GateMode;
   gateSource: GateSource;
+  precheckEnabled: boolean;
   enabled: boolean;
   nextRunAt: string | null;
   lastRun: {
     id: string;
     status: string;
     outcome: 'created' | 'reopened' | 'skipped' | null;
-    skipReason: 'task-open' | 'missed' | 'gate' | null;
+    skipReason: 'task-open' | 'missed' | 'gate' | 'no-work' | null;
     gate: RoutineGateResult | null;
     taskNumber: number | null;
     error: string | null;
@@ -101,6 +102,7 @@ export interface RoutineInput {
   catchUp?: CatchUp;
   gateMode?: GateMode;
   gateSource?: GateSource;
+  precheckEnabled?: boolean;
 }
 
 interface RunResult {
@@ -189,6 +191,7 @@ async function routineRows(
         catchUp: row.catchUp === 'once' ? 'once' : 'skip',
         gateMode: row.gateMode as GateMode,
         gateSource: row.gateSource as GateSource,
+        precheckEnabled: row.precheckEnabled,
         enabled: row.enabled,
         nextRunAt: next ? iso(next) : null,
         lastRun: run
@@ -204,7 +207,8 @@ async function routineRows(
               skipReason:
                 result.skipReason === 'task-open' ||
                 result.skipReason === 'missed' ||
-                result.skipReason === 'gate'
+                result.skipReason === 'gate' ||
+                result.skipReason === 'no-work'
                   ? result.skipReason
                   : null,
               gate: (run.input as { gate?: RoutineGateResult } | null)?.gate ?? null,
@@ -416,6 +420,7 @@ export async function createRoutine(
       catchUp: input.catchUp ?? 'skip',
       gateMode,
       gateSource,
+      precheckEnabled: input.precheckEnabled ?? true,
       gateApprovedBy: gateMode === 'active' ? userId : null,
       enabled: input.enabled ?? true,
       firedThrough: new Date(),
@@ -439,7 +444,7 @@ export async function updateRoutine(
   patch: Partial<RoutineInput> & { enabled?: boolean },
 ): Promise<RoutineRow> {
   const row = await routineSchedule(owner, routineId);
-  const { enabled, catchUp, gateMode, gateSource, ...changes } = patch;
+  const { enabled, catchUp, gateMode, gateSource, precheckEnabled, ...changes } = patch;
   const values: Partial<typeof helenaSchedule.$inferInsert> = {};
   const nextSource = gateSource ?? row.gateSource;
   const nextMode =
@@ -472,6 +477,7 @@ export async function updateRoutine(
     Object.assign(values, fields, { cron, timezone, actorUserId: userId });
   }
   if (catchUp !== undefined) values.catchUp = catchUp;
+  if (precheckEnabled !== undefined) values.precheckEnabled = precheckEnabled;
   if (enabled !== undefined) values.enabled = enabled;
   // Switched on again or given another time, the routine starts afresh: the times that
   // passed meanwhile do not fire.
@@ -532,9 +538,13 @@ export async function listRoutineRuns(
   owner: RoutineProject,
   routineId: string,
   window: { limit: number; offset: number },
+  includeIdle = false,
 ) {
   await routineSchedule(owner, routineId);
-  const where = eq(pipelineRun.scheduleId, routineId);
+  const where = and(
+    eq(pipelineRun.scheduleId, routineId),
+    includeIdle ? undefined : sql`coalesce(${pipelineRun.result}->>'skipReason', '') <> 'no-work'`,
+  )!;
   const [items, [total]] = await Promise.all([
     runDtos(where, window),
     db.select({ value: count() }).from(pipelineRun).where(where),

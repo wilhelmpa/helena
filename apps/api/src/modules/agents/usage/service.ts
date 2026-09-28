@@ -4,6 +4,7 @@ import {
   agentUsage,
   aiAgent,
   helenaGoalTask,
+  helenaProjectGoalLink,
   issue,
   organizationAgentAssignment,
   organizationDepartment,
@@ -202,7 +203,34 @@ const RUN_DAY = sql<string>`to_char(date_trunc('day', ${agentRun.finishedAt} AT 
 const RUN_MODEL = sql<string>`coalesce(${agentRun.model}, ${aiAgent.model})`;
 const parentIssue = alias(issue, 'usage_parent_issue');
 const parentGoal = alias(helenaGoalTask, 'usage_parent_goal');
-const GOAL_ID = sql<number>`coalesce(${helenaGoalTask.goalId}, ${parentGoal.goalId})`;
+const initiativeGoal = alias(helenaProjectGoalLink, 'usage_initiative_goal');
+const parentInitiativeGoal = alias(helenaProjectGoalLink, 'usage_parent_initiative_goal');
+function goalIdOf(projectId: typeof agentUsage.projectId | typeof agentRun.projectId) {
+  return sql<number>`coalesce(
+    ${helenaGoalTask.goalId}, ${parentGoal.goalId},
+    ${initiativeGoal.goalId}, ${parentInitiativeGoal.goalId},
+    CASE WHEN ${issue.id} IS NOT NULL THEN (
+      WITH RECURSIVE department_path(id, depth) AS (
+        SELECT ${organizationProjectAssignment.departmentId}::int, 0
+        UNION ALL
+        SELECT d.parent_id, dp.depth + 1
+        FROM organization_department d JOIN department_path dp ON d.id = dp.id
+        WHERE d.parent_id IS NOT NULL AND dp.depth < 16
+      )
+      SELECT g.id FROM organization_goal g
+      LEFT JOIN department_path dp ON dp.id = g.department_id
+      WHERE g.team_id = ${aiAgent.teamId} AND g.status IN ('active', 'planned')
+        AND (g.project_id = ${projectId}
+          OR (g.project_id IS NULL AND (dp.id IS NOT NULL OR g.department_id IS NULL)))
+      ORDER BY CASE WHEN g.project_id = ${projectId} THEN 0
+        WHEN dp.id IS NOT NULL THEN dp.depth + 1 ELSE 100 END,
+        CASE WHEN g.status = 'active' THEN 0 ELSE 1 END, g.id
+      LIMIT 1
+    ) END
+  )`;
+}
+const LEDGER_GOAL_ID = goalIdOf(agentUsage.projectId);
+const RUN_GOAL_ID = goalIdOf(agentRun.projectId);
 const DEPARTMENT_ID = sql<number>`coalesce(${organizationProjectAssignment.departmentId}, ${organizationAgentAssignment.departmentId})`;
 
 // The ledger summed by the given dimensions, each group priced by its model. The model is
@@ -245,7 +273,8 @@ export async function usageBy(
     .leftJoin(parentIssue, eq(parentIssue.id, issue.parentId))
     .leftJoin(helenaGoalTask, eq(helenaGoalTask.issueId, issue.id))
     .leftJoin(parentGoal, eq(parentGoal.issueId, parentIssue.id))
-    .leftJoin(organizationGoal, eq(organizationGoal.id, GOAL_ID))
+    .leftJoin(initiativeGoal, eq(initiativeGoal.initiativeId, issue.initiativeId))
+    .leftJoin(parentInitiativeGoal, eq(parentInitiativeGoal.initiativeId, parentIssue.initiativeId))
     .leftJoin(
       organizationProjectAssignment,
       eq(organizationProjectAssignment.projectId, agentUsage.projectId),
@@ -254,6 +283,7 @@ export async function usageBy(
       organizationAgentAssignment,
       eq(organizationAgentAssignment.agentId, agentUsage.agentId),
     )
+    .leftJoin(organizationGoal, eq(organizationGoal.id, LEDGER_GOAL_ID))
     .leftJoin(organizationDepartment, eq(organizationDepartment.id, DEPARTMENT_ID))
     .leftJoin(user, eq(user.id, aiAgent.userId))
     .leftJoin(project, eq(project.id, agentUsage.projectId))
@@ -303,7 +333,8 @@ export async function usageBy(
     .leftJoin(parentIssue, eq(parentIssue.id, issue.parentId))
     .leftJoin(helenaGoalTask, eq(helenaGoalTask.issueId, issue.id))
     .leftJoin(parentGoal, eq(parentGoal.issueId, parentIssue.id))
-    .leftJoin(organizationGoal, eq(organizationGoal.id, GOAL_ID))
+    .leftJoin(initiativeGoal, eq(initiativeGoal.initiativeId, issue.initiativeId))
+    .leftJoin(parentInitiativeGoal, eq(parentInitiativeGoal.initiativeId, parentIssue.initiativeId))
     .leftJoin(
       organizationProjectAssignment,
       eq(organizationProjectAssignment.projectId, agentRun.projectId),
@@ -312,6 +343,7 @@ export async function usageBy(
       organizationAgentAssignment,
       eq(organizationAgentAssignment.agentId, agentRun.agentId),
     )
+    .leftJoin(organizationGoal, eq(organizationGoal.id, RUN_GOAL_ID))
     .leftJoin(organizationDepartment, eq(organizationDepartment.id, DEPARTMENT_ID))
     .leftJoin(user, eq(user.id, aiAgent.userId))
     .leftJoin(project, eq(project.id, agentRun.projectId))

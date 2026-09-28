@@ -108,6 +108,8 @@ export interface TelegramLink {
   username: string | null;
   firstName: string | null;
   linkedAt: string;
+  selectedAgentId: number | null;
+  selectedProjectId: number | null;
 }
 
 export async function getTelegramLink(userId: string): Promise<TelegramLink | null> {
@@ -117,6 +119,8 @@ export async function getTelegramLink(userId: string): Promise<TelegramLink | nu
       username: userTelegramAccount.username,
       firstName: userTelegramAccount.firstName,
       linkedAt: userTelegramAccount.linkedAt,
+      selectedAgentId: userTelegramAccount.selectedAgentId,
+      selectedProjectId: userTelegramAccount.selectedProjectId,
     })
     .from(userTelegramAccount)
     .where(eq(userTelegramAccount.userId, userId));
@@ -127,6 +131,8 @@ export async function getTelegramLink(userId: string): Promise<TelegramLink | nu
     username: row.username,
     firstName: row.firstName,
     linkedAt: row.linkedAt.toISOString(),
+    selectedAgentId: row.selectedAgentId,
+    selectedProjectId: row.selectedProjectId,
   };
 }
 

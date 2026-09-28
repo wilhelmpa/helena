@@ -170,7 +170,9 @@ export const routineRoutes = new Elysia({
   .get(
     '/projects/:projectKey/routines/:routineId/runs',
     ({ project, params, query }) =>
-      paginate(query, (window) => listRoutineRuns(project, params.routineId, window)),
+      paginate(query, (window) =>
+        listRoutineRuns(project, params.routineId, window, query.includeIdle),
+      ),
     {
       params: routineParams,
       query: routinePageQuery,

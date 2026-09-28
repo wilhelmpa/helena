@@ -4,6 +4,9 @@ import {
   approvalRequest,
   db,
   helenaGoalTask,
+  helenaProjectGoalLink,
+  initiative,
+  notification,
   organizationAgentAssignment,
   organizationDepartment,
   organizationGoal,
@@ -19,6 +22,66 @@ import { recordUsage } from '../../service';
 
 describe('agent cost rollup and department throttle', () => {
   beforeEach(resetDb);
+
+  it('attributes a task under a linked initiative to its organization goal', async () => {
+    const owner = await signUpTestUser();
+    const asOwner = authedApi(owner.cookie);
+    const project = (await asOwner.projects.post({ key: 'MKT', name: 'Marketing' })).data!;
+    const view = (await asOwner.projects({ projectKey: 'MKT' }).get()).data!;
+    const agent = (
+      await createAgent(asOwner, 'MKT', { name: 'Worker', username: 'worker', kind: 'external' })
+    ).data!.agent;
+    const [goal] = await db
+      .insert(organizationGoal)
+      .values({
+        teamId: project.teamId,
+        projectId: project.id,
+        title: 'Launch',
+      })
+      .returning();
+    const [plan] = await db
+      .insert(initiative)
+      .values({ projectId: project.id, title: 'Campaign' })
+      .returning();
+    await db.insert(helenaProjectGoalLink).values({ initiativeId: plan!.id, goalId: goal!.id });
+    const task = (
+      await asOwner.projects({ projectKey: 'MKT' }).issues.post({
+        title: 'Draft copy',
+        columnId: view.columns[0]!.id,
+        initiativeId: plan!.id,
+      })
+    ).data!;
+    const [run] = await db
+      .insert(agentRun)
+      .values({
+        agentId: agent.id,
+        projectId: project.id,
+        issueId: task.id,
+        prompt: 'Draft',
+      })
+      .returning();
+    await recordUsage({
+      agentId: agent.id,
+      projectId: project.id,
+      runId: run!.id,
+      kind: 'run',
+      spend: { model: 'test-model', inputTokens: 12, outputTokens: 3 },
+    });
+    const usage = await asOwner.teams({ teamId: project.teamId })['agent-usage'].get({
+      query: { by: 'issue,goal' },
+    });
+    expect(usage.status).toBe(200);
+    expect(usage.data?.rows[0]).toMatchObject({
+      issueId: task.id,
+      goalId: goal!.id,
+      inputTokens: 12,
+    });
+    await db.delete(helenaProjectGoalLink);
+    const fallback = await asOwner.teams({ teamId: project.teamId })['agent-usage'].get({
+      query: { by: 'issue,goal' },
+    });
+    expect(fallback.data?.rows[0]?.goalId).toBe(goal!.id);
+  });
 
   it('attributes every runtime to its task, agent, project, goal and department and files a budget card', async () => {
     const owner = await signUpTestUser({ name: 'Owner' });
@@ -124,6 +187,9 @@ describe('agent cost rollup and department throttle', () => {
     const cards = await db.select().from(approvalRequest).where(eq(approvalRequest.kind, 'budget'));
     expect(cards).toHaveLength(1);
     expect(cards[0]).toMatchObject({ projectId, agentId: agent.id, status: 'pending' });
+    expect(
+      await db.select().from(notification).where(eq(notification.type, 'approval_requested')),
+    ).toMatchObject([{ userId: owner.userId, issueId: issue.id }]);
     const organization = await asOwner.teams({ teamId }).organization.get({ query: {} });
     expect(organization.data?.agents.find((entry) => entry.id === agent.id)?.throttled).toBe(true);
     const continued = await asOwner.approvals({ approvalId: cards[0]!.id }).budget.post({

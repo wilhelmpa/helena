@@ -17,6 +17,7 @@ import { categoryOfApprovalKind, type ActionScope } from '@helena/policy';
 import { approvalScope } from './scope';
 import { listMemberContexts, toMemberContext, type MemberRole } from '#modules/members/service';
 import { notifyApprovalRequested } from '#modules/notifications/service';
+import { enqueueTelegramApproval } from '#modules/telegram/channel';
 import { HttpError, iso, pgErrorCode } from '#shared/lib';
 import { hasPermission, type PermissionAction, type PermissionResource } from '#shared/permissions';
 import { publishDomainEvent } from '#shared/helena';
@@ -63,8 +64,10 @@ export const DECIDE_PERMISSION: [PermissionResource, PermissionAction] = ['ai_ag
 const agentUser = alias(user, 'agent_user');
 const decider = alias(user, 'decider');
 
-function selectApprovals() {
-  return db
+type Database = typeof db | Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+function selectApprovals(database: Database = db) {
+  return database
     .select({
       id: approvalRequest.id,
       projectId: approvalRequest.projectId,
@@ -121,8 +124,11 @@ function toDto(row: ApprovalRow): ApprovalDto {
   };
 }
 
-export async function getApproval(id: number): Promise<ApprovalDto | null> {
-  const [row] = await selectApprovals().where(eq(approvalRequest.id, id));
+export async function getApproval(
+  id: number,
+  database: Database = db,
+): Promise<ApprovalDto | null> {
+  const [row] = await selectApprovals(database).where(eq(approvalRequest.id, id));
   return row ? toDto(row) : null;
 }
 
@@ -308,6 +314,9 @@ export async function createApprovalRequest(input: {
       runId: run?.id ?? null,
     },
   });
+  await enqueueTelegramApproval(id, await deciders(input.projectId)).catch(() => {
+    console.warn('[telegram] could not queue approval notice');
+  });
   if (issueId != null) {
     await notifyApprovalRequested({
       projectId: input.projectId,
@@ -341,9 +350,10 @@ export async function decideApprovalRequest(
   id: number,
   deciderUserId: string,
   input: { approved: boolean; note?: string },
+  database: Database = db,
 ): Promise<ApprovalDto> {
   const note = input.note?.trim() || null;
-  await db.transaction(async (tx) => {
+  await database.transaction(async (tx) => {
     const [decided] = await tx
       .update(approvalRequest)
       .set({
@@ -428,7 +438,7 @@ export async function decideApprovalRequest(
       tx,
     );
   });
-  return (await getApproval(id))!;
+  return (await getApproval(id, database))!;
 }
 
 // What Hermes' approval guard lets a run execute: the commands of the calling agent's

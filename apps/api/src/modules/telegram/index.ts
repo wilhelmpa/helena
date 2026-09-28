@@ -4,9 +4,15 @@ import { requireUser } from '#shared/access';
 import { HttpError } from '#shared/lib';
 import { errors } from '#shared/responses';
 import { noContent } from '#shared/http';
-import { TelegramAccountResponse, TelegramLinkStartResponse } from './model';
+import {
+  TelegramAccountResponse,
+  TelegramLinkStartResponse,
+  TelegramTargetBody,
+  TelegramTargetResponse,
+} from './model';
 import { getInstanceBotConfig, isInstanceBotUsable } from '@repo/db';
 import { getTelegramLink, startTelegramLink, unlinkTelegram } from './service';
+import { selectTelegramTarget } from './channel';
 
 // The session user's own Telegram account link. Linking runs through the instance
 // bot: this mints a one-time code and returns the deep link that opens the bot with
@@ -31,6 +37,8 @@ export const telegramRoutes = new Elysia({ name: 'telegram', detail: { tags: ['T
           username: link.username,
           firstName: link.firstName,
           linkedAt: link.linkedAt,
+          selectedAgentId: link.selectedAgentId,
+          selectedProjectId: link.selectedProjectId,
         },
       };
     },
@@ -62,6 +70,16 @@ export const telegramRoutes = new Elysia({ name: 'telegram', detail: { tags: ['T
         description:
           'Mints a one-time code and returns the bot deep link that completes the link when opened.',
       },
+    },
+  )
+
+  .put(
+    '/telegram/account/target',
+    ({ user, body }) => selectTelegramTarget(requireUser(user).id, body.agentId, body.projectKey),
+    {
+      body: TelegramTargetBody,
+      response: { 200: TelegramTargetResponse, ...errors(400, 401, 403, 404) },
+      detail: { summary: 'Select the agent and project for Telegram chat' },
     },
   )
 

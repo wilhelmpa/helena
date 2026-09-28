@@ -1,7 +1,7 @@
 import type { Bot } from 'grammy';
 import { getInstanceBotConfig, isInstanceBotUsable } from '@repo/db';
 import { botConfig } from './config';
-import { createBot } from './bot';
+import { createBot, deliverPending } from './bot';
 
 // Keeps the running bot in step with the instance settings. The token is not env
 // configuration: an administrator sets it in god mode, so this polls the database and
@@ -15,6 +15,8 @@ import { createBot } from './bot';
 let current: { token: string; bot: Bot } | null = null;
 let stopped = false;
 let timer: ReturnType<typeof setTimeout> | null = null;
+let deliveryTimer: ReturnType<typeof setInterval> | null = null;
+let deliveryTask: Promise<void> | null = null;
 
 export interface SupervisorHandle {
   stop: () => Promise<void>;
@@ -39,7 +41,11 @@ async function stopCurrent(): Promise<void> {
   if (!current) return;
   const { bot } = current;
   current = null;
-  await bot.stop();
+  if (deliveryTimer) clearInterval(deliveryTimer);
+  deliveryTimer = null;
+  await deliveryTask;
+  deliveryTask = null;
+  if (bot.isRunning()) await bot.stop();
 }
 
 async function loop(): Promise<void> {
@@ -48,14 +54,13 @@ async function loop(): Promise<void> {
   let delay = cfg.configPollIntervalMs;
   try {
     await reconcile();
-  } catch (err) {
+  } catch {
     // The database being briefly unreachable must not kill the service, and a bot
     // already running keeps running meanwhile. This is the normal case at startup, so
     // retry sooner than the steady-state interval instead of leaving the bot idle for
     // a full poll cycle.
     delay = cfg.configRetryIntervalMs;
-    const reason = err instanceof Error ? err.message : String(err);
-    console.error(`[bot] could not read bot settings: ${reason}`);
+    console.error('[bot] could not read bot settings');
   }
   if (stopped) return;
   timer = setTimeout(loop, delay);
@@ -77,6 +82,14 @@ async function reconcile(): Promise<void> {
   const bot = createBot(settings.botToken);
   const entry = { token: settings.botToken, bot };
   current = entry;
+  deliveryTimer = setInterval(() => {
+    if (deliveryTask) return;
+    deliveryTask = deliverPending(bot)
+      .catch(() => console.error('[bot] delivery tick failed'))
+      .finally(() => {
+        deliveryTask = null;
+      });
+  }, 2_000);
   // bot.start() resolves only when the bot stops, so it is not awaited here. It
   // rejects when the token is rejected by Telegram, which bot.catch does not cover:
   // clear the entry so the next poll tries again instead of assuming it is running.
@@ -84,11 +97,14 @@ async function reconcile(): Promise<void> {
     .start({
       onStart: (me) => console.log(`[bot] polling as @${me.username}`),
       // Only what this bot acts on, so Telegram does not queue updates it ignores.
-      allowed_updates: ['message'],
+      allowed_updates: ['message', 'callback_query'],
     })
-    .catch((err: unknown) => {
-      const reason = err instanceof Error ? err.message : String(err);
-      console.error(`[bot] polling stopped: ${reason}`);
-      if (current === entry) current = null;
+    .catch(() => {
+      console.error('[bot] polling stopped');
+      if (current === entry) {
+        if (deliveryTimer) clearInterval(deliveryTimer);
+        deliveryTimer = null;
+        current = null;
+      }
     });
 }

@@ -24,6 +24,7 @@ export const ProjectGoalLink = t.Object({
 
 const WhyTask = t.Object({ id: t.Integer(), identifier: t.String(), title: t.String() });
 export const IssueWhyResponse = t.Object({
+  department: t.Nullable(t.Object({ id: t.Integer(), name: t.String() })),
   goal: t.Nullable(t.Object({ id: t.Integer(), title: t.String(), path: t.Array(t.String()) })),
   initiative: t.Nullable(t.Object({ id: t.Integer(), title: t.String() })),
   parents: t.Array(WhyTask),
