@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'bun:test';
-import { evictionDetected, probeDue, probeOutcome, type LocalAiGuard } from '../../guard-state';
+import {
+  evictionDetected,
+  modelReadyAndIdle,
+  probeDue,
+  probeOutcome,
+  type LocalAiGuard,
+} from '../../guard-state';
 
 const clean: LocalAiGuard = {
   checkedAt: null,
@@ -15,6 +21,18 @@ describe('local AI guard thresholds', () => {
   it('runs the probe at most once per five minutes', () => {
     expect(probeDue(1_000, 300_999)).toBe(false);
     expect(probeDue(1_000, 301_000)).toBe(true);
+  });
+
+  it('skips a loaded model while any local model is busy', () => {
+    const loaded = { all_models_loaded: [{ model_name: 'Q', is_busy: false }] };
+    expect(modelReadyAndIdle(loaded, 'Q')).toBe(true);
+    expect(
+      modelReadyAndIdle({ all_models_loaded: [{ model_name: 'Q', is_busy: true }] }, 'Q'),
+    ).toBe(false);
+    expect(
+      modelReadyAndIdle({ all_models_loaded: [{ model_name: 'Q', is_streaming: true }] }, 'Q'),
+    ).toBe(false);
+    expect(modelReadyAndIdle(loaded, 'missing')).toBe(false);
   });
   it('needs more than 30 seconds of eviction per process', () => {
     const process = { gpu: '0', pid: 12, name: 'qwen', evictedTimeMs: 60_000, evictedMs5m: 30_000 };

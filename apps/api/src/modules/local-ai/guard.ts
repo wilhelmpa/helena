@@ -11,8 +11,14 @@ import { and, eq, isNotNull, isNull } from 'drizzle-orm';
 import { HttpError } from '#shared/lib';
 import { HostdError, hostd } from '#modules/server/hostd';
 import type { HostSystemStatus } from '#modules/server/types';
-import { openAiEvalContext } from './eval-context';
-import { evictionDetected, probeDue, probeOutcome, type LocalAiGuard } from './guard-state';
+import { joinUrl, openAiEvalContext } from './eval-context';
+import {
+  evictionDetected,
+  modelReadyAndIdle,
+  probeDue,
+  probeOutcome,
+  type LocalAiGuard,
+} from './guard-state';
 import { LEMONADE_DEFAULT_BASE_URL } from './server-types';
 
 const PROBE_LIMIT_MS = 5_000;
@@ -106,11 +112,23 @@ export async function checkLocalAiGuard(now = Date.now()): Promise<void> {
     )
       return;
     if (await localAiWorkActive()) return;
+    const key = await readModelServerKey(server);
+    if (server.keySource !== 'none' && !key) return;
+    let ready = false;
+    try {
+      const response = await fetch(joinUrl(server.baseUrl, '/health'), {
+        headers: key ? { authorization: `Bearer ${key}` } : {},
+        redirect: 'error',
+        signal: AbortSignal.timeout(2_000),
+      });
+      ready = response.ok && modelReadyAndIdle(await response.json(), model);
+    } catch {
+      return;
+    }
+    if (!ready || (await localAiWorkActive())) return;
     lastProbe = now;
     const started = Date.now();
     try {
-      const key = await readModelServerKey(server);
-      if (server.keySource !== 'none' && !key) return;
       const result = await openAiEvalContext({
         baseUrl: server.baseUrl,
         key,
