@@ -4,7 +4,9 @@ import { app, authedApi, type Api } from '#tests/helpers/app';
 import { evaluateLocalAi } from '#tests/helpers/local-ai';
 import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
-import { createAgent } from '#tests/helpers/agents';
+import { createAgent, setAgentProjectRole } from '#tests/helpers/agents';
+import { createRole } from '#tests/helpers/roles';
+import { bootstrapHomeAgent } from '../../../../scripts/bootstrap-home-agent';
 import { insertMailAccount, insertMessage } from '#tests/helpers/mail';
 import {
   agentUsage,
@@ -1851,5 +1853,126 @@ describe('decisions through the local AI', () => {
     const refused = await decide(question);
     expect(refused.status).not.toBe('decided');
     expect(refused.error ?? '').toContain('Nur lokal');
+  });
+});
+
+describe('agent decision log', () => {
+  it('scopes MCP decisions by project, omits input text, and lets Home read the team', async () => {
+    const { asOwner, teamId } = await setup();
+    const second = (await asOwner.projects.post({ key: 'OTHER', name: 'Other' })).data!;
+    expect(second.teamId).toBe(teamId);
+    const home = await bootstrapHomeAgent();
+    if (home.status !== 'ready') throw new Error('Home agent was not provisioned');
+    const agent = await createAgent(asOwner, 'PRIV', {
+      name: 'Project reader',
+      username: 'project-reader',
+      kind: 'external',
+    });
+    expect(agent.status).toBe(201);
+    const agentKey = agent.data!.apiKey!;
+    const credentialId = await connection(asOwner, teamId);
+    await switchOn(asOwner, teamId, GENERAL_CLASS, credentialId, { storeInput: true });
+
+    for (const [projectKey, context] of [
+      ['PRIV', 'Private project context one'],
+      ['PRIV', 'Private project context two'],
+      ['OTHER', 'Other project context'],
+      [undefined, 'Team context'],
+    ] as const) {
+      const response = await asOwner.decisions.decide.post({
+        question: 'Which answer?',
+        options: ['First', 'Second'],
+        context,
+        ...(projectKey ? { projectKey } : { teamId }),
+      });
+      expect(response.status).toBe(200);
+      expect(response.data!.backend).toBe('compatible');
+    }
+
+    const ownerLog = (await asOwner.teams({ teamId }).decisions.log.get({ query: {} })).data!;
+    expect(ownerLog.items.some((item) => item.inputText?.includes('Private project context'))).toBe(
+      true,
+    );
+
+    async function call(key: string, args: Record<string, unknown>) {
+      const response = await app.handle(
+        new Request('http://localhost/mcp', {
+          method: 'POST',
+          headers: {
+            authorization: `Bearer ${key}`,
+            'content-type': 'application/json',
+            accept: 'application/json, text/event-stream',
+          },
+          body: JSON.stringify({
+            jsonrpc: '2.0',
+            id: 1,
+            method: 'tools/call',
+            params: { name: 'list_decisions', arguments: args },
+          }),
+        }),
+      );
+      const text = await response.text();
+      return JSON.parse(text.slice(text.indexOf('data: ') + 6)).result as {
+        isError?: boolean;
+        structuredContent: {
+          ok: boolean;
+          status: number;
+          data: { items: Array<Record<string, unknown>>; nextBefore: number | null };
+        };
+      };
+    }
+
+    const first = await call(agentKey, { limit: 1 });
+    expect(first.structuredContent).toMatchObject({ ok: true, status: 200 });
+    expect(first.structuredContent.data.items).toHaveLength(1);
+    expect(first.structuredContent.data.items[0]).toMatchObject({
+      projectKey: 'PRIV',
+      backend: 'compatible',
+      model: 'laya-test',
+      probabilities: { '0': 0.94 },
+    });
+    expect(first.structuredContent.data.items[0]).not.toHaveProperty('inputText');
+    const secondPage = await call(agentKey, { before: first.structuredContent.data.nextBefore });
+    expect(secondPage.structuredContent.data.items).toHaveLength(1);
+    expect(secondPage.structuredContent.data.items[0]?.projectKey).toBe('PRIV');
+    expect((await call(agentKey, { projectKey: 'OTHER' })).structuredContent.status).toBe(403);
+    expect((await call(agentKey, { limit: 201 })).structuredContent.status).toBe(400);
+    expect(
+      (await call(agentKey, { from: '2100-01-01T00:00:00Z' })).structuredContent.data.items,
+    ).toEqual([]);
+    expect(
+      (await call(agentKey, { to: '2020-01-01T00:00:00Z' })).structuredContent.data.items,
+    ).toEqual([]);
+    expect(
+      (await call(agentKey, { from: '2100-01-01T00:00:00Z', to: '2020-01-01T00:00:00Z' }))
+        .structuredContent.status,
+    ).toBe(400);
+    expect(
+      (await call(agentKey, { projectKey: 'PRIV', classId: GENERAL_CLASS })).structuredContent.data
+        .items,
+    ).toHaveLength(2);
+    expect((await call(agentKey, { classId: 'unknown' })).structuredContent.data.items).toEqual([]);
+
+    const all = await call(home.apiKey, { limit: 200 });
+    expect(all.structuredContent.data.items).toHaveLength(4);
+    expect(all.structuredContent.data.items.every((item) => !('inputText' in item))).toBe(true);
+    expect(all.structuredContent.data.items.map((item) => item.projectKey)).toEqual(
+      expect.arrayContaining(['PRIV', 'OTHER', null]),
+    );
+
+    const noRead = await createRole(asOwner, 'PRIV', {
+      name: 'No task read',
+      permissions: { work_items: { read: false } },
+    });
+    expect(noRead.status).toBe(201);
+    const changed = await setAgentProjectRole(
+      asOwner,
+      'PRIV',
+      agent.data!.agent.userId,
+      noRead.data!.id,
+    );
+    expect(changed.status).toBe(204);
+    expect((await call(agentKey, {})).structuredContent.data.items).toEqual([]);
+    expect((await call(agentKey, { projectKey: 'PRIV' })).structuredContent.status).toBe(403);
   });
 });
