@@ -63,6 +63,8 @@
     "cpuTemperature": "CPU {temperature}.",
     "fansFixed": "المراوح على الدرجة {level}.",
     "fansAuto": "المراوح على التلقائي.",
+    "fanModuleMissing": "وحدة المراوح مفقودة للنواة الحالية.",
+    "fanSensorsUnreadable": "تعذّرت قراءة قيم المراوح.",
     "memoryPressure": "الذاكرة قليلة: فاضل {available} بس.",
     "memoryOk": "الذاكرة: {available} فاضية.",
     "healthFailed": "الحالة متقريتش.",

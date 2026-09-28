@@ -63,6 +63,8 @@
     "cpuTemperature": "CPU {temperature}.",
     "fansFixed": "Ventoinhas no nível {level}.",
     "fansAuto": "Ventoinhas no automático.",
+    "fanModuleMissing": "Módulo das ventoinhas ausente para o kernel em execução.",
+    "fanSensorsUnreadable": "Não é possível ler os valores das ventoinhas.",
     "memoryPressure": "Memória apertada: só {available} livres.",
     "memoryOk": "Memória: {available} livres.",
     "healthFailed": "Não foi possível ler o estado.",

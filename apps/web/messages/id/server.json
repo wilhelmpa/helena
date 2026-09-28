@@ -63,6 +63,8 @@
     "cpuTemperature": "CPU {temperature}.",
     "fansFixed": "Kipas di level {level}.",
     "fansAuto": "Kipas otomatis.",
+    "fanModuleMissing": "Modul kipas tidak ada untuk kernel yang berjalan.",
+    "fanSensorsUnreadable": "Nilai kipas tidak dapat dibaca.",
     "memoryPressure": "Memori menipis: hanya {available} yang bebas.",
     "memoryOk": "Memori: {available} bebas.",
     "healthFailed": "Kondisi tidak dapat dibaca.",

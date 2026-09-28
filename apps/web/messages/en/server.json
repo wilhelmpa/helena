@@ -63,6 +63,8 @@
     "cpuTemperature": "CPU {temperature}.",
     "fansFixed": "Fans at level {level}.",
     "fansAuto": "Fans automatic.",
+    "fanModuleMissing": "Fan module missing for the running kernel.",
+    "fanSensorsUnreadable": "Fan readings are unavailable.",
     "memoryPressure": "Memory is tight: only {available} free.",
     "memoryOk": "Memory: {available} free.",
     "healthFailed": "The health could not be read.",

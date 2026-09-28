@@ -63,6 +63,8 @@
     "cpuTemperature": "CPU {temperature}。",
     "fansFixed": "风扇处于 {level} 档。",
     "fansAuto": "风扇自动调节。",
+    "fanModuleMissing": "当前内核缺少风扇模块。",
+    "fanSensorsUnreadable": "无法读取风扇数值。",
     "memoryPressure": "内存紧张：仅剩 {available} 可用。",
     "memoryOk": "内存：{available} 可用。",
     "healthFailed": "无法读取健康状态。",
