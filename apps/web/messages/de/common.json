@@ -278,13 +278,16 @@
     "agentTeam": "Agententeam",
     "autoArchive": "Automatische Archivierung"
   },
-  "statusOrb": {
+  "status": {
     "idle": "Ruht",
+    "listening": "Hört",
     "thinking": "Denkt",
-    "tool": "Nutzt ein Werkzeug",
+    "tool": "Nutzt Werkzeug",
+    "speaking": "Spricht",
     "waiting": "Wartet auf dich",
     "error": "Fehler",
-    "done": "Fertig",
-    "offline": "Offline"
+    "throttled": "Gedrosselt",
+    "offline": "Aus",
+    "done": "Fertig"
   }
 }

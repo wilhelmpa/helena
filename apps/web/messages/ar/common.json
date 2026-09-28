@@ -278,13 +278,16 @@
     "agentTeam": "فريق الوكلاء",
     "autoArchive": "الأرشفة التلقائية"
   },
-  "statusOrb": {
-    "idle": "في وضع الراحة",
+  "status": {
+    "idle": "في وضع السكون",
+    "listening": "يستمع",
     "thinking": "يفكر",
     "tool": "يستخدم أداة",
-    "waiting": "ينتظر ردك",
+    "speaking": "يتحدث",
+    "waiting": "ينتظرك",
     "error": "خطأ",
-    "done": "اكتمل",
-    "offline": "غير متصل"
+    "throttled": "مقيّد",
+    "offline": "غير متصل",
+    "done": "مكتمل"
   }
 }

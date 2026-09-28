@@ -6,6 +6,7 @@ import { NextIntlClientProvider } from 'next-intl';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { JSDOM } from 'jsdom';
 import chatWorkspace from '../../../../../messages/en/chatWorkspace.json';
+import common from '../../../../../messages/en/common.json';
 import type { ChatSummary } from '@/lib/api/endpoints/agentChat';
 import ChatListItem from './ChatListItem';
 
@@ -24,7 +25,7 @@ let originalGlobalDescriptors: Map<string, PropertyDescriptor | undefined>;
 function render(node: React.ReactNode) {
   act(() =>
     root.render(
-      <NextIntlClientProvider locale="en" messages={{ chatWorkspace }} timeZone="UTC">
+      <NextIntlClientProvider locale="en" messages={{ chatWorkspace, common }} timeZone="UTC">
         <QueryClientProvider client={queryClient}>{node}</QueryClientProvider>
       </NextIntlClientProvider>,
     ),
@@ -127,7 +128,7 @@ describe('ChatListItem', () => {
         onRemoved={() => {}}
       />,
     );
-    assert.ok(document.querySelector('[role="status"]'));
+    assert.ok(document.querySelector('[data-status="thinking"]'));
   });
 
   it('calls onSelect when the row itself is clicked', () => {

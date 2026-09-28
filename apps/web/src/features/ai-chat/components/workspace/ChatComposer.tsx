@@ -64,7 +64,6 @@ export interface ChatComposerProps {
   // What the answer is doing, or how it ended (see composerActivity), and the tool it
   // is running right now, if any.
   activity: ComposerActivity;
-  tool: string | null;
   // Messages written while an answer was still coming, waiting to go out in order.
   queue: QueuedMessage[];
   queuePaused: boolean;
@@ -120,7 +119,6 @@ export default function ChatComposer({
   states,
   motionEnabled,
   activity,
-  tool,
   queue,
   queuePaused,
   onQueue,
@@ -318,7 +316,7 @@ export default function ChatComposer({
           onFiles={(files) => void uploadFiles(files)}
         >
           <PromptInputHeader>
-            <ConversationBar conversation={conversation} agentName={agent.name} />
+            <ConversationBar conversation={conversation} />
             <ChatComposerQueue
               queue={queue}
               agentName={agent.name}
@@ -347,7 +345,6 @@ export default function ChatComposer({
             )}
             <ChatComposerStatus
               activity={activity}
-              tool={tool}
               agentName={agent.name}
               onReconnect={onReconnect}
               onContinue={onContinue}

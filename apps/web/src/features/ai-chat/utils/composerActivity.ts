@@ -1,9 +1,8 @@
 import type { ChatStatus, DynamicToolUIPart } from 'ai';
 import type { PlanUIMessage } from './chatMessages';
 
-// What the composer says about the answer, beside its own buttons — the one place the
-// state of the conversation is shown and steered (owner, 2026-09-24: "the controls
-// belong down at the input field"). The transcript itself shows only messages.
+// Internal activity from the chat stream. The Orb displays active states; the composer
+// only shows actions that recover from an interrupted answer.
 // - thinking: the answer was asked for and nothing of it has arrived yet
 // - writing: it is arriving
 // - queued: nothing yet, and the agent's runner is not there to pick it up
@@ -51,9 +50,7 @@ export function composerActivity(
   return 'answered';
 }
 
-// The tool the answer is running right now — its last part is a tool call whose result
-// has not come back — so the composer can say "Home nutzt web_search …" instead of a
-// bare "schreibt …" while nothing new appears for a while.
+// The active tool call is the last part while its result has not arrived.
 export function activeTool(messages: PlanUIMessage[], status: ChatStatus): string | null {
   if (status !== 'submitted' && status !== 'streaming') return null;
   const last = messages.at(-1);

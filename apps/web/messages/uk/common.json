@@ -278,13 +278,16 @@
     "agentTeam": "Команда агентів",
     "autoArchive": "Автоархівування"
   },
-  "statusOrb": {
+  "status": {
     "idle": "Відпочиває",
+    "listening": "Слухає",
     "thinking": "Думає",
     "tool": "Використовує інструмент",
+    "speaking": "Говорить",
     "waiting": "Чекає на вас",
     "error": "Помилка",
-    "done": "Готово",
-    "offline": "Не в мережі"
+    "throttled": "Обмежено",
+    "offline": "Не в мережі",
+    "done": "Готово"
   }
 }
