@@ -18,6 +18,7 @@ export type WidgetType =
   | 'agent_health'
   | 'webhook_health'
   | 'agent_workload'
+  | 'agent_costs'
   | 'plugin';
 
 export type BreakdownBy = 'status' | 'priority' | 'type' | 'assignee' | 'delegate';
@@ -95,6 +96,7 @@ export const WIDGET_DEFAULTS: Record<
   agent_health: { w: 3, h: 3, minH: 3, config: { days: 30 } },
   webhook_health: { w: 3, h: 3, minH: 3, config: { days: 30 } },
   agent_workload: { w: 6, h: 6, minH: 3, config: {} },
+  agent_costs: { w: 4, h: 6, minH: 4, config: { days: 30 } },
   plugin: { w: 6, h: 6, minH: 2, config: {} },
 };
 

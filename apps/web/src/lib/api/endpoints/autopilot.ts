@@ -42,9 +42,10 @@ export type BudgetPeriod = (typeof BUDGET_PERIODS)[number];
 
 export interface BudgetStatus {
   id: number;
-  scope: 'agent' | 'project';
+  scope: 'agent' | 'project' | 'department';
   agentId: number | null;
   projectId: number | null;
+  departmentId?: number | null;
   metric: BudgetMetric;
   period: BudgetPeriod;
   // Tokens, euros or seconds.

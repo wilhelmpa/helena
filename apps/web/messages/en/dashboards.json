@@ -71,6 +71,10 @@
     "agent_workload": {
       "label": "Agent workload",
       "description": "Delegated issues and run outcomes per agent"
+    },
+    "agent_costs": {
+      "label": "Agent costs",
+      "description": "Euro and tokens of the agents, budgets and the costliest agents and goals"
     }
   },
   "breakdown": {
@@ -256,5 +260,27 @@
     "vetoState": "Veto",
     "signalState": "Signal",
     "period": "Period"
+  },
+  "agentCosts": {
+    "tokens": "{tokens} tokens",
+    "days": "last {days} days",
+    "unpriced": "unpriced",
+    "noAgent": "No agent",
+    "empty": "No costs in this period yet.",
+    "used": "{percent}% used",
+    "budget": {
+      "tokens": {
+        "day": "Tokens budget today",
+        "month": "Tokens budget this month"
+      },
+      "cost": {
+        "day": "Cost budget today",
+        "month": "Cost budget this month"
+      },
+      "time": {
+        "day": "Run time budget today",
+        "month": "Run time budget this month"
+      }
+    }
   }
 }

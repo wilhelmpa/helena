@@ -71,6 +71,10 @@
     "agent_workload": {
       "label": "Carga dos agentes",
       "description": "Issues delegadas e resultados de execução por agente"
+    },
+    "agent_costs": {
+      "label": "Custos dos agentes",
+      "description": "Euros e tokens dos agentes, orçamentos e os agentes e metas mais caros"
     }
   },
   "breakdown": {
@@ -256,5 +260,27 @@
     "vetoState": "Veto",
     "signalState": "Signal",
     "period": "Period"
+  },
+  "agentCosts": {
+    "tokens": "{tokens} tokens",
+    "days": "últimos {days} dias",
+    "unpriced": "sem preço",
+    "noAgent": "Sem agente",
+    "empty": "Ainda não há custos neste período.",
+    "used": "{percent}% usado",
+    "budget": {
+      "tokens": {
+        "day": "Tokens budget today",
+        "month": "Tokens budget this month"
+      },
+      "cost": {
+        "day": "Cost budget today",
+        "month": "Cost budget this month"
+      },
+      "time": {
+        "day": "Run time budget today",
+        "month": "Run time budget this month"
+      }
+    }
   }
 }

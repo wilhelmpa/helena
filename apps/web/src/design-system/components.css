@@ -1549,3 +1549,53 @@ a.ds-run-card:hover {
     align-items: flex-start;
   }
 }
+
+/* Dashboard widget "Kosten der Agenten". */
+.ds-costs {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.ds-costs-total {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.ds-costs-total strong {
+  color: var(--text);
+  font-size: 24px;
+  font-weight: 520;
+  font-variant-numeric: tabular-nums;
+}
+.ds-costs-total span,
+.ds-costs-budget > span {
+  color: var(--text-3);
+  font-size: 12px;
+}
+.ds-costs-budget {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.ds-costs-list {
+  display: flex;
+  flex-direction: column;
+}
+.ds-costs-list li {
+  display: flex;
+  min-height: 28px;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  border-top: 1px solid var(--line);
+  font-size: 13px;
+}
+.ds-costs-list li > span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ds-costs-list li > span:last-child {
+  color: var(--text-2);
+  font-variant-numeric: tabular-nums;
+}

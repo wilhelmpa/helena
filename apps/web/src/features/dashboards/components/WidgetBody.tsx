@@ -10,6 +10,7 @@ import AgentRunsWidget from './widgets/AgentRunsWidget';
 import AgentHealthWidget from './widgets/AgentHealthWidget';
 import WebhookHealthWidget from './widgets/WebhookHealthWidget';
 import AgentWorkloadWidget from './widgets/AgentWorkloadWidget';
+import AgentCostsWidget from './widgets/AgentCostsWidget';
 import ProjectPluginWidget from './ProjectPluginWidget';
 
 // The widget body for a given type. Each widget reads its own config and analytics
@@ -45,6 +46,8 @@ export default function WidgetBody({
       return <WebhookHealthWidget projectKey={projectKey} config={config} />;
     case 'agent_workload':
       return <AgentWorkloadWidget projectKey={projectKey} />;
+    case 'agent_costs':
+      return <AgentCostsWidget project={project} config={config} />;
     case 'plugin':
       return <ProjectPluginWidget widget={widget} projectKey={projectKey} />;
     default:

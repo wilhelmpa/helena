@@ -44,6 +44,7 @@ export default function WidgetSettings({
       return <AgentRunsWidgetSettings config={config} onConfigChange={onConfigChange} />;
     case 'agent_health':
     case 'webhook_health':
+    case 'agent_costs':
       return <WidgetDaysSettings config={config} onConfigChange={onConfigChange} />;
     default:
       return null;

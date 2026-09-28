@@ -1,6 +1,7 @@
 import {
   Activity,
   BarChart3,
+  Coins,
   Bot,
   CalendarDays,
   Hash,
@@ -27,6 +28,7 @@ export const WIDGET_ICON: Record<Exclude<WidgetType, 'plugin'>, LucideIcon> = {
   agent_health: Activity,
   webhook_health: Webhook,
   agent_workload: Users,
+  agent_costs: Coins,
 };
 
 // Widget types grouped by subject for the add-widget picker. The picker renders one
@@ -39,6 +41,6 @@ export const WIDGET_GROUPS: { key: 'issues' | 'agents'; types: Exclude<WidgetTyp
     },
     {
       key: 'agents',
-      types: ['agent_runs', 'agent_health', 'webhook_health', 'agent_workload'],
+      types: ['agent_runs', 'agent_health', 'webhook_health', 'agent_workload', 'agent_costs'],
     },
   ];

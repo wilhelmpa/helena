@@ -71,6 +71,10 @@
     "agent_workload": {
       "label": "عبء عمل الوكلاء",
       "description": "المهام المفوّضة لكل وكيل ونتايج تشغيلاته"
+    },
+    "agent_costs": {
+      "label": "تكاليف الوكلاء",
+      "description": "اليورو والرموز للوكلاء والميزانيات وأغلى الوكلاء والأهداف"
     }
   },
   "breakdown": {
@@ -256,5 +260,27 @@
     "vetoState": "Veto",
     "signalState": "Signal",
     "period": "Period"
+  },
+  "agentCosts": {
+    "tokens": "{tokens} رمز",
+    "days": "آخر {days} يومًا",
+    "unpriced": "بلا سعر",
+    "noAgent": "بلا وكيل",
+    "empty": "لا توجد تكاليف في هذه الفترة بعد.",
+    "used": "استُهلك {percent}%",
+    "budget": {
+      "tokens": {
+        "day": "Tokens budget today",
+        "month": "Tokens budget this month"
+      },
+      "cost": {
+        "day": "Cost budget today",
+        "month": "Cost budget this month"
+      },
+      "time": {
+        "day": "Run time budget today",
+        "month": "Run time budget this month"
+      }
+    }
   }
 }

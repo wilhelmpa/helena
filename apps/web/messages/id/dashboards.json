@@ -71,6 +71,10 @@
     "agent_workload": {
       "label": "Beban kerja agen",
       "description": "Issue yang didelegasikan dan hasil eksekusi per agen"
+    },
+    "agent_costs": {
+      "label": "Biaya agen",
+      "description": "Euro dan token agen, anggaran, serta agen dan tujuan termahal"
     }
   },
   "breakdown": {
@@ -256,5 +260,27 @@
     "vetoState": "Veto",
     "signalState": "Signal",
     "period": "Period"
+  },
+  "agentCosts": {
+    "tokens": "{tokens} token",
+    "days": "{days} hari terakhir",
+    "unpriced": "tanpa harga",
+    "noAgent": "Tanpa agen",
+    "empty": "Belum ada biaya pada periode ini.",
+    "used": "{percent}% terpakai",
+    "budget": {
+      "tokens": {
+        "day": "Tokens budget today",
+        "month": "Tokens budget this month"
+      },
+      "cost": {
+        "day": "Cost budget today",
+        "month": "Cost budget this month"
+      },
+      "time": {
+        "day": "Run time budget today",
+        "month": "Run time budget this month"
+      }
+    }
   }
 }

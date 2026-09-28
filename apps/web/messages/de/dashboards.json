@@ -71,6 +71,10 @@
     "agent_workload": {
       "label": "Agentenauslastung",
       "description": "Delegierte Aufgaben und Laufergebnisse pro Agent"
+    },
+    "agent_costs": {
+      "label": "Kosten der Agenten",
+      "description": "Euro und Tokens der Agenten, Budgets und die teuersten Agenten und Ziele"
     }
   },
   "breakdown": {
@@ -256,5 +260,27 @@
     "vetoState": "Veto",
     "signalState": "Signal",
     "period": "Zeitraum"
+  },
+  "agentCosts": {
+    "tokens": "{tokens} Tokens",
+    "days": "letzte {days} Tage",
+    "unpriced": "ohne Preis",
+    "noAgent": "Ohne Agent",
+    "empty": "Noch keine Kosten in diesem Zeitraum.",
+    "used": "{percent} % verbraucht",
+    "budget": {
+      "tokens": {
+        "day": "Budget Tokens heute",
+        "month": "Budget Tokens diesen Monat"
+      },
+      "cost": {
+        "day": "Budget Kosten heute",
+        "month": "Budget Kosten diesen Monat"
+      },
+      "time": {
+        "day": "Budget Laufzeit heute",
+        "month": "Budget Laufzeit diesen Monat"
+      }
+    }
   }
 }

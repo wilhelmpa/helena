@@ -71,6 +71,10 @@
     "agent_workload": {
       "label": "Загрузка агентов",
       "description": "Делегированные задачи и результаты запусков по агентам"
+    },
+    "agent_costs": {
+      "label": "Затраты агентов",
+      "description": "Евро и токены агентов, бюджеты, самые дорогие агенты и цели"
     }
   },
   "breakdown": {
@@ -256,5 +260,27 @@
     "vetoState": "Veto",
     "signalState": "Signal",
     "period": "Period"
+  },
+  "agentCosts": {
+    "tokens": "{tokens} токенов",
+    "days": "последние {days} дн.",
+    "unpriced": "без цены",
+    "noAgent": "Без агента",
+    "empty": "За этот период затрат пока нет.",
+    "used": "использовано {percent} %",
+    "budget": {
+      "tokens": {
+        "day": "Tokens budget today",
+        "month": "Tokens budget this month"
+      },
+      "cost": {
+        "day": "Cost budget today",
+        "month": "Cost budget this month"
+      },
+      "time": {
+        "day": "Run time budget today",
+        "month": "Run time budget this month"
+      }
+    }
   }
 }
