@@ -293,6 +293,8 @@ describe("Helena's own runtime", () => {
       const local = await createAgent(asOwner, 'MKT', {
         name: 'Lokal',
         username: 'lokal',
+        kind: 'external',
+        triggerOnAssign: true,
         delegationDelaySec: 0,
       });
       const big = await createAgent(asOwner, 'MKT', {
