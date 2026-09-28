@@ -7,6 +7,9 @@ import { ROUTER_EVAL } from './evals/router';
 import { BROWSER_EVAL } from './evals/browser';
 import { DECISIONS_LOCAL_AI_CLASS } from './local-ai-class';
 import { ROUTINE_GATE_EVAL } from './evals/routine-gate';
+import { HEARTBEAT_PRECHECK_EVAL } from './evals/heartbeat-precheck';
+import { TASK_TRIAGE_EVAL } from './evals/task-triage';
+import { AGENT_ROUTING_EVAL } from './evals/agent-routing';
 
 // Helena's own decision classes and the backends the decisions service adds to the browser
 // task's (docs/helena-decisions/decisions.md §2, §4), registered as the internal plugin
@@ -21,8 +24,44 @@ export const RECEIPTS_CLASS = 'helena.receipts';
 export const GENERAL_CLASS = 'helena.general';
 export const BROWSER_CLASS = 'helena.browser';
 export const ROUTINE_GATE_CLASS = 'helena.routine.gate';
+export const HEARTBEAT_PRECHECK_CLASS = 'routines.precheck';
+export const TASK_TRIAGE_CLASS = 'tasks.triage';
+export const AGENT_ROUTING_CLASS = 'agents.routing';
 
 export const BUILTIN_DECISION_CLASSES: DecisionClass[] = [
+  {
+    id: HEARTBEAT_PRECHECK_CLASS,
+    label: { en: 'Heartbeat precheck', de: 'Heartbeat-Vorprüfung' },
+    description: {
+      en: 'Checks one borderline assigned task.',
+      de: 'Prüft eine einzelne Grenzfallaufgabe.',
+    },
+    input: { store: 'never', cloud: 'never' },
+    defaults: { threshold: 0.8, timeoutMs: 5000 },
+    eval: HEARTBEAT_PRECHECK_EVAL,
+  },
+  {
+    id: TASK_TRIAGE_CLASS,
+    label: { en: 'Task triage', de: 'Aufgaben-Einordnung' },
+    description: {
+      en: 'Suggests responsibility and priority.',
+      de: 'Schlägt Zuständigkeit und Priorität vor.',
+    },
+    input: { store: 'never', cloud: 'never' },
+    defaults: { threshold: 0.85, timeoutMs: 5000 },
+    eval: TASK_TRIAGE_EVAL,
+  },
+  {
+    id: AGENT_ROUTING_CLASS,
+    label: { en: 'Agent routing', de: 'Agenten-Routing' },
+    description: {
+      en: 'Selects an eligible agent for a task.',
+      de: 'Wählt einen geeigneten Agenten für eine Aufgabe.',
+    },
+    input: { store: 'never', cloud: 'allowed' },
+    defaults: { threshold: 0.85, timeoutMs: 5000 },
+    eval: AGENT_ROUTING_EVAL,
+  },
   {
     id: ROUTINE_GATE_CLASS,
     label: { en: 'Routine preflight', de: 'Routinen-Vorprüfung' },

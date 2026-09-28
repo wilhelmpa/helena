@@ -1,6 +1,6 @@
 import { Elysia, t } from 'elysia';
-import { aiAgent, agentRun, db } from '@repo/db';
-import { and, eq } from 'drizzle-orm';
+import { aiAgent, agentRun, db, organizationAgentAssignment, projectMember } from '@repo/db';
+import { and, asc, eq, isNull } from 'drizzle-orm';
 import { authContext } from '#shared/auth-context';
 import { guards } from '#shared/guards';
 import { requireProjectAccess, requireTeamMembership, requireUser } from '#shared/access';
@@ -42,6 +42,7 @@ import {
 } from './settings';
 import { teamParams } from '#modules/teams/model';
 import { firstStageView, updateFirstStage } from './first-stage';
+import { routeTaskAgent, triageTask } from './triage';
 
 // Typed decisions (docs/helena-decisions/decisions.md): the classes' settings, their evals
 // and log for the team's owners and managers, and `decide` for agents and people — one
@@ -84,12 +85,90 @@ async function runOf(header: string | null, agentId: number | null): Promise<num
   return row?.id ?? null;
 }
 
+async function projectDecisionAgents(projectId: number, teamId: number) {
+  const rows = await db
+    .select({
+      id: aiAgent.id,
+      username: aiAgent.username,
+      roleTitle: organizationAgentAssignment.roleTitle,
+      capabilities: organizationAgentAssignment.capabilities,
+    })
+    .from(aiAgent)
+    .innerJoin(
+      projectMember,
+      and(eq(projectMember.userId, aiAgent.userId), eq(projectMember.projectId, projectId)),
+    )
+    .leftJoin(
+      organizationAgentAssignment,
+      and(
+        eq(organizationAgentAssignment.agentId, aiAgent.id),
+        eq(organizationAgentAssignment.teamId, teamId),
+      ),
+    )
+    .where(and(eq(aiAgent.teamId, teamId), isNull(aiAgent.pausedAt), eq(aiAgent.template, false)))
+    .orderBy(asc(aiAgent.id))
+    .limit(14);
+  return rows.map((row) => ({
+    id: `a_${row.id}`,
+    label: [row.username, row.roleTitle, row.capabilities?.join(', ')]
+      .filter(Boolean)
+      .join(' — ')
+      .slice(0, 300),
+  }));
+}
+
 export const decisionRoutes = new Elysia({
   name: 'decisions',
   detail: { tags: ['Decisions'] },
 })
   .use(authContext)
   .use(guards)
+
+  .post(
+    '/projects/:projectKey/decisions/task-triage',
+    async ({ user, params, body }) => {
+      const project = await requireProjectAccess(params.projectKey, user);
+      const candidates = await projectDecisionAgents(project.id, project.teamId);
+      return triageTask({
+        teamId: project.teamId,
+        projectId: project.id,
+        title: body.title,
+        description: body.description,
+        candidates,
+        subject: `task-triage:${project.id}`,
+      });
+    },
+    {
+      body: t.Object({
+        title: t.String({ minLength: 1, maxLength: 300 }),
+        description: t.Optional(t.String({ maxLength: 2000 })),
+      }),
+      detail: { summary: 'Classify task responsibility and priority' },
+    },
+  )
+
+  .post(
+    '/projects/:projectKey/decisions/agent-route',
+    async ({ user, params, body }) => {
+      const project = await requireProjectAccess(params.projectKey, user);
+      const candidates = await projectDecisionAgents(project.id, project.teamId);
+      return routeTaskAgent({
+        teamId: project.teamId,
+        projectId: project.id,
+        title: body.title,
+        description: body.description,
+        candidates,
+        subject: `agent-route:${project.id}`,
+      });
+    },
+    {
+      body: t.Object({
+        title: t.String({ minLength: 1, maxLength: 300 }),
+        description: t.Optional(t.String({ maxLength: 2000 })),
+      }),
+      detail: { summary: 'Select an eligible agent for a task' },
+    },
+  )
 
   .post(
     '/decisions/decide',

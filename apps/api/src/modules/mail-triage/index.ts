@@ -37,6 +37,10 @@ export const MailClassification = t.Object({
   needsReply: t.Nullable(t.Boolean()),
   createTask: t.Nullable(t.Boolean()),
   answers: t.Record(t.String(), Answer),
+  cascade: t.Record(
+    t.String(),
+    t.Union([t.Literal('act'), t.Literal('suggest'), t.Literal('escalate')]),
+  ),
   actions: t.Array(
     t.Object({
       kind: t.String(),

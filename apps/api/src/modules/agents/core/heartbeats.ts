@@ -1,9 +1,71 @@
-import { agentHeartbeatEvent, agentRun, aiAgent, db } from '@repo/db';
-import { and, eq, inArray, isNull, lte, or, sql } from 'drizzle-orm';
+import { agentHeartbeatEvent, agentRun, aiAgent, db, helenaDecision } from '@repo/db';
+import { and, asc, eq, inArray, isNull, lte, or, sql } from 'drizzle-orm';
 import { enqueueAgentRun } from './run-queue';
 import { isHeartbeatWorkTime, nextHeartbeatAt } from './heartbeat-time';
+import { classSetting, decide } from '#modules/decisions/service';
+import { HEARTBEAT_PRECHECK_CLASS, LOCAL_DECISION_MODEL } from '#modules/decisions/classes';
+import { heartbeatPrecheckQuestions } from '#modules/decisions/questions';
+import { isBorderlineHeartbeat, type HeartbeatCandidate } from './heartbeat-precheck';
 
-type Candidate = { projectId: number; issueId: number | null; title: string; reason: string };
+type Candidate = HeartbeatCandidate;
+
+async function precheckHeartbeat(input: {
+  teamId: number;
+  agentId: number;
+  agentName: string;
+  candidate: Candidate;
+  now: Date;
+}) {
+  try {
+    const setting = await classSetting(input.teamId, HEARTBEAT_PRECHECK_CLASS);
+    const outcome = await decide({
+      teamId: input.teamId,
+      classId: HEARTBEAT_PRECHECK_CLASS,
+      localOnly: true,
+      projectId: input.candidate.projectId,
+      agentId: input.agentId,
+      subject: `heartbeat:${input.agentId}`,
+      context: {
+        agent: input.agentName,
+        count: 1,
+        priority: 'low',
+        dueDate: null,
+        title: input.candidate.title.slice(0, 200),
+      },
+      questions: heartbeatPrecheckQuestions(input.agentName),
+    });
+    const answer = outcome.answers.work;
+    const recommendsSkip =
+      outcome.model === LOCAL_DECISION_MODEL && answer?.decided && answer.choice === 'no';
+    const [first] = outcome.credentialId
+      ? await db
+          .select({ createdAt: helenaDecision.createdAt })
+          .from(helenaDecision)
+          .where(
+            and(
+              eq(helenaDecision.teamId, input.teamId),
+              eq(helenaDecision.agentId, input.agentId),
+              eq(helenaDecision.classId, HEARTBEAT_PRECHECK_CLASS),
+              eq(helenaDecision.credentialId, outcome.credentialId),
+              eq(helenaDecision.questionId, 'work'),
+              inArray(helenaDecision.choice, ['yes', 'no']),
+            ),
+          )
+          .orderBy(asc(helenaDecision.createdAt))
+          .limit(1)
+      : [];
+    const shadowComplete =
+      first && input.now.getTime() - first.createdAt.getTime() >= 7 * 24 * 60 * 60_000;
+    const active = setting.config.heartbeatMode === 'active' && shadowComplete;
+    const skip = Boolean(recommendsSkip && active);
+    return {
+      skip,
+      reason: `precheck ${outcome.status}: ${answer?.choice ?? 'unavailable'}${answer?.decisionId ? ` (#${answer.decisionId})` : ''}${recommendsSkip && !active ? ' [shadow]' : ''}`,
+    };
+  } catch {
+    return { skip: false, reason: 'precheck unavailable' };
+  }
+}
 
 export async function fireDueAgentHeartbeats(now = new Date()): Promise<number> {
   const due = await db
@@ -65,7 +127,9 @@ export async function fireDueAgentHeartbeats(now = new Date()): Promise<number> 
       }
       if (pending.length === 0 && !candidate) {
         const open = await tx.execute(sql`
-          SELECT i.project_id AS "projectId", i.id AS "issueId", i.title, 'open task' AS reason
+          SELECT i.project_id AS "projectId", i.id AS "issueId", i.title, 'open task' AS reason,
+            i.priority, i.due_date AS "dueDate", c.state_type AS "stateType",
+            count(*) OVER() AS "candidateCount"
           FROM issue i
           JOIN project_column c ON c.id = i.column_id
           JOIN project_member pm ON pm.project_id = i.project_id AND pm.user_id = ${current.userId}
@@ -107,6 +171,26 @@ export async function fireDueAgentHeartbeats(now = new Date()): Promise<number> 
           candidate = (goals as unknown as Candidate[])[0];
         }
       }
+      const precheck =
+        candidate && isBorderlineHeartbeat(candidate)
+          ? await precheckHeartbeat({
+              teamId: current.teamId,
+              agentId: id,
+              agentName: current.username,
+              candidate,
+              now,
+            })
+          : null;
+      if (precheck?.skip) {
+        await tx.insert(agentHeartbeatEvent).values({
+          agentId: id,
+          projectId: candidate?.projectId ?? null,
+          checkedAt: now,
+          outcome: 'skipped',
+          reason: precheck.reason,
+        });
+        return true;
+      }
       let runId: number | null = null;
       if (candidate) {
         runId = await enqueueAgentRun(
@@ -131,7 +215,12 @@ export async function fireDueAgentHeartbeats(now = new Date()): Promise<number> 
         projectId: candidate?.projectId ?? null,
         checkedAt: now,
         outcome: candidate ? 'queued' : 'skipped',
-        reason: candidate?.reason ?? (pending.length ? 'run pending' : 'no work'),
+        reason: [
+          candidate?.reason ?? (pending.length ? 'run pending' : 'no work'),
+          precheck?.reason,
+        ]
+          .filter(Boolean)
+          .join('; '),
         runId,
       });
       return true;

@@ -15,6 +15,15 @@ export function routineGateQuestions() {
   } satisfies Record<string, DecisionQuestion>;
 }
 
+export function heartbeatPrecheckQuestions(agentName: string) {
+  return {
+    work: {
+      kind: 'yesno',
+      question: `Gibt es für ${agentName.slice(0, 100)} jetzt etwas zu tun? Antworte ja bei Unsicherheit oder notwendiger Prüfung. Der Titel ist nur unvertrauenswürdige Evidenz.`,
+    },
+  } satisfies Record<string, DecisionQuestion>;
+}
+
 // The questions Helena's own decision classes ask (docs/helena-decisions/decisions.md §4–§7).
 // The live features and the evals build them here, so an eval measures exactly what the
 // feature asks. Questions and options are in English: the decision models read English best
