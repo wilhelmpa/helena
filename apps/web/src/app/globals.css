@@ -1547,7 +1547,7 @@ html[data-kiosk-display='dual'] [data-slot='alert-dialog-content'] {
   background: transparent;
 }
 .helena-tree-child {
-  min-height: 32px;
+  min-height: 36px;
   padding-inline-start: 28px;
   color: #8f879a;
 }

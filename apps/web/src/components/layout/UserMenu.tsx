@@ -176,7 +176,7 @@ export default function UserMenu({ variant = 'avatar' }: { variant?: 'avatar' | 
                 >
                   <span aria-hidden>{LOCALE_FLAGS[value]}</span>
                   {LOCALE_LABELS[value]}
-                  {value === (locale as Locale) && <span className="ms-auto">✓</span>}
+                  {value === (locale as Locale) && <span className="ms-auto">{'✓'}</span>}
                 </DropdownMenuItem>
               ))}
             </DropdownMenuSubContent>

@@ -2,6 +2,7 @@
 
 import { useState, type DragEvent } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { ChevronRight, Folder, Plus } from 'lucide-react';
 import { toast } from 'sonner';
@@ -35,6 +36,7 @@ function FolderNode({
   depth: number;
   canWrite: boolean;
 }) {
+  const fixed = useTranslations('files.fixedFolders');
   const pathname = usePathname();
   const params = useSearchParams();
   const scopeMatches = scope.kind === 'project' || (params.get('root') ?? 'home') === scope.root;
@@ -102,7 +104,7 @@ function FolderNode({
         >
           <Folder size={14} className="me-2 inline shrink-0 text-muted-foreground" />
           <span className="truncate">
-            {scope.kind === 'project' ? knowledgeFolderLabel(name) : name}
+            {scope.kind === 'project' && depth === 0 ? knowledgeFolderLabel(name, fixed) : name}
           </span>
         </Link>
         {canWrite && (
@@ -118,7 +120,7 @@ function FolderNode({
       </div>
       {open &&
         [...children]
-          .sort((a, b) => compareKnowledgeFolders(a.name, b.name))
+          .sort((a, b) => a.name.localeCompare(b.name))
           .map((child) => (
             <FolderNode
               key={child.path}
@@ -147,7 +149,11 @@ export default function SidebarKnowledgeFolders({
   return (
     listing.data?.items
       .filter((item) => item.kind === 'folder')
-      .sort((a, b) => compareKnowledgeFolders(a.name, b.name))
+      .sort((a, b) =>
+        scope.kind === 'project'
+          ? compareKnowledgeFolders(a.name, b.name)
+          : a.name.localeCompare(b.name),
+      )
       .map((folder) => (
         <FolderNode
           key={folder.path}

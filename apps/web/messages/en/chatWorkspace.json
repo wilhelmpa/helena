@@ -59,7 +59,7 @@
     "previousVersion": "Previous version",
     "nextVersion": "Next version",
     "saveAsNote": "Save as a note",
-    "noteSaved": "Chat saved as a note in Docs.",
+    "noteSaved": "Chat saved as a note in Knowledge.",
     "noteSaveFailed": "Could not save the chat as a note.",
     "noteQuestion": "Question",
     "noteAnswer": "{agent}’s answer",
@@ -79,8 +79,8 @@
     "stop": "Stop the answer",
     "attach": "Attach",
     "uploadFile": "Upload a file",
-    "fromVault": "Choose from the vault",
-    "vaultRoot": "Vault",
+    "fromVault": "Choose from Knowledge",
+    "vaultRoot": "Knowledge",
     "vaultEmpty": "This folder is empty.",
     "uploading": "Uploading…",
     "uploadFailed": "The upload failed.",
@@ -126,7 +126,7 @@
     "toggle": "Toggle the artifact panel",
     "code": "Code",
     "preview": "Preview",
-    "save": "Save to the vault",
+    "save": "Save to Knowledge",
     "saved": "Saved to {path}.",
     "writing": "Writing the artifact …"
   },
@@ -164,8 +164,7 @@
     "loading": "Loading the request…"
   },
   "newChat": {
-    "title": "New chat with {agent}",
-    "hint": "Pick the agent at the bottom left of the input — its state is shown there."
+    "title": "New chat with {agent}"
   },
   "agents": {
     "runtimeExternal": "External",

@@ -46,7 +46,7 @@ import ChatModelPicker from './ChatModelPicker';
 import ChatRenameDialog from './ChatRenameDialog';
 import ChatPromptVariablesDialog from './ChatPromptVariablesDialog';
 import ChatComposerStatus from './ChatComposerStatus';
-import ChatAgentMenu from './ChatAgentMenu';
+import ChatAgentMenu from '@/components/helena/AgentPicker';
 import styles from './HomeChatLanding.module.css';
 
 interface PendingAttachment {

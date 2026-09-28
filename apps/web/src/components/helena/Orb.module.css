@@ -71,18 +71,19 @@
 }
 .static {
   display: block;
-  width: 52%;
-  height: 52%;
-  margin: 24%;
+  width: 68%;
+  height: 68%;
+  margin: 16%;
   border-radius: 50%;
   background: radial-gradient(
     circle,
-    var(--orb-color) 0%,
-    color-mix(in srgb, var(--orb-color), transparent 55%) 37%,
-    transparent 72%
+    color-mix(in srgb, var(--orb-color) 85%, white) 0%,
+    var(--orb-color) 22%,
+    color-mix(in srgb, var(--orb-color), transparent 35%) 48%,
+    transparent 78%
   );
-  filter: blur(0.6rem);
-  box-shadow: 0 0 3rem color-mix(in srgb, var(--orb-color), transparent 75%);
+  filter: blur(0.8rem);
+  box-shadow: 0 0 5rem color-mix(in srgb, var(--orb-color), transparent 45%);
 }
 .tool {
   outline: 1px solid var(--status-thinking);

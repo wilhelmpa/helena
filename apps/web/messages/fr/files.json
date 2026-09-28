@@ -1,4 +1,11 @@
 {
+  "fixedFolders": {
+    "Docs": "Documents",
+    "Files": "Fichiers",
+    "Assets": "Pièces jointes",
+    "Boards": "Toiles",
+    "Inbox": "Entrée"
+  },
   "title": "Fichiers",
   "projectDescription": "Documents, pièces jointes et code de ce projet",
   "roots": {
@@ -55,7 +62,7 @@
     "copyPath": "Copier le chemin",
     "openInNotes": "Ouvrir dans Notes",
     "openInCode": "Ouvrir dans VS Code",
-    "openInDocs": "Ouvrir dans Docs",
+    "openInDocs": "Ouvrir dans Connaissances",
     "linkToTask": "Lier à une tâche",
     "trash": "Mettre à la corbeille",
     "showInFolder": "Afficher dans le dossier"
@@ -67,7 +74,7 @@
     "name": "Nom",
     "folderName": "Nouveau dossier",
     "fileName": "Note.md",
-    "fileHint": "Un fichier .md ou .txt. Une note Markdown s'ouvre dans Docs.",
+    "fileHint": "Fichier .md ou .txt. Markdown s’ouvre dans Connaissances.",
     "create": "Créer",
     "save": "Enregistrer",
     "cancel": "Annuler"

@@ -59,7 +59,7 @@
     "previousVersion": "Versão anterior",
     "nextVersion": "Próxima versão",
     "saveAsNote": "Salvar como nota",
-    "noteSaved": "Chat salvo como nota em Docs.",
+    "noteSaved": "Chat salvo como nota em Conhecimento.",
     "noteSaveFailed": "Não foi possível salvar o chat como nota.",
     "noteQuestion": "Pergunta",
     "noteAnswer": "Resposta de {agent}",
@@ -79,8 +79,8 @@
     "stop": "Parar a resposta",
     "attach": "Anexar",
     "uploadFile": "Enviar um arquivo",
-    "fromVault": "Escolher do vault",
-    "vaultRoot": "Vault",
+    "fromVault": "Escolher em Conhecimento",
+    "vaultRoot": "Conhecimento",
     "vaultEmpty": "Esta pasta está vazia.",
     "uploading": "Enviando…",
     "uploadFailed": "O envio falhou.",
@@ -126,7 +126,7 @@
     "toggle": "Mostrar/ocultar o painel de artefato",
     "code": "Código",
     "preview": "Prévia",
-    "save": "Salvar no vault",
+    "save": "Salvar em Conhecimento",
     "saved": "Salvo em {path}.",
     "writing": "Escrevendo o artefato…"
   },
@@ -164,8 +164,7 @@
     "loading": "Carregando o pedido…"
   },
   "newChat": {
-    "title": "Novo chat com {agent}",
-    "hint": "Escolha o agente no canto inferior esquerdo do campo de entrada — o status dele aparece ali."
+    "title": "Novo chat com {agent}"
   },
   "agents": {
     "runtimeExternal": "Externo",

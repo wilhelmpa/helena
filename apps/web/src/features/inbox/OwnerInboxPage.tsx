@@ -27,6 +27,10 @@ import { formatTime } from '@/utils/dates';
 import { projectColor } from '@/utils/projectColor';
 import Orb from '@/components/helena/Orb';
 import { useAgentStatus } from '@/utils/helenaStatus';
+import { Card, MonoLabel } from '@/components/helena/DashboardPrimitives';
+import { ProjectTag } from '@/components/helena/ProjectTag';
+import EmptyState from '@/components/helena/EmptyState';
+import PillButton from '@/components/helena/PillButton';
 import styles from './OwnerInboxPage.module.css';
 
 function InboxCard({ item }: { item: OwnerInboxItem }) {
@@ -94,22 +98,22 @@ function InboxCard({ item }: { item: OwnerInboxItem }) {
   const busy = approvalDecision.isPending || stepDecision.isPending || mentionRead.isPending;
 
   return (
-    <article className={styles.card}>
+    <Card as="article" className={styles.card}>
       <Orb state={status} size="dot" className={styles.dot} />
       <div className={styles.cardContent}>
         <span className={styles.tag} style={{ color: projectColor(item.projectKey) }}>
-          {project} · {tag}
+          {item.projectKey ? <ProjectTag projectKey={project} plain /> : project} · {tag}
         </span>
         <h2>{title}</h2>
         <p>{shortBody}</p>
         <div className={styles.actions}>
           {item.kind === 'approval' ? (
             item.approval.kind === 'budget' ? (
-              <button className={styles.primary} onClick={() => setExpanded(true)}>
+              <PillButton className={styles.primary} onClick={() => setExpanded(true)}>
                 {t('decide')}
-              </button>
+              </PillButton>
             ) : (
-              <button
+              <PillButton
                 className={styles.primary}
                 disabled={busy}
                 onClick={() =>
@@ -117,10 +121,10 @@ function InboxCard({ item }: { item: OwnerInboxItem }) {
                 }
               >
                 {t('approve')}
-              </button>
+              </PillButton>
             )
           ) : item.kind === 'step' ? (
-            <button
+            <PillButton
               className={styles.primary}
               disabled={busy}
               onClick={() =>
@@ -128,11 +132,11 @@ function InboxCard({ item }: { item: OwnerInboxItem }) {
               }
             >
               {t('approve')}
-            </button>
+            </PillButton>
           ) : item.kind === 'proposal' ? (
-            <button className={styles.primary} onClick={() => setExpanded(true)}>
+            <PillButton className={styles.primary} onClick={() => setExpanded(true)}>
               {t('decide')}
-            </button>
+            </PillButton>
           ) : item.kind === 'mention' ? (
             <Link className={styles.primary} href={seeHref!}>
               {t('reply')}
@@ -143,9 +147,12 @@ function InboxCard({ item }: { item: OwnerInboxItem }) {
                 {t('openDetails')}
               </Link>
             ) : (
-              <button className={styles.primary} onClick={item.entry.onSelect ?? openSystemDetails}>
+              <PillButton
+                className={styles.primary}
+                onClick={item.entry.onSelect ?? openSystemDetails}
+              >
                 {t('openDetails')}
-              </button>
+              </PillButton>
             )
           ) : (
             <Link className={styles.primary} href={seeHref!}>
@@ -202,7 +209,7 @@ function InboxCard({ item }: { item: OwnerInboxItem }) {
       <time className={styles.time} dateTime={item.at || undefined}>
         {item.at ? formatTime(item.at) : t('now')}
       </time>
-    </article>
+    </Card>
   );
 }
 
@@ -222,7 +229,7 @@ function OwnerInboxContent() {
   return (
     <main className={styles.main}>
       <div className={styles.content}>
-        <p className={styles.eyebrow}>{t('eyebrow')}</p>
+        <MonoLabel className={styles.eyebrow}>{t('eyebrow')}</MonoLabel>
         <div className={styles.headingRow}>
           <h1>
             {error && visible.length === 0 ? (
@@ -254,18 +261,18 @@ function OwnerInboxContent() {
             ))}
           </div>
         </div>
-        {error && <p className={styles.empty}>{t('loadError')}</p>}
+        {error && <EmptyState className={styles.empty}>{t('loadError')}</EmptyState>}
         {error && visible.length === 0 ? null : loading && actions.length === 0 ? (
-          <p className={styles.empty}>{t('loading')}</p>
+          <EmptyState className={styles.empty}>{t('loading')}</EmptyState>
         ) : visible.length === 0 ? (
-          <p className={styles.empty}>{t('empty')}</p>
+          <EmptyState className={styles.empty}>{t('empty')}</EmptyState>
         ) : (
           visible.map((item) => <InboxCard key={item.key} item={item} />)
         )}
         <section className={styles.reads} aria-labelledby="reads-heading">
           <h2 id="reads-heading">{t('toRead')}</h2>
           {visibleReads.length === 0 ? (
-            <p className={styles.empty}>{t('noCompletedRuns')}</p>
+            <EmptyState className={styles.empty}>{t('noCompletedRuns')}</EmptyState>
           ) : (
             visibleReads.map((entry) => {
               const target = activityDetails(entry);

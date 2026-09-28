@@ -1,4 +1,11 @@
 {
+  "fixedFolders": {
+    "Docs": "Documentos",
+    "Files": "Arquivos",
+    "Assets": "Anexos",
+    "Boards": "Telas",
+    "Inbox": "Entrada"
+  },
   "title": "Arquivos",
   "projectDescription": "Documentos, anexos e código deste projeto",
   "roots": {
@@ -55,7 +62,7 @@
     "copyPath": "Copiar caminho",
     "openInNotes": "Abrir em Notas",
     "openInCode": "Abrir no VS Code",
-    "openInDocs": "Abrir no Docs",
+    "openInDocs": "Abrir em Conhecimento",
     "linkToTask": "Vincular a uma tarefa",
     "trash": "Mover para a lixeira",
     "showInFolder": "Mostrar na pasta"
@@ -67,7 +74,7 @@
     "name": "Nome",
     "folderName": "Nova pasta",
     "fileName": "Nota.md",
-    "fileHint": "Um arquivo .md ou .txt. Uma nota Markdown abre no Docs.",
+    "fileHint": "Arquivo .md ou .txt. Markdown abre em Conhecimento.",
     "create": "Criar",
     "save": "Salvar",
     "cancel": "Cancelar"

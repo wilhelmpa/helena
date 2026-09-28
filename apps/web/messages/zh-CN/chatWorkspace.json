@@ -59,7 +59,7 @@
     "previousVersion": "上一个版本",
     "nextVersion": "下一个版本",
     "saveAsNote": "另存为笔记",
-    "noteSaved": "聊天已作为笔记保存到 Docs。",
+    "noteSaved": "聊天已作为笔记保存到知识库。",
     "noteSaveFailed": "无法将聊天保存为笔记。",
     "noteQuestion": "问题",
     "noteAnswer": "{agent} 的回答",
@@ -79,8 +79,8 @@
     "stop": "停止回答",
     "attach": "附加",
     "uploadFile": "上传文件",
-    "fromVault": "从保险库选择",
-    "vaultRoot": "保险库",
+    "fromVault": "从知识库选择",
+    "vaultRoot": "知识库",
     "vaultEmpty": "此文件夹为空。",
     "uploading": "正在上传…",
     "uploadFailed": "上传失败。",
@@ -126,7 +126,7 @@
     "toggle": "显示/隐藏产物面板",
     "code": "代码",
     "preview": "预览",
-    "save": "保存到保险库",
+    "save": "保存到知识库",
     "saved": "已保存到 {path}。",
     "writing": "正在生成工件…"
   },
@@ -164,8 +164,7 @@
     "loading": "正在加载请求…"
   },
   "newChat": {
-    "title": "与 {agent} 的新对话",
-    "hint": "在输入框左下角选择智能体——它的状态也显示在那里。"
+    "title": "与 {agent} 的新对话"
   },
   "agents": {
     "runtimeExternal": "外部",

@@ -59,7 +59,7 @@
     "previousVersion": "Version précédente",
     "nextVersion": "Version suivante",
     "saveAsNote": "Enregistrer comme note",
-    "noteSaved": "Chat enregistré comme note dans Docs.",
+    "noteSaved": "Discussion enregistrée comme note dans Connaissances.",
     "noteSaveFailed": "Impossible d’enregistrer le chat comme note.",
     "noteQuestion": "Question",
     "noteAnswer": "Réponse de {agent}",
@@ -79,8 +79,8 @@
     "stop": "Arrêter la réponse",
     "attach": "Joindre",
     "uploadFile": "Importer un fichier",
-    "fromVault": "Choisir dans le vault",
-    "vaultRoot": "Vault",
+    "fromVault": "Choisir dans Connaissances",
+    "vaultRoot": "Connaissances",
     "vaultEmpty": "Ce dossier est vide.",
     "uploading": "Envoi en cours…",
     "uploadFailed": "L’envoi a échoué.",
@@ -126,7 +126,7 @@
     "toggle": "Afficher/masquer le panneau d’artefact",
     "code": "Code",
     "preview": "Aperçu",
-    "save": "Enregistrer dans le vault",
+    "save": "Enregistrer dans Connaissances",
     "saved": "Enregistré sous {path}.",
     "writing": "Rédaction de l’artefact…"
   },
@@ -164,8 +164,7 @@
     "loading": "Chargement de la demande…"
   },
   "newChat": {
-    "title": "Nouvelle discussion avec {agent}",
-    "hint": "Choisissez l’agent en bas à gauche du champ de saisie — son état y est affiché."
+    "title": "Nouvelle discussion avec {agent}"
   },
   "agents": {
     "runtimeExternal": "Externe",

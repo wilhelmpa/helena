@@ -1,4 +1,11 @@
 {
+  "fixedFolders": {
+    "Docs": "المستندات",
+    "Files": "الملفات",
+    "Assets": "المرفقات",
+    "Boards": "اللوحات",
+    "Inbox": "الوارد"
+  },
   "title": "الملفات",
   "projectDescription": "مستندات هذا المشروع ومرفقاته وشيفرته",
   "roots": {
@@ -55,7 +62,7 @@
     "copyPath": "نسخ المسار",
     "openInNotes": "فتح في الملاحظات",
     "openInCode": "فتح في VS Code",
-    "openInDocs": "فتح في المستندات",
+    "openInDocs": "فتح في المعرفة",
     "linkToTask": "ربط بمهمة",
     "trash": "نقل إلى سلة المهملات",
     "showInFolder": "إظهار في المجلد"
@@ -67,7 +74,7 @@
     "name": "الاسم",
     "folderName": "مجلد جديد",
     "fileName": "ملاحظة.md",
-    "fileHint": "ملف ‎.md أو ‎.txt. تُفتح ملاحظة Markdown في المستندات.",
+    "fileHint": "ملف ‎.md أو ‎.txt. يفتح Markdown في المعرفة.",
     "create": "إنشاء",
     "save": "حفظ",
     "cancel": "إلغاء"

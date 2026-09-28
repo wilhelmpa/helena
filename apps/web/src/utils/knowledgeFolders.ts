@@ -7,8 +7,13 @@ const fixedFolders: Record<string, string> = {
 };
 
 const fixedOrder = ['Docs', 'Files', 'Assets', 'Boards', 'Inbox'];
+export type FixedFolderKey = 'Docs' | 'Files' | 'Assets' | 'Boards' | 'Inbox';
 
-export function knowledgeFolderLabel(name: string): string {
+export function knowledgeFolderLabel(
+  name: string,
+  translate?: (key: FixedFolderKey) => string,
+): string {
+  if (name in fixedFolders && translate) return translate(name as FixedFolderKey);
   return fixedFolders[name] ?? name;
 }
 
