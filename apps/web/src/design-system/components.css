@@ -1975,3 +1975,13 @@ a.ds-run-card:hover {
   height: 100%;
   padding: 0 var(--space-2);
 }
+
+/* A native select (the org chart's cards, a receipt's original, the inbox scope): the same
+   quiet field as every text field; inline when it is not told to fill its row. */
+.ds-select-native {
+  cursor: pointer;
+  padding-inline-end: var(--space-6);
+}
+.ds-select-native:not(.w-full) {
+  width: auto;
+}

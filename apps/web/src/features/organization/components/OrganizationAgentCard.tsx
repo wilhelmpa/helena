@@ -73,7 +73,7 @@ export default function OrganizationAgentCard({
         <label className="space-y-1 text-sm">
           <span className="block text-xs text-muted-foreground">{t('fields.teamRole')}</span>
           <select
-            className="h-8 w-full rounded-md border bg-background px-2 text-sm"
+            className="ds-field ds-select-native w-full"
             value={role}
             onChange={(event) => setRole(event.target.value as AgentTeamRole | '')}
           >
@@ -97,7 +97,7 @@ export default function OrganizationAgentCard({
         <label className="space-y-1 text-sm">
           <span className="block text-xs text-muted-foreground">{t('fields.department')}</span>
           <select
-            className="h-8 w-full rounded-md border bg-background px-2 text-sm"
+            className="ds-field ds-select-native w-full"
             value={departmentId}
             onChange={(event) => setDepartmentId(event.target.value)}
           >
@@ -112,7 +112,7 @@ export default function OrganizationAgentCard({
         <label className="space-y-1 text-sm">
           <span className="block text-xs text-muted-foreground">{t('fields.reportsTo')}</span>
           <select
-            className="h-8 w-full rounded-md border bg-background px-2 text-sm"
+            className="ds-field ds-select-native w-full"
             value={reportsToAgentId}
             onChange={(event) => setReportsToAgentId(event.target.value)}
           >

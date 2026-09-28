@@ -83,7 +83,7 @@ export function ReceiptOriginals({
             }}
           />
           <select
-            className="w-full rounded border bg-background p-2 text-sm"
+            className="ds-field ds-select-native w-full"
             aria-label={t('primary')}
             value={selected ?? ''}
             onChange={(event) =>

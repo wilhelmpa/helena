@@ -48,7 +48,7 @@ export default function OrganizationDepartmentCard({
             {t('fields.parentDepartment')}
           </span>
           <select
-            className="h-8 w-full rounded-md border bg-background px-2 text-sm"
+            className="ds-field ds-select-native w-full"
             value={parentId}
             onChange={(event) => setParentId(event.target.value)}
           >

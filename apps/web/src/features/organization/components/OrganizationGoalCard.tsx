@@ -65,7 +65,7 @@ export default function OrganizationGoalCard({
         <label className="space-y-1 text-sm">
           <span className="block text-xs text-muted-foreground">{t('fields.status')}</span>
           <select
-            className="h-8 w-full rounded-md border bg-background px-2 text-sm"
+            className="ds-field ds-select-native w-full"
             value={status}
             onChange={(event) => setStatus(event.target.value as OrganizationGoalStatus)}
           >
@@ -79,7 +79,7 @@ export default function OrganizationGoalCard({
         <label className="space-y-1 text-sm">
           <span className="block text-xs text-muted-foreground">{t('fields.department')}</span>
           <select
-            className="h-8 w-full rounded-md border bg-background px-2 text-sm"
+            className="ds-field ds-select-native w-full"
             value={departmentId}
             onChange={(event) => setDepartmentId(event.target.value)}
           >
@@ -94,7 +94,7 @@ export default function OrganizationGoalCard({
         <label className="space-y-1 text-sm">
           <span className="block text-xs text-muted-foreground">{t('fields.project')}</span>
           <select
-            className="h-8 w-full rounded-md border bg-background px-2 text-sm"
+            className="ds-field ds-select-native w-full"
             value={projectId}
             onChange={(event) => setProjectId(event.target.value)}
           >
@@ -109,7 +109,7 @@ export default function OrganizationGoalCard({
         <label className="space-y-1 text-sm">
           <span className="block text-xs text-muted-foreground">{t('fields.parentGoal')}</span>
           <select
-            className="h-8 w-full rounded-md border bg-background px-2 text-sm"
+            className="ds-field ds-select-native w-full"
             value={parentGoalId}
             onChange={(event) => setParentGoalId(event.target.value)}
           >
