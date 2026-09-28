@@ -1,6 +1,6 @@
 'use client';
 
-import type { AiChatModel } from '@/lib/api/endpoints/agentChat';
+import type { AiChatModel, UnavailableChatModel } from '@/lib/api/endpoints/agentChat';
 import type { AgentRuntimeKind } from '@/lib/api/endpoints/agents';
 import { useTranslations } from 'next-intl';
 import {
@@ -22,6 +22,7 @@ export default function RuntimePicker({
   model,
   reasoning,
   models,
+  unavailable = [],
   disabled = false,
   onChange,
 }: {
@@ -29,6 +30,7 @@ export default function RuntimePicker({
   model: string | null;
   reasoning: string | null;
   models: AiChatModel[];
+  unavailable?: UnavailableChatModel[];
   disabled?: boolean;
   onChange: (runtime: AgentRuntimeKind, model: string | null, reasoning: string | null) => void;
 }) {
@@ -37,7 +39,9 @@ export default function RuntimePicker({
   const availableModels = [...new Map(models.map((entry) => [entry.id, entry])).values()];
   const localModels = availableModels.filter((entry) => entry.id.startsWith('helena-local/'));
   const runtimeModels = availableModels.filter((entry) =>
-    choice === 'local' ? entry.id.startsWith('helena-local/') : !entry.local,
+    choice === 'local'
+      ? entry.id.startsWith('helena-local/')
+      : !entry.local && !entry.id.startsWith('helena-'),
   );
   const selected = runtimeModels.find((entry) => entry.id === model);
   const selectRuntime = (next: RuntimeChoice) => {
@@ -93,9 +97,22 @@ export default function RuntimePicker({
             <SelectItem value="__default__">{t('summary')}</SelectItem>
             {model && !selected && (
               <SelectItem value={model} disabled>
-                {model} · {t('unavailable')}
+                {model} ·{' '}
+                {unavailable.find((entry) => entry.id === model)?.detail ?? t('unavailable')}
               </SelectItem>
             )}
+            {unavailable
+              .filter((entry) => entry.id !== model)
+              .map((entry) => (
+                <SelectItem
+                  key={entry.id}
+                  value={entry.id}
+                  disabled
+                  title={entry.detail ?? undefined}
+                >
+                  {entry.id} · {entry.detail ?? t('unavailable')}
+                </SelectItem>
+              ))}
             {runtimeModels.map((entry) => (
               <SelectItem key={entry.id} value={entry.id}>
                 {entry.name}

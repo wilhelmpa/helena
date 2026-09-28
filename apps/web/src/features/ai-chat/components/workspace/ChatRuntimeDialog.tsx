@@ -71,6 +71,11 @@ export default function ChatRuntimeDialog({
               : []),
             ...(catalog.data?.localModels ?? []),
           ]}
+          unavailable={
+            runtime === (agent.runtimePolicy.runtime ?? 'hermes')
+              ? (catalog.data?.unavailable ?? [])
+              : []
+          }
           onChange={(nextRuntime, nextModel, nextReasoning) => {
             setRuntime(nextRuntime);
             setModel(nextModel);

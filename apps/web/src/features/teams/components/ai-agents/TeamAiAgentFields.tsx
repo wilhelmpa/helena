@@ -267,6 +267,11 @@ export default function TeamAiAgentFields({
             : []),
           ...localModels,
         ]}
+        unavailable={
+          (value.runtimePolicy.runtime ?? 'hermes') === (agent?.runtimePolicy.runtime ?? 'hermes')
+            ? chatModelsUnavailable
+            : []
+        }
         onChange={(runtime, model, reasoning) =>
           onChange({
             model: model ?? '',
