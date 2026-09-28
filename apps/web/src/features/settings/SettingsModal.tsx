@@ -7,21 +7,29 @@ import {
   useRef,
   useState,
   useSyncExternalStore,
-  type ReactNode,
+  type MouseEvent,
 } from 'react';
 import { createPortal } from 'react-dom';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useSession } from '@/lib/auth-client';
 import { useProjectsQuery } from '@/services/projects.service';
 import { useTeamsQuery } from '@/services/teams.service';
+import { useAiAgentsQuery } from '@/services/aiAgents.service';
+import { dashboardsPath } from '@/utils/paths';
 import { ShellHeaderSlotCtx } from '@/context/shellHeaderSlot';
 import ProjectSettingsModalContent from './ProjectSettingsModalContent';
+import SettingsAreaContent from './SettingsAreaContent';
 import {
   SETTINGS_MODAL_OPEN,
+  SETTINGS_PARAM,
+  parseSettingsParam,
   settingsModalRoute,
   settingsModalSections,
+  withSettingsParam,
   type ModalSection,
+  type OpenSettingsRequest,
   type SettingsArea,
+  type SettingsLocation,
 } from './settingsModalCatalog';
 
 const returnKey = 'helena:settings-return';
@@ -29,105 +37,194 @@ const subscribeToMount = () => () => {};
 const areaNames: Record<SettingsArea, string> = {
   project: 'Projekt',
   home: 'Home · alle Projekte',
+  agent: 'Agenten',
   account: 'Mein Konto',
   admin: 'Administrator',
 };
 
+// Whether the modal put its own entry on the history stack, so closing takes it off
+// again (Back then leaves the page instead of reopening the modal). One modal is open at
+// a time, so this is module state rather than a ref.
+let pushedEntry = false;
+
+function currentHref() {
+  return `${window.location.pathname}${window.location.search}${window.location.hash}`;
+}
+
+// The settings modal (ui-system §11, §13): one modal for every setting, over the page the
+// user is on. Where it stands lives in the URL (`?settings=area.slug`, see
+// settingsModalCatalog), set with the browser's own history so the page behind never
+// navigates, reloads or re-renders another route: closing it leaves everything as it was,
+// filters included. Old settings URLs (bookmarks, links in mails and pages) open the
+// modal over the page the user came from, or the project's dashboard.
 export default function SettingsModal({
   projectKey: currentProjectKey,
   projectName,
   teamId: currentTeamId,
-  routeContent,
 }: {
   projectKey?: string | null;
   projectName?: string | null;
   teamId?: number | null;
-  routeContent?: ReactNode;
 }) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const router = useRouter();
-  const route = settingsModalRoute(pathname);
+  const legacy = settingsModalRoute(pathname);
+  const location = legacy ? null : parseSettingsParam(searchParams.get(SETTINGS_PARAM));
   const { data: session } = useSession();
   const projects = useProjectsQuery().data ?? [];
   const teams = useTeamsQuery().data ?? [];
-  const pathProjectKey = pathname.match(/^\/project\/([^/]+)/)?.[1] ?? null;
-  const projectKey = currentProjectKey ?? pathProjectKey ?? projects[0]?.key ?? null;
+  // Project settings need the project the page has loaded, so they are offered only
+  // inside a project.
+  const projectKey = currentProjectKey ?? null;
   const project = projects.find((entry) => entry.key === projectKey);
   const name = projectName ?? project?.name ?? projectKey ?? '';
-  const pathTeamId = Number(pathname.match(/^\/account\/teams\/(\d+)/)?.[1]);
-  const teamId =
-    currentTeamId ??
-    (Number.isInteger(pathTeamId) && pathTeamId > 0 ? pathTeamId : (teams[0]?.id ?? null));
+  const teamId = currentTeamId ?? project?.teamId ?? teams[0]?.id ?? null;
   const admin = session?.user.role === 'god';
-  const sections = useMemo(
-    () => settingsModalSections(projectKey, teamId, admin),
-    [projectKey, teamId, admin],
+  const agentsQuery = useAiAgentsQuery(location ? teamId : null);
+  const agents = useMemo(
+    () =>
+      [...(agentsQuery.data ?? [])].sort(
+        (a, b) => Number(a.template) - Number(b.template) || a.name.localeCompare(b.name),
+      ),
+    [agentsQuery.data],
   );
+  const sections = useMemo(() => {
+    const base = settingsModalSections(projectKey, teamId, admin);
+    return {
+      ...base,
+      agent: agents.map((agent): ModalSection => ({
+        slug: String(agent.id),
+        label: agent.name,
+        description: agent.username ? `@${agent.username}` : '',
+        href: '',
+      })),
+    };
+  }, [projectKey, teamId, admin, agents]);
   const mounted = useSyncExternalStore(
     subscribeToMount,
     () => true,
     () => false,
   );
-  const [opened, setOpened] = useState(false);
-  const [area, setArea] = useState<SettingsArea>(projectKey ? 'project' : 'home');
-  const [slug, setSlug] = useState('agents');
   const [search, setSearch] = useState('');
   const [showMore, setShowMore] = useState(false);
   const navRef = useRef<HTMLElement>(null);
 
+  const allAreas = useMemo(
+    () =>
+      (['project', 'home', 'agent', 'account', 'admin'] as SettingsArea[]).filter((area) =>
+        area === 'project'
+          ? !!projectKey
+          : area === 'home' || area === 'agent'
+            ? teamId != null
+            : area === 'admin'
+              ? admin
+              : true,
+      ),
+    [admin, projectKey, teamId],
+  );
+
+  const defaultSlug = useCallback(
+    (area: SettingsArea) =>
+      area === 'project'
+        ? 'agents'
+        : area === 'home'
+          ? admin
+            ? 'defaults'
+            : 'info'
+          : area === 'agent'
+            ? (sections.agent[0]?.slug ?? '')
+            : area === 'account'
+              ? 'profile'
+              : 'general',
+    [admin, sections.agent],
+  );
+
+  // Moves the modal to `next` (null closes it) without touching the page behind.
+  const go = useCallback((next: SettingsLocation | null) => {
+    const href = withSettingsParam(currentHref(), next);
+    if (!next && pushedEntry) {
+      pushedEntry = false;
+      window.history.back();
+      return;
+    }
+    if (
+      next &&
+      !parseSettingsParam(new URLSearchParams(window.location.search).get(SETTINGS_PARAM))
+    ) {
+      pushedEntry = true;
+      window.history.pushState(null, '', href);
+      return;
+    }
+    window.history.replaceState(null, '', href);
+  }, []);
+
+  // Remember the last page that is not an old settings URL: that page stays behind the
+  // modal when such a URL is opened.
+  const queryString = searchParams.toString();
+  useEffect(() => {
+    if (legacy) return;
+    sessionStorage.setItem(
+      returnKey,
+      withSettingsParam(`${pathname}${queryString ? `?${queryString}` : ''}`, null),
+    );
+  }, [legacy, pathname, queryString]);
+
+  // An old settings URL: back to the page before (or the project's dashboard), with the
+  // modal open there.
+  useEffect(() => {
+    if (!legacy) return;
+    const projectOfPath = pathname.match(/^\/project\/([^/]+)/)?.[1] ?? null;
+    let back = sessionStorage.getItem(returnKey);
+    const backPath = back?.split(/[?#]/)[0] ?? '';
+    if (
+      !back ||
+      settingsModalRoute(backPath) ||
+      (projectOfPath && !backPath.startsWith(`/project/${projectOfPath}`))
+    ) {
+      back = projectOfPath ? dashboardsPath(decodeURIComponent(projectOfPath)) : '/';
+    }
+    router.replace(withSettingsParam(back, legacy), { scroll: false });
+  }, [legacy, pathname, router]);
+
   useEffect(() => {
     function handleOpen(event: Event) {
-      const detail = (event as CustomEvent<{ area?: SettingsArea; slug?: string }>).detail;
-      const nextArea =
-        detail?.area ?? (currentProjectKey ? 'project' : teamId ? 'home' : 'account');
-      const nextSlug =
-        detail?.slug ??
-        (nextArea === 'project'
-          ? 'agents'
-          : nextArea === 'home'
-            ? admin
-              ? 'defaults'
-              : 'info'
-            : nextArea === 'account'
-              ? 'profile'
-              : 'general');
-      if (!route) sessionStorage.setItem(returnKey, pathname);
-      if (nextArea !== 'project' || !currentProjectKey) {
-        const target =
-          sections[nextArea].find((item) => item.slug === nextSlug) ?? sections[nextArea][0];
-        if (target) router.push(target.href);
-        else if (nextArea === 'home') router.push('/account/teams');
-        return;
-      }
-      setArea(nextArea);
-      setSlug(nextSlug);
+      const detail = (event as CustomEvent<OpenSettingsRequest | undefined>).detail ?? {};
+      let area: SettingsArea =
+        detail.scope ??
+        (detail.agentId != null
+          ? 'agent'
+          : currentProjectKey
+            ? 'project'
+            : teamId
+              ? 'home'
+              : 'account');
+      if (!allAreas.includes(area)) area = allAreas.includes('home') ? 'home' : 'account';
+      const slug =
+        area === 'agent' && detail.agentId != null
+          ? String(detail.agentId)
+          : (detail.section ?? defaultSlug(area));
+      const extra = area === 'home' && detail.teamId != null ? String(detail.teamId) : detail.tab;
       setSearch('');
-      setOpened(true);
+      go({ area, slug, ...(extra ? { extra } : {}) });
     }
     window.addEventListener(SETTINGS_MODAL_OPEN, handleOpen);
     return () => window.removeEventListener(SETTINGS_MODAL_OPEN, handleOpen);
-  }, [admin, currentProjectKey, pathname, route, router, sections, teamId]);
+  }, [allAreas, currentProjectKey, defaultSlug, go, teamId]);
 
-  const activeArea = route?.area ?? area;
-  const activeSlug = route?.slug ?? slug;
-  const visible = opened || !!route;
-  const activeSection = sections[activeArea].find((item) => item.slug === activeSlug);
+  const visible = !!location;
+  const activeArea = location && allAreas.includes(location.area) ? location.area : null;
+  const activeSlug = location?.slug ?? '';
+  const activeSection = activeArea
+    ? sections[activeArea].find((item) => item.slug === activeSlug)
+    : undefined;
 
   useEffect(() => {
     if (!visible) return;
     navRef.current?.querySelector('.is-active')?.scrollIntoView({ block: 'nearest' });
   }, [activeArea, activeSlug, visible]);
 
-  const close = useCallback(() => {
-    setOpened(false);
-    if (!route) {
-      return;
-    }
-    const saved = sessionStorage.getItem(returnKey);
-    sessionStorage.removeItem(returnKey);
-    const fallback = route.area === 'project' && projectKey ? `/project/${projectKey}` : '/';
-    router.push(saved && !settingsModalRoute(saved) && saved !== pathname ? saved : fallback);
-  }, [pathname, projectKey, route, router]);
+  const close = useCallback(() => go(null), [go]);
 
   useEffect(() => {
     if (!visible) return;
@@ -157,37 +254,46 @@ export default function SettingsModal({
 
   function select(item: ModalSection, itemArea: SettingsArea) {
     setSearch('');
-    if (!route && itemArea === 'project' && currentProjectKey) {
-      setArea('project');
-      setSlug(item.slug);
-      return;
-    }
-    router.push(item.href);
+    go({ area: itemArea, slug: item.slug });
   }
 
   function selectArea(nextArea: SettingsArea) {
-    const first =
-      nextArea === 'home' && !admin
-        ? sections.home.find((item) => item.slug === 'info')
-        : sections[nextArea][0];
-    if (!first) {
-      if (nextArea === 'home') router.push('/account/teams');
+    setSearch('');
+    go({ area: nextArea, slug: defaultSlug(nextArea) });
+  }
+
+  // A link inside a section to another settings page (a server tab, "→ Zugänge") moves
+  // the modal instead of navigating the page behind it.
+  function keepLinksInModal(event: MouseEvent<HTMLElement>) {
+    if (
+      event.defaultPrevented ||
+      event.button !== 0 ||
+      event.metaKey ||
+      event.ctrlKey ||
+      event.shiftKey ||
+      event.altKey
+    )
       return;
-    }
-    if (!route && nextArea === 'project' && currentProjectKey) {
-      setArea('project');
-      setSlug('agents');
+    const anchor = (event.target as Element).closest('a[href]') as HTMLAnchorElement | null;
+    if (!anchor || (anchor.target && anchor.target !== '_self')) return;
+    const url = new URL(anchor.href, window.location.href);
+    if (url.origin !== window.location.origin) return;
+    const target = settingsModalRoute(url.pathname);
+    if (!target) return;
+    const targetProject = url.pathname.match(/^\/project\/([^/]+)/)?.[1];
+    if (
+      target.area === 'project' &&
+      targetProject &&
+      decodeURIComponent(targetProject) !== projectKey
+    )
       return;
-    }
-    router.push(first.href);
+    event.preventDefault();
+    go(target);
   }
 
   if (!mounted || !visible) return null;
 
   const query = search.trim().toLocaleLowerCase();
-  const allAreas: SettingsArea[] = admin
-    ? ['project', 'home', 'account', 'admin']
-    : ['project', 'home', 'account'];
   const results = query
     ? allAreas.flatMap((itemArea) =>
         sections[itemArea]
@@ -199,9 +305,15 @@ export default function SettingsModal({
           .map((item) => ({ ...item, area: itemArea })),
       )
     : [];
-  const primarySections =
-    activeArea === 'project' ? sections.project.slice(0, 11) : sections[activeArea];
-  const extraSections = activeArea === 'project' ? sections.project.slice(11) : [];
+  const areaSections = activeArea ? sections[activeArea] : [];
+  const primaryCount =
+    activeArea === 'project'
+      ? 11
+      : activeArea === 'agent'
+        ? agents.filter((a) => !a.template).length
+        : areaSections.length;
+  const primarySections = areaSections.slice(0, primaryCount);
+  const extraSections = areaSections.slice(primaryCount);
 
   return createPortal(
     <div className="settings-modal-layer" data-testid="settings-modal-layer">
@@ -212,8 +324,9 @@ export default function SettingsModal({
         aria-label="Einstellungen"
         className="settings-modal dark"
         data-testid="settings-modal"
-        data-settings-area={activeArea}
+        data-settings-area={activeArea ?? undefined}
         data-settings-section={activeSlug}
+        onClickCapture={keepLinksInModal}
       >
         <header className="settings-modal-header">
           <div className="settings-modal-tabs" role="tablist" aria-label="Einstellungsbereich">
@@ -274,7 +387,7 @@ export default function SettingsModal({
                   <button
                     key={item.slug}
                     type="button"
-                    onClick={() => select(item, activeArea)}
+                    onClick={() => activeArea && select(item, activeArea)}
                     className={`${item.slug === activeSlug ? 'is-active' : ''} ${item.slug === 'danger-zone' ? 'is-danger' : ''}`}
                   >
                     {item.label}
@@ -286,12 +399,14 @@ export default function SettingsModal({
                     open={showMore || extraSections.some((item) => item.slug === activeSlug)}
                     onToggle={(event) => setShowMore(event.currentTarget.open)}
                   >
-                    <summary>{'Weitere Einstellungen'}</summary>
+                    <summary>
+                      {activeArea === 'agent' ? 'Vorlagen' : 'Weitere Einstellungen'}
+                    </summary>
                     {extraSections.map((item) => (
                       <button
                         key={item.slug}
                         type="button"
-                        onClick={() => select(item, activeArea)}
+                        onClick={() => activeArea && select(item, activeArea)}
                         className={item.slug === activeSlug ? 'is-active' : ''}
                       >
                         {item.label}
@@ -304,16 +419,21 @@ export default function SettingsModal({
           </nav>
           <div className="settings-modal-pane">
             <p className="settings-modal-eyebrow">
-              {(activeArea === 'project' ? name : areaNames[activeArea]).toLocaleUpperCase()}
+              {(activeArea === 'project'
+                ? name
+                : activeArea
+                  ? areaNames[activeArea]
+                  : ''
+              ).toLocaleUpperCase()}
               {' · EINSTELLUNGEN'}
             </p>
             <h2>{activeSection?.label ?? 'Einstellungen'}</h2>
             <div className="settings-modal-existing">
               <ShellHeaderSlotCtx.Provider value={null}>
-                {route && routeContent ? (
-                  routeContent
-                ) : activeArea === 'project' ? (
+                {activeArea === 'project' ? (
                   <ProjectSettingsModalContent slug={activeSlug} />
+                ) : activeArea && location ? (
+                  <SettingsAreaContent location={location} teamId={teamId} />
                 ) : null}
               </ShellHeaderSlotCtx.Provider>
             </div>

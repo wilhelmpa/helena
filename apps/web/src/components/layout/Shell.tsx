@@ -421,11 +421,6 @@ export default function Shell({
                 projectKey={projectKey}
                 projectName={project?.project.name}
                 teamId={project?.project.teamId}
-                routeContent={
-                  ['settings', 'members', 'notifications', 'mcp'].includes(route.sub ?? '')
-                    ? children
-                    : undefined
-                }
               />
             </SidebarProvider>
           </ShellHeaderActionsSlotCtx.Provider>

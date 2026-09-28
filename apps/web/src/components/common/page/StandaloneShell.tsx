@@ -17,7 +17,6 @@ import UserMenu from '@/components/layout/UserMenu';
 import { EmergencyStopBanner } from '@/features/agent-runtime/components/EmergencyStop';
 import SettingsModal from '@/features/settings/SettingsModal';
 import { openSettingsModal, settingsModalRoute } from '@/features/settings/settingsModalCatalog';
-import { useSession } from '@/lib/auth-client';
 
 // The frame of an area that lives outside the project shell — the Administrator
 // (/god) and the account (/account) — built exactly like the main Shell, so the three
@@ -41,10 +40,10 @@ export default function StandaloneShell({
 }) {
   const router = useRouter();
   const pathname = usePathname();
+  // Every page of the account area and the Administrator is a section of the settings
+  // modal now: its old URL opens the modal over the page the user came from, so this
+  // frame shows nothing of its own while it forwards (SettingsModal).
   const settingsRoute = settingsModalRoute(pathname);
-  const { data: session } = useSession();
-  const showSettingsRoute =
-    settingsRoute && (settingsRoute.area !== 'admin' || session?.user.role === 'god');
   const showBrowser = useCallback(() => router.push('/?tool=browser'), [router]);
   const webLinks = useWebLinkNavigation(null, showBrowser);
   const { headerLayout } = useAccountPreferences();
@@ -110,10 +109,10 @@ export default function StandaloneShell({
               />
             )}
             <EmergencyStopBanner />
-            <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">{children}</div>
-            {(!settingsRoute || showSettingsRoute) && (
-              <SettingsModal routeContent={showSettingsRoute ? children : undefined} />
-            )}
+            <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
+              {settingsRoute ? null : children}
+            </div>
+            <SettingsModal />
           </SidebarInset>
         </SidebarProvider>
       </ShellHeaderSlotCtx.Provider>
