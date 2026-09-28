@@ -6,7 +6,6 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 import {
   buildGroups,
   buildMaps,
-  groupDefaults,
   groupIssues,
   sortIssues,
   type WorkItemsViewProps,
@@ -42,7 +41,6 @@ export default function TableView({
   settings,
   onSettingsChange,
   onOpenIssue,
-  onAddIssue,
   readOnly,
   widthScope,
 }: TableViewProps) {
@@ -108,13 +106,13 @@ export default function TableView({
         return (
           <TableSectionHeader
             group={item.group}
+            project={project}
             count={item.count}
             collapsed={isCollapsed}
             disabled={subgrouped && !isCollapsed}
             dropId={`sec:${item.dropKey}`}
             onDrop={(id) => reorder.moveIssue(id, item.assign, item.bucket, item.bucket.length)}
             onToggle={() => collapsed.toggle(item.group.key)}
-            onAddIssue={() => onAddIssue(groupDefaults(item.group.assign))}
             readOnly={readOnly}
           />
         );
