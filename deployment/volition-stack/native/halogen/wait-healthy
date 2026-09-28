@@ -1,0 +1,17 @@
+#!/bin/sh
+# helena-halogen.service's ExecStartPost: the unit counts as started once Halogen answers
+# /health with a responding engine, not when the container process exists. Loading the weights
+# takes minutes after a boot; the unit's TimeoutStartSec bounds the wait.
+#   wait-healthy <port>
+port=${1:-8731}
+i=0
+while :; do
+  body=$(curl -fsS --max-time 5 "http://127.0.0.1:$port/health" 2>/dev/null || true)
+  case "$body" in
+    *'"status":"ok"'*'"responds":true'*|*'"status": "ok"'*'"responds": true'*) exit 0 ;;
+  esac
+  i=$((i + 1))
+  # A note every minute, so the journal shows the wait.
+  [ $((i % 30)) -eq 0 ] && echo "halogen: waiting for /health on 127.0.0.1:$port ($((i * 2)) s)"
+  sleep 2
+done

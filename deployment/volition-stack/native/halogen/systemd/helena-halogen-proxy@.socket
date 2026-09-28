@@ -1,0 +1,17 @@
+# Helena local AI (native/halogen/install.sh): agents in isolation have a network namespace of
+# their own; their unit forwards 127.0.0.1:<port> to this socket (launcher.json, "halogen" and
+# "halogenquiet"), which leads to Halogen on the host's loopback. The instance is the port
+# (8731: the API, 8733: its address for turns without thinking). Only the agents' group may
+# connect.
+[Unit]
+Description=Helena Halogen forwarder for isolated agents (port %i)
+
+[Socket]
+ListenStream=/run/volition-agents/helena-halogen-%i.sock
+SocketUser=root
+SocketGroup=volition-agents
+SocketMode=0660
+DirectoryMode=0755
+
+[Install]
+WantedBy=sockets.target
