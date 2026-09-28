@@ -18,13 +18,13 @@ import { StatusDot, type StatusDotTone } from './StatusDot';
 // One tree for the sidebar and every other tree (docs/design-system.md §4, §7): rows of
 // one height, 16px indent per level from one text edge, exactly one marked row (the
 // caller decides which, see nav/activeMatch), no headings. Every row with children has a
-// small arrow after its label (so nothing moves). On level 1 the tree is an accordion:
-// exactly one area is open — the one holding the current page — until another is opened,
-// which closes the rest. Deeper groups fold one by one and remember it per user. A
-// status dot and a count stand at the end of the row.
+// small arrow after its label (so nothing moves). On level 1 any number of areas can be
+// open at once (owner, 28.09.): the area holding the current page opens when you get
+// there, and an area only closes when you close it. Deeper groups fold one by one and
+// remember it per user. A status dot and a count stand at the end of the row.
 
 const LevelCtx = createContext(0);
-type Accordion = { openId: string | null; setOpenId: (id: string | null) => void } | null;
+type Accordion = { isOpen: (id: string) => boolean; toggle: (id: string) => void } | null;
 const AccordionCtx = createContext<Accordion>(null);
 
 export function Tree({
@@ -36,22 +36,32 @@ export function Tree({
   children: ReactNode;
   label: string;
   className?: string;
-  // The level-1 area holding the current page: the one open area of the accordion.
+  // The level-1 area holding the current page: it opens when the page changes.
   activeSection?: string | null;
 }) {
-  const [state, setState] = useState<{ forActive: string | null; openId: string | null }>({
-    forActive: activeSection ?? null,
-    openId: activeSection ?? null,
+  const active = activeSection ?? null;
+  const [state, setState] = useState<{ forActive: string | null; openIds: string[] }>({
+    forActive: active,
+    openIds: active ? [active] : [],
   });
-  // A new page resets the accordion to the area that holds it.
-  const openId =
-    state.forActive === (activeSection ?? null) ? state.openId : (activeSection ?? null);
+  // A new page opens the area that holds it and leaves the other open areas open.
+  const openIds = useMemo(
+    () =>
+      state.forActive === active || !active || state.openIds.includes(active)
+        ? state.openIds
+        : [...state.openIds, active],
+    [state, active],
+  );
   const accordion = useMemo(
     () => ({
-      openId,
-      setOpenId: (id: string | null) => setState({ forActive: activeSection ?? null, openId: id }),
+      isOpen: (id: string) => openIds.includes(id),
+      toggle: (id: string) =>
+        setState({
+          forActive: active,
+          openIds: openIds.includes(id) ? openIds.filter((item) => item !== id) : [...openIds, id],
+        }),
     }),
-    [activeSection, openId],
+    [active, openIds],
   );
   return (
     <div role="tree" aria-label={label} className={`ds-tree ${className ?? ''}`}>
@@ -126,7 +136,7 @@ export function TreeItem({
   const open = !collapsible
     ? true
     : inAccordion
-      ? accordion.openId === id
+      ? accordion.isOpen(id)
       : stored === null
         ? defaultOpen || containsActive
         : stored === '1';
@@ -141,7 +151,7 @@ export function TreeItem({
     if (active) line.current?.scrollIntoView?.({ block: 'nearest' });
   }, [active]);
   const toggle = () => {
-    if (inAccordion) accordion.setOpenId(open ? null : id);
+    if (inAccordion) accordion.toggle(id);
     else if (storageKey) setStored(open ? '0' : '1');
   };
 
