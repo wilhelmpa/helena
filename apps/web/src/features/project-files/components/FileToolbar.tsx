@@ -1,5 +1,5 @@
-import { useRef, type ReactNode } from 'react';
-import { Code2, FilePlus, FolderPlus, LayoutGrid, List, Upload } from 'lucide-react';
+import { type ReactNode } from 'react';
+import { Code2, LayoutGrid, List } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import {
   PageActions,
@@ -10,6 +10,7 @@ import {
 } from '@/components/layout/PageToolbar';
 import type { useFileBrowserView } from '../hooks/useFileBrowserView';
 import FileSortMenu from './FileSortMenu';
+import FileCreateMenu from './FileCreateMenu';
 
 // The file browser's controls, in the header row like every page's (PageToolbar): the
 // page's own tabs first (`leading`, e.g. Wissen/Code), then the name filter, the order,
@@ -23,6 +24,7 @@ export default function FileToolbar({
   onUpload,
   onNewFolder,
   onNewFile,
+  projectKey,
 }: {
   leading?: ReactNode;
   view: ReturnType<typeof useFileBrowserView>;
@@ -32,9 +34,9 @@ export default function FileToolbar({
   onUpload: (files: File[]) => void;
   onNewFolder: () => void;
   onNewFile: () => void;
+  projectKey?: string | null;
 }) {
   const t = useTranslations('files.toolbar');
-  const input = useRef<HTMLInputElement>(null);
   const grid = view.mode === 'grid';
 
   const actions: PageAction[] = [
@@ -54,12 +56,6 @@ export default function FileToolbar({
       external: true,
     });
   }
-  if (canCreate) {
-    actions.push(
-      { id: 'folder', label: t('newFolder'), icon: FolderPlus, onClick: onNewFolder },
-      { id: 'note', label: t('newFile'), icon: FilePlus, onClick: onNewFile },
-    );
-  }
 
   return (
     <PageToolbar>
@@ -67,30 +63,14 @@ export default function FileToolbar({
       <PageToolbarSpacer />
       <PageSearch value={view.filter} onChange={view.setFilter} placeholder={t('filter')} />
       <FileSortMenu sort={view.sort} onChange={view.setSort} />
-      <PageActions
-        actions={actions}
-        primary={
-          canCreate
-            ? {
-                id: 'upload',
-                label: t('upload'),
-                icon: Upload,
-                disabled: uploading,
-                onClick: () => input.current?.click(),
-              }
-            : undefined
-        }
-      />
+      <PageActions actions={actions} />
       {canCreate && (
-        <input
-          ref={input}
-          type="file"
-          multiple
-          className="hidden"
-          onChange={(event) => {
-            onUpload(Array.from(event.target.files ?? []));
-            event.target.value = '';
-          }}
+        <FileCreateMenu
+          onNewFile={onNewFile}
+          onNewFolder={onNewFolder}
+          onUpload={onUpload}
+          projectKey={projectKey}
+          uploading={uploading}
         />
       )}
     </PageToolbar>

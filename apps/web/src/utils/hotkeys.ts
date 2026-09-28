@@ -61,7 +61,7 @@ export const HOTKEYS: HotkeyDef[] = [
     scope: 'global',
     fixed: true,
   },
-  { id: 'issue.new', group: 'general', combo: 'n', scope: 'app' },
+  { id: 'issue.new', group: 'general', combo: 'c', scope: 'app' },
   { id: 'initiative.new', group: 'general', combo: 'i', scope: 'app' },
   { id: 'project.new', group: 'general', combo: 'b', scope: 'app' },
   {
@@ -70,7 +70,7 @@ export const HOTKEYS: HotkeyDef[] = [
     combo: 's',
     scope: 'app',
   },
-  { id: 'chat.toggle', group: 'general', combo: 'c', scope: 'app' },
+  { id: 'chat.toggle', group: 'general', combo: 'mod+j', scope: 'app' },
   // The next workspace layout (hooks/useWorkspaceLayout).
   { id: 'layout.cycle', group: 'general', combo: 'l', scope: 'app' },
   { id: 'view.kanban', group: 'workItems', combo: '1', scope: 'app' },

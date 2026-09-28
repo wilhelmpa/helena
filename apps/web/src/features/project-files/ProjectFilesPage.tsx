@@ -73,6 +73,12 @@ export default function ProjectFilesPage({ boards }: { boards?: ReactNode }) {
             path={path}
             selected={params.get('file')}
             sourceOnly={params.get('source') === '1'}
+            createRequest={params.get('create')}
+            onCreateHandled={() => {
+              const next = new URLSearchParams(params.toString());
+              next.delete('create');
+              router.replace(`${filesPath(projectKey)}${next.size ? `?${next}` : ''}`);
+            }}
             rootLabel={t(`roots.${root}`)}
             permissions={{
               create: can('documents', 'create'),

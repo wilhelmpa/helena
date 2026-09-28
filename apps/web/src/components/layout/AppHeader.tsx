@@ -1,14 +1,12 @@
 import { useRef, type ReactNode } from 'react';
-import { Plus, Search } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { usePermissions } from '@/hooks/usePermissions';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { useHotkeyLabel } from '@/context/useHotkeys';
 import type { WorkspaceToolId } from '@/utils/workspaceTools';
 import type { HeaderExtraStore } from '@/utils/headerExtraStore';
 import type { HeaderLayout } from '@/lib/api/endpoints/userPreferences';
 import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -21,9 +19,7 @@ import ShellHeaderExtra from '@/components/layout/ShellHeaderExtra';
 
 export default function AppHeader({
   title,
-  hasProject,
   onOpenCommand,
-  onNewIssue,
   shownWorkspaceTools,
   onSelectWorkspaceTool,
   headerLayout,
@@ -35,9 +31,7 @@ export default function AppHeader({
   title: ReactNode;
   // The page's own name for the browser tab, before the breadcrumb (a task's title).
   titleLead?: string | null;
-  hasProject: boolean;
   onOpenCommand: () => void;
-  onNewIssue: () => void;
   // The tools the workspace layout shows right now.
   shownWorkspaceTools: readonly WorkspaceToolId[];
   onSelectWorkspaceTool: (tool: WorkspaceToolId) => void;
@@ -56,10 +50,7 @@ export default function AppHeader({
   pageHidden?: boolean;
 }) {
   const t = useTranslations('nav');
-  const { can } = usePermissions();
   const paletteKey = useHotkeyLabel('palette.toggle');
-  const newIssueKey = useHotkeyLabel('issue.new');
-  const canCreateIssue = hasProject && can('work_items', 'create');
   const single = headerLayout === 'single';
   const titleRef = useRef<HTMLDivElement>(null);
   useDocumentTitle(titleRef, titleLead);
@@ -120,23 +111,6 @@ export default function AppHeader({
           </TooltipTrigger>
           <TooltipContent>{t('searchHint', { key: paletteKey ?? '' })}</TooltipContent>
         </Tooltip>
-
-        {canCreateIssue && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="size-8 shrink-0 text-muted-foreground hover:bg-sidebar-accent/60 hover:text-foreground"
-                aria-label={t('newIssueHint', { key: newIssueKey ?? '' })}
-                onClick={onNewIssue}
-              >
-                <Plus />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>{t('newIssueHint', { key: newIssueKey ?? '' })}</TooltipContent>
-          </Tooltip>
-        )}
 
         <WorkspaceToolbar shown={shownWorkspaceTools} onSelectTool={onSelectWorkspaceTool} />
         <WorkspaceLayoutMenu />

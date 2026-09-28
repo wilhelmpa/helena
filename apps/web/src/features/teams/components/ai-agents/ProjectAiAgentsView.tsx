@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Copy, Plus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useTeamQuery } from '@/services/teams.service';
@@ -29,9 +30,20 @@ export default function ProjectAiAgentsView({
   const sectionText = useSettingsSectionText()(section.slug);
   const permissions = useTeamQuery(teamId).data?.permissions.ai_agents;
   const [creating, setCreating] = useState(false);
+  const router = useRouter();
+  const pathname = usePathname();
+  const params = useSearchParams();
   const [fromTemplate, setFromTemplate] = useState(false);
   const tSettings = useTranslations('settings.agents');
   const hasTemplates = (useAiAgentsQuery(teamId).data ?? []).some((agent) => agent.template);
+
+  useEffect(() => {
+    if (params.get('create') !== 'agent' || !permissions?.create) return;
+    queueMicrotask(() => setCreating(true));
+    const next = new URLSearchParams(params.toString());
+    next.delete('create');
+    router.replace(`${pathname}${next.size ? `?${next}` : ''}`);
+  }, [params, permissions?.create, router, pathname]);
 
   return (
     <SectionPageView title={sectionText.label} wide>
@@ -72,7 +84,7 @@ export default function ProjectAiAgentsView({
           <ListSkeleton rows={3} rowClassName="h-12" />
         ) : (
           <AgentSectionProvider teamId={teamId} permissions={permissions}>
-            <ProjectAiAgents />
+            <ProjectAiAgents onNewAgent={() => setCreating(true)} />
             <TeamAiAgentSheet
               open={creating}
               agent={null}

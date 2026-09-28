@@ -56,6 +56,18 @@ export function useKeyboardShortcuts(opts: {
       }
       if (isTypingTarget(e.target) || overlayOpen) return;
 
+      if (
+        hasProject &&
+        e.key.toLowerCase() === 'n' &&
+        e.shiftKey &&
+        (e.metaKey || e.ctrlKey) &&
+        !e.altKey
+      ) {
+        e.preventDefault();
+        onNewIssue();
+        return;
+      }
+
       if (hasProject) {
         for (const [id, view] of VIEW_HOTKEYS) {
           if (matches(e, id)) {

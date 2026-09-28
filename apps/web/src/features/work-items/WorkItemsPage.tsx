@@ -17,7 +17,7 @@ import {
   withoutHiddenSections,
   type ViewSettings,
 } from '@/utils/viewSettings';
-import { Check, Pencil, X } from 'lucide-react';
+import { Check, Pencil, Plus, X } from 'lucide-react';
 import ViewIconPicker from '@/components/layout/ViewIconPicker';
 import ViewFolderManager from '@/components/layout/ViewFolderManager';
 import { FilterControl } from '@/components/layout/FilterBar';
@@ -255,6 +255,16 @@ export default function WorkItemsPage() {
               <ViewFolderManager projectKey={project.project.key} folders={folders} />
             )}
             {controls}
+            {can('work_items', 'create') && (
+              <PageActions
+                primary={{
+                  id: 'new-issue',
+                  label: t('newIssue'),
+                  icon: Plus,
+                  onClick: () => onAddIssue({}),
+                }}
+              />
+            )}
           </>
         )}
       </PageToolbar>

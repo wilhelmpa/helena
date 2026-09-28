@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Plus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import SectionPageView from '@/components/common/page/SectionPageView';
@@ -24,7 +25,17 @@ export default function RoutinesPage() {
   const { project } = useShell();
   const { can } = usePermissions();
   const [addNew, setAddNew] = useState(false);
+  const router = useRouter();
+  const pathname = usePathname();
+  const params = useSearchParams();
   const agents = useProjectAgents().data ?? [];
+  useEffect(() => {
+    if (params.get('create') !== 'schedule' || agents.length === 0) return;
+    queueMicrotask(() => setAddNew(true));
+    const next = new URLSearchParams(params.toString());
+    next.delete('create');
+    router.replace(`${pathname}${next.size ? `?${next}` : ''}`);
+  }, [params, agents.length, router, pathname]);
   if (!project) return null;
   const canCreate = agents.length > 0 && can(section.resource, 'create');
   return (

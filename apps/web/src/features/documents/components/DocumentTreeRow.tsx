@@ -29,7 +29,8 @@ export default function DocumentTreeRow({
 }) {
   const { item, children } = node;
   const folder = item.kind === 'folder';
-  const open = folder && expanded.has(item.path);
+  const expandable = folder && children.length > 0;
+  const open = expandable && expanded.has(item.path);
   const active = item.path === openPath;
   const label = (
     <span className="min-w-0 flex-1 truncate" dir="auto">
@@ -38,7 +39,7 @@ export default function DocumentTreeRow({
   );
 
   return (
-    <li role="treeitem" aria-expanded={folder ? open : undefined} aria-selected={active}>
+    <li role="treeitem" aria-expanded={expandable ? open : undefined} aria-selected={active}>
       <div
         className={cn(
           'group/row flex h-8 items-center rounded-md pe-1 text-sm transition-colors',
@@ -52,14 +53,18 @@ export default function DocumentTreeRow({
           <button
             type="button"
             className="flex h-full min-w-0 flex-1 items-center gap-1.5 rounded-sm text-start outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
-            onClick={() => onToggle(item.path)}
+            onClick={() => expandable && onToggle(item.path)}
           >
-            <ChevronRight
-              className={cn(
-                'size-3.5 shrink-0 text-muted-foreground transition-transform rtl:rotate-180',
-                open && 'rotate-90 rtl:rotate-90',
-              )}
-            />
+            {expandable ? (
+              <ChevronRight
+                className={cn(
+                  'size-3.5 shrink-0 text-muted-foreground transition-transform rtl:rotate-180',
+                  open && 'rotate-90 rtl:rotate-90',
+                )}
+              />
+            ) : (
+              <span className="size-3.5 shrink-0" aria-hidden="true" />
+            )}
             {open ? (
               <FolderOpen className="size-4 shrink-0 text-muted-foreground" />
             ) : (

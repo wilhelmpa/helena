@@ -10,12 +10,14 @@ export default function LabelsSelect({
   groups,
   value,
   onToggle,
+  placeholder,
   readOnly,
 }: {
   labels: Label[];
   groups: LabelGroup[];
   value: number[];
   onToggle: (id: number) => void;
+  placeholder?: string;
   readOnly?: boolean;
 }) {
   const t = useTranslations('issue.fieldSelects');
@@ -36,7 +38,9 @@ export default function LabelsSelect({
         <Tag />
       )}
       <span className="truncate">
-        {selected.length > 0 ? t('labelCount', { count: selected.length }) : t('labels')}
+        {selected.length > 0
+          ? t('labelCount', { count: selected.length })
+          : (placeholder ?? t('labels'))}
       </span>
     </Pill>
   );

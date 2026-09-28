@@ -23,10 +23,12 @@ export default function InitiativeSelect({
   projectKey,
   value,
   onChange,
+  placeholder,
 }: {
   projectKey: string;
   value: number | null;
   onChange: (id: number | null) => void;
+  placeholder?: string;
 }) {
   const t = useTranslations('initiatives.select');
   const { can } = usePermissions();
@@ -60,7 +62,7 @@ export default function InitiativeSelect({
         <PopoverTrigger asChild>
           <Pill active={value != null}>
             {value != null ? <Target /> : <CircleDashed />}
-            <span className="truncate">{current?.title ?? t('label')}</span>
+            <span className="truncate">{current?.title ?? placeholder ?? t('label')}</span>
           </Pill>
         </PopoverTrigger>
         <PopoverContent className="w-56 p-0" align="start">

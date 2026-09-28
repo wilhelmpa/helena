@@ -50,6 +50,7 @@ export default function Modal({
   fullscreen = false,
   onToggleFullscreen,
   className,
+  createLayout = false,
 }: {
   title: string;
   // Trailing breadcrumb naming what the dialog was opened for.
@@ -69,6 +70,7 @@ export default function Modal({
   wide?: boolean | 'xl';
   // On the dialog itself, for a caller that has to adjust its padding.
   className?: string;
+  createLayout?: boolean;
   // Controlled by the caller: in fullscreen the content is a flex column, so the
   // caller's body has to claim the leftover space itself.
   fullscreen?: boolean;
@@ -95,27 +97,52 @@ export default function Modal({
               // row keeps its content height under a capped container, so the body
               // never shrinks and never scrolls.
               cn('flex max-h-[85vh] flex-col overflow-hidden', MAX_WIDTH[`${wide}`]),
+          createLayout &&
+            'top-[120px] w-[min(640px,calc(100vw-24px))] max-w-none translate-y-0 gap-0 rounded-[22px] border border-[#ffffff14] bg-[#0e0d11] px-6 pt-[22px] pb-4 shadow-[0_40px_100px_#000d] max-sm:top-[5vh]',
           className,
         )}
       >
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            {scope && (
+        <DialogHeader className={createLayout ? 'mb-1.5' : undefined}>
+          <DialogTitle
+            className={
+              createLayout
+                ? 'flex items-center justify-between font-mono text-[10px] font-medium tracking-[.23em] text-[#7ee0b8]'
+                : 'flex items-center gap-2'
+            }
+          >
+            {createLayout ? (
               <>
-                <span className="flex items-center gap-1.5 rounded-md bg-accent px-1.5 py-0.5 text-xs font-medium text-accent-foreground">
-                  {scope}
+                <span>
+                  {scope} · {title.toUpperCase()}
                 </span>
-                <span className="font-normal text-muted-foreground">›</span>
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="font-mono text-[10px] font-normal tracking-normal text-[#6f687a]"
+                >
+                  {'ESC'}
+                </button>
               </>
-            )}
-            {title}
-            {crumb && (
+            ) : (
               <>
-                <span className="font-normal text-muted-foreground">›</span>
-                <span className="font-normal text-muted-foreground">{crumb}</span>
+                {scope && (
+                  <>
+                    <span className="flex items-center gap-1.5 rounded-md bg-accent px-1.5 py-0.5 text-xs font-medium text-accent-foreground">
+                      {scope}
+                    </span>
+                    <span className="font-normal text-muted-foreground">›</span>
+                  </>
+                )}
+                {title}
+                {crumb && (
+                  <>
+                    <span className="font-normal text-muted-foreground">›</span>
+                    <span className="font-normal text-muted-foreground">{crumb}</span>
+                  </>
+                )}
+                {headerAction}
               </>
             )}
-            {headerAction}
           </DialogTitle>
           {description && <DialogDescription>{description}</DialogDescription>}
         </DialogHeader>
@@ -133,33 +160,35 @@ export default function Modal({
         </div>
         {/* After the body: Radix focuses the first tabbable node on open, which
             should be a field of the body, not a control. */}
-        <div className="absolute end-2.5 top-2.5 flex items-center gap-0.5">
-          {onToggleFullscreen && (
+        {!createLayout && (
+          <div className="absolute end-2.5 top-2.5 flex items-center gap-0.5">
+            {onToggleFullscreen && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className={CONTROL_CLASS}
+                aria-label={fullscreenLabel}
+                title={fullscreenLabel}
+                // Toggling only swaps classes, so keeping the click from moving
+                // focus leaves the caret in the field the user was editing.
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={onToggleFullscreen}
+              >
+                <FullscreenIcon />
+              </Button>
+            )}
             <Button
               variant="ghost"
               size="icon"
               className={CONTROL_CLASS}
-              aria-label={fullscreenLabel}
-              title={fullscreenLabel}
-              // Toggling only swaps classes, so keeping the click from moving
-              // focus leaves the caret in the field the user was editing.
-              onMouseDown={(e) => e.preventDefault()}
-              onClick={onToggleFullscreen}
+              aria-label={t('close')}
+              title={t('close')}
+              onClick={onClose}
             >
-              <FullscreenIcon />
+              <X />
             </Button>
-          )}
-          <Button
-            variant="ghost"
-            size="icon"
-            className={CONTROL_CLASS}
-            aria-label={t('close')}
-            title={t('close')}
-            onClick={onClose}
-          >
-            <X />
-          </Button>
-        </div>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );

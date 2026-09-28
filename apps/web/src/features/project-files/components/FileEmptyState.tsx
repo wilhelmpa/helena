@@ -1,13 +1,16 @@
 import { FolderOpen, SearchX } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import type { ReactNode } from 'react';
 
 // What an empty folder, or a filter without a match, shows instead of the listing.
 export default function FileEmptyState({
   filter,
   canUpload,
+  action,
 }: {
   filter: string;
   canUpload: boolean;
+  action?: ReactNode;
 }) {
   const t = useTranslations('files.empty');
   const Icon = filter ? SearchX : FolderOpen;
@@ -17,11 +20,7 @@ export default function FileEmptyState({
       <p className="mt-3 text-sm font-medium">
         {filter ? t('filter', { filter: filter.trim() }) : t('folder')}
       </p>
-      {!filter && (
-        <p className="mt-1 text-sm text-muted-foreground">
-          {canUpload ? t('folderHint') : t('readOnly')}
-        </p>
-      )}
+      {!filter && canUpload && action && <div className="mt-4 flex justify-center">{action}</div>}
     </div>
   );
 }

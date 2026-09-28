@@ -19,6 +19,7 @@ import FileDropOverlay from './FileDropOverlay';
 import FileFolderContent from './FileFolderContent';
 import FileToolbar from './FileToolbar';
 import FileViewerActions from './FileViewerActions';
+import FileCreateMenu from './FileCreateMenu';
 
 export interface FilePermissions {
   create: boolean;
@@ -40,6 +41,8 @@ export default function FileBrowser({
   onSelect,
   onDirtyChange,
   sourceOnly = false,
+  createRequest,
+  onCreateHandled,
 }: {
   // The page's own controls that lead the header toolbar (the project's Wissen/Code tabs).
   leading?: ReactNode;
@@ -52,6 +55,8 @@ export default function FileBrowser({
   onSelect: (file: string | null) => void;
   onDirtyChange?: (dirty: boolean) => void;
   sourceOnly?: boolean;
+  createRequest?: string | null;
+  onCreateHandled?: () => void;
 }) {
   const client = useQueryClient();
   const { onDirty, canLeave } = useFileNavigationGuard(onDirtyChange);
@@ -73,6 +78,14 @@ export default function FileBrowser({
     edit: permissions.edit && writable,
     delete: permissions.delete && writable,
   };
+  useEffect(() => {
+    if (!createRequest || !can.create) return;
+    if (createRequest !== 'doc' && createRequest !== 'folder') return;
+    queueMicrotask(() => {
+      setDialog({ kind: createRequest === 'doc' ? 'newFile' : 'newFolder' });
+      onCreateHandled?.();
+    });
+  }, [createRequest, can.create, onCreateHandled]);
   const actions = useFileActions({
     scope,
     listing: listing.data,
@@ -154,6 +167,7 @@ export default function FileBrowser({
         onUpload={transfers.sendFiles}
         onNewFolder={() => setDialog({ kind: 'newFolder' })}
         onNewFile={() => setDialog({ kind: 'newFile' })}
+        projectKey={scope.kind === 'project' ? scope.projectKey : null}
       />
       <FileBreadcrumbs
         rootLabel={rootLabel}
@@ -198,6 +212,17 @@ export default function FileBrowser({
               drag={transfers.drag}
               selected={selected}
               codeUrl={folderCodeUrl}
+              createAction={
+                can.create ? (
+                  <FileCreateMenu
+                    onNewFile={() => setDialog({ kind: 'newFile' })}
+                    onNewFolder={() => setDialog({ kind: 'newFolder' })}
+                    onUpload={transfers.sendFiles}
+                    projectKey={scope.kind === 'project' ? scope.projectKey : null}
+                    uploading={transfers.uploading}
+                  />
+                ) : undefined
+              }
             />
           )}
         </div>

@@ -36,6 +36,7 @@ import ShellBody from '@/components/layout/ShellBody';
 import ShellHeaderTitle from '@/components/layout/ShellHeaderTitle';
 import HeaderCrumbs from '@/components/layout/HeaderCrumbs';
 import ShellOverlays from '@/components/layout/ShellOverlays';
+import CreateDock from '@/components/layout/CreateDock';
 import WorkspaceLayoutHost from '@/components/layout/WorkspaceLayoutHost';
 import { useTranslations } from 'next-intl';
 
@@ -289,9 +290,7 @@ export default function Shell({
                     ? `${issueQuery.data.identifier} ${issueQuery.data.title}`
                     : null
                 }
-                hasProject={!!project}
                 onOpenCommand={() => overlays.setShowCommand(true)}
-                onNewIssue={openNewIssue}
                 shownWorkspaceTools={workspaceLayout.resolved.shownTools}
                 onSelectWorkspaceTool={selectWorkspaceTool}
                 headerLayout={headerLayout}
@@ -354,6 +353,9 @@ export default function Shell({
             />
 
             <ShellOverlays project={project} projectKey={projectKey} overlays={overlays} />
+            {projectKey && canCreateIssue && !workspaceOpen && routedTool !== 'chat' && (
+              <CreateDock projectKey={projectKey} onNewIssue={openNewIssue} />
+            )}
           </SidebarProvider>
         </ShellHeaderSlotCtx.Provider>
       </ShellCtx.Provider>

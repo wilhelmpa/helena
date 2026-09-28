@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
 import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 import type { PulseUnit } from '@/lib/api/endpoints/analytics';
 import type { WidgetConfig } from '@/utils/dashboardWidgets';
 import { Skeleton } from '@/components/ui/skeleton';
 import { usePulseQuery } from '../../services/analytics.service';
+import { Popover, PopoverAnchor, PopoverContent } from '@/components/ui/popover';
 
 // Green ramp for the four non-empty activity levels (GitHub-style). Empty cells
 // use the theme `muted` surface instead of a bright gray, so they read as a quiet
@@ -166,21 +166,29 @@ export default function PulseWidget({
         </span>
       </div>
 
-      {/* Portaled to the body so it can never shift the widget's layout. */}
-      {tip &&
-        typeof document !== 'undefined' &&
-        createPortal(
-          <div
-            className="pointer-events-none fixed z-50 -translate-x-1/2 -translate-y-full rounded-md border bg-popover px-2 py-1 text-xs text-popover-foreground shadow-md"
-            style={{ left: tip.x, top: tip.y - 6 }}
+      {tip && (
+        <Popover open>
+          <PopoverAnchor asChild>
+            <span
+              aria-hidden="true"
+              className="pointer-events-none fixed size-px"
+              style={{ left: tip.x, top: tip.y }}
+            />
+          </PopoverAnchor>
+          <PopoverContent
+            side="top"
+            align="center"
+            sideOffset={6}
+            onOpenAutoFocus={(event) => event.preventDefault()}
+            className="pointer-events-none w-auto max-w-[calc(100vw-16px)] px-2 py-1 text-xs"
           >
             <span className="font-medium">{tip.count}</span>{' '}
             <span className="text-muted-foreground">
               {t('eventNoun', { count: tip.count })} · {tip.label}
             </span>
-          </div>,
-          document.body,
-        )}
+          </PopoverContent>
+        </Popover>
+      )}
     </div>
   );
 }

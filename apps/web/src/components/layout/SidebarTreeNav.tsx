@@ -38,6 +38,7 @@ import { homeNavigation } from './homeNavigation';
 import SidebarApprovalsRefresh from './SidebarApprovalsRefresh';
 import SidebarAreaNav from './SidebarAreaNav';
 import SidebarSavedViewItem from './SidebarSavedViewItem';
+import { hasTreeContent } from './treeContent';
 
 function pathIsActive(pathname: string, href: string) {
   const path = href.split('?')[0]!;
@@ -83,6 +84,7 @@ function TreeBranch({
   label,
   href,
   action,
+  hasChildren,
   activePaths = [],
   children,
 }: {
@@ -90,6 +92,7 @@ function TreeBranch({
   label: string;
   href: string;
   action?: ReactNode;
+  hasChildren?: boolean;
   activePaths?: string[];
   children: ReactNode;
 }) {
@@ -98,22 +101,25 @@ function TreeBranch({
     `sidebar:tree:${id}`,
     pathIsActive(pathname, href) || activePaths.some((path) => pathIsActive(pathname, path)),
   );
+  const expandable = hasChildren ?? hasTreeContent(children);
   return (
     <div className="helena-tree-branch">
       <div className="helena-tree-parent">
         <TreeLink href={href}>{label}</TreeLink>
         {action}
-        <button
-          type="button"
-          className="helena-tree-toggle"
-          aria-label={label}
-          aria-expanded={open}
-          onClick={() => setOpen(!open)}
-        >
-          <ChevronRight size={14} className={open ? 'rotate-90' : ''} />
-        </button>
+        {expandable && (
+          <button
+            type="button"
+            className="helena-tree-toggle"
+            aria-label={label}
+            aria-expanded={open}
+            onClick={() => setOpen(!open)}
+          >
+            <ChevronRight size={14} className={open ? 'rotate-90' : ''} />
+          </button>
+        )}
       </div>
-      {open && <div className="helena-tree-children">{children}</div>}
+      {expandable && open && <div className="helena-tree-children">{children}</div>}
     </div>
   );
 }
@@ -297,11 +303,12 @@ export function SidebarProjectTree({
         id={`${projectKey}:tasks`}
         label={t('workItems')}
         href={taskHref}
+        hasChildren={views.length > 0 || areas.length > 0}
         action={
           can('views', 'create') && (
             <button
               type="button"
-              className="helena-tree-toggle"
+              className="helena-tree-toggle helena-tree-create"
               aria-label={viewsT('newView')}
               title={viewsT('newView')}
               onClick={onNewView}
@@ -339,6 +346,19 @@ export function SidebarProjectTree({
           id={`${projectKey}:files`}
           label={t('sidebarKnowledge')}
           href={filesPath(projectKey)}
+          hasChildren={!!folders?.items.some((item) => item.kind === 'folder')}
+          action={
+            can('documents', 'create') && (
+              <Link
+                href={`${filesPath(projectKey)}?create=folder`}
+                className="helena-tree-toggle helena-tree-create"
+                aria-label="Neuer Ordner"
+                title="Neuer Ordner"
+              >
+                <Plus size={14} />
+              </Link>
+            )
+          }
         >
           {folders?.items
             .filter((item) => item.kind === 'folder')
@@ -355,6 +375,19 @@ export function SidebarProjectTree({
           id={`${projectKey}:dashboard`}
           label={t('dashboards')}
           href={dashboardsPath(projectKey)}
+          hasChildren={dashboards.length > 0}
+          action={
+            can('dashboards', 'create') && (
+              <Link
+                href={`${dashboardsPath(projectKey)}?create=dashboard`}
+                className="helena-tree-toggle helena-tree-create"
+                aria-label="Neues Dashboard"
+                title="Neues Dashboard"
+              >
+                <Plus size={14} />
+              </Link>
+            )
+          }
         >
           {dashboards.map((dashboard) => (
             <TreeLink key={dashboard.id} href={dashboardPath(projectKey, dashboard.id)} nested>
@@ -367,6 +400,19 @@ export function SidebarProjectTree({
         id={`${projectKey}:auto`}
         label={t('sidebarAutomation')}
         href={can('ai_agents', 'read') ? aiAgentsPath(projectKey) : agentActivityPath(projectKey)}
+        hasChildren={can('ai_agents', 'read') || can('actions', 'read') || can('ai_agents', 'edit')}
+        action={
+          can('ai_agents', 'create') && (
+            <Link
+              href={`${aiTeamPath(projectKey, 'schedules')}?create=schedule`}
+              className="helena-tree-toggle helena-tree-create"
+              aria-label="Neuer Zeitplan"
+              title="Neuer Zeitplan"
+            >
+              <Plus size={14} />
+            </Link>
+          )
+        }
         activePaths={[
           organizationPath(projectKey),
           aiTeamPath(projectKey, 'schedules'),
