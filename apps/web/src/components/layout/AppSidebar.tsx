@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 import type { Project } from '@/lib/api/endpoints/projects';
 import type { View } from '@/lib/api/endpoints/views';
 import { useSession } from '@/lib/auth-client';
+import { APP_NAME } from '@/utils/app';
 import { godPath } from '@/utils/paths';
 import { GOD_SECTIONS } from '@/utils/godSections';
 import { useSidebarSide } from '@/hooks/useSidebarSide';
@@ -62,7 +63,7 @@ export default function AppSidebar({
     <Sidebar collapsible="offcanvas" side={side} className="helena-sidebar">
       <SidebarHeader className="helena-sidebar-header">
         <div className="helena-sidebar-brand">
-          <span>HELENA</span>
+          <span>{APP_NAME.toUpperCase()}</span>
           <time suppressHydrationWarning>{clock}</time>
         </div>
         <SidebarProjectSwitcher

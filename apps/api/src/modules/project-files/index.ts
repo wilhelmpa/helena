@@ -175,7 +175,7 @@ export const projectFileRoutes = new Elysia({
       detail: {
         summary: 'Create a project text file',
         description:
-          'Create a new bounded .txt, .md, or .markdown file. Existing files are never overwritten.',
+          'Create a new bounded .txt, .md, .markdown, or .canvas file. Existing files are never overwritten.',
       },
     },
   )

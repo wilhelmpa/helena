@@ -1,4 +1,12 @@
 import { InputRule, mergeAttributes, Node } from '@tiptap/core';
+import { PluginKey } from '@tiptap/pm/state';
+import { ReactRenderer } from '@tiptap/react';
+import Suggestion from '@tiptap/suggestion';
+import { searchKnowledge } from '@/lib/api/endpoints/knowledge';
+import EditorWikilinkMenu, {
+  type WikilinkCandidate,
+  type WikilinkMenuRef,
+} from './EditorWikilinkMenu';
 import {
   scanWikilink,
   WIKILINK_INPUT,
@@ -51,12 +59,75 @@ const TASK_CLASS =
 // A wikilink as one inline unit. It keeps the text between the brackets as written,
 // so it saves back unchanged. The markdown-it rule runs before the link rule; the
 // code rules run before both, so a link in code stays text.
-export const Wikilink = Node.create({
+const wikilinkSuggestionKey = new PluginKey('wikilinkSuggestion');
+
+export const Wikilink = Node.create<{ root?: string }>({
   name: 'wikilink',
   group: 'inline',
   inline: true,
   atom: true,
   selectable: true,
+
+  addOptions() {
+    return { root: undefined };
+  },
+
+  addProseMirrorPlugins() {
+    if (!this.options.root) return [];
+    const root = this.options.root;
+    return [
+      Suggestion<WikilinkCandidate, WikilinkCandidate>({
+        pluginKey: wikilinkSuggestionKey,
+        editor: this.editor,
+        char: '[[',
+        allowSpaces: true,
+        allowedPrefixes: null,
+        container: '[data-slot="dialog-content"]',
+        items: async ({ query }) => {
+          if (!query.trim() || query.includes(']')) return [];
+          const result = await searchKnowledge(query, root, 12);
+          return result.items
+            .filter((item) => /\.md$/i.test(item.path))
+            .map((item) => ({ path: item.path, title: item.title }));
+        },
+        command: ({ editor, range, props }) => {
+          const target = props.path.startsWith(`${root}/`)
+            ? props.path.slice(root.length + 1)
+            : props.path;
+          editor
+            .chain()
+            .focus()
+            .insertContentAt(range, {
+              type: 'wikilink',
+              attrs: { inner: target.replace(/\.md$/i, '') },
+            })
+            .run();
+        },
+        render: () => {
+          let component: ReactRenderer<WikilinkMenuRef> | null = null;
+          let unmount: (() => void) | null = null;
+          return {
+            onStart: (props) => {
+              component = new ReactRenderer(EditorWikilinkMenu, {
+                props,
+                editor: props.editor,
+                className: 'z-50',
+              });
+              unmount = props.mount(component.element);
+            },
+            onUpdate: (props) => component?.updateProps(props),
+            onKeyDown: (props) => component?.ref?.onKeyDown(props) ?? false,
+            onExit: () => {
+              unmount?.();
+              component?.destroy();
+              component = null;
+              unmount = null;
+            },
+          };
+        },
+      }),
+    ];
+  },
 
   addAttributes() {
     return {

@@ -25,6 +25,7 @@ export async function fileReferences(
 ) {
   const empty = {
     author: null as string | null,
+    authorKind: null as 'agent' | 'user' | null,
     runId: null as number | null,
     links: [] as { kind: string; title: string; href: string }[],
   };
@@ -32,6 +33,11 @@ export async function fileReferences(
   const full = joinPath(root.vaultPath, relativePath(path));
   const [entry] = await db.select().from(vaultEntry).where(eq(vaultEntry.path, full));
   let author = entry?.lastAuthor ?? null;
+  const authorKind: 'agent' | 'user' | null = author?.startsWith('agent:')
+    ? 'agent'
+    : author?.startsWith('user:')
+      ? 'user'
+      : null;
   if (author?.startsWith('user:')) {
     const [person] = await db
       .select({ name: user.name })
@@ -89,5 +95,5 @@ export async function fileReferences(
       href: `/chat?agent=${chat.agentId}&thread=${encodeURIComponent(chat.id)}`,
     })),
   );
-  return { author, runId: entry?.lastRunId ?? null, links };
+  return { author, authorKind, runId: entry?.lastRunId ?? null, links };
 }

@@ -17,6 +17,12 @@ import DocumentMarkdownEditor, {
 import DocumentPageTitle from './DocumentPageTitle';
 import DocumentToolbar from './DocumentToolbar';
 
+// Tiptap serializes a compact checklist with a blank line between its items.
+// It is the same list in Markdown; the untouched file remains the saved baseline.
+function comparableMarkdown(body: string) {
+  return body.replace(/(^\s*- \[[ xX]\] [^\n]+\n)\n(?=\s*- \[[ xX]\] )/gm, '$1');
+}
+
 // The note as the editor shows it. The editor works on image URLs the browser can
 // load; every body it reports is turned back into the note's own image links.
 export default function DocumentEditorCanvas({
@@ -73,7 +79,7 @@ export default function DocumentEditorCanvas({
       onEditorReady(instance);
       if (instance) {
         const body = noteBody(instance.storage.markdown.getMarkdown());
-        onLossless(body === loaded.body);
+        onLossless(comparableMarkdown(body) === comparableMarkdown(loaded.body));
         onLoaded(loaded.body);
       }
     },
@@ -138,6 +144,11 @@ export default function DocumentEditorCanvas({
         <DocumentMarkdownEditor
           key={loaded.revision}
           defaultValue={images.markdown}
+          wikilinkRoot={
+            path.startsWith('Projects/')
+              ? path.split('/').slice(0, 2).join('/')
+              : path.split('/')[0]
+          }
           editable={editable}
           placeholder={t('contentPlaceholder')}
           className="min-h-[58vh] flex-1 text-base leading-7"

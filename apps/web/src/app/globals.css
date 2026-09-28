@@ -1513,6 +1513,18 @@ html[data-kiosk-display='dual'] [data-slot='alert-dialog-content'] {
   background: #26212d;
   color: #f3edf9;
 }
+.knowledge-folder-add {
+  opacity: 0;
+}
+.helena-tree-parent:hover > .knowledge-folder-add,
+.helena-tree-parent:focus-within > .knowledge-folder-add {
+  opacity: 1;
+}
+@media (hover: none) {
+  .knowledge-folder-add {
+    opacity: 1;
+  }
+}
 .helena-tree-toggle svg {
   transition: transform 0.25s;
 }

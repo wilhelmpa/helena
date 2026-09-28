@@ -3,7 +3,7 @@ import { ChevronLeft } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Modal from '@/components/common/overlay/Modal';
 import { Button } from '@/components/ui/button';
-import type { FileScope } from '@/lib/api/endpoints/projectFiles';
+import type { FileItem, FileScope } from '@/lib/api/endpoints/projectFiles';
 import { useFilesQuery } from '@/services/files.service';
 import { parentPath } from '@/utils/vaultLinks';
 import { cn } from '@/lib/utils';
@@ -19,6 +19,7 @@ export default function FilePickerDialog({
   confirmLabel,
   initialPath = '',
   disabledPath,
+  accept,
   onPick,
   onClose,
 }: {
@@ -29,6 +30,7 @@ export default function FilePickerDialog({
   confirmLabel: string;
   initialPath?: string;
   disabledPath?: string;
+  accept?: (item: FileItem) => boolean;
   onPick: (path: string) => void;
   onClose: () => void;
 }) {
@@ -37,7 +39,7 @@ export default function FilePickerDialog({
   const [selected, setSelected] = useState<string | null>(null);
   const listing = useFilesQuery(scope, path);
   const items = (listing.data?.items ?? []).filter(
-    (item) => mode === 'file' || item.kind === 'folder',
+    (item) => item.kind === 'folder' || (mode === 'file' && (!accept || accept(item))),
   );
   const choice = mode === 'folder' ? path : selected;
 

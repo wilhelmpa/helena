@@ -150,18 +150,13 @@ export const codePath = (key: string) => `${projectPath(key)}/code`;
 // The Docs of Home: the notes under Home/Docs in the vault.
 export const homeDocsPath = () => '/docs';
 
-// A vault note opens in its project's Wissen or in Home's Docs.
+// A vault note opens in the one Wissen file browser for its root.
 export const vaultNotePath = (path: string) => {
   const [top, key, ...rest] = path.split('/');
   const project = top === 'Projects' && key;
   const relative = project ? rest.join('/') : [key, ...rest].filter(Boolean).join('/');
   const folder = relative.includes('/') ? relative.slice(0, relative.lastIndexOf('/')) : '';
-  if (project && /\.canvas$/i.test(relative))
-    return `${notesPath(key!)}&canvas=${encodeURIComponent(path)}`;
-  if (/\.md$/i.test(relative))
-    return project
-      ? filesPath(key!, folder, { file: relative })
-      : `${homeDocsPath()}?path=${encodeURIComponent(path)}`;
+  if (project && /\.canvas$/i.test(relative)) return filesPath(key!, folder, { file: relative });
   if (project) return filesPath(key!, folder, { file: relative });
   const root = top === 'Private' ? 'private' : top === 'Templates' ? 'templates' : 'home';
   return homeFilesPath(folder, { root, file: relative });

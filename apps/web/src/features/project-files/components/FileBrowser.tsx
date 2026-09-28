@@ -20,7 +20,8 @@ import FileFolderContent from './FileFolderContent';
 import FileToolbar from './FileToolbar';
 import FileViewerActions from './FileViewerActions';
 import ProjectKnowledgeViewer from './ProjectKnowledgeViewer';
-import ProjectFolderTree from './ProjectFolderTree';
+import KnowledgeFolderView from './KnowledgeFolderView';
+import KnowledgeCanvas from './KnowledgeCanvas';
 
 export interface FilePermissions {
   create: boolean;
@@ -77,7 +78,7 @@ export default function FileBrowser({
   };
   const actions = useFileActions({
     scope,
-    inlineMarkdown: scope.kind === 'project' && scope.root === 'vault',
+    inlineMarkdown: scope.kind === 'home' || scope.root === 'vault',
     listing: listing.data,
     onNavigate: navigate,
     onSelect: select,
@@ -131,7 +132,7 @@ export default function FileBrowser({
   }, [selected, vaultRoot, listing.isPending, listing.data, onSelect]);
   const items = visibleItems(listing.data?.items ?? [], view.filter, view.sort);
   const viewing = selected ? listing.data?.items.find((item) => item.path === selected) : undefined;
-  const knowledge = scope.kind === 'project' && scope.root === 'vault';
+  const knowledge = scope.kind === 'home' || scope.root === 'vault';
 
   return (
     <div
@@ -153,7 +154,7 @@ export default function FileBrowser({
         }
       }}
     >
-      {!(knowledge && viewing) && (
+      {!knowledge && (
         <FileToolbar
           leading={leading}
           view={view}
@@ -165,7 +166,7 @@ export default function FileBrowser({
           onNewFile={() => setDialog({ kind: 'newFile' })}
         />
       )}
-      {!(knowledge && viewing) && (
+      {!knowledge && (
         <FileBreadcrumbs
           rootLabel={rootLabel}
           path={path}
@@ -174,7 +175,18 @@ export default function FileBrowser({
         />
       )}
       {viewing ? (
-        knowledge ? (
+        knowledge && /\.canvas$/i.test(viewing.name) ? (
+          <KnowledgeCanvas
+            key={viewing.path}
+            scope={scope}
+            path={viewing.path}
+            name={viewing.name}
+            editable={can.edit}
+            item={viewing}
+            actions={actions}
+            can={can}
+          />
+        ) : knowledge ? (
           <ProjectKnowledgeViewer
             key={viewing.path}
             scope={scope}
@@ -215,35 +227,38 @@ export default function FileBrowser({
             }}
           />
         )
+      ) : knowledge ? (
+        <KnowledgeFolderView
+          scope={scope}
+          path={path}
+          items={items}
+          actions={actions}
+          can={can}
+          drag={transfers.drag}
+          onOpen={actions.open}
+          onNewFile={() => setDialog({ kind: 'newFile' })}
+          onNewCanvas={() => setDialog({ kind: 'newCanvas' })}
+          onNewFolder={() => setDialog({ kind: 'newFolder' })}
+          onUpload={transfers.sendFiles}
+        />
       ) : (
-        <div
-          className={
-            knowledge
-              ? 'flex min-h-0 flex-1 gap-6 overflow-hidden'
-              : 'min-h-0 flex-1 overflow-y-auto'
-          }
-        >
-          {knowledge && (
-            <ProjectFolderTree scope={scope} path={path} onNavigate={navigate} onSelect={select} />
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          {view.filter.trim() && vaultRoot ? (
+            <VaultSearchResults query={view.filter.trim()} root={vaultRoot} />
+          ) : (
+            <FileFolderContent
+              listing={listing}
+              items={items}
+              filter={view.filter}
+              mode={view.mode}
+              scope={scope}
+              actions={actions}
+              can={can}
+              drag={transfers.drag}
+              selected={selected}
+              codeUrl={folderCodeUrl}
+            />
           )}
-          <div className={knowledge ? 'min-w-0 flex-1 overflow-y-auto' : undefined}>
-            {view.filter.trim() && vaultRoot ? (
-              <VaultSearchResults query={view.filter.trim()} root={vaultRoot} />
-            ) : (
-              <FileFolderContent
-                listing={listing}
-                items={items}
-                filter={view.filter}
-                mode={view.mode}
-                scope={scope}
-                actions={actions}
-                can={can}
-                drag={transfers.drag}
-                selected={selected}
-                codeUrl={folderCodeUrl}
-              />
-            )}
-          </div>
         </div>
       )}
       {transfers.draggedFiles !== null && (

@@ -1,5 +1,9 @@
-import HomeDocumentsPage from '@/features/documents/HomeDocumentsPage';
+import { redirect } from 'next/navigation';
+import { homeFilesPath, vaultNotePath } from '@/utils/paths';
 
-export default function Page() {
-  return <HomeDocumentsPage />;
+export default async function Page({ searchParams }: { searchParams: Promise<{ path?: string }> }) {
+  const { path } = await searchParams;
+  redirect(
+    path && /^(Home|Private|Templates)\//.test(path) ? vaultNotePath(path) : homeFilesPath('Docs'),
+  );
 }

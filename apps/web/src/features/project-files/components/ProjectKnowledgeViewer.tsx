@@ -14,6 +14,7 @@ import {
   Pencil,
   Trash2,
   FileCode2,
+  FolderInput,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
@@ -288,6 +289,12 @@ export default function ProjectKnowledgeViewer({
               <DropdownMenuItem onSelect={() => actions.ask('rename', item)}>
                 <Pencil />
                 {t('rename')}
+              </DropdownMenuItem>
+            )}
+            {canEdit && (
+              <DropdownMenuItem onSelect={() => actions.ask('move', item)}>
+                <FolderInput />
+                {t('move')}
               </DropdownMenuItem>
             )}
             {canDelete && (

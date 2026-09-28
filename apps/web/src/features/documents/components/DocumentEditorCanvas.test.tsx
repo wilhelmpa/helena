@@ -191,6 +191,34 @@ it('round trips table aliases and soft breaks through the Docs canvas', async ()
   assert.ok(editedBody.endsWith('\n'));
 });
 
+it('opens a realistic agent Markdown file without changing its bytes or frontmatter', async () => {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const yaml =
+    '---\ntype: trade\ntags:\n  - strategie\n  - risiko\nagent: Koordinator TRADE\n---\n';
+  const content =
+    '## Strategie\n\nSiehe [[Regelwerk|Regeln]] und [Quelle](https://example.test/quelle).\n\n- [ ] Risiko prüfen\n- [x] Daten geladen\n\n| Symbol | Signal |\n| --- | --- |\n| SPY | [[TRADE-1|Prüfung]] |\n\n```ts\nconst signal = "MACD";\n```\n';
+  const bytes = new TextEncoder().encode(yaml + content);
+  const frontmatter = { type: 'trade', tags: ['strategie', 'risiko'], agent: 'Koordinator TRADE' };
+  await act(async () =>
+    root.render(
+      <QueryClientProvider client={client}>
+        <NextIntlClientProvider locale="en" timeZone="UTC" messages={{ documents, common }}>
+          <SessionProvider>
+            <RelativeTimeProvider>
+              <Probe note={{ body: content, frontmatter, revision: 0 }} />
+            </RelativeTimeProvider>
+          </SessionProvider>
+        </NextIntlClientProvider>
+      </QueryClientProvider>,
+    ),
+  );
+  assert.equal(loadedBody, content);
+  assert.equal(editedBody, '');
+  assert.equal(lossless, true);
+  assert.deepEqual(new TextEncoder().encode(yaml + loadedBody), bytes);
+  assert.equal(editor?.isEditable, true);
+});
+
 it('keeps a lossy document read-only and retains the original source for saving', async () => {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const source = '# Trade\n\n<!-- original comment -->\n\nBody\n';
