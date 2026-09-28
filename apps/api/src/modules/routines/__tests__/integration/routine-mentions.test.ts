@@ -200,6 +200,10 @@ describe('routine mentions', () => {
     expect(mention.prompt).toContain('tag nobody in your comments');
     expect(mention.prompt).toContain(INSTRUCTIONS);
     expect(mention.systemPrompt).not.toContain('To mention a person in a comment');
+    await coder.runner['agent-runs']({ runId: mention.id }).result.post({ status: 'success' });
+    const seoRun = (await seo.runner['agent-runs'].claim.post()).data!.run!;
+    expect(seoRun.prompt).toContain('The routine "Weekly check" of your project names you');
+    await seo.runner['agent-runs']({ runId: seoRun.id }).result.post({ status: 'success' });
     const delegation = (await writer.runner['agent-runs'].claim.post()).data!.run!;
     expect(delegation.prompt).toContain('comes from the routine "Weekly check"');
     expect(delegation.prompt).toContain('The routine also started @coder, @seo on this issue');
@@ -315,15 +319,13 @@ describe('routine mentions', () => {
       (await db.select().from(issueWatcher).where(eq(issueWatcher.issueId, taskId))).length,
     ).toBe(1);
 
-    // Both agents work on the fire's runs now.
+    // Each run releases the task claim before the next agent can work on it.
     const delegation = (await writer.runner['agent-runs'].claim.post()).data!.run!;
-    const mention = (await coder.runner['agent-runs'].claim.post()).data!.run!;
     const onTask = (runner: Api) => runner.issues({ issueId: taskId });
 
     // An agent that tags the owner anyway reaches him once that day; its comments and
     // status change tell the member who follows the task nothing.
     await onTask(writer.runner).comments.post({ body: `@${owner.username} Bericht ist fertig` });
-    await onTask(coder.runner).comments.post({ body: `@${owner.username} Abhängigkeiten ok` });
     await onTask(writer.runner).comments.post({ body: `@${owner.username} noch ein Nachtrag` });
     await onTask(writer.runner).patch({ columnId: column('Done') });
     expect(await mentionsOf(owner.userId)).toEqual([{ type: 'mentioned', issueId: taskId }]);
@@ -337,12 +339,13 @@ describe('routine mentions', () => {
       { type: 'mentioned', issueId: taskId },
     ]);
 
+    await writer.runner['agent-runs']({ runId: delegation.id }).result.post({ status: 'success' });
+    const mention = (await coder.runner['agent-runs'].claim.post()).data!.run!;
+    await onTask(coder.runner).comments.post({ body: `@${owner.username} Abhängigkeiten ok` });
+    expect(await mentionsOf(owner.userId)).toHaveLength(2);
+
     // Once its routine run is over, the agent talks the ordinary way again.
-    for (const [runner, id] of [
-      [writer.runner, delegation.id],
-      [coder.runner, mention.id],
-    ] as const)
-      await runner['agent-runs']({ runId: id }).result.post({ status: 'success' });
+    await coder.runner['agent-runs']({ runId: mention.id }).result.post({ status: 'success' });
     await onTask(writer.runner).comments.post({ body: `@${owner.username} Rückfrage beantwortet` });
     expect(await mentionsOf(owner.userId)).toHaveLength(3);
     expect(await mentionsOf(member.userId)).toEqual([{ type: 'commented', issueId: taskId }]);

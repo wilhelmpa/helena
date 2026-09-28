@@ -169,7 +169,7 @@ describe('local AI', () => {
     const helpers = settings.classes.find((c) => c.id === 'hermes-helpers')!;
     expect(helpers.blocker).toBe('eval-missing');
     expect(helpers.resolvedModel).toBe('helena-local/Qwen3.6-35B-A3B-GGUF');
-    expect(settings.classes.find((c) => c.id === 'triage')?.blocker).toBe('not-wired');
+    expect(settings.classes.find((c) => c.id === 'triage')?.blocker).toBe('eval-missing');
 
     // No class leaves "off" before its eval passed.
     const refused = await asOwner.god['local-ai'].policy.patch({

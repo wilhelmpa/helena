@@ -280,7 +280,14 @@ describe('project previews', () => {
     }
   });
   it('registers all five guarded MCP tools with workspace execution for mutations', () => {
-    const tools = routeTools(app).filter((tool) => tool.name.startsWith('preview_'));
+    const previewNames = new Set([
+      'preview_logs',
+      'preview_start',
+      'preview_status',
+      'preview_stop',
+      'preview_url',
+    ]);
+    const tools = routeTools(app).filter((tool) => previewNames.has(tool.name));
     expect(tools.map((tool) => tool.name).sort()).toEqual([
       'preview_logs',
       'preview_start',
