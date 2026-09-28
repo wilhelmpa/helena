@@ -11,6 +11,7 @@ import {
   Moon,
   OctagonX,
   Play,
+  Settings2,
   Sun,
   UserRound,
 } from 'lucide-react';
@@ -38,6 +39,7 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { EmergencyStopDialog } from '@/features/agent-runtime/components/EmergencyStop';
+import { openSettingsModal } from '@/features/settings/settingsModalCatalog';
 import { LOCALES, LOCALE_FLAGS, LOCALE_LABELS, type Locale } from '@/i18n/locales';
 import { useUpdateAccountPreferences } from '@/services/preferences.service';
 import {
@@ -153,6 +155,10 @@ export default function UserMenu({ variant = 'avatar' }: { variant?: 'avatar' | 
             </span>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
+          <DropdownMenuItem onSelect={() => openSettingsModal('account', 'profile')}>
+            <Settings2 />
+            {'Einstellungen'}
+          </DropdownMenuItem>
           {variant === 'row' && (
             <>
               <DropdownMenuItem asChild>

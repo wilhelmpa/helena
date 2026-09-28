@@ -27,6 +27,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { openSettingsModal } from '@/features/settings/settingsModalCatalog';
+import { Settings2 } from 'lucide-react';
 
 // The one pattern for everything a page offers (owner, 2026-09-24: "alles in eine
 // Reihe, ohne Funktionen zu verlieren, für alle Bereiche homogen"). A page puts its
@@ -427,7 +429,16 @@ export function PageActions({
       ? actions.find((action) => !action.menuOnly)
       : null;
   const inRow = visibleAction ? [visibleAction] : [];
-  const inMenu = actions.filter((action) => action !== visibleAction);
+  const inMenu: PageAction[] = [
+    ...actions.filter((action) => action !== visibleAction),
+    {
+      id: 'settings-modal',
+      label: 'Einstellungen',
+      icon: Settings2,
+      onClick: () => openSettingsModal(),
+      menuOnly: true,
+    },
+  ];
   const controls = (
     <div className="flex shrink-0 items-center gap-0.5">
       {inRow.map((action) => (

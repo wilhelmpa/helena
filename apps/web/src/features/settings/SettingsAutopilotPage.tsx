@@ -131,6 +131,9 @@ function AutopilotPage({ projectKey }: { projectKey: string }) {
                     draft={draft}
                     disabled={!editable || setBudgets.isPending}
                     onChange={(key, value) => setDraft({ ...draft, [key]: value })}
+                    onBlur={() => {
+                      if (dirty) void saveBudgets();
+                    }}
                   />
                 </SettingsCard>
                 <p className="mt-2 text-xs text-muted-foreground">{t('estimate')}</p>

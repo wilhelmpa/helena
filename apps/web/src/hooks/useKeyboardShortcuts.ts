@@ -54,6 +54,11 @@ export function useKeyboardShortcuts(opts: {
         onToggleCommand();
         return;
       }
+      if (matches(e, 'project.settings')) {
+        e.preventDefault();
+        onSettings();
+        return;
+      }
       if (hasChat && matches(e, 'chat.toggle')) {
         e.preventDefault();
         onToggleChat();
@@ -95,11 +100,6 @@ export function useKeyboardShortcuts(opts: {
       if (matches(e, 'project.new')) {
         e.preventDefault();
         onNewProject();
-        return;
-      }
-      if (hasProject && matches(e, 'project.settings')) {
-        e.preventDefault();
-        onSettings();
         return;
       }
       if (onCycleLayout && matches(e, 'layout.cycle')) {

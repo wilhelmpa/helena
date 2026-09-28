@@ -12,7 +12,6 @@ import type { IssueOpenMode } from '@/lib/api/endpoints/userPreferences';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { useOverlays } from '@/hooks/useOverlays';
 import { usePermissions } from '@/hooks/usePermissions';
-import { useSettingsNavGroups } from '@/hooks/useSettingsNavGroups';
 import { useShellProject } from '@/hooks/useShellProject';
 import { useShellRoute } from '@/hooks/useShellRoute';
 import { useProjectRouteSync } from '@/hooks/useProjectRouteSync';
@@ -35,6 +34,9 @@ import ShellBody from '@/components/layout/ShellBody';
 import ShellHeaderTitle from '@/components/layout/ShellHeaderTitle';
 import ShellOverlays from '@/components/layout/ShellOverlays';
 import WorkspaceLayoutHost from '@/components/layout/WorkspaceLayoutHost';
+import WorkItemsPage from '@/features/work-items/WorkItemsPage';
+import SettingsModal from '@/features/settings/SettingsModal';
+import { openSettingsModal } from '@/features/settings/settingsModalCatalog';
 import HomeDock from '@/components/layout/HomeDock';
 import ProjectLinkSheet from '@/components/layout/ProjectLinkSheet';
 import { useTranslations } from 'next-intl';
@@ -160,11 +162,6 @@ export default function Shell({
     }
   }, [activeWorkspaceTool, routedTool, setWorkspaceOpen, workspaceOpen]);
 
-  // The settings sections the member may open; the hotkey lands on the first of
-  // them, the same entry the sidebar links to.
-  const { firstHref: firstSettingsHref } = useSettingsNavGroups(projectKey, project);
-  const settingsHref = firstSettingsHref ?? '/account/preferences';
-
   // Only the work items routes: a cycle or an initiative board carries its own
   // filters and merges them itself.
   const filterDefaults = route.onBoard
@@ -233,7 +230,7 @@ export default function Shell({
     onNewIssue: () => canCreateIssue && openNewIssue(),
     onNewInitiative: () => canCreateInitiative && overlays.setShowNewInitiative(true),
     onNewProject: () => overlays.setShowNewProject(true),
-    onSettings: () => router.push(settingsHref),
+    onSettings: () => openSettingsModal(),
     onToggleChat: toggleCoordinatorChat,
     onCycleLayout: workspaceLayout.phone ? undefined : workspaceLayout.cycle,
   });
@@ -313,7 +310,7 @@ export default function Shell({
                         .filter((key, index, all) => all.indexOf(key) === index)
                     : []
                 }
-                onSettings={() => router.push(settingsHref)}
+                onSettings={() => openSettingsModal()}
               />
               <SidebarInset className="min-w-0">
                 <AppHeader
@@ -380,7 +377,11 @@ export default function Shell({
                     projectCount={projects.length}
                     allowNoProject={globalHome}
                   >
-                    {children}
+                    {['settings', 'members', 'notifications', 'mcp'].includes(route.sub ?? '') ? (
+                      <WorkItemsPage />
+                    ) : (
+                      children
+                    )}
                   </ShellBody>
                 </WorkspaceLayoutHost>
               </SidebarInset>
@@ -420,6 +421,16 @@ export default function Shell({
               />
 
               <ShellOverlays project={project} projectKey={projectKey} overlays={overlays} />
+              <SettingsModal
+                projectKey={projectKey}
+                projectName={project?.project.name}
+                teamId={project?.project.teamId}
+                routeContent={
+                  ['settings', 'members', 'notifications', 'mcp'].includes(route.sub ?? '')
+                    ? children
+                    : undefined
+                }
+              />
             </SidebarProvider>
           </ShellHeaderActionsSlotCtx.Provider>
         </ShellHeaderSlotCtx.Provider>

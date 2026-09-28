@@ -26,6 +26,12 @@ export default function SettingsGeneral({ form }: { form: GeneralForm }) {
             id="project-name"
             value={form.name}
             onChange={(e) => form.setName(e.target.value)}
+            onBlur={() => {
+              if (form.canSave) void form.save();
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') e.currentTarget.blur();
+            }}
             disabled={!form.editable}
           />
         </div>
@@ -37,6 +43,9 @@ export default function SettingsGeneral({ form }: { form: GeneralForm }) {
             maxLength={2000}
             value={form.description}
             onChange={(e) => form.setDescription(e.target.value)}
+            onBlur={() => {
+              if (form.canSave) void form.save();
+            }}
             disabled={!form.editable}
           />
         </div>

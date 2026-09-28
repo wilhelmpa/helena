@@ -67,7 +67,17 @@ export default function TeamInfoSection({ teamId }: { teamId: number }) {
             {isOwner ? (
               <div className="space-y-1.5">
                 <Label htmlFor="team-name">{tCommon('name')}</Label>
-                <Input id="team-name" value={name} onChange={(e) => setDraft(e.target.value)} />
+                <Input
+                  id="team-name"
+                  value={name}
+                  onChange={(e) => setDraft(e.target.value)}
+                  onBlur={() => {
+                    if (canSave) void save();
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') e.currentTarget.blur();
+                  }}
+                />
               </div>
             ) : (
               <div className="flex items-center justify-between gap-4">

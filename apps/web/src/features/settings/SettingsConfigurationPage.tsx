@@ -16,7 +16,6 @@ import { SettingsResourceProvider } from './context/settingsPermission';
 import SettingsSubtaskAutomation from './components/configuration/SettingsSubtaskAutomation';
 import SettingsEstimates from './components/configuration/SettingsEstimates';
 import SettingsAutoArchive from './components/configuration/SettingsAutoArchive';
-import MailAccountSettings from '@/components/mail/MailAccountSettings';
 import { useAutoArchiveForm } from './hooks/useAutoArchiveForm';
 import { useEstimatesForm } from './hooks/useEstimatesForm';
 import { useSubtaskAutomationForm } from './hooks/useSubtaskAutomationForm';
@@ -72,14 +71,6 @@ function ConfigurationPage({ project }: { project: ProjectDetail }) {
             {features.subtasks && <SettingsSubtaskAutomation form={subtasks} />}
             <SettingsEstimates form={estimates} />
             <SettingsAutoArchive form={archive} />
-            {can('integrations', 'read') && (
-              <MailAccountSettings
-                teamId={project.project.teamId}
-                projectId={project.project.id}
-                projectKey={project.project.key}
-                canEdit={can('integrations', 'edit')}
-              />
-            )}
           </div>
         </RequirePermission>
       </SettingsResourceProvider>
