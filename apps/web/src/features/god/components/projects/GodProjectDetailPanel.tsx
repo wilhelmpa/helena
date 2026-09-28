@@ -19,7 +19,7 @@ function Stat({ label, value }: { label: string; value: number }) {
   const t = useTranslations('god.projectPanel');
   return (
     <div
-      className="rounded-lg border border-sidebar-border bg-card px-3 py-2.5"
+      className="rounded-md border border-sidebar-border bg-card px-3 py-2.5"
       title={t('statTitle', { label, value })}
     >
       <div className="text-xl font-semibold tabular-nums">{compactCount(value)}</div>
@@ -73,7 +73,7 @@ export default function GodProjectDetailPanel({
         <div className="flex shrink-0 items-start justify-between gap-3 border-b border-sidebar-border px-4 pt-4 pb-4">
           <div className="min-w-0 space-y-1.5">
             <div className="flex min-w-0 items-center gap-2">
-              <span className="shrink-0 rounded bg-secondary px-1.5 py-0.5 text-xs font-medium text-secondary-foreground">
+              <span className="shrink-0 rounded-sm bg-secondary px-1.5 py-0.5 text-xs font-medium text-secondary-foreground">
                 {project?.key ?? '…'}
               </span>
               <h2 className="truncate text-md font-semibold">
@@ -136,7 +136,7 @@ export default function GodProjectDetailPanel({
                   )}
                 </div>
                 {project.members.length === 0 ? (
-                  <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed border-sidebar-border px-4 py-6 text-center">
+                  <div className="flex flex-col items-center gap-2 rounded-md border border-dashed border-sidebar-border px-4 py-6 text-center">
                     <Users className="size-5 text-muted-foreground" />
                     <p className="text-sm font-medium">{t('noMembersTitle')}</p>
                     <p className="max-w-[36ch] text-xs text-muted-foreground">

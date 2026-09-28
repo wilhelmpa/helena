@@ -17,7 +17,7 @@ export function SettingsEmpty({
 }) {
   const can = useSettingsCan();
   return (
-    <div className="flex flex-col items-center justify-center gap-3 rounded-lg p-4 text-center">
+    <div className="flex flex-col items-center justify-center gap-3 rounded-md p-4 text-center">
       <EmptyHeader className="gap-1">
         <EmptyTitle className="text-sm">{title}</EmptyTitle>
         <EmptyDescription className="text-xs">{description}</EmptyDescription>

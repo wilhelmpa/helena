@@ -126,7 +126,7 @@ export default function MembersList({
       {members.length === 0 ? (
         <MembersEmptyState kind={kind} searching={term !== undefined} />
       ) : (
-        <div className="overflow-hidden rounded-lg border bg-card">
+        <div className="overflow-hidden rounded-md border bg-card">
           <Table className="table-fixed md:min-w-[720px]">
             <colgroup>
               <col className="md:w-[36%]" />

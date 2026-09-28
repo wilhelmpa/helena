@@ -248,7 +248,9 @@
     "full": "全屏",
     "close": "关闭面板",
     "closeTab": "关闭 {tab}",
-    "reloadView": "重新加载视图"
+    "reloadView": "重新加载视图",
+    "pin": "固定：页面让出空间",
+    "unpin": "取消固定：浮于页面之上"
   },
   "sidebarTeam": "团队",
   "sidebarAgentPool": "智能体池",

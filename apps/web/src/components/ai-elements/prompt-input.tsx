@@ -100,7 +100,7 @@ export function PromptInput({
       >
         <InputGroup
           className={cn(
-            'overflow-hidden rounded-xl border-border bg-background shadow-none has-[[data-slot=input-group-control]:focus-visible]:border-ring/60 dark:bg-background',
+            'overflow-hidden rounded-lg border-border bg-background shadow-none has-[[data-slot=input-group-control]:focus-visible]:border-ring/60 dark:bg-background',
             dragOver && 'border-brand bg-brand-subtle/40',
             groupClassName,
           )}
@@ -278,7 +278,7 @@ export function PromptInputSubmit({
       size="icon-sm"
       aria-label={label}
       title={label}
-      className={cn('rounded-lg', className)}
+      className={cn('rounded-md', className)}
       {...props}
     >
       {children ?? <ArrowUp className="size-4" />}

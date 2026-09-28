@@ -108,7 +108,7 @@ export function BoardColumn({
   return (
     <div
       className={cn(
-        'group/column flex h-full min-w-[260px] flex-1 basis-[260px] flex-col rounded-[18px] bg-kanban-column p-3 shadow-[0_0_0_1px_var(--board-column-outline)] max-sm:min-w-[calc(100vw-32px)] max-sm:flex-none max-sm:snap-start',
+        'group/column flex h-full min-w-[260px] flex-1 basis-[260px] flex-col rounded-xl bg-kanban-column p-3 shadow-[0_0_0_1px_var(--board-column-outline)] max-sm:min-w-[calc(100vw-32px)] max-sm:flex-none max-sm:snap-start',
         pinned && PINNED_COLUMN,
         wip?.full && WIP_FULL_TINT[wipFullColor(wip)],
       )}
@@ -198,7 +198,7 @@ export function BoardColumn({
       <div
         ref={mergedRef}
         className={cn(
-          'min-h-0 flex-1 overflow-y-auto rounded-[14px]',
+          'min-h-0 flex-1 overflow-y-auto rounded-xl',
           isOverColumn && 'bg-kanban-column-raised',
         )}
       >

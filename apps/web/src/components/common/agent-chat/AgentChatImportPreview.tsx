@@ -44,7 +44,7 @@ export function AgentChatImportPreview({
                   className="border-b px-2 py-1.5 text-start font-medium whitespace-nowrap"
                 >
                   {header}
-                  <span className="ms-1 rounded bg-muted px-1 py-0.5 align-middle text-xs text-muted-foreground">
+                  <span className="ms-1 rounded-sm bg-muted px-1 py-0.5 align-middle text-xs text-muted-foreground">
                     {field}
                   </span>
                 </th>

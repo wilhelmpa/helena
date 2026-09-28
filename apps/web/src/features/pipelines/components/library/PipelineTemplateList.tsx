@@ -32,18 +32,18 @@ export default function PipelineTemplateList({
       {templates.isPending ? (
         <ListSkeleton rows={3} rowClassName="h-14" />
       ) : templates.isError ? (
-        <div className="flex flex-wrap items-center gap-3 rounded-lg border bg-card px-3 py-2 text-sm text-destructive">
+        <div className="flex flex-wrap items-center gap-3 rounded-md border bg-card px-3 py-2 text-sm text-destructive">
           {t('loadFailed')}
           <Button size="sm" variant="outline" onClick={() => void templates.refetch()}>
             {t('tryAgain')}
           </Button>
         </div>
       ) : rows.length === 0 ? (
-        <p className="rounded-lg border bg-card px-3 py-2 text-sm text-muted-foreground">
+        <p className="rounded-md border bg-card px-3 py-2 text-sm text-muted-foreground">
           {t('emptyHint')}
         </p>
       ) : (
-        <ul className="divide-y overflow-hidden rounded-lg border bg-card">
+        <ul className="divide-y overflow-hidden rounded-md border bg-card">
           {rows.map((pipeline) => (
             <PipelineTemplateRow key={pipeline.id} pipeline={pipeline} canDelete={canDelete} />
           ))}

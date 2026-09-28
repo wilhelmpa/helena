@@ -248,7 +248,9 @@
     "full": "Full screen",
     "close": "Close panel",
     "closeTab": "Close {tab}",
-    "reloadView": "Reload view"
+    "reloadView": "Reload view",
+    "pin": "Pin: the page makes room",
+    "unpin": "Unpin: floats over the page"
   },
   "sidebarTeam": "Team",
   "sidebarAgentPool": "Agent pool",

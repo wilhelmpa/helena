@@ -41,7 +41,7 @@ export default function GithubCliCommand({
                 {chunks}
               </a>
             ),
-            code: (chunks) => <code className="rounded bg-muted px-1 py-0.5">{chunks}</code>,
+            code: (chunks) => <code className="rounded-sm bg-muted px-1 py-0.5">{chunks}</code>,
           })}
         </p>
         <Button variant="outline" size="sm" onClick={() => void copy()}>

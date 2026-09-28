@@ -51,7 +51,7 @@ export default function IssueTimelineShare({
       <button
         type="button"
         title={hoverTitle}
-        className={`flex cursor-pointer items-center justify-center overflow-hidden rounded-xs opacity-90 hover:opacity-100 ${fixed ? 'shrink-0' : 'min-w-1'}`}
+        className={`flex cursor-pointer items-center justify-center overflow-hidden rounded-sm opacity-90 hover:opacity-100 ${fixed ? 'shrink-0' : 'min-w-1'}`}
         style={{
           backgroundColor: lane.color,
           ...(fixed ? {} : { flexGrow: share, flexBasis: 0 }),

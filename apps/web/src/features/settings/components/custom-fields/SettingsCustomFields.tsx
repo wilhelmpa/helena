@@ -104,7 +104,7 @@ export default function SettingsCustomFields({ project }: { project: ProjectDeta
 
   return (
     <div>
-      <div className="divide-y overflow-hidden rounded-lg border bg-card">
+      <div className="divide-y overflow-hidden rounded-md border bg-card">
         {groups.map((g) => {
           const key = String(g.scope);
           const open = !collapsed.has(key);

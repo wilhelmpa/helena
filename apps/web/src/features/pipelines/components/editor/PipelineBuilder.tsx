@@ -39,7 +39,7 @@ export default function PipelineBuilder({ header }: { header?: ReactNode }) {
           </SheetContent>
         </Sheet>
       ) : (
-        <aside className="sticky top-0 rounded-lg border bg-card p-4">
+        <aside className="sticky top-0 rounded-md border bg-card p-4">
           <PipelineStepInspector />
         </aside>
       )}

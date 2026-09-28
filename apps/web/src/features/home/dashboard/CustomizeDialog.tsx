@@ -127,7 +127,7 @@ function WidgetList({
       </h3>
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
         <SortableContext items={ids} strategy={verticalListSortingStrategy}>
-          <ul className="flex flex-col gap-px rounded-lg border border-sidebar-border bg-card p-1">
+          <ul className="flex flex-col gap-px rounded-md border border-sidebar-border bg-card p-1">
             {entries.map((entry, index) => (
               <WidgetRow
                 key={entry.widget.id}

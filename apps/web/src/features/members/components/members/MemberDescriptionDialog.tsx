@@ -91,7 +91,7 @@ export default function MemberDescriptionDialog({
                   onKeyDown={(e) => {
                     if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') void save();
                   }}
-                  className="min-h-40 w-full rounded-xl border-0 bg-card p-4 text-base leading-relaxed shadow-sm focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                  className="min-h-40 w-full rounded-lg border-0 bg-card p-4 text-base leading-relaxed shadow-sm focus-visible:ring-[3px] focus-visible:ring-ring/50"
                 />
                 <Button
                   size="lg"

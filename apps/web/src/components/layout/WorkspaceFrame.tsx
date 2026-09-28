@@ -45,7 +45,7 @@ export default function WorkspaceFrame({
       title={title}
       loading="lazy"
       className={cn(
-        'min-h-0 flex-1 rounded-b-xl border-0 bg-background',
+        'min-h-0 flex-1 rounded-b-lg border-0 bg-background',
         className,
         !active && 'hidden',
       )}

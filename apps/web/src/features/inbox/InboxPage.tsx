@@ -11,6 +11,7 @@ import InboxView from './components/InboxView';
 import MailInbox from './components/MailInbox';
 import { useProjectMailAccounts } from '@/services/mail.service';
 import InboxWorkspace from './InboxWorkspace';
+import { Page } from '@/design-system';
 
 type InboxTab = 'messages' | 'updates';
 
@@ -64,7 +65,7 @@ export default function InboxPage() {
     </>
   );
   return (
-    <div className="flex h-full min-h-0 flex-col">
+    <Page variant="fill">
       {all ? (
         activeTab === 'messages' ? (
           <InboxWorkspace projectKey={null} page leading={leading} />
@@ -81,6 +82,6 @@ export default function InboxPage() {
       ) : (
         <InboxView key={project.project.key} project={project} leading={leading} />
       )}
-    </div>
+    </Page>
   );
 }

@@ -64,7 +64,7 @@ export default function MailHtmlFrame({
       title="mail"
       sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox"
       srcDoc={mailFrameDocument({ html, apiBase: mailApiBase(), allowRemoteImages })}
-      className="w-full rounded bg-white"
+      className="w-full rounded-sm bg-white"
       style={{ height }}
     />
   );

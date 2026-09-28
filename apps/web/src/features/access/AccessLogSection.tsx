@@ -52,7 +52,7 @@ export function AccessLogSection({ teamId, leading }: { teamId: number; leading:
         <EmptyState title={t('empty')} description="" />
       ) : (
         <div className="flex flex-col gap-4">
-          <ul className="divide-y overflow-hidden rounded-lg border border-sidebar-border bg-card">
+          <ul className="divide-y overflow-hidden rounded-md border border-sidebar-border bg-card">
             {audit.items.map((entry) => (
               <AuditRow key={entry.id} entry={entry} showCredential />
             ))}

@@ -35,7 +35,7 @@ export default function FileBreadcrumbs({
             {...drag.target(crumb.target)}
             aria-current={index === crumbs.length - 1 ? 'page' : undefined}
             className={cn(
-              'rounded px-1.5 py-1 hover:bg-accent',
+              'rounded-sm px-1.5 py-1 hover:bg-accent',
               index === crumbs.length - 1 && 'font-medium',
               drag.over === crumb.target && 'bg-primary/10',
             )}

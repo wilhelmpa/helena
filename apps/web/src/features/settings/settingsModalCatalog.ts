@@ -83,13 +83,18 @@ const SYSTEM: ModalSectionDef[] = [
   s('email', 'system', { keywords: 'SMTP Versand' }),
 ];
 
+// Administrator, part 3: development — the UI framework's living documentation.
+const DEVELOPMENT: ModalSectionDef[] = [
+  s('ui', 'development', { keywords: 'Galerie Komponenten Design Framework Bausteine' }),
+];
+
 export function settingsModalSections(admin: boolean): Record<SettingsArea, ModalSectionDef[]> {
   return { account: ACCOUNT, admin: admin ? HELENA_SETTINGS : [] };
 }
 
 // Helena's settings pages, in the order of its sidebar: "Alle Projekte", then "System".
-export const HELENA_SETTINGS: ModalSectionDef[] = [...ALL_PROJECTS, ...SYSTEM];
-export const HELENA_SETTINGS_GROUPS = ['allProjects', 'system'] as const;
+export const HELENA_SETTINGS: ModalSectionDef[] = [...ALL_PROJECTS, ...SYSTEM, ...DEVELOPMENT];
+export const HELENA_SETTINGS_GROUPS = ['allProjects', 'system', 'development'] as const;
 
 // The page of one of Helena's settings; `extra` is a tab of it (Server → Backup) or a team.
 export function helenaSettingsPath(slug: string, extra?: string) {

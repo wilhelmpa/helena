@@ -29,7 +29,7 @@ export default function BackupTargetsCard({ targets }: { targets: BackupTarget[]
     secretAccessKey.length >= 8;
 
   return (
-    <section className="min-w-0 space-y-3 rounded-lg border border-sidebar-border bg-card p-4">
+    <section className="min-w-0 space-y-3 rounded-md border border-sidebar-border bg-card p-4">
       <CardHeader title={t('title')} />
       <p className="text-xs text-muted-foreground">{t('explain')}</p>
       {targets.length > 0 && (

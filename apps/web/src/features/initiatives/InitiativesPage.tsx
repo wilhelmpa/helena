@@ -9,7 +9,7 @@ import { usePermissions } from '@/hooks/usePermissions';
 import { useInitiativeCountsQuery, useInitiativesQuery } from '@/services/initiatives.service';
 import { INITIATIVE_SORTS, type InitiativeSort } from '@/lib/api/endpoints/initiatives';
 import { initiativesTabPath, type InitiativesTab } from '@/utils/paths';
-import { WorkspacePageHeader } from '@/components/layout/WorkspaceHeader';
+import { Page } from '@/design-system';
 import {
   PageActions,
   PageSelect,
@@ -103,8 +103,7 @@ export default function InitiativesPage({ tab }: { tab: InitiativesTab }) {
   const canCreate = can('initiatives', 'create');
 
   return (
-    <div className="flex flex-1 flex-col overflow-y-auto">
-      <WorkspacePageHeader title={t('title')} />
+    <Page title={t('title')}>
       {/* One row (docs/volition/ui-standard.md): the status tabs, sortable by drag, and
           the page's one primary action. */}
       <PageToolbar>
@@ -160,6 +159,6 @@ export default function InitiativesPage({ tab }: { tab: InitiativesTab }) {
       {creating && projectKey && (
         <InitiativeDialog projectKey={projectKey} onClose={() => setCreating(false)} />
       )}
-    </div>
+    </Page>
   );
 }

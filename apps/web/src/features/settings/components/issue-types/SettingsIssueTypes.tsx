@@ -126,7 +126,7 @@ export default function SettingsIssueTypes({
 
   return (
     <div className="space-y-4">
-      <div className="overflow-hidden rounded-lg border bg-card">
+      <div className="overflow-hidden rounded-md border bg-card">
         <Table className="table-fixed md:min-w-[640px]">
           <colgroup>
             <col className="w-[46%]" />
@@ -166,7 +166,7 @@ export default function SettingsIssueTypes({
                       {colorDot(type.color)}
                       <span className="truncate text-sm font-medium">{type.name}</span>
                       {type.isDefault && (
-                        <span className="rounded bg-secondary px-1.5 py-0.5 text-xs font-medium text-secondary-foreground">
+                        <span className="rounded-sm bg-secondary px-1.5 py-0.5 text-xs font-medium text-secondary-foreground">
                           {t('default')}
                         </span>
                       )}

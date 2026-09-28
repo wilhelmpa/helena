@@ -50,7 +50,7 @@ export function SettingsLabelGroupSection({
   });
   const name = group?.name ?? t('ungrouped');
   const wrapperClass = cn(
-    'rounded-lg transition-colors',
+    'rounded-md transition-colors',
     dragging && 'outline-1 -outline-offset-2 outline-border/60 outline-dashed',
     isOver && 'bg-primary/10 outline-2 outline-primary outline-solid',
   );

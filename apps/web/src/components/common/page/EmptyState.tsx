@@ -1,32 +1,22 @@
 import type { ReactNode } from 'react';
-import {
-  Empty,
-  EmptyContent,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyTitle,
-} from '@/components/ui/empty';
+import { EmptyState as FrameworkEmptyState } from '@/design-system/components/Section';
 
-// The "nothing here yet" block. `children` holds the action; pages with no action
-// to offer omit it. It grows to fill the space left over (`flex-1`), so mount it in
-// a flex column of a known height — in a plain block parent it keeps content height
-// and sits at the top.
+// Kept for older call sites: the one empty state of the framework (docs/ui-framework.md)
+// with a title, one sentence and the action (`children`).
 export function EmptyState({
   title,
   description,
+  icon,
   children,
 }: {
   title: string;
   description: string;
+  icon?: ReactNode;
   children?: ReactNode;
 }) {
   return (
-    <Empty>
-      <EmptyHeader>
-        <EmptyTitle>{title}</EmptyTitle>
-        <EmptyDescription>{description}</EmptyDescription>
-      </EmptyHeader>
-      {children && <EmptyContent>{children}</EmptyContent>}
-    </Empty>
+    <FrameworkEmptyState icon={icon} title={title} action={children}>
+      {description}
+    </FrameworkEmptyState>
   );
 }

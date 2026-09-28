@@ -125,7 +125,7 @@
 }
 
 :root {
-  /* Scales (px): spacing 4 · 8 · 12 · 16 · 24 · 32 · 48; radii 8 · 12 · 16 · pill. */
+  /* Scales (px): spacing 4 · 8 · 12 · 16 · 24 · 32 · 48; radii 6 · 8 · 12 · 16 · pill. */
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
@@ -133,10 +133,18 @@
   --space-5: 24px;
   --space-6: 32px;
   --space-7: 48px;
-  --radius-field: 8px;
-  --radius-card: 12px;
-  --radius-panel: 16px;
-  --radius-pill: 999px;
+  /* Radii: five steps, nothing in between (docs/ui-framework.md §Radien).
+     sm chips, badges, small marks · md buttons, fields, controls · lg cards, rows,
+     menus · xl panels, dialogs, overlays · full pills, avatars, dots. */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-full: 999px;
+  --radius-field: var(--radius-md);
+  --radius-card: var(--radius-lg);
+  --radius-panel: var(--radius-xl);
+  --radius-pill: var(--radius-full);
   --row-tree: 36px;
   --row-table: 40px;
   --control-h: 32px;
@@ -193,7 +201,7 @@
   --chart-3: var(--project-verve);
   --chart-4: var(--status-waiting);
   --chart-5: var(--danger);
-  --radius: 0.5rem;
+  --radius: var(--radius-md);
   --sidebar: var(--surface-1);
   --sidebar-foreground: var(--text);
   --sidebar-primary: var(--primary-bg);

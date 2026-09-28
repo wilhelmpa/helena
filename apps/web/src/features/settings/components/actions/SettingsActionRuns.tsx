@@ -36,7 +36,7 @@ export function SettingsActionRuns({ project }: { project: ProjectDetail }) {
       {query.isPending ? (
         <ListSkeleton rows={3} rowClassName="h-10" />
       ) : runs.length === 0 ? (
-        <p className="rounded-lg border p-4 text-sm text-muted-foreground">{t('noRuns')}</p>
+        <p className="rounded-md border p-4 text-sm text-muted-foreground">{t('noRuns')}</p>
       ) : (
         <Table className="min-w-[760px] table-fixed">
           <colgroup>

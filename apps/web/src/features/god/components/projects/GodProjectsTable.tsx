@@ -78,7 +78,7 @@ export default function GodProjectsTable({
               <TableCell className="px-3 py-3 align-top whitespace-normal">
                 <div className="flex min-w-0 flex-col gap-0.5">
                   <div className="flex min-w-0 items-center gap-2">
-                    <span className="shrink-0 rounded bg-secondary px-1.5 py-0.5 text-xs font-medium text-secondary-foreground">
+                    <span className="shrink-0 rounded-sm bg-secondary px-1.5 py-0.5 text-xs font-medium text-secondary-foreground">
                       {p.key}
                     </span>
                     <span className="truncate text-sm font-medium">{p.name}</span>

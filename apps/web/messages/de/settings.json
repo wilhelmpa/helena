@@ -681,7 +681,8 @@
     "groups": {
       "you": "Du",
       "allProjects": "Alle Projekte",
-      "system": "System"
+      "system": "System",
+      "development": "Entwicklung"
     },
     "sections": {
       "profile": {
@@ -831,6 +832,10 @@
       "server-power": {
         "label": "Leistung & Lüfter",
         "hint": "Leistungsprofil, Lüfter und Temperaturen."
+      },
+      "ui": {
+        "label": "UI-Bausteine",
+        "hint": "Jeder Baustein des UI-Frameworks mit seinen Varianten, hell und dunkel."
       }
     },
     "projectPath": "Projekt"
@@ -875,5 +880,47 @@
   },
   "defaults": {
     "adminOnly": "Diese Vorgaben für alle Projekte ändert nur der Administrator."
+  },
+  "uiGallery": {
+    "sample": "Beispieltext",
+    "tokens": "Tokens",
+    "actions": "Aktionen",
+    "newThing": "Neu anlegen",
+    "upload": "Hochladen",
+    "cancel": "Abbrechen",
+    "delete": "Löschen",
+    "small": "Klein",
+    "disabled": "Gesperrt",
+    "settings": "Einstellungen",
+    "openDialog": "Dialog öffnen",
+    "dialogTitle": "Ein Dialog",
+    "choices": "Auswahl",
+    "tabActive": "Aktiv",
+    "tabPlanned": "Geplant",
+    "tabAll": "Alle",
+    "tree": "Baum",
+    "circle": "Kreis",
+    "filter": "Filter",
+    "fields": "Felder",
+    "name": "Name",
+    "hint": "Ein Satz, der erklärt, was die Einstellung bewirkt.",
+    "search": "Suchen",
+    "description": "Beschreibung",
+    "error": "So kurz erklärt, was falsch ist.",
+    "surfaces": "Flächen",
+    "cardTitle": "Karte",
+    "meta": "vor 5 Min.",
+    "interactive": "Klickbar",
+    "selected": "Ausgewählt",
+    "lists": "Listen und Tabellen",
+    "group": "Gruppe",
+    "agent": "Agent",
+    "patterns": "Muster",
+    "settingsGroup": "Einstellungsgruppe",
+    "danger": "Gefahrenzone",
+    "properties": "Eigenschaften",
+    "emptySentence": "Hier liegt noch nichts. Leg das Erste an.",
+    "light": "Hell",
+    "dark": "Dunkel"
   }
 }

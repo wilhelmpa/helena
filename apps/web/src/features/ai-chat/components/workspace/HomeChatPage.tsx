@@ -2,6 +2,7 @@
 
 import Shell from '@/components/layout/Shell';
 import ChatWorkspaceRoot from './ChatWorkspaceRoot';
+import { Page } from '@/design-system';
 
 // The Home chat workspace (/chat): wrapped in the same Shell every other Home route
 // uses (Files, Agent activity, ...) for its sidebar, header and tool panel — this page
@@ -15,7 +16,9 @@ import ChatWorkspaceRoot from './ChatWorkspaceRoot';
 export default function HomeChatPage() {
   return (
     <Shell globalHome autoOpenGlobalChat={false} hideHeaderOnDesktop>
-      <ChatWorkspaceRoot projectKey={null} />
+      <Page variant="bleed">
+        <ChatWorkspaceRoot projectKey={null} />
+      </Page>
     </Shell>
   );
 }

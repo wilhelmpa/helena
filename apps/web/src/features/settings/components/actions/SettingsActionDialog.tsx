@@ -125,7 +125,7 @@ export function SettingsActionDialog({
           {!isValid && <p className="text-sm text-muted-foreground">{t('workflowNeedsAction')}</p>}
         </div>
 
-        <section className="space-y-2 rounded-xl border p-3">
+        <section className="space-y-2 rounded-lg border p-3">
           <div>
             <h3 className="text-sm font-medium">{t('testWorkflow')}</h3>
             <p className="text-xs text-muted-foreground">{t('testWorkflowHint')}</p>

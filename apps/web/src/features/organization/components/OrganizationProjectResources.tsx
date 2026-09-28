@@ -48,7 +48,7 @@ export default function OrganizationProjectResources({ projectKey }: { projectKe
   }
   if (provisioning.isError) {
     return (
-      <p className="mb-4 rounded-lg border border-destructive/40 p-3 text-sm text-destructive">
+      <p className="mb-4 rounded-md border border-destructive/40 p-3 text-sm text-destructive">
         {t('unavailable')}
       </p>
     );
@@ -60,7 +60,7 @@ export default function OrganizationProjectResources({ projectKey }: { projectKe
     job.status === 'succeeded' ? CheckCircle2 : job.status === 'failed' ? CircleAlert : Clock3;
 
   return (
-    <section className="mb-4 rounded-lg border bg-card p-4">
+    <section className="mb-4 rounded-md border bg-card p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="flex items-center gap-2 text-md font-medium">

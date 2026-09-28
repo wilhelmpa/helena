@@ -52,7 +52,7 @@ export default function IssueAttachmentCard({
   return (
     <div
       {...dragProps}
-      className={`group relative flex flex-col overflow-hidden rounded-lg border bg-card transition-colors hover:border-ring/40 ${
+      className={`group relative flex flex-col overflow-hidden rounded-md border bg-card transition-colors hover:border-ring/40 ${
         readOnly ? '' : 'cursor-grab active:cursor-grabbing'
       }`}
     >

@@ -248,7 +248,9 @@
     "full": "Pantalla completa",
     "close": "Cerrar panel",
     "closeTab": "Cerrar {tab}",
-    "reloadView": "Recargar vista"
+    "reloadView": "Recargar vista",
+    "pin": "Fijar: la página deja espacio",
+    "unpin": "Soltar: flota sobre la página"
   },
   "sidebarTeam": "Equipo",
   "sidebarAgentPool": "Grupo de agentes",

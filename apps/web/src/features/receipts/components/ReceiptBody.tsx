@@ -274,7 +274,7 @@ export default function ReceiptBody({
       {receipt.textExcerpt && (
         <section>
           <SectionLabel>{t('detail.text')}</SectionLabel>
-          <pre className="max-h-64 overflow-auto rounded-lg border border-sidebar-border bg-card p-3 text-xs whitespace-pre-wrap text-muted-foreground">
+          <pre className="max-h-64 overflow-auto rounded-md border border-sidebar-border bg-card p-3 text-xs whitespace-pre-wrap text-muted-foreground">
             {receipt.textExcerpt}
           </pre>
         </section>

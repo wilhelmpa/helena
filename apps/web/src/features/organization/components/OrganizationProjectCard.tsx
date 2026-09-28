@@ -27,7 +27,7 @@ export default function OrganizationProjectCard({
 
   return (
     <form
-      className="space-y-3 rounded-lg border bg-card p-4"
+      className="space-y-3 rounded-md border bg-card p-4"
       onSubmit={(event) => {
         event.preventDefault();
         save.mutate({

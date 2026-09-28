@@ -65,7 +65,7 @@ export function IntegrationPicker({
                     key={integration.key}
                     type="button"
                     onClick={() => onSelect(integration.key)}
-                    className="flex items-center gap-3 rounded-lg border border-transparent px-2 py-2 text-left transition-colors hover:bg-muted/60 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                    className="flex items-center gap-3 rounded-md border border-transparent px-2 py-2 text-left transition-colors hover:bg-muted/60 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                   >
                     <IntegrationIcon integration={integration} className="size-8" />
                     <span className="min-w-0 flex-1">

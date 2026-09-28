@@ -83,7 +83,7 @@ export default function VaultFilePicker({
             <li key={item.path}>
               <button
                 type="button"
-                className="flex w-full items-center gap-2 rounded px-2 py-1 text-start text-sm hover:bg-accent"
+                className="flex w-full items-center gap-2 rounded-sm px-2 py-1 text-start text-sm hover:bg-accent"
                 onClick={() =>
                   item.kind === 'folder'
                     ? setPath(item.path)

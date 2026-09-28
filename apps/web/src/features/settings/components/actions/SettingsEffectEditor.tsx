@@ -140,7 +140,7 @@ export function SettingsEffectEditor({
                   type="button"
                   onClick={() => removeKey(key)}
                   title={t('removeField')}
-                  className="rounded p-1 text-muted-foreground hover:bg-accent hover:text-foreground"
+                  className="rounded-sm p-1 text-muted-foreground hover:bg-accent hover:text-foreground"
                 >
                   <X className="size-4" />
                 </button>
@@ -167,7 +167,7 @@ export function SettingsEffectEditor({
                 key={key}
                 type="button"
                 onClick={() => addKey(key)}
-                className="w-full truncate rounded px-2 py-1.5 text-left text-sm hover:bg-accent"
+                className="w-full truncate rounded-sm px-2 py-1.5 text-left text-sm hover:bg-accent"
               >
                 {effectText.field(key)}
               </button>

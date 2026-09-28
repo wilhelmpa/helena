@@ -74,7 +74,7 @@ export default function LastCommentBubble({
           className={cn(
             // Same fill, outline and radius as a comment in the feed, on an opaque
             // background because it floats over the page.
-            'flex max-w-sm items-start gap-1 rounded-lg border border-black/4 bg-background py-2 ps-3 pe-2 shadow-[var(--overlay-shadow)] transition duration-300 ease-out hover:bg-muted/40 motion-reduce:transition-none dark:border-white/8',
+            'flex max-w-sm items-start gap-1 rounded-md border border-black/4 bg-background py-2 ps-3 pe-2 shadow-[var(--overlay-shadow)] transition duration-300 ease-out hover:bg-muted/40 motion-reduce:transition-none dark:border-white/8',
             // Hidden by opacity rather than unmounted, so a turn that ends fades out
             // as it came in.
             shown ? 'pointer-events-auto translate-y-0 opacity-100' : 'translate-y-2 opacity-0',

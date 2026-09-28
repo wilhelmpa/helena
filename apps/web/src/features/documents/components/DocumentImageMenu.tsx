@@ -48,13 +48,13 @@ export default function DocumentImageMenu({
           type="button"
           variant="ghost"
           size="icon-sm"
-          className="size-8 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
+          className="size-8 rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
           aria-label={t('image')}
         >
           <ImagePlus className="size-4 stroke-[1.75]" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="start" className="w-[21rem] space-y-3 rounded-xl p-3 shadow-xl">
+      <PopoverContent align="start" className="w-[21rem] space-y-3 rounded-lg p-3 shadow-xl">
         <input
           ref={fileInput}
           className="sr-only"
@@ -70,7 +70,7 @@ export default function DocumentImageMenu({
           type="button"
           variant="outline"
           size="sm"
-          className="h-9 w-full rounded-lg border-dashed bg-muted/20 text-xs shadow-none"
+          className="h-9 w-full rounded-md border-dashed bg-muted/20 text-xs shadow-none"
           disabled={uploading}
           onClick={() => fileInput.current?.click()}
         >
@@ -88,12 +88,12 @@ export default function DocumentImageMenu({
             value={url}
             type="url"
             dir="ltr"
-            className="h-9 rounded-lg text-xs"
+            className="h-9 rounded-md text-xs"
             placeholder={t('imageUrl')}
             aria-label={t('imageUrl')}
             onChange={(event) => setUrl(event.target.value)}
           />
-          <Button type="submit" size="sm" className="h-9 rounded-lg" disabled={!url.trim()}>
+          <Button type="submit" size="sm" className="h-9 rounded-md" disabled={!url.trim()}>
             {t('insert')}
           </Button>
         </form>

@@ -191,7 +191,7 @@ export default function OwnerTerminalPanel() {
               title={`${t(`kinds.${tab.kind}`)} ${tab.name}`}
               loading="lazy"
               className={cn(
-                'absolute inset-0 h-full w-full rounded-b-xl border-0 bg-background',
+                'absolute inset-0 h-full w-full rounded-b-lg border-0 bg-background',
                 key !== activeKey && 'pointer-events-none invisible',
               )}
               allow="clipboard-read; clipboard-write"

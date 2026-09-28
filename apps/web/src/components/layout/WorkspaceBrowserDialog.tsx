@@ -99,7 +99,7 @@ function Card({ title, body, actions }: { title: string; body: string; actions: 
     <div
       role="alertdialog"
       aria-label={title}
-      className="flex w-full max-w-sm flex-col gap-3 rounded-lg border bg-background p-4 shadow-lg"
+      className="flex w-full max-w-sm flex-col gap-3 rounded-md border bg-background p-4 shadow-lg"
     >
       <p className="text-md font-medium">{title}</p>
       {body && (
@@ -126,7 +126,7 @@ function JsDialog({
     <form
       role="alertdialog"
       aria-label={t('dialogTitle')}
-      className="flex w-full max-w-sm flex-col gap-3 rounded-lg border bg-background p-4 shadow-lg"
+      className="flex w-full max-w-sm flex-col gap-3 rounded-md border bg-background p-4 shadow-lg"
       onSubmit={(event) => {
         event.preventDefault();
         onAnswer(true, dialog.kind === 'prompt' ? text : undefined);

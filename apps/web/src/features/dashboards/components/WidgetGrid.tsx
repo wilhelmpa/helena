@@ -94,7 +94,7 @@ export default function WidgetGrid({
           compactor={verticalCompactor}
           onDragStop={(l) => editor.applyGrid(l)}
           onResizeStop={(l) => editor.applyGrid(l)}
-          className={cn(movable && 'rounded-lg outline-1 outline-border/50 outline-dashed')}
+          className={cn(movable && 'rounded-md outline-1 outline-border/50 outline-dashed')}
         >
           {layout.map((widget) => (
             <div key={widget.id} dir={direction} className="min-w-0 overflow-hidden">

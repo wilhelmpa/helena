@@ -70,7 +70,7 @@ export default function GitConnectionCard({
     <p className="text-xs text-muted-foreground">
       {t.rich(key, {
         b: (chunks) => <b>{chunks}</b>,
-        code: (chunks) => <code className="rounded bg-muted px-1 py-0.5">{chunks}</code>,
+        code: (chunks) => <code className="rounded-sm bg-muted px-1 py-0.5">{chunks}</code>,
       })}
     </p>
   );

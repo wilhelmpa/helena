@@ -310,6 +310,7 @@
     "lensWhy": "Why",
     "whyEmpty": "No agent is working on a task of this project yet.",
     "whyNoGoal": "No goal linked",
-    "noAgent": "No agent"
+    "noAgent": "No agent",
+    "filterLabel": "Status"
   }
 }

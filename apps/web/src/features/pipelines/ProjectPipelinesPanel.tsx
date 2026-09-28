@@ -66,11 +66,11 @@ export default function ProjectPipelinesPanel() {
       <WorkflowRunLimitSettings projectKey={projectKey} editable={editable} />
       <WorkflowSigningSecretSettings projectKey={projectKey} editable={editable} />
       {pipelines.isPending ? null : pipelines.isError ? (
-        <p className="rounded-lg border bg-card px-3 py-2 text-sm text-destructive">
+        <p className="rounded-md border bg-card px-3 py-2 text-sm text-destructive">
           {t('loadFailed')}
         </p>
       ) : !pipelines.data.length ? (
-        <p className="rounded-lg border bg-card px-3 py-2 text-sm text-muted-foreground">
+        <p className="rounded-md border bg-card px-3 py-2 text-sm text-muted-foreground">
           {t('empty')}
         </p>
       ) : (

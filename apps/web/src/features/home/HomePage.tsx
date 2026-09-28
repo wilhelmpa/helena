@@ -3,14 +3,15 @@
 import Shell from '@/components/layout/Shell';
 import { useTranslations } from 'next-intl';
 import HomeDashboard from './dashboard/HomeDashboard';
+import { Page } from '@/design-system';
 
 export default function HomePage() {
   const t = useTranslations('nav');
   return (
     <Shell globalHome globalTitle={t('sidebarAllProjects')} autoOpenGlobalChat={false}>
-      <div className="h-full overflow-y-auto pe-(--workspace-overlay-inset)">
+      <Page title={t('sidebarAllProjects')}>
         <HomeDashboard />
-      </div>
+      </Page>
     </Shell>
   );
 }

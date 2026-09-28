@@ -91,7 +91,7 @@ function JsonNode({
   return (
     <div>
       <div
-        className="flex cursor-pointer rounded hover:bg-accent/40"
+        className="flex cursor-pointer rounded-sm hover:bg-accent/40"
         style={indent}
         onClick={() => setOpen((o) => !o)}
       >

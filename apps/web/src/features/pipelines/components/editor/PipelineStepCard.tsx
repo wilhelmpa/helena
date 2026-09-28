@@ -37,7 +37,7 @@ export default function PipelineStepCard({ step }: { step: PipelineStep }) {
     >
       <div
         className={cn(
-          'flex items-start gap-1 rounded-lg border bg-background p-2 transition-colors',
+          'flex items-start gap-1 rounded-md border bg-background p-2 transition-colors',
           selectedId === step.id && 'border-foreground/25 bg-accent',
         )}
       >

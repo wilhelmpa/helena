@@ -22,7 +22,7 @@ export default function OrganizationOrchestrationUsage({ projectKey }: { project
   const data = usage.data;
 
   return (
-    <section className="space-y-3 rounded-lg border bg-card p-4">
+    <section className="space-y-3 rounded-md border bg-card p-4">
       <div>
         <h2 className="text-md font-medium">{t('title')}</h2>
         {data && (

@@ -135,7 +135,7 @@ export default function GodUserDetailPanel({
           ) : (
             <>
               {!user.emailVerified && (
-                <div className="flex items-start gap-3 rounded-lg border border-sidebar-border bg-card p-4">
+                <div className="flex items-start gap-3 rounded-md border border-sidebar-border bg-card p-4">
                   <MailWarning className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
                   <div className="min-w-0 flex-1 space-y-0.5">
                     <p className="text-sm font-medium">{t('unconfirmedTitle')}</p>
@@ -178,7 +178,7 @@ export default function GodUserDetailPanel({
                   )}
                 </div>
                 {user.projects.length === 0 ? (
-                  <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed border-sidebar-border px-4 py-6 text-center">
+                  <div className="flex flex-col items-center gap-2 rounded-md border border-dashed border-sidebar-border px-4 py-6 text-center">
                     <FolderOpen className="size-5 text-muted-foreground" />
                     <p className="text-sm font-medium">{t('noAccessTitle')}</p>
                     <p className="max-w-[36ch] text-xs text-muted-foreground">
@@ -241,7 +241,7 @@ export default function GodUserDetailPanel({
             </p>
 
             {soleOwned.length > 0 && (
-              <div className="space-y-4 rounded-lg border border-sidebar-border bg-card p-4">
+              <div className="space-y-4 rounded-md border border-sidebar-border bg-card p-4">
                 <div className="flex items-start gap-2.5">
                   <TriangleAlert className="mt-0.5 size-4 shrink-0 text-destructive" />
                   <div className="min-w-0 space-y-2">
@@ -252,7 +252,7 @@ export default function GodUserDetailPanel({
                       {soleOwned.map((p) => (
                         <span
                           key={p.projectId}
-                          className="rounded bg-secondary px-1.5 py-0.5 text-xs font-medium text-secondary-foreground"
+                          className="rounded-sm bg-secondary px-1.5 py-0.5 text-xs font-medium text-secondary-foreground"
                         >
                           {p.projectKey}
                         </span>

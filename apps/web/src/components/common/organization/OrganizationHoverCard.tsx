@@ -130,7 +130,7 @@ export default function OrganizationHoverCard({
   return (
     <div
       role="tooltip"
-      className="organization-hover-card pointer-events-none absolute z-20 hidden flex-col gap-0.5 rounded-2xl bg-popover p-3 text-popover-foreground shadow-[0_0_0_1px_var(--border),0_12px_32px_color-mix(in_srgb,var(--foreground)_14%,transparent)] [@media(hover:hover)]:flex"
+      className="organization-hover-card pointer-events-none absolute z-20 hidden flex-col gap-0.5 rounded-xl bg-popover p-3 text-popover-foreground shadow-[0_0_0_1px_var(--border),0_12px_32px_color-mix(in_srgb,var(--foreground)_14%,transparent)] [@media(hover:hover)]:flex"
       style={{ left, top, width: CARD_WIDTH }}
     >
       {body}

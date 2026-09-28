@@ -47,7 +47,7 @@ export default function OverviewTab({ tabs }: { tabs: ServerTab[] }) {
         onRefresh={() => void qc.invalidateQueries({ queryKey: serverKeys.all })}
       />
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-        <section className="space-y-3 rounded-lg border border-sidebar-border bg-card p-4">
+        <section className="space-y-3 rounded-md border border-sidebar-border bg-card p-4">
           <CardHeader title={t('overview.machine')} />
           {data ? (
             <Facts>
@@ -77,7 +77,7 @@ export default function OverviewTab({ tabs }: { tabs: ServerTab[] }) {
           )}
         </section>
 
-        <section className="space-y-3 rounded-lg border border-sidebar-border bg-card p-4">
+        <section className="space-y-3 rounded-md border border-sidebar-border bg-card p-4">
           <CardHeader title={t('overview.memory')} />
           {data ? (
             <Facts>
@@ -111,7 +111,7 @@ export default function OverviewTab({ tabs }: { tabs: ServerTab[] }) {
           )}
         </section>
 
-        <section className="space-y-3 rounded-lg border border-sidebar-border bg-card p-4 xl:col-span-2">
+        <section className="space-y-3 rounded-md border border-sidebar-border bg-card p-4 xl:col-span-2">
           <CardHeader title={t('overview.localAiGuard')}>
             <Button
               variant="outline"
@@ -153,7 +153,7 @@ export default function OverviewTab({ tabs }: { tabs: ServerTab[] }) {
           )}
         </section>
 
-        <section className="space-y-2 rounded-lg border border-sidebar-border bg-card p-4 xl:col-span-2">
+        <section className="space-y-2 rounded-md border border-sidebar-border bg-card p-4 xl:col-span-2">
           <CardHeader title={t('overview.health')} />
           {overview.data ? (
             <div className="grid grid-cols-1 gap-x-6 gap-y-3 lg:grid-cols-2">

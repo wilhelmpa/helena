@@ -32,7 +32,7 @@ export default function OrganizationOrchestrationPolicy({
   ].filter((warning): warning is string => Boolean(warning));
 
   return (
-    <section className="space-y-3 rounded-lg border bg-card p-4">
+    <section className="space-y-3 rounded-md border bg-card p-4">
       <div className="flex items-start justify-between gap-3">
         <div>
           <h2 className="flex items-center gap-2 text-md font-medium">

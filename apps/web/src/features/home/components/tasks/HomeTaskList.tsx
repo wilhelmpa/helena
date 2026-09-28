@@ -57,7 +57,7 @@ export default function HomeTaskList({
           >
             {group.name}
           </SectionLabel>
-          <div className="rounded-lg border bg-card p-1">
+          <div className="rounded-md border bg-card p-1">
             {group.issues.map((issue) => (
               <HomeTaskRow key={issue.id} issue={issue} />
             ))}

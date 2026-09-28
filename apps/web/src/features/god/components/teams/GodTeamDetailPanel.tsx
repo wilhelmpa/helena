@@ -19,7 +19,7 @@ function Stat({ label, value }: { label: string; value: number }) {
   const t = useTranslations('god.teamPanel');
   return (
     <div
-      className="rounded-lg border border-sidebar-border bg-card px-3 py-2.5"
+      className="rounded-md border border-sidebar-border bg-card px-3 py-2.5"
       title={t('statTitle', { label, value })}
     >
       <div className="text-xl font-semibold tabular-nums">{compactCount(value)}</div>

@@ -17,7 +17,7 @@ export default function PipelineCard({
   children: ReactNode;
 }) {
   return (
-    <section className="space-y-3 rounded-lg border bg-card p-4">
+    <section className="space-y-3 rounded-md border bg-card p-4">
       <div className="flex items-start justify-between gap-3">
         <div>
           <h2 className="text-md font-medium">{title}</h2>

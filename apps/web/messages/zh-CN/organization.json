@@ -310,6 +310,7 @@
     "lensWhy": "为何",
     "whyEmpty": "尚无代理在处理此项目的任务。",
     "whyNoGoal": "未关联目标",
-    "noAgent": "无代理"
+    "noAgent": "无代理",
+    "filterLabel": "状态"
   }
 }

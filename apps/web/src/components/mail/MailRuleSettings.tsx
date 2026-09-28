@@ -77,7 +77,7 @@ export default function MailRuleSettings({
       </ul>
       {canEdit && (
         <form
-          className="grid gap-2 rounded-lg border bg-card p-3 sm:grid-cols-2"
+          className="grid gap-2 rounded-md border bg-card p-3 sm:grid-cols-2"
           onSubmit={(event) => {
             event.preventDefault();
             if (!projectId || !value.trim()) return;

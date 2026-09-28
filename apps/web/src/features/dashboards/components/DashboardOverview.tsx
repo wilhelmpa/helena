@@ -37,7 +37,7 @@ function ActivityRow({ entry, projectKey }: { entry: AgentActivityEntry; project
   return (
     <Link
       href={href}
-      className="flex min-h-11 items-center gap-3 rounded-xl bg-[var(--dashboard-raised)] px-3 text-xs text-[var(--dashboard-ink)] transition-colors hover:bg-[var(--dashboard-selected)]"
+      className="flex min-h-11 items-center gap-3 rounded-lg bg-[var(--dashboard-raised)] px-3 text-xs text-[var(--dashboard-ink)] transition-colors hover:bg-[var(--dashboard-selected)]"
     >
       <Orb state={status} size="small" />
       <span className="min-w-0 flex-1 truncate">
@@ -157,7 +157,7 @@ export default function DashboardOverview({
               <Link
                 key={approval.id}
                 href={projectApprovalsPath(projectKey)}
-                className="flex min-h-11 items-center gap-3 rounded-xl bg-[var(--dashboard-raised)] px-3 text-xs text-[var(--dashboard-ink)] hover:bg-[var(--dashboard-selected)]"
+                className="flex min-h-11 items-center gap-3 rounded-lg bg-[var(--dashboard-raised)] px-3 text-xs text-[var(--dashboard-ink)] hover:bg-[var(--dashboard-selected)]"
               >
                 <Orb state="waiting" size="small" />
                 <span className="min-w-0 flex-1 truncate">{approval.action}</span>

@@ -59,7 +59,7 @@ export default function DomainListField({
           <span
             key={domain}
             dir="ltr"
-            className="flex items-center gap-1 rounded bg-muted px-1.5 py-0.5 font-mono text-xs"
+            className="flex items-center gap-1 rounded-sm bg-muted px-1.5 py-0.5 font-mono text-xs"
           >
             {domain}
             {!disabled && (

@@ -109,7 +109,7 @@ export function ServerSections({ area }: { area: string }) {
       {sections.map((section) => (
         <section
           key={section.id}
-          className="min-w-0 rounded-lg border border-sidebar-border bg-card p-4"
+          className="min-w-0 rounded-md border border-sidebar-border bg-card p-4"
         >
           <section.Component />
         </section>

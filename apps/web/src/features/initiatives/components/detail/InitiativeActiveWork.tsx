@@ -36,7 +36,7 @@ export default function InitiativeActiveWork({
       <h3 className="mb-3 text-xs font-medium text-muted-foreground">
         {t('inProgress')} <span className="tabular-nums">· {rows.length}</span>
       </h3>
-      <ul className="divide-border overflow-hidden rounded-lg border bg-card">
+      <ul className="divide-border overflow-hidden rounded-md border bg-card">
         {rows.map(({ issue, column }) => {
           const owner = issue.assigneeUserId ? assignees.get(issue.assigneeUserId) : null;
           return (

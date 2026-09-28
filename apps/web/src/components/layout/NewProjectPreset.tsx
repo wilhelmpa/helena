@@ -50,7 +50,7 @@ export default function NewProjectPreset({
 
       {/* The type list wraps to two rows at most and the line below is one row, so
           the block keeps its height when the selection changes. */}
-      <div className="space-y-2 rounded-lg bg-muted/60 p-3">
+      <div className="space-y-2 rounded-md bg-muted/60 p-3">
         <p className="text-xs text-muted-foreground">
           {t('typesCreated', { count: types.length })}
         </p>

@@ -26,7 +26,7 @@ export default function ChatArtifactCard({
       type="button"
       disabled={pending}
       onClick={() => onOpen(artifact)}
-      className="my-3 flex w-full items-center gap-3 rounded-lg border bg-card p-3 text-start transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:pointer-events-none"
+      className="my-3 flex w-full items-center gap-3 rounded-md border bg-card p-3 text-start transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:pointer-events-none"
     >
       <span className="grid size-9 shrink-0 place-items-center rounded-md bg-muted">
         <Icon className={pending ? 'size-4 animate-spin' : 'size-4'} />

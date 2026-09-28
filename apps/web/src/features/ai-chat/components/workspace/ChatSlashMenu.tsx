@@ -35,7 +35,7 @@ export default function ChatSlashMenu({
         align="start"
         sideOffset={8}
         onOpenAutoFocus={(event) => event.preventDefault()}
-        className="max-h-72 w-[var(--radix-popover-trigger-width)] max-w-[calc(100vw-16px)] scrollbar-thin overflow-y-auto rounded-lg p-1"
+        className="max-h-72 w-[var(--radix-popover-trigger-width)] max-w-[calc(100vw-16px)] scrollbar-thin overflow-y-auto rounded-md p-1"
       >
         {items.map((item, index) => {
           const key =

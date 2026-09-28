@@ -36,12 +36,35 @@ export function MonoLabel({ children, className }: { children: ReactNode; classN
   return <span className={`ds-mono-label ${className ?? ''}`}>{children}</span>;
 }
 
-// A sentence and the page's own main action, nothing else.
-export function EmptyState({ children, action }: { children: ReactNode; action?: ReactNode }) {
+// An empty area (owner, O62): a symbol, one sentence, the page's main action — never a
+// grey line under empty table heads. `fill` centres it in the room left on the page.
+export function EmptyState({
+  icon,
+  title,
+  children,
+  action,
+  fill = true,
+}: {
+  // A lucide icon element (<Inbox />).
+  icon?: ReactNode;
+  // Optional short title above the sentence ("Noch keine Belege").
+  title?: ReactNode;
+  // The one sentence.
+  children?: ReactNode;
+  // The same main action the page header offers, if any.
+  action?: ReactNode;
+  fill?: boolean;
+}) {
   return (
-    <div className="ds-empty">
-      <p>{children}</p>
-      {action}
+    <div className="ds-empty" data-fill={fill ? '' : undefined} role="status">
+      {icon && (
+        <span className="ds-empty-icon" aria-hidden="true">
+          {icon}
+        </span>
+      )}
+      {title && <p className="ds-empty-title">{title}</p>}
+      {children && <p className="ds-empty-text">{children}</p>}
+      {action && <div className="ds-empty-action">{action}</div>}
     </div>
   );
 }

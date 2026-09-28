@@ -30,7 +30,7 @@ export default function DocumentTagsInput({
       {tags.map((tag) => (
         <span
           key={tag}
-          className="flex items-center gap-0.5 rounded bg-muted px-1.5 py-0.5 text-xs"
+          className="flex items-center gap-0.5 rounded-sm bg-muted px-1.5 py-0.5 text-xs"
           dir="auto"
         >
           #{tag}

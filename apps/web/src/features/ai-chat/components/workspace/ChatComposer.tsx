@@ -522,7 +522,7 @@ export default function ChatComposer({
                 <PromptInputButton
                   variant="secondary"
                   tooltip={t('composer.stop')}
-                  className="rounded-lg text-foreground"
+                  className="rounded-md text-foreground"
                   onClick={onStop}
                 >
                   <Square className="size-3 fill-current" />

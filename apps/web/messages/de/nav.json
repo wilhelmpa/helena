@@ -248,7 +248,9 @@
     "full": "Vollbild",
     "close": "Panel schließen",
     "closeTab": "{tab} schließen",
-    "reloadView": "Ansicht neu laden"
+    "reloadView": "Ansicht neu laden",
+    "pin": "Anheften: Seite macht Platz",
+    "unpin": "Lösen: schwebt über der Seite"
   },
   "sidebarTeam": "Team",
   "sidebarAgentPool": "Agentenpool",

@@ -32,7 +32,7 @@ export default function PipelineBuiltinList({
           return (
             <li
               key={template.key}
-              className="flex flex-col gap-1.5 rounded-lg border bg-card px-3 py-2.5"
+              className="flex flex-col gap-1.5 rounded-md border bg-card px-3 py-2.5"
             >
               <p className="text-md font-medium" dir="auto">
                 {input.name}

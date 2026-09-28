@@ -24,12 +24,12 @@ export default function ProjectDangerZone({ project }: { project: ProjectDetail 
   if (!can('danger_zone', 'delete')) return null;
 
   return (
-    <div className="rounded-xl border border-destructive/40 bg-destructive/5 p-4">
+    <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-4">
       <div className="space-y-1">
         <h3 className="text-sm font-semibold text-destructive">{t('title')}</h3>
         <p className="text-xs text-muted-foreground">{t('description')}</p>
       </div>
-      <div className="mt-4 flex items-center justify-between gap-4 rounded-lg border border-border bg-card p-4">
+      <div className="mt-4 flex items-center justify-between gap-4 rounded-md border border-border bg-card p-4">
         <div className="min-w-0">
           <div className="text-sm font-medium">{t('deleteTitle')}</div>
           <p className="text-xs text-muted-foreground">{t('deleteDescription')}</p>

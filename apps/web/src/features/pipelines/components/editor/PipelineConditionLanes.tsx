@@ -24,7 +24,7 @@ export default function PipelineConditionLanes({ step }: { step: BranchingStep }
     <div className="@container ms-4 mt-1 border-s ps-3">
       <div className="grid gap-2 @lg:grid-cols-2">
         {BRANCHES.map(({ branch, end }) => (
-          <div key={branch} className="min-w-0 space-y-1 rounded-lg border border-dashed p-2">
+          <div key={branch} className="min-w-0 space-y-1 rounded-md border border-dashed p-2">
             <div className="flex items-center justify-between gap-2">
               <Badge variant="outline" className="max-w-full truncate">
                 {step.type === 'decision'

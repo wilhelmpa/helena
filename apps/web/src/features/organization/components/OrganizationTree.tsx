@@ -13,7 +13,7 @@ export default function OrganizationTree({ organization }: { organization: Organ
   const work = useAgentWorkStates();
   if (tree.length === 0) {
     return (
-      <p className="rounded-lg border bg-card px-3 py-2 text-sm text-muted-foreground">
+      <p className="rounded-md border bg-card px-3 py-2 text-sm text-muted-foreground">
         {t('map.empty')}
       </p>
     );

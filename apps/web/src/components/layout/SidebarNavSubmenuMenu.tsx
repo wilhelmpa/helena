@@ -29,7 +29,7 @@ export default function SidebarNavSubmenuMenu({
             <span>{label}</span>
           </SidebarMenuButton>
         </DropdownMenuTrigger>
-        <DropdownMenuContent className="min-w-48 rounded-lg" align="start" side="right">
+        <DropdownMenuContent className="min-w-48 rounded-md" align="start" side="right">
           <DropdownMenuLabel className="text-xs text-muted-foreground">{label}</DropdownMenuLabel>
           {items.map((item) => (
             <DropdownMenuItem key={item.key} asChild className="gap-2">

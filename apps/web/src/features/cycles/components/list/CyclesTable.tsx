@@ -37,7 +37,7 @@ export default function CyclesTable({
 
   return (
     <div className="flex-1 overflow-auto p-4">
-      <div className="min-w-[760px] overflow-hidden rounded-lg border bg-card">
+      <div className="min-w-[760px] overflow-hidden rounded-md border bg-card">
         <div
           className="grid h-8 items-center gap-3 border-b px-3 text-xs text-muted-foreground"
           style={{ gridTemplateColumns: GRID }}

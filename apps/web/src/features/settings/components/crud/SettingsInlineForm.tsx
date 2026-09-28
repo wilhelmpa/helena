@@ -25,7 +25,7 @@ export function SettingsInlineForm({
   const t = useTranslations('common');
 
   return (
-    <div className="flex items-center gap-2.5 rounded-lg bg-muted/40 p-2">
+    <div className="flex items-center gap-2.5 rounded-md bg-muted/40 p-2">
       {leading}
       <Input
         autoFocus

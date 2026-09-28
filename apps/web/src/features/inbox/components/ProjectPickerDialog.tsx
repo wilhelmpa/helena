@@ -61,7 +61,7 @@ export default function ProjectPickerDialog({
                 disabled={pending}
                 onClick={() => onPick(option.id)}
                 className={cn(
-                  'flex w-full items-center gap-2 rounded px-2 py-1.5 text-start text-sm hover:bg-accent',
+                  'flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-start text-sm hover:bg-accent',
                   option.id === currentProjectId && 'font-medium',
                 )}
               >

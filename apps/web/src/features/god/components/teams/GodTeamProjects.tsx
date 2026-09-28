@@ -48,9 +48,9 @@ export default function GodTeamProjects({ teamId }: { teamId: number }) {
             {projects.map((p) => (
               <div
                 key={p.id}
-                className="flex flex-wrap items-center gap-2 rounded-lg border border-sidebar-border bg-card px-3 py-2.5"
+                className="flex flex-wrap items-center gap-2 rounded-md border border-sidebar-border bg-card px-3 py-2.5"
               >
-                <span className="shrink-0 rounded bg-secondary px-1.5 py-0.5 text-xs font-medium text-secondary-foreground">
+                <span className="shrink-0 rounded-sm bg-secondary px-1.5 py-0.5 text-xs font-medium text-secondary-foreground">
                   {p.key}
                 </span>
                 <span className="min-w-0 flex-1 truncate text-sm">{p.name}</span>

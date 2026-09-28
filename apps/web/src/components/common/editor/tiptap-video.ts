@@ -32,7 +32,7 @@ export const Video = Node.create({
       mergeAttributes(HTMLAttributes, {
         controls: 'true',
         preload: 'metadata',
-        style: 'max-width:50%;border-radius:6px',
+        style: 'max-width:50%;border-radius:var(--radius-sm)',
       }),
     ];
   },

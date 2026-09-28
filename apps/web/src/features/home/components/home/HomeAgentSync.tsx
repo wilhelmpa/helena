@@ -10,7 +10,7 @@ export default function HomeAgentSync({ summary }: { summary: AgentSyncSummary }
   const ts = useTranslations('teams.agents.profileSync');
   if (summary.total === 0) return null;
   return (
-    <ul className="rounded-lg border bg-card p-1">
+    <ul className="rounded-md border bg-card p-1">
       <li className="flex h-8 min-w-0 items-center gap-2 px-2 text-sm">
         <StatusBadge status={summary.synced === summary.total ? 'success' : 'waiting'} dotOnly />
         <span className="min-w-0 truncate">{t('title')}</span>

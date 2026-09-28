@@ -11,7 +11,7 @@ export default function NewIssueDropOverlay({ count }: { count: number }) {
   else label = t('drop');
 
   return (
-    <div className="pointer-events-none absolute inset-0 z-50 flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-primary bg-background/80 text-primary backdrop-blur-sm">
+    <div className="pointer-events-none absolute inset-0 z-50 flex flex-col items-center justify-center gap-2 rounded-md border-2 border-dashed border-primary bg-background/80 text-primary backdrop-blur-sm">
       <Paperclip className="size-6" />
       <span className="text-sm font-medium">{label}</span>
       <span className="text-xs text-muted-foreground">{t('dropHint')}</span>

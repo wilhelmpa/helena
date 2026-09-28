@@ -20,7 +20,7 @@ export default function ProposalCard({ proposal }: { proposal: RuntimeProposal }
   const decide = useDecideProposal();
 
   return (
-    <article className="space-y-3 rounded-lg border bg-card p-4">
+    <article className="space-y-3 rounded-md border bg-card p-4">
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
         <Badge variant="outline">{t(`kind.${proposal.kind}`)}</Badge>
         {proposal.agentName && (

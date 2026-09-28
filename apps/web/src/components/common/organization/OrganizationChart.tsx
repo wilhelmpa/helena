@@ -15,8 +15,15 @@ import { useAiAgentsQuery } from '@/services/aiAgents.service';
 import { qk } from '@/services/queryKeys';
 import { deriveStatus, type HelenaStatus, type StatusSignals } from '@/utils/helenaStatus';
 import { openAgent as openAgentDialog } from '@/features/settings/settingsModalCatalog';
-import { EmptyState, PillButton, Segmented, StatusDot } from '@/design-system';
-import { PageSearch, PageToolbar, PageToolbarSpacer } from '@/components/layout/PageToolbar';
+import {
+  EmptyState,
+  PageSearch,
+  PageTabs,
+  PageToolbar,
+  PageToolbarSpacer,
+  PillButton,
+  Segmented,
+} from '@/design-system';
 import OrganizationChartFlow, { type ChartHover } from './OrganizationChartFlow';
 import OrganizationHoverCard from './OrganizationHoverCard';
 import OrganizationTaskSheet from './OrganizationTaskSheet';
@@ -454,22 +461,25 @@ export default function OrganizationChart({
             {t('tasksToggle')}
           </PillButton>
         )}
-        {FILTERS.map((item) => (
-          <PillButton
-            key={item}
-            tone={filter === item ? 'active' : 'neutral'}
-            aria-pressed={filter === item}
-            onClick={() => setFilter(item)}
-          >
-            {t(`filter.${item}`)}
-            <span className="ds-pill-count">{counts[item]}</span>
-            {item !== 'all' && counts[item] > 0 && (
-              <StatusDot
-                tone={item === 'running' ? 'working' : item === 'waiting' ? 'waiting' : 'error'}
-              />
-            )}
-          </PillButton>
-        ))}
+        {/* The status filter is one of the page's tabs (owner, O20: one pattern). */}
+        <PageTabs<Filter>
+          label={t('filterLabel')}
+          value={filter}
+          onChange={setFilter}
+          items={FILTERS.map((item) => ({
+            value: item,
+            label: t(`filter.${item}`),
+            count: counts[item],
+            dot:
+              item !== 'all' && counts[item] > 0
+                ? item === 'running'
+                  ? 'working'
+                  : item === 'waiting'
+                    ? 'waiting'
+                    : 'error'
+                : null,
+          }))}
+        />
         <PageToolbarSpacer />
         <PageSearch value={search} onChange={setSearch} placeholder={t('searchPlaceholder')} />
         {toolbarEnd}

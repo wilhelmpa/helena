@@ -12,7 +12,7 @@ import {
 import Link from 'next/link';
 import { Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { PageToolbar, PageToolbarSpacer } from '@/components/layout/PageToolbar';
+import { Page, PageToolbarSpacer } from '@/design-system';
 
 // One page pattern for Wissen and Belege (docs/ui-system.md §8, WissenOrdner.dc.html):
 // the sidebar tree picks the place, the page shows a header (mono eyebrow with the path,
@@ -184,7 +184,7 @@ export function KnowledgeRow({
       data-knowledge-row={index}
       data-selected={selected ? '' : undefined}
       className={cn(
-        'group relative grid min-h-11 shrink-0 grid-cols-[28px_minmax(0,1fr)_minmax(0,190px)_120px] items-center gap-3 rounded-xl px-3.5 max-sm:grid-cols-[22px_minmax(0,1fr)_auto]',
+        'group relative grid min-h-11 shrink-0 grid-cols-[28px_minmax(0,1fr)_minmax(0,190px)_120px] items-center gap-3 rounded-lg px-3.5 max-sm:grid-cols-[22px_minmax(0,1fr)_auto]',
         selected
           ? 'bg-accent text-accent-foreground shadow-[0_2px_6px_#0003,inset_0_1px_#ffffff0c]'
           : onClick && 'hover:bg-muted',
@@ -199,7 +199,7 @@ export function KnowledgeRow({
           title={title}
           onClick={onClick}
           onDoubleClick={onDoubleClick}
-          className="min-w-0 truncate rounded-md text-start text-[13px] outline-none after:absolute after:inset-0 after:rounded-xl after:content-[''] focus-visible:after:bg-foreground/5"
+          className="min-w-0 truncate rounded-md text-start text-[13px] outline-none after:absolute after:inset-0 after:rounded-lg after:content-[''] focus-visible:after:bg-foreground/5"
           dir="auto"
         >
           {name}
@@ -284,24 +284,33 @@ export default function KnowledgeFrame({
   footer?: ReactNode;
   frameProps?: Record<string, unknown>;
 }) {
-  // The page's header (the shell) names the place; its search, filters and "+ Neu" sit in
-  // the toolbar row like on every page, and a deeper folder shows its path over the list.
+  // The page template: the header (the shell) names the place and carries "+ Neu" on the
+  // right; search and filters sit in the toolbar row like on every page; a deeper folder
+  // shows its path over the list.
   return (
-    <div {...frameProps} data-project-knowledge className="ds-knowledge">
-      <PageToolbar>
-        {pills}
-        <PageToolbarSpacer />
-        {search}
-        {actions}
-      </PageToolbar>
-      <section className="ds-knowledge-main">
-        <h1 className="sr-only" dir="auto">
-          {title}
-        </h1>
-        {crumbs.length > 2 && <KnowledgeEyebrow crumbs={crumbs.slice(1)} />}
-        {children}
-        {footer}
-      </section>
-    </div>
+    <Page
+      variant="fill"
+      toolbar={
+        pills || search ? (
+          <>
+            {pills}
+            <PageToolbarSpacer />
+            {search}
+          </>
+        ) : undefined
+      }
+      actions={actions}
+    >
+      <div {...frameProps} data-project-knowledge className="ds-knowledge">
+        <section className="ds-knowledge-main">
+          <h1 className="sr-only" dir="auto">
+            {title}
+          </h1>
+          {crumbs.length > 2 && <KnowledgeEyebrow crumbs={crumbs.slice(1)} />}
+          {children}
+          {footer}
+        </section>
+      </div>
+    </Page>
   );
 }

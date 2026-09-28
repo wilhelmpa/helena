@@ -3,7 +3,6 @@
 import { useState, type ReactNode } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import {
-  Bot,
   FolderOpen,
   Paperclip,
   ReceiptText,
@@ -12,8 +11,8 @@ import {
   ListTodo,
   Plus,
   Settings2,
-  SquareTerminal,
   Target,
+  Users,
   Workflow,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -298,7 +297,7 @@ export function SidebarProjectTree({
     ...(showAgents
       ? [
           {
-            id: 'automation:team',
+            id: 'team',
             href: organizationPath(projectKey),
             also: [aiAgentsPath(projectKey), `${projectPath(projectKey)}/chat`],
           },
@@ -469,11 +468,20 @@ export function SidebarProjectTree({
           onClose={() => setNewKnowledgeFolder(false)}
         />
       )}
+      {showAgents && (
+        <TreeItem
+          id="team"
+          label={t('sidebarTeam')}
+          href={organizationPath(projectKey)}
+          icon={<Users />}
+          active={is('team')}
+          dot={automation}
+        />
+      )}
       <TreeItem
         id="automation"
         label={t('sidebarAutomation')}
-        icon={<Bot />}
-        dot={automation}
+        icon={<Workflow />}
         actions={
           can('ai_agents', 'create') && (
             <TreeAction
@@ -487,12 +495,6 @@ export function SidebarProjectTree({
       >
         {showAgents && (
           <>
-            <TreeItem
-              label={t('sidebarTeam')}
-              href={organizationPath(projectKey)}
-              active={is('automation:team')}
-              dot={automation}
-            />
             <TreeItem
               label={t('sidebarSchedules')}
               href={aiTeamPath(projectKey, 'schedules')}
@@ -570,10 +572,6 @@ export function SidebarHomeTree({
     { page: 1, pageSize: 1 },
     { stateType: 'open', assignee: 'me' },
   );
-  const openTasksCount = useCrossProjectIssuesQuery(
-    { page: 1, pageSize: 1 },
-    { stateType: 'open' },
-  );
   const schedulesCount = useMemberRoutines({ page: 1, pageSize: 1 });
   const roots = owner ? (['home', 'private', 'templates'] as const) : (['templates'] as const);
   const rootHref = (root: (typeof roots)[number]) => homeFilesPath('', { root });
@@ -585,8 +583,7 @@ export function SidebarHomeTree({
     { id: 'dashboard', href: '/', exact: true },
     { id: 'dashboard:all', href: '/dashboard' },
     ...(isGod ? [{ id: 'dashboard:system', href: '/system' }] : []),
-    { id: 'tasks:open', href: '/tasks', without: ['assignee'], also: ['/issue'] },
-    { id: 'tasks:mine', href: '/tasks?assignee=me' },
+    { id: 'tasks', href: '/tasks', also: ['/issue'] },
     { id: 'goals', href: '/organization?tab=goals' },
     { id: 'knowledge', href: '/files', without: ['root', 'path', 'file'], also: ['/docs'] },
     ...roots.map((root) => ({
@@ -594,12 +591,11 @@ export function SidebarHomeTree({
       href: `/files?root=${root}`,
       without: ['path'],
     })),
-    { id: 'automation:team', href: teamHref, without: ['tab'] },
-    { id: 'automation:pool', href: '/agents' },
+    { id: 'team', href: teamHref, without: ['tab'] },
+    { id: 'team:pool', href: '/agents' },
     { id: 'automation:schedules', href: '/schedules' },
     { id: 'automation:workflows', href: '/workflows' },
     { id: 'automation:history', href: '/activity', also: ['/browsers'] },
-    ...(owner ? [{ id: 'terminals', href: '/terminals' }] : []),
     ...(owner
       ? HELENA_SETTINGS.map((item) => ({
           id: `settings:${item.group}:${item.slug}`,
@@ -627,7 +623,7 @@ export function SidebarHomeTree({
         projects={projects}
         active={is('inbox')}
       />
-      <SidebarLabel>{t('sidebarProject')}</SidebarLabel>
+      <TreeGap />
       <TreeItem
         id="dashboard"
         label={t('dashboards')}
@@ -640,20 +636,14 @@ export function SidebarHomeTree({
           <TreeItem label={t('sidebarSystem')} href="/system" active={is('dashboard:system')} />
         )}
       </TreeItem>
-      <TreeItem id="tasks" label={t('workItems')} href="/tasks" icon={<ListTodo />}>
-        <TreeItem
-          label={t('sidebarMyTasks')}
-          href="/tasks?assignee=me"
-          active={is('tasks:mine')}
-          count={myTasksCount.data?.total || null}
-        />
-        <TreeItem
-          label={t('sidebarOpenTasks')}
-          href="/tasks"
-          active={is('tasks:open')}
-          count={openTasksCount.data?.total || null}
-        />
-      </TreeItem>
+      <TreeItem
+        id="tasks"
+        label={t('workItems')}
+        href="/tasks"
+        icon={<ListTodo />}
+        active={is('tasks')}
+        count={myTasksCount.data?.total || null}
+      />
       <TreeItem
         id="goals"
         label={t('sidebarGoals')}
@@ -701,14 +691,17 @@ export function SidebarHomeTree({
           onClose={() => setNewFolder(false)}
         />
       )}
-      <TreeItem id="automation" label={t('sidebarAutomation')} icon={<Workflow />} dot={automation}>
-        <TreeItem
-          label={t('sidebarTeam')}
-          href={teamHref}
-          active={is('automation:team')}
-          dot={automation}
-        />
-        <TreeItem label={t('sidebarAgentPool')} href="/agents" active={is('automation:pool')} />
+      <TreeItem
+        id="team"
+        label={t('sidebarTeam')}
+        href={teamHref}
+        icon={<Users />}
+        active={is('team')}
+        dot={automation}
+      >
+        <TreeItem label={t('sidebarAgentPool')} href="/agents" active={is('team:pool')} />
+      </TreeItem>
+      <TreeItem id="automation" label={t('sidebarAutomation')} icon={<Workflow />}>
         <TreeItem
           label={t('sidebarSchedules')}
           href="/schedules"
@@ -718,15 +711,6 @@ export function SidebarHomeTree({
         <TreeItem label={t('workflows')} href="/workflows" active={is('automation:workflows')} />
         <TreeItem label={t('sidebarHistory')} href="/activity" active={is('automation:history')} />
       </TreeItem>
-      {owner && (
-        <TreeItem
-          id="terminals"
-          label={t('sidebarTerminals')}
-          href="/terminals"
-          icon={<SquareTerminal />}
-          active={is('terminals')}
-        />
-      )}
       {owner && (
         <TreeItem id="settings" label={t('settings')} icon={<Settings2 />}>
           {HELENA_SETTINGS_GROUPS.map((group) => (

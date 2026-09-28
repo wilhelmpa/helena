@@ -84,11 +84,11 @@ export default function MailAccountSettings({
         </p>
       )}
       {accounts.isError ? (
-        <p className="rounded-lg border bg-card px-3 py-2 text-sm text-destructive">
+        <p className="rounded-md border bg-card px-3 py-2 text-sm text-destructive">
           {t('loadError')}
         </p>
       ) : (accounts.data ?? []).length === 0 && accounts.isSuccess ? (
-        <p className="rounded-lg border bg-card px-3 py-2 text-sm text-muted-foreground">
+        <p className="rounded-md border bg-card px-3 py-2 text-sm text-muted-foreground">
           {t('empty')}
         </p>
       ) : (

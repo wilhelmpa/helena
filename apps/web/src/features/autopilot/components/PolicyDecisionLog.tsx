@@ -63,7 +63,7 @@ export default function PolicyDecisionLog({ projectKey }: { projectKey: string }
           </button>
         ))}
       </div>
-      <div className="overflow-hidden rounded-lg border border-sidebar-border bg-card">
+      <div className="overflow-hidden rounded-md border border-sidebar-border bg-card">
         {query.isLoading ? (
           <div className="p-3">
             <ListSkeleton rows={4} rowClassName="h-8" />

@@ -7,7 +7,7 @@ export default function HomeTaskPeople({ issue }: { issue: CrossProjectIssue }) 
     <span className="flex shrink-0 items-center gap-1.5">
       {issue.delegate && (
         <span
-          className="flex max-w-28 items-center gap-1 rounded border px-1 text-xs text-muted-foreground"
+          className="flex max-w-28 items-center gap-1 rounded-sm border px-1 text-xs text-muted-foreground"
           title={issue.delegate.name}
         >
           <Bot className="size-3.5 shrink-0" aria-hidden />

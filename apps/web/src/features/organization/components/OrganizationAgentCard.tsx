@@ -40,7 +40,7 @@ export default function OrganizationAgentCard({
   const [capabilities, setCapabilities] = useState(agent.capabilities.join(', '));
 
   return (
-    <div className="space-y-4 rounded-lg border bg-card p-4">
+    <div className="space-y-4 rounded-md border bg-card p-4">
       <div>
         <div className="flex flex-wrap items-center gap-2">
           <h3 className="text-md font-medium" dir="auto">

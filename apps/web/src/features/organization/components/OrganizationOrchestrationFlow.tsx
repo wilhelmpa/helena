@@ -9,7 +9,7 @@ export default function OrganizationOrchestrationFlow() {
   const t = useTranslations('organization.orchestration.flow');
 
   return (
-    <section className="space-y-3 rounded-lg border bg-card p-4 text-sm">
+    <section className="space-y-3 rounded-md border bg-card p-4 text-sm">
       <h2 className="text-md font-medium">{t('title')}</h2>
       <div>
         <h3 className="text-xs font-medium text-muted-foreground">{t('directTitle')}</h3>

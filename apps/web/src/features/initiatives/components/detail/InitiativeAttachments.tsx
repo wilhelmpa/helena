@@ -107,7 +107,7 @@ export default function InitiativeAttachments({ initiativeId }: { initiativeId: 
                   disabled={!viewable}
                   onClick={() => setViewing(a)}
                   aria-label={t('open', { name: a.filename })}
-                  className="relative flex size-10 shrink-0 items-center justify-center overflow-hidden rounded bg-muted enabled:cursor-zoom-in [&_svg]:size-5"
+                  className="relative flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-sm bg-muted enabled:cursor-zoom-in [&_svg]:size-5"
                 >
                   <AttachmentThumb attachment={a} />
                 </button>

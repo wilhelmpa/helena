@@ -127,7 +127,7 @@ export default function UpdateCard({
   const t = useTranslations('updates');
   const text = useSourceText();
   return (
-    <div className="flex min-w-0 flex-col gap-2 rounded-lg border border-sidebar-border bg-card p-3">
+    <div className="flex min-w-0 flex-col gap-2 rounded-md border border-sidebar-border bg-card p-3">
       <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
         <span className="min-w-0 truncate text-sm font-medium" dir="auto">
           {item.name}

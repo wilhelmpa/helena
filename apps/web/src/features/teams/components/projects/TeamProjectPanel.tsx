@@ -61,7 +61,7 @@ export default function TeamProjectPanel({
       >
         <div className="flex shrink-0 items-center justify-between gap-3 border-b border-sidebar-border px-4 py-4">
           <div className="flex min-w-0 items-center gap-2">
-            <span className="shrink-0 rounded bg-secondary px-1.5 py-0.5 text-xs font-medium text-secondary-foreground">
+            <span className="shrink-0 rounded-sm bg-secondary px-1.5 py-0.5 text-xs font-medium text-secondary-foreground">
               {project.key}
             </span>
             <h2 className="truncate text-md font-semibold">{project.name}</h2>

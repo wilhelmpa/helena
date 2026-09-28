@@ -310,6 +310,7 @@
     "lensWhy": "Por qué",
     "whyEmpty": "Ningún agente trabaja aún en una tarea de este proyecto.",
     "whyNoGoal": "Sin objetivo vinculado",
-    "noAgent": "Sin agente"
+    "noAgent": "Sin agente",
+    "filterLabel": "Estado"
   }
 }

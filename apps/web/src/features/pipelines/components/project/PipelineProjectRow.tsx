@@ -38,7 +38,7 @@ export default function PipelineProjectRow({
   const StateIcon = entry.enabled ? CircleCheck : CircleOff;
 
   return (
-    <article className="space-y-3 rounded-lg border bg-card p-4">
+    <article className="space-y-3 rounded-md border bg-card p-4">
       <div className="flex flex-wrap items-start gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">

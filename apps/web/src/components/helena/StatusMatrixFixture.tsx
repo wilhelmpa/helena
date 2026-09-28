@@ -120,7 +120,7 @@ function MatrixCell({
   }
   return (
     <div data-surface={surface} data-status={status} className="min-w-0">
-      <Card as="div" className="flex h-[98px] min-w-0 items-center rounded-xl px-3 text-xs">
+      <Card as="div" className="flex h-[98px] min-w-0 items-center rounded-lg px-3 text-xs">
         {sample}
       </Card>
     </div>

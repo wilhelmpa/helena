@@ -61,6 +61,7 @@ const Access = dynamic(() =>
 const Devices = dynamic(() =>
   import('@/features/devices/DevicesPage').then((module) => module.DevicesContent),
 );
+const UiGallery = dynamic(() => import('@/features/ui-gallery/UiGallery'));
 const Catalog = dynamic(() =>
   import('@/features/home/HomeTeamSectionPage').then((module) => module.HomeTeamSectionContent),
 );
@@ -133,6 +134,8 @@ export default function SettingsAreaContent({
       );
     case 'auth-provider':
       return <God.authProvider {...props} />;
+    case 'ui':
+      return <UiGallery />;
     default: {
       const Page = (God as Record<string, ComponentType<Props>>)[slug];
       return Page ? <Page {...props} /> : null;

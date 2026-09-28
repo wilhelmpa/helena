@@ -37,7 +37,7 @@ export default function PipelineVersionsTab({
     return <p className="text-sm text-muted-foreground">{t('versions.empty')}</p>;
 
   return (
-    <ul className="divide-y overflow-hidden rounded-lg border bg-card">
+    <ul className="divide-y overflow-hidden rounded-md border bg-card">
       {versions.data.map((version) => (
         <li key={version.id} className="flex flex-wrap items-center gap-3 p-3 text-sm">
           <span className="font-medium">{t('editor.version', { version: version.version })}</span>

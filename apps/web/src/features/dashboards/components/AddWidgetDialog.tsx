@@ -124,7 +124,7 @@ export default function AddWidgetDialog({
                       key={type}
                       type="button"
                       onClick={() => add(type)}
-                      className="flex items-start gap-3 rounded-lg border bg-card p-3 text-start transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                      className="flex items-start gap-3 rounded-md border bg-card p-3 text-start transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                     >
                       <Icon className="mt-0.5 size-5 shrink-0 text-muted-foreground" />
                       <span className="min-w-0">
@@ -159,7 +159,7 @@ export default function AddWidgetDialog({
                         onOpenChange(false);
                         setQuery('');
                       }}
-                      className="flex items-start gap-3 rounded-lg border bg-card p-3 text-start transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                      className="flex items-start gap-3 rounded-md border bg-card p-3 text-start transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                     >
                       <Puzzle className="mt-0.5 size-5 shrink-0 text-muted-foreground" />
                       <span className="text-sm font-medium">{label}</span>

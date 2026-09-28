@@ -97,7 +97,7 @@ export function BoardCard({
         className={cn(
           // select-none so a Shift/Cmd-click toggles selection without the browser
           // also starting a native text selection across cards.
-          'kanban-card board-card relative flex cursor-grab flex-col gap-2 rounded-[14px] px-4 py-[14px] select-none sm:touch-none',
+          'kanban-card board-card relative flex cursor-grab flex-col gap-2 rounded-xl px-4 py-[14px] select-none sm:touch-none',
           isDragging && 'opacity-40',
           isBlocked(issue) && 'kanban-card-blocked',
           highlighted && 'board-card-highlight',

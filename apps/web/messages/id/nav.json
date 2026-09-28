@@ -248,7 +248,9 @@
     "full": "Layar penuh",
     "close": "Tutup panel",
     "closeTab": "Tutup {tab}",
-    "reloadView": "Muat ulang tampilan"
+    "reloadView": "Muat ulang tampilan",
+    "pin": "Sematkan: halaman memberi ruang",
+    "unpin": "Lepas: melayang di atas halaman"
   },
   "sidebarTeam": "Tim",
   "sidebarAgentPool": "Kumpulan agen",

@@ -15,7 +15,7 @@ export default function TableCard({
   return (
     <div
       className={cn(
-        'overflow-hidden rounded-lg border border-sidebar-border bg-card [&_[data-slot=table-head]]:px-3',
+        'overflow-hidden rounded-md border border-sidebar-border bg-card [&_[data-slot=table-head]]:px-3',
         className,
       )}
     >

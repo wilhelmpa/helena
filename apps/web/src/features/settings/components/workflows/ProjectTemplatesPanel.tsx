@@ -69,7 +69,7 @@ export function ProjectTemplatesPanel({ project }: { project: ProjectDetail }) {
       ) : templates.data?.length ? (
         <div className="grid gap-3 lg:grid-cols-2">
           {templates.data.map((template) => (
-            <article key={template.id} className="rounded-lg border bg-card p-4">
+            <article key={template.id} className="rounded-md border bg-card p-4">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
@@ -121,7 +121,7 @@ export function ProjectTemplatesPanel({ project }: { project: ProjectDetail }) {
           ))}
         </div>
       ) : (
-        <p className="rounded-lg border bg-card p-4 text-sm text-muted-foreground">
+        <p className="rounded-md border bg-card p-4 text-sm text-muted-foreground">
           {t('noTemplates')}
         </p>
       )}

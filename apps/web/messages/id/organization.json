@@ -310,6 +310,7 @@
     "lensWhy": "Mengapa",
     "whyEmpty": "Belum ada agen yang mengerjakan tugas proyek ini.",
     "whyNoGoal": "Tidak ada tujuan terhubung",
-    "noAgent": "Tanpa agen"
+    "noAgent": "Tanpa agen",
+    "filterLabel": "Status"
   }
 }

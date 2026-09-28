@@ -31,7 +31,7 @@ function DropdownMenuPortal({
 // Shared surface style for the menu content — matches the context menu / select
 // dropdown (rounded, hairline ring, popover background).
 const MENU_SURFACE =
-  'bg-popover text-popover-foreground ring-foreground/10 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 z-50 min-w-[9rem] origin-(--radix-dropdown-menu-content-transform-origin) overflow-hidden rounded-2xl p-1 shadow-md ring-1';
+  'bg-popover text-popover-foreground ring-foreground/10 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 z-50 min-w-[9rem] origin-(--radix-dropdown-menu-content-transform-origin) overflow-hidden rounded-xl p-1 shadow-md ring-1';
 
 // Shared row style for items.
 const MENU_ITEM =

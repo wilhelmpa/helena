@@ -52,7 +52,7 @@ export default function ChartDownload({
           disabled={saving}
           title={t('download')}
           aria-label={t('download')}
-          className="ms-auto shrink-0 rounded p-1 text-muted-foreground/60 transition-colors hover:text-foreground disabled:opacity-50"
+          className="ms-auto shrink-0 rounded-sm p-1 text-muted-foreground/60 transition-colors hover:text-foreground disabled:opacity-50"
         >
           <Download className="size-4" />
         </button>

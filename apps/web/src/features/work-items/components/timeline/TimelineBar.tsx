@@ -49,7 +49,7 @@ export function TimelineBar({
         if (readOnly) onOpen(issue.id);
       }}
       className={cn(
-        'group absolute top-1/2 z-10 flex h-6 -translate-y-1/2 items-center rounded px-1.5 text-white select-none',
+        'group absolute top-1/2 z-10 flex h-6 -translate-y-1/2 items-center rounded-sm px-1.5 text-white select-none',
         cursor,
       )}
       style={{

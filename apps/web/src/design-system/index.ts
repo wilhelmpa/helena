@@ -1,18 +1,26 @@
-// Helena design system (docs/design-system.md). Pages and features import their building
-// blocks from here only; colours live in tokens.css, shapes in components.css/shell.css.
+// Helena UI framework (docs/ui-framework.md, docs/design-system.md): the ONE public API
+// for pages, features and plugins. Tokens (tokens.css: colours light/dark, spacing,
+// radii, type), layout (Page template, toolbar, panel, overlay, modal), building blocks
+// (Card, List, Table, Pill/Badge, Tabs, Button, Field, EmptyState, Dialog, Menu) and
+// patterns (SettingsGroup/Row, FilterBar, DetailView). Pages and features import only
+// from here; eslint rejects free colours, spacing, radii and type sizes in them.
 export { Tree, TreeItem, TreeGap, TreeAction, useTreeLevel } from './components/Tree';
 export type { TreeItemProps } from './components/Tree';
 export { StatusDot } from './components/StatusDot';
 export type { StatusDotTone } from './components/StatusDot';
 export { Button, ButtonLink, IconButton } from './components/Button';
 export type { ButtonVariant } from './components/Button';
-export { Pill, PillButton } from './components/Pill';
+export { Pill, PillButton, Pill as Badge } from './components/Pill';
 export { Segmented } from './components/Segmented';
 export type { SegmentOption } from './components/Segmented';
 export type { PillTone } from './components/Pill';
 export { TextField, TextArea, Field, SearchField } from './components/Field';
 export { Card } from './components/Card';
 export { Section, MonoLabel, EmptyState } from './components/Section';
+export { Box, Stack, Inline, Grid, Text } from './components/Layout';
+export type { Space, TextSize, TextTone } from './components/Layout';
+export { ActionMenu, Tip } from './components/ActionMenu';
+export type { ActionMenuItem } from './components/ActionMenu';
 export { List, ListGroup, ListRow } from './components/List';
 export { Table, Th, Tr, Td } from './components/Table';
 export {
@@ -26,6 +34,23 @@ export {
 export { SettingsGroup, SettingsRow } from './components/SettingsGroup';
 export * from './components/Menu';
 export { PageHeader, PageToolbarRow, PageBody } from './layout/Page';
+export { Page } from './layout/PageTemplate';
+export type { PageVariant } from './layout/PageTemplate';
+export {
+  PageToolbar,
+  PageToolbarSpacer,
+  PageTabs,
+  PageTabs as Tabs,
+  PageSearch,
+  PageSelect,
+  PageActions,
+  usePageToolbarRoom,
+  PAGE_CONTROL_CLASS,
+  PAGE_PRIMARY_CLASS,
+} from './layout/PageToolbar';
+export type { PageTab, PageAction, PageSelectOption } from './layout/PageToolbar';
+export { default as Dialog, useModalFullscreen } from '@/components/common/overlay/Modal';
+export { default as FilterBar } from '@/components/layout/FilterBar';
 export type { Crumb } from './layout/Page';
 export { SidePanel } from './layout/SidePanel';
 export { Overlay } from './layout/Overlay';

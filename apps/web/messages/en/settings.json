@@ -681,7 +681,8 @@
     "groups": {
       "you": "You",
       "allProjects": "All projects",
-      "system": "System"
+      "system": "System",
+      "development": "Development"
     },
     "sections": {
       "profile": {
@@ -831,6 +832,10 @@
       "server-power": {
         "label": "Power & fans",
         "hint": "Power profile, fans and temperatures."
+      },
+      "ui": {
+        "label": "UI building blocks",
+        "hint": "Every building block of the UI framework with its variants, light and dark."
       }
     },
     "projectPath": "Project"
@@ -875,5 +880,47 @@
   },
   "defaults": {
     "adminOnly": "Only the administrator changes these defaults for all projects."
+  },
+  "uiGallery": {
+    "sample": "Sample text",
+    "tokens": "Tokens",
+    "actions": "Actions",
+    "newThing": "Create",
+    "upload": "Upload",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "small": "Small",
+    "disabled": "Disabled",
+    "settings": "Settings",
+    "openDialog": "Open dialog",
+    "dialogTitle": "A dialog",
+    "choices": "Choices",
+    "tabActive": "Active",
+    "tabPlanned": "Planned",
+    "tabAll": "All",
+    "tree": "Tree",
+    "circle": "Circle",
+    "filter": "Filter",
+    "fields": "Fields",
+    "name": "Name",
+    "hint": "One sentence that explains what the setting does.",
+    "search": "Search",
+    "description": "Description",
+    "error": "Briefly what is wrong.",
+    "surfaces": "Surfaces",
+    "cardTitle": "Card",
+    "meta": "5 min ago",
+    "interactive": "Clickable",
+    "selected": "Selected",
+    "lists": "Lists and tables",
+    "group": "Group",
+    "agent": "Agent",
+    "patterns": "Patterns",
+    "settingsGroup": "Settings group",
+    "danger": "Danger zone",
+    "properties": "Properties",
+    "emptySentence": "Nothing here yet. Create the first one.",
+    "light": "Light",
+    "dark": "Dark"
   }
 }

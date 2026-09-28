@@ -142,7 +142,7 @@ export default function SettingsStates({ project }: { project: ProjectDetail }) 
                     </Button>
                   )}
                 </div>
-                <ItemGroup className="overflow-hidden rounded-lg border bg-card">
+                <ItemGroup className="overflow-hidden rounded-md border bg-card">
                   {group.length === 0 && addingType !== s && (
                     <SettingsEmpty
                       title={t('emptyTitle', { type: tStateType(s) })}

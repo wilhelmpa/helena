@@ -46,7 +46,7 @@ export default function HomeLogins({ health }: { health: RuntimeLoginsHealth | u
 
   return (
     <div className="mt-2">
-      <ul className="rounded-lg border bg-card p-1">
+      <ul className="rounded-md border bg-card p-1">
         <li className="flex h-8 min-w-0 items-center gap-2 px-2 text-sm">
           <StatusBadge
             status={problems > 0 ? 'danger' : since || failing > 0 ? 'waiting' : 'success'}

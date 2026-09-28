@@ -24,7 +24,7 @@ export default function StickerColorPicker({
       <PopoverTrigger
         aria-label={t('backgroundColor')}
         title={t('backgroundColor')}
-        className="nodrag flex size-7 cursor-pointer items-center justify-center rounded text-black/50 hover:bg-black/10 hover:text-black/80 [&_svg]:size-3.5"
+        className="nodrag flex size-7 cursor-pointer items-center justify-center rounded-sm text-black/50 hover:bg-black/10 hover:text-black/80 [&_svg]:size-3.5"
       >
         <Palette />
       </PopoverTrigger>

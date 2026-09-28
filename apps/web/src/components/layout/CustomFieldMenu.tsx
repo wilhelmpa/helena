@@ -53,7 +53,7 @@ export default function CustomFieldMenu({
               <button
                 type="button"
                 onClick={() => setExpandedType((id) => (id === type.id ? null : type.id))}
-                className="flex w-full items-center gap-1.5 rounded px-2 py-1.5 text-left text-sm hover:bg-accent"
+                className="flex w-full items-center gap-1.5 rounded-sm px-2 py-1.5 text-left text-sm hover:bg-accent"
               >
                 {expandedType === type.id ? (
                   <ChevronDown className="size-3.5 shrink-0" />

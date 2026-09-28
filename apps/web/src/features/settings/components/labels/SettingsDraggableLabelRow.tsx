@@ -36,7 +36,7 @@ export function SettingsDraggableLabelRow({
         {...attributes}
         title={t('dragToGroup')}
         aria-label={t('dragLabel')}
-        className="flex size-6 shrink-0 cursor-grab touch-none items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground active:cursor-grabbing"
+        className="flex size-6 shrink-0 cursor-grab touch-none items-center justify-center rounded-sm text-muted-foreground hover:bg-accent hover:text-foreground active:cursor-grabbing"
       >
         <GripVertical className="size-4" />
       </button>

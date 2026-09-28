@@ -20,7 +20,7 @@ export default function TradingTakt({ data }: { data: TradingDashboardData }) {
         flexDirection: 'column',
         gap: 10,
         padding: 20,
-        borderRadius: 18,
+        borderRadius: 'var(--radius-xl)',
         background: 'var(--trading-card)',
         boxShadow: '0 0 0 1px var(--trading-card-line)',
         minHeight: 0,
@@ -56,7 +56,7 @@ export default function TradingTakt({ data }: { data: TradingDashboardData }) {
               gap: 10,
               minHeight: 36,
               padding: '4px 12px',
-              borderRadius: 12,
+              borderRadius: 'var(--radius-lg)',
               background: 'var(--trading-surface)',
               fontSize: 12,
             }}

@@ -4,7 +4,7 @@ import DisclosureCard from '@/components/common/DisclosureCard';
 import DevicesSection from './DevicesSection';
 
 const code = (chunks: ReactNode) => (
-  <code dir="ltr" className="rounded bg-muted px-1 py-0.5 text-xs">
+  <code dir="ltr" className="rounded-sm bg-muted px-1 py-0.5 text-xs">
     {chunks}
   </code>
 );

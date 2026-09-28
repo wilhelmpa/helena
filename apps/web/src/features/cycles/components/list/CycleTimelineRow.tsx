@@ -67,7 +67,7 @@ export default function CycleTimelineRow({
           onClick={canEdit ? undefined : () => onOpen(cycle.id)}
           title={`${formatShortDate(cycle.startDate)} – ${formatShortDate(cycle.endDate)}`}
           className={cn(
-            'group absolute top-1/2 z-10 flex h-6 -translate-y-1/2 items-center overflow-hidden rounded px-1.5 text-white select-none',
+            'group absolute top-1/2 z-10 flex h-6 -translate-y-1/2 items-center overflow-hidden rounded-sm px-1.5 text-white select-none',
             canMove ? 'cursor-grab' : 'cursor-pointer',
           )}
           style={{ left: rect.left, width: rect.width, backgroundColor: color }}

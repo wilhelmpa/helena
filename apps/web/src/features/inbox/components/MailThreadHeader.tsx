@@ -27,7 +27,7 @@ export default function MailThreadHeader({
         <button
           type="button"
           onClick={onMove}
-          className="flex items-center gap-1 rounded border px-1.5 py-0.5 hover:bg-accent"
+          className="flex items-center gap-1 rounded-sm border px-1.5 py-0.5 hover:bg-accent"
           title={t('moveHint')}
         >
           <FolderInput className="size-3" />
@@ -38,7 +38,7 @@ export default function MailThreadHeader({
           <Link
             key={issue.id}
             href={issuePath(issue.projectKey, issue.sequenceNumber)}
-            className="rounded border px-1.5 py-0.5 hover:bg-accent"
+            className="rounded-sm border px-1.5 py-0.5 hover:bg-accent"
           >
             {issue.identifier} {issue.title}
           </Link>

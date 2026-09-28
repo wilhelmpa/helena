@@ -24,7 +24,7 @@ export default function AutopilotLevelBadge({
         <span
           aria-label={t('badgeTitle', { level, name })}
           className={cn(
-            'inline-flex h-5 shrink-0 items-center gap-0.5 rounded border border-sidebar-border bg-card px-1 text-xs font-medium text-muted-foreground tabular-nums',
+            'inline-flex h-5 shrink-0 items-center gap-0.5 rounded-sm border border-sidebar-border bg-card px-1 text-xs font-medium text-muted-foreground tabular-nums',
             level === 3 && 'text-status-waiting',
             className,
           )}

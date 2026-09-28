@@ -22,7 +22,7 @@ export default function NotificationPreferences({ form }: { form: NotificationPr
   return (
     <div className="flex flex-col gap-6">
       <SettingsSection title={t('eventsTitle')}>
-        <div className="max-w-xl overflow-hidden rounded-lg border bg-card">
+        <div className="max-w-xl overflow-hidden rounded-md border bg-card">
           <div className={`${COLS} h-8 border-b px-3`}>
             <span />
             <ChannelHeader icon={<Mail className="size-3.5" />} label={t('email')} />

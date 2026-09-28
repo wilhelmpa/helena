@@ -47,7 +47,7 @@ export default function HomeSystemHealth() {
       <div className="grid min-w-0 grid-cols-1 gap-x-6 gap-y-4 @2xl:grid-cols-2">
         <div className="min-w-0">
           <SectionLabel icon={<Activity />}>{t('title')}</SectionLabel>
-          <ul className="grid grid-cols-1 rounded-lg border bg-card p-1">
+          <ul className="grid grid-cols-1 rounded-md border bg-card p-1">
             {data.services.map((health) => (
               <HomeServiceState key={health.service} health={health} />
             ))}
@@ -72,7 +72,7 @@ export default function HomeSystemHealth() {
         </div>
         <div className="min-w-0">
           <SectionLabel icon={<Brush />}>{t('janitorsTitle')}</SectionLabel>
-          <ul className="grid grid-cols-1 rounded-lg border bg-card p-1">
+          <ul className="grid grid-cols-1 rounded-md border bg-card p-1">
             {data.janitors.map((health) => (
               <HomeJanitorState key={health.job} health={health} />
             ))}

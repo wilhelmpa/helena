@@ -30,7 +30,7 @@ export default function CustomFieldMeta({ field }: { field: CustomField }) {
         </span>
       )}
       {field.showInBody && (
-        <span className="rounded bg-primary/10 px-1.5 py-0.5 text-foreground">
+        <span className="rounded-sm bg-primary/10 px-1.5 py-0.5 text-foreground">
           {t('mainInfoMeta')}
         </span>
       )}

@@ -29,7 +29,7 @@ import { fansChoice, formatCelsius, formatWatts, type ServerTab } from '../utils
 import { CardHeader, Fact, Facts, ServerSections } from './ServerParts';
 import ServerToolbar from './ServerToolbar';
 
-const CARD = 'min-w-0 space-y-3 rounded-lg border border-sidebar-border bg-card p-4';
+const CARD = 'min-w-0 space-y-3 rounded-md border border-sidebar-border bg-card p-4';
 const PROFILES: { value: PowerProfile; icon: typeof Leaf }[] = [
   { value: 'saver', icon: Leaf },
   { value: 'balanced', icon: Scale },

@@ -42,7 +42,7 @@ export default function LimitAccountCard({
     <div
       className={cn(
         'flex min-w-0 flex-col gap-px',
-        framed && 'rounded-lg border border-sidebar-border bg-card p-1',
+        framed && 'rounded-md border border-sidebar-border bg-card p-1',
       )}
     >
       <Link href={LIMITS_ADMIN_HREF} className={cn(ROW_CLASS, ROW_INTERACTIVE_CLASS)}>

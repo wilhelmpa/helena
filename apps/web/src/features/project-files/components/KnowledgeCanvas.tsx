@@ -72,7 +72,7 @@ const borderColors = ['#645274', '#395e50', '#65483d', '#6b562b'];
 function CanvasCard({ id, data }: NodeProps<CardNode>) {
   return (
     <div
-      className="group h-full w-full rounded-[17px] border bg-card px-4 py-3.5 shadow-sm"
+      className="group h-full w-full rounded-xl border bg-card px-4 py-3.5 shadow-sm"
       style={{ borderColor: data.color }}
     >
       <Handle
@@ -462,7 +462,7 @@ function CanvasSurface({
       >
         <Background variant={BackgroundVariant.Dots} gap={22} size={1} color="var(--line-strong)" />
       </ReactFlow>
-      <div className="absolute inset-s-1/2 bottom-6 z-10 flex max-w-[calc(100%-20px)] -translate-x-1/2 items-center gap-1 overflow-x-auto rounded-2xl border border-border bg-card p-1.5 text-xs text-muted-foreground shadow-md">
+      <div className="absolute inset-s-1/2 bottom-6 z-10 flex max-w-[calc(100%-20px)] -translate-x-1/2 items-center gap-1 overflow-x-auto rounded-xl border border-border bg-card p-1.5 text-xs text-muted-foreground shadow-md">
         {CANVAS_TOOLS.map((key) => (
           <button
             key={key}
@@ -480,7 +480,7 @@ function CanvasSurface({
                 }
               }
             }}
-            className={`shrink-0 rounded-xl px-3 py-2 ${tool === key ? 'bg-accent text-foreground' : 'hover:text-foreground'}`}
+            className={`shrink-0 rounded-lg px-3 py-2 ${tool === key ? 'bg-accent text-foreground' : 'hover:text-foreground'}`}
           >
             {t(`tools.${key}`)}
           </button>

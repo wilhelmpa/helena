@@ -31,7 +31,7 @@ export default function ConversationButton({
         active
           ? 'bg-accent text-foreground hover:text-foreground'
           : 'text-primary-foreground hover:text-primary-foreground',
-        homeLanding ? styles.homeMic : 'rounded-lg',
+        homeLanding ? styles.homeMic : 'rounded-md',
         unavailable && !active && 'opacity-60',
       )}
     >

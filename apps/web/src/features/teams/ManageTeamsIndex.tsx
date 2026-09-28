@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { teamPath } from '@/utils/paths';
 import { useTeamsQuery } from '@/services/teams.service';
+import { EmptyState, Page } from '@/design-system';
+import { Users } from 'lucide-react';
 
 // The page with no team in the URL. It opens the first team of the list; an account
 // with none has only the rail's create action left.
@@ -19,8 +21,6 @@ export default function ManageTeamsIndex() {
   }, [first, router]);
 
   return (
-    <div className="flex min-w-0 flex-1 items-center justify-center p-6">
-      {data?.length === 0 && <p className="text-sm text-muted-foreground">{t('empty')}</p>}
-    </div>
+    <Page>{data?.length === 0 && <EmptyState icon={<Users />}>{t('empty')}</EmptyState>}</Page>
   );
 }

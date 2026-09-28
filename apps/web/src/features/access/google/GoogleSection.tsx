@@ -122,7 +122,7 @@ export function GoogleSection({ teamId, leading }: { teamId: number; leading: Re
                 ))}
             </EmptyState>
           ) : (
-            <ul className="divide-y overflow-hidden rounded-lg border border-sidebar-border bg-card">
+            <ul className="divide-y overflow-hidden rounded-md border border-sidebar-border bg-card">
               {data.accounts.map((account) => (
                 <GoogleAccountRow
                   key={account.id}
@@ -139,7 +139,7 @@ export function GoogleSection({ teamId, leading }: { teamId: number; leading: Re
             <section className="flex flex-col gap-2">
               <h2 className="text-md font-medium">{t('inGog')}</h2>
               <p className="text-xs text-muted-foreground">{t('inGogHint')}</p>
-              <ul className="divide-y overflow-hidden rounded-lg border border-sidebar-border bg-card">
+              <ul className="divide-y overflow-hidden rounded-md border border-sidebar-border bg-card">
                 {gog.data!.unlisted.map((entry) => (
                   <li key={entry.email} className="flex items-center gap-3 px-4 py-2.5">
                     <span dir="ltr" className="min-w-0 flex-1 truncate text-sm">
@@ -167,7 +167,7 @@ export function GoogleSection({ teamId, leading }: { teamId: number; leading: Re
           {data.clients.length > 0 && (
             <section className="flex flex-col gap-2">
               <h2 className="text-md font-medium">{t('clients')}</h2>
-              <ul className="divide-y overflow-hidden rounded-lg border border-sidebar-border bg-card">
+              <ul className="divide-y overflow-hidden rounded-md border border-sidebar-border bg-card">
                 {data.clients.map((client) => (
                   <li key={client.id} className="flex items-center gap-3 px-4 py-2.5">
                     <div className="min-w-0 flex-1">

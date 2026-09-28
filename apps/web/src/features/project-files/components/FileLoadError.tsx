@@ -20,7 +20,7 @@ export default function FileLoadError({
 
   if (unreadable || missing) {
     return (
-      <div className="rounded-lg border p-4">
+      <div className="rounded-md border p-4">
         <Lock className="size-6 text-muted-foreground" />
         <p className="mt-3 text-sm font-medium">
           {unreadable ? t('unreadable.title') : t('unreadable.missing')}

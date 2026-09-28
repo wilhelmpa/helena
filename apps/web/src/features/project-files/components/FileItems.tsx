@@ -42,7 +42,7 @@ export default function FileItems({
     );
   }
   return (
-    <ul className="divide-y rounded-lg border">
+    <ul className="divide-y rounded-md border">
       {items.map((item) => (
         <FileListRow
           key={item.path}

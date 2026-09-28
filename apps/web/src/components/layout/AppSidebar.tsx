@@ -3,26 +3,26 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
-import { Code2, Globe2, Mail, PanelLeftClose, PanelLeftOpen, Search, Terminal } from 'lucide-react';
+import {
+  Code2,
+  Globe2,
+  Mail,
+  MessageCircle,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Search,
+  Terminal,
+} from 'lucide-react';
 import { useSession } from '@/lib/auth-client';
 import type { Project } from '@/lib/api/endpoints/projects';
 import type { View } from '@/lib/api/endpoints/views';
 import SidebarAccountRow from '@/components/brand/SidebarAccountRow';
-import { useAgentStatus } from '@/utils/helenaStatus';
-import { useChatWorkspaceScope } from '@/features/ai-chat/hooks/useChatWorkspaceScope';
+import { Tip } from '@/design-system';
 import SidebarProjectSwitcher from './SidebarProjectSwitcher';
 import { SidebarHomeTree, SidebarProjectTree } from './SidebarTreeNav';
 import { APP_NAME } from '@/utils/app';
 import type { WorkspaceToolId } from '@/utils/workspaceTools';
 import type { ViewTemplate } from '@/hooks/useViewEditor';
-
-// The chat tool's own face in the tool row: a small CSS orb in the Home agent's status
-// (owner, 28.09.: "das Chat-Symbol ist ein kleiner Orb").
-function ToolOrb() {
-  const home = useChatWorkspaceScope(null);
-  const status = useAgentStatus(home.agents[0]?.id ?? 0);
-  return <span className="ds-tool-orb" data-status={status} aria-hidden="true" />;
-}
 
 // The sidebar (docs/design-system.md §6–§7, drafts ui-entwurf/Navigation-*, Shell*):
 // HELENA (→ Home), clock and search; the project switcher; the tree (DU, PROJEKT); the
@@ -82,8 +82,10 @@ export default function AppSidebar({
     return () => window.clearInterval(timer);
   }, [locale]);
 
-  const tools: [WorkspaceToolId, typeof Globe2 | null, string][] = [
-    ['chat', null, t('chat')],
+  // The tool row (owner, O37): a chat symbol like the other tools, each with its name as
+  // a tooltip — no orb here, the orb is the dock's.
+  const tools: [WorkspaceToolId, typeof Globe2, string][] = [
+    ['chat', MessageCircle, t('chat')],
     ['browser', Globe2, t('workspace.browser')],
     ['terminal', Terminal, t('workspace.terminal')],
     ['code', Code2, t('workspace.code')],
@@ -149,19 +151,19 @@ export default function AppSidebar({
       <span className="ds-sidebar-label">{t('tools')}</span>
       <div className="ds-sidebar-tools">
         {tools.map(([id, Icon, label]) => (
-          <button
-            key={id}
-            type="button"
-            title={label}
-            aria-label={label}
-            aria-pressed={activeTool === id}
-            onClick={() => {
-              onSelectTool(id);
-              onNavigate();
-            }}
-          >
-            {Icon ? <Icon size={16} /> : <ToolOrb />}
-          </button>
+          <Tip key={id} label={label}>
+            <button
+              type="button"
+              aria-label={label}
+              aria-pressed={activeTool === id}
+              onClick={() => {
+                onSelectTool(id);
+                onNavigate();
+              }}
+            >
+              <Icon size={16} />
+            </button>
+          </Tip>
         ))}
       </div>
       <SidebarAccountRow />

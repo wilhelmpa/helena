@@ -134,7 +134,7 @@ export function WorkflowGraphEditor({
             <Badge variant="outline">{branchLabel}</Badge>
           </div>
         )}
-        <div className="rounded-xl border bg-background p-4 shadow-sm">
+        <div className="rounded-lg border bg-background p-4 shadow-sm">
           <div className="mb-3 flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 text-sm font-medium">
               {icon}
@@ -217,5 +217,5 @@ export function WorkflowGraphEditor({
     );
   }
 
-  return <div className="rounded-xl bg-muted/20 p-3 md:p-4">{renderNode(trigger)}</div>;
+  return <div className="rounded-lg bg-muted/20 p-3 md:p-4">{renderNode(trigger)}</div>;
 }

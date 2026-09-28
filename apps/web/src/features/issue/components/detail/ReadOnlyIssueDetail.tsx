@@ -47,7 +47,7 @@ export default function ReadOnlyIssueDetail({
       <div className="w-full max-w-3xl min-w-0">
         <div className="flex items-center gap-2">
           {issue.archivedAt && (
-            <span className="shrink-0 rounded border border-border px-1.5 py-0.5 text-xs font-medium text-muted-foreground uppercase">
+            <span className="shrink-0 rounded-sm border border-border px-1.5 py-0.5 text-xs font-medium text-muted-foreground uppercase">
               {t('archived')}
             </span>
           )}

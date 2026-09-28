@@ -54,7 +54,7 @@ export default function StickerNode({ id, data, selected }: NodeProps<StickerNod
 
   return (
     <div
-      className="sticker-note flex h-full w-full cursor-default flex-col rounded-xl border border-black/10 p-3 text-neutral-900 shadow-lg"
+      className="sticker-note flex h-full w-full cursor-default flex-col rounded-lg border border-black/10 p-3 text-neutral-900 shadow-lg"
       style={{ backgroundColor: stickerColorValue(data.color) }}
     >
       <NodeResizer isVisible={selected && canEdit} minWidth={200} minHeight={160} />

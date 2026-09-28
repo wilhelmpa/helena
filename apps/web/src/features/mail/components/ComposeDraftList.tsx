@@ -59,7 +59,7 @@ export default function ComposeDraftList({
             key={draft.id}
             type="button"
             onClick={() => setComposeDraft(draft.id)}
-            className="flex flex-col items-start gap-0.5 rounded-lg border bg-card px-3 py-2 text-start text-sm transition-colors hover:bg-accent"
+            className="flex flex-col items-start gap-0.5 rounded-md border bg-card px-3 py-2 text-start text-sm transition-colors hover:bg-accent"
           >
             <span className="flex w-full items-center gap-1.5">
               <PenLine className="size-3.5 shrink-0 text-muted-foreground" />

@@ -24,7 +24,7 @@ export default function MailMessageCard({
   const remote = useRemoteImages(threadId);
   const blocked = message.hasRemoteImages && !message.allowRemoteImages;
   return (
-    <article className="rounded-lg border bg-card">
+    <article className="rounded-md border bg-card">
       <header className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 border-b px-4 py-2 text-sm">
         <span dir="auto" className="font-medium">
           {message.fromName || message.fromAddress}

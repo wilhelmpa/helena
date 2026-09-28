@@ -29,7 +29,7 @@ export default function OrganizationDepartmentCard({
 
   return (
     <form
-      className="space-y-3 rounded-lg border bg-card p-4"
+      className="space-y-3 rounded-md border bg-card p-4"
       onSubmit={(event) => {
         event.preventDefault();
         update.mutate({

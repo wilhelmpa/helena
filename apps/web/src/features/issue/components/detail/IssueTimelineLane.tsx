@@ -21,7 +21,7 @@ export default function IssueTimelineLane({
   return (
     <div className="flex flex-col gap-0.5 @md:flex-row @md:items-center @md:gap-3">
       <div className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground @md:w-28 @md:shrink-0 @md:justify-end">
-        <span className="size-2 shrink-0 rounded-xs" style={{ backgroundColor: lane.color }} />
+        <span className="size-2 shrink-0 rounded-sm" style={{ backgroundColor: lane.color }} />
         <span className="truncate">{lane.label}</span>
       </div>
       <div className={`relative h-5 flex-1 rounded-sm bg-muted/60 ${hasFixedTail ? 'mr-12' : ''}`}>
