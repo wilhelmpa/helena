@@ -35,6 +35,7 @@ export const CHECK_KEYS = [
   'sys_updates',
   'sys_reboot',
   'sys_journald',
+  'sys_memory_guards',
   'sys_services',
   'sys_shells',
   'sys_secure_boot',

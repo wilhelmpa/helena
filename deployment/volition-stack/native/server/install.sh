@@ -10,6 +10,7 @@
 #   sudo ./install.sh status
 #   sudo ./install.sh [--dry-run] [--rollback] boot-layout   boot entries onto EFI/debian once
 #                                                           (or back); runs the installed helper
+#   sudo ./install.sh [--dry-run] [--owner <user>] memory-guards
 #   sudo ./install.sh [--dry-run] uninstall        keeps the repository and its password
 #
 # See README.md and docs/helena-decisions/server-admin.md.
@@ -26,7 +27,7 @@ while [ $# -gt 0 ]; do
     --rollback) rollback=--rollback ;;
     --owner) owner=$2; shift ;;
     --api-user) api_user=$2; shift ;;
-    install|backup-init|status|uninstall|boot-layout) command=$1 ;;
+    install|backup-init|status|uninstall|boot-layout|memory-guards) command=$1 ;;
     *) echo "unknown argument: $1" >&2; exit 2 ;;
   esac
   shift
@@ -89,6 +90,13 @@ install_code() {
 }
 
 case "$command" in
+memory-guards)
+  if [ "$DRY_RUN" = 1 ]; then
+    HELENA_DEV_USER=${owner:-${HELENA_DEV_USER:-wilhelmpa}} "$here/memory-guards.sh" --dry-run apply
+  else
+    HELENA_DEV_USER=${owner:-${HELENA_DEV_USER:-wilhelmpa}} "$here/memory-guards.sh" apply
+  fi
+  ;;
 install)
   getent group helena-hostd >/dev/null || run groupadd --system helena-hostd
   # The API's user reaches the socket through the group (the helper checks the user too).

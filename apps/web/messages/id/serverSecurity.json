@@ -61,6 +61,7 @@
     "sys_updates": "Pembaruan keamanan terpasang otomatis",
     "sys_reboot": "Tidak ada mulai ulang tertunda setelah pembaruan",
     "sys_journald": "Log dibatasi dan disimpan permanen",
+    "sys_memory_guards": "Perlindungan memori untuk AI, layanan, dan pengembangan aktif",
     "sys_services": "Tidak ada layanan yang tidak perlu aktif",
     "sys_shells": "Akun layanan tanpa shell login",
     "sys_secure_boot": "Secure Boot aktif",
@@ -165,6 +166,9 @@
     },
     "sys_journald": {
       "warn": "Ukuran log tidak dibatasi."
+    },
+    "sys_memory_guards": {
+      "warn": "Perlindungan memori tidak ada atau berbeda dari nilai yang ditetapkan."
     },
     "sys_services": {
       "warn": "Ada layanan berjalan yang tidak diperlukan."

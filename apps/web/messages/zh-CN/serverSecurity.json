@@ -61,6 +61,7 @@
     "sys_updates": "安全更新自动安装",
     "sys_reboot": "更新后没有待定的重启",
     "sys_journald": "日志有限额并持久保存",
+    "sys_memory_guards": "AI、服务和开发的内存保护已启用",
     "sys_services": "没有运行不需要的服务",
     "sys_shells": "服务账户没有登录 shell",
     "sys_secure_boot": "已启用 Secure Boot",
@@ -165,6 +166,9 @@
     },
     "sys_journald": {
       "warn": "日志大小没有限制。"
+    },
+    "sys_memory_guards": {
+      "warn": "内存保护缺失或与设定值不符。"
     },
     "sys_services": {
       "warn": "有不需要的服务在运行。"

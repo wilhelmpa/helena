@@ -61,6 +61,7 @@
     "sys_updates": "Security updates install automatically",
     "sys_reboot": "No reboot pending after updates",
     "sys_journald": "Logs limited and kept persistently",
+    "sys_memory_guards": "Memory protection for AI, services and development is active",
     "sys_services": "No unneeded services running",
     "sys_shells": "Service accounts without a login shell",
     "sys_secure_boot": "Secure Boot on",
@@ -165,6 +166,9 @@
     },
     "sys_journald": {
       "warn": "The size of the logs is not limited."
+    },
+    "sys_memory_guards": {
+      "warn": "Memory protection is missing or differs from the configured values."
     },
     "sys_services": {
       "warn": "Services that are not needed are running."
