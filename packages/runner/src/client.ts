@@ -186,6 +186,21 @@ export class Client {
     return (await (await this.get('/agent-runtime/policy')).json()) as RuntimePolicySnapshot;
   }
 
+  async decideRuntime(question: {
+    runtime: 'command' | 'webhook';
+    tool: string;
+    runId?: number;
+    messageId?: number;
+    command?: string;
+    workspace?: string;
+    mcp?: { server: string; action: 'send' };
+  }): Promise<{ outcome: string; message: string }> {
+    return (await (await this.post('/agent-policy/decide', question)).json()) as {
+      outcome: string;
+      message: string;
+    };
+  }
+
   // The values of the secrets the agent's MCP servers name, by secret id. Named with the
   // run or chat answer they are for, the read is recorded in Plan's audit log.
   async mcpSecrets(work?: WorkRef): Promise<Record<string, string>> {

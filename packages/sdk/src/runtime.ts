@@ -4,8 +4,8 @@ import type { RuntimeFailure, RuntimeFailureInput } from './runtime-failures';
 import type { RuntimeReaders } from './runtime-readers';
 import type { LocalizedText } from './text';
 
-// A runtime is an agent harness the runner drives: Hermes, Claude Code, Codex, or one a
-// plugin brings. The target contract is the Agent Client Protocol (ACP,
+// A runtime is an agent harness the runner drives: Hermes, Claude Code, Codex, a project
+// command, a webhook, or one a plugin brings. The target contract is the Agent Client Protocol (ACP,
 // https://agentclientprotocol.com): the runner starts the runtime's ACP agent over
 // stdio, opens or loads a session (with Helena's MCP servers), sends the prompt,
 // streams `session/update`, and answers `session/request_permission` through Helena's

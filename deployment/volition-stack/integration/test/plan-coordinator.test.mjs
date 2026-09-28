@@ -299,7 +299,7 @@ describe("ensurePlanProjectAgent", () => {
     assert.equal(state.writes.length, 1);
   });
 
-  it("names Claude Code or Codex in the descriptor, and rewrites it when the runtime changes", async () => {
+  it("names the selected runtime in the descriptor, and rewrites it when the runtime changes", async () => {
     const { state, options } = agentRuntime({ runtime: "claude" });
     const first = await ensurePlanProjectAgent(controlConfig, project, 31, options);
     assert.equal(first.runtime, "claude");
@@ -311,6 +311,16 @@ describe("ensurePlanProjectAgent", () => {
     const second = await ensurePlanProjectAgent(controlConfig, project, 31, options);
     assert.equal(second.descriptorChanged, true);
     assert.equal(state.descriptor.runtime, "codex");
+
+    state.runtime = "command";
+    const command = await ensurePlanProjectAgent(controlConfig, project, 31, options);
+    assert.equal(command.descriptorChanged, true);
+    assert.equal(state.descriptor.runtime, "command");
+
+    state.runtime = "webhook";
+    const webhook = await ensurePlanProjectAgent(controlConfig, project, 31, options);
+    assert.equal(webhook.descriptorChanged, true);
+    assert.equal(state.descriptor.runtime, "webhook");
 
     // Back to Hermes: the field goes, as for every Hermes agent.
     state.runtime = "hermes";

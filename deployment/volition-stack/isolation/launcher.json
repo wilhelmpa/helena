@@ -97,6 +97,9 @@
     "codex": {
       "exec": "/usr/local/bin/codex"
     },
+    "command": {
+      "exec": "/bin/sh"
+    },
     "profile-helper": {
       "exec": "/usr/local/bin/node",
       "fixedArgs": ["/srv/volition/source/plan/packages/runner/dist/cli.js", "profile-helper"],

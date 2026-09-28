@@ -23,6 +23,8 @@ const LABELS: Record<PresetName, string> = {
   antigravity: 'Antigravity',
   copilot: 'GitHub Copilot CLI',
   hermes: 'Hermes',
+  command: 'Command',
+  webhook: 'Webhook',
 };
 
 // What each preset does beyond building its command line. `isolation` names the runtimes
@@ -77,6 +79,22 @@ const CAPABILITIES: Record<PresetName, RuntimeCapabilities> = {
     isolation: true,
     images: true,
     toolsets: true,
+  },
+  command: {
+    sessions: false,
+    chat: true,
+    systemPrompt: true,
+    modelSelection: false,
+    mcp: false,
+    isolation: true,
+  },
+  webhook: {
+    sessions: false,
+    chat: true,
+    systemPrompt: true,
+    modelSelection: false,
+    mcp: false,
+    isolation: false,
   },
 };
 

@@ -49,9 +49,11 @@ export interface AgentRuntimePolicy {
   // session: 'failure' after a failed run and after rework on an issue, 'complex' also
   // after a run of many tool calls. Unset, 'complex'.
   reflection?: ReflectionMode;
-  // Which runtime runs the agent. Unset is Hermes, provisioned by the server; a Claude
-  // Code or Codex agent runs on a runner started with that preset.
+  // Which runtime runs the agent. Unset is Hermes; the project provisions the selected runner.
   runtime?: AgentRuntimeKind;
+  commandScript?: string;
+  webhookUrl?: string;
+  webhookSecretEnv?: string;
   // Unset, the agent's own memory writes wait for the owner's approval.
   memoryApproval?: boolean;
   // Skills of the runtime turned off by name.
@@ -81,8 +83,12 @@ export interface FallbackModel {
 }
 
 export type ReflectionMode = 'off' | 'failure' | 'complex';
-export type AgentRuntimeKind = 'hermes' | 'claude' | 'codex';
-export const AGENT_RUNTIME_KINDS: AgentRuntimeKind[] = ['hermes', 'claude', 'codex'];
+export type AgentRuntimeKind = 'hermes' | 'claude' | 'codex' | 'command' | 'webhook';
+export const AGENT_RUNTIME_KINDS = [
+  'hermes',
+  'claude',
+  'codex',
+] as const satisfies readonly AgentRuntimeKind[];
 
 // One thing the agent's reflection kept: a memory write, or a skill it created or
 // patched.

@@ -10,7 +10,8 @@ import type { OutputFormat } from './config';
 // Anything else about the invocation — MCP servers, model, working directory — is the
 // operator's, passed through `args` and the `--` tail.
 
-export type PresetName = 'claude' | 'codex' | 'opencode' | 'antigravity' | 'copilot' | 'hermes';
+export type PresetName =
+  'claude' | 'codex' | 'opencode' | 'antigravity' | 'copilot' | 'hermes' | 'command' | 'webhook';
 
 // The settings a task passes to a preset's command line.
 export type PresetTaskSettings = RuntimeTaskSettings;
@@ -64,6 +65,20 @@ export interface Preset extends CliCommand {
 }
 
 export const PRESETS: Record<PresetName, Preset> = {
+  command: {
+    bin: 'sh',
+    outputFormat: 'text',
+    promptVia: 'stdin',
+    head: () => ['-eu'],
+    tail: [],
+  },
+  webhook: {
+    bin: 'webhook',
+    outputFormat: 'text',
+    promptVia: 'stdin',
+    head: () => [],
+    tail: [],
+  },
   // stream-json carries the tool calls into the chat, and `session_id` rides on every line
   // of it, including the first. --verbose is required for stream-json under --print, and
   // --permission-mode auto has a classifier review each action, since nobody is there to

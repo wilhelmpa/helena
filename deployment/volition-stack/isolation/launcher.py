@@ -632,6 +632,26 @@ class Launcher:
         workspace = self.workspace(slug)
         if not self.owned_directory(workspace, account.pw_uid):
             raise IsolationError('workspace', 'the workspace is missing or not owned by the project')
+        if runtime.name == 'command':
+            if len(args) != 2 or args[0] != '-eu':
+                raise IsolationError('command', 'command runtime takes exactly one script')
+            script = _safe_path(args[1], 'command script')
+            if script == workspace or not within(workspace, script):
+                raise IsolationError('command', 'command script is outside the workspace')
+            try:
+                parent = open_path_nofollow(os.path.dirname(script))
+                try:
+                    file = os.open(os.path.basename(script), os.O_RDONLY | os.O_NOFOLLOW | os.O_CLOEXEC,
+                                   dir_fd=parent)
+                    try:
+                        if not stat.S_ISREG(os.fstat(file).st_mode):
+                            raise IsolationError('command', 'command script must be a regular file')
+                    finally:
+                        os.close(file)
+                finally:
+                    os.close(parent)
+            except OSError as error:
+                raise IsolationError('command', 'command script is unavailable or linked') from error
         cwd = _safe_path(request['cwd'], 'cwd')
         if not within(workspace, cwd):
             raise IsolationError('cwd', 'the working directory is outside the workspace')

@@ -11,6 +11,9 @@ import { presetArgv, presetPrompt } from './presets';
 import type { CommandHooks } from './runtime';
 import { runtimeOf } from './runtimes';
 import { localRoute } from './local-ai';
+import { executeWebhook } from './webhook-runtime';
+import { externalResult } from './external-result';
+import type { Spend } from './spend';
 
 // Runs one task: the command the preset builds, or the operator's own in a shell, with the
 // task on stdin and its context in the environment. Everything the agent needs beyond the
@@ -51,6 +54,7 @@ export interface Outcome {
   // What the whole run read, cache included, and wrote, for a command that reports
   // its totals (Hermes).
   usage?: ContextUsage;
+  spend?: Spend;
   // The Hermes session the command ran in, and the tool calls it made there.
   sessionId?: string;
   toolCalls?: number;
@@ -62,10 +66,17 @@ export interface Outcome {
 // Only the tail of each stream is reported, so a long transcript still shows its ending —
 // the part that says what the agent did — without sending megabytes back.
 const OUTPUT_LIMIT = 8000;
+const COMMAND_OUTPUT_LIMIT = 64 * 1024;
 const ERROR_LIMIT = 400;
 const HERMES_RESULT_LIMIT_BYTES = 128 * 1024;
 // How much of what Hermes printed outside the protocol a failure keeps: its last lines.
 const HERMES_PRINTED_LIMIT = 1200;
+
+function executionTimeoutMs(config: RunnerConfig, task: Task): number {
+  return config.agent === 'command' && task.runBudgetSeconds != null
+    ? Math.min(config.timeoutMs, task.runBudgetSeconds * 1000)
+    : config.timeoutMs;
+}
 
 // Hermes' closing `result` line carries the final answer and the token counts of its
 // session, summed over every model call of the run.
@@ -362,7 +373,19 @@ async function openGate(hooks: CommandHooks | undefined): Promise<{
 }
 
 // A CLI that took the task as an argument would read it twice if it also arrived here.
-function stdinText(preset: CliCommand | undefined, task: Task): string {
+function stdinText(preset: CliCommand | undefined, task: Task, command = false): string {
+  if (command) {
+    return JSON.stringify({
+      prompt: task.prompt,
+      systemPrompt: task.systemPrompt,
+      sessionId: task.sessionId ?? null,
+      model: task.model ?? null,
+      thinkingLevel: task.thinkingLevel ?? null,
+      maxTurns: task.maxTurns ?? null,
+      runBudgetSeconds: task.runBudgetSeconds ?? null,
+      autopilotLevel: task.autopilotLevel ?? null,
+    });
+  }
   if (!preset) return task.prompt;
   if (preset.promptVia === 'arg') return '';
   return presetPrompt(preset, task.systemPrompt, task.prompt);
@@ -386,6 +409,7 @@ export async function execute(
   task: Task,
   opts: ExecuteOptions = {},
 ): Promise<Outcome> {
+  if (config.agent === 'webhook') return executeWebhook(config, task, opts);
   const preset = presetOf(config);
   const scratch = await scratchDir(config, preset);
   const run = scratch ? { ...task, env: { ...task.env, ...scratch.env } } : task;
@@ -394,9 +418,14 @@ export async function execute(
     assertCodexSandbox(config, preset, args);
     const gate = await openGate(run.hooks);
     try {
-      const outcome = isolationEnabled()
-        ? await executeIsolated(config, run, preset, args, opts, gate.seen)
-        : await executeLocal(config, run, preset, bin, args, opts, gate.seen);
+      const command = config.agent === 'command';
+      const outputOptions = command ? { ...opts, onData: undefined } : opts;
+      const raw = isolationEnabled()
+        ? await executeIsolated(config, run, preset, args, outputOptions, gate.seen)
+        : await executeLocal(config, run, preset, bin, args, outputOptions, gate.seen);
+      const outcome =
+        command && raw.status === 'success' ? externalResult(raw.output, 'command') : raw;
+      if (command && outcome.output) opts.onData?.(outcome.output);
       run.hooks?.finished?.({ status: outcome.status, error: outcome.error });
       return outcome;
     } finally {
@@ -426,22 +455,30 @@ async function executeLocal(
     if (child.pid !== undefined) stopGroup(child.pid);
   };
   let timedOut = false;
-  const timer = setTimeout(() => {
-    timedOut = true;
-    kill();
-  }, config.timeoutMs);
+  const timer = setTimeout(
+    () => {
+      timedOut = true;
+      kill();
+    },
+    executionTimeoutMs(config, task),
+  );
   opts.signal?.addEventListener('abort', kill, { once: true });
   // A stop that came before the command started fires no event.
   if (opts.signal?.aborted) kill();
 
   let stdout = '';
   let stderr = '';
+  let commandOutputTooLarge = false;
   const hermesResult =
     config.outputFormat === 'hermes-stream-json' ? new HermesResultReader(opts.onSessionId) : null;
   child.stdout.setEncoding('utf8');
   child.stderr.setEncoding('utf8');
   child.stdout.on('data', (chunk: string) => {
-    stdout = tail(stdout + chunk, OUTPUT_LIMIT);
+    const next = stdout + chunk;
+    if (config.agent === 'command' && Buffer.byteLength(next, 'utf8') > COMMAND_OUTPUT_LIMIT) {
+      commandOutputTooLarge = true;
+    }
+    stdout = tail(next, config.agent === 'command' ? COMMAND_OUTPUT_LIMIT : OUTPUT_LIMIT);
     hermesResult?.write(chunk);
     seen(chunk);
     task.hooks?.output?.(chunk);
@@ -453,7 +490,7 @@ async function executeLocal(
   // A command that ignores stdin closes the pipe before the prompt is written, which is an
   // EPIPE the runner has no reason to fail on.
   child.stdin.on('error', () => {});
-  child.stdin.end(stdinText(preset, task));
+  child.stdin.end(stdinText(preset, task, config.agent === 'command'));
 
   // 'close' also waits for the command's stdio to close, which never happens if a
   // grandchild it left behind inherited the same pipe -- a killed command must not be
@@ -478,10 +515,13 @@ async function executeLocal(
   }
 
   hermesResult?.end();
+  if (commandOutputTooLarge) {
+    return { status: 'failed', output: '', error: 'Command output exceeds 64 KiB' };
+  }
   return finalOutcome(
     config,
     preset,
-    settle(code, signal, timedOut, stdout, stderr, config, hermesResult),
+    settle(code, signal, timedOut, stdout, stderr, executionTimeoutMs(config, task), hermesResult),
     hermesResult,
   );
 }
@@ -511,10 +551,13 @@ async function executeIsolated(
   if (!config.cwd) throw new Error('An isolated agent needs its working directory');
   const stop = new AbortController();
   let timedOut = false;
-  const timer = setTimeout(() => {
-    timedOut = true;
-    stop.abort();
-  }, config.timeoutMs);
+  const timer = setTimeout(
+    () => {
+      timedOut = true;
+      stop.abort();
+    },
+    executionTimeoutMs(config, task),
+  );
   const onAbort = () => stop.abort();
   opts.signal?.addEventListener('abort', onAbort, { once: true });
   // A stop that came before the command started fires no event.
@@ -522,13 +565,18 @@ async function executeIsolated(
 
   let stdout = '';
   let stderr = '';
+  let commandOutputTooLarge = false;
   const hermesResult =
     config.outputFormat === 'hermes-stream-json' ? new HermesResultReader(opts.onSessionId) : null;
   const out = new StringDecoder('utf8');
   const err = new StringDecoder('utf8');
   const onStdout = (text: string) => {
     if (!text) return;
-    stdout = tail(stdout + text, OUTPUT_LIMIT);
+    const next = stdout + text;
+    if (config.agent === 'command' && Buffer.byteLength(next, 'utf8') > COMMAND_OUTPUT_LIMIT) {
+      commandOutputTooLarge = true;
+    }
+    stdout = tail(next, config.agent === 'command' ? COMMAND_OUTPUT_LIMIT : OUTPUT_LIMIT);
     hermesResult?.write(text);
     seen(text);
     task.hooks?.output?.(text);
@@ -551,10 +599,10 @@ async function executeIsolated(
         cwd: config.cwd,
         agentId: isolation.agentId,
         work: opts.work ?? { kind: 'run', id: null },
-        limits: { runtimeMaxSec: Math.ceil(config.timeoutMs / 1000) + 60 },
+        limits: { runtimeMaxSec: Math.ceil(executionTimeoutMs(config, task) / 1000) + 60 },
       },
       {
-        stdin: stdinText(preset, task),
+        stdin: stdinText(preset, task, config.agent === 'command'),
         onStdout: (chunk) => onStdout(out.write(chunk)),
         onStderr: (chunk) => {
           stderr = tail(stderr + err.write(chunk), ERROR_LIMIT);
@@ -572,10 +620,13 @@ async function executeIsolated(
   }
   onStdout(out.end());
   hermesResult?.end();
+  if (commandOutputTooLarge) {
+    return { status: 'failed', output: '', error: 'Command output exceeds 64 KiB' };
+  }
   return finalOutcome(
     config,
     preset,
-    settle(code, signal, timedOut, stdout, stderr, config, hermesResult),
+    settle(code, signal, timedOut, stdout, stderr, executionTimeoutMs(config, task), hermesResult),
     hermesResult,
   );
 }
@@ -622,13 +673,13 @@ function settle(
   timedOut: boolean,
   stdout: string,
   stderr: string,
-  config: RunnerConfig,
+  timeoutMs: number,
   hermesResult: HermesResultReader | null,
 ): Outcome {
   const output = hermesResult?.result?.text ?? stdout.trim();
   if (hermesResult?.result && Buffer.byteLength(output, 'utf8') > HERMES_RESULT_LIMIT_BYTES)
     return { status: 'failed', output: '', error: 'Hermes final result exceeds 128 KiB' };
-  if (timedOut) return { status: 'failed', output, error: `Timed out after ${config.timeoutMs}ms` };
+  if (timedOut) return { status: 'failed', output, error: `Timed out after ${timeoutMs}ms` };
   if (code === 0 && hermesResult && !hermesResult.result)
     return { status: 'failed', output: '', error: 'Hermes stream ended without a final result' };
   const result = hermesResult?.result;

@@ -80,8 +80,11 @@ export interface AgentRuntimePolicy {
   // Unset or null: the instance's default list. Empty: no fallback.
   fallbackModels?: { provider: string; model: string }[] | null;
   // Which runtime runs the agent. Unset is Hermes, which the server provisions itself; a
-  // Claude Code or Codex agent runs on a runner started with that preset.
+  // Other agents run on the runner selected in their project descriptor.
   runtime?: AgentRuntimeKind;
+  commandScript?: string;
+  webhookUrl?: string;
+  webhookSecretEnv?: string;
   // How Hermes compresses a long conversation (docs/helena-decisions/agent-context.md §6).
   // A field left out takes the instance's default (the threshold) or Hermes' own.
   compression?: AgentCompression;
@@ -119,8 +122,14 @@ export const CHAT_REFLECTION_LIMITS = {
 
 export type ReflectionMode = 'off' | 'failure' | 'complex';
 const REFLECTION_MODES: ReflectionMode[] = ['off', 'failure', 'complex'];
-export type AgentRuntimeKind = 'hermes' | 'claude' | 'codex';
-export const AGENT_RUNTIMES: AgentRuntimeKind[] = ['hermes', 'claude', 'codex'];
+export type AgentRuntimeKind = 'hermes' | 'claude' | 'codex' | 'command' | 'webhook';
+export const AGENT_RUNTIMES: AgentRuntimeKind[] = [
+  'hermes',
+  'claude',
+  'codex',
+  'command',
+  'webhook',
+];
 
 export interface AgentRuntimeConflict {
   path: string;
@@ -292,6 +301,10 @@ export function normalizeRuntimePolicy(value: unknown): AgentRuntimePolicy {
     : [];
   const maxTurns = runLimit(policy.maxTurns, maxTurnsLimit);
   const runBudgetSeconds = runLimit(policy.runBudgetSeconds, runBudgetSecondsLimit);
+  const commandScript = typeof policy.commandScript === 'string' ? policy.commandScript.trim() : '';
+  const webhookUrl = typeof policy.webhookUrl === 'string' ? policy.webhookUrl.trim() : '';
+  const webhookSecretEnv =
+    typeof policy.webhookSecretEnv === 'string' ? policy.webhookSecretEnv.trim() : '';
   return {
     reasoningEffort:
       typeof policy.reasoningEffort === 'string' && policy.reasoningEffort.trim()
@@ -326,6 +339,23 @@ export function normalizeRuntimePolicy(value: unknown): AgentRuntimePolicy {
     // Hermes is the default and is left out, so an agent's policy keeps its revision.
     ...(AGENT_RUNTIMES.includes(policy.runtime as AgentRuntimeKind) &&
       policy.runtime !== 'hermes' && { runtime: policy.runtime }),
+    ...(commandScript &&
+      commandScript.length <= 256 &&
+      !commandScript.startsWith('/') &&
+      commandScript.split('/').every((part) => part !== '.' && part !== '..' && part !== '') &&
+      /^[A-Za-z0-9_./-]+$/.test(commandScript) && { commandScript }),
+    ...(webhookUrl &&
+      webhookUrl.length <= 2048 &&
+      (() => {
+        try {
+          const url = new URL(webhookUrl);
+          return url.protocol === 'https:' && !url.username && !url.password && !url.hash;
+        } catch {
+          return false;
+        }
+      })() && { webhookUrl }),
+    ...(webhookSecretEnv &&
+      /^[A-Za-z_][A-Za-z0-9_]{0,127}$/.test(webhookSecretEnv) && { webhookSecretEnv }),
     ...compressionField(policy.compression),
     ...(typeof policy.chatReflection === 'boolean' && { chatReflection: policy.chatReflection }),
     ...boundedInteger(

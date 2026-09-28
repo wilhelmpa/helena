@@ -414,10 +414,9 @@ def descriptor_identity(name: str, item: dict[str, Any]) -> tuple[str, str] | No
     return None
 
 
-# The runtimes a project agent's descriptor may name besides Hermes: the runner starts them
-# with its preset of that name, in the agent's profile directory as its home
-# (packages/runner/src/cli-runtime.ts).
-CLI_RUNTIMES = ('claude', 'codex')
+# The runtimes a project agent's descriptor may name besides Hermes. Each gets a separate
+# runner entry and profile directory; the runner executes a CLI, script or signed HTTP call.
+CLI_RUNTIMES = ('claude', 'codex', 'command', 'webhook')
 
 # What a Claude Code agent can be set to, by Claude Code's own aliases: each follows the
 # newest model of its family, so the list needs no update when a model is released. The
@@ -437,6 +436,8 @@ def cli_models(runtime: str, hermes_models: list[dict[str, Any]]) -> list[dict[s
     the account really has; Claude Code offers its aliases."""
     if runtime == 'claude':
         return [dict(model) for model in CLAUDE_MODELS]
+    if runtime in ('command', 'webhook'):
+        return []
     return [
         {key: value for key, value in model.items() if key != 'provider'}
         for model in hermes_models
@@ -460,19 +461,15 @@ def cli_entry(
     profile: str,
     isolated: bool,
 ) -> dict[str, Any]:
-    """A Claude Code or Codex agent: its profile directory is its home. The runner keeps its
-    skills below it, Claude Code its sessions and settings in .claude, Codex in .codex. No
-    Hermes file is linked into it, and its login reaches it per run (never from here)."""
+    """A non-Hermes agent: its profile directory is its home. Claude Code and Codex keep
+    their own sessions there. No Hermes file is linked into it."""
     if not isolated:
         private_directory(home)
-    env = {
-        'HELENA_AGENT_HOME': str(home),
-        **(
-            {'CLAUDE_CONFIG_DIR': str(home / '.claude')}
-            if runtime == 'claude'
-            else {'CODEX_HOME': str(home / '.codex')}
-        ),
-    }
+    env = {'HELENA_AGENT_HOME': str(home)}
+    if runtime == 'claude':
+        env['CLAUDE_CONFIG_DIR'] = str(home / '.claude')
+    elif runtime == 'codex':
+        env['CODEX_HOME'] = str(home / '.codex')
     entry: dict[str, Any] = {
         'name': username,
         'apiKey': item['apiKey'],
