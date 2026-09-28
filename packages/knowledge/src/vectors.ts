@@ -1,5 +1,5 @@
 import { and, asc, eq, inArray, isNull, ne, or, sql, type SQL } from 'drizzle-orm';
-import { appSetting, db, knowledgeChunk, knowledgeItem } from '@repo/db';
+import { appSetting, db, forgetSetting, knowledgeChunk, knowledgeItem } from '@repo/db';
 import type { SemanticRetriever } from './search';
 import { sha256 } from './text';
 
@@ -58,6 +58,7 @@ export async function saveSemanticSetting(setting: SemanticSetting): Promise<voi
     .insert(appSetting)
     .values({ key: SEMANTIC_SETTING, value: setting })
     .onConflictDoUpdate({ target: appSetting.key, set: { value: setting, updatedAt: new Date() } });
+  await forgetSetting(SEMANTIC_SETTING);
 }
 
 export async function hasPgvector(): Promise<boolean> {

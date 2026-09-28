@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import type { DecisionQuestion } from '@helena/sdk';
-import { appSetting, db, getSetting } from '@repo/db';
+import { appSetting, db, forgetSetting, getSetting } from '@repo/db';
 import { eq } from 'drizzle-orm';
 import { HttpError } from '#shared/lib';
 import { loadConnection } from '#modules/browser-task/connection';
@@ -227,6 +227,7 @@ export async function updateFirstStage(
       .set({ value: next, updatedAt: new Date() })
       .where(eq(appSetting.key, key(teamId)));
   });
+  await forgetSetting(key(teamId));
   return firstStageView(teamId);
 }
 

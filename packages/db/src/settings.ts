@@ -21,6 +21,16 @@ function ensureListener(): void {
   });
 }
 
+// Drops one cached setting here and in every other process. Call it after a
+// write that goes around setSetting, such as a locked read-modify-write in a
+// transaction, or readers keep the old value for up to CACHE_MS.
+export async function forgetSetting(key: string): Promise<void> {
+  cache.delete(key);
+  await db.execute(
+    sql`select pg_notify(${CHANNEL}, ${JSON.stringify({ key, source: databaseRuntimeName })})`,
+  );
+}
+
 // Forgets every cached setting. Tests call it after they wipe app_setting
 // with raw SQL, which bypasses setSetting and so never reaches the cache.
 export function clearSettingsCache(): void {

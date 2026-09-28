@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { and, eq, like } from 'drizzle-orm';
-import { appSetting, db, vaultEntry } from '@repo/db';
+import { appSetting, db, forgetSetting, vaultEntry } from '@repo/db';
 import {
   absoluteVaultPath,
   belowPattern,
@@ -454,5 +454,6 @@ export async function seedTemplates(language: 'de' | 'en' = 'de'): Promise<strin
     .insert(appSetting)
     .values({ key: SEEDED_KEY, value: true })
     .onConflictDoUpdate({ target: appSetting.key, set: { value: true, updatedAt: new Date() } });
+  await forgetSetting(SEEDED_KEY);
   return written;
 }

@@ -578,7 +578,7 @@ describe('kinds of work that run as an agent turn', () => {
 
   it('keep standalone eval classes outside automatic routing', () => {
     const wired = BUILTIN_TASK_CLASSES.filter((entry) => !entry.wired).map((entry) => entry.id);
-    expect(wired).toEqual(['agentic-coding', 'deutsch-texte', 'triage']);
+    expect(wired).toEqual(['agentic-coding', 'deutsch-texte']);
   });
 
   it('need an eval of their current version', () => {
