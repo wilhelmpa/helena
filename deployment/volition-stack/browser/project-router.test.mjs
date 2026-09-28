@@ -16,7 +16,6 @@ import {
 import {
   BrowserLink,
   fittedBounds,
-  fitWindows,
   navigableUrl,
   readWindowSizes,
   setLiveViewport,
@@ -964,6 +963,58 @@ describe("project browser router", () => {
       mobile: false,
     });
     assert.deepEqual(browser.page(), { width: 390, height: 700, ratio: 2 });
+    await setLiveViewport(port, null);
+  });
+
+  it("measures the toolbar again for a pinned narrow page, so its live view gets video", async () => {
+    // A 480 CSS pixel panel view is pinned (narrower than a window can be). When the last
+    // viewer leaves, the tab loses its visibility and the keeper forgets the toolbar; a pinned
+    // page does not follow its window, so the toolbar could not be measured again and the next
+    // view of the same size stayed on single JPEG frames for good.
+    const tabs = [{ id: PAGE, visible: true }];
+    const browser = fakeBrowser(tabs);
+    upstream = browser.server;
+    const port = await listen(upstream);
+    const narrow = { width: 480, height: 700, ratio: 2 };
+    await setLiveViewport(port, narrow);
+    assert.deepEqual(windowChrome(port), { width: 0, height: 87, scale: 2 });
+    tabs[0].visible = false;
+    await setLiveViewport(port, { ...narrow });
+    assert.equal(windowChrome(port), null);
+    tabs[0].visible = true;
+    await setLiveViewport(port, { ...narrow });
+    assert.deepEqual(windowChrome(port), { width: 0, height: 87, scale: 2 });
+    assert.deepEqual(browser.page(), { width: 480, height: 700, ratio: 2 });
+    assert.deepEqual(browser.sent("Browser.setWindowBounds").at(-1).params.bounds, {
+      left: 0,
+      top: 0,
+      width: 500,
+      height: 787,
+    });
+    await setLiveViewport(port, null);
+  });
+
+  it("lets go of a pinned page for a failed toolbar measurement only once per geometry", async () => {
+    const tabs = [{ id: PAGE, visible: true }];
+    const browser = fakeBrowser(tabs);
+    upstream = browser.server;
+    const port = await listen(upstream);
+    const narrow = { width: 480, height: 700, ratio: 2 };
+    await setLiveViewport(port, narrow);
+    tabs[0].visible = false;
+    await setLiveViewport(port, { ...narrow });
+    tabs[0].visible = true;
+    // The display ignores the probe: the measurement fails and the page is pinned again.
+    const original = browser.bounds();
+    browser.afterBounds = () => original;
+    await setLiveViewport(port, { ...narrow });
+    assert.equal(windowChrome(port), null);
+    assert.deepEqual(browser.page(), { width: 480, height: 700, ratio: 2 });
+    const clears = browser.sent("Emulation.clearDeviceMetricsOverride").length;
+    await setLiveViewport(port, { ...narrow });
+    await setLiveViewport(port, { ...narrow });
+    assert.equal(browser.sent("Emulation.clearDeviceMetricsOverride").length, clears);
+    browser.afterBounds = null;
     await setLiveViewport(port, null);
   });
 
