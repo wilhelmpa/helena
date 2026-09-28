@@ -116,17 +116,15 @@ export const BUILTIN_TASK_CLASSES: LocalAiTaskClass[] = [
     id: 'triage',
     label: label('triage'),
     description: description('triage'),
-    unit: 'npu',
+    unit: 'gpu',
     capability: 'chat',
     priority: 'background',
     // passed (0.94) with thinking on
     thinking: 'low',
     inMasterDefault: true,
-    // What Helena classifies today goes through the decisions service (`decide()`): the mail
-    // classifier, the model router, receipts and the workflow step "Entscheidung", on the
-    // class `decisions` (modules/decisions/local-ai-class.ts). Nothing is left for this class
-    // (proposal: retire it in favour of `decisions`, local-ai-platform.md §7.1).
-    wired: false,
+    // Mail triage and task assignment use this class through the decisions service.
+    wired: true,
+    modes: PREFER_ONLY,
     evaluate: evaluateTriage,
     threshold: 0.85,
   },

@@ -39,6 +39,7 @@ export interface DecisionConnection {
   sourceCredentialId: number | null;
   // keySource 'local-ai': the model server of Helena's local AI whose address and key it uses.
   modelServer: string | null;
+  localAiClassId?: string;
 }
 
 export interface SystemOneReply {
@@ -115,10 +116,11 @@ export interface ModelServerAccess {
   tokenIds?: TokenIds;
 }
 
-let modelServerResolver: ((slug: string) => Promise<ModelServerAccess | null>) | null = null;
+let modelServerResolver:
+  ((slug: string, classId: string) => Promise<ModelServerAccess | null>) | null = null;
 
 export function useModelServerResolver(
-  resolver: ((slug: string) => Promise<ModelServerAccess | null>) | null,
+  resolver: ((slug: string, classId: string) => Promise<ModelServerAccess | null>) | null,
 ): void {
   modelServerResolver = resolver;
 }
@@ -129,7 +131,10 @@ async function addressOf(
 ): Promise<{ baseUrl: string; key: string | null; model?: string | null; tokenIds?: TokenIds }> {
   if (connection.keySource === 'local-ai') {
     const server = modelServerResolver
-      ? await modelServerResolver(connection.modelServer ?? 'local')
+      ? await modelServerResolver(
+          connection.modelServer ?? 'local',
+          connection.localAiClassId ?? 'decisions',
+        )
       : null;
     if (!server) {
       throw new LocalDecisionConnectionError('no-server');
@@ -149,7 +154,7 @@ export class DecisionConnectionError extends HttpError {}
 
 const LOCAL_FAILURES = {
   'master-off': 'Local AI is switched off',
-  'class-off': 'Local AI does not take decisions (Lokale KI → Entscheidungen is off)',
+  'class-off': 'Local AI does not take this class of work',
   'unit-off': "The local AI's GPU is switched off",
   'no-server': 'No local AI model server is set up',
   'server-down': 'The local AI model server does not answer',

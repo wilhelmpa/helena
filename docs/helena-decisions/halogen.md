@@ -70,8 +70,8 @@ the shards recorded in its sidecar with the files; `cache clear` only while Halo
 `/etc/helena/halogen.conf` (copied once, never overwritten; `status` names what the owner changed):
 2 slots over a 262,144-position KV pool and `HALOGEN_MAX_TOK=16384`, as ran live. The vendor's
 default thinking is `xhigh`; Helena's own calls say how much they think, agent turns through
-Hermes only switch thinking on or off. `HALOGEN_REASONING_EFFORT=medium` is prepared as a comment:
-whether agent turns on Flash should think less by default is an owner decision (it is faster).
+Hermes only switch thinking on or off. `HALOGEN_REASONING_EFFORT=medium` is the default for
+requests that do not specify an effort. An existing `/etc/helena/halogen.conf` is not overwritten.
 
 ## 4. Firewall
 
@@ -105,7 +105,8 @@ purpose (§6 makes it unnecessary).
 - The server dialog can now edit a server (name, address, key, context, capabilities).
 - Isolated agents: `launcher.json` forwards `halogen` (8731) and `halogenquiet` (8733) through
   `helena-halogen-proxy@<port>.socket` (optional sockets: a machine without Halogen starts its
-  agents as before). `isolation.sh sync` after the install.
+  agents as before). The proxy unit permits the Podman subnet as well as localhost because
+  Podman DNAT sends loopback connections into that subnet. `isolation.sh sync` after the install.
 
 ## 6. Decisions: `logit_bias` by token id
 
@@ -134,8 +135,9 @@ command-line eval can use the owner's own Claude Code or Codex CLI (`--judge-cli
   reflection, decisions, coordinator-triage, hermes-helpers, voice-reply) with their eval on the
   Halogen model; `--evaluate` runs the missing ones one after the other, `--apply` puts the passed
   ones in `prefer` on that model (cloud fallback), `--enable` turns the master switch on. Tried on a
-  private database against the real Halogen: decisions 100 % → `prefer`. `triage` is **not wired**
-  in Helena yet (its eval exists, no feature sends work there).
+  private database against the real Halogen: decisions 100 % → `prefer`. Mail triage and task
+  assignment use `triage` through the decisions service when their connection uses local AI;
+  each decision class can use its configured cloud fallback.
 - Escalation rules (`apps/api/src/modules/escalation`, setting `helena.escalation`, `GET/PUT
   /god/escalation`, UI section marked „Entwurf“): kinds of work to a strong model (coding →
   gpt-6-sol; architecture, security, legal, external texts → Opus), unsure decisions below a
@@ -148,15 +150,15 @@ command-line eval can use the owner's own Claude Code or Codex CLI (`--judge-cli
 
 `apps/api/src/scripts/flash-home/`: a small tool loop (chat completions + MCP tools, the shape of
 Phase 3's own runtime) drives Flash as the Home agent through Helena's MCP, in-process against a
-private test database. The owner's written spec (there is no MCP tool for project blueprints: the
-blueprint CLI needs root provisioning) asks for a project, two agents, two goals, three delegated
+private test database. The owner's written spec asks for a project, two agents, two goals, three delegated
 tasks, a routine, a look at the runs, one routine fire and a status report; 13 checks, tool errors,
 repeats, time, tokens; the test project and agents are removed through the API afterwards. Of
 Helena's 213 MCP tools (~680 KB of schemas) it offers 27. Results: runbook and report.
+Owner and Home can preview or apply bundled project blueprints through MCP tools; apply is a
+workspace write.
 
 ## 10. Open
 
-- An MCP tool for project blueprints (dry run/apply) for the Home agent.
 - The owner's local terminals (`owner-terminal/local-model.ts`) know only Lemonade's models.
 - `helena-lan6`/hardening unaffected; the hardening audit does not check the Halogen table yet.
 - Quadlet and the Docker packaging (Phase 7).

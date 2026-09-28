@@ -132,6 +132,10 @@ render_nft() {
     "$here/helena-halogen.nft.in"
 }
 
+render_proxy_service() {
+  sed "s#@SUBNET@#$SUBNET#g" "$here/systemd/helena-halogen-proxy@.service"
+}
+
 # fetch <repo> <revision> <path> <bytes> <sha256> <target>: from Hugging Face at the pinned
 # revision, checked; a good file is kept.
 fetch() {
@@ -286,7 +290,7 @@ install_all() {
   say "== agents in isolation reach it through their unit's forwarder (127.0.0.1:$PORT, :$QUIET_PORT)"
   if getent group volition-agents >/dev/null; then
     put "$PROXY_SOCKET" 0644 root:root < "$here/systemd/helena-halogen-proxy@.socket"
-    put "$PROXY_SERVICE" 0644 root:root < "$here/systemd/helena-halogen-proxy@.service"
+    render_proxy_service | put "$PROXY_SERVICE" 0644 root:root
     run systemctl daemon-reload
     run systemctl enable --now "helena-halogen-proxy@$PORT.socket" "helena-halogen-proxy@$QUIET_PORT.socket"
     say "then: native/isolation.sh sync (launcher.json forwards halogen/halogenquiet)"
@@ -363,7 +367,8 @@ case "$command" in
     case "${args# }" in
       unit) render_unit ;;
       nft) render_nft ;;
-      *) die "render unit | nft" ;;
+      proxy) render_proxy_service ;;
+      *) die "render unit | nft | proxy" ;;
     esac
     ;;
   weights)

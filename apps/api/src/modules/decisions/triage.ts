@@ -20,7 +20,6 @@ export async function triageTask(input: {
     teamId: input.teamId,
     projectId: input.projectId,
     classId: TASK_TRIAGE_CLASS,
-    localOnly: true,
     subject: input.subject,
     context: {
       title: input.title.slice(0, 300),
@@ -52,7 +51,6 @@ export async function routeTaskAgent(input: {
     teamId: input.teamId,
     projectId: input.projectId,
     classId: AGENT_ROUTING_CLASS,
-    localOnly: true,
     subject: input.subject,
     context: {
       title: input.title.slice(0, 300),

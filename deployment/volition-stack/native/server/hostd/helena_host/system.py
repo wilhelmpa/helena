@@ -119,6 +119,28 @@ def preload_running(host: Host) -> bool:
         return False
 
 
+def local_ai_services(host: Host) -> dict[str, dict[str, bool]]:
+    tool = host.which('systemctl')
+    if not tool:
+        return {}
+    services = {}
+    for name, unit in (('lemonade', 'lemond.service'), ('halogen', 'helena-halogen.service')):
+        try:
+            result = host.run([tool, 'show', '--property=LoadState,UnitFileState,ActiveState', unit], timeout=3)
+            if result.returncode != 0:
+                continue
+            fields = dict(line.split('=', 1) for line in result.stdout.splitlines() if '=' in line)
+            if fields.get('LoadState') != 'loaded':
+                continue
+            services[name] = {
+                'enabled': fields.get('UnitFileState', '') in ('enabled', 'enabled-runtime'),
+                'active': fields.get('ActiveState') == 'active',
+            }
+        except (OSError, subprocess.TimeoutExpired):
+            continue
+    return services
+
+
 def meminfo(host: Host) -> dict[str, int]:
     values: dict[str, int] = {}
     for line in (host.read('/proc/meminfo') or '').splitlines():
@@ -212,5 +234,6 @@ def status(host: Host, state_dir: str | None = None) -> dict:
         'gpuProcesses': gpu_processes(host, state_dir),
         'memoryConsumers': memory_consumers(host),
         'localAiPreloadRunning': preload_running(host),
+        'localAiServices': local_ai_services(host),
         'efi': host.exists('/sys/firmware/efi'),
     }

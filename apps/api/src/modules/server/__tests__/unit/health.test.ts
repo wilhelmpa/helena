@@ -387,5 +387,24 @@ describe('power and system health', () => {
       state: 'critical',
       code: 'localAiEviction',
     });
+    const services = {
+      lemonade: { enabled: false, active: false },
+      halogen: { enabled: true, active: true },
+    };
+    const health = systemHealth({
+      ...base,
+      memory: { ...memory, totalBytes: 124_000_000_000 },
+      gpuMemory: {
+        vramTotalBytes: 536_870_912,
+        vramUsedBytes: 0,
+        gttTotalBytes: 120_000_000_000,
+        gttUsedBytes: 0,
+      },
+      localAiServices: services,
+      guard,
+    });
+    expect(byId(health, 'local-ai:lemonade')).toBeUndefined();
+    expect(byId(health, 'local-ai:guard')).toBeUndefined();
+    expect(byId(health, 'local-ai:halogen')).toMatchObject({ state: 'ok' });
   });
 });
