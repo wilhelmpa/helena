@@ -45,6 +45,9 @@ export async function enqueueAgentRun(
     // The kind of work the run is for Lokale KI (agent_run.work_class): a routine's
     // delegation is `routines`. Null for everything else.
     workClass?: string | null;
+    model?: string | null;
+    maxTurns?: number | null;
+    runBudgetSeconds?: number | null;
   },
   executor: typeof db | Transaction = db,
 ): Promise<number> {
@@ -97,6 +100,9 @@ export async function enqueueAgentRun(
         trigger: input.trigger ?? (input.sourceActivityId == null ? 'delegation' : 'mention'),
         nextAttemptAt: delay > 0 ? sql`now() + make_interval(secs => ${delay})` : undefined,
         workClass: input.workClass ?? null,
+        model: input.model ?? null,
+        maxTurns: input.maxTurns ?? null,
+        runBudgetSeconds: input.runBudgetSeconds ?? null,
         ...(input.continueSession && {
           sessionId: input.continueSession.sessionId,
           continuedFromRunId: input.continueSession.runId,
