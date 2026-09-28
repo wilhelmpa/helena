@@ -61,7 +61,8 @@ export default function FilterPills({
     <div className="ds-filter-pills">
       {filters.conditions.map((cond) => {
         const spec = specByField.get(cond.field);
-        if (!spec) return null;
+        // A condition of an unknown field or an old shape is not shown (it filters nothing).
+        if (!spec || !Array.isArray(cond.values)) return null;
         const fixed = saved?.conditions.some((rule) => same(rule, cond)) ?? false;
         const presence = cond.op === 'is_set' || cond.op === 'is_not_set';
         const label = presence

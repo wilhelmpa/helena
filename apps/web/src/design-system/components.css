@@ -1100,3 +1100,11 @@
     flex: 1;
   }
 }
+@media (min-width: 701px) {
+  .ds-segmented > button > svg + span {
+    display: inline;
+  }
+  .ds-segmented > button > svg:has(+ span) {
+    display: none;
+  }
+}
