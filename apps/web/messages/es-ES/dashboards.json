@@ -6,6 +6,8 @@
   "namePlaceholder": "Nombre del panel",
   "options": "Opciones del panel",
   "rename": "Renombrar",
+  "moveUp": "Subir",
+  "moveDown": "Bajar",
   "editLayout": "Editar disposición",
   "discard": "Descartar",
   "saveDashboard": "Guardar panel",

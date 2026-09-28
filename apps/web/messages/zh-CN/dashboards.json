@@ -6,6 +6,8 @@
   "namePlaceholder": "仪表盘名称",
   "options": "仪表盘选项",
   "rename": "重命名",
+  "moveUp": "上移",
+  "moveDown": "下移",
   "editLayout": "编辑布局",
   "discard": "放弃更改",
   "saveDashboard": "保存仪表盘",

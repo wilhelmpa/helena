@@ -420,6 +420,7 @@ export function PageActions({
   primary?: Omit<PageAction, 'menuOnly'>;
 }) {
   const t = useTranslations('common');
+  const tNav = useTranslations('nav');
   const room = useContext(RoomCtx);
   const inToolbar = useContext(ToolbarScopeCtx);
   const actionsSlot = useShellHeaderActionsSlot();
@@ -433,7 +434,7 @@ export function PageActions({
     ...actions.filter((action) => action !== visibleAction),
     {
       id: 'settings-modal',
-      label: 'Einstellungen',
+      label: tNav('settings'),
       icon: Settings2,
       onClick: () => openSettingsModal(),
       menuOnly: true,

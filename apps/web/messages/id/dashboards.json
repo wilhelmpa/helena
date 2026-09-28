@@ -6,6 +6,8 @@
   "namePlaceholder": "Nama dasbor",
   "options": "Opsi dasbor",
   "rename": "Ubah nama",
+  "moveUp": "Pindahkan ke atas",
+  "moveDown": "Pindahkan ke bawah",
   "editLayout": "Ubah tata letak",
   "discard": "Buang perubahan",
   "saveDashboard": "Simpan dasbor",

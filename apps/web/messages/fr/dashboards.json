@@ -6,6 +6,8 @@
   "namePlaceholder": "Nom du tableau de bord",
   "options": "Options du tableau de bord",
   "rename": "Renommer",
+  "moveUp": "Monter",
+  "moveDown": "Descendre",
   "editLayout": "Modifier la disposition",
   "discard": "Abandonner",
   "saveDashboard": "Enregistrer le tableau de bord",

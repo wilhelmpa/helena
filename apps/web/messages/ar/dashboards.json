@@ -6,6 +6,8 @@
   "namePlaceholder": "اسم لوحة المعلومات",
   "options": "خيارات لوحة المعلومات",
   "rename": "إعادة تسمية",
+  "moveUp": "نقل لأعلى",
+  "moveDown": "نقل لأسفل",
   "editLayout": "تعديل التخطيط",
   "discard": "تجاهل",
   "saveDashboard": "حفظ لوحة المعلومات",

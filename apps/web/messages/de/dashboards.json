@@ -6,6 +6,8 @@
   "namePlaceholder": "Dashboard-Name",
   "options": "Dashboard-Optionen",
   "rename": "Umbenennen",
+  "moveUp": "Nach oben verschieben",
+  "moveDown": "Nach unten verschieben",
   "editLayout": "Layout bearbeiten",
   "discard": "Verwerfen",
   "saveDashboard": "Dashboard speichern",

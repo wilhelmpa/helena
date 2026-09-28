@@ -3,7 +3,17 @@
 import { useEffect, useState, type CSSProperties } from 'react';
 import { useParams, usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { Check, LayoutTemplate, Pencil, Plus, Target, Trash2, Undo2 } from 'lucide-react';
+import {
+  ArrowDown,
+  ArrowUp,
+  Check,
+  LayoutTemplate,
+  Pencil,
+  Plus,
+  Target,
+  Trash2,
+  Undo2,
+} from 'lucide-react';
 import { useShell } from '@/context/shellContext';
 import { usePermissions } from '@/hooks/usePermissions';
 import { dashboardPath, dashboardsPath, initiativesPath } from '@/utils/paths';
@@ -14,13 +24,11 @@ import {
   PageActions,
   PageToolbar,
   PageToolbarSpacer,
-  usePageToolbarRoom,
   type PageAction,
 } from '@/components/layout/PageToolbar';
 import type { Dashboard } from '@/lib/api/endpoints/dashboards';
 import { useDashboardsQuery } from '@/services/dashboards.service';
 import { useDashboardEditor } from './hooks/useDashboardEditor';
-import DashboardTabs from './components/DashboardTabs';
 import WidgetGrid from './components/WidgetGrid';
 import DashboardOverview from './components/DashboardOverview';
 import { DashboardTitle, MonoLabel } from '@/components/helena/DashboardPrimitives';
@@ -28,15 +36,17 @@ import AddWidgetDialog from './components/AddWidgetDialog';
 import DashboardNameDialog from './components/DashboardNameDialog';
 import ConfirmDialog from '@/components/common/overlay/ConfirmDialog';
 
-// The dashboards section: a tab strip of named dashboards over a grid of analytics
-// widgets. The active dashboard comes from the route; with none selected the first
-// saved dashboard shows, or a built-in default when the project has none. Layout
-// edits are local until saved (see useDashboardEditor). Everything the page offers is
-// one header row (PageToolbar): the tabs, then editing the layout — while editing:
-// add a widget, discard, and save or done as the primary action.
+// The dashboards section: one named dashboard over a grid of analytics widgets. The
+// dashboards are listed and chosen in the project tree only (no tab strip here, the
+// tree is the one navigation). The active dashboard comes from the route; with none
+// selected the first saved dashboard shows, or a built-in default when the project has
+// none. Layout edits are local until saved (see useDashboardEditor). The header row
+// (PageToolbar) holds editing the layout and the "…" menu with New, Rename, Move and
+// Delete; while editing: add a widget, discard, and save or done as the primary action.
 export default function DashboardsPage() {
   const t = useTranslations('dashboards');
   const tCommon = useTranslations('common');
+  const tNav = useTranslations('nav');
   const { project } = useShell();
   const { can } = usePermissions();
   const features = useProjectFeatures();
@@ -102,7 +112,7 @@ export default function DashboardsPage() {
   if (features.initiatives && can('initiatives', 'read')) {
     layoutActions.push({
       id: 'initiatives',
-      label: 'Ziele',
+      label: tNav('initiatives'),
       icon: Target,
       href: initiativesPath(projectKey),
       menuOnly: true,
@@ -154,22 +164,15 @@ export default function DashboardsPage() {
       style={{ '--dashboard-project': projectColor(projectKey) } as CSSProperties}
     >
       <PageToolbar>
-        <DashboardTabs
-          dashboards={list}
-          activeDashboardId={activeDashboardId}
-          isVirtual={editor.isVirtual}
-          onSelect={(id) => router.push(dashboardPath(projectKey, id))}
-          onRename={(d) => setNameDialog(d)}
-          onDelete={setDeleting}
-          onReorder={(dragged, target) => editor.reorderDashboards(dragged, target)}
-        />
         <PageToolbarSpacer />
         <DashboardRowActions
           actions={layoutActions}
           primary={primary}
+          dashboards={list}
           active={active}
           onNew={() => setNameDialog('new')}
           onRename={(d) => setNameDialog(d)}
+          onReorder={(dragged, target) => editor.reorderDashboards(dragged, target)}
           onDelete={setDeleting}
         />
       </PageToolbar>
@@ -222,55 +225,71 @@ export default function DashboardsPage() {
   );
 }
 
-// The row's actions. While the tabs have room, New, Rename and Delete are on the tab
-// strip; once the tabs fold into their dropdown, they move into the "…" menu here.
+// The row's "…" menu: New, and for the dashboard on screen Rename, Move up/down (the
+// order of the dashboards in the tree) and Delete. The one visible button is editing the
+// layout; while editing, save or done is the primary action.
 function DashboardRowActions({
   actions,
   primary,
+  dashboards,
   active,
   onNew,
   onRename,
+  onReorder,
   onDelete,
 }: {
   actions: PageAction[];
   primary: Omit<PageAction, 'menuOnly'> | undefined;
+  dashboards: Dashboard[];
   active: Dashboard | null;
   onNew: () => void;
   onRename: (d: Dashboard) => void;
+  onReorder: (draggedId: number, targetId: number) => void;
   onDelete: (d: Dashboard) => void;
 }) {
   const t = useTranslations('dashboards');
   const tCommon = useTranslations('common');
   const { can } = usePermissions();
-  const room = usePageToolbarRoom();
   const all = [...actions];
-  if (!room.tabs) {
-    if (active && can('dashboards', 'edit'))
+  if (can('dashboards', 'create'))
+    all.push({ id: 'new', label: t('newDashboard'), icon: Plus, onClick: onNew, menuOnly: true });
+  if (active && can('dashboards', 'edit')) {
+    const index = dashboards.findIndex((d) => d.id === active.id);
+    const before = index > 0 ? dashboards[index - 1] : undefined;
+    const after = index >= 0 ? dashboards[index + 1] : undefined;
+    all.push({
+      id: 'rename',
+      label: t('rename'),
+      icon: Pencil,
+      onClick: () => onRename(active),
+      menuOnly: true,
+    });
+    if (dashboards.length > 1) {
       all.push({
-        id: 'rename',
-        label: t('rename'),
-        icon: Pencil,
-        onClick: () => onRename(active),
+        id: 'move-up',
+        label: t('moveUp'),
+        icon: ArrowUp,
+        disabled: !before,
+        onClick: () => before && onReorder(active.id, before.id),
         menuOnly: true,
       });
-    if (active && can('dashboards', 'delete'))
       all.push({
-        id: 'delete',
-        label: tCommon('delete'),
-        icon: Trash2,
-        onClick: () => onDelete(active),
+        id: 'move-down',
+        label: t('moveDown'),
+        icon: ArrowDown,
+        disabled: !after,
+        onClick: () => after && onReorder(active.id, after.id),
         menuOnly: true,
       });
+    }
   }
-  return (
-    <PageActions
-      actions={all}
-      primary={
-        primary ??
-        (can('dashboards', 'create')
-          ? { id: 'new', label: t('newDashboard'), icon: Plus, onClick: onNew }
-          : undefined)
-      }
-    />
-  );
+  if (active && can('dashboards', 'delete'))
+    all.push({
+      id: 'delete',
+      label: tCommon('delete'),
+      icon: Trash2,
+      onClick: () => onDelete(active),
+      menuOnly: true,
+    });
+  return <PageActions actions={all} primary={primary} />;
 }

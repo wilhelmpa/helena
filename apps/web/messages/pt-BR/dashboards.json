@@ -6,6 +6,8 @@
   "namePlaceholder": "Nome do dashboard",
   "options": "Opções do dashboard",
   "rename": "Renomear",
+  "moveUp": "Mover para cima",
+  "moveDown": "Mover para baixo",
   "editLayout": "Editar layout",
   "discard": "Descartar",
   "saveDashboard": "Salvar dashboard",
