@@ -294,8 +294,7 @@ export function AgentSheetForm({
       projects={projects}
       expanded={expanded}
       chatModels={chatCatalogQuery.data?.models ?? []}
-      chatModelsLoading={chatCatalogQuery.isLoading}
-      chatModelsError={chatCatalogQuery.isError}
+      localModels={chatCatalogQuery.data?.localModels ?? []}
       chatModelsUnavailable={chatCatalogQuery.data?.unavailable ?? []}
       agent={agent}
       skillsContent={skillsContent}

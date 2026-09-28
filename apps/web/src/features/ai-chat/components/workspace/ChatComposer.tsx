@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { useTranslations } from 'next-intl';
-import { RefreshCw, Square } from 'lucide-react';
+import { Plus, RefreshCw, Square } from 'lucide-react';
 import { toast } from 'sonner';
 import type { AiAgent } from '@/lib/api/endpoints/agents';
 import type { ChatPrompt } from '@/lib/api/endpoints/chatPrompts';
@@ -17,6 +17,7 @@ import {
   PromptInputTools,
 } from '@/components/ai-elements/prompt-input';
 import { SpeechInput } from '@/components/ai-elements/speech-input';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Suggestion, Suggestions } from '@/components/ai-elements/suggestion';
 import { AgentContextSize } from '@/components/common/agent-chat/AgentContextSize';
 import ConversationBar from '@/features/voice/components/ConversationBar';
@@ -394,6 +395,51 @@ export default function ChatComposer({
           </PromptInputBody>
           <PromptInputFooter>
             <PromptInputTools className="overflow-hidden">
+              {homeLanding && (
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <PromptInputButton
+                      tooltip={t('composer.attach')}
+                      aria-label={t('composer.attach')}
+                    >
+                      <Plus className="size-4" />
+                    </PromptInputButton>
+                  </PopoverTrigger>
+                  <PopoverContent
+                    side="top"
+                    align="start"
+                    className="flex w-auto items-center gap-1 p-2"
+                  >
+                    <ChatAttachPicker
+                      scopeKey={scopeKey}
+                      onUpload={() => fileInputRef.current?.click()}
+                      onPickVaultFile={(path, name) =>
+                        setAttachments((current) => [...current, { path, name }])
+                      }
+                    />
+                    {dictation.ready && !talking && (
+                      <SpeechInput
+                        value={value}
+                        onChange={setValue}
+                        maxLength={CHAT_PROMPT_LIMIT}
+                        engine={dictation.engine}
+                        recorder={dictation.recorder}
+                        onUnavailable={dictation.onUnavailable}
+                        onError={dictation.onError}
+                        onBusyChange={setDictating}
+                        labels={{
+                          start: dictation.local
+                            ? t('composer.dictateLocal')
+                            : t('composer.dictate'),
+                          stop: t('composer.stopDictation'),
+                          unavailable: t('composer.dictationUnavailable'),
+                        }}
+                      />
+                    )}
+                    <ChatAutoSpeakToggle on={autoSpeak} onChange={onAutoSpeakChange} />
+                  </PopoverContent>
+                </Popover>
+              )}
               {!homeLanding && (
                 <ChatAttachPicker
                   scopeKey={scopeKey}
@@ -439,7 +485,9 @@ export default function ChatComposer({
               )}
               {!homeLanding && <ChatAutoSpeakToggle on={autoSpeak} onChange={onAutoSpeakChange} />}
               <ChatAgentMenu
+                scopeKey={scopeKey}
                 agent={agent}
+                model={model}
                 agents={agents}
                 states={states}
                 motionEnabled={motionEnabled}

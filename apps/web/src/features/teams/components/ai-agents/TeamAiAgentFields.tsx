@@ -19,6 +19,7 @@ import AgentAutopilotSection from './AgentAutopilotSection';
 import AgentTemplateDriftSection from './AgentTemplateDriftSection';
 import AgentTemplateField from './AgentTemplateField';
 import { useTranslations } from 'next-intl';
+import RuntimePicker from '@/components/helena/RuntimePicker';
 
 // Which sections open when an existing agent is opened for editing, so the form reads
 // as a short list of sections instead of a wall of fields. Basics is not in it because
@@ -39,8 +40,7 @@ export default function TeamAiAgentFields({
   projects,
   expanded = false,
   chatModels,
-  chatModelsLoading,
-  chatModelsError,
+  localModels = [],
   chatModelsUnavailable = [],
   agent,
   skillsContent,
@@ -60,8 +60,7 @@ export default function TeamAiAgentFields({
   projects: TeamProjectOption[];
   expanded?: boolean;
   chatModels: AiChatModel[];
-  chatModelsLoading: boolean;
-  chatModelsError: boolean;
+  localModels?: AiChatModel[];
   // Models the provider refused this account, left out of chatModels.
   chatModelsUnavailable?: UnavailableChatModel[];
   // The saved agent, for the state only the server knows (its runner's presence).
@@ -90,6 +89,7 @@ export default function TeamAiAgentFields({
 }) {
   const t = useTranslations('teams.agents');
   const tCommon = useTranslations('common');
+  const tRuntime = useTranslations('chatWorkspace.runtimePicker');
   const [openSections, setOpenSections] = useState<Record<string, boolean>>(() => ({
     ...(agent ? DEFAULT_OPEN : {}),
     ...(initialOpenSection ? { [initialOpenSection]: true } : {}),
@@ -199,8 +199,6 @@ export default function TeamAiAgentFields({
       value={value}
       onChange={onChange}
       models={chatModels}
-      modelsLoading={chatModelsLoading}
-      modelsError={chatModelsError}
       conflicts={agent?.runtimeState.conflicts ?? []}
       unavailable={chatModelsUnavailable}
       agent={agent}
@@ -258,6 +256,36 @@ export default function TeamAiAgentFields({
     ) : null;
 
   const stack = [
+    <div key="runtime-picker" className="rounded-lg border border-border/60 p-4">
+      <p className="mb-3 text-xs text-muted-foreground">{tRuntime('summary')}</p>
+      <RuntimePicker
+        runtime={value.runtimePolicy.runtime ?? 'hermes'}
+        model={value.model || null}
+        reasoning={value.runtimePolicy.reasoningEffort}
+        models={[
+          ...((value.runtimePolicy.runtime ?? 'hermes') ===
+          (agent?.runtimePolicy.runtime ?? 'hermes')
+            ? chatModels
+            : []),
+          ...localModels,
+        ]}
+        unavailable={
+          (value.runtimePolicy.runtime ?? 'hermes') === (agent?.runtimePolicy.runtime ?? 'hermes')
+            ? chatModelsUnavailable
+            : []
+        }
+        onChange={(runtime, model, reasoning) =>
+          onChange({
+            model: model ?? '',
+            runtimePolicy: {
+              ...value.runtimePolicy,
+              runtime: runtime === 'hermes' ? undefined : runtime,
+              reasoningEffort: reasoning,
+            },
+          })
+        }
+      />
+    </div>,
     basicsSection,
     projectsSection,
     autopilotSection,

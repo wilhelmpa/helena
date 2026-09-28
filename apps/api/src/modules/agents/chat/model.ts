@@ -191,6 +191,7 @@ const chatModel = t.Object({
 export const chatCatalogBody = t.Object({ models: t.Array(chatModel, { maxItems: 200 }) });
 
 export const ChatCatalogResponse = t.Object({
+  localModels: t.Optional(t.Array(chatModel)),
   models: t.Array(
     t.Composite([
       chatModel,
