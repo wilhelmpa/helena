@@ -8,6 +8,8 @@ import { Textarea } from '@/components/ui/textarea';
 import type { OrganizationDepartment } from '@/lib/api/endpoints/organization';
 import { useDeleteDepartment, useUpdateDepartment } from '../services/organization.service';
 import DepartmentBudgets from './DepartmentBudgets';
+import DepartmentSkills from './DepartmentSkills';
+import DepartmentTemplateExport from './DepartmentTemplateExport';
 
 export default function OrganizationDepartmentCard({
   teamId,
@@ -70,7 +72,10 @@ export default function OrganizationDepartmentCard({
         />
       </label>
       <DepartmentBudgets teamId={teamId} department={department} />
-      <div className="flex justify-end gap-2">
+      <DepartmentSkills teamId={teamId} department={department} />
+      <div className="flex flex-wrap items-center justify-end gap-2">
+        <DepartmentTemplateExport teamId={teamId} department={department} />
+        <span className="flex-1" />
         <Button
           type="button"
           variant="ghost"

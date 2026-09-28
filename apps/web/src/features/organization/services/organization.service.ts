@@ -24,8 +24,14 @@ import {
   setProjectTokenCeiling,
   updateDepartment,
   setDepartmentBudgets,
+  getDepartmentSkills,
+  setDepartmentSkills,
   updateGoal,
 } from '@/lib/api/endpoints/organization';
+import {
+  exportDepartmentBundle,
+  importDepartmentBundle,
+} from '@/lib/api/endpoints/templateBundles';
 import { getAgentUsage } from '@/lib/api/endpoints/agentActivity';
 import { getIssueBySeq } from '@/lib/api/endpoints/issues';
 import { qk } from '@/services/queryKeys';
@@ -76,6 +82,40 @@ export function useSetDepartmentBudgets(teamId: number, departmentId: number) {
 
 export function useDeleteDepartment(teamId: number) {
   return useOrganizationMutation<number>(teamId, (id) => deleteDepartment(teamId, id));
+}
+
+// A department's skill lock: whether its agents may only use the skills it names.
+export function useDepartmentSkillsQuery(teamId: number, departmentId: number) {
+  return useQuery({
+    queryKey: qk.departmentSkills(teamId, departmentId),
+    queryFn: () => getDepartmentSkills(teamId, departmentId),
+  });
+}
+
+export function useSetDepartmentSkills(teamId: number, departmentId: number) {
+  return useOrganizationMutation<{ restricted: boolean; skillIds: number[] }>(teamId, (input) =>
+    setDepartmentSkills(teamId, departmentId, input),
+  );
+}
+
+// A department as a template file: fetched, then handed to the browser as a download.
+export function useExportDepartmentTemplate(teamId: number) {
+  return useMutation({
+    mutationFn: (departmentId: number) => exportDepartmentBundle(teamId, departmentId),
+  });
+}
+
+// A department template in: first a dry run (nothing written), then the import. The
+// import touches agents, goals and routines too, so it refreshes everything.
+export function useImportDepartmentTemplate(teamId: number) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { bundle: unknown; dryRun: boolean; update: boolean }) =>
+      importDepartmentBundle(teamId, input),
+    onSuccess: (_report, input) => {
+      if (!input.dryRun) void queryClient.invalidateQueries();
+    },
+  });
 }
 
 export function useCreateGoal(teamId: number) {

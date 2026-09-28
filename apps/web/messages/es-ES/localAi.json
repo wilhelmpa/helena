@@ -262,5 +262,44 @@
       "hint": "La rapidez con la que lee la voz. La voz local habla a su propio ritmo; esto se aplica a la voz del navegador.",
       "option": "{speed} %"
     }
+  },
+  "startOptions": {
+    "title": "Opciones de arranque",
+    "custom": "Opciones de arranque propias",
+    "hint": "Los cambios se aplican en el próximo arranque del modelo.",
+    "backend": "Backend",
+    "backendHint": "Con qué ejecuta Lemonade el modelo en la GPU.",
+    "backends": {
+      "default": "Predeterminado",
+      "rocm": "ROCm",
+      "vulkan": "Vulkan"
+    },
+    "spec": "Decodificación especulativa",
+    "specHint": "Un borrador propone tokens y el modelo los comprueba. Así las respuestas llegan antes.",
+    "specTypes": {
+      "off": "Desactivada",
+      "draft-mtp": "MTP (integrado en el modelo)",
+      "draft-dflash": "Modelo borrador DFlash"
+    },
+    "draftModel": "Modelo borrador",
+    "draftModelHint": "Ruta a un archivo GGUF en /var/lib/helena-ai/models.",
+    "draftTokens": "Tokens de borrador",
+    "draftTokensHint": "Cuántos tokens propone el borrador por paso, de 1 a 64.",
+    "parallel": "Slots paralelos",
+    "parallelHint": "Cuántas solicitudes atiende el modelo a la vez, de 1 a 32.",
+    "contextPerSlot": "Contexto por slot",
+    "contextPerSlotHint": "Tokens de contexto para cada solicitud paralela.",
+    "defaultPlaceholder": "Predeterminado",
+    "reset": "Restablecer valores predeterminados",
+    "saved": "Opciones de arranque de {name} guardadas",
+    "errors": {
+      "draftModelRequired": "Indica la ruta del modelo borrador.",
+      "draftModelPath": "La ruta debe apuntar a un archivo .gguf en /var/lib/helena-ai/models.",
+      "draftTokensRange": "Indica un número entero de 1 a 64.",
+      "parallelRange": "Indica un número entero de 1 a 32.",
+      "contextRange": "Indica un número entero de 1 a 1048576.",
+      "contextNeedsParallel": "Define primero los slots paralelos.",
+      "contextTotal": "Slots paralelos por contexto por slot no puede superar 1048576 tokens."
+    }
   }
 }

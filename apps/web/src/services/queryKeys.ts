@@ -288,6 +288,9 @@ export const qk = {
   // A goal with its linked tasks and notes; below the organization, so a change there
   // reloads it.
   goalDetail: (teamId: number, goalId: number) => ['organization', teamId, 'goal', goalId] as const,
+  // A department's skill lock; below the organization as well.
+  departmentSkills: (teamId: number, departmentId: number) =>
+    ['organization', teamId, 'department-skills', departmentId] as const,
   // What an agent's runtime keeps, read through its runner, and a run's timeline.
   agentRuntime: (teamId: number, agentId: number, what: string, params?: unknown) =>
     ['aiAgents', teamId, agentId, 'runtime', what, params ?? null] as const,

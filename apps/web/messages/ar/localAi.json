@@ -262,5 +262,44 @@
       "hint": "مدى سرعة قراءة الصوت. يتحدث الصوت المحلي بإيقاعه الخاص؛ ينطبق هذا على صوت المتصفح.",
       "option": "{speed}٪"
     }
+  },
+  "startOptions": {
+    "title": "خيارات التشغيل",
+    "custom": "خيارات تشغيل مخصصة",
+    "hint": "تسري التغييرات عند التشغيل التالي للنموذج.",
+    "backend": "الواجهة الخلفية",
+    "backendHint": "ما يستخدمه Lemonade لتشغيل النموذج على GPU.",
+    "backends": {
+      "default": "الافتراضي",
+      "rocm": "ROCm",
+      "vulkan": "Vulkan"
+    },
+    "spec": "فك الترميز التخميني",
+    "specHint": "تقترح مسودة رموزًا ويتحقق منها النموذج، فتصل الإجابات أسرع.",
+    "specTypes": {
+      "off": "متوقف",
+      "draft-mtp": "MTP (مدمج في النموذج)",
+      "draft-dflash": "نموذج مسودة DFlash"
+    },
+    "draftModel": "نموذج المسودة",
+    "draftModelHint": "مسار ملف GGUF ضمن /var/lib/helena-ai/models.",
+    "draftTokens": "رموز المسودة",
+    "draftTokensHint": "عدد الرموز التي تقترحها المسودة في كل خطوة، من 1 إلى 64.",
+    "parallel": "الفتحات المتوازية",
+    "parallelHint": "عدد الطلبات التي يعالجها النموذج في الوقت نفسه، من 1 إلى 32.",
+    "contextPerSlot": "السياق لكل فتحة",
+    "contextPerSlotHint": "رموز السياق لكل طلب متوازٍ.",
+    "defaultPlaceholder": "الافتراضي",
+    "reset": "إعادة إلى الافتراضي",
+    "saved": "تم حفظ خيارات تشغيل {name}",
+    "errors": {
+      "draftModelRequired": "أدخل مسار نموذج المسودة.",
+      "draftModelPath": "يجب أن يشير المسار إلى ملف ‎.gguf ضمن /var/lib/helena-ai/models.",
+      "draftTokensRange": "أدخل عددًا صحيحًا من 1 إلى 64.",
+      "parallelRange": "أدخل عددًا صحيحًا من 1 إلى 32.",
+      "contextRange": "أدخل عددًا صحيحًا من 1 إلى 1048576.",
+      "contextNeedsParallel": "حدد الفتحات المتوازية أولًا.",
+      "contextTotal": "يجب ألا يتجاوز حاصل ضرب الفتحات المتوازية في السياق لكل فتحة 1048576 رمزًا."
+    }
   }
 }

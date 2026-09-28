@@ -216,6 +216,25 @@ export const updateDepartment = (
 export const deleteDepartment = (teamId: number, departmentId: number) =>
   request<void>(`${base(teamId)}/departments/${departmentId}`, { method: 'DELETE' });
 
+// The skill lock of a department: while restricted, its agents may only use these skills.
+export interface DepartmentSkills {
+  restricted: boolean;
+  skills: { id: number; name: string }[];
+}
+
+export const getDepartmentSkills = (teamId: number, departmentId: number) =>
+  request<DepartmentSkills>(`${base(teamId)}/departments/${departmentId}/skills`);
+
+export const setDepartmentSkills = (
+  teamId: number,
+  departmentId: number,
+  input: { restricted: boolean; skillIds: number[] },
+) =>
+  request<DepartmentSkills>(`${base(teamId)}/departments/${departmentId}/skills`, {
+    method: 'PUT',
+    body: JSON.stringify(input),
+  });
+
 export const createGoal = (teamId: number, input: GoalInput) =>
   request<OrganizationGoal>(`${base(teamId)}/goals`, {
     method: 'POST',

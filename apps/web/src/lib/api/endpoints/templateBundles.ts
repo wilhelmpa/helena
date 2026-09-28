@@ -38,3 +38,19 @@ export const importBundle = (
 
 export const exportBundle = (teamId: number) =>
   request<TemplateBundle>(`/teams/${teamId}/template-bundles/export`);
+
+// A department as a template (Helena › Einstellungen › Abteilungen): its agents, roles,
+// reporting lines, heartbeats, routines, goals, skills and budgets, without credentials.
+export const exportDepartmentBundle = (teamId: number, departmentId: number) =>
+  request<TemplateBundle>(`/teams/${teamId}/template-bundles/departments/${departmentId}/export`);
+
+// The dry run reports what would change and writes nothing; `update` also overwrites
+// what differs in existing agents and settings.
+export const importDepartmentBundle = (
+  teamId: number,
+  input: { bundle: unknown; dryRun: boolean; update: boolean },
+) =>
+  request<BundleReport>(`/teams/${teamId}/template-bundles/departments/import`, {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });

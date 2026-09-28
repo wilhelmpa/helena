@@ -10,8 +10,10 @@ import {
   getLocalAiStatus,
   runLocalAiEval,
   updateLocalAiPolicy,
+  updateModelOptions,
   updateModelServer,
   type LocalAiSettings,
+  type LocalModelStartOptions,
   type PolicyPatch,
   type ServerInput,
 } from '@/lib/api/endpoints/localAi';
@@ -67,6 +69,23 @@ export function useCreateModelServer() {
   const invalidate = useInvalidate();
   return useMutation({
     mutationFn: (input: ServerInput) => createModelServer(input),
+    onSuccess: () => invalidate(),
+  });
+}
+
+// A model's start options; Lemonade reads them the next time it starts the model.
+export function useUpdateModelOptions() {
+  const invalidate = useInvalidate();
+  return useMutation({
+    mutationFn: ({
+      serverId,
+      model,
+      options,
+    }: {
+      serverId: number;
+      model: string;
+      options: LocalModelStartOptions;
+    }) => updateModelOptions(serverId, model, options),
     onSuccess: () => invalidate(),
   });
 }
