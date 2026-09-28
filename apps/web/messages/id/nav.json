@@ -1,4 +1,8 @@
 {
+  "projectLinkHint": "Konten ini milik proyek lain.",
+  "openInProject": "Buka di proyek",
+  "dockContext": "HOME · KONTEKS",
+  "dockOpen": "Buka Home (⌘J)",
   "sidebarMyTasks": "My tasks",
   "sidebarOpenTasks": "All open",
   "sidebarSwitchProject": "Switch project",
@@ -25,7 +29,7 @@
   "allWorkItems": "Semua item pekerjaan",
   "initiatives": "Inisiatif",
   "cycles": "Cycle",
-  "notes": "Papan",
+  "notes": "Kanvas",
   "documents": "Dokumen",
   "docs": "Dokumen",
   "aiTeam": "Tim AI",

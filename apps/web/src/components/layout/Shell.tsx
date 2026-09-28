@@ -23,9 +23,8 @@ import { useKioskDisplay } from '@/utils/kioskDisplay';
 import { createHeaderExtraStore } from '@/utils/headerExtraStore';
 import { defaultsFromFilters, type NewIssueDefaults } from '@/utils/project';
 import { ShellCtx, type ChatThreadRequest, type ShellContext } from '@/context/shellContext';
-import { ShellHeaderSlotCtx } from '@/context/shellHeaderSlot';
+import { ShellHeaderActionsSlotCtx, ShellHeaderSlotCtx } from '@/context/shellHeaderSlot';
 import type { WorkspaceLayoutChoice } from '@/context/workspaceLayout';
-import { useMediaQuery } from '@/hooks/useMediaQuery';
 import ShellHeaderExtra from '@/components/layout/ShellHeaderExtra';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 import AppSidebar from '@/components/layout/AppSidebar';
@@ -34,10 +33,14 @@ import CommandLayer from '@/components/layout/CommandLayer';
 import { EmergencyStopBanner } from '@/features/agent-runtime/components/EmergencyStop';
 import ShellBody from '@/components/layout/ShellBody';
 import ShellHeaderTitle from '@/components/layout/ShellHeaderTitle';
-import HeaderCrumbs from '@/components/layout/HeaderCrumbs';
 import ShellOverlays from '@/components/layout/ShellOverlays';
 import WorkspaceLayoutHost from '@/components/layout/WorkspaceLayoutHost';
+import HomeDock from '@/components/layout/HomeDock';
+import ProjectLinkSheet from '@/components/layout/ProjectLinkSheet';
 import { useTranslations } from 'next-intl';
+import { isTypingTarget } from '@/utils/hotkeys';
+import { requestDockVoice } from '@/features/voice/utils/dockVoice';
+import { STANDARD_LAYOUT_ID } from '@/extensions/workspaceLayouts';
 
 // The layout for /project/:projectKey and its children (the work items view and the
 // settings pages). It owns the project data, the view editor and the
@@ -49,8 +52,6 @@ export default function Shell({
   globalHome = false,
   globalTitle,
   autoOpenGlobalChat = true,
-  mobileHeaderOnly = false,
-  hideHeaderOnDesktop = false,
 }: {
   children: ReactNode;
   defaultSidebarOpen?: boolean;
@@ -58,8 +59,6 @@ export default function Shell({
   // The page name on a Home-level page; the header shows it as "Start › page".
   globalTitle?: string;
   autoOpenGlobalChat?: boolean;
-  mobileHeaderOnly?: boolean;
-  hideHeaderOnDesktop?: boolean;
 }) {
   const t = useTranslations('nav');
   const tShell = useTranslations('shell');
@@ -96,15 +95,7 @@ export default function Shell({
   // right under it instead — the same row on every page (owner, 2026-09-24: "mobile
   // muss alles richtig gut aussehen").
   const [pageBarSlot, setPageBarSlot] = useState<HTMLElement | null>(null);
-  const narrow = useMediaQuery('(max-width: 1023px)');
-  const pageSlot =
-    headerLayout === 'single'
-      ? narrow
-        ? pageBarSlot
-        : hideHeaderOnDesktop
-          ? null
-          : headerSlot
-      : null;
+  const pageSlot = headerLayout === 'single' ? pageBarSlot : null;
   const overlays = useOverlays();
   // On the kiosk's two screens the tool panel fills the second one.
   const kiosk = useKioskDisplay();
@@ -123,7 +114,7 @@ export default function Shell({
   const routedTool =
     route.sub === 'code' || route.sub === 'inbox' || route.sub === 'chat'
       ? route.sub
-      : pathname === '/' || pathname === '/chat'
+      : pathname === '/chat'
         ? 'chat'
         : null;
   // How the page and the panel's tools share the room (the header's layout menu).
@@ -183,7 +174,42 @@ export default function Shell({
 
   const openNewIssue = () => addIssue({});
 
-  const toggleCoordinatorChat = () => workspaceLayout.selectTool('chat');
+  const openHomeDock = () => {
+    if (workspaceLayout.chosenId !== STANDARD_LAYOUT_ID) {
+      workspaceLayout.setLayout(STANDARD_LAYOUT_ID);
+    }
+    workspacePanel.setOverlay();
+    workspacePanel.openTool('chat');
+  };
+  const toggleCoordinatorChat = () => {
+    if (workspaceOpen && activeWorkspaceTool === 'chat') workspacePanel.setOpen(false);
+    else openHomeDock();
+  };
+  useEffect(() => {
+    const close = (event: KeyboardEvent) => {
+      if (
+        event.key === 'Escape' &&
+        !overlays.anyOpen &&
+        workspaceOpen &&
+        activeWorkspaceTool === 'chat'
+      ) {
+        workspacePanel.setOpen(false);
+      }
+      if (
+        event.key === ' ' &&
+        !event.repeat &&
+        !isTypingTarget(event.target) &&
+        !overlays.anyOpen &&
+        workspaceOpen &&
+        activeWorkspaceTool === 'chat'
+      ) {
+        event.preventDefault();
+        requestDockVoice();
+      }
+    };
+    window.addEventListener('keydown', close);
+    return () => window.removeEventListener('keydown', close);
+  }, [workspaceOpen, activeWorkspaceTool, workspacePanel, overlays.anyOpen]);
   const [chatThreadRequest, setChatThreadRequest] = useState<ChatThreadRequest | null>(null);
 
   // The issue the palette builds its issue commands for: the open detail panel
@@ -256,118 +282,137 @@ export default function Shell({
     <WebLinksContext.Provider value={webLinks}>
       <ShellCtx.Provider value={context}>
         <ShellHeaderSlotCtx.Provider value={pageSlot}>
-          <SidebarProvider
-            open={navigation.sidebarOpen}
-            onOpenChange={navigation.setSidebarOpen}
-            className="h-svh overflow-hidden"
-            style={{ '--sidebar-width': '248px' } as CSSProperties}
-          >
-            <AppSidebar
-              projects={projects}
-              currentProjectKey={projectKey}
-              onSelectProject={(key) => router.push(navigation.projectDestination(key))}
-              onNewProject={() => overlays.setShowNewProject(true)}
-              onNewView={() => {
-                if (!projectKey) return;
-                editor.beginNewView();
-                if (!route.onBoard) router.push(projectPath(projectKey));
-              }}
-              onEditView={editor.beginEditView}
-              onDeleteView={editor.deleteView}
-            />
-            <SidebarInset className="min-w-0">
-              <AppHeader
-                hideOnDesktop={hideHeaderOnDesktop}
-                className={mobileHeaderOnly ? 'md:hidden' : undefined}
-                title={
-                  globalHome ? (
-                    globalTitle ? (
-                      <HeaderCrumbs
-                        items={[{ label: t('home'), href: '/' }, { label: globalTitle }]}
-                      />
+          <ShellHeaderActionsSlotCtx.Provider value={headerLayout === 'single' ? headerSlot : null}>
+            <SidebarProvider
+              open={navigation.sidebarOpen}
+              onOpenChange={navigation.setSidebarOpen}
+              className="h-svh overflow-hidden"
+              style={{ '--sidebar-width': '248px' } as CSSProperties}
+            >
+              <AppSidebar
+                projects={projects}
+                currentProjectKey={projectKey}
+                onSelectProject={(key) => router.push(navigation.projectDestination(key))}
+                onNewProject={() => overlays.setShowNewProject(true)}
+                onNewView={() => {
+                  if (!projectKey) return;
+                  editor.beginNewView();
+                  if (!route.onBoard) router.push(projectPath(projectKey));
+                }}
+                onEditView={editor.beginEditView}
+                onDeleteView={editor.deleteView}
+                onOpenCommand={() => overlays.setShowCommand(true)}
+                onSelectTool={selectWorkspaceTool}
+                activeTool={workspaceOpen ? activeWorkspaceTool : null}
+              />
+              <SidebarInset className="min-w-0">
+                <AppHeader
+                  title={
+                    globalHome ? (
+                      globalTitle ? (
+                        globalTitle
+                      ) : (
+                        t('home')
+                      )
                     ) : (
-                      t('home')
+                      <ShellHeaderTitle
+                        route={route}
+                        projectName={project?.project.name ?? t('project')}
+                        issueIdentifier={issueQuery.data?.identifier ?? null}
+                        issueParent={issueQuery.data?.parent ?? null}
+                        viewName={views.find((view) => view.id === route.activeViewId)?.name}
+                      />
                     )
-                  ) : (
-                    <ShellHeaderTitle
-                      route={route}
-                      projectName={project?.project.name ?? t('project')}
-                      issueIdentifier={issueQuery.data?.identifier ?? null}
-                      issueParent={issueQuery.data?.parent ?? null}
-                    />
+                  }
+                  titleLead={
+                    !globalHome && route.routeIssueSeq != null && issueQuery.data
+                      ? `${issueQuery.data.identifier} ${issueQuery.data.title}`
+                      : null
+                  }
+                  eyebrow={
+                    globalHome
+                      ? 'HOME'
+                      : `${project?.project.name ?? t('project')} · ${route.sub === 'dashboard' ? t('dashboards') : route.onBoard ? t('workItems') : (route.sub ?? t('project'))}`
+                  }
+                  headerLayout={headerLayout}
+                  headerExtra={null}
+                  pageSlotRef={setHeaderSlot}
+                  pageHidden={!workspaceLayout.resolved.pageVisible}
+                />
+                {headerLayout === 'single' && (
+                  <div
+                    ref={setPageBarSlot}
+                    data-slot="app-page-bar"
+                    className="relative flex h-11 shrink-0 items-center gap-1 border-b border-sidebar-border px-2 empty:hidden sm:px-9 [&:not(:has(>:not(:empty)))]:hidden"
+                  >
+                    <ShellHeaderExtra store={headerExtra} bare />
+                  </div>
+                )}
+
+                <EmergencyStopBanner />
+
+                {errorMsg && !forbidden && (
+                  <div className="border-b border-destructive/50 bg-destructive/10 px-4 py-2 text-sm text-destructive">
+                    {unreachable ? tShell('serverUnreachable') : errorMsg}
+                  </div>
+                )}
+
+                <WorkspaceLayoutHost
+                  layout={workspaceLayout}
+                  projectKey={projectKey}
+                  projectName={project?.project.name}
+                >
+                  <ShellBody
+                    forbidden={forbidden}
+                    hasProject={!!project}
+                    hasError={!!errorMsg}
+                    unreachable={unreachable}
+                    projectsLoaded={projectsLoaded}
+                    projectCount={projects.length}
+                    allowNoProject={globalHome}
+                  >
+                    {children}
+                  </ShellBody>
+                </WorkspaceLayoutHost>
+              </SidebarInset>
+
+              <HomeDock
+                open={workspaceLayout.resolved.shownTools.includes('chat')}
+                onOpen={openHomeDock}
+                onNewIssue={canCreateIssue ? openNewIssue : undefined}
+              />
+              <ProjectLinkSheet currentProjectKey={projectKey} projects={projects} />
+
+              <CommandLayer
+                open={overlays.showCommand}
+                onOpenChange={overlays.setShowCommand}
+                projects={projects}
+                currentProjectKey={projectKey}
+                onBoard={route.onBoard}
+                view={editor.view}
+                currentIssueId={currentIssueId}
+                onViewChange={editor.changeView}
+                onNewIssue={openNewIssue}
+                // Handled by the kanban board's selection provider (mounted only on the
+                // board); the constant matches BOARD_SELECT_ALL_EVENT in useSelection.
+                onSelectAll={() => window.dispatchEvent(new Event('board:select-all'))}
+                onNewInitiative={() => overlays.setShowNewInitiative(true)}
+                onNewProject={() => overlays.setShowNewProject(true)}
+                onSelectProject={(key) =>
+                  window.dispatchEvent(
+                    new CustomEvent('helena:project-link', {
+                      detail: navigation.projectDestination(key),
+                    }),
                   )
                 }
-                titleLead={
-                  !globalHome && route.routeIssueSeq != null && issueQuery.data
-                    ? `${issueQuery.data.identifier} ${issueQuery.data.title}`
-                    : null
-                }
-                hasProject={!!project}
-                onOpenCommand={() => overlays.setShowCommand(true)}
-                onNewIssue={openNewIssue}
-                shownWorkspaceTools={workspaceLayout.resolved.shownTools}
-                onSelectWorkspaceTool={selectWorkspaceTool}
-                headerLayout={headerLayout}
-                headerExtra={narrow ? null : headerExtra}
-                pageSlotRef={hideHeaderOnDesktop && !narrow ? undefined : setHeaderSlot}
-                pageHidden={!workspaceLayout.resolved.pageVisible}
+                onOpenIssue={(seq) => projectKey && router.push(issuePath(projectKey, seq))}
+                onIssueDeleted={onIssueDeleted}
+                onToggleChat={toggleCoordinatorChat}
               />
-              {headerLayout === 'single' && narrow && (
-                <div
-                  ref={setPageBarSlot}
-                  data-slot="app-page-bar"
-                  className="relative flex h-11 shrink-0 items-center gap-1 border-b border-sidebar-border px-2 empty:hidden [&:not(:has(>:not(:empty)))]:hidden"
-                >
-                  <ShellHeaderExtra store={headerExtra} bare />
-                </div>
-              )}
 
-              <EmergencyStopBanner />
-
-              {errorMsg && !forbidden && (
-                <div className="border-b border-destructive/50 bg-destructive/10 px-4 py-2 text-sm text-destructive">
-                  {unreachable ? tShell('serverUnreachable') : errorMsg}
-                </div>
-              )}
-
-              <WorkspaceLayoutHost layout={workspaceLayout} projectKey={projectKey}>
-                <ShellBody
-                  forbidden={forbidden}
-                  hasProject={!!project}
-                  hasError={!!errorMsg}
-                  unreachable={unreachable}
-                  projectsLoaded={projectsLoaded}
-                  projectCount={projects.length}
-                  allowNoProject={globalHome}
-                >
-                  {children}
-                </ShellBody>
-              </WorkspaceLayoutHost>
-            </SidebarInset>
-
-            <CommandLayer
-              open={overlays.showCommand}
-              onOpenChange={overlays.setShowCommand}
-              projects={projects}
-              currentProjectKey={projectKey}
-              onBoard={route.onBoard}
-              view={editor.view}
-              currentIssueId={currentIssueId}
-              onViewChange={editor.changeView}
-              onNewIssue={openNewIssue}
-              // Handled by the kanban board's selection provider (mounted only on the
-              // board); the constant matches BOARD_SELECT_ALL_EVENT in useSelection.
-              onSelectAll={() => window.dispatchEvent(new Event('board:select-all'))}
-              onNewInitiative={() => overlays.setShowNewInitiative(true)}
-              onNewProject={() => overlays.setShowNewProject(true)}
-              onSelectProject={(key) => router.push(navigation.projectDestination(key))}
-              onOpenIssue={(seq) => projectKey && router.push(issuePath(projectKey, seq))}
-              onIssueDeleted={onIssueDeleted}
-              onToggleChat={toggleCoordinatorChat}
-            />
-
-            <ShellOverlays project={project} projectKey={projectKey} overlays={overlays} />
-          </SidebarProvider>
+              <ShellOverlays project={project} projectKey={projectKey} overlays={overlays} />
+            </SidebarProvider>
+          </ShellHeaderActionsSlotCtx.Provider>
         </ShellHeaderSlotCtx.Provider>
       </ShellCtx.Provider>
     </WebLinksContext.Provider>

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
+import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useShell } from '@/context/shellContext';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -17,7 +18,8 @@ import {
   withoutHiddenSections,
   type ViewSettings,
 } from '@/utils/viewSettings';
-import { Check, Pencil, X } from 'lucide-react';
+import { CalendarDays, Check, Pencil, X } from 'lucide-react';
+import { cyclesPath } from '@/utils/paths';
 import ViewIconPicker from '@/components/layout/ViewIconPicker';
 import ViewFolderManager from '@/components/layout/ViewFolderManager';
 import { FilterControl } from '@/components/layout/FilterBar';
@@ -25,6 +27,7 @@ import {
   PageActions,
   PageToolbar,
   PageToolbarSpacer,
+  PAGE_CONTROL_CLASS,
   type PageAction,
 } from '@/components/layout/PageToolbar';
 import { useViewFoldersQuery, useViewsQuery } from '@/services/views.service';
@@ -47,6 +50,7 @@ interface TimelineCollapseState {
 // come from the Shell through React context.
 export default function WorkItemsPage() {
   const t = useTranslations('workItems');
+  const tNav = useTranslations('nav');
   const tCommon = useTranslations('common');
   const { project, filteredProject, editor, customFields, onOpenIssue, onAddIssue } = useShell();
   const { can } = usePermissions();
@@ -191,6 +195,12 @@ export default function WorkItemsPage() {
         customFields={customFields}
         issueTypes={project.issueTypes}
       />
+      {features.cycles && can('cycles', 'read') && (
+        <Link href={cyclesPath(projectKey)} className={PAGE_CONTROL_CLASS}>
+          <CalendarDays size={16} aria-hidden="true" />
+          {tNav('cycles')}
+        </Link>
+      )}
     </>
   );
 
@@ -238,18 +248,20 @@ export default function WorkItemsPage() {
           </>
         ) : (
           <>
-            {editor.activeView && can('views', 'edit') && (
-              <PageActions
-                actions={[
-                  {
-                    id: 'edit-view',
-                    label: t('editView'),
-                    icon: Pencil,
-                    onClick: () => editor.beginEditView(editor.activeView!),
-                  },
-                ]}
-              />
-            )}
+            <PageActions
+              actions={[
+                ...(editor.activeView && can('views', 'edit')
+                  ? [
+                      {
+                        id: 'edit-view',
+                        label: t('editView'),
+                        icon: Pencil,
+                        onClick: () => editor.beginEditView(editor.activeView!),
+                      },
+                    ]
+                  : []),
+              ]}
+            />
             <PageToolbarSpacer />
             {can('views', 'edit') && (
               <ViewFolderManager projectKey={project.project.key} folders={folders} />

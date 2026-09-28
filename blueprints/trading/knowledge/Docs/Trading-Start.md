@@ -22,8 +22,8 @@ Einstieg in das Trading-Projekt: Recherche, Analyse, Backtests, Paper-Trading (n
 - [[Trading-Watchlist]] – beobachtete Werte
 - [[Kapitalerträge 2026]] – Steuer-Dokumentation (keine Steuerberatung)
 
-## Board
-Das Notizen-Board „Strategie-Labor“ zeigt die Pipeline von der Idee bis zum Review.
+## Leinwand
+Die Leinwand „Strategie-Labor“ zeigt die Pipeline von der Idee bis zum Review.
 
 ## Vorlagen
 `Templates/Trading/`: Analyse, Strategie, Backtest, Trade, Tagesbericht, Wochenreview, Monatsreview, Pre-Market-Briefing, Watchlist.

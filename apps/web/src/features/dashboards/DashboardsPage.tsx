@@ -3,10 +3,11 @@
 import { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { Check, LayoutTemplate, Pencil, Plus, Trash2, Undo2 } from 'lucide-react';
+import { Check, LayoutTemplate, Pencil, Plus, Target, Trash2, Undo2 } from 'lucide-react';
 import { useShell } from '@/context/shellContext';
 import { usePermissions } from '@/hooks/usePermissions';
-import { dashboardPath, dashboardsPath } from '@/utils/paths';
+import { dashboardPath, dashboardsPath, initiativesPath } from '@/utils/paths';
+import { useProjectFeatures } from '@/hooks/useProjectFeatures';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   PageActions,
@@ -34,9 +35,11 @@ import ConfirmDialog from '@/components/common/overlay/ConfirmDialog';
 // add a widget, discard, and save or done as the primary action.
 export default function DashboardsPage() {
   const t = useTranslations('dashboards');
+  const tNav = useTranslations('nav');
   const tCommon = useTranslations('common');
   const { project } = useShell();
   const { can } = usePermissions();
+  const features = useProjectFeatures();
   const params = useParams<{ projectKey: string; dashboardId?: string }>();
   const router = useRouter();
   const projectKey = params.projectKey;
@@ -86,6 +89,15 @@ export default function DashboardsPage() {
   }
 
   const layoutActions: PageAction[] = [];
+  if (features.initiatives && can('initiatives', 'read')) {
+    layoutActions.push({
+      id: 'initiatives',
+      label: tNav('initiatives'),
+      icon: Target,
+      href: initiativesPath(projectKey),
+      menuOnly: true,
+    });
+  }
   let primary: Omit<PageAction, 'menuOnly'> | undefined;
   if (canEditLayout && !editing) {
     layoutActions.push({

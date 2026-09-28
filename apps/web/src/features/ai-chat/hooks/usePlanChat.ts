@@ -36,12 +36,14 @@ export function usePlanChat({
   threadId,
   onThreadCreated,
   onError,
+  pageContext,
 }: {
   scopeKey: string;
   agent: AiAgent;
   threadId: string | null;
   onThreadCreated: (threadId: string) => void;
   onError: (error: Error) => void;
+  pageContext?: { projectKey: string | null; path: string };
 }) {
   const client = useQueryClient();
   const [initialThreadId] = useState(threadId);
@@ -140,9 +142,9 @@ export function usePlanChat({
     (text: string, options: PlanSendOptions, metadata: PlanChatMetadata = {}) =>
       chat.sendMessage(
         { text, metadata: { createdAt: new Date().toISOString(), ...metadata } },
-        { body: options },
+        { body: { ...options, ...(pageContext && { context: pageContext }) } },
       ),
-    [chat],
+    [chat, pageContext],
   );
 
   // Stops the answer on the server; its stream then ends by itself with what was

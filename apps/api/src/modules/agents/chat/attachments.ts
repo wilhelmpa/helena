@@ -1,7 +1,7 @@
 import path from 'node:path';
 import { db, issue, project } from '@repo/db';
 import { eq, inArray } from 'drizzle-orm';
-import { checkPermission, type AuthUser } from '#shared/access';
+import { checkPermission, requireProjectAccess, type AuthUser } from '#shared/access';
 import { HttpError } from '#shared/lib';
 import { homeRoot, projectRootOf, vaultDirectory } from '#modules/project-files/roots';
 import { statVaultFile } from '#modules/project-files/service';
@@ -13,7 +13,9 @@ import { canAccess, vaultScope } from '#modules/knowledge/scope';
 // agent reads them from disk, which is why the prompt names them by absolute path.
 export type ChatAttachment =
   | { kind: 'file'; path: string; name: string; contentType: string; sizeBytes: number }
-  | { kind: 'task'; issueId: number; identifier: string; title: string };
+  | { kind: 'task'; issueId: number; identifier: string; title: string }
+  | { kind: 'page'; projectKey: string | null; path: string };
+export type PublicChatAttachment = Exclude<ChatAttachment, { kind: 'page' }>;
 
 export const MAX_ATTACHMENTS = 10;
 
@@ -99,6 +101,31 @@ export async function resolveAttachments(
   return [...resolved, ...(await resolveTasks(user, issueIds))];
 }
 
+export async function resolvePageContext(
+  user: AuthUser,
+  context: { projectKey: string | null; path: string } | undefined,
+): Promise<ChatAttachment[]> {
+  if (!context) return [];
+  const { projectKey, path: pagePath } = context;
+  if (!pagePath.startsWith('/') || pagePath.startsWith('//') || /[\\\r\n\0]/.test(pagePath)) {
+    throw new HttpError(400, 'Invalid page context');
+  }
+  if (projectKey) {
+    await requireProjectAccess(projectKey, user);
+    const projectPath = `/project/${encodeURIComponent(projectKey)}`;
+    if (
+      pagePath !== projectPath &&
+      !pagePath.startsWith(`${projectPath}/`) &&
+      !pagePath.startsWith(`${projectPath}?`)
+    ) {
+      throw new HttpError(400, 'Page context does not match project');
+    }
+  } else if (pagePath.startsWith('/project/')) {
+    throw new HttpError(400, 'Page context needs a project');
+  }
+  return [{ kind: 'page', projectKey, path: pagePath }];
+}
+
 export function absoluteVaultPath(vaultPath: string): string {
   return path.join(vaultDirectory(), vaultPath);
 }
@@ -133,6 +160,11 @@ export function questionText(content: string, attachments: ChatAttachment[] | nu
   if (tasks.length > 0) {
     lines.push('', "Tasks the person refers to (read them with Helena's tools):");
     for (const task of tasks) lines.push(`- ${task.identifier} "${task.title}"`);
+  }
+  const page = attachments.find((attachment) => attachment.kind === 'page');
+  if (page && page.kind === 'page') {
+    lines.push('', `Current Helena page: ${page.path}`);
+    if (page.projectKey) lines.push(`Current project: ${page.projectKey}`);
   }
   return lines.join('\n');
 }

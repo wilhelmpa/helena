@@ -1,4 +1,8 @@
 {
+  "projectLinkHint": "Ce contenu appartient à un autre projet.",
+  "openInProject": "Ouvrir dans le projet",
+  "dockContext": "HOME · CONTEXTE",
+  "dockOpen": "Ouvrir Home (⌘J)",
   "sidebarMyTasks": "My tasks",
   "sidebarOpenTasks": "All open",
   "sidebarSwitchProject": "Switch project",
@@ -27,7 +31,7 @@
   "cycles": "Cycles",
   "documents": "Docs",
   "docs": "Docs",
-  "notes": "Tableaux",
+  "notes": "Toiles",
   "aiTeam": "Équipe IA",
   "aiAgents": "Agents IA",
   "members": "Membres",

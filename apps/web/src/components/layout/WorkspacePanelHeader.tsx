@@ -12,6 +12,7 @@ import {
   X,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
+import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import type { WorkspacePanelMode } from '@/hooks/useWorkspacePanel';
 import { Button } from '@/components/ui/button';
@@ -38,6 +39,9 @@ export default function WorkspacePanelHeader({
   onToggleFull,
   onReload,
   onClose,
+  dockSheet = false,
+  contextProjectKey = null,
+  contextProjectName = null,
 }: {
   title: string;
   advanced: boolean;
@@ -65,11 +69,49 @@ export default function WorkspacePanelHeader({
   onToggleFull: () => void;
   onReload: () => void;
   onClose: () => void;
+  dockSheet?: boolean;
+  contextProjectKey?: string | null;
+  contextProjectName?: string | null;
 }) {
   const t = useTranslations('nav.workspace');
   const tChat = useTranslations('aiChat');
   const tCommon = useTranslations('common');
   const tLayout = useTranslations('nav.layout');
+  const tNav = useTranslations('nav');
+  const pathname = usePathname();
+  const pageSegment = pathname.split('/')[3];
+  const pageLabel =
+    !pageSegment || pageSegment === 'view' || pageSegment === 'issue'
+      ? tNav('workItems')
+      : pageSegment === 'dashboard'
+        ? tNav('dashboards')
+        : pageSegment === 'files'
+          ? tNav('sidebarKnowledge')
+          : pageSegment === 'inbox'
+            ? tNav('inbox')
+            : pageSegment.replaceAll('-', ' ');
+  if (dockSheet) {
+    return (
+      <div className="flex h-[46px] items-center justify-between px-5">
+        <div className="helena-home-context min-w-0 flex-1 truncate !p-0">
+          {tNav('dockContext')}{' '}
+          <strong>
+            {contextProjectName ?? contextProjectKey ?? tNav('home')} › {pageLabel}
+          </strong>
+        </div>
+        <div ref={slotRef} className="hidden" />
+        <Button
+          variant="ghost"
+          size="icon"
+          className="size-7 rounded-full"
+          onClick={onClose}
+          aria-label={tCommon('close')}
+        >
+          <X size={14} />
+        </Button>
+      </div>
+    );
+  }
   return (
     <div className={cn(WORKSPACE_PANEL_HEADER_CLASS, 'gap-1', picker ? 'ps-1.5 pe-3' : 'px-3')}>
       {picker}

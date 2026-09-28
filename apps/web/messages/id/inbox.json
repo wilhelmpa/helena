@@ -38,6 +38,8 @@
     "automation": "Helena"
   },
   "hub": {
+    "scopeProject": "Proyek ini",
+    "scopeAll": "Semua",
     "messages": "Messages",
     "updates": "Updates",
     "loading": "Loading messages…",

@@ -3,7 +3,7 @@
 import type { ComponentProps, ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { cn } from '@/lib/utils';
-import { useShellHeaderSlot } from '@/context/shellHeaderSlot';
+import { useShellHeaderActionsSlot, useShellHeaderSlot } from '@/context/shellHeaderSlot';
 import { Separator } from '@/components/ui/separator';
 
 export const WORKSPACE_HEADER_CLASS = 'flex h-12 shrink-0 items-center border-b';
@@ -39,12 +39,16 @@ export function WorkspacePageHeader({
   contentClassName?: string;
 }) {
   const slot = useShellHeaderSlot();
+  const actionsSlot = useShellHeaderActionsSlot();
   if (slot) {
     return (
       <>
         <h1 className="sr-only">{title}</h1>
         {actions
-          ? createPortal(<div className="flex shrink-0 items-center gap-2">{actions}</div>, slot)
+          ? createPortal(
+              <div className="flex shrink-0 items-center gap-2">{actions}</div>,
+              actionsSlot ?? slot,
+            )
           : null}
       </>
     );

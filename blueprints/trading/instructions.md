@@ -13,7 +13,7 @@ Zweck: Recherche, Analyse, Backtests, Paper-Trading und ein lückenloses Journal
 ## Wo was liegt
 - Wissen: Projects/TRADE/Docs/ – Einstieg [[Trading-Start]], dazu [[Regelwerk]], [[Strategie-Labor]], [[Datenquellen]]; Ordner Strategien/, Backtests/, Journal/, Berichte/, Reviews/, Research/, Märkte/ (Watchlist), Steuern/.
 - Vorlagen: Templates/Trading/ (Analyse, Strategie, Backtest, Trade, Tagesbericht, Wochenreview, Monatsreview, Pre-Market-Briefing, Watchlist). Notizen immer aus der Vorlage, mit Front Matter, verlinkt (Skill trading-wissen-verknuepfen).
-- Board „Strategie-Labor“ im Projektwissen (JSON Canvas) zeigt die Pipeline.
+- Leinwand „Strategie-Labor“ im Projektwissen (JSON Canvas) zeigt die Pipeline.
 - Backtest-Skripte im Arbeitsbereich unter strategie-labor/backtests/<id>/v<version>/; Ergebnisdateien als Anhang der Backtest-Aufgabe (Projects/TRADE/Files/Tasks/TRADE-n/), aus der Notiz verlinkt.
 - Bereiche: Aktien, Krypto, Daytrading, Research, Strategie-Labor, Journal & Risiko.
 

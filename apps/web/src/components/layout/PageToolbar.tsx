@@ -9,11 +9,13 @@ import {
   type ComponentProps,
   type ReactNode,
 } from 'react';
+import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import type { LucideIcon } from 'lucide-react';
 import { Check, ChevronDown, MoreHorizontal, Search, TextSearch, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
+import { useShellHeaderActionsSlot } from '@/context/shellHeaderSlot';
 import { ShellHeaderRow } from '@/components/layout/WorkspaceHeader';
 import {
   DropdownMenu,
@@ -78,6 +80,7 @@ const roomFor = (level: number, width: number): Room => ({
   tabs: level < 4,
 });
 const RoomCtx = createContext<Room>(roomFor(0, 0));
+const ToolbarScopeCtx = createContext(false);
 
 // For a page's own control in the toolbar (a sort menu, a select): whether it still has
 // room for its label (`actions`) or should show its icon alone.
@@ -116,7 +119,9 @@ export function PageToolbar({ children }: { children: ReactNode }) {
   return (
     <ShellHeaderRow className="gap-1 bg-background px-3">
       <div ref={setNode} className="flex min-w-0 flex-1 items-center gap-1 overflow-hidden">
-        <RoomCtx.Provider value={roomFor(level, width)}>{children}</RoomCtx.Provider>
+        <RoomCtx.Provider value={roomFor(level, width)}>
+          <ToolbarScopeCtx.Provider value>{children}</ToolbarScopeCtx.Provider>
+        </RoomCtx.Provider>
       </div>
     </ShellHeaderRow>
   );
@@ -414,9 +419,16 @@ export function PageActions({
 }) {
   const t = useTranslations('common');
   const room = useContext(RoomCtx);
-  const inRow = room.actions ? actions.filter((action) => !action.menuOnly) : [];
-  const inMenu = room.actions ? actions.filter((action) => action.menuOnly) : actions;
-  return (
+  const inToolbar = useContext(ToolbarScopeCtx);
+  const actionsSlot = useShellHeaderActionsSlot();
+  const visibleAction = primary
+    ? null
+    : room.actions
+      ? actions.find((action) => !action.menuOnly)
+      : null;
+  const inRow = visibleAction ? [visibleAction] : [];
+  const inMenu = actions.filter((action) => action !== visibleAction);
+  const controls = (
     <div className="flex shrink-0 items-center gap-0.5">
       {inRow.map((action) => (
         <Tooltip key={action.id}>
@@ -465,6 +477,7 @@ export function PageActions({
       ) : null}
     </div>
   );
+  return inToolbar && actionsSlot ? createPortal(controls, actionsSlot) : controls;
 }
 
 // Also a TooltipTrigger's child: Radix passes its ref and its own handlers through

@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState, type KeyboardEvent } from 'react';
+import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { useTranslations } from 'next-intl';
 import { RefreshCw, Square } from 'lucide-react';
 import { toast } from 'sonner';
@@ -23,6 +23,7 @@ import ConversationBar from '@/features/voice/components/ConversationBar';
 import ConversationButton from '@/features/voice/components/ConversationButton';
 import { useDictation } from '@/features/voice/hooks/useDictation';
 import type { Conversation } from '@/features/voice/hooks/useConversation';
+import { listenDockVoice } from '@/features/voice/utils/dockVoice';
 import { useVaultUpload } from '../../hooks/useVaultUpload';
 import { useChatPrompts } from '../../hooks/useChatPrompts';
 import { useChatListMutations } from '../../hooks/useChatList';
@@ -79,6 +80,7 @@ export interface ChatComposerProps {
   onAutoSpeakChange: (on: boolean) => void;
   // The hands-free conversation mode (features/voice).
   conversation: Conversation;
+  dockSheet?: boolean;
   threadId: string | null;
   projectKey: string | null;
   // Where a new chat's text is kept while its agent is still being picked.
@@ -128,6 +130,7 @@ export default function ChatComposer({
   autoSpeak,
   onAutoSpeakChange,
   conversation,
+  dockSheet = false,
   threadId,
   projectKey,
   draft,
@@ -148,6 +151,10 @@ export default function ChatComposer({
 }: ChatComposerProps) {
   const t = useTranslations('chatWorkspace');
   const homeName = homeLanding && agent.name === 'Helena' ? 'Home' : agent.name;
+  useEffect(() => {
+    if (!dockSheet) return;
+    return listenDockVoice(() => void conversation.start());
+  }, [dockSheet, conversation]);
   const [value, setStoredValue] = useState(() => draft?.current ?? '');
   const setValue = (next: string) => {
     setStoredValue(next);

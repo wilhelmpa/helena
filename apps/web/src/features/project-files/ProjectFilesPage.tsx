@@ -47,11 +47,12 @@ function LegacyBoard({
 
 export default function ProjectFilesPage() {
   const t = useTranslations('files');
+  const tNav = useTranslations('nav');
   const navigation = useFileNavigationGuard();
   const { projectKey } = useParams<{ projectKey: string }>();
   const params = useSearchParams();
   const router = useRouter();
-  const { can } = usePermissions();
+  const { can, isAdmin } = usePermissions();
   const features = useProjectFeatures();
   const boardView = params.get('view') === 'boards';
   const root: ProjectFileRoot = params.get('root') === 'code' ? 'code' : 'vault';

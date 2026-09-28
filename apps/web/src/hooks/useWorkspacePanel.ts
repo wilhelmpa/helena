@@ -151,6 +151,10 @@ export function useWorkspacePanel({
       return next;
     });
   }, []);
+  const setOverlay = useCallback(() => {
+    setMode('overlay');
+    write(MODE_KEY, 'overlay');
+  }, []);
 
   return {
     open: pinned || open,
@@ -162,5 +166,6 @@ export function useWorkspacePanel({
     openTool,
     toggleTool,
     toggleMode,
+    setOverlay,
   };
 }

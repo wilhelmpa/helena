@@ -23,7 +23,7 @@
     "workflow_config": "Workflow configuration",
     "actions": "Actions",
     "webhooks": "Webhooks",
-    "note_boards": "Note boards",
+    "note_boards": "Canvases",
     "danger_zone": "Danger zone"
   },
   "actions": {

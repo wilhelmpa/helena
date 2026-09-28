@@ -2,6 +2,7 @@
 
 import { useMemo, type CSSProperties, type ReactNode } from 'react';
 import { useTranslations } from 'next-intl';
+import { usePathname } from 'next/navigation';
 import { Direction } from 'radix-ui';
 import type { WorkspaceLayoutState } from '@/hooks/useWorkspaceLayout';
 import { usePersistedWidth } from '@/hooks/usePersistedWidth';
@@ -35,14 +36,17 @@ const PAGE_MIN_WIDTH = 400;
 export default function WorkspaceLayoutHost({
   layout,
   projectKey,
+  projectName,
   children,
 }: {
   layout: WorkspaceLayoutState;
   projectKey: string | null;
+  projectName?: string | null;
   // The page.
   children: ReactNode;
 }) {
   const t = useTranslations('nav.layout');
+  const pathname = usePathname();
   const tChat = useTranslations('aiChat');
   const direction = Direction.useDirection();
   const { resolved, panel, phone, dual, context } = layout;
@@ -61,6 +65,12 @@ export default function WorkspaceLayoutHost({
     DOCK_MAX_WIDTH,
   );
   const overlay = resolved.closable && (phone || panel.mode === 'overlay');
+  const dockSheet =
+    overlay &&
+    panel.open &&
+    resolved.shownTools.includes('chat') &&
+    panel.activeTool === 'chat' &&
+    pathname !== '/';
   const geometry = layoutGeometry({
     resolved,
     overlay,
@@ -121,6 +131,7 @@ export default function WorkspaceLayoutHost({
       <WorkspacePanel
         areas={toolAreas}
         contextProjectKey={projectKey}
+        contextProjectName={projectName}
         toolSession={panel.toolSession}
         mode={panel.mode}
         overlay={overlay}
@@ -131,6 +142,7 @@ export default function WorkspaceLayoutHost({
         onPickTool={layout.pickTool}
         onCloseArea={layout.closeArea}
         onClose={() => panel.setOpen(false)}
+        dockSheet={dockSheet}
       />
 
       {dockGrips.map((area) => (

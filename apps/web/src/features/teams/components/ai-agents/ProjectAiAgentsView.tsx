@@ -18,6 +18,8 @@ import { AgentSectionProvider } from '../../context/agentSection';
 import ProjectAgentTemplateDialog from './ProjectAgentTemplateDialog';
 import ProjectAiAgents from './ProjectAiAgents';
 import { TeamAiAgentSheet } from './TeamAiAgentSheet';
+import { workflowsPath } from '@/utils/paths';
+import { usePermissions } from '@/hooks/usePermissions';
 
 const section = AI_AGENTS_SECTION;
 

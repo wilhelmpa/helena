@@ -60,7 +60,7 @@
       "dashboards": "Gráficos e métricas em dashboards salvos.",
       "initiatives": "Grupos de issues acompanhados como uma peça de trabalho.",
       "cycles": "Períodos delimitados de trabalho nos quais as issues são planejadas.",
-      "notes": "Quadros livres de notas adesivas.",
+      "notes": "Telas livres para notas adesivas.",
       "subtasks": "Issues detalhadas em subtarefas sob um pai.",
       "checklists": "Listas de passos acompanhados dentro de uma issue.",
       "issueStats": "Quanto tempo uma issue passou em cada estado.",

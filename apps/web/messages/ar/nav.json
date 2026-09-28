@@ -1,4 +1,8 @@
 {
+  "projectLinkHint": "ينتمي هذا المحتوى إلى مشروع آخر.",
+  "openInProject": "افتح في المشروع",
+  "dockContext": "HOME · السياق",
+  "dockOpen": "افتح Home (⌘J)",
   "sidebarMyTasks": "My tasks",
   "sidebarOpenTasks": "All open",
   "sidebarSwitchProject": "Switch project",
@@ -25,7 +29,7 @@
   "allWorkItems": "كل عناصر العمل (work items)",
   "initiatives": "المبادرات (initiatives)",
   "cycles": "الدورات (cycles)",
-  "notes": "اللوحات",
+  "notes": "لوحات فنية",
   "documents": "Docs",
   "docs": "Docs",
   "aiTeam": "فريق الذكاء الاصطناعي",
