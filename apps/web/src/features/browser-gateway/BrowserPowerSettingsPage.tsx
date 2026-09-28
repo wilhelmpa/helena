@@ -83,7 +83,9 @@ export default function BrowserPowerSettingsPage() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {(IDLE_MINUTES as readonly number[]).includes(current.idleMinutes) ? null : (
+                        {(IDLE_MINUTES as readonly number[]).includes(
+                          current.idleMinutes,
+                        ) ? null : (
                           <SelectItem value={String(current.idleMinutes)}>
                             {t('minutes', { count: current.idleMinutes })}
                           </SelectItem>

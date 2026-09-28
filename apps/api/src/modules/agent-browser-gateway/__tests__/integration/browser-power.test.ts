@@ -44,11 +44,19 @@ describe('browser power settings', () => {
       alwaysOnProjectIds: [mkt.id],
     });
     expect(saved.status).toBe(200);
-    expect(saved.data).toEqual({ idleMinutes: 30, alwaysOnProjectIds: [mkt.id], homeAlwaysOn: false });
+    expect(saved.data).toEqual({
+      idleMinutes: 30,
+      alwaysOnProjectIds: [mkt.id],
+      homeAlwaysOn: false,
+    });
 
     // A partial update keeps the rest.
     const home = await asOwner.god['browser-power'].put({ homeAlwaysOn: true });
-    expect(home.data).toEqual({ idleMinutes: 30, alwaysOnProjectIds: [mkt.id], homeAlwaysOn: true });
+    expect(home.data).toEqual({
+      idleMinutes: 30,
+      alwaysOnProjectIds: [mkt.id],
+      homeAlwaysOn: true,
+    });
     expect((await asOwner.god['browser-power'].get()).data).toEqual(home.data!);
   });
 
@@ -86,15 +94,21 @@ describe('browser power settings', () => {
     expect((await routerRead('x'.repeat(48))).status).toBe(401);
     const res = await routerRead();
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({ schemaVersion: 1, idleMinutes: 5, alwaysOn: ['home', 'mkt'] });
+    expect(await res.json()).toEqual({
+      schemaVersion: 1,
+      idleMinutes: 5,
+      alwaysOn: ['home', 'mkt'],
+    });
   });
 
   it('keeps a stored value it cannot use from reaching the router', () => {
-    expect(sanitizeBrowserPower({ idleMinutes: 'x', alwaysOnProjectIds: [3, 3, -1, 'a'] })).toEqual({
-      idleMinutes: 15,
-      alwaysOnProjectIds: [3],
-      homeAlwaysOn: false,
-    });
+    expect(sanitizeBrowserPower({ idleMinutes: 'x', alwaysOnProjectIds: [3, 3, -1, 'a'] })).toEqual(
+      {
+        idleMinutes: 15,
+        alwaysOnProjectIds: [3],
+        homeAlwaysOn: false,
+      },
+    );
     expect(
       alwaysOnSlugs({ idleMinutes: 15, alwaysOnProjectIds: [1, 2, 7], homeAlwaysOn: false }, [
         { id: 1, key: 'VOL' },

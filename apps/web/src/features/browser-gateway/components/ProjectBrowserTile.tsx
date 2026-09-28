@@ -31,42 +31,43 @@ export default function ProjectBrowserTile({
   // A project browser runs on demand: one nobody used for a while is stopped, and opening it
   // starts it again. That is not "unreachable".
   const power = state?.power;
-  const status = power === 'stopped' || power === 'stopping' ? (
-    <>
-      <Moon className="size-3.5 shrink-0" />
-      <span className="truncate">{t('stopped')}</span>
-    </>
-  ) : power === 'starting' ? (
-    <>
-      <Loader2 className="size-3.5 shrink-0 animate-spin" />
-      <span className="truncate">{t('starting')}</span>
-    </>
-  ) : !state?.reachable ? (
-    <>
-      <CircleSlash className="size-3.5 shrink-0" />
-      <span className="truncate">{t('unreachable')}</span>
-    </>
-  ) : control?.by === 'agent' ? (
-    <>
-      <Bot className="size-3.5 shrink-0" />
-      <span className="truncate">
-        {control.locked && control.agentName
-          ? t('controlledByAgent', { agentName: control.agentName })
-          : t('agentActive')}
-        {since && ` · ${since}`}
-      </span>
-    </>
-  ) : control?.by === 'owner' ? (
-    <>
-      <UserRound className="size-3.5 shrink-0" />
-      <span className="truncate">
-        {t('controlledByOwner')}
-        {since && ` · ${since}`}
-      </span>
-    </>
-  ) : (
-    <span className="truncate">{t('free')}</span>
-  );
+  const status =
+    power === 'stopped' || power === 'stopping' ? (
+      <>
+        <Moon className="size-3.5 shrink-0" />
+        <span className="truncate">{t('stopped')}</span>
+      </>
+    ) : power === 'starting' ? (
+      <>
+        <Loader2 className="size-3.5 shrink-0 animate-spin" />
+        <span className="truncate">{t('starting')}</span>
+      </>
+    ) : !state?.reachable ? (
+      <>
+        <CircleSlash className="size-3.5 shrink-0" />
+        <span className="truncate">{t('unreachable')}</span>
+      </>
+    ) : control?.by === 'agent' ? (
+      <>
+        <Bot className="size-3.5 shrink-0" />
+        <span className="truncate">
+          {control.locked && control.agentName
+            ? t('controlledByAgent', { agentName: control.agentName })
+            : t('agentActive')}
+          {since && ` · ${since}`}
+        </span>
+      </>
+    ) : control?.by === 'owner' ? (
+      <>
+        <UserRound className="size-3.5 shrink-0" />
+        <span className="truncate">
+          {t('controlledByOwner')}
+          {since && ` · ${since}`}
+        </span>
+      </>
+    ) : (
+      <span className="truncate">{t('free')}</span>
+    );
 
   return (
     <Link
