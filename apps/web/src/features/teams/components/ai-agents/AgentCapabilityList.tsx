@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
+import { SettingsGroup, SettingsRow } from '@/design-system';
 import { useTranslations } from 'next-intl';
 import { groupInOrder } from '../../utils/agentForm';
 import { AgentListSearch, SEARCH_THRESHOLD } from './AgentListSearch';
@@ -39,41 +40,30 @@ export function AgentCapabilityList({
   }, [items, query]);
 
   return (
-    <div className="space-y-2">
+    <div className="ds-capability-list">
       {items.length > SEARCH_THRESHOLD && (
         <AgentListSearch value={query} onChange={setQuery} placeholder={searchPlaceholder} />
       )}
 
-      <div className="max-h-72 space-y-4 overflow-y-auto pe-1">
-        {groups.length === 0 ? (
-          <p className="py-4 text-center text-xs text-muted-foreground">
-            {t('noMatch', { query: query.trim() })}
-          </p>
-        ) : (
-          groups.map(([group, groupItems]) => (
-            <div key={group} className="space-y-1.5">
-              {group && (
-                <p className="text-xs font-medium tracking-wide text-muted-foreground">{group}</p>
-              )}
-              {groupItems.map((item) => (
-                <label key={item.id} className="flex cursor-pointer items-start gap-2">
-                  <Checkbox
-                    className="mt-0.5"
-                    checked={item.checked}
-                    onCheckedChange={(v) => onToggle(item.id, v === true)}
-                  />
-                  <span>
-                    <span className="text-sm">{item.title}</span>
-                    {item.subtitle && (
-                      <span className="block text-xs text-muted-foreground">{item.subtitle}</span>
-                    )}
-                  </span>
-                </label>
-              ))}
-            </div>
-          ))
-        )}
-      </div>
+      {groups.length === 0 ? (
+        <p className="py-4 text-center text-xs text-muted-foreground">
+          {t('noMatch', { query: query.trim() })}
+        </p>
+      ) : (
+        groups.map(([group, groupItems]) => (
+          <SettingsGroup key={group} title={group || undefined}>
+            {groupItems.map((item) => (
+              <SettingsRow key={item.id} label={item.title} description={item.subtitle}>
+                <Switch
+                  aria-label={item.title}
+                  checked={item.checked}
+                  onCheckedChange={(v) => onToggle(item.id, v)}
+                />
+              </SettingsRow>
+            ))}
+          </SettingsGroup>
+        ))
+      )}
     </div>
   );
 }

@@ -676,7 +676,8 @@
         "chatReflectionNothing": "Rien retenu",
         "chatReflectionMemory": "Mémoire ({target})",
         "chatReflectionSkill": "Compétence {target}",
-        "chatReflectionWhen": "Quand"
+        "chatReflectionWhen": "Quand",
+        "groupTitle": "Apprentissage"
       },
       "skillEnabled": "{name} activée",
       "skillsDisabled": "désactivées : {count}",
@@ -844,7 +845,7 @@
         "autopilot": "Pilote automatique et budget",
         "runtime-policy": "Modèle et comportement",
         "triggers": "Déclencheurs",
-        "heartbeat": "Pulsation",
+        "heartbeat": "Battement",
         "abilities": "Outils et mémoire",
         "skills": "Compétences",
         "tools": "Outils personnalisés",
@@ -855,7 +856,22 @@
       },
       "general": "Général",
       "generalHint": "Nom, consignes et ce avec quoi l’agent travaille.",
-      "execution": "Exécution"
+      "execution": "Exécution",
+      "hints": {
+        "general": "Nom, consignes et ce avec quoi l’agent travaille.",
+        "projects": "Les projets dans lesquels l’agent travaille.",
+        "autopilot": "Son autonomie et ce qu’il peut dépenser.",
+        "runtime-policy": "Combien de discussions à la fois et quels modèles de secours ; réglages fins sous « Avancé ».",
+        "triggers": "Ce qui lance une exécution : une mention, une délégation ou un champ.",
+        "heartbeat": "Vérifie à intervalle fixe s’il y a quelque chose à faire et ne lance une exécution qu’alors.",
+        "abilities": "Ce qu’il apprend et les outils qu’il peut utiliser.",
+        "skills": "Des instructions réutilisables qu’il peut charger.",
+        "tools": "Des outils personnalisés qu’il peut appeler.",
+        "access": "Qui peut faire tourner son runner.",
+        "environment": "Les variables que reçoivent ses exécutions.",
+        "token": "La clé avec laquelle un runner externe se connecte.",
+        "runner": "Où il tourne et comment le démarrer."
+      }
     },
     "overview": {
       "capabilities": "Compétences",

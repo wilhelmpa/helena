@@ -1,5 +1,6 @@
 import { useContext, type ReactNode } from 'react';
-import { AgentFormPageModeCtx } from './agentFormPages';
+import { useTranslations } from 'next-intl';
+import { AgentFormPageModeCtx, useAgentDialog } from './agentFormPages';
 import { ChevronRight, type LucideIcon } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
@@ -30,14 +31,18 @@ export function AgentFormSection({
 }) {
   // A page of the agent dialog: the section is the page, with its title as the page's
   // heading and the fields always shown.
+  // Its heading is the page's name in the dialog's list, so both read the same.
   const pageMode = useContext(AgentFormPageModeCtx);
+  const dialog = useAgentDialog();
+  const tPages = useTranslations('teams.agents.pages');
   if (pageMode) {
+    const page = dialog?.page;
     return (
       <section className="ds-agent-page">
         <header className="ds-agent-page-head">
           <div>
-            <h2>{title}</h2>
-            {hint && <p>{hint}</p>}
+            <h2>{page ? tPages(`items.${page}`) : title}</h2>
+            {page ? <p>{tPages(`hints.${page}`)}</p> : hint && <p>{hint}</p>}
           </div>
           {headerRight && <span className="ds-agent-page-count">{headerRight}</span>}
         </header>

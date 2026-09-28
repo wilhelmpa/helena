@@ -676,7 +676,8 @@
         "chatReflectionNothing": "Nothing kept",
         "chatReflectionMemory": "Memory ({target})",
         "chatReflectionSkill": "Skill {target}",
-        "chatReflectionWhen": "When"
+        "chatReflectionWhen": "When",
+        "groupTitle": "Learning"
       },
       "skillEnabled": "{name} on",
       "skillsDisabled": "{count} off",
@@ -855,7 +856,22 @@
       },
       "general": "General",
       "generalHint": "Name, instructions and what the agent runs on.",
-      "execution": "Execution"
+      "execution": "Execution",
+      "hints": {
+        "general": "Name, instructions and what the agent runs on.",
+        "projects": "Which projects the agent works in.",
+        "autopilot": "How independently it acts and what it may spend.",
+        "runtime-policy": "How many chats at once and which fallback models; fine-tuning under “Advanced”.",
+        "triggers": "What starts a run: a mention, a delegation or a field.",
+        "heartbeat": "Checks at a fixed interval whether there is something to do and only then starts a run.",
+        "abilities": "What it learns and which tools it may use.",
+        "skills": "Reusable instructions it can load.",
+        "tools": "Custom tools it may call.",
+        "access": "Who may run its runner.",
+        "environment": "Variables its runs receive.",
+        "token": "The key an external runner signs in with.",
+        "runner": "Where it runs and how you start it."
+      }
     },
     "overview": {
       "capabilities": "Capabilities",

@@ -676,7 +676,8 @@
         "chatReflectionNothing": "没有记录内容",
         "chatReflectionMemory": "记忆（{target}）",
         "chatReflectionSkill": "技能 {target}",
-        "chatReflectionWhen": "何时"
+        "chatReflectionWhen": "何时",
+        "groupTitle": "学习"
       },
       "skillEnabled": "启用 {name}",
       "skillsDisabled": "已停用 {count} 个",
@@ -855,7 +856,22 @@
       },
       "general": "常规",
       "generalHint": "名称、指令以及代理的运行方式。",
-      "execution": "执行"
+      "execution": "执行",
+      "hints": {
+        "general": "名称、指令以及代理的运行方式。",
+        "projects": "代理在哪些项目中工作。",
+        "autopilot": "它的自主程度以及可以花费多少。",
+        "runtime-policy": "同时多少个对话以及备用模型；细节设置在“高级”中。",
+        "triggers": "什么会启动运行：提及、委派或字段。",
+        "heartbeat": "按固定间隔检查是否有事可做，只有这时才启动运行。",
+        "abilities": "它学习什么以及可以使用哪些工具。",
+        "skills": "它可以加载的可复用指令。",
+        "tools": "它可以调用的自定义工具。",
+        "access": "谁可以运行它的运行器。",
+        "environment": "它的运行会收到的变量。",
+        "token": "外部运行器用来登录的密钥。",
+        "runner": "它在哪里运行以及如何启动。"
+      }
     },
     "overview": {
       "capabilities": "能力",

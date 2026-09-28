@@ -676,7 +676,8 @@
         "chatReflectionNothing": "Tidak ada yang disimpan",
         "chatReflectionMemory": "Memori ({target})",
         "chatReflectionSkill": "Skill {target}",
-        "chatReflectionWhen": "Kapan"
+        "chatReflectionWhen": "Kapan",
+        "groupTitle": "Belajar"
       },
       "skillEnabled": "{name} aktif",
       "skillsDisabled": "{count} nonaktif",
@@ -855,7 +856,22 @@
       },
       "general": "Umum",
       "generalHint": "Nama, instruksi, dan dengan apa agen bekerja.",
-      "execution": "Eksekusi"
+      "execution": "Eksekusi",
+      "hints": {
+        "general": "Nama, instruksi, dan dengan apa agen bekerja.",
+        "projects": "Proyek tempat agen bekerja.",
+        "autopilot": "Seberapa mandiri ia bertindak dan berapa yang boleh dibelanjakan.",
+        "runtime-policy": "Berapa obrolan sekaligus dan model cadangan; penyetelan di “Lanjutan”.",
+        "triggers": "Apa yang memulai proses: sebutan, delegasi, atau kolom.",
+        "heartbeat": "Memeriksa pada interval tetap apakah ada yang perlu dikerjakan, dan hanya saat itu memulai run.",
+        "abilities": "Apa yang dipelajari dan alat yang boleh dipakai.",
+        "skills": "Instruksi yang dapat dipakai ulang dan dimuat.",
+        "tools": "Alat khusus yang boleh dipanggil.",
+        "access": "Siapa yang boleh menjalankan runner-nya.",
+        "environment": "Variabel yang diterima prosesnya.",
+        "token": "Kunci yang dipakai runner eksternal untuk masuk.",
+        "runner": "Di mana ia berjalan dan cara memulainya."
+      }
     },
     "overview": {
       "capabilities": "Kemampuan",

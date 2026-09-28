@@ -676,7 +676,8 @@
         "chatReflectionNothing": "Nada guardado",
         "chatReflectionMemory": "Memória ({target})",
         "chatReflectionSkill": "Habilidade {target}",
-        "chatReflectionWhen": "Quando"
+        "chatReflectionWhen": "Quando",
+        "groupTitle": "Aprendizado"
       },
       "skillEnabled": "{name} ativada",
       "skillsDisabled": "desativadas: {count}",
@@ -855,7 +856,22 @@
       },
       "general": "Geral",
       "generalHint": "Nome, instruções e com o que o agente trabalha.",
-      "execution": "Execução"
+      "execution": "Execução",
+      "hints": {
+        "general": "Nome, instruções e com o que o agente trabalha.",
+        "projects": "Em quais projetos o agente trabalha.",
+        "autopilot": "Quão autônomo ele age e quanto pode gastar.",
+        "runtime-policy": "Quantos chats ao mesmo tempo e quais modelos reserva; ajustes finos em “Avançado”.",
+        "triggers": "O que inicia uma execução: uma menção, uma delegação ou um campo.",
+        "heartbeat": "Verifica em intervalos fixos se há algo a fazer e só então inicia uma execução.",
+        "abilities": "O que aprende e quais ferramentas pode usar.",
+        "skills": "Instruções reutilizáveis que ele pode carregar.",
+        "tools": "Ferramentas próprias que ele pode chamar.",
+        "access": "Quem pode operar seu runner.",
+        "environment": "Variáveis que suas execuções recebem.",
+        "token": "A chave com que um runner externo se autentica.",
+        "runner": "Onde ele roda e como iniciá-lo."
+      }
     },
     "overview": {
       "capabilities": "Capacidades",

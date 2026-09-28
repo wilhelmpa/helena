@@ -43,7 +43,7 @@ export default function AgentLearningSettings({
   ] as const;
 
   return (
-    <SettingsGroup title={t('title')} description={canEdit ? t('hint') : t('readOnly')}>
+    <SettingsGroup title={t('groupTitle')} description={canEdit ? t('hint') : t('readOnly')}>
       {rows.map((row) => (
         <SettingsRow key={row.key} label={row.label} description={row.hint}>
           {canEdit ? (
@@ -65,7 +65,7 @@ export default function AgentLearningSettings({
               onChange({ ...policy, reflection: value as AgentRuntimePolicy['reflection'] })
             }
           >
-            <SelectTrigger className="w-44 shrink-0" aria-label={t('reflectionTitle')}>
+            <SelectTrigger className="w-60 shrink-0" aria-label={t('reflectionTitle')}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

@@ -1480,6 +1480,14 @@ a.ds-run-card:hover {
   text-transform: uppercase;
 }
 /* "3 weitere Dateien in diesem Ordner →": the way between Wissen and Dateien. */
+.ds-capability-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.ds-capability-list > .ds-settings-group + .ds-settings-group {
+  margin-top: 0;
+}
 .ds-knowledge-others {
   align-self: flex-start;
   margin: var(--space-2) 14px 0;
