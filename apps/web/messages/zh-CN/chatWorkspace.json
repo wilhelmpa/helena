@@ -168,15 +168,6 @@
     "hint": "在输入框左下角选择智能体——它的状态也显示在那里。"
   },
   "agents": {
-    "status": {
-      "running": "工作中",
-      "waiting": "等待你处理",
-      "ready": "就绪",
-      "offline": "离线",
-      "never": "从未连接",
-      "paused": "已暂停",
-      "template": "模板——添加到项目后才能与其对话"
-    },
     "runtimeExternal": "外部",
     "switch": "正在与 {agent} 对话——与其他智能体开始新对话",
     "newChatWith": "新对话，对象…"
@@ -204,12 +195,6 @@
     "stop": "停止回答",
     "jev": "Optional Jev first stage for this chat"
   },
-  "activity": {
-    "thinking": "{agent} 正在思考…",
-    "writing": "{agent} 正在撰写…",
-    "queued": "正在等待 {agent}——它的运行器离线。运行器恢复后开始回答。",
-    "usingTool": "{agent} 正在使用 {tool} …"
-  },
   "session": {
     "copy": "复制会话 ID",
     "copied": "已复制会话 ID",
@@ -222,15 +207,6 @@
     "interrupt": "打断",
     "end": "结束",
     "heard": "“{text}”",
-    "phase": {
-      "starting": "正在打开麦克风 …",
-      "listening": "我在听——直接说吧。",
-      "hearing": "正在听你说 …",
-      "transcribing": "正在记录 …",
-      "thinking": "{agent} 马上回答 …",
-      "speaking": "{agent} 正在说话——开口即可打断",
-      "speakingTap": "{agent} 正在说话"
-    },
     "where": {
       "listenLocal": "语音识别：本机上的 Whisper",
       "listenBrowser": "语音识别：浏览器（Chrome 和 Safari 会把录音发送给 Google 或 Apple）",

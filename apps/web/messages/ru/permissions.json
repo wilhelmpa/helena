@@ -23,7 +23,7 @@
     "workflow_config": "Настройки рабочего процесса",
     "actions": "Действия",
     "webhooks": "Вебхуки",
-    "note_boards": "Доски заметок",
+    "note_boards": "Холсты заметок",
     "danger_zone": "Опасная зона"
   },
   "actions": {

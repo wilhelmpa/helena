@@ -3,9 +3,20 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ChevronsUpDown, Info, LogOut, OctagonX, Play } from 'lucide-react';
+import {
+  ChevronsUpDown,
+  Info,
+  Languages,
+  LogOut,
+  Moon,
+  OctagonX,
+  Play,
+  Sun,
+  UserRound,
+} from 'lucide-react';
 import { toast } from 'sonner';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
+import { useTheme } from 'next-themes';
 import { signOut, useSession } from '@/lib/auth-client';
 import { ACCOUNT_SECTIONS, accountPath } from '@/utils/accountSections';
 import { useAccountSectionLabel } from '@/hooks/useSectionLabels';
@@ -19,11 +30,16 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { EmergencyStopDialog } from '@/features/agent-runtime/components/EmergencyStop';
+import { LOCALES, LOCALE_FLAGS, LOCALE_LABELS, type Locale } from '@/i18n/locales';
+import { useUpdateAccountPreferences } from '@/services/preferences.service';
 import {
   useEmergencyStop,
   useSetEmergencyStop,
@@ -44,6 +60,9 @@ export default function UserMenu({ variant = 'avatar' }: { variant?: 'avatar' | 
   // The instance role in words ('god' is the Administrator), never the raw value.
   const tUsers = useTranslations('god.users');
   const tCommon = useTranslations('common');
+  const locale = useLocale();
+  const { resolvedTheme, setTheme } = useTheme();
+  const updatePreferences = useUpdateAccountPreferences();
   const sectionLabel = useAccountSectionLabel();
   const router = useRouter();
   const tStop = useTranslations('agentRuntime.emergencyStop');
@@ -134,14 +153,53 @@ export default function UserMenu({ variant = 'avatar' }: { variant?: 'avatar' | 
             </span>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
-          {ACCOUNT_SECTIONS.map(({ slug, icon: Icon }) => (
-            <DropdownMenuItem key={slug} asChild>
-              <Link href={accountPath(slug)}>
-                <Icon />
-                {sectionLabel(slug)}
-              </Link>
-            </DropdownMenuItem>
-          ))}
+          {variant === 'row' && (
+            <>
+              <DropdownMenuItem asChild>
+                <Link href={accountPath(ACCOUNT_SECTIONS[0]!.slug)}>
+                  <UserRound />
+                  {'Konto'}
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger>
+                  <Languages />
+                  {tCommon('language')}
+                </DropdownMenuSubTrigger>
+                <DropdownMenuSubContent>
+                  {LOCALES.map((value) => (
+                    <DropdownMenuItem
+                      key={value}
+                      onSelect={() => updatePreferences.mutate({ locale: value })}
+                    >
+                      <span aria-hidden>{LOCALE_FLAGS[value]}</span>
+                      {LOCALE_LABELS[value]}
+                      {value === (locale as Locale) && ' ✓'}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
+              <DropdownMenuItem
+                onSelect={() => {
+                  const next = resolvedTheme === 'dark' ? 'light' : 'dark';
+                  setTheme(next);
+                  updatePreferences.mutate({ theme: next });
+                }}
+              >
+                {resolvedTheme === 'dark' ? <Sun /> : <Moon />}
+                {resolvedTheme === 'dark' ? 'Hell' : 'Dunkel'}
+              </DropdownMenuItem>
+            </>
+          )}
+          {variant !== 'row' &&
+            ACCOUNT_SECTIONS.map(({ slug, icon: Icon }) => (
+              <DropdownMenuItem key={slug} asChild>
+                <Link href={accountPath(slug)}>
+                  <Icon />
+                  {sectionLabel(slug)}
+                </Link>
+              </DropdownMenuItem>
+            ))}
           {role === 'god' && (
             <>
               <DropdownMenuSeparator />

@@ -7,6 +7,7 @@ import {
   layoutStorageKey,
   migrateLegacyLayout,
   parseStoredLayout,
+  projectLayoutStorageKey,
 } from './workspaceLayoutStorage';
 
 function memoryStorage(entries: Record<string, string> = {}) {
@@ -28,6 +29,21 @@ describe('workspace layout storage', () => {
     assert.notEqual(
       dockWidthsKey('kiosk-dual', 'chat-left'),
       dockWidthsKey('browser', 'chat-left'),
+    );
+  });
+
+  it('remembers the selected panel layout for each project', () => {
+    assert.notEqual(
+      projectLayoutStorageKey('browser', 'TRADE'),
+      projectLayoutStorageKey('browser', 'VOL'),
+    );
+    assert.notEqual(
+      projectLayoutStorageKey('browser', 'TRADE'),
+      projectLayoutStorageKey('browser', null),
+    );
+    assert.notEqual(
+      projectLayoutStorageKey('browser', 'TRADE'),
+      projectLayoutStorageKey('kiosk-dual', 'TRADE'),
     );
   });
 

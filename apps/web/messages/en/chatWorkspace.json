@@ -168,15 +168,6 @@
     "hint": "Pick the agent at the bottom left of the input — its state is shown there."
   },
   "agents": {
-    "status": {
-      "running": "Working",
-      "waiting": "Waiting for you",
-      "ready": "Ready",
-      "offline": "Offline",
-      "never": "Never connected",
-      "paused": "Paused",
-      "template": "Template — add it to a project to chat with it"
-    },
     "runtimeExternal": "External",
     "switch": "Chatting with {agent} — start a new chat with another agent",
     "newChatWith": "New chat with …"
@@ -204,12 +195,6 @@
     "stop": "Stop the answer",
     "jev": "Optional Jev first stage for this chat"
   },
-  "activity": {
-    "thinking": "{agent} is thinking…",
-    "writing": "{agent} is writing…",
-    "queued": "Waiting for {agent} — its runner is offline. The answer starts once it is back.",
-    "usingTool": "{agent} is using {tool} …"
-  },
   "session": {
     "copy": "Copy session ID",
     "copied": "Session ID copied",
@@ -222,15 +207,6 @@
     "interrupt": "Interrupt",
     "end": "End",
     "heard": "“{text}”",
-    "phase": {
-      "starting": "Starting the microphone …",
-      "listening": "Listening – just speak.",
-      "hearing": "Hearing you …",
-      "transcribing": "Writing it down …",
-      "thinking": "{agent} will answer shortly …",
-      "speaking": "{agent} is speaking – speak to interrupt",
-      "speakingTap": "{agent} is speaking"
-    },
     "where": {
       "listenLocal": "Speech recognition: Whisper on this machine",
       "listenBrowser": "Speech recognition: the browser (Chrome and Safari send the recording to Google or Apple)",

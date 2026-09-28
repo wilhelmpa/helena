@@ -2,14 +2,16 @@
 
 import type { ReactNode } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { Bot, Building2, FolderKanban, Network, Target, Workflow } from 'lucide-react';
+import { Bot, Building2, FolderKanban, Globe2, Network, Target, Workflow } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import {
   PageTabs,
+  PageActions,
   PageToolbar,
   PageToolbarSpacer,
   type PageTab,
 } from '@/components/layout/PageToolbar';
+import { agentsPath, browserOverviewPath, pipelinesPath, workflowsPath } from '@/utils/paths';
 import type { Organization } from '@/lib/api/endpoints/organization';
 import OrganizationAgents from './OrganizationAgents';
 import OrganizationDepartments from './OrganizationDepartments';
@@ -36,6 +38,7 @@ export default function OrganizationWorkspace({
   toolbarEnd?: ReactNode;
 }) {
   const t = useTranslations('organization');
+  const tNav = useTranslations('nav');
   const params = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -68,6 +71,43 @@ export default function OrganizationWorkspace({
         <PageTabs label={t('title')} items={tabs} value={tab} onChange={select} />
         <PageToolbarSpacer />
         {toolbarEnd}
+        <PageActions
+          actions={
+            projectKey
+              ? [
+                  {
+                    id: 'workflows',
+                    label: tNav('workflows'),
+                    icon: Workflow,
+                    href: workflowsPath(projectKey),
+                    menuOnly: true,
+                  },
+                ]
+              : [
+                  {
+                    id: 'agents',
+                    label: tNav('agentPool'),
+                    icon: Bot,
+                    href: agentsPath(),
+                    menuOnly: true,
+                  },
+                  {
+                    id: 'workflows',
+                    label: tNav('workflows'),
+                    icon: Workflow,
+                    href: pipelinesPath(),
+                    menuOnly: true,
+                  },
+                  {
+                    id: 'browser',
+                    label: tNav('workspace.browser'),
+                    icon: Globe2,
+                    href: browserOverviewPath(),
+                    menuOnly: true,
+                  },
+                ]
+          }
+        />
       </PageToolbar>
       {tab === 'orchestration' && projectKey ? (
         <OrganizationOrchestration

@@ -1,4 +1,8 @@
 {
+  "dockContext": "HOME · 上下文",
+  "projectLinkHint": "此内容属于其他项目。",
+  "openInProject": "在项目中打开",
+  "dockOpen": "打开 Home (⌘J)",
   "sidebarMyTasks": "My tasks",
   "sidebarOpenTasks": "All open",
   "sidebarSwitchProject": "Switch project",
@@ -25,7 +29,7 @@
   "allWorkItems": "全部工作项",
   "initiatives": "计划",
   "cycles": "周期",
-  "notes": "便签板",
+  "notes": "画布",
   "documents": "Docs",
   "docs": "Docs",
   "aiTeam": "AI 团队",
@@ -211,6 +215,7 @@
     "commandPlaceholder": "选择布局…",
     "layouts": {
       "standard": "标准",
+      "page-tool-half": "平分 50/50",
       "chat-left": "聊天在左",
       "chat-tool": "聊天 + 工具",
       "two-tools": "两个工具",
@@ -226,5 +231,15 @@
     "resizeArea": "调整宽度"
   },
   "receipts": "票据",
-  "browserLab": "Browser 2.0"
+  "browserLab": "Browser 2.0",
+  "panelTabs": {
+    "tabs": "Tools",
+    "addTab": "Add tab",
+    "browserTab": "Browser tab",
+    "side": "Side panel",
+    "split": "Split 50/50",
+    "full": "Full screen",
+    "close": "Close panel",
+    "closeTab": "Close {tab}"
+  }
 }

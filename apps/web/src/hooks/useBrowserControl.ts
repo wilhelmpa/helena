@@ -17,6 +17,7 @@ export function useBrowserControl(base: string) {
     queryKey,
     queryFn: () => browserTabs(base),
     refetchInterval: TABS_REFRESH_MS,
+    enabled: !!base,
   });
   const act = useMutation({
     mutationFn: ({ action, id, url }: { action: BrowserAction; id?: string; url?: string }) =>
@@ -26,6 +27,7 @@ export function useBrowserControl(base: string) {
   const list = tabs.data ?? [];
   return {
     tabs: list,
+    ready: tabs.isSuccess,
     active: list.find((tab) => tab.active) ?? list[0] ?? null,
     act: act.mutate,
     busy: act.isPending,

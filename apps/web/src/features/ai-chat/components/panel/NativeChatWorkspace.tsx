@@ -1,11 +1,10 @@
 'use client';
 
 import { useContext, useEffect, useState } from 'react';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { ShellCtx } from '@/context/shellContext';
 import type { WorkspaceContentProps } from '@/extensions/panelTools';
-import { runtimeEnv } from '@/utils/runtimeEnv';
-import { nativeChatProjectKey } from '@/utils/workspaceTools';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useChatWorkspaceScope } from '../../hooks/useChatWorkspaceScope';
 import ChatWorkspace from '../workspace/ChatWorkspace';
@@ -20,10 +19,17 @@ import type { ChatLocation } from '../../utils/chatLocation';
 // master before the first project exists.
 export default function NativeChatWorkspace({ projectKey }: WorkspaceContentProps) {
   const t = useTranslations('chatWorkspace');
-  const config = runtimeEnv().workspace;
+  const tNav = useTranslations('nav');
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const contextParams = new URLSearchParams();
+  for (const key of ['file', 'path', 'root', 'view']) {
+    const value = searchParams.get(key);
+    if (value) contextParams.set(key, value);
+  }
+  const pagePath = `${pathname}${contextParams.size ? `?${contextParams.toString()}` : ''}`;
   const shell = useContext(ShellCtx);
-  const chatProjectKey = projectKey ? nativeChatProjectKey(config, projectKey) : null;
-  const scope = useChatWorkspaceScope(chatProjectKey);
+  const scope = useChatWorkspaceScope(null);
   const [location, setLocation] = useState<ChatLocation>({ agentId: null, threadId: null });
 
   // A click elsewhere in the app (an activity entry, an issue) asks to open one of the
@@ -56,13 +62,22 @@ export default function NativeChatWorkspace({ projectKey }: WorkspaceContentProp
   }
 
   return (
-    <ChatWorkspace
-      scopeKey={scope.scopeKey}
-      teamId={scope.teamId}
-      projectKey={chatProjectKey}
-      agents={scope.agents}
-      location={location}
-      onNavigate={setLocation}
-    />
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div className="helena-home-context">
+        {tNav('dockContext')}{' '}
+        <strong>
+          {projectKey ?? tNav('home')} › {pathname}
+        </strong>
+      </div>
+      <ChatWorkspace
+        scopeKey={scope.scopeKey}
+        teamId={scope.teamId}
+        projectKey={null}
+        agents={scope.agents}
+        location={location}
+        onNavigate={setLocation}
+        pageContext={{ projectKey, path: pagePath }}
+      />
+    </div>
   );
 }

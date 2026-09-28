@@ -13,6 +13,7 @@ import { usePanelTools } from '@/extensions/panelTools';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { readLocal, useLocalValue, writeLocal } from '@/hooks/useLocalValue';
 import { useWorkspacePanel } from '@/hooks/useWorkspacePanel';
+import { useWorkspaceTabs } from '@/hooks/useWorkspaceTabs';
 import type { KioskDisplay } from '@/utils/kioskDisplay';
 import {
   nextLayoutId,
@@ -27,6 +28,7 @@ import {
   layoutStorageKey,
   migrateLegacyLayout,
   parseStoredLayout,
+  projectLayoutStorageKey,
   type LayoutContext,
   type StoredLayout,
 } from '@/utils/workspaceLayoutStorage';
@@ -75,7 +77,7 @@ export function useWorkspaceLayout({
   const phone = useMediaQuery('(max-width: 767px)');
   const dual = kiosk === 'dual';
   const context: LayoutContext = layoutContext(kiosk);
-  const storageKey = layoutStorageKey(context);
+  const storageKey = projectLayoutStorageKey(context, projectKey);
   const initial = useMemo(() => defaultLayout(context), [context]);
   // Kept per device; the server render and hydration read the layout's default.
   const [raw] = useLocalValue(storageKey);
@@ -85,6 +87,11 @@ export function useWorkspaceLayout({
   useEffect(() => {
     if (readLocal(storageKey) !== null) return;
     try {
+      const previous = readLocal(layoutStorageKey(context));
+      if (previous) {
+        writeLocal(storageKey, previous);
+        return;
+      }
       const migrated = migrateLegacyLayout(localStorage, context);
       if (migrated) writeLocal(storageKey, JSON.stringify(migrated));
     } catch {
@@ -113,6 +120,7 @@ export function useWorkspaceLayout({
     // Outside the standard layout the panel stays, like on the dual kiosk's second screen.
     pinned: dual || !layout.optionalPanel,
   });
+  const tabs = useWorkspaceTabs(projectKey);
 
   const areaTools = useMemo(() => {
     const picked: Record<string, string> = {};
@@ -202,8 +210,9 @@ export function useWorkspaceLayout({
         });
       }
       if (changes.activeTool) openTool(changes.activeTool);
+      if (changes.activeTool) tabs.openTool(changes.activeTool);
     },
-    [layout.id, openTool, resolved, update],
+    [layout.id, openTool, resolved, tabs, update],
   );
 
   // An area with a tool of its own that already shows `tool` (the docked chat).
@@ -219,15 +228,87 @@ export function useWorkspaceLayout({
     (tool: string) => {
       if (shownBeside(tool)) return;
       if (!resolved.closable && resolved.mainTool === tool) return;
+      tabs.openTool(tool);
       toggleTool(tool);
     },
-    [resolved.closable, resolved.mainTool, shownBeside, toggleTool],
+    [resolved.closable, resolved.mainTool, shownBeside, tabs, toggleTool],
   );
   const showTool = useCallback(
     (tool: string) => {
-      if (!shownBeside(tool)) openTool(tool);
+      if (!shownBeside(tool)) {
+        tabs.openTool(tool);
+        openTool(tool);
+      }
     },
-    [openTool, shownBeside],
+    [openTool, shownBeside, tabs],
+  );
+
+  const activateTab = useCallback(
+    (tool: string) => {
+      if (shownBeside(tool)) {
+        const main = resolved.areas.find((area) => area.main);
+        if (main) {
+          pickTool(main.id, tool);
+          return;
+        }
+      }
+      tabs.openTool(tool);
+      openTool(tool);
+    },
+    [openTool, pickTool, resolved.areas, shownBeside, tabs],
+  );
+
+  const closeTab = useCallback(
+    (key: string) => {
+      tabs.close(key);
+      if (key === `tool:${panel.activeTool}`) {
+        const next = tabs.saved.find((entry) => entry !== key && entry.startsWith('tool:'));
+        if (next) openTool(next.slice(5));
+        else panel.setOpen(false);
+      }
+    },
+    [openTool, panel, tabs],
+  );
+
+  const choosePanelLayout = useCallback(
+    (choice: 'side' | 'split' | 'full') => {
+      panel.chooseMode(choice === 'side' ? 'overlay' : 'push');
+      setLayout(
+        choice === 'full'
+          ? FULL_LAYOUT_ID
+          : choice === 'split'
+            ? 'page-tool-half'
+            : STANDARD_LAYOUT_ID,
+      );
+    },
+    [panel, setLayout],
+  );
+
+  const openHome = useCallback(() => {
+    tabs.openTool('chat');
+    panel.openTool('chat');
+    if (shownBeside('chat')) choosePanelLayout('side');
+  }, [choosePanelLayout, panel, shownBeside, tabs]);
+
+  const moveTabLeft = useCallback(
+    (key: string) => {
+      const tool = key.startsWith('browser:')
+        ? 'browser'
+        : key.startsWith('tool:')
+          ? key.slice(5)
+          : null;
+      if (!tool) return;
+      const main =
+        panel.activeTool === tool ? (tool === 'chat' ? 'browser' : 'chat') : panel.activeTool;
+      tabs.openTool(tool);
+      panel.openTool(main);
+      update((current) => ({
+        ...current,
+        layout: 'chat-tool',
+        tools: { ...current.tools, [areaToolKey('chat-tool', 'chat')]: tool },
+      }));
+    },
+    [panel, tabs, update],
   );
 
   // Back to the page alone: from an area's close button, the standard layout.
@@ -243,13 +324,19 @@ export function useWorkspaceLayout({
     layout,
     resolved,
     panel,
+    tabs,
     setLayout,
     toggleFull,
     cycle,
     pickTool,
     selectTool,
     showTool,
+    activateTab,
     closeArea,
+    closeTab,
+    choosePanelLayout,
+    openHome,
+    moveTabLeft,
   };
 }
 

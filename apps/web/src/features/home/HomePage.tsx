@@ -7,7 +7,7 @@ import HomeDashboard from './dashboard/HomeDashboard';
 // tool panel instead of hiding under it (--workspace-overlay-inset, WorkspaceLayoutHost).
 export default function HomePage() {
   return (
-    <Shell globalHome>
+    <Shell globalHome autoOpenGlobalChat={false}>
       <div className="h-full overflow-y-auto pe-(--workspace-overlay-inset)">
         <HomeDashboard />
       </div>

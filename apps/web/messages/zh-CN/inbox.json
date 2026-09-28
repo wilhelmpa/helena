@@ -38,6 +38,8 @@
     "automation": "Helena"
   },
   "hub": {
+    "scopeProject": "此项目",
+    "scopeAll": "全部",
     "messages": "Messages",
     "updates": "Updates",
     "loading": "Loading messages…"

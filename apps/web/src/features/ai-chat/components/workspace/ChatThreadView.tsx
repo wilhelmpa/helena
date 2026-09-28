@@ -1,9 +1,9 @@
 'use client';
 
 import WebLinkScope from '@/components/common/WebLinkScope';
-import AgentStatusOrb from '@/components/common/agent-chat/AgentStatusOrb';
+import Orb from '@/components/helena/Orb';
 import { useAccountPreferences } from '@/services/preferences.service';
-import { agentOrbState, chatOrbState } from '@/utils/agentStatusOrb';
+import { useAgentStatus } from '@/utils/helenaStatus';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
@@ -51,6 +51,7 @@ export interface ChatThreadViewProps {
   hasArtifact: boolean;
   // Mounted as the chat page (its bar goes into the app header), not in the tool panel.
   inPage?: boolean;
+  pageContext?: { projectKey: string | null; path: string };
 }
 
 // One open conversation: the header, the transcript (or, before the first message, a
@@ -76,6 +77,7 @@ export default function ChatThreadView({
   onToggleArtifact,
   hasArtifact,
   inPage = false,
+  pageContext,
 }: ChatThreadViewProps) {
   const t = useTranslations('chatWorkspace');
   const motionEnabled = useAccountPreferences().homeDashboard.chatAnimation !== false;
@@ -84,6 +86,7 @@ export default function ChatThreadView({
     agent,
     threadId,
     onThreadCreated,
+    pageContext,
     // The composer checks the agent's chat limit before sending; this catches the race
     // where two sends (two tabs) both passed it, so the one that lost is explained.
     onError: (error) => {
@@ -137,10 +140,6 @@ export default function ChatThreadView({
       clearTimeout(hide);
     };
   }, [activity, lastMessageId]);
-  const mappedOrbState = chatOrbState(activity, tool, choices != null);
-  const orbState =
-    mappedOrbState === 'done' && recentDoneId !== lastMessageId ? null : mappedOrbState;
-
   // What is written while an answer is still coming waits here and goes out in order
   // once the agent is done (old-chat parity). An answer that failed holds the queue:
   // nothing more is sent on its own until the member sends again.
@@ -182,21 +181,17 @@ export default function ChatThreadView({
     },
     onProblem: reportVoice,
   });
-  const showAnswerOrb = orbState !== null || conversation.phase !== 'off';
+  const orbStatus = useAgentStatus(agent.id, {
+    chatId: threadId,
+    run: empty ? state?.label : undefined,
+    chat: activity === 'answered' && recentDoneId !== lastMessageId ? null : activity,
+    voicePhase: conversation.phase,
+    tool,
+    awaitingChoice: choices != null,
+    runtimeStatus: state?.online === false ? 'offline' : agent.runtimeState.status,
+  });
+  const showAnswerOrb = orbStatus !== 'idle' || conversation.phase !== 'off';
   const orbVisible = !plan.restoreFailed && (empty || showAnswerOrb);
-  const voiceThinking = conversation.phase === 'thinking' || conversation.phase === 'transcribing';
-  const orbVisualState =
-    conversation.phase === 'speaking' ||
-    conversation.phase === 'listening' ||
-    conversation.phase === 'hearing'
-      ? 'idle'
-      : voiceThinking
-        ? orbState === 'tool'
-          ? 'tool'
-          : 'thinking'
-        : empty
-          ? agentOrbState(state?.label, agent.runtimeState.status)
-          : (orbState ?? 'idle');
   const talking = conversation.phase !== 'off';
   useEffect(() => {
     if (conversation.state.notice !== 'echo') return;
@@ -284,10 +279,9 @@ export default function ChatThreadView({
               ['--orb-size' as string]: '100%',
             }}
           >
-            <AgentStatusOrb
-              state={orbVisualState}
+            <Orb
+              state={orbStatus}
               size="large"
-              online={state?.online ?? !empty}
               motionEnabled={motionEnabled}
               voicePhase={conversation.phase}
               micStream={conversation.micStream}
@@ -302,7 +296,6 @@ export default function ChatThreadView({
           states={states}
           motionEnabled={motionEnabled}
           activity={activity}
-          tool={tool}
           queue={queue}
           queuePaused={queuePaused}
           onQueue={(text, options, metadata) => {
@@ -317,6 +310,7 @@ export default function ChatThreadView({
           conversation={conversation}
           threadId={threadId}
           projectKey={projectKey}
+          dockSheet={pageContext != null}
           draft={threadId == null ? newChatDraft : undefined}
           busy={plan.busy}
           model={model.model}

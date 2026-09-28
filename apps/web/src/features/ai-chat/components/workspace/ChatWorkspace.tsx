@@ -32,6 +32,7 @@ export interface ChatWorkspaceProps {
   onNavigate: (next: ChatLocation, options?: { replace?: boolean }) => void;
   // The chat page, not the tool panel: the conversation's bar joins the app header.
   inPage?: boolean;
+  pageContext?: { projectKey: string | null; path: string };
 }
 
 // The claude.ai-style chat: a chat list, the open conversation with its composer, and
@@ -48,6 +49,7 @@ export default function ChatWorkspace({
   location,
   onNavigate,
   inPage = false,
+  pageContext,
 }: ChatWorkspaceProps) {
   const [rootRef, width] = useContainerWidth<HTMLDivElement>();
   const [listOpen, setListOpen] = useState(false);
@@ -187,6 +189,7 @@ export default function ChatWorkspace({
             onToggleArtifact={() => setArtifactOpen((open) => !open)}
             hasArtifact={artifact != null}
             inPage={inPage}
+            pageContext={pageContext}
           />
         ) : resolvingAgent ? (
           <div className="flex h-full min-h-0 flex-col gap-3 p-4">

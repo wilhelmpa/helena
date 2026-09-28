@@ -18,11 +18,13 @@ export default function ShellHeaderTitle({
   projectName,
   issueIdentifier,
   issueParent,
+  viewName,
 }: {
   route: ShellRoute;
   projectName: string;
   issueIdentifier: string | null;
   issueParent: IssueRef | null;
+  viewName?: string | null;
 }) {
   const t = useTranslations('nav');
   const sectionText = useSettingsSectionText();
@@ -54,7 +56,7 @@ export default function ShellHeaderTitle({
     if (aiTeamSection) return known(aiTeamSection) ? sectionText(aiTeamSection).label : t('aiTeam');
     if (sub === 'ai-agents') return t('aiAgents');
     if (sub === 'api') return t('api');
-    return projectName;
+    return viewName ?? t('workItems');
   }
 
   if (route.routeIssueSeq != null) {
@@ -76,7 +78,7 @@ export default function ShellHeaderTitle({
     return <CycleBreadcrumb projectKey={route.projectKey} cycleId={route.routeCycleId} />;
   }
   const label = pageLabel();
-  if (!route.projectKey || label === projectName) return <>{label}</>;
+  if (!route.projectKey || label === projectName || !route.section) return <>{label}</>;
   const project = { label: projectName, href: projectPath(route.projectKey) };
   if (route.section) {
     const first = SETTINGS_SECTIONS[0]?.slug;

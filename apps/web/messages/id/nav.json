@@ -1,4 +1,8 @@
 {
+  "dockContext": "HOME · KONTEKS",
+  "projectLinkHint": "Konten ini milik proyek lain.",
+  "openInProject": "Buka di proyek",
+  "dockOpen": "Buka Home (⌘J)",
   "sidebarMyTasks": "My tasks",
   "sidebarOpenTasks": "All open",
   "sidebarSwitchProject": "Switch project",
@@ -25,7 +29,7 @@
   "allWorkItems": "Semua item pekerjaan",
   "initiatives": "Inisiatif",
   "cycles": "Cycle",
-  "notes": "Papan",
+  "notes": "Kanvas",
   "documents": "Dokumen",
   "docs": "Dokumen",
   "aiTeam": "Tim AI",
@@ -211,6 +215,7 @@
     "commandPlaceholder": "Pilih tata letak…",
     "layouts": {
       "standard": "Standar",
+      "page-tool-half": "Terbagi 50/50",
       "chat-left": "Chat di kiri",
       "chat-tool": "Chat + alat",
       "two-tools": "Dua alat",
@@ -226,5 +231,15 @@
     "resizeArea": "Ubah lebar"
   },
   "receipts": "Bukti",
-  "browserLab": "Browser 2.0"
+  "browserLab": "Browser 2.0",
+  "panelTabs": {
+    "tabs": "Tools",
+    "addTab": "Add tab",
+    "browserTab": "Browser tab",
+    "side": "Side panel",
+    "split": "Split 50/50",
+    "full": "Full screen",
+    "close": "Close panel",
+    "closeTab": "Close {tab}"
+  }
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, type CSSProperties, type ReactNode } from 'react';
+import { useMemo, useState, type CSSProperties, type ReactNode } from 'react';
 import { useTranslations } from 'next-intl';
 import { Direction } from 'radix-ui';
 import type { WorkspaceLayoutState } from '@/hooks/useWorkspaceLayout';
@@ -45,6 +45,7 @@ export default function WorkspaceLayoutHost({
   const t = useTranslations('nav.layout');
   const tChat = useTranslations('aiChat');
   const direction = Direction.useDirection();
+  const [leftDrop, setLeftDrop] = useState(false);
   const { resolved, panel, phone, dual, context } = layout;
   const panelAreas = resolved.areas.filter((area) => area.side === 'panel');
   const split = panelAreas.length > 1;
@@ -61,6 +62,7 @@ export default function WorkspaceLayoutHost({
     DOCK_MAX_WIDTH,
   );
   const overlay = resolved.closable && (phone || panel.mode === 'overlay');
+  const dockSheet = false;
   const geometry = layoutGeometry({
     resolved,
     overlay,
@@ -94,16 +96,36 @@ export default function WorkspaceLayoutHost({
     <div
       data-workspace-layout={resolved.id}
       className={cn(
-        'relative grid min-h-0 flex-1 grid-rows-[2.5rem_minmax(0,1fr)] overflow-hidden',
+        'relative grid min-h-0 flex-1 grid-rows-[6.125rem_minmax(0,1fr)] overflow-hidden',
         resolved.full && 'fixed inset-0 z-50 bg-background',
       )}
-      style={{ gridTemplateColumns: geometry.columns }}
+      style={{
+        gridTemplateColumns:
+          resolved.id === 'page-tool-half' && !phone && !dual
+            ? 'minmax(0,1fr) minmax(0,1fr)'
+            : geometry.columns,
+      }}
     >
       <div
         className={cn(
           'relative row-span-full flex min-h-0 min-w-0 flex-col overflow-hidden',
           !resolved.pageVisible && 'hidden',
+          leftDrop && 'ring-2 ring-[#ae8bcf] ring-inset',
         )}
+        onDragOver={(event) => {
+          const valid =
+            event.dataTransfer.types.includes('application/x-helena-tab') &&
+            event.clientX < event.currentTarget.getBoundingClientRect().left + 100;
+          if (valid) event.preventDefault();
+          setLeftDrop(valid);
+        }}
+        onDragLeave={() => setLeftDrop(false)}
+        onDrop={(event) => {
+          event.preventDefault();
+          setLeftDrop(false);
+          const key = event.dataTransfer.getData('application/x-helena-tab');
+          if (key) layout.moveTabLeft(key);
+        }}
         style={{
           gridColumn: geometry.pageColumn,
           // How much of the page a floating panel covers, for a page that would rather
@@ -130,7 +152,17 @@ export default function WorkspaceLayoutHost({
         onToggleFull={layout.toggleFull}
         onPickTool={layout.pickTool}
         onCloseArea={layout.closeArea}
-        onClose={() => panel.setOpen(false)}
+        onClose={() => {
+          if (resolved.full) layout.choosePanelLayout('side');
+          panel.setOpen(false);
+        }}
+        dockSheet={dockSheet}
+        tabs={layout.tabs}
+        activeTool={panel.activeTool}
+        layoutId={layout.chosenId}
+        onSelectTab={layout.activateTab}
+        onCloseTab={layout.closeTab}
+        onChooseLayout={layout.choosePanelLayout}
       />
 
       {dockGrips.map((area) => (

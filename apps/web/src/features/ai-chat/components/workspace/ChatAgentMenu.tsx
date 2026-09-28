@@ -4,8 +4,8 @@ import { ChevronDown } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { AiAgent } from '@/lib/api/endpoints/agents';
 import AgentAvatar from '@/components/common/page/AgentAvatar';
-import AgentStatusOrb from '@/components/common/agent-chat/AgentStatusOrb';
-import { agentOrbState } from '@/utils/agentStatusOrb';
+import Orb from '@/components/helena/Orb';
+import { useAgentStatus } from '@/utils/helenaStatus';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -36,6 +36,10 @@ export default function ChatAgentMenu({
   const t = useTranslations('chatWorkspace');
   const text = useAgentStateText();
   const state = states.get(agent.id);
+  const status = useAgentStatus(agent.id, {
+    run: state?.label,
+    runtimeStatus: state?.online === false ? 'offline' : agent.runtimeState.status,
+  });
 
   return (
     <DropdownMenu modal={false}>
@@ -47,17 +51,10 @@ export default function ChatAgentMenu({
           title={`${agent.name} · ${text.detail(agent, state)}`}
         >
           <AgentAvatar name={agent.name} className="size-5 text-xl" />
-          <AgentStatusOrb
-            state={agentOrbState(state?.label, agent.runtimeState.status)}
-            online={state?.online ?? false}
-            motionEnabled={motionEnabled}
-          />
+          <Orb state={status} motionEnabled={motionEnabled} />
           <span className="hidden max-w-32 truncate text-foreground @md/composer:inline">
             {agent.name}
           </span>
-          {state && (
-            <span className="hidden truncate @xl/composer:inline">{text.status(state.label)}</span>
-          )}
           <ChevronDown className="size-3.5 shrink-0" />
         </button>
       </DropdownMenuTrigger>

@@ -70,7 +70,10 @@ function builtin(
 ): WorkspaceLayout {
   return {
     id,
-    label: { i18n: `nav.layout.layouts.${id}` },
+    label:
+      id === 'page-tool-half'
+        ? { de: 'Geteilt 50/50', en: 'Split 50/50' }
+        : { i18n: `nav.layout.layouts.${id}` },
     order,
     areas,
     full: flags.full ?? false,
@@ -84,6 +87,9 @@ const page: WorkspaceLayoutArea = { id: 'page', shows: 'page', side: 'page' };
 for (const layout of [
   // Page | tool: the panel opens beside the page, as always.
   builtin(STANDARD_LAYOUT_ID, 10, [page, { id: 'main', shows: 'main', side: 'panel' }], {
+    optionalPanel: true,
+  }),
+  builtin('page-tool-half', 15, [page, { id: 'main', shows: 'main', side: 'panel' }], {
     optionalPanel: true,
   }),
   // The chat docked beside the page on the first screen, a tool (the browser) on the

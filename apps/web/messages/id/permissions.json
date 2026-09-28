@@ -23,7 +23,7 @@
     "workflow_config": "Konfigurasi alur kerja",
     "actions": "Tindakan",
     "webhooks": "Webhook",
-    "note_boards": "Papan catatan",
+    "note_boards": "Kanvas catatan",
     "danger_zone": "Zona bahaya"
   },
   "actions": {

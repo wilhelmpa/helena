@@ -17,7 +17,8 @@ import {
   withoutHiddenSections,
   type ViewSettings,
 } from '@/utils/viewSettings';
-import { Check, Pencil, X } from 'lucide-react';
+import { CalendarDays, Check, Pencil, X } from 'lucide-react';
+import { cyclesPath } from '@/utils/paths';
 import ViewIconPicker from '@/components/layout/ViewIconPicker';
 import ViewFolderManager from '@/components/layout/ViewFolderManager';
 import { FilterControl } from '@/components/layout/FilterBar';
@@ -47,6 +48,7 @@ interface TimelineCollapseState {
 // come from the Shell through React context.
 export default function WorkItemsPage() {
   const t = useTranslations('workItems');
+  const tNav = useTranslations('nav');
   const tCommon = useTranslations('common');
   const { project, filteredProject, editor, customFields, onOpenIssue, onAddIssue } = useShell();
   const { can } = usePermissions();
@@ -238,18 +240,31 @@ export default function WorkItemsPage() {
           </>
         ) : (
           <>
-            {editor.activeView && can('views', 'edit') && (
-              <PageActions
-                actions={[
-                  {
-                    id: 'edit-view',
-                    label: t('editView'),
-                    icon: Pencil,
-                    onClick: () => editor.beginEditView(editor.activeView!),
-                  },
-                ]}
-              />
-            )}
+            <PageActions
+              actions={[
+                ...(editor.activeView && can('views', 'edit')
+                  ? [
+                      {
+                        id: 'edit-view',
+                        label: t('editView'),
+                        icon: Pencil,
+                        onClick: () => editor.beginEditView(editor.activeView!),
+                      },
+                    ]
+                  : []),
+                ...(features.cycles && can('cycles', 'read')
+                  ? [
+                      {
+                        id: 'cycles',
+                        label: tNav('cycles'),
+                        icon: CalendarDays,
+                        href: cyclesPath(projectKey),
+                        menuOnly: true,
+                      },
+                    ]
+                  : []),
+              ]}
+            />
             <PageToolbarSpacer />
             {can('views', 'edit') && (
               <ViewFolderManager projectKey={project.project.key} folders={folders} />

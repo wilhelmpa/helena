@@ -168,15 +168,6 @@
     "hint": "Den Agenten wählst du unten links im Eingabefeld – dort siehst du auch seinen Status."
   },
   "agents": {
-    "status": {
-      "running": "Arbeitet",
-      "waiting": "Wartet auf dich",
-      "ready": "Bereit",
-      "offline": "Offline",
-      "never": "Nie verbunden",
-      "paused": "Pausiert",
-      "template": "Vorlage – füge sie einem Projekt hinzu, um mit ihr zu chatten"
-    },
     "runtimeExternal": "Extern",
     "switch": "Chat mit {agent} – neuen Chat mit einem anderen Agenten beginnen",
     "newChatWith": "Neuer Chat mit …"
@@ -204,12 +195,6 @@
     "stop": "Antwort stoppen",
     "jev": "Optionale JEV-Vorstufe für diesen Chat"
   },
-  "activity": {
-    "thinking": "{agent} denkt nach …",
-    "writing": "{agent} schreibt …",
-    "queued": "Wartet auf {agent} – sein Runner ist offline. Die Antwort startet, sobald er wieder da ist.",
-    "usingTool": "{agent} nutzt {tool} …"
-  },
   "session": {
     "copy": "Session-ID kopieren",
     "copied": "Session-ID kopiert",
@@ -222,15 +207,6 @@
     "interrupt": "Unterbrechen",
     "end": "Beenden",
     "heard": "„{text}“",
-    "phase": {
-      "starting": "Mikrofon startet …",
-      "listening": "Ich höre zu – sprich einfach.",
-      "hearing": "Ich höre dich …",
-      "transcribing": "Schreibe mit …",
-      "thinking": "{agent} antwortet gleich …",
-      "speaking": "{agent} spricht – sprich, um zu unterbrechen",
-      "speakingTap": "{agent} spricht"
-    },
     "where": {
       "listenLocal": "Spracherkennung: Whisper auf diesem Rechner",
       "listenBrowser": "Spracherkennung: Browser (Chrome und Safari senden die Aufnahme an Google bzw. Apple)",

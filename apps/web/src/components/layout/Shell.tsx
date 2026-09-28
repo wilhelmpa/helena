@@ -34,10 +34,13 @@ import CommandLayer from '@/components/layout/CommandLayer';
 import { EmergencyStopBanner } from '@/features/agent-runtime/components/EmergencyStop';
 import ShellBody from '@/components/layout/ShellBody';
 import ShellHeaderTitle from '@/components/layout/ShellHeaderTitle';
-import HeaderCrumbs from '@/components/layout/HeaderCrumbs';
 import ShellOverlays from '@/components/layout/ShellOverlays';
 import WorkspaceLayoutHost from '@/components/layout/WorkspaceLayoutHost';
+import HomeDock from '@/components/layout/HomeDock';
+import ProjectLinkSheet from '@/components/layout/ProjectLinkSheet';
 import { useTranslations } from 'next-intl';
+import { isTypingTarget } from '@/utils/hotkeys';
+import { requestDockVoice } from '@/features/voice/utils/dockVoice';
 
 // The layout for /project/:projectKey and its children (the work items view and the
 // settings pages). It owns the project data, the view editor and the
@@ -140,7 +143,7 @@ export default function Shell({
 
   useProjectRouteSync({ projects, projectsLoaded, projectKey, allowEmpty: globalHome });
 
-  const selectWorkspaceTool = workspaceLayout.selectTool;
+  const selectWorkspaceTool = workspaceLayout.activateTab;
   const {
     activeTool: activeWorkspaceTool,
     open: workspaceOpen,
@@ -158,6 +161,9 @@ export default function Shell({
   // The settings sections the member may open; the hotkey lands on the first of
   // them, the same entry the sidebar links to.
   const { firstHref: firstSettingsHref } = useSettingsNavGroups(projectKey, project);
+  const settingsHref = projectKey
+    ? (firstSettingsHref ?? '/account/preferences')
+    : '/account/preferences';
 
   // Only the work items routes: a cycle or an initiative board carries its own
   // filters and merges them itself.
@@ -172,7 +178,35 @@ export default function Shell({
 
   const openNewIssue = () => addIssue({});
 
-  const toggleCoordinatorChat = () => workspaceLayout.selectTool('chat');
+  const toggleCoordinatorChat = () => {
+    if (workspaceOpen && activeWorkspaceTool === 'chat') workspacePanel.setOpen(false);
+    else workspaceLayout.openHome();
+  };
+  useEffect(() => {
+    const close = (event: KeyboardEvent) => {
+      if (
+        event.key === 'Escape' &&
+        !overlays.anyOpen &&
+        workspaceOpen &&
+        activeWorkspaceTool === 'chat'
+      ) {
+        workspacePanel.setOpen(false);
+      }
+      if (
+        event.key === ' ' &&
+        !event.repeat &&
+        !isTypingTarget(event.target) &&
+        !overlays.anyOpen &&
+        workspaceOpen &&
+        activeWorkspaceTool === 'chat'
+      ) {
+        event.preventDefault();
+        requestDockVoice();
+      }
+    };
+    window.addEventListener('keydown', close);
+    return () => window.removeEventListener('keydown', close);
+  }, [workspaceOpen, activeWorkspaceTool, workspacePanel, overlays.anyOpen]);
   const [chatThreadRequest, setChatThreadRequest] = useState<ChatThreadRequest | null>(null);
 
   // The issue the palette builds its issue commands for: the open detail panel
@@ -194,7 +228,7 @@ export default function Shell({
     onNewIssue: () => canCreateIssue && openNewIssue(),
     onNewInitiative: () => canCreateInitiative && overlays.setShowNewInitiative(true),
     onNewProject: () => overlays.setShowNewProject(true),
-    onSettings: () => firstSettingsHref && router.push(firstSettingsHref),
+    onSettings: () => router.push(settingsHref),
     onToggleChat: toggleCoordinatorChat,
     onCycleLayout: workspaceLayout.phone ? undefined : workspaceLayout.cycle,
   });
@@ -254,7 +288,13 @@ export default function Shell({
             <AppSidebar
               projects={projects}
               currentProjectKey={projectKey}
-              onSelectProject={(key) => router.push(navigation.projectDestination(key))}
+              onSelectProject={(key) =>
+                window.dispatchEvent(
+                  new CustomEvent('helena:project-link', {
+                    detail: navigation.projectDestination(key),
+                  }),
+                )
+              }
               onNewProject={() => overlays.setShowNewProject(true)}
               onNewView={() => {
                 if (!projectKey) return;
@@ -263,15 +303,24 @@ export default function Shell({
               }}
               onEditView={editor.beginEditView}
               onDeleteView={editor.deleteView}
+              onOpenCommand={() => overlays.setShowCommand(true)}
+              onSelectTool={selectWorkspaceTool}
+              activeTool={workspaceOpen ? activeWorkspaceTool : null}
+              openTools={
+                workspaceOpen
+                  ? workspaceLayout.tabs.saved
+                      .map((key) => (key.startsWith('browser:') ? 'browser' : key.slice(5)))
+                      .filter((key, index, all) => all.indexOf(key) === index)
+                  : []
+              }
+              onSettings={() => router.push(settingsHref)}
             />
             <SidebarInset className="min-w-0">
               <AppHeader
                 title={
                   globalHome ? (
                     globalTitle ? (
-                      <HeaderCrumbs
-                        items={[{ label: t('home'), href: '/' }, { label: globalTitle }]}
-                      />
+                      globalTitle
                     ) : (
                       t('home')
                     )
@@ -281,6 +330,7 @@ export default function Shell({
                       projectName={project?.project.name ?? t('project')}
                       issueIdentifier={issueQuery.data?.identifier ?? null}
                       issueParent={issueQuery.data?.parent ?? null}
+                      viewName={views.find((view) => view.id === route.activeViewId)?.name}
                     />
                   )
                 }
@@ -289,11 +339,11 @@ export default function Shell({
                     ? `${issueQuery.data.identifier} ${issueQuery.data.title}`
                     : null
                 }
-                hasProject={!!project}
-                onOpenCommand={() => overlays.setShowCommand(true)}
-                onNewIssue={openNewIssue}
-                shownWorkspaceTools={workspaceLayout.resolved.shownTools}
-                onSelectWorkspaceTool={selectWorkspaceTool}
+                eyebrow={
+                  globalHome
+                    ? 'HOME'
+                    : `${project?.project.name ?? t('project')} · ${route.sub === 'dashboard' ? t('dashboards') : route.onBoard ? t('workItems') : (route.sub ?? t('project'))}`
+                }
                 headerLayout={headerLayout}
                 headerExtra={narrow ? null : headerExtra}
                 pageSlotRef={setHeaderSlot}
@@ -331,6 +381,13 @@ export default function Shell({
                 </ShellBody>
               </WorkspaceLayoutHost>
             </SidebarInset>
+
+            <HomeDock
+              open={workspaceOpen}
+              onOpen={workspaceLayout.openHome}
+              onNewIssue={openNewIssue}
+            />
+            <ProjectLinkSheet currentProjectKey={projectKey} projects={projects} />
 
             <CommandLayer
               open={overlays.showCommand}

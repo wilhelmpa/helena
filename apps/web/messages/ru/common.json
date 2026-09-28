@@ -168,7 +168,7 @@
     "cycles": "Циклы",
     "dashboards": "Дашборды",
     "documents": "Docs",
-    "notes": "Доски",
+    "notes": "Холсты",
     "subtasks": "Подзадачи",
     "checklists": "Чек-листы",
     "issueStats": "Статистика задач"
@@ -278,13 +278,16 @@
     "agentTeam": "Команда агентов",
     "autoArchive": "Автоархивация"
   },
-  "statusOrb": {
-    "idle": "Ожидает",
+  "status": {
+    "idle": "Отдыхает",
+    "listening": "Слушает",
     "thinking": "Думает",
     "tool": "Использует инструмент",
-    "waiting": "Ждёт вашего ответа",
+    "speaking": "Говорит",
+    "waiting": "Ждёт вас",
     "error": "Ошибка",
-    "done": "Готово",
-    "offline": "Не в сети"
+    "throttled": "Ограничен",
+    "offline": "Не в сети",
+    "done": "Готово"
   }
 }
