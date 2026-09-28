@@ -215,6 +215,14 @@
     "title": "Voz en el chat",
     "loading": "Cargando …",
     "failed": "No se pudieron cargar los ajustes de voz.",
+    "aliases": {
+      "title": "Correcciones de palabras reconocidas",
+      "hint": "Una corrección por línea: palabra reconocida → escritura deseada. Solo se sustituyen palabras completas. Las sugerencias provienen de nombres de proyectos y agentes.",
+      "placeholder": "Jeff → Jev",
+      "invalid": "Cada línea debe tener «reconocida → escrita».",
+      "reset": "Restaurar sugerencias",
+      "save": "Guardar ajustes de voz"
+    },
     "pause": {
       "title": "Pausa antes de la respuesta",
       "hint": "Cuánto tiempo debes callar antes de que Helena envíe tu frase. Más corta responde antes; más larga te interrumpe menos.",

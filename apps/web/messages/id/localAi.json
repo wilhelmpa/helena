@@ -215,6 +215,14 @@
     "title": "Suara di chat",
     "loading": "Memuat …",
     "failed": "Pengaturan suara tidak dapat dimuat.",
+    "aliases": {
+      "title": "Koreksi kata yang dikenali",
+      "hint": "Satu koreksi per baris: kata yang dikenali → ejaan yang diinginkan. Hanya kata utuh yang diganti. Saran berasal dari nama proyek dan agen.",
+      "placeholder": "Jeff → Jev",
+      "invalid": "Setiap baris harus berisi “dikenali → ditulis”.",
+      "reset": "Pulihkan saran",
+      "save": "Simpan pengaturan suara"
+    },
     "pause": {
       "title": "Jeda sebelum jawaban",
       "hint": "Berapa lama kamu harus diam sebelum Helena mengirim kalimatmu. Lebih singkat menjawab lebih cepat, lebih lama jarang memotongmu.",

@@ -215,6 +215,14 @@
     "title": "La voix dans le chat",
     "loading": "Chargement …",
     "failed": "Impossible de charger les réglages de la voix.",
+    "aliases": {
+      "title": "Corrections des mots reconnus",
+      "hint": "Une correction par ligne : mot reconnu → graphie souhaitée. Seuls les mots entiers sont remplacés. Les suggestions proviennent des noms de projets et d’agents.",
+      "placeholder": "Jeff → Jev",
+      "invalid": "Chaque ligne doit contenir « reconnu → écrit ».",
+      "reset": "Rétablir les suggestions",
+      "save": "Enregistrer les paramètres vocaux"
+    },
     "pause": {
       "title": "Pause avant la réponse",
       "hint": "Le silence qu’il faut avant qu’Helena envoie ta phrase. Plus court répond plus vite, plus long t’interrompt moins souvent.",
