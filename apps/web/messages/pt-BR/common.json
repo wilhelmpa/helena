@@ -168,7 +168,7 @@
     "cycles": "Ciclos",
     "dashboards": "Dashboards",
     "documents": "Docs",
-    "notes": "Quadros",
+    "notes": "Telas",
     "subtasks": "Subtarefas",
     "checklists": "Checklists",
     "issueStats": "Estatísticas de issue"
@@ -278,13 +278,16 @@
     "agentTeam": "Equipe de agentes",
     "autoArchive": "Arquivamento automático"
   },
-  "statusOrb": {
+  "status": {
     "idle": "Em repouso",
+    "listening": "Ouvindo",
     "thinking": "Pensando",
     "tool": "Usando uma ferramenta",
+    "speaking": "Falando",
     "waiting": "Aguardando você",
     "error": "Erro",
-    "done": "Concluído",
-    "offline": "Offline"
+    "throttled": "Limitado",
+    "offline": "Offline",
+    "done": "Concluído"
   }
 }

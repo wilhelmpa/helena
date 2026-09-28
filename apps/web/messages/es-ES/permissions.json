@@ -23,7 +23,7 @@
     "workflow_config": "Configuración del flujo de trabajo",
     "actions": "Acciones",
     "webhooks": "Webhooks",
-    "note_boards": "Tableros de notas",
+    "note_boards": "Lienzos",
     "danger_zone": "Zona de riesgo"
   },
   "actions": {

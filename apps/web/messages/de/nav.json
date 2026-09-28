@@ -1,4 +1,8 @@
 {
+  "dockContext": "HOME · KONTEXT",
+  "projectLinkHint": "Dieser Inhalt gehört zu einem anderen Projekt.",
+  "openInProject": "Im Projekt öffnen",
+  "dockOpen": "Home öffnen (⌘J)",
   "sidebarMyTasks": "Meine Aufgaben",
   "sidebarOpenTasks": "Alle offenen",
   "sidebarSwitchProject": "Projekt wechseln",
@@ -24,7 +28,7 @@
   "allWorkItems": "Alle Aufgaben",
   "initiatives": "Initiativen",
   "cycles": "Zyklen",
-  "notes": "Boards",
+  "notes": "Leinwände",
   "documents": "Dokumente",
   "docs": "Dokumente",
   "aiTeam": "KI-Team",
@@ -176,7 +180,7 @@
   "mailAccounts": "E-Mail-Konten",
   "agentPool": "Agentenpool",
   "mcps": "MCPs",
-  "tools": "Tools",
+  "tools": "Werkzeuge",
   "skills": "Skills",
   "credentials": "Zugänge",
   "devices": "Geräte",
@@ -211,6 +215,7 @@
     "commandPlaceholder": "Layout wählen…",
     "layouts": {
       "standard": "Standard",
+      "page-tool-half": "Geteilt 50/50",
       "chat-left": "Chat links",
       "chat-tool": "Chat + Werkzeug",
       "two-tools": "Zwei Werkzeuge",
@@ -226,5 +231,15 @@
     "resizeArea": "Breite ändern"
   },
   "receipts": "Belege",
-  "browserLab": "Browser 2.0"
+  "browserLab": "Browser 2.0",
+  "panelTabs": {
+    "tabs": "Werkzeuge",
+    "addTab": "Tab hinzufügen",
+    "browserTab": "Browser-Tab",
+    "side": "Seitenfeld",
+    "split": "Geteilt 50/50",
+    "full": "Vollbild",
+    "close": "Panel schließen",
+    "closeTab": "{tab} schließen"
+  }
 }

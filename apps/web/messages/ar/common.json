@@ -168,7 +168,7 @@
     "cycles": "الدورات",
     "dashboards": "لوحات المعلومات",
     "documents": "Docs",
-    "notes": "اللوحات",
+    "notes": "لوحات فنية",
     "subtasks": "المهام الفرعية",
     "checklists": "قوائم التحقّق (قائمة الحاجات اللي لازم تتراجع)",
     "issueStats": "إحصاءات المهام"
@@ -278,13 +278,16 @@
     "agentTeam": "فريق الوكلاء",
     "autoArchive": "الأرشفة التلقائية"
   },
-  "statusOrb": {
-    "idle": "في وضع الراحة",
+  "status": {
+    "idle": "في وضع السكون",
+    "listening": "يستمع",
     "thinking": "يفكر",
     "tool": "يستخدم أداة",
-    "waiting": "ينتظر ردك",
+    "speaking": "يتحدث",
+    "waiting": "ينتظرك",
     "error": "خطأ",
-    "done": "اكتمل",
-    "offline": "غير متصل"
+    "throttled": "مقيّد",
+    "offline": "غير متصل",
+    "done": "مكتمل"
   }
 }

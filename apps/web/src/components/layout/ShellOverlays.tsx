@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import type { ProjectDetail } from '@/lib/api/endpoints/projects';
-import { issuePath, projectPath } from '@/utils/paths';
+import { dashboardsPath, issuePath } from '@/utils/paths';
 import type { useOverlays } from '@/hooks/useOverlays';
 import NewProjectModal from '@/components/layout/NewProjectModal';
 import NewTeamModal from '@/features/teams/components/NewTeamModal';
@@ -33,7 +33,7 @@ export default function ShellOverlays({
           onClose={() => overlays.setShowNewProject(false)}
           onCreated={(key) => {
             overlays.setShowNewProject(false);
-            router.push(projectPath(key));
+            router.push(dashboardsPath(key));
           }}
         />
       )}

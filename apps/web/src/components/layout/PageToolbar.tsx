@@ -415,9 +415,14 @@ export function PageActions({
 }) {
   const t = useTranslations('common');
   const room = useContext(RoomCtx);
-  const inRow = room.actions ? actions.filter((action) => !action.menuOnly) : [];
+  const visibleAction = primary
+    ? null
+    : room.actions
+      ? actions.find((action) => !action.menuOnly)
+      : null;
+  const inRow = visibleAction ? [visibleAction] : [];
   const inMenu: PageAction[] = [
-    ...(room.actions ? actions.filter((action) => action.menuOnly) : actions),
+    ...actions.filter((action) => action !== visibleAction),
     {
       id: 'settings-modal',
       label: 'Einstellungen',

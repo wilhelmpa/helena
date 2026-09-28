@@ -1,4 +1,8 @@
 {
+  "dockContext": "HOME · CONTEXT",
+  "projectLinkHint": "This content belongs to another project.",
+  "openInProject": "Open in project",
+  "dockOpen": "Open Home (⌘J)",
   "sidebarMyTasks": "My tasks",
   "sidebarOpenTasks": "All open",
   "sidebarSwitchProject": "Switch project",
@@ -25,7 +29,7 @@
   "allWorkItems": "All tasks",
   "initiatives": "Initiatives",
   "cycles": "Cycles",
-  "notes": "Boards",
+  "notes": "Canvases",
   "documents": "Docs",
   "docs": "Docs",
   "aiTeam": "AI Team",
@@ -211,6 +215,7 @@
     "commandPlaceholder": "Choose a layout…",
     "layouts": {
       "standard": "Standard",
+      "page-tool-half": "Split 50/50",
       "chat-left": "Chat on the left",
       "chat-tool": "Chat + tool",
       "two-tools": "Two tools",
@@ -226,5 +231,15 @@
     "resizeArea": "Resize"
   },
   "receipts": "Receipts",
-  "browserLab": "Browser 2.0"
+  "browserLab": "Browser 2.0",
+  "panelTabs": {
+    "tabs": "Tools",
+    "addTab": "Add tab",
+    "browserTab": "Browser tab",
+    "side": "Side panel",
+    "split": "Split 50/50",
+    "full": "Full screen",
+    "close": "Close panel",
+    "closeTab": "Close {tab}"
+  }
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Loader2, Lock } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useBrowserControlGate } from '@/hooks/useBrowserControlGate';
@@ -31,12 +32,14 @@ export default function WorkspaceBrowserLive({
   reloadToken,
   followAgent,
   className,
+  controlSlot,
 }: {
   base: string;
   active: boolean;
   reloadToken: number;
   followAgent: boolean;
   className?: string;
+  controlSlot?: HTMLElement | null;
 }) {
   const t = useTranslations('nav.workspace.browserBar');
   // This device's choice of stream and of holding the page's size (the bar's stream menu).
@@ -211,12 +214,25 @@ export default function WorkspaceBrowserLive({
       )}
       {/* Who steers: the gateway's lock with "Übernehmen"/"Zurückgeben", or, before the
           gateway runs, who last acted on the page. */}
-      <WorkspaceBrowserControl
-        control={control}
-        busy={busy}
-        onTakeOver={() => takeOver()}
-        onHandBack={() => release()}
-      />
+      {controlSlot ? (
+        createPortal(
+          <WorkspaceBrowserControl
+            control={control}
+            busy={busy}
+            inline
+            onTakeOver={() => takeOver()}
+            onHandBack={() => release()}
+          />,
+          controlSlot,
+        )
+      ) : (
+        <WorkspaceBrowserControl
+          control={control}
+          busy={busy}
+          onTakeOver={() => takeOver()}
+          onHandBack={() => release()}
+        />
+      )}
       <div className="pointer-events-none absolute end-2 top-2 flex flex-col items-end gap-1">
         {page?.fixed && (
           <div

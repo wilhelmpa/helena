@@ -1,4 +1,8 @@
 {
+  "dockContext": "HOME · КОНТЕКСТ",
+  "projectLinkHint": "Цей матеріал належить до іншого проєкту.",
+  "openInProject": "Відкрити у проєкті",
+  "dockOpen": "Відкрити Home (⌘J)",
   "sidebarMyTasks": "My tasks",
   "sidebarOpenTasks": "All open",
   "sidebarSwitchProject": "Switch project",
@@ -25,7 +29,7 @@
   "allWorkItems": "Усі задачі",
   "initiatives": "Ініціативи",
   "cycles": "Цикли",
-  "notes": "Дошки",
+  "notes": "Полотна",
   "documents": "Docs",
   "docs": "Docs",
   "aiTeam": "AI-команда",
@@ -211,6 +215,7 @@
     "commandPlaceholder": "Виберіть макет…",
     "layouts": {
       "standard": "Стандартний",
+      "page-tool-half": "Розділено 50/50",
       "chat-left": "Чат ліворуч",
       "chat-tool": "Чат + інструмент",
       "two-tools": "Два інструменти",
@@ -226,5 +231,15 @@
     "resizeArea": "Змінити ширину"
   },
   "receipts": "Чеки",
-  "browserLab": "Browser 2.0"
+  "browserLab": "Browser 2.0",
+  "panelTabs": {
+    "tabs": "Tools",
+    "addTab": "Add tab",
+    "browserTab": "Browser tab",
+    "side": "Side panel",
+    "split": "Split 50/50",
+    "full": "Full screen",
+    "close": "Close panel",
+    "closeTab": "Close {tab}"
+  }
 }

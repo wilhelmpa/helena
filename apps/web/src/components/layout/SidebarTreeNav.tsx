@@ -8,7 +8,6 @@ import { useTranslations } from 'next-intl';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useProjectFeatures } from '@/hooks/useProjectFeatures';
 import { usePersistedBoolean } from '@/hooks/usePersistedBoolean';
-import { useProjectSettingsNavItems } from '@/hooks/useProjectSettingsNavItems';
 import { usePendingApprovalCount } from '@/services/approvals.service';
 import { useProposalCount } from '@/features/agent-runtime/services/agentRuntime.service';
 import { usePipelineApprovals } from '@/services/pipelines.service';
@@ -16,7 +15,8 @@ import { useViewFoldersQuery, useViewsQuery } from '@/services/views.service';
 import type { View } from '@/lib/api/endpoints/views';
 import { useFilesQuery } from '@/services/files.service';
 import { useDashboardsQuery } from '@/services/dashboards.service';
-import { useProjectMailAccounts } from '@/services/mail.service';
+import { useInboxUnread } from '@/hooks/useInboxUnread';
+import type { Project } from '@/lib/api/endpoints/projects';
 import {
   agentActivityPath,
   aiAgentsPath,
@@ -26,10 +26,7 @@ import {
   filesPath,
   homeFilesPath,
   inboxPath,
-  initiativesPath,
-  cyclesPath,
   projectPath,
-  receiptsPath,
   workflowsPath,
   projectApprovalsPath,
   organizationPath,
@@ -118,11 +115,28 @@ function TreeBranch({
   );
 }
 
-function ApprovalBadge({ teamIds }: { teamIds: number[] }) {
+function OtherProjectUnread({ project }: { project: Project }) {
+  const unread = useInboxUnread(project.key, project.id).data ?? 0;
+  return unread > 0 ? (
+    <span className="helena-other-inbox-dot" aria-label="Andere Projekte haben neue Einträge" />
+  ) : null;
+}
+
+function ApprovalBadge({
+  teamIds,
+  projectKey,
+  projects,
+}: {
+  teamIds: number[];
+  projectKey: string | null;
+  projects: Project[];
+}) {
   const t = useTranslations('nav');
   const pending = usePendingApprovalCount().data?.count ?? 0;
   const pipelines = usePipelineApprovals().data?.length ?? 0;
   const proposals = useProposalCount().data?.count ?? 0;
+  const project = projects.find((item) => item.key === projectKey);
+  const projectUnread = useInboxUnread(project?.key ?? null, project?.id ?? null).data ?? 0;
   return (
     <>
       {teamIds.map((teamId) => (
@@ -131,12 +145,20 @@ function ApprovalBadge({ teamIds }: { teamIds: number[] }) {
       <TreeBranch
         id="you:inbox"
         label={t('sidebarInbox')}
-        href="/inbox"
+        href={projectKey ? inboxPath(projectKey) : '/inbox'}
         activePaths={['/approvals']}
         action={
-          pending + pipelines + proposals > 0 && (
-            <span className="helena-tree-badge">{pending + pipelines + proposals}</span>
-          )
+          <>
+            {(projectKey ? projectUnread : pending + pipelines + proposals) > 0 && (
+              <span className="helena-tree-badge">
+                {projectKey ? projectUnread : pending + pipelines + proposals}
+              </span>
+            )}
+            {projectKey &&
+              projects
+                .filter((item) => item.key !== projectKey)
+                .map((item) => <OtherProjectUnread key={item.key} project={item} />)}
+          </>
         }
       >
         <TreeLink href="/approvals" nested>
@@ -147,13 +169,20 @@ function ApprovalBadge({ teamIds }: { teamIds: number[] }) {
   );
 }
 
-export function SidebarPersonalNav({ teamIds }: { teamIds: number[] }) {
+export function SidebarPersonalNav({
+  teamIds,
+  projectKey,
+  projects,
+}: {
+  teamIds: number[];
+  projectKey: string | null;
+  projects: Project[];
+}) {
   const t = useTranslations('nav');
   return (
     <section className="helena-sidebar-section">
       <h2>{t('sidebarYou')}</h2>
-      <TreeLink href="/chat">{t('sidebarHomeChat')}</TreeLink>
-      <ApprovalBadge teamIds={teamIds} />
+      <ApprovalBadge teamIds={teamIds} projectKey={projectKey} projects={projects} />
     </section>
   );
 }
@@ -165,6 +194,7 @@ export function SidebarHomeTree({ teamId }: { teamId: number | null }) {
   return (
     <section className="helena-sidebar-section">
       <h2>{t('sidebarProject')}</h2>
+      <TreeLink href="/">{t('dashboards')}</TreeLink>
       <TreeBranch id="home:tasks" label={t('workItems')} href="/tasks">
         <TreeLink href="/tasks?assignee=me" nested>
           {t('sidebarMyTasks')}
@@ -192,7 +222,6 @@ export function SidebarHomeTree({ teamId }: { teamId: number | null }) {
           {t('sidebarTemplates')}
         </TreeLink>
       </TreeBranch>
-      <TreeLink href="/">{t('dashboards')}</TreeLink>
       <TreeBranch
         id="home:auto"
         label={t('sidebarAutomation')}
@@ -202,58 +231,11 @@ export function SidebarHomeTree({ teamId }: { teamId: number | null }) {
         <TreeLink href={get('organization') ?? '/organization'} nested>
           {t('sidebarTeamDeciders')}
         </TreeLink>
-        <TreeLink href={get('agentPool') ?? '/agents'} nested>
-          {t('aiAgents')}
-        </TreeLink>
         <TreeLink href="/schedules" nested>
           {t('sidebarSchedules')}
         </TreeLink>
         <TreeLink href="/activity" nested>
           {t('sidebarHistory')}
-        </TreeLink>
-        <TreeLink href={get('workflows') ?? '/workflows'} nested>
-          {t('workflows')}
-        </TreeLink>
-        {get('browser') && (
-          <TreeLink href={get('browser')!} nested>
-            {t('workspace.browser')}
-          </TreeLink>
-        )}
-      </TreeBranch>
-      <TreeBranch
-        id="home:settings"
-        label={t('settings')}
-        href={get('teamSettings') ?? '/account/preferences'}
-        activePaths={['/skills', '/tools', '/mcps', '/access', '/decisions', '/devices']}
-      >
-        {home
-          .filter((item) => item.group === 'globalSettings')
-          .map((item) => (
-            <TreeLink key={item.id} href={item.href} nested>
-              {t(item.id)}
-            </TreeLink>
-          ))}
-        {teamId == null && (
-          <>
-            <TreeLink href="/skills" nested>
-              {t('skills')}
-            </TreeLink>
-            <TreeLink href="/tools" nested>
-              {t('tools')}
-            </TreeLink>
-            <TreeLink href="/mcps" nested>
-              {t('mcps')}
-            </TreeLink>
-            <TreeLink href="/decisions" nested>
-              {t('decisions')}
-            </TreeLink>
-            <TreeLink href="/account/teams" nested>
-              {t('teamSettings')}
-            </TreeLink>
-          </>
-        )}
-        <TreeLink href="/inbox" nested>
-          {t('inbox')}
         </TreeLink>
       </TreeBranch>
     </section>
@@ -273,7 +255,7 @@ export function SidebarProjectTree({
 }) {
   const t = useTranslations('nav');
   const viewsT = useTranslations('views');
-  const { can, isAdmin } = usePermissions();
+  const { can } = usePermissions();
   const features = useProjectFeatures();
   const { data: views = [] } = useViewsQuery(projectKey);
   const { data: areas = [] } = useViewFoldersQuery(projectKey);
@@ -285,14 +267,24 @@ export function SidebarProjectTree({
   const { data: dashboards = [] } = useDashboardsQuery(
     features.dashboards && can('dashboards', 'read') ? projectKey : null,
   );
-  const { data: mailAccounts = [] } = useProjectMailAccounts(projectKey);
-  const settings = useProjectSettingsNavItems(projectKey);
-  const first = settings.find((item) => item.key === 'general') ?? settings[0];
   const taskHref = projectPath(projectKey);
 
   return (
     <section className="helena-sidebar-section">
       <h2>{t('sidebarProject')}</h2>
+      {features.dashboards && can('dashboards', 'read') && (
+        <TreeBranch
+          id={`${projectKey}:dashboard`}
+          label={t('dashboards')}
+          href={dashboardsPath(projectKey)}
+        >
+          {dashboards.map((dashboard) => (
+            <TreeLink key={dashboard.id} href={dashboardPath(projectKey, dashboard.id)} nested>
+              {dashboard.name}
+            </TreeLink>
+          ))}
+        </TreeBranch>
+      )}
       <TreeBranch
         id={`${projectKey}:tasks`}
         label={t('workItems')}
@@ -350,19 +342,6 @@ export function SidebarProjectTree({
             ))}
         </TreeBranch>
       )}
-      {features.dashboards && can('dashboards', 'read') && (
-        <TreeBranch
-          id={`${projectKey}:dashboard`}
-          label={t('dashboards')}
-          href={dashboardsPath(projectKey)}
-        >
-          {dashboards.map((dashboard) => (
-            <TreeLink key={dashboard.id} href={dashboardPath(projectKey, dashboard.id)} nested>
-              {dashboard.name}
-            </TreeLink>
-          ))}
-        </TreeBranch>
-      )}
       <TreeBranch
         id={`${projectKey}:auto`}
         label={t('sidebarAutomation')}
@@ -393,30 +372,12 @@ export function SidebarProjectTree({
             {t('sidebarHistory')}
           </TreeLink>
         )}
-        {can('actions', 'read') && (
-          <TreeLink href={workflowsPath(projectKey)} nested>
-            {t('workflows')}
-          </TreeLink>
-        )}
         {can('ai_agents', 'edit') && (
           <TreeLink href={projectApprovalsPath(projectKey)} nested>
             {t('approvals')}
           </TreeLink>
         )}
       </TreeBranch>
-      {mailAccounts.length > 0 && <TreeLink href={inboxPath(projectKey)}>{t('inbox')}</TreeLink>}
-      {isAdmin && <TreeLink href={receiptsPath(projectKey)}>{t('receipts')}</TreeLink>}
-      {features.initiatives && can('initiatives', 'read') && (
-        <TreeLink href={initiativesPath(projectKey)}>{t('initiatives')}</TreeLink>
-      )}
-      {features.cycles && can('cycles', 'read') && (
-        <TreeLink href={cyclesPath(projectKey)}>{t('cycles')}</TreeLink>
-      )}
-      {first && (
-        <TreeLink href={first.href} activeOverride={settings.some((item) => item.active)}>
-          {t('settings')}
-        </TreeLink>
-      )}
     </section>
   );
 }

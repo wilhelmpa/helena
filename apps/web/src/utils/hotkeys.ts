@@ -70,7 +70,7 @@ export const HOTKEYS: HotkeyDef[] = [
     combo: 'mod+,',
     scope: 'global',
   },
-  { id: 'chat.toggle', group: 'general', combo: 'c', scope: 'app' },
+  { id: 'chat.toggle', group: 'general', combo: 'mod+j', scope: 'global' },
   // The next workspace layout (hooks/useWorkspaceLayout).
   { id: 'layout.cycle', group: 'general', combo: 'l', scope: 'app' },
   { id: 'view.kanban', group: 'workItems', combo: '1', scope: 'app' },

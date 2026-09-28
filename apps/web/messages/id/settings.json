@@ -60,7 +60,7 @@
       "dashboards": "Bagan dan metrik pada dasbor yang disimpan.",
       "initiatives": "Grup issue yang dipantau sebagai satu unit pekerjaan.",
       "cycles": "Periode kerja berbatas waktu untuk merencanakan issue.",
-      "notes": "Papan bebas untuk catatan tempel.",
+      "notes": "Kanvas bebas untuk catatan tempel.",
       "subtasks": "Issue yang dipecah menjadi subtugas di bawah induk.",
       "checklists": "Daftar langkah yang dipantau di dalam issue.",
       "issueStats": "Berapa lama suatu issue berada di setiap status.",

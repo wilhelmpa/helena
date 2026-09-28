@@ -1,4 +1,8 @@
 {
+  "dockContext": "HOME · CONTEXTO",
+  "projectLinkHint": "Este conteúdo pertence a outro projeto.",
+  "openInProject": "Abrir no projeto",
+  "dockOpen": "Abrir Home (⌘J)",
   "sidebarMyTasks": "My tasks",
   "sidebarOpenTasks": "All open",
   "sidebarSwitchProject": "Switch project",
@@ -25,7 +29,7 @@
   "allWorkItems": "Todos os itens de trabalho",
   "initiatives": "Iniciativas",
   "cycles": "Ciclos",
-  "notes": "Quadros",
+  "notes": "Telas",
   "documents": "Docs",
   "docs": "Docs",
   "aiTeam": "Time de IA",
@@ -211,6 +215,7 @@
     "commandPlaceholder": "Escolha um layout…",
     "layouts": {
       "standard": "Padrão",
+      "page-tool-half": "Dividido 50/50",
       "chat-left": "Chat à esquerda",
       "chat-tool": "Chat + ferramenta",
       "two-tools": "Duas ferramentas",
@@ -226,5 +231,15 @@
     "resizeArea": "Redimensionar"
   },
   "receipts": "Comprovantes",
-  "browserLab": "Browser 2.0"
+  "browserLab": "Browser 2.0",
+  "panelTabs": {
+    "tabs": "Tools",
+    "addTab": "Add tab",
+    "browserTab": "Browser tab",
+    "side": "Side panel",
+    "split": "Split 50/50",
+    "full": "Full screen",
+    "close": "Close panel",
+    "closeTab": "Close {tab}"
+  }
 }
