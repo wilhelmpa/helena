@@ -280,6 +280,16 @@ class PowerTests(HostTest):
         self.assertEqual(power.fans_summary(ec), {'mode': 'auto', 'level': None})
         self.assertEqual(power.cpu_temperature(self.host, DEFAULT_CONFIG['power']), 58.2)
 
+    def test_status_reports_expected_fan_module_and_unreadable_rpm(self):
+        self.ec()
+        self.write('/etc/modules-load.d/helena-fan-control.conf', 'ec_su_axb35\n')
+        os.makedirs(self.host.path('/sys/module/ec_su_axb35'))
+        os.remove(self.host.path('/sys/class/ec_su_axb35/fan2/rpm'))
+        status = power.status(self.host, DEFAULT_CONFIG['power'], {'power': {}, 'guard': {}}, None)
+        self.assertTrue(status['fanControlExpected'])
+        self.assertTrue(status['fanModuleLoaded'])
+        self.assertIsNone(status['ec']['fans'][1]['rpm'])
+
     def test_another_board_never_gets_the_ec(self):
         self.ec(board='SomethingElse')
         self.assertIsNone(power.read_ec(self.host, DEFAULT_CONFIG['power']))

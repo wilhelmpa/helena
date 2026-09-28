@@ -20,8 +20,8 @@ set -eu
 here=$(cd "$(dirname "$0")" && pwd)
 
 EC_REPO=https://github.com/cmetz/ec-su_axb35-linux.git
-EC_COMMIT=e483ec93deab514c66d3e5c9eeed98b6c17887b4      # 2026-04-03
-EC_VERSION=20260403-e483ec9
+EC_COMMIT=f62c2c228959a08683273a26ef3afd8991e69f6d     # PR #31: restore AUTO on unload
+EC_VERSION=f62c2c22
 SMU_REPO=https://github.com/amkillam/ryzen_smu.git
 SMU_COMMIT=0bb95d961664c7a0ac180f849fa16fe7da71922d     # 2026-04-25, driver 0.1.7
 SMU_VERSION=0.1.7-0bb95d9
@@ -128,6 +128,10 @@ install)
   dkms_install ryzen_smu "$SMU_VERSION"
 
   run install -m 0644 -o root -g root "$here/helena-fan-control.modules" /etc/modules-load.d/helena-fan-control.conf
+  run install -m 0755 -o root -g root "$here/helena-fan-module-check" /usr/local/sbin/helena-fan-module-check
+  run install -m 0644 -o root -g root "$here/helena-fan-module-check.service" /etc/systemd/system/helena-fan-module-check.service
+  run systemctl daemon-reload
+  run systemctl enable helena-fan-module-check.service
   if echo "$FAILED_BUILDS" | grep -q "@$(uname -r)"; then
     echo "The modules did not build for the running kernel $(uname -r):$FAILED_BUILDS" >&2
     echo "Nothing was loaded; see /var/lib/dkms/*/*/build/make.log. Roll back: $0 uninstall" >&2
@@ -168,6 +172,9 @@ status)
   systemctl is-active helena-power-guard.service >/dev/null && echo "guard: active" || echo "guard: inactive"
   ;;
 uninstall)
+  run systemctl disable --now helena-fan-module-check.service || true
+  run rm -f /etc/systemd/system/helena-fan-module-check.service /usr/local/sbin/helena-fan-module-check
+  run systemctl daemon-reload
   # Fans back to the EC's own control first, so nothing is left fixed low.
   if [ -d /sys/class/ec_su_axb35 ]; then
     for fan in 1 2 3; do

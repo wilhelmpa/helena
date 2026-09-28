@@ -1,0 +1,10 @@
+#!/bin/sh
+# Build the pinned EC module for a newly booted kernel when DKMS missed the upgrade.
+set -eu
+kernel=$(uname -r)
+if ! dkms status -m ec_su_axb35 -v f62c2c22 -k "$kernel" 2>/dev/null \
+    | grep -q '^ec_su_axb35/f62c2c22, .*: installed' \
+    || ! modinfo -k "$kernel" ec_su_axb35 >/dev/null 2>&1; then
+  dkms install -m ec_su_axb35 -v f62c2c22 -k "$kernel"
+fi
+modprobe ec_su_axb35

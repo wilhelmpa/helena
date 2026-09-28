@@ -76,13 +76,29 @@ class NetworksTests(unittest.TestCase):
 
     def test_the_firewall_sets_stay_as_before(self):
         v6, v4 = sync.firewall_networks(LINKS, ROUTES4)
-        self.assertEqual(v6, ['2003:c3:172e:f989::/64', 'fd11:22::/64'])
+        self.assertEqual(v6, ['2003:c3:172e:f989::/64'])
         self.assertEqual(v4, ['192.168.2.0/24'])
         script = sync.nft_script(v6, v4)
-        self.assertIn('add element inet helena_hardening lan6 { fe80::/10, fc00::/7, 2003:c3:172e:f989::/64, '
-                      'fd11:22::/64 }', script)
+        self.assertIn('add element inet helena_hardening lan6 { fe80::/10, fc00::/7, 2003:c3:172e:f989::/64 }', script)
         self.assertIn('add element inet helena_hardening lan4 { 192.168.2.0/24 }', script)
         self.assertNotIn('lan4', sync.nft_script(v6, []))  # never emptied on a link flap
+
+    def test_prefix_change_with_noprefixroute_addresses(self):
+        fixture = json.loads('''[{"ifname":"eno1","addr_info":[
+          {"family":"inet6","local":"2003:c3:1111:2222::58","prefixlen":64,"scope":"global",
+           "flags":["dynamic","deprecated","noprefixroute"],"preferred_life_time":0},
+          {"family":"inet6","local":"2003:c3:3333:4444::58","prefixlen":64,"scope":"global",
+           "flags":["dynamic","noprefixroute"],"preferred_life_time":3600},
+          {"family":"inet6","local":"fd00:1::58","prefixlen":64,"scope":"global"},
+          {"family":"inet6","local":"fe80::58","prefixlen":64,"scope":"link"}]},
+          {"ifname":"virbr0","addr_info":[{"family":"inet6","local":"2003:c3:aaaa:bbbb::1",
+           "prefixlen":64,"scope":"global"}]}]''')
+        v6, _ = sync.firewall_networks(fixture, [])
+        self.assertEqual(v6, ['2003:c3:3333:4444::/64'])
+        self.assertIn('fe80::/10, fc00::/7', sync.nft_script(v6, []))
+        prefixes, own = sync.owner_networks(fixture, 'eno1')
+        self.assertNotIn('2003:c3:1111:2222::/64', prefixes)
+        self.assertIn('2003:c3:1111:2222::58/128', own)
 
     def test_the_include(self):
         text = sync.render_nginx(['2003:c3:172e:f989::/64'], ['192.168.2.58/32', f'{GUA}/128'], 'eno1')

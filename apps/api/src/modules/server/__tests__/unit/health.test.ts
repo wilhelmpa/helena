@@ -311,6 +311,28 @@ describe('power and system health', () => {
     });
   });
 
+  it('reports a missing fan module and unreadable fan readings as critical', () => {
+    const missing = powerHealth(
+      power({ fanControlExpected: true, fanModuleLoaded: false, ec: null, fans: null }),
+    );
+    expect(byId(missing, 'fans:hardware')).toMatchObject({
+      state: 'critical',
+      code: 'fanModuleMissing',
+    });
+    const unreadable = powerHealth(
+      power({
+        fanControlExpected: true,
+        fanModuleLoaded: true,
+        ec: { ...power().ec!, fans: [{ ...power().ec!.fans[0]!, rpm: null }] },
+      }),
+    );
+    expect(byId(unreadable, 'fans:hardware')).toMatchObject({
+      state: 'critical',
+      code: 'fanSensorsUnreadable',
+    });
+    expect(unreadable.find((item) => item.id === 'fans')).toBeUndefined();
+  });
+
   it('the GPU share of the memory is never pressure, low memory is', () => {
     const base = {
       hostname: 'kingston-server',

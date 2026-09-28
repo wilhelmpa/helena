@@ -229,6 +229,8 @@ export interface StorageStatus {
 export type PowerProfile = 'saver' | 'balanced' | 'performance';
 
 export interface PowerStatus {
+  fanControlExpected?: boolean;
+  fanModuleLoaded?: boolean;
   available: { ec: boolean; os: boolean; ryzenadj: boolean; smuDriver: boolean };
   board: string | null;
   profile: PowerProfile | 'mixed' | null;

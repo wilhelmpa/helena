@@ -247,8 +247,8 @@ build_llama_hip() {
   # GGML_HIP=ON: the HIP backend (ggml-cuda compiled for AMD).
   # AMDGPU_TARGETS=gfx1151: code for this GPU only (ROCm 10 knows it natively: no
   #   HSA_OVERRIDE_GFX_VERSION anywhere).
-  # GGML_HIP_ROCWMMA_FATTN=ON: flash attention through rocWMMA on RDNA3.5's WMMA units, the
-  #   prefill gain on Strix Halo at long context (§4 of the decision, measured).
+  # GGML_HIP_ROCWMMA_FATTN=ON is ineffective since llama.cpp PR #26046; the measured prefill
+  #   gain comes from the MMA kernel. Keep the existing CMake invocation for identical builds.
   # LLAMA_CURL=OFF: the binaries never download anything (Lemonade places the models).
   # LLAMA_BUILD_NUMBER/COMMIT: a tarball has no .git; `llama-server --version` still names the
   #   release (b11166 = build 11166) and the checked commit.
