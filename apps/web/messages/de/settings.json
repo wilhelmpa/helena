@@ -720,6 +720,10 @@
         "label": "Lokale KI",
         "hint": "Modelle auf diesem Server: an/aus, Aufgaben, Vorladen."
       },
+      "browser": {
+        "label": "Browser",
+        "hint": "Projekt-Browser nur bei Bedarf: Leerlaufzeit und Ausnahmen „immer an“."
+      },
       "decisions": {
         "label": "Entscheider",
         "hint": "Schnelle Entscheidungen: Arten, Schwellen, Protokoll."

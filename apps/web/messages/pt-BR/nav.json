@@ -142,7 +142,10 @@
       "bookmarks": "Favoritos",
       "bookmarkPage": "Salvar esta página",
       "removeBookmark": "Remover favorito",
-      "noBookmarks": "Nenhum favorito ainda"
+      "noBookmarks": "Nenhum favorito ainda",
+      "browserStarting": "Iniciando o navegador…",
+      "browserStartingShort": "Iniciando o navegador…",
+      "browserStartFailed": "O navegador não iniciou. Tentando de novo…"
     },
     "browserPreviews": {
       "title": "Prévias",

@@ -142,7 +142,10 @@
       "bookmarks": "Bookmark",
       "bookmarkPage": "Bookmark halaman ini",
       "removeBookmark": "Hapus bookmark",
-      "noBookmarks": "Belum ada bookmark"
+      "noBookmarks": "Belum ada bookmark",
+      "browserStarting": "Memulai browser…",
+      "browserStartingShort": "Memulai browser…",
+      "browserStartFailed": "Browser tidak dapat dimulai. Mencoba lagi…"
     },
     "browserPreviews": {
       "title": "Pratinjau",

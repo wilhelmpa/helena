@@ -720,6 +720,10 @@
         "label": "IA local",
         "hint": "Modelos neste servidor: ligar, tarefas, pré-carga."
       },
+      "browser": {
+        "label": "Navegador",
+        "hint": "Navegadores de projeto sob demanda: tempo ocioso e os que ficam sempre ligados."
+      },
       "decisions": {
         "label": "Decisores",
         "hint": "Decisões rápidas: tipos, limites, registro."

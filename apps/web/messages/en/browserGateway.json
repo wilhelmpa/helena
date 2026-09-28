@@ -22,5 +22,27 @@
     "failed": "The browser could not do that."
   },
   "linkScopeMissing": "The source project of this link is not known. Open its project or chat first.",
-  "linkBrowserUnavailable": "The internal browser for this project is not configured."
+  "linkBrowserUnavailable": "The internal browser for this project is not configured.",
+  "stopped": "Paused",
+  "stoppedHint": "Starts when opened",
+  "starting": "Starting…",
+  "power": {
+    "saved": "Saved",
+    "idleTitle": "Project browsers",
+    "idle": "Stop when idle for",
+    "idleHint": "A browser nobody watches and no agent uses is stopped after this time. It starts again within seconds the next time it is opened or an agent uses it; tabs and sign-ins are kept.",
+    "minutes": "{count, plural, one {# minute} other {# minutes}}",
+    "never": "Never (always on)",
+    "alwaysOnTitle": "Always on",
+    "alwaysOnFor": "Keep the browser of {name} always on",
+    "home": "Helena",
+    "state": {
+      "running": "Running",
+      "starting": "Starting…",
+      "stopping": "Stopping…",
+      "stopped": "Paused — starts when opened",
+      "unknown": "State unknown",
+      "none": "No browser set up yet"
+    }
+  }
 }

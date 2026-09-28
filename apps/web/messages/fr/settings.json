@@ -720,6 +720,10 @@
         "label": "IA locale",
         "hint": "Modèles sur ce serveur : activation, tâches, préchargement."
       },
+      "browser": {
+        "label": "Navigateur",
+        "hint": "Navigateurs de projet à la demande : délai d’inactivité et ceux toujours actifs."
+      },
       "decisions": {
         "label": "Décideurs",
         "hint": "Décisions rapides : types, seuils, journal."

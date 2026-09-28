@@ -36,6 +36,11 @@ export interface LiveViewport extends Size {
 
 export type ScreencastStatus = 'connecting' | 'live' | 'reconnecting';
 
+// A project browser runs on demand: the router starts it when a live view opens and says so
+// ({"type":"browser"}): "starting" until it runs, "failed" when it did not start (the view
+// connects again as after any dropped connection). Null: the router said nothing, it ran.
+export type BrowserStartState = 'starting' | 'failed' | null;
+
 // The router streams video to a view that plays it, and JPEG frames otherwise.
 export type ScreencastMode = 'jpeg' | 'video';
 
@@ -106,6 +111,7 @@ type ServerText =
       holder?: string;
     }
   | { type: 'tab' }
+  | { type: 'browser'; state: 'starting' | 'running' | 'failed' }
   | { type: 'pong'; t: number }
   | ({ type: 'handover'; open: boolean } & Partial<LiveHandover>)
   | ({ type: 'control' } & LiveControlState);
@@ -157,6 +163,7 @@ export function useBrowserScreencast(
     () => false,
   );
   const [status, setStatus] = useState<ScreencastStatus>('connecting');
+  const [browserStart, setBrowserStart] = useState<BrowserStartState>(null);
   const [mode, setMode] = useState<ScreencastMode>('jpeg');
   const [hasFrame, setHasFrame] = useState(false);
   // Whether the video element shows a frame of the current MSE video; until it does, the
@@ -474,6 +481,7 @@ export function useBrowserScreencast(
         // router — declares visibility explicitly before sending its current viewport.
         // Existing clients send the same hidden:false signal just after their viewport.
         lastSent.current = null;
+        setBrowserStart(null);
         send({ type: 'hidden', hidden: false });
         sendViewport(true);
         send({ type: 'follow', agent: followAgentRef.current });
@@ -541,7 +549,9 @@ export function useBrowserScreencast(
           return receive(event.data);
         }
         const message = JSON.parse(event.data) as ServerText;
-        if (message.type === 'dialog') setDialog(message.open ? message : null);
+        if (message.type === 'browser') {
+          setBrowserStart(message.state === 'running' ? null : message.state);
+        } else if (message.type === 'dialog') setDialog(message.open ? message : null);
         else if (message.type === 'handover') {
           setHandover(
             message.open
@@ -635,6 +645,7 @@ export function useBrowserScreencast(
 
   return {
     status,
+    browserStart,
     mode,
     playback: playback.current,
     hasFrame,

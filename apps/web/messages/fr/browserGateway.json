@@ -22,5 +22,27 @@
     "failed": "Le navigateur n'a pas pu le faire."
   },
   "linkScopeMissing": "Le projet source de ce lien est inconnu. Ouvrez d’abord son projet ou sa conversation.",
-  "linkBrowserUnavailable": "Le navigateur interne de ce projet n’est pas configuré."
+  "linkBrowserUnavailable": "Le navigateur interne de ce projet n’est pas configuré.",
+  "stopped": "En pause",
+  "stoppedHint": "Démarre à l’ouverture",
+  "starting": "Démarrage…",
+  "power": {
+    "saved": "Enregistré",
+    "idleTitle": "Navigateurs de projet",
+    "idle": "Arrêter après une inactivité de",
+    "idleHint": "Un navigateur que personne ne regarde et qu’aucun agent n’utilise est arrêté après ce délai. Il redémarre en quelques secondes à la prochaine ouverture ou quand un agent l’utilise ; les onglets et les connexions sont conservés.",
+    "minutes": "{count, plural, one {# minute} other {# minutes}}",
+    "never": "Jamais (toujours actif)",
+    "alwaysOnTitle": "Toujours actif",
+    "alwaysOnFor": "Garder le navigateur de {name} toujours actif",
+    "home": "Helena",
+    "state": {
+      "running": "En cours d’exécution",
+      "starting": "Démarrage…",
+      "stopping": "Arrêt en cours…",
+      "stopped": "En pause — démarre à l’ouverture",
+      "unknown": "État inconnu",
+      "none": "Pas encore de navigateur"
+    }
+  }
 }
