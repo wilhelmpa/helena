@@ -206,6 +206,10 @@
     "noBacklinks": "没有链接",
     "history": "历史",
     "noHistory": "暂无历史",
-    "discard": "放弃未保存的更改？"
+    "discard": "放弃未保存的更改？",
+    "othersFiles": "此文件夹中还有 {count} 个文件 →",
+    "othersKnowledge": "此文件夹中有 {count} 个文档和画布 →",
+    "openInPage": "大图打开",
+    "download": "下载"
   }
 }

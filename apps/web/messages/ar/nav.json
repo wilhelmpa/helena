@@ -271,5 +271,6 @@
   "mail": "البريد",
   "settingsExecution": "التنفيذ الافتراضي",
   "adminOnly": "يرى المسؤول فقط هذه الإعدادات.",
-  "sidebarTerminals": "الطرفيات"
+  "sidebarTerminals": "الطرفيات",
+  "sidebarFiles": "الملفات"
 }

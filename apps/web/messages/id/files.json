@@ -206,6 +206,10 @@
     "noBacklinks": "Tidak ada tautan",
     "history": "Riwayat",
     "noHistory": "Belum ada riwayat",
-    "discard": "Buang perubahan yang belum disimpan?"
+    "discard": "Buang perubahan yang belum disimpan?",
+    "othersFiles": "{count} berkas lain di folder ini →",
+    "othersKnowledge": "{count} dokumen dan kanvas di folder ini →",
+    "openInPage": "Buka besar",
+    "download": "Unduh"
   }
 }

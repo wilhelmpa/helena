@@ -271,5 +271,6 @@
   "mail": "邮件",
   "settingsExecution": "默认执行",
   "adminOnly": "只有管理员能看到这些设置。",
-  "sidebarTerminals": "终端"
+  "sidebarTerminals": "终端",
+  "sidebarFiles": "文件"
 }

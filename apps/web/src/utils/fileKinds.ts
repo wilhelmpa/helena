@@ -61,6 +61,7 @@ const TEXT_EXTENSIONS = new Set([
   ...Object.keys(LANGUAGES).filter((extension) => !['html', 'svg', 'xml'].includes(extension)),
   'txt',
   'log',
+  'eml',
   'env',
   'cfg',
   'properties',

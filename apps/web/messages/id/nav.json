@@ -271,5 +271,6 @@
   "mail": "Surel",
   "settingsExecution": "Eksekusi bawaan",
   "adminOnly": "Hanya administrator yang melihat pengaturan ini.",
-  "sidebarTerminals": "Terminal"
+  "sidebarTerminals": "Terminal",
+  "sidebarFiles": "Berkas"
 }

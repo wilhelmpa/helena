@@ -433,7 +433,7 @@ export default function TeamAiAgentFields({
                 </SettingsRow>
               )}
             </SettingsGroup>
-            <SettingsGroup title={t('pages.execution')} description={tRuntime('summary')}>
+            <SettingsGroup title={t('pages.execution')}>
               <div className="ds-settings-row is-stacked">{runtimeControls}</div>
             </SettingsGroup>
             <SettingsGroup>

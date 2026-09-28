@@ -206,6 +206,10 @@
     "noBacklinks": "No links",
     "history": "History",
     "noHistory": "No history yet",
-    "discard": "Discard unsaved changes?"
+    "discard": "Discard unsaved changes?",
+    "othersFiles": "{count, plural, one {# more file} other {# more files}} in this folder →",
+    "othersKnowledge": "{count, plural, one {# doc or canvas} other {# docs and canvases}} in this folder →",
+    "openInPage": "Open large",
+    "download": "Download"
   }
 }

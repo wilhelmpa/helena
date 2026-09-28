@@ -271,5 +271,6 @@
   "mail": "Почта",
   "settingsExecution": "Исполнение по умолчанию",
   "adminOnly": "Эти настройки видит только администратор.",
-  "sidebarTerminals": "Терминалы"
+  "sidebarTerminals": "Терминалы",
+  "sidebarFiles": "Файлы"
 }

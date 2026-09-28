@@ -529,3 +529,37 @@ body[data-modal-open='true'] [data-radix-popper-content-wrapper] {
   gap: 8px;
   margin-bottom: 16px;
 }
+
+/* A file preview in the overlay (FileViewer): size and the caller's actions on one line,
+   the file below, filling the rest. */
+.ds-file-preview {
+  display: flex;
+  min-height: 100%;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.ds-file-preview-bar {
+  display: flex;
+  min-height: 32px;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+.ds-file-preview-size {
+  color: var(--text-3);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.ds-file-preview-actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-inline-start: auto;
+}
+.ds-file-preview-body {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+}

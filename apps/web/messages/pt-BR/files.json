@@ -206,6 +206,10 @@
     "noBacklinks": "Nenhum link",
     "history": "Histórico",
     "noHistory": "Ainda sem histórico",
-    "discard": "Descartar as alterações não salvas?"
+    "discard": "Descartar as alterações não salvas?",
+    "othersFiles": "{count, plural, one {mais # arquivo} other {mais # arquivos}} nesta pasta →",
+    "othersKnowledge": "{count, plural, one {# documento ou tela} other {# documentos e telas}} nesta pasta →",
+    "openInPage": "Abrir grande",
+    "download": "Baixar"
   }
 }

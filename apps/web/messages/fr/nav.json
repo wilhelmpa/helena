@@ -271,5 +271,6 @@
   "mail": "Courriel",
   "settingsExecution": "Exécution par défaut",
   "adminOnly": "Seul l'administrateur voit ces réglages.",
-  "sidebarTerminals": "Terminaux"
+  "sidebarTerminals": "Terminaux",
+  "sidebarFiles": "Fichiers"
 }

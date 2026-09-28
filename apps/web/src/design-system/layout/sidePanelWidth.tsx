@@ -18,7 +18,7 @@ export const SIDE_PANEL_WIDTH_VAR = '--helena-side-panel-width';
 // Overlays that hold a whole form (an agent's settings) open wider and remember their own
 // width; everything else shares one.
 export type SidePanelKind = 'default' | 'wide';
-const DEFAULTS: Record<SidePanelKind, number> = { default: SIDE_PANEL_DEFAULT_WIDTH, wide: 760 };
+const DEFAULTS: Record<SidePanelKind, number> = { default: SIDE_PANEL_DEFAULT_WIDTH, wide: 880 };
 const KEYS: Record<SidePanelKind, string> = {
   default: STORAGE_KEY,
   wide: `${STORAGE_KEY}:wide`,

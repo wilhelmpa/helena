@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import Modal, { useModalFullscreen } from '@/components/common/overlay/Modal';
+import { Overlay } from '@/design-system/layout/Overlay';
 import { formatSize } from '@/utils/fileSize';
 import FileViewerContent from './FileViewerContent';
 
@@ -13,9 +13,10 @@ export interface ViewerFile {
   vaultPath: string | null;
 }
 
-// Looks at a file without leaving the page: a PDF in the browser's viewer, images with
-// zoom, audio and video, text highlighted, an office file's extracted text. `actions`
-// are the buttons the caller offers for it (download, open elsewhere, link).
+// Looks at a file without leaving the page, in the one overlay on the right (owner 28.09.:
+// a file preview opens like a task or a run): a PDF in the browser's viewer, images with
+// zoom, audio and video, text highlighted, an office file's extracted text. `actions` are
+// the buttons the caller offers for it (download, open elsewhere, link).
 export default function FileViewer({
   file,
   actions,
@@ -25,19 +26,25 @@ export default function FileViewer({
   actions: ReactNode;
   onClose: () => void;
 }) {
-  const fullscreen = useModalFullscreen();
   return (
-    <Modal
-      title={file.name}
-      description={file.sizeBytes !== null ? formatSize(file.sizeBytes) : undefined}
+    <Overlay
+      label={file.name}
+      tabs={[{ id: 'file', label: file.name }]}
       onClose={onClose}
-      wide="xl"
-      {...fullscreen}
+      closeOnOutsideClick
+      className="ds-file-overlay"
     >
-      <div className="flex flex-wrap items-center gap-1.5 pb-3">{actions}</div>
-      <div className="flex min-h-0 flex-1 flex-col">
-        <FileViewerContent file={file} />
+      <div className="ds-file-preview">
+        <div className="ds-file-preview-bar">
+          {file.sizeBytes !== null && (
+            <span className="ds-file-preview-size">{formatSize(file.sizeBytes)}</span>
+          )}
+          <span className="ds-file-preview-actions">{actions}</span>
+        </div>
+        <div className="ds-file-preview-body">
+          <FileViewerContent file={file} />
+        </div>
       </div>
-    </Modal>
+    </Overlay>
   );
 }

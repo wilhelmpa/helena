@@ -271,5 +271,6 @@
   "mail": "Mail",
   "settingsExecution": "Default execution",
   "adminOnly": "Only the administrator sees these settings.",
-  "sidebarTerminals": "Terminals"
+  "sidebarTerminals": "Terminals",
+  "sidebarFiles": "Files"
 }

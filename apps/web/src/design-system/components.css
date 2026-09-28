@@ -678,7 +678,7 @@
   padding: 0 var(--space-4) var(--space-3);
 }
 /* Narrow — a phone, or a settings group in a narrow overlay: the control goes below. */
-@container (max-width: 520px) {
+@container (max-width: 440px) {
   .ds-settings-row {
     flex-direction: column;
     align-items: stretch;
@@ -1478,6 +1478,16 @@ a.ds-run-card:hover {
   font: 500 10px/16px var(--font-mono);
   letter-spacing: 0.2em;
   text-transform: uppercase;
+}
+/* "3 weitere Dateien in diesem Ordner →": the way between Wissen and Dateien. */
+.ds-knowledge-others {
+  align-self: flex-start;
+  margin: var(--space-2) 14px 0;
+  color: var(--text-3);
+  font-size: 12px;
+}
+.ds-knowledge-others:hover {
+  color: var(--accent);
 }
 .ds-knowledge-preview {
   display: flex;

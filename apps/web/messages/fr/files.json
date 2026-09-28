@@ -206,6 +206,10 @@
     "noBacklinks": "Aucun lien",
     "history": "Historique",
     "noHistory": "Pas encore d’historique",
-    "discard": "Abandonner les modifications non enregistrées ?"
+    "discard": "Abandonner les modifications non enregistrées ?",
+    "othersFiles": "{count, plural, one {# autre fichier} other {# autres fichiers}} dans ce dossier →",
+    "othersKnowledge": "{count, plural, one {# document ou canevas} other {# documents et canevas}} dans ce dossier →",
+    "openInPage": "Ouvrir en grand",
+    "download": "Télécharger"
   }
 }

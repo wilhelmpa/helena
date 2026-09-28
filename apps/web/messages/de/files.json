@@ -206,6 +206,10 @@
     "noBacklinks": "Keine Verweise",
     "history": "Verlauf",
     "noHistory": "Noch kein Verlauf",
-    "discard": "Ungespeicherte Änderungen verwerfen?"
+    "discard": "Ungespeicherte Änderungen verwerfen?",
+    "othersFiles": "{count, plural, one {# weitere Datei} other {# weitere Dateien}} in diesem Ordner →",
+    "othersKnowledge": "{count, plural, one {# Dokument oder Leinwand} other {# Dokumente und Leinwände}} in diesem Ordner →",
+    "openInPage": "Groß öffnen",
+    "download": "Herunterladen"
   }
 }

@@ -123,6 +123,8 @@ export interface FilesLocation {
   root?: string;
   project?: string;
   file?: string | null;
+  // "files": the Dateien entry — the files that are not docs or canvases.
+  kind?: 'files';
 }
 
 function filesQuery(folder: string | undefined, location: FilesLocation): string {
@@ -131,6 +133,7 @@ function filesQuery(folder: string | undefined, location: FilesLocation): string
   if (location.project) query.set('project', location.project);
   if (folder) query.set('path', folder);
   if (location.file) query.set('file', location.file);
+  if (location.kind) query.set('kind', location.kind);
   const search = query.toString();
   return search ? `?${search}` : '';
 }

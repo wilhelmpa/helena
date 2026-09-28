@@ -2,6 +2,8 @@
 
 import { useRef, useState, type ReactNode } from 'react';
 import { useTranslations } from 'next-intl';
+import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { useQueries } from '@tanstack/react-query';
 import { FileImage, FileText, Folder, Network, Plus, Upload, type LucideIcon } from 'lucide-react';
 import {
@@ -18,12 +20,16 @@ import KnowledgeFrame, {
   useListKeyboard,
   type KnowledgeCrumb,
 } from '@/components/helena/KnowledgeFrame';
-import { MonoLabel } from '@/components/helena/DashboardPrimitives';
 import PillButton from '@/components/helena/PillButton';
 import { ProjectTag } from '@/components/helena/ProjectTag';
 import { useRelativeTime } from '@/context/relativeTimeContext';
 import { searchKnowledge } from '@/lib/api/endpoints/knowledge';
-import { getFileReferences, type FileItem, type FileScope } from '@/lib/api/endpoints/projectFiles';
+import {
+  fileRawUrl,
+  getFileReferences,
+  type FileItem,
+  type FileScope,
+} from '@/lib/api/endpoints/projectFiles';
 import {
   isCanvas,
   isDoc,
@@ -32,7 +38,17 @@ import {
   knowledgeKind,
 } from '../utils/knowledgeKinds';
 import type { FilePermissions } from './FileBrowser';
-import KnowledgePreview from './KnowledgePreview';
+import FileViewer from '@/components/common/files/FileViewer';
+import { Button } from '@/components/ui/button';
+
+// The query of the same folder in the other list (Wissen ↔ Dateien).
+function otherKindQuery(params: URLSearchParams | null, kind: KnowledgeListKind) {
+  const next = new URLSearchParams(params?.toString() ?? '');
+  next.delete('file');
+  if (kind === 'files') next.delete('kind');
+  else next.set('kind', 'files');
+  return next.toString();
+}
 
 // One file of a Wissen list, with the folder it belongs to. `item.path` is relative to
 // the root of `scope`; `vaultPath` is the canonical vault path.
@@ -53,8 +69,9 @@ export interface KnowledgeSearchRoot {
   projectKey?: string | null;
 }
 
-type Filter = 'all' | 'docs' | 'canvases' | 'files' | 'agents';
-const filters: Filter[] = ['all', 'docs', 'canvases', 'files', 'agents'];
+// Wissen lists docs and canvases, Dateien the other files (two entries in the sidebar,
+// owner 28.09.: no kind filters above the list). "Von Agenten" narrows either.
+export type KnowledgeListKind = 'knowledge' | 'files';
 export type KnowledgeCreation = 'doc' | 'canvas' | 'folder' | 'upload';
 const creations: KnowledgeCreation[] = ['doc', 'canvas', 'folder', 'upload'];
 const creationIcons: Record<KnowledgeCreation, LucideIcon> = {
@@ -64,18 +81,15 @@ const creationIcons: Record<KnowledgeCreation, LucideIcon> = {
   upload: FileImage,
 };
 
-function matches(filter: Filter, item: FileItem, fromAgent: boolean) {
-  if (filter === 'docs') return isDoc(item.name);
-  if (filter === 'canvases') return isCanvas(item.name);
-  if (filter === 'files') return !isDoc(item.name) && !isCanvas(item.name);
-  if (filter === 'agents') return fromAgent;
-  return true;
+function ofKind(kind: KnowledgeListKind, item: FileItem) {
+  const knowledge = isDoc(item.name) || isCanvas(item.name);
+  return kind === 'files' ? !knowledge : knowledge;
 }
 
-// The one list of Wissen (WissenOrdner.dc.html): files only — folders live in the sidebar
-// tree and are never listed a second time here. A click on a doc opens it in the editor;
-// any other file is selected and previewed on the right (double click, Enter or "Öffnen"
-// opens it). ↑/↓ move the selection.
+// The one list of Wissen and Dateien (WissenOrdner.dc.html): files only — folders live in
+// the sidebar tree and are never listed a second time here. A click on a doc or canvas
+// opens it in the main area; any other file opens its preview in the overlay on the right
+// ("Öffnen" there shows it in the main area). ↑/↓ move the selection, Enter opens.
 export default function KnowledgeListView({
   crumbs,
   title,
@@ -110,7 +124,10 @@ export default function KnowledgeListView({
 }) {
   const t = useTranslations('files.knowledge');
   const relativeTime = useRelativeTime();
-  const [filter, setFilter] = useState<Filter>('all');
+  const params = useSearchParams();
+  const kind: KnowledgeListKind = params?.get('kind') === 'files' ? 'files' : 'knowledge';
+  const [fromAgents, setFromAgents] = useState(false);
+  const [preview, setPreview] = useState<KnowledgeEntry | null>(null);
   const [query, setQuery] = useState('');
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [dropping, setDropping] = useState(false);
@@ -124,7 +141,7 @@ export default function KnowledgeListView({
     queries: entries.map((entry) => ({
       queryKey: ['knowledge-author', entry.scope, entry.item.path],
       queryFn: () => getFileReferences(entry.scope, entry.item.path),
-      enabled: filter === 'agents',
+      enabled: fromAgents,
       retry: false,
     })),
   });
@@ -161,16 +178,23 @@ export default function KnowledgeListView({
     : [];
   const shown = searching
     ? found
-    : entries.filter((entry, index) =>
-        matches(filter, entry.item, authors[index]?.data?.authorKind === 'agent'),
+    : entries.filter(
+        (entry, index) =>
+          ofKind(kind, entry.item) && (!fromAgents || authors[index]?.data?.authorKind === 'agent'),
       );
+  // In a folder of Wissen, the other files of the folder are one click away (and back).
+  const others = searching ? 0 : entries.filter((entry) => !ofKind(kind, entry.item)).length;
+  const open = (entry: KnowledgeEntry) => {
+    if (isDoc(entry.item.name) || isCanvas(entry.item.name)) onOpen(entry);
+    else setPreview(entry);
+  };
   const selected = shown.find((entry) => entry.key === selectedKey) ?? shown[0];
   const selectedIndex = selected ? shown.indexOf(selected) : -1;
   const { ref: listRef, onKeyDown: onListKeyDown } = useListKeyboard({
     count: shown.length,
     selected: selectedIndex,
     onSelect: (index) => setSelectedKey(shown[index]?.key ?? null),
-    onOpen: (index) => shown[index] && onOpen(shown[index]),
+    onOpen: (index) => shown[index] && open(shown[index]),
   });
   const pending = searching ? hits.some((hit) => hit.isPending) : loading;
   const mixedProjects = new Set(entries.map((entry) => entry.projectKey ?? '')).size > 1;
@@ -231,12 +255,11 @@ export default function KnowledgeListView({
           )
         }
         pills={
-          !searching &&
-          filters.map((value) => (
-            <KnowledgePill key={value} active={filter === value} onClick={() => setFilter(value)}>
-              {t(`filters.${value}`)}
+          !searching && (
+            <KnowledgePill active={fromAgents} onClick={() => setFromAgents(!fromAgents)}>
+              {t('filters.agents')}
             </KnowledgePill>
-          ))
+          )
         }
         footer={
           can.create &&
@@ -270,44 +293,6 @@ export default function KnowledgeListView({
             </button>
           )
         }
-        preview={
-          selected || (can.create && onCreate) ? (
-            <>
-              {selected && (
-                <KnowledgePreview
-                  key={selected.key}
-                  item={selected.item}
-                  scope={selected.scope}
-                  vaultPath={selected.vaultPath}
-                  label={knowledgeDisplayName(selected.item.name)}
-                  location={searching ? undefined : where(selected)}
-                  onOpen={() => onOpen(selected)}
-                />
-              )}
-              {can.create && onCreate && (
-                <div className="mt-2 flex flex-col gap-1.5">
-                  <MonoLabel>{t('new')}</MonoLabel>
-                  {creations
-                    .filter((kind) => kind !== 'upload' || onUpload)
-                    .map((kind) => {
-                      const Icon = creationIcons[kind];
-                      return (
-                        <button
-                          key={kind}
-                          type="button"
-                          onClick={() => create(kind)}
-                          className="ds-knowledge-new-item"
-                        >
-                          <Icon size={16} strokeWidth={1.6} className="text-muted-foreground" />
-                          {t(`create.${kind}`)}
-                        </button>
-                      );
-                    })}
-                </div>
-              )}
-            </>
-          ) : undefined
-        }
       >
         {note && !searching && <p className="-mt-2 px-3.5 text-xs text-muted-foreground">{note}</p>}
         <KnowledgeListHead
@@ -329,7 +314,7 @@ export default function KnowledgeListView({
           )}
           {!pending && shown.length === 0 && (
             <p className="px-3.5 py-3 text-sm text-muted-foreground">
-              {searching ? t('noResults') : filter === 'all' ? emptyText : t('emptyFilter')}
+              {searching ? t('noResults') : fromAgents ? t('emptyFilter') : emptyText}
             </p>
           )}
           {shown.map((entry, index) => {
@@ -358,16 +343,55 @@ export default function KnowledgeListView({
                 selected={selected?.key === entry.key}
                 onClick={() => {
                   setSelectedKey(entry.key);
-                  if (kind === 'doc') onOpen(entry);
+                  open(entry);
                 }}
-                onDoubleClick={() => onOpen(entry)}
+                onDoubleClick={() => open(entry)}
                 menu={menuFor?.(entry)}
                 rowProps={rowPropsFor?.(entry)}
               />
             );
           })}
         </div>
+        {others > 0 && (
+          <Link
+            className="ds-knowledge-others"
+            href={`?${otherKindQuery(params, kind)}`}
+            scroll={false}
+          >
+            {t(kind === 'files' ? 'othersKnowledge' : 'othersFiles', { count: others })}
+          </Link>
+        )}
       </KnowledgeFrame>
+      {preview && (
+        <FileViewer
+          file={{
+            name: preview.item.name,
+            contentType: preview.item.contentType,
+            sizeBytes: preview.item.sizeBytes,
+            url: fileRawUrl(preview.scope, preview.item.path),
+            vaultPath: preview.vaultPath,
+          }}
+          actions={
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const entry = preview;
+                  setPreview(null);
+                  onOpen(entry);
+                }}
+              >
+                {t('openInPage')}
+              </Button>
+              <Button variant="outline" size="sm" asChild>
+                <a href={fileRawUrl(preview.scope, preview.item.path, true)}>{t('download')}</a>
+              </Button>
+            </>
+          }
+          onClose={() => setPreview(null)}
+        />
+      )}
       {onUpload && (
         <input
           ref={upload}

@@ -5,6 +5,8 @@ import { usePathname, useSearchParams } from 'next/navigation';
 import {
   Bot,
   FolderOpen,
+  Paperclip,
+  ReceiptText,
   Inbox,
   LayoutDashboard,
   ListTodo,
@@ -273,19 +275,20 @@ export function SidebarProjectTree({
           {
             id: 'knowledge',
             href: filesPath(projectKey),
-            without: ['path', 'file'],
+            without: ['path', 'file', 'kind'],
             also: [`${projectPath(projectKey)}/docs`, `${projectPath(projectKey)}/notes`],
           },
+          { id: 'files', href: filesPath(projectKey, '', { kind: 'files' }) },
           ...(isAdmin
             ? [
                 {
-                  id: 'knowledge:receipts',
+                  id: 'receipts',
                   href: receiptsPath(projectKey),
                   without: ['view'],
                   exact: true,
                 },
                 ...RECEIPT_VIEWS.map((view) => ({
-                  id: `knowledge:receipts:${view}`,
+                  id: `receipts:${view}`,
                   href: `${receiptsPath(projectKey)}?view=${view}`,
                 })),
               ]
@@ -312,7 +315,10 @@ export function SidebarProjectTree({
     { id: 'settings:settingsAgents:autopilot', href: settingsPath(projectKey, 'budgets') },
   ];
   // A file of a folder: the folder row marks itself (SidebarKnowledgeFolders).
-  const folderOpen = location.pathname === filesPath(projectKey) && location.search.has('path');
+  const folderOpen =
+    location.pathname === filesPath(projectKey) &&
+    location.search.has('path') &&
+    !location.search.has('kind');
   const activeId = pickActive(candidates, location);
   const activeSection = folderOpen ? 'knowledge' : sectionOf(activeId);
   const is = (id: string) => activeId === id;
@@ -422,7 +428,7 @@ export function SidebarProjectTree({
       {showKnowledge && (
         <TreeItem
           id="knowledge"
-          label={isAdmin ? t('sidebarKnowledgeReceipts') : t('sidebarKnowledge')}
+          label={t('sidebarKnowledge')}
           href={filesPath(projectKey)}
           icon={<FolderOpen />}
           active={is('knowledge')}
@@ -438,14 +444,23 @@ export function SidebarProjectTree({
             scope={{ kind: 'project', projectKey, root: 'vault' }}
             canWrite={can('documents', 'edit')}
           />
-          {isAdmin && (
-            <SidebarReceiptsItem
-              projectKey={projectKey}
-              active={is('knowledge:receipts')}
-              activeView={RECEIPT_VIEWS.find((view) => is(`knowledge:receipts:${view}`)) ?? null}
-            />
-          )}
         </TreeItem>
+      )}
+      {features.documents && can('documents', 'read') && (
+        <TreeItem
+          id="files"
+          label={t('sidebarFiles')}
+          href={filesPath(projectKey, '', { kind: 'files' })}
+          icon={<Paperclip />}
+          active={is('files')}
+        />
+      )}
+      {showKnowledge && isAdmin && (
+        <SidebarReceiptsItem
+          projectKey={projectKey}
+          active={is('receipts')}
+          activeView={RECEIPT_VIEWS.find((view) => is(`receipts:${view}`)) ?? null}
+        />
       )}
       {newKnowledgeFolder && (
         <FileNewFolderDialog
@@ -759,8 +774,10 @@ function SidebarReceiptsItem({
     : {};
   return (
     <TreeItem
+      id="receipts"
       label={t('receipts')}
       href={receiptsPath(projectKey)}
+      icon={<ReceiptText />}
       active={active}
       containsActive={activeView != null}
       storageKey={`${projectKey}:receipts`}

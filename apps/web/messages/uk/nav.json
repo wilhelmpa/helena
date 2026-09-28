@@ -271,5 +271,6 @@
   "mail": "Пошта",
   "settingsExecution": "Типове виконання",
   "adminOnly": "Ці налаштування бачить лише адміністратор.",
-  "sidebarTerminals": "Термінали"
+  "sidebarTerminals": "Термінали",
+  "sidebarFiles": "Файли"
 }

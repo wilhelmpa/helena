@@ -206,6 +206,10 @@
     "noBacklinks": "Sin enlaces",
     "history": "Historial",
     "noHistory": "Aún sin historial",
-    "discard": "¿Descartar los cambios sin guardar?"
+    "discard": "¿Descartar los cambios sin guardar?",
+    "othersFiles": "{count, plural, one {# archivo más} other {# archivos más}} en esta carpeta →",
+    "othersKnowledge": "{count, plural, one {# documento o lienzo} other {# documentos y lienzos}} en esta carpeta →",
+    "openInPage": "Abrir en grande",
+    "download": "Descargar"
   }
 }
