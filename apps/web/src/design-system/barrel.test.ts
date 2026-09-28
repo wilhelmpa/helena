@@ -48,6 +48,10 @@ describe('framework barrel', () => {
       /lib\/api\/core\/client\.ts$/,
       new Set(),
     );
-    assert.equal(chain, null, chain?.map((file) => file.slice(srcDir.length + 1)).join(' > '));
+    assert.equal(
+      chain,
+      null,
+      chain ? chain.map((file) => file.slice(srcDir.length + 1)).join(' > ') : 'no chain',
+    );
   });
 });
