@@ -588,7 +588,7 @@ if (import.meta.main) {
   const server = createProjectBrowserRouter({ root, settingsRoot, idle });
   const stopKeeper = startWindowKeeper({
     listBrowsers: () => listProjectBrowsers(root),
-    running: ({ slug }) => idle.running(slug),
+    isRunning: ({ slug }) => idle.running(slug),
     prepare: async ({ slug, cdpPort }) => {
       try { await fs.access(COLOR_SCHEME_FILE(settingsRoot, slug)); }
       catch (error) {

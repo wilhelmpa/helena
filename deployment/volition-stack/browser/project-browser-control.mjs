@@ -789,10 +789,10 @@ async function fitWindowsNow(link) {
 }
 
 // Runs fitWindows for every project browser once per interval. A browser that cannot be
-// reached is tried again on the next pass with a new connection. A browser `running` says is
+// reached is tried again on the next pass with a new connection. A browser `isRunning` says is
 // stopped (project browsers on demand, project-browser-power.mjs) is left alone, with the page
 // size its live view or agent asked for kept: its next start is prepared and fitted anew.
-export function startWindowKeeper({ listBrowsers, prepare, running = () => true, intervalMs = 1_000, log = () => {} }) {
+export function startWindowKeeper({ listBrowsers, prepare, isRunning = () => true, intervalMs = 1_000, log = () => {} }) {
   const lastErrors = new Map();
   const prepared = new Set();
   const down = new Set();
@@ -820,7 +820,7 @@ export function startWindowKeeper({ listBrowsers, prepare, running = () => true,
       for (const browser of current) {
         const { cdpPort } = browser;
         const link = linkFor(cdpPort);
-        if (!running(browser)) {
+        if (!isRunning(browser)) {
           if (!down.has(cdpPort)) {
             down.add(cdpPort);
             link.close();
