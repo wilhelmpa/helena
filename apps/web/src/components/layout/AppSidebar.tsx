@@ -6,6 +6,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import type { Project } from '@/lib/api/endpoints/projects';
 import type { View } from '@/lib/api/endpoints/views';
 import { useSession } from '@/lib/auth-client';
+import { APP_NAME } from '@/utils/app';
 import { godPath } from '@/utils/paths';
 import { GOD_SECTIONS } from '@/utils/godSections';
 import { useSidebarSide } from '@/hooks/useSidebarSide';

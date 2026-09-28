@@ -224,18 +224,18 @@ describe('knowledge', () => {
       ]);
     });
 
-    it('stores a pasted image in the Assets folder beside the note and serves it', async () => {
+    it('stores a pasted image in the same folder as the note and serves it', async () => {
       const { asOwner } = await setup();
       const notePath = 'Projects/MKT/Docs/Note.md';
       await write(asOwner, notePath, 'Note');
       const file = new File([new Uint8Array([137, 80, 78, 71])], 'shot.png', { type: 'image/png' });
       const first = await asOwner.knowledge.assets.post({ file }, { query: { path: notePath } });
       const second = await asOwner.knowledge.assets.post({ file }, { query: { path: notePath } });
-      expect(first.data).toEqual({ path: 'Projects/MKT/Docs/Assets/shot.png' });
-      expect(second.data).toEqual({ path: 'Projects/MKT/Docs/Assets/shot 2.png' });
+      expect(first.data).toEqual({ path: 'Projects/MKT/Docs/shot.png' });
+      expect(second.data).toEqual({ path: 'Projects/MKT/Docs/shot 2.png' });
 
       const raw = await asOwner.knowledge.raw.get({
-        query: { path: 'Projects/MKT/Docs/Assets/shot.png' },
+        query: { path: 'Projects/MKT/Docs/shot.png' },
       });
       expect(raw.status).toBe(200);
       expect(raw.response.headers.get('content-type')).toBe('image/png');

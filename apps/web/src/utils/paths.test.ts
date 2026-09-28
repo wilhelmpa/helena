@@ -34,7 +34,7 @@ describe('Files page paths', () => {
   });
 });
 
-it('opens project Markdown inline in Wissen and keeps Home Markdown in Docs', () => {
+it('opens all Markdown and canvas files inline in Wissen', () => {
   assert.equal(
     vaultNotePath('Projects/VOL/Docs/Plan.md'),
     '/project/VOL/files?path=Docs&file=Docs%2FPlan.md',
@@ -44,8 +44,11 @@ it('opens project Markdown inline in Wissen and keeps Home Markdown in Docs', ()
     '/project/VOL/files?path=Files%2FTasks&file=Files%2FTasks%2FVOL-1.md',
   );
   assert.equal(vaultNotePath('Private/Steuern.txt'), '/files?root=private&file=Steuern.txt');
-  assert.equal(vaultNotePath('Home/Docs/März.md'), '/docs?path=Home%2FDocs%2FM%C3%A4rz.md');
-  assert.equal(vaultNotePath('Templates/Brief.md'), '/docs?path=Templates%2FBrief.md');
+  assert.equal(
+    vaultNotePath('Home/Docs/März.md'),
+    '/files?root=home&path=Docs&file=Docs%2FM%C3%A4rz.md',
+  );
+  assert.equal(vaultNotePath('Templates/Brief.md'), '/files?root=templates&file=Brief.md');
   assert.equal(
     vaultMarkdownSourcePath('Projects/VOL/Docs/Plan.md'),
     '/project/VOL/files?path=Docs&file=Docs%2FPlan.md&source=1',
@@ -54,6 +57,6 @@ it('opens project Markdown inline in Wissen and keeps Home Markdown in Docs', ()
   assert.equal(notePath('VOL', 42), '/project/VOL/files?view=boards&board=42');
   assert.equal(
     vaultNotePath('Projects/VOL/Boards/Plan.canvas'),
-    '/project/VOL/files?view=boards&canvas=Projects%2FVOL%2FBoards%2FPlan.canvas',
+    '/project/VOL/files?path=Boards&file=Boards%2FPlan.canvas',
   );
 });

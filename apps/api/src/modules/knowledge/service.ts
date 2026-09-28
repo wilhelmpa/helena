@@ -7,7 +7,6 @@ import { mimeFromName } from '@repo/storage/mime';
 import {
   absoluteVaultPath,
   assertNoSymlink,
-  assetsFolderFor,
   baseName,
   commitVaultPaths,
   composeNote,
@@ -539,12 +538,11 @@ export async function rawFile(relative: string, request: Request, download: bool
   );
 }
 
-// Stores a file added to a note (a pasted image) in the Assets folder of the note's
-// project, or Home/Assets, under a name not taken yet. Returns its vault path.
+// Images inserted into a note live beside that note, under a name not taken yet.
 export async function uploadAsset(scope: VaultScope, notePath: string, file: File) {
   if (file.size === 0) throw new HttpError(400, 'File is empty');
   if (file.size > MAX_ASSET_BYTES) throw new HttpError(413, 'File is too large');
-  const folder = assetsFolderFor(notePath);
+  const folder = parentPath(notePath);
   if (!canAccess(scope, folder, 'write')) throw new HttpError(403, 'You cannot add files here');
   const name = safeAttachmentFilename(file.name).replace(/^\.+/, '').slice(-120) || 'file';
   const dot = name.lastIndexOf('.');

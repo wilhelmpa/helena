@@ -58,6 +58,7 @@ function safeDocumentLinkHref(href: string): boolean {
 
 type EditorLabels = {
   placeholder: string;
+  wikilinkRoot?: string;
   codeBlockLabel: string;
   tableLabel: string;
   blocks?: {
@@ -99,7 +100,7 @@ export function documentEditorExtensions(labels: EditorLabels) {
     Color,
     Highlight.configure({ multicolor: true }),
     TextAlign.configure({ types: ['heading', 'paragraph'] }),
-    Wikilink,
+    Wikilink.configure({ root: labels.wikilinkRoot }),
     SlashCommand.configure({
       codeBlockLabel: labels.codeBlockLabel,
       tableLabel: labels.tableLabel,
@@ -123,6 +124,7 @@ export default function DocumentMarkdownEditor({
   onOpenWikilink,
   onPickImage,
   onUploadImage,
+  wikilinkRoot,
 }: {
   defaultValue: string;
   editable: boolean;
@@ -134,6 +136,7 @@ export default function DocumentMarkdownEditor({
   onOpenWikilink?: (inner: string) => void;
   onPickImage?: () => void;
   onUploadImage?: (file: File) => Promise<{ url: string; filename: string }>;
+  wikilinkRoot?: string;
 }) {
   const scopeRef = useWebLinkScopeRef();
   const t = useTranslations('documents.toolbar');
@@ -150,6 +153,7 @@ export default function DocumentMarkdownEditor({
     editable,
     extensions: documentEditorExtensions({
       placeholder,
+      wikilinkRoot,
       codeBlockLabel: t('codeBlock'),
       tableLabel: t('table'),
       blocks: {

@@ -3,9 +3,10 @@
 import { type ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { ChevronRight, Folder, Plus } from 'lucide-react';
+import { ChevronRight, Plus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { usePermissions } from '@/hooks/usePermissions';
+import { useSession } from '@/lib/auth-client';
 import { useProjectFeatures } from '@/hooks/useProjectFeatures';
 import { usePersistedBoolean } from '@/hooks/usePersistedBoolean';
 import { useInboxUnread } from '@/hooks/useInboxUnread';
@@ -15,7 +16,6 @@ import { usePendingApprovalCount } from '@/services/approvals.service';
 import { usePipelineApprovals } from '@/services/pipelines.service';
 import { useViewFoldersQuery, useViewsQuery } from '@/services/views.service';
 import type { View } from '@/lib/api/endpoints/views';
-import { useFilesQuery } from '@/services/files.service';
 import { useDashboardsQuery } from '@/services/dashboards.service';
 import {
   agentActivityPath,
@@ -39,6 +39,9 @@ import SidebarApprovalsRefresh from './SidebarApprovalsRefresh';
 import SidebarAreaNav from './SidebarAreaNav';
 import SidebarSavedViewItem from './SidebarSavedViewItem';
 import { hasTreeContent } from './treeContent';
+import SidebarKnowledgeFolders from './SidebarKnowledgeFolders';
+import FileNewFolderDialog from '@/features/project-files/components/FileNewFolderDialog';
+import { useState } from 'react';
 
 function pathIsActive(pathname: string, href: string) {
   const path = href.split('?')[0]!;
@@ -96,6 +99,7 @@ function TreeBranch({
   action,
   activePaths = [],
   defaultOpen = false,
+  activeOverride,
   children,
 }: {
   id: string;
@@ -104,6 +108,7 @@ function TreeBranch({
   action?: ReactNode;
   activePaths?: string[];
   defaultOpen?: boolean;
+  activeOverride?: boolean;
   children: ReactNode;
 }) {
   const pathname = usePathname();
@@ -117,7 +122,9 @@ function TreeBranch({
   return (
     <div className="helena-tree-branch">
       <div className="helena-tree-parent">
-        <TreeLink href={href}>{label}</TreeLink>
+        <TreeLink href={href} activeOverride={activeOverride}>
+          {label}
+        </TreeLink>
         {action}
         {expandable && (
           <button
@@ -200,8 +207,14 @@ export function SidebarHomeTree({ teamId }: { teamId: number | null }) {
   const t = useTranslations('nav');
   const tWorkItems = useTranslations('workItems');
   const tHome = useTranslations('home');
+  const owner = useSession().data?.user.role === 'god';
   const home = homeNavigation(teamId);
   const get = (id: string) => home.find((item) => item.id === id)?.href;
+  const [newFolder, setNewFolder] = useState(false);
+  const params = useSearchParams();
+  const homeRoot = params.get('root');
+  const homePath = params.get('path');
+  const homePathname = usePathname();
   return (
     <section className="helena-sidebar-section">
       <h2>{t('sidebarProject')}</h2>
@@ -219,20 +232,57 @@ export function SidebarHomeTree({ teamId }: { teamId: number | null }) {
         href="/files"
         activePaths={['/docs']}
         defaultOpen
+        action={
+          owner && (
+            <button
+              type="button"
+              className="helena-tree-toggle knowledge-folder-add"
+              aria-label="Ordner in Home anlegen"
+              onClick={() => setNewFolder(true)}
+            >
+              <Plus size={14} />
+            </button>
+          )
+        }
+        defaultOpen
       >
-        <TreeLink href="/docs" nested>
-          {t('docs')}
-        </TreeLink>
-        <TreeLink href={homeFilesPath('', { root: 'home' })} nested>
-          {t('sidebarHome')}
-        </TreeLink>
-        <TreeLink href={homeFilesPath('', { root: 'private' })} nested>
-          {t('sidebarPrivate')}
-        </TreeLink>
-        <TreeLink href={homeFilesPath('', { root: 'templates' })} nested>
-          {t('sidebarTemplates')}
-        </TreeLink>
+        {(owner ? (['home', 'private', 'templates'] as const) : (['templates'] as const)).map(
+          (root) => (
+            <div key={root}>
+              <TreeLink
+                href={homeFilesPath('', { root })}
+                nested
+                activeOverride={
+                  homePathname === '/files' &&
+                  (homeRoot ?? (owner ? 'home' : 'templates')) === root &&
+                  !homePath
+                }
+              >
+                {t(
+                  root === 'home'
+                    ? 'sidebarHome'
+                    : root === 'private'
+                      ? 'sidebarPrivate'
+                      : 'sidebarTemplates',
+                )}
+              </TreeLink>
+              <div className="helena-tree-children">
+                <SidebarKnowledgeFolders scope={{ kind: 'home', root }} canWrite={owner} />
+              </div>
+            </div>
+          ),
+        )}
       </TreeBranch>
+      {newFolder && (
+        <FileNewFolderDialog
+          scope={{
+            kind: 'home',
+            root: homeRoot === 'private' || homeRoot === 'templates' ? homeRoot : 'home',
+          }}
+          folder=""
+          onClose={() => setNewFolder(false)}
+        />
+      )}
       <TreeBranch id="home:dashboard" label={t('dashboards')} href="/dashboard" defaultOpen>
         <TreeLink href="/dashboard#projects" nested>
           {tWorkItems('allTasks.allProjects')}
@@ -318,20 +368,14 @@ export function SidebarProjectTree({
   onDeleteView: (view: View) => Promise<void>;
 }) {
   const t = useTranslations('nav');
+  const [newKnowledgeFolder, setNewKnowledgeFolder] = useState(false);
   const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const activeKnowledgeFolder =
-    pathname === filesPath(projectKey) ? searchParams.get('path')?.split('/')[0] : null;
+  const knowledgePath = useSearchParams().get('path');
   const viewsT = useTranslations('views');
   const { can, isAdmin } = usePermissions();
   const features = useProjectFeatures();
   const { data: views = [] } = useViewsQuery(projectKey);
   const { data: areas = [] } = useViewFoldersQuery(projectKey);
-  const { data: folders } = useFilesQuery(
-    { kind: 'project', projectKey, root: 'vault' },
-    '',
-    features.documents && can('documents', 'read'),
-  );
   const { data: dashboards = [] } = useDashboardsQuery(
     features.dashboards && can('dashboards', 'read') ? projectKey : null,
   );
@@ -350,7 +394,7 @@ export function SidebarProjectTree({
           can('views', 'create') && (
             <button
               type="button"
-              className="helena-tree-toggle"
+              className="helena-tree-toggle knowledge-folder-add"
               aria-label={viewsT('newView')}
               title={viewsT('newView')}
               onClick={onNewView}
@@ -388,21 +432,32 @@ export function SidebarProjectTree({
           id={`${projectKey}:files`}
           label={t('sidebarKnowledge')}
           href={filesPath(projectKey)}
-        >
-          {folders?.items
-            .filter((item) => item.kind === 'folder')
-            .map((folder) => (
-              <TreeLink
-                key={folder.path}
-                href={filesPath(projectKey, folder.path)}
-                nested
-                activeOverride={activeKnowledgeFolder === folder.path}
+          activeOverride={pathname === filesPath(projectKey) && !knowledgePath}
+          action={
+            can('documents', 'create') && (
+              <button
+                type="button"
+                className="helena-tree-toggle knowledge-folder-add"
+                aria-label="Ordner in Wissen anlegen"
+                onClick={() => setNewKnowledgeFolder(true)}
               >
-                <Folder size={13} className="me-2 inline" />
-                {folder.name}
-              </TreeLink>
-            ))}
+                <Plus size={14} />
+              </button>
+            )
+          }
+        >
+          <SidebarKnowledgeFolders
+            scope={{ kind: 'project', projectKey, root: 'vault' }}
+            canWrite={can('documents', 'edit')}
+          />
         </TreeBranch>
+      )}
+      {newKnowledgeFolder && (
+        <FileNewFolderDialog
+          scope={{ kind: 'project', projectKey, root: 'vault' }}
+          folder=""
+          onClose={() => setNewKnowledgeFolder(false)}
+        />
       )}
       {features.dashboards && can('dashboards', 'read') && (
         <TreeBranch
