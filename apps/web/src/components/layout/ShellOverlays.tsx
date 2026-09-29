@@ -15,6 +15,7 @@ import NewTeamModal from '@/features/teams/components/NewTeamModal';
 import InitiativeDialog from '@/components/common/overlay/InitiativeDialog';
 import NewIssueModal from '@/features/issue/components/create/NewIssueModal';
 import IssueDetail from '@/features/issue/components/detail/IssueDetail';
+import { usePinnedOverlay } from '@/utils/overlayPin';
 
 // The project-level overlays the Shell mounts above its content. Each renders only
 // while its overlay state says it is open.
@@ -40,6 +41,29 @@ export default function ShellOverlays({
     useCycleOptionsQuery(selectedScaffold?.project.cyclesEnabled ? targetKey : null).data ?? [];
   const selectedAreas = useViewFoldersQuery(targetKey !== projectKey ? targetKey : null).data ?? [];
   const projects = useProjectsQuery().data ?? [];
+  // A task pinned on another page (Auftrag 117): it stays open here, in its own project.
+  const pinned = usePinnedOverlay('issue');
+  const [pinnedKey, pinnedIdText] = pinned ? pinned.value.split(':') : [null, null];
+  const pinnedId = Number(pinnedIdText) || null;
+  const pinnedScaffold = useProjectQuery(
+    pinnedKey && pinnedKey !== projectKey ? pinnedKey : null,
+  ).data;
+  const pinnedCycles =
+    useCycleOptionsQuery(
+      pinnedScaffold?.project.cyclesEnabled && pinnedKey !== projectKey ? pinnedKey : null,
+    ).data ?? [];
+  const pinnedProject: ProjectDetail | null =
+    pinnedKey == null
+      ? null
+      : pinnedKey === projectKey
+        ? project
+        : pinnedScaffold
+          ? { ...pinnedScaffold, issues: [], plannedCycles: pinnedCycles, areas: [] }
+          : null;
+  const showPinned =
+    pinnedProject != null &&
+    pinnedId != null &&
+    !(overlays.openIssueId === pinnedId && pinnedKey === projectKey);
   const creationProject: ProjectDetail | null =
     targetKey === projectKey
       ? project
@@ -89,6 +113,18 @@ export default function ShellOverlays({
             toast.success(t('created', { identifier: created.identifier }), {
               action: { label: t('open'), onClick: () => overlays.setOpenIssueId(created.id) },
             });
+          }}
+        />
+      )}
+
+      {showPinned && overlays.openIssueId == null && !issueBehindPanel && (
+        <IssueDetail
+          key={`pinned:${pinned!.value}`}
+          project={pinnedProject!}
+          issueId={pinnedId!}
+          onClose={() => undefined}
+          onExpand={(seq) => {
+            if (pinnedKey && seq != null) router.push(issuePath(pinnedKey, seq));
           }}
         />
       )}

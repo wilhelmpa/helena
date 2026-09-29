@@ -30,12 +30,15 @@ export default function FileItemMenu({
   can,
   extra,
   size = 'small',
+  onRename,
 }: {
   item: FileItem;
   actions: FileActions;
   can: FilePermissions;
   extra?: ReactNode;
   size?: 'default' | 'small';
+  // Renames in place (a row of Wissen) instead of the rename dialog.
+  onRename?: () => void;
 }) {
   const t = useTranslations('files.actions');
   const file = item.kind === 'file';
@@ -79,7 +82,7 @@ export default function FileItemMenu({
         {can.edit && (
           <>
             <MenuSeparator />
-            <MenuItem onSelect={() => actions.ask('rename', item)}>
+            <MenuItem onSelect={() => (onRename ? onRename() : actions.ask('rename', item))}>
               <Pencil />
               {t('rename')}
             </MenuItem>

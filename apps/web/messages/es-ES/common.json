@@ -297,5 +297,12 @@
   "searchSettings": "Buscar ajuste …",
   "nameList": {
     "more": "+{count} más"
+  },
+  "pinOverlay": "Fijar: permanece abierto al cambiar de página",
+  "unpinOverlay": "Desfijar: se cierra al cambiar de página",
+  "inherit": {
+    "inherited": "Hereda de {appName}",
+    "overridden": "Cambiado para este proyecto",
+    "reset": "Restablecer"
   }
 }

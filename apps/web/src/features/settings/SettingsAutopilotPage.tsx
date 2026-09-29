@@ -1,17 +1,17 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Check, RotateCcw } from 'lucide-react';
+import { Check } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 import { useShell } from '@/context/shellContext';
 import { settingsSection } from '@/utils/settingsSections';
-import { agentsPath, organizationPath } from '@/utils/paths';
+import { teamListPath, teamOrganizationPath, organizationPath } from '@/utils/paths';
 import { useSession } from '@/lib/auth-client';
 import { useInstanceProjectDefaultsQuery } from '@/features/god/services/god.service';
 import {
-  Badge,
   Button,
+  InheritedMark,
   ButtonLink,
   Inline,
   Section,
@@ -177,19 +177,16 @@ function AutopilotPage({ projectKey }: { projectKey: string }) {
                         onChange={(level) => void chooseLevel(level)}
                         disabled={!editable || setLevel.isPending}
                       />
-                      {levelOverridden && (
-                        <>
-                          <Badge tone="accent">{tExecution('overridden')}</Badge>
-                          <Button
-                            size="small"
-                            variant="ghost"
-                            icon={<RotateCcw size={14} />}
-                            disabled={!editable || setLevel.isPending}
-                            onClick={() => void chooseLevel(defaultLevel as AutopilotLevel)}
-                          >
-                            {tExecution('resetToDefault')}
-                          </Button>
-                        </>
+                      {defaultLevel != null && (
+                        <InheritedMark
+                          overridden={levelOverridden}
+                          disabled={!editable || setLevel.isPending}
+                          onReset={
+                            editable
+                              ? () => void chooseLevel(defaultLevel as AutopilotLevel)
+                              : undefined
+                          }
+                        />
                       )}
                     </Inline>
                     <AutopilotRuleSummary rules={rules} />
@@ -203,20 +200,11 @@ function AutopilotPage({ projectKey }: { projectKey: string }) {
                     label={tExecution(budgetsOverridden ? 'budgetsOverridden' : 'budgetsDefault')}
                     description={tExecution('budgetsDefaultHint')}
                   >
-                    {budgetsOverridden && (
-                      <Inline gap={2}>
-                        <Badge tone="accent">{tExecution('overridden')}</Badge>
-                        <Button
-                          size="small"
-                          variant="ghost"
-                          icon={<RotateCcw size={14} />}
-                          disabled={!editable || setBudgets.isPending}
-                          onClick={() => void resetBudgets()}
-                        >
-                          {tExecution('resetToDefault')}
-                        </Button>
-                      </Inline>
-                    )}
+                    <InheritedMark
+                      overridden={budgetsOverridden}
+                      disabled={!editable || setBudgets.isPending}
+                      onReset={editable ? () => void resetBudgets() : undefined}
+                    />
                   </SettingsRow>
                 )}
                 <BudgetFields
@@ -280,7 +268,7 @@ function AutopilotPage({ projectKey }: { projectKey: string }) {
               <Section title={t('agentsTitle')}>
                 <AutopilotAgentList
                   agents={data.agents}
-                  agentHref={(id) => `${agentsPath()}?agent=${id}`}
+                  agentHref={(id) => teamListPath(teamOrganizationPath(), `agent=${id}`)}
                 />
               </Section>
 

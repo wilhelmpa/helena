@@ -309,5 +309,11 @@
   "context": {
     "task": "Tarea {identifier} «{title}»",
     "document": "Documento {name}"
+  },
+  "dock": {
+    "expand": "Abrir el chat",
+    "collapse": "Plegar el chat",
+    "openTab": "Abrir como pestaña",
+    "empty": "Pregunta a {agent} …"
   }
 }

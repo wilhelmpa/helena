@@ -51,8 +51,7 @@ import { type Receipt, type ReviewItem, type Transaction } from '@/lib/api/endpo
 import { filesPath, receiptsPath } from '@/utils/paths';
 import ExportView from './components/ExportView';
 import { ImportDialog } from './components/ImportDialog';
-import ReceiptPreview from './components/ReceiptPreview';
-import { Overlay } from '@/design-system/layout/Overlay';
+import ReceiptOverlay from './components/ReceiptOverlay';
 import { ReviewTab } from './components/ReviewTab';
 import { receiptIcon, receiptSignedCents } from './components/ReceiptRows';
 import {
@@ -494,20 +493,12 @@ export default function ReceiptsPage() {
         {body}
       </KnowledgeFrame>
       {selected !== null && (
-        <Overlay
-          label={t('detail.title')}
-          tabs={[{ id: 'receipt', label: t('detail.title') }]}
+        <ReceiptOverlay
+          projectKey={projectKey}
+          receiptId={selected}
+          onOpenReceipt={setSelectedId}
           onClose={() => setSelectedId(null)}
-          className="ds-receipt-overlay"
-        >
-          <ReceiptPreview
-            key={selected}
-            projectKey={projectKey}
-            receiptId={selected}
-            onOpenReceipt={setSelectedId}
-            onDeleted={() => setSelectedId(null)}
-          />
-        </Overlay>
+        />
       )}
       <input
         ref={fileInput}

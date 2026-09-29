@@ -12,12 +12,16 @@ export default function ResizeGrip({
   className,
   style,
   onDrag,
+  axis = 'x',
 }: {
   label: string;
   className?: string;
   // Where it sits, such as its column in a grid.
   style?: CSSProperties;
-  onDrag: (deltaX: number) => void;
+  // How far the pointer moved along this axis since the drag started: 'x' sizes a
+  // column (a grip on its side), 'y' a row (a grip on its top or bottom edge).
+  onDrag: (delta: number) => void;
+  axis?: 'x' | 'y';
 }) {
   // The drag listens on the window, since the pointer leaves the 6px grip as soon
   // as it moves. The host can unmount mid-drag (switching layout or project), and
@@ -27,13 +31,13 @@ export default function ResizeGrip({
 
   function beginResize(e: React.PointerEvent) {
     e.preventDefault();
-    const startX = e.clientX;
+    const start = axis === 'x' ? e.clientX : e.clientY;
     const grip = e.currentTarget as HTMLDivElement;
     const pointerId = e.pointerId;
     grip.setPointerCapture(pointerId);
-    document.documentElement.style.cursor = 'col-resize';
+    document.documentElement.style.cursor = axis === 'x' ? 'col-resize' : 'row-resize';
     document.documentElement.style.userSelect = 'none';
-    const onMove = (ev: PointerEvent) => onDrag(ev.clientX - startX);
+    const onMove = (ev: PointerEvent) => onDrag((axis === 'x' ? ev.clientX : ev.clientY) - start);
     const onUp = () => {
       grip.removeEventListener('pointermove', onMove);
       grip.removeEventListener('pointerup', onUp);
@@ -55,8 +59,8 @@ export default function ResizeGrip({
   // same way as a drag of that distance.
   function onKeyDown(e: React.KeyboardEvent) {
     const step = e.shiftKey ? 50 : 10;
-    if (e.key === 'ArrowLeft') onDrag(-step);
-    else if (e.key === 'ArrowRight') onDrag(step);
+    if (e.key === (axis === 'x' ? 'ArrowLeft' : 'ArrowUp')) onDrag(-step);
+    else if (e.key === (axis === 'x' ? 'ArrowRight' : 'ArrowDown')) onDrag(step);
     else return;
     e.preventDefault();
   }
@@ -67,7 +71,7 @@ export default function ResizeGrip({
     // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
     <div
       role="separator"
-      aria-orientation="vertical"
+      aria-orientation={axis === 'x' ? 'vertical' : 'horizontal'}
       aria-label={label}
       // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
       tabIndex={0}
@@ -75,7 +79,8 @@ export default function ResizeGrip({
       onKeyDown={onKeyDown}
       style={style}
       className={cn(
-        'w-1.5 cursor-col-resize touch-none outline-none select-none hover:bg-primary/40 focus-visible:bg-primary/40',
+        'touch-none outline-none select-none hover:bg-primary/40 focus-visible:bg-primary/40',
+        axis === 'x' ? 'w-1.5 cursor-col-resize' : 'h-1.5 cursor-row-resize',
         className,
       )}
     />

@@ -49,6 +49,7 @@ import { useTranslations } from 'next-intl';
 export function AgentSheetForm({
   agent,
   projectId,
+  asTemplate = false,
   expanded = false,
   onCreated,
   initialOpenSection,
@@ -56,6 +57,8 @@ export function AgentSheetForm({
   agent: AiAgent | null;
   // The project a new agent is created in, set when the sheet is opened from inside one.
   projectId?: number;
+  // A new template of the pool: the template switch starts on.
+  asTemplate?: boolean;
   expanded?: boolean;
   onCreated: (agent: AiAgent) => void;
   initialOpenSection?: string;
@@ -63,7 +66,7 @@ export function AgentSheetForm({
   const t = useTranslations('teams.agents');
   const tCommon = useTranslations('common');
   const [value, setValue] = useState<AgentFormValue>(() =>
-    initialAgentValue(agent ?? undefined, projectId),
+    initialAgentValue(agent ?? undefined, projectId, asTemplate),
   );
   const isCreate = agent == null;
   // The plaintext key issued in this sheet, by the create or by a regenerate. It is

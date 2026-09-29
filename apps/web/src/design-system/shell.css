@@ -657,7 +657,8 @@
   width: var(--ds-panel-w, 480px);
   max-width: calc(100vw - 24px);
   grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: auto minmax(0, 1fr);
+  /* Head, the tool, and under it the chat bar while another tab is in front. */
+  grid-template-rows: auto minmax(0, 1fr) auto;
   overflow: visible;
   border-radius: var(--radius-panel);
   background: var(--surface-1);
@@ -1518,6 +1519,11 @@
   border-radius: 0 0 var(--radius-lg) var(--radius-lg);
   background: var(--bg);
 }
+/* A terminal that does not answer: Ava's own view in its place (Auftrag 116). */
+div.ds-terminal-frame {
+  display: flex;
+  flex-direction: column;
+}
 .ds-terminal-frame[data-active='false'] {
   visibility: hidden;
   pointer-events: none;
@@ -1534,6 +1540,85 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+/* The chat behind another tab (Auftrag 116): a bar at the bottom of the panel — the last
+   answer in one line over the composer — that opens into a chat area of the height the
+   user dragged. The tool above it loses its bottom corners to it. */
+.ds-side-panel:has(.ds-chat-dock) [data-panel-part='content'] {
+  border-radius: 0;
+}
+.ds-chat-dock {
+  position: relative;
+  border-top: 1px solid var(--line);
+  border-radius: 0 0 var(--radius-panel) var(--radius-panel);
+  background: var(--surface-1);
+}
+.ds-chat-dock .helena-home-context {
+  display: none;
+}
+.ds-chat-dock-grip {
+  position: absolute !important;
+  top: -4px;
+  right: 0;
+  left: 0;
+  z-index: 2;
+  height: 8px !important;
+  background: transparent !important;
+}
+.ds-chat-dock-grip::after {
+  position: absolute;
+  top: 2px;
+  left: 50%;
+  width: 44px;
+  height: 4px;
+  border-radius: var(--radius-sm);
+  background: var(--text-3);
+  content: '';
+  opacity: 0.5;
+  transform: translateX(-50%);
+}
+.ds-chat-dock-grip:hover::after,
+.ds-chat-dock-grip:active::after {
+  background: var(--accent);
+  opacity: 1;
+}
+.ds-chat-dock-bar {
+  display: flex;
+  height: 40px;
+  flex: none;
+  align-items: center;
+  gap: 2px;
+  padding: 0 8px 0 12px;
+}
+.ds-chat-dock-bar[data-state='expanded'] {
+  border-bottom: 1px solid var(--line);
+}
+.ds-chat-dock-line {
+  display: flex;
+  height: 32px;
+  min-width: 0;
+  flex: 1;
+  align-items: center;
+  gap: var(--space-2);
+  border-radius: var(--radius-field);
+  padding: 0 var(--space-2) 0 0;
+  color: var(--text-2);
+  font-size: 13px;
+  text-align: start;
+}
+.ds-chat-dock-line:hover {
+  color: var(--text);
+}
+.ds-chat-dock-text {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ds-chat-dock-text[data-tone='name'] {
+  color: var(--text);
+  font-weight: 500;
 }
 .ds-chat-panel-loading {
   display: flex;

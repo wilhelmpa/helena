@@ -1671,6 +1671,81 @@ export async function copyTemplateIntoProject(
   };
 }
 
+// "Pool erweitern" (Auftrag 117): a new template in the team's pool from an agent that
+// works somewhere — its instructions, model, runtime policy, skills, tools, MCP servers,
+// role and capabilities, Autopilot level and budgets — so projects can add copies of it.
+// The agent itself stays as it is. The template works in no project; its handle is the
+// agent's with "-vorlage" (numbered when that is taken).
+export async function saveAgentAsTemplate(
+  agentRow: AiAgentRow,
+  ownerUserId: string,
+  name?: string,
+): Promise<{ agent: AiAgentRow; apiKey: string }> {
+  if (agentRow.template) throw new HttpError(400, 'The agent is a template already');
+  const [assignment, skills, mcpServers, agentTools] = await Promise.all([
+    db
+      .select({
+        roleTitle: organizationAgentAssignment.roleTitle,
+        capabilities: organizationAgentAssignment.capabilities,
+      })
+      .from(organizationAgentAssignment)
+      .where(eq(organizationAgentAssignment.agentId, agentRow.id))
+      .then((rows) => rows[0]),
+    db
+      .select({ skillId: agentSkillLink.skillId })
+      .from(agentSkillLink)
+      .where(eq(agentSkillLink.agentId, agentRow.id)),
+    db
+      .select({ mcpServerId: agentMcpServerLink.mcpServerId })
+      .from(agentMcpServerLink)
+      .where(eq(agentMcpServerLink.agentId, agentRow.id)),
+    db
+      .select({ agentToolId: agentToolLink.agentToolId })
+      .from(agentToolLink)
+      .where(eq(agentToolLink.agentId, agentRow.id)),
+  ]);
+  const base = agentRow.username.slice(0, 64 - '-vorlage-99'.length);
+  let username: string | null = null;
+  for (let number = 1; number <= 99 && !username; number += 1) {
+    const candidate = number === 1 ? `${base}-vorlage` : `${base}-vorlage-${number}`;
+    try {
+      await assertUsernameFree(agentRow.teamId, candidate);
+      username = candidate;
+    } catch (error) {
+      if (!(error instanceof HttpError) || error.status !== 409) throw error;
+    }
+  }
+  if (!username) throw new HttpError(409, 'No free handle is left for the template');
+  const created = await createAgent(agentRow.teamId, {
+    name: name?.trim() || agentRow.name,
+    username,
+    model: agentRow.model,
+    instructions: agentRow.instructions,
+    runtimePolicy: agentRow.runtimePolicy,
+    triggerOnMention: agentRow.triggerOnMention,
+    triggerOnAssign: agentRow.triggerOnAssign,
+    heartbeatIntervalMinutes: agentRow.heartbeatIntervalMinutes,
+    heartbeatTimezone: agentRow.heartbeatTimezone,
+    heartbeatDays: agentRow.heartbeatDays,
+    heartbeatStart: agentRow.heartbeatStart,
+    heartbeatEnd: agentRow.heartbeatEnd,
+    heartbeatInstructions: agentRow.heartbeatInstructions,
+    delegationDelaySec: agentRow.delegationDelaySec,
+    maxConcurrentChats: agentRow.maxConcurrentChats,
+    runnerScope: agentRow.runnerScope,
+    ownerUserId,
+    template: true,
+    roleTitle: assignment?.roleTitle,
+    capabilities: assignment?.capabilities,
+    skillIds: skills.map(({ skillId }) => skillId),
+    mcpServerIds: mcpServers.map(({ mcpServerId }) => mcpServerId),
+    agentToolIds: agentTools.map(({ agentToolId }) => agentToolId),
+  });
+  await copyAgentLevel(agentRow.id, created.agent.id);
+  await copyAgentBudgets(agentRow.id, created.agent.id);
+  return { ...created, agent: (await getAgentById(created.agent.id, agentRow.teamId))! };
+}
+
 // Replaces the agent's API key: deletes the current key row(s) for the bot user
 // and issues a new one. Returns the new plaintext secret, or null if the agent
 // does not exist. There is no atomic rotate in the plugin, so this is delete+create.

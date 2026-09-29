@@ -214,25 +214,43 @@
     padding-top: env(safe-area-inset-top);
     padding-bottom: env(safe-area-inset-bottom);
   }
+  /* One line for the title (or the tabs) and the close X (owner 29.09., Auftrag 117); the
+     search, when there is one, takes the line below. */
   .ds-modal-head {
+    min-height: 56px;
     flex-wrap: wrap;
+    gap: var(--space-2);
     padding: 10px 12px;
   }
+  .ds-modal-head > .ds-modal-title {
+    min-width: 0;
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
   .ds-modal-tabs {
-    order: 2;
-    width: 100%;
+    min-width: 0;
+    flex: 1;
   }
   .ds-modal-tools {
-    width: 100%;
+    display: contents;
+  }
+  .ds-modal-close {
+    order: 1;
+    margin-inline-start: auto;
   }
   .ds-modal-search {
+    order: 2;
     width: auto;
-    flex: 1;
+    flex: 1 1 100%;
   }
   .ds-modal-main {
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: auto minmax(0, 1fr);
   }
+  /* The sections as one scrolling row that never runs out of the screen: its edge fades,
+     so it is clear that there is more (Auftrag 117). */
   .ds-modal-nav {
     flex-direction: row;
     overflow-x: auto;
@@ -240,6 +258,18 @@
     border-right: 0;
     border-bottom: 1px solid var(--line);
     padding: 8px 12px;
+    scroll-padding-inline: 12px;
+    scrollbar-width: none;
+    mask-image: linear-gradient(
+      to right,
+      transparent 0,
+      #000 12px,
+      #000 calc(100% - 32px),
+      transparent 100%
+    );
+  }
+  .ds-modal-nav::-webkit-scrollbar {
+    display: none;
   }
   .ds-modal-nav-group {
     flex-direction: row;
@@ -374,6 +404,17 @@ body[data-modal-open='true'] [data-radix-popper-content-wrapper] {
   color: var(--text);
   font-size: 13px;
   text-align: end;
+}
+.ds-agent-overview-goals {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--text);
+  font-size: 13px;
+  overflow-wrap: anywhere;
 }
 .ds-agent-overview-budget {
   width: 140px;

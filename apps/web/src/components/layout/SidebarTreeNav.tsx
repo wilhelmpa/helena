@@ -12,6 +12,7 @@ import {
   Plus,
   Settings2,
   Target,
+  Trash2,
   Users,
   Workflow,
 } from 'lucide-react';
@@ -281,6 +282,7 @@ export function SidebarProjectTree({
             also: [`${projectPath(projectKey)}/docs`, `${projectPath(projectKey)}/notes`],
           },
           { id: 'files', href: filesPath(projectKey, '', { kind: 'files' }) },
+          { id: 'files:trash', href: filesPath(projectKey, '', { trash: true }) },
           ...(isAdmin
             ? [
                 {
@@ -465,6 +467,15 @@ export function SidebarProjectTree({
             scope={{ kind: 'project', projectKey, root: 'vault' }}
             canWrite={can('documents', 'edit')}
           />
+          {features.documents && can('documents', 'read') && (
+            // Wissen › Papierkorb (Auftrag 117): trashed files, to restore.
+            <TreeItem
+              label={t('sidebarTrash')}
+              href={filesPath(projectKey, '', { trash: true })}
+              icon={<Trash2 />}
+              active={is('files:trash')}
+            />
+          )}
         </TreeItem>
       )}
       {newKnowledgeFolder && (
@@ -597,13 +608,13 @@ export function SidebarHomeTree({
       also: ['/docs'],
     },
     { id: 'knowledge:files', href: '/files?kind=files' },
+    { id: 'knowledge:trash', href: `/files?root=${currentRoot}&trash=1` },
     ...roots.map((root) => ({
       id: `knowledge:${root}`,
       href: `/files?root=${root}`,
       without: ['path'],
     })),
     { id: 'team', href: teamHref, without: ['tab'] },
-    { id: 'team:pool', href: '/agents' },
     { id: 'automation:schedules', href: '/schedules' },
     { id: 'automation:workflows', href: '/workflows' },
     { id: 'automation:history', href: '/activity', also: ['/browsers'] },
@@ -697,6 +708,12 @@ export function SidebarHomeTree({
             <SidebarKnowledgeFolders scope={{ kind: 'home', root }} canWrite={owner} />
           </TreeItem>
         ))}
+        <TreeItem
+          label={t('sidebarTrash')}
+          href={`/files?root=${currentRoot}&trash=1`}
+          icon={<Trash2 />}
+          active={is('knowledge:trash')}
+        />
       </TreeItem>
       {newFolder && (
         <FileNewFolderDialog
@@ -715,9 +732,7 @@ export function SidebarHomeTree({
         icon={<Users />}
         active={is('team')}
         dot={automation}
-      >
-        <TreeItem label={t('sidebarAgentPool')} href="/agents" active={is('team:pool')} />
-      </TreeItem>
+      />
       <TreeItem id="automation" label={t('sidebarAutomation')} icon={<Workflow />}>
         <TreeItem
           label={t('sidebarSchedules')}

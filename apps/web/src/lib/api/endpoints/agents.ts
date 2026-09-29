@@ -389,6 +389,14 @@ export const copyAiAgentTemplate = (teamId: number, agentId: number, projectId: 
     body: JSON.stringify({ projectId }),
   });
 
+// "Pool erweitern": a new template of the pool from an agent that works somewhere, with its
+// configuration; the agent stays as it is. The template's key is returned once.
+export const saveAiAgentAsTemplate = (teamId: number, agentId: number, name?: string) =>
+  request<{ agent: AiAgent; apiKey: string }>(
+    `/teams/${teamId}/ai-agents/${agentId}/save-as-template`,
+    { method: 'POST', body: JSON.stringify(name ? { name } : {}) },
+  );
+
 export const updateAiAgent = (teamId: number, agentId: number, patch: AiAgentPatch) =>
   request<AiAgent>(`/teams/${teamId}/ai-agents/${agentId}`, {
     method: 'PATCH',

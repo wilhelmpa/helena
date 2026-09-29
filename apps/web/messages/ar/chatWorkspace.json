@@ -309,5 +309,11 @@
   "context": {
     "task": "المهمة {identifier} «{title}»",
     "document": "المستند {name}"
+  },
+  "dock": {
+    "expand": "فتح المحادثة",
+    "collapse": "طي المحادثة",
+    "openTab": "فتح كعلامة تبويب",
+    "empty": "اسأل {agent} …"
   }
 }

@@ -25,6 +25,10 @@ import WorkspaceTabBar from './WorkspaceTabBar';
 import type { useWorkspaceTabs } from '@/hooks/useWorkspaceTabs';
 import WorkspaceToolPicker from './WorkspaceToolPicker';
 import WorkspaceUnavailable from './WorkspaceUnavailable';
+import { ChatDockCtx, type ChatDockState } from '@/context/chatDock';
+import { PanelToolCloseCtx } from '@/context/panelToolTab';
+import { clampChatDockHeight, useChatDockPreference } from '@/hooks/useChatDockPreference';
+import ResizeGrip from '@/components/common/ResizeGrip';
 
 function browserStreamUrl(url: string, lossless: boolean) {
   const parsed = new URL(url);
@@ -153,6 +157,23 @@ export default function WorkspacePanel({
   >([]);
   const [frameReloads, setFrameReloads] = useState<Record<string, number>>({});
   const [visitedContents, setVisitedContents] = useState<WorkspaceToolId[]>([]);
+  // Another tab in front: the chat stays at hand as a bar at the bottom of the panel
+  // (owner 29.09., Auftrag 116) — the same mounted chat, so an answer streaming in, the
+  // draft and a running conversation go on while the other tab is used.
+  const chatTool = registered.find((entry) => entry.id === 'chat');
+  const dockChat =
+    mainArea != null &&
+    chatTool?.view.kind === 'component' &&
+    !areas.some((area) => area.tool === 'chat');
+  const dockPreference = useChatDockPreference();
+  const dock = useMemo<ChatDockState>(
+    () => ({
+      expanded: dockPreference.expanded,
+      onToggle: () => dockPreference.setExpanded(!dockPreference.expanded),
+      onOpenTab: () => onSelectTab('chat'),
+    }),
+    [dockPreference, onSelectTab],
+  );
 
   // What a visible tool shows: its own view where one is registered, else a frame. The
   // advanced chat view is a frame, and only the main area offers it. The browser's frame
@@ -204,6 +225,7 @@ export default function WorkspacePanel({
   useEffect(() => {
     if (visible.length === 0) return;
     const shown = visible.filter((entry) => entry.content).map((entry) => entry.id);
+    if (dockChat) shown.push('chat');
     setVisitedContents((current) => {
       const added = shown.filter((id) => !current.includes(id));
       return added.length > 0 ? [...current, ...added] : current;
@@ -242,7 +264,7 @@ export default function WorkspacePanel({
         ...next.filter((frame) => keep.has(frame.key)),
       ];
     });
-  }, [visible]);
+  }, [visible, dockChat]);
 
   const browserBar = browserBase ? (
     <WorkspaceBrowserBar
@@ -282,6 +304,17 @@ export default function WorkspacePanel({
       return ref;
     };
   });
+
+  // "Tab schließen" of a tool that does not answer (EmbedProblem): its tab in the panel.
+  // One function per tool, so the contexts below keep theirs across renders.
+  const closers = useMemo<Record<string, () => void>>(
+    () =>
+      Object.fromEntries(
+        registered.map((entry) => [entry.id, () => onCloseTab(`tool:${entry.id}`)]),
+      ),
+    [onCloseTab, registered],
+  );
+  const closeToolTab = (tool: string) => closers[tool] ?? null;
 
   // Above the page while the panel floats over it; equal layers keep the DOM order.
   const layer = overlay ? 'z-30' : undefined;
@@ -401,22 +434,24 @@ export default function WorkspacePanel({
             className={cn('flex min-h-0 min-w-0 flex-col', layer, !area && 'hidden')}
             style={place(area, '2')}
           >
-            {liveBase ? (
-              <WorkspaceBrowserLive
-                base={liveBase}
-                followAgent={browserPreferences.followAgent}
-                controlSlot={area ? slots[area.id] : null}
-                {...props}
-              />
-            ) : (
-              <WorkspaceFrame
-                url={frame.url}
-                title={frame.title}
-                helenaCode={frame.tool === 'code'}
-                sandbox={frame.sandboxed ? 'allow-scripts allow-forms' : undefined}
-                {...props}
-              />
-            )}
+            <PanelToolCloseCtx.Provider value={closeToolTab(frame.tool)}>
+              {liveBase ? (
+                <WorkspaceBrowserLive
+                  base={liveBase}
+                  followAgent={browserPreferences.followAgent}
+                  controlSlot={area ? slots[area.id] : null}
+                  {...props}
+                />
+              ) : (
+                <WorkspaceFrame
+                  url={frame.url}
+                  title={frame.title}
+                  helenaCode={frame.tool === 'code'}
+                  sandbox={frame.sandboxed ? 'allow-scripts allow-forms' : undefined}
+                  {...props}
+                />
+              )}
+            </PanelToolCloseCtx.Provider>
           </div>
         );
       })}
@@ -424,11 +459,14 @@ export default function WorkspacePanel({
         const view = panelTool(id)?.view;
         const ToolContent = view?.kind === 'component' ? view.component : undefined;
         const area = areaOfContent.get(id);
+        // The chat behind another tab: the bar at the bottom of the main area.
+        const docked = id === 'chat' && !area && dockChat && mainArea != null;
         return ToolContent ? (
           <div
             key={`${id}:${contextProjectKey ?? 'global'}`}
-            data-panel-part={area?.main ? 'content' : undefined}
+            data-panel-part={area?.main ? 'content' : docked ? 'chat-dock' : undefined}
             data-panel-tool={area?.main ? id : undefined}
+            data-state={docked ? (dock.expanded ? 'expanded' : 'collapsed') : undefined}
             role="region"
             aria-label={labels[id] ?? id}
             className={cn(
@@ -436,15 +474,43 @@ export default function WorkspacePanel({
               // area's height instead of an iframe's default 150px.
               'flex min-h-0 min-w-0 flex-col overflow-hidden',
               layer,
-              !area && 'hidden',
+              docked && 'ds-chat-dock',
+              !area && !docked && 'hidden',
             )}
-            style={place(area, '2')}
+            style={
+              docked
+                ? {
+                    gridColumn: String(mainArea?.column ?? 1),
+                    gridRow: '3',
+                    height: dock.expanded ? `${dockPreference.height}px` : undefined,
+                  }
+                : place(area, '2')
+            }
           >
-            <PanelHeaderSlotCtx.Provider
-              value={area && !(area.main && advanced) ? (slots[area.id] ?? null) : null}
-            >
-              <ToolContent projectKey={contextProjectKey} />
-            </PanelHeaderSlotCtx.Provider>
+            {docked && dock.expanded ? (
+              <ResizeGrip
+                axis="y"
+                label={t('chatDockResize')}
+                className="ds-chat-dock-grip"
+                onDrag={(delta) => {
+                  const panel = document.querySelector<HTMLElement>(
+                    '.ds-side-panel[data-open="true"]',
+                  );
+                  dockPreference.setHeight(
+                    clampChatDockHeight(dockPreference.height - delta, panel?.clientHeight),
+                  );
+                }}
+              />
+            ) : null}
+            <ChatDockCtx.Provider value={docked ? dock : null}>
+              <PanelToolCloseCtx.Provider value={closeToolTab(id)}>
+                <PanelHeaderSlotCtx.Provider
+                  value={area && !(area.main && advanced) ? (slots[area.id] ?? null) : null}
+                >
+                  <ToolContent projectKey={contextProjectKey} />
+                </PanelHeaderSlotCtx.Provider>
+              </PanelToolCloseCtx.Provider>
+            </ChatDockCtx.Provider>
           </div>
         ) : null;
       })}

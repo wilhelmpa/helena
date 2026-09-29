@@ -906,7 +906,8 @@
     "groupAgents": "الوكلاء",
     "copies": "{count, plural, =0 {لا نسخ} one {نسخة واحدة} two {نسختان} few {# نسخ} many {# نسخة} other {# نسخة}}",
     "moreActionsFor": "إجراءات {name}",
-    "defaultModel": "النموذج الافتراضي"
+    "defaultModel": "النموذج الافتراضي",
+    "saveAsTemplate": "حفظه في المجموعة كقالب"
   },
   "members": {
     "roleSaved": "{name} الآن {role}",

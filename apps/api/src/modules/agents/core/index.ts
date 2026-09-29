@@ -21,6 +21,7 @@ import {
   agentScopeOf,
   memberProjectIds,
   copyTemplateIntoProject,
+  saveAgentAsTemplate,
 } from './service';
 import { resetCopyToTemplate } from './template-sync';
 import {
@@ -37,6 +38,7 @@ import {
   agentListQuery,
   agentParams,
   copyTemplateBody,
+  saveAsTemplateBody,
   createAgentBody,
   projectAgentParams,
   resetToTemplateBody,
@@ -219,6 +221,31 @@ export const aiAgentRoutes = new Elysia({ name: 'ai-agents', detail: { tags: ['A
           'instructions, model, runtime policy, skills and capabilities, and its name and ' +
           "handle suffixed with the project key. The copy's API key is returned once.",
         ...mcpTool('copy_ai_agent_template'),
+      },
+    },
+  )
+
+  // "Pool erweitern" (Auftrag 117): a new template in the pool from a working agent.
+  .post(
+    '/teams/:teamId/ai-agents/:agentId/save-as-template',
+    async ({ params, membership, body, set, user }) => {
+      const agentRow = await requireVisibleAgent(params.agentId, membership);
+      set.status = 201;
+      return saveAgentAsTemplate(agentRow, requireUser(user).id, body.name);
+    },
+    {
+      params: agentParams,
+      body: saveAsTemplateBody,
+      teamPermission: ['ai_agents', 'create'],
+      response: { 201: CreateAgentResponse, ...commonErrors, ...errors(409) },
+      detail: {
+        summary: 'Save an agent as a template',
+        description:
+          "Add a template to the team's pool with the agent's instructions, model, runtime " +
+          'policy, skills, tools, MCP servers, role, Autopilot level and budgets. The agent ' +
+          "stays as it is; the template works in no project. The template's API key is " +
+          'returned once.',
+        ...mcpTool('save_ai_agent_as_template'),
       },
     },
   )

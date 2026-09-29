@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Loader2, Lock } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -11,6 +11,8 @@ import { useBrowserPreferences } from '@/hooks/useBrowserPreferences';
 import { useBrowserScreencast, type ShownFrame } from '@/hooks/useBrowserScreencast';
 import { useDevicePixelRatio } from '@/hooks/useDevicePixelRatio';
 import { cn } from '@/lib/utils';
+import { EmbedProblem } from '@/design-system';
+import { usePanelToolClose } from '@/context/panelToolTab';
 import { frameRect, type Size } from '@/utils/browserLive';
 import WorkspaceBrowserControl from './WorkspaceBrowserControl';
 import WorkspaceBrowserDialog, { type LiveCard } from './WorkspaceBrowserDialog';
@@ -42,6 +44,7 @@ export default function WorkspaceBrowserLive({
   controlSlot?: HTMLElement | null;
 }) {
   const t = useTranslations('nav.workspace.browserBar');
+  const tWorkspace = useTranslations('nav.workspace');
   // This device's choice of stream and of holding the page's size (the bar's stream menu).
   const { videoPreference, holdSize } = useBrowserPreferences();
   const view = useRef<HTMLDivElement>(null);
@@ -52,6 +55,9 @@ export default function WorkspaceBrowserLive({
   // The view's size and the frame on screen, which place the frame (layout).
   const box = useRef<Size | null>(null);
   const shown = useRef<ShownFrame | null>(null);
+  // "Neu laden" of the view shown when the browser does not answer (Auftrag 116).
+  const [retries, setRetries] = useState(0);
+  const closeTab = usePanelToolClose();
 
   // Places the canvas and the video element where the frame on screen is drawn — one to one
   // when the page has the view's size, else scaled to fit (see frameRect) — and keeps the
@@ -103,7 +109,7 @@ export default function WorkspaceBrowserLive({
   } = useBrowserScreencast(
     base,
     active,
-    reloadToken,
+    reloadToken + retries,
     canvas,
     video,
     followAgent,
@@ -153,6 +159,18 @@ export default function WorkspaceBrowserLive({
   }, [active, dpr, layout, setViewport]);
 
   const connecting = !hasFrame;
+  // No first frame for a while, or the browser did not start: Ava's own view, while the
+  // stream keeps trying by itself (Auftrag 116).
+  const [stuck, setStuck] = useState(false);
+  useEffect(() => {
+    if (!connecting || !active) return;
+    const timer = setTimeout(() => setStuck(true), 15_000);
+    return () => {
+      clearTimeout(timer);
+      setStuck(false);
+    };
+  }, [active, connecting, retries]);
+  const unreachable = connecting && (stuck || browserStart === 'failed');
   // A browser that was stopped while nobody used it starts again: said over the last frame.
   const starting = browserStart === 'starting' && hasFrame;
   const reconnecting = status === 'reconnecting' && hasFrame && !starting;
@@ -270,19 +288,30 @@ export default function WorkspaceBrowserLive({
           {t('reconnectingShort')}
         </div>
       )}
-      {connecting && (
-        <div
-          aria-live="polite"
-          className="absolute inset-0 flex items-center justify-center bg-background/80 p-4 text-center text-sm text-muted-foreground"
-        >
-          {browserStart === 'starting'
-            ? t('browserStarting')
-            : browserStart === 'failed'
-              ? t('browserStartFailed')
-              : status === 'reconnecting'
-                ? t('reconnecting')
-                : t('connecting')}
+      {unreachable ? (
+        <div className="absolute inset-0 flex">
+          <EmbedProblem
+            tool={tWorkspace('browser')}
+            reason={browserStart === 'failed' ? 'status' : 'unreachable'}
+            onReload={() => setRetries((value) => value + 1)}
+            onClose={closeTab ?? undefined}
+          />
         </div>
+      ) : (
+        connecting && (
+          <div
+            aria-live="polite"
+            className="absolute inset-0 flex items-center justify-center bg-background/80 p-4 text-center text-sm text-muted-foreground"
+          >
+            {browserStart === 'starting'
+              ? t('browserStarting')
+              : browserStart === 'failed'
+                ? t('browserStartFailed')
+                : status === 'reconnecting'
+                  ? t('reconnecting')
+                  : t('connecting')}
+          </div>
+        )
       )}
     </div>
   );

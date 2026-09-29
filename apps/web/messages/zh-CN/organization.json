@@ -331,11 +331,15 @@
     "whyNoGoal": "未关联目标",
     "noAgent": "无代理",
     "filterLabel": "状态",
-    "addMember": "添加成员"
+    "addMember": "添加成员",
+    "viewList": "列表",
+    "addHere": "添加成员：{name}",
+    "nodeMenu": "{name} 的操作",
+    "addMemberHere": "添加成员"
   },
   "addMember": {
     "title": "添加团队成员",
-    "description": "将代理池中的代理或模板的新副本加入项目团队。",
+    "description": "池中的智能体、模板的新副本或新智能体加入项目团队。",
     "source": "来源",
     "fromPool": "来自代理池",
     "fromTemplate": "来自模板",
@@ -348,6 +352,20 @@
     "add": "添加",
     "added": "已添加到 {project}",
     "failed": "无法添加成员。",
-    "keyOnce": "该副本在 {appName} 之外运行：请立即复制其密钥，它只显示一次。"
+    "keyOnce": "该副本在 {appName} 之外运行：请立即复制其密钥，它只显示一次。",
+    "fromNew": "新建",
+    "newHint": "{project} 中的新智能体，作为协调者下的专员。它会在右侧打开以便设置。",
+    "create": "创建"
+  },
+  "pool": {
+    "saved": "{name} 现已作为模板加入池",
+    "noMatch": "没有符合搜索的智能体。",
+    "showLabel": "显示",
+    "showAll": "全部",
+    "showAgents": "智能体",
+    "showTemplates": "模板",
+    "extend": "扩充池",
+    "newTemplate": "新模板",
+    "newAgent": "新智能体"
   }
 }

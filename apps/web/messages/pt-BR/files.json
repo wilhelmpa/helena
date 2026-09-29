@@ -89,7 +89,11 @@
   "trashDialog": {
     "title": "Mover {name} para a lixeira?",
     "description": "Ele vai para a pasta de lixeira do vault e pode ser restaurado de lá.",
-    "confirm": "Mover para a lixeira"
+    "confirm": "Mover para a lixeira",
+    "counting": "Lendo o conteúdo …",
+    "emptyFolder": "A pasta está vazia.",
+    "folderHolds": "{count, plural, one {Contém # item que vai junto:} other {Contém # itens que vão junto:}}",
+    "more": "e mais {count}"
   },
   "linkDialog": {
     "title": "Vincular a uma tarefa",
@@ -209,7 +213,8 @@
     "emptyFilesTitle": "Ainda sem arquivos",
     "emptyFiles": "PDFs, imagens e outros arquivos chegam aqui. Envie um ou arraste para cá.",
     "onlySubfoldersTitle": "Somente subpastas",
-    "onlySubfolders": "Esta pasta não contém arquivos. Abra uma das subpastas."
+    "onlySubfolders": "Esta pasta não contém arquivos. Abra uma das subpastas.",
+    "renameLabel": "Novo nome para {name}"
   },
   "canvas": {
     "opening": "Abrindo a tela …",
@@ -271,5 +276,20 @@
     "viewTable": "Tabela",
     "viewCards": "Cartões",
     "viewList": "Lista"
+  },
+  "renamed": "Renomeado para {name}",
+  "trashView": {
+    "search": "Buscar na lixeira …",
+    "name": "Nome",
+    "from": "Pasta · excluído",
+    "loading": "Carregando a lixeira …",
+    "loadFailed": "Não foi possível carregar a lixeira.",
+    "emptyTitle": "A lixeira está vazia",
+    "empty": "O que você excluir aqui vem para cá e pode ser restaurado.",
+    "noMatch": "Nada na lixeira corresponde à busca.",
+    "topLevel": "nível superior",
+    "restore": "Restaurar",
+    "restoreTo": "Devolver para {path}",
+    "restored": "{name} foi restaurado"
   }
 }

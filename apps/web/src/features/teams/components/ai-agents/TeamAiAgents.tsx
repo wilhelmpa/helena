@@ -1,45 +1,46 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import type { AiAgent } from '@/lib/api/endpoints/agents';
-import { useAiAgentsQuery, useDeleteAiAgent } from '@/services/aiAgents.service';
+import {
+  useAiAgentsQuery,
+  useDeleteAiAgent,
+  useSaveAiAgentAsTemplate,
+} from '@/services/aiAgents.service';
+import { openAgent } from '@/features/settings/settingsModalCatalog';
 import ListSkeleton from '@/components/common/skeleton/ListSkeleton';
 import ConfirmDialog from '@/components/common/overlay/ConfirmDialog';
 import { useAgentSection } from '../../context/agentSection';
 import TeamAiAgentTable from './TeamAiAgentTable';
-import { TeamAiAgentSheet } from './TeamAiAgentSheet';
 import { useTranslations } from 'next-intl';
 import { Bot } from 'lucide-react';
 import { EmptyState, Stack, Text } from '@/design-system';
-import { poolGroups } from '../../utils/agentPool';
+import { filterPool, type PoolShow } from '../../utils/agentPool';
 
 // The agents of a team: bot users that issues can be delegated to in any project the
 // team attaches them to, and below them the templates projects copy their specialists
-// from. An agent is driven through the API by its runner. Creating and editing happen
-// in the same full-width sheet, which also owns the agent's API key: the sheet reveals
-// it once on create and is where it is regenerated.
-export default function TeamAiAgents() {
+// from — the Liste view of Team (Auftrag 117). A click opens the agent in the one overlay
+// on the right (the agent dialog), never a page of its own.
+export default function TeamAiAgents({
+  search = '',
+  show = 'all',
+  projectKey = null,
+}: {
+  search?: string;
+  show?: PoolShow;
+  // On a project's Team page: its agents (and the templates it can add copies of).
+  projectKey?: string | null;
+}) {
   const t = useTranslations('teams.agents');
+  const tPool = useTranslations('organization.pool');
   const { teamId } = useAgentSection();
   const agentsQuery = useAiAgentsQuery(teamId);
   const agents = agentsQuery.data ?? [];
   const deleteAgent = useDeleteAiAgent(teamId);
-
-  // The agent the sheet edits, by id; null means the sheet is closed. Creating one is
-  // the section's own sheet, above this list.
-  const [editingId, setEditingId] = useState<number | null>(null);
-  // The section the sheet opens on besides its defaults, set together with editingId
-  // below; cleared once the sheet closes so reopening a different agent by hand starts
-  // from the usual defaults again.
-  const [openSection, setOpenSection] = useState<string | undefined>();
-  // The tab and the run a deep link opens (`&tab=runs&run=<id>`).
-  const [openTab, setOpenTab] = useState<string | undefined>();
-  const [openRun, setOpenRun] = useState<number | null>(null);
+  const saveTemplate = useSaveAiAgentAsTemplate(teamId);
   const [deleting, setDeleting] = useState<AiAgent | null>(null);
 
-  // A `/skills` or `/memory` chat command sends the member straight to one agent's
-  // sheet: `?agent=<id>` opens it (`&section=<id>` also expands that section), and the
-  // params are dropped from the URL right away so navigating back or reopening the
-  // page by hand does not reopen it a second time.
+  // A `/skills` or `/memory` chat command, or an old link, names one agent (`?agent=<id>`,
+  // `&tab=`): it opens in the agent dialog, and the params leave the address.
   const router = useRouter();
   const searchParams = useSearchParams();
   useEffect(() => {
@@ -49,13 +50,8 @@ export default function TeamAiAgents() {
       requested === 'home'
         ? agents.find((agent) => agent.agentRole === 'home')?.id
         : Number(requested);
-    if (id != null && agents.some((a) => a.id === id)) {
-      setEditingId(id);
-      setOpenSection(searchParams.get('section') ?? undefined);
-      setOpenTab(searchParams.get('tab') ?? undefined);
-      const run = Number(searchParams.get('run'));
-      setOpenRun(Number.isInteger(run) && run > 0 ? run : null);
-    }
+    if (id != null && agents.some((a) => a.id === id))
+      openAgent(id, teamId, searchParams.get('tab') ?? undefined);
     const params = new URLSearchParams(searchParams);
     params.delete('agent');
     params.delete('section');
@@ -67,8 +63,7 @@ export default function TeamAiAgents() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams, agentsQuery.isPending]);
 
-  const editing = agents.find((a) => a.id === editingId) ?? null;
-  const groups = poolGroups(agents);
+  const groups = filterPool(agents, { search, show, projectKey });
   // How many project copies each template has: "0 Kopien" on its row says it is unused.
   const copyCounts = new Map<number, number>();
   for (const agent of agents) {
@@ -76,14 +71,13 @@ export default function TeamAiAgents() {
     copyCounts.set(agent.sourceTemplateId, (copyCounts.get(agent.sourceTemplateId) ?? 0) + 1);
   }
   const tableProps = {
-    onEdit: (agent: AiAgent) => setEditingId(agent.id),
-    // The runs are a tab of the agent's own page.
-    onRuns: (agent: AiAgent) => {
-      setEditingId(agent.id);
-      setOpenTab('runs');
-    },
+    onEdit: (agent: AiAgent) => openAgent(agent.id, teamId, 'overview'),
+    // The runs are a tab of the agent's dialog.
+    onRuns: (agent: AiAgent) => openAgent(agent.id, teamId, 'runs'),
     onDelete: setDeleting,
+    onSaveTemplate: (agent: AiAgent) => saveTemplate.mutate({ agentId: agent.id }),
   };
+  const nothing = groups.agents.length === 0 && groups.templates.length === 0;
 
   return (
     <>
@@ -93,9 +87,13 @@ export default function TeamAiAgents() {
         <EmptyState icon={<Bot />} title={t('empty')}>
           {t('emptyHint')}
         </EmptyState>
+      ) : nothing ? (
+        <EmptyState icon={<Bot />}>{tPool('noMatch')}</EmptyState>
       ) : (
         <Stack gap={5}>
-          <TeamAiAgentTable label={t('groupAgents')} agents={groups.agents} {...tableProps} />
+          {groups.agents.length > 0 && (
+            <TeamAiAgentTable label={t('groupAgents')} agents={groups.agents} {...tableProps} />
+          )}
           {groups.templates.length > 0 && (
             <Stack gap={2}>
               <TeamAiAgentTable
@@ -111,20 +109,6 @@ export default function TeamAiAgents() {
           )}
         </Stack>
       )}
-
-      <TeamAiAgentSheet
-        open={editingId != null}
-        agent={editing}
-        onClose={() => {
-          setEditingId(null);
-          setOpenSection(undefined);
-          setOpenTab(undefined);
-          setOpenRun(null);
-        }}
-        initialOpenSection={openSection}
-        initialTab={openTab}
-        initialRunId={openRun}
-      />
 
       {deleting && (
         <ConfirmDialog

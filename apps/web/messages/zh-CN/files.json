@@ -89,7 +89,11 @@
   "trashDialog": {
     "title": "将 {name} 移到回收站？",
     "description": "它会被移到知识库的回收站文件夹，可以从那里恢复。",
-    "confirm": "移到回收站"
+    "confirm": "移到回收站",
+    "counting": "正在读取内容 …",
+    "emptyFolder": "文件夹为空。",
+    "folderHolds": "其中有 # 个条目，会一起移走：",
+    "more": "另有 {count} 个"
   },
   "linkDialog": {
     "title": "关联到任务",
@@ -209,7 +213,8 @@
     "emptyFilesTitle": "还没有文件",
     "emptyFiles": "PDF、图片和其他文件会放在这里。上传一个或拖到这里。",
     "onlySubfoldersTitle": "只有子文件夹",
-    "onlySubfolders": "此文件夹中没有文件。请打开其中一个子文件夹。"
+    "onlySubfolders": "此文件夹中没有文件。请打开其中一个子文件夹。",
+    "renameLabel": "{name} 的新名称"
   },
   "canvas": {
     "opening": "正在打开画布 …",
@@ -271,5 +276,20 @@
     "viewTable": "表格",
     "viewCards": "卡片",
     "viewList": "列表"
+  },
+  "renamed": "已重命名为 {name}",
+  "trashView": {
+    "search": "在回收站中搜索 …",
+    "name": "名称",
+    "from": "文件夹 · 删除时间",
+    "loading": "正在加载回收站 …",
+    "loadFailed": "无法加载回收站。",
+    "emptyTitle": "回收站为空",
+    "empty": "在这里删除的内容会进入回收站，可以恢复。",
+    "noMatch": "回收站中没有匹配的内容。",
+    "topLevel": "顶层",
+    "restore": "恢复",
+    "restoreTo": "放回 {path}",
+    "restored": "{name} 已恢复"
   }
 }

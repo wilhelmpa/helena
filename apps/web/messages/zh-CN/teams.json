@@ -906,7 +906,8 @@
     "groupAgents": "代理",
     "copies": "{count, plural, =0 {没有副本} other {# 个副本}}",
     "moreActionsFor": "{name} 的操作",
-    "defaultModel": "默认模型"
+    "defaultModel": "默认模型",
+    "saveAsTemplate": "作为模板存入池"
   },
   "members": {
     "roleSaved": "{name} 现在是{role}",

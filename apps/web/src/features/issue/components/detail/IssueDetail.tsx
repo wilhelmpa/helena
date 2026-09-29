@@ -37,6 +37,7 @@ export default function IssueDetail({
         )
       }
       onClose={onClose}
+      pin={{ kind: 'issue', value: `${project.project.key}:${issueId}` }}
       onFullscreen={() => onExpand(issue?.sequenceNumber ?? null)}
       closeOnOutsideClick
       className="ds-issue-overlay"

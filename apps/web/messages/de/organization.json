@@ -331,11 +331,15 @@
     "whyNoGoal": "Kein Ziel verknüpft",
     "noAgent": "Ohne Agent",
     "filterLabel": "Status",
-    "addMember": "Mitglied hinzufügen"
+    "addMember": "Mitglied hinzufügen",
+    "viewList": "Liste",
+    "addHere": "Mitglied hinzufügen: {name}",
+    "nodeMenu": "Aktionen für {name}",
+    "addMemberHere": "Mitglied hinzufügen"
   },
   "addMember": {
     "title": "Teammitglied hinzufügen",
-    "description": "Ein Agent aus dem Pool oder eine neue Kopie einer Vorlage kommt ins Team des Projekts.",
+    "description": "Ein Agent aus dem Pool, eine neue Kopie einer Vorlage oder ein neuer Agent kommt ins Team des Projekts.",
     "source": "Herkunft",
     "fromPool": "Aus dem Pool",
     "fromTemplate": "Aus Vorlage",
@@ -348,6 +352,20 @@
     "add": "Hinzufügen",
     "added": "Zu {project} hinzugefügt",
     "failed": "Das Mitglied konnte nicht hinzugefügt werden.",
-    "keyOnce": "Die Kopie läuft außerhalb von {appName}: Kopiere ihren Schlüssel jetzt, er wird nur einmal angezeigt."
+    "keyOnce": "Die Kopie läuft außerhalb von {appName}: Kopiere ihren Schlüssel jetzt, er wird nur einmal angezeigt.",
+    "fromNew": "Neu anlegen",
+    "newHint": "Ein neuer Agent in {project}, als Spezialist unter dem Koordinator. Er öffnet sich rechts zum Einrichten.",
+    "create": "Anlegen"
+  },
+  "pool": {
+    "saved": "{name} liegt jetzt als Vorlage im Pool",
+    "noMatch": "Kein Agent passt zur Suche.",
+    "showLabel": "Zeigen",
+    "showAll": "Alle",
+    "showAgents": "Agenten",
+    "showTemplates": "Vorlagen",
+    "extend": "Pool erweitern",
+    "newTemplate": "Neue Vorlage",
+    "newAgent": "Neuer Agent"
   }
 }

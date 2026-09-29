@@ -23,6 +23,8 @@ import FileViewerActions from './FileViewerActions';
 import ProjectKnowledgeViewer from './ProjectKnowledgeViewer';
 import KnowledgeFolderView, { useKnowledgeCrumbs, vaultRootOf } from './KnowledgeFolderView';
 import KnowledgeRecentView from './KnowledgeRecentView';
+import KnowledgeTrashView from './KnowledgeTrashView';
+import { useSearchParams } from 'next/navigation';
 import KnowledgeCanvas from './KnowledgeCanvas';
 import KnowledgeBaseView from './KnowledgeBaseView';
 import { Page } from '@/design-system';
@@ -78,6 +80,8 @@ export default function FileBrowser({
     void client.invalidateQueries({ queryKey: filesScopeKey(scope) });
   };
   const listing = useFilesQuery(scope, path);
+  // Wissen › Papierkorb (?trash=1): what was trashed below this place, to restore.
+  const trashView = useSearchParams()?.get('trash') === '1';
   const view = useFileBrowserView();
   const [dialog, setDialog] = useState<FileDialogState>(null);
   const writable = listing.data?.writable ?? false;
@@ -271,6 +275,12 @@ export default function FileBrowser({
             }}
           />
         )
+      ) : trashView && knowledge ? (
+        <KnowledgeTrashView
+          root={vaultRootOf(scope)}
+          title={k('trash')}
+          canRestore={permissions.create || permissions.edit}
+        />
       ) : levelOne ? (
         <KnowledgeRecentView
           sources={[{ root: vaultRootOf(scope), scope }]}

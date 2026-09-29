@@ -89,7 +89,11 @@
   "trashDialog": {
     "title": "Move {name} to the trash?",
     "description": "It moves to the trash folder of the vault and can be restored from there.",
-    "confirm": "Move to trash"
+    "confirm": "Move to trash",
+    "counting": "Reading its contents …",
+    "emptyFolder": "The folder is empty.",
+    "folderHolds": "{count, plural, one {It holds # entry that goes with it:} other {It holds # entries that go with it:}}",
+    "more": "and {count} more"
   },
   "linkDialog": {
     "title": "Link to task",
@@ -209,7 +213,8 @@
     "emptyFilesTitle": "No files yet",
     "emptyFiles": "PDFs, images and other files land here. Upload one or drop it here.",
     "onlySubfoldersTitle": "Only subfolders",
-    "onlySubfolders": "This folder holds no files. Open one of its subfolders."
+    "onlySubfolders": "This folder holds no files. Open one of its subfolders.",
+    "renameLabel": "New name for {name}"
   },
   "canvas": {
     "opening": "Opening the canvas …",
@@ -271,5 +276,20 @@
     "viewTable": "Table",
     "viewCards": "Cards",
     "viewList": "List"
+  },
+  "renamed": "Renamed to {name}",
+  "trashView": {
+    "search": "Search the trash …",
+    "name": "Name",
+    "from": "Folder · trashed",
+    "loading": "Loading the trash …",
+    "loadFailed": "The trash could not be loaded.",
+    "emptyTitle": "The trash is empty",
+    "empty": "What you delete here lands here and can be restored.",
+    "noMatch": "Nothing in the trash matches the search.",
+    "topLevel": "top level",
+    "restore": "Restore",
+    "restoreTo": "Put back to {path}",
+    "restored": "{name} is restored"
   }
 }

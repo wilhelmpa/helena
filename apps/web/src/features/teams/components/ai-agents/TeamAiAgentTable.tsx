@@ -1,5 +1,5 @@
 import { useTranslations } from 'next-intl';
-import { Copy, History, MessageSquare, Trash2 } from 'lucide-react';
+import { Copy, History, LibraryBig, MessageSquare, Trash2 } from 'lucide-react';
 import type { AiAgent } from '@/lib/api/endpoints/agents';
 import { isRunnerOnline } from '@/components/common/agent-chat/runnerOnline';
 import { useAgentWorkStates } from '@/hooks/useAgentWorkStates';
@@ -18,6 +18,7 @@ export default function TeamAiAgentTable({
   onEdit,
   onRuns,
   onDelete,
+  onSaveTemplate,
 }: {
   label: string;
   agents: AiAgent[];
@@ -26,6 +27,8 @@ export default function TeamAiAgentTable({
   onEdit: (agent: AiAgent) => void;
   onRuns: (agent: AiAgent) => void;
   onDelete: (agent: AiAgent) => void;
+  // "Pool erweitern": a template of the pool from this agent.
+  onSaveTemplate?: (agent: AiAgent) => void;
 }) {
   const work = useAgentWorkStates();
   return (
@@ -40,6 +43,9 @@ export default function TeamAiAgentTable({
             onEdit={() => onEdit(agent)}
             onRuns={() => onRuns(agent)}
             onDelete={() => onDelete(agent)}
+            onSaveTemplate={
+              onSaveTemplate && !agent.template ? () => onSaveTemplate(agent) : undefined
+            }
           />
         ))}
       </ListGroup>
@@ -54,6 +60,7 @@ function PoolRow({
   onEdit,
   onRuns,
   onDelete,
+  onSaveTemplate,
 }: {
   agent: AiAgent;
   work?: 'running' | 'waiting';
@@ -61,6 +68,7 @@ function PoolRow({
   onEdit: () => void;
   onRuns: () => void;
   onDelete: () => void;
+  onSaveTemplate?: () => void;
 }) {
   const t = useTranslations('teams.agents');
   const can = useAgentCan();
@@ -107,6 +115,16 @@ function PoolRow({
                     label: t('testChat'),
                     icon: <MessageSquare size={14} />,
                     onSelect: onEdit,
+                  },
+                ]
+              : []),
+            ...(onSaveTemplate && can('create')
+              ? [
+                  {
+                    id: 'save-template',
+                    label: t('saveAsTemplate'),
+                    icon: <LibraryBig size={14} />,
+                    onSelect: onSaveTemplate,
                   },
                 ]
               : []),

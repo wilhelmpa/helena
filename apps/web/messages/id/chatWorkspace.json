@@ -309,5 +309,11 @@
   "context": {
     "task": "Tugas {identifier} “{title}”",
     "document": "Dokumen {name}"
+  },
+  "dock": {
+    "expand": "Buka obrolan",
+    "collapse": "Tutup obrolan",
+    "openTab": "Buka sebagai tab",
+    "empty": "Tanya {agent} …"
   }
 }

@@ -173,7 +173,22 @@
     "codeRetry": "Recharger",
     "codeNoFolder": "Ce projet n’a pas encore de dossier de travail.",
     "codeNoFolderPending": "Le dossier de travail de ce projet est en cours de préparation.",
-    "codeSettings": "Paramètres du projet"
+    "codeSettings": "Paramètres du projet",
+    "chatDockResize": "Redimensionner le chat",
+    "frameProblem": {
+      "title": "{tool} est injoignable",
+      "reasons": {
+        "unreachable": "Le service ne répond pas. Il redémarre peut-être, ou le réseau a changé.",
+        "status": "Le service signale une erreur ({status}).",
+        "forbidden": "Pas d’accès. Reconnecte-toi ou accorde l’accès.",
+        "timeout": "Pas de réponse à temps.",
+        "blocked": "Le navigateur n’a pas affiché la page (refusée ou bloquée)."
+      },
+      "retrying": "Se reconnecte dès qu’il répond à nouveau.",
+      "reload": "Recharger",
+      "close": "Fermer l’onglet",
+      "connecting": "Connexion à {tool} …"
+    }
   },
   "groups": {
     "project": "Projet",
@@ -287,5 +302,6 @@
   "settingsExtensions": "Extensions",
   "settingsAutopilotExecution": "Pilote automatique et exécution",
   "settingsProjectAccess": "Gérer les accès",
-  "sidebarHelenaKnowledge": "{appName}"
+  "sidebarHelenaKnowledge": "{appName}",
+  "sidebarTrash": "Corbeille"
 }

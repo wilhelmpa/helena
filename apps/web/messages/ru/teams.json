@@ -906,7 +906,8 @@
     "groupAgents": "Агенты",
     "copies": "{count, plural, =0 {Нет копий} one {# копия} few {# копии} many {# копий} other {# копии}}",
     "moreActionsFor": "Действия для {name}",
-    "defaultModel": "Модель по умолчанию"
+    "defaultModel": "Модель по умолчанию",
+    "saveAsTemplate": "Сохранить в пул как шаблон"
   },
   "members": {
     "roleSaved": "{name} теперь {role}",

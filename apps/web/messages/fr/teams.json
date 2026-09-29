@@ -906,7 +906,8 @@
     "groupAgents": "Agents",
     "copies": "{count, plural, =0 {Aucune copie} one {# copie} other {# copies}}",
     "moreActionsFor": "Actions pour {name}",
-    "defaultModel": "Modèle par défaut"
+    "defaultModel": "Modèle par défaut",
+    "saveAsTemplate": "Ajouter au pool comme modèle"
   },
   "members": {
     "roleSaved": "{name} est maintenant {role}",

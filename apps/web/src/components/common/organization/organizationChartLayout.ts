@@ -10,7 +10,16 @@ export const LEADER_HEIGHT = 92;
 export const LEAF_WIDTH = 242;
 export const LEAF_HEIGHT = 112;
 const X_GAP = 16;
-const LEVEL_GAP = 30;
+// Room between a leader and its reports for a clear trunk and the shared line (owner
+// 29.09.: the lines from the coordinator to its specialists were not to be seen).
+const LEVEL_GAP = 56;
+// Every report of a leader hangs from one horizontal line this far above its row.
+export const BUS_OFFSET = 24;
+// Specialists without reports of their own wrap into rows of at most four; the trunk runs
+// down the middle gap to the next row, which is wider so the line never touches a card.
+export const LEAVES_PER_ROW = 4;
+const ROW_X_GAP = 32;
+const ROW_GAP = 56;
 // Stacked specialists hang off a rail on the left of their coordinator.
 const RAIL_INDENT = 40;
 const STACK_GAP = 14;
@@ -70,6 +79,13 @@ export function organizationChartLayout(
   const height = (agent: OrganizationAgent) => cardHeight(agent) + taskRoom(agent);
   const visible = (agent: OrganizationAgent) =>
     collapsed.has(agent.id) ? [] : (children.get(agent.id) ?? []);
+  const allLeaves = (reports: OrganizationAgent[]) =>
+    reports.every((report) => visible(report).length === 0);
+  // Rows of specialists under a leader (only leaves; a report with its own reports keeps the
+  // classic subtree layout).
+  const wrapped = (agent: OrganizationAgent, reports: OrganizationAgent[]) =>
+    !stacked(agent, reports) && reports.length > LEAVES_PER_ROW && allLeaves(reports);
+  const rowWidth = (count: number) => count * LEAF_WIDTH + Math.max(0, count - 1) * ROW_X_GAP;
   const stacked = (agent: OrganizationAgent, reports: OrganizationAgent[]) =>
     Boolean(options.stackLeaves) &&
     !agent.isHome &&
@@ -88,6 +104,8 @@ export function organizationChartLayout(
     let result = width(agent);
     if (reports.length && stacked(agent, reports)) {
       result = Math.max(result, RAIL_INDENT + LEAF_WIDTH);
+    } else if (reports.length && wrapped(agent, reports)) {
+      result = Math.max(result, rowWidth(LEAVES_PER_ROW));
     } else if (reports.length) {
       const sum =
         reports.reduce((total, report) => total + measure(report), 0) +
@@ -102,7 +120,12 @@ export function organizationChartLayout(
   const nodes: Node[] = [];
   const edges: Edge[] = [];
   const placed = new Set<number>();
-  const edge = (source: OrganizationAgent, target: OrganizationAgent, rail: boolean): Edge => {
+  const edge = (
+    source: OrganizationAgent,
+    target: OrganizationAgent,
+    rail: boolean,
+    busY?: number,
+  ): Edge => {
     const active = delegating.has(target.id);
     return {
       id: `${source.id}-${target.id}`,
@@ -111,7 +134,7 @@ export function organizationChartLayout(
       type: 'flow',
       animated: active,
       ...(rail ? { sourceHandle: 'rail', targetHandle: 'side' } : {}),
-      data: { active, rail },
+      data: { active, rail, ...(busY != null ? { busY } : {}) },
     };
   };
   function node(agent: OrganizationAgent, x: number, y: number) {
@@ -164,14 +187,31 @@ export function organizationChartLayout(
       }
       return;
     }
+    if (reports.length && wrapped(agent, reports)) {
+      node(agent, left + (total - width(agent)) / 2, y);
+      let top = y + height(agent) + LEVEL_GAP;
+      for (let start = 0; start < reports.length; start += LEAVES_PER_ROW) {
+        const row = reports.slice(start, start + LEAVES_PER_ROW);
+        let x = left + (total - rowWidth(row.length)) / 2;
+        for (const report of row) {
+          placed.add(report.id);
+          node(report, x, top);
+          edges.push(edge(agent, report, false, top - BUS_OFFSET));
+          x += LEAF_WIDTH + ROW_X_GAP;
+        }
+        top += Math.max(...row.map(height)) + ROW_GAP;
+      }
+      return;
+    }
     node(agent, left + (total - width(agent)) / 2, y);
+    const childTop = y + height(agent) + LEVEL_GAP;
     const childrenWidth =
       reports.reduce((sum, report) => sum + measure(report), 0) +
       X_GAP * Math.max(0, reports.length - 1);
     let cursor = left + (total - childrenWidth) / 2;
     for (const report of reports) {
-      edges.push(edge(agent, report, false));
-      place(report, cursor, y + height(agent) + LEVEL_GAP);
+      edges.push(edge(agent, report, false, childTop - BUS_OFFSET));
+      place(report, cursor, childTop);
       cursor += measure(report) + X_GAP;
     }
   }

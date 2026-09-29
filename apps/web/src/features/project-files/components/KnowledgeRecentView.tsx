@@ -51,7 +51,7 @@ export default function KnowledgeRecentView({
   onOpen: (entry: KnowledgeEntry) => void;
   onCreate?: (kind: KnowledgeCreation) => void;
   onUpload?: (files: File[]) => void;
-  menuFor?: (entry: KnowledgeEntry) => ReactNode;
+  menuFor?: (entry: KnowledgeEntry, helpers: { rename?: () => void }) => ReactNode;
   more?: ReactNode;
 }) {
   const t = useTranslations('files.knowledge');

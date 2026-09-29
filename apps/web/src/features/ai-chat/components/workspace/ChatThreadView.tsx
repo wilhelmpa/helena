@@ -18,6 +18,9 @@ import { uuid } from '@/utils/uuid';
 import type { ChatAgentState } from '../../utils/agentPresence';
 import type { Artifact } from '../../utils/artifacts';
 import ChatHeader from './ChatHeader';
+import ChatDockBar from './ChatDockBar';
+import { dockLine } from '../../utils/dockLine';
+import { useChatDock } from '@/context/chatDock';
 import ChatMessageList from './ChatMessageList';
 import ChatComposer from '@/components/helena/Composer';
 import ChatNewChatIntro from './ChatNewChatIntro';
@@ -133,7 +136,10 @@ export default function ChatThreadView({
   const lastOwnMessage = plan.messages.findLast((message) => message.role === 'user');
   const state = states.get(agent.id);
   const empty = !plan.restoring && !plan.restoreFailed && plan.messages.length === 0;
-  const homeLanding = projectKey === null && empty && (inPage || pageContext != null);
+  // Behind another tab of the panel the chat is its bar at the bottom (Auftrag 116): no
+  // header of its own, the transcript only while the bar is open.
+  const dock = useChatDock();
+  const homeLanding = !dock && projectKey === null && empty && (inPage || pageContext != null);
   const activity = composerActivity(plan.messages, plan.status, state?.online ?? true);
   const tool = activeTool(plan.messages, plan.status);
   const choices = activity === 'answered' ? pendingChoices(plan.messages) : null;
@@ -284,7 +290,15 @@ export default function ChatThreadView({
         {inPage && projectKey === null && homeLanding && (
           <HomeChatMasthead onOpenList={onOpenList} />
         )}
-        {!homeLanding && (
+        {dock && (
+          <ChatDockBar
+            dock={dock}
+            agentName={agentDisplayName(agent, appName)}
+            lastAnswer={lastAnswer ? dockLine(messageText(lastAnswer)) : null}
+            status={orbStatus}
+          />
+        )}
+        {!homeLanding && !dock && (
           <ChatHeader
             scopeKey={scopeKey}
             projectKey={projectKey}
@@ -301,7 +315,10 @@ export default function ChatThreadView({
             inPage={inPage}
           />
         )}
-        <div className="relative flex min-h-0 flex-1 flex-col">
+        <div
+          className="relative flex min-h-0 flex-1 flex-col"
+          hidden={dock != null && !dock.expanded}
+        >
           {plan.restoreFailed ? (
             <ChatRestoreError onRetry={() => void plan.retryRestore()} />
           ) : homeLanding ? (
@@ -356,11 +373,12 @@ export default function ChatThreadView({
             </div>
           )}
         </div>
-        {busyElsewhere(activity, workingElsewhere ? 'running' : null) && (
-          <p className="ds-chat-busy-note" role="status">
-            {t('composer.busyElsewhere', { agent: agentDisplayName(agent, appName) })}
-          </p>
-        )}
+        {(!dock || dock.expanded) &&
+          busyElsewhere(activity, workingElsewhere ? 'running' : null) && (
+            <p className="ds-chat-busy-note" role="status">
+              {t('composer.busyElsewhere', { agent: agentDisplayName(agent, appName) })}
+            </p>
+          )}
         <ChatComposer
           homeLanding={homeLanding}
           scopeKey={scopeKey}

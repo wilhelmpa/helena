@@ -173,7 +173,22 @@
     "codeRetry": "إعادة التحميل",
     "codeNoFolder": "لا يوجد لهذا المشروع مجلد عمل بعد.",
     "codeNoFolderPending": "ما زال مجلد عمل هذا المشروع قيد الإعداد.",
-    "codeSettings": "إعدادات المشروع"
+    "codeSettings": "إعدادات المشروع",
+    "chatDockResize": "تغيير ارتفاع المحادثة",
+    "frameProblem": {
+      "title": "تعذّر الوصول إلى {tool}",
+      "reasons": {
+        "unreachable": "الخدمة لا تستجيب. ربما يُعاد تشغيلها أو تغيّرت الشبكة.",
+        "status": "تُبلغ الخدمة عن خطأ ({status}).",
+        "forbidden": "لا يوجد وصول. سجّل الدخول مجددًا أو امنح الإذن.",
+        "timeout": "لا رد في الوقت المحدد.",
+        "blocked": "لم يعرض المتصفح الصفحة (مرفوضة أو محظورة)."
+      },
+      "retrying": "سيُعاد الاتصال فور استجابته مجددًا.",
+      "reload": "إعادة التحميل",
+      "close": "إغلاق علامة التبويب",
+      "connecting": "جارٍ الاتصال بـ {tool} …"
+    }
   },
   "groups": {
     "project": "المشروع",
@@ -287,5 +302,6 @@
   "settingsExtensions": "الإضافات",
   "settingsAutopilotExecution": "الطيار الآلي والتنفيذ",
   "settingsProjectAccess": "إدارة الوصول",
-  "sidebarHelenaKnowledge": "{appName}"
+  "sidebarHelenaKnowledge": "{appName}",
+  "sidebarTrash": "سلة المهملات"
 }

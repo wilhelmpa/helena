@@ -13,13 +13,13 @@ import { useToday } from '../hooks/useToday';
 import CustomizeDialog from './CustomizeDialog';
 import SystemDetailsDialog from './SystemDetailsDialog';
 import WidgetView, { WidgetPlaceholder } from './WidgetView';
-import { columnsOf, sectionBlocks, type Arranged } from './layout';
+import { sectionBlocks, type Arranged } from './layout';
 import { HomeDashboardProvider, useHomeDashboard, useHomeDashboardValue } from './useHomeDashboard';
 import { Grid, Text } from '@/design-system';
 
-// A pair block of half-width sections: two columns on a wide screen (first, third, … left),
-// one column in the reader's order below that. The columns are `display: contents` when
-// narrow, so every section sorts by its place in the reader's order.
+// A pair block of half-width sections: two per row on a wide screen, in the reader's order,
+// and the two of a row equally tall (owner 29.09.: "Karten im Dashboard alle gleich hoch");
+// one column below that.
 function SectionPair({
   items,
   render,
@@ -27,16 +27,11 @@ function SectionPair({
   items: DashboardWidget[];
   render: (widget: DashboardWidget) => ReactNode;
 }) {
-  const columns = columnsOf(items);
   return (
-    <div className="flex flex-col gap-4 @4xl:grid @4xl:grid-cols-2 @4xl:items-start">
-      {columns.map((column, side) => (
-        <div key={side} className="contents @4xl:flex @4xl:flex-col @4xl:gap-4">
-          {column.map((widget) => (
-            <div key={widget.id} className="min-w-0" style={{ order: items.indexOf(widget) }}>
-              {render(widget)}
-            </div>
-          ))}
+    <div className="flex flex-col gap-4 @4xl:grid @4xl:grid-cols-2 @4xl:items-stretch">
+      {items.map((widget) => (
+        <div key={widget.id} className="flex min-w-0 flex-col [&>*]:flex-1">
+          {render(widget)}
         </div>
       ))}
     </div>
