@@ -37,7 +37,13 @@ function useLocalAiProblems({ owner }: { owner: boolean }): NeedsYouSourceResult
       icon: Cpu,
     }));
   const evals: NeedsYouEntry[] = (settings.data?.classes ?? [])
-    .filter((entry) => entry.mode !== 'off' && entry.blocker === 'eval-failed')
+    .filter(
+      (entry) =>
+        (entry.mode !== 'off' && entry.blocker === 'eval-failed') ||
+        (status.data?.globalModel?.job?.committed &&
+          !status.data.globalModel.job.restored &&
+          status.data.globalModel.job.failedClasses.includes(entry.id)),
+    )
     .map((entry) => {
       const latest = settings.data?.evals.find(
         (item) => item.classId === entry.id && item.modelId === entry.resolvedModel,

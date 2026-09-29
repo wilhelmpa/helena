@@ -1,3 +1,12 @@
+import { withModelAdmission, assertModelIdle } from './maintenance-state';
+import {
+  beginGlobalModel,
+  bulkLocalDefault,
+  globalModelStatus,
+  previewGlobalModel,
+  resumeGlobalModel,
+} from './global-model';
+import { globalModelBody, globalModelResumeBody, bulkLocalDefaultBody } from './model';
 import { Elysia, t } from 'elysia';
 import { requireGod } from '#shared/access';
 import { authContext } from '#shared/auth-context';
@@ -36,6 +45,15 @@ import {
 } from './service';
 import { judgeView, writeJudge } from './judge';
 
+async function configureModel<T>(change: () => Promise<T>): Promise<T> {
+  const result = await withModelAdmission(async () => {
+    await assertModelIdle();
+    return change();
+  });
+  if (result === null) throw new HttpError(409, 'Model maintenance is pending');
+  return result;
+}
+
 // Local AI (docs/helena-decisions/local-ai-platform.md): the owner's model servers, the
 // policy that sends background work there first, the evals that gate each kind of work, the
 // status the "Lokale KI" card shows, and the keys a runner hands its agents. Owner only; the
@@ -47,6 +65,41 @@ export const localAiRoutes = new Elysia({
 })
   .use(authContext)
   .use(runnerAuth)
+
+  .get('/god/local-ai/default', () => globalModelStatus(), {
+    beforeHandle: ({ user }) => {
+      requireGod(user);
+    },
+    detail: { summary: 'Read the global local model and durable maintenance progress' },
+  })
+  .post('/god/local-ai/default/preview', ({ body }) => previewGlobalModel(body.model), {
+    beforeHandle: ({ user }) => {
+      requireGod(user);
+    },
+    body: globalModelBody,
+    detail: { summary: 'Preview affected agents, classes and the 72 GB weight lock' },
+  })
+  .post('/god/local-ai/default/apply', ({ body }) => beginGlobalModel(body.model), {
+    beforeHandle: ({ user }) => {
+      requireGod(user);
+    },
+    body: globalModelBody,
+    detail: { summary: 'Begin a recoverable local model switch' },
+  })
+  .post('/god/local-ai/default/resume', ({ body }) => resumeGlobalModel(body.rollback), {
+    beforeHandle: ({ user }) => {
+      requireGod(user);
+    },
+    body: globalModelResumeBody,
+    detail: { summary: 'Resume or roll back the pending model switch' },
+  })
+  .post('/god/local-ai/default/agents', ({ body }) => bulkLocalDefault(body.ids, body.apply), {
+    beforeHandle: ({ user }) => {
+      requireGod(user);
+    },
+    body: bulkLocalDefaultBody,
+    detail: { summary: 'Preview or apply local default to selected agents' },
+  })
 
   .get(
     '/god/local-ai',
@@ -87,7 +140,7 @@ export const localAiRoutes = new Elysia({
     '/god/local-ai/policy',
     ({ user, body }) => {
       requireGod(user);
-      return updatePolicy(body);
+      return configureModel(() => updatePolicy(body));
     },
     {
       body: policyBody,
@@ -107,7 +160,7 @@ export const localAiRoutes = new Elysia({
     '/god/local-ai/servers',
     ({ user, body }) => {
       requireGod(user);
-      return createServer(body);
+      return configureModel(() => createServer(body));
     },
     {
       body: serverBody,
@@ -125,7 +178,7 @@ export const localAiRoutes = new Elysia({
     '/god/local-ai/servers/:id',
     ({ user, params, body }) => {
       requireGod(user);
-      return updateServer(params.id, body);
+      return configureModel(() => updateServer(params.id, body));
     },
     {
       params: serverParams,
@@ -139,7 +192,8 @@ export const localAiRoutes = new Elysia({
     '/god/local-ai/servers/:id',
     async ({ user, params }) => {
       requireGod(user);
-      if (!(await deleteServer(params.id))) throw new HttpError(404, 'No such server');
+      if (!(await configureModel(() => deleteServer(params.id))))
+        throw new HttpError(404, 'No such server');
       return noContent();
     },
     {
@@ -166,7 +220,7 @@ export const localAiRoutes = new Elysia({
     '/god/local-ai/servers/:id/models/:model/options',
     ({ user, params, body }) => {
       requireGod(user);
-      return updateModelOptions(params.id, params.model, body);
+      return configureModel(() => updateModelOptions(params.id, params.model, body));
     },
     {
       params: t.Object({ id: t.Numeric(), model: t.String({ maxLength: 300 }) }),

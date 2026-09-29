@@ -242,6 +242,7 @@ const loadedEntry = t.Object({
 });
 
 export const LocalAiStatus = t.Object({
+  globalModel: t.Any(),
   halogenPriority: t.Optional(
     t.Nullable(
       t.Object({
@@ -455,4 +456,11 @@ export const judgeBody = t.Object({
   agentId: t.Optional(t.Nullable(t.Number())),
   baseUrl: t.Optional(t.Nullable(t.String({ maxLength: 500 }))),
   key: t.Optional(t.Nullable(t.String({ maxLength: 500 }))),
+});
+
+export const globalModelBody = t.Object({ model: t.String({ minLength: 1, maxLength: 300 }) });
+export const globalModelResumeBody = t.Object({ rollback: t.Optional(t.Boolean()) });
+export const bulkLocalDefaultBody = t.Object({
+  ids: t.Array(t.Integer({ minimum: 1 }), { minItems: 1, maxItems: 1000 }),
+  apply: t.Boolean(),
 });

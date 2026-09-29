@@ -1,3 +1,4 @@
+import { readMaintenance } from './maintenance-state';
 import {
   agentChatMessage,
   agentRun,
@@ -76,7 +77,9 @@ export async function localAiWorkActive(): Promise<boolean> {
 }
 
 export async function checkLocalAiGuard(now = Date.now()): Promise<void> {
-  if (running || restarting) return;
+  const operation = (await readMaintenance())?.operation;
+  if (running || restarting || (operation && !['done', 'rolled-back'].includes(operation.phase)))
+    return;
   running = true;
   try {
     let host: HostSystemStatus;

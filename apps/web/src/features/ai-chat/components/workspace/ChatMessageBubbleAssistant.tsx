@@ -1,5 +1,7 @@
 'use client';
 
+import { isLocalModel } from '@/features/local-ai/utils/modelIdentity';
+
 import { ModelRouteLine } from '@/features/decisions/components/ModelRouteLine';
 import VoiceReplyLine from '@/features/voice/components/VoiceReplyLine';
 import { LocalFallbackLine } from '@/features/local-ai/components/LocalFallbackLine';
@@ -53,9 +55,9 @@ export default function ChatMessageBubbleAssistant({
       : null,
   );
   const check = message.metadata?.modelCheck;
-  const usedModel = check?.used?.model ?? null;
+  const usedModel = check?.used?.model ?? message.metadata?.model ?? null;
   const usedRuntime = check?.runtime;
-  const execution = usedModel?.startsWith('helena-local/')
+  const execution = isLocalModel(usedModel, check?.used?.provider)
     ? tr('local')
     : usedRuntime === 'claude' || usedRuntime === 'claude-code'
       ? tr('claude')

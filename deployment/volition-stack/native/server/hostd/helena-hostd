@@ -200,6 +200,9 @@ def run_boot_layout(args: list[str]) -> int:
 def main(argv: list[str]) -> int:
     command = argv[0] if argv else 'serve'
     try:
+        if command == 'model-start-allowed' and len(argv) == 2:
+            from helena_host.model_server import may_start
+            return 0 if may_start(Host(), argv[1]) else 1
         if command == 'serve':
             return serve()
         if command == 'guard':

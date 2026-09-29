@@ -1,3 +1,4 @@
+import { LOCAL_DEFAULT, localDefaultModel, readMaintenance } from './maintenance-state';
 import { aiAgent, db, pipelineRun, readLocalAiPolicy } from '@repo/db';
 import { parseLocalModelId } from '@helena/sdk';
 import { eq } from 'drizzle-orm';
@@ -90,6 +91,9 @@ export async function localAiMayStart(
   request: typeof fetch = fetch,
   capacityCache?: CapacityCache,
 ): Promise<boolean> {
+  if ((await readMaintenance())?.admissionPaused) return false;
+  if (input.model === LOCAL_DEFAULT)
+    input = { ...input, model: await localDefaultModel(), fallbackModel: 'gpt-6-luna' };
   const explicitLocal = parseLocalModelId(input.model) !== null;
   const model = explicitLocal
     ? (await chooseModelNow(input.model, input.fallbackModel ?? null)).model

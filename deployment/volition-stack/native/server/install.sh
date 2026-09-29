@@ -85,6 +85,11 @@ install_code() {
   run install -m 0755 -o root -g root "$here/hooks/helena-esp-sync" "$LIB/helena-esp-sync"
   run install -m 0755 -o root -g root "$here/hooks/helena-nvme-pm" "$LIB/helena-nvme-pm"
   run install -m 0644 -o root -g root "$here/README.md" "$LIB/README.md"
+  run install -d -m 0755 -o root -g root /var/lib/volition /var/lib/volition/model-maintenance
+  for unit in helena-halogen.service lemond.service helena-embed.service helena-voice-stt.service helena-voice-tts.service helena-ai-preload.service helena-ai-proxy.service helena-voice-stt-proxy.service helena-voice-tts-proxy.service; do
+    run install -d -m 0755 "/etc/systemd/system/$unit.d"
+    run install -m 0644 "$here/systemd/volition-model-maintenance.conf" "/etc/systemd/system/$unit.d/volition-model-maintenance.conf"
+  done
   # Compiled caches from an older copy never shadow the new code (python3 -I writes none).
   run rm -rf "$LIB/helena_host/__pycache__"
 }

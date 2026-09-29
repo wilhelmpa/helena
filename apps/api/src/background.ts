@@ -1,3 +1,4 @@
+import { resumeGlobalModel } from '#modules/local-ai/global-model';
 import { startLoop } from '@helena/loop';
 import { recordJanitorRun } from '@repo/db';
 import { intEnv } from '#shared/lib';
@@ -79,6 +80,13 @@ export function startBackgroundJobs(): void {
     'policy-log',
     async () => void (await prunePolicyDecisions()),
     () => intEnv('HELENA_POLICY_LOG_PRUNE_INTERVAL_MS', 86_400_000),
+  );
+  startLoop(
+    'model-maintenance',
+    async () => {
+      await resumeGlobalModel();
+    },
+    () => 2_000,
   );
   startLoop('local-ai-guard', checkLocalAiGuard, () => 60_000);
   // Expired sign-in sessions, which better-auth only removes when they are used again.

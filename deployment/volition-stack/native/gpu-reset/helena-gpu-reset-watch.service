@@ -10,7 +10,7 @@ Restart=always
 RestartSec=3
 NoNewPrivileges=yes
 ProtectSystem=strict
-ReadWritePaths=/var/lib/helena-ai
+ReadWritePaths=/var/lib/helena-ai /var/lib/volition/model-maintenance
 
 [Install]
 WantedBy=multi-user.target

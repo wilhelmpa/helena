@@ -1,3 +1,4 @@
+import type { GlobalModelStatus } from './globalModel';
 import { request } from '@/lib/api/core/client';
 
 // Helena's local AI (docs/helena-decisions/local-ai-platform.md): the owner's model servers
@@ -167,6 +168,7 @@ export interface LoadedModel {
 }
 
 export interface LocalAiStatus {
+  globalModel?: GlobalModelStatus;
   lastGpuReset: {
     at: string;
     bootId: string;

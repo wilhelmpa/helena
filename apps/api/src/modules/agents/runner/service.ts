@@ -1,3 +1,5 @@
+import { withModelAdmission, LOCAL_DEFAULT } from '#modules/local-ai/maintenance-state';
+import { localDefaultClassFallback } from '#modules/local-ai/global-model';
 import {
   db,
   getDisplayName,
@@ -320,7 +322,7 @@ async function runSettingsOf(
   agent: { model: string | null; thinkingLevel: string | null },
 ): Promise<{ model: string | null; thinkingLevel: string | null; fallback: LocalFallback | null }> {
   const choice = await chooseModelNow(model, agent.model);
-  if (!choice.fallback) return { model, thinkingLevel, fallback: null };
+  if (!choice.fallback) return { model: choice.model, thinkingLevel, fallback: null };
   return {
     model: choice.model,
     thinkingLevel:
@@ -333,6 +335,10 @@ async function runSettingsOf(
 // paused agent's runs wait in the queue. FOR UPDATE SKIP LOCKED keeps two runners on
 // the same key from taking the same run.
 export async function claimRunnerRun(agent: RunnerAgent): Promise<RunnerRun | null> {
+  return withModelAdmission(() => claimAdmittedRun(agent));
+}
+
+async function claimAdmittedRun(agent: RunnerAgent): Promise<RunnerRun | null> {
   const agentId = agent.id;
   await expireExhaustedRuns(agentId);
   await touchRunner(agentId);
@@ -549,6 +555,14 @@ export async function claimRunnerRun(agent: RunnerAgent): Promise<RunnerRun | nu
   );
   let { model, thinkingLevel } = configured;
   let fallback = configured.fallback;
+  if (
+    (row.model ?? agent.model) === LOCAL_DEFAULT &&
+    (await localDefaultClassFallback(row.workClass))
+  ) {
+    fallback = model ? { from: model, reason: 'failed' } : null;
+    model = 'gpt-6-luna';
+    thinkingLevel = null;
+  }
   // The kind of work the run is (a digest, a routine's task, a coordinator's first plan) may
   // run on its local model while Lokale KI takes it (docs/helena-decisions/local-ai-platform.md
   // §7.1); otherwise, and whenever the server does not answer, on the model above, exactly as
@@ -581,7 +595,15 @@ export async function claimRunnerRun(agent: RunnerAgent): Promise<RunnerRun | nu
       })
       .where(eq(agentRun.id, row.id));
   }
-  if (!local?.model && !row.model && !row.sessionId && !digest && row.trigger !== 'workspace') {
+  if (
+    !parseLocalModelId(model) &&
+    !fallback &&
+    !local?.model &&
+    !row.model &&
+    !row.sessionId &&
+    !digest &&
+    row.trigger !== 'workspace'
+  ) {
     const routed = await routeRequest({
       teamId: agent.teamId,
       agentId: agent.id,

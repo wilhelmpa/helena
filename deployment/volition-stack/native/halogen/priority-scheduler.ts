@@ -18,6 +18,17 @@ export class PriorityScheduler {
   };
   private waiting: Waiting[] = [];
   private healthy = true;
+  private administrativePaused = false;
+  admissionCheck: (() => boolean) | undefined;
+
+  setAdministrativePaused(paused: boolean): void {
+    this.administrativePaused = paused;
+    this.drain();
+  }
+
+  private paused(): boolean {
+    return this.administrativePaused || (this.admissionCheck?.() ?? false);
+  }
   private fallbacks: Record<PriorityClass, number> = {
     interactive: 0, realtime: 0, normal: 0, background: 0,
   };
@@ -55,6 +66,7 @@ export class PriorityScheduler {
     return {
       config: this.config,
       healthy: this.healthy,
+      administrativePaused: this.paused(),
       active: { ...this.active },
       queued: Object.fromEntries(classes.map((kind) => [kind, waits[kind].length])) as Record<PriorityClass, number>,
       oldestWaitMs: Math.max(0, ...this.waiting.map((item) => this.now() - item.since)),
@@ -62,10 +74,10 @@ export class PriorityScheduler {
         Math.max(0, ...waits[kind].map((item) => this.now() - item.since))])) as Record<PriorityClass, number>,
       fallbacks: { ...this.fallbacks },
       paused: {
-        interactive: !this.healthy,
-        realtime: !this.healthy,
-        normal: !this.healthy,
-        background: !this.healthy || this.active.interactive + this.active.realtime > 0 ||
+        interactive: !this.healthy || this.paused(),
+        realtime: !this.healthy || this.paused(),
+        normal: !this.healthy || this.paused(),
+        background: !this.healthy || this.paused() || this.active.interactive + this.active.realtime > 0 ||
           waits.interactive.length + waits.realtime.length > 0,
       },
     };
@@ -76,7 +88,7 @@ export class PriorityScheduler {
   }
 
   private eligible(kind: PriorityClass): boolean {
-    if (!this.healthy || this.total() >= this.config.maxConcurrent) return false;
+    if (this.paused() || !this.healthy || this.total() >= this.config.maxConcurrent) return false;
     const cap: Record<PriorityClass, number> = {
       interactive: this.config.maxInteractive,
       realtime: this.config.maxRealtime,

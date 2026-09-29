@@ -10,7 +10,7 @@ import threading
 from dataclasses import dataclass
 from typing import Callable
 
-from . import audit, backup, events, guard, power, storage, system
+from . import audit, backup, events, guard, power, storage, system, model_server
 from .common import VERSION, Host, HostError, iso
 from .config import GUARD_LIMIT_RANGE, Config, load_settings, save_settings
 from .varlink import VarlinkError
@@ -24,6 +24,8 @@ interface io.helena.hostd
 
 method Capabilities() -> (result: object)
 method SystemStatus() -> (result: object)
+method ModelMaintenanceStatus() -> (result: object)
+method SwitchModelServer(id: string, action: ?string, target: ?object, previous: ?object, expected: ?string, ack: ?string, actor: ?string) -> (result: object)
 method RestartLocalAi(actor: ?string) -> (result: object)
 method StorageStatus(fresh: ?bool) -> (result: object)
 method StartRaidCheck(array: string, actor: ?string) -> (result: object)
@@ -197,22 +199,8 @@ def storage_status(ctx: Context, params: dict) -> dict:
 
 
 def restart_local_ai(ctx: Context, _: dict) -> dict:
-    tool = ctx.host.which('systemctl')
-    if not tool:
-        raise HostError('NotAvailable', 'systemd is not available')
-    services = system.local_ai_services(ctx.host)
-    units = []
-    if services.get('lemonade', {}).get('enabled'):
-        units.extend(('lemond.service', 'helena-ai-preload.service'))
-    if services.get('halogen', {}).get('enabled'):
-        units.append('helena-halogen.service')
-    if not units:
-        raise HostError('NotAvailable', 'No local AI service is enabled')
-    for unit in units:
-        result = ctx.host.run([tool, 'restart', '--no-block', unit], timeout=15)
-        if result.returncode != 0:
-            raise HostError('CommandFailed', f'{unit} could not be restarted')
-    return {'restarted': True}
+    value = model_server.reset_group(ctx.host)
+    return {'restarted': False, 'maintenance': value['operation']}
 
 
 storage_lock = threading.Lock()
@@ -228,6 +216,9 @@ def _locked(lock: threading.Lock, fn: Callable[[Context, dict], dict]) -> Callab
 METHODS: dict[str, Method] = {
     'Capabilities': Method(capabilities, {}),
     'SystemStatus': Method(lambda ctx, _: system.status(ctx.host, ctx.config.state_dir), {}),
+    'ModelMaintenanceStatus': Method(lambda ctx, _: model_server.state(ctx.host), {}),
+    'SwitchModelServer': Method(lambda ctx, p: model_server.switch(ctx.host, p),
+        _p(id='string', action='?string', target='?object', previous='?object', expected='?string', ack='?string', actor='?string'), mutating=True),
     'RestartLocalAi': Method(restart_local_ai, _p(actor='?string'), mutating=True),
     'StorageStatus': Method(storage_status, _p(fresh='?bool')),
     'StartRaidCheck': Method(_locked(storage_lock, lambda ctx, p: storage.start_check(ctx.host, p['array'])),

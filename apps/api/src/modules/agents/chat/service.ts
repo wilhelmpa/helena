@@ -1,4 +1,9 @@
 import {
+  withModelAdmission,
+  LOCAL_DEFAULT,
+  localDefaultModel,
+} from '#modules/local-ai/maintenance-state';
+import {
   db,
   getDisplayName,
   agentChatCatalog,
@@ -1060,6 +1065,10 @@ export async function claimNextMessage(agent: RunnerAgent): Promise<ClaimedChat 
 // wait. Claiming clears whatever a previous attempt produced: the answer is generated
 // again from the start, and the browser would otherwise read the abandoned half twice.
 async function claimMessage(agent: RunnerAgent): Promise<ClaimedChat | null> {
+  return withModelAdmission(() => claimAdmittedMessage(agent));
+}
+
+async function claimAdmittedMessage(agent: RunnerAgent): Promise<ClaimedChat | null> {
   const rows = await db.execute(sql`
     UPDATE agent_chat_message m
     SET attempts = m.attempts + 1,
@@ -1132,15 +1141,15 @@ async function claimMessage(agent: RunnerAgent): Promise<ClaimedChat | null> {
   // agent answers with without local AI (its own, or the runtime's default when that is local
   // too), and the answer notes the fallback (docs/helena-decisions/local-ai-platform.md §6.3).
   const forcedFallback = row.preclaimCheck?.fallback ?? null;
+  let forcedModel = chosen.model;
+  if (chosen.model === LOCAL_DEFAULT) forcedModel = 'gpt-6-luna';
+  else if (parseLocalModelId(chosen.model)) {
+    forcedModel = agent.model;
+    if (agent.model === LOCAL_DEFAULT) forcedModel = 'gpt-6-luna';
+    else if (parseLocalModelId(agent.model)) forcedModel = null;
+  }
   const choice = forcedFallback
-    ? {
-        model: parseLocalModelId(chosen.model)
-          ? parseLocalModelId(agent.model)
-            ? null
-            : agent.model
-          : chosen.model,
-        fallback: forcedFallback,
-      }
+    ? { model: forcedModel, fallback: forcedFallback }
     : await chooseModelNow(chosen.model, agent.model);
   let settings = choice.fallback
     ? {
@@ -1148,8 +1157,8 @@ async function claimMessage(agent: RunnerAgent): Promise<ClaimedChat | null> {
         thinkingLevel:
           choice.model !== null && choice.model === agent.model ? agent.thinkingLevel : null,
       }
-    : chosen;
-  if (!row.model && !voiceModel && !forcedFallback) {
+    : { ...chosen, model: choice.model };
+  if (!row.model && !voiceModel && !forcedFallback && !parseLocalModelId(choice.model)) {
     const routed = await routeRequest({
       teamId: agent.teamId,
       agentId: agent.id,
@@ -1380,7 +1389,8 @@ async function validateChatSettings(
     return { model: null, thinkingLevel: null };
   }
   const catalog = await readChatCatalog(agentId);
-  const selected = catalog.models.find((entry) => entry.id === model);
+  const resolved = model === LOCAL_DEFAULT ? await localDefaultModel() : model;
+  const selected = catalog.models.find((entry) => entry.id === resolved);
   if (!selected) throw new HttpError(400, 'The selected model is not available');
   if (thinkingLevel && !selected.thinkingLevels.includes(thinkingLevel)) {
     throw new HttpError(400, 'The selected thinking level is not available for this model');
