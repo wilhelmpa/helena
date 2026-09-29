@@ -57,6 +57,11 @@ export const agentLearningRoutes = new Elysia({
       params: agentParams,
       teamPermission: ['ai_agents', 'read'],
       response: { 200: NativeSkillsResponse, ...commonErrors },
+      detail: {
+        summary: 'Read the history of learned skills for an agent',
+        description:
+          'Lists current and archived native skills with their revisions for owner review.',
+      },
     },
   )
   .post(
@@ -71,6 +76,10 @@ export const agentLearningRoutes = new Elysia({
       body: nativeSkillReviewBody,
       teamPermission: ['ai_agents', 'edit'],
       response: { 200: NativeSkillResponse, ...commonErrors, ...errors(409) },
+      detail: {
+        summary: 'Review a learned skill revision',
+        description: 'Records the owner decision on a specific revision of an agent-created skill.',
+      },
     },
   )
 

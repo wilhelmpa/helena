@@ -1,8 +1,9 @@
 import { describe, it, expect, beforeEach } from 'bun:test';
-import { authedApi, type Api } from '#tests/helpers/app';
+import { app, authedApi, type Api } from '#tests/helpers/app';
 import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
 import { untaggedRoutes } from '#tests/helpers/mcp';
+import { routeTools } from '#mcp/generate';
 
 // Checklists: an issue holds several checklists, each holding checkbox items. Both
 // are ordered by position within their parent and come back with the issue read
@@ -373,10 +374,13 @@ describe('checklists', () => {
     });
   });
 
-  // The list comes with the issue read, so it stays session-only.
-  it('exposes the checklist writes an agent needs to MCP', () => {
-    expect(untaggedRoutes((route) => route.includes('checklist'))).toEqual([
-      'GET /issues/:issueId/checklists',
-    ]);
+  // The issue read carries checklists, and agents may also refresh the list directly.
+  it('exposes checklist reads and writes as MCP tools', () => {
+    expect(untaggedRoutes((route) => route.includes('checklist'))).toEqual([]);
+    expect(routeTools(app).filter((tool) => tool.path === '/issues/:issueId/checklists')).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ method: 'GET', name: 'list_issue_checklists' }),
+      ]),
+    );
   });
 });

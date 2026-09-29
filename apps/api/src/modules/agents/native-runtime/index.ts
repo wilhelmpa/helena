@@ -101,6 +101,10 @@ export const nativeRuntimeRoutes = new Elysia({
       runnerAgent: true,
       body: nativeSkillUseBody,
       response: { 200: OkResponse, ...errors(401, 403, 404, 409) },
+      detail: {
+        summary: 'Record a learned skill use',
+        description: 'Records that the calling agent used one of its learned native skills.',
+      },
     },
   )
   .post(

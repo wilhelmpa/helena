@@ -236,6 +236,7 @@ describe('routines', () => {
         classId: HEARTBEAT_PRECHECK_CLASS,
         credentialId: credential.data!.id,
         backendLabel: 'test double',
+        model: LOCAL_DECISION_MODEL,
         threshold: 0.8,
         questions: 60,
         answered: 60,
