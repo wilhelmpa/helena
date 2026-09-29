@@ -139,8 +139,7 @@ export default function KnowledgeFolderView({
   const subfolders = items
     .filter((item) => item.kind === 'folder')
     .map((item) => ({
-      name:
-        scope.kind === 'project' && !path ? knowledgeFolderLabel(item.name, fixed) : item.name,
+      name: scope.kind === 'project' && !path ? knowledgeFolderLabel(item.name, fixed) : item.name,
       path: item.path,
       icon: folderIcon(item.path, scope.kind === 'project'),
     }));

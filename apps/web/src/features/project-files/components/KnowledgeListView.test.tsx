@@ -109,11 +109,7 @@ async function render(props: Partial<Parameters<typeof KnowledgeListView>[0]> = 
   await act(async () =>
     root.render(
       <QueryClientProvider client={client}>
-        <NextIntlClientProvider
-          locale="de"
-          messages={{ files, common }}
-          timeZone="Europe/Berlin"
-        >
+        <NextIntlClientProvider locale="de" messages={{ files, common }} timeZone="Europe/Berlin">
           <KnowledgeListView
             title="Wissen"
             entries={[
@@ -168,7 +164,10 @@ it('a click opens the file on the right; full screen or a double click opens it 
   const { opened } = await render();
   const plan = document.querySelector<HTMLButtonElement>('[data-row-button]')!;
   await act(async () => plan.click());
-  assert.equal(document.querySelector('[data-preview]')?.getAttribute('data-preview'), 'Docs/Plan.md');
+  assert.equal(
+    document.querySelector('[data-preview]')?.getAttribute('data-preview'),
+    'Docs/Plan.md',
+  );
   await act(async () => button('groß').click());
   assert.deepEqual(opened, ['Docs/Plan.md']);
   assert.equal(document.querySelector('[data-preview]'), null);

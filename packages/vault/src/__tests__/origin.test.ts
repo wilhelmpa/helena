@@ -15,15 +15,15 @@ describe('vaultOrigin', () => {
   });
 
   test('an unknown origin value is ignored', () => {
-    expect(
-      vaultOrigin({ path: 'Projects/VOL/Docs/A.md', frontmatter: { origin: 'robot' } }),
-    ).toBe('manual');
+    expect(vaultOrigin({ path: 'Projects/VOL/Docs/A.md', frontmatter: { origin: 'robot' } })).toBe(
+      'manual',
+    );
   });
 
   test('generated projections and system folders are the system', () => {
-    expect(
-      vaultOrigin({ path: 'Projects/VOL/Docs/B.md', frontmatter: { generated: true } }),
-    ).toBe('system');
+    expect(vaultOrigin({ path: 'Projects/VOL/Docs/B.md', frontmatter: { generated: true } })).toBe(
+      'system',
+    );
     expect(vaultOrigin({ path: 'Projects/VOL/Files/Belege/2026-09/r.pdf' })).toBe('system');
     expect(vaultOrigin({ path: 'Projects/VOL/Files/Mail/a.pdf' })).toBe('system');
     expect(vaultOrigin({ path: 'Projects/VOL/Docs/Agenten/Coder.md' })).toBe('system');

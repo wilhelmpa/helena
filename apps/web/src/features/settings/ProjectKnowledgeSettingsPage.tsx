@@ -152,14 +152,18 @@ export default function ProjectKnowledgeSettingsPage() {
       </SettingsGroup>
 
       {isAdmin && (
-        <SettingsGroup id="bank-accounts" title={t('bankAccounts')} description={t('bankAccountsHint')}>
-            <AccountsTab
-              projectKey={projectKey}
-              accounts={accounts.data ?? []}
-              imports={imports.data ?? []}
-              loading={accounts.isPending || imports.isPending}
-              onImport={(accountId) => setImportFor({ accountId })}
-            />
+        <SettingsGroup
+          id="bank-accounts"
+          title={t('bankAccounts')}
+          description={t('bankAccountsHint')}
+        >
+          <AccountsTab
+            projectKey={projectKey}
+            accounts={accounts.data ?? []}
+            imports={imports.data ?? []}
+            loading={accounts.isPending || imports.isPending}
+            onImport={(accountId) => setImportFor({ accountId })}
+          />
         </SettingsGroup>
       )}
 

@@ -195,9 +195,7 @@ export default function KnowledgeListView({
   const ofThisKind = entries.filter((entry) => ofKind(kind, entry.item));
   const shown = searching
     ? found
-    : ofThisKind.filter(
-        (entry) => origin === 'all' || (entry.item.origin ?? 'manual') === origin,
-      );
+    : ofThisKind.filter((entry) => origin === 'all' || (entry.item.origin ?? 'manual') === origin);
   const selected = shown.find((entry) => entry.key === selectedKey) ?? shown[0];
   const selectedIndex = selected ? shown.indexOf(selected) : -1;
   const { ref: listRef, onKeyDown: onListKeyDown } = useListKeyboard({
@@ -279,14 +277,14 @@ export default function KnowledgeListView({
           {subfolders.map((folder) => {
             const Icon = folder.icon ?? Folder;
             return (
-            <Button
-              key={folder.path}
-              variant="quiet"
-              icon={<Icon size={14} aria-hidden="true" />}
-              onClick={() => onOpenFolder?.(folder.path)}
-            >
-              {folder.name}
-            </Button>
+              <Button
+                key={folder.path}
+                variant="quiet"
+                icon={<Icon size={14} aria-hidden="true" />}
+                onClick={() => onOpenFolder?.(folder.path)}
+              >
+                {folder.name}
+              </Button>
             );
           })}
         </Inline>
@@ -300,25 +298,25 @@ export default function KnowledgeListView({
       title={kind === 'files' ? t('emptyFilesTitle') : t('emptyTitle')}
       action={
         can.create &&
-        (kind === 'files' || !onCreate
-          ? onUpload && (
-              <Button
-                variant="primary"
-                icon={<Upload size={15} aria-hidden="true" />}
-                onClick={() => create('upload')}
-              >
-                {t('create.upload')}
-              </Button>
-            )
-          : (
-              <Button
-                variant="primary"
-                icon={<FilePlus2 size={15} aria-hidden="true" />}
-                onClick={() => create('doc')}
-              >
-                {t('create.firstDoc')}
-              </Button>
-            ))
+        (kind === 'files' || !onCreate ? (
+          onUpload && (
+            <Button
+              variant="primary"
+              icon={<Upload size={15} aria-hidden="true" />}
+              onClick={() => create('upload')}
+            >
+              {t('create.upload')}
+            </Button>
+          )
+        ) : (
+          <Button
+            variant="primary"
+            icon={<FilePlus2 size={15} aria-hidden="true" />}
+            onClick={() => create('doc')}
+          >
+            {t('create.firstDoc')}
+          </Button>
+        ))
       }
     >
       {emptyText}
@@ -350,11 +348,7 @@ export default function KnowledgeListView({
           !searching &&
           ofThisKind.length > 0 &&
           ORIGINS.map((value) => (
-            <KnowledgePill
-              key={value}
-              active={origin === value}
-              onClick={() => setOrigin(value)}
-            >
+            <KnowledgePill key={value} active={origin === value} onClick={() => setOrigin(value)}>
               {tOrigin(value)}
             </KnowledgePill>
           ))

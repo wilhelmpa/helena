@@ -331,60 +331,60 @@ export default function ProjectKnowledgeViewer({
   );
   return (
     <Page variant="bleed" actions={menu}>
-    <WebLinkScope projectKey={projectKey}>
-      <div
-        data-file-preview
-        data-project-knowledge
-        className="flex min-h-0 min-w-0 flex-1 overflow-hidden bg-background text-foreground"
-      >
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto px-9 ps-16 pt-[26px] pb-6 max-lg:ps-9 max-md:px-5 max-sm:px-4">
-          <article className="w-full max-w-[740px] min-w-0">
-            {head}
-            <div
-              className={`${styles.prose} mt-[30px] text-[15px] leading-[1.75] text-foreground/90`}
-            >
-              {markdown ? (
-                source ? (
-                  // A file the formatted editor cannot keep opens in the source editor,
-                  // without a note about it (owner, O15).
-                  <VaultTextEditor
-                    scope={scope}
-                    path={path}
-                    canEdit={canEdit}
-                    onDirty={reportDirty}
-                    vaultPath={canonical}
-                    beforeNavigate={() => true}
-                    sourceOnly
-                  />
+      <WebLinkScope projectKey={projectKey}>
+        <div
+          data-file-preview
+          data-project-knowledge
+          className="flex min-h-0 min-w-0 flex-1 overflow-hidden bg-background text-foreground"
+        >
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto px-9 ps-16 pt-[26px] pb-6 max-lg:ps-9 max-md:px-5 max-sm:px-4">
+            <article className="w-full max-w-[740px] min-w-0">
+              {head}
+              <div
+                className={`${styles.prose} mt-[30px] text-[15px] leading-[1.75] text-foreground/90`}
+              >
+                {markdown ? (
+                  source ? (
+                    // A file the formatted editor cannot keep opens in the source editor,
+                    // without a note about it (owner, O15).
+                    <VaultTextEditor
+                      scope={scope}
+                      path={path}
+                      canEdit={canEdit}
+                      onDirty={reportDirty}
+                      vaultPath={canonical}
+                      beforeNavigate={() => true}
+                      sourceOnly
+                    />
+                  ) : (
+                    <MarkdownBody
+                      path={canonical}
+                      editable={canEdit}
+                      onDirty={reportDirty}
+                      onSaveReady={onSaveReady}
+                      onLossless={onLossless}
+                    />
+                  )
                 ) : (
-                  <MarkdownBody
-                    path={canonical}
-                    editable={canEdit}
-                    onDirty={reportDirty}
-                    onSaveReady={onSaveReady}
-                    onLossless={onLossless}
-                  />
-                )
-              ) : (
-                <FileViewerContent file={file} />
-              )}
-            </div>
-          </article>
-          {!wide && (
-            <aside className="mt-10 flex max-w-[740px] flex-col gap-[22px] border-t border-border pt-6">
-              {details}
-            </aside>
+                  <FileViewerContent file={file} />
+                )}
+              </div>
+            </article>
+            {!wide && (
+              <aside className="mt-10 flex max-w-[740px] flex-col gap-[22px] border-t border-border pt-6">
+                {details}
+              </aside>
+            )}
+          </div>
+          {wide && (
+            <ResizableSidePanel label={k('details')} reserve={520}>
+              <div className="flex min-h-0 flex-1 flex-col gap-[22px] overflow-y-auto ps-6 pe-9 pt-[84px] pb-6">
+                {details}
+              </div>
+            </ResizableSidePanel>
           )}
         </div>
-        {wide && (
-          <ResizableSidePanel label={k('details')} reserve={520}>
-            <div className="flex min-h-0 flex-1 flex-col gap-[22px] overflow-y-auto ps-6 pe-9 pt-[84px] pb-6">
-              {details}
-            </div>
-          </ResizableSidePanel>
-        )}
-      </div>
-    </WebLinkScope>
+      </WebLinkScope>
     </Page>
   );
 }

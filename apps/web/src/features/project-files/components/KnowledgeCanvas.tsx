@@ -422,7 +422,9 @@ function CanvasSurface({
   };
   const connect = useCallback(
     (connection: Connection) => {
-      setEdges((current) => addEdge({ ...connection, style: { stroke: 'var(--line-strong)' } }, current));
+      setEdges((current) =>
+        addEdge({ ...connection, style: { stroke: 'var(--line-strong)' } }, current),
+      );
       markDirty();
     },
     [setEdges, markDirty],

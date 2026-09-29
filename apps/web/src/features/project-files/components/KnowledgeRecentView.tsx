@@ -70,32 +70,32 @@ export default function KnowledgeRecentView({
         // again; they stay in their folder and out of the latest files.
         .filter((file) => !RECEIPT_NOTE.test(file.path))
         .map((file) => {
-        const relative = file.path.slice(source.root.length + 1);
-        const folders = relative.split('/').slice(0, -1);
-        const folder = folders
-          .map((segment, depth) =>
-            depth === 0 && source.scope.kind === 'project'
-              ? knowledgeFolderLabel(segment, fixed)
-              : segment,
-          )
-          .join(' / ');
-        return {
-          key: file.path,
-          item: {
-            name: file.name,
-            path: relative,
-            kind: 'file' as const,
-            contentType: file.mime,
-            sizeBytes: file.sizeBytes,
-            updatedAt: file.updatedAt,
-            origin: file.origin,
-          },
-          scope: source.scope,
-          vaultPath: file.path,
-          projectKey: source.projectKey,
-          location: [source.label, folder].filter(Boolean).join(' / ') || t('topLevel'),
-        };
-      }),
+          const relative = file.path.slice(source.root.length + 1);
+          const folders = relative.split('/').slice(0, -1);
+          const folder = folders
+            .map((segment, depth) =>
+              depth === 0 && source.scope.kind === 'project'
+                ? knowledgeFolderLabel(segment, fixed)
+                : segment,
+            )
+            .join(' / ');
+          return {
+            key: file.path,
+            item: {
+              name: file.name,
+              path: relative,
+              kind: 'file' as const,
+              contentType: file.mime,
+              sizeBytes: file.sizeBytes,
+              updatedAt: file.updatedAt,
+              origin: file.origin,
+            },
+            scope: source.scope,
+            vaultPath: file.path,
+            projectKey: source.projectKey,
+            location: [source.label, folder].filter(Boolean).join(' / ') || t('topLevel'),
+          };
+        }),
     )
     .sort((a, b) => (b.item.updatedAt ?? '').localeCompare(a.item.updatedAt ?? ''))
     .slice(0, LIMIT);

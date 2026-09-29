@@ -306,7 +306,11 @@ export default function ReceiptsPage() {
   );
 
   const uploadAction = (
-    <Button variant="primary" icon={<Upload size={15} />} onClick={() => fileInput.current?.click()}>
+    <Button
+      variant="primary"
+      icon={<Upload size={15} />}
+      onClick={() => fileInput.current?.click()}
+    >
       {t('actions.upload')}
     </Button>
   );

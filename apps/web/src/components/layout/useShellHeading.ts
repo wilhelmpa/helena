@@ -107,7 +107,12 @@ export function useShellHeading({
         root === 'project' ? undefined : homeFilesPath(folder, { root: root ?? undefined }),
       );
       return {
-        crumbs: [{ label: home, href: '/' }, knowledge, ...(trail.title ? [place] : []), ...trail.crumbs],
+        crumbs: [
+          { label: home, href: '/' },
+          knowledge,
+          ...(trail.title ? [place] : []),
+          ...trail.crumbs,
+        ],
         title: trail.title ?? place.label,
         accent: projectColor(null),
       };
@@ -155,7 +160,9 @@ export function useShellHeading({
       search,
       (folder) => filesPath(key, folder),
       (segment, depth) =>
-        depth === 0 ? knowledgeFolderLabel(segment, (fixed: FixedFolderKey) => tFixed(fixed)) : segment,
+        depth === 0
+          ? knowledgeFolderLabel(segment, (fixed: FixedFolderKey) => tFixed(fixed))
+          : segment,
     );
     if (trail.title) return heading([project, knowledge, ...trail.crumbs], trail.title);
     return search?.get('kind') === 'files'
