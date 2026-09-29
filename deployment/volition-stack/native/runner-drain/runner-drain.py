@@ -118,7 +118,11 @@ class System:
         return True
 
     def identity(self, pid):
-        text = Path(f'/proc/{pid}/stat').read_text()
+        # None once the process is gone: systemd may still name it for a moment after exit.
+        try:
+            text = Path(f'/proc/{pid}/stat').read_text()
+        except (FileNotFoundError, ProcessLookupError):
+            return None
         return text[text.rfind(') ') + 2:].split()[19]
 
     def empty_group(self, group):
@@ -303,6 +307,11 @@ class Drain:
             if self.drained(current):
                 self.save('drained')
                 return
+            if current['MainPID'] != '0' and self.system.identity(current['MainPID']) is None:
+                # It exited between systemd's answer and our look at /proc (29.09.: this
+                # aborted a drain that had already stopped the runner). Look again.
+                time.sleep(0.2)
+                continue
             if current['MainPID'] != '0' and not self.held_identity(current):
                 raise Refuse('Runner invocation changed; no signal sent')
             if current['ActiveState'] == 'active' and current['Job'] in ('', '0'):

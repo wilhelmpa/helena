@@ -140,6 +140,24 @@ class DrainTest(unittest.TestCase):
         self.new_controller().drain(TARGET, 0)
         self.assertEqual(len(self.stops()), 1)
 
+    def test_runner_exiting_between_show_and_proc_read_still_drains(self):
+        self.system.finish_on_stop = False
+        seen = []
+
+        def vanishing(pid):
+            if self.system.snapshot['ActiveState'] == 'deactivating':
+                # systemd still names the PID, /proc no longer has it; systemd catches up next.
+                seen.append(pid)
+                self.system.finish()
+                return None
+            return '456'
+
+        self.system.identity = vanishing
+        self.controller.drain(TARGET, 5)
+        self.assertEqual(seen, ['123'])
+        self.assertEqual(self.controller.load()['phase'], 'drained')
+        self.assertEqual(len(self.stops()), 1)
+
     def test_uncertain_dispatch_does_not_retry_signal(self):
         self.system.fail_stop = True
         with self.assertRaisesRegex(module.Refuse, 'uncertain dispatch'):
