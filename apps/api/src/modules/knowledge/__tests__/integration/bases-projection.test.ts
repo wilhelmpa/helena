@@ -233,6 +233,7 @@ it('previews and materializes redacted agent notes without changing DB configura
   const scout = exported.data.notes.find((item) => item.content.includes('username: scout'))!;
   expect(scout).toBeDefined();
   expect(scout.content).toContain('agent_id:');
+  expect(scout.path).toMatch(/\/Docs\/Agenten\/scout \(\d+\)\.md$/);
   expect(exported.data.base.content).toContain('name: Agenten');
   expect(scout.content).not.toContain('instructions:');
   expect(await readFile(path.join(root(), scout.path), 'utf8').catch(() => null)).toBeNull();

@@ -459,6 +459,9 @@ function CanvasSurface({
         nodesDraggable={editable}
         nodesConnectable={editable && tool === 'connect'}
         defaultViewport={{ x: 0, y: 0, zoom: 1 }}
+        // In the narrow preview every card should be in sight.
+        fitView={compact}
+        fitViewOptions={{ padding: 0.15, maxZoom: 1 }}
         proOptions={{ hideAttribution: true }}
         className="!bg-background"
       >

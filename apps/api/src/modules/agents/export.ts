@@ -96,9 +96,21 @@ export function agentExportNote(
     .update(composeNote(properties, body, null))
     .digest('hex');
   return {
-    path: `Projects/${projectKey}/Docs/Agenten/${agent.id}.md`,
+    // Readable in Wissen and Obsidian ("scout (12).md"); the id keeps the name unique.
+    path: `Projects/${projectKey}/Docs/Agenten/${agentFileName(agent)}`,
     content: composeNote({ ...properties, projection_hash: projectionHash }, body, null),
   };
+}
+
+// A file name from the agent's handle: path separators and control characters out, at most
+// 80 characters, then its id.
+export function agentFileName(agent: Pick<Agent, 'id' | 'username'>): string {
+  const handle = agent.username
+    // eslint-disable-next-line no-control-regex
+    .replace(/[\/\\\u0000-\u001f:*?"<>|]+/g, '-')
+    .replace(/^[.\s-]+|[.\s-]+$/g, '')
+    .slice(0, 80);
+  return `${handle || 'agent'} (${agent.id}).md`;
 }
 
 async function existingFile(relative: string) {
@@ -129,7 +141,9 @@ export async function materializeAgentExport(projectId: number, projectKey: stri
   const desired = new Map(snapshot.notes.map((note) => [note.path, note.content]));
   const changed: string[] = [];
   for (const relative of await walkVault(root)) {
-    if (!/\/\d+\.md$/.test(relative) || desired.has(relative)) continue;
+    // Earlier exports are named "<id>.md", newer ones "<handle> (<id>).md"; only generated
+    // agent notes (checked below) are ever removed.
+    if (!/\.md$/i.test(relative) || desired.has(relative)) continue;
     const file = await existingFile(relative);
     if (!file) continue;
     const frontmatter = splitNote(file.content).frontmatter;
