@@ -496,6 +496,8 @@
   align-items: center;
   gap: var(--space-4);
   border-bottom: 1px solid var(--line);
+  /* Opaque, the page background: nothing shines through under the status bar (O70). */
+  background: var(--bg);
   padding: 0 var(--page-pad-x);
 }
 .ds-page-heading {

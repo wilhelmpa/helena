@@ -369,6 +369,7 @@ export default function ChatThreadView({
           threadId={threadId}
           projectKey={projectKey}
           dockSheet={pageContext != null}
+          typeToFocus={inPage}
           draft={threadId == null ? newChatDraft : undefined}
           busy={plan.busy}
           model={model.model}

@@ -114,10 +114,7 @@ export function HomeChatActivityCards() {
             const body = (
               <>
                 <span className={styles.cardTag} style={{ color: accent }}>
-                  <span
-                    className={styles.cardDot}
-                    style={{ backgroundColor: accent, boxShadow: `0 0 8px ${accent}` }}
-                  />
+                  <span className={styles.cardDot} style={{ backgroundColor: accent }} />
                   {t('needsYou')}
                 </span>
                 <span className={styles.cardTitle}>{entry.title}</span>
@@ -148,10 +145,7 @@ export function HomeChatActivityCards() {
           return (
             <Link key={entry.id} href={activityHref(entry)} className={styles.card}>
               <span className={styles.cardTag} style={{ color: accent }}>
-                <span
-                  className={styles.cardDot}
-                  style={{ backgroundColor: accent, boxShadow: `0 0 8px ${accent}` }}
-                />
+                <span className={styles.cardDot} style={{ backgroundColor: accent }} />
                 {entry.project?.key ?? 'HELENA'}
               </span>
               <span className={styles.cardTitle}>

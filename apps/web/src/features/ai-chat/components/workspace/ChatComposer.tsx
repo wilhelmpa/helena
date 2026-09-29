@@ -48,6 +48,7 @@ import ChatPromptVariablesDialog from './ChatPromptVariablesDialog';
 import ChatComposerStatus from './ChatComposerStatus';
 import ChatAgentMenu from '@/components/helena/AgentPicker';
 import styles from './HomeChatLanding.module.css';
+import { useTypeToFocus } from '../../hooks/useTypeToFocus';
 
 interface PendingAttachment {
   path: string;
@@ -82,6 +83,9 @@ export interface ChatComposerProps {
   // The hands-free conversation mode (features/voice).
   conversation: Conversation;
   dockSheet?: boolean;
+  // The big chat (a page of its own, not the tool panel): a key typed while the focus is
+  // nowhere lands in the field instead of the app's one-key shortcuts (O64).
+  typeToFocus?: boolean;
   threadId: string | null;
   projectKey: string | null;
   // Where a new chat's text is kept while its agent is still being picked.
@@ -134,6 +138,7 @@ export default function ChatComposer({
   onAutoSpeakChange,
   conversation,
   dockSheet = false,
+  typeToFocus = false,
   threadId,
   projectKey,
   draft,
@@ -159,11 +164,11 @@ export default function ChatComposer({
     if (!dockSheet) return;
     return listenDockVoice(() => void conversation.start());
   }, [dockSheet, conversation]);
-  const [value, setStoredValue] = useState(() => draft?.current ?? '');
-  const setValue = (next: string) => {
-    setStoredValue(next);
-    if (draft) draft.current = next;
-  };
+  const [value, setValue] = useState(() => draft?.current ?? '');
+  // The new chat's text travels with it when its agent is picked (the view remounts).
+  useEffect(() => {
+    if (draft) draft.current = value;
+  }, [draft, value]);
   const [attachments, setAttachments] = useState<PendingAttachment[]>([]);
   const [modelPickerOpen, setModelPickerOpen] = useState(false);
   const [renaming, setRenaming] = useState(false);
@@ -186,6 +191,7 @@ export default function ChatComposer({
     update();
     requestAnimationFrame(() => textareaRef.current?.focus());
   }
+  useTypeToFocus(textareaRef, typeToFocus);
 
   const commands = useComposerCommands(value, {
     scopeKey,
@@ -257,6 +263,9 @@ export default function ChatComposer({
     }
     setValue('');
     setAttachments([]);
+    // Sending by the arrow leaves the focus on a button the answer replaces with "stop":
+    // the next message is typed into the field, not into the page (O64).
+    requestAnimationFrame(() => textareaRef.current?.focus());
   }
 
   // ⌘/Ctrl+Enter breaks the line at the caret like Shift+Enter; setRangeText keeps the
@@ -305,7 +314,7 @@ export default function ChatComposer({
   const showChoices = choices != null && !busy && queue.length === 0;
 
   return (
-    <div className={homeLanding ? styles.composer : 'ds-chat-composer shrink-0 px-3 pt-2 pb-3'}>
+    <div className={homeLanding ? styles.composer : 'ds-chat-composer shrink-0'}>
       <div className={`relative mx-auto w-full ${homeLanding ? 'max-w-[760px]' : 'max-w-3xl'}`}>
         {commands.open && (
           <ChatSlashMenu
@@ -392,7 +401,7 @@ export default function ChatComposer({
                 talking ? t('voice.placeholder') : t('composer.placeholder', { agent: homeName })
               }
               aria-label={t('composer.placeholder', { agent: homeName })}
-              title={t('composer.hint')}
+              aria-description={t('composer.hint')}
               maxLength={CHAT_PROMPT_LIMIT}
             />
           </PromptInputBody>

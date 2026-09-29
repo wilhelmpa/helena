@@ -50,7 +50,6 @@
   flex: none;
   border-radius: 50%;
   background: var(--status-thinking);
-  box-shadow: 0 0 8px var(--status-thinking);
 }
 
 .pulse {
@@ -59,7 +58,6 @@
 
 .quietDot {
   background: var(--text-3);
-  box-shadow: none;
 }
 
 .hero {
@@ -188,7 +186,9 @@ button.card {
 }
 
 .composer {
-  padding: 0 16px;
+  /* In the tool panel nothing follows the field: it keeps its distance from the bottom
+     edge too (O39). */
+  padding: 0 var(--space-4) max(var(--space-4), env(safe-area-inset-bottom));
   background: transparent;
 }
 

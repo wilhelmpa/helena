@@ -5,6 +5,7 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { Providers } from '@/components/providers';
 import RuntimeEnvScript from '@/components/runtime-env-script';
+import ThemeColorSync from '@/components/ThemeColorSync';
 import { localeDirection, type Locale } from '@/i18n/locales';
 import { BRAND_ASSETS } from '@/components/brand/assets';
 import { THEME_COLOR_DARK, THEME_COLOR_LIGHT } from '@/utils/app';
@@ -66,6 +67,7 @@ export default async function RootLayout({
           storageKey="itsaplan-theme"
           nonce={nonce}
         >
+          <ThemeColorSync />
           <NextIntlClientProvider>
             <Providers>{children}</Providers>
           </NextIntlClientProvider>
