@@ -335,7 +335,11 @@ function Blocks() {
                 <span>{t('ladderTop')}</span>
               </button>
             </li>
-            <li className="ds-ladder-step" data-current="true" style={{ '--ds-ladder-depth': 1 } as CSSProperties}>
+            <li
+              className="ds-ladder-step"
+              data-current="true"
+              style={{ '--ds-ladder-depth': 1 } as CSSProperties}
+            >
               <span className="ds-ladder-self">
                 <Target size={14} aria-hidden="true" />
                 <span>{sample}</span>
