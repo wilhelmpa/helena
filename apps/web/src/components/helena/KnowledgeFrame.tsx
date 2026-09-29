@@ -64,31 +64,6 @@ export function KnowledgeSearch({
   );
 }
 
-export function KnowledgePill({
-  active,
-  children,
-  count,
-  onClick,
-}: {
-  active: boolean;
-  children: ReactNode;
-  count?: number;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      aria-pressed={active}
-      onClick={onClick}
-      className="ds-pill ds-pill-button"
-      data-tone={active ? 'active' : 'neutral'}
-    >
-      {children}
-      {count !== undefined && count > 0 && <span className="ds-pill-count">{count}</span>}
-    </button>
-  );
-}
-
 // The column heads over a list (NAME · ART · GEÄNDERT).
 export function KnowledgeListHead({
   name,

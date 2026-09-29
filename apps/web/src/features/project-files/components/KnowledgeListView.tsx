@@ -30,13 +30,13 @@ import {
   PAGE_CONTROL_CLASS,
   PAGE_PRIMARY_CLASS,
   PageSelect,
+  Segmented,
   Text,
 } from '@/design-system';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { cn } from '@/lib/utils';
 import KnowledgeFrame, {
   KnowledgeListHead,
-  KnowledgePill,
   KnowledgeRow,
   KnowledgeSearch,
   useListKeyboard,
@@ -362,11 +362,14 @@ export default function KnowledgeListView({
               options={ORIGINS.map((value) => ({ value, label: tOrigin(value) }))}
             />
           ) : (
-            ORIGINS.map((value) => (
-              <KnowledgePill key={value} active={origin === value} onClick={() => setOrigin(value)}>
-                {tOrigin(value)}
-              </KnowledgePill>
-            ))
+            // The same segment control as every other view switch in the top bar (owner
+            // 29.09.: Wissen looked different from Aufgaben).
+            <Segmented<FileOrigin | 'all'>
+              label={tOrigin('label')}
+              value={origin}
+              onChange={setOrigin}
+              options={ORIGINS.map((value) => ({ value, label: tOrigin(value) }))}
+            />
           ))
         }
         footer={
