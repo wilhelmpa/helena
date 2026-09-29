@@ -170,19 +170,19 @@ export default function AddTeamMemberDialog({
         ) : (
           // The list scrolls on its own, so the choice below and the buttons stay in view.
           <div className="max-h-72 overflow-y-auto">
-          <List label={source === 'pool' ? t('fromPool') : t('fromTemplate')}>
-            {candidates.options.map((option) => (
-              <ListRow
-                key={option.id}
-                icon={source === 'pool' ? <Bot /> : <Copy />}
-                title={option.name}
-                subtitle={option.detail || undefined}
-                meta={option.meta || undefined}
-                selected={picked === option.id}
-                onSelect={() => setPicked(option.id)}
-              />
-            ))}
-          </List>
+            <List label={source === 'pool' ? t('fromPool') : t('fromTemplate')}>
+              {candidates.options.map((option) => (
+                <ListRow
+                  key={option.id}
+                  icon={source === 'pool' ? <Bot /> : <Copy />}
+                  title={option.name}
+                  subtitle={option.detail || undefined}
+                  meta={option.meta || undefined}
+                  selected={picked === option.id}
+                  onSelect={() => setPicked(option.id)}
+                />
+              ))}
+            </List>
           </div>
         )}
         {candidates.managers.length > 0 && (
