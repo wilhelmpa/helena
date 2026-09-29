@@ -308,7 +308,7 @@
     "webhookUrl": "Адреса (HTTPS)",
     "webhookSecretEnv": "Змінна з ключем підпису",
     "webhookHint": "{appName} викликає адресу з підписом за Standard Webhooks. Передайте агенту ключ (whsec_…) як змінну середовища в розділі «Доступи».",
-    "helena": "Helena (спершу локально)"
+    "helena": "{appName} (спершу локально)"
   },
   "context": {
     "task": "Завдання {identifier} «{title}»",

@@ -308,7 +308,7 @@
     "webhookUrl": "Endereço (HTTPS)",
     "webhookSecretEnv": "Variável com a chave de assinatura",
     "webhookHint": "A {appName} chama o endereço assinado conforme Standard Webhooks. Dê a chave (whsec_…) ao agente como variável de ambiente em Acessos.",
-    "helena": "Helena (local primeiro)"
+    "helena": "{appName} (local primeiro)"
   },
   "context": {
     "task": "Tarefa {identifier} “{title}”",

@@ -920,7 +920,7 @@
         "assistent": "Tâches, commentaires, savoir, mémoire et faits. L'agent trouve d'autres outils au besoin.",
         "recherche": "Comme Assistance, avec le navigateur du projet.",
         "coder-lite": "Comme Assistance, avec fichiers et shell dans le dossier de travail.",
-        "voll": "Tous les outils de Helena directement. Demande le plus de contexte."
+        "voll": "Tous les outils de {appName} directement. Demande le plus de contexte."
       },
       "browserBudget": "Temps de navigateur par tâche (secondes)",
       "browserBudgetHint": "Ensuite l'agent n'a plus d'outils de navigateur et répond avec ce qu'il a.",

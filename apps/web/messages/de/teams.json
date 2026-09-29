@@ -920,7 +920,7 @@
         "assistent": "Aufgaben, Kommentare, Wissen, Gedächtnis und Fakten. Weitere Werkzeuge findet der Agent bei Bedarf.",
         "recherche": "Wie Assistenz, dazu der Projekt-Browser direkt.",
         "coder-lite": "Wie Assistenz, dazu Dateien und Shell im Arbeitsordner.",
-        "voll": "Alle Werkzeuge von Helena direkt. Braucht den meisten Kontext."
+        "voll": "Alle Werkzeuge von {appName} direkt. Braucht den meisten Kontext."
       },
       "browserBudget": "Browser-Zeit je Auftrag (Sekunden)",
       "browserBudgetHint": "Danach bekommt der Agent keine Browser-Werkzeuge mehr und antwortet mit dem, was er hat.",

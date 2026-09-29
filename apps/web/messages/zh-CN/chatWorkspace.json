@@ -308,7 +308,7 @@
     "webhookUrl": "地址（HTTPS）",
     "webhookSecretEnv": "存放签名密钥的变量",
     "webhookHint": "{appName} 按 Standard Webhooks 签名调用该地址。请在“访问”中把密钥（whsec_…）作为环境变量提供给代理。",
-    "helena": "Helena（本地优先）"
+    "helena": "{appName}（本地优先）"
   },
   "context": {
     "task": "任务 {identifier}「{title}」",

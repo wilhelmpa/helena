@@ -920,7 +920,7 @@
         "assistent": "Tugas, komentar, pengetahuan, memori, dan fakta. Agen menemukan alat lain bila perlu.",
         "recherche": "Seperti Asisten, ditambah peramban proyek.",
         "coder-lite": "Seperti Asisten, ditambah berkas dan shell di folder kerja.",
-        "voll": "Semua alat Helena langsung. Butuh konteks paling banyak."
+        "voll": "Semua alat {appName} langsung. Butuh konteks paling banyak."
       },
       "browserBudget": "Waktu peramban per tugas (detik)",
       "browserBudgetHint": "Setelah itu agen tidak punya alat peramban dan menjawab dengan apa yang ada.",

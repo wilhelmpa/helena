@@ -308,7 +308,7 @@
     "webhookUrl": "Alamat (HTTPS)",
     "webhookSecretEnv": "Variabel berisi kunci tanda tangan",
     "webhookHint": "{appName} memanggil alamat dengan tanda tangan Standard Webhooks. Berikan kunci (whsec_…) ke agen sebagai variabel lingkungan di Akses.",
-    "helena": "Helena (lokal dulu)"
+    "helena": "{appName} (lokal dulu)"
   },
   "context": {
     "task": "Tugas {identifier} “{title}”",

@@ -105,8 +105,8 @@ class ConfigTest(unittest.TestCase):
         config = common.load_config(str(config_file(self.dir)), require_root=False)
         self.assertEqual(config.user_prefix, 'vp-')
         self.assertEqual(config.forwards, {'egress': 3128, 'plan': 3000, 'localai': 13305,
-                                           'halogen': 8731, 'halogenquiet': 8733})
-        self.assertEqual(config.optional_sockets, ('localai', 'halogen', 'halogenquiet'))
+                                           'volitionnpu': 13306, 'halogen': 8731, 'halogenquiet': 8733})
+        self.assertEqual(config.optional_sockets, ('localai', 'halogen', 'halogenquiet', 'volitionnpu'))
         self.assertEqual(
             set(config.runtimes), {'hermes', 'claude', 'codex', 'command', 'helena', 'profile-helper'})
         # Helena's own loop is a subcommand of the runner bundle, which it only reads.

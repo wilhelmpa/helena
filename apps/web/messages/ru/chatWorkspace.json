@@ -308,7 +308,7 @@
     "webhookUrl": "Адрес (HTTPS)",
     "webhookSecretEnv": "Переменная с ключом подписи",
     "webhookHint": "{appName} вызывает адрес с подписью по Standard Webhooks. Передайте агенту ключ (whsec_…) как переменную окружения в разделе «Доступы».",
-    "helena": "Helena (сначала локально)"
+    "helena": "{appName} (сначала локально)"
   },
   "context": {
     "task": "Задача {identifier} «{title}»",

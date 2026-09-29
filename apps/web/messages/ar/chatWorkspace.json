@@ -308,7 +308,7 @@
     "webhookUrl": "العنوان (HTTPS)",
     "webhookSecretEnv": "المتغير الذي يحمل مفتاح التوقيع",
     "webhookHint": "تستدعي {appName} العنوان موقّعًا وفق Standard Webhooks. أعطِ الوكيل المفتاح (whsec_…) كمتغير بيئة ضمن الوصول.",
-    "helena": "Helena (المحلي أولًا)"
+    "helena": "{appName} (المحلي أولًا)"
   },
   "context": {
     "task": "المهمة {identifier} «{title}»",

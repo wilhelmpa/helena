@@ -308,7 +308,7 @@
     "webhookUrl": "Address (HTTPS)",
     "webhookSecretEnv": "Variable holding the signing key",
     "webhookHint": "{appName} calls the address signed per Standard Webhooks. Give the agent the key (whsec_…) as an environment variable under Access.",
-    "helena": "Helena (local first)"
+    "helena": "{appName} (local first)"
   },
   "context": {
     "task": "Task {identifier} “{title}”",

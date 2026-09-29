@@ -308,7 +308,7 @@
     "webhookUrl": "Adresse (HTTPS)",
     "webhookSecretEnv": "Variable contenant la clé de signature",
     "webhookHint": "{appName} appelle l'adresse avec une signature Standard Webhooks. Donnez la clé (whsec_…) à l'agent comme variable d'environnement dans Accès.",
-    "helena": "Helena (local d’abord)"
+    "helena": "{appName} (local d’abord)"
   },
   "context": {
     "task": "Tâche {identifier} « {title} »",
