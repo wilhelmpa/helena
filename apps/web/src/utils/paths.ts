@@ -61,8 +61,16 @@ export const connectionsPath = () => accessPath('connections');
 
 export const mailAccountsPath = () => accessPath('mail');
 
-export const agentsPath = () => '/agents';
 export const teamOrganizationPath = () => '/organization';
+
+// Team › Liste (Auftrag 117): the agent pool is a view of Team, not a page of its own.
+// `search` carries what an old address held (?agent=7&tab=runs), so it still opens there.
+export function teamListPath(base: string, search = ''): string {
+  const query = new URLSearchParams(search);
+  query.set('orgView', 'list');
+  return `${base}?${query.toString()}`;
+}
+export const agentsPath = () => teamListPath(teamOrganizationPath());
 
 export const mcpsPath = () => '/mcps';
 
@@ -197,7 +205,8 @@ export const inboxPath = (key: string) => `${projectPath(key)}/inbox`;
 // Telegram chat id). A main-nav Configuration destination, open to any member.
 export const notificationsPath = (key: string) => `${projectPath(key)}/notifications`;
 
-export const aiAgentsPath = (key: string) => `${projectPath(key)}/ai-agents`;
+// A project's agents: the list view of its Team page.
+export const aiAgentsPath = (key: string) => teamListPath(organizationPath(key));
 
 export const mcpServerPath = (key: string) => `${projectPath(key)}/mcp`;
 

@@ -331,11 +331,15 @@
     "whyNoGoal": "Tidak ada tujuan terhubung",
     "noAgent": "Tanpa agen",
     "filterLabel": "Status",
-    "addMember": "Tambah anggota"
+    "addMember": "Tambah anggota",
+    "viewList": "Daftar",
+    "addHere": "Tambah anggota: {name}",
+    "nodeMenu": "Tindakan untuk {name}",
+    "addMemberHere": "Tambah anggota"
   },
   "addMember": {
     "title": "Tambah anggota tim",
-    "description": "Agen dari pool atau salinan baru dari templat bergabung dengan tim proyek.",
+    "description": "Agen dari pool, salinan baru templat, atau agen baru bergabung ke tim proyek.",
     "source": "Sumber",
     "fromPool": "Dari pool",
     "fromTemplate": "Dari templat",
@@ -348,6 +352,20 @@
     "add": "Tambah",
     "added": "Ditambahkan ke {project}",
     "failed": "Anggota tidak dapat ditambahkan.",
-    "keyOnce": "Salinan berjalan di luar {appName}: salin kuncinya sekarang, hanya ditampilkan sekali."
+    "keyOnce": "Salinan berjalan di luar {appName}: salin kuncinya sekarang, hanya ditampilkan sekali.",
+    "fromNew": "Buat baru",
+    "newHint": "Agen baru di {project}, spesialis di bawah koordinator. Terbuka di kanan untuk diatur.",
+    "create": "Buat"
+  },
+  "pool": {
+    "saved": "{name} kini jadi templat di pool",
+    "noMatch": "Tidak ada agen yang cocok.",
+    "showLabel": "Tampilkan",
+    "showAll": "Semua",
+    "showAgents": "Agen",
+    "showTemplates": "Templat",
+    "extend": "Perluas pool",
+    "newTemplate": "Templat baru",
+    "newAgent": "Agen baru"
   }
 }

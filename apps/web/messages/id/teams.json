@@ -906,7 +906,8 @@
     "groupAgents": "Agen",
     "copies": "{count, plural, =0 {Tidak ada salinan} other {# salinan}}",
     "moreActionsFor": "Tindakan untuk {name}",
-    "defaultModel": "Model bawaan"
+    "defaultModel": "Model bawaan",
+    "saveAsTemplate": "Simpan ke pool sebagai templat"
   },
   "members": {
     "roleSaved": "{name} sekarang menjadi {role}",

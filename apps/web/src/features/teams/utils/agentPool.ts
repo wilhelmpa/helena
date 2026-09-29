@@ -22,3 +22,45 @@ export function poolGroups<T extends Pick<AiAgent, 'template' | 'name'>>(
     templates: agents.filter((agent) => agent.template).sort(byName),
   };
 }
+
+export type PoolShow = 'all' | 'agents' | 'templates';
+
+// The pool list of the Team page (Auftrag 117): filtered by a search over name, handle,
+// projects and model, by agents or templates, and — on a project's Team page — to the
+// agents that work in the project (the templates stay, a project adds copies of them).
+export function filterPool<
+  T extends Pick<AiAgent, 'template' | 'name' | 'username' | 'model'> & {
+    projects: { key: string; name: string }[];
+  },
+>(
+  agents: T[],
+  {
+    search = '',
+    show = 'all',
+    projectKey = null,
+  }: {
+    search?: string;
+    show?: PoolShow;
+    projectKey?: string | null;
+  },
+): { agents: T[]; templates: T[] } {
+  const query = search.trim().toLocaleLowerCase();
+  const matches = (agent: T) =>
+    !query ||
+    [
+      agent.name,
+      agent.username,
+      agent.model ?? '',
+      ...agent.projects.flatMap((p) => [p.key, p.name]),
+    ]
+      .join('\u0000')
+      .toLocaleLowerCase()
+      .includes(query);
+  const inProject = (agent: T) =>
+    agent.template || projectKey == null || agent.projects.some((p) => p.key === projectKey);
+  const groups = poolGroups(agents.filter((agent) => matches(agent) && inProject(agent)));
+  return {
+    agents: show === 'templates' ? [] : groups.agents,
+    templates: show === 'agents' ? [] : groups.templates,
+  };
+}

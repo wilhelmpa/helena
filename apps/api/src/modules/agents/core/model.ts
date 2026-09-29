@@ -693,6 +693,15 @@ export const copyTemplateBody = t.Object({
   projectId: t.Integer({ description: 'The project of the team the copy works in.' }),
 });
 
+export const saveAsTemplateBody = t.Object({
+  name: t.Optional(
+    t.String({
+      maxLength: 128,
+      description: "The template's name; the agent's name when it is left out.",
+    }),
+  ),
+});
+
 export const resetToTemplateBody = t.Object({
   group: templateFieldGroup,
 });

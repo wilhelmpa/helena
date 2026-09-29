@@ -331,11 +331,15 @@
     "whyNoGoal": "Nenhuma meta vinculada",
     "noAgent": "Sem agente",
     "filterLabel": "Status",
-    "addMember": "Adicionar membro"
+    "addMember": "Adicionar membro",
+    "viewList": "Lista",
+    "addHere": "Adicionar um membro: {name}",
+    "nodeMenu": "Ações de {name}",
+    "addMemberHere": "Adicionar um membro"
   },
   "addMember": {
     "title": "Adicionar membro à equipe",
-    "description": "Um agente do pool ou uma nova cópia de um modelo entra na equipe do projeto.",
+    "description": "Um agente do pool, uma nova cópia de um modelo ou um novo agente entra na equipe do projeto.",
     "source": "Origem",
     "fromPool": "Do pool",
     "fromTemplate": "De um modelo",
@@ -348,6 +352,20 @@
     "add": "Adicionar",
     "added": "Adicionado a {project}",
     "failed": "Não foi possível adicionar o membro.",
-    "keyOnce": "A cópia roda fora da {appName}: copie a chave agora, ela é mostrada só uma vez."
+    "keyOnce": "A cópia roda fora da {appName}: copie a chave agora, ela é mostrada só uma vez.",
+    "fromNew": "Criar novo",
+    "newHint": "Um novo agente em {project}, especialista sob o coordenador. Abre à direita para configurar.",
+    "create": "Criar"
+  },
+  "pool": {
+    "saved": "{name} agora é um modelo do pool",
+    "noMatch": "Nenhum agente corresponde à busca.",
+    "showLabel": "Mostrar",
+    "showAll": "Todos",
+    "showAgents": "Agentes",
+    "showTemplates": "Modelos",
+    "extend": "Ampliar o pool",
+    "newTemplate": "Novo modelo",
+    "newAgent": "Novo agente"
   }
 }

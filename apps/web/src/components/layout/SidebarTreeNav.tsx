@@ -603,7 +603,6 @@ export function SidebarHomeTree({
       without: ['path'],
     })),
     { id: 'team', href: teamHref, without: ['tab'] },
-    { id: 'team:pool', href: '/agents' },
     { id: 'automation:schedules', href: '/schedules' },
     { id: 'automation:workflows', href: '/workflows' },
     { id: 'automation:history', href: '/activity', also: ['/browsers'] },
@@ -715,9 +714,7 @@ export function SidebarHomeTree({
         icon={<Users />}
         active={is('team')}
         dot={automation}
-      >
-        <TreeItem label={t('sidebarAgentPool')} href="/agents" active={is('team:pool')} />
-      </TreeItem>
+      />
       <TreeItem id="automation" label={t('sidebarAutomation')} icon={<Workflow />}>
         <TreeItem
           label={t('sidebarSchedules')}

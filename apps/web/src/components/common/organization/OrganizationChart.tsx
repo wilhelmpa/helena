@@ -4,16 +4,19 @@ import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useQueries, useQuery } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
-import { ChevronRight, UserPlus } from 'lucide-react';
+import { ChevronRight, Download, LibraryBig, Plus, Upload, UserPlus } from 'lucide-react';
 import type { Edge, Node } from '@xyflow/react';
 import type { Organization, OrganizationAgent } from '@/lib/api/endpoints/organization';
 import { listAgentActivity } from '@/lib/api/endpoints/agentActivity';
 import { listDecisionLog } from '@/lib/api/endpoints/decisions';
 import { getProjectAutopilot } from '@/lib/api/endpoints/autopilot';
 import { listIssuesAcrossProjects } from '@/lib/api/endpoints/issues';
-import { useAiAgentsQuery } from '@/services/aiAgents.service';
+import { useAiAgentsQuery, useSaveAiAgentAsTemplate } from '@/services/aiAgents.service';
 import { useTeamQuery } from '@/services/teams.service';
 import AddTeamMemberDialog from '@/features/organization/components/AddTeamMemberDialog';
+import TeamPoolList, { type PoolCreation } from '@/features/organization/components/TeamPoolList';
+import { useTemplateBundleExport } from '@/features/teams/components/ai-agents/TemplateBundleDialog';
+import { filterPool, type PoolShow } from '@/features/teams/utils/agentPool';
 import { qk } from '@/services/queryKeys';
 import { deriveStatus, type HelenaStatus, type StatusSignals } from '@/utils/helenaStatus';
 import { openAgent as openAgentDialog } from '@/features/settings/settingsModalCatalog';
@@ -49,7 +52,8 @@ import {
 } from './organizationFocus';
 import { useOrganizationToolStates } from './useOrganizationToolStates';
 
-export type OrganizationChartView = 'tree' | 'ring';
+// Team (Auftrag 117): the same agents as a ring, a tree or the pool's list.
+export type OrganizationChartView = 'tree' | 'ring' | 'list';
 type Filter = 'all' | 'running' | 'waiting' | 'throttled' | 'error';
 
 const FILTERS: Filter[] = ['all', 'running', 'waiting', 'throttled', 'error'];
@@ -85,6 +89,8 @@ export default function OrganizationChart({
   toolbarEnd?: ReactNode;
 }) {
   const t = useTranslations('organization.chart');
+  const tPool = useTranslations('organization.pool');
+  const tTeams = useTranslations('teams');
   const tNav = useTranslations('nav');
   const router = useRouter();
   const pathname = usePathname();
@@ -125,16 +131,25 @@ export default function OrganizationChart({
   const [filter, setFilter] = useState<Filter>('all');
   const [search, setSearch] = useState('');
   // "Mitglied hinzufügen" (owner, O23/O57): in the tree and in the ring, for whoever may
-  // create agents in the team.
-  const [adding, setAdding] = useState(false);
+  // create agents in the team — from the toolbar, or from the "+" of a node, set to its
+  // project and to who the new member reports to (Auftrag 117).
+  const [adding, setAdding] = useState<{ projectId?: number; managerId?: number } | null>(null);
   const canAdd = useTeamQuery(organization.teamId).data?.permissions.ai_agents.create ?? false;
+  const saveTemplate = useSaveAiAgentAsTemplate(organization.teamId);
+  // The list (the pool): what it shows, and a new agent or template in the overlay.
+  const [poolShow, setPoolShow] = useState<PoolShow>('all');
+  const [creating, setCreating] = useState<PoolCreation>(null);
+  const [importing, setImporting] = useState(false);
+  const exporting = useTemplateBundleExport(organization.teamId);
 
   // View, level and the task ring live in the address, so a link and the back button
   // reach them; the defaults leave it clean.
   const defaultView: OrganizationChartView = projectId == null ? 'ring' : 'tree';
   const requestedView = params.get('orgView');
   const view: OrganizationChartView =
-    requestedView === 'tree' || requestedView === 'ring' ? requestedView : defaultView;
+    requestedView === 'tree' || requestedView === 'ring' || requestedView === 'list'
+      ? requestedView
+      : defaultView;
   const focusValue = params.get('orgFocus');
   const focus = useMemo(
     () => focusFromParam(focusValue, organization, projectId),
@@ -345,12 +360,29 @@ export default function OrganizationChart({
       view,
     ],
   );
-  const layout = tree ?? ring!;
+  // The list view has neither.
+  const layout = tree ?? ring ?? { nodes: [] as Node[], edges: [] as Edge[] };
   const filtering = filter !== 'all' || query !== '';
 
+  // The "+" of a node: members join a coordinator (or Home) in its project; any agent can
+  // become a template of the pool.
+  const addAt = (agent: OrganizationAgent) =>
+    canAdd && (agent.isHome || agent.role === 'coordinator')
+      ? () =>
+          setAdding({
+            projectId: agent.isHome ? projectId : (agent.projects[0]?.id ?? projectId),
+            managerId: agent.id,
+          })
+      : undefined;
+  const saveAt = (agent: OrganizationAgent) =>
+    canAdd && !agent.isHome && !agent.template
+      ? () => saveTemplate.mutate({ agentId: agent.id })
+      : undefined;
   const agentData = (agent: OrganizationAgent): ChartAgentData => {
     const levels = trustByAgent.get(agent.id);
     return {
+      onAdd: addAt(agent),
+      onSaveTemplate: saveAt(agent),
       agent,
       settings: byId.get(agent.id) ?? null,
       trustLabel:
@@ -373,10 +405,15 @@ export default function OrganizationChart({
   const nodes: Node[] = layout.nodes.map((node) => {
     if (node.type === 'group') {
       const group = (node.data as { group: RingGroup }).group;
+      const target = group.target;
       return {
         ...node,
         data: {
           group,
+          onAdd:
+            canAdd && target
+              ? () => setAdding(target.kind === 'project' ? { projectId: target.id } : {})
+              : undefined,
           dimmed:
             filtering &&
             !group.members.some((id) => {
@@ -392,7 +429,12 @@ export default function OrganizationChart({
       return { ...node, data: { ...node.data, dimmed: filtering && agent && !matches(agent) } };
     }
     const agent = byAgentId.get(Number(node.id));
-    if (!agent) return node;
+    if (!agent) {
+      // A department in the middle of the ring: members join one of its projects.
+      return node.type === 'hub' && canAdd
+        ? { ...node, data: { ...node.data, onAdd: () => setAdding({}) } }
+        : node;
+    }
     return {
       ...node,
       data: {
@@ -446,8 +488,121 @@ export default function OrganizationChart({
     setFocus({ kind: 'agent', id });
   };
 
+  const projectKey = project?.key ?? null;
+  const poolCounts = (() => {
+    const all = filterPool(agentsQuery.data ?? [], { search, projectKey });
+    return {
+      all: all.agents.length + all.templates.length,
+      agents: all.agents.length,
+      templates: all.templates.length,
+    };
+  })();
+  const viewSwitch = (
+    <Segmented
+      value={view}
+      onChange={(next) => setView(next)}
+      label={t('viewLabel')}
+      options={[
+        { value: 'ring', label: t('viewRing') },
+        { value: 'tree', label: t('viewTree') },
+        { value: 'list', label: t('viewList') },
+      ]}
+    />
+  );
+  const addDialog = adding && (
+    <AddTeamMemberDialog
+      organization={organization}
+      projectId={adding.projectId ?? projectId}
+      managerId={adding.managerId}
+      onCreateNew={(projectForNew) => {
+        setAdding(null);
+        setCreating({ projectId: projectForNew });
+      }}
+      onClose={() => setAdding(null)}
+    />
+  );
+
+  // Liste: the pool of the team (on a project's page, the project's agents and the
+  // templates), with the same toolbar as the chart.
+  if (view === 'list')
+    return (
+      <div className="ds-org">
+        <PageToolbar>
+          {viewSwitch}
+          <PageTabs<PoolShow>
+            label={tPool('showLabel')}
+            value={poolShow}
+            onChange={setPoolShow}
+            items={(['all', 'agents', 'templates'] as const).map((item) => ({
+              value: item,
+              label: tPool(
+                item === 'all' ? 'showAll' : item === 'agents' ? 'showAgents' : 'showTemplates',
+              ),
+              count: poolCounts[item],
+            }))}
+          />
+          <PageToolbarSpacer />
+          <PageSearch value={search} onChange={setSearch} placeholder={t('searchPlaceholder')} />
+          {toolbarEnd}
+          {canAdd && (
+            <PageActions
+              actions={[
+                {
+                  id: 'new-agent',
+                  label: tPool('newAgent'),
+                  icon: Plus,
+                  onClick: () => setCreating({ projectId }),
+                },
+                {
+                  id: 'new-template',
+                  label: tPool('newTemplate'),
+                  icon: LibraryBig,
+                  onClick: () => setCreating({ asTemplate: true }),
+                },
+                {
+                  id: 'import-templates',
+                  label: tTeams('templateBundles.importAction'),
+                  icon: Upload,
+                  onClick: () => setImporting(true),
+                },
+                {
+                  id: 'export-templates',
+                  label: tTeams('templateBundles.exportAction'),
+                  icon: Download,
+                  disabled: exporting.isPending,
+                  onClick: () => exporting.mutate(),
+                },
+              ]}
+              primary={{
+                id: 'add-member',
+                label: t('addMember'),
+                icon: UserPlus,
+                onClick: () => setAdding({}),
+              }}
+            />
+          )}
+        </PageToolbar>
+        <TeamPoolList
+          teamId={organization.teamId}
+          projectKey={projectKey}
+          search={search}
+          show={poolShow}
+          creating={creating}
+          onCreatingChange={setCreating}
+          importing={importing}
+          onImportingChange={setImporting}
+        />
+        {addDialog}
+      </div>
+    );
+
   if (organizationChartAgents(organization.agents, projectId).length === 0)
-    return <EmptyState>{t('empty')}</EmptyState>;
+    return (
+      <div className="ds-org">
+        <PageToolbar>{viewSwitch}</PageToolbar>
+        <EmptyState>{t('empty')}</EmptyState>
+      </div>
+    );
 
   const crumbLabel = (crumb: (typeof scope.crumbs)[number]) =>
     crumb.focus.kind === 'root' && projectId == null ? tNav('sidebarHome') : crumb.label;
@@ -456,15 +611,7 @@ export default function OrganizationChart({
     <div className="ds-org">
       <PageToolbar>
         {toolbarStart}
-        <Segmented
-          value={view}
-          onChange={(next) => setView(next)}
-          label={t('viewLabel')}
-          options={[
-            { value: 'tree', label: t('viewTree') },
-            { value: 'ring', label: t('viewRing') },
-          ]}
-        />
+        {viewSwitch}
         {/* The same "Aufgaben" in both views, at the same place (owner, 29.09.). */}
         <PillButton
           tone={showTasks ? 'active' : 'neutral'}
@@ -501,7 +648,7 @@ export default function OrganizationChart({
               id: 'add-member',
               label: t('addMember'),
               icon: UserPlus,
-              onClick: () => setAdding(true),
+              onClick: () => setAdding({}),
             }}
           />
         )}
@@ -585,11 +732,18 @@ export default function OrganizationChart({
           </p>
         )}
       </section>
-      {adding && (
-        <AddTeamMemberDialog
-          organization={organization}
-          projectId={projectId}
-          onClose={() => setAdding(false)}
+      {addDialog}
+      {creating && (
+        <TeamPoolList
+          teamId={organization.teamId}
+          projectKey={projectKey}
+          search=""
+          show="all"
+          creating={creating}
+          onCreatingChange={setCreating}
+          importing={false}
+          onImportingChange={() => undefined}
+          onlyOverlays
         />
       )}
       {openTask && (

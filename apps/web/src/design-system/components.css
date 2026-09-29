@@ -2803,3 +2803,52 @@ a.ds-run-card:hover {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
+
+/* The "+" at a node of the Team chart (Auftrag 117): a small circle under a card of the
+   tree, at the corner of a node of the ring; shown on hover and keyboard focus. */
+.ds-org-node-add {
+  position: absolute;
+  z-index: 2;
+  display: flex;
+  width: 24px;
+  height: 24px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-full);
+  background: var(--surface-1);
+  box-shadow: var(--shadow-card);
+  color: var(--text-2);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.ds-org-node-add[data-placement='bottom'] {
+  bottom: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+.ds-org-node-add[data-placement='corner'] {
+  top: -6px;
+  right: -6px;
+}
+.ds-org-node-add:hover,
+.ds-org-node-add[data-state='open'] {
+  background: var(--surface-3);
+  color: var(--text);
+}
+.organization-card:is(:hover, :focus-within) .ds-org-node-add,
+.ds-ring-node:is(:hover, :focus-within) .ds-org-node-add,
+.ds-org-node-add[data-state='open'],
+.ds-org-node-add:focus-visible {
+  opacity: 1;
+}
+@media (hover: none) {
+  .ds-org-node-add {
+    opacity: 1;
+  }
+}
+/* Team › Liste: the pool under the toolbar, the width of the page. */
+.ds-team-pool {
+  padding-top: var(--space-2);
+}

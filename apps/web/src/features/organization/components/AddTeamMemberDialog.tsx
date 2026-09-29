@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Bot, Copy, TriangleAlert } from 'lucide-react';
+import { Bot, Copy, Sparkles, TriangleAlert } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
@@ -39,11 +39,18 @@ import { teamMemberCandidates, type MemberSource } from '../teamMembers';
 export default function AddTeamMemberDialog({
   organization,
   projectId,
+  managerId: initialManagerId,
+  onCreateNew,
   onClose,
 }: {
   organization: Organization;
-  // The project of the page; on Helena's page the reader picks one.
+  // The project of the page (or of the node whose "+" opened it); on Helena's page the
+  // reader picks one.
   projectId?: number;
+  // Who the member reports to, when the "+" of a coordinator opened it (Auftrag 117).
+  managerId?: number;
+  // "Neu anlegen": a new agent in the project, set up in the overlay on the right.
+  onCreateNew?: (projectId: number) => void;
   onClose: () => void;
 }) {
   const t = useTranslations('organization.addMember');
@@ -53,27 +60,32 @@ export default function AddTeamMemberDialog({
   const agentsQuery = useAiAgentsQuery(teamId);
   const agents = useMemo(() => agentsQuery.data ?? [], [agentsQuery.data]);
   const copy = useCopyAiAgentTemplate(teamId);
-  const [source, setSource] = useState<MemberSource>('pool');
+  const [source, setSource] = useState<MemberSource | 'new'>('pool');
   const [chosenProject, setChosenProject] = useState<number | null>(
     projectId ?? organization.projects[0]?.id ?? null,
   );
   const [picked, setPicked] = useState<number | null>(null);
-  const [managerId, setManagerId] = useState<number | null>(null);
+  const [managerId, setManagerId] = useState<number | null>(initialManagerId ?? null);
   const [saving, setSaving] = useState(false);
   const [apiKey, setApiKey] = useState<string | null>(null);
   const project = organization.projects.find((item) => item.id === chosenProject) ?? null;
   const candidates = useMemo(
-    () => teamMemberCandidates(organization, agents, chosenProject, source),
+    () =>
+      teamMemberCandidates(organization, agents, chosenProject, source === 'new' ? 'pool' : source),
     [organization, agents, chosenProject, source],
   );
   const manager = managerId ?? candidates.defaultManagerId;
 
-  const choose = (next: MemberSource) => {
+  const choose = (next: MemberSource | 'new') => {
     setSource(next);
     setPicked(null);
   };
 
   async function add() {
+    if (source === 'new') {
+      if (project && onCreateNew) onCreateNew(project.id);
+      return;
+    }
     if (!project || picked == null) return;
     setSaving(true);
     try {
@@ -127,7 +139,7 @@ export default function AddTeamMemberDialog({
   return (
     <Dialog title={t('title')} description={t('description')} onClose={onClose}>
       <Stack gap={4}>
-        <Segmented<MemberSource>
+        <Segmented<MemberSource | 'new'>
           label={t('source')}
           value={source}
           onChange={choose}
@@ -135,6 +147,7 @@ export default function AddTeamMemberDialog({
           options={[
             { value: 'pool', label: t('fromPool') },
             { value: 'template', label: t('fromTemplate') },
+            ...(onCreateNew ? [{ value: 'new' as const, label: t('fromNew') }] : []),
           ]}
         />
         {projectId == null && (
@@ -160,7 +173,11 @@ export default function AddTeamMemberDialog({
             </Select>
           </Field>
         )}
-        {candidates.options.length === 0 ? (
+        {source === 'new' ? (
+          <EmptyState icon={<Sparkles />} fill={false}>
+            {t('newHint', { project: project?.name ?? '' })}
+          </EmptyState>
+        ) : candidates.options.length === 0 ? (
           <EmptyState icon={source === 'pool' ? <Bot /> : <Copy />} fill={false}>
             {source === 'pool' ? t('poolEmpty') : t('templatesEmpty')}
           </EmptyState>
@@ -182,7 +199,7 @@ export default function AddTeamMemberDialog({
             </List>
           </div>
         )}
-        {candidates.managers.length > 0 && (
+        {source !== 'new' && candidates.managers.length > 0 && (
           <Field label={t('reportsTo')} hint={t('reportsToHint')} htmlFor="add-member-manager">
             <Select
               value={manager != null ? String(manager) : undefined}
@@ -207,10 +224,10 @@ export default function AddTeamMemberDialog({
           </Button>
           <Button
             variant="primary"
-            disabled={picked == null || project == null || saving}
+            disabled={(source !== 'new' && picked == null) || project == null || saving}
             onClick={() => void add()}
           >
-            {saving ? tCommon('saving') : t('add')}
+            {saving ? tCommon('saving') : source === 'new' ? t('create') : t('add')}
           </Button>
         </Inline>
       </Stack>

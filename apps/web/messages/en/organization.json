@@ -331,11 +331,15 @@
     "whyNoGoal": "No goal linked",
     "noAgent": "No agent",
     "filterLabel": "Status",
-    "addMember": "Add member"
+    "addMember": "Add member",
+    "viewList": "List",
+    "addHere": "Add a member: {name}",
+    "nodeMenu": "Actions for {name}",
+    "addMemberHere": "Add a member"
   },
   "addMember": {
     "title": "Add a team member",
-    "description": "An agent from the pool or a new copy of a template joins the project's team.",
+    "description": "An agent of the pool, a new copy of a template or a new agent joins the project's team.",
     "source": "Source",
     "fromPool": "From the pool",
     "fromTemplate": "From a template",
@@ -348,6 +352,20 @@
     "add": "Add",
     "added": "Added to {project}",
     "failed": "The member could not be added.",
-    "keyOnce": "The copy runs outside {appName}: copy its key now, it is shown only once."
+    "keyOnce": "The copy runs outside {appName}: copy its key now, it is shown only once.",
+    "fromNew": "Create new",
+    "newHint": "A new agent in {project}, a specialist under the coordinator. It opens on the right to set up.",
+    "create": "Create"
+  },
+  "pool": {
+    "saved": "{name} is now a template in the pool",
+    "noMatch": "No agent matches the search.",
+    "showLabel": "Show",
+    "showAll": "All",
+    "showAgents": "Agents",
+    "showTemplates": "Templates",
+    "extend": "Extend the pool",
+    "newTemplate": "New template",
+    "newAgent": "New agent"
   }
 }
