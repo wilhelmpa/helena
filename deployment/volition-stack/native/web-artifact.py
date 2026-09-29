@@ -1,24 +1,16 @@
 #!/usr/bin/env python3
-"""A web build made on another machine than the server, for web-release.sh --artifact.
+"""Package and verify a Linux x86_64 web release for web-release.sh --artifact.
 
-Building the web app takes about 12 GB for a few minutes, which the server running Helena,
-its agents and the local models cannot spare. This builds it elsewhere (the owner's Mac, a
-second PC) from the exact commit, for the server's platform, and checks it again on the
-server before anything is installed.
+Use build-web-release.sh on the Mac: it obtains the exact commit from Kingston and runs
+the build in a Linux x86_64 container. A native Darwin build is not a valid release.
 
   web-artifact.py build --repo CLONE --commit SHA --out DIR
-      A clean worktree of CLONE at SHA; `bun install` with the server's native packages
-      (linux-x64) next to the build machine's; `next build` with the deployment id the
-      server uses; the standalone server, its static files and public/ copied to
-      DIR/web-<id>/, packages for other platforms left out, a manifest and the checksum of
-      every file written. Prints the directory.
+      A clean Linux x86_64 worktree of CLONE at SHA; installs dependencies, builds and
+      packages DIR/web-<id>/ with manifest and checksums. Prints the directory.
   web-artifact.py verify DIR --commit SHA
-      The manifest names SHA; every file is there and unchanged, and there is no other; no
-      link points outside; every native module is linux-x64 (ELF, x86-64). Exit 1 otherwise.
+      The manifest names SHA and the target lockfile hash; files and native modules match.
 
-Then, e.g.:
-  rsync -a --delete DIR/web-<id>/ kingston:agent-work/web-artifacts/<id>/
-  sudo deploy.sh --expect SHA --web-artifact /home/wilhelmpa/agent-work/web-artifacts/<id> BRANCH
+The archive subcommand validates and extracts tarballs. See README.md for deploy steps.
 """
 import argparse
 import datetime
@@ -30,6 +22,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tarfile
 import tempfile
 from pathlib import Path
 
@@ -113,47 +106,60 @@ def inventory(root):
     return files, links
 
 
+def package(tree, commit, out_root):
+    """Package an already built Linux x64 tree without copying its build cache."""
+    if platform.system().lower() != TARGET_OS or platform.machine().lower() not in ('x86_64', 'amd64'):
+        raise ValueError('packaging requires a Linux x86_64 build environment')
+    tree = Path(tree)
+    ident = deployment_id(commit)
+    out = Path(out_root).resolve() / ('web-' + ident)
+    if out.exists():
+        shutil.rmtree(out)
+    web = tree / 'apps/web'
+    out.mkdir(parents=True)
+    shutil.copytree(web / '.next/standalone', out / 'standalone', symlinks=True)
+    shutil.copytree(web / '.next/static', out / 'static', symlinks=True)
+    if (web / 'public').is_dir():
+        shutil.copytree(web / 'public', out / 'public', symlinks=True)
+    removed = prune_other_platforms(out / 'standalone')
+    files, links = inventory(out)
+    manifest = {
+        'format': FORMAT,
+        'commit': commit,
+        'lockfileSha256': sha256(tree / 'bun.lock'),
+        'deploymentId': ident,
+        'platform': TARGET_OS + '-' + TARGET_CPU,
+        'builtAt': datetime.datetime.now(datetime.timezone.utc).isoformat(timespec='seconds'),
+        'builtOn': platform.platform(),
+        'buildHost': os.environ.get('VOLITION_BUILD_HOST', platform.node()),
+        'bun': subprocess.check_output(['bun', '--version'], text=True).strip(),
+        'node': subprocess.check_output(['node', '--version'], text=True).strip(),
+        'files': files,
+        'links': links,
+        'removedForOtherPlatforms': removed,
+    }
+    (out / 'manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
+    (out / 'SHA256SUMS').write_text(''.join(f'{digest}  {name}\n' for name, digest in files.items()))
+    return out
+
+
 def build(args):
+    if platform.system().lower() != TARGET_OS or platform.machine().lower() not in ('x86_64', 'amd64'):
+        raise ValueError('build requires Linux x86_64; use build-web-release.sh on the Mac')
     commit = subprocess.check_output(
         ['git', '-C', args.repo, 'rev-parse', '--verify', args.commit + '^{commit}'], text=True).strip()
     ident = deployment_id(commit)
     out = Path(args.out).resolve() / ('web-' + ident)
     if out.exists():
         shutil.rmtree(out)
-    work = Path(tempfile.mkdtemp(prefix='helena-web-artifact-'))
+    work = Path(tempfile.mkdtemp(prefix='volition-web-artifact-'))
     tree = work / 'tree'
     try:
         run(['git', '-C', args.repo, 'worktree', 'add', '--detach', str(tree), commit])
-        install = ['bun', 'install', '--frozen-lockfile']
-        host = (platform.system().lower(), {'x86_64': 'x64', 'amd64': 'x64'}.get(platform.machine().lower(), platform.machine().lower()))
-        if host != (TARGET_OS, TARGET_CPU):
-            # The build machine's own native packages to build with, the server's to run on.
-            install += ['--os=*', '--cpu=*']
-        run(install, cwd=tree)
+        run(['bun', 'install', '--frozen-lockfile'], cwd=tree)
         env = dict(os.environ, NEXT_DEPLOYMENT_ID=ident, NEXT_TELEMETRY_DISABLED='1')
         run(['bun', 'run', 'build'], cwd=tree / 'apps/web', env=env)
-        web = tree / 'apps/web'
-        out.mkdir(parents=True)
-        shutil.copytree(web / '.next/standalone', out / 'standalone', symlinks=True)
-        shutil.copytree(web / '.next/static', out / 'static', symlinks=True)
-        if (web / 'public').is_dir():
-            shutil.copytree(web / 'public', out / 'public', symlinks=True)
-        removed = prune_other_platforms(out / 'standalone')
-        files, links = inventory(out)
-        manifest = {
-            'format': FORMAT,
-            'commit': commit,
-            'deploymentId': ident,
-            'platform': TARGET_OS + '-' + TARGET_CPU,
-            'builtAt': datetime.datetime.now(datetime.timezone.utc).isoformat(timespec='seconds'),
-            'builtOn': platform.platform(),
-            'bun': subprocess.check_output(['bun', '--version'], text=True).strip(),
-            'node': subprocess.check_output(['node', '--version'], text=True).strip(),
-            'links': links,
-            'removedForOtherPlatforms': removed,
-        }
-        (out / 'manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
-        (out / 'SHA256SUMS').write_text(''.join(f'{digest}  {name}\n' for name, digest in files.items()))
+        out = package(tree, commit, args.out)
     finally:
         subprocess.run(['git', '-C', args.repo, 'worktree', 'remove', '--force', str(tree)], check=False)
         shutil.rmtree(work, ignore_errors=True)
@@ -166,7 +172,7 @@ def build(args):
     return 0
 
 
-def check(root, commit):
+def check(root, commit, lockfile_sha256=None):
     root = Path(root).resolve()
     problems = []
     try:
@@ -180,10 +186,17 @@ def check(root, commit):
         problems.append('the commit to check against must be a full SHA')
     if manifest.get('commit') != commit:
         problems.append(f"built from {manifest.get('commit')}, not {commit}")
+    if not re.fullmatch(r'[0-9a-f]{64}', manifest.get('lockfileSha256', '')):
+        problems.append('missing or malformed lockfile hash')
+    if lockfile_sha256 and manifest.get('lockfileSha256') != lockfile_sha256:
+        problems.append('lockfile hash does not match the target commit')
     if manifest.get('deploymentId') != deployment_id(commit):
         problems.append('deployment id does not match the commit')
     if manifest.get('platform') != TARGET_OS + '-' + TARGET_CPU:
         problems.append('built for ' + str(manifest.get('platform')))
+    for field in ('buildHost', 'node', 'bun'):
+        if not isinstance(manifest.get(field), str) or not manifest[field]:
+            problems.append('missing ' + field)
     for required in ('standalone/apps/web/server.js', 'static'):
         if not (root / required).exists():
             problems.append('missing ' + required)
@@ -193,8 +206,12 @@ def check(root, commit):
         if not match:
             problems.append('malformed SHA256SUMS line')
             continue
+        if match.group(2) in expected:
+            problems.append('duplicate SHA256SUMS entry')
         expected[match.group(2)] = match.group(1)
     files, links = inventory(root)
+    if manifest.get('files') != files:
+        problems.append('file hashes differ from the manifest')
     for name in sorted(set(expected) - set(files)):
         problems.append('missing file ' + name)
     for name in sorted(set(files) - set(expected)):
@@ -214,8 +231,42 @@ def check(root, commit):
     return problems
 
 
+def unpack_archive(archive, destination, commit, lockfile_sha256):
+    """Validate archive member names/types before extraction, then validate contents."""
+    destination = Path(destination)
+    with tarfile.open(archive, 'r:*') as tar:
+        for member in tar:
+            parts = Path(member.name).parts
+            if (not parts or parts[0] != 'web-' + deployment_id(commit)
+                    or '..' in parts or member.name.startswith('/')
+                    or not (member.isfile() or member.isdir() or member.issym() or member.islnk())):
+                raise ValueError('unsafe archive member: ' + member.name)
+        tar.extractall(destination, filter='data')
+    root = destination / ('web-' + deployment_id(commit))
+    problems = check(root, commit, lockfile_sha256)
+    if problems:
+        raise ValueError('; '.join(problems[:10]))
+    return root
+
+
+def archive_action(args):
+    try:
+        if args.out:
+            destination = Path(args.out)
+            destination.mkdir(parents=True, exist_ok=True)
+            unpack_archive(args.archive, destination, args.commit, args.lockfile_sha256)
+        else:
+            with tempfile.TemporaryDirectory(prefix='volition-web-verify-') as temp:
+                unpack_archive(args.archive, temp, args.commit, args.lockfile_sha256)
+    except (OSError, ValueError, tarfile.TarError) as error:
+        print('web-artifact: ' + str(error), file=sys.stderr)
+        return 1
+    print('web-artifact: ok')
+    return 0
+
+
 def verify(args):
-    problems = check(args.dir, args.commit)
+    problems = check(args.dir, args.commit, args.lockfile_sha256)
     for problem in problems[:50]:
         print('web-artifact: ' + problem, file=sys.stderr)
     if problems:
@@ -232,11 +283,28 @@ def main(argv=None):
     b.add_argument('--repo', required=True)
     b.add_argument('--commit', required=True)
     b.add_argument('--out', required=True)
+    p = commands.add_parser('package')
+    p.add_argument('--tree', required=True)
+    p.add_argument('--commit', required=True)
+    p.add_argument('--out', required=True)
     v = commands.add_parser('verify')
     v.add_argument('dir')
     v.add_argument('--commit', required=True)
+    v.add_argument('--lockfile-sha256')
+    a = commands.add_parser('archive')
+    a.add_argument('archive')
+    a.add_argument('--commit', required=True)
+    a.add_argument('--lockfile-sha256', required=True)
+    a.add_argument('--out')
     args = parser.parse_args(argv)
-    return build(args) if args.command == 'build' else verify(args)
+    if args.command == 'build':
+        return build(args)
+    if args.command == 'package':
+        print(package(args.tree, args.commit, args.out))
+        return 0
+    if args.command == 'archive':
+        return archive_action(args)
+    return verify(args)
 
 
 if __name__ == '__main__':
