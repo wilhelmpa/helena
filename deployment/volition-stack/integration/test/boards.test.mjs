@@ -25,20 +25,21 @@ test('board retries and rename preserve paths and existing content; symlinks are
   try {
     const workspace = { slug: 'demo', hostPath: root, containerPath: '/projects/demo' };
     const config = { planUrl: 'https://plan.test', codeUrl: 'https://code.test' };
-    const files = async (_, boardId) => ({ id: `/Projects/demo/Boards/board-${boardId}`, url: 'https://cloud.test/files' });
     const value = envelope();
-    const first = await provisionBoards(config, value, workspace, files);
+    const first = await provisionBoards(config, value, workspace);
     await fs.writeFile(path.join(root, 'boards/board-12/user-document.txt'), 'keep');
     value.boards[0].name = 'Renamed board'; value.boards[0].slug = 'renamed-board';
-    const second = await provisionBoards(config, value, workspace, files);
+    const second = await provisionBoards(config, value, workspace);
     assert.deepEqual(second, first);
+    assert.deepEqual(first.map((resource) => resource.kind), ['board:12']);
     assert.equal(await fs.readFile(path.join(root, 'boards/board-12/user-document.txt'), 'utf8'), 'keep');
     const metadata = JSON.parse(await fs.readFile(path.join(root, 'boards/board-12/board.json'), 'utf8'));
     assert.equal(metadata.links.plan, 'https://plan.test/project/DEMO/view/12');
+    assert.equal(Object.hasOwn(metadata.links, 'files'), false);
     assert.equal(metadata.board.name, 'Renamed board');
     await fs.mkdir(path.join(root, 'other'));
     await fs.symlink(path.join(root, 'other'), path.join(root, 'boards/board-13'));
     value.requestedResources = ['board:13']; value.boards[0].id = 13; value.boards[0].resource = 'board:13';
-    await assert.rejects(provisionBoards(config, value, workspace, files), /real project-owned/);
+    await assert.rejects(provisionBoards(config, value, workspace), /real project-owned/);
   } finally { await fs.rm(root, { recursive: true, force: true }); }
 });

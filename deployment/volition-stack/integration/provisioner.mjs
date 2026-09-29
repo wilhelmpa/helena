@@ -26,7 +26,7 @@ import { readJson, writeJsonAtomic } from "./atomic-json.mjs";
 import { movePath } from "./move-path.mjs";
 
 const execFileAsync = promisify(execFile);
-const PROVISIONER_REVISION = 19;
+const PROVISIONER_REVISION = 20;
 const LEDGER_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
 const VAULT_PROJECT_FOLDERS = ["Docs", "Files", "Assets", "Inbox"];
 
@@ -140,8 +140,6 @@ export function createProvisioner(config, options = {}) {
   const projectBrowserActive =
     options.projectBrowserActive ?? createProjectBrowserStatus(config, { execute });
   const ensureFiles = options.ensureFiles ?? ensureProjectVault;
-  const ensureBoardFiles =
-    options.ensureBoardFiles ?? ensureLocalBoardFiles;
   let queue = Promise.resolve();
 
   // The runner reads descriptors only on startup. A durable generation change asks it to
@@ -170,14 +168,6 @@ export function createProvisioner(config, options = {}) {
       VAULT_PROJECT_FOLDERS.map((folder) => ensureSharedVaultDirectory(path.join(projectRoot, folder))),
     );
     return resource("files", projectRoot);
-  }
-
-  async function ensureLocalBoardFiles(slug, boardId, project) {
-    const files = await ensureProjectVault(slug, project);
-    const boardsRoot = await ensureSharedVaultDirectory(path.join(files.id, "Files", "Boards"));
-    const boardRoot = path.join(boardsRoot, `board-${boardId}`);
-    await ensureSharedVaultDirectory(boardRoot);
-    return resource(`board:${boardId}:files`, boardRoot);
   }
 
   async function projectWorkspace(project) {
@@ -309,14 +299,10 @@ export function createProvisioner(config, options = {}) {
     const kept = new Set(validBoards(envelope.boards).map((board) => board.id));
     const removed = validBoards(registry.boards).filter((board) => !kept.has(board.id));
     const quarantineRoot = path.join(config.projectTrashRoot, envelope.eventId);
-    const boardFilesRoot = path.join(config.vaultRoot, "Projects", envelope.project.key, "Files", "Boards");
     const quarantined = [];
     for (const { id } of removed) {
       const name = `board-${id}`;
-      const folders = [
-        ...(workspace.hostPath ? [[path.join(workspace.hostPath, "boards"), "workspace"]] : []),
-        [boardFilesRoot, "files"],
-      ];
+      const folders = workspace.hostPath ? [[path.join(workspace.hostPath, "boards"), "workspace"]] : [];
       for (const [root, kind] of folders) {
         const source = path.join(root, name);
         const exists = await fs.lstat(source).then(() => true, () => false);
@@ -550,7 +536,7 @@ export function createProvisioner(config, options = {}) {
         ...(await quarantineRemovedBoards(envelope, workspace)),
       ];
       if (quarantined.length) await writeTrashReceipt(quarantineRoot, envelope, quarantined);
-      const boardResources = await provisionBoards(urls, envelope, workspace, ensureBoardFiles);
+      const boardResources = await provisionBoards(urls, envelope, workspace);
       const registryPath = await writeRegistry(
         envelope,
         workspace,

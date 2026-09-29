@@ -11,6 +11,7 @@ import {
 import { and, asc, eq, inArray, lt, ne, sql } from 'drizzle-orm';
 import { equalJitterBackoffMs } from './backoff';
 import { workerConfig } from './config';
+import { isAllowedResultKind, sanitizeResourceUrl } from './provisioning-resource-url';
 
 interface ClaimedProvisioningJob {
   id: string;
@@ -521,70 +522,4 @@ function sanitizeResult(
         .map((w) => w.slice(0, 500))
     : undefined;
   return warnings?.length ? { resources, warnings } : { resources };
-}
-
-function isAllowedResultKind(kind: string, requestedResources: ReadonlySet<string>): boolean {
-  if (requestedResources.has(kind)) return true;
-  const boardFiles = /^board:([1-9][0-9]{0,9}):files$/.exec(kind);
-  return boardFiles ? requestedResources.has(`board:${boardFiles[1]}`) : false;
-}
-
-function sanitizeResourceUrl(kind: string, value: string): string | null {
-  if (value.length > 2000) return null;
-  try {
-    const url = new URL(value);
-    if ((url.protocol !== 'http:' && url.protocol !== 'https:') || url.username || url.password) {
-      return null;
-    }
-    // These two UI deep links require one non-secret path parameter. All other
-    // query fields are discarded so access tokens cannot be persisted by mistake.
-    const board = /^board:([1-9][0-9]{0,9})(:files)?$/.exec(kind);
-    const queryKey =
-      kind === 'workspace' || (board && !board[2])
-        ? 'folder'
-        : kind === 'files' || board?.[2] === ':files'
-          ? 'dir'
-          : kind === 'terminal'
-            ? 'arg'
-            : null;
-    const deepPath = queryKey ? url.searchParams.get(queryKey) : null;
-    const browserRoute =
-      kind === 'browser'
-        ? /^\/browser\/projects\/([a-z0-9][a-z0-9-]{0,31})\/vnc\.html$/.exec(url.pathname)
-        : null;
-    const browserPath = browserRoute ? url.searchParams.get('path') : null;
-    const validBrowserPath =
-      browserRoute !== null &&
-      browserPath === `browser/projects/${browserRoute[1]}/websockify` &&
-      url.searchParams.get('autoconnect') === '1' &&
-      url.searchParams.get('resize') === 'remote';
-    url.search = '';
-    const validDeepPath = board
-      ? board[2] === ':files'
-        ? new RegExp(`^/Projects/[a-z0-9][a-z0-9_-]{0,127}/Boards/board-${board[1]}$`, 'i').test(
-            deepPath ?? '',
-          )
-        : new RegExp(`^/projects/[a-z0-9][a-z0-9_-]{0,127}/boards/board-${board[1]}$`, 'i').test(
-            deepPath ?? '',
-          )
-      : kind === 'workspace'
-        ? /^\/projects\/[a-z0-9][a-z0-9_-]{0,127}$/i.test(deepPath ?? '')
-        : kind === 'files'
-          ? /^\/Projects\/[a-z0-9][a-z0-9_-]{0,127}$/i.test(deepPath ?? '')
-          : kind === 'terminal'
-            ? /^[a-z0-9][a-z0-9_-]{0,63}$/.test(deepPath ?? '')
-            : false;
-    if (queryKey && deepPath && validDeepPath) {
-      url.searchParams.set(queryKey, deepPath);
-    }
-    if (validBrowserPath) {
-      url.searchParams.set('autoconnect', '1');
-      url.searchParams.set('resize', 'remote');
-      url.searchParams.set('path', browserPath);
-    }
-    url.hash = '';
-    return url.toString();
-  } catch {
-    return null;
-  }
 }
