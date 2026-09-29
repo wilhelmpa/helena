@@ -146,6 +146,8 @@ export default function Orb({
           state: visual,
           theme,
           glow: 'off',
+          // Rings with travelling lights around the sphere (owner, 29.09., O73).
+          orbits: 'on',
           'aria-hidden': true,
         })}
     </span>
