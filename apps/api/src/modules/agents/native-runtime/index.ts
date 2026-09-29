@@ -5,8 +5,14 @@ import { selectRuntimes } from './selection';
 import { runtimeSelectionBody, RuntimeSelectionResponse } from './model';
 import { readNativeRuntime } from './readers';
 import { nativeReadBody, NativeReadResponse } from './model';
-import { listNativeSkills, saveNativeSkill } from './skills';
-import { nativeSkillWriteBody, NativeSkillResponse, NativeSkillsResponse } from './model';
+import { listNativeSkills, saveNativeSkill, recordSkillUse } from './skills';
+import {
+  nativeSkillWriteBody,
+  NativeSkillResponse,
+  NativeSkillsResponse,
+  nativeSkillUseBody,
+  nativeSkillListQuery,
+} from './model';
 import './consolidation';
 import { Elysia } from 'elysia';
 import { guards } from '#shared/guards';
@@ -65,19 +71,36 @@ export const nativeRuntimeRoutes = new Elysia({
       summary: 'Read the native sessions and maintain learned skills of the calling agent',
     },
   })
-  .get('/agent-runtime/skills', ({ agent }) => listNativeSkills(agent.id), {
-    runnerAgent: true,
-    response: { 200: NativeSkillsResponse, ...errors(401, 403) },
-    detail: { summary: 'Read learned native skills and their revisions' },
-  })
+  .get(
+    '/agent-runtime/skills',
+    ({ agent, query }) => listNativeSkills(agent.id, query.includeArchived === 'true', false),
+    {
+      query: nativeSkillListQuery,
+      runnerAgent: true,
+      response: { 200: NativeSkillsResponse, ...errors(401, 403) },
+      detail: { summary: 'Read learned native skills and their revisions' },
+    },
+  )
   .put(
     '/agent-runtime/skills',
-    ({ agent, body }) => saveNativeSkill(agent.id, body.skill, body.baseRevision),
+    ({ agent, body }) => saveNativeSkill(agent.id, body.skill, body.baseRevision, body),
     {
       runnerAgent: true,
       body: nativeSkillWriteBody,
       response: { 200: NativeSkillResponse, ...errors(400, 401, 403, 409, 413) },
       detail: { summary: 'Create or revise a learned native skill with its files' },
+    },
+  )
+  .post(
+    '/agent-runtime/skills/use',
+    async ({ agent, body }) => {
+      await recordSkillUse(agent.id, body.name);
+      return { ok: true as const };
+    },
+    {
+      runnerAgent: true,
+      body: nativeSkillUseBody,
+      response: { 200: OkResponse, ...errors(401, 403, 404, 409) },
     },
   )
   .post(

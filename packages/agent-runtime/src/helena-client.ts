@@ -40,6 +40,8 @@ export interface LearnedRuntimeSkill {
   otherFiles: number;
   truncated: boolean;
   revision?: string;
+  status?: string;
+  change?: unknown;
 }
 
 export interface HelenaApi {
@@ -59,8 +61,13 @@ export interface HelenaApi {
   memory(): Promise<MemoryState>;
   note(text: string): Promise<void>;
   proposeMemory(file: string, content: string, reason: string): Promise<{ status: string }>;
-  learnedSkills?(): Promise<LearnedRuntimeSkill[]>;
-  saveSkill?(skill: LearnedRuntimeSkill, baseRevision: string | null): Promise<LearnedRuntimeSkill>;
+  learnedSkills?(includeArchived?: boolean): Promise<LearnedRuntimeSkill[]>;
+  saveSkill?(
+    skill: LearnedRuntimeSkill,
+    baseRevision: string | null,
+    options?: { sessionId?: string; structured?: boolean },
+  ): Promise<LearnedRuntimeSkill>;
+  skillUsed?(name: string): Promise<void>;
   searchSessions(query: string, limit?: number): Promise<SessionHit[]>;
 }
 
@@ -119,12 +126,23 @@ export class HelenaClient implements HelenaApi {
     return (await response.json()) as T;
   }
 
-  learnedSkills(): Promise<LearnedRuntimeSkill[]> {
-    return this.request('GET', '/agent-runtime/skills');
+  learnedSkills(includeArchived = false): Promise<LearnedRuntimeSkill[]> {
+    return this.request(
+      'GET',
+      `/agent-runtime/skills${includeArchived ? '?includeArchived=true' : ''}`,
+    );
   }
 
-  saveSkill(skill: LearnedRuntimeSkill, baseRevision: string | null): Promise<LearnedRuntimeSkill> {
-    return this.request('PUT', '/agent-runtime/skills', { skill, baseRevision });
+  saveSkill(
+    skill: LearnedRuntimeSkill,
+    baseRevision: string | null,
+    options?: { sessionId?: string; structured?: boolean },
+  ): Promise<LearnedRuntimeSkill> {
+    return this.request('PUT', '/agent-runtime/skills', { skill, baseRevision, ...options });
+  }
+
+  async skillUsed(name: string): Promise<void> {
+    await this.request('POST', '/agent-runtime/skills/use', { name });
   }
 
   // Denied whenever Helena cannot be asked: a policy that cannot be checked does not hold.

@@ -173,12 +173,22 @@ export const RuntimesResponse = t.Object({
 
 export const nativeSkillWriteBody = t.Object({
   skill: learnedSkill,
+  sessionId: t.Optional(t.String({ maxLength: 100 })),
+  structured: t.Optional(t.Boolean()),
   baseRevision: t.Nullable(t.String({ pattern: '^[a-f0-9]{64}$' })),
 });
 export const NativeSkillResponse = t.Intersect([
   learnedSkill,
   t.Object({
     revision: t.String(),
+    status: t.Optional(t.String()),
+    change: t.Optional(t.Unknown()),
+    history: t.Optional(t.Array(t.Unknown())),
+    version: t.Optional(t.Number()),
+    useCount: t.Optional(t.Number()),
+    lastUsedAt: t.Optional(t.String()),
+    createdAt: t.Optional(t.String()),
+    proposed: t.Optional(t.Boolean()),
     pinned: t.Optional(t.Boolean()),
     archived: t.Optional(t.Boolean()),
   }),
@@ -279,3 +289,12 @@ export const ProfileImportResponse = t.Object({
   skills: t.Number(),
   sessions: t.Array(t.Object({ sourceId: t.String(), sessionId: t.String() })),
 });
+
+export const nativeSkillUseBody = t.Object({ name: t.String({ minLength: 1, maxLength: 128 }) });
+export const nativeSkillReviewBody = t.Object({
+  path: t.String({ minLength: 1, maxLength: 260 }),
+  revision: t.String({ pattern: '^[a-f0-9]{64}$' }),
+  action: t.Union([t.Literal('approve'), t.Literal('reject'), t.Literal('restore')]),
+});
+
+export const nativeSkillListQuery = t.Object({ includeArchived: t.Optional(t.Literal('true')) });

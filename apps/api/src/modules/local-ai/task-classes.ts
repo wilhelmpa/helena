@@ -38,6 +38,26 @@ const PREFER_ONLY: readonly LocalAiMode[] = ['off', 'prefer'];
 
 export const BUILTIN_TASK_CLASSES: LocalAiTaskClass[] = [
   {
+    id: 'skill-learning',
+    label: 'Skill learning',
+    description: 'Native creation, correction, safe non-learning and reuse with fewer tool calls',
+    unit: 'gpu',
+    capability: 'tools',
+    priority: 'background',
+    thinking: 'off',
+    inMasterDefault: false,
+    wired: false,
+    experimental: true,
+    modes: PREFER_ONLY,
+    evaluate: async (context) => {
+      if (!context.runSkillLearning)
+        throw new Error('Native skill-learning eval runner unavailable');
+      return context.runSkillLearning();
+    },
+    evalVersion: 1,
+    threshold: 1,
+  },
+  {
     id: 'agentic-coding',
     label: 'Agentic Coding',
     description: 'Twelve disposable TypeScript and Python repositories solved with Hermes tools',

@@ -1,3 +1,10 @@
+import { listNativeSkills, reviewNativeSkill } from '../native-runtime/skills';
+import {
+  NativeSkillsResponse,
+  NativeSkillResponse,
+  nativeSkillReviewBody,
+} from '../native-runtime/model';
+import { agentForPerson } from '../people-access';
 import { Elysia } from 'elysia';
 import { guards } from '#shared/guards';
 import { authContext } from '#shared/auth-context';
@@ -38,6 +45,34 @@ export const agentLearningRoutes = new Elysia({
 })
   .use(authContext)
   .use(guards)
+
+  .get(
+    '/teams/:teamId/ai-agents/:agentId/learned-skills/history',
+    async ({ params, membership }) => {
+      await requireAgent(params.agentId, membership);
+      await agentForPerson(params.agentId, membership);
+      return listNativeSkills(params.agentId, true);
+    },
+    {
+      params: agentParams,
+      teamPermission: ['ai_agents', 'read'],
+      response: { 200: NativeSkillsResponse, ...commonErrors },
+    },
+  )
+  .post(
+    '/teams/:teamId/ai-agents/:agentId/learned-skills/review',
+    async ({ params, membership, body, user }) => {
+      await requireAgent(params.agentId, membership);
+      await agentForPerson(params.agentId, membership);
+      return reviewNativeSkill(params.agentId, body.path, body.revision, body.action, user!.id);
+    },
+    {
+      params: agentParams,
+      body: nativeSkillReviewBody,
+      teamPermission: ['ai_agents', 'edit'],
+      response: { 200: NativeSkillResponse, ...commonErrors, ...errors(409) },
+    },
+  )
 
   .get(
     '/teams/:teamId/ai-agents/:agentId/learned-skills/content',

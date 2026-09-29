@@ -1,6 +1,7 @@
 import {
   applyNativeSkillActions,
   listNativeSkills,
+  skillDescription,
   learnedInventory,
   nativeSkills,
 } from '../native-runtime/skills';
@@ -147,7 +148,7 @@ export async function runtimePolicySnapshot(agentRef: RunnerAgent) {
               id: 0,
               slug: `learned/${skill.path}`,
               name: skill.name,
-              description: skill.name,
+              description: skillDescription(skill),
               markdown: skill.markdown,
               files: skill.files,
             })),

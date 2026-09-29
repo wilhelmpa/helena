@@ -9,3 +9,5 @@ export * from './session';
 export * from './escalation';
 export { main as helenaAgentMain } from './cli';
 export type { AgentTool, ToolOutput, PolicyQuestion } from './tools/types';
+
+export { runSkillLearningEval } from './skill-learning-eval';

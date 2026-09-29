@@ -257,6 +257,7 @@ export interface LocalAiEvalContext {
   signal?: AbortSignal;
   chat(request: LocalAiChatRequest): Promise<LocalAiChatAnswer>;
   judge?(request: LocalAiChatRequest): Promise<LocalAiChatAnswer>;
+  runSkillLearning?(): Promise<LocalAiEvalResult>;
   runCodingTask?(id: string): Promise<{
     testsPassed: boolean;
     validToolCalls: number;

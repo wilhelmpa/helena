@@ -155,7 +155,7 @@ export function findToolsTool(catalog: () => ToolCatalogEntry[]): AgentTool {
   };
 }
 
-export function skillTool(skills: SkillEntry[]): AgentTool {
+export function skillTool(skills: SkillEntry[], used?: (name: string) => Promise<void>): AgentTool {
   return {
     name: 'load_skill',
     kind: 'meta',
@@ -174,6 +174,7 @@ export function skillTool(skills: SkillEntry[]): AgentTool {
         return error(`No skill ${name}. Skills: ${skills.map((entry) => entry.name).join(', ')}`);
       const file = text(input.file).trim();
       if (!file) {
+        await used?.(skill.name);
         const extra = (skill.files ?? []).map((entry) => entry.path);
         return {
           text: extra.length
@@ -262,18 +263,30 @@ export function sessionSearchTool(api: HelenaApi): AgentTool {
   };
 }
 
-export function learnSkillTool(api: HelenaApi): AgentTool {
+export function learnSkillTool(
+  api: HelenaApi,
+  options: {
+    sessionId?: () => string | undefined;
+    allowCreate?: () => boolean;
+  } = {},
+): AgentTool {
   return {
-    name: 'learn_skill',
+    name: 'skill_manage',
     description:
-      'Read your learned skills and revisions with action list. Save a reusable procedure with action save, name, path, markdown, files and baseRevision (null for creation, the read revision for edits). Preserve all reference and script files. Never store secrets.',
+      'Manage reusable learned procedures. list reads skills and revisions. create requires name, path and markdown; update replaces markdown of an existing path; patch replaces exactly one occurrence of oldText with newText. Edits require baseRevision from list. Use Agent Skills frontmatter (name, description explaining when to use) and nonempty ## Steps, ## Pitfalls, ## Examples sections. Improve a similar existing skill instead of duplicating it. Keep secrets and credential paths out. Preserve reference files.',
     inputSchema: {
       type: 'object',
       properties: {
-        action: { type: 'string', enum: ['list', 'save'] },
-        path: { type: 'string' },
+        action: { type: 'string', enum: ['list', 'create', 'update', 'patch'] },
+        path: {
+          type: 'string',
+          description:
+            'Exact skill directory key from list, e.g. csv-import, not a filesystem path.',
+        },
         name: { type: 'string' },
         markdown: { type: 'string' },
+        oldText: { type: 'string' },
+        newText: { type: 'string' },
         baseRevision: { type: ['string', 'null'] },
         files: {
           type: 'array',
@@ -287,13 +300,43 @@ export function learnSkillTool(api: HelenaApi): AgentTool {
       required: ['action'],
     },
     async execute(input) {
-      if (input.action === 'list' && api.learnedSkills)
-        return { text: JSON.stringify(await api.learnedSkills()) };
-      if (input.action !== 'save' || !api.saveSkill) return error('Unsupported skill action');
-      if (input.baseRevision !== null && typeof input.baseRevision !== 'string')
-        return error('Read the current skill revision before saving');
-      const files = Array.isArray(input.files) ? input.files : [];
+      if (!api.learnedSkills || !api.saveSkill) return error('Skill learning unavailable');
+      const skills = await api.learnedSkills(true);
+      if (input.action === 'list') return { text: JSON.stringify(skills) };
+      if (!['create', 'update', 'patch'].includes(text(input.action)))
+        return error('Unsupported skill action');
+      if (input.action === 'create' && options.allowCreate?.() === false)
+        return error('A failed task may only improve an existing skill');
+      const requestedPath = text(input.path) || (input.action === 'create' ? text(input.name) : '');
+      const normalizedPath = requestedPath.replace(/^skills\//, '').replace(/\/SKILL\.md$/, '');
+      const current =
+        skills.find((skill) => skill.path === requestedPath) ??
+        skills.find((skill) => skill.path === normalizedPath);
+      if (input.action !== 'create' && !current)
+        return error(
+          `Unknown skill path. Use the directory key from list: ${skills.map((skill) => skill.path).join(', ')}`,
+        );
+      if (input.action !== 'create' && current?.revision !== input.baseRevision)
+        return error(
+          'Read the current skill revision with list and pass its exact baseRevision string before editing',
+        );
+      const duplicate = skills.find(
+        (skill) => skill.name.toLowerCase() === text(input.name).toLowerCase(),
+      );
+      if (input.action === 'create' && (current || duplicate))
+        return error(
+          `Improve existing skill ${current?.path ?? duplicate?.path} with update or patch and its revision`,
+        );
+      let markdown = text(input.markdown);
+      if (input.action === 'patch') {
+        const old = text(input.oldText);
+        if (!old || current!.markdown.split(old).length !== 2)
+          return error('oldText must match exactly once');
+        markdown = current!.markdown.replace(old, text(input.newText));
+      }
+      const files = input.files === undefined ? (current?.files ?? []) : input.files;
       if (
+        !Array.isArray(files) ||
         files.some(
           (file) => !file || typeof file.path !== 'string' || typeof file.content !== 'string',
         )
@@ -301,18 +344,24 @@ export function learnSkillTool(api: HelenaApi): AgentTool {
         return error('Invalid skill files');
       const saved = await api.saveSkill(
         {
-          path: text(input.path),
-          name: text(input.name),
-          markdown: text(input.markdown),
+          path: current?.path ?? requestedPath,
+          name: text(input.name) || current?.name || '',
+          markdown,
           files,
           truncated: false,
           otherFiles: 0,
         },
-        input.baseRevision,
+        current?.revision ?? null,
+        { sessionId: options.sessionId?.(), structured: true },
       );
       return {
-        text: JSON.stringify({ path: saved.path, revision: saved.revision }),
-        changed: true,
+        text: JSON.stringify({
+          path: saved.path,
+          revision: saved.revision,
+          status: saved.status ?? 'applied',
+          change: saved.change,
+        }),
+        changed: saved.status !== 'pending',
       };
     },
   };
