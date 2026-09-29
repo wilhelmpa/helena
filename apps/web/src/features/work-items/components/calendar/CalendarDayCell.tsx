@@ -71,6 +71,8 @@ export function CalendarDayCell({
             issues={issues}
             hidden={issues.length - MAX_CHIPS}
             dot={dot}
+            properties={properties}
+            maps={maps}
             onOpen={onOpen}
           />
         )}

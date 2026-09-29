@@ -8,6 +8,12 @@
 export { Tree, TreeItem, TreeGap, TreeAction, useTreeLevel } from './components/Tree';
 export type { TreeItemProps } from './components/Tree';
 export { StatusDot } from './components/StatusDot';
+export { StatusBox } from './components/StatusBox';
+export { ToolbarPopover } from './components/ToolbarPopover';
+// The searchable pick list of a field (status, priority, goal …) in a popover: one
+// implementation, with groups, a trailing note per row and "create what I typed".
+export { default as PopoverPick } from '@/components/common/fields/PopoverPick';
+export type { PickItem, PickGroup, PickCreate } from '@/components/common/fields/PopoverPick';
 export type { StatusDotTone } from './components/StatusDot';
 export { Button, ButtonLink, IconButton } from './components/Button';
 export type { ButtonVariant } from './components/Button';

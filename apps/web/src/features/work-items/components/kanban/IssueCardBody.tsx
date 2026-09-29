@@ -1,5 +1,5 @@
 import { useSession } from '@/lib/auth-client';
-import { Inline } from '@/design-system';
+import { Inline, StatusBox } from '@/design-system';
 import type { BoardIssue } from '@/lib/api/endpoints/issues';
 import type { ProjectDetail } from '@/lib/api/endpoints/projects';
 import { type Maps } from '@/utils/project';
@@ -69,10 +69,12 @@ export function IssueCardBody({
         <Inline gap={2} className="min-w-0">
           <Inline gap={1} wrap className="min-w-0 flex-1">
             {status && (
-              <span className="ds-issue-status" data-state-type={status.stateType}>
-                <StateIcon stateType={status.stateType} color={status.color} />
-                <span>{status.name}</span>
-              </span>
+              <StatusBox
+                stateType={status.stateType}
+                icon={<StateIcon stateType={status.stateType} color={status.color} />}
+              >
+                {status.name}
+              </StatusBox>
             )}
             {labels.map((label) => (
               <BoardHintPill key={label.id} name={label.name} />

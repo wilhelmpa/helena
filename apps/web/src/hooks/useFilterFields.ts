@@ -7,7 +7,7 @@ import type { GoalRef, InitiativeRef } from '@/lib/api/endpoints/issues';
 import type { ProjectPoolGoal } from '@/lib/api/endpoints/projectGoals';
 import type { InitiativeOption } from '@/lib/api/endpoints/initiatives';
 import { useInitiativeOptionsQuery } from '@/services/initiatives.service';
-import { useGoalOptionsQuery } from '@/services/goalOptions.service';
+import { useSortedGoalOptions } from '@/services/goalOptions.service';
 import { CYCLE_STATUS_META } from '@/utils/cycleMeta';
 import { formatDate } from '@/utils/dates';
 import {
@@ -84,7 +84,7 @@ function goalOptions(project: ProjectDetail, linkable: ProjectPoolGoal[]): Field
   for (const issue of project.issues) if (issue.goal) namedByIssues.set(issue.goal.id, issue.goal);
   for (const goal of linkable) namedByIssues.delete(goal.id);
   return [
-    ...[...linkable].sort(compareGoals).map((goal) => ({
+    ...linkable.map((goal) => ({
       value: goal.id,
       label: goal.title,
       color: GOAL_STATUS_META[goal.status].color,
@@ -152,7 +152,7 @@ export function newCondition(spec: FieldSpec): FilterCondition {
 export function useFilterFields(projectKey?: string) {
   const t = useTranslations('filters');
   const initiatives = useInitiativeOptionsQuery(projectKey ?? null).data ?? [];
-  const goals = useGoalOptionsQuery(projectKey ?? null).data ?? [];
+  const goals = useSortedGoalOptions(projectKey ?? null);
   const operator = byKey(useTranslations('filters.operators'));
   const stateType = byKey(useTranslations('display.stateTypes'));
   const cycleStatus = byKey(useTranslations('filters.cycleStatus'));

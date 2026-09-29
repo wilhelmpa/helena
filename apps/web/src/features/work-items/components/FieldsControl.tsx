@@ -1,23 +1,10 @@
-import { useState } from 'react';
 import { ListChecks } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
-import {
-  Button,
-  Inline,
-  MonoLabel,
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-  Stack,
-  Text,
-  usePageToolbarRoom,
-} from '@/design-system';
-import { PAGE_CONTROL_ACTIVE_CLASS, PAGE_CONTROL_CLASS } from '@/components/layout/PageToolbar';
+import { Button, Inline, MonoLabel, Stack, Text, ToolbarPopover } from '@/design-system';
 import PropertyChip from '@/components/layout/PropertyChip';
 import TableProperties from '@/components/layout/TableProperties';
 import CustomFieldMenu from '@/components/layout/CustomFieldMenu';
-import { cn } from '@/lib/utils';
 import { byKey } from '@/utils/messageKey';
 import type { CustomField } from '@/lib/api/endpoints/customFields';
 import type { FieldDefaults } from '@/lib/api/endpoints/displayDefaults';
@@ -70,9 +57,6 @@ export default function FieldsControl({
   const t = useTranslations('workItems.fields');
   const tDisplay = useTranslations('display');
   const property = byKey(useTranslations('display.properties'));
-  const [open, setOpen] = useState(false);
-  // The name shows while the toolbar has room, the icon alone after that.
-  const room = usePageToolbarRoom();
   const features = useProjectFeatures();
   const { isAdmin } = usePermissions();
   const projectKey = project.project.key;
@@ -127,133 +111,121 @@ export default function FieldsControl({
   };
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <button
-          type="button"
-          aria-label={t('button')}
-          title={t('button')}
-          className={cn(
-            PAGE_CONTROL_CLASS,
-            (open || differs) && PAGE_CONTROL_ACTIVE_CLASS,
-            !room.actions && 'ds-icon-only',
-          )}
-        >
-          <ListChecks aria-hidden="true" />
-          {room.actions && <span>{t('button')}</span>}
-        </button>
-      </PopoverTrigger>
-      <PopoverContent align="end" className="ds-fields-popover">
-        <Stack gap={3}>
-          <Stack gap={1}>
-            <Inline justify="between">
-              <MonoLabel>{t('heading')}</MonoLabel>
-              <Text size="xs" tone="muted">
-                {t(`source.${source(layout)}`)}
-              </Text>
-            </Inline>
-            <Text size="sm" tone="muted">
-              {t('hint')}
+    <ToolbarPopover
+      icon={ListChecks}
+      label={t('button')}
+      active={differs}
+      contentClassName="ds-fields-popover"
+    >
+      <Stack gap={3}>
+        <Stack gap={1}>
+          <Inline justify="between">
+            <MonoLabel>{t('heading')}</MonoLabel>
+            <Text size="xs" tone="muted">
+              {t(`source.${source(layout)}`)}
             </Text>
-          </Stack>
-
-          <FieldsPreview view={view} project={project} properties={settings.properties} />
-
-          <Inline gap={1} wrap>
-            {view === 'table' ? (
-              <TableProperties
-                properties={settings.properties}
-                customFields={customFields}
-                issueTypes={issueTypes}
-                onChange={setProperties}
-                trailing={subtasksChip}
-              />
-            ) : (
-              <>
-                {choices.map((key) => (
-                  <PropertyChip
-                    key={key}
-                    label={property(key)}
-                    on={settings.properties.includes(key)}
-                    onClick={() => toggle(key)}
-                  />
-                ))}
-                {view === 'kanban' &&
-                  customFields
-                    .filter((field) => settings.properties.includes(customFieldKey(field.id)))
-                    .map((field) => (
-                      <PropertyChip
-                        key={field.id}
-                        label={field.name}
-                        on
-                        onClick={() => toggle(customFieldKey(field.id))}
-                      />
-                    ))}
-                {subtasksChip}
-                {view === 'kanban' && (
-                  <CustomFieldMenu
-                    customFields={customFields}
-                    issueTypes={issueTypes}
-                    selected={new Set(settings.properties)}
-                    onToggle={toggle}
-                  />
-                )}
-              </>
-            )}
           </Inline>
-          {view === 'list' && (
-            <Text size="xs" tone="muted">
-              {t('listFixed')}
-            </Text>
-          )}
-          {view === 'calendar' && (
-            <Text size="xs" tone="muted">
-              {t('calendarHint')}
-            </Text>
-          )}
+          <Text size="sm" tone="muted">
+            {t('hint')}
+          </Text>
+        </Stack>
 
-          <Stack gap={2} className="ds-fields-actions">
-            {differs && !savedView && (
-              <Inline justify="between">
-                <Text size="xs" tone="muted">
-                  {t('differs')}
-                </Text>
-                <Button variant="ghost" size="small" onClick={() => setProperties(inForce)}>
-                  {t('reset')}
-                </Button>
-              </Inline>
-            )}
-            <Inline gap={2} wrap>
-              {isAdmin && (
-                <Button
-                  size="small"
-                  disabled={save.saveProject.isPending}
-                  onClick={() => saveDefault('project')}
-                >
-                  {t('saveProject')}
-                </Button>
+        <FieldsPreview view={view} project={project} properties={settings.properties} />
+
+        <Inline gap={1} wrap>
+          {view === 'table' ? (
+            <TableProperties
+              properties={settings.properties}
+              customFields={customFields}
+              issueTypes={issueTypes}
+              onChange={setProperties}
+              trailing={subtasksChip}
+            />
+          ) : (
+            <>
+              {choices.map((key) => (
+                <PropertyChip
+                  key={key}
+                  label={property(key)}
+                  on={settings.properties.includes(key)}
+                  onClick={() => toggle(key)}
+                />
+              ))}
+              {view === 'kanban' &&
+                customFields
+                  .filter((field) => settings.properties.includes(customFieldKey(field.id)))
+                  .map((field) => (
+                    <PropertyChip
+                      key={field.id}
+                      label={field.name}
+                      on
+                      onClick={() => toggle(customFieldKey(field.id))}
+                    />
+                  ))}
+              {subtasksChip}
+              {view === 'kanban' && (
+                <CustomFieldMenu
+                  customFields={customFields}
+                  issueTypes={issueTypes}
+                  selected={new Set(settings.properties)}
+                  onToggle={toggle}
+                />
               )}
+            </>
+          )}
+        </Inline>
+        {view === 'list' && (
+          <Text size="xs" tone="muted">
+            {t('listFixed')}
+          </Text>
+        )}
+        {view === 'calendar' && (
+          <Text size="xs" tone="muted">
+            {t('calendarHint')}
+          </Text>
+        )}
+
+        <Stack gap={2} className="ds-fields-actions">
+          {differs && !savedView && (
+            <Inline justify="between">
+              <Text size="xs" tone="muted">
+                {t('differs')}
+              </Text>
+              <Button variant="ghost" size="small" onClick={() => setProperties(inForce)}>
+                {t('reset')}
+              </Button>
+            </Inline>
+          )}
+          <Inline gap={2} wrap>
+            {isAdmin && (
               <Button
                 size="small"
-                disabled={save.saveGlobal.isPending}
-                onClick={() => saveDefault('global')}
+                disabled={save.saveProject.isPending}
+                onClick={() => saveDefault('project')}
               >
-                {t('saveGlobal')}
+                {t('saveProject')}
               </Button>
-              {isAdmin && source(layout) === 'project' && (
-                <Button
-                  variant="ghost"
-                  size="small"
-                  disabled={save.saveProject.isPending}
-                  onClick={removeProjectDefault}
-                >
-                  {t('removeProject')}
-                </Button>
-              )}
-            </Inline>
-          </Stack>
+            )}
+            <Button
+              size="small"
+              disabled={save.saveGlobal.isPending}
+              onClick={() => saveDefault('global')}
+            >
+              {t('saveGlobal')}
+            </Button>
+            {isAdmin && source(layout) === 'project' && (
+              <Button
+                variant="ghost"
+                size="small"
+                disabled={save.saveProject.isPending}
+                onClick={removeProjectDefault}
+              >
+                {t('removeProject')}
+              </Button>
+            )}
+          </Inline>
         </Stack>
-      </PopoverContent>
-    </Popover>
+      </Stack>
+    </ToolbarPopover>
   );
 }

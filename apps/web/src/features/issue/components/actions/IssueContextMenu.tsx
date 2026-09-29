@@ -24,8 +24,8 @@ import type { Issue, IssuePatch } from '@/lib/api/endpoints/issues';
 import { actionIcon } from '@/utils/actionIcons';
 import { useActionsQuery } from '@/services/actions.service';
 import { useRestoreIssue, useUpdateIssue } from '@/services/issues.service';
-import { useGoalOptionsQuery } from '@/services/goalOptions.service';
-import { GOAL_STATUS_META, compareGoals } from '@/utils/goalMeta';
+import { useSortedGoalOptions } from '@/services/goalOptions.service';
+import { GOAL_STATUS_META } from '@/utils/goalMeta';
 import { CYCLE_STATUS_META } from '@/utils/cycleMeta';
 import { usePermissions } from '@/hooks/usePermissions';
 import { usePriorityLabel } from '@/hooks/usePriorityLabel';
@@ -99,7 +99,7 @@ export default function IssueContextMenu({
   const [confirmingAction, setConfirmingAction] = useState<ActionDef | null>(null);
   // Goals are not in the board scaffold, so they are fetched here — only while this menu
   // is open, as every card on the board mounts one.
-  const goalsQuery = useGoalOptionsQuery(project.project.key, open);
+  const goals = useSortedGoalOptions(project.project.key, open);
 
   // No Shell (public share): render the card as-is, without the right-click menu.
   if (!shell) return <>{children}</>;
@@ -128,7 +128,6 @@ export default function IssueContextMenu({
     PRIORITY_FIELDS.find((p) => p.value === (issue.priority ?? '')) ?? PRIORITY_FIELDS[0];
   const members = project.assignees.filter((a) => a.kind === 'member');
   const agents = delegatableAgents(project.assignees, session?.user.id ?? null);
-  const goals = [...(goalsQuery.data ?? [])].sort(compareGoals);
 
   return (
     <>

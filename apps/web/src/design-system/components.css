@@ -1553,7 +1553,7 @@ a.ds-run-card:hover {
   color: var(--accent);
 }
 .ds-why-sep {
-  margin-inline-end: 4px;
+  margin-inline: 5px 4px;
   color: var(--text-3);
 }
 .ds-issue-cost {
@@ -2018,6 +2018,12 @@ a.ds-run-card:hover {
 @media (pointer: coarse) {
   .ds-issue-prop-value button {
     min-height: 34px;
+  }
+  /* The small icon buttons in a task's head (copy link, branch, prompt, share, archive,
+     delete) were 24 px squares: a finger hit the neighbour as often as the one it meant. */
+  .ds-panel-head-tools button[data-size='icon-xs'] {
+    width: 32px;
+    height: 32px;
   }
 }
 .ds-run .ds-more-toggle {

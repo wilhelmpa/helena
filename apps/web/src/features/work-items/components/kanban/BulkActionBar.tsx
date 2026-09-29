@@ -17,8 +17,8 @@ import { useTranslations } from 'next-intl';
 import type { ProjectDetail } from '@/lib/api/endpoints/projects';
 import { usePermissions } from '@/hooks/usePermissions';
 import { usePriorityLabel } from '@/hooks/usePriorityLabel';
-import { useGoalOptionsQuery } from '@/services/goalOptions.service';
-import { GOAL_STATUS_META, compareGoals } from '@/utils/goalMeta';
+import { useSortedGoalOptions } from '@/services/goalOptions.service';
+import { GOAL_STATUS_META } from '@/utils/goalMeta';
 import { CYCLE_STATUS_META } from '@/utils/cycleMeta';
 import { subtaskCount } from '@/utils/subtasks';
 import { cn } from '@/lib/utils';
@@ -49,8 +49,7 @@ export function BulkActionBar({ project }: { project: ProjectDetail }) {
   // Goals are not in the board scaffold. The bulk picker fetches the ones a task of the
   // project can serve only while selection is active (with none loaded the picker is left
   // out).
-  const { data } = useGoalOptionsQuery(project.project.key, selection.isSelecting);
-  const goals = [...(data ?? [])].sort(compareGoals);
+  const goals = useSortedGoalOptions(project.project.key, selection.isSelecting);
 
   if (!selection.isSelecting) return null;
 
