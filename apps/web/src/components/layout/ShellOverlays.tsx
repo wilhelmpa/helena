@@ -22,10 +22,14 @@ export default function ShellOverlays({
   project,
   projectKey,
   overlays,
+  issueBehindPanel = false,
 }: {
   project: ProjectDetail | null;
   projectKey: string | null;
   overlays: ReturnType<typeof useOverlays>;
+  // The tool panel was opened over the open task: the task waits behind it (still the
+  // chat's context) and comes back when the panel closes.
+  issueBehindPanel?: boolean;
 }) {
   const router = useRouter();
   const t = useTranslations('issue.create');
@@ -89,7 +93,7 @@ export default function ShellOverlays({
         />
       )}
 
-      {project && overlays.openIssueId != null && (
+      {project && overlays.openIssueId != null && !issueBehindPanel && (
         <IssueDetail
           project={project}
           issueId={overlays.openIssueId}

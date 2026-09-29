@@ -157,6 +157,20 @@ export default function Shell({
     setOpen: setWorkspaceOpen,
   } = workspacePanel;
 
+  // The panel and a task's overlay share the right side: the one opened last is in front
+  // (owner, 28.09.: opening the chat over an open task must show the chat, which then names
+  // that task as its context). Tracked across renders without an effect.
+  const [panelAboveIssue, setPanelAboveIssue] = useState(false);
+  const [rightSide, setRightSide] = useState({ panel: false, issue: null as number | null });
+  if (rightSide.panel !== workspaceOpen || rightSide.issue !== overlays.openIssueId) {
+    const panelOpened = workspaceOpen && !rightSide.panel;
+    const issueOpened = overlays.openIssueId != null && overlays.openIssueId !== rightSide.issue;
+    setPanelAboveIssue(
+      !workspaceOpen ? false : issueOpened ? false : panelOpened ? true : panelAboveIssue,
+    );
+    setRightSide({ panel: workspaceOpen, issue: overlays.openIssueId });
+  }
+
   // The panel that would show the page's own tool closes (the pinned panel of another
   // layout shows a different tool instead, see resolveWorkspaceLayout).
   useEffect(() => {
@@ -445,7 +459,12 @@ export default function Shell({
                 onToggleChat={toggleCoordinatorChat}
               />
 
-              <ShellOverlays project={project} projectKey={projectKey} overlays={overlays} />
+              <ShellOverlays
+                project={project}
+                projectKey={projectKey}
+                overlays={overlays}
+                issueBehindPanel={panelAboveIssue}
+              />
               <SettingsModal />
               <AgentDialog />
               <RunOverlay />

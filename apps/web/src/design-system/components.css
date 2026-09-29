@@ -2533,6 +2533,7 @@ a.ds-run-card:hover {
   flex-direction: column;
 }
 .ds-agent-chip[data-variant='quiet'] {
+  flex: none;
   border-color: transparent;
   background: transparent;
 }

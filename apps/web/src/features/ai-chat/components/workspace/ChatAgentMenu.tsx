@@ -48,8 +48,10 @@ export default function ChatAgentMenu({
   const t = useTranslations('chatWorkspace');
   const tr = useTranslations('chatWorkspace.runtimePicker');
   const state = states.get(agent.id);
+  // Whether the agent can answer — not what it does elsewhere (owner, 28.09.: the chat's
+  // orbs show this chat, not the agent's other work or the local model's load).
   const status = useAgentStatus(agent.id, {
-    run: state?.label,
+    run: null,
     runtimeStatus: state?.online === false ? 'offline' : agent.runtimeState.status,
   });
   const [pickerOpen, setPickerOpen] = useState(false);
