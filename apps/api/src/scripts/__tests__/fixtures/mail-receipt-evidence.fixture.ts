@@ -252,6 +252,8 @@ moduleMock('receipts/dedup', {
     return [];
   },
 });
+// The second-brain projection rebuild after an intake has its own integration test.
+moduleMock('receipts/projection', { rebuildReceiptProjection: async () => {} });
 moduleMock('receipts/source', {
   receiptSourceLinks: () => assert.fail('Source links must not be rendered during intake'),
 });
