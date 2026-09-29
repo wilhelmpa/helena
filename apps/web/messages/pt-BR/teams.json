@@ -890,7 +890,11 @@
       "latestResults": "Últimos resultados",
       "noResults": "Nenhuma execução ainda.",
       "allSettings": "Todas as configurações"
-    }
+    },
+    "groupAgents": "Agentes",
+    "copies": "{count, plural, =0 {Nenhuma cópia} one {# cópia} other {# cópias}}",
+    "moreActionsFor": "Ações de {name}",
+    "defaultModel": "Modelo padrão"
   },
   "members": {
     "roleSaved": "{name} agora é {role}",

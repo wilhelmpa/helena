@@ -103,5 +103,7 @@
       "human": "Keine Person entspricht dieser Suche.",
       "agent": "Kein Agent entspricht dieser Suche."
     }
-  }
+  },
+  "agentsOnTeam": "Agenten kommen, gehen und bekommen ihre Anweisungen auf der Team-Seite.",
+  "openTeam": "Team öffnen"
 }

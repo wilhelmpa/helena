@@ -890,7 +890,11 @@
       "latestResults": "أحدث النتائج",
       "noResults": "لا توجد تشغيلات بعد.",
       "allSettings": "كل الإعدادات"
-    }
+    },
+    "groupAgents": "الوكلاء",
+    "copies": "{count, plural, =0 {لا نسخ} one {نسخة واحدة} two {نسختان} few {# نسخ} many {# نسخة} other {# نسخة}}",
+    "moreActionsFor": "إجراءات {name}",
+    "defaultModel": "النموذج الافتراضي"
   },
   "members": {
     "roleSaved": "{name} الآن {role}",

@@ -103,5 +103,7 @@
       "human": "Aucune personne ne correspond à cette recherche.",
       "agent": "Aucun agent IA ne correspond à cette recherche."
     }
-  }
+  },
+  "agentsOnTeam": "Les agents rejoignent, quittent et reçoivent leurs instructions sur la page Équipe.",
+  "openTeam": "Ouvrir Équipe"
 }
