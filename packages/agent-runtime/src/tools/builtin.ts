@@ -42,18 +42,81 @@ function words(value: string): string[] {
     .filter((word) => word.length > 1);
 }
 
+const GERMAN_TOOL_WORDS: Record<string, string[]> = {
+  aufgabe: ['issue', 'issues', 'task'],
+  aufgaben: ['issues', 'tasks'],
+  ticket: ['issue'],
+  kommentar: ['comment'],
+  kommentare: ['comments'],
+  kommentiere: ['comment'],
+  schreibe: ['add', 'create'],
+  ziel: ['goal'],
+  ziele: ['goals'],
+  wissen: ['knowledge'],
+  projektwissen: ['search', 'knowledge'],
+  datei: ['file'],
+  dateien: ['files'],
+  mail: ['mail'],
+  entwurf: ['draft'],
+  antwort: ['reply'],
+  kalender: ['calendar'],
+  kalendereintrag: ['calendar', 'event'],
+  katalog: ['catalog', 'lookup'],
+  testkatalog: ['catalog', 'lookup'],
+  datensatz: ['item', 'lookup'],
+  eintrag: ['item', 'lookup'],
+  termin: ['event'],
+  termine: ['events'],
+  zeitplan: ['schedule'],
+  entscheidung: ['decisions', 'decision'],
+  entscheidungsfunktion: ['decide'],
+  entscheide: ['decide'],
+  wähle: ['decide'],
+  freigabe: ['approval', 'approvals'],
+  testfreigabe: ['approval'],
+  genehmigung: ['approval'],
+  agent: ['agent'],
+  agenten: ['ai', 'agents'],
+  depot: ['positions', 'account'],
+  positionen: ['positions'],
+  browser: ['browser'],
+  suche: ['search'],
+  suchen: ['search'],
+  finden: ['search'],
+  lesen: ['read'],
+  anzeigen: ['get', 'list'],
+  welche: ['list'],
+  welcher: ['list'],
+  welchen: ['get'],
+  auflisten: ['list'],
+  erstellen: ['create'],
+  erstelle: ['create'],
+  lege: ['create'],
+  anlegen: ['create'],
+  ändern: ['update'],
+  bearbeiten: ['update'],
+  löschen: ['delete'],
+};
+
+function queryWords(query: string): string[] {
+  return [...new Set(words(query).flatMap((word) => [word, ...(GERMAN_TOOL_WORDS[word] ?? [])]))];
+}
+
 export function searchCatalog(
   catalog: ToolCatalogEntry[],
   query: string,
   limit = 6,
 ): ToolCatalogEntry[] {
-  const wanted = words(query);
+  const wanted = queryWords(query);
   if (wanted.length === 0) return [];
+  const queryText = query.toLowerCase();
   return catalog
     .map((entry, index) => {
       const name = new Set(words(entry.name));
       const description = new Set(words(entry.description));
       let score = 0;
+      const exactName = entry.name.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      if (new RegExp(`(?:^|[^a-z0-9_])${exactName}(?:$|[^a-z0-9_])`).test(queryText)) score += 100;
       for (const word of wanted) {
         if (name.has(word)) score += 3;
         else if ([...name].some((part) => part.startsWith(word))) score += 2;
@@ -80,7 +143,7 @@ export function findToolsTool(catalog: () => ToolCatalogEntry[]): AgentTool {
       required: ['query'],
     },
     async execute(input) {
-      const hits = searchCatalog(catalog(), text(input.query));
+      const hits = searchCatalog(catalog(), text(input.query), 4);
       if (hits.length === 0) return { text: 'No tool found. Try other words.' };
       return {
         text: `Now available:\n${hits

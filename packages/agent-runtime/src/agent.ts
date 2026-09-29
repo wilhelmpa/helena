@@ -17,6 +17,7 @@ import {
   findToolsTool,
   memoryTool,
   learnSkillTool,
+  searchCatalog,
   sessionSearchTool,
   skillTool,
   type ToolCatalogEntry,
@@ -30,8 +31,8 @@ import type { AgentTool, PolicyQuestion } from './tools/types';
 // role (Helena's MCP server, the project browser, files and shell in the working folder, the
 // loop's own), its memory and skills in the system prompt, and the session store.
 
-// Helena's own tools every role carries directly; the rest are found with find_tools.
-export const CORE_HELENA_TOOLS = ['search_knowledge'];
+// Task-matched Helena tools are offered directly; the rest are found with find_tools.
+export const CORE_HELENA_TOOLS: string[] = [];
 
 const LOOP_TOOLS = ['clarify', 'find_tools', 'load_skill', 'memory', 'search_sessions'];
 const FILE_TOOL_NAMES = FILE_TOOLS.map((entry) => entry.name);
@@ -201,6 +202,14 @@ export async function runAgent(input: AgentRunInput): Promise<LoopResult> {
     }
     tools.push(...(input.extraTools ?? []));
     const direct = directTools(profile, tools, config.tools?.core);
+    for (const hit of searchCatalog(
+      tools
+        .filter((entry) => !direct.has(entry.name))
+        .map(({ name, description }) => ({ name, description })),
+      input.prompt,
+      4,
+    ))
+      direct.add(hit.name);
     const catalog = (): ToolCatalogEntry[] =>
       tools
         .filter((entry) => !direct.has(entry.name))

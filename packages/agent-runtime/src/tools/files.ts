@@ -87,7 +87,8 @@ const readFileTool: AgentTool = {
 
 const writeFileTool: AgentTool = {
   name: 'write_file',
-  description: 'Create or replace a file of the working folder with the given content.',
+  description:
+    'Create or replace a file of the working folder with the given content. For a named file in the working folder, pass its filename directly; no directory preflight is needed.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -171,7 +172,8 @@ async function walk(
 
 const listFilesTool: AgentTool = {
   name: 'list_files',
-  description: 'List files and folders of the working folder (folders end with /).',
+  description:
+    'List files and folders of the working folder (folders end with /). This result answers directory inventory questions without a second shell ls.',
   readOnly: true,
   inputSchema: {
     type: 'object',
@@ -202,7 +204,7 @@ const listFilesTool: AgentTool = {
 const searchFilesTool: AgentTool = {
   name: 'search_files',
   description:
-    'Search the text of the files in the working folder for a regular expression. Returns file:line: text.',
+    'Search the text of the files in the working folder for a case-insensitive regular expression. Returns file:line: text.',
   readOnly: true,
   inputSchema: {
     type: 'object',
@@ -216,7 +218,7 @@ const searchFilesTool: AgentTool = {
     guarded(async () => {
       let pattern: RegExp;
       try {
-        pattern = new RegExp(text(input.pattern), 'i');
+        pattern = new RegExp(text(input.pattern).replace(/^\(\?i\)/, ''), 'i');
       } catch {
         return error('Invalid regular expression.');
       }

@@ -1,0 +1,3844 @@
+[
+  {
+    "group": "browser-gateway",
+    "name": "browser_acquire",
+    "descriptionChars": 291,
+    "offeredDescriptionChars": 291,
+    "schemaBytes": 377,
+    "required": [],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "browser-gateway",
+    "name": "browser_check",
+    "descriptionChars": 211,
+    "offeredDescriptionChars": 211,
+    "schemaBytes": 360,
+    "required": ["question"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "browser-gateway",
+    "name": "browser_choose",
+    "descriptionChars": 143,
+    "offeredDescriptionChars": 143,
+    "schemaBytes": 450,
+    "required": ["question", "options"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "browser-gateway",
+    "name": "browser_click",
+    "descriptionChars": 123,
+    "offeredDescriptionChars": 123,
+    "schemaBytes": 981,
+    "required": ["target"],
+    "enums": {
+      "button": ["left", "right", "middle"],
+      "modifiers[]": ["Alt", "Control", "ControlOrMeta", "Meta", "Shift"]
+    },
+    "nestedObjects": []
+  },
+  {
+    "group": "browser-gateway",
+    "name": "browser_console_messages",
+    "descriptionChars": 188,
+    "offeredDescriptionChars": 188,
+    "schemaBytes": 527,
+    "required": [],
+    "enums": {
+      "level": ["error", "warning", "info", "debug"]
+    },
+    "nestedObjects": []
+  },
+  {
+    "group": "browser-gateway",
+    "name": "browser_downloads",
+    "descriptionChars": 108,
+    "offeredDescriptionChars": 108,
+    "schemaBytes": 307,
+    "required": [],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "browser-gateway",
+    "name": "browser_drag",
+    "descriptionChars": 42,
+    "offeredDescriptionChars": 42,
+    "schemaBytes": 950,
+    "required": ["startTarget", "endTarget"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "browser-gateway",
+    "name": "browser_file_upload",
+    "descriptionChars": 246,
+    "offeredDescriptionChars": 246,
+    "schemaBytes": 740,
+    "required": [],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "browser-gateway",
+    "name": "browser_fill_form",
+    "descriptionChars": 100,
+    "offeredDescriptionChars": 100,
+    "schemaBytes": 1179,
+    "required": ["fields"],
+    "enums": {
+      "fields[].type": ["textbox", "checkbox", "radio", "combobox", "slider"]
+    },
+    "nestedObjects": ["fields[]"]
+  },
+  {
+    "group": "browser-gateway",
+    "name": "browser_find",
+    "descriptionChars": 220,
+    "offeredDescriptionChars": 220,
+    "schemaBytes": 433,
+    "required": ["text"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "browser-gateway",
+    "name": "browser_handle_dialog",
+    "descriptionChars": 56,
+    "offeredDescriptionChars": 56,
+    "schemaBytes": 501,
+    "required": ["accept"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "browser-gateway",
+    "name": "browser_handover",
+    "descriptionChars": 199,
+    "offeredDescriptionChars": 199,
+    "schemaBytes": 488,
+    "required": ["reason"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "browser-gateway",
+    "name": "browser_hover",
+    "descriptionChars": 38,
+    "offeredDescriptionChars": 38,
+    "schemaBytes": 612,
+    "required": ["target"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "browser-gateway",
+    "name": "browser_login",
+    "descriptionChars": 306,
+    "offeredDescriptionChars": 306,
+    "schemaBytes": 551,
+    "required": ["usernameTarget", "passwordTarget"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "browser-gateway",
+    "name": "browser_login_code",
+    "descriptionChars": 143,
+    "offeredDescriptionChars": 143,
+    "schemaBytes": 526,
+    "required": ["target", "credentialId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "browser-gateway",
+    "name": "browser_navigate",
+    "descriptionChars": 99,
+    "offeredDescriptionChars": 99,
+    "schemaBytes": 389,
+    "required": ["url"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "browser-gateway",
+    "name": "browser_navigate_back",
+    "descriptionChars": 43,
+    "offeredDescriptionChars": 43,
+    "schemaBytes": 307,
+    "required": [],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "browser-gateway",
+    "name": "browser_network_requests",
+    "descriptionChars": 142,
+    "offeredDescriptionChars": 142,
+    "schemaBytes": 580,
+    "required": [],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "browser-gateway",
+    "name": "browser_press_key",
+    "descriptionChars": 78,
+    "offeredDescriptionChars": 78,
+    "schemaBytes": 446,
+    "required": ["key"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "browser-gateway",
+    "name": "browser_release",
+    "descriptionChars": 87,
+    "offeredDescriptionChars": 87,
+    "schemaBytes": 307,
+    "required": [],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "browser-gateway",
+    "name": "browser_reload",
+    "descriptionChars": 23,
+    "offeredDescriptionChars": 23,
+    "schemaBytes": 307,
+    "required": [],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "browser-gateway",
+    "name": "browser_scroll",
+    "descriptionChars": 149,
+    "offeredDescriptionChars": 149,
+    "schemaBytes": 671,
+    "required": ["direction"],
+    "enums": {
+      "direction": ["up", "down", "left", "right"]
+    },
+    "nestedObjects": []
+  },
+  {
+    "group": "browser-gateway",
+    "name": "browser_select_option",
+    "descriptionChars": 30,
+    "offeredDescriptionChars": 30,
+    "schemaBytes": 779,
+    "required": ["target", "values"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "browser-gateway",
+    "name": "browser_snapshot",
+    "descriptionChars": 242,
+    "offeredDescriptionChars": 242,
+    "schemaBytes": 478,
+    "required": [],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "browser-gateway",
+    "name": "browser_status",
+    "descriptionChars": 142,
+    "offeredDescriptionChars": 142,
+    "schemaBytes": 307,
+    "required": [],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "browser-gateway",
+    "name": "browser_tabs",
+    "descriptionChars": 103,
+    "offeredDescriptionChars": 103,
+    "schemaBytes": 642,
+    "required": ["action"],
+    "enums": {
+      "action": ["list", "new", "close", "select"]
+    },
+    "nestedObjects": []
+  },
+  {
+    "group": "browser-gateway",
+    "name": "browser_take_screenshot",
+    "descriptionChars": 161,
+    "offeredDescriptionChars": 161,
+    "schemaBytes": 723,
+    "required": [],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "browser-gateway",
+    "name": "browser_task",
+    "descriptionChars": 1070,
+    "offeredDescriptionChars": 1070,
+    "schemaBytes": 3071,
+    "required": ["goal"],
+    "enums": {
+      "mode": ["act", "read"]
+    },
+    "nestedObjects": [
+      "values",
+      "success",
+      "success.fields[]",
+      "plan[]",
+      "plan[].success",
+      "plan[].success.fields[]"
+    ]
+  },
+  {
+    "group": "browser-gateway",
+    "name": "browser_type",
+    "descriptionChars": 205,
+    "offeredDescriptionChars": 205,
+    "schemaBytes": 909,
+    "required": ["target", "text"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "browser-gateway",
+    "name": "browser_wait_for",
+    "descriptionChars": 85,
+    "offeredDescriptionChars": 85,
+    "schemaBytes": 517,
+    "required": [],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "configured-connector",
+    "name": "alpaca_news",
+    "descriptionChars": 88,
+    "offeredDescriptionChars": 88,
+    "schemaBytes": 646,
+    "required": [],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "configured-connector",
+    "name": "alpaca_paper_account",
+    "descriptionChars": 173,
+    "offeredDescriptionChars": 173,
+    "schemaBytes": 90,
+    "required": [],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "configured-connector",
+    "name": "alpaca_paper_bars",
+    "descriptionChars": 133,
+    "offeredDescriptionChars": 133,
+    "schemaBytes": 1086,
+    "required": ["symbol", "start"],
+    "enums": {
+      "timeframe": ["1Min", "5Min", "15Min", "1Hour", "1Day", "1Week"]
+    },
+    "nestedObjects": []
+  },
+  {
+    "group": "configured-connector",
+    "name": "alpaca_paper_cancel_order",
+    "descriptionChars": 196,
+    "offeredDescriptionChars": 196,
+    "schemaBytes": 168,
+    "required": ["orderId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "configured-connector",
+    "name": "alpaca_paper_check_order",
+    "descriptionChars": 241,
+    "offeredDescriptionChars": 241,
+    "schemaBytes": 1138,
+    "required": ["symbol", "side"],
+    "enums": {
+      "side": ["buy", "sell"],
+      "type": ["market", "limit", "stop", "stop_limit"],
+      "timeInForce": ["day", "gtc", "ioc"]
+    },
+    "nestedObjects": []
+  },
+  {
+    "group": "configured-connector",
+    "name": "alpaca_paper_close_position",
+    "descriptionChars": 245,
+    "offeredDescriptionChars": 245,
+    "schemaBytes": 600,
+    "required": ["requestId", "symbol", "rationale"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "configured-connector",
+    "name": "alpaca_paper_market",
+    "descriptionChars": 141,
+    "offeredDescriptionChars": 141,
+    "schemaBytes": 192,
+    "required": ["symbols"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "configured-connector",
+    "name": "alpaca_paper_orders",
+    "descriptionChars": 167,
+    "offeredDescriptionChars": 167,
+    "schemaBytes": 717,
+    "required": [],
+    "enums": {
+      "status": ["open", "closed", "all"]
+    },
+    "nestedObjects": []
+  },
+  {
+    "group": "configured-connector",
+    "name": "alpaca_paper_positions",
+    "descriptionChars": 84,
+    "offeredDescriptionChars": 84,
+    "schemaBytes": 90,
+    "required": [],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "configured-connector",
+    "name": "alpaca_paper_submit_order",
+    "descriptionChars": 443,
+    "offeredDescriptionChars": 443,
+    "schemaBytes": 2058,
+    "required": ["symbol", "side", "requestId", "strategyId", "strategyVersion", "rationale"],
+    "enums": {
+      "side": ["buy", "sell"],
+      "type": ["market", "limit", "stop", "stop_limit"],
+      "timeInForce": ["day", "gtc", "ioc"]
+    },
+    "nestedObjects": []
+  },
+  {
+    "group": "configured-connector",
+    "name": "firecrawl_crawl",
+    "descriptionChars": 201,
+    "offeredDescriptionChars": 201,
+    "schemaBytes": 465,
+    "required": ["url"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "configured-connector",
+    "name": "firecrawl_extract",
+    "descriptionChars": 191,
+    "offeredDescriptionChars": 191,
+    "schemaBytes": 824,
+    "required": ["urls", "prompt"],
+    "enums": {},
+    "nestedObjects": ["schema"]
+  },
+  {
+    "group": "configured-connector",
+    "name": "firecrawl_map",
+    "descriptionChars": 153,
+    "offeredDescriptionChars": 153,
+    "schemaBytes": 503,
+    "required": ["url"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "configured-connector",
+    "name": "firecrawl_scrape",
+    "descriptionChars": 130,
+    "offeredDescriptionChars": 130,
+    "schemaBytes": 335,
+    "required": ["url"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "configured-connector",
+    "name": "firecrawl_search",
+    "descriptionChars": 163,
+    "offeredDescriptionChars": 163,
+    "schemaBytes": 414,
+    "required": ["query"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "configured-connector",
+    "name": "gitea_comment_issue",
+    "descriptionChars": 99,
+    "offeredDescriptionChars": 99,
+    "schemaBytes": 481,
+    "required": ["owner", "repo", "issue", "body"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "configured-connector",
+    "name": "gitea_create_issue",
+    "descriptionChars": 133,
+    "offeredDescriptionChars": 133,
+    "schemaBytes": 436,
+    "required": ["owner", "repo", "title"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "configured-connector",
+    "name": "gitea_list_issues",
+    "descriptionChars": 136,
+    "offeredDescriptionChars": 136,
+    "schemaBytes": 620,
+    "required": ["owner", "repo"],
+    "enums": {
+      "state": ["open", "closed", "all"]
+    },
+    "nestedObjects": []
+  },
+  {
+    "group": "configured-connector",
+    "name": "gitea_update_issue",
+    "descriptionChars": 140,
+    "offeredDescriptionChars": 140,
+    "schemaBytes": 635,
+    "required": ["owner", "repo", "issue"],
+    "enums": {
+      "state": ["open", "closed"]
+    },
+    "nestedObjects": []
+  },
+  {
+    "group": "configured-connector",
+    "name": "instagram_account_insights",
+    "descriptionChars": 223,
+    "offeredDescriptionChars": 223,
+    "schemaBytes": 1066,
+    "required": ["metric"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "configured-connector",
+    "name": "instagram_business_discovery",
+    "descriptionChars": 200,
+    "offeredDescriptionChars": 200,
+    "schemaBytes": 1340,
+    "required": ["username"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "configured-connector",
+    "name": "instagram_container_status",
+    "descriptionChars": 150,
+    "offeredDescriptionChars": 150,
+    "schemaBytes": 218,
+    "required": ["containerId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "configured-connector",
+    "name": "instagram_content_publishing_limit",
+    "descriptionChars": 192,
+    "offeredDescriptionChars": 192,
+    "schemaBytes": 182,
+    "required": [],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "configured-connector",
+    "name": "instagram_create_carousel",
+    "descriptionChars": 201,
+    "offeredDescriptionChars": 201,
+    "schemaBytes": 565,
+    "required": ["childContainerIds"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "configured-connector",
+    "name": "instagram_create_comment",
+    "descriptionChars": 96,
+    "offeredDescriptionChars": 96,
+    "schemaBytes": 273,
+    "required": ["mediaId", "message"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "configured-connector",
+    "name": "instagram_create_media_container",
+    "descriptionChars": 253,
+    "offeredDescriptionChars": 253,
+    "schemaBytes": 1857,
+    "required": [],
+    "enums": {
+      "mediaType": ["IMAGE", "VIDEO", "REELS", "STORIES", "CAROUSEL"]
+    },
+    "nestedObjects": ["userTags[]"]
+  },
+  {
+    "group": "configured-connector",
+    "name": "instagram_delete_comment",
+    "descriptionChars": 84,
+    "offeredDescriptionChars": 84,
+    "schemaBytes": 189,
+    "required": ["commentId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "configured-connector",
+    "name": "instagram_delete_media",
+    "descriptionChars": 97,
+    "offeredDescriptionChars": 97,
+    "schemaBytes": 224,
+    "required": ["mediaId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "configured-connector",
+    "name": "instagram_get_account",
+    "descriptionChars": 147,
+    "offeredDescriptionChars": 147,
+    "schemaBytes": 276,
+    "required": [],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "configured-connector",
+    "name": "instagram_get_comment",
+    "descriptionChars": 32,
+    "offeredDescriptionChars": 32,
+    "schemaBytes": 314,
+    "required": ["commentId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "configured-connector",
+    "name": "instagram_get_media",
+    "descriptionChars": 73,
+    "offeredDescriptionChars": 73,
+    "schemaBytes": 408,
+    "required": ["mediaId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "configured-connector",
+    "name": "instagram_get_mentioned_comment",
+    "descriptionChars": 78,
+    "offeredDescriptionChars": 78,
+    "schemaBytes": 336,
+    "required": ["commentId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "configured-connector",
+    "name": "instagram_get_mentioned_media",
+    "descriptionChars": 84,
+    "offeredDescriptionChars": 84,
+    "schemaBytes": 383,
+    "required": ["mediaId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "configured-connector",
+    "name": "instagram_hashtag_recent_media",
+    "descriptionChars": 141,
+    "offeredDescriptionChars": 141,
+    "schemaBytes": 537,
+    "required": ["hashtagId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "configured-connector",
+    "name": "instagram_hashtag_search",
+    "descriptionChars": 154,
+    "offeredDescriptionChars": 154,
+    "schemaBytes": 199,
+    "required": ["hashtag"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "configured-connector",
+    "name": "instagram_hashtag_top_media",
+    "descriptionChars": 106,
+    "offeredDescriptionChars": 106,
+    "schemaBytes": 537,
+    "required": ["hashtagId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "configured-connector",
+    "name": "instagram_hide_comment",
+    "descriptionChars": 69,
+    "offeredDescriptionChars": 69,
+    "schemaBytes": 274,
+    "required": ["commentId", "hide"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "configured-connector",
+    "name": "instagram_list_comment_replies",
+    "descriptionChars": 30,
+    "offeredDescriptionChars": 30,
+    "schemaBytes": 478,
+    "required": ["commentId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "configured-connector",
+    "name": "instagram_list_comments",
+    "descriptionChars": 67,
+    "offeredDescriptionChars": 67,
+    "schemaBytes": 466,
+    "required": ["mediaId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "configured-connector",
+    "name": "instagram_list_live_media",
+    "descriptionChars": 68,
+    "offeredDescriptionChars": 68,
+    "schemaBytes": 286,
+    "required": [],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "configured-connector",
+    "name": "instagram_list_media",
+    "descriptionChars": 108,
+    "offeredDescriptionChars": 108,
+    "schemaBytes": 467,
+    "required": [],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "configured-connector",
+    "name": "instagram_list_stories",
+    "descriptionChars": 83,
+    "offeredDescriptionChars": 83,
+    "schemaBytes": 286,
+    "required": [],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "configured-connector",
+    "name": "instagram_list_tagged_media",
+    "descriptionChars": 73,
+    "offeredDescriptionChars": 73,
+    "schemaBytes": 443,
+    "required": [],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "configured-connector",
+    "name": "instagram_media_children",
+    "descriptionChars": 62,
+    "offeredDescriptionChars": 62,
+    "schemaBytes": 331,
+    "required": ["mediaId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "configured-connector",
+    "name": "instagram_media_insights",
+    "descriptionChars": 190,
+    "offeredDescriptionChars": 190,
+    "schemaBytes": 418,
+    "required": ["mediaId", "metric"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "configured-connector",
+    "name": "instagram_publish_media",
+    "descriptionChars": 171,
+    "offeredDescriptionChars": 171,
+    "schemaBytes": 211,
+    "required": ["containerId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "configured-connector",
+    "name": "instagram_publish_post",
+    "descriptionChars": 220,
+    "offeredDescriptionChars": 220,
+    "schemaBytes": 825,
+    "required": ["caption", "items"],
+    "enums": {},
+    "nestedObjects": ["items[]", "items[].userTags[]"]
+  },
+  {
+    "group": "configured-connector",
+    "name": "instagram_recently_searched_hashtags",
+    "descriptionChars": 133,
+    "offeredDescriptionChars": 133,
+    "schemaBytes": 246,
+    "required": [],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "configured-connector",
+    "name": "instagram_reply_to_comment",
+    "descriptionChars": 36,
+    "offeredDescriptionChars": 36,
+    "schemaBytes": 275,
+    "required": ["commentId", "message"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "configured-connector",
+    "name": "instagram_reply_to_mention",
+    "descriptionChars": 168,
+    "offeredDescriptionChars": 168,
+    "schemaBytes": 426,
+    "required": ["message", "mediaId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "configured-connector",
+    "name": "instagram_update_media",
+    "descriptionChars": 71,
+    "offeredDescriptionChars": 71,
+    "schemaBytes": 331,
+    "required": ["mediaId", "commentEnabled"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "configured-connector",
+    "name": "jina_classify",
+    "descriptionChars": 165,
+    "offeredDescriptionChars": 165,
+    "schemaBytes": 313,
+    "required": ["text", "labels"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "configured-connector",
+    "name": "jina_deepsearch",
+    "descriptionChars": 166,
+    "offeredDescriptionChars": 166,
+    "schemaBytes": 352,
+    "required": ["question"],
+    "enums": {
+      "reasoningEffort": ["low", "medium", "high"]
+    },
+    "nestedObjects": []
+  },
+  {
+    "group": "configured-connector",
+    "name": "jina_grounding",
+    "descriptionChars": 144,
+    "offeredDescriptionChars": 144,
+    "schemaBytes": 207,
+    "required": ["statement"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "configured-connector",
+    "name": "jina_reader",
+    "descriptionChars": 130,
+    "offeredDescriptionChars": 130,
+    "schemaBytes": 192,
+    "required": ["url"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "configured-connector",
+    "name": "jina_rerank",
+    "descriptionChars": 150,
+    "offeredDescriptionChars": 150,
+    "schemaBytes": 446,
+    "required": ["query", "documents"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "configured-connector",
+    "name": "jina_search",
+    "descriptionChars": 127,
+    "offeredDescriptionChars": 127,
+    "schemaBytes": 292,
+    "required": ["query"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "configured-connector",
+    "name": "jina_segment",
+    "descriptionChars": 118,
+    "offeredDescriptionChars": 118,
+    "schemaBytes": 327,
+    "required": ["content"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "configured-connector",
+    "name": "notion_add_comment",
+    "descriptionChars": 235,
+    "offeredDescriptionChars": 235,
+    "schemaBytes": 350,
+    "required": ["text"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "configured-connector",
+    "name": "notion_create_page",
+    "descriptionChars": 226,
+    "offeredDescriptionChars": 226,
+    "schemaBytes": 388,
+    "required": ["parentPageId", "title"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "configured-connector",
+    "name": "notion_read_comments",
+    "descriptionChars": 173,
+    "offeredDescriptionChars": 173,
+    "schemaBytes": 217,
+    "required": ["pageId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "configured-connector",
+    "name": "notion_read_page",
+    "descriptionChars": 211,
+    "offeredDescriptionChars": 211,
+    "schemaBytes": 217,
+    "required": ["pageId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "configured-connector",
+    "name": "notion_search",
+    "descriptionChars": 210,
+    "offeredDescriptionChars": 210,
+    "schemaBytes": 273,
+    "required": [],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "configured-connector",
+    "name": "notion_update_page",
+    "descriptionChars": 303,
+    "offeredDescriptionChars": 303,
+    "schemaBytes": 580,
+    "required": ["pageId"],
+    "enums": {
+      "mode": ["append", "replace", "edit"]
+    },
+    "nestedObjects": []
+  },
+  {
+    "group": "configured-connector",
+    "name": "telegram_send",
+    "descriptionChars": 53,
+    "offeredDescriptionChars": 53,
+    "schemaBytes": 290,
+    "required": ["text"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "configured-connector",
+    "name": "threads_delete",
+    "descriptionChars": 64,
+    "offeredDescriptionChars": 64,
+    "schemaBytes": 211,
+    "required": ["mediaId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "configured-connector",
+    "name": "threads_get_conversation",
+    "descriptionChars": 118,
+    "offeredDescriptionChars": 118,
+    "schemaBytes": 424,
+    "required": ["mediaId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "configured-connector",
+    "name": "threads_get_post",
+    "descriptionChars": 68,
+    "offeredDescriptionChars": 68,
+    "schemaBytes": 303,
+    "required": ["mediaId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "configured-connector",
+    "name": "threads_get_profile",
+    "descriptionChars": 81,
+    "offeredDescriptionChars": 81,
+    "schemaBytes": 251,
+    "required": [],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "configured-connector",
+    "name": "threads_keyword_search",
+    "descriptionChars": 118,
+    "offeredDescriptionChars": 118,
+    "schemaBytes": 1245,
+    "required": ["q"],
+    "enums": {
+      "searchType": ["TOP", "RECENT"],
+      "searchMode": ["KEYWORD", "TAG"],
+      "mediaType": ["TEXT", "IMAGE", "VIDEO"]
+    },
+    "nestedObjects": []
+  },
+  {
+    "group": "configured-connector",
+    "name": "threads_list_posts",
+    "descriptionChars": 85,
+    "offeredDescriptionChars": 85,
+    "schemaBytes": 788,
+    "required": [],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "configured-connector",
+    "name": "threads_list_replies",
+    "descriptionChars": 69,
+    "offeredDescriptionChars": 69,
+    "schemaBytes": 418,
+    "required": ["mediaId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "configured-connector",
+    "name": "threads_list_user_replies",
+    "descriptionChars": 44,
+    "offeredDescriptionChars": 44,
+    "schemaBytes": 785,
+    "required": [],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "configured-connector",
+    "name": "threads_location_search",
+    "descriptionChars": 156,
+    "offeredDescriptionChars": 156,
+    "schemaBytes": 554,
+    "required": [],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "configured-connector",
+    "name": "threads_manage_pending_reply",
+    "descriptionChars": 104,
+    "offeredDescriptionChars": 104,
+    "schemaBytes": 311,
+    "required": ["replyId", "approve"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "configured-connector",
+    "name": "threads_manage_reply",
+    "descriptionChars": 69,
+    "offeredDescriptionChars": 69,
+    "schemaBytes": 304,
+    "required": ["replyId", "hide"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "configured-connector",
+    "name": "threads_media_insights",
+    "descriptionChars": 167,
+    "offeredDescriptionChars": 167,
+    "schemaBytes": 312,
+    "required": ["mediaId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "configured-connector",
+    "name": "threads_pending_replies",
+    "descriptionChars": 111,
+    "offeredDescriptionChars": 111,
+    "schemaBytes": 549,
+    "required": ["mediaId"],
+    "enums": {
+      "approvalStatus": ["pending", "ignored"]
+    },
+    "nestedObjects": []
+  },
+  {
+    "group": "configured-connector",
+    "name": "threads_publish",
+    "descriptionChars": 204,
+    "offeredDescriptionChars": 204,
+    "schemaBytes": 1260,
+    "required": [],
+    "enums": {
+      "replyControl": [
+        "everyone",
+        "accounts_you_follow",
+        "mentioned_only",
+        "parent_post_author_only",
+        "followers_only"
+      ]
+    },
+    "nestedObjects": []
+  },
+  {
+    "group": "configured-connector",
+    "name": "threads_publishing_limit",
+    "descriptionChars": 138,
+    "offeredDescriptionChars": 138,
+    "schemaBytes": 90,
+    "required": [],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "configured-connector",
+    "name": "threads_reply",
+    "descriptionChars": 150,
+    "offeredDescriptionChars": 150,
+    "schemaBytes": 809,
+    "required": ["replyToId"],
+    "enums": {
+      "replyControl": [
+        "everyone",
+        "accounts_you_follow",
+        "mentioned_only",
+        "parent_post_author_only",
+        "followers_only"
+      ]
+    },
+    "nestedObjects": []
+  },
+  {
+    "group": "configured-connector",
+    "name": "threads_user_insights",
+    "descriptionChars": 173,
+    "offeredDescriptionChars": 173,
+    "schemaBytes": 871,
+    "required": [],
+    "enums": {
+      "breakdown": ["country", "city", "age", "gender"]
+    },
+    "nestedObjects": []
+  },
+  {
+    "group": "configured-connector",
+    "name": "trading_indikatoren",
+    "descriptionChars": 77,
+    "offeredDescriptionChars": 77,
+    "schemaBytes": 310,
+    "required": ["symbol"],
+    "enums": {
+      "timeframe": ["1Min", "5Min", "15Min", "1Hour", "1Day", "1Week"]
+    },
+    "nestedObjects": []
+  },
+  {
+    "group": "configured-connector",
+    "name": "trading_signal_pruefen",
+    "descriptionChars": 126,
+    "offeredDescriptionChars": 126,
+    "schemaBytes": 285,
+    "required": ["strategie", "symbol"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "decide",
+    "name": "decide",
+    "descriptionChars": 455,
+    "offeredDescriptionChars": 455,
+    "schemaBytes": 947,
+    "required": ["question"],
+    "enums": {},
+    "nestedObjects": ["options[].anyOf[1]"]
+  },
+  {
+    "group": "files-git",
+    "name": "edit_file",
+    "descriptionChars": 123,
+    "offeredDescriptionChars": 123,
+    "schemaBytes": 190,
+    "required": ["path", "old_text", "new_text"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "files-git",
+    "name": "list_files",
+    "descriptionChars": 66,
+    "offeredDescriptionChars": 66,
+    "schemaBytes": 171,
+    "required": [],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "files-git",
+    "name": "read_file",
+    "descriptionChars": 100,
+    "offeredDescriptionChars": 100,
+    "schemaBytes": 253,
+    "required": ["path"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "files-git",
+    "name": "write_file",
+    "descriptionChars": 70,
+    "offeredDescriptionChars": 70,
+    "schemaBytes": 115,
+    "required": ["path", "content"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "accept_invite",
+    "descriptionChars": 166,
+    "offeredDescriptionChars": 166,
+    "schemaBytes": 95,
+    "required": ["token"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "add_attachment",
+    "descriptionChars": 53,
+    "offeredDescriptionChars": 53,
+    "schemaBytes": 288,
+    "required": ["issueId", "filename"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "add_comment",
+    "descriptionChars": 257,
+    "offeredDescriptionChars": 257,
+    "schemaBytes": 307,
+    "required": ["issueId", "body"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "add_goal_note",
+    "descriptionChars": 266,
+    "offeredDescriptionChars": 266,
+    "schemaBytes": 621,
+    "required": ["goalId", "body"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "add_issue_watcher",
+    "descriptionChars": 91,
+    "offeredDescriptionChars": 91,
+    "schemaBytes": 180,
+    "required": ["issueId", "userId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "add_member",
+    "descriptionChars": 192,
+    "offeredDescriptionChars": 192,
+    "schemaBytes": 382,
+    "required": ["userId", "role", "projectKey"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "archive_issue",
+    "descriptionChars": 226,
+    "offeredDescriptionChars": 226,
+    "schemaBytes": 707,
+    "required": ["issueId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "backlinks",
+    "descriptionChars": 145,
+    "offeredDescriptionChars": 145,
+    "schemaBytes": 272,
+    "required": [],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "capture_note",
+    "descriptionChars": 330,
+    "offeredDescriptionChars": 330,
+    "schemaBytes": 985,
+    "required": ["title", "text"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "capture_web_page",
+    "descriptionChars": 255,
+    "offeredDescriptionChars": 255,
+    "schemaBytes": 397,
+    "required": ["url"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "copy_ai_agent_template",
+    "descriptionChars": 298,
+    "offeredDescriptionChars": 298,
+    "schemaBytes": 458,
+    "required": ["agentId", "projectId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "copy_project",
+    "descriptionChars": 398,
+    "offeredDescriptionChars": 398,
+    "schemaBytes": 1128,
+    "required": ["key", "name", "projectKey"],
+    "enums": {},
+    "nestedObjects": ["include"]
+  },
+  {
+    "group": "helena-mcp",
+    "name": "create_action",
+    "descriptionChars": 30,
+    "offeredDescriptionChars": 30,
+    "schemaBytes": 6214,
+    "required": ["name", "projectKey"],
+    "enums": {},
+    "nestedObjects": [
+      "condition",
+      "condition.conditions[]",
+      "effect",
+      "workflow",
+      "workflow.nodes[].anyOf[0]",
+      "workflow.nodes[].anyOf[0].config",
+      "workflow.nodes[].anyOf[0].position",
+      "workflow.nodes[].anyOf[1]",
+      "workflow.nodes[].anyOf[1].config",
+      "workflow.nodes[].anyOf[1].config.conditions[]",
+      "workflow.nodes[].anyOf[1].position",
+      "workflow.nodes[].anyOf[2]",
+      "workflow.nodes[].anyOf[2].config",
+      "workflow.nodes[].anyOf[2].position",
+      "workflow.edges[]"
+    ]
+  },
+  {
+    "group": "helena-mcp",
+    "name": "create_agent_skill",
+    "descriptionChars": 137,
+    "offeredDescriptionChars": 137,
+    "schemaBytes": 816,
+    "required": ["source"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "create_ai_agent",
+    "descriptionChars": 105,
+    "offeredDescriptionChars": 105,
+    "schemaBytes": 11211,
+    "required": ["name", "username"],
+    "enums": {},
+    "nestedObjects": [
+      "runtimePolicy",
+      "runtimePolicy.files[]",
+      "runtimePolicy.helena",
+      "runtimePolicy.helena.escalation",
+      "runtimePolicy.compression",
+      "runtimePolicy.compression.model",
+      "runtimePolicy.fallbackModels.anyOf[0][]",
+      "fieldTriggers[]"
+    ]
+  },
+  {
+    "group": "helena-mcp",
+    "name": "create_chart",
+    "descriptionChars": 1037,
+    "offeredDescriptionChars": 1037,
+    "schemaBytes": 3207,
+    "required": ["type", "x", "series", "data", "projectKey"],
+    "enums": {},
+    "nestedObjects": ["series[]", "data[]"]
+  },
+  {
+    "group": "helena-mcp",
+    "name": "create_checklist",
+    "descriptionChars": 71,
+    "offeredDescriptionChars": 71,
+    "schemaBytes": 248,
+    "required": ["issueId", "title"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "create_checklist_item",
+    "descriptionChars": 30,
+    "offeredDescriptionChars": 30,
+    "schemaBytes": 264,
+    "required": ["checklistId", "content"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "create_column",
+    "descriptionChars": 99,
+    "offeredDescriptionChars": 99,
+    "schemaBytes": 1240,
+    "required": ["name", "stateType", "projectKey"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "create_custom_field",
+    "descriptionChars": 36,
+    "offeredDescriptionChars": 36,
+    "schemaBytes": 962,
+    "required": ["name", "fieldType", "projectKey"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "create_cycle",
+    "descriptionChars": 90,
+    "offeredDescriptionChars": 90,
+    "schemaBytes": 541,
+    "required": ["name", "startDate", "endDate", "projectKey"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "create_dashboard",
+    "descriptionChars": 18,
+    "offeredDescriptionChars": 18,
+    "schemaBytes": 270,
+    "required": ["name", "projectKey"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "create_initiative",
+    "descriptionChars": 34,
+    "offeredDescriptionChars": 34,
+    "schemaBytes": 1226,
+    "required": ["title", "projectKey"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "create_invite",
+    "descriptionChars": 247,
+    "offeredDescriptionChars": 247,
+    "schemaBytes": 397,
+    "required": ["email", "role", "projectKey"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "create_issue",
+    "descriptionChars": 117,
+    "offeredDescriptionChars": 117,
+    "schemaBytes": 3921,
+    "required": ["columnId", "title", "projectKey"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "create_issue_template",
+    "descriptionChars": 125,
+    "offeredDescriptionChars": 125,
+    "schemaBytes": 758,
+    "required": ["name", "projectKey"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "create_issue_type",
+    "descriptionChars": 79,
+    "offeredDescriptionChars": 79,
+    "schemaBytes": 262,
+    "required": ["name", "projectKey"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "create_label",
+    "descriptionChars": 61,
+    "offeredDescriptionChars": 61,
+    "schemaBytes": 324,
+    "required": ["name", "projectKey"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "create_label_group",
+    "descriptionChars": 51,
+    "offeredDescriptionChars": 51,
+    "schemaBytes": 206,
+    "required": ["name", "projectKey"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "create_note_board",
+    "descriptionChars": 243,
+    "offeredDescriptionChars": 243,
+    "schemaBytes": 288,
+    "required": ["name", "projectKey"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "create_project",
+    "descriptionChars": 172,
+    "offeredDescriptionChars": 172,
+    "schemaBytes": 1391,
+    "required": ["key", "name"],
+    "enums": {
+      "preset": [
+        "general",
+        "software",
+        "product",
+        "content",
+        "marketing",
+        "design",
+        "sales",
+        "operations",
+        "support",
+        "recruiting"
+      ]
+    },
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "create_role",
+    "descriptionChars": 13,
+    "offeredDescriptionChars": 13,
+    "schemaBytes": 122,
+    "required": ["name", "permissions"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "create_routine",
+    "descriptionChars": 207,
+    "offeredDescriptionChars": 207,
+    "schemaBytes": 1942,
+    "required": [
+      "idempotencyKey",
+      "agentId",
+      "title",
+      "instructions",
+      "mode",
+      "cron",
+      "projectKey"
+    ],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "create_view",
+    "descriptionChars": 33,
+    "offeredDescriptionChars": 33,
+    "schemaBytes": 418,
+    "required": ["name", "projectKey"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "create_webhook",
+    "descriptionChars": 16,
+    "offeredDescriptionChars": 16,
+    "schemaBytes": 475,
+    "required": ["url", "events", "projectKey"],
+    "enums": {
+      "events[]": [
+        "issue.created",
+        "issue.updated",
+        "issue.deleted",
+        "issue.assigned",
+        "issue.state_changed",
+        "issue.label_changed",
+        "issue.link_changed",
+        "comment.created",
+        "comment.updated",
+        "comment.deleted"
+      ]
+    },
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "create_worklog",
+    "descriptionChars": 122,
+    "offeredDescriptionChars": 122,
+    "schemaBytes": 642,
+    "required": ["issueId", "minutes", "spentOn"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "delete_action",
+    "descriptionChars": 31,
+    "offeredDescriptionChars": 31,
+    "schemaBytes": 146,
+    "required": ["actionId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "delete_agent_runtime_file",
+    "descriptionChars": 48,
+    "offeredDescriptionChars": 48,
+    "schemaBytes": 298,
+    "required": ["agentId", "path"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "delete_agent_skill",
+    "descriptionChars": 61,
+    "offeredDescriptionChars": 61,
+    "schemaBytes": 242,
+    "required": ["skillId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "delete_agent_skill_reference",
+    "descriptionChars": 40,
+    "offeredDescriptionChars": 40,
+    "schemaBytes": 358,
+    "required": ["skillId", "path"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "delete_ai_agent",
+    "descriptionChars": 50,
+    "offeredDescriptionChars": 50,
+    "schemaBytes": 236,
+    "required": ["agentId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "delete_attachment",
+    "descriptionChars": 96,
+    "offeredDescriptionChars": 96,
+    "schemaBytes": 128,
+    "required": ["publicId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "delete_checklist",
+    "descriptionChars": 40,
+    "offeredDescriptionChars": 40,
+    "schemaBytes": 152,
+    "required": ["checklistId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "delete_checklist_item",
+    "descriptionChars": 33,
+    "offeredDescriptionChars": 33,
+    "schemaBytes": 142,
+    "required": ["itemId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "delete_column",
+    "descriptionChars": 131,
+    "offeredDescriptionChars": 131,
+    "schemaBytes": 336,
+    "required": ["projectKey", "columnId", "mode"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "delete_comment",
+    "descriptionChars": 131,
+    "offeredDescriptionChars": 131,
+    "schemaBytes": 212,
+    "required": ["commentId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "delete_custom_field",
+    "descriptionChars": 22,
+    "offeredDescriptionChars": 22,
+    "schemaBytes": 188,
+    "required": ["projectKey", "fieldId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "delete_cycle",
+    "descriptionChars": 67,
+    "offeredDescriptionChars": 67,
+    "schemaBytes": 144,
+    "required": ["cycleId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "delete_dashboard",
+    "descriptionChars": 18,
+    "offeredDescriptionChars": 18,
+    "schemaBytes": 152,
+    "required": ["dashboardId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "delete_initiative",
+    "descriptionChars": 53,
+    "offeredDescriptionChars": 53,
+    "schemaBytes": 154,
+    "required": ["initiativeId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "delete_invite",
+    "descriptionChars": 24,
+    "offeredDescriptionChars": 24,
+    "schemaBytes": 190,
+    "required": ["projectKey", "inviteId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "delete_issue",
+    "descriptionChars": 254,
+    "offeredDescriptionChars": 254,
+    "schemaBytes": 870,
+    "required": ["issueId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "delete_issue_template",
+    "descriptionChars": 67,
+    "offeredDescriptionChars": 67,
+    "schemaBytes": 194,
+    "required": ["projectKey", "templateId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "delete_issue_type",
+    "descriptionChars": 21,
+    "offeredDescriptionChars": 21,
+    "schemaBytes": 186,
+    "required": ["projectKey", "typeId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "delete_label",
+    "descriptionChars": 15,
+    "offeredDescriptionChars": 15,
+    "schemaBytes": 188,
+    "required": ["projectKey", "labelId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "delete_label_group",
+    "descriptionChars": 21,
+    "offeredDescriptionChars": 21,
+    "schemaBytes": 188,
+    "required": ["projectKey", "groupId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "delete_note_board",
+    "descriptionChars": 242,
+    "offeredDescriptionChars": 242,
+    "schemaBytes": 188,
+    "required": ["projectKey", "boardId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "delete_project",
+    "descriptionChars": 64,
+    "offeredDescriptionChars": 64,
+    "schemaBytes": 134,
+    "required": ["projectKey"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "delete_role",
+    "descriptionChars": 173,
+    "offeredDescriptionChars": 173,
+    "schemaBytes": 236,
+    "required": ["roleId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "delete_routine",
+    "descriptionChars": 44,
+    "offeredDescriptionChars": 44,
+    "schemaBytes": 213,
+    "required": ["projectKey", "routineId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "delete_view",
+    "descriptionChars": 34,
+    "offeredDescriptionChars": 34,
+    "schemaBytes": 142,
+    "required": ["viewId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "delete_webhook",
+    "descriptionChars": 16,
+    "offeredDescriptionChars": 16,
+    "schemaBytes": 148,
+    "required": ["webhookId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "delete_worklog",
+    "descriptionChars": 187,
+    "offeredDescriptionChars": 187,
+    "schemaBytes": 148,
+    "required": ["worklogId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "discover_github_skills",
+    "descriptionChars": 158,
+    "offeredDescriptionChars": 158,
+    "schemaBytes": 143,
+    "required": ["url"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "draft_reply",
+    "descriptionChars": 294,
+    "offeredDescriptionChars": 294,
+    "schemaBytes": 499,
+    "required": ["projectKey", "threadId", "body"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "export_department_template",
+    "descriptionChars": 107,
+    "offeredDescriptionChars": 107,
+    "schemaBytes": 154,
+    "required": ["departmentId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "fact_feedback",
+    "descriptionChars": 63,
+    "offeredDescriptionChars": 63,
+    "schemaBytes": 256,
+    "required": ["factId", "helpful"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "fact_store",
+    "descriptionChars": 279,
+    "offeredDescriptionChars": 279,
+    "schemaBytes": 1578,
+    "required": ["action"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "finish_cycle",
+    "descriptionChars": 144,
+    "offeredDescriptionChars": 144,
+    "schemaBytes": 144,
+    "required": ["cycleId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "get_agent_run_stats",
+    "descriptionChars": 52,
+    "offeredDescriptionChars": 52,
+    "schemaBytes": 220,
+    "required": ["projectKey"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "get_agent_skill",
+    "descriptionChars": 98,
+    "offeredDescriptionChars": 98,
+    "schemaBytes": 242,
+    "required": ["skillId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "get_agent_skill_markdown",
+    "descriptionChars": 31,
+    "offeredDescriptionChars": 31,
+    "schemaBytes": 242,
+    "required": ["skillId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "get_agent_skill_reference",
+    "descriptionChars": 57,
+    "offeredDescriptionChars": 57,
+    "schemaBytes": 358,
+    "required": ["skillId", "path"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "get_agent_workload",
+    "descriptionChars": 49,
+    "offeredDescriptionChars": 49,
+    "schemaBytes": 134,
+    "required": ["projectKey"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "get_ai_agent",
+    "descriptionChars": 38,
+    "offeredDescriptionChars": 38,
+    "schemaBytes": 236,
+    "required": ["agentId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "get_approval",
+    "descriptionChars": 107,
+    "offeredDescriptionChars": 107,
+    "schemaBytes": 268,
+    "required": ["approvalId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "get_automation_health",
+    "descriptionChars": 341,
+    "offeredDescriptionChars": 341,
+    "schemaBytes": 134,
+    "required": ["projectKey"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "get_connection_action",
+    "descriptionChars": 98,
+    "offeredDescriptionChars": 98,
+    "schemaBytes": 190,
+    "required": ["projectKey", "actionId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "get_cycle",
+    "descriptionChars": 30,
+    "offeredDescriptionChars": 30,
+    "schemaBytes": 144,
+    "required": ["cycleId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "get_department_skills",
+    "descriptionChars": 31,
+    "offeredDescriptionChars": 31,
+    "schemaBytes": 154,
+    "required": ["departmentId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "get_goal",
+    "descriptionChars": 131,
+    "offeredDescriptionChars": 131,
+    "schemaBytes": 142,
+    "required": ["goalId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "get_initiative",
+    "descriptionChars": 36,
+    "offeredDescriptionChars": 36,
+    "schemaBytes": 154,
+    "required": ["initiativeId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "get_invite",
+    "descriptionChars": 60,
+    "offeredDescriptionChars": 60,
+    "schemaBytes": 95,
+    "required": ["token"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "get_issue",
+    "descriptionChars": 31,
+    "offeredDescriptionChars": 31,
+    "schemaBytes": 144,
+    "required": ["issueId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "get_issue_by_number",
+    "descriptionChars": 155,
+    "offeredDescriptionChars": 155,
+    "schemaBytes": 202,
+    "required": ["projectKey", "sequenceNumber"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "get_issue_why",
+    "descriptionChars": 32,
+    "offeredDescriptionChars": 32,
+    "schemaBytes": 144,
+    "required": ["issueId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "get_note_board",
+    "descriptionChars": 361,
+    "offeredDescriptionChars": 361,
+    "schemaBytes": 188,
+    "required": ["projectKey", "boardId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "get_project",
+    "descriptionChars": 220,
+    "offeredDescriptionChars": 220,
+    "schemaBytes": 134,
+    "required": ["projectKey"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "get_project_activity",
+    "descriptionChars": 36,
+    "offeredDescriptionChars": 36,
+    "schemaBytes": 336,
+    "required": ["projectKey"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "get_project_breakdown",
+    "descriptionChars": 43,
+    "offeredDescriptionChars": 43,
+    "schemaBytes": 335,
+    "required": ["by", "projectKey"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "get_project_goal_context",
+    "descriptionChars": 45,
+    "offeredDescriptionChars": 45,
+    "schemaBytes": 134,
+    "required": ["projectKey"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "get_project_pulse",
+    "descriptionChars": 40,
+    "offeredDescriptionChars": 40,
+    "schemaBytes": 340,
+    "required": ["projectKey"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "get_project_stats",
+    "descriptionChars": 61,
+    "offeredDescriptionChars": 61,
+    "schemaBytes": 134,
+    "required": ["projectKey"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "get_project_throughput",
+    "descriptionChars": 39,
+    "offeredDescriptionChars": 39,
+    "schemaBytes": 221,
+    "required": ["projectKey"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "get_provider_limits",
+    "descriptionChars": 463,
+    "offeredDescriptionChars": 463,
+    "schemaBytes": 47,
+    "required": [],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "get_role_usage",
+    "descriptionChars": 159,
+    "offeredDescriptionChars": 159,
+    "schemaBytes": 142,
+    "required": ["roleId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "get_webhook_stats",
+    "descriptionChars": 61,
+    "offeredDescriptionChars": 61,
+    "schemaBytes": 220,
+    "required": ["projectKey"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "google_calendar_create_event",
+    "descriptionChars": 75,
+    "offeredDescriptionChars": 75,
+    "schemaBytes": 849,
+    "required": ["projectKey", "account", "summary", "start", "end"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "google_calendar_delete_event",
+    "descriptionChars": 24,
+    "offeredDescriptionChars": 24,
+    "schemaBytes": 347,
+    "required": ["projectKey", "account", "eventId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "google_calendar_events",
+    "descriptionChars": 76,
+    "offeredDescriptionChars": 76,
+    "schemaBytes": 555,
+    "required": ["projectKey", "account", "from", "to"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "google_calendar_update_event",
+    "descriptionChars": 73,
+    "offeredDescriptionChars": 73,
+    "schemaBytes": 879,
+    "required": ["projectKey", "account", "eventId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "google_contacts_create",
+    "descriptionChars": 21,
+    "offeredDescriptionChars": 21,
+    "schemaBytes": 407,
+    "required": ["projectKey", "account", "name"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "google_contacts_search",
+    "descriptionChars": 60,
+    "offeredDescriptionChars": 60,
+    "schemaBytes": 339,
+    "required": ["projectKey", "account", "query"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "google_docs_append",
+    "descriptionChars": 36,
+    "offeredDescriptionChars": 36,
+    "schemaBytes": 337,
+    "required": ["projectKey", "account", "documentId", "text"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "google_docs_create",
+    "descriptionChars": 51,
+    "offeredDescriptionChars": 51,
+    "schemaBytes": 320,
+    "required": ["projectKey", "account", "title"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "google_docs_read",
+    "descriptionChars": 30,
+    "offeredDescriptionChars": 30,
+    "schemaBytes": 286,
+    "required": ["projectKey", "account", "documentId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "google_drive_delete",
+    "descriptionChars": 31,
+    "offeredDescriptionChars": 31,
+    "schemaBytes": 278,
+    "required": ["projectKey", "account", "fileId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "google_drive_read",
+    "descriptionChars": 107,
+    "offeredDescriptionChars": 107,
+    "schemaBytes": 278,
+    "required": ["projectKey", "account", "fileId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "google_drive_search",
+    "descriptionChars": 123,
+    "offeredDescriptionChars": 123,
+    "schemaBytes": 340,
+    "required": ["projectKey", "account", "query"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "google_drive_share",
+    "descriptionChars": 126,
+    "offeredDescriptionChars": 126,
+    "schemaBytes": 506,
+    "required": ["projectKey", "account", "fileId", "email", "role"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "google_drive_upload",
+    "descriptionChars": 60,
+    "offeredDescriptionChars": 60,
+    "schemaBytes": 445,
+    "required": ["projectKey", "account", "name", "content"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "google_mail_draft",
+    "descriptionChars": 53,
+    "offeredDescriptionChars": 53,
+    "schemaBytes": 811,
+    "required": ["projectKey", "account", "to", "subject", "body"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "google_mail_label",
+    "descriptionChars": 144,
+    "offeredDescriptionChars": 144,
+    "schemaBytes": 443,
+    "required": ["projectKey", "account", "threadId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "google_mail_read_thread",
+    "descriptionChars": 92,
+    "offeredDescriptionChars": 92,
+    "schemaBytes": 282,
+    "required": ["projectKey", "account", "threadId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "google_mail_search",
+    "descriptionChars": 225,
+    "offeredDescriptionChars": 225,
+    "schemaBytes": 339,
+    "required": ["projectKey", "account", "query"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "google_mail_send",
+    "descriptionChars": 164,
+    "offeredDescriptionChars": 164,
+    "schemaBytes": 811,
+    "required": ["projectKey", "account", "to", "subject", "body"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "google_mail_trash",
+    "descriptionChars": 67,
+    "offeredDescriptionChars": 67,
+    "schemaBytes": 284,
+    "required": ["projectKey", "account", "messageId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "google_sheets_append",
+    "descriptionChars": 57,
+    "offeredDescriptionChars": 57,
+    "schemaBytes": 508,
+    "required": ["projectKey", "account", "spreadsheetId", "range", "values"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "google_sheets_read",
+    "descriptionChars": 67,
+    "offeredDescriptionChars": 67,
+    "schemaBytes": 342,
+    "required": ["projectKey", "account", "spreadsheetId", "range"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "google_sheets_update",
+    "descriptionChars": 56,
+    "offeredDescriptionChars": 56,
+    "schemaBytes": 508,
+    "required": ["projectKey", "account", "spreadsheetId", "range", "values"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "google_tasks_create",
+    "descriptionChars": 18,
+    "offeredDescriptionChars": 18,
+    "schemaBytes": 531,
+    "required": ["projectKey", "account", "title"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "google_tasks_delete",
+    "descriptionChars": 21,
+    "offeredDescriptionChars": 21,
+    "schemaBytes": 403,
+    "required": ["projectKey", "account", "taskId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "google_tasks_list",
+    "descriptionChars": 38,
+    "offeredDescriptionChars": 38,
+    "schemaBytes": 402,
+    "required": ["projectKey", "account"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "google_tasks_update",
+    "descriptionChars": 33,
+    "offeredDescriptionChars": 33,
+    "schemaBytes": 611,
+    "required": ["projectKey", "account", "taskId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "import_department_template",
+    "descriptionChars": 132,
+    "offeredDescriptionChars": 132,
+    "schemaBytes": 122,
+    "required": ["bundle"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "link_attachment",
+    "descriptionChars": 104,
+    "offeredDescriptionChars": 104,
+    "schemaBytes": 207,
+    "required": ["issueId", "path"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "link_issue_to_goal",
+    "descriptionChars": 163,
+    "offeredDescriptionChars": 163,
+    "schemaBytes": 458,
+    "required": ["issueId", "goalId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "link_issues",
+    "descriptionChars": 239,
+    "offeredDescriptionChars": 239,
+    "schemaBytes": 732,
+    "required": ["issueId", "targetIssueId", "kind"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "link_project_goal",
+    "descriptionChars": 39,
+    "offeredDescriptionChars": 39,
+    "schemaBytes": 304,
+    "required": ["initiativeId", "goalId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "list_actions",
+    "descriptionChars": 25,
+    "offeredDescriptionChars": 25,
+    "schemaBytes": 134,
+    "required": ["projectKey"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "list_agent_runs",
+    "descriptionChars": 32,
+    "offeredDescriptionChars": 32,
+    "schemaBytes": 349,
+    "required": ["projectKey"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "list_agent_runtime_files",
+    "descriptionChars": 77,
+    "offeredDescriptionChars": 77,
+    "schemaBytes": 236,
+    "required": ["agentId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "list_agent_skill_options",
+    "descriptionChars": 130,
+    "offeredDescriptionChars": 130,
+    "schemaBytes": 47,
+    "required": [],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "list_agent_skills",
+    "descriptionChars": 144,
+    "offeredDescriptionChars": 144,
+    "schemaBytes": 484,
+    "required": [],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "list_ai_agent_configured_tools",
+    "descriptionChars": 46,
+    "offeredDescriptionChars": 46,
+    "schemaBytes": 236,
+    "required": ["agentId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "list_ai_agent_skills",
+    "descriptionChars": 36,
+    "offeredDescriptionChars": 36,
+    "schemaBytes": 236,
+    "required": ["agentId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "list_ai_agents",
+    "descriptionChars": 108,
+    "offeredDescriptionChars": 108,
+    "schemaBytes": 251,
+    "required": [],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "list_attachments",
+    "descriptionChars": 139,
+    "offeredDescriptionChars": 139,
+    "schemaBytes": 144,
+    "required": ["issueId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "list_configured_tool_options",
+    "descriptionChars": 141,
+    "offeredDescriptionChars": 141,
+    "schemaBytes": 47,
+    "required": [],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "list_configured_tools",
+    "descriptionChars": 221,
+    "offeredDescriptionChars": 221,
+    "schemaBytes": 484,
+    "required": [],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "list_connections",
+    "descriptionChars": 424,
+    "offeredDescriptionChars": 424,
+    "schemaBytes": 89,
+    "required": ["projectKey"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "list_custom_fields",
+    "descriptionChars": 31,
+    "offeredDescriptionChars": 31,
+    "schemaBytes": 227,
+    "required": ["projectKey"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "list_cycles",
+    "descriptionChars": 33,
+    "offeredDescriptionChars": 33,
+    "schemaBytes": 256,
+    "required": ["projectKey"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "list_dashboards",
+    "descriptionChars": 27,
+    "offeredDescriptionChars": 27,
+    "schemaBytes": 134,
+    "required": ["projectKey"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "list_decisions",
+    "descriptionChars": 219,
+    "offeredDescriptionChars": 219,
+    "schemaBytes": 477,
+    "required": [],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "list_folder",
+    "descriptionChars": 244,
+    "offeredDescriptionChars": 244,
+    "schemaBytes": 183,
+    "required": [],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "list_goals",
+    "descriptionChars": 292,
+    "offeredDescriptionChars": 292,
+    "schemaBytes": 441,
+    "required": [],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "list_initiative_activity",
+    "descriptionChars": 52,
+    "offeredDescriptionChars": 52,
+    "schemaBytes": 326,
+    "required": ["initiativeId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "list_initiatives",
+    "descriptionChars": 57,
+    "offeredDescriptionChars": 57,
+    "schemaBytes": 1155,
+    "required": ["projectKey"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "list_integration_credentials",
+    "descriptionChars": 106,
+    "offeredDescriptionChars": 106,
+    "schemaBytes": 484,
+    "required": [],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "list_integrations",
+    "descriptionChars": 144,
+    "offeredDescriptionChars": 144,
+    "schemaBytes": 47,
+    "required": [],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "list_invites",
+    "descriptionChars": 24,
+    "offeredDescriptionChars": 24,
+    "schemaBytes": 134,
+    "required": ["projectKey"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "list_issue_activity",
+    "descriptionChars": 220,
+    "offeredDescriptionChars": 220,
+    "schemaBytes": 433,
+    "required": ["issueId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "list_issue_templates",
+    "descriptionChars": 33,
+    "offeredDescriptionChars": 33,
+    "schemaBytes": 134,
+    "required": ["projectKey"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "list_issues",
+    "descriptionChars": 41,
+    "offeredDescriptionChars": 41,
+    "schemaBytes": 1908,
+    "required": ["projectKey"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "list_member_candidates",
+    "descriptionChars": 97,
+    "offeredDescriptionChars": 97,
+    "schemaBytes": 134,
+    "required": ["projectKey"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "list_members",
+    "descriptionChars": 178,
+    "offeredDescriptionChars": 178,
+    "schemaBytes": 805,
+    "required": ["projectKey"],
+    "enums": {
+      "kind": ["all", "human", "agent"]
+    },
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "list_model_availability",
+    "descriptionChars": 271,
+    "offeredDescriptionChars": 271,
+    "schemaBytes": 47,
+    "required": [],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "list_note_boards",
+    "descriptionChars": 230,
+    "offeredDescriptionChars": 230,
+    "schemaBytes": 189,
+    "required": ["projectKey"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "list_permission_catalog",
+    "descriptionChars": 264,
+    "offeredDescriptionChars": 264,
+    "schemaBytes": 47,
+    "required": [],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "list_projects",
+    "descriptionChars": 103,
+    "offeredDescriptionChars": 103,
+    "schemaBytes": 156,
+    "required": [],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "list_role_options",
+    "descriptionChars": 130,
+    "offeredDescriptionChars": 130,
+    "schemaBytes": 47,
+    "required": [],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "list_roles",
+    "descriptionChars": 126,
+    "offeredDescriptionChars": 126,
+    "schemaBytes": 545,
+    "required": [],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "list_routine_runs",
+    "descriptionChars": 148,
+    "offeredDescriptionChars": 148,
+    "schemaBytes": 651,
+    "required": ["projectKey", "routineId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "list_routines",
+    "descriptionChars": 89,
+    "offeredDescriptionChars": 89,
+    "schemaBytes": 572,
+    "required": ["projectKey"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "list_teams",
+    "descriptionChars": 231,
+    "offeredDescriptionChars": 231,
+    "schemaBytes": 47,
+    "required": [],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "list_views",
+    "descriptionChars": 29,
+    "offeredDescriptionChars": 29,
+    "schemaBytes": 134,
+    "required": ["projectKey"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "list_webhook_deliveries",
+    "descriptionChars": 35,
+    "offeredDescriptionChars": 35,
+    "schemaBytes": 323,
+    "required": ["webhookId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "list_webhooks",
+    "descriptionChars": 25,
+    "offeredDescriptionChars": 25,
+    "schemaBytes": 134,
+    "required": ["projectKey"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "list_worklogs",
+    "descriptionChars": 94,
+    "offeredDescriptionChars": 94,
+    "schemaBytes": 144,
+    "required": ["issueId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "mark_issue_blocked",
+    "descriptionChars": 388,
+    "offeredDescriptionChars": 388,
+    "schemaBytes": 296,
+    "required": ["issueId", "question"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "prepare_issue_import",
+    "descriptionChars": 530,
+    "offeredDescriptionChars": 530,
+    "schemaBytes": 414,
+    "required": ["projectKey", "attachmentId", "mapping"],
+    "enums": {},
+    "nestedObjects": ["mapping"]
+  },
+  {
+    "group": "helena-mcp",
+    "name": "preview_logs",
+    "descriptionChars": 79,
+    "offeredDescriptionChars": 79,
+    "schemaBytes": 318,
+    "required": ["projectKey"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "preview_start",
+    "descriptionChars": 350,
+    "offeredDescriptionChars": 350,
+    "schemaBytes": 617,
+    "required": ["projectKey"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "preview_status",
+    "descriptionChars": 91,
+    "offeredDescriptionChars": 91,
+    "schemaBytes": 152,
+    "required": ["projectKey"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "preview_stop",
+    "descriptionChars": 22,
+    "offeredDescriptionChars": 22,
+    "schemaBytes": 152,
+    "required": ["projectKey"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "preview_url",
+    "descriptionChars": 158,
+    "offeredDescriptionChars": 158,
+    "schemaBytes": 152,
+    "required": ["projectKey"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "read_chat_attachment",
+    "descriptionChars": 251,
+    "offeredDescriptionChars": 251,
+    "schemaBytes": 101,
+    "required": ["publicId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "read_document",
+    "descriptionChars": 415,
+    "offeredDescriptionChars": 415,
+    "schemaBytes": 507,
+    "required": ["path"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "read_knowledge",
+    "descriptionChars": 241,
+    "offeredDescriptionChars": 241,
+    "schemaBytes": 385,
+    "required": ["ref"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "read_mail",
+    "descriptionChars": 397,
+    "offeredDescriptionChars": 397,
+    "schemaBytes": 250,
+    "required": ["projectKey", "threadId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "regenerate_ai_agent_key",
+    "descriptionChars": 57,
+    "offeredDescriptionChars": 57,
+    "schemaBytes": 236,
+    "required": ["agentId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "reject_invite",
+    "descriptionChars": 49,
+    "offeredDescriptionChars": 49,
+    "schemaBytes": 95,
+    "required": ["token"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "remove_issue_watcher",
+    "descriptionChars": 95,
+    "offeredDescriptionChars": 95,
+    "schemaBytes": 180,
+    "required": ["issueId", "userId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "remove_member",
+    "descriptionChars": 136,
+    "offeredDescriptionChars": 136,
+    "schemaBytes": 125,
+    "required": ["projectKey", "userId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "rename_checklist",
+    "descriptionChars": 27,
+    "offeredDescriptionChars": 27,
+    "schemaBytes": 256,
+    "required": ["checklistId", "title"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "reorder_actions",
+    "descriptionChars": 45,
+    "offeredDescriptionChars": 45,
+    "schemaBytes": 317,
+    "required": ["orderedIds", "projectKey"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "reorder_checklist_items",
+    "descriptionChars": 56,
+    "offeredDescriptionChars": 56,
+    "schemaBytes": 296,
+    "required": ["checklistId", "orderedIds"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "reorder_checklists",
+    "descriptionChars": 47,
+    "offeredDescriptionChars": 47,
+    "schemaBytes": 288,
+    "required": ["issueId", "orderedIds"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "reorder_columns",
+    "descriptionChars": 116,
+    "offeredDescriptionChars": 116,
+    "schemaBytes": 278,
+    "required": ["orderedIds", "projectKey"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "reorder_dashboards",
+    "descriptionChars": 18,
+    "offeredDescriptionChars": 18,
+    "schemaBytes": 278,
+    "required": ["orderedIds", "projectKey"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "reorder_views",
+    "descriptionChars": 49,
+    "offeredDescriptionChars": 49,
+    "schemaBytes": 432,
+    "required": ["orderedIds", "projectKey"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "report_output",
+    "descriptionChars": 142,
+    "offeredDescriptionChars": 142,
+    "schemaBytes": 436,
+    "required": ["runId", "kind", "title", "target"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "request_approval",
+    "descriptionChars": 667,
+    "offeredDescriptionChars": 667,
+    "schemaBytes": 1848,
+    "required": ["kind", "action", "projectKey"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "request_mail_send",
+    "descriptionChars": 235,
+    "offeredDescriptionChars": 235,
+    "schemaBytes": 188,
+    "required": ["projectKey", "draftId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "reset_ai_agent_to_template",
+    "descriptionChars": 178,
+    "offeredDescriptionChars": 178,
+    "schemaBytes": 521,
+    "required": ["agentId", "group"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "restore_issue",
+    "descriptionChars": 88,
+    "offeredDescriptionChars": 88,
+    "schemaBytes": 144,
+    "required": ["issueId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "run_mail_triage",
+    "descriptionChars": 1278,
+    "offeredDescriptionChars": 1278,
+    "schemaBytes": 302,
+    "required": ["projectKey"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "run_routine",
+    "descriptionChars": 115,
+    "offeredDescriptionChars": 115,
+    "schemaBytes": 213,
+    "required": ["projectKey", "routineId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "search_issues",
+    "descriptionChars": 34,
+    "offeredDescriptionChars": 34,
+    "schemaBytes": 417,
+    "required": ["projectKey"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "search_knowledge",
+    "descriptionChars": 499,
+    "offeredDescriptionChars": 499,
+    "schemaBytes": 727,
+    "required": ["q"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "search_mail",
+    "descriptionChars": 474,
+    "offeredDescriptionChars": 474,
+    "schemaBytes": 892,
+    "required": ["projectKey"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "send_invite_email",
+    "descriptionChars": 110,
+    "offeredDescriptionChars": 110,
+    "schemaBytes": 190,
+    "required": ["projectKey", "inviteId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "set_ai_agent_configured_tools",
+    "descriptionChars": 160,
+    "offeredDescriptionChars": 160,
+    "schemaBytes": 373,
+    "required": ["agentId", "agentToolIds"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "set_ai_agent_projects",
+    "descriptionChars": 212,
+    "offeredDescriptionChars": 212,
+    "schemaBytes": 558,
+    "required": ["agentId", "projectIds"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "set_ai_agent_skills",
+    "descriptionChars": 103,
+    "offeredDescriptionChars": 103,
+    "schemaBytes": 415,
+    "required": ["agentId", "skillIds"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "set_department_skills",
+    "descriptionChars": 31,
+    "offeredDescriptionChars": 31,
+    "schemaBytes": 264,
+    "required": ["departmentId", "restricted", "skillIds"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "set_issue_field_value",
+    "descriptionChars": 134,
+    "offeredDescriptionChars": 134,
+    "schemaBytes": 520,
+    "required": ["issueId", "fieldId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "set_member_description",
+    "descriptionChars": 84,
+    "offeredDescriptionChars": 84,
+    "schemaBytes": 187,
+    "required": ["projectKey", "userId", "description"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "set_member_role",
+    "descriptionChars": 331,
+    "offeredDescriptionChars": 331,
+    "schemaBytes": 337,
+    "required": ["projectKey", "userId", "role"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "start_next_cycle",
+    "descriptionChars": 156,
+    "offeredDescriptionChars": 156,
+    "schemaBytes": 144,
+    "required": ["cycleId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "trading_classify",
+    "descriptionChars": 839,
+    "offeredDescriptionChars": 839,
+    "schemaBytes": 1429,
+    "required": ["projectKey", "kind"],
+    "enums": {
+      "kind": ["news", "rule", "routing"]
+    },
+    "nestedObjects": ["publicNews"]
+  },
+  {
+    "group": "helena-mcp",
+    "name": "trading_request_strategy_approval",
+    "descriptionChars": 359,
+    "offeredDescriptionChars": 359,
+    "schemaBytes": 514,
+    "required": ["projectKey", "credentialId", "strategyId", "strategyVersion"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "transfer_cycle_issues",
+    "descriptionChars": 141,
+    "offeredDescriptionChars": 141,
+    "schemaBytes": 474,
+    "required": ["cycleId", "targetCycleId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "unlink_issues",
+    "descriptionChars": 50,
+    "offeredDescriptionChars": 50,
+    "schemaBytes": 241,
+    "required": ["issueId", "linkId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "update_action",
+    "descriptionChars": 26,
+    "offeredDescriptionChars": 26,
+    "schemaBytes": 6219,
+    "required": ["actionId"],
+    "enums": {},
+    "nestedObjects": [
+      "condition",
+      "condition.conditions[]",
+      "effect",
+      "workflow",
+      "workflow.nodes[].anyOf[0]",
+      "workflow.nodes[].anyOf[0].config",
+      "workflow.nodes[].anyOf[0].position",
+      "workflow.nodes[].anyOf[1]",
+      "workflow.nodes[].anyOf[1].config",
+      "workflow.nodes[].anyOf[1].config.conditions[]",
+      "workflow.nodes[].anyOf[1].position",
+      "workflow.nodes[].anyOf[2]",
+      "workflow.nodes[].anyOf[2].config",
+      "workflow.nodes[].anyOf[2].position",
+      "workflow.edges[]"
+    ]
+  },
+  {
+    "group": "helena-mcp",
+    "name": "update_agent_skill",
+    "descriptionChars": 56,
+    "offeredDescriptionChars": 56,
+    "schemaBytes": 494,
+    "required": ["skillId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "update_agent_skill_reference",
+    "descriptionChars": 73,
+    "offeredDescriptionChars": 73,
+    "schemaBytes": 431,
+    "required": ["skillId", "path", "content"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "update_ai_agent",
+    "descriptionChars": 63,
+    "offeredDescriptionChars": 63,
+    "schemaBytes": 10817,
+    "required": ["agentId"],
+    "enums": {},
+    "nestedObjects": [
+      "runtimePolicy",
+      "runtimePolicy.files[]",
+      "runtimePolicy.helena",
+      "runtimePolicy.helena.escalation",
+      "runtimePolicy.compression",
+      "runtimePolicy.compression.model",
+      "runtimePolicy.fallbackModels.anyOf[0][]",
+      "fieldTriggers[]"
+    ]
+  },
+  {
+    "group": "helena-mcp",
+    "name": "update_checklist_item",
+    "descriptionChars": 59,
+    "offeredDescriptionChars": 59,
+    "schemaBytes": 319,
+    "required": ["itemId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "update_column",
+    "descriptionChars": 118,
+    "offeredDescriptionChars": 118,
+    "schemaBytes": 1277,
+    "required": ["projectKey", "columnId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "update_comment",
+    "descriptionChars": 218,
+    "offeredDescriptionChars": 218,
+    "schemaBytes": 288,
+    "required": ["commentId", "body"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "update_custom_field",
+    "descriptionChars": 219,
+    "offeredDescriptionChars": 219,
+    "schemaBytes": 1022,
+    "required": ["projectKey", "fieldId"],
+    "enums": {},
+    "nestedObjects": ["options[]"]
+  },
+  {
+    "group": "helena-mcp",
+    "name": "update_cycle",
+    "descriptionChars": 95,
+    "offeredDescriptionChars": 95,
+    "schemaBytes": 522,
+    "required": ["cycleId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "update_dashboard",
+    "descriptionChars": 18,
+    "offeredDescriptionChars": 18,
+    "schemaBytes": 281,
+    "required": ["dashboardId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "update_initiative",
+    "descriptionChars": 82,
+    "offeredDescriptionChars": 82,
+    "schemaBytes": 1238,
+    "required": ["initiativeId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "update_issue",
+    "descriptionChars": 275,
+    "offeredDescriptionChars": 275,
+    "schemaBytes": 3593,
+    "required": ["issueId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "update_issue_template",
+    "descriptionChars": 115,
+    "offeredDescriptionChars": 115,
+    "schemaBytes": 811,
+    "required": ["projectKey", "templateId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "update_issue_type",
+    "descriptionChars": 52,
+    "offeredDescriptionChars": 52,
+    "schemaBytes": 282,
+    "required": ["projectKey", "typeId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "update_label",
+    "descriptionChars": 88,
+    "offeredDescriptionChars": 88,
+    "schemaBytes": 371,
+    "required": ["projectKey", "labelId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "update_label_group",
+    "descriptionChars": 37,
+    "offeredDescriptionChars": 37,
+    "schemaBytes": 253,
+    "required": ["projectKey", "groupId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "update_note_board",
+    "descriptionChars": 519,
+    "offeredDescriptionChars": 519,
+    "schemaBytes": 429,
+    "required": ["projectKey", "boardId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "update_project",
+    "descriptionChars": 166,
+    "offeredDescriptionChars": 166,
+    "schemaBytes": 222,
+    "required": ["projectKey"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "update_role",
+    "descriptionChars": 14,
+    "offeredDescriptionChars": 14,
+    "schemaBytes": 198,
+    "required": ["roleId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "update_routine",
+    "descriptionChars": 144,
+    "offeredDescriptionChars": 144,
+    "schemaBytes": 1908,
+    "required": ["projectKey", "routineId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "update_view",
+    "descriptionChars": 30,
+    "offeredDescriptionChars": 30,
+    "schemaBytes": 419,
+    "required": ["viewId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "update_webhook",
+    "descriptionChars": 16,
+    "offeredDescriptionChars": 16,
+    "schemaBytes": 474,
+    "required": ["webhookId"],
+    "enums": {
+      "events[]": [
+        "issue.created",
+        "issue.updated",
+        "issue.deleted",
+        "issue.assigned",
+        "issue.state_changed",
+        "issue.label_changed",
+        "issue.link_changed",
+        "comment.created",
+        "comment.updated",
+        "comment.deleted"
+      ]
+    },
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "update_worklog",
+    "descriptionChars": 179,
+    "offeredDescriptionChars": 179,
+    "schemaBytes": 626,
+    "required": ["worklogId"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "upload_chat_attachment",
+    "descriptionChars": 222,
+    "offeredDescriptionChars": 222,
+    "schemaBytes": 239,
+    "required": ["projectKey", "filename", "contentBase64"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "upsert_agent_runtime_file",
+    "descriptionChars": 113,
+    "offeredDescriptionChars": 113,
+    "schemaBytes": 355,
+    "required": ["agentId", "path", "content"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "helena-mcp",
+    "name": "write_note",
+    "descriptionChars": 424,
+    "offeredDescriptionChars": 424,
+    "schemaBytes": 793,
+    "required": ["path"],
+    "enums": {},
+    "nestedObjects": ["frontmatter"]
+  },
+  {
+    "group": "runtime-meta",
+    "name": "clarify",
+    "descriptionChars": 180,
+    "offeredDescriptionChars": 180,
+    "schemaBytes": 151,
+    "required": ["question"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "runtime-meta",
+    "name": "find_tools",
+    "descriptionChars": 151,
+    "offeredDescriptionChars": 151,
+    "schemaBytes": 79,
+    "required": ["query"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "runtime-meta",
+    "name": "load_skill",
+    "descriptionChars": 140,
+    "offeredDescriptionChars": 140,
+    "schemaBytes": 102,
+    "required": ["name"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "runtime-meta",
+    "name": "memory",
+    "descriptionChars": 381,
+    "offeredDescriptionChars": 381,
+    "schemaBytes": 307,
+    "required": ["action"],
+    "enums": {
+      "action": ["read", "note", "propose"],
+      "file": ["MEMORY.md", "USER.md"]
+    },
+    "nestedObjects": []
+  },
+  {
+    "group": "search",
+    "name": "search_files",
+    "descriptionChars": 101,
+    "offeredDescriptionChars": 101,
+    "schemaBytes": 169,
+    "required": ["pattern"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "search",
+    "name": "search_sessions",
+    "descriptionChars": 175,
+    "offeredDescriptionChars": 175,
+    "schemaBytes": 79,
+    "required": ["query"],
+    "enums": {},
+    "nestedObjects": []
+  },
+  {
+    "group": "shell-git",
+    "name": "shell",
+    "descriptionChars": 191,
+    "offeredDescriptionChars": 191,
+    "schemaBytes": 83,
+    "required": ["command"],
+    "enums": {},
+    "nestedObjects": []
+  }
+]
