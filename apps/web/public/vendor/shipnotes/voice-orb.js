@@ -264,7 +264,16 @@
         this._gl = gl;
         this._program = program;
         this._uniforms = {};
-        for (const n of ['time', 'pixels', 'density', 'weights', 'bands', 'onset', 'light', 'haloAmount'])
+        for (const n of [
+          'time',
+          'pixels',
+          'density',
+          'weights',
+          'bands',
+          'onset',
+          'light',
+          'haloAmount',
+        ])
           this._uniforms[n] = gl.getUniformLocation(program, n);
         this._auto = matchMedia('(pointer: coarse)').matches ? 6000 : 12000;
         if (!this._lossHandler) {
@@ -374,14 +383,16 @@
       const h = this._hctx;
       h.clearRect(0, 0, size, size);
       const glowOn = this.getAttribute('glow') !== 'off';
-      const glow = glowOn && h.createRadialGradient(
-        size * 0.5,
-        size * 0.5,
-        size * 0.1,
-        size * 0.5,
-        size * 0.5,
-        size * 0.48,
-      );
+      const glow =
+        glowOn &&
+        h.createRadialGradient(
+          size * 0.5,
+          size * 0.5,
+          size * 0.1,
+          size * 0.5,
+          size * 0.5,
+          size * 0.48,
+        );
       const energy = (weights[1] + weights[3]) * (bands[0] * 0.025 + onset * 0.035);
       const light = this._light;
       if (glow) {
