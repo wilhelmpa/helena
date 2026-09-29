@@ -90,7 +90,7 @@ export default function FlatBoard({
   const baseGroups =
     settings.showEmptyGroups && !filtered
       ? groups
-    : groups.filter((g) => (issuesByGroup.get(g.key)?.length ?? 0) > 0);
+      : groups.filter((g) => (issuesByGroup.get(g.key)?.length ?? 0) > 0);
   const visibleGroups = baseGroups.filter((g) => !hiddenSet.has(g.key));
   const hiddenGroups = baseGroups.filter((g) => hiddenSet.has(g.key));
 

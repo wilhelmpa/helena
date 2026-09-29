@@ -77,7 +77,7 @@ describe('board card data', () => {
     assert.deepEqual(data.meta, ['Bewertung positiv']);
   });
 
-  it('says how long the task has been in its status, in the reader\'s words', () => {
+  it("says how long the task has been in its status, in the reader's words", () => {
     const data = boardCardData(issue([]), project, maps, ['statusAge'], priorityLabel, words);
     assert.match(data.meta[0]!, /^seit /);
   });

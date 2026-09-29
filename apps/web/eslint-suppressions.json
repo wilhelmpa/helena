@@ -2340,11 +2340,6 @@
       "count": 11
     }
   },
-  "src/features/issue/components/detail/IssueDetailContent.tsx": {
-    "better-tailwindcss/no-restricted-classes": {
-      "count": 7
-    }
-  },
   "src/features/issue/components/detail/IssueDetailSkeleton.tsx": {
     "better-tailwindcss/no-restricted-classes": {
       "count": 3
@@ -5122,7 +5117,7 @@
   },
   "src/features/work-items/components/kanban/BoardColumn.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 14
+      "count": 11
     },
     "jsx-a11y/click-events-have-key-events": {
       "count": 1
@@ -5191,11 +5186,6 @@
   "src/features/work-items/components/kanban/InlineColumnCreate.tsx": {
     "better-tailwindcss/no-restricted-classes": {
       "count": 7
-    }
-  },
-  "src/features/work-items/components/kanban/IssueCardBody.tsx": {
-    "better-tailwindcss/no-restricted-classes": {
-      "count": 3
     }
   },
   "src/features/work-items/components/kanban/IssueCardLinks.tsx": {
