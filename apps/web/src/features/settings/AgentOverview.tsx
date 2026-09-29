@@ -129,10 +129,17 @@ export default function AgentOverview({
             {[agent.model ?? tChart('standardModel'), reasoning].filter(Boolean).join(' · ')}
           </span>
         </SettingsRow>
-        <SettingsRow label={t('why')}>
-          <span className="ds-agent-overview-value">
-            {goals.length ? goals.map((goal) => goal.title).join(', ') : t('noWhy')}
-          </span>
+        {/* Long goal titles wrap below the label instead of running out of the card. */}
+        <SettingsRow label={t('why')} stacked={goals.length > 0}>
+          {goals.length ? (
+            <ul className="ds-agent-overview-goals">
+              {goals.map((goal) => (
+                <li key={goal.id}>{goal.title}</li>
+              ))}
+            </ul>
+          ) : (
+            <span className="ds-agent-overview-value">{t('noWhy')}</span>
+          )}
         </SettingsRow>
       </SettingsGroup>
 
