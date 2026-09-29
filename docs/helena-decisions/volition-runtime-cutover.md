@@ -8,6 +8,7 @@ acceptance tests and UI work below are complete. This branch is not a release ap
 
 | Requirement | Current implementation | Work before acceptance |
 | --- | --- | --- |
+| Finished Release 11 fixes | `hub/rel-11-fix` still points at `c32d9f7c5` during task 113; task 112 has uncommitted corrections and an unfinished repeated API run | Integrate the committed result of task 112 before the complete test and acceptance run |
 | Learned skills | `packages/runner/src/helena-runtime.ts` rejects skill actions; `packages/agent-runtime/src/tools/builtin.ts` only loads supplied skills | Native creation, revision, pin/discard and policy handling; preserve script/reference files; prove learning and reuse |
 | Readable native sessions | `apps/api/src/modules/agents/runtime-views/index.ts` asks runtime readers; `packages/runner/src/readers/index.ts` registers only Hermes, Claude and Codex | Read native sessions and transcripts with existing project/chat-owner access checks; expose imported histories without requiring Hermes |
 | Persistent agent instructions | `instructionsOf()` in the native adapter selects only `SOUL.md` | Apply the configured `AGENTS.md` and relevant instruction contributions without duplicating generated context |
@@ -63,3 +64,14 @@ that dynamically constructed or externally installed references have been discov
    separately because no reverse history migration has been implemented.
 
 No step in this sequence has been executed on the live system by task 113.
+
+## Validation at handover
+
+The private database migration passed, as did 51 runtime/runner tests, the native runtime
+package typecheck and formatting. Full Web lint finished with no errors and five warnings.
+The first API run had 16 passes and nine failures because the hardening suite did not enable
+`HELENA_NATIVE_RUNTIME`; its setup now enables and restores that flag, but the repeated API
+run is still pending. The workspace typecheck first stopped on the new fetch test double's
+missing Bun `preconnect` property; that issue is fixed and the package typecheck passes, but
+the remaining workspace checks are pending. Waiting repetitions were cancelled when task
+112 occupied the sole heavy test slot with another full API run. No model eval was started.

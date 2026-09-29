@@ -81,8 +81,17 @@ async function setup() {
 }
 
 describe('native runtime hardening', () => {
-  beforeEach(resetDb);
-  afterEach(() => useEmbedder(null));
+  let previousNativeRuntime: string | undefined;
+  beforeEach(async () => {
+    previousNativeRuntime = process.env.HELENA_NATIVE_RUNTIME;
+    process.env.HELENA_NATIVE_RUNTIME = 'on';
+    await resetDb();
+  });
+  afterEach(() => {
+    useEmbedder(null);
+    if (previousNativeRuntime === undefined) delete process.env.HELENA_NATIVE_RUNTIME;
+    else process.env.HELENA_NATIVE_RUNTIME = previousNativeRuntime;
+  });
   it('does not roll back approved native memory from a stale runner inventory', async () => {
     const { agent, owner } = await setup();
     await proposeMemory(agent.id, 'MEMORY.md', 'Approved revision');

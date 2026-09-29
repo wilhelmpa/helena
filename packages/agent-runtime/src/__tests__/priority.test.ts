@@ -4,7 +4,10 @@ import { resolveModel } from '../models';
 
 test('native model requests carry background priority only to Halogen', async () => {
   const requests: { url: string; priority: string | null }[] = [];
-  const fetchMock = spyOn(globalThis, 'fetch').mockImplementation(async (url, init) => {
+  const fakeFetch = async (
+    url: Parameters<typeof fetch>[0],
+    init?: Parameters<typeof fetch>[1],
+  ) => {
     requests.push({
       url: String(url),
       priority: new Headers(init?.headers).get('x-volition-halogen-priority'),
@@ -18,7 +21,10 @@ test('native model requests carry background priority only to Halogen', async ()
       ],
       usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
     });
-  });
+  };
+  const fetchMock = spyOn(globalThis, 'fetch').mockImplementation(
+    Object.assign(fakeFetch, { preconnect: globalThis.fetch.preconnect }),
+  );
   try {
     for (const baseUrl of [
       'http://127.0.0.1:8741/v1',
