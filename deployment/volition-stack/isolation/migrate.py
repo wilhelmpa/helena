@@ -356,7 +356,7 @@ def apply(args, config) -> Changes:
     projects = registry_projects(config)
     print(f'projects: {", ".join(slug for slug, _ in projects) or "none"} and {config.home_slug}')
 
-    # Home first: every project's vault folder gets its read entry.
+    # Home first: project vaults and workspaces share write access with Home.
     global_home = os.path.dirname(config.profiles_root)
     home_account = None
     try:
@@ -388,10 +388,12 @@ def apply(args, config) -> Changes:
         vault = os.path.join(config.vault_root, 'Projects', key)
         named = {(ACL_USER, account.pw_uid): rwx}
         if home_account:
-            named[(ACL_USER, home_account.pw_uid)] = rx
+            named[(ACL_USER, home_account.pw_uid)] = rwx
+            acl_tree(workspace, named, changes)
         acl_tree(vault, named, changes)
     if home_account:
         # The folder that holds the projects' folders, so Home can list them.
+        acl_tree_top(config.workspace_root, {(ACL_USER, home_account.pw_uid): rx}, changes)
         acl_tree_top(os.path.join(config.vault_root, 'Projects'), {(ACL_USER, home_account.pw_uid): rx}, changes)
 
     browser_root = args.browser_root

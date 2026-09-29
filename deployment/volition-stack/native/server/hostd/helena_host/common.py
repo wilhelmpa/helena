@@ -9,6 +9,7 @@ import fcntl
 import json
 import os
 import re
+import selectors
 import subprocess
 import tempfile
 import time
@@ -49,13 +50,40 @@ Runner = Callable[..., CommandResult]
 
 def run_command(argv: list[str], *, timeout: float = 30, input: str | None = None,
                 env: dict[str, str] | None = None, stdout_path: str | None = None,
-                stdin_path: str | None = None) -> CommandResult:
+                stdin_path: str | None = None, output_limit: int | None = None) -> CommandResult:
     """Runs a command without a shell. `stdout_path` streams stdout into a new file (0600)
     instead of memory, for database dumps; `stdin_path` feeds a file root opened (a dump
     handed to a tool that runs as another user)."""
     full_env = dict(BASE_ENV)
     if env:
         full_env.update(env)
+    if output_limit is not None:
+        proc = subprocess.Popen(argv, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
+                                stderr=subprocess.STDOUT, env=full_env)
+        captured = bytearray()
+        deadline = time.monotonic() + timeout
+        try:
+            with selectors.DefaultSelector() as selector:
+                selector.register(proc.stdout, selectors.EVENT_READ)
+                while selector.get_map():
+                    if time.monotonic() >= deadline:
+                        raise subprocess.TimeoutExpired(argv, timeout, output=bytes(captured))
+                    for key, _ in selector.select(0.1):
+                        chunk = os.read(key.fd, 65536)
+                        if not chunk:
+                            selector.unregister(key.fd)
+                        else:
+                            captured.extend(chunk[:max(0, output_limit - len(captured))])
+                code = proc.wait(timeout=max(0.1, deadline - time.monotonic()))
+            return CommandResult(code, captured.decode('utf-8', 'replace'), '')
+        except subprocess.TimeoutExpired as error:
+            error.output = bytes(captured)
+            raise
+        finally:
+            if proc.poll() is None:
+                proc.kill()
+                proc.wait()
+            proc.stdout.close()
     if stdin_path is not None:
         with open(stdin_path, 'rb') as source:
             proc = subprocess.run(argv, stdin=source, capture_output=True, env=full_env,

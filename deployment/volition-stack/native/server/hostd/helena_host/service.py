@@ -10,7 +10,7 @@ import threading
 from dataclasses import dataclass
 from typing import Callable
 
-from . import audit, backup, events, guard, power, storage, system
+from . import audit, backup, events, guard, power, storage, system, privileged
 from .common import VERSION, Host, HostError, iso
 from .config import GUARD_LIMIT_RANGE, Config, load_settings, save_settings
 from .varlink import VarlinkError
@@ -22,6 +22,10 @@ DESCRIPTION = """# Helena's host helper: the disks and the RAID, backups, power 
 # Helena runs on. Only the API's user may call it. Every method answers (result: object).
 interface io.helena.hostd
 
+method PrivilegedResult(id: string) -> (result: object)
+method RootSettings() -> (result: object)
+method SetRootSettings(enabled: bool, directOnly: bool, actor: ?string) -> (result: object)
+method RunPrivileged(id: string, command: string, seconds: int, epoch: int, actor: ?string) -> (result: object)
 method Capabilities() -> (result: object)
 method SystemStatus() -> (result: object)
 method RestartLocalAi(actor: ?string) -> (result: object)
@@ -226,6 +230,10 @@ def _locked(lock: threading.Lock, fn: Callable[[Context, dict], dict]) -> Callab
 
 
 METHODS: dict[str, Method] = {
+    'PrivilegedResult': Method(privileged.result, _p(id='string')),
+    'RootSettings': Method(privileged.settings, _p()),
+    'SetRootSettings': Method(privileged.configure, _p(enabled='bool', directOnly='bool', actor='?string'), mutating=True),
+    'RunPrivileged': Method(privileged.run, _p(id='string', command='string', seconds='int', epoch='int', actor='?string'), mutating=True),
     'Capabilities': Method(capabilities, {}),
     'SystemStatus': Method(lambda ctx, _: system.status(ctx.host, ctx.config.state_dir), {}),
     'RestartLocalAi': Method(restart_local_ai, _p(actor='?string'), mutating=True),

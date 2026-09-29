@@ -97,6 +97,7 @@ export async function enqueueAgentRun(
     const [row] = await tx
       .insert(agentRun)
       .values({
+        taintSources: input.continueSession ? ['continued-session'] : [],
         agentId: input.agentId,
         projectId: input.projectId,
         issueId: input.issueId,

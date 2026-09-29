@@ -1,3 +1,4 @@
+import { toolsFullyObserved } from '@helena/sdk';
 import {
   db,
   getDisplayName,
@@ -445,6 +446,8 @@ export async function claimRunnerRun(agent: RunnerAgent): Promise<RunnerRun | nu
     ), claimed_run AS (
     UPDATE agent_run r
     SET attempts = r.attempts + 1,
+        observed_runtime = ${agent.runtime},
+        taint_sources = CASE WHEN ${toolsFullyObserved(agent.runtime)} THEN r.taint_sources ELSE r.taint_sources || '["unobserved-runtime"]'::jsonb END,
         claims = r.claims + 1,
         claimed_at = now(),
         started_at = coalesce(r.started_at, now()),

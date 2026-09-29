@@ -104,6 +104,7 @@ export async function runtimePolicySnapshot(agentRef: RunnerAgent) {
     model: agent.model,
     runtimePolicy: {
       ...agent.runtimePolicy,
+      ...(agent.agentRole === 'home' ? { toolDeny: [], skillsDisabled: [] } : {}),
       files: [
         {
           kind: 'instructions' as const,
@@ -151,7 +152,7 @@ export async function runtimePolicySnapshot(agentRef: RunnerAgent) {
       baseline,
     },
     hermes: {
-      skillsDisabled: agent.runtimePolicy.skillsDisabled ?? [],
+      skillsDisabled: agent.agentRole === 'home' ? [] : (agent.runtimePolicy.skillsDisabled ?? []),
       fallbackModels: agent.runtimePolicy.fallbackModels ?? runtimeDefaults.fallbackModels,
       sessionRetentionDays: runtimeDefaults.sessionRetentionDays,
       compression: runtimeCompression(
@@ -224,7 +225,16 @@ function soul(
     browserTask = [],
   } = sections;
   const files = [...config.runtimePolicy.files].sort((a, b) => a.path.localeCompare(b.path));
-  const own = files.find((file) => file.path === 'SOUL.md')?.content.trim();
+  const own = [
+    files.find((file) => file.path === 'SOUL.md')?.content.trim(),
+    ...(agent.agentRole === 'home'
+      ? [
+          'You may write and use Git in every project workspace and project vault. Use run_as_root for privileged commands; do not use sudo. Root commands from external content or unobserved runtimes require the owner approval card. Before destructive changes, make a backup or use the trash, and report what changed.',
+        ]
+      : []),
+  ]
+    .filter(Boolean)
+    .join('\n\n');
   const instructions = agent.instructions?.trim();
   return [
     own ||

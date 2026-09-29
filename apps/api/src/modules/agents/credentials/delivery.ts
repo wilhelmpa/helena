@@ -1,3 +1,4 @@
+import { projectRoot } from '#modules/project-files/roots';
 import {
   db,
   agentChatMessage,
@@ -6,6 +7,7 @@ import {
   integrationCredentialGrant,
   integrationCredentialUse,
   openCredential,
+  project,
   user,
 } from '@repo/db';
 import { and, eq, gt, inArray, isNotNull, sql } from 'drizzle-orm';
@@ -13,7 +15,13 @@ import { HttpError } from '#shared/lib';
 import type { RunnerAgent } from '../runner/service';
 import { mcpSecretServers } from '../mcp-servers/service';
 import { loginOrigins } from './kinds';
-import { credentialInScope, grantReaches, type GrantSubject } from './grants';
+import {
+  credentialInScope,
+  grantReaches,
+  grantsOf,
+  type GrantEntry,
+  type GrantSubject,
+} from './grants';
 
 // What an agent's runner receives for the run or chat answer it holds, and the audit log
 // entries that receiving and using a credential writes.
@@ -241,6 +249,7 @@ export async function recordMcpSecretDelivery(
 }
 
 export interface DeliveredSshKey {
+  workspaces?: string[];
   id: number;
   label: string;
   updatedAt: string;
@@ -271,11 +280,13 @@ export async function deliverSshKeys(
   work: ClaimedWork,
 ): Promise<DeliveredSshKey[]> {
   const subject = subjectOf(agent, work);
+  if (agent.agentRole === 'home') subject.projectId = null;
   const jobKey = await workspaceJobKey(work);
   const granted = sql`exists (select 1 from ${integrationCredentialGrant} where ${integrationCredentialGrant.credentialId} = ${integrationCredential.id} and ${grantReaches(subject)})`;
   const rows = await db
     .select({
       id: integrationCredential.id,
+      projectId: integrationCredential.projectId,
       label: integrationCredential.label,
       updatedAt: integrationCredential.updatedAt,
       ciphertext: integrationCredential.ciphertext,
@@ -292,12 +303,39 @@ export async function deliverSshKeys(
       ),
     )
     .orderBy(integrationCredential.id);
+  const workspaceProjects =
+    agent.agentRole === 'home'
+      ? await db
+          .select({ id: project.id, key: project.key })
+          .from(project)
+          .where(eq(project.teamId, agent.teamId))
+      : [];
+  const homeGrants =
+    agent.agentRole === 'home'
+      ? await grantsOf(rows.map((row) => row.id))
+      : new Map<number, GrantEntry[]>();
   const keys = rows.flatMap((row): DeliveredSshKey[] => {
     const secrets = JSON.parse(openCredential(row)) as { privateKey?: string };
     if (!secrets.privateKey) return [];
+    let workspaces: string[] | undefined;
+    if (agent.agentRole === 'home') {
+      const grants = homeGrants.get(row.id) ?? [];
+      const global = row.projectId == null && grants.some((grant) => grant.agentId === agent.id);
+      const projectIds =
+        row.projectId == null
+          ? grants.flatMap((grant) => (grant.projectId == null ? [] : [grant.projectId]))
+          : [row.projectId];
+      workspaces = global
+        ? []
+        : workspaceProjects
+            .filter((p) => projectIds.includes(p.id))
+            .map((p) => projectRoot(p.key, 'code').directory);
+      if (!global && !workspaces.length) return [];
+    }
     return [
       {
         id: row.id,
+        ...(workspaces !== undefined && { workspaces }),
         label: row.label ?? '',
         updatedAt: row.updatedAt.toISOString(),
         privateKey: secrets.privateKey,

@@ -106,10 +106,10 @@ class HelenaApprovalGuardTest(unittest.TestCase):
     def decisions(self):
         return [body for method, path, body, _ in FakeHelena.requests if path == "/agent-policy/decide"]
 
-    def test_reads_run_without_asking_helena(self):
+    def test_reads_are_observed_by_helena(self):
         for tool in ["read_file", "search_files", "web_search", "browser_snapshot", "clarify"]:
             self.assertIsNone(self.check(tool, path="notes.md"))
-        self.assertEqual(FakeHelena.requests, [])
+        self.assertEqual(len(self.decisions()), 5)
 
     def test_asks_the_engine_about_a_command_with_what_it_needs(self):
         self.assertIsNone(self.check("terminal", command="git push --force origin main"))
@@ -134,11 +134,10 @@ class HelenaApprovalGuardTest(unittest.TestCase):
         self.assertBlocked(self.check("execute_code", code="print(1)"), "BLOCKED: budget")
         self.assertEqual(self.decisions()[-1]["command"], "print(1)")
 
-    def test_never_approves_a_command_on_the_hard_block_list(self):
+    def test_server_decides_former_hard_blocks(self):
         for command in ["rm -rf /", "shutdown -h now"]:
-            with self.subTest(command=command):
-                self.assertBlocked(self.check("terminal", command=command), "not even with an approval")
-        self.assertEqual(FakeHelena.requests, [])
+            self.assertIsNone(self.check("terminal", command=command))
+        self.assertEqual(len(self.decisions()), 2)
 
     def test_blocks_when_helena_cannot_be_reached(self):
         os.environ["ITSAPLAN_URL"] = f"http://127.0.0.1:{closed_port()}"
@@ -162,9 +161,11 @@ class HelenaApprovalGuardTest(unittest.TestCase):
         self.assertIsNone(self.check("terminal", command="git push --force origin main"))
         self.assertEqual(FakeHelena.requests, [])
 
-    def test_blocks_hermes_cron_jobs_in_runs_and_chats(self):
+    def test_routes_agent_cron_calls_to_the_server_and_preserves_standalone_behavior(self):
         call = {"action": "create", "schedule": "every 1h", "prompt": "Check the inbox"}
-        self.assertBlocked(self.check("cronjob_manage", **call), "routine in Helena")
+        self.assertIsNone(self.check("cronjob_manage", **call))
+        self.assertEqual(FakeHelena.requests[-1][2]["tool"], "cronjob_manage")
+        FakeHelena.requests = []
         del os.environ["ITSAPLAN_RUN_ID"]
         self.assertBlocked(self.check("cronjob_manage", **call), "routine in Helena")
         self.assertEqual(FakeHelena.requests, [])
@@ -174,21 +175,17 @@ class HelenaApprovalGuardTest(unittest.TestCase):
             self.assertIsNone(self.check("mcp_itsaplan_create_issue", title="x"))
         with mock.patch.object(GUARD, "mcp_tool_info", return_value=("shop", True)):
             self.assertIsNone(self.check("mcp_shop_list_orders"))
-        self.assertEqual(FakeHelena.requests, [])
+        self.assertEqual(len(self.decisions()), 1)
         with mock.patch.object(GUARD, "mcp_tool_info", return_value=("shop", False)):
             self.assertIsNone(self.check("mcp_shop_refund", order="1"))
-        [body] = self.decisions()
+        body = self.decisions()[-1]
         self.assertEqual(body["mcp"], {"server": "shop", "annotations": {"readOnlyHint": False}})
 
-    def test_falls_back_to_approved_commands_on_a_helena_without_the_engine(self):
+    def test_missing_engine_blocks_unobserved_calls(self):
         FakeHelena.engine = False
-        result = self.check("terminal", command="git push --force origin main")
-        self.assertBlocked(result, "exactly this command in command")
-        FakeHelena.commands = ["git push --force origin main"]
-        self.assertIsNone(self.check("terminal", command="  git push --force origin main\n"))
-        self.assertIsNone(self.check("terminal", command="ls -la"))
-        self.assertIsNone(self.check("write_file", path="a.md"))
-        self.assertBlocked(self.check("execute_code", code="print(2)"), "execute_code runs arbitrary Python")
+        self.assertBlocked(self.check("terminal", command="git status"), "could not decide")
+        self.assertBlocked(self.check("read_file", path="a.md"), "could not decide")
+
 
 
 HERMES_RUNTIME = importlib.util.find_spec("yaml") is not None and importlib.util.find_spec("pydantic") is not None
@@ -247,9 +244,9 @@ class HermesLoadsTheGuardTest(unittest.TestCase):
         self.assertEqual(result["git push --force origin main"], {"plugin": None, "hermes": True})
         self.assertIn("request_approval", result["git reset --hard"]["plugin"])
         self.assertTrue(result["git reset --hard"]["hermes"])
-        self.assertIn("not even with an approval", result["rm -rf /"]["plugin"])
+        self.assertIn("request_approval", result["rm -rf /"]["plugin"])
         self.assertFalse(result["rm -rf /"]["hermes"])
-        self.assertIn("routine in Helena", result["cronjob_manage"])
+        self.assertIn("request_approval", result["cronjob_manage"])
 
 
 if __name__ == "__main__":

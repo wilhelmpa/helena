@@ -235,7 +235,15 @@
       "session_end": "Sitzung beendet",
       "token_rejected": "Token abgelehnt"
     },
-    "grantActiveOpen": "Freigegeben."
+    "grantActiveOpen": "Freigegeben.",
+    "rootAccess": {
+      "title": "Root-Stelle für Ava",
+      "enabled": "Root-Stelle für Ava",
+      "directOnly": "Root nur auf direkten Owner-Auftrag",
+      "audit": "Root-Aufrufe (letzte 100)",
+      "refresh": "Aktualisieren",
+      "boundary": "Widerruf beendet nur von der Root-Stelle gestartete Units. Durch Befehle angelegte Dienste, Cronjobs und sudoers-Änderungen müssen gesondert zurückgenommen werden."
+    }
   },
   "storage": {
     "saved": "Speichereinstellungen gespeichert",

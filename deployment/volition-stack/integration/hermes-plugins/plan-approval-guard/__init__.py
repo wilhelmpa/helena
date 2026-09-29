@@ -1,7 +1,7 @@
 """Helena approval guard: the Autopilot's adapter in Hermes.
 
 In a run or a chat answer of a Helena agent (``ITSAPLAN_RUN_ID`` or ``ITSAPLAN_MESSAGE_ID`` is
-set), Hermes asks Helena's policy engine before each tool call that is not a plain read
+set), Hermes asks Helena's policy engine before every tool call, including reads
 (POST /agent-policy/decide). Helena classifies the call into an action category (write, send,
 delete, pay, publish, execute, credentials), applies the Autopilot level of the project and
 its budgets, logs the decision, and answers allow, needs-approval or deny with the message the
@@ -9,8 +9,7 @@ agent reads. A call that is not allowed is blocked with that message; a command 
 approved exactly, in a request whose decision started this run, is allowed by the engine.
 
 Helena's own MCP tools are checked by Helena itself when they arrive, so they pass here.
-Hermes' hard block list is never approvable. Hermes' own scheduler is blocked everywhere:
-Helena schedules work through its routines, so a Hermes cron job would run the work twice.
+The server also decides about Hermes' scheduler; Home has the owner's full tool access.
 Hermes sessions started outside the Helena runner are left to Hermes' own approval settings.
 """
 
@@ -19,11 +18,10 @@ from __future__ import annotations
 import json
 import os
 import re
-import urllib.error
 import urllib.request
 from typing import Any
 
-from tools.approval_detection import detect_dangerous_command, detect_hardline_command
+from tools.approval_detection import detect_dangerous_command
 
 # Below Hermes' pre_tool_call timeout (plugins.hook_callback_timeout, 30 seconds by default),
 # which would block the call with a less helpful message.
@@ -33,37 +31,6 @@ CRON_MESSAGE = (
     "BLOCKED: Hermes cron jobs are not used here. Recurring work is a routine in Helena, which "
     "a person sets up on the project's Schedules page; a Hermes job would run the work twice."
 )
-
-# Hermes tools that only read or only talk within the task: every Autopilot level allows them,
-# so they do not wait for a round trip to Helena.
-READ_TOOLS = {
-    "web_search",
-    "web_extract",
-    "read_file",
-    "search_files",
-    "vision_analyze",
-    "skills_list",
-    "skill_view",
-    "session_search",
-    "browser_navigate",
-    "browser_snapshot",
-    "browser_scroll",
-    "browser_back",
-    "browser_get_images",
-    "browser_vision",
-    "browser_console",
-    "browser_vault_list",
-    "ha_list_entities",
-    "ha_get_state",
-    "ha_list_services",
-    "kanban_show",
-    "kanban_list",
-    "kanban_attachments",
-    "todo_list",
-    "memory",
-    "clarify",
-    "delegate_task",
-}
 
 # The MCP servers whose tools Helena checks itself when they arrive: Helena's own.
 SERVER_SIDE_MCP = {
@@ -86,19 +53,6 @@ def _post(path: str, body: dict[str, Any]) -> dict[str, Any]:
     if not isinstance(value, dict):
         raise ValueError("Helena answered with an unexpected body")
     return value
-
-
-def approved_commands(run_id: str) -> list[str]:
-    """The commands approved for this run, for a Helena that predates the policy engine."""
-    if not run_id.isdigit():
-        raise ValueError("ITSAPLAN_RUN_ID is not a run id")
-    url = f"{os.environ['ITSAPLAN_URL'].rstrip('/')}/agent-runs/{run_id}/approved-commands"
-    request = urllib.request.Request(url, headers={"x-api-key": os.environ["ITSAPLAN_API_KEY"]})
-    with urllib.request.urlopen(request, timeout=PLAN_TIMEOUT_SECONDS) as response:
-        commands = json.load(response)
-    if not isinstance(commands, list):
-        raise ValueError("Helena answered with an unexpected body")
-    return commands
 
 
 def mcp_tool_info(tool_name: str) -> tuple[str, bool] | None:
@@ -125,40 +79,11 @@ def mcp_tool_info(tool_name: str) -> tuple[str, bool] | None:
         return None
 
 
-def _legacy_block(tool_name: str, text: str, subject: str, reason: str) -> str | None:
-    """The guard's behaviour before the policy engine: a dangerous command or any code needs a
-    person's approval of exactly that text."""
-    if tool_name == "terminal":
-        dangerous, _, description = detect_dangerous_command(text)
-        if not dangerous:
-            return None
-        reason = f"it is flagged as dangerous: {description}"
-    approved = {c.strip() for c in approved_commands(os.environ.get("ITSAPLAN_RUN_ID", ""))}
-    if text.strip() in approved:
-        return None
-    return (
-        f"BLOCKED: this {subject} needs a person's approval in Helena ({reason}). If it is "
-        "needed, call Helena's request_approval tool with the kind that fits, the action in one "
-        f"line and exactly this {subject} in command, then end your run without running it."
-    )
-
-
 def block_message(tool_name: str, args: dict[str, Any]) -> str | None:
-    if tool_name == "terminal":
-        command = args.get("command")
-        if isinstance(command, str):
-            hardline, description = detect_hardline_command(command)
-            if hardline:
-                return (
-                    f"BLOCKED: {description}. Hermes never runs this command, not even with an "
-                    "approval, so do not request one."
-                )
-    if tool_name in READ_TOOLS:
-        return None
     mcp = mcp_tool_info(tool_name)
     if mcp is not None:
         server, read_only = mcp
-        if server in SERVER_SIDE_MCP or read_only:
+        if server in SERVER_SIDE_MCP:
             return None
 
     body: dict[str, Any] = {"runtime": "hermes", "tool": tool_name[:200], "workspace": os.getcwd()}
@@ -179,19 +104,7 @@ def block_message(tool_name: str, args: dict[str, Any]) -> str | None:
     if mcp is not None:
         body["mcp"] = {"server": mcp[0], "annotations": {"readOnlyHint": mcp[1]}}
 
-    try:
-        decision = _post("/agent-policy/decide", body)
-    except urllib.error.HTTPError as error:
-        if error.code != 404 or not run_id:
-            raise
-        # A Helena without the policy engine: only commands and code are checked, as before.
-        if tool_name == "terminal" and isinstance(args.get("command"), str):
-            return _legacy_block(tool_name, args["command"], "command", "")
-        if tool_name == "execute_code" and isinstance(args.get("code"), str):
-            return _legacy_block(
-                tool_name, args["code"], "code", "execute_code runs arbitrary Python"
-            )
-        return None
+    decision = _post("/agent-policy/decide", body)
     if decision.get("outcome") == "allow":
         return None
     message = decision.get("message")
@@ -199,9 +112,9 @@ def block_message(tool_name: str, args: dict[str, Any]) -> str | None:
 
 
 def check_tool_call(tool_name: str = "", args: Any = None, **_: Any) -> dict[str, str] | None:
-    if tool_name == "cronjob_manage":
-        return {"action": "block", "message": CRON_MESSAGE}
     if not os.environ.get("ITSAPLAN_RUN_ID") and not os.environ.get("ITSAPLAN_MESSAGE_ID"):
+        if tool_name == "cronjob_manage":
+            return {"action": "block", "message": CRON_MESSAGE}
         return None
     try:
         message = block_message(tool_name, args if isinstance(args, dict) else {})

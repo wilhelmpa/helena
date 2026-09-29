@@ -17,6 +17,7 @@ import type { RunnerConfig } from './config';
 // and to GitHub on port 443 (ssh.github.com, GitHub's SSH over the HTTPS port).
 
 export interface SshKey {
+  workspaces?: string[];
   id: number;
   label: string;
   // Changes whenever the key pair is regenerated.
@@ -211,5 +212,37 @@ export async function applySshKeys(dir: string, keys: SshKey[]): Promise<Record<
   }
   if (files.length === 0) return {};
   await writeSshSupport(dir);
+  if (keys.some((key) => key.workspaces !== undefined)) {
+    const globalKeys = keys
+      .filter((key) => !key.workspaces?.length)
+      .map((key) => join(dir, `id_${key.id}`));
+    const roots = [...new Set(keys.flatMap((key) => key.workspaces ?? []))];
+    const mapping = Object.fromEntries(
+      roots.map((root) => [
+        root,
+        gitSshCommand(dir, [
+          ...globalKeys,
+          ...keys
+            .filter((key) => key.workspaces?.includes(root))
+            .map((key) => join(dir, `id_${key.id}`)),
+        ]),
+      ]),
+    );
+    const wrapper = await writePrivate(
+      dir,
+      'volition-git-ssh.py',
+      [
+        'import json, os, shlex, sys',
+        `commands = json.loads(${JSON.stringify(JSON.stringify(mapping))})`,
+        `fallback = ${JSON.stringify(gitSshCommand(dir, globalKeys))}`,
+        'cwd = os.path.realpath(os.getcwd())',
+        'command = next((value for root, value in commands.items() if cwd == root or cwd.startswith(root + "/")), fallback)',
+        'argv = shlex.split(command) + sys.argv[1:]',
+        'os.execvp(argv[0], argv)',
+        '',
+      ].join('\n'),
+    );
+    return { GIT_SSH_COMMAND: `python3 -I ${quote(wrapper)}` };
+  }
   return { GIT_SSH_COMMAND: gitSshCommand(dir, files) };
 }

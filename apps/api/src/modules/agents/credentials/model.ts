@@ -265,6 +265,7 @@ export const SshKeysResponse = t.Object({
   keys: t.Array(
     t.Object({
       id: t.Number(),
+      workspaces: t.Optional(t.Array(t.String())),
       label: t.String(),
       updatedAt: t.String({ description: 'Changes whenever the key pair is regenerated.' }),
       privateKey: t.String(),

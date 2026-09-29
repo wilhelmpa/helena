@@ -750,7 +750,7 @@ def prove_4_no_foreign_files(report: Report) -> None:
                                          f'read:{ROOT}/hermes/profiles/alpha_7/MEMORY.md'], agent_id=7)
     expect(report, '4', results, f'read:{ROOT}/hermes/profiles/alpha/MEMORY.md', False)
     expect(report, '4', results, f'read:{ROOT}/hermes/profiles/alpha_7/MEMORY.md', True)
-    # Home reads every project's vault folder, writes its own, and nothing else.
+    # Home writes across projects; private data and direct root stay inaccessible.
     results = probe('home', 'home', [f'read:{ROOT}/vault/Projects/ALPHA/note-alpha.md',
                                      f'read:{ROOT}/vault/Projects/BETA/note-beta.md', f'read:{ROOT}/vault/Home/home.md',
                                      f'write:{ROOT}/vault/Home/written.md', f'write:{ROOT}/vault/Projects/ALPHA/x.md',
@@ -759,9 +759,25 @@ def prove_4_no_foreign_files(report: Report) -> None:
     expect(report, '4', results, f'read:{ROOT}/vault/Projects/BETA/note-beta.md', True)
     expect(report, '4', results, f'read:{ROOT}/vault/Home/home.md', True)
     expect(report, '4', results, f'write:{ROOT}/vault/Home/written.md', True)
-    expect(report, '4', results, f'write:{ROOT}/vault/Projects/ALPHA/x.md', False)
+    expect(report, '4', results, f'write:{ROOT}/vault/Projects/ALPHA/x.md', True)
     expect(report, '4', results, f'read:{ROOT}/vault/Private', False)
-    expect(report, '4', results, f'read:{ROOT}/workspaces/projects/alpha', False)
+    expect(report, '4', results, f'read:{ROOT}/workspaces/projects/alpha', True)
+    for slug in ['alpha', 'beta']:
+        path = f'{ROOT}/workspaces/projects/{slug}/home-written.txt'
+        results = probe('home', 'home', [f'write:{path}'])
+        expect(report, '4', results, f'write:{path}', True)
+        results = probe(slug, slug, [f'write:{path}'])
+        expect(report, '4', results, f'write:{path}', True)
+    repository = f'{ROOT}/workspaces/projects/alpha/shared-git-proof'
+    for slug, profile, label, agent_id in [('alpha', 'alpha', 'first', None),
+                                            ('home', 'home', 'home', None),
+                                            ('alpha', 'alpha_7', 'specialist', 7),
+                                            ('home', 'home', 'home-again', None)]:
+        check = f'git:{repository},{label}'
+        results = probe(slug, profile, [check], agent_id=agent_id)
+        expect(report, '4', results, check, True)
+    results = probe('home', 'home', ['exec:sudo,-n,id,-u'])
+    expect(report, '4', results, 'exec:sudo,-n,id,-u', False)
     # Outside any unit, on the host, the project users cannot read each other's files either.
     done = sh('/usr/sbin/runuser', '-u', 'vpt-alpha', '--', 'cat', f'{ROOT}/workspaces/projects/beta/secret-beta.txt', check=False)
     report.add('4', 'host: vpt-alpha reads beta workspace', done.returncode != 0,

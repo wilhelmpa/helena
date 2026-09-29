@@ -22,6 +22,17 @@ import type { RuntimeAccount } from './runtime-account';
 // A runtime's id: a built-in's, or a plugin runtime's (RuntimeType.id).
 export type RuntimeId = 'hermes' | 'claude' | 'codex' | (string & {});
 
+export const runtimeToolObservation: Readonly<Record<string, boolean>> = {
+  hermes: true,
+  central: true,
+  claude: false,
+  codex: false,
+};
+
+export function toolsFullyObserved(runtime: string): boolean {
+  return runtimeToolObservation[runtime] === true;
+}
+
 // What a runner works on: a queued run or a chat message.
 export type WorkRef = { runId: number } | { messageId: number };
 

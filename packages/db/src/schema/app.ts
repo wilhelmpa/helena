@@ -731,6 +731,9 @@ export const agentRun = pgTable(
   'agent_run',
   {
     id: serial('id').primaryKey(),
+    rootOrigin: text('root_origin').notNull().default('system'),
+    observedRuntime: text('observed_runtime'),
+    taintSources: jsonb('taint_sources').$type<string[]>().notNull().default([]),
     agentId: integer('agent_id')
       .notNull()
       .references(() => aiAgent.id, { onDelete: 'cascade' }),
@@ -1124,6 +1127,9 @@ export const agentChatMessage = pgTable(
   'agent_chat_message',
   {
     id: serial('id').primaryKey(),
+    rootOrigin: text('root_origin').notNull().default('system'),
+    observedRuntime: text('observed_runtime'),
+    taintSources: jsonb('taint_sources').$type<string[]>().notNull().default([]),
     threadId: text('thread_id')
       .notNull()
       .references(() => agentChatThread.id, { onDelete: 'cascade' }),

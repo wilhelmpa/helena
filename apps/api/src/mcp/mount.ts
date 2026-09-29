@@ -66,6 +66,9 @@ export function mountMcp(app: any): void {
       const serve = async (credential: McpCredential, userId: string) => {
         const server = await buildMcpServer(mcpApp, credential, userId, {
           runId,
+          agentUnit: request.headers.get('x-volition-agent-unit'),
+          agentRuntime: request.headers.get('x-volition-agent-runtime'),
+          messageId: Number(request.headers.get('x-volition-message')) || null,
           agentProject: agentSocketProject(request.headers),
         });
         const transport = new WebStandardStreamableHTTPServerTransport({

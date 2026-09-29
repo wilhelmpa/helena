@@ -444,7 +444,7 @@ describe('knowledge', () => {
       expect(found.data?.items).toEqual([]);
     });
 
-    it('lets the Home agent read every project and write only Home', async () => {
+    it('lets the Home agent read and write every project and Home', async () => {
       const { asOwner } = await setup();
       const home = await bootstrapHomeAgent();
       if (home.status !== 'ready') throw new Error('Home agent was not provisioned');
@@ -453,7 +453,7 @@ describe('knowledge', () => {
       await write(asOwner, 'Private/Diary.md', 'Diary');
 
       expect((await read(asHome, 'Projects/MKT/Docs/Plan.md')).status).toBe(200);
-      expect((await write(asHome, 'Projects/MKT/Docs/Home.md', 'x')).status).toBe(403);
+      expect((await write(asHome, 'Projects/MKT/Docs/Home.md', 'x')).status).toBe(200);
       expect((await write(asHome, 'Home/Docs/Overview.md', 'Overview')).status).toBe(200);
       expect((await read(asHome, 'Private/Diary.md')).status).toBe(403);
       const root = await asHome.knowledge.folders.get({ query: {} });

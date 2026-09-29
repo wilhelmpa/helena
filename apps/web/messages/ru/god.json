@@ -235,7 +235,15 @@
       "session_end": "Сессия завершена",
       "token_rejected": "Токен отклонён"
     },
-    "grantActiveOpen": "Доступ открыт."
+    "grantActiveOpen": "Доступ открыт.",
+    "rootAccess": {
+      "title": "Root access for Ava",
+      "enabled": "Root access for Ava",
+      "directOnly": "Root only on direct owner request",
+      "audit": "Root commands (latest 100)",
+      "refresh": "Refresh",
+      "boundary": "Revocation stops only units started by the root broker. Services, cron jobs and sudoers changes created by a command require separate reversal."
+    }
   },
   "storage": {
     "saved": "Настройки хранилища сохранены",

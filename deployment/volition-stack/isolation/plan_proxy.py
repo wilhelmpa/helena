@@ -36,6 +36,7 @@ from isolation_common import (  # noqa: E402
 )
 
 FORWARDED_HEADERS = {
+    'x-helena-run', 'x-volition-message',
     'accept', 'accept-encoding', 'accept-language', 'authorization', 'cache-control', 'content-type',
     'if-match', 'if-modified-since', 'if-none-match', 'last-event-id', 'mcp-protocol-version',
     'mcp-session-id', 'range', 'traceparent', 'tracestate', 'user-agent', 'x-api-key', 'x-request-id',
@@ -79,6 +80,19 @@ class PlanProxy:
         unit = unit_of_pid(pid) or ''
         meta = parse_unit(unit, self.unit_prefix)
         return slug, (unit if meta and meta['slug'] == slug else '')
+
+    async def runtime_of_unit(self, unit: str) -> str:
+        process = await asyncio.create_subprocess_exec(
+            'systemctl', 'show', unit, '--property=Description', '--value',
+            stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.DEVNULL)
+        try:
+            output, _ = await asyncio.wait_for(process.communicate(), 2)
+            match = re.fullmatch(rb'Volition agent [a-z0-9-]+ \(([a-z0-9-]+)\)\s*', output)
+            return match[1].decode() if match and process.returncode == 0 else 'unknown'
+        except asyncio.TimeoutError:
+            process.kill()
+            await process.wait()
+            return 'unknown'
 
     async def respond(self, writer, status: int, message: str) -> None:
         body = f'{{"error":"{message}"}}'.encode()
@@ -139,6 +153,7 @@ class PlanProxy:
             lines += [f'X-Volition-Agent-Project: {slug}', 'Connection: close']
             if unit:
                 lines.append(f'X-Volition-Agent-Unit: {unit}')
+                lines.append(f'X-Volition-Agent-Runtime: {await self.runtime_of_unit(unit)}')
 
             upstream_reader, upstream_writer = await asyncio.wait_for(
                 asyncio.open_connection(*self.upstream, limit=1 << 20), 10)

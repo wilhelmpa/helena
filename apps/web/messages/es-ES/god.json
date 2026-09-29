@@ -235,7 +235,15 @@
       "session_end": "Sesión finalizada",
       "token_rejected": "Token rechazado"
     },
-    "grantActiveOpen": "Acceso concedido."
+    "grantActiveOpen": "Acceso concedido.",
+    "rootAccess": {
+      "title": "Root access for Ava",
+      "enabled": "Root access for Ava",
+      "directOnly": "Root only on direct owner request",
+      "audit": "Root commands (latest 100)",
+      "refresh": "Refresh",
+      "boundary": "Revocation stops only units started by the root broker. Services, cron jobs and sudoers changes created by a command require separate reversal."
+    }
   },
   "storage": {
     "saved": "Los ajustes de almacenamiento se han guardado",

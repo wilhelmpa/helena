@@ -113,7 +113,7 @@ export async function vaultScope(
   const projects = new Map<string, Access>();
   if (allProjects) {
     for (const row of await teamProjects(agent.teamId)) {
-      if (reachable(row)) projects.set(row.key, { read: true, write: false });
+      if (reachable(row)) projects.set(row.key, { read: true, write: homeAgent });
     }
   } else {
     for (const row of await memberships(caller.id)) {
