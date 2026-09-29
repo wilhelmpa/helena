@@ -761,6 +761,22 @@ describe('Hermes learning and protected state', () => {
     } satisfies RuntimePolicyClient;
   }
 
+  it('reports an agent without a project as offline with a clear reason', async () => {
+    const { materializer } = await fixture();
+    const statuses: RuntimeStatus[] = [];
+    const sync = new HermesPolicySynchronizer(
+      sequence([{ ...snapshot('sha256:unassigned'), projects: [] }], statuses),
+      materializer,
+    );
+    await sync.ensure();
+    await sync.ensure();
+    expect(statuses).toHaveLength(1);
+    expect(statuses[0]).toMatchObject({
+      status: 'offline',
+      detail: 'Agent no longer belongs to a project',
+    });
+  });
+
   it('turns learning on or off in the managed configuration and pauses the curator', async () => {
     const { hermesHome, materializer } = await fixture();
     await materializer.apply({

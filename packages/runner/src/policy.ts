@@ -96,7 +96,7 @@ export interface RuntimeConflict {
 
 export interface RuntimeStatus {
   adapter: string;
-  status: 'online' | 'degraded';
+  status: 'online' | 'degraded' | 'offline';
   appliedRevision: string | null;
   capabilities: string[];
   detail: string | null;
@@ -1061,6 +1061,19 @@ export class HermesPolicySynchronizer implements RuntimeAdapter {
     const fallback = JSON.stringify(snapshot.hermes?.fallbackModels ?? null);
     const sameRevision = snapshot.revision === this.appliedRevision;
     if (sameRevision && fallback === this.appliedFallback) return false;
+    if (snapshot.projects?.length === 0) {
+      this.appliedRevision = snapshot.revision;
+      this.applied = null;
+      this.failed = null;
+      this.state = {
+        status: 'offline',
+        detail: 'Agent no longer belongs to a project',
+        conflicts: [],
+        restored: [],
+        actions: [],
+      };
+      return true;
+    }
     if (
       this.failed?.revision === snapshot.revision &&
       this.now() - this.failed.at < RETRY_FAILED_MS
