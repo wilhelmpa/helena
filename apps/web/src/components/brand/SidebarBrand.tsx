@@ -7,8 +7,8 @@ import HelenaWordmark from '@/components/brand/HelenaWordmark';
 import { APP_NAME } from '@/utils/app';
 import { cn } from '@/lib/utils';
 
-// The product mark at the top of the sidebar: the torch (24px, three device pixels per
-// art pixel on a 2× screen) and the compact wordmark. Collapses to the mark alone when
+// The product mark at the top of the sidebar: the Orb as its 24px gradient disc and the
+// compact wordmark. Collapses to the mark alone when
 // the sidebar is in icon mode. No version and no release notes: the owner wants it
 // quiet. It leads to Start, as a logo does (owner, 2026-09-24), without a hover fill.
 export default function SidebarBrand({ className }: { className?: string }) {

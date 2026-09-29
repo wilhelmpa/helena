@@ -1,4 +1,5 @@
-// The wordmark keeps its established ANSI Shadow bands.
+// Colours of the retired ANSI Shadow wordmark. tokens.css still carries them as
+// --helena-gold/-amber/-bronze (brandTokens.test.ts keeps both in step).
 export const HERMES = {
   gold: '#FFD700',
   amber: '#FFBF00',
@@ -14,14 +15,17 @@ export const BANDS = {
 export type BandColor = keyof typeof BANDS.dark;
 export type BrandTheme = keyof typeof BANDS;
 
-// Orb colours are independent of the product name and of the ANSI wordmark.
+// The Orb is the app's voice orb in its speaking state. Icons and large marks use the
+// particle renders in packages/brand/assets; at 48px and below particles are only
+// noise, so a vector disc in the same gradient (violet lower left, pink upper right)
+// stands for it. `ink` is the renders' background.
 export const ORB = {
-  tileLight: '#1B1B1F',
-  tileDark: '#2A2A31',
-  ring: '#E8A33D',
-  core: '#F2C14E',
+  ink: '#0B0A0E',
   paper: '#F6F4EF',
+  text: '#1B1B1F',
+  onDark: ['#6C4CF5', '#B356DC', '#FF5C9E'],
+  onLight: ['#3A2BE8', '#8A2BBF', '#E0306B'],
 } as const;
 
-// Kept for the existing wordmark tokens; the Orb itself uses ORB.tileLight/Dark.
+// Kept for the existing ink token in tokens.css.
 export const TILE = HERMES.ink;

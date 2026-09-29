@@ -1,26 +1,22 @@
 export { BANDS, HERMES, ORB, TILE, type BandColor, type BrandTheme } from './palette';
+export { TERMINAL_WORDMARK, terminalWordmark } from './ansi';
 export {
-  ANSI_COMPACT,
-  ANSI_FULL,
-  HELENA_ANSI,
-  ROW_BANDS,
-  renderAnsi,
-  type AnsiArt,
-  type AnsiGeometry,
-} from './ansi';
-export { wordmarkArt, type WordmarkSize } from './art';
-export {
-  ORB_GRID,
-  ORB_RADIUS,
+  DISC_RADIUS,
+  LOCKUP,
+  discBody,
+  discGradient,
   faviconSvg,
   lockupSvg,
   markSvg,
-  orbBody,
-  orbGeometry,
+  orbStops,
   socialPreviewSvg,
+  wordmarkGeometry,
   wordmarkSvg,
-  type MarkSvgOptions,
-  type OrbDetail,
-  type OrbVariant,
+  type MarkVariant,
+  type OrbImage,
+  type OrbScheme,
+  type WordmarkSize,
+  type WordmarkTheme,
 } from './svg';
-export { mailHeaderHtml } from './mail';
+// The mail header (with the inline Orb image) is its own entry, @helena/brand/mail, so
+// the web bundle does not carry the image.

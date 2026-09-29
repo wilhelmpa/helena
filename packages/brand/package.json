@@ -1,17 +1,20 @@
 {
   "name": "@helena/brand",
   "version": "0.0.0",
-  "description": "Helena's Orb mark, ANSI wordmark, palette, and deterministic icon build",
+  "description": "The AVA brand: particle Orb renders, vector Orb, Inter wordmark outlines, deterministic icon build",
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./mail": "./src/mail.ts"
   },
   "scripts": {
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "bun test",
-    "build:assets": "bun scripts/build-assets.ts"
+    "build:assets": "bun scripts/build-assets.ts",
+    "extract:wordmark": "bun scripts/extract-wordmark.ts",
+    "preview:sheet": "bun scripts/preview-sheet.ts"
   },
   "devDependencies": {
     "@repo/eslint-config": "workspace:*",

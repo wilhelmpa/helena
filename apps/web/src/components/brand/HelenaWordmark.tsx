@@ -1,13 +1,12 @@
-import { wordmarkArt, type WordmarkSize } from '@helena/brand';
+import { wordmarkGeometry, type WordmarkSize } from '@helena/brand';
 import { cn } from '@/lib/utils';
 
-// The Helena wordmark (packages/brand): HELENA in ANSI Shadow, the block capitals of
-// Hermes Agent's banner, drawn as paths in the theme's gold/amber/bronze bands
-// (--helena-gold/-amber/-bronze in globals.css; `helena-on-ink` on a dark brand
-// surface forces Hermes' own colours).
-//   compact  the app's chrome (sidebar, share header): 75 × 21px, half a pixel per art
-//            unit, so every edge falls on a whole device pixel of a 2× screen
-//   full     sign-in panel and other large places; 300px wide unless the caller says
+// The AVA wordmark (packages/brand): the letters of Inter as outlines, spaced 0.32em,
+// in the current text colour.
+//   compact  the app's chrome (sidebar, share header): Inter Regular, 10px cap height,
+//            about as tall as the sidebar's 13px row text
+//   full     sign-in panel and other large places: Inter Light, 28px cap height unless
+//            the caller sizes it
 // `label` names it for assistive technology where it is the only text; next to a
 // visible name it stays decorative.
 export default function HelenaWordmark({
@@ -19,24 +18,17 @@ export default function HelenaWordmark({
   className?: string;
   label?: string;
 }) {
-  const { width, height, rows } = wordmarkArt(size);
+  const { d, viewBox, width, height } = wordmarkGeometry(size);
+  const cap = size === 'compact' ? 10 : 28;
   return (
     <svg
-      viewBox={`0 0 ${width} ${height}`}
+      viewBox={viewBox}
+      width={Math.round((cap * width) / height)}
+      height={cap}
       {...(label ? { role: 'img', 'aria-label': label } : { 'aria-hidden': true })}
-      // The letters fill the upper five of the six rows; the sixth holds only the thin
-      // shadow line. Centred as a box next to the square mark they sat 2px high (owner,
-      // 2026-09-24: "nicht vertikal bündig mit dem Logo"), so the compact size moves down.
-      style={
-        size === 'compact'
-          ? { width: width / 2, height: height / 2, transform: 'translateY(2px)' }
-          : undefined
-      }
-      className={cn(size === 'full' && 'h-auto w-[300px]', className)}
+      className={cn('shrink-0', className)}
     >
-      {rows.map((row, i) => (
-        <path key={i} d={row.d} fill={`var(--helena-${row.band})`} />
-      ))}
+      <path d={d} fill="currentColor" />
     </svg>
   );
 }

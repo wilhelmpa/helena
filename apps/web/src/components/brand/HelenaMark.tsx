@@ -1,24 +1,57 @@
-import { ORB, orbGeometry, type OrbDetail } from '@helena/brand';
+import type { CSSProperties } from 'react';
+import { DISC_RADIUS, orbStops, type OrbScheme } from '@helena/brand';
+import { cn } from '@/lib/utils';
 
-// The mark uses the same 100×100 geometry as the generated icons. At 24px, the
-// optical variant widens the ring, core and satellite. The tile follows data-theme.
+const gradient = (scheme: OrbScheme) => `linear-gradient(45deg, ${orbStops(scheme).join(', ')})`;
+// The disc's share of the box, as in the 100×100 icon grid (packages/brand).
+const DISC_INSET = `${50 - DISC_RADIUS.bare}%`;
+
+// The AVA mark, the app's voice orb (packages/brand).
+//   small (default) a disc in the orb's violet-to-pink gradient: at sidebar and form
+//                   sizes (up to 48px) the particle render would only be noise. Deeper
+//                   colours in the light theme, brighter in the dark one.
+//   large           the particle render itself (public/brand/orb-*.png), for the sign-in
+//                   panel and About at 80px and more.
+// `onInk` keeps the dark-surface version in both themes (BrandHero's ink panel).
 export default function HelenaMark({
   className,
   detail,
+  onInk = false,
 }: {
   className?: string;
   detail?: 'small' | 'large';
+  onInk?: boolean;
 }) {
-  const optical: OrbDetail =
-    detail === 'small' || (!detail && className?.includes('size-6')) ? 'small' : 'regular';
-  const { stroke, core, satellite } = orbGeometry(optical);
+  if (detail === 'large') {
+    return (
+      <span
+        aria-hidden="true"
+        className={cn(
+          'inline-block bg-contain bg-center bg-no-repeat',
+          onInk
+            ? 'bg-[url(/brand/orb-dark.png)]'
+            : 'bg-[url(/brand/orb-light.png)] dark:bg-[url(/brand/orb-dark.png)]',
+          className,
+        )}
+      />
+    );
+  }
+  const style = {
+    '--ava-orb-light': gradient('light'),
+    '--ava-orb-dark': gradient('dark'),
+    inset: DISC_INSET,
+  } as CSSProperties;
   return (
-    <svg viewBox="0 0 100 100" fill="none" aria-hidden="true" className={className}>
-      <style>{`[data-theme='dark'] .volition-orb-tile { fill: ${ORB.tileDark}; }`}</style>
-      <rect className="volition-orb-tile" width="100" height="100" rx="23" fill={ORB.tileLight} />
-      <circle cx="50" cy="52" r="23" stroke={ORB.ring} strokeWidth={stroke} />
-      <circle cx="50" cy="52" r={core} fill={ORB.core} />
-      <circle cx="72" cy="30" r={satellite} fill={ORB.paper} />
-    </svg>
+    <span aria-hidden="true" className={cn('relative inline-block', className)}>
+      <span
+        style={style}
+        className={cn(
+          'absolute rounded-full',
+          onInk
+            ? 'bg-(image:--ava-orb-dark)'
+            : 'bg-(image:--ava-orb-light) dark:bg-(image:--ava-orb-dark)',
+        )}
+      />
+    </span>
   );
 }
