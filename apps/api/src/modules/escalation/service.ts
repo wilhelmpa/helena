@@ -2,7 +2,7 @@ import { getSetting, setSetting } from '@repo/db';
 import { normalizeEscalation, type EscalationPatch, type EscalationSettings } from './rules';
 
 // The escalation rules as one setting (rules.ts). The Administrator reads and changes them in
-// Lokale KI → Eskalation; nothing acts on them until Phase 2 wires them in.
+// Lokale KI → Eskalation; failed local agent runs use them to queue a strong continuation.
 
 export const ESCALATION_SETTING_KEY = 'helena.escalation';
 

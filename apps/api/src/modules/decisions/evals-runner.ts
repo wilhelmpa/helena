@@ -130,6 +130,9 @@ export async function evalAllows(
   if (!cls?.eval) return { ok: true };
   const latest = await latestEval(teamId, classId, credentialId);
   if (!latest || latest.status !== 'done') return { ok: false, reason: 'no_eval' };
+  const connection = await loadConnection(credentialId);
+  if (connection?.backend.id === 'local-logit' && latest.model !== connection.model)
+    return { ok: false, reason: 'no_eval' };
   if (!latest.passed) return { ok: false, reason: 'eval_failed' };
   if (threshold + 1e-9 < latest.threshold) return { ok: false, reason: 'eval_threshold' };
   return { ok: true };

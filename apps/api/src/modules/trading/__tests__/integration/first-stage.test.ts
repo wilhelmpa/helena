@@ -204,6 +204,25 @@ describe('trading caller optional Jev stage', () => {
       expect(response.data!.model).toBe('primary');
       expect(seen()).toEqual(['jev:stage', 'primary:regular']);
     });
+  for (const kind of ['news', 'rule', 'routing'] as const)
+    it(`private ${kind} uses the permitted Jev stage and a local fallback`, async () => {
+      const { policy, route } = await setup();
+      const classId =
+        kind === 'news'
+          ? TRADING_NEWS_CLASS
+          : kind === 'rule'
+            ? TRADING_RULES_CLASS
+            : TRADING_ROUTING_CLASS;
+      await policy.patch({ useCases: { [classId]: { enabled: true, cloudAllowed: true } } });
+      mode = 'error';
+      const response = await route.post({
+        kind,
+        context: 'Synthetic private context',
+        ...(kind === 'rule' ? { rule: 'Synthetic rule' } : {}),
+      });
+      expect(response.data!.model).toBe('primary');
+      expect(seen()).toEqual(['jev:stage', 'primary:regular']);
+    });
   for (const revoke of ['master', 'use-case', 'off-on'] as const)
     it(`${revoke} during an in-flight request discards a late stage response`, async () => {
       const { policy, run } = await setup();
@@ -241,7 +260,8 @@ describe('trading caller optional Jev stage', () => {
   });
   for (const kind of ['news', 'rule', 'routing'] as const)
     it(`legacy ${kind} cannot send context to cloud primary or cloud fallback`, async () => {
-      const { teamId, primary, jev, route } = await setup();
+      const { teamId, primary, jev, policy, route } = await setup();
+      await policy.patch({ enabled: false });
       const classId =
         kind === 'news'
           ? TRADING_NEWS_CLASS

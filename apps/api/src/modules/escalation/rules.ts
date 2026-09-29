@@ -4,9 +4,8 @@
 // answer is unsure, or after the local model failed. Set in Helena as one setting
 // (app_setting `helena.escalation`); off until the owner switches it on.
 //
-// This module is pure: the settings as Helena keeps them and the one decision `escalate()`
-// that a run's claim (and later the central runtime) asks. Nothing calls it yet: Phase 2 wires
-// it in, class by class, after its evals.
+// This module is pure: the settings as Helena keeps them and the decision `escalate()`
+// used when a local agent run fails.
 
 // Kinds of work that always go to a strong model (the plan's list).
 export type EscalationKind = 'coding' | 'architecture' | 'security' | 'legal' | 'external-text';

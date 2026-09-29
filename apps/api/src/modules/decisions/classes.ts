@@ -28,10 +28,8 @@ export const HEARTBEAT_PRECHECK_CLASS = 'routines.precheck';
 export const TASK_TRIAGE_CLASS = 'tasks.triage';
 export const AGENT_ROUTING_CLASS = 'agents.routing';
 
-export function localAiClassForDecision(classId: string): 'triage' | 'decisions' {
-  return classId === MAIL_CLASS || classId === TASK_TRIAGE_CLASS || classId === AGENT_ROUTING_CLASS
-    ? 'triage'
-    : 'decisions';
+export function localAiClassForDecision(_classId: string): 'decisions' {
+  return 'decisions';
 }
 
 export const BUILTIN_DECISION_CLASSES: DecisionClass[] = [
@@ -129,10 +127,8 @@ export const BUILTIN_DECISION_CLASSES: DecisionClass[] = [
 // llama-server, Lemonade): the "local logit" readout of a small language model, and a JSON
 // answer of any chat model (docs/helena-decisions/decisions.md §3.2). Both answer the same
 // System One questions as TypeSafe's Jev, so the browser's fast path can use them too.
-export const LOCAL_AI_URL = 'http://127.0.0.1:13305/api/v1';
-// The local AI's workhorse, which passed every class's eval by logit readout on 2026-09-25
-// (decisions.md §8); Lemonade's name for it.
-export const LOCAL_DECISION_MODEL = 'Qwen3.6-35B-A3B-MTP-GGUF';
+export const LOCAL_AI_URL = 'http://127.0.0.1:8731/v1';
+export const LOCAL_DECISION_MODEL = 'halogen-qwen3.8-flash-next';
 
 export const DECISIONS_BACKENDS: DecisionBackendType[] = [
   {

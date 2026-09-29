@@ -57,6 +57,8 @@ import {
 import { chooseModelNow, classModelNow, type LocalFallback } from '#modules/local-ai/service';
 import { WORK_CLASS } from '#modules/local-ai/work-classes';
 import { routinePromptContext } from '#modules/routines/agent-runs';
+import { readEscalation } from '#modules/escalation/service';
+import { failedRunEscalation } from './escalation';
 import { issueWhy, issueWhySection } from '#modules/project-goals/ladder';
 import { activeOrderContext } from '#modules/standing-orders/service';
 import { localAiMayStart, type CapacityCache } from '#modules/local-ai/pressure';
@@ -261,7 +263,10 @@ export async function expireExhaustedRuns(agentId?: number): Promise<number> {
         rows.map((row) => row.id),
       ),
     );
-  for (const row of rows) await recordAgentRunFinished(row, 'failed', row.lastError);
+  for (const row of rows) {
+    await recordAgentRunFinished(row, 'failed', row.lastError);
+    await queueFailedRunEscalation(row.id);
+  }
   return rows.length;
 }
 
@@ -308,7 +313,10 @@ export async function expireResumeLimitedRuns(): Promise<number> {
         rows.map((row) => row.id),
       ),
     );
-  for (const row of rows) await recordAgentRunFinished(row, 'failed', row.lastError);
+  for (const row of rows) {
+    await recordAgentRunFinished(row, 'failed', row.lastError);
+    await queueFailedRunEscalation(row.id);
+  }
   return rows.length;
 }
 
@@ -926,6 +934,67 @@ async function requestReflection(
     : { prompt: reflectionPrompt(reason, await getDisplayName()), ...REFLECTION_LIMITS };
 }
 
+async function queueFailedRunEscalation(runId: number): Promise<void> {
+  const settings = await readEscalation();
+  if (!settings.enabled) return;
+  await db.transaction(async (tx) => {
+    const [row] = await tx
+      .select({
+        id: agentRun.id,
+        agentId: agentRun.agentId,
+        projectId: agentRun.projectId,
+        issueId: agentRun.issueId,
+        prompt: agentRun.prompt,
+        sessionId: agentRun.sessionId,
+        model: agentRun.model,
+        modelCheck: agentRun.modelCheck,
+        attempts: agentRun.attempts,
+        lastError: agentRun.lastError,
+        agentModel: aiAgent.model,
+        runtimePolicy: aiAgent.runtimePolicy,
+      })
+      .from(agentRun)
+      .innerJoin(aiAgent, eq(aiAgent.id, agentRun.agentId))
+      .where(and(eq(agentRun.id, runId), eq(agentRun.status, 'failed')))
+      .for('update');
+    if (!row) return;
+    const [alreadyQueued] = await tx
+      .select({ id: agentRun.id })
+      .from(agentRun)
+      .where(eq(agentRun.continuedFromRunId, runId))
+      .limit(1);
+    if (alreadyQueued) return;
+    const plan = failedRunEscalation(settings, {
+      agentId: row.agentId,
+      projectId: row.projectId,
+      issueId: row.issueId,
+      runtime: runtimeOfPolicy(normalizeRuntimePolicy(row.runtimePolicy)),
+      agentModel: row.agentModel,
+      model: row.model,
+      configuredModel:
+        (row.modelCheck as { configured?: { model?: string | null } } | null)?.configured?.model ??
+        null,
+      modelSource:
+        (row.modelCheck as { configured?: { source?: string } } | null)?.configured?.source ?? null,
+      attempts: row.attempts,
+      error: row.lastError,
+    });
+    if (!plan) return;
+    const instruction = `The local attempt failed (${plan.reason}). Continue the task with ${plan.model}. Review the previous attempt and correct its failure.`;
+    await tx.insert(agentRun).values({
+      agentId: row.agentId,
+      projectId: row.projectId,
+      issueId: row.issueId,
+      trigger: 'manual',
+      prompt: row.sessionId ? instruction : `${row.prompt}\n\n${instruction}`,
+      model: plan.model,
+      sessionId: row.sessionId,
+      continuedFromRunId: runId,
+      taintSources: row.sessionId ? ['continued-session'] : [],
+    });
+  });
+}
+
 // Records the outcome the runner reports. A failure is terminal: the runner ran the
 // command and it failed, so re-serving the same run would just repeat it. A run in
 // which the agent reported itself blocked ends as a success whatever the command did
@@ -1044,6 +1113,7 @@ export async function finishRun(
         }
       : null,
   );
+  if (status === 'failed') await queueFailedRunEscalation(runId);
   // "Handeln & berichten": what the run did without approval, on its task.
   await postAutopilotReport(runId);
   const paused = await enforceAgentLimits(agent.id, row.projectId, row.issueId);

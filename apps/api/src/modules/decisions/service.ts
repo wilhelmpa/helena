@@ -44,6 +44,8 @@ export interface DecideRequest {
   // Internal request restriction: may narrow but never relax the class's policy.
   // Not a caller-controlled API setting and never persisted as an owner preference.
   localOnly?: boolean;
+  // Permits only the configured Jev first stage on otherwise local-only input.
+  allowPrivateJev?: boolean;
   questions: Record<string, DecisionQuestion>;
   subject?: string | null;
   projectId?: number | null;
@@ -351,7 +353,7 @@ export async function decide(request: DecideRequest): Promise<DecideOutcome> {
   const chatAllowsStage = await firstStageChatGuard(request).catch(() => async () => false);
   // A stage-setting or eval lookup failure skips the optimization. The existing path stays.
   const stage =
-    !request.localOnly &&
+    (!request.localOnly || request.allowPrivateJev === true) &&
     (await chatAllowsStage().catch(() => false)) &&
     JSON.stringify({ context: request.context, questions: request.questions }).length <= 16000
       ? await firstStageCandidate(request.teamId, cls.id, threshold).catch(() => null)
@@ -382,7 +384,7 @@ export async function decide(request: DecideRequest): Promise<DecideOutcome> {
         request.teamId,
         cls,
         credentialId,
-        request.localOnly,
+        request.localOnly && !isStage,
       );
       if ('refused' in found) {
         last = { status: 'no_backend', message: found.refused, connection: null };

@@ -38,8 +38,7 @@ export const TRADING_DECISION_CLASSES: DecisionClass[] = [
       en: 'Whether a planned paper trade meets one written rule of the rule book. A checklist aid; the hard limits are enforced by the paper tools.',
       de: 'Ob ein geplanter Paper-Trade eine Regel des Regelwerks erfüllt. Eine Checklisten-Hilfe; die harten Grenzen setzen die Paper-Werkzeuge selbst durch.',
     },
-    // Plans and positions are the owner's: local backends only.
-    input: { store: 'optional', cloud: 'never' },
+    input: { store: 'optional', cloud: 'allowed' },
     defaults: { threshold: 0.85, timeoutMs: 6000 },
     eval: RULE_EVAL,
   },
@@ -50,7 +49,7 @@ export const TRADING_DECISION_CLASSES: DecisionClass[] = [
       en: 'Which role of the trading team takes a task (research, chart, crypto, day trading, risk, quant, strategy, paper, finance, coordination).',
       de: 'Welche Rolle des Trading-Teams eine Aufgabe übernimmt (Research, Chart, Krypto, Daytrading, Risiko, Quant, Strategie, Paper, Finanzen, Koordination).',
     },
-    input: { store: 'optional', cloud: 'never' },
+    input: { store: 'optional', cloud: 'allowed' },
     defaults: { threshold: 0.7, timeoutMs: 5000 },
     eval: ROUTING_EVAL,
   },
