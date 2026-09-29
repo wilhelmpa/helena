@@ -1,6 +1,7 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { constants, type Dirent } from 'node:fs';
 import {
+  chmod,
   copyFile,
   link,
   lstat,
@@ -339,6 +340,41 @@ export async function writeUniqueFile(
         // Receipt intake owns a transaction and indexes the original after its commit.
         if (!options.deferIndex)
           await recordFileWrite([joinPath(root.vaultPath!, relative)], actor);
+        return relative;
+      } catch (error) {
+        if (errorCode(error) !== 'EEXIST') throw error;
+      }
+    }
+    throw new HttpError(409, 'No free file name is left in this folder');
+  } finally {
+    await unlink(temporary);
+  }
+}
+
+// Import a bounded file already staged on disk without loading its bytes into memory.
+// The destination is still created through the same checked folder, atomic link, and
+// index path as an ordinary upload.
+export async function writeUniqueFileFromPath(
+  root: FileRoot,
+  folder: string,
+  name: string,
+  source: string,
+  actor?: FileActor,
+): Promise<string> {
+  await assertWritable(root);
+  if (name.toLowerCase().endsWith('.md')) assertNotGeneratedContent(name, await readFile(source));
+  const safeFolder = relativePath(folder);
+  const directory = await folderDirectory(root, safeFolder);
+  const temporary = path.join(directory, `.${randomUUID()}.part`);
+  await copyFile(source, temporary, constants.COPYFILE_EXCL);
+  try {
+    await chmod(temporary, FILE_MODE);
+    for (let number = 1; number <= MAX_NAME_ATTEMPTS; number += 1) {
+      const candidate = numberedName(safeFileName(name), number);
+      try {
+        await link(temporary, path.join(directory, candidate));
+        const relative = joinPath(safeFolder, candidate);
+        await recordFileWrite([joinPath(root.vaultPath!, relative)], actor);
         return relative;
       } catch (error) {
         if (errorCode(error) !== 'EEXIST') throw error;

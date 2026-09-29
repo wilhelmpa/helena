@@ -9,7 +9,7 @@ import { HttpError } from '#shared/lib';
 import { canAccess, vaultScope } from '#modules/knowledge/scope';
 import { joinPath, relativePath, safeFileName } from '#modules/project-files/paths';
 import { homeRoot, projectRoot, projectVaultPath } from '#modules/project-files/roots';
-import { describeVaultFile, writeUniqueFile } from '#modules/project-files/service';
+import { describeVaultFile, writeUniqueFileFromPath } from '#modules/project-files/service';
 import { DuplicateReceipt, requireReceipt, uploadReceipt } from '#modules/receipts/receipts';
 import type { ToolCaller } from '../tools';
 
@@ -41,12 +41,18 @@ function target(caller: ToolCaller, folder: string) {
   };
 }
 
-async function collect(stream: Readable): Promise<{ bytes: Buffer; sha256: string; size: number }> {
+async function collect(stream: Readable): Promise<{
+  file: string;
+  dir: string;
+  sha256: string;
+  size: number;
+}> {
   const dir = await mkdtemp(path.join(tmpdir(), 'volition-drive-'));
   const file = path.join(dir, 'original');
   const handle = await open(file, 'wx', 0o600);
   const hash = createHash('sha256');
   let size = 0;
+  let completed = false;
   try {
     for await (const chunk of stream) {
       const bytes = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk as Uint8Array);
@@ -59,10 +65,11 @@ async function collect(stream: Readable): Promise<{ bytes: Buffer; sha256: strin
       await handle.writeFile(bytes);
     }
     await handle.close();
-    return { bytes: await readFile(file), sha256: hash.digest('hex'), size };
+    completed = true;
+    return { file, dir, sha256: hash.digest('hex'), size };
   } finally {
     await handle.close().catch(() => undefined);
-    await rm(dir, { recursive: true, force: true });
+    if (!completed) await rm(dir, { recursive: true, force: true });
   }
 }
 
@@ -74,83 +81,98 @@ export async function saveDriveToVault(caller: ToolCaller, input: DriveVaultInpu
   const scope = await vaultScope({ id: caller.agent.userId }, true);
   if (!canAccess(scope, vaultPath, 'write'))
     throw new HttpError(403, 'This folder is outside your vault access.');
-  const { bytes, sha256, size } = await collect(input.stream);
-  const name = safeFileName(input.name);
-  if (input.asReceipt) {
-    const [row] = await db
-      .select({ id: project.id, teamId: project.teamId, key: project.key })
-      .from(project)
-      .where(eq(project.id, caller.project.id));
-    if (!row || row.key !== caller.project.key) throw new HttpError(403, 'Project access denied.');
-    try {
-      const receipt = await uploadReceipt(
-        row,
-        new File([bytes], name, { type: input.mimeType }),
-        caller.agent.userId,
-        {
-          source: `Google Drive ${input.fileId}`,
-          fileDate: input.modifiedTime,
-          actorRef: `agent:${caller.agent.id}`,
-          runId: caller.run?.id ?? null,
-        },
+  const staged = await collect(input.stream);
+  try {
+    const { sha256, size } = staged;
+    const name = safeFileName(input.name);
+    if (input.asReceipt) {
+      const [row] = await db
+        .select({ id: project.id, teamId: project.teamId, key: project.key })
+        .from(project)
+        .where(eq(project.id, caller.project.id));
+      if (!row || row.key !== caller.project.key)
+        throw new HttpError(403, 'Project access denied.');
+      try {
+        const receipt = await uploadReceipt(
+          row,
+          new File([await readFile(staged.file)], name, { type: input.mimeType }),
+          caller.agent.userId,
+          {
+            source: `Google Drive ${input.fileId}`,
+            fileDate: input.modifiedTime,
+            actorRef: `agent:${caller.agent.id}`,
+            runId: caller.run?.id ?? null,
+          },
+        );
+        return {
+          vaultPath: receipt.vaultPath,
+          sha256,
+          size,
+          mimeType: input.mimeType,
+          link: `/projects/${encodeURIComponent(row.key)}/files/raw?path=${encodeURIComponent(receipt.vaultPath.slice(projectVaultPath(row.key).length + 1))}`,
+          receiptId: receipt.id,
+          duplicate: false,
+        };
+      } catch (error) {
+        if (!(error instanceof DuplicateReceipt)) throw error;
+        const receipt = await requireReceipt(row.id, error.existingId);
+        const relative = receipt.vaultPath.slice(projectVaultPath(row.key).length + 1);
+        return {
+          vaultPath: receipt.vaultPath,
+          sha256,
+          size,
+          mimeType: input.mimeType,
+          link: `/projects/${encodeURIComponent(row.key)}/files/raw?path=${encodeURIComponent(relative)}`,
+          receiptId: receipt.id,
+          duplicate: true,
+        };
+      }
+    }
+    const known = await db
+      .select({ path: vaultEntry.path })
+      .from(vaultEntry)
+      .where(
+        and(
+          eq(vaultEntry.sha256, sha256),
+          like(vaultEntry.path, `${destination.root.vaultPath}/%`),
+        ),
       );
-      return {
-        vaultPath: receipt.vaultPath,
-        sha256,
-        size,
-        mimeType: input.mimeType,
-        link: `/projects/${encodeURIComponent(row.key)}/files/raw?path=${encodeURIComponent(receipt.vaultPath.slice(projectVaultPath(row.key).length + 1))}`,
-        receiptId: receipt.id,
-        duplicate: false,
-      };
-    } catch (error) {
-      if (!(error instanceof DuplicateReceipt)) throw error;
-      const receipt = await requireReceipt(row.id, error.existingId);
-      const relative = receipt.vaultPath.slice(projectVaultPath(row.key).length + 1);
-      return {
-        vaultPath: receipt.vaultPath,
-        sha256,
-        size,
-        mimeType: input.mimeType,
-        link: `/projects/${encodeURIComponent(row.key)}/files/raw?path=${encodeURIComponent(relative)}`,
-        receiptId: receipt.id,
-        duplicate: true,
-      };
+    for (const entry of known) {
+      if (!entry.path.startsWith(`${destination.root.vaultPath}/`)) continue;
+      const relative = entry.path.slice(destination.root.vaultPath!.length + 1);
+      const existing = await describeVaultFile(destination.root, relative).catch(() => null);
+      if (existing?.sha256 === sha256) {
+        const link =
+          destination.root.name === 'home'
+            ? `/files/raw?root=home&path=${encodeURIComponent(relative)}`
+            : `/projects/${encodeURIComponent(caller.project.key)}/files/raw?path=${encodeURIComponent(relative)}`;
+        return {
+          vaultPath: entry.path,
+          sha256,
+          size,
+          mimeType: existing.contentType,
+          link,
+          duplicate: true,
+        };
+      }
     }
-  }
-  const known = await db
-    .select({ path: vaultEntry.path })
-    .from(vaultEntry)
-    .where(
-      and(eq(vaultEntry.sha256, sha256), like(vaultEntry.path, `${destination.root.vaultPath}/%`)),
+    const relative = await writeUniqueFileFromPath(
+      destination.root,
+      destination.folder,
+      name,
+      staged.file,
+      {
+        ref: `agent:${caller.agent.id}`,
+        runId: caller.run?.id ?? null,
+      },
     );
-  for (const entry of known) {
-    if (!entry.path.startsWith(`${destination.root.vaultPath}/`)) continue;
-    const relative = entry.path.slice(destination.root.vaultPath!.length + 1);
-    const existing = await describeVaultFile(destination.root, relative).catch(() => null);
-    if (existing?.sha256 === sha256) {
-      const link =
-        destination.root.name === 'home'
-          ? `/files/raw?root=home&path=${encodeURIComponent(relative)}`
-          : `/projects/${encodeURIComponent(caller.project.key)}/files/raw?path=${encodeURIComponent(relative)}`;
-      return {
-        vaultPath: entry.path,
-        sha256,
-        size,
-        mimeType: existing.contentType,
-        link,
-        duplicate: true,
-      };
-    }
+    const saved = joinPath(destination.root.vaultPath!, relative);
+    const link =
+      destination.root.name === 'home'
+        ? `/files/raw?root=home&path=${encodeURIComponent(relative)}`
+        : `/projects/${encodeURIComponent(caller.project.key)}/files/raw?path=${encodeURIComponent(relative)}`;
+    return { vaultPath: saved, sha256, size, mimeType: input.mimeType, link, duplicate: false };
+  } finally {
+    await rm(staged.dir, { recursive: true, force: true });
   }
-  const relative = await writeUniqueFile(destination.root, destination.folder, name, bytes, {
-    ref: `agent:${caller.agent.id}`,
-    runId: caller.run?.id ?? null,
-  });
-  const saved = joinPath(destination.root.vaultPath!, relative);
-  const link =
-    destination.root.name === 'home'
-      ? `/files/raw?root=home&path=${encodeURIComponent(relative)}`
-      : `/projects/${encodeURIComponent(caller.project.key)}/files/raw?path=${encodeURIComponent(relative)}`;
-  return { vaultPath: saved, sha256, size, mimeType: input.mimeType, link, duplicate: false };
 }
