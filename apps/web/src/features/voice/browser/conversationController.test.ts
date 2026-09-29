@@ -19,6 +19,7 @@ function harness(
   transcribe: ConversationDeps['transcribe'] = async () => ({ text: 'Hallo' }),
   audibleDelayMs = 0,
   bridgeDelayMs = 5,
+  wakeText?: string,
 ) {
   Object.defineProperty(globalThis, 'window', { configurable: true, value: globalThis });
   Object.defineProperty(globalThis, 'document', {
@@ -91,7 +92,7 @@ function harness(
     },
   });
   controller.setEngines({ engine: 'local' }, { engine: 'local', fallback: 'browser' });
-  controller.start([], false);
+  controller.start([], false, wakeText);
   const ready = async () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
   };
@@ -121,6 +122,12 @@ function harness(
 }
 
 describe('conversation controller with fake ear and speaker', () => {
+  it('sends the sentence following Ava as the first turn', async () => {
+    const h = harness(async () => ({ text: 'unused' }), 0, 5, 'mach das Licht an');
+    await h.ready();
+    assert.deepEqual(h.sent, ['mach das Licht an']);
+  });
+
   it('bridges once, streams the first sentence, then listens after the final audio', async () => {
     const h = harness();
     await h.ready();

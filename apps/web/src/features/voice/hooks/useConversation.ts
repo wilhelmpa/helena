@@ -1,12 +1,14 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { transcribeRecording } from '@/lib/api/endpoints/voice';
 import {
   ConversationController,
   type ConversationMessage,
   type ConversationProblem,
 } from '../browser/conversationController';
+import { startWakeWordListener, type WakeWordStatus } from '../browser/wakeWordListener';
+import { subscribeVoiceOutput, voiceOutputActive } from '../browser/voiceOutput';
 import {
   conversationPhase,
   initialConversation,
@@ -15,6 +17,7 @@ import {
 } from '../utils/conversation';
 import type { TurnTimings } from '../utils/turnTimings';
 import { useVoice } from './useVoice';
+import { useWakeWordSetting } from './useWakeWordSetting';
 
 // The chat's conversation mode (hands-free): see browser/conversationController.ts. The chat
 // passes its messages (as text), whether an answer is coming, how many messages wait in its
@@ -42,6 +45,7 @@ export interface Conversation {
   speakerEngine: 'local' | 'browser' | 'none';
   micStream: MediaStream | null;
   outputAnalyser: AnalyserNode | null;
+  wakeWordStatus: WakeWordStatus | 'off';
   start: () => void;
   stop: () => void;
   interrupt: () => void;
@@ -54,12 +58,15 @@ const HEARD_MS = 4_000;
 
 export function useConversation(options: ConversationOptions): Conversation {
   const voice = useVoice();
+  const wakeWord = useWakeWordSetting();
+  const outputActive = useSyncExternalStore(subscribeVoiceOutput, voiceOutputActive, () => false);
   const [state, setState] = useState<ConversationState>(initialConversation);
   const [heard, setHeard] = useState<string | null>(null);
   const [timings, setTimings] = useState<TurnTimings | null>(null);
   const [misheard, setMisheard] = useState(false);
   const [micStream, setMicStream] = useState<MediaStream | null>(null);
   const [outputAnalyser, setOutputAnalyser] = useState<AnalyserNode | null>(null);
+  const [wakeStatus, setWakeStatus] = useState<WakeWordStatus>('checking');
   const painter = useRef<((level: number) => void) | null>(null);
   const latest = useRef(options);
   const refresh = useRef(voice.refresh);
@@ -115,6 +122,36 @@ export function useConversation(options: ConversationOptions): Conversation {
     controller().update(options.messages, options.busy, options.queued);
   }, [controller, options.messages, options.busy, options.queued]);
 
+  useEffect(() => {
+    if (!wakeWord.enabled || state.active !== 'off' || !voice.ready || outputActive) return;
+    if (voice.listener.engine === 'none') return;
+    let cancelled = false;
+    let stop: (() => void) | undefined;
+    void startWakeWordListener({
+      isCancelled: () => cancelled,
+      onStatus: (status) => {
+        if (!cancelled) setWakeStatus(status);
+      },
+      onWake: (firstText) => {
+        if (!cancelled) controller().start(latest.current.messages, latest.current.busy, firstText);
+      },
+    }).then((close) => {
+      if (cancelled) close();
+      else stop = close;
+    });
+    return () => {
+      cancelled = true;
+      stop?.();
+    };
+  }, [
+    controller,
+    wakeWord.enabled,
+    state.active,
+    voice.ready,
+    voice.listener.engine,
+    outputActive,
+  ]);
+
   // Leaving the chat ends the conversation: microphone off, voice silent.
   useEffect(
     () => () => {
@@ -140,6 +177,14 @@ export function useConversation(options: ConversationOptions): Conversation {
       speakerEngine: voice.speaker.engine,
       micStream,
       outputAnalyser,
+      wakeWordStatus:
+        !wakeWord.enabled || state.active !== 'off'
+          ? 'off'
+          : voice.listener.engine === 'none'
+            ? 'unavailable'
+            : outputActive
+              ? 'paused'
+              : wakeStatus,
       start,
       stop: () => controller().stop(),
       interrupt: () => controller().interrupt(),
@@ -154,6 +199,9 @@ export function useConversation(options: ConversationOptions): Conversation {
       voice.speaker.engine,
       micStream,
       outputAnalyser,
+      wakeWord.enabled,
+      wakeStatus,
+      outputActive,
       state,
       heard,
       timings,

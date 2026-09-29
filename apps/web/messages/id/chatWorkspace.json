@@ -228,6 +228,10 @@
     "hint": "Lanjutkan di terminal: hermes --resume {id} (atau claude --resume {id})"
   },
   "voice": {
+    "wakeListening": "listening for Ava",
+    "wakeChecking": "Checking on-device Ava recognition …",
+    "wakePaused": "Ava recognition paused while audio plays",
+    "wakeUnavailable": "Ava recognition is unavailable here",
     "startConversation": "Mulai percakapan – bicara dan dengarkan tanpa tangan",
     "endConversation": "Akhiri percakapan",
     "placeholder": "Bicara saja – atau ketik …",

@@ -228,6 +228,10 @@
     "hint": "المتابعة في الطرفية: hermes --resume {id} (أو claude --resume {id})"
   },
   "voice": {
+    "wakeListening": "listening for Ava",
+    "wakeChecking": "Checking on-device Ava recognition …",
+    "wakePaused": "Ava recognition paused while audio plays",
+    "wakeUnavailable": "Ava recognition is unavailable here",
     "startConversation": "بدء محادثة – تحدّث واستمع دون استخدام اليدين",
     "endConversation": "إنهاء المحادثة",
     "placeholder": "تحدّث فقط – أو اكتب …",

@@ -162,7 +162,7 @@ export class ConversationController {
   }
 
   // Starts from a click: the voice is unlocked before anything waits.
-  start(messages: ConversationMessage[], busy: boolean): void {
+  start(messages: ConversationMessage[], busy: boolean, wakeText?: string): void {
     if (this.state.active !== 'off') return;
     if (this.listener.engine === 'none') {
       this.deps.onProblem(this.listener.blocker);
@@ -180,9 +180,17 @@ export class ConversationController {
     this.voice = this.createVoice(this.speaker);
     this.voice?.unlock();
     this.earcon = createEarcon();
+    if (wakeText !== undefined) this.earcon.play();
     this.dispatch({ type: 'start' });
     void this.openEar().then((opened) => {
-      if (opened) this.dispatch({ type: 'ready' });
+      if (!opened) return;
+      this.dispatch({ type: 'ready' });
+      if (wakeText?.trim()) {
+        this.deps.onHeard(wakeText);
+        this.utterances.push({ samples: null, text: wakeText, reading: '' });
+        this.dispatch({ type: 'speechStart' });
+        this.dispatch({ type: 'speechEnd' });
+      }
     });
   }
 

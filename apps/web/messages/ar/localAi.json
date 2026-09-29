@@ -243,6 +243,12 @@
     }
   },
   "voice": {
+    "wake": {
+      "title": "Listen for “Ava”",
+      "hint": "The microphone stays open while a chat page is open. Before “Ava”, only on-device recognition processes your voice; nothing is saved.",
+      "availability": "On-device recognition",
+      "availabilityHint": "Works only if the browser already has a German offline speech pack. Helena does not download one."
+    },
     "title": "الصوت في الدردشة",
     "loading": "جارٍ التحميل …",
     "failed": "تعذّر تحميل إعدادات الصوت.",
