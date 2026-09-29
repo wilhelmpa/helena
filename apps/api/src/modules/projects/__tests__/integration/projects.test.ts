@@ -8,7 +8,7 @@ import { addProjectMember } from '#tests/helpers/members';
 import { createRole, listProjectRoles } from '#tests/helpers/roles';
 import { createAgent, projectIdOf, teamOf } from '#tests/helpers/agents';
 import { clearLimits, setLimits } from '#tests/helpers/limits';
-import { bootstrapHomeAgent } from '../../../../../scripts/bootstrap-home-agent';
+import { bootstrapHomeAgent } from '../../../../scripts/bootstrap-home-agent';
 import { cleanupOrphanAgents } from '../../../../../scripts/cleanup-orphan-agents';
 
 // Full integration flow: a real session against the real (test) database.

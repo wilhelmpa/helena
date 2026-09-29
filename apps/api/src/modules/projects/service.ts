@@ -34,7 +34,6 @@ import { getProjectSetting, setProjectSetting } from '#shared/project-settings';
 import { PROJECT_FEATURES, featureLabel, type ProjectFeature } from '#shared/features';
 import { getLimits } from '#shared/limits';
 import { enableProjectBrowser } from '#modules/agents/mcp-servers/service';
-import { deleteThreadsWhere } from '#modules/agents/core/runtime/memory';
 import { deleteAgent, queueAgentRuntime } from '#modules/agents/core/service';
 import { isHomeAgent } from '#modules/agents/core/home-agent';
 import { getProjectDefaults } from '#modules/settings/service';
@@ -997,7 +996,6 @@ export async function setSubtaskAutomationSettings(
 // issues and their columns are deleted by the same cascade, so it is satisfied, and so
 // are the chats started in the project.
 export async function deleteProject(projectId: number): Promise<void> {
-  await deleteThreadsWhere({ projectId });
   const [target] = await db
     .select({ teamId: project.teamId, key: project.key })
     .from(project)
