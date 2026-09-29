@@ -87,6 +87,7 @@ describe('voice settings', () => {
       speed: 1.4,
       vocabulary: ['Verve', 'x'.repeat(60)],
       vocabularyAliases: null,
+      pronunciationLexicon: [],
       voice: null,
       replyModel: null,
       // No reasoning without a model.
@@ -95,6 +96,15 @@ describe('voice settings', () => {
     expect(normalizeVoiceSettings(null).pauseMs).toBe(300);
     expect(normalizeVoiceSettings({ fallbackTimeoutMs: 50 }).fallbackTimeoutMs).toBe(300);
     expect(normalizeVoiceSettings({ fallbackTimeoutMs: 9000 }).fallbackTimeoutMs).toBe(5000);
+    expect(
+      normalizeVoiceSettings({
+        pronunciationLexicon: [
+          { word: 'Claude', pronunciation: 'Kloud' },
+          { word: 'claude', pronunciation: 'ignored' },
+          { word: '', pronunciation: 'empty' },
+        ],
+      }).pronunciationLexicon,
+    ).toEqual([{ word: 'Claude', pronunciation: 'Kloud' }]);
   });
 
   it('puts the owner’s words before Ava and her pronunciation variants', () => {

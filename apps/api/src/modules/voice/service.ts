@@ -26,6 +26,7 @@ import {
 } from './transcript';
 import { withTranscriptionAdmission } from './maintenance';
 import { readWav, whisperWav } from './wav';
+import { ttsText } from './tts-text';
 
 // Voice in the chat (docs/helena-decisions/voice.md): dictation and the conversation mode send
 // their recordings here, and the conversation mode's reading aloud asks here for audio. Both go
@@ -390,9 +391,7 @@ export async function synthesize(input: {
   text: string;
   language?: string | null;
 }): Promise<SpeechAudio> {
-  const text = input.text.replace(/\s+/g, ' ').trim();
-  if (!text) throw new HttpError(400, 'Nothing to say', 'voice-empty');
-  if (text.length > VOICE_LIMITS.maxSpeechChars)
+  if (input.text.length > VOICE_LIMITS.maxSpeechChars)
     throw new HttpError(
       413,
       `At most ${VOICE_LIMITS.maxSpeechChars} characters at a time`,
@@ -403,6 +402,11 @@ export async function synthesize(input: {
     readModelServerKey(route.server),
     readVoiceSettings(),
   ]);
+  const text =
+    input.language?.startsWith('de') || !input.language
+      ? ttsText(input.text, settings.pronunciationLexicon)
+      : input.text.replace(/\s+/g, ' ').trim();
+  if (!text) throw new HttpError(400, 'Nothing to say', 'voice-empty');
   const audioCaps = serverType(route.server.kind)?.audio;
   const pcmRate = audioCaps?.speechPcmRate ?? null;
   const language = input.language ? LANGUAGE_NAMES[input.language] : undefined;

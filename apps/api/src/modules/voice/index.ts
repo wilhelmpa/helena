@@ -20,6 +20,7 @@ import {
   transcribe,
   voiceStatus,
 } from './service';
+import { DEFAULT_PRONUNCIATIONS } from './tts-text';
 import {
   helenaWords,
   readVoiceSettings,
@@ -134,6 +135,7 @@ export const voiceRoutes = new Elysia({ name: 'voice', detail: { tags: ['Voice']
       ]);
       return {
         ...settings,
+        defaultPronunciations: DEFAULT_PRONUNCIATIONS,
         helenaWords: words,
         suggestedAliases: suggestedAliases(words),
         voices,
@@ -165,6 +167,7 @@ export const voiceRoutes = new Elysia({ name: 'voice', detail: { tags: ['Voice']
       ]);
       return {
         ...settings,
+        defaultPronunciations: DEFAULT_PRONUNCIATIONS,
         helenaWords: words,
         suggestedAliases: suggestedAliases(words),
         voices,
