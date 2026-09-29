@@ -23,6 +23,9 @@ ProtectSystem=strict
 RestrictAddressFamilies=AF_UNIX AF_INET
 IPAddressDeny=any
 IPAddressAllow=localhost
+# podman DNATs 127.0.0.1:8731/8733 into Halogen's container network; without this the
+# SYNs to Halogen are dropped (the health probe and every forwarded request hang).
+IPAddressAllow=@SUBNET@
 
 [Install]
 WantedBy=multi-user.target

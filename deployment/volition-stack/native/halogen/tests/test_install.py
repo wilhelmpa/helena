@@ -361,6 +361,7 @@ class ProxyUnitsTest(unittest.TestCase):
         self.assertNotIn('restart helena-halogen', result.stdout)
         unit = (HERE.parent / 'systemd/volition-halogen-priority.service.in').read_text()
         self.assertIn('RuntimeDirectory=volition-halogen-priority', unit)
+        self.assertIn('IPAddressAllow=@SUBNET@', unit)
         self.assertIn('User=volition-plan', unit)
 
     def test_forwarder_is_a_named_user_on_the_loopback(self):

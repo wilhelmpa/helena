@@ -321,3 +321,20 @@ test('a stalled upstream releases its slot and pauses admission', async () => {
   expect(proxy.scheduler.status().active.realtime).toBe(0);
   expect(proxy.scheduler.status().healthy).toBe(false);
 });
+
+test('GET without a body reaches the backend (model list, health)', async () => {
+  const backend = createServer((req, res) => {
+    res.writeHead(200, { 'content-type': 'application/json' });
+    res.end(JSON.stringify({ path: req.url, method: req.method }));
+  });
+  await new Promise<void>((resolve) => backend.listen(0, '127.0.0.1', resolve));
+  cleanups.push(() => new Promise((resolve) => backend.close(() => resolve())));
+  const port = (backend.address() as { port: number }).port;
+  const dir = await mkdtemp(join(tmpdir(), 'volition-priority-'));
+  const proxy = await startPriorityProxy({ hostPorts: [0, 0], backendPorts: [port, port], socketDir: dir });
+  cleanups.push(async () => { await proxy.close(); await rm(dir, { recursive: true, force: true }); });
+  const response = await fetch(`http://127.0.0.1:${proxy.ports[0]}/v1/models`, {
+    signal: AbortSignal.timeout(2_000),
+  });
+  expect(await response.json()).toEqual({ path: '/v1/models', method: 'GET' });
+});
