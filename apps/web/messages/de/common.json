@@ -299,5 +299,10 @@
     "more": "+{count} weitere"
   },
   "pinOverlay": "Anheften: bleibt beim Seitenwechsel offen",
-  "unpinOverlay": "Lösen: schließt beim Seitenwechsel"
+  "unpinOverlay": "Lösen: schließt beim Seitenwechsel",
+  "inherit": {
+    "inherited": "Erbt von {appName}",
+    "overridden": "Für dieses Projekt geändert",
+    "reset": "Zurücksetzen"
+  }
 }

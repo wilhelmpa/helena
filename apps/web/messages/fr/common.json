@@ -299,5 +299,10 @@
     "more": "+{count} de plus"
   },
   "pinOverlay": "Épingler : reste ouvert quand la page change",
-  "unpinOverlay": "Désépingler : se ferme quand la page change"
+  "unpinOverlay": "Désépingler : se ferme quand la page change",
+  "inherit": {
+    "inherited": "Hérite de {appName}",
+    "overridden": "Modifié pour ce projet",
+    "reset": "Réinitialiser"
+  }
 }

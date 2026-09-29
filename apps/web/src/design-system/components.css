@@ -2835,3 +2835,16 @@ a.ds-run-card:hover {
 .ds-team-pool {
   padding-top: var(--space-2);
 }
+
+/* Where a project setting stands against Ava's default (InheritedMark, Auftrag 117). */
+.ds-inherited {
+  display: inline-flex;
+  min-height: 28px;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+.ds-inherited[data-state='inherited'] {
+  color: var(--text-3);
+  font-size: 12px;
+}

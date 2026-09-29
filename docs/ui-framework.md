@@ -131,3 +131,30 @@ Der Einstieg `@/design-system` ist reine Darstellung: Er zieht keinen API-Client
 - **Leerzustände:** `EmptyState` mit Titel, einem Satz und der Hauptaktion (Doc anlegen, Datei hochladen, Beleg hochladen); ein Ordner nur mit Unterordnern bietet sie als Knöpfe an. Nie Spaltenköpfe über einer leeren Liste.
 - **Ansichten (`.base`):** `KnowledgeBaseView` zeigt Tabelle, Karten oder Liste (`Segmented`), filtert die Zeilen und öffnet die Notiz einer Zeile; nicht auswertbare Ausdrücke sagt sie offen. „Neu › Ansicht“ legt eine Ansicht über den Ordner an.
 - **Einstellungen › Wissen & Belege:** Belege zusammenführen, Beleg-Eingang, „Belege als Notizen“ (+ neu aufbauen), Bankkonten, Agenten als Notizen (Vorschau, in Wissen ablegen).
+
+## 12. Neues Modul: so sieht die Leiste aus (Auftrag 117)
+
+Jedes Modul – auch jedes neue – baut seine obere Leiste gleich, Aufgaben ist die Referenz. Der Test `src/app/toolbarGuard.test.ts` liest alle Seiten, Features und `components/helena` und schlägt fehl, wenn ein Modul eigene Teile baut.
+
+```tsx
+<Page
+  actions={<PageActions primary={{ id: 'new', label: t('new'), icon: Plus, onClick }} actions={[…]} />}
+  toolbar={
+    <>
+      <Segmented …/>            {/* Ansicht: Board · Liste · Tabelle, Kreis · Baum · Liste */}
+      <PageTabs …/>             {/* Einfachauswahl mit Zählern: Alle · Agenten · Vorlagen */}
+      <FilterBar …/>            {/* bzw. PageFilterMenu: Filter als Chips */}
+      <SegmentToggle …/>        {/* ein Schalter im Segment-Look (Aufgaben-Ring im Team) */}
+      <PageToolbarSpacer />
+      <PageSearch …/>           {/* die eine Suche, auch in Wissen und Belege (⌘K) */}
+    </>
+  }
+>
+```
+
+- **Reihenfolge:** Ansicht (`Segmented`), dann Auswahl/Filter (`PageTabs`, `FilterBar`/`PageFilterMenu`, `SegmentToggle`), Abstandhalter, Suche. Die Hauptaktion steht rechts im Kopf (`PageActions`), Seltenes in ihrem „…“.
+- **Verboten** (der Test nennt Datei und Zeile): ein eigenes Suchfeld (`<input type="search">`), eigene Filter-Pillen (`ds-pill-button`), eine lose `PillButton`, ein rohes `<input>` oder ein `SearchField` in einer `PageToolbar`.
+- **Fehlt etwas,** kommt es zuerst als Baustein ins Design-System (§6), dann ins Modul.
+- **Overlay:** Was aufgeht (Aufgabe, Lauf, Agent, Datei, Beleg), nutzt `Overlay` mit `pin` – Kopf: eigene Aktionen, dann Anheften, Vollbild, Schließen. Angeheftet bleibt es beim Seitenwechsel offen (`utils/overlayPin`).
+- **Global und im Projekt:** Eine Einstellung, die es auf beiden Ebenen gibt, zeigt im Projekt `InheritedMark` („Erbt von Ava“ bzw. „Für dieses Projekt geändert · Zurücksetzen“).
+- **Prüfen:** `node apps/web/scripts/ui-audit.mjs` misst gegen ein laufendes Ava Hintergründe (nur Tokens, kein Weiß im Dunkeln), Seitenabstände der Seitenschablone und die Rahmen/Status-Boxen der Aufgaben – hell und dunkel, 1440 und 390 px.

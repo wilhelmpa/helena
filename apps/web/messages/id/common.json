@@ -299,5 +299,10 @@
     "more": "+{count} lainnya"
   },
   "pinOverlay": "Sematkan: tetap terbuka saat halaman berganti",
-  "unpinOverlay": "Lepas: tertutup saat halaman berganti"
+  "unpinOverlay": "Lepas: tertutup saat halaman berganti",
+  "inherit": {
+    "inherited": "Mewarisi dari {appName}",
+    "overridden": "Diubah untuk proyek ini",
+    "reset": "Setel ulang"
+  }
 }

@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { useState } from 'react';
-import { FlaskConical, KeyRound, RotateCcw } from 'lucide-react';
-import { Badge, Button as DsButton, Inline, Stack } from '@/design-system';
+import { FlaskConical, KeyRound } from 'lucide-react';
+import { InheritedMark, Stack } from '@/design-system';
 import { useTranslations } from 'next-intl';
 import SettingsCard from '@/components/common/page/SettingsCard';
 import SettingsRow from '@/components/common/page/SettingsRow';
@@ -97,22 +97,11 @@ export function BrowserControlSection({
               </Select>
               {/* An override of Helena's default is marked in words and has its way back,
                   the same as the autopilot level (owner, L3). */}
-              {setting.mode !== 'inherit' && (
-                <Inline gap={2}>
-                  <Badge tone="accent">{t('overridden')}</Badge>
-                  {editable && (
-                    <DsButton
-                      size="small"
-                      variant="ghost"
-                      icon={<RotateCcw size={14} />}
-                      disabled={update.isPending}
-                      onClick={() => update.mutate({ mode: 'inherit' })}
-                    >
-                      {t('resetToDefault')}
-                    </DsButton>
-                  )}
-                </Inline>
-              )}
+              <InheritedMark
+                overridden={setting.mode !== 'inherit'}
+                disabled={update.isPending}
+                onReset={editable ? () => update.mutate({ mode: 'inherit' }) : undefined}
+              />
             </Stack>
           }
         />
