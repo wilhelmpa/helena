@@ -12,10 +12,12 @@ describe('deriveStatus priority', () => {
     ['thinking', { chat: 'streaming', run: 'done' }],
     ['tool', { chat: 'streaming', tool: 'search', run: 'done' }],
     ['waiting', { chat: 'streaming', tool: 'search', awaitingChoice: true }],
+    ['waiting', { voicePhase: 'waiting', chat: 'streaming' }],
     ['listening', { voicePhase: 'hearing', awaitingChoice: true }],
     ['speaking', { voicePhase: 'speaking', awaitingChoice: true }],
     ['throttled', { budget: 'exhausted', voicePhase: 'speaking' }],
     ['error', { chat: 'failed', budget: 'exhausted' }],
+    ['error', { voicePhase: 'error', chat: 'streaming' }],
     ['offline', { runtimeStatus: 'offline', chat: 'failed' }],
   ] as const;
 

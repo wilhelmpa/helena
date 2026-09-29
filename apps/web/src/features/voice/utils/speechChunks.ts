@@ -156,7 +156,11 @@ export function nextSpeechChunks(
       continue;
     }
     const last = end === ends.at(-1);
-    if (joined.length < MIN_CHARS && !(last && final)) {
+    if (
+      joined.length < MIN_CHARS &&
+      !(last && final) &&
+      !(end < markdown.length && /[.!?…]$/.test(joined))
+    ) {
       pending = joined;
       continue;
     }

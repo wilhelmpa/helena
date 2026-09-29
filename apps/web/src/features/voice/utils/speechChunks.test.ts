@@ -72,12 +72,13 @@ describe('nextSpeechChunks', () => {
     ]);
   });
 
-  it('joins pieces too short to say alone', () => {
+  it('speaks a short first sentence as soon as the next words arrive', () => {
     assert.deepEqual(nextSpeechChunks('Ja. Nein. Vielleicht doch.', 0, true).chunks, [
-      'Ja. Nein. Vielleicht doch.',
+      'Ja.',
+      'Nein.',
+      'Vielleicht doch.',
     ]);
-    // While streaming, a short piece waits for the next one.
-    assert.deepEqual(nextSpeechChunks('Ja. Und', 0, false), { chunks: [], offset: 0 });
+    assert.deepEqual(nextSpeechChunks('Ja. Und', 0, false), { chunks: ['Ja.'], offset: 3 });
   });
 
   it('cuts a very long sentence at a comma', () => {

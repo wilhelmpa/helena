@@ -15,7 +15,12 @@ import { startRecognitionEar } from './recognitionEar';
 import { MicrophoneError } from './recorder';
 import { createEarcon, type Earcon } from './earcon';
 import { stopSpeaking } from './speak';
-import { createBrowserSpeaker, createLocalSpeaker, type VoiceSpeaker } from './speakers';
+import {
+  createBrowserSpeaker,
+  createLocalSpeaker,
+  type SpeakerEvents,
+  type VoiceSpeaker,
+} from './speakers';
 import { DEFAULT_PAUSE_MS } from '../utils/voiceSettings';
 import { startVadEar, type ConversationEar, type EarEvents } from './vadListener';
 
@@ -63,6 +68,9 @@ export interface ConversationDeps {
   refreshStatus(): void;
   // Where the time of the last turn went (the owner stopped speaking → the answer is heard).
   onTimings?(timings: TurnTimings): void;
+  openEar?(events: EarEvents, pauseMs: number): Promise<ConversationEar>;
+  speakerFactory?(speaker: Speaker, events: SpeakerEvents, speed: number): VoiceSpeaker | null;
+  bridgeDelayMs?: number;
 }
 
 interface Utterance {
@@ -79,7 +87,12 @@ const SEND_TIMEOUT_MS = 10_000;
 const WAITING_CHIME_MS = 1_600;
 // A finished-looking last sentence of a streaming answer is read once the text has been quiet
 // this long (speechChunks.settledTail): the runner sends text every 150 ms while it comes.
-const TAIL_QUIET_MS = 300;
+const TAIL_QUIET_MS = 100;
+const BRIDGE_DELAY_MS = 120;
+
+export function bridgePhrase(language: string): string {
+  return language === 'de' ? 'Moment …' : 'One moment …';
+}
 
 function pageLanguage(): string | null {
   const lang = (document.documentElement.lang || '').slice(0, 2).toLowerCase();
@@ -94,7 +107,7 @@ export class ConversationController {
   private listener: Listener = { engine: 'none', blocker: 'unsupported' };
   private utterances: Utterance[] = [];
   // The answer being read and how far.
-  private reading: { id: string; offset: number; dropped: boolean } | null = null;
+  private reading: { id: string; offset: number; dropped: boolean; chunks: number } | null = null;
   // The messages there were before the conversation started: never read.
   private baseline = new Set<string>();
   private messages: ConversationMessage[] = [];
@@ -106,10 +119,16 @@ export class ConversationController {
   private generation = 0;
   private tailTimer = 0;
   private chimeTimer = 0;
+  private bridgeTimer = 0;
+  private bridgeDueAt = 0;
+  private bridgeActive = false;
+  private bridgeSinceAnswer = false;
   private earcon: Earcon | null = null;
   // How long a pause ends a turn, and how fast the browser's voice reads (the owner's settings).
   private pauseMs = DEFAULT_PAUSE_MS;
   private speed = 1;
+  private immediateResponse = true;
+  private bridgeEnabled = true;
   // The turn being timed: from the end of the owner's speech to the first sound of the answer.
   private marks: TurnMarks | null = null;
 
@@ -130,9 +149,16 @@ export class ConversationController {
   }
 
   // The owner's voice settings; a changed pause applies from the next conversation.
-  configure(options: { pauseMs?: number; speed?: number }): void {
+  configure(options: {
+    pauseMs?: number;
+    speed?: number;
+    immediateResponse?: boolean;
+    bridgeEnabled?: boolean;
+  }): void {
     if (options.pauseMs) this.pauseMs = options.pauseMs;
     if (options.speed) this.speed = options.speed;
+    if (options.immediateResponse !== undefined) this.immediateResponse = options.immediateResponse;
+    if (options.bridgeEnabled !== undefined) this.bridgeEnabled = options.bridgeEnabled;
   }
 
   // Starts from a click: the voice is unlocked before anything waits.
@@ -149,6 +175,8 @@ export class ConversationController {
     this.baseline = new Set(messages.map((message) => message.id));
     this.reading = null;
     this.utterances = [];
+    this.bridgeActive = false;
+    this.bridgeSinceAnswer = false;
     this.voice = this.createVoice(this.speaker);
     this.voice?.unlock();
     this.earcon = createEarcon();
@@ -199,16 +227,15 @@ export class ConversationController {
       case 'transcribe':
         void this.writeDown(this.utterances.shift());
         return;
-      case 'discardUtterance':
-        this.utterances.shift();
-        return;
       case 'send':
         if (this.marks && !this.marks.sentAt) this.marks.sentAt = performance.now();
         window.clearTimeout(this.chimeTimer);
-        this.chimeTimer = window.setTimeout(() => {
-          if (this.state.awaitingAnswer && !this.state.speaking && !this.state.userSpeaking)
-            this.earcon?.play();
-        }, WAITING_CHIME_MS);
+        if (!this.immediateResponse || !this.bridgeEnabled)
+          this.chimeTimer = window.setTimeout(() => {
+            if (this.state.awaitingAnswer && !this.state.speaking && !this.state.userSpeaking)
+              this.earcon?.play();
+          }, WAITING_CHIME_MS);
+        this.scheduleBridge();
         this.sawBusy = this.busy;
         window.clearTimeout(this.sendTimer);
         this.sendTimer = window.setTimeout(() => {
@@ -225,6 +252,7 @@ export class ConversationController {
         return;
       case 'dropReading':
         this.voice?.clear();
+        this.bridgeActive = false;
         if (this.reading) this.reading.dropped = true;
         return;
       case 'stopAll':
@@ -234,6 +262,7 @@ export class ConversationController {
         window.clearTimeout(this.sendTimer);
         window.clearTimeout(this.tailTimer);
         window.clearTimeout(this.chimeTimer);
+        window.clearTimeout(this.bridgeTimer);
         this.earcon?.close();
         this.earcon = null;
         this.marks = null;
@@ -243,6 +272,8 @@ export class ConversationController {
         this.voice = null;
         this.utterances = [];
         this.reading = null;
+        this.bridgeActive = false;
+        this.bridgeSinceAnswer = false;
         return;
     }
   }
@@ -259,7 +290,10 @@ export class ConversationController {
       return false;
     }
     const events: EarEvents = {
-      onSpeechStart: () => this.dispatch({ type: 'speechStart' }),
+      onSpeechStart: () => {
+        window.clearTimeout(this.bridgeTimer);
+        this.dispatch({ type: 'speechStart' });
+      },
       onMisfire: () => this.dispatch({ type: 'speechMisfire' }),
       onUtterance: (samples, text) => {
         if (generation !== this.generation) return;
@@ -267,6 +301,11 @@ export class ConversationController {
         // pause (its `pauseMs`) after that.
         const now = performance.now();
         this.marks = { stoppedAt: now - (this.ear?.pauseMs ?? 0), heardAt: now };
+        performance.mark('volition-voice-speech-ended', {
+          startTime: Math.max(0, this.marks.stoppedAt),
+        });
+        this.bridgeDueAt = now + (this.deps.bridgeDelayMs ?? BRIDGE_DELAY_MS);
+        this.scheduleBridge();
         this.utterances.push({ samples, text, reading: this.voice?.reading() ?? '' });
         this.dispatch({ type: 'speechEnd' });
       },
@@ -281,8 +320,9 @@ export class ConversationController {
       },
     };
     try {
-      const ear =
-        listener.engine === 'local'
+      const ear = this.deps.openEar
+        ? await this.deps.openEar(events, this.pauseMs)
+        : listener.engine === 'local'
           ? await startVadEar(events, this.pauseMs)
           : startRecognitionEar(events);
       if (generation !== this.generation) {
@@ -303,7 +343,7 @@ export class ConversationController {
   }
 
   private createVoice(speaker: Speaker): VoiceSpeaker | null {
-    const events = {
+    const events: SpeakerEvents = {
       onStart: () => {
         this.ear?.setGuarded(true);
         this.dispatch({ type: 'speakerStarted' });
@@ -312,10 +352,16 @@ export class ConversationController {
         this.ear?.setGuarded(false);
         this.dispatch({ type: 'speakerIdle' });
       },
-      onAudible: () => this.heard(),
+      onAudible: () => {
+        this.recordFirstTone();
+        if (this.bridgeActive) return;
+        this.bridgeSinceAnswer = false;
+        this.heard();
+      },
       onAnalyser: (analyser: AnalyserNode | null) => this.deps.onOutputAnalyser?.(analyser),
       onError: (text: string) => this.voiceFailed(text),
     };
+    if (this.deps.speakerFactory) return this.deps.speakerFactory(speaker, events, this.speed);
     if (speaker.engine === 'local') return createLocalSpeaker(events);
     if (speaker.engine === 'browser') return createBrowserSpeaker(events, { rate: this.speed });
     return null;
@@ -325,9 +371,12 @@ export class ConversationController {
   // in "only" the answer stays unread. Said once.
   private voiceFailed(text: string): void {
     const failed = this.voice;
-    if (!failed || failed.engine !== 'local') return;
+    if (!failed) return;
     this.deps.onProblem('voice-failed');
-    const rest = [text, ...failed.drain()];
+    this.dispatch({ type: 'error' });
+    if (failed.engine !== 'local') return;
+    const rest = this.bridgeActive ? [] : [text, ...failed.drain()];
+    if (this.bridgeActive) failed.clear();
     failed.destroy();
     const fallback = this.speaker.engine === 'local' ? this.speaker.fallback : null;
     this.speaker = fallback ? { engine: 'browser' } : { engine: 'none' };
@@ -341,6 +390,7 @@ export class ConversationController {
     const finish = (text: string) => {
       if (generation !== this.generation) return;
       if (this.marks && !this.marks.transcribedAt) this.marks.transcribedAt = performance.now();
+      performance.mark('volition-voice-transcribed');
       const echo =
         this.state.readingPaused && text !== '' && looksLikeEcho(text, utterance?.reading ?? '');
       if (text && !echo) this.deps.onHeard(text);
@@ -358,7 +408,13 @@ export class ConversationController {
       finish(result.text);
     } catch (error) {
       if (generation !== this.generation) return;
+      window.clearTimeout(this.bridgeTimer);
+      if (this.bridgeActive) {
+        this.voice?.clear();
+        this.bridgeActive = false;
+      }
       this.deps.onProblem('transcribe-failed');
+      this.dispatch({ type: 'error' });
       if (error instanceof ApiError && error.code?.startsWith('voice-local'))
         this.deps.refreshStatus();
       this.dispatch({ type: 'transcribeFailed' });
@@ -375,11 +431,14 @@ export class ConversationController {
     if (index < 0) return;
     const message = this.messages[index]!;
     if (this.reading?.id !== message.id)
-      this.reading = { id: message.id, offset: 0, dropped: false };
+      this.reading = { id: message.id, offset: 0, dropped: false, chunks: 0 };
     if (this.reading.dropped) return;
     if (message.text.trim() && this.marks?.sentAt && !this.marks.answerAt) {
       this.marks.answerAt = performance.now();
+      performance.mark('volition-voice-first-text');
       window.clearTimeout(this.chimeTimer);
+      window.clearTimeout(this.bridgeTimer);
+      this.dispatch({ type: 'answerStarted' });
     }
     const streaming = this.busy && index === this.messages.length - 1;
     this.handOver(message.text, !streaming);
@@ -399,12 +458,68 @@ export class ConversationController {
 
   private handOver(text: string, final: boolean): void {
     if (!this.reading || !this.voice) return;
+    const switchToAnswerVoice = () => {
+      if (!this.bridgeActive) return;
+      this.voice?.clear();
+      this.bridgeActive = false;
+    };
+    if (/```|~~~|^\s*\|.+\|\s*$/m.test(text) && this.reading.chunks === 0) {
+      switchToAnswerVoice();
+      this.reading.dropped = true;
+      this.voice.enqueue(
+        pageLanguage() === 'de' ? 'Die Details stehen im Chat.' : 'I put the details in the chat.',
+      );
+      return;
+    }
     const next = nextSpeechChunks(text, this.reading.offset, final, pageLanguage() ?? 'de');
     this.reading.offset = next.offset;
-    for (const chunk of next.chunks) this.voice.enqueue(chunk);
+    if (next.chunks.length) switchToAnswerVoice();
+    for (const chunk of next.chunks) {
+      if (this.reading.chunks >= 3) {
+        this.reading.dropped = true;
+        this.voice.enqueue(
+          pageLanguage() === 'de' ? 'Mehr steht im Chat.' : 'There is more in the chat.',
+        );
+        break;
+      }
+      this.reading.chunks += 1;
+      this.voice.enqueue(chunk);
+    }
+  }
+
+  private scheduleBridge(): void {
+    window.clearTimeout(this.bridgeTimer);
+    if (!this.immediateResponse || !this.bridgeEnabled || this.bridgeSinceAnswer) return;
+    const generation = this.generation;
+    this.bridgeTimer = window.setTimeout(
+      () => {
+        if (
+          generation !== this.generation ||
+          this.state.active !== 'on' ||
+          this.state.userSpeaking ||
+          this.state.readingPaused ||
+          this.state.speaking ||
+          this.marks?.answerAt ||
+          !this.voice
+        )
+          return;
+        this.bridgeActive = true;
+        this.bridgeSinceAnswer = true;
+        this.dispatch({ type: 'waiting' });
+        this.voice.enqueue(bridgePhrase(pageLanguage() ?? 'de'));
+      },
+      Math.max(0, this.bridgeDueAt - performance.now()),
+    );
   }
 
   // The first sound of an answer: the turn's time is complete.
+  private recordFirstTone(): void {
+    if (!this.marks || this.marks.firstSoundAt) return;
+    this.marks.firstSoundAt = performance.now();
+    this.marks.firstSoundKind = this.bridgeActive ? 'bridge' : 'answer';
+    performance.mark('volition-voice-first-tone');
+  }
+
   private heard(): void {
     const marks = this.marks;
     if (!marks?.answerAt) return;

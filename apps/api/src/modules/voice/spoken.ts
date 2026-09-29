@@ -5,10 +5,10 @@ import { readVoiceSettings } from './settings';
 // not read. Without it agents answered a spoken "Wie viele Aufgaben sind offen?" with a table.
 
 const SPOKEN_NOTE =
-  '[Said in a voice conversation; your answer will be read aloud. Answer in one to three ' +
-  'short, natural spoken sentences in the language of the person: no Markdown, lists, tables, ' +
-  'code, links or emojis, and numbers, dates and times the way one says them. If the request ' +
-  'needs your tools, use them as usual and then say the result briefly.]';
+  '[Said in a voice conversation. Answer briefly in natural spoken language. If the person ' +
+  'needs detailed content, a list, table or code, put the complete content in this chat; the ' +
+  'voice client will say a short notice instead. Use your tools as usual and give a brief ' +
+  'spoken result when they finish. Say numbers, dates and times naturally.]';
 
 export function spokenQuestion(text: string): string {
   return `${SPOKEN_NOTE}\n\n${text}`;

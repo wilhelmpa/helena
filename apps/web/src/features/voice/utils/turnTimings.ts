@@ -15,6 +15,8 @@ export interface TurnMarks {
   transcribedAt?: number;
   sentAt?: number;
   answerAt?: number;
+  firstSoundAt?: number;
+  firstSoundKind?: 'bridge' | 'answer';
 }
 
 export interface TurnTimings {
@@ -23,6 +25,8 @@ export interface TurnTimings {
   answerMs: number;
   voiceMs: number;
   totalMs: number;
+  firstSoundMs?: number;
+  firstSoundKind?: 'bridge' | 'answer';
 }
 
 export function turnTimings(marks: TurnMarks & { audibleAt: number }): TurnTimings {
@@ -38,5 +42,9 @@ export function turnTimings(marks: TurnMarks & { audibleAt: number }): TurnTimin
     answerMs: round(answer - sent),
     voiceMs: round(audible - answer),
     totalMs: round(audible - marks.stoppedAt),
+    ...(marks.firstSoundAt && {
+      firstSoundMs: round(marks.firstSoundAt - marks.stoppedAt),
+      firstSoundKind: marks.firstSoundKind,
+    }),
   };
 }

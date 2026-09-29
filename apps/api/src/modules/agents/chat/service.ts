@@ -47,8 +47,10 @@ import {
   claimedModelCheck,
   modelCheckOf,
   withStoredFallback,
+  type ModelCheck,
   type RunModelReport,
 } from '../runtime-sync/model-check';
+import { parseLocalModelId } from '@helena/sdk';
 import { routeRequest, routesOfChatMessages } from '#modules/model-router/service';
 import type { AgUiEventBody, ChatMessageStatus } from './model';
 import { notifyChatAnswer } from './wake';
@@ -826,11 +828,21 @@ export async function takeHeldAnswer(agentId: number, messageId: number): Promis
 }
 
 // Hands a held answer to the agent's runner at once: nothing of the voice reply stays in it.
-export async function releaseHeldAnswer(agentId: number, messageId: number): Promise<void> {
+export async function releaseHeldAnswer(
+  agentId: number,
+  messageId: number,
+  fallback: ModelCheck['fallback'] | null = null,
+): Promise<void> {
   await db.transaction(async (tx) => {
     const rows = await tx
       .update(agentChatMessage)
-      .set({ status: 'pending', content: '', model: null, nextAttemptAt: sql`now()` })
+      .set({
+        status: 'pending',
+        content: '',
+        model: null,
+        modelCheck: fallback ? claimedModelCheck(null, null, 'default', fallback) : null,
+        nextAttemptAt: sql`now()`,
+      })
       .where(liveAnswer(agentId, messageId))
       .returning({ id: agentChatMessage.id });
     if (rows.length === 0) return;
@@ -1002,6 +1014,7 @@ interface ClaimedRow {
   model: string | null;
   thinkingLevel: string | null;
   projectId: number | null;
+  preclaimCheck: ModelCheck | null;
 }
 
 // Fails answers handed out too many times without a result, so a chat whose runner
@@ -1077,6 +1090,7 @@ async function claimMessage(agent: RunnerAgent): Promise<ClaimedChat | null> {
       m.id,
       m.thread_id AS "threadId",
       m.attempts,
+      m.model_check AS "preclaimCheck",
       (SELECT model FROM agent_chat_thread t WHERE t.id = m.thread_id) AS "model",
       (SELECT thinking_level FROM agent_chat_thread t WHERE t.id = m.thread_id) AS "thinkingLevel",
       (SELECT project_id FROM agent_chat_thread t WHERE t.id = m.thread_id) AS "projectId"
@@ -1115,7 +1129,17 @@ async function claimMessage(agent: RunnerAgent): Promise<ClaimedChat | null> {
   // A local model only while local AI runs it and its server answers; otherwise the model the
   // agent answers with without local AI (its own, or the runtime's default when that is local
   // too), and the answer notes the fallback (docs/helena-decisions/local-ai-platform.md §6.3).
-  const choice = await chooseModelNow(chosen.model, agent.model);
+  const forcedFallback = row.preclaimCheck?.fallback ?? null;
+  const choice = forcedFallback
+    ? {
+        model: parseLocalModelId(chosen.model)
+          ? parseLocalModelId(agent.model)
+            ? null
+            : agent.model
+          : chosen.model,
+        fallback: forcedFallback,
+      }
+    : await chooseModelNow(chosen.model, agent.model);
   let settings = choice.fallback
     ? {
         model: choice.model,
@@ -1123,7 +1147,7 @@ async function claimMessage(agent: RunnerAgent): Promise<ClaimedChat | null> {
           choice.model !== null && choice.model === agent.model ? agent.thinkingLevel : null,
       }
     : chosen;
-  if (!row.model && !voiceModel) {
+  if (!row.model && !voiceModel && !forcedFallback) {
     const routed = await routeRequest({
       teamId: agent.teamId,
       agentId: agent.id,

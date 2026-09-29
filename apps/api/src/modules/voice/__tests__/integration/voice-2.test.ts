@@ -2,7 +2,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'bun:test'
 import { apiKeyApi, app, authedApi, type Api } from '#tests/helpers/app';
 import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
-import { createAgent } from '#tests/helpers/agents';
+import { createAgent, teamOf } from '#tests/helpers/agents';
 import { host } from '#shared/helena';
 import { LOCAL_AI_PLUGIN_ID, LOCAL_AI_PROVIDES, localAiPlugin } from '#modules/local-ai/plugin';
 import { forgetServerAnswers, settleEvals } from '#modules/local-ai/service';
@@ -48,6 +48,7 @@ async function chatCompletion(request: Request): Promise<Response> {
   };
   const prompt = body.messages.at(-1)?.content ?? '';
   received.push({ path: '/api/v1/chat/completions', json: body as Record<string, unknown> });
+  if (body.stream && prompt.includes('Langsam antworten')) await Bun.sleep(500);
   const reply = replyTo(prompt);
   if (!body.stream) {
     return Response.json({
@@ -244,7 +245,15 @@ describe('voice settings', () => {
     expect((await authedApi(member.cookie).god.voice.settings.get()).status).toBe(403);
 
     const first = (await asOwner.god.voice.settings.get()).data!;
-    expect(first).toMatchObject({ pauseMs: 600, vocabulary: [], voice: null, speed: 1 });
+    expect(first).toMatchObject({
+      pauseMs: 300,
+      immediateResponse: true,
+      bridgeEnabled: true,
+      fallbackTimeoutMs: 800,
+      vocabulary: [],
+      voice: null,
+      speed: 1,
+    });
     // Helena knows its own names, the agents' and the projects' (a key that only differs in
     // case from the name is the same word).
     expect(first.helenaWords).toEqual(expect.arrayContaining(['Helena', 'Vera', 'Verve']));
@@ -262,8 +271,12 @@ describe('voice settings', () => {
     expect((await authedApi(owner.cookie).voice.get()).data!.settings).toEqual({
       pauseMs: 900,
       speed: 1,
+      immediateResponse: true,
+      bridgeEnabled: true,
+      fallbackTimeoutMs: 800,
     });
     expect((await asOwner.god.voice.settings.patch({ pauseMs: 50 })).status).toBe(400);
+    expect((await asOwner.god.voice.settings.patch({ fallbackTimeoutMs: 50 })).status).toBe(400);
   });
 });
 
@@ -492,6 +505,60 @@ describe('the voice reply', () => {
     const { asOwner, agent, asAgent } = await setup();
     await chatOf(asOwner, agent.id).chat.post({ prompt: 'Hallo, hörst du mich?', via: 'voice' });
     // Off: the runner takes a spoken question right away.
+    expect((await asAgent['agent-chats'].claim.post()).data!.message).not.toBeNull();
+    expect(received.some((entry) => entry.path === '/api/v1/chat/completions')).toBe(false);
+  });
+
+  it('hands a slow local first token to the runner after the configured timeout', async () => {
+    const { asOwner, agent, asAgent } = await setup();
+    await switchOn(asOwner);
+    await asOwner
+      .teams({ teamId: await teamOf(asOwner, 'VERVE') })
+      ['ai-agents']({ agentId: agent.id })
+      .patch({ model: 'openai/gpt-5.5' });
+    await asAgent['agent-chats'].catalog.post({
+      models: [
+        {
+          id: 'helena-local/Qwen3.6-35B-A3B-GGUF',
+          name: 'Local Qwen',
+          reasoning: false,
+          thinkingLevels: [],
+          thinkingDefault: null,
+        },
+      ],
+    });
+    await asOwner.god.voice.settings.patch({
+      fallbackTimeoutMs: 300,
+      replyModel: 'helena-local/Qwen3.6-35B-A3B-GGUF',
+    });
+    const sent = await chatOf(asOwner, agent.id).chat.post({
+      prompt: 'Langsam antworten',
+      via: 'voice',
+    });
+    const claimed = await until(
+      async () => (await asAgent['agent-chats'].claim.post()).data!.message,
+      (message) => message !== null,
+    );
+    expect(claimed!.model).toBe('openai/gpt-5.5');
+    await asAgent['agent-chats']({ messageId: claimed!.id }).events.post({
+      events: [{ type: 'TEXT_MESSAGE_CONTENT', messageId: 'fallback', delta: 'Fertig.' }],
+    });
+    await asAgent['agent-chats']({ messageId: claimed!.id }).result.post({ status: 'success' });
+    const items = (
+      await chatOf(asOwner, agent.id).threads({ threadId: sent.data!.threadId }).messages.get()
+    ).data!.items;
+    expect(items.find((item) => item.role === 'assistant')?.localFallback).toEqual({
+      from: 'helena-local/Qwen3.6-35B-A3B-GGUF',
+      reason: 'failed',
+    });
+  });
+
+  it('sends spoken turns straight to the runner when immediate response is off', async () => {
+    const { asOwner, agent, asAgent } = await setup();
+    await switchOn(asOwner);
+    await asOwner.god.voice.settings.patch({ immediateResponse: false });
+    received.length = 0;
+    await chatOf(asOwner, agent.id).chat.post({ prompt: 'Hallo, hörst du mich?', via: 'voice' });
     expect((await asAgent['agent-chats'].claim.post()).data!.message).not.toBeNull();
     expect(received.some((entry) => entry.path === '/api/v1/chat/completions')).toBe(false);
   });
