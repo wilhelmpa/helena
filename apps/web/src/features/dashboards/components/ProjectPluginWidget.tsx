@@ -9,6 +9,8 @@ import { pluginDashboardWidget } from '@/extensions/pluginDashboardWidgets';
 import TradingKpis from './TradingKpis';
 import TradingWatchlist from './TradingWatchlist';
 import TradingTakt from './TradingTakt';
+import TradingDataWidget from './TradingDataWidget';
+import type { TradingWidgetId } from '@/lib/api/endpoints/trading';
 import styles from './TradingDashboard.module.css';
 import { Text } from '@/design-system';
 
@@ -25,10 +27,12 @@ export default function ProjectPluginWidget({
     .map((slot) => pluginDashboardWidget(slot, 'project'))
     .find((entry) => entry?.id === widget.config?.pluginWidgetId);
   const trading = pluginWidget?.pluginId === 'helena.trading';
+  const originalTrading =
+    trading && ['kpis', 'watchlist', 'takt'].some((id) => pluginWidget?.id.endsWith(`:${id}`));
   const data = useQuery({
     queryKey: ['trading-dashboard', projectKey, 'today'],
     queryFn: () => getTradingDashboard(projectKey, 'today'),
-    enabled: trading,
+    enabled: originalTrading,
   });
   if (!pluginWidget)
     return (
@@ -37,6 +41,16 @@ export default function ProjectPluginWidget({
       </Text>
     );
   if (trading) {
+    const id = pluginWidget.id.split(':').at(-1) as TradingWidgetId;
+    if (['account', 'positions', 'orders', 'history', 'strategies', 'decisions'].includes(id))
+      return (
+        <TradingDataWidget
+          id={id}
+          projectKey={projectKey}
+          period="today"
+          credentialId={widget.config?.credentialId}
+        />
+      );
     if (!data.data)
       return (
         <Text as="p" size="xs" tone="muted">

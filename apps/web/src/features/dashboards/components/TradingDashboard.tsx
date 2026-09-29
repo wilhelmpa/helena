@@ -10,6 +10,8 @@ import { pluginDashboardWidget } from '@/extensions/pluginDashboardWidgets';
 import TradingKpis from './TradingKpis';
 import TradingWatchlist from './TradingWatchlist';
 import TradingTakt from './TradingTakt';
+import TradingDataWidget from './TradingDataWidget';
+import type { TradingWidgetId } from '@/lib/api/endpoints/trading';
 import styles from './TradingDashboard.module.css';
 import { Plus } from 'lucide-react';
 import { Grid, Page, PageActions, PageTabs, Stack, Text } from '@/design-system';
@@ -34,10 +36,11 @@ export default function TradingDashboard({
   const ids = new Set(dashboard.layout.map((item) => item.config?.pluginWidgetId));
   const has = (id: string) =>
     widgets.some((widget) => widget?.id === `plugin:helena.trading:${id}` && ids.has(widget.id));
+  const hasOriginalWidget = ['kpis', 'watchlist', 'takt'].some(has);
   const data = useQuery({
     queryKey: ['trading-dashboard', projectKey, period],
     queryFn: () => getTradingDashboard(projectKey, period),
-    enabled: widgets.length > 0,
+    enabled: hasOriginalWidget,
   });
   // The page template (docs/ui-framework.md): the header names the dashboard, the
   // period is the toolbar's tabs, adding a widget is the page's action.
@@ -85,6 +88,30 @@ export default function TradingDashboard({
             )}
           </>
         )}
+        {(
+          [
+            'account',
+            'positions',
+            'orders',
+            'history',
+            'strategies',
+            'decisions',
+          ] as TradingWidgetId[]
+        )
+          .filter(has)
+          .map((id) => (
+            <TradingDataWidget
+              key={id}
+              id={id}
+              projectKey={projectKey}
+              period={period}
+              credentialId={
+                dashboard.layout.find(
+                  (item) => item.config?.pluginWidgetId === `plugin:helena.trading:${id}`,
+                )?.config?.credentialId
+              }
+            />
+          ))}
       </Stack>
     </Page>
   );

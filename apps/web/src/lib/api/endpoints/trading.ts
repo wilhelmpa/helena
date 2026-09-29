@@ -22,3 +22,20 @@ export const getTradingDashboard = (projectKey: string, period: TradingPeriod) =
   request<TradingDashboardData>(
     `/projects/${encodeURIComponent(projectKey)}/trading/dashboard?period=${period}`,
   );
+
+export type TradingWidgetId =
+  'account' | 'positions' | 'orders' | 'history' | 'strategies' | 'decisions';
+export interface TradingWidgetResult {
+  data: unknown | null;
+  error: string | null;
+}
+export type TradingWidgets = Record<TradingWidgetId, TradingWidgetResult>;
+
+export const getTradingWidgets = (
+  projectKey: string,
+  period: TradingPeriod,
+  credentialId?: number,
+) =>
+  request<TradingWidgets>(
+    `/projects/${encodeURIComponent(projectKey)}/trading/widgets?period=${period}${credentialId ? `&credentialId=${credentialId}` : ''}`,
+  );

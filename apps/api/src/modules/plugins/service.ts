@@ -17,7 +17,10 @@ import { host, registries } from '#shared/helena';
 // Loads the approved plugins of HELENA_PLUGINS_DIR. Called once at start (index.ts).
 export async function loadExternalServerPlugins(): Promise<LoadedPlugin[]> {
   const root = pluginsDir();
-  if (!root) return [];
+  if (!root) {
+    await host.start();
+    return [];
+  }
   const settings = await getPluginSettings();
   const loaded = await loadExternalPlugins(host, {
     root,

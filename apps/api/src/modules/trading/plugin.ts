@@ -15,7 +15,17 @@ export const TRADING_PROVIDES: PluginManifest['provides'] = {
   connectors: [connector.id],
   tools: (connector.tools ?? []).map((tool) => tool.name),
   decisionClasses: TRADING_DECISION_CLASSES.map((entry) => entry.id),
-  uiSlots: ['dashboard-widget:kpis', 'dashboard-widget:watchlist', 'dashboard-widget:takt'],
+  uiSlots: [
+    'kpis',
+    'watchlist',
+    'takt',
+    'account',
+    'positions',
+    'orders',
+    'history',
+    'strategies',
+    'decisions',
+  ].map((id) => `dashboard-widget:${id}`),
 };
 
 export const TRADING_PERMISSIONS: PluginManifest['permissions'] = {
@@ -47,6 +57,12 @@ export const tradingPlugin: HelenaPlugin = {
       ['kpis', 'Kennzahlen', { w: 12, h: 3 }],
       ['watchlist', 'Watchlist', { w: 8, h: 10 }],
       ['takt', 'Takt', { w: 4, h: 10 }],
+      ['account', 'Konto', { w: 6, h: 6 }],
+      ['positions', 'Offene Positionen', { w: 6, h: 6 }],
+      ['orders', 'Orders', { w: 6, h: 8 }],
+      ['history', 'Ergebnis-Verlauf', { w: 6, h: 8 }],
+      ['strategies', 'Strategien & Freigaben', { w: 6, h: 8 }],
+      ['decisions', 'Entscheidungen', { w: 6, h: 8 }],
     ] as const) {
       ctx.uiSlots.register({
         slot: 'dashboard-widget',
