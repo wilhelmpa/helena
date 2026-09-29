@@ -1482,7 +1482,7 @@
   },
   "src/features/documents/components/DocumentOptionsMenu.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 4
+      "count": 1
     },
     "no-restricted-imports": {
       "count": 1
@@ -3377,11 +3377,6 @@
       "count": 7
     }
   },
-  "src/features/project-files/components/FileItemMenu.tsx": {
-    "no-restricted-imports": {
-      "count": 1
-    }
-  },
   "src/features/project-files/components/FileItems.tsx": {
     "better-tailwindcss/no-restricted-classes": {
       "count": 3
@@ -3420,16 +3415,6 @@
   "src/features/project-files/components/HomeFilesRoots.tsx": {
     "better-tailwindcss/no-restricted-classes": {
       "count": 9
-    }
-  },
-  "src/features/project-files/components/KnowledgeListView.tsx": {
-    "better-tailwindcss/no-restricted-classes": {
-      "count": 9
-    }
-  },
-  "src/features/project-files/components/ProjectKnowledgeViewer.tsx": {
-    "no-restricted-imports": {
-      "count": 1
     }
   },
   "src/features/project-files/components/UnifiedFileViewer.tsx": {
@@ -3493,11 +3478,6 @@
   "src/features/push/components/PushHint.tsx": {
     "better-tailwindcss/no-restricted-classes": {
       "count": 7
-    }
-  },
-  "src/features/receipts/ReceiptsPage.tsx": {
-    "better-tailwindcss/no-restricted-classes": {
-      "count": 14
     }
   },
   "src/features/receipts/components/AccountsTab.tsx": {

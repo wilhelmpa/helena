@@ -776,7 +776,8 @@ it('opens source from the document menu without a mode switch or persistent warn
   await until(() => !!document.querySelector('textarea'));
   assert.equal(sourceArea().value, original.replace(/\r\n/g, '\n'));
   assert.equal(document.querySelector('button[aria-pressed]'), null);
-  assert.ok(!document.body.textContent?.includes(files.unified.sourceRequired));
+  // No note about Markdown the formatted editor cannot keep (owner, O15).
+  assert.doesNotMatch(document.body.textContent ?? '', /formatted editor|formatierte Editor/i);
   assert.ok(!document.body.textContent?.includes(files.unified.original));
   assert.ok(!requests.some((request) => request.url.pathname.endsWith('/files/references')));
 });

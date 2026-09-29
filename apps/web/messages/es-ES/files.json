@@ -1,7 +1,7 @@
 {
   "fixedFolders": {
     "Docs": "Documentos",
-    "Files": "Archivos",
+    "Files": "Archivo",
     "Assets": "Adjuntos",
     "Boards": "Lienzos",
     "Inbox": "Entrada"
@@ -142,7 +142,6 @@
     "run": "Ejecución {run}",
     "formatted": "Texto con formato",
     "source": "Código fuente Markdown",
-    "sourceRequired": "Este archivo contiene Markdown que el editor con formato no puede conservar. Edita el código fuente para mantener todo el contenido.",
     "sourceEditRejected": "Esta edición no ha podido conservar los finales de línea originales. Tu texto anterior no ha cambiado. Prueba con ediciones más pequeñas."
   },
   "knowledge": {
@@ -163,14 +162,9 @@
       "doc": "Doc",
       "canvas": "Lienzo",
       "folder": "Carpeta",
-      "upload": "Subir archivo"
-    },
-    "filters": {
-      "all": "Todo",
-      "docs": "Documentos",
-      "canvases": "Lienzos",
-      "files": "Archivos",
-      "agents": "De agentes"
+      "upload": "Subir archivo",
+      "base": "Vista (tabla, tarjetas, lista)",
+      "firstDoc": "Crear un documento"
     },
     "columns": {
       "name": "Nombre",
@@ -184,13 +178,12 @@
       "doc": "Doc",
       "pdf": "PDF",
       "image": "Imagen",
-      "file": "Archivo"
+      "file": "Archivo",
+      "base": "Vista"
     },
     "dropHint": "Arrastra archivos aquí o <pick>elige</pick>",
     "entries": "{count, plural, one {# elemento} other {# elementos}}",
-    "subfolders": "{count, plural, one {# subcarpeta, en el árbol de la izquierda} other {# subcarpetas, en el árbol de la izquierda}}",
     "emptyFolder": "Esta carpeta está vacía. Crea un doc o arrastra archivos aquí.",
-    "emptyFolderWithSubfolders": "Aquí no hay archivos, solo subcarpetas. Ábrelas en el árbol de la izquierda.",
     "emptyFilter": "No hay archivos de este tipo.",
     "emptyRecent": "Aún no hay archivos. Crea un doc o arrastra archivos aquí.",
     "recent": "Modificados recientemente",
@@ -210,11 +203,13 @@
     "history": "Historial",
     "noHistory": "Aún sin historial",
     "discard": "¿Descartar los cambios sin guardar?",
-    "othersFiles": "{count, plural, one {# archivo} other {# archivos}} al lado →",
-    "othersKnowledge": "{count, plural, one {# documento o lienzo} other {# documentos y lienzos}} al lado →",
-    "openInPage": "Abrir en grande",
     "download": "Descargar",
-    "searchFiles": "Buscar en archivos …"
+    "searchFiles": "Buscar en archivos …",
+    "emptyTitle": "Aún no hay nada en Conocimiento",
+    "emptyFilesTitle": "Aún no hay archivos",
+    "emptyFiles": "Aquí llegan PDF, imágenes y otros archivos. Sube uno o arrástralo aquí.",
+    "onlySubfoldersTitle": "Solo subcarpetas",
+    "onlySubfolders": "Esta carpeta no contiene archivos. Abre una de sus subcarpetas."
   },
   "canvas": {
     "opening": "Abriendo el lienzo …",
@@ -233,8 +228,6 @@
     "zoomIn": "Acercar",
     "insert": "Insertar",
     "findTask": "Buscar una tarea",
-    "eyebrow": "Conocimiento / {path}",
-    "canvases": "Lienzos",
     "counts": "{cards, plural, one {# tarjeta} other {# tarjetas}} · {links, plural, one {# conexión} other {# conexiones}}",
     "share": "Compartir",
     "tools": {
@@ -243,6 +236,40 @@
       "doc": "Insertar documento",
       "task": "Insertar tarea",
       "connect": "Conectar"
-    }
+    },
+    "newTitle": "Nuevo lienzo",
+    "newHint": "Organiza y conecta tarjetas, documentos y tareas libremente; Obsidian abre el mismo archivo.",
+    "newName": "Nuevo lienzo",
+    "create": "Crear"
+  },
+  "origin": {
+    "system": "Sistema",
+    "agent": "Agente",
+    "manual": "Manual",
+    "all": "Todos",
+    "systemHint": "Creado por Helena (recibos, adjuntos de correo, exportaciones)",
+    "agentHint": "Creado por un agente",
+    "manualHint": "Creado o subido por una persona",
+    "label": "Origen"
+  },
+  "base": {
+    "loading": "Cargando vista …",
+    "readFailed": "No se pudo leer la vista.",
+    "rowsFailed": "No se pudieron cargar las filas de la vista.",
+    "unsupported": "Esta vista usa una expresión que Helena aún no evalúa",
+    "views": "Vistas",
+    "filter": "Filtrar filas",
+    "count": "{count, plural, one {# nota} other {# notas}}",
+    "countFiltered": "{shown} de {total}",
+    "noMatch": "Ninguna fila coincide con el filtro.",
+    "empty": "Ninguna nota encaja en esta vista.",
+    "truncated": "Las primeras {count} filas",
+    "newTitle": "Nueva vista",
+    "newHint": "Una vista muestra las notas de esta carpeta como tabla, tarjetas o lista; Obsidian abre el mismo archivo.",
+    "newName": "Resumen",
+    "create": "Crear",
+    "viewTable": "Tabla",
+    "viewCards": "Tarjetas",
+    "viewList": "Lista"
   }
 }

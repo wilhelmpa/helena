@@ -4,7 +4,8 @@
     "review": "À vérifier",
     "matched": "Associés",
     "accounts": "Comptes",
-    "all": "Tous les justificatifs"
+    "all": "Tous les justificatifs",
+    "export": "Export"
   },
   "month": "Mois",
   "allMonths": "Tous les mois",
@@ -206,5 +207,17 @@
     "einvoice": "Facture électronique (XML)",
     "mail": "Justificatif issu d’un e-mail",
     "noPicture": "Pas d’aperçu pour ce fichier"
+  },
+  "emptyTitle": "Aucun justificatif pour l’instant",
+  "export": {
+    "emptyTitle": "Rien à exporter pour l’instant",
+    "emptyHint": "Dès qu’il y a des justificatifs ou des écritures, chaque mois est prêt à être téléchargé ici.",
+    "older": "{count} mois plus anciens",
+    "receipts": "{count, plural, one {# justificatif} other {# justificatifs}}",
+    "openReceipts": "{count} ouverts",
+    "openTransactions": "{count, plural, one {# écriture sans justificatif} other {# écritures sans justificatif}}",
+    "done": "{month} téléchargé",
+    "downloadMonth": "Télécharger {month} en ZIP",
+    "download": "ZIP"
   }
 }

@@ -59,6 +59,7 @@ export const FileItemResponse = t.Object({
   sizeBytes: t.Nullable(t.Number()),
   contentType: t.Nullable(t.String()),
   updatedAt: t.Nullable(t.String()),
+  origin: t.Optional(t.Union([t.Literal('system'), t.Literal('agent'), t.Literal('manual')])),
 });
 
 export const FileListResponse = t.Object({

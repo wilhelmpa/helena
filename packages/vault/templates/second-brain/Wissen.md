@@ -5,6 +5,6 @@ status: draft
 project: PROJECT
 tags: []
 source: ""
-origin: human
+origin: manual
 ---
 # Title

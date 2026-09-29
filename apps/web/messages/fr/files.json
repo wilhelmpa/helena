@@ -1,7 +1,7 @@
 {
   "fixedFolders": {
     "Docs": "Documents",
-    "Files": "Fichiers",
+    "Files": "Classement",
     "Assets": "Pièces jointes",
     "Boards": "Toiles",
     "Inbox": "Entrée"
@@ -142,7 +142,6 @@
     "run": "Exécution {run}",
     "formatted": "Texte mis en forme",
     "source": "Source Markdown",
-    "sourceRequired": "Ce fichier contient du Markdown que l’éditeur mis en forme ne peut pas conserver. Modifiez la source pour garder tout le contenu.",
     "sourceEditRejected": "Cette modification n’a pas pu conserver les fins de ligne d’origine. Votre texte précédent est inchangé. Essayez des modifications plus petites."
   },
   "knowledge": {
@@ -163,14 +162,9 @@
       "doc": "Doc",
       "canvas": "Toile",
       "folder": "Dossier",
-      "upload": "Téléverser un fichier"
-    },
-    "filters": {
-      "all": "Tout",
-      "docs": "Documents",
-      "canvases": "Toiles",
-      "files": "Fichiers",
-      "agents": "Par des agents"
+      "upload": "Téléverser un fichier",
+      "base": "Vue (tableau, cartes, liste)",
+      "firstDoc": "Créer un doc"
     },
     "columns": {
       "name": "Nom",
@@ -184,13 +178,12 @@
       "doc": "Doc",
       "pdf": "PDF",
       "image": "Image",
-      "file": "Fichier"
+      "file": "Fichier",
+      "base": "Vue"
     },
     "dropHint": "Déposez des fichiers ici ou <pick>choisissez</pick>",
     "entries": "{count, plural, one {# élément} other {# éléments}}",
-    "subfolders": "{count, plural, one {# sous-dossier, dans l’arborescence à gauche} other {# sous-dossiers, dans l’arborescence à gauche}}",
     "emptyFolder": "Ce dossier est vide. Créez un doc ou déposez des fichiers ici.",
-    "emptyFolderWithSubfolders": "Aucun fichier ici, seulement des sous-dossiers. Ouvrez-les dans l’arborescence à gauche.",
     "emptyFilter": "Aucun fichier de ce type.",
     "emptyRecent": "Pas encore de fichiers. Créez un doc ou déposez des fichiers ici.",
     "recent": "Modifiés récemment",
@@ -210,11 +203,13 @@
     "history": "Historique",
     "noHistory": "Pas encore d’historique",
     "discard": "Abandonner les modifications non enregistrées ?",
-    "othersFiles": "{count, plural, one {# fichier} other {# fichiers}} à côté →",
-    "othersKnowledge": "{count, plural, one {# document ou canevas} other {# documents et canevas}} à côté →",
-    "openInPage": "Ouvrir en grand",
     "download": "Télécharger",
-    "searchFiles": "Rechercher dans les fichiers …"
+    "searchFiles": "Rechercher dans les fichiers …",
+    "emptyTitle": "Rien encore dans Savoir",
+    "emptyFilesTitle": "Aucun fichier pour l’instant",
+    "emptyFiles": "Les PDF, images et autres fichiers arrivent ici. Téléversez-en un ou déposez-le ici.",
+    "onlySubfoldersTitle": "Seulement des sous-dossiers",
+    "onlySubfolders": "Ce dossier ne contient aucun fichier. Ouvrez l’un de ses sous-dossiers."
   },
   "canvas": {
     "opening": "Ouverture de la toile …",
@@ -233,8 +228,6 @@
     "zoomIn": "Zoomer",
     "insert": "Insérer",
     "findTask": "Chercher une tâche",
-    "eyebrow": "Savoir / {path}",
-    "canvases": "Toiles",
     "counts": "{cards, plural, one {# carte} other {# cartes}} · {links, plural, one {# lien} other {# liens}}",
     "share": "Partager",
     "tools": {
@@ -243,6 +236,40 @@
       "doc": "Insérer un document",
       "task": "Insérer une tâche",
       "connect": "Relier"
-    }
+    },
+    "newTitle": "Nouveau canevas",
+    "newHint": "Disposez et reliez librement cartes, docs et tâches ; Obsidian ouvre le même fichier.",
+    "newName": "Nouveau canevas",
+    "create": "Créer"
+  },
+  "origin": {
+    "system": "Système",
+    "agent": "Agent",
+    "manual": "Manuel",
+    "all": "Tous",
+    "systemHint": "Créé par Helena (justificatifs, pièces jointes, exports)",
+    "agentHint": "Créé par un agent",
+    "manualHint": "Créé ou téléversé par une personne",
+    "label": "Origine"
+  },
+  "base": {
+    "loading": "Chargement de la vue …",
+    "readFailed": "La vue n’a pas pu être lue.",
+    "rowsFailed": "Les lignes de la vue n’ont pas pu être chargées.",
+    "unsupported": "Cette vue utilise une expression qu’Helena n’évalue pas encore",
+    "views": "Vues",
+    "filter": "Filtrer les lignes",
+    "count": "{count, plural, one {# note} other {# notes}}",
+    "countFiltered": "{shown} sur {total}",
+    "noMatch": "Aucune ligne ne correspond au filtre.",
+    "empty": "Aucune note ne correspond à cette vue.",
+    "truncated": "Les {count} premières lignes",
+    "newTitle": "Nouvelle vue",
+    "newHint": "Une vue affiche les notes de ce dossier en tableau, cartes ou liste ; Obsidian ouvre le même fichier.",
+    "newName": "Aperçu",
+    "create": "Créer",
+    "viewTable": "Tableau",
+    "viewCards": "Cartes",
+    "viewList": "Liste"
   }
 }

@@ -10,7 +10,7 @@ describe('fixed vault folder labels', () => {
   it('keeps the raw path names while showing distinct labels', () => {
     assert.deepEqual(
       ['Docs', 'Files', 'Assets', 'Boards', 'Inbox'].map((name) => knowledgeFolderLabel(name)),
-      ['Dokumente', 'Dateien', 'Anhänge', 'Leinwände', 'Eingang'],
+      ['Dokumente', 'Ablage', 'Anhänge', 'Leinwände', 'Eingang'],
     );
     assert.equal(knowledgeFolderLabel('Owner Folder'), 'Owner Folder');
     assert.equal(knowledgeFolderLabel('constructor'), 'constructor');

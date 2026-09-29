@@ -119,6 +119,7 @@ export interface RecentVaultFile {
   mime: string | null;
   sizeBytes: number | null;
   updatedAt: string | null;
+  origin?: 'system' | 'agent' | 'manual';
 }
 
 export const listRecentVaultFiles = (root: string, limit = 50) =>
@@ -195,3 +196,58 @@ export const uploadNoteAsset = (notePath: string, file: File) =>
 // A vault file as the browser loads it: through the web origin, which forwards the
 // session to the API (app/protected-media/knowledge/raw).
 export const vaultFileUrl = (path: string) => `/protected-media/knowledge/raw?${query({ path })}`;
+
+// Obsidian Bases (docs/second-brain-backend-api.md): a .base file is a YAML view definition
+// over the notes the reader may see — no database, no permission boundary of its own.
+export interface BaseDefinitionView {
+  type?: string;
+  name?: string;
+  order?: string[];
+  [key: string]: unknown;
+}
+
+export interface BaseFile {
+  path: string;
+  content: string;
+  sha256: string;
+  definition: { views?: BaseDefinitionView[]; [key: string]: unknown };
+}
+
+export interface BaseRow {
+  path: string;
+  file: {
+    path: string;
+    name: string;
+    basename: string;
+    folder: string;
+    ext: string;
+    ctime: string | null;
+    mtime: string | null;
+  };
+  note: Record<string, unknown>;
+  formula: Record<string, unknown>;
+  values: Record<string, unknown>;
+}
+
+export interface BaseRows {
+  path: string;
+  view: { name: string; type: string; order: string[] };
+  total: number;
+  page: number;
+  pageSize: number;
+  rows: BaseRow[];
+}
+
+export const getBase = (path: string) => request<BaseFile>(`/knowledge/bases?${query({ path })}`);
+
+export const writeBase = (input: { path: string; content: string; expectedSha: string | null }) =>
+  request<BaseFile>('/knowledge/bases', { method: 'PUT', body: JSON.stringify(input) });
+
+export const getBaseRows = (path: string, view?: string, page = 1, pageSize = 200) =>
+  request<BaseRows>(`/knowledge/bases/rows?${query({ path, view, page, pageSize })}`);
+
+// The properties a new note of Wissen starts with (type, status, project, origin …).
+export const getPropertiesTemplate = (path: string) =>
+  request<{ path: string; frontmatter: Record<string, unknown>; content: string }>(
+    `/knowledge/properties-template?${query({ path })}`,
+  );

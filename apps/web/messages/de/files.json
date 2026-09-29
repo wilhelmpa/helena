@@ -1,7 +1,7 @@
 {
   "fixedFolders": {
     "Docs": "Dokumente",
-    "Files": "Dateien",
+    "Files": "Ablage",
     "Assets": "Anhänge",
     "Boards": "Leinwände",
     "Inbox": "Eingang"
@@ -142,7 +142,6 @@
     "run": "Lauf {run}",
     "formatted": "Formatierter Text",
     "source": "Markdown-Quelltext",
-    "sourceRequired": "Diese Datei enthält Markdown, das der formatierte Editor nicht erhalten kann. Bearbeite den Quelltext, damit alle Inhalte erhalten bleiben.",
     "sourceEditRejected": "Diese Änderung konnte nicht unter Erhalt der ursprünglichen Zeilenenden übernommen werden. Der vorherige Text bleibt erhalten. Versuche kleinere Änderungen."
   },
   "knowledge": {
@@ -163,14 +162,9 @@
       "doc": "Doc",
       "canvas": "Leinwand",
       "folder": "Ordner",
-      "upload": "Datei hochladen"
-    },
-    "filters": {
-      "all": "Alles",
-      "docs": "Dokumente",
-      "canvases": "Leinwände",
-      "files": "Dateien",
-      "agents": "Von Agenten"
+      "upload": "Datei hochladen",
+      "base": "Ansicht (Tabelle, Karten, Liste)",
+      "firstDoc": "Doc anlegen"
     },
     "columns": {
       "name": "Name",
@@ -184,13 +178,12 @@
       "doc": "Doc",
       "pdf": "PDF",
       "image": "Bild",
-      "file": "Datei"
+      "file": "Datei",
+      "base": "Ansicht"
     },
     "dropHint": "Dateien hierher ziehen oder <pick>auswählen</pick>",
     "entries": "{count, plural, one {# Eintrag} other {# Einträge}}",
-    "subfolders": "{count, plural, one {# Unterordner, im Baum links} other {# Unterordner, im Baum links}}",
     "emptyFolder": "Dieser Ordner ist leer. Leg ein Doc an oder zieh Dateien hierher.",
-    "emptyFolderWithSubfolders": "Hier liegen keine Dateien, nur Unterordner. Öffne sie im Baum links.",
     "emptyFilter": "Keine Dateien dieser Art.",
     "emptyRecent": "Noch keine Dateien. Leg ein Doc an oder zieh Dateien hierher.",
     "recent": "Zuletzt geändert",
@@ -210,11 +203,13 @@
     "history": "Verlauf",
     "noHistory": "Noch kein Verlauf",
     "discard": "Ungespeicherte Änderungen verwerfen?",
-    "othersFiles": "{count, plural, one {# Datei} other {# Dateien}} daneben →",
-    "othersKnowledge": "{count, plural, one {# Dokument oder Leinwand} other {# Dokumente und Leinwände}} daneben →",
-    "openInPage": "Groß öffnen",
     "download": "Herunterladen",
-    "searchFiles": "In Dateien suchen …"
+    "searchFiles": "In Dateien suchen …",
+    "emptyTitle": "Noch nichts in Wissen",
+    "emptyFilesTitle": "Noch keine Dateien",
+    "emptyFiles": "PDFs, Bilder und andere Dateien landen hier. Lade eine hoch oder zieh sie hierher.",
+    "onlySubfoldersTitle": "Nur Unterordner",
+    "onlySubfolders": "In diesem Ordner liegen keine Dateien. Öffne einen der Unterordner."
   },
   "canvas": {
     "opening": "Leinwand wird geöffnet …",
@@ -233,8 +228,6 @@
     "zoomIn": "Vergrößern",
     "insert": "Einfügen",
     "findTask": "Aufgabe suchen",
-    "eyebrow": "Wissen / {path}",
-    "canvases": "Leinwände",
     "counts": "{cards, plural, one {# Karte} other {# Karten}} · {links, plural, one {# Verbindung} other {# Verbindungen}}",
     "share": "Teilen",
     "tools": {
@@ -243,6 +236,40 @@
       "doc": "Doc einfügen",
       "task": "Aufgabe einfügen",
       "connect": "Verbinden"
-    }
+    },
+    "newTitle": "Neue Leinwand",
+    "newHint": "Karten, Dokumente und Aufgaben frei anordnen und verbinden; Obsidian öffnet dieselbe Datei.",
+    "newName": "Neue Leinwand",
+    "create": "Erstellen"
+  },
+  "origin": {
+    "system": "System",
+    "agent": "Agent",
+    "manual": "Manuell",
+    "all": "Alle",
+    "systemHint": "Von Helena angelegt (Belege, Mail-Anhänge, Exporte)",
+    "agentHint": "Von einem Agenten angelegt",
+    "manualHint": "Von einem Menschen angelegt oder hochgeladen",
+    "label": "Herkunft"
+  },
+  "base": {
+    "loading": "Ansicht wird geladen …",
+    "readFailed": "Die Ansicht ließ sich nicht lesen.",
+    "rowsFailed": "Die Zeilen der Ansicht ließen sich nicht laden.",
+    "unsupported": "Diese Ansicht nutzt einen Ausdruck, den Helena noch nicht auswertet",
+    "views": "Ansichten",
+    "filter": "Zeilen filtern",
+    "count": "{count, plural, one {# Dokument} other {# Dokumente}}",
+    "countFiltered": "{shown} von {total}",
+    "noMatch": "Keine Zeile passt zum Filter.",
+    "empty": "Kein Dokument passt zu dieser Ansicht.",
+    "truncated": "Die ersten {count} Zeilen",
+    "newTitle": "Neue Ansicht",
+    "newHint": "Eine Ansicht zeigt die Dokumente dieses Ordners als Tabelle, Karten oder Liste; Obsidian öffnet dieselbe Datei.",
+    "newName": "Übersicht",
+    "create": "Anlegen",
+    "viewTable": "Tabelle",
+    "viewCards": "Karten",
+    "viewList": "Liste"
   }
 }

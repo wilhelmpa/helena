@@ -76,6 +76,9 @@ it('enforces project ACL for Bases and evaluates only authorized notes', async (
     `/knowledge/properties-template?path=${templatePath}`,
   );
   expect((template.data.frontmatter as { project: string }).project).toBe('MKT');
+  expect((template.data.frontmatter as { origin: string }).origin).toBe('manual');
+  expect(template.data.content as string).toStartWith('---\n');
+  expect(template.data.content as string).not.toContain('# ');
   const unsupportedPath = 'Projects/MKT/Docs/Unsupported.base';
   const unsupported = `formulas:\n  next: 'date(now)'\nviews:\n  - type: table\n    name: Unsupported\n    order: [formula.next]\npluginSetting: keep\n`;
   expect(
@@ -230,6 +233,7 @@ it('previews and materializes redacted agent notes without changing DB configura
   const scout = exported.data.notes.find((item) => item.content.includes('username: scout'))!;
   expect(scout).toBeDefined();
   expect(scout.content).toContain('agent_id:');
+  expect(scout.path).toMatch(/\/Docs\/Agenten\/scout \(\d+\)\.md$/);
   expect(exported.data.base.content).toContain('name: Agenten');
   expect(scout.content).not.toContain('instructions:');
   expect(await readFile(path.join(root(), scout.path), 'utf8').catch(() => null)).toBeNull();

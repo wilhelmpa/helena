@@ -272,12 +272,15 @@ export const baseRoutes = new Elysia({ name: 'knowledge-bases', detail: { tags: 
         project: locateVaultPath(paths.path).projectKey,
         tags: [] as string[],
         source: '',
-        origin: 'human',
+        // One of the origins every list shows (packages/vault/src/origin.ts).
+        origin: 'manual',
       };
+      // The note's name is its title (Helena shows it above the text), so the body starts
+      // empty rather than with a second heading.
       return {
         path: paths.path,
         frontmatter,
-        content: composeNote(frontmatter, '# Title\n', null),
+        content: composeNote(frontmatter, '', null),
       };
     },
     {

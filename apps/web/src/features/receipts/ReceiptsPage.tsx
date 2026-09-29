@@ -1,14 +1,13 @@
 'use client';
 
-import { useDeferredValue, useRef, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useDeferredValue, useEffect, useRef, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   ArrowDownLeft,
   ArrowUpRight,
   CalendarDays,
   Check,
   CircleSlash,
-  Download,
   FileUp,
   FolderOpen,
   Plus,
@@ -27,6 +26,9 @@ import {
   MenuTrigger as DropdownMenuTrigger,
   Button,
   EmptyState,
+  IconButton,
+  Stack,
+  Text,
 } from '@/design-system';
 import { MonoLabel } from '@/components/helena/DashboardPrimitives';
 import KnowledgeFrame, {
@@ -42,16 +44,12 @@ import {
   PAGE_PRIMARY_CLASS,
 } from '@/components/layout/PageToolbar';
 import { cn } from '@/lib/utils';
+import { settingsPath } from '@/utils/paths';
 import VaultFilePicker from '@/features/mail/components/VaultFilePicker';
 import { ApiError } from '@/lib/api/core/client';
-import {
-  downloadMonthExport,
-  type Receipt,
-  type ReviewItem,
-  type Transaction,
-} from '@/lib/api/endpoints/receipts';
+import { type Receipt, type ReviewItem, type Transaction } from '@/lib/api/endpoints/receipts';
 import { filesPath, receiptsPath } from '@/utils/paths';
-import { AccountsTab } from './components/AccountsTab';
+import ExportView from './components/ExportView';
 import { ImportDialog } from './components/ImportDialog';
 import ReceiptPreview from './components/ReceiptPreview';
 import { Overlay } from '@/design-system/layout/Overlay';
@@ -59,7 +57,6 @@ import { ReviewTab } from './components/ReviewTab';
 import { receiptIcon, receiptSignedCents } from './components/ReceiptRows';
 import {
   useBankAccountsQuery,
-  useImportsQuery,
   useReceiptFromVault,
   useReceiptsQuery,
   useReceiptSummaryQuery,
@@ -68,10 +65,12 @@ import {
   useUpdateTransaction,
   useUploadReceipt,
 } from './services/receipts.service';
-import { formatCents, formatDay, formatMonth, saveBlob } from './utils/format';
+import { formatCents, formatDay, formatMonth } from './utils/format';
 
-export type ReceiptsView = 'all' | 'open' | 'review' | 'matched' | 'accounts';
-const VIEWS: ReceiptsView[] = ['all', 'open', 'review', 'matched', 'accounts'];
+// Belege in the sidebar under Wissen (owner 29.09.): all, Offen, Prüfen, Zugeordnet,
+// Export. The bank accounts are set up in Projekt › Einstellungen › Wissen & Belege.
+export type ReceiptsView = 'all' | 'open' | 'review' | 'matched' | 'export';
+const VIEWS: ReceiptsView[] = ['all', 'open', 'review', 'matched', 'export'];
 
 const ALL_MONTHS = 'all';
 const ACCEPT = '.pdf,.png,.jpg,.jpeg,.xml';
@@ -100,6 +99,7 @@ export default function ReceiptsPage() {
   const tFiles = useTranslations('files');
   const locale = useLocale();
   const params = useSearchParams();
+  const router = useRouter();
   const { project } = useShell();
   const { isAdmin } = usePermissions();
   const projectKey = project?.project.key ?? '';
@@ -113,7 +113,6 @@ export default function ReceiptsPage() {
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [cursorId, setCursorId] = useState<number | null>(null);
   const [importFor, setImportFor] = useState<{ accountId: number | null } | null>(null);
-  const [exporting, setExporting] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
   const upload = useUploadReceipt(projectKey);
   const fromVault = useReceiptFromVault(projectKey);
@@ -125,6 +124,12 @@ export default function ReceiptsPage() {
   const q = deferred || undefined;
   const summary = useReceiptSummaryQuery(projectKey, monthFilter, enabled);
   const accounts = useBankAccountsQuery(projectKey, enabled);
+  // The old accounts view lives in the project's settings now.
+  const accountsLink = requested === ('accounts' as string);
+  useEffect(() => {
+    if (accountsLink && projectKey)
+      router.replace(`${settingsPath(projectKey, 'knowledge')}#bank-accounts`);
+  }, [accountsLink, projectKey, router]);
   const listed = useReceiptsQuery(
     projectKey,
     {
@@ -145,10 +150,9 @@ export default function ReceiptsPage() {
     enabled && view === 'open',
   );
   const review = useReviewQuery(projectKey, monthFilter, enabled && view === 'review');
-  const imports = useImportsQuery(projectKey, enabled && view === 'accounts');
 
   const receipts: Receipt[] = listed.data ?? [];
-  const selected = view === 'accounts' ? null : selectedId;
+  const selected = view === 'export' ? null : selectedId;
   const cursor = selectedId ?? cursorId;
   const selectedIndex = receipts.findIndex((receipt) => receipt.id === cursor);
   const { ref: listRef, onKeyDown: onListKeyDown } = useListKeyboard({
@@ -169,7 +173,7 @@ export default function ReceiptsPage() {
   if (!isAdmin) {
     return (
       <KnowledgeFrame crumbs={crumbs} title={tNav('receipts')}>
-        <p className="text-sm text-muted-foreground">{t('noAccessHint')}</p>
+        <EmptyState icon={<ReceiptText />}>{t('noAccessHint')}</EmptyState>
       </KnowledgeFrame>
     );
   }
@@ -225,21 +229,6 @@ export default function ReceiptsPage() {
     }
   }
 
-  async function exportMonth() {
-    if (month === ALL_MONTHS) return;
-    setExporting(true);
-    try {
-      saveBlob(
-        await downloadMonthExport(projectKey, month),
-        `Helena-Belege_${projectKey}_${month}.zip`,
-      );
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : String(error));
-    } finally {
-      setExporting(false);
-    }
-  }
-
   const accountList = accounts.data ?? [];
   const reviewItems = (review.data ?? []).filter((item) => !q || matchesSearch(item, q));
 
@@ -268,17 +257,9 @@ export default function ReceiptsPage() {
         title={receipt.filename}
         detail={detail}
         trailing={
-          <span
-            className={
-              cents === null
-                ? 'text-muted-foreground'
-                : cents < 0
-                  ? 'text-foreground'
-                  : 'text-status-success'
-            }
-          >
+          <Text tone={cents === null ? 'muted' : cents < 0 ? 'default' : 'success'} mono>
             {formatCents(cents, receipt.currency, locale)}
-          </span>
+          </Text>
         }
         selected={cursor === receipt.id}
         onClick={() => {
@@ -303,13 +284,12 @@ export default function ReceiptsPage() {
         .join(' · ')}
       trailing={
         <>
-          <span className={transaction.amountCents < 0 ? 'text-foreground' : 'text-status-success'}>
+          <Text tone={transaction.amountCents < 0 ? 'default' : 'success'} mono>
             {formatCents(transaction.amountCents, transaction.currency, locale)}
-          </span>
-          <button
-            type="button"
-            aria-label={ignoredRow ? t('open.undoIgnore') : t('open.noReceiptNeeded')}
-            title={ignoredRow ? t('open.undoIgnore') : t('open.noReceiptNeeded')}
+          </Text>
+          <IconButton
+            size="small"
+            label={ignoredRow ? t('open.undoIgnore') : t('open.noReceiptNeeded')}
             disabled={updateTransaction.isPending}
             onClick={() =>
               updateTransaction.mutate({
@@ -317,37 +297,46 @@ export default function ReceiptsPage() {
                 patch: { status: ignoredRow ? 'open' : 'ignored' },
               })
             }
-            className="grid size-7 shrink-0 place-items-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground"
           >
             {ignoredRow ? <Undo2 size={14} /> : <CircleSlash size={14} />}
-          </button>
+          </IconButton>
         </>
       }
     />
   );
 
+  const uploadAction = (
+    <Button
+      variant="primary"
+      icon={<Upload size={15} />}
+      onClick={() => fileInput.current?.click()}
+    >
+      {t('actions.upload')}
+    </Button>
+  );
+  const empty =
+    view === 'open' ? (
+      <EmptyState icon={<Check />} title={t('open.noReceipts')} fill={false} />
+    ) : view === 'matched' ? (
+      <EmptyState icon={<ReceiptText />} title={t('matched.emptyTitle')} action={uploadAction}>
+        {t('matched.emptyHint')}
+      </EmptyState>
+    ) : (
+      <EmptyState icon={<ReceiptText />} title={t('emptyTitle')} action={uploadAction}>
+        {t('emptyAll')}
+      </EmptyState>
+    );
+
   const list = (
     // Arrow keys move through the rows; the rows themselves are buttons.
     // eslint-disable-next-line jsx-a11y/no-static-element-interactions
-    <div
-      ref={listRef}
-      onKeyDown={onListKeyDown}
-      className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto"
-    >
+    <div ref={listRef} onKeyDown={onListKeyDown} className="flex min-h-0 flex-col overflow-y-auto">
       {listed.isPending ? (
-        <p role="status" className="px-3.5 py-3 text-xs text-muted-foreground">
-          {t('detail.loading')}
-        </p>
+        <EmptyState fill={false}>{t('detail.loading')}</EmptyState>
       ) : receipts.length ? (
         receipts.map(receiptRow)
       ) : (
-        <EmptyState icon={<ReceiptText />}>
-          {view === 'open'
-            ? t('open.noReceipts')
-            : view === 'matched'
-              ? t('matched.emptyHint')
-              : t('emptyAll')}
-        </EmptyState>
+        empty
       )}
     </div>
   );
@@ -362,44 +351,37 @@ export default function ReceiptsPage() {
           onOpenReceipt={setSelectedId}
         />
       </div>
-    ) : view === 'accounts' ? (
-      <div className="min-h-0 flex-1 overflow-y-auto">
-        <AccountsTab
-          projectKey={projectKey}
-          accounts={accountList}
-          imports={imports.data ?? []}
-          loading={accounts.isPending || imports.isPending}
-          onImport={(accountId) => setImportFor({ accountId })}
-        />
-      </div>
+    ) : view === 'export' ? (
+      <ExportView
+        projectKey={projectKey}
+        months={months}
+        loading={summary.isPending}
+        onUpload={() => fileInput.current?.click()}
+      />
     ) : view === 'open' ? (
-      <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto">
-        <section className="flex flex-col gap-2">
-          <MonoLabel className="px-3.5">{`${t('open.receipts')} · ${receipts.length}`}</MonoLabel>
+      <Stack gap={5} className="min-h-0 flex-1 overflow-y-auto">
+        <Stack gap={2}>
+          <MonoLabel>{`${t('open.receipts')} · ${receipts.length}`}</MonoLabel>
           {list}
-        </section>
-        <section className="flex flex-col gap-2">
-          <MonoLabel className="px-3.5">
-            {`${t('open.transactions')} · ${openTransactions.data?.length ?? 0}`}
-          </MonoLabel>
+        </Stack>
+        <Stack gap={2}>
+          <MonoLabel>{`${t('open.transactions')} · ${openTransactions.data?.length ?? 0}`}</MonoLabel>
           {(openTransactions.data ?? []).length ? (
             (openTransactions.data ?? []).map((transaction) => transactionRow(transaction, false))
           ) : (
-            <p className="px-3.5 text-sm text-muted-foreground">{t('open.noTransactions')}</p>
+            <EmptyState icon={<Check />} title={t('open.noTransactions')} fill={false} />
           )}
-        </section>
+        </Stack>
         {(ignored.data ?? []).length > 0 && (
-          <section className="flex flex-col gap-2">
-            <MonoLabel className="px-3.5">
-              {`${t('open.ignored')} · ${ignored.data!.length}`}
-            </MonoLabel>
+          <Stack gap={2}>
+            <MonoLabel>{`${t('open.ignored')} · ${ignored.data!.length}`}</MonoLabel>
             {ignored.data!.map((transaction) => transactionRow(transaction, true))}
-          </section>
+          </Stack>
         )}
-      </div>
+      </Stack>
     ) : (
       <>
-        {(listed.isPending || receipts.length > 0) && (
+        {receipts.length > 0 && (
           <KnowledgeListHead
             name={t('columns.name')}
             kind={t('columns.detail')}
@@ -417,56 +399,41 @@ export default function ReceiptsPage() {
         title={title}
         frameProps={{ 'data-receipts': view }}
         search={
-          view !== 'accounts' && (
+          view !== 'export' && (
             <KnowledgeSearch value={search} onChange={setSearch} placeholder={t('search')} />
           )
         }
         actions={
-          <>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button type="button" className={cn(PAGE_CONTROL_CLASS, PAGE_PRIMARY_CLASS)}>
-                  <Plus aria-hidden="true" />
-                  {t('new')}
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-60">
-                <DropdownMenuItem
-                  disabled={upload.isPending}
-                  onSelect={() => fileInput.current?.click()}
-                >
-                  <Upload />
-                  {t('actions.upload')}
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  disabled={fromVault.isPending}
-                  onSelect={() => setVaultOpen(true)}
-                >
-                  <FolderOpen />
-                  {t('actions.fromVault')}
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onSelect={() => setImportFor({ accountId: accountList[0]?.id ?? null })}
-                >
-                  <FileUp />
-                  {t('actions.import')}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            {/* One entry is a button, not a "…" menu (owner, O36). */}
-            <Button
-              variant="quiet"
-              icon={<Download size={16} />}
-              disabled={month === ALL_MONTHS || exporting}
-              title={month === ALL_MONTHS ? t('actions.exportPickMonth') : undefined}
-              onClick={() => void exportMonth()}
-            >
-              {t('actions.export')}
-            </Button>
-          </>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button type="button" className={cn(PAGE_CONTROL_CLASS, PAGE_PRIMARY_CLASS)}>
+                <Plus aria-hidden="true" />
+                {t('new')}
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-60">
+              <DropdownMenuItem
+                disabled={upload.isPending}
+                onSelect={() => fileInput.current?.click()}
+              >
+                <Upload />
+                {t('actions.upload')}
+              </DropdownMenuItem>
+              <DropdownMenuItem disabled={fromVault.isPending} onSelect={() => setVaultOpen(true)}>
+                <FolderOpen />
+                {t('actions.fromVault')}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onSelect={() => setImportFor({ accountId: accountList[0]?.id ?? null })}
+              >
+                <FileUp />
+                {t('actions.import')}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         }
         pills={
-          view !== 'accounts' && (
+          view !== 'export' && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
@@ -493,7 +460,8 @@ export default function ReceiptsPage() {
           )
         }
         footer={
-          (view === 'all' || view === 'open') && (
+          (view === 'all' || view === 'open') &&
+          receipts.length > 0 && (
             <button
               type="button"
               data-knowledge-dropzone=""
@@ -541,7 +509,8 @@ export default function ReceiptsPage() {
         type="file"
         multiple
         accept={ACCEPT}
-        className="hidden"
+        hidden
+        data-receipt-upload=""
         onChange={(event) => void uploadFiles(event.target.files)}
       />
       {vaultOpen && (

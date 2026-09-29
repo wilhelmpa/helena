@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { labRunActive, type LabRun } from '@/lib/api/endpoints/browserTask';
+import { vaultFileUrl } from '@/lib/api/endpoints/knowledge';
 import { useNow } from '@/features/provider-limits/hooks/useNow';
 import { approvalsPath } from '@/utils/paths';
 
@@ -202,10 +203,10 @@ export function LabRunPanel({
           {t('openChat')}
         </Link>
       )}
-      {run.finalFrame && (
-        // eslint-disable-next-line @next/next/no-img-element -- a data: URL of the run's last page
+      {(run.finalFramePath || run.finalFrame) && (
+        // eslint-disable-next-line @next/next/no-img-element -- the run's last page from the vault
         <img
-          src={run.finalFrame}
+          src={run.finalFramePath ? vaultFileUrl(run.finalFramePath) : run.finalFrame!}
           alt={t('finalFrame')}
           className="w-full rounded-md border border-sidebar-border"
         />

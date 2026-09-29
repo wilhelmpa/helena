@@ -81,7 +81,13 @@ export const helenaBrowserTaskRun = pgTable(
       onDelete: 'set null',
     }),
     chatThreadId: text('chat_thread_id'),
-    // A small picture of the page at the end (jev-browser's throwaway browser has no live view).
+    // A small picture of the page at the end (jev-browser's throwaway browser has no live view):
+    // a file in the vault, Projects/<KEY>/Files/Browser/<id>.<png|jpg> (Home/Files/Browser for
+    // Home's browser). final_frame_sha256 finds it again after it was moved.
+    finalFramePath: text('final_frame_path'),
+    finalFrameSha256: text('final_frame_sha256'),
+    // Before the vault: the picture itself as a data: URL. Only rows from then have it, until
+    // apps/api/src/scripts/browser-frames-to-vault.ts moves them into the vault.
     finalFrame: text('final_frame'),
     tokenHash: text('token_hash'),
     tokenExpiresAt: timestamp('token_expires_at', { withTimezone: true }),

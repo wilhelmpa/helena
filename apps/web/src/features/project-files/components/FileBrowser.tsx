@@ -24,6 +24,8 @@ import ProjectKnowledgeViewer from './ProjectKnowledgeViewer';
 import KnowledgeFolderView, { useKnowledgeCrumbs, vaultRootOf } from './KnowledgeFolderView';
 import KnowledgeRecentView from './KnowledgeRecentView';
 import KnowledgeCanvas from './KnowledgeCanvas';
+import KnowledgeBaseView from './KnowledgeBaseView';
+import { Page } from '@/design-system';
 import FileCreateMenu from './FileCreateMenu';
 import FileItemMenu from './FileItemMenu';
 
@@ -147,7 +149,9 @@ export default function FileBrowser({
     };
   }, [selected, vaultRoot, listing.isPending, listing.data, onSelect]);
   const items = visibleItems(listing.data?.items ?? [], view.filter, view.sort);
-  const levelOne = scope.kind === 'project' && scope.root === 'vault' && !path;
+  // Level 1 of a place of Wissen (a project's folder, Helena, Privat, Vorlagen): the latest
+  // files across all its folders, never a list of folders under empty column heads (O14).
+  const levelOne = (scope.kind === 'home' || scope.root === 'vault') && !path;
   const levelOneCrumbs = useKnowledgeCrumbs(scope, [], (folder) => navigate(folder), true);
   const k = useTranslations('files.knowledge');
   const viewing = selected ? listing.data?.items.find((item) => item.path === selected) : undefined;
@@ -205,6 +209,27 @@ export default function FileBrowser({
             actions={actions}
             can={can}
           />
+        ) : knowledge && /\.base$/i.test(viewing.name) && vaultRoot ? (
+          <Page
+            actions={<FileItemMenu item={viewing} actions={actions} can={can} size="default" />}
+          >
+            <KnowledgeBaseView
+              key={viewing.path}
+              path={`${vaultRoot}/${viewing.path}`}
+              onOpenNote={(note) => {
+                if (!note.startsWith(`${vaultRoot}/`)) return;
+                const relative = note.slice(vaultRoot.length + 1);
+                actions.open({
+                  name: baseName(relative),
+                  path: relative,
+                  kind: 'file',
+                  sizeBytes: null,
+                  contentType: null,
+                  updatedAt: null,
+                });
+              }}
+            />
+          </Page>
         ) : knowledge ? (
           <ProjectKnowledgeViewer
             key={viewing.path}
@@ -255,7 +280,14 @@ export default function FileBrowser({
           onOpen={(entry) => actions.open(entry.item)}
           onCreate={(kind) =>
             setDialog({
-              kind: kind === 'doc' ? 'newFile' : kind === 'canvas' ? 'newCanvas' : 'newFolder',
+              kind:
+                kind === 'doc'
+                  ? 'newFile'
+                  : kind === 'canvas'
+                    ? 'newCanvas'
+                    : kind === 'base'
+                      ? 'newBase'
+                      : 'newFolder',
             })
           }
           onUpload={transfers.sendFiles}
@@ -273,6 +305,7 @@ export default function FileBrowser({
           onOpen={actions.open}
           onNewFile={() => setDialog({ kind: 'newFile' })}
           onNewCanvas={() => setDialog({ kind: 'newCanvas' })}
+          onNewBase={() => setDialog({ kind: 'newBase' })}
           onNewFolder={() => setDialog({ kind: 'newFolder' })}
           onUpload={transfers.sendFiles}
         />

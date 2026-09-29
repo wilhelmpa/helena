@@ -16,7 +16,11 @@ export interface FileItem {
   sizeBytes: number | null;
   contentType: string | null;
   updatedAt: string | null;
+  // Vault files: who made it (system, agent or a person).
+  origin?: FileOrigin;
 }
+
+export type FileOrigin = 'system' | 'agent' | 'manual';
 
 export interface FileList {
   root: string;

@@ -27,6 +27,7 @@ import {
   type TaskRow,
 } from './runs';
 import { postToRouter } from './router-client';
+import { currentFramePath } from './frames';
 
 // Browser 2.0 (docs/helena-decisions/browser-task.md §3.5): the owner's test area. A run is a
 // row of helena_browser_task_run with source 'lab':
@@ -85,6 +86,9 @@ export interface LabRunView {
   agentId: number | null;
   agentName: string | null;
   chatThreadId: string | null;
+  // The vault path of the run's last page (a PNG or JPEG in Files/Browser), for the full view.
+  finalFramePath: string | null;
+  // A run from before the vault: the picture itself as a data: URL, until the migration.
   finalFrame: string | null;
   createdAt: string;
   finishedAt: string | null;
@@ -497,7 +501,8 @@ async function view(
     agentId: row.agentId,
     agentName: name,
     chatThreadId: row.chatThreadId,
-    finalFrame: withFrame ? row.finalFrame : null,
+    finalFramePath: withFrame ? await currentFramePath(row) : null,
+    finalFrame: withFrame && !row.finalFramePath ? row.finalFrame : null,
     createdAt: iso(row.createdAt),
     finishedAt: row.finishedAt ? iso(row.finishedAt) : null,
   };

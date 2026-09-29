@@ -7,6 +7,7 @@ import { accessErrors, commonErrors, errors } from '#shared/responses';
 import { requireUser } from '#shared/access';
 import { knowledgeActor } from '#modules/knowledge/reach';
 import { storeProjectFile } from '#modules/attachments/project-vault';
+import { CHAT_FILES_FOLDER } from './folder';
 import { serveVaultFile, trashVaultFile } from '#modules/project-files/service';
 import { ATTACHMENT_INLINE } from '#modules/project-files/serve';
 import {
@@ -66,13 +67,7 @@ export const chatAttachmentRoutes = new Elysia({
       const contentType = await uploadContentType(bytes, filename, body.contentType);
       await assertAttachmentUploadAllowed(project.id, bytes.length, contentType);
       const actor = await knowledgeActor(requireUser(user), request.headers);
-      const file = await storeProjectFile(
-        project.id,
-        'Files/Chat Attachments',
-        filename,
-        bytes,
-        actor,
-      );
+      const file = await storeProjectFile(project.id, CHAT_FILES_FOLDER, filename, bytes, actor);
       let row;
       try {
         row = await createChatAttachment({

@@ -1,7 +1,7 @@
 {
   "fixedFolders": {
     "Docs": "Documents",
-    "Files": "Files",
+    "Files": "Storage",
     "Assets": "Attachments",
     "Boards": "Canvases",
     "Inbox": "Incoming"
@@ -142,7 +142,6 @@
     "run": "Run {run}",
     "formatted": "Formatted text",
     "source": "Markdown source",
-    "sourceRequired": "This file contains Markdown the formatted editor cannot preserve. Edit the source to keep all content.",
     "sourceEditRejected": "This edit could not preserve the original line endings. Your previous text is unchanged. Try smaller edits."
   },
   "knowledge": {
@@ -163,14 +162,9 @@
       "doc": "Doc",
       "canvas": "Canvas",
       "folder": "Folder",
-      "upload": "Upload file"
-    },
-    "filters": {
-      "all": "All",
-      "docs": "Documents",
-      "canvases": "Canvases",
-      "files": "Files",
-      "agents": "By agents"
+      "upload": "Upload file",
+      "base": "View (table, cards, list)",
+      "firstDoc": "Create a doc"
     },
     "columns": {
       "name": "Name",
@@ -184,13 +178,12 @@
       "doc": "Doc",
       "pdf": "PDF",
       "image": "Image",
-      "file": "File"
+      "file": "File",
+      "base": "View"
     },
     "dropHint": "Drop files here or <pick>choose</pick>",
     "entries": "{count, plural, one {# entry} other {# entries}}",
-    "subfolders": "{count, plural, one {# subfolder, in the tree on the left} other {# subfolders, in the tree on the left}}",
     "emptyFolder": "This folder is empty. Create a doc or drop files here.",
-    "emptyFolderWithSubfolders": "No files here, only subfolders. Open them in the tree on the left.",
     "emptyFilter": "No files of this kind.",
     "emptyRecent": "No files yet. Create a doc or drop files here.",
     "recent": "Recently changed",
@@ -210,11 +203,13 @@
     "history": "History",
     "noHistory": "No history yet",
     "discard": "Discard unsaved changes?",
-    "othersFiles": "{count, plural, one {# file} other {# files}} alongside →",
-    "othersKnowledge": "{count, plural, one {# doc or canvas} other {# docs and canvases}} alongside →",
-    "openInPage": "Open large",
     "download": "Download",
-    "searchFiles": "Search files …"
+    "searchFiles": "Search files …",
+    "emptyTitle": "Nothing in Knowledge yet",
+    "emptyFilesTitle": "No files yet",
+    "emptyFiles": "PDFs, images and other files land here. Upload one or drop it here.",
+    "onlySubfoldersTitle": "Only subfolders",
+    "onlySubfolders": "This folder holds no files. Open one of its subfolders."
   },
   "canvas": {
     "opening": "Opening the canvas …",
@@ -233,8 +228,6 @@
     "zoomIn": "Zoom in",
     "insert": "Insert",
     "findTask": "Find a task",
-    "eyebrow": "Knowledge / {path}",
-    "canvases": "Canvases",
     "counts": "{cards, plural, one {# card} other {# cards}} · {links, plural, one {# link} other {# links}}",
     "share": "Share",
     "tools": {
@@ -243,6 +236,40 @@
       "doc": "Insert doc",
       "task": "Insert task",
       "connect": "Connect"
-    }
+    },
+    "newTitle": "New canvas",
+    "newHint": "Arrange and connect cards, docs and tasks freely; Obsidian opens the same file.",
+    "newName": "New canvas",
+    "create": "Create"
+  },
+  "origin": {
+    "system": "System",
+    "agent": "Agent",
+    "manual": "Manual",
+    "all": "All",
+    "systemHint": "Made by Helena (receipts, mail attachments, exports)",
+    "agentHint": "Made by an agent",
+    "manualHint": "Made or uploaded by a person",
+    "label": "Origin"
+  },
+  "base": {
+    "loading": "Loading view …",
+    "readFailed": "The view could not be read.",
+    "rowsFailed": "The rows of the view could not be loaded.",
+    "unsupported": "This view uses an expression Helena does not evaluate yet",
+    "views": "Views",
+    "filter": "Filter rows",
+    "count": "{count, plural, one {# note} other {# notes}}",
+    "countFiltered": "{shown} of {total}",
+    "noMatch": "No row matches the filter.",
+    "empty": "No note fits this view.",
+    "truncated": "The first {count} rows",
+    "newTitle": "New view",
+    "newHint": "A view shows the notes of this folder as a table, cards or a list; Obsidian opens the same file.",
+    "newName": "Overview",
+    "create": "Create",
+    "viewTable": "Table",
+    "viewCards": "Cards",
+    "viewList": "List"
   }
 }
