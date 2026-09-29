@@ -142,7 +142,7 @@ describe('project files', () => {
 
     expect((await files.get({ query: { path: 'Docs' } })).data!.items).toEqual([]);
     expect(readFileSync(vaultFile('.trash/Projects/MKT/Docs/plan.txt'), 'utf8')).toBe('v1');
-    expect(readFileSync(vaultFile('.trash/Projects/MKT/Docs/plan (2).txt'), 'utf8')).toBe('v2');
+    expect(readFileSync(vaultFile('.trash/Projects/MKT/Docs/plan 2.txt'), 'utf8')).toBe('v2');
     expect((await files.delete({}, { query: { path: '' } })).status).toBe(400);
   });
 
