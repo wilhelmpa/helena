@@ -1003,10 +1003,12 @@
   "projectAccess": {
     "create": "添加访问",
     "credentialsTitle": "此项目中的访问",
+    "credentialsHint": "本项目的访问凭据只在这里有效。集中管理的凭据仅在授予此项目后有效，且只对“授权”中列出的智能体有效。",
     "empty": "此项目尚未被授予任何访问。",
     "allAgents": "项目的所有代理",
     "notGranted": "尚未授权任何人",
     "ownProject": "仅此项目",
+    "fromCentral": "集中授予",
     "grants": "授权",
     "environmentTitle": "环境变量",
     "environmentHint": "此项目的代理从其访问中获得的变量。"

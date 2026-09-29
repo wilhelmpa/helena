@@ -97,6 +97,8 @@
     "memorySystem": "RAM fürs System",
     "memoryAvailable": "Davon frei",
     "memoryGpu": "GPU reserviert",
+    "memoryGpuDynamic": "GPU-Speicher (dynamisch)",
+    "memoryGpuUpTo": "bis {total}, nach Bedarf aus dem Arbeitsspeicher (GTT)",
     "memoryGpuUsed": "GPU belegt",
     "swap": "Auslagerung",
     "swapUsed": "{used} von {total}",

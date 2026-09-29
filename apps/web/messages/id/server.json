@@ -91,6 +91,8 @@
     "memorySystem": "RAM untuk sistem",
     "memoryAvailable": "Yang bebas",
     "memoryGpu": "Dicadangkan untuk GPU",
+    "memoryGpuDynamic": "Memori GPU (dinamis)",
+    "memoryGpuUpTo": "hingga {total}, diambil dari memori sistem sesuai kebutuhan (GTT)",
     "memoryGpuUsed": "Dipakai GPU",
     "swap": "Swap",
     "swapUsed": "{used} dari {total}",

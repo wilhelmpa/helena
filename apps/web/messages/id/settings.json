@@ -1003,10 +1003,12 @@
   "projectAccess": {
     "create": "Tambah akses",
     "credentialsTitle": "Akses di proyek ini",
+    "credentialsHint": "Akses proyek ini hanya berlaku di sini. Akses pusat hanya jika diberikan ke proyek ini, dan hanya untuk agen di „Izin“.",
     "empty": "Belum ada akses yang diberikan ke proyek ini.",
     "allAgents": "Semua agen proyek",
     "notGranted": "Belum ada yang diberi akses",
     "ownProject": "Hanya proyek ini",
+    "fromCentral": "Diberikan secara pusat",
     "grants": "Izin",
     "environmentTitle": "Variabel lingkungan",
     "environmentHint": "Yang diterima agen proyek ini sebagai variabel dari aksesnya."

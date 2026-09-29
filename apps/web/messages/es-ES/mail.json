@@ -128,7 +128,7 @@
     "title": "Cuentas de correo",
     "add": "Añadir cuenta",
     "intro": "Helena importa todas las carpetas de estas cuentas por IMAP, con los adjuntos, y envía por SMTP. El correo de una cuenta de proyecto se archiva en ese proyecto.",
-    "projectIntro": "Las cuentas cuyo correo se archiva en este proyecto.",
+    "projectIntro": "Solo este proyecto: el correo de estas cuentas llega aquí; los demás proyectos no lo ven.",
     "loadError": "No se han podido cargar las cuentas.",
     "empty": "Aún no hay ninguna cuenta de correo.",
     "home": "Helena",

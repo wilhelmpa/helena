@@ -105,3 +105,19 @@ export function loadFacts(load: ServerLoad | null | undefined): LoadFact[] {
   if (typeof load.gpuPercent === 'number') facts.push({ kind: 'gpu', percent: load.gpuPercent });
   return facts;
 }
+
+// Kingston runs Halogen (Flash), the embedding server (Vulkan), speech recognition and the
+// voice; Lemonade is gone (owner, 29.09., K9). A Lemonade entry that is switched off is not
+// listed, and none is offered to add; one still switched on stays visible, so nothing that
+// runs is hidden.
+export const HALOGEN = 'halogen';
+export const LEMONADE = 'lemonade';
+
+export function shownServers<T extends { kind: string; enabled: boolean }>(servers: T[]): T[] {
+  return servers.filter((server) => server.kind !== LEMONADE || server.enabled);
+}
+
+// The kinds the add dialog offers; the kind of a server being edited stays listed.
+export function addableServerTypes<T extends { id: string }>(types: T[], current: string): T[] {
+  return types.filter((type) => type.id !== LEMONADE || type.id === current);
+}

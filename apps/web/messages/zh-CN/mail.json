@@ -128,7 +128,7 @@
     "title": "邮件账户",
     "add": "添加账户",
     "intro": "Helena 通过 IMAP 导入这些账户的所有文件夹及其附件，并通过 SMTP 发送邮件。项目账户的邮件会归入该项目。",
-    "projectIntro": "邮件归入此项目的账户。",
+    "projectIntro": "仅限此项目：这些账户的邮件进入这里，其他项目看不到。",
     "loadError": "无法加载账户。",
     "empty": "还没有邮件账户。",
     "home": "Helena",

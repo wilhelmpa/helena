@@ -21,7 +21,7 @@
     "service": "Сервис",
     "cloudNote": "То, что Helena отдаёт на решение, например видимый текст страницы или письмо, уходит в этот сервис. Пароли и введённые значения — нет.",
     "localNote": "Собственный сервер System One. Helena обращается к нему только по этому адресу.",
-    "localModelNote": "Сервер, совместимый с OpenAI, с logprobs (llama.cpp, Lemonade, vLLM). Helena обращается к нему только по этому адресу.",
+    "localModelNote": "Сервер, совместимый с OpenAI, с logprobs (llama.cpp, Halogen, vLLM). Helena обращается к нему только по этому адресу.",
     "address": "Адрес",
     "model": "Модель",
     "allowPrivate": "Разрешить этот локальный адрес",

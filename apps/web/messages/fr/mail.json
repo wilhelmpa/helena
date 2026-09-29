@@ -128,7 +128,7 @@
     "title": "Comptes e-mail",
     "add": "Ajouter un compte",
     "intro": "Helena importe tous les dossiers de ces comptes par IMAP, avec les pièces jointes, et envoie par SMTP. Les e-mails d'un compte de projet sont classés dans ce projet.",
-    "projectIntro": "Les comptes dont les e-mails sont classés dans ce projet.",
+    "projectIntro": "Ce projet uniquement : les e-mails de ces comptes arrivent ici, les autres projets ne les voient pas.",
     "loadError": "Les comptes n'ont pas pu être chargés.",
     "empty": "Aucun compte e-mail pour le moment.",
     "home": "Helena",

@@ -64,6 +64,9 @@ import {
   newServerForm,
   serverInput,
   type ServerForm,
+  HALOGEN,
+  addableServerTypes,
+  shownServers,
 } from '../utils/serverForm';
 import LocalAiCard from './LocalAiCard';
 import LocalAiJudgeSection from './LocalAiJudgeSection';
@@ -117,10 +120,10 @@ function ServersSection({ settings }: { settings: LocalAiSettings }) {
         </Button>
       }
     >
-      {settings.servers.length === 0 ? (
+      {shownServers(settings.servers).length === 0 ? (
         <SettingsCard className="p-4 text-sm text-muted-foreground">{t('none')}</SettingsCard>
       ) : (
-        settings.servers.map((server) => (
+        shownServers(settings.servers).map((server) => (
           <ServerCard key={server.id} server={server} settings={settings} />
         ))
       )}
@@ -283,7 +286,7 @@ function ServerDialog({
           contextLength: String(server.contextLength),
           capabilities: server.options.capabilities,
         }
-      : newServerForm(settings, 'lemonade');
+      : newServerForm(settings, HALOGEN);
   // Mounted only while open (see its callers), so each opening starts from the server as it is.
   const [form, setForm] = useState<ServerForm>(initial);
   const set = (patch: Partial<ServerForm>) => setForm((current) => ({ ...current, ...patch }));
@@ -321,7 +324,7 @@ function ServerDialog({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {settings.serverTypes.map((entry) => (
+                {addableServerTypes(settings.serverTypes, form.kind).map((entry) => (
                   <SelectItem key={entry.id} value={entry.id}>
                     {resolveLabel(entry.label, locale, (key) => tRoot(key as never))}
                   </SelectItem>

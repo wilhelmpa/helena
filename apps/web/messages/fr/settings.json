@@ -1003,10 +1003,12 @@
   "projectAccess": {
     "create": "Ajouter un accès",
     "credentialsTitle": "Accès dans ce projet",
+    "credentialsHint": "Un accès de ce projet ne vaut qu’ici. Un accès central seulement s’il est accordé à ce projet, et seulement aux agents indiqués sous « Autorisations ».",
     "empty": "Aucun accès n’a encore été accordé à ce projet.",
     "allAgents": "Tous les agents du projet",
     "notGranted": "Personne n’y a encore accès",
     "ownProject": "Ce projet uniquement",
+    "fromCentral": "Accordé de façon centrale",
     "grants": "Autorisations",
     "environmentTitle": "Variables d’environnement",
     "environmentHint": "Ce que les agents de ce projet reçoivent comme variables de leurs accès."

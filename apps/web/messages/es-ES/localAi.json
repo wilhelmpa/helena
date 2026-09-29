@@ -90,7 +90,7 @@
   },
   "servers": {
     "title": "Servidores de modelos",
-    "description": "Halogen o Lemonade en este equipo, u otro servidor compatible con OpenAI. Sus modelos aparecen en todos los selectores de modelo mientras la IA local está activada.",
+    "description": "Halogen (Flash), embeddings (Vulkan), reconocimiento de voz y voz en este equipo, u otro servidor compatible con OpenAI. Sus modelos aparecen en todos los selectores de modelo mientras la IA local está activada.",
     "add": "Añadir servidor",
     "none": "Aún no hay servidor. Instala la IA local con native/local-ai/install.sh y añádelo aquí.",
     "reachable": "Accesible · {version}",
@@ -153,7 +153,7 @@
     "eigeneHint": "Los tipos de trabajo tal como están configurados abajo."
   },
   "serverTypes": {
-    "lemonade": "Lemonade Server (GPU + NPU)",
+    "lemonade": "Lemonade (ya no se usa)",
     "halogen": "Halogen (Qwen3.8-Flash-Next, GPU)",
     "openaiCompatible": "Servidor compatible con OpenAI",
     "whisperCpp": "whisper.cpp (reconocimiento de voz, GPU)",
@@ -292,7 +292,7 @@
     "custom": "Opciones de arranque propias",
     "hint": "Los cambios se aplican en el próximo arranque del modelo.",
     "backend": "Backend",
-    "backendHint": "Con qué ejecuta Lemonade el modelo en la GPU.",
+    "backendHint": "Con qué ejecuta el servidor el modelo en la GPU.",
     "backends": {
       "default": "Predeterminado",
       "rocm": "ROCm",

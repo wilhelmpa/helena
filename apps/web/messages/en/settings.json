@@ -1003,10 +1003,12 @@
   "projectAccess": {
     "create": "Add access",
     "credentialsTitle": "Access in this project",
+    "credentialsHint": "A login of this project applies here only. A central one only when it is granted to this project, and only to the agents under “Grants”.",
     "empty": "No access has been granted to this project yet.",
     "allAgents": "All agents of the project",
     "notGranted": "Nobody granted yet",
     "ownProject": "This project only",
+    "fromCentral": "Granted centrally",
     "grants": "Grants",
     "environmentTitle": "Environment variables",
     "environmentHint": "What this project’s agents receive as variables from their access."

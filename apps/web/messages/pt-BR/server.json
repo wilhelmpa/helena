@@ -91,6 +91,8 @@
     "memorySystem": "RAM para o sistema",
     "memoryAvailable": "Dela, livre",
     "memoryGpu": "Reservada para a GPU",
+    "memoryGpuDynamic": "Memória da GPU (dinâmica)",
+    "memoryGpuUpTo": "até {total}, tirada da memória do sistema conforme necessário (GTT)",
     "memoryGpuUsed": "Usada pela GPU",
     "swap": "Swap",
     "swapUsed": "{used} de {total}",

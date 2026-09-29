@@ -128,7 +128,7 @@
     "title": "Mail accounts",
     "add": "Add account",
     "intro": "Helena imports every folder of these accounts over IMAP, with attachments, and sends over SMTP. A project account files its mail under that project.",
-    "projectIntro": "The accounts whose mail is filed under this project.",
+    "projectIntro": "This project only: mail from these accounts lands here; other projects do not see it.",
     "loadError": "The accounts could not be loaded.",
     "empty": "No mail account yet.",
     "home": "Helena",

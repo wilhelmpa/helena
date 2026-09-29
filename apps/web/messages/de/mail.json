@@ -128,7 +128,7 @@
     "title": "E-Mail-Konten",
     "add": "Konto hinzufügen",
     "intro": "Helena holt alle Ordner dieser Konten per IMAP mit Anhängen und sendet per SMTP. Die Mails eines Projektkontos landen in diesem Projekt.",
-    "projectIntro": "Die Konten, deren Mails in diesem Projekt abgelegt werden.",
+    "projectIntro": "Nur für dieses Projekt: Die Mails dieser Konten landen hier, andere Projekte sehen sie nicht.",
     "loadError": "Die Konten konnten nicht geladen werden.",
     "empty": "Noch kein E-Mail-Konto.",
     "home": "Helena",

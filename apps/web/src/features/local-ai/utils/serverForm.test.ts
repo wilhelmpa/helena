@@ -118,3 +118,31 @@ describe('the load line', () => {
     assert.deepEqual(loadFacts(null), []);
   });
 });
+
+describe('Lemonade is gone (K9)', () => {
+  it('lists a switched-off Lemonade server no more, but one that runs', async () => {
+    const { shownServers } = await import('./serverForm');
+    const servers = [
+      { id: 1, kind: 'lemonade', enabled: false },
+      { id: 2, kind: 'halogen', enabled: true },
+      { id: 3, kind: 'lemonade', enabled: true },
+    ];
+    assert.deepEqual(
+      shownServers(servers).map((server) => server.id),
+      [2, 3],
+    );
+  });
+
+  it('offers no Lemonade server to add, but keeps the kind of one being edited', async () => {
+    const { addableServerTypes } = await import('./serverForm');
+    const types = [{ id: 'lemonade' }, { id: 'halogen' }, { id: 'openaiCompatible' }];
+    assert.deepEqual(
+      addableServerTypes(types, 'halogen').map((type) => type.id),
+      ['halogen', 'openaiCompatible'],
+    );
+    assert.deepEqual(
+      addableServerTypes(types, 'lemonade').map((type) => type.id),
+      ['lemonade', 'halogen', 'openaiCompatible'],
+    );
+  });
+});

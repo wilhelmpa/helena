@@ -91,6 +91,8 @@
     "memorySystem": "系统内存",
     "memoryAvailable": "其中可用",
     "memoryGpu": "为 GPU 预留",
+    "memoryGpuDynamic": "GPU 内存（动态）",
+    "memoryGpuUpTo": "最多 {total}，按需从系统内存分配（GTT）",
     "memoryGpuUsed": "GPU 已用",
     "swap": "交换空间",
     "swapUsed": "{used} / {total}",

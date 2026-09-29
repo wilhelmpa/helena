@@ -90,7 +90,7 @@
   },
   "servers": {
     "title": "خوادم النماذج",
-    "description": "Halogen أو Lemonade على هذا الجهاز، أو خادم آخر متوافق مع OpenAI. تظهر نماذجه في كل اختيار للنموذج ما دام الذكاء الاصطناعي المحلي مفعّلًا.",
+    "description": "Halogen (Flash) والتضمينات (Vulkan) والتعرّف على الكلام والصوت على هذا الجهاز، أو خادم آخر متوافق مع OpenAI. تظهر نماذجه في كل اختيار للنموذج ما دام الذكاء الاصطناعي المحلي مفعّلًا.",
     "add": "إضافة خادم",
     "none": "لا يوجد خادم بعد. ثبّت الذكاء الاصطناعي المحلي عبر native/local-ai/install.sh ثم أضفه هنا.",
     "reachable": "متاح · {version}",
@@ -153,7 +153,7 @@
     "eigeneHint": "أنواع العمل كما هي مضبوطة أدناه."
   },
   "serverTypes": {
-    "lemonade": "Lemonade Server (GPU + NPU)",
+    "lemonade": "Lemonade (لم يعد مستخدمًا)",
     "halogen": "Halogen (Qwen3.8-Flash-Next، GPU)",
     "openaiCompatible": "خادم متوافق مع OpenAI",
     "whisperCpp": "whisper.cpp (التعرف على الكلام، GPU)",
@@ -292,7 +292,7 @@
     "custom": "خيارات تشغيل مخصصة",
     "hint": "تسري التغييرات عند التشغيل التالي للنموذج.",
     "backend": "الواجهة الخلفية",
-    "backendHint": "ما يستخدمه Lemonade لتشغيل النموذج على GPU.",
+    "backendHint": "ما يستخدمه الخادم لتشغيل النموذج على GPU.",
     "backends": {
       "default": "الافتراضي",
       "rocm": "ROCm",

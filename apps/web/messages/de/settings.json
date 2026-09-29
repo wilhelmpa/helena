@@ -1003,10 +1003,12 @@
   "projectAccess": {
     "create": "Zugang anlegen",
     "credentialsTitle": "Zugänge in diesem Projekt",
+    "credentialsHint": "Ein Zugang dieses Projekts gilt nur hier. Ein zentraler Zugang nur, wenn er diesem Projekt freigegeben ist, und nur für die Agenten unter „Freigaben“.",
     "empty": "Diesem Projekt ist noch kein Zugang freigegeben.",
     "allAgents": "Alle Agenten des Projekts",
     "notGranted": "Noch niemand freigegeben",
     "ownProject": "Nur dieses Projekt",
+    "fromCentral": "Zentral freigegeben",
     "grants": "Freigaben",
     "environmentTitle": "Umgebungsvariablen",
     "environmentHint": "Was die Agenten dieses Projekts aus ihren Zugängen als Variablen bekommen."

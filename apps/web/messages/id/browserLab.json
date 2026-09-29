@@ -21,7 +21,7 @@
     "service": "Layanan",
     "cloudNote": "Yang diputuskan untuk Helena, seperti teks halaman yang terlihat atau email, dikirim ke layanan ini. Kata sandi dan nilai yang diketik tidak.",
     "localNote": "Server System One milik Anda sendiri. Helena hanya menjangkaunya di alamat ini.",
-    "localModelNote": "Server yang kompatibel dengan OpenAI dengan logprobs (llama.cpp, Lemonade, vLLM). Helena hanya menjangkaunya di alamat ini.",
+    "localModelNote": "Server yang kompatibel dengan OpenAI dengan logprobs (llama.cpp, Halogen, vLLM). Helena hanya menjangkaunya di alamat ini.",
     "address": "Alamat",
     "model": "Model",
     "allowPrivate": "Izinkan alamat lokal ini",

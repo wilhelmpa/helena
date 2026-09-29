@@ -21,7 +21,7 @@
     "service": "服务",
     "cloudNote": "Helena 交给它决定的内容（例如页面上可见的文字或一封邮件）会发送到此服务。密码和输入的值不会。",
     "localNote": "你自己的 System One 服务器。Helena 只通过此地址访问它。",
-    "localModelNote": "兼容 OpenAI 且支持 logprobs 的服务器（llama.cpp、Lemonade、vLLM）。Helena 只通过此地址访问它。",
+    "localModelNote": "兼容 OpenAI 且支持 logprobs 的服务器（llama.cpp、Halogen、vLLM）。Helena 只通过此地址访问它。",
     "address": "地址",
     "model": "模型",
     "allowPrivate": "允许此本地地址",

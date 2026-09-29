@@ -49,7 +49,9 @@ const ALL_PROJECTS: ModalSectionDef[] = [
   s('agents', 'allProjects', {
     keywords: 'Claude Code Codex Hermes Laufzeit Anmeldung Modell Fallback Not-Aus Preise',
   }),
-  s('local-ai', 'allProjects', { keywords: 'Qwen GPU NPU Lemonade Vorladen Schutz Klassen' }),
+  s('local-ai', 'allProjects', {
+    keywords: 'Halogen Flash Qwen GPU Embedding Vulkan Sprache Vorladen Schutz Klassen',
+  }),
   s('browser', 'allProjects', {
     keywords: 'Projekt-Browser Leerlauf immer an Chromium Speicher starten beenden',
   }),

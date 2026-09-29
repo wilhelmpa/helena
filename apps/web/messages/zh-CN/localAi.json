@@ -90,7 +90,7 @@
   },
   "servers": {
     "title": "模型服务器",
-    "description": "本机上的 Halogen 或 Lemonade，或其他 OpenAI 兼容服务器。本地 AI 开启时，其模型会出现在所有模型选择中。",
+    "description": "本机上的 Halogen（Flash）、嵌入（Vulkan）、语音识别和语音，或其他 OpenAI 兼容服务器。本地 AI 开启时，其模型会出现在所有模型选择中。",
     "add": "添加服务器",
     "none": "还没有服务器。先用 native/local-ai/install.sh 安装本地 AI，再在这里添加。",
     "reachable": "可访问 · {version}",
@@ -153,7 +153,7 @@
     "eigeneHint": "按下方设置的工作类型。"
   },
   "serverTypes": {
-    "lemonade": "Lemonade Server（GPU + NPU）",
+    "lemonade": "Lemonade（已不再使用）",
     "halogen": "Halogen（Qwen3.8-Flash-Next，GPU）",
     "openaiCompatible": "兼容 OpenAI 的服务器",
     "whisperCpp": "whisper.cpp（语音识别，GPU）",
@@ -292,7 +292,7 @@
     "custom": "自定义启动选项",
     "hint": "更改将在模型下次启动时生效。",
     "backend": "后端",
-    "backendHint": "Lemonade 在 GPU 上运行模型所用的后端。",
+    "backendHint": "服务器在 GPU 上运行模型所用的后端。",
     "backends": {
       "default": "默认",
       "rocm": "ROCm",

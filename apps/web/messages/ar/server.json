@@ -91,6 +91,8 @@
     "memorySystem": "RAM للنظام",
     "memoryAvailable": "الفاضي منها",
     "memoryGpu": "محجوز للـ GPU",
+    "memoryGpuDynamic": "ذاكرة GPU (ديناميكية)",
+    "memoryGpuUpTo": "حتى {total}، تُؤخذ من ذاكرة النظام عند الحاجة (GTT)",
     "memoryGpuUsed": "مستخدم من الـ GPU",
     "swap": "ذاكرة التبديل",
     "swapUsed": "{used} من {total}",

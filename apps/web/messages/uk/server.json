@@ -91,6 +91,8 @@
     "memorySystem": "ОЗП для системи",
     "memoryAvailable": "З неї вільно",
     "memoryGpu": "Зарезервовано для GPU",
+    "memoryGpuDynamic": "Пам’ять GPU (динамічна)",
+    "memoryGpuUpTo": "до {total}, береться із системної пам’яті за потреби (GTT)",
     "memoryGpuUsed": "Зайнято GPU",
     "swap": "Підкачка",
     "swapUsed": "{used} з {total}",

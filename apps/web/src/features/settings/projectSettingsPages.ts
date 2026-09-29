@@ -1,8 +1,10 @@
 import { mcpServerPath, membersPath, notificationsPath, settingsPath } from '@/utils/paths';
 
 // A project's settings pages in the order of the sidebar (docs/einstellungen-struktur.md):
-// Allgemein · Mitglieder · Benachrichtigungen, Arbeit ▸, Agenten ▸, Wissen & Belege, Mail, Erweiterungen,
-// Integrationen ▸. `group` and `labelKey` are keys under `nav`; without a labelKey the
+// Allgemein · Mitglieder · Benachrichtigungen, Arbeit ▸, Autopilot & Ausführung · Zugänge ·
+// Netzwerk · Browser, Wissen & Belege, Mail, Erweiterungen, Integrationen ▸. The agents' four
+// pages were one folder deeper ("Agenten ▸"); they stand at the top now, one click each
+// (owner, O58/L1). `group` and `labelKey` are keys under `nav`; without a labelKey the
 // label is the section's own (sections.settings).
 export type ProjectSettingsPage = {
   slug: string;
@@ -49,18 +51,18 @@ export function projectSettingsPages(projectKey: string): ProjectSettingsPage[] 
     page('actions', 'settingsWork', 'Aktionen Knöpfe'),
     page(
       'autopilot',
-      'settingsAgents',
+      undefined,
       'Autopilot Stufe Budget Freigaben Standard-Ausführung Modell Tagesbudget Vorgabe',
       'settingsAutopilotExecution',
     ),
-    page('network', 'settingsAgents', 'Netzwerk erlaubte Ziele'),
     page(
       'environment',
-      'settingsAgents',
+      undefined,
       'Zugänge Umgebung Variablen Schlüssel Logins Freigaben',
       'settingsProjectAccess',
     ),
-    page('browser', 'settingsAgents', 'Browser Domains Takt Sperren'),
+    page('network', undefined, 'Netzwerk erlaubte Ziele Agenten'),
+    page('browser', undefined, 'Browser Domains Takt Sperren Agenten'),
     page(
       'knowledge',
       undefined,

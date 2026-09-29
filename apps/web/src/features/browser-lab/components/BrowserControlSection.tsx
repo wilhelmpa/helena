@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { useState } from 'react';
-import { FlaskConical, KeyRound } from 'lucide-react';
+import { FlaskConical, KeyRound, RotateCcw } from 'lucide-react';
+import { Badge, Button as DsButton, Inline, Stack } from '@/design-system';
 import { useTranslations } from 'next-intl';
 import SettingsCard from '@/components/common/page/SettingsCard';
 import SettingsRow from '@/components/common/page/SettingsRow';
@@ -64,52 +65,55 @@ export function BrowserControlSection({
               : t('activeStandard', { source: t(`source.${effective.source}`) })
           }
           control={
-            <div className="flex flex-col items-end gap-1.5">
-              <div className="flex items-center gap-2">
-                {setting.mode !== 'inherit' && (
-                  <span className="size-1.5 rounded-full bg-brand" title={t('overridden')} />
-                )}
-                <Select
-                  value={setting.mode}
-                  disabled={!editable}
-                  onValueChange={(mode) => {
-                    const next = mode as BrowserControlMode;
-                    if (next === 'decision' && connections.length === 0) return;
-                    update.mutate({
-                      mode: next,
-                      ...(next === 'decision' && setting.credentialId === null
-                        ? { credentialId: connections[0]!.id }
-                        : {}),
-                    });
-                  }}
-                >
-                  <SelectTrigger className="w-64" aria-label={t('mode')}>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {MODES.map((mode) => (
-                      <SelectItem
-                        key={mode}
-                        value={mode}
-                        disabled={mode === 'decision' && connections.length === 0}
-                      >
-                        {t(`modes.${mode}`)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              {setting.mode !== 'inherit' && editable && (
-                <button
-                  type="button"
-                  className="text-xs text-brand hover:underline"
-                  disabled={update.isPending}
-                  onClick={() => update.mutate({ mode: 'inherit' })}
-                >
-                  {t('resetToDefault')}
-                </button>
+            <Stack gap={2} align="end">
+              <Select
+                value={setting.mode}
+                disabled={!editable}
+                onValueChange={(mode) => {
+                  const next = mode as BrowserControlMode;
+                  if (next === 'decision' && connections.length === 0) return;
+                  update.mutate({
+                    mode: next,
+                    ...(next === 'decision' && setting.credentialId === null
+                      ? { credentialId: connections[0]!.id }
+                      : {}),
+                  });
+                }}
+              >
+                <SelectTrigger className="w-64" aria-label={t('mode')}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {MODES.map((mode) => (
+                    <SelectItem
+                      key={mode}
+                      value={mode}
+                      disabled={mode === 'decision' && connections.length === 0}
+                    >
+                      {t(`modes.${mode}`)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {/* An override of Helena's default is marked in words and has its way back,
+                  the same as the autopilot level (owner, L3). */}
+              {setting.mode !== 'inherit' && (
+                <Inline gap={2}>
+                  <Badge tone="accent">{t('overridden')}</Badge>
+                  {editable && (
+                    <DsButton
+                      size="small"
+                      variant="ghost"
+                      icon={<RotateCcw size={14} />}
+                      disabled={update.isPending}
+                      onClick={() => update.mutate({ mode: 'inherit' })}
+                    >
+                      {t('resetToDefault')}
+                    </DsButton>
+                  )}
+                </Inline>
               )}
-            </div>
+            </Stack>
           }
         />
         {effective.problem === 'connection_missing' && (

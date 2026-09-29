@@ -128,7 +128,7 @@
     "title": "Akun email",
     "add": "Tambahkan akun",
     "intro": "Helena mengimpor semua folder akun ini lewat IMAP, lengkap dengan lampiran, dan mengirim lewat SMTP. Email akun proyek disimpan di proyek itu.",
-    "projectIntro": "Akun yang emailnya disimpan di proyek ini.",
+    "projectIntro": "Hanya proyek ini: email dari akun ini masuk ke sini; proyek lain tidak melihatnya.",
     "loadError": "Akun tidak dapat dimuat.",
     "empty": "Belum ada akun email.",
     "home": "Helena",

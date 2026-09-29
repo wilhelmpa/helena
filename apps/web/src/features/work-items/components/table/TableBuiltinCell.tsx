@@ -31,17 +31,14 @@ export function TableBuiltinCell({
   switch (column) {
     case 'status': {
       const col = maps.columnById.get(issue.columnId);
+      // The status as its own box, the same as in the list (owner, O43/O45).
       return (
-        <div className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
+        <div className="flex min-w-0 items-center">
           {col ? (
-            <>
-              <StateIcon
-                stateType={col.stateType}
-                color={col.color}
-                className="size-3.5 shrink-0"
-              />
-              <span className="truncate">{col.name}</span>
-            </>
+            <span className="ds-issue-status" data-state-type={col.stateType}>
+              <StateIcon stateType={col.stateType} color={col.color} />
+              <span>{col.name}</span>
+            </span>
           ) : (
             DASH
           )}

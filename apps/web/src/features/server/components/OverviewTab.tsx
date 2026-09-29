@@ -17,6 +17,7 @@ import {
   useServerSystem,
 } from '../services/server.service';
 import { formatMemory, isServerTab, orderedHealth, type ServerTab } from '../utils/serverFormat';
+import { gpuMemory } from '@/features/local-ai/utils/localAi';
 import { CardHeader, Fact, Facts, HealthLine, ServerSections } from './ServerParts';
 import ServerToolbar from './ServerToolbar';
 
@@ -32,6 +33,7 @@ export default function OverviewTab({ tabs }: { tabs: ServerTab[] }) {
   const system = useServerSystem();
   const restart = useRestartLocalAi();
   const data = system.data;
+  const gpu = data?.gpuMemory ? gpuMemory(data.gpuMemory) : null;
   const refreshing = overview.isFetching || system.isFetching;
 
   const areas = (overview.data?.capabilities ?? [])
@@ -85,15 +87,20 @@ export default function OverviewTab({ tabs }: { tabs: ServerTab[] }) {
               <Fact label={t('overview.memoryAvailable')}>
                 {formatMemory(data.memory.availableBytes)}
               </Fact>
-              {data.gpuMemory && (
-                <Fact label={t('overview.memoryGpu')}>
-                  {formatMemory(data.gpuMemory.vramTotalBytes)}
+              {/* The GPU takes its memory from the system as it needs it (GTT, up to the
+                  kernel's limit); the fixed UMA carve-out is only 0.5 GiB and says nothing
+                  (owner, 29.09., K11). */}
+              {gpu && (
+                <Fact
+                  label={t(gpu.kind === 'gtt' ? 'overview.memoryGpuDynamic' : 'overview.memoryGpu')}
+                >
+                  {gpu.kind === 'gtt'
+                    ? t('overview.memoryGpuUpTo', { total: formatMemory(gpu.total) })
+                    : formatMemory(gpu.total)}
                 </Fact>
               )}
-              {data.gpuMemory && (
-                <Fact label={t('overview.memoryGpuUsed')}>
-                  {formatMemory(data.gpuMemory.vramUsedBytes)}
-                </Fact>
+              {gpu && gpu.used != null && (
+                <Fact label={t('overview.memoryGpuUsed')}>{formatMemory(gpu.used)}</Fact>
               )}
               {!!data.memory.swapTotalBytes && (
                 <Fact label={t('overview.swap')}>

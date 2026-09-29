@@ -90,7 +90,7 @@
   },
   "servers": {
     "title": "Сервери моделей",
-    "description": "Halogen або Lemonade на цій машині чи інший OpenAI-сумісний сервер. Його моделі є в кожному виборі моделі, поки локальний ШІ увімкнено.",
+    "description": "Halogen (Flash), ембедінги (Vulkan), розпізнавання мовлення й голос на цій машині чи інший OpenAI-сумісний сервер. Його моделі є в кожному виборі моделі, поки локальний ШІ увімкнено.",
     "add": "Додати сервер",
     "none": "Серверів ще немає. Встановіть локальний ШІ за допомогою native/local-ai/install.sh і додайте його тут.",
     "reachable": "Доступний · {version}",
@@ -153,7 +153,7 @@
     "eigeneHint": "Види роботи, як налаштовано нижче."
   },
   "serverTypes": {
-    "lemonade": "Lemonade Server (GPU + NPU)",
+    "lemonade": "Lemonade (більше не використовується)",
     "halogen": "Halogen (Qwen3.8-Flash-Next, GPU)",
     "openaiCompatible": "Сервер, сумісний з OpenAI",
     "whisperCpp": "whisper.cpp (розпізнавання мовлення, GPU)",
@@ -292,7 +292,7 @@
     "custom": "Власні параметри запуску",
     "hint": "Зміни наберуть чинності під час наступного запуску моделі.",
     "backend": "Бекенд",
-    "backendHint": "На чому Lemonade запускає модель на GPU.",
+    "backendHint": "На чому сервер запускає модель на GPU.",
     "backends": {
       "default": "Типово",
       "rocm": "ROCm",

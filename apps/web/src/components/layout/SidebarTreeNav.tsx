@@ -222,18 +222,16 @@ export function SidebarProjectTree({
       .filter((view) => view.folderId === folderId)
       .sort((a, b) => a.position - b.position || a.id - b.id);
 
-  // Settings (docs/einstellungen-struktur.md): Allgemein · Mitglieder ·
-  // Benachrichtigungen, Arbeit ▸, Agenten ▸, Wissen & Belege, Mail, Erweiterungen, Integrationen ▸.
+  // Settings (docs/einstellungen-struktur.md): Allgemein · Mitglieder · Benachrichtigungen,
+  // Arbeit ▸, the agents' pages, Wissen & Belege, Mail, Erweiterungen, Integrationen ▸ (O58).
   const settingsPages = projectSettingsPages(projectKey);
   const pageLabel = (page: (typeof settingsPages)[number]) =>
     page.labelKey ? t(page.labelKey as never) : sectionText(page.slug).label;
-  const settingsGroups = ['settingsWork', 'settingsAgents', 'settingsIntegrations'].map(
-    (group) => ({
-      id: group,
-      label: t(group as never),
-      items: settingsPages.filter((page) => page.group === group),
-    }),
-  );
+  const settingsGroups = ['settingsWork', 'settingsIntegrations'].map((group) => ({
+    id: group,
+    label: t(group as never),
+    items: settingsPages.filter((page) => page.group === group),
+  }));
   const settingsTop = settingsPages.filter((page) => !page.group);
   const settingsOrder: (
     | { kind: 'page'; page: (typeof settingsPages)[number] }

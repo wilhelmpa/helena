@@ -68,7 +68,9 @@ export default function SettingsEnvironmentPage() {
       }
     >
       <Stack gap={6}>
-        <Section title={t('credentialsTitle')}>
+        {/* Isolation made visible (owner, O42): what is the project's own and what Helena
+            granted it, and that nothing else reaches its agents. */}
+        <Section title={t('credentialsTitle')} description={t('credentialsHint')}>
           {credentials.isPending ? (
             <ListSkeleton rows={3} rowClassName="h-10" />
           ) : mine.length === 0 ? (
@@ -82,12 +84,10 @@ export default function SettingsEnvironmentPage() {
                   key={entry.id}
                   icon={<KeyRound size={16} />}
                   title={entry.label}
-                  subtitle={whoOf(entry)}
+                  subtitle={`${tKinds(entry.kind as never)} · ${whoOf(entry)}`}
                   meta={
                     <Badge tone={entry.projectId === projectId ? 'accent' : 'neutral'}>
-                      {entry.projectId === projectId
-                        ? t('ownProject')
-                        : tKinds(entry.kind as never)}
+                      {entry.projectId === projectId ? t('ownProject') : t('fromCentral')}
                     </Badge>
                   }
                   actions={

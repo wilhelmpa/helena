@@ -21,7 +21,7 @@
     "service": "Service",
     "cloudNote": "Ce que Helena fait décider, comme le texte visible d’une page ou un e-mail, part vers ce service. Les mots de passe et les valeurs saisies, non.",
     "localNote": "Un serveur System One à vous. Helena ne le joint qu'à cette adresse.",
-    "localModelNote": "Un serveur compatible OpenAI avec logprobs (llama.cpp, Lemonade, vLLM). Helena ne l’atteint qu’à cette adresse.",
+    "localModelNote": "Un serveur compatible OpenAI avec logprobs (llama.cpp, Halogen, vLLM). Helena ne l’atteint qu’à cette adresse.",
     "address": "Adresse",
     "model": "Modèle",
     "allowPrivate": "Autoriser cette adresse locale",

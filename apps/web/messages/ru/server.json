@@ -91,6 +91,8 @@
     "memorySystem": "ОЗУ для системы",
     "memoryAvailable": "Из неё свободно",
     "memoryGpu": "Зарезервировано для GPU",
+    "memoryGpuDynamic": "Память GPU (динамическая)",
+    "memoryGpuUpTo": "до {total}, берётся из системной памяти по мере надобности (GTT)",
     "memoryGpuUsed": "Занято GPU",
     "swap": "Подкачка",
     "swapUsed": "{used} из {total}",
