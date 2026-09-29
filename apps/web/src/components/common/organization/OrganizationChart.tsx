@@ -27,8 +27,8 @@ import {
   PageTabs,
   PageToolbar,
   PageToolbarSpacer,
-  PillButton,
   Segmented,
+  SegmentToggle,
 } from '@/design-system';
 import OrganizationChartFlow from './OrganizationChartFlow';
 import OrganizationHoverCard from './OrganizationHoverCard';
@@ -613,13 +613,12 @@ export default function OrganizationChart({
         {toolbarStart}
         {viewSwitch}
         {/* The same "Aufgaben" in both views, at the same place (owner, 29.09.). */}
-        <PillButton
-          tone={showTasks ? 'active' : 'neutral'}
-          aria-pressed={showTasks}
-          onClick={() => setParams({ orgTasks: showTasks ? null : '1' })}
+        <SegmentToggle
+          pressed={showTasks}
+          onPressedChange={(on) => setParams({ orgTasks: on ? '1' : null })}
         >
           {t('tasksToggle')}
-        </PillButton>
+        </SegmentToggle>
         {/* The status filter is one of the page's tabs (owner, O20: one pattern). */}
         <PageTabs<Filter>
           label={t('filterLabel')}

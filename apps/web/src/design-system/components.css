@@ -1642,26 +1642,9 @@ a.ds-run-card:hover {
     overflow: visible;
   }
 }
+/* Wissen's search is the toolbar's PageSearch; the wrapper only holds ⌘K's target. */
 .ds-knowledge-search {
-  width: 240px;
-}
-.ds-knowledge-search input {
-  min-width: 0;
-  flex: 1;
-  background: transparent;
-  color: var(--text);
-  font-size: 13px;
-  outline: none;
-}
-.ds-knowledge-search kbd {
-  color: var(--text-3);
-  font: 10px var(--font-mono);
-}
-@media (max-width: 700px) {
-  .ds-knowledge-search {
-    width: auto;
-    flex: 1;
-  }
+  display: contents;
 }
 
 /* Drop zone under a list (Wissen, Belege). */

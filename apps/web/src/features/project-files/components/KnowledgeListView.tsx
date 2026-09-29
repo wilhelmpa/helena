@@ -166,7 +166,6 @@ export default function KnowledgeListView({
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [renamingKey, setRenamingKey] = useState<string | null>(null);
   const [dropping, setDropping] = useState(false);
-  const search = useRef<HTMLInputElement>(null);
   const upload = useRef<HTMLInputElement>(null);
   const create = (creation: KnowledgeCreation) => {
     if (creation === 'upload') upload.current?.click();
@@ -366,7 +365,6 @@ export default function KnowledgeListView({
             value={query}
             onChange={setQuery}
             placeholder={kind === 'files' ? t('searchFiles') : t('searchPlaceholder')}
-            inputRef={search}
           />
         }
         actions={

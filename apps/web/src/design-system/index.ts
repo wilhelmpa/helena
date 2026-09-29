@@ -13,6 +13,7 @@ export { Button, ButtonLink, IconButton } from './components/Button';
 export type { ButtonVariant } from './components/Button';
 export { Pill, PillButton, Pill as Badge } from './components/Pill';
 export { Segmented } from './components/Segmented';
+export { SegmentToggle } from './components/SegmentToggle';
 export type { SegmentOption } from './components/Segmented';
 export type { PillTone } from './components/Pill';
 export { TextField, TextArea, Field, SearchField } from './components/Field';

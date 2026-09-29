@@ -79,6 +79,14 @@ export function Modal({
     };
   }, [open, onClose]);
 
+  // The section in view in the scrolling row of sections on a phone.
+  useEffect(() => {
+    if (!open || !hydrated) return;
+    dialog.current
+      ?.querySelector('.ds-modal-nav-item.is-active')
+      ?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
+  }, [open, hydrated, activeTab, nav]);
+
   // A portal only after hydration: the server has no document, so the first client
   // render must match its empty output (React #418 on a reload with the modal open).
   if (!open || !hydrated) return null;
