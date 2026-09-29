@@ -35,6 +35,7 @@ export async function enqueueAgentRun(
     issueId: number | null;
     sourceActivityId: number | null;
     prompt: string;
+    model?: string | null;
     trigger?:
       | 'mention'
       | 'delegation'
@@ -43,7 +44,8 @@ export async function enqueueAgentRun(
       | 'manual'
       | 'approval'
       | 'workspace'
-      | 'heartbeat';
+      | 'heartbeat'
+      | 'escalation';
     // Seconds the run stays unclaimable after it is queued, so the issue can still be
     // edited before the agent reads it.
     delaySeconds?: number;
@@ -103,6 +105,7 @@ export async function enqueueAgentRun(
         issueId: input.issueId,
         sourceActivityId: input.sourceActivityId,
         prompt: input.prompt,
+        model: input.model ?? null,
         trigger: input.trigger ?? (input.sourceActivityId == null ? 'delegation' : 'mention'),
         nextAttemptAt: delay > 0 ? sql`now() + make_interval(secs => ${delay})` : undefined,
         workClass: input.workClass ?? null,

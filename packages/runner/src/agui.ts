@@ -350,6 +350,8 @@ export class AnswerStream {
         if (!this.sawAnyText) this.appendText(event.text);
         return;
       case 'usage':
+      case 'spend':
+      case 'escalate':
         return;
     }
   }
@@ -604,7 +606,13 @@ export class FinalAnswerReader {
   ) {}
 
   write(chunk: string): void {
-    if (this.format !== 'claude-stream-json' && this.format !== 'codex-jsonl') return;
+    if (
+      this.format !== 'claude-stream-json' &&
+      this.format !== 'codex-jsonl' &&
+      this.format !== 'helena-jsonl'
+    ) {
+      return;
+    }
     this.buffered += chunk;
     const lines = this.buffered.split('\n');
     this.buffered = lines.pop() ?? '';
@@ -638,6 +646,11 @@ export class FinalAnswerReader {
       return;
     }
     if (!value || typeof value !== 'object') return;
+    if (this.format === 'helena-jsonl') {
+      if (value.type === 'session') this.named(value.id);
+      if (value.type === 'result' && typeof value.text === 'string') this.answer = value.text;
+      return;
+    }
     if (this.format === 'claude-stream-json') {
       this.named(value.session_id);
       if (value.type === 'result' && typeof value.result === 'string') this.answer = value.result;
@@ -648,6 +661,55 @@ export class FinalAnswerReader {
     if (value.type === 'item.completed' && item?.type === 'agent_message') {
       if (typeof item.text === 'string') this.answer = item.text;
     }
+  }
+}
+
+// The hand-over Helena's own loop names when it gives a task to a bigger model (helena-jsonl
+// `escalate`), for the run's report.
+export interface Escalation {
+  target: string;
+  reason: string;
+  detail: string | null;
+  handover: string;
+}
+
+export class EscalationReader {
+  private buffered = '';
+  private found: Escalation | null = null;
+
+  constructor(private readonly format: OutputFormat) {}
+
+  write(chunk: string): void {
+    if (this.format !== 'helena-jsonl') return;
+    this.buffered += chunk;
+    const lines = this.buffered.split('\n');
+    this.buffered = lines.pop() ?? '';
+    for (const line of lines) this.read(line);
+  }
+
+  value(): Escalation | null {
+    if (this.buffered) {
+      this.read(this.buffered);
+      this.buffered = '';
+    }
+    return this.found;
+  }
+
+  private read(line: string): void {
+    let value: Record<string, unknown>;
+    try {
+      value = JSON.parse(line.trim()) as Record<string, unknown>;
+    } catch {
+      return;
+    }
+    if (value?.type !== 'escalate') return;
+    if (typeof value.target !== 'string' || typeof value.handover !== 'string') return;
+    this.found = {
+      target: value.target.slice(0, 200),
+      reason: typeof value.reason === 'string' ? value.reason.slice(0, 40) : 'failure',
+      detail: typeof value.detail === 'string' ? value.detail.slice(0, 200) : null,
+      handover: value.handover.slice(0, 20_000),
+    };
   }
 }
 

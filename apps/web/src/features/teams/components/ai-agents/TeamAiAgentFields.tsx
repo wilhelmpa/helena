@@ -23,6 +23,9 @@ import AgentTemplateField from './AgentTemplateField';
 import { useTranslations } from 'next-intl';
 import { useSession } from '@/lib/auth-client';
 import RuntimePicker from '@/components/helena/RuntimePicker';
+import { useQuery } from '@tanstack/react-query';
+import { getAgentRuntimes } from '@/lib/api/endpoints/agents';
+import { qk } from '@/services/queryKeys';
 import AgentHeartbeatSection from './AgentHeartbeatSection';
 import AgentEscalationPin from '@/features/local-ai/components/AgentEscalationPin';
 import { AgentFormPageModeCtx, useAgentDialog, type AgentFormPageId } from './agentFormPages';
@@ -98,6 +101,12 @@ export default function TeamAiAgentFields({
   const isGod = useSession().data?.user.role === 'god';
   const tCommon = useTranslations('common');
   const tRuntime = useTranslations('chatWorkspace.runtimePicker');
+  // Whether this instance offers Helena's own loop (HELENA_NATIVE_RUNTIME).
+  const runtimes = useQuery({
+    queryKey: qk.agentRuntimes,
+    queryFn: getAgentRuntimes,
+    staleTime: 5 * 60_000,
+  });
   const dialog = useAgentDialog();
   const [openSections, setOpenSections] = useState<Record<string, boolean>>(() => ({
     ...(agent ? DEFAULT_OPEN : {}),
@@ -281,6 +290,7 @@ export default function TeamAiAgentFields({
         model={value.model || null}
         reasoning={value.runtimePolicy.reasoningEffort}
         external
+        helena={runtimes.data?.helena === true}
         models={[
           ...((value.runtimePolicy.runtime ?? 'hermes') ===
           (agent?.runtimePolicy.runtime ?? 'hermes')

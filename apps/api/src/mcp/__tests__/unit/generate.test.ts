@@ -126,6 +126,29 @@ function toolWith(hooks: Record<string, unknown>, method = 'DELETE') {
 }
 
 describe('mcp tool input schema', () => {
+  it('omits OpenAPI nullable markers from JSON Schema unions', () => {
+    const tool = toolWith({
+      body: {
+        type: 'object',
+        properties: {
+          typeId: { nullable: true, anyOf: [{ type: 'integer' }, { type: 'null' }] },
+          nested: {
+            type: 'object',
+            properties: {
+              value: { nullable: true, anyOf: [{ type: 'string' }, { type: 'null' }] },
+            },
+          },
+          nullable: { type: 'string' },
+        },
+      },
+    });
+    expect(tool.inputSchema.properties).toHaveProperty('nullable');
+    expect(tool.inputSchema.properties.nested).not.toHaveProperty('nullable');
+    expect(tool.inputSchema.properties.typeId).toEqual({
+      anyOf: [{ type: 'integer' }, { type: 'null' }],
+    });
+  });
+
   // A body declared as a union has no properties of its own, so offering only the
   // top level left the caller unable to send the discriminator the route requires.
   it('offers every branch of a union body and requires what they share', () => {

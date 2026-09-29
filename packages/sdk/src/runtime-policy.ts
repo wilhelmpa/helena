@@ -109,6 +109,24 @@ export interface RuntimeCompression {
   model?: { provider: string; model: string } | null;
 }
 
+// Settings of Helena's own loop (runtime `helena`, docs/helena-decisions/zentrale-laufzeit.md):
+// the tools of the agent's role and when it hands a task to a bigger model.
+export interface RuntimeHelenaSettings {
+  toolProfile?: 'assistent' | 'recherche' | 'coder-lite' | 'voll';
+  escalation?: {
+    mode?: 'auto' | 'never' | 'always';
+    // A model this loop drives (`anthropic/claude-sonnet-5`) or `runtime:claude[/model]`,
+    // `runtime:codex[/model]`, which Helena starts as a follow-up run.
+    target?: string | null;
+    taskKinds?: string[];
+    confidenceBelow?: number;
+    onFailure?: boolean;
+    central?: import('./escalation').EscalationSettings;
+    agentId?: number;
+  };
+  browserBudgetSeconds?: number;
+}
+
 export interface RuntimePolicySnapshot {
   revision: string;
   // Older control planes omit project membership.
@@ -137,6 +155,8 @@ export interface RuntimePolicySnapshot {
   memoryWrites?: RuntimeMemoryPolicy;
   // Helena's settings for Hermes' own configuration. An older server sends none.
   hermes?: RuntimeHermesSettings;
+  // Settings of Helena's own loop; sent for an agent on the `helena` runtime.
+  helena?: RuntimeHelenaSettings;
   // The local model servers and the helper calls that go there first, while local AI is on
   // (docs/helena-decisions/local-ai-platform.md). Absent while it is off.
   localAi?: RuntimeLocalAi | null;

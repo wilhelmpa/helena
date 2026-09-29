@@ -12,7 +12,7 @@ import {
 import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
-import { hermesMetrics } from '../agentic-coding/run';
+import { HELENA_AGENT_ENTRY, helenaMetrics, hermesMetrics } from '../agentic-coding/run';
 
 // The browser tasks of packages/browser-gateway/eval/tasks.ts, as far as this script uses them.
 // They are loaded at run time: that file belongs to the gateway package, whose types (DOM,
@@ -151,6 +151,17 @@ export function toolEvents(output: string): ToolEvent[] {
       const event = JSON.parse(line) as Record<string, unknown>;
       if (event.type === 'tool_use' && typeof event.name === 'string')
         events.push({ name: event.name, input: event.input ?? null });
+      // Helena's own loop (helena-jsonl) names the tool as the model called it, its arguments
+      // as JSON text.
+      if (event.type === 'tool-call' && typeof event.name === 'string') {
+        let input: unknown = null;
+        try {
+          input = JSON.parse(String(event.input ?? 'null'));
+        } catch {
+          input = event.input ?? null;
+        }
+        events.push({ name: event.name, input });
+      }
     } catch {
       // not JSON
     }
@@ -282,9 +293,63 @@ async function statLines(file: string | undefined): Promise<number> {
   return text.split('\n').filter(Boolean).length;
 }
 
+// How the candidate runs: Hermes with a copied profile, or Helena's own loop
+// (packages/agent-runtime) with the eval's projekt-browser as its MCP server, the browser
+// tools given directly (no tool_search/tool_call bridge).
+export type BrowserRuntime =
+  | { kind: 'hermes'; bin: string; profile: string }
+  | {
+      kind: 'helena';
+      entry: string;
+      baseUrl: string;
+      mcp: { command: string; args: string[]; env: Record<string, string> };
+    };
+
+export function helenaBrowserConfig(
+  model: string,
+  provider: string | null,
+  runtime: Extract<BrowserRuntime, { kind: 'helena' }>,
+  cwd: string,
+  maxTurns: number,
+  runBudget: number,
+) {
+  const name = provider ?? 'local';
+  return {
+    model: `${name}/${model}`,
+    servers: [
+      {
+        provider: name,
+        kind: 'openai-compatible',
+        baseUrl: runtime.baseUrl,
+        local: true,
+        thinkingSwitch: true,
+      },
+    ],
+    workdir: cwd,
+    mcpServers: [
+      {
+        name: 'projekt-browser',
+        transport: 'stdio',
+        command: runtime.mcp.command,
+        args: runtime.mcp.args,
+        env: Object.entries(runtime.mcp.env).map(([key, value]) => ({
+          name: key,
+          value: { literal: value },
+        })),
+        toolTimeoutSec: 120,
+      },
+    ],
+    tools: { profile: 'recherche', browserBudgetSeconds: runBudget },
+    memory: { enabled: false },
+    policy: 'allow',
+    limits: { maxTurns, runBudgetSeconds: runBudget },
+  };
+}
+
 export interface EvaluateOptions {
   model: string;
   provider: string | null;
+  runtime?: BrowserRuntime;
   hermes: string;
   profile: string;
   cwd: string;
@@ -299,42 +364,73 @@ export async function evaluateBrowserTask(task: BrowserEvalTask, options: Evalua
   await options.reset();
   const statsFrom = await statLines(options.statsFile);
   const started = Date.now();
-  const output = await run(
-    options.hermes,
-    [
-      'chat',
-      '--format',
-      'stream-json',
-      '--query-file',
-      '-',
-      '--source',
-      'tool',
-      '--accept-hooks',
-      '--model',
-      options.model,
-      ...(options.provider ? ['--provider', options.provider] : []),
-      // The MCP server's toolset (Hermes registers it as mcp-projekt-browser with this alias).
-      // Hermes offers MCP tools through its tool_search bridge, as it does for Helena's agents.
-      '-t',
-      'projekt-browser',
-      '--max-turns',
-      String(options.maxTurns),
-      '--run-budget',
-      String(options.runBudget),
-    ],
-    {
+  const runtime: BrowserRuntime = options.runtime ?? {
+    kind: 'hermes',
+    bin: options.hermes,
+    profile: options.profile,
+  };
+  let output: ProcessResult;
+  if (runtime.kind === 'helena') {
+    const configFile = join(options.cwd, 'helena-agent.json');
+    await writeFile(
+      configFile,
+      JSON.stringify(
+        helenaBrowserConfig(
+          options.model,
+          options.provider,
+          runtime,
+          options.cwd,
+          options.maxTurns,
+          options.runBudget,
+        ),
+      ),
+      { mode: 0o600 },
+    );
+    output = await run(process.execPath, [runtime.entry, '--config', configFile], {
       cwd: options.cwd,
-      env: { ...process.env, HERMES_HOME: options.profile },
+      env: { ...process.env },
       input: buildPrompt(task),
       timeoutMs: (options.runBudget + 30) * 1000,
-    },
-  );
+    });
+  } else {
+    output = await run(
+      runtime.bin,
+      [
+        'chat',
+        '--format',
+        'stream-json',
+        '--query-file',
+        '-',
+        '--source',
+        'tool',
+        '--accept-hooks',
+        '--model',
+        options.model,
+        ...(options.provider ? ['--provider', options.provider] : []),
+        // The MCP server's toolset (Hermes registers it as mcp-projekt-browser with this alias).
+        // Hermes offers MCP tools through its tool_search bridge, as it does for Helena's agents.
+        '-t',
+        'projekt-browser',
+        '--max-turns',
+        String(options.maxTurns),
+        '--run-budget',
+        String(options.runBudget),
+      ],
+      {
+        cwd: options.cwd,
+        env: { ...process.env, HERMES_HOME: runtime.profile },
+        input: buildPrompt(task),
+        timeoutMs: (options.runBudget + 30) * 1000,
+      },
+    );
+  }
   const durationMs = Date.now() - started;
   const page = await options.readPage().catch(() => null);
   const events = toolEvents(output.stdout);
   const answer = finalAnswer(output.stdout);
   const grade = gradeBrowserTask(task, page, answer, calledTools(events));
-  const metrics = hermesMetrics(output.stdout);
+  const metrics =
+    runtime.kind === 'helena' ? helenaMetrics(output.stdout) : hermesMetrics(output.stdout);
   const stats = await readStats(options.statsFile, statsFrom);
   const snapshots = stats.filter((stat) => stat.ok && /snapshot|navigate|click/.test(stat.tool));
   return {
@@ -563,7 +659,8 @@ function arg(name: string): string | null {
 if (import.meta.main) {
   const model = arg('model');
   const template = arg('profile-template');
-  if (!model || !template) {
+  const helena = arg('runtime') === 'helena';
+  if (!model || (!template && !helena)) {
     console.error(
       'usage: bun apps/api/src/scripts/agentic-browser/run.ts --model MODEL [--provider PROVIDER] --profile-template HERMES_HOME [--work-dir DIR] [--chromium /usr/bin/chromium] [--hermes-bin hermes] [--only a,b] [--max-turns 12] [--run-budget 240] [--json FILE]',
     );
@@ -615,17 +712,27 @@ if (import.meta.main) {
     await waitFor(`${cdp}/json/version`);
     const statsFile = join(work, 'calls.jsonl');
     const profile = join(work, 'hermes');
-    await prepareProfile(template, profile, {
+    const mcp = {
       command: process.execPath,
       args: [join(GATEWAY_EVAL, 'hermes-mcp.ts')],
       env: { HELENA_EVAL_CDP_URL: cdp, HELENA_EVAL_STATS: statsFile },
-    });
+    };
+    if (!helena) await prepareProfile(template!, profile, mcp);
+    const runtime: BrowserRuntime = helena
+      ? {
+          kind: 'helena',
+          entry: HELENA_AGENT_ENTRY,
+          baseUrl: arg('base-url') ?? 'http://127.0.0.1:8731/v1',
+          mcp,
+        }
+      : { kind: 'hermes', bin: arg('hermes-bin') ?? 'hermes', profile };
     const tasks = (await loadTasks(site)).filter((task) => !only || only.includes(task.id));
     const rows: BrowserEvalRow[] = [];
     for (const task of tasks) {
       const row = await evaluateBrowserTask(task, {
         model,
         provider,
+        runtime,
         hermes: arg('hermes-bin') ?? 'hermes',
         profile,
         cwd: work,

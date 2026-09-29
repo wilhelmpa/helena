@@ -9,7 +9,10 @@
     "goal": "Metas",
     "initiative": "Iniciativas",
     "board": "Telas",
-    "receipt": "Comprovantes"
+    "receipt": "Comprovantes",
+    "agentSession": "Sessões de agentes",
+    "agentMemory": "Memória dos agentes",
+    "fact": "Fatos"
   },
   "picker": {
     "search": "Buscar conhecimento",

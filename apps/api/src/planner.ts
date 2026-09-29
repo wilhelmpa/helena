@@ -68,13 +68,14 @@ import { godRoutes } from './modules/god';
 import { pluginAdminRoutes, pluginSlotRoutes, projectExtensionRoutes } from './modules/plugins';
 import { templateBundleRoutes } from './modules/template-bundles';
 import { modelAvailabilityRoutes } from './modules/model-availability';
-import { localAiRoutes } from './modules/local-ai';
 import { escalationRoutes } from './modules/escalation';
+import { localAiRoutes } from './modules/local-ai';
 import { voiceRoutes } from './modules/voice';
 import { agentRunnerRoutes } from './modules/agents/runner';
 import { agentChatRoutes } from './modules/agents/chat';
 import { chatPromptRoutes } from './modules/chat-prompts';
 import { agentRuntimePolicyRoutes } from './modules/agents/runtime-policy';
+import { nativeRuntimeRoutes } from './modules/agents/native-runtime';
 import { agentRuntimeSyncRoutes, runnerHealthRoutes } from './modules/agents/runtime-sync';
 import { agentRuntimeFileRoutes } from './modules/agents/runtime-files';
 import { notificationRoutes } from './modules/notifications';
@@ -247,6 +248,7 @@ export const planner = new Elysia({ name: 'planner' })
   .use(agentChatRoutes)
   .use(chatPromptRoutes)
   .use(agentRuntimePolicyRoutes)
+  .use(nativeRuntimeRoutes)
   .use(agentRuntimeSyncRoutes)
   .use(runnerHealthRoutes)
   .use(agentRuntimeFileRoutes)

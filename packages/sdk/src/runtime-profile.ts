@@ -71,6 +71,10 @@ export interface RunSettings {
   // the adapter puts them in front of the run's own context.
   instructions?: string;
   hooks?: CommandHooks;
+  // Fields a runtime reading its task as JSON on stdin (promptVia `stdin-json`) gets beside
+  // the task: Helena's own loop receives its whole configuration this way, so nothing of it
+  // has to be written where the agent's sandbox could read it later.
+  input?: Record<string, unknown>;
   // The environment variables Helena delivered for this work (Zugänge), by name, and the
   // secret values among them, which everything reported about the work masks. Their values
   // are in `env`.

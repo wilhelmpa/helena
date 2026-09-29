@@ -6,8 +6,7 @@ import { EscalationSettings, escalationBody } from './model';
 import { readEscalation, writeEscalation } from './service';
 
 // The escalation rules (rules.ts): when a strong subscription model takes over from the local
-// one. Owner only. A draft for Phase 2 (docs/plan-lokal-halogen.md): stored and shown, not yet
-// acted on.
+// one. Owner only; native runtime snapshots use these rules.
 export const escalationRoutes = new Elysia({
   name: 'escalation',
   detail: { tags: ['Local AI'] },
@@ -26,7 +25,7 @@ export const escalationRoutes = new Elysia({
         description:
           'When a strong model (Opus, gpt-6-sol) takes over from the local one: work of a ' +
           'hard kind, an unsure local answer, a failed local attempt, and fixed choices per ' +
-          'agent, project or task. Off by default; Phase 2 wires it into the runs.',
+          'agent, project or task. Off by default; used by the native runtime.',
       },
     },
   )

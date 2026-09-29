@@ -176,6 +176,7 @@ export type {
   RuntimeAction,
   RuntimeCompression,
   RuntimeHermesSettings,
+  RuntimeHelenaSettings,
   RuntimeLearning,
   RuntimeMcpServer,
   RuntimeMcpValue,
@@ -443,3 +444,4 @@ export {
 } from './halogen-priority';
 
 export { runtimeToolObservation, toolsFullyObserved } from './runtime-profile';
+export * from './escalation';

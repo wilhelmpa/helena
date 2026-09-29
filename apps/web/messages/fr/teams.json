@@ -907,7 +907,43 @@
     "copies": "{count, plural, =0 {Aucune copie} one {# copie} other {# copies}}",
     "moreActionsFor": "Actions pour {name}",
     "defaultModel": "Modèle par défaut",
-    "saveAsTemplate": "Ajouter au pool comme modèle"
+    "saveAsTemplate": "Ajouter au pool comme modèle",
+    "helenaRuntime": {
+      "toolProfile": "Outils",
+      "profile": {
+        "assistent": "Assistance",
+        "recherche": "Recherche avec navigateur",
+        "coder-lite": "Programmation simple",
+        "voll": "Tous les outils"
+      },
+      "profileHint": {
+        "assistent": "Tâches, commentaires, savoir, mémoire et faits. L'agent trouve d'autres outils au besoin.",
+        "recherche": "Comme Assistance, avec le navigateur du projet.",
+        "coder-lite": "Comme Assistance, avec fichiers et shell dans le dossier de travail.",
+        "voll": "Tous les outils de Helena directement. Demande le plus de contexte."
+      },
+      "browserBudget": "Temps de navigateur par tâche (secondes)",
+      "browserBudgetHint": "Ensuite l'agent n'a plus d'outils de navigateur et répond avec ce qu'il a.",
+      "escalationTarget": "Transmettre à un grand modèle",
+      "target": {
+        "none": "Ne jamais transmettre",
+        "claude": "Claude Code (abonnement)",
+        "codex": "Codex (abonnement)"
+      },
+      "escalationHint": "Un agent de ce projet avec l'exécution choisie reprend la tâche dans un suivi, avec l'historique.",
+      "taskKinds": "Toujours transmettre pour",
+      "kind": {
+        "programmierung-gross": "Gros travail de programmation",
+        "architektur": "Architecture",
+        "sicherheit": "Sécurité",
+        "recht": "Droit et contrats",
+        "aussenkommunikation": "Textes externes"
+      },
+      "onFailure": "Transmettre après un échec (boucle, tests rouges, délai)",
+      "confidence": "Transmettre sous une confiance de (%)",
+      "confidenceOff": "désactivé",
+      "confidenceHint": "Avant le début, le modèle de décision estime si un petit modèle suffit. Vide : ne pas demander."
+    }
   },
   "members": {
     "roleSaved": "{name} est maintenant {role}",

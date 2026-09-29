@@ -12,6 +12,7 @@ import os
 import re
 import sys
 import tempfile
+import urllib.request
 import stat
 from pathlib import Path
 from typing import Any
@@ -416,7 +417,7 @@ def descriptor_identity(name: str, item: dict[str, Any]) -> tuple[str, str] | No
 
 # The runtimes a project agent's descriptor may name besides Hermes. Each gets a separate
 # runner entry and profile directory; the runner executes a CLI, script or signed HTTP call.
-CLI_RUNTIMES = ('claude', 'codex', 'command', 'webhook')
+CLI_RUNTIMES = ('claude', 'codex', 'command', 'webhook', 'helena')
 
 # What a Claude Code agent can be set to, by Claude Code's own aliases: each follows the
 # newest model of its family, so the list needs no update when a model is released. The
@@ -438,6 +439,14 @@ def cli_models(runtime: str, hermes_models: list[dict[str, Any]]) -> list[dict[s
         return [dict(model) for model in CLAUDE_MODELS]
     if runtime in ('command', 'webhook'):
         return []
+    if runtime == 'helena':
+        # Helena's own loop drives Helena's local model servers (and API-key providers the
+        # agent is given); its models are the local ones the catalog lists.
+        return [
+            dict(model) for model in hermes_models
+            if str(model.get('provider', '')).startswith(('helena-', 'volition-'))
+            or model.get('provider') in ('anthropic', 'openai', 'openrouter')
+        ]
     return [
         {key: value for key, value in model.items() if key != 'provider'}
         for model in hermes_models
@@ -497,6 +506,7 @@ def descriptor_entries(
     browser_root: Path | None = None,
     isolated: bool = False,
     problems: list[str] | None = None,
+    native: bool = False,
 ) -> list[dict[str, Any]]:
     """One runner entry per descriptor. With `problems`, a descriptor that cannot be served is
     left out and named there, so one broken agent does not keep every other one from starting;
@@ -507,7 +517,7 @@ def descriptor_entries(
     profiles_root = (global_home / 'profiles').resolve(strict=False)
     for descriptor_path in sorted(root.glob('*.json')):
         try:
-            entry = descriptor_entry(descriptor_path, global_home, profiles_root, browser_root, isolated)
+            entry = descriptor_entry(descriptor_path, global_home, profiles_root, browser_root, isolated, native)
         except RuntimeError as exc:
             if problems is None:
                 raise
@@ -523,6 +533,7 @@ def descriptor_entry(
     profiles_root: Path,
     browser_root: Path | None,
     isolated: bool,
+    native: bool = False,
 ) -> dict[str, Any]:
     private_file(descriptor_path, 'Hermes runner descriptor')
     try:
@@ -562,6 +573,8 @@ def descriptor_entry(
     ):
         raise RuntimeError('Hermes runner descriptor conflicts with its project')
     runtime = descriptor_runtime(item)
+    if native and runtime == 'hermes':
+        raise RuntimeError('Native catalog refuses a Hermes descriptor')
     if runtime in CLI_RUNTIMES:
         return cli_entry(runtime, username, item, home, slug, descriptor_path.stem, isolated)
     if isolated:
@@ -642,6 +655,25 @@ def browser_harness_command() -> str | None:
     return command if isinstance(command, str) and command.startswith('/') else None
 
 
+def native_catalog_models(models: object) -> list[dict[str, Any]]:
+    """Explicit operator configuration, without Hermes imports or credential discovery."""
+    if not isinstance(models, list) or not models:
+        raise RuntimeError('Native catalog requires configured models')
+    result = []
+    seen = set()
+    for model in models:
+        if not isinstance(model, dict) or not isinstance(model.get('id'), str) or not isinstance(model.get('provider'), str):
+            raise RuntimeError('Invalid native model catalog')
+        key = (model['provider'], model['id'])
+        if key in seen:
+            continue
+        seen.add(key)
+        result.append({key: value for key, value in model.items() if key in (
+            'id', 'provider', 'name', 'reasoning', 'thinkingLevels', 'thinkingDefault', 'contextLength', 'vision',
+        )})
+    return result
+
+
 def write_runtime(
     template_path: Path,
     output_path: Path,
@@ -651,22 +683,42 @@ def write_runtime(
     browser_root: Path | None = None,
     plugin_root: Path = PLAN_PLUGIN_ROOT,
     problems: list[str] | None = None,
+    native: bool = False,
+    home_runtime: str = 'hermes',
+    native_models: list[dict[str, Any]] | None = None,
 ) -> tuple[str, int, int]:
     problems = [] if problems is None else problems
     payload = json.loads(template_path.read_text(encoding='utf-8'))
-    payload['hermes'] = {**profile, 'plugins': plan_plugins(plugin_root)}
-    provider, _default_model = configured_route()
-    if provider:
-        payload['provider'] = provider
+    if native:
+        for key in ('hermes', 'command', 'args', 'provider', 'outputFormat'):
+            payload.pop(key, None)
+        payload['agent'] = 'helena'
+        payload['models'] = native_catalog_models(native_models if native_models is not None else payload.get('models', []))
+        provider = ''
     else:
-        payload.pop('provider', None)
-    payload['models'] = catalog_models(provider)
+        payload['hermes'] = {**profile, 'plugins': plan_plugins(plugin_root)}
+        provider, _default_model = configured_route()
+        if provider:
+            payload['provider'] = provider
+        else:
+            payload.pop('provider', None)
+        payload['models'] = catalog_models(provider)
 
     home_key = os.environ.get('ITSAPLAN_API_KEY', '').strip()
     if len(home_key) < 16 or len(home_key) > 2048 or '\n' in home_key:
         raise RuntimeError('The Home runner credential is unavailable')
     isolated = isolation_enabled()
-    if isolated:
+    if native:
+        home_runtime = 'helena'
+    if home_runtime not in ('hermes', *CLI_RUNTIMES):
+        raise RuntimeError('Unknown Home runtime')
+    if home_runtime != 'hermes':
+        home = cli_entry(home_runtime, 'volition-home', {
+            'apiKey': home_key, 'cwd': HOME_WORKSPACE, 'planAgentId': None,
+        }, global_home / 'profiles' / 'home', 'home', 'home', isolated)
+        home.pop('runtime')
+        home.update({'agent': home_runtime, 'models': cli_models(home_runtime, payload['models']), 'args': []})
+    elif isolated:
         # Home runs as Home's user in a profile of its own (the migration copied its state
         # there); the global home holds the runner's keys and is nobody's profile.
         home = {
@@ -693,7 +745,7 @@ def write_runtime(
             },
         }
     agents = [home]
-    for entry in descriptor_entries(descriptor_root, global_home, browser_root, isolated, problems):
+    for entry in descriptor_entries(descriptor_root, global_home, browser_root, isolated, problems, native):
         runtime = entry.pop('runtime', 'hermes')
         if runtime in CLI_RUNTIMES:
             # The runner's shared settings, without what only Hermes takes.
@@ -750,27 +802,64 @@ def write_runtime(
     return provider, len(payload['models']), len(agents)
 
 
+def configured_home_policy(template_path: Path) -> dict[str, Any]:
+    payload = json.loads(template_path.read_text(encoding='utf-8'))
+    url = str(payload['url']).rstrip('/') + '/agent-runtime/policy'
+    request = urllib.request.Request(url, headers={'x-api-key': os.environ['ITSAPLAN_API_KEY']})
+    with urllib.request.urlopen(request, timeout=20) as response:
+        policy = json.load(response)
+    return policy
+
+
+def policy_models(policy: dict[str, Any], configured: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    models = list(configured)
+    for server in (policy.get('localAi') or {}).get('servers', []):
+        for model in server.get('models', []):
+            models.append({
+                'id': model['id'], 'provider': server['provider'], 'name': model_name(model['id']),
+                'reasoning': True, 'thinkingLevels': ['none', 'low', 'medium', 'high'],
+                'thinkingDefault': 'low', 'contextLength': model.get('contextLength', server.get('contextLength')),
+                'vision': model.get('vision', False),
+            })
+    selected = policy.get('model')
+    choices = list((policy.get('hermes') or {}).get('fallbackModels', []))
+    if isinstance(selected, str) and '/' in selected:
+        provider, model = selected.split('/', 1)
+        choices.append({'provider': provider, 'model': model})
+    for choice in choices:
+        if choice.get('provider') in ('openai', 'anthropic', 'openrouter', 'openai-codex') and choice.get('model'):
+            models.append({'id': choice['model'], 'provider': choice['provider'], 'name': model_name(choice['model'])})
+    return native_catalog_models(models)
+
+
 def main(argv: list[str]) -> int:
     if len(argv) != 3:
         print('usage: volition-hermes-catalog.py TEMPLATE OUTPUT', file=sys.stderr)
         return 2
-    global_home = Path(os.environ.get('HERMES_HOME', '')).resolve(strict=True)
+    native = os.environ.get('VOLITION_NATIVE_CATALOG') == 'on'
+    root_env = 'VOLITION_RUNTIME_ROOT' if native else 'HERMES_HOME'
+    global_home = Path(os.environ.get(root_env, '')).resolve(strict=True)
     descriptor_root = Path(os.environ.get('HERMES_RUNNER_DESCRIPTOR_ROOT', str(global_home / 'run' / 'agents')))
     browser_root_value = os.environ.get(
         'HERMES_PROJECT_BROWSER_ROOT',
         '/var/lib/volition/project-browser/projects',
     ).strip()
     browser_root = Path(browser_root_value) if browser_root_value else None
-    profile: dict[str, Any] = hermes_profile()
-    require_browser_toolset(profile)
-    require_approval_guard(hermes_approvals())
-    harness = browser_harness_command()
-    if harness:
-        profile['browserHarness'] = harness
+    profile: dict[str, Any] = {}
+    if not native:
+        profile = hermes_profile()
+        require_browser_toolset(profile)
+        require_approval_guard(hermes_approvals())
+        harness = browser_harness_command()
+        if harness:
+            profile['browserHarness'] = harness
     problems: list[str] = []
+    policy = configured_home_policy(Path(argv[1]))
+    configured = json.loads(Path(argv[1]).read_text(encoding='utf-8')).get('models', [])
     provider, count, agents = write_runtime(
         Path(argv[1]), Path(argv[2]), descriptor_root, global_home, profile, browser_root,
-        problems=problems,
+        problems=problems, native=native, home_runtime=policy.get('runtimePolicy', {}).get('runtime') or 'hermes',
+        native_models=policy_models(policy, configured) if native else None,
     )
     for problem in problems:
         print(f'Hermes catalog: left out {problem}', file=sys.stderr)

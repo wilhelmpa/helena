@@ -1,4 +1,5 @@
 import type { KnowledgeSource } from '@helena/sdk';
+import { agentMemorySource, agentSessionSource, factSource } from './helena-runtime';
 import { chatSource } from './chats';
 import { commentSource, issueSource } from './issues';
 import { mailSource } from './mail';
@@ -9,6 +10,9 @@ import { runSource } from './runs';
 import { vaultSource } from './vault';
 
 export {
+  agentMemorySource,
+  agentSessionSource,
+  factSource,
   chatSource,
   commentSource,
   issueSource,
@@ -32,5 +36,8 @@ export function builtinKnowledgeSources(): KnowledgeSource[] {
     chatSource,
     runSource,
     commentSource,
+    agentSessionSource,
+    agentMemorySource,
+    factSource,
   ];
 }

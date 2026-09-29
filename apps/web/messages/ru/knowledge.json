@@ -9,7 +9,10 @@
     "goal": "Цели",
     "initiative": "Инициативы",
     "board": "Холсты",
-    "receipt": "Чеки"
+    "receipt": "Чеки",
+    "agentSession": "Сеансы агентов",
+    "agentMemory": "Память агентов",
+    "fact": "Факты"
   },
   "picker": {
     "search": "Поиск знаний",

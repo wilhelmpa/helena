@@ -48,7 +48,8 @@
       "manual": "Tarea manual",
       "approval": "Decisión de aprobación",
       "workspace": "Tarea del espacio de trabajo",
-      "digest": "Resumen"
+      "digest": "Resumen",
+      "escalation": "Traspaso"
     },
     "results": "Resultados",
     "noSummary": "Aún no hay resumen.",
@@ -109,6 +110,21 @@
       "agent": "Agente (aprobada)",
       "owner": "Editada aquí",
       "observed": "Encontrada en el runtime"
+    },
+    "facts": {
+      "title": "{count, plural, one {# hecho} other {# hechos}}",
+      "trust": "{value} %",
+      "trustHint": "Confianza: confirmado {confirmations}×, útil {helpful}×",
+      "contradicted": "posible contradicción",
+      "edit": "Editar",
+      "confirm": "Correcto",
+      "remove": "Quitar",
+      "save": "Guardar",
+      "cancel": "Cancelar"
+    },
+    "notes": {
+      "title": "Notas diarias",
+      "lines": "{count, plural, one {# entrada} other {# entradas}}"
     }
   },
   "proposals": {

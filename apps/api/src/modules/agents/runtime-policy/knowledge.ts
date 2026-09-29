@@ -52,6 +52,7 @@ const LOOK_AT_FILE: Record<AgentRuntimeKind, string> = {
   codex: 'view_image',
   command: 'your script',
   webhook: 'your service',
+  helena: 'read_file (text) or the knowledge tools',
 };
 
 // What an agent is told about the knowledge vault in its SOUL.md: where knowledge goes,

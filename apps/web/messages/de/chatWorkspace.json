@@ -307,7 +307,8 @@
     "commandScriptHint": "Pfad relativ zum Projektordner. Das Skript bekommt die Aufgabe als JSON und läuft im abgeschotteten Bereich des Projekts; seine Ausgabe ist das Ergebnis.",
     "webhookUrl": "Adresse (HTTPS)",
     "webhookSecretEnv": "Variable mit dem Signaturschlüssel",
-    "webhookHint": "{appName} ruft die Adresse signiert nach Standard Webhooks auf. Den Schlüssel (whsec_…) gibst du dem Agenten unter Zugänge als Umgebungsvariable."
+    "webhookHint": "{appName} ruft die Adresse signiert nach Standard Webhooks auf. Den Schlüssel (whsec_…) gibst du dem Agenten unter Zugänge als Umgebungsvariable.",
+    "helena": "Helena (lokal zuerst)"
   },
   "context": {
     "task": "Aufgabe {identifier} „{title}“",

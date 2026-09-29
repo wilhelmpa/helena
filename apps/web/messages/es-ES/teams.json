@@ -907,7 +907,43 @@
     "copies": "{count, plural, =0 {Sin copias} one {# copia} other {# copias}}",
     "moreActionsFor": "Acciones de {name}",
     "defaultModel": "Modelo por defecto",
-    "saveAsTemplate": "Guardar en el pool como plantilla"
+    "saveAsTemplate": "Guardar en el pool como plantilla",
+    "helenaRuntime": {
+      "toolProfile": "Herramientas",
+      "profile": {
+        "assistent": "Asistencia",
+        "recherche": "Investigación con navegador",
+        "coder-lite": "Programación sencilla",
+        "voll": "Todas las herramientas"
+      },
+      "profileHint": {
+        "assistent": "Tareas, comentarios, conocimiento, memoria y hechos. El agente encuentra más herramientas cuando las necesita.",
+        "recherche": "Como Asistencia, más el navegador del proyecto.",
+        "coder-lite": "Como Asistencia, más archivos y shell en la carpeta de trabajo.",
+        "voll": "Todas las herramientas de Helena directamente. Necesita más contexto."
+      },
+      "browserBudget": "Tiempo de navegador por tarea (segundos)",
+      "browserBudgetHint": "Después el agente ya no tiene herramientas de navegador y responde con lo que tiene.",
+      "escalationTarget": "Pasar a un modelo grande",
+      "target": {
+        "none": "Nunca pasar",
+        "claude": "Claude Code (suscripción)",
+        "codex": "Codex (suscripción)"
+      },
+      "escalationHint": "Un agente de este proyecto con la ejecución elegida retoma la tarea en una continuación, con el historial.",
+      "taskKinds": "Pasar siempre en",
+      "kind": {
+        "programmierung-gross": "Programación mayor",
+        "architektur": "Arquitectura",
+        "sicherheit": "Seguridad",
+        "recht": "Derecho y contratos",
+        "aussenkommunikation": "Textos externos"
+      },
+      "onFailure": "Pasar tras un fallo (bucle, pruebas en rojo, límite de tiempo)",
+      "confidence": "Pasar por debajo de una confianza de (%)",
+      "confidenceOff": "desactivado",
+      "confidenceHint": "Antes de empezar, el modelo de decisión estima si basta un modelo pequeño. Vacío: no preguntar."
+    }
   },
   "members": {
     "roleSaved": "{name} es ahora {role}",

@@ -46,6 +46,7 @@ const SUB_AGENTS: Record<AgentRuntimeKind, string[]> = {
   codex: [],
   command: [],
   webhook: [],
+  helena: [],
 };
 
 export function coordinatorSection(input: {

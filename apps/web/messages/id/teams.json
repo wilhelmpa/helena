@@ -907,7 +907,43 @@
     "copies": "{count, plural, =0 {Tidak ada salinan} other {# salinan}}",
     "moreActionsFor": "Tindakan untuk {name}",
     "defaultModel": "Model bawaan",
-    "saveAsTemplate": "Simpan ke pool sebagai templat"
+    "saveAsTemplate": "Simpan ke pool sebagai templat",
+    "helenaRuntime": {
+      "toolProfile": "Alat",
+      "profile": {
+        "assistent": "Asisten",
+        "recherche": "Riset dengan peramban",
+        "coder-lite": "Pemrograman sederhana",
+        "voll": "Semua alat"
+      },
+      "profileHint": {
+        "assistent": "Tugas, komentar, pengetahuan, memori, dan fakta. Agen menemukan alat lain bila perlu.",
+        "recherche": "Seperti Asisten, ditambah peramban proyek.",
+        "coder-lite": "Seperti Asisten, ditambah berkas dan shell di folder kerja.",
+        "voll": "Semua alat Helena langsung. Butuh konteks paling banyak."
+      },
+      "browserBudget": "Waktu peramban per tugas (detik)",
+      "browserBudgetHint": "Setelah itu agen tidak punya alat peramban dan menjawab dengan apa yang ada.",
+      "escalationTarget": "Serahkan ke model besar",
+      "target": {
+        "none": "Jangan pernah",
+        "claude": "Claude Code (langganan)",
+        "codex": "Codex (langganan)"
+      },
+      "escalationHint": "Agen proyek ini dengan eksekusi terpilih mengambil alih tugas sebagai lanjutan, dengan riwayatnya.",
+      "taskKinds": "Selalu serahkan untuk",
+      "kind": {
+        "programmierung-gross": "Pemrograman besar",
+        "architektur": "Arsitektur",
+        "sicherheit": "Keamanan",
+        "recht": "Hukum dan kontrak",
+        "aussenkommunikation": "Teks untuk pihak luar"
+      },
+      "onFailure": "Serahkan setelah gagal (putaran, tes merah, batas waktu)",
+      "confidence": "Serahkan di bawah keyakinan (%)",
+      "confidenceOff": "mati",
+      "confidenceHint": "Sebelum mulai, model keputusan menilai apakah model kecil cukup. Kosong: jangan tanya."
+    }
   },
   "members": {
     "roleSaved": "{name} sekarang menjadi {role}",

@@ -9,7 +9,10 @@
     "goal": "Цілі",
     "initiative": "Ініціативи",
     "board": "Полотна",
-    "receipt": "Квитанції"
+    "receipt": "Квитанції",
+    "agentSession": "Сеанси агентів",
+    "agentMemory": "Пам’ять агентів",
+    "fact": "Факти"
   },
   "picker": {
     "search": "Пошук знань",

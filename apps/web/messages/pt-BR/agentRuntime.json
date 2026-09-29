@@ -48,7 +48,8 @@
       "manual": "Tarefa manual",
       "approval": "Decisão de aprovação",
       "workspace": "Tarefa do espaço de trabalho",
-      "digest": "Resumo"
+      "digest": "Resumo",
+      "escalation": "Transferência"
     },
     "results": "Resultados",
     "noSummary": "Ainda não há resumo.",
@@ -109,6 +110,21 @@
       "agent": "Agente (aprovada)",
       "owner": "Editada aqui",
       "observed": "Encontrada no runtime"
+    },
+    "facts": {
+      "title": "{count, plural, one {# fato} other {# fatos}}",
+      "trust": "{value} %",
+      "trustHint": "Confiança: confirmado {confirmations}×, útil {helpful}×",
+      "contradicted": "possível contradição",
+      "edit": "Editar",
+      "confirm": "Correto",
+      "remove": "Remover",
+      "save": "Salvar",
+      "cancel": "Cancelar"
+    },
+    "notes": {
+      "title": "Notas diárias",
+      "lines": "{count, plural, one {# entrada} other {# entradas}}"
     }
   },
   "proposals": {

@@ -22,6 +22,8 @@ COPY packages/net/package.json ./packages/net/
 COPY packages/storage/package.json ./packages/storage/
 COPY packages/vault/package.json ./packages/vault/
 COPY packages/runner/package.json ./packages/runner/
+COPY packages/agent-runtime/package.json ./packages/agent-runtime/
+COPY packages/facts/package.json ./packages/facts/
 COPY packages/eslint-config/package.json ./packages/eslint-config/
 # --filter bot installs only the bot workspace and its dependency closure.
 # INSTALL_FLAGS defaults to --production; the test gate overrides it to "".

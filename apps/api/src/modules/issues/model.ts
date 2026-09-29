@@ -546,8 +546,10 @@ export const listIssuesQuery = t.Object({
 });
 
 export const issueSequenceParams = t.Object({
-  projectKey: t.String(),
-  sequenceNumber: t.Numeric(),
+  projectKey: t.String({
+    description: 'Project key before the final hyphen, e.g. VOL105 in VOL105-8.',
+  }),
+  sequenceNumber: t.Numeric({ description: 'Number after the final hyphen, e.g. 8 in VOL105-8.' }),
 });
 
 export const updateIssueBody = t.Object({

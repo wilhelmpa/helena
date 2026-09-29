@@ -324,6 +324,7 @@ export const ChatEventsResponse = t.Object({
 export const ClaimChatResponse = t.Object({
   message: t.Nullable(
     t.Object({
+      projectId: t.Nullable(t.Number()),
       id: t.Number(),
       threadId: t.String(),
       prompt: t.String(),
@@ -373,6 +374,14 @@ export const chatClaimQuery = t.Object({ claim: t.Optional(t.Numeric({ minimum: 
 // `usage` is the size of the context this answer left behind. A null one is shown as a
 // dash in the chat.
 export const chatResultBody = t.Object({
+  escalation: t.Optional(
+    t.Object({
+      target: t.String({ maxLength: 200 }),
+      reason: t.String({ maxLength: 40 }),
+      detail: t.Nullable(t.String({ maxLength: 200 })),
+      handover: t.String({ maxLength: 20_000 }),
+    }),
+  ),
   status: t.Union([t.Literal('success'), t.Literal('failed')]),
   error: t.Optional(t.Nullable(t.String())),
   usage: contextUsageBody,

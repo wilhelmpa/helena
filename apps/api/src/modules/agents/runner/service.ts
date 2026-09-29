@@ -36,6 +36,7 @@ import { routeRequest } from '#modules/model-router/service';
 import { DIGEST_SYSTEM_PROMPT } from '#modules/updates/digest-prompt';
 import { JUDGE_SYSTEM_PROMPT, JUDGE_WORK_CLASS } from '#modules/local-ai/judge-prompt';
 import { MAX_RUN_OUTPUT_BYTES, type reflectionBody } from './model';
+import { queueEscalation, type EscalationReport } from './escalation';
 import { recordUsage, type Spend } from '../usage/service';
 import { emergencyStopActive } from '#modules/emergency-stop/service';
 import {
@@ -172,6 +173,7 @@ export interface RunnerRun {
   // The issue's human-readable key ("MKT-42"), so the runner can name the work in its
   // log. Null for a run with no issue, or a deleted one.
   issueIdentifier: string | null;
+  projectId: number;
   // The human comment that started the run. The external runner attaches its final
   // answer to it so the issue feed keeps the exchange threaded.
   sourceActivityId: number | null;
@@ -637,6 +639,7 @@ export async function claimRunnerRun(agent: RunnerAgent): Promise<RunnerRun | nu
     claim: row.claim,
     issueId: row.issueId,
     issueIdentifier: row.issueIdentifier,
+    projectId: row.projectId,
     sourceActivityId: row.sourceActivityId,
     model,
     thinkingLevel,
@@ -890,7 +893,11 @@ async function requestReflection(
     .from(aiAgent)
     .where(eq(aiAgent.id, agentId));
   if (!agent) return null;
-  const reason = reflectionReason(normalizeRuntimePolicy(agent.runtimePolicy), {
+  const policy = normalizeRuntimePolicy(agent.runtimePolicy);
+  // Helena's own loop reflects inside its command, only after a checked success
+  // (docs/helena-decisions/zentrale-laufzeit.md §8.4).
+  if (policy.runtime === 'helena') return null;
+  const reason = reflectionReason(policy, {
     status: run.status,
     toolCalls: report.toolCalls ?? 0,
     rework: await isRework(agentId, runId, run.issueId),
@@ -946,6 +953,7 @@ export async function finishRun(
     spend?: Spend | null;
     runtime?: RunModelReport;
     failure?: RuntimeFailure;
+    escalation?: EscalationReport;
   },
   claim?: number,
 ): Promise<{ reflection: ReflectionRequest | null } | null> {
@@ -1047,6 +1055,16 @@ export async function finishRun(
   // "Handeln & berichten": what the run did without approval, on its task.
   await postAutopilotReport(runId);
   const paused = await enforceAgentLimits(agent.id, row.projectId, row.issueId);
+  // Helena's own loop handed the task to a bigger model: the follow-up run takes it from
+  // here, so this one reflects on nothing.
+  if (result.escalation && status === 'success') {
+    await queueEscalation(
+      agent.id,
+      { id: runId, projectId: row.projectId, issueId: row.issueId },
+      result.escalation,
+    );
+    return { reflection: null };
+  }
   return {
     reflection: await requestReflection(
       agent.id,

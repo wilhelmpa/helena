@@ -184,7 +184,8 @@
       "heartbeat": "lief beim Heartbeat",
       "approval": "lief nach einer Freigabe-Entscheidung",
       "workspace": "lief als Arbeitsbereich-Auftrag",
-      "digest": "schrieb eine Zusammenfassung"
+      "digest": "schrieb eine Zusammenfassung",
+      "escalation": "übernahm eine Übergabe"
     }
   },
   "agentHealth": {

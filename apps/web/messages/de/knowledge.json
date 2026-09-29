@@ -9,7 +9,10 @@
     "goal": "Ziele",
     "initiative": "Projektziele",
     "board": "Leinwände",
-    "receipt": "Belege"
+    "receipt": "Belege",
+    "agentSession": "Agenten-Sitzungen",
+    "agentMemory": "Agenten-Gedächtnis",
+    "fact": "Fakten"
   },
   "picker": {
     "search": "Wissen suchen",

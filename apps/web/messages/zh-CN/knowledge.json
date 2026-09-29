@@ -9,7 +9,10 @@
     "goal": "目标",
     "initiative": "举措",
     "board": "画布",
-    "receipt": "收据"
+    "receipt": "收据",
+    "agentSession": "智能体会话",
+    "agentMemory": "智能体记忆",
+    "fact": "事实"
   },
   "picker": {
     "search": "搜索知识",

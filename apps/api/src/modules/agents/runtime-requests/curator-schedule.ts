@@ -1,5 +1,5 @@
 import { db, aiAgent, getSetting, setSetting } from '@repo/db';
-import { and, eq, sql } from 'drizzle-orm';
+import { and, eq, or, sql } from 'drizzle-orm';
 import { intEnv } from '#shared/lib';
 import { emergencyStopActive } from '#modules/emergency-stop/service';
 import { queueRuntimeRequest } from './service';
@@ -24,8 +24,14 @@ export async function scheduleCuratorRuns(now = new Date()): Promise<number> {
         eq(aiAgent.kind, 'external'),
         eq(aiAgent.template, false),
         sql`coalesce((${aiAgent.runtimePolicy}->>'curator')::boolean, false)`,
-        sql`${aiAgent.runtimeState}->'capabilities' ? 'curator'`,
-        sql`${aiAgent.lastSeenAt} > now() - interval '2 minutes'`,
+        sql`coalesce((${aiAgent.runtimePolicy}->>'learning')::boolean, true)`,
+        or(
+          sql`${aiAgent.runtimePolicy}->>'runtime' = 'helena'`,
+          and(
+            sql`${aiAgent.runtimeState}->'capabilities' ? 'curator'`,
+            sql`${aiAgent.lastSeenAt} > now() - interval '2 minutes'`,
+          ),
+        ),
       ),
     );
   if (agents.length === 0) return 0;

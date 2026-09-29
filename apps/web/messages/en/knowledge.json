@@ -9,7 +9,10 @@
     "goal": "Goals",
     "initiative": "Initiatives",
     "board": "Canvases",
-    "receipt": "Receipts"
+    "receipt": "Receipts",
+    "agentSession": "Agent sessions",
+    "agentMemory": "Agent memory",
+    "fact": "Facts"
   },
   "picker": {
     "search": "Search knowledge",

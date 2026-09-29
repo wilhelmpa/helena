@@ -20,6 +20,7 @@ export const RunnerRunResponse = t.Object({
   }),
   issueId: t.Nullable(t.Number()),
   issueIdentifier: t.Nullable(t.String()),
+  projectId: t.Number(),
   sourceActivityId: t.Nullable(t.Number()),
   model: t.Nullable(t.String()),
   thinkingLevel: t.Nullable(t.String()),
@@ -110,6 +111,20 @@ export const resultBody = t.Object({
   spend: spendBody,
   runtime: t.Optional(runModelReport),
   failure: t.Optional(runFailure),
+  escalation: t.Optional(
+    t.Object(
+      {
+        target: t.String({ maxLength: 200 }),
+        reason: t.String({ maxLength: 40 }),
+        detail: t.Nullable(t.String({ maxLength: 200 })),
+        handover: t.String({ maxLength: 20_000 }),
+      },
+      {
+        description:
+          "The task Helena's own loop handed to a bigger model: Helena queues the follow-up run.",
+      },
+    ),
+  ),
 });
 
 // The answer to a run result: a reflection the runner starts in the run's session, or

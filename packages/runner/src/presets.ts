@@ -11,7 +11,15 @@ import type { OutputFormat } from './config';
 // operator's, passed through `args` and the `--` tail.
 
 export type PresetName =
-  'claude' | 'codex' | 'opencode' | 'antigravity' | 'copilot' | 'hermes' | 'command' | 'webhook';
+  | 'claude'
+  | 'codex'
+  | 'opencode'
+  | 'antigravity'
+  | 'copilot'
+  | 'hermes'
+  | 'helena'
+  | 'command'
+  | 'webhook';
 
 // The settings a task passes to a preset's command line.
 export type PresetTaskSettings = RuntimeTaskSettings;
@@ -62,6 +70,10 @@ export function codexToolEnvArgs(toolEnv: PresetTaskSettings['toolEnv']): string
 // formats agui.ts reads.
 export interface Preset extends CliCommand {
   outputFormat: OutputFormat;
+  // Started as a subcommand of this runner's own bundle (`node cli.js <bin> …`) rather than
+  // as a program of its own: Helena's own loop. The isolation launcher's preset names the
+  // bundle and the subcommand itself.
+  runnerSubcommand?: boolean;
 }
 
 export const PRESETS: Record<PresetName, Preset> = {
@@ -178,6 +190,28 @@ export const PRESETS: Record<PresetName, Preset> = {
       ...(sessionId ? ['--session-id', sessionId] : []),
     ],
     tail: ['-p'],
+  },
+
+  // Helena's own agent loop (packages/agent-runtime, docs/helena-decisions/zentrale-laufzeit.md):
+  // the task and the whole configuration come as one JSON object on stdin (the adapter adds the
+  // configuration, helena-runtime.ts), the events go out as helena-jsonl. A resumed session is
+  // Helena's own (helena_agent_session), which the loop loads through the API.
+  helena: {
+    bin: 'helena-agent',
+    outputFormat: 'helena-jsonl',
+    promptVia: 'stdin-json',
+    runnerSubcommand: true,
+    head: (sessionId) => ['--stdin-json', ...(sessionId ? ['--resume', sessionId] : [])],
+    taskArgs: ({ model, provider, thinkingLevel, maxTurns, runBudgetSeconds }) => [
+      ...(model
+        ? ['--model', provider && !model.includes('/') ? `${provider}/${model}` : model]
+        : []),
+      ...(thinkingLevel ? ['--reasoning', thinkingLevel] : []),
+      ...(maxTurns ? ['--max-turns', String(maxTurns)] : []),
+      ...(runBudgetSeconds ? ['--run-budget', String(runBudgetSeconds)] : []),
+    ],
+    tail: [],
+    sessionLost: (error) => error.includes('Session not found'),
   },
 
   hermes: {

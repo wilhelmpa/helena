@@ -10,7 +10,12 @@ export {
   knowledgeSources,
   useKnowledgeRegistries,
 } from './registry';
-export { builtinKnowledgeSources } from './sources';
+export {
+  agentMemorySource,
+  agentSessionSource,
+  builtinKnowledgeSources,
+  factSource,
+} from './sources';
 export { HOME_VAULT_RESOURCE, reindexVaultPaths, vaultSource } from './sources/vault';
 export { instanceHome, routes, type InstanceHome } from './sources/common';
 export {

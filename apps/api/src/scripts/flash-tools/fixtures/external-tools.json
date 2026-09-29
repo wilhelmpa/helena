@@ -1,0 +1,12 @@
+[
+  {
+    "group": "external-mcp:fixture",
+    "name": "fixture__lookup",
+    "description": "Look up an item by its id in the local fixture catalog.",
+    "inputSchema": {
+      "type": "object",
+      "properties": { "id": { "type": "string" } },
+      "required": ["id"]
+    }
+  }
+]

@@ -51,7 +51,7 @@ export const runtimeViewRoutes = new Elysia({
         const hits = await askRuntime<typeof SessionSearchResponse.static>(
           params.agentId,
           { op: 'sessions.search', query: q, limit: query.limit ?? 20 },
-          { userId },
+          { userId, viewer },
         );
         const seen = await resolveSessions(
           params.agentId,
@@ -73,7 +73,7 @@ export const runtimeViewRoutes = new Elysia({
       const page = await askRuntime<typeof SessionPageResponse.static>(
         params.agentId,
         { op: 'sessions.list', limit: query.limit ?? 25, offset: query.offset ?? 0 },
-        { userId },
+        { userId, viewer },
       );
       const seen = await resolveSessions(
         params.agentId,

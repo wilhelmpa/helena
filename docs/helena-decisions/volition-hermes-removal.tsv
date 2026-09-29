@@ -1,0 +1,487 @@
+phase	path	action
+2	apps/api/src/app.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	apps/api/src/mcp/instructions.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	apps/api/src/modules/access-logins/index.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	apps/api/src/modules/access-logins/model.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	apps/api/src/modules/access-logins/service.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	apps/api/src/modules/agent-browser-gateway/credentials.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	apps/api/src/modules/agents/chat-reflection/policy.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	apps/api/src/modules/agents/chat-reflection/service.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	apps/api/src/modules/agents/chat/model.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	apps/api/src/modules/agents/chat/service.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	apps/api/src/modules/agents/core/index.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	apps/api/src/modules/agents/core/model.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	apps/api/src/modules/agents/core/service.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	apps/api/src/modules/agents/credentials/delivery.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	apps/api/src/modules/agents/credentials/env.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	apps/api/src/modules/agents/credentials/grants.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	apps/api/src/modules/agents/credentials/index.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	apps/api/src/modules/agents/credentials/kinds.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	apps/api/src/modules/agents/mcp-servers/model.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	apps/api/src/modules/agents/mcp-servers/service.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	apps/api/src/modules/agents/model.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	apps/api/src/modules/agents/native-runtime/facts.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	apps/api/src/modules/agents/proposals/model.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	apps/api/src/modules/agents/proposals/service.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	apps/api/src/modules/agents/runner/reflection.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	apps/api/src/modules/agents/runner/service.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	apps/api/src/modules/agents/runtime-files/index.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	apps/api/src/modules/agents/runtime-files/paths.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	apps/api/src/modules/agents/runtime-policy/knowledge.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	apps/api/src/modules/agents/runtime-policy/model.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	apps/api/src/modules/agents/runtime-policy/service.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	apps/api/src/modules/agents/runtime-policy/structure.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	apps/api/src/modules/agents/runtime-requests/curator-schedule.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	apps/api/src/modules/agents/runtime-sync/model-check.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	apps/api/src/modules/agents/runtime-sync/model.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	apps/api/src/modules/agents/runtime-sync/service.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	apps/api/src/modules/agents/runtime-views/index.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	apps/api/src/modules/approvals/index.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	apps/api/src/modules/approvals/service.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	apps/api/src/modules/autopilot/engine.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	apps/api/src/modules/autopilot/evaluator.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	apps/api/src/modules/autopilot/index.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	apps/api/src/modules/autopilot/model.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	apps/api/src/modules/autopilot/service.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	apps/api/src/modules/autopilot/usage.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	apps/api/src/modules/control-plane-workflows/service.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	apps/api/src/modules/emergency-stop/index.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	apps/api/src/modules/emergency-stop/service.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	apps/api/src/modules/engine/agent-runs.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	apps/api/src/modules/god/index.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	apps/api/src/modules/god/model.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	apps/api/src/modules/knowledge/reach.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	apps/api/src/modules/local-ai/agentic-coding-eval.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	apps/api/src/modules/local-ai/evals.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	apps/api/src/modules/local-ai/index.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	apps/api/src/modules/local-ai/judge.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	apps/api/src/modules/local-ai/model.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	apps/api/src/modules/local-ai/server-types.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	apps/api/src/modules/local-ai/service.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	apps/api/src/modules/local-ai/task-classes.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	apps/api/src/modules/model-availability/logins.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	apps/api/src/modules/model-availability/model.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	apps/api/src/modules/model-availability/runtime.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	apps/api/src/modules/model-availability/service.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	apps/api/src/modules/model-prices/service.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	apps/api/src/modules/notifications/service.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	apps/api/src/modules/projects/copy.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	apps/api/src/modules/projects/service.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	apps/api/src/modules/provider-limits/index.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	apps/api/src/modules/provider-limits/merge.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	apps/api/src/modules/provider-limits/model.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+4	apps/api/src/modules/runtime-admin/hermes-update.ts	Remove Hermes updater and runtime administration registration
+4	apps/api/src/modules/runtime-admin/index.ts	Remove Hermes updater and runtime administration registration
+4	apps/api/src/modules/runtime-admin/model.ts	Remove Hermes updater and runtime administration registration
+4	apps/api/src/modules/runtime-admin/settings.ts	Remove Hermes updater and runtime administration registration
+2	apps/api/src/modules/runtime-logins/model.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+4	apps/api/src/modules/updates/digest.ts	Remove Hermes updater and runtime administration registration
+4	apps/api/src/modules/updates/feeds.ts	Remove Hermes updater and runtime administration registration
+4	apps/api/src/modules/updates/index.ts	Remove Hermes updater and runtime administration registration
+4	apps/api/src/modules/updates/model.ts	Remove Hermes updater and runtime administration registration
+4	apps/api/src/modules/updates/service.ts	Remove Hermes updater and runtime administration registration
+4	apps/api/src/modules/updates/settings.ts	Remove Hermes updater and runtime administration registration
+4	apps/api/src/modules/updates/sources/hermes.ts	Remove Hermes updater and runtime administration registration
+4	apps/api/src/modules/updates/sources/index.ts	Remove Hermes updater and runtime administration registration
+2	apps/api/src/scripts/agent-tuning.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	apps/api/src/scripts/agent-tuning/plan.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	apps/api/src/scripts/agent-tuning/target.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	apps/api/src/scripts/agentic-browser/README.md	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	apps/api/src/scripts/agentic-browser/run.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	apps/api/src/scripts/agentic-coding/README.md	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	apps/api/src/scripts/agentic-coding/run.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+1	apps/api/src/scripts/bootstrap-home-agent.ts	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+2	apps/api/src/scripts/eval-helena-mcp.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	apps/api/src/scripts/local-ai-phase2.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	apps/api/src/scripts/project-blueprint.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	apps/api/src/scripts/rename-project-coordinators.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	apps/api/src/scripts/setup-browser-gateway.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+6	apps/web/messages/ar/agentRuntime.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/ar/autopilot.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/ar/chatWorkspace.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/ar/credentials.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/ar/god.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/ar/localAi.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/ar/modelAvailability.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/ar/nav.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/ar/organization.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/ar/providerLimits.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/ar/settings.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/ar/teams.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/ar/updates.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/de/agentRuntime.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/de/autopilot.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/de/chatWorkspace.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/de/credentials.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/de/god.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/de/localAi.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/de/modelAvailability.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/de/nav.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/de/organization.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/de/providerLimits.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/de/settings.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/de/teams.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/de/updates.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/en/agentRuntime.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/en/autopilot.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/en/chatWorkspace.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/en/credentials.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/en/god.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/en/localAi.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/en/modelAvailability.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/en/nav.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/en/organization.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/en/providerLimits.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/en/settings.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/en/teams.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/en/updates.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/es-ES/agentRuntime.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/es-ES/autopilot.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/es-ES/chatWorkspace.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/es-ES/credentials.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/es-ES/god.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/es-ES/localAi.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/es-ES/modelAvailability.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/es-ES/nav.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/es-ES/organization.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/es-ES/providerLimits.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/es-ES/settings.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/es-ES/teams.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/es-ES/updates.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/fr/agentRuntime.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/fr/autopilot.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/fr/chatWorkspace.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/fr/credentials.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/fr/god.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/fr/localAi.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/fr/modelAvailability.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/fr/nav.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/fr/organization.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/fr/providerLimits.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/fr/settings.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/fr/teams.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/fr/updates.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/id/agentRuntime.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/id/autopilot.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/id/chatWorkspace.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/id/credentials.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/id/god.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/id/localAi.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/id/modelAvailability.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/id/nav.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/id/organization.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/id/providerLimits.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/id/settings.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/id/teams.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/id/updates.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/pt-BR/agentRuntime.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/pt-BR/autopilot.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/pt-BR/chatWorkspace.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/pt-BR/credentials.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/pt-BR/god.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/pt-BR/localAi.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/pt-BR/modelAvailability.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/pt-BR/nav.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/pt-BR/organization.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/pt-BR/providerLimits.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/pt-BR/settings.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/pt-BR/teams.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/pt-BR/updates.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/ru/agentRuntime.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/ru/autopilot.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/ru/chatWorkspace.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/ru/credentials.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/ru/god.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/ru/localAi.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/ru/modelAvailability.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/ru/nav.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/ru/organization.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/ru/providerLimits.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/ru/settings.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/ru/teams.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/ru/updates.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/uk/agentRuntime.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/uk/autopilot.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/uk/chatWorkspace.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/uk/credentials.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/uk/god.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/uk/localAi.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/uk/modelAvailability.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/uk/nav.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/uk/organization.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/uk/providerLimits.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/uk/settings.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/uk/teams.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/uk/updates.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/zh-CN/agentRuntime.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/zh-CN/autopilot.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/zh-CN/chatWorkspace.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/zh-CN/credentials.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/zh-CN/god.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/zh-CN/localAi.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/zh-CN/modelAvailability.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/zh-CN/nav.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/zh-CN/organization.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/zh-CN/providerLimits.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/zh-CN/settings.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/zh-CN/teams.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/messages/zh-CN/updates.json	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/src/app/globals.css	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/src/components/agent-message/AgentMessageParts.tsx	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/src/components/brand/AboutHelenaDialog.tsx	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/src/components/common/organization/OrganizationHoverCard.tsx	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/src/components/common/page/AgentAvatar.tsx	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/src/components/common/page/BrandPanel.tsx	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/src/components/common/page/CopyableCommand.tsx	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/src/components/helena/RuntimePicker.tsx	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/src/features/access/logins/AccessLoginsSection.tsx	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/src/features/access/logins/SharedLoginItem.tsx	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/src/features/agent-runtime/components/AgentRuntimePanel.tsx	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/src/features/agent-runtime/components/AgentSessionsPanel.tsx	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/src/features/agent-runtime/components/EmergencyStop.tsx	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/src/features/agent-runtime/components/FallbackModelsEditor.tsx	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/src/features/agent-runtime/components/ProposalCard.tsx	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/src/features/agent-runtime/services/agentRuntime.service.ts	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/src/features/ai-chat/components/workspace/ChatAgentMenu.tsx	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/src/features/ai-chat/components/workspace/ChatComposer.tsx	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/src/features/ai-chat/components/workspace/ChatMessageBubbleAssistant.tsx	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/src/features/ai-chat/components/workspace/ChatRuntimeDialog.tsx	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/src/features/ai-chat/components/workspace/ChatSlashMenu.tsx	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/src/features/ai-chat/hooks/useAgentStateText.ts	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/src/features/ai-chat/hooks/useChatPrompts.ts	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/src/features/ai-chat/hooks/useComposerCommands.ts	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/src/features/ai-chat/services/planChatTransport.ts	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/src/features/ai-chat/utils/agentPresence.ts	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/src/features/ai-chat/utils/chatCommands.ts	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/src/features/ai-chat/utils/composerActivity.ts	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/src/features/approvals/components/ApprovalsView.tsx	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/src/features/approvals/components/RuntimeProposalList.tsx	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/src/features/autopilot/components/PolicyDecisionLog.tsx	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/src/features/god/GodAgentRuntimePage.tsx	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/src/features/home/components/home/HomeLogins.tsx	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/src/features/home/components/home/HomeSystemHealth.tsx	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/src/features/issue/components/create/NewIssueModal.tsx	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/src/features/issue/components/detail/IssueAgentTeamRun.tsx	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/src/features/issue/components/detail/IssueAgentTeamStages.tsx	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/src/features/issue/utils/agentTeam.ts	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/src/features/local-ai/components/LocalFallbackLine.tsx	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/src/features/model-availability/components/AgentModelIssue.tsx	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/src/features/model-availability/utils/modelFailure.ts	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/src/features/organization/components/OrganizationAgentCard.tsx	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/src/features/provider-limits/utils/limitsFormat.ts	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/src/features/settings/components/workflows/ControlPlaneAgentTeamPolicy.tsx	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/src/features/settings/settingsModalCatalog.ts	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/src/features/teams/components/agent-tools/McpServerFields.tsx	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/src/features/teams/components/agent-tools/McpServerRow.tsx	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/src/features/teams/components/agent-tools/TeamAgentToolsSection.tsx	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/src/features/teams/components/agent-tools/TeamMcpServers.tsx	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/src/features/teams/components/ai-agents/AgentAbilitiesSection.tsx	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/src/features/teams/components/ai-agents/AgentCompressionSettings.tsx	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/src/features/teams/components/ai-agents/AgentLearnedSkillRow.tsx	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/src/features/teams/components/ai-agents/AgentLearningSettings.tsx	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/src/features/teams/components/ai-agents/AgentMemoryFiles.tsx	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/src/features/teams/components/ai-agents/AgentRuntimeConflicts.tsx	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/src/features/teams/components/ai-agents/AgentRuntimeNotices.tsx	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/src/features/teams/components/ai-agents/AgentRuntimePolicySection.tsx	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/src/features/teams/components/ai-agents/AgentSkillClashes.tsx	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/src/features/teams/components/ai-agents/AgentSkillInventory.tsx	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/src/features/teams/components/ai-agents/AgentToolsetList.tsx	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/src/features/teams/components/ai-agents/TeamAiAgentFields.tsx	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/src/features/teams/services/agentLearning.service.ts	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/src/features/teams/utils/agentAbilities.ts	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/src/features/teams/utils/builtinMcpServers.ts	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/src/features/teams/utils/credentialForm.ts	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/src/features/teams/utils/mcpServerForm.ts	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/src/features/update-center/components/ApplyUpdateDialog.tsx	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/src/features/update-center/components/UpdateSettingsSection.tsx	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/src/features/voice/utils/speechChunks.ts	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/src/lib/api/endpoints/accessLogins.ts	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/src/lib/api/endpoints/agentRuntime.ts	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/src/lib/api/endpoints/agents.ts	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/src/lib/api/endpoints/god.ts	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/src/lib/api/endpoints/issues.ts	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/src/lib/api/endpoints/localAi.ts	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/src/lib/api/endpoints/modelAvailability.ts	Replace transitional controls and translations after Claude UI acceptance
+6	apps/web/src/services/queryKeys.ts	Replace transitional controls and translations after Claude UI acceptance
+1	deployment/volition-stack/INSTALL.md	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+1	deployment/volition-stack/NATIVE_ACCEPTANCE.md	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+1	deployment/volition-stack/NATIVE_ARCHITECTURE.md	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+1	deployment/volition-stack/README.md	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+1	deployment/volition-stack/backup/backup.sh	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+1	deployment/volition-stack/backup/excludes.txt	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+1	deployment/volition-stack/backup/offsite.py	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+1	deployment/volition-stack/backup/volition-offsite.service	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+1	deployment/volition-stack/browser/README.md	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+1	deployment/volition-stack/browser/project-browser-screencast.mjs	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+1	deployment/volition-stack/browser/systemd/volition-project-browser-router.service	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+1	deployment/volition-stack/compose.hub.yml	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+1	deployment/volition-stack/docs/fresh-reset.md	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+1	deployment/volition-stack/docs/retire-hermes-dashboard.md	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+1	deployment/volition-stack/docs/secret-boundaries.md	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+1	deployment/volition-stack/factory-reset/README.md	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+1	deployment/volition-stack/factory-reset/factory-reset.mjs	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+1	deployment/volition-stack/fresh-reset/ACCEPTANCE.md	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+1	deployment/volition-stack/fresh-reset/README.md	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+1	deployment/volition-stack/fresh-reset/final_acceptance.py	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+1	deployment/volition-stack/fresh-reset/fresh_reset.py	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+1	deployment/volition-stack/fresh-reset/legacy-trash-allowlist.json	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+1	deployment/volition-stack/fresh-reset/test_fresh_reset.py	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+1	deployment/volition-stack/install.sh	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+1	deployment/volition-stack/integration/.env.example	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+1	deployment/volition-stack/integration/README.md	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+1	deployment/volition-stack/integration/acceptance/README.md	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+1	deployment/volition-stack/integration/areas.mjs	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+1	deployment/volition-stack/integration/config.mjs	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+1	deployment/volition-stack/integration/connections.mjs	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+1	deployment/volition-stack/integration/hermes-plugins/plan-approval-guard/__init__.py	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+1	deployment/volition-stack/integration/hermes-plugins/plan-approval-guard/plugin.yaml	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+1	deployment/volition-stack/integration/hermes-runner/README.md	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+1	deployment/volition-stack/integration/hermes-runner/hermes-config.fragment.yaml	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+1	deployment/volition-stack/integration/hermes-runner/itsaplan-runner.json	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+1	deployment/volition-stack/integration/plan-coordinator.mjs	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+1	deployment/volition-stack/integration/project-context.mjs	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+1	deployment/volition-stack/integration/provisioner.mjs	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+1	deployment/volition-stack/integration/scripts/volition-hermes-bootstrap	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+1	deployment/volition-stack/integration/scripts/volition-hermes-browser-smoke.py	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+1	deployment/volition-stack/integration/scripts/volition-hermes-catalog.py	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+1	deployment/volition-stack/integration/scripts/volition-hermes-runner	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+1	deployment/volition-stack/integration/systemd/volition-hermes-bootstrap.service	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+1	deployment/volition-stack/integration/systemd/volition-hermes-bootstrap.timer	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+1	deployment/volition-stack/integration/systemd/volition-hermes-runner.service	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+1	deployment/volition-stack/integration/systemd/volition-provisioning.service	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+1	deployment/volition-stack/integration/triage.mjs	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+5	deployment/volition-stack/isolation/README.md	Remove Hermes bindings after native and subscription sandbox verification
+5	deployment/volition-stack/isolation/isolation_common.py	Remove Hermes bindings after native and subscription sandbox verification
+5	deployment/volition-stack/isolation/launcher.json	Remove Hermes bindings after native and subscription sandbox verification
+5	deployment/volition-stack/isolation/launcher.py	Remove Hermes bindings after native and subscription sandbox verification
+5	deployment/volition-stack/isolation/migrate.py	Remove Hermes bindings after native and subscription sandbox verification
+5	deployment/volition-stack/isolation/proof/harness.py	Remove Hermes bindings after native and subscription sandbox verification
+5	deployment/volition-stack/isolation/proof/mock_model.py	Remove Hermes bindings after native and subscription sandbox verification
+5	deployment/volition-stack/isolation/proof/probe.py	Remove Hermes bindings after native and subscription sandbox verification
+5	deployment/volition-stack/isolation/proof/proof_agent_env.py	Remove Hermes bindings after native and subscription sandbox verification
+5	deployment/volition-stack/isolation/proof/proof_browser.py	Remove Hermes bindings after native and subscription sandbox verification
+5	deployment/volition-stack/isolation/proof/proof_function.py	Remove Hermes bindings after native and subscription sandbox verification
+5	deployment/volition-stack/isolation/runtime_modes.py	Remove Hermes bindings after native and subscription sandbox verification
+5	deployment/volition-stack/isolation/sandbox.py	Remove Hermes bindings after native and subscription sandbox verification
+1	deployment/volition-stack/native/DEPLOY.md	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+1	deployment/volition-stack/native/deploy.sh	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+1	deployment/volition-stack/native/dev/README.md	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+1	deployment/volition-stack/native/dev/agent-runner.sh	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+1	deployment/volition-stack/native/dev/render-env.py	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+1	deployment/volition-stack/native/google/setup.sh	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+1	deployment/volition-stack/native/halogen/halogen.conf	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+1	deployment/volition-stack/native/halogen/install.sh	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+1	deployment/volition-stack/native/halogen/systemd/helena-halogen.service.in	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+1	deployment/volition-stack/native/hardening/apply.sh	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+1	deployment/volition-stack/native/hardening/audit.sh	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+4	deployment/volition-stack/native/hermes-update/helena-hermes-update	Remove Hermes updater and runtime administration registration
+4	deployment/volition-stack/native/hermes-update/helena-hermes-update.path	Remove Hermes updater and runtime administration registration
+4	deployment/volition-stack/native/hermes-update/helena-hermes-update.service	Remove Hermes updater and runtime administration registration
+4	deployment/volition-stack/native/hermes-update/hermes-update.example.json	Remove Hermes updater and runtime administration registration
+4	deployment/volition-stack/native/hermes-update/install.sh	Remove Hermes updater and runtime administration registration
+4	deployment/volition-stack/native/hermes-update/test_helena_hermes_update.py	Remove Hermes updater and runtime administration registration
+1	deployment/volition-stack/native/isolation.sh	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+1	deployment/volition-stack/native/lan/CADDY_ROUTE.md	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+1	deployment/volition-stack/native/limits/proof.sh	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+1	deployment/volition-stack/native/local-ai/install.sh	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+1	deployment/volition-stack/native/local-ai/kernel.sh	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+1	deployment/volition-stack/native/nginx/README.md	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+1	deployment/volition-stack/native/nginx/install-hermes-guard.sh	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+1	deployment/volition-stack/native/owner-terminal/90-wilhelmpa	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+1	deployment/volition-stack/native/owner-terminal/nginx-owner-terminal.conf	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+1	deployment/volition-stack/native/owner-terminal/owner-terminal-router.mjs	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+1	deployment/volition-stack/native/runner-drain/BOOTSTRAP.md	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+1	deployment/volition-stack/native/runner-drain/README.md	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+1	deployment/volition-stack/native/runner-drain/runner-drain.py	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+1	deployment/volition-stack/native/runner-drain/test_deploy_order.py	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+1	deployment/volition-stack/native/runtimes/install-cli-runtimes.sh	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+1	deployment/volition-stack/native/server/README.md	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+1	deployment/volition-stack/native/server/install.sh	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+1	deployment/volition-stack/native/server/memory-guards.sh	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+1	deployment/volition-stack/native/systemd/60-volition-project-browser.rules	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+1	deployment/volition-stack/native/systemd/61-helena-browser-on-demand.rules	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+1	deployment/volition-stack/native/systemd/volition-code.service.d/vault.conf	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+1	deployment/volition-stack/native/systemd/volition-hermes-runner.service	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+1	deployment/volition-stack/native/systemd/volition-project-browser-chromium@.service	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+1	deployment/volition-stack/native/systemd/volition-project-browser-kasm@.service	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+1	deployment/volition-stack/native/systemd/volition-project-browser-router.service	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+1	deployment/volition-stack/native/systemd/volition-provisioning.service	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+1	deployment/volition-stack/native/systemd/volition-terminal.service	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+1	deployment/volition-stack/native/systemd/volition-trash-purge.service	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+3	deployment/volition-stack/native/token-keeper/helena-token-keeper.service	Remove Hermes credential views while preserving independent Claude and Codex credentials
+3	deployment/volition-stack/native/token-keeper/helena_token_keeper.py	Remove Hermes credential views while preserving independent Claude and Codex credentials
+3	deployment/volition-stack/native/token-keeper/install.sh	Remove Hermes credential views while preserving independent Claude and Codex credentials
+3	deployment/volition-stack/native/token-keeper/rejection_fixture.py	Remove Hermes credential views while preserving independent Claude and Codex credentials
+3	deployment/volition-stack/native/token-keeper/runner-dropin.conf	Remove Hermes credential views while preserving independent Claude and Codex credentials
+3	deployment/volition-stack/native/token-keeper/test_helena_token_keeper.py	Remove Hermes credential views while preserving independent Claude and Codex credentials
+3	deployment/volition-stack/native/token-keeper/test_token_keeper_hermes.py	Remove Hermes credential views while preserving independent Claude and Codex credentials
+4	deployment/volition-stack/native/updates/install.sh	Remove Hermes updater and runtime administration registration
+1	deployment/volition-stack/scripts/fresh-reset.mjs	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+1	deployment/volition-stack/scripts/probe-secret-boundaries.sh	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+1	deployment/volition-stack/scripts/prove-hermes-sync.browser-steps.ts	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+1	deployment/volition-stack/scripts/prove-hermes-sync.browser.ts	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+1	deployment/volition-stack/scripts/prove-hermes-sync.ops.ts	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+1	deployment/volition-stack/scripts/prove-hermes-sync.ts	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+1	deployment/volition-stack/scripts/setup-agent-pool.ops.ts	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+1	deployment/volition-stack/scripts/verify-checkpoint.py	Switch catalog and provisioning to native operation; retire Hermes units after rollout
+7	packages/db/src/schema/app.ts	Retain historical migrations; remove active Hermes defaults and schema constraints in a separate migration
+7	packages/db/src/schema/autopilot.ts	Retain historical migrations; remove active Hermes defaults and schema constraints in a separate migration
+7	packages/db/src/schema/local-ai.ts	Retain historical migrations; remove active Hermes defaults and schema constraints in a separate migration
+7	packages/db/src/schema/model-availability.ts	Retain historical migrations; remove active Hermes defaults and schema constraints in a separate migration
+7	packages/db/src/schema/updates.ts	Retain historical migrations; remove active Hermes defaults and schema constraints in a separate migration
+2	packages/runner/src/adapters.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	packages/runner/src/agent-env.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	packages/runner/src/agui.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	packages/runner/src/browser-gateway.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	packages/runner/src/chat-reflect.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	packages/runner/src/chat.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	packages/runner/src/cli-runtime.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	packages/runner/src/cli-tools.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	packages/runner/src/cli.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	packages/runner/src/client.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	packages/runner/src/config.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	packages/runner/src/contributions.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	packages/runner/src/descriptor-reload.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	packages/runner/src/digest.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	packages/runner/src/execute.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	packages/runner/src/files.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	packages/runner/src/helena-runtime.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	packages/runner/src/hermes-profile.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	packages/runner/src/hermes-settings.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	packages/runner/src/inventory.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	packages/runner/src/isolation.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	packages/runner/src/learning.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	packages/runner/src/limits/context.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	packages/runner/src/limits/hermes.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	packages/runner/src/limits/index.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	packages/runner/src/limits/normalize.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	packages/runner/src/limits/report.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	packages/runner/src/local-ai.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	packages/runner/src/logins.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	packages/runner/src/policy.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	packages/runner/src/presets.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	packages/runner/src/readers/context.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	packages/runner/src/readers/hermes-bridge.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	packages/runner/src/readers/hermes.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	packages/runner/src/readers/index.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	packages/runner/src/readers/jsonl.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	packages/runner/src/redact.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	packages/runner/src/reflect.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	packages/runner/src/run.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	packages/runner/src/runtimes.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	packages/runner/src/spend.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	packages/runner/src/ssh.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	packages/runner/src/update.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	packages/sdk/src/index.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	packages/sdk/src/local-ai.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	packages/sdk/src/plugin.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	packages/sdk/src/registry.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	packages/sdk/src/runtime-failures.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	packages/sdk/src/runtime-logins.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	packages/sdk/src/runtime-policy.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	packages/sdk/src/runtime-profile.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	packages/sdk/src/runtime-readers.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	packages/sdk/src/runtime.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	packages/sdk/src/templates.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	packages/sdk/src/updates.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass
+2	packages/sdk/src/usage-limits.ts	Remove Hermes execution and compatibility paths after imported histories and runtime parity pass

@@ -20,3 +20,4 @@ export * from './sign-in';
 export * from './learning';
 
 export * from './root-access';
+export * from './helena-runtime';

@@ -9,7 +9,10 @@
     "goal": "Tujuan",
     "initiative": "Inisiatif",
     "board": "Kanvas",
-    "receipt": "Bukti pembayaran"
+    "receipt": "Bukti pembayaran",
+    "agentSession": "Sesi agen",
+    "agentMemory": "Memori agen",
+    "fact": "Fakta"
   },
   "picker": {
     "search": "Cari pengetahuan",

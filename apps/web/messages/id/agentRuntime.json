@@ -48,7 +48,8 @@
       "manual": "Tugas manual",
       "approval": "Keputusan persetujuan",
       "workspace": "Tugas ruang kerja",
-      "digest": "Ringkasan"
+      "digest": "Ringkasan",
+      "escalation": "Serah terima"
     },
     "results": "Hasil",
     "noSummary": "Belum ada ringkasan.",
@@ -109,6 +110,21 @@
       "agent": "Agen (disetujui)",
       "owner": "Diedit di sini",
       "observed": "Ditemukan di runtime"
+    },
+    "facts": {
+      "title": "{count, plural, other {# fakta}}",
+      "trust": "{value} %",
+      "trustHint": "Kepercayaan: dikonfirmasi {confirmations}×, membantu {helpful}×",
+      "contradicted": "kemungkinan bertentangan",
+      "edit": "Ubah",
+      "confirm": "Benar",
+      "remove": "Hapus",
+      "save": "Simpan",
+      "cancel": "Batal"
+    },
+    "notes": {
+      "title": "Catatan harian",
+      "lines": "{count, plural, other {# entri}}"
     }
   },
   "proposals": {

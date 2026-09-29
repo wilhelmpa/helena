@@ -48,7 +48,8 @@
       "manual": "Ручная задача",
       "approval": "Решение по согласованию",
       "workspace": "Задание рабочей области",
-      "digest": "Сводка"
+      "digest": "Сводка",
+      "escalation": "Передача"
     },
     "results": "Результаты",
     "noSummary": "Сводки пока нет.",
@@ -109,6 +110,21 @@
       "agent": "Агент (согласовано)",
       "owner": "Изменено здесь",
       "observed": "Найдено в среде выполнения"
+    },
+    "facts": {
+      "title": "{count, plural, one {# факт} few {# факта} many {# фактов} other {# факта}}",
+      "trust": "{value} %",
+      "trustHint": "Доверие: подтверждено {confirmations}×, полезно {helpful}×",
+      "contradicted": "возможное противоречие",
+      "edit": "Изменить",
+      "confirm": "Верно",
+      "remove": "Удалить",
+      "save": "Сохранить",
+      "cancel": "Отмена"
+    },
+    "notes": {
+      "title": "Дневные заметки",
+      "lines": "{count, plural, one {# запись} few {# записи} many {# записей} other {# записи}}"
     }
   },
   "proposals": {

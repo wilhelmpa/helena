@@ -1,4 +1,12 @@
-import { db, agentChatMessage, agentChatThread, agentRun, issue, project } from '@repo/db';
+import {
+  db,
+  agentChatMessage,
+  agentChatThread,
+  agentRun,
+  helenaAgentSession,
+  issue,
+  project,
+} from '@repo/db';
 import { and, desc, eq, inArray } from 'drizzle-orm';
 import { HttpError } from '#shared/lib';
 
@@ -35,7 +43,7 @@ export async function resolveSessions(
   const ids = [...new Set(sessionIds)].filter(Boolean);
   const result = new Map<string, Resolved>();
   if (ids.length === 0) return result;
-  const [runs, threads, answers] = await Promise.all([
+  const [runs, threads, answers, native] = await Promise.all([
     db
       .select({
         sessionId: agentRun.sessionId,
@@ -69,8 +77,53 @@ export async function resolveSessions(
       .from(agentChatMessage)
       .innerJoin(agentChatThread, eq(agentChatThread.id, agentChatMessage.threadId))
       .where(and(eq(agentChatMessage.agentId, agentId), inArray(agentChatMessage.sessionId, ids))),
+    db
+      .select({
+        id: helenaAgentSession.id,
+        kind: helenaAgentSession.kind,
+        projectId: helenaAgentSession.projectId,
+        runId: helenaAgentSession.runId,
+        threadId: helenaAgentSession.chatThreadId,
+        userId: agentChatThread.userId,
+        chatTitle: agentChatThread.title,
+        issueTitle: issue.title,
+        issueSeq: issue.sequenceNumber,
+        projectKey: project.key,
+      })
+      .from(helenaAgentSession)
+      .leftJoin(agentChatThread, eq(agentChatThread.id, helenaAgentSession.chatThreadId))
+      .leftJoin(agentRun, eq(agentRun.id, helenaAgentSession.runId))
+      .leftJoin(issue, eq(issue.id, agentRun.issueId))
+      .leftJoin(project, eq(project.id, helenaAgentSession.projectId))
+      .where(
+        and(
+          eq(helenaAgentSession.agentId, agentId),
+          inArray(
+            helenaAgentSession.id,
+            ids.filter((id) => /^[0-9a-f-]{36}$/i.test(id)),
+          ),
+        ),
+      ),
   ]);
   for (const id of ids) {
+    const own = native.find((row) => row.id === id);
+    if (own) {
+      let visible = viewer.projectIds === undefined;
+      if (own.kind === 'chat' || own.threadId) visible = own.userId === viewer.userId;
+      else if (own.projectId !== null)
+        visible = viewer.projectIds === undefined || viewer.projectIds.includes(own.projectId);
+      result.set(id, {
+        visible,
+        link: {
+          runId: own.runId,
+          issueIdentifier: own.issueSeq !== null ? `${own.projectKey}-${own.issueSeq}` : null,
+          issueTitle: own.issueTitle,
+          chatThreadId: own.threadId,
+          chatTitle: own.chatTitle,
+        },
+      });
+      continue;
+    }
     const run = runs.find((row) => row.sessionId === id);
     const chat = [...threads, ...answers].find((row) => row.sessionId === id);
     const link: SessionLink | null =

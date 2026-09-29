@@ -9,7 +9,10 @@
     "goal": "الأهداف",
     "initiative": "المبادرات",
     "board": "اللوحات",
-    "receipt": "الإيصالات"
+    "receipt": "الإيصالات",
+    "agentSession": "جلسات الوكلاء",
+    "agentMemory": "ذاكرة الوكلاء",
+    "fact": "الحقائق"
   },
   "picker": {
     "search": "البحث في المعرفة",

@@ -415,9 +415,17 @@ const CALENDAR_TOOLS = [
     name: 'google_calendar_events',
     service: 'calendar',
     category: 'read',
-    description: 'List the events of a calendar between two times, optionally matching a text.',
+    description:
+      'List Google Calendar events between two times. Set account to the connected Google email address; omit calendarId for its primary calendar. Use calendarId only for a separate calendar ID within that account.',
     input: T.Object({
-      calendarId: T.Optional(T.String({ default: 'primary', maxLength: 300 })),
+      calendarId: T.Optional(
+        T.String({
+          default: 'primary',
+          maxLength: 300,
+          description:
+            'Calendar ID within the selected Google account. Omit for the primary calendar.',
+        }),
+      ),
       from: T.String({ description: 'ISO date-time the window starts.' }),
       to: T.String({ description: 'ISO date-time the window ends.' }),
       query: T.Optional(T.String({ maxLength: 200 })),

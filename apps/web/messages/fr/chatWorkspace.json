@@ -307,7 +307,8 @@
     "commandScriptHint": "Chemin relatif au dossier du projet. Le script reçoit la tâche en JSON et s'exécute dans l'espace isolé du projet ; sa sortie est le résultat.",
     "webhookUrl": "Adresse (HTTPS)",
     "webhookSecretEnv": "Variable contenant la clé de signature",
-    "webhookHint": "{appName} appelle l'adresse avec une signature Standard Webhooks. Donnez la clé (whsec_…) à l'agent comme variable d'environnement dans Accès."
+    "webhookHint": "{appName} appelle l'adresse avec une signature Standard Webhooks. Donnez la clé (whsec_…) à l'agent comme variable d'environnement dans Accès.",
+    "helena": "Helena (local d’abord)"
   },
   "context": {
     "task": "Tâche {identifier} « {title} »",

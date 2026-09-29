@@ -83,6 +83,8 @@ export interface AgentRuntimePolicy {
   // Which runtime runs the agent. Unset is Hermes, which the server provisions itself; a
   // Other agents run on the runner selected in their project descriptor.
   runtime?: AgentRuntimeKind;
+  // Settings of Helena's own loop (runtime `helena`).
+  helena?: AgentHelenaSettings;
   commandScript?: string;
   webhookUrl?: string;
   webhookSecretEnv?: string;
@@ -123,14 +125,80 @@ export const CHAT_REFLECTION_LIMITS = {
 
 export type ReflectionMode = 'off' | 'failure' | 'complex';
 const REFLECTION_MODES: ReflectionMode[] = ['off', 'failure', 'complex'];
-export type AgentRuntimeKind = 'hermes' | 'claude' | 'codex' | 'command' | 'webhook';
-export const AGENT_RUNTIMES: AgentRuntimeKind[] = [
-  'hermes',
-  'claude',
-  'codex',
-  'command',
-  'webhook',
-];
+export type AgentRuntimeKind = 'hermes' | 'claude' | 'codex' | 'command' | 'webhook' | 'helena';
+
+// Helena's own agent loop (docs/helena-decisions/zentrale-laufzeit.md) is behind a switch
+// while it replaces Hermes step by step: without HELENA_NATIVE_RUNTIME=on the API does not
+// know it, so an agent set to it runs on Hermes again (the way back).
+export function nativeRuntimeEnabled(
+  env: Record<string, string | undefined> = process.env,
+): boolean {
+  return env.HELENA_NATIVE_RUNTIME?.trim().toLowerCase() === 'on';
+}
+
+const BASE_RUNTIMES: AgentRuntimeKind[] = ['hermes', 'claude', 'codex', 'command', 'webhook'];
+
+export function agentRuntimes(): AgentRuntimeKind[] {
+  return nativeRuntimeEnabled() ? [...BASE_RUNTIMES, 'helena'] : BASE_RUNTIMES;
+}
+
+// The runtimes every instance knows; agentRuntimes() adds Helena's own while it is switched on.
+export const AGENT_RUNTIMES: AgentRuntimeKind[] = BASE_RUNTIMES;
+
+export interface AgentHelenaSettings {
+  toolProfile?: 'assistent' | 'recherche' | 'coder-lite' | 'voll';
+  escalation?: {
+    mode?: 'auto' | 'never' | 'always';
+    target?: string | null;
+    taskKinds?: string[];
+    confidenceBelow?: number;
+    onFailure?: boolean;
+  };
+  browserBudgetSeconds?: number;
+}
+
+const TOOL_PROFILES = ['assistent', 'recherche', 'coder-lite', 'voll'] as const;
+const ESCALATION_TARGET =
+  /^(runtime:(claude|codex)(\/[A-Za-z0-9._:-]{1,80})?|[a-z0-9][a-z0-9-]{0,40}\/[A-Za-z0-9._:/-]{1,120})$/;
+
+// The settings of Helena's own loop as stored: only known fields, in their bounds.
+export function helenaSettings(value: unknown): AgentHelenaSettings | undefined {
+  if (!value || typeof value !== 'object') return undefined;
+  const raw = value as Record<string, unknown>;
+  const out: AgentHelenaSettings = {};
+  if (TOOL_PROFILES.includes(raw.toolProfile as never)) {
+    out.toolProfile = raw.toolProfile as AgentHelenaSettings['toolProfile'];
+  }
+  if (typeof raw.browserBudgetSeconds === 'number' && raw.browserBudgetSeconds >= 30) {
+    out.browserBudgetSeconds = Math.min(Math.round(raw.browserBudgetSeconds), 3600);
+  }
+  const escalation = raw.escalation as Record<string, unknown> | undefined;
+  if (escalation && typeof escalation === 'object') {
+    const next: NonNullable<AgentHelenaSettings['escalation']> = {};
+    if (['auto', 'never', 'always'].includes(escalation.mode as string)) {
+      next.mode = escalation.mode as 'auto' | 'never' | 'always';
+    }
+    if (escalation.target === null) next.target = null;
+    else if (
+      typeof escalation.target === 'string' &&
+      ESCALATION_TARGET.test(escalation.target.trim())
+    ) {
+      next.target = escalation.target.trim();
+    }
+    if (Array.isArray(escalation.taskKinds)) {
+      next.taskKinds = escalation.taskKinds
+        .filter((kind): kind is string => typeof kind === 'string' && !!kind.trim())
+        .map((kind) => kind.trim().toLowerCase().slice(0, 40))
+        .slice(0, 20);
+    }
+    if (typeof escalation.confidenceBelow === 'number') {
+      next.confidenceBelow = Math.max(0, Math.min(1, escalation.confidenceBelow));
+    }
+    if (typeof escalation.onFailure === 'boolean') next.onFailure = escalation.onFailure;
+    if (Object.keys(next).length > 0) out.escalation = next;
+  }
+  return Object.keys(out).length > 0 ? out : undefined;
+}
 
 export interface AgentRuntimeConflict {
   path: string;
@@ -338,8 +406,9 @@ export function normalizeRuntimePolicy(value: unknown): AgentRuntimePolicy {
         .slice(0, 8),
     }),
     // Hermes is the default and is left out, so an agent's policy keeps its revision.
-    ...(AGENT_RUNTIMES.includes(policy.runtime as AgentRuntimeKind) &&
+    ...(agentRuntimes().includes(policy.runtime as AgentRuntimeKind) &&
       policy.runtime !== 'hermes' && { runtime: policy.runtime }),
+    ...(helenaSettings(policy.helena) && { helena: helenaSettings(policy.helena) }),
     ...(commandScript &&
       commandScript.length <= 256 &&
       !commandScript.startsWith('/') &&

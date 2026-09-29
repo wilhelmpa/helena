@@ -9,7 +9,10 @@
     "goal": "Objectifs",
     "initiative": "Initiatives",
     "board": "Toiles",
-    "receipt": "Justificatifs"
+    "receipt": "Justificatifs",
+    "agentSession": "Sessions des agents",
+    "agentMemory": "Mémoire des agents",
+    "fact": "Faits"
   },
   "picker": {
     "search": "Rechercher dans les connaissances",
