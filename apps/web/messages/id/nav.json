@@ -173,7 +173,22 @@
     "codeRetry": "Muat ulang",
     "codeNoFolder": "Proyek ini belum punya folder kerja.",
     "codeNoFolderPending": "Folder kerja proyek ini masih disiapkan.",
-    "codeSettings": "Pengaturan proyek"
+    "codeSettings": "Pengaturan proyek",
+    "chatDockResize": "Ubah tinggi obrolan",
+    "frameProblem": {
+      "title": "{tool} tidak dapat dijangkau",
+      "reasons": {
+        "unreachable": "Layanan tidak menjawab. Mungkin sedang dimulai ulang, atau jaringan berganti.",
+        "status": "Layanan melaporkan kesalahan ({status}).",
+        "forbidden": "Tidak ada akses. Masuk lagi atau berikan akses.",
+        "timeout": "Tidak ada jawaban tepat waktu.",
+        "blocked": "Peramban tidak menampilkan halaman (ditolak atau diblokir)."
+      },
+      "retrying": "Tersambung ulang begitu menjawab lagi.",
+      "reload": "Muat ulang",
+      "close": "Tutup tab",
+      "connecting": "Menghubungkan ke {tool} …"
+    }
   },
   "groups": {
     "project": "Proyek",
@@ -287,5 +302,6 @@
   "settingsExtensions": "Ekstensi",
   "settingsAutopilotExecution": "Autopilot & eksekusi",
   "settingsProjectAccess": "Kelola akses",
-  "sidebarHelenaKnowledge": "{appName}"
+  "sidebarHelenaKnowledge": "{appName}",
+  "sidebarTrash": "Tempat sampah"
 }

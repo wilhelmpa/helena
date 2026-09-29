@@ -26,6 +26,24 @@ def check(spec: str) -> dict:
     kind, _, arg = spec.partition(':')
     args = arg.split(',') if arg else []
     try:
+        if kind == 'git':
+            directory, label = args
+            remote = directory + '-remote.git'
+            def git(*command, cwd=None):
+                subprocess.run(['git', *command], cwd=cwd, check=True, capture_output=True, timeout=20)
+            if not os.path.isdir(remote):
+                git('init', '--bare', remote)
+            if not os.path.isdir(directory):
+                git('clone', remote, directory)
+            git('checkout', '-B', 'proof', cwd=directory)
+            if label != 'first':
+                git('pull', '--ff-only', 'origin', 'proof', cwd=directory)
+            with open(os.path.join(directory, label + '.txt'), 'w') as handle:
+                handle.write(label + '\n')
+            git('add', '.', cwd=directory)
+            git('commit', '-m', label, cwd=directory)
+            git('push', 'origin', 'proof', cwd=directory)
+            return result(True, 'clone/checkout/commit/pull/push')
         if kind == 'whoami':
             return result(True, json.dumps({
                 'uid': os.getuid(), 'gid': os.getgid(), 'groups': os.getgroups(), 'cwd': os.getcwd(),

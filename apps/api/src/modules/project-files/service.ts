@@ -134,9 +134,14 @@ export async function listFolder(root: FileRoot, relative = '') {
     await assertNoSymlinks(root.directory, safe);
     entries = await readdir(target, { withFileTypes: true });
   } catch (error) {
-    // A root Plan creates on the first write is empty until then; a missing private
-    // folder or workspace is reported as missing.
-    if (!safe && root.creatable && isMissing(error)) entries = [];
+    // The project root and its board folder are empty until their first write.
+    // A missing private folder or workspace is reported as missing.
+    if (
+      root.creatable &&
+      isMissing(error) &&
+      (!safe || (root.name === 'vault' && safe === 'Boards'))
+    )
+      entries = [];
     else return await fileSystemError(error, 'Folder not found');
   }
   // Hidden entries (.obsidian, .trash, .git) and Syncthing's conflict copies are not

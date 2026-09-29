@@ -3,8 +3,8 @@ import { speechText } from './speechText';
 
 // Reading an answer aloud while it streams: the text that has arrived is cut into pieces a
 // voice can say — whole sentences, list items, lines — as soon as each is complete, so the
-// first sentence is spoken while the agent still writes the rest. Code blocks are skipped
-// whole (speechText drops them); a very long sentence is cut at a comma so no single piece
+// first sentence is spoken while the agent still writes the rest. Code blocks and tables get
+// a short spoken description; a very long sentence is cut at a comma so no single piece
 // runs longer than a voice engine handles well (Chrome's own voices stop after ~15 seconds).
 
 // Where reading stopped: everything before `offset` has been handed to the voice.
@@ -28,6 +28,30 @@ const MAX_CHARS = 280;
 
 function isFenceLine(line: string): boolean {
   return /^\s{0,3}(```|~~~)/.test(line);
+}
+
+function isTableLine(line: string): boolean {
+  return /^\s*\|?[^|\n]+\|[^\n]+\|?\s*$/.test(line);
+}
+
+function spokenSection(section: string, lang: string): string {
+  const code =
+    lang === 'de' ? 'Den Code zeige ich dir im Chat.' : 'I will show the code in the chat.';
+  const annotated = section
+    .replace(/(?:```|~~~)[\s\S]*?(?:```|~~~|$)/g, ` ${code} `)
+    .replace(/(?:^|\n)((?:\s*[^\n]*\|[^\n]*(?:\n|$)){2,})/g, (_match, table: string) => {
+      const rows = table.trim().split('\n');
+      const header = rows[0]!
+        .split('|')
+        .map((cell) => cell.trim())
+        .filter(Boolean)
+        .join(', ');
+      const dataRows = rows.slice(1).filter((row) => !/^\s*\|?[\s:|-]+\|[\s:|-]+\|?\s*$/.test(row));
+      return lang === 'de'
+        ? ` Tabelle mit den Spalten ${header} und ${dataRows.length} ${dataRows.length === 1 ? 'Zeile' : 'Zeilen'}. `
+        : ` Table with columns ${header} and ${dataRows.length} ${dataRows.length === 1 ? 'row' : 'rows'}. `;
+    });
+  return speakable(speechText(annotated), lang);
 }
 
 // Whether the dot, question or exclamation mark at `index` ends a sentence.
@@ -60,6 +84,20 @@ function boundaries(text: string, from: number, final: boolean): number[] {
       if (!complete && !final) break;
       inFence = !inFence;
       if (!inFence) found.push(complete ? newline + 1 : lineEnd);
+    } else if (!inFence && isTableLine(line)) {
+      let end = lineEnd;
+      let nextStart = complete ? newline + 1 : text.length;
+      while (nextStart < text.length) {
+        const nextNewline = text.indexOf('\n', nextStart);
+        const nextEnd = nextNewline === -1 ? text.length : nextNewline;
+        if (!isTableLine(text.slice(nextStart, nextEnd))) break;
+        end = nextEnd;
+        nextStart = nextNewline === -1 ? text.length : nextNewline + 1;
+      }
+      if (nextStart === text.length && !final) break;
+      found.push(end < text.length ? end + 1 : end);
+      lineStart = end < text.length ? end + 1 : end;
+      continue;
     } else if (!inFence) {
       // A half-arrived line that may still become a fence ("`", "``") waits.
       if (!complete && !final && /^\s{0,3}[`~]{1,2}$/.test(line)) break;
@@ -79,7 +117,7 @@ function boundaries(text: string, from: number, final: boolean): number[] {
     if (!complete) break;
     lineStart = newline + 1;
   }
-  if (final && !inFence && (found.length === 0 || found.at(-1)! < text.length)) {
+  if (final && (found.length === 0 || found.at(-1)! < text.length)) {
     found.push(text.length);
   }
   return [...new Set(found)].filter((position) => position > from).sort((a, b) => a - b);
@@ -143,7 +181,7 @@ export function nextSpeechChunks(
   let consumed = offset;
   let pending = '';
   for (const end of ends) {
-    const spoken = speakable(speechText(markdown.slice(start, end)), lang);
+    const spoken = spokenSection(markdown.slice(start, end), lang);
     start = end;
     // Pieces joined because each was short (a heading, list items) keep a pause between them.
     const joined = !pending

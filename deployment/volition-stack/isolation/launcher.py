@@ -219,10 +219,14 @@ class Launcher:
 
     def vault_binds(self, slug: str, key: str | None) -> tuple[list[str], list[str]]:
         """(read-write, read-only) vault folders: the project's own, or for Home its own folder
-        and every project folder read-only."""
+        and every project vault and workspace."""
         root = self.config.vault_root
         if slug == self.config.home_slug:
-            return [os.path.join(root, 'Home')], [os.path.join(root, 'Projects')]
+            from migrate import registry_projects
+            projects = registry_projects(self.config)
+            return [os.path.join(root, 'Home'),
+                    *[os.path.join(root, 'Projects', project_key) for _, project_key in projects],
+                    *[os.path.join(self.config.workspace_root, project_slug) for project_slug, _ in projects]], []
         return [os.path.join(root, 'Projects', key)], []
 
     def owned_directory(self, path: str, uid: int) -> bool:
@@ -672,6 +676,20 @@ class Launcher:
         except (OSError, IsolationError):
             cwd = workspace
 
+        git_roots = [workspace]
+        if slug == self.config.home_slug:
+            from migrate import registry_projects
+            git_roots += [os.path.join(self.config.workspace_root, item) for item, _ in registry_projects(self.config)]
+        entries = [(name, value) for root in git_roots for name, value in [('safe.directory', root), ('safe.directory', root + '/*')]]
+        entries.append(('core.sharedRepository', 'group'))
+        env.setdefault('GIT_AUTHOR_NAME', f'Volition {slug}')
+        env.setdefault('GIT_AUTHOR_EMAIL', f'volition+{slug}@localhost')
+        env.setdefault('GIT_COMMITTER_NAME', env['GIT_AUTHOR_NAME'])
+        env.setdefault('GIT_COMMITTER_EMAIL', env['GIT_AUTHOR_EMAIL'])
+        env['GIT_CONFIG_COUNT'] = str(len(entries))
+        for index, (name, value) in enumerate(entries):
+            env[f'GIT_CONFIG_KEY_{index}'] = name
+            env[f'GIT_CONFIG_VALUE_{index}'] = value
         vault_rw, vault_ro = self.vault_binds(slug, key)
         return {
             'slug': slug,
@@ -1239,6 +1257,8 @@ class Launcher:
         # The vault keeps its owners and the group every service reads it through; the
         # project user gets its own folder, and Home reads every project's.
         rw, ro = self.vault_binds(slug, key)
+        if slug == config.home_slug:
+            rw, ro = [os.path.join(config.vault_root, 'Home')], []
         vault_owners = {0, runner}
         for path in rw:
             done[path] = self.grant_directory(path, account, own=False, owners=vault_owners, group=readers,
@@ -1246,9 +1266,11 @@ class Launcher:
         if slug != config.home_slug:
             try:
                 home = pwd.getpwnam(project_user(config, config.home_slug))
-                for path in rw:
-                    self.grant_directory(path, account, own=False, owners=vault_owners, group=readers,
-                                         named={(ACL_USER, home.pw_uid): rx})
+                from migrate import Changes, acl_tree, acl_tree_top
+                for path in [workspace, *rw]:
+                    acl_tree(path, {(ACL_USER, home.pw_uid): rwx, (ACL_USER, account.pw_uid): rwx}, Changes(False))
+                acl_tree_top(config.workspace_root, {(ACL_USER, home.pw_uid): rx}, Changes(False))
+                acl_tree_top(os.path.join(config.vault_root, 'Projects'), {(ACL_USER, home.pw_uid): rx}, Changes(False))
             except KeyError:
                 pass
         else:

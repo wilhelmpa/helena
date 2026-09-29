@@ -46,6 +46,14 @@ def client_hello(host):
 
 
 class NetworkTest(unittest.IsolatedAsyncioTestCase):
+    async def test_runtime_comes_from_the_root_owned_unit_not_client_headers(self):
+        proxy = plan_proxy.PlanProxy(('127.0.0.1', 3000), 'vp-', 'volition-agent-', 'volition-agents')
+        process = types.SimpleNamespace(returncode=0, communicate=AsyncMock(return_value=(b'Volition agent home (codex)\n', b'')))
+        with patch.object(asyncio, 'create_subprocess_exec', AsyncMock(return_value=process)):
+            self.assertEqual(await proxy.runtime_of_unit('volition-agent-home--a0-c1-abcdef012345.service'), 'codex')
+        self.assertNotIn('x-volition-agent-runtime', plan_proxy.FORWARDED_HEADERS)
+        self.assertNotIn('x-volition-agent-unit', plan_proxy.FORWARDED_HEADERS)
+
     async def test_large_chunks_are_read_and_written_in_bounded_pieces(self):
         size = 2 * 1024 * 1024
         reader = reader_for(b'200000\r\n' + b'x' * size + b'\r\n0\r\n\r\n')

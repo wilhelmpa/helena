@@ -305,6 +305,11 @@ export interface RuntimeLoginsHealth {
 }
 
 export interface SystemHealth {
+  vault?: {
+    state: 'ok' | 'down';
+    checkedAt: string | null;
+    findings: { code: string; path: string; detail: string }[];
+  };
   agents: AgentSyncSummary;
   logins?: RuntimeLoginsHealth;
   services: SystemServiceHealth[];

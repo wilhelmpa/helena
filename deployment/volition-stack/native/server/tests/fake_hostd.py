@@ -60,6 +60,7 @@ class Fake:
              'device': '/dev/md/helena-root', 'message': None},
         ]
         self.seen = 0
+        self.owner_sudo = True
 
     # ── Storage ────────────────────────────────────────────────────────────────────────
     def storage(self) -> dict:
@@ -307,6 +308,11 @@ class Fake:
         if name == 'SetGuard':
             self.guard['limit'] = params['limit']
             return self.guard
+        if name == 'OwnerSudoStatus':
+            return {'enabled': self.owner_sudo}
+        if name == 'SetOwnerSudo':
+            self.owner_sudo = params['enabled']
+            return {'enabled': self.owner_sudo}
         if name == 'BackupStatus':
             return self.backup()
         if name == 'BackupSnapshots':

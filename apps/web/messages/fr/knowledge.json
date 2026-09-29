@@ -5,7 +5,25 @@
     "vault": "Notes et fichiers",
     "mail": "E-mails",
     "chat": "Chats",
-    "run": "Exécutions d’agents"
+    "run": "Exécutions d’agents",
+    "goal": "Objectifs",
+    "initiative": "Initiatives",
+    "board": "Toiles",
+    "receipt": "Justificatifs"
+  },
+  "picker": {
+    "search": "Rechercher dans les connaissances",
+    "kind": "Filtrer par type",
+    "all": "Tous les types",
+    "file": "Fichiers",
+    "doc": "Docs",
+    "journal": "Journal",
+    "template": "Modèles",
+    "note": "Notes",
+    "image": "Images",
+    "browserImage": "Images du navigateur",
+    "chatFile": "Fichiers de chat",
+    "unavailable": "Les connaissances sont indisponibles pour le moment."
   },
   "capture": {
     "inbox": "Boîte de réception",

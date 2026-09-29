@@ -122,6 +122,7 @@ export const qk = {
   knowledgeBacklinks: (path: string) => ['knowledge', 'backlinks', path] as const,
   knowledgeTaskNotes: (identifier: string) => ['knowledge', 'task', identifier] as const,
   knowledgeTrash: (root: string) => ['knowledge', 'trash', root] as const,
+  knowledgeDeletePreview: (path: string) => ['knowledge', 'delete-preview', path] as const,
   knowledgeConflicts: (root: string) => ['knowledge', 'conflicts', root] as const,
   knowledgeHistory: (path: string) => ['knowledge', 'history', path] as const,
   knowledgeSearch: (q: string, folder = '') => ['knowledge', 'search', folder, q] as const,

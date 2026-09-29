@@ -7,7 +7,7 @@ import { AgentPausedBadge } from '@/components/common/agent-chat/AgentPausedBadg
 import { AgentTemplateBadge } from '@/components/common/agent-chat/AgentTemplateBadge';
 import Orb from '@/components/helena/Orb';
 import { useAgentStatus } from '@/utils/helenaStatus';
-import { agentsPath } from '@/utils/paths';
+import { teamListPath, teamOrganizationPath } from '@/utils/paths';
 import {
   organizationAgentRole,
   type OrganizationAgentNode as AgentNode,
@@ -47,7 +47,7 @@ export default function OrganizationAgentNode({
       className="relative before:absolute before:start-0 before:top-0 before:h-4 before:w-3 before:rounded-es-md before:border-s before:border-b before:border-sidebar-border"
     >
       <Link
-        href={`${agentsPath()}?${new URLSearchParams({ agent: String(agent.id) })}`}
+        href={teamListPath(teamOrganizationPath(), `agent=${agent.id}`)}
         className="group flex min-h-8 min-w-0 items-center gap-2 rounded-md px-2 py-1 text-sm transition-colors hover:bg-sidebar-accent focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:outline-none"
       >
         <Bot className="size-4 shrink-0 text-muted-foreground group-hover:text-foreground" />

@@ -297,5 +297,12 @@
   "searchSettings": "Search settings …",
   "nameList": {
     "more": "+{count} more"
+  },
+  "pinOverlay": "Pin: stays open when the page changes",
+  "unpinOverlay": "Unpin: closes when the page changes",
+  "inherit": {
+    "inherited": "Inherits from {appName}",
+    "overridden": "Changed for this project",
+    "reset": "Reset"
   }
 }

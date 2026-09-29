@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
 import type { OrganizationAgent } from '@/lib/api/endpoints/organization';
 import { organizationChartAgents } from './organizationChartAgents';
-import { organizationChartLayout } from './organizationChartLayout';
+import { BUS_OFFSET, LEAVES_PER_ROW, organizationChartLayout } from './organizationChartLayout';
 import { organizationChartState } from './organizationChartState';
 import type { AgentActivityEntry } from '@/lib/api/endpoints/agentActivity';
 
@@ -66,5 +66,26 @@ describe('Organigramm', () => {
     assert.equal(organizationChartState(agents[1]!, [entry('running')], true), 'tool');
     assert.equal(organizationChartState(agents[1]!, [entry('pending')], false), 'waiting');
     assert.equal(organizationChartState(agents[1]!, [entry('failed')], false), 'error');
+  });
+
+  test('Spezialisten hängen an einer Linie und brechen in Viererreihen um', () => {
+    const team = [agent(2, null, 7), ...Array.from({ length: 10 }, (_, i) => agent(10 + i, 2, 7))];
+    const chart = organizationChartLayout(team, new Set(), new Set());
+    const lead = chart.nodes.find((node) => node.id === '2')!;
+    const leaves = chart.nodes.filter((node) => node.id !== '2');
+    const rows = [...new Set(leaves.map((node) => node.position.y))].sort((a, b) => a - b);
+    assert.equal(rows.length, Math.ceil(10 / LEAVES_PER_ROW));
+    for (const top of rows)
+      assert.ok(leaves.filter((node) => node.position.y === top).length <= LEAVES_PER_ROW);
+    assert.ok(rows[0]! > lead.position.y);
+    // Every line of a row runs along the same height, just above that row.
+    for (const edge of chart.edges) {
+      const target = chart.nodes.find((node) => node.id === edge.target)!;
+      assert.equal((edge.data as { busY?: number }).busY, target.position.y - BUS_OFFSET);
+    }
+    // The trunk runs through the middle gap of a full row, never through a card.
+    const trunk = lead.position.x + (lead.width ?? 0) / 2;
+    for (const node of leaves.filter((item) => item.position.y !== rows.at(-1)))
+      assert.ok(trunk < node.position.x || trunk > node.position.x + (node.width ?? 0));
   });
 });

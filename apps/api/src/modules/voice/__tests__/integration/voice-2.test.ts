@@ -249,6 +249,8 @@ describe('voice settings', () => {
       pauseMs: 300,
       immediateResponse: true,
       bridgeEnabled: true,
+      progressEnabled: true,
+      readFullAnswers: true,
       fallbackTimeoutMs: 800,
       vocabulary: [],
       voice: null,
@@ -273,6 +275,8 @@ describe('voice settings', () => {
       speed: 1,
       immediateResponse: true,
       bridgeEnabled: true,
+      progressEnabled: true,
+      readFullAnswers: true,
       fallbackTimeoutMs: 800,
     });
     expect((await asOwner.god.voice.settings.patch({ pauseMs: 50 })).status).toBe(400);

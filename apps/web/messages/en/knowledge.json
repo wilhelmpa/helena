@@ -5,7 +5,25 @@
     "vault": "Notes & files",
     "mail": "Mail",
     "chat": "Chats",
-    "run": "Agent runs"
+    "run": "Agent runs",
+    "goal": "Goals",
+    "initiative": "Initiatives",
+    "board": "Canvases",
+    "receipt": "Receipts"
+  },
+  "picker": {
+    "search": "Search knowledge",
+    "kind": "Filter by type",
+    "all": "All types",
+    "file": "Files",
+    "doc": "Docs",
+    "journal": "Journal",
+    "template": "Templates",
+    "note": "Notes",
+    "image": "Images",
+    "browserImage": "Browser images",
+    "chatFile": "Chat files",
+    "unavailable": "Knowledge is unavailable right now."
   },
   "capture": {
     "inbox": "Inbox",

@@ -48,6 +48,30 @@ describe('the host helper client', () => {
     expect(seen!).toEqual({ method: 'io.helena.hostd.SystemStatus', parameters: { fresh: true } });
   });
 
+  it('sends a root command and its revocation epoch over Varlink', async () => {
+    await listen((request) => {
+      expect(request).toEqual({
+        method: 'io.helena.hostd.RunPrivileged',
+        parameters: {
+          id: 'a'.repeat(32),
+          command: 'id -u',
+          seconds: 30,
+          epoch: 7,
+        },
+      });
+      return {
+        parameters: { result: { unit: 'volition-root-proof.service', exitCode: 0, output: '0\n' } },
+      };
+    });
+    const result = await hostd('RunPrivileged', {
+      id: 'a'.repeat(32),
+      command: 'id -u',
+      seconds: 30,
+      epoch: 7,
+    });
+    expect(result).toMatchObject({ exitCode: 0, output: '0\n' });
+  });
+
   it('turns a Varlink error into a HostdError with its code and parameter', async () => {
     await listen(() => ({
       error: 'io.helena.hostd.InvalidParameter',

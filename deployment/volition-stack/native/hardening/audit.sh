@@ -81,22 +81,28 @@ need_root() { # ID GROUP SEVERITY
   record "$1" "$2" "$3" skip "needs root"
 }
 
-# auth.sudo (H-07, §8.3). The automation account (helena-ops) is the only one allowed sudo
-# without a password, and only while its password is locked and SSH takes its key only
-# (sshd_config.d/60-helena-ops.conf, checked in sshd's effective config). Anyone else with
-# NOPASSWD: ALL is root without a password for whoever holds that account.
+# auth.sudo (H-07, §8.3). The owner rule is intentional while the managed drop-in is present.
 OPS_USER=${HELENA_OPS_USER:-helena-ops}
 check_sudo() {
   local blanket others status methods problem=
   blanket=$(grep -Rhs -E '^[^#]*NOPASSWD:\s*ALL\s*$' /etc/sudoers /etc/sudoers.d/ | awk '{print $1}' | sort -u)
-  others=$(grep -vxF -- "$OPS_USER" <<<"$blanket" | grep . | paste -sd, -)
+  others=$(grep -Evx "${OPS_USER}|wilhelmpa" <<<"$blanket" | grep . | paste -sd, -)
+  if grep -qxF wilhelmpa <<<"$blanket" \
+     && { ! printf 'wilhelmpa ALL=(ALL:ALL) NOPASSWD: ALL\n' | cmp -s - /etc/sudoers.d/99-volition-owner-terminal \
+          || grep -Eq '^[[:space:]]*wilhelmpa[[:space:]].*NOPASSWD:[[:space:]]*ALL[[:space:]]*$' /etc/sudoers.d/90-wilhelmpa 2>/dev/null; }; then
+    others=${others:+$others,}wilhelmpa
+  fi
   if [[ -n $others ]]; then
     record auth.sudo auth medium warn "NOPASSWD: ALL for $others (root without a password for that account)" \
       "why=others" "value=$others"
     return
   fi
   if ! grep -qxF -- "$OPS_USER" <<<"$blanket"; then
-    record auth.sudo auth medium pass "no blanket NOPASSWD"
+    if grep -qxF wilhelmpa <<<"$blanket"; then
+      record auth.sudo auth medium pass "wilhelmpa NOPASSWD consciously enabled" "why=owner_enabled"
+    else
+      record auth.sudo auth medium pass "no blanket NOPASSWD"
+    fi
     return
   fi
   status=$(passwd -S "$OPS_USER" 2>/dev/null | awk '{print $2}')
@@ -105,7 +111,11 @@ check_sudo() {
   [[ $status == L ]] || problem=password
   if [[ $methods != publickey ]]; then problem=${problem:+both}; problem=${problem:-ssh}; fi
   if [[ -z $problem ]]; then
-    record auth.sudo auth medium pass "only $OPS_USER (the automation account: password locked, SSH key only)"
+    if grep -qxF wilhelmpa <<<"$blanket"; then
+      record auth.sudo auth medium pass "wilhelmpa NOPASSWD consciously enabled; $OPS_USER password locked and SSH key only" "why=owner_enabled"
+    else
+      record auth.sudo auth medium pass "only $OPS_USER (the automation account: password locked, SSH key only)"
+    fi
   else
     record auth.sudo auth medium warn "$OPS_USER has NOPASSWD: ALL; password ${status:-?}, SSH authenticationmethods ${methods:-?}" \
       "why=ops" "value=$OPS_USER" "problem=$problem"

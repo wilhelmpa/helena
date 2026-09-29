@@ -78,7 +78,9 @@
     "working": "{count, plural, other {# 个代理在工作}}",
     "setupFailed": "设置失败",
     "budgetStopped": "已停止",
-    "budgetThrottled": "已限速"
+    "budgetThrottled": "已限速",
+    "openLabel": "{count, plural, other {个未完成任务}}",
+    "started": "{count} 个进行中"
   },
   "system": {
     "title": "系统",

@@ -60,7 +60,10 @@ async function approvalRequested(event: CoreEvent<'helena.approval.requested'>):
   if (!category) return;
   const approval = await getApproval(event.data.approvalId);
   if (!approval || approval.status !== 'pending') return;
-  const people = await deciders(approval.projectId);
+  const people =
+    approval.payload?.type === 'volition-root' && typeof approval.payload.ownerId === 'string'
+      ? [approval.payload.ownerId]
+      : await deciders(approval.projectId);
   const where = approval.issueIdentifier ?? approval.projectName;
   await pushTo(people, category, {
     dedupeKey: `approval:${approval.id}`,
@@ -71,10 +74,13 @@ async function approvalRequested(event: CoreEvent<'helena.approval.requested'>):
     at: new Date(event.time),
     render: (locale) => ({
       title: formatPush(locale, 'approval.title', { agent: approval.agentName }),
-      body: formatPush(locale, where ? 'approval.bodyWhere' : 'approval.body', {
-        action: approval.action,
-        where: where ?? '',
-      }),
+      body:
+        approval.payload?.type === 'volition-root'
+          ? `${approval.action}\n${approval.details.slice(0, 700)}`
+          : formatPush(locale, where ? 'approval.bodyWhere' : 'approval.body', {
+              action: approval.action,
+              where: where ?? '',
+            }),
     }),
   });
 }

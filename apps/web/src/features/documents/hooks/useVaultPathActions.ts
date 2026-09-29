@@ -43,10 +43,10 @@ export function useVaultPathActions({
 
   const moveTo = (path: string, folder: string) => relocate(path, joinPath(folder, baseName(path)));
 
-  const remove = async (path: string) => {
+  const remove = async (path: string, confirmContents?: string) => {
     const open = affectsOpen(path);
     if (open) await flush();
-    await trash.mutateAsync(path);
+    await trash.mutateAsync(confirmContents ? { path, confirmContents } : path);
     if (open) router.replace(pathname);
   };
 

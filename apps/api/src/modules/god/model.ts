@@ -326,6 +326,11 @@ export const EngineSettingsResponse = t.Object({
 });
 
 export const SystemHealthResponse = t.Object({
+  vault: t.Object({
+    state: t.Union([t.Literal('ok'), t.Literal('down')]),
+    checkedAt: t.Nullable(t.String()),
+    findings: t.Array(t.Object({ code: t.String(), path: t.String(), detail: t.String() })),
+  }),
   agents: agentSyncSummary,
   logins: runtimeLoginsHealth,
   services: t.Array(

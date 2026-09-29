@@ -15,6 +15,8 @@ export type FlowEdge = Edge<
     active: boolean;
     accent?: string;
     rail?: boolean;
+    // The height of the shared line all reports of a leader hang from (tree view).
+    busY?: number;
     variant?: 'straight' | 'step';
     strong?: boolean;
     task?: boolean;
@@ -37,6 +39,19 @@ function usePageVisible() {
   );
 }
 
+// A tree line: straight down from the leader to the shared line of its row, along it, and
+// straight down to the report – every report of a row hangs from the same line, so one sees
+// at a glance whose they are (owner 29.09.).
+export function busPath(sx: number, sy: number, tx: number, ty: number, busY: number): string {
+  if (Math.abs(tx - sx) < 1) return `M ${sx},${sy} L ${tx},${ty}`;
+  const dir = tx > sx ? 1 : -1;
+  const r = Math.max(0, Math.min(8, Math.abs(tx - sx) / 2, busY - sy, ty - busY));
+  return (
+    `M ${sx},${sy} L ${sx},${busY - r} Q ${sx},${busY} ${sx + dir * r},${busY} ` +
+    `L ${tx - dir * r},${busY} Q ${tx},${busY} ${tx},${busY + r} L ${tx},${ty}`
+  );
+}
+
 // A reporting line. A running delegation lights the line up and sends a dot of light
 // from the manager to the agent; reduced motion keeps the lit line without the dot.
 export default function OrganizationFlowEdge({
@@ -54,22 +69,24 @@ export default function OrganizationFlowEdge({
   const active = Boolean(data?.active);
   const path = data?.rail
     ? `M ${sourceX},${sourceY} L ${sourceX},${targetY - 6} Q ${sourceX},${targetY} ${sourceX + 6},${targetY} L ${targetX},${targetY}`
-    : data?.variant === 'straight'
-      ? getStraightPath({ sourceX, sourceY, targetX, targetY })[0]
-      : getSmoothStepPath({
-          sourceX,
-          sourceY,
-          targetX,
-          targetY,
-          sourcePosition,
-          targetPosition,
-          // An SVG path corner, not a CSS radius.
-          borderRadius: 10,
-          // One bus per parent (owner 28.09.): straight down, then every line to the
-          // same level runs along one shared height just below the parent, then down to
-          // each child — never a separate midpoint per child.
-          centerY: targetY > sourceY + 40 ? sourceY + 24 : undefined,
-        })[0];
+    : data?.busY != null
+      ? busPath(sourceX, sourceY, targetX, targetY, data.busY)
+      : data?.variant === 'straight'
+        ? getStraightPath({ sourceX, sourceY, targetX, targetY })[0]
+        : getSmoothStepPath({
+            sourceX,
+            sourceY,
+            targetX,
+            targetY,
+            sourcePosition,
+            targetPosition,
+            // An SVG path corner, not a CSS radius.
+            borderRadius: 10,
+            // One bus per parent (owner 28.09.): straight down, then every line to the
+            // same level runs along one shared height just below the parent, then down to
+            // each child — never a separate midpoint per child.
+            centerY: targetY > sourceY + 40 ? sourceY + 24 : undefined,
+          })[0];
   const color = active ? 'var(--status-listening)' : (data?.accent ?? 'var(--org-edge)');
   return (
     <>

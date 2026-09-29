@@ -173,7 +173,22 @@
     "codeRetry": "Перезагрузить",
     "codeNoFolder": "У этого проекта ещё нет рабочей папки.",
     "codeNoFolderPending": "Рабочая папка этого проекта ещё создаётся.",
-    "codeSettings": "Настройки проекта"
+    "codeSettings": "Настройки проекта",
+    "chatDockResize": "Изменить высоту чата",
+    "frameProblem": {
+      "title": "{tool} недоступен",
+      "reasons": {
+        "unreachable": "Сервис не отвечает. Возможно, он перезапускается или сменилась сеть.",
+        "status": "Сервис сообщает об ошибке ({status}).",
+        "forbidden": "Нет доступа. Войдите снова или откройте доступ.",
+        "timeout": "Нет ответа вовремя.",
+        "blocked": "Браузер не показал страницу (отклонена или заблокирована)."
+      },
+      "retrying": "Переподключится, как только снова ответит.",
+      "reload": "Перезагрузить",
+      "close": "Закрыть вкладку",
+      "connecting": "Подключение к {tool} …"
+    }
   },
   "groups": {
     "project": "Проект",
@@ -287,5 +302,6 @@
   "settingsExtensions": "Расширения",
   "settingsAutopilotExecution": "Автопилот и исполнение",
   "settingsProjectAccess": "Управление доступами",
-  "sidebarHelenaKnowledge": "{appName}"
+  "sidebarHelenaKnowledge": "{appName}",
+  "sidebarTrash": "Корзина"
 }

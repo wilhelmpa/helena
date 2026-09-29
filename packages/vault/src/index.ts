@@ -1,5 +1,6 @@
 export { VaultError } from './errors';
 export * from './paths';
+export * from './references';
 export * from './markdown';
 export * from './base';
 export * from './mime';
@@ -41,6 +42,7 @@ export {
   listTrash,
   MAX_NOTE_BYTES,
   moveVaultPath,
+  purgeVaultTrash,
   readVaultFile,
   restoreVaultPath,
   trashVaultPath,

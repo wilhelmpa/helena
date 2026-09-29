@@ -7,7 +7,7 @@ describe('Home chat page context', () => {
       questionText('Warum ist diese Aufgabe blockiert?', [
         { kind: 'page', projectKey: 'TRADE', path: '/project/TRADE/issue/42' },
       ]),
-    ).toContain('Current Helena page: /project/TRADE/issue/42\nCurrent project: TRADE');
+    ).toContain('Current Ava page: /project/TRADE/issue/42\nCurrent project: TRADE');
   });
 
   it('rejects a project URL without a project context', async () => {

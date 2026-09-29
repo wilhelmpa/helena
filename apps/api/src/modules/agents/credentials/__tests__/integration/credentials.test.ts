@@ -5,6 +5,12 @@ import { resetDb } from '#tests/helpers/db';
 import { createAgent } from '#tests/helpers/agents';
 import { addProjectMember } from '#tests/helpers/members';
 import { createCredential } from '#tests/helpers/integrations';
+import { bootstrapHomeAgent } from '../../../../../scripts/bootstrap-home-agent';
+import { getRunnerAgent } from '#modules/agents/runner/service';
+import { deliverSshKeys } from '../../delivery';
+import { projectRoot } from '#modules/project-files/roots';
+import { db, aiAgent } from '@repo/db';
+import { eq } from 'drizzle-orm';
 import { forgetTeamSecrets, maskForTeam } from '../../env';
 
 // The Credentials page: a team's web logins, API keys, SSH keys and secrets, the agents
@@ -220,6 +226,39 @@ describe('credentials', () => {
     expect(audit.data!.items.filter((entry) => entry.purpose === 'deleted')).toMatchObject([
       { credentialId: null, credentialLabel: 'GitHub', action: 'changed', agentName: 'Owner' },
     ]);
+  });
+
+  it('delivers Home SSH keys across projects with each workspace attribution', async () => {
+    const { asOwner, teamId, mkt, ops } = await setup();
+    const home = await bootstrapHomeAgent();
+    if (home.status !== 'ready') throw new Error('Missing Home fixture');
+    const [row] = await db
+      .select({ userId: aiAgent.userId })
+      .from(aiAgent)
+      .where(eq(aiAgent.id, home.agentId));
+    const runner = (await getRunnerAgent(row!.userId))!;
+    const ids = [];
+    for (const project of [mkt, ops]) {
+      const key = await credentials(asOwner, teamId).post({ kind: 'ssh_key', label: project.key });
+      expect(key.status).toBe(201);
+      ids.push(key.data!.id);
+      expect(
+        (await credential(asOwner, teamId, key.data!.id).patch({ projectId: project.id })).status,
+      ).toBe(200);
+      expect(
+        (await credential(asOwner, teamId, key.data!.id).grants.put({ agentIds: [home.agentId] }))
+          .status,
+      ).toBe(200);
+    }
+    const keys = await deliverSshKeys(runner, {
+      runId: null,
+      chatMessageId: null,
+      projectId: mkt.id,
+    });
+    expect(keys.map((key) => key.id)).toEqual(ids);
+    expect(keys.map((key) => key.workspaces)).toEqual(
+      [projectRoot('MKT', 'code'), projectRoot('OPS', 'code')].map((root) => [root.directory]),
+    );
   });
 
   it('masks delivered SSH keys and TOTP seeds across key rotation and deletion', async () => {

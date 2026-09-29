@@ -1,5 +1,6 @@
 'use client';
 
+import GodRootAccess from './components/security/GodRootAccess';
 import { useTranslations } from 'next-intl';
 import SettingsCard from '@/components/common/page/SettingsCard';
 import SettingsSection from '@/components/common/page/SettingsSection';
@@ -32,6 +33,7 @@ export default function GodSecurityPage() {
   return (
     <GodSectionPage slug="security">
       <SecurityStatusSections />
+      <GodRootAccess />
 
       <SettingsSection title={t('grantTitle')} description={t('grantDescription')}>
         <SettingsCard className="space-y-2 p-4 text-sm">
@@ -78,8 +80,8 @@ export default function GodSecurityPage() {
         description={t('sudoDescription')}
         action={
           <EnabledSwitch
-            checked={settings.data?.sudoPasswordRequired ?? false}
-            onChange={(checked) => updateSettings.mutate({ sudoPasswordRequired: checked })}
+            checked={settings.data?.sudoWithoutPassword ?? true}
+            onChange={(checked) => updateSettings.mutate({ sudoWithoutPassword: checked })}
             disabled={!settings.data || updateSettings.isPending}
           />
         }

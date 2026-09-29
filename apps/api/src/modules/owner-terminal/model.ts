@@ -59,7 +59,7 @@ export const OwnerTerminalAuditResponse = t.Array(OwnerTerminalAuditEntry);
 // /owner-terminal/step-up/totp and this setting has one usable value.
 export const OwnerTerminalSettingsResponse = t.Object({
   stepUpMethods: t.Array(t.Union([t.Literal('totp'), t.Literal('passkey')])),
-  sudoPasswordRequired: t.Boolean(),
+  sudoWithoutPassword: t.Boolean(),
   stepUpRequired: t.Boolean(),
   recordOutput: t.Record(t.String(), t.Boolean()),
 });

@@ -16,9 +16,8 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import type { VoiceSettings, VoiceSettingsPatch } from '@/lib/api/endpoints/voice';
 import { speak } from '../browser/speak';
-import { createLocalSpeaker } from '../browser/speakers';
 import { useVoiceSettings, useUpdateVoiceSettings } from '../hooks/useVoiceSettings';
-import { useVoiceStatus } from '../hooks/useVoice';
+import { useVoice } from '../hooks/useVoice';
 
 // Lokale KI → Sprache (docs/helena-decisions/voice-2.md §5): the owner's voice settings — how
 // long a pause ends a turn, the words the transcription should know, the local voice, and the
@@ -84,28 +83,21 @@ function WordsRow({
 }
 
 // Plays a sample sentence in the voice the conversation would use now: Helena's local voice
-// (Lokale KI → Vorlesen) where it runs, otherwise the browser's.
+// (Lokale KI → Vorlesen) where it runs, otherwise the browser's — the same path as reading an
+// answer aloud.
 function PreviewButton() {
   const t = useTranslations('localAi.voice');
-  const status = useVoiceStatus();
+  const voice = useVoice();
   const [playing, setPlaying] = useState(false);
   const play = () => {
-    const sample = t('voice.sample');
     setPlaying(true);
-    if (!status.data?.speech.local) {
-      if (!speak(sample, () => setPlaying(false))) setPlaying(false);
-      return;
-    }
-    const speaker = createLocalSpeaker({
-      onStart: () => {},
-      onIdle: () => {
-        setPlaying(false);
-        speaker.destroy();
-      },
+    const started = speak(t('voice.sample'), {
+      speaker: voice.speaker,
+      speed: voice.speed,
+      onEnd: () => setPlaying(false),
       onError: () => toast.error(t('voice.previewFailed')),
     });
-    speaker.unlock();
-    speaker.enqueue(sample);
+    if (!started) setPlaying(false);
   };
   return (
     <Button variant="outline" size="sm" className="self-end" disabled={playing} onClick={play}>

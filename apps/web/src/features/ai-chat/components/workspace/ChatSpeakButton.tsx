@@ -4,26 +4,27 @@ import { useEffect, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Square, Volume2 } from 'lucide-react';
 import { MessageAction } from '@/components/ai-elements/message';
-import { canSpeak, speak, stopSpeaking } from '@/features/voice/browser/speak';
+import { speak, stopSpeaking } from '@/features/voice/browser/speak';
+import { useVoice } from '@/features/voice/hooks/useVoice';
 import { speechText } from '@/features/voice/utils/speechText';
 
-// Reads an answer aloud with the browser's speech synthesis: its words without the
-// Markdown around them, in the page's language; stops on a second press or when the
-// message leaves the view. Works on plain http, unlike dictation.
+// Reads an answer aloud with the voice of the conversation mode — Helena's local voice where it
+// runs, else the browser's speech synthesis: its words without the Markdown around them, in the
+// page's language; stops on a second press or when the message leaves the view.
 export default function ChatSpeakButton({ text }: { text: string }) {
   const t = useTranslations('common.agentChat');
-  const [supported, setSupported] = useState(false);
+  const voice = useVoice();
   const [speaking, setSpeaking] = useState(false);
   const mine = useRef(false);
 
-  useEffect(() => {
-    setSupported(canSpeak());
-    return () => {
+  useEffect(
+    () => () => {
       if (mine.current) stopSpeaking();
-    };
-  }, []);
+    },
+    [],
+  );
 
-  if (!supported || !speechText(text)) return null;
+  if (!voice.ready || voice.speaker.engine === 'none' || !speechText(text)) return null;
 
   function toggle() {
     if (speaking) {
@@ -32,9 +33,13 @@ export default function ChatSpeakButton({ text }: { text: string }) {
       setSpeaking(false);
       return;
     }
-    mine.current = speak(text, () => {
-      mine.current = false;
-      setSpeaking(false);
+    mine.current = speak(text, {
+      speaker: voice.speaker,
+      speed: voice.speed,
+      onEnd: () => {
+        mine.current = false;
+        setSpeaking(false);
+      },
     });
     setSpeaking(mine.current);
   }

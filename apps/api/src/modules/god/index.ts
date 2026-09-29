@@ -24,6 +24,7 @@ import {
   validDisplayName,
 } from '@repo/db';
 import { emailBody, hasEmailProvider, sendEmail } from '@repo/mailer';
+import { purgeVaultTrash, VaultError } from '@repo/vault';
 import { authContext } from '#shared/auth-context';
 import { requireGod } from '#shared/access';
 import { engineSettings, setDefaultTimezone } from '#modules/engine/settings';
@@ -33,6 +34,7 @@ import { paginate } from '#shared/pagination';
 import { noContent } from '#shared/http';
 import { deleteProject } from '#modules/projects/service';
 import { systemHealth } from './system-health';
+import { vaultIntegrity } from './vault-integrity';
 import {
   deleteInstanceUser,
   getInstanceProject,
@@ -163,6 +165,29 @@ export const godRoutes = new Elysia({ name: 'god', detail: { tags: ['God'] } })
         'usable (with the command that signs one in again).',
     },
   })
+  .get('/god/vault-integrity', () => vaultIntegrity(), {
+    detail: { summary: 'Read the latest Vault integrity check' },
+  })
+  .post(
+    '/god/vault-trash/purge',
+    async ({ body }) => {
+      try {
+        return await purgeVaultTrash(body);
+      } catch (error) {
+        if (error instanceof VaultError)
+          throw new HttpError(error.status, error.message, error.code);
+        throw error;
+      }
+    },
+    {
+      body: t.Object({
+        olderThanDays: t.Integer({ minimum: 1, maximum: 3650 }),
+        apply: t.Optional(t.Boolean()),
+        confirmTargets: t.Optional(t.Array(t.String())),
+      }),
+      detail: { summary: 'Preview or explicitly apply Vault trash cleanup' },
+    },
+  )
 
   .get('/god/engine', () => engineSettings(), {
     response: { 200: EngineSettingsResponse, ...errors(401, 403) },
@@ -449,6 +474,10 @@ export const godRoutes = new Elysia({ name: 'god', detail: { tags: ['God'] } })
 
   .get('/god/display-name', async () => ({ displayName: await getDisplayName() }), {
     response: { 200: DisplayNameSchema, ...errors(401, 403) },
+    detail: {
+      summary: 'Read the product display name',
+      description: 'Read the name shown to people throughout this installation.',
+    },
   })
 
   .put(
@@ -460,6 +489,10 @@ export const godRoutes = new Elysia({ name: 'god', detail: { tags: ['God'] } })
     {
       body: DisplayNameSchema,
       response: { 200: DisplayNameSchema, ...errors(400, 401, 403, 422) },
+      detail: {
+        summary: 'Change the product display name',
+        description: 'Set the name shown to people and rename the default Home agent.',
+      },
     },
   )
 

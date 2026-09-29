@@ -92,12 +92,14 @@ bash "$here/apply.sh" --apply sudo-model >"$W/out" || fail "apply failed: $(cat 
 [[ $(cat "$W/pw/helena-ops") == L ]] || fail "helena-ops not locked"
 cmp -s "$here/files/60-helena-ops.conf" "$W/sshd.d/60-helena-ops.conf" || fail "sshd drop-in missing"
 cmp -s "$here/files/80-helena-ops" "$W/sudoers.d/80-helena-ops" || fail "sudoers rule missing"
+cmp -s "$here/files/99-volition-owner-terminal" "$W/sudoers.d/99-volition-owner-terminal" || fail "owner sudoers rule missing"
+[[ $(stat -c %a "$W/sudoers.d/99-volition-owner-terminal") == 440 ]] || fail "owner rule not 0440"
 [[ $(stat -c %a "$W/sudoers.d/80-helena-ops") == 440 ]] || fail "sudoers rule not 0440"
 [[ ! -e $W/sudoers.d/90-wilhelmpa ]] || fail "the owner's rule is still there"
 ls "$W"/state/backup/*/etc/sudoers.d/90-wilhelmpa >/dev/null || fail "no backup of the owner's rule"
 grep -q 'systemctl reload ssh' "$W/calls" || fail "sshd not reloaded"
 /usr/sbin/visudo -c >/dev/null || fail "visudo -c fails afterwards"
-audit | grep -q $'\tpass\t' || fail "audit should pass now: $(audit)"
+audit | grep -q $'\tpass\t.*why=owner_enabled' || fail "audit should report deliberate enablement: $(audit)"
 
 # Again: nothing to do (the orchestrator did it live already).
 rm -f "$W/calls"
@@ -106,6 +108,14 @@ grep -q 'password locked (already)' "$W/out" && grep -q '60-helena-ops.conf unch
   && grep -q '80-helena-ops unchanged' "$W/out" && grep -q 'no other account has NOPASSWD: ALL (already)' "$W/out" \
   || fail "second run is not idempotent: $(cat "$W/out")"
 [[ ! -e $W/calls ]] || fail "second run changed something: $(cat "$W/calls")"
+
+# An owner revocation survives another installer run.
+echo 'disabled by owner' >"$W/sudoers.d/.99-volition-owner-terminal.disabled"
+bash "$here/apply.sh" --apply sudo-model >"$W/out" || fail "apply after revocation failed"
+[[ ! -e $W/sudoers.d/99-volition-owner-terminal ]] || fail "installer ignored revocation"
+rm -f "$W/sudoers.d/.99-volition-owner-terminal.disabled"
+bash "$here/apply.sh" --apply sudo-model >"$W/out" || fail "re-enable through installer failed"
+[[ -e $W/sudoers.d/99-volition-owner-terminal ]] || fail "installer did not restore default"
 
 # A live rule with other comments counts as in place.
 printf '# written by hand\nhelena-ops   ALL=(ALL:ALL)   NOPASSWD: ALL\n' >"$W/sudoers.d/80-helena-ops"
@@ -116,6 +126,7 @@ grep -q '^# written by hand' "$W/sudoers.d/80-helena-ops" || fail "a hand-made e
 # Rollback puts the owner's rule back; the audit warns again.
 bash "$here/apply.sh" --apply rollback sudo-model >"$W/out" || fail "rollback failed: $(cat "$W/out")"
 [[ -e $W/sudoers.d/90-wilhelmpa ]] || fail "rollback did not restore the owner's rule"
+[[ ! -e $W/sudoers.d/99-volition-owner-terminal ]] || fail "rollback did not remove the managed rule"
 audit | grep -q $'\twarn\t.*why=others' || fail "after the rollback the audit should warn"
 
 # A file with other rules keeps them; only the blanket line is commented out.
@@ -126,12 +137,11 @@ grep -q '^# helena sudo-model: wilhelmpa ALL=(ALL:ALL) NOPASSWD: ALL$' "$W/sudoe
   && grep -q '^wilhelmpa ALL=(root) NOPASSWD: /usr/bin/true$' "$W/sudoers.d/90-wilhelmpa" \
   || fail "mixed file not handled: $(cat "$W/sudoers.d/90-wilhelmpa")"
 
-# Refusals: the owner without a usable password keeps his rule; no key, no --apply.
+# A locked owner password does not prevent the managed NOPASSWD rule.
 reset
 echo L >"$W/pw/wilhelmpa"
-if bash "$here/apply.sh" --apply sudo-model >"$W/out" 2>&1; then fail "applied although the owner has no password"; fi
-grep -q 'has no usable password' "$W/out" || fail "wrong refusal: $(cat "$W/out")"
-[[ -e $W/sudoers.d/90-wilhelmpa ]] || fail "the owner's rule was moved although refused"
+bash "$here/apply.sh" --apply sudo-model >"$W/out" || fail "owner without password was refused"
+[[ -e $W/sudoers.d/99-volition-owner-terminal ]] || fail "owner rule missing after apply"
 reset
 : >"$W/home/helena-ops/.ssh/authorized_keys"
 if bash "$here/apply.sh" --apply sudo-model >"$W/out" 2>&1; then fail "applied without a key"; fi

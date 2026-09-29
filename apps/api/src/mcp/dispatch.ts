@@ -28,7 +28,14 @@ export async function dispatchTool(
   tool: McpRouteTool,
   args: Record<string, unknown>,
   credential: McpCredential,
-  opts: { viaMcpEndpoint: boolean; agentProject?: string | null },
+  opts: {
+    agentRuntime?: string | null;
+    agentUnit?: string | null;
+    runId?: number | null;
+    messageId?: number | null;
+    viaMcpEndpoint: boolean;
+    agentProject?: string | null;
+  },
 ): Promise<{ text: string; isError: boolean; structuredContent: StructuredResult }> {
   const rest: Record<string, unknown> = { ...args };
 
@@ -56,6 +63,10 @@ export async function dispatchTool(
     method: tool.method,
     headers: {
       'content-type': 'application/json',
+      ...(opts.agentRuntime ? { 'x-volition-agent-runtime': opts.agentRuntime } : {}),
+      ...(opts.agentUnit ? { 'x-volition-agent-unit': opts.agentUnit } : {}),
+      ...(opts.runId ? { 'x-helena-run': String(opts.runId) } : {}),
+      ...(opts.messageId ? { 'x-volition-message': String(opts.messageId) } : {}),
       ...(opts.agentProject ? { [AGENT_PROJECT_HEADER]: opts.agentProject } : {}),
       ...(credential.kind === 'api-key' ? { 'x-api-key': credential.apiKey } : {}),
       // Marks this as an MCP call so guards enforce the per-project MCP toggle.

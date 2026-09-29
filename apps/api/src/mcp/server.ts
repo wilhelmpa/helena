@@ -1,3 +1,4 @@
+import { observeTool } from '#modules/root-access/provenance';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import {
@@ -101,7 +102,13 @@ export async function buildMcpServer(
   credential: McpCredential,
   userId: string,
   // The run an agent's runtime names on its requests (x-helena-run), for the policy log.
-  context: { runId?: number | null; agentProject?: string | null } = {},
+  context: {
+    agentRuntime?: string | null;
+    agentUnit?: string | null;
+    messageId?: number | null;
+    runId?: number | null;
+    agentProject?: string | null;
+  } = {},
 ): Promise<Server> {
   const displayName = await getDisplayName();
   const server = new Server(
@@ -163,6 +170,14 @@ export async function buildMcpServer(
   }));
 
   server.setRequestHandler(CallToolRequestSchema, async (req) => {
+    const observer = await callerAgent(userId);
+    if (observer)
+      await observeTool(
+        observer.id,
+        context,
+        req.params.name,
+        configured.has(req.params.name) || !routes.has(req.params.name),
+      );
     const bound = configured.get(req.params.name);
     if (bound) {
       return callConfiguredTool(
@@ -223,7 +238,14 @@ export async function buildMcpServer(
         route,
         args,
         credential,
-        { viaMcpEndpoint: true, agentProject: context.agentProject },
+        {
+          viaMcpEndpoint: true,
+          agentProject: context.agentProject,
+          runId: context.runId,
+          messageId: context.messageId,
+          agentUnit: context.agentUnit,
+          agentRuntime: context.agentRuntime,
+        },
       );
       return { content: [{ type: 'text', text }], isError, structuredContent };
     }

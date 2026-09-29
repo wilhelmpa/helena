@@ -15,6 +15,7 @@ import KnowledgeCanvas from './KnowledgeCanvas';
 import OriginBadge from './OriginBadge';
 import { MarkdownBody } from './ProjectKnowledgeViewer';
 import VaultTextEditor from './VaultTextEditor';
+import { useOverlayShownHere, type OverlayPin } from '@/utils/overlayPin';
 
 // A file of Wissen opened on the right, in the one overlay (owner 29.09., O49): a doc in
 // its editor, a canvas, a view (.base), a PDF, an image, any other file in its viewer. The
@@ -27,6 +28,7 @@ export default function KnowledgePreview({
   onClose,
   onOpenLarge,
   onOpenEntry,
+  pinnedHost = false,
 }: {
   entry: KnowledgeEntry;
   can: FilePermissions;
@@ -35,6 +37,8 @@ export default function KnowledgePreview({
   onOpenLarge: () => void;
   // A note a view (.base) lists, opened in its place.
   onOpenEntry?: (vaultPath: string) => void;
+  // Shown by the Shell because it is pinned (PinnedKnowledgePreview), not by a Wissen page.
+  pinnedHost?: boolean;
 }) {
   const t = useTranslations('files.knowledge');
   const relativeTime = useRelativeTime();
@@ -56,6 +60,13 @@ export default function KnowledgePreview({
     if (!saveRef.current && dirtyRef.current && !window.confirm(t('discard'))) return;
     then();
   };
+  // Pinned, the file stays open on other pages (Auftrag 117); the entry comes along.
+  const pin: OverlayPin = {
+    kind: 'file',
+    value: entry.key,
+    data: JSON.stringify({ entry, can }),
+  };
+  useOverlayShownHere(pinnedHost ? null : pin);
   const doc = isDoc(item.name);
   const vaultPath = entry.vaultPath;
 
@@ -115,6 +126,7 @@ export default function KnowledgePreview({
       actions={menu}
       onClose={() => void leave(onClose)}
       onFullscreen={() => void leave(onOpenLarge)}
+      pin={pin}
       className="ds-file-overlay"
       bodyClassName="ds-knowledge-preview"
     >

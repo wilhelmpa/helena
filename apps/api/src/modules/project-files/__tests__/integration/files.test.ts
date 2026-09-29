@@ -66,6 +66,24 @@ describe('project files', () => {
     });
   });
 
+  it('lists a missing Boards folder as empty and creates it on first write', async () => {
+    const { files } = await setup();
+    const boards = vaultFile('Projects/MKT/Boards');
+    const listing = await files.get({ query: { root: 'vault', path: 'Boards' } });
+    expect(listing.status).toBe(200);
+    expect(listing.data).toMatchObject({ path: 'Boards', items: [] });
+    expect(existsSync(boards)).toBe(false);
+    expect((await files.get({ query: { path: 'Missing' } })).status).toBe(404);
+
+    expect(
+      (await files.text.post({ path: 'Boards/First.canvas', content: '{"nodes":[],"edges":[]}' }))
+        .status,
+    ).toBe(201);
+    expect((await files.get({ query: { path: 'Boards' } })).data?.items).toMatchObject([
+      { name: 'First.canvas', kind: 'file' },
+    ]);
+  });
+
   it('uploads files into a folder and numbers a name that is taken', async () => {
     const { files } = await setup();
     expect((await files.folders.post({ path: 'Rechnungen' })).status).toBe(201);
@@ -142,7 +160,7 @@ describe('project files', () => {
 
     expect((await files.get({ query: { path: 'Docs' } })).data!.items).toEqual([]);
     expect(readFileSync(vaultFile('.trash/Projects/MKT/Docs/plan.txt'), 'utf8')).toBe('v1');
-    expect(readFileSync(vaultFile('.trash/Projects/MKT/Docs/plan (2).txt'), 'utf8')).toBe('v2');
+    expect(readFileSync(vaultFile('.trash/Projects/MKT/Docs/plan 2.txt'), 'utf8')).toBe('v2');
     expect((await files.delete({}, { query: { path: '' } })).status).toBe(400);
   });
 

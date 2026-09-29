@@ -2,7 +2,7 @@ import { randomBytes } from 'node:crypto';
 import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { beforeEach, describe, expect, it } from 'bun:test';
+import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
 import { auth } from '@repo/auth';
 import { eq } from 'drizzle-orm';
 import {
@@ -17,6 +17,7 @@ import { apiKeyApi, authedApi } from '#tests/helpers/app';
 import { signUpTestUser, type TestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
 import { enrollTotp, totpCode } from '../helpers/totp';
+import { useHostdTransport } from '#modules/server/hostd';
 
 // The proxy token is signed with the key setup.sh writes on a real host; the test signs
 // with a key of its own instead of depending on the host having one.
@@ -33,7 +34,23 @@ async function ownerWithTotp(): Promise<{ user: TestUser; secret: string }> {
 }
 
 describe('owner terminal', () => {
-  beforeEach(resetDb);
+  let sudoEnabled = true;
+  const sudoCalls: { method: string; parameters: Record<string, unknown> }[] = [];
+  beforeEach(async () => {
+    await resetDb();
+    sudoEnabled = true;
+    sudoCalls.length = 0;
+    useHostdTransport(async (method, parameters) => {
+      sudoCalls.push({ method, parameters });
+      if (method === 'OwnerSudoStatus') return { enabled: sudoEnabled };
+      if (method === 'SetOwnerSudo') {
+        sudoEnabled = parameters.enabled as boolean;
+        return { enabled: sudoEnabled };
+      }
+      throw new Error(`unexpected hostd method ${method}`);
+    });
+  });
+  afterEach(() => useHostdTransport(null));
 
   it('opens a 12h grant for a correct TOTP code and reports it back', async () => {
     const { user, secret } = await ownerWithTotp();
@@ -202,20 +219,24 @@ describe('owner terminal', () => {
     const api = authedApi(user.cookie, ORIGIN);
 
     const initial = await api['owner-terminal'].settings.get();
-    // Off by default: the existing blanket sudoers NOPASSWD stays in effect
-    // until the orchestrator audits the automation and turns this on
-    // deliberately (see service.ts's defaultSettings comment).
-    expect(initial.data).toMatchObject({ sudoPasswordRequired: false, stepUpMethods: ['totp'] });
+    expect(initial.data).toMatchObject({ sudoWithoutPassword: true, stepUpMethods: ['totp'] });
 
     const updated = await api['owner-terminal'].settings.patch({
-      sudoPasswordRequired: true,
+      sudoWithoutPassword: false,
       recordOutput: { shell: true },
     });
     expect(updated.status).toBe(200);
     expect(updated.data).toMatchObject({
-      sudoPasswordRequired: true,
+      sudoWithoutPassword: false,
       recordOutput: { shell: true },
     });
+    expect(
+      sudoCalls.some((call) => call.method === 'SetOwnerSudo' && call.parameters.enabled === false),
+    ).toBe(true);
+    expect((await api['owner-terminal'].settings.get()).data?.sudoWithoutPassword).toBe(false);
+    expect(
+      (await db.select().from(ownerTerminalAudit)).some((entry) => entry.event === 'sudo_changed'),
+    ).toBe(true);
   });
 
   it('opens the terminal from the LAN without a code once step-up is off, never from loopback', async () => {

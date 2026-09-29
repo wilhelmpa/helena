@@ -173,7 +173,22 @@
     "codeRetry": "Recargar",
     "codeNoFolder": "Este proyecto aún no tiene carpeta de trabajo.",
     "codeNoFolderPending": "La carpeta de trabajo de este proyecto aún se está preparando.",
-    "codeSettings": "Ajustes del proyecto"
+    "codeSettings": "Ajustes del proyecto",
+    "chatDockResize": "Cambiar la altura del chat",
+    "frameProblem": {
+      "title": "No se puede acceder a {tool}",
+      "reasons": {
+        "unreachable": "El servicio no responde. Puede que se esté reiniciando o que la red haya cambiado.",
+        "status": "El servicio informa de un error ({status}).",
+        "forbidden": "Sin acceso. Vuelve a iniciar sesión o concede el acceso.",
+        "timeout": "Sin respuesta a tiempo.",
+        "blocked": "El navegador no mostró la página (rechazada o bloqueada)."
+      },
+      "retrying": "Se reconecta en cuanto vuelva a responder.",
+      "reload": "Recargar",
+      "close": "Cerrar pestaña",
+      "connecting": "Conectando con {tool} …"
+    }
   },
   "groups": {
     "project": "Proyecto",
@@ -287,5 +302,6 @@
   "settingsExtensions": "Extensiones",
   "settingsAutopilotExecution": "Piloto automático y ejecución",
   "settingsProjectAccess": "Gestionar accesos",
-  "sidebarHelenaKnowledge": "{appName}"
+  "sidebarHelenaKnowledge": "{appName}",
+  "sidebarTrash": "Papelera"
 }

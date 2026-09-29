@@ -3,6 +3,7 @@ import { requireGod, requireUser } from '#shared/access';
 import { authContext } from '#shared/auth-context';
 import { preferredLocale } from '#modules/user-preferences/service';
 import { errors } from '#shared/responses';
+import { HttpError } from '#shared/lib';
 import {
   TranscriptionResponse,
   VoiceSettingsResponse,
@@ -18,6 +19,7 @@ import {
   speechVoices,
   synthesize,
   transcribe,
+  VOICE_LIMITS,
   voiceStatus,
 } from './service';
 import { DEFAULT_PRONUNCIATIONS } from './tts-text';
@@ -60,6 +62,9 @@ export const voiceRoutes = new Elysia({ name: 'voice', detail: { tags: ['Voice']
     async ({ user, body }) => {
       const current = requireUser(user);
       await requireHuman(current.id);
+      if (body.file.size > VOICE_LIMITS.maxBytes) {
+        throw new HttpError(413, 'The recording is too large', 'voice-too-long');
+      }
       const release = acquireVoice('transcribe', current.id);
       try {
         return await transcribe({

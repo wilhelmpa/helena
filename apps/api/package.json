@@ -43,6 +43,7 @@
     "@repo/net": "workspace:*",
     "@repo/storage": "workspace:*",
     "@repo/vault": "workspace:*",
+    "@sinclair/typebox": "^0.34.52",
     "@typesafe-ai/sdk": "0.6.0",
     "croner": "^10.0.1",
     "decode-named-character-reference": "^1.3.0",

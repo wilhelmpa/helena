@@ -20,6 +20,7 @@ function harness(
   audibleDelayMs = 0,
   bridgeDelayMs = 5,
   wakeText?: string,
+  progressIntervalMs?: number,
 ) {
   Object.defineProperty(globalThis, 'window', { configurable: true, value: globalThis });
   Object.defineProperty(globalThis, 'document', {
@@ -30,6 +31,9 @@ function harness(
   const sent: string[] = [];
   const problems: string[] = [];
   const timings: TurnTimings[] = [];
+  const engines: string[] = [];
+  const preloaded: string[][] = [];
+  let clears = 0;
   let ear: EarEvents | null = null;
   let speaker: VoiceSpeaker | null = null;
   let speakerEvents: SpeakerEvents | null = null;
@@ -43,6 +47,7 @@ function harness(
     refreshStatus: () => {},
     onTimings: (value) => timings.push(value),
     bridgeDelayMs,
+    progressIntervalMs,
     openEar: async (events) => {
       ear = events;
       return { pauseMs: 460, setGuarded: () => {}, destroy: async () => {} };
@@ -50,6 +55,7 @@ function harness(
     speakerFactory: (_engine, events: SpeakerEvents) => {
       if (_engine.engine === 'none') return null;
       speakerEvents = events;
+      engines.push(_engine.engine);
       const queue: string[] = [];
       let paused = false;
       speaker = {
@@ -60,18 +66,22 @@ function harness(
           if (queue.length === 1) events.onStart();
           if (audibleDelayMs)
             setTimeout(() => {
-              if (!paused && queue.includes(text)) events.onAudible?.();
+              if (!paused && queue.includes(text)) events.onAudible?.(text);
             }, audibleDelayMs);
-          else if (!paused) events.onAudible?.();
+          else if (!paused) events.onAudible?.(text);
+        },
+        preload(texts) {
+          preloaded.push(texts);
         },
         pause() {
           paused = true;
         },
         resume() {
           paused = false;
-          events.onAudible?.();
+          if (queue[0]) events.onAudible?.(queue[0]);
         },
         clear() {
+          clears += 1;
           queue.length = 0;
           events.onIdle();
         },
@@ -110,8 +120,16 @@ function harness(
     sent,
     problems,
     timings,
+    engines,
+    preloaded,
+    get clears() {
+      return clears;
+    },
     ready,
     utter,
+    beginSpeech() {
+      ear?.onSpeechStart();
+    },
     get speaker() {
       return speaker;
     },
@@ -133,14 +151,17 @@ describe('conversation controller with fake ear and speaker', () => {
     await h.ready();
     h.utter('Hallo');
     await new Promise((resolve) => setTimeout(resolve, 12));
-    assert.deepEqual(h.spoken, ['Moment …']);
+    assert.deepEqual(h.spoken, ['Ich schau kurz nach.']);
     assert.deepEqual(h.sent, ['Hallo']);
     h.controller.update(
       [{ id: 'a', role: 'assistant', text: 'Hallo. Der Rest entsteht' }],
       true,
       0,
     );
-    assert.deepEqual(h.spoken, ['Moment …', 'Hallo.']);
+    assert.deepEqual(h.spoken, ['Ich schau kurz nach.', 'Hallo.']);
+    assert.equal(h.clears, 0);
+    assert.deepEqual(h.engines, ['local']);
+    assert.ok(h.preloaded[0]?.includes('Ich schau kurz nach.'));
     assert.equal(h.timings[0]?.firstSoundKind, 'bridge');
     assert.ok((h.timings[0]?.firstSoundMs ?? Infinity) < 1000);
     assert.equal(h.controller.snapshot.waiting, false);
@@ -164,7 +185,7 @@ describe('conversation controller with fake ear and speaker', () => {
     h.speaker?.clear();
     h.utter('Noch etwas');
     await new Promise((resolve) => setTimeout(resolve, 12));
-    assert.deepEqual(h.spoken, ['Moment …']);
+    assert.deepEqual(h.spoken, ['Ich schau kurz nach.']);
     h.controller.stop();
 
     const disabled = harness();
@@ -189,7 +210,7 @@ describe('conversation controller with fake ear and speaker', () => {
     h.controller.stop();
   });
 
-  it('skips the bridge for a prompt first sentence and speaks chat details briefly', async () => {
+  it('skips the bridge for a prompt first sentence and describes tables', async () => {
     const fast = harness(undefined, 0, 50);
     await fast.ready();
     fast.utter('Hallo');
@@ -207,7 +228,7 @@ describe('conversation controller with fake ear and speaker', () => {
       false,
       0,
     );
-    assert.deepEqual(detailed.spoken, ['Die Details stehen im Chat.']);
+    assert.deepEqual(detailed.spoken, ['Tabelle mit den Spalten Name, Wert und 1 Zeile.']);
     detailed.controller.stop();
   });
 
@@ -235,17 +256,97 @@ describe('conversation controller with fake ear and speaker', () => {
     failed.controller.stop();
   });
 
-  it('shows a TTS error, keeps text in chat, and accepts another turn', async () => {
+  it('alternates bridges after answered turns', async () => {
+    const h = harness();
+    await h.ready();
+    h.utter('Erste Frage');
+    await new Promise((resolve) => setTimeout(resolve, 12));
+    h.controller.update([{ id: 'a', role: 'assistant', text: 'Erste Antwort.' }], false, 0);
+    h.speaker?.clear();
+    h.utter('Zweite Frage');
+    await new Promise((resolve) => setTimeout(resolve, 12));
+    assert.equal(h.spoken.at(-1), 'Einen Augenblick, ich prüfe das.');
+    h.controller.stop();
+  });
+
+  it('throttles tool updates and stops them when answer reading begins', async () => {
+    const h = harness(undefined, 0, 5, undefined, 20);
+    await h.ready();
+    h.controller.configure({ bridgeEnabled: false });
+    h.utter('Prüfe meine Mails');
+    h.controller.update([], true, 0, 'outlook_search');
+    await new Promise((resolve) => setTimeout(resolve, 25));
+    assert.deepEqual(h.spoken, ['Ich lese deine Mails.']);
+    h.controller.update([], true, 0, 'browser_open');
+    await new Promise((resolve) => setTimeout(resolve, 25));
+    assert.deepEqual(h.spoken, ['Ich lese deine Mails.', 'Ich öffne den Browser.']);
+    h.beginSpeech();
+    await new Promise((resolve) => setTimeout(resolve, 25));
+    assert.equal(h.spoken.length, 2);
+    h.controller.update(
+      [{ id: 'a', role: 'assistant', text: 'Die Antwort ist da.' }],
+      false,
+      0,
+      'browser_open',
+    );
+    await new Promise((resolve) => setTimeout(resolve, 25));
+    assert.equal(h.spoken.filter((part) => part === 'Ich öffne den Browser.').length, 1);
+    h.controller.stop();
+  });
+
+  it('reads every sentence and resumes after code and tables', async () => {
+    const h = harness();
+    await h.ready();
+    h.controller.configure({ bridgeEnabled: false });
+    h.utter('Erkläre es');
+    h.controller.update(
+      [
+        {
+          id: 'a',
+          role: 'assistant',
+          text: 'Eins. Zwei. Drei. Vier. Fünf.\n```ts\nconst x = 1;\n```\nDanach geht es weiter.\n| Name | Wert |\n| --- | --- |\n| A | 1 |\nZum Schluss noch ein Satz.',
+        },
+      ],
+      false,
+      0,
+    );
+    assert.ok(h.spoken.some((part) => part.includes('Fünf.')));
+    assert.ok(h.spoken.some((part) => part.includes('Den Code zeige ich dir im Chat.')));
+    assert.ok(
+      h.spoken.some((part) => part.includes('Tabelle mit den Spalten Name, Wert und 1 Zeile.')),
+    );
+    assert.ok(h.spoken.some((part) => part.includes('Zum Schluss noch ein Satz.')));
+    assert.ok(!h.spoken.some((part) => part.includes('const x')));
+    h.controller.stop();
+  });
+
+  it('does not change voices when a piece fails: the voice keeps its own recovery', async () => {
+    const h = harness();
+    await h.ready();
+    h.utter('Hallo');
+    await new Promise((resolve) => setTimeout(resolve, 12));
+    const first = h.speaker;
+    h.failVoice('Ich schau kurz nach.');
+    // Reported once for the answer, and no second voice (the browser's) was made in its place.
+    h.failVoice('Noch ein Stück.');
+    assert.deepEqual(h.problems, ['voice-failed']);
+    assert.deepEqual(h.engines, ['local']);
+    assert.equal(h.speaker, first);
+    h.controller.stop();
+  });
+
+  it('shows a TTS error once, keeps text in chat, and tries the voice again for the next answer', async () => {
     const h = harness();
     await h.ready();
     h.controller.setEngines({ engine: 'local' }, { engine: 'local', fallback: null });
     h.utter('Hallo');
     await new Promise((resolve) => setTimeout(resolve, 12));
-    h.failVoice('Moment …');
+    h.failVoice('Ich schau kurz nach.');
     assert.deepEqual(h.problems, ['voice-failed']);
     assert.equal(conversationPhase(h.controller.snapshot), 'error');
     h.controller.update([{ id: 'a', role: 'assistant', text: 'Antwort als Text.' }], false, 0);
-    assert.deepEqual(h.spoken, ['Moment …']);
+    // No permanent silence: the next answer goes to the voice again (which asks Helena's voice).
+    assert.deepEqual(h.spoken, ['Ich schau kurz nach.', 'Antwort als Text.']);
     h.utter('Neue Frage');
     assert.equal(h.controller.snapshot.active, 'on');
     assert.equal(h.controller.snapshot.error, false);

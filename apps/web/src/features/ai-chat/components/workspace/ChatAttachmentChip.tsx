@@ -18,6 +18,21 @@ import {
 // composer already showed it before sending) or a task the member pointed the agent at,
 // which opens the task.
 export default function ChatAttachmentChip({ attachment }: { attachment: AiChatAttachment }) {
+  if (attachment.kind === 'knowledge') {
+    return (
+      <Attachment size="xs">
+        <AttachmentMedia>
+          <FileText />
+        </AttachmentMedia>
+        <AttachmentContent>
+          <AttachmentTitle dir="auto">{attachment.title}</AttachmentTitle>
+        </AttachmentContent>
+        <AttachmentTrigger asChild>
+          <Link href={attachment.href} aria-label={attachment.title} />
+        </AttachmentTrigger>
+      </Attachment>
+    );
+  }
   if (attachment.kind === 'task') {
     const [projectKey] = attachment.identifier.split('-');
     const sequence = Number(attachment.identifier.slice(projectKey.length + 1));

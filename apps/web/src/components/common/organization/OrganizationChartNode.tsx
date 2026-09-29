@@ -8,6 +8,7 @@ import BudgetBar, { fullestBudget } from '@/components/helena/BudgetBar';
 import type { AiAgent } from '@/lib/api/endpoints/agents';
 import type { OrganizationAgent } from '@/lib/api/endpoints/organization';
 import { useAgentStatus, type StatusSignals } from '@/utils/helenaStatus';
+import OrganizationNodeActions from './OrganizationNodeActions';
 
 // What every chart node of an agent carries, in the tree and in the ring.
 export interface ChartAgentData extends Record<string, unknown> {
@@ -22,6 +23,9 @@ export interface ChartAgentData extends Record<string, unknown> {
   showCollapse: boolean;
   collapsed: boolean;
   onToggle: (id: number) => void;
+  // The node's "+" (OrganizationNodeActions): a member here, or a template from this agent.
+  onAdd?: () => void;
+  onSaveTemplate?: () => void;
 }
 
 export type ChartAgentNode = Node<ChartAgentData, 'agent'>;
@@ -154,6 +158,11 @@ export default function OrganizationChartNode({ data }: NodeProps<ChartAgentNode
           {collapsed ? '+' : '−'} {reportCount}
         </button>
       )}
+      <OrganizationNodeActions
+        name={agent.name}
+        onAdd={data.onAdd}
+        onSaveTemplate={data.onSaveTemplate}
+      />
       <Handle type="source" position={Position.Bottom} className={handle} isConnectable={false} />
       <Handle
         id="rail"

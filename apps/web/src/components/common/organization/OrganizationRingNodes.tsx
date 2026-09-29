@@ -8,6 +8,7 @@ import Orb from '@/components/helena/Orb';
 import type { OrganizationDepartment } from '@/lib/api/endpoints/organization';
 import { useChartAgentStatus, type ChartAgentData } from './OrganizationChartNode';
 import type { RingGroup, RingTask } from './organizationRingLayout';
+import OrganizationNodeActions from './OrganizationNodeActions';
 
 // Clicks on these nodes are handled by the chart (OrganizationChartFlow's onNodeClick),
 // so a click and a double click can be told apart and a keyboard Enter on the button
@@ -81,17 +82,26 @@ export function OrganizationRingHub({ data }: NodeProps<RingHubNode>) {
         <span className="ds-ring-hub-name">{agent?.name ?? department?.name}</span>
         <span className="ds-ring-meta">{t('agentCount', { count })}</span>
       </button>
+      <OrganizationNodeActions
+        name={agent?.name ?? department?.name ?? ''}
+        onAdd={data.onAdd}
+        onSaveTemplate={data.onSaveTemplate}
+        placement="corner"
+      />
     </div>
   );
 }
 
-export type RingGroupNode = Node<{ group: RingGroup; dimmed: boolean }, 'group'>;
+export type RingGroupNode = Node<
+  { group: RingGroup; dimmed: boolean; onAdd?: () => void },
+  'group'
+>;
 
 // A department, or a project, on the inner ring. A click opens its own ring.
 export function OrganizationRingGroup({ data }: NodeProps<RingGroupNode>) {
   const t = useTranslations('organization.chart');
   const locale = useLocale();
-  const { group, dimmed } = data;
+  const { group, dimmed, onAdd } = data;
   return (
     <div className="ds-ring-node ds-ring-group-box" data-dimmed={dimmed || undefined}>
       <CenterHandles />
@@ -118,6 +128,7 @@ export function OrganizationRingGroup({ data }: NodeProps<RingGroupNode>) {
           />
         )}
       </button>
+      <OrganizationNodeActions name={group.label} onAdd={onAdd} placement="corner" />
     </div>
   );
 }
@@ -162,6 +173,12 @@ export function OrganizationRingPill({ data }: NodeProps<RingPillNode>) {
           <span className="ds-ring-pill-name">{agent.name}</span>
         </span>
       </button>
+      <OrganizationNodeActions
+        name={agent.name}
+        onAdd={data.onAdd}
+        onSaveTemplate={data.onSaveTemplate}
+        placement="corner"
+      />
     </div>
   );
 }

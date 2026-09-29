@@ -31,6 +31,7 @@ import {
   setAgentRunArchived,
   createAiAgent,
   copyAiAgentTemplate,
+  saveAiAgentAsTemplate,
   updateAiAgent,
   regenerateAiAgentKey,
   deleteAiAgent,
@@ -309,6 +310,21 @@ export function useCopyAiAgentTemplate(teamId: number | null) {
     mutationFn: ({ templateId, projectId }: { templateId: number; projectId: number }) =>
       copyAiAgentTemplate(teamId!, templateId, projectId),
     onSuccess: invalidate,
+  });
+}
+
+// "Pool erweitern": the template joins the pool list (Team › Liste › Vorlagen), which is
+// out of sight from the tree or ring it was started in, so a success says so.
+export function useSaveAiAgentAsTemplate(teamId: number | null) {
+  const t = useTranslations('organization.pool');
+  const invalidate = useAgentInvalidator(teamId);
+  return useMutation({
+    mutationFn: ({ agentId, name }: { agentId: number; name?: string }) =>
+      saveAiAgentAsTemplate(teamId!, agentId, name),
+    onSuccess: ({ agent }) => {
+      toast.success(t('saved', { name: agent.name }));
+      invalidate();
+    },
   });
 }
 

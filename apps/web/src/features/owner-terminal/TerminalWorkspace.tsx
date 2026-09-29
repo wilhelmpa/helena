@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import WorkspaceFrame from '@/components/layout/WorkspaceFrame';
@@ -24,6 +24,9 @@ export default function TerminalWorkspace({ projectKey }: WorkspaceContentProps)
   const workspaceConfig = runtimeEnv().workspace;
   const provisioning = useProjectProvisioningQuery(projectKey);
   const area = useRef<HTMLDivElement | null>(null);
+  // The frame appears only once the terminal answers (WorkspaceFrame), and again after a
+  // reconnect: each load attaches copy, paste and the theme to the frame now there.
+  const [loads, setLoads] = useState(0);
   const resources = useMemo(
     () =>
       provisioning.data?.status === 'succeeded' ? (provisioning.data.result?.resources ?? []) : [],
@@ -60,13 +63,19 @@ export default function TerminalWorkspace({ projectKey }: WorkspaceContentProps)
       detach?.();
       detachTheme?.();
     };
-  }, [projectKey, url, tTerminal, resolvedTheme]);
+  }, [projectKey, url, tTerminal, resolvedTheme, loads]);
 
   if (!projectKey) return <OwnerTerminalPanel />;
   if (!url) return null;
   return (
     <div ref={area} className="flex h-full min-h-0 flex-1 flex-col">
-      <WorkspaceFrame url={url} title={t('terminal')} active className="flex-1" />
+      <WorkspaceFrame
+        url={url}
+        title={t('terminal')}
+        active
+        className="flex-1"
+        onLoaded={() => setLoads((value) => value + 1)}
+      />
     </div>
   );
 }

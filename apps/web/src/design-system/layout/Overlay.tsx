@@ -1,12 +1,13 @@
 'use client';
 
 import { useRef, useState, type CSSProperties, type ReactNode } from 'react';
-import { Maximize2, Minimize2, X } from 'lucide-react';
+import { Maximize2, Minimize2, Pin, PinOff, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useExitOnEscape } from '@/hooks/useExitOnEscape';
 import { useExitOnClickOutside } from '@/hooks/useExitOnClickOutside';
 import { SidePanelResizeHandle, useSidePanelWidth, type SidePanelKind } from './sidePanelWidth';
 import { PageChromeCtx } from './pageChrome';
+import { toggleOverlayPin, unpinOverlay, useOverlayPin, type OverlayPin } from '@/utils/overlayPin';
 
 export type OverlayTab = { id: string; label: ReactNode };
 
@@ -30,6 +31,7 @@ export function Overlay({
   className,
   bodyClassName,
   width: kind = 'default',
+  pin,
   children,
 }: {
   label: string;
@@ -49,16 +51,27 @@ export function Overlay({
   bodyClassName?: string;
   // 'wide' for a whole form (an agent's settings): wider, with its own remembered width.
   width?: SidePanelKind;
+  // What this overlay shows, when it can be pinned: pinned, it stays open when the page
+  // changes (utils/overlayPin), like the chat panel (Auftrag 117).
+  pin?: OverlayPin;
   children: ReactNode;
 }) {
   const t = useTranslations('common');
   const { width } = useSidePanelWidth(kind);
   const [full, setFull] = useState(false);
-  useExitOnEscape(() => (full ? setFull(false) : onClose()), escape);
+  const pinnedNow = useOverlayPin();
+  const pinned = pin != null && pinnedNow?.kind === pin.kind && pinnedNow.value === pin.value;
+  // Closing a pinned overlay unpins it.
+  const close = () => {
+    if (pin) unpinOverlay(pin);
+    onClose();
+  };
+  useExitOnEscape(() => (full ? setFull(false) : close()), escape);
   const active = activeTab ?? tabs[0]?.id;
   const surface = useRef<HTMLElement>(null);
   useExitOnClickOutside(surface, () => {
-    if (closeOnOutsideClick && !full) onClose();
+    // Pinned, it stays while the page behind is used.
+    if (closeOnOutsideClick && !full && !pinned) onClose();
   });
 
   return (
@@ -68,6 +81,7 @@ export function Overlay({
       className={`ds-side-panel ds-overlay ${className ?? ''}`}
       data-open="true"
       data-full={full ? 'true' : 'false'}
+      data-pinned={pinned ? 'true' : undefined}
       style={{ '--ds-panel-w': `${width}px` } as CSSProperties}
     >
       {!full && <SidePanelResizeHandle kind={kind} />}
@@ -91,6 +105,18 @@ export function Overlay({
         </div>
         <div className="ds-panel-head-tools">
           {actions}
+          {pin && (
+            <button
+              type="button"
+              className="ds-icon-button ds-panel-pin"
+              onClick={() => toggleOverlayPin(pin)}
+              aria-pressed={pinned}
+              title={pinned ? t('unpinOverlay') : t('pinOverlay')}
+              aria-label={pinned ? t('unpinOverlay') : t('pinOverlay')}
+            >
+              {pinned ? <PinOff size={15} /> : <Pin size={15} />}
+            </button>
+          )}
           <button
             type="button"
             className="ds-icon-button"
@@ -103,7 +129,7 @@ export function Overlay({
           <button
             type="button"
             className="ds-icon-button"
-            onClick={onClose}
+            onClick={close}
             title={t('close')}
             aria-label={t('close')}
           >

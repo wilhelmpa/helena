@@ -233,9 +233,18 @@
       "grant_revoked": "授权已撤销",
       "session_start": "会话已开始",
       "session_end": "会话已结束",
-      "token_rejected": "令牌被拒绝"
+      "token_rejected": "令牌被拒绝",
+      "sudo_changed": "Terminal sudo changed"
     },
-    "grantActiveOpen": "已授权。"
+    "grantActiveOpen": "已授权。",
+    "rootAccess": {
+      "title": "Root access for Ava",
+      "enabled": "Root access for Ava",
+      "directOnly": "Root only on direct owner request",
+      "audit": "Root commands (latest 100)",
+      "refresh": "Refresh",
+      "boundary": "Revocation stops only units started by the root broker. Services, cron jobs and sudoers changes created by a command require separate reversal."
+    }
   },
   "storage": {
     "saved": "存储设置已保存",

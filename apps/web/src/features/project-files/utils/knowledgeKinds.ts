@@ -45,3 +45,12 @@ export const knowledgeIcons: Record<KnowledgeKind, LucideIcon> = {
 // A doc, canvas or view is shown by its name without the extension.
 export const knowledgeDisplayName = (name: string) =>
   isKnowledge(name) ? name.replace(/\.(md|markdown|canvas|base)$/i, '') : name;
+
+// A name typed while renaming in place (Auftrag 117): a doc, canvas or view is shown and
+// typed without its extension, so it keeps the one it had; any other file is taken as typed.
+export function renamedFileName(original: string, typed: string): string {
+  const name = typed.trim();
+  const extension = /\.(md|markdown|canvas|base)$/i.exec(original)?.[0];
+  if (!extension || /\.[a-z0-9]+$/i.test(name)) return name;
+  return `${name}${extension}`;
+}

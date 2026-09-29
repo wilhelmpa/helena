@@ -297,5 +297,12 @@
   "searchSettings": "Buscar configuração …",
   "nameList": {
     "more": "+{count} mais"
+  },
+  "pinOverlay": "Fixar: fica aberto ao trocar de página",
+  "unpinOverlay": "Desafixar: fecha ao trocar de página",
+  "inherit": {
+    "inherited": "Herda de {appName}",
+    "overridden": "Alterado para este projeto",
+    "reset": "Redefinir"
   }
 }

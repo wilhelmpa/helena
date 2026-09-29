@@ -220,9 +220,9 @@
     "stepUpDescription": "Was beweist, dass wirklich der Owner das Terminal öffnet, jedes Mal, auch im LAN.",
     "stepUpMethod": "TOTP (eine Authenticator-App), eingerichtet unter Konto → Sicherheit. Passkey übernimmt, sobald diese Instanz hinter HTTPS läuft.",
     "stepUpOffHint": "Im LAN ohne Code: Das Terminal öffnet sich für deine Sitzung im Heimnetz direkt. Über den Tunnel (loopback) und von außen bleibt der Code aus der Authenticator-App immer Pflicht.",
-    "sudoTitle": "sudo im Browser-Terminal verlangt Passwort",
-    "sudoDescription": "Aus (Standard) lässt jeden sudo-Befehl überall passwortlos, im Owner-Terminal genau wie in der SSH-Automatisierung – sudo autorisiert nach Unix-Konto und kann die beiden nicht unterscheiden. An verengt das sudo im Browser-Terminal auf eine geprüfte Liste von Automatisierungsbefehlen und verlangt für alles andere das Linux-Passwort.",
-    "sudoHint": "Das Einschalten hier reicht allein nicht aus: sudo lässt sich zur Laufzeit nicht pro Sitzung umschalten, ein Betreiber muss deshalb erst jeden `sudo -n`-Befehl prüfen, den die SSH-Automatisierung der Instanz tatsächlich ausführt, ihn gegen die sudo-Regel abgleichen und diese Regel von Hand installieren. Vorher mit dem Betreiber absprechen – bis dahin hat diese Einstellung keine Wirkung.",
+    "sudoTitle": "Terminals: sudo ohne Passwort",
+    "sudoDescription": "Gilt für das Unix-Konto wilhelmpa und damit für Shell, Claude Code, Codex und andere Sitzungen dieses Kontos.",
+    "sudoHint": "Änderungen wirken sofort. Der Code aus der Authenticator-App beim Öffnen bleibt erforderlich.",
     "auditTitle": "Audit-Protokoll",
     "auditDescription": "Jeder Bestätigungsversuch, jede Änderung der Freigabe und jede Terminal-Sitzung, neueste zuerst. Keine Tastatureingaben.",
     "auditEmpty": "Noch keine Ereignisse.",
@@ -233,9 +233,18 @@
       "grant_revoked": "Freigabe widerrufen",
       "session_start": "Sitzung gestartet",
       "session_end": "Sitzung beendet",
-      "token_rejected": "Token abgelehnt"
+      "token_rejected": "Token abgelehnt",
+      "sudo_changed": "Terminal-sudo geändert"
     },
-    "grantActiveOpen": "Freigegeben."
+    "grantActiveOpen": "Freigegeben.",
+    "rootAccess": {
+      "title": "Root-Stelle für Ava",
+      "enabled": "Root-Stelle für Ava",
+      "directOnly": "Root nur auf direkten Owner-Auftrag",
+      "audit": "Root-Aufrufe (letzte 100)",
+      "refresh": "Aktualisieren",
+      "boundary": "Widerruf beendet nur von der Root-Stelle gestartete Units. Durch Befehle angelegte Dienste, Cronjobs und sudoers-Änderungen müssen gesondert zurückgenommen werden."
+    }
   },
   "storage": {
     "saved": "Speichereinstellungen gespeichert",

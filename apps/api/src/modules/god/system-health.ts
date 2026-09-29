@@ -21,6 +21,7 @@ import { nextFireTime } from '#modules/engine/schedules';
 import { modelAvailabilityHealth } from '#modules/model-availability/service';
 import { runFailures } from '#modules/pipelines/runs';
 import { runtimeLogins } from '#modules/runtime-logins/service';
+import { vaultIntegrity } from './vault-integrity';
 
 // The state of the services Helena works with, for the owner's overview on Home. The
 // worker and the engine report themselves, the worker checks the provisioning service,
@@ -261,19 +262,21 @@ function runnerHealth(
 }
 
 export async function systemHealth() {
-  const [reported, [runner], runs, engine, janitors, agents, logins, models] = await Promise.all([
-    db.select().from(serviceHeartbeat),
-    db
-      .select({ lastSeenAt: sql`max(${aiAgent.lastSeenAt})`.mapWith(aiAgent.lastSeenAt) })
-      .from(aiAgent)
-      .where(eq(aiAgent.kind, 'external')),
-    runCounts(),
-    engineHealth(),
-    listJanitorRuns(),
-    runtimeSyncSummary(),
-    runtimeLogins(),
-    modelAvailabilityHealth(),
-  ]);
+  const [reported, [runner], runs, engine, janitors, agents, logins, models, vault] =
+    await Promise.all([
+      db.select().from(serviceHeartbeat),
+      db
+        .select({ lastSeenAt: sql`max(${aiAgent.lastSeenAt})`.mapWith(aiAgent.lastSeenAt) })
+        .from(aiAgent)
+        .where(eq(aiAgent.kind, 'external')),
+      runCounts(),
+      engineHealth(),
+      listJanitorRuns(),
+      runtimeSyncSummary(),
+      runtimeLogins(),
+      modelAvailabilityHealth(),
+      vaultIntegrity(),
+    ]);
   const byService = new Map(reported.map((row) => [row.service, row]));
   const byJanitor = new Map(janitors.map((row) => [row.job, row]));
   return {
@@ -291,5 +294,6 @@ export async function systemHealth() {
     engine,
     janitors: JANITOR_JOBS.map((job) => janitorHealth(job, byJanitor.get(job))),
     models,
+    vault,
   };
 }

@@ -21,7 +21,7 @@ dev_clone=$HOME/volition/plan
 # The owner's main agents run without asking before each step (owner, 28.09., O27/O28:
 # "volle Rechte ohne Rückfragen"). The tabs sit behind the terminal's own step-up and
 # belong to the owner's own account; what that account may do with sudo is sudoers'
-# decision (90-wilhelmpa, setup.sh --install-sudo-policy), not this script's.
+# decision (hardening/apply.sh sudo-model and hostd), not this script's.
 claude_full=(--dangerously-skip-permissions)
 codex_full=(--dangerously-bypass-approvals-and-sandbox)
 

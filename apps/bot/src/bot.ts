@@ -111,24 +111,39 @@ export function createBot(token: string): Bot {
   return bot;
 }
 
+export function approvalTextChunks(text: string): string[] {
+  const characters = Array.from(text);
+  const chunks: string[] = [];
+  for (let offset = 0; offset < characters.length; offset += 1750) {
+    chunks.push(characters.slice(offset, offset + 1750).join(''));
+  }
+  return chunks;
+}
+
 export async function deliverPending(bot: Bot): Promise<void> {
   for (const notice of await pendingApprovalNotices()) {
     try {
       if (!notice.chatId) continue;
-      await bot.api.sendMessage(
-        notice.chatId,
-        `Approval #${notice.approvalId}: ${notice.action}\n${notice.details}`.slice(0, 4000),
-        {
-          reply_markup: {
-            inline_keyboard: [
-              [
-                { text: 'Approve', callback_data: `approval:${notice.approvalId}:yes` },
-                { text: 'Reject', callback_data: `approval:${notice.approvalId}:no` },
-              ],
-            ],
-          },
-        },
+      const chunks = approvalTextChunks(
+        `Approval #${notice.approvalId}: ${notice.action}\n${notice.details}`,
       );
+      for (const [index, text] of chunks.entries())
+        await bot.api.sendMessage(
+          notice.chatId,
+          text,
+          index === chunks.length - 1
+            ? {
+                reply_markup: {
+                  inline_keyboard: [
+                    [
+                      { text: 'Approve', callback_data: `approval:${notice.approvalId}:yes` },
+                      { text: 'Reject', callback_data: `approval:${notice.approvalId}:no` },
+                    ],
+                  ],
+                },
+              }
+            : undefined,
+        );
       await markNoticeSent(notice.id);
     } catch {
       console.error('[bot] delivery failed');

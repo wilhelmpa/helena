@@ -43,7 +43,7 @@ export interface OwnerTerminalAuditEntry {
 
 export interface OwnerTerminalSettings {
   stepUpMethods: ('totp' | 'passkey')[];
-  sudoPasswordRequired: boolean;
+  sudoWithoutPassword: boolean;
   // false: LAN sessions open the terminal without a TOTP code (never loopback).
   stepUpRequired: boolean;
   recordOutput: Partial<Record<OwnerTerminalKind, boolean>>;

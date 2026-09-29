@@ -1,6 +1,7 @@
 'use client';
 
 import type { AiAgent } from '@/lib/api/endpoints/agents';
+import type { ChatSummary } from '@/lib/api/endpoints/agentChat';
 import type { ChatLayoutMode } from '../../utils/chatLayout';
 import ChatListPaneBody from './ChatListPaneBody';
 import ChatListDrawer from './ChatListDrawer';
@@ -14,6 +15,9 @@ export interface ChatListPaneProps {
   // Where the drawer opens in the compact layout: next to the button that opens it.
   side?: 'start' | 'end';
   selectedThreadId: string | null;
+  // The open chat's own record: shown in the list even where the list's scope (a project)
+  // does not hold it, so an open chat never sits beside "no chats yet".
+  openChat?: ChatSummary | null;
   onSelectThread: (thread: { id: string; agentId: number }) => void;
   // A chat was deleted: the open one closes.
   onThreadRemoved: (threadId: string) => void;

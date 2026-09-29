@@ -243,6 +243,11 @@
     }
   },
   "voice": {
+    "progress": { "title": "تحديثات أثناء العمل", "hint": "تخبرك آفا بإيجاز بما تعمل عليه." },
+    "readFull": {
+      "title": "قراءة الإجابات كاملة",
+      "hint": "تقرأ آفا الإجابة كاملة وتصف الشيفرة والجداول باختصار."
+    },
     "wake": {
       "title": "Listen for “Ava”",
       "hint": "The microphone stays open while a chat page is open. Before “Ava”, only on-device recognition processes your voice; nothing is saved.",

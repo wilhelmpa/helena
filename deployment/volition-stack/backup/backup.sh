@@ -145,6 +145,7 @@ done
 backup_result=$(restic backup --read-concurrency 1 --quiet --json --tag volition --exclude-file /home/pw/services/volition-stack/backup/excludes.txt \
   "$stage" /home/pw/services/itsaplan /home/pw/services/volition-stack \
   /home/pw/services/volition-workspaces \
+  /srv/volition/vault \
   /home/pw/services/volition-stack/data/hermes /home/pw/.config/systemd/user /home/pw/.config/itsaplan \
   /home/pw/.local/share/hermes-gog /home/pw/Projekte/Shopify/v1-cart-suite "${runtime_paths[@]}")
 snapshot_id=$(python3 -c '

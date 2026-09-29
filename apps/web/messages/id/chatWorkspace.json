@@ -141,8 +141,11 @@
     "dictateLocal": "Dikte (Whisper di mesin ini)",
     "stopDictation": "Hentikan dikte",
     "dictationUnavailable": "Dikte tidak bisa dipakai di sini saat ini – klik untuk alasannya",
-    "autoSpeak": "Bacakan jawaban secara otomatis",
-    "autoSpeakOn": "Jawaban dibacakan – klik untuk mematikan",
+    "readAllOff": "Hanya jawaban atas pertanyaan lisan yang dibacakan – klik untuk membacakan semuanya",
+    "readAllOn": "Semua dibacakan di obrolan ini – klik untuk mematikan",
+    "readAllShort": "Semua",
+    "voiceFallback": "Suara lokal tidak dapat dijangkau – suara browser",
+    "voiceDown": "Suara lokal tidak dapat dijangkau – tidak ada yang dibacakan",
     "queuedList": "Menunggu dikirim",
     "localModel": "{name} (lokal)",
     "fallbackModel": "Cadangan: {name}",
@@ -259,7 +262,7 @@
       "failed": "Mikrofon tidak dapat dinyalakan.",
       "transcribeFailed": "Transkripsi gagal. Silakan coba lagi.",
       "recognitionFailed": "Pengenalan suara browser tidak merespons (Chrome mengirim rekaman ke Google untuk itu). Dengan Administrator → AI lokal → “Transkripsi”, Whisper mencatat di mesin ini.",
-      "voiceFailed": "Suara lokal gagal. Jawaban ada di chat; bila diizinkan, browser melanjutkan membaca.",
+      "voiceFailed": "Suara lokal tidak merespons. Jawabannya ada di obrolan.",
       "nothingHeard": "Tidak ada yang dipahami – apakah mikrofon menyala?",
       "limit": "Dihentikan setelah {seconds} detik – batas terpanjang sebuah dikte.",
       "echoTitle": "Saya mendengar diri saya sendiri",
@@ -309,5 +312,11 @@
   "context": {
     "task": "Tugas {identifier} “{title}”",
     "document": "Dokumen {name}"
+  },
+  "dock": {
+    "expand": "Buka obrolan",
+    "collapse": "Tutup obrolan",
+    "openTab": "Buka sebagai tab",
+    "empty": "Tanya {agent} …"
   }
 }

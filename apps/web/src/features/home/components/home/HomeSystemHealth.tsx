@@ -15,6 +15,7 @@ import LimitsHealthLines from '@/features/provider-limits/components/LimitsHealt
 import ModelAvailabilityHealthLines from '@/features/model-availability/components/ModelAvailabilityHealthLines';
 import ServerHealthLines from '@/features/server/components/ServerHealthLines';
 import { Box, Card, Grid, Stack } from '@/design-system';
+import StatusBadge from '@/components/common/page/StatusBadge';
 
 // The instance owner's view of the services around Helena (Start → System, in a dialog) — the Hermes runner, the
 // Helena engine (workflows, agent teams, routines), the provisioning service and the
@@ -78,6 +79,20 @@ export default function HomeSystemHealth() {
           ))}
         </ul>
       </Card>
+      {data.vault && (
+        <Card title="Vault">
+          <StatusBadge status={data.vault.state === 'ok' ? 'success' : 'danger'}>
+            {data.vault.state === 'ok' ? 'OK' : data.vault.findings.length}
+          </StatusBadge>
+          <ul>
+            {data.vault.findings.map((finding, index) => (
+              <li key={`${finding.code}:${finding.path}:${index}`}>
+                {finding.code}: {finding.path}
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
     </Grid>
   );
 }

@@ -70,7 +70,12 @@ export function isAgentFormValid(v: AgentFormValue): boolean {
 
 // The form's starting value, from an existing agent when editing or blank defaults
 // when creating, in the project given.
-export function initialAgentValue(agent?: AiAgent, projectId?: number): AgentFormValue {
+export function initialAgentValue(
+  agent?: AiAgent,
+  projectId?: number,
+  // A new template of the pool ("Pool erweitern"): the switch starts on.
+  asTemplate = false,
+): AgentFormValue {
   return {
     name: agent?.name ?? '',
     username: agent?.username ?? '',
@@ -102,7 +107,7 @@ export function initialAgentValue(agent?: AiAgent, projectId?: number): AgentFor
     projectIds: (agent?.projects ?? []).map((project) => project.id),
     projectScope: agent?.projectScope ?? 'selected',
     projectId: agent ? null : (projectId ?? null),
-    template: agent?.template ?? false,
+    template: agent?.template ?? asTemplate,
     runnerScope: agent?.runnerScope ?? 'team',
   };
 }

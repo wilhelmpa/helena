@@ -731,6 +731,9 @@ export const agentRun = pgTable(
   'agent_run',
   {
     id: serial('id').primaryKey(),
+    rootOrigin: text('root_origin').notNull().default('system'),
+    observedRuntime: text('observed_runtime'),
+    taintSources: jsonb('taint_sources').$type<string[]>().notNull().default([]),
     agentId: integer('agent_id')
       .notNull()
       .references(() => aiAgent.id, { onDelete: 'cascade' }),
@@ -1124,6 +1127,9 @@ export const agentChatMessage = pgTable(
   'agent_chat_message',
   {
     id: serial('id').primaryKey(),
+    rootOrigin: text('root_origin').notNull().default('system'),
+    observedRuntime: text('observed_runtime'),
+    taintSources: jsonb('taint_sources').$type<string[]>().notNull().default([]),
     threadId: text('thread_id')
       .notNull()
       .references(() => agentChatThread.id, { onDelete: 'cascade' }),
@@ -3520,7 +3526,7 @@ export const ownerTerminalAudit = pgTable(
   (t) => [
     check(
       'owner_terminal_audit_event_check',
-      sql`${t.event} IN ('step_up_ok', 'step_up_fail', 'rate_limited', 'grant_revoked', 'session_start', 'session_end', 'token_rejected')`,
+      sql`${t.event} IN ('step_up_ok', 'step_up_fail', 'rate_limited', 'grant_revoked', 'session_start', 'session_end', 'token_rejected', 'sudo_changed')`,
     ),
     index('owner_terminal_audit_user_idx').on(t.userId, t.createdAt.desc()),
     // Backs the rate-limit window query: failures of one user in the last 15 minutes.

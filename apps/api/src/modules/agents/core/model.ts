@@ -611,6 +611,15 @@ export const ChatAttachmentResponse = t.Union([
     identifier: t.String(),
     title: t.String(),
   }),
+  t.Object({
+    kind: t.Literal('knowledge'),
+    ref: t.String(),
+    title: t.String(),
+    source: t.String(),
+    href: t.String(),
+    vaultPath: t.Optional(t.String()),
+    contentType: t.Optional(t.String()),
+  }),
 ]);
 
 // One page of a chat thread's transcript (ChatMessagePage).
@@ -691,6 +700,15 @@ export const createAgentBody = t.Object({
 
 export const copyTemplateBody = t.Object({
   projectId: t.Integer({ description: 'The project of the team the copy works in.' }),
+});
+
+export const saveAsTemplateBody = t.Object({
+  name: t.Optional(
+    t.String({
+      maxLength: 128,
+      description: "The template's name; the agent's name when it is left out.",
+    }),
+  ),
 });
 
 export const resetToTemplateBody = t.Object({

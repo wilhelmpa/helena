@@ -926,9 +926,15 @@ export class PatchrightGatewaySession implements GatewaySession {
       : options.fullPage
         ? 'the full page'
         : 'the viewport';
+    const savedAs = this.#onDownload
+      ? await this.#onDownload(
+          `screenshot-${new Date().toISOString().replace(/[:.]/g, '-')}.png`,
+          covered,
+        )
+      : null;
     return {
       text: await this.#answer(
-        `Took a screenshot of ${what}${rects.length ? ` (${rects.length} login field(s) covered)` : ''}`,
+        `Took a screenshot of ${what}${rects.length ? ` (${rects.length} login field(s) covered)` : ''}${savedAs ? `; saved in Vault: ${savedAs}` : ''}`,
       ),
       image: { data: covered.toString('base64'), mimeType: 'image/png' },
     };

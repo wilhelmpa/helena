@@ -89,7 +89,11 @@
   "trashDialog": {
     "title": "Mettre {name} à la corbeille ?",
     "description": "L'élément est déplacé dans la corbeille du coffre et peut y être restauré.",
-    "confirm": "Mettre à la corbeille"
+    "confirm": "Mettre à la corbeille",
+    "counting": "Lecture du contenu …",
+    "emptyFolder": "Le dossier est vide.",
+    "folderHolds": "{count, plural, one {Il contient # élément qui part avec lui :} other {Il contient # éléments qui partent avec lui :}}",
+    "more": "et {count} de plus"
   },
   "linkDialog": {
     "title": "Lier à une tâche",
@@ -209,7 +213,8 @@
     "emptyFilesTitle": "Aucun fichier pour l’instant",
     "emptyFiles": "Les PDF, images et autres fichiers arrivent ici. Téléversez-en un ou déposez-le ici.",
     "onlySubfoldersTitle": "Seulement des sous-dossiers",
-    "onlySubfolders": "Ce dossier ne contient aucun fichier. Ouvrez l’un de ses sous-dossiers."
+    "onlySubfolders": "Ce dossier ne contient aucun fichier. Ouvrez l’un de ses sous-dossiers.",
+    "renameLabel": "Nouveau nom pour {name}"
   },
   "canvas": {
     "opening": "Ouverture de la toile …",
@@ -271,5 +276,20 @@
     "viewTable": "Tableau",
     "viewCards": "Cartes",
     "viewList": "Liste"
+  },
+  "renamed": "Renommé en {name}",
+  "trashView": {
+    "search": "Chercher dans la corbeille …",
+    "name": "Nom",
+    "from": "Dossier · supprimé",
+    "loading": "Chargement de la corbeille …",
+    "loadFailed": "Impossible de charger la corbeille.",
+    "emptyTitle": "La corbeille est vide",
+    "empty": "Ce que tu supprimes ici arrive ici et peut être restauré.",
+    "noMatch": "Rien dans la corbeille ne correspond à la recherche.",
+    "topLevel": "niveau supérieur",
+    "restore": "Restaurer",
+    "restoreTo": "Remettre à {path}",
+    "restored": "{name} est restauré"
   }
 }

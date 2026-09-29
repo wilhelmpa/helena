@@ -141,8 +141,11 @@
     "dictateLocal": "Dictate (Whisper on this machine)",
     "stopDictation": "Stop dictation",
     "dictationUnavailable": "Dictation is not possible here right now – click for the reason",
-    "autoSpeak": "Read answers aloud automatically",
-    "autoSpeakOn": "Answers are read aloud – click to turn off",
+    "readAllOff": "Only answers to spoken questions are read aloud – click to read everything",
+    "readAllOn": "Everything in this chat is read aloud – click to turn off",
+    "readAllShort": "All",
+    "voiceFallback": "Local voice unreachable – browser voice",
+    "voiceDown": "Local voice unreachable – nothing is read aloud",
     "queuedList": "Waiting to send",
     "localModel": "{name} (local)",
     "fallbackModel": "Fallback: {name}",
@@ -259,7 +262,7 @@
       "failed": "The microphone could not be started.",
       "transcribeFailed": "Transcription failed. Please try again.",
       "recognitionFailed": "The browser's speech recognition does not answer (Chrome sends the recording to Google for it). With Administrator → Local AI → “Transcription”, Whisper on this machine writes along.",
-      "voiceFailed": "The local voice failed. The answer is in the chat; where allowed, the browser reads on.",
+      "voiceFailed": "The local voice is not answering. The answer is in the chat.",
       "nothingHeard": "Nothing understood – was the microphone on?",
       "limit": "Stopped after {seconds} seconds – the longest a dictation can be.",
       "echoTitle": "I heard myself",
@@ -309,5 +312,11 @@
   "context": {
     "task": "Task {identifier} “{title}”",
     "document": "Document {name}"
+  },
+  "dock": {
+    "expand": "Open the chat",
+    "collapse": "Close the chat",
+    "openTab": "Open as tab",
+    "empty": "Ask {agent} …"
   }
 }

@@ -89,7 +89,11 @@
   "trashDialog": {
     "title": "Pindahkan {name} ke tempat sampah?",
     "description": "Entri dipindahkan ke folder tempat sampah vault dan dapat dipulihkan dari sana.",
-    "confirm": "Pindahkan ke tempat sampah"
+    "confirm": "Pindahkan ke tempat sampah",
+    "counting": "Membaca isinya …",
+    "emptyFolder": "Folder kosong.",
+    "folderHolds": "Berisi # entri yang ikut dipindahkan:",
+    "more": "dan {count} lainnya"
   },
   "linkDialog": {
     "title": "Tautkan ke tugas",
@@ -209,7 +213,8 @@
     "emptyFilesTitle": "Belum ada berkas",
     "emptyFiles": "PDF, gambar, dan berkas lain masuk ke sini. Unggah satu atau seret ke sini.",
     "onlySubfoldersTitle": "Hanya subfolder",
-    "onlySubfolders": "Folder ini tidak berisi berkas. Buka salah satu subfoldernya."
+    "onlySubfolders": "Folder ini tidak berisi berkas. Buka salah satu subfoldernya.",
+    "renameLabel": "Nama baru untuk {name}"
   },
   "canvas": {
     "opening": "Membuka kanvas …",
@@ -271,5 +276,20 @@
     "viewTable": "Tabel",
     "viewCards": "Kartu",
     "viewList": "Daftar"
+  },
+  "renamed": "Diganti nama menjadi {name}",
+  "trashView": {
+    "search": "Cari di tempat sampah …",
+    "name": "Nama",
+    "from": "Folder · dihapus",
+    "loading": "Memuat tempat sampah …",
+    "loadFailed": "Tempat sampah tidak dapat dimuat.",
+    "emptyTitle": "Tempat sampah kosong",
+    "empty": "Yang kamu hapus di sini masuk ke sini dan bisa dipulihkan.",
+    "noMatch": "Tidak ada yang cocok di tempat sampah.",
+    "topLevel": "tingkat atas",
+    "restore": "Pulihkan",
+    "restoreTo": "Kembalikan ke {path}",
+    "restored": "{name} dipulihkan"
   }
 }

@@ -331,11 +331,15 @@
     "whyNoGoal": "Sin objetivo vinculado",
     "noAgent": "Sin agente",
     "filterLabel": "Estado",
-    "addMember": "Añadir miembro"
+    "addMember": "Añadir miembro",
+    "viewList": "Lista",
+    "addHere": "Añadir un miembro: {name}",
+    "nodeMenu": "Acciones de {name}",
+    "addMemberHere": "Añadir un miembro"
   },
   "addMember": {
     "title": "Añadir un miembro al equipo",
-    "description": "Un agente del pool o una nueva copia de una plantilla se une al equipo del proyecto.",
+    "description": "Un agente del pool, una copia nueva de una plantilla o un agente nuevo se une al equipo del proyecto.",
     "source": "Origen",
     "fromPool": "Del pool",
     "fromTemplate": "Desde plantilla",
@@ -348,6 +352,20 @@
     "add": "Añadir",
     "added": "Añadido a {project}",
     "failed": "No se pudo añadir el miembro.",
-    "keyOnce": "La copia se ejecuta fuera de {appName}: copia su clave ahora, solo se muestra una vez."
+    "keyOnce": "La copia se ejecuta fuera de {appName}: copia su clave ahora, solo se muestra una vez.",
+    "fromNew": "Crear nuevo",
+    "newHint": "Un agente nuevo en {project}, especialista bajo el coordinador. Se abre a la derecha para configurarlo.",
+    "create": "Crear"
+  },
+  "pool": {
+    "saved": "{name} ya es una plantilla del pool",
+    "noMatch": "Ningún agente coincide con la búsqueda.",
+    "showLabel": "Mostrar",
+    "showAll": "Todos",
+    "showAgents": "Agentes",
+    "showTemplates": "Plantillas",
+    "extend": "Ampliar el pool",
+    "newTemplate": "Nueva plantilla",
+    "newAgent": "Nuevo agente"
   }
 }

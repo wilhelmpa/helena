@@ -5,7 +5,25 @@
     "vault": "笔记与文件",
     "mail": "邮件",
     "chat": "聊天",
-    "run": "智能体运行"
+    "run": "智能体运行",
+    "goal": "目标",
+    "initiative": "举措",
+    "board": "画布",
+    "receipt": "收据"
+  },
+  "picker": {
+    "search": "搜索知识",
+    "kind": "按类型筛选",
+    "all": "所有类型",
+    "file": "文件",
+    "doc": "文档",
+    "journal": "日志",
+    "template": "模板",
+    "note": "笔记",
+    "image": "图片",
+    "browserImage": "浏览器图片",
+    "chatFile": "聊天文件",
+    "unavailable": "知识目前不可用。"
   },
   "capture": {
     "inbox": "收件箱",

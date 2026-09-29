@@ -46,6 +46,19 @@ mock.module('../../hooks/useActiveChat', () => ({
     };
   },
 }));
+// The chat records the page looks up for a thread from the address (a project page checks
+// which scope the chat belongs to).
+const summaries = new Map<
+  string,
+  { id: string; agent: { id: number }; project: { key: string } | null }
+>();
+let summaryLoading = false;
+mock.module('../../hooks/useChatSummary', () => ({
+  useChatSummary: (threadId: string | null) => ({
+    data: threadId ? summaries.get(threadId) : undefined,
+    isLoading: threadId != null && summaryLoading,
+  }),
+}));
 mock.module('./ChatWorkspace', () => ({
   default: ({
     scopeKey,
@@ -90,6 +103,8 @@ beforeEach(async () => {
   setters.clear();
   validators.clear();
   routes.length = 0;
+  summaries.clear();
+  summaryLoading = false;
   search = new URLSearchParams();
   originals = new Map(
     replacedGlobals.map((name) => [name, Object.getOwnPropertyDescriptor(globalThis, name)]),
@@ -229,5 +244,50 @@ describe('active chat location', () => {
     await act(async () => finish({ agentId: 7, threadId: 'old' }));
     assert.equal(saved.get('home')?.threadId, null);
     assert.match(routes.at(-1)?.href ?? '', /new=1/);
+  });
+
+  describe('the scope of a chat opened in a project', () => {
+    it('keeps a chat of this project and remembers it', async () => {
+      summaries.set('m1', { id: 'm1', agent: { id: 7 }, project: { key: 'MKT' } });
+      search = new URLSearchParams('agent=7&thread=m1');
+      await render('MKT');
+      assert.deepEqual(saved.get('project:MKT'), { agentId: 7, threadId: 'm1' });
+      assert.equal(routes.length, 0);
+      assert.equal(document.querySelector('[data-page="true"]')?.getAttribute('data-thread'), 'm1');
+    });
+
+    it("moves a Helena chat to Helena's chat page instead of a list that does not hold it", async () => {
+      summaries.set('h1', { id: 'h1', agent: { id: 7 }, project: null });
+      search = new URLSearchParams('agent=7&thread=h1');
+      await render('MKT');
+      assert.deepEqual(routes.at(-1), { kind: 'replace', href: '/?agent=7&thread=h1' });
+      assert.equal(saved.has('project:MKT'), false);
+      assert.equal(document.querySelector('[data-page="true"]'), null);
+    });
+
+    it("moves another project's chat to that project's page", async () => {
+      summaries.set('o1', { id: 'o1', agent: { id: 9 }, project: { key: 'OPS' } });
+      search = new URLSearchParams('agent=9&thread=o1');
+      await render('MKT');
+      assert.match(routes.at(-1)?.href ?? '', /^\/project\/OPS\/chat\?agent=9&thread=o1$/);
+      assert.equal(saved.has('project:MKT'), false);
+    });
+
+    it('waits for the chat record before remembering the chat', async () => {
+      summaryLoading = true;
+      search = new URLSearchParams('agent=7&thread=m1');
+      await render('MKT');
+      assert.equal(saved.has('project:MKT'), false);
+      assert.equal(routes.length, 0);
+      assert.equal(document.querySelector('[data-page="true"]'), null);
+    });
+
+    it("lets Helena's page open a chat of any project", async () => {
+      summaries.set('o1', { id: 'o1', agent: { id: 9 }, project: { key: 'OPS' } });
+      search = new URLSearchParams('agent=9&thread=o1');
+      await render();
+      assert.deepEqual(saved.get('home'), { agentId: 9, threadId: 'o1' });
+      assert.equal(routes.length, 0);
+    });
   });
 });

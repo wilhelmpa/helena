@@ -318,6 +318,43 @@
   margin-top: var(--space-2);
 }
 
+/* ── An embedded tool that does not answer (Auftrag 116) ─────────────────── */
+.ds-embed-problem,
+.ds-embed-connecting {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  background: var(--surface-1);
+}
+.ds-embed-problem .ds-empty-action {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-2);
+}
+.ds-embed-problem-retry {
+  display: block;
+  margin-top: var(--space-2);
+  color: var(--text-3);
+  font-size: 12px;
+}
+.ds-embed-connecting {
+  align-items: center;
+  justify-content: center;
+  color: var(--text-3);
+  font-size: 12px;
+  animation: ds-embed-connecting-in 0.2s ease-out 0.8s both;
+}
+@keyframes ds-embed-connecting-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 /* ── Status dot (after the text, never before) ───────────────────────────── */
 .ds-status-dot {
   width: 7px;
@@ -778,7 +815,9 @@
   height: 14px;
 }
 @media (max-width: 700px) {
-  .ds-segmented > button > span:not(:only-child) {
+  /* A view with an icon shows the icon alone; a tab of words (and its count) keeps them —
+     PageTabs' "Alle 11 · Agenten 7" was an empty box on a phone (Auftrag 117). */
+  .ds-segmented > button > svg ~ span {
     display: none;
   }
   .ds-segmented > button {
@@ -1605,26 +1644,9 @@ a.ds-run-card:hover {
     overflow: visible;
   }
 }
+/* Wissen's search is the toolbar's PageSearch; the wrapper only holds ⌘K's target. */
 .ds-knowledge-search {
-  width: 240px;
-}
-.ds-knowledge-search input {
-  min-width: 0;
-  flex: 1;
-  background: transparent;
-  color: var(--text);
-  font-size: 13px;
-  outline: none;
-}
-.ds-knowledge-search kbd {
-  color: var(--text-3);
-  font: 10px var(--font-mono);
-}
-@media (max-width: 700px) {
-  .ds-knowledge-search {
-    width: auto;
-    flex: 1;
-  }
+  display: contents;
 }
 
 /* Drop zone under a list (Wissen, Belege). */
@@ -2729,6 +2751,23 @@ a.ds-run-card:hover {
   padding: var(--space-4) var(--space-5);
   overflow-y: auto;
 }
+/* A doc in the overlay reads like a task in it (Auftrag 117): the same edge, its first
+   heading the size of a task's title, the text the size of a task's description. */
+.ds-overlay-body.ds-knowledge-preview .ds-knowledge-preview-body {
+  padding: 0;
+}
+.ds-knowledge-preview .md-content {
+  font-size: 15px;
+}
+.ds-knowledge-preview .md-content > h1:first-child {
+  margin-top: 0;
+  margin-bottom: var(--space-4);
+  color: var(--text);
+  font-size: 24px;
+  font-weight: 520;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
 .ds-knowledge-preview-body [data-knowledge-canvas] {
   flex: none;
   height: min(70vh, 640px);
@@ -2748,4 +2787,71 @@ a.ds-run-card:hover {
   font: 12px/1.6 var(--font-mono);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
+}
+
+/* The "+" at a node of the Team chart (Auftrag 117): a small circle under a card of the
+   tree, at the corner of a node of the ring; shown on hover and keyboard focus. */
+.ds-org-node-add {
+  position: absolute;
+  z-index: 2;
+  display: flex;
+  width: 24px;
+  height: 24px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-full);
+  background: var(--surface-1);
+  box-shadow: var(--shadow-card);
+  color: var(--text-2);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.ds-org-node-add[data-placement='bottom'] {
+  bottom: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+.ds-org-node-add[data-placement='corner'] {
+  top: -6px;
+  right: -6px;
+}
+.ds-org-node-add:hover,
+.ds-org-node-add[data-state='open'] {
+  background: var(--surface-3);
+  color: var(--text);
+}
+.organization-card:is(:hover, :focus-within) .ds-org-node-add,
+.ds-ring-node:is(:hover, :focus-within) .ds-org-node-add,
+.ds-org-node-add[data-state='open'],
+.ds-org-node-add:focus-visible {
+  opacity: 1;
+}
+/* A touch screen has no hover: the "+" to add a member stays at coordinators, departments
+   and projects; "Als Vorlage" is in the list's row menu there. */
+@media (hover: none) {
+  .ds-org-node-add[data-add] {
+    opacity: 1;
+  }
+  .ds-org-node-add:not([data-add]) {
+    display: none;
+  }
+}
+/* Team › Liste: the pool under the toolbar, the width of the page. */
+.ds-team-pool {
+  padding-top: var(--space-2);
+}
+
+/* Where a project setting stands against Ava's default (InheritedMark, Auftrag 117). */
+.ds-inherited {
+  display: inline-flex;
+  min-height: 28px;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+.ds-inherited[data-state='inherited'] {
+  color: var(--text-3);
+  font-size: 12px;
 }

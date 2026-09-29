@@ -92,7 +92,13 @@ describe('OpenAPI document', () => {
 
     expect(doc.paths['/scim/v2/Users']!.post!.tags).toEqual(['SCIM']);
     expect(operations.length).toBeGreaterThan(300);
-    expect(operations.every((operation) => Boolean(operation.description))).toBe(true);
+    expect(
+      Object.entries(doc.paths).flatMap(([path, methods]) =>
+        Object.entries(methods)
+          .filter(([, operation]) => 'responses' in operation && !operation.description)
+          .map(([method]) => `${method.toUpperCase()} ${path}`),
+      ),
+    ).toEqual([]);
   });
 });
 

@@ -127,13 +127,22 @@ export async function getMemberContext(
   const rows = await db
     .select({
       role: projectMember.role,
+      agentRole: aiAgent.agentRole,
       permissions: teamRole.permissions,
     })
     .from(projectMember)
+    .leftJoin(aiAgent, eq(aiAgent.userId, projectMember.userId))
     .leftJoin(teamRole, eq(teamRole.id, projectMember.roleId))
     .where(and(eq(projectMember.projectId, projectId), eq(projectMember.userId, userId)));
   const r = rows[0];
-  return r ? toMemberContext(r.role as MemberRole, r.permissions) : null;
+  if (!r) return null;
+  return {
+    role: r.role as MemberRole,
+    permissions:
+      r.agentRole === 'home'
+        ? fullPermissions()
+        : toMemberContext(r.role as MemberRole, r.permissions).permissions,
+  };
 }
 
 // The projects in which the user's role grants the action on the resource (an owner
@@ -170,6 +179,14 @@ export async function projectIdsWithPermission(
 // what lets a project owner manage the resources the team holds for all of them.
 // Someone who is a member of no project of the team gets an empty matrix.
 export async function getTeamPermissions(teamId: number, userId: string): Promise<Permissions> {
+  const [home] = await db
+    .select({ id: aiAgent.id })
+    .from(aiAgent)
+    .where(
+      and(eq(aiAgent.userId, userId), eq(aiAgent.teamId, teamId), eq(aiAgent.agentRole, 'home')),
+    );
+  if (home) return fullPermissions();
+
   const rows = await db
     .select({ role: projectMember.role, permissions: teamRole.permissions })
     .from(projectMember)

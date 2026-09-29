@@ -233,9 +233,18 @@
       "grant_revoked": "Concessão revogada",
       "session_start": "Sessão iniciada",
       "session_end": "Sessão encerrada",
-      "token_rejected": "Token rejeitado"
+      "token_rejected": "Token rejeitado",
+      "sudo_changed": "Terminal sudo changed"
     },
-    "grantActiveOpen": "Acesso concedido."
+    "grantActiveOpen": "Acesso concedido.",
+    "rootAccess": {
+      "title": "Root access for Ava",
+      "enabled": "Root access for Ava",
+      "directOnly": "Root only on direct owner request",
+      "audit": "Root commands (latest 100)",
+      "refresh": "Refresh",
+      "boundary": "Revocation stops only units started by the root broker. Services, cron jobs and sudoers changes created by a command require separate reversal."
+    }
   },
   "storage": {
     "saved": "Configurações de armazenamento salvas",

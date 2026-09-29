@@ -460,7 +460,7 @@ describe('receipts', () => {
     // The month's export: the CSV, each receipt under Ausgaben, the Factur-X XML beside its PDF.
     const exported = await http.send('GET', '/export?month=2026-09');
     expect(exported.status).toBe(200);
-    expect(exported.headers.get('content-disposition')).toContain('Helena-Belege_FIN_2026-09.zip');
+    expect(exported.headers.get('content-disposition')).toContain('Ava-Belege_FIN_2026-09.zip');
     const files = readExportZip(new Uint8Array(await exported.arrayBuffer()));
     const names = Object.keys(files).sort();
     expect(names).toContain('2026-09/Buchungen_2026-09.csv');

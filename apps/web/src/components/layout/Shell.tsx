@@ -35,6 +35,8 @@ import WorkspaceLayoutHost from '@/components/layout/WorkspaceLayoutHost';
 import SettingsModal from '@/features/settings/SettingsModal';
 import AgentDialog from '@/features/settings/AgentDialog';
 import RunOverlay from '@/features/agent-runtime/components/RunOverlay';
+import PinnedKnowledgePreview from '@/features/project-files/components/PinnedKnowledgePreview';
+import PinnedReceiptOverlay from '@/features/receipts/components/PinnedReceiptOverlay';
 import { openSettingsModal } from '@/features/settings/settingsModalCatalog';
 import HomeDock from '@/components/layout/HomeDock';
 import ProjectLinkSheet from '@/components/layout/ProjectLinkSheet';
@@ -472,6 +474,8 @@ export default function Shell({
               <SettingsModal />
               <AgentDialog />
               <RunOverlay />
+              <PinnedKnowledgePreview />
+              <PinnedReceiptOverlay />
             </SidebarProvider>
           </ShellHeaderActionsSlotCtx.Provider>
         </ShellHeaderSlotCtx.Provider>

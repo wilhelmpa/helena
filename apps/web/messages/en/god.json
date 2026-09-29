@@ -220,9 +220,9 @@
     "stepUpDescription": "What proves it is the owner opening the terminal, every time, even on the LAN.",
     "stepUpMethod": "TOTP (an authenticator app), enrolled at Account -> Security. Passkey takes over once this instance runs behind HTTPS.",
     "stepUpOffHint": "On the LAN without a code: the terminal opens straight away for your session on the home network. Through the tunnel (loopback) and from outside, the authenticator code is always required.",
-    "sudoTitle": "Sudo in the browser terminal asks for a password",
-    "sudoDescription": "Off (default) leaves every sudo command passwordless everywhere, in the owner terminal exactly as much as in SSH automation -- sudo authorizes by Unix account and cannot tell the two apart. On narrows the browser terminal's sudo down to a reviewed list of automation commands and asks for the Linux password for everything else.",
-    "sudoHint": "Turning this on here is not enough by itself: sudo cannot be switched per session at runtime, so an operator still has to audit every `sudo -n` command the instance's SSH automation runs, check it against the sudoers policy, and install that policy by hand. Ask the operator before switching this on -- until they do, this setting has no effect.",
+    "sudoTitle": "Terminals: sudo without a password",
+    "sudoDescription": "Applies to the Unix account wilhelmpa, including Shell, Claude Code, Codex and other sessions on that account.",
+    "sudoHint": "Changes take effect immediately. The authenticator code is still required when opening a terminal.",
     "auditTitle": "Audit trail",
     "auditDescription": "Every step-up attempt, grant change and terminal session, newest first. No keystrokes.",
     "auditEmpty": "No events yet.",
@@ -233,9 +233,18 @@
       "grant_revoked": "Grant revoked",
       "session_start": "Session started",
       "session_end": "Session ended",
-      "token_rejected": "Token rejected"
+      "token_rejected": "Token rejected",
+      "sudo_changed": "Terminal sudo changed"
     },
-    "grantActiveOpen": "Access granted."
+    "grantActiveOpen": "Access granted.",
+    "rootAccess": {
+      "title": "Root access for Ava",
+      "enabled": "Root access for Ava",
+      "directOnly": "Root only on direct owner request",
+      "audit": "Root commands (latest 100)",
+      "refresh": "Refresh",
+      "boundary": "Revocation stops only units started by the root broker. Services, cron jobs and sudoers changes created by a command require separate reversal."
+    }
   },
   "storage": {
     "saved": "Storage settings saved",

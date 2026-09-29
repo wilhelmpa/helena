@@ -2,7 +2,15 @@ import { beforeEach, describe, expect, it } from 'bun:test';
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { eq } from 'drizzle-orm';
-import { db, vaultEntry } from '@repo/db';
+import {
+  db,
+  helenaReceipt,
+  initiative,
+  noteBoard,
+  organizationGoal,
+  project,
+  vaultEntry,
+} from '@repo/db';
 import { indexVaultPaths } from '@repo/vault';
 import { knowledgeSources, runSources, seedTemplates } from '@helena/knowledge';
 import { app, authedApi, type Api } from '#tests/helpers/app';
@@ -71,6 +79,20 @@ describe('second brain', () => {
     await note(asOwner, 'Projects/MKT/Docs/Regale.md', 'Vergleich der Kühlregale für [[MKT-1]].');
     await runSources(knowledgeSources());
 
+    const recent = await asOwner.knowledge.picker.get({ query: {} });
+    expect(recent.status).toBe(200);
+    expect(recent.data!.items.map((item) => item.ref)).toContain(`issue:${issue.id}`);
+    const pickedVault = await asOwner.knowledge.picker.get({
+      query: { q: 'Kühlregale', sources: 'vault' },
+    });
+    expect(pickedVault.data!.items.map((item) => item.source)).toEqual(['vault']);
+    const pickedDocs = await asOwner.knowledge.picker.get({
+      query: { q: 'Kühlregale', kind: 'doc' },
+    });
+    expect(pickedDocs.data!.items.map((item) => item.ref)).toContain(
+      'vault:Projects/MKT/Docs/Regale.md',
+    );
+
     const found = await asOwner.knowledge.find.get({ query: { q: 'Kühlregale' } });
     expect(found.status).toBe(200);
     const sources = found.data!.items.map((hit) => hit.source);
@@ -105,6 +127,67 @@ describe('second brain', () => {
     expect(mentions.data!.map((item) => item.ref)).toContain('vault:Projects/MKT/Docs/Regale.md');
   });
 
+  it('indexes goals and receipts with the receipt original path', async () => {
+    const { asOwner } = await setup();
+    const [scope] = await db
+      .select({ id: project.id, teamId: project.teamId })
+      .from(project)
+      .where(eq(project.key, 'MKT'));
+    await db
+      .insert(initiative)
+      .values({ projectId: scope!.id, title: 'Kühlkette sichern', description: 'Neue Geräte' });
+    await db.insert(organizationGoal).values({
+      teamId: scope!.teamId,
+      projectId: scope!.id,
+      title: 'Kühlung sichern',
+      description: 'Lager stabil halten',
+    });
+    await db.insert(helenaReceipt).values({
+      teamId: scope!.teamId,
+      projectId: scope!.id,
+      source: 'vault',
+      vaultPath: 'Projects/MKT/Files/Belege/kuehlung.pdf',
+      filename: 'kuehlung.pdf',
+      sha256: 'test-receipt-119',
+      invoiceNumber: 'KUEHL-119',
+      textExcerpt: 'Kühlung von Waren',
+    });
+    await runSources(knowledgeSources());
+    const found = await asOwner.knowledge.picker.get({ query: { q: 'Kühl' } });
+    expect(found.status).toBe(200);
+    expect(found.data!.items.map((item) => item.source)).toEqual(
+      expect.arrayContaining(['goal', 'initiative', 'receipt']),
+    );
+    const receipt = found.data!.items.find((item) => item.source === 'receipt')!;
+    expect(receipt.metadata.originalPath).toBe('Projects/MKT/Files/Belege/kuehlung.pdf');
+    const goals = await asOwner.knowledge.picker.get({
+      query: { q: 'Kühlung', project: 'MKT', sources: 'goal' },
+    });
+    expect(goals.data!.items.map((item) => item.source)).toEqual(['goal']);
+  });
+
+  it('offers a private canvas only to its reader', async () => {
+    const { asOwner, owner } = await setup();
+    const [scope] = await db.select({ id: project.id }).from(project).where(eq(project.key, 'MKT'));
+    const [board] = await db
+      .insert(noteBoard)
+      .values({
+        projectId: scope!.id,
+        ownerUserId: owner.userId,
+        createdByUserId: owner.userId,
+        name: 'Privater Plan',
+        canvas: { nodes: [{ data: { text: 'Kühlung planen' } }] },
+      })
+      .returning({ id: noteBoard.id });
+    const found = await asOwner.knowledge.picker.get({ query: { q: 'Kühlung', sources: 'board' } });
+    expect(found.data!.items.map((item) => item.ref)).toEqual([`board:${board!.id}`]);
+    const stranger = authedApi((await signUpTestUser({ name: 'Stranger' })).cookie);
+    expect(
+      (await stranger.knowledge.picker.get({ query: { q: 'Kühlung', sources: 'board' } })).data!
+        .items,
+    ).toEqual([]);
+  });
+
   it('keeps each reader to what they may open', async () => {
     const { asOwner } = await setup();
     await note(asOwner, 'Private/Tagebuch.md', 'Geheimnis über Kühlregale');
@@ -114,6 +197,8 @@ describe('second brain', () => {
     await runSources(knowledgeSources());
     const own = await asOwner.knowledge.find.get({ query: { q: 'Kühlregale' } });
     expect(own.data!.items.map((item) => item.ref)).toContain('vault:Private/Tagebuch.md');
+    const picker = await asOwner.knowledge.picker.get({ query: { q: 'Kühlregale' } });
+    expect(picker.data!.items.map((item) => item.ref)).not.toContain('vault:Private/Tagebuch.md');
     const theirs = await stranger.knowledge.find.get({ query: { q: 'Kühlregale' } });
     expect(theirs.data!.items).toEqual([]);
     expect(

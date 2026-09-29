@@ -53,9 +53,9 @@ export const VOICE_LIMITS = {
 
 // The largest audio a speech model may answer with (a few sentences of 24 kHz WAV are ~1 MB).
 const MAX_SPEECH_BYTES = 16 * 1024 * 1024;
-// Whisper on the NPU needs a few seconds for two minutes of audio; loading the model first
-// takes longer.
-const TRANSCRIBE_TIMEOUT_MS = 90_000;
+// The on-demand CPU Whisper service may cold-start behind socket 13306 before it answers;
+// its systemd unit allows five minutes for startup.
+const TRANSCRIBE_TIMEOUT_MS = 300_000;
 const SPEECH_TIMEOUT_MS = 60_000;
 
 // Only people talk to Helena by voice; an agent's key gets a 403 here.
@@ -111,6 +111,8 @@ export async function voiceStatus() {
       speed: settings.speed,
       immediateResponse: settings.immediateResponse,
       bridgeEnabled: settings.bridgeEnabled,
+      progressEnabled: settings.progressEnabled,
+      readFullAnswers: settings.readFullAnswers,
       fallbackTimeoutMs: settings.fallbackTimeoutMs,
     },
     limits: {

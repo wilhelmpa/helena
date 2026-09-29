@@ -7,13 +7,8 @@ import { PAGE_CONTROL_ACTIVE_CLASS, PAGE_CONTROL_CLASS } from '@/components/layo
 import { agentTabsFor } from '@/features/agent-runtime/agentTabs';
 import type { AiAgent } from '@/lib/api/endpoints/agents';
 import { useAiAgentsQuery } from '@/services/aiAgents.service';
-import {
-  Sheet,
-  SheetClose,
-  SheetContent,
-  SheetDescription,
-  SheetTitle,
-} from '@/components/ui/sheet';
+import { SheetClose, SheetDescription, SheetTitle } from '@/components/ui/sheet';
+import { Overlay } from '@/design-system';
 import { Button } from '@/components/ui/button';
 import AgentTestChat from '@/features/ai-chat/components/panel/AgentTestChat';
 import { useAgentCan, useAgentSection } from '../../context/agentSection';
@@ -24,14 +19,14 @@ import { useAgentDialog } from './agentFormPages';
 
 const SETTINGS_TAB = 'settings';
 
-// Full-width sheet for one agent. Opened for create (agent null) or to edit an
-// existing one. Create and edit share the same form (AgentSheetForm): on create the
-// sheet stays open and switches to editing the new agent. Beside the form sits the chat
-// (the same one as everywhere else) to try the agent out.
+// A new agent (or, from an older caller, one agent) in the one overlay on the right
+// (Auftrag 117: an agent never opens as a page of its own): the same form as the agent
+// dialog; after "Anlegen" it stays open on the new agent, whose key it shows once.
 export function TeamAiAgentSheet({
   open,
   agent,
   projectId,
+  asTemplate = false,
   onClose,
   initialOpenSection,
   initialTab,
@@ -39,6 +34,8 @@ export function TeamAiAgentSheet({
 }: {
   open: boolean;
   agent: AiAgent | null;
+  // A new template of the pool ("Pool erweitern").
+  asTemplate?: boolean;
   // The project a new agent is created in, when the sheet is opened from one.
   projectId?: number;
   onClose: () => void;
@@ -49,31 +46,31 @@ export function TeamAiAgentSheet({
   initialTab?: string;
   initialRunId?: number | null;
 }) {
+  const t = useTranslations('teams.agents');
+  if (!open) return null;
+  const label = agent ? agent.name : t('newAgent');
   return (
-    <Sheet open={open} onOpenChange={(o) => !o && onClose()}>
-      {/* The built-in close button is pinned to the far top-right corner, which drifts
-          away from the header controls at full width. Hide it (it is the only direct
-          <button> child of SheetContent) and render our own in the header. */}
-      {/* duration-0 cancels the slide-in/out animation from SheetContent so the
-          full-screen editor appears at once instead of sliding in from the right. */}
-      <SheetContent
-        side="right"
-        className="w-full gap-0 p-0 duration-0 data-[state=closed]:duration-0 data-[state=open]:duration-0 sm:max-w-none [&>button]:hidden"
-      >
-        {/* Key by agent (or 'new' for create) so switching gives a fresh form and chat
-            session; create keeps the 'new' key while it becomes edit, so no remount. */}
-        {open && (
-          <SheetBody
-            key={agent?.id ?? 'new'}
-            initialAgent={agent}
-            projectId={projectId}
-            initialOpenSection={initialOpenSection}
-            initialTab={initialTab}
-            initialRunId={initialRunId ?? null}
-          />
-        )}
-      </SheetContent>
-    </Sheet>
+    <Overlay
+      label={label}
+      tabs={[{ id: 'agent', label }]}
+      onClose={onClose}
+      className="ds-agent-overlay"
+      bodyClassName="is-flush"
+      width="wide"
+    >
+      {/* Keyed by agent (or 'new' for create) so switching gives a fresh form; create keeps
+          the 'new' key while it becomes edit, so no remount. */}
+      <SheetBody
+        key={agent?.id ?? 'new'}
+        initialAgent={agent}
+        projectId={projectId}
+        asTemplate={asTemplate}
+        initialOpenSection={initialOpenSection}
+        initialTab={initialTab}
+        initialRunId={initialRunId ?? null}
+        inModal
+      />
+    </Overlay>
   );
 }
 
@@ -98,6 +95,7 @@ export function AgentSettingsBody({
 function SheetBody({
   initialAgent,
   projectId,
+  asTemplate = false,
   initialOpenSection,
   initialTab,
   initialRunId,
@@ -105,6 +103,7 @@ function SheetBody({
 }: {
   initialAgent: AiAgent | null;
   projectId?: number;
+  asTemplate?: boolean;
   initialOpenSection?: string;
   initialTab?: string;
   initialRunId: number | null;
@@ -224,6 +223,7 @@ function SheetBody({
           <AgentSheetForm
             agent={agent}
             projectId={projectId}
+            asTemplate={asTemplate}
             expanded
             onCreated={setCreatedAgent}
             initialOpenSection={initialOpenSection}

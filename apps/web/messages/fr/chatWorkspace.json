@@ -141,8 +141,11 @@
     "dictateLocal": "Dicter (Whisper sur cette machine)",
     "stopDictation": "Arrêter la dictée",
     "dictationUnavailable": "La dictée n'est pas possible ici pour l'instant – cliquez pour savoir pourquoi",
-    "autoSpeak": "Lire les réponses à voix haute automatiquement",
-    "autoSpeakOn": "Les réponses sont lues à voix haute – cliquez pour désactiver",
+    "readAllOff": "Seules les réponses aux questions orales sont lues à voix haute – cliquer pour tout lire",
+    "readAllOn": "Tout est lu à voix haute dans ce chat – cliquer pour désactiver",
+    "readAllShort": "Tout",
+    "voiceFallback": "Voix locale injoignable – voix du navigateur",
+    "voiceDown": "Voix locale injoignable – rien n’est lu à voix haute",
     "queuedList": "En attente d’envoi",
     "localModel": "{name} (local)",
     "fallbackModel": "Repli : {name}",
@@ -259,7 +262,7 @@
       "failed": "Le micro n'a pas pu démarrer.",
       "transcribeFailed": "La transcription a échoué. Réessayez.",
       "recognitionFailed": "La reconnaissance vocale du navigateur ne répond pas (Chrome envoie l'enregistrement à Google pour cela). Avec Administrateur → IA locale → « Transcription », Whisper prend note sur cette machine.",
-      "voiceFailed": "La voix locale est tombée en panne. La réponse est dans le chat ; là où c'est permis, le navigateur continue la lecture.",
+      "voiceFailed": "La voix locale ne répond pas. La réponse est dans le chat.",
       "nothingHeard": "Rien compris – le micro était-il allumé ?",
       "limit": "Arrêté après {seconds} secondes – la durée maximale d'une dictée.",
       "echoTitle": "Je me suis entendue",
@@ -309,5 +312,11 @@
   "context": {
     "task": "Tâche {identifier} « {title} »",
     "document": "Document {name}"
+  },
+  "dock": {
+    "expand": "Ouvrir le chat",
+    "collapse": "Replier le chat",
+    "openTab": "Ouvrir en onglet",
+    "empty": "Demande à {agent} …"
   }
 }

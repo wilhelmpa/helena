@@ -26,7 +26,7 @@ describe('home sidebar navigation', () => {
       { id: 'inbox', group: 'work', href: '/inbox' },
       { id: 'files', group: 'work', href: '/files' },
       { id: 'approvals', group: 'work', href: '/approvals' },
-      { id: 'agentPool', group: 'agents', href: '/agents' },
+      { id: 'agentPool', group: 'agents', href: '/organization?orgView=list' },
       { id: 'organization', group: 'agents', href: '/organization' },
       { id: 'agentActivity', group: 'agents', href: '/activity' },
       { id: 'browser', group: 'agents', href: '/browsers' },

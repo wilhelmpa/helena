@@ -1,5 +1,7 @@
+import { observeTool } from '#modules/root-access/provenance';
 import {
   db,
+  aiAgent,
   agentRun,
   approvalRequest,
   getDisplayName,
@@ -184,6 +186,13 @@ function agentMessage(
 }
 
 export async function decide(input: DecideInput): Promise<EngineDecision> {
+  if (input.agentId != null && input.tool && !['hermes', 'claude', 'codex'].includes(input.adapter))
+    await observeTool(
+      input.agentId,
+      { runId: input.runId, messageId: input.chatMessageId },
+      input.tool,
+      input.adapter === 'gateway',
+    );
   const scope = input.scope ?? 'workspace';
   const resolved = await resolveLevel(input.agentId, input.projectId);
   const [exhausted, approved] = await Promise.all([
@@ -202,15 +211,34 @@ export async function decide(input: DecideInput): Promise<EngineDecision> {
           input.projectId,
         ),
   ]);
-  const decision = policyEvaluator().evaluate({
-    agentId: input.agentId,
-    projectId: input.projectId,
-    category: input.category,
-    scope,
-    level: resolved.level,
-    approved: approved || input.approvedByTask === true,
-    budgetExhausted: exhausted !== null,
-  });
+  const [agent] =
+    input.agentId == null
+      ? []
+      : await db
+          .select({ role: aiAgent.agentRole })
+          .from(aiAgent)
+          .where(eq(aiAgent.id, input.agentId));
+  let decision: PolicyDecision;
+  if (agent?.role === 'home') {
+    decision = { outcome: 'allow', reason: 'policy', detail: 'Home access', policyIds: [] };
+  } else if (input.adapter === 'hermes' && input.tool === 'cronjob_manage') {
+    decision = {
+      outcome: 'deny',
+      reason: 'policy',
+      detail: 'Recurring work is a routine in Helena.',
+      policyIds: [],
+    };
+  } else {
+    decision = policyEvaluator().evaluate({
+      agentId: input.agentId,
+      projectId: input.projectId,
+      category: input.category,
+      scope,
+      level: resolved.level,
+      approved: approved || input.approvedByTask === true,
+      budgetExhausted: exhausted !== null,
+    });
+  }
   const plainRead =
     (input.category === 'read' || input.category === 'report') && decision.outcome === 'allow';
   let decisionId: number | null = null;

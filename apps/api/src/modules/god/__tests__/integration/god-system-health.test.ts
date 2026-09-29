@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'bun:test';
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
@@ -57,6 +57,85 @@ const service = (
 
 describe('system health', () => {
   beforeEach(resetDb);
+
+  it('shows the latest Vault check only to the owner and marks stale checks red', async () => {
+    const dir = await mkdtemp(join(process.env.TMPDIR ?? tmpdir(), 'vault-health-'));
+    const saved = process.env.VOLITION_VAULT_INTEGRITY_REPORT;
+    process.env.VOLITION_VAULT_INTEGRITY_REPORT = join(dir, 'report.json');
+    try {
+      await writeFile(
+        process.env.VOLITION_VAULT_INTEGRITY_REPORT,
+        JSON.stringify({
+          state: 'ok',
+          checkedAt: new Date().toISOString(),
+          findings: [],
+        }),
+      );
+      const { god } = await setup();
+      const member = await addUser({ email: 'member@example.com' });
+      expect((await god.api.god['vault-integrity'].get()).data?.state).toBe('ok');
+      expect((await member.api.god['vault-integrity'].get()).status).toBe(403);
+      await writeFile(
+        process.env.VOLITION_VAULT_INTEGRITY_REPORT,
+        JSON.stringify({
+          state: 'ok',
+          checkedAt: '2020-01-01T00:00:00Z',
+          findings: [],
+        }),
+      );
+      const stale = (await god.api.god['vault-integrity'].get()).data;
+      expect(stale?.state).toBe('down');
+      expect(stale?.findings[0]?.code).toBe('stale_report');
+    } finally {
+      if (saved === undefined) delete process.env.VOLITION_VAULT_INTEGRITY_REPORT;
+      else process.env.VOLITION_VAULT_INTEGRITY_REPORT = saved;
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('requires an exact dry run before the owner purges old Vault trash', async () => {
+    const root = await mkdtemp(join(process.env.TMPDIR ?? tmpdir(), 'vault-purge-'));
+    const saved = process.env.PROJECT_VAULT_ROOT;
+    process.env.PROJECT_VAULT_ROOT = root;
+    try {
+      const { god } = await setup();
+      const member = await addUser({ email: 'member@example.com' });
+      const original = 'Home/Docs/Old.md';
+      await god.api.knowledge.notes.put({ path: original, content: 'old' });
+      await god.api.knowledge.trash.post({ path: original });
+      const records = join(root, '.trash/.records');
+      for (const name of await readdir(records)) {
+        const file = join(records, name);
+        const value = JSON.parse(await readFile(file, 'utf8'));
+        value.trashedAt = '2020-01-01T00:00:00Z';
+        await writeFile(file, JSON.stringify(value));
+      }
+      const preview = await god.api.god['vault-trash'].purge.post({ olderThanDays: 30 });
+      expect(preview.data?.targets).toEqual([`.trash/${original}`]);
+      expect((await member.api.god['vault-trash'].purge.post({ olderThanDays: 30 })).status).toBe(
+        403,
+      );
+      expect(
+        (
+          await god.api.god['vault-trash'].purge.post({
+            olderThanDays: 30,
+            apply: true,
+            confirmTargets: [],
+          })
+        ).status,
+      ).toBe(409);
+      const applied = await god.api.god['vault-trash'].purge.post({
+        olderThanDays: 30,
+        apply: true,
+        confirmTargets: preview.data!.targets,
+      });
+      expect(applied.data?.applied).toBe(true);
+    } finally {
+      if (saved === undefined) delete process.env.PROJECT_VAULT_ROOT;
+      else process.env.PROJECT_VAULT_ROOT = saved;
+      await rm(root, { recursive: true, force: true });
+    }
+  });
 
   it('shows the shared model logins the token keeper reports, with the owners command', async () => {
     const dir = await mkdtemp(join(process.env.TMPDIR ?? tmpdir(), 'logins-'));

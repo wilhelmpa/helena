@@ -1,16 +1,9 @@
 'use client';
 
-import {
-  useEffect,
-  useRef,
-  type ComponentType,
-  type KeyboardEvent,
-  type ReactNode,
-  type RefObject,
-} from 'react';
-import { Search } from 'lucide-react';
+import { useEffect, useRef, type ComponentType, type KeyboardEvent, type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
-import { Page, PageToolbarSpacer } from '@/design-system';
+import KnowledgeRowName from './KnowledgeRowName';
+import { Page, PageSearch, PageToolbarSpacer } from '@/design-system';
 
 // One page pattern for Wissen and Belege (docs/ui-system.md §8, WissenOrdner.dc.html):
 // the sidebar tree picks the place, the page shows a header (mono eyebrow with the path,
@@ -27,65 +20,30 @@ export function KnowledgeSearch({
   value,
   onChange,
   placeholder,
-  inputRef,
 }: {
   value: string;
   onChange: (value: string) => void;
   placeholder: string;
-  inputRef?: RefObject<HTMLInputElement | null>;
 }) {
-  const own = useRef<HTMLInputElement>(null);
-  const input = inputRef ?? own;
+  // The toolbar's one search field (PageSearch, Auftrag 117), with ⌘K to reach it.
+  const host = useRef<HTMLSpanElement>(null);
   useEffect(() => {
     const focus = (event: globalThis.KeyboardEvent) => {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+        const input = host.current?.querySelector('input');
+        if (!input) return;
         event.preventDefault();
         event.stopImmediatePropagation();
-        input.current?.focus();
+        input.focus();
       }
     };
     window.addEventListener('keydown', focus, true);
     return () => window.removeEventListener('keydown', focus, true);
-  }, [input]);
+  }, []);
   return (
-    <label className="ds-search ds-knowledge-search">
-      <Search size={13} aria-hidden="true" />
-      <input
-        ref={input}
-        type="search"
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        placeholder={placeholder}
-        aria-label={placeholder}
-        className="min-w-0 flex-1 bg-transparent text-foreground outline-none placeholder:text-muted-foreground [&::-webkit-search-cancel-button]:hidden"
-      />
-      <kbd className="font-mono text-[10px] text-muted-foreground/80 max-sm:hidden">{'⌘K'}</kbd>
-    </label>
-  );
-}
-
-export function KnowledgePill({
-  active,
-  children,
-  count,
-  onClick,
-}: {
-  active: boolean;
-  children: ReactNode;
-  count?: number;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      aria-pressed={active}
-      onClick={onClick}
-      className="ds-pill ds-pill-button"
-      data-tone={active ? 'active' : 'neutral'}
-    >
-      {children}
-      {count !== undefined && count > 0 && <span className="ds-pill-count">{count}</span>}
-    </button>
+    <span ref={host} className="ds-knowledge-search">
+      <PageSearch value={value} onChange={onChange} placeholder={placeholder} />
+    </span>
   );
 }
 
@@ -123,6 +81,7 @@ export function KnowledgeRow({
   menu,
   rowProps,
   title,
+  renaming,
 }: {
   index?: number;
   icon: ComponentType<{ size?: number; strokeWidth?: number; className?: string }>;
@@ -135,6 +94,14 @@ export function KnowledgeRow({
   menu?: ReactNode;
   rowProps?: Record<string, unknown>;
   title?: string;
+  // Renamed in place (F2 or the menu, Auftrag 117): the name is a field; Enter keeps it,
+  // Esc or leaving it without a change drops it.
+  renaming?: {
+    initial: string;
+    label: string;
+    onSubmit: (name: string) => void;
+    onCancel: () => void;
+  };
 }) {
   return (
     <div
@@ -149,7 +116,9 @@ export function KnowledgeRow({
       )}
     >
       <Icon size={18} strokeWidth={1.6} className="text-muted-foreground" />
-      {onClick ? (
+      {renaming ? (
+        <KnowledgeRowName {...renaming} />
+      ) : onClick ? (
         <button
           type="button"
           data-row-button=""

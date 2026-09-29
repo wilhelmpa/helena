@@ -141,8 +141,11 @@
     "dictateLocal": "Diktieren (Whisper auf diesem Rechner)",
     "stopDictation": "Diktat beenden",
     "dictationUnavailable": "Diktieren geht hier gerade nicht – klicken für den Grund",
-    "autoSpeak": "Antworten automatisch vorlesen",
-    "autoSpeakOn": "Antworten werden vorgelesen – zum Ausschalten klicken",
+    "readAllOff": "Nur Antworten auf Sprachfragen werden vorgelesen – klicken, um alles vorzulesen",
+    "readAllOn": "Alles wird in diesem Chat vorgelesen – zum Ausschalten klicken",
+    "readAllShort": "Alles",
+    "voiceFallback": "Lokale Stimme nicht erreichbar – Browserstimme",
+    "voiceDown": "Lokale Stimme nicht erreichbar – es wird nichts vorgelesen",
     "queuedList": "Wartet auf das Senden",
     "localModel": "{name} (lokal)",
     "fallbackModel": "Rückfall: {name}",
@@ -257,9 +260,9 @@
       "blocked": "Der Browser hat das Mikrofon nicht freigegeben. Erlaube es in den Website-Einstellungen (das Symbol links in der Adresszeile).",
       "missing": "Kein Mikrofon gefunden.",
       "failed": "Das Mikrofon konnte nicht gestartet werden.",
-      "transcribeFailed": "Die Transkription ist fehlgeschlagen. Versuch es noch einmal.",
+      "transcribeFailed": "Spracherkennung nicht erreichbar oder Aufnahme nicht lesbar. Versuch es noch einmal.",
       "recognitionFailed": "Die Spracherkennung des Browsers antwortet nicht (Chrome schickt die Aufnahme dafür an Google). Mit Administrator → Lokale KI → „Transkription“ schreibt Whisper auf diesem Rechner mit.",
-      "voiceFailed": "Die lokale Stimme ist ausgefallen. Die Antwort steht im Chat; wo erlaubt, liest der Browser weiter.",
+      "voiceFailed": "Die lokale Stimme antwortet nicht. Die Antwort steht im Chat.",
       "nothingHeard": "Nichts verstanden – war das Mikrofon an?",
       "limit": "Nach {seconds} Sekunden beendet – so lang darf ein Diktat höchstens sein.",
       "echoTitle": "Ich habe mich selbst gehört",
@@ -309,5 +312,11 @@
   "context": {
     "task": "Aufgabe {identifier} „{title}“",
     "document": "Dokument {name}"
+  },
+  "dock": {
+    "expand": "Chat aufklappen",
+    "collapse": "Chat zuklappen",
+    "openTab": "Als Tab öffnen",
+    "empty": "Frag {agent} …"
   }
 }
