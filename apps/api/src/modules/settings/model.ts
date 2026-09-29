@@ -8,9 +8,23 @@ export const StorageSettingsSchema = t.Object({
   projectQuotaMb: t.Number(),
 });
 
+// A default budget of a new project (owner 28.09., Paperclip's budgets): the same metrics
+// and periods as a project's own budgets.
+const DefaultBudgetSchema = t.Object({
+  metric: oneOf(['tokens', 'cost', 'time']),
+  period: oneOf(['day', 'month']),
+  limit: t.Number({ exclusiveMinimum: 0, maximum: 1e15 }),
+});
+
 export const ProjectDefaultsSchema = t.Object({
   mcpEnabled: t.Boolean(),
   autopilotLevel: t.Union([t.Literal(0), t.Literal(1), t.Literal(2), t.Literal(3)]),
+  budgets: t.Array(DefaultBudgetSchema, {
+    maxItems: 6,
+    description:
+      'The budgets a new project starts with (one per metric and period). A project changes ' +
+      'its own; the settings mark where it differs from this default.',
+  }),
 });
 
 export const ProjectDefaultsPatchSchema = t.Partial(ProjectDefaultsSchema);

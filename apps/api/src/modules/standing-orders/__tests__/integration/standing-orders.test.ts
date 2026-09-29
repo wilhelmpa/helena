@@ -102,4 +102,37 @@ describe('standing orders', () => {
     expect(off.data?.active).toBe(false);
     expect(await activeOrderContext(projectId, agent.data!.agent.id)).toBe('');
   });
+
+  it('lets only the owner delete an order for good', async () => {
+    const owner = await signUpTestUser({ name: 'Owner' });
+    const asOwner = authedApi(owner.cookie);
+    await asOwner.projects.post({ key: 'OPS', name: 'Operations' });
+    const agent = await createAgent(asOwner, 'OPS', {
+      name: 'Helper',
+      username: 'helper',
+      kind: 'external',
+    });
+    const orders = asOwner.projects({ projectKey: 'OPS' })['standing-orders'];
+    const created = await orders.post({ body: 'Answer in German', source: 'Owner' });
+    const id = created.data!.id;
+    const asAgent = apiKeyApi(agent.data!.apiKey!);
+    const refused = await asAgent
+      .projects({ projectKey: 'OPS' })
+      ['standing-orders']({ orderId: id })
+      .delete();
+    expect(refused.status).toBe(403);
+    const removed = await orders({ orderId: id }).delete();
+    expect(removed.status).toBe(200);
+    expect((await orders.get()).data).toEqual([]);
+    expect((await orders({ orderId: id }).delete()).status).toBe(404);
+
+    const home = await bootstrapHomeAgent();
+    if (home.status !== 'ready') throw new Error('Helena was not provisioned');
+    const helena = await asOwner.helena['standing-orders'].post({
+      body: 'Report every Friday',
+      source: 'Owner',
+    });
+    expect((await asOwner.helena['standing-orders']({ orderId: helena.data!.id }).delete()).status).toBe(200);
+    expect(await activeOrderContext(null, home.agentId)).not.toContain('Report every Friday');
+  });
 });

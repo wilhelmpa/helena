@@ -22,7 +22,7 @@ describe('dashboard widgets', () => {
     const list = dashboardWidgets.list().sort((a, b) => a.order - b.order);
     assert.deepEqual(
       list.filter((w) => w.kind === 'figure').map((w) => w.id),
-      ['agents', 'tasks', 'limits', 'system', 'local-ai', 'updates'],
+      ['agents', 'tasks', 'limits', 'budgets', 'system', 'local-ai', 'updates'],
     );
     assert.deepEqual(
       list.filter((w) => w.kind === 'section').map((w) => w.id),
@@ -30,7 +30,7 @@ describe('dashboard widgets', () => {
     );
     assert.deepEqual(
       list.filter((w) => w.audience === 'owner').map((w) => w.id),
-      ['limits', 'system', 'local-ai', 'updates'],
+      ['limits', 'budgets', 'system', 'local-ai', 'updates'],
     );
     assert.equal(dashboardWidgets.get('projects')?.width, 'full');
     assert.equal(dashboardWidgets.pluginOf('agents'), 'helena.home');
@@ -95,6 +95,7 @@ describe('needs-you sources', () => {
         'updates',
         'security',
         'local-ai',
+        'budgets',
         'approvals',
         'workflow-steps',
         'proposals',
