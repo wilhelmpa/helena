@@ -120,10 +120,10 @@ describe('one canonical project vault', () => {
     });
     expect(uploaded.structuredContent).toMatchObject({ ok: true, status: 201 });
     const artifact = uploaded.structuredContent.data as { id: string; vaultPath: string };
-    expect(artifact.vaultPath).toBe('Projects/MKT/Files/Chat Attachments/HelenaSixArtifact.png');
+    expect(artifact.vaultPath).toBe('Projects/MKT/Files/Chat/HelenaSixArtifact.png');
     const artifactLink = await tool(writer.apiKey!, 'link_attachment', {
       issueId: issue.id,
-      path: 'Files/Chat Attachments/HelenaSixArtifact.png',
+      path: 'Files/Chat/HelenaSixArtifact.png',
     });
     expect(artifactLink.structuredContent).toMatchObject({
       ok: true,
@@ -151,11 +151,11 @@ describe('one canonical project vault', () => {
     ).toBe(200);
     const renamedNote = 'Projects/MKT/Docs/HelenaSixReviewed.md';
     expect((await api.knowledge.move.post({ from: notePath, to: renamedNote })).status).toBe(200);
-    const renamedArtifact = 'Files/Chat Attachments/HelenaSixReviewed.png';
+    const renamedArtifact = 'Files/Chat/HelenaSixReviewed.png';
     expect(
       (
         await files.move.post({
-          from: 'Files/Chat Attachments/HelenaSixArtifact.png',
+          from: 'Files/Chat/HelenaSixArtifact.png',
           to: renamedArtifact,
         })
       ).status,
@@ -259,7 +259,7 @@ describe('one canonical project vault', () => {
     });
     expect(uploaded.isError).not.toBe(true);
     const file = uploaded.structuredContent.data as { id: string; vaultPath: string };
-    expect(file.vaultPath).toBe('Projects/MKT/Files/Chat Attachments/Report.md');
+    expect(file.vaultPath).toBe('Projects/MKT/Files/Chat/Report.md');
     const [entry] = await db.select().from(vaultEntry).where(eq(vaultEntry.path, file.vaultPath));
     expect(entry.lastAuthor).toBe(`agent:${agent.agent.id}`);
     const relative = file.vaultPath.slice('Projects/MKT/'.length);

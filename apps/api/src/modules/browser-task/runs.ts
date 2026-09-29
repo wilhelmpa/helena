@@ -9,6 +9,7 @@ import { askSystemOne, loadConnection, type SystemOneReply } from './connection'
 import type { EffectiveBrowserControl } from './settings';
 import { effectiveBrowserControl } from './settings';
 import { browserStageStillEnabled, captureBrowserStage } from './first-stage';
+import { attachFinalFrame } from './frames';
 import { withinFailsafe } from '#modules/decisions/service';
 import { StageRevoked, withStageGuard } from '#modules/decisions/stage-request';
 import { stageCircuitResult } from '#modules/decisions/first-stage';
@@ -370,12 +371,6 @@ export async function finishTask(token: unknown, result: unknown): Promise<void>
         ...(r.handoffWholeTask === true ? { handoffWholeTask: true } : {}),
       },
       durationMs: duration,
-      // jev-browser's throwaway browser has no live view: a picture of its last page.
-      ...(typeof r.finalFrame === 'string' &&
-      /^data:image\/(jpeg|png);base64,[A-Za-z0-9+/=]+$/.test(r.finalFrame) &&
-      r.finalFrame.length <= 600_000
-        ? { finalFrame: r.finalFrame }
-        : {}),
       ...(typeof r.inputTokens === 'number' && r.inputTokens > row.inputTokens
         ? { inputTokens: Math.round(r.inputTokens) }
         : {}),
@@ -388,7 +383,11 @@ export async function finishTask(token: unknown, result: unknown): Promise<void>
     })
     .where(and(eq(helenaBrowserTaskRun.id, row.id), isNull(helenaBrowserTaskRun.finishedAt)))
     .returning();
-  if (done) await ledger(done);
+  if (!done) return;
+  await ledger(done);
+  // jev-browser's throwaway browser has no live view: a picture of its last page, as a file
+  // in the vault.
+  await attachFinalFrame(done, r.finalFrame);
 }
 
 // A task's tokens in the ledger (agent_usage, kind 'tool'), under the agent's run or chat answer.
