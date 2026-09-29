@@ -1094,33 +1094,53 @@
 .ds-issue-list-count {
   color: var(--text-3);
 }
+/* A group's tasks in one framed box, like the table (owner, 28.09., O43/O45). */
+.ds-issue-list-box {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface-1);
+}
+/* One row in fixed columns: key · title (+ other properties) · status · priority · due ·
+   labels and people. The fixed ones keep their width when empty, so nothing jumps. */
 .ds-issue-list-row {
-  display: flex;
+  display: grid;
   width: 100%;
   min-width: 0;
   height: 40px;
+  grid-template-columns: 76px minmax(0, 1fr) 150px 104px 76px minmax(40px, auto);
   align-items: center;
-  gap: 14px;
-  border-radius: var(--radius-lg);
-  padding: 0 12px;
+  column-gap: var(--space-3);
+  padding: 0 var(--space-3);
   text-align: start;
   transition: background-color 0.15s;
+}
+.ds-issue-list-row + .ds-issue-list-row,
+.ds-issue-list-box > * + * .ds-issue-list-row,
+.ds-issue-list-box > * + .ds-issue-list-row {
+  border-top: 1px solid var(--line);
 }
 .ds-issue-list-row:hover,
 .ds-issue-list-row[data-state='open'] {
   background: var(--surface-2);
 }
 .ds-issue-list-key {
-  width: 64px;
-  flex: none;
+  overflow: hidden;
   color: var(--text-3);
   font-family: var(--font-mono);
   font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ds-issue-list-main {
+  display: flex;
+  min-width: 0;
+  align-items: baseline;
+  gap: var(--space-3);
 }
 .ds-issue-list-title {
-  min-width: 80px;
-  max-width: 40%;
-  flex: none;
+  min-width: 0;
+  flex: 0 1 auto;
   overflow: hidden;
   color: var(--text);
   font-size: 13px;
@@ -1130,27 +1150,76 @@
 }
 .ds-issue-list-meta {
   min-width: 0;
-  flex: 1;
+  flex: 1 1 0;
+  overflow: hidden;
+  color: var(--text-3);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ds-issue-list-cell {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 6px;
   overflow: hidden;
   color: var(--text-2);
-  font-family: var(--font-mono);
   font-size: 12px;
+  white-space: nowrap;
+}
+.ds-issue-list-cell > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ds-issue-list-cell[data-col='due'] {
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+.ds-issue-list-cell[data-overdue='true'] {
+  color: var(--status-error);
+}
+/* The status as its own box. */
+.ds-issue-status {
+  display: inline-flex;
+  max-width: 100%;
+  height: 22px;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  padding: 0 var(--space-2);
+  color: var(--text-2);
+  font-size: 12px;
+}
+.ds-issue-status > svg {
+  width: 12px;
+  height: 12px;
+  flex: none;
+}
+.ds-issue-status > span {
+  min-width: 0;
+  overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .ds-issue-list-end {
   display: flex;
-  flex: none;
+  min-width: 0;
   align-items: center;
+  justify-content: flex-end;
   gap: 6px;
 }
 @media (max-width: 700px) {
-  .ds-issue-list-meta {
-    display: none;
+  .ds-issue-list-row {
+    grid-template-columns: 76px minmax(0, 1fr) auto;
   }
-  .ds-issue-list-title {
-    max-width: none;
-    flex: 1;
+  .ds-issue-list-meta,
+  .ds-issue-list-cell[data-col='priority'],
+  .ds-issue-list-cell[data-col='due'],
+  .ds-issue-list-end {
+    display: none;
   }
 }
 @media (min-width: 701px) {
@@ -2302,4 +2371,24 @@ a.ds-run-card:hover {
 }
 .ds-agent-chip[data-variant='quiet']:hover {
   background: var(--surface-2);
+}
+/* The description under a task's title: room above it. */
+.ds-issue-description {
+  margin-top: var(--space-4);
+}
+
+/* ── Board columns (Aufgaben › Board) ─────────────────────────────────────── */
+/* Wide enough for a title on one or two lines (owner, 28.09.: narrow cards, titles
+   breaking). On a phone a column is 82% of the screen, so the next one shows at the edge
+   and the swipe to it is obvious. */
+.ds-board-column {
+  min-width: 300px;
+  flex: 1 1 300px;
+}
+@media (max-width: 639px) {
+  .ds-board-column {
+    min-width: 82vw;
+    flex: none;
+    scroll-snap-align: start;
+  }
 }

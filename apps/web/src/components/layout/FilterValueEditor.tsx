@@ -17,15 +17,22 @@ export default function FilterValueEditor({
   cond,
   onChange,
   project,
+  defaultOpen = false,
+  onEscape,
 }: {
   spec: FieldSpec;
   cond: FilterCondition;
   onChange: (values: FilterValue[]) => void;
   project: ProjectDetail;
+  // A condition just added opens its values at once (owner, 28.09.: the value list closed
+  // on the first click and had to be opened a second time).
+  defaultOpen?: boolean;
+  // Escape in the value list closes the whole filter editor, not only the list.
+  onEscape?: () => void;
 }) {
   const t = useTranslations('filters');
   const { booleanOptions, valuesLabel } = useFilterFields();
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(defaultOpen);
 
   if (cond.op === 'is_set' || cond.op === 'is_not_set') return null;
 
@@ -91,7 +98,11 @@ export default function FilterValueEditor({
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>{trigger}</PopoverTrigger>
-      <PopoverContent align="start" className="max-h-72 w-72 overflow-auto p-1">
+      <PopoverContent
+        align="start"
+        className="max-h-72 w-72 overflow-auto p-1"
+        onEscapeKeyDown={() => onEscape?.()}
+      >
         {options.map((o) => {
           const checked = cond.values.some((v) => v === o.value);
           return (

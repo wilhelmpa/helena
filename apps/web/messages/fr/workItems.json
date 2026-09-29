@@ -158,5 +158,17 @@
     "loadFailedHint": "Le serveur n’a pas répondu. Réessaie dans un instant."
   },
   "viewNotFound": "Cette vue n’existe plus. Toutes les tâches sont affichées.",
-  "layout": "Disposition"
+  "layout": "Disposition",
+  "card": {
+    "status": "{value}",
+    "priority": "{value}",
+    "type": "{value}",
+    "statusAge": "depuis {value}",
+    "initiative": "Objectif : {value}",
+    "cycle": "Cycle {value}",
+    "estimatePoints": "{value} pts",
+    "estimateTime": "{value}",
+    "startDate": "dès le {value}",
+    "dueDate": "échéance {value}"
+  }
 }

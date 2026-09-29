@@ -158,5 +158,17 @@
     "loadFailedHint": "The server did not answer. Try again in a moment."
   },
   "viewNotFound": "This view no longer exists. Showing all tasks.",
-  "layout": "Layout"
+  "layout": "Layout",
+  "card": {
+    "status": "{value}",
+    "priority": "{value}",
+    "type": "{value}",
+    "statusAge": "for {value}",
+    "initiative": "Goal: {value}",
+    "cycle": "Cycle {value}",
+    "estimatePoints": "{value} pts",
+    "estimateTime": "{value}",
+    "startDate": "from {value}",
+    "dueDate": "due {value}"
+  }
 }

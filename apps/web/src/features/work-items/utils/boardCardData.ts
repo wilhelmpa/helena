@@ -28,13 +28,30 @@ function shownValue(field: CustomField, entry: IssueFieldValueEntry, maps: Maps)
   return value.replace(/\s+/g, ' ').trim().slice(0, 80);
 }
 
+// The built-in properties of a task's meta line, each with its own words in the reader's
+// language (messages workItems.card): "seit 11 Std.", "fällig 3. Okt." — never a German
+// label hard-coded here (owner, 28.09.: the card read "Status Neu · Status 11h").
+export type CardMetaKey =
+  | 'status'
+  | 'statusAge'
+  | 'priority'
+  | 'type'
+  | 'initiative'
+  | 'cycle'
+  | 'estimatePoints'
+  | 'estimateTime'
+  | 'startDate'
+  | 'dueDate';
+
+export type CardMetaWords = (key: CardMetaKey, value: string) => string;
+
 export function boardCardData(
   issue: BoardIssue,
   project: ProjectDetail,
   maps: Maps,
   properties: PropertyKey[],
   priorityLabel: (priority: string | null) => string,
-  statusAgeLabel: string,
+  words: CardMetaWords,
 ) {
   const fields = properties.flatMap((key) => {
     if (!isCustomFieldKey(key)) return [];
@@ -75,34 +92,38 @@ export function boardCardData(
       return item && item !== important ? [`${item.field.name} ${item.value}`] : [];
     }
     switch (property) {
-      case 'status':
-        return [`Status ${maps.columnById.get(issue.columnId)?.name ?? ''}`];
+      case 'status': {
+        const status = maps.columnById.get(issue.columnId)?.name;
+        return status ? [words('status', status)] : [];
+      }
       case 'priority':
-        return issue.priority ? [`Priorität ${priorityLabel(issue.priority)}`] : [];
+        return issue.priority ? [words('priority', priorityLabel(issue.priority))] : [];
       case 'type': {
         const type = issue.typeId ? maps.typeById.get(issue.typeId) : null;
-        return type ? [`Typ ${type.name}`] : [];
+        return type ? [words('type', type.name)] : [];
       }
       case 'initiative':
-        return issue.initiative ? [`Ziel ${issue.initiative.title}`] : [];
+        return issue.initiative ? [words('initiative', issue.initiative.title)] : [];
       case 'cycle':
-        return issue.cycle ? [`Zyklus ${issue.cycle.name}`] : [];
+        return issue.cycle ? [words('cycle', issue.cycle.name)] : [];
       case 'estimatePoints':
         return issue.estimatePoints != null && builtinImportant !== property
-          ? [`Punkte ${issue.estimatePoints}`]
+          ? [words('estimatePoints', String(issue.estimatePoints))]
           : [];
       case 'estimateTime':
         return issue.estimateMinutes != null && builtinImportant !== property
-          ? [`Aufwand ${formatMinutes(issue.estimateMinutes)}`]
+          ? [words('estimateTime', formatMinutes(issue.estimateMinutes))]
           : [];
       case 'startDate':
-        return issue.startDate ? [`Start ${formatShortDate(issue.startDate)}`] : [];
+        return issue.startDate ? [words('startDate', formatShortDate(issue.startDate))] : [];
       case 'dueDate':
         return issue.dueDate && (important || builtinImportant)
-          ? [`Fällig ${formatShortDate(issue.dueDate)}`]
+          ? [words('dueDate', formatShortDate(issue.dueDate))]
           : [];
-      case 'statusAge':
-        return [`${statusAgeLabel} ${formatDurationShort(issue.statusSince)}`];
+      case 'statusAge': {
+        const age = formatDurationShort(issue.statusSince);
+        return age ? [words('statusAge', age)] : [];
+      }
       default:
         return [];
     }
@@ -111,4 +132,12 @@ export function boardCardData(
     ? issue.labelIds.flatMap((id) => maps.labelById.get(id) ?? [])
     : [];
   return { importantValue, meta, labels };
+}
+
+// The properties a board card shows: the view's, without the one its columns already are —
+// a board grouped by status names the status above the cards (owner, 28.09.).
+export function cardProperties(settings: { properties: PropertyKey[]; group: string }) {
+  return settings.group === 'status'
+    ? settings.properties.filter((property) => property !== 'status')
+    : settings.properties;
 }
