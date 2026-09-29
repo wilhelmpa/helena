@@ -33,7 +33,7 @@ permissions and the git repositories; the provisioning service creates the proje
   changes (or one rescan). The row moves with it, keeping its id, its links and its
   extracted text, and `vault_move` records it for `resolveVaultPath`.
 - **Text only in git.** `isVersioned` and the `.gitignore` the setup script writes agree:
-  md, canvas, txt, csv, json, yaml; not the trash, not Syncthing's conflict copies, not
+  md, canvas, base, txt, csv, json, yaml; not the trash, not Syncthing's conflict copies, not
   `.obsidian/workspace*`. `Private/` is a repository of its own.
 - **Extraction is queued.** A binary file is indexed as `pending`; the watcher extracts it
   with poppler, tesseract (deu+eng) and pandoc, and reads xlsx and pptx itself. A missing

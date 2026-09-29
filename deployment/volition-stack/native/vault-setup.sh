@@ -63,6 +63,7 @@ text_only='# Written by vault-setup.sh: the history holds text files only.
 !.gitignore
 !*.md
 !*.canvas
+!*.base
 !*.txt
 !*.csv
 !*.json

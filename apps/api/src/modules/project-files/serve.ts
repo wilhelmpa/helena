@@ -11,7 +11,9 @@ export function contentTypeOf(filename: string): string {
 }
 
 const isText = (contentType: string) =>
-  /^text\/(plain|markdown|csv|calendar)\b/i.test(contentType) || contentType === 'application/json';
+  /^text\/(plain|markdown|csv|calendar)\b/i.test(contentType) ||
+  contentType === 'application/json' ||
+  contentType === 'application/yaml';
 
 // What the Files viewer opens in the browser: PDF in its own viewer (which does not
 // open under a sandbox policy), raster images, audio and video, and text as text/plain.
