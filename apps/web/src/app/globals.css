@@ -103,7 +103,7 @@ body:has(.project-ai-agents-view) [class~='@container/page']::-webkit-scrollbar 
 /* Org chart (components/common/organization): lines, orbits and the breathing hub of
    the "Kreis" view. Real states only; reduced motion keeps everything still. */
 .organization-flow {
-  --org-edge: color-mix(in srgb, var(--foreground) 32%, transparent);
+  --org-edge: color-mix(in srgb, var(--foreground) 45%, transparent);
   --org-orbit: color-mix(in srgb, var(--foreground) 22%, transparent);
 }
 
