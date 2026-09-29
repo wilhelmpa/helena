@@ -165,6 +165,10 @@ moduleMock('receipts/dedup', {
   autoMergeEnabled: async () => true,
   inspectNewReceipts: async () => [],
 });
+// "Belege als Notizen" is off here; its own tests cover the projection.
+moduleMock('receipts/projection', {
+  rebuildReceiptProjection: async () => ({ enabled: false, projected: 0, changed: 0, basePath: '' }),
+});
 moduleMock('receipts/source', {
   receiptSourceLinks: () => assert.fail('Source links must not be rendered during intake'),
 });
