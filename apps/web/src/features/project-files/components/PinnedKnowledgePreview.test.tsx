@@ -16,11 +16,13 @@ mock.module('./KnowledgePreview', () => ({
   ),
 }));
 
+// Loaded before a window exists: the API client reads its address when it is imported.
+const { default: PinnedKnowledgePreview } = await import('./PinnedKnowledgePreview');
+
 test('the pinned file is shown on another page and not twice on its own', async () => {
   await withDom('https://ava.example/project/VOL/files?path=Docs', async () => {
     const pins = await import('@/utils/overlayPin');
     pins.resetOverlayPinForTest();
-    const { default: PinnedKnowledgePreview } = await import('./PinnedKnowledgePreview');
     const { createRoot } = await import('react-dom/client');
     const root = createRoot(document.querySelector('#root')!);
     const entry = {

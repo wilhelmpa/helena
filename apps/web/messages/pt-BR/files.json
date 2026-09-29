@@ -228,8 +228,7 @@
     "emptyFiles": "PDFs, imagens e outros arquivos chegam aqui. Envie um ou arraste para cá.",
     "onlySubfoldersTitle": "Somente subpastas",
     "onlySubfolders": "Esta pasta não contém arquivos. Abra uma das subpastas.",
-    "renameLabel": "Novo nome para {name}",
-    "formatted": "Formatado"
+    "renameLabel": "Novo nome para {name}"
   },
   "canvas": {
     "opening": "Abrindo a tela …",

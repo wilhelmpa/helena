@@ -228,8 +228,7 @@
     "emptyFiles": "تصل ملفات PDF والصور والملفات الأخرى إلى هنا. ارفع ملفًا أو اسحبه إلى هنا.",
     "onlySubfoldersTitle": "مجلدات فرعية فقط",
     "onlySubfolders": "لا يحتوي هذا المجلد على ملفات. افتح أحد مجلداته الفرعية.",
-    "renameLabel": "اسم جديد لـ {name}",
-    "formatted": "منسّق"
+    "renameLabel": "اسم جديد لـ {name}"
   },
   "canvas": {
     "opening": "جارٍ فتح اللوحة …",

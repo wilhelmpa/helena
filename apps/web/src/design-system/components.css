@@ -2866,6 +2866,15 @@ a.ds-run-card:hover {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.ds-folder-mark {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  color: var(--text-3);
+}
+.ds-folder-mark[data-kind='task'] {
+  color: var(--accent);
+}
 .ds-file-actions {
   padding-block: var(--space-1);
 }

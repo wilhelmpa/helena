@@ -12,6 +12,7 @@ import { useUploadFiles } from '@/features/project-files/services/projectFiles.s
 import { homeFilesPath } from '@/utils/paths';
 import FileBrowser from './components/FileBrowser';
 import FileBrowserDialogs, { type FileDialogState } from './components/FileBrowserDialogs';
+import { EntryActionBar } from './components/FileActionBar';
 import KnowledgeRecentView, { type KnowledgeSource } from './components/KnowledgeRecentView';
 import { useFileNavigationGuard } from './hooks/useFileNavigationGuard';
 import type { HomeFilesRoot } from './components/HomeFilesRoots';
@@ -122,6 +123,9 @@ export default function HomeFilesPage() {
                 })
               }
               onUpload={(files) => upload.mutate({ folder: '', files })}
+              actionBarFor={(entry) => (
+                <EntryActionBar entry={entry} can={{ create: owner, edit: owner, delete: owner }} />
+              )}
             />
             <FileBrowserDialogs
               scope={homeScope}

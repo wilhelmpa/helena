@@ -12,6 +12,7 @@ import type { FilePermissions } from './FileBrowser';
 import type { KnowledgeEntry } from './KnowledgeListView';
 import KnowledgeBaseView from './KnowledgeBaseView';
 import KnowledgeCanvas from './KnowledgeCanvas';
+import FolderMark from './FolderMark';
 import OriginBadge from './OriginBadge';
 import { MarkdownBody } from './ProjectKnowledgeViewer';
 import VaultTextEditor from './VaultTextEditor';
@@ -45,6 +46,7 @@ export default function KnowledgePreview({
   pinnedHost?: boolean;
 }) {
   const t = useTranslations('files.knowledge');
+  const unified = useTranslations('files.unified');
   const relativeTime = useRelativeTime();
   const { item, scope } = entry;
   const name = knowledgeDisplayName(item.name);
@@ -102,8 +104,8 @@ export default function KnowledgePreview({
           value={asSource ? 'source' : 'formatted'}
           onChange={(next) => void showSource(next === 'source')}
           options={[
-            { value: 'formatted', label: t('formatted') },
-            { value: 'source', label: t('source') },
+            { value: 'formatted', label: unified('formatted') },
+            { value: 'source', label: unified('source') },
           ]}
         />
         {asSource ? (
@@ -181,6 +183,7 @@ export default function KnowledgePreview({
         <Stack gap={3} className="ds-knowledge-preview-body" data-knowledge-preview={item.path}>
           <Inline gap={2} wrap>
             {item.origin && item.origin !== 'manual' && <OriginBadge origin={item.origin} />}
+            <FolderMark entry={entry} />
             <Text size="xs" tone="muted">
               {[entry.location, item.updatedAt ? relativeTime(item.updatedAt) : null]
                 .filter(Boolean)

@@ -158,8 +158,8 @@
     "references": "Sources and references",
     "author": "Edited by {author}",
     "run": "Run {run}",
-    "formatted": "Formatted text",
-    "source": "Markdown source",
+    "formatted": "Formatted",
+    "source": "Source",
     "sourceEditRejected": "This edit could not preserve the original line endings. Your previous text is unchanged. Try smaller edits."
   },
   "knowledge": {
@@ -228,8 +228,7 @@
     "emptyFiles": "PDFs, images and other files land here. Upload one or drop it here.",
     "onlySubfoldersTitle": "Only subfolders",
     "onlySubfolders": "This folder holds no files. Open one of its subfolders.",
-    "renameLabel": "New name for {name}",
-    "formatted": "Formatted"
+    "renameLabel": "New name for {name}"
   },
   "canvas": {
     "opening": "Opening the canvas …",

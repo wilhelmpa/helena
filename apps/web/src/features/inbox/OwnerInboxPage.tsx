@@ -31,9 +31,9 @@ import { useAgentStatus } from '@/utils/helenaStatus';
 import { Card } from '@/components/helena/DashboardPrimitives';
 import { ProjectTag } from '@/components/helena/ProjectTag';
 import { EmptyState, Page } from '@/design-system';
-import { PageTabs } from '@/components/layout/PageToolbar';
-import { Bell, CheckCircle2, CircleAlert, History, MessageSquareText } from 'lucide-react';
+import { CheckCircle2, CircleAlert, History } from 'lucide-react';
 import InboxWorkspace from './InboxWorkspace';
+import OwnerInboxTabs, { type OwnerInboxTab } from './OwnerInboxTabs';
 import PillButton from '@/components/helena/PillButton';
 import styles from './OwnerInboxPage.module.css';
 
@@ -218,33 +218,6 @@ function InboxCard({ item }: { item: OwnerInboxItem }) {
 }
 
 const HOME = '__helena';
-
-// Home's inbox has the tabs of a project's (owner 29.09., O82): the mail of every account
-// and project, and what needs the owner (approvals, mentions, runs to read).
-type OwnerInboxTab = 'messages' | 'updates';
-
-function OwnerInboxTabs({
-  tab,
-  waiting,
-  onChange,
-}: {
-  tab: OwnerInboxTab;
-  waiting: number;
-  onChange: (tab: OwnerInboxTab) => void;
-}) {
-  const t = useTranslations('inbox.hub');
-  return (
-    <PageTabs
-      label={t('messages')}
-      value={tab}
-      onChange={onChange}
-      items={[
-        { value: 'messages', label: t('messages'), icon: MessageSquareText },
-        { value: 'updates', label: t('updates'), icon: Bell, count: waiting || undefined },
-      ]}
-    />
-  );
-}
 
 function OwnerInboxUpdates({ tabs }: { tabs: ReactNode }) {
   const t = useTranslations('inbox.owner');

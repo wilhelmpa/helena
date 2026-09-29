@@ -228,8 +228,7 @@
     "emptyFiles": "Aquí llegan PDF, imágenes y otros archivos. Sube uno o arrástralo aquí.",
     "onlySubfoldersTitle": "Solo subcarpetas",
     "onlySubfolders": "Esta carpeta no contiene archivos. Abre una de sus subcarpetas.",
-    "renameLabel": "Nuevo nombre para {name}",
-    "formatted": "Con formato"
+    "renameLabel": "Nuevo nombre para {name}"
   },
   "canvas": {
     "opening": "Abriendo el lienzo …",

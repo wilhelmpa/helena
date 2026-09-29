@@ -94,6 +94,7 @@ export default function KnowledgeRecentView({
             vaultPath: file.path,
             projectKey: source.projectKey,
             location: [source.label, folder].filter(Boolean).join(' / ') || t('topLevel'),
+            folder: folders.join('/'),
           };
         }),
     )

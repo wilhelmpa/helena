@@ -3,8 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useOverlayShownByPage, usePinnedOverlay } from '@/utils/overlayPin';
 import { vaultNotePath } from '@/utils/paths';
-import { useFileActions } from '../hooks/useFileActions';
-import FileActionBar from './FileActionBar';
+import { EntryActionBar } from './FileActionBar';
 import type { FilePermissions } from './FileBrowser';
 import type { KnowledgeEntry } from './KnowledgeListView';
 import KnowledgePreview from './KnowledgePreview';
@@ -29,20 +28,11 @@ function PinnedPreview({ entry, can }: { entry: KnowledgeEntry; can: FilePermiss
   const router = useRouter();
   // On another page there are no dialogs to rename, move or trash with: the file's actions
   // that need none (download, link, chat) stand there all the same.
-  const actions = useFileActions({
-    scope: entry.scope,
-    listing: undefined,
-    onNavigate: () => undefined,
-    onSelect: () => undefined,
-    ask: () => undefined,
-  });
   return (
     <KnowledgePreview
       entry={entry}
       can={can}
-      actionBar={
-        <FileActionBar item={entry.item} actions={actions} can={can} withDialogs={false} />
-      }
+      actionBar={<EntryActionBar entry={entry} can={can} />}
       pinnedHost
       onClose={() => undefined}
       onOpenLarge={() => {

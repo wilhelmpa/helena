@@ -228,8 +228,7 @@
     "emptyFiles": "PDF、图片和其他文件会放在这里。上传一个或拖到这里。",
     "onlySubfoldersTitle": "只有子文件夹",
     "onlySubfolders": "此文件夹中没有文件。请打开其中一个子文件夹。",
-    "renameLabel": "{name} 的新名称",
-    "formatted": "格式化"
+    "renameLabel": "{name} 的新名称"
   },
   "canvas": {
     "opening": "正在打开画布 …",

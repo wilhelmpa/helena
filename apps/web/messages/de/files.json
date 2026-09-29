@@ -158,8 +158,8 @@
     "references": "Quellen und Verknüpfungen",
     "author": "Bearbeitet von {author}",
     "run": "Lauf {run}",
-    "formatted": "Formatierter Text",
-    "source": "Markdown-Quelltext",
+    "formatted": "Formatiert",
+    "source": "Quelltext",
     "sourceEditRejected": "Diese Änderung konnte nicht unter Erhalt der ursprünglichen Zeilenenden übernommen werden. Der vorherige Text bleibt erhalten. Versuche kleinere Änderungen."
   },
   "knowledge": {
@@ -228,8 +228,7 @@
     "emptyFiles": "PDFs, Bilder und andere Dateien landen hier. Lade eine hoch oder zieh sie hierher.",
     "onlySubfoldersTitle": "Nur Unterordner",
     "onlySubfolders": "In diesem Ordner liegen keine Dateien. Öffne einen der Unterordner.",
-    "renameLabel": "Neuer Name für {name}",
-    "formatted": "Formatiert"
+    "renameLabel": "Neuer Name für {name}"
   },
   "canvas": {
     "opening": "Leinwand wird geöffnet …",

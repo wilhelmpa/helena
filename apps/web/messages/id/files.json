@@ -228,8 +228,7 @@
     "emptyFiles": "PDF, gambar, dan berkas lain masuk ke sini. Unggah satu atau seret ke sini.",
     "onlySubfoldersTitle": "Hanya subfolder",
     "onlySubfolders": "Folder ini tidak berisi berkas. Buka salah satu subfoldernya.",
-    "renameLabel": "Nama baru untuk {name}",
-    "formatted": "Terformat"
+    "renameLabel": "Nama baru untuk {name}"
   },
   "canvas": {
     "opening": "Membuka kanvas …",

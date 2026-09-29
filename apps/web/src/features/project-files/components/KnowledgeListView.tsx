@@ -54,6 +54,7 @@ import {
 } from '../utils/knowledgeKinds';
 import type { FilePermissions } from './FileBrowser';
 import KnowledgePreview from './KnowledgePreview';
+import FolderMark from './FolderMark';
 import OriginBadge from './OriginBadge';
 
 // One file of a Wissen list, with the folder it belongs to. `item.path` is relative to
@@ -67,6 +68,8 @@ export interface KnowledgeEntry {
   projectKey?: string | null;
   // The folder the entry lives in, shown where a list mixes folders ("Zuletzt geändert").
   location?: string;
+  // That folder's path from the project's folder on, for its kind's symbol (FolderMark).
+  folder?: string;
 }
 
 export interface KnowledgeSearchRoot {
@@ -292,10 +295,14 @@ export default function KnowledgeListView({
     entry.projectKey ? (
       <Inline gap={1}>
         <ProjectTag projectKey={entry.projectKey} />
+        <FolderMark entry={entry} />
         <Text truncate>{entry.location}</Text>
       </Inline>
     ) : (
-      entry.location
+      <Inline gap={1}>
+        <FolderMark entry={entry} />
+        <Text truncate>{entry.location}</Text>
+      </Inline>
     );
 
   // The empty list says what is missing and offers the one thing to do about it.

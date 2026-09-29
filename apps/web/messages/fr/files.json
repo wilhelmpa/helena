@@ -228,8 +228,7 @@
     "emptyFiles": "Les PDF, images et autres fichiers arrivent ici. Téléversez-en un ou déposez-le ici.",
     "onlySubfoldersTitle": "Seulement des sous-dossiers",
     "onlySubfolders": "Ce dossier ne contient aucun fichier. Ouvrez l’un de ses sous-dossiers.",
-    "renameLabel": "Nouveau nom pour {name}",
-    "formatted": "Mis en forme"
+    "renameLabel": "Nouveau nom pour {name}"
   },
   "canvas": {
     "opening": "Ouverture de la toile …",

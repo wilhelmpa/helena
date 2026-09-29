@@ -11,17 +11,24 @@ import DocumentToolbar from './DocumentToolbar';
 export default function DocumentEditorField({
   editor,
   onUploadImage,
+  showToolbar,
   children,
 }: {
   editor: Editor | null;
   onUploadImage: (file: File) => Promise<{ url: string; filename: string }>;
+  // Only where the text can be edited. The field itself stays either way, so the editor
+  // inside keeps its place (and its text) when editing is switched on or off, as it is while
+  // a save runs.
+  showToolbar: boolean;
   children: ReactNode;
 }) {
   return (
     <div className="ds-doc-editor">
-      <div className="ds-doc-editor-bar">
-        <DocumentToolbar editor={editor} onUploadImage={onUploadImage} wrap />
-      </div>
+      {showToolbar && (
+        <div className="ds-doc-editor-bar">
+          <DocumentToolbar editor={editor} onUploadImage={onUploadImage} wrap />
+        </div>
+      )}
       <div className="ds-doc-editor-body">{children}</div>
     </div>
   );

@@ -11,7 +11,8 @@ import {
 } from '@/design-system';
 import type { FileItem } from '@/lib/api/endpoints/projectFiles';
 import { useFileActionItems, type FileActionItem } from '../hooks/useFileActionItems';
-import type { FileActions } from '../hooks/useFileActions';
+import { useFileActions, type FileActions } from '../hooks/useFileActions';
+import type { KnowledgeEntry } from './KnowledgeListView';
 import type { FilePermissions } from './FileBrowser';
 
 function ActionButton({ action }: { action: FileActionItem }) {
@@ -101,4 +102,26 @@ export default function FileActionBar({
       )}
     </Inline>
   );
+}
+
+// The bar for one entry of a list that spans places (Home's latest files, a pinned file on
+// another page): the entry's own place has its own actions, without the dialogs of a Wissen
+// page unless the caller has them.
+export function EntryActionBar({
+  entry,
+  can,
+  withDialogs = false,
+}: {
+  entry: KnowledgeEntry;
+  can: FilePermissions;
+  withDialogs?: boolean;
+}) {
+  const actions = useFileActions({
+    scope: entry.scope,
+    listing: undefined,
+    onNavigate: () => undefined,
+    onSelect: () => undefined,
+    ask: () => undefined,
+  });
+  return <FileActionBar item={entry.item} actions={actions} can={can} withDialogs={withDialogs} />;
 }

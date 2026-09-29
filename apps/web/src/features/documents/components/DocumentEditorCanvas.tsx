@@ -93,7 +93,7 @@ export default function DocumentEditorCanvas({
 
   // Inside an overlay or a page of Wissen a doc is one visible field with its toolbar
   // (owner 29.09., O79: the editor was hardly to be seen).
-  const field = embedded && editable;
+  const field = embedded;
   const editorNode = (
     <DocumentMarkdownEditor
       key={loaded.revision}
@@ -166,7 +166,11 @@ export default function DocumentEditorCanvas({
           </header>
         )}
         {field ? (
-          <DocumentEditorField editor={editor} onUploadImage={upload.mutateAsync}>
+          <DocumentEditorField
+            editor={editor}
+            onUploadImage={upload.mutateAsync}
+            showToolbar={editable}
+          >
             {editorNode}
           </DocumentEditorField>
         ) : (
