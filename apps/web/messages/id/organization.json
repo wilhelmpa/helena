@@ -318,6 +318,24 @@
     "whyEmpty": "Belum ada agen yang mengerjakan tugas proyek ini.",
     "whyNoGoal": "Tidak ada tujuan terhubung",
     "noAgent": "Tanpa agen",
-    "filterLabel": "Status"
+    "filterLabel": "Status",
+    "addMember": "Tambah anggota"
+  },
+  "addMember": {
+    "title": "Tambah anggota tim",
+    "description": "Agen dari pool atau salinan baru dari templat bergabung dengan tim proyek.",
+    "source": "Sumber",
+    "fromPool": "Dari pool",
+    "fromTemplate": "Dari templat",
+    "project": "Proyek",
+    "chooseProject": "Pilih proyek",
+    "poolEmpty": "Semua agen di pool sudah bekerja di proyek ini.",
+    "templatesEmpty": "Tim belum memiliki templat.",
+    "reportsTo": "Melapor ke",
+    "reportsToHint": "Koordinator proyek, kecuali Anda memilih yang lain.",
+    "add": "Tambah",
+    "added": "Ditambahkan ke {project}",
+    "failed": "Anggota tidak dapat ditambahkan.",
+    "keyOnce": "Salinan berjalan di luar Helena: salin kuncinya sekarang, hanya ditampilkan sekali."
   }
 }

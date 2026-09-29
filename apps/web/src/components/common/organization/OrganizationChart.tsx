@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useQueries, useQuery } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, UserPlus } from 'lucide-react';
 import type { Edge, Node } from '@xyflow/react';
 import type { Organization, OrganizationAgent } from '@/lib/api/endpoints/organization';
 import { listAgentActivity } from '@/lib/api/endpoints/agentActivity';
@@ -12,11 +12,14 @@ import { listDecisionLog } from '@/lib/api/endpoints/decisions';
 import { getProjectAutopilot } from '@/lib/api/endpoints/autopilot';
 import { listIssuesAcrossProjects } from '@/lib/api/endpoints/issues';
 import { useAiAgentsQuery } from '@/services/aiAgents.service';
+import { useTeamQuery } from '@/services/teams.service';
+import AddTeamMemberDialog from '@/features/organization/components/AddTeamMemberDialog';
 import { qk } from '@/services/queryKeys';
 import { deriveStatus, type HelenaStatus, type StatusSignals } from '@/utils/helenaStatus';
 import { openAgent as openAgentDialog } from '@/features/settings/settingsModalCatalog';
 import {
   EmptyState,
+  PageActions,
   PageSearch,
   PageTabs,
   PageToolbar,
@@ -116,6 +119,10 @@ export default function OrganizationChart({
   const [collapsed, setCollapsed] = useState<Set<number>>(new Set());
   const [filter, setFilter] = useState<Filter>('all');
   const [search, setSearch] = useState('');
+  // "Mitglied hinzufügen" (owner, O23/O57): in the tree and in the ring, for whoever may
+  // create agents in the team.
+  const [adding, setAdding] = useState(false);
+  const canAdd = useTeamQuery(organization.teamId).data?.permissions.ai_agents.create ?? false;
 
   // View, level and the task ring live in the address, so a link and the back button
   // reach them; the defaults leave it clean.
@@ -483,6 +490,16 @@ export default function OrganizationChart({
         <PageToolbarSpacer />
         <PageSearch value={search} onChange={setSearch} placeholder={t('searchPlaceholder')} />
         {toolbarEnd}
+        {canAdd && (
+          <PageActions
+            primary={{
+              id: 'add-member',
+              label: t('addMember'),
+              icon: UserPlus,
+              onClick: () => setAdding(true),
+            }}
+          />
+        )}
       </PageToolbar>
       <section className="ds-org-stage" aria-label={tNav('sidebarTeamDeciders')}>
         {scope.crumbs.length > 1 && (
@@ -566,6 +583,13 @@ export default function OrganizationChart({
           </p>
         )}
       </section>
+      {adding && (
+        <AddTeamMemberDialog
+          organization={organization}
+          projectId={projectId}
+          onClose={() => setAdding(false)}
+        />
+      )}
       {openTask && (
         <OrganizationTaskSheet
           projectKey={openTask.projectKey}

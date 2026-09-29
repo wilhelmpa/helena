@@ -318,6 +318,24 @@
     "whyEmpty": "Aucun agent ne travaille encore sur une tâche de ce projet.",
     "whyNoGoal": "Aucun objectif lié",
     "noAgent": "Sans agent",
-    "filterLabel": "Statut"
+    "filterLabel": "Statut",
+    "addMember": "Ajouter un membre"
+  },
+  "addMember": {
+    "title": "Ajouter un membre à l’équipe",
+    "description": "Un agent du pool ou une nouvelle copie d’un modèle rejoint l’équipe du projet.",
+    "source": "Origine",
+    "fromPool": "Depuis le pool",
+    "fromTemplate": "Depuis un modèle",
+    "project": "Projet",
+    "chooseProject": "Choisir un projet",
+    "poolEmpty": "Tous les agents du pool travaillent déjà dans ce projet.",
+    "templatesEmpty": "L’équipe n’a pas encore de modèles.",
+    "reportsTo": "Rend compte à",
+    "reportsToHint": "Le coordinateur du projet, sauf choix contraire.",
+    "add": "Ajouter",
+    "added": "Ajouté à {project}",
+    "failed": "Le membre n’a pas pu être ajouté.",
+    "keyOnce": "La copie s’exécute hors de Helena : copiez sa clé maintenant, elle n’est affichée qu’une fois."
   }
 }

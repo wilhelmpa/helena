@@ -119,6 +119,53 @@ describe('Organigramm „Kreis“', () => {
     assert.ok(!ring.edges.some((edge) => edge.target === '99'));
   });
 
+  test('Home: echte Ringe – jede Ebene auf einem Kreis, keine Linie kreuzt eine andere', () => {
+    const ring = organizationRingLayout({
+      level: 'home',
+      agents,
+      departments,
+      projects,
+      delegating: new Set(),
+    });
+    const at = new Map(ring.nodes.map((node) => [node.id, node.position]));
+    const distance = (id: string) => Math.round(Math.hypot(at.get(id)!.x, at.get(id)!.y));
+    const same = (ids: string[]) => new Set(ids.map(distance)).size === 1;
+    const first = ['group:d:1', 'group:d:2', 'group:p:13', '99'];
+    const second = ['2', '3', '4', '5'];
+    const third = [20, 29, 40, 47, 60, 64].map(String);
+    assert.ok(same(first), 'erster Ring');
+    assert.ok(same(second), 'zweiter Ring');
+    assert.ok(same(third), 'dritter Ring');
+    assert.ok(distance('99') < distance('2') && distance('2') < distance('20'));
+    assert.deepEqual(ring.orbits.slice(0, 3), [distance('99'), distance('2'), distance('20')]);
+    // Every line of the middle ends on the first ring.
+    assert.ok(ring.edges.filter((edge) => edge.source === '1').every((edge) => first.includes(edge.target)));
+    // No two lines cross (lines that share a node may touch there).
+    const cross = (a: [number, number][], b: [number, number][]) => {
+      const turn = (p: [number, number], q: [number, number], r: [number, number]) =>
+        Math.sign((q[0] - p[0]) * (r[1] - p[1]) - (q[1] - p[1]) * (r[0] - p[0]));
+      return (
+        turn(a[0], a[1], b[0]) * turn(a[0], a[1], b[1]) < 0 &&
+        turn(b[0], b[1], a[0]) * turn(b[0], b[1], a[1]) < 0
+      );
+    };
+    const lines = ring.edges.map((edge) => ({
+      edge,
+      points: [edge.source, edge.target].map((id) => [at.get(id)!.x, at.get(id)!.y]) as [
+        number,
+        number,
+      ][],
+    }));
+    for (const a of lines)
+      for (const b of lines) {
+        if (a === b) continue;
+        const shared = [a.edge.source, a.edge.target].some((id) =>
+          [b.edge.source, b.edge.target].includes(id),
+        );
+        if (!shared) assert.ok(!cross(a.points, b.points), `${a.edge.id} kreuzt ${b.edge.id}`);
+      }
+  });
+
   test('gleiche Daten ergeben dieselben Positionen (kein Springen)', () => {
     const input = {
       level: 'home' as const,

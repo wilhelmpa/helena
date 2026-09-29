@@ -318,6 +318,24 @@
     "whyEmpty": "No agent is working on a task of this project yet.",
     "whyNoGoal": "No goal linked",
     "noAgent": "No agent",
-    "filterLabel": "Status"
+    "filterLabel": "Status",
+    "addMember": "Add member"
+  },
+  "addMember": {
+    "title": "Add a team member",
+    "description": "An agent from the pool or a new copy of a template joins the project's team.",
+    "source": "Source",
+    "fromPool": "From the pool",
+    "fromTemplate": "From a template",
+    "project": "Project",
+    "chooseProject": "Choose a project",
+    "poolEmpty": "Every agent of the pool already works in this project.",
+    "templatesEmpty": "The team has no templates yet.",
+    "reportsTo": "Reports to",
+    "reportsToHint": "The coordinator of the project unless you choose otherwise.",
+    "add": "Add",
+    "added": "Added to {project}",
+    "failed": "The member could not be added.",
+    "keyOnce": "The copy runs outside Helena: copy its key now, it is shown only once."
   }
 }

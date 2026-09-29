@@ -8,14 +8,17 @@ import type {
 } from '@/lib/api/endpoints/organization';
 import { projectColor } from '@/utils/projectColor';
 
-// "Kreis": the same org data as the tree, radial, on every level:
-// - home:       Home in the middle, departments (or projects without one) on the inner
-//               ring, their agents on the outer ring as branches;
-// - department: the department in the middle, its projects on the inner ring;
+// "Kreis": the same org data as the tree, as real rings around the middle (owner, O18/O56):
+// every level of the reporting chain is one ring, and every branch keeps to its own slice
+// of the circle (its share is the number of agents at its ends), so no two lines cross
+// and none runs past the ring it ends on.
+// - home:       Home in the middle, departments (or projects without one) on the first
+//               ring, their coordinators on the second, their teams further out;
+// - department: the department in the middle, its projects on the first ring;
 // - project:    the project's coordinator in the middle, Home above it, its team around;
 // - agent:      the agent in the middle, its manager above it, its reports around.
 // Positions come from sorted data only, so a click, a filter or a refetch never moves
-// a node. Optional tasks sit on the outermost ring at their agent.
+// a node. Optional tasks sit outside the last ring at their agent.
 
 export type RingLevel = 'home' | 'department' | 'project' | 'agent';
 
@@ -60,13 +63,17 @@ export interface RingLayoutInput {
   tasks?: RingTask[];
 }
 
-const GROUP_RADIUS = 190;
 const GROUP_SIZE = 112;
 export const HUB_SIZE = 136;
 const PILL_HEIGHT = 34;
 const TASK_HEIGHT = 26;
 const MARGIN = 10;
-const RADIUS_STEP = 42;
+// The first ring sits this far outside the hub's edge; each further ring at least this
+// far outside the one before it. A ring grows only when its nodes would touch.
+const FIRST_GAP = 70;
+const RING_STEP = 96;
+const GROW_STEP = 12;
+const TASK_GAP = 110;
 const TASKS_PER_AGENT = 4;
 
 // A pill's width from its label, close enough to keep the collision check honest.
@@ -107,17 +114,38 @@ function edge(
   };
 }
 
-// Places a box on the ray at `angle`, from `radius` outwards, where it overlaps nothing.
+// Places a box on the ray at `angle`, from `radius` outwards, where it overlaps nothing
+// (the tasks: they fan out around their agent's ray, outside the rings).
 function placeOnRay(placed: Box[], angle: number, radius: number, w: number, h: number) {
   let box: Box = { x: 0, y: 0, w, h };
   let at = radius;
   for (let step = 0; step < 60; step++) {
-    at = radius + step * RADIUS_STEP;
+    at = radius + step * 42;
     box = { x: Math.cos(rad(angle)) * at, y: Math.sin(rad(angle)) * at, w, h };
     if (!placed.some((other) => overlaps(box, other))) break;
   }
   placed.push(box);
   return { box, radius: at };
+}
+
+// One node of the radial tree: an agent, or a department or project circle.
+interface RingNode {
+  id: string;
+  kind: 'agent' | 'group';
+  agent?: OrganizationAgent;
+  group?: RingGroup;
+  accent: string;
+  // A head of its sector (or the manager above the middle): marked on its pill.
+  head: boolean;
+  // The line into it: from its parent (null for a loose agent, which gets none).
+  lineFrom: 'parent' | 'none' | 'reverse';
+  children: RingNode[];
+  // Leaves below it (1 for a leaf): its share of the circle.
+  weight: number;
+  depth: number;
+  angle: number;
+  w: number;
+  h: number;
 }
 
 export function organizationRingLayout({
@@ -171,17 +199,8 @@ export function organizationRingLayout({
   if (!hubAgent && !hubDepartment) return { nodes: [], edges: [], orbits: [] };
   const hubId = hubAgent ? String(hubAgent.id) : `department:${hubDepartment!.id}`;
 
-  // Everyone below an agent, depth first and by name, each once.
+  // Every agent is placed once.
   const seen = new Set<number>(hubAgent ? [hubAgent.id] : []);
-  function subtree(agent: OrganizationAgent): OrganizationAgent[] {
-    const result: OrganizationAgent[] = [];
-    for (const report of children.get(agent.id) ?? []) {
-      if (seen.has(report.id)) continue;
-      seen.add(report.id);
-      result.push(report, ...subtree(report));
-    }
-    return result;
-  }
 
   // The manager shown above the hub (project and agent level).
   const manager =
@@ -205,13 +224,6 @@ export function organizationRingLayout({
         .sort(byName);
   for (const head of heads) seen.add(head.id);
 
-  interface Sector {
-    group: RingGroup;
-    circle: boolean;
-    members: OrganizationAgent[];
-    heads: Set<number>;
-  }
-  const sectors: Sector[] = [];
   const palette = [
     'var(--project-vol)',
     'var(--project-trade)',
@@ -220,7 +232,45 @@ export function organizationRingLayout({
     'var(--project-color-5)',
   ];
 
-  if (level === 'home' || level === 'department') {
+  // Everyone below an agent as a tree, each agent once, by name.
+  function agentNode(
+    agent: OrganizationAgent,
+    accent: string,
+    head: boolean,
+    lineFrom: RingNode['lineFrom'],
+  ): RingNode {
+    const reports = (children.get(agent.id) ?? []).filter((report) => !seen.has(report.id));
+    for (const report of reports) seen.add(report.id);
+    return {
+      id: String(agent.id),
+      kind: 'agent',
+      agent,
+      accent,
+      head,
+      lineFrom,
+      children: reports.map((report) => agentNode(report, accent, false, 'parent')),
+      weight: 1,
+      depth: 0,
+      angle: 0,
+      w: ringPillWidth(agent.name),
+      h: PILL_HEIGHT,
+    };
+  }
+
+  // The middle's children, ring by ring outwards: departments or projects as circles
+  // (Home and department level), then their heads, then everyone below them.
+  const top: RingNode[] = [];
+  const grouped = level === 'home' || level === 'department';
+  let sectorIndex = 0;
+  if (manager) {
+    top.push({
+      ...agentNode(manager, projectColor(null), true, 'reverse'),
+      // The manager keeps only the line down to the middle; its other reports belong to
+      // another level.
+      children: [],
+    });
+  }
+  if (grouped) {
     const bucket = new Map<
       string,
       {
@@ -261,75 +311,137 @@ export function organizationRingLayout({
       entry.heads.push(head);
       bucket.set(key, entry);
     }
-    [...bucket.entries()]
-      .sort((a, b) => a[1].order.localeCompare(b[1].order))
-      .forEach(([key, entry], index) => {
-        const members: OrganizationAgent[] = [];
-        for (const head of entry.heads.sort(byName)) members.push(head, ...subtree(head));
-        sectors.push({
-          circle: !key.startsWith('a:'),
-          members,
-          heads: new Set(entry.heads.map((head) => head.id)),
-          group: {
-            key,
-            target: entry.target,
-            label: entry.label,
-            tag: [...entry.keys].sort().join(' · '),
-            accent: entry.accent ?? palette[index % palette.length]!,
-            members: members.map((member) => member.id),
-            budget: entry.budget,
-            throttled:
-              (entry.budget?.ratio ?? 0) >= 1 || members.some((member) => member.throttled),
-          },
-        });
+    for (const [key, entry] of [...bucket.entries()].sort((a, b) =>
+      a[1].order.localeCompare(b[1].order),
+    )) {
+      const accent = entry.accent ?? palette[sectorIndex++ % palette.length]!;
+      if (key.startsWith('a:')) {
+        // A head outside every project: straight on the first ring.
+        for (const head of entry.heads.sort(byName))
+          top.push(agentNode(head, accent, true, 'parent'));
+        continue;
+      }
+      const headNodes = entry.heads.sort(byName).map((head) => agentNode(head, accent, true, 'parent'));
+      const members: number[] = [];
+      const collect = (node: RingNode) => {
+        if (node.agent) members.push(node.agent.id);
+        node.children.forEach(collect);
+      };
+      headNodes.forEach(collect);
+      const group: RingGroup = {
+        key,
+        target: entry.target,
+        label: entry.label,
+        tag: [...entry.keys].sort().join(' · '),
+        accent,
+        members,
+        budget: entry.budget,
+        throttled:
+          (entry.budget?.ratio ?? 0) >= 1 || members.some((id) => byId.get(id)?.throttled),
+      };
+      top.push({
+        id: `group:${key}`,
+        kind: 'group',
+        group,
+        accent,
+        head: false,
+        lineFrom: 'parent',
+        children: headNodes,
+        weight: 1,
+        depth: 0,
+        angle: 0,
+        w: GROUP_SIZE,
+        h: GROUP_SIZE,
       });
+    }
   } else {
-    const members: OrganizationAgent[] = [];
-    if (manager) members.push(manager);
-    for (const head of heads) members.push(head, ...subtree(head));
     const project =
       level === 'project'
         ? projectById.get(focusId ?? -1)
         : hubAgent?.projects.map((item) => projectById.get(item.id)).find(Boolean);
-    sectors.push({
-      circle: false,
-      members,
-      heads: new Set(heads.map((head) => head.id)),
-      group: {
-        key: 'single',
-        target: null,
-        label: '',
-        tag: '',
-        accent: projectColor(project?.key ?? null),
-        members: members.map((member) => member.id),
-      },
-    });
+    const accent = projectColor(project?.key ?? null);
+    for (const head of heads) top.push(agentNode(head, accent, true, 'parent'));
   }
-  // Agents in scope outside every chain: shown, never connected by an invented line.
+  // Agents in scope outside every chain: shown on the first ring, never connected by an
+  // invented line.
   const loose = agents
     .filter((agent) => !seen.has(agent.id) && !agent.isHome)
     .filter((agent) => agent.reportsToAgentId == null || !byId.has(agent.reportsToAgentId))
     .sort(byName);
   for (const agent of loose) seen.add(agent.id);
-  const looseMembers = loose.flatMap((agent) => [agent, ...subtree(agent)]);
-  if (looseMembers.length)
-    sectors.push({
-      circle: false,
-      members: looseMembers,
-      heads: new Set(),
-      group: {
-        key: 'loose',
-        target: null,
-        label: '',
-        tag: '',
-        accent: 'var(--muted-foreground)',
-        members: looseMembers.map((agent) => agent.id),
-      },
+  for (const agent of loose) top.push(agentNode(agent, 'var(--muted-foreground)', false, 'none'));
+
+  // Every node's share of the circle is the number of leaves below it, so a branch never
+  // leaves its own slice and no two lines cross.
+  function measure(node: RingNode, depth: number): number {
+    node.depth = depth;
+    node.weight = node.children.length
+      ? node.children.reduce((sum, child) => sum + measure(child, depth + 1), 0)
+      : 1;
+    return node.weight;
+  }
+  const total = top.reduce((sum, node) => sum + measure(node, 1), 0);
+  // The first slice is centred at the top: the manager (or the first group) sits above
+  // the middle.
+  let start = -90 - (top[0] ? (180 * top[0].weight) / Math.max(1, total) : 0);
+  function assign(node: RingNode, from: number, span: number) {
+    node.angle = from + span / 2;
+    let at = from;
+    for (const child of node.children) {
+      const share = (span * child.weight) / Math.max(1, node.weight);
+      assign(child, at, share);
+      at += share;
+    }
+  }
+  for (const node of top) {
+    const span = (360 * node.weight) / Math.max(1, total);
+    assign(node, start, span);
+    start += span;
+  }
+
+  // Ring by ring: the smallest radius at which no node of the ring touches another one
+  // (of its ring or of a ring inside it).
+  const rings: RingNode[][] = [];
+  const walk = (node: RingNode) => {
+    (rings[node.depth - 1] ??= []).push(node);
+    node.children.forEach(walk);
+  };
+  top.forEach(walk);
+  const placed: Box[] = [{ x: 0, y: 0, w: HUB_SIZE, h: HUB_SIZE }];
+  const radii: number[] = [];
+  const at = new Map<string, Box>();
+  rings.forEach((ring, index) => {
+    const widest = Math.max(...ring.map((node) => Math.max(node.w, node.h)));
+    let radius =
+      index === 0
+        ? HUB_SIZE / 2 + FIRST_GAP + widest / 2
+        : radii[index - 1]! + Math.max(RING_STEP, widest / 2 + PILL_HEIGHT);
+    const boxesAt = (r: number) =>
+      ring.map((node) => ({
+        x: Math.cos(rad(node.angle)) * r,
+        y: Math.sin(rad(node.angle)) * r,
+        w: node.w,
+        h: node.h,
+      }));
+    for (let step = 0; step < 400; step++) {
+      const boxes = boxesAt(radius);
+      const clash =
+        boxes.some((box) => placed.some((other) => overlaps(box, other))) ||
+        boxes.some((box, i) => boxes.some((other, j) => j > i && overlaps(box, other)));
+      if (!clash) break;
+      radius += GROW_STEP;
+    }
+    radius = Math.round(radius);
+    radii.push(radius);
+    boxesAt(radius).forEach((box, i) => {
+      placed.push(box);
+      at.set(ring[i]!.id, box);
     });
+  });
 
   const nodes: Node[] = [];
   const edges: Edge[] = [];
-  const total = sectors.reduce((sum, sector) => sum + sector.members.length, 0);
+  const agentCount = rings.flat().filter((node) => node.kind === 'agent').length;
   nodes.push({
     id: hubId,
     type: 'hub',
@@ -341,97 +453,53 @@ export function organizationRingLayout({
     data: {
       ...(hubAgent ? { agent: hubAgent } : {}),
       department: hubDepartment ?? null,
-      count: total,
-      accent: sectors[0]?.group.accent,
+      count: agentCount,
+      accent: top.find((node) => node.kind === 'group')?.accent ?? top[0]?.accent,
     },
   });
-
-  const grouped = level === 'home' || level === 'department';
-  const agentRadius = Math.max(grouped ? 360 : 250, total * 9);
-  const placed: Box[] = [{ x: 0, y: 0, w: HUB_SIZE, h: HUB_SIZE }];
-  const weight = (sector: Sector) => Math.max(1, sector.members.length) + 0.8;
-  const weights = sectors.reduce((sum, sector) => sum + weight(sector), 0);
-  // The first sector is centered at the top; without groups the manager is at the top.
-  let start = grouped
-    ? -90 - (sectors[0] ? (180 * weight(sectors[0])) / weights : 0)
-    : -90 - 180 / Math.max(1, total);
-  const circles = sectors.filter((sector) => sector.circle).length;
-  const groupRadius = circles > 0 ? Math.max(GROUP_RADIUS, circles * 30) : 0;
-  let outermost = agentRadius;
   const agentAngles = new Map<number, number>();
-
-  for (const sector of sectors) {
-    const span = grouped
-      ? (360 * weight(sector)) / weights
-      : (360 * sector.members.length) / Math.max(1, total);
-    const middle = start + span / 2;
-    const groupId = `group:${sector.group.key}`;
-    const anchor = sector.circle ? groupId : hubId;
-    if (sector.circle) {
-      const x = Math.cos(rad(middle)) * groupRadius;
-      const y = Math.sin(rad(middle)) * groupRadius;
-      placed.push({ x, y, w: GROUP_SIZE, h: GROUP_SIZE });
+  const busy = (node: RingNode): boolean =>
+    (node.agent != null && delegating.has(node.agent.id)) || node.children.some(busy);
+  const emit = (node: RingNode, parentId: string) => {
+    const box = at.get(node.id)!;
+    if (node.kind === 'group') {
       nodes.push({
-        id: groupId,
+        id: node.id,
         type: 'group',
-        position: { x, y },
+        position: { x: box.x, y: box.y },
         origin: [0.5, 0.5],
         width: GROUP_SIZE,
         height: GROUP_SIZE,
         draggable: false,
-        data: { group: sector.group },
+        data: { group: node.group },
       });
-      edges.push(
-        edge(
-          hubId,
-          groupId,
-          sector.group.accent,
-          sector.members.some((member) => delegating.has(member.id)),
-          true,
-        ),
-      );
-    }
-    const count = sector.members.length;
-    const accent = sector.group.accent;
-    sector.members.forEach((agent, index) => {
-      const angle = start + (span * (index + 0.5)) / Math.max(1, count);
-      const { box, radius } = placeOnRay(
-        placed,
-        angle,
-        agentRadius,
-        ringPillWidth(agent.name),
-        PILL_HEIGHT,
-      );
-      outermost = Math.max(outermost, radius);
-      agentAngles.set(agent.id, angle);
+      edges.push(edge(parentId, node.id, node.accent, busy(node), true));
+    } else {
+      const agent = node.agent!;
+      agentAngles.set(agent.id, node.angle);
       nodes.push({
-        id: String(agent.id),
+        id: node.id,
         type: 'pill',
         position: { x: box.x, y: box.y },
         origin: [0.5, 0.5],
         draggable: false,
         data: {
           agent,
-          accent,
-          head: sector.heads.has(agent.id) || agent.id === manager?.id,
+          accent: node.accent,
+          head: node.head,
           reportCount: (children.get(agent.id) ?? []).length,
         },
       });
-      if (agent.id === manager?.id) {
-        const active = hubAgent ? delegating.has(hubAgent.id) : false;
-        edges.push(edge(String(agent.id), hubId, accent, active));
-        return;
-      }
-      const managerId = agent.reportsToAgentId;
-      const managerShown =
-        managerId != null &&
-        managerId !== hubAgent?.id &&
-        sector.members.some((member) => member.id === managerId);
-      const source = managerShown ? String(managerId) : sector.heads.has(agent.id) ? anchor : null;
-      if (source) edges.push(edge(source, String(agent.id), accent, delegating.has(agent.id)));
-    });
-    start += span;
-  }
+      if (node.lineFrom === 'reverse')
+        edges.push(
+          edge(node.id, parentId, node.accent, hubAgent ? delegating.has(hubAgent.id) : false),
+        );
+      else if (node.lineFrom === 'parent')
+        edges.push(edge(parentId, node.id, node.accent, delegating.has(agent.id)));
+    }
+    node.children.forEach((child) => emit(child, node.id));
+  };
+  top.forEach((node) => emit(node, hubId));
 
   // Tasks: the outermost ring, fanned out around the ray of their agent.
   const byAgent = new Map<number, RingTask[]>();
@@ -439,7 +507,8 @@ export function organizationRingLayout({
     if (!agentAngles.has(task.agentId) && task.agentId !== hubAgent?.id) continue;
     byAgent.set(task.agentId, [...(byAgent.get(task.agentId) ?? []), task]);
   }
-  const taskRadius = outermost + 110;
+  const outermost = radii.at(-1) ?? HUB_SIZE;
+  const taskRadius = outermost + TASK_GAP;
   let taskOutermost = 0;
   for (const [agentId, list] of [...byAgent].sort((a, b) => a[0] - b[0])) {
     const baseAngle = agentAngles.get(agentId) ?? -90;
@@ -463,11 +532,6 @@ export function organizationRingLayout({
     });
   }
 
-  const orbits = [
-    ...(groupRadius ? [groupRadius] : []),
-    agentRadius,
-    ...(outermost > agentRadius + 20 ? [outermost] : []),
-    ...(taskOutermost ? [taskRadius] : []),
-  ];
+  const orbits = [...radii, ...(taskOutermost ? [taskRadius] : [])];
   return { nodes, edges, orbits };
 }
