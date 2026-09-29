@@ -8,6 +8,13 @@ disallowedTools:
   - computer_use
   - tts
 skills:
+  - ava-bedienen
+  - ava-bedienen-aufgaben
+  - ava-bedienen-wissen
+  - ava-bedienen-ziele
+  - ava-bedienen-team
+  - ava-bedienen-belege
+  - ava-bedienen-zeitplaene
   - helena-ui-standard
   - design-critique
   - frontend-design

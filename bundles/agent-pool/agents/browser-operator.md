@@ -11,6 +11,13 @@ disallowedTools:
   - terminal
   - code_execution
 skills:
+  - ava-bedienen
+  - ava-bedienen-aufgaben
+  - ava-bedienen-wissen
+  - ava-bedienen-ziele
+  - ava-bedienen-team
+  - ava-bedienen-belege
+  - ava-bedienen-zeitplaene
   - typesafe-ai
   - helena-browser-decisions
   - agentic-browser-testing

@@ -12,6 +12,13 @@ disallowedTools:
   - code_execution
   - browser
 skills:
+  - ava-bedienen
+  - ava-bedienen-aufgaben
+  - ava-bedienen-wissen
+  - ava-bedienen-ziele
+  - ava-bedienen-team
+  - ava-bedienen-belege
+  - ava-bedienen-zeitplaene
   - ziele-in-aufgaben-zerlegen
   - write-spec
   - prioritization-frameworks

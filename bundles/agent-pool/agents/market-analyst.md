@@ -9,6 +9,13 @@ disallowedTools:
   - image_gen
   - tts
 skills:
+  - ava-bedienen
+  - ava-bedienen-aufgaben
+  - ava-bedienen-wissen
+  - ava-bedienen-ziele
+  - ava-bedienen-team
+  - ava-bedienen-belege
+  - ava-bedienen-zeitplaene
   - portfolio-analytics
   - risk-management
   - correlation-analysis
