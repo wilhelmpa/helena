@@ -48,8 +48,10 @@ sudo /srv/volition/source/plan/deployment/volition-stack/native/deploy.sh \
   hub/build-extern
 ```
 
-The deploy checks the commit, target `bun.lock` SHA-256, every packaged file, symlinks
-and Linux x86_64 native modules before touching the checkout. It checks again before
+The new deploy script checks the commit, target `bun.lock` SHA-256, every packaged file,
+symlinks and Linux x86_64 native modules before its drain and checkout. On the first
+deployment from the older live script, verification happens after its checkout handoff;
+failure enters the existing rollback. It checks again before
 installing a new `web-releases` directory, copies old static chunks, switches `current`,
 smokes the web service and uses the existing rollback path on failure.
 
