@@ -388,7 +388,7 @@ def apply(args, config) -> Changes:
         vault = os.path.join(config.vault_root, 'Projects', key)
         named = {(ACL_USER, account.pw_uid): rwx}
         if home_account:
-            named[(ACL_USER, home_account.pw_uid)] = rx
+            named[(ACL_USER, home_account.pw_uid)] = rwx
         acl_tree(vault, named, changes)
     if home_account:
         # The folder that holds the projects' folders, so Home can list them.
@@ -460,9 +460,24 @@ def rollback(args, config) -> Changes:
     return changes
 
 
+def sync_home_vault(args, config) -> Changes:
+    changes = Changes(args.dry_run)
+    try:
+        home = pwd.getpwnam(project_user(config, config.home_slug))
+    except KeyError:
+        changes.skip(config.vault_root, 'Home account does not exist')
+        return changes
+    for _slug, key in registry_projects(config):
+        acl_tree(os.path.join(config.vault_root, 'Projects', key),
+                 {(ACL_USER, home.pw_uid): 7}, changes)
+    acl_tree_top(os.path.join(config.vault_root, 'Projects'),
+                 {(ACL_USER, home.pw_uid): 5}, changes)
+    return changes
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(prog='migrate.py')
-    parser.add_argument('command', choices=['apply', 'rollback'])
+    parser.add_argument('command', choices=['apply', 'rollback', 'home-vault'])
     parser.add_argument('--dry-run', action='store_true')
     parser.add_argument('--config', default=os.environ.get('VOLITION_LAUNCHER_CONFIG', os.path.join(HERE, 'launcher.json')))
     parser.add_argument('--browser-root')
@@ -473,7 +488,8 @@ def main() -> int:
         print('migrate.py: run as root', file=sys.stderr)
         return 1
     config = load_config(args.config)
-    changes = (apply if args.command == 'apply' else rollback)(args, config)
+    operation = {'apply': apply, 'rollback': rollback, 'home-vault': sync_home_vault}[args.command]
+    changes = operation(args, config)
     print(json.dumps({'changes': changes.count, 'dryRun': changes.dry_run, 'skipped': changes.skipped}))
     return 0
 

@@ -10,6 +10,7 @@ const NOW = '2026-09-24T20:00:00.000Z';
 
 function healthy(): SystemHealth {
   return {
+    vault: { state: 'ok', checkedAt: NOW, findings: [] },
     agents: {
       total: 6,
       synced: 6,

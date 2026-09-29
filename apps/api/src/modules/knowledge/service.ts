@@ -2,7 +2,7 @@ import { createReadStream } from 'node:fs';
 import { lstat, readdir, stat } from 'node:fs/promises';
 import { Readable } from 'node:stream';
 import { and, asc, eq, inArray, ne, or, sql } from 'drizzle-orm';
-import { db, vaultEntry, vaultLink } from '@repo/db';
+import { db, helenaReceipt, noteBoard, vaultEntry, vaultLink } from '@repo/db';
 import { mimeFromName } from '@repo/storage/mime';
 import {
   absoluteVaultPath,
@@ -16,12 +16,14 @@ import {
   findEntry,
   indexVaultPaths,
   isIgnoredPath,
+  isCanvasPath,
   isNotePath,
   joinVaultPath,
   listSyncConflicts,
   listTrash,
   locateVaultPath,
   MAX_NOTE_BYTES,
+  movedReferencePath,
   moveEntries,
   moveVaultPath,
   normalizeVaultPath,
@@ -30,6 +32,8 @@ import {
   pathOrBelow,
   readVaultFile,
   resolveVaultPath,
+  sha256Of,
+  rewriteVaultReferences,
   restoreVaultPath,
   splitNote,
   TASK_IDENTIFIER,
@@ -49,6 +53,7 @@ const MAX_TREE_ITEMS = 5000;
 const MAX_FOLDER_ITEMS = 1000;
 const DEFAULT_MAX_CHARS = 200_000;
 const MAX_ASSET_BYTES = 50 * 1024 * 1024;
+const MAX_REFERENCE_BYTES = 5 * 1024 * 1024;
 
 // The vault reports expected failures as VaultError; the routes answer them as the
 // HTTP error of the same status.
@@ -510,9 +515,125 @@ export async function createFolder(relative: string) {
   return { path: relative };
 }
 
+function protectedVaultPath(relative: string): boolean {
+  const parts = relative.split('/');
+  const systemFolders = new Set(['Docs', 'Files', 'Inbox', 'Boards', 'Assets']);
+  return (
+    relative === 'Home' ||
+    (parts[0] === 'Home' && parts.length === 2 && systemFolders.has(parts[1]!)) ||
+    relative === 'Projects' ||
+    relative === 'Templates' ||
+    relative === 'Private' ||
+    (parts[0] === 'Projects' && parts.length <= 2) ||
+    (parts[0] === 'Projects' && parts.length === 3 && systemFolders.has(parts[2]!))
+  );
+}
+
+async function assertMutablePath(relative: string): Promise<void> {
+  if (protectedVaultPath(relative))
+    throw new HttpError(403, 'This Vault system folder is protected');
+  const receipts = await db
+    .select({ id: helenaReceipt.id })
+    .from(helenaReceipt)
+    .where(
+      or(
+        eq(helenaReceipt.vaultPath, relative),
+        sql`left(${helenaReceipt.vaultPath}, char_length(${relative}::text) + 1) = ${relative}::text || '/'`,
+      ),
+    )
+    .limit(1);
+  if (receipts.length) {
+    throw new HttpError(403, 'Receipt originals cannot be moved or trashed');
+  }
+}
+
+export async function deletePreview(relative: string) {
+  await assertNoSymlink(relative);
+  const info = await lstat(absoluteVaultPath(relative)).catch(() => null);
+  if (!info) throw new HttpError(404, 'File or folder not found');
+  const kind = info.isDirectory() ? ('folder' as const) : ('file' as const);
+  const items: string[] = kind === 'file' ? [relative] : [];
+  if (kind === 'folder') {
+    const pending = [relative];
+    while (pending.length) {
+      const folder = pending.pop()!;
+      for (const entry of await readdir(absoluteVaultPath(folder), { withFileTypes: true })) {
+        if (entry.name.startsWith('.') || entry.isSymbolicLink()) {
+          throw new HttpError(403, 'The folder contains protected Vault items');
+        }
+        const child = joinVaultPath(folder, entry.name);
+        items.push(child);
+        if (items.length > MAX_TREE_ITEMS)
+          throw new HttpError(413, 'The folder holds too many files');
+        if (entry.isDirectory()) pending.push(child);
+      }
+    }
+  }
+  items.sort();
+  const state = [];
+  for (const item of items) {
+    const file = await lstat(absoluteVaultPath(item));
+    state.push(`${item}:${file.size}:${file.mtimeMs}`);
+  }
+  return {
+    path: relative,
+    kind,
+    count: items.length,
+    items,
+    confirmation: sha256Of(Buffer.from(state.join('\n'))),
+  };
+}
+
 export async function movePath(scope: VaultScope, from: string, to: string) {
+  await assertMutablePath(from);
+  await deletePreview(from);
+  if (protectedVaultPath(to)) throw new HttpError(403, 'This Vault system folder is protected');
+  const source = locateVaultPath(from);
+  const target = locateVaultPath(to);
+  if (source.scope !== target.scope || source.projectKey !== target.projectKey) {
+    throw new HttpError(400, 'Move within the same Vault area');
+  }
   if (isNotePath(from) !== isNotePath(to)) {
     throw new HttpError(400, 'A note keeps the ".md" ending when it is renamed');
+  }
+  const paths = await walkVault('');
+  const oldStem = isNotePath(from) ? baseName(from).replace(/\.md$/i, '') : baseName(from);
+  const shortName =
+    paths.filter(
+      (path) =>
+        (isNotePath(path) ? baseName(path).replace(/\.md$/i, '') : baseName(path)) === oldStem,
+    ).length === 1;
+  const updates: { path: string; content: string; original: Buffer; sha256: string }[] = [];
+  for (const relative of paths) {
+    if (!isNotePath(relative) && !isCanvasPath(relative)) continue;
+    const info = await lstat(absoluteVaultPath(relative));
+    if (!info.isFile()) continue;
+    if (info.size > MAX_REFERENCE_BYTES) {
+      throw new HttpError(413, 'A Vault document is too large to verify its links');
+    }
+    const original = await readVaultFile(relative, MAX_REFERENCE_BYTES);
+    const content = original.bytes.toString('utf8');
+    const location = locateVaultPath(relative);
+    const sameArea = location.scope === source.scope && location.projectKey === source.projectKey;
+    const rewritten = rewriteVaultReferences(
+      content,
+      isCanvasPath(relative) ? 'canvas' : 'note',
+      from,
+      to,
+      shortName && sameArea,
+      sameArea,
+      relative,
+    );
+    if (rewritten === content) continue;
+    if (!canAccess(scope, relative, 'write')) {
+      throw new HttpError(403, 'A Vault link in another area must be updated before this move');
+    }
+    updates.push({
+      path: relative,
+      content: rewritten,
+      original: original.bytes,
+      sha256: original.sha256,
+    });
   }
   await moveVaultPath(from, to);
   try {
@@ -521,11 +642,54 @@ export async function movePath(scope: VaultScope, from: string, to: string) {
     await moveVaultPath(to, from);
     throw error;
   }
-  await recordWrite([from, to], `Move ${from} to ${to}`, scope);
+  const changed: string[] = [];
+  const applied: { path: string; original: Buffer; originalSha: string; sha256: string }[] = [];
+  try {
+    for (const update of updates) {
+      const relative = movedReferencePath(update.path, from, to);
+      const written = await writeVaultFile(relative, Buffer.from(update.content), update.sha256);
+      changed.push(relative);
+      applied.push({
+        path: relative,
+        original: update.original,
+        originalSha: update.sha256,
+        sha256: written.sha256,
+      });
+      if (isCanvasPath(relative)) {
+        await db
+          .update(noteBoard)
+          .set({ vaultSha256: written.sha256 })
+          .where(eq(noteBoard.vaultPath, relative));
+      }
+    }
+  } catch (error) {
+    try {
+      for (const update of applied.reverse()) {
+        await writeVaultFile(update.path, update.original, update.sha256);
+        if (isCanvasPath(update.path)) {
+          await db
+            .update(noteBoard)
+            .set({ vaultSha256: update.originalSha })
+            .where(eq(noteBoard.vaultPath, update.path));
+        }
+      }
+      await moveEntries(to, from);
+      await moveVaultPath(to, from);
+    } catch (rollbackError) {
+      throw new Error('Vault move failed and could not be rolled back', { cause: rollbackError });
+    }
+    throw error;
+  }
+  await recordWrite([from, to, ...changed], `Move ${from} to ${to}`, scope);
   return { path: to };
 }
 
-export async function trashPath(scope: VaultScope, relative: string) {
+export async function trashPath(scope: VaultScope, relative: string, confirmContents?: string) {
+  await assertMutablePath(relative);
+  const preview = await deletePreview(relative);
+  if (preview.kind === 'folder' && confirmContents !== preview.confirmation) {
+    throw new HttpError(409, 'Confirm the folder contents before moving it to the trash');
+  }
   await trashVaultPath(relative);
   await recordWrite([relative], `Trash ${relative}`, scope);
   return { path: relative };
@@ -537,11 +701,15 @@ export async function restorePath(scope: VaultScope, relative: string) {
   return { path: relative };
 }
 
-export async function listTrashed(root: string) {
-  return (await listTrash(root)).map((item) => ({
-    path: item.path,
-    trashedAt: iso(item.trashedAt),
-  }));
+export async function listTrashed(scope: VaultScope, root: string) {
+  const items = await listTrash(root);
+  if (root === '' && scope.private) items.push(...(await listTrash('Private')));
+  return items
+    .filter((item) => canAccess(scope, item.path, 'read'))
+    .map((item) => ({
+      path: item.path,
+      trashedAt: iso(item.trashedAt),
+    }));
 }
 
 // The Syncthing conflict copies below a Docs root: two devices changed a note at the

@@ -4,6 +4,7 @@ import {
   createVaultFolder,
   getNoteVersion,
   getVaultDocument,
+  getVaultDeletePreview,
   getVaultTree,
   listBacklinks,
   listNoteHistory,
@@ -48,6 +49,14 @@ export function useVaultTrashQuery(root: string, enabled: boolean) {
     queryKey: qk.knowledgeTrash(root),
     queryFn: () => listVaultTrash(root),
     enabled,
+  });
+}
+
+export function useVaultDeletePreviewQuery(path: string | null) {
+  return useQuery({
+    queryKey: qk.knowledgeDeletePreview(path ?? ''),
+    queryFn: () => getVaultDeletePreview(path!),
+    enabled: path !== null,
   });
 }
 
@@ -152,7 +161,10 @@ export function useTrashVaultPath(root: string) {
   const invalidate = useInvalidateTree(root);
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: trashVaultPath,
+    mutationFn: (input: string | { path: string; confirmContents?: string }) =>
+      typeof input === 'string'
+        ? trashVaultPath(input)
+        : trashVaultPath(input.path, input.confirmContents),
     onSuccess: () => {
       invalidate();
       void qc.invalidateQueries({ queryKey: qk.knowledgeConflicts(root) });

@@ -12,6 +12,7 @@ import {
   backlinksQuery,
   ConflictListResponse,
   documentQuery,
+  DeletePreviewResponse,
   DocumentResponse,
   folderQuery,
   FolderResponse,
@@ -27,6 +28,7 @@ import {
   searchQuery,
   SearchResponse,
   TrashListResponse,
+  trashBody,
   treeQuery,
   recentQuery,
   RecentResponse,
@@ -43,6 +45,7 @@ import {
   backlinksToPath,
   backlinksToTask,
   createFolder,
+  deletePreview,
   listConflicts,
   listFolder,
   listTrashed,
@@ -210,19 +213,32 @@ export const knowledgeRoutes = new Elysia({
       detail: {
         summary: 'Move or rename a note or folder',
         description: 'The index keeps the links to what moved, and records the move.',
+        ...mcpTool('move_vault_path', { idempotentHint: false }),
       },
     },
   )
-  .post('/knowledge/trash', ({ scope, paths }) => vaultCall(() => trashPath(scope, paths.path)), {
-    vault: { action: 'write', fields: ['path'] },
-    body: pathBody,
-    response: { 200: PathResponse, ...commonErrors, ...errors(409) },
-    detail: {
-      summary: 'Move a note or folder to the trash',
-      description: 'Moves it to the vault trash (.trash) at the same relative path.',
-    },
+  .get('/knowledge/delete-preview', ({ paths }) => vaultCall(() => deletePreview(paths.path)), {
+    vault: { action: 'read', fields: ['path'] },
+    query: pathQuery,
+    response: { 200: DeletePreviewResponse, ...commonErrors, ...errors(413) },
+    detail: { summary: 'Preview a Vault deletion' },
   })
-  .get('/knowledge/trash', ({ paths }) => vaultCall(() => listTrashed(paths.path)), {
+  .post(
+    '/knowledge/trash',
+    ({ scope, paths, body }) => vaultCall(() => trashPath(scope, paths.path, body.confirmContents)),
+    {
+      vault: { action: 'write', fields: ['path'] },
+      body: trashBody,
+      response: { 200: PathResponse, ...commonErrors, ...errors(409) },
+      detail: {
+        summary: 'Move a note or folder to the trash',
+        description:
+          'Moves it to the vault trash (.trash). Folders require the token from delete-preview.',
+        ...mcpTool('trash_vault_path', { idempotentHint: false }),
+      },
+    },
+  )
+  .get('/knowledge/trash', ({ scope, paths }) => vaultCall(() => listTrashed(scope, paths.path)), {
     vault: { action: 'read', fields: ['path'] },
     query: pathQuery,
     response: { 200: TrashListResponse, ...commonErrors },
@@ -243,6 +259,7 @@ export const knowledgeRoutes = new Elysia({
         summary: 'Restore a trashed file to its path',
         description:
           'Move a file back from the trash to its original path. 409 if that path is taken.',
+        ...mcpTool('restore_vault_path', { idempotentHint: false }),
       },
     },
   )

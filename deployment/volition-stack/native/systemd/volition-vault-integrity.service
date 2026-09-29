@@ -1,0 +1,14 @@
+[Unit]
+Description=Read-only Volition Vault integrity check
+After=postgresql.service
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/volition/plan.env
+Environment=RESTIC_REPOSITORY=/home/pw/services/volition-backups/restic
+Environment=RESTIC_PASSWORD_FILE=/home/pw/services/volition-stack/.secrets/backup_restic_password
+Environment=RESTIC_CACHE_DIR=/var/lib/volition/plan/restic-cache
+ExecStart=/usr/bin/python3 /srv/volition/source/plan/deployment/volition-stack/native/vault-integrity.py --report /var/lib/volition/plan/vault-integrity.json
+ReadWritePaths=/var/lib/volition/plan
+ProtectSystem=strict
+PrivateTmp=yes

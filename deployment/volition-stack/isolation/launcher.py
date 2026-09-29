@@ -218,11 +218,10 @@ class Launcher:
         return os.path.join(self.config.workspace_root, slug)
 
     def vault_binds(self, slug: str, key: str | None) -> tuple[list[str], list[str]]:
-        """(read-write, read-only) vault folders: the project's own, or for Home its own folder
-        and every project folder read-only."""
+        """(read-write, read-only) vault folders: the project's own, or Home and all projects."""
         root = self.config.vault_root
         if slug == self.config.home_slug:
-            return [os.path.join(root, 'Home')], [os.path.join(root, 'Projects')]
+            return [os.path.join(root, 'Home'), os.path.join(root, 'Projects')], []
         return [os.path.join(root, 'Projects', key)], []
 
     def owned_directory(self, path: str, uid: int) -> bool:
@@ -1237,7 +1236,7 @@ class Launcher:
         done['profiles'] = len(profiles)
 
         # The vault keeps its owners and the group every service reads it through; the
-        # project user gets its own folder, and Home reads every project's.
+        # project user gets its own folder, and Home reads and writes every project's.
         rw, ro = self.vault_binds(slug, key)
         vault_owners = {0, runner}
         for path in rw:
@@ -1248,7 +1247,7 @@ class Launcher:
                 home = pwd.getpwnam(project_user(config, config.home_slug))
                 for path in rw:
                     self.grant_directory(path, account, own=False, owners=vault_owners, group=readers,
-                                         named={(ACL_USER, home.pw_uid): rx})
+                                         named={(ACL_USER, home.pw_uid): rwx})
             except KeyError:
                 pass
         else:

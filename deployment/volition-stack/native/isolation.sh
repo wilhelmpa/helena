@@ -276,6 +276,7 @@ case $command in
     install_code
     open_shared_code
     install_units
+    migrate home-vault
     run systemctl try-restart volition-agent-launcher.service volition-egress.service volition-agent-plan.service
     ;;
   open-code)

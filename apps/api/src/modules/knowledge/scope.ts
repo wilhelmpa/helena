@@ -31,8 +31,8 @@ import { knowledgeActor, type KnowledgeActor } from './reach';
 //   (documents read / edit), while the project has Docs on. Over MCP the project also
 //   has to be in its team's MCP reach.
 // - Home/, Templates/ and everything else outside Projects/: the instance owner (the
-//   god account). A project agent reads Templates/. The Home agent reads everything
-//   but Private/, the projects of its team included, and writes Home/.
+//   god account). A project agent reads Templates/. The Home agent reads and writes
+//   Home/ and all enabled projects, but never Private/.
 // - Private/: the instance owner only, never an agent. The file permissions enforce
 //   the same for the agent user.
 // - Hidden paths (.git, .obsidian, .trash) are never reached through the API.
@@ -111,9 +111,12 @@ export async function vaultScope(
   const reachable = (row: ProjectFlags) =>
     row.documentsEnabled && (!viaMcp || (row.mcpEnabled && row.teamMcpEnabled));
   const projects = new Map<string, Access>();
-  if (allProjects) {
-    for (const row of await teamProjects(agent.teamId)) {
-      if (reachable(row)) projects.set(row.key, { read: true, write: false });
+  if (allProjects || homeAgent) {
+    const rows = homeAgent
+      ? await db.select(projectColumns).from(project).innerJoin(team, eq(team.id, project.teamId))
+      : await teamProjects(agent.teamId);
+    for (const row of rows) {
+      if (homeAgent || reachable(row)) projects.set(row.key, { read: true, write: homeAgent });
     }
   } else {
     for (const row of await memberships(caller.id)) {

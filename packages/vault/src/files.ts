@@ -11,6 +11,7 @@ import {
   joinVaultPath,
   parentPath,
   PRIVATE_DIR,
+  normalizeVaultPath,
   syncConflictOriginal,
   TRASH_DIR,
 } from './paths';
@@ -161,19 +162,145 @@ function trashPathOf(relative: string): string {
   return joinVaultPath(PRIVATE_DIR, TRASH_DIR, relative.slice(PRIVATE_DIR.length + 1));
 }
 
+interface TrashRecord {
+  original: string;
+  target: string;
+  trashedAt: string;
+  recordPath: string;
+}
+
+function canonicalRecordPath(value: string): boolean {
+  try {
+    return normalizeVaultPath(value) === value;
+  } catch {
+    return false;
+  }
+}
+
+function trashRoot(relative: string): string {
+  return isWithin(relative, PRIVATE_DIR) ? `${PRIVATE_DIR}/${TRASH_DIR}` : TRASH_DIR;
+}
+
+async function trashRecords(root: string): Promise<TrashRecord[]> {
+  const folder = joinVaultPath(root, '.records');
+  const names = await readdir(absoluteVaultPath(folder)).catch((error: unknown) => {
+    if (isMissing(error)) return [];
+    throw error;
+  });
+  const records: TrashRecord[] = [];
+  for (const name of names) {
+    if (!name.endsWith('.json')) continue;
+    const recordPath = joinVaultPath(folder, name);
+    await assertNoSymlink(recordPath);
+    let value: unknown;
+    try {
+      value = JSON.parse(await readFile(absoluteVaultPath(recordPath), 'utf8'));
+    } catch {
+      continue;
+    }
+    if (!value || typeof value !== 'object') continue;
+    const record = value as Record<string, unknown>;
+    if (
+      typeof record.original !== 'string' ||
+      typeof record.target !== 'string' ||
+      typeof record.trashedAt !== 'string' ||
+      !canonicalRecordPath(record.original) ||
+      !canonicalRecordPath(record.target) ||
+      !isWithin(record.target, root) ||
+      !Number.isFinite(Date.parse(record.trashedAt))
+    )
+      continue;
+    records.push({
+      original: record.original,
+      target: record.target,
+      trashedAt: record.trashedAt,
+      recordPath,
+    });
+  }
+  return records;
+}
+
 // Moves a file or folder to the trash, the way Obsidian's ".trash" works. Returns the
 // path in the trash.
 export async function trashVaultPath(relative: string): Promise<string> {
   const first = trashPathOf(relative);
   let target = first;
-  for (let number = 2; await exists(target); number += 1) target = withSuffix(first, number);
+  const records = await trashRecords(trashRoot(relative));
+  for (let number = 2; ; number += 1) {
+    const parentRecord = records.find(
+      (record) => target !== record.target && isWithin(target, record.target),
+    );
+    if (parentRecord) {
+      target = withSuffix(parentRecord.target, number) + target.slice(parentRecord.target.length);
+    } else if (await exists(target)) {
+      target = withSuffix(first, number);
+    } else break;
+    if (number > 1000) throw new VaultError(409, 'No free trash path is available');
+  }
   await moveVaultPath(relative, target);
+  try {
+    const recordPath = joinVaultPath(trashRoot(relative), '.records', `${randomUUID()}.json`);
+    await writeVaultFile(
+      recordPath,
+      Buffer.from(
+        JSON.stringify({ original: relative, target, trashedAt: new Date().toISOString() }),
+      ),
+      null,
+    );
+  } catch (error) {
+    await moveVaultPath(target, relative);
+    throw error;
+  }
   return target;
 }
 
 // Moves a file back from the trash to where it was. `relative` is the original path.
 export async function restoreVaultPath(relative: string): Promise<void> {
-  await moveVaultPath(trashPathOf(relative), relative);
+  const records = (await trashRecords(trashRoot(relative)))
+    .filter((record) => record.original === relative)
+    .sort((a, b) => a.trashedAt.localeCompare(b.trashedAt));
+  const record = records.find((item) =>
+    lstatSync(absoluteVaultPath(item.target), { throwIfNoEntry: false }),
+  );
+  await moveVaultPath(record?.target ?? trashPathOf(relative), relative);
+  if (record) await rm(absoluteVaultPath(record.recordPath));
+}
+
+export async function purgeVaultTrash(input: {
+  olderThanDays: number;
+  apply?: boolean;
+  confirmTargets?: string[];
+}): Promise<{ targets: string[]; applied: boolean }> {
+  if (
+    !Number.isInteger(input.olderThanDays) ||
+    input.olderThanDays < 1 ||
+    input.olderThanDays > 3650
+  ) {
+    throw new VaultError(400, 'olderThanDays must be between 1 and 3650');
+  }
+  const before = Date.now() - input.olderThanDays * 86_400_000;
+  const allRecords = (
+    await Promise.all([trashRecords(TRASH_DIR), trashRecords(`${PRIVATE_DIR}/${TRASH_DIR}`)])
+  ).flat();
+  const records = allRecords
+    .filter((record) => Date.parse(record.trashedAt) < before)
+    .filter(
+      (record) =>
+        !allRecords.some((other) => other !== record && isWithin(other.target, record.target)),
+    )
+    .sort((a, b) => a.target.localeCompare(b.target));
+  const targets = records.map((record) => record.target);
+  if (input.apply) {
+    if (JSON.stringify([...(input.confirmTargets ?? [])].sort()) !== JSON.stringify(targets)) {
+      throw new VaultError(409, 'The trash changed; run the dry run again before applying');
+    }
+    for (const record of records) {
+      await assertNoSymlink(record.target);
+      await rm(absoluteVaultPath(record.target), { recursive: true, force: true });
+      await rm(absoluteVaultPath(record.recordPath));
+    }
+  }
+  return { targets, applied: input.apply === true };
 }
 
 export interface SyncConflict {
@@ -219,11 +346,15 @@ export interface TrashedItem {
   trashedAt: Date;
 }
 
-// The files trashed from below a folder, newest first. A trashed folder shows as the
-// files it held, each restorable on its own.
+// The items trashed from below a folder, newest first. New entries use records, so a
+// trashed folder is one restorable item; legacy entries remain discoverable by scanning.
 export async function listTrash(folder: string): Promise<TrashedItem[]> {
   const trashFolder = trashPathOf(folder);
-  const items: TrashedItem[] = [];
+  const records = await trashRecords(trashRoot(folder));
+  const recordedTargets = new Set(records.map((record) => record.target));
+  const items: TrashedItem[] = records
+    .filter((record) => isWithin(record.original, folder))
+    .map((record) => ({ path: record.original, trashedAt: new Date(record.trashedAt) }));
   const pending = [''];
   while (pending.length > 0) {
     const current = pending.pop()!;
@@ -240,9 +371,11 @@ export async function listTrash(folder: string): Promise<TrashedItem[]> {
       if (entry.isSymbolicLink() || entry.name.startsWith('.')) continue;
       const relative = joinVaultPath(current, entry.name);
       if (entry.isDirectory()) {
+        if (recordedTargets.has(joinVaultPath(trashFolder, relative))) continue;
         pending.push(relative);
         continue;
       }
+      if (recordedTargets.has(joinVaultPath(trashFolder, relative))) continue;
       const info = await lstat(absoluteVaultPath(joinVaultPath(trashFolder, relative)));
       items.push({ path: joinVaultPath(folder, relative), trashedAt: info.ctime });
     }

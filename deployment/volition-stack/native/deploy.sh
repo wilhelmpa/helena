@@ -317,6 +317,11 @@ fi
 
 # The vault's layout, groups, permissions and git history; idempotent.
 "$live/deployment/volition-stack/native/vault-setup.sh"
+for unit in volition-vault-integrity.service volition-vault-integrity.timer; do
+  install_from_checkout -m 0644 "$live/deployment/volition-stack/native/systemd/$unit" /etc/systemd/system/
+done
+systemctl daemon-reload
+systemctl enable --now volition-vault-integrity.timer >/dev/null
 
 # Mastra and the Hermes team bridge were replaced by the Helena engine, which runs inside the
 # API. An instance that still has them stops them before the migration drops Mastra's tables,

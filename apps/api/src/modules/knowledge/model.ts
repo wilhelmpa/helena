@@ -119,6 +119,24 @@ export const pathBody = t.Object({
   path: vaultPath('Vault-relative path.'),
 });
 
+export const trashBody = t.Object({
+  path: vaultPath('Vault-relative path.'),
+  confirmContents: t.Optional(
+    t.String({
+      pattern: '^[0-9a-f]{64}$',
+      description: 'The token returned by delete-preview for a folder.',
+    }),
+  ),
+});
+
+export const DeletePreviewResponse = t.Object({
+  path: t.String(),
+  kind: t.Union([t.Literal('file'), t.Literal('folder')]),
+  count: t.Number(),
+  items: t.Array(t.String()),
+  confirmation: t.String(),
+});
+
 export const uploadAssetQuery = t.Object({
   path: vaultPath('The note the file is added to.'),
 });

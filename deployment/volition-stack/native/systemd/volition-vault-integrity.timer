@@ -1,0 +1,11 @@
+[Unit]
+Description=Check Volition Vault every 15 minutes
+
+[Timer]
+OnBootSec=3min
+OnUnitActiveSec=15min
+Persistent=true
+Unit=volition-vault-integrity.service
+
+[Install]
+WantedBy=timers.target

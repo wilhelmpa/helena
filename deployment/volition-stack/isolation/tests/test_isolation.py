@@ -458,6 +458,12 @@ class LauncherRequestTest(unittest.TestCase):
         self.assertEqual(checked['cwd'], str(self.dir / 'workspaces/alpha/src'))
         self.assertEqual(checked['vault_rw'], [str(self.dir / 'vault/Projects/ALPHA')])
 
+    def test_home_sees_all_project_vaults_but_project_only_its_own(self):
+        self.assertEqual(self.worker.vault_binds('home', None),
+                         ([str(self.dir / 'vault/Home'), str(self.dir / 'vault/Projects')], []))
+        self.assertEqual(self.worker.vault_binds('alpha', 'ALPHA'),
+                         ([str(self.dir / 'vault/Projects/ALPHA')], []))
+
     def test_command_script_stays_a_regular_file_in_the_project_workspace(self):
         script = self.dir / 'workspaces/alpha/src/review.sh'
         script.write_text('echo reviewed\n')
