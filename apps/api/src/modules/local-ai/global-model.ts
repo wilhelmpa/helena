@@ -1,3 +1,11 @@
+import {
+  LOCAL_PROFILES,
+  NPU_BASE,
+  NPU_SLUG,
+  NPU_CLASSES,
+  npuClassModel,
+  type LocalProfile,
+} from './npu-profile';
 import { randomUUID } from 'node:crypto';
 import {
   aiAgent,
@@ -46,6 +54,7 @@ interface ModelJob {
 }
 export async function globalModelStatus() {
   return {
+    profiles: LOCAL_PROFILES,
     model: await localDefaultModel(),
     maintenance: await readMaintenance(),
     job: await readUncachedSetting<ModelJob>(MAINTENANCE_KEY),
@@ -79,31 +88,45 @@ function switchedClasses(): string[] {
     .map((entry) => entry.id);
 }
 
-export async function previewGlobalModel(modelId: string) {
+export async function previewGlobalModel(modelId: string, profile?: LocalProfile) {
   const target = await targetOf(modelId);
+  if (profile === 'local-halogen' && target.server !== 'halogen')
+    throw new HttpError(400, 'The Halogen profile requires Halogen');
+  if (profile === 'local-27b-npu') {
+    if (target.server !== 'lemonade' || target.model !== 'Qwen3.8-27B-GGUF')
+      throw new HttpError(400, 'The paired profile requires Qwen3.8-27B-GGUF');
+    const npu = (await listModelServers()).find((row) => row.slug === NPU_SLUG);
+    if (npu?.kind !== 'fastflowlm' || npu.baseUrl !== NPU_BASE)
+      throw new HttpError(400, 'Register the managed NPU server first');
+    target.npu = 'qwen3.5:4b';
+  }
+  if (profile) target.profile = profile;
   const agents = await db
     .select({ id: aiAgent.id, name: aiAgent.username })
     .from(aiAgent)
     .where(eq(aiAgent.model, LOCAL_DEFAULT));
-  const classes = switchedClasses();
+  const classes = [...new Set([...switchedClasses(), ...(target.npu ? NPU_CLASSES : [])])];
   return {
     target,
     agents,
     classes,
     previous: await localDefaultModel(),
+    npuClasses: target.npu ? NPU_CLASSES : [],
+    npuSelection: target.npu ? ['qwen3.5:4b', 'qwen3.5:2b'] : [],
+    memoryReserveGiB: 12,
     weightLockGb: 72,
     simultaneousLargeModels: false,
     requiresGroupStop: true,
   };
 }
 
-export async function beginGlobalModel(modelId: string) {
+export async function beginGlobalModel(modelId: string, profile?: LocalProfile) {
   return db.transaction(async (tx) => {
     const gate = await tx.execute(
       sql`select pg_try_advisory_xact_lock(${ADMISSION_LOCK}) as acquired`,
     );
     if (!gate[0]?.acquired) throw new HttpError(409, 'Admission is busy; retry');
-    const preview = await previewGlobalModel(modelId);
+    const preview = await previewGlobalModel(modelId, profile);
     const status = await hostd<MaintenanceState>('ModelMaintenanceStatus');
     if (status.operation && !['done', 'rolled-back'].includes(status.operation.phase))
       throw new HttpError(409, 'A model operation is pending');
@@ -167,13 +190,13 @@ async function commitModel(state: MaintenanceState, job: ModelJob, rollback: boo
           set: { value: sql`excluded.value`, updatedAt: new Date() },
         });
     for (const server of await listModelServers()) {
-      if (!['halogen', 'lemonade'].includes(server.kind)) continue;
+      if (!['halogen', 'lemonade'].includes(server.kind) && server.slug !== NPU_SLUG) continue;
       await tx
         .update(helenaModelServer)
         .set({
           enabled: rollback
             ? (job.servers.find((row) => row.id === server.id)?.enabled ?? false)
-            : server.slug === target.slug,
+            : server.slug === target.slug || (server.slug === NPU_SLUG && !!target.npu),
         })
         .where(eq(helenaModelServer.id, server.id));
     }
@@ -183,8 +206,12 @@ async function commitModel(state: MaintenanceState, job: ModelJob, rollback: boo
 
 async function evaluateClasses(state: MaintenanceState, job: ModelJob): Promise<boolean> {
   const target = state.operation!.target;
-  const server = (await listModelServers()).find((row) => row.slug === target.slug)!;
+  const servers = await listModelServers();
   for (const classId of job.classes) {
+    const npuModel = npuClassModel(target, classId);
+    const slug = npuModel ? NPU_SLUG : target.slug;
+    const modelName = npuModel ?? target.model;
+    const server = servers.find((row) => row.slug === slug)!;
     if (!job.evals[classId]) {
       // The eval row itself closes the crash window between starting it and storing its id.
       const [existing] = await db
@@ -193,7 +220,7 @@ async function evaluateClasses(state: MaintenanceState, job: ModelJob): Promise<
         .where(
           and(
             eq(helenaLocalAiEval.serverId, server.id),
-            eq(helenaLocalAiEval.model, target.model),
+            eq(helenaLocalAiEval.model, modelName),
             eq(helenaLocalAiEval.classId, classId),
             gte(helenaLocalAiEval.ranAt, new Date(job.startedAt)),
           ),
@@ -206,7 +233,7 @@ async function evaluateClasses(state: MaintenanceState, job: ModelJob): Promise<
           (
             await startEval({
               classId,
-              modelId: localModelId(target.slug, target.model),
+              modelId: localModelId(slug, modelName),
               userId: null,
             })
           ).id;
@@ -224,7 +251,9 @@ async function evaluateClasses(state: MaintenanceState, job: ModelJob): Promise<
       mode: job.failedClasses.includes(classId)
         ? 'off'
         : (job.previousPolicy.classes[classId]?.mode ?? 'off'),
-      model: localModelId(target.slug, target.model),
+      model: job.failedClasses.includes(classId)
+        ? localModelId(target.slug, target.model)
+        : localModelId(slug, modelName),
     };
     await setSetting('localAi.policy', policy);
     await setSetting(MAINTENANCE_KEY, job);
@@ -290,6 +319,10 @@ export async function resumeGlobalModel(rollback = false): Promise<MaintenanceSt
       const target = reverse ? op.previous : op.target;
       const server = (await listModelServers()).find((row) => row.slug === target.slug);
       if (server) await refreshServer(server.id);
+      if (target.npu) {
+        const npu = (await listModelServers()).find((row) => row.slug === NPU_SLUG);
+        if (npu) await refreshServer(npu.id);
+      }
     }
     if (phase === 'eval' && !(await evaluateClasses(state, job))) return state;
     return hostd<MaintenanceState>(

@@ -11,6 +11,8 @@ export interface ModelTarget {
   server: 'halogen' | 'lemonade';
   slug: string;
   model: string;
+  profile?: 'local-halogen' | 'local-27b-npu';
+  npu?: 'qwen3.5:4b' | 'qwen3.5:2b';
 }
 export interface MaintenanceState {
   version: 1;
