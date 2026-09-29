@@ -38,6 +38,8 @@ export default function FilterPills({
   const [addOpen, setAddOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [openId, setOpenId] = useState<string | null>(null);
+  // The condition added last: its values open with its editor.
+  const [addedId, setAddedId] = useState<string | null>(null);
   const specs = fieldSpecs(project, customFields);
   const specByField = new Map(fieldSpecs(project, customFields, filters).map((s) => [s.field, s]));
 
@@ -52,6 +54,7 @@ export default function FilterPills({
     setQuery('');
     // The new condition's values open right away (the draft's submenu of values).
     setOpenId(condition.id);
+    setAddedId(condition.id);
   };
   const matches = specs.filter((spec) =>
     spec.label.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()),
@@ -72,7 +75,10 @@ export default function FilterPills({
           <Popover
             key={cond.id}
             open={openId === cond.id}
-            onOpenChange={(open) => setOpenId(open ? cond.id : null)}
+            onOpenChange={(open) => {
+              setOpenId(open ? cond.id : null);
+              if (!open) setAddedId(null);
+            }}
           >
             <span className="ds-filter-pill" data-tone={fixed ? 'neutral' : 'active'}>
               <PopoverTrigger asChild>
@@ -104,6 +110,11 @@ export default function FilterPills({
                   remove(cond.id);
                   setOpenId(null);
                 }}
+                openValues={addedId === cond.id}
+                onEscape={() => {
+                  setOpenId(null);
+                  setAddedId(null);
+                }}
               />
             </PopoverContent>
           </Popover>
@@ -121,7 +132,13 @@ export default function FilterPills({
             {`+ ${t('filter')}`}
           </button>
         </PopoverTrigger>
-        <PopoverContent align="start" className="ds-filter-menu">
+        <PopoverContent
+          align="start"
+          className="ds-filter-menu"
+          // Choosing a property opens that condition's editor: focus must not jump back to
+          // "+ Filter", which would close the editor again at once.
+          onCloseAutoFocus={(event) => event.preventDefault()}
+        >
           <input
             value={query}
             onChange={(event) => setQuery(event.target.value)}

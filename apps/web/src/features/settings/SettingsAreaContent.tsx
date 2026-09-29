@@ -41,6 +41,8 @@ const God = {
   authProvider: page(() => import('@/features/god/GodAuthProviderPage')),
   scim: page(() => import('@/features/god/GodScimPage')),
 };
+// The escalation rules, central in Agenten und Modelle (owner 28.09.).
+const Escalation = page(() => import('@/features/local-ai/components/LocalAiEscalationSection'));
 const ServerPage = dynamic(() => import('@/features/server/ServerPage'));
 const BrowserPower = dynamic(() => import('@/features/browser-gateway/BrowserPowerSettingsPage'));
 const HomeDefaultsPage = page(() => import('@/features/settings/HomeDefaultsPage'));
@@ -103,7 +105,7 @@ export default function SettingsAreaContent({
     case 'defaults':
       return <Stack parts={[HomeDefaultsPage, God.general]} props={props} />;
     case 'agents':
-      return <Stack parts={[God.runtime, God.prices]} props={props} />;
+      return <Stack parts={[God.runtime, Escalation, God.prices]} props={props} />;
     case 'local-ai':
       return <God.localAi {...props} />;
     case 'browser':

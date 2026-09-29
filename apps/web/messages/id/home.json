@@ -26,7 +26,8 @@
     "running": "Sedang berjalan",
     "finished": "Baru selesai",
     "schedules": "Berikutnya",
-    "projects": "Proyek"
+    "projects": "Proyek",
+    "budgets": "Anggaran"
   },
   "figures": {
     "problems": "{count} masalah",
@@ -72,7 +73,12 @@
     "empty": "Tidak ada yang dijadwalkan."
   },
   "projects": {
-    "empty": "Belum ada proyek."
+    "empty": "Belum ada proyek.",
+    "open": "{count, plural, =0 {Tidak ada tugas terbuka} other {# tugas terbuka}}",
+    "working": "{count, plural, other {# agen bekerja}}",
+    "setupFailed": "Penyiapan gagal",
+    "budgetStopped": "Berhenti",
+    "budgetThrottled": "Diperlambat"
   },
   "system": {
     "title": "Sistem",
@@ -91,6 +97,18 @@
       "raidOk": "RAID ok",
       "backup": "cadangan {at} lalu",
       "cpu": "CPU {temperature}"
+    }
+  },
+  "budgets": {
+    "title": "Anggaran",
+    "ok": "Aman",
+    "allWithin": "Tidak ada anggaran yang memperlambat atau menghentikan kerja",
+    "summaryStopped": "{stopped} berhenti · {names}",
+    "summaryThrottled": "Diperlambat · {names}",
+    "stopped": {
+      "project": "Anggaran habis: {name} menahan pekerjaannya",
+      "agent": "Anggaran habis: {name} dijeda",
+      "department": "Anggaran habis: departemen {name} menahan pekerjaannya"
     }
   }
 }

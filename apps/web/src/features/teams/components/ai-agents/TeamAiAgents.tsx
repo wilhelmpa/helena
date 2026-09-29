@@ -2,16 +2,15 @@ import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import type { AiAgent } from '@/lib/api/endpoints/agents';
 import { useAiAgentsQuery, useDeleteAiAgent } from '@/services/aiAgents.service';
-import { EmptyState } from '@/components/common/page/EmptyState';
 import ListSkeleton from '@/components/common/skeleton/ListSkeleton';
 import ConfirmDialog from '@/components/common/overlay/ConfirmDialog';
 import { useAgentSection } from '../../context/agentSection';
 import TeamAiAgentTable from './TeamAiAgentTable';
 import { TeamAiAgentSheet } from './TeamAiAgentSheet';
 import { useTranslations } from 'next-intl';
-import { Info } from 'lucide-react';
-import { SectionLabel } from '@/components/common/page/RowList';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Bot } from 'lucide-react';
+import { EmptyState, Stack, Text } from '@/design-system';
+import { poolGroups } from '../../utils/agentPool';
 
 // The agents of a team: bot users that issues can be delegated to in any project the
 // team attaches them to, and below them the templates projects copy their specialists
@@ -69,7 +68,13 @@ export default function TeamAiAgents() {
   }, [searchParams, agentsQuery.isPending]);
 
   const editing = agents.find((a) => a.id === editingId) ?? null;
-  const templates = agents.filter((a) => a.template);
+  const groups = poolGroups(agents);
+  // How many project copies each template has: "0 Kopien" on its row says it is unused.
+  const copyCounts = new Map<number, number>();
+  for (const agent of agents) {
+    if (agent.sourceTemplateId == null) continue;
+    copyCounts.set(agent.sourceTemplateId, (copyCounts.get(agent.sourceTemplateId) ?? 0) + 1);
+  }
   const tableProps = {
     onEdit: (agent: AiAgent) => setEditingId(agent.id),
     // The runs are a tab of the agent's own page.
@@ -85,37 +90,26 @@ export default function TeamAiAgents() {
       {agentsQuery.isPending ? (
         <ListSkeleton rows={3} rowClassName="h-12" />
       ) : agents.length === 0 ? (
-        <EmptyState title={t('empty')} description={t('emptyHint')} />
+        <EmptyState icon={<Bot />} title={t('empty')}>
+          {t('emptyHint')}
+        </EmptyState>
       ) : (
-        <div className="space-y-6">
-          <TeamAiAgentTable agents={agents.filter((a) => !a.template)} {...tableProps} />
-          {templates.length > 0 && (
-            <section>
-              {/* The group label, as in the sidebar; what templates are for sits in its
-                  tooltip rather than as an intro line under it. */}
-              <SectionLabel
-                className="px-1"
-                trailing={
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <button
-                        type="button"
-                        aria-label={t('templatesHint')}
-                        className="grid size-5 place-items-center rounded-sm text-muted-foreground hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:outline-none"
-                      >
-                        <Info className="size-3.5" />
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent className="max-w-xs">{t('templatesHint')}</TooltipContent>
-                  </Tooltip>
-                }
-              >
-                {t('templates')}
-              </SectionLabel>
-              <TeamAiAgentTable agents={templates} {...tableProps} />
-            </section>
+        <Stack gap={5}>
+          <TeamAiAgentTable label={t('groupAgents')} agents={groups.agents} {...tableProps} />
+          {groups.templates.length > 0 && (
+            <Stack gap={2}>
+              <TeamAiAgentTable
+                label={t('templates')}
+                agents={groups.templates}
+                copyCounts={copyCounts}
+                {...tableProps}
+              />
+              <Text size="xs" tone="muted">
+                {t('templatesHint')}
+              </Text>
+            </Stack>
           )}
-        </div>
+        </Stack>
       )}
 
       <TeamAiAgentSheet

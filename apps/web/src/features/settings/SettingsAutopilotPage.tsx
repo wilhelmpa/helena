@@ -48,6 +48,11 @@ import {
   draftFrom,
   type BudgetCellKey,
 } from '@/features/autopilot/utils/autopilotFormat';
+import {
+  budgetsFromDefaults,
+  budgetsMatchDefaults,
+} from '@/features/autopilot/utils/budgetDefaults';
+import StandingOrdersGroup from '@/features/autopilot/components/StandingOrdersGroup';
 import SettingsToolbar from './components/SettingsToolbar';
 import { SettingsResourceProvider } from './context/settingsPermission';
 
@@ -73,7 +78,7 @@ function AutopilotPage({ projectKey }: { projectKey: string }) {
   const defaults = useInstanceProjectDefaultsQuery(session?.user.role === 'god');
   const defaultLevel = defaults.data?.autopilotLevel ?? null;
   const sectionText = useSettingsSectionText()(section.slug);
-  const { can } = usePermissions();
+  const { can, isAdmin } = usePermissions();
   const editable = can(section.resource, 'edit');
   const query = useProjectAutopilot(projectKey);
   const setLevel = useSetProjectLevel(projectKey);
@@ -115,6 +120,22 @@ function AutopilotPage({ projectKey }: { projectKey: string }) {
   const rules = data?.levels.find((entry) => entry.level === data.level)?.rules ?? [];
 
   const levelOverridden = defaultLevel != null && data != null && data.level !== defaultLevel;
+  // The budgets are Helena's default for projects unless changed here (owner 28.09.:
+  // an override is marked and has its way back).
+  const defaultBudgets = defaults.data?.budgets ?? null;
+  const budgetsOverridden =
+    defaultBudgets != null && data != null && !budgetsMatchDefaults(data.budgets, defaultBudgets);
+
+  async function resetBudgets() {
+    if (!defaultBudgets) return;
+    try {
+      const next = await setBudgets.mutateAsync(budgetsFromDefaults(defaultBudgets));
+      setDraft(draftFrom(next.budgets));
+      toast.success(tExecution('budgetsReset'));
+    } catch {
+      // Surfaced by the global mutation error toast.
+    }
+  }
   const team = organizationPath(projectKey);
 
   return (
@@ -177,6 +198,27 @@ function AutopilotPage({ projectKey }: { projectKey: string }) {
               </SettingsGroup>
 
               <SettingsGroup title={t('budgetsTitle')} description={t('budgetsHint')}>
+                {defaultBudgets != null && (
+                  <SettingsRow
+                    label={tExecution(budgetsOverridden ? 'budgetsOverridden' : 'budgetsDefault')}
+                    description={tExecution('budgetsDefaultHint')}
+                  >
+                    {budgetsOverridden && (
+                      <Inline gap={2}>
+                        <Badge tone="accent">{tExecution('overridden')}</Badge>
+                        <Button
+                          size="small"
+                          variant="ghost"
+                          icon={<RotateCcw size={14} />}
+                          disabled={!editable || setBudgets.isPending}
+                          onClick={() => void resetBudgets()}
+                        >
+                          {tExecution('resetToDefault')}
+                        </Button>
+                      </Inline>
+                    )}
+                  </SettingsRow>
+                )}
                 <BudgetFields
                   idPrefix="project-budget"
                   budgets={data.budgets}
@@ -223,10 +265,17 @@ function AutopilotPage({ projectKey }: { projectKey: string }) {
                 </SettingsRow>
               </SettingsGroup>
 
-              {/* Standing instructions for every agent of the project (owner, 28.09.: they
-                  belong to Projekt › Agenten; they were a form per project under
-                  Organisation › Abteilungen). */}
-              <ProjectInstructions projectKey={projectKey} />
+              {/* Instructions for every agent of the project (owner, 28.09.): the project's
+                  standing text, and the standing orders (OpenClaw) — rules the agents follow
+                  in every run, which they may also propose. */}
+              <StandingOrdersGroup
+                scope={{ projectKey }}
+                title={tExecution('instructionsTitle')}
+                description={tExecution('instructionsHint')}
+                canEdit={isAdmin}
+              >
+                <ProjectInstructions projectKey={projectKey} />
+              </StandingOrdersGroup>
 
               <Section title={t('agentsTitle')}>
                 <AutopilotAgentList
@@ -260,48 +309,43 @@ function ProjectInstructions({ projectKey }: { projectKey: string }) {
   if (!entry) return null;
   const value = draft ?? entry.instructions;
   return (
-    <SettingsGroup
-      title={tExecution('instructionsTitle')}
-      description={tExecution('instructionsHint')}
-    >
-      <SettingsRow label={tExecution('instructionsLabel')} htmlFor="project-instructions" stacked>
-        <Stack gap={2}>
-          <TextArea
-            id="project-instructions"
-            rows={4}
-            maxLength={4000}
-            value={value}
-            disabled={!canManage || save.isPending}
-            placeholder={tExecution('instructionsPlaceholder')}
-            onChange={(event) => setDraft(event.target.value)}
-          />
-          {canManage && (
-            <Inline justify="end">
-              <Button
-                size="small"
-                variant="quiet"
-                disabled={draft === null || draft === entry.instructions || save.isPending}
-                onClick={() =>
-                  save.mutate(
-                    {
-                      id: entry.id,
-                      input: { departmentId: entry.departmentId, instructions: value },
+    <SettingsRow label={tExecution('instructionsLabel')} htmlFor="project-instructions" stacked>
+      <Stack gap={2}>
+        <TextArea
+          id="project-instructions"
+          rows={4}
+          maxLength={4000}
+          value={value}
+          disabled={!canManage || save.isPending}
+          placeholder={tExecution('instructionsPlaceholder')}
+          onChange={(event) => setDraft(event.target.value)}
+        />
+        {canManage && (
+          <Inline justify="end">
+            <Button
+              size="small"
+              variant="quiet"
+              disabled={draft === null || draft === entry.instructions || save.isPending}
+              onClick={() =>
+                save.mutate(
+                  {
+                    id: entry.id,
+                    input: { departmentId: entry.departmentId, instructions: value },
+                  },
+                  {
+                    onSuccess: () => {
+                      setDraft(null);
+                      toast.success(tExecution('instructionsSaved'));
                     },
-                    {
-                      onSuccess: () => {
-                        setDraft(null);
-                        toast.success(tExecution('instructionsSaved'));
-                      },
-                    },
-                  )
-                }
-              >
-                {save.isPending ? tCommon('saving') : tCommon('save')}
-              </Button>
-            </Inline>
-          )}
-        </Stack>
-      </SettingsRow>
-    </SettingsGroup>
+                  },
+                )
+              }
+            >
+              {save.isPending ? tCommon('saving') : tCommon('save')}
+            </Button>
+          </Inline>
+        )}
+      </Stack>
+    </SettingsRow>
   );
 }

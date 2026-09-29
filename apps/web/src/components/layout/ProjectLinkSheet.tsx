@@ -30,7 +30,9 @@ export default function ProjectLinkSheet({
     const onRequest = (event: Event) => {
       const href = (event as CustomEvent<string>).detail;
       const target = projectLinkTarget(href, currentProjectKey, window.location.origin);
+      // A page that needs no sheet (Helena's own pages, the open project) is opened.
       if (target) setTarget(target);
+      else router.push(href);
     };
     const onClick = (event: MouseEvent) => {
       if (
@@ -60,7 +62,7 @@ export default function ProjectLinkSheet({
       document.removeEventListener('click', onClick, true);
       window.removeEventListener('helena:project-link', onRequest);
     };
-  }, [currentProjectKey]);
+  }, [currentProjectKey, router]);
 
   const close = useCallback(() => setTarget(null), []);
   // A task that is not on its project's board: the page overlay instead.

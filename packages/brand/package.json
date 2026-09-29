@@ -1,7 +1,7 @@
 {
   "name": "@helena/brand",
   "version": "0.0.0",
-  "description": "Helena's logo and type: the variant switch, the palette, the pixel art of the mark and the wordmark, and the build of the icon files",
+  "description": "Helena's Orb mark, ANSI wordmark, palette, and deterministic icon build",
   "private": true,
   "type": "module",
   "exports": {

@@ -13,7 +13,7 @@
     "unavailable": "تعذّر التحقق من الوصول إلى الطرفية أو حفظه. يرجى المحاولة مرة أخرى."
   },
   "grant": {
-    "active": "الطرفية مصرَّحة حتى {time}",
+    "active": "مفتوح حتى {time}",
     "expired": "انتهت صلاحية تصريح الطرفية.",
     "end": "إنهاء",
     "lan": "الطرفية مفتوحة بدون رمز (الشبكة المحلية)"
@@ -26,7 +26,10 @@
     "helena-dev-codex": "تطوير Helena (Codex)",
     "close": "إنهاء الجلسة",
     "local-qwen36": "Qwen 3.6 محلي (Codex)",
-    "local-qwen38": "Qwen 3.8 محلي (Codex)"
+    "local-qwen38": "Qwen 3.8 محلي (Codex)",
+    "local-flash": "Flash",
+    "add": "فتح الطرفية",
+    "label": "الطرفيات"
   },
   "keys": {
     "esc": "Esc",

@@ -13,7 +13,7 @@
     "unavailable": "Не удалось проверить или сохранить доступ к терминалу. Попробуйте ещё раз."
   },
   "grant": {
-    "active": "Терминал разрешён до {time}",
+    "active": "Открыто до {time}",
     "expired": "Разрешение терминала истекло.",
     "end": "Завершить",
     "lan": "Терминал открыт без кода (LAN)"
@@ -26,7 +26,10 @@
     "helena-dev-codex": "Развивать Helena (Codex)",
     "close": "Завершить сеанс",
     "local-qwen36": "Qwen 3.6 локально (Codex)",
-    "local-qwen38": "Qwen 3.8 локально (Codex)"
+    "local-qwen38": "Qwen 3.8 локально (Codex)",
+    "local-flash": "Flash",
+    "add": "Открыть терминал",
+    "label": "Терминалы"
   },
   "keys": {
     "esc": "Esc",

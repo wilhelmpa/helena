@@ -26,7 +26,8 @@
     "running": "Running now",
     "finished": "Finished lately",
     "schedules": "Coming up",
-    "projects": "Projects"
+    "projects": "Projects",
+    "budgets": "Budgets"
   },
   "figures": {
     "problems": "{count, plural, one {# problem} other {# problems}}",
@@ -72,7 +73,12 @@
     "empty": "Nothing scheduled."
   },
   "projects": {
-    "empty": "No projects yet."
+    "empty": "No projects yet.",
+    "open": "{count, plural, =0 {No open tasks} one {# open task} other {# open tasks}}",
+    "working": "{count, plural, one {# agent working} other {# agents working}}",
+    "setupFailed": "Setup failed",
+    "budgetStopped": "Stopped",
+    "budgetThrottled": "Slowed"
   },
   "system": {
     "title": "System",
@@ -91,6 +97,18 @@
       "raidOk": "RAID ok",
       "backup": "backup {at} ago",
       "cpu": "CPU {temperature}"
+    }
+  },
+  "budgets": {
+    "title": "Budgets",
+    "ok": "Within",
+    "allWithin": "No budget slows or stops work",
+    "summaryStopped": "{stopped} stopped · {names}",
+    "summaryThrottled": "Slowed · {names}",
+    "stopped": {
+      "project": "Budget used up: {name} holds its work",
+      "agent": "Budget used up: {name} is paused",
+      "department": "Budget used up: department {name} holds its work"
     }
   }
 }

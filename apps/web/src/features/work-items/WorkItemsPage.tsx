@@ -22,6 +22,7 @@ import {
 import { Pencil, Plus } from 'lucide-react';
 import ViewIconPicker from '@/components/layout/ViewIconPicker';
 import FilterPills from '@/components/layout/FilterPills';
+import { useFilterFields } from '@/hooks/useFilterFields';
 import { PageActions, PageToolbar } from '@/components/layout/PageToolbar';
 import {
   Button,
@@ -67,6 +68,7 @@ export default function WorkItemsPage() {
   const tViews = useTranslations('views');
   const tLayouts = byKey(useTranslations('display.layouts'));
   const { project, filteredProject, editor, customFields, onOpenIssue, onAddIssue } = useShell();
+  const { describeConditions } = useFilterFields(project?.project.key);
   const { can } = usePermissions();
   const groupLabels = useGroupLabels();
   const features = useProjectFeatures();
@@ -243,6 +245,11 @@ export default function WorkItemsPage() {
       issueTypes={project.issueTypes}
     />
   );
+  // A new view from the page's filters is named after them ("Priorität: Hoch"), never
+  // "Alle" (owner, 28.09.); the name stays editable.
+  const suggestedViewName = describeConditions(editor.filters, project, customFields)
+    .join(', ')
+    .slice(0, 80);
   const controls = (
     <FilterPills
       filters={editor.filters}
@@ -256,9 +263,12 @@ export default function WorkItemsPage() {
   return (
     <Page variant="fill">
       <PageToolbar>
+        {/* The toolbar stays while a view is being made or edited (owner, 28.09.): the
+            page behind the overlay keeps its filters, display and layout, which edit the
+            same draft. Only the "changed" state and the page actions step back. */}
+        {controls}
         {!editor.editing && (
           <>
-            {controls}
             {(editor.changed || (!editor.activeView && editor.filters.conditions.length > 0)) && (
               <span className="ds-changed">
                 {editor.changed && (
@@ -283,16 +293,20 @@ export default function WorkItemsPage() {
                   <button
                     type="button"
                     className="is-new"
-                    onClick={() => editor.beginNewView('current')}
+                    onClick={() => editor.beginNewView('current', suggestedViewName)}
                   >
                     {tViews('saveAsNewShort')}
                   </button>
                 )}
               </span>
             )}
-            <span className="ds-toolbar-fill" />
-            {display}
-            {layoutSwitch}
+          </>
+        )}
+        <span className="ds-toolbar-fill" />
+        {display}
+        {layoutSwitch}
+        {!editor.editing && (
+          <>
             <PageActions
               actions={
                 editor.activeView && !editor.changed && can('views', 'edit')

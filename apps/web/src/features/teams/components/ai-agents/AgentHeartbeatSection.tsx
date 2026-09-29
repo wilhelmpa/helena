@@ -1,22 +1,38 @@
 'use client';
 
+import { useContext } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { HeartPulse } from 'lucide-react';
 import { useFormatter, useTranslations } from 'next-intl';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { listAgentHeartbeats, type AiAgent } from '@/lib/api/endpoints/agents';
 import { useAgentSection } from '@/features/teams/context/agentSection';
+import { useAgentAutopilot } from '@/services/autopilot.service';
+import { budgetState, leadingBudget } from '@/features/home/dashboard/budgetAlerts';
 import type { AgentFormValue } from '../../utils/agentForm';
+import { heartbeatHistory } from '../../utils/heartbeatHistory';
 import { AgentFormSection } from './AgentFormSection';
-import { SettingsGroup, SettingsRow } from '@/design-system';
+import { AgentFormPageModeCtx } from './agentFormPages';
+import {
+  Inline,
+  List,
+  ListRow,
+  Pill,
+  PillButton,
+  SettingsGroup,
+  SettingsRow,
+  Stack,
+  Text,
+  TextArea,
+  TextField,
+} from '@/design-system';
 
 const DAYS = [1, 2, 3, 4, 5, 6, 0] as const;
 
-// The agent's heartbeat (hub/pc-heartbeats): at a fixed interval, inside its working
-// hours and on its days, Helena checks whether there is something for it to do and only
-// then starts a run with the heartbeat's instruction. Empty interval = no heartbeat.
-// Below: when it last and next beats, and the last checks with their outcome.
+// The agent's heartbeat (hub/pc-heartbeats, Paperclip): at a fixed interval, inside its
+// working hours and on its days, Helena checks whether there is something for it to do —
+// borderline cases through a quick local precheck — and only then starts a run with the
+// heartbeat's instruction. Empty interval = no heartbeat. Below: the beat (last, next, and
+// whether a budget slows it) and the last checks, the skipped ones bundled (owner 28.09.).
 export default function AgentHeartbeatSection({
   open,
   onOpenChange,
@@ -33,17 +49,31 @@ export default function AgentHeartbeatSection({
   const t = useTranslations('teams.agents.heartbeat');
   const format = useFormatter();
   const { teamId } = useAgentSection();
+  // On its page of the agent dialog the section is always open.
+  const pageMode = useContext(AgentFormPageModeCtx);
+  const shown = open || pageMode;
   const history = useQuery({
-    queryKey: ['agent-heartbeats', teamId, agent?.id],
-    queryFn: () => listAgentHeartbeats(teamId, agent!.id),
-    enabled: open && agent != null,
+    queryKey: ['agent-heartbeats', teamId, agent?.id, 'all'],
+    queryFn: () => listAgentHeartbeats(teamId, agent!.id, true),
+    enabled: shown && agent != null,
     staleTime: 30_000,
   });
+  // A budget at 80 % or more doubles the interval (the heartbeat's throttle).
+  const autopilot = useAgentAutopilot(teamId, shown && agent && !agent.template ? agent.id : null);
+  const throttled =
+    budgetState(
+      leadingBudget([
+        ...(autopilot.data?.budgets ?? []),
+        ...(autopilot.data?.projects.flatMap((project) => project.budgets) ?? []),
+      ]),
+    ) !== 'ok';
   const on = value.heartbeatIntervalMinutes.trim() !== '';
   const when = (iso: string | null | undefined) =>
     iso ? format.dateTime(new Date(iso), { dateStyle: 'short', timeStyle: 'short' }) : '–';
+  const time = (iso: string) => format.dateTime(new Date(iso), { timeStyle: 'short' });
   const weekday = (day: number) =>
     format.dateTime(new Date(Date.UTC(2026, 8, 27 + day)), { weekday: 'short', timeZone: 'UTC' });
+  const items = heartbeatHistory(history.data ?? []).slice(0, 10);
 
   return (
     <AgentFormSection
@@ -54,26 +84,10 @@ export default function AgentHeartbeatSection({
       open={open}
       onOpenChange={onOpenChange}
     >
-      <SettingsGroup
-        advancedLabel={t('history')}
-        advanced={
-          agent && (history.data?.length ?? 0) > 0 ? (
-            <ul className="ds-heartbeat-history" aria-label={t('history')}>
-              {history.data!.slice(0, 8).map((event) => (
-                <li key={event.id}>
-                  <time dateTime={event.checkedAt}>{when(event.checkedAt)}</time>
-                  <span>{t(`outcome.${event.outcome}`)}</span>
-                  <span className="ds-heartbeat-reason">{event.reason}</span>
-                </li>
-              ))}
-            </ul>
-          ) : undefined
-        }
-      >
+      <SettingsGroup>
         <SettingsRow label={t('intervalLabel')} description={t('intervalHint')}>
-          <span className="ds-inline-unit">
-            <Input
-              className="w-20"
+          <Inline gap={2}>
+            <TextField
               inputMode="numeric"
               aria-label={t('intervalLabel')}
               value={value.heartbeatIntervalMinutes}
@@ -82,42 +96,37 @@ export default function AgentHeartbeatSection({
                 onChange({ heartbeatIntervalMinutes: event.target.value.replace(/\D/g, '') })
               }
             />
-            {t('minutes')}
-          </span>
+            <Text size="sm" tone="muted">
+              {t('minutes')}
+            </Text>
+          </Inline>
         </SettingsRow>
         <SettingsRow label={t('hoursLabel')} description={t('hoursHint')}>
-          <span className="ds-inline-unit">
-            <Input
+          <Inline gap={2}>
+            <TextField
               type="time"
-              className="w-28"
               aria-label={t('from')}
               value={value.heartbeatStart}
-              disabled={!on}
               onChange={(event) => onChange({ heartbeatStart: event.target.value })}
             />
-            –
-            <Input
+            <Text tone="muted">–</Text>
+            <TextField
               type="time"
-              className="w-28"
               aria-label={t('to')}
               value={value.heartbeatEnd}
-              disabled={!on}
               onChange={(event) => onChange({ heartbeatEnd: event.target.value })}
             />
-          </span>
+          </Inline>
         </SettingsRow>
         <SettingsRow label={t('days')} description={t('daysHint')}>
-          <div className="ds-heartbeat-days" role="group" aria-label={t('days')}>
+          <Inline gap={1} wrap role="group" aria-label={t('days')}>
             {DAYS.map((day) => {
               const active = value.heartbeatDays.includes(day);
               return (
-                <button
+                <PillButton
                   key={day}
-                  type="button"
-                  className="ds-pill ds-pill-button"
-                  data-tone={active ? 'active' : 'neutral'}
+                  tone={active ? 'active' : 'neutral'}
                   aria-pressed={active}
-                  disabled={!on}
                   onClick={() =>
                     onChange({
                       heartbeatDays: active
@@ -127,42 +136,81 @@ export default function AgentHeartbeatSection({
                   }
                 >
                   {weekday(day)}
-                </button>
+                </PillButton>
               );
             })}
-          </div>
+          </Inline>
         </SettingsRow>
         <SettingsRow label={t('timezone')} description={t('timezoneHint')}>
-          <Input
+          <TextField
             dir="ltr"
-            className="w-44"
             aria-label={t('timezone')}
             value={value.heartbeatTimezone}
-            disabled={!on}
             onChange={(event) => onChange({ heartbeatTimezone: event.target.value })}
           />
         </SettingsRow>
         <SettingsRow label={t('instructions')} description={t('instructionsHint')} stacked>
-          <Textarea
+          <TextArea
             rows={3}
             aria-label={t('instructions')}
             value={value.heartbeatInstructions}
-            disabled={!on}
             placeholder={t('instructionsPlaceholder')}
             onChange={(event) => onChange({ heartbeatInstructions: event.target.value })}
           />
         </SettingsRow>
+        <SettingsRow label={t('precheck')} description={t('precheckHint')} />
         {agent && (
           <SettingsRow
             label={t('schedule')}
-            description={`${t('last')}: ${when(agent.heartbeatLastAt)}`}
+            description={`${t('last')}: ${when(agent.heartbeatLastAt)} · ${t('next')}: ${on ? when(agent.heartbeatNextAt) : '–'}`}
           >
-            <span className="ds-agent-overview-value">
-              {t('next')}: {on ? when(agent.heartbeatNextAt) : '–'}
-            </span>
+            {on && throttled && <Pill tone="warning">{t('throttled')}</Pill>}
           </SettingsRow>
         )}
       </SettingsGroup>
+      {agent && (
+        <Stack gap={2}>
+          <Text size="xs" tone="muted" weight="medium">
+            {t('history')}
+          </Text>
+          {items.length === 0 ? (
+            <Text size="sm" tone="muted">
+              {history.isPending ? '…' : t('historyEmpty')}
+            </Text>
+          ) : (
+            <List label={t('history')}>
+              {items.map((item) =>
+                item.kind === 'queued' ? (
+                  <ListRow
+                    key={item.event.id}
+                    icon={<HeartPulse />}
+                    title={t('outcome.queued')}
+                    subtitle={item.event.reason}
+                    dot="working"
+                    meta={when(item.event.checkedAt)}
+                  />
+                ) : (
+                  <ListRow
+                    key={item.key}
+                    icon={<HeartPulse />}
+                    title={
+                      item.count > 1
+                        ? t('skippedMany', {
+                            count: item.count,
+                            reason: t(`reasons.${item.reason}`),
+                          })
+                        : t(`reasons.${item.reason}`)
+                    }
+                    meta={
+                      item.count > 1 ? `${time(item.to)} – ${time(item.from)}` : when(item.from)
+                    }
+                  />
+                ),
+              )}
+            </List>
+          )}
+        </Stack>
+      )}
     </AgentFormSection>
   );
 }

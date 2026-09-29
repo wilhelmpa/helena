@@ -158,5 +158,17 @@
     "loadFailedHint": "Сервер не відповів. Спробуйте ще раз трохи згодом."
   },
   "viewNotFound": "Цього подання більше немає. Показано всі завдання.",
-  "layout": "Вигляд"
+  "layout": "Вигляд",
+  "card": {
+    "status": "{value}",
+    "priority": "{value}",
+    "type": "{value}",
+    "statusAge": "вже {value}",
+    "initiative": "Мета: {value}",
+    "cycle": "Цикл {value}",
+    "estimatePoints": "{value} б.",
+    "estimateTime": "{value}",
+    "startDate": "з {value}",
+    "dueDate": "термін {value}"
+  }
 }

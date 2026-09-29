@@ -28,7 +28,7 @@ import IssueCustomFieldControl from '../fields/IssueCustomFieldControl';
 import IssueCustomFieldBody from '../fields/IssueCustomFieldBody';
 import IssueWatchers from './IssueWatchers';
 import IssuePropertyRow from './IssuePropertyRow';
-import { IssueCostRow, IssueWhyRow } from './IssueWhyCost';
+import { IssueClaimRow, IssueCostRow, IssueWhyRow } from './IssueWhyCost';
 import { type Embeddable } from '@/components/common/editor/attachmentEmbed';
 import { parseDate } from '@/utils/dates';
 import { cn } from '@/lib/utils';
@@ -344,6 +344,7 @@ export default function IssueProperties({
   // Why the task exists and what it cost come from their own queries, so they join the
   // everyday rows only where the reader is signed in (never on the public shared page).
   if (!readOnly) {
+    rowByKey.set('claim', <IssueClaimRow key="claim" issueId={issue.id} />);
     rowByKey.set(
       'why',
       <IssueWhyRow key="why" issueId={issue.id} projectKey={project.project.key} />,
@@ -363,6 +364,7 @@ export default function IssueProperties({
     'priority',
     'assignee',
     'delegate',
+    'claim',
     'why',
     'initiative',
     'dueDate',

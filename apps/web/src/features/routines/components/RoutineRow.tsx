@@ -6,7 +6,7 @@ import StatusBadge from '@/components/common/page/StatusBadge';
 import { Switch } from '@/components/ui/switch';
 import { TableCell, TableRow } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
-import { aiTeamPath, issuePath } from '@/utils/paths';
+import { issuePath, routineEditPath } from '@/utils/paths';
 import { useCronDescription } from '../hooks/useCronDescription';
 import { formatInZone } from '../utils/schedulePreview';
 import { RoutineActionsMenu, type RoutineActions } from './RoutineActionsMenu';
@@ -32,7 +32,7 @@ export function RoutineRow({
       {showProject && (
         <TableCell className="px-3 py-2.5 align-top whitespace-normal">
           <Link
-            href={aiTeamPath(routine.projectKey, 'schedules')}
+            href={routineEditPath(routine.projectKey, routine.id)}
             className="text-sm font-medium underline-offset-2 hover:underline"
           >
             {routine.projectName}
@@ -52,7 +52,7 @@ export function RoutineRow({
         >
           {showProject ? (
             <Link
-              href={aiTeamPath(routine.projectKey, 'schedules')}
+              href={routineEditPath(routine.projectKey, routine.id)}
               className="underline-offset-2 hover:underline"
             >
               {routine.title}

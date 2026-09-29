@@ -25,11 +25,16 @@ export default function FilterConditionPill({
   onOperatorChange,
   onValuesChange,
   onRemove,
+  openValues = false,
+  onEscape,
 }: {
   spec: FieldSpec;
   cond: FilterCondition;
   project: ProjectDetail;
   stacked?: boolean;
+  // Open the value list right away (a condition just added).
+  openValues?: boolean;
+  onEscape?: () => void;
   onOperatorChange: (op: FilterOperator) => void;
   onValuesChange: (values: FilterValue[]) => void;
   onRemove: () => void;
@@ -61,7 +66,14 @@ export default function FilterConditionPill({
           ))}
         </SelectContent>
       </Select>
-      <FilterValueEditor spec={spec} cond={cond} onChange={onValuesChange} project={project} />
+      <FilterValueEditor
+        spec={spec}
+        cond={cond}
+        onChange={onValuesChange}
+        project={project}
+        defaultOpen={openValues}
+        onEscape={onEscape}
+      />
       <button
         type="button"
         onClick={onRemove}

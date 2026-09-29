@@ -67,7 +67,7 @@ test('opens a task in the overlay and never frames another project page', async 
       root.render(
         <NextIntlClientProvider locale="en" timeZone="UTC" messages={{ nav }}>
           <ProjectLinkSheet
-            currentProjectKey={null}
+            currentProjectKey="VOL"
             projects={[{ key: 'TRADE', name: 'Trading' } as never]}
           />
         </NextIntlClientProvider>,
@@ -95,6 +95,24 @@ test('opens a task in the overlay and never frames another project page', async 
     });
     assert.ok(document.querySelector('[data-task="TRADE-7"]'));
     assert.equal(document.querySelector('iframe'), null);
+
+    // On Helena's own pages no project is open: a project page is opened straight away.
+    await act(async () => {
+      root.render(
+        <NextIntlClientProvider locale="en" timeZone="UTC" messages={{ nav }}>
+          <ProjectLinkSheet
+            currentProjectKey={null}
+            projects={[{ key: 'TRADE', name: 'Trading' } as never]}
+          />
+        </NextIntlClientProvider>,
+      );
+    });
+    await act(async () => {
+      window.dispatchEvent(
+        new CustomEvent('helena:project-link', { detail: '/project/TRADE/dashboard' }),
+      );
+    });
+    assert.equal(pushed.at(-1), '/project/TRADE/dashboard');
   } finally {
     await act(async () => root.unmount());
     dom.window.close();

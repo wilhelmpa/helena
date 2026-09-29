@@ -33,6 +33,7 @@ import {
   collapsedSwimlanesKey,
   issuesToMove,
 } from '../../utils/kanban';
+import { cardProperties } from '../../utils/boardCardData';
 
 // One flattened swimlane block: its header, then a row of columns.
 interface SwimlaneRow {
@@ -246,7 +247,7 @@ export default function SwimlaneBoard({
                           project={project}
                           issues={issues}
                           maps={maps}
-                          properties={settings.properties}
+                          properties={cardProperties(settings)}
                           cellKey={`${row.swimlane.key}|${column.key}`}
                           manualOrder={manualOrder}
                           readOnly={readOnly}
@@ -271,7 +272,7 @@ export default function SwimlaneBoard({
         issues={project.issues}
         project={project}
         maps={maps}
-        properties={settings.properties}
+        properties={cardProperties(settings)}
       />
     </DndContext>
   );

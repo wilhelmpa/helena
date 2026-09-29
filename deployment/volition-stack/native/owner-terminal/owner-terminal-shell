@@ -18,20 +18,27 @@ fi
 
 dev_clone=$HOME/volition/plan
 
+# The owner's main agents run without asking before each step (owner, 28.09., O27/O28:
+# "volle Rechte ohne Rückfragen"). The tabs sit behind the terminal's own step-up and
+# belong to the owner's own account; what that account may do with sudo is sudoers'
+# decision (90-wilhelmpa, setup.sh --install-sudo-policy), not this script's.
+claude_full=(--dangerously-skip-permissions)
+codex_full=(--dangerously-bypass-approvals-and-sandbox)
+
 case "$kind" in
   shell)
     command=(bash -l)
     workdir=$HOME
     ;;
   claude)
-    command=("$HOME/.local/bin/claude")
+    command=("$HOME/.local/bin/claude" "${claude_full[@]}")
     workdir=$HOME
     ;;
   codex)
     command=(/usr/local/bin/codex)
     workdir=$HOME
     ;;
-  local-qwen36 | local-qwen38)
+  local-qwen36 | local-qwen38 | local-flash)
     command=(/usr/local/bin/node "$(dirname -- "$(realpath -- "$0")")/owner-local-codex.mjs" "$kind" "$name")
     workdir=$HOME
     ;;
@@ -95,7 +102,7 @@ if ! "${tmux[@]}" has-session -t "=$session" 2>/dev/null; then
     codex | helena-dev-codex)
       # Codex has no id to choose up front; it continues the newest session of the
       # working directory, and starts a new one where there is none.
-      command=(bash -c '"$1" resume --last || exec "$1"' codex "${command[0]}")
+      command=(bash -c '"$1" resume --last "$2" || exec "$1" "$2"' codex "${command[0]}" "${codex_full[0]}")
       ;;
   esac
 fi

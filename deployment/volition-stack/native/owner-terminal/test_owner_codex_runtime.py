@@ -90,7 +90,9 @@ sys.exit(subprocess.run(args[work + 2:], cwd=args[work + 1]).returncode)
                     self.assertEqual(result.returncode, 0, result.stderr)
                     actual = json.loads(result.stdout)
                     self.assertEqual(actual['version'], version)
-                    self.assertEqual(actual['args'], ['resume', '--last'])
+                    # Full rights without a question before each step (owner, 28.09., O27).
+                    self.assertEqual(actual['args'], [
+                        'resume', '--last', '--dangerously-bypass-approvals-and-sandbox'])
                     self.assertEqual(actual['home'], str(self.home))
                     self.assertEqual(actual['codexHome'], str(self.codex_home))
                     self.assertEqual(actual['cwd'], str(self.home if kind == 'codex'

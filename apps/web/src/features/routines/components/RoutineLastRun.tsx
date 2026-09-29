@@ -61,9 +61,11 @@ export function RoutineLastRun({
   const outcome =
     run.skipReason === 'missed'
       ? t('outcome.missed')
-      : run.outcome && identifier
-        ? t.rich(`outcome.${run.outcome}`, { identifier, task })
-        : null;
+      : run.skipReason === 'no-work'
+        ? t('outcome.noWork')
+        : run.outcome && identifier
+          ? t.rich(`outcome.${run.outcome}`, { identifier, task })
+          : null;
   return (
     <Stack gap={1}>
       <Inline gap={2}>

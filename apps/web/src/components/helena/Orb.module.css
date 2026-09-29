@@ -4,7 +4,7 @@
   flex: none;
   border-radius: 50%;
   background: var(--orb-color);
-  box-shadow: 0 0 0.5rem color-mix(in srgb, var(--orb-color), transparent 45%);
+  box-shadow: 0 0 0.3rem color-mix(in srgb, var(--orb-color), transparent 60%);
   transition:
     background-color 400ms ease,
     box-shadow 400ms ease,
@@ -35,9 +35,43 @@
 .offline {
   --orb-color: var(--status-offline);
 }
-/* Done is at rest: no green (owner — colour only while something happens). */
+/* Done (owner, 28.09., O38: a state "fertig/erfolgreich"): the orb lights up in the success
+   colour once and settles back to rest — colour only while something happens. */
 .done {
   --orb-color: var(--status-idle);
+}
+.orb:not(.large).done {
+  animation: settle 2.4s ease-out both;
+}
+.large.done .static {
+  animation: settle 2.4s ease-out both;
+}
+.large.done::after {
+  position: absolute;
+  inset: 22%;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px var(--status-done);
+  content: '';
+  opacity: 0;
+  pointer-events: none;
+  animation: ring 1.6s ease-out 1;
+}
+@keyframes settle {
+  0%,
+  35% {
+    --orb-color: var(--status-done);
+    background-color: var(--status-done);
+  }
+}
+@keyframes ring {
+  0% {
+    opacity: 0.9;
+    transform: scale(0.92);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.12);
+  }
 }
 .dot {
   width: 0.375rem;
@@ -99,11 +133,22 @@
     color-mix(in srgb, var(--orb-color) 8%, white) 0%,
     color-mix(in srgb, var(--orb-color) 55%, white) 24%,
     var(--orb-color) 62%,
-    color-mix(in srgb, var(--orb-color), #120f18 28%) 100%
+    color-mix(in srgb, var(--orb-color), var(--orb-shade) var(--orb-shade-mix)) 100%
   );
   box-shadow:
-    0 0 2rem color-mix(in srgb, var(--orb-color), transparent 40%),
-    0 0 6rem color-mix(in srgb, var(--orb-color), transparent 70%);
+    0 0 1.5rem color-mix(in srgb, var(--orb-color), transparent 55%),
+    0 0 4rem color-mix(in srgb, var(--orb-color), transparent 80%);
+}
+/* On a light ground: a lighter sphere and a faint halo, no dark ball. */
+:global([data-theme='light']) .static {
+  background: radial-gradient(
+    circle at 36% 30%,
+    white 0%,
+    color-mix(in srgb, var(--orb-color) 30%, white) 30%,
+    color-mix(in srgb, var(--orb-color) 72%, white) 72%,
+    var(--orb-color) 100%
+  );
+  box-shadow: 0 0 2.5rem color-mix(in srgb, var(--orb-color), transparent 78%);
 }
 .large:is(.listening, .thinking, .tool, .speaking, .waiting) .static {
   animation: breathe 3.2s ease-in-out infinite;
@@ -111,9 +156,6 @@
 @keyframes breathe {
   50% {
     transform: scale(1.05);
-    box-shadow:
-      0 0 3rem color-mix(in srgb, var(--orb-color), transparent 30%),
-      0 0 8rem color-mix(in srgb, var(--orb-color), transparent 62%);
   }
 }
 /* The ring of a small orb: using a tool, or waiting for you. The large orb says it by its

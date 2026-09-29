@@ -830,7 +830,19 @@
       "daysHint": "Pada hari apa saja.",
       "timezoneHint": "Untuk jam dan hari, mis. Europe/Berlin.",
       "instructionsHint": "Apa yang diperiksa setiap detak. Proses hanya dimulai bila ada pekerjaan.",
-      "schedule": "Jadwal"
+      "schedule": "Jadwal",
+      "precheck": "Pra-pemeriksaan",
+      "precheckHint": "Pada kasus meragukan, model lokal cepat memutuskan dulu apakah ada pekerjaan; tanpa pekerjaan tidak ada jalannya.",
+      "throttled": "Diperlambat anggaran",
+      "historyEmpty": "Belum ada pemeriksaan.",
+      "skippedMany": "{count}× {reason}",
+      "reasons": {
+        "noWork": "tidak ada pekerjaan",
+        "outsideHours": "di luar jam kerja",
+        "precheck": "dilewati pra-pemeriksaan",
+        "runPending": "jalannya masih menunggu",
+        "other": "dilewati"
+      }
     },
     "pages": {
       "groups": {
@@ -890,7 +902,11 @@
       "latestResults": "Hasil terbaru",
       "noResults": "Belum ada proses.",
       "allSettings": "Semua pengaturan"
-    }
+    },
+    "groupAgents": "Agen",
+    "copies": "{count, plural, =0 {Tidak ada salinan} other {# salinan}}",
+    "moreActionsFor": "Tindakan untuk {name}",
+    "defaultModel": "Model bawaan"
   },
   "members": {
     "roleSaved": "{name} sekarang menjadi {role}",

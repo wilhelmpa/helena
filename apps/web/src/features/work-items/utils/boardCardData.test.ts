@@ -4,7 +4,7 @@ import type { BoardIssue } from '@/lib/api/endpoints/issues';
 import type { ProjectDetail } from '@/lib/api/endpoints/projects';
 import type { Maps } from '@/utils/project';
 import { setDisplayLocale } from '@/utils/dates';
-import { boardCardData } from './boardCardData';
+import { boardCardData, cardProperties } from './boardCardData';
 
 const project = {
   customFields: [
@@ -15,6 +15,8 @@ const project = {
 } as ProjectDetail;
 const maps = { columnById: new Map(), typeById: new Map(), labelById: new Map() } as Maps;
 const priorityLabel = (priority: string | null) => priority ?? '';
+const words = (key: string, value: string) =>
+  key === 'statusAge' ? `seit ${value}` : key === 'status' ? value : `${key} ${value}`;
 
 function issue(fieldValues: BoardIssue['fieldValues'], dueDate: string | null = null) {
   return {
@@ -38,7 +40,7 @@ describe('board card data', () => {
       maps,
       ['cf:2', 'cf:1', 'cf:3'],
       priorityLabel,
-      'In status',
+      words,
     );
     assert.equal(data.importantValue, '771,35');
     assert.deepEqual(data.meta, ['RSI 57', 'MACD 2,12 / 1,31']);
@@ -52,7 +54,7 @@ describe('board card data', () => {
       maps,
       ['cf:1'],
       priorityLabel,
-      'In status',
+      words,
     );
     assert.equal(data.importantValue, '3. Okt.');
     assert.deepEqual(data.meta, []);
@@ -70,13 +72,26 @@ describe('board card data', () => {
       maps,
       ['cf:4'],
       priorityLabel,
-      'In status',
+      words,
     );
     assert.deepEqual(data.meta, ['Bewertung positiv']);
   });
 
-  it('labels the time in the current status', () => {
-    const data = boardCardData(issue([]), project, maps, ['statusAge'], priorityLabel, 'In status');
-    assert.match(data.meta[0], /^In status /);
+  it("says how long the task has been in its status, in the reader's words", () => {
+    const data = boardCardData(issue([]), project, maps, ['statusAge'], priorityLabel, words);
+    assert.match(data.meta[0]!, /^seit /);
+  });
+
+  it('leaves the status out where the column already names it', () => {
+    const withColumn = {
+      ...maps,
+      columnById: new Map([[1, { id: 1, name: 'Neu' }]]),
+    } as unknown as Maps;
+    const shown = boardCardData(issue([]), project, withColumn, ['status'], priorityLabel, words);
+    assert.deepEqual(shown.meta, ['Neu']);
+    assert.deepEqual(cardProperties({ properties: ['status', 'priority'], group: 'status' }), [
+      'priority',
+    ]);
+    assert.deepEqual(cardProperties({ properties: ['status'], group: 'priority' }), ['status']);
   });
 });

@@ -95,8 +95,7 @@ export default function LocalAiSettingsView() {
           <ServersSection settings={data} />
           <ClassesSection settings={data} />
           <LocalAiJudgeSection />
-          {/* The escalation rules (LocalAiEscalationSection) are stored and tested, but no run
-              follows them yet: the section is mounted with Phase 2, when escalate() is wired. */}
+          {/* The escalation rules live in Agenten und Modelle (owner 28.09.). */}
           <VoiceSettingsSection />
         </>
       )}

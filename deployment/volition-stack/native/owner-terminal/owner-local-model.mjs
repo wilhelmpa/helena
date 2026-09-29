@@ -5,6 +5,8 @@ import path from 'node:path';
 export const LOCAL_MODELS = Object.freeze({
   'local-qwen36': 'Qwen3.6-35B-A3B-MTP-GGUF',
   'local-qwen38': 'Qwen3.8-27B-GGUF',
+  // Qwen3.8 Flash Next on Halogen (native/halogen), the local model the owner works with.
+  'local-flash': 'halogen-qwen3.8-flash-next',
 });
 export const LOCAL_API = 'http://127.0.0.1:3000/owner-terminal/local';
 

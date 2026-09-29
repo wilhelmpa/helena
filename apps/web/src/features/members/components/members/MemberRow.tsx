@@ -86,7 +86,9 @@ export default function MemberRow({
               </Text>
             </Stack>
           </Inline>
-          <MemberDescription member={member} />
+          {/* An agent's project instructions are managed on the Team page; a paragraph here
+              only buried the people (owner, O34). */}
+          {!member.isAgent && <MemberDescription member={member} />}
         </Stack>
       </TableCell>
       <TableCell className="px-3 pt-4 pb-3 align-top whitespace-normal">

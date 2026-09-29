@@ -2,7 +2,9 @@
 
 import { useTranslations } from 'next-intl';
 import { SlidersHorizontal } from 'lucide-react';
-import { Fragment, useState, type ReactNode } from 'react';
+import { Fragment, useEffect, useState, type ReactNode } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { openSystemDetails } from './systemDetails';
 import { PageActions, PageToolbar } from '@/components/layout/PageToolbar';
 import type { DashboardWidget } from '@/extensions/dashboardWidgets';
 import { usePluginDashboardWidgets } from '@/extensions/pluginDashboardWidgets';
@@ -13,11 +15,7 @@ import SystemDetailsDialog from './SystemDetailsDialog';
 import WidgetView, { WidgetPlaceholder } from './WidgetView';
 import { columnsOf, sectionBlocks, type Arranged } from './layout';
 import { HomeDashboardProvider, useHomeDashboard, useHomeDashboardValue } from './useHomeDashboard';
-import { Text } from '@/design-system';
-
-// The figure row: an auto-fit grid of tiles at least 160px wide that wraps to a second row
-// instead of scrolling; two columns on a phone.
-const FIGURE_ROW = 'grid grid-cols-2 gap-[14px] @4xl:grid-cols-4';
+import { Grid, Text } from '@/design-system';
 
 // A pair block of half-width sections: two columns on a wide screen (first, third, … left),
 // one column in the reader's order below that. The columns are `display: contents` when
@@ -84,6 +82,18 @@ export default function HomeDashboard() {
   const dashboard = useHomeDashboard();
   const context = useHomeDashboardValue(dashboard);
   const { ready, figures, sections, prefs, save, owner } = dashboard;
+  // The old System page (/system) lands here with its overview open (owner, O8).
+  const params = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+  const wantsSystem = params.get('system') === '1';
+  useEffect(() => {
+    if (!wantsSystem || !owner) return;
+    openSystemDetails();
+    const next = new URLSearchParams(params.toString());
+    next.delete('system');
+    router.replace(next.size ? `${pathname}?${next}` : pathname, { scroll: false });
+  }, [wantsSystem, owner, params, pathname, router]);
   const render = (widget: DashboardWidget) =>
     ready ? <WidgetView widget={widget} /> : <WidgetPlaceholder widget={widget} />;
 
@@ -107,7 +117,9 @@ export default function HomeDashboard() {
       </PageToolbar>
       {/* The page's header names it (Helena / Alle Projekte); the body starts with figures. */}
       <div className="ds-dashboard-body @container">
-        <div className={FIGURE_ROW}>
+        {/* The figure row: the tiles share one row while they fit, then wrap evenly; two
+            columns on a phone. */}
+        <Grid min="fit" gap={3}>
           {figures
             .filter((entry) => entry.visible)
             .map((entry) => (
@@ -123,7 +135,7 @@ export default function HomeDashboard() {
                 )}
               </Fragment>
             ))}
-        </div>
+        </Grid>
         <Sections sections={sections} render={render} />
       </div>
       <CustomizeDialog

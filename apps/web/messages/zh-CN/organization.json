@@ -107,7 +107,19 @@
     "create": "创建目标",
     "titlePlaceholder": "目标标题",
     "descriptionPlaceholder": "目标是什么？如何判断已经达成？",
-    "none": "无"
+    "none": "无",
+    "ladder": "目标阶梯",
+    "ladderAlone": "此目标独立存在：不服务于其他目标，也没有目标服务于它。",
+    "back": "返回目标",
+    "actions": "{title} 的操作",
+    "why": "为什么",
+    "work": "工作",
+    "saveFailed": "更改未保存。",
+    "deleteTitle": "删除目标「{title}」？",
+    "deleteBody": "其下的目标将不再服务于任何目标；关联的任务会保留。",
+    "wholeTeam": "整个团队",
+    "list": "目标",
+    "proposalsWaiting": "有提议等待你决定"
   },
   "agents": {
     "empty": "此团队没有代理。",
@@ -318,6 +330,24 @@
     "whyEmpty": "尚无代理在处理此项目的任务。",
     "whyNoGoal": "未关联目标",
     "noAgent": "无代理",
-    "filterLabel": "状态"
+    "filterLabel": "状态",
+    "addMember": "添加成员"
+  },
+  "addMember": {
+    "title": "添加团队成员",
+    "description": "将代理池中的代理或模板的新副本加入项目团队。",
+    "source": "来源",
+    "fromPool": "来自代理池",
+    "fromTemplate": "来自模板",
+    "project": "项目",
+    "chooseProject": "选择项目",
+    "poolEmpty": "代理池中的所有代理都已在此项目中工作。",
+    "templatesEmpty": "团队还没有模板。",
+    "reportsTo": "汇报给",
+    "reportsToHint": "默认是项目的协调员。",
+    "add": "添加",
+    "added": "已添加到 {project}",
+    "failed": "无法添加成员。",
+    "keyOnce": "该副本在 Helena 之外运行：请立即复制其密钥，它只显示一次。"
   }
 }

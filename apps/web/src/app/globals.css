@@ -666,7 +666,7 @@ html [data-sonner-toast][data-styled='true']:not(:focus-visible) {
   text-transform: uppercase;
 }
 .board-card-title {
-  font-size: 18px;
+  font-size: 16px;
   line-height: 1.25;
   font-weight: 560;
   letter-spacing: -0.02em;

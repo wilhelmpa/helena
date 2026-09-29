@@ -6,6 +6,7 @@ import type { ProjectDetail } from '@/lib/api/endpoints/projects';
 import MarkdownEditor from '@/components/common/editor/MarkdownEditor';
 import InitiativeAttachments from './InitiativeAttachments';
 import InitiativeHeader from './InitiativeHeader';
+import InitiativeWhy from '../shared/InitiativeWhy';
 import { Box, Stack, Text } from '@/design-system';
 
 // The initiative's own text: its title, its properties and its description as
@@ -26,22 +27,22 @@ export default function InitiativeOverview({
     // column, so the viewport says nothing about whether the two fit side by side.
     <Box pad={4} className="@container w-full">
       <Stack gap={5} className="@4xl:flex-row">
-        <div className="max-w-3xl min-w-0 flex-1">
+        <Stack gap={4} className="ds-initiative-main">
           <InitiativeHeader initiative={initiative} project={project} />
+          <InitiativeWhy projectKey={project.project.key} initiativeId={initiative.id} />
           {hasDescription ? (
             <MarkdownEditor
-              className="mt-4 text-sm"
               // The editor reads its content once, at mount: a save has to remount it.
               key={initiative.updatedAt}
               defaultValue={initiative.description}
               editable={false}
             />
           ) : (
-            <Text as="p" size="sm" tone="muted" className="mt-4">
+            <Text as="p" size="sm" tone="muted">
               {t('noDescription')}
             </Text>
           )}
-        </div>
+        </Stack>
         <Stack as="aside" gap={4} className="@4xl:ms-auto @4xl:w-88 @4xl:shrink-0">
           <InitiativeAttachments initiativeId={initiative.id} />
         </Stack>

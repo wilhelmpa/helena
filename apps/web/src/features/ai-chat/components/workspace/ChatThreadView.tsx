@@ -22,13 +22,23 @@ import ChatComposer from '@/components/helena/Composer';
 import ChatNewChatIntro from './ChatNewChatIntro';
 import { HomeChatActivityCards, HomeChatHero, HomeChatMasthead } from './HomeChatLanding';
 import ChatRestoreError from './ChatRestoreError';
-import { activeTool, composerActivity, pendingChoices } from '../../utils/composerActivity';
+import {
+  activeTool,
+  busyElsewhere,
+  composerActivity,
+  pendingChoices,
+} from '../../utils/composerActivity';
+import { agentDisplayName } from '../../utils/agentChip';
 import { useAutoSpeak } from '../../hooks/useAutoSpeak';
 import { messageText } from '../../utils/chatMessages';
 import { speak } from '@/features/voice/browser/speak';
 import { useConversation } from '@/features/voice/hooks/useConversation';
 import { useVoiceProblem } from '@/features/voice/hooks/useVoiceProblem';
 import type { QueuedMessage } from './ChatComposerQueue';
+import {
+  HOME_ACTIVE_STATUSES,
+  useHomeActiveActivity,
+} from '@/features/home/services/homeKpis.service';
 
 type Queued = QueuedMessage & { options: PlanSendOptions; metadata: PlanChatMetadata };
 
@@ -124,6 +134,12 @@ export default function ChatThreadView({
   const tool = activeTool(plan.messages, plan.status);
   const choices = activity === 'answered' ? pendingChoices(plan.messages) : null;
   const lastMessageId = plan.messages.at(-1)?.id ?? null;
+  // A local model fell back to the configured one on the last answer: the chip says who
+  // really answered (owner, 28.09.).
+  const lastAnswer = plan.messages.findLast((message) => message.role === 'assistant');
+  const answeredBy = lastAnswer?.metadata?.localFallback
+    ? (lastAnswer.metadata.model ?? null)
+    : null;
   const [recentDoneId, setRecentDoneId] = useState<string | null>(null);
   const previousActivity = useRef(activity);
   useEffect(() => {
@@ -183,9 +199,20 @@ export default function ChatThreadView({
     },
     onProblem: reportVoice,
   });
+  // The agent answering or running somewhere else right now (the same "working" the Home
+  // masthead counts — a question still waiting for a runner is not work).
+  const feed = useHomeActiveActivity();
+  const workingElsewhere = (feed.data?.items ?? []).some(
+    (entry) =>
+      entry.agent?.id === agent.id &&
+      HOME_ACTIVE_STATUSES.has(entry.status) &&
+      (threadId == null || entry.threadId !== threadId),
+  );
+  // This chat's own state only: what the agent does elsewhere (other chats, runs, the load
+  // of the local model) never moves this orb (owner, 28.09.).
   const orbStatus = useAgentStatus(agent.id, {
     chatId: threadId,
-    run: empty ? state?.label : undefined,
+    run: null,
     chat: activity === 'answered' && recentDoneId !== lastMessageId ? null : activity,
     voicePhase: conversation.phase,
     tool,
@@ -314,6 +341,11 @@ export default function ChatThreadView({
             </div>
           )}
         </div>
+        {busyElsewhere(activity, workingElsewhere ? 'running' : null) && (
+          <p className="ds-chat-busy-note" role="status">
+            {t('composer.busyElsewhere', { agent: agentDisplayName(agent) })}
+          </p>
+        )}
         <ChatComposer
           homeLanding={homeLanding}
           scopeKey={scopeKey}
@@ -351,6 +383,7 @@ export default function ChatThreadView({
           onStop={() => void plan.stop()}
           onNewChat={() => onNewChat(agent.id)}
           onPickAgent={onNewChat}
+          answeredBy={answeredBy}
           onRetryLast={() => void plan.regenerate()}
           onReconnect={() => void plan.reconnect()}
           onContinue={() => void plan.send(t('interrupted.continuePrompt'), { agentId: agent.id })}

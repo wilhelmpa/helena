@@ -352,7 +352,7 @@
   "escalation": {
     "title": "升级",
     "description": "何时由强大的订阅模型接替本地模型：困难工作、不确定的回答、失败。",
-    "draft": "草稿——尚未生效",
+    "draft": "现在即保存；中央运行时启用后会遵循这些规则。",
     "enabled": "升级已开启",
     "defaultModel": "默认模型",
     "model": "模型",
@@ -374,7 +374,26 @@
       "error": "错误"
     },
     "pinsNone": "没有针对代理、项目或任务的固定选择。",
-    "pins": "{count} 个针对代理、项目或任务的固定选择。"
+    "pins": "{count} 个针对代理、项目或任务的固定选择。",
+    "draftBadge": "已准备",
+    "saved": "升级规则已保存",
+    "defaultModelHint": "规则未指定模型时使用。",
+    "uncertaintyHint": "置信度低于此值（%）时由强模型回答。",
+    "failureHint": "本地尝试达到此次数后由强模型接手。",
+    "failureOn": "视为失败",
+    "pinsLabel": "固定选择",
+    "agentHint": "规则在“代理与模型”中设置。",
+    "pinLabel": "此代理的设定",
+    "pinSaved": "设定已保存",
+    "pinModelHint": "留空：使用默认模型。",
+    "pinModes": {
+      "auto": "按规则",
+      "local": "始终本地",
+      "strong": "始终强模型",
+      "autoHint": "由中央规则决定。",
+      "localHint": "此代理从不升级。",
+      "strongHint": "此代理始终使用强模型。"
+    }
   },
   "classGroups": {
     "none": "还没有可用的工作类型：请先通过评测。",

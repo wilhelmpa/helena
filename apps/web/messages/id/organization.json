@@ -107,7 +107,19 @@
     "create": "Buat tujuan",
     "titlePlaceholder": "Judul tujuan",
     "descriptionPlaceholder": "Tentang apa, dan bagaimana kamu tahu sudah tercapai?",
-    "none": "Tidak ada"
+    "none": "Tidak ada",
+    "ladder": "Tangga tujuan",
+    "ladderAlone": "Tujuan ini berdiri sendiri: tidak melayani tujuan lain dan tidak dilayani tujuan lain.",
+    "back": "Kembali ke tujuan",
+    "actions": "Tindakan untuk {title}",
+    "why": "Mengapa",
+    "work": "Pekerjaan",
+    "saveFailed": "Perubahan tidak tersimpan.",
+    "deleteTitle": "Hapus tujuan “{title}”?",
+    "deleteBody": "Tujuan di bawahnya tidak lagi melayani tujuan apa pun; tugas yang terhubung tetap ada.",
+    "wholeTeam": "Seluruh tim",
+    "list": "Tujuan",
+    "proposalsWaiting": "Ada usulan menunggu keputusanmu"
   },
   "agents": {
     "empty": "Tim ini tidak memiliki agen.",
@@ -318,6 +330,24 @@
     "whyEmpty": "Belum ada agen yang mengerjakan tugas proyek ini.",
     "whyNoGoal": "Tidak ada tujuan terhubung",
     "noAgent": "Tanpa agen",
-    "filterLabel": "Status"
+    "filterLabel": "Status",
+    "addMember": "Tambah anggota"
+  },
+  "addMember": {
+    "title": "Tambah anggota tim",
+    "description": "Agen dari pool atau salinan baru dari templat bergabung dengan tim proyek.",
+    "source": "Sumber",
+    "fromPool": "Dari pool",
+    "fromTemplate": "Dari templat",
+    "project": "Proyek",
+    "chooseProject": "Pilih proyek",
+    "poolEmpty": "Semua agen di pool sudah bekerja di proyek ini.",
+    "templatesEmpty": "Tim belum memiliki templat.",
+    "reportsTo": "Melapor ke",
+    "reportsToHint": "Koordinator proyek, kecuali Anda memilih yang lain.",
+    "add": "Tambah",
+    "added": "Ditambahkan ke {project}",
+    "failed": "Anggota tidak dapat ditambahkan.",
+    "keyOnce": "Salinan berjalan di luar Helena: salin kuncinya sekarang, hanya ditampilkan sekali."
   }
 }

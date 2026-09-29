@@ -117,12 +117,14 @@ export default function Shell({
   // Plugins' panel tools join the built-ins once the API lists them.
   usePluginPanelTools();
   // A page that already is a tool (code, inbox, chat) is not shown a second time beside
-  // itself — two chats side by side, one of them not the page's.
+  // itself — two chats side by side, one of them not the page's. Helena's start page is
+  // her chat too: a chat panel left open elsewhere laid itself over it after navigating
+  // back or reloading (owner, 29.09.).
   const pathname = usePathname();
   const routedTool =
     route.sub === 'code' || route.sub === 'inbox' || route.sub === 'chat'
       ? route.sub
-      : pathname === '/chat'
+      : pathname === '/chat' || (globalHome && pathname === '/')
         ? 'chat'
         : null;
   // How the page and the panel's tools share the room (the header's layout menu).
@@ -156,6 +158,20 @@ export default function Shell({
     open: workspaceOpen,
     setOpen: setWorkspaceOpen,
   } = workspacePanel;
+
+  // The panel and a task's overlay share the right side: the one opened last is in front
+  // (owner, 28.09.: opening the chat over an open task must show the chat, which then names
+  // that task as its context). Tracked across renders without an effect.
+  const [panelAboveIssue, setPanelAboveIssue] = useState(false);
+  const [rightSide, setRightSide] = useState({ panel: false, issue: null as number | null });
+  if (rightSide.panel !== workspaceOpen || rightSide.issue !== overlays.openIssueId) {
+    const panelOpened = workspaceOpen && !rightSide.panel;
+    const issueOpened = overlays.openIssueId != null && overlays.openIssueId !== rightSide.issue;
+    setPanelAboveIssue(
+      !workspaceOpen ? false : issueOpened ? false : panelOpened ? true : panelAboveIssue,
+    );
+    setRightSide({ panel: workspaceOpen, issue: overlays.openIssueId });
+  }
 
   // The panel that would show the page's own tool closes (the pinned panel of another
   // layout shows a different tool instead, see resolveWorkspaceLayout).
@@ -278,6 +294,16 @@ export default function Shell({
     headerLayout,
     headerExtra,
     workspaceLayout: layoutChoice,
+    currentIssue: (() => {
+      const panelIssue =
+        overlays.openIssueId != null
+          ? project?.issues.find((issue) => issue.id === overlays.openIssueId)
+          : null;
+      if (panelIssue) return { identifier: panelIssue.identifier, title: panelIssue.title };
+      return issueQuery.data
+        ? { identifier: issueQuery.data.identifier, title: issueQuery.data.title }
+        : null;
+    })(),
   };
 
   // The frame (docs/design-system.md §3): the sidebar — full, a 56px rail, or an overlay
@@ -435,7 +461,12 @@ export default function Shell({
                 onToggleChat={toggleCoordinatorChat}
               />
 
-              <ShellOverlays project={project} projectKey={projectKey} overlays={overlays} />
+              <ShellOverlays
+                project={project}
+                projectKey={projectKey}
+                overlays={overlays}
+                issueBehindPanel={panelAboveIssue}
+              />
               <SettingsModal />
               <AgentDialog />
               <RunOverlay />

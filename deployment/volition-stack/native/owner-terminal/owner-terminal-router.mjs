@@ -57,7 +57,7 @@ const allowedHosts = new Set(
 );
 
 // Keep in sync with apps/api/src/modules/owner-terminal/model.ts OWNER_TERMINAL_KINDS.
-const KINDS = new Set(['shell', 'claude', 'codex', 'helena-dev-claude', 'helena-dev-codex', 'local-qwen36', 'local-qwen38']);
+const KINDS = new Set(['shell', 'claude', 'codex', 'helena-dev-claude', 'helena-dev-codex', 'local-qwen36', 'local-qwen38', 'local-flash']);
 const NAME_RE = /^[a-z0-9][a-z0-9-]{0,31}$/;
 
 const localStateRoot = path.join(path.dirname(runtimeRoot), 'local-models');

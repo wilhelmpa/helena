@@ -27,6 +27,7 @@ import { CardOverlay } from './CardOverlay';
 import { BoardColumn } from './BoardColumn';
 import { CollapsedColumn } from './CollapsedColumn';
 import { WipCount } from './WipCount';
+import { cardProperties } from '../../utils/boardCardData';
 
 // Flat board: one vertically-virtualized column per group, in a horizontal row. A
 // trailing "Hidden" panel holds the columns that the user hid.
@@ -83,11 +84,13 @@ export default function FlatBoard({
   const issuesByGroup = groupIssues(groups, sorted, settings.group);
   const maps = buildMaps(project);
 
-  // Empty groups are removed when "Show empty columns" is off. A manual hide moves
-  // any of the remaining groups into the "Hidden" panel.
-  const baseGroups = settings.showEmptyGroups
-    ? groups
-    : groups.filter((g) => (issuesByGroup.get(g.key)?.length ?? 0) > 0);
+  // Empty groups are removed when "Show empty columns" is off, and while a filter is
+  // applied — a filtered board shows where its matches are, not a row of zeros (owner,
+  // 28.09.). A manual hide moves any of the remaining groups into the "Hidden" panel.
+  const baseGroups =
+    settings.showEmptyGroups && !filtered
+      ? groups
+      : groups.filter((g) => (issuesByGroup.get(g.key)?.length ?? 0) > 0);
   const visibleGroups = baseGroups.filter((g) => !hiddenSet.has(g.key));
   const hiddenGroups = baseGroups.filter((g) => hiddenSet.has(g.key));
 
@@ -166,7 +169,7 @@ export default function FlatBoard({
               group={group}
               issues={issuesByGroup.get(group.key) ?? []}
               maps={maps}
-              properties={settings.properties}
+              properties={cardProperties(settings)}
               manualOrder={manualOrder}
               wip={wipOf(group)}
               filtered={filtered}
@@ -232,7 +235,7 @@ export default function FlatBoard({
         issues={project.issues}
         project={project}
         maps={maps}
-        properties={settings.properties}
+        properties={cardProperties(settings)}
       />
     </DndContext>
   );

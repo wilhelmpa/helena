@@ -71,7 +71,8 @@
     "created": "أنشأ <task>{identifier}</task>",
     "reopened": "أعاد فتح <task>{identifier}</task>",
     "skipped": "اتخطّى: <task>{identifier}</task> لسه مفتوحة",
-    "missed": "اتخطّى: بدأ متأخر أوي"
+    "missed": "اتخطّى: بدأ متأخر أوي",
+    "noWork": "تم التخطي: لا جديد للقيام به"
   },
   "moreActions": "إجراءات أخرى",
   "runNow": "تشغيل الآن",

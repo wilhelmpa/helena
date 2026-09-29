@@ -1094,33 +1094,53 @@
 .ds-issue-list-count {
   color: var(--text-3);
 }
+/* A group's tasks in one framed box, like the table (owner, 28.09., O43/O45). */
+.ds-issue-list-box {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface-1);
+}
+/* One row in fixed columns: key · title (+ other properties) · status · priority · due ·
+   labels and people. The fixed ones keep their width when empty, so nothing jumps. */
 .ds-issue-list-row {
-  display: flex;
+  display: grid;
   width: 100%;
   min-width: 0;
   height: 40px;
+  grid-template-columns: 76px minmax(0, 1fr) 150px 104px 76px minmax(40px, auto);
   align-items: center;
-  gap: 14px;
-  border-radius: var(--radius-lg);
-  padding: 0 12px;
+  column-gap: var(--space-3);
+  padding: 0 var(--space-3);
   text-align: start;
   transition: background-color 0.15s;
+}
+.ds-issue-list-row + .ds-issue-list-row,
+.ds-issue-list-box > * + * .ds-issue-list-row,
+.ds-issue-list-box > * + .ds-issue-list-row {
+  border-top: 1px solid var(--line);
 }
 .ds-issue-list-row:hover,
 .ds-issue-list-row[data-state='open'] {
   background: var(--surface-2);
 }
 .ds-issue-list-key {
-  width: 64px;
-  flex: none;
+  overflow: hidden;
   color: var(--text-3);
   font-family: var(--font-mono);
   font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ds-issue-list-main {
+  display: flex;
+  min-width: 0;
+  align-items: baseline;
+  gap: var(--space-3);
 }
 .ds-issue-list-title {
-  min-width: 80px;
-  max-width: 40%;
-  flex: none;
+  min-width: 0;
+  flex: 0 1 auto;
   overflow: hidden;
   color: var(--text);
   font-size: 13px;
@@ -1130,27 +1150,76 @@
 }
 .ds-issue-list-meta {
   min-width: 0;
-  flex: 1;
+  flex: 1 1 0;
+  overflow: hidden;
+  color: var(--text-3);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ds-issue-list-cell {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 6px;
   overflow: hidden;
   color: var(--text-2);
-  font-family: var(--font-mono);
   font-size: 12px;
+  white-space: nowrap;
+}
+.ds-issue-list-cell > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ds-issue-list-cell[data-col='due'] {
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+.ds-issue-list-cell[data-overdue='true'] {
+  color: var(--status-error);
+}
+/* The status as its own box. */
+.ds-issue-status {
+  display: inline-flex;
+  max-width: 100%;
+  height: 22px;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  padding: 0 var(--space-2);
+  color: var(--text-2);
+  font-size: 12px;
+}
+.ds-issue-status > svg {
+  width: 12px;
+  height: 12px;
+  flex: none;
+}
+.ds-issue-status > span {
+  min-width: 0;
+  overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .ds-issue-list-end {
   display: flex;
-  flex: none;
+  min-width: 0;
   align-items: center;
+  justify-content: flex-end;
   gap: 6px;
 }
 @media (max-width: 700px) {
-  .ds-issue-list-meta {
-    display: none;
+  .ds-issue-list-row {
+    grid-template-columns: 72px minmax(0, 1fr) 112px;
   }
-  .ds-issue-list-title {
-    max-width: none;
-    flex: 1;
+  .ds-issue-list-meta,
+  .ds-issue-list-cell[data-col='priority'],
+  .ds-issue-list-cell[data-col='due'],
+  .ds-issue-list-end {
+    display: none;
   }
 }
 @media (min-width: 701px) {
@@ -1681,29 +1750,196 @@ a.ds-run-card:hover {
 /* Ziele: the goals as their ladder. */
 .ds-goals {
   display: flex;
+  min-height: 0;
   flex-direction: column;
   gap: var(--space-4);
+}
+/* Helena › Ziele (owner, 28.09., O11): the goals as cards on the left, the chosen one on the
+   right. Below 900px they take turns: the list, or the goal with a way back. */
+.ds-goals-split {
+  display: grid;
+  align-items: start;
+  grid-template-columns: minmax(280px, 380px) minmax(0, 1fr);
+  gap: var(--space-5);
 }
 .ds-goals-list {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: var(--space-2);
 }
-.ds-goal {
+.ds-goal-card {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin-inline-start: calc(var(--ds-goal-depth, 0) * 20px);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface-1);
+  padding: var(--space-3);
+  text-align: start;
+  transition: background-color 0.15s;
+}
+.ds-goal-card:hover {
+  background: var(--surface-2);
+}
+.ds-goal-card[aria-current='true'] {
+  border-color: var(--accent);
+  background: var(--surface-2);
+}
+.ds-goal-card-head {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: var(--space-2);
+}
+.ds-goal-card-dot {
+  width: 8px;
+  height: 8px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--text-3);
+}
+.ds-goal-card-dot[data-status='active'] {
+  background: var(--status-thinking);
+}
+.ds-goal-card-dot[data-status='achieved'] {
+  background: var(--status-done);
+}
+.ds-goal-card-dot[data-status='paused'] {
+  background: var(--status-offline);
+}
+.ds-goal-card-title {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 520;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ds-goal-card-flag {
+  display: inline-flex;
+  min-width: 18px;
+  height: 18px;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+  background: var(--status-waiting);
+  padding: 0 5px;
+  color: var(--bg);
+  font-size: 11px;
+  font-weight: 600;
+}
+.ds-goal-card-meta {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  gap: 2px var(--space-2);
+  padding-inline-start: 16px;
+  color: var(--text-3);
+  font-size: 12px;
+}
+.ds-goal-card-meta > span + span::before {
+  margin-inline-end: var(--space-2);
+  content: '·';
+}
+.ds-goal-card-progress {
+  display: block;
+  height: 4px;
+  margin-inline-start: 16px;
+  overflow: hidden;
+  border-radius: var(--radius-full);
+  background: var(--surface-3);
+}
+.ds-goal-card-progress > span {
+  display: block;
+  height: 100%;
+  border-radius: var(--radius-full);
+  background: var(--accent);
+}
+.ds-goals-detail {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface-1);
+  padding: var(--space-5);
+}
+.ds-goal-detail {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  margin-inline-start: calc(var(--ds-goal-depth, 0) * 24px);
+  gap: var(--space-4);
 }
-.ds-goal-chain {
+.ds-goal-back {
+  display: none;
+}
+.ds-goal-detail-title {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  outline: none;
+}
+.ds-goal-description {
+  min-height: 3rem;
+}
+/* The goal ladder ("Warum"): from the top goal down to the chosen one and below it. */
+.ds-ladder {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.ds-ladder-step {
+  display: flex;
+  padding-inline-start: calc(var(--ds-ladder-depth, 0) * 18px);
+}
+.ds-ladder-step > button,
+.ds-ladder-self {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: var(--space-2);
+  border-radius: var(--radius-md);
+  padding: var(--space-1) var(--space-2);
+  color: var(--text-2);
+  font-size: 13px;
+  text-align: start;
+}
+.ds-ladder-step > button:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+.ds-ladder-self {
+  color: var(--text);
+  font-weight: 600;
+}
+.ds-ladder-step svg {
+  flex: none;
   color: var(--text-3);
-  font: 500 10px/16px var(--font-mono);
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
 }
-@media (max-width: 700px) {
-  .ds-goal {
+.ds-ladder-step[data-current='true'] svg {
+  color: var(--accent);
+}
+@media (max-width: 899px) {
+  .ds-goals-split {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .ds-goals-split[data-chosen='true'] .ds-goals-list,
+  .ds-goals-split[data-chosen='false'] .ds-goals-detail {
+    display: none;
+  }
+  .ds-goal-back {
+    display: inline-flex;
+  }
+  .ds-goal-card {
     margin-inline-start: calc(var(--ds-goal-depth, 0) * 12px);
+  }
+  .ds-goals-detail {
+    padding: var(--space-4);
   }
 }
 
@@ -2042,6 +2278,11 @@ a.ds-run-card:hover {
 .ds-grid[data-min='wide'] {
   grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
 }
+/* A row of figures that share the width however many there are (the dashboard's tiles):
+   one row while they fit, wrapping evenly after that. */
+.ds-grid[data-min='fit'] {
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
 .ds-grid[data-cols='2'] {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
@@ -2062,6 +2303,9 @@ a.ds-run-card:hover {
 @media (max-width: 599px) {
   .ds-grid[data-min] {
     grid-template-columns: minmax(0, 1fr);
+  }
+  .ds-grid[data-min='fit'] {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
@@ -2241,6 +2485,136 @@ a.ds-run-card:hover {
 /* A control in a list row's meta column keeps the text font, not the meta's mono. */
 .ds-list-meta :is(select, input, button) {
   font-family: var(--font-sans);
+}
+
+/* ── The agent chip at the composer (ChatAgentMenu) ──────────────────────── */
+/* "Helena · Flash (lokal)": the agent's status orb, who and with which model, one pill of
+   the control height with a clean round edge (owner, 28.09., O2). */
+.ds-agent-chip {
+  display: inline-flex;
+  height: 32px;
+  min-width: 0;
+  max-width: 100%;
+  flex: 0 1 auto;
+  align-items: center;
+  gap: var(--space-2);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-full);
+  background: var(--surface-2);
+  padding: 0 var(--space-3);
+  color: var(--text-2);
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.ds-agent-chip:hover,
+.ds-agent-chip[data-state='open'] {
+  background: var(--surface-3);
+  color: var(--text);
+}
+.ds-agent-chip:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.ds-agent-chip-label {
+  min-width: 0;
+  max-width: 24rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ds-agent-chip > svg {
+  flex: none;
+  color: var(--text-3);
+}
+.ds-agent-menu {
+  width: 18rem;
+  max-height: 24rem;
+  overflow-y: auto;
+}
+.ds-agent-menu-item {
+  gap: var(--space-2);
+}
+.ds-agent-menu-item-text {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+}
+.ds-agent-chip[data-variant='quiet'] {
+  flex: none;
+  border-color: transparent;
+  background: transparent;
+}
+.ds-agent-chip[data-variant='quiet']:hover {
+  background: var(--surface-2);
+}
+/* The description under a task's title: room above it. */
+.ds-issue-description {
+  margin-top: var(--space-4);
+}
+
+/* ── Board columns (Aufgaben › Board) ─────────────────────────────────────── */
+/* Wide enough for a title on one or two lines (owner, 28.09.: narrow cards, titles
+   breaking). On a phone a column is 82% of the screen, so the next one shows at the edge
+   and the swipe to it is obvious. */
+.ds-board-column {
+  min-width: 300px;
+  flex: 1 1 300px;
+}
+@media (max-width: 639px) {
+  .ds-board-column {
+    min-width: 82vw;
+    flex: none;
+    scroll-snap-align: start;
+  }
+}
+
+/* A project goal's "Warum" (InitiativeWhy) and its ladder in a goal row. */
+.ds-initiative-main {
+  min-width: 0;
+  max-width: 760px;
+  flex: 1;
+}
+.ds-initiative-why {
+  min-width: 0;
+}
+.ds-goal-why {
+  display: inline-flex;
+  min-width: 0;
+  max-width: 28rem;
+  align-items: center;
+  gap: 4px;
+  overflow: hidden;
+  color: var(--accent);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ds-goal-why > svg {
+  flex: none;
+}
+
+/* "Bearbeitet von …" in a task's properties (IssueClaimRow). */
+.ds-issue-claim {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--text);
+  font-size: 13px;
+}
+.ds-issue-claim-since {
+  color: var(--text-3);
+  font-size: 12px;
+}
+
+/* The quiet note that the chat's agent works elsewhere (its orb stays with this chat). */
+.ds-chat-busy-note {
+  margin: 0 auto;
+  width: 100%;
+  max-width: 48rem;
+  padding: 0 var(--space-4) var(--space-1);
+  color: var(--text-3);
+  font-size: 12px;
 }
 
 /* Wissen › Leinwand (owner, O53): the tools at the bottom of the canvas, each an icon and

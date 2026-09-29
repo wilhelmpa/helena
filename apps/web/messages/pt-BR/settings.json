@@ -896,13 +896,24 @@
     "levelDefault": "Igual ao padrão de todos os projetos.",
     "autopilotTitle": "Piloto automático",
     "instructionsTitle": "Instruções",
-    "instructionsHint": "Valem para cada agente deste projeto.",
+    "instructionsHint": "Todo agente deste projeto as segue em cada execução.",
     "instructionsLabel": "Instruções do projeto",
     "instructionsPlaceholder": "Descreva a missão do projeto e as instruções de operação.",
-    "instructionsSaved": "Instruções salvas"
+    "instructionsSaved": "Instruções salvas",
+    "budgetsReset": "Orçamentos voltaram ao padrão",
+    "budgetsOverridden": "Este projeto tem orçamentos próprios",
+    "budgetsDefault": "Como o padrão de todos os projetos",
+    "budgetsDefaultHint": "O padrão fica nas configurações da Helena, em “Padrões dos projetos”."
   },
   "defaults": {
-    "adminOnly": "Só o administrador altera estes padrões para todos os projetos."
+    "adminOnly": "Só o administrador altera estes padrões para todos os projetos.",
+    "budgetsTitle": "Orçamentos para novos projetos",
+    "budgetsHint": "Em 80 % os batimentos desaceleram, em 100 % o trabalho para. Dias e meses em UTC.",
+    "budgetsSaved": "Orçamentos dos novos projetos salvos",
+    "budgetsOverridden": "{count, plural, one {# projeto tem orçamentos próprios.} other {# projetos têm orçamentos próprios.}}",
+    "budgetsNone": "Todos os projetos seguem este padrão.",
+    "helenaOrdersTitle": "Instruções permanentes para a Helena",
+    "helenaOrdersHint": "A Helena as segue em cada chat e execução."
   },
   "uiGallery": {
     "sample": "Sample text",
@@ -944,7 +955,10 @@
     "properties": "Properties",
     "emptySentence": "Nothing here yet. Create the first one.",
     "light": "Light",
-    "dark": "Dark"
+    "dark": "Dark",
+    "agentChip": "Helena · Flash (local)",
+    "statusBox": "Em andamento",
+    "ladderTop": "Publicar a Helena"
   },
   "organization": {
     "label": "Organização",

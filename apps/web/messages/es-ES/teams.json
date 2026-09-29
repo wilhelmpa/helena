@@ -830,7 +830,19 @@
       "daysHint": "Qué días de la semana.",
       "timezoneHint": "Para horario y días, p. ej. Europe/Berlin.",
       "instructionsHint": "Qué comprueba en cada latido. Solo se inicia una ejecución si hay algo que hacer.",
-      "schedule": "Ritmo"
+      "schedule": "Ritmo",
+      "precheck": "Comprobación previa",
+      "precheckHint": "En un caso dudoso, un modelo local rápido decide primero si hay trabajo; sin trabajo no se inicia ninguna ejecución.",
+      "throttled": "Frenado por un presupuesto",
+      "historyEmpty": "Aún no hay comprobaciones.",
+      "skippedMany": "{count}× {reason}",
+      "reasons": {
+        "noWork": "nada que hacer",
+        "outsideHours": "fuera del horario",
+        "precheck": "omitido por la comprobación previa",
+        "runPending": "una ejecución sigue esperando",
+        "other": "omitido"
+      }
     },
     "pages": {
       "groups": {
@@ -890,7 +902,11 @@
       "latestResults": "Últimos resultados",
       "noResults": "Aún no hay ejecuciones.",
       "allSettings": "Todos los ajustes"
-    }
+    },
+    "groupAgents": "Agentes",
+    "copies": "{count, plural, =0 {Sin copias} one {# copia} other {# copias}}",
+    "moreActionsFor": "Acciones de {name}",
+    "defaultModel": "Modelo por defecto"
   },
   "members": {
     "roleSaved": "{name} es ahora {role}",

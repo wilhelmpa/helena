@@ -84,6 +84,7 @@ import { enqueueParentResume } from './subtask-resume-run';
 import { assertWipLimit, columnAutoAssignee, wipLimitBreach } from '#modules/columns/service';
 import { enqueueStateChangedActions, type ActionChain } from '#modules/actions/queue';
 import { canBeIssueAssignee, resolveIssueAssignee } from './responsibility';
+import { readableDescription } from './description';
 
 // Data access for issues and their per-issue data: labels, custom field values,
 // and selected options. The human identifier (e.g. "MKT-42") is the project key
@@ -1095,7 +1096,7 @@ export async function createIssue(
         columnId: input.columnId,
         parentId: input.parentId ?? null,
         title: input.title,
-        description: input.description ?? '',
+        description: readableDescription(input.description ?? ''),
         priority: input.priority ?? null,
         estimatePoints: input.estimatePoints == null ? null : String(input.estimatePoints),
         estimateMinutes: input.estimateMinutes ?? null,
@@ -1296,7 +1297,7 @@ export async function updateIssue(
     });
   if (patch.delegateUserId !== undefined) set.delegateUserId = patch.delegateUserId;
   if (patch.title !== undefined) set.title = patch.title;
-  if (patch.description !== undefined) set.description = patch.description;
+  if (patch.description !== undefined) set.description = readableDescription(patch.description);
   if (patch.priority !== undefined) set.priority = patch.priority;
   if (patch.estimatePoints !== undefined)
     set.estimatePoints = patch.estimatePoints == null ? null : String(patch.estimatePoints);

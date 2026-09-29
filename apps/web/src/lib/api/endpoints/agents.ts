@@ -449,8 +449,11 @@ export interface AgentHeartbeatEvent {
   runId: number | null;
 }
 
-export const listAgentHeartbeats = (teamId: number, agentId: number) =>
-  request<AgentHeartbeatEvent[]>(`/teams/${teamId}/ai-agents/${agentId}/heartbeats`);
+// The agent's last checks; `includeIdle` adds the ones that found no work at all.
+export const listAgentHeartbeats = (teamId: number, agentId: number, includeIdle = false) =>
+  request<AgentHeartbeatEvent[]>(
+    `/teams/${teamId}/ai-agents/${agentId}/heartbeats${includeIdle ? '?includeIdle=true' : ''}`,
+  );
 
 // The project's agents as read-only notes (docs/second-brain-backend-api.md): a preview
 // without writing, and the snapshots written to Projects/<KEY>/Docs/Agenten with a view.

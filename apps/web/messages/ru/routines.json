@@ -71,7 +71,8 @@
     "created": "Создана <task>{identifier}</task>",
     "reopened": "Переоткрыта <task>{identifier}</task>",
     "skipped": "Пропущен: <task>{identifier}</task> ещё открыта",
-    "missed": "Пропущен: начался слишком поздно"
+    "missed": "Пропущен: начался слишком поздно",
+    "noWork": "Пропущено: нового ничего нет"
   },
   "moreActions": "Другие действия",
   "runNow": "Запустить сейчас",

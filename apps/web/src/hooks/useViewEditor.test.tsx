@@ -194,6 +194,20 @@ test('new view starts from the current filters and layout with a prefilled name'
   }
 });
 
+test('a new view from All is named after its filters, never "All"', () => {
+  const app = setup();
+  try {
+    app.render(null);
+    act(() => editor.beginNewView('current', 'Priorität ist Hoch'));
+    assert.equal(editor.draftName, 'Priorität ist Hoch');
+    act(() => editor.cancelEdits());
+    act(() => editor.beginNewView('current'));
+    assert.equal(editor.draftName, '');
+  } finally {
+    app.cleanup();
+  }
+});
+
 test('filters on All survive reload for the same user', () => {
   const app = setup();
   try {

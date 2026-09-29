@@ -22,6 +22,9 @@ import {
   issueChatParams,
   showVersionBody,
   updateChatBody,
+  trashAllChatsBody,
+  emptyChatTrashBody,
+  ChatCountResponse,
   ChatCatalogResponse,
   ClaimChatResponse,
   RetryChatResponse,
@@ -60,7 +63,9 @@ import {
   getChat,
   listChats,
   purgeChat,
+  purgeTrash,
   restoreChat,
+  trashAllChats,
   setChatPinned,
   trashChat,
   updateChat,
@@ -173,6 +178,50 @@ export const agentChatRoutes = new Elysia({ name: 'agent-chat', detail: { tags: 
         description:
           "The caller's chats with every agent, pinned ones first, then the newest. A search " +
           'ranks a title hit first.',
+      },
+    },
+  )
+
+  // "Alle löschen": every chat of the list into the trash, and the trash emptied for good.
+  .post(
+    '/chats/trash-all',
+    async ({ body, user }) => {
+      const caller = requireUser(user);
+      const project = body.projectKey ? await getProjectByKey(body.projectKey) : null;
+      if (body.projectKey && !project) throw new HttpError(404, 'Project not found');
+      return {
+        count: await trashAllChats(caller.id, {
+          projectId: project?.id,
+          view: body.view ?? 'active',
+        }),
+      };
+    },
+    {
+      body: trashAllChatsBody,
+      response: { 200: ChatCountResponse, ...commonErrors },
+      detail: {
+        summary: 'Move all chats to the trash',
+        description:
+          "The caller's chats (of one project, or all of them) into the trash, where each can " +
+          'be restored. A chat whose answer is still being written stays.',
+      },
+    },
+  )
+
+  .post(
+    '/chats/empty-trash',
+    async ({ body, user }) => {
+      const caller = requireUser(user);
+      const project = body.projectKey ? await getProjectByKey(body.projectKey) : null;
+      if (body.projectKey && !project) throw new HttpError(404, 'Project not found');
+      return { count: await purgeTrash(caller.id, { projectId: project?.id }) };
+    },
+    {
+      body: emptyChatTrashBody,
+      response: { 200: ChatCountResponse, ...commonErrors },
+      detail: {
+        summary: 'Empty the chat trash',
+        description: "Delete the caller's chats in the trash for good, with their messages.",
       },
     },
   )

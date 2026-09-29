@@ -71,7 +71,8 @@
     "created": "已创建 <task>{identifier}</task>",
     "reopened": "已重新打开 <task>{identifier}</task>",
     "skipped": "已跳过：<task>{identifier}</task> 仍未关闭",
-    "missed": "已跳过：开始得太晚"
+    "missed": "已跳过：开始得太晚",
+    "noWork": "已跳过：没有新工作"
   },
   "moreActions": "更多操作",
   "runNow": "立即运行",

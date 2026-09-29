@@ -1,11 +1,12 @@
-import { useTranslations } from 'next-intl';
 import { useSession } from '@/lib/auth-client';
+import { Inline } from '@/design-system';
 import type { BoardIssue } from '@/lib/api/endpoints/issues';
 import type { ProjectDetail } from '@/lib/api/endpoints/projects';
 import { type Maps } from '@/utils/project';
 import { usePriorityLabel } from '@/hooks/usePriorityLabel';
 import type { PropertyKey } from '@/utils/viewSettings';
 import { boardCardData } from '../../utils/boardCardData';
+import { useCardMetaWords } from '../../hooks/useCardMetaWords';
 import { AssigneeAvatar } from '@/features/issue/components/shared/IssueBadges';
 import { BoardHintPill } from '../shared/BoardHintPill';
 import { IssueIdentifier } from '../shared/IssueIdentifier';
@@ -30,14 +31,14 @@ export function IssueCardBody({
 }) {
   const { data: session } = useSession();
   const priorityLabel = usePriorityLabel();
-  const tColumns = useTranslations('workItems.columns');
+  const words = useCardMetaWords();
   const { importantValue, meta, labels } = boardCardData(
     issue,
     project,
     maps,
     properties,
     priorityLabel,
-    tColumns('statusAge'),
+    words,
   );
   const assignee = issue.assigneeUserId ? maps.assigneeById.get(issue.assigneeUserId) : undefined;
   const delegate = issue.delegateUserId ? maps.assigneeById.get(issue.delegateUserId) : undefined;
@@ -45,7 +46,7 @@ export function IssueCardBody({
 
   return (
     <>
-      <div className="flex min-w-0 items-baseline justify-between gap-2">
+      <Inline gap={2} align="baseline" justify="between" className="min-w-0">
         <span
           dir="auto"
           className="board-card-title line-clamp-2 min-w-0 wrap-anywhere text-foreground"
@@ -57,19 +58,19 @@ export function IssueCardBody({
             {importantValue}
           </span>
         )}
-      </div>
+      </Inline>
 
       {meta.length > 0 && (
         <div className="board-card-meta truncate text-muted-foreground">{meta.join(' · ')}</div>
       )}
 
       {(labels.length > 0 || showAssignee || delegate) && (
-        <div className="flex min-w-0 items-center gap-1.5">
-          <div className="flex min-w-0 flex-1 flex-wrap gap-1">
+        <Inline gap={2} className="min-w-0">
+          <Inline gap={1} wrap className="min-w-0 flex-1">
             {labels.map((label) => (
               <BoardHintPill key={label.id} name={label.name} />
             ))}
-          </div>
+          </Inline>
           {delegate && (
             <DelegateOrb
               teamId={readOnly ? null : project.project.teamId}
@@ -80,7 +81,7 @@ export function IssueCardBody({
           {showAssignee && (
             <AssigneeAvatar name={assignee.name} image={assignee.image} className="size-5" />
           )}
-        </div>
+        </Inline>
       )}
 
       {issue.parentId != null ? (

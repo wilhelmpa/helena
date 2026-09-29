@@ -7,6 +7,7 @@ import {
   issueAttachment,
   issueType,
   aiAgent,
+  helenaBudget,
   organizationAgentAssignment,
   organizationDepartment,
   organizationProjectAssignment,
@@ -686,6 +687,18 @@ export async function createProject(
       roleId: defaultRoleId,
       locale,
     });
+    // The budgets Helena gives every new project (Vorgaben für Projekte); the project's
+    // settings change them.
+    if (defaults.budgets.length > 0)
+      await tx.insert(helenaBudget).values(
+        defaults.budgets.map((budget) => ({
+          teamId: ownerTeam.id,
+          projectId: row.id,
+          metric: budget.metric,
+          period: budget.period,
+          limitValue: budget.limit,
+        })),
+      );
     await insertDefaultStates(tx, row.id, locale);
     await insertPresetIssueTypes(tx, row.id, input.preset, locale);
     const { ids: defaultViewIds } = await ensureDefaultProjectViews(tx, row.id, locale);

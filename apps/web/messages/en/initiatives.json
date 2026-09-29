@@ -161,5 +161,11 @@
   "deleteTitle": "Delete goal",
   "deleteConfirm": "Delete “{name}”? Its tasks stay in the project, without this goal.",
   "sortBy": "Sort",
-  "sortDefault": "Own order"
+  "sortDefault": "Own order",
+  "why": {
+    "label": "Why",
+    "choose": "Choose a Helena goal",
+    "none": "Serves no Helena goal yet.",
+    "noneOption": "No goal"
+  }
 }

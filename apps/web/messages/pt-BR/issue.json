@@ -40,7 +40,10 @@
     "why": "Por quê",
     "cost": "Custo",
     "costUnpriced": "sem preço",
-    "costTokens": "{tokens} tokens"
+    "costTokens": "{tokens} tokens",
+    "claimedBy": "Em trabalho por",
+    "claimedSince": "há {age}",
+    "claimedHint": "Este agente está com a tarefa agora; outras execuções esperam até ele liberar."
   },
   "menu": {
     "preview": "Visualizar",

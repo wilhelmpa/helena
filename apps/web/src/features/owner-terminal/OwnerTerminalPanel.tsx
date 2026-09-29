@@ -1,17 +1,17 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { arrayMove } from '@dnd-kit/sortable';
 import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { cn } from '@/lib/utils';
 import type { OwnerTerminalKind } from '@/lib/api/endpoints/owner-terminal';
 import {
   closeOwnerTerminalSession,
   endOwnerTerminalAuditSession,
   startOwnerTerminalAuditSession,
   useOwnerTerminalGrantQuery,
+  useOwnerTerminalLocalModels,
 } from './services/owner-terminal.service';
 import StepUpDialog from './components/StepUpDialog';
 import GrantBanner from './components/GrantBanner';
@@ -19,46 +19,42 @@ import TerminalTabBar from './components/TerminalTabBar';
 import MobileKeyBar from './components/MobileKeyBar';
 import { attachTerminalClipboard } from './utils/terminalClipboard';
 import { terminalClipboardToasts } from './utils/terminalClipboardToasts';
+import {
+  addableKinds,
+  DEFAULT_TABS,
+  normalizeTabs,
+  tabKey,
+  visibleTabs,
+  type OpenTerminalTab,
+} from './utils/terminalTabs';
 import { attachTerminalTheme } from '@/utils/terminalTheme';
 
-export interface OpenTerminalTab {
-  kind: OwnerTerminalKind;
-  name: string;
-}
+export type { OpenTerminalTab } from './utils/terminalTabs';
 
-// v2: Shell, Claude Code and Codex are open from the start (owner, 2026-09-24);
-// the new key drops the Shell-only lists v1 saved before that.
-const STORAGE_KEY = 'owner-terminal:tabs:v2';
-const DEFAULT_TABS: OpenTerminalTab[] = [
-  { kind: 'shell', name: 'main' },
-  { kind: 'claude', name: 'main' },
-  { kind: 'codex', name: 'main' },
-];
+// v3: Shell, Claude Code, Codex and Flash, each once (owner, 28.09., O26); older lists are
+// read once and cleaned up (utils/terminalTabs.ts).
+const STORAGE_KEY = 'owner-terminal:tabs:v3';
+const OLDER_KEYS = ['owner-terminal:tabs:v2'];
 
 // The list of open tabs is a per-browser convenience, not the source of truth:
 // the tmux session a tab points at (owner-<kind>-<name> on the host) is what
 // actually persists, and reopening the same kind with the same name from any
-// device reconnects to it. Restoring the same *list* of tabs automatically only
-// works on the browser that opened them.
+// device reconnects to it.
 function loadTabs(): OpenTerminalTab[] {
   if (typeof window === 'undefined') return DEFAULT_TABS;
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    const parsed = raw ? (JSON.parse(raw) as OpenTerminalTab[]) : null;
-    return Array.isArray(parsed) && parsed.length > 0 ? parsed : DEFAULT_TABS;
+    for (const key of [STORAGE_KEY, ...OLDER_KEYS]) {
+      const raw = window.localStorage.getItem(key);
+      if (raw) return normalizeTabs(JSON.parse(raw));
+    }
   } catch {
-    return DEFAULT_TABS;
+    // Unreadable: the defaults.
   }
+  return DEFAULT_TABS;
 }
 
-function nextName(tabs: OpenTerminalTab[], kind: OwnerTerminalKind): string {
-  const taken = new Set(tabs.filter((tab) => tab.kind === kind).map((tab) => tab.name));
-  if (!taken.has('main')) return 'main';
-  for (let n = 2; ; n += 1) if (!taken.has(`main-${n}`)) return `main-${n}`;
-}
-
-// The owner terminal (Home -> Terminal): step-up gated, tmux-persisted Shell,
-// Claude Code, Codex and Helena-dev sessions. See
+// The owner terminal (Home -> Terminal): step-up gated, tmux-persisted Shell, Claude Code,
+// Codex and Flash sessions. See
 // docs/volition-design-owner-terminals.md. Registered for the "terminal" tool
 // only in the Home context -- TerminalWorkspace renders the project terminal's
 // plain iframe everywhere else.
@@ -67,8 +63,23 @@ export default function OwnerTerminalPanel() {
   const isMobile = useIsMobile();
   const { resolvedTheme } = useTheme();
   const grant = useOwnerTerminalGrantQuery();
+  const localModels = useOwnerTerminalLocalModels();
+  const readyLocal = useMemo(
+    () =>
+      new Set<string>(
+        (localModels.data ?? []).filter((model) => model.ready).map((model) => model.kind),
+      ),
+    [localModels.data],
+  );
   const [tabs, setTabs] = useState<OpenTerminalTab[]>(DEFAULT_TABS);
   const [activeKey, setActiveKey] = useState('shell:main');
+  const shown = useMemo(() => visibleTabs(tabs, readyLocal), [tabs, readyLocal]);
+  // The tab to show: the chosen one, or the first visible one (Flash went away).
+  const current = shown.some((tab) => tabKey(tab) === activeKey)
+    ? activeKey
+    : shown[0]
+      ? tabKey(shown[0])
+      : activeKey;
   const frames = useRef<Record<string, HTMLIFrameElement | null>>({});
   const area = useRef<HTMLDivElement | null>(null);
 
@@ -85,9 +96,9 @@ export default function OwnerTerminalPanel() {
 
   useEffect(() => {
     if (!grant.data?.active) return;
-    const [kind, name] = activeKey.split(':') as [OwnerTerminalKind, string];
+    const [kind, name] = current.split(':') as [OwnerTerminalKind, string];
     void startOwnerTerminalAuditSession(kind, name);
-  }, [activeKey, grant.data?.active]);
+  }, [current, grant.data?.active]);
 
   // xterm in each frame fits itself on its window's resize event. A frame hidden with
   // display:none measured nothing, and a panel resize or a tab switch does not always
@@ -97,7 +108,7 @@ export default function OwnerTerminalPanel() {
   useEffect(() => {
     const fit = () => {
       try {
-        frames.current[activeKey]?.contentWindow?.dispatchEvent(new Event('resize'));
+        frames.current[current]?.contentWindow?.dispatchEvent(new Event('resize'));
       } catch {
         // Not loaded yet; its own load fits it.
       }
@@ -109,7 +120,7 @@ export default function OwnerTerminalPanel() {
       cancelAnimationFrame(frame);
       observer.disconnect();
     };
-  }, [activeKey, grant.data?.active]);
+  }, [current, grant.data?.active]);
 
   // Copy and paste in every open terminal (owner, 2026-09-24: "ich muss copy paste
   // können im Terminal"); see utils/terminalClipboard.ts.
@@ -137,9 +148,10 @@ export default function OwnerTerminalPanel() {
   if (!grant.data?.active) return <StepUpDialog onSuccess={() => grant.refetch()} />;
 
   function addTab(kind: OwnerTerminalKind) {
-    const name = nextName(tabs, kind);
-    setTabs((current) => [...current, { kind, name }]);
-    setActiveKey(`${kind}:${name}`);
+    setTabs((current) =>
+      current.some((tab) => tab.kind === kind) ? current : [...current, { kind, name: 'main' }],
+    );
+    setActiveKey(`${kind}:main`);
   }
 
   function reorderTabs(fromKey: string, toKey: string) {
@@ -160,27 +172,28 @@ export default function OwnerTerminalPanel() {
       const next = current.filter((tab) => `${tab.kind}:${tab.name}` !== key);
       return next.length > 0 ? next : DEFAULT_TABS;
     });
-    if (activeKey === key) {
-      const remaining = tabs.filter((tab) => `${tab.kind}:${tab.name}` !== key);
+    if (current === key) {
+      const remaining = shown.filter((tab) => tabKey(tab) !== key);
       const fallback = remaining[0] ?? DEFAULT_TABS[0]!;
-      setActiveKey(`${fallback.kind}:${fallback.name}`);
+      setActiveKey(tabKey(fallback));
     }
   }
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <GrantBanner expiresAt={grant.data.expiresAt} />
       <TerminalTabBar
-        tabs={tabs}
-        activeKey={activeKey}
+        tabs={shown}
+        addable={addableKinds(tabs, readyLocal)}
+        activeKey={current}
         onSelect={setActiveKey}
         onClose={closeTab}
         onReorder={reorderTabs}
         onAdd={addTab}
       />
+      <GrantBanner expiresAt={grant.data.expiresAt} />
       <div ref={area} className="relative min-h-0 flex-1">
-        {tabs.map((tab) => {
-          const key = `${tab.kind}:${tab.name}`;
+        {shown.map((tab) => {
+          const key = tabKey(tab);
           return (
             <iframe
               key={key}
@@ -190,19 +203,21 @@ export default function OwnerTerminalPanel() {
               src={`/focus/owner-terminal/${tab.kind}/${tab.name}/`}
               title={`${t(`kinds.${tab.kind}`)} ${tab.name}`}
               loading="lazy"
-              className={cn(
-                'absolute inset-0 h-full w-full rounded-b-lg border-0 bg-background',
-                key !== activeKey && 'pointer-events-none invisible',
-              )}
+              className="ds-terminal-frame"
+              data-active={key === current ? 'true' : 'false'}
               allow="clipboard-read; clipboard-write"
-              onLoad={(event) =>
-                event.currentTarget.contentWindow?.dispatchEvent(new Event('resize'))
-              }
+              onLoad={(event) => {
+                try {
+                  event.currentTarget.contentWindow?.dispatchEvent(new Event('resize'));
+                } catch {
+                  // Not the terminal (its router is down and something else answered).
+                }
+              }}
             />
           );
         })}
       </div>
-      {isMobile && <MobileKeyBar frame={frames.current[activeKey] ?? null} />}
+      {isMobile && <MobileKeyBar frame={frames.current[current] ?? null} />}
     </div>
   );
 }

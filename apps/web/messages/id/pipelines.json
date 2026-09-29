@@ -43,9 +43,9 @@
     "create": "Buat",
     "templates": "Templat",
     "empty": "Belum ada templat",
-    "emptyHint": "Tambahkan templat bawaan di bawah atau buat templat baru.",
-    "builtins": "Templat bawaan",
-    "builtinsHint": "Menambahkannya menyalinnya ke pustaka Anda dalam bahasa Anda, tempat Anda dapat mengubahnya.",
+    "emptyHint": "Tambahkan salah satu contoh di bawah atau buat sendiri.",
+    "builtins": "Contoh",
+    "builtinsHint": "Disalin ke pustaka Anda dalam bahasa Anda, tempat Anda dapat mengubahnya.",
     "addToLibrary": "Tambahkan ke pustaka",
     "added": "{name} ditambahkan ke pustaka.",
     "steps": "{count, plural, other {# langkah}}",
@@ -57,7 +57,10 @@
     "tryAgain": "Coba lagi",
     "noAccess": "Anda mungkin tidak dapat melihat alur kerja tim ini.",
     "readOnly": "Hanya anggota yang boleh membuat alur kerja yang dapat menambahkan templat di sini.",
-    "noAccessTitle": "Tidak ada akses"
+    "noAccessTitle": "Tidak ada akses",
+    "startsWhen": "Mulai: {trigger}",
+    "stepsLabel": "Langkah",
+    "moreSteps": "+{count} lagi"
   },
   "starter": {
     "name": "Alur kerja baru",
@@ -592,5 +595,21 @@
     "of": "{workflow} di {project}",
     "step": "Langkah: {step}",
     "waitingSince": "Menunggu sejak {time}"
+  },
+  "kindsOverview": {
+    "workflow": {
+      "title": "Alur kerja",
+      "text": "Cara tugas berjalan: langkah demi langkah — agen, persetujuan, pemberitahuan."
+    },
+    "schedule": {
+      "title": "Jadwal (rutinitas)",
+      "text": "Kapan pekerjaan mulai sendiri: pada waktu tetap agen mendapat tugas, mis. setiap pagi pukul delapan.",
+      "open": "Jadwal"
+    },
+    "heartbeat": {
+      "title": "Detak",
+      "text": "Agen memeriksa secara berkala apakah ada pekerjaan, dan baru mulai saat itu.",
+      "open": "Tim"
+    }
   }
 }

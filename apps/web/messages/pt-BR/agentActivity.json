@@ -27,7 +27,8 @@
     "delegation": "Delegação",
     "field": "Gatilho de campo",
     "schedule": "Agendamento",
-    "manual": "Manual"
+    "manual": "Manual",
+    "heartbeat": "Batimento"
   },
   "maxTurns": "{count, plural, one {No máximo # turno} other {No máximo # turnos}}",
   "runBudget": "{minutes, plural, one {Limite de # minuto} other {Limite de # minutos}}",
@@ -44,5 +45,12 @@
   "allStatuses": "Todos os estados",
   "statusRunning": "Em andamento",
   "noneRunning": "Nada em andamento agora.",
-  "noneRunningHint": "Defina o estado como “Todos os estados” para ver todo o histórico."
+  "noneRunningHint": "Defina o estado como “Todos os estados” para ver todo o histórico.",
+  "between": "{from} – {to}",
+  "show": "Mostrar",
+  "hide": "Ocultar",
+  "filterHeartbeats": "Batimentos",
+  "heartbeatsBundled": "Batimentos agrupados",
+  "heartbeatsAll": "Todos os batimentos",
+  "heartbeatRuns": "{count, plural, one {# execução por batimento} other {# execuções por batimento}}"
 }

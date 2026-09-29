@@ -2,8 +2,7 @@
 
 import { Search } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { cn } from '@/lib/utils';
-import { Input } from '@/components/ui/input';
+import { SearchField } from '@/design-system';
 
 // Searches every one of the caller's chats by title and message text, server side (see
 // GET /chats?q=). Two characters or fewer search nothing, which the API enforces too —
@@ -11,25 +10,20 @@ import { Input } from '@/components/ui/input';
 export default function ChatListSearch({
   value,
   onChange,
-  className,
 }: {
   value: string;
   onChange: (value: string) => void;
-  className?: string;
 }) {
   const t = useTranslations('chatWorkspace');
-
   return (
-    <div className={cn('relative', className)}>
-      <Search className="pointer-events-none absolute start-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-      <Input
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        placeholder={t('list.search')}
-        aria-label={t('list.search')}
-        className="h-8 bg-background ps-8 shadow-none"
-        dir="auto"
-      />
-    </div>
+    <SearchField
+      className="ds-chat-list-search"
+      icon={<Search aria-hidden="true" />}
+      value={value}
+      onChange={(event) => onChange(event.target.value)}
+      placeholder={t('list.search')}
+      aria-label={t('list.search')}
+      dir="auto"
+    />
   );
 }

@@ -160,6 +160,40 @@ describe('chat list', () => {
     expect((await chat.get()).status).toBe(404);
   });
 
+  it('moves all chats of a list to the trash and empties it, keeping a running answer', async () => {
+    const { asOwner, mia, otto, asMia, asOtto } = await setup();
+    await chatOf(asOwner, 'MKT', mia.id).chat.post({ prompt: 'One' });
+    await answer(asMia, 'Ok.');
+    await chatOf(asOwner, 'MKT', mia.id).chat.post({ prompt: 'Two' });
+    await answer(asMia, 'Ok.');
+    await chatOf(asOwner, 'OPS', otto.id).chat.post({ prompt: 'Other project' });
+    await answer(asOtto, 'Ok.');
+    // Still being answered: stays where it is.
+    const running = await chatOf(asOwner, 'MKT', mia.id).chat.post({ prompt: 'Running' });
+
+    const moved = await asOwner.chats['trash-all'].post({ projectKey: 'MKT' });
+    expect(moved.status).toBe(200);
+    expect(moved.data!.count).toBe(2);
+    expect((await asOwner.chats.get({ query: {} })).data!.items.map((c) => c.title)).toEqual([
+      'Running',
+      'Other project',
+    ]);
+    expect(
+      (await asOwner.chats.get({ query: { view: 'trash' } })).data!.items.map((c) => c.title),
+    ).toEqual(['Two', 'One']);
+    expect((await asOwner.chats['trash-all'].post({ projectKey: 'NOPE' })).status).toBe(404);
+
+    // Another member's list is untouched by their own "Alle löschen".
+    const asMember = await addProjectMember(asOwner, 'MKT');
+    expect((await asMember.chats['trash-all'].post({})).data!.count).toBe(0);
+    expect((await asMember.chats['empty-trash'].post({})).data!.count).toBe(0);
+
+    const emptied = await asOwner.chats['empty-trash'].post({});
+    expect(emptied.data!.count).toBe(2);
+    expect((await asOwner.chats.get({ query: { view: 'trash' } })).data!.total).toBe(0);
+    expect((await asOwner.chats({ threadId: running.data!.threadId }).get()).status).toBe(200);
+  });
+
   it('takes a message into an archived chat and lists it again', async () => {
     const { asOwner, mia, asMia } = await setup();
     const sent = await chatOf(asOwner, 'MKT', mia.id).chat.post({ prompt: 'Later' });

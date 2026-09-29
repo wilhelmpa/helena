@@ -107,7 +107,19 @@
     "create": "Ziel anlegen",
     "titlePlaceholder": "Zieltitel",
     "descriptionPlaceholder": "Worum geht es, woran erkennst du, dass es erreicht ist?",
-    "none": "Keine Angabe"
+    "none": "Keine Angabe",
+    "ladder": "Ziel-Leiter",
+    "ladderAlone": "Dieses Ziel steht für sich: Es dient keinem anderen, und keines dient ihm.",
+    "back": "Zurück zu den Zielen",
+    "actions": "Aktionen für {title}",
+    "why": "Warum",
+    "work": "Arbeit",
+    "saveFailed": "Die Änderung wurde nicht gespeichert.",
+    "deleteTitle": "Ziel „{title}“ löschen?",
+    "deleteBody": "Die Ziele darunter hängen danach an keinem Ziel mehr, verknüpfte Aufgaben bleiben erhalten.",
+    "wholeTeam": "Ganzes Team",
+    "list": "Ziele",
+    "proposalsWaiting": "Vorschläge warten auf deine Entscheidung"
   },
   "agents": {
     "empty": "Dieses Team hat keine Agenten.",
@@ -318,6 +330,24 @@
     "whyEmpty": "Noch arbeitet kein Agent an einer Aufgabe dieses Projekts.",
     "whyNoGoal": "Kein Ziel verknüpft",
     "noAgent": "Ohne Agent",
-    "filterLabel": "Status"
+    "filterLabel": "Status",
+    "addMember": "Mitglied hinzufügen"
+  },
+  "addMember": {
+    "title": "Teammitglied hinzufügen",
+    "description": "Ein Agent aus dem Pool oder eine neue Kopie einer Vorlage kommt ins Team des Projekts.",
+    "source": "Herkunft",
+    "fromPool": "Aus dem Pool",
+    "fromTemplate": "Aus Vorlage",
+    "project": "Projekt",
+    "chooseProject": "Projekt wählen",
+    "poolEmpty": "Alle Agenten des Pools arbeiten schon in diesem Projekt.",
+    "templatesEmpty": "Das Team hat noch keine Vorlagen.",
+    "reportsTo": "Berichtet an",
+    "reportsToHint": "Der Koordinator des Projekts, wenn du nichts anderes wählst.",
+    "add": "Hinzufügen",
+    "added": "Zu {project} hinzugefügt",
+    "failed": "Das Mitglied konnte nicht hinzugefügt werden.",
+    "keyOnce": "Die Kopie läuft außerhalb von Helena: Kopiere ihren Schlüssel jetzt, er wird nur einmal angezeigt."
   }
 }

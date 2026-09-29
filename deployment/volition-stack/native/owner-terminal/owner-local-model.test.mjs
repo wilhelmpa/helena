@@ -64,6 +64,7 @@ for (const kind of Object.keys(LOCAL_MODELS)) test(`${kind} launches managed Cod
     assert.equal(binary, '/usr/local/bin/codex');
     assert.ok(args.includes('--no-daemon'));
     assert.ok(!args.includes('resume'));
+    assert.equal(args.at(-1), '--dangerously-bypass-approvals-and-sandbox');
     assert.ok(args.join(' ').includes('wire_api="responses"'));
     assert.ok(args.includes('features.multi_agent=false'));
     assert.ok(!args.join(' ').includes('synthetic-capability'));
@@ -71,9 +72,13 @@ for (const kind of Object.keys(LOCAL_MODELS)) test(`${kind} launches managed Cod
     assert.equal(options.env.CODEX_HOME, path.join(root, `.local/state/helena-owner-terminal/${kind}-main/codex`));
     await mkdir(path.join(options.env.CODEX_HOME, 'sessions/2026'), { recursive: true });
     await launchLocalCodex(kind, 'main', { runtimeRoot: root, ownerHome: root, spawnImpl });
-    assert.deepEqual(launches[1][1].slice(-2), ['resume', '--last']);
+    assert.deepEqual(launches[1][1].slice(-3), [
+      'resume',
+      '--last',
+      '--dangerously-bypass-approvals-and-sandbox',
+    ]);
     const shell = await readFile(new URL('./owner-terminal-shell', import.meta.url), 'utf8');
-    assert.ok(shell.includes('local-qwen36 | local-qwen38)'));
+    assert.ok(shell.includes('local-qwen36 | local-qwen38 | local-flash)'));
     assert.ok(shell.includes('owner-local-codex.mjs'));
   } finally { await rm(root, { recursive: true, force: true }); }
 });
@@ -89,5 +94,5 @@ test('native deploy restarts the router from the checkout containing both helper
   assert.ok(!setup.includes('restart helena-owner-tmux'));
   const nginx = await readFile(new URL('./nginx-owner-terminal.conf', import.meta.url), 'utf8');
   assert.ok(nginx.includes('location ~ ^/(backend/|api/)?owner-terminal/local/'));
-  assert.ok(nginx.includes('local-qwen36|local-qwen38'));
+  assert.ok(nginx.includes('local-qwen36|local-qwen38|local-flash'));
 });

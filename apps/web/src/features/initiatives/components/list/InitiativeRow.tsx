@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { Target } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { Assignee } from '@/lib/api/endpoints/projects';
 import type { Initiative } from '@/lib/api/endpoints/initiatives';
@@ -18,10 +19,13 @@ export default function InitiativeRow({
   initiative,
   projectKey,
   owner,
+  why,
 }: {
   initiative: Initiative;
   projectKey: string;
   owner: Assignee | null;
+  // The Helena goal it serves, as its ladder (owner, 28.09.: Ziel-Leiter).
+  why?: string[] | null;
 }) {
   const t = useTranslations('initiatives');
   const priorityLabel = usePriorityLabel();
@@ -52,6 +56,12 @@ export default function InitiativeRow({
             {initiative.targetDate && (
               <span>
                 {t('columns.target')} {formatShortDate(initiative.targetDate)}
+              </span>
+            )}
+            {why && why.length > 0 && (
+              <span className="ds-goal-why" title={why.join(' › ')}>
+                <Target size={12} aria-hidden="true" />
+                {why.join(' › ')}
               </span>
             )}
             {initiative.priority && (

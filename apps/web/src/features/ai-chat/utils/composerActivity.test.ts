@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { activeTool, composerActivity, pendingChoices } from './composerActivity';
+import { activeTool, busyElsewhere, composerActivity, pendingChoices } from './composerActivity';
 import type { PlanUIMessage } from './chatMessages';
 
 const question: PlanUIMessage = { id: '1', role: 'user', parts: [{ type: 'text', text: 'Q' }] };
@@ -83,5 +83,16 @@ describe('activeTool', () => {
 
   it('is null once the tool answered', () => {
     assert.equal(activeTool([question, running('output-available')], 'streaming'), null);
+  });
+});
+
+describe('busyElsewhere', () => {
+  it('names work of the agent elsewhere only while this chat rests', () => {
+    assert.equal(busyElsewhere('idle', 'running'), true);
+    assert.equal(busyElsewhere('answered', 'running'), true);
+    assert.equal(busyElsewhere('thinking', 'running'), false);
+    assert.equal(busyElsewhere('writing', 'running'), false);
+    assert.equal(busyElsewhere('idle', 'ready'), false);
+    assert.equal(busyElsewhere('idle', undefined), false);
   });
 });

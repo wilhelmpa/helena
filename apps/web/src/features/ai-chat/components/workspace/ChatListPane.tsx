@@ -11,6 +11,8 @@ export interface ChatListPaneProps {
   mode: ChatLayoutMode;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  // Where the drawer opens in the compact layout: next to the button that opens it.
+  side?: 'start' | 'end';
   selectedThreadId: string | null;
   onSelectThread: (thread: { id: string; agentId: number }) => void;
   // A chat was deleted: the open one closes.
@@ -18,24 +20,24 @@ export interface ChatListPaneProps {
   onNewChat: () => void;
 }
 
-// The chat list: pinned chats, then grouped by when they were last written in (see
-// chatGroups.ts), in the sidebar's own look. Wide enough, it is a column to the side of
-// the conversation; below @3xl/chat (the CHAT_SPLIT_WIDTH the utility and this class
-// share) it becomes a drawer over the chat instead (ChatListDrawer), which is what makes
-// it work in the tool panel and on a phone without a second layout to maintain.
+// The chat list: pinned chats, then grouped by when they were last written in, by project
+// or by agent (see chatGroups.ts), in the sidebar's own look. Wide enough, it is a column
+// to the side of the conversation; below @3xl/chat it becomes a floating drawer over the
+// chat instead (ChatListDrawer), which is what makes it work in the tool panel and on a
+// phone without a second layout to maintain.
 export default function ChatListPane(props: ChatListPaneProps) {
-  const { mode, open, onOpenChange } = props;
+  const { mode, open, onOpenChange, side } = props;
 
   if (mode === 'compact') {
     return (
-      <ChatListDrawer open={open} onOpenChange={onOpenChange}>
+      <ChatListDrawer open={open} onOpenChange={onOpenChange} side={side}>
         <ChatListPaneBody {...props} />
       </ChatListDrawer>
     );
   }
 
   return (
-    <div className="hidden w-64 shrink-0 border-e border-sidebar-border bg-sidebar @3xl/chat:flex @3xl/chat:flex-col">
+    <div className="ds-chat-list-column">
       <ChatListPaneBody {...props} />
     </div>
   );

@@ -64,7 +64,7 @@ eslint lehnt alle anderen `rounded-*`-Klassen ab (`rounded`, `rounded-xs`, `roun
 
 In `features/**` und `app/**` sind Tailwind-Klassen für Abstände (`p-4`, `gap-2`, `space-y-3`, `mt-1` …), Schriftgrößen (`text-sm` …) und Radien verboten. Stattdessen:
 
-- `Stack gap={3}` (untereinander), `Inline gap={2} justify="between" wrap` (nebeneinander), `Grid min="card"` bzw. `Grid columns={2}` bzw. `Grid split`, `Box pad={4}`.
+- `Stack gap={3}` (untereinander), `Inline gap={2} justify="between" wrap` (nebeneinander), `Grid min="card"` bzw. `Grid columns={2}` bzw. `Grid split`, `Box pad={4}`. `Grid min="fit"` teilt eine Zeile unter beliebig vielen Karten auf (Kennzahlen des Dashboards), auf dem Handy zweispaltig.
 - `Text size="xs|sm|md|lg" tone="muted|faint|accent|danger|success|warning" mono truncate`.
 - Die Skala: 1 = 4 px, 2 = 8, 3 = 12, 4 = 16, 5 = 24, 6 = 32, 7 = 48.
 
@@ -90,17 +90,34 @@ Funktionen nach dem Vorbild von Hermes, OpenClaw und Paperclip bekommen keine ei
 
 | Funktion | Ort | Baustein |
 |---|---|---|
-| Budgets, Drossel, harter Stopp | Projekt › Einstellungen › Agenten › **Autopilot & Ausführung** (Überschreibung, markiert, „Auf Vorgabe zurücksetzen“); Vorgabe unter **Vorgaben für Projekte** | `SettingsGroup` „Budgets“ (vorhanden) |
-| Dauerhafte Anweisungen | Projekt › **Autopilot & Ausführung** (neue Gruppe „Anweisungen“); für Helena unter **Vorgaben für Projekte** | `SettingsGroup` + `TextArea` |
-| Eskalation | **Agenten und Modelle** (zentrale Regeln, `LocalAiEscalationSection` zieht dorthin, sobald ein Lauf sie befolgt); Agent-Detail nur „Festlegung für diesen Agenten“ | `SettingsGroup` |
+| Budgets, Drossel, harter Stopp | Projekt › Einstellungen › Agenten › **Autopilot & Ausführung** (Überschreibung, markiert, „Auf Vorgabe zurücksetzen“); Vorgabe unter **Vorgaben für Projekte** (`DefaultBudgetsGroup`, gilt für neue Projekte); Anzeige: Dashboard-Kachel „Budgets“, Projektkarten, „Braucht dich“ (aufgebraucht = gestoppt, ab 80 % = gedrosselt) | `SettingsGroup` „Budgets“, `BudgetsTile`, `budgetNeedsYouSource` |
+| Dauerhafte Anweisungen | Projekt › **Autopilot & Ausführung** (Gruppe „Anweisungen“ mit den Projektanweisungen); für Helena unter **Vorgaben für Projekte**; Vorschläge der Agenten übernehmen/ablehnen | `StandingOrdersGroup` |
+| Eskalation | **Agenten und Modelle** (zentrale Regeln, als „Vorbereitet“ markiert, bis die zentrale Laufzeit sie befolgt); Agent-Dialog › Modell & Verhalten nur „Festlegung für diesen Agenten“ | `LocalAiEscalationSection`, `AgentEscalationPin` |
 | Telegram-Kanal | **Benachrichtigungen & Kanäle** › Telegram | vorhanden |
-| Heartbeat, Gedächtnis, Fakten, Skills pro Agent | Agent-Detail (Agent-Dialog) | `DetailView`, `SettingsGroup` |
+| Heartbeat, Gedächtnis, Fakten, Skills pro Agent | Agent-Detail (Agent-Dialog); der Herzschlag zeigt Vorprüfung, Drossel und die letzten Prüfungen gebündelt, der Verlauf bündelt Herzschlag-Läufe | `DetailView`, `SettingsGroup`, `List` |
 | Skills, Selbstlernen | **Skills** (Katalog) | vorhanden |
-| Ziel-Leiter | Ziele-Seite und Aufgabendetail | `DetailGroup` |
-| Sitzungssuche | globale Suche (⌘K) | Befehlspalette |
+| Ziel-Leiter | Helena › Ziele (rechte Spalte, „Warum“), Projekt-Ziele (Zeile und „Warum“ im Ziel), Aufgabendetail („Warum“) | `DetailGroup`, `.ds-ladder`, `.ds-why` |
+| Aufgaben-Übernahme | Aufgabendetail „Bearbeitet von …“ (Lease des Laufs, `GET /issues/:id/claim`) | Eigenschaftszeile |
+| Sitzungssuche | globale Suche (⌘K) über Chats und Agentenläufe (Wissensindex des Workers) | Befehlspalette |
 
 ## 9. Abnahme
 
 Pro Paket eine Klick-Abnahme im echten Browser über alle betroffenen Seiten: hell und dunkel, Desktop 1440 und Handy 375, Konsole ohne Fehler. Was nicht funktioniert, wird repariert oder verschwindet aus der UI.
 
 Der Einstieg `@/design-system` ist reine Darstellung: Er zieht keinen API-Client, keine Dienste und keine Datenhooks nach sich (Test `design-system/barrel.test.ts`). Komponenten, die Daten lesen (Composer, Agentenwahl, FilterBar mit Projektdaten), liegen außerhalb und bauen selbst auf dem Framework auf.
+
+## 10. Muster aus Paket 3+4 (hub/ui-3a)
+
+- **Agenten-Chip** (`.ds-agent-chip`): wer antwortet, mit welchem Modell, wie Menschen es nennen („Helena · Flash (lokal)“,
+  `utils/modelNames.ts`), bei einem Rückfall zusätzlich „Rückfall: …“. Die Variante `data-variant="quiet"` ist der Ein-Klick-Weg
+  zu Helena, wo ein Projekt-Agent vorn steht.
+- **Orb**: zeigt nur den Zustand dieses Chats (bzw. ob der Agent antworten kann). Arbeit des Agenten anderswo ist ein dezenter
+  Hinweis über dem Composer (`.ds-chat-busy-note`), nie Bewegung des Orbs. Im hellen Design zeichnet `voice-orb theme="light"`
+  Farbe statt Licht; kein dunkler Untergrund.
+- **Drawer in einer Box** (`.ds-drawer-host`/`.ds-drawer`): schwebendes Panel über seiner Box (Chatliste im schmalen Chat), an
+  der Seite des Knopfs, der es öffnet — nie eine zweite Spalte neben der Sidebar.
+- **Terminal-Leiste** (`.ds-terminal-bar`): die Tabs im Look der Panel-Tabs, darunter die Freigabe als ruhige Zeile
+  (`.ds-terminal-grant`).
+- **Aufgabenliste**: jede Gruppe eingefasst (`.ds-issue-list-box`), Zeilen in festen Spalten (Schlüssel · Titel · Status-Box
+  `.ds-issue-status` · Priorität · Fälligkeit · Personen), damit nichts springt.
+- **Zweispaltige Liste/Detail** (`.ds-goals-split`): Karten links, das Gewählte rechts; unter 900 px abwechselnd mit Rückweg.

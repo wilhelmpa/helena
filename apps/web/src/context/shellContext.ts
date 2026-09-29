@@ -40,6 +40,9 @@ export type ShellContext = {
   // The workspace layouts and the chosen one, for the header's layout menu and the
   // command palette (context/workspaceLayout).
   workspaceLayout?: WorkspaceLayoutChoice;
+  // The task open in front of the reader (the side panel, else the task page), which the
+  // chat in the panel names as its context (owner, 28.09., O50).
+  currentIssue?: { identifier: string; title: string } | null;
 };
 
 export type ChatThreadRequest = { agentId: number; threadId: string };

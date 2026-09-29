@@ -12,6 +12,7 @@ import { useChatSummary } from '../../hooks/useChatSummary';
 import { artifactPlacement, chatLayoutMode } from '../../utils/chatLayout';
 import type { Artifact } from '../../utils/artifacts';
 import { locationAfterDeletion, type ChatLocation } from '../../utils/chatLocation';
+import { newChatScopeKey } from '../../utils/contextAgents';
 import ChatListPane from './ChatListPane';
 import ChatThreadView from './ChatThreadView';
 import ChatEmptyState from './ChatEmptyState';
@@ -141,10 +142,11 @@ export default function ChatWorkspace({
   // thread of another scope). A new chat is this workspace's, including once its first
   // answer gave it an id.
   const summary = useChatSummary(threadId);
+  // A new chat with an agent of one project runs in that project, even from Helena's panel.
   const threadScopeKey =
     threadId != null && threadId !== adoptedThreadId && summary.data
       ? chatScopeKey(summary.data)
-      : scopeKey;
+      : newChatScopeKey(scopeKey, selectedAgent);
   const resolvingThread =
     threadId != null && threadId !== adoptedThreadId && !summary.data && summary.isLoading;
   let linkProjectKey: string | null | undefined;
@@ -161,6 +163,7 @@ export default function ChatWorkspace({
         projectKey={projectKey}
         agents={agents}
         mode={mode}
+        side={inPage && projectKey === null ? 'end' : 'start'}
         open={listOpen}
         onOpenChange={setListOpen}
         selectedThreadId={threadId}
