@@ -199,5 +199,9 @@
     "savedProject": "Standard für dieses Projekt gespeichert.",
     "savedGlobal": "Standard für alle deine Projekte gespeichert.",
     "removedProject": "Projektstandard entfernt."
+  },
+  "emptyProject": {
+    "title": "Noch keine Aufgaben",
+    "text": "Eine Aufgabe hält fest, was zu tun ist, wer es tut und bis wann."
   }
 }

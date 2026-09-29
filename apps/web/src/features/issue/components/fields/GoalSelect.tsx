@@ -85,7 +85,10 @@ export default function GoalSelect({
       readOnly={readOnly}
       width="wide"
       trigger={
-        <Pill active={chosen != null} title={chosen ? undefined : (legacy ?? undefined)}>
+        <Pill
+          active={chosen != null}
+          title={!chosen && legacy ? t('legacy', { title: legacy }) : undefined}
+        >
           {chosen ? (
             colorDot(GOAL_STATUS_META[chosen.status].color)
           ) : legacy ? (

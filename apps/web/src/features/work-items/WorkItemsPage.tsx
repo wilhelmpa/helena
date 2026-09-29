@@ -19,13 +19,14 @@ import {
   withoutHiddenSections,
   type ViewSettings,
 } from '@/utils/viewSettings';
-import { Pencil, Plus } from 'lucide-react';
+import { ListChecks, Pencil, Plus } from 'lucide-react';
 import ViewIconPicker from '@/components/layout/ViewIconPicker';
 import FilterPills from '@/components/layout/FilterPills';
 import { useFilterFields } from '@/hooks/useFilterFields';
 import { PageActions, PageToolbar } from '@/components/layout/PageToolbar';
 import {
   Button,
+  EmptyState,
   Overlay,
   Segmented,
   SettingsGroup,
@@ -196,6 +197,28 @@ export default function WorkItemsPage() {
   };
 
   function renderView() {
+    // A project with no task at all shows one empty state with the page's main action, not the
+    // bare heads of empty columns and tables (owner, A11/O62). A filter that hides every task
+    // keeps its own empty lanes.
+    if (project!.issues.length === 0 && editor.view !== 'timeline' && can('work_items', 'create')) {
+      return (
+        <EmptyState
+          icon={<ListChecks aria-hidden="true" />}
+          title={t('emptyProject.title')}
+          action={
+            <Button
+              variant="quiet"
+              icon={<Plus aria-hidden="true" />}
+              onClick={() => onAddIssue({})}
+            >
+              {t('newIssue')}
+            </Button>
+          }
+        >
+          {t('emptyProject.text')}
+        </EmptyState>
+      );
+    }
     switch (editor.view) {
       case 'table':
         return (

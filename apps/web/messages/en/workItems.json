@@ -199,5 +199,9 @@
     "savedProject": "Default for this project saved.",
     "savedGlobal": "Default for all your projects saved.",
     "removedProject": "Project default removed."
+  },
+  "emptyProject": {
+    "title": "No tasks yet",
+    "text": "A task records what has to be done, by whom and by when."
   }
 }
