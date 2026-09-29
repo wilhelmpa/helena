@@ -124,7 +124,7 @@ export default function KnowledgeListView({
   subfolders = [],
   onOpenFolder,
 }: {
-  crumbs: KnowledgeCrumb[];
+  crumbs?: KnowledgeCrumb[];
   title: ReactNode;
   entries: KnowledgeEntry[];
   loading?: boolean;

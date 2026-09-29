@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, type DragEvent } from 'react';
+import { createElement, useState, type DragEvent } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Plus } from 'lucide-react';
@@ -77,13 +77,12 @@ function FolderNode({
     }
   };
   const scopeKey = scope.kind === 'project' ? scope.projectKey : `home:${scope.root}`;
-  const Icon = folderIcon(path, scope.kind === 'project');
   return (
     <>
       <TreeItem
         label={scope.kind === 'project' && depth === 0 ? knowledgeFolderLabel(name, fixed) : name}
         href={folderUrl(scope, path)}
-        icon={<Icon />}
+        icon={createElement(folderIcon(path, scope.kind === 'project'))}
         active={current}
         containsActive={isAncestor}
         storageKey={`folder:${scopeKey}:${path}`}
