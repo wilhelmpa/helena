@@ -407,9 +407,7 @@
       const ctx = this._ctx;
       ctx.clearRect(0, 0, size, size);
       ctx.globalCompositeOperation = this._light ? 'source-over' : 'lighter';
-      ctx.fillStyle = this._light
-        ? `rgb(${rgb.map((c) => Math.round(c * 0.62))})`
-        : `rgb(${rgb})`;
+      ctx.fillStyle = this._light ? `rgb(${rgb.map((c) => Math.round(c * 0.62))})` : `rgb(${rgb})`;
       for (let i = 0; i < this._count; i++) {
         const o = i * 4,
           n = this._seeds,

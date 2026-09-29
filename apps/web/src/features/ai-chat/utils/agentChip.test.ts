@@ -31,6 +31,9 @@ describe('agent chip', () => {
       agentChipLabel(coordinator, null, null, words).label,
       'Koordinator TRADE · Agenten-Standard',
     );
-    assert.equal(agentChipLabel(coordinator, 'claude-opus-5-5', 'claude-opus-5-5', words).label, 'Koordinator TRADE · Opus 5.5');
+    assert.equal(
+      agentChipLabel(coordinator, 'claude-opus-5-5', 'claude-opus-5-5', words).label,
+      'Koordinator TRADE · Opus 5.5',
+    );
   });
 });

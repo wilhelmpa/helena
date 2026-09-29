@@ -2,7 +2,14 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { Archive, ArrowLeft, MoreHorizontal, PanelLeftClose, SquarePen, Trash2 } from 'lucide-react';
+import {
+  Archive,
+  ArrowLeft,
+  MoreHorizontal,
+  PanelLeftClose,
+  SquarePen,
+  Trash2,
+} from 'lucide-react';
 import { useSearchTerm } from '@/hooks/useSearchTerm';
 import type { ChatListView } from '@/lib/api/endpoints/agentChat';
 import {

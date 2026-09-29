@@ -9,8 +9,7 @@ export interface ChatPageContext {
 }
 
 export type ChatContextItem =
-  | { kind: 'task'; identifier: string; title: string }
-  | { kind: 'document'; name: string };
+  { kind: 'task'; identifier: string; title: string } | { kind: 'document'; name: string };
 
 const PAGE_PARAMS = ['file', 'path', 'root', 'view'] as const;
 

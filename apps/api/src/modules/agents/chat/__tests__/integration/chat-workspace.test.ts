@@ -181,9 +181,7 @@ describe('chat list', () => {
     expect(
       (await asOwner.chats.get({ query: { view: 'trash' } })).data!.items.map((c) => c.title),
     ).toEqual(['Two', 'One']);
-    expect(
-      (await asOwner.chats['trash-all'].post({ projectKey: 'NOPE' })).status,
-    ).toBe(404);
+    expect((await asOwner.chats['trash-all'].post({ projectKey: 'NOPE' })).status).toBe(404);
 
     // Another member's list is untouched by their own "Alle löschen".
     const asMember = await addProjectMember(asOwner, 'MKT');

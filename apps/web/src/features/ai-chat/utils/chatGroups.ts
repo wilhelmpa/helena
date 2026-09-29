@@ -69,8 +69,7 @@ export function groupChatsBy(
     if (chat.pinned) continue;
     const key: ChatGroupKey =
       by === 'project' ? `p:${chat.project?.key ?? ''}` : `a:${chat.agent.id}`;
-    const label =
-      by === 'project' ? (chat.project?.name ?? helenaLabel) : chat.agent.name;
+    const label = by === 'project' ? (chat.project?.name ?? helenaLabel) : chat.agent.name;
     const section = sections.get(key) ?? { key, chats: [], label };
     section.chats.push(chat);
     sections.set(key, section);

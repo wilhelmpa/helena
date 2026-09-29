@@ -600,14 +600,6 @@
       "count": 39
     }
   },
-  "src/features/ai-chat/components/panel/NativeChatWorkspace.tsx": {
-    "better-tailwindcss/no-restricted-classes": {
-      "count": 4
-    },
-    "react-hooks/set-state-in-effect": {
-      "count": 1
-    }
-  },
   "src/features/ai-chat/components/workspace/ArtifactCodeView.tsx": {
     "better-tailwindcss/no-restricted-classes": {
       "count": 2
@@ -616,22 +608,6 @@
   "src/features/ai-chat/components/workspace/ArtifactPanel.tsx": {
     "better-tailwindcss/no-restricted-classes": {
       "count": 12
-    }
-  },
-  "src/features/ai-chat/components/workspace/ChatAgentMenu.tsx": {
-    "better-tailwindcss/no-restricted-classes": {
-      "count": 6
-    },
-    "no-restricted-imports": {
-      "count": 2
-    }
-  },
-  "src/features/ai-chat/components/workspace/ChatAgentMenuItem.tsx": {
-    "better-tailwindcss/no-restricted-classes": {
-      "count": 5
-    },
-    "no-restricted-imports": {
-      "count": 1
     }
   },
   "src/features/ai-chat/components/workspace/ChatApprovalCard.tsx": {
@@ -701,16 +677,6 @@
       "count": 1
     }
   },
-  "src/features/ai-chat/components/workspace/ChatListDrawer.tsx": {
-    "better-tailwindcss/no-restricted-classes": {
-      "count": 1
-    }
-  },
-  "src/features/ai-chat/components/workspace/ChatListGroups.tsx": {
-    "better-tailwindcss/no-restricted-classes": {
-      "count": 13
-    }
-  },
   "src/features/ai-chat/components/workspace/ChatListItem.tsx": {
     "better-tailwindcss/no-restricted-classes": {
       "count": 10
@@ -721,21 +687,6 @@
       "count": 1
     },
     "no-restricted-imports": {
-      "count": 1
-    }
-  },
-  "src/features/ai-chat/components/workspace/ChatListPaneBody.tsx": {
-    "better-tailwindcss/no-restricted-classes": {
-      "count": 6
-    }
-  },
-  "src/features/ai-chat/components/workspace/ChatListRowButton.tsx": {
-    "better-tailwindcss/no-restricted-classes": {
-      "count": 4
-    }
-  },
-  "src/features/ai-chat/components/workspace/ChatListSearch.tsx": {
-    "better-tailwindcss/no-restricted-classes": {
       "count": 1
     }
   },

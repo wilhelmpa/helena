@@ -16,7 +16,10 @@ import { contextAgents } from '../utils/contextAgents';
 // (ChatWorkspaceRoot) and the tool panel's (panel/NativeChatWorkspace), so a fresh
 // installation talks to its global master before the first project exists in both the
 // same way.
-export function useChatWorkspaceScope(projectKey: string | null, contextProjectKey?: string | null) {
+export function useChatWorkspaceScope(
+  projectKey: string | null,
+  contextProjectKey?: string | null,
+) {
   const teams = useTeamsQuery();
   const project = useProjectQuery(projectKey);
   const homeTeamId = projectKey ? null : soleTeamId(teams.data);

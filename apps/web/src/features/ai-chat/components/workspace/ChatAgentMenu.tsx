@@ -4,7 +4,14 @@ import { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { AiAgent } from '@/lib/api/endpoints/agents';
-import { Menu, MenuContent, MenuItem, MenuLabel, MenuSeparator, MenuTrigger } from '@/design-system';
+import {
+  Menu,
+  MenuContent,
+  MenuItem,
+  MenuLabel,
+  MenuSeparator,
+  MenuTrigger,
+} from '@/design-system';
 import Orb from '@/components/helena/Orb';
 import { useAgentStatus } from '@/utils/helenaStatus';
 import { runtimeChoice } from '@/components/helena/RuntimePicker';
