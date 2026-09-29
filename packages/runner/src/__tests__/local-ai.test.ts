@@ -48,6 +48,40 @@ function snapshot(localAi: RuntimeLocalAi | null): RuntimePolicySnapshot {
 }
 
 describe('local AI in the runner', () => {
+  it('uses the host proxy outside isolation and leaves the isolated port for socket routing', () => {
+    const halogen: RuntimeLocalAi = {
+      servers: [
+        {
+          provider: 'helena-halogen',
+          baseUrl: 'http://127.0.0.1:8731/v1',
+          noThinkingBaseUrl: 'http://127.0.0.1:8733/v1',
+          keyEnv: null,
+          contextLength: 131072,
+          models: [{ id: 'flash', contextLength: null, vision: false }],
+        },
+      ],
+      helpers: [],
+    };
+    const old = process.env.AGENT_ISOLATION;
+    try {
+      delete process.env.AGENT_ISOLATION;
+      const host = hermesLocalAiConfig(halogen) as {
+        providers: Record<string, Record<string, unknown>>;
+      };
+      expect(host.providers['helena-halogen']?.base_url).toBe('http://127.0.0.1:8741/v1');
+      expect(host.providers['helena-halogen']?.extra_headers).toEqual({
+        'x-volition-halogen-priority': '${VOLITION_HALOGEN_PRIORITY}',
+      });
+      process.env.AGENT_ISOLATION = 'on';
+      const isolated = hermesLocalAiConfig(halogen) as {
+        providers: Record<string, Record<string, unknown>>;
+      };
+      expect(isolated.providers['helena-halogen']?.base_url).toBe('http://127.0.0.1:8731/v1');
+    } finally {
+      if (old === undefined) delete process.env.AGENT_ISOLATION;
+      else process.env.AGENT_ISOLATION = old;
+    }
+  });
   it('names the model an agent runs on without local AI for its fallback chain', () => {
     const providerOf = (model: string) => (model === 'claude-opus-5' ? 'anthropic' : undefined);
     const defaults = { model: 'gpt-6-luna', provider: 'openai-codex', reasoning: 'low' };

@@ -1,5 +1,7 @@
 import {
+  isLocalHalogenUrl,
   localThinkingFields,
+  priorityProxyBaseUrl,
   type LocalAiChatAnswer,
   type LocalAiChatRequest,
   type LocalAiEvalContext,
@@ -40,10 +42,13 @@ export function openAiEvalContext(options: {
   runCodingTask?: LocalAiEvalContext['runCodingTask'];
 }): LocalAiEvalContext {
   const post = async (path: string, body: unknown) => {
-    const response = await fetch(joinUrl(options.baseUrl, path), {
+    const response = await fetch(joinUrl(priorityProxyBaseUrl(options.baseUrl), path), {
       method: 'POST',
       headers: {
         'content-type': 'application/json',
+        ...(isLocalHalogenUrl(options.baseUrl)
+          ? { 'x-volition-halogen-priority': 'background' }
+          : {}),
         ...(options.key ? { authorization: `Bearer ${options.key}` } : {}),
       },
       body: JSON.stringify(body),

@@ -76,6 +76,10 @@ export function runEnv(run: Run): Record<string, string> {
   };
 }
 
+function backgroundRun(run: Run): boolean {
+  return run.trigger === 'schedule' || run.trigger === 'digest' || Boolean(run.workClass);
+}
+
 function taskOf(run: Run) {
   return {
     prompt: run.prompt,
@@ -163,7 +167,11 @@ export async function perform(
       ...task,
       systemPrompt: withInstructions(hermes?.instructions, task.systemPrompt, task.sessionId),
       toolsets: hermes?.toolsets ?? null,
-      env: { ...task.env, ...hermes?.env },
+      env: {
+        ...task.env,
+        ...hermes?.env,
+        VOLITION_HALOGEN_PRIORITY: backgroundRun(run) ? 'background' : 'normal',
+      },
       hooks: hermes?.hooks,
       delivered: hermes?.delivered?.names,
     },
@@ -178,7 +186,7 @@ export async function perform(
       },
       onSessionId: saveSession,
       signal: stop.signal,
-      work: { kind: 'run', id: run.id },
+      work: { kind: backgroundRun(run) ? 'background' : 'run', id: run.id },
     },
   );
   timeline.stop();

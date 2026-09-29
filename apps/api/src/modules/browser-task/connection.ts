@@ -1,5 +1,11 @@
 import { TypeSafeClient, APITimeoutError } from '@typesafe-ai/sdk';
-import { SYSTEM_ONE_MODELS_PATH, systemOneUrl, type DecisionBackendType } from '@helena/sdk';
+import {
+  isLocalHalogenUrl,
+  priorityProxyBaseUrl,
+  SYSTEM_ONE_MODELS_PATH,
+  systemOneUrl,
+  type DecisionBackendType,
+} from '@helena/sdk';
 import {
   askByJson,
   askByLogprobs,
@@ -357,10 +363,13 @@ function openAiServer(
     model: address.model || connection.model,
     ...(address.tokenIds && { tokenIds: address.tokenIds }),
     async post(path, body, signal) {
-      const res = await fetcher(systemOneUrl(address.baseUrl, path), {
+      const res = await fetcher(priorityProxyBaseUrl(systemOneUrl(address.baseUrl, path)), {
         method: 'POST',
         headers: {
           'content-type': 'application/json',
+          ...(isLocalHalogenUrl(address.baseUrl)
+            ? { 'x-volition-halogen-priority': 'background' }
+            : {}),
           ...(address.key ? { authorization: `Bearer ${address.key}` } : {}),
         },
         body: JSON.stringify(body),

@@ -351,6 +351,18 @@ class HalogenInstallTest(unittest.TestCase):
 
 
 class ProxyUnitsTest(unittest.TestCase):
+    def test_priority_installer_does_not_restart_halogen(self):
+        script = HERE.parent / 'priority-install.sh'
+        result = subprocess.run(['sh', str(script), '--dry-run', 'install'],
+                                capture_output=True, text=True,
+                                env={**os.environ, 'VOLITION_AGENTS_GID': '1234'})
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn('would enable/start volition-halogen-priority.service', result.stdout)
+        self.assertNotIn('restart helena-halogen', result.stdout)
+        unit = (HERE.parent / 'systemd/volition-halogen-priority.service.in').read_text()
+        self.assertIn('RuntimeDirectory=volition-halogen-priority', unit)
+        self.assertIn('User=volition-plan', unit)
+
     def test_forwarder_is_a_named_user_on_the_loopback(self):
         service = (HERE.parent / 'systemd/helena-halogen-proxy@.service').read_text()
         socket = (HERE.parent / 'systemd/helena-halogen-proxy@.socket').read_text()

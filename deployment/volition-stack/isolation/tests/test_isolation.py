@@ -538,8 +538,15 @@ class LauncherRequestTest(unittest.TestCase):
         self.assertIn('BindReadOnlyPaths=-/run/volition-agents/helena-ai.sock', props)
         # Halogen (native/halogen/install.sh) the same way: its API and its address for turns
         # without thinking, both optional.
-        self.assertIn('BindReadOnlyPaths=-/run/volition-agents/helena-halogen-8731.sock', props)
-        self.assertIn('BindReadOnlyPaths=-/run/volition-agents/helena-halogen-8733.sock', props)
+        self.assertIn('BindReadOnlyPaths=-/run/volition-halogen-priority/normal-8731.sock', props)
+        self.assertIn('BindReadOnlyPaths=-/run/volition-halogen-priority/normal-8733.sock', props)
+        chat_props = self.worker.sandbox_properties(
+            'alpha', checked['account'], [checked['workspace']], [], checked['limits'], 'chat')
+        self.assertIn('BindReadOnlyPaths=-/run/volition-halogen-priority/chat-8731.sock', chat_props)
+        self.assertNotIn('BindReadOnlyPaths=-/run/volition-halogen-priority/normal-8731.sock', chat_props)
+        self.assertEqual(launcher_module.work_socket(
+            'halogen', '/run/volition-halogen-priority/normal-8731.sock', 'background'),
+            '/run/volition-halogen-priority/background-8731.sock')
         self.assertIn('BindReadOnlyPaths=/run/volition-agents/egress.sock', props)
         self.assertIn('BindReadOnlyPaths=/run/volition-agents/plan.sock', props)
 

@@ -95,20 +95,20 @@ function fakeContext(
 }
 
 const ROUTES = {
-  'http://127.0.0.1:8731/health': HEALTH,
-  'http://127.0.0.1:8731/metrics': METRICS,
-  'http://127.0.0.1:8731/v1/models': MODELS,
+  'http://127.0.0.1:8741/health': HEALTH,
+  'http://127.0.0.1:8741/metrics': METRICS,
+  'http://127.0.0.1:8741/v1/models': MODELS,
 };
 
 describe('a server path', () => {
   it('appends to the base, or starts at the root with //', () => {
     expect(serverUrl('http://127.0.0.1:8731/v1', '/models')).toBe(
-      'http://127.0.0.1:8731/v1/models',
+      'http://127.0.0.1:8741/v1/models',
     );
     expect(serverUrl('http://127.0.0.1:8731/v1/', 'models')).toBe(
-      'http://127.0.0.1:8731/v1/models',
+      'http://127.0.0.1:8741/v1/models',
     );
-    expect(serverUrl('http://127.0.0.1:8731/v1', '//health')).toBe('http://127.0.0.1:8731/health');
+    expect(serverUrl('http://127.0.0.1:8731/v1', '//health')).toBe('http://127.0.0.1:8741/health');
   });
 });
 
@@ -159,13 +159,13 @@ describe('Halogen', () => {
       kvUsagePercent: 12.5,
     });
     // /health and /metrics sit next to /v1, not below it.
-    expect(context.asked).toContain('http://127.0.0.1:8731/health');
-    expect(context.asked).toContain('http://127.0.0.1:8731/metrics');
+    expect(context.asked).toContain('http://127.0.0.1:8741/health');
+    expect(context.asked).toContain('http://127.0.0.1:8741/metrics');
   });
 
   it('is not reachable while its engine is not ok, and says why without a URL', async () => {
     const status = await halogenServer.status(
-      fakeContext({ ...ROUTES, 'http://127.0.0.1:8731/health': { status: 'loading' } }),
+      fakeContext({ ...ROUTES, 'http://127.0.0.1:8741/health': { status: 'loading' } }),
     );
     expect(status.reachable).toBe(false);
     expect(status.error).toBe('status loading');
@@ -194,7 +194,7 @@ describe('Halogen', () => {
   });
 
   it('keeps its status when /metrics is missing', async () => {
-    const { 'http://127.0.0.1:8731/metrics': _metrics, ...rest } = ROUTES;
+    const { 'http://127.0.0.1:8741/metrics': _metrics, ...rest } = ROUTES;
     const status = await halogenServer.status(fakeContext(rest));
     expect(status.reachable).toBe(true);
     expect(status.load?.outputTokensPerSecond).toBeNull();

@@ -154,6 +154,8 @@ export async function getRunnerAgent(userId: string): Promise<RunnerAgent | null
 export interface RunnerRun {
   id: number;
   trigger: AgentRunTrigger;
+  // The background task class, when the run belongs to one.
+  workClass: string | null;
   // The task as the agent should read it: the trigger text framed with what started
   // the run and what to do about it.
   prompt: string;
@@ -193,8 +195,6 @@ type ClaimedRow = Omit<RunnerRun, 'systemPrompt' | 'autopilotLevel'> & {
   projectId: number;
   // The run's own reasoning effort, where it overrides the agent's (a digest run).
   reasoning: string | null;
-  // The kind of work the run is for Lokale KI (agent_run.work_class), or null.
-  workClass: string | null;
   // What the last claim recorded about its model (agent_run.model_check), or null.
   modelCheck: unknown;
   // Claimed before, by a claim that ended without a result: the runner stopped, handed
@@ -566,6 +566,7 @@ export async function claimRunnerRun(agent: RunnerAgent): Promise<RunnerRun | nu
   return {
     id: row.id,
     trigger: row.trigger,
+    workClass: row.workClass,
     // A workspace job (a clone) is for the runner itself: its prompt is the job as it was
     // queued, never framed for a model.
     prompt:

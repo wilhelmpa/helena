@@ -83,3 +83,22 @@ sudo systemd-run … bun apps/api/src/scripts/local-ai-phase2.ts --apply      # 
 The update center lists Halogen (check only): the newest image tag on ghcr.io against the pinned
 version, with the changelog. Taking an update: new digest and version in `install.sh`, `install`,
 restart (owner's click / maintenance window). Rollback: the previous digest.
+# Priority scheduling
+
+`priority-install.sh install` starts `volition-halogen-priority.service` without restarting
+Halogen. It listens on 127.0.0.1:8741 and :8743 for host API/worker/runner traffic and on
+six Unix sockets for isolated agents. The launcher selects the chat, normal, or background
+socket from the work kind. Isolated clients cannot select a priority with an HTTP header.
+The service forwards to the existing Halogen ports 8731 and 8733, streams SSE without
+buffering, and cancels the upstream request when its client disconnects.
+
+The Local AI policy controls slot limits, background concurrency, queue length, and queue
+timeout. The proxy reloads it from PostgreSQL every five seconds. Its queue and active counts
+are available at `http://127.0.0.1:8741/priority/status` and through the owner Local AI status
+API. A request whose proxy wait expires receives HTTP 503 with `Retry-After`. The reservation
+is a slot reservation; Halogen's separate shared KV pool can still make an admitted chat wait
+for memory when long requests have filled it.
+
+Run the installer only after the branch is in the live checkout and the in-flight agent work
+has drained. It synchronizes the isolation launcher and then disables the old socket proxies.
+The installer does not restart `helena-halogen`.

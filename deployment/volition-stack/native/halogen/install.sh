@@ -296,7 +296,9 @@ install_all() {
   run systemctl enable helena-halogen.service
 
   say "== agents in isolation reach it through their unit's forwarder (127.0.0.1:$PORT, :$QUIET_PORT)"
-  if getent group volition-agents >/dev/null; then
+  if systemctl is-enabled --quiet volition-halogen-priority.service 2>/dev/null; then
+    say "priority proxy owns the isolated agent sockets"
+  elif getent group volition-agents >/dev/null; then
     put "$PROXY_SOCKET" 0644 root:root < "$here/systemd/helena-halogen-proxy@.socket"
     render_proxy_service | put "$PROXY_SERVICE" 0644 root:root
     run systemctl daemon-reload

@@ -280,6 +280,23 @@ describe('the policy and its routes', () => {
       summaries: { mode: 'off', model: null },
     });
     expect(policy.preset).toBe('ausgewogen');
+    expect(policy.halogenPriority).toEqual(defaultLocalAiPolicy().halogenPriority);
+    expect(
+      normalizeLocalAiPolicy({
+        halogenPriority: {
+          maxConcurrent: 2,
+          reservedInteractive: 3,
+          maxBackground: 2,
+          queueTimeoutMs: 5_000,
+        },
+      }).halogenPriority,
+    ).toEqual({
+      maxConcurrent: 2,
+      reservedInteractive: 1,
+      maxBackground: 1,
+      queueTimeoutMs: 5_000,
+      maxQueue: 64,
+    });
     expect(defaultLocalAiPolicy().enabled).toBe(false);
   });
 

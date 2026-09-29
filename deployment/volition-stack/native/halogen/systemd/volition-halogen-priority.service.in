@@ -1,0 +1,28 @@
+[Unit]
+Description=Volition Halogen request scheduler
+After=network.target postgresql.service helena-halogen.service
+
+[Service]
+Type=simple
+User=volition-plan
+Group=volition
+SupplementaryGroups=volition-agents
+UMask=0007
+WorkingDirectory=/srv/volition/source/plan
+EnvironmentFile=/etc/volition/plan.env
+Environment=VOLITION_AGENTS_GID=@AGENTS_GID@
+RuntimeDirectory=volition-halogen-priority
+RuntimeDirectoryMode=0755
+ExecStart=/usr/local/bin/bun /srv/volition/source/plan/deployment/volition-stack/native/halogen/priority-proxy.ts
+Restart=always
+RestartSec=2
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectHome=yes
+ProtectSystem=strict
+RestrictAddressFamilies=AF_UNIX AF_INET
+IPAddressDeny=any
+IPAddressAllow=localhost
+
+[Install]
+WantedBy=multi-user.target

@@ -84,7 +84,14 @@ RESERVED_ENV = {
 # approval guard) are the runtime's.
 RESERVED_ENV_PREFIXES = ('VOLITION_AGENT_', 'SYSTEMD_')
 PROXY_ENV = {'http_proxy', 'https_proxy', 'all_proxy', 'no_proxy', 'ftp_proxy'}
-WORK_KINDS = {'run': 'r', 'chat': 'c', 'helper': 'h'}
+WORK_KINDS = {'run': 'r', 'chat': 'c', 'helper': 'h', 'background': 'b'}
+
+
+def work_socket(name: str, path: str, work_kind: str) -> str:
+    if name not in ('halogen', 'halogenquiet'):
+        return path
+    priority = 'chat' if work_kind == 'chat' else 'background' if work_kind in ('helper', 'background') else 'normal'
+    return path.replace('/normal-', f'/{priority}-')
 REQUEST_KEYS = {
     'ping': {'v', 'op'},
     'run': {'v', 'op', 'slug', 'profile', 'runtime', 'args', 'env', 'cwd', 'agentId', 'work', 'limits',
@@ -345,6 +352,7 @@ class Launcher:
         rw: list[str],
         ro: list[str],
         limits: dict[str, str],
+        work_kind: str = 'run',
     ) -> list[str]:
         """Every property of an agent unit. Nothing here comes from a request but the user
         and the browser-gateway socket, which the slug names, and paths the launcher derived
@@ -391,7 +399,8 @@ class Launcher:
         props += [f'InaccessiblePaths=-{path}' for path in config.inaccessible]
         props += [
             f'BindReadOnlyPaths={"-" if name in config.optional_sockets else ""}{path}'
-            for name, path in config.sockets.items()
+            for name, original in config.sockets.items()
+            for path in [work_socket(name, original, work_kind)]
         ]
         gateway_bind = self.browser_gateway_bind(slug)
         if gateway_bind:
@@ -521,10 +530,12 @@ class Launcher:
         env.update(runtime.env)
         return [f'--setenv={key}={value}' for key, value in env.items()]
 
-    def sandbox_args(self, mode: str, runtime, home: str | None, extra: list[str], slug: str | None = None) -> list[str]:
+    def sandbox_args(self, mode: str, runtime, home: str | None, extra: list[str], slug: str | None = None,
+                     work_kind: str = 'run') -> list[str]:
         args = [self.config.python, '-I', self.config.sandbox, mode]
         for name, port in self.config.forwards.items():
-            args += ['--forward', f'{int(port)}={self.config.sockets[name]}']
+            path = work_socket(name, self.config.sockets[name], work_kind)
+            args += ['--forward', f'{int(port)}={path}']
         if slug:
             account = self.project_account(slug)
             for port in ports(account.pw_uid, self.config.uid_range[0]):
@@ -690,7 +701,8 @@ class Launcher:
             self.prepare_home_targets(checked['home'], account)
         runtime_ro, credential_props = self.runtime_binds(runtime, checked['home'], checked['agent_runtime'])
         rw = [checked['workspace'], *checked['vault_rw']] + ([checked['home']] if checked['home'] else [])
-        props = self.sandbox_properties(slug, account, rw, [*checked['vault_ro'], *runtime_ro], checked['limits'])
+        work_kind = (request.get('work') or {}).get('kind', 'run')
+        props = self.sandbox_properties(slug, account, rw, [*checked['vault_ro'], *runtime_ro], checked['limits'], work_kind)
         props += credential_props
         home = checked['home'] or checked['workspace']
         command = [
@@ -701,7 +713,8 @@ class Launcher:
             *self.base_env(account, home, runtime),
             '--',
             *self.sandbox_args('run', runtime, checked['home'], ['--env-header', '--', runtime.exec,
-                                                                *runtime.fixed_args, *checked['args']], slug),
+                                                                *runtime.fixed_args, *checked['args']], slug,
+                               work_kind),
         ]
         await self.reserve(slug)
         try:
