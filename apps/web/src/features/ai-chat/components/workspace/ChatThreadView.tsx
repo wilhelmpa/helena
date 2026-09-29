@@ -35,6 +35,10 @@ import { speak } from '@/features/voice/browser/speak';
 import { useConversation } from '@/features/voice/hooks/useConversation';
 import { useVoiceProblem } from '@/features/voice/hooks/useVoiceProblem';
 import type { QueuedMessage } from './ChatComposerQueue';
+import {
+  HOME_ACTIVE_STATUSES,
+  useHomeActiveActivity,
+} from '@/features/home/services/homeKpis.service';
 
 type Queued = QueuedMessage & { options: PlanSendOptions; metadata: PlanChatMetadata };
 
@@ -195,6 +199,15 @@ export default function ChatThreadView({
     },
     onProblem: reportVoice,
   });
+  // The agent answering or running somewhere else right now (the same "working" the Home
+  // masthead counts — a question still waiting for a runner is not work).
+  const feed = useHomeActiveActivity();
+  const workingElsewhere = (feed.data?.items ?? []).some(
+    (entry) =>
+      entry.agent?.id === agent.id &&
+      HOME_ACTIVE_STATUSES.has(entry.status) &&
+      (threadId == null || entry.threadId !== threadId),
+  );
   // This chat's own state only: what the agent does elsewhere (other chats, runs, the load
   // of the local model) never moves this orb (owner, 28.09.).
   const orbStatus = useAgentStatus(agent.id, {
@@ -328,7 +341,7 @@ export default function ChatThreadView({
             </div>
           )}
         </div>
-        {busyElsewhere(activity, state?.label) && (
+        {busyElsewhere(activity, workingElsewhere ? 'running' : null) && (
           <p className="ds-chat-busy-note" role="status">
             {t('composer.busyElsewhere', { agent: agentDisplayName(agent) })}
           </p>
