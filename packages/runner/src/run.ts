@@ -65,6 +65,7 @@ function runTimeline(
 export function runEnv(run: Run): Record<string, string> {
   return {
     ITSAPLAN_RUN_ID: String(run.id),
+    VOLITION_WORK_CLAIM: String(run.claim),
     ITSAPLAN_PROJECT_ID: String(run.projectId ?? ''),
     ITSAPLAN_TRIGGER: run.trigger,
     ITSAPLAN_SYSTEM_PROMPT: run.systemPrompt,

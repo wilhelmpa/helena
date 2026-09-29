@@ -44,7 +44,18 @@ export interface LearnedRuntimeSkill {
   change?: unknown;
 }
 
+export interface FollowupBatch {
+  pending: boolean;
+  replace: boolean;
+  items: { seq: number; step: number; message: ModelMessage }[];
+}
+
 export interface HelenaApi {
+  followups?(boundary?: {
+    sessionId: string;
+    afterSeq: number;
+    step: number;
+  }): Promise<FollowupBatch>;
   decide(question: PolicyQuestion & { runtime: 'helena'; workspace?: string }): Promise<Decision>;
   createSession(input: {
     kind: 'run' | 'chat' | 'reflection';
@@ -86,7 +97,7 @@ export class HelenaClient implements HelenaApi {
   constructor(
     url: string,
     private readonly apiKey: string,
-    private readonly ids: { runId: number | null; messageId: number | null } = {
+    private readonly ids: { runId: number | null; messageId: number | null; claim?: number } = {
       runId: null,
       messageId: null,
     },
@@ -124,6 +135,21 @@ export class HelenaClient implements HelenaApi {
     }
     if (response.status === 204) return undefined as T;
     return (await response.json()) as T;
+  }
+
+  followups(boundary?: {
+    sessionId: string;
+    afterSeq: number;
+    step: number;
+  }): Promise<FollowupBatch> {
+    if (!this.ids.claim || (!this.ids.messageId && !this.ids.runId))
+      return Promise.resolve({ pending: false, replace: false, items: [] });
+    return this.request('POST', '/agent-runtime/followups', {
+      kind: this.ids.messageId ? 'chat' : 'run',
+      id: this.ids.messageId ?? this.ids.runId,
+      claim: this.ids.claim,
+      ...boundary,
+    });
   }
 
   learnedSkills(includeArchived = false): Promise<LearnedRuntimeSkill[]> {

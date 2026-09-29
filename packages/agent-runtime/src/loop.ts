@@ -1,3 +1,4 @@
+import type { TurnInstructions } from './followups';
 import { generateText, jsonSchema, streamText, tool, type ModelMessage, type ToolSet } from 'ai';
 import { DEFAULTS, type AgentRuntimeConfig } from './config';
 import {
@@ -22,6 +23,7 @@ import type { AgentTool, PolicyQuestion, ToolOutput } from './tools/types';
 // limits and the signs of a run going nowhere (docs/helena-decisions/zentrale-laufzeit.md §5).
 
 export interface LoopInput {
+  followups?: TurnInstructions;
   config: AgentRuntimeConfig;
   prompt: string;
   system: string;
@@ -113,6 +115,7 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
   const { config, sink, sessions } = input;
   const now = input.now ?? Date.now;
   const started = now();
+  let budgetStarted = started;
   const kind = config.kind ?? 'run';
   const budgetMs =
     (config.limits?.runBudgetSeconds ??
@@ -190,7 +193,26 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
     entries.push(...items);
     await sessions.append(sessionId!, items);
   };
-  await save([{ role: 'user', content: input.prompt }], firstStep);
+  let workId: string | null = null;
+  if (input.env.ITSAPLAN_MESSAGE_ID) workId = `chat:${input.env.ITSAPLAN_MESSAGE_ID}`;
+  else if (input.env.ITSAPLAN_RUN_ID) workId = `run:${input.env.ITSAPLAN_RUN_ID}`;
+  const alreadyStarted =
+    workId &&
+    entries.some(
+      (entry) =>
+        entry.message.role === 'user' && entry.message.providerOptions?.volition?.workId === workId,
+    );
+  if (!alreadyStarted)
+    await save(
+      [
+        {
+          role: 'user',
+          content: input.prompt,
+          ...(workId && { providerOptions: { volition: { workId } } }),
+        },
+      ],
+      firstStep,
+    );
 
   // ── spend, summed over the steps ──
   const spend: SpendEvent = {
@@ -340,11 +362,39 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
     config.limits?.compressAtTokens ?? Math.min(12_000, Math.floor(contextOf() * 0.6));
   let lastInputTokens = 0;
 
+  const consumeInstructions = async () => {
+    if (!input.followups) return false;
+    const batch = await input.followups.consume({
+      sessionId: sessionId!,
+      afterSeq: seq,
+      step: step + 1,
+    });
+    entries.push(...batch.items);
+    seq = batch.items.at(-1)?.seq ?? seq;
+    if (batch.replace) {
+      turns = 0;
+      budgetStarted = now();
+    }
+    if (batch.items.length) {
+      lastText = '';
+      nudged = false;
+      emptyAnswerNudged = false;
+      watch = new FailureWatch();
+    }
+    return batch.items.length > 0;
+  };
+  // Save completed tool results before an unavailable control channel can fail the turn.
+  const instructionsPending = () =>
+    input.followups?.pending().catch(() => true) ?? Promise.resolve(false);
+  const stepSignal = () =>
+    input.followups ? AbortSignal.any([input.signal, input.followups.signal]) : input.signal;
+
   for (;;) {
+    await consumeInstructions();
     if (input.signal.aborted) {
       return finish({ status: 'failed', text: lastText, exitCode: 130, reason: 'aborted' });
     }
-    const elapsed = now() - started;
+    const elapsed = now() - budgetStarted;
     if (elapsed >= budgetMs) {
       const escalated = await escalate({ reason: 'failure', detail: 'budget' }, lastText);
       if (escalated && escalated !== 'switched') return escalated;
@@ -407,7 +457,7 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
     for (let index = 0; index < chain.length; index++) {
       const model = chain[index]!;
       try {
-        outcome = await callModel(model, messages, toolSet, budgetMs - (now() - started));
+        outcome = await callModel(model, messages, toolSet, budgetMs - (now() - budgetStarted));
         if (index > 0) {
           // The first one failed: the rest of the run stays on the one that answered.
           chain = chain.slice(index);
@@ -428,6 +478,7 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
       }
     }
     if (!outcome) {
+      if (!input.signal.aborted && input.followups?.signal.aborted) continue;
       if (input.signal.aborted || (lastError instanceof StepAbort && lastError.why === 'aborted')) {
         return finish({ status: 'failed', text: lastText, exitCode: 130, reason: 'aborted' });
       }
@@ -445,7 +496,7 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
       if (
         config.escalation?.central?.enabled &&
         failureAttempts < config.escalation.central.failure.localAttempts &&
-        now() - started < budgetMs
+        now() - budgetStarted < budgetMs
       )
         continue;
       return finish({
@@ -496,6 +547,7 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
         ],
         step,
       );
+      if (await consumeInstructions()) continue;
       // A local model sometimes ends its turn announcing what it is about to do ("Ich schaue
       // mir die Seite an.") instead of doing it: it is told once to go on.
       if (!nudged && turns < maxTurns && isAnnouncement(outcome.text)) {
@@ -539,12 +591,16 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
     let invalid = 0;
     let looping = false;
     let warning: string | null = null;
+    let deferCalls = await instructionsPending();
     for (const call of outcome.calls) {
       spend.toolCalls += 1;
       toolsUsed.add(call.name);
       const inputJson = JSON.stringify(call.input ?? {});
       sink.emit({ type: 'tool-call', id: call.id, name: call.name, input: inputJson });
-      const result = await runTool(call);
+      const result =
+        deferCalls || input.followups?.signal.aborted
+          ? { output: { text: 'Not executed: a new instruction takes priority.', isError: true } }
+          : await runTool(call);
       if (call.invalid || result.unknown) invalid += 1;
       sink.emit({
         type: 'tool-result',
@@ -580,7 +636,7 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
           '(Helena) Du wiederholst Aufrufe, die nichts ändern. Geh anders vor oder beende den Zug mit dem, was du hast.';
       }
       if (verdict === 'loop') looping = true;
-      if (endTurn) break;
+      deferCalls ||= endTurn || (await instructionsPending());
     }
     const deferred = [...active].filter((name) => !input.direct.has(name));
     for (const name of deferred.slice(0, -8)) active.delete(name);
@@ -591,6 +647,7 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
     if (warning) stepMessages.push({ role: 'user', content: warning });
     await save(stepMessages, step);
 
+    if (await consumeInstructions()) continue;
     if (endTurn) {
       const text = clarifyText || lastText;
       if (clarifyText) sink.emit({ type: 'text', delta: `\n\n${clarifyText}` });
@@ -642,6 +699,7 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
     tools: ToolSet,
     leftMs: number,
   ) {
+    const signal = stepSignal();
     const controller = new AbortController();
     let why: StepAbort['why'] | null = null;
     const stop = (reason: StepAbort['why']) => {
@@ -650,7 +708,8 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
       controller.abort();
     };
     const onAbort = () => stop('aborted');
-    input.signal.addEventListener('abort', onAbort, { once: true });
+    signal.addEventListener('abort', onAbort, { once: true });
+    if (signal.aborted) onAbort();
     let watchdog = setTimeout(() => stop('first-chunk'), Math.min(firstChunkMs, leftMs));
     const stepTimer = setTimeout(() => stop('step-timeout'), stepMs);
     const budgetTimer = setTimeout(() => stop('budget'), Math.max(leftMs, 1));
@@ -741,7 +800,7 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
       clearTimeout(watchdog);
       clearTimeout(budgetTimer);
       clearTimeout(stepTimer);
-      input.signal.removeEventListener('abort', onAbort);
+      signal.removeEventListener('abort', onAbort);
     }
     if (why) throw new StepAbort(why);
     if (streamError && calls.length === 0 && !text) throw streamError;
@@ -791,17 +850,19 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
     const timeout = Math.min(
       entry.timeoutMs ?? toolTimeoutMs,
       entry.kind === 'browser' ? browserLeftMs : Number.POSITIVE_INFINITY,
-      Math.max(budgetMs - (now() - started), 1),
+      Math.max(budgetMs - (now() - budgetStarted), 1),
     );
+    const signal = stepSignal();
     const controller = new AbortController();
     const onAbort = () => controller.abort();
-    if (input.signal.aborted) controller.abort();
-    input.signal.addEventListener('abort', onAbort, { once: true });
+    if (signal.aborted) controller.abort();
+    signal.addEventListener('abort', onAbort, { once: true });
     const began = now();
     let timer: ReturnType<typeof setTimeout> | undefined;
+    let execution: Promise<ToolOutput> | undefined;
     try {
       const output = await Promise.race([
-        (async (): Promise<ToolOutput> => {
+        (execution = (async (): Promise<ToolOutput> => {
           if (question) {
             const decision = await input.policy(question);
             if (!decision.allowed) return { text: decision.message, isError: true };
@@ -813,7 +874,7 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
             env: input.env,
             hasTool: (name) => toolsByName.has(name),
           });
-        })(),
+        })()),
         new Promise<ToolOutput>((resolve) => {
           const aborted = () => resolve({ text: 'The tool was stopped.', isError: true });
           if (controller.signal.aborted) aborted();
@@ -829,6 +890,7 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
           }, timeout);
         }),
       ]);
+      if (input.followups?.signal.aborted) await execution?.catch(() => {});
       return { output };
     } catch (error) {
       return {
@@ -836,7 +898,7 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
       };
     } finally {
       clearTimeout(timer);
-      input.signal.removeEventListener('abort', onAbort);
+      signal.removeEventListener('abort', onAbort);
       if (entry.kind === 'browser') browserLeftMs -= now() - began;
     }
   }
@@ -863,7 +925,7 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
       abortSignal: AbortSignal.any([
         input.signal,
         AbortSignal.timeout(
-          Math.max(1, Math.min(stepMs, Math.floor(budgetMs - (now() - started)))),
+          Math.max(1, Math.min(stepMs, Math.floor(budgetMs - (now() - budgetStarted)))),
         ),
       ]),
       maxRetries: 0,

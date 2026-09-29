@@ -1,3 +1,4 @@
+import { FollowupInbox } from './followups';
 import { DEFAULTS, type AgentRuntimeConfig, type ToolProfile } from './config';
 import type { EventSink } from './events';
 import { HelenaClient, type HelenaApi, type MemoryState } from './helena-client';
@@ -88,6 +89,7 @@ function helenaOf(input: AgentRunInput): HelenaApi | null {
   return new HelenaClient(url, key, {
     runId: Number(input.env.ITSAPLAN_RUN_ID) || null,
     messageId: Number(input.env.ITSAPLAN_MESSAGE_ID) || null,
+    claim: Number(input.env.VOLITION_WORK_CLAIM) || undefined,
   });
 }
 
@@ -317,7 +319,10 @@ export async function runAgent(input: AgentRunInput): Promise<LoopResult> {
     const sessions = storeOf(input, helena);
     const policy = policyOf(config, helena);
     const evidence: string[] = [];
+    const inbox = helena?.followups ? new FollowupInbox(helena.followups.bind(helena)) : null;
+    inbox?.start();
     const result = await runLoop({
+      ...(inbox && { followups: inbox }),
       ...(uncertainty && { uncertainty }),
       config,
       prompt: input.prompt,
@@ -357,7 +362,7 @@ export async function runAgent(input: AgentRunInput): Promise<LoopResult> {
       signal: input.signal,
       deferFinal: true,
       ...(helena && { note: (text: string) => helena.note(text) }),
-    });
+    }).finally(() => inbox?.stop());
     // Failed skill use can propose a correction; only successful work can create a skill.
     allowSkillCreate = result.status === 'success' && result.testsGreen !== false;
     if (helena && shouldReflect(config, result) && !input.signal.aborted) {

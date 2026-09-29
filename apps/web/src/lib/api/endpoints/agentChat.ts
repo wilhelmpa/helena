@@ -34,6 +34,8 @@ async function* readSseEvents(
 // (https://docs.ag-ui.com, typed in @ag-ui/core). Only the fields the chat reads are
 // named; the rest of the protocol passes through and is ignored here.
 export interface AgUiEvent {
+  name?: string;
+  value?: unknown;
   type: string;
   delta?: string;
   content?: string;
