@@ -182,13 +182,10 @@ describe('integrations', () => {
   });
 
   // The catalog and the credential list are read over MCP, so the reads are tagged. The
-  // writes are not: a credential body carries the service's secret in plain text. The
-  // options route is untagged too: it is what the UI pickers read, and the credential
-  // list already covers the same ground for an agent.
+  // writes are not: a credential body carries the service's secret in plain text.
   it('exposes the credential reads to MCP, not the writes', () => {
     const untagged = untaggedRoutes((route) => route.includes('integrations'));
     expect(untagged).toEqual([
-      'GET /teams/:teamId/integrations/options',
       'POST /teams/:teamId/integrations',
       'PATCH /teams/:teamId/integrations/:credentialId',
       'DELETE /teams/:teamId/integrations/:credentialId',

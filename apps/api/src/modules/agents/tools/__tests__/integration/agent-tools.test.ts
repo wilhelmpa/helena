@@ -222,16 +222,11 @@ describe('agent tools', () => {
     expect(set.data?.map((t) => t.id)).toEqual([mine.data!.id]);
   });
 
-  // Over MCP a configured tool can be read and enabled on an agent, but binding one to
-  // a credential stays in the UI, where the credential is added.
-  it('exposes reading and enabling configured tools to MCP, not binding one', () => {
+  it('exposes guarded tool configuration through MCP', () => {
     const untagged = untaggedRoutes(
       (route) => route.includes('agent-tools') || route.includes('tool-configs'),
     );
-    expect(untagged).toEqual([
-      'POST /teams/:teamId/agent-tools',
-      'DELETE /teams/:teamId/agent-tools/:agentToolId',
-    ]);
+    expect(untagged).toEqual([]);
   });
 
   it('lets a team member read the tools when their project role grants it', async () => {

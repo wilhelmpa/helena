@@ -872,71 +872,23 @@ describe('ai agents', () => {
     });
   });
 
-  // An agent is set up entirely over MCP. What stays out serves the chat UI: the
-  // caller's own thread history and the chat itself, plus this agent's run
-  // history — the analytics routes carry the project-wide run feed MCP reads instead —
-  // and its MCP servers, which start commands on the agents' machine.
-  it('exposes agent management to MCP', () => {
+  it('keeps picker, transport and administrative runtime routes out of MCP', () => {
     const untagged = untaggedRoutes((route) => route.includes('/ai-agents'));
-    // These owner UI/history/runtime routes intentionally stay out of agent tools.
-    // Keep the exact list so accidental exposure or loss of an MCP tag fails this test.
-    expect(untagged).toEqual([
-      'GET /teams/:teamId/ai-agents/:agentId/heartbeats',
-      'GET /teams/:teamId/ai-agents/:agentId/runs',
-      // Archiving a run tidies the owner's run history; agents get no tool for it.
-      'POST /teams/:teamId/ai-agents/:agentId/runs/:runId/archive',
-      'POST /teams/:teamId/ai-agents/:agentId/runs/:runId/unarchive',
-      'GET /teams/:teamId/ai-agents/:agentId/threads',
-      'PUT /teams/:teamId/ai-agents/:agentId/threads/:threadId/favorite',
-      'DELETE /teams/:teamId/ai-agents/:agentId/threads/:threadId/favorite',
-      'GET /teams/:teamId/ai-agents/:agentId/threads/:threadId/messages',
-      'PATCH /teams/:teamId/ai-agents/:agentId/threads/:threadId',
-      'DELETE /teams/:teamId/ai-agents/:agentId/threads/:threadId',
-      'GET /projects/:projectKey/ai-agents/:agentId/threads',
-      'PUT /projects/:projectKey/ai-agents/:agentId/threads/:threadId/favorite',
-      'DELETE /projects/:projectKey/ai-agents/:agentId/threads/:threadId/favorite',
-      'GET /projects/:projectKey/ai-agents/:agentId/threads/:threadId/messages',
-      'PATCH /projects/:projectKey/ai-agents/:agentId/threads/:threadId',
-      'DELETE /projects/:projectKey/ai-agents/:agentId/threads/:threadId',
-      'GET /teams/:teamId/ai-agents/:agentId/mcp-servers',
-      'PUT /teams/:teamId/ai-agents/:agentId/mcp-servers',
-      'GET /teams/:teamId/ai-agents/:agentId/learned-skills/content',
-      'POST /teams/:teamId/ai-agents/:agentId/learned-skills/promote',
-      'GET /teams/:teamId/ai-agents/:agentId/runtime-actions',
-      'POST /teams/:teamId/ai-agents/:agentId/runtime-actions',
-      'GET /teams/:teamId/ai-agents/:agentId/runs/:runId',
-      'GET /teams/:teamId/ai-agents/:agentId/runs/:runId/events',
-      'POST /teams/:teamId/ai-agents/:agentId/runs/:runId/continue',
-      'GET /teams/:teamId/ai-agents/:agentId/runtime/sessions',
-      'GET /teams/:teamId/ai-agents/:agentId/runtime/sessions/:sessionId',
-      'GET /teams/:teamId/ai-agents/:agentId/runtime/logs',
-      'GET /teams/:teamId/ai-agents/:agentId/runtime/health',
-      'GET /teams/:teamId/ai-agents/:agentId/runtime/version',
-      'GET /teams/:teamId/ai-agents/:agentId/runtime/curator',
-      'POST /teams/:teamId/ai-agents/:agentId/runtime/curator/run',
-      'POST /teams/:teamId/ai-agents/:agentId/runtime/curator',
-      'GET /teams/:teamId/ai-agents/:agentId/runtime/requests/:requestId',
-      'GET /teams/:teamId/ai-agents/:agentId/memory/revisions',
-      'POST /teams/:teamId/ai-agents/:agentId/chat',
-      'POST /teams/:teamId/ai-agents/:agentId/chat/retry',
-      'GET /teams/:teamId/ai-agents/:agentId/chat/catalog',
-      'GET /teams/:teamId/ai-agents/:agentId/chat/:messageId/events',
-      'GET /teams/:teamId/ai-agents/:agentId/chat/:messageId/stream',
-      'POST /teams/:teamId/ai-agents/:agentId/chat/:messageId/cancel',
-      'POST /projects/:projectKey/ai-agents/:agentId/chat',
-      'POST /projects/:projectKey/ai-agents/:agentId/chat/retry',
-      'GET /projects/:projectKey/ai-agents/:agentId/chat/catalog',
+    expect(untagged.sort()).toEqual([
       'GET /projects/:projectKey/ai-agents/:agentId/chat/:messageId/events',
       'GET /projects/:projectKey/ai-agents/:agentId/chat/:messageId/stream',
-      'POST /projects/:projectKey/ai-agents/:agentId/chat/:messageId/cancel',
+      'GET /projects/:projectKey/ai-agents/:agentId/chat/catalog',
+      'GET /projects/:projectKey/ai-agents/:agentId/chat/model-picker',
+      'GET /teams/:teamId/ai-agents/:agentId/chat/:messageId/events',
+      'GET /teams/:teamId/ai-agents/:agentId/chat/:messageId/stream',
+      'GET /teams/:teamId/ai-agents/:agentId/chat/catalog',
+      'GET /teams/:teamId/ai-agents/:agentId/chat/model-picker',
       'GET /teams/:teamId/ai-agents/:agentId/facts',
+      'GET /teams/:teamId/ai-agents/:agentId/learned-skills/history',
       'GET /teams/:teamId/ai-agents/:agentId/memory/notes',
-      'GET /teams/:teamId/ai-agents/:agentId/runtime-sync',
-      'POST /teams/:teamId/ai-agents/:agentId/runtime-sync/rewrite',
-      'GET /teams/:teamId/ai-agents/:agentId/autopilot',
-      'PUT /teams/:teamId/ai-agents/:agentId/autopilot',
-      'PUT /teams/:teamId/ai-agents/:agentId/autopilot/budgets',
-      'GET /teams/:teamId/ai-agents/:agentId/chat-reflections',
+      'POST /teams/:teamId/ai-agents/:agentId/learned-skills/review',
+      'POST /teams/:teamId/ai-agents/:agentId/profile-import',
+      'POST /teams/:teamId/ai-agents/runtime-selection',
     ]);
   });
 });

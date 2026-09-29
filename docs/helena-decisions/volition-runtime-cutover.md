@@ -18,9 +18,9 @@ configuration change. The rollout order is Home, coordinators, specialists.
 | Cloud fallback | Native model chain and explicit subscription runtime fallback | API-key models run in the loop; `openai-codex` becomes an authorized Codex handover, `claude-code` a Claude handover; API retains project context and cancellation |
 
 Native learned skills have their own `ai_agent.volition_learned_skills` storage; Hermes
-inventory reports cannot overwrite them during rollback. Migration 0219 adds import
-provenance and its journal; 0220 separates native skills from the external-runtime report
-cache. MEMORY/USER revisions and native session rows remain available across runtime changes.
+inventory reports cannot overwrite them during rollback. Migration 0222 adds import
+provenance, its journal and separate native skill storage; 0223 copies existing native
+skills from the external-runtime report cache. MEMORY/USER revisions and native session rows remain available across runtime changes.
 
 The native catalog reads Home's desired runtime from `/agent-runtime/policy`, including
 while the catalog still serves a mixed runtime fleet. Its native-only mode refuses Hermes

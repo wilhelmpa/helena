@@ -104,6 +104,12 @@
   ],
   [
     "DELETE",
+    "/teams/:teamId/facts/:factId",
+    "admin",
+    "Human fact correction or deletion requires the administrative memory editor guards."
+  ],
+  [
+    "DELETE",
     "/teams/:teamId/integrations/:credentialId",
     "admin",
     "Verwaltet Zugangsdaten oder Geheimnisse im Adminbereich; kein Agentenwerkzeug."
@@ -189,6 +195,12 @@
   ],
   [
     "GET",
+    "/agent-runtime/memory",
+    "intern",
+    "Agent-key runtime protocol for its own memory state."
+  ],
+  [
+    "GET",
     "/agent-runtime/model-server-keys",
     "intern",
     "Maschinen- oder Runner-Protokoll; wird vom Dienst selbst aufgerufen."
@@ -204,6 +216,24 @@
     "/agent-runtime/runtime-login",
     "intern",
     "Maschinen- oder Runner-Protokoll; wird vom Dienst selbst aufgerufen."
+  ],
+  [
+    "GET",
+    "/agent-runtime/sessions/:sessionId",
+    "intern",
+    "Agent-key runtime protocol for its own sessions/:sessionId state."
+  ],
+  [
+    "GET",
+    "/agent-runtime/skills",
+    "intern",
+    "Agent-key runtime protocol for its own skills state."
+  ],
+  [
+    "GET",
+    "/agent-runtimes",
+    "UI-only",
+    "Runtime availability catalog for the existing runtime picker."
   ],
   [
     "GET",
@@ -387,6 +417,7 @@
     "admin",
     "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
   ],
+  ["GET", "/god/local-ai/default", "admin", "Owner-only model maintenance control plane: default."],
   [
     "GET",
     "/god/local-ai/evals/:id",
@@ -671,6 +702,12 @@
   ],
   [
     "GET",
+    "/internal/browser-gateway/previews/:slug",
+    "intern",
+    "Internal browser gateway lookup for isolated preview routing."
+  ],
+  [
+    "GET",
     "/internal/systemone/v1/models",
     "intern",
     "Maschinen- oder Runner-Protokoll; wird vom Dienst selbst aufgerufen."
@@ -680,6 +717,24 @@
     "/knowledge/picker",
     "UI-only",
     "Auswahlwerte für ein Webformular; die Fachaktion hat ein eigenes Werkzeug."
+  ],
+  [
+    "GET",
+    "/knowledge/preview",
+    "UI-only",
+    "Preview metadata for the authenticated knowledge viewer."
+  ],
+  [
+    "GET",
+    "/knowledge/preview/file",
+    "binär",
+    "Authenticated file preview streams bytes rather than a JSON tool result."
+  ],
+  [
+    "GET",
+    "/knowledge/preview/table",
+    "UI-only",
+    "Paged table preview for the authenticated knowledge viewer."
   ],
   [
     "GET",
@@ -757,15 +812,33 @@
   ],
   [
     "GET",
+    "/projects/:projectKey/ai-agents/:agentId/chat/model-picker",
+    "UI-only",
+    "Chat model picker catalog with availability and reasoning choices."
+  ],
+  [
+    "GET",
     "/projects/:projectKey/cycles/options",
     "UI-only",
     "Auswahlwerte für ein Webformular; die Fachaktion hat ein eigenes Werkzeug."
   ],
   [
     "GET",
+    "/projects/:projectKey/display-defaults",
+    "UI-only",
+    "Project field visibility defaults for the work item views."
+  ],
+  [
+    "GET",
     "/projects/:projectKey/files/raw",
     "binär",
     "Datei-/Stream-Übertragung statt JSON; der Werkzeug-Dispatcher unterstützt diesen Payload nicht."
+  ],
+  [
+    "GET",
+    "/projects/:projectKey/goal-options",
+    "UI-only",
+    "Goal picker options; goals are available through the existing goal tools."
   ],
   [
     "GET",
@@ -784,6 +857,12 @@
     "/projects/:projectKey/receipts/export",
     "binär",
     "Datei-/Stream-Übertragung statt JSON; der Werkzeug-Dispatcher unterstützt diesen Payload nicht."
+  ],
+  [
+    "GET",
+    "/projects/:projectKey/trading/widgets",
+    "UI-only",
+    "Aggregated dashboard presentation; paper trading tools expose the underlying actions."
   ],
   [
     "GET",
@@ -943,6 +1022,30 @@
   ],
   [
     "GET",
+    "/teams/:teamId/ai-agents/:agentId/chat/model-picker",
+    "UI-only",
+    "Chat model picker catalog with availability and reasoning choices."
+  ],
+  [
+    "GET",
+    "/teams/:teamId/ai-agents/:agentId/facts",
+    "admin",
+    "Human memory editor reads facts under agent administration and private-owner checks."
+  ],
+  [
+    "GET",
+    "/teams/:teamId/ai-agents/:agentId/learned-skills/history",
+    "admin",
+    "Administrative learned-skill revision history with agent visibility checks."
+  ],
+  [
+    "GET",
+    "/teams/:teamId/ai-agents/:agentId/memory/notes",
+    "admin",
+    "Human memory editor reads notes with agent administration and private-owner checks."
+  ],
+  [
+    "GET",
     "/teams/:teamId/projects/options",
     "UI-only",
     "Auswahlwerte für ein Webformular; die Fachaktion hat ein eigenes Werkzeug."
@@ -1042,6 +1145,12 @@
     "/teams/:teamId/credentials/:credentialId",
     "admin",
     "Verwaltet Zugangsdaten oder Geheimnisse im Adminbereich; kein Agentenwerkzeug."
+  ],
+  [
+    "PATCH",
+    "/teams/:teamId/facts/:factId",
+    "admin",
+    "Human fact correction or deletion requires the administrative memory editor guards."
   ],
   [
     "PATCH",
@@ -1159,6 +1268,19 @@
   ],
   [
     "POST",
+    "/agent-runtime/memory/notes",
+    "intern",
+    "Agent-key runtime protocol for its own memory/notes state."
+  ],
+  [
+    "POST",
+    "/agent-runtime/memory/proposals",
+    "intern",
+    "Agent-key runtime protocol for its own memory/proposals state."
+  ],
+  ["POST", "/agent-runtime/read", "intern", "Agent-key runtime protocol for its own read state."],
+  [
+    "POST",
     "/agent-runtime/requests/:requestId/answer",
     "intern",
     "Maschinen- oder Runner-Protokoll; wird vom Dienst selbst aufgerufen."
@@ -1174,6 +1296,30 @@
     "/agent-runtime/runner-health",
     "intern",
     "Maschinen- oder Runner-Protokoll; wird vom Dienst selbst aufgerufen."
+  ],
+  [
+    "POST",
+    "/agent-runtime/sessions",
+    "intern",
+    "Agent-key runtime protocol for its own sessions state."
+  ],
+  [
+    "POST",
+    "/agent-runtime/sessions/:sessionId/compaction",
+    "intern",
+    "Agent-key runtime protocol for its own sessions/:sessionId/compaction state."
+  ],
+  [
+    "POST",
+    "/agent-runtime/sessions/:sessionId/items",
+    "intern",
+    "Agent-key runtime protocol for its own sessions/:sessionId/items state."
+  ],
+  [
+    "POST",
+    "/agent-runtime/skills/use",
+    "intern",
+    "Agent-key runtime protocol for its own skills/use state."
   ],
   [
     "POST",
@@ -1216,6 +1362,30 @@
     "/god/hermes-update/request",
     "admin",
     "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "POST",
+    "/god/local-ai/default/agents",
+    "admin",
+    "Owner-only model maintenance control plane: default/agents."
+  ],
+  [
+    "POST",
+    "/god/local-ai/default/apply",
+    "admin",
+    "Owner-only model maintenance control plane: default/apply."
+  ],
+  [
+    "POST",
+    "/god/local-ai/default/preview",
+    "admin",
+    "Owner-only model maintenance control plane: default/preview."
+  ],
+  [
+    "POST",
+    "/god/local-ai/default/resume",
+    "admin",
+    "Owner-only model maintenance control plane: default/resume."
   ],
   [
     "POST",
@@ -1598,6 +1768,24 @@
   ],
   [
     "POST",
+    "/teams/:teamId/ai-agents/:agentId/learned-skills/review",
+    "admin",
+    "Human review and restore of learned skills with administrative agent guards."
+  ],
+  [
+    "POST",
+    "/teams/:teamId/ai-agents/:agentId/profile-import",
+    "admin",
+    "Administrative profile import with dry-run and conflict checks."
+  ],
+  [
+    "POST",
+    "/teams/:teamId/ai-agents/runtime-selection",
+    "admin",
+    "Administrative batch runtime cutover with revision and active-work checks."
+  ],
+  [
+    "POST",
     "/teams/:teamId/connectors/google/clients",
     "binär",
     "Datei-/Stream-Übertragung statt JSON; der Werkzeug-Dispatcher unterstützt diesen Payload nicht."
@@ -1703,6 +1891,12 @@
     "/account/push/presence",
     "UI-only",
     "Persönlicher Browser- oder Ansichtsstatus ohne eigenständige Agentenaktion."
+  ],
+  [
+    "PUT",
+    "/agent-runtime/skills",
+    "intern",
+    "Agent-key runtime protocol for its own skills state."
   ],
   [
     "PUT",
@@ -1895,6 +2089,18 @@
     "/god/telegram-settings",
     "admin",
     "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "PUT",
+    "/projects/:projectKey/display-defaults",
+    "UI-only",
+    "Project field visibility defaults for the work item views."
+  ],
+  [
+    "PUT",
+    "/projects/:projectKey/display-defaults/global",
+    "UI-only",
+    "Global field visibility defaults managed from the work item views."
   ],
   [
     "PUT",

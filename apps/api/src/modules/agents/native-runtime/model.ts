@@ -177,22 +177,20 @@ export const nativeSkillWriteBody = t.Object({
   structured: t.Optional(t.Boolean()),
   baseRevision: t.Nullable(t.String({ pattern: '^[a-f0-9]{64}$' })),
 });
-export const NativeSkillResponse = t.Intersect([
-  learnedSkill,
-  t.Object({
-    revision: t.String(),
-    status: t.Optional(t.String()),
-    change: t.Optional(t.Unknown()),
-    history: t.Optional(t.Array(t.Unknown())),
-    version: t.Optional(t.Number()),
-    useCount: t.Optional(t.Number()),
-    lastUsedAt: t.Optional(t.String()),
-    createdAt: t.Optional(t.String()),
-    proposed: t.Optional(t.Boolean()),
-    pinned: t.Optional(t.Boolean()),
-    archived: t.Optional(t.Boolean()),
-  }),
-]);
+export const NativeSkillResponse = t.Object({
+  ...learnedSkill.properties,
+  revision: t.String(),
+  status: t.Optional(t.String()),
+  change: t.Optional(t.Unknown()),
+  history: t.Optional(t.Array(t.Unknown())),
+  version: t.Optional(t.Number()),
+  useCount: t.Optional(t.Number()),
+  lastUsedAt: t.Optional(t.String()),
+  createdAt: t.Optional(t.String()),
+  proposed: t.Optional(t.Boolean()),
+  pinned: t.Optional(t.Boolean()),
+  archived: t.Optional(t.Boolean()),
+});
 export const NativeSkillsResponse = t.Array(NativeSkillResponse);
 
 export const nativeReadBody = t.Union([

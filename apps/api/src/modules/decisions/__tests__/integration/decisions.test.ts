@@ -22,6 +22,7 @@ import { eq } from 'drizzle-orm';
 import { auth } from '@repo/auth';
 import { dispatchTool } from '#mcp/dispatch';
 import { routeTools } from '#mcp/generate';
+import { loadConnection } from '#modules/browser-task/connection';
 import { publishChatCatalog } from '#modules/agents/chat/service';
 import { setManualPrice } from '#modules/model-prices/service';
 import {
@@ -220,6 +221,7 @@ async function passedEval(teamId: number, classId: string, credentialId: number,
     classId,
     credentialId,
     backendLabel: 'test',
+    model: (await loadConnection(credentialId))?.model ?? null,
     threshold,
     questions: 10,
     answered: 10,

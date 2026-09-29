@@ -246,7 +246,11 @@ describe('agent skills', () => {
     const untagged = untaggedRoutes(
       (route) => route.includes('agent-skills') || route.endsWith('/skills'),
     );
-    expect(untagged).toEqual(['POST /teams/:teamId/agent-skills/:skillId/references']);
+    expect(untagged).toEqual([
+      'POST /teams/:teamId/agent-skills/:skillId/references',
+      'GET /agent-runtime/skills',
+      'PUT /agent-runtime/skills',
+    ]);
   });
 
   it('lets a team member read the library when their project role grants it', async () => {

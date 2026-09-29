@@ -277,6 +277,7 @@ describe('agent heartbeats', () => {
         classId: HEARTBEAT_PRECHECK_CLASS,
         credentialId: credential.data!.id,
         backendLabel: 'test double',
+        model,
         threshold: 0.8,
         questions: 60,
         answered: 60,

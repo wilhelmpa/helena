@@ -406,17 +406,14 @@ describe('agent learning', () => {
     expect((await agentRoute(outsider, teamId, agentId)['runtime-actions'].get()).status).toBe(404);
   });
 
-  // An agent does not decide on what it or another agent learned.
-  it('exposes none of its routes as MCP tools', () => {
+  it('keeps learned-skill review and history behind the administrative routes', () => {
     expect(
       untaggedRoutes(
         (route) => route.includes('learned-skills') || route.includes('runtime-actions'),
       ),
     ).toEqual([
-      'GET /teams/:teamId/ai-agents/:agentId/learned-skills/content',
-      'POST /teams/:teamId/ai-agents/:agentId/learned-skills/promote',
-      'GET /teams/:teamId/ai-agents/:agentId/runtime-actions',
-      'POST /teams/:teamId/ai-agents/:agentId/runtime-actions',
+      'GET /teams/:teamId/ai-agents/:agentId/learned-skills/history',
+      'POST /teams/:teamId/ai-agents/:agentId/learned-skills/review',
     ]);
   });
 });

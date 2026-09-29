@@ -61,6 +61,9 @@ afterEach(() => {
 
 test('versions learned procedures, records use without invalidating revisions and exposes exact diffs', async () => {
   const { agent, ownerAgent } = await setup();
+  expect(
+    (await ownerAgent['learned-skills'].content.get({ query: { path: 'missing' } })).status,
+  ).toBe(404);
   const session = (await agent['agent-runtime'].sessions.post({ kind: 'run' })).data!;
   const first = await agent['agent-runtime'].skills.put({
     skill,
@@ -68,7 +71,7 @@ test('versions learned procedures, records use without invalidating revisions an
     structured: true,
     sessionId: session.id,
   });
-  expect(first.status).toBe(200);
+  expect(first.status, JSON.stringify(first.error?.value)).toBe(200);
   expect(first.data).toMatchObject({ version: 1, status: 'applied', useCount: 0 });
   expect((await agent['agent-runtime'].skills.use.post({ name: skill.name })).status).toBe(200);
   const revised = await agent['agent-runtime'].skills.put({

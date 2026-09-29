@@ -396,7 +396,7 @@ describe('optional Jev first decision stage', () => {
     expect(calls).toEqual(['jev', 'primary', 'fallback']);
   });
 
-  it('requires explicit cloud permission, passed evals and a team-wide connection; local-only classes stay excluded', async () => {
+  it('requires explicit cloud permission, passed evals and a team-wide connection; trading still requires its own eval', async () => {
     const { api, teamId, project, primary, jev, run } = await setup();
     const route = api.teams({ teamId }).decisions['first-stage'];
     expect(
@@ -409,7 +409,7 @@ describe('optional Jev first decision stage', () => {
           useCases: { 'helena.trading.rules': { enabled: true, cloudAllowed: true } },
         })
       ).status,
-    ).toBe(400);
+    ).toBe(409);
     await db.delete(helenaDecisionEval).where(eq(helenaDecisionEval.credentialId, jev));
     expect((await run()).credentialId).toBe(primary);
     expect(calls).toEqual(['primary']);

@@ -1,10 +1,10 @@
 import { describe, it, expect, beforeEach } from 'bun:test';
-import { apiKeyApi, authedApi, type Api } from '#tests/helpers/app';
+import { app, apiKeyApi, authedApi, type Api } from '#tests/helpers/app';
 import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
 import { createCredential } from '#tests/helpers/integrations';
 import { createCredentialEntry } from '#tests/helpers/credentials';
-import { untaggedRoutes } from '#tests/helpers/mcp';
+import { routeTools } from '#mcp/generate';
 import { addProjectMember } from '#tests/helpers/members';
 import { createRole } from '#tests/helpers/roles';
 import { createAgent } from '#tests/helpers/agents';
@@ -406,15 +406,12 @@ describe('agent MCP servers', () => {
     expect((await servers(outsider, teamId).get()).status).toBe(404);
   });
 
-  // A server starts a command on the agents' machine, so it is configured in the UI only.
-  it('exposes none of its routes as MCP tools', () => {
-    expect(untaggedRoutes((route) => route.includes('mcp-servers'))).toEqual([
-      'GET /teams/:teamId/mcp-servers',
-      'POST /teams/:teamId/mcp-servers',
-      'PATCH /teams/:teamId/mcp-servers/:mcpServerId',
-      'DELETE /teams/:teamId/mcp-servers/:mcpServerId',
-      'GET /teams/:teamId/ai-agents/:agentId/mcp-servers',
-      'PUT /teams/:teamId/ai-agents/:agentId/mcp-servers',
-    ]);
+  it('exposes the guarded library and agent configuration as catalog tools', () => {
+    const tools = routeTools(app).filter((tool) => tool.path.includes('mcp-servers'));
+    expect(tools).toHaveLength(6);
+    for (const tool of tools) {
+      expect(tool.category).toBe(tool.name === 'list_agent_mcp_servers' ? 'read' : 'credentials');
+      expect(tool.pathParams).toContain('teamId');
+    }
   });
 });
