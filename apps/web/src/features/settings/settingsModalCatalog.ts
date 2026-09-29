@@ -241,7 +241,11 @@ export function withSettingsParam(href: string, location: SettingsLocation | nul
 
 export const SETTINGS_MODAL_OPEN = 'helena:settings-open';
 export const AGENT_DIALOG_OPEN = 'helena:agent-open';
-export const AGENT_PARAM = 'agent';
+// Its own name: `agent` is the chat's (`/?agent=1&thread=…`) and the Zugänge page's
+// filter, and sharing it opened the dialog over every chat (owner 29.09., O64).
+export const AGENT_PARAM = 'agentSheet';
+// The old agent page's `/agents?agent=7` still opens it there.
+export const LEGACY_AGENT_PARAM = 'agent';
 
 // What to open. `scope: 'account'` opens Mein Konto (at `section`); the other scopes open
 // a page of Helena's settings (`section`, its `tab` or `teamId`); `scope: 'agent'` with

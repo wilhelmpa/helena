@@ -55,8 +55,14 @@ export async function startPriorityProxy(options: ProxyOptions) {
           response.resume();
           resolve((response.statusCode ?? 500) < 500);
         });
-        check.setTimeout(timeoutMs, () => check.destroy());
+        // Bun does not always emit error after destroy(): resolve here and on close, so a
+        // slow /health never leaves the probe pending (and the proxy paused) for good.
+        check.setTimeout(timeoutMs, () => {
+          resolve(false);
+          check.destroy();
+        });
         check.on('error', () => resolve(false));
+        check.on('close', () => resolve(false));
         check.end();
       })));
       scheduler.setHealthy(healthy.every(Boolean));
@@ -162,7 +168,12 @@ export async function startPriorityProxy(options: ProxyOptions) {
           outgoing.end(JSON.stringify({ error: { code: 'backend_unavailable' } }));
         } else if (!outgoing.destroyed) outgoing.destroy();
       });
+      // A request without a body (GET /v1/models, /health) is sent at once: Bun does not
+      // always end an empty IncomingMessage, so piping it would never send the request.
+      const hasBody = Boolean(incoming.headers['transfer-encoding']) ||
+        Number(incoming.headers['content-length'] ?? 0) > 0;
       if (body) upstream.end(body);
+      else if (!hasBody) upstream.end();
       else incoming.pipe(upstream);
     };
 
