@@ -45,6 +45,9 @@ Jede Route im App-Rahmen rendert genau eine `<Page>`. Der Test `src/app/pageTemp
 - **Drei-Punkte-Menü:** Ein Menü mit nur einem Eintrag ist ein sekundärer Button. `PageActions` und `ActionMenu` machen das automatisch.
 - **Leerzustand:** `EmptyState` mit Symbol, einem Satz und der Hauptaktion der Seite. Nie eine graue Zeile unter leeren Tabellenköpfen.
 - **Icon-only-Knöpfe** bekommen immer ein Label und `Tip` (Tooltip).
+- **Baum und Seitenleiste (`Tree`, `TreeItem`):** Eine Gruppe mit genau einem einfachen Link (ohne eigene Seite, ohne Aktionen) ist dieser Link: kein Pfeil, keine Liste, die Zeile führt direkt hin und ist markiert, wenn der Link es ist (Owner, O89). Eine Gruppe, die nichts rendert, hat ebenfalls keinen Pfeil. Ein Bereich mit einem einzigen Dashboard verlinkt direkt darauf; erst ab zwei klappt die Liste auf. `TreeNote` ist die stille Textzeile im Baum, `TreeSearch` das Suchfeld eines Baumabschnitts (beide auf der Einrückung der Zeilen darum). Die Kennung der Seite `/` (Dashboard oder geöffneter Chat) trennt `nav/activeMatch` über `without` / `withAny`.
+- **Chats in der Seitenleiste (Owner, O87):** `features/ai-chat/components/sidebar/SidebarChats` ist ein Bereich der Ebene 1 unter „Du“: Angeheftet, eigene Ordner, dann ein Abschnitt je Agent (Home-Agent, Koordinatoren, Spezialisten; `utils/chatSections`), dazu Suche, Archiv und Papierkorb. Das Chat-Fenster (Seite und Panel) zeigt nur die Unterhaltung, es hat keine eigene Chatliste. Ein Klick öffnet den Chat auf der Chat-Seite seines Ortes; ist das Chat-Werkzeug im Panel offen und man auf einer anderen Seite, öffnet er ihn im Panel und lässt die Seite stehen.
+- **Chat-Eingabefeld (Owner, O84):** Eine Zeile Text (auch der Platzhalter) steht genau in der Mitte des Feldes: `PromptInputTextarea` leitet das Polster aus `--ds-chat-field-min` und `--ds-chat-field-line` ab; wer das Feld höher macht (Startseite), setzt nur diese Variable.
 
 ## 4. Radien
 

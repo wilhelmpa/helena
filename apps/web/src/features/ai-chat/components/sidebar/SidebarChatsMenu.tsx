@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { forwardRef, useState, type ComponentProps } from 'react';
 import { FolderPlus, MoreHorizontal, Trash2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Menu, MenuContent, MenuItem, MenuSeparator, MenuTrigger, Text } from '@/design-system';
@@ -11,13 +11,23 @@ import { useChatFoldersContext } from '../../hooks/useChatFolders';
 import { addFolder } from '../../utils/chatFolders';
 import ChatRenameDialog from '../workspace/ChatRenameDialog';
 
-function MoreButton({ label }: { label: string }) {
-  return (
-    <button type="button" className="ds-tree-action" aria-label={label} title={label}>
-      <MoreHorizontal />
-    </button>
-  );
-}
+// The "…" of a row. A Radix trigger hands it its props and ref, so it passes both on.
+const MoreButton = forwardRef<HTMLButtonElement, ComponentProps<'button'> & { label: string }>(
+  function MoreButton({ label, ...props }, ref) {
+    return (
+      <button
+        ref={ref}
+        type="button"
+        className="ds-tree-action"
+        aria-label={label}
+        title={label}
+        {...props}
+      >
+        <MoreHorizontal />
+      </button>
+    );
+  },
+);
 
 // The "…" of the chat area: a new folder of the member's own (O4), and every chat of the
 // list into the trash (a chat still being answered stays).

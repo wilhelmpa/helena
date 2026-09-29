@@ -1,30 +1,20 @@
 {
   "waitingForTeam": "Der Chat wartet auf das erste Team.",
   "list": {
-    "title": "Chats",
     "search": "Chats durchsuchen",
     "newChat": "Neuer Chat",
-    "open": "Chat-Liste öffnen",
-    "close": "Chat-Liste schließen",
     "moreActions": "Weitere Aktionen",
-    "viewActive": "Aktiv",
     "viewArchived": "Archiviert",
     "viewTrash": "Papierkorb",
     "untitled": "Neue Unterhaltung",
-    "running": "Antwortet",
     "noMatches": "Keine Chats gefunden.",
-    "searchResults": "Suchergebnisse",
     "empty": {
       "active": "Noch keine Chats. Mit + startest du einen.",
       "archived": "Keine archivierten Chats.",
       "trash": "Der Papierkorb ist leer."
     },
     "group": {
-      "pinned": "Angeheftet",
-      "today": "Heute",
-      "yesterday": "Gestern",
-      "week": "Letzte 7 Tage",
-      "month": "Letzte 30 Tage"
+      "pinned": "Angeheftet"
     },
     "pin": "Anheften",
     "unpin": "Lösen",
@@ -43,12 +33,6 @@
     "trashed": "Chat in den Papierkorb verschoben.",
     "purged": "Chat endgültig gelöscht.",
     "options": "Chatliste",
-    "groupBy": "Gruppieren",
-    "grouping": {
-      "time": "Nach Datum",
-      "project": "Nach Projekt",
-      "agent": "Nach Agent"
-    },
     "deleteAll": "Alle löschen",
     "deleteAllTitle": "Alle Chats löschen?",
     "deleteAllBody": "Die Chats dieser Liste kommen in den Papierkorb und lassen sich dort wiederherstellen. Ein Chat, in dem gerade geantwortet wird, bleibt.",

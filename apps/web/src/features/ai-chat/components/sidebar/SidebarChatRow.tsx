@@ -15,6 +15,7 @@ export default function SidebarChatRow({
   projectKey,
   active,
   onRemoved,
+  onOpenInPanel,
 }: {
   chat: ChatSummary;
   view: ChatListView;
@@ -22,6 +23,8 @@ export default function SidebarChatRow({
   projectKey: string | null;
   active: boolean;
   onRemoved: (chat: ChatSummary) => void;
+  // With the chat tool open in the panel a click opens the chat there and leaves the page.
+  onOpenInPanel?: (chat: ChatSummary) => void;
 }) {
   const t = useTranslations('chatWorkspace');
   const title = chat.title || t('list.untitled');
@@ -34,6 +37,16 @@ export default function SidebarChatRow({
       active={active}
       dot={chat.running ? 'working' : null}
       count={projectKey == null ? (chat.project?.key ?? null) : null}
+      rowProps={
+        onOpenInPanel
+          ? {
+              onClick: (event) => {
+                event.preventDefault();
+                onOpenInPanel(chat);
+              },
+            }
+          : undefined
+      }
       actions={<SidebarChatMenu chat={chat} view={view} onRemoved={onRemoved} />}
     />
   );

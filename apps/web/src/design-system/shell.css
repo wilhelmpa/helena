@@ -286,6 +286,11 @@
   .ds-tree-actions {
     opacity: 1;
   }
+  /* Without hover the actions always stand at the end of the row: the text and a count keep
+     clear of them. */
+  .ds-tree-line:has(> .ds-tree-actions) > .ds-tree-row {
+    padding-inline-end: 40px;
+  }
 }
 .ds-tree-action {
   display: flex;

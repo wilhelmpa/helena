@@ -4,9 +4,7 @@
   "recent": "Running now",
   "finished": "Recently finished",
   "empty": "No recent agent runs.",
-  "history": "Open chat history",
   "activity": "Open agent activity",
   "workingOpen": "Open the running runs",
-  "chats": "Chats",
   "needsYou": "NEEDS YOU"
 }

@@ -1,11 +1,12 @@
 'use client';
 
-import { useEffect, useMemo, useRef } from 'react';
+import { useContext, useEffect, useMemo, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { Archive, Folder, MessageCircle, Pin, Trash2 } from 'lucide-react';
+import { Archive, Folder, MessagesSquare, Pin, Trash2 } from 'lucide-react';
 import Avatar from '@/components/common/Avatar';
 import { useDisplayName } from '@/context/displayName';
+import { ShellCtx } from '@/context/shellContext';
 import { useSearchTerm } from '@/hooks/useSearchTerm';
 import type { ChatListView, ChatSummary } from '@/lib/api/endpoints/agentChat';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -105,6 +106,7 @@ export default function SidebarChats({
   const appName = useDisplayName();
   const router = useRouter();
   const params = useSearchParams();
+  const shell = useContext(ShellCtx);
   const scope = useChatWorkspaceScope(projectKey);
   const chatFolders = useChatFolders();
   const { search, setSearch, term } = useSearchTerm();
@@ -148,6 +150,11 @@ export default function SidebarChats({
     if (!open || open.running) return;
     removed(open);
   };
+  // The chat tool is open beside another page: a chat opens there, not instead of the page.
+  const inPanel = shell?.chatPanelOpen && !active;
+  const openInPanel = inPanel
+    ? (chat: ChatSummary) => shell?.onOpenChatThread(chat.agent.id, chat.id)
+    : undefined;
   const row = (chat: ChatSummary) => (
     <SidebarChatRow
       key={chat.id}
@@ -156,6 +163,7 @@ export default function SidebarChats({
       projectKey={projectKey}
       active={active && chat.id === activeThreadId}
       onRemoved={removed}
+      onOpenInPanel={openInPanel}
     />
   );
   const holdsActive = (list: ChatSummary[]) => list.some((chat) => chat.id === activeThreadId);
@@ -167,7 +175,7 @@ export default function SidebarChats({
       <TreeItem
         id="chats"
         label={tNav('sidebarChats')}
-        icon={<MessageCircle />}
+        icon={<MessagesSquare />}
         href={projectKey ? chatPath(projectKey) : undefined}
         active={active && !markedInList}
         actions={

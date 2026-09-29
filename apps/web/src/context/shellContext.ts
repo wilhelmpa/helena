@@ -30,6 +30,9 @@ export type ShellContext = {
   // Opens the chat panel on one of the reader's conversations. The request is held
   // until the panel has opened it.
   onOpenChatThread: (agentId: number, threadId: string) => void;
+  // The chat tool is open in the panel: the chat list of the sidebar then opens a chat there,
+  // instead of taking the page away from the reader (owner, O87).
+  chatPanelOpen: boolean;
   chatThreadRequest: ChatThreadRequest | null;
   onChatThreadHandled: () => void;
   // The account's header layout preference, and the child page's way of putting
