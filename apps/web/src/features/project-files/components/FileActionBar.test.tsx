@@ -10,6 +10,7 @@ import { withDom } from '../../../../test/dom';
 const { ShellCtx } = await import('@/context/shellContext');
 const { default: FileActionBar } = await import('./FileActionBar');
 const queue = await import('@/utils/chatAttachQueue');
+const { FileOverlayCtx } = await import('../hooks/fileOverlayContext');
 
 // A file's actions stand in its overlay with their names (owner 29.09., O80): the important
 // ones as buttons, the rare ones under a menu that says what it holds — and the row's menu
@@ -48,12 +49,14 @@ async function mount(
         <ShellCtx.Provider
           value={{ onOpenWorkspaceTool: (tool: string) => opened.push(tool) } as never}
         >
-          <FileActionBar
-            item={item}
-            actions={fakeActions as never}
-            can={can}
-            withDialogs={withDialogs}
-          />
+          <FileOverlayCtx.Provider value={{ dismiss: () => opened.push('dismissed') }}>
+            <FileActionBar
+              item={item}
+              actions={fakeActions as never}
+              can={can}
+              withDialogs={withDialogs}
+            />
+          </FileOverlayCtx.Provider>
         </ShellCtx.Provider>
       </NextIntlClientProvider>,
     );
@@ -132,7 +135,8 @@ test('"Attach to chat" queues the file for the composer and shows the chat', asy
         ...document.querySelectorAll<HTMLButtonElement>('[data-file-actions] button'),
       ].find((button) => button.textContent?.trim() === files.actions.attachToChat)!;
       await act(async () => attach.click());
-      assert.deepEqual(opened, ['chat']);
+      // The file's overlay steps aside first, or the chat would open behind it.
+      assert.deepEqual(opened, ['dismissed', 'chat']);
       assert.deepEqual(queue.takeQueuedChatAttachments(), [
         { path: 'Projects/VOL/Docs/plan.md', name: 'plan.md' },
       ]);

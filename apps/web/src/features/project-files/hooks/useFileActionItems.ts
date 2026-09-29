@@ -1,6 +1,7 @@
 'use client';
 
 import { useContext } from 'react';
+import { FileOverlayCtx } from './fileOverlayContext';
 import {
   ClipboardCopy,
   Code2,
@@ -64,6 +65,7 @@ export function useFileActionItems({
 }): FileActionItem[] {
   const t = useTranslations('files.actions');
   const shell = useContext(ShellCtx);
+  const overlay = useContext(FileOverlayCtx);
   const file = item.kind === 'file';
   const code = actions.codeUrl(item);
   const canonical = actions.vaultPath(item);
@@ -113,6 +115,8 @@ export function useFileActionItems({
       Icon: MessageSquarePlus,
       run: () => {
         queueChatAttachment({ path: canonical, name: item.name });
+        // The chat opens over the page; the file's overlay would cover it.
+        overlay?.dismiss();
         openTool('chat');
       },
       group: 'use',

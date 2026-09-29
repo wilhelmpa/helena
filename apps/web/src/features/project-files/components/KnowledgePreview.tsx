@@ -16,7 +16,8 @@ import FolderMark from './FolderMark';
 import OriginBadge from './OriginBadge';
 import { MarkdownBody } from './ProjectKnowledgeViewer';
 import VaultTextEditor from './VaultTextEditor';
-import { useOverlayShownHere, type OverlayPin } from '@/utils/overlayPin';
+import { unpinOverlay, useOverlayShownHere, type OverlayPin } from '@/utils/overlayPin';
+import { FileOverlayCtx } from '../hooks/fileOverlayContext';
 import { fileViewKind } from '@/utils/fileKinds';
 
 // A file of Wissen opened on the right, in the one overlay (owner 29.09., O49): a doc in
@@ -169,31 +170,38 @@ export default function KnowledgePreview({
     );
   }
 
+  const dismiss = () =>
+    void leave(() => {
+      unpinOverlay(pin);
+      onClose();
+    });
   return (
-    <Overlay
-      label={name}
-      tabs={[{ id: 'file', label: name }]}
-      onClose={() => void leave(onClose)}
-      onOpenPage={() => void leave(onOpenLarge)}
-      pin={pin}
-      className="ds-file-overlay"
-      bodyClassName="ds-knowledge-preview"
-    >
-      <WebLinkScope projectKey={scope.kind === 'project' ? scope.projectKey : null}>
-        <Stack gap={3} className="ds-knowledge-preview-body" data-knowledge-preview={item.path}>
-          <Inline gap={2} wrap>
-            {item.origin && item.origin !== 'manual' && <OriginBadge origin={item.origin} />}
-            <FolderMark entry={entry} />
-            <Text size="xs" tone="muted">
-              {[entry.location, item.updatedAt ? relativeTime(item.updatedAt) : null]
-                .filter(Boolean)
-                .join(' · ')}
-            </Text>
-          </Inline>
-          {actionBar}
-          {body}
-        </Stack>
-      </WebLinkScope>
-    </Overlay>
+    <FileOverlayCtx.Provider value={{ dismiss }}>
+      <Overlay
+        label={name}
+        tabs={[{ id: 'file', label: name }]}
+        onClose={() => void leave(onClose)}
+        onOpenPage={() => void leave(onOpenLarge)}
+        pin={pin}
+        className="ds-file-overlay"
+        bodyClassName="ds-knowledge-preview"
+      >
+        <WebLinkScope projectKey={scope.kind === 'project' ? scope.projectKey : null}>
+          <Stack gap={3} className="ds-knowledge-preview-body" data-knowledge-preview={item.path}>
+            <Inline gap={2} wrap>
+              {item.origin && item.origin !== 'manual' && <OriginBadge origin={item.origin} />}
+              <FolderMark entry={entry} />
+              <Text size="xs" tone="muted">
+                {[entry.location, item.updatedAt ? relativeTime(item.updatedAt) : null]
+                  .filter(Boolean)
+                  .join(' · ')}
+              </Text>
+            </Inline>
+            {actionBar}
+            {body}
+          </Stack>
+        </WebLinkScope>
+      </Overlay>
+    </FileOverlayCtx.Provider>
   );
 }
