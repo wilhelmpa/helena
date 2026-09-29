@@ -16,6 +16,7 @@ from helena_preview_worker import clean_line, pipe
 
 NAME = re.compile(r'^[a-z0-9][a-z0-9-]{0,39}$')
 SLOTS = 8
+HISTORY_SECONDS = 3600
 PORT_BASE = 24000
 RUNTIME_ROOT = os.environ.get('HELENA_PREVIEW_RUNTIME_ROOT', '/run/helena-previews')
 STATE_ROOT = os.environ.get('HELENA_PREVIEW_STATE_ROOT', '/var/lib/helena-previews')
@@ -164,13 +165,31 @@ class Previews:
         self.connection_tasks: dict[int, set[asyncio.Task]] = {}
         self.closing_ports: set[int] = set()
         self.listener_lock = asyncio.Lock()
+        configured = os.environ.get('VOLITION_PREVIEW_MAX_PER_PROJECT', str(SLOTS))
+        self.max_per_project = int(configured) if configured.isdecimal() and 1 <= int(configured) <= SLOTS else SLOTS
 
     def metadata(self, slug: str) -> list[dict]:
         directory = self.state / slug
         if not directory.is_dir():
             return []
-        return [value for path in sorted(directory.glob('*.json'))
-                if (value := read_json(path)) and value.get('slug') == slug and NAME.fullmatch(value.get('name', ''))]
+        values = []
+        for path in sorted(directory.glob('*.json')):
+            value = read_json(path)
+            if not value or value.get('slug') != slug or not NAME.fullmatch(value.get('name', '')):
+                continue
+            status = self.snapshot(value)['status']
+            state_path = self.directory(value) / 'status.json'
+            history_path = path if value.get('retired') or not state_path.exists() else state_path
+            if status in {'stopped', 'failed'}:
+                try:
+                    expired = time.time() - history_path.stat().st_mtime > HISTORY_SECONDS
+                except OSError:
+                    expired = False
+                if expired:
+                    path.unlink(missing_ok=True)
+                    continue
+            values.append(value)
+        return values
 
     def directory(self, preview: dict) -> Path:
         return self.runtime / preview['slug'] / str(preview['port'])
@@ -238,9 +257,6 @@ class Previews:
     async def start(self, request, account, values, existing) -> dict:
         slug, name = request['slug'], request.get('name', 'main')
         if existing and self.snapshot(existing)['status'] in {'starting', 'running'}:
-            if (request.get('cwd') not in (None, existing['cwd'])
-                    or request.get('command') not in (None, existing['command'], 'npm run dev', 'bun run dev')):
-                raise IsolationError('busy', 'Stop this preview before changing its directory or command')
             return await self.await_ready(existing)
         workspace = self.launcher.workspace(slug)
         if not self.launcher.owned_directory(workspace, account.pw_uid):
@@ -250,12 +266,21 @@ class Previews:
         idle = request.get('idleTimeoutSec', 14400)
         if not isinstance(idle, int) or isinstance(idle, bool) or not 60 <= idle <= 86400:
             raise IsolationError('invalid', 'Idle timeout must be between 60 and 86400 seconds')
+        _, requested_command = development_command(cwd, request.get('command'), 0)
+        relative_cwd = os.path.relpath(cwd, workspace)
+        duplicate = next((value for value in values
+                          if self.snapshot(value)['status'] in {'starting', 'running'}
+                          and value['cwd'] == relative_cwd and value['command'] == requested_command), None)
+        if duplicate:
+            return await self.await_ready(duplicate)
         used = {value['port'] for value in values if self.snapshot(value)['status'] in {'starting', 'running'}}
+        if len(used) >= self.max_per_project:
+            raise IsolationError('busy', f'This project reached its preview limit ({self.max_per_project}); stop one first')
         assigned = ports(account.pw_uid, self.config.uid_range[0])
         port = existing['port'] if existing and existing['port'] in assigned and existing['port'] not in used else next(
             (p for p in assigned if p not in used), None)
         if port is None:
-            raise IsolationError('busy', 'This project already has eight active previews; stop one first')
+            raise IsolationError('busy', 'All preview ports for this project are occupied; stop one first')
         argv, command = development_command(cwd, request.get('command'), port)
         preview = {'slug': slug, 'name': name, 'port': port, 'url': f'http://127.0.0.1:{port}',
                    'cwd': os.path.relpath(cwd, workspace), 'absoluteCwd': cwd, 'command': command,

@@ -769,6 +769,7 @@ describe('GatewayDispatcher: domain policy (design §8)', () => {
       name: 'main',
       reason: 'stopped' as const,
       logs: ['server exited'],
+      nextStep: 'Start the preview with preview_start, then use the returned URL.',
     };
     const gateway = dispatcher({
       sessions: fakeSessions(session),
@@ -807,6 +808,39 @@ describe('GatewayDispatcher: domain policy (design §8)', () => {
       state: { type: 'navigation-error', code: 'ERR_CONNECTION_REFUSED' },
     });
     expect(states).toEqual([expect.objectContaining({ code: 'ERR_CONNECTION_REFUSED' })]);
+  });
+
+  it('adds managed preview logs and a next step when Chromium cannot connect', async () => {
+    const session = fakeSession({
+      navigate: mock(async () => {
+        throw new Error('page.goto: net::ERR_CONNECTION_REFUSED');
+      }),
+    });
+    const gateway = dispatcher({
+      sessions: fakeSessions(session),
+      helena: fakeHelenaClient({
+        previews: mock(async () => [
+          {
+            name: 'homepage-dev',
+            status: 'running',
+            url: 'http://127.0.0.1:24032',
+            lines: ['astro ready'],
+          },
+        ]),
+      }),
+      checkPreview: async () => ({ managed: true, state: null }),
+    });
+    const result = await gateway.handle({
+      tool: 'browser_navigate',
+      agentKey: 'k',
+      args: { url: 'http://127.0.0.1:24032/' },
+    });
+    expect(result).toMatchObject({
+      ok: false,
+      state: { name: 'homepage-dev', reason: 'error', logs: ['astro ready'] },
+    });
+    expect(!result.ok && result.error).toContain('preview_status');
+    expect(!result.ok && result.error).toContain('astro ready');
   });
 
   it('allows a domain the list does not name, and applies the policy before every tool', async () => {

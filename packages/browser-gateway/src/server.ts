@@ -19,7 +19,10 @@ import type { HelenaClient, ResolveResult } from './helena-client.ts';
 import { HelenaApiError } from './helena-client.ts';
 import {
   checkPreviewNavigation,
+  matchingPreview,
   navigationError,
+  previewFailure,
+  previewFailureMessage,
   type NavigationState,
 } from './preview-navigation.ts';
 import type {
@@ -182,7 +185,7 @@ function unreachable(error: unknown, fallback = 'The project browser is not reac
 class PreviewNavigationError extends Error {
   state: Extract<NavigationState, { type: 'preview-unreachable' }>;
   constructor(state: Extract<NavigationState, { type: 'preview-unreachable' }>) {
-    super(`Preview ${state.name} is ${state.reason}.`);
+    super(previewFailureMessage(state));
     this.state = state;
   }
 }
@@ -331,7 +334,7 @@ export class GatewayDispatcher {
         this.#onNavigationState(slug, preview.state);
         return {
           ok: false,
-          error: `Preview ${preview.state.name} is ${preview.state.reason}.`,
+          error: previewFailureMessage(preview.state),
           state: preview.state,
         };
       }
@@ -410,6 +413,22 @@ export class GatewayDispatcher {
         }
         const url = str(request.args, 'url') ?? str(request.args, 'startUrl') ?? '';
         const state = navigationError(url, error);
+        if (
+          state &&
+          hostOf(url) === '127.0.0.1' &&
+          /^(ERR_CONNECTION_|ERR_EMPTY_RESPONSE|ERR_TIMED_OUT)/.test(state.code)
+        ) {
+          const preview = matchingPreview(url, await this.#helena.previews(slug).catch(() => []));
+          if (preview) {
+            const failure = previewFailure(preview, url);
+            this.#onNavigationState(slug, failure);
+            return {
+              ok: false as const,
+              error: session.guard.redact(previewFailureMessage(failure, state.code)),
+              state: failure,
+            };
+          }
+        }
         if (state) this.#onNavigationState(slug, state);
         const message = error instanceof Error ? error.message : String(error);
         // Playwright's messages carry a call log; the first line says what went wrong.

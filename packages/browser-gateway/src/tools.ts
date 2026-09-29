@@ -64,7 +64,7 @@ const DEFINED_TOOLS: ToolDef[] = [
     title: 'Navigate to a URL',
     description:
       'Navigate to a URL, waiting for the page to load. Refused for a domain the ' +
-      "project's settings block.",
+      "project's settings block. For managed previews, use preview_status to wait for readiness; terminal curl and sleep cannot verify the preview.",
     inputSchema: schema({ url: { type: 'string', description: 'The URL to navigate to' } }, [
       'url',
     ]),

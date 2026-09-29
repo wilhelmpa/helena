@@ -10,6 +10,7 @@ import signal
 import socket
 import sys
 import tempfile
+import time
 import types
 import unittest
 from unittest.mock import AsyncMock, patch
@@ -382,6 +383,169 @@ asyncio.run(main())
         value = await manager.start({'slug': 'vol'}, None, [], existing)
         self.assertEqual(value['preview']['status'], 'running')
         manager.await_ready.assert_awaited_once_with(existing)
+
+    async def test_same_app_and_command_reuses_running_preview_across_names(self):
+        workspace = self.root / 'workspace'
+        app = workspace / 'homepage'
+        binary = app / 'node_modules/.bin/astro'
+        binary.parent.mkdir(parents=True)
+        binary.write_text('')
+        (app / 'package.json').write_text(json.dumps({
+            'scripts': {'dev': 'astro dev'}, 'devDependencies': {'astro': '5.6.1'}}))
+        account = types.SimpleNamespace(pw_uid=os.getuid())
+        launcher = types.SimpleNamespace(
+            config=types.SimpleNamespace(uid_range=(os.getuid(), os.getuid())),
+            workspace=lambda _slug: str(workspace), owned_directory=lambda *_: True)
+        manager = previews.Previews(launcher)
+        manager.snapshot = lambda value: {'status': value['status']}
+        manager.await_ready = AsyncMock(return_value={'preview': {'name': 'homepage-dev', 'status': 'running'}})
+        running = {'slug': 'vol', 'name': 'homepage-dev', 'cwd': 'homepage',
+                   'command': 'astro dev', 'status': 'running', 'port': 24000}
+        result = await manager.start({'slug': 'vol', 'name': 'astro', 'cwd': 'homepage',
+                                      'command': 'astro dev'}, account, [running], None)
+        self.assertEqual(result['preview']['name'], 'homepage-dev')
+        manager.await_ready.assert_awaited_once_with(running)
+        manager.max_per_project = 1
+        with self.assertRaisesRegex(IsolationError, r'preview limit \(1\)'):
+            await manager.start({'slug': 'vol', 'name': 'other', 'cwd': 'homepage',
+                                 'command': 'astro dev --verbose'}, account, [running], None)
+
+    async def test_preview_limit_configuration_is_bounded(self):
+        launcher = types.SimpleNamespace(config=types.SimpleNamespace())
+        with patch.dict(os.environ, {'VOLITION_PREVIEW_MAX_PER_PROJECT': '2'}):
+            self.assertEqual(previews.Previews(launcher).max_per_project, 2)
+        with patch.dict(os.environ, {'VOLITION_PREVIEW_MAX_PER_PROJECT': '100'}):
+            self.assertEqual(previews.Previews(launcher).max_per_project, previews.SLOTS)
+
+    async def test_expired_stopped_metadata_is_removed(self):
+        manager = previews.Previews(types.SimpleNamespace(config=types.SimpleNamespace()))
+        manager.state = self.root / 'state'
+        manager.runtime = self.root / 'runtime'
+        (manager.state / 'vol').mkdir(parents=True)
+        directory = manager.runtime / 'vol/24032'
+        directory.mkdir(parents=True)
+        metadata = manager.state / 'vol/old.json'
+        previews.write_json(metadata, {'slug': 'vol', 'name': 'old', 'port': 24032})
+        status = directory / 'status.json'
+        previews.write_json(status, {'status': 'stopped'})
+        old = time.time() - previews.HISTORY_SECONDS - 1
+        os.utime(status, (old, old))
+        self.assertEqual(manager.metadata('vol'), [])
+        self.assertFalse(metadata.exists())
+
+    async def test_two_preview_ports_forward_for_one_project(self):
+        async def respond(reader, writer):
+            await reader.readuntil(b'\r\n\r\n')
+            writer.write(b'HTTP/1.1 200 OK\r\nContent-Length: 4\r\n\r\npage')
+            await writer.drain()
+            writer.close()
+        manager = previews.Previews(types.SimpleNamespace(
+            config=types.SimpleNamespace(),
+            project_account=lambda _slug: types.SimpleNamespace(pw_uid=os.getuid())))
+        manager.runtime = self.root
+        manager.firewall = AsyncMock()
+        upstreams = []
+        try:
+            for _ in range(2):
+                with socket.socket() as probe:
+                    probe.bind(('127.0.0.1', 0))
+                    port = probe.getsockname()[1]
+                directory = self.root / 'vol' / str(port)
+                directory.mkdir(parents=True)
+                upstreams.append(await asyncio.start_unix_server(respond, str(directory / 'http.sock')))
+                await manager.listen({'slug': 'vol', 'port': port})
+                reader, writer = await asyncio.open_connection('127.0.0.1', port)
+                writer.write(b'GET / HTTP/1.1\r\nHost: localhost\r\n\r\n')
+                await writer.drain()
+                self.assertIn(b'page', await asyncio.wait_for(reader.read(1024), 2))
+                writer.close()
+                await writer.wait_closed()
+            self.assertEqual(len(manager.servers), 2)
+        finally:
+            for port in tuple(manager.servers):
+                await manager.close_listener(port)
+            for server in upstreams:
+                server.close()
+                await server.wait_closed()
+
+    async def test_preview_start_with_real_worker_reuses_and_stops(self):
+        workspace = self.root / 'workspace'
+        app = workspace / 'homepage'
+        binary = app / 'node_modules/.bin/astro'
+        binary.parent.mkdir(parents=True)
+        (app / 'package.json').write_text(json.dumps({
+            'scripts': {'dev': 'astro dev'}, 'devDependencies': {'astro': 'synthetic'}}))
+        binary.write_text('''#!/usr/bin/env python3
+import http.server, sys
+port = int(sys.argv[sys.argv.index('--port') + 1])
+class Page(http.server.BaseHTTPRequestHandler):
+    def do_GET(self):
+        body = b'<title>Astro synthetic preview</title>'
+        self.send_response(200)
+        self.send_header('Content-Length', str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+    def log_message(self, *args): pass
+print('astro ready', flush=True)
+http.server.HTTPServer(('127.0.0.1', port), Page).serve_forever()
+''')
+        binary.chmod(0o755)
+        account = types.SimpleNamespace(pw_uid=os.getuid(), pw_gid=os.getgid())
+        children = {}
+        async def stop_unit(unit):
+            child = children.pop(unit, None)
+            if child and child.returncode is None:
+                child.terminate()
+                await asyncio.wait_for(child.wait(), 10)
+        config = types.SimpleNamespace(uid_range=(os.getuid(), os.getuid()),
+            systemd_run='/fake-systemd-run', sandbox=previews.__file__,
+            path=os.environ['PATH'], python=sys.executable)
+        launcher = types.SimpleNamespace(config=config, workspace=lambda _slug: str(workspace),
+            owned_directory=lambda *_: True, registry_key=lambda _slug: None,
+            project_account=lambda _slug: account, stop_unit=stop_unit,
+            systemctl=AsyncMock(), sandbox_properties=lambda *_: [])
+        manager = previews.Previews(launcher)
+        manager.state = self.root / 'state'
+        manager.runtime = self.root / 'runtime'
+        manager.listen = AsyncMock()
+        with socket.socket() as probe:
+            probe.bind(('127.0.0.1', 0))
+            port = probe.getsockname()[1]
+        original_spawn = asyncio.create_subprocess_exec
+        class Launched:
+            async def wait(self): return 0
+        async def fake_systemd(*args, **kwargs):
+            unit = next(value.removeprefix('--unit=') for value in args if value.startswith('--unit='))
+            command = args[args.index('--') + 1:]
+            children[unit] = await original_spawn(*command,
+                stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.DEVNULL)
+            return Launched()
+        request = {'op': 'preview-start', 'slug': 'vol', 'name': 'homepage-dev',
+                   'cwd': 'homepage', 'command': 'astro dev'}
+        try:
+            with patch.object(previews, 'ports', return_value=range(port, port + 8)), \
+                    patch.object(previews.asyncio, 'create_subprocess_exec', side_effect=fake_systemd):
+                first = (await manager.request(request))['preview']
+                self.assertEqual(first['status'], 'running')
+                duplicate = (await manager.request({**request, 'name': 'astro'}))['preview']
+                self.assertEqual(duplicate['name'], 'homepage-dev')
+                self.assertEqual(len(children), 1)
+                reader, writer = await asyncio.open_unix_connection(
+                    str(manager.directory({'slug': 'vol', 'port': port}) / 'http.sock'))
+                writer.write(b'GET / HTTP/1.1\r\nHost: localhost\r\n\r\n')
+                await writer.drain()
+                page = await asyncio.wait_for(reader.read(1024), 3)
+                self.assertIn(b'Astro synthetic preview', page)
+                writer.close()
+                await writer.wait_closed()
+                stopped = (await manager.request({'op': 'preview-stop', 'slug': 'vol',
+                                                  'name': 'homepage-dev'}))['preview']
+                self.assertEqual(stopped['status'], 'stopped')
+        finally:
+            for unit in tuple(children):
+                await stop_unit(unit)
+            for active_port in tuple(manager.servers):
+                await manager.close_listener(active_port)
 
     async def test_retired_slot_cannot_inherit_the_replacement_status_or_logs(self):
         manager = previews.Previews(types.SimpleNamespace(config=types.SimpleNamespace()))
