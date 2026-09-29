@@ -226,8 +226,15 @@ function CanvasSurface({
   const { screenToFlowPosition, zoomIn, zoomOut, getZoom, setViewport } = useReactFlow();
   const [zoom, setZoom] = useState(100);
   useEffect(() => {
-    if (window.innerWidth < 640) void setViewport({ x: -55, y: 100, zoom: 1 });
-  }, [setViewport]);
+    if (!compact && window.innerWidth < 640) void setViewport({ x: -55, y: 100, zoom: 1 });
+  }, [compact, setViewport]);
+  // The preview fits the cards once they are measured; the zoom label follows.
+  const cardCount = nodes.length;
+  useEffect(() => {
+    if (!compact || cardCount === 0) return;
+    const timer = window.setTimeout(() => setZoom(Math.round(getZoom() * 100)), 120);
+    return () => window.clearTimeout(timer);
+  }, [compact, cardCount, getZoom]);
   const edit = useCallback(
     (id: string, field: 'title' | 'body', value: string) => {
       setNodes((current) =>
@@ -461,9 +468,10 @@ function CanvasSurface({
         nodesDraggable={editable}
         nodesConnectable={editable && tool === 'connect'}
         defaultViewport={{ x: 0, y: 0, zoom: 1 }}
-        // In the narrow preview every card should be in sight.
+        // In the narrow preview every card should be in sight, and the zoom says so.
         fitView={compact}
         fitViewOptions={{ padding: 0.15, maxZoom: 1 }}
+        onMoveEnd={(_event, viewport) => setZoom(Math.round(viewport.zoom * 100))}
         proOptions={{ hideAttribution: true }}
         className="!bg-background"
       >
