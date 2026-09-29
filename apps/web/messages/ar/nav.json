@@ -302,5 +302,6 @@
   "settingsExtensions": "الإضافات",
   "settingsAutopilotExecution": "الطيار الآلي والتنفيذ",
   "settingsProjectAccess": "إدارة الوصول",
-  "sidebarHelenaKnowledge": "{appName}"
+  "sidebarHelenaKnowledge": "{appName}",
+  "sidebarTrash": "سلة المهملات"
 }

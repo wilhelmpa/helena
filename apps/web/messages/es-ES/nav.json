@@ -302,5 +302,6 @@
   "settingsExtensions": "Extensiones",
   "settingsAutopilotExecution": "Piloto automático y ejecución",
   "settingsProjectAccess": "Gestionar accesos",
-  "sidebarHelenaKnowledge": "{appName}"
+  "sidebarHelenaKnowledge": "{appName}",
+  "sidebarTrash": "Papelera"
 }

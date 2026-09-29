@@ -106,6 +106,12 @@ export function useShellHeading({
       const trail = knowledgeTrail(search, (folder) =>
         root === 'project' ? undefined : homeFilesPath(folder, { root: root ?? undefined }),
       );
+      if (search.get('trash') === '1')
+        return {
+          crumbs: [{ label: home, href: '/' }, knowledge, place],
+          title: t('sidebarTrash'),
+          accent: projectColor(null),
+        };
       return {
         crumbs: [
           { label: home, href: '/' },
@@ -165,6 +171,7 @@ export function useShellHeading({
           : segment,
     );
     if (trail.title) return heading([project, knowledge, ...trail.crumbs], trail.title);
+    if (search?.get('trash') === '1') return heading([project, knowledge], t('sidebarTrash'));
     return search?.get('kind') === 'files'
       ? heading([project, knowledge], t('sidebarFiles'))
       : heading([project], t('sidebarKnowledge'));

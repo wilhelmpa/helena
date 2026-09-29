@@ -135,6 +135,8 @@ export interface FilesLocation {
   file?: string | null;
   // "files": the Dateien entry — the files that are not docs or canvases.
   kind?: 'files';
+  // The place's Papierkorb (Auftrag 117).
+  trash?: boolean;
 }
 
 function filesQuery(folder: string | undefined, location: FilesLocation): string {
@@ -144,6 +146,7 @@ function filesQuery(folder: string | undefined, location: FilesLocation): string
   if (folder) query.set('path', folder);
   if (location.file) query.set('file', location.file);
   if (location.kind) query.set('kind', location.kind);
+  if (location.trash) query.set('trash', '1');
   const search = query.toString();
   return search ? `?${search}` : '';
 }

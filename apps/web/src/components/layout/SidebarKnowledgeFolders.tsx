@@ -3,8 +3,7 @@
 import { createElement, useState, type DragEvent } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { Plus } from 'lucide-react';
-import { TreeAction, TreeItem } from '@/design-system';
+import { TreeItem } from '@/design-system';
 import { toast } from 'sonner';
 import type { FileScope } from '@/lib/api/endpoints/projectFiles';
 import { useFilesQuery } from '@/services/files.service';
@@ -13,7 +12,7 @@ import {
   useUploadFiles,
 } from '@/features/project-files/services/projectFiles.service';
 import { ENTRY_TYPE, isEntryDrag, moveTarget } from '@/features/project-files/utils/fileDrag';
-import FileNewFolderDialog from '@/features/project-files/components/FileNewFolderDialog';
+import SidebarFolderMenu from './SidebarFolderMenu';
 import { filesPath, homeFilesPath } from '@/utils/paths';
 import {
   compareKnowledgeFolders,
@@ -42,7 +41,6 @@ function FolderNode({
   canWrite: boolean;
 }) {
   const fixed = useTranslations('files.fixedFolders');
-  const tNav = useTranslations('nav');
   const pathname = usePathname();
   const params = useSearchParams();
   const scopeMatches = scope.kind === 'project' || (params.get('root') ?? 'home') === scope.root;
@@ -52,7 +50,6 @@ function FolderNode({
   const isAncestor =
     onFilesPage && scopeMatches && (params.get('path') ?? '').startsWith(`${path}/`);
   const [over, setOver] = useState(false);
-  const [newFolder, setNewFolder] = useState(false);
   const listing = useFilesQuery(scope, path);
   const move = useMoveFile(scope);
   const upload = useUploadFiles(scope);
@@ -100,9 +97,14 @@ function FolderNode({
         }}
         actions={
           canWrite && (
-            <TreeAction label={tNav('sidebarNewFolder')} onClick={() => setNewFolder(true)}>
-              <Plus />
-            </TreeAction>
+            // A new subfolder, rename, move, the trash (Auftrag 117); the fixed folders of
+            // a project stay where and what they are.
+            <SidebarFolderMenu
+              scope={scope}
+              path={path}
+              name={name}
+              fixed={scope.kind === 'project' && depth === 0 && knowledgeFolderLabel(name) !== name}
+            />
           )
         }
       >
@@ -119,9 +121,6 @@ function FolderNode({
             ))
           : null}
       </TreeItem>
-      {newFolder && (
-        <FileNewFolderDialog scope={scope} folder={path} onClose={() => setNewFolder(false)} />
-      )}
     </>
   );
 }

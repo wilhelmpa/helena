@@ -89,7 +89,11 @@
   "trashDialog": {
     "title": "{name} in den Papierkorb verschieben?",
     "description": "Es wird in den Papierkorb-Ordner des Vaults verschoben und kann von dort wiederhergestellt werden.",
-    "confirm": "In den Papierkorb"
+    "confirm": "In den Papierkorb",
+    "counting": "Inhalt wird gelesen …",
+    "emptyFolder": "Der Ordner ist leer.",
+    "folderHolds": "{count, plural, one {Er enthält # Eintrag, der mitgeht:} other {Er enthält # Einträge, die mitgehen:}}",
+    "more": "und {count} weitere"
   },
   "linkDialog": {
     "title": "Mit Aufgabe verknüpfen",
@@ -209,7 +213,8 @@
     "emptyFilesTitle": "Noch keine Dateien",
     "emptyFiles": "PDFs, Bilder und andere Dateien landen hier. Lade eine hoch oder zieh sie hierher.",
     "onlySubfoldersTitle": "Nur Unterordner",
-    "onlySubfolders": "In diesem Ordner liegen keine Dateien. Öffne einen der Unterordner."
+    "onlySubfolders": "In diesem Ordner liegen keine Dateien. Öffne einen der Unterordner.",
+    "renameLabel": "Neuer Name für {name}"
   },
   "canvas": {
     "opening": "Leinwand wird geöffnet …",
@@ -271,5 +276,20 @@
     "viewTable": "Tabelle",
     "viewCards": "Karten",
     "viewList": "Liste"
+  },
+  "renamed": "Umbenannt in {name}",
+  "trashView": {
+    "search": "Im Papierkorb suchen …",
+    "name": "Name",
+    "from": "Ordner · gelöscht",
+    "loading": "Papierkorb wird geladen …",
+    "loadFailed": "Der Papierkorb konnte nicht geladen werden.",
+    "emptyTitle": "Der Papierkorb ist leer",
+    "empty": "Was du hier löschst, landet hier und lässt sich wiederherstellen.",
+    "noMatch": "Nichts im Papierkorb passt zur Suche.",
+    "topLevel": "oberste Ebene",
+    "restore": "Wiederherstellen",
+    "restoreTo": "Nach {path} zurücklegen",
+    "restored": "{name} ist wiederhergestellt"
   }
 }

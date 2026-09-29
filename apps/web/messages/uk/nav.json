@@ -302,5 +302,6 @@
   "settingsExtensions": "Розширення",
   "settingsAutopilotExecution": "Автопілот і виконання",
   "settingsProjectAccess": "Керування доступами",
-  "sidebarHelenaKnowledge": "{appName}"
+  "sidebarHelenaKnowledge": "{appName}",
+  "sidebarTrash": "Кошик"
 }

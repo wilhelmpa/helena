@@ -302,5 +302,6 @@
   "settingsExtensions": "Erweiterungen",
   "settingsAutopilotExecution": "Autopilot & Ausführung",
   "settingsProjectAccess": "Zugänge verwalten",
-  "sidebarHelenaKnowledge": "{appName}"
+  "sidebarHelenaKnowledge": "{appName}",
+  "sidebarTrash": "Papierkorb"
 }

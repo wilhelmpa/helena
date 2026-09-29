@@ -302,5 +302,6 @@
   "settingsExtensions": "Ekstensi",
   "settingsAutopilotExecution": "Autopilot & eksekusi",
   "settingsProjectAccess": "Kelola akses",
-  "sidebarHelenaKnowledge": "{appName}"
+  "sidebarHelenaKnowledge": "{appName}",
+  "sidebarTrash": "Tempat sampah"
 }

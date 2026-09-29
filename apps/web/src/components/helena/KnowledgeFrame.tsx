@@ -10,6 +10,7 @@ import {
 } from 'react';
 import { Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import KnowledgeRowName from './KnowledgeRowName';
 import { Page, PageToolbarSpacer } from '@/design-system';
 
 // One page pattern for Wissen and Belege (docs/ui-system.md §8, WissenOrdner.dc.html):
@@ -98,6 +99,7 @@ export function KnowledgeRow({
   menu,
   rowProps,
   title,
+  renaming,
 }: {
   index?: number;
   icon: ComponentType<{ size?: number; strokeWidth?: number; className?: string }>;
@@ -110,6 +112,14 @@ export function KnowledgeRow({
   menu?: ReactNode;
   rowProps?: Record<string, unknown>;
   title?: string;
+  // Renamed in place (F2 or the menu, Auftrag 117): the name is a field; Enter keeps it,
+  // Esc or leaving it without a change drops it.
+  renaming?: {
+    initial: string;
+    label: string;
+    onSubmit: (name: string) => void;
+    onCancel: () => void;
+  };
 }) {
   return (
     <div
@@ -124,7 +134,9 @@ export function KnowledgeRow({
       )}
     >
       <Icon size={18} strokeWidth={1.6} className="text-muted-foreground" />
-      {onClick ? (
+      {renaming ? (
+        <KnowledgeRowName {...renaming} />
+      ) : onClick ? (
         <button
           type="button"
           data-row-button=""

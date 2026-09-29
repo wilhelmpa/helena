@@ -302,5 +302,6 @@
   "settingsExtensions": "Extensions",
   "settingsAutopilotExecution": "Pilote automatique et exécution",
   "settingsProjectAccess": "Gérer les accès",
-  "sidebarHelenaKnowledge": "{appName}"
+  "sidebarHelenaKnowledge": "{appName}",
+  "sidebarTrash": "Corbeille"
 }

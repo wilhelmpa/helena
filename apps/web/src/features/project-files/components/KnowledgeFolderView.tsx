@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { MoreHorizontal } from 'lucide-react';
-import Modal from '@/components/common/overlay/Modal';
 import {
   Menu as DropdownMenu,
   MenuContent as DropdownMenuContent,
@@ -13,7 +12,9 @@ import {
 } from '@/design-system';
 import type { KnowledgeCrumb } from '@/components/helena/KnowledgeFrame';
 import DocumentTemplateDialog from '@/features/documents/components/DocumentTemplateDialog';
-import DocumentTrashList from '@/features/documents/components/DocumentTrashList';
+import { toast } from 'sonner';
+import { childPath, parentPath } from '@/utils/vaultLinks';
+import { useMoveFile } from '../services/projectFiles.service';
 import { useOpenDailyNoteMutation } from '@/services/everything.service';
 import { useProjectQuery } from '@/services/projects.service';
 import { vaultNotePath } from '@/utils/paths';
@@ -21,7 +22,7 @@ import type { FileItem, FileScope } from '@/lib/api/endpoints/projectFiles';
 import { folderIcon, knowledgeFolderLabel } from '@/utils/knowledgeFolders';
 import type { FileActions } from '../hooks/useFileActions';
 import type { FileEntryDrag } from '../hooks/useFileEntryDrag';
-import { isCanvas, isDoc } from '../utils/knowledgeKinds';
+import { isCanvas, isDoc, renamedFileName } from '../utils/knowledgeKinds';
 import type { FilePermissions } from './FileBrowser';
 import FileItemMenu from './FileItemMenu';
 import KnowledgeListView, { type KnowledgeEntry } from './KnowledgeListView';
@@ -109,7 +110,8 @@ export default function KnowledgeFolderView({
   const fixed = useTranslations('files.fixedFolders');
   const roots = useTranslations('files.roots');
   const [templateOpen, setTemplateOpen] = useState(false);
-  const [trashOpen, setTrashOpen] = useState(false);
+  const tFiles = useTranslations('files');
+  const move = useMoveFile(scope);
   const router = useRouter();
   const daily = useOpenDailyNoteMutation();
   const project = useProjectQuery(scope.kind === 'project' ? scope.projectKey : null);
@@ -168,7 +170,16 @@ export default function KnowledgeFolderView({
             {t('fromTemplate')}
           </DropdownMenuItem>
         )}
-        <DropdownMenuItem onSelect={() => setTrashOpen(true)}>{t('trash')}</DropdownMenuItem>
+        <DropdownMenuItem
+          onSelect={() => {
+            // The place's Papierkorb is a view of its own now (Auftrag 117).
+            const query = new URLSearchParams(window.location.search);
+            query.set('trash', '1');
+            router.push(`${window.location.pathname}?${query.toString()}`);
+          }}
+        >
+          {t('trash')}
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
@@ -194,8 +205,18 @@ export default function KnowledgeFolderView({
         }
         kind="all"
         onUpload={onUpload}
-        menuFor={(entry) => <FileItemMenu item={entry.item} actions={actions} can={can} />}
+        menuFor={(entry, helpers) => (
+          <FileItemMenu item={entry.item} actions={actions} can={can} onRename={helpers.rename} />
+        )}
         rowPropsFor={(entry) => drag.source(entry.item)}
+        onRename={(entry, typed) => {
+          const name = renamedFileName(entry.item.name, typed);
+          move.mutate(
+            { from: entry.item.path, to: childPath(parentPath(entry.item.path), name) },
+            { onSuccess: () => toast.success(tFiles('renamed', { name })) },
+          );
+        }}
+        onTrash={(entry) => actions.ask('trash', entry.item)}
         more={more}
         subfolders={subfolders}
         onOpenFolder={(folder) => actions.open(folderItem(folder))}
@@ -207,11 +228,6 @@ export default function KnowledgeFolderView({
           onCreated={(created) => router.push(vaultNotePath(created))}
           onClose={() => setTemplateOpen(false)}
         />
-      )}
-      {trashOpen && (
-        <Modal title={t('trash')} onClose={() => setTrashOpen(false)} wide>
-          <DocumentTrashList root={root} canEdit={can.edit} />
-        </Modal>
       )}
     </>
   );

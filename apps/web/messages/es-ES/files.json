@@ -89,7 +89,11 @@
   "trashDialog": {
     "title": "¿Mover {name} a la papelera?",
     "description": "Se mueve a la carpeta de papelera del vault y puede restaurarse desde allí.",
-    "confirm": "Mover a la papelera"
+    "confirm": "Mover a la papelera",
+    "counting": "Leyendo el contenido …",
+    "emptyFolder": "La carpeta está vacía.",
+    "folderHolds": "{count, plural, one {Contiene # elemento que se va con ella:} other {Contiene # elementos que se van con ella:}}",
+    "more": "y {count} más"
   },
   "linkDialog": {
     "title": "Vincular a una tarea",
@@ -209,7 +213,8 @@
     "emptyFilesTitle": "Aún no hay archivos",
     "emptyFiles": "Aquí llegan PDF, imágenes y otros archivos. Sube uno o arrástralo aquí.",
     "onlySubfoldersTitle": "Solo subcarpetas",
-    "onlySubfolders": "Esta carpeta no contiene archivos. Abre una de sus subcarpetas."
+    "onlySubfolders": "Esta carpeta no contiene archivos. Abre una de sus subcarpetas.",
+    "renameLabel": "Nuevo nombre para {name}"
   },
   "canvas": {
     "opening": "Abriendo el lienzo …",
@@ -271,5 +276,20 @@
     "viewTable": "Tabla",
     "viewCards": "Tarjetas",
     "viewList": "Lista"
+  },
+  "renamed": "Renombrado como {name}",
+  "trashView": {
+    "search": "Buscar en la papelera …",
+    "name": "Nombre",
+    "from": "Carpeta · eliminado",
+    "loading": "Cargando la papelera …",
+    "loadFailed": "No se pudo cargar la papelera.",
+    "emptyTitle": "La papelera está vacía",
+    "empty": "Lo que borres aquí llega aquí y se puede restaurar.",
+    "noMatch": "Nada en la papelera coincide con la búsqueda.",
+    "topLevel": "nivel superior",
+    "restore": "Restaurar",
+    "restoreTo": "Devolver a {path}",
+    "restored": "{name} se ha restaurado"
   }
 }

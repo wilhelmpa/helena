@@ -200,3 +200,48 @@ it('an empty Wissen offers to create the first doc', async () => {
   await act(async () => button('Doc anlegen').click());
   assert.equal(created, 'doc');
 });
+
+it('F2 renames the selected file in place, Entf moves it to the trash (Auftrag 117)', async () => {
+  const renamed: [string, string][] = [];
+  const trashed: string[] = [];
+  await render({
+    onRename: (target, name) => renamed.push([target.item.path, name]),
+    onTrash: (target) => trashed.push(target.item.path),
+  });
+  const rows = document.querySelector<HTMLElement>('.ds-knowledge-rows')!;
+  const key = (value: string) =>
+    act(async () =>
+      rows.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: value, bubbles: true })),
+    );
+  await key('F2');
+  const field = document.querySelector<HTMLInputElement>('.ds-knowledge-rename')!;
+  assert.ok(field, 'the name is a field');
+  assert.equal(field.value, 'Plan');
+  await act(async () => {
+    const setter = Object.getOwnPropertyDescriptor(
+      dom.window.HTMLInputElement.prototype,
+      'value',
+    )!.set!;
+    setter.call(field, 'Plan 2027');
+    field.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+  });
+  assert.deepEqual(renamed, [['Docs/Plan.md', 'Plan 2027']]);
+  assert.equal(document.querySelector('.ds-knowledge-rename'), null);
+  await key('Delete');
+  assert.deepEqual(trashed, ['Docs/Plan.md']);
+});
+
+it('Esc leaves the name as it was', async () => {
+  const renamed: string[] = [];
+  await render({ onRename: (_target, name) => renamed.push(name), onTrash: () => {} });
+  const rows = document.querySelector<HTMLElement>('.ds-knowledge-rows')!;
+  await act(async () =>
+    rows.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'F2', bubbles: true })),
+  );
+  const field = document.querySelector<HTMLInputElement>('.ds-knowledge-rename')!;
+  await act(async () =>
+    field.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true })),
+  );
+  assert.deepEqual(renamed, []);
+  assert.equal(document.querySelector('.ds-knowledge-rename'), null);
+});

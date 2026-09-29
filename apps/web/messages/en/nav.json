@@ -302,5 +302,6 @@
   "settingsExtensions": "Extensions",
   "settingsAutopilotExecution": "Autopilot & execution",
   "settingsProjectAccess": "Manage access",
-  "sidebarHelenaKnowledge": "{appName}"
+  "sidebarHelenaKnowledge": "{appName}",
+  "sidebarTrash": "Trash"
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState, type ReactNode } from 'react';
+import { useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { useTranslations } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
 import { useQueries } from '@tanstack/react-query';
@@ -121,6 +121,8 @@ export default function KnowledgeListView({
   onUpload,
   menuFor,
   rowPropsFor,
+  onRename,
+  onTrash,
   more,
   emptyText,
   kind: forcedKind,
@@ -137,8 +139,12 @@ export default function KnowledgeListView({
   onOpen: (entry: KnowledgeEntry) => void;
   onCreate?: (kind: KnowledgeCreation) => void;
   onUpload?: (files: File[]) => void;
-  menuFor?: (entry: KnowledgeEntry) => ReactNode;
+  // The row's menu; `rename` starts renaming the row in place.
+  menuFor?: (entry: KnowledgeEntry, helpers: { rename?: () => void }) => ReactNode;
   rowPropsFor?: (entry: KnowledgeEntry) => Record<string, unknown>;
+  // Renaming in place (F2, the menu) and the trash (Entf) of the selected row (Auftrag 117).
+  onRename?: (entry: KnowledgeEntry, name: string) => void;
+  onTrash?: (entry: KnowledgeEntry) => void;
   more?: ReactNode;
   emptyText: string;
   // A folder shows everything ('all'); level 1 follows ?kind= (Wissen or Dateien).
@@ -158,6 +164,7 @@ export default function KnowledgeListView({
   const [preview, setPreview] = useState<KnowledgeEntry | null>(null);
   const [query, setQuery] = useState('');
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
+  const [renamingKey, setRenamingKey] = useState<string | null>(null);
   const [dropping, setDropping] = useState(false);
   const search = useRef<HTMLInputElement>(null);
   const upload = useRef<HTMLInputElement>(null);
@@ -207,6 +214,28 @@ export default function KnowledgeListView({
     selected: selectedIndex,
     onSelect: (index) => setSelectedKey(shown[index]?.key ?? null),
     onOpen: (index) => shown[index] && setPreview(shown[index]),
+  });
+  // F2 renames the selected row in place, Entf (or ⌘⌫) moves it to the trash.
+  const onRowsKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (selected && can.edit && onRename && event.key === 'F2') {
+      event.preventDefault();
+      setRenamingKey(selected.key);
+      return;
+    }
+    if (
+      selected &&
+      can.delete &&
+      onTrash &&
+      (event.key === 'Delete' || (event.key === 'Backspace' && (event.metaKey || event.ctrlKey)))
+    ) {
+      event.preventDefault();
+      onTrash(selected);
+      return;
+    }
+    onListKeyDown(event);
+  };
+  const helpersFor = (entry: KnowledgeEntry) => ({
+    rename: onRename && can.edit ? () => setRenamingKey(entry.key) : undefined,
   });
   const pending = searching ? hits.some((hit) => hit.isPending) : loading;
   // A note a view (.base) lists opens in the same place.
@@ -415,7 +444,7 @@ export default function KnowledgeListView({
         )}
         {/* Arrow keys move through the rows; the rows themselves are buttons. */}
         {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions */}
-        <div ref={listRef} onKeyDown={onListKeyDown} className="ds-knowledge-rows">
+        <div ref={listRef} onKeyDown={onRowsKeyDown} className="ds-knowledge-rows">
           {pending ? (
             <EmptyState fill={false}>{searching ? t('searching') : t('loading')}</EmptyState>
           ) : shown.length === 0 ? (
@@ -468,8 +497,21 @@ export default function KnowledgeListView({
                     setPreview(null);
                     onOpen(entry);
                   }}
-                  menu={menuFor?.(entry)}
+                  menu={menuFor?.(entry, helpersFor(entry))}
                   rowProps={rowPropsFor?.(entry)}
+                  renaming={
+                    renamingKey === entry.key && onRename
+                      ? {
+                          initial: knowledgeDisplayName(entry.item.name),
+                          label: t('renameLabel', { name: entry.item.name }),
+                          onSubmit: (name) => {
+                            setRenamingKey(null);
+                            onRename(entry, name);
+                          },
+                          onCancel: () => setRenamingKey(null),
+                        }
+                      : undefined
+                  }
                 />
               );
             })
@@ -481,7 +523,7 @@ export default function KnowledgeListView({
           key={preview.key}
           entry={preview}
           can={can}
-          menu={menuFor?.(preview)}
+          menu={menuFor?.(preview, {})}
           onClose={() => setPreview(null)}
           onOpenLarge={() => {
             const entry = preview;
