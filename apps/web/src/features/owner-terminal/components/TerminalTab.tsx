@@ -35,12 +35,12 @@ export default function TerminalTab({
     >
       <button
         type="button"
-        role="tab"
-        aria-selected={active}
         className="ds-panel-tab-select"
         onClick={onSelect}
         {...attributes}
         {...listeners}
+        role="tab"
+        aria-selected={active}
       >
         <span>{label}</span>
       </button>

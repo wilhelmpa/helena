@@ -105,8 +105,9 @@ async function loadedModels(
   const key = await readModelServerKey(server);
   if (server.keySource !== 'none' && !key)
     throw new HttpError(503, 'local_terminal_model_unavailable');
+  const headers: Record<string, string> = key ? { authorization: `Bearer ${key}` } : {};
   const init = {
-    headers: key ? { authorization: `Bearer ${key}` } : {},
+    headers,
     redirect: 'error' as const,
     signal: signal
       ? AbortSignal.any([signal, AbortSignal.timeout(5000)])
