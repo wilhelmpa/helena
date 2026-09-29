@@ -53,6 +53,7 @@
         "jose": "^6.2.12",
         "mammoth": "^1.12.1",
         "papaparse": "^5.7.0",
+        "postgres": "^3.4.9",
         "read-excel-file": "^9.3.10",
         "standardwebhooks": "1.1.1",
       },

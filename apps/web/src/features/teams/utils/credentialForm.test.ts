@@ -277,17 +277,14 @@ describe('grantable agents', () => {
   const agents = [
     agent(5, 'writer', [mkt]),
     agent(1, 'renamed-home', [mkt, ops], 'home'),
-    agent(3, 'hermes-mkt-coordinator', [mkt]),
-    agent(4, 'hermes-ops-coordinator', [ops]),
+    agent(3, 'mkt-koordinator', [mkt]),
+    agent(4, 'ops-koordinator', [ops]),
     { ...agent(6, 'designer'), template: true } as AiAgent,
   ];
 
   it('names the Home agent, the coordinators and the project agents', () => {
     assert.equal(agentRole({ username: 'renamed', agentRole: 'home' }), 'home');
-    assert.equal(
-      agentRole({ username: 'hermes-mkt-coordinator', agentRole: 'agent' }),
-      'coordinator',
-    );
+    assert.equal(agentRole({ username: 'mkt-koordinator', agentRole: 'agent' }), 'coordinator');
     assert.equal(agentRole({ username: 'writer', agentRole: 'agent' }), 'specialist');
   });
 

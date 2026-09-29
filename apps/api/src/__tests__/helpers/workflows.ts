@@ -58,7 +58,7 @@ export async function setupProject(options: { locale?: 'de' } = {}) {
   const columns = view.data!.columns;
   const organization = asOwner.teams({ teamId }).organization;
   const coordinator = (await organization.get()).data!.agents.find(
-    (agent) => agent.username === 'hermes-mkt-coordinator',
+    (agent) => agent.username === 'mkt-koordinator',
   )!;
   await organization.agents({ agentId: coordinator.id }).put({ role: 'coordinator' });
   const coder = await createAgent(asOwner, 'MKT', {

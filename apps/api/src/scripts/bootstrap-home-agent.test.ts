@@ -101,7 +101,7 @@ describe('Home agent bootstrap', () => {
 
     const organization = await api.teams({ teamId }).organization.get();
     expect(
-      organization.data!.agents.find((agent) => agent.username === 'hermes-mkt-coordinator'),
+      organization.data!.agents.find((agent) => agent.username === 'mkt-koordinator'),
     ).toMatchObject({ reportsToAgentId: result.agentId });
   });
 
@@ -147,7 +147,7 @@ describe('Project coordinator bootstrap', () => {
     const project = await createdProject();
 
     const first = await bootstrapProjectCoordinator(project.id);
-    expect(first?.agent.username).toBe('hermes-coord-coordinator');
+    expect(first?.agent.username).toBe('coord-koordinator');
     const issued = first!.apiKey!;
     expect(await keyWorks(issued)).toBe(true);
 

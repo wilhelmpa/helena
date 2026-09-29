@@ -1,4 +1,4 @@
-import { hermesProjectCoordinatorUsername } from '@repo/agent-naming';
+import { projectCoordinatorUsername } from '@repo/agent-naming';
 import { onThisOrigin, type WorkspaceRuntimeEnv } from './runtimeEnv';
 import type { ProvisionedProjectResource } from '@/lib/api/endpoints/projects';
 
@@ -75,7 +75,7 @@ export function preferredAgentUsername(projectKey: string | null): string {
   const normalizedKey = projectKey.trim().toUpperCase();
   const slugPattern = /^[a-z0-9][a-z0-9_-]{0,31}$/;
   const slug = normalizedKey === 'VERV' ? 'verve' : normalizedKey.toLowerCase();
-  return slugPattern.test(slug) ? hermesProjectCoordinatorUsername(normalizedKey) : '';
+  return slugPattern.test(slug) ? projectCoordinatorUsername(normalizedKey) : '';
 }
 
 export function nativeChatProjectKey(

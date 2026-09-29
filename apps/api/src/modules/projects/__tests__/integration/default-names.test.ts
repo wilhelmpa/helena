@@ -43,7 +43,7 @@ async function scaffold(api: Api, projectKey: string) {
 
 async function coordinatorName(api: Api, teamId: number, projectId: number) {
   const agents = await api.teams({ teamId })['ai-agents'].get({ query: { projectId } });
-  return agents.data!.find((agent) => agent.username.endsWith('-coordinator'))!.name;
+  return agents.data!.find((agent) => agent.username.endsWith('-koordinator'))!.name;
 }
 
 describe('default names of new projects and teams', () => {
@@ -60,7 +60,7 @@ describe('default names of new projects and teams', () => {
     expect(project.types).toEqual([{ name: 'Task', isDefault: true }]);
     expect(project.views).toEqual(['Kanban', 'List']);
     expect(await coordinatorName(api, created.data!.teamId, created.data!.id)).toBe(
-      'Hermes MKT Coordinator',
+      'Coordinator MKT',
     );
   });
 
@@ -87,7 +87,7 @@ describe('default names of new projects and teams', () => {
     ]);
     expect(project.views).toEqual(['Board', 'Liste']);
     expect(await coordinatorName(api, created.data!.teamId, created.data!.id)).toBe(
-      'Hermes-Koordinator MKT',
+      'Koordinator MKT',
     );
   });
 
@@ -156,9 +156,7 @@ describe('default names of new projects and teams', () => {
     // The types are the source's own data, copied as they are.
     expect(project.types).toEqual([{ name: 'Task', isDefault: true }]);
     expect(project.views).toEqual(['Board', 'Liste']);
-    expect(await coordinatorName(api, copy.data!.teamId, copy.data!.id)).toBe(
-      'Hermes-Koordinator CPY',
-    );
+    expect(await coordinatorName(api, copy.data!.teamId, copy.data!.id)).toBe('Koordinator CPY');
   });
 
   it('keeps copied English views as the default views of a German copy', async () => {

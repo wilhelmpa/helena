@@ -720,7 +720,7 @@ describe('browser gateway', () => {
     expect(initial.enabled).toEqual([]);
     expect(
       initial.skipped.filter((entry) => entry.why === 'already on').map((entry) => entry.username),
-    ).toEqual(expect.arrayContaining(['hermes-ops-coordinator']));
+    ).toEqual(expect.arrayContaining(['ops-koordinator']));
     // An installation from before that: the script turns it on, and only once.
     await db.delete(agentMcpServerLink).where(eq(agentMcpServerLink.agentId, home.agentId));
     const dry = await setupBrowserGateway(true);

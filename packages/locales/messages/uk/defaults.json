@@ -46,7 +46,7 @@
     "list": "Список",
     "allTasks": "Усі завдання"
   },
-  "coordinator": "Координатор Hermes {key}",
+  "coordinator": "Координатор {key}",
   "teamRole": "Учасник",
   "blocked": {
     "label": "Заблоковано",

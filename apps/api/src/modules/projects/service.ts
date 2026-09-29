@@ -43,10 +43,7 @@ import { ensureDefaultProjectViews } from '#modules/views/service';
 import { DEFAULT_LOCALE, type Locale } from '#modules/user-preferences/locale';
 import { preferredLocale } from '#modules/user-preferences/service';
 import { coordinatorName, defaultStates, presetIssueTypes } from '@helena/locales/defaults';
-import {
-  hermesProjectCoordinatorUsername,
-  isHermesProjectCoordinatorUsername,
-} from '@repo/agent-naming';
+import { projectCoordinatorUsername, isProjectCoordinatorUsername } from '@repo/agent-naming';
 
 // Data access for projects: the top-level container that groups its own columns,
 // issue types, labels, assignees, custom fields, issues, saved views, and
@@ -343,12 +340,12 @@ export const DEFAULT_PROVISIONING_RESOURCES = [
   'browser',
 ] as const;
 
-// hermesProjectCoordinatorUsername/isHermesProjectCoordinatorUsername now live in
+// projectCoordinatorUsername/isProjectCoordinatorUsername now live in
 // @repo/agent-naming (imported above), the single source of truth apps/web's
 // preferredAgentUsername (utils/workspaceTools.ts) also depends on — they used to be
 // two independent implementations of the same convention. Re-exported here so every
 // existing `from '#modules/projects/service'` import in this app keeps working.
-export { hermesProjectCoordinatorUsername, isHermesProjectCoordinatorUsername };
+export { projectCoordinatorUsername, isProjectCoordinatorUsername };
 
 // A project coordinator is a real external agent, not a deployment-side record. The
 // deterministic, reserved handle makes it unique per project key (which is
@@ -369,10 +366,7 @@ export async function newProjectAgentUserIds(teamId: number): Promise<string[]> 
   return rows.map(({ userId }) => userId);
 }
 
-export function hermesProjectCoordinatorInstructions(
-  projectKey: string,
-  projectName: string,
-): string {
+export function projectCoordinatorInstructions(projectKey: string, projectName: string): string {
   return [
     `You coordinate project ${projectKey} (${projectName.trim()}) for its owner.`,
     'Use the project instructions and authorized work items as your scope.',
@@ -380,7 +374,7 @@ export function hermesProjectCoordinatorInstructions(
   ].join(' ');
 }
 
-export async function createHermesProjectCoordinator(
+export async function createProjectCoordinator(
   tx: Transaction,
   input: {
     projectId: number;
@@ -393,7 +387,7 @@ export async function createHermesProjectCoordinator(
     locale: Locale;
   },
 ): Promise<void> {
-  const username = hermesProjectCoordinatorUsername(input.projectKey);
+  const username = projectCoordinatorUsername(input.projectKey);
   // Old versions left a coordinator behind when its project was deleted. Recover
   // that unbound, reserved identity before creating the replacement so upgrading
   // an existing instance does not turn a delete/recreate into a unique-index 500.
@@ -412,7 +406,7 @@ export async function createHermesProjectCoordinator(
     if (memberships.length > 0) {
       throw new HttpError(
         409,
-        `Reserved Hermes coordinator ${username} is still attached to another project`,
+        `Reserved coordinator ${username} is still attached to another project`,
       );
     }
     // The agent owns a dedicated bot user. Deleting that user cascades to its
@@ -438,7 +432,7 @@ export async function createHermesProjectCoordinator(
       userId,
       username,
       kind: 'external',
-      instructions: hermesProjectCoordinatorInstructions(input.projectKey, input.projectName),
+      instructions: projectCoordinatorInstructions(input.projectKey, input.projectName),
       triggerOnMention: true,
       triggerOnAssign: true,
       delegationDelaySec: 0,
@@ -677,7 +671,7 @@ export async function createProject(
         })),
       );
     }
-    await createHermesProjectCoordinator(tx, {
+    await createProjectCoordinator(tx, {
       projectId: row.id,
       teamId: ownerTeam.id,
       projectKey: row.key,
@@ -1024,7 +1018,7 @@ export async function deleteProject(projectId: number): Promise<void> {
         project: projectRow,
         requestedResources: provisioning?.requestedResources ?? [...DEFAULT_PROVISIONING_RESOURCES],
       });
-      const coordinatorUsername = hermesProjectCoordinatorUsername(projectRow.key);
+      const coordinatorUsername = projectCoordinatorUsername(projectRow.key);
       const coordinators = await tx
         .select({ userId: aiAgent.userId })
         .from(aiAgent)

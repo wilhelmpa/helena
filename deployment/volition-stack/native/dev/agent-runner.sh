@@ -46,7 +46,7 @@ python3 - "$home/run/itsaplan-runner.json" "$work/runner.json" "$slug" "$profile
 import json, os, sys
 source, target, slug, profile, work = sys.argv[1:6]
 live = json.load(open(source))
-name = f'hermes-{slug}-coordinator'
+name = f'{slug}-koordinator'
 agent = next((a for a in live['agents'] if a.get('name') == name), None)
 if agent is None:
     raise SystemExit(f'agent-runner.sh: {name} is not in the live runner configuration')

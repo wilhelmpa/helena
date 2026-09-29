@@ -29,7 +29,7 @@ class HermesProjectBrowserCatalogTest(unittest.TestCase):
             "projectId": 7,
             "teamId": 3,
             "planAgentId": 21,
-            "username": "hermes-demo-coordinator",
+            "username": "demo-koordinator",
             "cwd": str(root / "workspace"),
             "hermesHome": str(self.home / "profiles" / "demo"),
             "globalHermesHome": str(self.home),
@@ -103,7 +103,7 @@ class HermesProjectBrowserCatalogTest(unittest.TestCase):
     def test_runs_a_project_agent_in_its_own_profile_with_the_project_browser(self):
         self.write_agent("demo_42")
         coordinator, agent = CATALOG.descriptor_entries(self.descriptors, self.home, self.browsers)
-        self.assertEqual(coordinator["name"], "hermes-demo-coordinator")
+        self.assertEqual(coordinator["name"], "demo-koordinator")
         self.assertEqual(agent["name"], "Coder.Bot")
         self.assertEqual(agent["env"]["HERMES_HOME"], str(self.home / "profiles" / "demo_42"))
         self.assertEqual(agent["env"]["BROWSER_CDP_URL"], "http://127.0.0.1:19201")
@@ -115,7 +115,7 @@ class HermesProjectBrowserCatalogTest(unittest.TestCase):
             ("demo_42", {"planAgentId": 43}),
             ("demo_42", {"username": "../escape"}),
             ("demo_42", {"hermesHome": str(self.home / "profiles" / "demo")}),
-            ("demo_42", {"username": "hermes-demo-coordinator", "hermesHome": str(self.home / "profiles" / "demo")}),
+            ("demo_42", {"username": "demo-koordinator", "hermesHome": str(self.home / "profiles" / "demo")}),
             ("demo_x42", {}),
             ("Demo_42", {"hermesHome": str(self.home / "profiles" / "Demo_42")}),
         ):

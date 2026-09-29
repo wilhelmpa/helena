@@ -61,7 +61,7 @@ it('plans explicit model and member-chat scope changes once, without granting pr
       instructions: blueprint.project.instructions,
     },
     areas: [],
-    agents: ['hermes-elli-coordinator', 'assistant-elli', 'finance-elli'].map(profile),
+    agents: ['elli-koordinator', 'assistant-elli', 'finance-elli'].map(profile),
     library: [],
     network: null,
     existingFiles: [],

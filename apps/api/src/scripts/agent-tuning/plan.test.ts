@@ -43,7 +43,7 @@ function agent(overrides: Partial<CurrentAgent> = {}): CurrentAgent {
     browser: 'none',
     projects: [{ id: 5, key: 'VOL', assignment: '' }],
     role: 'specialist',
-    manager: 'hermes-vol-coordinator',
+    manager: 'vol-koordinator',
     department: null,
     triggerOnMention: true,
     triggerOnAssign: true,
@@ -60,7 +60,7 @@ function agent(overrides: Partial<CurrentAgent> = {}): CurrentAgent {
 function state(agents: CurrentAgent[], overrides: Partial<CurrentState> = {}): CurrentState {
   return {
     agents,
-    projects: [{ id: 5, key: 'VOL', instructions: '', coordinator: 'hermes-vol-coordinator' }],
+    projects: [{ id: 5, key: 'VOL', instructions: '', coordinator: 'vol-koordinator' }],
     library: ['brainstorming', 'writing-plans', 'systematic-debugging', 'frontend-design'],
     unavailableModels: [],
     departments: [{ id: 1, name: 'Volition', parent: null }],
@@ -275,7 +275,7 @@ function withTemplate(overrides: Partial<CurrentAgent> = {}): CurrentState {
     }),
     agent({
       id: 6,
-      username: 'hermes-vol-coordinator',
+      username: 'vol-koordinator',
       role: 'coordinator',
       manager: 'master',
       instructions: 'alt',
@@ -295,7 +295,7 @@ function copyTarget(): TuningTarget {
     templates: [{ username: 'qa', denyToolsets: ['computer_use', 'tts'] }],
     agents: [
       {
-        username: 'hermes-vol-coordinator',
+        username: 'vol-koordinator',
         addSkills: [],
         denyToolsets: [],
         disableSkills: [],
@@ -331,7 +331,7 @@ describe('copies', () => {
     expect(plan.changes.map((c) => `${c.kind} ${'username' in c ? c.username : ''}`)).toEqual([
       'templateToolDeny qa',
       'copy qa-vol',
-      'instructions hermes-vol-coordinator',
+      'instructions vol-koordinator',
       'skillsDisabled qa-vol',
       'assignment qa-vol',
       'browser qa-vol',
@@ -358,7 +358,7 @@ describe('copies', () => {
       skills: ['systematic-debugging'],
       toolDeny: ['computer_use', 'tts'],
       role: 'specialist',
-      manager: 'hermes-vol-coordinator',
+      manager: 'vol-koordinator',
       browser: 'gateway',
     });
     expect(planTuning(done, copyTarget(), ALL).changes).toEqual([]);
@@ -485,7 +485,7 @@ describe('organisation', () => {
       instructions: 'Eigener Text',
       department: 'Volition',
       role: 'coordinator',
-      manager: 'hermes-vol-coordinator',
+      manager: 'vol-koordinator',
     });
     const plan = planTuning(current, orgTarget(), ['instructions', 'copies']);
     expect(plan.changes.map((c) => c.kind)).toEqual(['department']);
@@ -495,7 +495,7 @@ describe('organisation', () => {
         '@coder-vol: named "Mein Support" by hand; left as it is',
         '@coder-vol: in department "Volition" by hand; left as it is',
         '@coder-vol: agent-team role coordinator by hand; left as it is',
-        '@coder-vol: reports to @hermes-vol-coordinator by hand; left as it is',
+        '@coder-vol: reports to @vol-koordinator by hand; left as it is',
       ]),
     );
   });
@@ -696,7 +696,7 @@ describe('the target of this installation', () => {
     for (const copy of COPIES) {
       const key = copy.copyOf!.projectKey;
       const coordinator = TARGET.agents.find(
-        (a) => a.username === `hermes-${key.toLowerCase()}-coordinator`,
+        (a) => a.username === `${key.toLowerCase()}-koordinator`,
       )!;
       const current = state([
         agent({ username: copy.username, projects: [{ id: 1, key, assignment: '' }] }),
@@ -717,7 +717,7 @@ describe('the target of this installation', () => {
       expect(entry.org?.department).toMatch(/^Verve · (Entwicklung|Marketing|Support)$/);
       const text = entry.assignments!.VERVE!.text;
       expect(text).toContain('/srv/volition/workspaces/projects/verve/');
-      expect(text).toContain('@hermes-verve-coordinator');
+      expect(text).toContain('@verve-koordinator');
       expect(text.length).toBeLessThanOrEqual(500);
     }
     expect(TARGET.departments?.map((d) => d.parent)).toEqual(['Volition', 'Volition', 'Volition']);

@@ -30,7 +30,7 @@ describe('workspaceTools', () => {
     assert.equal(nativeChatProjectKey(config, null), 'PRIV');
     assert.equal(preferredAgentUsername(null), '');
     assert.equal(nativeChatProjectKey(config, 'verv'), 'VERV');
-    assert.equal(preferredAgentUsername('VERV'), 'hermes-verve-coordinator');
+    assert.equal(preferredAgentUsername('VERV'), 'verve-koordinator');
   });
 
   it("opens Home's terminal outside a project", () => {
@@ -56,8 +56,8 @@ describe('workspaceTools', () => {
   });
 
   it('uses the deterministic project agent while provisioning is pending', () => {
-    assert.equal(preferredAgentUsername('OPS'), 'hermes-ops-coordinator');
-    assert.equal(preferredAgentUsername('VERV'), 'hermes-verve-coordinator');
+    assert.equal(preferredAgentUsername('OPS'), 'ops-koordinator');
+    assert.equal(preferredAgentUsername('VERV'), 'verve-koordinator');
   });
 
   it('prefers successfully provisioned project resources over static mappings', () => {
@@ -79,7 +79,7 @@ describe('workspaceTools', () => {
       },
     ];
     const tools = workspaceTools(config, 'DEMO', resources);
-    assert.equal(preferredAgentUsername('DEMO'), 'hermes-demo-coordinator');
+    assert.equal(preferredAgentUsername('DEMO'), 'demo-koordinator');
     assert.equal(tools.chat.url, '');
     assert.equal(
       tools.code.url,

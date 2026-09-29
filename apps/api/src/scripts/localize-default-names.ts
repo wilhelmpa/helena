@@ -31,7 +31,7 @@ import {
   userPreference,
 } from '@repo/db';
 import { and, asc, eq, inArray } from 'drizzle-orm';
-import { hermesProjectCoordinatorUsername } from '@repo/agent-naming';
+import { projectCoordinatorUsername } from '@repo/agent-naming';
 import {
   DEFAULT_STATES,
   DEFAULT_VIEWS,
@@ -179,7 +179,7 @@ export async function planDefaultNameLocalization(
       .where(
         and(
           eq(aiAgent.teamId, target.teamId),
-          eq(aiAgent.username, hermesProjectCoordinatorUsername(target.key)),
+          eq(aiAgent.username, projectCoordinatorUsername(target.key)),
         ),
       );
     if (coordinator && coordinator.name === coordinatorName(target.key, 'en')) {

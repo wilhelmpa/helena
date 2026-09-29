@@ -5,7 +5,7 @@ import {
   type BlueprintSticker,
   type ProjectBlueprint,
 } from '@helena/sdk';
-import { hermesProjectCoordinatorUsername } from '@repo/agent-naming';
+import { projectCoordinatorUsername } from '@repo/agent-naming';
 
 // What applying a project blueprint (@helena/sdk blueprints.ts) changes, worked out from the
 // team as it is. Pure: the state comes from state.ts, the changes are carried out by
@@ -157,7 +157,7 @@ export interface BlueprintPlan {
 }
 
 export function coordinatorHandle(projectKey: string): string {
-  return hermesProjectCoordinatorUsername(projectKey);
+  return projectCoordinatorUsername(projectKey);
 }
 
 // A stable UUID (version 5 layout, SHA-1) for a routine of a blueprint in a project, so

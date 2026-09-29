@@ -544,9 +544,7 @@ describe('mail send', () => {
 
   it('queues a draft once its approval request is approved and returns a rejected one', async () => {
     const { account } = await sendingAccount('imap.gmail.com');
-    const agentId = await insertAgent(account.teamId, 'hermes-vol-coordinator', [
-      account.projectId!,
-    ]);
+    const agentId = await insertAgent(account.teamId, 'vol-koordinator', [account.projectId!]);
     const request = async (status: string) => {
       const [row] = await db
         .insert(approvalRequest)

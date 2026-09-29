@@ -401,7 +401,7 @@ def descriptor_identity(name: str, item: dict[str, Any]) -> tuple[str, str] | No
     """The project slug and Plan username a descriptor must carry, from its file name:
     `<slug>` is the project's coordinator, `<slug>_<agentId>` another agent of the project."""
     if COORDINATOR_DESCRIPTOR.fullmatch(name):
-        return name, f'hermes-{name}-coordinator'
+        return name, f'{name}-koordinator'
     match = PROJECT_AGENT_DESCRIPTOR.fullmatch(name)
     username = item.get('username')
     if (

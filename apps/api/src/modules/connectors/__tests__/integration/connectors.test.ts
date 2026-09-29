@@ -616,7 +616,7 @@ describe('SSH keys', () => {
 
     // The project's coordinator, which a new project gets.
     const started = (await clone()).data!;
-    expect(started).toMatchObject({ agentName: 'Hermes MKT Coordinator', name: 'homepage' });
+    expect(started).toMatchObject({ agentName: 'Coordinator MKT', name: 'homepage' });
     // Without one: an agent of this one project, still not the Home agent.
     const coordinatorUser = (await asOwner.teams({ teamId })['ai-agents'].get()).data!.find(
       (agent) => agent.id === started.agentId,

@@ -247,7 +247,7 @@ export type AgentRole = 'home' | 'coordinator' | 'specialist';
 // The Home role is persisted; a project's coordinator uses the coordinator handle.
 export function agentRole(agent: Pick<AiAgent, 'username' | 'agentRole'>): AgentRole {
   if (agent.agentRole === 'home') return 'home';
-  return agent.username.endsWith('-coordinator') ? 'coordinator' : 'specialist';
+  return agent.username.endsWith('-koordinator') ? 'coordinator' : 'specialist';
 }
 
 export interface AgentGroup {

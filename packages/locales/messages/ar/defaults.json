@@ -46,7 +46,7 @@
     "list": "قائمة",
     "allTasks": "كل المهام"
   },
-  "coordinator": "منسق Hermes {key}",
+  "coordinator": "منسق {key}",
   "teamRole": "عضو",
   "blocked": {
     "label": "محظور",

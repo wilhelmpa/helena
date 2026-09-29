@@ -46,7 +46,7 @@
     "list": "List",
     "allTasks": "All tasks"
   },
-  "coordinator": "Hermes {key} Coordinator",
+  "coordinator": "Coordinator {key}",
   "teamRole": "Member",
   "blocked": {
     "label": "Blocked",
