@@ -17,14 +17,18 @@ import {
 import { useAgentStatus } from '@/utils/helenaStatus';
 import AgentSettingsModalContent from './AgentSettingsModalContent';
 import AgentOverview from './AgentOverview';
-import { AGENT_DIALOG_OPEN, AGENT_PARAM } from './settingsModalCatalog';
+import { AGENT_DIALOG_OPEN, AGENT_PARAM, LEGACY_AGENT_PARAM } from './settingsModalCatalog';
 
 let pushedEntry = false;
+
+const onAgentsPage = () =>
+  typeof window !== 'undefined' && window.location.pathname.startsWith('/agents');
 
 function hrefWith(agentId: number | null, tab?: string) {
   const url = new URL(window.location.href);
   url.searchParams.delete('agentTab');
   url.searchParams.delete('agentRunId');
+  if (onAgentsPage()) url.searchParams.delete(LEGACY_AGENT_PARAM);
   if (agentId == null) url.searchParams.delete(AGENT_PARAM);
   else {
     url.searchParams.set(AGENT_PARAM, String(agentId));
@@ -62,7 +66,9 @@ function AgentHeading({
 export default function AgentDialog() {
   const t = useTranslations('settings.modal');
   const params = useSearchParams();
-  const fromUrl = Number(params.get(AGENT_PARAM)) || null;
+  const fromUrl =
+    Number(params.get(AGENT_PARAM) ?? (onAgentsPage() ? params.get(LEGACY_AGENT_PARAM) : null)) ||
+    null;
   const [teamHint, setTeamHint] = useState<number | null>(null);
   const teams = useTeamsQuery().data ?? [];
   const teamId = teamHint ?? teams[0]?.id ?? null;
@@ -76,7 +82,9 @@ export default function AgentDialog() {
       window.history.back();
       return;
     }
-    if (agentId != null && !new URLSearchParams(window.location.search).has(AGENT_PARAM)) {
+    const search = new URLSearchParams(window.location.search);
+    const open = search.has(AGENT_PARAM) || (onAgentsPage() && search.has(LEGACY_AGENT_PARAM));
+    if (agentId != null && !open) {
       pushedEntry = true;
       window.history.pushState(null, '', href);
       return;
@@ -97,10 +105,7 @@ export default function AgentDialog() {
   }, [go]);
 
   // The old agent page linked a tab and a run as `tab`/`run` (/agents?agent=7&tab=runs&run=1).
-  const legacy = (key: string) =>
-    typeof window !== 'undefined' && window.location.pathname.startsWith('/agents')
-      ? params.get(key)
-      : null;
+  const legacy = (key: string) => (onAgentsPage() ? params.get(key) : null);
 
   if (fromUrl == null || teamId == null) return null;
   return (
