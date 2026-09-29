@@ -667,6 +667,10 @@ async function readStdin(limit: number): Promise<string> {
 // one operation on stdin and answers on stdout; HERMES_HOME is the profile the launcher
 // bound into the unit.
 async function profileHelper(): Promise<void> {
+  // The launcher starts the helper with an empty environment, but it only ever runs for an
+  // isolated agent: what it writes must be what the isolated agent reaches (e.g. Halogen at
+  // 8731, forwarded to the priority proxy's socket, not the host's 8741; 29.09.).
+  process.env.AGENT_ISOLATION = 'on';
   const home = process.env.HERMES_HOME;
   let answer: unknown;
   try {
