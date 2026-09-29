@@ -38,6 +38,26 @@ const PREFER_ONLY: readonly LocalAiMode[] = ['off', 'prefer'];
 
 export const BUILTIN_TASK_CLASSES: LocalAiTaskClass[] = [
   {
+    id: 'skill-usage',
+    label: 'Skill usage',
+    description:
+      '47 synthetic role cases: applicable skill, executed procedure, no unnecessary skills',
+    unit: 'gpu',
+    capability: 'tools',
+    priority: 'background',
+    thinking: 'off',
+    inMasterDefault: false,
+    wired: false,
+    experimental: true,
+    modes: PREFER_ONLY,
+    evaluate: async (context) => {
+      if (!context.runSkillUsage) throw new Error('Native skill-usage eval runner unavailable');
+      return context.runSkillUsage();
+    },
+    evalVersion: 1,
+    threshold: 1,
+  },
+  {
     id: 'skill-learning',
     label: 'Skill learning',
     description: 'Native creation, correction, safe non-learning and reuse with fewer tool calls',

@@ -63,6 +63,32 @@ export function openAiEvalContext(options: {
     signal: options.signal,
     judge: options.judge,
     runCodingTask: options.runCodingTask,
+    async runSkillUsage() {
+      const { runSkillUsageEval } =
+        await import('../../../../../packages/agent-runtime/src/skill-usage-eval');
+      return runSkillUsageEval({
+        config: {
+          model: `helena-halogen/${options.model}`,
+          reasoning: options.thinking === 'off' ? 'none' : (options.thinking ?? 'none'),
+          servers: [
+            {
+              provider: 'helena-halogen',
+              kind: 'openai-compatible',
+              baseUrl: priorityProxyBaseUrl(options.baseUrl),
+              keyEnv: 'VOLITION_EVAL_KEY',
+              local: isLocalHalogenUrl(options.baseUrl),
+              thinkingSwitch: true,
+            },
+          ],
+          workdir: '/tmp',
+        },
+        env: {
+          VOLITION_EVAL_KEY: options.key ?? undefined,
+          VOLITION_HALOGEN_PRIORITY: 'background',
+        },
+        signal: options.signal ?? AbortSignal.timeout(30 * 60_000),
+      });
+    },
     async runSkillLearning() {
       const { runSkillLearningEval } =
         await import('../../../../../packages/agent-runtime/src/skill-learning-eval');

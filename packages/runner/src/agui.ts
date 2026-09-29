@@ -37,7 +37,11 @@ export type AgUiEvent =
       content: string;
       // AG-UI has no error flag on a result: a failed tool says so here, with MCP's name
       // for it, and `content` is its error.
-      metadata?: { isError: true };
+      metadata?: {
+        isError?: true;
+        outcome?: 'ok' | 'nonzero_with_output' | 'error';
+        exitCode?: number | null;
+      };
     };
 
 // What one model call of the answer read and wrote, normalised across the commands: the
@@ -344,7 +348,12 @@ export class AnswerStream {
         this.pushToolCall(event.id, event.name, event.input);
         return;
       case 'tool-result':
-        this.pushToolResult(event.id, event.output, event.isError === true);
+        this.pushToolResult(
+          event.id,
+          event.output,
+          event.isError === true,
+          event.outcome ? { outcome: event.outcome, exitCode: event.exitCode } : undefined,
+        );
         return;
       case 'result':
         if (!this.sawAnyText) this.appendText(event.text);
@@ -570,7 +579,12 @@ export class AnswerStream {
     );
   }
 
-  private pushToolResult(toolCallId: string, content: string, isError = false): void {
+  private pushToolResult(
+    toolCallId: string,
+    content: string,
+    isError = false,
+    outcome?: { outcome: 'ok' | 'nonzero_with_output' | 'error'; exitCode?: number | null },
+  ): void {
     this.drainText(true);
     this.closeReasoning();
     this.queued.push({
@@ -578,7 +592,9 @@ export class AnswerStream {
       messageId: this.messageId,
       toolCallId,
       content: tail(this.mask.text(content), TOOL_TEXT_LIMIT),
-      ...(isError && { metadata: { isError: true as const } }),
+      ...((isError || outcome) && {
+        metadata: { ...outcome, ...(isError && { isError: true as const }) },
+      }),
     });
   }
 }

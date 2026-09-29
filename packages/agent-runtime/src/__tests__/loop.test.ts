@@ -342,13 +342,15 @@ describe('agent loop', () => {
     }
   });
 
-  test('the shell tool runs commands and reports red tests', async () => {
+  test('the shell tool preserves output for nonzero command exits', async () => {
     const { sink } = await run([
       { calls: [{ name: 'shell', input: { command: 'echo hallo && exit 3' } }] },
       { text: 'ok' },
     ]);
     const output = sink.of('tool-result')[0]!;
-    expect(output.isError).toBe(true);
+    expect(output.isError).not.toBe(true);
+    expect(output.outcome).toBe('nonzero_with_output');
+    expect(output.exitCode).toBe(3);
     expect(output.output).toContain('Exit code 3');
     expect(output.output).toContain('hallo');
   });

@@ -7,6 +7,7 @@ import { resultEvent, runLoop, type LoopResult } from './loop';
 import type { SpendEvent } from './events';
 import { modelChain, resolveModel, type ModelFactory, type ResolvedModel } from './models';
 import { buildSystemPrompt } from './prompt';
+import { workspaceState } from './workspace';
 import {
   FileSessionStore,
   HelenaSessionStore,
@@ -265,6 +266,8 @@ export async function runAgent(input: AgentRunInput): Promise<LoopResult> {
       skills,
       serverInstructions,
       workdir: config.workdir,
+      role: `${profile} ${(config.instructions ?? '').split('\n')[0]}`,
+      workspaceState: await workspaceState(config.workdir, input.env),
     });
 
     // The decision service's view of the task (Helena's `decide` tool), asked only where the

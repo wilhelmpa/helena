@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'bun:test';
-import { parseFrontmatter, isDisallowedRef, parseGithubSkillUrl } from '../../skill-format';
+import {
+  parseFrontmatter,
+  isDisallowedRef,
+  runtimeReferencePath,
+  parseGithubSkillUrl,
+} from '../../skill-format';
 
 // Pure parsing/validation for the skill format: SKILL.md frontmatter, the reference
 // file denylist, and the GitHub URL parser. No network or DB, so these are unit
@@ -28,14 +33,14 @@ describe('parseFrontmatter', () => {
 });
 
 describe('isDisallowedRef', () => {
-  it('rejects executable file types', () => {
-    for (const f of ['run.sh', 'tool.py', 'a.js', 'x.exe', 'lib.dll']) {
+  it('rejects binary executables', () => {
+    for (const f of ['x.exe', 'lib.dll', 'module.wasm']) {
       expect(isDisallowedRef(f)).toBe(true);
     }
   });
 
-  it('allows documents and files without a script extension', () => {
-    for (const f of ['notes.md', 'table.csv', 'image.png', 'README']) {
+  it('allows documents and script source for policy-controlled execution', () => {
+    for (const f of ['notes.md', 'table.csv', 'image.png', 'README', 'run.sh', 'tool.py', 'a.js']) {
       expect(isDisallowedRef(f)).toBe(false);
     }
   });
@@ -88,4 +93,17 @@ describe('parseGithubSkillUrl', () => {
   it('rejects an unsupported marker', () => {
     expect(() => parseGithubSkillUrl('https://github.com/o/r/commits/main')).toThrow();
   });
+});
+
+it('delivers safe script and reference paths without path traversal', () => {
+  for (const path of [
+    'scripts/check.py',
+    'scripts/__init__.py',
+    'refs/data.json',
+    'scripts/run.sh',
+    'README',
+  ])
+    expect(runtimeReferencePath(path)).toBe(true);
+  for (const path of ['../secret', '/tmp/secret', 'refs/../secret', 'scripts/module.so'])
+    expect(runtimeReferencePath(path)).toBe(false);
 });

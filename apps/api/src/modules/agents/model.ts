@@ -125,6 +125,8 @@ export type ChatPart =
       args?: string;
       result?: string;
       isError?: boolean;
+      outcome?: 'ok' | 'nonzero_with_output' | 'error';
+      exitCode?: number | null;
     };
 
 // One message of a conversation. Only user and assistant turns are returned; a tool

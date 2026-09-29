@@ -52,6 +52,8 @@ export interface Limits {
 
 export interface SkillEntry {
   name: string;
+  displayName?: string;
+  whenToUse?: string;
   description: string;
   markdown: string;
   files?: { path: string; content: string }[];

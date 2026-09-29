@@ -2,7 +2,8 @@ import { HttpError } from '#shared/lib';
 
 // Parsing and validation for skills in the Anthropic Agent Skill format: a SKILL.md
 // with YAML frontmatter (name/description) plus optional reference files, no
-// executable scripts. Kept dependency-free — only the two frontmatter keys are read,
+// binary executables. Script sources are delivered as text, never executed on import.
+// Kept dependency-free — only the two frontmatter keys are read,
 // so a minimal parser is enough and there is no YAML dependency to pull in.
 
 export interface SkillFrontmatter {
@@ -60,30 +61,18 @@ export function parseFrontmatter(markdown: string): SkillFrontmatter {
   return out;
 }
 
-// File extensions that make a reference executable. Rejected on upload so a skill
-// carries only knowledge, never runnable code.
-const DISALLOWED_REF_EXTENSIONS = new Set([
-  'sh',
-  'bash',
-  'zsh',
-  'js',
-  'mjs',
-  'cjs',
-  'ts',
-  'py',
-  'rb',
-  'pl',
-  'php',
-  'exe',
-  'bat',
-  'cmd',
-  'ps1',
-  'com',
-  'bin',
-  'so',
-  'dll',
-  'app',
-]);
+// Scripts are delivered as source text; executing one still goes through shell policy.
+const DISALLOWED_REF_EXTENSIONS = new Set(['exe', 'com', 'bin', 'so', 'dll', 'app', 'wasm']);
+
+export function runtimeReferencePath(path: string): boolean {
+  const segments = path.split('/');
+  return (
+    segments.length <= 8 &&
+    segments.every((part) => /^[A-Za-z0-9_][A-Za-z0-9._-]*$/.test(part)) &&
+    !isDisallowedRef(path) &&
+    !/\.(png|jpe?g|gif|webp|ico|pdf|zip|gz|woff2?|ttf|mp[34]|wav)$/i.test(path)
+  );
+}
 
 export function isDisallowedRef(filename: string): boolean {
   const ext = filename.split('.').pop()?.toLowerCase() ?? '';
@@ -250,11 +239,7 @@ export interface ImportedSkill {
   refs: ImportedRef[];
 }
 
-// Imports a skill from a public GitHub folder: the SKILL.md plus every markdown
-// reference file in the folder and its subfolders, with paths kept relative to the
-// folder so links inside SKILL.md resolve. Only .md files are taken, so scripts and
-// other files are never imported. A subfolder that is itself a skill (has its own
-// SKILL.md) is left out. Bounded by MAX_SKILL_REFS and MAX_IMPORT_BYTES.
+// Keep relative reference and script paths; nested skills are separate bundles.
 export async function importGithubSkill(url: string): Promise<ImportedSkill> {
   const loc = parseGithubSkillUrl(url);
   const tree = await fetchTree(loc);
@@ -276,15 +261,27 @@ export async function importGithubSkill(url: string): Promise<ImportedSkill> {
   const refs: ImportedRef[] = [];
   let total = Buffer.byteLength(markdown, 'utf8');
   for (const f of tree.files) {
-    if (refs.length >= MAX_SKILL_REFS || total >= MAX_IMPORT_BYTES) break;
     if (f.path === skillPath || (prefix && !f.path.startsWith(prefix))) continue;
-    // Only markdown references; this is what excludes scripts by construction.
-    if (!f.path.toLowerCase().endsWith('.md')) continue;
+    if (!runtimeReferencePath(f.path.slice(prefix.length))) continue;
     if (nestedSkillDirs.some((d) => f.path.startsWith(`${d}/`))) continue;
-    if (f.size > MAX_SKILL_BYTES || total + f.size > MAX_IMPORT_BYTES) continue;
+    if (
+      refs.length >= MAX_SKILL_REFS ||
+      f.size > MAX_SKILL_BYTES ||
+      total + f.size > MAX_IMPORT_BYTES
+    )
+      throw new HttpError(
+        413,
+        'Skill references exceed import limits; refusing an incomplete skill',
+      );
     const bytes = await fetchFile(loc, tree.ref, f.path);
     total += bytes.length;
-    refs.push({ path: f.path.slice(prefix.length), bytes, contentType: 'text/markdown' });
+    if (bytes.includes(0) || total > MAX_IMPORT_BYTES || bytes.length > MAX_SKILL_BYTES)
+      throw new HttpError(413, 'Skill reference is not bounded text');
+    refs.push({
+      path: f.path.slice(prefix.length),
+      bytes,
+      contentType: f.path.endsWith('.md') ? 'text/markdown' : 'text/plain',
+    });
   }
   return { markdown, refs };
 }

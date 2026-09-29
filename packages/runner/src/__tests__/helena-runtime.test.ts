@@ -108,6 +108,30 @@ describe('the helena runtime', () => {
     expect(answer.model()).toBe('helena-halogen/flash');
   });
 
+  it('preserves neutral terminal outcomes through the API event stream', async () => {
+    const events: AgUiEvent[] = [];
+    const answer = new AnswerStream('helena-jsonl', 't', '1', async (batch) => {
+      events.push(...batch);
+    });
+    answer.write(
+      lines(
+        { type: 'tool-call', id: 'terminal-1', name: 'shell', input: '{}' },
+        {
+          type: 'tool-result',
+          id: 'terminal-1',
+          output: 'partial output',
+          outcome: 'nonzero_with_output',
+          exitCode: 1,
+        },
+      ),
+    );
+    await answer.finish('');
+    expect(events.find((event) => event.type === 'TOOL_CALL_RESULT')).toMatchObject({
+      metadata: { outcome: 'nonzero_with_output', exitCode: 1 },
+    });
+    expect(JSON.stringify(events)).not.toContain('"isError":true');
+  });
+
   it('builds its command line with the resume flag and the model of the run', () => {
     const argv = presetArgv(PRESETS.helena, 's-9', 'ctx', [], 'task', {
       model: 'halogen-qwen3.8-flash-next',

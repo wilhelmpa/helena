@@ -474,6 +474,10 @@ async function readAnswerParts(messageIds: number[]): Promise<Map<number, ChatPa
       delta: sql<string | null>`${agentChatEvent.payload}->>'delta'`,
       content: sql<string | null>`${agentChatEvent.payload}->>'content'`,
       toolCallId: sql<string | null>`${agentChatEvent.payload}->>'toolCallId'`,
+      outcome: sql<
+        'ok' | 'nonzero_with_output' | 'error' | null
+      >`${agentChatEvent.payload}->'metadata'->>'outcome'`,
+      exitCode: sql<number | null>`(${agentChatEvent.payload}->'metadata'->>'exitCode')::integer`,
       toolCallName: sql<string | null>`${agentChatEvent.payload}->>'toolCallName'`,
       // AG-UI 1.0 carries a failed tool's flag in the event's metadata; runners before it
       // sent it on the event itself.
@@ -522,6 +526,10 @@ async function readAnswerParts(messageIds: number[]): Promise<Map<number, ChatPa
         const call = calls.get(callKey);
         if (call && row.content) call.result = row.content;
         if (call && row.isError) call.isError = true;
+        if (call && row.outcome) {
+          call.outcome = row.outcome;
+          call.exitCode = row.exitCode;
+        }
         break;
       }
     }

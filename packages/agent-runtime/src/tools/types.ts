@@ -38,6 +38,7 @@ export interface ToolOutput {
   activate?: string[];
   // What the loop reads besides the text: a shell command's exit code and whether it ran
   // tests (two red test runs in a row are a failure the loop hands over).
+  outcome?: 'ok' | 'nonzero_with_output' | 'error';
   exitCode?: number | null;
   test?: boolean;
 }

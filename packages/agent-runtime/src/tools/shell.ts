@@ -46,8 +46,18 @@ export function runShell(
   env: Record<string, string>,
   timeoutMs: number,
   signal: AbortSignal,
-): Promise<{ code: number | null; output: string; timedOut: boolean }> {
+): Promise<{
+  code: number | null;
+  output: string;
+  timedOut: boolean;
+  startError?: string;
+  aborted?: boolean;
+}> {
   return new Promise((resolve) => {
+    if (signal.aborted) {
+      resolve({ code: null, output: '', timedOut: false, aborted: true });
+      return;
+    }
     const child = spawn('/bin/sh', ['-c', command], {
       cwd,
       env,
@@ -56,6 +66,7 @@ export function runShell(
     });
     let output = '';
     let timedOut = false;
+    let startError: string | undefined;
     const killGroup = () => {
       try {
         if (child.pid) process.kill(-child.pid, 'SIGKILL');
@@ -77,9 +88,12 @@ export function runShell(
     const done = (code: number | null) => {
       clearTimeout(timer);
       signal.removeEventListener('abort', onAbort);
-      resolve({ code, output, timedOut });
+      resolve({ code, output, timedOut, startError, aborted: signal.aborted });
     };
-    child.on('error', () => done(127));
+    child.on('error', (error: NodeJS.ErrnoException) => {
+      startError = error.code ?? 'spawn failed';
+      done(null);
+    });
     child.on('close', (code) => done(code));
   });
 }
@@ -90,7 +104,9 @@ export function shellTool(options: { timeoutMs: number; delivered?: string[] }):
     kind: 'shell',
     description:
       'Run a shell command in the working folder and get its output (stdout and stderr together, the end of long output). ' +
-      'Use it to run tests, builds, git and small scripts. No interactive commands.',
+      'Use it to run tests, builds, git and small scripts. No interactive commands. ' +
+      'Prefer small calls. Guard optional files with if test -f FILE; then COMMAND; fi or (test -f FILE && COMMAND) || true. ' +
+      'Use ; for independent checks, && for dependencies. Nonzero exit codes preserve useful output; inspect outcome and exitCode.',
     timeoutMs: options.timeoutMs + 5_000,
     inputSchema: {
       type: 'object',
@@ -102,8 +118,9 @@ export function shellTool(options: { timeoutMs: number; delivered?: string[] }):
     question: (input) => ({ tool: 'shell', command: text(input.command) }),
     async execute(input, ctx): Promise<ToolOutput> {
       const command = text(input.command).trim();
-      if (!command) return error('No command.');
-      const cwd = await realpath(ctx.workdir);
+      if (!command) return { ...error('No command.'), outcome: 'error' };
+      const cwd = await realpath(ctx.workdir).catch(() => null);
+      if (!cwd) return { ...error('Working folder is unavailable.'), outcome: 'error' };
       const result = await runShell(
         command,
         cwd,
@@ -111,12 +128,36 @@ export function shellTool(options: { timeoutMs: number; delivered?: string[] }):
         options.timeoutMs,
         ctx.signal,
       );
-      const head = result.timedOut
-        ? `Timed out after ${Math.round(options.timeoutMs / 1000)} s.`
-        : `Exit code ${result.code}.`;
+      const failed =
+        result.timedOut ||
+        result.aborted ||
+        !!result.startError ||
+        result.code === null ||
+        result.code === 126 ||
+        result.code === 127 ||
+        (result.code !== 0 && /permission denied|operation not permitted/i.test(result.output));
+      let outcome: ToolOutput['outcome'] = 'ok';
+      if (failed) outcome = 'error';
+      else if (result.code !== 0) outcome = 'nonzero_with_output';
+      let head = `Exit code ${result.code}.`;
+      if (result.timedOut) head = `Timed out after ${Math.round(options.timeoutMs / 1000)} s.`;
+      else if (result.startError) head = `Could not start command (${result.startError}).`;
+      else if (result.aborted) head = 'Command aborted.';
+      let hint = '';
+      if (outcome === 'nonzero_with_output') {
+        hint =
+          'The command completed with a nonzero exit code. Inspect partial results; do not claim the command or tests passed.';
+        if (/no such file|cannot open|not found/i.test(result.output))
+          hint =
+            'A file or path may be missing. Earlier output remains usable; check the failing part.';
+        else if (/AGENTS\.md/.test(command))
+          hint =
+            'The optional AGENTS.md read may have failed (inference; stderr may be hidden). Earlier output remains usable.';
+      }
       return {
-        text: `${head}\n${result.output.trim() || '(no output)'}`,
-        isError: result.timedOut || result.code !== 0,
+        text: `${head}\n${hint}\n${result.output.trim() || '(no output)'}`,
+        isError: outcome === 'error',
+        outcome,
         changed: true,
         exitCode: result.timedOut ? null : result.code,
         test: isTestCommand(command),
