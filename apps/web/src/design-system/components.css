@@ -2248,6 +2248,7 @@ a.ds-run-card:hover {
 .ds-canvas-toolbar {
   position: absolute;
   inset-inline-start: 50%;
+  width: max-content;
   bottom: var(--space-5);
   z-index: 10;
   display: flex;
@@ -2309,6 +2310,7 @@ a.ds-run-card:hover {
 }
 .ds-canvas-zoom {
   padding: 0 var(--space-1);
+  white-space: nowrap;
   font-family: var(--font-mono);
 }
 
@@ -2344,7 +2346,8 @@ a.ds-run-card:hover {
   overflow-y: auto;
 }
 .ds-knowledge-preview-body [data-knowledge-canvas] {
-  min-height: 420px;
+  flex: none;
+  height: min(70vh, 640px);
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
 }

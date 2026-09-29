@@ -251,7 +251,11 @@
       "doc": "Insertar documento",
       "task": "Insertar tarea",
       "connect": "Conectar"
-    }
+    },
+    "newTitle": "Nuevo lienzo",
+    "newHint": "Organiza y conecta tarjetas, documentos y tareas libremente; Obsidian abre el mismo archivo.",
+    "newName": "Nuevo lienzo",
+    "create": "Crear"
   },
   "origin": {
     "system": "Sistema",

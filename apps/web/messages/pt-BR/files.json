@@ -251,7 +251,11 @@
       "doc": "Inserir documento",
       "task": "Inserir tarefa",
       "connect": "Conectar"
-    }
+    },
+    "newTitle": "Nova tela",
+    "newHint": "Organize e conecte cartões, docs e tarefas livremente; o Obsidian abre o mesmo arquivo.",
+    "newName": "Nova tela",
+    "create": "Criar"
   },
   "origin": {
     "system": "Sistema",

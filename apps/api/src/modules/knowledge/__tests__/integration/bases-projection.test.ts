@@ -77,7 +77,8 @@ it('enforces project ACL for Bases and evaluates only authorized notes', async (
   );
   expect((template.data.frontmatter as { project: string }).project).toBe('MKT');
   expect((template.data.frontmatter as { origin: string }).origin).toBe('manual');
-  expect(template.data.content as string).toContain('# Neu\n');
+  expect(template.data.content as string).toStartWith('---\n');
+  expect(template.data.content as string).not.toContain('# ');
   const unsupportedPath = 'Projects/MKT/Docs/Unsupported.base';
   const unsupported = `formulas:\n  next: 'date(now)'\nviews:\n  - type: table\n    name: Unsupported\n    order: [formula.next]\npluginSetting: keep\n`;
   expect(

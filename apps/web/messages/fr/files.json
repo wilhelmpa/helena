@@ -251,7 +251,11 @@
       "doc": "Insérer un document",
       "task": "Insérer une tâche",
       "connect": "Relier"
-    }
+    },
+    "newTitle": "Nouveau canevas",
+    "newHint": "Disposez et reliez librement cartes, docs et tâches ; Obsidian ouvre le même fichier.",
+    "newName": "Nouveau canevas",
+    "create": "Créer"
   },
   "origin": {
     "system": "Système",

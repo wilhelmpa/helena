@@ -251,7 +251,11 @@
       "doc": "插入文档",
       "task": "插入任务",
       "connect": "连接"
-    }
+    },
+    "newTitle": "新建画布",
+    "newHint": "自由排列并连接卡片、文档和任务；Obsidian 打开的是同一个文件。",
+    "newName": "新画布",
+    "create": "创建"
   },
   "origin": {
     "system": "系统",

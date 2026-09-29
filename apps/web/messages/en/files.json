@@ -251,7 +251,11 @@
       "doc": "Insert doc",
       "task": "Insert task",
       "connect": "Connect"
-    }
+    },
+    "newTitle": "New canvas",
+    "newHint": "Arrange and connect cards, docs and tasks freely; Obsidian opens the same file.",
+    "newName": "New canvas",
+    "create": "Create"
   },
   "origin": {
     "system": "System",

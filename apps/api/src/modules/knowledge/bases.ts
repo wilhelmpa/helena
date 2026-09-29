@@ -275,11 +275,12 @@ export const baseRoutes = new Elysia({ name: 'knowledge-bases', detail: { tags: 
         // One of the origins every list shows (packages/vault/src/origin.ts).
         origin: 'manual',
       };
-      const title = paths.path.split('/').at(-1)!.replace(/\.md$/i, '');
+      // The note's name is its title (Helena shows it above the text), so the body starts
+      // empty rather than with a second heading.
       return {
         path: paths.path,
         frontmatter,
-        content: composeNote(frontmatter, `# ${title}\n`, null),
+        content: composeNote(frontmatter, '', null),
       };
     },
     {

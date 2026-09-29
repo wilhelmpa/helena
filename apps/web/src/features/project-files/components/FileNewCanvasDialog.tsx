@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import type { FileScope } from '@/lib/api/endpoints/projectFiles';
 import { childPath } from '@/utils/vaultLinks';
 import { useCreateTextFile } from '../services/projectFiles.service';
@@ -14,13 +15,14 @@ export default function FileNewCanvasDialog({
   onCreated: (path: string) => void;
   onClose: () => void;
 }) {
+  const t = useTranslations('files.canvas');
   const create = useCreateTextFile(scope);
   return (
     <FileNameDialog
-      title="Neue Leinwand"
-      hint="Name der Leinwand"
-      initialName="Neue Leinwand"
-      submitLabel="Erstellen"
+      title={t('newTitle')}
+      hint={t('newHint')}
+      initialName={t('newName')}
+      submitLabel={t('create')}
       pending={create.isPending}
       onSubmit={(name) =>
         create.mutate(

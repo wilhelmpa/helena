@@ -251,7 +251,11 @@
       "doc": "Sisipkan dokumen",
       "task": "Sisipkan tugas",
       "connect": "Hubungkan"
-    }
+    },
+    "newTitle": "Kanvas baru",
+    "newHint": "Susun dan hubungkan kartu, dokumen, dan tugas dengan bebas; Obsidian membuka berkas yang sama.",
+    "newName": "Kanvas baru",
+    "create": "Buat"
   },
   "origin": {
     "system": "Sistem",

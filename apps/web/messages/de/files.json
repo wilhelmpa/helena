@@ -251,7 +251,11 @@
       "doc": "Doc einfügen",
       "task": "Aufgabe einfügen",
       "connect": "Verbinden"
-    }
+    },
+    "newTitle": "Neue Leinwand",
+    "newHint": "Karten, Docs und Aufgaben frei anordnen und verbinden; Obsidian öffnet dieselbe Datei.",
+    "newName": "Neue Leinwand",
+    "create": "Erstellen"
   },
   "origin": {
     "system": "System",
