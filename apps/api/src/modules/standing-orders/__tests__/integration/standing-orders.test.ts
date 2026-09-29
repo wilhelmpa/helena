@@ -132,7 +132,9 @@ describe('standing orders', () => {
       body: 'Report every Friday',
       source: 'Owner',
     });
-    expect((await asOwner.helena['standing-orders']({ orderId: helena.data!.id }).delete()).status).toBe(200);
+    expect(
+      (await asOwner.helena['standing-orders']({ orderId: helena.data!.id }).delete()).status,
+    ).toBe(200);
     expect(await activeOrderContext(null, home.agentId)).not.toContain('Report every Friday');
   });
 });
