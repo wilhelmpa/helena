@@ -6,10 +6,12 @@ import { entityGuard, guards } from '#shared/guards';
 import { commonErrors } from '#shared/responses';
 import { getIssueProjectId } from '#modules/issues/service';
 import { issueWhy, projectWhyChains } from '#modules/project-goals/ladder';
+import { issueClaim } from '#modules/issues/claim';
 import { IssueWhyResponse, ProjectWhyChainsResponse } from '#modules/project-goals/model';
 import { HttpError } from '#shared/lib';
 import {
   GoalDetailResponse,
+  IssueClaimResponse,
   GoalNoteResponse,
   GoalSummaryResponse,
   IssueGoalResponse,
@@ -59,6 +61,17 @@ export const goalRoutes = new Elysia({ name: 'goals', detail: { tags: ['Goals'] 
       },
     },
   )
+  // "bearbeitet von …": the agent whose run holds the task's work lease right now.
+  .get('/issues/:issueId/claim', ({ params }) => issueClaim(params.issueId), {
+    params: issueGoalParams,
+    workItem: 'read',
+    response: { 200: t.Nullable(IssueClaimResponse), ...commonErrors },
+    detail: {
+      summary: 'Get who works on a task right now',
+      description:
+        'The agent whose run holds the task, and since when; null while no run holds it.',
+    },
+  })
   .get(
     '/teams/:teamId/goals',
     ({ membership, query }) =>

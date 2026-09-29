@@ -107,7 +107,19 @@
     "create": "Criar objetivo",
     "titlePlaceholder": "Título do objetivo",
     "descriptionPlaceholder": "Do que se trata e como você saberá que foi alcançado?",
-    "none": "Nenhum"
+    "none": "Nenhum",
+    "ladder": "Escada de metas",
+    "ladderAlone": "Esta meta é independente: não serve a outra meta e nenhuma a serve.",
+    "back": "Voltar às metas",
+    "actions": "Ações de {title}",
+    "why": "Por quê",
+    "work": "Trabalho",
+    "saveFailed": "A alteração não foi salva.",
+    "deleteTitle": "Excluir a meta “{title}”?",
+    "deleteBody": "As metas abaixo dela deixam de servir a uma meta; as tarefas vinculadas permanecem.",
+    "wholeTeam": "Equipe inteira",
+    "list": "Metas",
+    "proposalsWaiting": "Há propostas aguardando sua decisão"
   },
   "agents": {
     "empty": "Esta equipe não tem agentes.",

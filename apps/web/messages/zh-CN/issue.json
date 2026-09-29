@@ -40,7 +40,10 @@
     "why": "原因",
     "cost": "成本",
     "costUnpriced": "未定价",
-    "costTokens": "{tokens} 令牌"
+    "costTokens": "{tokens} 令牌",
+    "claimedBy": "处理人",
+    "claimedSince": "已 {age}",
+    "claimedHint": "此代理当前持有该任务；其他运行会等待其释放。"
   },
   "menu": {
     "preview": "预览",

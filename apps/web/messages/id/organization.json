@@ -107,7 +107,19 @@
     "create": "Buat tujuan",
     "titlePlaceholder": "Judul tujuan",
     "descriptionPlaceholder": "Tentang apa, dan bagaimana kamu tahu sudah tercapai?",
-    "none": "Tidak ada"
+    "none": "Tidak ada",
+    "ladder": "Tangga tujuan",
+    "ladderAlone": "Tujuan ini berdiri sendiri: tidak melayani tujuan lain dan tidak dilayani tujuan lain.",
+    "back": "Kembali ke tujuan",
+    "actions": "Tindakan untuk {title}",
+    "why": "Mengapa",
+    "work": "Pekerjaan",
+    "saveFailed": "Perubahan tidak tersimpan.",
+    "deleteTitle": "Hapus tujuan “{title}”?",
+    "deleteBody": "Tujuan di bawahnya tidak lagi melayani tujuan apa pun; tugas yang terhubung tetap ada.",
+    "wholeTeam": "Seluruh tim",
+    "list": "Tujuan",
+    "proposalsWaiting": "Ada usulan menunggu keputusanmu"
   },
   "agents": {
     "empty": "Tim ini tidak memiliki agen.",

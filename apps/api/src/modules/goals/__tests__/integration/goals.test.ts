@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it } from 'bun:test';
+import { agentRun, db, issueWorkClaim } from '@repo/db';
 import { apiKeyApi, authedApi } from '#tests/helpers/app';
 import { createAgent } from '#tests/helpers/agents';
 import { signUpTestUser } from '#tests/helpers/auth';
@@ -84,6 +85,38 @@ describe('goals', () => {
     // A person of the team sees every goal.
     const owner = await api.teams({ teamId }).goals.get({ query: {} });
     expect(owner.data!.map((goal) => goal.title)).toContain('Cheaper hosting');
+  });
+
+  it('names the agent whose run holds a task, while its lease lasts', async () => {
+    const { api, agent, mkt } = await setup();
+    const columnId = await columnOf(api, 'MKT', 'unstarted');
+    const created = (
+      await api.projects({ projectKey: 'MKT' }).issues.post({ title: 'Claimed task', columnId })
+    ).data!;
+    const claim = () => api.issues({ issueId: created.id }).claim.get();
+    expect((await claim()).data).toBeNull();
+
+    const [run] = await db
+      .insert(agentRun)
+      .values({ agentId: agent.id, projectId: mkt.id, issueId: created.id, prompt: 'Work' })
+      .returning({ id: agentRun.id });
+    await db.insert(issueWorkClaim).values({
+      issueId: created.id,
+      runId: run!.id,
+      claim: 1,
+      expiresAt: new Date(Date.now() + 60_000),
+    });
+    const held = await claim();
+    expect(held.status).toBe(200);
+    expect(held.data).toMatchObject({
+      agent: { id: agent.id, name: 'Writer', username: 'writer' },
+      runId: run!.id,
+    });
+
+    // An expired lease is free: nobody holds the task.
+    await db.update(issueWorkClaim).set({ expiresAt: new Date(Date.now() - 1_000) });
+    expect((await claim()).data).toBeNull();
+    expect((await api.issues({ issueId: 999_999 }).claim.get()).status).toBe(404);
   });
 
   it('links tasks to a goal on create and counts them in its progress', async () => {

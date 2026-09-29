@@ -161,5 +161,11 @@
   "deleteTitle": "删除目标",
   "deleteConfirm": "删除“{name}”？任务会留在项目中，只是不再属于此目标。",
   "sortBy": "排序",
-  "sortDefault": "自定义顺序"
+  "sortDefault": "自定义顺序",
+  "why": {
+    "label": "为什么",
+    "choose": "选择 Helena 目标",
+    "none": "尚未服务于任何 Helena 目标。",
+    "noneOption": "无目标"
+  }
 }

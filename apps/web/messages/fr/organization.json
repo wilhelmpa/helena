@@ -107,7 +107,19 @@
     "create": "Créer l'objectif",
     "titlePlaceholder": "Titre de l'objectif",
     "descriptionPlaceholder": "De quoi s'agit-il, et comment sauras-tu qu'il est atteint ?",
-    "none": "Aucun"
+    "none": "Aucun",
+    "ladder": "Échelle des objectifs",
+    "ladderAlone": "Cet objectif est autonome : il ne sert aucun autre objectif et aucun ne le sert.",
+    "back": "Retour aux objectifs",
+    "actions": "Actions pour {title}",
+    "why": "Pourquoi",
+    "work": "Travail",
+    "saveFailed": "La modification n’a pas été enregistrée.",
+    "deleteTitle": "Supprimer l’objectif « {title} » ?",
+    "deleteBody": "Les objectifs en dessous ne servent plus aucun objectif ; les tâches liées restent.",
+    "wholeTeam": "Toute l’équipe",
+    "list": "Objectifs",
+    "proposalsWaiting": "Des propositions attendent ta décision"
   },
   "agents": {
     "empty": "Cette équipe n’a aucun agent.",

@@ -161,5 +161,11 @@
   "deleteTitle": "Supprimer l’objectif",
   "deleteConfirm": "Supprimer « {name} » ? Les tâches restent dans le projet, sans cet objectif.",
   "sortBy": "Trier",
-  "sortDefault": "Ordre personnalisé"
+  "sortDefault": "Ordre personnalisé",
+  "why": {
+    "label": "Pourquoi",
+    "choose": "Choisir un objectif Helena",
+    "none": "Ne sert encore aucun objectif Helena.",
+    "noneOption": "Aucun objectif"
+  }
 }

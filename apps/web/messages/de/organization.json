@@ -107,7 +107,19 @@
     "create": "Ziel anlegen",
     "titlePlaceholder": "Zieltitel",
     "descriptionPlaceholder": "Worum geht es, woran erkennst du, dass es erreicht ist?",
-    "none": "Keine Angabe"
+    "none": "Keine Angabe",
+    "ladder": "Ziel-Leiter",
+    "ladderAlone": "Dieses Ziel steht für sich: Es dient keinem anderen, und keines dient ihm.",
+    "back": "Zurück zu den Zielen",
+    "actions": "Aktionen für {title}",
+    "why": "Warum",
+    "work": "Arbeit",
+    "saveFailed": "Die Änderung wurde nicht gespeichert.",
+    "deleteTitle": "Ziel „{title}“ löschen?",
+    "deleteBody": "Die Ziele darunter hängen danach an keinem Ziel mehr, verknüpfte Aufgaben bleiben erhalten.",
+    "wholeTeam": "Ganzes Team",
+    "list": "Ziele",
+    "proposalsWaiting": "Vorschläge warten auf deine Entscheidung"
   },
   "agents": {
     "empty": "Dieses Team hat keine Agenten.",

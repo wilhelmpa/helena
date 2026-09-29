@@ -116,3 +116,10 @@ export const IssueGoalResponse = t.Object({
   issueId: t.Number(),
   goalId: t.Nullable(t.Number()),
 });
+
+export const IssueClaimResponse = t.Object({
+  agent: t.Object({ id: t.Number(), name: t.String(), username: t.String() }),
+  runId: t.Number(),
+  since: t.String(),
+  expiresAt: t.String(),
+});

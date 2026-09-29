@@ -107,7 +107,19 @@
     "create": "Crear objetivo",
     "titlePlaceholder": "Título del objetivo",
     "descriptionPlaceholder": "¿De qué trata y cómo sabrás que se ha logrado?",
-    "none": "Ninguno"
+    "none": "Ninguno",
+    "ladder": "Escalera de objetivos",
+    "ladderAlone": "Este objetivo es independiente: no sirve a otro ni otro le sirve.",
+    "back": "Volver a los objetivos",
+    "actions": "Acciones de {title}",
+    "why": "Por qué",
+    "work": "Trabajo",
+    "saveFailed": "El cambio no se guardó.",
+    "deleteTitle": "¿Eliminar el objetivo «{title}»?",
+    "deleteBody": "Los objetivos que dependen de él quedan sin objetivo superior; las tareas vinculadas se mantienen.",
+    "wholeTeam": "Todo el equipo",
+    "list": "Objetivos",
+    "proposalsWaiting": "Hay propuestas esperando tu decisión"
   },
   "agents": {
     "empty": "Este equipo no tiene agentes.",

@@ -107,7 +107,19 @@
     "create": "Create goal",
     "titlePlaceholder": "Goal title",
     "descriptionPlaceholder": "What is it about, and how will you know it is reached?",
-    "none": "None"
+    "none": "None",
+    "ladder": "Goal ladder",
+    "ladderAlone": "This goal stands on its own: it serves no other goal, and none serves it.",
+    "back": "Back to the goals",
+    "actions": "Actions for {title}",
+    "why": "Why",
+    "work": "Work",
+    "saveFailed": "The change was not saved.",
+    "deleteTitle": "Delete the goal “{title}”?",
+    "deleteBody": "The goals below it then serve no goal; linked tasks stay.",
+    "wholeTeam": "Whole team",
+    "list": "Goals",
+    "proposalsWaiting": "Proposals are waiting for your decision"
   },
   "agents": {
     "empty": "This team has no agents.",

@@ -20,6 +20,15 @@ export interface IssueWhy {
 
 export const getIssueWhy = (id: number) => request<IssueWhy>(`/issues/${id}/why`);
 
+// Who works on a task right now: the agent whose run holds it, since when; null when nobody.
+export interface IssueClaim {
+  agent: { id: number; name: string; username: string };
+  runId: number;
+  since: string;
+  expiresAt: string;
+}
+export const getIssueClaim = (id: number) => request<IssueClaim | null>(`/issues/${id}/claim`);
+
 // The subtask disposition as the delete route takes it: a query string, since a
 // DELETE carries no body.
 function subtaskQuery(disposition?: SubtaskDisposition): string {

@@ -107,7 +107,19 @@
     "create": "创建目标",
     "titlePlaceholder": "目标标题",
     "descriptionPlaceholder": "目标是什么？如何判断已经达成？",
-    "none": "无"
+    "none": "无",
+    "ladder": "目标阶梯",
+    "ladderAlone": "此目标独立存在：不服务于其他目标，也没有目标服务于它。",
+    "back": "返回目标",
+    "actions": "{title} 的操作",
+    "why": "为什么",
+    "work": "工作",
+    "saveFailed": "更改未保存。",
+    "deleteTitle": "删除目标「{title}」？",
+    "deleteBody": "其下的目标将不再服务于任何目标；关联的任务会保留。",
+    "wholeTeam": "整个团队",
+    "list": "目标",
+    "proposalsWaiting": "有提议等待你决定"
   },
   "agents": {
     "empty": "此团队没有代理。",

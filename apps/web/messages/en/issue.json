@@ -40,7 +40,10 @@
     "why": "Why",
     "cost": "Cost",
     "costUnpriced": "unpriced",
-    "costTokens": "{tokens} tokens"
+    "costTokens": "{tokens} tokens",
+    "claimedBy": "Worked on by",
+    "claimedSince": "for {age}",
+    "claimedHint": "This agent holds the task right now; other runs wait until it lets go."
   },
   "menu": {
     "preview": "Preview",

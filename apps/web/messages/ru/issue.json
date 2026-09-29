@@ -40,7 +40,10 @@
     "why": "Зачем",
     "cost": "Затраты",
     "costUnpriced": "без цены",
-    "costTokens": "{tokens} токенов"
+    "costTokens": "{tokens} токенов",
+    "claimedBy": "В работе у",
+    "claimedSince": "уже {age}",
+    "claimedHint": "Этот агент сейчас держит задачу; другие запуски ждут, пока он её отпустит."
   },
   "menu": {
     "preview": "Предпросмотр",
