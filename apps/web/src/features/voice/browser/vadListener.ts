@@ -32,9 +32,9 @@ export interface EarEvents {
   onError?(reason: 'blocked' | 'missing' | 'failed' | 'network'): void;
 }
 
-// vad-web includes the silence before SpeechEnd in the returned audio. Keep an extra 320 ms
+// vad-web includes the silence before SpeechEnd in the returned audio. Keep an extra 160 ms
 // after the configured pause so quiet final syllables remain in the utterance.
-export const VAD_TAIL_MS = 320;
+export const VAD_TAIL_MS = 160;
 
 export const detector = (pauseMs: number) => ({
   positiveSpeechThreshold: 0.5,

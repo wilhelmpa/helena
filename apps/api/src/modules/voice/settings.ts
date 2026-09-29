@@ -23,6 +23,9 @@ export interface VocabularyAlias {
 
 export interface VoiceSettings {
   pauseMs: number;
+  immediateResponse: boolean;
+  bridgeEnabled: boolean;
+  fallbackTimeoutMs: number;
   vocabulary: string[];
   vocabularyAliases: VocabularyAlias[] | null;
   voice: string | null;
@@ -33,6 +36,7 @@ export interface VoiceSettings {
 
 export const VOICE_SETTINGS_LIMITS = {
   pauseMs: { min: 300, max: 2000 },
+  fallbackTimeoutMs: { min: 300, max: 5000 },
   speed: { min: 0.7, max: 1.4 },
   // Whisper reads at most 224 tokens of prompt; the rest would be cut anyway.
   vocabularyWords: 60,
@@ -41,7 +45,10 @@ export const VOICE_SETTINGS_LIMITS = {
 } as const;
 
 export const DEFAULT_VOICE_SETTINGS: VoiceSettings = {
-  pauseMs: 600,
+  pauseMs: 300,
+  immediateResponse: true,
+  bridgeEnabled: true,
+  fallbackTimeoutMs: 800,
   vocabulary: [],
   vocabularyAliases: null,
   voice: null,
@@ -106,6 +113,19 @@ export function normalizeVoiceSettings(raw: unknown): VoiceSettings {
   const defaults = DEFAULT_VOICE_SETTINGS;
   return {
     pauseMs: Math.round(clamp(value.pauseMs, VOICE_SETTINGS_LIMITS.pauseMs, defaults.pauseMs)),
+    immediateResponse:
+      typeof value.immediateResponse === 'boolean'
+        ? value.immediateResponse
+        : defaults.immediateResponse,
+    bridgeEnabled:
+      typeof value.bridgeEnabled === 'boolean' ? value.bridgeEnabled : defaults.bridgeEnabled,
+    fallbackTimeoutMs: Math.round(
+      clamp(
+        value.fallbackTimeoutMs,
+        VOICE_SETTINGS_LIMITS.fallbackTimeoutMs,
+        defaults.fallbackTimeoutMs,
+      ),
+    ),
     vocabulary: uniqueWords(
       Array.isArray(value.vocabulary) ? (value.vocabulary as unknown[]).map(String) : [],
       VOICE_SETTINGS_LIMITS.vocabularyWords,

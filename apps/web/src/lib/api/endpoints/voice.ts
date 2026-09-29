@@ -18,7 +18,13 @@ export interface VoiceStatus {
   transcription: VoicePath;
   speech: VoicePath;
   // What the browser applies itself (absent from an older API).
-  settings?: { pauseMs: number; speed: number };
+  settings?: {
+    pauseMs: number;
+    speed: number;
+    immediateResponse: boolean;
+    bridgeEnabled: boolean;
+    fallbackTimeoutMs: number;
+  };
   limits: { maxSeconds: number; maxBytes: number; maxSpeechChars: number };
 }
 
@@ -76,6 +82,9 @@ export async function speakText(
 export interface VoiceSettings {
   // How long a pause ends a conversation turn (ms).
   pauseMs: number;
+  immediateResponse: boolean;
+  bridgeEnabled: boolean;
+  fallbackTimeoutMs: number;
   // Words the transcription should know, beyond Helena's own names.
   vocabulary: string[];
   vocabularyAliases: VocabularyAlias[] | null;
@@ -102,6 +111,9 @@ export type VoiceSettingsPatch = Partial<
   Pick<
     VoiceSettings,
     | 'pauseMs'
+    | 'immediateResponse'
+    | 'bridgeEnabled'
+    | 'fallbackTimeoutMs'
     | 'vocabulary'
     | 'vocabularyAliases'
     | 'voice'

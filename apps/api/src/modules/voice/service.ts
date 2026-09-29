@@ -104,7 +104,13 @@ export async function voiceStatus() {
     transcription: pathOf(transcription),
     speech: pathOf(speech),
     // What the browser applies itself.
-    settings: { pauseMs: settings.pauseMs, speed: settings.speed },
+    settings: {
+      pauseMs: settings.pauseMs,
+      speed: settings.speed,
+      immediateResponse: settings.immediateResponse,
+      bridgeEnabled: settings.bridgeEnabled,
+      fallbackTimeoutMs: settings.fallbackTimeoutMs,
+    },
     limits: {
       maxSeconds: VOICE_LIMITS.maxSeconds,
       maxBytes: VOICE_LIMITS.maxBytes,

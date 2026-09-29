@@ -29,4 +29,20 @@ describe('turnTimings', () => {
     assert.equal(timings.voiceMs, 0);
     assert.equal(timings.totalMs, 500);
   });
+
+  it('reports the first bridging sound separately from the real answer', () => {
+    const timings = turnTimings({
+      stoppedAt: 1000,
+      heardAt: 1460,
+      firstSoundAt: 1850,
+      firstSoundKind: 'bridge',
+      transcribedAt: 1900,
+      sentAt: 1910,
+      answerAt: 2400,
+      audibleAt: 2800,
+    });
+    assert.equal(timings.firstSoundMs, 850);
+    assert.equal(timings.firstSoundKind, 'bridge');
+    assert.equal(timings.totalMs, 1800);
+  });
 });

@@ -25,6 +25,9 @@ export const VoiceStatusResponse = t.Object({
   settings: t.Object({
     pauseMs: t.Number({ description: 'How long a pause ends a conversation turn (ms)' }),
     speed: t.Number({ description: 'How fast the local voice speaks (1 = normal)' }),
+    immediateResponse: t.Boolean(),
+    bridgeEnabled: t.Boolean(),
+    fallbackTimeoutMs: t.Number(),
   }),
   limits: t.Object({
     maxSeconds: t.Number({ description: 'The longest recording one request may carry' }),
@@ -66,6 +69,9 @@ export const speechBody = t.Object({
 
 const settingsFields = {
   pauseMs: t.Number({ minimum: 300, maximum: 2000, description: 'Pause that ends a turn (ms)' }),
+  immediateResponse: t.Boolean(),
+  bridgeEnabled: t.Boolean(),
+  fallbackTimeoutMs: t.Number({ minimum: 300, maximum: 5000 }),
   vocabulary: t.Array(t.String({ minLength: 1, maxLength: 60 }), {
     maxItems: 60,
     description: 'Words the transcription should know (names, products, terms)',

@@ -34,6 +34,7 @@ import {
   voiceReplyRequest,
   type StreamDelta,
 } from './reply-request';
+import { readVoiceSettings } from './settings';
 
 // Helena's voice reply (Lokale KI → "Sprachantwort", class `voice-reply`;
 // docs/helena-decisions/voice-2.md §4). A spoken question goes to the agent like a typed one,
@@ -51,8 +52,7 @@ import {
 // Helena data. Its answer is marked (`via = 'voice'`) and names its model. Off by default; like
 // every local class it can only be switched on once its eval (reply-eval.ts) passed.
 
-// The first words must come this soon, or the agent answers after all.
-const FIRST_TOKEN_MS = 2_000;
+// The total cap also covers a model that began but then stalled.
 const TOTAL_MS = 20_000;
 // Written to the chat in steps like a runner's (packages/runner chat.ts).
 const FLUSH_MS = 120;
@@ -74,17 +74,19 @@ async function route(): Promise<LocalRoute | null> {
 type Outcome =
   | { kind: 'answered'; inputTokens: number | null; outputTokens: number | null }
   | { kind: 'hand-over' }
+  | { kind: 'fallback' }
   | { kind: 'canceled' };
 
 async function streamAnswer(
   job: SpokenAnswerJob,
   local: LocalRoute,
   request: LocalAiChatRequest,
+  firstTokenMs: number,
 ): Promise<Outcome> {
   const key = await readModelServerKey(local.server);
   const abort = new AbortController();
   const total = setTimeout(() => abort.abort(), TOTAL_MS);
-  const first = setTimeout(() => abort.abort(), FIRST_TOKEN_MS);
+  const first = setTimeout(() => abort.abort(), firstTokenMs);
   const messageId = `msg-${job.messageId}`;
   let held = '';
   let open = false;
@@ -110,6 +112,7 @@ async function streamAnswer(
 
   const say = (text: string) => {
     if (!text) return;
+    const starting = !open;
     if (!open) {
       open = true;
       pending.push(
@@ -118,6 +121,7 @@ async function streamAnswer(
       );
     }
     pending.push({ type: 'TEXT_MESSAGE_CONTENT', messageId, delta: text });
+    if (starting) void flush();
   };
 
   try {
@@ -151,7 +155,7 @@ async function streamAnswer(
         signal: abort.signal,
       },
     );
-    if (!response.ok || !response.body) return { kind: 'hand-over' };
+    if (!response.ok || !response.body) return { kind: 'fallback' };
     const reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
     let buffer = '';
     let firstSeen = false;
@@ -186,7 +190,7 @@ async function streamAnswer(
     }
     if (!open) {
       // Nothing but held-back text (a very short answer) or nothing at all.
-      if (!held.trim()) return { kind: 'hand-over' };
+      if (!held.trim()) return { kind: 'fallback' };
       say(held);
     }
     pending.push({ type: 'TEXT_MESSAGE_END', messageId });
@@ -207,7 +211,7 @@ async function streamAnswer(
       await flush().catch(() => {});
       return { kind: 'answered', inputTokens: null, outputTokens: null };
     }
-    return { kind: 'hand-over' };
+    return { kind: 'fallback' };
   } finally {
     clearTimeout(total);
     clearTimeout(first);
@@ -232,7 +236,7 @@ async function person(
 }
 
 export async function answerSpokenQuestion(job: SpokenAnswerJob): Promise<void> {
-  const local = await route();
+  const [local, settings] = await Promise.all([route(), readVoiceSettings()]);
   if (!local || !(await takeHeldAnswer(job.agentId, job.messageId))) {
     await releaseHeldAnswer(job.agentId, job.messageId);
     return;
@@ -254,9 +258,16 @@ export async function answerSpokenQuestion(job: SpokenAnswerJob): Promise<void> 
     turns: conversation.turns.slice(0, -1),
     question: question.text,
   });
-  const outcome = await streamAnswer(job, local, request);
+  const outcome = await streamAnswer(job, local, request, settings.fallbackTimeoutMs);
   if (outcome.kind === 'hand-over') {
     await releaseHeldAnswer(job.agentId, job.messageId);
+    return;
+  }
+  if (outcome.kind === 'fallback') {
+    await releaseHeldAnswer(job.agentId, job.messageId, {
+      from: local.modelId,
+      reason: 'failed',
+    });
     return;
   }
   if (outcome.kind === 'canceled') return;
@@ -269,7 +280,8 @@ export async function answerSpokenQuestion(job: SpokenAnswerJob): Promise<void> 
 
 registerSpokenAnswerer({
   async available() {
-    return (await route()) !== null;
+    const settings = await readVoiceSettings();
+    return settings.immediateResponse && (await route()) !== null;
   },
   answer: (job) => answerSpokenQuestion(job),
 });

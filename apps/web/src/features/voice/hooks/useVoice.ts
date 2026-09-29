@@ -52,6 +52,8 @@ export function useVoice(): {
   // How long a pause ends a conversation turn, and how fast the voice reads (Sprache settings).
   pauseMs: number;
   speed: number;
+  immediateResponse: boolean;
+  bridgeEnabled: boolean;
   refresh: () => void;
 } {
   const status = useVoiceStatus();
@@ -68,6 +70,8 @@ export function useVoice(): {
       maxSeconds: known?.limits.maxSeconds ?? 120,
       pauseMs: clampPause(known?.settings?.pauseMs),
       speed: known?.settings?.speed ?? 1,
+      immediateResponse: known?.settings?.immediateResponse ?? true,
+      bridgeEnabled: known?.settings?.bridgeEnabled ?? true,
       refresh: () => void refetch(),
     }),
     [browser, known, settled, refetch],

@@ -4,11 +4,8 @@
 // answer is read interrupts it (barge-in).
 //
 // Barge-in and echo: with loudspeakers the microphone also hears the voice reading the answer.
-// Browsers cancel that echo for audio the page plays itself (Helena's local voice), not for the
-// system voices speechSynthesis uses. So an interruption is not trusted at once: reading pauses,
-// and when what was "said" turns out to be the answer's own words (or nothing), reading goes on
-// and interrupting by voice is switched off for the rest of the conversation — the stop button
-// still interrupts, and headphones never get here.
+// Browsers cancel echo for audio the page plays itself. Reading pauses as soon as speech starts;
+// transcription decides whether to resume an echo or discard the reading for a new request.
 
 export type ConversationPhase =
   | 'off'
@@ -22,6 +19,8 @@ export type ConversationPhase =
   | 'transcribing'
   // Sent; the agent works on the answer and there is nothing to read yet.
   | 'thinking'
+  | 'waiting'
+  | 'error'
   // Reading the answer aloud.
   | 'speaking';
 
@@ -35,14 +34,12 @@ export interface ConversationState {
   pendingText: string;
   // A message was sent and its answer has not ended yet.
   awaitingAnswer: boolean;
+  waiting: boolean;
+  error: boolean;
   // The voice is reading (or has pieces queued).
   speaking: boolean;
   // Reading paused because the owner seemed to start speaking; decided by what was said.
   readingPaused: boolean;
-  // Whether speaking interrupts the reading; off once an echo was caught.
-  bargeIn: boolean;
-  // An utterance that began while reading and is not trusted (bargeIn off): dropped.
-  ignoringUtterance: boolean;
   // Something the owner should know about (shown once).
   notice: 'echo' | null;
 }
@@ -61,6 +58,9 @@ export type ConversationEvent =
   | { type: 'transcribeFailed' }
   // The answer to the sent message ended (complete, stopped or failed).
   | { type: 'answerEnded' }
+  | { type: 'waiting' }
+  | { type: 'answerStarted' }
+  | { type: 'error' }
   | { type: 'speakerStarted' }
   | { type: 'speakerIdle' }
   // The owner pressed "Unterbrechen": stop reading this answer.
@@ -70,8 +70,6 @@ export type ConversationEvent =
 export type ConversationEffect =
   // Write the finished utterance down (the hook holds its audio).
   | { type: 'transcribe' }
-  // Drop the finished utterance unheard.
-  | { type: 'discardUtterance' }
   | { type: 'send'; text: string }
   | { type: 'pauseReading' }
   | { type: 'resumeReading' }
@@ -85,18 +83,20 @@ export const initialConversation: ConversationState = {
   transcribing: 0,
   pendingText: '',
   awaitingAnswer: false,
+  waiting: false,
+  error: false,
   speaking: false,
   readingPaused: false,
-  bargeIn: true,
-  ignoringUtterance: false,
   notice: null,
 };
 
 export function conversationPhase(state: ConversationState): ConversationPhase {
   if (state.active !== 'on') return state.active;
-  if (state.userSpeaking && !state.ignoringUtterance) return 'hearing';
+  if (state.userSpeaking) return 'hearing';
+  if (state.speaking && !state.readingPaused) return 'speaking';
+  if (state.error) return 'error';
   if (state.transcribing > 0) return 'transcribing';
-  if (state.speaking) return 'speaking';
+  if (state.waiting) return 'waiting';
   if (state.awaitingAnswer) return 'thinking';
   return 'listening';
 }
@@ -109,7 +109,7 @@ function flush(state: ConversationState, effects: ConversationEffect[]): Step {
     return { state, effects };
   }
   return {
-    state: { ...state, pendingText: '', awaitingAnswer: true },
+    state: { ...state, pendingText: '', awaitingAnswer: true, waiting: false },
     effects: [...effects, { type: 'send', text: state.pendingText.trim() }],
   };
 }
@@ -142,33 +142,23 @@ export function conversationStep(state: ConversationState, event: ConversationEv
 
     case 'speechStart': {
       if (state.userSpeaking) return { state, effects: [] };
-      // While reading, an untrusted start (echo seen before) is not the owner.
-      if (state.speaking && !state.readingPaused && !state.bargeIn) {
-        return { state: { ...state, userSpeaking: true, ignoringUtterance: true }, effects: [] };
-      }
       if (state.speaking && !state.readingPaused) {
         return {
-          state: { ...state, userSpeaking: true, readingPaused: true },
+          state: { ...state, userSpeaking: true, readingPaused: true, error: false },
           effects: [{ type: 'pauseReading' }],
         };
       }
-      return { state: { ...state, userSpeaking: true }, effects: [] };
+      return { state: { ...state, userSpeaking: true, error: false }, effects: [] };
     }
 
     case 'speechMisfire': {
-      const next = { ...state, userSpeaking: false, ignoringUtterance: false };
+      const next = { ...state, userSpeaking: false };
       // Noise, not words: the reading goes on.
       const settled = settleReading(next, true);
       return flush(settled.state, settled.effects);
     }
 
     case 'speechEnd': {
-      if (state.ignoringUtterance) {
-        return {
-          state: { ...state, userSpeaking: false, ignoringUtterance: false },
-          effects: [{ type: 'discardUtterance' }],
-        };
-      }
       return {
         state: { ...state, userSpeaking: false, transcribing: state.transcribing + 1 },
         effects: [{ type: 'transcribe' }],
@@ -182,17 +172,16 @@ export function conversationStep(state: ConversationState, event: ConversationEv
         transcribing: Math.max(0, state.transcribing - 1),
       };
       if (event.echo) {
-        // The microphone heard the reading: go on reading, and stop trusting voice
-        // interruptions for the rest of this conversation.
-        const settled = settleReading(
-          { ...next, bargeIn: false, notice: state.bargeIn ? 'echo' : state.notice },
-          true,
-        );
+        // The microphone heard the reading: resume it and keep accepting later interruptions.
+        const settled = settleReading({ ...next, notice: 'echo' }, true);
         return flush(settled.state, settled.effects);
       }
       if (!text) {
         const settled = settleReading(next, true);
         return flush(settled.state, settled.effects);
+      }
+      if (/^stopp[.!?]?$/iu.test(text)) {
+        return { state: initialConversation, effects: [{ type: 'stopAll' }] };
       }
       const settled = settleReading(next, false);
       return flush(
@@ -211,7 +200,16 @@ export function conversationStep(state: ConversationState, event: ConversationEv
     }
 
     case 'answerEnded':
-      return { state: { ...state, awaitingAnswer: false }, effects: [] };
+      return { state: { ...state, awaitingAnswer: false, waiting: false }, effects: [] };
+
+    case 'waiting':
+      return { state: { ...state, waiting: true }, effects: [] };
+
+    case 'answerStarted':
+      return { state: { ...state, waiting: false }, effects: [] };
+
+    case 'error':
+      return { state: { ...state, error: true, waiting: false }, effects: [] };
 
     case 'speakerStarted':
       return { state: { ...state, speaking: true }, effects: [] };

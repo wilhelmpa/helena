@@ -16,7 +16,15 @@ export const HELENA_STATUSES = [
 
 export type HelenaStatus = (typeof HELENA_STATUSES)[number];
 export type VoicePhase =
-  'off' | 'starting' | 'listening' | 'hearing' | 'transcribing' | 'thinking' | 'speaking';
+  | 'off'
+  | 'starting'
+  | 'listening'
+  | 'hearing'
+  | 'transcribing'
+  | 'thinking'
+  | 'waiting'
+  | 'speaking'
+  | 'error';
 
 export interface VoiceOrbAudio {
   phase: VoicePhase;
@@ -48,13 +56,15 @@ export function deriveStatus({
   if (
     runtimeStatus === 'degraded' ||
     ['failed', 'sendFailed', 'lost', 'error'].includes(chat ?? '') ||
-    ['failed', 'error'].includes(run ?? '')
+    ['failed', 'error'].includes(run ?? '') ||
+    voicePhase === 'error'
   )
     return 'error';
   if (budget === true || budget === 'throttled' || budget === 'exhausted') return 'throttled';
   if (voicePhase === 'speaking') return 'speaking';
   if (voicePhase === 'listening' || voicePhase === 'hearing') return 'listening';
-  if (awaitingChoice || run === 'waiting' || chat === 'queued') return 'waiting';
+  if (awaitingChoice || run === 'waiting' || chat === 'queued' || voicePhase === 'waiting')
+    return 'waiting';
   if (tool) return 'tool';
   if (
     run === 'running' ||

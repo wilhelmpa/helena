@@ -115,7 +115,7 @@ describe('conversation turn-taking', () => {
     assert.deepEqual(phases, ['hearing', 'speaking']);
   });
 
-  it('catches its own voice: reading goes on, and voice no longer interrupts', () => {
+  it('catches its own voice, resumes, and still accepts the next interruption', () => {
     const reading = run([...on, { type: 'speakerStarted' }]).state;
     const echo = run(
       [
@@ -130,17 +130,16 @@ describe('conversation turn-taking', () => {
       { type: 'transcribe' },
       { type: 'resumeReading' },
     ]);
-    assert.equal(echo.state.bargeIn, false);
     assert.equal(echo.state.notice, 'echo');
     assert.equal(conversationPhase(echo.state), 'speaking');
-    // The next sound while reading is not taken for the owner.
+    // The next words still get checked for an echo before they are sent.
     const after = run([{ type: 'speechStart' }, { type: 'speechEnd' }], echo.state);
-    assert.deepEqual(after.effects, [{ type: 'discardUtterance' }]);
-    assert.deepEqual(after.phases, ['speaking', 'speaking']);
+    assert.deepEqual(after.effects, [{ type: 'pauseReading' }, { type: 'transcribe' }]);
+    assert.deepEqual(after.phases, ['hearing', 'transcribing']);
     // Once the reading is over, the owner is heard again.
     const listening = run(
       [{ type: 'speakerIdle' }, { type: 'speechStart' }, { type: 'speechEnd' }],
-      after.state,
+      echo.state,
     );
     assert.deepEqual(listening.effects, [{ type: 'transcribe' }]);
   });
@@ -160,6 +159,53 @@ describe('conversation turn-taking', () => {
     );
     assert.deepEqual(stopped.effects, [{ type: 'stopAll' }]);
     assert.deepEqual(stopped.phases, ['off', 'off']);
+  });
+
+  it('waits through a tool run, speaks the result, and listens again', () => {
+    const { state, phases } = run([
+      ...on,
+      { type: 'speechStart' },
+      { type: 'speechEnd' },
+      { type: 'transcribed', text: 'Prüf meine Aufgaben.', echo: false },
+      { type: 'waiting' },
+      { type: 'speakerStarted' },
+      { type: 'speakerIdle' },
+      { type: 'answerStarted' },
+      { type: 'speakerStarted' },
+      { type: 'answerEnded' },
+      { type: 'speakerIdle' },
+    ]);
+    assert.deepEqual(phases.slice(-7), [
+      'waiting',
+      'speaking',
+      'waiting',
+      'thinking',
+      'speaking',
+      'speaking',
+      'listening',
+    ]);
+    assert.equal(state.active, 'on');
+  });
+
+  it('ends on a single spoken Stopp and recovers from an STT error', () => {
+    const failed = run([
+      ...on,
+      { type: 'speechStart' },
+      { type: 'speechEnd' },
+      { type: 'error' },
+      { type: 'transcribeFailed' },
+    ]);
+    assert.equal(conversationPhase(failed.state), 'error');
+    const recovered = run(
+      [
+        { type: 'speechStart' },
+        { type: 'speechEnd' },
+        { type: 'transcribed', text: 'Stopp.', echo: false },
+      ],
+      failed.state,
+    );
+    assert.equal(recovered.state.active, 'off');
+    assert.deepEqual(recovered.effects.at(-1), { type: 'stopAll' });
   });
 });
 

@@ -81,6 +81,9 @@ describe('voice settings', () => {
       }),
     ).toEqual({
       pauseMs: 300,
+      immediateResponse: true,
+      bridgeEnabled: true,
+      fallbackTimeoutMs: 800,
       speed: 1.4,
       vocabulary: ['Verve', 'x'.repeat(60)],
       vocabularyAliases: null,
@@ -89,7 +92,9 @@ describe('voice settings', () => {
       // No reasoning without a model.
       replyThinkingLevel: null,
     });
-    expect(normalizeVoiceSettings(null).pauseMs).toBe(600);
+    expect(normalizeVoiceSettings(null).pauseMs).toBe(300);
+    expect(normalizeVoiceSettings({ fallbackTimeoutMs: 50 }).fallbackTimeoutMs).toBe(300);
+    expect(normalizeVoiceSettings({ fallbackTimeoutMs: 9000 }).fallbackTimeoutMs).toBe(5000);
   });
 
   it('puts the owner’s words before Helena’s', () => {
