@@ -79,15 +79,16 @@ export default function OrganizationFlowEdge({
         className="organization-edge"
         style={{
           stroke: color,
-          strokeWidth: active ? 2 : data?.strong ? 1.5 : data?.task ? 1 : 1.25,
+          // Clear lines (owner, O71: the 1px lanes were too faint).
+          strokeWidth: active ? 2.5 : data?.strong ? 2.5 : data?.task ? 1.5 : 2,
           strokeOpacity: data?.dimmed
             ? 0.12
             : active
-              ? 0.9
+              ? 0.95
               : data?.task
-                ? 0.5
+                ? 0.6
                 : data?.accent
-                  ? 0.42
+                  ? 0.7
                   : 1,
           strokeDasharray: data?.task ? '2 4' : active && reduced ? '4 5' : undefined,
           transition: 'stroke-opacity 200ms ease',

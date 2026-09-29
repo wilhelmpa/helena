@@ -46,8 +46,8 @@ body:has(.project-ai-agents-view) [class~='@container/page']::-webkit-scrollbar 
 }
 
 .react-flow__node .organization-orb {
-  width: 7px;
-  height: 7px;
+  width: 10px;
+  height: 10px;
 }
 
 .react-flow__node .organization-orb.organization-orb-idle {
@@ -103,8 +103,8 @@ body:has(.project-ai-agents-view) [class~='@container/page']::-webkit-scrollbar 
 /* Org chart (components/common/organization): lines, orbits and the breathing hub of
    the "Kreis" view. Real states only; reduced motion keeps everything still. */
 .organization-flow {
-  --org-edge: color-mix(in srgb, var(--foreground) 18%, transparent);
-  --org-orbit: color-mix(in srgb, var(--foreground) 13%, transparent);
+  --org-edge: color-mix(in srgb, var(--foreground) 32%, transparent);
+  --org-orbit: color-mix(in srgb, var(--foreground) 22%, transparent);
 }
 
 .organization-flow .react-flow__node {
@@ -150,24 +150,6 @@ body:has(.project-ai-agents-view) [class~='@container/page']::-webkit-scrollbar 
   }
 }
 
-.organization-ring-hub:not([aria-pressed='true']) {
-  animation: organization-halo 2.8s ease-out infinite;
-}
-
-@keyframes organization-halo {
-  0% {
-    box-shadow:
-      0 0 0 0 color-mix(in srgb, var(--brand) 32%, transparent),
-      0 0 40px color-mix(in srgb, var(--brand) 18%, transparent);
-  }
-
-  100% {
-    box-shadow:
-      0 0 0 18px color-mix(in srgb, var(--brand) 0%, transparent),
-      0 0 40px color-mix(in srgb, var(--brand) 18%, transparent);
-  }
-}
-
 .organization-flow .react-flow__controls {
   overflow: hidden;
   border-radius: var(--radius-lg);
@@ -191,8 +173,7 @@ body:has(.project-ai-agents-view) [class~='@container/page']::-webkit-scrollbar 
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .organization-orbit,
-  .organization-ring-hub:not([aria-pressed='true']) {
+  .organization-orbit {
     animation: none;
   }
 }

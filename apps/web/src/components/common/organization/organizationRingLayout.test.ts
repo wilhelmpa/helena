@@ -9,7 +9,13 @@ import type {
 } from '@/lib/api/endpoints/organization';
 import { organizationChartLayout } from './organizationChartLayout';
 import { focusFromParam, focusParam, focusScope } from './organizationFocus';
-import { organizationRingLayout, ringPillWidth, ringTaskWidth } from './organizationRingLayout';
+import { readFileSync } from 'node:fs';
+import {
+  RING_MIN_ZOOM,
+  organizationRingLayout,
+  ringPillWidth,
+  ringTaskWidth,
+} from './organizationRingLayout';
 
 function agent(
   id: number,
@@ -135,9 +141,19 @@ describe('Organigramm „Kreis“', () => {
     const third = [20, 29, 40, 47, 60, 64].map(String);
     assert.ok(same(first), 'erster Ring');
     assert.ok(same(second), 'zweiter Ring');
-    assert.ok(same(third), 'dritter Ring');
-    assert.ok(distance('99') < distance('2') && distance('2') < distance('20'));
-    assert.deepEqual(ring.orbits.slice(0, 3), [distance('99'), distance('2'), distance('20')]);
+    // A crowded outer ring may split into tiers (O71): every agent on its base circle or
+    // a fixed step outside it, never in between.
+    const base = ring.orbits[2]!;
+    const tierDistances = new Set(third.map(distance));
+    const steps = [...tierDistances].map((value) => value - base);
+    assert.ok(
+      steps.every((step) => step >= 0),
+      'dritter Ring',
+    );
+    assert.ok(tierDistances.has(base), 'dritter Ring: Grundkreis');
+    assert.ok(new Set(steps.map((step) => step % 84)).size === 1, 'dritter Ring: feste Stufen');
+    assert.ok(distance('99') < distance('2') && distance('2') < base);
+    assert.deepEqual(ring.orbits.slice(0, 2), [distance('99'), distance('2')]);
     // Every line of the middle ends on the first ring.
     assert.ok(
       ring.edges.filter((edge) => edge.source === '1').every((edge) => first.includes(edge.target)),
@@ -312,5 +328,44 @@ describe('Organigramm „Baum“ auf Home', () => {
     assert.ok(firstLeaf(tree).position.y > firstLeaf(without).position.y);
     const lastTask = shown.at(-1)!;
     assert.ok(firstLeaf(tree).position.y > lastTask.position.y);
+  });
+});
+
+describe('ring readable when fitted (owner, O71)', () => {
+  test('the fit stops at a zoom where the ring text (12px min) stays 11px', () => {
+    assert.ok(RING_MIN_ZOOM * 12 >= 11 - 1e-9);
+  });
+
+  test('no ring text below 12px and no glow on its nodes', () => {
+    const css = readFileSync(new URL('../../../design-system/shell.css', import.meta.url), 'utf8');
+    const ring = css.slice(css.indexOf('── Team › Kreis'));
+    const block = ring.slice(0, ring.indexOf('── ', 20) > 0 ? ring.indexOf('── ', 20) : undefined);
+    const sizes = [...block.matchAll(/font-size:\s*(\d+)px/g)].map((match) => Number(match[1]));
+    assert.ok(sizes.length > 0);
+    assert.ok(Math.min(...sizes) >= 12, `smallest ring font ${Math.min(...sizes)}px`);
+    assert.doesNotMatch(block, /box-shadow/);
+  });
+
+  test('the rings stay compact: the Home level of 28 agents stays under 1600px across (was 1800px with smaller nodes)', () => {
+    const layout = organizationRingLayout({
+      level: 'home',
+      agents,
+      departments,
+      projects,
+      delegating: new Set(),
+    });
+    const outer = Math.max(...layout.orbits);
+    assert.ok(outer * 2 < 1600, `ring diameter ${outer * 2}px`);
+  });
+
+  test('the task ring appears only with tasks (the Aufgaben filter on)', () => {
+    const layout = organizationRingLayout({
+      level: 'home',
+      agents,
+      departments,
+      projects,
+      delegating: new Set(),
+    });
+    assert.equal(layout.nodes.filter((node) => node.type === 'task').length, 0);
   });
 });

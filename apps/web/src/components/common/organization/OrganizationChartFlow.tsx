@@ -28,6 +28,7 @@ import '@xyflow/react/dist/style.css';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import OrganizationFlowEdge from './OrganizationFlowEdge';
 import OrganizationChartNode from './OrganizationChartNode';
+import { RING_MIN_ZOOM } from './organizationRingLayout';
 import {
   OrganizationRingGroup,
   OrganizationRingHub,
@@ -118,9 +119,7 @@ function Flow({
         .filter((node): node is NonNullable<typeof node> => node != null && !!node.measured.width);
       if (internals.length === 0) return false;
       const nodeBounds = getNodesBounds(internals);
-      // The ring always fits whole (owner 28.09.: no overflow, no labels cut, no
-      // scrolling): its orbits count into the bounds and it may shrink as far as needed.
-      // A tall tree keeps a readable zoom and is shown from its top.
+      // The ring's orbits count into its bounds.
       const outer = view === 'ring' && orbits.length ? Math.max(...orbits) : 0;
       const bounds = outer
         ? (() => {
@@ -137,7 +136,11 @@ function Flow({
             };
           })()
         : nodeBounds;
-      const minimum = view === 'ring' ? 0.1 : 0.5;
+      // Never smaller than readable (owner, O71): the ring stops at RING_MIN_ZOOM (its 12px
+      // text stays 11px on screen) and a larger one is centred on its middle and panned;
+      // a tall tree keeps a readable zoom and is shown from its top.
+      const ring = view === 'ring';
+      const minimum = ring ? RING_MIN_ZOOM : 0.5;
       const zoom = Math.min(
         1,
         Math.max(
@@ -148,11 +151,15 @@ function Flow({
           ),
         ),
       );
-      const x = (width - bounds.width * zoom) / 2 - bounds.x * zoom;
-      const y =
-        bounds.height * zoom > height - PADDING * 2
-          ? PADDING - bounds.y * zoom
-          : (height - bounds.height * zoom) / 2 - bounds.y * zoom;
+      const tooWide = bounds.width * zoom > width - PADDING * 2;
+      const tooTall = bounds.height * zoom > height - PADDING * 2;
+      // The ring's middle (the hub) sits at the flow's origin.
+      const x = ring && tooWide ? width / 2 : (width - bounds.width * zoom) / 2 - bounds.x * zoom;
+      const y = tooTall
+        ? ring
+          ? height / 2
+          : PADDING - bounds.y * zoom
+        : (height - bounds.height * zoom) / 2 - bounds.y * zoom;
       void flow.setViewport({ x, y, zoom }, { duration: animate && !reduced ? 320 : 0 });
       return true;
     },
@@ -246,7 +253,11 @@ function Flow({
         // The first fit is React Flow's own (it knows when the nodes are measured); later
         // fits on a new view or a resized stage come from the effect above.
         fitView
-        fitViewOptions={{ padding: 0.08, minZoom: view === 'ring' ? 0.1 : 0.5, maxZoom: 1 }}
+        fitViewOptions={{
+          padding: 0.08,
+          minZoom: view === 'ring' ? RING_MIN_ZOOM : 0.5,
+          maxZoom: 1,
+        }}
         nodes={nodes}
         edges={edges}
         nodeTypes={nodeTypes}
@@ -286,7 +297,8 @@ function Flow({
         onMoveStart={() => onHover(null)}
         onPaneClick={onPaneClick}
         zoomOnDoubleClick={false}
-        minZoom={0.08}
+        // By hand the reader may still step back for an overview.
+        minZoom={view === 'ring' ? 0.4 : 0.2}
         maxZoom={1.6}
         colorMode={resolvedTheme === 'dark' ? 'dark' : 'light'}
         style={{ background: 'transparent' }}
@@ -319,8 +331,8 @@ function Flow({
                     cy={radius + 2}
                     r={radius}
                     fill="none"
-                    strokeWidth={1}
-                    strokeDasharray="2 10"
+                    strokeWidth={1.5}
+                    strokeDasharray="4 8"
                   />
                 </svg>
               ))}

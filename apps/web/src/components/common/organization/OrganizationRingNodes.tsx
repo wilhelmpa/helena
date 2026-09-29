@@ -49,7 +49,7 @@ export type RingHubNode = Node<
 
 function HubAgentStatus({ data }: { data: ChartAgentData }) {
   const status = useChartAgentStatus(data);
-  return <Orb state={status} size="small" className="mb-0.5" />;
+  return <Orb state={status} size="small" />;
 }
 
 // The middle of the ring: Home, a department, a coordinator or a single agent, as a
@@ -67,32 +67,19 @@ export function OrganizationRingHub({ data }: NodeProps<RingHubNode>) {
           ? t('reviewer')
           : t('specialist');
   return (
-    <div className="relative size-[136px]">
+    <div className="ds-ring-node ds-ring-hub-box">
       <CenterHandles />
       <button
         type="button"
         aria-pressed={agent ? Boolean(selected) : undefined}
         aria-label={agent?.name ?? department?.name}
-        className={`organization-ring-hub flex size-full cursor-pointer flex-col items-center justify-center gap-1 rounded-full border bg-card text-card-foreground focus-visible:outline-2 focus-visible:outline-brand ${selected ? 'border-brand ring-[3px] ring-brand/25' : ''}`}
-        style={
-          selected
-            ? undefined
-            : { borderColor: `color-mix(in srgb, ${accent ?? 'var(--brand)'} 60%, transparent)` }
-        }
+        className="organization-ring-hub ds-ring-hub"
+        style={{ ['--ring-accent' as string]: accent ?? 'var(--brand)' }}
       >
         {agent && data.signals ? <HubAgentStatus data={data as ChartAgentData} /> : null}
-        <span
-          className="font-mono text-[9px] font-medium tracking-[.18em]"
-          style={{ color: accent ?? 'var(--brand)' }}
-        >
-          {eyebrow}
-        </span>
-        <span className="line-clamp-2 max-w-[116px] px-2 text-center text-[17px] leading-tight font-medium tracking-[-.03em]">
-          {agent?.name ?? department?.name}
-        </span>
-        <span className="font-mono text-[9px] tracking-[.08em] text-muted-foreground">
-          {t('agentCount', { count })}
-        </span>
+        <span className="ds-ring-eyebrow">{eyebrow}</span>
+        <span className="ds-ring-hub-name">{agent?.name ?? department?.name}</span>
+        <span className="ds-ring-meta">{t('agentCount', { count })}</span>
       </button>
     </div>
   );
@@ -106,33 +93,19 @@ export function OrganizationRingGroup({ data }: NodeProps<RingGroupNode>) {
   const locale = useLocale();
   const { group, dimmed } = data;
   return (
-    <div
-      className={`relative size-[112px] transition-opacity duration-200 ${dimmed ? 'opacity-30' : ''}`}
-    >
+    <div className="ds-ring-node ds-ring-group-box" data-dimmed={dimmed || undefined}>
       <CenterHandles />
       <button
         type="button"
         aria-label={t('openLevel', { name: group.label })}
         title={t('openLevel', { name: group.label })}
         data-throttled={group.throttled ? 'true' : undefined}
-        className="organization-ring-group flex size-full cursor-pointer flex-col items-center justify-center gap-0.5 rounded-full border bg-card px-2 text-center text-card-foreground transition-transform duration-200 hover:scale-[1.04] focus-visible:outline-2 focus-visible:outline-brand motion-reduce:transition-none motion-reduce:hover:scale-100"
-        style={{
-          borderColor: `color-mix(in srgb, ${group.accent} 55%, transparent)`,
-          boxShadow: `0 0 28px color-mix(in srgb, ${group.accent} 16%, transparent)`,
-        }}
+        className="organization-ring-group ds-ring-group"
+        style={{ ['--ring-accent' as string]: group.accent }}
       >
-        {group.tag && (
-          <span
-            className="max-w-[96px] truncate font-mono text-[8px] font-medium tracking-[.14em] uppercase"
-            style={{ color: group.accent }}
-          >
-            {group.tag}
-          </span>
-        )}
-        <span className="line-clamp-2 max-w-[96px] text-xs leading-tight font-medium">
-          {group.label}
-        </span>
-        <span className="font-mono text-[9px] text-muted-foreground">
+        {group.tag && <span className="ds-ring-eyebrow ds-ring-tag">{group.tag}</span>}
+        <span className="ds-ring-group-name">{group.label}</span>
+        <span className="ds-ring-meta">
           {group.budget
             ? formatBudgetAmount(group.budget.metric, group.budget.used, locale)
             : t('agentCount', { count: group.members.length })}
@@ -165,7 +138,8 @@ export function OrganizationRingPill({ data }: NodeProps<RingPillNode>) {
         : null;
   return (
     <div
-      className={`relative transition-opacity duration-200 ${dimmed ? 'opacity-30' : ''}`}
+      className="ds-ring-node"
+      data-dimmed={dimmed || undefined}
       data-selected={selected || undefined}
     >
       <CenterHandles />
@@ -174,30 +148,18 @@ export function OrganizationRingPill({ data }: NodeProps<RingPillNode>) {
         aria-pressed={selected}
         aria-label={agent.name}
         aria-keyshortcuts="Shift+Enter"
-        className={`organization-ring-pill flex h-[34px] max-w-[220px] min-w-[112px] cursor-pointer items-center gap-2 rounded-full border bg-card ps-3 pe-3.5 text-start text-card-foreground transition-[border-color,box-shadow] duration-200 focus-visible:outline-2 focus-visible:outline-brand ${selected ? 'border-brand ring-[3px] ring-brand/20' : 'border-border hover:border-muted-foreground/50'}`}
-        style={
-          head && !selected
-            ? { borderColor: `color-mix(in srgb, ${accent} 45%, transparent)` }
-            : undefined
-        }
+        className="organization-ring-pill ds-ring-pill"
+        data-head={head || undefined}
+        style={{ ['--ring-accent' as string]: accent }}
       >
         <Orb
           state={status}
           size="small"
           className={`organization-orb organization-orb-${status} ${agent.isHome ? 'organization-orb-home' : ''}`}
         />
-        <span className="flex min-w-0 flex-col leading-none">
-          {role && (
-            <span
-              className="truncate font-mono text-[8px] font-medium tracking-[.13em]"
-              style={{ color: accent }}
-            >
-              {role}
-            </span>
-          )}
-          <span className={`truncate text-xs ${head ? 'font-medium' : ''} ${role ? 'mt-0.5' : ''}`}>
-            {agent.name}
-          </span>
+        <span className="ds-ring-pill-text">
+          {role && <span className="ds-ring-eyebrow">{role}</span>}
+          <span className="ds-ring-pill-name">{agent.name}</span>
         </span>
       </button>
     </div>
@@ -211,26 +173,19 @@ export function OrganizationRingTask({ data }: NodeProps<RingTaskNode>) {
   const t = useTranslations('organization.chart');
   const { task, more, dimmed } = data;
   return (
-    <div className={`relative transition-opacity duration-200 ${dimmed ? 'opacity-30' : ''}`}>
+    <div className="ds-ring-node" data-dimmed={dimmed || undefined}>
       <CenterHandles />
       <button
         type="button"
         title={`${task.identifier} · ${task.title}`}
         aria-label={t('openTask', { identifier: task.identifier, title: task.title })}
-        className="organization-ring-task flex h-[26px] max-w-[190px] min-w-[76px] cursor-pointer items-center gap-1.5 rounded-full border border-border bg-card/90 ps-2 pe-2.5 text-start text-card-foreground hover:border-muted-foreground/50 focus-visible:outline-2 focus-visible:outline-brand"
+        className="organization-ring-task ds-ring-task"
+        style={{ ['--ring-accent' as string]: task.color }}
       >
-        <span
-          aria-hidden="true"
-          className="size-1.5 shrink-0 rounded-full"
-          style={{ background: task.color, boxShadow: `0 0 6px ${task.color}` }}
-        />
-        <span className="shrink-0 font-mono text-[10px] text-muted-foreground">
-          {task.identifier}
-        </span>
-        <span className="truncate text-[11px]">{task.title}</span>
-        {more > 0 && (
-          <span className="shrink-0 font-mono text-[10px] text-muted-foreground">+{more}</span>
-        )}
+        <span aria-hidden="true" className="ds-ring-task-dot" />
+        <span className="ds-ring-meta">{task.identifier}</span>
+        <span className="ds-ring-task-title">{task.title}</span>
+        {more > 0 && <span className="ds-ring-meta">+{more}</span>}
       </button>
     </div>
   );

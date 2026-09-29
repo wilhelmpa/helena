@@ -63,26 +63,39 @@ export interface RingLayoutInput {
   tasks?: RingTask[];
 }
 
-const GROUP_SIZE = 112;
-export const HUB_SIZE = 136;
-const PILL_HEIGHT = 34;
-const TASK_HEIGHT = 26;
-const MARGIN = 10;
+// Node sizes, as drawn by the ring's CSS (design-system/shell.css, .ds-ring-*). Owner,
+// 29.09. (O71): readable once fitted — bigger nodes and text, compact rings, so the fit
+// needs little zoom-out (and never goes below RING_MIN_ZOOM).
+const GROUP_SIZE = 136;
+export const HUB_SIZE = 156;
+const PILL_HEIGHT = 56;
+const TASK_HEIGHT = 32;
+const MARGIN = 8;
 // The first ring sits this far outside the hub's edge; each further ring at least this
 // far outside the one before it. A ring grows only when its nodes would touch.
-const FIRST_GAP = 70;
-const RING_STEP = 96;
-const GROW_STEP = 12;
-const TASK_GAP = 110;
+const FIRST_GAP = 36;
+const RING_STEP = 64;
+const GROW_STEP = 8;
+const TASK_GAP = 56;
 const TASKS_PER_AGENT = 4;
+// A department circle claims at least this many pill slots of the circle.
+const GROUP_WEIGHT = 2;
+// A crowded ring of agents may split into up to MAX_TIERS tiers this far apart.
+const TIER_GAP = PILL_HEIGHT + 28;
+const MAX_TIERS = 3;
+// The ring's smallest text is 12px: at this zoom it is still 11px on screen. A bigger
+// organisation is panned instead of shrunk further.
+export const RING_MIN_ZOOM = 11 / 12;
 
-// A pill's width from its label, close enough to keep the collision check honest.
+// A pill's width from its label (14px name, orb and padding), close enough to keep the
+// collision check honest. A long name wraps onto a second line instead of widening the
+// pill: wide pills side by side at the top of a ring are what pushes it outwards.
 export function ringPillWidth(label: string): number {
-  return Math.round(Math.min(220, Math.max(112, 44 + label.length * 6.6)));
+  return Math.round(Math.min(188, Math.max(128, 60 + Math.min(label.length, 16) * 7.8)));
 }
 
 export function ringTaskWidth(label: string): number {
-  return Math.round(Math.min(190, Math.max(76, 30 + label.length * 6)));
+  return Math.round(Math.min(240, Math.max(110, 44 + label.length * 7)));
 }
 
 type Box = { x: number; y: number; w: number; h: number };
@@ -120,7 +133,7 @@ function placeOnRay(placed: Box[], angle: number, radius: number, w: number, h: 
   let box: Box = { x: 0, y: 0, w, h };
   let at = radius;
   for (let step = 0; step < 60; step++) {
-    at = radius + step * 42;
+    at = radius + step * 36;
     box = { x: Math.cos(rad(angle)) * at, y: Math.sin(rad(angle)) * at, w, h };
     if (!placed.some((other) => overlaps(box, other))) break;
   }
@@ -374,11 +387,16 @@ export function organizationRingLayout({
 
   // Every node's share of the circle is the number of leaves below it, so a branch never
   // leaves its own slice and no two lines cross.
+  // A department or project circle is wider than a pill: it claims at least
+  // GROUP_WEIGHT slots, so a small team beside a large one is not squeezed into a sliver
+  // that pushes the whole first ring outwards (O71).
   function measure(node: RingNode, depth: number): number {
     node.depth = depth;
-    node.weight = node.children.length
+    const leaves = node.children.length
       ? node.children.reduce((sum, child) => sum + measure(child, depth + 1), 0)
       : 1;
+    // Everything on the first ring is a circle or a head pill: at least GROUP_WEIGHT slots.
+    node.weight = node.kind === 'group' || depth === 1 ? Math.max(GROUP_WEIGHT, leaves) : leaves;
     return node.weight;
   }
   const total = top.reduce((sum, node) => sum + measure(node, 1), 0);
@@ -410,31 +428,53 @@ export function organizationRingLayout({
   top.forEach(walk);
   const placed: Box[] = [{ x: 0, y: 0, w: HUB_SIZE, h: HUB_SIZE }];
   const radii: number[] = [];
+  // Where the next ring may start: the outer tier of the ring before.
+  let reach = 0;
   const at = new Map<string, Box>();
   rings.forEach((ring, index) => {
     const widest = Math.max(...ring.map((node) => Math.max(node.w, node.h)));
-    let radius =
+    const first =
       index === 0
         ? HUB_SIZE / 2 + FIRST_GAP + widest / 2
-        : radii[index - 1]! + Math.max(RING_STEP, widest / 2 + PILL_HEIGHT);
-    const boxesAt = (r: number) =>
-      ring.map((node) => ({
-        x: Math.cos(rad(node.angle)) * r,
-        y: Math.sin(rad(node.angle)) * r,
-        w: node.w,
-        h: node.h,
-      }));
-    for (let step = 0; step < 400; step++) {
-      const boxes = boxesAt(radius);
-      const clash =
+        : reach + Math.max(RING_STEP, widest / 2 + PILL_HEIGHT);
+    // A ring of agents only may split into tiers: every second (or third) pill a tier
+    // further out, so neighbours at the top and bottom (where pills meet side by side)
+    // need a fraction of the room and the ring stays close to the one inside it.
+    const tiersAllowed = ring.length > 3 && ring.every((node) => node.kind === 'agent');
+    const boxesAt = (r: number, tiers: number) =>
+      ring.map((node, i) => {
+        const radius = r + (i % tiers) * TIER_GAP;
+        return {
+          x: Math.cos(rad(node.angle)) * radius,
+          y: Math.sin(rad(node.angle)) * radius,
+          w: node.w,
+          h: node.h,
+        };
+      });
+    const fits = (r: number, tiers: number) => {
+      const boxes = boxesAt(r, tiers);
+      return !(
         boxes.some((box) => placed.some((other) => overlaps(box, other))) ||
-        boxes.some((box, i) => boxes.some((other, j) => j > i && overlaps(box, other)));
-      if (!clash) break;
-      radius += GROW_STEP;
+        boxes.some((box, i) => boxes.some((other, j) => j > i && overlaps(box, other)))
+      );
+    };
+    const smallest = (tiers: number) => {
+      let radius = first;
+      for (let step = 0; step < 400 && !fits(radius, tiers); step++) radius += GROW_STEP;
+      return Math.round(radius);
+    };
+    let tiers = 1;
+    let radius = smallest(1);
+    for (let count = 2; tiersAllowed && count <= MAX_TIERS; count++) {
+      const candidate = smallest(count);
+      if (candidate + (count - 1) * TIER_GAP < radius + (tiers - 1) * TIER_GAP) {
+        tiers = count;
+        radius = candidate;
+      }
     }
-    radius = Math.round(radius);
     radii.push(radius);
-    boxesAt(radius).forEach((box, i) => {
+    reach = radius + (tiers - 1) * TIER_GAP;
+    boxesAt(radius, tiers).forEach((box, i) => {
       placed.push(box);
       at.set(ring[i]!.id, box);
     });
@@ -508,7 +548,7 @@ export function organizationRingLayout({
     if (!agentAngles.has(task.agentId) && task.agentId !== hubAgent?.id) continue;
     byAgent.set(task.agentId, [...(byAgent.get(task.agentId) ?? []), task]);
   }
-  const outermost = radii.at(-1) ?? HUB_SIZE;
+  const outermost = reach || HUB_SIZE;
   const taskRadius = outermost + TASK_GAP;
   let taskOutermost = 0;
   for (const [agentId, list] of [...byAgent].sort((a, b) => a[0] - b[0])) {
