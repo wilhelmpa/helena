@@ -189,9 +189,11 @@ export function useViewEditor(
   // view's conditions plus the ad-hoc ones, and the live display. Deselecting the
   // active view (navigating to the All tab) keeps that state, so saveEdits creates
   // (not updates).
-  function beginNewView(template: ViewTemplate = 'current') {
+  function beginNewView(template: ViewTemplate = 'current', suggestion = '') {
+    // A view from the current page is named after its filters (the caller's suggestion) or
+    // left empty to be named — never "Alle" (owner, 28.09.).
     const name =
-      template === 'current' ? (activeView?.name ?? t('all')) : t(`templates.${template}`);
+      template === 'current' ? (activeView?.name ?? suggestion) : t(`templates.${template}`);
     if (template !== 'current') {
       const templateSettings = defaultViewSettings(template === 'status' ? 'kanban' : view);
       if (template === 'status') {

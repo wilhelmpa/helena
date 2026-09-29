@@ -6,7 +6,8 @@ import ListSkeleton from '@/components/common/skeleton/ListSkeleton';
 import { Button } from '@/components/ui/button';
 import { usePipelineTemplates } from '@/services/pipelines.service';
 import PipelineTemplateRow from './PipelineTemplateRow';
-import { Inline, Text } from '@/design-system';
+import { Workflow } from 'lucide-react';
+import { EmptyState, Inline, Text } from '@/design-system';
 
 export default function PipelineTemplateList({
   teamId,
@@ -48,9 +49,9 @@ export default function PipelineTemplateList({
           </Button>
         </Inline>
       ) : rows.length === 0 ? (
-        <Text as="p" size="sm" tone="muted" className="rounded-md border bg-card px-3 py-2">
+        <EmptyState icon={<Workflow />} fill={false}>
           {t('emptyHint')}
-        </Text>
+        </EmptyState>
       ) : (
         <ul className="divide-y overflow-hidden rounded-md border bg-card">
           {rows.map((pipeline) => (

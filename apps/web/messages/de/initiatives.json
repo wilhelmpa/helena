@@ -161,5 +161,11 @@
   "deleteTitle": "Ziel löschen",
   "deleteConfirm": "„{name}“ löschen? Die Aufgaben bleiben im Projekt, nur ohne dieses Ziel.",
   "sortBy": "Sortieren",
-  "sortDefault": "Eigene Reihenfolge"
+  "sortDefault": "Eigene Reihenfolge",
+  "why": {
+    "label": "Warum",
+    "choose": "Helena-Ziel wählen",
+    "none": "Dient noch keinem Helena-Ziel.",
+    "noneOption": "Keinem Ziel"
+  }
 }

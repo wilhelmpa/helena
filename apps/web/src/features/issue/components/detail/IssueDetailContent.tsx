@@ -26,6 +26,8 @@ import IssueCustomFieldBody from '../fields/IssueCustomFieldBody';
 import IssueProperties from './IssueProperties';
 import IssueActionsBar from '../actions/IssueActionsBar';
 import { useTranslations } from 'next-intl';
+import { readableText } from '@/utils/readableText';
+import { Badge, Inline } from '@/design-system';
 
 // The body of a issue — title, description, markdown custom fields, the
 // Properties grid, attachments, and the activity feed. Shared by the side panel
@@ -88,12 +90,8 @@ export default function IssueDetailContent({
   const heading = (
     <>
       <span className="ds-issue-key">{issue.identifier}</span>
-      <div className="flex items-start gap-2">
-        {issue.archivedAt && (
-          <span className="mt-1 shrink-0 rounded-sm border border-border px-1.5 py-0.5 text-xs font-medium text-muted-foreground uppercase">
-            {t('archived')}
-          </span>
-        )}
+      <Inline gap={2} align="start">
+        {issue.archivedAt && <Badge>{t('archived')}</Badge>}
         {canEdit ? (
           // A textarea, not an input, so a long title wraps and is shown in full.
           // Its value stays single-line: Enter commits instead of inserting a
@@ -124,20 +122,20 @@ export default function IssueDetailContent({
             {issue.title}
           </h1>
         )}
-      </div>
+      </Inline>
 
       {(canEdit || issue.description.trim() !== '') && (
         <MarkdownEditor
-          className="mt-4"
+          className="ds-issue-description"
           placeholder={tEditor('descriptionPlaceholder')}
-          defaultValue={issue.description}
+          defaultValue={readableText(issue.description)}
           key={`desc-${issue.updatedAt}-${replacements}`}
           editable={canEdit}
           onReady={setDescEditor}
           uploadFile={uploadFile}
           imageAttachments={imageAttachments}
           onBlur={(md) => {
-            if (md !== issue.description) patch({ description: md });
+            if (md !== readableText(issue.description)) patch({ description: md });
           }}
         />
       )}

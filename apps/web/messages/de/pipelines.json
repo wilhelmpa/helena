@@ -43,9 +43,9 @@
     "create": "Erstellen",
     "templates": "Vorlagen",
     "empty": "Noch keine Vorlagen",
-    "emptyHint": "Füge unten eine mitgelieferte Vorlage hinzu oder erstelle eine neue.",
-    "builtins": "Mitgelieferte Vorlagen",
-    "builtinsHint": "Eine hinzugefügte Vorlage wird in deiner Sprache in deine Bibliothek kopiert, wo du sie ändern kannst.",
+    "emptyHint": "Übernimm eines der Beispiele unten oder baue einen eigenen.",
+    "builtins": "Beispiele",
+    "builtinsHint": "Wird in deiner Sprache in deine Bibliothek kopiert, wo du es ändern kannst.",
     "addToLibrary": "Zur Bibliothek hinzufügen",
     "added": "{name} wurde zur Bibliothek hinzugefügt.",
     "steps": "{count, plural, one {# Schritt} other {# Schritte}}",
@@ -57,7 +57,10 @@
     "tryAgain": "Erneut versuchen",
     "noAccess": "Du darfst die Workflows dieses Teams nicht sehen.",
     "readOnly": "Nur Mitglieder, die Workflows erstellen dürfen, fügen hier Vorlagen hinzu.",
-    "noAccessTitle": "Kein Zugriff"
+    "noAccessTitle": "Kein Zugriff",
+    "startsWhen": "Startet: {trigger}",
+    "stepsLabel": "Schritte",
+    "moreSteps": "+{count} weitere"
   },
   "starter": {
     "name": "Neuer Workflow",
@@ -592,5 +595,21 @@
     "of": "{workflow} in {project}",
     "step": "Schritt: {step}",
     "waitingSince": "Wartet seit {time}"
+  },
+  "kindsOverview": {
+    "workflow": {
+      "title": "Workflow",
+      "text": "Wie eine Aufgabe abläuft: Schritte nacheinander – Agenten, Freigaben, Hinweise."
+    },
+    "schedule": {
+      "title": "Zeitplan (Routine)",
+      "text": "Wann Arbeit von selbst beginnt: zu festen Zeiten bekommt ein Agent eine Aufgabe, z. B. jeden Morgen um acht.",
+      "open": "Zeitpläne"
+    },
+    "heartbeat": {
+      "title": "Herzschlag",
+      "text": "Ein Agent schaut in festen Abständen, ob es Arbeit für ihn gibt, und legt erst dann los.",
+      "open": "Team"
+    }
   }
 }

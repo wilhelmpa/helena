@@ -830,7 +830,19 @@
       "daysHint": "في أي أيام الأسبوع.",
       "timezoneHint": "للساعات والأيام، مثل Europe/Berlin.",
       "instructionsHint": "ما يفحصه في كل نبضة. لا يبدأ التشغيل إلا إذا كان هناك ما يُنجز.",
-      "schedule": "الإيقاع"
+      "schedule": "الإيقاع",
+      "precheck": "فحص مسبق",
+      "precheckHint": "في الحالات الحدية يقرر نموذج محلي سريع أولًا إن كان هناك عمل؛ وبدون عمل لا يبدأ تشغيل.",
+      "throttled": "مُبطَّأ بسبب ميزانية",
+      "historyEmpty": "لا فحوص بعد.",
+      "skippedMany": "{count}× {reason}",
+      "reasons": {
+        "noWork": "لا شيء للقيام به",
+        "outsideHours": "خارج ساعات العمل",
+        "precheck": "تخطاه الفحص المسبق",
+        "runPending": "تشغيل ما زال ينتظر",
+        "other": "تم التخطي"
+      }
     },
     "pages": {
       "groups": {
@@ -890,7 +902,11 @@
       "latestResults": "أحدث النتائج",
       "noResults": "لا توجد تشغيلات بعد.",
       "allSettings": "كل الإعدادات"
-    }
+    },
+    "groupAgents": "الوكلاء",
+    "copies": "{count, plural, =0 {لا نسخ} one {نسخة واحدة} two {نسختان} few {# نسخ} many {# نسخة} other {# نسخة}}",
+    "moreActionsFor": "إجراءات {name}",
+    "defaultModel": "النموذج الافتراضي"
   },
   "members": {
     "roleSaved": "{name} الآن {role}",

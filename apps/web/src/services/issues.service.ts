@@ -23,6 +23,7 @@ import {
   type BoardIssues,
   type SubtaskDisposition,
   getIssue,
+  getIssueClaim,
   getIssueWhy,
   listIssueCycles,
   getIssueBySeq,
@@ -63,6 +64,16 @@ export function useIssueQuery(id: number | null) {
 }
 
 // Data for the design-system Why row and the orchestration Why view.
+// Polled: a run takes a task and lets it go while the detail is open.
+export function useIssueClaimQuery(id: number | null) {
+  return useQuery({
+    queryKey: [...qk.issue(id ?? -1), 'claim'],
+    queryFn: () => getIssueClaim(id!),
+    enabled: id != null,
+    refetchInterval: 15_000,
+  });
+}
+
 export function useIssueWhyQuery(id: number | null) {
   return useQuery({
     queryKey: [...qk.issue(id ?? -1), 'why'],

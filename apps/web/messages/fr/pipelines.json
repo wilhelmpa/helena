@@ -43,9 +43,9 @@
     "create": "Créer",
     "templates": "Modèles",
     "empty": "Aucun modèle pour l’instant",
-    "emptyHint": "Ajoutez un modèle intégré ci-dessous ou créez-en un nouveau.",
-    "builtins": "Modèles intégrés",
-    "builtinsHint": "En ajouter un le copie dans votre bibliothèque, dans votre langue, où vous pouvez le modifier.",
+    "emptyHint": "Ajoutez l’un des exemples ci-dessous ou créez le vôtre.",
+    "builtins": "Exemples",
+    "builtinsHint": "Copié dans votre bibliothèque dans votre langue, où vous pouvez le modifier.",
     "addToLibrary": "Ajouter à la bibliothèque",
     "added": "{name} a été ajouté à la bibliothèque.",
     "steps": "{count, plural, one {# étape} other {# étapes}}",
@@ -57,7 +57,10 @@
     "tryAgain": "Réessayer",
     "noAccess": "Vous ne pouvez pas voir les flux de travail de cette équipe.",
     "readOnly": "Seuls les membres autorisés à créer des flux de travail ajoutent des modèles ici.",
-    "noAccessTitle": "Aucun accès"
+    "noAccessTitle": "Aucun accès",
+    "startsWhen": "Démarre : {trigger}",
+    "stepsLabel": "Étapes",
+    "moreSteps": "+{count} de plus"
   },
   "starter": {
     "name": "Nouveau flux de travail",
@@ -592,5 +595,21 @@
     "of": "{workflow} dans {project}",
     "step": "Étape : {step}",
     "waitingSince": "En attente depuis {time}"
+  },
+  "kindsOverview": {
+    "workflow": {
+      "title": "Workflow",
+      "text": "Comment une tâche se déroule : des étapes l’une après l’autre — agents, validations, avis."
+    },
+    "schedule": {
+      "title": "Planification (routine)",
+      "text": "Quand le travail démarre seul : à heures fixes, un agent reçoit une tâche, p. ex. chaque matin à huit heures.",
+      "open": "Planifications"
+    },
+    "heartbeat": {
+      "title": "Battement",
+      "text": "Un agent vérifie à intervalles fixes s’il y a du travail pour lui, et ne commence qu’alors.",
+      "open": "Équipe"
+    }
   }
 }

@@ -158,5 +158,17 @@
     "loadFailedHint": "服务器没有响应，请稍后重试。"
   },
   "viewNotFound": "此视图已不存在。正在显示全部任务。",
-  "layout": "布局"
+  "layout": "布局",
+  "card": {
+    "status": "{value}",
+    "priority": "{value}",
+    "type": "{value}",
+    "statusAge": "已 {value}",
+    "initiative": "目标：{value}",
+    "cycle": "周期 {value}",
+    "estimatePoints": "{value} 点",
+    "estimateTime": "{value}",
+    "startDate": "自 {value}",
+    "dueDate": "截止 {value}"
+  }
 }

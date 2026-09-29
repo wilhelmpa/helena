@@ -15,7 +15,7 @@ import unittest
 
 HERE = pathlib.Path(__file__).resolve().parent.parent
 KINDS = ('shell', 'claude', 'codex', 'helena-dev-claude', 'helena-dev-codex',
-         'local-qwen36', 'local-qwen38')
+         'local-qwen36', 'local-qwen38', 'local-flash')
 
 
 class SyntheticUpstream(http.server.BaseHTTPRequestHandler):
@@ -158,7 +158,7 @@ http {{
                     self.assertEqual(self.upstreams['api'].requests[-1][0], '/auth/verify/owner-terminal/' + kind)
 
     def test_missing_edge_missing_grant_and_wrong_origin_never_reach_terminal(self):
-        for kind in ('shell', 'local-qwen36', 'local-qwen38'):
+        for kind in ('shell', 'local-qwen36', 'local-qwen38', 'local-flash'):
             for headers, status in (({'Cf-Access-Jwt-Assertion': ''}, 403),
                                     ({'Cookie': ''}, 401), ({'Origin': 'https://other.test'}, 403)):
                 with self.subTest(kind=kind, headers=headers):

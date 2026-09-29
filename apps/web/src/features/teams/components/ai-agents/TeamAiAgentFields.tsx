@@ -21,8 +21,10 @@ import AgentAutopilotSection from './AgentAutopilotSection';
 import AgentTemplateDriftSection from './AgentTemplateDriftSection';
 import AgentTemplateField from './AgentTemplateField';
 import { useTranslations } from 'next-intl';
+import { useSession } from '@/lib/auth-client';
 import RuntimePicker from '@/components/helena/RuntimePicker';
 import AgentHeartbeatSection from './AgentHeartbeatSection';
+import AgentEscalationPin from '@/features/local-ai/components/AgentEscalationPin';
 import { AgentFormPageModeCtx, useAgentDialog, type AgentFormPageId } from './agentFormPages';
 
 // Which sections open when an existing agent is opened for editing, so the form reads
@@ -92,6 +94,8 @@ export default function TeamAiAgentFields({
   initialOpenSection?: string;
 }) {
   const t = useTranslations('teams.agents');
+  // The escalation rules are the Administrator's (GET /god/escalation).
+  const isGod = useSession().data?.user.role === 'god';
   const tCommon = useTranslations('common');
   const tRuntime = useTranslations('chatWorkspace.runtimePicker');
   const dialog = useAgentDialog();
@@ -450,7 +454,14 @@ export default function TeamAiAgentFields({
       ),
       projects: projectsSection,
       autopilot: autopilotSection,
-      'runtime-policy': runtimePolicySection,
+      'runtime-policy': (
+        <>
+          {runtimePolicySection}
+          {/* "Festlegung für diesen Agenten" (owner 28.09.): the rules are central in
+              Administrator › Agenten und Modelle. */}
+          {agent && !agent.template && isGod && <AgentEscalationPin agentId={agent.id} />}
+        </>
+      ),
       triggers: triggersSection,
       heartbeat: heartbeatSection,
       abilities: abilitiesSection,

@@ -107,7 +107,19 @@
     "create": "Crear objetivo",
     "titlePlaceholder": "Título del objetivo",
     "descriptionPlaceholder": "¿De qué trata y cómo sabrás que se ha logrado?",
-    "none": "Ninguno"
+    "none": "Ninguno",
+    "ladder": "Escalera de objetivos",
+    "ladderAlone": "Este objetivo es independiente: no sirve a otro ni otro le sirve.",
+    "back": "Volver a los objetivos",
+    "actions": "Acciones de {title}",
+    "why": "Por qué",
+    "work": "Trabajo",
+    "saveFailed": "El cambio no se guardó.",
+    "deleteTitle": "¿Eliminar el objetivo «{title}»?",
+    "deleteBody": "Los objetivos que dependen de él quedan sin objetivo superior; las tareas vinculadas se mantienen.",
+    "wholeTeam": "Todo el equipo",
+    "list": "Objetivos",
+    "proposalsWaiting": "Hay propuestas esperando tu decisión"
   },
   "agents": {
     "empty": "Este equipo no tiene agentes.",
@@ -318,6 +330,24 @@
     "whyEmpty": "Ningún agente trabaja aún en una tarea de este proyecto.",
     "whyNoGoal": "Sin objetivo vinculado",
     "noAgent": "Sin agente",
-    "filterLabel": "Estado"
+    "filterLabel": "Estado",
+    "addMember": "Añadir miembro"
+  },
+  "addMember": {
+    "title": "Añadir un miembro al equipo",
+    "description": "Un agente del pool o una nueva copia de una plantilla se une al equipo del proyecto.",
+    "source": "Origen",
+    "fromPool": "Del pool",
+    "fromTemplate": "Desde plantilla",
+    "project": "Proyecto",
+    "chooseProject": "Elige un proyecto",
+    "poolEmpty": "Todos los agentes del pool ya trabajan en este proyecto.",
+    "templatesEmpty": "El equipo aún no tiene plantillas.",
+    "reportsTo": "Informa a",
+    "reportsToHint": "El coordinador del proyecto, salvo que elijas otro.",
+    "add": "Añadir",
+    "added": "Añadido a {project}",
+    "failed": "No se pudo añadir el miembro.",
+    "keyOnce": "La copia se ejecuta fuera de Helena: copia su clave ahora, solo se muestra una vez."
   }
 }

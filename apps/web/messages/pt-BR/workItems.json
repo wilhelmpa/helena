@@ -158,5 +158,17 @@
     "loadFailedHint": "O servidor não respondeu. Tente de novo em instantes."
   },
   "viewNotFound": "Esta visualização não existe mais. Mostrando todas as tarefas.",
-  "layout": "Layout"
+  "layout": "Layout",
+  "card": {
+    "status": "{value}",
+    "priority": "{value}",
+    "type": "{value}",
+    "statusAge": "há {value}",
+    "initiative": "Meta: {value}",
+    "cycle": "Ciclo {value}",
+    "estimatePoints": "{value} pts",
+    "estimateTime": "{value}",
+    "startDate": "a partir de {value}",
+    "dueDate": "vence {value}"
+  }
 }

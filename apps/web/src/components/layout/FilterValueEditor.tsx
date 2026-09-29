@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import type { ProjectDetail } from '@/lib/api/endpoints/projects';
 import type { FilterCondition, FilterValue } from '@/utils/filters';
@@ -17,15 +17,29 @@ export default function FilterValueEditor({
   cond,
   onChange,
   project,
+  defaultOpen = false,
+  onEscape,
 }: {
   spec: FieldSpec;
   cond: FilterCondition;
   onChange: (values: FilterValue[]) => void;
   project: ProjectDetail;
+  // A condition just added opens its values at once (owner, 28.09.: the value list closed
+  // on the first click and had to be opened a second time).
+  defaultOpen?: boolean;
+  // Escape in the value list closes the whole filter editor, not only the list.
+  onEscape?: () => void;
 }) {
   const t = useTranslations('filters');
   const { booleanOptions, valuesLabel } = useFilterFields();
   const [open, setOpen] = useState(false);
+  // Opened only once the condition's editor around it has taken the focus: opened with it,
+  // the editor's own focus would count as a click outside and close the list at once.
+  useEffect(() => {
+    if (!defaultOpen) return;
+    const timer = setTimeout(() => setOpen(true), 60);
+    return () => clearTimeout(timer);
+  }, [defaultOpen]);
 
   if (cond.op === 'is_set' || cond.op === 'is_not_set') return null;
 
@@ -91,7 +105,13 @@ export default function FilterValueEditor({
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>{trigger}</PopoverTrigger>
-      <PopoverContent align="start" className="max-h-72 w-72 overflow-auto p-1">
+      <PopoverContent
+        align="start"
+        className="max-h-72 w-72 overflow-auto p-1"
+        onEscapeKeyDown={() => onEscape?.()}
+        // Focus moving back into the condition's editor is not a reason to close the list.
+        onFocusOutside={(event) => event.preventDefault()}
+      >
         {options.map((o) => {
           const checked = cond.values.some((v) => v === o.value);
           return (

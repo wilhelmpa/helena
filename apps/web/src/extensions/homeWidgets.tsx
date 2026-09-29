@@ -24,6 +24,8 @@ import { useUpdateEntries } from '@/features/update-center/components/updateNeed
 import { useServerEntries } from '@/features/server/components/serverNeedsYou';
 import { useSecurityEntries } from '@/features/security-status/securityNeedsYou';
 import LocalAiTile from '@/features/local-ai/components/LocalAiTile';
+import { BudgetsTile } from '@/features/home/dashboard/tiles/BudgetsTile';
+import { budgetNeedsYouSource } from '@/features/home/dashboard/budgetNeedsYou';
 import { localAiNeedsYouSource } from '@/features/local-ai/services/localAiProblems';
 
 // Start's built-in widgets and "Braucht dich" sources (docs/helena-decisions/dashboard.md),
@@ -45,6 +47,15 @@ const BUILTINS = [
     order: 40,
     audience: 'owner',
     component: LimitsTiles,
+  }),
+  // Budgets that stop or slow work (owner 28.09., Paperclip): shown once one is set.
+  homeWidget({
+    id: 'budgets',
+    kind: 'figure',
+    group: 'agents',
+    order: 45,
+    audience: 'owner',
+    component: BudgetsTile,
   }),
   homeWidget({
     id: 'system',
@@ -132,6 +143,8 @@ const SOURCES = [
   { id: 'updates', order: 16, useEntries: useUpdateEntries },
   // Severe failed checks of the host audit (hub/hardening).
   { id: 'security', order: 17, useEntries: useSecurityEntries },
+  // A used-up budget that stops the work of a project, an agent or a department.
+  budgetNeedsYouSource,
   // Local AI: its server down, a kind of work whose model failed its eval (hub/local-ai).
   localAiNeedsYouSource,
 ];

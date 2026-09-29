@@ -22,7 +22,7 @@ class LocalCodexContractTest(unittest.TestCase):
         interfaces = json.loads(subprocess.check_output(['ip', '-j', 'link'], text=True))
         self.assertEqual([interface['ifname'] for interface in interfaces], ['lo'])
         self.assertTrue(CODEX.is_file())
-        for kind in ('local-qwen36', 'local-qwen38'):
+        for kind in ('local-qwen36', 'local-qwen38', 'local-flash'):
             with self.subTest(kind=kind), tempfile.TemporaryDirectory(prefix='local-codex-') as temp:
                 root = Path(temp)
                 for name in ('home', 'codex', 'work'):
@@ -101,7 +101,8 @@ class LocalCodexContractTest(unittest.TestCase):
                     self.assertEqual(result.returncode, 0, result.stderr[-4000:])
                     self.assertEqual(len(requests), 2, result.stderr[-4000:])
                     expected_model = {'local-qwen36': 'Qwen3.6-35B-A3B-MTP-GGUF',
-                                      'local-qwen38': 'Qwen3.8-27B-GGUF'}[kind]
+                                      'local-qwen38': 'Qwen3.8-27B-GGUF',
+                                      'local-flash': 'halogen-qwen3.8-flash-next'}[kind]
                     for request in requests:
                         self.assertEqual(request['model'], expected_model)
                         self.assertFalse(request['store'])

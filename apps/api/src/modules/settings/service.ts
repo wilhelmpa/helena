@@ -94,8 +94,17 @@ export function mimeAllowed(contentType: string, allowed: string[]): boolean {
 
 const PROJECT_DEFAULTS_SETTING_KEY = 'projects';
 
+export interface DefaultBudget {
+  metric: 'tokens' | 'cost' | 'time';
+  period: 'day' | 'month';
+  limit: number;
+}
+
 export interface ProjectDefaults {
   autopilotLevel: AutopilotLevel;
+  // The budgets a new project starts with (Paperclip's budgets, owner 28.09.): one per
+  // metric and period, the project's own settings change them.
+  budgets: DefaultBudget[];
   // Whether a new project starts reachable over MCP. On: an instance driven
   // through MCP does not have to remember the per-project toggle. This is a
   // visibility default, not an access grant — a project still only appears to a
@@ -104,7 +113,30 @@ export interface ProjectDefaults {
 }
 
 function defaultProjectDefaults(): ProjectDefaults {
-  return { mcpEnabled: true, autopilotLevel: DEFAULT_AUTOPILOT_LEVEL };
+  return { mcpEnabled: true, autopilotLevel: DEFAULT_AUTOPILOT_LEVEL, budgets: [] };
+}
+
+const BUDGET_METRICS = new Set(['tokens', 'cost', 'time']);
+const BUDGET_PERIODS = new Set(['day', 'month']);
+
+// Stored default budgets as Helena uses them: valid entries only, one per metric and period
+// (the last one wins), positive limits.
+export function normalizeDefaultBudgets(value: unknown): DefaultBudget[] {
+  if (!Array.isArray(value)) return [];
+  const byCell = new Map<string, DefaultBudget>();
+  for (const entry of value as Record<string, unknown>[]) {
+    if (!entry || typeof entry !== 'object') continue;
+    const { metric, period, limit } = entry;
+    if (typeof metric !== 'string' || !BUDGET_METRICS.has(metric)) continue;
+    if (typeof period !== 'string' || !BUDGET_PERIODS.has(period)) continue;
+    if (typeof limit !== 'number' || !Number.isFinite(limit) || limit <= 0) continue;
+    byCell.set(`${metric}:${period}`, {
+      metric: metric as DefaultBudget['metric'],
+      period: period as DefaultBudget['period'],
+      limit,
+    });
+  }
+  return [...byCell.values()];
 }
 
 export async function getProjectDefaults(): Promise<ProjectDefaults> {
@@ -116,6 +148,7 @@ export async function getProjectDefaults(): Promise<ProjectDefaults> {
     autopilotLevel: isAutopilotLevel(stored?.autopilotLevel)
       ? stored.autopilotLevel
       : DEFAULT_AUTOPILOT_LEVEL,
+    budgets: normalizeDefaultBudgets(stored?.budgets),
   };
 }
 
@@ -123,6 +156,7 @@ export async function setProjectDefaults(
   patch: Partial<ProjectDefaults>,
 ): Promise<ProjectDefaults> {
   const next = { ...(await getProjectDefaults()), ...patch };
+  next.budgets = normalizeDefaultBudgets(next.budgets);
   await setSetting(PROJECT_DEFAULTS_SETTING_KEY, next);
   return next;
 }

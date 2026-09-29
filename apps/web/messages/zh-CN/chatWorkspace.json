@@ -41,7 +41,22 @@
     "deleteConfirmTitle": "删除此聊天？",
     "deleteConfirmBody": "“{title}”及其消息将移入回收站，之后仍可恢复。",
     "trashed": "聊天已移入回收站。",
-    "purged": "聊天已永久删除。"
+    "purged": "聊天已永久删除。",
+    "options": "聊天列表",
+    "groupBy": "分组",
+    "grouping": {
+      "time": "按日期",
+      "project": "按项目",
+      "agent": "按代理"
+    },
+    "deleteAll": "全部删除",
+    "deleteAllTitle": "删除所有聊天？",
+    "deleteAllBody": "此列表中的聊天将移至回收站，可在那里恢复。仍在回答的聊天会保留。",
+    "emptyTrash": "清空回收站",
+    "emptyTrashTitle": "清空回收站？",
+    "emptyTrashBody": "回收站中的聊天及其所有消息将被永久删除。",
+    "trashedAll": "{count, plural, =0 {未移动聊天} other {# 个聊天已移至回收站}}",
+    "purgedAll": "{count, plural, =0 {回收站为空} other {已永久删除 # 个聊天}}"
   },
   "empty": {
     "noAgentsTitle": "没有可以对话的智能体",
@@ -119,7 +134,10 @@
     "dictationUnavailable": "此处暂时无法听写——点击查看原因",
     "autoSpeak": "自动朗读回答",
     "autoSpeakOn": "正在朗读回答——点击关闭",
-    "queuedList": "等待发送"
+    "queuedList": "等待发送",
+    "localModel": "{name}（本地）",
+    "fallbackModel": "备用：{name}",
+    "busyElsewhere": "{agent} 正在处理其他事情——回复可能需要一些时间。"
   },
   "artifact": {
     "title": "产物",
@@ -169,7 +187,8 @@
   "agents": {
     "runtimeExternal": "外部",
     "switch": "正在与 {agent} 对话——与其他智能体开始新对话",
-    "newChatWith": "新对话，对象…"
+    "newChatWith": "新对话，对象…",
+    "switchToHelena": "与 Helena 新建聊天"
   },
   "interrupted": {
     "lost": "与回答的连接已断开。{agent} 可能仍在处理。",
@@ -273,5 +292,9 @@
     "webhookUrl": "地址（HTTPS）",
     "webhookSecretEnv": "存放签名密钥的变量",
     "webhookHint": "Helena 按 Standard Webhooks 签名调用该地址。请在“访问”中把密钥（whsec_…）作为环境变量提供给代理。"
+  },
+  "context": {
+    "task": "任务 {identifier}「{title}」",
+    "document": "文档 {name}"
   }
 }

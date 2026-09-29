@@ -5,7 +5,9 @@ import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import {
   deleteChat,
+  emptyChatTrash,
   listChats,
+  trashAllChats,
   restoreChat,
   setChatPinned,
   updateChat,
@@ -105,5 +107,22 @@ export function useChatListMutations() {
     },
   });
 
-  return { pin, rename, archive, trash, purge, restore };
+  const trashAll = useMutation({
+    mutationFn: (filter: { projectKey?: string; view: 'active' | 'archived' }) =>
+      trashAllChats(filter),
+    onSuccess: ({ count }) => {
+      toast.success(t('list.trashedAll', { count }));
+      return client.invalidateQueries({ queryKey: qk.anyChatList });
+    },
+  });
+
+  const emptyTrash = useMutation({
+    mutationFn: (filter: { projectKey?: string }) => emptyChatTrash(filter),
+    onSuccess: ({ count }) => {
+      toast.success(t('list.purgedAll', { count }));
+      return client.invalidateQueries({ queryKey: qk.anyChatList });
+    },
+  });
+
+  return { pin, rename, archive, trash, purge, restore, trashAll, emptyTrash };
 }

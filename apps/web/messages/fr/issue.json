@@ -40,7 +40,10 @@
     "why": "Pourquoi",
     "cost": "Coût",
     "costUnpriced": "sans prix",
-    "costTokens": "{tokens} jetons"
+    "costTokens": "{tokens} jetons",
+    "claimedBy": "Traitée par",
+    "claimedSince": "depuis {age}",
+    "claimedHint": "Cet agent tient la tâche en ce moment ; les autres exécutions attendent qu’il la libère."
   },
   "menu": {
     "preview": "Aperçu",

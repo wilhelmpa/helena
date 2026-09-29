@@ -71,7 +71,8 @@
     "created": "Created <task>{identifier}</task>",
     "reopened": "Reopened <task>{identifier}</task>",
     "skipped": "Skipped: <task>{identifier}</task> is still open",
-    "missed": "Skipped: started too late"
+    "missed": "Skipped: started too late",
+    "noWork": "Skipped: nothing new to do"
   },
   "moreActions": "More actions",
   "runNow": "Run now",

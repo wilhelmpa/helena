@@ -40,7 +40,10 @@
     "why": "Mengapa",
     "cost": "Biaya",
     "costUnpriced": "tanpa harga",
-    "costTokens": "{tokens} token"
+    "costTokens": "{tokens} token",
+    "claimedBy": "Dikerjakan oleh",
+    "claimedSince": "sejak {age}",
+    "claimedHint": "Agen ini sedang memegang tugas; proses lain menunggu sampai dilepas."
   },
   "menu": {
     "preview": "Pratinjau",

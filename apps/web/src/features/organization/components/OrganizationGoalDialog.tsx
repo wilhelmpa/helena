@@ -2,12 +2,8 @@
 
 import { useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { Building2, CircleDot, FolderKanban, Target } from 'lucide-react';
 import Modal from '@/components/common/overlay/Modal';
 import MarkdownEditor from '@/components/common/editor/MarkdownEditor';
-import DatePill from '@/components/common/fields/DatePill';
-import PopoverPick from '@/components/common/fields/PopoverPick';
-import { Pill } from '@/components/common/fields/Pill';
 import { Button } from '@/components/ui/button';
 import type {
   OrganizationDepartment,
@@ -16,9 +12,8 @@ import type {
   OrganizationProject,
 } from '@/lib/api/endpoints/organization';
 import { useCreateGoal } from '../services/organization.service';
-import { Inline } from '@/design-system';
-
-const STATUSES: OrganizationGoalStatus[] = ['planned', 'active', 'achieved', 'paused'];
+import { Box, Inline } from '@/design-system';
+import GoalPropertyPills from './GoalPropertyPills';
 
 // "Neues Ziel" of Helena (goals above the projects) in the create dialog every new thing
 // uses (owner 28.09.: like "Neue Aufgabe"): a large title, the description, then one row of
@@ -65,18 +60,6 @@ export default function OrganizationGoalDialog({
     );
   };
 
-  const parent = goals.find((goal) => goal.id === parentGoalId);
-  const department = departments.find((item) => item.id === departmentId);
-  const project = projects.find((item) => item.id === projectId);
-  const none = (selected: boolean, onSelect: () => void) => ({
-    key: 'none',
-    search: t('goals.none'),
-    icon: null,
-    label: t('goals.none'),
-    selected,
-    onSelect,
-  });
-
   return (
     <Modal
       title={t('goals.new')}
@@ -106,103 +89,30 @@ export default function OrganizationGoalDialog({
             }
           }}
         />
-        <MarkdownEditor
-          className="mt-3 min-h-24 overflow-y-auto"
-          defaultValue=""
-          placeholder={t('goals.descriptionPlaceholder')}
-          onChange={setDescription}
-        />
-        <Inline gap={2} marginTop={2} wrap className="new-issue-pills">
-          <PopoverPick
-            trigger={
-              <Pill active>
-                <CircleDot />
-                {t(`statuses.${status}`)}
-              </Pill>
-            }
-            inputPlaceholder={t('fields.status')}
-            items={STATUSES.map((value) => ({
-              key: value,
-              search: t(`statuses.${value}`),
-              icon: <CircleDot />,
-              label: t(`statuses.${value}`),
-              selected: value === status,
-              onSelect: () => setStatus(value),
-            }))}
+        <Box marginTop={3}>
+          <MarkdownEditor
+            className="min-h-24 overflow-y-auto"
+            defaultValue=""
+            placeholder={t('goals.descriptionPlaceholder')}
+            onChange={setDescription}
           />
-          {goals.length > 0 && (
-            <PopoverPick
-              trigger={
-                <Pill active={parent != null}>
-                  <Target />
-                  {parent?.title ?? t('fields.parentGoal')}
-                </Pill>
-              }
-              inputPlaceholder={t('fields.parentGoal')}
-              contentClassName="w-72"
-              items={[
-                none(parentGoalId == null, () => setParentGoalId(null)),
-                ...goals.map((goal) => ({
-                  key: String(goal.id),
-                  search: goal.title,
-                  icon: <Target />,
-                  label: goal.title,
-                  selected: goal.id === parentGoalId,
-                  onSelect: () => setParentGoalId(goal.id),
-                })),
-              ]}
-            />
-          )}
-          {departments.length > 0 && (
-            <PopoverPick
-              trigger={
-                <Pill active={department != null}>
-                  <Building2 />
-                  {department?.name ?? t('fields.department')}
-                </Pill>
-              }
-              inputPlaceholder={t('fields.department')}
-              items={[
-                none(departmentId == null, () => setDepartmentId(null)),
-                ...departments.map((item) => ({
-                  key: String(item.id),
-                  search: item.name,
-                  icon: <Building2 />,
-                  label: item.name,
-                  selected: item.id === departmentId,
-                  onSelect: () => setDepartmentId(item.id),
-                })),
-              ]}
-            />
-          )}
-          {projects.length > 0 && (
-            <PopoverPick
-              trigger={
-                <Pill active={project != null}>
-                  <FolderKanban />
-                  {project?.name ?? t('fields.project')}
-                </Pill>
-              }
-              inputPlaceholder={t('fields.project')}
-              items={[
-                none(projectId == null, () => setProjectId(null)),
-                ...projects.map((item) => ({
-                  key: String(item.id),
-                  search: `${item.key} ${item.name}`,
-                  icon: <FolderKanban />,
-                  label: item.name,
-                  selected: item.id === projectId,
-                  onSelect: () => setProjectId(item.id),
-                })),
-              ]}
-            />
-          )}
-          <DatePill
-            value={targetDate}
-            placeholder={t('fields.targetDate')}
-            onChange={setTargetDate}
+        </Box>
+        <Box marginTop={2}>
+          <GoalPropertyPills
+            value={{ status, parentGoalId, departmentId, projectId, targetDate }}
+            goalId={null}
+            goals={goals}
+            departments={departments}
+            projects={projects}
+            onChange={(patch) => {
+              if (patch.status !== undefined) setStatus(patch.status);
+              if (patch.parentGoalId !== undefined) setParentGoalId(patch.parentGoalId);
+              if (patch.departmentId !== undefined) setDepartmentId(patch.departmentId);
+              if (patch.projectId !== undefined) setProjectId(patch.projectId);
+              if (patch.targetDate !== undefined) setTargetDate(patch.targetDate);
+            }}
           />
-        </Inline>
+        </Box>
         <Inline
           gap={2}
           marginTop={5}

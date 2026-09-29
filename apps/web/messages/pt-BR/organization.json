@@ -107,7 +107,19 @@
     "create": "Criar objetivo",
     "titlePlaceholder": "Título do objetivo",
     "descriptionPlaceholder": "Do que se trata e como você saberá que foi alcançado?",
-    "none": "Nenhum"
+    "none": "Nenhum",
+    "ladder": "Escada de metas",
+    "ladderAlone": "Esta meta é independente: não serve a outra meta e nenhuma a serve.",
+    "back": "Voltar às metas",
+    "actions": "Ações de {title}",
+    "why": "Por quê",
+    "work": "Trabalho",
+    "saveFailed": "A alteração não foi salva.",
+    "deleteTitle": "Excluir a meta “{title}”?",
+    "deleteBody": "As metas abaixo dela deixam de servir a uma meta; as tarefas vinculadas permanecem.",
+    "wholeTeam": "Equipe inteira",
+    "list": "Metas",
+    "proposalsWaiting": "Há propostas aguardando sua decisão"
   },
   "agents": {
     "empty": "Esta equipe não tem agentes.",
@@ -318,6 +330,24 @@
     "whyEmpty": "Nenhum agente trabalha ainda em uma tarefa deste projeto.",
     "whyNoGoal": "Nenhuma meta vinculada",
     "noAgent": "Sem agente",
-    "filterLabel": "Status"
+    "filterLabel": "Status",
+    "addMember": "Adicionar membro"
+  },
+  "addMember": {
+    "title": "Adicionar membro à equipe",
+    "description": "Um agente do pool ou uma nova cópia de um modelo entra na equipe do projeto.",
+    "source": "Origem",
+    "fromPool": "Do pool",
+    "fromTemplate": "De um modelo",
+    "project": "Projeto",
+    "chooseProject": "Escolha um projeto",
+    "poolEmpty": "Todos os agentes do pool já trabalham neste projeto.",
+    "templatesEmpty": "A equipe ainda não tem modelos.",
+    "reportsTo": "Reporta-se a",
+    "reportsToHint": "O coordenador do projeto, a menos que você escolha outro.",
+    "add": "Adicionar",
+    "added": "Adicionado a {project}",
+    "failed": "Não foi possível adicionar o membro.",
+    "keyOnce": "A cópia roda fora da Helena: copie a chave agora, ela é mostrada só uma vez."
   }
 }

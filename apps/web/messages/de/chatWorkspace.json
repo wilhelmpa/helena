@@ -41,7 +41,22 @@
     "deleteConfirmTitle": "Diesen Chat löschen?",
     "deleteConfirmBody": "„{title}“ und seine Nachrichten wandern in den Papierkorb und bleiben dort wiederherstellbar.",
     "trashed": "Chat in den Papierkorb verschoben.",
-    "purged": "Chat endgültig gelöscht."
+    "purged": "Chat endgültig gelöscht.",
+    "options": "Chatliste",
+    "groupBy": "Gruppieren",
+    "grouping": {
+      "time": "Nach Datum",
+      "project": "Nach Projekt",
+      "agent": "Nach Agent"
+    },
+    "deleteAll": "Alle löschen",
+    "deleteAllTitle": "Alle Chats löschen?",
+    "deleteAllBody": "Die Chats dieser Liste kommen in den Papierkorb und lassen sich dort wiederherstellen. Ein Chat, in dem gerade geantwortet wird, bleibt.",
+    "emptyTrash": "Papierkorb leeren",
+    "emptyTrashTitle": "Papierkorb leeren?",
+    "emptyTrashBody": "Die Chats im Papierkorb werden mit allen Nachrichten endgültig gelöscht.",
+    "trashedAll": "{count, plural, =0 {Keine Chats verschoben} one {Ein Chat im Papierkorb} other {# Chats im Papierkorb}}",
+    "purgedAll": "{count, plural, =0 {Der Papierkorb war leer} one {Ein Chat endgültig gelöscht} other {# Chats endgültig gelöscht}}"
   },
   "empty": {
     "noAgentsTitle": "Kein Agent für einen Chat",
@@ -119,7 +134,10 @@
     "dictationUnavailable": "Diktieren geht hier gerade nicht – klicken für den Grund",
     "autoSpeak": "Antworten automatisch vorlesen",
     "autoSpeakOn": "Antworten werden vorgelesen – zum Ausschalten klicken",
-    "queuedList": "Wartet auf das Senden"
+    "queuedList": "Wartet auf das Senden",
+    "localModel": "{name} (lokal)",
+    "fallbackModel": "Rückfall: {name}",
+    "busyElsewhere": "{agent} arbeitet gerade an anderer Stelle – eine Antwort kann etwas dauern."
   },
   "artifact": {
     "title": "Artefakt",
@@ -169,7 +187,8 @@
   "agents": {
     "runtimeExternal": "Extern",
     "switch": "Chat mit {agent} – neuen Chat mit einem anderen Agenten beginnen",
-    "newChatWith": "Neuer Chat mit …"
+    "newChatWith": "Neuer Chat mit …",
+    "switchToHelena": "Neuer Chat mit Helena"
   },
   "interrupted": {
     "lost": "Die Verbindung zur Antwort ist abgerissen. {agent} arbeitet vielleicht noch daran.",
@@ -273,5 +292,9 @@
     "webhookUrl": "Adresse (HTTPS)",
     "webhookSecretEnv": "Variable mit dem Signaturschlüssel",
     "webhookHint": "Helena ruft die Adresse signiert nach Standard Webhooks auf. Den Schlüssel (whsec_…) gibst du dem Agenten unter Zugänge als Umgebungsvariable."
+  },
+  "context": {
+    "task": "Aufgabe {identifier} „{title}“",
+    "document": "Dokument {name}"
   }
 }

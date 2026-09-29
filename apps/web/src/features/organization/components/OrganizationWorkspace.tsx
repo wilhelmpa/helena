@@ -85,6 +85,13 @@ export default function OrganizationWorkspace({
     ) : (
       <OrganizationChart
         organization={organization}
+        // On a project's Team page the project's coordinator is the middle of the ring
+        // (owner, O18/O56), and only the project's agents are shown.
+        projectId={
+          projectKey
+            ? organization.projects.find((project) => project.key === projectKey)?.id
+            : undefined
+        }
         toolbarStart={lensSwitch}
         toolbarEnd={toolbarEnd}
       />

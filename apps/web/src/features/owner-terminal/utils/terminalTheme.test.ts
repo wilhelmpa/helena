@@ -40,6 +40,11 @@ test('Wetty gets the Helena ANSI palette and terminal dimensions in both modes',
     assert.equal(term.options.lineHeight, 1.25);
     assert.equal(term.options.fontFamily, 'Helena JetBrains Mono, monospace');
     assert.match(dom.window.document.head.innerHTML, /padding:12px/);
+    // Wetty's keyboard and gear buttons are hidden (owner, 28.09., O29).
+    assert.match(
+      dom.window.document.head.innerHTML,
+      /#functions,#options,\.toggler\{display:none!important\}/,
+    );
     assert.equal(term.resizeTermCalls, 1);
     detachDark();
 

@@ -24,11 +24,12 @@ import { useSession } from '@/lib/auth-client';
 import ListPager from '@/components/common/ListPager';
 import { usePaging } from '@/hooks/usePaging';
 import MemberRow from './MemberRow';
-import { Stack } from '@/design-system';
+import { ButtonLink, Inline, Stack, Text } from '@/design-system';
+import { organizationPath } from '@/utils/paths';
 
 // The project's members, newest membership first, a page at a time. People and AI
-// agents share one list and are told apart by the tabs, so neither is pushed off the
-// first page by the other; the search runs on the server, within the open tab. The
+// agents are kept apart (owner, O34): the people first, the agents on their own tab,
+// short, with the way to the Team page where they are managed; the search runs on the server, within the open tab. The
 // last owner is protected — the API rejects removing them and the row's action is
 // disabled too. The tabs, the search and the page's primary action (`primary`, add a
 // member) are the page's one header row.
@@ -42,7 +43,7 @@ export default function MembersList({
   primary?: Omit<PageAction, 'menuOnly'>;
 }) {
   const t = useTranslations('members');
-  const [kind, setKind] = useState<MemberKind>('all');
+  const [kind, setKind] = useState<MemberKind>('human');
   const { search, setSearch, term } = useSearchTerm();
   const paging = usePaging();
   const { can, isAdmin } = usePermissions();
@@ -102,7 +103,6 @@ export default function MembersList({
         value={kind}
         onChange={onKindChange}
         items={[
-          { value: 'all', label: t('tabs.all') },
           { value: 'human', label: t('tabs.people') },
           { value: 'agent', label: t('tabs.agents') },
         ]}
@@ -172,6 +172,17 @@ export default function MembersList({
       )}
 
       {total > 0 && <ListPager paging={paging} total={total} />}
+
+      {kind === 'agent' && (
+        <Inline gap={3} wrap>
+          <Text size="sm" tone="muted">
+            {t('agentsOnTeam')}
+          </Text>
+          <ButtonLink href={organizationPath(projectKey)} size="small">
+            {t('openTeam')}
+          </ButtonLink>
+        </Inline>
+      )}
 
       {target && (
         <ConfirmDialog

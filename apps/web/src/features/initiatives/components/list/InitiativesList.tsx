@@ -5,6 +5,8 @@ import type { InitiativesTab } from '@/utils/paths';
 import { EmptyState } from '@/components/common/page/EmptyState';
 import ListSkeleton from '@/components/common/skeleton/ListSkeleton';
 import InitiativeRow from './InitiativeRow';
+import { useProjectGoalContext } from '@/services/projectGoals.service';
+import { poolGoalChain } from '../../utils/poolGoalChain';
 
 // A project's goals as one framed list (docs/design-system.md §4 List, owner 28.09.: "Ziele
 // schön"): each goal a row with its status dot, title and one line of detail on the left,
@@ -24,6 +26,7 @@ export default function InitiativesList({
 }) {
   const t = useTranslations('initiatives');
   const ownerById = new Map(project.assignees.map((a) => [a.userId, a]));
+  const goalContext = useProjectGoalContext(project.project.key);
 
   if (isLoading) return <ListSkeleton className="ds-goal-list-pad" rowClassName="h-14" />;
 
@@ -46,6 +49,7 @@ export default function InitiativesList({
             initiative={it}
             projectKey={project.project.key}
             owner={it.ownerUserId ? (ownerById.get(it.ownerUserId) ?? null) : null}
+            why={poolGoalChain(goalContext.data, it.id)?.steps}
           />
         ))}
       </ul>

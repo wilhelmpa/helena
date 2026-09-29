@@ -71,7 +71,8 @@
     "created": "Створено <task>{identifier}</task>",
     "reopened": "Повторно відкрито <task>{identifier}</task>",
     "skipped": "Пропущено: <task>{identifier}</task> ще відкрита",
-    "missed": "Пропущено: почався надто пізно"
+    "missed": "Пропущено: почався надто пізно",
+    "noWork": "Пропущено: нічого нового"
   },
   "moreActions": "Інші дії",
   "runNow": "Запустити зараз",

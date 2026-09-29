@@ -71,7 +71,8 @@
     "created": "<task>{identifier}</task> erstellt",
     "reopened": "<task>{identifier}</task> erneut geöffnet",
     "skipped": "Übersprungen: <task>{identifier}</task> ist noch offen",
-    "missed": "Übersprungen: zu spät gestartet"
+    "missed": "Übersprungen: zu spät gestartet",
+    "noWork": "Übersprungen: nichts Neues zu tun"
   },
   "moreActions": "Weitere Aktionen",
   "runNow": "Jetzt ausführen",

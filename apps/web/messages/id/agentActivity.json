@@ -27,7 +27,8 @@
     "delegation": "Delegasi",
     "field": "Pemicu bidang",
     "schedule": "Jadwal",
-    "manual": "Manual"
+    "manual": "Manual",
+    "heartbeat": "Detak"
   },
   "maxTurns": "{count, plural, other {Paling banyak # giliran}}",
   "runBudget": "{minutes, plural, other {Batas # menit}}",
@@ -44,5 +45,12 @@
   "allStatuses": "Semua keadaan",
   "statusRunning": "Sedang berjalan",
   "noneRunning": "Saat ini tidak ada yang berjalan.",
-  "noneRunningHint": "Atur keadaan ke “Semua keadaan” untuk melihat seluruh riwayat."
+  "noneRunningHint": "Atur keadaan ke “Semua keadaan” untuk melihat seluruh riwayat.",
+  "between": "{from} – {to}",
+  "show": "Tampilkan",
+  "hide": "Sembunyikan",
+  "filterHeartbeats": "Detak",
+  "heartbeatsBundled": "Detak digabung",
+  "heartbeatsAll": "Semua detak",
+  "heartbeatRuns": "{count, plural, other {# jalannya detak}}"
 }

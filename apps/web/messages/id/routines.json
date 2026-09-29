@@ -71,7 +71,8 @@
     "created": "Membuat <task>{identifier}</task>",
     "reopened": "Membuka kembali <task>{identifier}</task>",
     "skipped": "Dilewati: <task>{identifier}</task> masih terbuka",
-    "missed": "Dilewati: dimulai terlalu terlambat"
+    "missed": "Dilewati: dimulai terlalu terlambat",
+    "noWork": "Dilewati: tidak ada yang baru"
   },
   "moreActions": "Tindakan lainnya",
   "runNow": "Jalankan sekarang",

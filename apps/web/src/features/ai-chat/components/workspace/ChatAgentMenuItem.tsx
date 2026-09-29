@@ -2,11 +2,12 @@
 
 import { Check } from 'lucide-react';
 import type { AiAgent } from '@/lib/api/endpoints/agents';
+import { MenuItem, Text } from '@/design-system';
 import AgentAvatar from '@/components/common/page/AgentAvatar';
 import Orb from '@/components/helena/Orb';
 import { useAgentStatus } from '@/utils/helenaStatus';
-import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import type { ChatAgentState } from '../../utils/agentPresence';
+import { agentDisplayName } from '../../utils/agentChip';
 import { useAgentStateText } from '../../hooks/useAgentStateText';
 
 // One agent in ChatAgentMenu: avatar, name, the runtime/model/state line under it, and
@@ -30,20 +31,19 @@ export default function ChatAgentMenuItem({
     run: state?.label,
     runtimeStatus: state?.online === false ? 'offline' : agent.runtimeState.status,
   });
+  const name = agentDisplayName(agent);
 
   return (
-    <DropdownMenuItem disabled={!selectable} onSelect={onPick} className="gap-2 py-1.5">
-      <AgentAvatar
-        name={agent.name}
-        runtime={state?.runtime ?? undefined}
-        className="size-6 text-2xl"
-      />
+    <MenuItem disabled={!selectable} onSelect={onPick} className="ds-agent-menu-item">
+      <AgentAvatar name={name} runtime={state?.runtime ?? undefined} className="size-6" />
       <Orb state={status} motionEnabled={motionEnabled} />
-      <div className="min-w-0 flex-1">
-        <div className="truncate text-sm">{agent.name}</div>
-        <div className="truncate text-xs text-muted-foreground">{text.detail(agent, state)}</div>
-      </div>
-      {current && <Check className="size-4 shrink-0" />}
-    </DropdownMenuItem>
+      <span className="ds-agent-menu-item-text">
+        <Text truncate>{name}</Text>
+        <Text size="xs" tone="muted" truncate>
+          {text.detail(agent, state)}
+        </Text>
+      </span>
+      {current && <Check size={16} aria-hidden="true" />}
+    </MenuItem>
   );
 }

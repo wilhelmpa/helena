@@ -43,9 +43,9 @@
     "create": "Create",
     "templates": "Templates",
     "empty": "No templates yet",
-    "emptyHint": "Add a built-in template below or create a new one.",
-    "builtins": "Built-in templates",
-    "builtinsHint": "Adding one copies it into your library in your language, where you can change it.",
+    "emptyHint": "Add one of the examples below or build your own.",
+    "builtins": "Examples",
+    "builtinsHint": "Added to your library in your language, where you can change it.",
     "addToLibrary": "Add to library",
     "added": "{name} was added to the library.",
     "steps": "{count, plural, one {# step} other {# steps}}",
@@ -57,7 +57,10 @@
     "tryAgain": "Try again",
     "noAccess": "You may not see the workflows of this team.",
     "readOnly": "Only members who may create workflows add templates here.",
-    "noAccessTitle": "No access"
+    "noAccessTitle": "No access",
+    "startsWhen": "Starts: {trigger}",
+    "stepsLabel": "Steps",
+    "moreSteps": "+{count} more"
   },
   "starter": {
     "name": "New workflow",
@@ -592,5 +595,21 @@
     "of": "{workflow} in {project}",
     "step": "Step: {step}",
     "waitingSince": "Waiting since {time}"
+  },
+  "kindsOverview": {
+    "workflow": {
+      "title": "Workflow",
+      "text": "How a task runs its course: steps one after the other — agents, approvals, notices."
+    },
+    "schedule": {
+      "title": "Schedule (routine)",
+      "text": "When work starts by itself: at fixed times an agent gets a task, e.g. every morning at eight.",
+      "open": "Schedules"
+    },
+    "heartbeat": {
+      "title": "Heartbeat",
+      "text": "An agent looks at set intervals whether there is work for it, and only then starts.",
+      "open": "Team"
+    }
   }
 }

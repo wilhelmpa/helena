@@ -26,7 +26,8 @@
     "running": "Сейчас выполняется",
     "finished": "Недавно завершено",
     "schedules": "Далее",
-    "projects": "Проекты"
+    "projects": "Проекты",
+    "budgets": "Бюджеты"
   },
   "figures": {
     "problems": "{count, plural, one {# проблема} few {# проблемы} many {# проблем} other {# проблемы}}",
@@ -72,7 +73,12 @@
     "empty": "Ничего не запланировано."
   },
   "projects": {
-    "empty": "Проектов пока нет."
+    "empty": "Проектов пока нет.",
+    "open": "{count, plural, =0 {Нет открытых задач} one {# открытая задача} few {# открытые задачи} many {# открытых задач} other {# открытой задачи}}",
+    "working": "{count, plural, one {# агент работает} few {# агента работают} many {# агентов работают} other {# агента работают}}",
+    "setupFailed": "Настройка не удалась",
+    "budgetStopped": "Остановлено",
+    "budgetThrottled": "Замедлено"
   },
   "system": {
     "title": "Система",
@@ -91,6 +97,18 @@
       "raidOk": "RAID в норме",
       "backup": "бэкап {at} назад",
       "cpu": "ЦП {temperature}"
+    }
+  },
+  "budgets": {
+    "title": "Бюджеты",
+    "ok": "В рамках",
+    "allWithin": "Ни один бюджет не тормозит и не останавливает работу",
+    "summaryStopped": "Остановлено: {stopped} · {names}",
+    "summaryThrottled": "Замедлено · {names}",
+    "stopped": {
+      "project": "Бюджет исчерпан: {name} приостанавливает работу",
+      "agent": "Бюджет исчерпан: {name} на паузе",
+      "department": "Бюджет исчерпан: отдел {name} приостанавливает работу"
     }
   }
 }

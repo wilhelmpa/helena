@@ -107,7 +107,19 @@
     "create": "Create goal",
     "titlePlaceholder": "Goal title",
     "descriptionPlaceholder": "What is it about, and how will you know it is reached?",
-    "none": "None"
+    "none": "None",
+    "ladder": "Goal ladder",
+    "ladderAlone": "This goal stands on its own: it serves no other goal, and none serves it.",
+    "back": "Back to the goals",
+    "actions": "Actions for {title}",
+    "why": "Why",
+    "work": "Work",
+    "saveFailed": "The change was not saved.",
+    "deleteTitle": "Delete the goal “{title}”?",
+    "deleteBody": "The goals below it then serve no goal; linked tasks stay.",
+    "wholeTeam": "Whole team",
+    "list": "Goals",
+    "proposalsWaiting": "Proposals are waiting for your decision"
   },
   "agents": {
     "empty": "This team has no agents.",
@@ -318,6 +330,24 @@
     "whyEmpty": "No agent is working on a task of this project yet.",
     "whyNoGoal": "No goal linked",
     "noAgent": "No agent",
-    "filterLabel": "Status"
+    "filterLabel": "Status",
+    "addMember": "Add member"
+  },
+  "addMember": {
+    "title": "Add a team member",
+    "description": "An agent from the pool or a new copy of a template joins the project's team.",
+    "source": "Source",
+    "fromPool": "From the pool",
+    "fromTemplate": "From a template",
+    "project": "Project",
+    "chooseProject": "Choose a project",
+    "poolEmpty": "Every agent of the pool already works in this project.",
+    "templatesEmpty": "The team has no templates yet.",
+    "reportsTo": "Reports to",
+    "reportsToHint": "The coordinator of the project unless you choose otherwise.",
+    "add": "Add",
+    "added": "Added to {project}",
+    "failed": "The member could not be added.",
+    "keyOnce": "The copy runs outside Helena: copy its key now, it is shown only once."
   }
 }

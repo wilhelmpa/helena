@@ -197,5 +197,31 @@
     "dialogHint": "Ein von Hand eingetragener Preis wird bei keinem Import überschrieben.",
     "empty": "Keine Preise gefunden.",
     "none": "–"
+  },
+  "standingOrders": {
+    "failed": "Das hat nicht geklappt.",
+    "sourceOwner": "Owner",
+    "added": "Dauerhafte Anweisung hinzugefügt",
+    "proposal": "Vorschlag",
+    "proposedBy": "Vorgeschlagen: {source}. Gilt erst, wenn du sie übernimmst.",
+    "rejected": "Vorschlag abgelehnt",
+    "confirmed": "Anweisung gilt ab jetzt",
+    "reject": "Ablehnen",
+    "confirm": "Übernehmen",
+    "switchedOn": "Anweisung eingeschaltet",
+    "switchedOff": "Anweisung ausgeschaltet",
+    "saved": "Anweisung gespeichert",
+    "newLabel": "Neue dauerhafte Anweisung",
+    "empty": "Eine Regel, die in jedem Lauf gilt, bis du sie ausschaltest.",
+    "placeholder": "z. B. Rechnungen aus Mails immer unter Belege ablegen.",
+    "add": "Hinzufügen",
+    "deleteTitle": "Diese Anweisung löschen?",
+    "deleted": "Anweisung gelöscht",
+    "editLabel": "Anweisung ändern",
+    "inForce": "Gilt · {source}",
+    "off": "Ausgeschaltet · {source}",
+    "active": "Gilt",
+    "actions": "Aktionen der Anweisung",
+    "edit": "Ändern"
   }
 }

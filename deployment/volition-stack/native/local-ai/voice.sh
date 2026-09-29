@@ -199,7 +199,8 @@ voice_cmake() {
   src=$1; shift
   if [ "$1" = rocm ]; then shift; hip_cmake "$src" "$@"; else
     shift
-    run cmake -S "$src" -B "$src/build" -G Ninja -DCMAKE_BUILD_TYPE=Release \
+    # Ninja ships in the ROCm venv, not on the system PATH; the CPU build needs it too.
+    run env PATH="$ROCM_VENV/bin:$PATH" cmake -S "$src" -B "$src/build" -G Ninja -DCMAKE_BUILD_TYPE=Release \
       -DBUILD_SHARED_LIBS=OFF -DGGML_HIP=OFF "$@"
   fi
 }

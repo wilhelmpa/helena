@@ -17,7 +17,7 @@ import {
   helenaOrderParams,
   orderPatch,
 } from './model';
-import { createOrder, decideOrder, listOrders, updateOrder } from './service';
+import { createOrder, decideOrder, deleteOrder, listOrders, updateOrder } from './service';
 
 function owner(user: { id: string; role?: string | null } | null | undefined) {
   const me = requireUser(user);
@@ -87,6 +87,16 @@ export const standingOrderRoutes = new Elysia({
       detail: { summary: 'Update a project standing order' },
     },
   )
+  .delete(
+    '/projects/:projectKey/standing-orders/:orderId',
+    ({ project, params }) => deleteOrder({ projectId: project.id }, params.orderId),
+    {
+      projectOwner: true,
+      params: orderParams,
+      response: { 200: OrderResponse, ...commonErrors },
+      detail: { summary: 'Delete a project standing order' },
+    },
+  )
   .post(
     '/projects/:projectKey/standing-orders/:orderId/decision',
     ({ project, params, user, body }) =>
@@ -152,6 +162,18 @@ export const standingOrderRoutes = new Elysia({
       body: orderPatch,
       response: { 200: OrderResponse, ...commonErrors },
       detail: { summary: 'Update a Helena standing order' },
+    },
+  )
+  .delete(
+    '/helena/standing-orders/:orderId',
+    async ({ user, params }) => {
+      owner(user);
+      return deleteOrder({ agentId: await helenaAgentId() }, params.orderId);
+    },
+    {
+      params: helenaOrderParams,
+      response: { 200: OrderResponse, ...commonErrors },
+      detail: { summary: 'Delete a Helena standing order' },
     },
   )
   .post(

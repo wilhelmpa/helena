@@ -41,7 +41,22 @@
     "deleteConfirmTitle": "Delete this chat?",
     "deleteConfirmBody": "“{title}” and its messages move to the trash, where they stay restorable.",
     "trashed": "Chat moved to trash.",
-    "purged": "Chat deleted for good."
+    "purged": "Chat deleted for good.",
+    "options": "Chat list",
+    "groupBy": "Group by",
+    "grouping": {
+      "time": "By date",
+      "project": "By project",
+      "agent": "By agent"
+    },
+    "deleteAll": "Delete all",
+    "deleteAllTitle": "Delete all chats?",
+    "deleteAllBody": "The chats of this list go to the trash, where they can be restored. A chat that is still being answered stays.",
+    "emptyTrash": "Empty trash",
+    "emptyTrashTitle": "Empty the trash?",
+    "emptyTrashBody": "The chats in the trash are deleted for good, with all their messages.",
+    "trashedAll": "{count, plural, =0 {No chats moved} one {One chat in the trash} other {# chats in the trash}}",
+    "purgedAll": "{count, plural, =0 {The trash was empty} one {One chat deleted for good} other {# chats deleted for good}}"
   },
   "empty": {
     "noAgentsTitle": "No agent to chat with",
@@ -119,7 +134,10 @@
     "dictationUnavailable": "Dictation is not possible here right now – click for the reason",
     "autoSpeak": "Read answers aloud automatically",
     "autoSpeakOn": "Answers are read aloud – click to turn off",
-    "queuedList": "Waiting to send"
+    "queuedList": "Waiting to send",
+    "localModel": "{name} (local)",
+    "fallbackModel": "Fallback: {name}",
+    "busyElsewhere": "{agent} is working on something else right now – an answer may take a while."
   },
   "artifact": {
     "title": "Artifact",
@@ -169,7 +187,8 @@
   "agents": {
     "runtimeExternal": "External",
     "switch": "Chatting with {agent} — start a new chat with another agent",
-    "newChatWith": "New chat with …"
+    "newChatWith": "New chat with …",
+    "switchToHelena": "New chat with Helena"
   },
   "interrupted": {
     "lost": "The connection to the answer was lost. {agent} may still be working on it.",
@@ -273,5 +292,9 @@
     "webhookUrl": "Address (HTTPS)",
     "webhookSecretEnv": "Variable holding the signing key",
     "webhookHint": "Helena calls the address signed per Standard Webhooks. Give the agent the key (whsec_…) as an environment variable under Access."
+  },
+  "context": {
+    "task": "Task {identifier} “{title}”",
+    "document": "Document {name}"
   }
 }

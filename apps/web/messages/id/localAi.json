@@ -352,7 +352,7 @@
   "escalation": {
     "title": "Eskalasi",
     "description": "Kapan model langganan yang kuat mengambil alih dari model lokal: pekerjaan sulit, jawaban tidak pasti, kegagalan.",
-    "draft": "Draf – belum aktif",
+    "draft": "Disimpan sekarang; runtime pusat mengikuti aturan setelah digunakan.",
     "enabled": "Eskalasi aktif",
     "defaultModel": "Model bawaan",
     "model": "Model",
@@ -374,7 +374,26 @@
       "error": "Galat"
     },
     "pinsNone": "Tidak ada pilihan tetap untuk agen, proyek, atau tugas.",
-    "pins": "{count} pilihan tetap untuk agen, proyek, atau tugas."
+    "pins": "{count} pilihan tetap untuk agen, proyek, atau tugas.",
+    "draftBadge": "Disiapkan",
+    "saved": "Aturan eskalasi disimpan",
+    "defaultModelHint": "Mengambil alih bila aturan tidak menyebut model.",
+    "uncertaintyHint": "Di bawah keyakinan ini (dalam %) model kuat yang menjawab.",
+    "failureHint": "Setelah sekian percobaan lokal, model kuat mengambil alih.",
+    "failureOn": "Dihitung sebagai kegagalan",
+    "pinsLabel": "Pilihan tetap",
+    "agentHint": "Aturannya ada di “Agen dan model”.",
+    "pinLabel": "Pilihan untuk agen ini",
+    "pinSaved": "Pilihan disimpan",
+    "pinModelHint": "Kosong: model bawaan.",
+    "pinModes": {
+      "auto": "Aturan",
+      "local": "Selalu lokal",
+      "strong": "Selalu kuat",
+      "autoHint": "Aturan pusat yang memutuskan.",
+      "localHint": "Agen ini tidak pernah eskalasi.",
+      "strongHint": "Agen ini selalu memakai model kuat."
+    }
   },
   "classGroups": {
     "none": "Belum ada jenis pekerjaan yang siap: lulus evaluasi dulu.",

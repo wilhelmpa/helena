@@ -13,7 +13,7 @@
     "unavailable": "Не вдалося перевірити або зберегти доступ до термінала. Спробуйте ще раз."
   },
   "grant": {
-    "active": "Термінал дозволено до {time}",
+    "active": "Відкрито до {time}",
     "expired": "Дозвіл термінала закінчився.",
     "end": "Завершити",
     "lan": "Термінал відкрито без коду (LAN)"
@@ -26,7 +26,10 @@
     "helena-dev-codex": "Розвивати Helena (Codex)",
     "close": "Завершити сеанс",
     "local-qwen36": "Qwen 3.6 локально (Codex)",
-    "local-qwen38": "Qwen 3.8 локально (Codex)"
+    "local-qwen38": "Qwen 3.8 локально (Codex)",
+    "local-flash": "Flash",
+    "add": "Відкрити термінал",
+    "label": "Термінали"
   },
   "keys": {
     "esc": "Esc",

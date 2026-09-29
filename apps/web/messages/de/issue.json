@@ -40,7 +40,10 @@
     "why": "Warum",
     "cost": "Kosten",
     "costUnpriced": "ohne Preis",
-    "costTokens": "{tokens} Tokens"
+    "costTokens": "{tokens} Tokens",
+    "claimedBy": "Bearbeitet von",
+    "claimedSince": "seit {age}",
+    "claimedHint": "Dieser Agent hält die Aufgabe gerade; andere Läufe warten, bis er sie freigibt."
   },
   "menu": {
     "preview": "Vorschau",

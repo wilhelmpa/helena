@@ -352,7 +352,7 @@
   "escalation": {
     "title": "Escalade",
     "description": "Quand un modèle d’abonnement puissant remplace le modèle local : travail difficile, réponses incertaines, échecs.",
-    "draft": "Brouillon – pas encore actif",
+    "draft": "Enregistré dès maintenant ; le moteur central suit les règles dès qu’il est en service.",
     "enabled": "Escalade activée",
     "defaultModel": "Modèle par défaut",
     "model": "Modèle",
@@ -374,7 +374,26 @@
       "error": "Erreur"
     },
     "pinsNone": "Aucun choix fixe pour les agents, projets ou tâches.",
-    "pins": "{count} choix fixes pour les agents, projets ou tâches."
+    "pins": "{count} choix fixes pour les agents, projets ou tâches.",
+    "draftBadge": "Préparé",
+    "saved": "Règles d’escalade enregistrées",
+    "defaultModelHint": "Prend le relais quand une règle ne nomme aucun modèle.",
+    "uncertaintyHint": "Sous ce niveau de confiance (en %), le modèle fort répond.",
+    "failureHint": "Après ce nombre d’essais locaux, le modèle fort prend le relais.",
+    "failureOn": "Compte comme un échec",
+    "pinsLabel": "Choix fixés",
+    "agentHint": "Les règles se trouvent dans « Agents et modèles ».",
+    "pinLabel": "Choix pour cet agent",
+    "pinSaved": "Choix enregistré",
+    "pinModelHint": "Vide : le modèle par défaut.",
+    "pinModes": {
+      "auto": "Règles",
+      "local": "Toujours local",
+      "strong": "Toujours fort",
+      "autoHint": "Les règles centrales décident.",
+      "localHint": "Cet agent n’escalade jamais.",
+      "strongHint": "Cet agent travaille toujours avec un modèle fort."
+    }
   },
   "classGroups": {
     "none": "Aucun type de travail n’est prêt : réussir d’abord une évaluation.",

@@ -76,7 +76,9 @@ export function attachTerminalTheme(frame: HTMLIFrameElement, mode: 'dark' | 'li
       doc.head.appendChild(style);
     }
     if (style.dataset.helenaMode !== mode) {
-      style.textContent = `@font-face{font-family:'Helena JetBrains Mono';src:url('/fonts/helena-jetbrains-mono-latin.woff2') format('woff2');font-weight:100 900;font-display:swap}html,body{background:${theme.background};color-scheme:${mode}}#terminal{box-sizing:border-box;padding:12px;background:${theme.background}}#functions,#options{font-family:InterVariable,Inter,sans-serif}`;
+      // Wetty's own keyboard and gear buttons are hidden (owner, 28.09., O29): Helena's
+      // tab bar and the phone's key bar do their work.
+      style.textContent = `@font-face{font-family:'Helena JetBrains Mono';src:url('/fonts/helena-jetbrains-mono-latin.woff2') format('woff2');font-weight:100 900;font-display:swap}html,body{background:${theme.background};color-scheme:${mode}}#terminal{box-sizing:border-box;padding:12px;background:${theme.background}}#functions,#options,.toggler{display:none!important}`;
       style.dataset.helenaMode = mode;
     }
     const term = win.wetty_term;

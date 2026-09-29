@@ -94,6 +94,8 @@ export interface ChatComposerProps {
   onStop: () => void;
   onNewChat: () => void;
   onPickAgent: (agentId: number) => void;
+  // The model that answered last in place of the chosen one (a local model's fallback).
+  answeredBy?: string | null;
   onRetryLast: () => void;
   onReconnect: () => void;
   onContinue: () => void;
@@ -143,6 +145,7 @@ export default function ChatComposer({
   onStop,
   onNewChat,
   onPickAgent,
+  answeredBy,
   onRetryLast,
   onReconnect,
   onContinue,
@@ -487,12 +490,11 @@ export default function ChatComposer({
               <ChatAgentMenu
                 scopeKey={scopeKey}
                 agent={agent}
-                model={model}
                 agents={agents}
                 states={states}
                 motionEnabled={motionEnabled}
                 selectedModel={model}
-                pill={homeLanding}
+                answeredBy={answeredBy}
                 onPick={onPickAgent}
               />
               {!homeLanding && (

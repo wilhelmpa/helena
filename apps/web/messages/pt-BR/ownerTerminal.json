@@ -13,7 +13,7 @@
     "unavailable": "Não foi possível verificar ou salvar o acesso ao terminal. Tente novamente."
   },
   "grant": {
-    "active": "Terminal concedido até {time}",
+    "active": "Liberado até {time}",
     "expired": "A concessão do terminal expirou.",
     "end": "Encerrar",
     "lan": "Terminal aberto sem código (LAN)"
@@ -26,7 +26,10 @@
     "helena-dev-codex": "Desenvolver a Helena (Codex)",
     "close": "Encerrar sessão",
     "local-qwen36": "Qwen 3.6 local (Codex)",
-    "local-qwen38": "Qwen 3.8 local (Codex)"
+    "local-qwen38": "Qwen 3.8 local (Codex)",
+    "local-flash": "Flash",
+    "add": "Abrir terminal",
+    "label": "Terminais"
   },
   "keys": {
     "esc": "Esc",

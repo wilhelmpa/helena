@@ -158,5 +158,17 @@
     "loadFailedHint": "Der Server hat nicht geantwortet. Versuche es gleich noch einmal."
   },
   "viewNotFound": "Diese Ansicht gibt es nicht mehr. Alle Aufgaben werden gezeigt.",
-  "layout": "Darstellung"
+  "layout": "Darstellung",
+  "card": {
+    "status": "{value}",
+    "priority": "{value}",
+    "type": "{value}",
+    "statusAge": "seit {value}",
+    "initiative": "Ziel: {value}",
+    "cycle": "Zyklus {value}",
+    "estimatePoints": "{value} Pkt.",
+    "estimateTime": "{value}",
+    "startDate": "ab {value}",
+    "dueDate": "fällig {value}"
+  }
 }

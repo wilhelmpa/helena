@@ -26,7 +26,8 @@
     "running": "En curso",
     "finished": "Terminado hace poco",
     "schedules": "A continuación",
-    "projects": "Proyectos"
+    "projects": "Proyectos",
+    "budgets": "Presupuestos"
   },
   "figures": {
     "problems": "{count, plural, one {# problema} other {# problemas}}",
@@ -72,7 +73,12 @@
     "empty": "Nada programado."
   },
   "projects": {
-    "empty": "Aún no hay proyectos."
+    "empty": "Aún no hay proyectos.",
+    "open": "{count, plural, =0 {Sin tareas abiertas} one {# tarea abierta} other {# tareas abiertas}}",
+    "working": "{count, plural, one {# agente trabajando} other {# agentes trabajando}}",
+    "setupFailed": "Configuración fallida",
+    "budgetStopped": "Detenido",
+    "budgetThrottled": "Frenado"
   },
   "system": {
     "title": "Sistema",
@@ -91,6 +97,18 @@
       "raidOk": "RAID ok",
       "backup": "copia hace {at}",
       "cpu": "CPU {temperature}"
+    }
+  },
+  "budgets": {
+    "title": "Presupuestos",
+    "ok": "Dentro",
+    "allWithin": "Ningún presupuesto frena ni detiene el trabajo",
+    "summaryStopped": "{stopped} detenido(s) · {names}",
+    "summaryThrottled": "Frenado · {names}",
+    "stopped": {
+      "project": "Presupuesto agotado: {name} detiene su trabajo",
+      "agent": "Presupuesto agotado: {name} está en pausa",
+      "department": "Presupuesto agotado: el departamento {name} detiene su trabajo"
     }
   }
 }

@@ -161,5 +161,11 @@
   "deleteTitle": "حذف الهدف",
   "deleteConfirm": "حذف «{name}»؟ تبقى المهام في المشروع، لكن دون هذا الهدف.",
   "sortBy": "ترتيب",
-  "sortDefault": "الترتيب الخاص"
+  "sortDefault": "الترتيب الخاص",
+  "why": {
+    "label": "لماذا",
+    "choose": "اختر هدفًا في Helena",
+    "none": "لا يخدم أي هدف في Helena بعد.",
+    "noneOption": "لا هدف"
+  }
 }

@@ -71,6 +71,16 @@ export async function updateOrder(
   return dto(row);
 }
 
+// Removes an order for good (a confirmed one no longer wanted, a rejected proposal).
+export async function deleteOrder(scope: OrderScope, id: number) {
+  const [row] = await db
+    .delete(standingOrder)
+    .where(and(eq(standingOrder.id, id), condition(scope)))
+    .returning();
+  if (!row) throw new HttpError(404, 'Standing order not found');
+  return dto(row);
+}
+
 export async function decideOrder(
   scope: OrderScope,
   id: number,

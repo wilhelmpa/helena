@@ -582,7 +582,6 @@ export function SidebarHomeTree({
     { id: 'inbox', href: '/inbox', also: ['/approvals', '/mail'] },
     { id: 'dashboard', href: '/', exact: true },
     { id: 'dashboard:all', href: '/dashboard' },
-    ...(isGod ? [{ id: 'dashboard:system', href: '/system' }] : []),
     { id: 'tasks', href: '/tasks', also: ['/issue'] },
     { id: 'goals', href: '/organization?tab=goals' },
     { id: 'knowledge', href: '/files', without: ['root', 'path', 'file'], also: ['/docs'] },
@@ -632,9 +631,6 @@ export function SidebarHomeTree({
         active={is('dashboard')}
       >
         <TreeItem label={t('sidebarAllProjects')} href="/dashboard" active={is('dashboard:all')} />
-        {isGod && (
-          <TreeItem label={t('sidebarSystem')} href="/system" active={is('dashboard:system')} />
-        )}
       </TreeItem>
       <TreeItem
         id="tasks"

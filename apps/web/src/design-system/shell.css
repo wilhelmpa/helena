@@ -802,6 +802,11 @@
 .ds-overlay .ds-panel-tab-select {
   padding-inline-end: 10px;
 }
+/* The overlay's tabs are words without icons: as wide as their word, so the gaps between
+   them are even (owner, O22: "Läufe" stood apart from "Gedächtnis"). */
+.ds-overlay .ds-panel-tab {
+  min-width: 0;
+}
 /* Four tabs or more: the ones in the background show their icon alone, the open one keeps
    its name — no row of one-letter stubs (owner 28.09.). */
 .ds-panel-tabs-track:has(> .ds-panel-tab:nth-child(4))
@@ -1308,4 +1313,71 @@
 .ds-local-toolbar.ds-page-toolbar-standalone {
   height: auto;
   padding: 0;
+}
+
+/* The owner terminal (Werkzeug-Panel and Helena › Terminals): its tabs in the panel's tab
+   look, a quiet line with the grant under them, then the terminal frames (owner, 28.09.,
+   O26–O29). */
+.ds-terminal-bar {
+  display: flex;
+  min-height: 40px;
+  flex: none;
+  align-items: center;
+  padding: var(--space-1) var(--space-3);
+}
+.ds-terminal-grant {
+  display: flex;
+  min-height: 24px;
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  border-bottom: 1px solid var(--line);
+  padding: 0 var(--space-4) var(--space-1);
+}
+.ds-terminal-grant-end {
+  color: var(--text-3);
+  font-size: 12px;
+}
+.ds-terminal-grant-end:hover {
+  color: var(--text);
+  text-decoration: underline;
+}
+.ds-terminal-frame {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+  background: var(--bg);
+}
+.ds-terminal-frame[data-active='false'] {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* The chat tool in the Werkzeug-Panel: the context line, then the chat. */
+.ds-chat-panel {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+}
+.ds-chat-panel .helena-home-context {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ds-chat-panel-loading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.ds-chat-context-item {
+  color: var(--text-2);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  letter-spacing: 0;
+  text-transform: none;
 }

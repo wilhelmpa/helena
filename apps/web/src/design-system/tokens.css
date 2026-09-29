@@ -64,10 +64,13 @@
   --orb-mid: #bdaaff;
   --orb-lo: #6c5aa8;
   --orb-edge: #d9d2f5;
-  /* The disc the particle orb glows on: its particles add light, which a light ground
-     would swallow, so on light the orb sits on a small night sky. */
-  --orb-stage: radial-gradient(circle at 50% 42%, #2c2638 0%, #17141d 62%, #110f16 100%);
-  --orb-stage-shadow: 0 10px 30px #1a172033, 0 0 0 1px #1a17201f;
+  /* The particle orb draws colour on a light ground itself (voice-orb theme="light"): no
+     dark stage behind it (owner, 28.09.: it looked like a heavy dark ball). */
+  --orb-stage: none;
+  --orb-stage-shadow: none;
+  /* The still orb (reduced motion, hidden tab): its shaded edge. */
+  --orb-shade: #ffffff;
+  --orb-shade-mix: 30%;
 }
 
 [data-theme='dark'] {
@@ -122,6 +125,8 @@
   --orb-edge: #1b1622;
   --orb-stage: none;
   --orb-stage-shadow: none;
+  --orb-shade: #120f18;
+  --orb-shade-mix: 28%;
 }
 
 :root {

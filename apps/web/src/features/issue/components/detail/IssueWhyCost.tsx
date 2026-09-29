@@ -5,7 +5,9 @@ import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { useFormatter, useTranslations } from 'next-intl';
 import { getAgentUsage } from '@/lib/api/endpoints/agentRuntime';
-import { useIssueWhyQuery } from '@/services/issues.service';
+import { useIssueClaimQuery, useIssueWhyQuery } from '@/services/issues.service';
+import { formatDurationShort } from '@/utils/dates';
+import AgentAvatar from '@/components/common/page/AgentAvatar';
 import { compactTokens } from '@/utils/agentUsage';
 import { initiativesPath } from '@/utils/paths';
 import IssuePropertyRow from './IssuePropertyRow';
@@ -33,6 +35,25 @@ export function IssueWhyRow({ issueId, projectKey }: { issueId: number; projectK
           </span>
         ))}
       </Link>
+    </IssuePropertyRow>
+  );
+}
+
+// "Bearbeitet von …" (owner, 28.09.: the task lease of Paperclip, shown where it matters):
+// the agent whose run holds the task right now, since when. Nothing while nobody does.
+export function IssueClaimRow({ issueId }: { issueId: number }) {
+  const t = useTranslations('issue.fields');
+  const claim = useIssueClaimQuery(issueId).data;
+  if (!claim) return null;
+  return (
+    <IssuePropertyRow label={t('claimedBy')}>
+      <span className="ds-issue-claim" title={t('claimedHint')}>
+        <AgentAvatar name={claim.agent.name} className="size-5" />
+        <span>{claim.agent.name}</span>
+        <span className="ds-issue-claim-since">
+          {t('claimedSince', { age: formatDurationShort(claim.since) })}
+        </span>
+      </span>
     </IssuePropertyRow>
   );
 }

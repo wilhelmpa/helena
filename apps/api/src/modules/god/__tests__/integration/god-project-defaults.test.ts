@@ -98,6 +98,49 @@ describe('god project defaults', () => {
     });
   });
 
+  describe('default budgets (Vorgaben für Projekte)', () => {
+    it('stores one budget per metric and period and gives them to new projects only', async () => {
+      const { god } = await setup();
+      await god.api.projects.post({ key: 'OLD', name: 'Existing project' });
+      const put = await god.api.god['project-defaults'].put({
+        budgets: [
+          { metric: 'cost', period: 'day', limit: 5 },
+          { metric: 'cost', period: 'day', limit: 7 },
+          { metric: 'tokens', period: 'month', limit: 100000 },
+        ],
+      });
+      expect(put.status).toBe(200);
+      expect(put.data?.budgets).toEqual([
+        { metric: 'cost', period: 'day', limit: 7 },
+        { metric: 'tokens', period: 'month', limit: 100000 },
+      ]);
+      expect((await god.api.god['project-defaults'].get()).data?.budgets).toHaveLength(2);
+      // A partial change keeps them.
+      expect(
+        (await god.api.god['project-defaults'].put({ mcpEnabled: false })).data?.budgets,
+      ).toHaveLength(2);
+
+      await god.api.projects.post({ key: 'NEW', name: 'New project' });
+      const created = (await god.api.projects({ projectKey: 'NEW' }).autopilot.get()).data!;
+      expect(
+        created.budgets.map((budget) => [budget.metric, budget.period, budget.limit]).sort(),
+      ).toEqual([
+        ['cost', 'day', 7],
+        ['tokens', 'month', 100000],
+      ]);
+      const existing = (await god.api.projects({ projectKey: 'OLD' }).autopilot.get()).data!;
+      expect(existing.budgets).toEqual([]);
+    });
+
+    it('refuses a budget without a positive limit', async () => {
+      const { god } = await setup();
+      const res = await god.api.god['project-defaults'].put({
+        budgets: [{ metric: 'cost', period: 'day', limit: 0 }],
+      });
+      expect(res.status).toBe(400);
+    });
+  });
+
   describe('effect on project creation', () => {
     it('creates a project with MCP on under the default', async () => {
       const { god } = await setup();

@@ -158,5 +158,17 @@
     "loadFailedHint": "لم يستجب الخادم. حاول مرة أخرى بعد قليل."
   },
   "viewNotFound": "لم يعد هذا العرض موجودًا. يتم عرض كل المهام.",
-  "layout": "التخطيط"
+  "layout": "التخطيط",
+  "card": {
+    "status": "{value}",
+    "priority": "{value}",
+    "type": "{value}",
+    "statusAge": "منذ {value}",
+    "initiative": "الهدف: {value}",
+    "cycle": "الدورة {value}",
+    "estimatePoints": "{value} نقاط",
+    "estimateTime": "{value}",
+    "startDate": "من {value}",
+    "dueDate": "الاستحقاق {value}"
+  }
 }

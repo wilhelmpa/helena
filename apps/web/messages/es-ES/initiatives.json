@@ -161,5 +161,11 @@
   "deleteTitle": "Eliminar objetivo",
   "deleteConfirm": "¿Eliminar «{name}»? Las tareas se quedan en el proyecto, sin este objetivo.",
   "sortBy": "Ordenar",
-  "sortDefault": "Orden propio"
+  "sortDefault": "Orden propio",
+  "why": {
+    "label": "Por qué",
+    "choose": "Elegir un objetivo de Helena",
+    "none": "Aún no sirve a ningún objetivo de Helena.",
+    "noneOption": "Ningún objetivo"
+  }
 }

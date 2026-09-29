@@ -40,7 +40,10 @@
     "why": "لماذا",
     "cost": "التكلفة",
     "costUnpriced": "بلا سعر",
-    "costTokens": "{tokens} رمز"
+    "costTokens": "{tokens} رمز",
+    "claimedBy": "يعمل عليها",
+    "claimedSince": "منذ {age}",
+    "claimedHint": "هذا الوكيل يمسك المهمة الآن؛ تنتظر التشغيلات الأخرى حتى يفرج عنها."
   },
   "menu": {
     "preview": "معاينة",

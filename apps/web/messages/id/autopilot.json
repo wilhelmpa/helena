@@ -197,5 +197,31 @@
     "dialogHint": "Harga manual tidak pernah ditimpa oleh impor.",
     "empty": "Tidak ada harga.",
     "none": "–"
+  },
+  "standingOrders": {
+    "failed": "Itu tidak berhasil.",
+    "sourceOwner": "Pemilik",
+    "added": "Perintah tetap ditambahkan",
+    "proposal": "Usulan",
+    "proposedBy": "Diusulkan: {source}. Berlaku setelah Anda konfirmasi.",
+    "rejected": "Usulan ditolak",
+    "confirmed": "Perintah berlaku mulai sekarang",
+    "reject": "Tolak",
+    "confirm": "Konfirmasi",
+    "switchedOn": "Perintah diaktifkan",
+    "switchedOff": "Perintah dimatikan",
+    "saved": "Perintah disimpan",
+    "newLabel": "Perintah tetap baru",
+    "empty": "Aturan yang berlaku di setiap jalannya sampai Anda mematikannya.",
+    "placeholder": "mis. Selalu simpan faktur dari email di Bukti.",
+    "add": "Tambah",
+    "deleteTitle": "Hapus perintah ini?",
+    "deleted": "Perintah dihapus",
+    "editLabel": "Ubah perintah",
+    "inForce": "Berlaku · {source}",
+    "off": "Dimatikan · {source}",
+    "active": "Berlaku",
+    "actions": "Tindakan perintah",
+    "edit": "Ubah"
   }
 }
