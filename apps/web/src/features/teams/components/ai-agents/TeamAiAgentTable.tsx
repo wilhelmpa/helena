@@ -31,17 +31,17 @@ export default function TeamAiAgentTable({
   return (
     <List label={label}>
       <ListGroup label={label} count={agents.length}>
-      {agents.map((agent) => (
-        <PoolRow
-          key={agent.id}
-          agent={agent}
-          work={work.get(agent.id)}
-          copies={copyCounts?.get(agent.id)}
-          onEdit={() => onEdit(agent)}
-          onRuns={() => onRuns(agent)}
-          onDelete={() => onDelete(agent)}
-        />
-      ))}
+        {agents.map((agent) => (
+          <PoolRow
+            key={agent.id}
+            agent={agent}
+            work={work.get(agent.id)}
+            copies={copyCounts?.get(agent.id)}
+            onEdit={() => onEdit(agent)}
+            onRuns={() => onRuns(agent)}
+            onDelete={() => onDelete(agent)}
+          />
+        ))}
       </ListGroup>
     </List>
   );
@@ -74,7 +74,11 @@ function PoolRow({
       icon={agent.template ? <Copy /> : <Orb state={status} size="small" />}
       title={agent.name}
       subtitle={
-        text.projects.length > 0 ? text.projects.join(' · ') : agent.template ? undefined : t('noProjectsShort')
+        text.projects.length > 0
+          ? text.projects.join(' · ')
+          : agent.template
+            ? undefined
+            : t('noProjectsShort')
       }
       meta={
         agent.template ? (
