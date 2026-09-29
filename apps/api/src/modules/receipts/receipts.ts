@@ -41,6 +41,7 @@ import {
 } from './originals';
 import { mailOriginalPair } from './original-pair';
 import { autoMergeEnabled, inspectNewReceipts } from './dedup';
+import { rebuildReceiptProjection } from './projection';
 import { receiptSourceLinks } from './source';
 import {
   inMonth,
@@ -443,6 +444,7 @@ export async function intakeMailReceipts(input: MailReceiptInput): Promise<numbe
     // once; a subsequent index-repair retry must not repeat matching existing IDs.
     if (!input.skipMatching) for (const id of stored.newIds) await matchQuietly(id);
   }
+  if (stored.newIds.length) await rebuildReceiptProjection(input.projectId);
   return stored.ids;
 }
 

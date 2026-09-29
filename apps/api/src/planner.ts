@@ -58,6 +58,7 @@ import { gitSettingsRoutes } from './modules/git';
 import { dashboardRoutes } from './modules/dashboards';
 import { noteBoardRoutes } from './modules/note-boards';
 import { knowledgeRoutes } from './modules/knowledge';
+import { agentExportRoutes } from './modules/agents/export';
 import { analyticsRoutes } from './modules/analytics';
 import { chartRoutes } from './modules/charts';
 import { settingsRoutes } from './modules/settings';
@@ -248,6 +249,7 @@ export const planner = new Elysia({ name: 'planner' })
   .use(dashboardRoutes)
   .use(noteBoardRoutes)
   .use(knowledgeRoutes)
+  .use(agentExportRoutes)
   .use(projectFileRoutes)
   .use(analyticsRoutes)
   .use(chartRoutes)

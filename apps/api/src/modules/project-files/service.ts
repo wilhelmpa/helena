@@ -15,7 +15,7 @@ import {
 import path from 'node:path';
 import { db } from '@repo/db';
 import { sql } from 'drizzle-orm';
-import { isSyncConflict, moveEntries } from '@repo/vault';
+import { isSyncConflict, moveEntries, splitNote } from '@repo/vault';
 import { recordFileWrite, type FileActor } from './provenance';
 import { HttpError } from '#shared/lib';
 import {
@@ -45,7 +45,7 @@ import { contentTypeOf, serveFile, VIEWER_INLINE } from './serve';
 
 export { projectFilesSlug } from './roots';
 
-const TEXT_EXTENSIONS = new Set(['.md', '.markdown', '.txt', '.canvas']);
+const TEXT_EXTENSIONS = new Set(['.md', '.markdown', '.txt', '.canvas', '.base']);
 const MAX_TEXT_BYTES = 256 * 1024;
 const MAX_ITEMS = 1000;
 const MAX_NAME_ATTEMPTS = 1000;
@@ -76,7 +76,7 @@ function assertWritable(root: FileRoot) {
 function textPath(relative: string): string {
   const safe = relativePath(relative);
   if (!safe || !TEXT_EXTENSIONS.has(path.extname(safe).toLowerCase())) {
-    throw new HttpError(400, 'Only .txt, .md, .markdown, and .canvas files are allowed');
+    throw new HttpError(400, 'Only .txt, .md, .markdown, .canvas, and .base files are allowed');
   }
   return safe;
 }
@@ -202,6 +202,13 @@ async function writeNewFile(target: string, bytes: Uint8Array) {
   }
 }
 
+function assertNotGeneratedContent(relative: string, bytes: Uint8Array): void {
+  if (!relative.toLowerCase().endsWith('.md')) return;
+  if (splitNote(Buffer.from(bytes).toString('utf8')).frontmatter.generated === true) {
+    throw new HttpError(403, 'Generated notes are written by their DB export only');
+  }
+}
+
 export async function createTextFile(
   root: FileRoot,
   relative: string,
@@ -212,6 +219,7 @@ export async function createTextFile(
   const requested = textPath(relative);
   const safe = joinPath(parentPath(requested), safeFileName(path.basename(requested)));
   const bytes = Buffer.from(content);
+  assertNotGeneratedContent(safe, bytes);
   if (bytes.length > MAX_TEXT_BYTES) throw new HttpError(413, 'Text content is too large');
   const directory = await folderDirectory(root, parentPath(safe));
   await writeNewFile(path.join(directory, path.basename(safe)), bytes);
@@ -234,8 +242,10 @@ export async function updateTextFile(
       sql`select pg_advisory_xact_lock(hashtextextended(${root.directory + '/' + relativePath(relative)}, 0))`,
     );
     const current = await readTextFile(root, relative);
+    await assertMutableProjection(path.join(root.directory, current.path));
     if (current.etag !== expectedEtag) throw new HttpError(409, 'File changed since it was read');
     const bytes = Buffer.from(content);
+    assertNotGeneratedContent(current.path, bytes);
     if (bytes.length > MAX_TEXT_BYTES) throw new HttpError(413, 'Text content is too large');
     await replaceFileContents(root, current.path, bytes);
     return { path: current.path, content, sizeBytes: bytes.length, etag: etag(bytes) };
@@ -277,6 +287,7 @@ export async function writeUniqueFile(
   options: { deferIndex?: boolean } = {},
 ): Promise<string> {
   assertWritable(root);
+  assertNotGeneratedContent(name, bytes);
   const directory = await folderDirectory(root, relativePath(folder));
   const temporary = path.join(directory, `.${randomUUID()}.part`);
   await writeNewFile(temporary, bytes);
@@ -333,6 +344,15 @@ export async function uploadFiles(
   return items;
 }
 
+async function assertMutableProjection(target: string): Promise<void> {
+  if (!target.toLowerCase().endsWith('.md')) return;
+  const info = await stat(target);
+  if (!info.isFile() || info.size > 2 * 1024 * 1024) return;
+  if (splitNote(await readFile(target, 'utf8')).frontmatter.generated === true) {
+    throw new HttpError(403, 'Generated notes are read-only');
+  }
+}
+
 export async function moveEntry(root: FileRoot, from: string, to: string, actor?: FileActor) {
   assertWritable(root);
   const source = relativePath(from);
@@ -344,6 +364,7 @@ export async function moveEntry(root: FileRoot, from: string, to: string, actor?
     throw new HttpError(400, 'A folder cannot be moved into itself');
   }
   const { target } = await existingEntry(root, source);
+  await assertMutableProjection(target);
   const parent = await existingEntry(root, parentPath(destination));
   if (!parent.info.isDirectory()) throw new HttpError(400, 'The target is not a folder');
   const next = path.join(parent.target, path.basename(destination));
@@ -388,6 +409,7 @@ export async function trashEntry(
   const safe = relativePath(relative);
   if (!safe) throw new HttpError(400, 'File path is invalid');
   const { target } = await existingEntry(root, safe);
+  await assertMutableProjection(target);
   await rename(target, await trashTarget(root, safe));
   await recordFileWrite([joinPath(root.vaultPath!, safe)], actor);
 }
@@ -530,6 +552,7 @@ export async function upsertProjectText(
   const root = projectRoot(projectKey);
   const safe = textPath(relative);
   const bytes = Buffer.from(content);
+  assertNotGeneratedContent(safe, bytes);
   if (bytes.length > MAX_TEXT_BYTES) throw new HttpError(413, 'Text content is too large');
   await assertNoSymlinks(root.directory, safe, true);
   const target = path.join(await folderDirectory(root, parentPath(safe)), path.basename(safe));
@@ -539,6 +562,7 @@ export async function upsertProjectText(
   } catch (error) {
     if (!isMissing(error)) throw error;
   }
+  if (current !== null) await assertMutableProjection(target);
   if (expectedEtag === null && current !== null)
     throw new HttpError(409, 'File changed since it was read');
   if (typeof expectedEtag === 'string' && (current === null || etag(current) !== expectedEtag)) {
@@ -579,6 +603,7 @@ export async function deleteProjectFile(
       return { project: projectFilesSlug(projectKey), path: safe, deleted: false };
     throw error;
   }
+  await assertMutableProjection(target);
   if (expectedEtag && etag(current) !== expectedEtag) {
     throw new HttpError(409, 'File changed since it was read');
   }

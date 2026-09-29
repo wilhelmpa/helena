@@ -1,0 +1,15 @@
+filters:
+  and:
+    - 'file.inFolder("Projects/PROJECT/Files/Belege")'
+    - 'note.type == "receipt"'
+views:
+  - type: table
+    name: Belege
+    order:
+      - file.name
+      - note.invoice_date
+      - note.issuer
+      - note.total_gross
+      - note.vat_amount
+      - note.status
+      - note.pair_id

@@ -1,4 +1,6 @@
 import { Elysia, t } from 'elysia';
+import { eq } from 'drizzle-orm';
+import { db, project as projectTable } from '@repo/db';
 import { authContext } from '#shared/auth-context';
 import { requireUser } from '#shared/access';
 import { guards } from '#shared/guards';
@@ -63,6 +65,7 @@ import { linkReceiptOriginal, unlinkReceiptOriginal } from './originals';
 import { receiptViews } from './views';
 import { receiptOriginalMail } from './archived-source';
 import { listPairHistory, listPairSuggestions, resolvePairSuggestion } from './dedup';
+import { rebuildReceiptProjection } from './projection';
 
 // Receipt matching (Belege, docs/helena-decisions/decisions.md §7): a project's bank accounts
 // and statement imports, its receipts, the matches between them, the review list and the
@@ -98,6 +101,22 @@ export const receiptRoutes = new Elysia({
 })
   .use(authContext)
   .use(guards)
+  .onAfterHandle(async ({ request, params, set }) => {
+    if (
+      request.method === 'GET' ||
+      request.method === 'HEAD' ||
+      new URL(request.url).pathname.endsWith('/projection/rebuild') ||
+      Number(set.status ?? 200) >= 400
+    )
+      return;
+    const key = (params as { projectKey?: string }).projectKey;
+    if (!key) return;
+    const [row] = await db
+      .select({ id: projectTable.id })
+      .from(projectTable)
+      .where(eq(projectTable.key, key));
+    if (row) await rebuildReceiptProjection(row.id);
+  })
 
   // ── Bank accounts and statements ─────────────────────────────────────────────────────
 
@@ -307,6 +326,23 @@ export const receiptRoutes = new Elysia({
     detail: {
       summary: 'List receipts',
       description: 'Filter by status, month (invoice date, else arrival) and text.',
+    },
+  })
+  .post(`${base}/projection/rebuild`, ({ project }) => rebuildReceiptProjection(project.id), {
+    projectAdmin: true,
+    response: {
+      200: t.Object({
+        enabled: t.Boolean(),
+        projected: t.Number(),
+        changed: t.Number(),
+        basePath: t.Nullable(t.String()),
+      }),
+      ...commonErrors,
+      ...errors(409),
+    },
+    detail: {
+      summary: 'Rebuild read-only receipt notes from the DB',
+      description: 'Idempotent; a supplementary original only appears in its primary receipt note.',
     },
   })
   .get(

@@ -1,0 +1,17 @@
+filters:
+  and:
+    - 'file.inFolder("Projects/PROJECT/Docs/Agenten")'
+    - 'note.type == "agent"'
+views:
+  - type: table
+    name: Agenten
+    order:
+      - file.name
+      - note.agent_id
+      - note.role
+      - note.model
+      - note.heartbeat_minutes
+      - note.skills
+      - note.tools
+      - note.department
+      - note.reports_to_agent_id

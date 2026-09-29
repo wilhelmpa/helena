@@ -173,6 +173,13 @@ export async function writeNote(
   },
 ) {
   if (!isNotePath(input.path)) throw new HttpError(400, 'A note path ends in ".md"');
+  const previous = await readVaultFile(input.path, MAX_NOTE_BYTES).catch((error: unknown) => {
+    if (error instanceof VaultError && error.status === 404) return null;
+    throw error;
+  });
+  if (previous && splitNote(previous.bytes.toString('utf8')).frontmatter.generated === true) {
+    throw new HttpError(403, 'Generated notes are read-only');
+  }
   const expectedSha = input.expectedSha ?? null;
   let content: string;
   if (input.content !== undefined) {
@@ -193,6 +200,9 @@ export async function writeNote(
     throw new HttpError(400, 'Send the note as `content`, or as `body` with `frontmatter`');
   }
   const bytes = Buffer.from(content);
+  if (splitNote(content).frontmatter.generated === true) {
+    throw new HttpError(403, 'Generated notes are written by their DB export only');
+  }
   if (bytes.length > MAX_NOTE_BYTES) throw new HttpError(413, 'The note is too large');
   const result = await writeVaultFile(input.path, bytes, expectedSha);
   await recordWrite([input.path], `${result.created ? 'Create' : 'Update'} ${input.path}`, scope, {
@@ -365,6 +375,7 @@ export async function searchKnowledge(
   const conditions = [
     readableEntries(scope),
     ne(vaultEntry.kind, 'folder'),
+    sql`(${vaultEntry.frontmatter}->>'generated' IS DISTINCT FROM 'true' OR ${vaultEntry.frontmatter}->>'type' NOT IN ('receipt', 'agent') OR ${vaultEntry.frontmatter}->>'type' IS NULL)`,
     sql`${vaultEntry.search} @@ ${query}`,
   ];
   if (input.folder) conditions.push(pathOrBelow(input.folder));
