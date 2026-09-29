@@ -18,7 +18,9 @@ LogFilterPatterns=~.*(GET|HEAD) /(metrics|v1/models)([ ?]|$).*
 Environment=HALOGEN_IMAGE=@IMAGE@
 Environment=HALOGEN_PORT=@PORT@
 Environment=HALOGEN_QUIET_PORT=@QUIET_PORT@
+Environment=HALOGEN_WEIGHTS_LOCK=1
 EnvironmentFile=@CONF@
+LimitMEMLOCK=infinity
 # The container opens no connection of its own: the firewall table must be loaded (it drops
 # every connection the container's network starts, and lets only Helena's users reach the port).
 ExecStartPre=/usr/sbin/nft list table inet helena_halogen
@@ -38,6 +40,7 @@ ExecStart=/usr/bin/podman run --rm --name halogen --replace --pull=never --log-d
   -e HALOGEN_CHECKPOINT=/gguf/snapshots/@GGUF_REVISION@/@GGUF_FILE@ \
   -e HALOGEN_MTP_HEAD=/models/@MTP_HEAD@ \
   -e HALOGEN_GGUF_CACHE=/cache \
+  -e HALOGEN_WEIGHTS_LOCK \
   -e HALOGEN_KV_SLOTS -e HALOGEN_KV_POOL_POSITIONS -e HALOGEN_MAX_TOK \
   -e HALOGEN_REASONING_EFFORT -e HALOGEN_ENABLE_THINKING \
   -e HALOGEN_TEMPERATURE -e HALOGEN_TOP_P -e HALOGEN_TOP_K \

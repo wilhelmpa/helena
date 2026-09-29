@@ -62,7 +62,8 @@ class EmbedScriptTest(unittest.TestCase):
         self.assertIn('--host 127.0.0.1 --port 13308', unit)
         self.assertIn('--api-key-file %d/api-key', unit)
         self.assertIn('LoadCredential=api-key:/etc/helena/local-ai.key', unit)
-        self.assertIn('/opt/helena-ai/llamacpp/rocm-b11166/llama-server', unit)
+        self.assertIn('/opt/helena-ai/llamacpp/vulkan-b11166/llama-server', unit)
+        self.assertNotIn('DeviceAllow=/dev/kfd', unit)
         self.assertIn('IPAddressAllow=localhost', unit)
         # An embedding needs its whole input in one micro-batch: the per-slot context fits.
         ctx = int(re.search(r'--ctx-size (\d+)', unit).group(1))
@@ -71,14 +72,15 @@ class EmbedScriptTest(unittest.TestCase):
         self.assertGreaterEqual(ubatch, ctx // slots)
 
     def test_the_backend_can_be_vulkan(self):
-        env = {**os.environ, 'HELENA_AI_TEST_ROOT': self.root, 'HELENA_EMBED_BACKEND': 'vulkan'}
+        env = {**os.environ, 'HELENA_AI_TEST_ROOT': self.root, 'HELENA_EMBED_BACKEND': 'rocm'}
         unit = subprocess.run(['sh', str(SCRIPT), 'render'], capture_output=True, text=True, env=env).stdout
-        self.assertIn('/opt/helena-ai/llamacpp/vulkan-b11166/llama-server', unit)
+        self.assertIn('/opt/helena-ai/llamacpp/rocm-b11166/llama-server', unit)
+        self.assertIn('DeviceAllow=/dev/kfd rw', unit)
 
     def test_install_names_a_missing_model_and_starts_the_unit(self):
         out = run('--dry-run', 'install', root=self.root).stdout
         self.assertIn('install.sh models pull Qwen3-Embedding-0.6B-GGUF', out)
-        self.assertIn('would: systemctl enable --now helena-embed.service', out)
+        self.assertIn('would: systemctl restart helena-embed.service', out)
         self.place_model()
         out = run('--dry-run', 'install', root=self.root).stdout
         self.assertIn('have Qwen3-Embedding-0.6B-GGUF', out)

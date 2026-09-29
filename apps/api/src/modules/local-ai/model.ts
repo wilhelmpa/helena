@@ -218,6 +218,15 @@ const loadedEntry = t.Object({
 });
 
 export const LocalAiStatus = t.Object({
+  lastGpuReset: t.Nullable(
+    t.Object({
+      at: t.String(),
+      bootId: t.String(),
+      resetNumber: t.Number(),
+      restartedUnits: t.Array(t.String()),
+      failedUnits: t.Array(t.String()),
+    }),
+  ),
   guard: t.Object({
     checkedAt: t.Nullable(t.String()),
     probeAt: t.Nullable(t.String()),

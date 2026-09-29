@@ -46,15 +46,32 @@ class VoiceScriptTest(unittest.TestCase):
         # The design model is not part of the install (its own OK).
         self.assertNotIn('voicedesign', out)
 
-    def test_builds_for_this_gpu_on_helenas_rocm(self):
+    def test_cpu_stt_and_rocm_tts_defaults_and_configurable_backends(self):
         out = dry('install')
+        self.assertEqual(out.count('-DGGML_HIP=OFF'), 1)
+        self.assertEqual(out.count('-DGGML_HIP=ON'), 1)
+        self.assertEqual(out.count('DeviceAllow=/dev/kfd rw'), 1)
+        self.assertIn('--threads 12 --no-gpu', out)
+        self.assertIn('would: systemctl disable --now helena-voice-stt.service helena-voice-tts.service', out)
+        self.assertIn('would: systemctl enable --now helena-voice-stt-proxy.socket helena-voice-tts-proxy.socket', out)
+        env = {**os.environ, 'HELENA_AI_TEST_ROOT': ROOT, 'HELENA_VOICE_UNIT_DIR': f'{ROOT}/units',
+               'HELENA_VOICE_STT_BACKEND': 'rocm', 'HELENA_VOICE_TTS_BACKEND': 'rocm'}
+        result = subprocess.run(['sh', str(SCRIPT), '--dry-run', 'install'], capture_output=True, text=True, env=env)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        out = result.stdout
         self.assertEqual(out.count('-DGGML_HIP=ON'), 2)
         self.assertEqual(out.count('-DAMDGPU_TARGETS=gfx1151'), 2)
+        self.assertEqual(out.count('DeviceAllow=/dev/kfd rw'), 2)
         self.assertIn('rocm-10.0.0', out)
         self.assertNotIn('HSA_OVERRIDE_GFX_VERSION', out)
         # rocWMMA flash attention makes whisper.cpp transcribe garbage on gfx1151 (measured).
         self.assertNotIn('ROCWMMA', out)
         self.assertIn('--flash-attn', out)
+
+        env['HELENA_VOICE_TTS_BACKEND'] = 'cpu'
+        result = subprocess.run(['sh', str(SCRIPT), '--dry-run', 'install'], capture_output=True, text=True, env=env)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.stdout.count('DeviceAllow=/dev/kfd rw'), 1)
 
     def test_units_listen_on_loopback_in_a_sandbox(self):
         out = dry('install')

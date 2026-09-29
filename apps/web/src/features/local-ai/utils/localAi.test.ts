@@ -16,6 +16,7 @@ import {
 function status(overrides: Partial<LocalAiStatus['units']> = {}): LocalAiStatus {
   const unit = { allowed: true, present: true, busyPercent: 0, loaded: [] };
   return {
+    lastGpuReset: null,
     guard: {
       checkedAt: null,
       probeAt: null,
