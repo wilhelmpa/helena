@@ -1,5 +1,6 @@
 import { asc, eq } from 'drizzle-orm';
 import {
+  DEFAULT_DISPLAY_NAME,
   agentChatCatalog,
   aiAgent,
   db,
@@ -150,6 +151,9 @@ export function normalizeVoiceSettings(raw: unknown): VoiceSettings {
 export function suggestedAliases(names: string[]): VocabularyAlias[] {
   const known = new Set(names);
   return [
+    ...(known.has('Ava')
+      ? ['Eywa', 'Ewa', 'Aiwa'].map((heard) => ({ heard, written: 'Ava' }))
+      : []),
     ...(known.has('Jev') ? [{ heard: 'Jeff', written: 'Jev' }] : []),
     ...(known.has('VERVE')
       ? ['Färfe', 'Ferfe', 'Verve'].map((heard) => ({ heard, written: 'VERVE' }))
@@ -217,10 +221,16 @@ export async function helenaWords(): Promise<string[]> {
 export function vocabularyPrompt(
   own: string[],
   helena: string[],
-  displayName = 'Helena',
+  displayName = DEFAULT_DISPLAY_NAME,
 ): string | null {
   const words = uniqueWords(
-    [...own, displayName, ...VOICE_GLOSSARY, ...helena],
+    [
+      ...own,
+      displayName,
+      ...(displayName === 'Ava' ? ['Eywa', 'Ewa', 'Aiwa'] : []),
+      ...VOICE_GLOSSARY,
+      ...helena,
+    ],
     VOICE_SETTINGS_LIMITS.vocabularyWords,
   );
   return words.length ? `${words.join(', ')}.` : null;

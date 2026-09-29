@@ -154,7 +154,7 @@ function agentMessage(
     level: AutopilotLevel;
     command: boolean;
   },
-  displayName = 'Helena',
+  displayName = 'Ava',
 ): string {
   if (decision.outcome === 'allow') return '';
   const what = `${facts.category}${facts.category === 'delete' || facts.category === 'execute' ? ` (${facts.scope === 'workspace' ? 'inside' : 'outside'} your workspace)` : ''}`;

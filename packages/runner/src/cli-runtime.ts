@@ -321,7 +321,7 @@ const INLINE_SKILL_CHARS = 8_000;
 const INLINE_SKILLS_CHARS = 32_000;
 
 function skillsOf(snapshot: RuntimePolicySnapshot, root: string): SkillFiles {
-  const displayName = snapshot.displayName ?? 'Helena';
+  const displayName = snapshot.displayName ?? 'Ava';
   const files: CliFile[] = [
     {
       path: '.claude-plugin/plugin.json',

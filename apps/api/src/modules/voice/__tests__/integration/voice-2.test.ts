@@ -21,7 +21,7 @@ const KEY = 'test-voice-2-key';
 let fake: ReturnType<typeof Bun.serve>;
 const received: { path: string; form?: Record<string, string>; json?: Record<string, unknown> }[] =
   [];
-let whisperReply: Record<string, unknown> = { text: 'Hallo Helena, wie spät ist es?' };
+let whisperReply: Record<string, unknown> = { text: 'Hallo Eywa, wie spät ist es?' };
 
 // The voice reply's model: answers what the conversation answers, hands over the rest.
 const HAND_OVER = /Aufgabe|Mail|Kalender|Docker|Koordinator|Merk dir|Wetter|Server-Update genau/;
@@ -160,7 +160,7 @@ beforeEach(async () => {
   forgetVoiceVocabulary();
   forgetServerAnswers();
   received.length = 0;
-  whisperReply = { text: 'Hallo Helena, wie spät ist es?' };
+  whisperReply = { text: 'Hallo Eywa, wie spät ist es?' };
 });
 
 async function setup() {
@@ -256,7 +256,7 @@ describe('voice settings', () => {
     });
     // Helena knows its own names, the agents' and the projects' (a key that only differs in
     // case from the name is the same word).
-    expect(first.helenaWords).toEqual(expect.arrayContaining(['Helena', 'Vera', 'Verve']));
+    expect(first.helenaWords).toEqual(expect.arrayContaining(['Ava', 'Vera', 'Verve']));
     expect(first.voices).toEqual([]);
 
     const changed = await asOwner.god.voice.settings.patch({
@@ -291,7 +291,7 @@ describe('the ear on the GPU (whisper.cpp)', () => {
     const heard = await upload(owner.cookie, wav(2));
     expect(heard.status).toBe(200);
     expect(await heard.json()).toMatchObject({
-      text: 'Hallo Helena, wie spät ist es?',
+      text: 'Hallo Ava, wie spät ist es?',
       dropped: null,
       model: 'helena-ear/whisper',
     });
@@ -303,7 +303,7 @@ describe('the ear on the GPU (whisper.cpp)', () => {
       response_format: 'verbose_json',
     });
     // The owner's words first, then Helena's.
-    expect(form.prompt!.startsWith('Steuerberater Müller, Helena')).toBe(true);
+    expect(form.prompt!.startsWith('Steuerberater Müller, Ava, Eywa, Ewa, Aiwa')).toBe(true);
     expect(form.prompt).toContain('VERVE');
 
     // A segment Whisper itself doubts is speech is dropped; the confident one stays.
@@ -342,7 +342,7 @@ describe('the voice on the GPU (qwentts.cpp)', () => {
       new Request('http://localhost/voice/speech', {
         method: 'POST',
         headers: { cookie: owner.cookie, 'content-type': 'application/json' },
-        body: JSON.stringify({ text: 'Guten Morgen.', language: 'de' }),
+        body: JSON.stringify({ text: 'Guten Morgen, Ava.', language: 'de' }),
       }),
     );
     expect(audio.status).toBe(200);
@@ -353,7 +353,7 @@ describe('the voice on the GPU (qwentts.cpp)', () => {
     expect((await audio.arrayBuffer()).byteLength).toBe(9600);
     expect(received.find((entry) => entry.path === '/q/v1/audio/speech')!.json).toEqual({
       model: 'qwen3-tts',
-      input: 'Guten Morgen.',
+      input: 'Guten Morgen, Eywa.',
       response_format: 'pcm',
       voice: 'helena',
       language: 'German',

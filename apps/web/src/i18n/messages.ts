@@ -127,7 +127,7 @@ export type Messages = typeof defaultMessages;
 
 const NAMESPACES = Object.keys(defaultMessages) as (keyof Messages)[];
 
-export async function loadMessages(locale: Locale, appName = 'Helena'): Promise<Messages> {
+export async function loadMessages(locale: Locale, appName = 'Ava'): Promise<Messages> {
   const messages = await loadRawMessages(locale);
   return replaceAppName(messages, appName) as Messages;
 }

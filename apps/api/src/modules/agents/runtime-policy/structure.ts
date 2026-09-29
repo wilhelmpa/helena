@@ -9,11 +9,11 @@ const handles = (usernames: string[]) => usernames.map((username) => `@${usernam
 
 export function homeAgentSection(
   projects: { key: string; name: string; coordinators: string[] }[],
-  displayName = 'Helena',
+  displayName = 'Ava',
 ): string {
   return [
     '## Home agent',
-    "You are the Home agent, the master of this team's agents. People work with you in",
+    `Du bist ${displayName}, der Home-Agent. You are the master of this team's agents. People work with you in`,
     'Home; the views of a project do not list you.',
     ...(projects.length > 0
       ? [
@@ -66,7 +66,7 @@ export function coordinatorSection(input: {
     '## Agent team',
     `You coordinate the agent team of ${input.projectKeys.join(', ')}${manager}.`,
     ...SUB_AGENTS[input.runtime ?? 'hermes'].map((line) =>
-      line.replaceAll('{appName}', input.displayName ?? 'Helena'),
+      line.replaceAll('{appName}', input.displayName ?? 'Ava'),
     ),
     "Longer or specialist work goes to the project's specialists through the agent team",
     input.specialists.length > 0
@@ -123,10 +123,10 @@ export function memberSection(input: {
       : []),
     '',
     'Handing your work back:',
-    `- In a stage of the agent team, answer with exactly the JSON the stage asks for. ${input.displayName ?? 'Helena'} puts it on the task and your coordinator reviews it; do not change the task's status yourself there.`,
+    `- In a stage of the agent team, answer with exactly the JSON the stage asks for. ${input.displayName ?? 'Ava'} puts it on the task and your coordinator reviews it; do not change the task's status yourself there.`,
     "- On a task given to you directly, finish with a short comment on it (add_comment): what you did, what is verified, what is left. Then move it to its completed state, or to the project's review column where it has one.",
     `- Tag ${lead ?? 'the person who gave you the task'} in that comment only when they have to act on it.`,
-    `- Before anything with effects outside ${input.displayName ?? 'Helena'} (push, deploy, send, publish, pay, delete), ask with request_approval where the approval rules require it, then end the run.`,
+    `- Before anything with effects outside ${input.displayName ?? 'Ava'} (push, deploy, send, publish, pay, delete), ask with request_approval where the approval rules require it, then end the run.`,
     '- When only a person can decide how to go on, call mark_issue_blocked with one clear question and stop.',
   ].join('\n');
 }
@@ -195,7 +195,7 @@ const manager = alias(aiAgent, 'manager');
 // project work to the coordinators, a coordinator reports to Home and leads the project's
 // specialists, and a specialist or reviewer reports to its coordinator (or whoever the
 // organization chart names) and hands its work back. Empty for an agent outside the chain.
-export async function structureSection(agent: AiAgentRow, displayName = 'Helena'): Promise<string> {
+export async function structureSection(agent: AiAgentRow, displayName = 'Ava'): Promise<string> {
   const projectIds = agent.projects.map((p) => p.id);
   if (isHomeAgent(agent.agentRole)) {
     const coordinators = await roleHolders(agent.teamId, projectIds, 'coordinator');

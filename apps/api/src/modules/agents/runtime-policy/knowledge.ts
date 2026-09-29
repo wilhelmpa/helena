@@ -60,7 +60,7 @@ const LOOK_AT_FILE: Record<AgentRuntimeKind, string> = {
 export function knowledgeSection(
   access: VaultAccess,
   runtime: AgentRuntimeKind = 'hermes',
-  displayName = 'Helena',
+  displayName = 'Ava',
 ): string {
   if (access.read.length === 0) return '';
   const relative = (absolute: string) => path.relative(access.root, absolute) || '(everything)';

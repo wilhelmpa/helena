@@ -22,6 +22,10 @@ export interface BrowserRecognition extends EventTarget {
 
 export type RecognitionConstructor = new () => BrowserRecognition;
 
+export function normalizeRecognizedName(text: string): string {
+  return text.replace(/(?<![\p{L}\p{N}])(?:Eywa|Ewa|Aiwa)(?![\p{L}\p{N}])/giu, 'Ava');
+}
+
 export function recognitionConstructor(): RecognitionConstructor | undefined {
   if (typeof window === 'undefined') return undefined;
   const speech = window as typeof window & {

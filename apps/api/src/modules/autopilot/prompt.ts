@@ -25,7 +25,7 @@ function phrase(rule: LevelRule, displayName: string): string {
 
 export function levelInWords(
   level: AutopilotLevel,
-  displayName = 'Helena',
+  displayName = 'Ava',
 ): { free: string; approval: string } {
   const rules = levelRules(level);
   const join = (items: string[]) => (items.length > 0 ? items.join(', ') : 'nothing');
@@ -41,7 +41,7 @@ export function levelInWords(
 export function autopilotRunSection(
   projectKey: string,
   level: AutopilotLevel,
-  displayName = 'Helena',
+  displayName = 'Ava',
 ): string {
   const { free, approval } = levelInWords(level, displayName);
   return [
@@ -64,7 +64,7 @@ export function autopilotRunSection(
 // which carry no run frame.
 export function autopilotSoulSection(
   projects: { key: string; level: AutopilotLevel }[],
-  displayName = 'Helena',
+  displayName = 'Ava',
 ): string {
   const lines = [
     '## Approvals and Autopilot',

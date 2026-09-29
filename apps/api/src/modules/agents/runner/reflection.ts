@@ -50,7 +50,7 @@ const FOCUS: Record<ReflectionReason, string> = {
     'any task has. Where the steps were obvious, save nothing.',
 };
 
-export function reflectionPrompt(reason: ReflectionReason, displayName = 'Helena'): string {
+export function reflectionPrompt(reason: ReflectionReason, displayName = 'Ava'): string {
   return [
     'Look back at the task you just finished in this session and keep what will help you ' +
       'next time. Only your memory and skill tools are available now: do not continue the ' +
@@ -79,7 +79,7 @@ export function reflectionPrompt(reason: ReflectionReason, displayName = 'Helena
 
 // The turn after a chat went quiet (docs/helena-decisions/agent-context.md §5): where the
 // person says who they are and how they want things done, which a run rarely shows.
-export function chatReflectionPrompt(displayName = 'Helena'): string {
+export function chatReflectionPrompt(displayName = 'Ava'): string {
   return [
     'Look back at the conversation in this session and keep what will help you in the next ' +
       'ones. Only your memory and skill tools are available now: do not answer the person ' +

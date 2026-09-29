@@ -97,11 +97,11 @@ describe('voice settings', () => {
     expect(normalizeVoiceSettings({ fallbackTimeoutMs: 9000 }).fallbackTimeoutMs).toBe(5000);
   });
 
-  it('puts the owner’s words before Helena’s', () => {
-    expect(vocabularyPrompt(['Müller'], ['Helena', 'müller', 'Verve'])).toBe(
-      'Müller, Helena, TRADE, VERVE, Jev, Qwen, Alpaca.',
+  it('puts the owner’s words before Ava and her pronunciation variants', () => {
+    expect(vocabularyPrompt(['Müller'], ['Ava', 'müller', 'Verve'])).toBe(
+      'Müller, Ava, Eywa, Ewa, Aiwa, TRADE, VERVE, Jev, Qwen, Alpaca.',
     );
-    expect(vocabularyPrompt([], [])).toBe('Helena, TRADE, VERVE, Jev, Qwen, Alpaca.');
+    expect(vocabularyPrompt([], [])).toBe('Ava, Eywa, Ewa, Aiwa, TRADE, VERVE, Jev, Qwen, Alpaca.');
     expect(vocabularyPrompt([], [], 'Atlas')).toBe('Atlas, TRADE, VERVE, Jev, Qwen, Alpaca.');
   });
 
@@ -116,6 +116,9 @@ describe('voice settings', () => {
     expect(suggestedAliases(['Jev', 'Verve', 'Trading'])).toEqual([
       { heard: 'Jeff', written: 'Jev' },
     ]);
+    expect(
+      correctVocabulary('Eywa, Ewa, Aiwa und Ava. Ewagen bleibt.', suggestedAliases(['Ava'])),
+    ).toBe('Ava, Ava, Ava und Ava. Ewagen bleibt.');
     expect(
       normalizeVoiceSettings({ vocabularyAliases: [{ heard: 'Planet', written: 'plane' }] })
         .vocabularyAliases,

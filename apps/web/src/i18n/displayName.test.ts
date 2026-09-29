@@ -12,7 +12,7 @@ describe('display name', () => {
     assert.match(renamed.meta.title, /^Atlas/);
     assert.match(renamed.nav.basedOn, /^Atlas is a fork/);
     assert.match(renamed.nav.dockContext, /^ATLAS/);
-    assert.match(standard.meta.title, /^Helena/);
+    assert.match(standard.meta.title, /^Ava/);
     assert.equal(composeDocumentTitle(['Settings'], null, 'Atlas'), 'Settings · Atlas');
   });
 
@@ -47,10 +47,14 @@ describe('display name', () => {
       for (const entry of readdirSync(folder, { withFileTypes: true })) {
         const child = new URL(entry.name + (entry.isDirectory() ? '/' : ''), folder);
         if (entry.isDirectory()) visit(child);
-        else if (entry.name.endsWith('.tsx') && !entry.name.endsWith('.test.tsx')) {
+        else if (/\.tsx?$/.test(entry.name) && !entry.name.includes('.test.')) {
           const source = readFileSync(child, 'utf8');
-          assert.doesNotMatch(source, />\s*Helena\s*</);
+          assert.doesNotMatch(source, />\s*(?:Helena|هيلينا)\s*</);
           assert.doesNotMatch(source, /(?:placeholder|title|aria-label)="[^"]*Helena[^"]*"/);
+          if (entry.name !== 'HelenaWordmark.tsx') {
+            const code = source.replace(/\/\/[^\n]*/g, '');
+            assert.doesNotMatch(code, /(['"])Helena\1/);
+          }
         }
       }
     };

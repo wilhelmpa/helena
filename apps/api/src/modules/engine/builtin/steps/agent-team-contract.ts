@@ -181,7 +181,7 @@ export function stagePrompt(
   stage: StageInput,
   projectRef: string,
   startedByRoutine: string[] = [],
-  displayName = 'Helena',
+  displayName = 'Ava',
 ): string {
   const contract =
     stage.phase === 'coordinate'

@@ -319,7 +319,7 @@ describe('drift detection', () => {
       detail: 'args, env.BU_CDP_URL',
     });
     expect(drift).toContainEqual({ key: 'mcp_servers.shopify-dev', code: 'mcp-missing' });
-    expect(statuses.at(-1)?.detail).toBe("The agent's profile differs from Helena's settings.");
+    expect(statuses.at(-1)?.detail).toBe("The agent's profile differs from Ava's settings.");
     expect(JSON.stringify(statuses)).not.toContain('9222');
   });
 

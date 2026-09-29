@@ -10,17 +10,17 @@ const words = {
 const home = { name: 'Home', agentRole: 'home' as const };
 
 describe('agent chip', () => {
-  it('names the Home agent Helena and the local Halogen model Flash', () => {
+  it('names the Home agent Ava and the local Halogen model Flash', () => {
     assert.equal(
       agentChipLabel(home, 'helena-halogen/halogen-qwen3.8-flash-next', null, words).label,
-      'Helena · Flash (lokal)',
+      'Ava · Flash (lokal)',
     );
   });
 
   it('adds the model that really answered after a fallback', () => {
     assert.equal(
       agentChipLabel(home, 'helena-halogen/halogen-qwen3.8-flash-next', 'gpt-6-luna', words).label,
-      'Helena · Flash (lokal) · Rückfall: GPT-6 Luna',
+      'Ava · Flash (lokal) · Rückfall: GPT-6 Luna',
     );
   });
 
