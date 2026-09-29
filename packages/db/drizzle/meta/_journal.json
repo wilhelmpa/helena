@@ -1520,6 +1520,13 @@
       "when": 1790689683184,
       "tag": "0217_ava_display_name",
       "breakpoints": true
+    },
+    {
+      "idx": 218,
+      "version": "7",
+      "when": 1790691000000,
+      "tag": "0218_owner_terminal_sudo_audit",
+      "breakpoints": true
     }
   ]
 }

@@ -530,10 +530,8 @@ if changed deployment/volition-stack/native/terminal/project-terminal-router.mjs
 fi
 
 # The owner terminal: its own setup.sh installs the unit, the nginx snippet and the
-# signing key; the router is then restarted through the shared restart queue. It never touches /etc/sudoers.d/90-wilhelmpa here -- that is a
-# separate, deliberate step (setup.sh --install-sudo-policy=...) the orchestrator takes
-# by hand only once the instance's SSH automation has been audited against the sudoers
-# policy; see setup.sh and 90-wilhelmpa's own comments for why. A restart here ends every
+# signing key; the router is then restarted through the shared restart queue. The sudo
+# rule is installed by hardening/apply.sh sudo-model and changed through hostd. A restart here ends every
 # open owner-terminal session the same way the project terminal's does; the tmux sessions
 # behind them are unaffected and a reconnect finds them again after a fresh step-up.
 # Project browsers run on demand (browser/project-browser-power.mjs): the router starts one

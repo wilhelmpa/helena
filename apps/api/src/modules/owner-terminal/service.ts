@@ -15,6 +15,7 @@ import { isLanAddress } from './lan';
 import { edgeEntry } from '#modules/edge-access/service';
 import { totpFailure } from './totp-errors';
 import { mintOwnerTerminalToken, type OwnerTerminalAccess } from './token';
+import { HostdError, hostd } from '#modules/server/hostd';
 import type { OwnerTerminalKind } from './model';
 
 const GRANT_HOURS = 12;
@@ -28,23 +29,26 @@ const iso = (value: Date): string => value.toISOString();
 
 const SETTINGS_KEY = 'ownerTerminal';
 
+async function ownerSudoHostd<T>(method: string, params: Record<string, unknown> = {}): Promise<T> {
+  try {
+    return await hostd<T>(method, params);
+  } catch (error) {
+    if (error instanceof HostdError) {
+      throw new HttpError(
+        error.code === 'Unavailable' ? 503 : error.code === 'Timeout' ? 504 : 502,
+        error.message,
+      );
+    }
+    throw error;
+  }
+}
+
 export interface OwnerTerminalSettings {
   // Forward-looking: only 'totp' is ever produced today (see model.ts). Kept as a
   // list so a future passkey rollout, once HTTPS is up, is a setting change and
   // not a schema change.
   stepUpMethods: ('totp' | 'passkey')[];
-  // Whether the sudoers policy the browser terminal runs under asks for the Linux
-  // password. Read by deployment/volition-stack/native/owner-terminal/setup.sh,
-  // and only when the orchestrator passes --install-sudo-policy explicitly --
-  // sudo authorizes purely by Unix user, so nothing at runtime can make sudo
-  // itself treat a browser-terminal shell differently from an SSH one for the
-  // same account, and turning this on is only safe once the orchestrator's
-  // `sudo -n` automation has been fully audited against the sudoers Cmnd_Aliases
-  // (see 90-wilhelmpa's own comment). Defaults to false -- the existing blanket
-  // NOPASSWD stays in effect, and the UI says why turning this on needs that
-  // audit first, rather than presenting a security setting that quietly does
-  // less than it says until someone performs a separate, undocumented step.
-  sudoPasswordRequired: boolean;
+  sudoWithoutPassword: boolean;
   // false: an owner session coming from the LAN opens the terminal without a
   // TOTP code (owner, 2026-09-24, while the instance is still being built).
   // Loopback -- where the Cloudflare tunnel will arrive -- and any other public
@@ -56,7 +60,7 @@ export interface OwnerTerminalSettings {
 function defaultSettings(): OwnerTerminalSettings {
   return {
     stepUpMethods: ['totp'],
-    sudoPasswordRequired: false,
+    sudoWithoutPassword: true,
     stepUpRequired: true,
     recordOutput: {},
   };
@@ -67,16 +71,39 @@ export async function getOwnerTerminalSettings(): Promise<OwnerTerminalSettings>
   return { ...defaultSettings(), ...(stored ?? {}) };
 }
 
+export async function getOwnerTerminalSettingsForApi(): Promise<OwnerTerminalSettings> {
+  const [settings, sudo] = await Promise.all([
+    getOwnerTerminalSettings(),
+    ownerSudoHostd<{ enabled: boolean }>('OwnerSudoStatus'),
+  ]);
+  return { ...settings, sudoWithoutPassword: sudo.enabled };
+}
+
 export async function setOwnerTerminalSettings(
   patch: Partial<OwnerTerminalSettings>,
+  request?: Request,
 ): Promise<OwnerTerminalSettings> {
+  if (patch.sudoWithoutPassword !== undefined) {
+    const current = await ownerSudoHostd<{ enabled: boolean }>('OwnerSudoStatus');
+    if (current.enabled !== patch.sudoWithoutPassword) {
+      await ownerSudoHostd('SetOwnerSudo', {
+        enabled: patch.sudoWithoutPassword,
+        actor: request ? (await requireSession(request)).userId : 'owner',
+      });
+      await writeAudit({
+        userId: request ? (await requireSession(request)).userId : null,
+        event: 'sudo_changed',
+        detail: patch.sudoWithoutPassword ? 'enabled' : 'disabled',
+      });
+    }
+  }
   const next: OwnerTerminalSettings = {
     ...(await getOwnerTerminalSettings()),
     ...patch,
     stepUpMethods: ['totp'],
   };
   await setSetting(SETTINGS_KEY, next);
-  return next;
+  return request ? getOwnerTerminalSettingsForApi() : next;
 }
 
 // ── Request context ──────────────────────────────────────────────────────────

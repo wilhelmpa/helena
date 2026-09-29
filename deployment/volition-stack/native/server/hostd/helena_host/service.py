@@ -10,7 +10,7 @@ import threading
 from dataclasses import dataclass
 from typing import Callable
 
-from . import audit, backup, events, guard, power, storage, system
+from . import audit, backup, events, guard, owner_sudo, power, storage, system
 from .common import VERSION, Host, HostError, iso
 from .config import GUARD_LIMIT_RANGE, Config, load_settings, save_settings
 from .varlink import VarlinkError
@@ -36,6 +36,8 @@ method SetPowerProfile(profile: string, actor: ?string) -> (result: object)
 method SetPowerPolicy(mode: string, tctlLimit: ?int, actor: ?string) -> (result: object)
 method SetFans(mode: string, level: ?int, actor: ?string) -> (result: object)
 method SetGuard(limit: int, actor: ?string) -> (result: object)
+method OwnerSudoStatus() -> (result: object)
+method SetOwnerSudo(enabled: bool, actor: ?string) -> (result: object)
 method BackupStatus() -> (result: object)
 method BackupSnapshots() -> (result: object)
 method BackupList(snapshot: string, path: string) -> (result: object)
@@ -246,6 +248,9 @@ METHODS: dict[str, Method] = {
     'SetPowerPolicy': Method(set_power_policy, _p(mode='string', tctlLimit='?int', actor='?string'), mutating=True),
     'SetFans': Method(set_fans, _p(mode='string', level='?int', actor='?string'), mutating=True),
     'SetGuard': Method(set_guard, _p(limit='int', actor='?string'), mutating=True),
+    'OwnerSudoStatus': Method(lambda ctx, _: owner_sudo.status(ctx.host), {}),
+    'SetOwnerSudo': Method(lambda ctx, p: owner_sudo.set_enabled(ctx.host, p['enabled']),
+                           _p(enabled='bool', actor='?string'), mutating=True),
     'BackupStatus': Method(backup_status, {}),
     'BackupSnapshots': Method(lambda ctx, _: {'snapshots': backup.snapshots(ctx.host, ctx.config)}, {}),
     'BackupList': Method(lambda ctx, p: backup.list_dir(ctx.host, ctx.config, p['snapshot'], p['path']),

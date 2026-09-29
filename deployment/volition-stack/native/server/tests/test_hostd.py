@@ -20,7 +20,7 @@ from unittest import mock
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, '..', 'hostd'))
 
-from helena_host import backup, events, guard, power, service, storage, system  # noqa: E402
+from helena_host import backup, events, guard, owner_sudo, power, service, storage, system  # noqa: E402
 from helena_host.common import CommandResult, Host, HostError  # noqa: E402
 from helena_host.config import (Config, DEFAULT_CONFIG, _merge, load_settings, on_calendar,  # noqa: E402
                                 save_settings, validate_retention, validate_schedule)
@@ -109,6 +109,33 @@ class HostTest(unittest.TestCase):
 
 
 # ── Storage ──────────────────────────────────────────────────────────────────────────────
+
+class OwnerSudoTests(HostTest):
+    def test_enable_revoke_and_restore_on_validation_failure(self):
+        self.write('/etc/sudoers', 'root ALL=(ALL:ALL) ALL\n')
+        os.makedirs(self.host.path('/etc/sudoers.d'), exist_ok=True)
+        self.runner.on('/usr/sbin/visudo', rc=0)
+        self.assertEqual(owner_sudo.status(self.host), {'enabled': False})
+        self.assertEqual(owner_sudo.set_enabled(self.host, True), {'enabled': True})
+        self.assertEqual(self.read(owner_sudo.PATH).encode(), owner_sudo.RULE)
+        self.assertEqual(os.stat(self.host.path(owner_sudo.PATH)).st_mode & 0o777, 0o440)
+        self.assertEqual(owner_sudo.set_enabled(self.host, False), {'enabled': False})
+        self.assertFalse(self.host.exists(owner_sudo.PATH))
+        self.assertTrue(self.host.exists(owner_sudo.DISABLED))
+        self.runner.on('/usr/sbin/visudo', '-c', rc=1)
+        with self.assertRaises(HostError):
+            owner_sudo.set_enabled(self.host, True)
+        self.assertFalse(self.host.exists(owner_sudo.PATH))
+        self.assertTrue(self.host.exists(owner_sudo.DISABLED))
+
+    def test_revoke_refuses_legacy_owner_rule(self):
+        os.makedirs(self.host.path('/etc/sudoers.d'), exist_ok=True)
+        self.write(owner_sudo.PATH, owner_sudo.RULE.decode())
+        self.write(owner_sudo.LEGACY, owner_sudo.RULE.decode())
+        with self.assertRaises(HostError):
+            owner_sudo.set_enabled(self.host, False)
+        self.assertTrue(self.host.exists(owner_sudo.PATH))
+
 
 class StorageTests(HostTest):
     def md(self, action='recover', degraded='1', completed='1033942400 / 3902568576', mismatch='0'):

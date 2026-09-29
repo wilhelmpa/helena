@@ -233,7 +233,8 @@
       "grant_revoked": "Concessão revogada",
       "session_start": "Sessão iniciada",
       "session_end": "Sessão encerrada",
-      "token_rejected": "Token rejeitado"
+      "token_rejected": "Token rejeitado",
+      "sudo_changed": "Terminal sudo changed"
     },
     "grantActiveOpen": "Acesso concedido."
   },

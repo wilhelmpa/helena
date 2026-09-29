@@ -233,7 +233,8 @@
       "grant_revoked": "Izin dicabut",
       "session_start": "Sesi dimulai",
       "session_end": "Sesi berakhir",
-      "token_rejected": "Token ditolak"
+      "token_rejected": "Token ditolak",
+      "sudo_changed": "Terminal sudo changed"
     },
     "grantActiveOpen": "Akses diberikan."
   },

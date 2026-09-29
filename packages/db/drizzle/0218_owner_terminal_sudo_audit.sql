@@ -1,0 +1,2 @@
+ALTER TABLE owner_terminal_audit DROP CONSTRAINT owner_terminal_audit_event_check;--> statement-breakpoint
+ALTER TABLE owner_terminal_audit ADD CONSTRAINT owner_terminal_audit_event_check CHECK (event IN ('step_up_ok', 'step_up_fail', 'rate_limited', 'grant_revoked', 'session_start', 'session_end', 'token_rejected', 'sudo_changed'));
