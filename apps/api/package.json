@@ -13,7 +13,7 @@
     "dev": "bun --env-file=../../.env run --watch src/index.ts",
     "start": "bun run src/index.ts",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "NODE_OPTIONS=--max-old-space-size=6144 tsc --noEmit",
     "test": "bun test --env-file=../../.env.test",
     "test:coverage": "bun test --env-file=../../.env.test --coverage; bun scripts/coverage-report.ts"
   },
