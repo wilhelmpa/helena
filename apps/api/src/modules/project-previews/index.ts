@@ -66,7 +66,7 @@ export const projectPreviewRoutes = new Elysia({
       detail: {
         summary: 'Read project preview status',
         description:
-          'List persistent dev servers of this project; running means the HTTP readiness check passed.',
+          'List persistent dev servers of this project; running means the HTTP readiness check passed. Poll preview_status to wait for readiness. The agent terminal has a private network: curl cannot reach a managed preview, and sleep does not check it.',
         ...mcpTool('preview_status'),
       },
     },
@@ -82,7 +82,7 @@ export const projectPreviewRoutes = new Elysia({
       detail: {
         summary: 'Start a project preview',
         description:
-          'Start a persistent project dev server and wait up to 60 seconds for HTTP readiness. Inspect preview.status: failed includes a log tail. cwd is relative to this project workspace. Existing dependencies only; never installs packages. When running, follow browserInstruction to open the exact returned URL in this project browser and verify its content.',
+          'Start or reuse a persistent project dev server and wait up to 60 seconds for HTTP readiness. Repeated starts with the same name or app and command reuse the active preview. Inspect preview.status: failed includes a log tail. cwd is relative to this project workspace. Existing dependencies only; never installs packages. When running, follow browserInstruction to open the exact returned URL in this project browser and verify its content. The agent terminal cannot curl the preview; use preview_status to wait, not sleep.',
         ...mcpTool(
           'preview_start',
           { idempotentHint: true, openWorldHint: false },

@@ -119,6 +119,8 @@ starting the same process repeatedly. The cwd is relative to the project workspa
 it to detect the app or use the area path from your project context. Existing packages
 only: installing dependencies requires the owner's approval. Read preview_url and open
 it with browser_navigate in this project's browser, then verify with browser_snapshot.
+The terminal has a private network: curl cannot reach preview URLs. Poll preview_status
+instead of sleeping; do not sleep more than 10 seconds in a terminal without a reason.
 Follow browserInstruction from the result. A refusal for another localhost address does
 not describe this exact managed preview. Do not claim a block, a working page or working
 links without the corresponding tool evidence. Show the preview inside {appName}; the URL
