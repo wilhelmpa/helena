@@ -1,30 +1,20 @@
 {
   "waitingForTeam": "Obrolan menunggu tim pertama.",
   "list": {
-    "title": "Obrolan",
     "search": "Cari obrolan",
     "newChat": "Obrolan baru",
-    "open": "Buka daftar obrolan",
-    "close": "Tutup daftar obrolan",
     "moreActions": "Aksi lainnya",
-    "viewActive": "Aktif",
     "viewArchived": "Diarsipkan",
     "viewTrash": "Sampah",
     "untitled": "Percakapan baru",
-    "running": "Sedang menjawab",
     "noMatches": "Tidak ada obrolan yang cocok dengan pencarianmu.",
-    "searchResults": "Hasil pencarian",
     "empty": {
-      "active": "Belum ada obrolan. Mulai satu dari agen di atas.",
+      "active": "Belum ada obrolan. Mulai satu dengan +.",
       "archived": "Tidak ada obrolan yang diarsipkan.",
       "trash": "Sampah kosong."
     },
     "group": {
-      "pinned": "Disematkan",
-      "today": "Hari ini",
-      "yesterday": "Kemarin",
-      "week": "7 hari terakhir",
-      "month": "30 hari terakhir"
+      "pinned": "Disematkan"
     },
     "pin": "Sematkan",
     "unpin": "Lepas sematan",
@@ -43,12 +33,6 @@
     "trashed": "Obrolan dipindahkan ke sampah.",
     "purged": "Obrolan dihapus selamanya.",
     "options": "Daftar obrolan",
-    "groupBy": "Kelompokkan",
-    "grouping": {
-      "time": "Menurut tanggal",
-      "project": "Menurut proyek",
-      "agent": "Menurut agen"
-    },
     "deleteAll": "Hapus semua",
     "deleteAllTitle": "Hapus semua obrolan?",
     "deleteAllBody": "Obrolan dalam daftar ini dipindahkan ke tempat sampah dan dapat dipulihkan. Obrolan yang masih dijawab tetap ada.",
@@ -65,7 +49,8 @@
       "dissolve": "Bubarkan folder (chat tetap ada)",
       "actions": "Folder „{name}“",
       "empty": "Kosong: pindahkan chat ke sini lewat menunya."
-    }
+    },
+    "newChatWith": "Obrolan baru dengan {name}"
   },
   "empty": {
     "noAgentsTitle": "Tidak ada agen untuk diajak chat",

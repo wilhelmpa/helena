@@ -244,6 +244,27 @@
   font-family: var(--font-mono);
   font-size: 11px;
 }
+/* A line of text and the search field of a section: at the text edge of the rows around. */
+.ds-tree-note {
+  margin: 0;
+  padding: var(--space-1) 12px var(--space-2);
+  padding-inline-start: calc(12px + var(--ds-tree-level, 0) * 16px);
+  color: var(--text-3);
+  font-size: 12px;
+}
+.ds-tree-search {
+  padding: var(--space-1) 8px var(--space-1);
+  padding-inline-start: calc(8px + var(--ds-tree-level, 0) * 16px);
+}
+.ds-tree-search > * {
+  width: 100%;
+}
+.ds-tree-skeleton {
+  height: 24px;
+  margin: var(--space-1) 12px var(--space-1) 28px;
+  border-radius: var(--radius-md);
+}
+
 /* The row's own "+" / "…": at the end, before the count, only on hover or focus. */
 .ds-tree-actions {
   position: absolute;
@@ -264,6 +285,11 @@
 @media (hover: none) {
   .ds-tree-actions {
     opacity: 1;
+  }
+  /* Without hover the actions always stand at the end of the row: the text and a count keep
+     clear of them. */
+  .ds-tree-line:has(> .ds-tree-actions) > .ds-tree-row {
+    padding-inline-end: 40px;
   }
 }
 .ds-tree-action {

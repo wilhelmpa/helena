@@ -9,11 +9,10 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useContainerWidth } from '../../hooks/useContainerWidth';
 import { useChatAgentStates } from '../../hooks/useChatAgentStates';
 import { useChatSummary } from '../../hooks/useChatSummary';
-import { artifactPlacement, chatLayoutMode } from '../../utils/chatLayout';
+import { artifactPlacement } from '../../utils/chatLayout';
 import type { Artifact } from '../../utils/artifacts';
 import { locationAfterDeletion, type ChatLocation } from '../../utils/chatLocation';
 import { newChatScopeKey } from '../../utils/contextAgents';
-import ChatListPane from './ChatListPane';
 import ChatThreadView from './ChatThreadView';
 import ChatEmptyState from './ChatEmptyState';
 import ArtifactPanel from './ArtifactPanel';
@@ -55,7 +54,6 @@ export default function ChatWorkspace({
   pageContext,
 }: ChatWorkspaceProps) {
   const [rootRef, width] = useContainerWidth<HTMLDivElement>();
-  const [listOpen, setListOpen] = useState(false);
   const [artifact, setArtifact] = useState<Artifact | null>(null);
   const [artifactOpen, setArtifactOpen] = useState(false);
   const states = useChatAgentStates(agents);
@@ -84,16 +82,7 @@ export default function ChatWorkspace({
   const closePanels = useCallback(() => {
     setArtifact(null);
     setArtifactOpen(false);
-    setListOpen(false);
   }, []);
-
-  const selectThread = useCallback(
-    (thread: { id: string; agentId: number }) => {
-      closePanels();
-      onNavigate({ agentId: thread.agentId, threadId: thread.id });
-    },
-    [closePanels, onNavigate],
-  );
 
   const startNewChat = useCallback(
     (newAgentId: number | null) => {
@@ -136,10 +125,6 @@ export default function ChatWorkspace({
     setArtifactOpen(true);
   }, []);
 
-  // Before the first measurement (width 0) the layout is compact: the split layout
-  // hides the list behind its own container query, so guessing "wide" while narrow would
-  // leave the list button with nothing to open until the width arrives.
-  const mode = inPage && projectKey === null ? 'compact' : chatLayoutMode(width);
   const agentInScope = agents.find((agent) => agent.id === agentId) ?? null;
   // The agent a thread belongs to is not always one this workspace's picker offers
   // (one working in another project, or one the list has not loaded yet): it is read
@@ -168,19 +153,6 @@ export default function ChatWorkspace({
       ref={rootRef}
       className="@container/chat relative flex h-full min-h-0 flex-1 overflow-hidden"
     >
-      <ChatListPane
-        projectKey={projectKey}
-        agents={agents}
-        mode={mode}
-        side={inPage && projectKey === null ? 'end' : 'start'}
-        open={listOpen}
-        onOpenChange={setListOpen}
-        selectedThreadId={threadId}
-        openChat={threadId != null ? (summary.data ?? null) : null}
-        onSelectThread={selectThread}
-        onThreadRemoved={leaveDeletedThread}
-        onNewChat={() => startNewChat(null)}
-      />
       <div className="flex min-w-0 flex-1 flex-col">
         {selectedAgent && !resolvingThread ? (
           <ChatThreadView
@@ -196,8 +168,6 @@ export default function ChatWorkspace({
             onActivity={markThreadActive}
             onThreadDeleted={leaveDeletedThread}
             onNewChat={startNewChat}
-            onOpenList={() => setListOpen(true)}
-            compact={mode === 'compact'}
             onArtifact={showArtifact}
             artifactOpen={artifactOpen}
             onToggleArtifact={() => setArtifactOpen((open) => !open)}
@@ -211,11 +181,7 @@ export default function ChatWorkspace({
             <Skeleton className="h-full w-full flex-1" />
           </div>
         ) : (
-          <ChatEmptyState
-            teamId={teamId}
-            compact={mode === 'compact'}
-            onOpenList={() => setListOpen(true)}
-          />
+          <ChatEmptyState teamId={teamId} />
         )}
       </div>
       <WebLinkScope projectKey={linkProjectKey}>

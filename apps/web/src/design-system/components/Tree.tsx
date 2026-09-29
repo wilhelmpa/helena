@@ -1,18 +1,23 @@
 'use client';
 
 import {
+  Children,
+  Fragment,
   createContext,
+  isValidElement,
   useContext,
   useEffect,
   useMemo,
   useRef,
   useState,
   type AnchorHTMLAttributes,
+  type ReactElement,
   type ReactNode,
 } from 'react';
 import Link from 'next/link';
-import { ChevronDown, ChevronRight } from 'lucide-react';
+import { ChevronDown, ChevronRight, Search } from 'lucide-react';
 import { useLocalValue } from '@/hooks/useLocalValue';
+import { SearchField } from './Field';
 import { StatusDot, type StatusDotTone } from './StatusDot';
 
 // One tree for the sidebar and every other tree (docs/design-system.md §4, §7): rows of
@@ -22,6 +27,18 @@ import { StatusDot, type StatusDotTone } from './StatusDot';
 // open at once (owner, 28.09.): the area holding the current page opens when you get
 // there, and an area only closes when you close it. Deeper groups fold one by one and
 // remember it per user. A status dot and a count stand at the end of the row.
+
+// The elements a row's children really render: fragments are opened, null and false are
+// dropped (an empty list is no list, so it gets no arrow).
+function childElements(children: ReactNode): ReactElement[] {
+  const found: ReactElement[] = [];
+  for (const child of Children.toArray(children)) {
+    if (!isValidElement<{ children?: ReactNode }>(child)) continue;
+    if (child.type === Fragment) found.push(...childElements(child.props.children));
+    else found.push(child);
+  }
+  return found;
+}
 
 const LevelCtx = createContext(0);
 type Accordion = { isOpen: (id: string) => boolean; toggle: (id: string) => void } | null;
@@ -68,6 +85,41 @@ export function Tree({
       <AccordionCtx.Provider value={accordion}>
         <LevelCtx.Provider value={0}>{children}</LevelCtx.Provider>
       </AccordionCtx.Provider>
+    </div>
+  );
+}
+
+// A quiet line of text in the tree ("no chats yet"), at the indent of the rows around it.
+export function TreeNote({ children }: { children: ReactNode }) {
+  const level = useContext(LevelCtx);
+  return (
+    <p className="ds-tree-note" style={{ '--ds-tree-level': level } as React.CSSProperties}>
+      {children}
+    </p>
+  );
+}
+
+// The search field of a tree section, at the indent of the rows it filters.
+export function TreeSearch({
+  value,
+  onChange,
+  label,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  label: string;
+}) {
+  const level = useContext(LevelCtx);
+  return (
+    <div className="ds-tree-search" style={{ '--ds-tree-level': level } as React.CSSProperties}>
+      <SearchField
+        icon={<Search aria-hidden="true" />}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder={label}
+        aria-label={label}
+        dir="auto"
+      />
     </div>
   );
 }
@@ -133,7 +185,21 @@ export function TreeItem({
 }: TreeItemProps) {
   const level = useContext(LevelCtx);
   const accordion = useContext(AccordionCtx);
-  const hasChildren = Boolean(children);
+  // A group of exactly one plain link is that link (owner, O89): no arrow, no list — the
+  // row itself goes there and is marked when the link is. A row with a page of its own, with
+  // actions or with nothing to fold (`fixed`) keeps its shape.
+  const entries = childElements(children);
+  const only =
+    !href && !actions && !fixed && entries.length === 1 && entries[0]!.type === TreeItem
+      ? (entries[0]!.props as TreeItemProps)
+      : null;
+  const single = only?.href && childElements(only.children).length === 0 ? only : null;
+  if (single) {
+    href = single.href;
+    active = active || Boolean(single.active);
+    count ??= single.count;
+  }
+  const hasChildren = entries.length > 0 && !single;
   const collapsible = hasChildren && !fixed;
   const inAccordion = collapsible && level === 0 && accordion != null && id != null;
   const [stored, setStored] = useLocalValue(

@@ -220,10 +220,14 @@ button.card {
   display: none;
 }
 
+.pill {
+  /* The field is 44px high here; its text is centred by the field itself (O84). */
+  --ds-chat-field-min: 44px;
+}
+
 .pill :global([data-slot='input-group-control']) {
-  min-height: 44px;
   grid-column: 1;
-  padding: 8px 0;
+  padding-inline: 0;
 }
 
 .pill :global([data-align='block-end']) {
@@ -272,12 +276,8 @@ button.card {
     padding: 0 16px;
   }
 
-  /* A phone: the page header already says Helena; the date gives way. */
+  /* A phone: the page header already says the app's name; the date gives way. */
   .location {
-    display: none;
-  }
-
-  .chatsLabel {
     display: none;
   }
 

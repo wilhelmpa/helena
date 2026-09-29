@@ -303,5 +303,6 @@
   "settingsAutopilotExecution": "Autopilot & execution",
   "settingsProjectAccess": "Manage access",
   "sidebarHelenaKnowledge": "{appName}",
-  "sidebarTrash": "Trash"
+  "sidebarTrash": "Trash",
+  "sidebarChats": "Chats"
 }

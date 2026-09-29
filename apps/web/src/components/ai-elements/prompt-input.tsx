@@ -183,7 +183,10 @@ export function PromptInputTextarea({
       value={value}
       rows={1}
       className={cn(
-        'field-sizing-content max-h-60 min-h-10 px-3 pt-2.5 pb-1 text-sm md:text-sm',
+        // One line of text sits exactly in the middle of the field's height (the same room
+        // above and below, from --ds-chat-field-min and -line), and a longer text grows the
+        // field up to max-h-60 (owner, O84).
+        'field-sizing-content max-h-60 min-h-[var(--ds-chat-field-min)] px-3 py-[calc((var(--ds-chat-field-min)-var(--ds-chat-field-line))/2)] text-sm leading-[var(--ds-chat-field-line)] md:text-sm',
         className,
       )}
       onCompositionStart={() => setComposing(true)}

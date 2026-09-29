@@ -296,6 +296,7 @@ export default function Shell({
       setChatThreadRequest({ agentId, threadId });
       workspaceLayout.showTool('chat');
     },
+    chatPanelOpen: workspaceOpen && activeWorkspaceTool === 'chat',
     chatThreadRequest,
     onChatThreadHandled: () => setChatThreadRequest(null),
     headerLayout,

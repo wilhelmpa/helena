@@ -1,30 +1,20 @@
 {
   "waitingForTeam": "聊天正在等待第一个团队。",
   "list": {
-    "title": "聊天",
     "search": "搜索聊天",
     "newChat": "新建聊天",
-    "open": "打开聊天列表",
-    "close": "关闭聊天列表",
     "moreActions": "更多操作",
-    "viewActive": "进行中",
     "viewArchived": "已归档",
     "viewTrash": "回收站",
     "untitled": "新对话",
-    "running": "正在回答",
     "noMatches": "没有与搜索匹配的聊天。",
-    "searchResults": "搜索结果",
     "empty": {
-      "active": "还没有聊天。从上面的代理开始一个吧。",
+      "active": "还没有聊天。点 + 开始一个。",
       "archived": "没有已归档的聊天。",
       "trash": "回收站是空的。"
     },
     "group": {
-      "pinned": "已置顶",
-      "today": "今天",
-      "yesterday": "昨天",
-      "week": "过去 7 天",
-      "month": "过去 30 天"
+      "pinned": "已置顶"
     },
     "pin": "置顶",
     "unpin": "取消置顶",
@@ -43,12 +33,6 @@
     "trashed": "聊天已移入回收站。",
     "purged": "聊天已永久删除。",
     "options": "聊天列表",
-    "groupBy": "分组",
-    "grouping": {
-      "time": "按日期",
-      "project": "按项目",
-      "agent": "按代理"
-    },
     "deleteAll": "全部删除",
     "deleteAllTitle": "删除所有聊天？",
     "deleteAllBody": "此列表中的聊天将移至回收站，可在那里恢复。仍在回答的聊天会保留。",
@@ -65,7 +49,8 @@
       "dissolve": "解散文件夹（聊天保留）",
       "actions": "文件夹“{name}”",
       "empty": "空的：通过聊天的菜单把聊天移到这里。"
-    }
+    },
+    "newChatWith": "与 {name} 开始新聊天"
   },
   "empty": {
     "noAgentsTitle": "没有可以对话的智能体",

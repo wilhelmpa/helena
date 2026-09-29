@@ -1,30 +1,20 @@
 {
   "waitingForTeam": "Chat is waiting for the first team.",
   "list": {
-    "title": "Chats",
     "search": "Search chats",
     "newChat": "New chat",
-    "open": "Open the chat list",
-    "close": "Close the chat list",
     "moreActions": "More actions",
-    "viewActive": "Active",
     "viewArchived": "Archived",
     "viewTrash": "Trash",
     "untitled": "New conversation",
-    "running": "Answering",
     "noMatches": "No chats match your search.",
-    "searchResults": "Search results",
     "empty": {
-      "active": "No chats yet. Start one from the agents above.",
+      "active": "No chats yet. Start one with +.",
       "archived": "No archived chats.",
       "trash": "Trash is empty."
     },
     "group": {
-      "pinned": "Pinned",
-      "today": "Today",
-      "yesterday": "Yesterday",
-      "week": "Previous 7 days",
-      "month": "Previous 30 days"
+      "pinned": "Pinned"
     },
     "pin": "Pin",
     "unpin": "Unpin",
@@ -43,12 +33,6 @@
     "trashed": "Chat moved to trash.",
     "purged": "Chat deleted for good.",
     "options": "Chat list",
-    "groupBy": "Group by",
-    "grouping": {
-      "time": "By date",
-      "project": "By project",
-      "agent": "By agent"
-    },
     "deleteAll": "Delete all",
     "deleteAllTitle": "Delete all chats?",
     "deleteAllBody": "The chats of this list go to the trash, where they can be restored. A chat that is still being answered stays.",
@@ -65,7 +49,8 @@
       "dissolve": "Dissolve folder (chats stay)",
       "actions": "Folder “{name}”",
       "empty": "Empty: move chats here from their menu."
-    }
+    },
+    "newChatWith": "New chat with {name}"
   },
   "empty": {
     "noAgentsTitle": "No agent to chat with",

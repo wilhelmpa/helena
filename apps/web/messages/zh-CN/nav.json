@@ -303,5 +303,6 @@
   "settingsAutopilotExecution": "自动驾驶与执行",
   "settingsProjectAccess": "管理访问",
   "sidebarHelenaKnowledge": "{appName}",
-  "sidebarTrash": "回收站"
+  "sidebarTrash": "回收站",
+  "sidebarChats": "聊天"
 }

@@ -15,39 +15,40 @@ import {
   Trash2,
 } from 'lucide-react';
 import type { ChatListView, ChatSummary } from '@/lib/api/endpoints/agentChat';
-import { Button } from '@/components/ui/button';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+  Menu,
+  MenuContent,
+  MenuItem,
+  MenuSeparator,
+  MenuSub,
+  MenuSubContent,
+  MenuSubTrigger,
+  MenuTrigger,
+  Text,
+} from '@/design-system';
 import { uuid } from '@/utils/uuid';
 import { useChatFoldersContext } from '../../hooks/useChatFolders';
 import { addFolder, folderOfThread, forgetThread, moveToFolder } from '../../utils/chatFolders';
 import ConfirmDialog from '@/components/common/overlay/ConfirmDialog';
 import { useChatListMutations } from '../../hooks/useChatList';
-import ChatRenameDialog from './ChatRenameDialog';
+import ChatRenameDialog from '../workspace/ChatRenameDialog';
 
-// The row's own actions: pin, rename, archive and delete — restore and purge instead,
-// in the trash. Kept out of the row's button so the row stays a single click target.
+// The row's own actions in the sidebar: pin, rename, file in a folder, archive and
+// delete — restore and purge instead, in the trash. It is the "…" of the tree row
+// (`ds-tree-action`), so the row itself stays a single link.
 //
 // The menu is not modal and the confirmation closes before the chat is moved: the row
 // (and everything it renders) leaves the list the moment the list refetches, and a
 // dialog torn down while open can leave the page blocked for clicks. `onRemoved` tells
 // the workspace a chat was deleted, so an open one closes instead of lingering.
-export default function ChatListItemMenu({
+export default function SidebarChatMenu({
   chat,
   view,
   onRemoved,
 }: {
   chat: ChatSummary;
   view: ChatListView;
-  onRemoved: (threadId: string) => void;
+  onRemoved: (chat: ChatSummary) => void;
 }) {
   const t = useTranslations('chatWorkspace');
   const { pin, rename, archive, trash, purge, restore } = useChatListMutations();
@@ -59,83 +60,77 @@ export default function ChatListItemMenu({
 
   return (
     <>
-      <DropdownMenu modal={false}>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="size-7 shrink-0 opacity-0 group-hover/chat-row:opacity-100 group-has-[[aria-current=true]]/chat-row:opacity-100 hover:bg-transparent focus-visible:opacity-100 data-[state=open]:opacity-100"
+      <Menu modal={false}>
+        <MenuTrigger asChild>
+          <button
+            type="button"
+            className="ds-tree-action"
             aria-label={t('list.moreActions')}
+            title={t('list.moreActions')}
           >
-            <MoreHorizontal className="size-4" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
+            <MoreHorizontal />
+          </button>
+        </MenuTrigger>
+        <MenuContent align="start">
           {view === 'trash' ? (
             <>
-              <DropdownMenuItem onSelect={() => restore.mutate(chat.id)}>
-                <ArchiveRestore className="size-4" /> {t('list.restore')}
-              </DropdownMenuItem>
-              <DropdownMenuItem variant="destructive" onSelect={() => setDeleting(true)}>
-                <Trash2 className="size-4" /> {t('list.deleteForever')}
-              </DropdownMenuItem>
+              <MenuItem onSelect={() => restore.mutate(chat.id)}>
+                <ArchiveRestore size={16} /> {t('list.restore')}
+              </MenuItem>
+              <MenuItem variant="destructive" onSelect={() => setDeleting(true)}>
+                <Trash2 size={16} /> {t('list.deleteForever')}
+              </MenuItem>
             </>
           ) : (
             <>
-              <DropdownMenuItem
-                onSelect={() => pin.mutate({ threadId: chat.id, pinned: !chat.pinned })}
-              >
-                {chat.pinned ? <PinOff className="size-4" /> : <Pin className="size-4" />}
+              <MenuItem onSelect={() => pin.mutate({ threadId: chat.id, pinned: !chat.pinned })}>
+                {chat.pinned ? <PinOff size={16} /> : <Pin size={16} />}
                 {t(chat.pinned ? 'list.unpin' : 'list.pin')}
-              </DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => setRenaming(true)}>
-                <Pencil className="size-4" /> {t('list.rename')}
-              </DropdownMenuItem>
+              </MenuItem>
+              <MenuItem onSelect={() => setRenaming(true)}>
+                <Pencil size={16} /> {t('list.rename')}
+              </MenuItem>
               {/* The member's own folders (owner, O4). */}
-              <DropdownMenuSub>
-                <DropdownMenuSubTrigger>
-                  <Folder className="size-4" /> {t('list.folders.moveTo')}
-                </DropdownMenuSubTrigger>
-                <DropdownMenuSubContent>
+              <MenuSub>
+                <MenuSubTrigger>
+                  <Folder size={16} /> {t('list.folders.moveTo')}
+                </MenuSubTrigger>
+                <MenuSubContent>
                   {folders.map((folder) => (
-                    <DropdownMenuItem
+                    <MenuItem
                       key={folder.id}
                       disabled={folder.id === current?.id}
                       onSelect={() => save(moveToFolder(folders, chat.id, folder.id))}
                     >
-                      <Folder className="size-4" /> {folder.name}
-                    </DropdownMenuItem>
+                      <Folder size={16} /> {folder.name}
+                    </MenuItem>
                   ))}
-                  {folders.length > 0 && <DropdownMenuSeparator />}
-                  <DropdownMenuItem onSelect={() => setNaming(true)}>
-                    <FolderPlus className="size-4" /> {t('list.folders.new')}
-                  </DropdownMenuItem>
+                  {folders.length > 0 && <MenuSeparator />}
+                  <MenuItem onSelect={() => setNaming(true)}>
+                    <FolderPlus size={16} /> {t('list.folders.new')}
+                  </MenuItem>
                   {current && (
-                    <DropdownMenuItem onSelect={() => save(moveToFolder(folders, chat.id, null))}>
-                      <FolderMinus className="size-4" /> {t('list.folders.takeOut')}
-                    </DropdownMenuItem>
+                    <MenuItem onSelect={() => save(moveToFolder(folders, chat.id, null))}>
+                      <FolderMinus size={16} /> {t('list.folders.takeOut')}
+                    </MenuItem>
                   )}
-                </DropdownMenuSubContent>
-              </DropdownMenuSub>
-              <DropdownMenuItem
+                </MenuSubContent>
+              </MenuSub>
+              <MenuItem
                 onSelect={() =>
                   archive.mutate({ threadId: chat.id, archived: view !== 'archived' })
                 }
               >
-                {view === 'archived' ? (
-                  <ArchiveRestore className="size-4" />
-                ) : (
-                  <Archive className="size-4" />
-                )}
+                {view === 'archived' ? <ArchiveRestore size={16} /> : <Archive size={16} />}
                 {t(view === 'archived' ? 'list.unarchive' : 'list.archive')}
-              </DropdownMenuItem>
-              <DropdownMenuItem variant="destructive" onSelect={() => setDeleting(true)}>
-                <Trash2 className="size-4" /> {t('list.delete')}
-              </DropdownMenuItem>
+              </MenuItem>
+              <MenuItem variant="destructive" onSelect={() => setDeleting(true)}>
+                <Trash2 size={16} /> {t('list.delete')}
+              </MenuItem>
             </>
           )}
-        </DropdownMenuContent>
-      </DropdownMenu>
+        </MenuContent>
+      </Menu>
       {renaming && (
         <ChatRenameDialog
           initialTitle={chat.title ?? ''}
@@ -162,12 +157,12 @@ export default function ChatListItemMenu({
             await (view === 'trash' ? purge.mutateAsync(threadId) : trash.mutateAsync(threadId));
             if (view === 'trash' && folderOfThread(folders, threadId))
               save(forgetThread(folders, threadId));
-            onRemoved(threadId);
+            onRemoved(chat);
           }}
         >
-          <p className="text-sm text-muted-foreground">
+          <Text as="p" tone="muted">
             {t('list.deleteConfirmBody', { title: chat.title || t('list.untitled') })}
-          </p>
+          </Text>
         </ConfirmDialog>
       )}
     </>

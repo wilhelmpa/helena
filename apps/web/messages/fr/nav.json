@@ -303,5 +303,6 @@
   "settingsAutopilotExecution": "Pilote automatique et exécution",
   "settingsProjectAccess": "Gérer les accès",
   "sidebarHelenaKnowledge": "{appName}",
-  "sidebarTrash": "Corbeille"
+  "sidebarTrash": "Corbeille",
+  "sidebarChats": "Chats"
 }

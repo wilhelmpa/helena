@@ -18,6 +18,7 @@ import { nextPageParam } from '@/lib/api/core/paging';
 import { qk } from '@/services/queryKeys';
 
 export const CHAT_LIST_PAGE_SIZE = 30;
+const RUNNING_REFRESH_MS = 10_000;
 
 export interface ChatListFilter {
   projectKey?: string;
@@ -37,6 +38,12 @@ export function useChatList(filter: ChatListFilter) {
       listChats({ page: pageParam, pageSize: CHAT_LIST_PAGE_SIZE }, filter),
     initialPageParam: 1,
     getNextPageParam: nextPageParam,
+    // The sidebar shows a dot on a chat that is being answered: while one is, the list is
+    // read again now and then so the dot goes out when the answer is done.
+    refetchInterval: (query) =>
+      query.state.data?.pages.some((page) => page.items.some((chat) => chat.running))
+        ? RUNNING_REFRESH_MS
+        : false,
   });
 }
 

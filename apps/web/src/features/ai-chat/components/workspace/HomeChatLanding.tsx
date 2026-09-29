@@ -1,8 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import { MessagesSquare } from 'lucide-react';
-import { Button } from '@/design-system';
 import { useLocale, useTranslations } from 'next-intl';
 import { useSyncExternalStore, type ReactNode } from 'react';
 import {
@@ -17,6 +15,7 @@ import {
   runningActivityHref,
 } from '@/features/agent-activity/utils/runningLink';
 import { useSession } from '@/lib/auth-client';
+import { useDisplayName } from '@/context/displayName';
 import '@/extensions/homeWidgets';
 import { useNeedsYou } from '@/features/home/dashboard/useNeedsYou';
 import { startCards } from '@/features/home/utils/startCards';
@@ -39,9 +38,10 @@ function useHomeDate() {
   );
 }
 
-export function HomeChatMasthead({ onOpenList }: { onOpenList?: () => void }) {
+export function HomeChatMasthead() {
   const t = useTranslations('homeChat');
   const today = useHomeDate();
+  const appName = useDisplayName();
   const activity = useHomeActiveActivity();
   const active = (activity.data?.items ?? []).filter(
     (entry) => HOME_ACTIVE_STATUSES.has(entry.status) && entry.agent,
@@ -51,7 +51,7 @@ export function HomeChatMasthead({ onOpenList }: { onOpenList?: () => void }) {
   return (
     <div className={styles.masthead}>
       <div className={styles.location}>
-        <strong>{'HELENA'}</strong>
+        <strong>{appName.toLocaleUpperCase()}</strong>
         <span>·</span>
         <span>{today?.toLocaleUpperCase() ?? ''}</span>
       </div>
@@ -64,16 +64,6 @@ export function HomeChatMasthead({ onOpenList }: { onOpenList?: () => void }) {
           <span className={working ? styles.pulse : styles.quietDot} />
           {t('working', { count: working })}
         </Link>
-        {onOpenList && (
-          <Button
-            size="small"
-            icon={<MessagesSquare size={14} aria-hidden="true" />}
-            onClick={onOpenList}
-            aria-label={t('history')}
-          >
-            <span className={styles.chatsLabel}>{t('chats')}</span>
-          </Button>
-        )}
       </div>
     </div>
   );
@@ -91,6 +81,7 @@ export function HomeChatHero({ orb, showTitle = true }: { orb: ReactNode; showTi
 
 export function HomeChatActivityCards() {
   const t = useTranslations('homeChat');
+  const appName = useDisplayName();
   const tActivity = useTranslations('agentActivity');
   const activity = useHomeActiveActivity();
   const { data: session } = useSession();
@@ -146,7 +137,7 @@ export function HomeChatActivityCards() {
             <Link key={entry.id} href={activityHref(entry)} className={styles.card}>
               <span className={styles.cardTag} style={{ color: accent }}>
                 <span className={styles.cardDot} style={{ backgroundColor: accent }} />
-                {entry.project?.key ?? 'HELENA'}
+                {entry.project?.key ?? appName.toLocaleUpperCase()}
               </span>
               <span className={styles.cardTitle}>
                 {entry.issue?.title ?? tActivity(`kinds.${entry.kind}`)}

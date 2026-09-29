@@ -1,30 +1,8 @@
 import type { ChatFolder } from '@/lib/api/endpoints/userPreferences';
-import type { ChatSummary } from '@/lib/api/endpoints/agentChat';
-import type { ChatGroup } from './chatGroups';
 
-// The member's own chat folders (owner, O4), next to the automatic groups: the folders come
-// first, each with the chats filed in it (in the list's order); those chats leave the other
-// groups. Pure, so the list and the tests share it.
-
-export function withFolders(
-  groups: ChatGroup[],
-  chats: ChatSummary[],
-  folders: ChatFolder[],
-): ChatGroup[] {
-  if (folders.length === 0) return groups;
-  const folderOf = new Map<string, string>();
-  for (const folder of folders) for (const id of folder.threads) folderOf.set(id, folder.id);
-  const folderGroups: ChatGroup[] = folders.map((folder) => ({
-    key: `f:${folder.id}`,
-    label: folder.name,
-    folderId: folder.id,
-    chats: chats.filter((chat) => folderOf.get(chat.id) === folder.id),
-  }));
-  const rest = groups
-    .map((group) => ({ ...group, chats: group.chats.filter((chat) => !folderOf.has(chat.id)) }))
-    .filter((group) => group.chats.length > 0);
-  return [...folderGroups, ...rest];
-}
+// The member's own chat folders (owner, O4) in the sidebar's chat list: which folder a chat is
+// in, and creating, renaming, dissolving and filling them. Pure, so the list and the tests
+// share it.
 
 export function folderOfThread(folders: ChatFolder[], threadId: string): ChatFolder | null {
   return folders.find((folder) => folder.threads.includes(threadId)) ?? null;
