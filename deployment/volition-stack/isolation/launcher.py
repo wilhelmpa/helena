@@ -681,7 +681,8 @@ class Launcher:
             from migrate import registry_projects
             git_roots += [os.path.join(self.config.workspace_root, item) for item, _ in registry_projects(self.config)]
         entries = [(name, value) for root in git_roots for name, value in [('safe.directory', root), ('safe.directory', root + '/*')]]
-        entries.append(('core.sharedRepository', 'group'))
+        # No core.sharedRepository: git would set setgid on directories, which the agent
+        # units forbid (RestrictSUIDSGID); shared writing comes from the isolation ACLs.
         env.setdefault('GIT_AUTHOR_NAME', f'Volition {slug}')
         env.setdefault('GIT_AUTHOR_EMAIL', f'volition+{slug}@localhost')
         env.setdefault('GIT_COMMITTER_NAME', env['GIT_AUTHOR_NAME'])
