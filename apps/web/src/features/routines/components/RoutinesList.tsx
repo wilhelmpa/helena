@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
@@ -47,7 +47,7 @@ export function RoutinesList({
   const agents = (agentsQuery.data ?? []).filter((agent) =>
     agent.projects.some((item) => item.id === project.project.id),
   );
-  const routines = routinesQuery.data?.items ?? [];
+  const routines = useMemo(() => routinesQuery.data?.items ?? [], [routinesQuery.data]);
   const createRoutine = useCreateRoutine(projectKey);
   const updateRoutine = useUpdateRoutine(projectKey);
   const deleteRoutine = useDeleteRoutine(projectKey);
