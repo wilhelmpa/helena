@@ -18,6 +18,7 @@ export interface PlanSendOptions {
   parentId?: number | null;
   files?: string[];
   issueIds?: number[];
+  refs?: string[];
   model?: string | null;
   thinkingLevel?: string | null;
   // 'voice': said in the conversation mode; the answer is read aloud (features/voice).
@@ -85,8 +86,8 @@ export class PlanChatTransport implements ChatTransport<PlanUIMessage> {
       threadId: this.threadId ?? undefined,
       parentId: send.parentId !== undefined ? send.parentId : serverId(previous?.id),
       attachments:
-        send.files?.length || send.issueIds?.length
-          ? { files: send.files, issueIds: send.issueIds }
+        send.files?.length || send.issueIds?.length || send.refs?.length
+          ? { files: send.files, issueIds: send.issueIds, refs: send.refs }
           : undefined,
       ...(send.model !== undefined && { model: send.model, thinkingLevel: send.thinkingLevel }),
       ...(send.via && { via: send.via }),

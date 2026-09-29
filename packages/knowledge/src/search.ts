@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, isNull, like, or, sql, type SQL } from 'drizzle-orm';
+import { and, desc, eq, inArray, isNull, like, ne, notLike, or, sql, type SQL } from 'drizzle-orm';
 import { db, knowledgeItem, knowledgeLink, project } from '@repo/db';
 import { belowPattern } from '@repo/vault';
 import { readableItems, type KnowledgeReach } from './reach';
@@ -20,6 +20,8 @@ export interface SearchInput {
   limit: number;
   // Show one result per group (a thread, a task with its comments). On by default.
   collapse?: boolean;
+  excludePrivateVault?: boolean;
+  pickerKind?: string;
 }
 
 export interface SearchHit {
@@ -86,7 +88,17 @@ function filtersOf(input: SearchInput, withSources = true): SQL | undefined {
     parts.push(inArray(knowledgeItem.source, input.sources));
   }
   if (input.projectId === null) parts.push(isNull(knowledgeItem.projectId));
-  else if (input.projectId !== undefined) parts.push(eq(knowledgeItem.projectId, input.projectId));
+  else if (input.projectId !== undefined) {
+    parts.push(
+      or(
+        eq(knowledgeItem.projectId, input.projectId),
+        and(
+          eq(knowledgeItem.source, 'goal'),
+          sql`${knowledgeItem.metadata} ->> 'projectId' = ${String(input.projectId)}`,
+        ),
+      ),
+    );
+  }
   if (input.folder) {
     parts.push(
       and(
@@ -97,6 +109,25 @@ function filtersOf(input: SearchInput, withSources = true): SQL | undefined {
         ),
       ),
     );
+  }
+  if (input.excludePrivateVault) {
+    parts.push(or(ne(knowledgeItem.source, 'vault'), notLike(knowledgeItem.itemId, 'Private/%')));
+  }
+  if (input.pickerKind) {
+    const vault = eq(knowledgeItem.source, 'vault');
+    const path = knowledgeItem.itemId;
+    const kind: Record<string, SQL> = {
+      file: and(vault, sql`${knowledgeItem.metadata} ->> 'kind' = 'file'`)!,
+      doc: and(vault, sql`${path} ~ '^(Home|Projects/[^/]+)/Docs/'`)!,
+      journal: and(vault, like(path, 'Home/Docs/Journal/%'))!,
+      template: and(vault, like(path, 'Templates/%'))!,
+      note: and(vault, sql`${knowledgeItem.metadata} ->> 'kind' = 'note'`)!,
+      image: and(vault, like(knowledgeItem.mimeType, 'image/%'))!,
+      browser_image: and(vault, sql`${path} ~ '^((Home)|(Projects/[^/]+))/Files/Browser/'`)!,
+      chat_file: and(vault, sql`${path} ~ '^((Home)|(Projects/[^/]+))/Files/Chat/'`)!,
+      canvas: and(vault, like(path, '%.canvas'))!,
+    };
+    parts.push(kind[input.pickerKind] ?? eq(knowledgeItem.source, input.pickerKind));
   }
   return and(...parts);
 }

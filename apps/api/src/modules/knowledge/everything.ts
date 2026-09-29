@@ -9,6 +9,7 @@ import {
   knowledgeSource,
   linkingItems,
   parseRef,
+  recentItems,
   resetSource,
   searchKnowledgeIndex,
   saveSemanticSetting,
@@ -34,12 +35,14 @@ import {
   itemQuery,
   LinksResponse,
   linksQuery,
+  pickerQuery,
   semanticBody,
   SourcesResponse,
   sourceParams,
 } from './everything-model';
 import { knowledgeReach } from './reach';
 import { canAccess, vaultScope } from './scope';
+import { privateBoardHits } from './boards-picker';
 
 // The second brain's one search: every registered knowledge source (tasks, comments,
 // notes and files, mail, chats, agent runs, a plugin's own) through one index, filtered
@@ -112,6 +115,84 @@ export const everythingRoutes = new Elysia({
   detail: { tags: ['Knowledge'] },
 })
   .use(authContext)
+  .get(
+    '/knowledge/picker',
+    async ({ user, query }) => {
+      const reach = await knowledgeReach(requireUser(user), false);
+      const projectId = await projectIdByKey(query.project);
+      if (projectId && !reach.projects.get(projectId)?.size) {
+        throw new HttpError(403, 'You cannot search this project');
+      }
+      const sources = query.sources
+        ?.split(',')
+        .map((source) => source.trim())
+        .filter(Boolean);
+      const input = {
+        sources: sources?.length ? sources : undefined,
+        projectId,
+        limit: query.limit ?? 20,
+        excludePrivateVault: true,
+        pickerKind: query.kind,
+      };
+      const q = query.q?.trim() ?? '';
+      const result = q
+        ? await searchKnowledgeIndex(reach, { ...input, q })
+        : { items: await recentItems(reach, input), counts: {}, semantic: false };
+      const boards =
+        (!sources || sources.includes('board')) &&
+        (!query.kind || query.kind === 'canvas' || query.kind === 'board')
+          ? await privateBoardHits(reach, q, input.limit, projectId)
+          : [];
+      const boardBudget =
+        (sources?.length === 1 && sources[0] === 'board') || query.kind === 'board'
+          ? input.limit
+          : Math.min(10, boards.length);
+      const indexHits = result.items.slice(0, input.limit - boardBudget);
+      const boardHits = boards.slice(0, boardBudget).map((board) => ({
+        ...board,
+        url: absoluteHref(board.href),
+        cite: citeOf(board.title, board.href),
+        path: null,
+        mimeType: 'application/json',
+        metadata: { kind: 'canvas' },
+        author: null,
+        origin: null,
+        runId: null,
+        matched: q ? ['text'] : [],
+      }));
+      return {
+        counts: { ...result.counts, ...(boards.length && { board: boards.length }) },
+        semantic: result.semantic,
+        items: [
+          ...indexHits.map((hit) => ({
+            ref: hit.ref,
+            source: hit.source,
+            id: hit.id,
+            title: hit.title,
+            snippet: hit.snippet,
+            href: hit.href,
+            url: absoluteHref(hit.href),
+            cite: citeOf(hit.title, hit.href),
+            path: vaultPathOf(hit.source, hit.id),
+            projectKey: hit.projectKey,
+            mimeType: hit.mimeType,
+            metadata: hit.metadata,
+            author: hit.author,
+            origin: hit.origin,
+            runId: hit.runId,
+            updatedAt: hit.updatedAt,
+            matched: hit.matched,
+          })),
+          ...boardHits,
+        ].sort((a, b) => (q ? 0 : b.updatedAt.localeCompare(a.updatedAt))),
+      };
+    },
+    {
+      query: pickerQuery,
+      response: { 200: FindResponse, ...commonErrors },
+      detail: { summary: 'List or search attachable knowledge' },
+    },
+  )
   .get(
     '/knowledge/find',
     async ({ user, request, query }) => {

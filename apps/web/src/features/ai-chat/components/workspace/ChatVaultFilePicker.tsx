@@ -3,16 +3,15 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
-import { ChevronRight, File, Folder } from 'lucide-react';
-import { listFiles, type FileScope } from '@/lib/api/endpoints/projectFiles';
+import { File } from 'lucide-react';
+import { listAttachableKnowledge } from '@/lib/api/endpoints/everything';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { chatUploadScope, chatVaultPath } from '../../utils/chatVaultPaths';
+import { Input } from '@/components/ui/input';
 
-// A small folder browser to attach a file already in the vault instead of uploading it
-// again. Starts where a chat's attachments are allowed to come from: the project's own
-// vault for a project chat, Home's for a Home chat (see resolveAttachments on the API).
+// Minimal composer integration for the server's searchable knowledge picker. Claude's
+// design-system work owns the final appearance and localized subtype labels.
 export default function ChatVaultFilePicker({
   scopeKey,
   onClose,
@@ -20,40 +19,64 @@ export default function ChatVaultFilePicker({
 }: {
   scopeKey: string;
   onClose: () => void;
-  onPick: (path: string, name: string) => void;
+  onPick: (ref: string, title: string, source: string, href: string) => void;
 }) {
   const t = useTranslations('chatWorkspace');
-  const scope: FileScope = chatUploadScope(scopeKey);
-  const [path, setPath] = useState('');
+  const tSource = useTranslations('knowledge.source');
+  const tPicker = useTranslations('knowledge.picker');
+  const [search, setSearch] = useState('');
+  const [kind, setKind] = useState('');
   const list = useQuery({
-    queryKey: ['chatWorkspace', 'vaultBrowse', scopeKey, path],
-    queryFn: () => listFiles(scope, path),
+    queryKey: ['chatWorkspace', 'knowledgePicker', scopeKey, search, kind],
+    queryFn: ({ signal }) =>
+      listAttachableKnowledge(search, { kind: kind || undefined, limit: 50 }, signal),
   });
-  const crumbs = path ? path.split('/') : [];
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent size="small">
         <DialogHeader>
-          <DialogTitle>{t('composer.fromVault')}</DialogTitle>
+          <DialogTitle>{t('composer.attach')}</DialogTitle>
         </DialogHeader>
-        <div className="flex flex-wrap items-center gap-1 text-sm text-muted-foreground">
-          <button type="button" className="hover:underline" onClick={() => setPath('')}>
-            {t('composer.vaultRoot')}
-          </button>
-          {crumbs.map((segment, index) => (
-            <span key={index} className="flex items-center gap-1">
-              <ChevronRight className="size-3.5 rtl:rotate-180" />
-              <button
-                type="button"
-                className="hover:underline"
-                onClick={() => setPath(crumbs.slice(0, index + 1).join('/'))}
-              >
-                {segment}
-              </button>
-            </span>
+        <Input
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          aria-label={tPicker('search')}
+          placeholder={tPicker('search')}
+        />
+        <select
+          value={kind}
+          onChange={(event) => setKind(event.target.value)}
+          aria-label={tPicker('kind')}
+        >
+          <option value="">{tPicker('all')}</option>
+          {(
+            [
+              'vault',
+              'canvas',
+              'issue',
+              'goal',
+              'initiative',
+              'receipt',
+              'mail',
+              'chat',
+              'comment',
+              'run',
+            ] as const
+          ).map((kind) => (
+            <option key={kind} value={kind}>
+              {kind === 'canvas' ? tSource('board') : tSource(kind)}
+            </option>
           ))}
-        </div>
+          <option value="file">{tPicker('file')}</option>
+          <option value="doc">{tPicker('doc')}</option>
+          <option value="journal">{tPicker('journal')}</option>
+          <option value="template">{tPicker('template')}</option>
+          <option value="note">{tPicker('note')}</option>
+          <option value="image">{tPicker('image')}</option>
+          <option value="browser_image">{tPicker('browserImage')}</option>
+          <option value="chat_file">{tPicker('chatFile')}</option>
+        </select>
         <div className="max-h-80 space-y-0.5 overflow-y-auto">
           {list.isLoading &&
             Array.from({ length: 4 }).map((_, index) => (
@@ -61,23 +84,15 @@ export default function ChatVaultFilePicker({
             ))}
           {list.data?.items.map((item) => (
             <Button
-              key={item.path}
+              key={item.ref}
               type="button"
               variant="ghost"
               className="w-full justify-start gap-2 px-2"
-              onClick={() =>
-                item.kind === 'folder'
-                  ? setPath(item.path)
-                  : onPick(chatVaultPath(scopeKey, item.path), item.name)
-              }
+              onClick={() => onPick(item.ref, item.title, item.source, item.href)}
             >
-              {item.kind === 'folder' ? (
-                <Folder className="size-4 shrink-0 text-muted-foreground" />
-              ) : (
-                <File className="size-4 shrink-0 text-muted-foreground" />
-              )}
+              <File className="size-4 shrink-0 text-muted-foreground" />
               <span dir="auto" className="truncate">
-                {item.name}
+                {item.title}
               </span>
             </Button>
           ))}
@@ -86,6 +101,7 @@ export default function ChatVaultFilePicker({
               {t('composer.vaultEmpty')}
             </p>
           )}
+          {list.isError && <p role="alert">{tPicker('unavailable')}</p>}
         </div>
       </DialogContent>
     </Dialog>

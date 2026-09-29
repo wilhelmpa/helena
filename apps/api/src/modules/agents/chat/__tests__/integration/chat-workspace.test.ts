@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it } from 'bun:test';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
+import { db, helenaReceipt, noteBoard, project } from '@repo/db';
+import { eq } from 'drizzle-orm';
 import { apiKeyApi, authedApi, type Api } from '#tests/helpers/app';
 import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
@@ -56,6 +58,36 @@ async function answer(asRunner: Api, text: string, extra: { sessionId?: string }
 }
 
 describe('chat list', () => {
+  it('passes a canonical knowledge ref to the agent and refuses foreign project refs', async () => {
+    const { asOwner, mia, asMia } = await setup();
+    const mkt = (await asOwner.projects({ projectKey: 'MKT' }).get()).data!;
+    const own = (
+      await asOwner
+        .projects({ projectKey: 'MKT' })
+        .issues.post({ columnId: mkt.columns[0].id, title: 'Knowledge task' })
+    ).data!;
+    const sent = await chatOf(asOwner, 'MKT', mia.id).chat.post({
+      prompt: 'Read this',
+      attachments: { refs: [`issue:${own.id}`] },
+    });
+    expect(sent.status).toBe(200);
+    const claimed = (await asMia['agent-chats'].claim.post()).data!.message!;
+    expect(claimed.prompt).toContain(`issue:${own.id} "Knowledge task"`);
+    const ops = (await asOwner.projects({ projectKey: 'OPS' }).get()).data!;
+    const foreign = (
+      await asOwner
+        .projects({ projectKey: 'OPS' })
+        .issues.post({ columnId: ops.columns[0].id, title: 'Foreign task' })
+    ).data!;
+    expect(
+      (
+        await chatOf(asOwner, 'MKT', mia.id).chat.post({
+          prompt: 'Read this',
+          attachments: { refs: [`issue:${foreign.id}`] },
+        })
+      ).status,
+    ).toBe(404);
+  });
   it("lists the member's chats of every agent, and a project's own", async () => {
     const { asOwner, mia, otto, asMia, asOtto } = await setup();
     const first = await chatOf(asOwner, 'MKT', mia.id).chat.post({ prompt: 'Launch plan' });
@@ -446,6 +478,80 @@ describe('chat attachments', () => {
     writeFileSync(target, content);
   }
 
+  it('passes a picked browser image as visual input', async () => {
+    const { asOwner, mia, asMia } = await setup();
+    const uploaded = await asOwner
+      .projects({ projectKey: 'MKT' })
+      .files.upload.post(
+        { files: [new File(['png'], 'frame.png', { type: 'image/png' })] },
+        { query: { path: 'Files/Browser' } },
+      );
+    expect(uploaded.status).toBe(201);
+    const ref = 'vault:Projects/MKT/Files/Browser/frame.png';
+    const sent = await chatOf(asOwner, 'MKT', mia.id).chat.post({
+      prompt: 'Was ist auf dem Bild?',
+      attachments: { refs: [ref] },
+    });
+    expect(sent.status).toBe(200);
+    const claimed = (await asMia['agent-chats'].claim.post()).data!.message!;
+    expect(claimed.images).toContain(path.join(vault, 'Projects/MKT/Files/Browser/frame.png'));
+    expect(claimed.prompt).toContain(ref);
+  });
+
+  it('hands an explicit receipt reference and its original to the project agent', async () => {
+    const { asOwner, mia, asMia } = await setup();
+    const [scope] = await db
+      .select({ id: project.id, teamId: project.teamId })
+      .from(project)
+      .where(eq(project.key, 'MKT'));
+    const original = 'Projects/MKT/Files/Belege/original.pdf';
+    vaultFile(original, '%PDF-1.4');
+    const [receipt] = await db
+      .insert(helenaReceipt)
+      .values({
+        teamId: scope!.teamId,
+        projectId: scope!.id,
+        source: 'vault',
+        vaultPath: original,
+        filename: 'original.pdf',
+        sha256: 'chat-receipt-119',
+        textExcerpt: 'Rechnung für Kühlung',
+      })
+      .returning({ id: helenaReceipt.id });
+    const sent = await chatOf(asOwner, 'MKT', mia.id).chat.post({
+      prompt: 'Prüfe den Beleg',
+      attachments: { refs: [`receipt:${receipt!.id}`] },
+    });
+    expect(sent.status).toBe(200);
+    const claimed = (await asMia['agent-chats'].claim.post()).data!.message!;
+    expect(claimed.prompt).toContain(`receipt:${receipt!.id}`);
+    expect(claimed.prompt).toContain(`Original file: ${path.join(vault, original)}`);
+    expect(claimed.prompt).toContain('Attached content snapshot');
+  });
+
+  it('passes a private canvas as an explicit snapshot', async () => {
+    const { asOwner, owner, mia, asMia } = await setup();
+    const [scope] = await db.select({ id: project.id }).from(project).where(eq(project.key, 'MKT'));
+    const [board] = await db
+      .insert(noteBoard)
+      .values({
+        projectId: scope!.id,
+        ownerUserId: owner.userId,
+        createdByUserId: owner.userId,
+        name: 'Privater Plan',
+        canvas: { nodes: [{ data: { text: 'Vertrauliche Skizze' } }] },
+      })
+      .returning({ id: noteBoard.id });
+    const sent = await chatOf(asOwner, 'MKT', mia.id).chat.post({
+      prompt: 'Lies die Leinwand',
+      attachments: { refs: [`board:${board!.id}`] },
+    });
+    expect(sent.status).toBe(200);
+    const claimed = (await asMia['agent-chats'].claim.post()).data!.message!;
+    expect(claimed.prompt).toContain(`board:${board!.id}`);
+    expect(claimed.prompt).toContain('Vertrauliche Skizze');
+  });
+
   it('hands vault files and tasks to the agent by path and reference', async () => {
     const { asOwner, mia, asMia } = await setup();
     const uploaded = await asOwner
@@ -481,7 +587,7 @@ describe('chat attachments', () => {
         `- ${image} (image/png)`,
         `- ${path.join(vault, 'Home/Notes/brief.md')} (text/markdown; charset=utf-8)`,
         '',
-        "Tasks the person refers to (read them with Helena's tools):",
+        "Tasks the person refers to (read them with Ava's tools):",
         '- MKT-1 "Landing page"',
       ].join('\n'),
     );

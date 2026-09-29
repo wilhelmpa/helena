@@ -104,6 +104,22 @@ export const findKnowledge = (
     { signal },
   );
 
+export const listAttachableKnowledge = (
+  q: string,
+  options: { sources?: string[]; kind?: string; project?: string; limit?: number } = {},
+  signal?: AbortSignal,
+) =>
+  request<KnowledgeFindResult>(
+    `/knowledge/picker?${query({
+      q,
+      sources: options.sources?.join(','),
+      kind: options.kind,
+      project: options.project,
+      limit: options.limit,
+    })}`,
+    { signal },
+  );
+
 export const listMentions = (target: string) =>
   request<KnowledgeMention[]>(`/knowledge/links?${query({ target })}`);
 

@@ -385,7 +385,7 @@ export const agentChatRoutes = new Elysia({ name: 'agent-chat', detail: { tags: 
         threadId: body.threadId,
         parentId: body.parentId,
         attachments: [
-          ...(await resolveAttachments(caller, body.attachments ?? {})),
+          ...(await resolveAttachments(caller, params.agentId, body.attachments ?? {})),
           ...(await resolvePageContext(caller, body.context)),
         ],
         model: body.model,
@@ -535,7 +535,7 @@ export const agentChatRoutes = new Elysia({ name: 'agent-chat', detail: { tags: 
         prompt: body.prompt,
         threadId: body.threadId,
         parentId: body.parentId,
-        attachments: await resolveAttachments(caller, body.attachments ?? {}),
+        attachments: await resolveAttachments(caller, params.agentId, body.attachments ?? {}),
         model: body.model,
         thinkingLevel: body.thinkingLevel,
         via: body.via ?? null,

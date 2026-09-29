@@ -1,12 +1,15 @@
 import path from 'node:path';
-import { db, issue, project } from '@repo/db';
+import { aiAgent, db, issue, project } from '@repo/db';
 import { eq, inArray } from 'drizzle-orm';
+import { canRead, knowledgeSource, parseRef } from '@helena/knowledge';
 import { checkPermission, requireProjectAccess, type AuthUser } from '#shared/access';
 import { HttpError } from '#shared/lib';
 import { homeRoot, projectRootOf, vaultDirectory } from '#modules/project-files/roots';
 import { statVaultFile } from '#modules/project-files/service';
 import { relativePath } from '#modules/project-files/paths';
 import { canAccess, vaultScope } from '#modules/knowledge/scope';
+import { knowledgeReach } from '#modules/knowledge/reach';
+import { attachedPrivateBoard } from '#modules/knowledge/boards-picker';
 
 // What a question carries besides its text: vault files the member attached, and tasks
 // the member pointed the agent at. The files stay where they are in the vault; the
@@ -14,6 +17,17 @@ import { canAccess, vaultScope } from '#modules/knowledge/scope';
 export type ChatAttachment =
   | { kind: 'file'; path: string; name: string; contentType: string; sizeBytes: number }
   | { kind: 'task'; issueId: number; identifier: string; title: string }
+  | {
+      kind: 'knowledge';
+      ref: string;
+      title: string;
+      source: string;
+      href: string;
+      snapshot?: string;
+      originalPath?: string;
+      vaultPath?: string;
+      contentType?: string;
+    }
   | { kind: 'page'; projectKey: string | null; path: string };
 export type PublicChatAttachment = Exclude<ChatAttachment, { kind: 'page' }>;
 
@@ -87,18 +101,90 @@ async function resolveTasks(user: AuthUser, issueIds: number[]): Promise<ChatAtt
   return tasks;
 }
 
+async function resolveKnowledge(
+  user: AuthUser,
+  agentId: number,
+  references: string[],
+): Promise<ChatAttachment[]> {
+  if (!references.length) return [];
+  const [agent] = await db
+    .select({ userId: aiAgent.userId, teamId: aiAgent.teamId })
+    .from(aiAgent)
+    .where(eq(aiAgent.id, agentId));
+  if (!agent) throw new HttpError(404, 'Agent not found');
+  const [personReach, agentReach] = await Promise.all([
+    knowledgeReach(user, false),
+    knowledgeReach({ id: agent.userId }, true),
+  ]);
+  const resolved: ChatAttachment[] = [];
+  for (const reference of references) {
+    const parsed = parseRef(reference);
+    if (parsed?.source === 'board') {
+      resolved.push(await attachedPrivateBoard(parsed.id, personReach, agentReach, agent.teamId));
+      continue;
+    }
+    const source = parsed ? knowledgeSource(parsed.source) : null;
+    if (!parsed || !source || (parsed.source === 'vault' && parsed.id.startsWith('Private/'))) {
+      throw new HttpError(404, 'Knowledge item not found');
+    }
+    const item = await source.get(parsed.id);
+    if (!item) throw new HttpError(404, 'Knowledge item not found');
+    const scope = {
+      ...item.scope,
+      ownerId: item.scope.ownerId ?? null,
+      permission: item.scope.permission ?? null,
+    };
+    if (!canRead(personReach, scope) || item.scope.teamId !== agent.teamId) {
+      throw new HttpError(404, 'Knowledge item not found');
+    }
+    if (scope.projectId !== null && !agentReach.projects.has(scope.projectId)) {
+      throw new HttpError(404, 'Knowledge item not found');
+    }
+    if (
+      parsed.source === 'goal' &&
+      typeof item.metadata?.projectId === 'number' &&
+      !agentReach.projects.has(item.metadata.projectId)
+    ) {
+      throw new HttpError(404, 'Knowledge item not found');
+    }
+    const agentCanRead = canRead(agentReach, scope);
+    const originalPath =
+      parsed.source === 'receipt' && typeof item.metadata?.originalPath === 'string'
+        ? item.metadata.originalPath
+        : undefined;
+    const vaultPath = parsed.source === 'vault' ? item.id : undefined;
+    resolved.push({
+      kind: 'knowledge',
+      ref: `${parsed.source}:${item.id}`,
+      title: item.title,
+      source: parsed.source,
+      href: item.href,
+      ...(!agentCanRead && { snapshot: item.text.slice(0, 20_000) }),
+      ...(originalPath && { originalPath }),
+      ...(vaultPath && { vaultPath, contentType: item.mimeType ?? '' }),
+    });
+  }
+  return resolved;
+}
+
 export async function resolveAttachments(
   user: AuthUser,
-  input: { files?: string[]; issueIds?: number[] },
+  agentId: number,
+  input: { files?: string[]; issueIds?: number[]; refs?: string[] },
 ): Promise<ChatAttachment[]> {
   const files = [...new Set(input.files ?? [])];
   const issueIds = [...new Set(input.issueIds ?? [])];
-  if (files.length + issueIds.length > MAX_ATTACHMENTS) {
+  const refs = [...new Set(input.refs ?? [])];
+  if (files.length + issueIds.length + refs.length > MAX_ATTACHMENTS) {
     throw new HttpError(400, `A message takes at most ${MAX_ATTACHMENTS} attachments`);
   }
   const resolved: ChatAttachment[] = [];
   for (const file of files) resolved.push(await resolveFile(user, file));
-  return [...resolved, ...(await resolveTasks(user, issueIds))];
+  return [
+    ...resolved,
+    ...(await resolveTasks(user, issueIds)),
+    ...(await resolveKnowledge(user, agentId, refs)),
+  ];
 }
 
 export async function resolvePageContext(
@@ -136,7 +222,11 @@ export function imagePaths(attachments: ChatAttachment[]): string[] {
   return attachments.flatMap((attachment) =>
     attachment.kind === 'file' && /^image\/(png|jpe?g|gif|webp)$/.test(attachment.contentType)
       ? [absoluteVaultPath(attachment.path)]
-      : [],
+      : attachment.kind === 'knowledge' &&
+          attachment.vaultPath &&
+          /^image\/(png|jpe?g|gif|webp)$/.test(attachment.contentType ?? '')
+        ? [absoluteVaultPath(attachment.vaultPath)]
+        : [],
   );
 }
 
@@ -164,6 +254,22 @@ export function questionText(
   if (tasks.length > 0) {
     lines.push('', `Tasks the person refers to (read them with ${displayName}'s tools):`);
     for (const task of tasks) lines.push(`- ${task.identifier} "${task.title}"`);
+  }
+  const knowledge = attachments.flatMap((attachment) =>
+    attachment.kind === 'knowledge' ? [attachment] : [],
+  );
+  if (knowledge.length > 0) {
+    lines.push(
+      '',
+      `Attached knowledge (canonical refs; use ${displayName}'s read_knowledge tool where available, or the attached snapshot):`,
+    );
+    for (const item of knowledge) {
+      lines.push(`- ${item.ref} "${item.title}"`);
+      if (item.snapshot)
+        lines.push(`  Attached content snapshot: ${JSON.stringify(item.snapshot)}`);
+      if (item.originalPath) lines.push(`  Original file: ${absoluteVaultPath(item.originalPath)}`);
+      if (item.vaultPath) lines.push(`  Vault file: ${absoluteVaultPath(item.vaultPath)}`);
+    }
   }
   const page = attachments.find((attachment) => attachment.kind === 'page');
   if (page && page.kind === 'page') {

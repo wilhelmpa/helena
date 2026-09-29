@@ -611,6 +611,15 @@ export const ChatAttachmentResponse = t.Union([
     identifier: t.String(),
     title: t.String(),
   }),
+  t.Object({
+    kind: t.Literal('knowledge'),
+    ref: t.String(),
+    title: t.String(),
+    source: t.String(),
+    href: t.String(),
+    vaultPath: t.Optional(t.String()),
+    contentType: t.Optional(t.String()),
+  }),
 ]);
 
 // One page of a chat thread's transcript (ChatMessagePage).

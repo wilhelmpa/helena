@@ -240,7 +240,8 @@ export interface AiChatToolPart {
 // A vault file or a task a question carries. `path` is relative to the vault.
 export type AiChatAttachment =
   | { kind: 'file'; path: string; name: string; contentType: string; sizeBytes: number }
-  | { kind: 'task'; issueId: number; identifier: string; title: string };
+  | { kind: 'task'; issueId: number; identifier: string; title: string }
+  | { kind: 'knowledge'; ref: string; title: string; source: string; href: string };
 
 export type AiChatPart =
   { type: 'text'; text: string } | { type: 'reasoning'; text: string } | AiChatToolPart;
@@ -419,7 +420,7 @@ export const sendAiAgentChat = (
     prompt: string;
     threadId?: string;
     parentId?: number | null;
-    attachments?: { files?: string[]; issueIds?: number[] };
+    attachments?: { files?: string[]; issueIds?: number[]; refs?: string[] };
     model?: string | null;
     thinkingLevel?: string | null;
     // Said in the conversation mode: the agent answers short and speakable.

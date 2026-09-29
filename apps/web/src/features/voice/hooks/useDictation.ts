@@ -1,6 +1,7 @@
 'use client';
 
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import type {
   SpeechInputEngine,
   SpeechInputError,
@@ -8,10 +9,11 @@ import type {
 } from '@/components/ai-elements/speech-input';
 import { ApiError } from '@/lib/api/core/client';
 import { transcribeRecording } from '@/lib/api/endpoints/voice';
-import { MicrophoneError, startRecording } from '../browser/recorder';
+import { startRecording } from '../browser/recorder';
 import { durationMs, encodeWav16, isSilent } from '../utils/wav';
 import { useVoice } from './useVoice';
 import { useVoiceProblem } from './useVoiceProblem';
+import { dictationProblem } from '../utils/dictationProblem';
 
 // Dictation in the composer (the microphone button): Helena's local Whisper while Lokale KI →
 // Transkription takes it (record, then transcribe on this machine), else the browser's own
@@ -29,9 +31,13 @@ export function useDictation(): {
   recorder: SpeechRecorder;
   onUnavailable: () => void;
   onError: (error: SpeechInputError, cause?: unknown) => void;
+  errorText: string | null;
+  clearError: () => void;
 } {
   const voice = useVoice();
   const problem = useVoiceProblem();
+  const t = useTranslations('chatWorkspace.voice.problems');
+  const [errorText, setErrorText] = useState<string | null>(null);
   const { listener, maxSeconds, refresh } = voice;
 
   const recorder = useMemo<SpeechRecorder>(
@@ -45,7 +51,9 @@ export function useDictation(): {
             if (durationMs(samples) < 300 || isSilent(samples)) return '';
             const wav = new Blob([encodeWav16(samples) as BlobPart], { type: 'audio/wav' });
             try {
-              return (await transcribeRecording(wav, pageLanguage())).text;
+              const result = await transcribeRecording(wav, pageLanguage());
+              setErrorText(null);
+              return result.text;
             } catch (error) {
               if (error instanceof ApiError && error.code?.startsWith('voice-local')) refresh();
               throw error;
@@ -59,20 +67,38 @@ export function useDictation(): {
   );
 
   const onUnavailable = useCallback(() => {
-    if (listener.engine === 'none') problem(listener.blocker);
-  }, [listener, problem]);
+    if (listener.engine === 'none') {
+      problem(listener.blocker);
+      setErrorText(
+        t(
+          listener.blocker === 'insecure'
+            ? 'insecureTitle'
+            : listener.blocker === 'local-only-down'
+              ? 'localOnlyDownTitle'
+              : 'unsupportedTitle',
+        ),
+      );
+    }
+  }, [listener, problem, t]);
 
   const onError = useCallback(
     (error: SpeechInputError, cause?: unknown) => {
-      if (error === 'limit') return problem('limit', { seconds: maxSeconds });
-      if (error === 'nothing-heard') return problem('nothing-heard');
-      if (error === 'blocked') return problem('blocked');
-      if (error === 'network') return problem('recognition-failed');
-      if (cause instanceof ApiError) return problem('transcribe-failed');
-      if (cause instanceof MicrophoneError) return problem(cause.reason);
-      problem('failed');
+      const reason = dictationProblem(error, cause);
+      problem(reason, { seconds: maxSeconds });
+      const key = (
+        {
+          limit: 'limit',
+          'nothing-heard': 'nothingHeard',
+          blocked: 'blocked',
+          missing: 'missing',
+          failed: 'failed',
+          'transcribe-failed': 'transcribeFailed',
+          'recognition-failed': 'recognitionFailed',
+        } as const
+      )[reason];
+      setErrorText(t(key, { seconds: maxSeconds }));
     },
-    [maxSeconds, problem],
+    [maxSeconds, problem, t],
   );
 
   return {
@@ -87,5 +113,7 @@ export function useDictation(): {
     recorder,
     onUnavailable,
     onError,
+    errorText,
+    clearError: () => setErrorText(null),
   };
 }

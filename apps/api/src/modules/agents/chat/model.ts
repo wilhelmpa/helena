@@ -266,6 +266,12 @@ export const sendChatBody = t.Object({
       issueIds: t.Optional(
         t.Array(t.Integer(), { maxItems: 10, description: 'Tasks the message refers to.' }),
       ),
+      refs: t.Optional(
+        t.Array(t.String({ minLength: 3, maxLength: 1100 }), {
+          maxItems: 10,
+          description: 'Canonical knowledge references, such as vault:Home/Docs/x.md or mail:12.',
+        }),
+      ),
     }),
   ),
 });
