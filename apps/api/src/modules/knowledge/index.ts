@@ -1,4 +1,4 @@
-import { Elysia } from 'elysia';
+import { Elysia, t } from 'elysia';
 import { TASK_IDENTIFIER } from '@repo/vault';
 import { authContext } from '#shared/auth-context';
 import { HttpError } from '#shared/lib';
@@ -8,6 +8,7 @@ import { captureRoutes } from './capture-routes';
 import { baseRoutes } from './bases';
 import { everythingRoutes } from './everything';
 import { vaultGuard } from './guard';
+import { previewFile, previewMetadata, previewTable } from './preview';
 import {
   backlinksQuery,
   ConflictListResponse,
@@ -110,6 +111,28 @@ export const knowledgeRoutes = new Elysia({
       },
     },
   )
+  .get('/knowledge/preview', ({ paths }) => vaultCall(() => previewMetadata(paths.path)), {
+    vault: { action: 'read', fields: ['path'] },
+    query: pathQuery,
+    response: { 200: t.Any(), ...commonErrors, ...errors(413) },
+    detail: { summary: 'Describe an inline vault file preview' },
+  })
+  .get(
+    '/knowledge/preview/file',
+    ({ paths, request }) => vaultCall(() => previewFile(paths.path, request)),
+    {
+      vault: { action: 'read', fields: ['path'] },
+      query: pathQuery,
+      response: { ...commonErrors, ...errors(413, 422, 503, 504) },
+      detail: { summary: 'Stream an original media file or converted office PDF' },
+    },
+  )
+  .get('/knowledge/preview/table', ({ paths }) => vaultCall(() => previewTable(paths.path)), {
+    vault: { action: 'read', fields: ['path'] },
+    query: pathQuery,
+    response: { 200: t.Any(), ...commonErrors, ...errors(413, 422, 503, 504) },
+    detail: { summary: 'Read a bounded spreadsheet or delimited table preview' },
+  })
   .put(
     '/knowledge/notes',
     ({ scope, paths, body }) => vaultCall(() => writeNote(scope, { ...body, path: paths.path })),

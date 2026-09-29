@@ -1,0 +1,33 @@
+[Unit]
+Description=Volition vault preview conversion
+After=local-fs.target
+
+[Service]
+Type=simple
+User=volition-preview
+Group=volition-preview
+WorkingDirectory=/srv/volition/source/plan
+ExecStart=/usr/local/bin/bun run apps/api/src/modules/knowledge/preview-worker.ts
+Restart=on-failure
+RestartSec=2
+RuntimeDirectory=volition-preview
+RuntimeDirectoryMode=0750
+CacheDirectory=volition-preview
+CacheDirectoryMode=0700
+UMask=0077
+PrivateNetwork=yes
+RestrictAddressFamilies=AF_UNIX
+NoNewPrivileges=yes
+PrivateDevices=yes
+ProtectHome=yes
+ProtectSystem=strict
+ProtectKernelTunables=yes
+ProtectControlGroups=yes
+ProtectKernelModules=yes
+TemporaryFileSystem=/tmp:rw,nosuid,nodev,size=2G
+MemoryMax=2G
+CPUWeight=10
+TasksMax=64
+
+[Install]
+WantedBy=multi-user.target
