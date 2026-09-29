@@ -93,6 +93,7 @@ export const knowledgeRoutes = new Elysia({
         summary: 'Search the knowledge vault',
         description:
           'Ranked full-text search over the notes of the knowledge vault and the text extracted from its PDFs, scans, images and office files. Returns vault paths with a short excerpt (matches in **bold**). `folder` limits the search, e.g. "Projects/VOL" for one project or "Templates".',
+        ...mcpTool('search_knowledge_vault'),
       },
     },
   )
@@ -196,6 +197,7 @@ export const knowledgeRoutes = new Elysia({
         summary: 'List the latest files',
         description:
           'The files below a folder of the knowledge vault, newest first: notes and every other file across all subfolders.',
+        ...mcpTool('list_recent_knowledge'),
       },
     },
   )
@@ -206,6 +208,7 @@ export const knowledgeRoutes = new Elysia({
     detail: {
       summary: 'List the Docs tree',
       description: 'Every note and folder below a folder, sorted by path.',
+      ...mcpTool('list_knowledge_tree'),
     },
   })
   .post(
@@ -223,6 +226,7 @@ export const knowledgeRoutes = new Elysia({
       detail: {
         summary: 'Create a folder',
         description: 'Create an empty folder, e.g. below a Docs root. 409 if the path exists.',
+        ...mcpTool('create_knowledge_folder'),
       },
     },
   )
@@ -236,7 +240,7 @@ export const knowledgeRoutes = new Elysia({
       detail: {
         summary: 'Move or rename a note or folder',
         description: 'The index keeps the links to what moved, and records the move.',
-        ...mcpTool('move_vault_path', { idempotentHint: false }),
+        ...mcpTool('move_knowledge_path', { idempotentHint: false }),
       },
     },
   )
@@ -244,7 +248,11 @@ export const knowledgeRoutes = new Elysia({
     vault: { action: 'read', fields: ['path'] },
     query: pathQuery,
     response: { 200: DeletePreviewResponse, ...commonErrors, ...errors(413) },
-    detail: { summary: 'Preview a Vault deletion' },
+    detail: {
+      summary: 'Preview a Vault deletion',
+      description: 'Preview contents and get the confirmation token required to trash a folder.',
+      ...mcpTool('preview_knowledge_deletion'),
+    },
   })
   .post(
     '/knowledge/trash',
@@ -257,7 +265,11 @@ export const knowledgeRoutes = new Elysia({
         summary: 'Move a note or folder to the trash',
         description:
           'Moves it to the vault trash (.trash). Folders require the token from delete-preview.',
-        ...mcpTool('trash_vault_path', { idempotentHint: false }),
+        ...mcpTool(
+          'trash_knowledge_path',
+          { destructiveHint: true, idempotentHint: false },
+          'delete',
+        ),
       },
     },
   )
@@ -269,6 +281,7 @@ export const knowledgeRoutes = new Elysia({
       summary: 'List what was trashed below a folder',
       description:
         'The trashed files that came from below the folder, newest first, by their original path.',
+      ...mcpTool('list_knowledge_trash'),
     },
   })
   .post(
@@ -282,7 +295,7 @@ export const knowledgeRoutes = new Elysia({
         summary: 'Restore a trashed file to its path',
         description:
           'Move a file back from the trash to its original path. 409 if that path is taken.',
-        ...mcpTool('restore_vault_path', { idempotentHint: false }),
+        ...mcpTool('restore_knowledge_path', { idempotentHint: false }),
       },
     },
   )
@@ -297,6 +310,7 @@ export const knowledgeRoutes = new Elysia({
         summary: 'List sync conflicts',
         description:
           'The copies Syncthing kept below a folder where two devices changed a file at the same time, each with the file it belongs to.',
+        ...mcpTool('list_knowledge_conflicts'),
       },
     },
   )
@@ -307,6 +321,7 @@ export const knowledgeRoutes = new Elysia({
     detail: {
       summary: 'List the versions of a note',
       description: 'The commits of the vault history that changed the note, newest first.',
+      ...mcpTool('list_note_versions'),
     },
   })
   .get('/knowledge/history/version', ({ paths, query }) => noteVersion(paths.path, query.commit), {
@@ -316,6 +331,7 @@ export const knowledgeRoutes = new Elysia({
     detail: {
       summary: 'Read a note as it was at one commit',
       description: 'The whole file, frontmatter included, at one commit of its history.',
+      ...mcpTool('read_note_version'),
     },
   })
   .get(
@@ -362,6 +378,7 @@ export const knowledgeRoutes = new Elysia({
         summary: 'Find where a file is now',
         description:
           'The current path of a file a reference stored as path and sha256: the path while it exists, else where the file was moved to, else a file with the same content. null when none is found.',
+        ...mcpTool('resolve_knowledge_path'),
       },
     },
   )
@@ -376,6 +393,7 @@ export const knowledgeRoutes = new Elysia({
         summary: 'Find the file a wikilink points to',
         description:
           'The readable file whose name the target of [[target]] matches, preferring the folder and then the project of the note the link is in. null when none matches.',
+        ...mcpTool('resolve_knowledge_wikilink'),
       },
     },
   );

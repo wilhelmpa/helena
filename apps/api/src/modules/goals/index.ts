@@ -47,7 +47,10 @@ export const goalRoutes = new Elysia({ name: 'goals', detail: { tags: ['Goals'] 
   .get('/projects/:projectKey/why-chains', ({ project }) => projectWhyChains(project.id), {
     permission: ['work_items', 'read'],
     response: { 200: ProjectWhyChainsResponse, ...commonErrors },
-    detail: { summary: 'Read goal chains for the project organigram' },
+    detail: {
+      summary: 'Read goal chains for the project organigram',
+      ...mcpTool('list_project_goal_chains'),
+    },
   })
   // The goals a task of the project can serve (the pick list of a task's "Ziel"): the
   // project's own, its department's and the team-wide ones, with this project's progress
@@ -90,6 +93,7 @@ export const goalRoutes = new Elysia({ name: 'goals', detail: { tags: ['Goals'] 
         summary: 'Get who works on a task right now',
         description:
           'The agent whose run holds the task, and since when; null while no run holds it.',
+        ...mcpTool('get_issue_claim'),
       },
     },
   )

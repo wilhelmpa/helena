@@ -109,6 +109,7 @@ export const routineRoutes = new Elysia({
         description:
           'The agents the instructions @mention besides the given agent, and whether a run of ' +
           'a routine you save with them starts each. For the routine editor.',
+        ...mcpTool('preview_routine_mentions'),
       },
     },
   )

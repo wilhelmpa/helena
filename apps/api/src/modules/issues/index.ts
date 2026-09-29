@@ -312,7 +312,12 @@ export const issueRoutes = new Elysia({ name: 'issues', detail: { tags: ['Issues
       body: bulkUpdateIssuesBody,
       permission: ['work_items', 'edit'],
       response: { 200: BulkUpdatedResponse, ...commonErrors, ...errors(409) },
-      detail: { summary: 'Bulk update issues' },
+      detail: {
+        summary: 'Bulk update issues',
+        description:
+          'Update the listed issue ids in one project with the same patch; returns the count updated.',
+        ...mcpTool('bulk_update_issues'),
+      },
     },
   )
 
@@ -328,7 +333,12 @@ export const issueRoutes = new Elysia({ name: 'issues', detail: { tags: ['Issues
       body: bulkAddLabelsBody,
       permission: ['work_items', 'edit'],
       response: { 200: BulkUpdatedResponse, ...commonErrors },
-      detail: { summary: 'Bulk add labels to issues' },
+      detail: {
+        summary: 'Bulk add labels to issues',
+        description:
+          'Add the named labels to the listed issue ids without removing existing labels.',
+        ...mcpTool('bulk_add_issue_labels'),
+      },
     },
   )
 
@@ -346,7 +356,12 @@ export const issueRoutes = new Elysia({ name: 'issues', detail: { tags: ['Issues
       body: bulkArchiveIssuesBody,
       permission: ['work_items', 'edit'],
       response: { 200: BulkArchivedResponse, ...commonErrors, ...errors(409) },
-      detail: { summary: 'Bulk archive issues' },
+      detail: {
+        summary: 'Bulk archive issues',
+        description:
+          'Archive the listed issue ids in one project; handle their subtasks as requested.',
+        ...mcpTool('bulk_archive_issues', { destructiveHint: true }),
+      },
     },
   )
 
@@ -370,7 +385,12 @@ export const issueRoutes = new Elysia({ name: 'issues', detail: { tags: ['Issues
       body: bulkDeleteIssuesBody,
       permission: ['work_items', 'delete'],
       response: { 200: BulkDeletedResponse, ...commonErrors, ...errors(409) },
-      detail: { summary: 'Bulk delete issues' },
+      detail: {
+        summary: 'Bulk delete issues',
+        description:
+          'Permanently delete the listed issue ids in one project and purge their attachments.',
+        ...mcpTool('bulk_delete_issues', { destructiveHint: true }, 'delete'),
+      },
     },
   )
 
@@ -484,7 +504,7 @@ export const issueRoutes = new Elysia({ name: 'issues', detail: { tags: ['Issues
       params: projectKeyParams,
       permission: ['work_items', 'read'],
       response: { 200: BoardResponse, ...accessErrors },
-      detail: { summary: 'Get board issues' },
+      detail: { summary: 'Get board issues', ...mcpTool('get_board_issues') },
     },
   )
 
@@ -497,7 +517,7 @@ export const issueRoutes = new Elysia({ name: 'issues', detail: { tags: ['Issues
       params: projectKeyParams,
       permission: ['work_items', 'read'],
       response: { 200: t.Array(IssueResponse), ...accessErrors },
-      detail: { summary: 'List archived issues' },
+      detail: { summary: 'List archived issues', ...mcpTool('list_archived_issues') },
     },
   )
 
@@ -925,6 +945,7 @@ export const issueRoutes = new Elysia({ name: 'issues', detail: { tags: ['Issues
     detail: {
       summary: "List an issue's checklists",
       description: 'Every checklist of an issue with its items, both in display order.',
+      ...mcpTool('list_issue_checklists'),
     },
   })
 
@@ -1279,6 +1300,7 @@ export const issueRoutes = new Elysia({ name: 'issues', detail: { tags: ['Issues
         summary: 'Get an issue feed grouped by status',
         description:
           "Get a page of an issue's activity feed, split into the stretches it spent in one status.",
+        ...mcpTool('list_issue_feed_by_status'),
       },
     },
   )
@@ -1294,6 +1316,7 @@ export const issueRoutes = new Elysia({ name: 'issues', detail: { tags: ['Issues
     detail: {
       summary: 'Get an issue status timeline',
       description: "Get the stretches an issue spent in each status, with each one's duration.",
+      ...mcpTool('get_issue_status_timeline'),
     },
   })
 
@@ -1310,6 +1333,7 @@ export const issueRoutes = new Elysia({ name: 'issues', detail: { tags: ['Issues
       detail: {
         summary: 'Get the activity of one timeline stretch',
         description: "Get an issue's activity entries written between two moments, oldest first.",
+        ...mcpTool('get_issue_timeline_items'),
       },
     },
   )
@@ -1329,6 +1353,7 @@ export const issueRoutes = new Elysia({ name: 'issues', detail: { tags: ['Issues
           'Start the agent-team workflow with the issue as its task: the delegate leads ' +
           "when it is a coordinator, otherwise the project's only coordinator; the project's " +
           'specialists do the work. The project must have agent-team enabled.',
+        ...mcpTool('start_issue_agent_team', undefined, 'execute'),
       },
     },
   )
@@ -1341,6 +1366,7 @@ export const issueRoutes = new Elysia({ name: 'issues', detail: { tags: ['Issues
       summary: 'List the agent-team runs of an issue',
       description:
         'The agent-team runs whose task is this issue, newest first, with the status of each step and the result once a run finished.',
+      ...mcpTool('list_issue_agent_team_runs'),
     },
   })
 
@@ -1354,6 +1380,7 @@ export const issueRoutes = new Elysia({ name: 'issues', detail: { tags: ['Issues
       summary: 'Get an issue cycle history',
       description:
         'Get the cycles an issue was in, oldest first: the ones it was still planned into when they ended, plus its current one.',
+      ...mcpTool('list_issue_cycle_history'),
     },
   })
 

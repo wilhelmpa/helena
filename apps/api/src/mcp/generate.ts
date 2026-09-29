@@ -1,6 +1,12 @@
-import { categoryFromAnnotations, type ActionCategory, type ActionScope } from '@helena/sdk';
-import type { Permission } from '#shared/guards';
+import {
+  annotationsForCategory,
+  categoryFromAnnotations,
+  type ActionCategory,
+  type ActionScope,
+} from '@helena/sdk';
+import type { DeclaredPermission } from '#shared/guards';
 import type { McpApp } from './types';
+import routeToolCatalog from './route-tool-catalog.json';
 import { outputSchema, type McpOutputSchema } from './result';
 
 // Turns the assembled app's routes into MCP tool descriptors. A route opts in by
@@ -53,7 +59,7 @@ export interface McpRouteTool {
   // The cell of the role matrix the route's guard asserts, published by the guard as
   // `x-permission` on the route's detail. Absent on a route that asks only for
   // project membership.
-  permission?: Permission;
+  permission?: DeclaredPermission;
   // The connector whose accounts the tool acts with. The tool is listed only to an
   // agent that holds a grant on one of them.
   connector?: string;
@@ -220,6 +226,7 @@ export function routeTools(app: McpApp): McpRouteTool[] {
 
 function generateRouteTools(app: McpApp): McpRouteTool[] {
   const tools: McpRouteTool[] = [];
+  const catalog = new Map(routeToolCatalog.map((item) => [`${item.method} ${item.path}`, item]));
   for (const route of app.routes) {
     const hooks = route.hooks as Record<string, unknown>;
     const detail = hooks.detail as
@@ -233,15 +240,17 @@ function generateRouteTools(app: McpApp): McpRouteTool[] {
             scope?: ActionScope;
             connector?: string;
           };
-          'x-permission'?: Permission;
+          'x-permission'?: DeclaredPermission;
         }
       | undefined;
-    const tool = detail?.['x-mcp']?.tool;
+    const catalogEntry = catalog.get(`${route.method} ${route.path}`);
+    const tool = detail?.['x-mcp']?.tool ?? catalogEntry?.name;
     if (!tool) continue;
     const pathParams = extractPathParams(route.path);
     const annotations: McpToolAnnotations = {
       ...methodAnnotations(route.method),
       openWorldHint: false,
+      ...(catalogEntry ? annotationsForCategory(catalogEntry.category as ActionCategory) : {}),
       ...detail?.['x-mcp']?.annotations,
     };
     tools.push({
@@ -250,7 +259,11 @@ function generateRouteTools(app: McpApp): McpRouteTool[] {
       // The MCP tool description is the full text an LLM reads to pick a tool.
       // Prefer the route's `description` (the long explanation); fall back to the
       // short `summary` (the OpenAPI title) and then the tool name.
-      description: detail?.description ?? detail?.summary ?? tool,
+      description:
+        (detail?.description ?? detail?.summary ?? tool) +
+        (catalogEntry || route.path.startsWith('/projects/:projectKey/receipts')
+          ? ` Example: ${JSON.stringify(exampleInput(mergeInputSchema(hooks, pathParams)))}`
+          : ''),
       method: route.method,
       path: route.path,
       pathParams,
@@ -259,12 +272,35 @@ function generateRouteTools(app: McpApp): McpRouteTool[] {
       outputSchema: outputSchema(hooks.response),
       permission: detail?.['x-permission'],
       ...(detail?.['x-mcp']?.connector && { connector: detail['x-mcp'].connector }),
-      // Every tool acts on this tracker's own data and reaches nothing outside it,
-      // so openWorldHint is false throughout; the route may still override it.
+      // The catalog's action category supplies MCP hints for sends, publications,
+      // credential changes and executions that the HTTP method cannot express.
       annotations,
-      category: detail?.['x-mcp']?.category ?? categoryFromAnnotations(annotations),
-      scope: detail?.['x-mcp']?.scope,
+      category:
+        detail?.['x-mcp']?.category ??
+        (catalogEntry?.category as ActionCategory | undefined) ??
+        categoryFromAnnotations(annotations),
+      scope: detail?.['x-mcp']?.scope ?? (catalogEntry?.scope as ActionScope | undefined),
     });
   }
   return tools;
+}
+
+function exampleInput(schema: McpInputSchema): Record<string, unknown> {
+  return Object.fromEntries(
+    schema.required.map((name) => {
+      const field = schema.properties[name] as { type?: string; enum?: unknown[] } | undefined;
+      const value =
+        field?.enum?.[0] ??
+        (field?.type === 'integer' || field?.type === 'number'
+          ? 1
+          : field?.type === 'boolean'
+            ? true
+            : name === 'projectKey'
+              ? 'VOL'
+              : name === 'email'
+                ? 'person@example.com'
+                : `your_${name}`);
+      return [name, value];
+    }),
+  );
 }

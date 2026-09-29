@@ -10,6 +10,20 @@ disallowedTools:
   - tts
   - browser
 skills:
+  - ava-bedienen
+  - ava-bedienen-aufgaben
+  - ava-bedienen-wissen
+  - ava-bedienen-ziele
+  - ava-bedienen-team
+  - ava-bedienen-belege
+  - ava-bedienen-zeitplaene
+  - ava-bedienen-projekte
+  - ava-bedienen-mail
+  - ava-bedienen-google
+  - ava-bedienen-workflows
+  - ava-bedienen-entscheidungen
+  - ava-bedienen-benachrichtigungen
+  - ava-bedienen-suche
   - review-ablauf
   - owasp-security
   - security-and-hardening

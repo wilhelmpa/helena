@@ -399,7 +399,7 @@ export const aiAgentRoutes = new Elysia({ name: 'ai-agents', detail: { tags: ['A
         ),
         ...commonErrors,
       },
-      detail: { summary: 'List agent heartbeat checks' },
+      detail: { summary: 'List agent heartbeat checks', ...mcpTool('list_ai_agent_heartbeats') },
     },
   )
 
@@ -431,6 +431,7 @@ export const aiAgentRoutes = new Elysia({ name: 'ai-agents', detail: { tags: ['A
         description:
           "List an agent's triggered runs. An owner or a manager of the team sees them all; " +
           'anyone else only the runs that happened in a project they belong to. Archived runs are left out unless includeArchived is set.',
+        ...mcpTool('list_ai_agent_runs'),
       },
     },
   )
@@ -449,6 +450,7 @@ export const aiAgentRoutes = new Elysia({ name: 'ai-agents', detail: { tags: ['A
         description:
           'Take a finished run out of the lists without deleting it. A pending run cannot be ' +
           'archived (409).',
+        ...mcpTool('archive_ai_agent_run', { destructiveHint: true }),
       },
     },
   )
@@ -462,6 +464,7 @@ export const aiAgentRoutes = new Elysia({ name: 'ai-agents', detail: { tags: ['A
       detail: {
         summary: 'Bring back an archived agent run',
         description: 'Show an archived run in the lists again.',
+        ...mcpTool('unarchive_ai_agent_run'),
       },
     },
   )
