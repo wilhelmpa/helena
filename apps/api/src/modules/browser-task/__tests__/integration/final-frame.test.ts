@@ -68,7 +68,7 @@ describe('final frames of browser runs', () => {
     expect(row!.finalFrame).toBeNull();
     expect(row!.finalFramePath).toBe(expected);
     expect(row!.finalFrameSha256).toMatch(/^[0-9a-f]{64}$/);
-    expect(await readFile(path.join(vault, expected))).toEqual(png());
+    expect((await readFile(path.join(vault, expected))).equals(png())).toBe(true);
     const [entry] = await db.select().from(vaultEntry).where(eq(vaultEntry.path, expected));
     expect(entry?.lastAuthor).toBe('system');
     expect(vaultOrigin(entry!)).toBe('agent');
@@ -146,12 +146,11 @@ describe('final frames of browser runs', () => {
       { id: projectRun!.id, path: `Projects/MKT/Files/Browser/${projectRun!.id}.png` },
       { id: homeRun!.id, path: `Home/Files/Browser/${homeRun!.id}.jpg` },
     ]);
+    const stored = (relative: string) => readFile(path.join(vault, relative));
     expect(
-      await readFile(path.join(vault, `Projects/MKT/Files/Browser/${projectRun!.id}.png`)),
-    ).toEqual(png('project'));
-    expect(await readFile(path.join(vault, `Home/Files/Browser/${homeRun!.id}.jpg`))).toEqual(
-      png('home'),
-    );
+      (await stored(`Projects/MKT/Files/Browser/${projectRun!.id}.png`)).equals(png('project')),
+    ).toBe(true);
+    expect((await stored(`Home/Files/Browser/${homeRun!.id}.jpg`)).equals(png('home'))).toBe(true);
     const rows = await db.select().from(helenaBrowserTaskRun).orderBy(helenaBrowserTaskRun.id);
     expect(rows.map((row) => [row.id, row.finalFramePath, row.finalFrame])).toEqual([
       [projectRun!.id, `Projects/MKT/Files/Browser/${projectRun!.id}.png`, null],

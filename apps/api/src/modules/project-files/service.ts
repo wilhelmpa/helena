@@ -502,7 +502,7 @@ export async function statVaultFile(root: FileRoot, relative: string) {
   };
 }
 
-function vaultEntry(vaultPath: string) {
+function vaultFileRoot(vaultPath: string) {
   const safe = relativePath(vaultPath);
   const [top, ...rest] = safe.split('/');
   const home =
@@ -526,14 +526,14 @@ export async function serveVaultFile(input: {
   download: boolean;
   inline: (contentType: string) => boolean;
 }): Promise<Response> {
-  const { root, relative } = vaultEntry(input.vaultPath);
+  const { root, relative } = vaultFileRoot(input.vaultPath);
   const { target, info } = await existingEntry(root, relative);
   if (!info.isFile()) throw new HttpError(404, 'File not found');
   return serveFile({ ...input, file: target });
 }
 
 export async function trashVaultFile(vaultPath: string): Promise<void> {
-  const { root, relative } = vaultEntry(vaultPath);
+  const { root, relative } = vaultFileRoot(vaultPath);
   await trashEntry(root, relative);
 }
 
@@ -544,7 +544,7 @@ export async function replaceVaultFile(
   bytes: Uint8Array,
   actor?: FileActor,
 ): Promise<void> {
-  const { root, relative } = vaultEntry(vaultPath);
+  const { root, relative } = vaultFileRoot(vaultPath);
   await replaceFileContents(root, relative, bytes);
   await recordFileWrite([vaultPath], actor);
 }
