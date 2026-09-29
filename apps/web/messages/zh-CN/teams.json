@@ -830,7 +830,19 @@
       "daysHint": "在一周中的哪几天。",
       "timezoneHint": "用于时间和日期，例如 Europe/Berlin。",
       "instructionsHint": "每次心跳检查什么。只有有事可做时才会启动运行。",
-      "schedule": "节奏"
+      "schedule": "节奏",
+      "precheck": "预检",
+      "precheckHint": "在边界情况下，先由快速的本地模型判断是否有工作；没有工作就不启动运行。",
+      "throttled": "因预算而限速",
+      "historyEmpty": "还没有检查。",
+      "skippedMany": "{count}× {reason}",
+      "reasons": {
+        "noWork": "无事可做",
+        "outsideHours": "工作时间之外",
+        "precheck": "被预检跳过",
+        "runPending": "仍有运行在等待",
+        "other": "已跳过"
+      }
     },
     "pages": {
       "groups": {

@@ -46,11 +46,11 @@
   "statusRunning": "正在运行",
   "noneRunning": "当前没有正在运行的内容。",
   "noneRunningHint": "将状态设为“所有状态”即可查看全部记录。",
-  "idleHeartbeats": "{count, plural, other {# 次无结果的心跳}}",
   "between": "{from} – {to}",
   "show": "显示",
   "hide": "隐藏",
   "filterHeartbeats": "心跳",
-  "heartbeatsBundled": "空心跳已合并",
-  "heartbeatsAll": "所有心跳"
+  "heartbeatsBundled": "心跳已合并",
+  "heartbeatsAll": "所有心跳",
+  "heartbeatRuns": "{count, plural, other {# 次心跳运行}}"
 }

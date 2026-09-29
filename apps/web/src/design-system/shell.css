@@ -802,6 +802,11 @@
 .ds-overlay .ds-panel-tab-select {
   padding-inline-end: 10px;
 }
+/* The overlay's tabs are words without icons: as wide as their word, so the gaps between
+   them are even (owner, O22: "Läufe" stood apart from "Gedächtnis"). */
+.ds-overlay .ds-panel-tab {
+  min-width: 0;
+}
 /* Four tabs or more: the ones in the background show their icon alone, the open one keeps
    its name — no row of one-letter stubs (owner 28.09.). */
 .ds-panel-tabs-track:has(> .ds-panel-tab:nth-child(4))

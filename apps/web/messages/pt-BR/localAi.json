@@ -352,7 +352,7 @@
   "escalation": {
     "title": "Escalonamento",
     "description": "Quando um modelo de assinatura forte assume no lugar do local: trabalho difícil, respostas incertas, falhas.",
-    "draft": "Rascunho – ainda não ativo",
+    "draft": "Salvo agora; o runtime central segue as regras quando estiver em uso.",
     "enabled": "Escalonamento ligado",
     "defaultModel": "Modelo padrão",
     "model": "Modelo",
@@ -374,7 +374,26 @@
       "error": "Erro"
     },
     "pinsNone": "Nenhuma escolha fixa para agentes, projetos ou tarefas.",
-    "pins": "{count} escolhas fixas para agentes, projetos ou tarefas."
+    "pins": "{count} escolhas fixas para agentes, projetos ou tarefas.",
+    "draftBadge": "Preparado",
+    "saved": "Regras de escalonamento salvas",
+    "defaultModelHint": "Assume quando uma regra não indica modelo.",
+    "uncertaintyHint": "Abaixo desta confiança (em %) responde o modelo forte.",
+    "failureHint": "Após tantas tentativas locais o modelo forte assume.",
+    "failureOn": "Conta como falha",
+    "pinsLabel": "Escolhas fixas",
+    "agentHint": "As regras ficam em “Agentes e modelos”.",
+    "pinLabel": "Escolha para este agente",
+    "pinSaved": "Escolha salva",
+    "pinModelHint": "Vazio: o modelo padrão.",
+    "pinModes": {
+      "auto": "Regras",
+      "local": "Sempre local",
+      "strong": "Sempre forte",
+      "autoHint": "As regras centrais decidem.",
+      "localHint": "Este agente nunca escala.",
+      "strongHint": "Este agente sempre trabalha com um modelo forte."
+    }
   },
   "classGroups": {
     "none": "Nenhum tipo de trabalho pronto ainda: primeiro passe em uma avaliação.",

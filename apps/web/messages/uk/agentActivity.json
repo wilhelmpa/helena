@@ -46,11 +46,11 @@
   "statusRunning": "Виконується",
   "noneRunning": "Зараз нічого не виконується.",
   "noneRunningHint": "Обери «Усі стани», щоб побачити всю історію.",
-  "idleHeartbeats": "{count, plural, one {# пульс без результату} few {# пульси без результату} many {# пульсів без результату} other {# пульсу без результату}}",
   "between": "{from} – {to}",
   "show": "Показати",
   "hide": "Сховати",
   "filterHeartbeats": "Пульс",
-  "heartbeatsBundled": "Порожні пульси згруповано",
-  "heartbeatsAll": "Усі пульси"
+  "heartbeatsBundled": "Пульси згруповано",
+  "heartbeatsAll": "Усі пульси",
+  "heartbeatRuns": "{count, plural, one {# запуск за пульсом} few {# запуски за пульсом} many {# запусків за пульсом} other {# запуску за пульсом}}"
 }

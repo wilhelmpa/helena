@@ -197,5 +197,31 @@
     "dialogHint": "Un precio introducido a mano nunca se sobrescribe con una importación.",
     "empty": "No se encontraron precios.",
     "none": "–"
+  },
+  "standingOrders": {
+    "failed": "No ha funcionado.",
+    "sourceOwner": "Propietario",
+    "added": "Instrucción permanente añadida",
+    "proposal": "Propuesta",
+    "proposedBy": "Propuesta: {source}. Rige cuando la confirmes.",
+    "rejected": "Propuesta rechazada",
+    "confirmed": "La instrucción rige desde ahora",
+    "reject": "Rechazar",
+    "confirm": "Confirmar",
+    "switchedOn": "Instrucción activada",
+    "switchedOff": "Instrucción desactivada",
+    "saved": "Instrucción guardada",
+    "newLabel": "Nueva instrucción permanente",
+    "empty": "Una regla que rige en cada ejecución hasta que la desactives.",
+    "placeholder": "p. ej. Guarda siempre las facturas del correo en Recibos.",
+    "add": "Añadir",
+    "deleteTitle": "¿Eliminar esta instrucción?",
+    "deleted": "Instrucción eliminada",
+    "editLabel": "Cambiar instrucción",
+    "inForce": "Vigente · {source}",
+    "off": "Desactivada · {source}",
+    "active": "Vigente",
+    "actions": "Acciones de la instrucción",
+    "edit": "Cambiar"
   }
 }

@@ -46,11 +46,11 @@
   "statusRunning": "Sedang berjalan",
   "noneRunning": "Saat ini tidak ada yang berjalan.",
   "noneRunningHint": "Atur keadaan ke “Semua keadaan” untuk melihat seluruh riwayat.",
-  "idleHeartbeats": "{count, plural, other {# detak tanpa hasil}}",
   "between": "{from} – {to}",
   "show": "Tampilkan",
   "hide": "Sembunyikan",
   "filterHeartbeats": "Detak",
-  "heartbeatsBundled": "Detak kosong digabung",
-  "heartbeatsAll": "Semua detak"
+  "heartbeatsBundled": "Detak digabung",
+  "heartbeatsAll": "Semua detak",
+  "heartbeatRuns": "{count, plural, other {# jalannya detak}}"
 }

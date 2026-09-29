@@ -830,7 +830,19 @@
       "daysHint": "Quels jours de la semaine.",
       "timezoneHint": "Pour les heures et les jours, p. ex. Europe/Berlin.",
       "instructionsHint": "Ce qu’il vérifie à chaque battement. Une exécution ne démarre que s’il y a quelque chose à faire.",
-      "schedule": "Rythme"
+      "schedule": "Rythme",
+      "precheck": "Vérification préalable",
+      "precheckHint": "Dans un cas limite, un modèle local rapide décide d’abord s’il y a du travail ; sans travail, aucune exécution ne démarre.",
+      "throttled": "Ralenti par un budget",
+      "historyEmpty": "Aucune vérification pour l’instant.",
+      "skippedMany": "{count}× {reason}",
+      "reasons": {
+        "noWork": "rien à faire",
+        "outsideHours": "hors des heures de travail",
+        "precheck": "ignoré par la vérification préalable",
+        "runPending": "une exécution attend encore",
+        "other": "ignoré"
+      }
     },
     "pages": {
       "groups": {

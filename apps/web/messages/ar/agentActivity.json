@@ -46,11 +46,11 @@
   "statusRunning": "قيد التشغيل الآن",
   "noneRunning": "لا شيء قيد التشغيل الآن.",
   "noneRunningHint": "اضبط الحالة على «كل الحالات» لعرض السجل كاملًا.",
-  "idleHeartbeats": "{count, plural, one {نبضة واحدة بلا نتيجة} two {نبضتان بلا نتيجة} few {# نبضات بلا نتيجة} many {# نبضة بلا نتيجة} other {# نبضة بلا نتيجة}}",
   "between": "{from} – {to}",
   "show": "عرض",
   "hide": "إخفاء",
   "filterHeartbeats": "النبضات",
-  "heartbeatsBundled": "النبضات الفارغة مجمّعة",
-  "heartbeatsAll": "كل النبضات"
+  "heartbeatsBundled": "النبضات مجمّعة",
+  "heartbeatsAll": "كل النبضات",
+  "heartbeatRuns": "{count, plural, one {تشغيل نبضة واحد} two {تشغيلا نبضة} few {# تشغيلات نبضة} many {# تشغيلًا نبضة} other {# تشغيل نبضة}}"
 }

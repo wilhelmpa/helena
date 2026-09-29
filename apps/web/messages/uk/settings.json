@@ -896,13 +896,24 @@
     "levelDefault": "Як типове для всіх проєктів.",
     "autopilotTitle": "Автопілот",
     "instructionsTitle": "Інструкції",
-    "instructionsHint": "Діють для кожного агента проєкту.",
+    "instructionsHint": "Кожен агент проєкту дотримується їх у кожному запуску.",
     "instructionsLabel": "Інструкції проєкту",
     "instructionsPlaceholder": "Опишіть мандат проєкту та робочі інструкції.",
-    "instructionsSaved": "Інструкції збережено"
+    "instructionsSaved": "Інструкції збережено",
+    "budgetsReset": "Бюджети повернуто до типових",
+    "budgetsOverridden": "У проєкту власні бюджети",
+    "budgetsDefault": "Як типові для всіх проєктів",
+    "budgetsDefaultHint": "Типові значення — у налаштуваннях Helena, розділ «Типові для проєктів»."
   },
   "defaults": {
-    "adminOnly": "Ці значення для всіх проєктів змінює лише адміністратор."
+    "adminOnly": "Ці значення для всіх проєктів змінює лише адміністратор.",
+    "budgetsTitle": "Бюджети нових проєктів",
+    "budgetsHint": "З 80 % пульс сповільнюється, на 100 % робота зупиняється. Дні й місяці в UTC.",
+    "budgetsSaved": "Бюджети нових проєктів збережено",
+    "budgetsOverridden": "{count, plural, one {# проєкт має власні бюджети.} few {# проєкти мають власні бюджети.} many {# проєктів мають власні бюджети.} other {# проєкту мають власні бюджети.}}",
+    "budgetsNone": "Усі проєкти дотримуються цих типових значень.",
+    "helenaOrdersTitle": "Постійні вказівки для Helena",
+    "helenaOrdersHint": "Helena дотримується їх у кожному чаті й запуску."
   },
   "uiGallery": {
     "sample": "Sample text",

@@ -116,9 +116,17 @@ export type ProjectDetail = ProjectScaffold &
 
 // The instance upload limits. Readable by any signed-in user, because the upload UI
 // states them before a file is picked; only god mode can change them.
+// A budget a new project starts with (Vorgaben für Projekte).
+export interface DefaultBudget {
+  metric: 'tokens' | 'cost' | 'time';
+  period: 'day' | 'month';
+  limit: number;
+}
+
 export interface ProjectDefaults {
   mcpEnabled: boolean;
   autopilotLevel: 0 | 1 | 2 | 3;
+  budgets: DefaultBudget[];
 }
 
 export interface ProvisionedProjectResource {

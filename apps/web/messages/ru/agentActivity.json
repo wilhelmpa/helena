@@ -46,11 +46,11 @@
   "statusRunning": "Выполняется",
   "noneRunning": "Сейчас ничего не выполняется.",
   "noneRunningHint": "Выбери «Все состояния», чтобы увидеть всю историю.",
-  "idleHeartbeats": "{count, plural, one {# пульс без результата} few {# пульса без результата} many {# пульсов без результата} other {# пульса без результата}}",
   "between": "{from} – {to}",
   "show": "Показать",
   "hide": "Скрыть",
   "filterHeartbeats": "Пульс",
-  "heartbeatsBundled": "Пустые пульсы сгруппированы",
-  "heartbeatsAll": "Все пульсы"
+  "heartbeatsBundled": "Пульсы сгруппированы",
+  "heartbeatsAll": "Все пульсы",
+  "heartbeatRuns": "{count, plural, one {# запуск по пульсу} few {# запуска по пульсу} many {# запусков по пульсу} other {# запуска по пульсу}}"
 }

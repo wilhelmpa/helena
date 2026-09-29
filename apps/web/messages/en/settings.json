@@ -896,13 +896,24 @@
     "levelDefault": "Same as the default for all projects.",
     "autopilotTitle": "Autopilot",
     "instructionsTitle": "Instructions",
-    "instructionsHint": "Apply to every agent of this project.",
+    "instructionsHint": "Every agent of this project follows them in every run.",
     "instructionsLabel": "Project instructions",
     "instructionsPlaceholder": "Describe the project's mandate and operating instructions.",
-    "instructionsSaved": "Instructions saved"
+    "instructionsSaved": "Instructions saved",
+    "budgetsReset": "Budgets set back to the default",
+    "budgetsOverridden": "This project has its own budgets",
+    "budgetsDefault": "Like the default for all projects",
+    "budgetsDefaultHint": "The default is set in Helena's settings under Defaults for projects."
   },
   "defaults": {
-    "adminOnly": "Only the administrator changes these defaults for all projects."
+    "adminOnly": "Only the administrator changes these defaults for all projects.",
+    "budgetsTitle": "Budgets for new projects",
+    "budgetsHint": "At 80 % heartbeats slow down, at 100 % the work stops. Days and months in UTC.",
+    "budgetsSaved": "Budgets for new projects saved",
+    "budgetsOverridden": "{count, plural, one {# project has its own budgets.} other {# projects have their own budgets.}}",
+    "budgetsNone": "Every project follows this default.",
+    "helenaOrdersTitle": "Standing orders for Helena",
+    "helenaOrdersHint": "Helena follows them in every chat and run."
   },
   "uiGallery": {
     "sample": "Sample text",

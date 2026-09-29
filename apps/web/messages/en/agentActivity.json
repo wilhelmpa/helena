@@ -46,11 +46,11 @@
   "statusRunning": "Running now",
   "noneRunning": "Nothing is running right now.",
   "noneRunningHint": "Set the state to “All states” to see the whole history.",
-  "idleHeartbeats": "{count, plural, one {# heartbeat without result} other {# heartbeats without result}}",
   "between": "{from} – {to}",
   "show": "Show",
   "hide": "Hide",
   "filterHeartbeats": "Heartbeats",
-  "heartbeatsBundled": "Idle heartbeats bundled",
-  "heartbeatsAll": "Every heartbeat"
+  "heartbeatsBundled": "Heartbeats bundled",
+  "heartbeatsAll": "Every heartbeat",
+  "heartbeatRuns": "{count, plural, one {# heartbeat run} other {# heartbeat runs}}"
 }

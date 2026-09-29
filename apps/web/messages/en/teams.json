@@ -830,7 +830,19 @@
       "daysHint": "On which weekdays.",
       "timezoneHint": "For the hours and days, e.g. Europe/Berlin.",
       "instructionsHint": "What it checks on every beat. A run starts only when there is something to do.",
-      "schedule": "Schedule"
+      "schedule": "Schedule",
+      "precheck": "Precheck",
+      "precheckHint": "In a borderline case a quick local model decides first whether there is work; without work no run starts.",
+      "throttled": "Slowed by a budget",
+      "historyEmpty": "No checks yet.",
+      "skippedMany": "{count}× {reason}",
+      "reasons": {
+        "noWork": "nothing to do",
+        "outsideHours": "outside working hours",
+        "precheck": "skipped by the precheck",
+        "runPending": "a run is still waiting",
+        "other": "skipped"
+      }
     },
     "pages": {
       "groups": {

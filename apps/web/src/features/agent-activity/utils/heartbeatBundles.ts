@@ -10,16 +10,16 @@ export type TimelineItem =
       entries: AgentActivityEntry[];
     };
 
-// A run of the heartbeat that found no task to work on (owner, I: the history was mostly
-// TRADE heartbeats every 15 minutes).
-export function isIdleHeartbeat(entry: Pick<AgentActivityEntry, 'trigger' | 'issue'>): boolean {
-  return entry.trigger === 'heartbeat' && entry.issue == null;
+// A finished run its agent's heartbeat started (owner, I: the history was mostly TRADE
+// heartbeats every 15 minutes). A running or failed one is not routine and stays visible.
+export function isRoutineHeartbeat(entry: Pick<AgentActivityEntry, 'trigger' | 'status'>): boolean {
+  return entry.trigger === 'heartbeat' && entry.status === 'success';
 }
 
-// The timeline with the idle heartbeats bundled: a stretch of them in a row becomes one
-// row per agent ("12 Herzschläge ohne Ergebnis"), in the place of the newest one; a single
-// one stays a row of its own. Running and failed heartbeats are never bundled.
-export function bundleIdleHeartbeats(items: AgentActivityEntry[]): TimelineItem[] {
+// The timeline with the routine heartbeats bundled: a stretch of them in a row becomes one
+// row per agent ("12 Herzschläge"), in the place of the newest one; a single one stays a
+// row of its own.
+export function bundleHeartbeats(items: AgentActivityEntry[]): TimelineItem[] {
   const out: TimelineItem[] = [];
   let stretch: AgentActivityEntry[] = [];
   const flush = () => {
@@ -42,7 +42,7 @@ export function bundleIdleHeartbeats(items: AgentActivityEntry[]): TimelineItem[
     stretch = [];
   };
   for (const entry of items) {
-    if (isIdleHeartbeat(entry) && entry.status === 'success') stretch.push(entry);
+    if (isRoutineHeartbeat(entry)) stretch.push(entry);
     else {
       flush();
       out.push({ kind: 'entry', entry });
@@ -50,4 +50,11 @@ export function bundleIdleHeartbeats(items: AgentActivityEntry[]): TimelineItem[
   }
   flush();
   return out;
+}
+
+// The tasks a bundle of heartbeats worked on, each once, newest first.
+export function bundleTasks(entries: AgentActivityEntry[]): string[] {
+  return [
+    ...new Set(entries.flatMap((entry) => (entry.issue ? [entry.issue.identifier] : []))),
+  ];
 }

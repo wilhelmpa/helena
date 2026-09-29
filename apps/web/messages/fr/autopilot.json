@@ -197,5 +197,31 @@
     "dialogHint": "Un prix saisi à la main n’est jamais écrasé par une importation.",
     "empty": "Aucun prix trouvé.",
     "none": "–"
+  },
+  "standingOrders": {
+    "failed": "Cela n’a pas fonctionné.",
+    "sourceOwner": "Propriétaire",
+    "added": "Consigne permanente ajoutée",
+    "proposal": "Proposition",
+    "proposedBy": "Proposée : {source}. Elle s’applique une fois confirmée.",
+    "rejected": "Proposition refusée",
+    "confirmed": "La consigne s’applique désormais",
+    "reject": "Refuser",
+    "confirm": "Confirmer",
+    "switchedOn": "Consigne activée",
+    "switchedOff": "Consigne désactivée",
+    "saved": "Consigne enregistrée",
+    "newLabel": "Nouvelle consigne permanente",
+    "empty": "Une règle valable à chaque exécution jusqu’à ce que vous la désactiviez.",
+    "placeholder": "p. ex. Toujours classer les factures des mails dans Justificatifs.",
+    "add": "Ajouter",
+    "deleteTitle": "Supprimer cette consigne ?",
+    "deleted": "Consigne supprimée",
+    "editLabel": "Modifier la consigne",
+    "inForce": "En vigueur · {source}",
+    "off": "Désactivée · {source}",
+    "active": "En vigueur",
+    "actions": "Actions de la consigne",
+    "edit": "Modifier"
   }
 }

@@ -46,11 +46,11 @@
   "statusRunning": "En curso",
   "noneRunning": "Ahora no hay nada en curso.",
   "noneRunningHint": "Pon el estado en «Todos los estados» para ver todo el historial.",
-  "idleHeartbeats": "{count, plural, one {# latido sin resultado} other {# latidos sin resultado}}",
   "between": "{from} – {to}",
   "show": "Mostrar",
   "hide": "Ocultar",
   "filterHeartbeats": "Latidos",
-  "heartbeatsBundled": "Latidos vacíos agrupados",
-  "heartbeatsAll": "Todos los latidos"
+  "heartbeatsBundled": "Latidos agrupados",
+  "heartbeatsAll": "Todos los latidos",
+  "heartbeatRuns": "{count, plural, one {# ejecución por latido} other {# ejecuciones por latido}}"
 }

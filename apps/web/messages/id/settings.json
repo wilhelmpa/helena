@@ -896,13 +896,24 @@
     "levelDefault": "Sama dengan bawaan semua proyek.",
     "autopilotTitle": "Autopilot",
     "instructionsTitle": "Instruksi",
-    "instructionsHint": "Berlaku untuk setiap agen proyek ini.",
+    "instructionsHint": "Setiap agen proyek ini mengikutinya di setiap jalannya.",
     "instructionsLabel": "Instruksi proyek",
     "instructionsPlaceholder": "Jelaskan mandat proyek dan instruksi operasionalnya.",
-    "instructionsSaved": "Instruksi tersimpan"
+    "instructionsSaved": "Instruksi tersimpan",
+    "budgetsReset": "Anggaran dikembalikan ke bawaan",
+    "budgetsOverridden": "Proyek ini punya anggaran sendiri",
+    "budgetsDefault": "Seperti bawaan untuk semua proyek",
+    "budgetsDefaultHint": "Bawaan diatur di pengaturan Helena pada “Bawaan proyek”."
   },
   "defaults": {
-    "adminOnly": "Hanya administrator yang mengubah bawaan untuk semua proyek ini."
+    "adminOnly": "Hanya administrator yang mengubah bawaan untuk semua proyek ini.",
+    "budgetsTitle": "Anggaran untuk proyek baru",
+    "budgetsHint": "Pada 80 % detak diperlambat, pada 100 % kerja berhenti. Hari dan bulan dalam UTC.",
+    "budgetsSaved": "Anggaran proyek baru disimpan",
+    "budgetsOverridden": "{count, plural, other {# proyek punya anggaran sendiri.}}",
+    "budgetsNone": "Semua proyek mengikuti bawaan ini.",
+    "helenaOrdersTitle": "Perintah tetap untuk Helena",
+    "helenaOrdersHint": "Helena mengikutinya di setiap obrolan dan jalannya."
   },
   "uiGallery": {
     "sample": "Sample text",

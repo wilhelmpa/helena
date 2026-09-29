@@ -352,7 +352,7 @@
   "escalation": {
     "title": "Eskalation",
     "description": "Wann ein starkes Abo-Modell statt des lokalen übernimmt: schwere Arbeit, unsichere Antworten, Fehlschläge.",
-    "draft": "Entwurf – noch nicht aktiv",
+    "draft": "Wird gespeichert; die zentrale Laufzeit befolgt die Regeln, sobald sie im Einsatz ist.",
     "enabled": "Eskalation an",
     "defaultModel": "Standardmodell",
     "model": "Modell",
@@ -374,7 +374,26 @@
       "error": "Fehler"
     },
     "pinsNone": "Keine Festlegungen für Agenten, Projekte oder Aufgaben.",
-    "pins": "{count} Festlegungen für Agenten, Projekte oder Aufgaben."
+    "pins": "{count} Festlegungen für Agenten, Projekte oder Aufgaben.",
+    "draftBadge": "Vorbereitet",
+    "saved": "Eskalationsregeln gespeichert",
+    "defaultModelHint": "Übernimmt, wenn eine Regel kein Modell nennt.",
+    "uncertaintyHint": "Unter dieser Sicherheit (in %) antwortet das starke Modell.",
+    "failureHint": "Nach so vielen lokalen Versuchen übernimmt das starke Modell.",
+    "failureOn": "Gilt als Fehlschlag",
+    "pinsLabel": "Festlegungen",
+    "agentHint": "Die Regeln stehen unter „Agenten und Modelle“.",
+    "pinLabel": "Festlegung für diesen Agenten",
+    "pinSaved": "Festlegung gespeichert",
+    "pinModelHint": "Leer: das Standardmodell.",
+    "pinModes": {
+      "auto": "Regeln",
+      "local": "Immer lokal",
+      "strong": "Immer stark",
+      "autoHint": "Die zentralen Regeln entscheiden.",
+      "localHint": "Dieser Agent eskaliert nie.",
+      "strongHint": "Dieser Agent arbeitet immer mit einem starken Modell."
+    }
   },
   "classGroups": {
     "none": "Noch keine Art von Arbeit bereit: erst eine Auswertung bestehen.",

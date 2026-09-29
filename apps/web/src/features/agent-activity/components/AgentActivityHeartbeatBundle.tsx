@@ -5,9 +5,10 @@ import { useRelativeTime } from '@/context/relativeTimeContext';
 import type { AgentActivityEntry } from '@/lib/api/endpoints/agentActivity';
 import { Button, Inline, Text } from '@/design-system';
 import AgentActivityRow from './AgentActivityRow';
+import { bundleTasks } from '../utils/heartbeatBundles';
 
-// Heartbeats of one agent that found nothing to do, as one row of the history (owner, I):
-// how many, and from when to when; "Anzeigen" lists them.
+// Finished heartbeat runs of one agent in a row, as one row of the history (owner, I): how
+// many, on which tasks, from when to when; "Anzeigen" lists them.
 export default function AgentActivityHeartbeatBundle({
   agent,
   entries,
@@ -22,6 +23,7 @@ export default function AgentActivityHeartbeatBundle({
   const [open, setOpen] = useState(false);
   const newest = entries[0]!;
   const oldest = entries.at(-1)!;
+  const tasks = bundleTasks(entries);
   return (
     <>
       <li className="ds-activity-row" data-bundle="heartbeats">
@@ -31,8 +33,13 @@ export default function AgentActivityHeartbeatBundle({
         <Inline gap={2} wrap grow>
           <Text weight="medium">{agent?.name ?? '–'}</Text>
           <Text size="xs" tone="muted">
-            {t('idleHeartbeats', { count: entries.length })}
+            {t('heartbeatRuns', { count: entries.length })}
           </Text>
+          {tasks.length > 0 && (
+            <Text size="xs" tone="muted" mono>
+              {tasks.join(' · ')}
+            </Text>
+          )}
           {showProject && newest.project && (
             <Text size="xs" tone="muted" mono>
               {newest.project.key}

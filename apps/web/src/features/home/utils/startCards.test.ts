@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
 import type { AgentActivityEntry } from '@/lib/api/endpoints/agentActivity';
 import type { NeedsYouEntry } from '@/extensions/needsYouSources';
-import { isIdleHeartbeat, startCards } from './startCards';
+import { isRoutineHeartbeat, startCards } from './startCards';
 
 const run = (id: string, status: string, trigger: string | null, issue = false) =>
   ({
@@ -24,13 +24,13 @@ const need = (key: string, kind: NeedsYouEntry['kind']): NeedsYouEntry => ({
 });
 
 describe('Startseite: Karten unter dem Chat', () => {
-  test('Herzschlag ohne Aufgabe gilt als leer', () => {
-    assert.equal(isIdleHeartbeat(run('a', 'success', 'heartbeat')), true);
-    assert.equal(isIdleHeartbeat(run('b', 'success', 'heartbeat', true)), false);
-    assert.equal(isIdleHeartbeat(run('c', 'success', 'mention')), false);
+  test('ein fertiger Herzschlag-Lauf gilt als Routine, ein laufender nicht', () => {
+    assert.equal(isRoutineHeartbeat(run('a', 'success', 'heartbeat', true)), true);
+    assert.equal(isRoutineHeartbeat(run('b', 'running', 'heartbeat', true)), false);
+    assert.equal(isRoutineHeartbeat(run('c', 'success', 'mention')), false);
   });
 
-  test('„Braucht dich“ zuerst, dann laufende, dann fertige Arbeit, ohne leere Herzschläge', () => {
+  test('„Braucht dich“ zuerst, dann laufende, dann fertige Arbeit, ohne Herzschlag-Routine', () => {
     const cards = startCards(
       [need('problem:a', 'problem'), need('run:1', 'failure')],
       [

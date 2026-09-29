@@ -12,7 +12,7 @@ import AgentActivityToolbar from './AgentActivityToolbar';
 import AgentActivityLiveRefresh from './AgentActivityLiveRefresh';
 import AgentActivityRow from './AgentActivityRow';
 import AgentActivityHeartbeatBundle from './AgentActivityHeartbeatBundle';
-import { bundleIdleHeartbeats } from '../utils/heartbeatBundles';
+import { bundleHeartbeats } from '../utils/heartbeatBundles';
 import { ACTIVE_ACTIVITY_STATUSES } from '../utils/runningLink';
 import { Stack } from '@/design-system';
 
@@ -56,11 +56,11 @@ export default function AgentActivityTimeline({
   const items = pages
     .flatMap((page) => page.items)
     .filter((entry) => !running || ACTIVE_ACTIVITY_STATUSES.has(entry.status));
-  // Heartbeats that found nothing to do are bundled unless ?heartbeats=all (owner, I).
+  // Finished heartbeat runs are bundled unless ?heartbeats=all (owner, I).
   const allHeartbeats = searchParams.get('heartbeats') === 'all';
   const timeline = allHeartbeats
     ? items.map((entry) => ({ kind: 'entry' as const, entry }))
-    : bundleIdleHeartbeats(items);
+    : bundleHeartbeats(items);
   const setAllHeartbeats = (next: boolean) => {
     const params = new URLSearchParams(searchParams.toString());
     if (next) params.set('heartbeats', 'all');

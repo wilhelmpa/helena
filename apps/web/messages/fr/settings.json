@@ -896,13 +896,24 @@
     "levelDefault": "Comme le réglage de tous les projets.",
     "autopilotTitle": "Pilote automatique",
     "instructionsTitle": "Instructions",
-    "instructionsHint": "S’appliquent à chaque agent de ce projet.",
+    "instructionsHint": "Chaque agent de ce projet les suit à chaque exécution.",
     "instructionsLabel": "Instructions du projet",
     "instructionsPlaceholder": "Décrivez la mission du projet et ses consignes de fonctionnement.",
-    "instructionsSaved": "Instructions enregistrées"
+    "instructionsSaved": "Instructions enregistrées",
+    "budgetsReset": "Budgets remis à la valeur par défaut",
+    "budgetsOverridden": "Ce projet a ses propres budgets",
+    "budgetsDefault": "Comme la valeur par défaut de tous les projets",
+    "budgetsDefaultHint": "La valeur par défaut se règle dans les réglages de Helena, sous « Valeurs des projets »."
   },
   "defaults": {
-    "adminOnly": "Seul l'administrateur modifie ces valeurs pour tous les projets."
+    "adminOnly": "Seul l'administrateur modifie ces valeurs pour tous les projets.",
+    "budgetsTitle": "Budgets des nouveaux projets",
+    "budgetsHint": "À 80 % les battements ralentissent, à 100 % le travail s’arrête. Jours et mois en UTC.",
+    "budgetsSaved": "Budgets des nouveaux projets enregistrés",
+    "budgetsOverridden": "{count, plural, one {# projet a ses propres budgets.} other {# projets ont leurs propres budgets.}}",
+    "budgetsNone": "Tous les projets suivent cette valeur.",
+    "helenaOrdersTitle": "Consignes permanentes pour Helena",
+    "helenaOrdersHint": "Helena les suit dans chaque chat et exécution."
   },
   "uiGallery": {
     "sample": "Sample text",

@@ -46,11 +46,11 @@
   "statusRunning": "Läuft gerade",
   "noneRunning": "Gerade läuft nichts.",
   "noneRunningHint": "Stell den Zustand auf „Alle Zustände“, um den ganzen Verlauf zu sehen.",
-  "idleHeartbeats": "{count, plural, one {# Herzschlag ohne Ergebnis} other {# Herzschläge ohne Ergebnis}}",
   "between": "{from} – {to}",
   "show": "Anzeigen",
   "hide": "Ausblenden",
   "filterHeartbeats": "Herzschläge",
-  "heartbeatsBundled": "Leere Herzschläge gebündelt",
-  "heartbeatsAll": "Alle Herzschläge"
+  "heartbeatsBundled": "Herzschläge gebündelt",
+  "heartbeatsAll": "Alle Herzschläge",
+  "heartbeatRuns": "{count, plural, one {# Herzschlag-Lauf} other {# Herzschlag-Läufe}}"
 }
