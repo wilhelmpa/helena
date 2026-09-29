@@ -12,6 +12,7 @@ function keys(node: unknown, prefix = ''): string[] {
 }
 
 const SAMPLE = {
+  appName: 'Ava',
   subject: 'S',
   text: 'T.',
   duration: '3',
