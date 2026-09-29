@@ -74,7 +74,10 @@
     "openInDocs": "在知识库中打开",
     "linkToTask": "关联到任务",
     "trash": "移到回收站",
-    "showInFolder": "在文件夹中显示"
+    "showInFolder": "在文件夹中显示",
+    "copyLink": "复制链接",
+    "attachToChat": "附加到聊天",
+    "moreActions": "更多操作"
   },
   "dialog": {
     "newFolder": "新建文件夹",
@@ -116,7 +119,11 @@
     "noExtracted": "此文件尚无可用的提取文本。",
     "zoomIn": "放大",
     "zoomOut": "缩小",
-    "zoomReset": "适应"
+    "zoomReset": "适应",
+    "sheets": "工作表",
+    "sheetEmpty": "此表格为空。",
+    "sheetTruncated": "仅显示前 {rows} 行和 {columns} 列。下载文件可查看全部。",
+    "download": "下载"
   },
   "picker": {
     "up": "上一级文件夹",
@@ -221,7 +228,8 @@
     "emptyFiles": "PDF、图片和其他文件会放在这里。上传一个或拖到这里。",
     "onlySubfoldersTitle": "只有子文件夹",
     "onlySubfolders": "此文件夹中没有文件。请打开其中一个子文件夹。",
-    "renameLabel": "{name} 的新名称"
+    "renameLabel": "{name} 的新名称",
+    "formatted": "格式化"
   },
   "canvas": {
     "opening": "正在打开画布 …",

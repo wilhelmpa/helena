@@ -74,7 +74,10 @@
     "openInDocs": "Ouvrir dans Connaissances",
     "linkToTask": "Lier à une tâche",
     "trash": "Mettre à la corbeille",
-    "showInFolder": "Afficher dans le dossier"
+    "showInFolder": "Afficher dans le dossier",
+    "copyLink": "Copier le lien",
+    "attachToChat": "Joindre au chat",
+    "moreActions": "Autres actions"
   },
   "dialog": {
     "newFolder": "Nouveau dossier",
@@ -116,7 +119,11 @@
     "noExtracted": "Aucun texte extrait n'est encore disponible pour ce fichier.",
     "zoomIn": "Zoom avant",
     "zoomOut": "Zoom arrière",
-    "zoomReset": "Ajuster"
+    "zoomReset": "Ajuster",
+    "sheets": "Feuilles",
+    "sheetEmpty": "Ce tableau est vide.",
+    "sheetTruncated": "Seules les {rows} premières lignes et {columns} premières colonnes sont affichées. Télécharge le fichier pour tout voir.",
+    "download": "Télécharger"
   },
   "picker": {
     "up": "Dossier parent",
@@ -221,7 +228,8 @@
     "emptyFiles": "Les PDF, images et autres fichiers arrivent ici. Téléversez-en un ou déposez-le ici.",
     "onlySubfoldersTitle": "Seulement des sous-dossiers",
     "onlySubfolders": "Ce dossier ne contient aucun fichier. Ouvrez l’un de ses sous-dossiers.",
-    "renameLabel": "Nouveau nom pour {name}"
+    "renameLabel": "Nouveau nom pour {name}",
+    "formatted": "Mis en forme"
   },
   "canvas": {
     "opening": "Ouverture de la toile …",

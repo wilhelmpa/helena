@@ -24,6 +24,7 @@ import type { FileActions } from '../hooks/useFileActions';
 import type { FileEntryDrag } from '../hooks/useFileEntryDrag';
 import { isCanvas, isDoc, renamedFileName } from '../utils/knowledgeKinds';
 import type { FilePermissions } from './FileBrowser';
+import FileActionBar from './FileActionBar';
 import FileItemMenu from './FileItemMenu';
 import KnowledgeListView, { type KnowledgeEntry } from './KnowledgeListView';
 
@@ -204,6 +205,7 @@ export default function KnowledgeFolderView({
         menuFor={(entry, helpers) => (
           <FileItemMenu item={entry.item} actions={actions} can={can} onRename={helpers.rename} />
         )}
+        actionBarFor={(entry) => <FileActionBar item={entry.item} actions={actions} can={can} />}
         rowPropsFor={(entry) => drag.source(entry.item)}
         onRename={(entry, typed) => {
           const name = renamedFileName(entry.item.name, typed);

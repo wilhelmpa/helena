@@ -74,7 +74,10 @@
     "openInDocs": "Open in Knowledge",
     "linkToTask": "Link to task",
     "trash": "Move to trash",
-    "showInFolder": "Show in folder"
+    "showInFolder": "Show in folder",
+    "copyLink": "Copy link",
+    "attachToChat": "Attach to chat",
+    "moreActions": "More actions"
   },
   "dialog": {
     "newFolder": "New folder",
@@ -116,7 +119,11 @@
     "noExtracted": "No extracted text is available for this file yet.",
     "zoomIn": "Zoom in",
     "zoomOut": "Zoom out",
-    "zoomReset": "Fit"
+    "zoomReset": "Fit",
+    "sheets": "Sheets",
+    "sheetEmpty": "This table is empty.",
+    "sheetTruncated": "Only the first {rows} rows and {columns} columns are shown. Download the file to see everything.",
+    "download": "Download"
   },
   "picker": {
     "up": "Up one folder",
@@ -221,7 +228,8 @@
     "emptyFiles": "PDFs, images and other files land here. Upload one or drop it here.",
     "onlySubfoldersTitle": "Only subfolders",
     "onlySubfolders": "This folder holds no files. Open one of its subfolders.",
-    "renameLabel": "New name for {name}"
+    "renameLabel": "New name for {name}",
+    "formatted": "Formatted"
   },
   "canvas": {
     "opening": "Opening the canvas …",

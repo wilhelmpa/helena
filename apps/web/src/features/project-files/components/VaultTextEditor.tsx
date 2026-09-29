@@ -100,7 +100,7 @@ export default function VaultTextEditor({
           </Button>
         )}
       </div>
-      {vaultPath && /\.(md|markdown)$/i.test(path) ? (
+      {vaultPath && /\.(md|markdown|txt)$/i.test(path) ? (
         <VaultMarkdownContent
           key={`${draft?.etag ?? query.data.etag}:${sourceOnly ? 'source' : 'formatted'}`}
           content={draft?.originalContent ?? query.data.content}

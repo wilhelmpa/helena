@@ -2756,6 +2756,11 @@ a.ds-run-card:hover {
 .ds-overlay-body.ds-knowledge-preview .ds-knowledge-preview-body {
   padding: 0;
 }
+/* The file overlay's inner distance is small (owner 29.09., O75): the file sits close to the
+   edge, one surface, no second frame around preview or text. */
+.ds-overlay-body.ds-knowledge-preview {
+  padding: var(--space-3) var(--space-3) var(--space-4);
+}
 .ds-knowledge-preview .md-content {
   font-size: 15px;
 }
@@ -2773,6 +2778,155 @@ a.ds-run-card:hover {
   height: min(70vh, 640px);
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
+}
+
+/* The viewers of a file (docs/ui-framework.md §11): one surface, no frame in a frame — the
+   text, the table, the PDF, the image sit on the surface-2 field of the overlay or page. */
+.ds-file-text {
+  min-width: 0;
+  overflow: auto;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-lg);
+  background: var(--surface-2);
+}
+.ds-file-text-body {
+  margin: 0;
+  color: var(--text);
+  font: 12px/1.6 var(--font-mono);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.ds-file-text > pre {
+  background: transparent;
+}
+.ds-file-embed {
+  width: 100%;
+  min-height: 70vh;
+  flex: 1;
+  border: 0;
+  border-radius: var(--radius-lg);
+  background: var(--surface-2);
+}
+.ds-file-image {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.ds-file-image-stage {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  align-items: flex-start;
+  justify-content: center;
+  overflow: auto;
+  padding: var(--space-3);
+  border-radius: var(--radius-lg);
+  background: var(--surface-2);
+}
+.ds-file-image-img {
+  max-width: 100%;
+  max-height: 70vh;
+  object-fit: contain;
+}
+.ds-file-image-img[data-zoomed] {
+  max-width: none;
+  max-height: none;
+}
+.ds-file-media {
+  width: 100%;
+  max-height: 70vh;
+  border-radius: var(--radius-lg);
+}
+.ds-file-sheet {
+  min-width: 0;
+}
+.ds-file-sheet-tabs {
+  overflow-x: auto;
+}
+.ds-file-sheet-scroll {
+  max-height: 70vh;
+  overflow: auto;
+  border-radius: var(--radius-lg);
+  background: var(--surface-2);
+}
+.ds-file-sheet-scroll .ds-table-wrap {
+  overflow: visible;
+}
+.ds-file-sheet-scroll .ds-th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--surface-3);
+}
+.ds-file-sheet-scroll .ds-td {
+  max-width: 320px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ds-file-actions {
+  padding-block: var(--space-1);
+}
+
+/* The Markdown editor of Wissen (O79): one field on the surface-2 ground with its toolbar on
+   top, the caret in the text colour and the empty field showing its hint — visible in the
+   light and the dark theme, no frame in a frame. */
+.ds-doc-editor {
+  display: flex;
+  min-height: 0;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  background: var(--surface-2);
+}
+.ds-doc-toolbar-wrap {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1);
+}
+.ds-doc-editor-bar {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  flex: none;
+  padding: var(--space-1) var(--space-2);
+  border-bottom: 1px solid var(--line-strong);
+  background: var(--surface-3);
+}
+.ds-doc-editor-body {
+  display: flex;
+  min-height: 0;
+  width: 100%;
+  flex: 1;
+  flex-direction: column;
+  padding: var(--space-4);
+}
+.ds-doc-editor-text {
+  min-height: 40vh;
+  font-size: 16px;
+  line-height: 1.75;
+  cursor: text;
+}
+.ds-doc-editor-article {
+  display: flex;
+  min-height: 100%;
+  width: 100%;
+  flex-direction: column;
+  padding-bottom: var(--space-4);
+}
+.ds-doc-editor .ProseMirror {
+  min-height: 40vh;
+  caret-color: var(--text);
+}
+.ds-doc-editor .md-content p.is-editor-empty:first-child::before {
+  color: var(--text-3);
 }
 
 /* A read-only block of generated text (an agent note in the export preview). */

@@ -74,7 +74,10 @@
     "openInDocs": "فتح في المعرفة",
     "linkToTask": "ربط بمهمة",
     "trash": "نقل إلى سلة المهملات",
-    "showInFolder": "إظهار في المجلد"
+    "showInFolder": "إظهار في المجلد",
+    "copyLink": "نسخ الرابط",
+    "attachToChat": "إرفاق بالمحادثة",
+    "moreActions": "إجراءات أخرى"
   },
   "dialog": {
     "newFolder": "مجلد جديد",
@@ -116,7 +119,11 @@
     "noExtracted": "لا يتوفر نص مستخرج لهذا الملف بعد.",
     "zoomIn": "تكبير",
     "zoomOut": "تصغير",
-    "zoomReset": "ملاءمة"
+    "zoomReset": "ملاءمة",
+    "sheets": "الأوراق",
+    "sheetEmpty": "هذا الجدول فارغ.",
+    "sheetTruncated": "تُعرض فقط أول {rows} صفًا و{columns} عمودًا. نزّل الملف لرؤية كل شيء.",
+    "download": "تنزيل"
   },
   "picker": {
     "up": "مجلد واحد لأعلى",
@@ -221,7 +228,8 @@
     "emptyFiles": "تصل ملفات PDF والصور والملفات الأخرى إلى هنا. ارفع ملفًا أو اسحبه إلى هنا.",
     "onlySubfoldersTitle": "مجلدات فرعية فقط",
     "onlySubfolders": "لا يحتوي هذا المجلد على ملفات. افتح أحد مجلداته الفرعية.",
-    "renameLabel": "اسم جديد لـ {name}"
+    "renameLabel": "اسم جديد لـ {name}",
+    "formatted": "منسّق"
   },
   "canvas": {
     "opening": "جارٍ فتح اللوحة …",

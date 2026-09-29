@@ -18,6 +18,7 @@ const ICONS = {
   video: FileVideo,
   markdown: FileText,
   text: FileCode,
+  table: FileSpreadsheet,
   office: FileSpreadsheet,
   other: File,
 } as const;

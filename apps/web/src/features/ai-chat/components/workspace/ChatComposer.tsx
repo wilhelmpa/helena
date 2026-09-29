@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { useTranslations } from 'next-intl';
 import { Plus, RefreshCw, Square } from 'lucide-react';
 import { toast } from 'sonner';
@@ -50,6 +50,7 @@ import ChatComposerStatus from './ChatComposerStatus';
 import ChatAgentMenu from '@/components/helena/AgentPicker';
 import styles from './HomeChatLanding.module.css';
 import { useTypeToFocus } from '../../hooks/useTypeToFocus';
+import { useQueuedChatAttachments } from '@/utils/chatAttachQueue';
 
 type PendingAttachment =
   | { path: string; name: string; ref?: never }
@@ -171,6 +172,17 @@ export default function ChatComposer({
     if (draft) draft.current = value;
   }, [draft, value]);
   const [attachments, setAttachments] = useState<PendingAttachment[]>([]);
+  // Files sent here from Wissen ("An Chat anhängen") join the attachments.
+  useQueuedChatAttachments(
+    useCallback(
+      (items) =>
+        setAttachments((current) => [
+          ...current,
+          ...items.filter((item) => !current.some((existing) => existing.path === item.path)),
+        ]),
+      [],
+    ),
+  );
   const [modelPickerOpen, setModelPickerOpen] = useState(false);
   const [renaming, setRenaming] = useState(false);
   const [fillingPrompt, setFillingPrompt] = useState<ChatPrompt | null>(null);

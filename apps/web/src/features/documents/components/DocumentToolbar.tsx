@@ -26,9 +26,12 @@ import DocumentToolbarButton from './DocumentToolbarButton';
 export default function DocumentToolbar({
   editor,
   onUploadImage,
+  wrap = false,
 }: {
   editor: Editor | null;
   onUploadImage: (file: File) => Promise<{ url: string; filename: string }>;
+  // In a narrow overlay the buttons wrap onto a second row instead of scrolling out of sight.
+  wrap?: boolean;
 }) {
   const t = useTranslations('documents.toolbar');
   const [, renderSelection] = useState(0);
@@ -121,7 +124,11 @@ export default function DocumentToolbar({
 
   return (
     <div
-      className="flex h-12 min-w-0 [scrollbar-width:none] items-center gap-1 overflow-x-auto px-3 md:px-4 [&::-webkit-scrollbar]:hidden"
+      className={
+        wrap
+          ? 'ds-doc-toolbar-wrap'
+          : 'flex h-12 min-w-0 [scrollbar-width:none] items-center gap-1 overflow-x-auto px-3 md:px-4 [&::-webkit-scrollbar]:hidden'
+      }
       role="toolbar"
       aria-label={t('label')}
     >

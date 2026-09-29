@@ -1,7 +1,7 @@
 // How the viewer shows a file, from its name and the content type the api reported.
 
 export type FileViewKind =
-  'pdf' | 'image' | 'audio' | 'video' | 'markdown' | 'text' | 'office' | 'other';
+  'pdf' | 'image' | 'audio' | 'video' | 'markdown' | 'text' | 'table' | 'office' | 'other';
 
 const extensionOf = (name: string) => {
   const dot = name.lastIndexOf('.');
@@ -79,6 +79,8 @@ export function fileViewKind(name: string, contentType?: string | null): FileVie
   if (type.startsWith('audio/')) return 'audio';
   if (type.startsWith('video/')) return 'video';
   if (extension === 'md' || extension === 'markdown') return 'markdown';
+  // A comma- or tab-separated file is a table, shown as one.
+  if (extension === 'csv' || extension === 'tsv') return 'table';
   if (TEXT_EXTENSIONS.has(extension) || type.startsWith('text/plain')) return 'text';
   if (OFFICE.has(extension)) return 'office';
   return 'other';

@@ -15,6 +15,7 @@ import DocumentMarkdownEditor, {
   insertDocumentImage,
 } from '@/components/common/editor/DocumentMarkdownEditor';
 import DocumentPageTitle from './DocumentPageTitle';
+import DocumentEditorField from './DocumentEditorField';
 import DocumentToolbar from './DocumentToolbar';
 
 // Tiptap serializes a compact checklist with a blank line between its items.
@@ -90,6 +91,27 @@ export default function DocumentEditorCanvas({
     if (editor && editable && takeBodyFocus()) editor.commands.focus('start');
   }, [editor, editable]);
 
+  // Inside an overlay or a page of Wissen a doc is one visible field with its toolbar
+  // (owner 29.09., O79: the editor was hardly to be seen).
+  const field = embedded && editable;
+  const editorNode = (
+    <DocumentMarkdownEditor
+      key={loaded.revision}
+      defaultValue={images.markdown}
+      wikilinkRoot={
+        path.startsWith('Projects/') ? path.split('/').slice(0, 2).join('/') : path.split('/')[0]
+      }
+      editable={editable}
+      placeholder={t('contentPlaceholder')}
+      className={field ? 'ds-doc-editor-text flex-1' : 'min-h-[58vh] flex-1 text-base leading-7'}
+      onReady={ready}
+      onChange={(markdown) => onEdit(noteBody(markdown))}
+      onBlur={onBlur}
+      onOpenWikilink={onOpenWikilink}
+      onPickImage={editable ? () => imageInput.current?.click() : undefined}
+      onUploadImage={editable ? upload.mutateAsync : undefined}
+    />
+  );
   return (
     <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
       {editable && !embedded && (
@@ -102,7 +124,9 @@ export default function DocumentEditorCanvas({
       <article
         className={
           embedded
-            ? 'flex min-h-full w-full flex-col pb-24'
+            ? field
+              ? 'ds-doc-editor-article'
+              : 'flex min-h-full w-full flex-col pb-24'
             : 'mx-auto flex min-h-full w-full max-w-[860px] flex-col px-5 pt-10 pb-24 sm:px-8 md:pt-14 lg:px-14'
         }
       >
@@ -141,24 +165,13 @@ export default function DocumentEditorCanvas({
             </p>
           </header>
         )}
-        <DocumentMarkdownEditor
-          key={loaded.revision}
-          defaultValue={images.markdown}
-          wikilinkRoot={
-            path.startsWith('Projects/')
-              ? path.split('/').slice(0, 2).join('/')
-              : path.split('/')[0]
-          }
-          editable={editable}
-          placeholder={t('contentPlaceholder')}
-          className="min-h-[58vh] flex-1 text-base leading-7"
-          onReady={ready}
-          onChange={(markdown) => onEdit(noteBody(markdown))}
-          onBlur={onBlur}
-          onOpenWikilink={onOpenWikilink}
-          onPickImage={editable ? () => imageInput.current?.click() : undefined}
-          onUploadImage={editable ? upload.mutateAsync : undefined}
-        />
+        {field ? (
+          <DocumentEditorField editor={editor} onUploadImage={upload.mutateAsync}>
+            {editorNode}
+          </DocumentEditorField>
+        ) : (
+          editorNode
+        )}
       </article>
     </div>
   );

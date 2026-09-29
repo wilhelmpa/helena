@@ -74,7 +74,10 @@
     "openInDocs": "Buka di Pengetahuan",
     "linkToTask": "Tautkan ke tugas",
     "trash": "Pindahkan ke tempat sampah",
-    "showInFolder": "Tampilkan di folder"
+    "showInFolder": "Tampilkan di folder",
+    "copyLink": "Salin tautan",
+    "attachToChat": "Lampirkan ke obrolan",
+    "moreActions": "Aksi lainnya"
   },
   "dialog": {
     "newFolder": "Folder baru",
@@ -116,7 +119,11 @@
     "noExtracted": "Belum ada teks yang diekstrak untuk berkas ini.",
     "zoomIn": "Perbesar",
     "zoomOut": "Perkecil",
-    "zoomReset": "Paskan"
+    "zoomReset": "Paskan",
+    "sheets": "Lembar",
+    "sheetEmpty": "Tabel ini kosong.",
+    "sheetTruncated": "Hanya {rows} baris dan {columns} kolom pertama yang ditampilkan. Unduh berkas untuk melihat semuanya.",
+    "download": "Unduh"
   },
   "picker": {
     "up": "Naik satu folder",
@@ -221,7 +228,8 @@
     "emptyFiles": "PDF, gambar, dan berkas lain masuk ke sini. Unggah satu atau seret ke sini.",
     "onlySubfoldersTitle": "Hanya subfolder",
     "onlySubfolders": "Folder ini tidak berisi berkas. Buka salah satu subfoldernya.",
-    "renameLabel": "Nama baru untuk {name}"
+    "renameLabel": "Nama baru untuk {name}",
+    "formatted": "Terformat"
   },
   "canvas": {
     "opening": "Membuka kanvas …",

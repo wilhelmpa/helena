@@ -1,14 +1,5 @@
-import type { ReactNode } from 'react';
-import {
-  ClipboardCopy,
-  Code2,
-  Download,
-  FolderInput,
-  Link2,
-  MoreHorizontal,
-  Pencil,
-  Trash2,
-} from 'lucide-react';
+import { Fragment, type ReactNode } from 'react';
+import { MoreHorizontal } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import {
   IconButton,
@@ -19,11 +10,36 @@ import {
   MenuTrigger,
 } from '@/design-system';
 import type { FileItem } from '@/lib/api/endpoints/projectFiles';
+import { useFileActionItems, type FileActionItem } from '../hooks/useFileActionItems';
 import type { FileActions } from '../hooks/useFileActions';
 import type { FilePermissions } from './FileBrowser';
 
-// Everything that can be done with one entry, behind its "more" button. `extra` leads the
-// menu with what only the caller offers (a doc's source/editor switch).
+function MenuEntry({ action }: { action: FileActionItem }) {
+  const { Icon } = action;
+  if (action.href)
+    return (
+      <MenuItem asChild>
+        <a
+          href={action.href}
+          download={action.download}
+          {...(action.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+        >
+          <Icon />
+          {action.label}
+        </a>
+      </MenuItem>
+    );
+  return (
+    <MenuItem variant={action.destructive ? 'destructive' : undefined} onSelect={action.run}>
+      <Icon />
+      {action.label}
+    </MenuItem>
+  );
+}
+
+// Everything that can be done with one row, behind its "more" button. `extra` leads the
+// menu with what only the caller offers (a doc's source/editor switch). The overlay of a
+// file shows the same actions as named buttons (FileActionBar).
 export default function FileItemMenu({
   item,
   actions,
@@ -41,8 +57,10 @@ export default function FileItemMenu({
   onRename?: () => void;
 }) {
   const t = useTranslations('files.actions');
-  const file = item.kind === 'file';
-  const code = actions.codeUrl(item);
+  const items = useFileActionItems({ item, actions, can, onRename });
+  const groups = (['use', 'change', 'remove'] as const)
+    .map((group) => items.filter((action) => action.group === group))
+    .filter((group) => group.length > 0);
 
   return (
     <Menu>
@@ -53,51 +71,14 @@ export default function FileItemMenu({
       </MenuTrigger>
       <MenuContent align="end">
         {extra}
-        {file && (
-          <MenuItem asChild>
-            <a href={actions.downloadUrl(item)} download={item.name}>
-              <Download />
-              {t('download')}
-            </a>
-          </MenuItem>
-        )}
-        {code && (
-          <MenuItem asChild>
-            <a href={code} target="_blank" rel="noopener noreferrer">
-              <Code2 />
-              {t('openInCode')}
-            </a>
-          </MenuItem>
-        )}
-        {file && actions.projectKey && (
-          <MenuItem onSelect={() => actions.ask('link', item)}>
-            <Link2 />
-            {t('linkToTask')}
-          </MenuItem>
-        )}
-        <MenuItem onSelect={() => void actions.copyPath(item)}>
-          <ClipboardCopy />
-          {t('copyPath')}
-        </MenuItem>
-        {can.edit && (
-          <>
-            <MenuSeparator />
-            <MenuItem onSelect={() => (onRename ? onRename() : actions.ask('rename', item))}>
-              <Pencil />
-              {t('rename')}
-            </MenuItem>
-            <MenuItem onSelect={() => actions.ask('move', item)}>
-              <FolderInput />
-              {t('move')}
-            </MenuItem>
-          </>
-        )}
-        {can.delete && (
-          <MenuItem variant="destructive" onSelect={() => actions.ask('trash', item)}>
-            <Trash2 />
-            {t('trash')}
-          </MenuItem>
-        )}
+        {groups.map((group, index) => (
+          <Fragment key={group[0]!.group}>
+            {index > 0 && <MenuSeparator />}
+            {group.map((action) => (
+              <MenuEntry key={action.id} action={action} />
+            ))}
+          </Fragment>
+        ))}
       </MenuContent>
     </Menu>
   );

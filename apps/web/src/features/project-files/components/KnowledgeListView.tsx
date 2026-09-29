@@ -120,6 +120,7 @@ export default function KnowledgeListView({
   onCreate,
   onUpload,
   menuFor,
+  actionBarFor,
   rowPropsFor,
   onRename,
   onTrash,
@@ -141,6 +142,8 @@ export default function KnowledgeListView({
   onUpload?: (files: File[]) => void;
   // The row's menu; `rename` starts renaming the row in place.
   menuFor?: (entry: KnowledgeEntry, helpers: { rename?: () => void }) => ReactNode;
+  // The actions of the file open in the overlay, as named buttons.
+  actionBarFor?: (entry: KnowledgeEntry) => ReactNode;
   rowPropsFor?: (entry: KnowledgeEntry) => Record<string, unknown>;
   // Renaming in place (F2, the menu) and the trash (Entf) of the selected row (Auftrag 117).
   onRename?: (entry: KnowledgeEntry, name: string) => void;
@@ -521,7 +524,7 @@ export default function KnowledgeListView({
           key={preview.key}
           entry={preview}
           can={can}
-          menu={menuFor?.(preview, {})}
+          actionBar={actionBarFor?.(preview)}
           onClose={() => setPreview(null)}
           onOpenLarge={() => {
             const entry = preview;

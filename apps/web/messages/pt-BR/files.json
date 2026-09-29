@@ -74,7 +74,10 @@
     "openInDocs": "Abrir em Conhecimento",
     "linkToTask": "Vincular a uma tarefa",
     "trash": "Mover para a lixeira",
-    "showInFolder": "Mostrar na pasta"
+    "showInFolder": "Mostrar na pasta",
+    "copyLink": "Copiar link",
+    "attachToChat": "Anexar ao chat",
+    "moreActions": "Mais ações"
   },
   "dialog": {
     "newFolder": "Nova pasta",
@@ -116,7 +119,11 @@
     "noExtracted": "Ainda não há texto extraído para este arquivo.",
     "zoomIn": "Ampliar",
     "zoomOut": "Reduzir",
-    "zoomReset": "Ajustar"
+    "zoomReset": "Ajustar",
+    "sheets": "Planilhas",
+    "sheetEmpty": "Esta tabela está vazia.",
+    "sheetTruncated": "Apenas as primeiras {rows} linhas e {columns} colunas são exibidas. Baixe o arquivo para ver tudo.",
+    "download": "Baixar"
   },
   "picker": {
     "up": "Subir uma pasta",
@@ -221,7 +228,8 @@
     "emptyFiles": "PDFs, imagens e outros arquivos chegam aqui. Envie um ou arraste para cá.",
     "onlySubfoldersTitle": "Somente subpastas",
     "onlySubfolders": "Esta pasta não contém arquivos. Abra uma das subpastas.",
-    "renameLabel": "Novo nome para {name}"
+    "renameLabel": "Novo nome para {name}",
+    "formatted": "Formatado"
   },
   "canvas": {
     "opening": "Abrindo a tela …",

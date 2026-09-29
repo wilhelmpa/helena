@@ -55,6 +55,40 @@ export function ButtonLink({
   );
 }
 
+// An address that is not a page of the app: a download, another site. The same look as the
+// buttons; `href` is a plain address, so it opens or downloads as the browser does.
+export function ButtonAnchor({
+  href,
+  variant = 'quiet',
+  icon,
+  size = 'default',
+  className,
+  children,
+  download,
+  external = false,
+}: BaseProps & {
+  href: string;
+  className?: string;
+  children?: ReactNode;
+  download?: string | boolean;
+  // Opens in a new tab.
+  external?: boolean;
+}) {
+  return (
+    <a
+      href={href}
+      download={download}
+      data-variant={variant}
+      data-size={size}
+      className={`ds-button ${className ?? ''}`}
+      {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+    >
+      {icon}
+      {children != null && <span className="ds-button-label">{children}</span>}
+    </a>
+  );
+}
+
 // A square icon-only button; the label is required (tooltip and screen readers).
 export const IconButton = forwardRef<
   HTMLButtonElement,

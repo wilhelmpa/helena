@@ -42,6 +42,7 @@ export default function KnowledgeRecentView({
   onCreate,
   onUpload,
   menuFor,
+  actionBarFor,
   more,
 }: {
   sources: KnowledgeSource[];
@@ -52,6 +53,7 @@ export default function KnowledgeRecentView({
   onCreate?: (kind: KnowledgeCreation) => void;
   onUpload?: (files: File[]) => void;
   menuFor?: (entry: KnowledgeEntry, helpers: { rename?: () => void }) => ReactNode;
+  actionBarFor?: (entry: KnowledgeEntry) => ReactNode;
   more?: ReactNode;
 }) {
   const t = useTranslations('files.knowledge');
@@ -113,6 +115,7 @@ export default function KnowledgeRecentView({
       onCreate={onCreate}
       onUpload={onUpload}
       menuFor={menuFor}
+      actionBarFor={actionBarFor}
       more={more}
       emptyText={params?.get('kind') === 'files' ? t('emptyFiles') : t('emptyRecent')}
     />

@@ -29,6 +29,7 @@ import KnowledgeCanvas from './KnowledgeCanvas';
 import KnowledgeBaseView from './KnowledgeBaseView';
 import { Page } from '@/design-system';
 import FileCreateMenu from './FileCreateMenu';
+import FileActionBar from './FileActionBar';
 import FileItemMenu from './FileItemMenu';
 
 export interface FilePermissions {
@@ -302,6 +303,7 @@ export default function FileBrowser({
           }
           onUpload={transfers.sendFiles}
           menuFor={(entry) => <FileItemMenu item={entry.item} actions={actions} can={can} />}
+          actionBarFor={(entry) => <FileActionBar item={entry.item} actions={actions} can={can} />}
         />
       ) : knowledge ? (
         <KnowledgeFolderView

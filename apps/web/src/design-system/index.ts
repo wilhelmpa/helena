@@ -9,7 +9,7 @@ export { Tree, TreeItem, TreeGap, TreeAction, useTreeLevel } from './components/
 export type { TreeItemProps } from './components/Tree';
 export { StatusDot } from './components/StatusDot';
 export type { StatusDotTone } from './components/StatusDot';
-export { Button, ButtonLink, IconButton } from './components/Button';
+export { Button, ButtonAnchor, ButtonLink, IconButton } from './components/Button';
 export type { ButtonVariant } from './components/Button';
 export { Pill, PillButton, Pill as Badge } from './components/Pill';
 export { Segmented } from './components/Segmented';

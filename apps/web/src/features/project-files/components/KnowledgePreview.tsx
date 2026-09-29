@@ -2,7 +2,7 @@
 
 import { useCallback, useRef, useState, type ReactNode } from 'react';
 import { useTranslations } from 'next-intl';
-import { Inline, Overlay, Stack, Text } from '@/design-system';
+import { Inline, Overlay, Segmented, Stack, Text } from '@/design-system';
 import FileViewerContent from '@/components/common/files/FileViewerContent';
 import WebLinkScope from '@/components/common/WebLinkScope';
 import { useRelativeTime } from '@/context/relativeTimeContext';
@@ -16,15 +16,17 @@ import OriginBadge from './OriginBadge';
 import { MarkdownBody } from './ProjectKnowledgeViewer';
 import VaultTextEditor from './VaultTextEditor';
 import { useOverlayShownHere, type OverlayPin } from '@/utils/overlayPin';
+import { fileViewKind } from '@/utils/fileKinds';
 
 // A file of Wissen opened on the right, in the one overlay (owner 29.09., O49): a doc in
-// its editor, a canvas, a view (.base), a PDF, an image, any other file in its viewer. The
-// overlay's full-screen button opens it large in the page instead; Esc closes it. A doc
-// is saved before either happens.
+// its editor, a canvas, a view (.base), a text, a table, a PDF, an image, any other file in
+// its viewer. Under the head stand the file's actions with their names (O80, `actionBar`),
+// then the file itself on one surface (O75). Full screen makes the overlay large and small
+// again; "Als Seite öffnen" opens the file large in the page. A doc is saved before either.
 export default function KnowledgePreview({
   entry,
   can,
-  menu,
+  actionBar,
   onClose,
   onOpenLarge,
   onOpenEntry,
@@ -32,7 +34,9 @@ export default function KnowledgePreview({
 }: {
   entry: KnowledgeEntry;
   can: FilePermissions;
-  menu?: ReactNode;
+  // The file's actions as named buttons (FileActionBar), built by the page that has the
+  // dialogs behind them.
+  actionBar?: ReactNode;
   onClose: () => void;
   onOpenLarge: () => void;
   // A note a view (.base) lists, opened in its place.
@@ -46,6 +50,9 @@ export default function KnowledgePreview({
   const name = knowledgeDisplayName(item.name);
   const saveRef = useRef<(() => Promise<boolean>) | null>(null);
   const dirtyRef = useRef(false);
+  // A doc opens formatted; the source is a switch. One the formatted editor cannot keep
+  // exactly opens as source straight away.
+  const [source, setSource] = useState(false);
   const [lossy, setLossy] = useState(false);
   const onSaveReady = useCallback((save: (() => Promise<boolean>) | null) => {
     saveRef.current = save;
@@ -60,6 +67,17 @@ export default function KnowledgePreview({
     if (!saveRef.current && dirtyRef.current && !window.confirm(t('discard'))) return;
     then();
   };
+  // The switch between the formatted text and its source: the doc is saved on the way
+  // over, unsaved source text asks first.
+  const showSource = async (next: boolean) => {
+    if (next === source && !lossy) return;
+    if (next) {
+      if (saveRef.current && !(await saveRef.current())) return;
+    } else if (dirtyRef.current && !window.confirm(t('discard'))) return;
+    dirtyRef.current = false;
+    setLossy(false);
+    setSource(next);
+  };
   // Pinned, the file stays open on other pages (Auftrag 117); the entry comes along.
   const pin: OverlayPin = {
     kind: 'file',
@@ -69,27 +87,45 @@ export default function KnowledgePreview({
   useOverlayShownHere(pinnedHost ? null : pin);
   const doc = isDoc(item.name);
   const vaultPath = entry.vaultPath;
+  const viewKind = fileViewKind(item.name, item.contentType);
+  // Text that is written, not code: Markdown and plain text open in the Markdown editor.
+  const written = viewKind === 'markdown' || /\.txt$/i.test(item.name);
+  const asSource = source || lossy;
 
   let body: ReactNode;
   if (doc && vaultPath) {
-    body = lossy ? (
-      <VaultTextEditor
-        scope={scope}
-        path={item.path}
-        canEdit={can.edit}
-        onDirty={onDirty}
-        vaultPath={vaultPath}
-        beforeNavigate={() => true}
-        sourceOnly
-      />
-    ) : (
-      <MarkdownBody
-        path={vaultPath}
-        editable={can.edit}
-        onDirty={onDirty}
-        onSaveReady={onSaveReady}
-        onLossless={onLossless}
-      />
+    body = (
+      <Stack gap={2} className="ds-knowledge-editor">
+        <Segmented
+          className="self-start"
+          label={t('editor')}
+          value={asSource ? 'source' : 'formatted'}
+          onChange={(next) => void showSource(next === 'source')}
+          options={[
+            { value: 'formatted', label: t('formatted') },
+            { value: 'source', label: t('source') },
+          ]}
+        />
+        {asSource ? (
+          <VaultTextEditor
+            scope={scope}
+            path={item.path}
+            canEdit={can.edit}
+            onDirty={onDirty}
+            vaultPath={vaultPath}
+            beforeNavigate={() => true}
+            sourceOnly
+          />
+        ) : (
+          <MarkdownBody
+            path={vaultPath}
+            editable={can.edit}
+            onDirty={onDirty}
+            onSaveReady={onSaveReady}
+            onLossless={onLossless}
+          />
+        )}
+      </Stack>
     );
   } else if (isCanvas(item.name)) {
     body = (
@@ -105,6 +141,18 @@ export default function KnowledgePreview({
     );
   } else if (isBase(item.name) && vaultPath) {
     body = <KnowledgeBaseView path={vaultPath} compact onOpenNote={onOpenEntry} />;
+  } else if (written && vaultPath) {
+    // Plain text: the same editor, formatted first, with the source one click away.
+    body = (
+      <VaultTextEditor
+        scope={scope}
+        path={item.path}
+        canEdit={can.edit}
+        onDirty={onDirty}
+        vaultPath={vaultPath}
+        beforeNavigate={() => true}
+      />
+    );
   } else {
     body = (
       <FileViewerContent
@@ -123,7 +171,6 @@ export default function KnowledgePreview({
     <Overlay
       label={name}
       tabs={[{ id: 'file', label: name }]}
-      actions={menu}
       onClose={() => void leave(onClose)}
       onOpenPage={() => void leave(onOpenLarge)}
       pin={pin}
@@ -140,6 +187,7 @@ export default function KnowledgePreview({
                 .join(' · ')}
             </Text>
           </Inline>
+          {actionBar}
           {body}
         </Stack>
       </WebLinkScope>

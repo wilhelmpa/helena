@@ -3,6 +3,8 @@
 import { useRouter } from 'next/navigation';
 import { useOverlayShownByPage, usePinnedOverlay } from '@/utils/overlayPin';
 import { vaultNotePath } from '@/utils/paths';
+import { useFileActions } from '../hooks/useFileActions';
+import FileActionBar from './FileActionBar';
 import type { FilePermissions } from './FileBrowser';
 import type { KnowledgeEntry } from './KnowledgeListView';
 import KnowledgePreview from './KnowledgePreview';
@@ -11,7 +13,6 @@ import KnowledgePreview from './KnowledgePreview';
 // on the right, until it is closed or unpinned. The Wissen page that shows it itself keeps
 // its own; this one steps back there.
 export default function PinnedKnowledgePreview() {
-  const router = useRouter();
   const pin = usePinnedOverlay('file');
   const shownByPage = useOverlayShownByPage(pin);
   if (!pin?.data || shownByPage) return null;
@@ -21,12 +22,27 @@ export default function PinnedKnowledgePreview() {
   } catch {
     return null;
   }
-  const { entry, can } = parsed;
+  return <PinnedPreview key={pin.value} entry={parsed.entry} can={parsed.can} />;
+}
+
+function PinnedPreview({ entry, can }: { entry: KnowledgeEntry; can: FilePermissions }) {
+  const router = useRouter();
+  // On another page there are no dialogs to rename, move or trash with: the file's actions
+  // that need none (download, link, chat) stand there all the same.
+  const actions = useFileActions({
+    scope: entry.scope,
+    listing: undefined,
+    onNavigate: () => undefined,
+    onSelect: () => undefined,
+    ask: () => undefined,
+  });
   return (
     <KnowledgePreview
-      key={pin.value}
       entry={entry}
       can={can}
+      actionBar={
+        <FileActionBar item={entry.item} actions={actions} can={can} withDialogs={false} />
+      }
       pinnedHost
       onClose={() => undefined}
       onOpenLarge={() => {

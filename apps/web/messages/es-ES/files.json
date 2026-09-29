@@ -74,7 +74,10 @@
     "openInDocs": "Abrir en Conocimiento",
     "linkToTask": "Vincular a una tarea",
     "trash": "Mover a la papelera",
-    "showInFolder": "Mostrar en la carpeta"
+    "showInFolder": "Mostrar en la carpeta",
+    "copyLink": "Copiar enlace",
+    "attachToChat": "Adjuntar al chat",
+    "moreActions": "Más acciones"
   },
   "dialog": {
     "newFolder": "Nueva carpeta",
@@ -116,7 +119,11 @@
     "noExtracted": "Todavía no hay texto extraído para este archivo.",
     "zoomIn": "Ampliar",
     "zoomOut": "Reducir",
-    "zoomReset": "Ajustar"
+    "zoomReset": "Ajustar",
+    "sheets": "Hojas",
+    "sheetEmpty": "Esta tabla está vacía.",
+    "sheetTruncated": "Solo se muestran las primeras {rows} filas y {columns} columnas. Descarga el archivo para verlo todo.",
+    "download": "Descargar"
   },
   "picker": {
     "up": "Subir una carpeta",
@@ -221,7 +228,8 @@
     "emptyFiles": "Aquí llegan PDF, imágenes y otros archivos. Sube uno o arrástralo aquí.",
     "onlySubfoldersTitle": "Solo subcarpetas",
     "onlySubfolders": "Esta carpeta no contiene archivos. Abre una de sus subcarpetas.",
-    "renameLabel": "Nuevo nombre para {name}"
+    "renameLabel": "Nuevo nombre para {name}",
+    "formatted": "Con formato"
   },
   "canvas": {
     "opening": "Abriendo el lienzo …",

@@ -1,26 +1,60 @@
+'use client';
+
 import { useQuery } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
+import { Text } from '@/design-system';
 import { extractedText } from '@/lib/api/endpoints/projectFiles';
+import FileViewerFallback from './FileViewerFallback';
+import SheetView, { type SheetData } from './SheetView';
+import type { ViewerFile } from './FileViewer';
 
-// An office file cannot be shown in the browser. What the vault index extracted from it
-// is shown instead, once the index has it.
-export default function FileViewerOffice({ vaultPath }: { vaultPath: string | null }) {
+// What the server's converter made of an office file (LibreOffice on the server, no cloud
+// viewer): a PDF of the pages, or the sheets of a spreadsheet as rows.
+export type OfficePreview =
+  { kind: 'pdf'; url: string } | { kind: 'sheets'; sheets: SheetData[]; pdfUrl?: string };
+
+// An office file (Word, Excel, PowerPoint and their open formats). Converted, it is shown
+// as a PDF or a table; until the converter has it, the text the vault index extracted is
+// shown, and a file with neither has the download (never an empty box).
+export default function FileViewerOffice({
+  file,
+  preview = null,
+}: {
+  file: ViewerFile;
+  preview?: OfficePreview | null;
+}) {
   const t = useTranslations('files.viewer');
   const text = useQuery({
-    queryKey: ['files', 'extracted', vaultPath],
-    queryFn: () => extractedText(vaultPath!),
-    enabled: vaultPath !== null,
+    queryKey: ['files', 'extracted', file.vaultPath],
+    queryFn: () => extractedText(file.vaultPath!),
+    enabled: file.vaultPath !== null && preview === null,
     retry: false,
   });
-
-  if (vaultPath !== null && text.isPending) {
-    return <p className="text-sm text-muted-foreground">{t('loading')}</p>;
-  }
-  if (!text.data) return <p className="text-sm text-muted-foreground">{t('noExtracted')}</p>;
+  if (preview?.kind === 'pdf')
+    return <iframe src={preview.url} title={file.name} className="ds-file-embed" />;
+  if (preview?.kind === 'sheets') return <SheetView sheets={preview.sheets} />;
+  if (file.vaultPath !== null && text.isPending)
+    return (
+      <Text as="p" size="sm" tone="muted">
+        {t('loading')}
+      </Text>
+    );
+  if (!text.data)
+    return (
+      <FileViewerFallback
+        name={file.name}
+        contentType={file.contentType}
+        sizeBytes={file.sizeBytes}
+        url={file.url}
+        reason={t('noExtracted')}
+      />
+    );
   return (
-    <div className="min-h-0 flex-1 overflow-auto rounded-md border p-3">
-      <p className="mb-2 text-xs font-medium text-muted-foreground">{t('extracted')}</p>
-      <p className="text-sm whitespace-pre-wrap" dir="auto">
+    <div className="ds-file-text">
+      <Text as="p" size="xs" tone="muted">
+        {t('extracted')}
+      </Text>
+      <p className="ds-file-text-body" dir="auto">
         {text.data}
       </p>
     </div>

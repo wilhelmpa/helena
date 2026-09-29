@@ -1,13 +1,16 @@
+'use client';
+
+import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import { Text } from '@/design-system';
-import { highlightAs } from '@/lib/highlight';
-import { highlightLanguage } from '@/utils/fileKinds';
+import { detectDelimiter, parseDelimited } from './delimited';
+import SheetView from './SheetView';
 
-const MAX_TEXT_BYTES = 1024 * 1024;
+const MAX_TABLE_BYTES = 5 * 1024 * 1024;
 
-// A text file as it is, highlighted in the language its name stands for.
-export default function FileViewerText({
+// A CSV or TSV file as a table.
+export default function FileViewerTable({
   url,
   name,
   sizeBytes,
@@ -17,7 +20,7 @@ export default function FileViewerText({
   sizeBytes: number | null;
 }) {
   const t = useTranslations('files.viewer');
-  const tooLarge = sizeBytes !== null && sizeBytes > MAX_TEXT_BYTES;
+  const tooLarge = sizeBytes !== null && sizeBytes > MAX_TABLE_BYTES;
   const text = useQuery({
     queryKey: ['files', 'text', url],
     queryFn: async () => {
@@ -28,7 +31,11 @@ export default function FileViewerText({
     enabled: !tooLarge,
     retry: false,
   });
-
+  const rows = useMemo(
+    () =>
+      text.data === undefined ? [] : parseDelimited(text.data, detectDelimiter(text.data, name)),
+    [text.data, name],
+  );
   if (tooLarge)
     return (
       <Text as="p" size="sm" tone="muted">
@@ -47,13 +54,5 @@ export default function FileViewerText({
         {t('error')}
       </Text>
     );
-  const language = highlightLanguage(name);
-  const highlighted = language ? highlightAs(language, text.data) : null;
-  return (
-    <div className="md-content ds-file-text" dir="ltr">
-      <pre className="ds-file-text-body">
-        <code>{highlighted ?? text.data}</code>
-      </pre>
-    </div>
-  );
+  return <SheetView sheets={[{ name, rows }]} />;
 }

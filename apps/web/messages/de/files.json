@@ -74,7 +74,10 @@
     "openInDocs": "In Wissen öffnen",
     "linkToTask": "Mit Aufgabe verknüpfen",
     "trash": "In den Papierkorb",
-    "showInFolder": "Im Ordner zeigen"
+    "showInFolder": "Im Ordner zeigen",
+    "copyLink": "Link kopieren",
+    "attachToChat": "An Chat anhängen",
+    "moreActions": "Weitere Aktionen"
   },
   "dialog": {
     "newFolder": "Neuer Ordner",
@@ -116,7 +119,11 @@
     "noExtracted": "Für diese Datei ist noch kein extrahierter Text verfügbar.",
     "zoomIn": "Vergrößern",
     "zoomOut": "Verkleinern",
-    "zoomReset": "Einpassen"
+    "zoomReset": "Einpassen",
+    "sheets": "Blätter",
+    "sheetEmpty": "Diese Tabelle ist leer.",
+    "sheetTruncated": "Angezeigt werden nur die ersten {rows} Zeilen und {columns} Spalten. Lade die Datei herunter, um alles zu sehen.",
+    "download": "Herunterladen"
   },
   "picker": {
     "up": "Einen Ordner nach oben",
@@ -221,7 +228,8 @@
     "emptyFiles": "PDFs, Bilder und andere Dateien landen hier. Lade eine hoch oder zieh sie hierher.",
     "onlySubfoldersTitle": "Nur Unterordner",
     "onlySubfolders": "In diesem Ordner liegen keine Dateien. Öffne einen der Unterordner.",
-    "renameLabel": "Neuer Name für {name}"
+    "renameLabel": "Neuer Name für {name}",
+    "formatted": "Formatiert"
   },
   "canvas": {
     "opening": "Leinwand wird geöffnet …",
