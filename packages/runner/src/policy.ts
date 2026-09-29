@@ -824,7 +824,7 @@ const BUNDLED_SKILLS_DETAIL = 'The skills that ship with Hermes could not be see
 export class HermesPolicySynchronizer implements RuntimeAdapter {
   readonly runtime = 'hermes' as const;
   private displayName(): string {
-    return this.applied?.displayName ?? 'Helena';
+    return this.applied?.displayName ?? 'Ava';
   }
   private appliedRevision: string | null = null;
   // The snapshot of the applied revision, which each check applies again.
@@ -1057,7 +1057,7 @@ export class HermesPolicySynchronizer implements RuntimeAdapter {
       received,
       this.options.localFallback?.(received.model, this.defaults()) ?? null,
     );
-    process.env.VOLITION_DISPLAY_NAME = snapshot.displayName ?? 'Helena';
+    process.env.VOLITION_DISPLAY_NAME = snapshot.displayName ?? 'Ava';
     const fallback = JSON.stringify(snapshot.hermes?.fallbackModels ?? null);
     const sameRevision = snapshot.revision === this.appliedRevision;
     if (sameRevision && fallback === this.appliedFallback) return false;

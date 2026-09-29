@@ -739,7 +739,7 @@ export async function exportBundle(
 ): Promise<TemplateBundle> {
   const known = options.known;
   const license = options.license ?? known?.license ?? 'AGPL-3.0-only';
-  const author = options.author ?? known?.author ?? { name: options.productName ?? 'Helena' };
+  const author = options.author ?? known?.author ?? { name: options.productName ?? 'Ava' };
   const knownSkills = new Map((known?.skills ?? []).map((skill) => [skill.name, skill]));
   const knownAgents = new Map((known?.agents ?? []).map((agent) => [agent.name, agent]));
   const agents = await log.api<AgentRow[]>('GET', `/teams/${teamId}/ai-agents`);
@@ -832,7 +832,7 @@ export async function exportBundle(
     description:
       options.description ??
       known?.description ??
-      `Aus ${options.productName ?? 'Helena'} exportierte Agenten-Vorlagen.`,
+      `Aus ${options.productName ?? 'Ava'} exportierte Agenten-Vorlagen.`,
     license,
     author,
     skills: [...skills.values()].sort(

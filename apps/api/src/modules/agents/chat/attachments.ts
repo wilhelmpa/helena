@@ -145,7 +145,7 @@ export function imagePaths(attachments: ChatAttachment[]): string[] {
 export function questionText(
   content: string,
   attachments: ChatAttachment[] | null,
-  displayName = 'Helena',
+  displayName = 'Ava',
 ): string {
   if (!attachments || attachments.length === 0) return content;
   const lines = [content];

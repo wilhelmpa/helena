@@ -205,8 +205,7 @@ async function processEvent(
     );
     if (!sent)
       return {
-        responseText:
-          'The selected chat is unavailable. Choose the agent again in Helena settings.',
+        responseText: 'The selected chat is unavailable. Choose the agent again in settings.',
       };
     await tx
       .update(userTelegramAccount)

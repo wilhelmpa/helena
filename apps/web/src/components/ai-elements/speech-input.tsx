@@ -19,6 +19,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import {
   recognitionConstructor,
   recognitionLanguage,
+  normalizeRecognizedName,
   type BrowserRecognition,
 } from '@/utils/speechRecognition';
 
@@ -129,7 +130,7 @@ export function SpeechInput({
         if (result.isFinal) finals.current += result[0].transcript;
         else interim += result[0].transcript;
       }
-      emit(`${base.current}${finals.current}${interim}`);
+      emit(`${base.current}${normalizeRecognizedName(finals.current + interim)}`);
     };
     next.onerror = (event) => {
       setListening(false);
@@ -144,7 +145,7 @@ export function SpeechInput({
     };
     next.onend = () => {
       setListening(false);
-      emit(`${base.current}${finals.current}`);
+      emit(`${base.current}${normalizeRecognizedName(finals.current)}`);
     };
     recognition.current = next;
     try {

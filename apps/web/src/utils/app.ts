@@ -2,7 +2,7 @@ import { runtimeEnv } from './runtimeEnv';
 
 // The product name shown to users: the login panel, the passkey label in the OS
 // picker, and the account page. RuntimeEnvScript supplies the current setting.
-export const APP_NAME = runtimeEnv().displayName ?? 'Helena';
+export const APP_NAME = runtimeEnv().displayName ?? 'Ava';
 
 // The page background of each theme (globals.css --background, as hex), for the places
 // that need a literal colour before the stylesheet applies: the browser's theme-color

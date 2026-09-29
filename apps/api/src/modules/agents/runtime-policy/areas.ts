@@ -5,7 +5,7 @@ import type { AiAgentRow } from '../core/service';
 
 export function projectAreasSection(
   projects: { key: string; areas: { name: string; folder: string }[] }[],
-  displayName = 'Helena',
+  displayName = 'Ava',
 ): string {
   const lines = projects
     .filter((project) => project.areas.length > 0)
@@ -27,7 +27,7 @@ export function projectAreasSection(
 
 // The areas of the agent's projects as a SOUL.md section, so the Home agent and the
 // coordinators know where the work of each area is kept. Empty when none has an area.
-export async function areasSection(agent: AiAgentRow, displayName = 'Helena'): Promise<string> {
+export async function areasSection(agent: AiAgentRow, displayName = 'Ava'): Promise<string> {
   if (agent.projects.length === 0) return '';
   const rows = await db
     .select({

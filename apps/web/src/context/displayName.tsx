@@ -2,7 +2,7 @@
 
 import { createContext, useContext, type ReactNode } from 'react';
 
-const DisplayNameContext = createContext('Helena');
+const DisplayNameContext = createContext('Ava');
 
 export function DisplayNameProvider({ name, children }: { name: string; children: ReactNode }) {
   return <DisplayNameContext.Provider value={name}>{children}</DisplayNameContext.Provider>;

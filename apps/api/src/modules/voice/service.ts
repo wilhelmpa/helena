@@ -166,7 +166,10 @@ async function transcriptionContext(): Promise<{
     vocabularyCache = {
       at: now,
       prompt: vocabularyPrompt(settings.vocabulary, words, displayName),
-      aliases: settings.vocabularyAliases ?? suggestedAliases(words),
+      aliases: [
+        ...(settings.vocabularyAliases ?? suggestedAliases(words)),
+        ...suggestedAliases([displayName]),
+      ],
     };
   }
   return { prompt: vocabularyCache.prompt, aliases: vocabularyCache.aliases };
@@ -393,7 +396,7 @@ export async function synthesize(input: {
   // decodes.
   const body = {
     model: route.model,
-    input: text,
+    input: text.replace(/(?<![\p{L}\p{N}])Ava(?![\p{L}\p{N}])/giu, 'Eywa'),
     response_format: pcmRate ? 'pcm' : 'wav',
     ...(settings.voice && { voice: settings.voice }),
     ...(settings.speed !== 1 && { speed: settings.speed }),

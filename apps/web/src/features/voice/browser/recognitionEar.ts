@@ -1,6 +1,7 @@
 import {
   recognitionConstructor,
   recognitionLanguage,
+  normalizeRecognizedName,
   type BrowserRecognition,
 } from '@/utils/speechRecognition';
 import type { ConversationEar, EarEvents } from './vadListener';
@@ -24,7 +25,7 @@ export function startRecognitionEar(events: EarEvents): ConversationEar {
 
   const endTurn = () => {
     window.clearTimeout(timer);
-    const text = heard.trim();
+    const text = normalizeRecognizedName(heard.trim());
     heard = '';
     if (!speaking && !text) return;
     speaking = false;

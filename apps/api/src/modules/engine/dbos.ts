@@ -21,7 +21,7 @@ export function engineSchema(): string {
 
 function configure(): void {
   const url = process.env.HELENA_ENGINE_DATABASE_URL?.trim() || process.env.DATABASE_URL?.trim();
-  if (!url) throw new Error('DATABASE_URL is required for the Helena engine');
+  if (!url) throw new Error('DATABASE_URL is required for the volition engine');
   DBOS.setConfig({
     name: ENGINE_APP,
     systemDatabaseUrl: url,

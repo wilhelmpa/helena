@@ -111,7 +111,7 @@ describe('Home agent', () => {
 
     const feed = await asOwner.issues({ issueId: issue.data!.id }).feed.get({ query: {} });
     expect(feed.data!.items).toEqual(
-      expect.arrayContaining([expect.objectContaining({ actorName: 'Helena' })]),
+      expect.arrayContaining([expect.objectContaining({ actorName: 'Ava' })]),
     );
   });
 
