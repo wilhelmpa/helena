@@ -1,11 +1,11 @@
 {
   "title": "设备",
-  "description": "Syncthing 将 Helena、各项目和 Private/ 中的笔记与文件作为普通文件夹同步到你的 Mac 和手机上：在家时直接同步，外出时通过加密中继同步。",
+  "description": "Syncthing 将 {appName}、各项目和 Private/ 中的笔记与文件作为普通文件夹同步到你的 Mac 和手机上：在家时直接同步，外出时通过加密中继同步。",
   "loadError": "无法读取同步状态。",
   "ownerOnly": "只有实例所有者可以管理设备。",
   "unavailable": {
     "unconfiguredTitle": "Syncthing 尚未设置",
-    "unconfigured": "Helena 在此服务器上没有可用的 Syncthing 密钥。请安装 Debian 软件包 syncthing，并以 root 身份运行 <code>deployment/volition-stack/native/syncthing/setup.sh</code>。",
+    "unconfigured": "{appName} 在此服务器上没有可用的 Syncthing 密钥。请安装 Debian 软件包 syncthing，并以 root 身份运行 <code>deployment/volition-stack/native/syncthing/setup.sh</code>。",
     "unreachableTitle": "无法连接 Syncthing",
     "unreachable": "此服务器上未安装 Syncthing，或服务 <code>volition-syncthing</code> 未运行。"
   },
@@ -21,7 +21,7 @@
   },
   "folder": {
     "title": "同步状态",
-    "notSetUp": "Syncthing 中缺少文件夹 Helena。请在此服务器上重新运行 Syncthing 设置。",
+    "notSetUp": "Syncthing 中缺少文件夹 {appName}。请在此服务器上重新运行 Syncthing 设置。",
     "state": {
       "idle": "最新",
       "scanning": "扫描中",
@@ -44,7 +44,7 @@
     "paused": "已暂停",
     "lastSeen": "最后在线 {time}",
     "neverSeen": "尚未出现",
-    "notShared": "文件夹 Helena 未共享给此设备。",
+    "notShared": "文件夹 {appName} 未共享给此设备。",
     "remove": "移除",
     "removeTitle": "移除 {name}？",
     "removeBody": "该设备将不再与此服务器同步。设备上的文件会保留。"
@@ -54,7 +54,7 @@
     "hint": "只接受你自己的设备：被接受的设备会收到所有笔记和文件，包括 Private/。",
     "requested": "{time} 从 {address} 请求",
     "accept": "接受",
-    "accepted": "已接受 {name}。现在请在该设备上接受文件夹 Helena。"
+    "accepted": "已接受 {name}。现在请在该设备上接受文件夹 {appName}。"
   },
   "conflicts": {
     "title": "冲突",
@@ -70,11 +70,11 @@
     "step2": "在 Syncthing 中添加设备，输入此服务器的设备 ID，或扫描二维码。",
     "step2Lan": "如需在家直接同步，请将设备地址填写为 <code>{address}, dynamic</code>。",
     "step3": "随后该设备会出现在上方的“请求连接的设备”中。选择“接受”。",
-    "step4": "在设备上将文件夹 Helena 接受到名为 Helena 的文件夹：Mac 上为 <code>~/Helena</code>，Android 上为内部存储中的 <code>Helena</code>，iPhone 上为 Möbius Sync 中的“我的 iPhone”。",
-    "step5": "等待设备上的文件夹显示“最新”。笔记和文件随后就是设备上的普通文件；笔记最好在 Helena 的“笔记”中编写。",
+    "step4": "在设备上将文件夹 {appName} 接受到名为 {appName} 的文件夹：Mac 上为 <code>~/{appName}</code>，Android 上为内部存储中的 <code>{appName}</code>，iPhone 上为 Möbius Sync 中的“我的 iPhone”。",
+    "step5": "等待设备上的文件夹显示“最新”。笔记和文件随后就是设备上的普通文件；笔记最好在 {appName} 的“笔记”中编写。",
     "iphoneTitle": "iPhone",
-    "iphone": "Möbius Sync 会把文件夹 Helena 放在“我的 iPhone”中，“文件”应用会在那里显示它。只要应用保持打开或 iOS 允许其在后台运行，Möbius Sync 就会同步。",
+    "iphone": "Möbius Sync 会把文件夹 {appName} 放在“我的 iPhone”中，“文件”应用会在那里显示它。只要应用保持打开或 iOS 允许其在后台运行，Möbius Sync 就会同步。",
     "spaceTitle": "节省手机空间（可选）",
-    "space": "忽略模式只在填写它的设备上生效。如不想把邮件文件下载到手机，请在 Möbius Sync 或 Syncthing-Fork 中打开文件夹 Helena，在忽略模式中添加一行 <code>Files/Mail</code> 并保存，最好在接受文件夹后立即进行。这些文件仍保留在此服务器和其他设备上。"
+    "space": "忽略模式只在填写它的设备上生效。如不想把邮件文件下载到手机，请在 Möbius Sync 或 Syncthing-Fork 中打开文件夹 {appName}，在忽略模式中添加一行 <code>Files/Mail</code> 并保存，最好在接受文件夹后立即进行。这些文件仍保留在此服务器和其他设备上。"
   }
 }

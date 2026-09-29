@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { useDisplayName } from '@/context/displayName';
 import type { AiAgent } from '@/lib/api/endpoints/agents';
 import {
   Menu,
@@ -55,14 +56,21 @@ export default function ChatAgentMenu({
     runtimeStatus: state?.online === false ? 'offline' : agent.runtimeState.status,
   });
   const [pickerOpen, setPickerOpen] = useState(false);
+  const appName = useDisplayName();
   const currentRuntime = runtimeChoice(agent.runtimePolicy.runtime ?? 'hermes', agent.model);
   // Helena is always one click away (owner, 28.09., O41), also where a project's agent leads.
   const helena = agents.find((candidate) => candidate.agentRole === 'home');
-  const chip = agentChipLabel(agent, selectedModel ?? agent.model, answeredBy, {
-    local: (name) => t('composer.localModel', { name }),
-    fallback: (name) => t('composer.fallbackModel', { name }),
-    standard: t('composer.modelDefault'),
-  });
+  const chip = agentChipLabel(
+    agent,
+    selectedModel ?? agent.model,
+    answeredBy,
+    {
+      local: (name) => t('composer.localModel', { name }),
+      fallback: (name) => t('composer.fallbackModel', { name }),
+      standard: t('composer.modelDefault'),
+    },
+    appName,
+  );
 
   return (
     <>
@@ -104,7 +112,7 @@ export default function ChatAgentMenu({
           title={t('agents.switchToHelena')}
         >
           <Orb state="idle" size="dot" motionEnabled={motionEnabled} />
-          <span className="ds-agent-chip-label">{agentDisplayName(helena)}</span>
+          <span className="ds-agent-chip-label">{agentDisplayName(helena, appName)}</span>
         </button>
       )}
       {pickerOpen && (

@@ -1,9 +1,9 @@
 {
   "title": "Browser 2.0",
-  "homeBrowser": "Helena 浏览器",
+  "homeBrowser": "{appName} 浏览器",
   "which": "浏览器",
   "noBrowser": "没有可测试的浏览器",
-  "noBrowserHint": "这里既没有 Helena 浏览器，也没有项目浏览器。",
+  "noBrowserHint": "这里既没有 {appName} 浏览器，也没有项目浏览器。",
   "noAgents": "此浏览器的智能体都没有项目浏览器。请在智能体的工具中开启。",
   "tabs": {
     "label": "浏览器",
@@ -19,14 +19,14 @@
   },
   "connection": {
     "service": "服务",
-    "cloudNote": "Helena 交给它决定的内容（例如页面上可见的文字或一封邮件）会发送到此服务。密码和输入的值不会。",
-    "localNote": "你自己的 System One 服务器。Helena 只通过此地址访问它。",
-    "localModelNote": "兼容 OpenAI 且支持 logprobs 的服务器（llama.cpp、Halogen、vLLM）。Helena 只通过此地址访问它。",
+    "cloudNote": "{appName} 交给它决定的内容（例如页面上可见的文字或一封邮件）会发送到此服务。密码和输入的值不会。",
+    "localNote": "你自己的 System One 服务器。{appName} 只通过此地址访问它。",
+    "localModelNote": "兼容 OpenAI 且支持 logprobs 的服务器（llama.cpp、Halogen、vLLM）。{appName} 只通过此地址访问它。",
     "address": "地址",
     "model": "模型",
     "allowPrivate": "允许此本地地址",
-    "allowPrivateHint": "Helena 通常从不访问你网络中的地址。这里只允许这一个地址。",
-    "localAiKey": "地址、密钥和模型来自 Helena 的本地 AI（管理员 → 本地 AI，在那里开启“决策”）；此处无需填写。",
+    "allowPrivateHint": "{appName} 通常从不访问你网络中的地址。这里只允许这一个地址。",
+    "localAiKey": "地址、密钥和模型来自 {appName} 的本地 AI（管理员 → 本地 AI，在那里开启“决策”）；此处无需填写。",
     "key": "密钥",
     "keyHintTypesafe": "来自 console.typesafe.ai → Keys。",
     "keyHintVercel": "你的 Vercel 团队的 AI Gateway 密钥。",
@@ -40,7 +40,7 @@
     "keySourceCredential": "使用现有 API 密钥",
     "keyCredential": "原始 API 密钥凭据",
     "chooseKeyCredential": "选择 API 密钥",
-    "keyCredentialHint": "Helena 每次请求时都会从此凭据读取当前密钥。只需在那里轮换一次。只能使用本团队且属于同一项目（或整个团队）的 API 密钥。不会复制密钥，也不会向代理披露。",
+    "keyCredentialHint": "{appName} 每次请求时都会从此凭据读取当前密钥。只需在那里轮换一次。只能使用本团队且属于同一项目（或整个团队）的 API 密钥。不会复制密钥，也不会向代理披露。",
     "keySourcesLoading": "正在加载 API 密钥…",
     "keySourceUnavailable": "没有可用的匹配 API 密钥，或已保存的来源不再可访问。请选择有效来源或检查凭据。"
   },
@@ -90,12 +90,12 @@
     "modeHint": "Standard：智能体逐步点击。决策模型：智能体可将多步浏览器工作交给 browser_task。",
     "connectionHint": "在“访问与连接”→“凭据”中设置。",
     "teamHint": "显示哪个团队的连接。",
-    "overridden": "已覆盖 Helena 默认值",
-    "resetToDefault": "重置为 Helena 默认值"
+    "overridden": "已覆盖 {appName} 默认值",
+    "resetToDefault": "重置为 {appName} 默认值"
   },
   "form": {
     "goal": "任务",
-    "goalPlaceholder": "例如：搜索“Helena”并打开第一个结果",
+    "goalPlaceholder": "例如：搜索“{appName}”并打开第一个结果",
     "values": "要输入的值",
     "valuesPlaceholder": "email: max@example.com",
     "valuesHint": "每行一个，名称: 值。这些值会被输入，但绝不会发送给决策模型。",

@@ -1,6 +1,7 @@
 import { eq } from 'drizzle-orm';
 import {
   db,
+  getDisplayName,
   readModelServerKey,
   resolveLocalRoute,
   user,
@@ -251,7 +252,8 @@ export async function answerSpokenQuestion(job: SpokenAnswerJob): Promise<void> 
     return;
   }
   const request = voiceReplyRequest({
-    agentName: conversation.agentName ?? 'Helena',
+    agentName: conversation.agentName ?? (await getDisplayName()),
+    displayName: await getDisplayName(),
     personName: speaker.name,
     now: voiceReplyNow(speaker.language, new Date(), speaker.timeZone),
     language: speaker.language,

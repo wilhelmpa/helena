@@ -17,4 +17,8 @@ describe('speechText', () => {
   it('keeps inline code as plain words', () => {
     assert.equal(speechText('Nutze `bun test` dafür.'), 'Nutze bun test dafür.');
   });
+
+  it('speaks the name Ava as Eywa without changing longer words', () => {
+    assert.equal(speechText('Ava, Avatare und AVA.'), 'Eywa, Avatare und Eywa.');
+  });
 });

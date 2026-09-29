@@ -1,5 +1,6 @@
 import { existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
+import { getDisplayName } from '@repo/db';
 import { resolveText, type BundleOffer, type HelenaPlugin, type TemplateBundle } from '@helena/sdk';
 import { readBundleDir } from '@helena/sdk/bundles';
 import { checkBundle } from '@helena/sdk/server';
@@ -101,6 +102,7 @@ export async function exportTemplateBundle(
 ): Promise<TemplateBundle> {
   const log = new SyncLog(inProcessTransport(caller), { dryRun: true, update: false });
   return exportBundle(log, teamId, {
+    productName: await getDisplayName(),
     ...(options.agents?.length ? { agents: options.agents } : {}),
     ...(options.name ? { name: options.name } : {}),
     ...(options.displayName ? { displayName: options.displayName } : {}),

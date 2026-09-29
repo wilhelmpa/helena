@@ -21,7 +21,7 @@
   },
   "plugin": {
     "name": "Knowledge",
-    "description": "Helena's own knowledge sources and the Inbox and daily note capture."
+    "description": "{appName}'s own knowledge sources and the Inbox and daily note capture."
   },
   "journal": {
     "today": "Today's note"

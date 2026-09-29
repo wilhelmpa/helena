@@ -142,7 +142,11 @@ export function imagePaths(attachments: ChatAttachment[]): string[] {
 
 // The question as the agent reads it: the member's text, then the files by the path
 // the agent opens them at, then the tasks it looks up with Plan's tools.
-export function questionText(content: string, attachments: ChatAttachment[] | null): string {
+export function questionText(
+  content: string,
+  attachments: ChatAttachment[] | null,
+  displayName = 'Ava',
+): string {
   if (!attachments || attachments.length === 0) return content;
   const lines = [content];
   const files = attachments.flatMap((attachment) =>
@@ -158,12 +162,12 @@ export function questionText(content: string, attachments: ChatAttachment[] | nu
     attachment.kind === 'task' ? [attachment] : [],
   );
   if (tasks.length > 0) {
-    lines.push('', "Tasks the person refers to (read them with Helena's tools):");
+    lines.push('', `Tasks the person refers to (read them with ${displayName}'s tools):`);
     for (const task of tasks) lines.push(`- ${task.identifier} "${task.title}"`);
   }
   const page = attachments.find((attachment) => attachment.kind === 'page');
   if (page && page.kind === 'page') {
-    lines.push('', `Current Helena page: ${page.path}`);
+    lines.push('', `Current ${displayName} page: ${page.path}`);
     if (page.projectKey) lines.push(`Current project: ${page.projectKey}`);
   }
   return lines.join('\n');

@@ -404,7 +404,7 @@
     "schedule_too_frequent": "Jadwal ini berjalan lebih sering daripada yang diizinkan tim.",
     "invalid_url": "Masukkan URL yang diawali https:// atau http://.",
     "plugin_invalid": "{message}",
-    "plugin_trigger_unsupported": "Pemicu ini berjalan dengan jadwalnya sendiri, yang belum dijalankan oleh mesin Helena."
+    "plugin_trigger_unsupported": "Pemicu ini berjalan dengan jadwalnya sendiri, yang belum dijalankan oleh mesin {appName}."
   },
   "runs": {
     "status": {
@@ -574,7 +574,7 @@
     },
     "signing": {
       "title": "Kunci tanda tangan webhook",
-      "hint": "Langkah webhook menandatangani permintaannya dengan kunci ini (Standard Webhooks) agar penerima dapat memeriksa bahwa asalnya dari Helena.",
+      "hint": "Langkah webhook menandatangani permintaannya dengan kunci ini (Standard Webhooks) agar penerima dapat memeriksa bahwa asalnya dari {appName}.",
       "show": "Tampilkan",
       "hide": "Sembunyikan",
       "renew": "Perbarui",

@@ -4,7 +4,7 @@ import { act } from 'react';
 import type { Root } from 'react-dom/client';
 import { NextIntlClientProvider } from 'next-intl';
 import { JSDOM } from 'jsdom';
-import devices from '../../../../messages/de/devices.json';
+import { loadMessages } from '@/i18n/messages';
 import { RelativeTimeProvider } from '@/context/relativeTimeContext';
 import DevicesGuide from './DevicesGuide';
 
@@ -18,6 +18,7 @@ const replacedGlobals = [
 let dom: JSDOM;
 let root: Root;
 let originalGlobalDescriptors: Map<string, PropertyDescriptor | undefined>;
+const devices = (await loadMessages('de')).devices;
 
 function render(node: React.ReactNode) {
   act(() =>
@@ -62,7 +63,7 @@ describe('DevicesGuide', () => {
     render(<DevicesGuide lanAddress="tcp://192.168.2.220:22000" />);
     const codes = [...document.querySelectorAll('code')].map((code) => code.textContent);
     assert.ok(codes.includes('tcp://192.168.2.220:22000, dynamic'));
-    assert.ok(codes.includes('~/Helena'));
+    assert.ok(codes.includes('~/Ava'));
     assert.ok(codes.includes('Files/Mail'));
     assert.doesNotMatch(render(<DevicesGuide lanAddress={null} />), /dynamic/);
   });

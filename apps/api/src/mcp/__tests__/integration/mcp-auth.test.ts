@@ -1,6 +1,6 @@
 import { describe, expect, it, beforeEach } from 'bun:test';
 import { auth } from '@repo/auth';
-import { apikey, db } from '@repo/db';
+import { apikey, db, setDisplayName } from '@repo/db';
 import { eq } from 'drizzle-orm';
 import { app } from '#tests/helpers/app';
 import { resetDb } from '#tests/helpers/db';
@@ -47,7 +47,7 @@ describe('MCP transport', () => {
     }
   });
 
-  it('introduces itself as Helena with the release version', async () => {
+  it('introduces itself as Ava with the release version', async () => {
     const user = await signUpTestUser();
     const created = await auth.api.createApiKey({ body: { userId: user.userId, name: 'mcp' } });
     const response = await initialize(created.key);
@@ -56,9 +56,20 @@ describe('MCP transport', () => {
     const message = JSON.parse(text.includes('data:') ? text.split('data: ')[1]! : text);
     expect(message.result.serverInfo).toEqual({
       name: 'helena',
-      title: 'Helena',
+      title: 'Ava',
       version: pkg.version,
     });
+  });
+
+  it('introduces itself with the configured product name', async () => {
+    const user = await signUpTestUser();
+    const created = await auth.api.createApiKey({ body: { userId: user.userId, name: 'mcp' } });
+    await setDisplayName('Atlas');
+    const response = await initialize(created.key);
+    const text = await response.text();
+    const message = JSON.parse(text.includes('data:') ? text.split('data: ')[1]! : text);
+    expect(message.result.serverInfo.title).toBe('Atlas');
+    expect(message.result.instructions).toContain('Atlas');
   });
 });
 

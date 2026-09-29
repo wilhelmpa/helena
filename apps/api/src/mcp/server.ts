@@ -27,6 +27,7 @@ import { toolError } from './result';
 import { visibleConnectors } from '#modules/connectors/tools';
 import { callConfiguredTool, configuredToolsOf } from '#modules/agents/tools/run';
 import { SERVER_INFO } from './info';
+import { getDisplayName } from '@repo/db';
 
 // The path param of every team-scoped route.
 const TEAM_PARAM = 'teamId';
@@ -77,6 +78,19 @@ function refusal(status: number, text: string) {
   };
 }
 
+function brandDescriptions<T>(value: T, displayName: string): T {
+  if (Array.isArray(value)) return value.map((item) => brandDescriptions(item, displayName)) as T;
+  if (!value || typeof value !== 'object') return value;
+  return Object.fromEntries(
+    Object.entries(value).map(([key, item]) => [
+      key,
+      typeof item === 'string' && ['title', 'description', 'summary'].includes(key)
+        ? item.replaceAll('Helena', displayName)
+        : brandDescriptions(item, displayName),
+    ]),
+  ) as T;
+}
+
 // A low-level MCP Server for one request. tools/list returns the registry's tools;
 // tools/call asks the policy (@helena/sdk decide) and then runs the tool: a route tool
 // through app.handle with the caller's API key, a plugin's tool through its handler. The
@@ -89,14 +103,18 @@ export async function buildMcpServer(
   // The run an agent's runtime names on its requests (x-helena-run), for the policy log.
   context: { runId?: number | null; agentProject?: string | null } = {},
 ): Promise<Server> {
+  const displayName = await getDisplayName();
   const server = new Server(
     // `name` is the stable programmatic identifier; `title` is the human-readable
     // display name a client shows to the user (per the MCP Implementation spec).
-    SERVER_INFO,
+    { ...SERVER_INFO, title: displayName },
     // `instructions` reaches the client in the initialize response and covers what
     // no single tool description can: which tool resolves ids, how a column is
     // picked, how far a request to "work on an issue" goes.
-    { capabilities: { tools: {} }, instructions: SERVER_INSTRUCTIONS },
+    {
+      capabilities: { tools: {} },
+      instructions: SERVER_INSTRUCTIONS.replaceAll('{appName}', displayName),
+    },
   );
 
   const routes = new Map(routeTools(app).map((route) => [route.name, route]));
@@ -121,20 +139,26 @@ export async function buildMcpServer(
     tools: [...listed(), ...[...configured.values()].map((entry) => entry.tool)].map((tool) => {
       const route = routes.get(tool.name);
       // A plugin's tool without a title of its own gets its name spelled out, like a route.
-      if (!route) return { title: toolTitle(tool.name), ...toMcpTool(tool) };
-      return {
-        name: route.name,
-        title: route.title,
-        description: route.description,
-        // A caller whose team is already known does not get to name one.
-        inputSchema:
-          teamId !== null && needsTeam(route)
-            ? withoutFields(route.inputSchema, [TEAM_PARAM])
-            : route.inputSchema,
-        annotations: route.annotations,
-        outputSchema: route.outputSchema,
-        _meta: { [ACTION_META_KEY]: route.category },
-      };
+      if (!route) {
+        const listedTool = toMcpTool(tool);
+        return brandDescriptions({ title: toolTitle(tool.name), ...listedTool }, displayName);
+      }
+      return brandDescriptions(
+        {
+          name: route.name,
+          title: route.title,
+          description: route.description,
+          // A caller whose team is already known does not get to name one.
+          inputSchema:
+            teamId !== null && needsTeam(route)
+              ? withoutFields(route.inputSchema, [TEAM_PARAM])
+              : route.inputSchema,
+          annotations: route.annotations,
+          outputSchema: route.outputSchema,
+          _meta: { [ACTION_META_KEY]: route.category },
+        },
+        displayName,
+      );
     }),
   }));
 

@@ -8,6 +8,7 @@ import {
   user,
   emailSource,
   getProjectEmailConfig,
+  getDisplayName,
   type DeliveryPayload,
 } from '@repo/db';
 import { eq, inArray } from 'drizzle-orm';
@@ -193,7 +194,7 @@ export async function enqueueOutbound(
   const ref = issueRef(projectRow.key, issueRow.seq);
   const url = issueUrl(projectRow.key, issueRow.seq);
   // No person behind the event: a workflow, a routine or Helena itself changed it.
-  const actor = actorName ?? 'Helena';
+  const actor = actorName ?? (await getDisplayName());
   // One issue event, so every 'state_changed' row points at the same activity row.
   const statusActivityId =
     notifications.find((n) => n.type === 'state_changed')?.sourceActivityId ?? null;

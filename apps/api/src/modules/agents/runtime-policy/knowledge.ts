@@ -60,13 +60,14 @@ const LOOK_AT_FILE: Record<AgentRuntimeKind, string> = {
 export function knowledgeSection(
   access: VaultAccess,
   runtime: AgentRuntimeKind = 'hermes',
+  displayName = 'Ava',
 ): string {
   if (access.read.length === 0) return '';
   const relative = (absolute: string) => path.relative(access.root, absolute) || '(everything)';
   return [
     '## Knowledge',
     'The knowledge vault holds the notes and files of your projects: Markdown notes, PDFs,',
-    "scans and office files, the same files the owner reads in Helena's Docs and in his notes.",
+    `scans and office files, the same files the owner reads in ${displayName}'s Docs and in his notes.`,
     'search_knowledge searches everything you may open at once: tasks and their comments,',
     'notes and files, mail, chats and agent runs. read_knowledge reads a hit by its ref;',
     'read_document reads a note or the text of a file by its path (and names the file on',

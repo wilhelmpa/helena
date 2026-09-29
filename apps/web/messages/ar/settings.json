@@ -505,7 +505,7 @@
     "commandCopied": "الأمر اتنسخ. حط اسم مستودعك مكان owner/repo وشغّله.",
     "nativeConnections": "اتصالات مزوّدي Git",
     "nativeConnectionsRecommended": "اتصالات مزوّدي Git · موصى به",
-    "nativeConnectionsHint": "فوّض مزوّد Git، واختر المستودعات، ودع Helena يضبط خطافات الويب تلقائيًا.",
+    "nativeConnectionsHint": "فوّض مزوّد Git، واختر المستودعات، ودع {appName} يضبط خطافات الويب تلقائيًا.",
     "nativeConnectProvider": "ربط {provider}",
     "nativeNoConnections": "لم يتم ربط أي حساب مزوّد بعد. يظل الإعداد اليدوي لخطاف الويب متاحًا أدناه.",
     "nativeConnectTitle": "ربط {provider}",
@@ -543,7 +543,7 @@
     "nativeWebhookError": "يتطلب الانتباه",
     "nativeDisconnectProvider": "فصل المزوّد",
     "nativeDisconnectRepository": "فصل المستودع",
-    "nativeDisconnectConfirm": "هل تريد فصل {provider} وإزالة كل خطافات الويب التي يديرها Helena؟",
+    "nativeDisconnectConfirm": "هل تريد فصل {provider} وإزالة كل خطافات الويب التي يديرها {appName}؟",
     "nativeDisconnected": "تم فصل {provider}",
     "nativeRepositoryDisconnected": "تم فصل المستودع",
     "nativeDisconnectFailed": "تعذّر فصل التكامل.",
@@ -581,7 +581,7 @@
       },
       "blocked": {
         "label": "محظور",
-        "description": "لا وصول إلى الإنترنت. تبقى واجهة Helena البرمجية وبوابة المتصفح ونموذج الذكاء الاصطناعي الخاص بالوكيل فقط متاحة."
+        "description": "لا وصول إلى الإنترنت. تبقى واجهة {appName} البرمجية وبوابة المتصفح ونموذج الذكاء الاصطناعي الخاص بالوكيل فقط متاحة."
       }
     },
     "allowLabel": "قائمة السماح",
@@ -660,7 +660,7 @@
     "humanInputLabel": "إدخال شبيه بالبشر",
     "humanInputHint": "يكتب وينقر بفواصل زمنية شبيهة بالبشر بدلاً من أقصى سرعة. عطّله فقط لمشروع اختباري منخفض المخاطر.",
     "allowLocalLabel": "السماح بالعناوين المحلية",
-    "allowLocalHint": "يمكن للوكلاء فتح localhost والشبكة المحلية وعناوين ‎.local. اتركه معطّلًا إلا لاختبار موقع محلي: يعمل المتصفح على الخادم، حيث تصل هذه العناوين إلى Helena والمتصفحات الأخرى.",
+    "allowLocalHint": "يمكن للوكلاء فتح localhost والشبكة المحلية وعناوين ‎.local. اتركه معطّلًا إلا لاختبار موقع محلي: يعمل المتصفح على الخادم، حيث تصل هذه العناوين إلى {appName} والمتصفحات الأخرى.",
     "lockTimeoutLabel": "مهلة القفل",
     "lockTimeoutHint": "بعد مرور هذا العدد من الثواني دون أي إجراء، يتم تحرير تحكم الوكيل بالمتصفح تلقائيًا.",
     "seconds": "ثانية",
@@ -739,12 +739,12 @@
         "hint": "خوادم MCP والأدوات التي يستخدمها الوكلاء ومن يحق له استخدامها."
       },
       "mcps": {
-        "label": "Helena للتطبيقات الخارجية",
-        "hint": "كيف تصل عملاء MCP مثل Claude Desktop إلى Helena."
+        "label": "{appName} للتطبيقات الخارجية",
+        "hint": "كيف تصل عملاء MCP مثل Claude Desktop إلى {appName}."
       },
       "plugins": {
         "label": "الإضافات",
-        "hint": "إضافات Helena."
+        "hint": "إضافات {appName}."
       },
       "access": {
         "label": "الوصول والاتصالات",
@@ -848,7 +848,7 @@
       },
       "channels": {
         "label": "الإشعارات والقنوات",
-        "hint": "كيف ترسل Helena الرسائل عبر البريد و Telegram."
+        "hint": "كيف ترسل {appName} الرسائل عبر البريد و Telegram."
       }
     },
     "projectPath": "المشروع"
@@ -869,7 +869,7 @@
   },
   "execution": {
     "title": "التنفيذ",
-    "note": "تسري التغييرات فورًا. تُضبط القيم لكل المشاريع في إعدادات Helena.",
+    "note": "تسري التغييرات فورًا. تُضبط القيم لكل المشاريع في إعدادات {appName}.",
     "defaultLabel": "التنفيذ الافتراضي",
     "defaultHint": "يحدد كل وكيل بنفسه ما يعمل به في هذا المشروع.",
     "manageAgents": "إدارة الوكلاء",
@@ -903,7 +903,7 @@
     "budgetsReset": "أُعيدت الميزانيات إلى الافتراضي",
     "budgetsOverridden": "لهذا المشروع ميزانيات خاصة",
     "budgetsDefault": "مثل الافتراضي لكل المشاريع",
-    "budgetsDefaultHint": "يُضبط الافتراضي في إعدادات Helena ضمن «افتراضيات المشاريع»."
+    "budgetsDefaultHint": "يُضبط الافتراضي في إعدادات {appName} ضمن «افتراضيات المشاريع»."
   },
   "defaults": {
     "adminOnly": "لا يغيّر هذه الإعدادات الافتراضية لكل المشاريع إلا المسؤول.",
@@ -912,8 +912,8 @@
     "budgetsSaved": "حُفظت ميزانيات المشاريع الجديدة",
     "budgetsOverridden": "{count, plural, one {مشروع واحد له ميزانيات خاصة.} two {مشروعان لهما ميزانيات خاصة.} few {# مشاريع لها ميزانيات خاصة.} many {# مشروعًا لها ميزانيات خاصة.} other {# مشروع لها ميزانيات خاصة.}}",
     "budgetsNone": "تتبع جميع المشاريع هذا الافتراضي.",
-    "helenaOrdersTitle": "تعليمات دائمة لـ Helena",
-    "helenaOrdersHint": "تتبعها Helena في كل محادثة وتشغيل."
+    "helenaOrdersTitle": "تعليمات دائمة لـ {appName}",
+    "helenaOrdersHint": "تتبعها {appName} في كل محادثة وتشغيل."
   },
   "uiGallery": {
     "sample": "Sample text",
@@ -956,9 +956,9 @@
     "emptySentence": "Nothing here yet. Create the first one.",
     "light": "Light",
     "dark": "Dark",
-    "agentChip": "Helena · Flash (محلي)",
+    "agentChip": "{appName} · Flash (محلي)",
     "statusBox": "قيد التنفيذ",
-    "ladderTop": "نشر Helena"
+    "ladderTop": "نشر {appName}"
   },
   "organization": {
     "label": "المؤسسة",
@@ -1008,7 +1008,7 @@
     "projectionRebuildAction": "إعادة البناء",
     "projectionRebuilt": "{projected} إيصالات كملاحظات، {changed} تغيّرت",
     "bankAccounts": "الحسابات المصرفية",
-    "bankAccountsHint": "تطابق Helena الإيصالات مع هذه الحسابات. استورد الكشوف هنا أو من الإيصالات › جديد.",
+    "bankAccountsHint": "تطابق {appName} الإيصالات مع هذه الحسابات. استورد الكشوف هنا أو من الإيصالات › جديد.",
     "agentExport": "الوكلاء كملاحظات",
     "agentExportRow": "وكلاء هذا المشروع",
     "agentExportHint": "الدور والنموذج والمهارات والميزانيات لكل وكيل كملاحظة للقراءة فقط ضمن المستندات › Agenten مع عرض. تبقى التعليمات وبيانات الاعتماد خارجها؛ تعديل الملاحظات لا يغيّر شيئًا.",

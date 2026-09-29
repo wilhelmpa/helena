@@ -35,7 +35,7 @@
     "stateChanged": "{who} ha cambiado el estado de {from} a {to}",
     "stateChangedPlain": "{who} ha cambiado el estado",
     "approval_requested": "{who} solicita tu aprobación",
-    "automation": "Helena"
+    "automation": "{appName}"
   },
   "hub": {
     "scopeProject": "Este proyecto",
@@ -56,9 +56,9 @@
     "reset": "Restablecer filtros"
   },
   "owner": {
-    "home": "HELENA",
+    "home": "{appNameUpper}",
     "anAgent": "Un agente",
-    "defaultAgent": "Helena",
+    "defaultAgent": "{appName}",
     "mentionedBy": "{name} te ha mencionado",
     "approvalRequest": "{name} solicita una decisión.",
     "workflowWaiting": "Este flujo de trabajo espera tu decisión.",

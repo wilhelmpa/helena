@@ -156,6 +156,9 @@
     "joined": "beigetreten am {date}"
   },
   "general": {
+    "displayName": "Produktname",
+    "displayNameHint": "Der Name in der Oberfläche, in E-Mails und beim Installieren.",
+    "displayNameSaved": "Produktname gespeichert.",
     "about": "Info",
     "saved": "Projektvorgaben gespeichert",
     "projectDefaults": "Projektvorgaben",
@@ -171,7 +174,7 @@
     "timezoneServer": "Die des Servers verwenden",
     "savedTimezone": "Zeitzone gespeichert.",
     "autopilotDefault": "Standard-Autopilot-Stufe",
-    "autopilotDefaultHint": "Gilt für neue Projekte und Helena-Agenten ohne eigene Stufe. Bestehende Projekt- und Agenteneinstellungen bleiben erhalten."
+    "autopilotDefaultHint": "Gilt für neue Projekte und {appName}-Agenten ohne eigene Stufe. Bestehende Projekt- und Agenteneinstellungen bleiben erhalten."
   },
   "authentication": {
     "saved": "Authentifizierungseinstellungen gespeichert",
@@ -359,7 +362,7 @@
       "runner": "Laufzeit-Runner",
       "provisioning": "Provisionierung",
       "worker": "Worker",
-      "engine": "Helena-Motor"
+      "engine": "{appName}-Motor"
     },
     "seen": "vor {time} gesehen",
     "lastSeen": "zuletzt vor {time} gesehen",
@@ -419,9 +422,9 @@
   },
   "plugins": {
     "externalTitle": "Externe Plugins",
-    "externalDescription": "Ein externes Plugin läuft in Helena mit Helenas Rechten. Nur für Plugins einschalten, denen du vertraust.",
+    "externalDescription": "Ein externes Plugin läuft in {appName} mit {appName}s Rechten. Nur für Plugins einschalten, denen du vertraust.",
     "folder": "Plugin-Ordner: {path}",
-    "noFolder": "Kein Plugin-Ordner gesetzt (HELENA_PLUGINS_DIR), daher laufen nur Helenas eigene Plugins.",
+    "noFolder": "Kein Plugin-Ordner gesetzt (HELENA_PLUGINS_DIR), daher laufen nur {appName}s eigene Plugins.",
     "restartHint": "Änderungen gelten nach einem Neustart von API und Worker.",
     "foundTitle": "Im Plugin-Ordner",
     "none": "Keine Plugins gefunden.",
@@ -439,7 +442,7 @@
     "credentials": "Seine Werkzeuge nutzen die Zugangsdaten seiner Connectoren.",
     "names": {
       "integrations": "Integrationen",
-      "mcp": "Helena-MCP-Werkzeuge",
+      "mcp": "{appName}-MCP-Werkzeuge",
       "webhooks": "Webhooks",
       "bundles": "Vorlagen-Pakete",
       "limits": "Limits",
@@ -463,7 +466,7 @@
     },
     "loadFailed": "Die Erweiterungen ließen sich nicht laden.",
     "installedTitle": "Installiert",
-    "installedDescription": "Was Helena gerade geladen hat, mit Version und Status. Einstellungen einer Erweiterung für ein Projekt stehen in dessen Einstellungen unter Erweiterungen.",
+    "installedDescription": "Was {appName} gerade geladen hat, mit Version und Status. Einstellungen einer Erweiterung für ein Projekt stehen in dessen Einstellungen unter Erweiterungen.",
     "externalSwitch": "Externe Plugins laden",
     "restartTitle": "Neustart",
     "inProjects": "Eingestellt in",

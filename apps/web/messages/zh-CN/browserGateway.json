@@ -35,7 +35,7 @@
     "never": "从不（始终开启）",
     "alwaysOnTitle": "始终开启",
     "alwaysOnFor": "让 {name} 的浏览器始终开启",
-    "home": "Helena",
+    "home": "{appName}",
     "state": {
       "running": "运行中",
       "starting": "正在启动…",

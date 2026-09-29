@@ -24,18 +24,18 @@
     "methodTabsAria": "Connection method",
     "method": "OAuth",
     "personalKey": "API key",
-    "description": "Use this for any MCP client that supports OAuth, such as ChatGPT or Claude. You sign in with your Helena account. The client never receives an API key.",
+    "description": "Use this for any MCP client that supports OAuth, such as ChatGPT or Claude. You sign in with your {appName} account. The client never receives an API key.",
     "discovery": "OAuth discovery",
     "steps": {
       "add": "Add an MCP app in your client.",
       "paste": "Paste the MCP endpoint.",
       "choose": "Choose OAuth when the client asks how to sign in.",
-      "signIn": "Sign in to Helena and approve access."
+      "signIn": "Sign in to {appName} and approve access."
     },
-    "security": "OAuth uses PKCE (S256), dynamic client registration, and access tokens scoped to your Helena account.",
+    "security": "OAuth uses PKCE (S256), dynamic client registration, and access tokens scoped to your {appName} account.",
     "consent": {
-      "title": "Authorize Helena",
-      "description": "Allow this MCP client to act with the permissions of your Helena account.",
+      "title": "Authorize {appName}",
+      "description": "Allow this MCP client to act with the permissions of your {appName} account.",
       "missingCode": "This authorization request is missing its consent code.",
       "cancel": "Cancel",
       "pending": "Authorizing…",

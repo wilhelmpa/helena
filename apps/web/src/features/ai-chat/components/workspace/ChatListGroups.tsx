@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { useTranslations } from 'next-intl';
 import { Folder, MessagesSquare } from 'lucide-react';
+import { useDisplayName } from '@/context/displayName';
 import type { ChatListView } from '@/lib/api/endpoints/agentChat';
 import { EmptyState } from '@/design-system';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -64,6 +65,7 @@ export default function ChatListGroups({
   onThreadRemoved,
 }: ChatListGroupsProps) {
   const t = useTranslations('chatWorkspace');
+  const appName = useDisplayName();
   const query = useChatList({ projectKey: projectKey ?? undefined, q, view });
   const chats = chatsOf(query.data);
   const { folders } = useChatFoldersContext();
@@ -78,11 +80,11 @@ export default function ChatListGroups({
         : withFolders(
             grouping === 'time'
               ? groupChats(chats, new Date())
-              : groupChatsBy(chats, grouping, 'Helena'),
+              : groupChatsBy(chats, grouping, appName),
             chats,
             shownFolders,
           ),
-    [chats, q, grouping, t, shownFolders],
+    [chats, q, grouping, t, shownFolders, appName],
   );
   const sentinelRef = useRef<HTMLDivElement>(null);
 

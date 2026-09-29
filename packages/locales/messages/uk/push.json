@@ -41,7 +41,7 @@
     "noTask": "Запуск не вдався."
   },
   "test": {
-    "title": "Helena",
+    "title": "{appName}",
     "body": "Push-сповіщення працюють на цьому пристрої."
   },
   "subjects": {

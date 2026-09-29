@@ -43,7 +43,7 @@
   },
   "review": {
     "emptyTitle": "Nada que revisar",
-    "emptyHint": "Aquí esperan las asignaciones de las que Helena no estaba lo bastante segura.",
+    "emptyHint": "Aquí esperan las asignaciones de las que {appName} no estaba lo bastante segura.",
     "score": "Reglas",
     "confidence": "IA",
     "confirm": "Asignar",
@@ -75,7 +75,7 @@
   },
   "matched": {
     "emptyTitle": "Todavía no hay nada asignado",
-    "emptyHint": "Sube justificantes e importa un extracto bancario, y Helena los asigna.",
+    "emptyHint": "Sube justificantes e importa un extracto bancario, y {appName} los asigna.",
     "unmatch": "Quitar la asignación"
   },
   "accounts": {

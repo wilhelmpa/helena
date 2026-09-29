@@ -164,8 +164,8 @@
   "sortDefault": "Own order",
   "why": {
     "label": "Why",
-    "choose": "Choose a Helena goal",
-    "none": "Serves no Helena goal yet.",
+    "choose": "Choose a {appName} goal",
+    "none": "Serves no {appName} goal yet.",
     "noneOption": "No goal"
   }
 }

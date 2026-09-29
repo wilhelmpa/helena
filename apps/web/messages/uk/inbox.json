@@ -35,7 +35,7 @@
     "stateChanged": "{who} змінив(ла) статус з {from} на {to}",
     "stateChangedPlain": "{who} змінив(ла) статус",
     "approval_requested": "{who} просить вашого погодження",
-    "automation": "Helena"
+    "automation": "{appName}"
   },
   "hub": {
     "scopeProject": "Цей проєкт",
@@ -56,9 +56,9 @@
     "reset": "Скинути фільтри"
   },
   "owner": {
-    "home": "HELENA",
+    "home": "{appNameUpper}",
     "anAgent": "Агент",
-    "defaultAgent": "Helena",
+    "defaultAgent": "{appName}",
     "mentionedBy": "{name} згадав вас",
     "approvalRequest": "{name} просить ухвалити рішення.",
     "workflowWaiting": "Цей процес очікує на ваше рішення.",

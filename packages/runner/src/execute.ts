@@ -1,4 +1,5 @@
 import { spawn } from 'node:child_process';
+import { runnerDisplayName } from './display-name';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -336,7 +337,7 @@ export function assertCodexSandbox(
   const isolated = isolationEnabled() && config.isolation !== undefined;
   if (!isolated && codexWithoutSandbox(argv)) {
     throw new Error(
-      "Codex runs without its sandbox only inside Helena's agent isolation; this agent is not isolated",
+      `Codex runs without its sandbox only inside ${runnerDisplayName()}'s agent isolation; this agent is not isolated`,
     );
   }
 }

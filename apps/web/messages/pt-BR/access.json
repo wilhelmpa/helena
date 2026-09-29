@@ -22,12 +22,12 @@
     "deleteClient": "Excluir cliente OAuth",
     "deleteClientMessage": "Excluir {name}? As contas não poderão mais entrar com ele.",
     "engine": {
-      "helena": "Helena",
+      "helena": "{appName}",
       "gog": "gog"
     },
     "engineHint": {
-      "helena": "A Helena guarda o login criptografado e chama o Google com as bibliotecas do próprio Google.",
-      "gog": "O login fica no chaveiro do gog neste servidor; a Helena o alcança pelo broker. Sem caixa na caixa de entrada."
+      "helena": "A {appName} guarda o login criptografado e chama o Google com as bibliotecas do próprio Google.",
+      "gog": "O login fica no chaveiro do gog neste servidor; a {appName} o alcança pelo broker. Sem caixa na caixa de entrada."
     },
     "status": {
       "ok": "Conectada",
@@ -51,11 +51,11 @@
     "checked": "{email} verificada",
     "editServices": "Serviços",
     "signInAgain": "Entrar de novo",
-    "moveToHelena": "Assumir na Helena",
+    "moveToHelena": "Assumir na {appName}",
     "remove": "Remover conta",
     "removeMessage": "Remover {email}? Os agentes perdem o acesso na hora; os e-mails importados ficam até você excluir a caixa.",
     "removeFromGog": "Remover também o login do gog",
-    "inGog": "No gog, ainda não na Helena",
+    "inGog": "No gog, ainda não na {appName}",
     "inGogHint": "O gog guarda um login para estas contas. Mostrar não move nenhum token.",
     "adopt": "Mostrar",
     "adopted": "{email} é mostrada",
@@ -75,12 +75,12 @@
   "signIn": {
     "title": "Conectar conta Google",
     "againTitle": "Entrar de novo em {email}",
-    "moveTitle": "Assumir {email} na Helena",
+    "moveTitle": "Assumir {email} na {appName}",
     "engine": "Login guardado por",
     "client": "Cliente OAuth",
     "noClient": "Importe primeiro um cliente OAuth.",
     "email": "Endereço",
-    "emailHint": "Necessário para o gog; na Helena o Google pré-seleciona a conta.",
+    "emailHint": "Necessário para o gog; na {appName} o Google pré-seleciona a conta.",
     "services": "Serviços",
     "scope": "Pertence a",
     "start": "Continuar",
@@ -88,7 +88,7 @@
     "copyLink": "Copiar link",
     "linkCopied": "Link copiado",
     "pasteStep": "Depois de entrar, o navegador termina numa página que não carrega (127.0.0.1). Copie o endereço completo dessa página e cole aqui.",
-    "callbackStep": "Entre no Google; a Helena conclui sozinha e volta para cá.",
+    "callbackStep": "Entre no Google; a {appName} conclui sozinha e volta para cá.",
     "redirect": "Endereço dessa página",
     "finish": "Concluir",
     "connected": "{email} conectada",
@@ -98,7 +98,7 @@
     "title": "Serviços de {email}",
     "hint": "Um serviço desligado não fica disponível para nenhum agente.",
     "needsSignIn": "precisa entrar de novo",
-    "gogNoMail": "Uma conta guardada no gog não tem caixa na Helena. Assuma-a na Helena para a caixa de entrada.",
+    "gogNoMail": "Uma conta guardada no gog não tem caixa na {appName}. Assuma-a na {appName} para a caixa de entrada.",
     "saved": "Serviços salvos"
   },
   "mailbox": {
@@ -183,13 +183,13 @@
   "mcp": {
     "kind": "Servidor MCP (OAuth)",
     "kindPlural": "Servidores MCP (OAuth)",
-    "kindHint": "Um servidor MCP que entra com OAuth. A Helena guarda o token; a biblioteca de servidores MCP o envia como cabeçalho Authorization.",
+    "kindHint": "Um servidor MCP que entra com OAuth. A {appName} guarda o token; a biblioteca de servidores MCP o envia como cabeçalho Authorization.",
     "title": "Conectar um servidor MCP",
     "againTitle": "Entrar de novo em {name}",
     "serverUrl": "Endereço do servidor",
     "label": "Nome",
     "scope": "Scopes (opcional)",
-    "hint": "A Helena encontra o login do servidor, registra-se nele e pede que você entre. Depois escolha esta conexão como cabeçalho Authorization do servidor em Servidores MCP.",
+    "hint": "A {appName} encontra o login do servidor, registra-se nele e pede que você entre. Depois escolha esta conexão como cabeçalho Authorization do servidor em Servidores MCP.",
     "open": "Entrar no servidor",
     "connected": "Servidor MCP conectado",
     "signIn": "Entrar de novo",

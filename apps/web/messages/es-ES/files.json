@@ -41,10 +41,10 @@
     "folder": "Esta carpeta está vacía.",
     "folderHint": "Suelta archivos aquí o usa Subir.",
     "filter": "Ninguna entrada coincide con «{filter}».",
-    "readOnly": "Helena muestra esta carpeta en solo lectura."
+    "readOnly": "{appName} muestra esta carpeta en solo lectura."
   },
   "unreadable": {
-    "title": "Helena no puede leer esta carpeta",
+    "title": "{appName} no puede leer esta carpeta",
     "body": "El espacio de trabajo pertenece al usuario de los agentes en el servidor. Ábrelo en VS Code.",
     "missing": "Esta carpeta no existe en el servidor."
   },
@@ -128,7 +128,7 @@
     "content": "Contenido del archivo",
     "reload": "Recargar",
     "discard": "¿Descartar el borrador sin guardar?",
-    "editor": "Editor de Helena",
+    "editor": "Editor de {appName}",
     "preview": "Vista previa",
     "searching": "Buscando archivos…",
     "searchError": "Búsqueda no disponible o acceso denegado.",
@@ -247,7 +247,7 @@
     "agent": "Agente",
     "manual": "Manual",
     "all": "Todos",
-    "systemHint": "Creado por Helena (recibos, adjuntos de correo, exportaciones)",
+    "systemHint": "Creado por {appName} (recibos, adjuntos de correo, exportaciones)",
     "agentHint": "Creado por un agente",
     "manualHint": "Creado o subido por una persona",
     "label": "Origen"
@@ -256,7 +256,7 @@
     "loading": "Cargando vista …",
     "readFailed": "No se pudo leer la vista.",
     "rowsFailed": "No se pudieron cargar las filas de la vista.",
-    "unsupported": "Esta vista usa una expresión que Helena aún no evalúa",
+    "unsupported": "Esta vista usa una expresión que {appName} aún no evalúa",
     "views": "Vistas",
     "filter": "Filtrar filas",
     "count": "{count, plural, one {# nota} other {# notas}}",

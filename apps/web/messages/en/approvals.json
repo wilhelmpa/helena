@@ -1,6 +1,6 @@
 {
-  "hint": "Agents ask here before they send, publish, pay or delete something outside Helena, and workflows wait here at their approval gate. Your decision and your note start the next step.",
-  "projectHint": "Agents ask here before they send, publish, pay or delete something outside Helena for this project, and its workflows wait here at their approval gate.",
+  "hint": "Agents ask here before they send, publish, pay or delete something outside {appName}, and workflows wait here at their approval gate. Your decision and your note start the next step.",
+  "projectHint": "Agents ask here before they send, publish, pay or delete something outside {appName} for this project, and its workflows wait here at their approval gate.",
   "pending": "Pending",
   "decided": "Decided",
   "filterProject": "Filter by project",
@@ -10,7 +10,7 @@
     "decided": "No decisions yet"
   },
   "emptyHint": {
-    "pending": "When an agent asks before acting outside Helena, the request appears here.",
+    "pending": "When an agent asks before acting outside {appName}, the request appears here.",
     "decided": "Approved and rejected requests appear here."
   },
   "kind": {

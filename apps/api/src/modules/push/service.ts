@@ -2,7 +2,7 @@ import { isIP } from 'node:net';
 import { and, asc, count, eq, sql } from 'drizzle-orm';
 import { toLocale } from '@helena/locales';
 import { formatPush } from '@helena/locales/push';
-import { db, helenaPushPresence, helenaPushSubscription } from '@repo/db';
+import { db, getDisplayName, helenaPushPresence, helenaPushSubscription } from '@repo/db';
 import {
   forgetDevice,
   recordDeviceResult,
@@ -304,7 +304,7 @@ export async function sendTest(userId: string, id: number): Promise<TestResult> 
   const row = await ownDevice(userId, id);
   const result = await sendWebPush(row, {
     category: 'test',
-    title: formatPush(row.locale, 'test.title'),
+    title: formatPush(row.locale, 'test.title', { appName: await getDisplayName() }),
     body: formatPush(row.locale, 'test.body'),
     url: notificationSettingsPath(),
     tag: 'test',

@@ -1,4 +1,5 @@
 import { ROUTER_CLASS } from '#modules/decisions/classes';
+import { getDisplayName } from '@repo/db';
 import { ROUTER_TIERS, routerQuestions, type RouterTier } from '#modules/decisions/questions';
 import { classSetting, decide } from '#modules/decisions/service';
 import { routerConfig } from './service';
@@ -86,11 +87,12 @@ export async function routePrompt(input: {
   const model = CLAUDE_ALIASES[ROUTER_TIERS.includes(tier) ? tier : sessionTier];
   // Factual, not imperative (Claude Code's hook guidance): the standing rule for what to do
   // with it lives in the owner's CLAUDE.md, which the installer offers to add.
+  const displayName = await getDisplayName();
   const note = delegate
-    ? `Helena model router: this request looks like ${tier} work (confidence ${pct(route.confidence)}) ` +
+    ? `${displayName} model router: this request looks like ${tier} work (confidence ${pct(route.confidence)}) ` +
       `and does not depend on the earlier conversation (${pct(needsContext)}). ` +
       `A subagent with model "${model}" is expected to handle it well; the session model is ${sessionModel}.`
-    : `Helena model router: ${sessionModel} stays for this request ` +
+    : `${displayName} model router: ${sessionModel} stays for this request ` +
       `(rated ${tier}, confidence ${pct(route.confidence)}, depends on context ${pct(needsContext)}).`;
   return {
     decision: delegate ? 'delegate' : 'handle',

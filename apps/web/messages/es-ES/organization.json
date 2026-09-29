@@ -50,7 +50,7 @@
     "exportTemplate": "Exportar como plantilla",
     "exported": "Plantilla guardada: {file}",
     "importTemplate": "Importar departamento desde plantilla",
-    "importTemplateHint": "Elige un archivo de plantilla. Helena comprueba primero qué cambiaría y solo escribe cuando importas.",
+    "importTemplateHint": "Elige un archivo de plantilla. {appName} comprueba primero qué cambiaría y solo escribe cuando importas.",
     "templateChooseFile": "Elegir archivo de plantilla",
     "templateFile": "Archivo: {name}",
     "templateNotJson": "El archivo no es una plantilla válida.",
@@ -237,7 +237,7 @@
         "review": "El coordinador revisa los resultados.",
         "synchronize": "El resumen y las evidencias se escriben en la tarea, que pasa a Revisión o Hecho."
       },
-      "route": "Si las etiquetas de la tarea coinciden con las capacidades de un solo especialista, o el proyecto solo tiene uno, Helena omite el plan y asigna la tarea directamente."
+      "route": "Si las etiquetas de la tarea coinciden con las capacidades de un solo especialista, o el proyecto solo tiene uno, {appName} omite el plan y asigna la tarea directamente."
     },
     "usage": {
       "title": "Consumo de tokens",
@@ -278,7 +278,7 @@
     "projectDefault": "Predeterminado del proyecto",
     "noLimit": "Sin límite",
     "none": "Ninguno",
-    "home": "HELENA · MASTER",
+    "home": "{appNameUpper} · MASTER",
     "coordinator": "COORDINADOR",
     "reviewer": "REVISOR",
     "specialist": "ESPECIALISTA",
@@ -348,6 +348,6 @@
     "add": "Añadir",
     "added": "Añadido a {project}",
     "failed": "No se pudo añadir el miembro.",
-    "keyOnce": "La copia se ejecuta fuera de Helena: copia su clave ahora, solo se muestra una vez."
+    "keyOnce": "La copia se ejecuta fuera de {appName}: copia su clave ahora, solo se muestra una vez."
   }
 }

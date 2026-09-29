@@ -41,7 +41,7 @@
     "noTask": "一次运行失败了。"
   },
   "test": {
-    "title": "Helena",
+    "title": "{appName}",
     "body": "此设备上的推送通知正常工作。"
   },
   "subjects": {

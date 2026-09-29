@@ -95,7 +95,7 @@
       "auto": "Automatisch"
     },
     "project": "Projekt",
-    "projectHint": "Das Projekt vorschlagen, oder Mail unter Helena gleich dorthin verschieben.",
+    "projectHint": "Das Projekt vorschlagen, oder Mail unter {appName} gleich dorthin verschieben.",
     "task": "Aufgabe",
     "taskHint": "Wenn eine Mail um etwas bittet: eine Aufgabe in ihrem Projekt vorschlagen oder anlegen.",
     "agent": "An einen Agenten geben",

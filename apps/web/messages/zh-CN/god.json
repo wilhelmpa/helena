@@ -156,6 +156,9 @@
     "joined": "加入于 {date}"
   },
   "general": {
+    "displayName": "产品名称",
+    "displayNameHint": "应用、邮件和安装界面中显示的名称。",
+    "displayNameSaved": "产品名称已保存。",
     "about": "关于",
     "saved": "项目默认设置已保存",
     "projectDefaults": "项目默认设置",
@@ -359,7 +362,7 @@
       "runner": "运行环境 Runner",
       "provisioning": "资源配置",
       "worker": "Worker",
-      "engine": "Helena 引擎"
+      "engine": "{appName} 引擎"
     },
     "seen": "{time}前在线",
     "lastSeen": "最后一次在线于{time}前",
@@ -419,9 +422,9 @@
   },
   "plugins": {
     "externalTitle": "外部插件",
-    "externalDescription": "外部插件在 Helena 内部以 Helena 的权限运行。只为你信任的插件开启。",
+    "externalDescription": "外部插件在 {appName} 内部以 {appName} 的权限运行。只为你信任的插件开启。",
     "folder": "插件文件夹：{path}",
-    "noFolder": "未设置插件文件夹（HELENA_PLUGINS_DIR），因此只运行 Helena 自带的插件。",
+    "noFolder": "未设置插件文件夹（HELENA_PLUGINS_DIR），因此只运行 {appName} 自带的插件。",
     "restartHint": "更改在 API 和 worker 重启后生效。",
     "foundTitle": "插件文件夹中",
     "none": "未找到插件。",
@@ -439,7 +442,7 @@
     "credentials": "其工具使用其连接器的凭据。",
     "names": {
       "integrations": "集成",
-      "mcp": "Helena MCP 工具",
+      "mcp": "{appName} MCP 工具",
       "webhooks": "Webhook",
       "bundles": "模板包",
       "limits": "限额",
@@ -463,7 +466,7 @@
     },
     "loadFailed": "无法加载扩展。",
     "installedTitle": "已安装",
-    "installedDescription": "Helena 当前已加载的内容及其版本和状态。扩展针对某个项目的设置位于该项目设置中的“扩展”下。",
+    "installedDescription": "{appName} 当前已加载的内容及其版本和状态。扩展针对某个项目的设置位于该项目设置中的“扩展”下。",
     "externalSwitch": "加载外部插件",
     "restartTitle": "重启",
     "inProjects": "已在以下项目设置",

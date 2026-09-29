@@ -41,7 +41,7 @@
     "noTask": "فشل أحد التشغيلات."
   },
   "test": {
-    "title": "Helena",
+    "title": "{appName}",
     "body": "الإشعارات الفورية تعمل على هذا الجهاز."
   },
   "subjects": {

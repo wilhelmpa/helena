@@ -1,5 +1,6 @@
 import {
   db,
+  getDisplayName,
   agentChatCatalog,
   agentChatEvent,
   agentChatFavorite,
@@ -905,6 +906,7 @@ export async function spokenConversation(
   agentName: string | null;
 }> {
   const history = await readBranch(threadId, answerId);
+  const displayName = await getDisplayName();
   const [answer] = await db
     .select({ agentName: user.name, agentId: agentChatMessage.agentId })
     .from(agentChatMessage)
@@ -914,7 +916,7 @@ export async function spokenConversation(
   return {
     turns: history.map((turn) => ({
       role: turn.role === 'user' ? 'user' : 'assistant',
-      text: questionText(turn.content, turn.attachments as ChatAttachment[] | null),
+      text: questionText(turn.content, turn.attachments as ChatAttachment[] | null, displayName),
       mine: turn.role === 'assistant' && turn.agentId === answer?.agentId,
     })),
     agentName: answer?.agentName ?? null,
@@ -1116,7 +1118,7 @@ async function claimMessage(agent: RunnerAgent): Promise<ClaimedChat | null> {
   const sessionId = await resumableSession(row.threadId, history.slice(0, lastOwn + 1), agent.id);
   const attachments = (question?.attachments as ChatAttachment[] | null) ?? [];
   const spoken = question?.via === 'voice';
-  const text = questionText(question?.content ?? '', attachments);
+  const text = questionText(question?.content ?? '', attachments, await getDisplayName());
   // A spoken turn of a thread that follows the agent is answered with the model the owner set
   // for conversations (Lokale KI → Sprache), where he set one.
   const voiceModel = spoken && !row.model ? await spokenModel(agent.id) : null;
@@ -1188,7 +1190,10 @@ async function claimMessage(agent: RunnerAgent): Promise<ClaimedChat | null> {
   return {
     id: row.id,
     threadId: row.threadId,
-    prompt: earlier.length > 0 ? frameChatPrompt(earlier, asked, agent.id) : asked,
+    prompt:
+      earlier.length > 0
+        ? frameChatPrompt(earlier, asked, agent.id, await getDisplayName())
+        : asked,
     systemPrompt: await activeOrderContext(row.projectId, agent.id),
     attempts: row.attempts,
     sessionId,
@@ -1385,7 +1390,12 @@ async function validateChatSettings(
 
 // The earlier turns ahead of the question, for a session that does not hold them. An
 // answer another agent gave is named by that agent.
-function frameChatPrompt(history: BranchTurn[], question: string, agentId: number): string {
+function frameChatPrompt(
+  history: BranchTurn[],
+  question: string,
+  agentId: number,
+  displayName: string,
+): string {
   const lines = ['Earlier in this conversation:', ''];
   for (const turn of history) {
     // An answer Helena's voice reply gave in the agent's name (modules/voice/reply.ts).
@@ -1398,7 +1408,7 @@ function frameChatPrompt(history: BranchTurn[], question: string, agentId: numbe
             ? 'You'
             : turn.agentName;
     lines.push(
-      `${speaker}: ${questionText(turn.content, turn.attachments as ChatAttachment[] | null)}`,
+      `${speaker}: ${questionText(turn.content, turn.attachments as ChatAttachment[] | null, displayName)}`,
       '',
     );
   }

@@ -98,7 +98,7 @@
     "unreachable": "Inacessível",
     "keys": {
       "file": "Chave de arquivo",
-      "stored": "Chave salva no Helena",
+      "stored": "Chave salva no {appName}",
       "none": "Sem chave",
       "invalid": "Arquivo de chave não permitido"
     },
@@ -247,7 +247,7 @@
       "title": "Listen for “Ava”",
       "hint": "The microphone stays open while a chat page is open. Before “Ava”, only on-device recognition processes your voice; nothing is saved.",
       "availability": "On-device recognition",
-      "availabilityHint": "Works only if the browser already has a German offline speech pack. Helena does not download one."
+      "availabilityHint": "Works only if the browser already has a German offline speech pack. {appName} does not download one."
     },
     "title": "Voz no chat",
     "loading": "Carregando …",
@@ -262,22 +262,22 @@
     },
     "pause": {
       "title": "Pausa antes da resposta",
-      "hint": "Quanto tempo você precisa ficar em silêncio até a Helena enviar sua frase. Mais curta responde mais rápido, mais longa interrompe você menos.",
+      "hint": "Quanto tempo você precisa ficar em silêncio até a {appName} enviar sua frase. Mais curta responde mais rápido, mais longa interrompe você menos.",
       "option": "{seconds} s"
     },
     "words": {
-      "title": "Palavras que a Helena deve conhecer",
+      "title": "Palavras que a {appName} deve conhecer",
       "hint": "Nomes, produtos e termos, para o reconhecimento de fala escrevê-los certo. Ela já conhece: {words}.",
       "placeholder": "ex.: contador Müller, Shopify, Kubernetes",
       "save": "Salvar palavras"
     },
     "voice": {
       "title": "Voz",
-      "hint": "A voz local com que a Helena responde numa conversa (IA local → “Ler em voz alta”).",
+      "hint": "A voz local com que a {appName} responde numa conversa (IA local → “Ler em voz alta”).",
       "default": "Voz padrão do servidor",
       "none": "Ainda não há voz local – até lá o navegador lê.",
       "preview": "Ouvir",
-      "sample": "Oi, eu sou a Helena. É assim que eu soo numa conversa – é só dizer o que você precisa.",
+      "sample": "Oi, eu sou a {appName}. É assim que eu soo numa conversa – é só dizer o que você precisa.",
       "previewFailed": "Não foi possível tocar a voz."
     },
     "model": {

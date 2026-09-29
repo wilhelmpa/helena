@@ -30,7 +30,7 @@
     },
     "server": {
       "label": "Serveur",
-      "description": "La machine sur laquelle Helena tourne : disques et RAID, sauvegardes, puissance et ventilateurs."
+      "description": "La machine sur laquelle {appName} tourne : disques et RAID, sauvegardes, puissance et ventilateurs."
     },
     "authentication": {
       "label": "Authentification",
@@ -74,7 +74,7 @@
     },
     "plugins": {
       "label": "Plugins",
-      "description": "Les plugins intégrés de Helena et les plugins externes du dossier des plugins : ce qu'ils fournissent, les droits qu'ils demandent et ceux qui peuvent s'exécuter."
+      "description": "Les plugins intégrés de {appName} et les plugins externes du dossier des plugins : ce qu'ils fournissent, les droits qu'ils demandent et ceux qui peuvent s'exécuter."
     },
     "model-prices": {
       "label": "Prix des modèles",
@@ -82,7 +82,7 @@
     },
     "updates": {
       "label": "Mises à jour",
-      "description": "Ce qu’utilise Helena, les nouvelles versions, ce qu’elles changent, et la mise à jour."
+      "description": "Ce qu’utilise {appName}, les nouvelles versions, ce qu’elles changent, et la mise à jour."
     },
     "local-ai": {
       "label": "IA locale",

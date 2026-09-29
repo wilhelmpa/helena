@@ -19,7 +19,7 @@
   "readFailed": "The host helper did not answer. It may not be running right now.",
   "unavailable": {
     "title": "Nothing to manage here",
-    "noHelper": "Helena runs without the host helper (in a container, for example). Disks, backups and fans are then managed outside Helena.",
+    "noHelper": "{appName} runs without the host helper (in a container, for example). Disks, backups and fans are then managed outside {appName}.",
     "failed": "The host helper did not answer."
   },
   "health": {
@@ -42,9 +42,9 @@
     "espSyncSkipped": "The second EFI partition was not updated {at} ago: {reason, select, notMounted {{mount} was not mounted} notVfat {{mount} is not a FAT partition} sameDevice {both mount points are the same partition} other {skipped}}. The reserve disk may start an old version.",
     "espSyncFailed": "Copying to the second EFI partition failed {at} ago: {reason, select, sourceIncomplete {the boot loader is missing on the first} readFailed {the first could not be read completely} noRsync {rsync is missing} rsyncFailed {write error} verifyFailed {the copy differs from the original} other {unknown error}}. Starting from the reserve disk is safe again only after a copy succeeds.",
     "espRemovableStale": "The fallback boot path EFI/BOOT on {mount} {problem, select, missing {is missing} differs {starts other files than the boot entries} fallback {contains fbx64.efi, which would create firmware entries of its own} stub {does not find the system partition} other {is not right}}. The firmware sometimes starts this path on its own.",
-    "bootEntryMissing": "Boot entry \"{label}\" is missing. {repair, select, nextBoot {Helena creates it at the next start.} diskMissing {Helena creates it once the disk is back.} other {}}",
-    "bootEntryBroken": "Boot entry \"{label}\" is invalid: {problem, select, noPartuuid {the firmware rewrote it} wrongDisk {it points to another disk} wrongLoader {it starts another file} inactive {it is switched off} other {it does not match}}. {repair, select, nextBoot {Helena repairs it at the next start.} diskMissing {Helena repairs it once the disk is back.} other {}}",
-    "bootEntryDuplicate": "Boot entry \"{label}\" exists more than once. {repair, select, nextBoot {Helena tidies up at the next start.} diskMissing {Helena tidies up once the disk is back.} other {}}",
+    "bootEntryMissing": "Boot entry \"{label}\" is missing. {repair, select, nextBoot {{appName} creates it at the next start.} diskMissing {{appName} creates it once the disk is back.} other {}}",
+    "bootEntryBroken": "Boot entry \"{label}\" is invalid: {problem, select, noPartuuid {the firmware rewrote it} wrongDisk {it points to another disk} wrongLoader {it starts another file} inactive {it is switched off} other {it does not match}}. {repair, select, nextBoot {{appName} repairs it at the next start.} diskMissing {{appName} repairs it once the disk is back.} other {}}",
+    "bootEntryDuplicate": "Boot entry \"{label}\" exists more than once. {repair, select, nextBoot {{appName} tidies up at the next start.} diskMissing {{appName} tidies up once the disk is back.} other {}}",
     "bootLoaderMissing": "The boot loader is missing on {mount}; boot entry \"{label}\" cannot start.",
     "bootEntriesOk": "{count, plural, one {The boot entry is right.} other {All # boot entries are right.}}",
     "eventsCritical": "{count, plural, one {One serious report} other {# serious reports}} from mdadm or smartd, not seen yet.",
@@ -116,7 +116,7 @@
     "checkStarted": "The check is running.",
     "checkStopped": "The check was stopped.",
     "checkConfirmTitle": "Check the mirror?",
-    "checkConfirmBody": "Reads both disks completely and compares them (the same as the automatic monthly check). It takes a few hours and slows the disks down a little; Helena keeps running.",
+    "checkConfirmBody": "Reads both disks completely and compares them (the same as the automatic monthly check). It takes a few hours and slows the disks down a little; {appName} keeps running.",
     "syncAction": {
       "idle": "Idle",
       "resync": "Resync",
@@ -178,7 +178,7 @@
       "intro": "When a disk drops off the bus while running (\"controller is down\" in the log, the mirror runs without it, lsblk does not list it), it is often not broken. A restart usually does not bring it back; a cold start does. Until then, no kernel or GRUB updates.",
       "step": {
         "poweroff": "Shut down cleanly",
-        "poweroffBody": "Helena and the agents stop; the mirror is complete on the other disk.",
+        "poweroffBody": "{appName} and the agents stop; the mirror is complete on the other disk.",
         "powerOn": "Switch on again",
         "powerOnBody": "With the power button, or by Wake-on-LAN from another computer on the home network.",
         "smart": "Check SMART",
@@ -193,7 +193,7 @@
     "replace": {
       "open": "Replace a disk",
       "title": "Replace a disk of the mirror",
-      "intro": "Step by step, with the commands for this machine. Helena does not run them: you type them into the owner terminal. The server keeps running on the other disk meanwhile.",
+      "intro": "Step by step, with the commands for this machine. {appName} does not run them: you type them into the owner terminal. The server keeps running on the other disk meanwhile.",
       "which": "Which disk comes out?",
       "disk": "Disk {letter}",
       "noPlan": "There is no plan for this disk: it is not part of a mirror, or a healthy second disk is missing.",
@@ -345,11 +345,11 @@
     },
     "password": {
       "title": "Write down the backup password",
-      "explain": "Without this password the backup cannot be read, also not by Helena after a reinstall. Write it on paper or into your password manager. After you confirm, Helena never shows it again.",
+      "explain": "Without this password the backup cannot be read, also not by {appName} after a reinstall. Write it on paper or into your password manager. After you confirm, {appName} never shows it again.",
       "show": "Show password",
       "written": "I have written the password down safely.",
       "confirm": "Confirm",
-      "confirmed": "Confirmed. Helena no longer shows the password."
+      "confirmed": "Confirmed. {appName} no longer shows the password."
     },
     "targets": {
       "title": "Offsite",
@@ -465,7 +465,7 @@
     },
     "guard": {
       "title": "Fan guard",
-      "explain": "When the fans are fixed below level 5 and the CPU stays at {limit} or more for a few seconds, Helena puts them to level 5. Below {release} for two minutes, your level comes back.",
+      "explain": "When the fans are fixed below level 5 and the CPU stays at {limit} or more for a few seconds, {appName} puts them to level 5. Below {release} for two minutes, your level comes back.",
       "limit": "Limit",
       "saved": "Saved.",
       "active": "Holding the fans at level 5 right now.",

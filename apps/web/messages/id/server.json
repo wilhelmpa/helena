@@ -19,7 +19,7 @@
   "readFailed": "Helper host tidak menjawab. Mungkin helper sedang tidak berjalan.",
   "unavailable": {
     "title": "Tidak ada yang perlu dikelola di sini",
-    "noHelper": "Helena berjalan tanpa helper host (misalnya di dalam kontainer). Disk, cadangan, dan kipas lalu dikelola di luar Helena.",
+    "noHelper": "{appName} berjalan tanpa helper host (misalnya di dalam kontainer). Disk, cadangan, dan kipas lalu dikelola di luar {appName}.",
     "failed": "Helper host tidak menjawab."
   },
   "health": {
@@ -42,9 +42,9 @@
     "espSyncSkipped": "Partisi EFI kedua tidak diperbarui {at} lalu: {reason, select, notMounted {{mount} tidak terpasang} notVfat {{mount} bukan partisi FAT} sameDevice {kedua titik kait adalah partisi yang sama} other {dilewati}}. Disk serep mungkin memulai versi lama.",
     "espSyncFailed": "Penyalinan ke partisi EFI kedua gagal {at} lalu: {reason, select, sourceIncomplete {boot loader tidak ada di partisi pertama} readFailed {partisi pertama tidak terbaca sepenuhnya} noRsync {rsync tidak ada} rsyncFailed {kesalahan tulis} verifyFailed {salinan berbeda dari aslinya} other {kesalahan tak dikenal}}. Boot dari disk serep baru aman lagi setelah penyalinan berhasil.",
     "espRemovableStale": "Jalur boot darurat EFI/BOOT di {mount} {problem, select, missing {tidak ada} differs {memulai berkas yang berbeda dari entri boot} fallback {berisi fbx64.efi, yang akan membuat entri firmware sendiri} stub {tidak menemukan partisi sistem} other {tidak benar}}. Firmware terkadang memulai jalur ini dengan sendirinya.",
-    "bootEntryMissing": "Entri boot “{label}” tidak ada. {repair, select, nextBoot {Helena membuatnya saat mulai berikutnya.} diskMissing {Helena membuatnya begitu disk kembali.} other {}}",
-    "bootEntryBroken": "Entri boot “{label}” tidak valid: {problem, select, noPartuuid {firmware menulis ulang entri ini} wrongDisk {entri ini menunjuk ke disk lain} wrongLoader {entri ini memulai berkas lain} inactive {entri ini dinonaktifkan} other {entri ini tidak cocok}}. {repair, select, nextBoot {Helena memperbaikinya saat mulai berikutnya.} diskMissing {Helena memperbaikinya begitu disk kembali.} other {}}",
-    "bootEntryDuplicate": "Entri boot “{label}” ada lebih dari satu. {repair, select, nextBoot {Helena merapikannya saat mulai berikutnya.} diskMissing {Helena merapikannya begitu disk kembali.} other {}}",
+    "bootEntryMissing": "Entri boot “{label}” tidak ada. {repair, select, nextBoot {{appName} membuatnya saat mulai berikutnya.} diskMissing {{appName} membuatnya begitu disk kembali.} other {}}",
+    "bootEntryBroken": "Entri boot “{label}” tidak valid: {problem, select, noPartuuid {firmware menulis ulang entri ini} wrongDisk {entri ini menunjuk ke disk lain} wrongLoader {entri ini memulai berkas lain} inactive {entri ini dinonaktifkan} other {entri ini tidak cocok}}. {repair, select, nextBoot {{appName} memperbaikinya saat mulai berikutnya.} diskMissing {{appName} memperbaikinya begitu disk kembali.} other {}}",
+    "bootEntryDuplicate": "Entri boot “{label}” ada lebih dari satu. {repair, select, nextBoot {{appName} merapikannya saat mulai berikutnya.} diskMissing {{appName} merapikannya begitu disk kembali.} other {}}",
     "bootLoaderMissing": "Boot loader tidak ada di {mount}; entri “{label}” tidak bisa memulai.",
     "bootEntriesOk": "{count, plural, other {Semua # entri boot benar.}}",
     "eventsCritical": "{count, plural, other {# laporan serius}} dari mdadm atau smartd, belum dilihat.",
@@ -116,7 +116,7 @@
     "checkStarted": "Pemeriksaan sedang berjalan.",
     "checkStopped": "Pemeriksaan dihentikan.",
     "checkConfirmTitle": "Periksa mirror?",
-    "checkConfirmBody": "Membaca kedua disk sepenuhnya dan membandingkannya (sama dengan pemeriksaan bulanan otomatis). Ini memakan beberapa jam dan sedikit memperlambat disk; Helena tetap berjalan.",
+    "checkConfirmBody": "Membaca kedua disk sepenuhnya dan membandingkannya (sama dengan pemeriksaan bulanan otomatis). Ini memakan beberapa jam dan sedikit memperlambat disk; {appName} tetap berjalan.",
     "syncAction": {
       "idle": "Diam",
       "resync": "Sinkron ulang",
@@ -178,7 +178,7 @@
       "intro": "Jika disk terlepas dari bus saat berjalan (“controller is down” di log, mirror berjalan tanpanya, lsblk tidak menampilkannya), sering kali disk itu tidak rusak. Mulai ulang biasanya tidak mengembalikannya; menyalakan dari keadaan mati bisa. Sampai saat itu, jangan perbarui kernel atau GRUB.",
       "step": {
         "poweroff": "Matikan dengan rapi",
-        "poweroffBody": "Helena dan para agen berhenti; mirror lengkap di disk yang lain.",
+        "poweroffBody": "{appName} dan para agen berhenti; mirror lengkap di disk yang lain.",
         "powerOn": "Nyalakan lagi",
         "powerOnBody": "Dengan tombol daya atau lewat Wake-on-LAN dari komputer lain di jaringan rumah.",
         "smart": "Periksa SMART",
@@ -193,7 +193,7 @@
     "replace": {
       "open": "Ganti disk",
       "title": "Ganti disk mirror",
-      "intro": "Langkah demi langkah, dengan perintah untuk mesin ini. Helena tidak menjalankannya: Anda mengetiknya di terminal pemilik. Sementara itu, server tetap berjalan di disk yang lain.",
+      "intro": "Langkah demi langkah, dengan perintah untuk mesin ini. {appName} tidak menjalankannya: Anda mengetiknya di terminal pemilik. Sementara itu, server tetap berjalan di disk yang lain.",
       "which": "Disk mana yang dilepas?",
       "disk": "Disk {letter}",
       "noPlan": "Tidak ada rencana untuk disk ini: disk ini bukan bagian dari mirror, atau disk kedua yang sehat tidak ada.",
@@ -345,11 +345,11 @@
     },
     "password": {
       "title": "Catat kata sandi cadangan",
-      "explain": "Tanpa kata sandi ini, cadangan tidak bisa dibaca, juga tidak oleh Helena setelah instalasi ulang. Tulis di kertas atau di pengelola kata sandi Anda. Setelah Anda konfirmasi, Helena tidak akan menampilkannya lagi.",
+      "explain": "Tanpa kata sandi ini, cadangan tidak bisa dibaca, juga tidak oleh {appName} setelah instalasi ulang. Tulis di kertas atau di pengelola kata sandi Anda. Setelah Anda konfirmasi, {appName} tidak akan menampilkannya lagi.",
       "show": "Tampilkan kata sandi",
       "written": "Saya sudah mencatat kata sandi dengan aman.",
       "confirm": "Konfirmasi",
-      "confirmed": "Terkonfirmasi. Helena tidak lagi menampilkan kata sandi."
+      "confirmed": "Terkonfirmasi. {appName} tidak lagi menampilkan kata sandi."
     },
     "targets": {
       "title": "Di luar lokasi",
@@ -465,7 +465,7 @@
     },
     "guard": {
       "title": "Pelindung kipas",
-      "explain": "Jika kipas disetel tetap di bawah level 5 dan CPU bertahan di {limit} atau lebih selama beberapa detik, Helena menyetelnya ke level 5. Setelah dua menit di bawah {release}, level Anda kembali.",
+      "explain": "Jika kipas disetel tetap di bawah level 5 dan CPU bertahan di {limit} atau lebih selama beberapa detik, {appName} menyetelnya ke level 5. Setelah dua menit di bawah {release}, level Anda kembali.",
       "limit": "Batas",
       "saved": "Tersimpan.",
       "active": "Sedang menahan kipas di level 5.",

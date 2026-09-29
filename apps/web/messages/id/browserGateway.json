@@ -35,7 +35,7 @@
     "never": "Tidak pernah (selalu aktif)",
     "alwaysOnTitle": "Selalu aktif",
     "alwaysOnFor": "Biarkan browser {name} selalu aktif",
-    "home": "Helena",
+    "home": "{appName}",
     "state": {
       "running": "Berjalan",
       "starting": "Memulai…",

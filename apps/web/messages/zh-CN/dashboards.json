@@ -136,7 +136,7 @@
       "field": "更新了以下工作项的字段：",
       "other": "更新了"
     },
-    "automation": "Helena"
+    "automation": "{appName}"
   },
   "pulse": {
     "caption": {

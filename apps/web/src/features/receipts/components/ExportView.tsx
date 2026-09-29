@@ -6,6 +6,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import { Button, EmptyState } from '@/design-system';
 import { KnowledgeRow } from '@/components/helena/KnowledgeFrame';
+import { useDisplayName } from '@/context/displayName';
 import { downloadMonthExport } from '@/lib/api/endpoints/receipts';
 import { useReceiptSummaryQuery } from '../services/receipts.service';
 import { formatMonth, saveBlob } from '../utils/format';
@@ -74,6 +75,7 @@ function ExportMonthRow({
 }) {
   const t = useTranslations('receipts');
   const locale = useLocale();
+  const displayName = useDisplayName();
   const summary = useReceiptSummaryQuery(projectKey, month, true).data;
   const [busy, setBusy] = useState(false);
   const receipts = summary
@@ -95,7 +97,7 @@ function ExportMonthRow({
     try {
       saveBlob(
         await downloadMonthExport(projectKey, month),
-        `Helena-Belege_${projectKey}_${month}.zip`,
+        `${displayName}-Belege_${projectKey}_${month}.zip`,
       );
       toast.success(t('export.done', { month: formatMonth(month, locale) }));
     } catch (error) {

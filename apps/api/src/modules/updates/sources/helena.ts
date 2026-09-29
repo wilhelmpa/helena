@@ -1,6 +1,7 @@
 import type { UpdateSource } from '@helena/sdk';
 import { htmlToText } from '../feeds';
 import { getUpdateStatus } from '#modules/settings/updates';
+import { getDisplayName } from '@repo/db';
 
 // Helena itself, for an installation that follows a published release feed
 // (UPDATE_FEED_URL, settings/updates.ts). Without one there is nothing to compare with and
@@ -22,7 +23,7 @@ export const helenaSource: UpdateSource = {
     return [
       {
         component: 'helena',
-        name: 'Helena',
+        name: await getDisplayName(),
         installed: status.currentVersion,
         available: status.latestVersion,
         updateAvailable: status.updateAvailable,

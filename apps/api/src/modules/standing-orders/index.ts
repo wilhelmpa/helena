@@ -1,5 +1,5 @@
 import { Elysia } from 'elysia';
-import { aiAgent, db } from '@repo/db';
+import { aiAgent, db, getDisplayName } from '@repo/db';
 import { and, eq } from 'drizzle-orm';
 import { authContext } from '#shared/auth-context';
 import { guards } from '#shared/guards';
@@ -19,9 +19,10 @@ import {
 } from './model';
 import { createOrder, decideOrder, deleteOrder, listOrders, updateOrder } from './service';
 
-function owner(user: { id: string; role?: string | null } | null | undefined) {
+async function owner(user: { id: string; role?: string | null } | null | undefined) {
   const me = requireUser(user);
-  if (me.role !== 'god') throw new HttpError(403, 'Only the owner may change Helena orders');
+  if (me.role !== 'god')
+    throw new HttpError(403, `Only the owner may change ${await getDisplayName()} orders`);
   return me.id;
 }
 
@@ -32,7 +33,7 @@ async function helenaAgentId() {
     .where(eq(aiAgent.agentRole, 'home'))
     .orderBy(aiAgent.id)
     .limit(1);
-  if (!agent) throw new HttpError(404, 'Helena agent not found');
+  if (!agent) throw new HttpError(404, `${await getDisplayName()} agent not found`);
   return agent.id;
 }
 
@@ -112,7 +113,7 @@ export const standingOrderRoutes = new Elysia({
   .get(
     '/helena/standing-orders',
     async ({ user }) => {
-      owner(user);
+      await owner(user);
       return listOrders({ agentId: await helenaAgentId() });
     },
     {
@@ -123,7 +124,7 @@ export const standingOrderRoutes = new Elysia({
   .post(
     '/helena/standing-orders',
     async ({ user, body }) =>
-      createOrder({ agentId: await helenaAgentId() }, owner(user), body, false),
+      createOrder({ agentId: await helenaAgentId() }, await owner(user), body, false),
     {
       body: orderBody,
       response: { 200: OrderResponse, ...commonErrors },
@@ -139,7 +140,11 @@ export const standingOrderRoutes = new Elysia({
         .select({ id: aiAgent.id })
         .from(aiAgent)
         .where(and(eq(aiAgent.id, agentId), eq(aiAgent.userId, me.id)));
-      if (!agent) throw new HttpError(403, 'Only Helena may propose a Helena standing order');
+      if (!agent)
+        throw new HttpError(
+          403,
+          `Only ${await getDisplayName()} may propose a ${await getDisplayName()} standing order`,
+        );
       return createOrder({ agentId }, me.id, body, true);
     },
     {
@@ -154,7 +159,7 @@ export const standingOrderRoutes = new Elysia({
   .patch(
     '/helena/standing-orders/:orderId',
     async ({ user, params, body }) => {
-      owner(user);
+      await owner(user);
       return updateOrder({ agentId: await helenaAgentId() }, params.orderId, body);
     },
     {
@@ -167,7 +172,7 @@ export const standingOrderRoutes = new Elysia({
   .delete(
     '/helena/standing-orders/:orderId',
     async ({ user, params }) => {
-      owner(user);
+      await owner(user);
       return deleteOrder({ agentId: await helenaAgentId() }, params.orderId);
     },
     {
@@ -179,7 +184,12 @@ export const standingOrderRoutes = new Elysia({
   .post(
     '/helena/standing-orders/:orderId/decision',
     async ({ user, params, body }) =>
-      decideOrder({ agentId: await helenaAgentId() }, params.orderId, owner(user), body.approved),
+      decideOrder(
+        { agentId: await helenaAgentId() },
+        params.orderId,
+        await owner(user),
+        body.approved,
+      ),
     {
       params: helenaOrderParams,
       body: orderDecision,

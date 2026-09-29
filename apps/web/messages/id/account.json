@@ -71,7 +71,7 @@
     "totpDisableFailed": "Tidak dapat mematikan aplikasi autentikator.",
     "minLength": "Minimal {count} karakter.",
     "added": "Ditambahkan {date}",
-    "passkeysElsewhere": "Passkey milik {host}. Di jaringan rumah ini Helena memasukkan Anda secara otomatis; tambahkan passkey baru di {host}."
+    "passkeysElsewhere": "Passkey milik {host}. Di jaringan rumah ini {appName} memasukkan Anda secara otomatis; tambahkan passkey baru di {host}."
   },
   "accounts": {
     "label": "Akun",
@@ -178,7 +178,7 @@
     "showChatByDefault": "Tampilkan obrolan secara bawaan",
     "showChatByDefaultDescription": "Panel obrolan terbuka bersama halaman proyek. Tutup kapan saja dari bilah judul atau ikon obrolan.",
     "chatAnimation": "Animasikan status chat",
-    "chatAnimationDescription": "Tampilkan orb status animasi di chat Helena dan proyek. Jika dimatikan, indikator tetap statis."
+    "chatAnimationDescription": "Tampilkan orb status animasi di chat {appName} dan proyek. Jika dimatikan, indikator tetap statis."
   },
   "shell": {
     "title": "Akun"
@@ -187,7 +187,7 @@
     "title": "Notifikasi",
     "thisDevice": {
       "title": "Push di perangkat ini",
-      "description": "Pesan dari Helena di ponsel atau komputer ini, bahkan saat Helena tidak dibuka.",
+      "description": "Pesan dari {appName} di ponsel atau komputer ini, bahkan saat {appName} tidak dibuka.",
       "switch": "Pesan push",
       "off": "Mati",
       "never": "Nyala, belum ada yang terkirim",
@@ -202,11 +202,11 @@
     "hints": {
       "insecure": {
         "title": "Push memerlukan koneksi aman",
-        "body": "Browser hanya mengizinkan push melalui HTTPS atau di localhost. Buka Helena lewat alamat https-nya setelah disiapkan."
+        "body": "Browser hanya mengizinkan push melalui HTTPS atau di localhost. Buka {appName} lewat alamat https-nya setelah disiapkan."
       },
       "iosInstall": {
-        "title": "Di iPhone dan iPad, tambahkan Helena ke Layar Utama dulu",
-        "body": "Di Safari: Bagikan → “Tambah ke Layar Utama”. Lalu buka Helena dari Layar Utama dan nyalakan push di sini (iOS 16.4 atau lebih baru)."
+        "title": "Di iPhone dan iPad, tambahkan {appName} ke Layar Utama dulu",
+        "body": "Di Safari: Bagikan → “Tambah ke Layar Utama”. Lalu buka {appName} dari Layar Utama dan nyalakan push di sini (iOS 16.4 atau lebih baru)."
       },
       "unsupported": {
         "title": "Browser ini tidak mendukung push",
@@ -258,7 +258,7 @@
       },
       "agent-replies": {
         "label": "Jawaban agen",
-        "description": "Jawaban di chat sudah siap saat Helena tidak Anda buka."
+        "description": "Jawaban di chat sudah siap saat {appName} tidak Anda buka."
       }
     }
   }

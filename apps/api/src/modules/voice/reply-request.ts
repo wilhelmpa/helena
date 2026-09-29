@@ -27,6 +27,7 @@ const LANGUAGE_NAMES: Record<string, string> = {
 
 export interface VoiceReplyInput {
   agentName: string;
+  displayName?: string;
   personName: string | null;
   // "Freitag, 26. September 2026, 00:43" in the person's language.
   now: string;
@@ -40,7 +41,7 @@ export function voiceReplyRequest(input: VoiceReplyInput): LocalAiChatRequest {
   const language = LANGUAGE_NAMES[input.language] ?? 'German';
   const person = input.personName ?? 'the person';
   const system = [
-    `You are ${input.agentName}, an assistant in Helena. You are talking with ${person} by ` +
+    `You are ${input.agentName}, an assistant in ${input.displayName ?? 'Ava'}. You are talking with ${person} by ` +
       'voice: everything you write is read aloud at once.',
     'Answer yourself ONLY when this conversation and general knowledge are enough: a greeting, ' +
       'small talk, whether you can hear them, thanks or goodbye, the time or the date (it is ' +

@@ -50,7 +50,7 @@
     "exportTemplate": "Export as template",
     "exported": "Template saved: {file}",
     "importTemplate": "Import department from template",
-    "importTemplateHint": "Choose a template file. Helena first checks what would change and only writes when you import.",
+    "importTemplateHint": "Choose a template file. {appName} first checks what would change and only writes when you import.",
     "templateChooseFile": "Choose template file",
     "templateFile": "File: {name}",
     "templateNotJson": "The file is not a valid template.",
@@ -237,7 +237,7 @@
         "review": "The coordinator reviews the results.",
         "synchronize": "The summary and evidence are written to the task, which moves to Review or Done."
       },
-      "route": "When the task's labels match the capabilities of exactly one specialist, or the project has only one, Helena skips the plan and assigns the task directly."
+      "route": "When the task's labels match the capabilities of exactly one specialist, or the project has only one, {appName} skips the plan and assigns the task directly."
     },
     "usage": {
       "title": "Token usage",
@@ -278,7 +278,7 @@
     "projectDefault": "Project default",
     "noLimit": "No limit",
     "none": "None",
-    "home": "HELENA · MASTER",
+    "home": "{appNameUpper} · MASTER",
     "coordinator": "COORDINATOR",
     "reviewer": "REVIEWER",
     "specialist": "SPECIALIST",
@@ -348,6 +348,6 @@
     "add": "Add",
     "added": "Added to {project}",
     "failed": "The member could not be added.",
-    "keyOnce": "The copy runs outside Helena: copy its key now, it is shown only once."
+    "keyOnce": "The copy runs outside {appName}: copy its key now, it is shown only once."
   }
 }

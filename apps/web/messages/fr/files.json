@@ -41,10 +41,10 @@
     "folder": "Ce dossier est vide.",
     "folderHint": "Déposez des fichiers ici ou utilisez Téléverser.",
     "filter": "Aucune entrée ne correspond à « {filter} ».",
-    "readOnly": "Helena affiche ce dossier en lecture seule."
+    "readOnly": "{appName} affiche ce dossier en lecture seule."
   },
   "unreadable": {
-    "title": "Helena ne peut pas lire ce dossier",
+    "title": "{appName} ne peut pas lire ce dossier",
     "body": "L'espace de travail appartient à l'utilisateur des agents sur le serveur. Ouvrez-le plutôt dans VS Code.",
     "missing": "Ce dossier n'existe pas sur le serveur."
   },
@@ -128,7 +128,7 @@
     "content": "Contenu du fichier",
     "reload": "Recharger",
     "discard": "Abandonner le brouillon non enregistré ?",
-    "editor": "Éditeur Helena",
+    "editor": "Éditeur {appName}",
     "preview": "Aperçu",
     "searching": "Recherche dans les fichiers…",
     "searchError": "Recherche indisponible ou accès refusé.",
@@ -247,7 +247,7 @@
     "agent": "Agent",
     "manual": "Manuel",
     "all": "Tous",
-    "systemHint": "Créé par Helena (justificatifs, pièces jointes, exports)",
+    "systemHint": "Créé par {appName} (justificatifs, pièces jointes, exports)",
     "agentHint": "Créé par un agent",
     "manualHint": "Créé ou téléversé par une personne",
     "label": "Origine"
@@ -256,7 +256,7 @@
     "loading": "Chargement de la vue …",
     "readFailed": "La vue n’a pas pu être lue.",
     "rowsFailed": "Les lignes de la vue n’ont pas pu être chargées.",
-    "unsupported": "Cette vue utilise une expression qu’Helena n’évalue pas encore",
+    "unsupported": "Cette vue utilise une expression qu’{appName} n’évalue pas encore",
     "views": "Vues",
     "filter": "Filtrer les lignes",
     "count": "{count, plural, one {# note} other {# notes}}",

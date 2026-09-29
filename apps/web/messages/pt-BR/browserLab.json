@@ -1,9 +1,9 @@
 {
   "title": "Browser 2.0",
-  "homeBrowser": "Navegador da Helena",
+  "homeBrowser": "Navegador da {appName}",
   "which": "Navegador",
   "noBrowser": "Nenhum navegador para testar",
-  "noBrowserHint": "Aqui não há nem o navegador da Helena nem o de um projeto.",
+  "noBrowserHint": "Aqui não há nem o navegador da {appName} nem o de um projeto.",
   "noAgents": "Nenhum agente deste navegador tem o navegador do projeto. Ative-o nas ferramentas do agente.",
   "tabs": {
     "label": "Navegador",
@@ -19,14 +19,14 @@
   },
   "connection": {
     "service": "Serviço",
-    "cloudNote": "O que a Helena manda decidir, como o texto visível de uma página ou um e-mail, vai para este serviço. Senhas e valores digitados, não.",
-    "localNote": "Um servidor System One seu. A Helena só o acessa neste endereço.",
-    "localModelNote": "Um servidor compatível com OpenAI com logprobs (llama.cpp, Halogen, vLLM). A Helena só o acessa neste endereço.",
+    "cloudNote": "O que a {appName} manda decidir, como o texto visível de uma página ou um e-mail, vai para este serviço. Senhas e valores digitados, não.",
+    "localNote": "Um servidor System One seu. A {appName} só o acessa neste endereço.",
+    "localModelNote": "Um servidor compatível com OpenAI com logprobs (llama.cpp, Halogen, vLLM). A {appName} só o acessa neste endereço.",
     "address": "Endereço",
     "model": "Modelo",
     "allowPrivate": "Permitir este endereço local",
-    "allowPrivateHint": "A Helena nunca chama endereços da sua rede. Isto permite exatamente este endereço, nada mais.",
-    "localAiKey": "Endereço, chave e modelo vêm da IA local da Helena (Administrador → IA local, ative lá “Decisões”); nada para preencher aqui.",
+    "allowPrivateHint": "A {appName} nunca chama endereços da sua rede. Isto permite exatamente este endereço, nada mais.",
+    "localAiKey": "Endereço, chave e modelo vêm da IA local da {appName} (Administrador → IA local, ative lá “Decisões”); nada para preencher aqui.",
     "key": "Chave",
     "keyHintTypesafe": "Em console.typesafe.ai → Keys.",
     "keyHintVercel": "Uma chave do AI Gateway da sua equipe na Vercel.",
@@ -40,7 +40,7 @@
     "keySourceCredential": "Usar uma chave de API existente",
     "keyCredential": "Credencial da chave de API original",
     "chooseKeyCredential": "Escolha uma chave de API",
-    "keyCredentialHint": "A Helena lê a chave atual desta credencial a cada requisição. Faça a rotação uma única vez lá. Só podem ser usadas chaves de API desta equipe e do mesmo projeto (ou da equipe inteira). Nenhuma chave é copiada nem revelada aos agentes.",
+    "keyCredentialHint": "A {appName} lê a chave atual desta credencial a cada requisição. Faça a rotação uma única vez lá. Só podem ser usadas chaves de API desta equipe e do mesmo projeto (ou da equipe inteira). Nenhuma chave é copiada nem revelada aos agentes.",
     "keySourcesLoading": "Carregando chaves de API…",
     "keySourceUnavailable": "Nenhuma chave de API compatível está disponível, ou a origem salva não está mais acessível. Escolha uma origem válida ou verifique as credenciais."
   },
@@ -90,12 +90,12 @@
     "modeHint": "Standard: os agentes clicam passo a passo. Modelo de decisão: os agentes podem entregar trabalho de vários passos ao browser_task.",
     "connectionHint": "Configurado em Acessos e conexões → Acessos.",
     "teamHint": "De quem são as conexões listadas.",
-    "overridden": "Padrão do Helena substituído",
-    "resetToDefault": "Voltar ao padrão do Helena"
+    "overridden": "Padrão do {appName} substituído",
+    "resetToDefault": "Voltar ao padrão do {appName}"
   },
   "form": {
     "goal": "Tarefa",
-    "goalPlaceholder": "ex.: Pesquise \"Helena\" e abra o primeiro resultado",
+    "goalPlaceholder": "ex.: Pesquise \"{appName}\" e abra o primeiro resultado",
     "values": "Valores a digitar",
     "valuesPlaceholder": "email: max@example.com",
     "valuesHint": "Um por linha, nome: valor. Os valores são digitados, mas nunca enviados ao modelo de decisão.",

@@ -1513,6 +1513,13 @@
       "when": 1790686952759,
       "tag": "0216_browser_frame_vault",
       "breakpoints": true
+    },
+    {
+      "idx": 217,
+      "version": "7",
+      "when": 1790689683184,
+      "tag": "0217_ava_display_name",
+      "breakpoints": true
     }
   ]
 }

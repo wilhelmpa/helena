@@ -43,7 +43,7 @@
   },
   "review": {
     "emptyTitle": "没有需要审核的内容",
-    "emptyHint": "Helena 不够确定的匹配会在这里等待。",
+    "emptyHint": "{appName} 不够确定的匹配会在这里等待。",
     "score": "规则",
     "confidence": "AI",
     "confirm": "匹配",
@@ -75,7 +75,7 @@
   },
   "matched": {
     "emptyTitle": "尚未匹配任何内容",
-    "emptyHint": "上传票据并导入银行对账单，Helena 就会将它们匹配起来。",
+    "emptyHint": "上传票据并导入银行对账单，{appName} 就会将它们匹配起来。",
     "unmatch": "解除匹配"
   },
   "accounts": {

@@ -2,6 +2,7 @@ import {
   aiAgent,
   approvalRequest,
   db,
+  getDisplayName,
   getInstanceBotConfig,
   isInstanceBotUsable,
   project,
@@ -188,7 +189,9 @@ async function processEvent(
   if (event.kind === 'message') {
     const target = await targetFor(event.userId, tx);
     if (!target || !event.text)
-      return { responseText: 'Choose an agent in Helena settings before chatting.' };
+      return {
+        responseText: `Choose an agent in ${await getDisplayName()} settings before chatting.`,
+      };
     const sent = await sendMessage(
       {
         agentId: target.agentId,
@@ -202,8 +205,7 @@ async function processEvent(
     );
     if (!sent)
       return {
-        responseText:
-          'The selected chat is unavailable. Choose the agent again in Helena settings.',
+        responseText: 'The selected chat is unavailable. Choose the agent again in settings.',
       };
     await tx
       .update(userTelegramAccount)
@@ -233,7 +235,7 @@ async function processEvent(
     .for('share');
   if (!owner) return { responseText: 'Approval is not available to this account.' };
   if (approval.kind === 'budget')
-    return { responseText: 'Decide budget requests in Helena Approvals.' };
+    return { responseText: `Decide budget requests in ${await getDisplayName()} Approvals.` };
   try {
     await decideApprovalRequest(event.approvalId, event.userId, { approved: event.approved }, tx);
   } catch (error) {
@@ -265,7 +267,10 @@ export async function processTelegramEvents(): Promise<void> {
           .set(
             retry
               ? { state: 'pending' }
-              : { state: 'done', responseText: 'Helena could not process this request.' },
+              : {
+                  state: 'done',
+                  responseText: `${await getDisplayName()} could not process this request.`,
+                },
           )
           .where(eq(telegramChannelEvent.id, event.id));
       }

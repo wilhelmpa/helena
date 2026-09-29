@@ -1,9 +1,9 @@
 {
   "title": "Browser 2.0",
-  "homeBrowser": "Helena-Browser",
+  "homeBrowser": "{appName}-Browser",
   "which": "Browser",
   "noBrowser": "Kein Browser zum Testen",
-  "noBrowserHint": "Hier läuft weder der Helena-Browser noch ein Projekt-Browser.",
+  "noBrowserHint": "Hier läuft weder der {appName}-Browser noch ein Projekt-Browser.",
   "noAgents": "Kein Agent dieses Browsers hat den Projekt-Browser. Schalte ihn in den Werkzeugen des Agenten ein.",
   "tabs": {
     "label": "Browser",
@@ -19,14 +19,14 @@
   },
   "connection": {
     "service": "Dienst",
-    "cloudNote": "Was Helena entscheiden lässt, etwa der sichtbare Text einer Seite oder eine Mail, geht an diesen Dienst. Passwörter und eingetippte Werte nicht.",
-    "localNote": "Ein eigener System-One-Server. Helena erreicht ihn nur unter dieser Adresse.",
-    "localModelNote": "Ein OpenAI-kompatibler Server mit Logprobs (llama.cpp, Halogen, vLLM). Helena erreicht ihn nur unter dieser Adresse.",
+    "cloudNote": "Was {appName} entscheiden lässt, etwa der sichtbare Text einer Seite oder eine Mail, geht an diesen Dienst. Passwörter und eingetippte Werte nicht.",
+    "localNote": "Ein eigener System-One-Server. {appName} erreicht ihn nur unter dieser Adresse.",
+    "localModelNote": "Ein OpenAI-kompatibler Server mit Logprobs (llama.cpp, Halogen, vLLM). {appName} erreicht ihn nur unter dieser Adresse.",
     "address": "Adresse",
     "model": "Modell",
     "allowPrivate": "Diese lokale Adresse erlauben",
-    "allowPrivateHint": "Helena ruft Adressen in deinem Netz sonst nie auf. Das erlaubt genau diese Adresse, nichts anderes.",
-    "localAiKey": "Adresse, Schlüssel und Modell kommen aus Helenas lokaler KI (Administrator → Lokale KI, dort „Entscheidungen“ einschalten); hier ist nichts einzutragen.",
+    "allowPrivateHint": "{appName} ruft Adressen in deinem Netz sonst nie auf. Das erlaubt genau diese Adresse, nichts anderes.",
+    "localAiKey": "Adresse, Schlüssel und Modell kommen aus {appName}s lokaler KI (Administrator → Lokale KI, dort „Entscheidungen“ einschalten); hier ist nichts einzutragen.",
     "key": "Schlüssel",
     "keyHintTypesafe": "Aus console.typesafe.ai → Keys.",
     "keyHintVercel": "Ein AI-Gateway-Schlüssel deines Vercel-Teams.",
@@ -40,7 +40,7 @@
     "keySourceCredential": "Vorhandenen API-Schlüssel verwenden",
     "keyCredential": "Ursprünglicher API-Zugang",
     "chooseKeyCredential": "API-Zugang auswählen",
-    "keyCredentialHint": "Helena liest für jeden Aufruf den aktuellen Schlüssel dieses Zugangs. Ändere ihn nur dort. Verwendbar sind API-Zugänge dieses Teams im selben Projekt oder für das ganze Team. Es wird kein Schlüssel kopiert oder an Agenten weitergegeben.",
+    "keyCredentialHint": "{appName} liest für jeden Aufruf den aktuellen Schlüssel dieses Zugangs. Ändere ihn nur dort. Verwendbar sind API-Zugänge dieses Teams im selben Projekt oder für das ganze Team. Es wird kein Schlüssel kopiert oder an Agenten weitergegeben.",
     "keySourcesLoading": "API-Zugänge werden geladen…",
     "keySourceUnavailable": "Kein passender API-Zugang verfügbar oder die gespeicherte Quelle ist nicht mehr zugänglich. Wähle eine gültige Quelle oder prüfe Zugänge."
   },
@@ -90,12 +90,12 @@
     "modeHint": "Standard: Agenten klicken Schritt für Schritt. Entscheidungsmodell: Agenten dürfen mehrschrittige Browser-Arbeit an browser_task abgeben.",
     "connectionHint": "Eingerichtet unter Zugänge & Verbindungen → Zugänge.",
     "teamHint": "Wessen Verbindungen angezeigt werden.",
-    "overridden": "Helena-Vorgabe überschrieben",
-    "resetToDefault": "Auf Helena-Vorgabe zurücksetzen"
+    "overridden": "{appName}-Vorgabe überschrieben",
+    "resetToDefault": "Auf {appName}-Vorgabe zurücksetzen"
   },
   "form": {
     "goal": "Aufgabe",
-    "goalPlaceholder": "z. B. Suche nach „Helena“ und öffne das erste Ergebnis",
+    "goalPlaceholder": "z. B. Suche nach „{appName}“ und öffne das erste Ergebnis",
     "values": "Werte zum Eintippen",
     "valuesPlaceholder": "email: max@example.com",
     "valuesHint": "Einer pro Zeile, Name: Wert. Werte werden eingetippt, aber nie an das Entscheidungsmodell geschickt.",

@@ -30,7 +30,7 @@
     },
     "server": {
       "label": "Server",
-      "description": "The machine Helena runs on: disks and RAID, backups, power and fans."
+      "description": "The machine {appName} runs on: disks and RAID, backups, power and fans."
     },
     "authentication": {
       "label": "Authentication",
@@ -74,7 +74,7 @@
     },
     "plugins": {
       "label": "Plugins",
-      "description": "Helena's own plugins and the external ones in the plugin folder: what they provide, the rights they ask for, and which may run."
+      "description": "{appName}'s own plugins and the external ones in the plugin folder: what they provide, the rights they ask for, and which may run."
     },
     "model-prices": {
       "label": "Model prices",
@@ -82,7 +82,7 @@
     },
     "updates": {
       "label": "Updates",
-      "description": "What Helena runs on, which new versions exist, what they change, and updating."
+      "description": "What {appName} runs on, which new versions exist, what they change, and updating."
     },
     "local-ai": {
       "label": "Local AI",

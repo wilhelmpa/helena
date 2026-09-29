@@ -149,7 +149,7 @@ export function envNameProblem(name: string): string | null {
     return 'A variable name has capital letters, digits and underscores, starts with a letter or an underscore and is at most 64 characters long.';
   }
   if (DENIED_NAMES.has(name) || DENIED_PREFIXES.some((prefix) => name.startsWith(prefix))) {
-    return `${name} is set by Helena, the runtime or the system and cannot come from a credential.`;
+    return `${name} is set by the app, the runtime or the system and cannot come from a credential.`;
   }
   return null;
 }

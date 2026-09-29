@@ -30,7 +30,7 @@
     },
     "server": {
       "label": "Server",
-      "description": "Mesin tempat Helena berjalan: disk dan RAID, cadangan, daya, dan kipas."
+      "description": "Mesin tempat {appName} berjalan: disk dan RAID, cadangan, daya, dan kipas."
     },
     "authentication": {
       "label": "Autentikasi",
@@ -74,7 +74,7 @@
     },
     "plugins": {
       "label": "Plugin",
-      "description": "Plugin bawaan Helena dan plugin eksternal di folder plugin: apa yang disediakan, hak yang diminta, dan mana yang boleh berjalan."
+      "description": "Plugin bawaan {appName} dan plugin eksternal di folder plugin: apa yang disediakan, hak yang diminta, dan mana yang boleh berjalan."
     },
     "model-prices": {
       "label": "Harga model",
@@ -82,7 +82,7 @@
     },
     "updates": {
       "label": "Pembaruan",
-      "description": "Apa yang digunakan Helena, versi baru yang ada, apa yang berubah, dan memperbarui."
+      "description": "Apa yang digunakan {appName}, versi baru yang ada, apa yang berubah, dan memperbarui."
     },
     "local-ai": {
       "label": "AI lokal",

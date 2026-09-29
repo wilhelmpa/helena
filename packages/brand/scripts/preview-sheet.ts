@@ -33,7 +33,7 @@ const small = {
   light32: raster(markSvg('bare-light'), 32),
 };
 const icon512 = file('icon-512.png');
-const mail = mailHeaderHtml().replace(
+const mail = mailHeaderHtml('Ava').replace(
   `cid:${MAIL_INLINE_IMAGES[0]!.cid}`,
   uri('image/png', Buffer.from(MAIL_INLINE_IMAGES[0]!.base64, 'base64')),
 );

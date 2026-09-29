@@ -43,8 +43,8 @@
   "dialog": {
     "title": "Mettre à jour {name} ?",
     "titleGroup": "{count, plural, one {Mettre à jour # paquet ?} other {Mettre à jour # paquets ?}}",
-    "download": "Helena télécharge la nouvelle version chez l’éditeur et l’installe ({source}).",
-    "downloadApt": "apt télécharge les paquets depuis les sources Debian et les installe. Helena sauvegarde d’abord la base de données.",
+    "download": "{appName} télécharge la nouvelle version chez l’éditeur et l’installe ({source}).",
+    "downloadApt": "apt télécharge les paquets depuis les sources Debian et les installe. {appName} sauvegarde d’abord la base de données.",
     "downloadHermes": "L’assistant Hermes récupère le nouvel état depuis le dépôt Hermes et le réinstalle.",
     "wayBack": "Retour arrière : la version actuelle est conservée et peut être restaurée.",
     "wayBackApt": "Retour arrière : apt n’en a pas d’automatique. Le journal indique ensuite la commande pour les anciennes versions.",
@@ -70,10 +70,10 @@
     "cliRuntimes": "Environnements d’agents",
     "apt": "Paquets Debian",
     "hostTools": "Outils",
-    "helena": "Helena"
+    "helena": "{appName}"
   },
   "hints": {
-    "manual": "Pas d’installateur dans Helena : mis à jour à la main.",
+    "manual": "Pas d’installateur dans {appName} : mis à jour à la main.",
     "notInstalled": "Non installé.",
     "deploy": "Mis à jour avec le déploiement.",
     "hermesOffline": "Aucun runner Hermes joignable : état de la dernière vérification."
@@ -81,7 +81,7 @@
   "settings": {
     "title": "Paramètres",
     "schedule": "Vérifier automatiquement",
-    "scheduleDescription": "Helena cherche de nouvelles versions selon ce calendrier.",
+    "scheduleDescription": "{appName} cherche de nouvelles versions selon ce calendrier.",
     "cron": "Calendrier",
     "timezone": "Fuseau horaire",
     "summarize": "Résumer avec l’IA",

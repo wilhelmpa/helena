@@ -4,6 +4,7 @@
 // classifies the call, applies the Autopilot level and the budgets, and logs the decision.
 // A call Helena allows goes on to Claude Code's own permission mode. When Helena cannot be
 // asked, the call is denied: a policy that cannot be checked does not hold.
+import { runnerDisplayName } from './display-name';
 
 export interface HookInput {
   tool_name?: unknown;
@@ -86,17 +87,18 @@ export async function runPolicyHook(
   env: Record<string, string | undefined> = process.env,
   fetchImpl: typeof fetch = fetch,
 ): Promise<string> {
+  const displayName = runnerDisplayName(env);
   let input: HookInput;
   try {
     input = JSON.parse(stdin) as HookInput;
   } catch {
-    return deny('BLOCKED: Helena could not read this tool call.');
+    return deny(`BLOCKED: ${displayName} could not read this tool call.`);
   }
   const question = hookQuestion(input, env);
   if (!question) return '';
   const url = env.ITSAPLAN_URL;
   const key = env.ITSAPLAN_API_KEY;
-  if (!url || !key) return deny('BLOCKED: Helena cannot be asked about this call.');
+  if (!url || !key) return deny(`BLOCKED: ${displayName} cannot be asked about this call.`);
   try {
     const response = await fetchImpl(`${url.replace(/\/+$/, '')}/agent-policy/decide`, {
       method: 'POST',
@@ -104,13 +106,13 @@ export async function runPolicyHook(
       body: JSON.stringify(question),
       signal: AbortSignal.timeout(10_000),
     });
-    if (!response.ok) throw new Error(`Helena answered ${response.status}`);
+    if (!response.ok) throw new Error(`${displayName} answered ${response.status}`);
     const decision = (await response.json()) as { outcome?: string; message?: string };
     if (decision.outcome === 'allow') return '';
-    return deny(decision.message || "BLOCKED by Helena's Autopilot.");
+    return deny(decision.message || `BLOCKED by ${displayName}'s Autopilot.`);
   } catch (error) {
     return deny(
-      `BLOCKED: Helena could not decide on this call (${error instanceof Error ? error.message : 'unknown error'}). ` +
+      `BLOCKED: ${displayName} could not decide on this call (${error instanceof Error ? error.message : 'unknown error'}). ` +
         'Do not run it or reach the same result another way; end the run and report the problem.',
     );
   }

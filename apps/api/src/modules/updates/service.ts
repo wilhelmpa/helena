@@ -15,6 +15,7 @@ import {
   agentRun,
   agentChatMessage,
   db,
+  getDisplayName,
   getSetting,
   helenaUpdate,
   helenaUpdateAction,
@@ -506,7 +507,7 @@ export async function applyUpdate(
   }
   const source = host.updateSources.get(row.source);
   if (!source?.apply)
-    throw new HttpError(409, 'Diese Komponente kann hier nicht aktualisiert werden');
+    throw new HttpError(409, `This component cannot be updated from ${await getDisplayName()}`);
   let rows = [row];
   if (scope !== 'item') {
     if (!row.groupKey) throw new HttpError(400, 'This component has no group');

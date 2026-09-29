@@ -126,9 +126,9 @@
     "undoDone": "Removed the last exchange. Send a new message to continue from before it.",
     "undoNone": "Nothing to undo yet.",
     "refusal": {
-      "schedules": "Hermes’ own scheduling commands aren’t run from chat — use Helena’s routines instead.",
+      "schedules": "Hermes’ own scheduling commands aren’t run from chat — use {appName}’s routines instead.",
       "approvals": "Approval commands aren’t run from chat — use the approval card or the Approvals page.",
-      "config": "This changes the agent’s own configuration — use the agent’s settings in Helena instead.",
+      "config": "This changes the agent’s own configuration — use the agent’s settings in {appName} instead.",
       "outside": "This isn’t something the chat can do."
     },
     "reasoning": "Reasoning effort",
@@ -197,7 +197,7 @@
     "runtimeExternal": "External",
     "switch": "Chatting with {agent} — start a new chat with another agent",
     "newChatWith": "New chat with …",
-    "switchToHelena": "New chat with Helena"
+    "switchToHelena": "New chat with {appName}"
   },
   "interrupted": {
     "lost": "The connection to the answer was lost. {agent} may still be working on it.",
@@ -247,7 +247,7 @@
     },
     "problems": {
       "insecureTitle": "The microphone needs a secure connection",
-      "insecure": "Browsers only lend the microphone over HTTPS, and Helena runs over http here. Until HTTPS arrives: open {flag} in Chrome, enter {origin}, choose “Enabled” and restart Chrome. Safari and Firefox: only with HTTPS.",
+      "insecure": "Browsers only lend the microphone over HTTPS, and {appName} runs over http here. Until HTTPS arrives: open {flag} in Chrome, enter {origin}, choose “Enabled” and restart Chrome. Safari and Firefox: only with HTTPS.",
       "copyFlag": "Copy address",
       "flagCopied": "Address copied – paste it into Chrome's address bar.",
       "localOnlyDownTitle": "Local transcription is unavailable right now",
@@ -304,7 +304,7 @@
     "commandScriptHint": "Path relative to the project folder. The script gets the task as JSON and runs in the project's isolated area; its output is the result.",
     "webhookUrl": "Address (HTTPS)",
     "webhookSecretEnv": "Variable holding the signing key",
-    "webhookHint": "Helena calls the address signed per Standard Webhooks. Give the agent the key (whsec_…) as an environment variable under Access."
+    "webhookHint": "{appName} calls the address signed per Standard Webhooks. Give the agent the key (whsec_…) as an environment variable under Access."
   },
   "context": {
     "task": "Task {identifier} “{title}”",

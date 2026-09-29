@@ -4,6 +4,7 @@ import { localeFromAcceptLanguage } from '@helena/locales/accept-language';
 import { isTimeZone } from '@/utils/dates';
 import { FALLBACK_TIMEZONE, LOCALE_COOKIE, TIMEZONE_COOKIE, isLocale } from './locales';
 import { loadMessages } from './messages';
+import { getDisplayName } from './displayName';
 
 // The app has no `[locale]` route segment, so every URL stays the same in every
 // language. The account preference is the durable copy, the cookie selects later
@@ -21,7 +22,7 @@ export default getRequestConfig(async () => {
 
   return {
     locale,
-    messages: await loadMessages(locale),
+    messages: await loadMessages(locale, await getDisplayName()),
     // The initial reference for relative times. Sharing it between the server and
     // client keeps hydration stable; RelativeTimeProvider advances it once mounted.
     now: new Date(),

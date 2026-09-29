@@ -126,9 +126,9 @@
     "undoDone": "Última troca removida. Envie uma nova mensagem para continuar a partir de antes dela.",
     "undoNone": "Nada para desfazer ainda.",
     "refusal": {
-      "schedules": "Os comandos de agendamento do próprio Hermes não rodam pelo chat — use as rotinas do Helena.",
+      "schedules": "Os comandos de agendamento do próprio Hermes não rodam pelo chat — use as rotinas do {appName}.",
       "approvals": "Comandos de aprovação não rodam pelo chat — use o cartão de aprovação ou a página de Aprovações.",
-      "config": "Isso muda a configuração do próprio agente — use as configurações do agente no Helena.",
+      "config": "Isso muda a configuração do próprio agente — use as configurações do agente no {appName}.",
       "outside": "Isso não é algo que o chat possa fazer."
     },
     "reasoning": "Esforço de raciocínio",
@@ -197,7 +197,7 @@
     "runtimeExternal": "Externo",
     "switch": "Chat com {agent} — iniciar um novo chat com outro agente",
     "newChatWith": "Novo chat com…",
-    "switchToHelena": "Nova conversa com a Helena"
+    "switchToHelena": "Nova conversa com a {appName}"
   },
   "interrupted": {
     "lost": "A conexão com a resposta caiu. {agent} talvez ainda esteja trabalhando nela.",
@@ -247,7 +247,7 @@
     },
     "problems": {
       "insecureTitle": "O microfone precisa de uma conexão segura",
-      "insecure": "Os navegadores só liberam o microfone via HTTPS, e aqui a Helena roda em http. Até o HTTPS chegar: abra {flag} no Chrome, informe {origin}, escolha “Enabled” e reinicie o Chrome. Safari e Firefox: só com HTTPS.",
+      "insecure": "Os navegadores só liberam o microfone via HTTPS, e aqui a {appName} roda em http. Até o HTTPS chegar: abra {flag} no Chrome, informe {origin}, escolha “Enabled” e reinicie o Chrome. Safari e Firefox: só com HTTPS.",
       "copyFlag": "Copiar endereço",
       "flagCopied": "Endereço copiado – cole-o na barra de endereços do Chrome.",
       "localOnlyDownTitle": "A transcrição local está indisponível agora",
@@ -304,7 +304,7 @@
     "commandScriptHint": "Caminho relativo à pasta do projeto. O script recebe a tarefa em JSON e roda na área isolada do projeto; a saída é o resultado.",
     "webhookUrl": "Endereço (HTTPS)",
     "webhookSecretEnv": "Variável com a chave de assinatura",
-    "webhookHint": "A Helena chama o endereço assinado conforme Standard Webhooks. Dê a chave (whsec_…) ao agente como variável de ambiente em Acessos."
+    "webhookHint": "A {appName} chama o endereço assinado conforme Standard Webhooks. Dê a chave (whsec_…) ao agente como variável de ambiente em Acessos."
   },
   "context": {
     "task": "Tarefa {identifier} “{title}”",

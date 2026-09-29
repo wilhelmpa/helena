@@ -1,4 +1,7 @@
+'use client';
+
 import { wordmarkGeometry, type WordmarkSize } from '@helena/brand';
+import { useDisplayName } from '@/context/displayName';
 import { cn } from '@/lib/utils';
 
 // The AVA wordmark (packages/brand): the letters of Inter as outlines, spaced 0.32em,
@@ -18,6 +21,8 @@ export default function HelenaWordmark({
   className?: string;
   label?: string;
 }) {
+  const appName = useDisplayName();
+  if (appName !== 'Ava') return <span className={className}>{appName}</span>;
   const { d, viewBox, width, height } = wordmarkGeometry(size);
   const cap = size === 'compact' ? 10 : 28;
   return (
