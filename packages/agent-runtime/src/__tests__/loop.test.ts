@@ -70,6 +70,17 @@ async function run(
 }
 
 describe('agent loop', () => {
+  test('asks once for an answer after an empty turn following a tool result', async () => {
+    const { result, sink } = await run([
+      { calls: [{ name: 'write_file', input: { path: 'a.txt', content: 'Test' } }] },
+      { text: '' },
+      { text: 'Die Datei wurde gelesen.' },
+    ]);
+    expect(result.status).toBe('success');
+    expect(result.text).toBe('Die Datei wurde gelesen.');
+    expect(sink.of('tool-call').map((event) => event.name)).toEqual(['write_file']);
+  });
+
   test('answers without tools and reports session, model, spend and result', async () => {
     const { result, sink } = await run([{ text: 'Hallo!', reasoning: 'kurz nachdenken' }]);
     expect(result.status).toBe('success');
@@ -251,6 +262,28 @@ describe('agent loop', () => {
     expect(outputs[0]).toContain('not loaded');
     expect(outputs[1]).toContain('create_calendar_event');
     expect(outputs[2]).toBe('event created');
+  });
+
+  test('offers a task-matched tool directly and defers unrelated knowledge search', async () => {
+    const extraTools: AgentTool[] = ['create_issue', 'search_knowledge'].map((name) => ({
+      name,
+      description: name === 'create_issue' ? 'Create a project issue' : 'Search project knowledge',
+      readOnly: true,
+      inputSchema: { type: 'object', properties: {} },
+      execute: async () => ({ text: 'done' }),
+    }));
+    const { primary, result } = await run(
+      [{ calls: [{ name: 'create_issue', input: {} }] }, { text: 'Erledigt.' }],
+      {
+        prompt: 'Erstelle eine Aufgabe im Projekt.',
+        extraTools,
+        config: { tools: { profile: 'assistent' } },
+      },
+    );
+    const offered = primary.doStreamCalls[0]!.tools!.map((entry) => entry.name);
+    expect(offered).toContain('create_issue');
+    expect(offered).not.toContain('search_knowledge');
+    expect(result.status).toBe('success');
   });
 
   test('file tools stay inside the working folder', async () => {

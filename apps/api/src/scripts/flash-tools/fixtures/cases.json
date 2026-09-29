@@ -1,0 +1,347 @@
+[
+  {
+    "id": "issue-1",
+    "group": "aufgaben",
+    "tool": "create_issue",
+    "prompt": "Lege im Testprojekt VOL105 eine Aufgabe mit dem Titel „Antwortzeit prüfen“ an.",
+    "result": "Die Aufgabe VOL105-17 wurde angelegt.",
+    "answer": "VOL105-17"
+  },
+  {
+    "id": "issue-2",
+    "group": "aufgaben",
+    "tool": "create_issue",
+    "prompt": "Erstelle für VOL105 ein Ticket namens „Rechnung sichten“ mit kurzer Beschreibung „Testbeleg“.",
+    "result": "Die Aufgabe VOL105-18 wurde angelegt.",
+    "answer": "VOL105-18"
+  },
+  {
+    "id": "comment-1",
+    "group": "kommentare",
+    "tool": "add_comment",
+    "prompt": "Schreibe bei der Aufgabe VOL105-7 den Kommentar „Geprüft“.",
+    "result": "Kommentar 1051 zu VOL105-7 gespeichert.",
+    "answer": "1051"
+  },
+  {
+    "id": "comment-2",
+    "group": "kommentare",
+    "tool": "add_comment",
+    "prompt": "Ergänze bei VOL105-8 den Hinweis „Beleg fehlt“ als Kommentar.",
+    "result": "Kommentar 1052 zu VOL105-8 gespeichert.",
+    "answer": "1052"
+  },
+  {
+    "id": "knowledge-1",
+    "group": "wissen",
+    "tool": "search_knowledge",
+    "prompt": "Wann ist laut Projektwissen die Testfreigabe geplant?",
+    "result": "Im Wissensdokument steht: Testfreigabe am 17. Oktober.",
+    "answer": "17. Oktober"
+  },
+  {
+    "id": "knowledge-2",
+    "group": "wissen",
+    "tool": "search_knowledge",
+    "prompt": "Suche im Projektwissen nach der vereinbarten Aufbewahrungsfrist.",
+    "result": "Die Aufbewahrungsfrist beträgt 30 Tage.",
+    "answer": "30 Tage"
+  },
+  {
+    "id": "mail-1",
+    "group": "mail",
+    "tool": "draft_reply",
+    "prompt": "Im Helena-Projekt VOL105: Bereite für Mailthread 105 die Antwort „Wir melden uns morgen“ vor. Speichere ausschließlich einen Entwurf.",
+    "result": "Mailentwurf 1051 gespeichert, nichts versendet.",
+    "answer": "1051"
+  },
+  {
+    "id": "mail-2",
+    "group": "mail",
+    "tool": "draft_reply",
+    "prompt": "Im Helena-Projekt VOL105: Lege für Mailthread 106 die Antwort „Der Termin passt“ nur als Entwurf an.",
+    "result": "Mailentwurf 1052 gespeichert, nichts versendet.",
+    "answer": "1052"
+  },
+  {
+    "id": "calendar-1",
+    "group": "kalender",
+    "tool": "google_calendar_events",
+    "prompt": "Welche Termine stehen im verbundenen Google-Testkalender des Projekts VOL105 am 5. Oktober 2026? Das Testkonto ist test-kalender@example.com.",
+    "result": "Am 5. Oktober steht Teamrunde um 16:00 im Kalender.",
+    "answer": "16:00"
+  },
+  {
+    "id": "calendar-2",
+    "group": "kalender",
+    "tool": "google_calendar_events",
+    "prompt": "Prüfe im Google-Testkalender test-kalender@example.com des Projekts VOL105 für den 30. September 2026, ob ein Review eingetragen ist.",
+    "result": "Morgen ist das Review um 10:30 eingetragen.",
+    "answer": "10:30"
+  },
+  {
+    "id": "goal-1",
+    "group": "ziele",
+    "tool": "list_goals",
+    "prompt": "Welche Ziele gibt es im Testprojekt VOL105?",
+    "result": "Ziel: Antwortzeit unter zwei Stunden.",
+    "answer": "zwei Stunden"
+  },
+  {
+    "id": "goal-2",
+    "group": "ziele",
+    "tool": "list_goals",
+    "prompt": "Liste die aktuellen Projektziele von VOL105 auf.",
+    "result": "Ziel: 90 Prozent der Aufgaben im Quartal abschließen.",
+    "answer": "90 Prozent"
+  },
+  {
+    "id": "decision-1",
+    "group": "entscheidungen",
+    "tool": "list_decisions",
+    "prompt": "Welche Entscheidung wurde für die lokale Speicherung in VOL105 dokumentiert?",
+    "result": "Entscheidung D-105: lokale Speicherung verwenden.",
+    "answer": "D-105"
+  },
+  {
+    "id": "decision-2",
+    "group": "entscheidungen",
+    "tool": "list_decisions",
+    "prompt": "Zeige die letzte dokumentierte Entscheidung des Testprojekts VOL105.",
+    "result": "Entscheidung D-106: Prüflauf wöchentlich.",
+    "answer": "D-106"
+  },
+  {
+    "id": "approval-1",
+    "group": "genehmigungen",
+    "tool": "get_approval",
+    "prompt": "Welchen Status hat die Testfreigabe 105?",
+    "result": "Freigabe 105 wartet auf Entscheidung.",
+    "answer": "wart"
+  },
+  {
+    "id": "approval-2",
+    "group": "genehmigungen",
+    "tool": "get_approval",
+    "prompt": "Prüfe, ob die Genehmigung 106 im Testprojekt schon erteilt wurde.",
+    "result": "Genehmigung 106 ist genehmigt.",
+    "answer": "genehmigt"
+  },
+  {
+    "id": "agent-1",
+    "group": "agenten",
+    "tool": "list_ai_agents",
+    "prompt": "Welche Agenten gehören zu VOL105?",
+    "result": "Vollständige Agentenliste für VOL105: Agent Lumen (ID 105) ist diesem Projekt zugeordnet und aktiv.",
+    "answer": "Lumen"
+  },
+  {
+    "id": "agent-2",
+    "group": "agenten",
+    "tool": "list_ai_agents",
+    "prompt": "Liste die aktiven Agenten im Testprojekt auf.",
+    "result": "Vollständige Agentenliste für VOL105: Agent Nova (ID 106) ist diesem Projekt zugeordnet und aktiv.",
+    "answer": "Nova"
+  },
+  {
+    "id": "trade-1",
+    "group": "trading-lesetools",
+    "tool": "alpaca_paper_positions",
+    "prompt": "Welche Positionen zeigt das Test-Paper-Depot? Nur lesen.",
+    "result": "Vollständige Liste des Test-Paper-Depots: AAPL, zwei Stück. Keine weiteren Positionen.",
+    "answer": "AAPL"
+  },
+  {
+    "id": "trade-2",
+    "group": "trading-lesetools",
+    "tool": "alpaca_paper_positions",
+    "prompt": "Prüfe lesend, ob im Paper-Depot eine AAPL-Position liegt.",
+    "result": "Vollständige Liste des Test-Paper-Depots: AAPL ist mit zwei Stücken vorhanden. Keine weiteren Positionen.",
+    "answer": "2"
+  },
+  {
+    "id": "browser-1",
+    "group": "browser",
+    "tool": "browser_snapshot",
+    "profile": "recherche",
+    "prompt": "Lies auf der bereits geöffneten lokalen Produktseite den Preis des Rucksacks ab.",
+    "result": "Produktseite Rucksack Gipfel 30. Preis: 49 €.",
+    "answer": "49 €"
+  },
+  {
+    "id": "browser-2",
+    "group": "browser",
+    "tool": "browser_snapshot",
+    "profile": "recherche",
+    "prompt": "Was kostet der Rucksack auf der offenen lokalen Testseite?",
+    "result": "Produktseite Rucksack Gipfel 30. Preis: 49 €.",
+    "answer": "49 €"
+  },
+  {
+    "id": "decide-1",
+    "group": "decide",
+    "tool": "decide",
+    "prompt": "Protokolliere mit Helenas Entscheidungsfunktion eine Wahl für die Testfrage: Eine kurze FAQ-Antwort ist gefragt. Wähle zwischen A (drei Dateien lesen) und B (das bereits belegte Faktum verwenden).",
+    "result": "Entscheidung D-105 protokolliert: Variante B, Konfidenz 0,91.",
+    "answer": "B"
+  },
+  {
+    "id": "decide-2",
+    "group": "decide",
+    "tool": "decide",
+    "prompt": "Protokolliere mit Helenas Entscheidungsfunktion eine Wahl für die Testfrage: Bei täglich wechselnden Daten, prüfe wöchentlich oder monatlich? Gib die getroffene Wahl an.",
+    "result": "Entscheidung D-106 protokolliert: wöchentliche Prüfung, Konfidenz 0,88.",
+    "answer": "wöchentlich"
+  },
+  {
+    "id": "external-1",
+    "group": "externes-mcp",
+    "tool": "fixture__lookup",
+    "prompt": "Frage den lokalen Testkatalog nach dem Eintrag A17.",
+    "result": "Katalogeintrag A17: verfügbar.",
+    "answer": "A17"
+  },
+  {
+    "id": "external-2",
+    "group": "externes-mcp",
+    "tool": "fixture__lookup",
+    "prompt": "Suche im lokalen Testkatalog den Datensatz B18.",
+    "result": "Katalogeintrag B18: reserviert.",
+    "answer": "B18"
+  },
+  {
+    "id": "file-read-1",
+    "group": "dateien",
+    "tool": "read_file",
+    "profile": "coder-lite",
+    "prompt": "Lies die lokale Testdatei bericht.txt und nenne das Datum der Testfreigabe.",
+    "result": "",
+    "answer": "17. Oktober"
+  },
+  {
+    "id": "file-read-2",
+    "group": "dateien",
+    "tool": "read_file",
+    "profile": "coder-lite",
+    "prompt": "Welche Aufbewahrungsfrist steht in bericht.txt?",
+    "result": "",
+    "answer": "30 Tage"
+  },
+  {
+    "id": "file-list-1",
+    "group": "dateien",
+    "tool": "list_files",
+    "profile": "coder-lite",
+    "prompt": "Welche Dateien liegen im lokalen Testordner? Nenne bericht.txt, falls sie vorhanden ist.",
+    "result": "",
+    "answer": "bericht.txt"
+  },
+  {
+    "id": "file-list-2",
+    "group": "dateien",
+    "tool": "list_files",
+    "profile": "coder-lite",
+    "prompt": "Liste die Textdateien des lokalen Testordners auf.",
+    "result": "",
+    "answer": "bericht.txt"
+  },
+  {
+    "id": "file-search-1",
+    "group": "suche",
+    "tool": "search_files",
+    "profile": "coder-lite",
+    "prompt": "Suche in den lokalen Testdateien nach „Testfreigabe“ und nenne das Datum.",
+    "result": "",
+    "answer": "17. Oktober"
+  },
+  {
+    "id": "file-search-2",
+    "group": "suche",
+    "tool": "search_files",
+    "profile": "coder-lite",
+    "prompt": "Finde in den lokalen Testdateien die Aufbewahrungsfrist.",
+    "result": "",
+    "answer": "30 Tage"
+  },
+  {
+    "id": "file-write-1",
+    "group": "dateien",
+    "tool": "write_file",
+    "profile": "coder-lite",
+    "prompt": "Erstelle im lokalen Testordner die Datei notiz-1.txt mit dem Text „Nur Testdaten“.",
+    "result": "",
+    "answer": "notiz-1.txt"
+  },
+  {
+    "id": "file-write-2",
+    "group": "dateien",
+    "tool": "write_file",
+    "profile": "coder-lite",
+    "prompt": "Schreibe eine neue Datei notiz-2.txt mit „Freigabe geprüft“ im lokalen Testordner.",
+    "result": "",
+    "answer": "notiz-2.txt"
+  },
+  {
+    "id": "file-edit-1",
+    "group": "dateien",
+    "tool": "edit_file",
+    "profile": "coder-lite",
+    "prompt": "Ändere in bericht.txt genau „Status: offen.“ zu „Status: geprüft.“ und bestätige die Änderung.",
+    "result": "",
+    "answer": "geprüft"
+  },
+  {
+    "id": "file-edit-2",
+    "group": "dateien",
+    "tool": "edit_file",
+    "profile": "coder-lite",
+    "prompt": "Ersetze in bericht.txt „Testfreigabe: 17. Oktober.“ durch „Testfreigabe: 18. Oktober.“ und nenne das neue Datum.",
+    "result": "",
+    "answer": "18. Oktober"
+  },
+  {
+    "id": "shell-1",
+    "group": "shell-git",
+    "tool": "shell",
+    "profile": "coder-lite",
+    "prompt": "Zeige mit Git im lokalen Testordner die unversionierte Datei an.",
+    "result": "",
+    "answer": "bericht.txt"
+  },
+  {
+    "id": "shell-2",
+    "group": "shell-git",
+    "tool": "shell",
+    "profile": "coder-lite",
+    "prompt": "Welcher Git-Branch ist im lokalen Testordner ausgecheckt?",
+    "result": "",
+    "answer": "flash-eval"
+  },
+  {
+    "id": "chain-knowledge-issue",
+    "group": "ketten",
+    "tool": "create_issue",
+    "chain": ["search_knowledge", "create_issue"],
+    "prompt": "Prüfe im Projektwissen von VOL105 das Datum der Testfreigabe und lege danach eine Aufgabe in der offenen Spalte an, dieses Datum zu kontrollieren.",
+    "results": {
+      "search_knowledge": "Quelle Testplan.md im Projektwissen: Die Testfreigabe ist am 17. Oktober.",
+      "create_issue": "Aufgabe VOL105-19 zur Kontrolle des 17. Oktober angelegt."
+    },
+    "result": "Aufgabe VOL105-19 zur Kontrolle des 17. Oktober angelegt.",
+    "answer": "VOL105-19"
+  },
+  {
+    "id": "chain-browser-price",
+    "group": "ketten",
+    "tool": "browser_snapshot",
+    "chain": ["browser_navigate", "browser_snapshot"],
+    "profile": "recherche",
+    "prompt": "Öffne die lokale Testseite http://127.0.0.1:18650/produkt?name=Rucksack und lies dort den Preis ab.",
+    "results": {
+      "browser_navigate": "Lokale Produktseite geöffnet.",
+      "browser_snapshot": "Produktseite Rucksack. Preis: 49 €."
+    },
+    "result": "Produktseite Rucksack. Preis: 49 €.",
+    "answer": "49 €"
+  }
+]

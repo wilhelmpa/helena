@@ -327,6 +327,7 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
 
   watch = new FailureWatch();
   let nudged = false;
+  let emptyAnswerNudged = false;
   let lastText = '';
   let turns = 0;
   const contextOf = () => chain[0]!.contextLength;
@@ -505,6 +506,20 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
         continue;
       }
       if (!lastText) {
+        if (toolsUsed.size > 0 && !emptyAnswerNudged && turns < maxTurns) {
+          emptyAnswerNudged = true;
+          await save(
+            [
+              {
+                role: 'user',
+                content:
+                  '(Helena) Das Werkzeug hat geantwortet, aber deine Antwort ist leer. Verwende sein Ergebnis und beantworte die Aufgabe jetzt.',
+              },
+            ],
+            step,
+          );
+          continue;
+        }
         return finish({ status: 'failed', text: '', exitCode: 1, reason: 'empty-answer' });
       }
       return finish({ status: 'success', text: lastText, exitCode: 0 });

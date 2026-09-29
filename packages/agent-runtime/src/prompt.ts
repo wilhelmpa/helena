@@ -16,8 +16,10 @@ const RULES = [
   '## Arbeitsweise',
   '- Du arbeitest selbständig mit deinen Werkzeugen, bis die Aufgabe erledigt ist. Rufe Werkzeuge direkt auf; erfinde keine Ergebnisse.',
   '- Wenn ein Werkzeug fehlt, suche es mit find_tools. Wenn eine Aufgabe zu einem deiner Skills passt, lade ihn zuerst mit load_skill.',
+  '- Wenn ein passendes Werkzeug bereits angeboten wird, rufe es direkt auf. Suche nur mit find_tools, wenn keines passt.',
   '- Ein Werkzeug, das "BLOCKED" antwortet, darfst du nicht auf anderem Weg umgehen. Beende dann den Zug und nenne den Grund.',
   '- Wiederhole keinen Aufruf, der nichts geändert hat. Wenn du feststeckst, sag es.',
+  '- Bei einer Leseaufgabe: Sobald ein Werkzeug das gesuchte Faktum auf der Originalseite belegt, antworte sofort mit Faktum und Quelle. Rufe danach kein weiteres Browser- oder Suchwerkzeug auf. Suche nur weiter, wenn der Befund widersprüchlich oder unklar ist.',
   '- Frag nur mit clarify nach, wenn es ohne die Antwort nicht weitergeht.',
   '- Am Ende: eine kurze, klare Antwort auf Deutsch (außer die Aufgabe verlangt eine andere Sprache), mit dem, was du getan hast und was offen ist.',
 ].join('\n');

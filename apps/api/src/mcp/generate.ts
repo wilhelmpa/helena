@@ -149,6 +149,26 @@ interface SchemaShape {
   oneOf?: SchemaShape[];
 }
 
+function jsonSchema(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(jsonSchema);
+  if (!value || typeof value !== 'object') return value;
+  return Object.fromEntries(
+    Object.entries(value)
+      .filter(([key]) => key !== 'nullable')
+      .map(([key, child]) => [
+        key,
+        ['properties', 'patternProperties', '$defs', 'definitions'].includes(key) &&
+        child &&
+        typeof child === 'object' &&
+        !Array.isArray(child)
+          ? Object.fromEntries(
+              Object.entries(child).map(([name, schema]) => [name, jsonSchema(schema)]),
+            )
+          : jsonSchema(child),
+      ]),
+  );
+}
+
 function mergeInputSchema(hooks: Record<string, unknown>, pathParams: string[]): McpInputSchema {
   const properties: Record<string, unknown> = {};
   const required: string[] = [];
@@ -163,7 +183,8 @@ function mergeInputSchema(hooks: Record<string, unknown>, pathParams: string[]):
     let common: string[] | null = null;
     for (const part of parts) {
       if (!part.properties) continue;
-      Object.assign(properties, part.properties);
+      for (const [name, value] of Object.entries(part.properties))
+        properties[name] = jsonSchema(value);
       const names = Array.isArray(part.required) ? (part.required as string[]) : [];
       common = common === null ? names : common.filter((n) => names.includes(n));
     }
