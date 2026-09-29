@@ -57,12 +57,18 @@ describe('Mitglied hinzufügen', () => {
     assert.equal(result.options.find((option) => option.id === 4)!.detail, 'P11');
   });
 
-  test('Vorlage: alle Vorlagen des Teams', () => {
+  test('Vorlage: alle Vorlagen des Teams, außer schon ins Projekt kopierte', () => {
     const result = teamMemberCandidates(organization, agents, 10, 'template');
     assert.deepEqual(
       result.options.map((option) => option.id),
       [9],
     );
+    const withCopy = [
+      ...agents,
+      { id: 30, name: 'Vorlage Coder P10', template: false, sourceTemplateId: 9, projects: [project(10)] },
+    ] as unknown as AiAgent[];
+    assert.deepEqual(teamMemberCandidates(organization, withCopy, 10, 'template').options, []);
+    assert.equal(teamMemberCandidates(organization, withCopy, 11, 'template').options.length, 1);
   });
 
   test('berichtet standardmäßig an den Koordinator, sonst an Helena', () => {

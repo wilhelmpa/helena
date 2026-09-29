@@ -49,7 +49,15 @@ export function teamMemberCandidates(
               meta: '',
             }))
         : agents
-            .filter((agent) => agent.template)
+            // A template already copied into the project is not offered again: the second
+            // copy would take the first one's name.
+            .filter(
+              (agent) =>
+                agent.template &&
+                !agents.some(
+                  (copy) => copy.sourceTemplateId === agent.id && inProject(copy.projects),
+                ),
+            )
             .sort(byName)
             .map((agent) => ({ id: agent.id, name: agent.name, detail: '', meta: '' }));
   const projectAgents = organization.agents.filter(

@@ -1,5 +1,6 @@
 'use client';
 
+import { useContext } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { HeartPulse } from 'lucide-react';
 import { useFormatter, useTranslations } from 'next-intl';
@@ -10,6 +11,7 @@ import { budgetState, leadingBudget } from '@/features/home/dashboard/budgetAler
 import type { AgentFormValue } from '../../utils/agentForm';
 import { heartbeatHistory } from '../../utils/heartbeatHistory';
 import { AgentFormSection } from './AgentFormSection';
+import { AgentFormPageModeCtx } from './agentFormPages';
 import {
   Inline,
   List,
@@ -47,14 +49,17 @@ export default function AgentHeartbeatSection({
   const t = useTranslations('teams.agents.heartbeat');
   const format = useFormatter();
   const { teamId } = useAgentSection();
+  // On its page of the agent dialog the section is always open.
+  const pageMode = useContext(AgentFormPageModeCtx);
+  const shown = open || pageMode;
   const history = useQuery({
     queryKey: ['agent-heartbeats', teamId, agent?.id, 'all'],
     queryFn: () => listAgentHeartbeats(teamId, agent!.id, true),
-    enabled: open && agent != null,
+    enabled: shown && agent != null,
     staleTime: 30_000,
   });
   // A budget at 80 % or more doubles the interval (the heartbeat's throttle).
-  const autopilot = useAgentAutopilot(teamId, open && agent && !agent.template ? agent.id : null);
+  const autopilot = useAgentAutopilot(teamId, shown && agent && !agent.template ? agent.id : null);
   const throttled =
     budgetState(
       leadingBudget([
