@@ -203,7 +203,10 @@ export default function KnowledgeBaseView({
             {shown.map((row) => (
               <Tr key={row.path} data-base-row={row.path}>
                 {columns.map((column, index) => (
-                  <Td key={column} label={columnLabel(column, properties, tKnowledge('columns.name'))}>
+                  <Td
+                    key={column}
+                    label={columnLabel(column, properties, tKnowledge('columns.name'))}
+                  >
                     {index === 0 ? opener(row) : cellText(row.values[column])}
                   </Td>
                 ))}
