@@ -297,5 +297,7 @@
   "searchSettings": "Cari pengaturan …",
   "nameList": {
     "more": "+{count} lainnya"
-  }
+  },
+  "pinOverlay": "Sematkan: tetap terbuka saat halaman berganti",
+  "unpinOverlay": "Lepas: tertutup saat halaman berganti"
 }

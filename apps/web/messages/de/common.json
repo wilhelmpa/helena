@@ -297,5 +297,7 @@
   "searchSettings": "Einstellung suchen …",
   "nameList": {
     "more": "+{count} weitere"
-  }
+  },
+  "pinOverlay": "Anheften: bleibt beim Seitenwechsel offen",
+  "unpinOverlay": "Lösen: schließt beim Seitenwechsel"
 }

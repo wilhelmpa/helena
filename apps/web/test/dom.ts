@@ -18,6 +18,7 @@ const NAMES = [
   'KeyboardEvent',
   'PointerEvent',
   'localStorage',
+  'sessionStorage',
   'getComputedStyle',
   'requestAnimationFrame',
   'cancelAnimationFrame',

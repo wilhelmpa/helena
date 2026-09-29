@@ -2766,6 +2766,23 @@ a.ds-run-card:hover {
   padding: var(--space-4) var(--space-5);
   overflow-y: auto;
 }
+/* A doc in the overlay reads like a task in it (Auftrag 117): the same edge, its first
+   heading the size of a task's title, the text the size of a task's description. */
+.ds-overlay-body.ds-knowledge-preview .ds-knowledge-preview-body {
+  padding: 0;
+}
+.ds-knowledge-preview .md-content {
+  font-size: 15px;
+}
+.ds-knowledge-preview .md-content > h1:first-child {
+  margin-top: 0;
+  margin-bottom: var(--space-4);
+  color: var(--text);
+  font-size: 24px;
+  font-weight: 520;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
 .ds-knowledge-preview-body [data-knowledge-canvas] {
   flex: none;
   height: min(70vh, 640px);

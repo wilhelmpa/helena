@@ -297,5 +297,7 @@
   "searchSettings": "Chercher un réglage …",
   "nameList": {
     "more": "+{count} de plus"
-  }
+  },
+  "pinOverlay": "Épingler : reste ouvert quand la page change",
+  "unpinOverlay": "Désépingler : se ferme quand la page change"
 }

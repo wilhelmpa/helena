@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { useTeamsQuery } from '@/services/teams.service';
 import { useAiAgentsQuery } from '@/services/aiAgents.service';
 import { Overlay } from '@/design-system';
+import { usePinnedOverlay } from '@/utils/overlayPin';
 import { RUN_OVERLAY_OPEN, RUN_PARAM, parseRunParam } from '../runOverlay';
 import RunView from './RunView';
 
@@ -22,7 +23,10 @@ function hrefWith(value: string | null) {
 // and head as the task overlay; full screen opens it on the agent's Läufe tab.
 export default function RunOverlay() {
   const params = useSearchParams();
-  const target = parseRunParam(params.get(RUN_PARAM));
+  const fromUrl = params.get(RUN_PARAM);
+  // Pinned, the run stays open on the next page, where the address no longer names it.
+  const pinned = usePinnedOverlay('run');
+  const target = parseRunParam(fromUrl ?? pinned?.value ?? null);
   const teamId = useTeamsQuery().data?.[0]?.id ?? null;
   const agent = (useAiAgentsQuery(target ? teamId : null).data ?? []).find(
     (entry) => entry.id === target?.agentId,
@@ -52,12 +56,19 @@ export default function RunOverlay() {
     return () => window.removeEventListener(RUN_OVERLAY_OPEN, onOpen);
   }, [go]);
 
-  const close = () => go(null);
+  const close = () => {
+    if (fromUrl != null) go(null);
+  };
 
   if (!target || teamId == null) return null;
   const title = `${agent?.name ?? '…'} · #${target.runId}`;
   return (
-    <Overlay label={title} tabs={[{ id: 'run', label: title }]} onClose={close}>
+    <Overlay
+      label={title}
+      tabs={[{ id: 'run', label: title }]}
+      onClose={close}
+      pin={{ kind: 'run', value: `${target.agentId}.${target.runId}` }}
+    >
       <RunView
         teamId={teamId}
         agentId={target.agentId}

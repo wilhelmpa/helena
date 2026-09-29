@@ -15,6 +15,7 @@ import {
   type AgentFormPageId,
 } from '@/features/teams/components/ai-agents/agentFormPages';
 import { useAgentStatus } from '@/utils/helenaStatus';
+import { usePinnedOverlay } from '@/utils/overlayPin';
 import AgentSettingsModalContent from './AgentSettingsModalContent';
 import AgentOverview from './AgentOverview';
 import { AGENT_DIALOG_OPEN, AGENT_PARAM, LEGACY_AGENT_PARAM } from './settingsModalCatalog';
@@ -69,11 +70,14 @@ export default function AgentDialog() {
   const fromUrl =
     Number(params.get(AGENT_PARAM) ?? (onAgentsPage() ? params.get(LEGACY_AGENT_PARAM) : null)) ||
     null;
+  // Pinned, the agent stays open on the next page too, where the address no longer names it.
+  const pinned = usePinnedOverlay('agent');
+  const agentId = fromUrl ?? (pinned ? Number(pinned.value) || null : null);
   const [teamHint, setTeamHint] = useState<number | null>(null);
   const teams = useTeamsQuery().data ?? [];
   const teamId = teamHint ?? teams[0]?.id ?? null;
-  const agents = useAiAgentsQuery(fromUrl != null ? teamId : null).data ?? [];
-  const agent = agents.find((entry) => entry.id === fromUrl);
+  const agents = useAiAgentsQuery(agentId != null ? teamId : null).data ?? [];
+  const agent = agents.find((entry) => entry.id === agentId);
 
   const go = useCallback((agentId: number | null, tab?: string) => {
     const href = hrefWith(agentId, tab);
@@ -107,17 +111,19 @@ export default function AgentDialog() {
   // The old agent page linked a tab and a run as `tab`/`run` (/agents?agent=7&tab=runs&run=1).
   const legacy = (key: string) => (onAgentsPage() ? params.get(key) : null);
 
-  if (fromUrl == null || teamId == null) return null;
+  if (agentId == null || teamId == null) return null;
   return (
     <AgentDialogFrame
-      key={`${fromUrl}:${params.get('agentTab') ?? ''}`}
+      key={`${agentId}:${params.get('agentTab') ?? ''}`}
       teamId={teamId}
-      agentId={fromUrl}
+      agentId={agentId}
       agent={agent ?? null}
       label={agent?.name ?? t('title')}
       initialTab={params.get('agentTab') ?? legacy('tab') ?? SETTINGS_TAB}
       runId={Number(params.get('agentRunId') ?? legacy('run')) || null}
-      onClose={() => go(null)}
+      onClose={() => {
+        if (fromUrl != null) go(null);
+      }}
     />
   );
 }
@@ -173,6 +179,7 @@ function AgentDialogFrame({
       activeTab={tab}
       onTab={setTab}
       onClose={onClose}
+      pin={{ kind: 'agent', value: String(agentId) }}
       className="ds-agent-overlay"
       bodyClassName="is-flush"
       width="wide"

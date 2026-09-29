@@ -297,5 +297,7 @@
   "searchSettings": "Buscar configuração …",
   "nameList": {
     "more": "+{count} mais"
-  }
+  },
+  "pinOverlay": "Fixar: fica aberto ao trocar de página",
+  "unpinOverlay": "Desafixar: fecha ao trocar de página"
 }
