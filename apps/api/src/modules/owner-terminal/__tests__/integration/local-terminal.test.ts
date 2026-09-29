@@ -361,7 +361,7 @@ describe('local owner terminal inference', () => {
     // Lemonade is asked once per request, whatever number of its terminals.
     expect(calls).toHaveLength(3);
   });
-  it('offers Flash while Halogen lists its model, and sends its answers to Halogen', async () => {
+  it('offers Flash while Halogen lists its model', async () => {
     const { owner } = await setup();
     const flash = LOCAL_TERMINAL_MODELS['local-flash'];
     await db.insert(helenaModelServer).values({
