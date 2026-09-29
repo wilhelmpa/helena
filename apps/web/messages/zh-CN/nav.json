@@ -167,7 +167,13 @@
       "open": "在浏览器中打开",
       "logs": "日志",
       "noLogs": "暂无日志。"
-    }
+    },
+    "codeLoading": "正在加载 Code …",
+    "codeSlow": "Code 目前没有响应。",
+    "codeRetry": "重新加载",
+    "codeNoFolder": "此项目还没有工作文件夹。",
+    "codeNoFolderPending": "此项目的工作文件夹仍在设置中。",
+    "codeSettings": "项目设置"
   },
   "groups": {
     "project": "项目",

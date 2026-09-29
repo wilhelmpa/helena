@@ -406,9 +406,14 @@ export default function ReceiptsPage() {
         actions={
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button type="button" className={cn(PAGE_CONTROL_CLASS, PAGE_PRIMARY_CLASS)}>
+              <button
+                type="button"
+                aria-label={t('new')}
+                className={cn(PAGE_CONTROL_CLASS, PAGE_PRIMARY_CLASS)}
+              >
                 <Plus aria-hidden="true" />
-                {t('new')}
+                {/* On a phone the button is its symbol; the title keeps the room. */}
+                <span className="ds-phone-hidden">{t('new')}</span>
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-60">

@@ -70,7 +70,7 @@
     },
     "agent-runtime": {
       "label": "Agent runtime",
-      "description": "The emergency stop, the Hermes installation and its updates, the fallback models and session retention every agent gets, and what the agents spent."
+      "description": "The emergency stop, the runtime and its updates, the fallback models and session retention every agent gets, and what the agents spent."
     },
     "plugins": {
       "label": "Plugins",

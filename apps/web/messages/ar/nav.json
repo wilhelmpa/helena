@@ -167,7 +167,13 @@
       "open": "فتح في المتصفح",
       "logs": "السجلات",
       "noLogs": "لا توجد سجلات."
-    }
+    },
+    "codeLoading": "جارٍ تحميل Code …",
+    "codeSlow": "لا يستجيب Code الآن.",
+    "codeRetry": "إعادة التحميل",
+    "codeNoFolder": "لا يوجد لهذا المشروع مجلد عمل بعد.",
+    "codeNoFolderPending": "ما زال مجلد عمل هذا المشروع قيد الإعداد.",
+    "codeSettings": "إعدادات المشروع"
   },
   "groups": {
     "project": "المشروع",

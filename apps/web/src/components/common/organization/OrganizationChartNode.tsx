@@ -83,7 +83,7 @@ export default function OrganizationChartNode({ data }: NodeProps<ChartAgentNode
     <div
       data-selected={selected || undefined}
       data-throttled={agent.throttled && !selected ? 'true' : undefined}
-      className={`organization-card group relative rounded-xl border bg-card px-[18px] text-start text-card-foreground shadow-[0_8px_22px_color-mix(in_srgb,var(--foreground)_6%,transparent)] transition-[opacity,border-color,box-shadow] duration-200 ${leader ? 'h-[92px] w-[280px] pt-2 pb-4' : 'h-[112px] w-[242px] pt-[14px] pb-4'} ${selected ? 'border-brand ring-[3px] ring-brand/20' : 'border-border hover:border-muted-foreground/40'} ${dimmed ? 'opacity-30' : ''}`}
+      className={`organization-card group relative rounded-xl border bg-card px-[18px] text-start text-card-foreground transition-[opacity,border-color,box-shadow] duration-200 ${leader ? 'h-[92px] w-[280px] pt-2 pb-4' : 'h-[112px] w-[242px] pt-[14px] pb-4'} ${selected ? 'border-brand ring-[3px] ring-brand/20' : 'border-border hover:border-muted-foreground/40'} ${dimmed ? 'opacity-30' : ''}`}
     >
       <Handle type="target" position={Position.Top} className={handle} isConnectable={false} />
       <Handle
@@ -102,7 +102,7 @@ export default function OrganizationChartNode({ data }: NodeProps<ChartAgentNode
         aria-pressed={selected}
         aria-label={agent.name}
       >
-        <span className="flex items-center gap-2 font-mono text-[10px] font-medium tracking-[.13em] text-muted-foreground">
+        <span className="flex items-center gap-2 font-mono text-[12px] font-medium tracking-[.08em] text-muted-foreground">
           <HeartbeatRing agent={agent}>
             <Orb
               state={status}
@@ -116,19 +116,19 @@ export default function OrganizationChartNode({ data }: NodeProps<ChartAgentNode
           </span>
         </span>
         <span
-          className={`${leader ? 'mt-2' : 'mt-1'} block truncate text-[15px] font-medium`}
+          className={`${leader ? 'mt-2' : 'mt-1'} block truncate text-[16px] font-medium`}
           title={agent.name}
         >
           {agent.name}
         </span>
         <span
-          className="mt-1 block truncate font-mono text-[11px] text-muted-foreground"
+          className="mt-1 block truncate font-mono text-[12px] text-muted-foreground"
           title={modelLine}
         >
           {modelLine}
         </span>
         {!leader && (
-          <span className="mt-1 block truncate text-[11px] text-muted-foreground">
+          <span className="mt-1 block truncate text-[12px] text-muted-foreground">
             {t('decider')}: {decider ?? t('noDecider')} · {effectiveTrust}
           </span>
         )}

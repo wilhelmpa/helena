@@ -16,7 +16,8 @@ const RAIL_INDENT = 40;
 const STACK_GAP = 14;
 // An agent's current tasks hang under its card, as in the ring (owner 29.09.: the same
 // "Aufgaben" in both views): at most four, the fourth names how many more.
-const TASK_HEIGHT = 26;
+// The task pill's height as the ring draws it (.ds-ring-task).
+const TASK_HEIGHT = 32;
 const TASK_GAP = 6;
 const TASK_INDENT = 12;
 const TASKS_PER_AGENT = 4;

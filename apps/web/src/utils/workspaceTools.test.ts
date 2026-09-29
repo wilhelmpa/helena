@@ -225,3 +225,10 @@ describe('codeFolderUrl', () => {
     assert.equal(codeFolderUrl(config, 'Projects/VOL'), '');
   });
 });
+
+describe('Code of a project without a folder (29.09.)', () => {
+  it('opens no editor rather than the folder that was open last', () => {
+    assert.equal(workspaceTools(config, 'VOL').code.url, '');
+    assert.equal(workspaceTools(config, null).code.url, 'https://plan.example.com/workspace/code/');
+  });
+});

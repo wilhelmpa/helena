@@ -120,7 +120,7 @@
     "localPatches": "{count, plural, one {# lokale Änderung wird übernommen: {list}} other {# lokale Änderungen werden übernommen: {list}}}",
     "kind": {
       "memory-write": "Gedächtnis",
-      "hermes-update": "Hermes-Update"
+      "hermes-update": "Laufzeit-Update"
     },
     "status": {
       "pending": "Wartet",
@@ -233,8 +233,8 @@
   "admin": {
     "stopTitle": "Not-Aus",
     "stopDescription": "Hält alle Agenten der Instanz auf einmal an. Auch im Kontomenü.",
-    "hermesTitle": "Hermes",
-    "hermesDescription": "Die Hermes-Installation, auf der alle Agenten laufen. Ein Update braucht deine Freigabe; der Helfer legt eine Sicherung an und rollt bei einem Fehler zurück.",
+    "hermesTitle": "Laufzeit",
+    "hermesDescription": "Die Laufzeit, auf der alle Agenten arbeiten. Ein Update braucht deine Freigabe; der Helfer legt eine Sicherung an und rollt bei einem Fehler zurück.",
     "installed": "Installiert: {version}",
     "notChecked": "Noch nicht geprüft.",
     "upToDate": "Aktuell",
@@ -266,10 +266,10 @@
     "team": "Team",
     "noTeam": "Noch kein Team.",
     "openUpdates": "In Updates öffnen",
-    "profilesTitle": "Hermes-Profile",
+    "profilesTitle": "Agentenprofile",
     "compressionThreshold": "Kontext verdichten ab (Tokens)",
     "compressionThresholdHint": "Für jeden Agenten ohne eigenen Wert. 100 000 hält lange Chats deutlich unter den Fenstern heutiger Modelle, ohne Läufe mitten in der Arbeit zu oft zusammenzufassen.",
-    "bundledSkills": "Mitgelieferte Hermes-Skills",
+    "bundledSkills": "Mitgelieferte Skills der Laufzeit",
     "bundledSkillsHint": "Helena legt sie in jedem Hermes-Profil gleich an (docx, pdf, xlsx, Debugging …). Einzelne schaltest du beim Agenten aus. „Nur die nötigsten“ legt keine neuen mehr an; vorhandene bleiben.",
     "bundledSkillsAll": "Alle",
     "bundledSkillsEssential": "Nur die nötigsten"

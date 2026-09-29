@@ -33,6 +33,20 @@ function write(storage: Storage, key: string, value: string | null): void {
   }
 }
 
+// Chrome's permission for requests into the local network ('local-network-access', before
+// that 'private-network-access'); unknown names and other browsers count as not denied.
+async function localNetworkDenied(): Promise<boolean> {
+  for (const name of ['local-network-access', 'private-network-access']) {
+    try {
+      const status = await navigator.permissions.query({ name: name as PermissionName });
+      return status.state === 'denied';
+    } catch {
+      // Not a permission this browser knows.
+    }
+  }
+  return false;
+}
+
 // Switches to the home network's own origin when it answers from this device (see
 // ./homeAccess.ts). Runs once per page load on any other origin, in the background; renders
 // nothing. Whether it runs at all is the instance setting "Zu Hause automatisch direkt
@@ -59,6 +73,9 @@ export default function HomeAutoConnect() {
       try {
         const config = await getEdgeHome();
         if (!config?.autoConnect || config.homeUrl !== new URL(homeUrl).origin) return pause();
+        // The member said no to local network access for this site: asking would only end
+        // in a blocked request and a console error.
+        if (await localNetworkDenied()) return pause();
         // A plain GET without credentials: no preflight, no cookie of either origin. Chrome
         // asks once whether this site may reach the local network. Away from home the name
         // leads nowhere (or to another network's device without Helena's certificate).

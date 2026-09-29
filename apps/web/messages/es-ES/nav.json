@@ -167,7 +167,13 @@
       "open": "Abrir en el navegador",
       "logs": "Registros",
       "noLogs": "Sin registros."
-    }
+    },
+    "codeLoading": "Cargando Code …",
+    "codeSlow": "Code no responde ahora mismo.",
+    "codeRetry": "Recargar",
+    "codeNoFolder": "Este proyecto aún no tiene carpeta de trabajo.",
+    "codeNoFolderPending": "La carpeta de trabajo de este proyecto aún se está preparando.",
+    "codeSettings": "Ajustes del proyecto"
   },
   "groups": {
     "project": "Proyecto",

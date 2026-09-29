@@ -23,7 +23,8 @@ export default function HomeTaskRow({ issue }: { issue: CrossProjectIssue }) {
         as="span"
         size="xs"
         tone="muted"
-        className="w-16 shrink-0 font-mono max-sm:w-14"
+        // An id never breaks ("TRADE-" / "45", owner 29.09.): wide enough for KEY-123.
+        className="w-20 shrink-0 font-mono whitespace-nowrap max-sm:w-18"
         dir="ltr"
       >
         {issue.identifier}

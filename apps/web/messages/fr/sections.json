@@ -70,7 +70,7 @@
     },
     "agent-runtime": {
       "label": "Runtime des agents",
-      "description": "L'arrêt d'urgence, l'installation Hermes et ses mises à jour, les modèles de secours et la conservation des sessions pour tous les agents, et ce que les agents ont consommé."
+      "description": "L’arrêt d’urgence, l’environnement et ses mises à jour, les modèles de secours et la conservation des sessions de tous les agents, et ce qu’ils ont consommé."
     },
     "plugins": {
       "label": "Plugins",

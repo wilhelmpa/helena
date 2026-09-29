@@ -120,7 +120,7 @@
     "localPatches": "{count, plural, other {将保留 # 项本地更改：{list}}}",
     "kind": {
       "memory-write": "记忆",
-      "hermes-update": "Hermes 更新"
+      "hermes-update": "运行环境更新"
     },
     "status": {
       "pending": "等待中",
@@ -233,8 +233,8 @@
   "admin": {
     "stopTitle": "紧急停止",
     "stopDescription": "一次性暂停实例中的所有代理。账户菜单中也有此项。",
-    "hermesTitle": "Hermes",
-    "hermesDescription": "所有代理运行所依赖的 Hermes 安装。更新需要你的批准；辅助程序会先做备份，失败时自动回滚。",
+    "hermesTitle": "运行环境",
+    "hermesDescription": "所有智能体工作的运行环境。更新需要你的批准；助手会先备份，失败时自动回滚。",
     "installed": "已安装：{version}",
     "notChecked": "尚未检查。",
     "upToDate": "已是最新",
@@ -266,10 +266,10 @@
     "team": "团队",
     "noTeam": "暂无团队。",
     "openUpdates": "在“更新”中打开",
-    "profilesTitle": "Hermes 配置档",
+    "profilesTitle": "智能体配置档案",
     "compressionThreshold": "上下文压缩阈值（令牌）",
     "compressionThresholdHint": "适用于所有未设置自身值的代理。100,000 能让长聊天远低于当今模型的窗口，又不会在运行途中过于频繁地汇总。",
-    "bundledSkills": "Hermes 自带技能",
+    "bundledSkills": "运行环境自带的技能",
     "bundledSkillsHint": "Helena 会以相同方式放入每个 Hermes 配置档（docx、pdf、xlsx、调试……）。可在代理上单独关闭。“仅必需”不再添加新技能，已有的保留。",
     "bundledSkillsAll": "全部",
     "bundledSkillsEssential": "仅必需"

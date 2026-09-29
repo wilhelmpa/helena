@@ -140,7 +140,9 @@ function Flow({
       // text stays 11px on screen) and a larger one is centred on its middle and panned;
       // a tall tree keeps a readable zoom and is shown from its top.
       const ring = view === 'ring';
-      const minimum = ring ? RING_MIN_ZOOM : 0.5;
+      // The tree too (owner, 29.09.: its cards were as tiny as the ring): its smallest text
+      // is 12px as well, so both stop at the same readable zoom and are panned beyond it.
+      const minimum = RING_MIN_ZOOM;
       const zoom = Math.min(
         1,
         Math.max(
@@ -255,7 +257,7 @@ function Flow({
         fitView
         fitViewOptions={{
           padding: 0.08,
-          minZoom: view === 'ring' ? RING_MIN_ZOOM : 0.5,
+          minZoom: RING_MIN_ZOOM,
           maxZoom: 1,
         }}
         nodes={nodes}

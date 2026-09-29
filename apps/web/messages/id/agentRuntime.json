@@ -120,7 +120,7 @@
     "localPatches": "{count, plural, other {# perubahan lokal dipertahankan: {list}}}",
     "kind": {
       "memory-write": "Memori",
-      "hermes-update": "Pembaruan Hermes"
+      "hermes-update": "Pembaruan runtime"
     },
     "status": {
       "pending": "Menunggu",
@@ -233,8 +233,8 @@
   "admin": {
     "stopTitle": "Stop darurat",
     "stopDescription": "Menghentikan semua agen di instance ini sekaligus. Juga ada di menu akun.",
-    "hermesTitle": "Hermes",
-    "hermesDescription": "Instalasi Hermes tempat semua agen berjalan. Pembaruan memerlukan persetujuan Anda; skrip pembaruan membuat cadangan dan memulihkan versi sebelumnya jika gagal.",
+    "hermesTitle": "Runtime",
+    "hermesDescription": "Runtime tempat semua agen bekerja. Pembaruan butuh persetujuanmu; helper menyimpan cadangan dan mengembalikan jika gagal.",
     "installed": "Terpasang: {version}",
     "notChecked": "Belum diperiksa.",
     "upToDate": "Terbaru",
@@ -266,10 +266,10 @@
     "team": "Tim",
     "noTeam": "Belum ada tim.",
     "openUpdates": "Buka di Pembaruan",
-    "profilesTitle": "Profil Hermes",
+    "profilesTitle": "Profil agen",
     "compressionThreshold": "Padatkan konteks mulai (token)",
     "compressionThresholdHint": "Untuk setiap agen tanpa nilai sendiri. 100.000 menjaga obrolan panjang jauh di bawah jendela model saat ini tanpa terlalu sering merangkum run yang sedang berjalan.",
-    "bundledSkills": "Skill bawaan Hermes",
+    "bundledSkills": "Skill bawaan runtime",
     "bundledSkillsHint": "Helena menanamnya dengan cara sama di setiap profil Hermes (docx, pdf, xlsx, debugging …). Matikan satu per satu di agen. “Hanya yang penting” tidak menambah yang baru; yang ada tetap.",
     "bundledSkillsAll": "Semua",
     "bundledSkillsEssential": "Hanya yang penting"

@@ -356,7 +356,7 @@
   "systemHealth": {
     "title": "服务",
     "service": {
-      "runner": "Hermes 运行器",
+      "runner": "运行环境 Runner",
       "provisioning": "资源配置",
       "worker": "Worker",
       "engine": "Helena 引擎"

@@ -120,7 +120,7 @@
     "localPatches": "{count, plural, one {# modification locale est conservée : {list}} other {# modifications locales sont conservées : {list}}}",
     "kind": {
       "memory-write": "Mémoire",
-      "hermes-update": "Mise à jour de Hermes"
+      "hermes-update": "Mise à jour de l’environnement"
     },
     "status": {
       "pending": "En attente",
@@ -233,8 +233,8 @@
   "admin": {
     "stopTitle": "Arrêt d'urgence",
     "stopDescription": "Arrête d'un coup tous les agents de l'instance. Aussi dans le menu du compte.",
-    "hermesTitle": "Hermes",
-    "hermesDescription": "L'installation Hermes sur laquelle tournent tous les agents. Une mise à jour nécessite votre approbation ; le script de mise à jour fait une sauvegarde et revient à la version précédente en cas d'échec.",
+    "hermesTitle": "Environnement d’exécution",
+    "hermesDescription": "L’environnement sur lequel travaillent tous les agents. Une mise à jour demande ton accord ; l’assistant garde une sauvegarde et revient en arrière en cas d’échec.",
     "installed": "Version installée : {version}",
     "notChecked": "Pas encore vérifié.",
     "upToDate": "À jour",
@@ -266,10 +266,10 @@
     "team": "Équipe",
     "noTeam": "Aucune équipe pour l'instant.",
     "openUpdates": "Ouvrir dans Mises à jour",
-    "profilesTitle": "Profils Hermes",
+    "profilesTitle": "Profils des agents",
     "compressionThreshold": "Compresser le contexte à partir de (jetons)",
     "compressionThresholdHint": "Pour chaque agent sans valeur propre. 100 000 garde les longs chats bien sous les fenêtres des modèles actuels, sans résumer trop souvent les exécutions en cours.",
-    "bundledSkills": "Compétences fournies avec Hermes",
+    "bundledSkills": "Compétences fournies avec l’environnement",
     "bundledSkillsHint": "Helena les installe de la même façon dans chaque profil Hermes (docx, pdf, xlsx, débogage…). Désactive-les une à une sur l’agent. « Seulement l’essentiel » n’en ajoute plus ; celles présentes restent.",
     "bundledSkillsAll": "Toutes",
     "bundledSkillsEssential": "Seulement l’essentiel"

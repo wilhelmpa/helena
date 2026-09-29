@@ -32,7 +32,7 @@ export default function HomeFilesPage() {
   const tNav = useTranslations('nav');
   const params = useSearchParams();
   const router = useRouter();
-  const { data: session } = useSession();
+  const { data: session, isPending: sessionPending } = useSession();
   // The session is read after mount so the first client render matches the server's.
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -139,7 +139,9 @@ export default function HomeFilesPage() {
               onClose={() => setDialog(null)}
             />
           </>
-        ) : (
+        ) : !mounted || sessionPending ? null : (
+          // Only once the session is known: before, a folder without a root (/docs → Docs)
+          // was asked in Templates, as for a member, and answered 404 (owner, 29.09.).
           <FileBrowser
             key={current}
             onDirtyChange={navigation.onDirty}

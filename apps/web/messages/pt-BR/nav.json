@@ -167,7 +167,13 @@
       "open": "Abrir no navegador",
       "logs": "Logs",
       "noLogs": "Sem saída de logs."
-    }
+    },
+    "codeLoading": "Carregando o Code …",
+    "codeSlow": "O Code não está respondendo agora.",
+    "codeRetry": "Recarregar",
+    "codeNoFolder": "Este projeto ainda não tem pasta de trabalho.",
+    "codeNoFolderPending": "A pasta de trabalho deste projeto ainda está sendo preparada.",
+    "codeSettings": "Configurações do projeto"
   },
   "groups": {
     "project": "Projeto",

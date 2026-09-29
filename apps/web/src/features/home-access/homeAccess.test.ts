@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { homeTarget, isHomeAnswer, probeUrl, shouldProbe } from './homeAccess';
+import { homeTarget, isHomeAnswer, probeUrl, shouldProbe, isHomeOrigin } from './homeAccess';
 import { passkeysUsableOn } from './passkeys';
 
 const HOME = 'https://helena-home.example.com';
@@ -53,4 +53,10 @@ describe('passkeys on the home origin', () => {
     assert.equal(passkeysUsableOn('helena.example.com', 'evilhelena.example.com'), false);
     assert.equal(passkeysUsableOn(undefined, 'anything.test'), true);
   });
+});
+
+it('the LAN expiry check runs only on the home origin (29.09.)', () => {
+  assert.equal(isHomeOrigin('https://helena-home.example', 'https://helena-home.example/'), true);
+  assert.equal(isHomeOrigin('https://helena.example', 'https://helena-home.example/'), false);
+  assert.equal(isHomeOrigin('https://helena.example', undefined), false);
 });

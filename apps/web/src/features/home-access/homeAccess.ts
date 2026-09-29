@@ -10,7 +10,9 @@
 // tunnel from home).
 
 export const PROBE_TIMEOUT_MS = 1500;
-export const FAILURE_PAUSE_MS = 10 * 60_000;
+// Away from home the check fails; the browser logs that failure itself, so it is not
+// repeated on every page (an hour, then once more).
+export const FAILURE_PAUSE_MS = 60 * 60_000;
 export const FAILED_KEY = 'helena.homeAccess.failedUntil';
 export const STAY_KEY = 'helena.homeAccess.stay';
 export const STAY_PARAM = 'remote';
@@ -45,6 +47,16 @@ export function shouldProbe({
   }
   if (home.protocol !== 'https:' || home.origin === here) return false;
   return !(failedUntil && failedUntil > now);
+}
+
+// Whether this page is served from the home network's own origin.
+export function isHomeOrigin(here: string, homeUrl: string | undefined): boolean {
+  if (!homeUrl) return false;
+  try {
+    return new URL(homeUrl).origin === here;
+  } catch {
+    return false;
+  }
 }
 
 export function probeUrl(homeUrl: string): string {

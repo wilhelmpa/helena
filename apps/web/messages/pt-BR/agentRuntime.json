@@ -120,7 +120,7 @@
     "localPatches": "{count, plural, one {# alteração local é mantida: {list}} other {# alterações locais são mantidas: {list}}}",
     "kind": {
       "memory-write": "Memória",
-      "hermes-update": "Atualização do Hermes"
+      "hermes-update": "Atualização do runtime"
     },
     "status": {
       "pending": "Aguardando",
@@ -233,8 +233,8 @@
   "admin": {
     "stopTitle": "Parada de emergência",
     "stopDescription": "Para de uma vez todos os agentes da instância. Também no menu da conta.",
-    "hermesTitle": "Hermes",
-    "hermesDescription": "A instalação do Hermes em que todos os agentes rodam. Uma atualização precisa da sua aprovação; o script de atualização faz um backup e reverte se falhar.",
+    "hermesTitle": "Runtime",
+    "hermesDescription": "O runtime em que todos os agentes trabalham. Uma atualização precisa da sua aprovação; o assistente guarda um backup e reverte se falhar.",
     "installed": "Versão instalada: {version}",
     "notChecked": "Ainda não verificado.",
     "upToDate": "Atualizado",
@@ -266,10 +266,10 @@
     "team": "Time",
     "noTeam": "Nenhum time ainda.",
     "openUpdates": "Abrir em Atualizações",
-    "profilesTitle": "Perfis do Hermes",
+    "profilesTitle": "Perfis dos agentes",
     "compressionThreshold": "Comprimir o contexto a partir de (tokens)",
     "compressionThresholdHint": "Para todo agente sem valor próprio. 100.000 mantém chats longos bem abaixo das janelas dos modelos atuais sem resumir execuções com frequência demais.",
-    "bundledSkills": "Habilidades que vêm com o Hermes",
+    "bundledSkills": "Skills incluídas no runtime",
     "bundledSkillsHint": "O Helena as instala do mesmo jeito em cada perfil do Hermes (docx, pdf, xlsx, depuração…). Desative as que quiser no agente. “Só o essencial” não instala novas; as existentes ficam.",
     "bundledSkillsAll": "Todas",
     "bundledSkillsEssential": "Só o essencial"

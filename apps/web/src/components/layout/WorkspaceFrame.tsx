@@ -13,6 +13,7 @@ export default function WorkspaceFrame({
   className,
   sandbox,
   helenaCode = false,
+  onLoaded,
 }: {
   url: string;
   title: string;
@@ -22,6 +23,8 @@ export default function WorkspaceFrame({
   // A plugin's page runs sandboxed: scripts and forms, never Helena's origin or session.
   sandbox?: string;
   helenaCode?: boolean;
+  // The frame's page has loaded (the host may cover it until then).
+  onLoaded?: () => void;
 }) {
   const frame = useRef<HTMLIFrameElement>(null);
   const { resolvedTheme } = useTheme();
@@ -51,6 +54,7 @@ export default function WorkspaceFrame({
       )}
       style={helenaCode ? { colorScheme: resolvedTheme === 'light' ? 'light' : 'dark' } : undefined}
       onLoad={(event) => {
+        onLoaded?.();
         if (!helenaCode) return;
         try {
           const doc = event.currentTarget.contentDocument;

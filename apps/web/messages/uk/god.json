@@ -356,7 +356,7 @@
   "systemHealth": {
     "title": "Сервіси",
     "service": {
-      "runner": "Ранер Hermes",
+      "runner": "Ранер середовища",
       "provisioning": "Провіжинінг",
       "worker": "Воркер",
       "engine": "Рушій Helena"

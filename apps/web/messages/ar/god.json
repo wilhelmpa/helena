@@ -356,7 +356,7 @@
   "systemHealth": {
     "title": "الخدمات",
     "service": {
-      "runner": "مشغّل Hermes",
+      "runner": "مشغّل بيئة التشغيل",
       "provisioning": "التجهيز",
       "worker": "العامل",
       "engine": "محرك Helena"

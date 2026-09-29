@@ -168,7 +168,13 @@
       "open": "Im Browser öffnen",
       "logs": "Logs",
       "noLogs": "Keine Log-Ausgabe."
-    }
+    },
+    "codeLoading": "Code wird geladen …",
+    "codeSlow": "Code antwortet gerade nicht.",
+    "codeRetry": "Neu laden",
+    "codeNoFolder": "Für dieses Projekt gibt es noch keinen Arbeitsordner.",
+    "codeNoFolderPending": "Der Arbeitsordner dieses Projekts wird noch eingerichtet.",
+    "codeSettings": "Projekt-Einstellungen"
   },
   "groups": {
     "project": "Projekt",
