@@ -11,6 +11,7 @@ import { signUpTestUser, type TestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
 import { insertMailAccount, insertMessage } from '#tests/helpers/mail';
 import { untaggedRoutes } from '#tests/helpers/mcp';
+import { routeTools } from '#mcp/generate';
 import type { DecideOutcome, DecideRequest } from '#modules/decisions/service';
 import { getProjectByKey } from '#modules/projects/service';
 import type { AccountView, ImportResult } from '../../accounts';
@@ -967,13 +968,24 @@ describe('receipts', () => {
     expect((await http.call<{ receipts: ReceiptView[] }>('GET', '')).data.receipts).toHaveLength(0);
   });
 
-  it('is for the project administrators only and offers no MCP tools', async () => {
+  it('keeps receipt tools within project administrators and project boundaries', async () => {
     const stranger = await signUpTestUser();
+    await authedApi(stranger.cookie).projects.post({ key: 'OTHER', name: 'Other project' });
     const denied = await client(stranger).call('GET', '/accounts');
     expect(denied.status).toBe(403);
+    expect((await client(owner, 'OTHER').call('GET', '/accounts')).status).toBe(403);
+    expect((await client(stranger, 'OTHER').call('GET', '/accounts')).status).toBe(200);
+    const prepared = await http.call<{ downloadPath: string }>('POST', '/export/prepare', {
+      month: '2026-09',
+    });
+    expect(prepared.status).toBe(200);
+    expect(prepared.data.downloadPath).toBe('/projects/FIN/receipts/export?month=2026-09');
     const receiptRoutes = (route: string) => route.includes('/projects/:projectKey/receipts');
     const all = app.routes.filter((route) => receiptRoutes(`${route.method} ${route.path}`));
     expect(all.length).toBeGreaterThan(20);
-    expect(untaggedRoutes(receiptRoutes)).toHaveLength(all.length);
+    expect(untaggedRoutes(receiptRoutes)).toHaveLength(4);
+    for (const tool of routeTools(app).filter((tool) => receiptRoutes(tool.path))) {
+      expect(tool.permission).toEqual(['project_admin', 'admin']);
+    }
   });
 });

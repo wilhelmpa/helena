@@ -1,724 +1,1923 @@
 [
-  ["ALL", "/api/auth/*", "auth"],
-  ["DELETE", "/account/push/devices/:id", "auth"],
-  ["DELETE", "/chat-prompts/:promptId", "UI-only"],
-  ["DELETE", "/chats/:threadId", "UI-only"],
-  ["DELETE", "/chats/:threadId/pin", "UI-only"],
-  ["DELETE", "/device-sync/devices/:deviceId", "intern"],
-  ["DELETE", "/files", "auth"],
-  ["DELETE", "/god/local-ai/servers/:id", "admin"],
-  ["DELETE", "/god/model-availability/:entryId", "admin"],
-  ["DELETE", "/god/model-prices/:model", "admin"],
-  ["DELETE", "/god/plugins/:pluginId/approval", "admin"],
-  ["DELETE", "/god/server/backup/targets/:id", "admin"],
-  ["DELETE", "/god/server/disks/arrays/:array/check", "admin"],
-  ["DELETE", "/god/server/disks/boot-reserve", "admin"],
-  ["DELETE", "/god/users/:userId", "admin"],
-  ["DELETE", "/helena/standing-orders/:orderId", "auth"],
-  ["DELETE", "/initiative-attachments/:publicId", "auth"],
-  ["DELETE", "/issues/:issueId/development/:linkId", "auth"],
-  ["DELETE", "/issues/:issueId/share", "auth"],
-  ["DELETE", "/issues/:issueId/watch", "auth"],
-  ["DELETE", "/mail/drafts/:draftId", "auth"],
-  ["DELETE", "/mcp", "auth"],
-  ["DELETE", "/me/avatar", "auth"],
-  ["DELETE", "/notifications", "auth"],
-  ["DELETE", "/notifications/:id", "auth"],
-  ["DELETE", "/pipelines/:pipelineId", "auth"],
-  ["DELETE", "/projects/:projectKey/ai-agents/:agentId/threads/:threadId", "UI-only"],
-  ["DELETE", "/projects/:projectKey/ai-agents/:agentId/threads/:threadId/favorite", "UI-only"],
-  ["DELETE", "/projects/:projectKey/files", "auth"],
-  ["DELETE", "/projects/:projectKey/pipelines/:pipelineId/hook", "auth"],
-  ["DELETE", "/projects/:projectKey/project-templates/:templateId", "auth"],
-  ["DELETE", "/projects/:projectKey/receipts/:receiptId", "auth"],
-  ["DELETE", "/projects/:projectKey/receipts/:receiptId/original-link", "auth"],
-  ["DELETE", "/projects/:projectKey/receipts/accounts/:accountId", "auth"],
-  ["DELETE", "/projects/:projectKey/receipts/matches/:matchId", "auth"],
-  ["DELETE", "/projects/:projectKey/settings/git/connections/:connectionId", "admin"],
+  [
+    "ALL",
+    "/api/auth/*",
+    "auth",
+    "Anmeldung/OAuth-Rücksprung mit Nutzerinteraktion; kein Agentenwerkzeug."
+  ],
+  [
+    "DELETE",
+    "/account/push/devices/:id",
+    "UI-only",
+    "Persönlicher Browser- oder Ansichtsstatus ohne eigenständige Agentenaktion."
+  ],
+  [
+    "DELETE",
+    "/device-sync/devices/:deviceId",
+    "intern",
+    "Maschinen- oder Runner-Protokoll; wird vom Dienst selbst aufgerufen."
+  ],
+  [
+    "DELETE",
+    "/god/local-ai/servers/:id",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "DELETE",
+    "/god/model-availability/:entryId",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "DELETE",
+    "/god/model-prices/:model",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "DELETE",
+    "/god/plugins/:pluginId/approval",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "DELETE",
+    "/god/server/backup/targets/:id",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "DELETE",
+    "/god/server/disks/arrays/:array/check",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "DELETE",
+    "/god/server/disks/boot-reserve",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "DELETE",
+    "/god/users/:userId",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  ["DELETE", "/mcp", "auth", "MCP-Transport und Handshake, nicht als eigenes Werkzeug aufrufbar."],
+  [
+    "DELETE",
+    "/me/avatar",
+    "UI-only",
+    "Persönlicher Browser- oder Ansichtsstatus ohne eigenständige Agentenaktion."
+  ],
+  [
+    "DELETE",
+    "/projects/:projectKey/settings/git/connections/:connectionId",
+    "admin",
+    "Verwaltet Git-Verbindungen und Webhook-Geheimnisse im Projekt-Adminbereich."
+  ],
   [
     "DELETE",
     "/projects/:projectKey/settings/git/connections/:connectionId/repositories/:repositoryId",
-    "admin"
+    "admin",
+    "Verwaltet Git-Verbindungen und Webhook-Geheimnisse im Projekt-Adminbereich."
   ],
-  ["DELETE", "/projects/:projectKey/standing-orders/:orderId", "auth"],
-  ["DELETE", "/provider-limits/:limitId", "auth"],
-  ["DELETE", "/scim/v2/Groups/:id", "intern"],
-  ["DELETE", "/scim/v2/Users/:id", "intern"],
-  ["DELETE", "/teams/:teamId/agent-tools/:agentToolId", "auth"],
-  ["DELETE", "/teams/:teamId/ai-agents/:agentId/threads/:threadId", "UI-only"],
-  ["DELETE", "/teams/:teamId/ai-agents/:agentId/threads/:threadId/favorite", "UI-only"],
-  ["DELETE", "/teams/:teamId/connectors/google/accounts/:accountId", "auth"],
-  ["DELETE", "/teams/:teamId/connectors/google/clients/:clientId", "auth"],
-  ["DELETE", "/teams/:teamId/credentials/:credentialId", "admin"],
-  ["DELETE", "/teams/:teamId/decisions/evals/:evalId", "auth"],
-  ["DELETE", "/teams/:teamId/integrations/:credentialId", "admin"],
-  ["DELETE", "/teams/:teamId/invites/:inviteId", "auth"],
-  ["DELETE", "/teams/:teamId/mail/accounts/:accountId", "auth"],
-  ["DELETE", "/teams/:teamId/mail/rules/:ruleId", "auth"],
-  ["DELETE", "/teams/:teamId/mcp-servers/:mcpServerId", "auth"],
-  ["DELETE", "/teams/:teamId/members/:userId", "auth"],
-  ["DELETE", "/teams/:teamId/model-availability/:entryId", "auth"],
-  ["DELETE", "/teams/:teamId/organization/agents/:agentId", "auth"],
-  ["DELETE", "/teams/:teamId/organization/departments/:departmentId", "auth"],
-  ["DELETE", "/teams/:teamId/organization/goals/:goalId", "auth"],
-  ["DELETE", "/teams/:teamId/organization/projects/:projectId", "auth"],
-  ["DELETE", "/teams/:teamId/projects/:projectId", "auth"],
-  ["DELETE", "/telegram/account", "auth"],
-  ["DELETE", "/view-folders/:folderId", "auth"],
-  ["DELETE", "/views/:viewId/favorite", "UI-only"],
-  ["DELETE", "/views/:viewId/share", "auth"],
-  ["GET", "/", "auth"],
-  ["GET", "/.well-known/oauth-authorization-server", "auth"],
-  ["GET", "/.well-known/oauth-protected-resource/mcp", "auth"],
-  ["GET", "/account/active-chat", "auth"],
-  ["GET", "/account/preferences", "auth"],
-  ["GET", "/account/push", "auth"],
-  ["GET", "/action-runs/:runId", "auth"],
-  ["GET", "/agent-activity", "auth"],
-  ["GET", "/agent-chats/:messageId/env", "auth"],
-  ["GET", "/agent-chats/:messageId/ssh-keys", "auth"],
-  ["GET", "/agent-chats/:messageId/web-logins", "auth"],
-  ["GET", "/agent-proposals", "auth"],
-  ["GET", "/agent-proposals/count", "auth"],
-  ["GET", "/agent-runs/:runId/approved-commands", "intern"],
-  ["GET", "/agent-runs/:runId/env", "intern"],
-  ["GET", "/agent-runs/:runId/ssh-keys", "intern"],
-  ["GET", "/agent-runs/:runId/web-logins", "intern"],
-  ["GET", "/agent-runtime/mcp-secrets", "intern"],
-  ["GET", "/agent-runtime/model-server-keys", "intern"],
-  ["GET", "/agent-runtime/policy", "intern"],
-  ["GET", "/agent-runtime/runtime-login", "intern"],
-  ["GET", "/approvals", "auth"],
-  ["GET", "/approvals/pending-count", "auth"],
-  ["GET", "/approvals/projects", "auth"],
-  ["GET", "/attachments/:publicId/raw", "binär"],
-  ["GET", "/attachments/:publicId/view", "auth"],
-  ["GET", "/auth-config", "auth"],
-  ["GET", "/auth/verify", "auth"],
-  ["GET", "/auth/verify/edge", "auth"],
-  ["GET", "/auth/verify/lan", "auth"],
-  ["GET", "/auth/verify/owner-terminal/:kind", "auth"],
-  ["GET", "/avatars/:id/raw", "binär"],
-  ["GET", "/browser-gateway/overview", "auth"],
-  ["GET", "/chat-attachments/:publicId/raw", "binär"],
-  ["GET", "/chat-prompts", "UI-only"],
-  ["GET", "/chats", "UI-only"],
-  ["GET", "/chats/:threadId", "UI-only"],
-  ["GET", "/connections", "auth"],
-  ["GET", "/connectors/google/oauth/callback", "auth"],
-  ["GET", "/connectors/mcp-oauth/callback", "auth"],
-  ["GET", "/decision-backends", "auth"],
-  ["GET", "/device-sync", "intern"],
-  ["GET", "/device-sync/conflicts", "intern"],
-  ["GET", "/display-name", "auth"],
-  ["GET", "/docs", "UI-only"],
-  ["GET", "/docs/json", "UI-only"],
-  ["GET", "/edge/home", "intern"],
-  ["GET", "/edge/home/probe", "intern"],
-  ["GET", "/emergency-stop", "auth"],
-  ["GET", "/files", "auth"],
-  ["GET", "/files/raw", "binär"],
-  ["GET", "/files/references", "auth"],
-  ["GET", "/files/text", "auth"],
-  ["GET", "/god/agent-runtime-settings", "admin"],
-  ["GET", "/god/auth-settings", "admin"],
-  ["GET", "/god/browser-control", "admin"],
-  ["GET", "/god/browser-power", "admin"],
-  ["GET", "/god/display-name", "admin"],
-  ["GET", "/god/email-settings", "admin"],
-  ["GET", "/god/engine", "admin"],
-  ["GET", "/god/escalation", "admin"],
-  ["GET", "/god/google-settings", "admin"],
-  ["GET", "/god/hermes-update", "admin"],
-  ["GET", "/god/hotkey-settings", "admin"],
-  ["GET", "/god/local-ai", "admin"],
-  ["GET", "/god/local-ai/evals/:id", "admin"],
-  ["GET", "/god/local-ai/judge", "admin"],
-  ["GET", "/god/local-ai/status", "admin"],
-  ["GET", "/god/model-availability", "admin"],
-  ["GET", "/god/oidc-settings", "admin"],
-  ["GET", "/god/plugins", "admin"],
-  ["GET", "/god/plugins/projects", "admin"],
-  ["GET", "/god/project-defaults", "admin"],
-  ["GET", "/god/projects", "admin"],
-  ["GET", "/god/projects/:projectId", "admin"],
-  ["GET", "/god/projects/options", "admin"],
-  ["GET", "/god/run-resume-settings", "admin"],
-  ["GET", "/god/scim-groups", "admin"],
-  ["GET", "/god/scim-settings", "admin"],
-  ["GET", "/god/security/edge", "admin"],
-  ["GET", "/god/security/sign-ins", "admin"],
-  ["GET", "/god/security/status", "admin"],
-  ["GET", "/god/server", "admin"],
-  ["GET", "/god/server/backup", "admin"],
-  ["GET", "/god/server/backup/restores/:id", "admin"],
-  ["GET", "/god/server/backup/snapshots", "admin"],
-  ["GET", "/god/server/backup/snapshots/:snapshot/files", "admin"],
-  ["GET", "/god/server/disks", "admin"],
-  ["GET", "/god/server/events", "admin"],
-  ["GET", "/god/server/power", "admin"],
-  ["GET", "/god/server/system", "admin"],
-  ["GET", "/god/storage-settings", "admin"],
-  ["GET", "/god/system-health", "admin"],
-  ["GET", "/god/teams", "admin"],
-  ["GET", "/god/teams/:teamId", "admin"],
-  ["GET", "/god/teams/:teamId/members", "admin"],
-  ["GET", "/god/teams/:teamId/projects", "admin"],
-  ["GET", "/god/telegram-settings", "admin"],
-  ["GET", "/god/update-center", "admin"],
-  ["GET", "/god/update-center/actions/:actionId", "admin"],
-  ["GET", "/god/update-center/settings", "admin"],
-  ["GET", "/god/updates", "admin"],
-  ["GET", "/god/users", "admin"],
-  ["GET", "/god/users/:userId", "admin"],
-  ["GET", "/god/voice/settings", "admin"],
-  ["GET", "/helena/standing-orders", "auth"],
-  ["GET", "/hub-inbox/sources", "auth"],
-  ["GET", "/hub-inbox/threads", "UI-only"],
-  ["GET", "/imports/:importId", "auth"],
-  ["GET", "/initiative-attachments/:publicId/raw", "binär"],
-  ["GET", "/initiatives/:initiativeId/attachments", "auth"],
-  ["GET", "/internal/agent-egress/policy", "intern"],
-  ["GET", "/internal/browser-gateway/policy", "intern"],
-  ["GET", "/internal/browser-gateway/power", "intern"],
-  ["GET", "/internal/systemone/v1/models", "intern"],
-  ["GET", "/issues", "auth"],
-  ["GET", "/issues/:issueId/chats", "UI-only"],
-  ["GET", "/issues/:issueId/development/repositories", "auth"],
-  ["GET", "/issues/:issueId/development/repositories/:repositoryId/branches", "auth"],
-  ["GET", "/issues/:issueId/development/repositories/:repositoryId/pull-requests", "auth"],
-  ["GET", "/issues/:issueId/mail-threads", "auth"],
-  ["GET", "/issues/:issueId/pipeline-runs", "auth"],
-  ["GET", "/issues/:issueId/pipelines", "auth"],
-  ["GET", "/knowledge/bases", "auth"],
-  ["GET", "/knowledge/bases/rows", "auth"],
-  ["GET", "/knowledge/capture-targets", "auth"],
-  ["GET", "/knowledge/links", "auth"],
-  ["GET", "/knowledge/properties-template", "auth"],
-  ["GET", "/knowledge/raw", "binär"],
-  ["GET", "/knowledge/sources", "auth"],
-  ["GET", "/knowledge/templates", "auth"],
-  ["GET", "/link-previews", "auth"],
-  ["GET", "/mail/attachments/:attachmentId", "auth"],
-  ["GET", "/mail/drafts/:draftId", "auth"],
-  ["GET", "/mail/messages/:messageId/parts/:contentId", "auth"],
-  ["GET", "/mail/threads/:threadId", "UI-only"],
-  ["GET", "/mail/threads/:threadId/classification", "UI-only"],
-  ["GET", "/mcp", "auth"],
-  ["GET", "/me", "auth"],
-  ["GET", "/model-prices", "auth"],
-  ["GET", "/notifications", "auth"],
-  ["GET", "/notifications/unread", "auth"],
-  ["GET", "/owner-terminal/audit", "admin"],
-  ["GET", "/owner-terminal/grant", "admin"],
-  ["GET", "/owner-terminal/local-models", "admin"],
-  ["GET", "/owner-terminal/settings", "admin"],
-  ["GET", "/pipeline-approvals", "auth"],
-  ["GET", "/pipeline-runs/:runId", "auth"],
-  ["GET", "/pipelines/:pipelineId", "auth"],
-  ["GET", "/pipelines/:pipelineId/runs", "auth"],
-  ["GET", "/pipelines/:pipelineId/versions", "auth"],
-  ["GET", "/pipelines/:pipelineId/versions/:version", "auth"],
-  ["GET", "/plugins/:pluginId/ui/*", "auth"],
-  ["GET", "/plugins/ui-slots", "auth"],
-  ["GET", "/projects/:projectKey/action-runs", "auth"],
-  ["GET", "/projects/:projectKey/actions/quick", "auth"],
-  ["GET", "/projects/:projectKey/agent-activity", "auth"],
-  ["GET", "/projects/:projectKey/agent-activity/usage", "auth"],
-  ["GET", "/projects/:projectKey/agent-export", "auth"],
-  ["GET", "/projects/:projectKey/agent-network/events", "auth"],
-  ["GET", "/projects/:projectKey/ai-agents/:agentId/chat/:messageId/events", "auth"],
-  ["GET", "/projects/:projectKey/ai-agents/:agentId/chat/:messageId/stream", "binär"],
-  ["GET", "/projects/:projectKey/ai-agents/:agentId/chat/catalog", "UI-only"],
-  ["GET", "/projects/:projectKey/ai-agents/:agentId/threads", "UI-only"],
-  ["GET", "/projects/:projectKey/ai-agents/:agentId/threads/:threadId/messages", "UI-only"],
-  ["GET", "/projects/:projectKey/autopilot", "auth"],
-  ["GET", "/projects/:projectKey/autopilot/decisions", "auth"],
-  ["GET", "/projects/:projectKey/browser-control/connections", "auth"],
-  ["GET", "/projects/:projectKey/browser-gateway/events", "auth"],
-  ["GET", "/projects/:projectKey/browser-lab/options", "UI-only"],
-  ["GET", "/projects/:projectKey/browser-lab/runs", "auth"],
-  ["GET", "/projects/:projectKey/browser-lab/runs/:runId", "auth"],
-  ["GET", "/projects/:projectKey/control-plane/workflows", "auth"],
-  ["GET", "/projects/:projectKey/control-plane/workflows/:workflowId/runs", "auth"],
-  ["GET", "/projects/:projectKey/control-plane/workflows/:workflowId/runs/:runId", "auth"],
-  ["GET", "/projects/:projectKey/cycles/completed", "auth"],
-  ["GET", "/projects/:projectKey/cycles/options", "UI-only"],
-  ["GET", "/projects/:projectKey/extensions", "auth"],
-  ["GET", "/projects/:projectKey/files", "auth"],
-  ["GET", "/projects/:projectKey/files/raw", "binär"],
-  ["GET", "/projects/:projectKey/files/references", "auth"],
-  ["GET", "/projects/:projectKey/files/text", "auth"],
-  ["GET", "/projects/:projectKey/initiatives/counts", "auth"],
-  ["GET", "/projects/:projectKey/initiatives/options", "UI-only"],
-  ["GET", "/projects/:projectKey/mail/accounts", "auth"],
-  ["GET", "/projects/:projectKey/note-boards/access-candidates", "auth"],
-  ["GET", "/projects/:projectKey/notification-preferences", "auth"],
-  ["GET", "/projects/:projectKey/pipeline-context", "auth"],
-  ["GET", "/projects/:projectKey/pipeline-run-limit", "auth"],
-  ["GET", "/projects/:projectKey/pipelines", "auth"],
-  ["GET", "/projects/:projectKey/pipelines/:pipelineId/hook", "auth"],
-  ["GET", "/projects/:projectKey/project-templates", "auth"],
-  ["GET", "/projects/:projectKey/provisioning", "auth"],
-  ["GET", "/projects/:projectKey/receipts", "auth"],
-  ["GET", "/projects/:projectKey/receipts/:receiptId", "auth"],
-  ["GET", "/projects/:projectKey/receipts/:receiptId/candidates", "auth"],
-  ["GET", "/projects/:projectKey/receipts/:receiptId/file", "auth"],
-  ["GET", "/projects/:projectKey/receipts/:receiptId/source-mail", "auth"],
-  ["GET", "/projects/:projectKey/receipts/accounts", "auth"],
-  ["GET", "/projects/:projectKey/receipts/export", "auth"],
-  ["GET", "/projects/:projectKey/receipts/imports", "auth"],
-  ["GET", "/projects/:projectKey/receipts/pair-history", "auth"],
-  ["GET", "/projects/:projectKey/receipts/pair-suggestions", "auth"],
-  ["GET", "/projects/:projectKey/receipts/review", "auth"],
-  ["GET", "/projects/:projectKey/receipts/summary", "auth"],
-  ["GET", "/projects/:projectKey/receipts/transactions", "auth"],
-  ["GET", "/projects/:projectKey/settings", "admin"],
-  ["GET", "/projects/:projectKey/settings/agent-network", "admin"],
-  ["GET", "/projects/:projectKey/settings/auto-archive", "admin"],
-  ["GET", "/projects/:projectKey/settings/browser-control", "admin"],
-  ["GET", "/projects/:projectKey/settings/browser-gateway", "admin"],
-  ["GET", "/projects/:projectKey/settings/git", "admin"],
-  ["GET", "/projects/:projectKey/settings/git/connections", "admin"],
-  ["GET", "/projects/:projectKey/settings/git/connections/:connectionId/repositories", "admin"],
-  ["GET", "/projects/:projectKey/settings/subtasks", "admin"],
-  ["GET", "/projects/:projectKey/setup", "auth"],
-  ["GET", "/projects/:projectKey/standing-orders", "auth"],
-  ["GET", "/projects/:projectKey/trading/dashboard", "UI-only"],
-  ["GET", "/projects/:projectKey/view-folders", "auth"],
-  ["GET", "/projects/:projectKey/workflow-signing-secret", "auth"],
-  ["GET", "/provider-limits/settings", "admin"],
-  ["GET", "/routines", "auth"],
-  ["GET", "/scim/v2/Groups", "intern"],
-  ["GET", "/scim/v2/Groups/:id", "intern"],
-  ["GET", "/scim/v2/ResourceTypes", "intern"],
-  ["GET", "/scim/v2/ResourceTypes/:id", "intern"],
-  ["GET", "/scim/v2/Schemas", "intern"],
-  ["GET", "/scim/v2/Schemas/:id", "intern"],
-  ["GET", "/scim/v2/ServiceProviderConfig", "intern"],
-  ["GET", "/scim/v2/Users", "intern"],
-  ["GET", "/scim/v2/Users/:id", "intern"],
-  ["GET", "/settings/hotkeys", "admin"],
-  ["GET", "/settings/storage", "admin"],
-  ["GET", "/settings/version", "admin"],
-  ["GET", "/settings/whats-new", "admin"],
-  ["GET", "/share/:kind/:token/attachments/:publicId/raw", "binär"],
-  ["GET", "/share/issue/:token", "UI-only"],
-  ["GET", "/share/view/:token", "UI-only"],
-  ["GET", "/share/view/:token/issues/:issueId", "UI-only"],
-  ["GET", "/sync/rev", "auth"],
-  ["GET", "/teams/:teamId", "auth"],
-  ["GET", "/teams/:teamId/access/audit", "auth"],
-  ["GET", "/teams/:teamId/access/logins", "auth"],
-  ["GET", "/teams/:teamId/agent-environment", "auth"],
-  ["GET", "/teams/:teamId/agent-usage", "auth"],
-  ["GET", "/teams/:teamId/ai-agents/:agentId/autopilot", "auth"],
-  ["GET", "/teams/:teamId/ai-agents/:agentId/chat-reflections", "auth"],
-  ["GET", "/teams/:teamId/ai-agents/:agentId/chat/:messageId/events", "auth"],
-  ["GET", "/teams/:teamId/ai-agents/:agentId/chat/:messageId/stream", "binär"],
-  ["GET", "/teams/:teamId/ai-agents/:agentId/chat/catalog", "UI-only"],
-  ["GET", "/teams/:teamId/ai-agents/:agentId/learned-skills/content", "auth"],
-  ["GET", "/teams/:teamId/ai-agents/:agentId/mcp-servers", "auth"],
-  ["GET", "/teams/:teamId/ai-agents/:agentId/memory/revisions", "auth"],
-  ["GET", "/teams/:teamId/ai-agents/:agentId/runs/:runId", "auth"],
-  ["GET", "/teams/:teamId/ai-agents/:agentId/runs/:runId/events", "auth"],
-  ["GET", "/teams/:teamId/ai-agents/:agentId/runtime-actions", "auth"],
-  ["GET", "/teams/:teamId/ai-agents/:agentId/runtime-sync", "auth"],
-  ["GET", "/teams/:teamId/ai-agents/:agentId/runtime/curator", "auth"],
-  ["GET", "/teams/:teamId/ai-agents/:agentId/runtime/health", "auth"],
-  ["GET", "/teams/:teamId/ai-agents/:agentId/runtime/logs", "auth"],
-  ["GET", "/teams/:teamId/ai-agents/:agentId/runtime/requests/:requestId", "auth"],
-  ["GET", "/teams/:teamId/ai-agents/:agentId/runtime/sessions", "auth"],
-  ["GET", "/teams/:teamId/ai-agents/:agentId/runtime/sessions/:sessionId", "auth"],
-  ["GET", "/teams/:teamId/ai-agents/:agentId/runtime/version", "auth"],
-  ["GET", "/teams/:teamId/ai-agents/:agentId/threads", "UI-only"],
-  ["GET", "/teams/:teamId/ai-agents/:agentId/threads/:threadId/messages", "UI-only"],
-  ["GET", "/teams/:teamId/browser-control/connections", "auth"],
-  ["GET", "/teams/:teamId/browser-lab/home/options", "UI-only"],
-  ["GET", "/teams/:teamId/browser-lab/home/runs", "auth"],
-  ["GET", "/teams/:teamId/browser-lab/home/runs/:runId", "auth"],
-  ["GET", "/teams/:teamId/connectors", "auth"],
-  ["GET", "/teams/:teamId/connectors/google", "auth"],
-  ["GET", "/teams/:teamId/connectors/google/accounts/:accountId", "auth"],
-  ["GET", "/teams/:teamId/connectors/google/gog", "auth"],
-  ["GET", "/teams/:teamId/credentials", "admin"],
-  ["GET", "/teams/:teamId/credentials/:credentialId/uses", "admin"],
-  ["GET", "/teams/:teamId/credentials/decision-key-sources/options", "admin"],
-  ["GET", "/teams/:teamId/decisions/classes", "auth"],
-  ["GET", "/teams/:teamId/decisions/classes/:classId", "auth"],
-  ["GET", "/teams/:teamId/decisions/evals", "auth"],
-  ["GET", "/teams/:teamId/decisions/log", "auth"],
-  ["GET", "/teams/:teamId/integrations/options", "admin"],
-  ["GET", "/teams/:teamId/invites", "auth"],
-  ["GET", "/teams/:teamId/mail/accounts", "auth"],
-  ["GET", "/teams/:teamId/mail/contacts", "auth"],
-  ["GET", "/teams/:teamId/mail/drafts", "auth"],
-  ["GET", "/teams/:teamId/mail/folders", "auth"],
-  ["GET", "/teams/:teamId/mail/rules", "auth"],
-  ["GET", "/teams/:teamId/mail/threads", "UI-only"],
-  ["GET", "/teams/:teamId/mcp-servers", "auth"],
-  ["GET", "/teams/:teamId/members", "auth"],
-  ["GET", "/teams/:teamId/model-router", "auth"],
-  ["GET", "/teams/:teamId/notification-settings", "auth"],
-  ["GET", "/teams/:teamId/organization", "auth"],
-  ["GET", "/teams/:teamId/organization/departments/:departmentId/budgets", "auth"],
-  ["GET", "/teams/:teamId/pipeline-builtins", "auth"],
-  ["GET", "/teams/:teamId/pipeline-context", "auth"],
-  ["GET", "/teams/:teamId/pipelines", "auth"],
-  ["GET", "/teams/:teamId/projects", "auth"],
-  ["GET", "/teams/:teamId/projects/:projectId", "auth"],
-  ["GET", "/teams/:teamId/projects/:projectId/members", "auth"],
-  ["GET", "/teams/:teamId/projects/options", "UI-only"],
-  ["GET", "/teams/:teamId/receipt-dedup", "auth"],
-  ["GET", "/teams/:teamId/receipt-dedup/history", "auth"],
-  ["GET", "/teams/:teamId/receipt-dedup/suggestions", "auth"],
-  ["GET", "/teams/:teamId/receipt-projection", "auth"],
-  ["GET", "/teams/:teamId/template-bundles/export", "auth"],
-  ["GET", "/teams/:teamId/template-bundles/offers", "auth"],
-  ["GET", "/telegram/account", "auth"],
-  ["GET", "/view-folders/:folderId/file-count", "auth"],
-  ["GET", "/voice", "auth"],
-  ["GET", "/workflow-engine/settings", "admin"],
-  ["GET", "/workflow-engine/types", "intern"],
-  ["OPTIONS", "/", "auth"],
-  ["OPTIONS", "/*", "auth"],
-  ["PATCH", "/account/preferences", "auth"],
-  ["PATCH", "/account/push/devices/:id", "auth"],
-  ["PATCH", "/chat-prompts/:promptId", "UI-only"],
-  ["PATCH", "/chats/:threadId", "UI-only"],
-  ["PATCH", "/god/local-ai/policy", "admin"],
-  ["PATCH", "/god/local-ai/servers/:id", "admin"],
-  ["PATCH", "/god/update-center/settings", "admin"],
-  ["PATCH", "/god/voice/settings", "admin"],
-  ["PATCH", "/helena/standing-orders/:orderId", "auth"],
-  ["PATCH", "/hub-inbox/sources/:sourceId", "auth"],
-  ["PATCH", "/hub-inbox/threads/:threadId", "UI-only"],
-  ["PATCH", "/mail/drafts/:draftId", "auth"],
-  ["PATCH", "/mail/threads/:threadId", "UI-only"],
-  ["PATCH", "/mail/threads/:threadId/classification", "UI-only"],
-  ["PATCH", "/owner-terminal/settings", "admin"],
-  ["PATCH", "/pipelines/:pipelineId", "auth"],
-  ["PATCH", "/projects/:projectKey/ai-agents/:agentId/threads/:threadId", "UI-only"],
-  ["PATCH", "/projects/:projectKey/extensions/connections/:credentialId", "auth"],
-  ["PATCH", "/projects/:projectKey/pipeline-run-limit", "auth"],
-  ["PATCH", "/projects/:projectKey/project-templates/:templateId", "auth"],
-  ["PATCH", "/projects/:projectKey/receipts/:receiptId", "auth"],
-  ["PATCH", "/projects/:projectKey/receipts/accounts/:accountId", "auth"],
-  ["PATCH", "/projects/:projectKey/receipts/transactions/:transactionId", "auth"],
-  ["PATCH", "/projects/:projectKey/settings", "admin"],
-  ["PATCH", "/projects/:projectKey/settings/auto-archive", "admin"],
-  ["PATCH", "/projects/:projectKey/settings/estimates", "admin"],
-  ["PATCH", "/projects/:projectKey/settings/git", "admin"],
-  ["PATCH", "/projects/:projectKey/settings/subtasks", "admin"],
-  ["PATCH", "/projects/:projectKey/standing-orders/:orderId", "auth"],
-  ["PATCH", "/provider-limits/settings", "admin"],
-  ["PATCH", "/scim/v2/Groups/:id", "intern"],
-  ["PATCH", "/scim/v2/Users/:id", "intern"],
-  ["PATCH", "/teams/:teamId", "auth"],
-  ["PATCH", "/teams/:teamId/ai-agents/:agentId/threads/:threadId", "UI-only"],
-  ["PATCH", "/teams/:teamId/connectors/google/accounts/:accountId", "auth"],
-  ["PATCH", "/teams/:teamId/credentials/:credentialId", "admin"],
-  ["PATCH", "/teams/:teamId/decisions/classes/:classId", "auth"],
-  ["PATCH", "/teams/:teamId/decisions/first-stage", "auth"],
-  ["PATCH", "/teams/:teamId/integrations/:credentialId", "admin"],
-  ["PATCH", "/teams/:teamId/mail/accounts/:accountId", "auth"],
-  ["PATCH", "/teams/:teamId/mcp", "auth"],
-  ["PATCH", "/teams/:teamId/mcp-servers/:mcpServerId", "auth"],
-  ["PATCH", "/teams/:teamId/members/:userId", "auth"],
-  ["PATCH", "/teams/:teamId/organization/agents/:agentId/projects/:projectId", "auth"],
-  ["PATCH", "/teams/:teamId/organization/departments/:departmentId", "auth"],
-  ["PATCH", "/teams/:teamId/organization/goals/:goalId", "auth"],
-  ["PATCH", "/teams/:teamId/projects/:projectId", "auth"],
-  ["PATCH", "/view-folders/:folderId", "auth"],
-  ["POST", "/account/push/devices", "auth"],
-  ["POST", "/account/push/devices/:id/test", "auth"],
-  ["POST", "/actions/:actionId/preview", "UI-only"],
-  ["POST", "/actions/:actionId/run", "auth"],
-  ["POST", "/agent-chat-reflections/:id/result", "auth"],
-  ["POST", "/agent-chat-reflections/claim", "auth"],
-  ["POST", "/agent-chats/:messageId/events", "auth"],
-  ["POST", "/agent-chats/:messageId/heartbeat", "auth"],
-  ["POST", "/agent-chats/:messageId/result", "auth"],
-  ["POST", "/agent-chats/catalog", "UI-only"],
-  ["POST", "/agent-chats/claim", "auth"],
-  ["POST", "/agent-policy/decide", "auth"],
-  ["POST", "/agent-proposals/:proposalId/decision", "auth"],
-  ["POST", "/agent-runs/:runId/events", "intern"],
-  ["POST", "/agent-runs/:runId/heartbeat", "intern"],
-  ["POST", "/agent-runs/:runId/reflection", "intern"],
-  ["POST", "/agent-runs/:runId/release", "intern"],
-  ["POST", "/agent-runs/:runId/result", "intern"],
-  ["POST", "/agent-runs/:runId/session", "intern"],
-  ["POST", "/agent-runs/claim", "intern"],
-  ["POST", "/agent-runtime/credential-uses", "intern"],
-  ["POST", "/agent-runtime/limits", "intern"],
-  ["POST", "/agent-runtime/requests/:requestId/answer", "intern"],
-  ["POST", "/agent-runtime/requests/claim", "intern"],
-  ["POST", "/agent-runtime/runner-health", "intern"],
-  ["POST", "/agent-runtime/status", "intern"],
-  ["POST", "/approvals/:approvalId/budget", "auth"],
-  ["POST", "/approvals/:approvalId/decision", "auth"],
-  ["POST", "/chat-prompts", "UI-only"],
-  ["POST", "/chats/:threadId/restore", "UI-only"],
-  ["POST", "/chats/empty-trash", "UI-only"],
-  ["POST", "/chats/trash-all", "UI-only"],
-  ["POST", "/connections/actions", "auth"],
-  ["POST", "/device-sync/pending/:deviceId/accept", "intern"],
-  ["POST", "/files/folders", "auth"],
-  ["POST", "/files/move", "auth"],
-  ["POST", "/files/text", "auth"],
-  ["POST", "/files/upload", "binär"],
-  ["POST", "/god/email-settings/test", "admin"],
-  ["POST", "/god/hermes-update/check", "admin"],
-  ["POST", "/god/hermes-update/request", "admin"],
-  ["POST", "/god/local-ai/evals", "admin"],
-  ["POST", "/god/local-ai/servers", "admin"],
-  ["POST", "/god/local-ai/servers/:id/check", "admin"],
-  ["POST", "/god/model-prices/import", "admin"],
-  ["POST", "/god/plugins/:pluginId/approval", "admin"],
-  ["POST", "/god/scim-settings/token", "admin"],
-  ["POST", "/god/server/backup/password/acknowledge", "admin"],
-  ["POST", "/god/server/backup/password/reveal", "admin"],
-  ["POST", "/god/server/backup/restores", "admin"],
-  ["POST", "/god/server/backup/run", "admin"],
-  ["POST", "/god/server/disks/:disk/self-test", "admin"],
-  ["POST", "/god/server/disks/arrays/:array/check", "admin"],
-  ["POST", "/god/server/disks/boot-reserve", "admin"],
-  ["POST", "/god/server/events/seen", "admin"],
-  ["POST", "/god/server/local-ai/restart", "admin"],
-  ["POST", "/god/update-center/check", "admin"],
-  ["POST", "/god/update-center/hermes/refresh-local", "admin"],
-  ["POST", "/god/update-center/items/:itemId/apply", "admin"],
-  ["POST", "/god/updates/check", "admin"],
-  ["POST", "/god/users/:userId/verify-email", "admin"],
-  ["POST", "/helena/standing-orders", "auth"],
-  ["POST", "/helena/standing-orders/:orderId/decision", "auth"],
-  ["POST", "/hooks/workflows/:hookId", "auth"],
-  ["POST", "/hub-inbox/threads/:threadId/create-task", "UI-only"],
-  ["POST", "/hub-inbox/threads/:threadId/retry-triage", "UI-only"],
-  ["POST", "/imports/:importId/cancel", "auth"],
-  ["POST", "/imports/:importId/confirm", "auth"],
-  ["POST", "/initiatives/:initiativeId/attachments", "auth"],
-  ["POST", "/internal/agent-egress/events", "intern"],
-  ["POST", "/internal/bootstrap/home-agent", "intern"],
-  ["POST", "/internal/bootstrap/project-agent", "intern"],
-  ["POST", "/internal/bootstrap/project-coordinator", "intern"],
-  ["POST", "/internal/browser-gateway/audit", "intern"],
-  ["POST", "/internal/browser-gateway/decide", "intern"],
-  ["POST", "/internal/browser-gateway/download", "intern"],
-  ["POST", "/internal/browser-gateway/handover", "intern"],
-  ["POST", "/internal/browser-gateway/handover-done", "intern"],
-  ["POST", "/internal/browser-gateway/login", "intern"],
-  ["POST", "/internal/browser-gateway/login-code", "intern"],
-  ["POST", "/internal/browser-gateway/resolve", "intern"],
-  ["POST", "/internal/browser-gateway/systemone", "intern"],
-  ["POST", "/internal/browser-gateway/task/finish", "intern"],
-  ["POST", "/internal/browser-gateway/task/progress", "intern"],
-  ["POST", "/internal/browser-gateway/task/start", "intern"],
-  ["POST", "/internal/systemone/v1/systemone", "intern"],
-  ["POST", "/issues/:issueId/attachments", "auth"],
-  ["POST", "/issues/:issueId/development", "auth"],
-  ["POST", "/issues/:issueId/development/pull-requests", "auth"],
-  ["POST", "/issues/:issueId/pipeline-runs", "auth"],
-  ["POST", "/issues/:issueId/share", "auth"],
-  ["POST", "/issues/:issueId/watch", "auth"],
-  ["POST", "/knowledge/assets", "binär"],
-  ["POST", "/knowledge/journal", "auth"],
-  ["POST", "/knowledge/notes/from-template", "auth"],
-  ["POST", "/knowledge/sources/:source/reindex", "auth"],
-  ["POST", "/mail/drafts/:draftId/attachments", "auth"],
-  ["POST", "/mail/drafts/:draftId/send", "auth"],
-  ["POST", "/mail/drafts/:draftId/undo", "auth"],
-  ["POST", "/mail/drafts/:draftId/vault-attachments", "auth"],
-  ["POST", "/mail/messages/:messageId/remote-images", "auth"],
-  ["POST", "/mail/threads/:threadId/actions", "UI-only"],
-  ["POST", "/mail/threads/:threadId/classification", "UI-only"],
-  ["POST", "/mail/threads/:threadId/classification/accept", "UI-only"],
-  ["POST", "/mail/threads/:threadId/note", "UI-only"],
-  ["POST", "/mail/threads/:threadId/task", "UI-only"],
-  ["POST", "/mcp", "auth"],
-  ["POST", "/me/avatar", "auth"],
-  ["POST", "/model-router/prompt", "auth"],
-  ["POST", "/notifications/:id/read", "auth"],
-  ["POST", "/notifications/:id/snooze", "auth"],
-  ["POST", "/notifications/read-all", "auth"],
-  ["POST", "/owner-terminal/grant/revoke", "admin"],
-  ["POST", "/owner-terminal/local/:kind/bootstrap", "admin"],
-  ["POST", "/owner-terminal/local/:kind/v1/responses", "admin"],
-  ["POST", "/owner-terminal/sessions/end", "admin"],
-  ["POST", "/owner-terminal/sessions/start", "admin"],
-  ["POST", "/owner-terminal/step-up/totp", "admin"],
-  ["POST", "/pipeline-runs/:runId/approval", "auth"],
-  ["POST", "/pipeline-runs/:runId/cancel", "auth"],
-  ["POST", "/pipeline-runs/:runId/retry", "auth"],
-  ["POST", "/projects/:projectKey/agent-export/materialize", "auth"],
-  ["POST", "/projects/:projectKey/ai-agents/:agentId/chat", "auth"],
-  ["POST", "/projects/:projectKey/ai-agents/:agentId/chat/:messageId/cancel", "auth"],
-  ["POST", "/projects/:projectKey/ai-agents/:agentId/chat/retry", "auth"],
-  ["POST", "/projects/:projectKey/browser-lab/runs", "auth"],
-  ["POST", "/projects/:projectKey/browser-lab/runs/:runId/cancel", "auth"],
-  ["POST", "/projects/:projectKey/control-plane/workflows/:workflowId/runs/:runId/cancel", "auth"],
-  ["POST", "/projects/:projectKey/control-plane/workflows/:workflowId/runs/:runId/retry", "auth"],
-  ["POST", "/projects/:projectKey/decisions/agent-route", "auth"],
-  ["POST", "/projects/:projectKey/decisions/task-triage", "auth"],
-  ["POST", "/projects/:projectKey/files/folders", "auth"],
-  ["POST", "/projects/:projectKey/files/move", "auth"],
-  ["POST", "/projects/:projectKey/files/text", "auth"],
-  ["POST", "/projects/:projectKey/files/upload", "binär"],
-  ["POST", "/projects/:projectKey/pipelines", "auth"],
-  ["POST", "/projects/:projectKey/pipelines/:pipelineId/hook", "auth"],
-  ["POST", "/projects/:projectKey/pipelines/validate", "auth"],
-  ["POST", "/projects/:projectKey/project-templates", "auth"],
-  ["POST", "/projects/:projectKey/project-templates/:templateId/apply", "auth"],
-  ["POST", "/projects/:projectKey/provisioning/retry", "auth"],
-  ["POST", "/projects/:projectKey/receipts", "auth"],
-  ["POST", "/projects/:projectKey/receipts/:receiptId/extract", "auth"],
-  ["POST", "/projects/:projectKey/receipts/:receiptId/match", "auth"],
-  ["POST", "/projects/:projectKey/receipts/:receiptId/match-manual", "auth"],
-  ["POST", "/projects/:projectKey/receipts/accounts", "auth"],
-  ["POST", "/projects/:projectKey/receipts/accounts/:accountId/imports", "auth"],
-  ["POST", "/projects/:projectKey/receipts/from-vault", "auth"],
-  ["POST", "/projects/:projectKey/receipts/matches/:matchId/confirm", "auth"],
-  ["POST", "/projects/:projectKey/receipts/matches/:matchId/reject", "auth"],
-  ["POST", "/projects/:projectKey/receipts/pair-suggestions/:suggestionId", "auth"],
-  ["POST", "/projects/:projectKey/receipts/projection/rebuild", "auth"],
-  ["POST", "/projects/:projectKey/settings/git/connections", "admin"],
-  ["POST", "/projects/:projectKey/settings/git/connections/:connectionId/repositories", "admin"],
-  ["POST", "/projects/:projectKey/settings/git/secret", "admin"],
-  ["POST", "/projects/:projectKey/standing-orders", "auth"],
-  ["POST", "/projects/:projectKey/standing-orders/:orderId/decision", "auth"],
-  ["POST", "/projects/:projectKey/view-folders", "auth"],
-  ["POST", "/projects/:projectKey/views/defaults", "auth"],
-  ["POST", "/projects/:projectKey/workflow-signing-secret", "auth"],
-  ["POST", "/provider-limits/refresh", "auth"],
-  ["POST", "/scim/v2/Groups", "intern"],
-  ["POST", "/scim/v2/Users", "intern"],
-  ["POST", "/settings/whats-new/seen", "admin"],
-  ["POST", "/teams", "auth"],
-  ["POST", "/teams/:teamId/access/logins/agents/:agentId/check", "auth"],
-  ["POST", "/teams/:teamId/access/logins/agents/:agentId/sign-out", "auth"],
-  ["POST", "/teams/:teamId/agent-skills/:skillId/references", "auth"],
-  ["POST", "/teams/:teamId/agent-tools", "auth"],
-  ["POST", "/teams/:teamId/ai-agents/:agentId/chat", "auth"],
-  ["POST", "/teams/:teamId/ai-agents/:agentId/chat/:messageId/cancel", "auth"],
-  ["POST", "/teams/:teamId/ai-agents/:agentId/chat/retry", "auth"],
-  ["POST", "/teams/:teamId/ai-agents/:agentId/learned-skills/promote", "auth"],
-  ["POST", "/teams/:teamId/ai-agents/:agentId/runs/:runId/continue", "auth"],
-  ["POST", "/teams/:teamId/ai-agents/:agentId/runtime-actions", "auth"],
-  ["POST", "/teams/:teamId/ai-agents/:agentId/runtime-sync/rewrite", "auth"],
-  ["POST", "/teams/:teamId/ai-agents/:agentId/runtime/curator", "auth"],
-  ["POST", "/teams/:teamId/ai-agents/:agentId/runtime/curator/run", "auth"],
-  ["POST", "/teams/:teamId/browser-lab/home/runs", "auth"],
-  ["POST", "/teams/:teamId/browser-lab/home/runs/:runId/cancel", "auth"],
-  ["POST", "/teams/:teamId/connectors/google/accounts/:accountId/check", "auth"],
-  ["POST", "/teams/:teamId/connectors/google/clients", "auth"],
-  ["POST", "/teams/:teamId/connectors/google/gog/adopt", "auth"],
-  ["POST", "/teams/:teamId/connectors/google/sign-in", "auth"],
-  ["POST", "/teams/:teamId/connectors/google/sign-in/finish", "auth"],
-  ["POST", "/teams/:teamId/connectors/mcp-oauth", "auth"],
-  ["POST", "/teams/:teamId/connectors/mcp-oauth/:connectionId/finish", "auth"],
-  ["POST", "/teams/:teamId/connectors/mcp-oauth/:connectionId/sign-in", "auth"],
-  ["POST", "/teams/:teamId/credentials", "admin"],
-  ["POST", "/teams/:teamId/credentials/:credentialId/clone", "admin"],
-  ["POST", "/teams/:teamId/credentials/:credentialId/ssh-key", "admin"],
-  ["POST", "/teams/:teamId/credentials/:credentialId/test", "admin"],
-  ["POST", "/teams/:teamId/decisions/classes/:classId/evals", "auth"],
-  ["POST", "/teams/:teamId/decisions/log/:decisionId/outcome", "auth"],
-  ["POST", "/teams/:teamId/goals/:goalId/notes/:noteId/decision", "auth"],
-  ["POST", "/teams/:teamId/integrations", "admin"],
-  ["POST", "/teams/:teamId/invites", "auth"],
-  ["POST", "/teams/:teamId/leave", "auth"],
-  ["POST", "/teams/:teamId/mail/accounts", "auth"],
-  ["POST", "/teams/:teamId/mail/accounts/:accountId/reset", "auth"],
-  ["POST", "/teams/:teamId/mail/accounts/test", "auth"],
-  ["POST", "/teams/:teamId/mail/drafts", "auth"],
-  ["POST", "/teams/:teamId/mail/rules", "auth"],
-  ["POST", "/teams/:teamId/mcp-servers", "auth"],
-  ["POST", "/teams/:teamId/model-availability/replace", "auth"],
-  ["POST", "/teams/:teamId/organization/agents/:agentId/pause", "auth"],
-  ["POST", "/teams/:teamId/organization/agents/:agentId/resume", "auth"],
-  ["POST", "/teams/:teamId/organization/departments", "auth"],
-  ["POST", "/teams/:teamId/organization/goals", "auth"],
-  ["POST", "/teams/:teamId/pipelines", "auth"],
-  ["POST", "/teams/:teamId/pipelines/validate", "auth"],
-  ["POST", "/teams/:teamId/project-deprovisioning/:jobId/retry", "auth"],
-  ["POST", "/teams/:teamId/projects", "auth"],
-  ["POST", "/teams/:teamId/projects/:projectId/copy", "auth"],
-  ["POST", "/teams/:teamId/template-bundles/import", "auth"],
-  ["POST", "/telegram/account/link", "auth"],
-  ["POST", "/views/:viewId/share", "auth"],
-  ["POST", "/voice/speech", "binär"],
-  ["POST", "/voice/transcriptions", "binär"],
-  ["POST", "/webhooks/git/:webhookId", "intern"],
-  ["POST", "/webhooks/github/:webhookId", "intern"],
-  ["PUT", "/account/active-chat", "auth"],
-  ["PUT", "/account/push/presence", "auth"],
-  ["PUT", "/attachments/:publicId", "auth"],
-  ["PUT", "/attachments/:publicId/link", "auth"],
-  ["PUT", "/chats/:threadId/active", "UI-only"],
-  ["PUT", "/chats/:threadId/pin", "UI-only"],
-  ["PUT", "/files/text", "auth"],
-  ["PUT", "/god/agent-runtime-settings", "admin"],
-  ["PUT", "/god/auth-settings", "admin"],
-  ["PUT", "/god/browser-control", "admin"],
-  ["PUT", "/god/browser-power", "admin"],
-  ["PUT", "/god/display-name", "admin"],
-  ["PUT", "/god/email-settings", "admin"],
-  ["PUT", "/god/emergency-stop", "admin"],
-  ["PUT", "/god/engine", "admin"],
-  ["PUT", "/god/escalation", "admin"],
-  ["PUT", "/god/google-settings", "admin"],
-  ["PUT", "/god/hotkey-settings", "admin"],
-  ["PUT", "/god/local-ai/judge", "admin"],
-  ["PUT", "/god/local-ai/servers/:id/models/:model/options", "admin"],
-  ["PUT", "/god/model-prices/:model", "admin"],
-  ["PUT", "/god/model-prices/settings", "admin"],
-  ["PUT", "/god/oidc-settings", "admin"],
-  ["PUT", "/god/plugins", "admin"],
-  ["PUT", "/god/project-defaults", "admin"],
-  ["PUT", "/god/run-resume-settings", "admin"],
-  ["PUT", "/god/scim-groups/:groupId/mappings", "admin"],
-  ["PUT", "/god/scim-settings", "admin"],
-  ["PUT", "/god/security/edge", "admin"],
-  ["PUT", "/god/server/backup/settings", "admin"],
-  ["PUT", "/god/server/backup/targets/:id", "admin"],
-  ["PUT", "/god/server/power/fans", "admin"],
-  ["PUT", "/god/server/power/guard", "admin"],
-  ["PUT", "/god/server/power/policy", "admin"],
-  ["PUT", "/god/server/power/profile", "admin"],
-  ["PUT", "/god/storage-settings", "admin"],
-  ["PUT", "/god/telegram-settings", "admin"],
-  ["PUT", "/knowledge/bases", "auth"],
-  ["PUT", "/knowledge/semantic", "auth"],
-  ["PUT", "/projects/:projectKey/ai-agents/:agentId/threads/:threadId/favorite", "UI-only"],
-  ["PUT", "/projects/:projectKey/autopilot", "auth"],
-  ["PUT", "/projects/:projectKey/autopilot/budgets", "auth"],
-  ["PUT", "/projects/:projectKey/control-plane/workflows/:workflowId", "auth"],
-  ["PUT", "/projects/:projectKey/files/text", "auth"],
-  ["PUT", "/projects/:projectKey/notification-preferences", "auth"],
-  ["PUT", "/projects/:projectKey/pipelines/:pipelineId", "auth"],
-  ["PUT", "/projects/:projectKey/receipts/:receiptId/original-link", "auth"],
-  ["PUT", "/projects/:projectKey/settings/agent-network", "admin"],
-  ["PUT", "/projects/:projectKey/settings/browser-control", "admin"],
-  ["PUT", "/projects/:projectKey/settings/browser-gateway", "admin"],
-  ["PUT", "/projects/:projectKey/view-folders/reorder", "auth"],
-  ["PUT", "/scim/v2/Groups/:id", "intern"],
-  ["PUT", "/scim/v2/Users/:id", "intern"],
-  ["PUT", "/teams/:teamId/ai-agents/:agentId/autopilot", "auth"],
-  ["PUT", "/teams/:teamId/ai-agents/:agentId/autopilot/budgets", "auth"],
-  ["PUT", "/teams/:teamId/ai-agents/:agentId/mcp-servers", "auth"],
-  ["PUT", "/teams/:teamId/ai-agents/:agentId/threads/:threadId/favorite", "UI-only"],
-  ["PUT", "/teams/:teamId/credentials/:credentialId/grants", "admin"],
-  ["PUT", "/teams/:teamId/model-router/agents/:agentId", "auth"],
-  ["PUT", "/teams/:teamId/model-router/projects/:projectId", "auth"],
-  ["PUT", "/teams/:teamId/notification-settings", "auth"],
-  ["PUT", "/teams/:teamId/organization/agents/:agentId", "auth"],
-  ["PUT", "/teams/:teamId/organization/agents/:agentId/token-ceilings", "auth"],
-  ["PUT", "/teams/:teamId/organization/departments/:departmentId/budgets", "auth"],
-  ["PUT", "/teams/:teamId/organization/projects/:projectId", "auth"],
-  ["PUT", "/teams/:teamId/organization/projects/:projectId/token-ceiling", "auth"],
-  ["PUT", "/teams/:teamId/receipt-dedup", "auth"],
-  ["PUT", "/teams/:teamId/receipt-projection", "auth"],
-  ["PUT", "/telegram/account/target", "auth"],
-  ["PUT", "/views/:viewId/favorite", "UI-only"]
+  [
+    "DELETE",
+    "/scim/v2/Groups/:id",
+    "intern",
+    "SCIM-Provisionierung über den Identitätsanbieter; kein Agentenaufruf."
+  ],
+  [
+    "DELETE",
+    "/scim/v2/Users/:id",
+    "intern",
+    "SCIM-Provisionierung über den Identitätsanbieter; kein Agentenaufruf."
+  ],
+  [
+    "DELETE",
+    "/teams/:teamId/credentials/:credentialId",
+    "admin",
+    "Verwaltet Zugangsdaten oder Geheimnisse im Adminbereich; kein Agentenwerkzeug."
+  ],
+  [
+    "DELETE",
+    "/teams/:teamId/integrations/:credentialId",
+    "admin",
+    "Verwaltet Zugangsdaten oder Geheimnisse im Adminbereich; kein Agentenwerkzeug."
+  ],
+  [
+    "DELETE",
+    "/views/:viewId/favorite",
+    "UI-only",
+    "Persönlicher Browser- oder Ansichtsstatus ohne eigenständige Agentenaktion."
+  ],
+  ["GET", "/", "auth", "Öffentliche Metadaten, Sitzung oder CORS-Prüfung; keine fachliche Aktion."],
+  [
+    "GET",
+    "/.well-known/oauth-authorization-server",
+    "auth",
+    "Anmeldung/OAuth-Rücksprung mit Nutzerinteraktion; kein Agentenwerkzeug."
+  ],
+  [
+    "GET",
+    "/.well-known/oauth-protected-resource/mcp",
+    "auth",
+    "Anmeldung/OAuth-Rücksprung mit Nutzerinteraktion; kein Agentenwerkzeug."
+  ],
+  [
+    "GET",
+    "/account/active-chat",
+    "UI-only",
+    "Persönlicher Browser- oder Ansichtsstatus ohne eigenständige Agentenaktion."
+  ],
+  [
+    "GET",
+    "/account/preferences",
+    "UI-only",
+    "Persönlicher Browser- oder Ansichtsstatus ohne eigenständige Agentenaktion."
+  ],
+  [
+    "GET",
+    "/agent-chats/:messageId/env",
+    "intern",
+    "Maschinen- oder Runner-Protokoll; wird vom Dienst selbst aufgerufen."
+  ],
+  [
+    "GET",
+    "/agent-chats/:messageId/ssh-keys",
+    "intern",
+    "Maschinen- oder Runner-Protokoll; wird vom Dienst selbst aufgerufen."
+  ],
+  [
+    "GET",
+    "/agent-chats/:messageId/web-logins",
+    "intern",
+    "Maschinen- oder Runner-Protokoll; wird vom Dienst selbst aufgerufen."
+  ],
+  [
+    "GET",
+    "/agent-runs/:runId/approved-commands",
+    "intern",
+    "Maschinen- oder Runner-Protokoll; wird vom Dienst selbst aufgerufen."
+  ],
+  [
+    "GET",
+    "/agent-runs/:runId/env",
+    "intern",
+    "Maschinen- oder Runner-Protokoll; wird vom Dienst selbst aufgerufen."
+  ],
+  [
+    "GET",
+    "/agent-runs/:runId/ssh-keys",
+    "intern",
+    "Maschinen- oder Runner-Protokoll; wird vom Dienst selbst aufgerufen."
+  ],
+  [
+    "GET",
+    "/agent-runs/:runId/web-logins",
+    "intern",
+    "Maschinen- oder Runner-Protokoll; wird vom Dienst selbst aufgerufen."
+  ],
+  [
+    "GET",
+    "/agent-runtime/mcp-secrets",
+    "intern",
+    "Maschinen- oder Runner-Protokoll; wird vom Dienst selbst aufgerufen."
+  ],
+  [
+    "GET",
+    "/agent-runtime/model-server-keys",
+    "intern",
+    "Maschinen- oder Runner-Protokoll; wird vom Dienst selbst aufgerufen."
+  ],
+  [
+    "GET",
+    "/agent-runtime/policy",
+    "intern",
+    "Maschinen- oder Runner-Protokoll; wird vom Dienst selbst aufgerufen."
+  ],
+  [
+    "GET",
+    "/agent-runtime/runtime-login",
+    "intern",
+    "Maschinen- oder Runner-Protokoll; wird vom Dienst selbst aufgerufen."
+  ],
+  [
+    "GET",
+    "/attachments/:publicId/raw",
+    "binär",
+    "Datei-/Stream-Übertragung statt JSON; der Werkzeug-Dispatcher unterstützt diesen Payload nicht."
+  ],
+  [
+    "GET",
+    "/attachments/:publicId/view",
+    "binär",
+    "Datei-/Stream-Übertragung statt JSON; der Werkzeug-Dispatcher unterstützt diesen Payload nicht."
+  ],
+  [
+    "GET",
+    "/auth-config",
+    "auth",
+    "Anmeldung/OAuth-Rücksprung mit Nutzerinteraktion; kein Agentenwerkzeug."
+  ],
+  [
+    "GET",
+    "/auth/verify",
+    "auth",
+    "Anmeldung/OAuth-Rücksprung mit Nutzerinteraktion; kein Agentenwerkzeug."
+  ],
+  [
+    "GET",
+    "/auth/verify/edge",
+    "auth",
+    "Anmeldung/OAuth-Rücksprung mit Nutzerinteraktion; kein Agentenwerkzeug."
+  ],
+  [
+    "GET",
+    "/auth/verify/lan",
+    "auth",
+    "Anmeldung/OAuth-Rücksprung mit Nutzerinteraktion; kein Agentenwerkzeug."
+  ],
+  [
+    "GET",
+    "/auth/verify/owner-terminal/:kind",
+    "auth",
+    "Anmeldung/OAuth-Rücksprung mit Nutzerinteraktion; kein Agentenwerkzeug."
+  ],
+  [
+    "GET",
+    "/avatars/:id/raw",
+    "binär",
+    "Datei-/Stream-Übertragung statt JSON; der Werkzeug-Dispatcher unterstützt diesen Payload nicht."
+  ],
+  [
+    "GET",
+    "/chat-attachments/:publicId/raw",
+    "binär",
+    "Datei-/Stream-Übertragung statt JSON; der Werkzeug-Dispatcher unterstützt diesen Payload nicht."
+  ],
+  [
+    "GET",
+    "/connections",
+    "admin",
+    "Instanz- oder Administrationssteuerung außerhalb der fachlichen Agentenwerkzeuge."
+  ],
+  [
+    "GET",
+    "/connectors/google/oauth/callback",
+    "auth",
+    "Anmeldung/OAuth-Rücksprung mit Nutzerinteraktion; kein Agentenwerkzeug."
+  ],
+  [
+    "GET",
+    "/connectors/mcp-oauth/callback",
+    "auth",
+    "Anmeldung/OAuth-Rücksprung mit Nutzerinteraktion; kein Agentenwerkzeug."
+  ],
+  [
+    "GET",
+    "/device-sync",
+    "intern",
+    "Maschinen- oder Runner-Protokoll; wird vom Dienst selbst aufgerufen."
+  ],
+  [
+    "GET",
+    "/device-sync/conflicts",
+    "intern",
+    "Maschinen- oder Runner-Protokoll; wird vom Dienst selbst aufgerufen."
+  ],
+  [
+    "GET",
+    "/display-name",
+    "auth",
+    "Öffentliche Metadaten, Sitzung oder CORS-Prüfung; keine fachliche Aktion."
+  ],
+  ["GET", "/docs", "UI-only", "Dokumentation oder UI-Erweiterung der Weboberfläche."],
+  ["GET", "/docs/json", "UI-only", "Dokumentation oder UI-Erweiterung der Weboberfläche."],
+  [
+    "GET",
+    "/edge/home",
+    "intern",
+    "Maschinen- oder Runner-Protokoll; wird vom Dienst selbst aufgerufen."
+  ],
+  [
+    "GET",
+    "/edge/home/probe",
+    "intern",
+    "Maschinen- oder Runner-Protokoll; wird vom Dienst selbst aufgerufen."
+  ],
+  [
+    "GET",
+    "/files/raw",
+    "binär",
+    "Datei-/Stream-Übertragung statt JSON; der Werkzeug-Dispatcher unterstützt diesen Payload nicht."
+  ],
+  [
+    "GET",
+    "/god/agent-runtime-settings",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "GET",
+    "/god/auth-settings",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "GET",
+    "/god/browser-control",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "GET",
+    "/god/browser-power",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "GET",
+    "/god/display-name",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "GET",
+    "/god/email-settings",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "GET",
+    "/god/engine",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "GET",
+    "/god/escalation",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "GET",
+    "/god/google-settings",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "GET",
+    "/god/hermes-update",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "GET",
+    "/god/hotkey-settings",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "GET",
+    "/god/local-ai",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "GET",
+    "/god/local-ai/evals/:id",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "GET",
+    "/god/local-ai/judge",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "GET",
+    "/god/local-ai/status",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "GET",
+    "/god/model-availability",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "GET",
+    "/god/oidc-settings",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "GET",
+    "/god/plugins",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "GET",
+    "/god/plugins/projects",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "GET",
+    "/god/project-defaults",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "GET",
+    "/god/projects",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "GET",
+    "/god/projects/:projectId",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "GET",
+    "/god/projects/options",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "GET",
+    "/god/root-access",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "GET",
+    "/god/root-access/audit",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "GET",
+    "/god/run-resume-settings",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "GET",
+    "/god/scim-groups",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "GET",
+    "/god/scim-settings",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "GET",
+    "/god/security/edge",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "GET",
+    "/god/security/sign-ins",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "GET",
+    "/god/security/status",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "GET",
+    "/god/server",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "GET",
+    "/god/server/backup",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "GET",
+    "/god/server/backup/restores/:id",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "GET",
+    "/god/server/backup/snapshots",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "GET",
+    "/god/server/backup/snapshots/:snapshot/files",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "GET",
+    "/god/server/disks",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "GET",
+    "/god/server/events",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "GET",
+    "/god/server/power",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "GET",
+    "/god/server/system",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "GET",
+    "/god/storage-settings",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "GET",
+    "/god/system-health",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "GET",
+    "/god/teams",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "GET",
+    "/god/teams/:teamId",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "GET",
+    "/god/teams/:teamId/members",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "GET",
+    "/god/teams/:teamId/projects",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "GET",
+    "/god/telegram-settings",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "GET",
+    "/god/update-center",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "GET",
+    "/god/update-center/actions/:actionId",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "GET",
+    "/god/update-center/settings",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "GET",
+    "/god/updates",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "GET",
+    "/god/users",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "GET",
+    "/god/users/:userId",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "GET",
+    "/god/vault-integrity",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "GET",
+    "/god/voice/settings",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "GET",
+    "/initiative-attachments/:publicId/raw",
+    "binär",
+    "Datei-/Stream-Übertragung statt JSON; der Werkzeug-Dispatcher unterstützt diesen Payload nicht."
+  ],
+  [
+    "GET",
+    "/internal/agent-egress/policy",
+    "intern",
+    "Maschinen- oder Runner-Protokoll; wird vom Dienst selbst aufgerufen."
+  ],
+  [
+    "GET",
+    "/internal/browser-gateway/policy",
+    "intern",
+    "Maschinen- oder Runner-Protokoll; wird vom Dienst selbst aufgerufen."
+  ],
+  [
+    "GET",
+    "/internal/browser-gateway/power",
+    "intern",
+    "Maschinen- oder Runner-Protokoll; wird vom Dienst selbst aufgerufen."
+  ],
+  [
+    "GET",
+    "/internal/systemone/v1/models",
+    "intern",
+    "Maschinen- oder Runner-Protokoll; wird vom Dienst selbst aufgerufen."
+  ],
+  [
+    "GET",
+    "/knowledge/picker",
+    "UI-only",
+    "Auswahlwerte für ein Webformular; die Fachaktion hat ein eigenes Werkzeug."
+  ],
+  [
+    "GET",
+    "/knowledge/raw",
+    "binär",
+    "Datei-/Stream-Übertragung statt JSON; der Werkzeug-Dispatcher unterstützt diesen Payload nicht."
+  ],
+  [
+    "GET",
+    "/mail/attachments/:attachmentId",
+    "binär",
+    "Datei-/Stream-Übertragung statt JSON; der Werkzeug-Dispatcher unterstützt diesen Payload nicht."
+  ],
+  [
+    "GET",
+    "/mail/messages/:messageId/parts/:contentId",
+    "binär",
+    "Datei-/Stream-Übertragung statt JSON; der Werkzeug-Dispatcher unterstützt diesen Payload nicht."
+  ],
+  ["GET", "/mcp", "auth", "MCP-Transport und Handshake, nicht als eigenes Werkzeug aufrufbar."],
+  [
+    "GET",
+    "/me",
+    "auth",
+    "Öffentliche Metadaten, Sitzung oder CORS-Prüfung; keine fachliche Aktion."
+  ],
+  [
+    "GET",
+    "/owner-terminal/audit",
+    "admin",
+    "Interaktive Owner-Terminal-Freigabe; kein Agentenwerkzeug."
+  ],
+  [
+    "GET",
+    "/owner-terminal/grant",
+    "admin",
+    "Interaktive Owner-Terminal-Freigabe; kein Agentenwerkzeug."
+  ],
+  [
+    "GET",
+    "/owner-terminal/local-models",
+    "admin",
+    "Interaktive Owner-Terminal-Freigabe; kein Agentenwerkzeug."
+  ],
+  [
+    "GET",
+    "/owner-terminal/settings",
+    "admin",
+    "Interaktive Owner-Terminal-Freigabe; kein Agentenwerkzeug."
+  ],
+  [
+    "GET",
+    "/plugins/:pluginId/ui/*",
+    "UI-only",
+    "Plugin-Oberfläche wird im Browser geladen; kein fachlicher Agentenaufruf."
+  ],
+  ["GET", "/plugins/ui-slots", "UI-only", "Dokumentation oder UI-Erweiterung der Weboberfläche."],
+  [
+    "GET",
+    "/projects/:projectKey/ai-agents/:agentId/chat/:messageId/events",
+    "UI-only",
+    "Persönlicher Chatverlauf oder Ansichtszustand der Weboberfläche."
+  ],
+  [
+    "GET",
+    "/projects/:projectKey/ai-agents/:agentId/chat/:messageId/stream",
+    "binär",
+    "Datei-/Stream-Übertragung statt JSON; der Werkzeug-Dispatcher unterstützt diesen Payload nicht."
+  ],
+  [
+    "GET",
+    "/projects/:projectKey/ai-agents/:agentId/chat/catalog",
+    "UI-only",
+    "Persönlicher Chatverlauf oder Ansichtszustand der Weboberfläche."
+  ],
+  [
+    "GET",
+    "/projects/:projectKey/cycles/options",
+    "UI-only",
+    "Auswahlwerte für ein Webformular; die Fachaktion hat ein eigenes Werkzeug."
+  ],
+  [
+    "GET",
+    "/projects/:projectKey/files/raw",
+    "binär",
+    "Datei-/Stream-Übertragung statt JSON; der Werkzeug-Dispatcher unterstützt diesen Payload nicht."
+  ],
+  [
+    "GET",
+    "/projects/:projectKey/initiatives/options",
+    "UI-only",
+    "Auswahlwerte für ein Webformular; die Fachaktion hat ein eigenes Werkzeug."
+  ],
+  [
+    "GET",
+    "/projects/:projectKey/receipts/:receiptId/file",
+    "binär",
+    "Datei-/Stream-Übertragung statt JSON; der Werkzeug-Dispatcher unterstützt diesen Payload nicht."
+  ],
+  [
+    "GET",
+    "/projects/:projectKey/receipts/export",
+    "binär",
+    "Datei-/Stream-Übertragung statt JSON; der Werkzeug-Dispatcher unterstützt diesen Payload nicht."
+  ],
+  [
+    "GET",
+    "/projects/:projectKey/workflow-signing-secret",
+    "admin",
+    "Verwaltet Zugangsdaten oder Geheimnisse im Adminbereich; kein Agentenwerkzeug."
+  ],
+  [
+    "GET",
+    "/provider-limits/settings",
+    "admin",
+    "Instanz- oder Administrationssteuerung außerhalb der fachlichen Agentenwerkzeuge."
+  ],
+  [
+    "GET",
+    "/scim/v2/Groups",
+    "intern",
+    "SCIM-Provisionierung über den Identitätsanbieter; kein Agentenaufruf."
+  ],
+  [
+    "GET",
+    "/scim/v2/Groups/:id",
+    "intern",
+    "SCIM-Provisionierung über den Identitätsanbieter; kein Agentenaufruf."
+  ],
+  [
+    "GET",
+    "/scim/v2/ResourceTypes",
+    "intern",
+    "SCIM-Provisionierung über den Identitätsanbieter; kein Agentenaufruf."
+  ],
+  [
+    "GET",
+    "/scim/v2/ResourceTypes/:id",
+    "intern",
+    "SCIM-Provisionierung über den Identitätsanbieter; kein Agentenaufruf."
+  ],
+  [
+    "GET",
+    "/scim/v2/Schemas",
+    "intern",
+    "SCIM-Provisionierung über den Identitätsanbieter; kein Agentenaufruf."
+  ],
+  [
+    "GET",
+    "/scim/v2/Schemas/:id",
+    "intern",
+    "SCIM-Provisionierung über den Identitätsanbieter; kein Agentenaufruf."
+  ],
+  [
+    "GET",
+    "/scim/v2/ServiceProviderConfig",
+    "intern",
+    "SCIM-Provisionierung über den Identitätsanbieter; kein Agentenaufruf."
+  ],
+  [
+    "GET",
+    "/scim/v2/Users",
+    "intern",
+    "SCIM-Provisionierung über den Identitätsanbieter; kein Agentenaufruf."
+  ],
+  [
+    "GET",
+    "/scim/v2/Users/:id",
+    "intern",
+    "SCIM-Provisionierung über den Identitätsanbieter; kein Agentenaufruf."
+  ],
+  [
+    "GET",
+    "/settings/hotkeys",
+    "admin",
+    "Instanz- oder Administrationssteuerung außerhalb der fachlichen Agentenwerkzeuge."
+  ],
+  [
+    "GET",
+    "/settings/storage",
+    "admin",
+    "Instanz- oder Administrationssteuerung außerhalb der fachlichen Agentenwerkzeuge."
+  ],
+  [
+    "GET",
+    "/settings/version",
+    "admin",
+    "Instanz- oder Administrationssteuerung außerhalb der fachlichen Agentenwerkzeuge."
+  ],
+  [
+    "GET",
+    "/settings/whats-new",
+    "admin",
+    "Instanz- oder Administrationssteuerung außerhalb der fachlichen Agentenwerkzeuge."
+  ],
+  [
+    "GET",
+    "/share/:kind/:token/attachments/:publicId/raw",
+    "binär",
+    "Datei-/Stream-Übertragung statt JSON; der Werkzeug-Dispatcher unterstützt diesen Payload nicht."
+  ],
+  [
+    "GET",
+    "/share/issue/:token",
+    "UI-only",
+    "Öffentliche Freigabeansicht per Link, keine Aktion mit Agentenidentität."
+  ],
+  [
+    "GET",
+    "/share/view/:token",
+    "UI-only",
+    "Öffentliche Freigabeansicht per Link, keine Aktion mit Agentenidentität."
+  ],
+  [
+    "GET",
+    "/share/view/:token/issues/:issueId",
+    "UI-only",
+    "Öffentliche Freigabeansicht per Link, keine Aktion mit Agentenidentität."
+  ],
+  [
+    "GET",
+    "/sync/rev",
+    "UI-only",
+    "Persönlicher Browser- oder Ansichtsstatus ohne eigenständige Agentenaktion."
+  ],
+  [
+    "GET",
+    "/teams/:teamId/access/audit",
+    "admin",
+    "Verwaltet Zugangsdaten oder Geheimnisse im Adminbereich; kein Agentenwerkzeug."
+  ],
+  [
+    "GET",
+    "/teams/:teamId/access/logins",
+    "admin",
+    "Verwaltet Zugangsdaten oder Geheimnisse im Adminbereich; kein Agentenwerkzeug."
+  ],
+  [
+    "GET",
+    "/teams/:teamId/agent-environment",
+    "admin",
+    "Verwaltet Zugangsdaten oder Geheimnisse im Adminbereich; kein Agentenwerkzeug."
+  ],
+  [
+    "GET",
+    "/teams/:teamId/ai-agents/:agentId/chat/:messageId/events",
+    "UI-only",
+    "Persönlicher Chatverlauf oder Ansichtszustand der Weboberfläche."
+  ],
+  [
+    "GET",
+    "/teams/:teamId/ai-agents/:agentId/chat/:messageId/stream",
+    "binär",
+    "Datei-/Stream-Übertragung statt JSON; der Werkzeug-Dispatcher unterstützt diesen Payload nicht."
+  ],
+  [
+    "GET",
+    "/teams/:teamId/ai-agents/:agentId/chat/catalog",
+    "UI-only",
+    "Persönlicher Chatverlauf oder Ansichtszustand der Weboberfläche."
+  ],
+  [
+    "GET",
+    "/teams/:teamId/projects/options",
+    "UI-only",
+    "Auswahlwerte für ein Webformular; die Fachaktion hat ein eigenes Werkzeug."
+  ],
+  [
+    "GET",
+    "/voice",
+    "UI-only",
+    "Persönlicher Browser- oder Ansichtsstatus ohne eigenständige Agentenaktion."
+  ],
+  [
+    "GET",
+    "/workflow-engine/types",
+    "intern",
+    "Maschinen- oder Runner-Protokoll; wird vom Dienst selbst aufgerufen."
+  ],
+  [
+    "OPTIONS",
+    "/",
+    "auth",
+    "Öffentliche Metadaten, Sitzung oder CORS-Prüfung; keine fachliche Aktion."
+  ],
+  [
+    "OPTIONS",
+    "/*",
+    "auth",
+    "Öffentliche Metadaten, Sitzung oder CORS-Prüfung; keine fachliche Aktion."
+  ],
+  [
+    "PATCH",
+    "/account/preferences",
+    "UI-only",
+    "Persönlicher Browser- oder Ansichtsstatus ohne eigenständige Agentenaktion."
+  ],
+  [
+    "PATCH",
+    "/account/push/devices/:id",
+    "UI-only",
+    "Persönlicher Browser- oder Ansichtsstatus ohne eigenständige Agentenaktion."
+  ],
+  [
+    "PATCH",
+    "/god/local-ai/policy",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "PATCH",
+    "/god/local-ai/servers/:id",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "PATCH",
+    "/god/update-center/settings",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "PATCH",
+    "/god/voice/settings",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "PATCH",
+    "/owner-terminal/settings",
+    "admin",
+    "Interaktive Owner-Terminal-Freigabe; kein Agentenwerkzeug."
+  ],
+  [
+    "PATCH",
+    "/projects/:projectKey/settings/git",
+    "admin",
+    "Verwaltet Git-Verbindungen und Webhook-Geheimnisse im Projekt-Adminbereich."
+  ],
+  [
+    "PATCH",
+    "/provider-limits/settings",
+    "admin",
+    "Instanz- oder Administrationssteuerung außerhalb der fachlichen Agentenwerkzeuge."
+  ],
+  [
+    "PATCH",
+    "/scim/v2/Groups/:id",
+    "intern",
+    "SCIM-Provisionierung über den Identitätsanbieter; kein Agentenaufruf."
+  ],
+  [
+    "PATCH",
+    "/scim/v2/Users/:id",
+    "intern",
+    "SCIM-Provisionierung über den Identitätsanbieter; kein Agentenaufruf."
+  ],
+  [
+    "PATCH",
+    "/teams/:teamId/credentials/:credentialId",
+    "admin",
+    "Verwaltet Zugangsdaten oder Geheimnisse im Adminbereich; kein Agentenwerkzeug."
+  ],
+  [
+    "PATCH",
+    "/teams/:teamId/integrations/:credentialId",
+    "admin",
+    "Verwaltet Zugangsdaten oder Geheimnisse im Adminbereich; kein Agentenwerkzeug."
+  ],
+  [
+    "POST",
+    "/account/push/devices",
+    "UI-only",
+    "Persönlicher Browser- oder Ansichtsstatus ohne eigenständige Agentenaktion."
+  ],
+  [
+    "POST",
+    "/agent-chat-reflections/:id/result",
+    "intern",
+    "Maschinen- oder Runner-Protokoll; wird vom Dienst selbst aufgerufen."
+  ],
+  [
+    "POST",
+    "/agent-chat-reflections/claim",
+    "intern",
+    "Maschinen- oder Runner-Protokoll; wird vom Dienst selbst aufgerufen."
+  ],
+  [
+    "POST",
+    "/agent-chats/:messageId/events",
+    "intern",
+    "Maschinen- oder Runner-Protokoll; wird vom Dienst selbst aufgerufen."
+  ],
+  [
+    "POST",
+    "/agent-chats/:messageId/heartbeat",
+    "intern",
+    "Maschinen- oder Runner-Protokoll; wird vom Dienst selbst aufgerufen."
+  ],
+  [
+    "POST",
+    "/agent-chats/:messageId/result",
+    "intern",
+    "Maschinen- oder Runner-Protokoll; wird vom Dienst selbst aufgerufen."
+  ],
+  [
+    "POST",
+    "/agent-chats/catalog",
+    "intern",
+    "Runner veröffentlicht seine Modellliste; kein Agentenaufruf."
+  ],
+  [
+    "POST",
+    "/agent-chats/claim",
+    "intern",
+    "Maschinen- oder Runner-Protokoll; wird vom Dienst selbst aufgerufen."
+  ],
+  [
+    "POST",
+    "/agent-policy/decide",
+    "intern",
+    "Maschinen- oder Runner-Protokoll; wird vom Dienst selbst aufgerufen."
+  ],
+  [
+    "POST",
+    "/agent-runs/:runId/events",
+    "intern",
+    "Maschinen- oder Runner-Protokoll; wird vom Dienst selbst aufgerufen."
+  ],
+  [
+    "POST",
+    "/agent-runs/:runId/heartbeat",
+    "intern",
+    "Maschinen- oder Runner-Protokoll; wird vom Dienst selbst aufgerufen."
+  ],
+  [
+    "POST",
+    "/agent-runs/:runId/reflection",
+    "intern",
+    "Maschinen- oder Runner-Protokoll; wird vom Dienst selbst aufgerufen."
+  ],
+  [
+    "POST",
+    "/agent-runs/:runId/release",
+    "intern",
+    "Maschinen- oder Runner-Protokoll; wird vom Dienst selbst aufgerufen."
+  ],
+  [
+    "POST",
+    "/agent-runs/:runId/result",
+    "intern",
+    "Maschinen- oder Runner-Protokoll; wird vom Dienst selbst aufgerufen."
+  ],
+  [
+    "POST",
+    "/agent-runs/:runId/session",
+    "intern",
+    "Maschinen- oder Runner-Protokoll; wird vom Dienst selbst aufgerufen."
+  ],
+  [
+    "POST",
+    "/agent-runs/claim",
+    "intern",
+    "Maschinen- oder Runner-Protokoll; wird vom Dienst selbst aufgerufen."
+  ],
+  [
+    "POST",
+    "/agent-runtime/credential-uses",
+    "intern",
+    "Maschinen- oder Runner-Protokoll; wird vom Dienst selbst aufgerufen."
+  ],
+  [
+    "POST",
+    "/agent-runtime/limits",
+    "intern",
+    "Maschinen- oder Runner-Protokoll; wird vom Dienst selbst aufgerufen."
+  ],
+  [
+    "POST",
+    "/agent-runtime/requests/:requestId/answer",
+    "intern",
+    "Maschinen- oder Runner-Protokoll; wird vom Dienst selbst aufgerufen."
+  ],
+  [
+    "POST",
+    "/agent-runtime/requests/claim",
+    "intern",
+    "Maschinen- oder Runner-Protokoll; wird vom Dienst selbst aufgerufen."
+  ],
+  [
+    "POST",
+    "/agent-runtime/runner-health",
+    "intern",
+    "Maschinen- oder Runner-Protokoll; wird vom Dienst selbst aufgerufen."
+  ],
+  [
+    "POST",
+    "/agent-runtime/status",
+    "intern",
+    "Maschinen- oder Runner-Protokoll; wird vom Dienst selbst aufgerufen."
+  ],
+  [
+    "POST",
+    "/connections/actions",
+    "admin",
+    "Instanz- oder Administrationssteuerung außerhalb der fachlichen Agentenwerkzeuge."
+  ],
+  [
+    "POST",
+    "/device-sync/pending/:deviceId/accept",
+    "intern",
+    "Maschinen- oder Runner-Protokoll; wird vom Dienst selbst aufgerufen."
+  ],
+  [
+    "POST",
+    "/files/upload",
+    "binär",
+    "Datei-/Stream-Übertragung statt JSON; der Werkzeug-Dispatcher unterstützt diesen Payload nicht."
+  ],
+  [
+    "POST",
+    "/god/email-settings/test",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "POST",
+    "/god/hermes-update/check",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "POST",
+    "/god/hermes-update/request",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "POST",
+    "/god/local-ai/evals",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "POST",
+    "/god/local-ai/servers",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "POST",
+    "/god/local-ai/servers/:id/check",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "POST",
+    "/god/model-prices/import",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "POST",
+    "/god/plugins/:pluginId/approval",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "POST",
+    "/god/scim-settings/token",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "POST",
+    "/god/server/backup/password/acknowledge",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "POST",
+    "/god/server/backup/password/reveal",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "POST",
+    "/god/server/backup/restores",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "POST",
+    "/god/server/backup/run",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "POST",
+    "/god/server/disks/:disk/self-test",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "POST",
+    "/god/server/disks/arrays/:array/check",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "POST",
+    "/god/server/disks/boot-reserve",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "POST",
+    "/god/server/events/seen",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "POST",
+    "/god/server/local-ai/restart",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "POST",
+    "/god/update-center/check",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "POST",
+    "/god/update-center/hermes/refresh-local",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "POST",
+    "/god/update-center/items/:itemId/apply",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "POST",
+    "/god/updates/check",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "POST",
+    "/god/users/:userId/verify-email",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "POST",
+    "/god/vault-trash/purge",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "POST",
+    "/hooks/workflows/:hookId",
+    "intern",
+    "Eingehender Webhook des externen Systems; kein Agentenaufruf."
+  ],
+  [
+    "POST",
+    "/initiatives/:initiativeId/attachments",
+    "binär",
+    "Datei-/Stream-Übertragung statt JSON; der Werkzeug-Dispatcher unterstützt diesen Payload nicht."
+  ],
+  [
+    "POST",
+    "/internal/agent-egress/events",
+    "intern",
+    "Maschinen- oder Runner-Protokoll; wird vom Dienst selbst aufgerufen."
+  ],
+  [
+    "POST",
+    "/internal/bootstrap/home-agent",
+    "intern",
+    "Maschinen- oder Runner-Protokoll; wird vom Dienst selbst aufgerufen."
+  ],
+  [
+    "POST",
+    "/internal/bootstrap/project-agent",
+    "intern",
+    "Maschinen- oder Runner-Protokoll; wird vom Dienst selbst aufgerufen."
+  ],
+  [
+    "POST",
+    "/internal/bootstrap/project-coordinator",
+    "intern",
+    "Maschinen- oder Runner-Protokoll; wird vom Dienst selbst aufgerufen."
+  ],
+  [
+    "POST",
+    "/internal/browser-gateway/audit",
+    "intern",
+    "Maschinen- oder Runner-Protokoll; wird vom Dienst selbst aufgerufen."
+  ],
+  [
+    "POST",
+    "/internal/browser-gateway/decide",
+    "intern",
+    "Maschinen- oder Runner-Protokoll; wird vom Dienst selbst aufgerufen."
+  ],
+  [
+    "POST",
+    "/internal/browser-gateway/download",
+    "intern",
+    "Maschinen- oder Runner-Protokoll; wird vom Dienst selbst aufgerufen."
+  ],
+  [
+    "POST",
+    "/internal/browser-gateway/handover",
+    "intern",
+    "Maschinen- oder Runner-Protokoll; wird vom Dienst selbst aufgerufen."
+  ],
+  [
+    "POST",
+    "/internal/browser-gateway/handover-done",
+    "intern",
+    "Maschinen- oder Runner-Protokoll; wird vom Dienst selbst aufgerufen."
+  ],
+  [
+    "POST",
+    "/internal/browser-gateway/login",
+    "intern",
+    "Maschinen- oder Runner-Protokoll; wird vom Dienst selbst aufgerufen."
+  ],
+  [
+    "POST",
+    "/internal/browser-gateway/login-code",
+    "intern",
+    "Maschinen- oder Runner-Protokoll; wird vom Dienst selbst aufgerufen."
+  ],
+  [
+    "POST",
+    "/internal/browser-gateway/resolve",
+    "intern",
+    "Maschinen- oder Runner-Protokoll; wird vom Dienst selbst aufgerufen."
+  ],
+  [
+    "POST",
+    "/internal/browser-gateway/systemone",
+    "intern",
+    "Maschinen- oder Runner-Protokoll; wird vom Dienst selbst aufgerufen."
+  ],
+  [
+    "POST",
+    "/internal/browser-gateway/task/finish",
+    "intern",
+    "Maschinen- oder Runner-Protokoll; wird vom Dienst selbst aufgerufen."
+  ],
+  [
+    "POST",
+    "/internal/browser-gateway/task/progress",
+    "intern",
+    "Maschinen- oder Runner-Protokoll; wird vom Dienst selbst aufgerufen."
+  ],
+  [
+    "POST",
+    "/internal/browser-gateway/task/start",
+    "intern",
+    "Maschinen- oder Runner-Protokoll; wird vom Dienst selbst aufgerufen."
+  ],
+  [
+    "POST",
+    "/internal/systemone/v1/systemone",
+    "intern",
+    "Maschinen- oder Runner-Protokoll; wird vom Dienst selbst aufgerufen."
+  ],
+  [
+    "POST",
+    "/issues/:issueId/attachments",
+    "binär",
+    "Datei-/Stream-Übertragung statt JSON; der Werkzeug-Dispatcher unterstützt diesen Payload nicht."
+  ],
+  [
+    "POST",
+    "/knowledge/assets",
+    "binär",
+    "Datei-/Stream-Übertragung statt JSON; der Werkzeug-Dispatcher unterstützt diesen Payload nicht."
+  ],
+  [
+    "POST",
+    "/mail/drafts/:draftId/attachments",
+    "binär",
+    "Datei-/Stream-Übertragung statt JSON; der Werkzeug-Dispatcher unterstützt diesen Payload nicht."
+  ],
+  ["POST", "/mcp", "auth", "MCP-Transport und Handshake, nicht als eigenes Werkzeug aufrufbar."],
+  [
+    "POST",
+    "/me/avatar",
+    "UI-only",
+    "Persönlicher Browser- oder Ansichtsstatus ohne eigenständige Agentenaktion."
+  ],
+  [
+    "POST",
+    "/owner-terminal/grant/revoke",
+    "admin",
+    "Interaktive Owner-Terminal-Freigabe; kein Agentenwerkzeug."
+  ],
+  [
+    "POST",
+    "/owner-terminal/local/:kind/bootstrap",
+    "admin",
+    "Interaktive Owner-Terminal-Freigabe; kein Agentenwerkzeug."
+  ],
+  [
+    "POST",
+    "/owner-terminal/local/:kind/v1/responses",
+    "admin",
+    "Interaktive Owner-Terminal-Freigabe; kein Agentenwerkzeug."
+  ],
+  [
+    "POST",
+    "/owner-terminal/sessions/end",
+    "admin",
+    "Interaktive Owner-Terminal-Freigabe; kein Agentenwerkzeug."
+  ],
+  [
+    "POST",
+    "/owner-terminal/sessions/start",
+    "admin",
+    "Interaktive Owner-Terminal-Freigabe; kein Agentenwerkzeug."
+  ],
+  [
+    "POST",
+    "/owner-terminal/step-up/totp",
+    "admin",
+    "Interaktive Owner-Terminal-Freigabe; kein Agentenwerkzeug."
+  ],
+  [
+    "POST",
+    "/projects/:projectKey/files/upload",
+    "binär",
+    "Datei-/Stream-Übertragung statt JSON; der Werkzeug-Dispatcher unterstützt diesen Payload nicht."
+  ],
+  [
+    "POST",
+    "/projects/:projectKey/receipts",
+    "binär",
+    "Datei-Upload mit Multipart-Formular; der JSON-Werkzeug-Dispatcher unterstützt ihn nicht."
+  ],
+  [
+    "POST",
+    "/projects/:projectKey/receipts/accounts/:accountId/imports",
+    "binär",
+    "Datei-Upload mit Multipart-Formular; der JSON-Werkzeug-Dispatcher unterstützt ihn nicht."
+  ],
+  [
+    "POST",
+    "/projects/:projectKey/settings/git/connections",
+    "admin",
+    "Verwaltet Git-Verbindungen und Webhook-Geheimnisse im Projekt-Adminbereich."
+  ],
+  [
+    "POST",
+    "/projects/:projectKey/settings/git/connections/:connectionId/repositories",
+    "admin",
+    "Verwaltet Git-Verbindungen und Webhook-Geheimnisse im Projekt-Adminbereich."
+  ],
+  [
+    "POST",
+    "/projects/:projectKey/settings/git/secret",
+    "admin",
+    "Verwaltet Zugangsdaten oder Geheimnisse im Adminbereich; kein Agentenwerkzeug."
+  ],
+  [
+    "POST",
+    "/projects/:projectKey/workflow-signing-secret",
+    "admin",
+    "Verwaltet Zugangsdaten oder Geheimnisse im Adminbereich; kein Agentenwerkzeug."
+  ],
+  [
+    "POST",
+    "/scim/v2/Groups",
+    "intern",
+    "SCIM-Provisionierung über den Identitätsanbieter; kein Agentenaufruf."
+  ],
+  [
+    "POST",
+    "/scim/v2/Users",
+    "intern",
+    "SCIM-Provisionierung über den Identitätsanbieter; kein Agentenaufruf."
+  ],
+  [
+    "POST",
+    "/settings/whats-new/seen",
+    "admin",
+    "Instanz- oder Administrationssteuerung außerhalb der fachlichen Agentenwerkzeuge."
+  ],
+  [
+    "POST",
+    "/teams/:teamId/access/logins/agents/:agentId/check",
+    "admin",
+    "Verwaltet Zugangsdaten oder Geheimnisse im Adminbereich; kein Agentenwerkzeug."
+  ],
+  [
+    "POST",
+    "/teams/:teamId/access/logins/agents/:agentId/sign-out",
+    "admin",
+    "Verwaltet Zugangsdaten oder Geheimnisse im Adminbereich; kein Agentenwerkzeug."
+  ],
+  [
+    "POST",
+    "/teams/:teamId/agent-skills/:skillId/references",
+    "binär",
+    "Datei-/Stream-Übertragung statt JSON; der Werkzeug-Dispatcher unterstützt diesen Payload nicht."
+  ],
+  [
+    "POST",
+    "/teams/:teamId/connectors/google/clients",
+    "binär",
+    "Datei-/Stream-Übertragung statt JSON; der Werkzeug-Dispatcher unterstützt diesen Payload nicht."
+  ],
+  [
+    "POST",
+    "/teams/:teamId/connectors/google/sign-in",
+    "auth",
+    "Anmeldung/OAuth-Rücksprung mit Nutzerinteraktion; kein Agentenwerkzeug."
+  ],
+  [
+    "POST",
+    "/teams/:teamId/connectors/google/sign-in/finish",
+    "auth",
+    "Anmeldung/OAuth-Rücksprung mit Nutzerinteraktion; kein Agentenwerkzeug."
+  ],
+  [
+    "POST",
+    "/teams/:teamId/connectors/mcp-oauth",
+    "auth",
+    "Anmeldung/OAuth-Rücksprung mit Nutzerinteraktion; kein Agentenwerkzeug."
+  ],
+  [
+    "POST",
+    "/teams/:teamId/connectors/mcp-oauth/:connectionId/finish",
+    "auth",
+    "Anmeldung/OAuth-Rücksprung mit Nutzerinteraktion; kein Agentenwerkzeug."
+  ],
+  [
+    "POST",
+    "/teams/:teamId/connectors/mcp-oauth/:connectionId/sign-in",
+    "auth",
+    "Anmeldung/OAuth-Rücksprung mit Nutzerinteraktion; kein Agentenwerkzeug."
+  ],
+  [
+    "POST",
+    "/teams/:teamId/credentials",
+    "admin",
+    "Verwaltet Zugangsdaten oder Geheimnisse im Adminbereich; kein Agentenwerkzeug."
+  ],
+  [
+    "POST",
+    "/teams/:teamId/credentials/:credentialId/clone",
+    "admin",
+    "Verwaltet Zugangsdaten oder Geheimnisse im Adminbereich; kein Agentenwerkzeug."
+  ],
+  [
+    "POST",
+    "/teams/:teamId/credentials/:credentialId/ssh-key",
+    "admin",
+    "Verwaltet Zugangsdaten oder Geheimnisse im Adminbereich; kein Agentenwerkzeug."
+  ],
+  [
+    "POST",
+    "/teams/:teamId/credentials/:credentialId/test",
+    "admin",
+    "Verwaltet Zugangsdaten oder Geheimnisse im Adminbereich; kein Agentenwerkzeug."
+  ],
+  [
+    "POST",
+    "/teams/:teamId/integrations",
+    "admin",
+    "Verwaltet Zugangsdaten oder Geheimnisse im Adminbereich; kein Agentenwerkzeug."
+  ],
+  [
+    "POST",
+    "/telegram/account/link",
+    "auth",
+    "Telegram-Kopplung erfordert persönliche Bestätigung außerhalb des Agenten."
+  ],
+  [
+    "POST",
+    "/voice/speech",
+    "binär",
+    "Datei-/Stream-Übertragung statt JSON; der Werkzeug-Dispatcher unterstützt diesen Payload nicht."
+  ],
+  [
+    "POST",
+    "/voice/transcriptions",
+    "binär",
+    "Datei-/Stream-Übertragung statt JSON; der Werkzeug-Dispatcher unterstützt diesen Payload nicht."
+  ],
+  [
+    "POST",
+    "/webhooks/git/:webhookId",
+    "intern",
+    "Eingehender Webhook des externen Systems; kein Agentenaufruf."
+  ],
+  [
+    "POST",
+    "/webhooks/github/:webhookId",
+    "intern",
+    "Eingehender Webhook des externen Systems; kein Agentenaufruf."
+  ],
+  [
+    "PUT",
+    "/account/active-chat",
+    "UI-only",
+    "Persönlicher Browser- oder Ansichtsstatus ohne eigenständige Agentenaktion."
+  ],
+  [
+    "PUT",
+    "/account/push/presence",
+    "UI-only",
+    "Persönlicher Browser- oder Ansichtsstatus ohne eigenständige Agentenaktion."
+  ],
+  [
+    "PUT",
+    "/attachments/:publicId",
+    "binär",
+    "Datei-/Stream-Übertragung statt JSON; der Werkzeug-Dispatcher unterstützt diesen Payload nicht."
+  ],
+  [
+    "PUT",
+    "/god/agent-runtime-settings",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "PUT",
+    "/god/auth-settings",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "PUT",
+    "/god/browser-control",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "PUT",
+    "/god/browser-power",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "PUT",
+    "/god/display-name",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "PUT",
+    "/god/email-settings",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "PUT",
+    "/god/emergency-stop",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "PUT",
+    "/god/engine",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "PUT",
+    "/god/escalation",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "PUT",
+    "/god/google-settings",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "PUT",
+    "/god/hotkey-settings",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "PUT",
+    "/god/local-ai/judge",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "PUT",
+    "/god/local-ai/servers/:id/models/:model/options",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "PUT",
+    "/god/model-prices/:model",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "PUT",
+    "/god/model-prices/settings",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "PUT",
+    "/god/oidc-settings",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "PUT",
+    "/god/plugins",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "PUT",
+    "/god/project-defaults",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "PUT",
+    "/god/root-access",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "PUT",
+    "/god/run-resume-settings",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "PUT",
+    "/god/scim-groups/:groupId/mappings",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "PUT",
+    "/god/scim-settings",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "PUT",
+    "/god/security/edge",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "PUT",
+    "/god/server/backup/settings",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "PUT",
+    "/god/server/backup/targets/:id",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "PUT",
+    "/god/server/power/fans",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "PUT",
+    "/god/server/power/guard",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "PUT",
+    "/god/server/power/policy",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "PUT",
+    "/god/server/power/profile",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "PUT",
+    "/god/storage-settings",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "PUT",
+    "/god/telegram-settings",
+    "admin",
+    "Instanzverwaltung; nach Auftrag 118b keine Einzelwerkzeuge für /god."
+  ],
+  [
+    "PUT",
+    "/scim/v2/Groups/:id",
+    "intern",
+    "SCIM-Provisionierung über den Identitätsanbieter; kein Agentenaufruf."
+  ],
+  [
+    "PUT",
+    "/scim/v2/Users/:id",
+    "intern",
+    "SCIM-Provisionierung über den Identitätsanbieter; kein Agentenaufruf."
+  ],
+  [
+    "PUT",
+    "/teams/:teamId/credentials/:credentialId/grants",
+    "admin",
+    "Verwaltet Zugangsdaten oder Geheimnisse im Adminbereich; kein Agentenwerkzeug."
+  ],
+  [
+    "PUT",
+    "/views/:viewId/favorite",
+    "UI-only",
+    "Persönlicher Browser- oder Ansichtsstatus ohne eigenständige Agentenaktion."
+  ]
 ]

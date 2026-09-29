@@ -1,0 +1,2241 @@
+[
+  {
+    "method": "GET",
+    "path": "/projects/:projectKey/settings",
+    "name": "get_project_settings",
+    "category": "read"
+  },
+  {
+    "method": "GET",
+    "path": "/projects/:projectKey/provisioning",
+    "name": "get_project_provisioning_status",
+    "category": "read"
+  },
+  {
+    "method": "GET",
+    "path": "/projects/:projectKey/setup",
+    "name": "get_project_setup_state",
+    "category": "read"
+  },
+  {
+    "method": "POST",
+    "path": "/projects/:projectKey/provisioning/retry",
+    "name": "retry_project_failed_provisioning_job",
+    "category": "execute",
+    "scope": "external"
+  },
+  {
+    "method": "PATCH",
+    "path": "/projects/:projectKey/settings",
+    "name": "update_project_settings",
+    "category": "write"
+  },
+  {
+    "method": "GET",
+    "path": "/projects/:projectKey/settings/auto-archive",
+    "name": "get_project_auto_archive_thresholds",
+    "category": "read"
+  },
+  {
+    "method": "PATCH",
+    "path": "/projects/:projectKey/settings/auto-archive",
+    "name": "update_project_auto_archive_thresholds",
+    "category": "write"
+  },
+  {
+    "method": "GET",
+    "path": "/projects/:projectKey/settings/subtasks",
+    "name": "get_project_subtask_automations",
+    "category": "read"
+  },
+  {
+    "method": "PATCH",
+    "path": "/projects/:projectKey/settings/subtasks",
+    "name": "update_project_subtask_automations",
+    "category": "write"
+  },
+  {
+    "method": "PATCH",
+    "path": "/projects/:projectKey/settings/estimates",
+    "name": "update_project_estimate_kinds_and_time_logging",
+    "category": "write"
+  },
+  {
+    "method": "GET",
+    "path": "/teams/:teamId",
+    "name": "get_team",
+    "category": "read"
+  },
+  {
+    "method": "GET",
+    "path": "/teams/:teamId/members",
+    "name": "list_team_members",
+    "category": "read"
+  },
+  {
+    "method": "GET",
+    "path": "/teams/:teamId/projects",
+    "name": "list_team_projects",
+    "category": "read"
+  },
+  {
+    "method": "GET",
+    "path": "/teams/:teamId/projects/:projectId",
+    "name": "get_project_team_owns",
+    "category": "read"
+  },
+  {
+    "method": "GET",
+    "path": "/teams/:teamId/projects/:projectId/members",
+    "name": "list_project_members",
+    "category": "read"
+  },
+  {
+    "method": "PATCH",
+    "path": "/teams/:teamId/mcp",
+    "name": "update_team_mcp_settings",
+    "category": "credentials"
+  },
+  {
+    "method": "GET",
+    "path": "/teams/:teamId/receipt-dedup",
+    "name": "read_team_receipt_auto_merge_setting",
+    "category": "read"
+  },
+  {
+    "method": "PUT",
+    "path": "/teams/:teamId/receipt-dedup",
+    "name": "set_automatic_receipt_linking_for_team",
+    "category": "write"
+  },
+  {
+    "method": "GET",
+    "path": "/teams/:teamId/receipt-projection",
+    "name": "read_optional_receipt_note_projection_setting",
+    "category": "read"
+  },
+  {
+    "method": "PUT",
+    "path": "/teams/:teamId/receipt-projection",
+    "name": "enable_or_disable_generated_receipt_notes_for_team",
+    "category": "write"
+  },
+  {
+    "method": "GET",
+    "path": "/teams/:teamId/receipt-dedup/suggestions",
+    "name": "list_pending_receipt_suggestions_across_team_for_inbox",
+    "category": "read"
+  },
+  {
+    "method": "GET",
+    "path": "/teams/:teamId/receipt-dedup/history",
+    "name": "list_automatic_receipt_links_and_detaches_across_team",
+    "category": "read"
+  },
+  {
+    "method": "PATCH",
+    "path": "/teams/:teamId",
+    "name": "rename_team",
+    "category": "write"
+  },
+  {
+    "method": "POST",
+    "path": "/teams/:teamId/projects",
+    "name": "create_project_in_team",
+    "category": "write"
+  },
+  {
+    "method": "POST",
+    "path": "/teams/:teamId/projects/:projectId/copy",
+    "name": "copy_project_of_team",
+    "category": "write"
+  },
+  {
+    "method": "PATCH",
+    "path": "/teams/:teamId/projects/:projectId",
+    "name": "update_project_of_team",
+    "category": "write"
+  },
+  {
+    "method": "DELETE",
+    "path": "/teams/:teamId/projects/:projectId",
+    "name": "delete_project_of_team",
+    "category": "delete"
+  },
+  {
+    "method": "POST",
+    "path": "/teams/:teamId/project-deprovisioning/:jobId/retry",
+    "name": "retry_deleted_project_failed_cleanup",
+    "category": "execute"
+  },
+  {
+    "method": "PATCH",
+    "path": "/teams/:teamId/members/:userId",
+    "name": "update_member_rank_in_team",
+    "category": "credentials"
+  },
+  {
+    "method": "DELETE",
+    "path": "/teams/:teamId/members/:userId",
+    "name": "remove_member_from_team",
+    "category": "credentials"
+  },
+  {
+    "method": "POST",
+    "path": "/teams/:teamId/leave",
+    "name": "leave_team",
+    "category": "credentials"
+  },
+  {
+    "method": "POST",
+    "path": "/teams/:teamId/invites",
+    "name": "invite_someone_to_team",
+    "category": "send",
+    "scope": "external"
+  },
+  {
+    "method": "GET",
+    "path": "/teams/:teamId/invites",
+    "name": "list_team_invites",
+    "category": "read"
+  },
+  {
+    "method": "DELETE",
+    "path": "/teams/:teamId/invites/:inviteId",
+    "name": "delete_invite_of_team",
+    "category": "credentials"
+  },
+  {
+    "method": "POST",
+    "path": "/teams/:teamId/agent-tools",
+    "name": "configure_tool",
+    "category": "credentials"
+  },
+  {
+    "method": "DELETE",
+    "path": "/teams/:teamId/agent-tools/:agentToolId",
+    "name": "delete_configured_tool",
+    "category": "delete"
+  },
+  {
+    "method": "GET",
+    "path": "/teams/:teamId/mcp-servers",
+    "name": "list_mcp_servers",
+    "category": "credentials"
+  },
+  {
+    "method": "POST",
+    "path": "/teams/:teamId/mcp-servers",
+    "name": "add_mcp_server",
+    "category": "credentials"
+  },
+  {
+    "method": "PATCH",
+    "path": "/teams/:teamId/mcp-servers/:mcpServerId",
+    "name": "update_mcp_server",
+    "category": "credentials"
+  },
+  {
+    "method": "DELETE",
+    "path": "/teams/:teamId/mcp-servers/:mcpServerId",
+    "name": "delete_mcp_server",
+    "category": "credentials"
+  },
+  {
+    "method": "GET",
+    "path": "/teams/:teamId/ai-agents/:agentId/mcp-servers",
+    "name": "list_agent_mcp_servers",
+    "category": "read"
+  },
+  {
+    "method": "PUT",
+    "path": "/teams/:teamId/ai-agents/:agentId/mcp-servers",
+    "name": "set_agent_mcp_servers",
+    "category": "credentials"
+  },
+  {
+    "method": "GET",
+    "path": "/teams/:teamId/connectors",
+    "name": "list_connectors",
+    "category": "read"
+  },
+  {
+    "method": "GET",
+    "path": "/teams/:teamId/connectors/google",
+    "name": "list_google_accounts_and_oauth_clients",
+    "category": "read"
+  },
+  {
+    "method": "DELETE",
+    "path": "/teams/:teamId/connectors/google/clients/:clientId",
+    "name": "delete_oauth_client",
+    "category": "credentials"
+  },
+  {
+    "method": "PATCH",
+    "path": "/teams/:teamId/connectors/google/accounts/:accountId",
+    "name": "change_google_account",
+    "category": "credentials"
+  },
+  {
+    "method": "POST",
+    "path": "/teams/:teamId/connectors/google/accounts/:accountId/check",
+    "name": "check_google_account",
+    "category": "execute",
+    "scope": "external"
+  },
+  {
+    "method": "GET",
+    "path": "/teams/:teamId/connectors/google/accounts/:accountId",
+    "name": "read_google_account",
+    "category": "read"
+  },
+  {
+    "method": "DELETE",
+    "path": "/teams/:teamId/connectors/google/accounts/:accountId",
+    "name": "remove_google_account",
+    "category": "credentials"
+  },
+  {
+    "method": "GET",
+    "path": "/teams/:teamId/connectors/google/gog",
+    "name": "list_accounts_gog_holds",
+    "category": "read"
+  },
+  {
+    "method": "POST",
+    "path": "/teams/:teamId/connectors/google/gog/adopt",
+    "name": "list_account_gog_holds",
+    "category": "credentials"
+  },
+  {
+    "method": "GET",
+    "path": "/teams/:teamId/ai-agents/:agentId/learned-skills/content",
+    "name": "read_learned_skill",
+    "category": "read"
+  },
+  {
+    "method": "POST",
+    "path": "/teams/:teamId/ai-agents/:agentId/learned-skills/promote",
+    "name": "take_learned_skill_into_library",
+    "category": "write"
+  },
+  {
+    "method": "GET",
+    "path": "/teams/:teamId/ai-agents/:agentId/runtime-actions",
+    "name": "list_actions_waiting_for_agent_runtime",
+    "category": "read"
+  },
+  {
+    "method": "POST",
+    "path": "/teams/:teamId/ai-agents/:agentId/runtime-actions",
+    "name": "queue_action_for_agent_runtime",
+    "category": "execute",
+    "scope": "external"
+  },
+  {
+    "method": "GET",
+    "path": "/teams/:teamId/ai-agents/:agentId/runs/:runId",
+    "name": "read_one_run_of_agent",
+    "category": "read"
+  },
+  {
+    "method": "GET",
+    "path": "/teams/:teamId/ai-agents/:agentId/runs/:runId/events",
+    "name": "read_run_timeline",
+    "category": "read"
+  },
+  {
+    "method": "POST",
+    "path": "/teams/:teamId/ai-agents/:agentId/runs/:runId/continue",
+    "name": "continue_run_session",
+    "category": "execute"
+  },
+  {
+    "method": "GET",
+    "path": "/teams/:teamId/ai-agents/:agentId/runtime/sessions",
+    "name": "list_or_search_agent_runtime_sessions",
+    "category": "read"
+  },
+  {
+    "method": "GET",
+    "path": "/teams/:teamId/ai-agents/:agentId/runtime/sessions/:sessionId",
+    "name": "read_transcript_of_session",
+    "category": "read"
+  },
+  {
+    "method": "GET",
+    "path": "/teams/:teamId/ai-agents/:agentId/runtime/logs",
+    "name": "read_agent_runtime_log",
+    "category": "read"
+  },
+  {
+    "method": "GET",
+    "path": "/teams/:teamId/ai-agents/:agentId/runtime/health",
+    "name": "check_agent_runtime_hermes_doctor",
+    "category": "read"
+  },
+  {
+    "method": "GET",
+    "path": "/teams/:teamId/ai-agents/:agentId/runtime/version",
+    "name": "read_version_of_agent_runtime",
+    "category": "read"
+  },
+  {
+    "method": "GET",
+    "path": "/teams/:teamId/ai-agents/:agentId/runtime/curator",
+    "name": "read_state_of_agent_skill_curator",
+    "category": "read"
+  },
+  {
+    "method": "POST",
+    "path": "/teams/:teamId/ai-agents/:agentId/runtime/curator",
+    "name": "pin_or_unpin_skill_for_agent_curator",
+    "category": "write"
+  },
+  {
+    "method": "GET",
+    "path": "/teams/:teamId/ai-agents/:agentId/runtime/requests/:requestId",
+    "name": "read_state_of_queued_runtime_request",
+    "category": "read"
+  },
+  {
+    "method": "GET",
+    "path": "/teams/:teamId/agent-usage",
+    "name": "read_what_agents_spent",
+    "category": "read"
+  },
+  {
+    "method": "GET",
+    "path": "/agent-proposals",
+    "name": "list_runtime_proposals",
+    "category": "read"
+  },
+  {
+    "method": "GET",
+    "path": "/agent-proposals/count",
+    "name": "count_runtime_proposals_waiting_for_caller",
+    "category": "read"
+  },
+  {
+    "method": "POST",
+    "path": "/agent-proposals/:proposalId/decision",
+    "name": "decide_on_runtime_proposal",
+    "category": "write"
+  },
+  {
+    "method": "GET",
+    "path": "/teams/:teamId/ai-agents/:agentId/memory/revisions",
+    "name": "list_versions_of_agent_memory",
+    "category": "read"
+  },
+  {
+    "method": "GET",
+    "path": "/issues",
+    "name": "list_issues_across_projects",
+    "category": "read"
+  },
+  {
+    "method": "GET",
+    "path": "/issues/:issueId/development/repositories",
+    "name": "list_repositories_available_to_issue",
+    "category": "read"
+  },
+  {
+    "method": "GET",
+    "path": "/issues/:issueId/development/repositories/:repositoryId/pull-requests",
+    "name": "list_pull_requests_available_to_issue",
+    "category": "read"
+  },
+  {
+    "method": "GET",
+    "path": "/issues/:issueId/development/repositories/:repositoryId/branches",
+    "name": "list_repository_branches_available_to_issue",
+    "category": "read"
+  },
+  {
+    "method": "POST",
+    "path": "/issues/:issueId/development",
+    "name": "link_existing_pull_request",
+    "category": "write"
+  },
+  {
+    "method": "POST",
+    "path": "/issues/:issueId/development/pull-requests",
+    "name": "create_pull_request_for_issue",
+    "category": "publish",
+    "scope": "external"
+  },
+  {
+    "method": "DELETE",
+    "path": "/issues/:issueId/development/:linkId",
+    "name": "unlink_development_item",
+    "category": "delete"
+  },
+  {
+    "method": "POST",
+    "path": "/issues/:issueId/watch",
+    "name": "watch_issue",
+    "category": "write"
+  },
+  {
+    "method": "DELETE",
+    "path": "/issues/:issueId/watch",
+    "name": "unwatch_issue",
+    "category": "delete"
+  },
+  {
+    "method": "GET",
+    "path": "/projects/:projectKey/initiatives/counts",
+    "name": "initiative_status_counts",
+    "category": "read"
+  },
+  {
+    "method": "DELETE",
+    "path": "/initiative-attachments/:publicId",
+    "name": "delete_initiative_attachment",
+    "category": "delete"
+  },
+  {
+    "method": "GET",
+    "path": "/projects/:projectKey/cycles/completed",
+    "name": "list_completed_cycles",
+    "category": "read"
+  },
+  {
+    "method": "GET",
+    "path": "/imports/:importId",
+    "name": "view_import_draft",
+    "category": "read"
+  },
+  {
+    "method": "POST",
+    "path": "/imports/:importId/confirm",
+    "name": "confirm_import_and_create_issues",
+    "category": "execute"
+  },
+  {
+    "method": "POST",
+    "path": "/imports/:importId/cancel",
+    "name": "cancel_import_draft",
+    "category": "execute"
+  },
+  {
+    "method": "GET",
+    "path": "/projects/:projectKey/view-folders",
+    "name": "list_saved_view_folders",
+    "category": "read"
+  },
+  {
+    "method": "POST",
+    "path": "/projects/:projectKey/view-folders",
+    "name": "create_saved_view_folder",
+    "category": "write"
+  },
+  {
+    "method": "PUT",
+    "path": "/projects/:projectKey/view-folders/reorder",
+    "name": "reorder_saved_view_folders",
+    "category": "write"
+  },
+  {
+    "method": "PATCH",
+    "path": "/view-folders/:folderId",
+    "name": "rename_saved_view_folder_or_change_folder",
+    "category": "write"
+  },
+  {
+    "method": "DELETE",
+    "path": "/view-folders/:folderId",
+    "name": "delete_saved_view_folder",
+    "category": "delete"
+  },
+  {
+    "method": "GET",
+    "path": "/view-folders/:folderId/file-count",
+    "name": "count_files_in_area_before_deletion",
+    "category": "read"
+  },
+  {
+    "method": "POST",
+    "path": "/projects/:projectKey/views/defaults",
+    "name": "ensure_default_saved_views",
+    "category": "write"
+  },
+  {
+    "method": "POST",
+    "path": "/issues/:issueId/share",
+    "name": "enable_issue_sharing",
+    "category": "publish",
+    "scope": "external"
+  },
+  {
+    "method": "DELETE",
+    "path": "/issues/:issueId/share",
+    "name": "revoke_issue_sharing",
+    "category": "delete",
+    "scope": "external"
+  },
+  {
+    "method": "POST",
+    "path": "/views/:viewId/share",
+    "name": "enable_view_sharing",
+    "category": "publish",
+    "scope": "external"
+  },
+  {
+    "method": "DELETE",
+    "path": "/views/:viewId/share",
+    "name": "revoke_view_sharing",
+    "category": "delete",
+    "scope": "external"
+  },
+  {
+    "method": "GET",
+    "path": "/projects/:projectKey/action-runs",
+    "name": "list_action_runs",
+    "category": "read"
+  },
+  {
+    "method": "GET",
+    "path": "/action-runs/:runId",
+    "name": "get_action_run_and_workflow_steps",
+    "category": "read"
+  },
+  {
+    "method": "GET",
+    "path": "/projects/:projectKey/actions/quick",
+    "name": "list_quick_actions",
+    "category": "read"
+  },
+  {
+    "method": "POST",
+    "path": "/actions/:actionId/run",
+    "name": "run_manual_action",
+    "category": "execute"
+  },
+  {
+    "method": "GET",
+    "path": "/projects/:projectKey/project-templates",
+    "name": "list_reusable_project_and_board_templates",
+    "category": "read"
+  },
+  {
+    "method": "POST",
+    "path": "/projects/:projectKey/project-templates",
+    "name": "capture_current_project_as_reusable_template",
+    "category": "write"
+  },
+  {
+    "method": "PATCH",
+    "path": "/projects/:projectKey/project-templates/:templateId",
+    "name": "update_reusable_project_template",
+    "category": "write"
+  },
+  {
+    "method": "POST",
+    "path": "/projects/:projectKey/project-templates/:templateId/apply",
+    "name": "apply_project_or_board_template_idempotently",
+    "category": "execute"
+  },
+  {
+    "method": "DELETE",
+    "path": "/projects/:projectKey/project-templates/:templateId",
+    "name": "delete_reusable_project_template",
+    "category": "delete"
+  },
+  {
+    "method": "GET",
+    "path": "/projects/:projectKey/control-plane/workflows",
+    "name": "list_built_in_workflows_of_project",
+    "category": "read"
+  },
+  {
+    "method": "PUT",
+    "path": "/projects/:projectKey/control-plane/workflows/:workflowId",
+    "name": "switch_built_in_workflow_on_or_off_and_configure_it",
+    "category": "write"
+  },
+  {
+    "method": "GET",
+    "path": "/projects/:projectKey/control-plane/workflows/:workflowId/runs",
+    "name": "list_runs_of_built_in_workflow",
+    "category": "read"
+  },
+  {
+    "method": "GET",
+    "path": "/projects/:projectKey/control-plane/workflows/:workflowId/runs/:runId",
+    "name": "get_run_of_built_in_workflow",
+    "category": "read"
+  },
+  {
+    "method": "POST",
+    "path": "/projects/:projectKey/control-plane/workflows/:workflowId/runs/:runId/retry",
+    "name": "retry_failed_run_of_built_in_workflow",
+    "category": "execute"
+  },
+  {
+    "method": "POST",
+    "path": "/projects/:projectKey/control-plane/workflows/:workflowId/runs/:runId/cancel",
+    "name": "cancel_run_of_built_in_workflow",
+    "category": "execute"
+  },
+  {
+    "method": "GET",
+    "path": "/routines",
+    "name": "list_routines_across_projects",
+    "category": "read"
+  },
+  {
+    "method": "GET",
+    "path": "/projects/:projectKey/pipelines/:pipelineId/hook",
+    "name": "get_webhook_of_workflow",
+    "category": "read"
+  },
+  {
+    "method": "POST",
+    "path": "/projects/:projectKey/pipelines/:pipelineId/hook",
+    "name": "create_or_renew_webhook_of_workflow",
+    "category": "credentials"
+  },
+  {
+    "method": "DELETE",
+    "path": "/projects/:projectKey/pipelines/:pipelineId/hook",
+    "name": "delete_webhook_of_workflow",
+    "category": "credentials"
+  },
+  {
+    "method": "GET",
+    "path": "/teams/:teamId/ai-agents/:agentId/runtime-sync",
+    "name": "read_whether_agent_runtime_is_in_sync",
+    "category": "read"
+  },
+  {
+    "method": "POST",
+    "path": "/teams/:teamId/ai-agents/:agentId/runtime-sync/rewrite",
+    "name": "rewrite_agent_runtime_profile",
+    "category": "write"
+  },
+  {
+    "method": "GET",
+    "path": "/projects/:projectKey/note-boards/access-candidates",
+    "name": "list_who_board_can_be_shared_with",
+    "category": "read"
+  },
+  {
+    "method": "GET",
+    "path": "/knowledge/links",
+    "name": "list_what_mentions_task_note_or_another_item",
+    "category": "read"
+  },
+  {
+    "method": "GET",
+    "path": "/knowledge/sources",
+    "name": "list_knowledge_sources_and_how_far_index_is",
+    "category": "read"
+  },
+  {
+    "method": "POST",
+    "path": "/knowledge/sources/:source/reindex",
+    "name": "index_source_again_from_start",
+    "category": "execute"
+  },
+  {
+    "method": "PUT",
+    "path": "/knowledge/semantic",
+    "name": "switch_semantic_search_on_or_off",
+    "category": "write"
+  },
+  {
+    "method": "GET",
+    "path": "/knowledge/capture-targets",
+    "name": "list_where_things_can_be_saved",
+    "category": "read"
+  },
+  {
+    "method": "POST",
+    "path": "/knowledge/journal",
+    "name": "open_daily_note",
+    "category": "write"
+  },
+  {
+    "method": "GET",
+    "path": "/knowledge/templates",
+    "name": "list_note_templates",
+    "category": "read"
+  },
+  {
+    "method": "POST",
+    "path": "/knowledge/notes/from-template",
+    "name": "create_note_from_template",
+    "category": "write"
+  },
+  {
+    "method": "GET",
+    "path": "/knowledge/properties-template",
+    "name": "suggest_properties_for_new_knowledge_note",
+    "category": "read"
+  },
+  {
+    "method": "GET",
+    "path": "/knowledge/bases",
+    "name": "read_obsidian_base_and_yaml_definition",
+    "category": "read"
+  },
+  {
+    "method": "PUT",
+    "path": "/knowledge/bases",
+    "name": "create_or_update_obsidian_base",
+    "category": "write"
+  },
+  {
+    "method": "GET",
+    "path": "/knowledge/bases/rows",
+    "name": "query_rows_of_base_under_callers_project_acl",
+    "category": "read"
+  },
+  {
+    "method": "GET",
+    "path": "/projects/:projectKey/files",
+    "name": "list_project_files",
+    "category": "read"
+  },
+  {
+    "method": "GET",
+    "path": "/projects/:projectKey/files/references",
+    "name": "file_author_task_links_and_your_conversations",
+    "category": "read"
+  },
+  {
+    "method": "GET",
+    "path": "/projects/:projectKey/files/text",
+    "name": "read_project_text_file",
+    "category": "read"
+  },
+  {
+    "method": "PUT",
+    "path": "/projects/:projectKey/files/text",
+    "name": "edit_project_text_file_with_version_check",
+    "category": "write"
+  },
+  {
+    "method": "POST",
+    "path": "/projects/:projectKey/files/text",
+    "name": "create_project_text_file",
+    "category": "write"
+  },
+  {
+    "method": "POST",
+    "path": "/projects/:projectKey/files/folders",
+    "name": "create_project_folder",
+    "category": "write"
+  },
+  {
+    "method": "POST",
+    "path": "/projects/:projectKey/files/move",
+    "name": "rename_or_move_project_file_or_folder",
+    "category": "write"
+  },
+  {
+    "method": "DELETE",
+    "path": "/projects/:projectKey/files",
+    "name": "move_project_file_or_folder_to_trash",
+    "category": "delete"
+  },
+  {
+    "method": "GET",
+    "path": "/files",
+    "name": "list_home_templates_or_private_files",
+    "category": "read"
+  },
+  {
+    "method": "GET",
+    "path": "/files/references",
+    "name": "file_author_and_your_conversations",
+    "category": "read"
+  },
+  {
+    "method": "GET",
+    "path": "/files/text",
+    "name": "read_home_templates_or_private_text_file",
+    "category": "read"
+  },
+  {
+    "method": "PUT",
+    "path": "/files/text",
+    "name": "edit_home_templates_or_private_text_file_with_version_check",
+    "category": "write"
+  },
+  {
+    "method": "POST",
+    "path": "/files/text",
+    "name": "create_home_templates_or_private_text_file",
+    "category": "write"
+  },
+  {
+    "method": "POST",
+    "path": "/files/folders",
+    "name": "create_home_templates_or_private_folder",
+    "category": "write"
+  },
+  {
+    "method": "POST",
+    "path": "/files/move",
+    "name": "rename_or_move_home_templates_or_private_file_or_folder",
+    "category": "write"
+  },
+  {
+    "method": "DELETE",
+    "path": "/files",
+    "name": "move_home_templates_or_private_file_or_folder_to_trash",
+    "category": "delete"
+  },
+  {
+    "method": "GET",
+    "path": "/notifications",
+    "name": "list_inbox_notifications",
+    "category": "read"
+  },
+  {
+    "method": "GET",
+    "path": "/notifications/unread",
+    "name": "get_unread_notification_count",
+    "category": "read"
+  },
+  {
+    "method": "POST",
+    "path": "/notifications/read-all",
+    "name": "mark_all_notifications_read",
+    "category": "write"
+  },
+  {
+    "method": "DELETE",
+    "path": "/notifications",
+    "name": "delete_inbox_notifications",
+    "category": "delete"
+  },
+  {
+    "method": "POST",
+    "path": "/notifications/:id/read",
+    "name": "mark_notification_read_or_unread",
+    "category": "write"
+  },
+  {
+    "method": "POST",
+    "path": "/notifications/:id/snooze",
+    "name": "snooze_notification",
+    "category": "write"
+  },
+  {
+    "method": "DELETE",
+    "path": "/notifications/:id",
+    "name": "delete_notification",
+    "category": "delete"
+  },
+  {
+    "method": "GET",
+    "path": "/teams/:teamId/notification-settings",
+    "name": "get_notification_provider_settings",
+    "category": "read"
+  },
+  {
+    "method": "PUT",
+    "path": "/teams/:teamId/notification-settings",
+    "name": "update_notification_provider_settings",
+    "category": "write"
+  },
+  {
+    "method": "GET",
+    "path": "/projects/:projectKey/notification-preferences",
+    "name": "get_notification_preferences",
+    "category": "read"
+  },
+  {
+    "method": "PUT",
+    "path": "/projects/:projectKey/notification-preferences",
+    "name": "update_notification_preferences",
+    "category": "write"
+  },
+  {
+    "method": "GET",
+    "path": "/projects/:projectKey/standing-orders",
+    "name": "list_project_standing_orders",
+    "category": "read"
+  },
+  {
+    "method": "POST",
+    "path": "/projects/:projectKey/standing-orders",
+    "name": "create_project_standing_order",
+    "category": "write"
+  },
+  {
+    "method": "PATCH",
+    "path": "/projects/:projectKey/standing-orders/:orderId",
+    "name": "update_project_standing_order",
+    "category": "write"
+  },
+  {
+    "method": "DELETE",
+    "path": "/projects/:projectKey/standing-orders/:orderId",
+    "name": "delete_project_standing_order",
+    "category": "delete"
+  },
+  {
+    "method": "POST",
+    "path": "/projects/:projectKey/standing-orders/:orderId/decision",
+    "name": "decide_project_standing_order_proposal",
+    "category": "write"
+  },
+  {
+    "method": "GET",
+    "path": "/helena/standing-orders",
+    "name": "list_helena_standing_orders",
+    "category": "read"
+  },
+  {
+    "method": "POST",
+    "path": "/helena/standing-orders",
+    "name": "create_helena_standing_order",
+    "category": "write"
+  },
+  {
+    "method": "PATCH",
+    "path": "/helena/standing-orders/:orderId",
+    "name": "update_helena_standing_order",
+    "category": "write"
+  },
+  {
+    "method": "DELETE",
+    "path": "/helena/standing-orders/:orderId",
+    "name": "delete_helena_standing_order",
+    "category": "delete"
+  },
+  {
+    "method": "POST",
+    "path": "/helena/standing-orders/:orderId/decision",
+    "name": "decide_helena_standing_order_proposal",
+    "category": "write"
+  },
+  {
+    "method": "GET",
+    "path": "/hub-inbox/sources",
+    "name": "list_connected_inbox_sources",
+    "category": "read"
+  },
+  {
+    "method": "PATCH",
+    "path": "/hub-inbox/sources/:sourceId",
+    "name": "update_inbox_source",
+    "category": "write"
+  },
+  {
+    "method": "GET",
+    "path": "/hub-inbox/threads",
+    "name": "list_unified_inbox_threads",
+    "category": "read"
+  },
+  {
+    "method": "PATCH",
+    "path": "/hub-inbox/threads/:threadId",
+    "name": "update_inbox_thread",
+    "category": "write"
+  },
+  {
+    "method": "POST",
+    "path": "/hub-inbox/threads/:threadId/retry-triage",
+    "name": "retry_inbox_triage",
+    "category": "execute"
+  },
+  {
+    "method": "POST",
+    "path": "/hub-inbox/threads/:threadId/create-task",
+    "name": "create_task_from_inbox_thread",
+    "category": "write"
+  },
+  {
+    "method": "GET",
+    "path": "/projects/:projectKey/agent-activity",
+    "name": "list_agent_activity_of_project",
+    "category": "read"
+  },
+  {
+    "method": "GET",
+    "path": "/projects/:projectKey/agent-activity/usage",
+    "name": "get_token_usage_of_agents_of_project",
+    "category": "read"
+  },
+  {
+    "method": "GET",
+    "path": "/agent-activity",
+    "name": "list_agent_activity_across_projects",
+    "category": "read"
+  },
+  {
+    "method": "GET",
+    "path": "/projects/:projectKey/settings/agent-network",
+    "name": "get_network_access_of_project_agents",
+    "category": "read"
+  },
+  {
+    "method": "PUT",
+    "path": "/projects/:projectKey/settings/agent-network",
+    "name": "update_network_access_of_project_agents",
+    "category": "write"
+  },
+  {
+    "method": "GET",
+    "path": "/projects/:projectKey/agent-network/events",
+    "name": "list_network_connections_of_project_agents",
+    "category": "read"
+  },
+  {
+    "method": "GET",
+    "path": "/browser-gateway/overview",
+    "name": "list_projects_with_project_browser",
+    "category": "read"
+  },
+  {
+    "method": "GET",
+    "path": "/projects/:projectKey/settings/browser-gateway",
+    "name": "get_project_browser_gateway_settings",
+    "category": "read"
+  },
+  {
+    "method": "PUT",
+    "path": "/projects/:projectKey/settings/browser-gateway",
+    "name": "update_project_browser_gateway_settings",
+    "category": "write"
+  },
+  {
+    "method": "GET",
+    "path": "/projects/:projectKey/browser-gateway/events",
+    "name": "list_project_browser_recent_gateway_actions",
+    "category": "read"
+  },
+  {
+    "method": "GET",
+    "path": "/decision-backends",
+    "name": "list_kinds_of_decision_model_service",
+    "category": "read"
+  },
+  {
+    "method": "GET",
+    "path": "/projects/:projectKey/settings/browser-control",
+    "name": "get_project_browser_control_standard_or_decision_model",
+    "category": "read"
+  },
+  {
+    "method": "PUT",
+    "path": "/projects/:projectKey/settings/browser-control",
+    "name": "set_project_browser_control",
+    "category": "write"
+  },
+  {
+    "method": "GET",
+    "path": "/projects/:projectKey/browser-control/connections",
+    "name": "list_decision_model_connections_project_can_use",
+    "category": "read"
+  },
+  {
+    "method": "GET",
+    "path": "/teams/:teamId/browser-control/connections",
+    "name": "list_team_decision_model_connections_for_whole_team",
+    "category": "read"
+  },
+  {
+    "method": "GET",
+    "path": "/projects/:projectKey/browser-lab/runs",
+    "name": "list_project_browser_tasks_and_browser_2_0_runs",
+    "category": "read"
+  },
+  {
+    "method": "POST",
+    "path": "/projects/:projectKey/browser-lab/runs",
+    "name": "start_browser_2_0_run",
+    "category": "execute",
+    "scope": "external"
+  },
+  {
+    "method": "GET",
+    "path": "/projects/:projectKey/browser-lab/runs/:runId",
+    "name": "get_browser_2_0_run_with_steps",
+    "category": "read"
+  },
+  {
+    "method": "POST",
+    "path": "/projects/:projectKey/browser-lab/runs/:runId/cancel",
+    "name": "cancel_browser_2_0_run",
+    "category": "execute",
+    "scope": "external"
+  },
+  {
+    "method": "GET",
+    "path": "/teams/:teamId/browser-lab/home/runs",
+    "name": "list_browser_tasks_and_browser_2_0_runs_of_home_browser",
+    "category": "read"
+  },
+  {
+    "method": "POST",
+    "path": "/teams/:teamId/browser-lab/home/runs",
+    "name": "start_browser_2_0_run_on_home_browser",
+    "category": "execute",
+    "scope": "external"
+  },
+  {
+    "method": "GET",
+    "path": "/teams/:teamId/browser-lab/home/runs/:runId",
+    "name": "get_browser_2_0_run_on_home_browser",
+    "category": "read"
+  },
+  {
+    "method": "POST",
+    "path": "/teams/:teamId/browser-lab/home/runs/:runId/cancel",
+    "name": "cancel_browser_2_0_run_on_home_browser",
+    "category": "execute",
+    "scope": "external"
+  },
+  {
+    "method": "GET",
+    "path": "/teams/:teamId/decisions/classes",
+    "name": "list_decision_classes",
+    "category": "read"
+  },
+  {
+    "method": "PATCH",
+    "path": "/teams/:teamId/decisions/first-stage",
+    "name": "configure_optional_jev_first_decision_stage",
+    "category": "write"
+  },
+  {
+    "method": "GET",
+    "path": "/teams/:teamId/decisions/classes/:classId",
+    "name": "read_decision_class",
+    "category": "read"
+  },
+  {
+    "method": "PATCH",
+    "path": "/teams/:teamId/decisions/classes/:classId",
+    "name": "change_decision_class",
+    "category": "write"
+  },
+  {
+    "method": "GET",
+    "path": "/teams/:teamId/decisions/evals",
+    "name": "list_evals_of_decision_classes",
+    "category": "read"
+  },
+  {
+    "method": "DELETE",
+    "path": "/teams/:teamId/decisions/evals/:evalId",
+    "name": "cancel_running_eval",
+    "category": "delete"
+  },
+  {
+    "method": "GET",
+    "path": "/teams/:teamId/decisions/log",
+    "name": "read_decision_log",
+    "category": "read"
+  },
+  {
+    "method": "POST",
+    "path": "/teams/:teamId/decisions/log/:decisionId/outcome",
+    "name": "correct_decision",
+    "category": "write"
+  },
+  {
+    "method": "GET",
+    "path": "/teams/:teamId/model-router",
+    "name": "read_model_router_switches",
+    "category": "read"
+  },
+  {
+    "method": "PUT",
+    "path": "/teams/:teamId/model-router/agents/:agentId",
+    "name": "switch_model_router_for_agent",
+    "category": "write"
+  },
+  {
+    "method": "PUT",
+    "path": "/teams/:teamId/model-router/projects/:projectId",
+    "name": "allow_or_forbid_model_router_in_project",
+    "category": "write"
+  },
+  {
+    "method": "POST",
+    "path": "/approvals/:approvalId/decision",
+    "name": "decide_approval_request",
+    "category": "write"
+  },
+  {
+    "method": "GET",
+    "path": "/approvals",
+    "name": "list_approval_requests",
+    "category": "read"
+  },
+  {
+    "method": "GET",
+    "path": "/approvals/pending-count",
+    "name": "count_pending_approval_requests",
+    "category": "read"
+  },
+  {
+    "method": "GET",
+    "path": "/approvals/projects",
+    "name": "list_projects_caller_may_decide_approvals_in",
+    "category": "read"
+  },
+  {
+    "method": "GET",
+    "path": "/projects/:projectKey/autopilot",
+    "name": "get_project_autopilot",
+    "category": "read"
+  },
+  {
+    "method": "PUT",
+    "path": "/projects/:projectKey/autopilot",
+    "name": "set_project_autopilot_level",
+    "category": "write"
+  },
+  {
+    "method": "PUT",
+    "path": "/projects/:projectKey/autopilot/budgets",
+    "name": "set_project_budgets",
+    "category": "write"
+  },
+  {
+    "method": "GET",
+    "path": "/projects/:projectKey/autopilot/decisions",
+    "name": "list_policy_engine_decisions_in_project",
+    "category": "read"
+  },
+  {
+    "method": "GET",
+    "path": "/teams/:teamId/ai-agents/:agentId/autopilot",
+    "name": "get_agent_autopilot",
+    "category": "read"
+  },
+  {
+    "method": "PUT",
+    "path": "/teams/:teamId/ai-agents/:agentId/autopilot",
+    "name": "set_agent_own_autopilot_level",
+    "category": "write"
+  },
+  {
+    "method": "PUT",
+    "path": "/teams/:teamId/ai-agents/:agentId/autopilot/budgets",
+    "name": "set_agent_budgets",
+    "category": "write"
+  },
+  {
+    "method": "POST",
+    "path": "/approvals/:approvalId/budget",
+    "name": "decide_budget_card",
+    "category": "write"
+  },
+  {
+    "method": "GET",
+    "path": "/teams/:teamId/pipelines",
+    "name": "list_workflow_templates",
+    "category": "read"
+  },
+  {
+    "method": "POST",
+    "path": "/teams/:teamId/pipelines",
+    "name": "create_workflow_template",
+    "category": "write"
+  },
+  {
+    "method": "GET",
+    "path": "/teams/:teamId/pipeline-builtins",
+    "name": "list_built_in_workflow_templates",
+    "category": "read"
+  },
+  {
+    "method": "GET",
+    "path": "/teams/:teamId/pipeline-context",
+    "name": "get_workflow_editor_context_of_library",
+    "category": "read"
+  },
+  {
+    "method": "POST",
+    "path": "/teams/:teamId/pipelines/validate",
+    "name": "validate_workflow_template",
+    "category": "read"
+  },
+  {
+    "method": "GET",
+    "path": "/projects/:projectKey/pipelines",
+    "name": "list_workflows_of_project",
+    "category": "read"
+  },
+  {
+    "method": "POST",
+    "path": "/projects/:projectKey/pipelines",
+    "name": "create_project_workflow",
+    "category": "write"
+  },
+  {
+    "method": "PUT",
+    "path": "/projects/:projectKey/pipelines/:pipelineId",
+    "name": "use_workflow_in_project",
+    "category": "write"
+  },
+  {
+    "method": "GET",
+    "path": "/projects/:projectKey/pipeline-context",
+    "name": "get_workflow_editor_context_of_project",
+    "category": "read"
+  },
+  {
+    "method": "POST",
+    "path": "/projects/:projectKey/pipelines/validate",
+    "name": "validate_workflow_in_project",
+    "category": "read"
+  },
+  {
+    "method": "GET",
+    "path": "/projects/:projectKey/pipeline-run-limit",
+    "name": "get_project_workflow_run_limit",
+    "category": "read"
+  },
+  {
+    "method": "PATCH",
+    "path": "/projects/:projectKey/pipeline-run-limit",
+    "name": "update_project_workflow_run_limit",
+    "category": "write"
+  },
+  {
+    "method": "GET",
+    "path": "/pipelines/:pipelineId",
+    "name": "get_workflow",
+    "category": "read"
+  },
+  {
+    "method": "PATCH",
+    "path": "/pipelines/:pipelineId",
+    "name": "update_workflow",
+    "category": "write"
+  },
+  {
+    "method": "DELETE",
+    "path": "/pipelines/:pipelineId",
+    "name": "delete_workflow",
+    "category": "delete"
+  },
+  {
+    "method": "GET",
+    "path": "/pipelines/:pipelineId/versions",
+    "name": "list_versions_of_workflow",
+    "category": "read"
+  },
+  {
+    "method": "GET",
+    "path": "/pipelines/:pipelineId/versions/:version",
+    "name": "get_version_of_workflow",
+    "category": "read"
+  },
+  {
+    "method": "GET",
+    "path": "/pipelines/:pipelineId/runs",
+    "name": "list_runs_of_workflow",
+    "category": "read"
+  },
+  {
+    "method": "GET",
+    "path": "/issues/:issueId/pipelines",
+    "name": "list_workflows_to_start_on_issue",
+    "category": "read"
+  },
+  {
+    "method": "GET",
+    "path": "/issues/:issueId/pipeline-runs",
+    "name": "list_workflow_runs_of_issue",
+    "category": "read"
+  },
+  {
+    "method": "POST",
+    "path": "/issues/:issueId/pipeline-runs",
+    "name": "start_workflow_on_issue",
+    "category": "execute"
+  },
+  {
+    "method": "GET",
+    "path": "/pipeline-runs/:runId",
+    "name": "get_workflow_run",
+    "category": "read"
+  },
+  {
+    "method": "POST",
+    "path": "/pipeline-runs/:runId/cancel",
+    "name": "cancel_workflow_run",
+    "category": "execute"
+  },
+  {
+    "method": "POST",
+    "path": "/pipeline-runs/:runId/retry",
+    "name": "retry_failed_workflow_run",
+    "category": "execute"
+  },
+  {
+    "method": "POST",
+    "path": "/pipeline-runs/:runId/approval",
+    "name": "decide_approval_step_of_workflow_run",
+    "category": "write"
+  },
+  {
+    "method": "GET",
+    "path": "/pipeline-approvals",
+    "name": "list_waiting_workflow_approvals",
+    "category": "read"
+  },
+  {
+    "method": "GET",
+    "path": "/teams/:teamId/mail/accounts",
+    "name": "list_mail_accounts_of_team",
+    "category": "read"
+  },
+  {
+    "method": "GET",
+    "path": "/projects/:projectKey/mail/accounts",
+    "name": "list_mail_accounts_of_project",
+    "category": "read"
+  },
+  {
+    "method": "POST",
+    "path": "/teams/:teamId/mail/accounts",
+    "name": "add_mail_account",
+    "category": "credentials"
+  },
+  {
+    "method": "PATCH",
+    "path": "/teams/:teamId/mail/accounts/:accountId",
+    "name": "change_mail_account",
+    "category": "credentials"
+  },
+  {
+    "method": "DELETE",
+    "path": "/teams/:teamId/mail/accounts/:accountId",
+    "name": "remove_mail_account",
+    "category": "credentials"
+  },
+  {
+    "method": "POST",
+    "path": "/teams/:teamId/mail/accounts/:accountId/reset",
+    "name": "reset_imported_mail_of_account",
+    "category": "delete"
+  },
+  {
+    "method": "GET",
+    "path": "/teams/:teamId/mail/rules",
+    "name": "list_rules_that_file_new_mail_under_project",
+    "category": "read"
+  },
+  {
+    "method": "POST",
+    "path": "/teams/:teamId/mail/rules",
+    "name": "add_rule_that_files_mail_of_sender_under_project",
+    "category": "write"
+  },
+  {
+    "method": "DELETE",
+    "path": "/teams/:teamId/mail/rules/:ruleId",
+    "name": "remove_mail_rule",
+    "category": "delete"
+  },
+  {
+    "method": "GET",
+    "path": "/teams/:teamId/mail/folders",
+    "name": "list_imported_folders_of_mail_accounts",
+    "category": "read"
+  },
+  {
+    "method": "GET",
+    "path": "/teams/:teamId/mail/contacts",
+    "name": "find_past_correspondents_for_recipient_field",
+    "category": "read"
+  },
+  {
+    "method": "POST",
+    "path": "/mail/messages/:messageId/remote-images",
+    "name": "allow_or_block_remote_images_of_message",
+    "category": "write"
+  },
+  {
+    "method": "GET",
+    "path": "/issues/:issueId/mail-threads",
+    "name": "list_mail_threads_linked_to_task",
+    "category": "read"
+  },
+  {
+    "method": "GET",
+    "path": "/teams/:teamId/mail/drafts",
+    "name": "list_open_mail_drafts",
+    "category": "read"
+  },
+  {
+    "method": "POST",
+    "path": "/teams/:teamId/mail/drafts",
+    "name": "start_mail_answer_or_forward",
+    "category": "write"
+  },
+  {
+    "method": "GET",
+    "path": "/mail/drafts/:draftId",
+    "name": "get_mail_draft",
+    "category": "read"
+  },
+  {
+    "method": "PATCH",
+    "path": "/mail/drafts/:draftId",
+    "name": "save_mail_draft",
+    "category": "write"
+  },
+  {
+    "method": "DELETE",
+    "path": "/mail/drafts/:draftId",
+    "name": "discard_mail_draft",
+    "category": "delete"
+  },
+  {
+    "method": "POST",
+    "path": "/mail/drafts/:draftId/vault-attachments",
+    "name": "attach_file_of_vault_to_draft",
+    "category": "write"
+  },
+  {
+    "method": "POST",
+    "path": "/mail/drafts/:draftId/send",
+    "name": "send_mail_draft",
+    "category": "send",
+    "scope": "external"
+  },
+  {
+    "method": "POST",
+    "path": "/mail/drafts/:draftId/undo",
+    "name": "take_back_mail_in_undo_time",
+    "category": "execute"
+  },
+  {
+    "method": "GET",
+    "path": "/teams/:teamId/organization",
+    "name": "get_team_organization",
+    "category": "read"
+  },
+  {
+    "method": "POST",
+    "path": "/teams/:teamId/organization/departments",
+    "name": "create_organization_department",
+    "category": "write"
+  },
+  {
+    "method": "PATCH",
+    "path": "/teams/:teamId/organization/departments/:departmentId",
+    "name": "update_organization_department",
+    "category": "write"
+  },
+  {
+    "method": "DELETE",
+    "path": "/teams/:teamId/organization/departments/:departmentId",
+    "name": "delete_organization_department",
+    "category": "delete"
+  },
+  {
+    "method": "GET",
+    "path": "/teams/:teamId/organization/departments/:departmentId/budgets",
+    "name": "get_department_budgets_and_consumption",
+    "category": "read"
+  },
+  {
+    "method": "PUT",
+    "path": "/teams/:teamId/organization/departments/:departmentId/budgets",
+    "name": "set_department_budgets",
+    "category": "write"
+  },
+  {
+    "method": "POST",
+    "path": "/teams/:teamId/organization/goals",
+    "name": "create_organization_goal",
+    "category": "write"
+  },
+  {
+    "method": "PATCH",
+    "path": "/teams/:teamId/organization/goals/:goalId",
+    "name": "update_organization_goal",
+    "category": "write"
+  },
+  {
+    "method": "DELETE",
+    "path": "/teams/:teamId/organization/goals/:goalId",
+    "name": "delete_organization_goal",
+    "category": "delete"
+  },
+  {
+    "method": "PUT",
+    "path": "/teams/:teamId/organization/agents/:agentId",
+    "name": "set_agent_organization_assignment",
+    "category": "write"
+  },
+  {
+    "method": "DELETE",
+    "path": "/teams/:teamId/organization/agents/:agentId",
+    "name": "clear_agent_organization_assignment",
+    "category": "delete"
+  },
+  {
+    "method": "POST",
+    "path": "/teams/:teamId/organization/agents/:agentId/pause",
+    "name": "pause_agent",
+    "category": "write"
+  },
+  {
+    "method": "POST",
+    "path": "/teams/:teamId/organization/agents/:agentId/resume",
+    "name": "resume_agent",
+    "category": "write"
+  },
+  {
+    "method": "PUT",
+    "path": "/teams/:teamId/organization/agents/:agentId/token-ceilings",
+    "name": "set_agent_token_ceilings",
+    "category": "write"
+  },
+  {
+    "method": "PUT",
+    "path": "/teams/:teamId/organization/projects/:projectId/token-ceiling",
+    "name": "set_project_token_ceiling",
+    "category": "write"
+  },
+  {
+    "method": "PUT",
+    "path": "/teams/:teamId/organization/projects/:projectId",
+    "name": "set_project_organization_assignment",
+    "category": "write"
+  },
+  {
+    "method": "DELETE",
+    "path": "/teams/:teamId/organization/projects/:projectId",
+    "name": "clear_project_organization_assignment",
+    "category": "delete"
+  },
+  {
+    "method": "PATCH",
+    "path": "/teams/:teamId/organization/agents/:agentId/projects/:projectId",
+    "name": "set_project_instructions_for_agent",
+    "category": "write"
+  },
+  {
+    "method": "POST",
+    "path": "/teams/:teamId/goals/:goalId/notes/:noteId/decision",
+    "name": "decide_proposed_goal_status",
+    "category": "write"
+  },
+  {
+    "method": "GET",
+    "path": "/projects/:projectKey/extensions",
+    "name": "list_project_extension_settings",
+    "category": "read"
+  },
+  {
+    "method": "PATCH",
+    "path": "/projects/:projectKey/extensions/connections/:credentialId",
+    "name": "save_project_connection_settings",
+    "category": "write"
+  },
+  {
+    "method": "GET",
+    "path": "/teams/:teamId/template-bundles/offers",
+    "name": "list_template_bundles_on_offer_helena_and_plugins",
+    "category": "read"
+  },
+  {
+    "method": "POST",
+    "path": "/teams/:teamId/template-bundles/import",
+    "name": "import_template_bundle_into_team",
+    "category": "write"
+  },
+  {
+    "method": "DELETE",
+    "path": "/teams/:teamId/model-availability/:entryId",
+    "name": "try_model_again",
+    "category": "delete"
+  },
+  {
+    "method": "POST",
+    "path": "/teams/:teamId/model-availability/replace",
+    "name": "move_every_agent_off_model",
+    "category": "execute",
+    "scope": "external"
+  },
+  {
+    "method": "POST",
+    "path": "/teams",
+    "name": "create_team",
+    "category": "write"
+  },
+  {
+    "method": "POST",
+    "path": "/teams/:teamId/ai-agents/:agentId/runtime/curator/run",
+    "name": "run_agent_skill_curator_now",
+    "category": "execute"
+  },
+  {
+    "method": "GET",
+    "path": "/initiatives/:initiativeId/attachments",
+    "name": "list_initiative_attachments",
+    "category": "read"
+  },
+  {
+    "method": "PUT",
+    "path": "/attachments/:publicId/link",
+    "name": "point_attachment_at_another_project_file",
+    "category": "write"
+  },
+  {
+    "method": "POST",
+    "path": "/projects/:projectKey/agent-export/materialize",
+    "name": "write_redacted_agent_snapshots_to_project_vault",
+    "category": "write"
+  },
+  {
+    "method": "GET",
+    "path": "/model-prices",
+    "name": "list_model_prices",
+    "category": "read"
+  },
+  {
+    "method": "POST",
+    "path": "/teams/:teamId/decisions/classes/:classId/evals",
+    "name": "evaluate_decision_class",
+    "category": "execute"
+  },
+  {
+    "method": "GET",
+    "path": "/teams/:teamId/ai-agents/:agentId/chat-reflections",
+    "name": "list_agent_chat_reflections",
+    "category": "read"
+  },
+  {
+    "method": "GET",
+    "path": "/projects/:projectKey/browser-lab/options",
+    "name": "what_browser_2_0_test_can_run_as_and_with",
+    "category": "read"
+  },
+  {
+    "method": "GET",
+    "path": "/teams/:teamId/browser-lab/home/options",
+    "name": "what_browser_2_0_test_on_home_browser_can_run_as_and_with",
+    "category": "read"
+  },
+  {
+    "method": "GET",
+    "path": "/projects/:projectKey/trading/dashboard",
+    "name": "read_trading_dashboard_from_project_data",
+    "category": "read"
+  },
+  {
+    "method": "GET",
+    "path": "/teams/:teamId/mail/threads",
+    "name": "list_mail_threads_newest_first",
+    "category": "read"
+  },
+  {
+    "method": "GET",
+    "path": "/mail/threads/:threadId",
+    "name": "get_mail_thread_with_messages",
+    "category": "read"
+  },
+  {
+    "method": "PATCH",
+    "path": "/mail/threads/:threadId",
+    "name": "move_mail_thread_to_another_project_or_to_home",
+    "category": "write"
+  },
+  {
+    "method": "POST",
+    "path": "/mail/threads/:threadId/actions",
+    "name": "mark_flag_archive_or_delete_mail_thread",
+    "category": "delete"
+  },
+  {
+    "method": "POST",
+    "path": "/mail/threads/:threadId/task",
+    "name": "create_task_from_mail_thread",
+    "category": "write"
+  },
+  {
+    "method": "POST",
+    "path": "/mail/threads/:threadId/note",
+    "name": "save_mail_thread_as_note_in_vault",
+    "category": "write"
+  },
+  {
+    "method": "GET",
+    "path": "/mail/threads/:threadId/classification",
+    "name": "read_how_mail_thread_was_classified",
+    "category": "read"
+  },
+  {
+    "method": "POST",
+    "path": "/mail/threads/:threadId/classification",
+    "name": "classify_mail_thread_now",
+    "category": "execute"
+  },
+  {
+    "method": "PATCH",
+    "path": "/mail/threads/:threadId/classification",
+    "name": "correct_mail_thread_classification",
+    "category": "write"
+  },
+  {
+    "method": "POST",
+    "path": "/mail/threads/:threadId/classification/accept",
+    "name": "accept_classifier_suggestion",
+    "category": "write"
+  },
+  {
+    "method": "POST",
+    "path": "/actions/:actionId/preview",
+    "name": "preview_workflow",
+    "category": "execute"
+  },
+  {
+    "method": "GET",
+    "path": "/chat-prompts",
+    "name": "list_chat_prompts",
+    "category": "read"
+  },
+  {
+    "method": "POST",
+    "path": "/chat-prompts",
+    "name": "create_chat_prompt",
+    "category": "write"
+  },
+  {
+    "method": "PATCH",
+    "path": "/chat-prompts/:promptId",
+    "name": "update_chat_prompt",
+    "category": "write"
+  },
+  {
+    "method": "DELETE",
+    "path": "/chat-prompts/:promptId",
+    "name": "delete_chat_prompt",
+    "category": "delete"
+  },
+  {
+    "method": "GET",
+    "path": "/teams/:teamId/integrations/options",
+    "name": "list_integration_options",
+    "category": "read"
+  },
+  {
+    "method": "GET",
+    "path": "/teams/:teamId/credentials",
+    "name": "list_credentials",
+    "category": "read"
+  },
+  {
+    "method": "GET",
+    "path": "/teams/:teamId/credentials/:credentialId/uses",
+    "name": "list_credential_audit_log",
+    "category": "read"
+  },
+  {
+    "method": "GET",
+    "path": "/teams/:teamId/credentials/decision-key-sources/options",
+    "name": "choose_api_key_source_for_decision_connection",
+    "category": "read"
+  },
+  {
+    "method": "GET",
+    "path": "/projects/:projectKey/settings/git",
+    "name": "get_project_repository_integration_settings",
+    "category": "read"
+  },
+  {
+    "method": "GET",
+    "path": "/projects/:projectKey/settings/git/connections",
+    "name": "list_project_git_provider_connections",
+    "category": "read"
+  },
+  {
+    "method": "GET",
+    "path": "/projects/:projectKey/settings/git/connections/:connectionId/repositories",
+    "name": "list_repositories_available_through_git_provider_connection",
+    "category": "read"
+  },
+  {
+    "method": "GET",
+    "path": "/workflow-engine/settings",
+    "name": "read_default_time_zone_of_schedules",
+    "category": "read"
+  },
+  {
+    "method": "GET",
+    "path": "/link-previews",
+    "name": "preview_public_web_link",
+    "category": "read"
+  },
+  {
+    "method": "GET",
+    "path": "/telegram/account",
+    "name": "get_linked_telegram_account",
+    "category": "read"
+  },
+  {
+    "method": "PUT",
+    "path": "/telegram/account/target",
+    "name": "select_agent_and_project_for_telegram_chat",
+    "category": "write"
+  },
+  {
+    "method": "DELETE",
+    "path": "/telegram/account",
+    "name": "unlink_telegram_account",
+    "category": "delete"
+  },
+  {
+    "method": "GET",
+    "path": "/account/push",
+    "name": "read_push_settings",
+    "category": "read"
+  },
+  {
+    "method": "POST",
+    "path": "/account/push/devices/:id/test",
+    "name": "send_test_push_to_device",
+    "category": "send",
+    "scope": "external"
+  },
+  {
+    "method": "GET",
+    "path": "/emergency-stop",
+    "name": "read_instance_emergency_stop",
+    "category": "read"
+  },
+  {
+    "method": "POST",
+    "path": "/provider-limits/refresh",
+    "name": "ask_for_plan_limits_now",
+    "category": "execute"
+  },
+  {
+    "method": "DELETE",
+    "path": "/provider-limits/:limitId",
+    "name": "forget_plan_account",
+    "category": "delete"
+  },
+  {
+    "method": "POST",
+    "path": "/projects/:projectKey/decisions/task-triage",
+    "name": "classify_task_responsibility_and_priority",
+    "category": "execute"
+  },
+  {
+    "method": "POST",
+    "path": "/projects/:projectKey/decisions/agent-route",
+    "name": "select_eligible_agent_for_task",
+    "category": "execute"
+  },
+  {
+    "method": "POST",
+    "path": "/model-router/prompt",
+    "name": "route_claude_code_prompt",
+    "category": "execute",
+    "scope": "external"
+  },
+  {
+    "method": "POST",
+    "path": "/teams/:teamId/mail/accounts/test",
+    "name": "test_imap_and_smtp_login_of_mail_account",
+    "category": "execute"
+  },
+  {
+    "method": "DELETE",
+    "path": "/chats/:threadId",
+    "name": "delete_chat",
+    "category": "delete"
+  },
+  {
+    "method": "DELETE",
+    "path": "/chats/:threadId/pin",
+    "name": "unpin_chat",
+    "category": "delete"
+  },
+  {
+    "method": "DELETE",
+    "path": "/projects/:projectKey/ai-agents/:agentId/threads/:threadId",
+    "name": "delete_chat_thread",
+    "category": "delete"
+  },
+  {
+    "method": "DELETE",
+    "path": "/projects/:projectKey/ai-agents/:agentId/threads/:threadId/favorite",
+    "name": "unstar_chat_thread",
+    "category": "delete"
+  },
+  {
+    "method": "DELETE",
+    "path": "/teams/:teamId/ai-agents/:agentId/threads/:threadId",
+    "name": "delete_global_home_chat_thread",
+    "category": "delete"
+  },
+  {
+    "method": "DELETE",
+    "path": "/teams/:teamId/ai-agents/:agentId/threads/:threadId/favorite",
+    "name": "unstar_global_home_chat_thread",
+    "category": "delete"
+  },
+  {
+    "method": "GET",
+    "path": "/chats",
+    "name": "list_chats",
+    "category": "read"
+  },
+  {
+    "method": "GET",
+    "path": "/chats/:threadId",
+    "name": "get_chat",
+    "category": "read"
+  },
+  {
+    "method": "GET",
+    "path": "/issues/:issueId/chats",
+    "name": "list_caller_chats_linked_to_task",
+    "category": "read"
+  },
+  {
+    "method": "GET",
+    "path": "/projects/:projectKey/ai-agents/:agentId/threads",
+    "name": "list_chat_threads",
+    "category": "read"
+  },
+  {
+    "method": "GET",
+    "path": "/projects/:projectKey/ai-agents/:agentId/threads/:threadId/messages",
+    "name": "get_thread_messages",
+    "category": "read"
+  },
+  {
+    "method": "GET",
+    "path": "/teams/:teamId/ai-agents/:agentId/threads",
+    "name": "list_global_home_chat_threads",
+    "category": "read"
+  },
+  {
+    "method": "GET",
+    "path": "/teams/:teamId/ai-agents/:agentId/threads/:threadId/messages",
+    "name": "get_global_home_thread_messages",
+    "category": "read"
+  },
+  {
+    "method": "PATCH",
+    "path": "/chats/:threadId",
+    "name": "update_chat",
+    "category": "write"
+  },
+  {
+    "method": "PATCH",
+    "path": "/projects/:projectKey/ai-agents/:agentId/threads/:threadId",
+    "name": "rename_chat_thread",
+    "category": "write"
+  },
+  {
+    "method": "PATCH",
+    "path": "/teams/:teamId/ai-agents/:agentId/threads/:threadId",
+    "name": "rename_global_home_chat_thread",
+    "category": "write"
+  },
+  {
+    "method": "POST",
+    "path": "/chats/:threadId/restore",
+    "name": "restore_deleted_chat",
+    "category": "write"
+  },
+  {
+    "method": "POST",
+    "path": "/chats/empty-trash",
+    "name": "empty_chat_trash",
+    "category": "delete"
+  },
+  {
+    "method": "POST",
+    "path": "/chats/trash-all",
+    "name": "move_all_chats_to_trash",
+    "category": "delete"
+  },
+  {
+    "method": "POST",
+    "path": "/projects/:projectKey/ai-agents/:agentId/chat",
+    "name": "send_chat_message",
+    "category": "send"
+  },
+  {
+    "method": "POST",
+    "path": "/projects/:projectKey/ai-agents/:agentId/chat/:messageId/cancel",
+    "name": "stop_answer",
+    "category": "execute"
+  },
+  {
+    "method": "POST",
+    "path": "/projects/:projectKey/ai-agents/:agentId/chat/retry",
+    "name": "answer_chat_question_again",
+    "category": "send"
+  },
+  {
+    "method": "POST",
+    "path": "/teams/:teamId/ai-agents/:agentId/chat",
+    "name": "send_global_home_chat_message",
+    "category": "send",
+    "scope": "external"
+  },
+  {
+    "method": "POST",
+    "path": "/teams/:teamId/ai-agents/:agentId/chat/:messageId/cancel",
+    "name": "stop_global_home_answer",
+    "category": "execute"
+  },
+  {
+    "method": "POST",
+    "path": "/teams/:teamId/ai-agents/:agentId/chat/retry",
+    "name": "answer_global_home_chat_question_again",
+    "category": "send",
+    "scope": "external"
+  },
+  {
+    "method": "PUT",
+    "path": "/chats/:threadId/active",
+    "name": "show_another_version_of_message",
+    "category": "write"
+  },
+  {
+    "method": "PUT",
+    "path": "/chats/:threadId/pin",
+    "name": "pin_chat",
+    "category": "write"
+  },
+  {
+    "method": "PUT",
+    "path": "/projects/:projectKey/ai-agents/:agentId/threads/:threadId/favorite",
+    "name": "star_chat_thread",
+    "category": "write"
+  },
+  {
+    "method": "PUT",
+    "path": "/teams/:teamId/ai-agents/:agentId/threads/:threadId/favorite",
+    "name": "star_global_home_chat_thread",
+    "category": "write"
+  },
+  {
+    "method": "GET",
+    "path": "/projects/:projectKey/agent-export",
+    "name": "export_project_agent_notes",
+    "category": "read"
+  },
+  {
+    "method": "GET",
+    "path": "/teams/:teamId/template-bundles/export",
+    "name": "export_team_template_bundle",
+    "category": "read"
+  }
+]

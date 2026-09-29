@@ -1,6 +1,6 @@
 ---
 name: ava-bedienen
-description: Helena über ihre MCP-Werkzeuge bedienen; Einstieg für Aufgaben, Wissen, Ziele, Team, Belege und Zeitpläne.
+description: Helena über ihre MCP-Werkzeuge bedienen; Einstieg für alle Projekt-, Team- und Kommunikationsbereiche.
 ---
 
 # Ava bedienen
@@ -13,5 +13,12 @@ Nutze Helena-Werkzeuge für Arbeit, die im Projekt oder Team dokumentiert werden
 - Agenten und Team: `ava-bedienen-team`
 - Belege: `ava-bedienen-belege`
 - Routinen und Zeitpläne: `ava-bedienen-zeitplaene`
+- Projekte und Vorlagen: `ava-bedienen-projekte`
+- Mail: `ava-bedienen-mail`
+- Google und Kalender: `ava-bedienen-google`
+- Workflows: `ava-bedienen-workflows`
+- Entscheidungen: `ava-bedienen-entscheidungen`
+- Benachrichtigungen: `ava-bedienen-benachrichtigungen`
+- Bereichsübergreifende Suche: `ava-bedienen-suche`
 
 Beispiel: `list_issues({"projectKey":"VOL"})`, dann `get_issue({"issueId":123})`. Nutze die tatsächlichen IDs aus den Antworten.

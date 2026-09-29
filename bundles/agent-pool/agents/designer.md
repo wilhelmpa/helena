@@ -15,6 +15,13 @@ skills:
   - ava-bedienen-team
   - ava-bedienen-belege
   - ava-bedienen-zeitplaene
+  - ava-bedienen-projekte
+  - ava-bedienen-mail
+  - ava-bedienen-google
+  - ava-bedienen-workflows
+  - ava-bedienen-entscheidungen
+  - ava-bedienen-benachrichtigungen
+  - ava-bedienen-suche
   - helena-ui-standard
   - design-critique
   - frontend-design

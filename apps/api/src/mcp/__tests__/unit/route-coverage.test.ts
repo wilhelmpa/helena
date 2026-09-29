@@ -2,6 +2,7 @@ import { describe, expect, it } from 'bun:test';
 import { app } from '../../../app';
 import { routeTools } from '../../generate';
 import exceptions from '../../route-exceptions.json';
+import catalog from '../../route-tool-catalog.json';
 
 const routeKey = (method: string, path: string) => `${method} ${path}`;
 const exceptionClasses = new Set(['intern', 'binär', 'auth', 'admin', 'UI-only']);
@@ -16,9 +17,10 @@ describe('MCP route coverage', () => {
     expect(tools.map((tool) => tool.name).length).toBe(
       new Set(tools.map((tool) => tool.name)).size,
     );
-    for (const [method, path, reason] of exceptions) {
+    for (const [method, path, reasonClass, reason] of exceptions) {
       const key = routeKey(method, path);
-      expect(exceptionClasses.has(reason)).toBe(true);
+      expect(exceptionClasses.has(reasonClass)).toBe(true);
+      expect(reason.length).toBeGreaterThan(20);
       expect(routes.has(key)).toBe(true);
       expect(toolRoutes.has(key)).toBe(false);
       expect(excluded.has(key)).toBe(false);
@@ -50,11 +52,46 @@ describe('MCP route coverage', () => {
     );
   });
 
+  it('keeps catalog tools on JSON routes and receipt tools behind project administration', () => {
+    const tools = routeTools(app);
+    const names = new Set<string>();
+    for (const entry of catalog) {
+      const route = app.routes.find(
+        (candidate) => candidate.method === entry.method && candidate.path === entry.path,
+      );
+      expect(route).toBeDefined();
+      expect(names.has(entry.name)).toBe(false);
+      names.add(entry.name);
+      expect(JSON.stringify(route?.hooks.body ?? {})).not.toContain('"format":"binary"');
+      const tool = tools.find((candidate) => candidate.name === entry.name);
+      expect(String(tool?.category)).toBe(entry.category);
+      expect(tool?.description).toContain('Example:');
+    }
+    const receipts = tools.filter((tool) => tool.path.startsWith('/projects/:projectKey/receipts'));
+    expect(receipts.length).toBeGreaterThan(20);
+    for (const tool of receipts) {
+      expect(tool.permission).toEqual(['project_admin', 'admin']);
+      expect(tool.pathParams).toContain('projectKey');
+    }
+    expect(tools.find((tool) => tool.name === 'list_receipts')?.category).toBe('read');
+    expect(tools.find((tool) => tool.name === 'update_receipt')?.category).toBe('write');
+    expect(tools.find((tool) => tool.name === 'prepare_receipt_export')?.category).toBe('read');
+    expect(tools.find((tool) => tool.name === 'send_mail_draft')?.category).toBe('send');
+    expect(tools.find((tool) => tool.name === 'send_mail_draft')?.annotations.openWorldHint).toBe(
+      true,
+    );
+    expect(tools.find((tool) => tool.name === 'add_mail_account')?.category).toBe('credentials');
+  });
+
   it('refuses anonymous calls to the new project, vault and team routes', async () => {
     for (const path of [
       '/projects/VOL/issues/archived',
       '/knowledge/tree?root=Projects/VOL',
       '/teams/1/ai-agents/1/runs',
+      '/projects/VOL/receipts',
+      '/teams/1/projects',
+      '/notifications',
+      '/mail/threads/1',
     ]) {
       const response = await app.handle(new Request(`http://localhost${path}`));
       expect(response.status).toBe(401);

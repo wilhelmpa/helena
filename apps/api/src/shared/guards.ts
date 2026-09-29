@@ -25,6 +25,8 @@ import type { PermissionResource, PermissionAction } from './permissions';
 
 // A [resource, action] pair naming one cell of the role permission matrix.
 export type Permission = [PermissionResource, PermissionAction];
+// Project administration is a standing check, not a cell of the role matrix.
+export type DeclaredPermission = Permission | ['project_admin', 'admin'];
 
 // The slice of the request context an entity guard reads. Annotated explicitly
 // because the factory is defined outside a plugin, so there is no context to
@@ -194,6 +196,7 @@ export const guards = new Elysia({ name: 'guards' }).use(authContext).macro({
   // owner and the team that runs it both govern.
   projectAdmin(_enabled: boolean) {
     return {
+      detail: { 'x-permission': ['project_admin', 'admin'] } as DocumentDecoration,
       async resolve({ params, user, request }) {
         const project = await requireProjectAdmin((params as ProjectKeyParams).projectKey, user);
         assertMcpEnabled(project, isMcpRequest(request.headers));

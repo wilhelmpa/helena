@@ -1,11 +1,11 @@
 # Routes without MCP tools
 
-`route-exceptions.json` lists each REST route without an `x-mcp` tool as `[method, path, class]`. The route coverage test requires every route to appear exactly once as a tool or an exception. A new route fails the test until it is reviewed and explicitly classified.
+`route-exceptions.json` lists each REST route without a tool as `[method, path, class, reason]`. `route-tool-catalog.json` adds explicit tools for existing guarded routes without changing their HTTP handlers. The route coverage test requires every route to appear exactly once as a tool or a reasoned exception. A new route fails the test until it is reviewed.
 
 - `intern`: machine, runner, webhook or internal transport endpoint.
 - `binär`: file transfer or streamed payload unsuitable for the JSON tool dispatcher.
-- `auth`: authentication endpoint, private session data, or a route whose agent authorization and project scope still need review. The last group is open work; the label does not mean the route is safe to expose.
-- `admin`: instance or administrative control plane, including receipt routes guarded by `projectAdmin` without a declared `x-permission`.
-- `UI-only`: view state, picker, preview or chat interface endpoint.
+- `auth`: sign-in, session, OAuth callback or interactive account linking.
+- `admin`: instance or credential control plane, including `/god` routes excluded by Auftrag 118b.
+- `UI-only`: personal browser state, picker or public share view.
 
-The `auth` entries with `x-permission` are the current review queue. Before converting one to a tool, check its successful response is JSON, inspect all additional handler checks, and verify that an agent key cannot cross project boundaries. Remove the exception when the tool is added.
+Catalog tools dispatch to the original route with the caller's key. The route's authentication, team and project guards continue to enforce access. A catalog entry carries an action category and gets its input and output schemas from the route.
