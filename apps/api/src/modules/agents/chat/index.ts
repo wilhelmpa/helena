@@ -1,3 +1,5 @@
+import { readFollowups, submitFollowup } from '../native-runtime/followups';
+import { followupBody, FollowupResponse, FollowupsResponse } from '../native-runtime/model';
 import { modelPicker } from '#modules/local-ai/model-picker';
 import { Elysia, t } from 'elysia';
 import { authContext } from '#shared/auth-context';
@@ -514,6 +516,46 @@ export const agentChatRoutes = new Elysia({ name: 'agent-chat', detail: { tags: 
     },
   )
 
+  .get(
+    '/teams/:teamId/ai-agents/:agentId/chat/:messageId/followups',
+    async ({ params, membership, user }) => {
+      const caller = requireUser(user);
+      const agent = await requireTeamAgent(params.agentId, membership);
+      if (!isTriggerableBy(agent, caller.id))
+        throw new HttpError(403, 'This agent only takes tasks from its owner');
+      return readFollowups({ kind: 'chat', id: params.messageId }, params.agentId, caller.id, null);
+    },
+    {
+      params: teamChatMessageParams,
+      teamPermission: ['ai_agents', 'read'],
+      response: { 200: FollowupsResponse, ...commonErrors, ...errors(409, 429) },
+      detail: { summary: 'Read answer follow-up instructions' },
+    },
+  )
+  .post(
+    '/teams/:teamId/ai-agents/:agentId/chat/:messageId/followups',
+    async ({ params, membership, user, body }) => {
+      const caller = requireUser(user);
+      const agent = await requireTeamAgent(params.agentId, membership);
+      if (!isTriggerableBy(agent, caller.id))
+        throw new HttpError(403, 'This agent only takes tasks from its owner');
+      return submitFollowup(
+        { kind: 'chat', id: params.messageId },
+        params.agentId,
+        caller.id,
+        null,
+        body,
+      );
+    },
+    {
+      params: teamChatMessageParams,
+      teamPermission: ['ai_agents', 'read'],
+      body: followupBody,
+      response: { 200: FollowupResponse, ...commonErrors, ...errors(409, 429) },
+      detail: { summary: 'Send answer follow-up instructions' },
+    },
+  )
+
   .post(
     '/teams/:teamId/ai-agents/:agentId/chat/:messageId/cancel',
     async ({ params, membership, user }) => {
@@ -698,6 +740,95 @@ export const agentChatRoutes = new Elysia({ name: 'agent-chat', detail: { tags: 
 
   // Stops the answer being produced. The runner learns of it on its next report and
   // kills the command; what the agent wrote before it stays in the transcript.
+  .get(
+    '/projects/:projectKey/ai-agents/:agentId/chat/:messageId/followups',
+    async ({ params, project, user }) => {
+      const caller = requireUser(user);
+      const agent = await requireProjectAgent(params.agentId, project.id, caller.id);
+      if (!isTriggerableBy(agent, caller.id))
+        throw new HttpError(403, 'This agent only takes tasks from its owner');
+      return readFollowups(
+        { kind: 'chat', id: params.messageId },
+        params.agentId,
+        caller.id,
+        project.id,
+      );
+    },
+    {
+      params: chatMessageParams,
+      permission: ['ai_agents', 'read'],
+      response: { 200: FollowupsResponse, ...commonErrors, ...errors(409, 429) },
+      detail: { summary: 'Read answer follow-up instructions' },
+    },
+  )
+  .post(
+    '/projects/:projectKey/ai-agents/:agentId/chat/:messageId/followups',
+    async ({ params, project, user, body }) => {
+      const caller = requireUser(user);
+      const agent = await requireProjectAgent(params.agentId, project.id, caller.id);
+      if (!isTriggerableBy(agent, caller.id))
+        throw new HttpError(403, 'This agent only takes tasks from its owner');
+      return submitFollowup(
+        { kind: 'chat', id: params.messageId },
+        params.agentId,
+        caller.id,
+        project.id,
+        body,
+      );
+    },
+    {
+      params: chatMessageParams,
+      permission: ['ai_agents', 'read'],
+      body: followupBody,
+      response: { 200: FollowupResponse, ...commonErrors, ...errors(409, 429) },
+      detail: { summary: 'Send answer follow-up instructions' },
+    },
+  )
+
+  .get(
+    '/projects/:projectKey/ai-agents/:agentId/runs/:runId/followups',
+    async ({ params, project, user }) => {
+      const caller = requireUser(user);
+      const agent = await requireProjectAgent(params.agentId, project.id, caller.id);
+      if (!isTriggerableBy(agent, caller.id))
+        throw new HttpError(403, 'This agent only takes tasks from its owner');
+      return readFollowups(
+        { kind: 'run', id: params.runId },
+        params.agentId,
+        caller.id,
+        project.id,
+      );
+    },
+    {
+      params: t.Object({ projectKey: t.String(), agentId: t.Numeric(), runId: t.Numeric() }),
+      permission: ['ai_agents', 'read'],
+      response: { 200: FollowupsResponse, ...commonErrors, ...errors(409, 429) },
+      detail: { summary: 'Read run follow-up instructions' },
+    },
+  )
+  .post(
+    '/projects/:projectKey/ai-agents/:agentId/runs/:runId/followups',
+    async ({ params, project, user, body }) => {
+      const caller = requireUser(user);
+      const agent = await requireProjectAgent(params.agentId, project.id, caller.id);
+      if (!isTriggerableBy(agent, caller.id))
+        throw new HttpError(403, 'This agent only takes tasks from its owner');
+      return submitFollowup(
+        { kind: 'run', id: params.runId },
+        params.agentId,
+        caller.id,
+        project.id,
+        body,
+      );
+    },
+    {
+      params: t.Object({ projectKey: t.String(), agentId: t.Numeric(), runId: t.Numeric() }),
+      permission: ['ai_agents', 'read'],
+      body: followupBody,
+      response: { 200: FollowupResponse, ...commonErrors, ...errors(409, 429) },
+      detail: { summary: 'Send run follow-up instructions' },
+    },
+  )
   .post(
     '/projects/:projectKey/ai-agents/:agentId/chat/:messageId/cancel',
     async ({ params, project, user }) => {

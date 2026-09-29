@@ -296,3 +296,52 @@ export const nativeSkillReviewBody = t.Object({
 });
 
 export const nativeSkillListQuery = t.Object({ includeArchived: t.Optional(t.Literal('true')) });
+
+export const followupMode = t.Union([
+  t.Literal('inject'),
+  t.Literal('after'),
+  t.Literal('replace'),
+]);
+export const followupBody = t.Object({
+  id: t.String({ format: 'uuid' }),
+  mode: followupMode,
+  prompt: t.String({ minLength: 1, maxLength: 20000 }),
+});
+export const FollowupResponse = t.Object({
+  id: t.String(),
+  mode: followupMode,
+  state: t.Union([t.Literal('pending'), t.Literal('applied'), t.Literal('queued')]),
+  prompt: t.String(),
+  nextId: t.Nullable(t.Integer()),
+  position: t.Optional(t.Object({ sessionId: t.String(), seq: t.Integer(), step: t.Integer() })),
+});
+export const FollowupsResponse = t.Object({
+  modes: t.Array(followupMode),
+  items: t.Array(FollowupResponse),
+});
+export const nativeFollowupBody = t.Object({
+  kind: t.Union([t.Literal('chat'), t.Literal('run')]),
+  id: t.Integer({ minimum: 1 }),
+  claim: t.Integer({ minimum: 1 }),
+  sessionId: t.Optional(t.String({ format: 'uuid' })),
+  afterSeq: t.Optional(t.Integer({ minimum: 0 })),
+  step: t.Optional(t.Integer({ minimum: 1 })),
+});
+export const NativeFollowupsResponse = t.Object({
+  pending: t.Boolean(),
+  replace: t.Boolean(),
+  items: t.Array(
+    t.Object({
+      seq: t.Integer(),
+      step: t.Integer(),
+      message: t.Object({ role: t.Literal('user'), content: t.String() }),
+    }),
+  ),
+});
+
+export const MessageInjectedEvent = t.Object({
+  type: t.Literal('CUSTOM'),
+  name: t.Literal('message_injected'),
+  value: FollowupResponse,
+});
+export type MessageInjectedEventBody = typeof MessageInjectedEvent.static;

@@ -1,3 +1,5 @@
+import { nativeFollowups } from './followups';
+import { nativeFollowupBody, NativeFollowupsResponse } from './model';
 import { importProfile } from './import';
 import { profileImportBody, ProfileImportResponse } from './model';
 import { teamParams } from '#modules/teams/model';
@@ -63,6 +65,12 @@ export const nativeRuntimeRoutes = new Elysia({
   detail: { tags: ['Agent Runtime'] },
 })
   .use(runnerAuth)
+  .post('/agent-runtime/followups', ({ agent, body }) => nativeFollowups(agent.id, body), {
+    runnerAgent: true,
+    body: nativeFollowupBody,
+    response: { 200: NativeFollowupsResponse, ...errors(400, 401, 403, 404, 409) },
+    detail: { summary: 'Read or consume instructions at a native runtime boundary' },
+  })
   .post('/agent-runtime/read', ({ agent, body }) => readNativeRuntime(agent.id, body), {
     runnerAgent: true,
     body: nativeReadBody,

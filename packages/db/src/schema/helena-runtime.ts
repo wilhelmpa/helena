@@ -23,7 +23,7 @@ import {
   uuid,
   type AnyPgColumn,
 } from 'drizzle-orm/pg-core';
-import { agentRun, aiAgent, project, team } from './app';
+import { agentRun, agentChatMessage, aiAgent, project, team } from './app';
 
 const bytea = customType<{ data: Buffer; driverData: Buffer }>({ dataType: () => 'bytea' });
 
@@ -179,4 +179,29 @@ export const volitionProfileImport = pgTable(
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [primaryKey({ columns: [t.agentId, t.sourceKey] })],
+);
+
+export const volitionFollowup = pgTable(
+  'volition_followup',
+  {
+    id: uuid('id').primaryKey(),
+    agentId: integer('agent_id')
+      .notNull()
+      .references(() => aiAgent.id, { onDelete: 'cascade' }),
+    messageId: integer('message_id').references(() => agentChatMessage.id, { onDelete: 'cascade' }),
+    runId: integer('run_id').references(() => agentRun.id, { onDelete: 'cascade' }),
+    userId: text('user_id').notNull(),
+    mode: text('mode').$type<'inject' | 'after' | 'replace'>().notNull(),
+    state: text('state').$type<'pending' | 'applied' | 'queued'>().notNull().default('pending'),
+    prompt: text('prompt').notNull(),
+    nextId: integer('next_id'),
+    waitId: integer('wait_id').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    check('volition_followup_target_check', sql`(${t.messageId} IS NULL) <> (${t.runId} IS NULL)`),
+    check('volition_followup_mode_check', sql`${t.mode} IN ('inject', 'after', 'replace')`),
+    check('volition_followup_state_check', sql`${t.state} IN ('pending', 'applied', 'queued')`),
+    index('volition_followup_agent_state_idx').on(t.agentId, t.state),
+  ],
 );

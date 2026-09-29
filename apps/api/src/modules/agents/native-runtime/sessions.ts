@@ -142,6 +142,11 @@ export async function appendItems(
   });
   if (rows.length === 0) return;
   await db.transaction(async (tx) => {
+    await tx
+      .select({ id: helenaAgentSession.id })
+      .from(helenaAgentSession)
+      .where(eq(helenaAgentSession.id, session.id))
+      .for('update');
     await tx.insert(helenaAgentSessionItem).values(rows).onConflictDoNothing();
     await tx
       .update(helenaAgentSession)

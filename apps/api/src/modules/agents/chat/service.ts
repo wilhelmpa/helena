@@ -1,3 +1,5 @@
+import type { MessageInjectedEventBody } from '../native-runtime/model';
+import { dispatchFollowups } from '../native-runtime/followups';
 import { toolsFullyObserved } from '@helena/sdk';
 import { ownerOrigin, inheritedChatTaint } from '#modules/root-access/provenance';
 import { queueChatEscalation } from './escalation';
@@ -1023,6 +1025,7 @@ export interface ClaimedChat {
 
 // The claim's raw row: the answer plus what the prompts are built from.
 interface ClaimedRow {
+  resumeSessionId: string | null;
   id: number;
   threadId: string;
   attempts: number;
@@ -1070,13 +1073,14 @@ export async function claimNextMessage(agent: RunnerAgent): Promise<ClaimedChat 
 }
 
 // Takes the agent's next due answer, or null when it has none. A paused agent's answers
-// wait. Claiming clears whatever a previous attempt produced: the answer is generated
-// again from the start, and the browser would otherwise read the abandoned half twice.
+// wait. Each claim replaces text events; native claims keep their session checkpoint
+// and server-owned instruction events.
 async function claimMessage(agent: RunnerAgent): Promise<ClaimedChat | null> {
   return withModelAdmission(() => claimAdmittedMessage(agent));
 }
 
 async function claimAdmittedMessage(agent: RunnerAgent): Promise<ClaimedChat | null> {
+  await dispatchFollowups(agent.id);
   const rows = await db.execute(sql`
     UPDATE agent_chat_message m
     SET attempts = m.attempts + 1,
@@ -1084,7 +1088,7 @@ async function claimAdmittedMessage(agent: RunnerAgent): Promise<ClaimedChat | n
         taint_sources = CASE WHEN ${toolsFullyObserved(agent.runtime)} THEN m.taint_sources ELSE m.taint_sources || '["unobserved-runtime"]'::jsonb END,
         status = 'streaming',
         content = '',
-        session_id = NULL,
+        session_id = CASE WHEN ${agent.runtime} = 'helena' THEN m.session_id ELSE NULL END,
         started_at = coalesce(m.started_at, now()),
         next_attempt_at = now() + make_interval(secs => ${agentChatConfig.leaseSeconds()})
     WHERE m.id = (
@@ -1110,6 +1114,7 @@ async function claimAdmittedMessage(agent: RunnerAgent): Promise<ClaimedChat | n
     RETURNING
       m.id,
       m.thread_id AS "threadId",
+      m.session_id AS "resumeSessionId",
       m.attempts,
       m.model_check AS "preclaimCheck",
       (SELECT CASE WHEN t.agent_id = m.agent_id THEN t.model ELSE m.model END FROM agent_chat_thread t WHERE t.id = m.thread_id) AS "model",
@@ -1118,7 +1123,7 @@ async function claimAdmittedMessage(agent: RunnerAgent): Promise<ClaimedChat | n
   `);
   const row = (rows as unknown as ClaimedRow[])[0];
   if (!row) return null;
-  await db.delete(agentChatEvent).where(eq(agentChatEvent.messageId, row.id));
+  await db.delete(agentChatEvent).where(and(eq(agentChatEvent.messageId, row.id), runnerEvent));
   // The agent's instructions reach Hermes through the SOUL.md of its profile, so the
   // message carries no system prompt. A branch whose last answer is the last one of a
   // live session needs only the new question; any other gets the earlier turns of the
@@ -1134,7 +1139,9 @@ async function claimAdmittedMessage(agent: RunnerAgent): Promise<ClaimedChat | n
     !(history[lastOwn]!.role === 'assistant' && history[lastOwn]!.via !== 'voice')
   )
     lastOwn -= 1;
-  const sessionId = await resumableSession(row.threadId, history.slice(0, lastOwn + 1), agent.id);
+  const sessionId =
+    row.resumeSessionId ??
+    (await resumableSession(row.threadId, history.slice(0, lastOwn + 1), agent.id));
   const attachments = (question?.attachments as ChatAttachment[] | null) ?? [];
   const spoken = question?.via === 'voice';
   const text = questionText(question?.content ?? '', attachments, await getDisplayName());
@@ -1463,6 +1470,8 @@ async function wasCanceled(agentId: number, messageId: number): Promise<boolean>
   return rows[0]?.status === 'canceled';
 }
 
+const runnerEvent = sql`coalesce(${agentChatEvent.payload}->>'name', '') <> 'message_injected'`;
+
 // Records what the runner reported. Text deltas also grow the answer's own text, so the
 // transcript reads correctly even if the browser never watched the stream.
 export async function appendEvents(
@@ -1485,14 +1494,14 @@ export async function appendEvents(
       const [size] = await tx
         .select({ value: count() })
         .from(agentChatEvent)
-        .where(eq(agentChatEvent.messageId, messageId));
+        .where(and(eq(agentChatEvent.messageId, messageId), runnerEvent));
       if (delivery.offset !== size!.value) {
         if (delivery.offset + events.length > size!.value)
           throw new HttpError(409, 'Chat event offset does not match');
         const previous = await tx
           .select({ payload: agentChatEvent.payload })
           .from(agentChatEvent)
-          .where(eq(agentChatEvent.messageId, messageId))
+          .where(and(eq(agentChatEvent.messageId, messageId), runnerEvent))
           .orderBy(asc(agentChatEvent.id))
           .offset(delivery.offset)
           .limit(events.length);
@@ -1784,7 +1793,7 @@ export interface ChatAck {
 }
 
 export interface ChatEventPage {
-  items: { id: number; event: AgUiEventBody }[];
+  items: { id: number; event: AgUiEventBody | MessageInjectedEventBody }[];
   status: ChatMessageStatus;
   error: string | null;
   nextCursor: number | null;
@@ -1827,7 +1836,10 @@ export async function readEvents(
   const hasMore = eventRows.length > EVENT_PAGE;
   const events = hasMore ? eventRows.slice(0, EVENT_PAGE) : eventRows;
   return {
-    items: events.map((e) => ({ id: e.id, event: e.payload as AgUiEventBody })),
+    items: events.map((e) => ({
+      id: e.id,
+      event: e.payload as AgUiEventBody | MessageInjectedEventBody,
+    })),
     status: message.status as ChatMessageStatus,
     error: message.lastError,
     nextCursor: events.at(-1)?.id ?? null,

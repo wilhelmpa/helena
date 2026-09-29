@@ -101,6 +101,7 @@ export async function answer(
         ITSAPLAN_SYSTEM_PROMPT: message.systemPrompt,
         ITSAPLAN_THREAD_ID: message.threadId,
         ITSAPLAN_MESSAGE_ID: String(message.id),
+        VOLITION_WORK_CLAIM: String(message.attempts ?? ''),
         ITSAPLAN_SESSION_ID: message.sessionId ?? '',
         ...hermes?.env,
         VOLITION_HALOGEN_PRIORITY: 'interactive',

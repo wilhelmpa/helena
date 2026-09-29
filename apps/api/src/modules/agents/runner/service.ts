@@ -1,3 +1,4 @@
+import { dispatchFollowups } from '../native-runtime/followups';
 import { toolsFullyObserved } from '@helena/sdk';
 import { withModelAdmission, LOCAL_DEFAULT } from '#modules/local-ai/maintenance-state';
 import { localDefaultClassFallback } from '#modules/local-ai/global-model';
@@ -350,6 +351,7 @@ export async function claimRunnerRun(agent: RunnerAgent): Promise<RunnerRun | nu
 }
 
 async function claimAdmittedRun(agent: RunnerAgent): Promise<RunnerRun | null> {
+  await dispatchFollowups(agent.id);
   const agentId = agent.id;
   await expireExhaustedRuns(agentId);
   await touchRunner(agentId);

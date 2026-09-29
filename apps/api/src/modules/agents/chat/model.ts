@@ -1,3 +1,4 @@
+import { MessageInjectedEvent } from '../native-runtime/model';
 import { t } from 'elysia';
 import { runFailure, unavailableCatalogModel } from '#modules/model-availability/model';
 import { pageQueryFields, pageResponse } from '#shared/pagination';
@@ -311,7 +312,7 @@ export const chatMessageStatus = t.Union([
 export type ChatMessageStatus = typeof chatMessageStatus.static;
 
 export const ChatEventsResponse = t.Object({
-  items: t.Array(t.Object({ id: t.Number(), event: AgUiEvent })),
+  items: t.Array(t.Object({ id: t.Number(), event: t.Union([AgUiEvent, MessageInjectedEvent]) })),
   status: chatMessageStatus,
   error: t.Nullable(t.String()),
   nextCursor: t.Nullable(t.Number()),
