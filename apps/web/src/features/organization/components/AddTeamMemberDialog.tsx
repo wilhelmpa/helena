@@ -131,13 +131,10 @@ export default function AddTeamMemberDialog({
           label={t('source')}
           value={source}
           onChange={choose}
+          // Words, not icons: on a phone the segment control shows only the icons.
           options={[
-            { value: 'pool', label: t('fromPool'), icon: <Bot size={14} aria-hidden="true" /> },
-            {
-              value: 'template',
-              label: t('fromTemplate'),
-              icon: <Copy size={14} aria-hidden="true" />,
-            },
+            { value: 'pool', label: t('fromPool') },
+            { value: 'template', label: t('fromTemplate') },
           ]}
         />
         {projectId == null && (
