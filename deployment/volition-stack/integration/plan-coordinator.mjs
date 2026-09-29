@@ -478,7 +478,9 @@ async function ensureOrganization(config, fetchImpl, project, agent, hermesIdent
 // provisioning run leaves the descriptor and the running Hermes runner untouched.
 // The runtimes a project agent can run on. Hermes is the default and is not written into
 // the descriptor, so the descriptors of Hermes agents stay as they were.
-const AGENT_RUNTIMES = new Set(['hermes', 'claude', 'codex', 'command', 'webhook']);
+// helena: Helena's own agent loop (packages/agent-runtime); the API names it only while
+// HELENA_NATIVE_RUNTIME is on.
+const AGENT_RUNTIMES = new Set(['hermes', 'claude', 'codex', 'command', 'webhook', 'helena']);
 
 async function ensureKeyedDescriptor(config, project, options, { name, route, body, isAgent, runtimeOf }) {
   const fetchImpl = options.fetchImpl ?? fetch;

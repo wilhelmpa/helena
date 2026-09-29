@@ -81,14 +81,54 @@ export const runtimePolicy = t.Object({
         t.Literal('codex'),
         t.Literal('command'),
         t.Literal('webhook'),
+        t.Literal('helena'),
       ],
       {
         description:
-          'Which runtime runs the agent. Unset is Hermes. The server provisions a runtime for ' +
+          "Which runtime runs the agent. Unset is Hermes. Helena is Helena's own agent loop " +
+          '(local and API-key models), available while HELENA_NATIVE_RUNTIME is on. Unset is Hermes. The server provisions a runtime for ' +
           'an agent of one project whichever it is. Command runs a workspace script; Webhook ' +
           'posts a signed request to an external service. Claude Code and Codex also receive ' +
           'managed instructions, skills, tools, models and granted runtime logins.',
       },
+    ),
+  ),
+  helena: t.Optional(
+    t.Object(
+      {
+        toolProfile: t.Optional(
+          t.Union(
+            [
+              t.Literal('assistent'),
+              t.Literal('recherche'),
+              t.Literal('coder-lite'),
+              t.Literal('voll'),
+            ],
+            {
+              description: 'The tools of the role (docs/helena-decisions/zentrale-laufzeit.md §6).',
+            },
+          ),
+        ),
+        escalation: t.Optional(
+          t.Object({
+            mode: t.Optional(t.Union([t.Literal('auto'), t.Literal('never'), t.Literal('always')])),
+            target: t.Optional(
+              t.Nullable(
+                t.String({
+                  maxLength: 160,
+                  description:
+                    'A model the loop drives (`anthropic/claude-sonnet-5`) or `runtime:claude[/model]`, `runtime:codex[/model]`.',
+                }),
+              ),
+            ),
+            taskKinds: t.Optional(t.Array(t.String({ maxLength: 40 }), { maxItems: 20 })),
+            confidenceBelow: t.Optional(t.Number({ minimum: 0, maximum: 1 })),
+            onFailure: t.Optional(t.Boolean()),
+          }),
+        ),
+        browserBudgetSeconds: t.Optional(t.Integer({ minimum: 30, maximum: 3600 })),
+      },
+      { description: "Settings of Helena's own loop (runtime helena)." },
     ),
   ),
   commandScript: t.Optional(

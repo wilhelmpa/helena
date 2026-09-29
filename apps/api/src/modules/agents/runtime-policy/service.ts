@@ -1,3 +1,4 @@
+import { readEscalation } from '#modules/escalation/service';
 import { createHash } from 'node:crypto';
 import { db, aiAgent, getDisplayName } from '@repo/db';
 import { eq } from 'drizzle-orm';
@@ -163,6 +164,19 @@ export async function runtimePolicySnapshot(agentRef: RunnerAgent) {
     // Local AI, while it is on (docs/helena-decisions/local-ai-platform.md): part of the
     // revision, so switching it on or off rewrites every profile.
     localAi,
+    // Helena's own loop (docs/helena-decisions/zentrale-laufzeit.md): its role's tools and
+    // when it hands a task to a bigger model.
+    ...(agent.runtimePolicy.runtime === 'helena' && {
+      helena: {
+        ...agent.runtimePolicy.helena,
+        escalation: {
+          mode: agent.runtimePolicy.helena?.escalation?.mode ?? 'auto',
+          target: agent.runtimePolicy.helena?.escalation?.target,
+          agentId: agent.id,
+          central: await readEscalation(),
+        },
+      },
+    }),
     actions,
   };
   // Prefix the digest so API clients consistently keep this as an opaque string.
@@ -433,7 +447,9 @@ export async function reportRuntimeState(
   const done = await completeRuntimeActions(agentId, actions);
   await completeMemoryWrites(agentId, done, actions);
   await recordMemoryProposals(agentId, memoryProposals);
-  await recordObservedMemory(agentId, value.inventory);
+  // Native memory lives in this database. Its runner inventory is a snapshot and may
+  // predate an approval or a completed owner write; it must never replace that revision.
+  if (value.adapter !== 'helena') await recordObservedMemory(agentId, value.inventory);
   return value;
 }
 

@@ -1,3 +1,4 @@
+import { agentMemorySource, reindexItems } from '@helena/knowledge';
 import { createHash } from 'node:crypto';
 import {
   db,
@@ -36,7 +37,7 @@ export async function memoryBaseline(
       content: agentMemoryRevision.content,
     })
     .from(agentMemoryRevision)
-    .where(eq(agentMemoryRevision.agentId, agentId))
+    .where(and(eq(agentMemoryRevision.agentId, agentId), inArray(agentMemoryRevision.file, FILES)))
     .orderBy(agentMemoryRevision.file, desc(agentMemoryRevision.id));
   return rows.map((row) => ({ ...row, file: row.file as MemoryFile }));
 }
@@ -75,13 +76,16 @@ export interface MemoryProposalReport {
 export async function recordMemoryProposals(
   agentId: number,
   reports: MemoryProposalReport[] | undefined,
+  executor: Executor = db,
 ): Promise<void> {
   if (!reports?.length) return;
-  const baseline = new Map((await memoryBaseline(agentId)).map((entry) => [entry.file, entry]));
+  const baseline = new Map(
+    (await memoryBaseline(agentId, executor)).map((entry) => [entry.file, entry]),
+  );
   for (const report of reports) {
     if (!FILES.includes(report.file) || sha256(report.content) !== report.sha256) continue;
     const before = baseline.get(report.file);
-    await db.transaction(async (tx) => {
+    await executor.transaction(async (tx) => {
       await tx
         .update(agentProposal)
         .set({ status: 'rejected', note: 'Replaced by a newer change', decidedAt: new Date() })
@@ -144,7 +148,17 @@ export async function decideMemoryProposal(
   userId: string,
   note: string | null,
 ): Promise<void> {
-  await db.transaction(async (tx) => {
+  const indexed = await db.transaction(async (tx) => {
+    const [candidate] = await tx
+      .select({ agentId: agentProposal.agentId })
+      .from(agentProposal)
+      .where(eq(agentProposal.id, proposalId));
+    if (candidate?.agentId)
+      await tx
+        .select({ id: aiAgent.id })
+        .from(aiAgent)
+        .where(eq(aiAgent.id, candidate.agentId))
+        .for('update');
     const [proposal] = await tx
       .update(agentProposal)
       .set({
@@ -157,10 +171,34 @@ export async function decideMemoryProposal(
       .returning();
     if (!proposal) throw new HttpError(409, 'This proposal has already been decided');
     if (!approved || !proposal.agentId) return;
-    const payload = proposal.payload as { file: MemoryFile; after: string };
+    const payload = proposal.payload as { file: MemoryFile; after: string; baseSha256?: string };
+    const [agent] = await tx
+      .select({ policy: aiAgent.runtimePolicy })
+      .from(aiAgent)
+      .where(eq(aiAgent.id, proposal.agentId))
+      .for('update');
     const [base] = (await memoryBaseline(proposal.agentId, tx)).filter(
       (entry) => entry.file === payload.file,
     );
+    if ((agent?.policy as { runtime?: string })?.runtime === 'helena') {
+      if (payload.baseSha256 !== (base?.sha256 ?? sha256(''))) {
+        throw new HttpError(409, 'Memory changed after this proposal; review a new proposal');
+      }
+      await tx.insert(agentMemoryRevision).values({
+        agentId: proposal.agentId,
+        file: payload.file,
+        content: payload.after,
+        sha256: sha256(payload.after),
+        source: 'agent',
+        proposalId: proposal.id,
+        userId,
+      });
+      await tx
+        .update(agentProposal)
+        .set({ status: 'applied' })
+        .where(eq(agentProposal.id, proposal.id));
+      return `${proposal.agentId}:${payload.file}`;
+    }
     await tx
       .delete(agentRuntimeAction)
       .where(
@@ -181,6 +219,11 @@ export async function decideMemoryProposal(
       },
     });
   });
+  if (indexed) {
+    await reindexItems(agentMemorySource, [indexed]).catch((error: unknown) => {
+      console.error('[agent-memory] approved revision reindex failed', error);
+    });
+  }
 }
 
 // A write-memory action the runner carried out: the new version is recorded, as the agent's

@@ -48,7 +48,8 @@
       "manual": "Tâche manuelle",
       "approval": "Décision d'approbation",
       "workspace": "Tâche d’espace de travail",
-      "digest": "Résumé"
+      "digest": "Résumé",
+      "escalation": "Transmission"
     },
     "results": "Résultats",
     "noSummary": "Pas encore de résumé.",
@@ -109,6 +110,21 @@
       "agent": "Agent (approuvée)",
       "owner": "Modifiée ici",
       "observed": "Trouvée dans le runtime"
+    },
+    "facts": {
+      "title": "{count, plural, one {# fait} other {# faits}}",
+      "trust": "{value} %",
+      "trustHint": "Confiance : confirmé {confirmations}×, utile {helpful}×",
+      "contradicted": "contradiction possible",
+      "edit": "Modifier",
+      "confirm": "Exact",
+      "remove": "Retirer",
+      "save": "Enregistrer",
+      "cancel": "Annuler"
+    },
+    "notes": {
+      "title": "Notes du jour",
+      "lines": "{count, plural, one {# entrée} other {# entrées}}"
     }
   },
   "proposals": {

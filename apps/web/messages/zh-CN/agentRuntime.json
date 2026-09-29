@@ -48,7 +48,8 @@
       "manual": "手动任务",
       "approval": "审批决定",
       "workspace": "工作区任务",
-      "digest": "摘要"
+      "digest": "摘要",
+      "escalation": "交接"
     },
     "results": "结果",
     "noSummary": "暂无摘要。",
@@ -109,6 +110,21 @@
       "agent": "代理（已批准）",
       "owner": "在此编辑",
       "observed": "在运行时中发现"
+    },
+    "facts": {
+      "title": "{count, plural, other {# 条事实}}",
+      "trust": "{value} %",
+      "trustHint": "可信度：确认 {confirmations} 次，有用 {helpful} 次",
+      "contradicted": "可能矛盾",
+      "edit": "编辑",
+      "confirm": "正确",
+      "remove": "移除",
+      "save": "保存",
+      "cancel": "取消"
+    },
+    "notes": {
+      "title": "每日笔记",
+      "lines": "{count, plural, other {# 条}}"
     }
   },
   "proposals": {

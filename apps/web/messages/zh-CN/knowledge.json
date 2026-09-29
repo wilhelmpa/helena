@@ -5,7 +5,10 @@
     "vault": "笔记与文件",
     "mail": "邮件",
     "chat": "聊天",
-    "run": "智能体运行"
+    "run": "智能体运行",
+    "agentSession": "智能体会话",
+    "agentMemory": "智能体记忆",
+    "fact": "事实"
   },
   "capture": {
     "inbox": "收件箱",

@@ -24,7 +24,11 @@ import {
   getRuntimeRequest,
   getRuntimeVersion,
   getTranscript,
+  correctFact,
+  listAgentFacts,
+  listAgentNotes,
   listMemoryRevisions,
+  removeFact,
   listProposals,
   listRuntimeSessions,
   requestHermesUpdate,
@@ -263,6 +267,35 @@ export function useMemoryRevisions(teamId: number, agentId: number) {
   return useQuery({
     queryKey: qk.memoryRevisions(teamId, agentId),
     queryFn: () => listMemoryRevisions(teamId, agentId),
+  });
+}
+
+export function useAgentFacts(teamId: number, agentId: number) {
+  return useQuery({
+    queryKey: qk.agentFacts(teamId, agentId),
+    queryFn: () => listAgentFacts(teamId, agentId),
+  });
+}
+
+export function useAgentNotes(teamId: number, agentId: number) {
+  return useQuery({
+    queryKey: qk.agentNotes(teamId, agentId),
+    queryFn: () => listAgentNotes(teamId, agentId),
+  });
+}
+
+// The owner's correction of a fact: its text or its trust, or its removal.
+export function useCorrectFact(teamId: number, agentId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { id: number; content?: string; trust?: number; remove?: boolean }) =>
+      input.remove
+        ? removeFact(teamId, input.id)
+        : correctFact(teamId, input.id, {
+            ...(input.content !== undefined && { content: input.content }),
+            ...(input.trust !== undefined && { trust: input.trust }),
+          }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: qk.agentFacts(teamId, agentId) }),
   });
 }
 

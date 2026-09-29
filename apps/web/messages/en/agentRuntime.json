@@ -48,7 +48,8 @@
       "manual": "Manual task",
       "approval": "Approval decision",
       "workspace": "Workspace job",
-      "digest": "Summary"
+      "digest": "Summary",
+      "escalation": "Hand-over"
     },
     "results": "Results",
     "noSummary": "No summary yet.",
@@ -109,6 +110,21 @@
       "agent": "Agent (approved)",
       "owner": "Edited here",
       "observed": "Found in the runtime"
+    },
+    "facts": {
+      "title": "{count, plural, one {# fact} other {# facts}}",
+      "trust": "{value} %",
+      "trustHint": "Trust: confirmed {confirmations}×, helpful {helpful}×",
+      "contradicted": "possible contradiction",
+      "edit": "Edit",
+      "confirm": "Correct",
+      "remove": "Remove",
+      "save": "Save",
+      "cancel": "Cancel"
+    },
+    "notes": {
+      "title": "Daily notes",
+      "lines": "{count, plural, one {# entry} other {# entries}}"
     }
   },
   "proposals": {

@@ -14,6 +14,7 @@ import type { RunModelReport } from './runtime';
 // only ever hands back that agent's work.
 
 export interface Run {
+  projectId?: number | null;
   id: number;
   // 'workspace': a job for the runner itself (the prompt is its JSON), not for the model.
   // 'digest': a text-only run (digest.ts), the update center's summary of release notes.
@@ -55,6 +56,7 @@ export interface Run {
 // where the coding agent session already holds it and only the new message is sent. Null
 // there means no session yet: start one and report the id it got.
 export interface ChatMessage {
+  projectId?: number | null;
   id: number;
   attempts?: number;
   threadId: string;
@@ -365,6 +367,8 @@ export class Client {
       // Why it failed, where the runtime's words say: Helena records a model the provider
       // does not serve this account and retries nothing that cannot pass.
       failure?: RuntimeFailure;
+      // The task Helena's own loop handed to a bigger model: Helena starts the follow-up run.
+      escalation?: { target: string; reason: string; detail: string | null; handover: string };
     },
   ): Promise<ReflectionRequest | null> {
     const res = await this.post(`/agent-runs/${runId}/result${claimQuery(claim)}`, result);
@@ -451,6 +455,7 @@ export class Client {
       spend?: Spend | null;
       runtime?: RunModelReport;
       failure?: RuntimeFailure;
+      escalation?: { target: string; reason: string; detail: string | null; handover: string };
     },
     claim?: number,
   ): Promise<void> {

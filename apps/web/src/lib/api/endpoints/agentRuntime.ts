@@ -374,6 +374,50 @@ export const listMemoryRevisions = (teamId: number, agentId: number, file?: stri
     `${agentPath(teamId, agentId)}/memory/revisions${file ? `?file=${encodeURIComponent(file)}` : ''}`,
   );
 
+// ---------------------------------------------------------------- facts and daily notes
+
+// A fact of the fact store (docs/helena-decisions/zentrale-laufzeit.md §8.2): what an agent
+// learned, with the trust it earned.
+export interface AgentFact {
+  id: number;
+  content: string;
+  category: string;
+  tags: string[];
+  entities: string[];
+  trust: number;
+  project: string | null;
+  confirmations: number;
+  helpful: number;
+  unhelpful: number;
+  contradictedBy: number | null;
+  updatedAt: string;
+}
+
+export interface AgentNote {
+  day: string;
+  content: string;
+  updatedAt: string;
+}
+
+export const listAgentFacts = (teamId: number, agentId: number) =>
+  request<AgentFact[]>(`${agentPath(teamId, agentId)}/facts`);
+
+export const listAgentNotes = (teamId: number, agentId: number) =>
+  request<AgentNote[]>(`${agentPath(teamId, agentId)}/memory/notes`);
+
+export const correctFact = (
+  teamId: number,
+  factId: number,
+  change: { content?: string; trust?: number },
+) =>
+  request<{ status: string }>(`/teams/${teamId}/facts/${factId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(change),
+  });
+
+export const removeFact = (teamId: number, factId: number) =>
+  request<{ status: string }>(`/teams/${teamId}/facts/${factId}`, { method: 'DELETE' });
+
 // ---------------------------------------------------------------- instance
 
 export interface EmergencyStop {

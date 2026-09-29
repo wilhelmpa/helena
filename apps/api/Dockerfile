@@ -24,6 +24,8 @@ COPY packages/net/package.json ./packages/net/
 COPY packages/storage/package.json ./packages/storage/
 COPY packages/vault/package.json ./packages/vault/
 COPY packages/runner/package.json ./packages/runner/
+COPY packages/agent-runtime/package.json ./packages/agent-runtime/
+COPY packages/facts/package.json ./packages/facts/
 COPY packages/eslint-config/package.json ./packages/eslint-config/
 # INSTALL_FILTER installs only the api workspace and its dependency closure, so the
 # image excludes every other app's deps. INSTALL_FLAGS defaults to --production; the

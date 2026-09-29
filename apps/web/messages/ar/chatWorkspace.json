@@ -304,7 +304,8 @@
     "commandScriptHint": "مسار نسبي لمجلد المشروع. يتلقى السكربت المهمة بصيغة JSON ويعمل في المنطقة المعزولة للمشروع؛ مخرجاته هي النتيجة.",
     "webhookUrl": "العنوان (HTTPS)",
     "webhookSecretEnv": "المتغير الذي يحمل مفتاح التوقيع",
-    "webhookHint": "تستدعي {appName} العنوان موقّعًا وفق Standard Webhooks. أعطِ الوكيل المفتاح (whsec_…) كمتغير بيئة ضمن الوصول."
+    "webhookHint": "تستدعي {appName} العنوان موقّعًا وفق Standard Webhooks. أعطِ الوكيل المفتاح (whsec_…) كمتغير بيئة ضمن الوصول.",
+    "helena": "Helena (المحلي أولًا)"
   },
   "context": {
     "task": "المهمة {identifier} «{title}»",

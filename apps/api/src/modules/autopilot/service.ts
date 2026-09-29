@@ -340,7 +340,7 @@ export async function decideForRuntime(
     workspace: question.workspace,
     intent: question.intent,
   });
-  const adapter = ['hermes', 'claude', 'codex', 'gateway'].includes(question.runtime)
+  const adapter = ['hermes', 'claude', 'codex', 'helena', 'gateway'].includes(question.runtime)
     ? question.runtime
     : `runtime:${question.runtime.slice(0, 24)}`;
   return decide({

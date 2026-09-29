@@ -51,6 +51,7 @@ export interface AgentRuntimePolicy {
   reflection?: ReflectionMode;
   // Which runtime runs the agent. Unset is Hermes; the project provisions the selected runner.
   runtime?: AgentRuntimeKind;
+  helena?: HelenaRuntimeSettings;
   commandScript?: string;
   webhookUrl?: string;
   webhookSecretEnv?: string;
@@ -83,7 +84,23 @@ export interface FallbackModel {
 }
 
 export type ReflectionMode = 'off' | 'failure' | 'complex';
-export type AgentRuntimeKind = 'hermes' | 'claude' | 'codex' | 'command' | 'webhook';
+export type AgentRuntimeKind = 'hermes' | 'claude' | 'codex' | 'command' | 'webhook' | 'helena';
+
+// Settings of Helena's own loop (runtime `helena`, docs/helena-decisions/zentrale-laufzeit.md).
+export type HelenaToolProfile = 'assistent' | 'recherche' | 'coder-lite' | 'voll';
+export interface HelenaRuntimeSettings {
+  toolProfile?: HelenaToolProfile;
+  escalation?: {
+    mode?: 'auto' | 'never' | 'always';
+    target?: string | null;
+    taskKinds?: string[];
+    confidenceBelow?: number;
+    onFailure?: boolean;
+  };
+  browserBudgetSeconds?: number;
+}
+
+export const getAgentRuntimes = () => request<{ helena: boolean }>('/agent-runtimes');
 export const AGENT_RUNTIME_KINDS = [
   'hermes',
   'claude',

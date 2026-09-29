@@ -416,7 +416,7 @@ def descriptor_identity(name: str, item: dict[str, Any]) -> tuple[str, str] | No
 
 # The runtimes a project agent's descriptor may name besides Hermes. Each gets a separate
 # runner entry and profile directory; the runner executes a CLI, script or signed HTTP call.
-CLI_RUNTIMES = ('claude', 'codex', 'command', 'webhook')
+CLI_RUNTIMES = ('claude', 'codex', 'command', 'webhook', 'helena')
 
 # What a Claude Code agent can be set to, by Claude Code's own aliases: each follows the
 # newest model of its family, so the list needs no update when a model is released. The
@@ -438,6 +438,14 @@ def cli_models(runtime: str, hermes_models: list[dict[str, Any]]) -> list[dict[s
         return [dict(model) for model in CLAUDE_MODELS]
     if runtime in ('command', 'webhook'):
         return []
+    if runtime == 'helena':
+        # Helena's own loop drives Helena's local model servers (and API-key providers the
+        # agent is given); its models are the local ones the catalog lists.
+        return [
+            {key: value for key, value in model.items() if key != 'provider'}
+            for model in hermes_models
+            if str(model.get('provider', '')).startswith('helena-')
+        ]
     return [
         {key: value for key, value in model.items() if key != 'provider'}
         for model in hermes_models

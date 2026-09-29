@@ -1,0 +1,32 @@
+{
+  "name": "@helena/agent-runtime",
+  "version": "0.1.0",
+  "description": "Helena's own agent loop: local and API-key models, Helena's tools, sessions, memory and escalation",
+  "license": "Apache-2.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./cli": "./src/cli.ts"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "@ai-sdk/anthropic": "^4.0.66",
+    "@ai-sdk/openai-compatible": "^3.0.58",
+    "@helena/facts": "workspace:*",
+    "@helena/sdk": "workspace:*",
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "ai": "^7"
+  },
+  "devDependencies": {
+    "@ai-sdk/provider": "4.0.18",
+    "@repo/eslint-config": "workspace:*",
+    "@types/bun": "latest",
+    "eslint": "^9.39.0",
+    "typescript": "^6.0.3"
+  }
+}

@@ -25,6 +25,7 @@
     "@helena/connectors": "workspace:*",
     "@helena/decisions": "workspace:*",
     "@helena/finance": "workspace:*",
+    "@helena/facts": "workspace:*",
     "@helena/knowledge": "workspace:*",
     "@helena/locales": "workspace:*",
     "@helena/loop": "workspace:*",

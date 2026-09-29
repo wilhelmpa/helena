@@ -184,7 +184,8 @@
       "heartbeat": "berjalan saat denyut berkala",
       "approval": "dijalankan setelah keputusan persetujuan",
       "workspace": "menjalankan tugas ruang kerja",
-      "digest": "menulis ringkasan"
+      "digest": "menulis ringkasan",
+      "escalation": "mengambil alih serah terima"
     }
   },
   "agentHealth": {

@@ -176,6 +176,7 @@ export type {
   RuntimeAction,
   RuntimeCompression,
   RuntimeHermesSettings,
+  RuntimeHelenaSettings,
   RuntimeLearning,
   RuntimeMcpServer,
   RuntimeMcpValue,
@@ -441,3 +442,5 @@ export {
   priorityProxyBaseUrl,
   type PriorityConfig,
 } from './halogen-priority';
+
+export * from './escalation';

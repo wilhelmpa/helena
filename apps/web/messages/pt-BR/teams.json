@@ -906,7 +906,43 @@
     "groupAgents": "Agentes",
     "copies": "{count, plural, =0 {Nenhuma cópia} one {# cópia} other {# cópias}}",
     "moreActionsFor": "Ações de {name}",
-    "defaultModel": "Modelo padrão"
+    "defaultModel": "Modelo padrão",
+    "helenaRuntime": {
+      "toolProfile": "Ferramentas",
+      "profile": {
+        "assistent": "Assistência",
+        "recherche": "Pesquisa com navegador",
+        "coder-lite": "Programação simples",
+        "voll": "Todas as ferramentas"
+      },
+      "profileHint": {
+        "assistent": "Tarefas, comentários, conhecimento, memória e fatos. O agente encontra mais ferramentas quando precisa.",
+        "recherche": "Como Assistência, mais o navegador do projeto.",
+        "coder-lite": "Como Assistência, mais arquivos e shell na pasta de trabalho.",
+        "voll": "Todas as ferramentas da Helena diretamente. Precisa de mais contexto."
+      },
+      "browserBudget": "Tempo de navegador por tarefa (segundos)",
+      "browserBudgetHint": "Depois o agente não tem mais ferramentas de navegador e responde com o que tem.",
+      "escalationTarget": "Passar para um modelo grande",
+      "target": {
+        "none": "Nunca passar",
+        "claude": "Claude Code (assinatura)",
+        "codex": "Codex (assinatura)"
+      },
+      "escalationHint": "Um agente deste projeto com a execução escolhida assume a tarefa numa continuação, com o histórico.",
+      "taskKinds": "Sempre passar em",
+      "kind": {
+        "programmierung-gross": "Programação maior",
+        "architektur": "Arquitetura",
+        "sicherheit": "Segurança",
+        "recht": "Direito e contratos",
+        "aussenkommunikation": "Textos externos"
+      },
+      "onFailure": "Passar após uma falha (loop, testes vermelhos, limite de tempo)",
+      "confidence": "Passar abaixo de uma confiança de (%)",
+      "confidenceOff": "desligado",
+      "confidenceHint": "Antes do início, o modelo de decisão avalia se um modelo pequeno basta. Vazio: não perguntar."
+    }
   },
   "members": {
     "roleSaved": "{name} agora é {role}",

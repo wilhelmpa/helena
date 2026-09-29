@@ -1,0 +1,22 @@
+{
+  "name": "@helena/facts",
+  "version": "0.1.0",
+  "description": "Helena's fact store principle: holographic reduced representations (phase encoding), entity extraction and ranking",
+  "license": "Apache-2.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test"
+  },
+  "devDependencies": {
+    "@repo/eslint-config": "workspace:*",
+    "@types/bun": "latest",
+    "eslint": "^9.39.0",
+    "typescript": "^6.0.3"
+  }
+}

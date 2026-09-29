@@ -929,6 +929,8 @@ describe('ai agents', () => {
       'GET /projects/:projectKey/ai-agents/:agentId/chat/:messageId/events',
       'GET /projects/:projectKey/ai-agents/:agentId/chat/:messageId/stream',
       'POST /projects/:projectKey/ai-agents/:agentId/chat/:messageId/cancel',
+      'GET /teams/:teamId/ai-agents/:agentId/facts',
+      'GET /teams/:teamId/ai-agents/:agentId/memory/notes',
       'GET /teams/:teamId/ai-agents/:agentId/runtime-sync',
       'POST /teams/:teamId/ai-agents/:agentId/runtime-sync/rewrite',
       'GET /teams/:teamId/ai-agents/:agentId/autopilot',

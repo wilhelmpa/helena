@@ -1,3 +1,5 @@
+import { queueChatEscalation } from './escalation';
+import type { EscalationReport } from '../runner/escalation';
 import {
   db,
   getDisplayName,
@@ -20,6 +22,7 @@ import {
   isNotNull,
   isNull,
   notExists,
+  or,
   sql,
 } from 'drizzle-orm';
 import { isDeepStrictEqual } from 'node:util';
@@ -996,6 +999,7 @@ export async function showVersion(
 }
 
 export interface ClaimedChat {
+  projectId: number | null;
   id: number;
   threadId: string;
   prompt: string;
@@ -1093,7 +1097,7 @@ async function claimMessage(agent: RunnerAgent): Promise<ClaimedChat | null> {
       m.thread_id AS "threadId",
       m.attempts,
       m.model_check AS "preclaimCheck",
-      (SELECT model FROM agent_chat_thread t WHERE t.id = m.thread_id) AS "model",
+      (SELECT CASE WHEN t.agent_id = m.agent_id THEN t.model ELSE m.model END FROM agent_chat_thread t WHERE t.id = m.thread_id) AS "model",
       (SELECT thinking_level FROM agent_chat_thread t WHERE t.id = m.thread_id) AS "thinkingLevel",
       (SELECT project_id FROM agent_chat_thread t WHERE t.id = m.thread_id) AS "projectId"
   `);
@@ -1190,6 +1194,7 @@ async function claimMessage(agent: RunnerAgent): Promise<ClaimedChat | null> {
   return {
     id: row.id,
     threadId: row.threadId,
+    projectId: row.projectId,
     prompt:
       earlier.length > 0
         ? frameChatPrompt(earlier, asked, agent.id, await getDisplayName())
@@ -1552,13 +1557,13 @@ export async function cancelMessage(
   userId: string,
 ): Promise<boolean> {
   const owned = await db
-    .select({ id: agentChatMessage.id })
+    .select({ id: agentChatMessage.id, agentId: agentChatMessage.agentId })
     .from(agentChatMessage)
     .innerJoin(agentChatThread, eq(agentChatThread.id, agentChatMessage.threadId))
     .where(
       and(
         eq(agentChatMessage.id, messageId),
-        eq(agentChatMessage.agentId, agentId),
+        or(eq(agentChatMessage.agentId, agentId), eq(agentChatThread.agentId, agentId)),
         eq(agentChatThread.userId, userId),
       ),
     )
@@ -1567,7 +1572,7 @@ export async function cancelMessage(
   await db
     .update(agentChatMessage)
     .set({ status: 'canceled', finishedAt: new Date() })
-    .where(liveAnswer(agentId, messageId));
+    .where(liveAnswer(owned[0].agentId, messageId));
   await notifyChatAnswer(messageId);
   return true;
 }
@@ -1586,6 +1591,7 @@ export async function finishMessage(
     spend?: Spend | null;
     runtime?: RunModelReport;
     failure?: RuntimeFailure;
+    escalation?: EscalationReport;
   },
   // The runtime the agent runs on, which a finding about its model is recorded under.
   runtime = 'hermes',
@@ -1633,6 +1639,9 @@ export async function finishMessage(
       >`(SELECT t.project_id FROM agent_chat_thread t WHERE t.id = ${agentChatMessage.threadId})`,
     });
   if (rows.length > 0) {
+    if (result.escalation && result.status === 'success') {
+      await queueChatEscalation(agentId, messageId, result.escalation);
+    }
     await learnFromOutcome({
       runtime,
       report: result.runtime,
@@ -1687,10 +1696,25 @@ export async function finishMessage(
           eq(agentChatMessage.id, messageId),
           eq(agentChatMessage.agentId, agentId),
           eq(agentChatMessage.attempts, claim),
-          eq(agentChatMessage.status, result.status),
+          or(
+            eq(agentChatMessage.status, result.status),
+            result.escalation && result.status === 'success'
+              ? and(
+                  eq(agentChatMessage.status, 'failed'),
+                  eq(
+                    agentChatMessage.lastError,
+                    `No eligible agent for ${result.escalation.target}`,
+                  ),
+                )
+              : undefined,
+          ),
         ),
       );
-    if (finished) return true;
+    if (finished) {
+      if (result.escalation && result.status === 'success')
+        await queueChatEscalation(agentId, messageId, result.escalation);
+      return true;
+    }
   }
   // Stopped from the chat while the command was ending: the answer is already closed,
   // so there is nothing to record and nothing wrong.
@@ -1771,7 +1795,7 @@ export async function readEvents(
     .where(
       and(
         eq(agentChatMessage.id, messageId),
-        eq(agentChatMessage.agentId, agentId),
+        or(eq(agentChatMessage.agentId, agentId), eq(agentChatThread.agentId, agentId)),
         eq(agentChatThread.userId, userId),
       ),
     )

@@ -1,5 +1,5 @@
 import { setTimeout as sleep } from 'node:timers/promises';
-import { AnswerStream, FinalAnswerReader, UsageReader } from './agui';
+import { AnswerStream, EscalationReader, FinalAnswerReader, UsageReader } from './agui';
 import { isTransient, RequestError, type Client, type ReflectionRequest, type Run } from './client';
 import type { RunnerConfig } from './config';
 import { execute, modelProvider, type Outcome } from './execute';
@@ -65,6 +65,7 @@ function runTimeline(
 export function runEnv(run: Run): Record<string, string> {
   return {
     ITSAPLAN_RUN_ID: String(run.id),
+    ITSAPLAN_PROJECT_ID: String(run.projectId ?? ''),
     ITSAPLAN_TRIGGER: run.trigger,
     ITSAPLAN_SYSTEM_PROMPT: run.systemPrompt,
     ITSAPLAN_ISSUE: run.issueIdentifier ?? '',
@@ -151,6 +152,7 @@ export async function perform(
     }
   };
   const answer = new FinalAnswerReader(config.outputFormat, saveSession);
+  const escalation = new EscalationReader(config.outputFormat);
   const redactor = runRedactor(config, hermes?.env ?? {}, hermes?.delivered?.secrets);
   const mask = new SecretMask(redactor.secrets());
   const timeline = runTimeline(config, client, run, redactor);
@@ -174,6 +176,7 @@ export async function perform(
       },
       hooks: hermes?.hooks,
       delivered: hermes?.delivered?.names,
+      ...(hermes?.input && { input: hermes.input }),
     },
     {
       onData: (chunk) => {
@@ -181,6 +184,7 @@ export async function perform(
         spend.write(chunk);
         logins.write(chunk);
         answer.write(chunk);
+        escalation.write(chunk);
         timeline.stream.write(chunk);
         limits?.write(chunk);
       },
@@ -197,13 +201,26 @@ export async function perform(
   }
   usage.end();
   answer.end();
+  // A task Helena's own loop handed to a bigger model is done here: Helena starts the
+  // follow-up run with the hand-over (zentrale-laufzeit.md §9).
+  const handedOver = escalation.value();
+  const settled: Outcome =
+    handedOver && outcome.status === 'failed'
+      ? {
+          ...outcome,
+          status: 'success',
+          output: answer.text() ?? outcome.output,
+          error: undefined,
+          failure: undefined,
+        }
+      : outcome;
   await (
-    outcome.status === 'success'
-      ? timeline.stream.finish(outcome.output)
+    settled.status === 'success'
+      ? timeline.stream.finish(settled.output)
       : timeline.stream.fail(
-          outcome.error ?? 'The run failed',
-          outcome.output,
-          outcome.failure?.code,
+          settled.error ?? 'The run failed',
+          settled.output,
+          settled.failure?.code,
         )
   ).catch(() => {});
   const uses = logins.uses();
@@ -222,10 +239,13 @@ export async function perform(
   );
   // The answer and the error are the command's own words: masked like its timeline.
   const result = {
-    ...outcome,
-    ...(outcome.error !== undefined && { error: mask.text(outcome.error) }),
+    ...settled,
+    ...(handedOver && {
+      escalation: { ...handedOver, handover: mask.text(handedOver.handover) },
+    }),
+    ...(settled.error !== undefined && { error: mask.text(settled.error) }),
     // The answer itself, where the command prints an event stream (Claude Code, Codex).
-    output: mask.text(answer.text() ?? outcome.output),
+    output: mask.text(answer.text() ?? settled.output),
     usage: outcome.usage ?? usage.value(),
     spend:
       outcome.spend ??

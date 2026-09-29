@@ -906,7 +906,43 @@
     "groupAgents": "Agenten",
     "copies": "{count, plural, =0 {Keine Kopien} one {# Kopie} other {# Kopien}}",
     "moreActionsFor": "Aktionen für {name}",
-    "defaultModel": "Standardmodell"
+    "defaultModel": "Standardmodell",
+    "helenaRuntime": {
+      "toolProfile": "Werkzeuge",
+      "profile": {
+        "assistent": "Assistenz",
+        "recherche": "Recherche mit Browser",
+        "coder-lite": "Einfaches Programmieren",
+        "voll": "Alle Werkzeuge"
+      },
+      "profileHint": {
+        "assistent": "Aufgaben, Kommentare, Wissen, Gedächtnis und Fakten. Weitere Werkzeuge findet der Agent bei Bedarf.",
+        "recherche": "Wie Assistenz, dazu der Projekt-Browser direkt.",
+        "coder-lite": "Wie Assistenz, dazu Dateien und Shell im Arbeitsordner.",
+        "voll": "Alle Werkzeuge von Helena direkt. Braucht den meisten Kontext."
+      },
+      "browserBudget": "Browser-Zeit je Auftrag (Sekunden)",
+      "browserBudgetHint": "Danach bekommt der Agent keine Browser-Werkzeuge mehr und antwortet mit dem, was er hat.",
+      "escalationTarget": "Übergabe an ein großes Modell",
+      "target": {
+        "none": "Nie übergeben",
+        "claude": "Claude Code (Abo)",
+        "codex": "Codex (Abo)"
+      },
+      "escalationHint": "Ein Agent dieses Projekts mit der gewählten Ausführung übernimmt die Aufgabe als Folge-Lauf, mit dem bisherigen Verlauf.",
+      "taskKinds": "Immer übergeben bei",
+      "kind": {
+        "programmierung-gross": "Größerer Programmierarbeit",
+        "architektur": "Architektur",
+        "sicherheit": "Sicherheit",
+        "recht": "Recht und Verträgen",
+        "aussenkommunikation": "Texten nach außen"
+      },
+      "onFailure": "Bei Fehlschlag übergeben (Schleife, rote Tests, Zeitgrenze)",
+      "confidence": "Übergeben unter Sicherheit (%)",
+      "confidenceOff": "aus",
+      "confidenceHint": "Der Entscheider schätzt vor dem Start, ob ein kleines Modell reicht. Leer lassen: nicht fragen."
+    }
   },
   "members": {
     "roleSaved": "{name} ist jetzt {role}",

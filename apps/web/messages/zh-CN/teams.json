@@ -906,7 +906,43 @@
     "groupAgents": "代理",
     "copies": "{count, plural, =0 {没有副本} other {# 个副本}}",
     "moreActionsFor": "{name} 的操作",
-    "defaultModel": "默认模型"
+    "defaultModel": "默认模型",
+    "helenaRuntime": {
+      "toolProfile": "工具",
+      "profile": {
+        "assistent": "助理",
+        "recherche": "带浏览器的调研",
+        "coder-lite": "简单编程",
+        "voll": "全部工具"
+      },
+      "profileHint": {
+        "assistent": "任务、评论、知识、记忆和事实。其余工具由智能体按需查找。",
+        "recherche": "同助理，另加项目浏览器。",
+        "coder-lite": "同助理，另加工作目录中的文件和命令行。",
+        "voll": "直接提供 Helena 的全部工具。需要最多上下文。"
+      },
+      "browserBudget": "每个任务的浏览器时间（秒）",
+      "browserBudgetHint": "之后智能体不再有浏览器工具，并用已有信息回答。",
+      "escalationTarget": "交给大模型",
+      "target": {
+        "none": "从不",
+        "claude": "Claude Code（订阅）",
+        "codex": "Codex（订阅）"
+      },
+      "escalationHint": "本项目中使用所选执行方式的智能体会以后续运行接手任务，并带上已有记录。",
+      "taskKinds": "以下情况总是交出",
+      "kind": {
+        "programmierung-gross": "较大的编程工作",
+        "architektur": "架构",
+        "sicherheit": "安全",
+        "recht": "法律与合同",
+        "aussenkommunikation": "对外文本"
+      },
+      "onFailure": "失败后交出（循环、测试失败、超时）",
+      "confidence": "低于置信度时交出（%）",
+      "confidenceOff": "关闭",
+      "confidenceHint": "开始前由决策模型判断小模型是否足够。留空：不询问。"
+    }
   },
   "members": {
     "roleSaved": "{name} 现在是{role}",

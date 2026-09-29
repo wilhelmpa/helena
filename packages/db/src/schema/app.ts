@@ -837,7 +837,7 @@ export const agentRun = pgTable(
     ),
     check(
       'agent_run_trigger_check',
-      sql`${t.trigger} IN ('mention', 'delegation', 'subtask', 'field', 'schedule', 'manual', 'approval', 'workspace', 'digest', 'heartbeat')`,
+      sql`${t.trigger} IN ('mention', 'delegation', 'subtask', 'field', 'schedule', 'manual', 'approval', 'workspace', 'digest', 'heartbeat', 'escalation')`,
     ),
     index('agent_run_due_idx').on(t.status, t.nextAttemptAt),
     index('agent_run_project_idx').on(t.projectId),
@@ -2036,7 +2036,11 @@ export const agentMemoryRevision = pgTable(
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
-    check('agent_memory_revision_file_check', sql`${t.file} IN ('MEMORY.md', 'USER.md')`),
+    // The two memory files, and the daily notes of Helena's own runtime (notes/<date>.md).
+    check(
+      'agent_memory_revision_file_check',
+      sql`${t.file} IN ('MEMORY.md', 'USER.md') OR ${t.file} ~ '^notes/[0-9]{4}-[0-9]{2}-[0-9]{2}[.]md$'`,
+    ),
     check('agent_memory_revision_source_check', sql`${t.source} IN ('agent', 'owner', 'observed')`),
     index('agent_memory_revision_agent_idx').on(t.agentId, t.file, t.id),
   ],

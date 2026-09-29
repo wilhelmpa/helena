@@ -906,7 +906,43 @@
     "groupAgents": "الوكلاء",
     "copies": "{count, plural, =0 {لا نسخ} one {نسخة واحدة} two {نسختان} few {# نسخ} many {# نسخة} other {# نسخة}}",
     "moreActionsFor": "إجراءات {name}",
-    "defaultModel": "النموذج الافتراضي"
+    "defaultModel": "النموذج الافتراضي",
+    "helenaRuntime": {
+      "toolProfile": "الأدوات",
+      "profile": {
+        "assistent": "المساعدة",
+        "recherche": "بحث مع المتصفح",
+        "coder-lite": "برمجة بسيطة",
+        "voll": "كل الأدوات"
+      },
+      "profileHint": {
+        "assistent": "المهام والتعليقات والمعرفة والذاكرة والحقائق. يجد الوكيل أدوات أخرى عند الحاجة.",
+        "recherche": "مثل المساعدة، مع متصفح المشروع.",
+        "coder-lite": "مثل المساعدة، مع الملفات والصدفة في مجلد العمل.",
+        "voll": "كل أدوات Helena مباشرة. تحتاج إلى أكبر قدر من السياق."
+      },
+      "browserBudget": "وقت المتصفح لكل مهمة (ثوانٍ)",
+      "browserBudgetHint": "بعد ذلك لا يملك الوكيل أدوات المتصفح ويجيب بما لديه.",
+      "escalationTarget": "التسليم إلى نموذج كبير",
+      "target": {
+        "none": "عدم التسليم أبدًا",
+        "claude": "Claude Code (اشتراك)",
+        "codex": "Codex (اشتراك)"
+      },
+      "escalationHint": "يتولى وكيل من هذا المشروع بطريقة التنفيذ المختارة المهمة كتشغيل لاحق، مع السجل.",
+      "taskKinds": "التسليم دائمًا في حالة",
+      "kind": {
+        "programmierung-gross": "برمجة أكبر",
+        "architektur": "الهندسة",
+        "sicherheit": "الأمان",
+        "recht": "القانون والعقود",
+        "aussenkommunikation": "نصوص خارجية"
+      },
+      "onFailure": "التسليم بعد الفشل (حلقة، اختبارات حمراء، مهلة)",
+      "confidence": "التسليم تحت ثقة (%)",
+      "confidenceOff": "متوقف",
+      "confidenceHint": "قبل البدء يقدّر نموذج القرار إن كان نموذج صغير يكفي. فارغ: لا تسأل."
+    }
   },
   "members": {
     "roleSaved": "{name} الآن {role}",
