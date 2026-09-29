@@ -1799,7 +1799,7 @@
   },
   "src/features/home/dashboard/HomeDashboard.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 3
+      "count": 2
     }
   },
   "src/features/home/dashboard/SystemDetailsDialog.tsx": {
