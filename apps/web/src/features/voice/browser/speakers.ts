@@ -19,6 +19,7 @@ import { markVoiceOutput } from './voiceOutput';
 export interface VoiceSpeaker {
   readonly engine: 'browser' | 'local';
   enqueue(text: string): void;
+  preload(texts: string[]): void;
   pause(): void;
   resume(): void;
   // Stops and forgets everything queued.
@@ -37,7 +38,7 @@ export interface SpeakerEvents {
   onStart(): void;
   onIdle(): void;
   // A piece is audible now (its sound started), not only queued or on its way.
-  onAudible?(): void;
+  onAudible?(text: string): void;
   onAnalyser?(analyser: AnalyserNode | null): void;
   onError?(text: string, error: unknown): void;
 }
@@ -100,7 +101,7 @@ export function createBrowserSpeaker(
       next();
     };
     utterance.onstart = () => {
-      if (mine === turn) events.onAudible?.();
+      if (mine === turn) events.onAudible?.(text);
     };
     utterance.onend = done;
     utterance.onerror = (event) => {
@@ -123,6 +124,7 @@ export function createBrowserSpeaker(
 
   return {
     engine: 'browser',
+    preload() {},
     enqueue(text) {
       if (!text.trim()) return;
       queue.push(text);
@@ -239,6 +241,7 @@ export function createLocalSpeaker(
     speakText(text, speechLanguage().slice(0, 2).toLowerCase(), signal),
 ): VoiceSpeaker {
   const queue: Piece[] = [];
+  const preloaded = new Map<string, Piece>();
   let context: AudioContext | null = null;
   let analyser: AnalyserNode | null = null;
   let playing: Playing | null = null;
@@ -339,7 +342,7 @@ export function createLocalSpeaker(
         current.audible = true;
         window.setTimeout(
           () => {
-            if (current.turn === turn) events.onAudible?.();
+            if (current.turn === turn) events.onAudible?.(piece.text);
           },
           Math.max(0, (at - ctx.currentTime) * 1000),
         );
@@ -370,24 +373,42 @@ export function createLocalSpeaker(
   };
 
   const forget = (pieces: Piece[]) => {
-    for (const piece of pieces) piece.abort.abort();
+    for (const piece of pieces) if (preloaded.get(piece.text) !== piece) piece.abort.abort();
   };
 
   return {
     engine: 'local',
     enqueue(text) {
       if (!text.trim()) return;
-      queue.push({
-        text,
-        abort: new AbortController(),
-        buffers: [],
-        done: false,
-        failed: null,
-        loading: false,
-        changed: null,
-      });
+      queue.push(
+        preloaded.get(text) ?? {
+          text,
+          abort: new AbortController(),
+          buffers: [],
+          done: false,
+          failed: null,
+          loading: false,
+          changed: null,
+        },
+      );
       prefetch();
       next();
+    },
+    preload(texts) {
+      for (const text of texts) {
+        if (preloaded.has(text)) continue;
+        const piece: Piece = {
+          text,
+          abort: new AbortController(),
+          buffers: [],
+          done: false,
+          failed: null,
+          loading: false,
+          changed: null,
+        };
+        preloaded.set(text, piece);
+        load(piece);
+      }
     },
     pause() {
       paused = true;
@@ -424,6 +445,8 @@ export function createLocalSpeaker(
     destroy() {
       stopSources();
       forget(queue.splice(0));
+      for (const piece of preloaded.values()) piece.abort.abort();
+      preloaded.clear();
       setBusy(false);
       events.onAnalyser?.(null);
       analyser?.disconnect();

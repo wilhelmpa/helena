@@ -250,6 +250,11 @@
       "availabilityHint": "Works only if the browser already has a German offline speech pack. Helena does not download one."
     },
     "title": "Voice in the chat",
+    "progress": { "title": "Progress updates", "hint": "Ava briefly says what she is working on." },
+    "readFull": {
+      "title": "Read full answers",
+      "hint": "Ava reads the entire answer and briefly describes code and tables."
+    },
     "loading": "Loading …",
     "failed": "The voice settings could not be loaded.",
     "aliases": {

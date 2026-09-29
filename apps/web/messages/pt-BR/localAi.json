@@ -243,6 +243,14 @@
     }
   },
   "voice": {
+    "progress": {
+      "title": "Atualizações de andamento",
+      "hint": "Ava diz brevemente no que está trabalhando."
+    },
+    "readFull": {
+      "title": "Ler respostas completas",
+      "hint": "Ava lê toda a resposta e resume códigos e tabelas."
+    },
     "wake": {
       "title": "Listen for “Ava”",
       "hint": "The microphone stays open while a chat page is open. Before “Ava”, only on-device recognition processes your voice; nothing is saved.",

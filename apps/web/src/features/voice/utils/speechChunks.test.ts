@@ -47,10 +47,11 @@ describe('nextSpeechChunks', () => {
     );
   });
 
-  it('skips code blocks whole and waits while one is still open', () => {
+  it('announces code blocks and waits while one is still open', () => {
     const answer = 'Hier ist der Code dazu:\n```ts\nconst a = 1;\n```\nDanach ist alles fertig.';
     assert.deepEqual(nextSpeechChunks(answer, 0, true).chunks, [
       'Hier ist der Code dazu:',
+      'Den Code zeige ich dir im Chat.',
       'Danach ist alles fertig.',
     ]);
     const open = 'Hier ist der Code dazu:\n```ts\nconst a = 1; // Wichtig. Ja.\n';
@@ -89,11 +90,19 @@ describe('nextSpeechChunks', () => {
     assert.equal(chunks.join(' '), long);
   });
 
-  it('says nothing for an answer that is only code', () => {
+  it('announces an answer that is only code', () => {
     assert.deepEqual(nextSpeechChunks('```\nls -la\n```', 0, true), {
-      chunks: [],
+      chunks: ['Den Code zeige ich dir im Chat.'],
       offset: 14,
     });
+  });
+
+  it('announces a table without outer pipes and continues with prose', () => {
+    const answer = 'Name | Wert\n--- | ---\nA | 1\nDas Ergebnis folgt.';
+    assert.deepEqual(nextSpeechChunks(answer, 0, true).chunks, [
+      'Tabelle mit den Spalten Name, Wert und 1 Zeile.',
+      'Das Ergebnis folgt.',
+    ]);
   });
 });
 

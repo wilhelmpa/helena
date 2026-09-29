@@ -26,6 +26,7 @@ export interface ConversationOptions {
   messages: ConversationMessage[];
   busy: boolean;
   queued: number;
+  tool?: string | null;
   send: (text: string) => void;
   onProblem: (problem: ConversationProblem) => void;
 }
@@ -115,12 +116,22 @@ export function useConversation(options: ConversationOptions): Conversation {
       speed: voice.speed,
       immediateResponse: voice.immediateResponse,
       bridgeEnabled: voice.bridgeEnabled,
+      progressEnabled: voice.progressEnabled,
+      readFullAnswers: voice.readFullAnswers,
     });
-  }, [controller, voice.pauseMs, voice.speed, voice.immediateResponse, voice.bridgeEnabled]);
+  }, [
+    controller,
+    voice.pauseMs,
+    voice.speed,
+    voice.immediateResponse,
+    voice.bridgeEnabled,
+    voice.progressEnabled,
+    voice.readFullAnswers,
+  ]);
 
   useEffect(() => {
-    controller().update(options.messages, options.busy, options.queued);
-  }, [controller, options.messages, options.busy, options.queued]);
+    controller().update(options.messages, options.busy, options.queued, options.tool);
+  }, [controller, options.messages, options.busy, options.queued, options.tool]);
 
   useEffect(() => {
     if (!wakeWord.enabled || state.active !== 'off' || !voice.ready || outputActive) return;

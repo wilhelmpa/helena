@@ -83,6 +83,8 @@ describe('voice settings', () => {
       pauseMs: 300,
       immediateResponse: true,
       bridgeEnabled: true,
+      progressEnabled: true,
+      readFullAnswers: true,
       fallbackTimeoutMs: 800,
       speed: 1.4,
       vocabulary: ['Verve', 'x'.repeat(60)],

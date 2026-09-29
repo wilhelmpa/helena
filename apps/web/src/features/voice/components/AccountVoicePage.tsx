@@ -60,54 +60,80 @@ function Editor({ settings }: { settings: VoiceSettings }) {
     );
 
   return (
-    <SettingsCard className="divide-y">
-      <div className="space-y-2 p-4">
-        <label htmlFor="voice-vocabulary" className="text-sm font-medium">
-          {t('words.title')}
-        </label>
-        <p className="text-xs text-muted-foreground">
-          {t('words.hint', { words: settings.helenaWords.slice(0, 12).join(', ') })}
-        </p>
-        <Textarea
-          id="voice-vocabulary"
-          value={words}
-          onChange={(event) => setWords(event.target.value)}
-          rows={3}
-          placeholder={t('words.placeholder')}
-        />
-      </div>
-      <div className="space-y-2 p-4">
-        <label htmlFor="voice-aliases" className="text-sm font-medium">
-          {t('aliases.title')}
-        </label>
-        <p className="text-xs text-muted-foreground">{t('aliases.hint')}</p>
-        <Textarea
-          id="voice-aliases"
-          value={aliases}
-          onChange={(event) => setAliases(event.target.value)}
-          rows={5}
-          placeholder={t('aliases.placeholder')}
-        />
-        {!valid && <p className="text-xs text-destructive">{t('aliases.invalid')}</p>}
-        <div className="flex justify-end gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={update.isPending}
-            onClick={() => save(null)}
-          >
-            {t('aliases.reset')}
-          </Button>
-          <Button
-            size="sm"
-            disabled={!changed || !valid || update.isPending}
-            onClick={() => save(parsedAliases)}
-          >
-            {t('aliases.save')}
-          </Button>
+    <>
+      <SettingsGroup>
+        <SettingsRow
+          label={t('progress.title')}
+          description={t('progress.hint')}
+          htmlFor="voice-progress"
+        >
+          <Switch
+            id="voice-progress"
+            checked={settings.progressEnabled}
+            onCheckedChange={(progressEnabled) => update.mutate({ progressEnabled })}
+          />
+        </SettingsRow>
+        <SettingsRow
+          label={t('readFull.title')}
+          description={t('readFull.hint')}
+          htmlFor="voice-read-full"
+        >
+          <Switch
+            id="voice-read-full"
+            checked={settings.readFullAnswers}
+            onCheckedChange={(readFullAnswers) => update.mutate({ readFullAnswers })}
+          />
+        </SettingsRow>
+      </SettingsGroup>
+      <SettingsCard className="divide-y">
+        <div className="space-y-2 p-4">
+          <label htmlFor="voice-vocabulary" className="text-sm font-medium">
+            {t('words.title')}
+          </label>
+          <p className="text-xs text-muted-foreground">
+            {t('words.hint', { words: settings.helenaWords.slice(0, 12).join(', ') })}
+          </p>
+          <Textarea
+            id="voice-vocabulary"
+            value={words}
+            onChange={(event) => setWords(event.target.value)}
+            rows={3}
+            placeholder={t('words.placeholder')}
+          />
         </div>
-      </div>
-    </SettingsCard>
+        <div className="space-y-2 p-4">
+          <label htmlFor="voice-aliases" className="text-sm font-medium">
+            {t('aliases.title')}
+          </label>
+          <p className="text-xs text-muted-foreground">{t('aliases.hint')}</p>
+          <Textarea
+            id="voice-aliases"
+            value={aliases}
+            onChange={(event) => setAliases(event.target.value)}
+            rows={5}
+            placeholder={t('aliases.placeholder')}
+          />
+          {!valid && <p className="text-xs text-destructive">{t('aliases.invalid')}</p>}
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={update.isPending}
+              onClick={() => save(null)}
+            >
+              {t('aliases.reset')}
+            </Button>
+            <Button
+              size="sm"
+              disabled={!changed || !valid || update.isPending}
+              onClick={() => save(parsedAliases)}
+            >
+              {t('aliases.save')}
+            </Button>
+          </div>
+        </div>
+      </SettingsCard>
+    </>
   );
 }
 

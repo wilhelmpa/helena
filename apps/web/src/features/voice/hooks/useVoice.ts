@@ -54,6 +54,8 @@ export function useVoice(): {
   speed: number;
   immediateResponse: boolean;
   bridgeEnabled: boolean;
+  progressEnabled: boolean;
+  readFullAnswers: boolean;
   refresh: () => void;
 } {
   const status = useVoiceStatus();
@@ -72,6 +74,8 @@ export function useVoice(): {
       speed: known?.settings?.speed ?? 1,
       immediateResponse: known?.settings?.immediateResponse ?? true,
       bridgeEnabled: known?.settings?.bridgeEnabled ?? true,
+      progressEnabled: known?.settings?.progressEnabled ?? true,
+      readFullAnswers: known?.settings?.readFullAnswers ?? true,
       refresh: () => void refetch(),
     }),
     [browser, known, settled, refetch],

@@ -243,6 +243,14 @@
     }
   },
   "voice": {
+    "progress": {
+      "title": "Промежуточные сообщения",
+      "hint": "Ава кратко сообщает, над чем работает."
+    },
+    "readFull": {
+      "title": "Читать ответы полностью",
+      "hint": "Ава читает весь ответ и кратко описывает код и таблицы."
+    },
     "wake": {
       "title": "Listen for “Ava”",
       "hint": "The microphone stays open while a chat page is open. Before “Ava”, only on-device recognition processes your voice; nothing is saved.",

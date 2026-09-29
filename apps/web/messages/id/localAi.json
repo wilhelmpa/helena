@@ -243,6 +243,14 @@
     }
   },
   "voice": {
+    "progress": {
+      "title": "Pembaruan progres",
+      "hint": "Ava memberi tahu secara singkat apa yang sedang dikerjakannya."
+    },
+    "readFull": {
+      "title": "Bacakan jawaban lengkap",
+      "hint": "Ava membacakan seluruh jawaban dan merangkum kode serta tabel."
+    },
     "wake": {
       "title": "Listen for “Ava”",
       "hint": "The microphone stays open while a chat page is open. Before “Ava”, only on-device recognition processes your voice; nothing is saved.",

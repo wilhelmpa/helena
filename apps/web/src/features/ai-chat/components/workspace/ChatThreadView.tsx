@@ -196,6 +196,7 @@ export default function ChatThreadView({
     messages: voiceMessages,
     busy: plan.busy,
     queued: queue.length,
+    tool,
     send: (text) => {
       const options: PlanSendOptions = {
         agentId: agent.id,
