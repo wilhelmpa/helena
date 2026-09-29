@@ -24,7 +24,6 @@ import { usePaging } from '@/hooks/usePaging';
 import SectionPageView from '@/components/common/page/SectionPageView';
 import ListSkeleton from '@/components/common/skeleton/ListSkeleton';
 import MembersEmptyState from '@/components/common/page/MembersEmptyState';
-import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import TeamInviteDialog from './TeamInviteDialog';
 import TeamInviteRow from './TeamInviteRow';
 import TeamMemberRow from './TeamMemberRow';
@@ -36,6 +35,7 @@ import {
   PageToolbarSpacer,
 } from '@/components/layout/PageToolbar';
 import TableCard from '@/components/common/page/TableCard';
+import { Table, Th, Tr } from '@/design-system';
 
 // The team's members, a page at a time, with the invites that have not been answered
 // yet above them. People and agents work on one board, so both are listed and the tabs
@@ -132,30 +132,22 @@ export default function TeamMembersSection({
           <MembersEmptyState kind={kind} searching={term !== undefined} />
         ) : (
           <TableCard>
-            <Table className="table-fixed xl:min-w-[720px]">
+            <Table stack={false} className="table-fixed xl:min-w-[720px]">
               <colgroup>
                 <col className="w-[46%]" />
                 <col className="w-[16%]" />
                 <col className="w-[20%] max-md:hidden" />
                 <col className="w-[18%]" />
               </colgroup>
-              <TableHeader>
-                <TableRow className="hover:bg-transparent">
-                  <TableHead className="text-xs font-medium text-muted-foreground">
-                    {t('columns.account')}
-                  </TableHead>
-                  <TableHead className="text-xs font-medium text-muted-foreground">
-                    {t('columns.role')}
-                  </TableHead>
-                  <TableHead className="text-xs font-medium text-muted-foreground max-md:hidden">
-                    {t('columns.joined')}
-                  </TableHead>
-                  <TableHead className="text-end text-xs font-medium text-muted-foreground">
-                    {tCommon('actions')}
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+              <thead>
+                <Tr className="hover:bg-transparent">
+                  <Th>{t('columns.account')}</Th>
+                  <Th>{t('columns.role')}</Th>
+                  <Th className="max-md:hidden">{t('columns.joined')}</Th>
+                  <Th alignment="end">{tCommon('actions')}</Th>
+                </Tr>
+              </thead>
+              <tbody>
                 {pending.map((invite) => (
                   <TeamInviteRow key={invite.id} invite={invite} onRevoke={setTarget} />
                 ))}
@@ -174,7 +166,7 @@ export default function TeamMembersSection({
                     }
                   />
                 ))}
-              </TableBody>
+              </tbody>
             </Table>
           </TableCard>
         )}

@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import type { UsageDimension, UsageRow } from '@/lib/api/endpoints/agentRuntime';
 import { compactTokens, formatElapsed } from '@/utils/agentUsage';
 import { useAgentUsage } from '../services/agentRuntime.service';
+import { Table, Th, Tr, Td } from '@/design-system';
 
 const PERIODS = [7, 30, 90] as const;
 
@@ -91,46 +92,44 @@ export default function UsageReport({
           </div>
           {report.data.unpriced && <p className="text-xs text-muted-foreground">{t('unpriced')}</p>}
           <div className="overflow-x-auto rounded-md bg-card">
-            <table className="w-full text-sm">
-              <thead className="text-xs text-muted-foreground">
-                <tr className="border-b border-border/50">
+            <Table stack={false}>
+              <thead>
+                <Tr>
                   {by.map((dimension) => (
-                    <th key={dimension} className="px-3 py-2 text-start font-normal">
-                      {t(`dimension.${dimension}`)}
-                    </th>
+                    <Th key={dimension}>{t(`dimension.${dimension}`)}</Th>
                   ))}
-                  <th className="px-3 py-2 text-end font-normal">{t('input')}</th>
-                  <th className="px-3 py-2 text-end font-normal">{t('cached')}</th>
-                  <th className="px-3 py-2 text-end font-normal">{t('output')}</th>
-                  <th className="px-3 py-2 text-end font-normal">{t('time')}</th>
-                  <th className="px-3 py-2 text-end font-normal">{t('cost')}</th>
-                </tr>
+                  <Th alignment="end">{t('input')}</Th>
+                  <Th alignment="end">{t('cached')}</Th>
+                  <Th alignment="end">{t('output')}</Th>
+                  <Th alignment="end">{t('time')}</Th>
+                  <Th alignment="end">{t('cost')}</Th>
+                </Tr>
               </thead>
-              <tbody className="divide-y divide-border/50">
+              <tbody>
                 {report.data.rows.map((row, index) => (
-                  <tr key={index} className="hover:bg-accent/60">
+                  <Tr key={index}>
                     {by.map((dimension) => (
-                      <td key={dimension} className="px-3 py-2 whitespace-nowrap">
-                        {cell(row, dimension, t)}
-                      </td>
+                      <Td key={dimension}>{cell(row, dimension, t)}</Td>
                     ))}
-                    <td className="px-3 py-2 text-end tabular-nums" dir="ltr">
+                    <Td alignment="end" className="tabular-nums" dir="ltr">
                       {compactTokens(row.inputTokens)}
-                    </td>
-                    <td className="px-3 py-2 text-end text-muted-foreground tabular-nums" dir="ltr">
+                    </Td>
+                    <Td alignment="end" className="tabular-nums" dir="ltr">
                       {compactTokens(row.cacheReadTokens)}
-                    </td>
-                    <td className="px-3 py-2 text-end tabular-nums" dir="ltr">
+                    </Td>
+                    <Td alignment="end" className="tabular-nums" dir="ltr">
                       {compactTokens(row.outputTokens)}
-                    </td>
-                    <td className="px-3 py-2 text-end text-muted-foreground tabular-nums">
+                    </Td>
+                    <Td alignment="end" className="tabular-nums">
                       {row.durationMs ? formatElapsed(row.durationMs) : '—'}
-                    </td>
-                    <td className="px-3 py-2 text-end tabular-nums">{euro(row.costEur)}</td>
-                  </tr>
+                    </Td>
+                    <Td alignment="end" className="tabular-nums">
+                      {euro(row.costEur)}
+                    </Td>
+                  </Tr>
                 ))}
               </tbody>
-            </table>
+            </Table>
           </div>
         </>
       )}

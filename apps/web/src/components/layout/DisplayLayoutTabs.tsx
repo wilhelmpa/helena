@@ -1,9 +1,8 @@
 import { useTranslations } from 'next-intl';
 import { byKey } from '@/utils/messageKey';
 import { useHotkeyFormatter } from '@/context/useHotkeys';
-import { cn } from '@/lib/utils';
 import { VIEWS, type WorkItemsView } from '@/utils/viewTypes';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Segmented } from '@/design-system';
 
 // The layout switcher at the top of the Display settings: one tab per work items
 // layout, the active one showing its label. The hotkey is appended to the tooltip
@@ -16,26 +15,26 @@ export default function DisplayLayoutTabs({
   onViewChange: (view: WorkItemsView) => void;
 }) {
   const t = byKey(useTranslations('display.layouts'));
+  const tDisplay = useTranslations('display');
   const hotkey = useHotkeyFormatter();
 
   return (
-    <Tabs value={view} onValueChange={(v) => onViewChange(v as WorkItemsView)}>
-      <TabsList className="w-full">
-        {VIEWS.map(({ value, icon: Icon, hotkey: id }) => {
-          const label = t(value);
-          return (
-            <TabsTrigger
-              key={value}
-              value={value}
-              title={hotkey(id) ? `${label} (${hotkey(id)})` : label}
-              className={cn('min-w-0 gap-1.5 px-1.5', value === view ? 'flex-1' : 'flex-none')}
-            >
-              <Icon className="size-3.5" />
-              {value === view && <span className="truncate text-xs">{label}</span>}
-            </TabsTrigger>
-          );
-        })}
-      </TabsList>
-    </Tabs>
+    // The same segment control as every view switch (O20): the active layout with its
+    // name, the others as icons with the name (and hotkey) in their tooltip.
+    <Segmented<WorkItemsView>
+      label={tDisplay('title')}
+      value={view}
+      onChange={onViewChange}
+      className="w-full"
+      options={VIEWS.map(({ value, icon: Icon, hotkey: id }) => {
+        const label = t(value);
+        return {
+          value,
+          icon: <Icon aria-hidden="true" />,
+          label: value === view ? label : <span className="sr-only">{label}</span>,
+          title: hotkey(id) ? `${label} (${hotkey(id)})` : label,
+        };
+      })}
+    />
   );
 }

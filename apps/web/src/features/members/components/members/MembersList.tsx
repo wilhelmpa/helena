@@ -7,7 +7,6 @@ import type { MemberKind, MemberRow as Member } from '@/lib/api/endpoints/member
 import ConfirmDialog from '@/components/common/overlay/ConfirmDialog';
 import ListSkeleton from '@/components/common/skeleton/ListSkeleton';
 import MembersEmptyState from '@/components/common/page/MembersEmptyState';
-import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import {
   PageActions,
   PageSearch,
@@ -24,7 +23,7 @@ import { useSession } from '@/lib/auth-client';
 import ListPager from '@/components/common/ListPager';
 import { usePaging } from '@/hooks/usePaging';
 import MemberRow from './MemberRow';
-import { ButtonLink, Inline, Stack, Text } from '@/design-system';
+import { ButtonLink, Inline, Stack, Text, Table, Th, Tr } from '@/design-system';
 import { organizationPath } from '@/utils/paths';
 
 // The project's members, newest membership first, a page at a time. People and AI
@@ -128,7 +127,7 @@ export default function MembersList({
         <MembersEmptyState kind={kind} searching={term !== undefined} />
       ) : (
         <div className="overflow-hidden rounded-md border bg-card">
-          <Table className="table-fixed md:min-w-[720px]">
+          <Table stack={false} className="table-fixed md:min-w-[720px]">
             <colgroup>
               <col className="md:w-[36%]" />
               <col className="w-32 md:w-[17%]" />
@@ -136,26 +135,18 @@ export default function MembersList({
               <col className="hidden md:table-column md:w-[13%]" />
               <col className="w-14 md:w-[17%]" />
             </colgroup>
-            <TableHeader>
-              <TableRow className="hover:bg-transparent">
-                <TableHead className="px-3 text-xs font-normal text-muted-foreground">
-                  {t('columns.member')}
-                </TableHead>
-                <TableHead className="px-3 text-xs font-normal text-muted-foreground">
-                  {t('columns.role')}
-                </TableHead>
-                <TableHead className="hidden px-3 text-xs font-normal text-muted-foreground md:table-cell">
-                  {t('columns.timezone')}
-                </TableHead>
-                <TableHead className="hidden px-3 text-xs font-normal text-muted-foreground md:table-cell">
-                  {t('columns.joined')}
-                </TableHead>
-                <TableHead className="px-3 text-end text-xs font-normal text-muted-foreground">
+            <thead>
+              <Tr className="hover:bg-transparent">
+                <Th>{t('columns.member')}</Th>
+                <Th>{t('columns.role')}</Th>
+                <Th className="hidden md:table-cell">{t('columns.timezone')}</Th>
+                <Th className="hidden md:table-cell">{t('columns.joined')}</Th>
+                <Th alignment="end">
                   <span className="sr-only md:not-sr-only">{t('columns.actions')}</span>
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
+                </Th>
+              </Tr>
+            </thead>
+            <tbody>
               {members.map((m) => (
                 <MemberRow
                   key={m.userId}
@@ -166,7 +157,7 @@ export default function MembersList({
                   onRemove={setTarget}
                 />
               ))}
-            </TableBody>
+            </tbody>
           </Table>
         </div>
       )}

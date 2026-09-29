@@ -5,18 +5,10 @@ import { useTranslations } from 'next-intl';
 import type { InstanceTeam } from '@/lib/api/endpoints/god';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 import { compactCount } from '../../utils/numbers';
 import TableCard from '@/components/common/page/TableCard';
 
-import { Text } from '@/design-system';
+import { Text, Table, Td, Th, Tr } from '@/design-system';
 
 // The team list. A row (or the pencil in its Actions cell) opens the team in the side
 // panel, where the full counts, the projects and the member list are.
@@ -32,7 +24,7 @@ export default function GodTeamsTable({
 
   return (
     <TableCard>
-      <Table className="table-fixed xl:min-w-[860px]">
+      <Table stack={false} className="table-fixed xl:min-w-[860px]">
         <colgroup>
           <col className="w-[34%]" />
           <col className="w-[11%]" />
@@ -42,83 +34,57 @@ export default function GodTeamsTable({
           <col className="w-[14%] max-xl:hidden" />
           <col className="w-[8%]" />
         </colgroup>
-        <TableHeader>
-          <TableRow className="hover:bg-transparent">
-            <TableHead className="text-xs font-medium text-muted-foreground">
-              {t('columns.team')}
-            </TableHead>
-            <TableHead className="text-xs font-medium text-muted-foreground">
-              {t('columns.projects')}
-            </TableHead>
-            <TableHead className="text-xs font-medium text-muted-foreground max-md:hidden">
-              {t('columns.members')}
-            </TableHead>
-            <TableHead className="text-xs font-medium text-muted-foreground max-md:hidden">
-              {t('columns.issues')}
-            </TableHead>
-            <TableHead className="text-xs font-medium text-muted-foreground max-md:hidden">
-              {t('columns.agents')}
-            </TableHead>
-            <TableHead className="text-xs font-medium text-muted-foreground max-xl:hidden">
-              {t('columns.mcp')}
-            </TableHead>
-            <TableHead className="text-right text-xs font-medium text-muted-foreground">
-              {tCommon('actions')}
-            </TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
+        <thead>
+          <Tr className="hover:bg-transparent">
+            <Th>{t('columns.team')}</Th>
+            <Th>{t('columns.projects')}</Th>
+            <Th className="max-md:hidden">{t('columns.members')}</Th>
+            <Th className="max-md:hidden">{t('columns.issues')}</Th>
+            <Th className="max-md:hidden">{t('columns.agents')}</Th>
+            <Th className="max-xl:hidden">{t('columns.mcp')}</Th>
+            <Th alignment="end">{tCommon('actions')}</Th>
+          </Tr>
+        </thead>
+        <tbody>
           {teams.map((team) => (
-            <TableRow
+            <Tr
               key={team.id}
               className="cursor-pointer"
               onClick={() => onSelect(team.id)}
               title={t('showDetails')}
             >
-              <TableCell className="px-3 py-3">
+              <Td className="py-3">
                 <Text as="span" size="sm" className="truncate font-medium">
                   {team.name}
                 </Text>
-              </TableCell>
+              </Td>
 
-              <TableCell
-                className="px-3 py-3 text-sm tabular-nums"
-                title={String(team.projectCount)}
-              >
+              <Td className="py-3 tabular-nums" title={String(team.projectCount)}>
                 {compactCount(team.projectCount)}
-              </TableCell>
+              </Td>
 
-              <TableCell
-                className="px-3 py-3 text-sm tabular-nums max-md:hidden"
-                title={String(team.memberCount)}
-              >
+              <Td className="py-3 tabular-nums max-md:hidden" title={String(team.memberCount)}>
                 {compactCount(team.memberCount)}
-              </TableCell>
+              </Td>
 
-              <TableCell
-                className="px-3 py-3 text-sm tabular-nums max-md:hidden"
-                title={String(team.issueCount)}
-              >
+              <Td className="py-3 tabular-nums max-md:hidden" title={String(team.issueCount)}>
                 {compactCount(team.issueCount)}
-              </TableCell>
+              </Td>
 
-              <TableCell
-                className="px-3 py-3 text-sm tabular-nums max-md:hidden"
-                title={String(team.agentCount)}
-              >
+              <Td className="py-3 tabular-nums max-md:hidden" title={String(team.agentCount)}>
                 {compactCount(team.agentCount)}
-              </TableCell>
+              </Td>
 
-              <TableCell className="px-3 py-3 max-xl:hidden">
+              <Td className="py-3 max-xl:hidden">
                 <Badge
                   variant={team.mcpEnabled ? 'secondary' : 'outline'}
                   className="px-1.5 py-0 text-xs font-medium"
                 >
                   {t(team.mcpEnabled ? 'mcpEnabled' : 'mcpOff')}
                 </Badge>
-              </TableCell>
+              </Td>
 
-              <TableCell className="px-3 py-3 text-right">
+              <Td alignment="end" className="py-3">
                 <Button
                   variant="ghost"
                   size="icon"
@@ -132,10 +98,10 @@ export default function GodTeamsTable({
                 >
                   <Pencil />
                 </Button>
-              </TableCell>
-            </TableRow>
+              </Td>
+            </Tr>
           ))}
-        </TableBody>
+        </tbody>
       </Table>
     </TableCard>
   );

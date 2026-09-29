@@ -482,25 +482,33 @@
 .ds-tr.is-selected .ds-td {
   background: var(--surface-3);
 }
+.ds-th[data-align='end'],
+.ds-td[data-align='end'] {
+  text-align: end;
+}
+.ds-th[data-align='center'],
+.ds-td[data-align='center'] {
+  text-align: center;
+}
 @media (max-width: 900px) {
-  .ds-table thead {
+  .ds-table:not([data-stack='off']) thead {
     display: none;
   }
-  .ds-table,
-  .ds-table tbody,
-  .ds-tr,
-  .ds-td {
+  .ds-table:not([data-stack='off']),
+  .ds-table:not([data-stack='off']) tbody,
+  .ds-table:not([data-stack='off']) .ds-tr,
+  .ds-table:not([data-stack='off']) .ds-td {
     display: block;
     width: 100%;
   }
-  .ds-tr {
+  .ds-table:not([data-stack='off']) .ds-tr {
     margin-bottom: var(--space-2);
     border-radius: var(--radius-card);
     background: var(--surface-1);
     padding: var(--space-2) 0;
     box-shadow: var(--shadow-card);
   }
-  .ds-td {
+  .ds-table:not([data-stack='off']) .ds-td {
     display: flex;
     height: auto;
     min-height: 32px;
@@ -509,7 +517,7 @@
     gap: var(--space-3);
     border: 0;
   }
-  .ds-td[data-label]::before {
+  .ds-table:not([data-stack='off']) .ds-td[data-label]::before {
     content: attr(data-label);
     color: var(--text-3);
     font-size: 12px;

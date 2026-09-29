@@ -3,7 +3,8 @@
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import SettingsCard from '@/components/common/page/SettingsCard';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useState } from 'react';
+import { Segmented, Stack } from '@/design-system';
 import { MCP_CLIENTS, MCP_URL } from '../utils/clients';
 import CodeBlock from '@/components/common/CodeBlock';
 
@@ -15,6 +16,7 @@ export default function McpConnectionGuide() {
   const t = useTranslations('mcp');
   const clientLabel = (c: (typeof MCP_CLIENTS)[number]) =>
     c.labelKey ? t(`clients.${c.labelKey}`) : c.label;
+  const [client, setClient] = useState<string>(MCP_CLIENTS[0].label);
 
   return (
     <SettingsCard className="space-y-4 p-4">
@@ -38,16 +40,15 @@ export default function McpConnectionGuide() {
         <CodeBlock code={MCP_URL} />
       </div>
 
-      <Tabs defaultValue={MCP_CLIENTS[0].label} className="gap-3">
-        <TabsList aria-label={t('clientTabsAria')}>
-          {MCP_CLIENTS.map((c) => (
-            <TabsTrigger key={c.label} value={c.label}>
-              {clientLabel(c)}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-        {MCP_CLIENTS.map((c) => (
-          <TabsContent key={c.label} value={c.label} className="space-y-2">
+      <Stack gap={3}>
+        <Segmented
+          label={t('clientTabsAria')}
+          value={client}
+          onChange={setClient}
+          options={MCP_CLIENTS.map((c) => ({ value: c.label, label: clientLabel(c) }))}
+        />
+        {MCP_CLIENTS.filter((c) => c.label === client).map((c) => (
+          <Stack key={c.label} gap={2}>
             {(c.file || c.noteKey) && (
               <p className="text-sm text-muted-foreground">
                 {c.file && (
@@ -63,9 +64,9 @@ export default function McpConnectionGuide() {
               </p>
             )}
             <CodeBlock code={c.code} />
-          </TabsContent>
+          </Stack>
         ))}
-      </Tabs>
+      </Stack>
     </SettingsCard>
   );
 }

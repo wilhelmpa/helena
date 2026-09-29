@@ -2,8 +2,8 @@ import { KeyRound, Pencil, Trash2 } from 'lucide-react';
 import type { IntegrationCredential } from '@/lib/api/endpoints/integrations';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { TableCell, TableRow } from '@/components/ui/table';
 import { useTranslations } from 'next-intl';
+import { Td, Tr } from '@/design-system';
 
 // One credential as a table row: the integration name and optional account label,
 // the redacted fields as badges, and edit/delete actions gated by permission.
@@ -25,8 +25,8 @@ export function CredentialRow({
   const t = useTranslations('teams.integrations');
   const fields = Object.entries(credential.redacted);
   return (
-    <TableRow className="group/item">
-      <TableCell className="px-3 py-3 whitespace-normal">
+    <Tr className="group/item">
+      <Td className="py-3 whitespace-normal">
         <div className="flex min-w-0 items-center gap-2.5">
           <div className="flex size-8 shrink-0 items-center justify-center rounded-md border border-sidebar-border bg-background text-muted-foreground">
             <KeyRound className="size-4" />
@@ -38,8 +38,8 @@ export function CredentialRow({
             )}
           </div>
         </div>
-      </TableCell>
-      <TableCell className="px-3 py-3 whitespace-normal">
+      </Td>
+      <Td className="py-3 whitespace-normal">
         {fields.length > 0 ? (
           <div className="flex flex-wrap gap-1">
             {fields.map(([k, v]) => (
@@ -51,8 +51,8 @@ export function CredentialRow({
         ) : (
           <span className="text-xs text-muted-foreground">{t('noFields')}</span>
         )}
-      </TableCell>
-      <TableCell className="px-3 py-2">
+      </Td>
+      <Td>
         <div className="flex items-center justify-end gap-1">
           {canEdit && (
             <Button
@@ -77,7 +77,7 @@ export function CredentialRow({
             </Button>
           )}
         </div>
-      </TableCell>
-    </TableRow>
+      </Td>
+    </Tr>
   );
 }

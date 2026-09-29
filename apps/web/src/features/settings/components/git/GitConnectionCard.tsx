@@ -6,13 +6,12 @@ import { API_URL } from '@/lib/api/core/client';
 import SettingsCard from '@/components/common/page/SettingsCard';
 import SettingsSection from '@/components/common/page/SettingsSection';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useRegenerateGitSecret } from '../../services/settings.service';
 import GitCopyField from './GitCopyField';
 import GithubCliCommand from './GithubCliCommand';
 import GitlabCliCommand from './GitlabCliCommand';
 
-import { Inline, Text, Stack, Box } from '@/design-system';
+import { Inline, Text, Stack, Box, Segmented } from '@/design-system';
 
 // One tab per supported host: each takes the same payload URL and secret, but
 // names the fields and the pull request trigger differently. Gitea and Forgejo
@@ -116,16 +115,15 @@ export default function GitConnectionCard({
                 </Inline>
               </summary>
               <Box marginTop={4}>
-                <Tabs value={tab} onValueChange={(v) => setTab(v as ProviderKey)}>
-                  <TabsList variant="line">
-                    {PROVIDERS.map((p) => (
-                      <TabsTrigger key={p.key} value={p.key}>
-                        {p.label}
-                      </TabsTrigger>
-                    ))}
-                  </TabsList>
-                  {PROVIDERS.map((p) => (
-                    <TabsContent key={p.key} value={p.key} className="mt-4 space-y-4">
+                <Stack gap={4}>
+                  <Segmented<ProviderKey>
+                    label={t('manualSetup')}
+                    value={tab}
+                    onChange={setTab}
+                    options={PROVIDERS.map((p) => ({ value: p.key, label: p.label }))}
+                  />
+                  {PROVIDERS.filter((p) => p.key === tab).map((p) => (
+                    <Stack key={p.key} gap={4}>
                       {hint(p.hint)}
                       {p.key === 'github' && (
                         <GithubCliCommand payloadUrl={payloadUrl} secret={secret} />
@@ -133,9 +131,9 @@ export default function GitConnectionCard({
                       {p.key === 'gitlab' && (
                         <GitlabCliCommand payloadUrl={payloadUrl} secret={secret} />
                       )}
-                    </TabsContent>
+                    </Stack>
                   ))}
-                </Tabs>
+                </Stack>
               </Box>
             </Box>
           </>

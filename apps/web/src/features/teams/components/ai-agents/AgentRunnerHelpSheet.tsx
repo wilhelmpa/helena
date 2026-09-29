@@ -3,7 +3,8 @@ import { useTranslations } from 'next-intl';
 import { API_URL } from '@/lib/api/core/client';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useState } from 'react';
+import { Segmented, Stack } from '@/design-system';
 import { AgentRunnerCodeBlock } from './AgentRunnerCodeBlock';
 import { AgentRunnerHelpStep } from './AgentRunnerHelpStep';
 
@@ -186,30 +187,7 @@ export function AgentRunnerHelpSheet() {
           </AgentRunnerHelpStep>
 
           <AgentRunnerHelpStep n={4} title={t('runnerHelpRun')}>
-            <Tabs defaultValue="claude">
-              <TabsList variant="line">
-                {AGENTS.map((a) => (
-                  <TabsTrigger key={a.id} value={a.id}>
-                    {a.id === 'custom' ? t('runnerHelpTabCustom') : a.label}
-                  </TabsTrigger>
-                ))}
-              </TabsList>
-              {AGENTS.map((a) => (
-                <TabsContent key={a.id} value={a.id} className="space-y-3 pt-3">
-                  {a.files.map((f) => (
-                    <div key={f.name} className="space-y-1.5">
-                      <p className="font-mono text-xs text-muted-foreground">{f.name}</p>
-                      <AgentRunnerCodeBlock code={f.code} />
-                    </div>
-                  ))}
-                  <div className="space-y-1.5">
-                    <p className="font-mono text-xs text-muted-foreground">itsaplan-runner.json</p>
-                    <AgentRunnerCodeBlock code={configFile(a)} />
-                  </div>
-                  <AgentRunnerCodeBlock code={RUN_COMMAND} />
-                </TabsContent>
-              ))}
-            </Tabs>
+            <RunnerFiles />
           </AgentRunnerHelpStep>
 
           <AgentRunnerHelpStep n={5} title={t('runnerHelpCheck')}>
@@ -218,5 +196,36 @@ export function AgentRunnerHelpSheet() {
         </div>
       </SheetContent>
     </Sheet>
+  );
+}
+
+// The files for the chosen agent, one agent at a time (one tab pattern, owner O20).
+function RunnerFiles() {
+  const t = useTranslations('teams.agents');
+  const [agent, setAgent] = useState<string>('claude');
+  const current = AGENTS.find((a) => a.id === agent) ?? AGENTS[0]!;
+  return (
+    <Stack gap={3}>
+      <Segmented
+        label={t('runnerHelpRun')}
+        value={agent}
+        onChange={setAgent}
+        options={AGENTS.map((a) => ({
+          value: a.id,
+          label: a.id === 'custom' ? t('runnerHelpTabCustom') : a.label,
+        }))}
+      />
+      {current.files.map((f) => (
+        <div key={f.name} className="space-y-1.5">
+          <p className="font-mono text-xs text-muted-foreground">{f.name}</p>
+          <AgentRunnerCodeBlock code={f.code} />
+        </div>
+      ))}
+      <div className="space-y-1.5">
+        <p className="font-mono text-xs text-muted-foreground">itsaplan-runner.json</p>
+        <AgentRunnerCodeBlock code={configFile(current)} />
+      </div>
+      <AgentRunnerCodeBlock code={RUN_COMMAND} />
+    </Stack>
   );
 }

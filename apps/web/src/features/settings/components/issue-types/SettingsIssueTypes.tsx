@@ -8,14 +8,6 @@ import { colorDot } from '@/components/common/fields/colorDot';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 import { EmptyState } from '@/components/common/page/EmptyState';
 import SettingsColorField from '../crud/SettingsColorField';
 import SettingsConfirmDeleteDialog from '../crud/SettingsConfirmDeleteDialog';
@@ -27,7 +19,7 @@ import {
   useUpdateIssueType,
 } from '../../services/settings.service';
 
-import { Box, Inline, Stack, Text } from '@/design-system';
+import { Box, Inline, Stack, Text, Table, Td, Th, Tr } from '@/design-system';
 
 // The project's issue types. Adding is opened from the page header (the `adding`
 // flag is lifted to the page); the add form itself is inline in this list.
@@ -129,41 +121,35 @@ export default function SettingsIssueTypes({
   return (
     <Stack gap={4}>
       <div className="overflow-hidden rounded-md border bg-card">
-        <Table className="table-fixed md:min-w-[640px]">
+        <Table stack={false} className="table-fixed md:min-w-[640px]">
           <colgroup>
             <col className="w-[46%]" />
             <col className="w-[40%]" />
             <col className="w-[14%]" />
           </colgroup>
-          <TableHeader>
-            <TableRow className="hover:bg-transparent">
-              <TableHead className="px-3 text-xs font-normal text-muted-foreground">
-                {t('columns.type')}
-              </TableHead>
-              <TableHead className="px-3 text-xs font-normal text-muted-foreground">
-                {t('columns.issues')}
-              </TableHead>
-              <TableHead className="px-3 text-end text-xs font-normal text-muted-foreground">
-                {tCommon('actions')}
-              </TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
+          <thead>
+            <Tr className="hover:bg-transparent">
+              <Th>{t('columns.type')}</Th>
+              <Th>{t('columns.issues')}</Th>
+              <Th alignment="end">{tCommon('actions')}</Th>
+            </Tr>
+          </thead>
+          <tbody>
             {types.map((type) =>
               editingId === type.id ? (
-                <TableRow key={type.id} className="hover:bg-transparent">
-                  <TableCell colSpan={3} className="px-3 py-2">
+                <Tr key={type.id} className="hover:bg-transparent">
+                  <Td colSpan={3}>
                     {inlineForm(
                       tCommon('save'),
                       () => void saveEdit(type),
                       () => setEditingId(null),
                       `type-default-edit-${type.id}`,
                     )}
-                  </TableCell>
-                </TableRow>
+                  </Td>
+                </Tr>
               ) : (
-                <TableRow key={type.id} className="group/item">
-                  <TableCell className="px-3 py-3 align-middle">
+                <Tr key={type.id} className="group/item">
+                  <Td className="py-3">
                     <Inline gap={2} className="flex min-w-0 items-center">
                       {colorDot(type.color)}
                       <Text as="span" size="sm" className="truncate font-medium">
@@ -180,11 +166,11 @@ export default function SettingsIssueTypes({
                         </Box>
                       )}
                     </Inline>
-                  </TableCell>
-                  <TableCell className="px-3 py-3 align-middle text-sm text-muted-foreground tabular-nums">
+                  </Td>
+                  <Td className="py-3 tabular-nums">
                     {t('issueCount', { count: issueCount(type.id) })}
-                  </TableCell>
-                  <TableCell className="px-3 py-2 align-middle">
+                  </Td>
+                  <Td>
                     <Inline gap={1} justify="end" className="flex items-center justify-end">
                       {can('edit') && (
                         <Button
@@ -211,23 +197,23 @@ export default function SettingsIssueTypes({
                         </Button>
                       )}
                     </Inline>
-                  </TableCell>
-                </TableRow>
+                  </Td>
+                </Tr>
               ),
             )}
             {adding && (
-              <TableRow className="hover:bg-transparent">
-                <TableCell colSpan={3} className="px-3 py-2">
+              <Tr className="hover:bg-transparent">
+                <Td colSpan={3}>
                   {inlineForm(
                     tCommon('add'),
                     () => void add(),
                     () => onAddingChange(false),
                     'type-default-new',
                   )}
-                </TableCell>
-              </TableRow>
+                </Td>
+              </Tr>
             )}
-          </TableBody>
+          </tbody>
         </Table>
       </div>
 

@@ -5,10 +5,9 @@ import { formatDateTime } from '@/utils/dates';
 import { formatSize } from '@/utils/fileSize';
 import { useRelativeTime } from '@/context/relativeTimeContext';
 import { Badge } from '@/components/ui/badge';
-import { TableCell, TableRow } from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
-import { Box, Text } from '@/design-system';
+import { Box, Text, Td, Tr } from '@/design-system';
 
 export default function SettingsNetworkLogRow({ event }: { event: AgentNetworkEvent }) {
   const t = useTranslations('settings.network');
@@ -16,23 +15,23 @@ export default function SettingsNetworkLogRow({ event }: { event: AgentNetworkEv
   const agentName = event.agent?.name || event.agent?.username;
 
   return (
-    <TableRow>
-      <TableCell className="px-3 py-2 text-xs whitespace-nowrap text-muted-foreground">
+    <Tr>
+      <Td>
         <Tooltip>
           <TooltipTrigger asChild>
             <span>{relativeTime(event.lastAt)}</span>
           </TooltipTrigger>
           <TooltipContent>{formatDateTime(event.lastAt)}</TooltipContent>
         </Tooltip>
-      </TableCell>
-      <TableCell className="px-3 py-2 text-sm">
+      </Td>
+      <Td>
         <div className="truncate font-medium">{agentName ?? '—'}</div>
         {event.runId != null && <div className="text-xs text-muted-foreground">#{event.runId}</div>}
-      </TableCell>
-      <TableCell className="px-3 py-2 font-mono text-xs">
+      </Td>
+      <Td className="font-mono">
         {event.host}:{event.port}
-      </TableCell>
-      <TableCell className="px-3 py-2">
+      </Td>
+      <Td>
         <Badge variant={event.decision === 'blocked' ? 'destructive' : 'secondary'}>
           {byKey(t)(`decisions.${event.decision}`)}
         </Badge>
@@ -43,11 +42,13 @@ export default function SettingsNetworkLogRow({ event }: { event: AgentNetworkEv
             </Text>
           </Box>
         )}
-      </TableCell>
-      <TableCell className="px-3 py-2 text-end text-sm tabular-nums">{event.connections}</TableCell>
-      <TableCell className="px-3 py-2 text-end text-xs text-muted-foreground tabular-nums">
+      </Td>
+      <Td alignment="end" className="tabular-nums">
+        {event.connections}
+      </Td>
+      <Td alignment="end" className="tabular-nums">
         ↑ {formatSize(event.bytesOut)} / ↓ {formatSize(event.bytesIn)}
-      </TableCell>
-    </TableRow>
+      </Td>
+    </Tr>
   );
 }

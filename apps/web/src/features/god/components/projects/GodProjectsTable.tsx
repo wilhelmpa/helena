@@ -6,18 +6,10 @@ import type { InstanceProject } from '@/lib/api/endpoints/god';
 import { formatShortDate } from '@/utils/dates';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 import { compactCount } from '../../utils/numbers';
 import TableCard from '@/components/common/page/TableCard';
 
-import { Box, Stack, Inline, Text } from '@/design-system';
+import { Box, Stack, Inline, Text, Table, Td, Th, Tr } from '@/design-system';
 
 // The project list. A row (or the pencil in its Actions cell) opens the project in
 // the side panel, where the full counts and the member list are. The columns here
@@ -34,7 +26,7 @@ export default function GodProjectsTable({
 
   return (
     <TableCard>
-      <Table className="table-fixed xl:min-w-[860px]">
+      <Table stack={false} className="table-fixed xl:min-w-[860px]">
         <colgroup>
           <col className="w-[36%]" />
           <col className="w-[10%]" />
@@ -44,40 +36,26 @@ export default function GodProjectsTable({
           <col className="w-[11%] max-md:hidden" />
           <col className="w-[8%]" />
         </colgroup>
-        <TableHeader>
-          <TableRow className="hover:bg-transparent">
-            <TableHead className="text-xs font-medium text-muted-foreground">
-              {t('columns.project')}
-            </TableHead>
-            <TableHead className="text-xs font-medium text-muted-foreground">
-              {t('columns.members')}
-            </TableHead>
-            <TableHead className="text-xs font-medium text-muted-foreground max-md:hidden">
-              {t('columns.issues')}
-            </TableHead>
-            <TableHead className="text-xs font-medium text-muted-foreground max-md:hidden">
-              {t('columns.agents')}
-            </TableHead>
-            <TableHead className="text-xs font-medium text-muted-foreground max-xl:hidden">
-              {t('columns.lastActivity')}
-            </TableHead>
-            <TableHead className="text-xs font-medium text-muted-foreground max-md:hidden">
-              {t('columns.mcp')}
-            </TableHead>
-            <TableHead className="text-right text-xs font-medium text-muted-foreground">
-              {tCommon('actions')}
-            </TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
+        <thead>
+          <Tr className="hover:bg-transparent">
+            <Th>{t('columns.project')}</Th>
+            <Th>{t('columns.members')}</Th>
+            <Th className="max-md:hidden">{t('columns.issues')}</Th>
+            <Th className="max-md:hidden">{t('columns.agents')}</Th>
+            <Th className="max-xl:hidden">{t('columns.lastActivity')}</Th>
+            <Th className="max-md:hidden">{t('columns.mcp')}</Th>
+            <Th alignment="end">{tCommon('actions')}</Th>
+          </Tr>
+        </thead>
+        <tbody>
           {projects.map((p) => (
-            <TableRow
+            <Tr
               key={p.id}
               className="cursor-pointer"
               onClick={() => onSelect(p.id)}
               title={t('showDetails')}
             >
-              <TableCell className="px-3 py-3 align-top whitespace-normal">
+              <Td className="py-3 align-top whitespace-normal">
                 <Stack gap={1} className="flex min-w-0 flex-col">
                   <Inline gap={2} className="flex min-w-0 items-center">
                     <Box
@@ -96,16 +74,13 @@ export default function GodProjectsTable({
                     {t('created', { date: formatShortDate(p.createdAt) })}
                   </Text>
                 </Stack>
-              </TableCell>
+              </Td>
 
-              <TableCell
-                className="px-3 py-3 align-top text-sm tabular-nums"
-                title={String(p.memberCount)}
-              >
+              <Td className="py-3 align-top tabular-nums" title={String(p.memberCount)}>
                 {compactCount(p.memberCount)}
-              </TableCell>
+              </Td>
 
-              <TableCell className="px-3 py-3 align-top text-sm tabular-nums max-md:hidden">
+              <Td className="py-3 align-top tabular-nums max-md:hidden">
                 <Stack gap={1} className="flex flex-col">
                   <span title={String(p.issueCount)}>{compactCount(p.issueCount)}</span>
                   {/* Its own line, so a project with five-digit counts does not push the
@@ -122,20 +97,20 @@ export default function GodProjectsTable({
                     </Text>
                   )}
                 </Stack>
-              </TableCell>
+              </Td>
 
-              <TableCell
-                className="px-3 py-3 align-top text-sm tabular-nums max-md:hidden"
+              <Td
+                className="py-3 align-top tabular-nums max-md:hidden"
                 title={String(p.agentCount)}
               >
                 {compactCount(p.agentCount)}
-              </TableCell>
+              </Td>
 
-              <TableCell className="px-3 py-3 align-top text-xs text-muted-foreground max-xl:hidden">
+              <Td className="py-3 align-top max-xl:hidden">
                 {p.lastActivityAt ? formatShortDate(p.lastActivityAt) : t('neverActive')}
-              </TableCell>
+              </Td>
 
-              <TableCell className="px-3 py-3 align-top max-md:hidden">
+              <Td className="py-3 align-top max-md:hidden">
                 {p.mcpEnabled ? (
                   <Badge variant="secondary" className="px-1.5 py-0 text-xs font-medium">
                     {t('mcpEnabled')}
@@ -145,9 +120,9 @@ export default function GodProjectsTable({
                     {t('mcpOff')}
                   </Badge>
                 )}
-              </TableCell>
+              </Td>
 
-              <TableCell className="px-3 py-3 text-right align-top">
+              <Td alignment="end" className="py-3 align-top">
                 <Button
                   variant="ghost"
                   size="icon"
@@ -161,10 +136,10 @@ export default function GodProjectsTable({
                 >
                   <Pencil />
                 </Button>
-              </TableCell>
-            </TableRow>
+              </Td>
+            </Tr>
           ))}
-        </TableBody>
+        </tbody>
       </Table>
     </TableCard>
   );

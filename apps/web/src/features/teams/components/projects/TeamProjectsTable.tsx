@@ -9,15 +9,8 @@ import { projectPath } from '@/utils/paths';
 import Avatar from '@/components/common/Avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 import TableCard from '@/components/common/page/TableCard';
+import { Table, Td, Th, Tr } from '@/design-system';
 
 // The projects of the team. A row opens the project in the side panel; the arrow in
 // its Actions cell opens the project itself, for the ones the reader is a member of.
@@ -34,7 +27,7 @@ export default function TeamProjectsTable({
   return (
     <div className="overflow-x-auto">
       <TableCard>
-        <Table className="table-fixed xl:min-w-[720px]">
+        <Table stack={false} className="table-fixed xl:min-w-[720px]">
           <colgroup>
             <col className="w-[44%]" />
             <col className="w-[16%] max-md:hidden" />
@@ -42,33 +35,19 @@ export default function TeamProjectsTable({
             <col className="w-[18%] max-md:hidden" />
             <col className="w-[10%]" />
           </colgroup>
-          <TableHeader>
-            <TableRow className="hover:bg-transparent">
-              <TableHead className="text-xs font-medium text-muted-foreground">
-                {t('columns.project')}
-              </TableHead>
-              <TableHead className="text-xs font-medium text-muted-foreground max-md:hidden">
-                {t('columns.owners')}
-              </TableHead>
-              <TableHead className="text-xs font-medium text-muted-foreground">
-                {t('columns.members')}
-              </TableHead>
-              <TableHead className="text-xs font-medium text-muted-foreground max-md:hidden">
-                {t('columns.created')}
-              </TableHead>
-              <TableHead className="text-end text-xs font-medium text-muted-foreground">
-                {tCommon('actions')}
-              </TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
+          <thead>
+            <Tr className="hover:bg-transparent">
+              <Th>{t('columns.project')}</Th>
+              <Th className="max-md:hidden">{t('columns.owners')}</Th>
+              <Th>{t('columns.members')}</Th>
+              <Th className="max-md:hidden">{t('columns.created')}</Th>
+              <Th alignment="end">{tCommon('actions')}</Th>
+            </Tr>
+          </thead>
+          <tbody>
             {projects.map((project) => (
-              <TableRow
-                key={project.id}
-                className="cursor-pointer"
-                onClick={() => onSelect(project.id)}
-              >
-                <TableCell className="px-3 py-3">
+              <Tr key={project.id} className="cursor-pointer" onClick={() => onSelect(project.id)}>
+                <Td className="py-3">
                   <div className="flex min-w-0 items-center gap-2.5">
                     <Badge
                       variant="outline"
@@ -78,9 +57,9 @@ export default function TeamProjectsTable({
                     </Badge>
                     <span className="truncate text-sm font-medium">{project.name}</span>
                   </div>
-                </TableCell>
+                </Td>
 
-                <TableCell className="px-3 py-3 max-md:hidden">
+                <Td className="py-3 max-md:hidden">
                   {project.owners.length > 0 && (
                     <span
                       className="flex items-center -space-x-1.5"
@@ -98,17 +77,13 @@ export default function TeamProjectsTable({
                       ))}
                     </span>
                   )}
-                </TableCell>
+                </Td>
 
-                <TableCell className="px-3 py-3 text-sm tabular-nums">
-                  {project.memberCount}
-                </TableCell>
+                <Td className="py-3 tabular-nums">{project.memberCount}</Td>
 
-                <TableCell className="px-3 py-3 text-sm text-muted-foreground max-md:hidden">
-                  {formatDate(project.createdAt)}
-                </TableCell>
+                <Td className="py-3 max-md:hidden">{formatDate(project.createdAt)}</Td>
 
-                <TableCell className="px-3 py-2 text-end">
+                <Td alignment="end">
                   {project.isMember && (
                     <Button
                       asChild
@@ -124,10 +99,10 @@ export default function TeamProjectsTable({
                       </Link>
                     </Button>
                   )}
-                </TableCell>
-              </TableRow>
+                </Td>
+              </Tr>
             ))}
-          </TableBody>
+          </tbody>
         </Table>
       </TableCard>
     </div>

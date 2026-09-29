@@ -7,18 +7,11 @@ import type { Role } from '@/lib/api/endpoints/roles';
 import ListSkeleton from '@/components/common/skeleton/ListSkeleton';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { PermissionsPopover } from '@/components/common/permissions/PermissionsPopover';
 import DeleteRoleDialog from './DeleteRoleDialog';
 import TableCard from '@/components/common/page/TableCard';
+import { Table, Td, Th, Tr } from '@/design-system';
 
 // The team's roles, one row each: what it grants, and the actions to edit or delete
 // it. Deleting is the owner's, so a manager gets the row without that action. The
@@ -59,33 +52,27 @@ export default function TeamRolesList({
   return (
     <div className="overflow-x-auto">
       <TableCard>
-        <Table className="table-fixed xl:min-w-[560px]">
+        <Table stack={false} className="table-fixed xl:min-w-[560px]">
           <colgroup>
             <col className="w-[56%]" />
             <col className="w-[26%]" />
             <col className="w-[18%]" />
           </colgroup>
-          <TableHeader>
-            <TableRow className="hover:bg-transparent">
-              <TableHead className="text-xs font-medium text-muted-foreground">
-                {t('columns.role')}
-              </TableHead>
-              <TableHead className="text-xs font-medium text-muted-foreground">
-                {t('columns.permissions')}
-              </TableHead>
-              <TableHead className="text-end text-xs font-medium text-muted-foreground">
-                {tCommon('actions')}
-              </TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
+          <thead>
+            <Tr className="hover:bg-transparent">
+              <Th>{t('columns.role')}</Th>
+              <Th>{t('columns.permissions')}</Th>
+              <Th alignment="end">{tCommon('actions')}</Th>
+            </Tr>
+          </thead>
+          <tbody>
             {roles.map((role) => (
-              <TableRow
+              <Tr
                 key={role.id}
                 className={canEdit ? 'cursor-pointer' : undefined}
                 onClick={() => canEdit && onEdit(role)}
               >
-                <TableCell className="px-3 py-3">
+                <Td className="py-3">
                   <div className="flex min-w-0 items-center gap-2">
                     <span className="truncate text-sm font-medium">{role.name}</span>
                     {role.isDefault && (
@@ -97,13 +84,13 @@ export default function TeamRolesList({
                       </Badge>
                     )}
                   </div>
-                </TableCell>
+                </Td>
 
-                <TableCell className="px-3 py-3" onClick={(e) => e.stopPropagation()}>
+                <Td className="py-3" onClick={(e) => e.stopPropagation()}>
                   <PermissionsPopover permissions={role.permissions} />
-                </TableCell>
+                </Td>
 
-                <TableCell className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
+                <Td onClick={(e) => e.stopPropagation()}>
                   <div className="flex items-center justify-end gap-1">
                     <Button
                       variant="ghost"
@@ -138,10 +125,10 @@ export default function TeamRolesList({
                       </Tooltip>
                     )}
                   </div>
-                </TableCell>
-              </TableRow>
+                </Td>
+              </Tr>
             ))}
-          </TableBody>
+          </tbody>
         </Table>
       </TableCard>
 

@@ -1,7 +1,7 @@
 import { useTranslations } from 'next-intl';
 import type { Webhook } from '@/lib/api/endpoints/webhooks';
-import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { SettingsWebhookRow } from './SettingsWebhookRow';
+import { Table, Th, Tr } from '@/design-system';
 
 interface SettingsWebhooksTableProps {
   webhooks: Webhook[];
@@ -21,26 +21,20 @@ export function SettingsWebhooksTable({
 
   return (
     <div className="overflow-hidden rounded-md border bg-card">
-      <Table className="min-w-[820px] table-fixed">
+      <Table stack={false} className="min-w-[820px] table-fixed">
         <colgroup>
           <col className="w-[40%]" />
           <col className="w-[46%]" />
           <col className="w-[14%]" />
         </colgroup>
-        <TableHeader>
-          <TableRow className="hover:bg-transparent">
-            <TableHead className="px-3 text-xs font-normal text-muted-foreground">
-              {t('columns.endpoint')}
-            </TableHead>
-            <TableHead className="px-3 text-xs font-normal text-muted-foreground">
-              {t('columns.events')}
-            </TableHead>
-            <TableHead className="px-3 text-end text-xs font-normal text-muted-foreground">
-              {tCommon('actions')}
-            </TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
+        <thead>
+          <Tr className="hover:bg-transparent">
+            <Th>{t('columns.endpoint')}</Th>
+            <Th>{t('columns.events')}</Th>
+            <Th alignment="end">{tCommon('actions')}</Th>
+          </Tr>
+        </thead>
+        <tbody>
           {webhooks.map((webhook) => (
             <SettingsWebhookRow
               key={webhook.id}
@@ -50,7 +44,7 @@ export function SettingsWebhooksTable({
               onDelete={() => onDelete(webhook)}
             />
           ))}
-        </TableBody>
+        </tbody>
       </Table>
     </div>
   );

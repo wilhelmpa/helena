@@ -2,8 +2,8 @@ import { Trash2, Wrench } from 'lucide-react';
 import type { ConfiguredTool } from '@/lib/api/endpoints/agentTools';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { TableCell, TableRow } from '@/components/ui/table';
 import { useTranslations } from 'next-intl';
+import { Td, Tr } from '@/design-system';
 
 // One configured tool as a table row: the tool name with the integration and
 // credential it runs on below, the token permissions it needs as badges, and a
@@ -28,8 +28,8 @@ export function ToolConfigRow({
     ? `${integrationLabel} · ${tool.credentialLabel}`
     : integrationLabel;
   return (
-    <TableRow className="group/item">
-      <TableCell className="px-3 py-3 align-top whitespace-normal">
+    <Tr className="group/item">
+      <Td className="py-3 align-top whitespace-normal">
         <div className="flex min-w-0 items-start gap-2.5">
           <div className="flex size-8 shrink-0 items-center justify-center rounded-md border border-sidebar-border bg-background text-muted-foreground">
             <Wrench className="size-4" />
@@ -39,8 +39,8 @@ export function ToolConfigRow({
             <span className="truncate text-xs text-muted-foreground">{on}</span>
           </div>
         </div>
-      </TableCell>
-      <TableCell className="px-3 py-3 pt-4 align-top whitespace-normal max-md:hidden">
+      </Td>
+      <Td className="py-3 pt-4 align-top whitespace-normal max-md:hidden">
         {scopes.length > 0 ? (
           <div className="flex flex-wrap gap-1">
             {scopes.map((s) => (
@@ -52,8 +52,8 @@ export function ToolConfigRow({
         ) : (
           <span className="text-xs text-muted-foreground">{t('noScopes')}</span>
         )}
-      </TableCell>
-      <TableCell className="px-3 py-2 pt-3 align-top">
+      </Td>
+      <Td className="pt-3 align-top">
         <div className="flex items-center justify-end gap-1">
           {canDelete && (
             <Button
@@ -67,7 +67,7 @@ export function ToolConfigRow({
             </Button>
           )}
         </div>
-      </TableCell>
-    </TableRow>
+      </Td>
+    </Tr>
   );
 }

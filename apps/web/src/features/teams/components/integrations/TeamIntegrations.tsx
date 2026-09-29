@@ -3,7 +3,6 @@ import { useTranslations } from 'next-intl';
 import type { ResourcePermissions } from '@/lib/api/endpoints/roles';
 import type { IntegrationCredential, IntegrationMeta } from '@/lib/api/endpoints/integrations';
 import { useCredentialsPageQuery, useDeleteCredential } from '@/services/integrations.service';
-import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { EmptyState } from '@/components/common/page/EmptyState';
 import { integrationLabel } from '@/utils/integrationLabels';
 import ConfirmDialog from '@/components/common/overlay/ConfirmDialog';
@@ -12,6 +11,7 @@ import { usePaging } from '@/hooks/usePaging';
 import { CredentialDialog } from './CredentialDialog';
 import { CredentialRow } from './CredentialRow';
 import TableCard from '@/components/common/page/TableCard';
+import { Table, Th, Tr } from '@/design-system';
 
 // The team's stored credentials as a table. Editing happens in a dialog; deleting
 // confirms first. Adding is done from the tab header.
@@ -43,26 +43,20 @@ export default function TeamIntegrations({
         <div className="space-y-4">
           <div className="overflow-x-auto">
             <TableCard>
-              <Table className="table-fixed xl:min-w-[560px]">
+              <Table stack={false} className="table-fixed xl:min-w-[560px]">
                 <colgroup>
                   <col className="w-[34%]" />
                   <col className="w-[50%]" />
                   <col className="w-[16%]" />
                 </colgroup>
-                <TableHeader>
-                  <TableRow className="hover:bg-transparent">
-                    <TableHead className="text-xs font-medium text-muted-foreground">
-                      {t('columns.integration')}
-                    </TableHead>
-                    <TableHead className="text-xs font-medium text-muted-foreground">
-                      {t('columns.credentials')}
-                    </TableHead>
-                    <TableHead className="text-end text-xs font-medium text-muted-foreground">
-                      {tCommon('actions')}
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
+                <thead>
+                  <Tr className="hover:bg-transparent">
+                    <Th>{t('columns.integration')}</Th>
+                    <Th>{t('columns.credentials')}</Th>
+                    <Th alignment="end">{tCommon('actions')}</Th>
+                  </Tr>
+                </thead>
+                <tbody>
                   {credentials.map((c) => (
                     <CredentialRow
                       key={c.id}
@@ -74,7 +68,7 @@ export default function TeamIntegrations({
                       onDelete={() => setDeleting(c)}
                     />
                   ))}
-                </TableBody>
+                </tbody>
               </Table>
             </TableCard>
           </div>

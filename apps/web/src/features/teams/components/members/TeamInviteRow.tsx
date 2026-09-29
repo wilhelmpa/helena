@@ -7,8 +7,8 @@ import type { InviteRow } from '@/lib/api/endpoints/invites';
 import { inviteLink } from '@/utils/paths';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { TableCell, TableRow } from '@/components/ui/table';
 import { copyText } from '@/utils/clipboard';
+import { Td, Tr } from '@/design-system';
 
 // One pending invite of the team: the invited address, what it grants — a rank in
 // the team, or a project it also joins — a copy-link button and a revoke action.
@@ -35,8 +35,8 @@ export default function TeamInviteRow({
   }
 
   return (
-    <TableRow className="hover:bg-transparent">
-      <TableCell className="px-3 py-3">
+    <Tr className="hover:bg-transparent">
+      <Td className="py-3">
         <div className="flex min-w-0 items-center gap-2.5">
           <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted">
             <Mail className="size-4 text-muted-foreground" />
@@ -50,16 +50,14 @@ export default function TeamInviteRow({
             </p>
           </div>
         </div>
-      </TableCell>
-      <TableCell className="px-3 py-3">
+      </Td>
+      <Td className="py-3">
         <Badge variant="outline" className="font-normal">
           {tManage(`roles.${invite.teamRole}`)}
         </Badge>
-      </TableCell>
-      <TableCell className="px-3 py-3 text-sm text-muted-foreground max-md:hidden">
-        {t('pending')}
-      </TableCell>
-      <TableCell className="px-3 py-2">
+      </Td>
+      <Td className="py-3 max-md:hidden">{t('pending')}</Td>
+      <Td>
         <div className="flex items-center justify-end gap-1">
           <Button
             variant="ghost"
@@ -80,7 +78,7 @@ export default function TeamInviteRow({
             <X className="size-4" />
           </Button>
         </div>
-      </TableCell>
-    </TableRow>
+      </Td>
+    </Tr>
   );
 }

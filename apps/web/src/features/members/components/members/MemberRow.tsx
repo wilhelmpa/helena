@@ -7,7 +7,6 @@ import type { Role } from '@/lib/api/endpoints/roles';
 import { formatDateTime } from '@/utils/dates';
 import Avatar from '@/components/common/Avatar';
 import { Button } from '@/components/ui/button';
-import { TableCell, TableRow } from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useSession } from '@/lib/auth-client';
@@ -16,7 +15,7 @@ import MemberProvisionedBadge from '@/components/common/MemberProvisionedBadge';
 import MemberRoleControl from './MemberRoleControl';
 import MemberDescription from './MemberDescription';
 import MemberDescriptionDialog from './MemberDescriptionDialog';
-import { Inline, Stack, Text } from '@/design-system';
+import { Inline, Stack, Text, Td, Tr } from '@/design-system';
 
 // One member's row in the members list: identity, role control, and the actions
 // (edit description, leave or revoke access). Acting on someone else's membership
@@ -54,8 +53,8 @@ export default function MemberRow({
   const displayName = member.name || member.email;
 
   return (
-    <TableRow className="group/item">
-      <TableCell className="px-3 py-3 align-top whitespace-normal">
+    <Tr className="group/item">
+      <Td className="py-3 align-top whitespace-normal">
         <Stack gap={1} className="min-w-0">
           <Inline gap={3} className="min-w-0">
             <Avatar name={displayName} image={member.image} className="size-8 shrink-0" />
@@ -90,8 +89,8 @@ export default function MemberRow({
               only buried the people (owner, O34). */}
           {!member.isAgent && <MemberDescription member={member} />}
         </Stack>
-      </TableCell>
-      <TableCell className="px-3 pt-4 pb-3 align-top whitespace-normal">
+      </Td>
+      <Td className="pt-4 pb-3 align-top whitespace-normal">
         <MemberRoleControl
           projectKey={projectKey}
           member={member}
@@ -100,15 +99,15 @@ export default function MemberRow({
           canGrantOwner={isAdmin}
           isLastOwner={isLastOwner}
         />
-      </TableCell>
-      <TableCell className="hidden px-3 py-3 align-top text-sm whitespace-normal text-muted-foreground md:table-cell">
+      </Td>
+      <Td className="hidden py-3 align-top whitespace-normal md:table-cell">
         {/* An agent reads no timestamps, so its bot user's zone means nothing. */}
         {member.isAgent ? null : member.timezone}
-      </TableCell>
-      <TableCell className="hidden px-3 py-3 align-top text-sm whitespace-normal text-muted-foreground md:table-cell">
+      </Td>
+      <Td className="hidden py-3 align-top whitespace-normal md:table-cell">
         {formatDateTime(member.createdAt)}
-      </TableCell>
-      <TableCell className="px-3 pt-3 pb-2 align-top">
+      </Td>
+      <Td className="pt-3 pb-2 align-top">
         <Inline gap={1} justify="end">
           {canEditDescription && (
             <MemberDescriptionDialog projectKey={projectKey} member={member} self={self} />
@@ -131,7 +130,7 @@ export default function MemberRow({
             </Tooltip>
           )}
         </Inline>
-      </TableCell>
-    </TableRow>
+      </Td>
+    </Tr>
   );
 }

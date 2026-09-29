@@ -7,18 +7,10 @@ import { formatShortDate } from '@/utils/dates';
 import Avatar from '@/components/common/Avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 import { useProviderList } from '../../hooks/useProviderList';
 import TableCard from '@/components/common/page/TableCard';
 
-import { Inline, Stack, Text } from '@/design-system';
+import { Inline, Stack, Text, Table, Td, Th, Tr } from '@/design-system';
 
 // The account list. A row (or the pencil in its Actions cell) opens the account in
 // the side panel, where the email can be confirmed and the account deleted.
@@ -35,7 +27,7 @@ export default function GodUsersTable({
 
   return (
     <TableCard>
-      <Table className="table-fixed xl:min-w-[860px]">
+      <Table stack={false} className="table-fixed xl:min-w-[860px]">
         <colgroup>
           <col className="w-[30%]" />
           <col className="w-[12%]" />
@@ -45,40 +37,26 @@ export default function GodUsersTable({
           <col className="w-[13%] max-md:hidden" />
           <col className="w-[8%]" />
         </colgroup>
-        <TableHeader>
-          <TableRow className="hover:bg-transparent">
-            <TableHead className="text-xs font-medium text-muted-foreground">
-              {t('columns.account')}
-            </TableHead>
-            <TableHead className="text-xs font-medium text-muted-foreground">
-              {t('columns.role')}
-            </TableHead>
-            <TableHead className="text-xs font-medium text-muted-foreground max-xl:hidden">
-              {t('columns.signIn')}
-            </TableHead>
-            <TableHead className="text-xs font-medium text-muted-foreground max-md:hidden">
-              {t('columns.projects')}
-            </TableHead>
-            <TableHead className="text-xs font-medium text-muted-foreground max-xl:hidden">
-              {t('columns.lastSeen')}
-            </TableHead>
-            <TableHead className="text-xs font-medium text-muted-foreground max-md:hidden">
-              {t('columns.email')}
-            </TableHead>
-            <TableHead className="text-right text-xs font-medium text-muted-foreground">
-              {tCommon('actions')}
-            </TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
+        <thead>
+          <Tr className="hover:bg-transparent">
+            <Th>{t('columns.account')}</Th>
+            <Th>{t('columns.role')}</Th>
+            <Th className="max-xl:hidden">{t('columns.signIn')}</Th>
+            <Th className="max-md:hidden">{t('columns.projects')}</Th>
+            <Th className="max-xl:hidden">{t('columns.lastSeen')}</Th>
+            <Th className="max-md:hidden">{t('columns.email')}</Th>
+            <Th alignment="end">{tCommon('actions')}</Th>
+          </Tr>
+        </thead>
+        <tbody>
           {users.map((u) => (
-            <TableRow
+            <Tr
               key={u.id}
               className="cursor-pointer"
               onClick={() => onSelect(u.id)}
               title={t('showAccess')}
             >
-              <TableCell className="px-3 py-3 align-top whitespace-normal">
+              <Td className="py-3 align-top whitespace-normal">
                 <Inline gap={3} align="start" className="flex min-w-0 items-start">
                   <Avatar name={u.name || u.email} image={u.image} className="size-8 shrink-0" />
                   <Stack gap={1} padTop={1} className="flex min-w-0 flex-col">
@@ -93,9 +71,9 @@ export default function GodUsersTable({
                     </Text>
                   </Stack>
                 </Inline>
-              </TableCell>
+              </Td>
 
-              <TableCell className="px-3 py-3 align-top">
+              <Td className="py-3 align-top">
                 <Inline gap={1} align="stretch" wrap className="flex flex-wrap">
                   {u.role === 'god' ? (
                     <Badge variant="secondary" className="gap-1 px-1.5 py-0 text-xs font-medium">
@@ -114,21 +92,19 @@ export default function GodUsersTable({
                     </Badge>
                   )}
                 </Inline>
-              </TableCell>
+              </Td>
 
-              <TableCell className="px-3 py-3 align-top text-xs text-muted-foreground max-xl:hidden">
+              <Td className="py-3 align-top max-xl:hidden">
                 {u.providers.length ? providerList(u.providers) : t('noProviders')}
-              </TableCell>
+              </Td>
 
-              <TableCell className="px-3 py-3 align-top text-sm max-md:hidden">
-                {u.projectCount}
-              </TableCell>
+              <Td className="py-3 align-top max-md:hidden">{u.projectCount}</Td>
 
-              <TableCell className="px-3 py-3 align-top text-xs text-muted-foreground max-xl:hidden">
+              <Td className="py-3 align-top max-xl:hidden">
                 {u.lastSeenAt ? formatShortDate(u.lastSeenAt) : t('neverSeen')}
-              </TableCell>
+              </Td>
 
-              <TableCell className="px-3 py-3 align-top max-md:hidden">
+              <Td className="py-3 align-top max-md:hidden">
                 {u.emailVerified ? (
                   <Badge variant="secondary" className="px-1.5 py-0 text-xs font-medium">
                     {t('verified')}
@@ -138,9 +114,9 @@ export default function GodUsersTable({
                     {t('notVerified')}
                   </Badge>
                 )}
-              </TableCell>
+              </Td>
 
-              <TableCell className="px-3 py-3 text-right align-top">
+              <Td alignment="end" className="py-3 align-top">
                 <Button
                   variant="ghost"
                   size="icon"
@@ -154,10 +130,10 @@ export default function GodUsersTable({
                 >
                   <Pencil />
                 </Button>
-              </TableCell>
-            </TableRow>
+              </Td>
+            </Tr>
           ))}
-        </TableBody>
+        </tbody>
       </Table>
     </TableCard>
   );

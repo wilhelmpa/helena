@@ -24,16 +24,9 @@ import SettingsCard from '@/components/common/page/SettingsCard';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 import GodSectionPage from './components/GodSectionPage';
 import ModelPriceDialog from './components/model-prices/ModelPriceDialog';
+import { Table, Td, Th, Tr } from '@/design-system';
 
 // Administrator → Modellpreise: euros per million tokens per model, from models.dev
 // (converted at the owner's exchange rate) or entered by hand, which no import overwrites.
@@ -124,44 +117,42 @@ export default function GodModelPricesPage() {
         <p className="text-sm text-muted-foreground">{t('empty')}</p>
       ) : (
         <TableCard>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>{t('model')}</TableHead>
-                <TableHead>{t('provider')}</TableHead>
-                <TableHead className="text-end">{t('input')}</TableHead>
-                <TableHead className="text-end">{t('output')}</TableHead>
-                <TableHead className="text-end">{t('cacheRead')}</TableHead>
-                <TableHead className="text-end">{t('cacheWrite')}</TableHead>
-                <TableHead>{t('sourceLabel')}</TableHead>
-                <TableHead className="w-20" />
-              </TableRow>
-            </TableHeader>
-            <TableBody>
+          <Table stack={false}>
+            <thead>
+              <Tr>
+                <Th>{t('model')}</Th>
+                <Th>{t('provider')}</Th>
+                <Th alignment="end">{t('input')}</Th>
+                <Th alignment="end">{t('output')}</Th>
+                <Th alignment="end">{t('cacheRead')}</Th>
+                <Th alignment="end">{t('cacheWrite')}</Th>
+                <Th>{t('sourceLabel')}</Th>
+                <Th className="w-20" />
+              </Tr>
+            </thead>
+            <tbody>
               {items.map((item) => (
-                <TableRow key={item.model}>
-                  <TableCell className="font-mono text-xs">{item.model}</TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {item.provider ?? t('none')}
-                  </TableCell>
-                  <TableCell className="text-end tabular-nums">
+                <Tr key={item.model}>
+                  <Td className="font-mono">{item.model}</Td>
+                  <Td>{item.provider ?? t('none')}</Td>
+                  <Td alignment="end" className="tabular-nums">
                     {money(item.inputPerMTok)}
-                  </TableCell>
-                  <TableCell className="text-end tabular-nums">
+                  </Td>
+                  <Td alignment="end" className="tabular-nums">
                     {money(item.outputPerMTok)}
-                  </TableCell>
-                  <TableCell className="text-end tabular-nums">
+                  </Td>
+                  <Td alignment="end" className="tabular-nums">
                     {money(item.cacheReadPerMTok)}
-                  </TableCell>
-                  <TableCell className="text-end tabular-nums">
+                  </Td>
+                  <Td alignment="end" className="tabular-nums">
                     {money(item.cacheWritePerMTok)}
-                  </TableCell>
-                  <TableCell>
+                  </Td>
+                  <Td>
                     <Badge variant={item.source === 'manual' ? 'secondary' : 'outline'}>
                       {t(item.source === 'manual' ? 'source.manual' : 'source.modelsDev')}
                     </Badge>
-                  </TableCell>
-                  <TableCell>
+                  </Td>
+                  <Td>
                     <div className="flex justify-end gap-0.5">
                       <Button
                         variant="ghost"
@@ -185,10 +176,10 @@ export default function GodModelPricesPage() {
                         </Button>
                       )}
                     </div>
-                  </TableCell>
-                </TableRow>
+                  </Td>
+                </Tr>
               ))}
-            </TableBody>
+            </tbody>
           </Table>
         </TableCard>
       )}

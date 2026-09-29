@@ -7,7 +7,6 @@ import {
   useConfiguredToolsPageQuery,
   useDeleteConfiguredTool,
 } from '@/services/customTools.service';
-import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { EmptyState } from '@/components/common/page/EmptyState';
 import ListSkeleton from '@/components/common/skeleton/ListSkeleton';
 import ConfirmDialog from '@/components/common/overlay/ConfirmDialog';
@@ -16,6 +15,7 @@ import { usePaging } from '@/hooks/usePaging';
 import { integrationLabel } from '@/utils/integrationLabels';
 import { ToolConfigRow } from './ToolConfigRow';
 import TableCard from '@/components/common/page/TableCard';
+import { Table, Th, Tr } from '@/design-system';
 
 // The team's configured tools as a table: a catalog tool bound to an integration
 // credential, callable by the agents of every project the team owns. Adding
@@ -55,26 +55,20 @@ export default function TeamAgentTools({
         <div className="space-y-4">
           <div className="overflow-x-auto">
             <TableCard>
-              <Table className="table-fixed xl:min-w-[760px]">
+              <Table stack={false} className="table-fixed xl:min-w-[760px]">
                 <colgroup>
                   <col className="w-[34%]" />
                   <col className="w-[52%] max-md:hidden" />
                   <col className="w-[14%]" />
                 </colgroup>
-                <TableHeader>
-                  <TableRow className="hover:bg-transparent">
-                    <TableHead className="text-xs font-medium text-muted-foreground">
-                      {t('tool')}
-                    </TableHead>
-                    <TableHead className="text-xs font-medium text-muted-foreground max-md:hidden">
-                      {t('scopes')}
-                    </TableHead>
-                    <TableHead className="text-end text-xs font-medium text-muted-foreground">
-                      {tCommon('actions')}
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
+                <thead>
+                  <Tr className="hover:bg-transparent">
+                    <Th>{t('tool')}</Th>
+                    <Th className="max-md:hidden">{t('scopes')}</Th>
+                    <Th alignment="end">{tCommon('actions')}</Th>
+                  </Tr>
+                </thead>
+                <tbody>
                   {tools.map((tool) => (
                     <ToolConfigRow
                       key={tool.id}
@@ -86,7 +80,7 @@ export default function TeamAgentTools({
                       onDelete={() => setDeleting(tool)}
                     />
                   ))}
-                </TableBody>
+                </tbody>
               </Table>
             </TableCard>
           </div>

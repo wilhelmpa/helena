@@ -4,7 +4,6 @@ import { useTranslations } from 'next-intl';
 import type { Routine } from '@/lib/api/endpoints/routines';
 import StatusBadge from '@/components/common/page/StatusBadge';
 import { Switch } from '@/components/ui/switch';
-import { TableCell, TableRow } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
 import { issuePath, routineEditPath } from '@/utils/paths';
 import { useCronDescription } from '../hooks/useCronDescription';
@@ -12,7 +11,7 @@ import { formatInZone } from '../utils/schedulePreview';
 import { RoutineActionsMenu, type RoutineActions } from './RoutineActionsMenu';
 import { RoutineLastRun } from './RoutineLastRun';
 import { RoutineMentionsLine } from './RoutineMentions';
-import { Text } from '@/design-system';
+import { Text, Td, Tr } from '@/design-system';
 
 // One routine. Without `actions` the row only reads, the way Home lists the routines of
 // every project.
@@ -28,9 +27,9 @@ export function RoutineRow({
   const t = useTranslations('routines');
   const describe = useCronDescription();
   return (
-    <TableRow className="group/item">
+    <Tr className="group/item">
       {showProject && (
-        <TableCell className="px-3 py-2.5 align-top whitespace-normal">
+        <Td className="py-2.5 align-top whitespace-normal">
           <Link
             href={routineEditPath(routine.projectKey, routine.id)}
             className="text-sm font-medium underline-offset-2 hover:underline"
@@ -40,9 +39,9 @@ export function RoutineRow({
           <Text as="p" size="xs" tone="muted" className="font-mono">
             {routine.projectKey}
           </Text>
-        </TableCell>
+        </Td>
       )}
-      <TableCell className="px-3 py-2.5 align-top whitespace-normal">
+      <Td className="py-2.5 align-top whitespace-normal">
         <Text
           as="p"
           size="sm"
@@ -90,8 +89,8 @@ export function RoutineRow({
             </span>
           )}
         </Text>
-      </TableCell>
-      <TableCell className="px-3 py-2.5 align-top whitespace-normal">
+      </Td>
+      <Td className="py-2.5 align-top whitespace-normal">
         <Text as="p" size="sm" title={routine.cron}>
           {describe(routine.cron) ?? routine.cron}
         </Text>
@@ -103,11 +102,11 @@ export function RoutineRow({
             ? t('nextRunAt', { time: formatInZone(routine.nextRunAt, routine.timezone) })
             : t('paused')}
         </Text>
-      </TableCell>
-      <TableCell className="px-3 py-2.5 align-top whitespace-normal">
+      </Td>
+      <Td className="py-2.5 align-top whitespace-normal">
         <RoutineLastRun routine={routine} canEdit={actions?.canEdit ?? false} />
-      </TableCell>
-      <TableCell className="px-3 py-2.5 align-top">
+      </Td>
+      <Td className="py-2.5 align-top">
         {actions?.canEdit ? (
           <Switch
             checked={routine.enabled}
@@ -119,12 +118,12 @@ export function RoutineRow({
             {routine.enabled ? t('active') : t('paused')}
           </StatusBadge>
         )}
-      </TableCell>
+      </Td>
       {actions && (
-        <TableCell className="px-3 py-2 text-end align-top">
+        <Td alignment="end" className="align-top">
           <RoutineActionsMenu actions={actions} />
-        </TableCell>
+        </Td>
       )}
-    </TableRow>
+    </Tr>
   );
 }

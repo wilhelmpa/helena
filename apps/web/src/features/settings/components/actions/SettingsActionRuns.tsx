@@ -8,16 +8,8 @@ import { revScope } from '@/utils/revScopes';
 import { formatDateTime } from '@/utils/dates';
 import ListSkeleton from '@/components/common/skeleton/ListSkeleton';
 import { Badge } from '@/components/ui/badge';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 
-import { Box, Stack, Text } from '@/design-system';
+import { Box, Stack, Text, Table, Td, Th, Tr } from '@/design-system';
 
 export function SettingsActionRuns({ project }: { project: ProjectDetail }) {
   const t = useTranslations('settings.actions');
@@ -46,7 +38,7 @@ export function SettingsActionRuns({ project }: { project: ProjectDetail }) {
           </Text>
         </Box>
       ) : (
-        <Table className="min-w-[760px] table-fixed">
+        <Table stack={false} className="min-w-[760px] table-fixed">
           <colgroup>
             <col className="w-[24%]" />
             <col className="w-[17%]" />
@@ -54,30 +46,30 @@ export function SettingsActionRuns({ project }: { project: ProjectDetail }) {
             <col className="w-[18%]" />
             <col className="w-[16%]" />
           </colgroup>
-          <TableHeader>
-            <TableRow className="hover:bg-transparent">
-              <TableHead>{t('columns.action')}</TableHead>
-              <TableHead>{t('workItem')}</TableHead>
-              <TableHead>{t('stateTransition')}</TableHead>
-              <TableHead>{t('runStatusLabel')}</TableHead>
-              <TableHead className="text-end">{t('runAt')}</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
+          <thead>
+            <Tr className="hover:bg-transparent">
+              <Th>{t('columns.action')}</Th>
+              <Th>{t('workItem')}</Th>
+              <Th>{t('stateTransition')}</Th>
+              <Th>{t('runStatusLabel')}</Th>
+              <Th alignment="end">{t('runAt')}</Th>
+            </Tr>
+          </thead>
+          <tbody>
             {runs.map((run) => (
-              <TableRow key={run.id}>
-                <TableCell className="px-3 py-2">
+              <Tr key={run.id}>
+                <Td>
                   <div className="truncate text-sm font-medium">{run.actionName}</div>
                   <div className="text-xs text-muted-foreground">
                     {t(triggerLabel(run.trigger))}
                   </div>
-                </TableCell>
-                <TableCell className="px-3 py-2 text-sm">{run.issueIdentifier ?? '—'}</TableCell>
-                <TableCell className="px-3 py-2 text-sm">
+                </Td>
+                <Td>{run.issueIdentifier ?? '—'}</Td>
+                <Td>
                   {run.fromColumnName ?? `#${run.fromColumnId}`} →{' '}
                   {run.toColumnName ?? `#${run.toColumnId}`}
-                </TableCell>
-                <TableCell className="px-3 py-2">
+                </Td>
+                <Td>
                   <Badge
                     variant={
                       run.status === 'failed'
@@ -102,13 +94,13 @@ export function SettingsActionRuns({ project }: { project: ProjectDetail }) {
                       </Text>
                     </Box>
                   )}
-                </TableCell>
-                <TableCell className="px-3 py-2 text-end text-xs text-muted-foreground tabular-nums">
+                </Td>
+                <Td alignment="end" className="tabular-nums">
                   {formatDateTime(run.createdAt)}
-                </TableCell>
-              </TableRow>
+                </Td>
+              </Tr>
             ))}
-          </TableBody>
+          </tbody>
         </Table>
       )}
     </Stack>

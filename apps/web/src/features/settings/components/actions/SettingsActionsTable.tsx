@@ -2,8 +2,8 @@ import { useTranslations } from 'next-intl';
 import type { ActionDef } from '@/lib/api/endpoints/actions';
 import type { CustomField } from '@/lib/api/endpoints/customFields';
 import type { ProjectDetail } from '@/lib/api/endpoints/projects';
-import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { SettingsActionRow } from './SettingsActionRow';
+import { Table, Th, Tr } from '@/design-system';
 
 interface SettingsActionsTableProps {
   actions: ActionDef[];
@@ -29,26 +29,20 @@ export function SettingsActionsTable({
 
   return (
     <div className="overflow-hidden rounded-md border bg-card">
-      <Table className="min-w-[680px] table-fixed">
+      <Table stack={false} className="min-w-[680px] table-fixed">
         <colgroup>
           <col className="w-[44%]" />
           <col className="w-[42%]" />
           <col className="w-[14%]" />
         </colgroup>
-        <TableHeader>
-          <TableRow className="hover:bg-transparent">
-            <TableHead className="px-3 text-xs font-normal text-muted-foreground">
-              {t('columns.action')}
-            </TableHead>
-            <TableHead className="px-3 text-xs font-normal text-muted-foreground">
-              {t('columns.thenSet')}
-            </TableHead>
-            <TableHead className="px-3 text-end text-xs font-normal text-muted-foreground">
-              {tCommon('actions')}
-            </TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
+        <thead>
+          <Tr className="hover:bg-transparent">
+            <Th>{t('columns.action')}</Th>
+            <Th>{t('columns.thenSet')}</Th>
+            <Th alignment="end">{tCommon('actions')}</Th>
+          </Tr>
+        </thead>
+        <tbody>
           {actions.map((action) => (
             <SettingsActionRow
               key={action.id}
@@ -61,7 +55,7 @@ export function SettingsActionsTable({
               onToggle={(enabled) => onToggle(action, enabled)}
             />
           ))}
-        </TableBody>
+        </tbody>
       </Table>
     </div>
   );

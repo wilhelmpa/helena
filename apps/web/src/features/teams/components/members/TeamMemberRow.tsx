@@ -6,9 +6,9 @@ import type { TeamMember } from '@/lib/api/endpoints/teams';
 import { formatDate } from '@/utils/dates';
 import Avatar from '@/components/common/Avatar';
 import { Button } from '@/components/ui/button';
-import { TableCell, TableRow } from '@/components/ui/table';
 import MemberProvisionedBadge from '@/components/common/MemberProvisionedBadge';
 import TeamMemberRoleControl from './TeamMemberRoleControl';
+import { Td, Tr } from '@/design-system';
 
 // One row of the team member list. An agent is a member like a person, with two
 // differences: it is addressed by its handle rather than an email, and the role column
@@ -38,8 +38,8 @@ export default function TeamMemberRow({
   const canRemove = onRemove != null && !self && !provisioned && viewerRole === 'owner';
 
   return (
-    <TableRow className={onOpen ? 'cursor-pointer' : 'hover:bg-transparent'} onClick={onOpen}>
-      <TableCell className="px-3 py-3">
+    <Tr className={onOpen ? 'cursor-pointer' : 'hover:bg-transparent'} onClick={onOpen}>
+      <Td className="py-3">
         <div className="flex min-w-0 items-center gap-2.5">
           <Avatar name={displayName} image={member.image} className="size-8 shrink-0" />
           <div className="min-w-0">
@@ -52,19 +52,17 @@ export default function TeamMemberRow({
             </p>
           </div>
         </div>
-      </TableCell>
-      <TableCell className="px-3 py-3">
+      </Td>
+      <Td className="py-3">
         <TeamMemberRoleControl
           teamId={teamId}
           member={member}
           viewerRole={viewerRole}
           self={self}
         />
-      </TableCell>
-      <TableCell className="px-3 py-3 text-sm text-muted-foreground max-md:hidden">
-        {formatDate(member.joinedAt)}
-      </TableCell>
-      <TableCell className="px-3 py-2">
+      </Td>
+      <Td className="py-3 max-md:hidden">{formatDate(member.joinedAt)}</Td>
+      <Td>
         {canRemove && (
           <div className="flex items-center justify-end">
             <Button
@@ -81,7 +79,7 @@ export default function TeamMemberRow({
             </Button>
           </div>
         )}
-      </TableCell>
-    </TableRow>
+      </Td>
+    </Tr>
   );
 }

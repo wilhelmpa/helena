@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Segmented, Stack } from '@/design-system';
 import { useCreateSkill, useDiscoverGithubSkills } from '@/services/agentSkills.service';
 import { useTranslations } from 'next-intl';
 
@@ -266,76 +266,87 @@ export function SkillCreateDialog({
 
   return (
     <Modal title={t('newSkill')} scope={teamName} onClose={onClose} wide>
-      <Tabs value={source} onValueChange={(v) => setSource(v as Source)}>
-        <TabsList variant="line">
-          <TabsTrigger value="inline">{t('tabInline')}</TabsTrigger>
-          <TabsTrigger value="upload">{t('tabUpload')}</TabsTrigger>
-          <TabsTrigger value="github">{t('tabGithub')}</TabsTrigger>
-        </TabsList>
+      <Stack gap={4}>
+        <Segmented<Source>
+          label={t('newSkill')}
+          value={source}
+          onChange={setSource}
+          options={[
+            { value: 'inline', label: t('tabInline') },
+            { value: 'upload', label: t('tabUpload') },
+            { value: 'github', label: t('tabGithub') },
+          ]}
+        />
 
-        <TabsContent value="inline" className="mt-2 space-y-4">
-          <div className="space-y-1.5">
-            <Label>SKILL.md</Label>
-            <Textarea
-              value={markdown}
-              onChange={(e) => setMarkdown(e.target.value)}
-              rows={10}
-              className="font-mono text-xs"
-              placeholder={
-                '---\nname: My skill\ndescription: What it does and when to use it\n---\n\nInstructions…'
-              }
-            />
-          </div>
-          {nameAndCreate}
-        </TabsContent>
-
-        <TabsContent value="upload" className="mt-2 space-y-4">
-          <div className="space-y-1.5">
-            <Label>{t('skillFile')}</Label>
-            <Input
-              type="file"
-              accept=".md,.markdown,.txt,text/markdown,text/plain"
-              onChange={(e) => onFile(e.target.files?.[0])}
-            />
-            {fileName && (
-              <p className="text-xs text-muted-foreground">{t('loaded', { file: fileName })}</p>
-            )}
-          </div>
-          {nameAndCreate}
-        </TabsContent>
-
-        <TabsContent value="github" className="mt-2 space-y-4">
-          <div className="flex gap-2.5 rounded-md border border-status-waiting/30 bg-status-waiting/10 p-3 text-status-waiting">
-            <TriangleAlert className="mt-px size-4 shrink-0" />
-            <div className="space-y-1.5 text-xs leading-relaxed">
-              <p className="font-medium">{t('trustWarning')}</p>
-              <ul className="list-disc space-y-0.5 ps-4 text-status-waiting/90">
-                <li>{t('trustWarning1')}</li>
-                <li>{t('trustWarning2')}</li>
-              </ul>
+        {source === 'inline' && (
+          <Stack gap={4}>
+            <div className="space-y-1.5">
+              <Label>SKILL.md</Label>
+              <Textarea
+                value={markdown}
+                onChange={(e) => setMarkdown(e.target.value)}
+                rows={10}
+                className="font-mono text-xs"
+                placeholder={
+                  '---\nname: My skill\ndescription: What it does and when to use it\n---\n\nInstructions…'
+                }
+              />
             </div>
-          </div>
+            {nameAndCreate}
+          </Stack>
+        )}
 
-          <div className="space-y-1.5">
-            <Label>{t('githubUrl')}</Label>
-            <Input
-              value={sourceUrl}
-              onChange={(e) => setSourceUrl(e.target.value)}
-              placeholder={t('githubUrlPlaceholder')}
-            />
-            <p className="text-xs text-muted-foreground">{t('githubUrlHint')}</p>
-          </div>
+        {source === 'upload' && (
+          <Stack gap={4}>
+            <div className="space-y-1.5">
+              <Label>{t('skillFile')}</Label>
+              <Input
+                type="file"
+                accept=".md,.markdown,.txt,text/markdown,text/plain"
+                onChange={(e) => onFile(e.target.files?.[0])}
+              />
+              {fileName && (
+                <p className="text-xs text-muted-foreground">{t('loaded', { file: fileName })}</p>
+              )}
+            </div>
+            {nameAndCreate}
+          </Stack>
+        )}
 
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={onClose} disabled={busy}>
-              {tCommon('cancel')}
-            </Button>
-            <Button onClick={runDiscover} disabled={busy || sourceUrl.trim() === ''}>
-              {t('findSkills')}
-            </Button>
-          </div>
-        </TabsContent>
-      </Tabs>
+        {source === 'github' && (
+          <Stack gap={4}>
+            <div className="flex gap-2.5 rounded-md border border-status-waiting/30 bg-status-waiting/10 p-3 text-status-waiting">
+              <TriangleAlert className="mt-px size-4 shrink-0" />
+              <div className="space-y-1.5 text-xs leading-relaxed">
+                <p className="font-medium">{t('trustWarning')}</p>
+                <ul className="list-disc space-y-0.5 ps-4 text-status-waiting/90">
+                  <li>{t('trustWarning1')}</li>
+                  <li>{t('trustWarning2')}</li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>{t('githubUrl')}</Label>
+              <Input
+                value={sourceUrl}
+                onChange={(e) => setSourceUrl(e.target.value)}
+                placeholder={t('githubUrlPlaceholder')}
+              />
+              <p className="text-xs text-muted-foreground">{t('githubUrlHint')}</p>
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={onClose} disabled={busy}>
+                {tCommon('cancel')}
+              </Button>
+              <Button onClick={runDiscover} disabled={busy || sourceUrl.trim() === ''}>
+                {t('findSkills')}
+              </Button>
+            </div>
+          </Stack>
+        )}
+      </Stack>
     </Modal>
   );
 }

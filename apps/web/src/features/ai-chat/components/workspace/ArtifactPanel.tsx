@@ -8,7 +8,7 @@ import { useMutation } from '@tanstack/react-query';
 import { WorkspaceHeader } from '@/components/layout/WorkspaceHeader';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Segmented } from '@/design-system';
 import { copyText } from '@/utils/clipboard';
 import { createTextFile } from '@/lib/api/endpoints/projectFiles';
 import { chatUploadScope } from '../../hooks/useVaultUpload';
@@ -63,16 +63,25 @@ export default function ArtifactPanel({
           </span>
         </div>
         <div className="flex shrink-0 items-center gap-1">
-          <Tabs value={tab} onValueChange={(value) => setTab(value as 'code' | 'preview')}>
-            <TabsList>
-              <TabsTrigger value="preview" aria-label={t('artifact.preview')}>
-                <Eye className="size-3.5" />
-              </TabsTrigger>
-              <TabsTrigger value="code" aria-label={t('artifact.code')}>
-                <Code2 className="size-3.5" />
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
+          <Segmented<'code' | 'preview'>
+            label={t('artifact.title')}
+            value={tab}
+            onChange={setTab}
+            options={[
+              {
+                value: 'preview',
+                icon: <Eye aria-hidden="true" />,
+                label: <span className="sr-only">{t('artifact.preview')}</span>,
+                title: t('artifact.preview'),
+              },
+              {
+                value: 'code',
+                icon: <Code2 aria-hidden="true" />,
+                label: <span className="sr-only">{t('artifact.code')}</span>,
+                title: t('artifact.code'),
+              },
+            ]}
+          />
           <Button
             variant="ghost"
             size="icon"

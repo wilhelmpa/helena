@@ -3,7 +3,6 @@ import { useTranslations } from 'next-intl';
 import type { ResourcePermissions } from '@/lib/api/endpoints/roles';
 import type { AgentSkill } from '@/lib/api/endpoints/agentSkills';
 import { useSkillsPageQuery, useDeleteSkill } from '@/services/agentSkills.service';
-import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { EmptyState } from '@/components/common/page/EmptyState';
 import ListSkeleton from '@/components/common/skeleton/ListSkeleton';
 import ConfirmDialog from '@/components/common/overlay/ConfirmDialog';
@@ -12,6 +11,7 @@ import { usePaging } from '@/hooks/usePaging';
 import { SkillEditDialog } from './SkillEditDialog';
 import { SkillRow } from './SkillRow';
 import TableCard from '@/components/common/page/TableCard';
+import { Table, Th, Tr } from '@/design-system';
 
 // The team's skill library as a table: reusable instructions the agents of
 // its projects load on demand. A skill is a SKILL.md plus optional reference files;
@@ -47,26 +47,20 @@ export default function TeamAgentSkills({
         <div className="space-y-4">
           <div className="overflow-x-auto">
             <TableCard>
-              <Table className="table-fixed xl:min-w-[820px]">
+              <Table stack={false} className="table-fixed xl:min-w-[820px]">
                 <colgroup>
                   <col className="w-[28%]" />
                   <col className="w-[58%] max-md:hidden" />
                   <col className="w-[14%]" />
                 </colgroup>
-                <TableHeader>
-                  <TableRow className="hover:bg-transparent">
-                    <TableHead className="text-xs font-medium text-muted-foreground">
-                      {t('skill')}
-                    </TableHead>
-                    <TableHead className="text-xs font-medium text-muted-foreground max-md:hidden">
-                      {t('description')}
-                    </TableHead>
-                    <TableHead className="text-end text-xs font-medium text-muted-foreground">
-                      {tCommon('actions')}
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
+                <thead>
+                  <Tr className="hover:bg-transparent">
+                    <Th>{t('skill')}</Th>
+                    <Th className="max-md:hidden">{t('description')}</Th>
+                    <Th alignment="end">{tCommon('actions')}</Th>
+                  </Tr>
+                </thead>
+                <tbody>
                   {skills.map((skill) => (
                     <SkillRow
                       key={skill.id}
@@ -77,7 +71,7 @@ export default function TeamAgentSkills({
                       onDelete={() => setDeleting(skill)}
                     />
                   ))}
-                </TableBody>
+                </tbody>
               </Table>
             </TableCard>
           </div>

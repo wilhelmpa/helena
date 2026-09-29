@@ -9,11 +9,10 @@ import { describeEffect } from '@/utils/actions';
 import { actionIcon } from '@/utils/actionIcons';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { TableCell, TableRow } from '@/components/ui/table';
 import SettingsIconButton from '../SettingsIconButton';
 import { useSettingsCan } from '../../context/settingsPermission';
 
-import { Inline, Stack, Text } from '@/design-system';
+import { Inline, Stack, Text, Td, Tr } from '@/design-system';
 
 export function SettingsActionRow({
   action,
@@ -41,8 +40,8 @@ export function SettingsActionRow({
   const effects = describeEffect(action.effect, project, effectText);
   const Icon = actionIcon(action.icon);
   return (
-    <TableRow className="group/item">
-      <TableCell className="px-3 py-3 align-top whitespace-normal">
+    <Tr className="group/item">
+      <Td className="py-3 align-top whitespace-normal">
         <Inline gap={3} align="start" className="flex min-w-0 items-start">
           <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
             <Icon className="size-4" />
@@ -77,8 +76,8 @@ export function SettingsActionRow({
             )}
           </Stack>
         </Inline>
-      </TableCell>
-      <TableCell className="px-3 py-3 pt-4 align-top whitespace-normal">
+      </Td>
+      <Td className="py-3 pt-4 align-top whitespace-normal">
         {effects.length > 0 ? (
           <Inline gap={1} align="stretch" wrap className="flex flex-wrap">
             {effects.map((e) => (
@@ -92,8 +91,8 @@ export function SettingsActionRow({
             {t('noChanges')}
           </Text>
         )}
-      </TableCell>
-      <TableCell className="px-3 py-2 pt-3 align-top">
+      </Td>
+      <Td className="pt-3 align-top">
         <Inline gap={1} justify="end" className="flex items-center justify-end">
           {can('edit') && (
             <Switch
@@ -118,8 +117,8 @@ export function SettingsActionRow({
             </SettingsIconButton>
           )}
         </Inline>
-      </TableCell>
-    </TableRow>
+      </Td>
+    </Tr>
   );
 }
 

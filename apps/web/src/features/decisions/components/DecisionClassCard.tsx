@@ -32,6 +32,7 @@ import {
 } from '@/services/decisions.service';
 import { classKey, euros, milliseconds, percent } from '../utils/format';
 import { MailTriageConfig } from './MailTriageConfig';
+import { Table, Th, Tr, Td } from '@/design-system';
 
 const NONE = 'none';
 
@@ -204,50 +205,50 @@ function EvalSummary({ evaluation, teamId }: { evaluation: DecisionEval; teamId:
       )}
       {open && (
         <div className="grid gap-4 md:grid-cols-2">
-          <table className="w-full text-xs">
+          <Table stack={false}>
             <caption className="pb-1 text-start text-muted-foreground">{t('byQuestion')}</caption>
             <thead>
-              <tr className="text-start text-muted-foreground">
-                <th className="font-normal">{t('question')}</th>
-                <th className="text-end font-normal">{t('accuracy')}</th>
-                <th className="text-end font-normal">{t('answeredShort')}</th>
-                <th className="text-end font-normal">{t('precision')}</th>
-              </tr>
+              <Tr>
+                <Th>{t('question')}</Th>
+                <Th alignment="end">{t('accuracy')}</Th>
+                <Th alignment="end">{t('answeredShort')}</Th>
+                <Th alignment="end">{t('precision')}</Th>
+              </Tr>
             </thead>
             <tbody>
               {Object.entries(details.byQuestion ?? {}).map(([question, score]) => (
-                <tr key={question}>
-                  <td>{question}</td>
-                  <td className="text-end">{percent(score.correct / score.questions)}</td>
-                  <td className="text-end">
+                <Tr key={question}>
+                  <Td>{question}</Td>
+                  <Td alignment="end">{percent(score.correct / score.questions)}</Td>
+                  <Td alignment="end">
                     {score.answered}/{score.questions}
-                  </td>
-                  <td className="text-end">
+                  </Td>
+                  <Td alignment="end">
                     {percent(score.answered ? score.correctAnswered / score.answered : null)}
-                  </td>
-                </tr>
+                  </Td>
+                </Tr>
               ))}
             </tbody>
-          </table>
-          <table className="w-full text-xs">
+          </Table>
+          <Table stack={false}>
             <caption className="pb-1 text-start text-muted-foreground">{t('sweep')}</caption>
             <thead>
-              <tr className="text-start text-muted-foreground">
-                <th className="font-normal">{t('threshold')}</th>
-                <th className="text-end font-normal">{t('precision')}</th>
-                <th className="text-end font-normal">{t('coverage')}</th>
-              </tr>
+              <Tr>
+                <Th>{t('threshold')}</Th>
+                <Th alignment="end">{t('precision')}</Th>
+                <Th alignment="end">{t('coverage')}</Th>
+              </Tr>
             </thead>
             <tbody>
               {(details.sweep ?? []).map((point) => (
-                <tr key={point.threshold}>
-                  <td>{percent(point.threshold)}</td>
-                  <td className="text-end">{percent(point.precision)}</td>
-                  <td className="text-end">{percent(point.coverage)}</td>
-                </tr>
+                <Tr key={point.threshold}>
+                  <Td>{percent(point.threshold)}</Td>
+                  <Td alignment="end">{percent(point.precision)}</Td>
+                  <Td alignment="end">{percent(point.coverage)}</Td>
+                </Tr>
               ))}
             </tbody>
-          </table>
+          </Table>
         </div>
       )}
     </div>

@@ -1,7 +1,7 @@
 import { useTranslations } from 'next-intl';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAgentWorkloadQuery } from '../../services/analytics.service';
-import { Stack, Text } from '@/design-system';
+import { Stack, Text, Table, Th, Tr, Td } from '@/design-system';
 
 // Per-agent workload: how many open issues each agent is currently delegated and its
 // lifetime run outcomes (success over total). Rows are ordered by delegated load. No
@@ -30,22 +30,24 @@ export default function AgentWorkloadWidget({ projectKey }: { projectKey: string
   }
 
   return (
-    <table className="w-full text-sm">
+    <Table stack={false}>
       <thead>
-        <tr className="border-b text-left text-xs text-muted-foreground">
-          <th className="pb-1.5 font-medium">{t('agent')}</th>
-          <th className="pb-1.5 text-right font-medium">{t('delegated')}</th>
-          <th className="pb-1.5 text-right font-medium">{t('runs')}</th>
-        </tr>
+        <Tr>
+          <Th>{t('agent')}</Th>
+          <Th alignment="end">{t('delegated')}</Th>
+          <Th alignment="end">{t('runs')}</Th>
+        </Tr>
       </thead>
-      <tbody className="divide-y divide-border/50">
+      <tbody>
         {items.map((a) => (
-          <tr key={a.agentId}>
-            <td className="min-w-0 py-1.5">
+          <Tr key={a.agentId}>
+            <Td className="min-w-0">
               <span className="block truncate">{a.agentName}</span>
-            </td>
-            <td className="py-1.5 text-right tabular-nums">{a.delegatedOpen}</td>
-            <td className="py-1.5 text-right tabular-nums">
+            </Td>
+            <Td alignment="end" className="tabular-nums">
+              {a.delegatedOpen}
+            </Td>
+            <Td alignment="end" className="tabular-nums">
               <span>
                 {a.runsSuccess}/{a.runsTotal}
               </span>
@@ -54,10 +56,10 @@ export default function AgentWorkloadWidget({ projectKey }: { projectKey: string
                   {t('failed', { count: a.runsFailed })}
                 </Text>
               )}
-            </td>
-          </tr>
+            </Td>
+          </Tr>
         ))}
       </tbody>
-    </table>
+    </Table>
   );
 }

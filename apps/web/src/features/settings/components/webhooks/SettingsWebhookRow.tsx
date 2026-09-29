@@ -11,14 +11,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { TableCell, TableRow } from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import SettingsIconButton from '../SettingsIconButton';
 import { useSettingsCan } from '../../context/settingsPermission';
 import { copyText } from '@/utils/clipboard';
 
-import { Inline, Stack, Text } from '@/design-system';
+import { Inline, Stack, Text, Td, Tr } from '@/design-system';
 
 export function SettingsWebhookRow({
   webhook,
@@ -47,8 +46,8 @@ export function SettingsWebhookRow({
   }
 
   return (
-    <TableRow className="group/item">
-      <TableCell className="px-3 py-4 align-top whitespace-normal">
+    <Tr className="group/item">
+      <Td className="py-4 align-top whitespace-normal">
         <Inline gap={3} align="start" className="flex min-w-0 items-start">
           <span
             className={cn(
@@ -86,8 +85,8 @@ export function SettingsWebhookRow({
             </Inline>
           </Stack>
         </Inline>
-      </TableCell>
-      <TableCell className="px-3 py-4 align-top whitespace-normal">
+      </Td>
+      <Td className="py-4 align-top whitespace-normal">
         <Inline gap={1} align="stretch" wrap className="flex flex-wrap">
           {webhook.events.map((event) => (
             <Badge key={event} variant="outline" className="font-mono text-xs">
@@ -95,8 +94,8 @@ export function SettingsWebhookRow({
             </Badge>
           ))}
         </Inline>
-      </TableCell>
-      <TableCell className="px-3 py-3 align-top">
+      </Td>
+      <Td className="py-3 align-top">
         <Inline gap={1} justify="end" className="flex items-center justify-end">
           <SettingsIconButton title={t('deliveryHistory')} onClick={onShowDeliveries}>
             <History className="size-4" />
@@ -139,8 +138,8 @@ export function SettingsWebhookRow({
             </DropdownMenu>
           )}
         </Inline>
-      </TableCell>
-    </TableRow>
+      </Td>
+    </Tr>
   );
 }
 

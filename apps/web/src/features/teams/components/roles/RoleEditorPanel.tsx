@@ -23,6 +23,7 @@ import {
   orderActions,
 } from '@/utils/permissions';
 import { usePermissionLabels } from '@/hooks/usePermissionLabels';
+import { Table, Th, Tr, Td } from '@/design-system';
 
 // The check state of a set of cells: all on, all off, or mixed.
 function triState(values: boolean[]): boolean | 'indeterminate' {
@@ -134,14 +135,14 @@ export default function RoleEditorPanel({
             />
           </div>
 
-          <table className="w-full border-collapse text-sm">
+          <Table stack={false}>
             <thead>
-              <tr className="border-b">
-                <th className="py-2 pr-2 text-left text-xs font-medium">{t('resourceColumn')}</th>
+              <Tr>
+                <Th>{t('resourceColumn')}</Th>
                 {actions.map((action) => {
                   const state = triState(cellsFor(resourceKeys, [action]));
                   return (
-                    <th key={action} className="px-1 py-2">
+                    <Th key={action}>
                       <div className="flex flex-col items-center gap-1">
                         <span className="text-xs font-medium text-muted-foreground">
                           {actionLabel(action)}
@@ -153,18 +154,18 @@ export default function RoleEditorPanel({
                           aria-label={t('toggleActionAll', { action: actionLabel(action) })}
                         />
                       </div>
-                    </th>
+                    </Th>
                   );
                 })}
-              </tr>
+              </Tr>
             </thead>
             <tbody>
               {groups.map((group) => {
                 const groupState = triState(cellsFor(group.resources, actions));
                 return (
                   <Fragment key={group.key}>
-                    <tr className="border-b bg-muted/40">
-                      <td className="py-1.5 pr-2">
+                    <Tr className="bg-muted/40">
+                      <Td>
                         <div className="flex items-center gap-2">
                           <MatrixCheckbox
                             checked={groupState}
@@ -176,11 +177,11 @@ export default function RoleEditorPanel({
                           />
                           <span className="text-xs font-medium">{groupLabel(group.key)}</span>
                         </div>
-                      </td>
+                      </Td>
                       {actions.map((action) => {
                         const state = triState(cellsFor(group.resources, [action]));
                         return (
-                          <td key={action} className="px-1 py-1.5 text-center">
+                          <Td alignment="center" key={action}>
                             <MatrixCheckbox
                               checked={state}
                               onCheckedChange={() =>
@@ -195,15 +196,15 @@ export default function RoleEditorPanel({
                                 group: groupLabel(group.key),
                               })}
                             />
-                          </td>
+                          </Td>
                         );
                       })}
-                    </tr>
+                    </Tr>
                     {group.resources.map((resource) => (
-                      <tr key={resource} className="border-b last:border-b-0">
-                        <td className="py-2 pr-2 pl-6">{resourceLabel(resource)}</td>
+                      <Tr key={resource}>
+                        <Td>{resourceLabel(resource)}</Td>
                         {actions.map((action) => (
-                          <td key={action} className="px-1 py-2 text-center">
+                          <Td alignment="center" key={action}>
                             {supports(resource, action) && (
                               <MatrixCheckbox
                                 checked={matrix[resource][action]}
@@ -216,15 +217,15 @@ export default function RoleEditorPanel({
                                 })}
                               />
                             )}
-                          </td>
+                          </Td>
                         ))}
-                      </tr>
+                      </Tr>
                     ))}
                   </Fragment>
                 );
               })}
             </tbody>
-          </table>
+          </Table>
         </div>
 
         <div className="flex shrink-0 items-center justify-end gap-2 border-t px-4 py-3">

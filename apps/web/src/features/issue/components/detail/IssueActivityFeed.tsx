@@ -3,7 +3,7 @@ import type { IssueActivityView } from '@/lib/api/endpoints/userPreferences';
 import type { Column } from '@/lib/api/endpoints/columns';
 import type { Assignee } from '@/lib/api/endpoints/projects';
 import { useSession } from '@/lib/auth-client';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Inline, Segmented, Stack } from '@/design-system';
 import { useAccountPreferencesQuery } from '@/services/preferences.service';
 import CommentComposer, { type ComposerContext } from './CommentComposer';
 import IssueFeedList from './IssueFeedList';
@@ -53,31 +53,29 @@ export default function IssueActivityFeed({
       <CommentComposer {...composer} />
 
       {view && (
-        <Tabs
-          value={view}
-          onValueChange={(value) => setViewHere(value as IssueActivityView)}
-          className="gap-4"
-        >
-          <TabsList className="ml-auto h-7 p-[2px]">
-            <TabsTrigger value="flat" className="px-2 text-xs">
-              {tIssue('feedFlat')}
-            </TabsTrigger>
-            <TabsTrigger value="grouped" className="px-2 text-xs">
-              {tIssue('feedGrouped')}
-            </TabsTrigger>
-          </TabsList>
-          <TabsContent value="flat">
+        <Stack gap={4}>
+          <Inline justify="end">
+            <Segmented<IssueActivityView>
+              label={tIssue('activityHeading')}
+              value={view}
+              onChange={setViewHere}
+              options={[
+                { value: 'flat', label: tIssue('feedFlat') },
+                { value: 'grouped', label: tIssue('feedGrouped') },
+              ]}
+            />
+          </Inline>
+          {view === 'flat' ? (
             <IssueFeedList issueId={issueId} imageByUserId={imageByUserId} composer={composer} />
-          </TabsContent>
-          <TabsContent value="grouped">
+          ) : (
             <IssueGroupedFeed
               issueId={issueId}
               columns={columns}
               imageByUserId={imageByUserId}
               composer={composer}
             />
-          </TabsContent>
-        </Tabs>
+          )}
+        </Stack>
       )}
     </div>
   );

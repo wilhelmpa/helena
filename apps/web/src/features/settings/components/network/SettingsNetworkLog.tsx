@@ -8,10 +8,9 @@ import { EmptyState } from '@/components/common/page/EmptyState';
 import ListSkeleton from '@/components/common/skeleton/ListSkeleton';
 import SettingsSection from '@/components/common/page/SettingsSection';
 import { Button } from '@/components/ui/button';
-import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import SettingsNetworkLogRow from './SettingsNetworkLogRow';
 
-import { Text } from '@/design-system';
+import { Text, Table, Th, Tr } from '@/design-system';
 
 type DecisionFilter = 'all' | 'blocked';
 
@@ -50,22 +49,22 @@ export default function SettingsNetworkLog({ projectKey }: { projectKey: string 
       ) : (
         <>
           <div className="overflow-x-auto rounded-md border bg-card">
-            <Table className="min-w-[820px]">
-              <TableHeader>
-                <TableRow className="hover:bg-transparent">
-                  <TableHead>{t('columns.time')}</TableHead>
-                  <TableHead>{t('columns.agent')}</TableHead>
-                  <TableHead>{t('columns.target')}</TableHead>
-                  <TableHead>{t('columns.decision')}</TableHead>
-                  <TableHead className="text-end">{t('columns.connections')}</TableHead>
-                  <TableHead className="text-end">{t('columns.data')}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+            <Table stack={false} className="min-w-[820px]">
+              <thead>
+                <Tr className="hover:bg-transparent">
+                  <Th>{t('columns.time')}</Th>
+                  <Th>{t('columns.agent')}</Th>
+                  <Th>{t('columns.target')}</Th>
+                  <Th>{t('columns.decision')}</Th>
+                  <Th alignment="end">{t('columns.connections')}</Th>
+                  <Th alignment="end">{t('columns.data')}</Th>
+                </Tr>
+              </thead>
+              <tbody>
                 {items.map((event) => (
                   <SettingsNetworkLogRow key={event.id} event={event} />
                 ))}
-              </TableBody>
+              </tbody>
             </Table>
           </div>
           {query.hasNextPage ? (

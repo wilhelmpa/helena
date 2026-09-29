@@ -10,7 +10,6 @@ import {
   PageToolbar,
   PageToolbarSpacer,
 } from '@/components/layout/PageToolbar';
-import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { useEmailForm } from '../../hooks/useEmailForm';
 import { useTelegramForm } from '../../hooks/useTelegramForm';
 import EmailSettings from './EmailSettings';
@@ -40,7 +39,7 @@ export default function TeamNotificationProviders({
   const active = tab === 'email' ? emailForm : telegramForm;
 
   return (
-    <Tabs value={tab} onValueChange={(v) => setTab(v as NotificationTab)} className="gap-0">
+    <>
       <PageToolbar>
         {!channel && (
           <PageTabs<NotificationTab>
@@ -65,13 +64,11 @@ export default function TeamNotificationProviders({
         />
       </PageToolbar>
 
-      <TabsContent value="email" className="mt-0">
+      {tab === 'email' ? (
         <EmailSettings form={emailForm} />
-      </TabsContent>
-
-      <TabsContent value="telegram" className="mt-0">
+      ) : (
         <TelegramSettings form={telegramForm} />
-      </TabsContent>
-    </Tabs>
+      )}
+    </>
   );
 }

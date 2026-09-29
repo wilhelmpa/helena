@@ -10,20 +10,13 @@ import { usePaging } from '@/hooks/usePaging';
 import { EmptyState } from '@/components/common/page/EmptyState';
 import ListSkeleton from '@/components/common/skeleton/ListSkeleton';
 import { Button } from '@/components/ui/button';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAgentCan, useAgentSection } from '../../context/agentSection';
 import { AgentMetaChip } from './AgentMetaChip';
 import { AgentTriggers } from './AgentTriggers';
 import ProjectAgentAssignmentDialog from './ProjectAgentAssignmentDialog';
 import TableCard from '@/components/common/page/TableCard';
+import { Table, Td, Th, Tr } from '@/design-system';
 
 // The agents working in this project. The server leaves the Home agent out. Their role
 // and instructions here are project-specific fields of the membership.
@@ -59,7 +52,7 @@ export default function ProjectAiAgents({ onNewAgent }: { onNewAgent: () => void
   return (
     <div className="space-y-4">
       <TableCard>
-        <Table className="table-fixed xl:min-w-[640px]">
+        <Table stack={false} className="table-fixed xl:min-w-[640px]">
           <colgroup>
             <col className="w-[25%]" />
             <col className="w-[25%] max-md:hidden" />
@@ -67,33 +60,23 @@ export default function ProjectAiAgents({ onNewAgent }: { onNewAgent: () => void
             <col className="w-[25%] max-md:hidden" />
             <col className="w-[11%]" />
           </colgroup>
-          <TableHeader>
-            <TableRow className="hover:bg-transparent">
-              <TableHead className="text-xs font-medium text-muted-foreground">
-                {tTeam('agent')}
-              </TableHead>
-              <TableHead className="text-xs font-medium text-muted-foreground max-md:hidden">
-                {t('assignment')}
-              </TableHead>
-              <TableHead className="text-xs font-medium text-muted-foreground max-md:hidden">
-                {tTeam('columns.triggers')}
-              </TableHead>
-              <TableHead className="text-xs font-medium text-muted-foreground max-md:hidden">
-                {tTeam('columns.configuration')}
-              </TableHead>
-              <TableHead className="text-end text-xs font-medium text-muted-foreground">
-                {tCommon('actions')}
-              </TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
+          <thead>
+            <Tr className="hover:bg-transparent">
+              <Th>{tTeam('agent')}</Th>
+              <Th className="max-md:hidden">{t('assignment')}</Th>
+              <Th className="max-md:hidden">{tTeam('columns.triggers')}</Th>
+              <Th className="max-md:hidden">{tTeam('columns.configuration')}</Th>
+              <Th alignment="end">{tCommon('actions')}</Th>
+            </Tr>
+          </thead>
+          <tbody>
             {shown.map((agent) => {
               const assignment = project
                 ? agent.projects.find((entry) => entry.id === project.project.id)
                 : undefined;
               return (
-                <TableRow key={agent.id} className="group/item">
-                  <TableCell className="px-3 py-3 align-middle whitespace-normal">
+                <Tr key={agent.id} className="group/item">
+                  <Td className="py-3 whitespace-normal">
                     <div className="flex min-w-0 items-center gap-2.5">
                       <div className="flex size-8 shrink-0 items-center justify-center rounded-md border bg-background text-muted-foreground">
                         <Bot className="size-4" />
@@ -108,8 +91,8 @@ export default function ProjectAiAgents({ onNewAgent }: { onNewAgent: () => void
                         </span>
                       </div>
                     </div>
-                  </TableCell>
-                  <TableCell className="px-3 py-3 align-middle whitespace-normal max-md:hidden">
+                  </Td>
+                  <Td className="py-3 whitespace-normal max-md:hidden">
                     {assignment && (
                       <div className="flex min-w-0 flex-col gap-1">
                         <span className="text-sm font-medium">
@@ -120,11 +103,11 @@ export default function ProjectAiAgents({ onNewAgent }: { onNewAgent: () => void
                         </span>
                       </div>
                     )}
-                  </TableCell>
-                  <TableCell className="px-3 py-3 align-middle whitespace-normal max-md:hidden">
+                  </Td>
+                  <Td className="py-3 whitespace-normal max-md:hidden">
                     <AgentTriggers agent={agent} />
-                  </TableCell>
-                  <TableCell className="px-3 py-3 align-middle whitespace-normal max-md:hidden">
+                  </Td>
+                  <Td className="py-3 whitespace-normal max-md:hidden">
                     <div className="flex flex-col items-start gap-1">
                       <AgentRunnerStatus agent={agent} />
                       <AgentMetaChip icon={Shield}>
@@ -133,8 +116,8 @@ export default function ProjectAiAgents({ onNewAgent }: { onNewAgent: () => void
                           : tTeam('runnerScopeTeam')}
                       </AgentMetaChip>
                     </div>
-                  </TableCell>
-                  <TableCell className="px-3 py-2 align-middle">
+                  </Td>
+                  <Td>
                     <div className="flex items-center justify-end gap-1">
                       {assignment && project && (can('members_manage', 'edit') || isAdmin) && (
                         <ProjectAgentAssignmentDialog
@@ -187,11 +170,11 @@ export default function ProjectAiAgents({ onNewAgent }: { onNewAgent: () => void
                         </Tooltip>
                       )}
                     </div>
-                  </TableCell>
-                </TableRow>
+                  </Td>
+                </Tr>
               );
             })}
-          </TableBody>
+          </tbody>
         </Table>
       </TableCard>
       <ListPager paging={paging} total={agents.length} />

@@ -1,9 +1,9 @@
 import { useTranslations } from 'next-intl';
 import type { Routine } from '@/lib/api/endpoints/routines';
-import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import type { RoutineActions } from './RoutineActionsMenu';
 import { RoutineItem } from './RoutineItem';
 import { RoutineRow } from './RoutineRow';
+import { Table, Th, Tr } from '@/design-system';
 
 export function RoutinesTable({
   routines,
@@ -29,7 +29,7 @@ export function RoutinesTable({
           />
         ))}
       </ul>
-      <Table className="min-w-[860px] table-fixed max-md:hidden">
+      <Table stack={false} className="min-w-[860px] table-fixed max-md:hidden">
         <colgroup>
           {showProject && <col className="w-[16%]" />}
           <col className={showProject ? 'w-[26%]' : 'w-[34%]'} />
@@ -38,19 +38,21 @@ export function RoutinesTable({
           <col className="w-[10%]" />
           {actionsFor && <col className="w-[8%]" />}
         </colgroup>
-        <TableHeader>
-          <TableRow className="hover:bg-transparent">
-            {showProject && <TableHead className={head}>{t('project')}</TableHead>}
-            <TableHead className={head}>{t('name')}</TableHead>
-            <TableHead className={head}>{t('schedule')}</TableHead>
-            <TableHead className={head}>{t('lastRun')}</TableHead>
-            <TableHead className={head}>{t('status')}</TableHead>
+        <thead>
+          <Tr className="hover:bg-transparent">
+            {showProject && <Th className={head}>{t('project')}</Th>}
+            <Th className={head}>{t('name')}</Th>
+            <Th className={head}>{t('schedule')}</Th>
+            <Th className={head}>{t('lastRun')}</Th>
+            <Th className={head}>{t('status')}</Th>
             {actionsFor && (
-              <TableHead className={`text-end ${head}`}>{tCommon('actions')}</TableHead>
+              <Th alignment="end" className={head}>
+                {tCommon('actions')}
+              </Th>
             )}
-          </TableRow>
-        </TableHeader>
-        <TableBody>
+          </Tr>
+        </thead>
+        <tbody>
           {routines.map((routine) => (
             <RoutineRow
               key={routine.id}
@@ -59,7 +61,7 @@ export function RoutinesTable({
               actions={actionsFor?.(routine)}
             />
           ))}
-        </TableBody>
+        </tbody>
       </Table>
     </div>
   );
