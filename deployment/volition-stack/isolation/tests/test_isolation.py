@@ -14,6 +14,7 @@ import tempfile
 import types
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 HERE = Path(__file__).resolve().parent
 ISOLATION = HERE.parent
@@ -730,22 +731,69 @@ class CredentialTargetTest(LauncherRequestTest):
         started: list[list[str]] = []
         helper = self.helper_runtime()
         self.worker.config.runtimes['profile-helper'] = helper
+        runtime_root = self.dir / 'run'
 
         async def stream(command, unit, env, reader, writer):
             self.assertTrue((self.home / '.codex').is_dir())  # there before systemd-run
+            self.assertTrue(env['GIT_CONFIG_GLOBAL'].startswith(f'{runtime_root}/git-'))
+            config = runtime_root / 'alpha' / Path(env['GIT_CONFIG_GLOBAL']).name
+            self.assertEqual(config.read_text(),
+                             f'[safe]\n\tdirectory = {self.dir}/workspaces/alpha\n'
+                             f'\tdirectory = {self.dir}/workspaces/alpha/*\n')
+            values = subprocess.run(['git', 'config', '--file', str(config), '--get-all', 'safe.directory'],
+                                    capture_output=True, text=True, check=True)
+            self.assertEqual(values.stdout.splitlines(),
+                             [f'{self.dir}/workspaces/alpha', f'{self.dir}/workspaces/alpha/*'])
+            self.assertEqual(stat.S_IMODE(config.stat().st_mode), 0o640)
+            self.assertEqual(config.stat().st_gid, os.getgid())
+            self.assertNotIn('GIT_CONFIG_COUNT', env)
             started.append(command)
         self.worker.stream = stream
-        self.worker.preview_directory = lambda slug: None
         self.worker.lock = asyncio.Lock()
         self.worker.active, self.worker.total = {}, 0
         request = {**self.base, 'runtime': 'profile-helper', 'args': [], 'agentRuntime': 'codex',
                    'work': {'kind': 'helper', 'id': None}}
-        asyncio.run(self.worker.run(request, None, None, 'test'))
-        [command] = started
-        self.assertFalse(any('keeper/view' in part for part in command))
-        self.assertEqual(stat.S_IMODE((self.home / '.codex').stat().st_mode), 0o700)
-        asyncio.run(self.worker.run({**request, 'agentRuntime': 'hermes'}, None, None, 'test'))
-        self.assertTrue(any(f'keeper/view/codex:{self.home}/.codex' in part for part in started[1]))
+        with patch.object(launcher_module, 'RUNTIME_ROOT', str(runtime_root)):
+            asyncio.run(self.worker.run(request, None, None, 'test'))
+            [command] = started
+            self.assertFalse(any('keeper/view' in part for part in command))
+            self.assertEqual(stat.S_IMODE((self.home / '.codex').stat().st_mode), 0o700)
+            self.assertEqual(list((runtime_root / 'alpha').glob('git-*.config')), [])
+            asyncio.run(self.worker.run({**request, 'agentRuntime': 'hermes'}, None, None, 'test'))
+            self.assertTrue(any(f'keeper/view/codex:{self.home}/.codex' in part for part in started[1]))
+            self.assertEqual(list((runtime_root / 'alpha').glob('git-*.config')), [])
+
+    def test_home_git_config_covers_all_registered_workspaces_and_is_removed_on_failure(self):
+        (self.dir / 'home').mkdir()
+        (self.dir / 'profiles/home').mkdir()
+        script = self.dir / 'home/proof.sh'
+        script.write_text('true\n')
+        (self.dir / 'registry/beta.json').write_text(json.dumps({'slug': 'beta', 'project': {'id': 2, 'key': 'BETA'}}))
+        runtime_root = self.dir / 'run'
+        self.worker.lock = asyncio.Lock()
+        self.worker.active, self.worker.total = {}, 0
+
+        async def fail_stream(command, unit, env, reader, writer):
+            config = runtime_root / 'home' / Path(env['GIT_CONFIG_GLOBAL']).name
+            self.assertEqual(config.read_text().splitlines(), [
+                '[safe]',
+                f'\tdirectory = {self.dir}/home',
+                f'\tdirectory = {self.dir}/home/*',
+                f'\tdirectory = {self.dir}/workspaces/alpha',
+                f'\tdirectory = {self.dir}/workspaces/alpha/*',
+                f'\tdirectory = {self.dir}/workspaces/beta',
+                f'\tdirectory = {self.dir}/workspaces/beta/*',
+            ])
+            raise RuntimeError('stream failed')
+
+        self.worker.stream = fail_stream
+        with patch.object(launcher_module, 'RUNTIME_ROOT', str(runtime_root)):
+            with self.assertRaisesRegex(RuntimeError, 'stream failed'):
+                asyncio.run(self.worker.run({**self.base, 'slug': 'home', 'runtime': 'command',
+                                             'profile': 'home', 'args': ['-eu', str(script)],
+                                             'cwd': str(self.dir / 'home')}, None, None, 'test'))
+            self.assertEqual(list((runtime_root / 'home').glob('git-*.config')), [])
+            self.assertEqual(self.worker.total, 0)
 
 
 class MigrateTest(unittest.TestCase):
