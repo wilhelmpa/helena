@@ -150,8 +150,8 @@ export default function KnowledgeBaseView({
           {filter.trim() ? t('noMatch') : t('empty')}
         </EmptyState>
       ) : type === 'cards' ? (
-        <Grid min={compact ? undefined : 'card'} columns={compact ? 1 : undefined}>
-          {shown.map((row) => (
+        (() => {
+          const cards = shown.map((row) => (
             <Card key={row.path} title={opener(row)} data-base-row={row.path}>
               <Stack gap={1}>
                 {columns
@@ -163,8 +163,9 @@ export default function KnowledgeBaseView({
                   ))}
               </Stack>
             </Card>
-          ))}
-        </Grid>
+          ));
+          return compact ? <Stack gap={2}>{cards}</Stack> : <Grid min="card">{cards}</Grid>;
+        })()
       ) : type === 'list' ? (
         <List label={data.view.name}>
           {shown.map((row) => (

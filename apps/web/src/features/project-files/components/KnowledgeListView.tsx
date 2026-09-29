@@ -310,7 +310,7 @@ export default function KnowledgeListView({
                 {t('create.upload')}
               </Button>
             )
-          : onCreate && (
+          : (
               <Button
                 variant="primary"
                 icon={<FilePlus2 size={15} aria-hidden="true" />}
