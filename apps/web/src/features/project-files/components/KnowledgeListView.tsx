@@ -363,11 +363,7 @@ export default function KnowledgeListView({
             />
           ) : (
             ORIGINS.map((value) => (
-              <KnowledgePill
-                key={value}
-                active={origin === value}
-                onClick={() => setOrigin(value)}
-              >
+              <KnowledgePill key={value} active={origin === value} onClick={() => setOrigin(value)}>
                 {tOrigin(value)}
               </KnowledgePill>
             ))
