@@ -1063,6 +1063,8 @@ export class HermesPolicySynchronizer implements RuntimeAdapter {
     if (sameRevision && fallback === this.appliedFallback) return false;
     if (snapshot.projects?.length === 0) {
       this.appliedRevision = snapshot.revision;
+      // Keep the fallback chain too, so the unchanged revision is not reported again.
+      this.appliedFallback = fallback;
       this.applied = null;
       this.failed = null;
       this.state = {

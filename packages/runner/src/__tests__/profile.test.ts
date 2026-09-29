@@ -130,6 +130,7 @@ describe('Helena owns every MCP server of a Hermes profile', () => {
         headers: {
           Authorization: 'Bearer ${ITSAPLAN_API_KEY}',
           'x-helena-run': '${ITSAPLAN_RUN_ID}',
+          'x-volition-message': '${ITSAPLAN_MESSAGE_ID}',
         },
         strict_redirect_headers: true,
         lazy: true,

@@ -357,9 +357,10 @@ describe('what a Claude Code or Codex run reports', () => {
     const claude = JSON.parse(claudeMcpArgs(specs('claude'))[1]!);
     expect(claude.mcpServers.itsaplan.headers).toEqual({
       'x-helena-run': '${ITSAPLAN_RUN_ID}',
+      'x-volition-message': '${ITSAPLAN_MESSAGE_ID}',
     });
     expect(codexMcpArgs(specs('codex'), [], {}).args).toContain(
-      'mcp_servers.itsaplan.env_http_headers={x-helena-run="ITSAPLAN_RUN_ID"}',
+      'mcp_servers.itsaplan.env_http_headers={x-helena-run="ITSAPLAN_RUN_ID",x-volition-message="ITSAPLAN_MESSAGE_ID"}',
     );
   });
 });
