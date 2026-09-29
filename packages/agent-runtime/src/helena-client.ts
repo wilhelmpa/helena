@@ -45,6 +45,11 @@ export interface LearnedRuntimeSkill {
 }
 
 export interface HelenaApi {
+  selectTools?(input: {
+    prompt: string;
+    tools: { name: string; description: string }[];
+    projectKey?: string;
+  }): Promise<{ names: string[] | null }>;
   decide(question: PolicyQuestion & { runtime: 'helena'; workspace?: string }): Promise<Decision>;
   createSession(input: {
     kind: 'run' | 'chat' | 'reflection';
@@ -81,6 +86,18 @@ export class HelenaRequestError extends Error {
 }
 
 export class HelenaClient implements HelenaApi {
+  selectTools(input: {
+    prompt: string;
+    tools: { name: string; description: string }[];
+    projectKey?: string;
+  }): Promise<{ names: string[] | null }> {
+    return this.request(
+      'POST',
+      '/decisions/tool-selection',
+      { ...input, ...(this.ids.messageId ? { chatMessageId: this.ids.messageId } : {}) },
+      1500,
+    );
+  }
   private readonly base: string;
 
   constructor(

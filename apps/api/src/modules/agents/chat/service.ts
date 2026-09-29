@@ -684,6 +684,11 @@ export async function sendMessage(
     // 'voice': said in the conversation mode (docs/helena-decisions/voice-2.md).
     via?: 'voice' | null;
     maxConcurrentChats: number;
+    avaCommand?: (
+      prompt: string,
+      messageId: number,
+      beforeExecute: () => Promise<boolean>,
+    ) => Promise<string | null>;
   },
   database: typeof db | Tx = db,
 ): Promise<{ threadId: string; messageId: number; userMessageId: number } | null> {
@@ -694,10 +699,15 @@ export async function sendMessage(
   // back from the agent's runner for a moment and answered by the voice reply, which hands it
   // back to the runner when the question needs the agent.
   const answerer = spokenAnswerer;
-  const held =
+  const voiceHeld =
     input.via === 'voice' && answerer
       ? await answerer.available(agentId).catch(() => false)
       : false;
+  const command =
+    !input.attachments?.length && (input.via === 'voice' || !input.model)
+      ? input.avaCommand
+      : undefined;
+  const held = Boolean(command) || voiceHeld;
   const sent = await database.transaction(async (tx) => {
     await assertSendRate(tx, agentId, userId);
     await assertConcurrencyLimit(tx, agentId, userId, input.maxConcurrentChats);
@@ -774,7 +784,28 @@ export async function sendMessage(
     );
     return { threadId, messageId: answer.id, userMessageId: question.id };
   });
-  if (sent && held && answerer) {
+  if (sent && command) {
+    const reply = await command(prompt, sent.messageId, () =>
+      takeHeldAnswer(agentId, sent.messageId),
+    ).catch(() => null);
+    if (reply !== null) {
+      const messageId = `msg-${sent.messageId}`;
+      await appendEvents(agentId, sent.messageId, [
+        { type: 'TEXT_MESSAGE_START', messageId, role: 'assistant' },
+        { type: 'TEXT_MESSAGE_CONTENT', messageId, delta: reply },
+        { type: 'TEXT_MESSAGE_END', messageId },
+      ]);
+      await finishSpokenAnswer(agentId, sent.messageId, {
+        model: 'jev-command',
+        inputTokens: null,
+        outputTokens: null,
+        via: input.via ?? null,
+      });
+      return sent;
+    }
+    if (!voiceHeld) await releaseHeldAnswer(agentId, sent.messageId);
+  }
+  if (sent && voiceHeld && answerer) {
     const job = {
       agentId,
       messageId: sent.messageId,
@@ -869,13 +900,18 @@ export async function releaseHeldAnswer(
 export async function finishSpokenAnswer(
   agentId: number,
   messageId: number,
-  result: { model: string; inputTokens: number | null; outputTokens: number | null },
+  result: {
+    model: string;
+    inputTokens: number | null;
+    outputTokens: number | null;
+    via?: 'voice' | null;
+  },
 ): Promise<boolean> {
   const rows = await db
     .update(agentChatMessage)
     .set({
       status: 'success',
-      via: 'voice',
+      via: result.via === undefined ? 'voice' : result.via,
       finishedAt: new Date(),
       model: result.model.slice(0, 200),
       inputTokens: result.inputTokens,

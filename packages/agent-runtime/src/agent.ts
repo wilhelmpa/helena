@@ -243,7 +243,11 @@ export async function runAgent(input: AgentRunInput): Promise<LoopResult> {
       direct.add(hit.name);
     const catalog = (): ToolCatalogEntry[] =>
       tools
-        .filter((entry) => !direct.has(entry.name))
+        .filter(
+          (entry) =>
+            entry.name !== 'find_tools' &&
+            (Boolean(helena?.selectTools) || !direct.has(entry.name)),
+        )
         .map(({ name, description }) => ({ name, description }));
     if (catalog().length > 0) {
       const finder = findToolsTool(catalog);
@@ -318,6 +322,21 @@ export async function runAgent(input: AgentRunInput): Promise<LoopResult> {
     const policy = policyOf(config, helena);
     const evidence: string[] = [];
     const result = await runLoop({
+      ...(helena?.selectTools && {
+        selectTools: async ({ prompt, tools }: { prompt: string; tools: AgentTool[] }) => {
+          const candidates = searchCatalog(tools, prompt, 12);
+          if (!candidates.length) return null;
+          return (
+            await helena.selectTools!({
+              prompt: prompt.slice(-4000),
+              tools: candidates.map(({ name, description }) => ({
+                name,
+                description: description.slice(0, 180),
+              })),
+            })
+          ).names;
+        },
+      }),
       ...(uncertainty && { uncertainty }),
       config,
       prompt: input.prompt,

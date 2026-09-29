@@ -38,10 +38,14 @@ import { GENERIC_EVAL } from '../modules/decisions/evals/generic';
 import { MAIL_EVAL } from '../modules/decisions/evals/mail';
 import { RECEIPT_EVAL } from '../modules/decisions/evals/receipts';
 import { ROUTER_EVAL } from '../modules/decisions/evals/router';
+import { AVA_COMMAND_EVAL } from '../modules/decisions/evals/ava-befehle';
+import { TOOL_SELECTION_EVAL } from '../modules/decisions/evals/tool-selection';
+import { PAPER_PRECHECK_EVAL } from '@helena/trading';
 
 interface Backend {
   name: string;
-  protocol: 'systemone' | 'openai-logprobs' | 'openai-json';
+  protocol: 'systemone' | 'openai-logprobs' | 'openai-json' | 'connection';
+  credentialId?: number;
   url: string;
   keyFile?: string;
   model: string;
@@ -51,6 +55,9 @@ interface Backend {
 }
 
 const SETS: Record<string, { set: DecisionEvalSet; threshold: number }> = {
+  'ava-befehle': { set: AVA_COMMAND_EVAL, threshold: 0.98 },
+  'tool-selection': { set: TOOL_SELECTION_EVAL, threshold: 0.95 },
+  'paper-precheck': { set: PAPER_PRECHECK_EVAL, threshold: 0.95 },
   router: { set: ROUTER_EVAL, threshold: 0.6 },
   mail: { set: MAIL_EVAL, threshold: 0.7 },
   receipts: { set: RECEIPT_EVAL, threshold: 0.85 },
@@ -85,6 +92,25 @@ async function postJson(url: string, key: string | null, body: unknown, signal?:
 // `concurrency` bounds the requests of the whole eval: the cases at a time, and the questions of
 // one case at a time (1 keeps a single request in flight on a shared local server).
 async function asker(backend: Backend, debias: boolean, concurrency: number) {
+  if (backend.protocol === 'connection') {
+    if (backend.credentialId !== 46)
+      throw new Error('This synthetic Jev eval requires connection 46.');
+    const { loadConnection } = await import('../modules/browser-task/connection');
+    const { askConnection } = await import('../modules/decisions/service');
+    const connection = await loadConnection(backend.credentialId);
+    if (!connection || connection.backend.id !== 'typesafe')
+      throw new Error('Jev connection 46 is unavailable.');
+    return async (context: string, questions: Record<string, DecisionQuestion>) => {
+      const result = await askConnection(connection, context, questions, 20_000, undefined, 0);
+      return {
+        answers: result.answers,
+        latencyMs: result.reply.latencyMs,
+        inputTokens: result.reply.inputTokens,
+        outputTokens: result.reply.outputTokens,
+        model: result.reply.model,
+      };
+    };
+  }
   const key = await keyOf(backend);
   const base = backend.url.replace(/\/+$/, '');
   const server: OpenAiCompatibleServer = {

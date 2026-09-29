@@ -14,6 +14,44 @@ async function workdir(): Promise<string> {
   return mkdtemp(join(tmpdir(), 'helena-agent-test-'));
 }
 
+function selectionClient(selectTools: NonNullable<HelenaApi['selectTools']>): HelenaApi {
+  return {
+    selectTools,
+    decide: async () => ({ allowed: true, message: 'Synthetic allow' }),
+    createSession: async () => 'unused',
+    loadSession: async () => null,
+    appendItems: async () => {},
+    compact: async () => {},
+    memory: async () => ({ files: [], notes: [], approval: false }),
+    note: async () => {},
+    proposeMemory: async () => ({ status: 'applied' }),
+    searchSessions: async () => [],
+  };
+}
+
+test('tool preselection narrows the model catalog and keeps find_tools', async () => {
+  const { primary, result } = await run([{ text: 'Done.' }], {
+    prompt: 'Read the file.',
+    helena: selectionClient(async () => ({ names: ['read_file'] })),
+  });
+  expect(result.status).toBe('success');
+  expect(primary.doStreamCalls[0]!.tools?.map((tool) => tool.name).sort()).toEqual([
+    'find_tools',
+    'read_file',
+  ]);
+});
+
+test('a failed tool preselection preserves the original catalog', async () => {
+  const { primary, result } = await run([{ text: 'Done.' }], {
+    prompt: 'Read the file.',
+    helena: selectionClient(async () => {
+      throw new Error('timeout');
+    }),
+  });
+  expect(result.status).toBe('success');
+  expect(primary.doStreamCalls[0]!.tools?.some((tool) => tool.name === 'write_file')).toBe(true);
+});
+
 function config(dir: string, extra: Partial<AgentRuntimeConfig> = {}): AgentRuntimeConfig {
   return {
     model: 'local/flash',

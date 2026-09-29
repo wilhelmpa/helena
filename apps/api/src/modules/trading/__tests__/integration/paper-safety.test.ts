@@ -2,8 +2,15 @@ import { beforeEach, describe, expect, it } from 'bun:test';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { eq } from 'drizzle-orm';
-import { approvalRequest, db, helenaPaperOrderIntent, project as projectTable } from '@repo/db';
+import {
+  aiAgent,
+  approvalRequest,
+  db,
+  helenaPaperOrderIntent,
+  project as projectTable,
+} from '@repo/db';
 import { paperIntent } from '@helena/trading';
+import { projectCoordinatorUsername } from '@repo/agent-naming';
 import type { ToolCallContext } from '@helena/sdk';
 import { apiKeyApi, authedApi } from '#tests/helpers/app';
 import { signUpTestUser } from '#tests/helpers/auth';
@@ -57,6 +64,40 @@ async function setup() {
 
 describe('paper safety in the API and database', () => {
   beforeEach(resetDb);
+  it('an unavailable precheck creates one coordinator review and never authorizes an order', async () => {
+    const { asOwner, context } = await setup();
+    const [coordinator] = await db
+      .select({ userId: aiAgent.userId })
+      .from(aiAgent)
+      .where(eq(aiAgent.username, projectCoordinatorUsername('TRD')));
+    expect(coordinator).toBeDefined();
+    const input = {
+      requestId: crypto.randomUUID(),
+      order: { symbol: 'SPY', side: 'sell' as const, type: 'market' as const, qty: 1 },
+      check: {
+        ok: true,
+        violations: [],
+        opening: false,
+        assetClass: 'us_equity' as const,
+        qty: 1,
+        price: 100,
+        notionalUsd: 100,
+        riskUsd: 0,
+        positionAfterUsd: 0,
+        dayPnlUsd: 0,
+      },
+      marketOpen: true,
+      duplicate: false,
+      rationale: 'Synthetic closing request.',
+    };
+    expect((await paperExecution.precheck(context, input)).allowed).toBe(false);
+    expect((await paperExecution.precheck(context, input)).allowed).toBe(false);
+    const tasks = (await asOwner.projects({ projectKey: 'TRD' }).issues.get()).data!;
+    expect(tasks).toHaveLength(1);
+    expect((await asOwner.issues({ issueId: tasks[0]!.id }).get()).data?.delegateUserId).toBe(
+      coordinator!.userId,
+    );
+  });
   it('keeps the complete snapshot pending at autopilot 3; only a human can approve', async () => {
     const f = await setup();
     const { approval } = await createStrategyApproval(f.input, ACCOUNT);

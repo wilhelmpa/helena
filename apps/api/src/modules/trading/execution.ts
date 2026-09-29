@@ -10,6 +10,7 @@ import { credentialValues } from '#modules/agents/integrations/service';
 import { emergencyStopActive } from '#modules/emergency-stop/service';
 import { HttpError } from '#shared/lib';
 import { assertStrategyApproval } from './strategies';
+import { precheckPaperOrder } from './precheck';
 
 let activeLocks = 0;
 const columns = {
@@ -25,6 +26,7 @@ const at = (accountId: string, clientOrderId: string) =>
   );
 
 export const paperExecution: PaperExecution = {
+  precheck: precheckPaperOrder,
   async withAccountLock(ctx, accountId, work) {
     if (!ctx.project?.teamId || !ctx.credentialId)
       throw new HttpError(403, 'A project-bound paper credential is required.');

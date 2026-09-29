@@ -10,7 +10,15 @@ import type { EffectiveBrowserControl } from './settings';
 import { effectiveBrowserControl } from './settings';
 import { browserStageStillEnabled, captureBrowserStage } from './first-stage';
 import { attachFinalFrame } from './frames';
-import { withinFailsafe } from '#modules/decisions/service';
+import {
+  askConnection,
+  classSetting,
+  effectiveThreshold,
+  recordDecisionAttempt,
+  usableDecisionConnection,
+} from '#modules/decisions/service';
+import { BROWSER_CLASS, decisionClass } from '#modules/decisions/classes';
+import { browserDecisionConfident, browserQuestions } from './cascade';
 import { StageRevoked, withStageGuard } from '#modules/decisions/stage-request';
 import { stageCircuitResult } from '#modules/decisions/first-stage';
 
@@ -161,6 +169,20 @@ export async function taskSystemOne(
   if (row.decisions >= row.maxSteps * 2 + 8)
     throw new HttpError(429, 'The task used up its decisions.');
   let reply: SystemOneReply;
+  let attempts = 0;
+  const usage = {
+    inputTokens: 0,
+    outputTokens: 0,
+    latencyMs: 0,
+    providerCostUsd: null as number | null,
+  };
+  const collect = (result: SystemOneReply) => {
+    usage.inputTokens += result.inputTokens;
+    usage.outputTokens += result.outputTokens;
+    usage.latencyMs += result.latencyMs;
+    if (result.providerCostUsd !== null)
+      usage.providerCostUsd = (usage.providerCostUsd ?? 0) + result.providerCostUsd;
+  };
   if (row.firstStageScope) {
     if (JSON.stringify(request).length > 16000) {
       await cancelOptionalStage(row.id);
@@ -170,30 +192,105 @@ export async function taskSystemOne(
       );
     }
     const control = await effectiveBrowserControl({ teamId: row.teamId, projectId: row.projectId });
+    const questions = browserQuestions(request.questions);
+    const cls = decisionClass(BROWSER_CLASS)!;
+    const setting = await classSetting(row.teamId, BROWSER_CLASS);
+    const threshold = effectiveThreshold(cls, setting);
+    const logRequest = {
+      teamId: row.teamId,
+      projectId: row.projectId,
+      agentId: row.agentId,
+      runId: row.runId,
+      chatMessageId: row.chatMessageId,
+      classId: BROWSER_CLASS,
+      subject: `browser-task:${row.id}`,
+      context:
+        request.state && typeof request.state === 'object' && !Array.isArray(request.state)
+          ? (request.state as Record<string, unknown>)
+          : typeof request.state === 'string'
+            ? request.state
+            : JSON.stringify(request.state),
+      questions,
+    };
     try {
-      reply = await withStageGuard(
+      attempts++;
+      const result = await withStageGuard(
         () => browserStageStillEnabled(row),
         undefined,
         (signal) =>
-          withinFailsafe(connection, request, control.firstStage?.timeoutMs ?? 1000, signal, 0),
+          askConnection(
+            connection,
+            logRequest.context,
+            questions,
+            control.firstStage?.timeoutMs ?? 1000,
+            signal,
+            0,
+          ),
       );
+      collect(result.reply);
+      await recordDecisionAttempt(logRequest, connection, result);
+      if (!browserDecisionConfident(result, threshold))
+        throw new Error('Uncertain browser decision.');
+      reply = result.reply;
       stageCircuitResult(row.teamId, connection.credentialId, true);
     } catch (error) {
-      await cancelOptionalStage(row.id);
+      await recordDecisionAttempt(
+        logRequest,
+        connection,
+        null,
+        error instanceof StageRevoked ? 'Jev stage revoked.' : 'Jev stage failed or was uncertain.',
+      );
       if (!(error instanceof StageRevoked))
         stageCircuitResult(row.teamId, connection.credentialId, false);
-      throw new HttpError(
-        409,
-        'The optional Jev stage stopped. Continue with the existing step tools and current page state.',
-      );
+      let fallback: SystemOneReply | null = null;
+      if (!(error instanceof StageRevoked) && (await browserStageStillEnabled(row))) {
+        for (const id of [setting.credentialId, setting.fallbackCredentialId]) {
+          if (!id || id === connection.credentialId) continue;
+          const found = await usableDecisionConnection(row.teamId, cls, id, true);
+          if ('refused' in found) continue;
+          if (found.connection.backend.protocol !== 'openai-logprobs') continue;
+          if (row.decisions + attempts >= row.maxSteps * 2 + 8) break;
+          try {
+            attempts++;
+            const result = await withStageGuard(
+              () => browserStageStillEnabled(row),
+              undefined,
+              (signal) =>
+                askConnection(found.connection, logRequest.context, questions, 3000, signal, 0),
+            );
+            collect(result.reply);
+            await recordDecisionAttempt(logRequest, found.connection, result);
+            if (browserDecisionConfident(result, threshold)) fallback = result.reply;
+          } catch {
+            await recordDecisionAttempt(
+              logRequest,
+              found.connection,
+              null,
+              'Local browser fallback failed.',
+            );
+          }
+          break;
+        }
+      }
+      if (fallback) reply = fallback;
+      else {
+        await cancelOptionalStage(row.id);
+        throw new HttpError(
+          409,
+          'The optional Jev stage stopped. Continue with the existing step tools and current page state.',
+        );
+      }
     }
   } else {
+    attempts++;
     reply = await askSystemOne(connection, request);
+    collect(reply);
   }
+  reply = { ...reply, ...usage };
   await db
     .update(helenaBrowserTaskRun)
     .set({
-      decisions: sql`${helenaBrowserTaskRun.decisions} + 1`,
+      decisions: sql`${helenaBrowserTaskRun.decisions} + ${attempts}`,
       inputTokens: sql`${helenaBrowserTaskRun.inputTokens} + ${reply.inputTokens}`,
       outputTokens: sql`${helenaBrowserTaskRun.outputTokens} + ${reply.outputTokens}`,
       decisionMs: sql`${helenaBrowserTaskRun.decisionMs} + ${reply.latencyMs}`,

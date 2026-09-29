@@ -55,6 +55,7 @@ function fixture() {
   let marketOpen = true;
   let pendingClose = false;
   const execution: PaperExecution = {
+    precheck: async () => ({ allowed: true, reason: 'synthetic pass' }),
     async withAccountLock(_ctx, _account, work) {
       if (locked) throw new Error('account busy');
       locked = true;
@@ -221,6 +222,42 @@ function fixture() {
   };
 }
 const submit = 'alpaca_paper_submit_order';
+
+describe('paper precheck precedes every write', () => {
+  test('a negative or uncertain result prevents the order and durable intent', async () => {
+    for (const reason of ['Rule failed.', 'Uncertain news.', 'Duplicate order.']) {
+      const f = fixture();
+      f.execution.precheck = async () => ({ allowed: false, reason });
+      expect(await f.call(submit, request)).toMatchObject({ isError: true });
+      expect(f.writes).toEqual([]);
+      expect(f.intents.size).toBe(0);
+    }
+  });
+  test('a failed precheck leaves the protective stop in place', async () => {
+    const f = fixture();
+    f.held(1);
+    const stop = brokerOrder({ side: 'sell', type: 'stop', stop_price: '580' });
+    f.open.push(stop);
+    f.execution.precheck = async () => ({ allowed: false, reason: 'Review required.' });
+    expect(
+      await f.call('alpaca_paper_close_position', {
+        requestId: crypto.randomUUID(),
+        symbol: 'SPY',
+        rationale: 'Close the synthetic position.',
+      }),
+    ).toMatchObject({ isError: true });
+    expect(stop.status).toBe('new');
+    expect(f.writes).toEqual([]);
+  });
+  test('a timeout cannot place an order', async () => {
+    const f = fixture();
+    f.execution.precheck = async () => {
+      throw new Error('timeout');
+    };
+    await expect(f.call(submit, request)).rejects.toThrow('timeout');
+    expect(f.writes).toEqual([]);
+  });
+});
 
 describe('pending inventory reservations', () => {
   test('held buys and partial fills retain value; OCO exits reserve inventory once', () => {

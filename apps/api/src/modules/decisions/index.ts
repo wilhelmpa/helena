@@ -1,5 +1,13 @@
 import { Elysia, t } from 'elysia';
-import { aiAgent, agentRun, db, organizationAgentAssignment, projectMember } from '@repo/db';
+import {
+  aiAgent,
+  agentRun,
+  agentChatMessage,
+  agentChatThread,
+  db,
+  organizationAgentAssignment,
+  projectMember,
+} from '@repo/db';
 import { and, asc, eq, isNull } from 'drizzle-orm';
 import { authContext } from '#shared/auth-context';
 import { guards } from '#shared/guards';
@@ -47,6 +55,8 @@ import {
 import { teamParams } from '#modules/teams/model';
 import { firstStageView, updateFirstStage } from './first-stage';
 import { routeTaskAgent, triageTask } from './triage';
+import { selectTools } from './tool-selection';
+import { toolSelectionBody, ToolSelectionResponse } from './model';
 
 // Typed decisions (docs/helena-decisions/decisions.md): the classes' settings, their evals
 // and log for the team's owners and managers, and `decide` for agents and people — one
@@ -127,6 +137,49 @@ export const decisionRoutes = new Elysia({
 })
   .use(authContext)
   .use(guards)
+
+  .post(
+    '/decisions/tool-selection',
+    async ({ user, body, request }) => {
+      const scope = await decideScope(user, body);
+      const runId = await runOf(request.headers.get('x-helena-run'), scope.agentId);
+      if (body.chatMessageId) {
+        const [chat] = await db
+          .select({ projectId: agentChatThread.projectId })
+          .from(agentChatMessage)
+          .innerJoin(agentChatThread, eq(agentChatThread.id, agentChatMessage.threadId))
+          .where(
+            and(
+              eq(agentChatMessage.id, body.chatMessageId),
+              eq(agentChatMessage.agentId, scope.agentId ?? -1),
+              eq(agentChatMessage.role, 'assistant'),
+            ),
+          );
+        if (!chat) throw new HttpError(403, 'The chat does not belong to the calling agent.');
+        if (scope.projectId !== null && scope.projectId !== chat.projectId)
+          throw new HttpError(403, 'Chat project mismatch.');
+        scope.projectId = chat.projectId;
+      } else if (runId) {
+        const [run] = await db
+          .select({ projectId: agentRun.projectId })
+          .from(agentRun)
+          .where(eq(agentRun.id, runId));
+        if (scope.projectId !== null && scope.projectId !== run?.projectId)
+          throw new HttpError(403, 'Run project mismatch.');
+        scope.projectId = run?.projectId ?? null;
+      }
+      return selectTools(
+        { ...scope, runId, chatMessageId: body.chatMessageId },
+        body.prompt,
+        body.tools,
+      );
+    },
+    {
+      body: toolSelectionBody,
+      response: { 200: ToolSelectionResponse, ...errors(400, 401, 403, 404) },
+      detail: { summary: 'Select relevant tools from the calling runtime catalog' },
+    },
+  )
 
   .post(
     '/projects/:projectKey/decisions/task-triage',

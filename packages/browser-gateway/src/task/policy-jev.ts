@@ -43,13 +43,13 @@ function stateOf(input: RoundInput, elements: PageElement[]) {
   const hasValues = Object.keys(values).length > 0;
   return {
     page: {
-      url: observation.url,
-      title: observation.title,
+      url: observation.url.slice(0, 500),
+      title: observation.title.slice(0, 200),
       text: observation.text.slice(0, 1800),
       ...(observation.dialogs.length
         ? { dialogs: observation.dialogs.slice(0, 2).map((d) => d.slice(0, 300)) }
         : {}),
-      ...(observation.jsDialog ? { browser_dialog: observation.jsDialog } : {}),
+      ...(observation.jsDialog ? { browser_dialog: observation.jsDialog.slice(0, 300) } : {}),
       elements: elements.map((e) => ({
         i: e.i,
         role: e.role,
@@ -61,7 +61,7 @@ function stateOf(input: RoundInput, elements: PageElement[]) {
       })),
     },
     task: {
-      goal: goal.slice(0, 500),
+      goal,
       ...(success
         ? {
             success: {
@@ -91,13 +91,26 @@ function stateOf(input: RoundInput, elements: PageElement[]) {
           }
         : {}),
       // The typed values themselves stay out; the history names their keys.
-      history: history.slice(-4).map(({ text: _text, ...entry }) => entry),
+      history: history
+        .slice(-4)
+        .map(({ text: _text, ...entry }) =>
+          Object.fromEntries(
+            Object.entries(entry).map(([key, value]) => [
+              key,
+              typeof value === 'string' ? value.slice(0, 160) : value,
+            ]),
+          ),
+        ),
       ...(lastChange ? { last_change: JSON.stringify(lastChange).slice(0, 300) } : {}),
     },
   };
 }
 
 export function jevRound(input: RoundInput) {
+  if (input.goal.length > 1500)
+    throw new Error(
+      'The complete goal exceeds the bounded browser state; continue with the agent.',
+    );
   const { observation, goal, values, mode, round } = input;
   const hasValues = Object.keys(values).length > 0;
   const visible = observation.elements.filter((e) => !e.covered && !e.offscreen);

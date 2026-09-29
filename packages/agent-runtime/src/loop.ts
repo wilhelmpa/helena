@@ -41,6 +41,7 @@ export interface LoopInput {
   signal: AbortSignal;
   // Called once before the first step: the decision service's view of the task.
   uncertainty?: () => Promise<Escalation | null>;
+  selectTools?: (input: { prompt: string; tools: AgentTool[] }) => Promise<string[] | null>;
   // A durable note for the agent's memory (the flush before a compression).
   note?: (text: string) => Promise<void>;
   // The caller writes the closing spend and result lines itself (after a reflection).
@@ -125,6 +126,7 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
   let browserLeftMs = (config.tools?.browserBudgetSeconds ?? DEFAULTS.browserBudgetSeconds) * 1000;
   const toolsByName = new Map(input.tools.map((entry) => [entry.name, entry]));
   const active = new Set([...input.direct].filter((name) => toolsByName.has(name)));
+  const discovered = new Set<string>();
   let chain = [...input.models];
   if (chain.length === 0) throw new Error('no model to run on');
 
@@ -393,7 +395,23 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
       ...shrinkOld(visible, step),
     ];
     const toolSet: ToolSet = {};
-    for (const name of active) {
+    let offered: Set<string> = active;
+    if (input.selectTools) {
+      const names = await input
+        .selectTools({
+          prompt: messages.map(messageText).join('\n').slice(-4000),
+          tools: input.tools,
+        })
+        .catch(() => null);
+      const selected = names?.filter((name) => toolsByName.has(name));
+      if (selected?.length) {
+        offered = new Set(selected);
+        for (const name of discovered) offered.add(name);
+        if (toolsByName.has('find_tools')) offered.add('find_tools');
+        for (const name of offered) active.add(name);
+      }
+    }
+    for (const name of offered) {
       const entry = toolsByName.get(name)!;
       toolSet[name] = tool({
         description: entry.description,
@@ -568,6 +586,7 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
         if (!toolsByName.has(name)) continue;
         active.delete(name);
         active.add(name);
+        discovered.add(name);
       }
       if (result.output.endTurn) {
         endTurn = true;

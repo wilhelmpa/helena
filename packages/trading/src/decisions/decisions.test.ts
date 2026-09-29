@@ -31,8 +31,9 @@ function checkSet(set: DecisionEvalSet) {
 }
 
 describe('trading decision classes', () => {
-  test('three classes, each with an eval of at least 24 cases', () => {
+  test('four classes, each with an eval of at least 24 cases', () => {
     expect(TRADING_DECISION_CLASSES.map((entry) => entry.id)).toEqual([
+      'volition.trading.precheck',
       'helena.trading.news',
       'helena.trading.rules',
       'helena.trading.routing',
@@ -44,14 +45,18 @@ describe('trading decision classes', () => {
   });
 
   test('both answers of the rule check appear in its eval', () => {
-    const rules = TRADING_DECISION_CLASSES[1]!.eval!;
+    const rules = TRADING_DECISION_CLASSES.find(
+      (entry) => entry.id === 'helena.trading.rules',
+    )!.eval!;
     const answers = rules.cases.map((entry) => entry.expected.meets);
     expect(answers.filter((answer) => answer === 'yes').length).toBeGreaterThanOrEqual(10);
     expect(answers.filter((answer) => answer === 'no').length).toBeGreaterThanOrEqual(10);
   });
 
   test('every role of the routing is expected at least once', () => {
-    const routing = TRADING_DECISION_CLASSES[2]!.eval!;
+    const routing = TRADING_DECISION_CLASSES.find(
+      (entry) => entry.id === 'helena.trading.routing',
+    )!.eval!;
     const expected = new Set(routing.cases.flatMap((entry) => [entry.expected.role].flat()));
     const roles = decisionOptionIds(routing.cases[0]!.questions.role!);
     for (const role of roles)

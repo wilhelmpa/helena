@@ -62,6 +62,18 @@ async function input(): Promise<RoundInput> {
 }
 
 describe('compatible speculative Jev heads', () => {
+  it('bounds page metadata and history while preserving the complete allowed goal', async () => {
+    const state = await input();
+    state.observation.title = 'x'.repeat(100_000);
+    state.observation.url = `https://example.invalid/${'x'.repeat(100_000)}`;
+    state.history = [{ action: 'click', element: 'x'.repeat(100_000) }];
+    state.goal = 'x'.repeat(1500);
+    const request = jevRound(state).request;
+    expect(JSON.stringify(request.state).length).toBeLessThan(8000);
+    expect((request.state as { task: { goal: string } }).task.goal).toBe(state.goal);
+    state.goal += ' Do not submit.';
+    expect(() => jevRound(state)).toThrow('complete goal');
+  });
   it('caps the state at forty visible candidates and four history entries', async () => {
     const state = await input();
     state.observation.text = 'x'.repeat(5000);

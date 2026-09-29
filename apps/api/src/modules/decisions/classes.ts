@@ -10,6 +10,10 @@ import { ROUTINE_GATE_EVAL } from './evals/routine-gate';
 import { HEARTBEAT_PRECHECK_EVAL } from './evals/heartbeat-precheck';
 import { TASK_TRIAGE_EVAL } from './evals/task-triage';
 import { AGENT_ROUTING_EVAL } from './evals/agent-routing';
+import { TOOL_SELECTION_CLASS } from './tool-selection-questions';
+import { TOOL_SELECTION_EVAL } from './evals/tool-selection';
+import { AVA_COMMAND_CLASS } from './ava-questions';
+import { AVA_COMMAND_EVAL } from './evals/ava-befehle';
 
 // Helena's own decision classes and the backends the decisions service adds to the browser
 // task's (docs/helena-decisions/decisions.md §2, §4), registered as the internal plugin
@@ -33,6 +37,20 @@ export function localAiClassForDecision(_classId: string): 'decisions' {
 }
 
 export const BUILTIN_DECISION_CLASSES: DecisionClass[] = [
+  {
+    id: AVA_COMMAND_CLASS,
+    label: { en: 'Ava commands', de: 'Ava-Befehle' },
+    input: { store: 'never', cloud: 'allowed' },
+    defaults: { threshold: 0.98, timeoutMs: 1000 },
+    eval: AVA_COMMAND_EVAL,
+  },
+  {
+    id: TOOL_SELECTION_CLASS,
+    label: { en: 'Tool selection', de: 'Werkzeug-Vorauswahl' },
+    input: { store: 'never', cloud: 'allowed' },
+    defaults: { threshold: 0.95, timeoutMs: 1000 },
+    eval: TOOL_SELECTION_EVAL,
+  },
   {
     id: HEARTBEAT_PRECHECK_CLASS,
     label: { en: 'Heartbeat precheck', de: 'Heartbeat-Vorprüfung' },

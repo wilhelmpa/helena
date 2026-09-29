@@ -26,6 +26,7 @@ import { getInstanceBrowserControl, effectiveBrowserControl } from '../../settin
 const TOKEN = 'synthetic-jev-browser-gateway-token-0123456789';
 let server: ReturnType<typeof Bun.serve>;
 let calls = 0;
+let localCalls = 0;
 let behavior: 'normal' | 'error' | 'held' = 'normal';
 let release: (() => void) | undefined;
 let held: Promise<void> | undefined;
@@ -37,7 +38,29 @@ beforeAll(() => {
   server = Bun.serve({
     hostname: '127.0.0.1',
     port: 0,
-    async fetch() {
+    async fetch(request) {
+      if (new URL(request.url).pathname.endsWith('/chat/completions')) {
+        localCalls++;
+        return Response.json({
+          model: 'local-logit-fixture',
+          usage: { prompt_tokens: 2, completion_tokens: 1 },
+          choices: [
+            {
+              message: { content: 'A' },
+              logprobs: {
+                content: [
+                  {
+                    top_logprobs: [
+                      { token: 'A', logprob: Math.log(0.999) },
+                      { token: 'B', logprob: Math.log(0.001) },
+                    ],
+                  },
+                ],
+              },
+            },
+          ],
+        });
+      }
       calls++;
       if (behavior === 'held') await held;
       if (behavior === 'error')
@@ -54,6 +77,7 @@ afterAll(() => server.stop(true));
 beforeEach(async () => {
   await resetDb();
   calls = 0;
+  localCalls = 0;
   behavior = 'normal';
 });
 afterEach(() => {
@@ -165,6 +189,35 @@ const ask = (taskToken: string) =>
     state: 'Synthetic visible fixture only.',
     questions: { q: { type: 'noul', instructions: 'Is the fixture visible?' } },
   });
+
+it('falls from a failed Jev call to configured local logits and logs both stages', async () => {
+  const fixture = await setup();
+  const local = await fixture.api.teams({ teamId: fixture.teamId }).credentials.post({
+    kind: 'decision_model',
+    label: 'Synthetic local logits',
+    provider: 'local-logit',
+    model: 'local-logit-fixture',
+    baseUrl: `http://127.0.0.1:${server.port}`,
+    allowPrivateAddress: true,
+    value: 'synthetic-local-key',
+  });
+  expect(local.status).toBe(201);
+  expect(
+    (
+      await fixture.api
+        .teams({ teamId: fixture.teamId })
+        .decisions.classes({ classId: BROWSER_CLASS })
+        .patch({ credentialId: local.data!.id })
+    ).status,
+  ).toBe(200);
+  const task = await opened(fixture);
+  behavior = 'error';
+  const response = await ask(task.taskToken);
+  expect(response.status).toBe(200);
+  expect(calls).toBe(1);
+  expect(localCalls).toBeGreaterThan(0);
+  expect(await response.json()).toMatchObject({ model: 'local-logit-fixture' });
+});
 async function waitForCall() {
   const deadline = Date.now() + 1500;
   while (!calls && Date.now() < deadline) await Bun.sleep(5);
