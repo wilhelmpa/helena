@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 import { useShell } from '@/context/shellContext';
 import { settingsSection } from '@/utils/settingsSections';
-import { agentsPath, organizationPath } from '@/utils/paths';
+import { teamListPath, teamOrganizationPath, organizationPath } from '@/utils/paths';
 import { useSession } from '@/lib/auth-client';
 import { useInstanceProjectDefaultsQuery } from '@/features/god/services/god.service';
 import {
@@ -268,7 +268,7 @@ function AutopilotPage({ projectKey }: { projectKey: string }) {
               <Section title={t('agentsTitle')}>
                 <AutopilotAgentList
                   agents={data.agents}
-                  agentHref={(id) => `${agentsPath()}?agent=${id}`}
+                  agentHref={(id) => teamListPath(teamOrganizationPath(), `agent=${id}`)}
                 />
               </Section>
 
