@@ -1,11 +1,11 @@
 {
   "title": "Dispositivos",
-  "description": "Syncthing mantiene al día las notas y archivos de Helena, de los proyectos y de Private/ como una carpeta normal en tu Mac y tu teléfono: directamente en casa y mediante relés cifrados fuera de ella.",
+  "description": "Syncthing mantiene al día las notas y archivos de {appName}, de los proyectos y de Private/ como una carpeta normal en tu Mac y tu teléfono: directamente en casa y mediante relés cifrados fuera de ella.",
   "loadError": "No se pudo leer el estado de la sincronización.",
   "ownerOnly": "Solo el propietario de la instancia gestiona los dispositivos.",
   "unavailable": {
     "unconfiguredTitle": "Syncthing no está configurado",
-    "unconfigured": "Helena no tiene una clave válida para Syncthing en este servidor. Instala el paquete de Debian syncthing y ejecuta <code>deployment/volition-stack/native/syncthing/setup.sh</code> como root.",
+    "unconfigured": "{appName} no tiene una clave válida para Syncthing en este servidor. Instala el paquete de Debian syncthing y ejecuta <code>deployment/volition-stack/native/syncthing/setup.sh</code> como root.",
     "unreachableTitle": "Syncthing no está accesible",
     "unreachable": "Syncthing no está instalado en este servidor o el servicio <code>volition-syncthing</code> no está en marcha."
   },
@@ -21,7 +21,7 @@
   },
   "folder": {
     "title": "Estado de la sincronización",
-    "notSetUp": "Falta la carpeta Helena en Syncthing. Vuelve a ejecutar la configuración de Syncthing en este servidor.",
+    "notSetUp": "Falta la carpeta {appName} en Syncthing. Vuelve a ejecutar la configuración de Syncthing en este servidor.",
     "state": {
       "idle": "Al día",
       "scanning": "Analizando",
@@ -44,7 +44,7 @@
     "paused": "En pausa",
     "lastSeen": "Visto {time}",
     "neverSeen": "Aún no visto",
-    "notShared": "La carpeta Helena no está compartida con este dispositivo.",
+    "notShared": "La carpeta {appName} no está compartida con este dispositivo.",
     "remove": "Quitar",
     "removeTitle": "¿Quitar {name}?",
     "removeBody": "El dispositivo deja de sincronizarse con este servidor. Los archivos del dispositivo se quedan en él."
@@ -54,7 +54,7 @@
     "hint": "Acepta solo tus propios dispositivos: un dispositivo aceptado recibe todas las notas y archivos, Private/ incluido.",
     "requested": "Solicitado {time} desde {address}",
     "accept": "Aceptar",
-    "accepted": "{name} aceptado. Ahora acepta la carpeta Helena en el dispositivo."
+    "accepted": "{name} aceptado. Ahora acepta la carpeta {appName} en el dispositivo."
   },
   "conflicts": {
     "title": "Conflictos",
@@ -70,11 +70,11 @@
     "step2": "En Syncthing, añade un dispositivo e introduce el ID de dispositivo de este servidor, o escanea el código QR.",
     "step2Lan": "Para sincronizar directamente en casa, introduce <code>{address}, dynamic</code> como direcciones del dispositivo.",
     "step3": "El dispositivo aparece entonces arriba en «Dispositivos que piden conectarse». Elige Aceptar.",
-    "step4": "En el dispositivo, acepta la carpeta Helena en una carpeta llamada Helena: <code>~/Helena</code> en el Mac, <code>Helena</code> en el almacenamiento interno en Android, en «En mi iPhone» dentro de Möbius Sync en el iPhone.",
-    "step5": "Espera a que la carpeta muestre «Al día» en el dispositivo. Las notas y archivos son entonces archivos normales en el dispositivo; las notas se escriben mejor en Helena, en Notas.",
+    "step4": "En el dispositivo, acepta la carpeta {appName} en una carpeta llamada {appName}: <code>~/{appName}</code> en el Mac, <code>{appName}</code> en el almacenamiento interno en Android, en «En mi iPhone» dentro de Möbius Sync en el iPhone.",
+    "step5": "Espera a que la carpeta muestre «Al día» en el dispositivo. Las notas y archivos son entonces archivos normales en el dispositivo; las notas se escriben mejor en {appName}, en Notas.",
     "iphoneTitle": "iPhone",
-    "iphone": "Möbius Sync coloca la carpeta Helena en «En mi iPhone», donde la app Archivos la muestra. Möbius Sync sincroniza mientras la app está abierta o iOS la deja funcionar en segundo plano.",
+    "iphone": "Möbius Sync coloca la carpeta {appName} en «En mi iPhone», donde la app Archivos la muestra. Möbius Sync sincroniza mientras la app está abierta o iOS la deja funcionar en segundo plano.",
     "spaceTitle": "Ahorrar espacio en el teléfono (opcional)",
-    "space": "Los patrones de exclusión solo se aplican en el dispositivo donde se introducen. Para no cargar los archivos de correo en el teléfono, abre la carpeta Helena en Möbius Sync o Syncthing-Fork, añade la línea <code>Files/Mail</code> en los patrones de exclusión y guarda, mejor justo después de aceptar la carpeta. Los archivos se quedan en este servidor y en los demás dispositivos."
+    "space": "Los patrones de exclusión solo se aplican en el dispositivo donde se introducen. Para no cargar los archivos de correo en el teléfono, abre la carpeta {appName} en Möbius Sync o Syncthing-Fork, añade la línea <code>Files/Mail</code> en los patrones de exclusión y guarda, mejor justo después de aceptar la carpeta. Los archivos se quedan en este servidor y en los demás dispositivos."
   }
 }

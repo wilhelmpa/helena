@@ -1,6 +1,8 @@
+'use client';
+
 import HelenaMark from '@/components/brand/HelenaMark';
 import HelenaWordmark from '@/components/brand/HelenaWordmark';
-import { APP_NAME } from '@/utils/app';
+import { useDisplayName } from '@/context/displayName';
 
 // The header over a public shared page (a board or an issue). It shows the project
 // name, the ticker, and an optional trailing label. On a board that label is the
@@ -15,6 +17,7 @@ export default function PublicShareHeader({
   ticker: string;
   trailing?: string;
 }) {
+  const appName = useDisplayName();
   return (
     <header className="flex shrink-0 items-center gap-3 border-b px-4 py-3">
       <div className="flex min-w-0 items-baseline gap-2">
@@ -31,7 +34,7 @@ export default function PublicShareHeader({
       </div>
       <div className="ms-auto flex shrink-0 items-center gap-2 text-muted-foreground">
         <HelenaMark className="size-6" />
-        <HelenaWordmark label={APP_NAME} />
+        <HelenaWordmark label={appName} />
       </div>
     </header>
   );

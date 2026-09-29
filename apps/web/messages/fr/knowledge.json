@@ -21,7 +21,7 @@
   },
   "plugin": {
     "name": "Connaissances",
-    "description": "Les sources de connaissances propres à Helena, et la capture rapide dans la Boîte de réception et la note quotidienne."
+    "description": "Les sources de connaissances propres à {appName}, et la capture rapide dans la Boîte de réception et la note quotidienne."
   },
   "journal": {
     "today": "Note du jour"

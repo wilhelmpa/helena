@@ -156,6 +156,9 @@
     "joined": "a rejoint le {date}"
   },
   "general": {
+    "displayName": "Nom du produit",
+    "displayNameHint": "Le nom affiché dans l’application, les e-mails et à l’installation.",
+    "displayNameSaved": "Nom du produit enregistré.",
     "about": "À propos",
     "saved": "Valeurs par défaut des projets enregistrées",
     "projectDefaults": "Valeurs par défaut des projets",
@@ -359,7 +362,7 @@
       "runner": "Runner de l’environnement",
       "provisioning": "Provisionnement",
       "worker": "Worker",
-      "engine": "Moteur Helena"
+      "engine": "Moteur {appName}"
     },
     "seen": "vu il y a {time}",
     "lastSeen": "vu pour la dernière fois il y a {time}",
@@ -419,9 +422,9 @@
   },
   "plugins": {
     "externalTitle": "Plugins externes",
-    "externalDescription": "Un plugin externe s'exécute dans Helena avec les droits de Helena. N'activez ceci que pour des plugins de confiance.",
+    "externalDescription": "Un plugin externe s'exécute dans {appName} avec les droits de {appName}. N'activez ceci que pour des plugins de confiance.",
     "folder": "Dossier des plugins : {path}",
-    "noFolder": "Aucun dossier de plugins n'est défini (HELENA_PLUGINS_DIR) : seuls les plugins intégrés de Helena s'exécutent.",
+    "noFolder": "Aucun dossier de plugins n'est défini (HELENA_PLUGINS_DIR) : seuls les plugins intégrés de {appName} s'exécutent.",
     "restartHint": "Les changements prennent effet au redémarrage de l'API et du worker.",
     "foundTitle": "Dans le dossier des plugins",
     "none": "Aucun plugin trouvé.",
@@ -439,7 +442,7 @@
     "credentials": "Ses outils utilisent les identifiants de ses connecteurs.",
     "names": {
       "integrations": "Intégrations",
-      "mcp": "Outils MCP de Helena",
+      "mcp": "Outils MCP de {appName}",
       "webhooks": "Webhooks",
       "bundles": "Paquets de modèles",
       "limits": "Limites",
@@ -463,7 +466,7 @@
     },
     "loadFailed": "Impossible de charger les extensions.",
     "installedTitle": "Installées",
-    "installedDescription": "Ce que Helena a chargé, avec version et statut. Les réglages d'une extension pour un projet se trouvent dans les réglages de ce projet, sous Extensions.",
+    "installedDescription": "Ce que {appName} a chargé, avec version et statut. Les réglages d'une extension pour un projet se trouvent dans les réglages de ce projet, sous Extensions.",
     "externalSwitch": "Charger les plugins externes",
     "restartTitle": "Redémarrage",
     "inProjects": "Réglée dans",

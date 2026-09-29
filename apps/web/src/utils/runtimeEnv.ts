@@ -10,6 +10,7 @@ import { parseOrigins, rebaseUrl } from './appOrigins';
 // one of them (the API, the tools) are handed out on the origin the page was opened on.
 
 export interface RuntimeEnv {
+  displayName?: string;
   apiUrl: string;
   privacyUrl: string;
   termsUrl: string;

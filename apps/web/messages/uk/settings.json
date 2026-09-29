@@ -505,7 +505,7 @@
     "commandCopied": "Команду скопійовано. Замініть owner/repo і виконайте її.",
     "nativeConnections": "Підключення провайдерів",
     "nativeConnectionsRecommended": "Підключення провайдерів · Рекомендовано",
-    "nativeConnectionsHint": "Авторизуйте Git-провайдера, виберіть репозиторії, а Helena налаштує їхні webhooks.",
+    "nativeConnectionsHint": "Авторизуйте Git-провайдера, виберіть репозиторії, а {appName} налаштує їхні webhooks.",
     "nativeConnectProvider": "Підключити {provider}",
     "nativeNoConnections": "Облікові записи провайдерів ще не підключено. Нижче залишається ручне налаштування webhook.",
     "nativeConnectTitle": "Підключити {provider}",
@@ -543,7 +543,7 @@
     "nativeWebhookError": "Потребує уваги",
     "nativeDisconnectProvider": "Відключити провайдера",
     "nativeDisconnectRepository": "Відключити репозиторій",
-    "nativeDisconnectConfirm": "Відключити {provider} і видалити всі webhooks, якими керує Helena?",
+    "nativeDisconnectConfirm": "Відключити {provider} і видалити всі webhooks, якими керує {appName}?",
     "nativeDisconnected": "{provider} відключено",
     "nativeRepositoryDisconnected": "Репозиторій відключено",
     "nativeDisconnectFailed": "Не вдалося відключити інтеграцію.",
@@ -581,7 +581,7 @@
       },
       "blocked": {
         "label": "Заблоковано",
-        "description": "Без доступу до інтернету. Доступні лише API Helena, шлюз браузера та ШІ-модель агента."
+        "description": "Без доступу до інтернету. Доступні лише API {appName}, шлюз браузера та ШІ-модель агента."
       }
     },
     "allowLabel": "Список дозволів",
@@ -660,7 +660,7 @@
     "humanInputLabel": "Людиноподібне введення",
     "humanInputHint": "Друкує і клацає з людиноподібними паузами замість максимальної швидкості. Вимикайте лише для тестового проєкту з низьким ризиком.",
     "allowLocalLabel": "Дозволити локальні адреси",
-    "allowLocalHint": "Агенти можуть відкривати localhost, локальну мережу та адреси .local. Залиште вимкненим, якщо не тестуєте локальний сайт: браузер працює на сервері, де ці адреси ведуть до Helena та інших браузерів.",
+    "allowLocalHint": "Агенти можуть відкривати localhost, локальну мережу та адреси .local. Залиште вимкненим, якщо не тестуєте локальний сайт: браузер працює на сервері, де ці адреси ведуть до {appName} та інших браузерів.",
     "lockTimeoutLabel": "Тайм-аут блокування",
     "lockTimeoutHint": "Після стількох секунд без дії керування браузером агентом автоматично звільняється.",
     "seconds": "секунд",
@@ -739,12 +739,12 @@
         "hint": "MCP-сервери й інструменти агентів і хто може ними користуватися."
       },
       "mcps": {
-        "label": "Helena для зовнішніх застосунків",
-        "hint": "Як MCP-клієнти, як-от Claude Desktop, під'єднуються до Helena."
+        "label": "{appName} для зовнішніх застосунків",
+        "hint": "Як MCP-клієнти, як-от Claude Desktop, під'єднуються до {appName}."
       },
       "plugins": {
         "label": "Розширення",
-        "hint": "Розширення Helena."
+        "hint": "Розширення {appName}."
       },
       "access": {
         "label": "Доступи й підключення",
@@ -848,7 +848,7 @@
       },
       "channels": {
         "label": "Сповіщення й канали",
-        "hint": "Як Helena доставляє повідомлення поштою й у Telegram."
+        "hint": "Як {appName} доставляє повідомлення поштою й у Telegram."
       }
     },
     "projectPath": "Проєкт"
@@ -869,7 +869,7 @@
   },
   "execution": {
     "title": "Виконання",
-    "note": "Зміни діють одразу. Значення для всіх проєктів задаються в налаштуваннях Helena.",
+    "note": "Зміни діють одразу. Значення для всіх проєктів задаються в налаштуваннях {appName}.",
     "defaultLabel": "Виконання за замовчуванням",
     "defaultHint": "Кожен агент сам задає, з чим він працює в цьому проєкті.",
     "manageAgents": "Керувати агентами",
@@ -903,7 +903,7 @@
     "budgetsReset": "Бюджети повернуто до типових",
     "budgetsOverridden": "У проєкту власні бюджети",
     "budgetsDefault": "Як типові для всіх проєктів",
-    "budgetsDefaultHint": "Типові значення — у налаштуваннях Helena, розділ «Типові для проєктів»."
+    "budgetsDefaultHint": "Типові значення — у налаштуваннях {appName}, розділ «Типові для проєктів»."
   },
   "defaults": {
     "adminOnly": "Ці значення для всіх проєктів змінює лише адміністратор.",
@@ -912,8 +912,8 @@
     "budgetsSaved": "Бюджети нових проєктів збережено",
     "budgetsOverridden": "{count, plural, one {# проєкт має власні бюджети.} few {# проєкти мають власні бюджети.} many {# проєктів мають власні бюджети.} other {# проєкту мають власні бюджети.}}",
     "budgetsNone": "Усі проєкти дотримуються цих типових значень.",
-    "helenaOrdersTitle": "Постійні вказівки для Helena",
-    "helenaOrdersHint": "Helena дотримується їх у кожному чаті й запуску."
+    "helenaOrdersTitle": "Постійні вказівки для {appName}",
+    "helenaOrdersHint": "{appName} дотримується їх у кожному чаті й запуску."
   },
   "uiGallery": {
     "sample": "Sample text",
@@ -956,9 +956,9 @@
     "emptySentence": "Nothing here yet. Create the first one.",
     "light": "Light",
     "dark": "Dark",
-    "agentChip": "Helena · Flash (локально)",
+    "agentChip": "{appName} · Flash (локально)",
     "statusBox": "У роботі",
-    "ladderTop": "Опублікувати Helena"
+    "ladderTop": "Опублікувати {appName}"
   },
   "organization": {
     "label": "Організація",
@@ -1008,7 +1008,7 @@
     "projectionRebuildAction": "Перебудувати",
     "projectionRebuilt": "Чеків як нотаток: {projected}, змінено: {changed}",
     "bankAccounts": "Банківські рахунки",
-    "bankAccountsHint": "Helena зіставляє чеки з цими рахунками. Імпортуйте виписки тут або в розділі Чеки › Новий.",
+    "bankAccountsHint": "{appName} зіставляє чеки з цими рахунками. Імпортуйте виписки тут або в розділі Чеки › Новий.",
     "agentExport": "Агенти як нотатки",
     "agentExportRow": "Агенти цього проєкту",
     "agentExportHint": "Роль, модель, навички та бюджети кожного агента — нотаткою лише для читання в Документи › Agenten, з поданням. Інструкції та облікові дані не вивантажуються; редагування нотаток нічого не змінює.",

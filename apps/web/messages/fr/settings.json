@@ -505,7 +505,7 @@
     "commandCopied": "Commande copiée. Remplacez owner/repo, puis lancez-la.",
     "nativeConnections": "Connexions aux fournisseurs",
     "nativeConnectionsRecommended": "Connexions aux fournisseurs · Recommandé",
-    "nativeConnectionsHint": "Autorisez un fournisseur Git, choisissez des dépôts, et laissez Helena configurer leurs webhooks.",
+    "nativeConnectionsHint": "Autorisez un fournisseur Git, choisissez des dépôts, et laissez {appName} configurer leurs webhooks.",
     "nativeConnectProvider": "Connecter {provider}",
     "nativeNoConnections": "Aucun compte de fournisseur connecté pour l'instant. La configuration manuelle du webhook reste disponible ci-dessous.",
     "nativeConnectTitle": "Connecter {provider}",
@@ -543,7 +543,7 @@
     "nativeWebhookError": "Nécessite votre attention",
     "nativeDisconnectProvider": "Déconnecter le fournisseur",
     "nativeDisconnectRepository": "Déconnecter le dépôt",
-    "nativeDisconnectConfirm": "Déconnecter {provider} et supprimer tous les webhooks gérés par Helena ?",
+    "nativeDisconnectConfirm": "Déconnecter {provider} et supprimer tous les webhooks gérés par {appName} ?",
     "nativeDisconnected": "{provider} déconnecté",
     "nativeRepositoryDisconnected": "Dépôt déconnecté",
     "nativeDisconnectFailed": "Impossible de déconnecter l'intégration.",
@@ -581,7 +581,7 @@
       },
       "blocked": {
         "label": "Bloqué",
-        "description": "Aucun accès à Internet. Seuls l’API Helena, la passerelle du navigateur et le modèle d’IA de l’agent restent accessibles."
+        "description": "Aucun accès à Internet. Seuls l’API {appName}, la passerelle du navigateur et le modèle d’IA de l’agent restent accessibles."
       }
     },
     "allowLabel": "Liste d'autorisation",
@@ -660,7 +660,7 @@
     "humanInputLabel": "Saisie de type humain",
     "humanInputHint": "Tape et clique avec des pauses de type humain plutôt qu'à vitesse maximale. À désactiver uniquement pour un projet de test à faible risque.",
     "allowLocalLabel": "Autoriser les adresses locales",
-    "allowLocalHint": "Les agents peuvent ouvrir localhost, le réseau local et les adresses .local. À laisser désactivé sauf pour tester un site local : le navigateur tourne sur le serveur, où ces adresses atteignent Helena et les autres navigateurs.",
+    "allowLocalHint": "Les agents peuvent ouvrir localhost, le réseau local et les adresses .local. À laisser désactivé sauf pour tester un site local : le navigateur tourne sur le serveur, où ces adresses atteignent {appName} et les autres navigateurs.",
     "lockTimeoutLabel": "Délai du verrou",
     "lockTimeoutHint": "Passé ce nombre de secondes sans action, le contrôle du navigateur par un agent est libéré automatiquement.",
     "seconds": "secondes",
@@ -739,12 +739,12 @@
         "hint": "Les serveurs MCP et outils des agents, et qui peut les utiliser."
       },
       "mcps": {
-        "label": "Helena pour les apps externes",
-        "hint": "Comment des clients MCP comme Claude Desktop accèdent à Helena."
+        "label": "{appName} pour les apps externes",
+        "hint": "Comment des clients MCP comme Claude Desktop accèdent à {appName}."
       },
       "plugins": {
         "label": "Extensions",
-        "hint": "Extensions de Helena."
+        "hint": "Extensions de {appName}."
       },
       "access": {
         "label": "Accès et connexions",
@@ -848,7 +848,7 @@
       },
       "channels": {
         "label": "Notifications et canaux",
-        "hint": "Comment Helena envoie les messages par e-mail et Telegram."
+        "hint": "Comment {appName} envoie les messages par e-mail et Telegram."
       }
     },
     "projectPath": "Projet"
@@ -869,7 +869,7 @@
   },
   "execution": {
     "title": "Exécution",
-    "note": "Les modifications s'appliquent tout de suite. Les valeurs pour tous les projets se règlent dans les réglages de Helena.",
+    "note": "Les modifications s'appliquent tout de suite. Les valeurs pour tous les projets se règlent dans les réglages de {appName}.",
     "defaultLabel": "Exécution par défaut",
     "defaultHint": "Chaque agent règle lui-même avec quoi il travaille dans ce projet.",
     "manageAgents": "Gérer les agents",
@@ -903,7 +903,7 @@
     "budgetsReset": "Budgets remis à la valeur par défaut",
     "budgetsOverridden": "Ce projet a ses propres budgets",
     "budgetsDefault": "Comme la valeur par défaut de tous les projets",
-    "budgetsDefaultHint": "La valeur par défaut se règle dans les réglages de Helena, sous « Valeurs des projets »."
+    "budgetsDefaultHint": "La valeur par défaut se règle dans les réglages de {appName}, sous « Valeurs des projets »."
   },
   "defaults": {
     "adminOnly": "Seul l'administrateur modifie ces valeurs pour tous les projets.",
@@ -912,8 +912,8 @@
     "budgetsSaved": "Budgets des nouveaux projets enregistrés",
     "budgetsOverridden": "{count, plural, one {# projet a ses propres budgets.} other {# projets ont leurs propres budgets.}}",
     "budgetsNone": "Tous les projets suivent cette valeur.",
-    "helenaOrdersTitle": "Consignes permanentes pour Helena",
-    "helenaOrdersHint": "Helena les suit dans chaque chat et exécution."
+    "helenaOrdersTitle": "Consignes permanentes pour {appName}",
+    "helenaOrdersHint": "{appName} les suit dans chaque chat et exécution."
   },
   "uiGallery": {
     "sample": "Sample text",
@@ -956,9 +956,9 @@
     "emptySentence": "Nothing here yet. Create the first one.",
     "light": "Light",
     "dark": "Dark",
-    "agentChip": "Helena · Flash (local)",
+    "agentChip": "{appName} · Flash (local)",
     "statusBox": "En cours",
-    "ladderTop": "Publier Helena"
+    "ladderTop": "Publier {appName}"
   },
   "organization": {
     "label": "Organisation",
@@ -1008,7 +1008,7 @@
     "projectionRebuildAction": "Reconstruire",
     "projectionRebuilt": "{projected} justificatifs en notes, {changed} modifiés",
     "bankAccounts": "Comptes bancaires",
-    "bankAccountsHint": "Helena rapproche les justificatifs de ces comptes. Importez des relevés ici ou sous Justificatifs › Nouveau.",
+    "bankAccountsHint": "{appName} rapproche les justificatifs de ces comptes. Importez des relevés ici ou sous Justificatifs › Nouveau.",
     "agentExport": "Agents en notes",
     "agentExportRow": "Agents de ce projet",
     "agentExportHint": "Rôle, modèle, compétences et budgets de chaque agent en note en lecture seule sous Documents › Agenten, avec une vue. Instructions et identifiants restent exclus ; modifier les notes ne change rien.",

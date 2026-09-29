@@ -22,12 +22,12 @@
     "deleteClient": "OAuth-Client löschen",
     "deleteClientMessage": "{name} löschen? Konten können sich damit nicht mehr anmelden.",
     "engine": {
-      "helena": "Helena",
+      "helena": "{appName}",
       "gog": "gog"
     },
     "engineHint": {
-      "helena": "Helena bewahrt die Anmeldung verschlüsselt auf und ruft Google mit Googles eigenen Bibliotheken auf.",
-      "gog": "Die Anmeldung bleibt im Schlüsselbund von gog auf diesem Server; Helena erreicht sie über den Broker. Kein Postfach im Posteingang."
+      "helena": "{appName} bewahrt die Anmeldung verschlüsselt auf und ruft Google mit Googles eigenen Bibliotheken auf.",
+      "gog": "Die Anmeldung bleibt im Schlüsselbund von gog auf diesem Server; {appName} erreicht sie über den Broker. Kein Postfach im Posteingang."
     },
     "status": {
       "ok": "Verbunden",
@@ -51,11 +51,11 @@
     "checked": "{email} geprüft",
     "editServices": "Dienste",
     "signInAgain": "Neu anmelden",
-    "moveToHelena": "In Helena übernehmen",
+    "moveToHelena": "In {appName} übernehmen",
     "remove": "Konto entfernen",
     "removeMessage": "{email} entfernen? Agenten verlieren den Zugang sofort; die importierten Mails bleiben, bis du das Postfach löschst.",
     "removeFromGog": "Anmeldung auch aus gog entfernen",
-    "inGog": "In gog, noch nicht in Helena",
+    "inGog": "In gog, noch nicht in {appName}",
     "inGogHint": "gog hält für diese Konten eine Anmeldung. Anzeigen verschiebt kein Token.",
     "adopt": "Anzeigen",
     "adopted": "{email} wird angezeigt",
@@ -75,12 +75,12 @@
   "signIn": {
     "title": "Google-Konto verbinden",
     "againTitle": "{email} neu anmelden",
-    "moveTitle": "{email} in Helena übernehmen",
+    "moveTitle": "{email} in {appName} übernehmen",
     "engine": "Anmeldung aufbewahrt von",
     "client": "OAuth-Client",
     "noClient": "Importiere zuerst einen OAuth-Client.",
     "email": "Adresse",
-    "emailHint": "Für gog nötig; bei Helena wählt Google das Konto damit vor.",
+    "emailHint": "Für gog nötig; bei {appName} wählt Google das Konto damit vor.",
     "services": "Dienste",
     "scope": "Gehört zu",
     "start": "Weiter",
@@ -88,7 +88,7 @@
     "copyLink": "Link kopieren",
     "linkCopied": "Link kopiert",
     "pasteStep": "Nach der Anmeldung landet der Browser auf einer Seite, die nicht lädt (127.0.0.1). Kopiere die vollständige Adresse dieser Seite und füge sie hier ein.",
-    "callbackStep": "Melde dich bei Google an; Helena schließt danach selbst ab und kehrt hierher zurück.",
+    "callbackStep": "Melde dich bei Google an; {appName} schließt danach selbst ab und kehrt hierher zurück.",
     "redirect": "Adresse dieser Seite",
     "finish": "Abschließen",
     "connected": "{email} verbunden",
@@ -98,7 +98,7 @@
     "title": "Dienste von {email}",
     "hint": "Ein ausgeschalteter Dienst steht keinem Agenten zur Verfügung.",
     "needsSignIn": "braucht neue Anmeldung",
-    "gogNoMail": "Ein Konto in gog hat kein Postfach in Helena. Übernimm es in Helena für den Posteingang.",
+    "gogNoMail": "Ein Konto in gog hat kein Postfach in {appName}. Übernimm es in {appName} für den Posteingang.",
     "saved": "Dienste gespeichert"
   },
   "mailbox": {
@@ -183,13 +183,13 @@
   "mcp": {
     "kind": "MCP-Server (OAuth)",
     "kindPlural": "MCP-Server (OAuth)",
-    "kindHint": "Ein MCP-Server, der sich mit OAuth anmeldet. Helena bewahrt das Token auf; die MCP-Server-Bibliothek sendet es als Authorization-Header.",
+    "kindHint": "Ein MCP-Server, der sich mit OAuth anmeldet. {appName} bewahrt das Token auf; die MCP-Server-Bibliothek sendet es als Authorization-Header.",
     "title": "MCP-Server verbinden",
     "againTitle": "{name} neu anmelden",
     "serverUrl": "Server-Adresse",
     "label": "Name",
     "scope": "Scopes (optional)",
-    "hint": "Helena findet die Anmeldung des Servers, registriert sich dort und bittet dich, dich anzumelden. Danach wählst du diese Verbindung unter MCP-Server als Authorization-Header des Servers.",
+    "hint": "{appName} findet die Anmeldung des Servers, registriert sich dort und bittet dich, dich anzumelden. Danach wählst du diese Verbindung unter MCP-Server als Authorization-Header des Servers.",
     "open": "Beim Server anmelden",
     "connected": "MCP-Server verbunden",
     "signIn": "Neu anmelden",

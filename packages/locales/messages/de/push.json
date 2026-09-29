@@ -41,7 +41,7 @@
     "noTask": "Ein Lauf ist fehlgeschlagen."
   },
   "test": {
-    "title": "Helena",
+    "title": "{appName}",
     "body": "Push funktioniert auf diesem Gerät."
   },
   "subjects": {

@@ -10,7 +10,7 @@ import {
   hasConfiguredOidc,
   getOidcLabel,
 } from '@repo/auth';
-import { hasConfiguredEmailProvider } from '@repo/db';
+import { getDisplayName, hasConfiguredEmailProvider } from '@repo/db';
 import { cors } from '@elysiajs/cors';
 import { swagger } from '@elysiajs/swagger';
 import { Elysia } from 'elysia';
@@ -400,6 +400,7 @@ export const app = new Elysia()
   // into the SCIM group tables, so a group mapped to a project in god mode grants
   // access on an OIDC-only instance too, not just one that also runs a SCIM sync.
   .all('/api/auth/*', async ({ request }) => {
+    (await auth.$context).appName = await getDisplayName();
     const prefix = new URL(apiUrl).pathname.replace(/\/+$/, '');
     const authUrl = new URL(request.url);
     authUrl.pathname = `${prefix}${authUrl.pathname}`;
@@ -542,8 +543,18 @@ export const app = new Elysia()
       },
     },
   )
+  .get(
+    '/display-name',
+    async ({ set }) => {
+      set.headers['cache-control'] = 'no-store';
+      return { displayName: await getDisplayName() };
+    },
+    {
+      detail: { tags: ['System'], summary: 'Read the public product name' },
+    },
+  )
   // Root doubles as the liveness/health endpoint.
-  .get('/', () => ({ name: 'Helena api', status: 'ok' }), {
+  .get('/', async () => ({ name: `${await getDisplayName()} api`, status: 'ok' }), {
     detail: {
       tags: ['System'],
       summary: 'Check that the api is up',

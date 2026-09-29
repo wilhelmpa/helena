@@ -12,7 +12,7 @@
     "label": "Ordner",
     "vault": "Wissen",
     "code": "Code",
-    "home": "Helena",
+    "home": "{appName}",
     "private": "Privat",
     "templates": "Vorlagen",
     "projects": "Projekte"
@@ -41,10 +41,10 @@
     "folder": "Dieser Ordner ist leer.",
     "folderHint": "Dateien hierher ziehen oder „Hochladen“ verwenden.",
     "filter": "Kein Eintrag passt zu „{filter}“.",
-    "readOnly": "Helena zeigt diesen Ordner schreibgeschützt."
+    "readOnly": "{appName} zeigt diesen Ordner schreibgeschützt."
   },
   "unreadable": {
-    "title": "Helena kann diesen Ordner nicht lesen",
+    "title": "{appName} kann diesen Ordner nicht lesen",
     "body": "Der Workspace gehört dem Benutzer der Agenten auf dem Server. Öffne ihn stattdessen in VS Code.",
     "missing": "Dieser Ordner existiert auf dem Server nicht."
   },
@@ -62,7 +62,7 @@
     "download": "Herunterladen",
     "rename": "Umbenennen",
     "move": "Verschieben",
-    "copyPath": "Helena-Link kopieren",
+    "copyPath": "{appName}-Link kopieren",
     "openInCode": "In VS Code öffnen",
     "openInDocs": "In Wissen öffnen",
     "linkToTask": "Mit Aufgabe verknüpfen",
@@ -128,7 +128,7 @@
     "content": "Dateiinhalt",
     "reload": "Neu laden",
     "discard": "Ungespeicherten Entwurf verwerfen?",
-    "editor": "Helena-Editor",
+    "editor": "{appName}-Editor",
     "preview": "Vorschau",
     "searching": "Dateien werden durchsucht …",
     "searchError": "Suche nicht verfügbar oder Zugriff verweigert.",
@@ -247,7 +247,7 @@
     "agent": "Agent",
     "manual": "Manuell",
     "all": "Alle",
-    "systemHint": "Von Helena angelegt (Belege, Mail-Anhänge, Exporte)",
+    "systemHint": "Von {appName} angelegt (Belege, Mail-Anhänge, Exporte)",
     "agentHint": "Von einem Agenten angelegt",
     "manualHint": "Von einem Menschen angelegt oder hochgeladen",
     "label": "Herkunft"
@@ -256,7 +256,7 @@
     "loading": "Ansicht wird geladen …",
     "readFailed": "Die Ansicht ließ sich nicht lesen.",
     "rowsFailed": "Die Zeilen der Ansicht ließen sich nicht laden.",
-    "unsupported": "Diese Ansicht nutzt einen Ausdruck, den Helena noch nicht auswertet",
+    "unsupported": "Diese Ansicht nutzt einen Ausdruck, den {appName} noch nicht auswertet",
     "views": "Ansichten",
     "filter": "Zeilen filtern",
     "count": "{count, plural, one {# Dokument} other {# Dokumente}}",

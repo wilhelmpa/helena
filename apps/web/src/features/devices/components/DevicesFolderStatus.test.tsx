@@ -4,7 +4,7 @@ import { act } from 'react';
 import type { Root } from 'react-dom/client';
 import { NextIntlClientProvider } from 'next-intl';
 import { JSDOM } from 'jsdom';
-import devices from '../../../../messages/de/devices.json';
+import { loadMessages } from '@/i18n/messages';
 import type { SyncFolder } from '@/lib/api/endpoints/deviceSync';
 import { RelativeTimeProvider } from '@/context/relativeTimeContext';
 import DevicesFolderStatus from './DevicesFolderStatus';
@@ -19,6 +19,7 @@ const replacedGlobals = [
 let dom: JSDOM;
 let root: Root;
 let originalGlobalDescriptors: Map<string, PropertyDescriptor | undefined>;
+const devices = (await loadMessages('de')).devices;
 
 const folder: SyncFolder = {
   label: 'Helena',
@@ -83,6 +84,6 @@ describe('DevicesFolderStatus', () => {
   });
 
   it('says when the folder is missing', () => {
-    assert.match(render(<DevicesFolderStatus folder={null} />), /Der Ordner Helena fehlt/);
+    assert.match(render(<DevicesFolderStatus folder={null} />), /Der Ordner Ava fehlt/);
   });
 });

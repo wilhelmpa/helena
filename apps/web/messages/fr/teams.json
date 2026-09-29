@@ -424,7 +424,7 @@
         "codex": "Codex"
       },
       "runtimeHermesHint": "Le serveur fournit Hermes lui-même et garde son profil synchronisé.",
-      "runtimeCliHint": "Fonctionne comme service, comme un agent Hermes, dans son propre répertoire. Instructions, skills, serveurs MCP, outils, modèle et raisonnement viennent de Helena ; la connexion, d’Accès.",
+      "runtimeCliHint": "Fonctionne comme service, comme un agent Hermes, dans son propre répertoire. Instructions, skills, serveurs MCP, outils, modèle et raisonnement viennent de {appName} ; la connexion, d’Accès.",
       "compression": {
         "title": "Compression du contexte",
         "hint": "Un long chat ou une longue exécution renvoie tout son historique à chaque appel. À partir du seuil, Hermes résume les parties anciennes : moins de jetons par appel, au prix d’un appel de résumé et de moins de détails mot à mot. Vide : la valeur de l’instance.",
@@ -443,7 +443,7 @@
       "behaviourTitle": "Comportement"
     },
     "runtimeConflicts": {
-      "title": "Modifié hors de Helena",
+      "title": "Modifié hors de {appName}",
       "description": "Le runtime a remplacé ces fichiers par la version stockée ici et a conservé la version modifiée à côté.",
       "takeOver": "Reprendre",
       "editInLibrary": "Modifier dans la bibliothèque de compétences"
@@ -573,8 +573,8 @@
       "toolsetsReadOnly": "Seuls les membres qui peuvent modifier les agents peuvent désactiver des ensembles d'outils.",
       "noToolsets": "Le runner n'a indiqué aucun ensemble d'outils.",
       "mcpServers": "Serveurs MCP",
-      "mcpServersHint": "Helena les donne à chaque agent : son propre serveur et le navigateur du projet. Désactivez-en un et enregistrez pour que l'agent ne l'utilise pas.",
-      "mcpServersReadOnly": "Helena les donne à chaque agent. Seuls les membres autorisés à modifier les agents peuvent en désactiver un.",
+      "mcpServersHint": "{appName} les donne à chaque agent : son propre serveur et le navigateur du projet. Désactivez-en un et enregistrez pour que l'agent ne l'utilise pas.",
+      "mcpServersReadOnly": "{appName} les donne à chaque agent. Seuls les membres autorisés à modifier les agents peuvent en désactiver un.",
       "noMcpServers": "Aucun",
       "libraryMcpServers": "Serveurs MCP de l'équipe",
       "libraryMcpServersHint": "Un serveur activé démarre avec les chats et les exécutions de l'agent une fois enregistré.",
@@ -589,7 +589,7 @@
       "origin": {
         "agent": "Apprise",
         "hub": "Du Skills Hub",
-        "plan": "D'Helena",
+        "plan": "D'{appName}",
         "bundled": "Fournie avec Hermes"
       },
       "memory": "Mémoire",
@@ -628,14 +628,14 @@
         "enabled": "Auto-apprentissage",
         "enabledHint": "L'agent enregistre de la mémoire et crée des compétences pendant ses chats et ses exécutions ; les tokens qu'il y consacre comptent dans sa consommation. Désactivé, il n'enregistre rien de nouveau et sa mémoire n'est pas chargée.",
         "curator": "Curateur",
-        "curatorHint": "Le curateur de Hermes archive les compétences apprises qui n'ont pas servi depuis 30 jours. Helena lui demande une revue chaque semaine ; dans l'onglet Runtime de l'agent, vous en lancez une tout de suite et épinglez les compétences qu'il ne doit pas toucher.",
+        "curatorHint": "Le curateur de Hermes archive les compétences apprises qui n'ont pas servi depuis 30 jours. {appName} lui demande une revue chaque semaine ; dans l'onglet Runtime de l'agent, vous en lancez une tout de suite et épinglez les compétences qu'il ne doit pas toucher.",
         "reflectionTitle": "Réflexion",
         "reflectionHint": "Un court tour de suivi dans la même session que l'exécution, juste après sa fin, où l'agent ne retient que ce que cette exécution lui a appris. Ses tokens comptent dans la consommation de l'exécution.",
         "reflectionOff": "Désactivée",
         "reflectionFailure": "Après une exécution échouée ou une reprise",
         "reflectionComplex": "Aussi après une exécution à nombreuses étapes",
-        "restored": "Helena a rétabli ce qui avait été modifié en dehors d'Helena :",
-        "cronJobs": "{count, plural, one {# tâche du planificateur de Hermes s'exécute} other {# tâches du planificateur de Hermes s'exécutent}} en dehors d'Helena. Supprimez-les dans Hermes et utilisez plutôt une routine.",
+        "restored": "{appName} a rétabli ce qui avait été modifié en dehors d'{appName} :",
+        "cronJobs": "{count, plural, one {# tâche du planificateur de Hermes s'exécute} other {# tâches du planificateur de Hermes s'exécutent}} en dehors d'{appName}. Supprimez-les dans Hermes et utilisez plutôt une routine.",
         "waiting": "En attente du runner",
         "failed": "Échec : {error}",
         "queued": "Le runner s'en charge à sa prochaine synchronisation.",
@@ -682,7 +682,7 @@
       "skillEnabled": "{name} activée",
       "skillsDisabled": "désactivées : {count}",
       "skillClashes": "{count, plural, one {Un nom appartient} other {# noms appartiennent}} à plusieurs compétences. Hermes n’en charge alors aucune :",
-      "skillClashesFix": "Retirez la compétence Helena de l’agent (celle adaptée à Hermes prend alors le relais) ou renommez-la dans la bibliothèque.",
+      "skillClashesFix": "Retirez la compétence {appName} de l’agent (celle adaptée à Hermes prend alors le relais) ou renommez-la dans la bibliothèque.",
       "moreToolsets": "{count} de plus"
     },
     "paused": "En pause",
@@ -737,13 +737,13 @@
       "rewriteQueued": "Le runner réécrit le profil lors de sa prochaine synchronisation.",
       "drift": {
         "not-linked": "config.yaml n'est pas le lien vers la configuration Hermes partagée.",
-        "managed-config": "Hermes n'applique pas la configuration écrite par Helena.",
-        "mcp-unmanaged": "Le serveur MCP {server} est actif alors qu'Helena ne le prévoit pas.",
+        "managed-config": "Hermes n'applique pas la configuration écrite par {appName}.",
+        "mcp-unmanaged": "Le serveur MCP {server} est actif alors qu'{appName} ne le prévoit pas.",
         "mcp-missing": "Le serveur MCP {server} manque ou est désactivé.",
-        "mcp-differs": "Le serveur MCP {server} tourne avec d'autres réglages que dans Helena.",
+        "mcp-differs": "Le serveur MCP {server} tourne avec d'autres réglages que dans {appName}.",
         "mcp-unsupported": "Ce runtime ne peut pas démarrer le serveur MCP {server}.",
         "setting-differs": "Le réglage {key} diffère.",
-        "approval-guard": "Les commandes dangereuses s'exécutent sans le garde d'approbation d'Helena.",
+        "approval-guard": "Les commandes dangereuses s'exécutent sans le garde d'approbation d'{appName}.",
         "probe-failed": "Le profil n'a pas pu être lu."
       },
       "defaults": "Par défaut du runtime : {model} ({provider}), raisonnement {reasoning}",
@@ -758,7 +758,7 @@
         "notSignedIn": "Runtime non connecté.",
         "rejected": "Connexion du runtime refusée : expirée ou invalide.",
         "runtimeMissing": "{runtime} n’est pas installé sur le serveur.",
-        "sandboxUnavailable": "Sandbox indisponible : la sandbox propre à Codex ne démarre pas sur ce serveur, Codex fonctionne donc en lecture seule et n’atteint que les outils de Helena, sans shell. Avec l’isolation des agents, il tourne dans sa propre unité.",
+        "sandboxUnavailable": "Sandbox indisponible : la sandbox propre à Codex ne démarre pas sur ce serveur, Codex fonctionne donc en lecture seule et n’atteint que les outils de {appName}, sans shell. Avec l’isolation des agents, il tourne dans sa propre unité.",
         "notSignedInShort": "Runtime non connecté",
         "runtimeMissingShort": "Runtime absent",
         "sandboxUnavailableShort": "Sandbox indisponible"

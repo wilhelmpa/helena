@@ -2,6 +2,7 @@ import { auth } from '@repo/auth';
 import {
   aiAgent,
   db,
+  getDisplayName,
   organizationAgentAssignment,
   organizationProjectAssignment,
   project,
@@ -26,10 +27,11 @@ import { enableProjectBrowser } from '#modules/agents/mcp-servers/service';
 export type HomeAgentBootstrapResult =
   { status: 'pending' } | { status: 'ready'; agentId: number; apiKey: string };
 
-// Kept byte-identical to Hermes v0.21.4's auto-seeded default SOUL.md. Plan owns this
-// canonical copy for newly bootstrapped Home agents; existing agents are never rewritten.
+// The Home agent introduces itself by the visible name. The rest keeps Hermes' default
+// working style for newly bootstrapped agents.
 export const HOME_AGENT_SOUL =
-  'You are Hermes Agent, built by Nous Research. Be direct: match the length of your reply to the weight of ' +
+  'Du bist Ava, der Home-Agent. Du hilfst der Person über alle Projekte hinweg.\n\n' +
+  'Be direct: match the length of your reply to the weight of ' +
   'the ask — a one-line question gets a one-line answer, and finished work gets a short report of what ' +
   'changed, what\'s verified, and what\'s left, never a replay of the process. No filler ("Great question," ' +
   '"I\'d be happy to"), no restating the request back, no re-summarizing what you already said, no narrating ' +
@@ -38,9 +40,9 @@ export const HOME_AGENT_SOUL =
   'the stakes demand it, not by default.';
 
 const HOME_AGENT_INSTRUCTIONS = [
-  'You are the Home agent, the master of all agents of this system.',
+  'Du bist {appName}, der Home-Agent und Leiter aller Agenten dieses Systems.',
   'You help set up and run the whole system.',
-  'Work across projects, keep tasks traceable in Helena, and take no external action without explicit approval.',
+  'Work across projects, keep tasks traceable in {appName}, and take no external action without explicit approval.',
 ].join(' ');
 
 export interface ProjectCoordinatorBootstrapResult {
@@ -248,15 +250,16 @@ export async function bootstrapHomeAgent(): Promise<HomeAgentBootstrapResult> {
     return { status: 'ready', agentId: existing.id, apiKey };
   }
 
+  const displayName = await getDisplayName();
   const created = await createAgent(owner.teamId, {
-    name: 'Helena',
+    name: displayName,
     username: HOME_AGENT_USERNAME,
     agentRole: 'home',
     projectScope: 'all',
     projectIds: [],
     ownerUserId: owner.userId,
     runnerScope: 'owner',
-    instructions: HOME_AGENT_INSTRUCTIONS,
+    instructions: HOME_AGENT_INSTRUCTIONS.replaceAll('{appName}', displayName),
     triggerOnMention: true,
     triggerOnAssign: false,
     delegationDelaySec: 0,
@@ -265,7 +268,13 @@ export async function bootstrapHomeAgent(): Promise<HomeAgentBootstrapResult> {
       toolAllow: [],
       toolDeny: [],
       mcpGrants: ['itsaplan'],
-      files: [{ kind: 'instructions', path: 'SOUL.md', content: HOME_AGENT_SOUL }],
+      files: [
+        {
+          kind: 'instructions',
+          path: 'SOUL.md',
+          content: HOME_AGENT_SOUL.replace('Du bist Ava', `Du bist ${displayName}`),
+        },
+      ],
     },
   });
 

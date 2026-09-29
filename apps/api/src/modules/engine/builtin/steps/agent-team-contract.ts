@@ -181,6 +181,7 @@ export function stagePrompt(
   stage: StageInput,
   projectRef: string,
   startedByRoutine: string[] = [],
+  displayName = 'Ava',
 ): string {
   const contract =
     stage.phase === 'coordinate'
@@ -198,10 +199,10 @@ export function stagePrompt(
     `Objective: ${task.objective}`,
     `Acceptance criteria: ${JSON.stringify(task.acceptanceCriteria)}`,
     stage.phase === 'coordinate'
-      ? 'Only plan assignments. Helena executes each delegation after this stage. Do not call delegate_task, spawn agents, execute assignments, or mutate the task in this stage.'
-      : 'Complete only this stage. Helena owns delegation and task synchronization; do not spawn additional agents or change the task status.',
+      ? `Only plan assignments. ${displayName} executes each delegation after this stage. Do not call delegate_task, spawn agents, execute assignments, or mutate the task in this stage.`
+      : `Complete only this stage. ${displayName} owns delegation and task synchronization; do not spawn additional agents or change the task status.`,
     stage.phase === 'coordinate'
-      ? 'List in dependsOn the assignmentIds that must finish before an assignment can start. Assignments without dependencies run in parallel; a dependent assignment receives the summaries and evidence of the assignments it depends on. If no specialist is needed, return delegations: []; Helena will then run the task with you as the working agent.'
+      ? `List in dependsOn the assignmentIds that must finish before an assignment can start. Assignments without dependencies run in parallel; a dependent assignment receives the summaries and evidence of the assignments it depends on. If no specialist is needed, return delegations: []; ${displayName} will then run the task with you as the working agent.`
       : '',
     stage.phase === 'coordinate'
       ? `Allowed specialists: ${JSON.stringify(stage.team.specialists)}`

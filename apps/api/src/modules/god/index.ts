@@ -17,7 +17,12 @@ import {
   setScimSettings,
   rotateScimToken,
 } from '@repo/auth';
-import { hasConfiguredEmailProvider } from '@repo/db';
+import {
+  getDisplayName,
+  hasConfiguredEmailProvider,
+  setDisplayName,
+  validDisplayName,
+} from '@repo/db';
 import { emailBody, hasEmailProvider, sendEmail } from '@repo/mailer';
 import { authContext } from '#shared/auth-context';
 import { requireGod } from '#shared/access';
@@ -104,6 +109,7 @@ import {
 } from '#modules/agent-browser-gateway/model';
 import {
   HotkeyCombosSchema,
+  DisplayNameSchema,
   ProjectDefaultsSchema,
   ProjectDefaultsPatchSchema,
   RunResumeSettingsSchema,
@@ -257,14 +263,17 @@ export const godRoutes = new Elysia({ name: 'god', detail: { tags: ['God'] } })
         throw new HttpError(400, 'Configure an email provider first');
       }
 
+      const displayName = await getDisplayName();
       const body = emailBody(
-        'This test confirms that Helena can send email through the configured provider.',
+        `This test confirms that ${displayName} can send email through the configured provider.`,
+        null,
+        displayName,
       );
       const result = await sendEmail(
         { ...config, smtp: { ...config.smtp, timeout: config.smtp.timeout ?? 15 } },
         {
           to: current.email,
-          subject: 'Helena email test',
+          subject: `${displayName} email test`,
           ...body,
         },
       );
@@ -435,6 +444,22 @@ export const godRoutes = new Elysia({ name: 'god', detail: { tags: ['God'] } })
           'Replace the list of projects a provisioned group grants membership in, then ' +
           'reconcile the membership of every project the change touched.',
       },
+    },
+  )
+
+  .get('/god/display-name', async () => ({ displayName: await getDisplayName() }), {
+    response: { 200: DisplayNameSchema, ...errors(401, 403) },
+  })
+
+  .put(
+    '/god/display-name',
+    async ({ body }) => {
+      if (!validDisplayName(body.displayName)) throw new HttpError(400, 'Invalid display name');
+      return { displayName: await setDisplayName(body.displayName) };
+    },
+    {
+      body: DisplayNameSchema,
+      response: { 200: DisplayNameSchema, ...errors(400, 401, 403, 422) },
     },
   )
 

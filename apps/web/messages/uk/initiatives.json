@@ -164,8 +164,8 @@
   "sortDefault": "Власний порядок",
   "why": {
     "label": "Навіщо",
-    "choose": "Вибрати мету Helena",
-    "none": "Поки не служить жодній меті Helena.",
+    "choose": "Вибрати мету {appName}",
+    "none": "Поки не служить жодній меті {appName}.",
     "noneOption": "Без мети"
   }
 }

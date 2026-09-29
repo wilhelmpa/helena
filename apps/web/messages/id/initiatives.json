@@ -164,8 +164,8 @@
   "sortDefault": "Urutan sendiri",
   "why": {
     "label": "Mengapa",
-    "choose": "Pilih tujuan Helena",
-    "none": "Belum melayani tujuan Helena.",
+    "choose": "Pilih tujuan {appName}",
+    "none": "Belum melayani tujuan {appName}.",
     "noneOption": "Tanpa tujuan"
   }
 }

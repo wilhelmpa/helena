@@ -1,5 +1,6 @@
 import {
   db,
+  getDisplayName,
   aiAgent,
   agentRun,
   approvalRequest,
@@ -210,7 +211,7 @@ async function requestApproval(
     '',
     JSON.stringify(input, null, 2).slice(0, 8000),
     '',
-    'Helena carries this out exactly as shown once it is approved.',
+    `${await getDisplayName()} carries this out exactly as shown once it is approved.`,
   ].join('\n');
   const { approval } = await createApprovalRequest({
     scope: 'external',
@@ -251,7 +252,7 @@ async function requestApproval(
     approvalId: approval.id,
     message:
       `${reason} Approval request #${approval.id} is filed. End your run now: once the owner ` +
-      `decides, Helena carries out the action itself and starts a new run of yours; check ` +
+      `decides, ${await getDisplayName()} carries out the action itself and starts a new run of yours; check ` +
       `the outcome with get_connection_action ${action!.id}.`,
   };
 }

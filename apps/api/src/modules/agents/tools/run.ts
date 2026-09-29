@@ -10,6 +10,7 @@ import {
   type CallerAuth,
   type ProjectRef,
 } from '@helena/sdk';
+import { getDisplayName } from '@repo/db';
 import {
   aiAgent,
   agentTool,
@@ -155,7 +156,7 @@ export async function callConfiguredTool(
 
   if (category !== 'read' && (await emergencyStopActive())) {
     await audit('denied', category, `${tool.name}: emergency stop`);
-    return refusal(503, "Not now: Helena's emergency stop (Not-Aus) is on.");
+    return refusal(503, `Not now: ${await getDisplayName()}'s emergency stop (Not-Aus) is on.`);
   }
   if (registries.policies.list().length > 0) {
     const decision = await host.decide({

@@ -98,7 +98,7 @@
     "unreachable": "Недоступен",
     "keys": {
       "file": "Ключ из файла",
-      "stored": "Ключ хранится в Helena",
+      "stored": "Ключ хранится в {appName}",
       "none": "Без ключа",
       "invalid": "Файл ключа не разрешён"
     },
@@ -247,7 +247,7 @@
       "title": "Listen for “Ava”",
       "hint": "The microphone stays open while a chat page is open. Before “Ava”, only on-device recognition processes your voice; nothing is saved.",
       "availability": "On-device recognition",
-      "availabilityHint": "Works only if the browser already has a German offline speech pack. Helena does not download one."
+      "availabilityHint": "Works only if the browser already has a German offline speech pack. {appName} does not download one."
     },
     "title": "Голос в чате",
     "loading": "Загрузка …",
@@ -262,22 +262,22 @@
     },
     "pause": {
       "title": "Пауза перед ответом",
-      "hint": "Сколько нужно молчать, чтобы Helena отправила твою фразу. Короче — быстрее ответ, длиннее — реже перебивает.",
+      "hint": "Сколько нужно молчать, чтобы {appName} отправила твою фразу. Короче — быстрее ответ, длиннее — реже перебивает.",
       "option": "{seconds} с"
     },
     "words": {
-      "title": "Слова, которые Helena должна знать",
+      "title": "Слова, которые {appName} должна знать",
       "hint": "Имена, продукты и термины, чтобы распознавание речи писало их правильно. Уже знает: {words}.",
       "placeholder": "напр. налоговый консультант Мюллер, Shopify, Kubernetes",
       "save": "Сохранить слова"
     },
     "voice": {
       "title": "Голос",
-      "hint": "Локальный голос, которым Helena отвечает в разговоре (Локальный ИИ → «Чтение вслух»).",
+      "hint": "Локальный голос, которым {appName} отвечает в разговоре (Локальный ИИ → «Чтение вслух»).",
       "default": "Голос сервера по умолчанию",
       "none": "Локальный голос ещё не настроен — пока читает браузер.",
       "preview": "Прослушать",
-      "sample": "Привет, я Helena. Так я звучу в разговоре — просто скажи, что тебе нужно.",
+      "sample": "Привет, я {appName}. Так я звучу в разговоре — просто скажи, что тебе нужно.",
       "previewFailed": "Не удалось воспроизвести голос."
     },
     "model": {

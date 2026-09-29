@@ -50,7 +50,7 @@
     "exportTemplate": "Als Vorlage exportieren",
     "exported": "Vorlage gespeichert: {file}",
     "importTemplate": "Abteilung aus Vorlage importieren",
-    "importTemplateHint": "Wähle eine Vorlagendatei. Helena prüft zuerst, was sich ändern würde, und schreibt erst, wenn du importierst.",
+    "importTemplateHint": "Wähle eine Vorlagendatei. {appName} prüft zuerst, was sich ändern würde, und schreibt erst, wenn du importierst.",
     "templateChooseFile": "Vorlagendatei wählen",
     "templateFile": "Datei: {name}",
     "templateNotJson": "Die Datei ist keine gültige Vorlage.",
@@ -237,7 +237,7 @@
         "review": "Der Koordinator prüft die Ergebnisse.",
         "synchronize": "Zusammenfassung und Nachweise werden in die Aufgabe geschrieben, die dann nach „Review“ oder „Erledigt“ wechselt."
       },
-      "route": "Passen die Labels der Aufgabe zu den Fähigkeiten genau eines Spezialisten oder hat das Projekt nur einen, überspringt Helena die Planung und weist die Aufgabe direkt zu."
+      "route": "Passen die Labels der Aufgabe zu den Fähigkeiten genau eines Spezialisten oder hat das Projekt nur einen, überspringt {appName} die Planung und weist die Aufgabe direkt zu."
     },
     "usage": {
       "title": "Token-Verbrauch",
@@ -278,7 +278,7 @@
     "projectDefault": "Projektstandard",
     "noLimit": "Kein Limit",
     "none": "Keine",
-    "home": "HELENA · MASTER",
+    "home": "{appNameUpper} · MASTER",
     "coordinator": "KOORDINATOR",
     "reviewer": "PRÜFER",
     "specialist": "SPEZIALIST",
@@ -348,6 +348,6 @@
     "add": "Hinzufügen",
     "added": "Zu {project} hinzugefügt",
     "failed": "Das Mitglied konnte nicht hinzugefügt werden.",
-    "keyOnce": "Die Kopie läuft außerhalb von Helena: Kopiere ihren Schlüssel jetzt, er wird nur einmal angezeigt."
+    "keyOnce": "Die Kopie läuft außerhalb von {appName}: Kopiere ihren Schlüssel jetzt, er wird nur einmal angezeigt."
   }
 }

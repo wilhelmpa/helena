@@ -505,7 +505,7 @@
     "commandCopied": "Команда скопирована. Замените owner/repo и выполните её.",
     "nativeConnections": "Подключения провайдеров",
     "nativeConnectionsRecommended": "Подключения провайдеров · Рекомендуется",
-    "nativeConnectionsHint": "Авторизуйте Git-провайдера, выберите репозитории, а Helena настроит webhooks автоматически.",
+    "nativeConnectionsHint": "Авторизуйте Git-провайдера, выберите репозитории, а {appName} настроит webhooks автоматически.",
     "nativeConnectProvider": "Подключить {provider}",
     "nativeNoConnections": "Аккаунты провайдеров пока не подключены. Ниже остаётся ручная настройка webhook.",
     "nativeConnectTitle": "Подключить {provider}",
@@ -543,7 +543,7 @@
     "nativeWebhookError": "Требует внимания",
     "nativeDisconnectProvider": "Отключить провайдера",
     "nativeDisconnectRepository": "Отключить репозиторий",
-    "nativeDisconnectConfirm": "Отключить {provider} и удалить все webhooks, которыми управляет Helena?",
+    "nativeDisconnectConfirm": "Отключить {provider} и удалить все webhooks, которыми управляет {appName}?",
     "nativeDisconnected": "{provider} отключён",
     "nativeRepositoryDisconnected": "Репозиторий отключён",
     "nativeDisconnectFailed": "Не удалось отключить интеграцию.",
@@ -581,7 +581,7 @@
       },
       "blocked": {
         "label": "Заблокировано",
-        "description": "Без доступа в интернет. Доступны только API Helena, шлюз браузера и ИИ-модель агента."
+        "description": "Без доступа в интернет. Доступны только API {appName}, шлюз браузера и ИИ-модель агента."
       }
     },
     "allowLabel": "Список разрешений",
@@ -660,7 +660,7 @@
     "humanInputLabel": "Человекоподобный ввод",
     "humanInputHint": "Печатает и кликает с человекоподобными паузами вместо максимальной скорости. Отключайте только для малорискового тестового проекта.",
     "allowLocalLabel": "Разрешить локальные адреса",
-    "allowLocalHint": "Агенты могут открывать localhost, локальную сеть и адреса .local. Оставьте выключенным, если не тестируете локальный сайт: браузер работает на сервере, где эти адреса ведут к Helena и другим браузерам.",
+    "allowLocalHint": "Агенты могут открывать localhost, локальную сеть и адреса .local. Оставьте выключенным, если не тестируете локальный сайт: браузер работает на сервере, где эти адреса ведут к {appName} и другим браузерам.",
     "lockTimeoutLabel": "Тайм-аут блокировки",
     "lockTimeoutHint": "После стольких секунд бездействия управление браузером агентом автоматически освобождается.",
     "seconds": "секунд",
@@ -739,12 +739,12 @@
         "hint": "MCP-серверы и инструменты агентов и кто может ими пользоваться."
       },
       "mcps": {
-        "label": "Helena для внешних приложений",
-        "hint": "Как MCP-клиенты, например Claude Desktop, подключаются к Helena."
+        "label": "{appName} для внешних приложений",
+        "hint": "Как MCP-клиенты, например Claude Desktop, подключаются к {appName}."
       },
       "plugins": {
         "label": "Расширения",
-        "hint": "Расширения Helena."
+        "hint": "Расширения {appName}."
       },
       "access": {
         "label": "Доступы и подключения",
@@ -848,7 +848,7 @@
       },
       "channels": {
         "label": "Уведомления и каналы",
-        "hint": "Как Helena доставляет сообщения по почте и в Telegram."
+        "hint": "Как {appName} доставляет сообщения по почте и в Telegram."
       }
     },
     "projectPath": "Проект"
@@ -869,7 +869,7 @@
   },
   "execution": {
     "title": "Выполнение",
-    "note": "Изменения действуют сразу. Значения для всех проектов задаются в настройках Helena.",
+    "note": "Изменения действуют сразу. Значения для всех проектов задаются в настройках {appName}.",
     "defaultLabel": "Выполнение по умолчанию",
     "defaultHint": "Каждый агент сам задаёт, с чем он работает в этом проекте.",
     "manageAgents": "Управлять агентами",
@@ -903,7 +903,7 @@
     "budgetsReset": "Бюджеты возвращены к умолчанию",
     "budgetsOverridden": "У проекта свои бюджеты",
     "budgetsDefault": "Как умолчание для всех проектов",
-    "budgetsDefaultHint": "Умолчание задаётся в настройках Helena, раздел «Умолчания проектов»."
+    "budgetsDefaultHint": "Умолчание задаётся в настройках {appName}, раздел «Умолчания проектов»."
   },
   "defaults": {
     "adminOnly": "Эти значения для всех проектов меняет только администратор.",
@@ -912,8 +912,8 @@
     "budgetsSaved": "Бюджеты новых проектов сохранены",
     "budgetsOverridden": "{count, plural, one {У # проекта свои бюджеты.} few {У # проектов свои бюджеты.} many {У # проектов свои бюджеты.} other {У # проекта свои бюджеты.}}",
     "budgetsNone": "Все проекты следуют этому умолчанию.",
-    "helenaOrdersTitle": "Постоянные указания для Helena",
-    "helenaOrdersHint": "Helena следует им в каждом чате и запуске."
+    "helenaOrdersTitle": "Постоянные указания для {appName}",
+    "helenaOrdersHint": "{appName} следует им в каждом чате и запуске."
   },
   "uiGallery": {
     "sample": "Sample text",
@@ -956,9 +956,9 @@
     "emptySentence": "Nothing here yet. Create the first one.",
     "light": "Light",
     "dark": "Dark",
-    "agentChip": "Helena · Flash (локально)",
+    "agentChip": "{appName} · Flash (локально)",
     "statusBox": "В работе",
-    "ladderTop": "Опубликовать Helena"
+    "ladderTop": "Опубликовать {appName}"
   },
   "organization": {
     "label": "Организация",
@@ -1008,7 +1008,7 @@
     "projectionRebuildAction": "Пересоздать",
     "projectionRebuilt": "Чеков как заметок: {projected}, изменено: {changed}",
     "bankAccounts": "Банковские счета",
-    "bankAccountsHint": "Helena сопоставляет чеки с этими счетами. Импортируйте выписки здесь или в разделе Чеки › Новый.",
+    "bankAccountsHint": "{appName} сопоставляет чеки с этими счетами. Импортируйте выписки здесь или в разделе Чеки › Новый.",
     "agentExport": "Агенты как заметки",
     "agentExportRow": "Агенты этого проекта",
     "agentExportHint": "Роль, модель, навыки и бюджеты каждого агента — заметкой только для чтения в Документы › Agenten, с представлением. Инструкции и учётные данные не выгружаются; правка заметок ничего не меняет.",

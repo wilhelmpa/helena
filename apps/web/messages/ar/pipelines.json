@@ -404,7 +404,7 @@
     "schedule_too_frequent": "الجدولة تعمل بتكرار أكبر مما يسمح به الفريق.",
     "invalid_url": "أدخل عنوان URL يبدأ بـ https:// أو http://.",
     "plugin_invalid": "{message}",
-    "plugin_trigger_unsupported": "يعمل هذا المشغل وفق جدول خاص به، ولا يشغّله محرك Helena بعد."
+    "plugin_trigger_unsupported": "يعمل هذا المشغل وفق جدول خاص به، ولا يشغّله محرك {appName} بعد."
   },
   "runs": {
     "status": {
@@ -574,7 +574,7 @@
     },
     "signing": {
       "title": "مفتاح توقيع Webhook",
-      "hint": "توقّع خطوات Webhook طلباتها به (Standard Webhooks) ليتمكن المستلم من التحقق من أنها من Helena.",
+      "hint": "توقّع خطوات Webhook طلباتها به (Standard Webhooks) ليتمكن المستلم من التحقق من أنها من {appName}.",
       "show": "عرض",
       "hide": "إخفاء",
       "renew": "تجديد",

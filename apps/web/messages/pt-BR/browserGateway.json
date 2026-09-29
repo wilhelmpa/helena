@@ -35,7 +35,7 @@
     "never": "Nunca (sempre ligado)",
     "alwaysOnTitle": "Sempre ligado",
     "alwaysOnFor": "Manter o navegador de {name} sempre ligado",
-    "home": "Helena",
+    "home": "{appName}",
     "state": {
       "running": "Em execução",
       "starting": "Iniciando…",

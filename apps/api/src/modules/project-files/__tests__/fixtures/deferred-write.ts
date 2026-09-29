@@ -8,7 +8,11 @@ let inTransaction = false;
 const indexed: string[] = [];
 const forbidden = () => assert.fail('Unexpected database or network call');
 globalThis.fetch = forbidden as unknown as typeof fetch;
-mock.module('@repo/db', () => ({ db: new Proxy({}, { get: forbidden }), vaultEntry: {} }));
+mock.module('@repo/db', () => ({
+  db: new Proxy({}, { get: forbidden }),
+  getDisplayName: async () => 'Ava',
+  vaultEntry: {},
+}));
 mock.module('@repo/vault', () => ({
   isSyncConflict: () => false,
   splitNote: (content: string) => ({ frontmatterRaw: null, frontmatter: {}, body: content }),

@@ -164,8 +164,8 @@
   "sortDefault": "Orden propio",
   "why": {
     "label": "Por qué",
-    "choose": "Elegir un objetivo de Helena",
-    "none": "Aún no sirve a ningún objetivo de Helena.",
+    "choose": "Elegir un objetivo de {appName}",
+    "none": "Aún no sirve a ningún objetivo de {appName}.",
     "noneOption": "Ningún objetivo"
   }
 }

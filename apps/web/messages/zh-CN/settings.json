@@ -505,7 +505,7 @@
     "commandCopied": "命令已复制。替换 owner/repo 后运行。",
     "nativeConnections": "代码托管平台连接",
     "nativeConnectionsRecommended": "代码托管平台连接 · 推荐",
-    "nativeConnectionsHint": "授权 Git 代码托管平台，选择仓库，然后由 Helena 自动配置 webhook。",
+    "nativeConnectionsHint": "授权 Git 代码托管平台，选择仓库，然后由 {appName} 自动配置 webhook。",
     "nativeConnectProvider": "连接 {provider}",
     "nativeNoConnections": "尚未连接代码托管平台账户。下方仍可手动配置 webhook。",
     "nativeConnectTitle": "连接 {provider}",
@@ -543,7 +543,7 @@
     "nativeWebhookError": "需要处理",
     "nativeDisconnectProvider": "断开平台连接",
     "nativeDisconnectRepository": "断开仓库连接",
-    "nativeDisconnectConfirm": "要断开 {provider} 并删除所有由 Helena 管理的 webhook 吗？",
+    "nativeDisconnectConfirm": "要断开 {provider} 并删除所有由 {appName} 管理的 webhook 吗？",
     "nativeDisconnected": "已断开 {provider}",
     "nativeRepositoryDisconnected": "已断开仓库连接",
     "nativeDisconnectFailed": "无法断开集成。",
@@ -581,7 +581,7 @@
       },
       "blocked": {
         "label": "已阻止",
-        "description": "无法访问互联网。仅 Helena API、浏览器网关和该代理的 AI 模型保持可访问。"
+        "description": "无法访问互联网。仅 {appName} API、浏览器网关和该代理的 AI 模型保持可访问。"
       }
     },
     "allowLabel": "允许列表",
@@ -660,7 +660,7 @@
     "humanInputLabel": "拟人输入",
     "humanInputHint": "以拟人化的停顿而非最快速度进行输入和点击。仅在低风险的测试项目中关闭。",
     "allowLocalLabel": "允许本地地址",
-    "allowLocalHint": "代理可以打开 localhost、局域网和 .local 地址。除非要测试本地网站，否则请保持关闭：浏览器运行在服务器上，这些地址会访问到 Helena 和其他浏览器。",
+    "allowLocalHint": "代理可以打开 localhost、局域网和 .local 地址。除非要测试本地网站，否则请保持关闭：浏览器运行在服务器上，这些地址会访问到 {appName} 和其他浏览器。",
     "lockTimeoutLabel": "锁定超时",
     "lockTimeoutHint": "在这段秒数内没有操作后,代理对浏览器的控制会自动释放。",
     "seconds": "秒",
@@ -739,12 +739,12 @@
         "hint": "代理使用的 MCP 服务器和工具，以及谁可以使用。"
       },
       "mcps": {
-        "label": "供外部应用使用的 Helena",
-        "hint": "Claude Desktop 等 MCP 客户端如何访问 Helena。"
+        "label": "供外部应用使用的 {appName}",
+        "hint": "Claude Desktop 等 MCP 客户端如何访问 {appName}。"
       },
       "plugins": {
         "label": "插件",
-        "hint": "Helena 的扩展。"
+        "hint": "{appName} 的扩展。"
       },
       "access": {
         "label": "访问与连接",
@@ -848,7 +848,7 @@
       },
       "channels": {
         "label": "通知与渠道",
-        "hint": "Helena 如何通过邮件和 Telegram 发送消息。"
+        "hint": "{appName} 如何通过邮件和 Telegram 发送消息。"
       }
     },
     "projectPath": "项目"
@@ -869,7 +869,7 @@
   },
   "execution": {
     "title": "执行",
-    "note": "更改立即生效。适用于所有项目的值在 Helena 的设置中设定。",
+    "note": "更改立即生效。适用于所有项目的值在 {appName} 的设置中设定。",
     "defaultLabel": "默认执行",
     "defaultHint": "每个智能体自行设定在此项目中使用的执行方式。",
     "manageAgents": "管理智能体",
@@ -903,7 +903,7 @@
     "budgetsReset": "预算已恢复为默认值",
     "budgetsOverridden": "此项目有自己的预算",
     "budgetsDefault": "与所有项目的默认值相同",
-    "budgetsDefaultHint": "默认值在 Helena 设置的“项目默认值”中设置。"
+    "budgetsDefaultHint": "默认值在 {appName} 设置的“项目默认值”中设置。"
   },
   "defaults": {
     "adminOnly": "只有管理员可以更改这些适用于所有项目的默认值。",
@@ -912,8 +912,8 @@
     "budgetsSaved": "新项目预算已保存",
     "budgetsOverridden": "{count, plural, other {# 个项目有自己的预算。}}",
     "budgetsNone": "所有项目都遵循此默认值。",
-    "helenaOrdersTitle": "Helena 的常设指令",
-    "helenaOrdersHint": "Helena 在每次聊天和运行中都遵循它们。"
+    "helenaOrdersTitle": "{appName} 的常设指令",
+    "helenaOrdersHint": "{appName} 在每次聊天和运行中都遵循它们。"
   },
   "uiGallery": {
     "sample": "Sample text",
@@ -956,9 +956,9 @@
     "emptySentence": "Nothing here yet. Create the first one.",
     "light": "Light",
     "dark": "Dark",
-    "agentChip": "Helena · Flash（本地）",
+    "agentChip": "{appName} · Flash（本地）",
     "statusBox": "进行中",
-    "ladderTop": "发布 Helena"
+    "ladderTop": "发布 {appName}"
   },
   "organization": {
     "label": "组织",
@@ -1008,7 +1008,7 @@
     "projectionRebuildAction": "重建",
     "projectionRebuilt": "{projected} 张票据生成笔记，{changed} 条已更改",
     "bankAccounts": "银行账户",
-    "bankAccountsHint": "Helena 会将票据与这些账户匹配。可在此处或“票据 › 新建”中导入对账单。",
+    "bankAccountsHint": "{appName} 会将票据与这些账户匹配。可在此处或“票据 › 新建”中导入对账单。",
     "agentExport": "智能体作为笔记",
     "agentExportRow": "本项目的智能体",
     "agentExportHint": "每个智能体的角色、模型、技能和预算作为只读笔记保存在“文档 › Agenten”下，并附一个视图。指令和凭据不导出；修改笔记不会产生影响。",

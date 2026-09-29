@@ -1,4 +1,11 @@
-import { agentChatMessage, agentChatThread, aiAgent, db, helenaChatReflection } from '@repo/db';
+import {
+  agentChatMessage,
+  agentChatThread,
+  aiAgent,
+  db,
+  getDisplayName,
+  helenaChatReflection,
+} from '@repo/db';
 import { and, desc, eq, gt, inArray, isNotNull, sql } from 'drizzle-orm';
 import { intEnv } from '#shared/lib';
 import { enforceBudgets } from '#modules/autopilot/budgets';
@@ -205,7 +212,7 @@ export async function claimChatReflection(agent: RunnerAgent): Promise<ChatRefle
     claim: row.claims,
     sessionId: latest.sessionId,
     messageId: latest.id,
-    prompt: chatReflectionPrompt(),
+    prompt: chatReflectionPrompt(await getDisplayName()),
     ...settings,
   };
 }

@@ -121,7 +121,7 @@
     "noDescription": "No description",
     "readOnly": "You can read this workflow. Members who may edit workflows change it.",
     "loadFailed": "The workflow could not be loaded.",
-    "templateElsewhere": "This workflow is a template of the team's library. It is edited in Helena.",
+    "templateElsewhere": "This workflow is a template of the team's library. It is edited in {appName}.",
     "openTemplate": "Open the template",
     "issuesTitle": "{count, plural, one {# problem} other {# problems}}",
     "warningsTitle": "{count, plural, one {# problem in this project} other {# problems in this project}}",
@@ -404,7 +404,7 @@
     "schedule_too_frequent": "The schedule runs more often than the team allows.",
     "invalid_url": "Enter a URL that starts with https:// or http://.",
     "plugin_invalid": "{message}",
-    "plugin_trigger_unsupported": "This trigger fires on a schedule of its own, which the Helena engine does not run yet."
+    "plugin_trigger_unsupported": "This trigger fires on a schedule of its own, which the {appName} engine does not run yet."
   },
   "runs": {
     "status": {
@@ -537,7 +537,7 @@
     "create": "Create workflow",
     "createDescription": "A workflow of this project alone. It starts with one agent step.",
     "name": "Name",
-    "empty": "No workflows yet. Add templates to the library in Helena or create a workflow here.",
+    "empty": "No workflows yet. Add templates to the library in {appName} or create a workflow here.",
     "loadFailed": "The workflows could not be loaded.",
     "template": "Template",
     "own": "Project workflow",
@@ -574,7 +574,7 @@
     },
     "signing": {
       "title": "Webhook signing key",
-      "hint": "Webhook steps sign their requests with it (Standard Webhooks), so the receiver can check they come from Helena.",
+      "hint": "Webhook steps sign their requests with it (Standard Webhooks), so the receiver can check they come from {appName}.",
       "show": "Show",
       "hide": "Hide",
       "renew": "Renew",

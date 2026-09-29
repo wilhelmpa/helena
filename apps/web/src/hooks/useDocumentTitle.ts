@@ -1,7 +1,8 @@
 import { useEffect, type RefObject } from 'react';
+import { APP_NAME } from '@/utils/app';
+import { useDisplayName } from '@/context/displayName';
 
 // The product name every tab title ends with.
-const APP_NAME = 'Helena';
 
 // The words of the header's title (a breadcrumb or a plain name), most specific first:
 // "Labels · Einstellungen · E2E". The crumbs are the element's innermost text nodes.
@@ -14,10 +15,14 @@ export function headerTitleParts(node: HTMLElement): string[] {
   return parts.reverse();
 }
 
-export function composeDocumentTitle(parts: string[], lead?: string | null): string {
+export function composeDocumentTitle(
+  parts: string[],
+  lead?: string | null,
+  appName = APP_NAME,
+): string {
   // With a lead (a task's identifier and title) only the project stays from the crumbs.
   const words = lead ? [lead, parts[parts.length - 1]] : parts;
-  return [...words.filter(Boolean), APP_NAME].join(' · ');
+  return [...words.filter(Boolean), appName].join(' · ');
 }
 
 // Keeps the browser tab's title in line with the header's breadcrumb, so tabs and
@@ -25,12 +30,13 @@ export function composeDocumentTitle(parts: string[], lead?: string | null): str
 // own name first, where the breadcrumb only has an identifier. The title the page had
 // before (the app's generic one) comes back when the header goes.
 export function useDocumentTitle(target: RefObject<HTMLElement | null>, lead?: string | null) {
+  const appName = useDisplayName();
   useEffect(() => {
     const node = target.current;
     if (!node) return;
     const before = document.title;
     const update = () => {
-      const title = composeDocumentTitle(headerTitleParts(node), lead);
+      const title = composeDocumentTitle(headerTitleParts(node), lead, appName);
       if (document.title !== title) document.title = title;
     };
     update();
@@ -43,5 +49,5 @@ export function useDocumentTitle(target: RefObject<HTMLElement | null>, lead?: s
       observer.disconnect();
       document.title = before;
     };
-  }, [target, lead]);
+  }, [target, lead, appName]);
 }

@@ -22,12 +22,12 @@
     "deleteClient": "Eliminar cliente OAuth",
     "deleteClientMessage": "¿Eliminar {name}? Las cuentas ya no podrán iniciar sesión con él.",
     "engine": {
-      "helena": "Helena",
+      "helena": "{appName}",
       "gog": "gog"
     },
     "engineHint": {
-      "helena": "Helena guarda el inicio de sesión cifrado y llama a Google con las bibliotecas de Google.",
-      "gog": "El inicio de sesión queda en el llavero de gog en este servidor; Helena lo alcanza a través del broker. Sin buzón en la bandeja de entrada."
+      "helena": "{appName} guarda el inicio de sesión cifrado y llama a Google con las bibliotecas de Google.",
+      "gog": "El inicio de sesión queda en el llavero de gog en este servidor; {appName} lo alcanza a través del broker. Sin buzón en la bandeja de entrada."
     },
     "status": {
       "ok": "Conectada",
@@ -51,11 +51,11 @@
     "checked": "{email} comprobada",
     "editServices": "Servicios",
     "signInAgain": "Volver a iniciar sesión",
-    "moveToHelena": "Pasar a Helena",
+    "moveToHelena": "Pasar a {appName}",
     "remove": "Quitar cuenta",
     "removeMessage": "¿Quitar {email}? Los agentes pierden el acceso al instante; el correo importado se queda hasta que borres el buzón.",
     "removeFromGog": "Quitar también el inicio de sesión de gog",
-    "inGog": "En gog, aún no en Helena",
+    "inGog": "En gog, aún no en {appName}",
     "inGogHint": "gog guarda un inicio de sesión para estas cuentas. Mostrarlas no mueve ningún token.",
     "adopt": "Mostrar",
     "adopted": "{email} se muestra",
@@ -75,12 +75,12 @@
   "signIn": {
     "title": "Conectar cuenta de Google",
     "againTitle": "Volver a iniciar sesión en {email}",
-    "moveTitle": "Pasar {email} a Helena",
+    "moveTitle": "Pasar {email} a {appName}",
     "engine": "Inicio de sesión guardado por",
     "client": "Cliente OAuth",
     "noClient": "Importa primero un cliente OAuth.",
     "email": "Dirección",
-    "emailHint": "Necesaria para gog; con Helena, Google preselecciona la cuenta.",
+    "emailHint": "Necesaria para gog; con {appName}, Google preselecciona la cuenta.",
     "services": "Servicios",
     "scope": "Pertenece a",
     "start": "Continuar",
@@ -88,7 +88,7 @@
     "copyLink": "Copiar enlace",
     "linkCopied": "Enlace copiado",
     "pasteStep": "Tras iniciar sesión, el navegador acaba en una página que no carga (127.0.0.1). Copia la dirección completa de esa página y pégala aquí.",
-    "callbackStep": "Inicia sesión en Google; Helena termina sola y vuelve aquí.",
+    "callbackStep": "Inicia sesión en Google; {appName} termina sola y vuelve aquí.",
     "redirect": "Dirección de esa página",
     "finish": "Terminar",
     "connected": "{email} conectada",
@@ -98,7 +98,7 @@
     "title": "Servicios de {email}",
     "hint": "Un servicio desactivado no está disponible para ningún agente.",
     "needsSignIn": "requiere iniciar sesión de nuevo",
-    "gogNoMail": "Una cuenta guardada en gog no tiene buzón en Helena. Pásala a Helena para la bandeja de entrada.",
+    "gogNoMail": "Una cuenta guardada en gog no tiene buzón en {appName}. Pásala a {appName} para la bandeja de entrada.",
     "saved": "Servicios guardados"
   },
   "mailbox": {
@@ -183,13 +183,13 @@
   "mcp": {
     "kind": "Servidor MCP (OAuth)",
     "kindPlural": "Servidores MCP (OAuth)",
-    "kindHint": "Un servidor MCP que inicia sesión con OAuth. Helena guarda el token; la biblioteca de servidores MCP lo envía como cabecera Authorization.",
+    "kindHint": "Un servidor MCP que inicia sesión con OAuth. {appName} guarda el token; la biblioteca de servidores MCP lo envía como cabecera Authorization.",
     "title": "Conectar un servidor MCP",
     "againTitle": "Volver a iniciar sesión en {name}",
     "serverUrl": "Dirección del servidor",
     "label": "Nombre",
     "scope": "Scopes (opcional)",
-    "hint": "Helena encuentra el inicio de sesión del servidor, se registra y te pide que inicies sesión. Después elige esta conexión como cabecera Authorization del servidor en Servidores MCP.",
+    "hint": "{appName} encuentra el inicio de sesión del servidor, se registra y te pide que inicies sesión. Después elige esta conexión como cabecera Authorization del servidor en Servidores MCP.",
     "open": "Iniciar sesión en el servidor",
     "connected": "Servidor MCP conectado",
     "signIn": "Volver a iniciar sesión",

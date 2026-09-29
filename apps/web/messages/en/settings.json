@@ -505,7 +505,7 @@
     "commandCopied": "Command copied. Replace owner/repo, then run it.",
     "nativeConnections": "Provider connections",
     "nativeConnectionsRecommended": "Provider connections · Recommended",
-    "nativeConnectionsHint": "Authorize a Git provider, choose repositories, and let Helena configure their webhooks.",
+    "nativeConnectionsHint": "Authorize a Git provider, choose repositories, and let {appName} configure their webhooks.",
     "nativeConnectProvider": "Connect {provider}",
     "nativeNoConnections": "No provider accounts connected yet. Manual webhook setup remains available below.",
     "nativeConnectTitle": "Connect {provider}",
@@ -543,7 +543,7 @@
     "nativeWebhookError": "Needs attention",
     "nativeDisconnectProvider": "Disconnect provider",
     "nativeDisconnectRepository": "Disconnect repository",
-    "nativeDisconnectConfirm": "Disconnect {provider} and remove every webhook managed by Helena?",
+    "nativeDisconnectConfirm": "Disconnect {provider} and remove every webhook managed by {appName}?",
     "nativeDisconnected": "{provider} disconnected",
     "nativeRepositoryDisconnected": "Repository disconnected",
     "nativeDisconnectFailed": "Could not disconnect the integration.",
@@ -581,7 +581,7 @@
       },
       "blocked": {
         "label": "Blocked",
-        "description": "No internet access. Only the Helena API, the browser gateway and the agent’s AI model stay reachable."
+        "description": "No internet access. Only the {appName} API, the browser gateway and the agent’s AI model stay reachable."
       }
     },
     "allowLabel": "Allow list",
@@ -660,7 +660,7 @@
     "humanInputLabel": "Human-like input",
     "humanInputHint": "Types and clicks with human-like pauses instead of at top speed. Turn off only for a low-risk test project.",
     "allowLocalLabel": "Allow local addresses",
-    "allowLocalHint": "Agents may open localhost, the local network and .local addresses. Keep it off unless you test a local site: the browser runs on the server, where these reach Helena and the other browsers.",
+    "allowLocalHint": "Agents may open localhost, the local network and .local addresses. Keep it off unless you test a local site: the browser runs on the server, where these reach {appName} and the other browsers.",
     "lockTimeoutLabel": "Lock timeout",
     "lockTimeoutHint": "After this many seconds with no action, an agent's control of the browser is released automatically.",
     "seconds": "seconds",
@@ -739,12 +739,12 @@
         "hint": "The MCP servers and tools agents use, and who may use them."
       },
       "mcps": {
-        "label": "Helena for external apps",
-        "hint": "How MCP clients such as Claude Desktop reach Helena."
+        "label": "{appName} for external apps",
+        "hint": "How MCP clients such as Claude Desktop reach {appName}."
       },
       "plugins": {
         "label": "Plugins",
-        "hint": "Extensions of Helena."
+        "hint": "Extensions of {appName}."
       },
       "access": {
         "label": "Access & connections",
@@ -848,7 +848,7 @@
       },
       "channels": {
         "label": "Notifications & channels",
-        "hint": "How Helena delivers messages by email and Telegram."
+        "hint": "How {appName} delivers messages by email and Telegram."
       }
     },
     "projectPath": "Project"
@@ -869,7 +869,7 @@
   },
   "execution": {
     "title": "Execution",
-    "note": "Changes apply at once. Values for all projects are set in Helena's settings.",
+    "note": "Changes apply at once. Values for all projects are set in {appName}'s settings.",
     "defaultLabel": "Default execution",
     "defaultHint": "Each agent sets what the agents of this project work with.",
     "manageAgents": "Manage agents",
@@ -903,7 +903,7 @@
     "budgetsReset": "Budgets set back to the default",
     "budgetsOverridden": "This project has its own budgets",
     "budgetsDefault": "Like the default for all projects",
-    "budgetsDefaultHint": "The default is set in Helena's settings under Defaults for projects."
+    "budgetsDefaultHint": "The default is set in {appName}'s settings under Defaults for projects."
   },
   "defaults": {
     "adminOnly": "Only the administrator changes these defaults for all projects.",
@@ -912,8 +912,8 @@
     "budgetsSaved": "Budgets for new projects saved",
     "budgetsOverridden": "{count, plural, one {# project has its own budgets.} other {# projects have their own budgets.}}",
     "budgetsNone": "Every project follows this default.",
-    "helenaOrdersTitle": "Standing orders for Helena",
-    "helenaOrdersHint": "Helena follows them in every chat and run."
+    "helenaOrdersTitle": "Standing orders for {appName}",
+    "helenaOrdersHint": "{appName} follows them in every chat and run."
   },
   "uiGallery": {
     "sample": "Sample text",
@@ -956,9 +956,9 @@
     "emptySentence": "Nothing here yet. Create the first one.",
     "light": "Light",
     "dark": "Dark",
-    "agentChip": "Helena · Flash (local)",
+    "agentChip": "{appName} · Flash (local)",
     "statusBox": "In progress",
-    "ladderTop": "Publish Helena"
+    "ladderTop": "Publish {appName}"
   },
   "organization": {
     "label": "Organisation",
@@ -1008,7 +1008,7 @@
     "projectionRebuildAction": "Rebuild",
     "projectionRebuilt": "{projected} receipts as notes, {changed} changed",
     "bankAccounts": "Bank accounts",
-    "bankAccountsHint": "Helena matches the receipts against these accounts. Import statements here or under Receipts › New.",
+    "bankAccountsHint": "{appName} matches the receipts against these accounts. Import statements here or under Receipts › New.",
     "agentExport": "Agents as notes",
     "agentExportRow": "Agents of this project",
     "agentExportHint": "Role, model, skills and budgets of every agent as a read-only note under Documents › Agenten, with a view. Instructions and credentials stay out; editing the notes changes nothing.",

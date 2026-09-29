@@ -136,7 +136,7 @@
       "field": "atualizou um campo em",
       "other": "atualizou"
     },
-    "automation": "Helena"
+    "automation": "{appName}"
   },
   "pulse": {
     "caption": {

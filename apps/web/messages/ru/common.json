@@ -199,7 +199,7 @@
     "openPreviewLink": "Открыть {name} в новой вкладке",
     "loadingPreview": "Загрузка предпросмотра…",
     "previewUnavailable": "Предпросмотр недоступен. Откройте ссылку, чтобы посмотреть страницу.",
-    "internalPage": "Страница Helena",
+    "internalPage": "Страница {appName}",
     "internalPreviewUnavailable": "Эта страница недоступна, или у вас нет к ней доступа.",
     "previewNoteCount": "{count, plural, one {# заметка} few {# заметки} many {# заметок} other {# заметки}}",
     "previewCustomField": "Настраиваемое поле",

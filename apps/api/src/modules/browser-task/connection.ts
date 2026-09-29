@@ -1,4 +1,5 @@
 import { TypeSafeClient, APITimeoutError } from '@typesafe-ai/sdk';
+import { getDisplayName } from '@repo/db';
 import {
   isLocalHalogenUrl,
   priorityProxyBaseUrl,
@@ -505,7 +506,7 @@ export async function testConnection(connection: DecisionConnection): Promise<Co
   }
   try {
     const reply = await askSystemOne(connection, {
-      state: 'Helena connection test.',
+      state: `${await getDisplayName()} connection test.`,
       questions: { ok: { type: 'noul', instructions: 'Is this a connection test?' } },
     });
     readAnswer({ kind: 'yesno', question: 'Is this a connection test?' }, reply.answers.ok);

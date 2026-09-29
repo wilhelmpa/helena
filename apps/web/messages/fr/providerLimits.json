@@ -58,10 +58,10 @@
   "extraUsage": "Utilisation supplémentaire : {used} sur {limit}",
   "settings": {
     "auto": "Lire automatiquement",
-    "autoHint": "Helena interroge les runners à cet intervalle ; chaque connexion une seule fois, quel que soit le nombre d’agents qui l’utilisent.",
+    "autoHint": "{appName} interroge les runners à cet intervalle ; chaque connexion une seule fois, quel que soit le nombre d’agents qui l’utilisent.",
     "autoHintAt": "Dernière interrogation il y a {time}. Chaque connexion une seule fois, quel que soit le nombre d’agents qui l’utilisent.",
     "interval": "Intervalle",
-    "intervalHint": "À quelle fréquence Helena lit les limites.",
+    "intervalHint": "À quelle fréquence {appName} lit les limites.",
     "minutes": "{count} min",
     "near": "Juste à partir de",
     "nearHint": "À partir de cette part, une fenêtre passe à l’orange.",

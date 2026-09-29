@@ -424,7 +424,7 @@
         "codex": "Codex"
       },
       "runtimeHermesHint": "Hermes 由服务器自行提供，并保持其配置同步。",
-      "runtimeCliHint": "像 Hermes 智能体一样作为服务运行，拥有自己的目录。指令、技能、MCP 服务器、工具、模型和推理都来自 Helena；登录来自“访问”。",
+      "runtimeCliHint": "像 Hermes 智能体一样作为服务运行，拥有自己的目录。指令、技能、MCP 服务器、工具、模型和推理都来自 {appName}；登录来自“访问”。",
       "compression": {
         "title": "上下文压缩",
         "hint": "较长的聊天或运行会在每次调用时发送全部历史。达到阈值后，Hermes 会汇总较早的部分：每次调用的令牌更少，代价是一次汇总调用和更少的原文细节。留空：使用实例默认值。",
@@ -443,7 +443,7 @@
       "behaviourTitle": "行为"
     },
     "runtimeConflicts": {
-      "title": "在 Helena 之外被更改",
+      "title": "在 {appName} 之外被更改",
       "description": "运行时已将这些文件替换为此处存储的版本，并将更改后的版本保留在旁边。",
       "takeOver": "接管",
       "editInLibrary": "在技能库中编辑"
@@ -573,8 +573,8 @@
       "toolsetsReadOnly": "只有可以编辑代理的成员才能关闭工具集。",
       "noToolsets": "运行器没有报告任何工具集。",
       "mcpServers": "MCP 服务器",
-      "mcpServersHint": "Helena 为每个代理提供这些：它自己的服务器和项目的浏览器。关闭一个并保存，代理就不会使用它。",
-      "mcpServersReadOnly": "Helena 为每个代理提供这些。只有可以编辑代理的成员才能关闭。",
+      "mcpServersHint": "{appName} 为每个代理提供这些：它自己的服务器和项目的浏览器。关闭一个并保存，代理就不会使用它。",
+      "mcpServersReadOnly": "{appName} 为每个代理提供这些。只有可以编辑代理的成员才能关闭。",
       "noMcpServers": "无",
       "libraryMcpServers": "团队的 MCP 服务器",
       "libraryMcpServersHint": "保存后，已启用的服务器会随代理的聊天和运行一起启动。",
@@ -589,7 +589,7 @@
       "origin": {
         "agent": "已学会",
         "hub": "来自 Skills Hub",
-        "plan": "来自 Helena",
+        "plan": "来自 {appName}",
         "bundled": "随 Hermes 提供"
       },
       "memory": "记忆",
@@ -628,14 +628,14 @@
         "enabled": "自主学习",
         "enabledHint": "代理会在聊天和运行中保存记忆并创建技能，由此消耗的令牌计入其用量。关闭后，它不再保存新内容，也不会加载已有记忆。",
         "curator": "整理器",
-        "curatorHint": "Hermes 的整理器会归档 30 天未使用的已学技能。Helena 每周请它审查一次；在代理的“运行时”标签页中，你可以立即运行一次审查，并固定它不应改动的技能。",
+        "curatorHint": "Hermes 的整理器会归档 30 天未使用的已学技能。{appName} 每周请它审查一次；在代理的“运行时”标签页中，你可以立即运行一次审查，并固定它不应改动的技能。",
         "reflectionTitle": "反思",
         "reflectionHint": "运行结束后，在同一会话中进行的一轮简短后续对话，代理只保留这次运行教给它的内容，所耗令牌计入该次运行的用量。",
         "reflectionOff": "关闭",
         "reflectionFailure": "在运行失败或返工后",
         "reflectionComplex": "在步骤较多的运行后也会进行",
-        "restored": "Helena 已恢复在 Helena 之外被修改的内容：",
-        "cronJobs": "Hermes 自带调度器中有 {count, plural, other {# 个任务}}在 Helena 之外运行。请在 Hermes 中删除它们，改用例程。",
+        "restored": "{appName} 已恢复在 {appName} 之外被修改的内容：",
+        "cronJobs": "Hermes 自带调度器中有 {count, plural, other {# 个任务}}在 {appName} 之外运行。请在 Hermes 中删除它们，改用例程。",
         "waiting": "等待运行器",
         "failed": "失败：{error}",
         "queued": "运行器会在下次同步时执行。",
@@ -682,7 +682,7 @@
       "skillEnabled": "启用 {name}",
       "skillsDisabled": "已停用 {count} 个",
       "skillClashes": "{count, plural, other {# 个名称}}对应多个技能，Hermes 因此一个都不加载：",
-      "skillClashesFix": "从代理中移除 Helena 技能（改用为 Hermes 适配的版本），或在技能库中重命名。",
+      "skillClashesFix": "从代理中移除 {appName} 技能（改用为 Hermes 适配的版本），或在技能库中重命名。",
       "moreToolsets": "还有 {count} 个"
     },
     "paused": "已暂停",
@@ -737,13 +737,13 @@
       "rewriteQueued": "Runner 将在下次同步时重新写入配置。",
       "drift": {
         "not-linked": "config.yaml 不是指向共享 Hermes 配置的链接。",
-        "managed-config": "Hermes 未应用 Helena 写入的配置。",
-        "mcp-unmanaged": "MCP 服务器 {server} 已开启，但 Helena 并未提供它。",
+        "managed-config": "Hermes 未应用 {appName} 写入的配置。",
+        "mcp-unmanaged": "MCP 服务器 {server} 已开启，但 {appName} 并未提供它。",
         "mcp-missing": "MCP 服务器 {server} 缺失或已关闭。",
-        "mcp-differs": "MCP 服务器 {server} 的运行设置与 Helena 中不同。",
+        "mcp-differs": "MCP 服务器 {server} 的运行设置与 {appName} 中不同。",
         "mcp-unsupported": "此运行时无法启动 MCP 服务器 {server}。",
         "setting-differs": "设置 {key} 有偏差。",
-        "approval-guard": "危险命令在没有 Helena 审批守卫的情况下运行。",
+        "approval-guard": "危险命令在没有 {appName} 审批守卫的情况下运行。",
         "probe-failed": "无法读取配置。"
       },
       "defaults": "运行时默认：{model}（{provider}），推理 {reasoning}",
@@ -758,7 +758,7 @@
         "notSignedIn": "运行时未登录。",
         "rejected": "运行时登录被拒绝：已过期或无效。",
         "runtimeMissing": "服务器上未安装 {runtime}。",
-        "sandboxUnavailable": "沙箱不可用：Codex 自带的沙箱无法在此服务器上启动，因此 Codex 以只读方式运行，只能使用 Helena 的工具，无法使用 shell。启用智能体隔离后，它会在自己的单元中运行。",
+        "sandboxUnavailable": "沙箱不可用：Codex 自带的沙箱无法在此服务器上启动，因此 Codex 以只读方式运行，只能使用 {appName} 的工具，无法使用 shell。启用智能体隔离后，它会在自己的单元中运行。",
         "notSignedInShort": "运行时未登录",
         "runtimeMissingShort": "缺少运行时",
         "sandboxUnavailableShort": "沙箱不可用"

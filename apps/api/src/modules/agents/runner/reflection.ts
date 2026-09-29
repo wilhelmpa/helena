@@ -50,7 +50,7 @@ const FOCUS: Record<ReflectionReason, string> = {
     'any task has. Where the steps were obvious, save nothing.',
 };
 
-export function reflectionPrompt(reason: ReflectionReason): string {
+export function reflectionPrompt(reason: ReflectionReason, displayName = 'Ava'): string {
   return [
     'Look back at the task you just finished in this session and keep what will help you ' +
       'next time. Only your memory and skill tools are available now: do not continue the ' +
@@ -65,7 +65,7 @@ export function reflectionPrompt(reason: ReflectionReason): string {
       'this order: patch a skill you used in this session, extend an existing skill that ' +
       'covers the class, add a references/ file to one, create a skill named for the class ' +
       'of task, never for this one task. Read a skill with skill_view before you change it.',
-    'Leave the skills in the plan-managed category alone: Helena manages them and puts back any ' +
+    `Leave the skills in the plan-managed category alone: ${displayName} manages them and puts back any ` +
       'change. Do not save details of this one task, secrets, missing tools or other setup ' +
       'problems, or anything you are not sure of.',
     'Most tasks teach nothing new. A task that went as expected in a few ordinary steps (look ' +
@@ -79,7 +79,7 @@ export function reflectionPrompt(reason: ReflectionReason): string {
 
 // The turn after a chat went quiet (docs/helena-decisions/agent-context.md §5): where the
 // person says who they are and how they want things done, which a run rarely shows.
-export function chatReflectionPrompt(): string {
+export function chatReflectionPrompt(displayName = 'Ava'): string {
   return [
     'Look back at the conversation in this session and keep what will help you in the next ' +
       'ones. Only your memory and skill tools are available now: do not answer the person ' +
@@ -93,7 +93,7 @@ export function chatReflectionPrompt(): string {
       'quirks, project conventions, and paths and endpoints that matter.',
     'Create or patch a skill (skill_manage) only when the conversation worked out how to do a ' +
       'class of task, step by step. Read a skill with skill_view before you change it.',
-    'Leave the skills in the plan-managed category alone: Helena manages them. Do not save ' +
+    `Leave the skills in the plan-managed category alone: ${displayName} manages them. Do not save ` +
       'what your memory or instructions already hold, details of this one conversation, ' +
       'secrets, or anything you are not sure of.',
     'If nothing is worth keeping, answer "Nothing to save." Otherwise answer with one short ' +

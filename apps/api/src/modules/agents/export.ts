@@ -107,7 +107,7 @@ export function agentExportNote(
 export function agentFileName(agent: Pick<Agent, 'id' | 'username'>): string {
   const handle = agent.username
     // eslint-disable-next-line no-control-regex
-    .replace(/[\/\\\u0000-\u001f:*?"<>|]+/g, '-')
+    .replace(/[/\\\u0000-\u001f:*?"<>|]+/g, '-')
     .replace(/^[.\s-]+|[.\s-]+$/g, '')
     .slice(0, 80);
   return `${handle || 'agent'} (${agent.id}).md`;

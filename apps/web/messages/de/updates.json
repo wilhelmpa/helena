@@ -43,8 +43,8 @@
   "dialog": {
     "title": "{name} aktualisieren?",
     "titleGroup": "{count, plural, one {# Paket aktualisieren?} other {# Pakete aktualisieren?}}",
-    "download": "Helena lädt die neue Version beim Hersteller herunter und installiert sie ({source}).",
-    "downloadApt": "apt lädt die Pakete aus den Debian-Quellen und installiert sie. Vorher sichert Helena die Datenbank.",
+    "download": "{appName} lädt die neue Version beim Hersteller herunter und installiert sie ({source}).",
+    "downloadApt": "apt lädt die Pakete aus den Debian-Quellen und installiert sie. Vorher sichert {appName} die Datenbank.",
     "downloadHermes": "Der Hermes-Helfer holt den neuen Stand aus dem Hermes-Repository und installiert ihn neu.",
     "wayBack": "Rückweg: Die bisherige Version bleibt erhalten und lässt sich zurückholen.",
     "wayBackApt": "Rückweg: apt hat keinen automatischen. Das Protokoll nennt danach den Befehl für die alten Versionen.",
@@ -70,10 +70,10 @@
     "cliRuntimes": "Agenten-Laufzeiten",
     "apt": "Debian-Pakete",
     "hostTools": "Werkzeuge",
-    "helena": "Helena"
+    "helena": "{appName}"
   },
   "hints": {
-    "manual": "Ohne Installer in Helena: wird von Hand aktualisiert.",
+    "manual": "Ohne Installer in {appName}: wird von Hand aktualisiert.",
     "notInstalled": "Nicht installiert.",
     "deploy": "Wird mit dem Deploy aktualisiert.",
     "hermesOffline": "Kein Hermes-Runner erreichbar: Stand der letzten Prüfung."
@@ -81,7 +81,7 @@
   "settings": {
     "title": "Einstellungen",
     "schedule": "Automatisch prüfen",
-    "scheduleDescription": "Helena sucht nach dem Zeitplan nach neuen Versionen.",
+    "scheduleDescription": "{appName} sucht nach dem Zeitplan nach neuen Versionen.",
     "cron": "Zeitplan",
     "timezone": "Zeitzone",
     "summarize": "Mit KI zusammenfassen",

@@ -1,9 +1,9 @@
 {
   "title": "Browser 2.0",
-  "homeBrowser": "Helena browser",
+  "homeBrowser": "{appName} browser",
   "which": "Browser",
   "noBrowser": "No browser to test",
-  "noBrowserHint": "Neither Helena's browser nor a project browser is available here.",
+  "noBrowserHint": "Neither {appName}'s browser nor a project browser is available here.",
   "noAgents": "No agent of this browser has the project browser. Turn it on under the agent's tools.",
   "tabs": {
     "label": "Browser",
@@ -19,14 +19,14 @@
   },
   "connection": {
     "service": "Service",
-    "cloudNote": "What Helena asks it to decide about, such as the visible text of a page or a mail, goes to this service. Passwords and typed values do not.",
-    "localNote": "A server of your own that speaks System One. Helena reaches it only at this address.",
-    "localModelNote": "An OpenAI-compatible server with logprobs (llama.cpp, Halogen, vLLM). Helena reaches it only at this address.",
+    "cloudNote": "What {appName} asks it to decide about, such as the visible text of a page or a mail, goes to this service. Passwords and typed values do not.",
+    "localNote": "A server of your own that speaks System One. {appName} reaches it only at this address.",
+    "localModelNote": "An OpenAI-compatible server with logprobs (llama.cpp, Halogen, vLLM). {appName} reaches it only at this address.",
     "address": "Address",
     "model": "Model",
     "allowPrivate": "Allow this local address",
-    "allowPrivateHint": "Helena normally never calls addresses in your network. This allows exactly this address, nothing else.",
-    "localAiKey": "Address, key and model come from Helena's local AI (Administrator → Local AI, switch on \"Decisions\" there); nothing to enter here.",
+    "allowPrivateHint": "{appName} normally never calls addresses in your network. This allows exactly this address, nothing else.",
+    "localAiKey": "Address, key and model come from {appName}'s local AI (Administrator → Local AI, switch on \"Decisions\" there); nothing to enter here.",
     "key": "Key",
     "keyHintTypesafe": "From console.typesafe.ai → Keys.",
     "keyHintVercel": "An AI Gateway key from your Vercel team.",
@@ -40,7 +40,7 @@
     "keySourceCredential": "Use an existing API key",
     "keyCredential": "Original API key credential",
     "chooseKeyCredential": "Choose an API key",
-    "keyCredentialHint": "Helena reads the current key from this credential for each request. Rotate it there once. Only API keys from this team and the same project (or the whole team) can be used. No key is copied or disclosed to agents.",
+    "keyCredentialHint": "{appName} reads the current key from this credential for each request. Rotate it there once. Only API keys from this team and the same project (or the whole team) can be used. No key is copied or disclosed to agents.",
     "keySourcesLoading": "Loading API keys…",
     "keySourceUnavailable": "No matching API key is available, or the saved source is no longer accessible. Choose a valid source or check credentials."
   },
@@ -90,12 +90,12 @@
     "modeHint": "Standard: agents click step by step. Decision model: agents may hand multi-step browser work to browser_task.",
     "connectionHint": "Set up under Access & connections → Credentials.",
     "teamHint": "Whose connections are listed.",
-    "overridden": "Helena default overridden",
-    "resetToDefault": "Reset to Helena's default"
+    "overridden": "{appName} default overridden",
+    "resetToDefault": "Reset to {appName}'s default"
   },
   "form": {
     "goal": "Task",
-    "goalPlaceholder": "e.g. Search for \"Helena\" and open the first result",
+    "goalPlaceholder": "e.g. Search for \"{appName}\" and open the first result",
     "values": "Values to type",
     "valuesPlaceholder": "email: max@example.com",
     "valuesHint": "One per line, name: value. Values are typed but never sent to the decision model.",

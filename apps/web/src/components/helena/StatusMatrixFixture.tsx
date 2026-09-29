@@ -1,6 +1,7 @@
 'use client';
 
 import { HELENA_STATUSES, useAgentStatus, type StatusSignals } from '@/utils/helenaStatus';
+import { useDisplayName } from '@/context/displayName';
 import Orb from './Orb';
 import { Card, MonoLabel, Tile } from './DashboardPrimitives';
 import { ProjectTag } from './ProjectTag';
@@ -38,6 +39,7 @@ function MatrixCell({
   input: StatusSignals;
 }) {
   const status = useAgentStatus(0, input);
+  const displayName = useDisplayName();
   const orb = (size: 'large' | 'small' | 'dot') => (
     <Orb
       state={status}
@@ -55,7 +57,7 @@ function MatrixCell({
       sample = (
         <div className="flex items-center gap-2">
           {orb('small')}
-          <span>{'Helena'}</span>
+          <span>{displayName}</span>
         </div>
       );
       break;

@@ -214,7 +214,7 @@ export async function acceptDevice(deviceId: string): Promise<void> {
   const request = pending[deviceId];
   if (!request) throw new HttpError(404, 'No pending request from this device');
   const folder = await syncthingFind<FolderConfig>(`/rest/config/folders/${FOLDER}`);
-  if (!folder) throw new HttpError(409, 'The folder Helena is not set up');
+  if (!folder) throw new HttpError(409, 'The synced folder is not set up');
   await syncthingWrite('/rest/config/devices', 'POST', { deviceID: deviceId, name: request.name });
   if (!folder.devices.some((device) => device.deviceID === deviceId)) {
     await syncthingWrite(`/rest/config/folders/${FOLDER}`, 'PATCH', {

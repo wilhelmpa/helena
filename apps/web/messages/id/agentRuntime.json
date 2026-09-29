@@ -190,7 +190,7 @@
     "log": "Log",
     "reload": "Muat ulang",
     "logEmpty": "Tidak ada baris log.",
-    "noLogs": "Runtime ini tidak menyimpan log yang bisa dibaca Helena.",
+    "noLogs": "Runtime ini tidak menyimpan log yang bisa dibaca {appName}.",
     "level": {
       "all": "Semua",
       "WARNING": "Peringatan",
@@ -262,7 +262,7 @@
     "retentionHint": "Jumlah hari Hermes menyimpan transkrip run dan chat yang sudah selesai. Kosong: bawaan Hermes, 90 hari.",
     "saved": "Tersimpan. Runner menerapkannya pada sinkronisasi berikutnya.",
     "usageTitle": "Pemakaian",
-    "usageDescription": "Pemakaian agen dalam sebuah tim, dari buku token Helena, dengan biaya menurut tabel harga model.",
+    "usageDescription": "Pemakaian agen dalam sebuah tim, dari buku token {appName}, dengan biaya menurut tabel harga model.",
     "team": "Tim",
     "noTeam": "Belum ada tim.",
     "openUpdates": "Buka di Pembaruan",
@@ -270,7 +270,7 @@
     "compressionThreshold": "Padatkan konteks mulai (token)",
     "compressionThresholdHint": "Untuk setiap agen tanpa nilai sendiri. 100.000 menjaga obrolan panjang jauh di bawah jendela model saat ini tanpa terlalu sering merangkum run yang sedang berjalan.",
     "bundledSkills": "Skill bawaan runtime",
-    "bundledSkillsHint": "Helena menanamnya dengan cara sama di setiap profil Hermes (docx, pdf, xlsx, debugging …). Matikan satu per satu di agen. “Hanya yang penting” tidak menambah yang baru; yang ada tetap.",
+    "bundledSkillsHint": "{appName} menanamnya dengan cara sama di setiap profil Hermes (docx, pdf, xlsx, debugging …). Matikan satu per satu di agen. “Hanya yang penting” tidak menambah yang baru; yang ada tetap.",
     "bundledSkillsAll": "Semua",
     "bundledSkillsEssential": "Hanya yang penting"
   }

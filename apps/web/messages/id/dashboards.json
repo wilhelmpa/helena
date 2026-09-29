@@ -136,7 +136,7 @@
       "field": "memperbarui bidang pada",
       "other": "memperbarui"
     },
-    "automation": "Helena"
+    "automation": "{appName}"
   },
   "pulse": {
     "caption": {

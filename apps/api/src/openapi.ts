@@ -1,4 +1,5 @@
 import type { ElysiaSwaggerConfig } from '@elysiajs/swagger';
+import { getDisplayName } from '@repo/db';
 
 type OpenApiDocument = NonNullable<ElysiaSwaggerConfig['documentation']>;
 type Paths = NonNullable<OpenApiDocument['paths']>;
@@ -18,6 +19,7 @@ const MULTIPART_OPERATIONS = new Set([
 const PUBLIC_GET_PATHS = [
   /^\/$/,
   /^\/auth-config$/,
+  /^\/display-name$/,
   /^\/attachments\/\{publicId\}\/raw$/,
   /^\/chat-attachments\/\{publicId\}\/raw$/,
   /^\/avatars\/\{id\}\/raw$/,
@@ -135,7 +137,23 @@ export function normalizeOpenApiDocument(document: OpenApiDocument & { paths: Pa
   return document;
 }
 
-export function normalizeOpenApiResponse(request: Request, response: unknown): unknown {
+function brandDescriptions(value: unknown, displayName: string): void {
+  if (!value || typeof value !== 'object') return;
+  for (const [key, item] of Object.entries(value)) {
+    if (typeof item === 'string' && ['description', 'summary', 'title'].includes(key)) {
+      (value as Record<string, unknown>)[key] = item.replaceAll('Helena', displayName);
+    } else if (item && typeof item === 'object') {
+      brandDescriptions(item, displayName);
+    }
+  }
+}
+
+export async function normalizeOpenApiResponse(
+  request: Request,
+  response: unknown,
+): Promise<unknown> {
   if (new URL(request.url).pathname !== '/docs/json' || !isOpenApiDocument(response)) return;
-  return normalizeOpenApiDocument(response);
+  const document = structuredClone(normalizeOpenApiDocument(response));
+  brandDescriptions(document, await getDisplayName());
+  return document;
 }

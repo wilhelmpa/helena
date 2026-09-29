@@ -156,6 +156,9 @@
     "joined": "bergabung {date}"
   },
   "general": {
+    "displayName": "Nama produk",
+    "displayNameHint": "Nama yang ditampilkan di aplikasi, email, dan pemasangan.",
+    "displayNameSaved": "Nama produk disimpan.",
     "about": "Tentang",
     "saved": "Pengaturan bawaan proyek disimpan",
     "projectDefaults": "Pengaturan bawaan proyek",
@@ -359,7 +362,7 @@
       "runner": "Runner runtime",
       "provisioning": "Penyediaan",
       "worker": "Worker",
-      "engine": "Mesin Helena"
+      "engine": "Mesin {appName}"
     },
     "seen": "terlihat {time} lalu",
     "lastSeen": "terakhir terlihat {time} lalu",
@@ -419,9 +422,9 @@
   },
   "plugins": {
     "externalTitle": "Plugin eksternal",
-    "externalDescription": "Plugin eksternal berjalan di dalam Helena dengan hak Helena. Aktifkan hanya untuk plugin yang Anda percayai.",
+    "externalDescription": "Plugin eksternal berjalan di dalam {appName} dengan hak {appName}. Aktifkan hanya untuk plugin yang Anda percayai.",
     "folder": "Folder plugin: {path}",
-    "noFolder": "Folder plugin belum diatur (HELENA_PLUGINS_DIR), jadi hanya plugin bawaan Helena yang berjalan.",
+    "noFolder": "Folder plugin belum diatur (HELENA_PLUGINS_DIR), jadi hanya plugin bawaan {appName} yang berjalan.",
     "restartHint": "Perubahan berlaku setelah API dan worker dimulai ulang.",
     "foundTitle": "Di folder plugin",
     "none": "Tidak ada plugin.",
@@ -439,7 +442,7 @@
     "credentials": "Alatnya memakai kredensial konektornya.",
     "names": {
       "integrations": "Integrasi",
-      "mcp": "Alat MCP Helena",
+      "mcp": "Alat MCP {appName}",
       "webhooks": "Webhook",
       "bundles": "Paket templat",
       "limits": "Batas",
@@ -463,7 +466,7 @@
     },
     "loadFailed": "Ekstensi tidak dapat dimuat.",
     "installedTitle": "Terpasang",
-    "installedDescription": "Yang sedang dimuat Helena, beserta versi dan status. Pengaturan ekstensi untuk sebuah proyek ada di pengaturan proyek itu di bagian Ekstensi.",
+    "installedDescription": "Yang sedang dimuat {appName}, beserta versi dan status. Pengaturan ekstensi untuk sebuah proyek ada di pengaturan proyek itu di bagian Ekstensi.",
     "externalSwitch": "Muat plugin eksternal",
     "restartTitle": "Mulai ulang",
     "inProjects": "Diatur di",

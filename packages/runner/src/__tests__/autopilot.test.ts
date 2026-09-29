@@ -129,7 +129,7 @@ describe('policy hook', () => {
     const down = fakeFetch({ error: 'x' }, 503);
     const answer = JSON.parse(await runPolicyHook(stdin, env, down.impl));
     expect(answer.hookSpecificOutput.permissionDecision).toBe('deny');
-    expect(answer.hookSpecificOutput.permissionDecisionReason).toContain('Helena answered 503');
+    expect(answer.hookSpecificOutput.permissionDecisionReason).toContain('Ava answered 503');
     const noKey = JSON.parse(await runPolicyHook(stdin, { ITSAPLAN_URL: 'http://x' }, down.impl));
     expect(noKey.hookSpecificOutput.permissionDecision).toBe('deny');
     expect(

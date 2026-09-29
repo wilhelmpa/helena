@@ -156,6 +156,9 @@
     "joined": "Se unió {date}"
   },
   "general": {
+    "displayName": "Nombre del producto",
+    "displayNameHint": "El nombre que aparece en la aplicación, los correos y la instalación.",
+    "displayNameSaved": "Nombre del producto guardado.",
     "about": "Acerca de",
     "saved": "Los valores por defecto del proyecto se han guardado",
     "projectDefaults": "Valores por defecto del proyecto",
@@ -359,7 +362,7 @@
       "runner": "Runner del entorno",
       "provisioning": "Aprovisionamiento",
       "worker": "Worker",
-      "engine": "Motor de Helena"
+      "engine": "Motor de {appName}"
     },
     "seen": "visto hace {time}",
     "lastSeen": "visto por última vez hace {time}",
@@ -419,9 +422,9 @@
   },
   "plugins": {
     "externalTitle": "Plugins externos",
-    "externalDescription": "Un plugin externo se ejecuta dentro de Helena con los permisos de Helena. Actívalo solo para plugins de confianza.",
+    "externalDescription": "Un plugin externo se ejecuta dentro de {appName} con los permisos de {appName}. Actívalo solo para plugins de confianza.",
     "folder": "Carpeta de plugins: {path}",
-    "noFolder": "No hay carpeta de plugins (HELENA_PLUGINS_DIR), así que solo se ejecutan los plugins propios de Helena.",
+    "noFolder": "No hay carpeta de plugins (HELENA_PLUGINS_DIR), así que solo se ejecutan los plugins propios de {appName}.",
     "restartHint": "Los cambios se aplican cuando se reinician la API y el worker.",
     "foundTitle": "En la carpeta de plugins",
     "none": "No se encontraron plugins.",
@@ -439,7 +442,7 @@
     "credentials": "Sus herramientas usan las credenciales de sus conectores.",
     "names": {
       "integrations": "Integraciones",
-      "mcp": "Herramientas MCP de Helena",
+      "mcp": "Herramientas MCP de {appName}",
       "webhooks": "Webhooks",
       "bundles": "Paquetes de plantillas",
       "limits": "Límites",
@@ -463,7 +466,7 @@
     },
     "loadFailed": "No se pudieron cargar las extensiones.",
     "installedTitle": "Instaladas",
-    "installedDescription": "Lo que Helena tiene cargado, con versión y estado. Los ajustes de una extensión para un proyecto están en los ajustes de ese proyecto, en Extensiones.",
+    "installedDescription": "Lo que {appName} tiene cargado, con versión y estado. Los ajustes de una extensión para un proyecto están en los ajustes de ese proyecto, en Extensiones.",
     "externalSwitch": "Cargar plugins externos",
     "restartTitle": "Reinicio",
     "inProjects": "Configurada en",

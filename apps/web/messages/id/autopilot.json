@@ -107,7 +107,7 @@
     "hermes": "Hermes",
     "claude": "Claude Code",
     "codex": "Codex",
-    "mcp": "Alat Helena",
+    "mcp": "Alat {appName}",
     "gateway": "Peramban",
     "workflow": "Alur kerja",
     "approval": "Permintaan persetujuan",
@@ -158,8 +158,8 @@
     "level": "Tingkat {level}",
     "reason": "Mengapa perlu persetujuan",
     "scope": {
-      "workspace": "Di dalam Helena / ruang kerja proyek",
-      "external": "Di luar Helena / ruang kerja proyek"
+      "workspace": "Di dalam {appName} / ruang kerja proyek",
+      "external": "Di luar {appName} / ruang kerja proyek"
     }
   },
   "prices": {
@@ -185,7 +185,7 @@
     "rateSaved": "Kurs disimpan, harga dikonversi ulang.",
     "importedAt": "Terakhir diperbarui: {date} ({from})",
     "from": {
-      "snapshot": "daftar bawaan Helena",
+      "snapshot": "daftar bawaan {appName}",
       "modelsDev": "models.dev"
     },
     "add": "Masukkan harga",

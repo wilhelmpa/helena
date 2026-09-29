@@ -126,9 +126,9 @@
     "undoDone": "Pertukaran terakhir dihapus. Kirim pesan baru untuk melanjutkan dari sebelum itu.",
     "undoNone": "Belum ada yang bisa dibatalkan.",
     "refusal": {
-      "schedules": "Perintah penjadwalan milik Hermes sendiri tidak dijalankan dari obrolan — gunakan rutinitas Helena.",
+      "schedules": "Perintah penjadwalan milik Hermes sendiri tidak dijalankan dari obrolan — gunakan rutinitas {appName}.",
       "approvals": "Perintah persetujuan tidak dijalankan dari obrolan — gunakan kartu persetujuan atau halaman Persetujuan.",
-      "config": "Ini mengubah konfigurasi agen itu sendiri — gunakan pengaturan agen di Helena.",
+      "config": "Ini mengubah konfigurasi agen itu sendiri — gunakan pengaturan agen di {appName}.",
       "outside": "Ini bukan sesuatu yang bisa dilakukan obrolan."
     },
     "reasoning": "Upaya penalaran",
@@ -197,7 +197,7 @@
     "runtimeExternal": "Eksternal",
     "switch": "Chat dengan {agent} — mulai chat baru dengan agen lain",
     "newChatWith": "Chat baru dengan …",
-    "switchToHelena": "Obrolan baru dengan Helena"
+    "switchToHelena": "Obrolan baru dengan {appName}"
   },
   "interrupted": {
     "lost": "Koneksi ke jawaban terputus. {agent} mungkin masih mengerjakannya.",
@@ -247,7 +247,7 @@
     },
     "problems": {
       "insecureTitle": "Mikrofon memerlukan koneksi aman",
-      "insecure": "Browser hanya mengizinkan mikrofon lewat HTTPS, dan Helena di sini masih berjalan lewat http. Sampai HTTPS tersedia: buka {flag} di Chrome, masukkan {origin}, pilih “Enabled”, lalu mulai ulang Chrome. Safari dan Firefox: hanya dengan HTTPS.",
+      "insecure": "Browser hanya mengizinkan mikrofon lewat HTTPS, dan {appName} di sini masih berjalan lewat http. Sampai HTTPS tersedia: buka {flag} di Chrome, masukkan {origin}, pilih “Enabled”, lalu mulai ulang Chrome. Safari dan Firefox: hanya dengan HTTPS.",
       "copyFlag": "Salin alamat",
       "flagCopied": "Alamat disalin – tempelkan di bilah alamat Chrome.",
       "localOnlyDownTitle": "Transkripsi lokal sedang tidak tersedia",
@@ -304,7 +304,7 @@
     "commandScriptHint": "Jalur relatif ke folder proyek. Skrip menerima tugas sebagai JSON dan berjalan di area terisolasi proyek; keluarannya adalah hasil.",
     "webhookUrl": "Alamat (HTTPS)",
     "webhookSecretEnv": "Variabel berisi kunci tanda tangan",
-    "webhookHint": "Helena memanggil alamat dengan tanda tangan Standard Webhooks. Berikan kunci (whsec_…) ke agen sebagai variabel lingkungan di Akses."
+    "webhookHint": "{appName} memanggil alamat dengan tanda tangan Standard Webhooks. Berikan kunci (whsec_…) ke agen sebagai variabel lingkungan di Akses."
   },
   "context": {
     "task": "Tugas {identifier} “{title}”",

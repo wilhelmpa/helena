@@ -19,7 +19,7 @@
   "readFailed": "Der Host-Helfer hat nicht geantwortet. Er läuft vielleicht gerade nicht.",
   "unavailable": {
     "title": "Hier gibt es nichts zu verwalten",
-    "noHelper": "Helena läuft ohne den Host-Helfer (zum Beispiel in einem Container). Platten, Backup und Lüfter werden dann außerhalb von Helena verwaltet.",
+    "noHelper": "{appName} läuft ohne den Host-Helfer (zum Beispiel in einem Container). Platten, Backup und Lüfter werden dann außerhalb von {appName} verwaltet.",
     "failed": "Der Host-Helfer hat nicht geantwortet."
   },
   "health": {
@@ -42,9 +42,9 @@
     "espSyncSkipped": "Die zweite EFI-Partition wurde vor {at} nicht angeglichen: {reason, select, notMounted {{mount} war nicht eingehängt} notVfat {{mount} ist keine FAT-Partition} sameDevice {beide Einhängepunkte sind dieselbe Partition} other {übersprungen}}. Die Reserve-Platte startet so vielleicht einen alten Stand.",
     "espSyncFailed": "Die Kopie auf die zweite EFI-Partition ist vor {at} fehlgeschlagen: {reason, select, sourceIncomplete {auf der ersten fehlt der Bootloader} readFailed {die erste ließ sich nicht vollständig lesen} noRsync {rsync fehlt} rsyncFailed {Schreibfehler} verifyFailed {die Kopie weicht vom Original ab} other {unbekannter Fehler}}. Der Start von der Reserve-Platte ist erst nach einer gelungenen Kopie wieder sicher.",
     "espRemovableStale": "Der Notfall-Startpfad EFI/BOOT auf {mount} {problem, select, missing {fehlt} differs {startet andere Dateien als die Starteinträge} fallback {enthält fbx64.efi, das eigene Firmware-Einträge anlegen würde} stub {findet die Systempartition nicht} other {stimmt nicht}}. Die Firmware startet diesen Pfad manchmal von sich aus.",
-    "bootEntryMissing": "Starteintrag „{label}“ fehlt. {repair, select, nextBoot {Helena legt ihn beim nächsten Start an.} diskMissing {Helena legt ihn an, sobald die Platte wieder da ist.} other {}}",
-    "bootEntryBroken": "Starteintrag „{label}“ ist ungültig: {problem, select, noPartuuid {die Firmware hat ihn umgeschrieben} wrongDisk {er zeigt auf eine andere Platte} wrongLoader {er startet eine andere Datei} inactive {er ist abgeschaltet} other {er stimmt nicht}}. {repair, select, nextBoot {Helena repariert ihn beim nächsten Start.} diskMissing {Helena repariert ihn, sobald die Platte wieder da ist.} other {}}",
-    "bootEntryDuplicate": "Starteintrag „{label}“ gibt es mehrfach. {repair, select, nextBoot {Helena räumt beim nächsten Start auf.} diskMissing {Helena räumt auf, sobald die Platte wieder da ist.} other {}}",
+    "bootEntryMissing": "Starteintrag „{label}“ fehlt. {repair, select, nextBoot {{appName} legt ihn beim nächsten Start an.} diskMissing {{appName} legt ihn an, sobald die Platte wieder da ist.} other {}}",
+    "bootEntryBroken": "Starteintrag „{label}“ ist ungültig: {problem, select, noPartuuid {die Firmware hat ihn umgeschrieben} wrongDisk {er zeigt auf eine andere Platte} wrongLoader {er startet eine andere Datei} inactive {er ist abgeschaltet} other {er stimmt nicht}}. {repair, select, nextBoot {{appName} repariert ihn beim nächsten Start.} diskMissing {{appName} repariert ihn, sobald die Platte wieder da ist.} other {}}",
+    "bootEntryDuplicate": "Starteintrag „{label}“ gibt es mehrfach. {repair, select, nextBoot {{appName} räumt beim nächsten Start auf.} diskMissing {{appName} räumt auf, sobald die Platte wieder da ist.} other {}}",
     "bootLoaderMissing": "Auf {mount} fehlt der Bootloader; Starteintrag „{label}“ kann nicht starten.",
     "bootEntriesOk": "{count, plural, one {Der Starteintrag stimmt.} other {Alle # Starteinträge stimmen.}}",
     "eventsCritical": "{count, plural, one {Eine ernste Meldung} other {# ernste Meldungen}} von mdadm oder smartd, noch nicht gesehen.",
@@ -116,7 +116,7 @@
     "checkStarted": "Die Prüfung läuft.",
     "checkStopped": "Die Prüfung ist abgebrochen.",
     "checkConfirmTitle": "Spiegel prüfen?",
-    "checkConfirmBody": "Liest beide Platten vollständig und vergleicht sie (dasselbe, was einmal im Monat automatisch läuft). Das dauert einige Stunden und bremst die Platten etwas; Helena läuft weiter.",
+    "checkConfirmBody": "Liest beide Platten vollständig und vergleicht sie (dasselbe, was einmal im Monat automatisch läuft). Das dauert einige Stunden und bremst die Platten etwas; {appName} läuft weiter.",
     "syncAction": {
       "idle": "Ruht",
       "resync": "Abgleich",
@@ -178,7 +178,7 @@
       "intro": "Fällt eine Platte im Betrieb vom Bus (im Protokoll „controller is down“, der Spiegel läuft ohne sie, lsblk zeigt sie nicht), ist sie oft nicht kaputt. Ein Neustart holt sie meist nicht zurück, ein Kaltstart schon. Bis dahin keine Kernel- oder GRUB-Updates.",
       "step": {
         "poweroff": "Sauber ausschalten",
-        "poweroffBody": "Helena und die Agenten halten an; auf der anderen Platte ist der Spiegel vollständig.",
+        "poweroffBody": "{appName} und die Agenten halten an; auf der anderen Platte ist der Spiegel vollständig.",
         "powerOn": "Wieder einschalten",
         "powerOnBody": "Mit dem Einschaltknopf oder per Wake-on-LAN von einem anderen Rechner im Heimnetz.",
         "smart": "SMART prüfen",
@@ -193,7 +193,7 @@
     "replace": {
       "open": "Platte ersetzen",
       "title": "Eine Platte des Spiegels ersetzen",
-      "intro": "Schritt für Schritt, mit den Befehlen für diesen Rechner. Helena führt sie nicht aus: du gibst sie im Owner-Terminal ein. Der Server läuft währenddessen auf der anderen Platte weiter.",
+      "intro": "Schritt für Schritt, mit den Befehlen für diesen Rechner. {appName} führt sie nicht aus: du gibst sie im Owner-Terminal ein. Der Server läuft währenddessen auf der anderen Platte weiter.",
       "which": "Welche Platte kommt raus?",
       "disk": "Platte {letter}",
       "noPlan": "Für diese Platte gibt es keinen Plan: sie ist nicht Teil eines Spiegels, oder es fehlt eine gesunde zweite Platte.",
@@ -345,11 +345,11 @@
     },
     "password": {
       "title": "Backup-Passwort notieren",
-      "explain": "Ohne dieses Passwort lässt sich das Backup nicht lesen, auch nicht von Helena nach einer Neuinstallation. Schreib es auf Papier oder in deinen Passwortmanager. Nach der Bestätigung zeigt Helena es nie wieder.",
+      "explain": "Ohne dieses Passwort lässt sich das Backup nicht lesen, auch nicht von {appName} nach einer Neuinstallation. Schreib es auf Papier oder in deinen Passwortmanager. Nach der Bestätigung zeigt {appName} es nie wieder.",
       "show": "Passwort anzeigen",
       "written": "Ich habe das Passwort sicher notiert.",
       "confirm": "Bestätigen",
-      "confirmed": "Bestätigt. Helena zeigt das Passwort nicht mehr an."
+      "confirmed": "Bestätigt. {appName} zeigt das Passwort nicht mehr an."
     },
     "targets": {
       "title": "Außer Haus",
@@ -465,7 +465,7 @@
     },
     "guard": {
       "title": "Lüfterschutz",
-      "explain": "Stehen die Lüfter fest unter Stufe 5 und bleibt die CPU einige Sekunden bei {limit} oder mehr, stellt Helena sie auf Stufe 5. Unter {release} für zwei Minuten kommt deine Stufe zurück.",
+      "explain": "Stehen die Lüfter fest unter Stufe 5 und bleibt die CPU einige Sekunden bei {limit} oder mehr, stellt {appName} sie auf Stufe 5. Unter {release} für zwei Minuten kommt deine Stufe zurück.",
       "limit": "Grenze",
       "saved": "Gespeichert.",
       "active": "Hält die Lüfter gerade auf Stufe 5.",

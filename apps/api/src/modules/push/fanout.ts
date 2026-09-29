@@ -1,6 +1,6 @@
 import type { CoreEvent, HelenaEvent } from '@helena/sdk';
 import { formatPush } from '@helena/locales/push';
-import { agentChatMessage, aiAgent, db, issue, project, user } from '@repo/db';
+import { agentChatMessage, aiAgent, db, getDisplayName, issue, project, user } from '@repo/db';
 import { eq } from 'drizzle-orm';
 import { deciders, getApproval } from '#modules/approvals/service';
 import { notificationCategory } from './categories';
@@ -36,14 +36,14 @@ export function answerSnippet(content: string, max = 180): string {
 }
 
 async function agentName(agentId: number | null): Promise<string> {
-  if (agentId == null) return 'Helena';
+  if (agentId == null) return getDisplayName();
   // An agent's name is its member's.
   const [row] = await db
     .select({ name: user.name })
     .from(aiAgent)
     .innerJoin(user, eq(user.id, aiAgent.userId))
     .where(eq(aiAgent.id, agentId));
-  return row?.name ?? 'Helena';
+  return row?.name ?? (await getDisplayName());
 }
 
 async function projectKey(projectId: number | null): Promise<string | null> {

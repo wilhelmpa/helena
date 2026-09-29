@@ -1,11 +1,11 @@
 {
   "title": "الأجهزة",
-  "description": "يُبقي Syncthing ملاحظات وملفات Helena والمشاريع وPrivate/ محدَّثة كمجلد عادي على جهاز Mac والهاتف: مباشرةً في المنزل، وعبر مرحّلات مشفّرة أثناء التنقل.",
+  "description": "يُبقي Syncthing ملاحظات وملفات {appName} والمشاريع وPrivate/ محدَّثة كمجلد عادي على جهاز Mac والهاتف: مباشرةً في المنزل، وعبر مرحّلات مشفّرة أثناء التنقل.",
   "loadError": "تعذّرت قراءة حالة المزامنة.",
   "ownerOnly": "مالك المثيل وحده يدير الأجهزة.",
   "unavailable": {
     "unconfiguredTitle": "لم يتم إعداد Syncthing",
-    "unconfigured": "لا يملك Helena مفتاحًا صالحًا لـ Syncthing على هذا الخادم. ثبّت حزمة Debian ‏syncthing ثم شغّل <code>deployment/volition-stack/native/syncthing/setup.sh</code> بصلاحيات root.",
+    "unconfigured": "لا يملك {appName} مفتاحًا صالحًا لـ Syncthing على هذا الخادم. ثبّت حزمة Debian ‏syncthing ثم شغّل <code>deployment/volition-stack/native/syncthing/setup.sh</code> بصلاحيات root.",
     "unreachableTitle": "تعذّر الوصول إلى Syncthing",
     "unreachable": "Syncthing غير مثبّت على هذا الخادم، أو أن الخدمة <code>volition-syncthing</code> لا تعمل."
   },
@@ -21,7 +21,7 @@
   },
   "folder": {
     "title": "حالة المزامنة",
-    "notSetUp": "المجلد Helena غير موجود في Syncthing. شغّل إعداد Syncthing على هذا الخادم مرة أخرى.",
+    "notSetUp": "المجلد {appName} غير موجود في Syncthing. شغّل إعداد Syncthing على هذا الخادم مرة أخرى.",
     "state": {
       "idle": "محدَّث",
       "scanning": "جارٍ الفحص",
@@ -44,7 +44,7 @@
     "paused": "متوقف مؤقتًا",
     "lastSeen": "آخر ظهور {time}",
     "neverSeen": "لم يظهر بعد",
-    "notShared": "المجلد Helena غير مشارَك مع هذا الجهاز.",
+    "notShared": "المجلد {appName} غير مشارَك مع هذا الجهاز.",
     "remove": "إزالة",
     "removeTitle": "إزالة {name}؟",
     "removeBody": "يتوقف الجهاز عن المزامنة مع هذا الخادم. تبقى الملفات على الجهاز."
@@ -54,7 +54,7 @@
     "hint": "اقبل أجهزتك فقط: يتلقى الجهاز المقبول كل الملاحظات والملفات، بما فيها Private/.",
     "requested": "طُلب {time} من {address}",
     "accept": "قبول",
-    "accepted": "تم قبول {name}. اقبل الآن المجلد Helena على الجهاز."
+    "accepted": "تم قبول {name}. اقبل الآن المجلد {appName} على الجهاز."
   },
   "conflicts": {
     "title": "التعارضات",
@@ -70,11 +70,11 @@
     "step2": "في Syncthing، أضف جهازًا وأدخل معرّف جهاز هذا الخادم، أو امسح رمز QR.",
     "step2Lan": "للمزامنة المباشرة في المنزل، أدخل <code>{address}, dynamic</code> عناوينَ للجهاز.",
     "step3": "يظهر الجهاز بعدها في الأعلى ضمن «أجهزة تطلب الاتصال». اختر «قبول».",
-    "step4": "على الجهاز، اقبل المجلد Helena في مجلد اسمه Helena: <code>~/Helena</code> على Mac، و<code>Helena</code> في وحدة التخزين الداخلية على Android، وضمن «على iPhone» في Möbius Sync على iPhone.",
-    "step5": "انتظر حتى يظهر المجلد على الجهاز بحالة «محدَّث». تصبح الملاحظات والملفات عندها ملفات عادية على الجهاز؛ والأفضل كتابة الملاحظات في Helena ضمن «الملاحظات».",
+    "step4": "على الجهاز، اقبل المجلد {appName} في مجلد اسمه {appName}: <code>~/{appName}</code> على Mac، و<code>{appName}</code> في وحدة التخزين الداخلية على Android، وضمن «على iPhone» في Möbius Sync على iPhone.",
+    "step5": "انتظر حتى يظهر المجلد على الجهاز بحالة «محدَّث». تصبح الملاحظات والملفات عندها ملفات عادية على الجهاز؛ والأفضل كتابة الملاحظات في {appName} ضمن «الملاحظات».",
     "iphoneTitle": "iPhone",
-    "iphone": "يضع Möbius Sync المجلد Helena ضمن «على iPhone»، حيث يعرضه تطبيق «الملفات». يزامن Möbius Sync ما دام التطبيق مفتوحًا أو ما دام iOS يتركه يعمل في الخلفية.",
+    "iphone": "يضع Möbius Sync المجلد {appName} ضمن «على iPhone»، حيث يعرضه تطبيق «الملفات». يزامن Möbius Sync ما دام التطبيق مفتوحًا أو ما دام iOS يتركه يعمل في الخلفية.",
     "spaceTitle": "توفير المساحة على الهاتف (اختياري)",
-    "space": "تنطبق أنماط التجاهل على الجهاز الذي أُدخلت فيه فقط. لكي لا تُحمَّل ملفات البريد على الهاتف، افتح المجلد Helena في Möbius Sync أو Syncthing-Fork، وأضف السطر <code>Files/Mail</code> ضمن أنماط التجاهل واحفظ، ويُفضَّل فعل ذلك مباشرةً بعد قبول المجلد. تبقى الملفات على هذا الخادم وعلى الأجهزة الأخرى."
+    "space": "تنطبق أنماط التجاهل على الجهاز الذي أُدخلت فيه فقط. لكي لا تُحمَّل ملفات البريد على الهاتف، افتح المجلد {appName} في Möbius Sync أو Syncthing-Fork، وأضف السطر <code>Files/Mail</code> ضمن أنماط التجاهل واحفظ، ويُفضَّل فعل ذلك مباشرةً بعد قبول المجلد. تبقى الملفات على هذا الخادم وعلى الأجهزة الأخرى."
   }
 }

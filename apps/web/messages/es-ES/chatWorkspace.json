@@ -126,9 +126,9 @@
     "undoDone": "Se eliminó el último intercambio. Envía un mensaje nuevo para continuar desde antes de él.",
     "undoNone": "Nada que deshacer todavía.",
     "refusal": {
-      "schedules": "Los propios comandos de programación de Hermes no se ejecutan desde el chat — usa las rutinas de Helena.",
+      "schedules": "Los propios comandos de programación de Hermes no se ejecutan desde el chat — usa las rutinas de {appName}.",
       "approvals": "Los comandos de aprobación no se ejecutan desde el chat — usa la tarjeta de aprobación o la página de Aprobaciones.",
-      "config": "Esto cambia la configuración del propio agente — usa los ajustes del agente en Helena.",
+      "config": "Esto cambia la configuración del propio agente — usa los ajustes del agente en {appName}.",
       "outside": "Esto no es algo que el chat pueda hacer."
     },
     "reasoning": "Esfuerzo de razonamiento",
@@ -197,7 +197,7 @@
     "runtimeExternal": "Externo",
     "switch": "Chat con {agent}: empezar un chat nuevo con otro agente",
     "newChatWith": "Nuevo chat con…",
-    "switchToHelena": "Nuevo chat con Helena"
+    "switchToHelena": "Nuevo chat con {appName}"
   },
   "interrupted": {
     "lost": "Se perdió la conexión con la respuesta. Puede que {agent} siga trabajando en ella.",
@@ -247,7 +247,7 @@
     },
     "problems": {
       "insecureTitle": "El micrófono necesita una conexión segura",
-      "insecure": "Los navegadores solo permiten el micrófono por HTTPS, y aquí Helena funciona por http. Hasta que llegue HTTPS: abre {flag} en Chrome, añade {origin}, elige «Enabled» y reinicia Chrome. Safari y Firefox: solo con HTTPS.",
+      "insecure": "Los navegadores solo permiten el micrófono por HTTPS, y aquí {appName} funciona por http. Hasta que llegue HTTPS: abre {flag} en Chrome, añade {origin}, elige «Enabled» y reinicia Chrome. Safari y Firefox: solo con HTTPS.",
       "copyFlag": "Copiar dirección",
       "flagCopied": "Dirección copiada: pégala en la barra de direcciones de Chrome.",
       "localOnlyDownTitle": "La transcripción local no está disponible ahora",
@@ -304,7 +304,7 @@
     "commandScriptHint": "Ruta relativa a la carpeta del proyecto. El script recibe la tarea como JSON y se ejecuta en el área aislada del proyecto; su salida es el resultado.",
     "webhookUrl": "Dirección (HTTPS)",
     "webhookSecretEnv": "Variable con la clave de firma",
-    "webhookHint": "Helena llama a la dirección firmada según Standard Webhooks. Da la clave (whsec_…) al agente como variable de entorno en Accesos."
+    "webhookHint": "{appName} llama a la dirección firmada según Standard Webhooks. Da la clave (whsec_…) al agente como variable de entorno en Accesos."
   },
   "context": {
     "task": "Tarea {identifier} «{title}»",

@@ -107,7 +107,7 @@
     "hermes": "Hermes",
     "claude": "Claude Code",
     "codex": "Codex",
-    "mcp": "Helena 工具",
+    "mcp": "{appName} 工具",
     "gateway": "浏览器",
     "workflow": "工作流",
     "approval": "批准请求",
@@ -158,8 +158,8 @@
     "level": "级别 {level}",
     "reason": "为何需要批准",
     "scope": {
-      "workspace": "Helena / 项目工作区内",
-      "external": "Helena / 项目工作区外"
+      "workspace": "{appName} / 项目工作区内",
+      "external": "{appName} / 项目工作区外"
     }
   },
   "prices": {
@@ -185,7 +185,7 @@
     "rateSaved": "汇率已保存，价格已重新换算。",
     "importedAt": "上次更新：{date}（{from}）",
     "from": {
-      "snapshot": "Helena 自带列表",
+      "snapshot": "{appName} 自带列表",
       "modelsDev": "models.dev"
     },
     "add": "输入价格",

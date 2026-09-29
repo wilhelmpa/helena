@@ -16,5 +16,6 @@ export function speechText(markdown: string): string {
     .replace(/\|/g, ' ')
     .replace(/[ \t]+/g, ' ')
     .replace(/\n{3,}/g, '\n\n')
+    .replace(/(?<![\p{L}\p{N}])Ava(?![\p{L}\p{N}])/giu, 'Eywa')
     .trim();
 }

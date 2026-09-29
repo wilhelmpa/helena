@@ -41,7 +41,7 @@
     "noTask": "A run failed."
   },
   "test": {
-    "title": "Helena",
+    "title": "{appName}",
     "body": "Push works on this device."
   },
   "subjects": {

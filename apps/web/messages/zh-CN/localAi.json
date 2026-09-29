@@ -98,7 +98,7 @@
     "unreachable": "无法访问",
     "keys": {
       "file": "从文件读取密钥",
-      "stored": "密钥保存在 Helena 中",
+      "stored": "密钥保存在 {appName} 中",
       "none": "无密钥",
       "invalid": "不允许的密钥文件"
     },
@@ -247,7 +247,7 @@
       "title": "Listen for “Ava”",
       "hint": "The microphone stays open while a chat page is open. Before “Ava”, only on-device recognition processes your voice; nothing is saved.",
       "availability": "On-device recognition",
-      "availabilityHint": "Works only if the browser already has a German offline speech pack. Helena does not download one."
+      "availabilityHint": "Works only if the browser already has a German offline speech pack. {appName} does not download one."
     },
     "title": "聊天中的语音",
     "loading": "加载中 …",
@@ -262,22 +262,22 @@
     },
     "pause": {
       "title": "回答前的停顿",
-      "hint": "你需要沉默多久，Helena 才会发送你的话。越短回答越快，越长越少打断你。",
+      "hint": "你需要沉默多久，{appName} 才会发送你的话。越短回答越快，越长越少打断你。",
       "option": "{seconds} 秒"
     },
     "words": {
-      "title": "Helena 应该认识的词",
+      "title": "{appName} 应该认识的词",
       "hint": "人名、产品和术语，让语音识别写对它们。已认识：{words}。",
       "placeholder": "例如 税务顾问 Müller、Shopify、Kubernetes",
       "save": "保存词语"
     },
     "voice": {
       "title": "声音",
-      "hint": "Helena 在对话中回答时使用的本地声音（本地 AI → “朗读”）。",
+      "hint": "{appName} 在对话中回答时使用的本地声音（本地 AI → “朗读”）。",
       "default": "服务器默认声音",
       "none": "尚未设置本地声音——在此之前由浏览器朗读。",
       "preview": "试听",
-      "sample": "你好，我是 Helena。这是我在对话中的声音——告诉我你需要什么。",
+      "sample": "你好，我是 {appName}。这是我在对话中的声音——告诉我你需要什么。",
       "previewFailed": "无法播放声音。"
     },
     "model": {

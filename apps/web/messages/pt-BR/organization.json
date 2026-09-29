@@ -50,7 +50,7 @@
     "exportTemplate": "Exportar como modelo",
     "exported": "Modelo salvo: {file}",
     "importTemplate": "Importar departamento de um modelo",
-    "importTemplateHint": "Escolha um arquivo de modelo. A Helena verifica primeiro o que mudaria e só grava quando você importa.",
+    "importTemplateHint": "Escolha um arquivo de modelo. A {appName} verifica primeiro o que mudaria e só grava quando você importa.",
     "templateChooseFile": "Escolher arquivo de modelo",
     "templateFile": "Arquivo: {name}",
     "templateNotJson": "O arquivo não é um modelo válido.",
@@ -237,7 +237,7 @@
         "review": "O coordenador revisa os resultados.",
         "synchronize": "O resumo e as evidências são gravados na tarefa, que vai para Revisão ou Concluído."
       },
-      "route": "Quando as etiquetas da tarefa correspondem às capacidades de exatamente um especialista, ou o projeto tem só um, a Helena pula o plano e atribui a tarefa diretamente."
+      "route": "Quando as etiquetas da tarefa correspondem às capacidades de exatamente um especialista, ou o projeto tem só um, a {appName} pula o plano e atribui a tarefa diretamente."
     },
     "usage": {
       "title": "Consumo de tokens",
@@ -278,7 +278,7 @@
     "projectDefault": "Padrão do projeto",
     "noLimit": "Sem limite",
     "none": "Nenhum",
-    "home": "HELENA · MASTER",
+    "home": "{appNameUpper} · MASTER",
     "coordinator": "COORDENADOR",
     "reviewer": "REVISOR",
     "specialist": "ESPECIALISTA",
@@ -348,6 +348,6 @@
     "add": "Adicionar",
     "added": "Adicionado a {project}",
     "failed": "Não foi possível adicionar o membro.",
-    "keyOnce": "A cópia roda fora da Helena: copie a chave agora, ela é mostrada só uma vez."
+    "keyOnce": "A cópia roda fora da {appName}: copie a chave agora, ela é mostrada só uma vez."
   }
 }

@@ -126,9 +126,9 @@
     "undoDone": "تمت إزالة آخر تبادل. أرسل رسالة جديدة للمتابعة من قبله.",
     "undoNone": "لا شيء للتراجع عنه بعد.",
     "refusal": {
-      "schedules": "أوامر الجدولة الخاصة بـHermes لا تُنفَّذ من المحادثة — استخدم روتينات Helena بدلًا من ذلك.",
+      "schedules": "أوامر الجدولة الخاصة بـHermes لا تُنفَّذ من المحادثة — استخدم روتينات {appName} بدلًا من ذلك.",
       "approvals": "أوامر الموافقة لا تُنفَّذ من المحادثة — استخدم بطاقة الموافقة أو صفحة الموافقات.",
-      "config": "هذا يغيّر إعدادات الوكيل نفسه — استخدم إعدادات الوكيل في Helena.",
+      "config": "هذا يغيّر إعدادات الوكيل نفسه — استخدم إعدادات الوكيل في {appName}.",
       "outside": "هذا ليس شيئًا يمكن للمحادثة فعله."
     },
     "reasoning": "مستوى التفكير",
@@ -197,7 +197,7 @@
     "runtimeExternal": "خارجي",
     "switch": "دردشة مع {agent} — ابدأ دردشة جديدة مع وكيل آخر",
     "newChatWith": "دردشة جديدة مع…",
-    "switchToHelena": "محادثة جديدة مع Helena"
+    "switchToHelena": "محادثة جديدة مع {appName}"
   },
   "interrupted": {
     "lost": "انقطع الاتصال بالإجابة. ربما لا يزال {agent} يعمل عليها.",
@@ -247,7 +247,7 @@
     },
     "problems": {
       "insecureTitle": "يحتاج الميكروفون إلى اتصال آمن",
-      "insecure": "لا تسمح المتصفحات بالميكروفون إلا عبر HTTPS، وتعمل Helena هنا عبر http. إلى أن يتوفر HTTPS: افتح {flag} في Chrome، وأدخل {origin}، واختر «Enabled» ثم أعد تشغيل Chrome. Safari وFirefox: مع HTTPS فقط.",
+      "insecure": "لا تسمح المتصفحات بالميكروفون إلا عبر HTTPS، وتعمل {appName} هنا عبر http. إلى أن يتوفر HTTPS: افتح {flag} في Chrome، وأدخل {origin}، واختر «Enabled» ثم أعد تشغيل Chrome. Safari وFirefox: مع HTTPS فقط.",
       "copyFlag": "نسخ العنوان",
       "flagCopied": "تم نسخ العنوان – الصقه في شريط العنوان في Chrome.",
       "localOnlyDownTitle": "النسخ المحلي غير متاح الآن",
@@ -304,7 +304,7 @@
     "commandScriptHint": "مسار نسبي لمجلد المشروع. يتلقى السكربت المهمة بصيغة JSON ويعمل في المنطقة المعزولة للمشروع؛ مخرجاته هي النتيجة.",
     "webhookUrl": "العنوان (HTTPS)",
     "webhookSecretEnv": "المتغير الذي يحمل مفتاح التوقيع",
-    "webhookHint": "تستدعي Helena العنوان موقّعًا وفق Standard Webhooks. أعطِ الوكيل المفتاح (whsec_…) كمتغير بيئة ضمن الوصول."
+    "webhookHint": "تستدعي {appName} العنوان موقّعًا وفق Standard Webhooks. أعطِ الوكيل المفتاح (whsec_…) كمتغير بيئة ضمن الوصول."
   },
   "context": {
     "task": "المهمة {identifier} «{title}»",

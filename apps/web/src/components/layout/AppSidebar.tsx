@@ -20,7 +20,7 @@ import SidebarAccountRow from '@/components/brand/SidebarAccountRow';
 import { Tip } from '@/design-system';
 import SidebarProjectSwitcher from './SidebarProjectSwitcher';
 import { SidebarHomeTree, SidebarProjectTree } from './SidebarTreeNav';
-import { APP_NAME } from '@/utils/app';
+import { useDisplayName } from '@/context/displayName';
 import type { WorkspaceToolId } from '@/utils/workspaceTools';
 import type { ViewTemplate } from '@/hooks/useViewEditor';
 
@@ -60,6 +60,7 @@ export default function AppSidebar({
   onNavigate: () => void;
 }) {
   const t = useTranslations('nav');
+  const appName = useDisplayName();
   const locale = useLocale();
   const teamIds = [...new Set(projects.map((project) => project.teamId))];
   const homeTeamId = teamIds.length === 1 ? teamIds[0]! : null;
@@ -96,9 +97,9 @@ export default function AppSidebar({
     <nav className="ds-sidebar" aria-label={t('sidebarProject')}>
       <div className="ds-sidebar-brand">
         <Link href="/" title={t('sidebarHome')}>
-          <span className="ds-brand-full">{APP_NAME.toUpperCase()}</span>
+          <span className="ds-brand-full">{appName.toUpperCase()}</span>
           <span className="ds-brand-mark" aria-hidden="true">
-            {APP_NAME.charAt(0).toUpperCase()}
+            {appName.charAt(0).toUpperCase()}
           </span>
         </Link>
         <span className="ds-sidebar-brand-tools">

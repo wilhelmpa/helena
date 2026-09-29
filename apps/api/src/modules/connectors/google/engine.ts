@@ -8,6 +8,7 @@ import {
   type GoogleToolContext,
 } from '@helena/connectors/google';
 import { HttpError } from '#shared/lib';
+import { getDisplayName } from '@repo/db';
 import { getAccount, readAccountSecrets, setAccountStatus, type AccountRow } from '../store';
 
 // How Helena reaches a Google account: with the refresh token it holds (engine 'helena',
@@ -109,7 +110,10 @@ export async function googleToolContext(account: AccountRow): Promise<GoogleTool
 export async function googleAccountAccessToken(account: AccountRow): Promise<string> {
   const readable = googleReadable(account);
   if (readable.engine !== 'helena') {
-    throw new HttpError(409, 'An account kept in gog has no token Helena can use.');
+    throw new HttpError(
+      409,
+      `An account kept in gog has no token ${await getDisplayName()} can use.`,
+    );
   }
   const secrets = await readAccountSecrets(account.id);
   if (!secrets.refreshToken) throw new HttpError(409, 'The account is not signed in.');

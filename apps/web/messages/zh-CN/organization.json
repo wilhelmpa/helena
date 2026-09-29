@@ -50,7 +50,7 @@
     "exportTemplate": "导出为模板",
     "exported": "模板已保存：{file}",
     "importTemplate": "从模板导入部门",
-    "importTemplateHint": "选择一个模板文件。Helena 会先检查将发生的变化，只有在你导入时才写入。",
+    "importTemplateHint": "选择一个模板文件。{appName} 会先检查将发生的变化，只有在你导入时才写入。",
     "templateChooseFile": "选择模板文件",
     "templateFile": "文件：{name}",
     "templateNotJson": "该文件不是有效的模板。",
@@ -237,7 +237,7 @@
         "review": "协调者评审结果。",
         "synchronize": "摘要和证据写入任务，任务移至评审或完成。"
       },
-      "route": "当任务标签恰好匹配一位专家的能力，或项目只有一位专家时，Helena 会跳过规划并直接分配任务。"
+      "route": "当任务标签恰好匹配一位专家的能力，或项目只有一位专家时，{appName} 会跳过规划并直接分配任务。"
     },
     "usage": {
       "title": "令牌用量",
@@ -278,7 +278,7 @@
     "projectDefault": "项目默认",
     "noLimit": "无限制",
     "none": "无",
-    "home": "HELENA · MASTER",
+    "home": "{appNameUpper} · MASTER",
     "coordinator": "协调者",
     "reviewer": "评审者",
     "specialist": "专家",
@@ -348,6 +348,6 @@
     "add": "添加",
     "added": "已添加到 {project}",
     "failed": "无法添加成员。",
-    "keyOnce": "该副本在 Helena 之外运行：请立即复制其密钥，它只显示一次。"
+    "keyOnce": "该副本在 {appName} 之外运行：请立即复制其密钥，它只显示一次。"
   }
 }

@@ -1,7 +1,9 @@
+'use client';
+
 import type { ReactNode } from 'react';
 import HelenaMark from '@/components/brand/HelenaMark';
 import HelenaWordmark from '@/components/brand/HelenaWordmark';
-import { APP_NAME } from '@/utils/app';
+import { useDisplayName } from '@/context/displayName';
 import { cn } from '@/lib/utils';
 
 // The brand at full size on the ink panel, the same in both themes: the particle Orb
@@ -14,6 +16,7 @@ export default function BrandHero({
   className?: string;
   children?: ReactNode;
 }) {
+  const appName = useDisplayName();
   return (
     <div
       className={cn(
@@ -26,7 +29,7 @@ export default function BrandHero({
         className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_36%,color-mix(in_oklab,var(--ava-glow)_16%,transparent),transparent_60%)] [--ava-glow:#b356dc]"
       />
       <HelenaMark detail="large" onInk className="relative size-24" />
-      <HelenaWordmark size="full" label={APP_NAME} className="relative max-w-full" />
+      <HelenaWordmark size="full" label={appName} className="relative max-w-full" />
       {children}
     </div>
   );

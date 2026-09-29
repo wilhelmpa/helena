@@ -41,10 +41,10 @@
     "folder": "Folder ini kosong.",
     "folderHint": "Letakkan berkas di sini atau gunakan Unggah.",
     "filter": "Tidak ada entri yang cocok dengan “{filter}”.",
-    "readOnly": "Helena menampilkan folder ini hanya-baca."
+    "readOnly": "{appName} menampilkan folder ini hanya-baca."
   },
   "unreadable": {
-    "title": "Helena tidak dapat membaca folder ini",
+    "title": "{appName} tidak dapat membaca folder ini",
     "body": "Ruang kerja ini milik pengguna agen di server. Buka di VS Code sebagai gantinya.",
     "missing": "Folder ini tidak ada di server."
   },
@@ -128,7 +128,7 @@
     "content": "Isi file",
     "reload": "Muat ulang",
     "discard": "Buang draf yang belum disimpan?",
-    "editor": "Editor Helena",
+    "editor": "Editor {appName}",
     "preview": "Pratinjau",
     "searching": "Mencari file…",
     "searchError": "Pencarian tidak tersedia atau akses ditolak.",
@@ -247,7 +247,7 @@
     "agent": "Agen",
     "manual": "Manual",
     "all": "Semua",
-    "systemHint": "Dibuat oleh Helena (bukti, lampiran email, ekspor)",
+    "systemHint": "Dibuat oleh {appName} (bukti, lampiran email, ekspor)",
     "agentHint": "Dibuat oleh agen",
     "manualHint": "Dibuat atau diunggah oleh orang",
     "label": "Asal"
@@ -256,7 +256,7 @@
     "loading": "Memuat tampilan …",
     "readFailed": "Tampilan tidak dapat dibaca.",
     "rowsFailed": "Baris tampilan tidak dapat dimuat.",
-    "unsupported": "Tampilan ini memakai ekspresi yang belum dievaluasi Helena",
+    "unsupported": "Tampilan ini memakai ekspresi yang belum dievaluasi {appName}",
     "views": "Tampilan",
     "filter": "Saring baris",
     "count": "{count, plural, other {# catatan}}",

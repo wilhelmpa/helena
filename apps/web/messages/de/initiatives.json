@@ -164,8 +164,8 @@
   "sortDefault": "Eigene Reihenfolge",
   "why": {
     "label": "Warum",
-    "choose": "Helena-Ziel wählen",
-    "none": "Dient noch keinem Helena-Ziel.",
+    "choose": "{appName}-Ziel wählen",
+    "none": "Dient noch keinem {appName}-Ziel.",
     "noneOption": "Keinem Ziel"
   }
 }

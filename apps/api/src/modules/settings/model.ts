@@ -1,6 +1,10 @@
 import { t } from 'elysia';
 import { oneOf } from '#shared/schemas';
 
+export const DisplayNameSchema = t.Object({
+  displayName: t.String({ minLength: 1, maxLength: 40 }),
+});
+
 export const StorageSettingsSchema = t.Object({
   maxAttachmentMb: t.Number(),
   maxAvatarMb: t.Number(),

@@ -199,7 +199,7 @@
     "openPreviewLink": "在新标签页中打开 {name}",
     "loadingPreview": "正在加载预览…",
     "previewUnavailable": "无法预览。请打开链接查看此页面。",
-    "internalPage": "Helena 页面",
+    "internalPage": "{appName} 页面",
     "internalPreviewUnavailable": "此页面不可用，或你没有访问权限。",
     "previewNoteCount": "{count, plural, other {# 条笔记}}",
     "previewCustomField": "自定义字段",

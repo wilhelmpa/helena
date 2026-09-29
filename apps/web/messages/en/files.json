@@ -12,7 +12,7 @@
     "label": "Folders",
     "vault": "Knowledge",
     "code": "Code",
-    "home": "Helena",
+    "home": "{appName}",
     "private": "Private",
     "templates": "Templates",
     "projects": "Projects"
@@ -41,10 +41,10 @@
     "folder": "This folder is empty.",
     "folderHint": "Drop files here or use Upload.",
     "filter": "No entry matches “{filter}”.",
-    "readOnly": "Helena shows this folder read-only."
+    "readOnly": "{appName} shows this folder read-only."
   },
   "unreadable": {
-    "title": "Helena cannot read this folder",
+    "title": "{appName} cannot read this folder",
     "body": "The workspace belongs to the agents' user on the server. Open it in VS Code instead.",
     "missing": "This folder does not exist on the server."
   },
@@ -62,7 +62,7 @@
     "download": "Download",
     "rename": "Rename",
     "move": "Move",
-    "copyPath": "Copy Helena link",
+    "copyPath": "Copy {appName} link",
     "openInCode": "Open in VS Code",
     "openInDocs": "Open in Knowledge",
     "linkToTask": "Link to task",
@@ -128,7 +128,7 @@
     "content": "File content",
     "reload": "Reload",
     "discard": "Discard the unsaved draft?",
-    "editor": "Helena editor",
+    "editor": "{appName} editor",
     "preview": "Preview",
     "searching": "Searching files…",
     "searchError": "Search unavailable or access denied.",
@@ -247,7 +247,7 @@
     "agent": "Agent",
     "manual": "Manual",
     "all": "All",
-    "systemHint": "Made by Helena (receipts, mail attachments, exports)",
+    "systemHint": "Made by {appName} (receipts, mail attachments, exports)",
     "agentHint": "Made by an agent",
     "manualHint": "Made or uploaded by a person",
     "label": "Origin"
@@ -256,7 +256,7 @@
     "loading": "Loading view …",
     "readFailed": "The view could not be read.",
     "rowsFailed": "The rows of the view could not be loaded.",
-    "unsupported": "This view uses an expression Helena does not evaluate yet",
+    "unsupported": "This view uses an expression {appName} does not evaluate yet",
     "views": "Views",
     "filter": "Filter rows",
     "count": "{count, plural, one {# note} other {# notes}}",

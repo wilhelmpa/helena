@@ -6,6 +6,7 @@ import { useAccountPreferences } from '@/services/preferences.service';
 import { useAgentStatus } from '@/utils/helenaStatus';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { useDisplayName } from '@/context/displayName';
 import { toast } from 'sonner';
 import type { AiAgent } from '@/lib/api/endpoints/agents';
 import { ApiError } from '@/lib/api/core/client';
@@ -93,6 +94,7 @@ export default function ChatThreadView({
   pageContext,
 }: ChatThreadViewProps) {
   const t = useTranslations('chatWorkspace');
+  const appName = useDisplayName();
   const motionEnabled = useAccountPreferences().homeDashboard.chatAnimation !== false;
   const plan = usePlanChat({
     scopeKey,
@@ -356,7 +358,7 @@ export default function ChatThreadView({
         </div>
         {busyElsewhere(activity, workingElsewhere ? 'running' : null) && (
           <p className="ds-chat-busy-note" role="status">
-            {t('composer.busyElsewhere', { agent: agentDisplayName(agent) })}
+            {t('composer.busyElsewhere', { agent: agentDisplayName(agent, appName) })}
           </p>
         )}
         <ChatComposer

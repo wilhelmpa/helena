@@ -43,8 +43,8 @@
   "dialog": {
     "title": "Atualizar {name}?",
     "titleGroup": "{count, plural, one {Atualizar # pacote?} other {Atualizar # pacotes?}}",
-    "download": "O Helena baixa a nova versão do fabricante e a instala ({source}).",
-    "downloadApt": "O apt baixa os pacotes das fontes do Debian e os instala. Antes, o Helena faz backup do banco de dados.",
+    "download": "O {appName} baixa a nova versão do fabricante e a instala ({source}).",
+    "downloadApt": "O apt baixa os pacotes das fontes do Debian e os instala. Antes, o {appName} faz backup do banco de dados.",
     "downloadHermes": "O assistente do Hermes busca o novo estado no repositório do Hermes e o reinstala.",
     "wayBack": "Caminho de volta: a versão atual é mantida e pode ser restaurada.",
     "wayBackApt": "Caminho de volta: o apt não tem um automático. Depois, o registro indica o comando para as versões antigas.",
@@ -70,10 +70,10 @@
     "cliRuntimes": "Runtimes de agentes",
     "apt": "Pacotes do Debian",
     "hostTools": "Ferramentas",
-    "helena": "Helena"
+    "helena": "{appName}"
   },
   "hints": {
-    "manual": "Sem instalador no Helena: atualizado manualmente.",
+    "manual": "Sem instalador no {appName}: atualizado manualmente.",
     "notInstalled": "Não instalado.",
     "deploy": "Atualizado com o deploy.",
     "hermesOffline": "Nenhum runner do Hermes acessível: estado da última verificação."
@@ -81,7 +81,7 @@
   "settings": {
     "title": "Configurações",
     "schedule": "Verificar automaticamente",
-    "scheduleDescription": "O Helena procura novas versões conforme este agendamento.",
+    "scheduleDescription": "O {appName} procura novas versões conforme este agendamento.",
     "cron": "Agendamento",
     "timezone": "Fuso horário",
     "summarize": "Resumir com IA",

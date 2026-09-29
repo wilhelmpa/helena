@@ -35,7 +35,7 @@
     "never": "أبدًا (قيد التشغيل دائمًا)",
     "alwaysOnTitle": "قيد التشغيل دائمًا",
     "alwaysOnFor": "إبقاء متصفح {name} قيد التشغيل دائمًا",
-    "home": "Helena",
+    "home": "{appName}",
     "state": {
       "running": "يعمل",
       "starting": "جارٍ التشغيل…",

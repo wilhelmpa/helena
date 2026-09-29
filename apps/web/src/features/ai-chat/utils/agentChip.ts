@@ -1,9 +1,13 @@
 import type { AiAgent } from '@/lib/api/endpoints/agents';
 import { friendlyModel } from '@/utils/modelNames';
+import { APP_NAME } from '@/utils/app';
 
 // The Home agent is Helena, whatever its account is called (owner, 28.09.).
-export function agentDisplayName(agent: Pick<AiAgent, 'name' | 'agentRole'>): string {
-  return agent.agentRole === 'home' ? 'Helena' : agent.name;
+export function agentDisplayName(
+  agent: Pick<AiAgent, 'name' | 'agentRole'>,
+  appName = APP_NAME,
+): string {
+  return agent.agentRole === 'home' ? appName : agent.name;
 }
 
 export interface AgentChipWords {
@@ -23,8 +27,9 @@ export function agentChipLabel(
   modelId: string | null | undefined,
   answeredBy: string | null | undefined,
   words: AgentChipWords,
+  appName = APP_NAME,
 ): { name: string; model: string; label: string } {
-  const name = agentDisplayName(agent);
+  const name = agentDisplayName(agent, appName);
   const shown = (id: string | null | undefined) => {
     const friendly = friendlyModel(id);
     if (!friendly) return null;

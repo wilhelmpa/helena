@@ -43,7 +43,7 @@
   },
   "review": {
     "emptyTitle": "Nothing to review",
-    "emptyHint": "Matches Helena was not sure enough about wait here.",
+    "emptyHint": "Matches {appName} was not sure enough about wait here.",
     "score": "Rules",
     "confidence": "AI",
     "confirm": "Match",
@@ -75,7 +75,7 @@
   },
   "matched": {
     "emptyTitle": "Nothing matched yet",
-    "emptyHint": "Upload receipts and import a bank statement, and Helena matches them.",
+    "emptyHint": "Upload receipts and import a bank statement, and {appName} matches them.",
     "unmatch": "Remove the match"
   },
   "accounts": {

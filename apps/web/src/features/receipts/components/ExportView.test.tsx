@@ -7,6 +7,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { NextIntlClientProvider } from 'next-intl';
 import { JSDOM } from 'jsdom';
 import receipts from '../../../../messages/de/receipts.json';
+import { DisplayNameProvider } from '@/context/displayName';
 
 const { mock } = createRequire(import.meta.url)('bun:test') as {
   mock: { module(specifier: string, factory: () => Record<string, unknown>): void };
@@ -80,13 +81,15 @@ const flush = async () => {
     });
 };
 
-async function render(months: string[], onUpload = () => {}) {
+async function render(months: string[], onUpload = () => {}, displayName = 'Ava') {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   await act(async () =>
     root.render(
       <QueryClientProvider client={client}>
         <NextIntlClientProvider locale="de" messages={{ receipts }} timeZone="Europe/Berlin">
-          <ExportView projectKey="FIN" months={months} loading={false} onUpload={onUpload} />
+          <DisplayNameProvider name={displayName}>
+            <ExportView projectKey="FIN" months={months} loading={false} onUpload={onUpload} />
+          </DisplayNameProvider>
         </NextIntlClientProvider>
       </QueryClientProvider>,
     ),
@@ -95,7 +98,7 @@ async function render(months: string[], onUpload = () => {}) {
 }
 
 it('lists every month with what it holds and downloads its ZIP', async () => {
-  await render(['2026-09', '2026-08']);
+  await render(['2026-09', '2026-08'], undefined, 'Atlas');
   const rows = [...document.querySelectorAll('[data-knowledge-row]')];
   assert.equal(rows.length, 2);
   assert.match(rows[0]!.textContent!, /September 2026/);
@@ -104,7 +107,7 @@ it('lists every month with what it holds and downloads its ZIP', async () => {
   await act(async () => zip.click());
   await flush();
   assert.ok(requested.includes('/projects/FIN/receipts/export?month=2026-09'));
-  assert.deepEqual(saves, ['Helena-Belege_FIN_2026-09.zip']);
+  assert.deepEqual(saves, ['Atlas-Belege_FIN_2026-09.zip']);
 });
 
 it('offers the upload when there is nothing to export yet', async () => {
