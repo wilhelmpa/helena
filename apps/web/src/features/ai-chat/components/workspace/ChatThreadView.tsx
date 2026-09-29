@@ -22,7 +22,13 @@ import ChatComposer from '@/components/helena/Composer';
 import ChatNewChatIntro from './ChatNewChatIntro';
 import { HomeChatActivityCards, HomeChatHero, HomeChatMasthead } from './HomeChatLanding';
 import ChatRestoreError from './ChatRestoreError';
-import { activeTool, composerActivity, pendingChoices } from '../../utils/composerActivity';
+import {
+  activeTool,
+  busyElsewhere,
+  composerActivity,
+  pendingChoices,
+} from '../../utils/composerActivity';
+import { agentDisplayName } from '../../utils/agentChip';
 import { useAutoSpeak } from '../../hooks/useAutoSpeak';
 import { messageText } from '../../utils/chatMessages';
 import { speak } from '@/features/voice/browser/speak';
@@ -189,9 +195,11 @@ export default function ChatThreadView({
     },
     onProblem: reportVoice,
   });
+  // This chat's own state only: what the agent does elsewhere (other chats, runs, the load
+  // of the local model) never moves this orb (owner, 28.09.).
   const orbStatus = useAgentStatus(agent.id, {
     chatId: threadId,
-    run: empty ? state?.label : undefined,
+    run: null,
     chat: activity === 'answered' && recentDoneId !== lastMessageId ? null : activity,
     voicePhase: conversation.phase,
     tool,
@@ -320,6 +328,11 @@ export default function ChatThreadView({
             </div>
           )}
         </div>
+        {busyElsewhere(activity, state?.label) && (
+          <p className="ds-chat-busy-note" role="status">
+            {t('composer.busyElsewhere', { agent: agentDisplayName(agent) })}
+          </p>
+        )}
         <ChatComposer
           homeLanding={homeLanding}
           scopeKey={scopeKey}

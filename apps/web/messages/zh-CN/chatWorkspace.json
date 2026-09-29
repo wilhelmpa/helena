@@ -136,7 +136,8 @@
     "autoSpeakOn": "正在朗读回答——点击关闭",
     "queuedList": "等待发送",
     "localModel": "{name}（本地）",
-    "fallbackModel": "备用：{name}"
+    "fallbackModel": "备用：{name}",
+    "busyElsewhere": "{agent} 正在处理其他事情——回复可能需要一些时间。"
   },
   "artifact": {
     "title": "产物",

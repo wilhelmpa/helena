@@ -136,7 +136,8 @@
     "autoSpeakOn": "Answers are read aloud – click to turn off",
     "queuedList": "Waiting to send",
     "localModel": "{name} (local)",
-    "fallbackModel": "Fallback: {name}"
+    "fallbackModel": "Fallback: {name}",
+    "busyElsewhere": "{agent} is working on something else right now – an answer may take a while."
   },
   "artifact": {
     "title": "Artifact",

@@ -136,7 +136,8 @@
     "autoSpeakOn": "Відповіді зачитуються вголос — натисніть, щоб вимкнути",
     "queuedList": "Очікують надсилання",
     "localModel": "{name} (локально)",
-    "fallbackModel": "Резерв: {name}"
+    "fallbackModel": "Резерв: {name}",
+    "busyElsewhere": "{agent} зараз зайнятий іншим – відповідь може забрати час."
   },
   "artifact": {
     "title": "Артефакт",

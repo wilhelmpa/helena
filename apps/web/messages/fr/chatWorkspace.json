@@ -136,7 +136,8 @@
     "autoSpeakOn": "Les réponses sont lues à voix haute – cliquez pour désactiver",
     "queuedList": "En attente d’envoi",
     "localModel": "{name} (local)",
-    "fallbackModel": "Repli : {name}"
+    "fallbackModel": "Repli : {name}",
+    "busyElsewhere": "{agent} travaille sur autre chose en ce moment – la réponse peut prendre un peu de temps."
   },
   "artifact": {
     "title": "Artefact",

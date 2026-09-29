@@ -136,7 +136,8 @@
     "autoSpeakOn": "Jawaban dibacakan – klik untuk mematikan",
     "queuedList": "Menunggu dikirim",
     "localModel": "{name} (lokal)",
-    "fallbackModel": "Cadangan: {name}"
+    "fallbackModel": "Cadangan: {name}",
+    "busyElsewhere": "{agent} sedang mengerjakan hal lain – jawaban mungkin perlu waktu."
   },
   "artifact": {
     "title": "Artefak",

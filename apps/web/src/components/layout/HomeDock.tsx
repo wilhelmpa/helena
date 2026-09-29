@@ -5,6 +5,7 @@ import { useEffect, useRef } from 'react';
 import { useTranslations } from 'next-intl';
 import { Orb } from '@/design-system';
 import { useAgentStatus } from '@/utils/helenaStatus';
+import { useAgentWorkStates } from '@/hooks/useAgentWorkStates';
 import { useChatWorkspaceScope } from '@/features/ai-chat/hooks/useChatWorkspaceScope';
 import { requestDockVoice } from '@/features/voice/utils/dockVoice';
 
@@ -16,7 +17,12 @@ export default function HomeDock({ open, onOpen }: { open: boolean; onOpen: () =
   const pathname = usePathname();
   const t = useTranslations('nav');
   const home = useChatWorkspaceScope(null);
-  const status = useAgentStatus(home.agents[0]?.id ?? 0);
+  const homeId = home.agents[0]?.id ?? 0;
+  // The dock stands for the Home chat: its orb rests while Helena works elsewhere (other
+  // chats, runs, the local model busy for others — owner, 28.09.) and only asks for the owner
+  // when a run of hers waits for him.
+  const waiting = useAgentWorkStates().get(homeId) === 'waiting';
+  const status = useAgentStatus(homeId, { run: waiting ? 'waiting' : null });
   const hold = useRef<ReturnType<typeof setTimeout> | null>(null);
   const clearHold = () => {
     if (hold.current) clearTimeout(hold.current);

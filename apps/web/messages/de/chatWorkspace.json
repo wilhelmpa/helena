@@ -136,7 +136,8 @@
     "autoSpeakOn": "Antworten werden vorgelesen – zum Ausschalten klicken",
     "queuedList": "Wartet auf das Senden",
     "localModel": "{name} (lokal)",
-    "fallbackModel": "Rückfall: {name}"
+    "fallbackModel": "Rückfall: {name}",
+    "busyElsewhere": "{agent} arbeitet gerade an anderer Stelle – eine Antwort kann etwas dauern."
   },
   "artifact": {
     "title": "Artefakt",

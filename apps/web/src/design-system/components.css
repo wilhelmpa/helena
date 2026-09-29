@@ -2597,3 +2597,13 @@ a.ds-run-card:hover {
   color: var(--text-3);
   font-size: 12px;
 }
+
+/* The quiet note that the chat's agent works elsewhere (its orb stays with this chat). */
+.ds-chat-busy-note {
+  margin: 0 auto;
+  width: 100%;
+  max-width: 48rem;
+  padding: 0 var(--space-4) var(--space-1);
+  color: var(--text-3);
+  font-size: 12px;
+}

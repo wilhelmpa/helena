@@ -93,3 +93,14 @@ export function pendingChoices(messages: PlanUIMessage[]): PendingChoices | null
     choices: choices.slice(0, 6),
   };
 }
+
+// The agent works at something else (another chat, a run, a heartbeat) while this chat rests:
+// said once, quietly, beside the composer — never by this chat's orb, which shows only this
+// chat (owner, 28.09.: the orb looked busy whenever the local model worked elsewhere).
+export function busyElsewhere(
+  activity: ComposerActivity,
+  agentWork: string | null | undefined,
+): boolean {
+  if (agentWork !== 'running') return false;
+  return ['idle', 'answered', 'stopped', 'failed', 'lost'].includes(activity);
+}

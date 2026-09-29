@@ -136,7 +136,8 @@
     "autoSpeakOn": "تُقرأ الإجابات بصوت عالٍ – انقر للإيقاف",
     "queuedList": "بانتظار الإرسال",
     "localModel": "{name} (محلي)",
-    "fallbackModel": "البديل: {name}"
+    "fallbackModel": "البديل: {name}",
+    "busyElsewhere": "{agent} يعمل الآن على شيء آخر – قد يستغرق الرد بعض الوقت."
   },
   "artifact": {
     "title": "المُصنَّع",
