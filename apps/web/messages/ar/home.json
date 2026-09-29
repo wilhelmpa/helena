@@ -26,7 +26,8 @@
     "running": "قيد التشغيل الآن",
     "finished": "أُنجز مؤخرًا",
     "schedules": "التالي",
-    "projects": "المشاريع"
+    "projects": "المشاريع",
+    "budgets": "الميزانيات"
   },
   "figures": {
     "problems": "{count, plural, zero {لا مشكلات} one {مشكلة واحدة} two {مشكلتان} few {# مشكلات} many {# مشكلة} other {# مشكلة}}",
@@ -72,7 +73,12 @@
     "empty": "لا شيء مجدول."
   },
   "projects": {
-    "empty": "لا مشاريع بعد."
+    "empty": "لا مشاريع بعد.",
+    "open": "{count, plural, =0 {لا مهام مفتوحة} one {مهمة مفتوحة واحدة} two {مهمتان مفتوحتان} few {# مهام مفتوحة} many {# مهمة مفتوحة} other {# مهمة مفتوحة}}",
+    "working": "{count, plural, one {وكيل واحد يعمل} two {وكيلان يعملان} few {# وكلاء يعملون} many {# وكيلًا يعملون} other {# وكيل يعملون}}",
+    "setupFailed": "فشل الإعداد",
+    "budgetStopped": "متوقف",
+    "budgetThrottled": "مُبطَّأ"
   },
   "system": {
     "title": "النظام",
@@ -91,6 +97,18 @@
       "raidOk": "RAID سليم",
       "backup": "نسخة احتياطية قبل {at}",
       "cpu": "المعالج {temperature}"
+    }
+  },
+  "budgets": {
+    "title": "الميزانيات",
+    "ok": "ضمن الحد",
+    "allWithin": "لا توجد ميزانية تبطئ العمل أو توقفه",
+    "summaryStopped": "{stopped} متوقف · {names}",
+    "summaryThrottled": "مُبطَّأ · {names}",
+    "stopped": {
+      "project": "نفدت الميزانية: {name} يوقف عمله",
+      "agent": "نفدت الميزانية: {name} متوقف مؤقتًا",
+      "department": "نفدت الميزانية: القسم {name} يوقف عمله"
     }
   }
 }

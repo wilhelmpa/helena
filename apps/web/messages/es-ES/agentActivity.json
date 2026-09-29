@@ -27,7 +27,8 @@
     "delegation": "Delegación",
     "field": "Disparador de campo",
     "schedule": "Programación",
-    "manual": "Manual"
+    "manual": "Manual",
+    "heartbeat": "Latido"
   },
   "maxTurns": "{count, plural, one {Como máximo # turno} other {Como máximo # turnos}}",
   "runBudget": "{minutes, plural, one {Límite de # minuto} other {Límite de # minutos}}",
@@ -44,5 +45,12 @@
   "allStatuses": "Todos los estados",
   "statusRunning": "En curso",
   "noneRunning": "Ahora no hay nada en curso.",
-  "noneRunningHint": "Pon el estado en «Todos los estados» para ver todo el historial."
+  "noneRunningHint": "Pon el estado en «Todos los estados» para ver todo el historial.",
+  "idleHeartbeats": "{count, plural, one {# latido sin resultado} other {# latidos sin resultado}}",
+  "between": "{from} – {to}",
+  "show": "Mostrar",
+  "hide": "Ocultar",
+  "filterHeartbeats": "Latidos",
+  "heartbeatsBundled": "Latidos vacíos agrupados",
+  "heartbeatsAll": "Todos los latidos"
 }

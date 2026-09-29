@@ -1,11 +1,9 @@
 'use client';
 
-import { Activity, Brush } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import { useSession } from '@/lib/auth-client';
 import { formatDurationShort } from '@/utils/dates';
-import { SectionLabel } from '@/components/common/page/RowList';
 import { useSystemHealthQuery } from '../../services/systemHealth.service';
 import { healthProblems } from '../../utils/systemHealth';
 import HomeAgentSync from './HomeAgentSync';
@@ -16,7 +14,7 @@ import HomeServiceState from './HomeServiceState';
 import LimitsHealthLines from '@/features/provider-limits/components/LimitsHealthLines';
 import ModelAvailabilityHealthLines from '@/features/model-availability/components/ModelAvailabilityHealthLines';
 import ServerHealthLines from '@/features/server/components/ServerHealthLines';
-import { Box, Stack } from '@/design-system';
+import { Box, Card, Grid, Stack } from '@/design-system';
 
 // The instance owner's view of the services around Helena (Start → System, in a dialog) — the Hermes runner, the
 // Helena engine (workflows, agent teams, routines), the provisioning service and the
@@ -44,18 +42,19 @@ export default function HomeSystemHealth() {
   );
 
   return (
-    <section className="@container grid min-w-0 grid-cols-1 gap-x-6 gap-y-4">
-      <div className="grid min-w-0 grid-cols-1 gap-x-6 gap-y-4 @2xl:grid-cols-2">
-        <div className="min-w-0">
-          <SectionLabel icon={<Activity />}>{t('title')}</SectionLabel>
-          <Box as="ul" pad={1} className="grid grid-cols-1 rounded-md border bg-card">
+    // Two cards side by side (owner, O8: the system page was a list of text without cards):
+    // the services with everything that depends on them, and the maintenance loops.
+    <Grid split gap={4}>
+      <Card title={t('title')}>
+        <Stack gap={3}>
+          <ul>
             {data.services.map((health) => (
               <HomeServiceState key={health.service} health={health} />
             ))}
-          </Box>
+          </ul>
           <HomeEngineState engine={data.engine} />
           {problems.length > 0 && (
-            <Stack as="ul" gap={1} marginTop={1} padX={2} className="text-xs text-status-waiting">
+            <Stack as="ul" gap={1} className="text-status-waiting">
               {problems.map((problem) => (
                 <li key={problem}>{problem}</li>
               ))}
@@ -70,16 +69,15 @@ export default function HomeSystemHealth() {
               <HomeAgentSync summary={data.agents} />
             </Box>
           )}
-        </div>
-        <div className="min-w-0">
-          <SectionLabel icon={<Brush />}>{t('janitorsTitle')}</SectionLabel>
-          <Box as="ul" pad={1} className="grid grid-cols-1 rounded-md border bg-card">
-            {data.janitors.map((health) => (
-              <HomeJanitorState key={health.job} health={health} />
-            ))}
-          </Box>
-        </div>
-      </div>
-    </section>
+        </Stack>
+      </Card>
+      <Card title={t('janitorsTitle')}>
+        <ul>
+          {data.janitors.map((health) => (
+            <HomeJanitorState key={health.job} health={health} />
+          ))}
+        </ul>
+      </Card>
+    </Grid>
   );
 }

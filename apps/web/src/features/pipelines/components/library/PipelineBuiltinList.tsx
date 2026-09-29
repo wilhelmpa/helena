@@ -1,16 +1,16 @@
 'use client';
 
-import { Plus } from 'lucide-react';
+import { Fragment } from 'react';
+import { ArrowRight, Plus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
-import { SectionLabel } from '@/components/common/page/RowList';
-import { Button } from '@/components/ui/button';
 import { useBuiltinPipelines, useCreatePipelineTemplate } from '@/services/pipelines.service';
 import { useNewPipeline } from '../../hooks/useNewPipeline';
-import { Stack, Text } from '@/design-system';
+import { flowSummary } from '../../utils/flowSummary';
+import { Button, Card, Grid, Inline, Pill, Section, Stack, Text } from '@/design-system';
 
-// The templates Helena ships. Adding one copies it into the library with its names in
-// the reader's language.
+// The templates Helena ships, as examples: what starts one, its steps in order, and the
+// button that copies it into the library in the reader's language (owner, O25).
 export default function PipelineBuiltinList({
   teamId,
   canCreate,
@@ -19,51 +19,62 @@ export default function PipelineBuiltinList({
   canCreate: boolean;
 }) {
   const t = useTranslations('pipelines.library');
+  const tTriggers = useTranslations('pipelines.triggers');
   const builtins = useBuiltinPipelines(teamId);
   const create = useCreatePipelineTemplate(teamId);
   const { builtin } = useNewPipeline();
   if (!builtins.data?.length) return null;
 
   return (
-    <section className="min-w-0">
-      <SectionLabel>{t('builtins')}</SectionLabel>
-      <ul className="grid gap-2 md:grid-cols-2">
+    <Section title={t('builtins')} description={t('builtinsHint')}>
+      <Grid columns={2} gap={3}>
         {builtins.data.map((template) => {
           const input = builtin(template);
+          const flow = flowSummary(input.definition);
           return (
-            <Stack
-              as="li"
-              gap={2}
-              padX={3}
-              padY={3}
+            <Card
               key={template.key}
-              className="rounded-md border bg-card"
+              title={<span dir="auto">{input.name}</span>}
+              meta={t('startsWhen', { trigger: tTriggers(input.definition.trigger.type as 'manual') })}
             >
-              <Text as="p" size="md" className="font-medium" dir="auto">
-                {input.name}
-              </Text>
-              <Text as="p" size="sm" tone="muted" className="flex-1" dir="auto">
-                {input.description}
-              </Text>
-              {canCreate && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="mt-1 self-start"
-                  disabled={create.isPending}
-                  onClick={() =>
-                    create.mutate(input, {
-                      onSuccess: (created) => toast.success(t('added', { name: created.name })),
-                    })
-                  }
-                >
-                  <Plus /> {t('addToLibrary')}
-                </Button>
-              )}
-            </Stack>
+              <Stack gap={3}>
+                <Text size="sm" tone="muted" dir="auto">
+                  {input.description}
+                </Text>
+                <Inline gap={1} wrap aria-label={t('stepsLabel')}>
+                  {flow.names.map((name, index) => (
+                    <Fragment key={`${name}-${index}`}>
+                      {index > 0 && (
+                        <Text tone="faint">
+                          <ArrowRight size={12} aria-hidden="true" />
+                        </Text>
+                      )}
+                      <Pill>{name}</Pill>
+                    </Fragment>
+                  ))}
+                  {flow.more > 0 && <Pill>{t('moreSteps', { count: flow.more })}</Pill>}
+                </Inline>
+                {canCreate && (
+                  <Inline>
+                    <Button
+                      size="small"
+                      icon={<Plus size={14} />}
+                      disabled={create.isPending}
+                      onClick={() =>
+                        create.mutate(input, {
+                          onSuccess: (created) => toast.success(t('added', { name: created.name })),
+                        })
+                      }
+                    >
+                      {t('addToLibrary')}
+                    </Button>
+                  </Inline>
+                )}
+              </Stack>
+            </Card>
           );
         })}
-      </ul>
-    </section>
+      </Grid>
+    </Section>
   );
 }

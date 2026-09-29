@@ -27,7 +27,8 @@
     "delegation": "Delegation",
     "field": "Field trigger",
     "schedule": "Schedule",
-    "manual": "Manual"
+    "manual": "Manual",
+    "heartbeat": "Heartbeat"
   },
   "maxTurns": "{count, plural, one {At most # turn} other {At most # turns}}",
   "runBudget": "{minutes, plural, one {Budget # minute} other {Budget # minutes}}",
@@ -44,5 +45,12 @@
   "allStatuses": "All states",
   "statusRunning": "Running now",
   "noneRunning": "Nothing is running right now.",
-  "noneRunningHint": "Set the state to “All states” to see the whole history."
+  "noneRunningHint": "Set the state to “All states” to see the whole history.",
+  "idleHeartbeats": "{count, plural, one {# heartbeat without result} other {# heartbeats without result}}",
+  "between": "{from} – {to}",
+  "show": "Show",
+  "hide": "Hide",
+  "filterHeartbeats": "Heartbeats",
+  "heartbeatsBundled": "Idle heartbeats bundled",
+  "heartbeatsAll": "Every heartbeat"
 }

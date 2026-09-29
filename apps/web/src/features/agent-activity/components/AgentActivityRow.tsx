@@ -32,7 +32,7 @@ const STATUSES = [
   'skipped',
 ] as const;
 
-const TRIGGERS = ['mention', 'delegation', 'field', 'schedule', 'manual'] as const;
+const TRIGGERS = ['mention', 'delegation', 'field', 'schedule', 'manual', 'heartbeat'] as const;
 
 function isOneOf<T extends string>(values: readonly T[], value: string | null): value is T {
   return value != null && (values as readonly string[]).includes(value);

@@ -71,7 +71,8 @@
     "created": "Creó <task>{identifier}</task>",
     "reopened": "Reabrió <task>{identifier}</task>",
     "skipped": "Omitida: <task>{identifier}</task> sigue abierta",
-    "missed": "Omitida: empezó demasiado tarde"
+    "missed": "Omitida: empezó demasiado tarde",
+    "noWork": "Omitido: nada nuevo que hacer"
   },
   "moreActions": "Más acciones",
   "runNow": "Ejecutar ahora",

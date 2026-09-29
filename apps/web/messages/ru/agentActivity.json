@@ -27,7 +27,8 @@
     "delegation": "Делегирование",
     "field": "Триггер поля",
     "schedule": "Расписание",
-    "manual": "Вручную"
+    "manual": "Вручную",
+    "heartbeat": "Пульс"
   },
   "maxTurns": "{count, plural, one {Не более # хода} few {Не более # ходов} many {Не более # ходов} other {Не более # хода}}",
   "runBudget": "{minutes, plural, one {Лимит # минута} few {Лимит # минуты} many {Лимит # минут} other {Лимит # минуты}}",
@@ -44,5 +45,12 @@
   "allStatuses": "Все состояния",
   "statusRunning": "Выполняется",
   "noneRunning": "Сейчас ничего не выполняется.",
-  "noneRunningHint": "Выбери «Все состояния», чтобы увидеть всю историю."
+  "noneRunningHint": "Выбери «Все состояния», чтобы увидеть всю историю.",
+  "idleHeartbeats": "{count, plural, one {# пульс без результата} few {# пульса без результата} many {# пульсов без результата} other {# пульса без результата}}",
+  "between": "{from} – {to}",
+  "show": "Показать",
+  "hide": "Скрыть",
+  "filterHeartbeats": "Пульс",
+  "heartbeatsBundled": "Пустые пульсы сгруппированы",
+  "heartbeatsAll": "Все пульсы"
 }

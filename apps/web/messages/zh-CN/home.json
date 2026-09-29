@@ -26,7 +26,8 @@
     "running": "正在运行",
     "finished": "最近完成",
     "schedules": "即将执行",
-    "projects": "项目"
+    "projects": "项目",
+    "budgets": "预算"
   },
   "figures": {
     "problems": "{count} 个问题",
@@ -72,7 +73,12 @@
     "empty": "暂无计划。"
   },
   "projects": {
-    "empty": "还没有项目。"
+    "empty": "还没有项目。",
+    "open": "{count, plural, =0 {没有未完成任务} other {# 个未完成任务}}",
+    "working": "{count, plural, other {# 个代理在工作}}",
+    "setupFailed": "设置失败",
+    "budgetStopped": "已停止",
+    "budgetThrottled": "已限速"
   },
   "system": {
     "title": "系统",
@@ -91,6 +97,18 @@
       "raidOk": "RAID 正常",
       "backup": "{at}前备份",
       "cpu": "CPU {temperature}"
+    }
+  },
+  "budgets": {
+    "title": "预算",
+    "ok": "未超出",
+    "allWithin": "没有预算限制或停止工作",
+    "summaryStopped": "{stopped} 个已停止 · {names}",
+    "summaryThrottled": "已限速 · {names}",
+    "stopped": {
+      "project": "预算已用完：{name} 暂停工作",
+      "agent": "预算已用完：{name} 已暂停",
+      "department": "预算已用完：部门 {name} 暂停工作"
     }
   }
 }

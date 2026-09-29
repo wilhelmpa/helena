@@ -16,9 +16,15 @@ import {
   activityEntryHref as activityHref,
   runningActivityHref,
 } from '@/features/agent-activity/utils/runningLink';
+import { useSession } from '@/lib/auth-client';
+import '@/extensions/homeWidgets';
+import { useNeedsYou } from '@/features/home/dashboard/useNeedsYou';
+import { startCards } from '@/features/home/utils/startCards';
 import styles from './HomeChatLanding.module.css';
 
 const subscribe = () => () => {};
+// The start cards show only what cannot be hidden (problems and decisions).
+const NOTHING_HIDDEN: ReadonlySet<string> = new Set();
 
 function useHomeDate() {
   const locale = useLocale();
@@ -86,10 +92,10 @@ export function HomeChatActivityCards() {
   const t = useTranslations('homeChat');
   const tActivity = useTranslations('agentActivity');
   const activity = useHomeActiveActivity();
-  const items = activity.data?.items ?? [];
-  const running = items.filter((entry) => entry.project && HOME_ACTIVE_STATUSES.has(entry.status));
-  const finished = items.filter((entry) => entry.project && entry.status === 'success');
-  const cards = [...running, ...finished].slice(0, 3);
+  const { data: session } = useSession();
+  // "Braucht dich" first (owner, D): what waits for a decision or is red now, then the work.
+  const needs = useNeedsYou(NOTHING_HIDDEN, session?.user.role === 'god');
+  const cards = startCards(needs.items, activity.data?.items ?? []);
 
   return (
     <div className={styles.cards} aria-label={t('recent')}>
@@ -99,8 +105,36 @@ export function HomeChatActivityCards() {
           <span>{t('activity')}</span>
         </Link>
       ) : (
-        cards.map((entry) => {
-          const active = HOME_ACTIVE_STATUSES.has(entry.status);
+        cards.map((card) => {
+          if (card.kind === 'needs') {
+            const { entry } = card;
+            const accent =
+              entry.kind === 'problem' ? 'var(--status-danger)' : 'var(--status-waiting)';
+            const body = (
+              <>
+                <span className={styles.cardTag} style={{ color: accent }}>
+                  <span
+                    className={styles.cardDot}
+                    style={{ backgroundColor: accent, boxShadow: `0 0 8px ${accent}` }}
+                  />
+                  {t('needsYou')}
+                </span>
+                <span className={styles.cardTitle}>{entry.title}</span>
+                <span className={styles.cardMeta}>{entry.detail || entry.projectKey || ''}</span>
+              </>
+            );
+            return entry.href ? (
+              <Link key={entry.key} href={entry.href} className={styles.card}>
+                {body}
+              </Link>
+            ) : (
+              <button key={entry.key} type="button" className={styles.card} onClick={entry.onSelect}>
+                {body}
+              </button>
+            );
+          }
+          const { entry } = card;
+          const active = card.kind === 'running';
           const accent = projectColor(entry.project?.key ?? 'VOL');
           return (
             <Link key={entry.id} href={activityHref(entry)} className={styles.card}>

@@ -2,7 +2,9 @@
 
 import { useTranslations } from 'next-intl';
 import { SlidersHorizontal } from 'lucide-react';
-import { Fragment, useState, type ReactNode } from 'react';
+import { Fragment, useEffect, useState, type ReactNode } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { openSystemDetails } from './systemDetails';
 import { PageActions, PageToolbar } from '@/components/layout/PageToolbar';
 import type { DashboardWidget } from '@/extensions/dashboardWidgets';
 import { usePluginDashboardWidgets } from '@/extensions/pluginDashboardWidgets';
@@ -84,6 +86,18 @@ export default function HomeDashboard() {
   const dashboard = useHomeDashboard();
   const context = useHomeDashboardValue(dashboard);
   const { ready, figures, sections, prefs, save, owner } = dashboard;
+  // The old System page (/system) lands here with its overview open (owner, O8).
+  const params = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+  const wantsSystem = params.get('system') === '1';
+  useEffect(() => {
+    if (!wantsSystem || !owner) return;
+    openSystemDetails();
+    const next = new URLSearchParams(params.toString());
+    next.delete('system');
+    router.replace(next.size ? `${pathname}?${next}` : pathname, { scroll: false });
+  }, [wantsSystem, owner, params, pathname, router]);
   const render = (widget: DashboardWidget) =>
     ready ? <WidgetView widget={widget} /> : <WidgetPlaceholder widget={widget} />;
 

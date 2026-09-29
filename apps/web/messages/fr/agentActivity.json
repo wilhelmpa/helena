@@ -27,7 +27,8 @@
     "delegation": "Délégation",
     "field": "Déclencheur de champ",
     "schedule": "Planification",
-    "manual": "Manuel"
+    "manual": "Manuel",
+    "heartbeat": "Battement"
   },
   "maxTurns": "{count, plural, one {# tour au plus} other {# tours au plus}}",
   "runBudget": "{minutes, plural, one {Budget # minute} other {Budget # minutes}}",
@@ -44,5 +45,12 @@
   "allStatuses": "Tous les états",
   "statusRunning": "En cours",
   "noneRunning": "Rien n'est en cours pour l'instant.",
-  "noneRunningHint": "Choisis « Tous les états » pour voir tout l'historique."
+  "noneRunningHint": "Choisis « Tous les états » pour voir tout l'historique.",
+  "idleHeartbeats": "{count, plural, one {# battement sans résultat} other {# battements sans résultat}}",
+  "between": "{from} – {to}",
+  "show": "Afficher",
+  "hide": "Masquer",
+  "filterHeartbeats": "Battements",
+  "heartbeatsBundled": "Battements vides regroupés",
+  "heartbeatsAll": "Tous les battements"
 }

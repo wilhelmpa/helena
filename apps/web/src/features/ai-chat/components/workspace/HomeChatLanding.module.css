@@ -131,6 +131,12 @@
   background: var(--surface-2);
 }
 
+/* A "Braucht dich" card that opens a dialog instead of a page. */
+button.card {
+  cursor: pointer;
+  text-align: start;
+}
+
 .cardTag {
   display: flex;
   align-items: center;

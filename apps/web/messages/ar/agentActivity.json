@@ -27,7 +27,8 @@
     "delegation": "تفويض",
     "field": "مشغّل حقل",
     "schedule": "جدولة",
-    "manual": "يدوي"
+    "manual": "يدوي",
+    "heartbeat": "نبضة"
   },
   "maxTurns": "{count, plural, zero {# جولة كحد أقصى} one {جولة واحدة كحد أقصى} two {جولتان كحد أقصى} few {# جولات كحد أقصى} many {# جولة كحد أقصى} other {# جولة كحد أقصى}}",
   "runBudget": "{minutes, plural, zero {مهلة # دقيقة} one {مهلة دقيقة واحدة} two {مهلة دقيقتين} few {مهلة # دقائق} many {مهلة # دقيقة} other {مهلة # دقيقة}}",
@@ -44,5 +45,12 @@
   "allStatuses": "كل الحالات",
   "statusRunning": "قيد التشغيل الآن",
   "noneRunning": "لا شيء قيد التشغيل الآن.",
-  "noneRunningHint": "اضبط الحالة على «كل الحالات» لعرض السجل كاملًا."
+  "noneRunningHint": "اضبط الحالة على «كل الحالات» لعرض السجل كاملًا.",
+  "idleHeartbeats": "{count, plural, one {نبضة واحدة بلا نتيجة} two {نبضتان بلا نتيجة} few {# نبضات بلا نتيجة} many {# نبضة بلا نتيجة} other {# نبضة بلا نتيجة}}",
+  "between": "{from} – {to}",
+  "show": "عرض",
+  "hide": "إخفاء",
+  "filterHeartbeats": "النبضات",
+  "heartbeatsBundled": "النبضات الفارغة مجمّعة",
+  "heartbeatsAll": "كل النبضات"
 }

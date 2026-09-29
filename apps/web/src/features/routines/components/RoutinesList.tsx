@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import type { ProjectDetail } from '@/lib/api/endpoints/projects';
@@ -59,6 +60,21 @@ export function RoutinesList({
     scope: revScope.controlPlane(project.project.id),
     targets: [qk.routines(projectKey)],
   });
+
+  // A link from Helena's list of every schedule (owner, O24) opens the one it names for
+  // editing: `?edit=<id>`, dropped from the address once it is open.
+  const params = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+  const editId = params.get('edit');
+  useEffect(() => {
+    if (!editId || routinesQuery.isLoading) return;
+    const routine = routines.find((item) => item.id === editId);
+    if (routine) queueMicrotask(() => setEditing(routine));
+    const next = new URLSearchParams(params.toString());
+    next.delete('edit');
+    router.replace(next.size ? `${pathname}?${next}` : pathname, { scroll: false });
+  }, [editId, routines, routinesQuery.isLoading, params, pathname, router]);
 
   // The "New schedule" button lives in the page header; opening is signalled here.
   useEffect(() => {

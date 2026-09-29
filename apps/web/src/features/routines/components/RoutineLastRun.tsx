@@ -61,7 +61,9 @@ export function RoutineLastRun({
   const outcome =
     run.skipReason === 'missed'
       ? t('outcome.missed')
-      : run.outcome && identifier
+      : run.skipReason === 'no-work'
+        ? t('outcome.noWork')
+        : run.outcome && identifier
         ? t.rich(`outcome.${run.outcome}`, { identifier, task })
         : null;
   return (

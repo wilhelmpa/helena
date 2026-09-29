@@ -27,7 +27,8 @@
     "delegation": "委派",
     "field": "字段触发",
     "schedule": "计划",
-    "manual": "手动"
+    "manual": "手动",
+    "heartbeat": "心跳"
   },
   "maxTurns": "{count, plural, other {最多 # 轮}}",
   "runBudget": "{minutes, plural, other {限时 # 分钟}}",
@@ -44,5 +45,12 @@
   "allStatuses": "所有状态",
   "statusRunning": "正在运行",
   "noneRunning": "当前没有正在运行的内容。",
-  "noneRunningHint": "将状态设为“所有状态”即可查看全部记录。"
+  "noneRunningHint": "将状态设为“所有状态”即可查看全部记录。",
+  "idleHeartbeats": "{count, plural, other {# 次无结果的心跳}}",
+  "between": "{from} – {to}",
+  "show": "显示",
+  "hide": "隐藏",
+  "filterHeartbeats": "心跳",
+  "heartbeatsBundled": "空心跳已合并",
+  "heartbeatsAll": "所有心跳"
 }

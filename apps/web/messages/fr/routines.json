@@ -71,7 +71,8 @@
     "created": "A créé <task>{identifier}</task>",
     "reopened": "A rouvert <task>{identifier}</task>",
     "skipped": "Ignorée : <task>{identifier}</task> est encore ouverte",
-    "missed": "Ignorée : démarrée trop tard"
+    "missed": "Ignorée : démarrée trop tard",
+    "noWork": "Ignoré : rien de nouveau à faire"
   },
   "moreActions": "Plus d'actions",
   "runNow": "Exécuter maintenant",

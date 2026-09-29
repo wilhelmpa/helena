@@ -27,7 +27,8 @@
     "delegation": "Delegierung",
     "field": "Feld-Auslöser",
     "schedule": "Zeitplan",
-    "manual": "Manuell"
+    "manual": "Manuell",
+    "heartbeat": "Herzschlag"
   },
   "maxTurns": "{count, plural, one {Höchstens # Runde} other {Höchstens # Runden}}",
   "runBudget": "{minutes, plural, one {Budget # Minute} other {Budget # Minuten}}",
@@ -44,5 +45,12 @@
   "allStatuses": "Alle Zustände",
   "statusRunning": "Läuft gerade",
   "noneRunning": "Gerade läuft nichts.",
-  "noneRunningHint": "Stell den Zustand auf „Alle Zustände“, um den ganzen Verlauf zu sehen."
+  "noneRunningHint": "Stell den Zustand auf „Alle Zustände“, um den ganzen Verlauf zu sehen.",
+  "idleHeartbeats": "{count, plural, one {# Herzschlag ohne Ergebnis} other {# Herzschläge ohne Ergebnis}}",
+  "between": "{from} – {to}",
+  "show": "Anzeigen",
+  "hide": "Ausblenden",
+  "filterHeartbeats": "Herzschläge",
+  "heartbeatsBundled": "Leere Herzschläge gebündelt",
+  "heartbeatsAll": "Alle Herzschläge"
 }

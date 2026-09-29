@@ -15,6 +15,7 @@ import { pipelinePath } from '@/utils/paths';
 import { useNewPipeline } from '../../hooks/useNewPipeline';
 import PipelineBuiltinList from './PipelineBuiltinList';
 import PipelineTemplateList from './PipelineTemplateList';
+import AutomationKinds from './AutomationKinds';
 import { Stack, Text } from '@/design-system';
 
 // The team's library of workflow templates: its own templates, then the ones Helena
@@ -48,7 +49,8 @@ export default function PipelineLibrary({ teamId }: { teamId: number }) {
       ) : !permissions.read ? (
         <EmptyState title={t('noAccessTitle')} description={t('noAccess')} />
       ) : (
-        <Stack gap={5}>
+        <Stack gap={6}>
+          <AutomationKinds />
           <PipelineTemplateList teamId={teamId} canDelete={permissions.delete} />
           <PipelineBuiltinList teamId={teamId} canCreate={permissions.create} />
           {!permissions.create && (

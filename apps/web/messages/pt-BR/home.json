@@ -26,7 +26,8 @@
     "running": "Em andamento",
     "finished": "Concluídos recentemente",
     "schedules": "A seguir",
-    "projects": "Projetos"
+    "projects": "Projetos",
+    "budgets": "Orçamentos"
   },
   "figures": {
     "problems": "{count, plural, one {# problema} other {# problemas}}",
@@ -72,7 +73,12 @@
     "empty": "Nada agendado."
   },
   "projects": {
-    "empty": "Ainda não há projetos."
+    "empty": "Ainda não há projetos.",
+    "open": "{count, plural, =0 {Nenhuma tarefa aberta} one {# tarefa aberta} other {# tarefas abertas}}",
+    "working": "{count, plural, one {# agente trabalhando} other {# agentes trabalhando}}",
+    "setupFailed": "Configuração falhou",
+    "budgetStopped": "Parado",
+    "budgetThrottled": "Freado"
   },
   "system": {
     "title": "Sistema",
@@ -91,6 +97,18 @@
       "raidOk": "RAID ok",
       "backup": "backup há {at}",
       "cpu": "CPU {temperature}"
+    }
+  },
+  "budgets": {
+    "title": "Orçamentos",
+    "ok": "Dentro",
+    "allWithin": "Nenhum orçamento freia ou para o trabalho",
+    "summaryStopped": "{stopped} parado(s) · {names}",
+    "summaryThrottled": "Freado · {names}",
+    "stopped": {
+      "project": "Orçamento esgotado: {name} segura o trabalho",
+      "agent": "Orçamento esgotado: {name} está pausado",
+      "department": "Orçamento esgotado: o departamento {name} segura o trabalho"
     }
   }
 }

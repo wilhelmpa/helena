@@ -1,4 +1,4 @@
-import { Activity, Bot, ListFilter } from 'lucide-react';
+import { Activity, Bot, HeartPulse, ListFilter } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { AiAgent } from '@/lib/api/endpoints/agents';
 import type {
@@ -19,6 +19,8 @@ export default function AgentActivityToolbar({
   onChange,
   running,
   onRunning,
+  allHeartbeats,
+  onAllHeartbeats,
   agents,
 }: {
   filters: Filters;
@@ -26,6 +28,9 @@ export default function AgentActivityToolbar({
   // Only entries still at work (?status=running).
   running: boolean;
   onRunning: (running: boolean) => void;
+  // Heartbeats without a result one by one instead of bundled.
+  allHeartbeats: boolean;
+  onAllHeartbeats: (all: boolean) => void;
   agents: AiAgent[];
 }) {
   const t = useTranslations('agentActivity');
@@ -55,6 +60,17 @@ export default function AgentActivityToolbar({
         options={[
           { value: ANY, label: t('allKinds') },
           ...KINDS.map((kind) => ({ value: kind, label: t(`kinds.${kind}`) })),
+        ]}
+      />
+      <PageSelect<string>
+        label={t('filterHeartbeats')}
+        icon={HeartPulse}
+        value={allHeartbeats ? 'all' : 'bundled'}
+        defaultValue="bundled"
+        onChange={(value) => onAllHeartbeats(value === 'all')}
+        options={[
+          { value: 'bundled', label: t('heartbeatsBundled') },
+          { value: 'all', label: t('heartbeatsAll') },
         ]}
       />
       {agents.length > 0 && (

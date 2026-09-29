@@ -11,6 +11,8 @@ import { useAgentActivityFeed } from '../services/agentActivity.service';
 import AgentActivityToolbar from './AgentActivityToolbar';
 import AgentActivityLiveRefresh from './AgentActivityLiveRefresh';
 import AgentActivityRow from './AgentActivityRow';
+import AgentActivityHeartbeatBundle from './AgentActivityHeartbeatBundle';
+import { bundleIdleHeartbeats } from '../utils/heartbeatBundles';
 import { ACTIVE_ACTIVITY_STATUSES } from '../utils/runningLink';
 import { Stack } from '@/design-system';
 
@@ -54,6 +56,18 @@ export default function AgentActivityTimeline({
   const items = pages
     .flatMap((page) => page.items)
     .filter((entry) => !running || ACTIVE_ACTIVITY_STATUSES.has(entry.status));
+  // Heartbeats that found nothing to do are bundled unless ?heartbeats=all (owner, I).
+  const allHeartbeats = searchParams.get('heartbeats') === 'all';
+  const timeline = allHeartbeats
+    ? items.map((entry) => ({ kind: 'entry' as const, entry }))
+    : bundleIdleHeartbeats(items);
+  const setAllHeartbeats = (next: boolean) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (next) params.set('heartbeats', 'all');
+    else params.delete('heartbeats');
+    const query = params.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+  };
 
   const setFilters = (next: Filters, nextRunning = running) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -77,6 +91,8 @@ export default function AgentActivityTimeline({
         onChange={setFilters}
         running={running}
         onRunning={(next) => setFilters(filters, next)}
+        allHeartbeats={allHeartbeats}
+        onAllHeartbeats={setAllHeartbeats}
         agents={agents}
       />
       {feed.isPending ? (
@@ -94,9 +110,22 @@ export default function AgentActivityTimeline({
         />
       ) : (
         <ol className="ds-activity-list">
-          {items.map((entry) => (
-            <AgentActivityRow key={entry.id} entry={entry} showProject={projectKey == null} />
-          ))}
+          {timeline.map((item) =>
+            item.kind === 'entry' ? (
+              <AgentActivityRow
+                key={item.entry.id}
+                entry={item.entry}
+                showProject={projectKey == null}
+              />
+            ) : (
+              <AgentActivityHeartbeatBundle
+                key={item.key}
+                agent={item.agent}
+                entries={item.entries}
+                showProject={projectKey == null}
+              />
+            ),
+          )}
         </ol>
       )}
       {feed.hasNextPage && (

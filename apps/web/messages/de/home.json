@@ -26,7 +26,8 @@
     "running": "Läuft gerade",
     "finished": "Zuletzt fertig",
     "schedules": "Als Nächstes",
-    "projects": "Projekte"
+    "projects": "Projekte",
+    "budgets": "Budgets"
   },
   "figures": {
     "problems": "{count, plural, one {# Problem} other {# Probleme}}",
@@ -72,7 +73,12 @@
     "empty": "Nichts geplant."
   },
   "projects": {
-    "empty": "Noch keine Projekte."
+    "empty": "Noch keine Projekte.",
+    "open": "{count, plural, =0 {Keine offenen Aufgaben} one {# offene Aufgabe} other {# offene Aufgaben}}",
+    "working": "{count, plural, one {# Agent arbeitet} other {# Agenten arbeiten}}",
+    "setupFailed": "Einrichtung fehlgeschlagen",
+    "budgetStopped": "Gestoppt",
+    "budgetThrottled": "Gedrosselt"
   },
   "system": {
     "title": "System",
@@ -91,6 +97,18 @@
       "raidOk": "RAID ok",
       "backup": "Backup vor {at}",
       "cpu": "CPU {temperature}"
+    }
+  },
+  "budgets": {
+    "title": "Budgets",
+    "ok": "Im Rahmen",
+    "allWithin": "Kein Budget bremst oder stoppt Arbeit",
+    "summaryStopped": "{stopped} gestoppt · {names}",
+    "summaryThrottled": "Gedrosselt · {names}",
+    "stopped": {
+      "project": "Budget aufgebraucht: {name} hält seine Arbeit an",
+      "agent": "Budget aufgebraucht: {name} ist pausiert",
+      "department": "Budget aufgebraucht: Abteilung {name} hält ihre Arbeit an"
     }
   }
 }
