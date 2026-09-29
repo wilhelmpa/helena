@@ -244,9 +244,9 @@ class HermesLoadsTheGuardTest(unittest.TestCase):
         self.assertEqual(result["git push --force origin main"], {"plugin": None, "hermes": True})
         self.assertIn("request_approval", result["git reset --hard"]["plugin"])
         self.assertTrue(result["git reset --hard"]["hermes"])
-        self.assertIsNone(result["rm -rf /"]["plugin"])
+        self.assertIn("request_approval", result["rm -rf /"]["plugin"])
         self.assertFalse(result["rm -rf /"]["hermes"])
-        self.assertIsNone(result["cronjob_manage"])
+        self.assertIn("request_approval", result["cronjob_manage"])
 
 
 if __name__ == "__main__":
