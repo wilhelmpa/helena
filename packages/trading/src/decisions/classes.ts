@@ -3,6 +3,7 @@ import { NEWS_EVAL } from './news';
 import { NEWS_QUESTIONS, ROUTING_QUESTIONS, ruleQuestion } from './questions';
 import { RULE_EVAL } from './rules';
 import { ROUTING_EVAL } from './routing';
+import { PAPER_PRECHECK_EVAL, TRADING_PRECHECK_CLASS } from './precheck';
 
 // The trading decision classes (docs/helena-decisions/trading.md §6), registered by the
 // internal plugin helena.trading at the framework's `decisionClasses` point. Like every
@@ -18,6 +19,13 @@ export const TRADING_RULES_CLASS = 'helena.trading.rules';
 export const TRADING_ROUTING_CLASS = 'helena.trading.routing';
 
 export const TRADING_DECISION_CLASSES: DecisionClass[] = [
+  {
+    id: TRADING_PRECHECK_CLASS,
+    label: { en: 'Paper order precheck', de: 'Paper-Order-Vorprüfung' },
+    input: { store: 'never', cloud: 'allowed' },
+    defaults: { threshold: 0.95, timeoutMs: 1500 },
+    eval: PAPER_PRECHECK_EVAL,
+  },
   {
     id: TRADING_NEWS_CLASS,
     label: { en: 'Trading: sort news', de: 'Trading: Nachrichten einordnen' },

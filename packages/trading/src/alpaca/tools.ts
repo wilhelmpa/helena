@@ -149,6 +149,7 @@ const checkSchema = z.object(orderFields);
 
 const submitSchema = z.object({
   ...orderFields,
+  newsContext: z.string().min(1).max(800).optional(),
   requestId: z
     .string()
     .uuid()
@@ -806,10 +807,59 @@ export function alpacaPaperTools(deps: PaperToolDeps = {}): AgentTool<unknown>[]
             at,
             open,
           );
-          if (!check.ok) return refusedOrder(check);
+          const precheck = await execution.precheck(ctx, {
+            requestId: request.requestId,
+            order: orderRequest(request),
+            check,
+            marketOpen: check.assetClass === 'us_equity' && (await client.clock()).is_open,
+            duplicate: open.some(
+              (order) =>
+                !terminalOrder(order) &&
+                normalizedSymbol(order.symbol) === normalizedSymbol(request.symbol) &&
+                order.side === request.side,
+            ),
+            rationale: request.rationale,
+            newsContext: request.newsContext,
+            strategyId: request.strategyId,
+            strategyVersion: request.strategyVersion,
+          });
+          if (!check.ok || !precheck.allowed)
+            return refusedOrder({
+              ...check,
+              ok: false,
+              violations: [...check.violations, ...(!precheck.allowed ? [precheck.reason] : [])],
+            });
+          const freshOpen = await reconciledOpenOrders(client, execution, accountId);
+          const freshCheck = await runChecks(
+            client,
+            ctx.credential ?? {},
+            orderRequest(request),
+            now(),
+            freshOpen,
+          );
+          if (!freshCheck.ok) return refusedOrder(freshCheck);
+          if (
+            freshOpen.some(
+              (order) =>
+                !terminalOrder(order) &&
+                normalizedSymbol(order.symbol) === normalizedSymbol(request.symbol) &&
+                order.side === request.side,
+            )
+          )
+            return refusedOrder({
+              ...freshCheck,
+              ok: false,
+              violations: ['A conflicting paper order appeared during the precheck.'],
+            });
+          if (freshCheck.assetClass === 'us_equity' && !(await client.clock()).is_open)
+            return refusedOrder({
+              ...freshCheck,
+              ok: false,
+              violations: ['The stock market closed during the precheck.'],
+            });
           await execution.authorizeStrategy(ctx, accountId, request);
           await execution.beginIntent(ctx, intent);
-          const order = await client.submit(alpacaOrder(request, check, intent.clientOrderId));
+          const order = await client.submit(alpacaOrder(request, freshCheck, intent.clientOrderId));
           if (order.client_order_id !== intent.clientOrderId || !order.id || !order.status)
             throw new Error(
               'The broker did not acknowledge the intended order. Reconcile this requestId before continuing.',
@@ -887,6 +937,7 @@ export function alpacaPaperTools(deps: PaperToolDeps = {}): AgentTool<unknown>[]
         symbol: symbolSchema,
         percentage: z.number().min(1).max(100).optional(),
         rationale: z.string().min(10).max(600),
+        newsContext: z.string().min(1).max(800).optional(),
       }),
       category: 'write',
       async handler(input: unknown, ctx: ToolCallContext) {
@@ -895,6 +946,7 @@ export function alpacaPaperTools(deps: PaperToolDeps = {}): AgentTool<unknown>[]
           symbol: string;
           percentage?: number;
           rationale: string;
+          newsContext?: string;
         };
         if (!z.string().uuid().safeParse(request.requestId).success)
           throw new Error('A close request needs a stable requestId.');
@@ -953,7 +1005,26 @@ export function alpacaPaperTools(deps: PaperToolDeps = {}): AgentTool<unknown>[]
             now(),
             remaining,
           );
-          if (!check.ok) return refusedOrder(check);
+          const precheck = await execution.precheck(ctx, {
+            requestId: request.requestId,
+            order: orderRequest,
+            check,
+            marketOpen: check.assetClass === 'us_equity' && (await client.clock()).is_open,
+            duplicate: remaining.some(
+              (order) =>
+                !terminalOrder(order) &&
+                normalizedSymbol(order.symbol) === normalizedSymbol(request.symbol) &&
+                order.side === 'sell',
+            ),
+            rationale: request.rationale,
+            newsContext: request.newsContext,
+          });
+          if (!check.ok || !precheck.allowed)
+            return refusedOrder({
+              ...check,
+              ok: false,
+              violations: [...check.violations, ...(!precheck.allowed ? [precheck.reason] : [])],
+            });
           if (check.assetClass === 'us_equity' && !(await client.clock()).is_open)
             throw new Error('The stock market is closed; the protective stop was left unchanged.');
           const stop = exits.find((order) => order.type === 'stop' || order.type === 'stop_limit');

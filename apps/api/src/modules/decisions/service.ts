@@ -471,6 +471,22 @@ function storedInput(
   return `${question.question}\n\n${contextText(request.context)}`.slice(0, 8000);
 }
 
+export async function recordDecisionAttempt(
+  request: DecideRequest,
+  connection: DecisionConnection,
+  result: AskResult | null,
+  message = 'Decision backend failed.',
+) {
+  const cls = decisionClass(request.classId);
+  if (!cls) throw new HttpError(404, 'Unknown decision class.');
+  const setting = await classSetting(request.teamId, cls.id);
+  const threshold = effectiveThreshold(cls, setting);
+  if (result) return record(request, cls, setting, connection, threshold, result, false, false);
+  const failed = emptyOutcome('error', request.questions, threshold, message);
+  await logFailure(request, cls, setting, threshold, connection, failed);
+  return failed;
+}
+
 async function record(
   request: DecideRequest,
   cls: DecisionClass,
@@ -479,6 +495,7 @@ async function record(
   threshold: number,
   result: AskResult,
   forceUnsure = false,
+  countUsage = true,
 ): Promise<DecideOutcome> {
   const { reply } = result;
   const cost = await costOf(connection, reply);
@@ -539,7 +556,7 @@ async function record(
       decisionId: rows.find((row) => row.questionId === id)?.id ?? null,
     };
   }
-  if (request.agentId) {
+  if (request.agentId && countUsage) {
     await recordUsage({
       agentId: request.agentId,
       projectId: request.projectId ?? null,

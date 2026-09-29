@@ -27,7 +27,7 @@ export async function dispatchTool(
   app: McpApp,
   tool: McpRouteTool,
   args: Record<string, unknown>,
-  credential: McpCredential,
+  credential: McpCredential | { kind: 'session'; cookie: string },
   opts: {
     agentRuntime?: string | null;
     agentUnit?: string | null;
@@ -69,6 +69,7 @@ export async function dispatchTool(
       ...(opts.messageId ? { 'x-volition-message': String(opts.messageId) } : {}),
       ...(opts.agentProject ? { [AGENT_PROJECT_HEADER]: opts.agentProject } : {}),
       ...(credential.kind === 'api-key' ? { 'x-api-key': credential.apiKey } : {}),
+      ...(credential.kind === 'session' ? { cookie: credential.cookie } : {}),
       // Marks this as an MCP call so guards enforce the per-project MCP toggle.
       ...(opts.viaMcpEndpoint ? { [MCP_LOOPBACK_HEADER]: '1' } : {}),
     },

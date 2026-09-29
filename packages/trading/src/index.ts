@@ -23,6 +23,7 @@ export * from './indicators';
 export * from './indicators/signal';
 export * from './decisions/questions';
 export * from './decisions/classes';
+export * from './decisions/precheck';
 export { NEWS_EVAL, NEWS_CASES } from './decisions/news';
 export { RULE_EVAL, RULE_CASES } from './decisions/rules';
 export { ROUTING_EVAL, ROUTING_CASES } from './decisions/routing';

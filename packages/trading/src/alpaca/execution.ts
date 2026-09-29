@@ -1,6 +1,19 @@
 import { createHash } from 'node:crypto';
 import type { ToolCallContext } from '@helena/sdk';
 import { AlpacaError, type AlpacaOrder, type AlpacaPaperClient } from './client';
+import type { CheckResult, OrderRequest } from './checks';
+
+export interface PaperPrecheck {
+  requestId: string;
+  order: OrderRequest;
+  check: CheckResult;
+  marketOpen: boolean;
+  duplicate: boolean;
+  rationale: string;
+  newsContext?: string;
+  strategyId?: string;
+  strategyVersion?: string;
+}
 
 export interface PaperIntent {
   accountId: string;
@@ -10,6 +23,10 @@ export interface PaperIntent {
 }
 
 export interface PaperExecution {
+  precheck(
+    ctx: ToolCallContext,
+    input: PaperPrecheck,
+  ): Promise<{ allowed: boolean; reason: string }>;
   withAccountLock<T>(ctx: ToolCallContext, accountId: string, work: () => Promise<T>): Promise<T>;
   findIntent(accountId: string, clientOrderId: string): Promise<PaperIntent | null>;
   activeIntents(accountId: string): Promise<PaperIntent[]>;

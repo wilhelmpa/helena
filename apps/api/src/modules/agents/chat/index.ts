@@ -75,6 +75,7 @@ import {
 } from './threads';
 import { resolveAttachments, resolvePageContext } from './attachments';
 import { maskForTeam } from '../credentials/env';
+import { avaCommandForRequest } from '#modules/decisions/ava-command';
 
 // Chatting with an external agent: the member's side (send a message, follow the
 // answer) and the runner's side (take the next answer to produce, report AG-UI events,
@@ -373,7 +374,7 @@ export const agentChatRoutes = new Elysia({ name: 'agent-chat', detail: { tags: 
   // has no project yet; the transcript itself is already keyed by agent and member.
   .post(
     '/teams/:teamId/ai-agents/:agentId/chat',
-    async ({ params, membership, body, user }) => {
+    async ({ params, membership, body, user, request }) => {
       const caller = requireUser(user);
       const agent = await requireTeamAgent(params.agentId, membership);
       if (agent.template) throw new HttpError(400, 'A template does not run');
@@ -381,6 +382,12 @@ export const agentChatRoutes = new Elysia({ name: 'agent-chat', detail: { tags: 
         throw new HttpError(403, 'This agent only takes tasks from its owner');
       }
       const sent = await sendMessage({
+        avaCommand: avaCommandForRequest(request, {
+          teamId: params.teamId,
+          agentId: params.agentId,
+          projectId: null,
+          projectKey: null,
+        }),
         agentId: params.agentId,
         userId: caller.id,
         projectId: null,
@@ -578,13 +585,19 @@ export const agentChatRoutes = new Elysia({ name: 'agent-chat', detail: { tags: 
 
   .post(
     '/projects/:projectKey/ai-agents/:agentId/chat',
-    async ({ params, project, body, user }) => {
+    async ({ params, project, body, user, request }) => {
       const caller = requireUser(user);
       const agent = await requireProjectAgent(params.agentId, project.id, caller.id);
       if (!isTriggerableBy(agent, caller.id)) {
         throw new HttpError(403, 'This agent only takes tasks from its owner');
       }
       const sent = await sendMessage({
+        avaCommand: avaCommandForRequest(request, {
+          teamId: project.teamId,
+          agentId: params.agentId,
+          projectId: project.id,
+          projectKey: project.key,
+        }),
         agentId: params.agentId,
         userId: caller.id,
         projectId: project.id,

@@ -291,6 +291,7 @@ function fakeAlpaca(
         account_blocked: false,
       });
     }
+    if (pathname === '/v2/clock') return json({ is_open: true });
     if (pathname === '/v2/positions') return json([]);
     if (pathname === '/v2/orders' && method === 'GET') return json(state.orders ?? []);
     if (pathname === '/v1beta1/news') return json({ news: state.news ?? [] });
@@ -350,6 +351,7 @@ function tool(fetchImpl: Fetch, name: string) {
     fetch: fetchImpl,
     now: () => new Date('2026-10-01T15:00:00Z'),
     execution: {
+      precheck: async () => ({ allowed: true, reason: 'synthetic pass' }),
       withAccountLock: (_ctx, _id, work) => work(),
       findIntent: async () => null,
       activeIntents: async () => [],

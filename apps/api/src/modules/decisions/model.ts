@@ -1,5 +1,20 @@
 import { t } from 'elysia';
 
+export const toolSelectionBody = t.Object({
+  chatMessageId: t.Optional(t.Integer({ minimum: 1 })),
+  projectKey: t.Optional(t.String({ maxLength: 80 })),
+  teamId: t.Optional(t.Integer({ minimum: 1 })),
+  prompt: t.String({ minLength: 1, maxLength: 4000 }),
+  tools: t.Array(
+    t.Object({
+      name: t.String({ minLength: 1, maxLength: 160 }),
+      description: t.String({ maxLength: 180 }),
+    }),
+    { minItems: 1, maxItems: 12 },
+  ),
+});
+export const ToolSelectionResponse = t.Object({ names: t.Nullable(t.Array(t.String())) });
+
 // Request and response shapes of the decisions routes (docs/helena-decisions/decisions.md §2).
 
 const Localized = t.Union([t.String(), t.Record(t.String(), t.String())]);
