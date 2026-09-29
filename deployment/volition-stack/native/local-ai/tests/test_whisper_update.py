@@ -77,7 +77,8 @@ class BuildTest(unittest.TestCase):
     def test_build_is_offline_unprivileged_and_cpu_bounded(self):
         command = update.build_command('/source', 'isolated-build')
         for prop in ('DynamicUser=yes', 'PrivateDevices=yes', 'PrivateNetwork=yes',
-                     'MemoryMax=8G', 'CPUQuota=200%', 'TasksMax=64', 'ProtectSystem=strict'):
+                     'MemoryHigh=12G', 'MemoryMax=16G', 'CPUWeight=20',
+                     'CPUQuota=200%', 'TasksMax=64', 'ProtectSystem=strict'):
             self.assertIn(prop, command)
         self.assertIn('--parallel 2', command[-1])
         self.assertIn('-DGGML_HIP=ON', command[-1])

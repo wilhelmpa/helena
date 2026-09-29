@@ -12,6 +12,9 @@ Type=oneshot
 # ("Exception occurred in preexec_fn"), so neither a check nor an update could run.
 ExecStart=/usr/local/libexec/helena-hermes-update --config /etc/helena/hermes-update.json serve-request
 TimeoutStartSec=45min
+MemoryHigh=12G
+MemoryMax=16G
+CPUWeight=20
 NoNewPrivileges=yes
 PrivateTmp=yes
 ProtectSystem=strict

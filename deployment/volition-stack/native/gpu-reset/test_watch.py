@@ -12,6 +12,12 @@ spec.loader.exec_module(watch)
 
 
 class WatchTest(unittest.TestCase):
+    def test_planned_group_restart_uses_the_same_recovery_path(self):
+        with patch.object(watch.sys, "argv", ["gpu-reset-watch", "restart-group"]), \
+             patch.object(watch, "restart_group", return_value=(["helena-halogen.service"], [])) as restart:
+            self.assertEqual(watch.main(), 0)
+            restart.assert_called_once_with()
+
     def test_group_stop_kfd_drain_halogen_health_then_other_units(self):
         calls = []
 

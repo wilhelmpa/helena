@@ -54,7 +54,7 @@ export function toCandidate(state: StoredState | null, error: string | null): Up
     security: false,
     sourceUrl: REPOSITORY,
     notesUrl: `${REPOSITORY}/compare/${current.commit.slice(0, 12)}...${latest.commit.slice(0, 12)}`,
-    applicable: behind,
+    applicable: behind && !error,
     detail: `${commits.length} commits · ${localPatches.length} local${state.offline ? ' · cached Git refs' : ''}`,
     error,
     data: { target: latest.commit, checkedAt: state.checkedAt },
@@ -78,7 +78,13 @@ export const hermesSource: UpdateSource = {
       // No Hermes runner online: the last check still says what is installed, and the list
       // says why it is not newer.
       if (failure instanceof HttpError && failure.status === 503) {
-        return [{ ...toCandidate(stored, null), hint: { i18n: 'updates.hints.hermesOffline' } }];
+        return [
+          {
+            ...toCandidate(stored, null),
+            applicable: false,
+            hint: { i18n: 'updates.hints.hermesOffline' },
+          },
+        ];
       }
       const message = failure instanceof Error ? failure.message : String(failure);
       return [toCandidate(stored, message)];
@@ -97,7 +103,14 @@ export const hermesSource: UpdateSource = {
       ...(local.length ? ['', 'Local commits carried over:', ...local] : []),
     ].join('\n');
   },
-  async apply(_request, context) {
+  async apply(request, context) {
+    const checked = await checkHermesUpdate(context.userId);
+    if (
+      checked.check.latest.commit !== request.candidate.data?.target ||
+      checked.check.latestIsAncestor === true ||
+      checked.check.commits.length === 0
+    )
+      throw new Error('Der Hermes-Release-Stand hat sich geändert; bitte erneut prüfen');
     // An update someone requested on the approvals page is the same update: it is decided
     // here instead of being requested twice.
     const pending = (await hermesUpdateState(context.userId)).proposal;
@@ -113,7 +126,11 @@ export const hermesSource: UpdateSource = {
     if (!proposal || String(proposal.id) !== ref) return { state: 'running' };
     if (proposal.status === 'applied') return { state: 'done', log: proposal.log };
     if (proposal.status === 'failed' || proposal.status === 'rejected') {
-      return { state: 'failed', log: proposal.log, error: proposal.error ?? 'The update failed' };
+      return {
+        state: 'failed',
+        log: proposal.log,
+        error: `Hermes-Update fehlgeschlagen: ${proposal.error ?? 'Ursache unbekannt'}`,
+      };
     }
     return { state: 'running', log: proposal.log };
   },

@@ -82,6 +82,9 @@ class HelperTest(unittest.TestCase):
         patcher = mock.patch.object(helper.subprocess, "run", side_effect=self.fake)
         patcher.start()
         self.addCleanup(patcher.stop)
+        queue = mock.patch.object(helper.host_tools, "quiet_queue", return_value=contextlib.nullcontext())
+        queue.start()
+        self.addCleanup(queue.stop)
 
     def tearDown(self) -> None:
         self.tmp.cleanup()
@@ -167,6 +170,23 @@ class WhisperInventoryTest(unittest.TestCase):
                                   "versionSource": "running-executable-path"})
         link.assert_called_once_with("/proc/123/exe")
 
+    def test_reports_cpu_voice_and_pinned_gpu_builds(self):
+        fields = "LoadState=loaded\nActiveState=active\nMainPID=123\n"
+        result, _ = self.status(fields,
+            "/opt/helena-ai/voice/whisper-1.8.4-cpu/whisper-server")
+        self.assertEqual(result["version"], "1.8.4")
+        for unit, pattern, executable, version in (
+            ("helena-voice-tts.service",
+             r"/opt/helena-ai/voice/qwentts-([0-9a-f]{9,40})(?:-rocm|-cpu)?/tts-server",
+             "/opt/helena-ai/voice/qwentts-6a3e91283-rocm/tts-server", "6a3e91283"),
+            ("helena-embed.service",
+             r"/opt/helena-ai/llamacpp/(?:rocm|vulkan)-(b[0-9]+)/llama-server",
+             "/opt/helena-ai/llamacpp/vulkan-b11166/llama-server", "b11166"),
+        ):
+            with mock.patch.object(helper, "run", return_value=completed([], fields)), mock.patch.object(
+                    helper.os, "readlink", return_value=executable):
+                self.assertEqual(helper.executable_status(unit, pattern)["version"], version)
+
     def test_absent_or_inactive_service_never_invents_an_installed_version(self):
         result, link = self.status("LoadState=not-found\nActiveState=inactive\nMainPID=0")
         self.assertFalse(result["present"])
@@ -185,6 +205,18 @@ class WhisperInventoryTest(unittest.TestCase):
         with mock.patch.object(helper, "run", return_value=completed([], "LoadState=loaded\nActiveState=active\nMainPID=123")), mock.patch.object(
                 helper.os, "readlink", side_effect=FileNotFoundError):
             self.assertIsNone(helper.whisper_status()["version"])
+
+
+class ResourceScopeTest(unittest.TestCase):
+    def test_heavy_install_uses_systemd_scope(self):
+        with mock.patch.object(helper.os, "geteuid", return_value=0), mock.patch.object(
+                helper.subprocess, "run", return_value=completed([], "ok")) as execute:
+            helper.run(helper.Log(), ["apt-get", "install", "--only-upgrade", "openssl"], limited=True)
+        command = execute.call_args.args[0]
+        self.assertEqual(command[:2], ["systemd-run", "--scope"])
+        for prop in ("MemoryHigh=12G", "MemoryMax=16G", "CPUWeight=20"):
+            self.assertIn(prop, command)
+        self.assertEqual(command[-4:], ["apt-get", "install", "--only-upgrade", "openssl"])
 
 
 class AptRefreshTest(HelperTest):
@@ -219,6 +251,13 @@ class AptRefreshTest(HelperTest):
 
 
 class AptTest(HelperTest):
+    def test_busy_queue_refuses_before_package_install(self):
+        with mock.patch.object(helper.host_tools, "quiet_queue", side_effect=helper.host_tools.ToolError("busy queue")):
+            answer = helper.perform(self.config, {"action": "apt", "packages": ["openssl"]})
+        self.assertFalse(answer["ok"])
+        self.assertIn("busy queue", answer["error"])
+        self.assertFalse(any(command[:2] == ["apt-get", "install"] for command in self.fake.commands))
+
     def test_failed_metadata_refresh_never_installs_from_cached_candidates(self):
         def failed_refresh(args, **kwargs):
             if args[:2] == ["apt-get", "update"]:

@@ -456,6 +456,11 @@ if [[ -x /usr/local/libexec/helena-hermes-update ]] &&
   "$live/deployment/volition-stack/native/hermes-update/install.sh" --refresh
 fi
 
+if [[ -x /usr/local/lib/helena-ai/gpu-reset-watch ]] &&
+  changed deployment/volition-stack/native/gpu-reset; then
+  "$live/deployment/volition-stack/native/gpu-reset/install.sh" --refresh
+fi
+
 # Refresh the installed audit without installing/enabling its timer or applying hardening.
 audit_script=deployment/volition-stack/native/hardening/audit.sh
 if [[ -f /usr/local/libexec/helena-security-audit ]] && changed "$audit_script" &&

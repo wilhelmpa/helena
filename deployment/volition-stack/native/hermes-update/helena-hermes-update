@@ -54,9 +54,7 @@ def load_config(path: Path) -> dict:
     config.setdefault("remote", "origin")
     config.setdefault("branch", "main")
     config.setdefault("localBranch", None)
-    config.setdefault("track", "releases")
-    if config["track"] not in ("releases", "branch"):
-        raise UpdateError("config: track must be releases or branch")
+    config["track"] = "releases"
     config.setdefault("rollbackDir", "/var/lib/helena/hermes-update")
     config.setdefault(
         "install", ["{venv}/bin/python", "-m", "pip", "install", "--quiet", "-e", "{source}"]
@@ -201,17 +199,13 @@ def upstream(config: dict) -> str:
 RELEASE_TAG = re.compile(r"^v?\d+(\.\d+){1,3}$")
 
 
-# What "the newest version" is. Hermes' main moves by hundreds of commits a day, so by default
-# (`"track": "releases"`) it is the newest release tag on the upstream branch; `"track": "branch"`
-# follows the branch head as before. Without any release tag the branch head is used.
+# Hermes follows release tags on the upstream branch. No tag means no safe update target.
 def latest_ref(runner: Runner, config: dict) -> str:
-    if config.get("track", "releases") == "branch":
-        return upstream(config)
     tags = git(runner, config, "tag", "--merged", upstream(config), "--sort=-v:refname", check=False)
     for tag in tags.splitlines():
         if RELEASE_TAG.fullmatch(tag.strip()):
             return tag.strip()
-    return upstream(config)
+    raise UpdateError("Kein Hermes-Release-Tag gefunden; main wird nicht als Update angeboten")
 
 
 def log_lines(runner: Runner, config: dict, spec: str, limit: int = 200) -> list[dict]:
