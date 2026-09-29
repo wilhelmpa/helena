@@ -95,7 +95,11 @@ buffering, and cancels the upstream request when its client disconnects.
 The Local AI policy controls slot limits, background concurrency, queue length, and queue
 timeout. The proxy reloads it from PostgreSQL every five seconds. Its queue and active counts
 are available at `http://127.0.0.1:8741/priority/status` and through the owner Local AI status
-API. A request whose proxy wait expires receives HTTP 503 with `Retry-After`. The reservation
+API. Both status responses show token ceilings per request class: `voice-reply` and `realtime`
+have configured ceilings; `interactive` chats, `normal` runs, and `background` work retain
+their requested token settings up to Halogen's `HALOGEN_MAX_TOK`. Voice replies use the
+`voice-reply` header value and the interactive queue. A request whose proxy wait expires
+receives HTTP 503 with `Retry-After`. The reservation
 is a slot reservation; Halogen's separate shared KV pool can still make an admitted chat wait
 for memory when long requests have filled it.
 

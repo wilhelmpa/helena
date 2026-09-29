@@ -283,6 +283,10 @@ describe('the policy and its routes', () => {
     expect(policy.preset).toBe('ausgewogen');
     expect(policy.halogenPriority).toEqual(defaultLocalAiPolicy().halogenPriority);
     expect(
+      normalizeLocalAiPolicy({ halogenPriority: { voiceReplyMaxTokens: 4_097 } }).halogenPriority
+        .voiceReplyMaxTokens,
+    ).toBe(512);
+    expect(
       normalizeLocalAiPolicy({
         halogenPriority: {
           maxConcurrent: 2,
@@ -304,7 +308,7 @@ describe('the policy and its routes', () => {
       healthProbeMs: 3_000,
       healthTimeoutMs: 2_000,
       upstreamIdleMs: 60_000,
-      interactiveMaxTokens: 512,
+      voiceReplyMaxTokens: 512,
       realtimeMaxTokens: 64,
       queueTimeoutMs: 5_000,
       maxQueue: 64,

@@ -11,7 +11,7 @@ export interface PriorityConfig {
   healthProbeMs: number;
   healthTimeoutMs: number;
   upstreamIdleMs: number;
-  interactiveMaxTokens: number;
+  voiceReplyMaxTokens: number;
   realtimeMaxTokens: number;
   queueTimeoutMs: number;
   maxQueue: number;
@@ -34,7 +34,7 @@ export const DEFAULT_PRIORITY_CONFIG: PriorityConfig = {
   healthProbeMs: 3_000,
   healthTimeoutMs: 2_000,
   upstreamIdleMs: 60_000,
-  interactiveMaxTokens: 512,
+  voiceReplyMaxTokens: 512,
   realtimeMaxTokens: 64,
   queueTimeoutMs: 30_000,
   maxQueue: 64,
@@ -78,7 +78,7 @@ export function normalizeHalogenPriority(value: unknown): PriorityConfig {
     healthProbeMs: integer('healthProbeMs', 500, 30_000),
     healthTimeoutMs: integer('healthTimeoutMs', 250, 60_000),
     upstreamIdleMs: integer('upstreamIdleMs', 1_000, 120_000),
-    interactiveMaxTokens: integer('interactiveMaxTokens', 32, 4_096),
+    voiceReplyMaxTokens: integer('voiceReplyMaxTokens', 32, 4_096),
     realtimeMaxTokens: integer('realtimeMaxTokens', 8, 512),
     queueTimeoutMs: integer('queueTimeoutMs', 1_000, 120_000),
     maxQueue,
