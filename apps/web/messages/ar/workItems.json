@@ -26,6 +26,7 @@
     "priority": "الأولوية",
     "type": "النوع",
     "initiative": "الهدف",
+    "goal": "الهدف",
     "cycle": "الدورة",
     "labels": "الوسوم",
     "estimatePoints": "نقاط القصة",
@@ -75,11 +76,13 @@
     "assignee": "المسؤول",
     "delegate": "المفوَّض",
     "initiative": "الهدف",
+    "goal": "الهدف",
     "cycle": "الدورة",
     "labels": "الوسوم",
     "noAssignee": "بلا مسؤول",
     "noDelegate": "بلا مفوَّض",
     "noInitiative": "بلا هدف",
+    "noGoal": "بلا هدف",
     "noCycle": "بلا دورة",
     "archive": "أرشفة",
     "clearSelection": "مسح التحديد",
@@ -109,6 +112,7 @@
     "noPriority": "بلا أولوية",
     "noType": "بلا نوع",
     "noInitiative": "بلا هدف",
+    "noGoal": "بلا هدف",
     "noCycle": "بلا دورة",
     "noMember": "بدون قيمة",
     "noArea": "بلا مجال"
@@ -165,10 +169,39 @@
     "type": "{value}",
     "statusAge": "منذ {value}",
     "initiative": "الهدف: {value}",
+    "goal": "الهدف: {value}",
     "cycle": "الدورة {value}",
     "estimatePoints": "{value} نقاط",
     "estimateTime": "{value}",
     "startDate": "من {value}",
     "dueDate": "الاستحقاق {value}"
+  },
+  "fields": {
+    "button": "الحقول",
+    "heading": "الحقول",
+    "hint": "اختر التفاصيل التي تعرضها البطاقات والصفوف والأعمدة.",
+    "preview": "معاينة",
+    "previewEmpty": "عند وجود مهمة، سترى هنا كيف تبدو.",
+    "title": "العنوان",
+    "listFixed": "يحتفظ المعرّف والحالة والأولوية وتاريخ الاستحقاق والوسوم والمسؤول دائمًا بأعمدتها في القائمة.",
+    "calendarHint": "يتسع التقويم لعدد قليل من التفاصيل.",
+    "none": "لم تُختر أي حقول",
+    "source": {
+      "project": "الافتراضي: هذا المشروع",
+      "global": "الافتراضي: إعدادي",
+      "builtin": "الافتراضي: مدمج"
+    },
+    "differs": "يختلف عن الافتراضي",
+    "reset": "إعادة تعيين",
+    "saveProject": "حفظ كافتراضي لهذا المشروع",
+    "saveGlobal": "حفظ لجميع مشاريعي",
+    "removeProject": "إزالة افتراضي المشروع",
+    "savedProject": "تم حفظ الافتراضي لهذا المشروع.",
+    "savedGlobal": "تم حفظ الافتراضي لجميع مشاريعك.",
+    "removedProject": "أُزيل افتراضي المشروع."
+  },
+  "emptyProject": {
+    "title": "لا توجد مهام بعد",
+    "text": "تسجّل المهمة ما يجب إنجازه ومن سينجزه ومتى."
   }
 }

@@ -33,6 +33,7 @@
     "priority": "Prioridad",
     "type": "Tipo",
     "initiative": "Objetivo",
+    "goal": "Objetivo",
     "cycle": "Ciclo",
     "labels": "Etiquetas",
     "estimatePoints": "Puntos de historia",
@@ -82,11 +83,13 @@
     "assignee": "Asignatario",
     "delegate": "Delegado",
     "initiative": "Objetivo",
+    "goal": "Objetivo",
     "cycle": "Ciclo",
     "labels": "Etiquetas",
     "noAssignee": "Sin asignar",
     "noDelegate": "Sin delegado",
     "noInitiative": "Sin objetivo",
+    "noGoal": "Sin objetivo",
     "noCycle": "Sin ciclo",
     "archive": "Archivar",
     "clearSelection": "Limpiar la selección",
@@ -116,6 +119,7 @@
     "noPriority": "Sin prioridad",
     "noType": "Sin tipo",
     "noInitiative": "Sin objetivo",
+    "noGoal": "Sin objetivo",
     "noCycle": "Sin ciclo",
     "noMember": "Sin valor",
     "noArea": "Sin área"
@@ -165,10 +169,39 @@
     "type": "{value}",
     "statusAge": "desde hace {value}",
     "initiative": "Objetivo: {value}",
+    "goal": "Objetivo: {value}",
     "cycle": "Ciclo {value}",
     "estimatePoints": "{value} pts",
     "estimateTime": "{value}",
     "startDate": "desde {value}",
     "dueDate": "vence {value}"
+  },
+  "fields": {
+    "button": "Campos",
+    "heading": "Campos",
+    "hint": "Qué detalles muestran las tarjetas, filas y columnas.",
+    "preview": "Vista previa",
+    "previewEmpty": "En cuanto haya una tarea, aquí verás cómo se ve.",
+    "title": "Título",
+    "listFixed": "El ID, el estado, la prioridad, la fecha de vencimiento, las etiquetas y el asignatario siempre conservan su columna en la lista.",
+    "calendarHint": "El calendario tiene espacio para pocos detalles.",
+    "none": "No se ha elegido ningún campo",
+    "source": {
+      "project": "Predeterminado: este proyecto",
+      "global": "Predeterminado: mi ajuste",
+      "builtin": "Predeterminado: integrado"
+    },
+    "differs": "Difiere del valor predeterminado",
+    "reset": "Restablecer",
+    "saveProject": "Guardar como predeterminado para este proyecto",
+    "saveGlobal": "Guardar para todos mis proyectos",
+    "removeProject": "Quitar el valor predeterminado del proyecto",
+    "savedProject": "Valor predeterminado de este proyecto guardado.",
+    "savedGlobal": "Valor predeterminado guardado para todos tus proyectos.",
+    "removedProject": "Valor predeterminado del proyecto eliminado."
+  },
+  "emptyProject": {
+    "title": "Aún no hay tareas",
+    "text": "Una tarea recoge qué hay que hacer, quién lo hace y para cuándo."
   }
 }

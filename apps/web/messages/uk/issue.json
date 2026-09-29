@@ -16,6 +16,7 @@
     "type": "Тип",
     "labels": "Мітки",
     "initiative": "Ціль",
+    "goal": "Ціль",
     "cycle": "Цикл",
     "estimatePoints": "Сторі-поїнти",
     "estimateTime": "Оцінка за часом",
@@ -53,6 +54,7 @@
     "assignee": "Виконавець",
     "delegate": "Делегат",
     "initiative": "Ціль",
+    "goal": "Ціль",
     "cycle": "Цикл",
     "dueDate": "Дедлайн",
     "clearDueDate": "Прибрати дедлайн",
@@ -63,6 +65,7 @@
     "noAssignee": "Без виконавця",
     "noDelegate": "Без делегата",
     "noInitiative": "Без цілі",
+    "noGoal": "Без цілі",
     "noCycle": "Без циклу",
     "promptCopied": "Промпт скопійовано"
   },
@@ -507,5 +510,18 @@
       "needs-review": "потрібне рев’ю",
       "failed": "помилка"
     }
+  },
+  "goalSelect": {
+    "label": "Ціль",
+    "search": "Пошук цілей …",
+    "empty": "Цілей немає.",
+    "none": "Без цілі",
+    "createNamed": "Створити ціль «{title}»",
+    "scopeProject": "Цей проєкт",
+    "scopeDepartment": "Відділ",
+    "scopeTeam": "Для всієї команди",
+    "progress": "Виконано завдань: {done} із {total}",
+    "legacy": "Попередня ціль проєкту: {title}. Виберіть ціль, щоб замінити її.",
+    "creating": "Створення цілі …"
   }
 }

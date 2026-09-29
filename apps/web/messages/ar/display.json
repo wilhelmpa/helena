@@ -28,6 +28,7 @@
     "priority": "الأولوية",
     "type": "النوع",
     "initiative": "الهدف",
+    "goal": "الهدف",
     "cycle": "الدورة",
     "area": "المجال"
   },
@@ -39,6 +40,7 @@
     "assignee": "المسؤول",
     "delegate": "المفوَّض",
     "initiative": "الهدف",
+    "goal": "الهدف",
     "cycle": "الدورة",
     "labels": "الوسوم",
     "estimatePoints": "نقاط القصة",

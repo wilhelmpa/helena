@@ -33,6 +33,7 @@
     "priority": "优先级",
     "type": "类型",
     "initiative": "目标",
+    "goal": "目标",
     "cycle": "周期",
     "labels": "标签",
     "estimatePoints": "故事点",
@@ -82,11 +83,13 @@
     "assignee": "负责人",
     "delegate": "执行代理",
     "initiative": "目标",
+    "goal": "目标",
     "cycle": "周期",
     "labels": "标签",
     "noAssignee": "无负责人",
     "noDelegate": "无执行代理",
     "noInitiative": "无目标",
+    "noGoal": "无目标",
     "noCycle": "无周期",
     "archive": "归档",
     "clearSelection": "清除选择",
@@ -116,6 +119,7 @@
     "noPriority": "无优先级",
     "noType": "无类型",
     "noInitiative": "无目标",
+    "noGoal": "无目标",
     "noCycle": "无周期",
     "noMember": "无值",
     "noArea": "无区域"
@@ -165,10 +169,39 @@
     "type": "{value}",
     "statusAge": "已 {value}",
     "initiative": "目标：{value}",
+    "goal": "目标：{value}",
     "cycle": "周期 {value}",
     "estimatePoints": "{value} 点",
     "estimateTime": "{value}",
     "startDate": "自 {value}",
     "dueDate": "截止 {value}"
+  },
+  "fields": {
+    "button": "字段",
+    "heading": "字段",
+    "hint": "卡片、行和列显示哪些信息。",
+    "preview": "预览",
+    "previewEmpty": "有了任务后，你会在这里看到它的样子。",
+    "title": "标题",
+    "listFixed": "ID、状态、优先级、截止日期、标签和负责人在列表中始终保留各自的列。",
+    "calendarHint": "日历只有空间显示少量信息。",
+    "none": "未选择任何字段",
+    "source": {
+      "project": "默认：本项目",
+      "global": "默认：我的设置",
+      "builtin": "默认：内置"
+    },
+    "differs": "与默认值不同",
+    "reset": "重置",
+    "saveProject": "保存为本项目的默认值",
+    "saveGlobal": "保存到我的所有项目",
+    "removeProject": "移除项目默认值",
+    "savedProject": "已保存本项目的默认值。",
+    "savedGlobal": "已保存所有项目的默认值。",
+    "removedProject": "已移除项目默认值。"
+  },
+  "emptyProject": {
+    "title": "暂无任务",
+    "text": "任务记录要做什么、由谁来做以及何时完成。"
   }
 }

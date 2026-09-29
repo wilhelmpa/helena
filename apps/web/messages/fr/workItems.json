@@ -33,6 +33,7 @@
     "priority": "Priorité",
     "type": "Type",
     "initiative": "Objectif",
+    "goal": "Objectif",
     "cycle": "Cycle",
     "labels": "Étiquettes",
     "estimatePoints": "Story points",
@@ -82,11 +83,13 @@
     "assignee": "Responsable",
     "delegate": "Délégué",
     "initiative": "Objectif",
+    "goal": "Objectif",
     "cycle": "Cycle",
     "labels": "Étiquettes",
     "noAssignee": "Aucun responsable",
     "noDelegate": "Aucun délégué",
     "noInitiative": "Aucun objectif",
+    "noGoal": "Aucun objectif",
     "noCycle": "Aucun cycle",
     "archive": "Archiver",
     "clearSelection": "Annuler la sélection",
@@ -116,6 +119,7 @@
     "noPriority": "Aucune priorité",
     "noType": "Aucun type",
     "noInitiative": "Aucun objectif",
+    "noGoal": "Aucun objectif",
     "noCycle": "Aucun cycle",
     "noMember": "Aucune valeur",
     "noArea": "Aucun domaine"
@@ -165,10 +169,39 @@
     "type": "{value}",
     "statusAge": "depuis {value}",
     "initiative": "Objectif : {value}",
+    "goal": "Objectif : {value}",
     "cycle": "Cycle {value}",
     "estimatePoints": "{value} pts",
     "estimateTime": "{value}",
     "startDate": "dès le {value}",
     "dueDate": "échéance {value}"
+  },
+  "fields": {
+    "button": "Champs",
+    "heading": "Champs",
+    "hint": "Les informations affichées par les cartes, lignes et colonnes.",
+    "preview": "Aperçu",
+    "previewEmpty": "Dès qu’il y aura une tâche, vous verrez ici à quoi elle ressemble.",
+    "title": "Titre",
+    "listFixed": "L’ID, l’état, la priorité, l’échéance, les étiquettes et le responsable gardent toujours leur colonne dans la liste.",
+    "calendarHint": "Le calendrier n’a de place que pour quelques informations.",
+    "none": "Aucun champ choisi",
+    "source": {
+      "project": "Par défaut : ce projet",
+      "global": "Par défaut : mon réglage",
+      "builtin": "Par défaut : intégré"
+    },
+    "differs": "Diffère de la valeur par défaut",
+    "reset": "Réinitialiser",
+    "saveProject": "Enregistrer par défaut pour ce projet",
+    "saveGlobal": "Enregistrer pour tous mes projets",
+    "removeProject": "Supprimer le réglage par défaut du projet",
+    "savedProject": "Réglage par défaut de ce projet enregistré.",
+    "savedGlobal": "Réglage par défaut enregistré pour tous vos projets.",
+    "removedProject": "Réglage par défaut du projet supprimé."
+  },
+  "emptyProject": {
+    "title": "Aucune tâche pour l’instant",
+    "text": "Une tâche indique ce qu’il y a à faire, qui s’en charge et pour quand."
   }
 }

@@ -16,6 +16,7 @@
     "type": "Type",
     "labels": "Étiquettes",
     "initiative": "Objectif",
+    "goal": "Objectif",
     "cycle": "Cycle",
     "estimatePoints": "Story points",
     "estimateTime": "Estimation de temps",
@@ -53,6 +54,7 @@
     "assignee": "Responsable",
     "delegate": "Délégué",
     "initiative": "Objectif",
+    "goal": "Objectif",
     "cycle": "Cycle",
     "dueDate": "Échéance",
     "clearDueDate": "Effacer l'échéance",
@@ -63,6 +65,7 @@
     "noAssignee": "Aucun responsable",
     "noDelegate": "Aucun délégué",
     "noInitiative": "Aucun objectif",
+    "noGoal": "Aucun objectif",
     "noCycle": "Aucun cycle",
     "promptCopied": "Prompt copié dans le presse-papiers"
   },
@@ -507,5 +510,18 @@
       "needs-review": "à revoir",
       "failed": "échec"
     }
+  },
+  "goalSelect": {
+    "label": "Objectif",
+    "search": "Rechercher des objectifs …",
+    "empty": "Aucun objectif.",
+    "none": "Aucun objectif",
+    "createNamed": "Créer l’objectif « {title} »",
+    "scopeProject": "Ce projet",
+    "scopeDepartment": "Département",
+    "scopeTeam": "Toute l’équipe",
+    "progress": "{done} tâches sur {total} terminées",
+    "legacy": "Ancien objectif du projet : {title}. Choisissez un objectif pour le remplacer.",
+    "creating": "Création de l’objectif …"
   }
 }

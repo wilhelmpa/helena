@@ -33,6 +33,7 @@
     "priority": "Prioritas",
     "type": "Tipe",
     "initiative": "Sasaran",
+    "goal": "Sasaran",
     "cycle": "Cycle",
     "labels": "Label",
     "estimatePoints": "Story points",
@@ -82,11 +83,13 @@
     "assignee": "Penerima tugas",
     "delegate": "Delegasi",
     "initiative": "Sasaran",
+    "goal": "Sasaran",
     "cycle": "Cycle",
     "labels": "Label",
     "noAssignee": "Tanpa penerima tugas",
     "noDelegate": "Tanpa delegasi",
     "noInitiative": "Tanpa sasaran",
+    "noGoal": "Tanpa sasaran",
     "noCycle": "Tanpa cycle",
     "archive": "Arsipkan",
     "clearSelection": "Hapus pilihan",
@@ -116,6 +119,7 @@
     "noPriority": "Tanpa prioritas",
     "noType": "Tanpa tipe",
     "noInitiative": "Tanpa sasaran",
+    "noGoal": "Tanpa sasaran",
     "noCycle": "Tanpa cycle",
     "noMember": "Tanpa nilai",
     "noArea": "Tanpa area"
@@ -165,10 +169,39 @@
     "type": "{value}",
     "statusAge": "sejak {value}",
     "initiative": "Tujuan: {value}",
+    "goal": "Sasaran: {value}",
     "cycle": "Siklus {value}",
     "estimatePoints": "{value} poin",
     "estimateTime": "{value}",
     "startDate": "mulai {value}",
     "dueDate": "jatuh tempo {value}"
+  },
+  "fields": {
+    "button": "Bidang",
+    "heading": "Bidang",
+    "hint": "Rincian yang ditampilkan kartu, baris, dan kolom.",
+    "preview": "Pratinjau",
+    "previewEmpty": "Setelah ada tugas, tampilannya akan terlihat di sini.",
+    "title": "Judul",
+    "listFixed": "ID, status, prioritas, tenggat waktu, label, dan penerima tugas selalu tetap berada di kolomnya masing-masing dalam daftar.",
+    "calendarHint": "Kalender hanya punya ruang untuk beberapa rincian.",
+    "none": "Belum ada bidang yang dipilih",
+    "source": {
+      "project": "Default: proyek ini",
+      "global": "Default: pengaturan saya",
+      "builtin": "Default: bawaan"
+    },
+    "differs": "Berbeda dari default",
+    "reset": "Atur ulang",
+    "saveProject": "Simpan sebagai default untuk proyek ini",
+    "saveGlobal": "Simpan untuk semua proyek saya",
+    "removeProject": "Hapus default proyek",
+    "savedProject": "Default untuk proyek ini tersimpan.",
+    "savedGlobal": "Default untuk semua proyek tersimpan.",
+    "removedProject": "Default proyek dihapus."
+  },
+  "emptyProject": {
+    "title": "Belum ada tugas",
+    "text": "Tugas mencatat apa yang harus dikerjakan, oleh siapa, dan sampai kapan."
   }
 }

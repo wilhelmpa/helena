@@ -28,6 +28,7 @@
     "priority": "Prioritas",
     "type": "Tipe",
     "initiative": "Sasaran",
+    "goal": "Sasaran",
     "cycle": "Cycle",
     "area": "Area"
   },
@@ -39,6 +40,7 @@
     "assignee": "Penerima tugas",
     "delegate": "Delegasi",
     "initiative": "Sasaran",
+    "goal": "Sasaran",
     "cycle": "Cycle",
     "labels": "Label",
     "estimatePoints": "Story points",

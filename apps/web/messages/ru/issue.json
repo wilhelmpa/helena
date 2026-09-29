@@ -16,6 +16,7 @@
     "type": "Тип",
     "labels": "Метки",
     "initiative": "Цель",
+    "goal": "Цель",
     "cycle": "Цикл",
     "estimatePoints": "Стори-поинты",
     "estimateTime": "Оценка по времени",
@@ -53,6 +54,7 @@
     "assignee": "Исполнитель",
     "delegate": "Делегат",
     "initiative": "Цель",
+    "goal": "Цель",
     "cycle": "Цикл",
     "dueDate": "Дедлайн",
     "clearDueDate": "Убрать дедлайн",
@@ -63,6 +65,7 @@
     "noAssignee": "Без исполнителя",
     "noDelegate": "Без делегата",
     "noInitiative": "Без цели",
+    "noGoal": "Без цели",
     "noCycle": "Без цикла",
     "promptCopied": "Промпт скопирован"
   },
@@ -507,5 +510,18 @@
       "needs-review": "нужно ревью",
       "failed": "ошибка"
     }
+  },
+  "goalSelect": {
+    "label": "Цель",
+    "search": "Поиск целей …",
+    "empty": "Целей нет.",
+    "none": "Без цели",
+    "createNamed": "Создать цель «{title}»",
+    "scopeProject": "Этот проект",
+    "scopeDepartment": "Отдел",
+    "scopeTeam": "Для всей команды",
+    "progress": "Выполнено задач: {done} из {total}",
+    "legacy": "Прежняя цель проекта: {title}. Выберите цель, чтобы заменить её.",
+    "creating": "Создание цели …"
   }
 }

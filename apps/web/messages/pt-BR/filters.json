@@ -27,6 +27,11 @@
     "planned": "Objetivos planejados",
     "proposed": "Objetivos propostos"
   },
+  "goalStatus": {
+    "active": "Objetivos ativos",
+    "planned": "Objetivos planejados",
+    "paused": "Objetivos pausados"
+  },
   "fields": {
     "status": "Estado",
     "statusType": "Tipo de estado",
@@ -35,6 +40,7 @@
     "priority": "Prioridade",
     "type": "Tipo",
     "initiative": "Objetivo",
+    "goal": "Objetivo",
     "cycle": "Ciclo",
     "labels": "Etiquetas",
     "dueDate": "Data de vencimento",
@@ -48,6 +54,7 @@
     "delegate": "Sem delegado",
     "type": "Sem tipo",
     "initiative": "Sem objetivo",
+    "goal": "Sem objetivo",
     "cycle": "Sem ciclo",
     "member": "Sem valor",
     "area": "Sem área"

@@ -27,6 +27,11 @@
     "planned": "Sasaran terencana",
     "proposed": "Sasaran yang diusulkan"
   },
+  "goalStatus": {
+    "active": "Sasaran aktif",
+    "planned": "Sasaran terencana",
+    "paused": "Sasaran dijeda"
+  },
   "fields": {
     "status": "Status",
     "statusType": "Tipe status",
@@ -35,6 +40,7 @@
     "priority": "Prioritas",
     "type": "Tipe",
     "initiative": "Sasaran",
+    "goal": "Sasaran",
     "cycle": "Cycle",
     "labels": "Label",
     "dueDate": "Tenggat waktu",
@@ -48,6 +54,7 @@
     "delegate": "Tanpa delegasi",
     "type": "Tanpa tipe",
     "initiative": "Tanpa sasaran",
+    "goal": "Tanpa sasaran",
     "cycle": "Tanpa cycle",
     "member": "Tanpa nilai",
     "area": "Tanpa area"

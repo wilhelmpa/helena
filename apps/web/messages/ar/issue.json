@@ -16,6 +16,7 @@
     "type": "النوع",
     "labels": "الوسوم",
     "initiative": "الهدف",
+    "goal": "الهدف",
     "cycle": "الدورة",
     "estimatePoints": "نقاط القصة",
     "estimateTime": "تقدير الوقت",
@@ -53,6 +54,7 @@
     "assignee": "المسؤول",
     "delegate": "المفوَّض",
     "initiative": "الهدف",
+    "goal": "الهدف",
     "cycle": "الدورة",
     "dueDate": "تاريخ الاستحقاق",
     "clearDueDate": "مسح تاريخ الاستحقاق",
@@ -63,6 +65,7 @@
     "noAssignee": "بلا مسؤول",
     "noDelegate": "بلا مفوَّض",
     "noInitiative": "بلا هدف",
+    "noGoal": "بلا هدف",
     "noCycle": "بلا دورة",
     "promptCopied": "تم نسخ التوجيه إلى الحافظة"
   },
@@ -507,5 +510,18 @@
       "needs-review": "تحتاج مراجعة",
       "failed": "فشلت"
     }
+  },
+  "goalSelect": {
+    "label": "الهدف",
+    "search": "البحث عن الأهداف …",
+    "empty": "لا توجد أهداف.",
+    "none": "بلا هدف",
+    "createNamed": "إنشاء الهدف “{title}”",
+    "scopeProject": "هذا المشروع",
+    "scopeDepartment": "القسم",
+    "scopeTeam": "على مستوى الفريق",
+    "progress": "{done} من {total} مهام منجزة",
+    "legacy": "هدف المشروع السابق: {title}. اختر هدفًا لاستبداله.",
+    "creating": "جارٍ إنشاء الهدف …"
   }
 }

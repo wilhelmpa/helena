@@ -33,6 +33,7 @@
     "priority": "Prioridade",
     "type": "Tipo",
     "initiative": "Objetivo",
+    "goal": "Objetivo",
     "cycle": "Ciclo",
     "labels": "Etiquetas",
     "estimatePoints": "Pontos de história",
@@ -82,11 +83,13 @@
     "assignee": "Responsável",
     "delegate": "Delegado",
     "initiative": "Objetivo",
+    "goal": "Objetivo",
     "cycle": "Ciclo",
     "labels": "Etiquetas",
     "noAssignee": "Sem responsável",
     "noDelegate": "Sem delegado",
     "noInitiative": "Sem objetivo",
+    "noGoal": "Sem objetivo",
     "noCycle": "Sem ciclo",
     "archive": "Arquivar",
     "clearSelection": "Limpar seleção",
@@ -116,6 +119,7 @@
     "noPriority": "Sem prioridade",
     "noType": "Sem tipo",
     "noInitiative": "Sem objetivo",
+    "noGoal": "Sem objetivo",
     "noCycle": "Sem ciclo",
     "noMember": "Sem valor",
     "noArea": "Sem área"
@@ -165,10 +169,39 @@
     "type": "{value}",
     "statusAge": "há {value}",
     "initiative": "Meta: {value}",
+    "goal": "Objetivo: {value}",
     "cycle": "Ciclo {value}",
     "estimatePoints": "{value} pts",
     "estimateTime": "{value}",
     "startDate": "a partir de {value}",
     "dueDate": "vence {value}"
+  },
+  "fields": {
+    "button": "Campos",
+    "heading": "Campos",
+    "hint": "Quais detalhes os cartões, linhas e colunas mostram.",
+    "preview": "Pré-visualização",
+    "previewEmpty": "Assim que houver uma tarefa, você verá aqui como ela fica.",
+    "title": "Título",
+    "listFixed": "ID, status, prioridade, data de vencimento, etiquetas e responsável sempre mantêm sua coluna na lista.",
+    "calendarHint": "O calendário tem espaço para poucos detalhes.",
+    "none": "Nenhum campo escolhido",
+    "source": {
+      "project": "Padrão: este projeto",
+      "global": "Padrão: minha configuração",
+      "builtin": "Padrão: integrado"
+    },
+    "differs": "Difere do padrão",
+    "reset": "Redefinir",
+    "saveProject": "Salvar como padrão deste projeto",
+    "saveGlobal": "Salvar para todos os meus projetos",
+    "removeProject": "Remover o padrão do projeto",
+    "savedProject": "Padrão deste projeto salvo.",
+    "savedGlobal": "Padrão de todos os seus projetos salvo.",
+    "removedProject": "Padrão do projeto removido."
+  },
+  "emptyProject": {
+    "title": "Ainda não há tarefas",
+    "text": "Uma tarefa registra o que precisa ser feito, por quem e até quando."
   }
 }

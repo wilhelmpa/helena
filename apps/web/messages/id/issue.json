@@ -16,6 +16,7 @@
     "type": "Tipe",
     "labels": "Label",
     "initiative": "Sasaran",
+    "goal": "Sasaran",
     "cycle": "Cycle",
     "estimatePoints": "Story points",
     "estimateTime": "Estimasi waktu",
@@ -53,6 +54,7 @@
     "assignee": "Penerima tugas",
     "delegate": "Delegasi",
     "initiative": "Sasaran",
+    "goal": "Sasaran",
     "cycle": "Cycle",
     "dueDate": "Tenggat waktu",
     "clearDueDate": "Hapus tenggat waktu",
@@ -63,6 +65,7 @@
     "noAssignee": "Tanpa penerima tugas",
     "noDelegate": "Tanpa delegasi",
     "noInitiative": "Tanpa sasaran",
+    "noGoal": "Tanpa sasaran",
     "noCycle": "Tanpa cycle",
     "promptCopied": "Prompt disalin ke papan klip"
   },
@@ -507,5 +510,18 @@
       "needs-review": "perlu ditinjau",
       "failed": "gagal"
     }
+  },
+  "goalSelect": {
+    "label": "Sasaran",
+    "search": "Cari sasaran …",
+    "empty": "Belum ada sasaran.",
+    "none": "Tanpa sasaran",
+    "createNamed": "Buat sasaran “{title}”",
+    "scopeProject": "Proyek ini",
+    "scopeDepartment": "Departemen",
+    "scopeTeam": "Seluruh tim",
+    "progress": "{done} dari {total} tugas selesai",
+    "legacy": "Sasaran proyek sebelumnya: {title}. Pilih sasaran untuk menggantinya.",
+    "creating": "Membuat sasaran …"
   }
 }

@@ -28,6 +28,7 @@
     "priority": "Пріоритет",
     "type": "Тип",
     "initiative": "Ціль",
+    "goal": "Ціль",
     "cycle": "Цикл",
     "area": "Область"
   },
@@ -39,6 +40,7 @@
     "assignee": "Виконавець",
     "delegate": "Делегат",
     "initiative": "Ціль",
+    "goal": "Ціль",
     "cycle": "Цикл",
     "labels": "Мітки",
     "estimatePoints": "Сторі-поїнти",
