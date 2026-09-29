@@ -341,6 +341,11 @@ export const qk = {
   // The linkable initiatives behind the issue picker, narrowed by the typed search.
   initiativeOptions: (projectKey: string, params: Record<string, unknown>) =>
     ['initiatives', projectKey, 'options', params] as const,
+  // The goals a task of the project can serve (the pick list of a task's "Ziel").
+  goalOptions: (projectKey: string) => ['goal-options', projectKey] as const,
+  anyGoalOptions: ['goal-options'] as const,
+  // The fields the project's task views show by default: the project's and the member's own.
+  displayDefaults: (projectKey: string) => ['display-defaults', projectKey] as const,
   initiativeCounts: (projectKey: string) => ['initiativeCounts', projectKey] as const,
   initiative: (id: number) => ['initiative', id] as const,
   initiativeFeed: (id: number) => ['initiativeFeed', id] as const,

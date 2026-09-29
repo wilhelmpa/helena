@@ -36,7 +36,7 @@ export type CardMetaKey =
   | 'statusAge'
   | 'priority'
   | 'type'
-  | 'initiative'
+  | 'goal'
   | 'cycle'
   | 'estimatePoints'
   | 'estimateTime'
@@ -102,8 +102,8 @@ export function boardCardData(
         const type = issue.typeId ? maps.typeById.get(issue.typeId) : null;
         return type ? [words('type', type.name)] : [];
       }
-      case 'initiative':
-        return issue.initiative ? [words('initiative', issue.initiative.title)] : [];
+      case 'goal':
+        return issue.goal ? [words('goal', issue.goal.title)] : [];
       case 'cycle':
         return issue.cycle ? [words('cycle', issue.cycle.name)] : [];
       case 'estimatePoints':

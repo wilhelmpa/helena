@@ -30,7 +30,7 @@ const GROUP_FIELDS: BuiltinGroupField[] = [
   'delegate',
   'priority',
   'type',
-  'initiative',
+  'goal',
   'cycle',
   'area',
 ];
@@ -59,7 +59,7 @@ export default function DisplayGroupingRows({
   const setGroup = (group: GroupField) =>
     onChange(group === settings.subgroup ? { group, subgroup: 'none' } : { group });
 
-  // Initiative and Cycle are only offered while the project shows their section. A
+  // Cycle is only offered while the project shows its section. A
   // member custom field groups by whoever it holds, and is named by itself.
   const features = useProjectFeatures();
   const fields = GROUP_FIELDS.filter((f) => isFieldEnabled(f, features));

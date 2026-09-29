@@ -3,7 +3,7 @@ import { type Editor } from '@tiptap/react';
 import { MoreHorizontal } from 'lucide-react';
 import type { IssueTemplate } from '@/lib/api/endpoints/issueTemplates';
 import type { Project, ProjectDetail } from '@/lib/api/endpoints/projects';
-import type { CycleRef, Issue, IssueFieldValueInput } from '@/lib/api/endpoints/issues';
+import type { CycleRef, GoalRef, Issue, IssueFieldValueInput } from '@/lib/api/endpoints/issues';
 import { type NewIssueDefaults } from '@/utils/project';
 import { parseDate } from '@/utils/dates';
 import { cn } from '@/lib/utils';
@@ -48,7 +48,8 @@ import {
 } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Pill } from '@/components/common/fields/Pill';
-import InitiativeSelect from '../fields/InitiativeSelect';
+import GoalSelect from '../fields/GoalSelect';
+import { useGoalOptionsQuery } from '@/services/goalOptions.service';
 import CycleSelect from '../fields/CycleSelect';
 import AreaSelect from '../fields/AreaSelect';
 import { useTranslations } from 'next-intl';
@@ -84,7 +85,18 @@ export default function NewIssueModal({
       ? (project.issueTypes.find((t) => t.isDefault)?.id ?? null)
       : defaults.typeId,
   );
-  const [initiativeId, setInitiativeId] = useState<number | null>(defaults.initiativeId ?? null);
+  // An initiative comes from the board the issue is created on (an old project goal); the
+  // task's "Ziel" is picked here as a goal, named by id and shown from the goal list.
+  const initiativeId = defaults.initiativeId ?? null;
+  const [goalId, setGoalId] = useState<number | null>(defaults.goalId ?? null);
+  const [pickedGoal, setPickedGoal] = useState<GoalRef | null>(null);
+  const goalOptions = useGoalOptionsQuery(project.project.key).data;
+  const goal =
+    goalId == null
+      ? null
+      : pickedGoal?.id === goalId
+        ? pickedGoal
+        : (goalOptions?.find((option) => option.id === goalId) ?? null);
   // A default cycle that is not among the planned ones has finished, and nothing new
   // is planned into it — the issue is created without a cycle instead.
   const [cycle, setCycle] = useState<CycleRef | null>(
@@ -270,6 +282,7 @@ export default function NewIssueModal({
           parentId: defaults.parentId ?? null,
           typeId,
           initiativeId,
+          goalId,
           cycleId: cycle?.id ?? null,
           folderId,
           assigneeUserId,
@@ -478,14 +491,16 @@ export default function NewIssueModal({
             />
           )}
 
-          {project.project.initiativesEnabled && (
-            <InitiativeSelect
-              projectKey={project.project.key}
-              value={initiativeId}
-              onChange={setInitiativeId}
-              placeholder="Ziel"
-            />
-          )}
+          <GoalSelect
+            projectKey={project.project.key}
+            projectId={project.project.id}
+            teamId={project.project.teamId}
+            value={goal}
+            onChange={(next) => {
+              setGoalId(next?.id ?? null);
+              setPickedGoal(next);
+            }}
+          />
 
           <DatePill
             value={dueDate || null}

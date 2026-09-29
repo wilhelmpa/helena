@@ -16,6 +16,7 @@
     "type": "Typ",
     "labels": "Labels",
     "initiative": "Ziel",
+    "goal": "Ziel",
     "cycle": "Zyklus",
     "estimatePoints": "Story Points",
     "estimateTime": "Zeitschätzung",
@@ -53,6 +54,7 @@
     "assignee": "Zuständig",
     "delegate": "Delegiert an",
     "initiative": "Ziel",
+    "goal": "Ziel",
     "cycle": "Zyklus",
     "dueDate": "Fälligkeitsdatum",
     "clearDueDate": "Fälligkeitsdatum entfernen",
@@ -63,6 +65,7 @@
     "noAssignee": "Nicht zugewiesen",
     "noDelegate": "Nicht delegiert",
     "noInitiative": "Kein Ziel",
+    "noGoal": "Kein Ziel",
     "noCycle": "Kein Zyklus",
     "promptCopied": "Prompt in die Zwischenablage kopiert"
   },
@@ -507,5 +510,18 @@
       "needs-review": "Review nötig",
       "failed": "fehlgeschlagen"
     }
+  },
+  "goalSelect": {
+    "label": "Ziel",
+    "search": "Ziel suchen …",
+    "empty": "Keine Ziele.",
+    "none": "Kein Ziel",
+    "createNamed": "Neues Ziel „{title}“ anlegen",
+    "scopeProject": "Dieses Projekt",
+    "scopeDepartment": "Abteilung",
+    "scopeTeam": "Übergreifend",
+    "progress": "{done} von {total} Aufgaben erledigt",
+    "legacy": "Früheres Projektziel: {title}. Wähle ein Ziel, um es zu ersetzen.",
+    "creating": "Ziel wird angelegt …"
   }
 }

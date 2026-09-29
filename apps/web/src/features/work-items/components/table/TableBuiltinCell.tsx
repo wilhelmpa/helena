@@ -98,11 +98,9 @@ export function TableBuiltinCell({
         </div>
       );
     }
-    case 'initiative':
+    case 'goal':
       return (
-        <div className="truncate text-xs text-muted-foreground">
-          {issue.initiative?.title ?? DASH}
-        </div>
+        <div className="truncate text-xs text-muted-foreground">{issue.goal?.title ?? DASH}</div>
       );
     case 'cycle':
       return (

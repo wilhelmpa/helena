@@ -6,6 +6,7 @@
 import type { StateType } from '@/lib/api/endpoints/columns';
 import type { CycleStatus } from '@/lib/api/endpoints/cycles';
 import type { InitiativeStatus } from '@/lib/api/endpoints/initiatives';
+import type { GoalStatus } from '@/lib/api/endpoints/issues';
 
 export type Priority = 'urgent' | 'high' | 'medium' | 'low';
 
@@ -31,6 +32,10 @@ export const PRIORITY_FILTER_VALUES: (Priority | null)[] = [...PRIORITY_ORDER, n
 export const CYCLE_FILTER_STATUSES: CycleStatus[] = ['active', 'upcoming'];
 
 export const INITIATIVE_FILTER_STATUSES: InitiativeStatus[] = ['active', 'planned', 'proposed'];
+
+// The same for goals: the ones being worked on and the ones still to start. Achieved goals are
+// picked by name.
+export const GOAL_FILTER_STATUSES: GoalStatus[] = ['active', 'planned', 'paused'];
 
 // State types in workflow order. The label of a state type is a message under
 // `display.stateTypes`.

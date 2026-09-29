@@ -7,7 +7,7 @@ import type { CustomField } from '@/lib/api/endpoints/customFields';
 import type { IssueType } from '@/lib/api/endpoints/issueTypes';
 import type { Label } from '@/lib/api/endpoints/labels';
 import type { Assignee, ProjectDetail } from '@/lib/api/endpoints/projects';
-import type { InitiativeRef, Issue, IssuePatch, NewIssueInput } from '@/lib/api/endpoints/issues';
+import type { GoalRef, Issue, IssuePatch, NewIssueInput } from '@/lib/api/endpoints/issues';
 import type { CycleOption } from '@/lib/api/endpoints/cycles';
 import type { InitiativeOption } from '@/lib/api/endpoints/initiatives';
 import { CYCLE_STATUS_META } from '@/utils/cycleMeta';
@@ -21,7 +21,7 @@ import {
   type FilterSet,
   type FilterValue,
 } from '@/utils/filters';
-import { compareByGroupOrder } from '@/utils/initiativeMeta';
+import { GOAL_STATUS_META, compareGoals } from '@/utils/goalMeta';
 import {
   customFieldId,
   isCustomFieldKey,
@@ -47,6 +47,7 @@ export type NewIssueDefaults = Partial<
     | 'columnId'
     | 'typeId'
     | 'initiativeId'
+    | 'goalId'
     | 'cycleId'
     | 'folderId'
     | 'assigneeUserId'
@@ -87,7 +88,7 @@ function onlyWithStatus(entities: { id: number; status: string }[], status: stri
 // out — what the user pointed at wins over the filters.
 export function defaultsFromFilters(
   filters: FilterSet,
-  planned: { cycles: CycleOption[]; initiatives: InitiativeOption[] },
+  planned: { cycles: CycleOption[]; initiatives: InitiativeOption[]; goals?: GoalRef[] },
 ): NewIssueDefaults {
   const pinned = pinnedFilterValues(filters);
   const pinnedId = (field: string) => {
@@ -112,6 +113,7 @@ export function defaultsFromFilters(
     columnId: pinnedId('status') ?? undefined,
     typeId: pinnedId('type'),
     initiativeId: pinnedEntity('initiative', planned.initiatives),
+    goalId: pinnedEntity('goal', planned.goals ?? []),
     cycleId: pinnedEntity('cycle', planned.cycles),
     folderId: pinnedId('area'),
     assigneeUserId: pinnedText('assignee'),
@@ -305,6 +307,7 @@ export interface GroupLabels {
   noPriority: string;
   noType: string;
   noInitiative: string;
+  noGoal: string;
   noCycle: string;
   noArea: string;
   // The "No value" group of a member custom field, which has no name of its own.
@@ -398,25 +401,25 @@ function allGroups(project: ProjectDetail, group: GroupField, labels: GroupLabel
         })),
         { key: 't-none', name: labels.noType, assign: patchOnly({ typeId: null }), values: [null] },
       ];
-    case 'initiative': {
-      // Lanes come from the initiatives the loaded issues are linked to (each issue
-      // carries its initiative). Initiatives with no issue on the board get no lane;
-      // the full list is fetched on demand only where a picker needs it. "No
-      // initiative" leads, then the lanes by status, by title within one status.
-      const seen = new Map<number, InitiativeRef>();
-      for (const issue of project.issues)
-        if (issue.initiative) seen.set(issue.initiative.id, issue.initiative);
-      const options = [...seen.values()].sort(compareByGroupOrder).map((i) => ({
-        key: `i${i.id}`,
-        name: i.title,
-        assign: patchOnly({ initiativeId: i.id }),
-        values: [i.id, statusValue(i.status)],
+    case 'goal': {
+      // Lanes come from the goals the loaded issues serve (each issue carries its goal).
+      // Goals with no issue on the board get no lane; the full list is fetched on demand
+      // only where a picker needs it. "No goal" leads, then the lanes by status, by title
+      // within one status.
+      const seen = new Map<number, GoalRef>();
+      for (const issue of project.issues) if (issue.goal) seen.set(issue.goal.id, issue.goal);
+      const options = [...seen.values()].sort(compareGoals).map((goal) => ({
+        key: `g${goal.id}`,
+        name: goal.title,
+        color: GOAL_STATUS_META[goal.status].color,
+        assign: patchOnly({ goalId: goal.id }),
+        values: [goal.id, statusValue(goal.status)],
       }));
       return [
         {
-          key: 'i-none',
-          name: labels.noInitiative,
-          assign: patchOnly({ initiativeId: null }),
+          key: 'g-none',
+          name: labels.noGoal,
+          assign: patchOnly({ goalId: null }),
           values: [null],
         },
         ...options,
@@ -552,8 +555,8 @@ export function groupKeyOf(issue: Issue, group: GroupField): string {
       return issue.priority ? `p${issue.priority}` : 'p-none';
     case 'type':
       return issue.typeId != null ? `t${issue.typeId}` : 't-none';
-    case 'initiative':
-      return issue.initiative != null ? `i${issue.initiative.id}` : 'i-none';
+    case 'goal':
+      return issue.goal != null ? `g${issue.goal.id}` : 'g-none';
     case 'cycle':
       return issue.cycle != null ? `y${issue.cycle.id}` : 'y-none';
     case 'area':

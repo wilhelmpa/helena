@@ -41,7 +41,7 @@ describe('display defaults', () => {
   it('refuses keys that are not property names', async () => {
     const { api } = await setup();
     const mkt = api.projects({ projectKey: 'MKT' })['display-defaults'];
-    expect((await mkt.put({ defaults: { kanban: ['not valid!'] } })).status).toBe(422);
+    expect((await mkt.put({ defaults: { kanban: ['not valid!'] } })).status).toBe(400);
   });
 
   it('lets a member read the project default but only an admin save it', async () => {

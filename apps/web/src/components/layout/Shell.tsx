@@ -6,6 +6,7 @@ import { useWebLinkNavigation } from '@/hooks/useWebLinkNavigation';
 import { useWorkspaceNavigation } from '@/hooks/useWorkspaceNavigation';
 import { usePathname, useRouter } from 'next/navigation';
 import { useInitiativeOptionsQuery } from '@/services/initiatives.service';
+import { useGoalOptionsQuery } from '@/services/goalOptions.service';
 import { useIssueBySeqQuery } from '@/services/issues.service';
 import { useAccountPreferences } from '@/services/preferences.service';
 import type { IssueOpenMode } from '@/lib/api/endpoints/userPreferences';
@@ -90,6 +91,7 @@ export default function Shell({
   } = useShellProject(projectKey, route.activeViewId);
 
   const initiativeOptions = useInitiativeOptionsQuery(projectKey).data ?? [];
+  const goalOptions = useGoalOptionsQuery(projectKey).data ?? [];
   const { issueOpenMode, headerLayout } = useAccountPreferences();
   // What the active page put into the single-row header's middle slot (its view
   // tabs/filter bar); see useShellHeaderExtra. Unused, and always empty, in
@@ -187,6 +189,7 @@ export default function Shell({
     ? defaultsFromFilters(editor.effectiveFilters, {
         cycles: project?.plannedCycles ?? [],
         initiatives: initiativeOptions,
+        goals: goalOptions,
       })
     : {};
   const addIssue = (defaults: NewIssueDefaults) =>

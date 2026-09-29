@@ -24,8 +24,8 @@ import type { Issue, IssuePatch } from '@/lib/api/endpoints/issues';
 import { actionIcon } from '@/utils/actionIcons';
 import { useActionsQuery } from '@/services/actions.service';
 import { useRestoreIssue, useUpdateIssue } from '@/services/issues.service';
-import { useInitiativeOptionsQuery } from '@/services/initiatives.service';
-import { STATUS_META } from '@/utils/initiativeMeta';
+import { useGoalOptionsQuery } from '@/services/goalOptions.service';
+import { GOAL_STATUS_META, compareGoals } from '@/utils/goalMeta';
 import { CYCLE_STATUS_META } from '@/utils/cycleMeta';
 import { usePermissions } from '@/hooks/usePermissions';
 import { usePriorityLabel } from '@/hooks/usePriorityLabel';
@@ -97,11 +97,9 @@ export default function IssueContextMenu({
   const [open, setOpen] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [confirmingAction, setConfirmingAction] = useState<ActionDef | null>(null);
-  // Initiatives are not in the board scaffold, so they are fetched here — only
-  // while this menu is open, as every card on the board mounts one.
-  const initiativesQuery = useInitiativeOptionsQuery(
-    open && project.project.initiativesEnabled ? project.project.key : null,
-  );
+  // Goals are not in the board scaffold, so they are fetched here — only while this menu
+  // is open, as every card on the board mounts one.
+  const goalsQuery = useGoalOptionsQuery(project.project.key, open);
 
   // No Shell (public share): render the card as-is, without the right-click menu.
   if (!shell) return <>{children}</>;
@@ -130,7 +128,7 @@ export default function IssueContextMenu({
     PRIORITY_FIELDS.find((p) => p.value === (issue.priority ?? '')) ?? PRIORITY_FIELDS[0];
   const members = project.assignees.filter((a) => a.kind === 'member');
   const agents = delegatableAgents(project.assignees, session?.user.id ?? null);
-  const initiatives = initiativesQuery.data ?? [];
+  const goals = [...(goalsQuery.data ?? [])].sort(compareGoals);
 
   return (
     <>
@@ -247,28 +245,26 @@ export default function IssueContextMenu({
                 </ContextMenuSub>
               )}
 
-              {project.project.initiativesEnabled && (
-                <ContextMenuSub>
-                  <ContextMenuSubTrigger>
-                    {issue.initiative ? <Target /> : <CircleDashed />}
-                    {t('initiative')}
-                  </ContextMenuSubTrigger>
-                  <ContextMenuSubContent className="w-56">
-                    <ContextMenuItem onSelect={() => patch({ initiativeId: null })}>
-                      <CircleDashed />
-                      <span className="flex-1">{t('noInitiative')}</span>
-                      <SelectedCheck selected={issue.initiative == null} />
+              <ContextMenuSub>
+                <ContextMenuSubTrigger>
+                  {issue.goal ? <Target /> : <CircleDashed />}
+                  {t('goal')}
+                </ContextMenuSubTrigger>
+                <ContextMenuSubContent className="max-h-80 w-64 overflow-y-auto">
+                  <ContextMenuItem onSelect={() => patch({ goalId: null })}>
+                    <CircleDashed />
+                    <span className="flex-1">{t('noGoal')}</span>
+                    <SelectedCheck selected={issue.goal == null} />
+                  </ContextMenuItem>
+                  {goals.map((goal) => (
+                    <ContextMenuItem key={goal.id} onSelect={() => patch({ goalId: goal.id })}>
+                      {colorDot(GOAL_STATUS_META[goal.status].color)}
+                      <span className="flex-1 truncate">{goal.title}</span>
+                      <SelectedCheck selected={goal.id === issue.goal?.id} />
                     </ContextMenuItem>
-                    {initiatives.map((it) => (
-                      <ContextMenuItem key={it.id} onSelect={() => patch({ initiativeId: it.id })}>
-                        {colorDot(STATUS_META[it.status].color)}
-                        <span className="flex-1 truncate">{it.title}</span>
-                        <SelectedCheck selected={it.id === issue.initiative?.id} />
-                      </ContextMenuItem>
-                    ))}
-                  </ContextMenuSubContent>
-                </ContextMenuSub>
-              )}
+                  ))}
+                </ContextMenuSubContent>
+              </ContextMenuSub>
 
               {project.project.cyclesEnabled && (
                 <ContextMenuSub>

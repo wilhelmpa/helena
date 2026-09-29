@@ -13,15 +13,7 @@ import type { Sort, WorkItemsView } from '@/utils/viewTypes';
 // A `cf:<id>` key groups by a member custom field, which holds one person or agent
 // the way assignee and delegate do.
 export type BuiltinGroupField =
-  | 'none'
-  | 'status'
-  | 'assignee'
-  | 'delegate'
-  | 'priority'
-  | 'type'
-  | 'initiative'
-  | 'cycle'
-  | 'area';
+  'none' | 'status' | 'assignee' | 'delegate' | 'priority' | 'type' | 'goal' | 'cycle' | 'area';
 export type GroupField = BuiltinGroupField | CustomFieldKey;
 
 // Issue properties that can be shown on a Project card or as a Table column.
@@ -34,7 +26,7 @@ export type DisplayProperty =
   | 'type'
   | 'assignee'
   | 'delegate'
-  | 'initiative'
+  | 'goal'
   | 'cycle'
   | 'labels'
   | 'estimatePoints'
@@ -66,7 +58,7 @@ export const DISPLAY_PROPERTIES: DisplayProperty[] = [
   'type',
   'assignee',
   'delegate',
-  'initiative',
+  'goal',
   'cycle',
   'labels',
   'estimatePoints',
@@ -86,7 +78,6 @@ export const DISPLAY_PROPERTIES: DisplayProperty[] = [
 const SECTION_FIELDS: Partial<
   Record<BuiltinGroupField | DisplayProperty, keyof ProjectFeatureSet>
 > = {
-  initiative: 'initiatives',
   cycle: 'cycles',
   estimatePoints: 'pointsEstimate',
   estimateTime: 'timeEstimate',
@@ -229,12 +220,16 @@ const GROUP_FIELDS: BuiltinGroupField[] = [
   'delegate',
   'priority',
   'type',
-  'initiative',
+  'goal',
   'cycle',
   'area',
 ];
 const DISPLAY_VALUES: string[] = DISPLAY_PROPERTIES;
 const TIMELINE_SCALES: TimelineScale[] = ['week', 'month', 'quarter'];
+
+// The task field "Ziel" was an initiative once and is a goal now: a display saved under the
+// old name keeps its grouping and its column under the new one.
+const renamed = (value: unknown) => (value === 'initiative' ? 'goal' : value);
 
 const isGroupField = (value: unknown): value is GroupField =>
   typeof value === 'string' &&
@@ -285,6 +280,14 @@ export function normalizeViewSettings(
 ): ViewSettings {
   const d = defaultViewSettings(view);
   if (!s) return d;
+  s = {
+    ...s,
+    group: renamed(s.group) as GroupField,
+    subgroup: renamed(s.subgroup) as GroupField,
+    properties: Array.isArray(s.properties)
+      ? ([...new Set((s.properties as unknown[]).map(renamed))] as PropertyKey[])
+      : s.properties,
+  };
   const storedGroup = isGroupField(s.group) ? s.group : d.group;
   // Timeline was previously hard-coded to State while its persisted group was
   // `none`. Normalize that legacy value so existing local and saved views keep
