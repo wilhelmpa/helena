@@ -1513,6 +1513,20 @@
       "when": 1790686952759,
       "tag": "0216_browser_frame_vault",
       "breakpoints": true
+    },
+    {
+      "idx": 217,
+      "version": "7",
+      "when": 1790701754602,
+      "tag": "0217_work_items_display_defaults",
+      "breakpoints": true
+    },
+    {
+      "idx": 218,
+      "version": "7",
+      "when": 1790701768732,
+      "tag": "0218_work_items_goal_backfill",
+      "breakpoints": true
     }
   ]
 }

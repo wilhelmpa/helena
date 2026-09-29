@@ -1,19 +1,20 @@
 import { t } from 'elysia';
 import { goalStatus } from '#modules/goals/model';
+const GoalOption = t.Object({
+  id: t.Integer(),
+  title: t.String(),
+  description: t.String(),
+  status: goalStatus,
+  targetDate: t.Nullable(t.String()),
+  parentGoalId: t.Nullable(t.Integer()),
+  path: t.Array(t.String()),
+  scope: t.Union([t.Literal('project'), t.Literal('department'), t.Literal('team')]),
+  progress: t.Nullable(t.Object({ total: t.Integer(), done: t.Integer() })),
+});
+// A goal a task of the project can serve, with this project's own progress on it.
+export const GoalOptionsResponse = t.Array(GoalOption);
 export const ProjectGoalContext = t.Object({
-  goals: t.Array(
-    t.Object({
-      id: t.Integer(),
-      title: t.String(),
-      description: t.String(),
-      status: goalStatus,
-      targetDate: t.Nullable(t.String()),
-      parentGoalId: t.Nullable(t.Integer()),
-      path: t.Array(t.String()),
-      scope: t.Union([t.Literal('project'), t.Literal('department'), t.Literal('team')]),
-      progress: t.Nullable(t.Object({ total: t.Integer(), done: t.Integer() })),
-    }),
-  ),
+  goals: t.Array(GoalOption),
   links: t.Array(t.Object({ initiativeId: t.Integer(), goalId: t.Integer() })),
 });
 export const projectGoalLinkBody = t.Object({ goalId: t.Nullable(t.Integer({ minimum: 1 })) });

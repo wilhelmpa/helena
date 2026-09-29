@@ -619,6 +619,8 @@ export interface IssueSnapshot {
   columnId: number;
   typeId: number | null;
   initiativeId: number | null;
+  // Not diffed into the change log; carried for the write that follows the update.
+  goalId: number | null;
   cycleId: number | null;
   folderId: number | null;
   assigneeUserId: string | null;

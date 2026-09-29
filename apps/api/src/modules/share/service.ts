@@ -106,12 +106,13 @@ async function buildScaffold(project: ProjectRow, extended: boolean): Promise<Sh
 
 // Cuts an issue down to what a non-extended share exposes: its title, description,
 // state, type, priority, dates, and its place among the other issues. The people on
-// it, its planning (initiative, cycle, area), its labels and its custom field values
+// it, its planning (initiative, goal, cycle, area), its labels and its custom field values
 // stay private.
 function redactIssue<T extends IssueRow>(row: T): T {
   return {
     ...row,
     initiative: null,
+    goal: null,
     cycle: null,
     folderId: null,
     assigneeUserId: null,
