@@ -7,6 +7,7 @@ import {
   type LocalAiPolicy,
   type ModelServerRow,
 } from '@repo/db';
+import { capacityFromStatus, type PressureStatus } from '../../pressure';
 import {
   classEvalVersion,
   classModes,
@@ -293,9 +294,24 @@ describe('the policy and its routes', () => {
     ).toEqual({
       maxConcurrent: 2,
       reservedInteractive: 1,
+      maxInteractive: 2,
+      maxRealtime: 2,
+      maxNormal: 1,
       maxBackground: 1,
+      realtimeQueueMs: 750,
+      interactiveQueueMs: 5_000,
+      agingMs: 15_000,
+      healthProbeMs: 3_000,
+      healthTimeoutMs: 2_000,
+      upstreamIdleMs: 60_000,
+      interactiveMaxTokens: 512,
+      realtimeMaxTokens: 64,
       queueTimeoutMs: 5_000,
       maxQueue: 64,
+      maxQueuedInteractive: 16,
+      maxQueuedRealtime: 16,
+      maxQueuedNormal: 32,
+      maxQueuedBackground: 24,
     });
     expect(defaultLocalAiPolicy().enabled).toBe(false);
   });
@@ -733,5 +749,24 @@ describe('the key file', () => {
     expect(installer).toContain('KEY=${HELENA_AI_KEY_FILE:-$ETC/local-ai.key}');
     expect(service).toContain('DEFAULT_KEY_FILE = `${LOCAL_AI_KEY_DIR}/local-ai.key`');
     expect(allowedKeyFile('/etc/helena/local-ai.key')).toBe('/etc/helena/local-ai.key');
+  });
+});
+
+describe('Halogen start pressure', () => {
+  it('defers background starts during chat, full slots, and stalls', () => {
+    const status: PressureStatus = {
+      healthy: true,
+      active: { interactive: 0, realtime: 0, normal: 0, background: 0 },
+      queued: { interactive: 0, realtime: 0, normal: 0, background: 0 },
+      config: { maxConcurrent: 4, reservedInteractive: 1, maxBackground: 2, maxNormal: 3 },
+    };
+    expect(capacityFromStatus('background', status)).toBe(true);
+    status.active.interactive = 1;
+    expect(capacityFromStatus('background', status)).toBe(false);
+    status.active.interactive = 0;
+    status.active.normal = 3;
+    expect(capacityFromStatus('normal', status)).toBe(false);
+    status.healthy = false;
+    expect(capacityFromStatus('background', status)).toBe(false);
   });
 });

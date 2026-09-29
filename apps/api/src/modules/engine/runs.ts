@@ -7,6 +7,7 @@ import { engineRunning, enqueueWorkflow, insideOperation, RUNS_QUEUE } from './d
 import { ACTIVE_STATUSES } from './lifecycle';
 import { stepType } from './registry';
 import { runWorkflow } from './workflows';
+import { localAiHasCapacity } from '#modules/local-ai/pressure';
 
 // Starting, signalling, canceling and retrying engine runs. A run is written as a row
 // first (pipeline_run, 'pending'); starting it hands it to the engine as the DBOS
@@ -14,6 +15,11 @@ import { runWorkflow } from './workflows';
 // janitor for a run whose start was lost) finds the workflow that runs it.
 
 export async function startRun(runId: string): Promise<void> {
+  const [planned] = await db
+    .select({ kind: pipelineRun.kind })
+    .from(pipelineRun)
+    .where(eq(pipelineRun.id, runId));
+  if (planned?.kind === 'routine' && !(await localAiHasCapacity('background'))) return;
   if (!engineRunning() || insideOperation()) {
     // A step of another run (it created the task this run works on) or a process without
     // the engine enqueues it; any executor's queue takes it.
@@ -179,7 +185,7 @@ export async function signalFinishedAgentRuns(): Promise<number> {
 export async function startLostRuns(olderThanSeconds = 30): Promise<number> {
   if (!engineRunning()) return 0;
   const rows = await db
-    .select({ id: pipelineRun.id })
+    .select({ id: pipelineRun.id, kind: pipelineRun.kind })
     .from(pipelineRun)
     .where(
       and(
@@ -187,7 +193,17 @@ export async function startLostRuns(olderThanSeconds = 30): Promise<number> {
         lt(pipelineRun.createdAt, sql`now() - make_interval(secs => ${olderThanSeconds})`),
       ),
     )
+    .orderBy(
+      sql`CASE WHEN ${pipelineRun.kind} = 'routine' THEN 1 ELSE 0 END`,
+      pipelineRun.createdAt,
+    )
     .limit(50);
-  for (const row of rows) await startRunSoon(row.id);
-  return rows.length;
+  let started = 0;
+  const canStartRoutine = await localAiHasCapacity('background');
+  for (const row of rows) {
+    if (row.kind === 'routine' && !canStartRoutine) continue;
+    await startRunSoon(row.id);
+    started++;
+  }
+  return started;
 }

@@ -1,23 +1,26 @@
 import { DEFAULT_PRIORITY_CONFIG, type PriorityConfig } from '../../../../packages/sdk/src/halogen-priority';
 
-export type PriorityClass = 'interactive' | 'normal' | 'background';
+export type PriorityClass = 'interactive' | 'realtime' | 'normal' | 'background';
+const classes: PriorityClass[] = ['interactive', 'realtime', 'normal', 'background'];
+const rank: Record<PriorityClass, number> = { interactive: 3, realtime: 2, normal: 1, background: 0 };
 
 interface Waiting {
   kind: PriorityClass;
   since: number;
   finish: (admitted: boolean) => void;
-  timer: ReturnType<typeof setTimeout>;
+  timer?: ReturnType<typeof setTimeout>;
 }
 
 export class PriorityScheduler {
   private config: PriorityConfig;
   private active: Record<PriorityClass, number> = {
-    interactive: 0,
-    normal: 0,
-    background: 0,
+    interactive: 0, realtime: 0, normal: 0, background: 0,
   };
   private waiting: Waiting[] = [];
-  private interactiveBurst = 0;
+  private healthy = true;
+  private fallbacks: Record<PriorityClass, number> = {
+    interactive: 0, realtime: 0, normal: 0, background: 0,
+  };
 
   constructor(config: PriorityConfig = DEFAULT_PRIORITY_CONFIG, private readonly now = Date.now) {
     this.config = config;
@@ -28,43 +31,80 @@ export class PriorityScheduler {
     this.drain();
   }
 
+  setHealthy(healthy: boolean): void {
+    this.healthy = healthy;
+    if (!healthy) {
+      for (const item of [...this.waiting]) {
+        if (item.kind !== 'interactive' && item.kind !== 'realtime') continue;
+        this.waiting.splice(this.waiting.indexOf(item), 1);
+        if (item.timer) clearTimeout(item.timer);
+        this.fallbacks[item.kind]++;
+        item.finish(false);
+      }
+    }
+    this.drain();
+  }
+
+  recordFallback(kind: PriorityClass): void {
+    this.fallbacks[kind]++;
+  }
+
   status() {
+    const waits = Object.fromEntries(classes.map((kind) => [kind,
+      this.waiting.filter((item) => item.kind === kind)])) as Record<PriorityClass, Waiting[]>;
     return {
       config: this.config,
+      healthy: this.healthy,
       active: { ...this.active },
-      queued: {
-        interactive: this.waiting.filter((item) => item.kind === 'interactive').length,
-        normal: this.waiting.filter((item) => item.kind === 'normal').length,
-        background: this.waiting.filter((item) => item.kind === 'background').length,
+      queued: Object.fromEntries(classes.map((kind) => [kind, waits[kind].length])) as Record<PriorityClass, number>,
+      oldestWaitMs: Math.max(0, ...this.waiting.map((item) => this.now() - item.since)),
+      oldestWaitMsByClass: Object.fromEntries(classes.map((kind) => [kind,
+        Math.max(0, ...waits[kind].map((item) => this.now() - item.since))])) as Record<PriorityClass, number>,
+      fallbacks: { ...this.fallbacks },
+      paused: {
+        interactive: !this.healthy,
+        realtime: !this.healthy,
+        normal: !this.healthy,
+        background: !this.healthy || this.active.interactive + this.active.realtime > 0 ||
+          waits.interactive.length + waits.realtime.length > 0,
       },
-      oldestWaitMs: this.waiting.length ? this.now() - this.waiting[0]!.since : 0,
     };
   }
 
   private total(): number {
-    return this.active.interactive + this.active.normal + this.active.background;
+    return classes.reduce((sum, kind) => sum + this.active[kind], 0);
   }
 
   private eligible(kind: PriorityClass): boolean {
-    if (this.total() >= this.config.maxConcurrent) return false;
+    if (!this.healthy || this.total() >= this.config.maxConcurrent) return false;
+    const cap: Record<PriorityClass, number> = {
+      interactive: this.config.maxInteractive,
+      realtime: this.config.maxRealtime,
+      normal: this.config.maxNormal,
+      background: this.config.maxBackground,
+    };
+    if (this.active[kind] >= cap[kind]) return false;
     if (kind === 'interactive') return true;
-    if (this.active.normal + this.active.background >=
+    if (this.total() - this.active.interactive >=
       this.config.maxConcurrent - this.config.reservedInteractive) return false;
-    return kind !== 'background' || this.active.background < this.config.maxBackground;
+    if (kind === 'background' &&
+      (this.active.interactive + this.active.realtime > 0 ||
+        this.waiting.some((item) => item.kind === 'interactive' || item.kind === 'realtime'))) {
+      // Aged work may use spare non-interactive capacity even under sustained demand.
+      return this.waiting.some((item) => item.kind === 'background' &&
+        this.now() - item.since >= this.config.agingMs * 3);
+    }
+    return true;
   }
 
   private choose(): Waiting | undefined {
     const eligible = this.waiting.filter((item) => this.eligible(item.kind));
-    const chat = eligible.find((item) => item.kind === 'interactive');
-    const aged = eligible.find((item) => item.kind !== 'interactive' &&
-      this.now() - item.since >= Math.min(
-        item.kind === 'normal' ? 10_000 : 20_000,
-        this.config.queueTimeoutMs * (item.kind === 'normal' ? 0.5 : 0.75),
-      ));
-    if (chat && (this.interactiveBurst < 4 || !aged)) return chat;
-    if (aged) return aged;
-    return eligible.find((item) => item.kind === 'normal') ??
-      eligible.find((item) => item.kind === 'background');
+    eligible.sort((a, b) => {
+      const score = (item: Waiting) => rank[item.kind] +
+        Math.floor((this.now() - item.since) / this.config.agingMs) * (4 - rank[item.kind]);
+      return score(b) - score(a) || a.since - b.since || this.waiting.indexOf(a) - this.waiting.indexOf(b);
+    });
+    return eligible[0];
   }
 
   private drain(): void {
@@ -72,51 +112,62 @@ export class PriorityScheduler {
       const item = this.choose();
       if (!item) return;
       this.waiting.splice(this.waiting.indexOf(item), 1);
-      clearTimeout(item.timer);
+      if (item.timer) clearTimeout(item.timer);
       this.active[item.kind]++;
-      this.interactiveBurst = item.kind === 'interactive' ? this.interactiveBurst + 1 : 0;
       item.finish(true);
     }
   }
 
   async acquire(kind: PriorityClass, signal?: AbortSignal): Promise<(() => void) | null> {
     if (signal?.aborted) return null;
+    if (!this.healthy && (kind === 'interactive' || kind === 'realtime')) {
+      this.fallbacks[kind]++;
+      return null;
+    }
     let admitted: boolean;
     if ((this.waiting.length === 0 ||
-      (kind === 'interactive' && !this.waiting.some((item) => item.kind === 'interactive'))) &&
-      this.eligible(kind)) {
+      ((kind === 'interactive' || kind === 'realtime') &&
+        !this.waiting.some((item) => rank[item.kind] >= rank[kind]))) && this.eligible(kind)) {
       this.active[kind]++;
       admitted = true;
-    } else if (this.waiting.length >= this.config.maxQueue) {
+    } else if (this.waiting.length >= this.config.maxQueue ||
+      this.waiting.filter((item) => item.kind === kind).length >= ({
+        interactive: this.config.maxQueuedInteractive,
+        realtime: this.config.maxQueuedRealtime,
+        normal: this.config.maxQueuedNormal,
+        background: this.config.maxQueuedBackground,
+      })[kind]) {
+      this.fallbacks[kind]++;
       return null;
     } else {
       admitted = await new Promise<boolean>((resolve) => {
-        const finish = (value: boolean) => resolve(value);
-        const item: Waiting = {
-          kind,
-          since: this.now(),
-          finish,
-          timer: setTimeout(() => {
-            this.waiting.splice(this.waiting.indexOf(item), 1);
-            finish(false);
-            this.drain();
-          }, this.config.queueTimeoutMs),
+        const item: Waiting = { kind, since: this.now(), finish: resolve };
+        const timeout = kind === 'realtime' ? this.config.realtimeQueueMs :
+          kind === 'interactive' ? this.config.interactiveQueueMs :
+          kind === 'normal' ? this.config.queueTimeoutMs : null;
+        const finish = (value: boolean) => {
+          signal?.removeEventListener('abort', abort);
+          resolve(value);
         };
         const abort = () => {
           const index = this.waiting.indexOf(item);
           if (index >= 0) {
             this.waiting.splice(index, 1);
-            clearTimeout(item.timer);
+            if (item.timer) clearTimeout(item.timer);
             finish(false);
             this.drain();
           }
         };
+        item.finish = finish;
+        if (timeout !== null) item.timer = setTimeout(() => {
+          const index = this.waiting.indexOf(item);
+          if (index < 0) return;
+          this.waiting.splice(index, 1);
+          this.fallbacks[kind]++;
+          finish(false);
+          this.drain();
+        }, timeout);
         signal?.addEventListener('abort', abort, { once: true });
-        const originalFinish = item.finish;
-        item.finish = (value) => {
-          signal?.removeEventListener('abort', abort);
-          originalFinish(value);
-        };
         this.waiting.push(item);
         this.drain();
       });

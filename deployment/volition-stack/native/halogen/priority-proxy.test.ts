@@ -25,9 +25,9 @@ test('chat uses the reserved slot and overtakes queued background work', async (
   expect(order).toEqual(['chat']);
   normal!();
   running[0]!();
+  (await chat)!();
   expect(await background).toBeFunction();
   running[1]!();
-  (await chat)!();
   (await background)!();
 });
 
@@ -44,11 +44,11 @@ test('FIFO within a class, timeout, disconnect and config changes', async () => 
   expect(scheduler.status().queued.normal).toBe(1);
   firstRelease!();
   (await second)!();
-  const held = await scheduler.acquire('background');
-  const timeout = scheduler.acquire('background');
+  const held = await scheduler.acquire('normal');
+  const timeout = scheduler.acquire('normal');
   expect(await timeout).toBeNull();
   const controller = new AbortController();
-  const disconnected = scheduler.acquire('background', controller.signal);
+  const disconnected = scheduler.acquire('normal', controller.signal);
   controller.abort();
   expect(await disconnected).toBeNull();
   held!();
@@ -56,26 +56,19 @@ test('FIFO within a class, timeout, disconnect and config changes', async () => 
   expect(scheduler.status().config.maxBackground).toBe(1);
 });
 
-test('aged background work gets a turn after a bounded chat burst', async () => {
+test('aged background work gets a turn amid a chat burst', async () => {
   let now = 0;
   const scheduler = new PriorityScheduler(DEFAULT_PRIORITY_CONFIG, () => now);
   const occupied = await Promise.all(Array.from({ length: 4 }, () => scheduler.acquire('interactive')));
   const background = scheduler.acquire('background');
   const chats = Array.from({ length: 5 }, () => scheduler.acquire('interactive'));
-  now = 21_000;
+  now = 46_000;
   occupied[0]!();
-  let release = await chats[0]!;
-  for (const chat of chats.slice(1, 4)) {
-    release!();
-    release = await chat;
-  }
-  expect(scheduler.status().queued.background).toBe(1);
-  release!();
   const backgroundRelease = await background;
   expect(backgroundRelease).toBeFunction();
   backgroundRelease!();
   occupied.slice(1).forEach((release) => release!());
-  (await chats[4])!();
+  for (const chat of chats) (await chat)!();
 });
 
 async function fakeBackend() {
@@ -209,4 +202,122 @@ test('fake-backend load keeps four slots and starts chat before the background b
   expect(peak).toBeLessThanOrEqual(4);
   expect(order.indexOf('/chat')).toBeLessThan(order.findIndex((entry, index) =>
     entry === '/background' && index >= 2));
+});
+
+test('realtime wave is bounded and admits another request when one ends', async () => {
+  const scheduler = new PriorityScheduler({ ...DEFAULT_PRIORITY_CONFIG, maxConcurrent: 2,
+    reservedInteractive: 1, maxRealtime: 1, realtimeQueueMs: 30 });
+  const first = await scheduler.acquire('realtime');
+  const second = scheduler.acquire('realtime');
+  const third = scheduler.acquire('realtime');
+  expect(scheduler.status().queued.realtime).toBe(2);
+  first!();
+  const release = await second;
+  expect(release).toBeFunction();
+  expect(await third).toBeNull();
+  expect(scheduler.status().fallbacks.realtime).toBe(1);
+  release!();
+});
+
+test('a full background queue cannot block a spare realtime slot', async () => {
+  const scheduler = new PriorityScheduler({ ...DEFAULT_PRIORITY_CONFIG,
+    maxQueue: 2, maxQueuedBackground: 2 });
+  const running = await Promise.all([scheduler.acquire('background'), scheduler.acquire('background')]);
+  const abort = new AbortController();
+  const backlog = [scheduler.acquire('background', abort.signal),
+    scheduler.acquire('background', abort.signal)];
+  expect(scheduler.status().queued.background).toBe(2);
+  const realtime = await scheduler.acquire('realtime');
+  expect(realtime).toBeFunction();
+  realtime!();
+  abort.abort();
+  await Promise.all(backlog);
+  running.forEach((release) => release!());
+});
+
+test('a health transition releases queued realtime requests immediately', async () => {
+  const scheduler = new PriorityScheduler();
+  const running = await Promise.all(Array.from({ length: 2 }, () => scheduler.acquire('realtime')));
+  const waiting = scheduler.acquire('realtime');
+  expect(scheduler.status().queued.realtime).toBe(1);
+  scheduler.setHealthy(false);
+  expect(await waiting).toBeNull();
+  expect(scheduler.status().fallbacks.realtime).toBe(1);
+  running.forEach((release) => release!());
+  scheduler.setHealthy(true);
+  expect(await scheduler.acquire('realtime')).toBeFunction();
+});
+
+test('health stall pauses background, realtime falls back, recovery drains backlog', async () => {
+  let healthy = true;
+  const backend = createServer((req, res) => {
+    if (req.url === '/health' && !healthy) return;
+    res.end('{}');
+  });
+  await new Promise<void>((resolve) => backend.listen(0, '127.0.0.1', resolve));
+  cleanups.push(() => new Promise((resolve) => backend.close(() => resolve())));
+  const dir = await mkdtemp(join(tmpdir(), 'volition-priority-'));
+  const port = (backend.address() as { port: number }).port;
+  const proxy = await startPriorityProxy({ hostPorts: [0, 0], backendPorts: [port, port],
+    socketDir: dir, healthCheck: true, readConfig: async () => ({ ...DEFAULT_PRIORITY_CONFIG,
+      healthProbeMs: 20, healthTimeoutMs: 20, realtimeQueueMs: 30 }) });
+  cleanups.push(async () => { await proxy.close(); await rm(dir, { recursive: true, force: true }); });
+  for (let i = 0; i < 30 && !proxy.scheduler.status().healthy; i++) await tick();
+  expect(proxy.scheduler.status().healthy).toBe(true);
+  healthy = false;
+  for (let i = 0; i < 30 && proxy.scheduler.status().healthy; i++) await tick();
+  expect(proxy.scheduler.status().healthy).toBe(false);
+  const url = `http://127.0.0.1:${proxy.ports[0]}/v1/chat/completions`;
+  const fallback = await fetch(url, { method: 'POST', body: '{}',
+    headers: { 'x-volition-halogen-priority': 'realtime' } });
+  expect(fallback.status).toBe(503);
+  expect(proxy.scheduler.status().fallbacks.realtime).toBe(1);
+  const pending = fetch(url, { method: 'POST', body: '{}',
+    headers: { 'x-volition-halogen-priority': 'background' } });
+  for (let i = 0; i < 30 && proxy.scheduler.status().queued.background === 0; i++) await tick();
+  expect(proxy.scheduler.status().paused.background).toBe(true);
+  healthy = true;
+  expect((await pending).status).toBe(200);
+  expect(proxy.scheduler.status().queued.background).toBe(0);
+});
+
+test('interactive and realtime requests receive short token ceilings', async () => {
+  const received: Record<string, unknown>[] = [];
+  const backend = createServer(async (req, res) => {
+    if (req.url === '/health') { res.end('{}'); return; }
+    let body = '';
+    for await (const chunk of req) body += chunk.toString();
+    received.push(JSON.parse(body) as Record<string, unknown>);
+    res.end('{}');
+  });
+  await new Promise<void>((resolve) => backend.listen(0, '127.0.0.1', resolve));
+  cleanups.push(() => new Promise((resolve) => backend.close(() => resolve())));
+  const dir = await mkdtemp(join(tmpdir(), 'volition-priority-'));
+  const port = (backend.address() as { port: number }).port;
+  const proxy = await startPriorityProxy({ hostPorts: [0, 0], backendPorts: [port, port], socketDir: dir });
+  cleanups.push(async () => { await proxy.close(); await rm(dir, { recursive: true, force: true }); });
+  const url = `http://127.0.0.1:${proxy.ports[0]}/v1/chat/completions`;
+  for (const kind of ['realtime', 'interactive']) {
+    const response = await fetch(url, { method: 'POST', body: JSON.stringify({ model: 'fake', max_tokens: 10000 }),
+      headers: { 'content-type': 'application/json', 'x-volition-halogen-priority': kind } });
+    expect(response.status).toBe(200);
+  }
+  expect(received.map((body) => body.max_tokens)).toEqual([64, 512]);
+});
+
+test('a stalled upstream releases its slot and pauses admission', async () => {
+  const backend = createServer((_req, _res) => {});
+  await new Promise<void>((resolve) => backend.listen(0, '127.0.0.1', resolve));
+  cleanups.push(() => new Promise((resolve) => backend.close(() => resolve())));
+  const dir = await mkdtemp(join(tmpdir(), 'volition-priority-'));
+  const port = (backend.address() as { port: number }).port;
+  const proxy = await startPriorityProxy({ hostPorts: [0, 0], backendPorts: [port, port],
+    socketDir: dir, readConfig: async () => ({ ...DEFAULT_PRIORITY_CONFIG, upstreamIdleMs: 30 }) });
+  cleanups.push(async () => { await proxy.close(); await rm(dir, { recursive: true, force: true }); });
+  const response = await fetch(`http://127.0.0.1:${proxy.ports[0]}/v1/chat/completions`, {
+    method: 'POST', body: '{}', headers: { 'x-volition-halogen-priority': 'realtime' },
+  });
+  expect(response.status).toBe(502);
+  expect(proxy.scheduler.status().active.realtime).toBe(0);
+  expect(proxy.scheduler.status().healthy).toBe(false);
 });

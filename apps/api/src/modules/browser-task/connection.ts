@@ -368,7 +368,7 @@ function openAiServer(
         headers: {
           'content-type': 'application/json',
           ...(isLocalHalogenUrl(address.baseUrl)
-            ? { 'x-volition-halogen-priority': 'background' }
+            ? { 'x-volition-halogen-priority': 'realtime' }
             : {}),
           ...(address.key ? { authorization: `Bearer ${address.key}` } : {}),
         },

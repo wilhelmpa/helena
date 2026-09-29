@@ -7,6 +7,7 @@ import { HEARTBEAT_PRECHECK_CLASS } from '#modules/decisions/classes';
 import { heartbeatPrecheckQuestions } from '#modules/decisions/questions';
 import { isBorderlineHeartbeat, type HeartbeatCandidate } from './heartbeat-precheck';
 import { heartbeatBudgetThrottled } from '#modules/autopilot/budgets';
+import { localAiHasCapacity } from '#modules/local-ai/pressure';
 
 type Candidate = HeartbeatCandidate;
 
@@ -18,6 +19,8 @@ async function precheckHeartbeat(input: {
   now: Date;
 }) {
   try {
+    if (!(await localAiHasCapacity('background')))
+      return { skip: false, reason: 'precheck deferred due local AI load' };
     const setting = await classSetting(input.teamId, HEARTBEAT_PRECHECK_CLASS);
     const outcome = await decide({
       teamId: input.teamId,
@@ -69,6 +72,7 @@ async function precheckHeartbeat(input: {
 }
 
 export async function fireDueAgentHeartbeats(now = new Date()): Promise<number> {
+  if (!(await localAiHasCapacity('normal'))) return 0;
   const due = await db
     .select({ id: aiAgent.id })
     .from(aiAgent)

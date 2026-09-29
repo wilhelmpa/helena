@@ -143,9 +143,24 @@ const classSetting = t.Object({ mode, model: t.Nullable(t.String()) });
 const halogenPriority = t.Object({
   maxConcurrent: t.Number(),
   reservedInteractive: t.Number(),
+  maxInteractive: t.Number(),
+  maxRealtime: t.Number(),
+  maxNormal: t.Number(),
   maxBackground: t.Number(),
+  realtimeQueueMs: t.Number(),
+  interactiveQueueMs: t.Number(),
+  agingMs: t.Number(),
+  healthProbeMs: t.Number(),
+  healthTimeoutMs: t.Number(),
+  upstreamIdleMs: t.Number(),
+  interactiveMaxTokens: t.Number(),
+  realtimeMaxTokens: t.Number(),
   queueTimeoutMs: t.Number(),
   maxQueue: t.Number(),
+  maxQueuedInteractive: t.Number(),
+  maxQueuedRealtime: t.Number(),
+  maxQueuedNormal: t.Number(),
+  maxQueuedBackground: t.Number(),
 });
 
 export const LocalAiPolicy = t.Object({
@@ -231,9 +246,38 @@ export const LocalAiStatus = t.Object({
     t.Nullable(
       t.Object({
         config: halogenPriority,
-        active: t.Object({ interactive: t.Number(), normal: t.Number(), background: t.Number() }),
-        queued: t.Object({ interactive: t.Number(), normal: t.Number(), background: t.Number() }),
+        healthy: t.Boolean(),
+        active: t.Object({
+          interactive: t.Number(),
+          realtime: t.Number(),
+          normal: t.Number(),
+          background: t.Number(),
+        }),
+        queued: t.Object({
+          interactive: t.Number(),
+          realtime: t.Number(),
+          normal: t.Number(),
+          background: t.Number(),
+        }),
         oldestWaitMs: t.Number(),
+        oldestWaitMsByClass: t.Object({
+          interactive: t.Number(),
+          realtime: t.Number(),
+          normal: t.Number(),
+          background: t.Number(),
+        }),
+        fallbacks: t.Object({
+          interactive: t.Number(),
+          realtime: t.Number(),
+          normal: t.Number(),
+          background: t.Number(),
+        }),
+        paused: t.Object({
+          interactive: t.Boolean(),
+          realtime: t.Boolean(),
+          normal: t.Boolean(),
+          background: t.Boolean(),
+        }),
       }),
     ),
   ),

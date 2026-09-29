@@ -9,6 +9,9 @@ import { domainEventSubscribers, stepType } from './registry';
 import { subscribeEngineTriggers } from './events';
 import { writeStep } from './run-context';
 import { planFire } from './schedules';
+import { db, pipelineRun } from '@repo/db';
+import { eq } from 'drizzle-orm';
+import { localAiHasCapacity } from '#modules/local-ai/pressure';
 import {
   actionRank,
   StepFailure,
@@ -209,8 +212,20 @@ async function fire(scheduleId: string, scheduledAtIso: string): Promise<void> {
   const planned = await DBOS.runStep(() => planFire(scheduleId, scheduledAtIso), {
     name: 'helena:fire',
   });
-  if (planned)
+  if (planned) {
+    const mayStart = await DBOS.runStep(
+      async () => {
+        const [run] = await db
+          .select({ kind: pipelineRun.kind })
+          .from(pipelineRun)
+          .where(eq(pipelineRun.id, planned));
+        return run?.kind !== 'routine' || (await localAiHasCapacity('background'));
+      },
+      { name: 'helena:capacity' },
+    );
+    if (!mayStart) return;
     await DBOS.startWorkflow(runWorkflow, { workflowID: planned, queueName: RUNS_QUEUE })(planned);
+  }
 }
 
 export const fireWorkflow = DBOS.registerWorkflow(fire, { name: 'helena.fire' });

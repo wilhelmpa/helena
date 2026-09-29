@@ -1153,12 +1153,16 @@ export async function usageShare(days = 7) {
 // ── The status card ────────────────────────────────────────────────────────────────────
 
 export async function localAiStatus() {
-  type Counts = { interactive: number; normal: number; background: number };
+  type Counts = { interactive: number; realtime: number; normal: number; background: number };
   type PriorityStatus = {
     config: PriorityConfig;
+    healthy: boolean;
     active: Counts;
     queued: Counts;
     oldestWaitMs: number;
+    oldestWaitMsByClass: Counts;
+    fallbacks: Counts;
+    paused: { interactive: boolean; realtime: boolean; normal: boolean; background: boolean };
   };
   const [policy, servers, gpu, npu, usage, lastGpuReset, halogenPriority] = await Promise.all([
     readLocalAiPolicy(),
