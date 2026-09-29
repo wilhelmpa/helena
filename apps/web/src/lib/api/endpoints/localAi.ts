@@ -167,7 +167,13 @@ export interface LoadedModel {
 }
 
 export interface LocalAiStatus {
-  lastGpuReset: { at: string; bootId: string; resetNumber: number; restartedUnits: string[]; failedUnits: string[] } | null;
+  lastGpuReset: {
+    at: string;
+    bootId: string;
+    resetNumber: number;
+    restartedUnits: string[];
+    failedUnits: string[];
+  } | null;
   guard: {
     checkedAt: string | null;
     probeAt: string | null;

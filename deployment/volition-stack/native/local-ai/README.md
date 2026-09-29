@@ -11,9 +11,9 @@ each step in a maintenance window, after the RAID resync (`cat /proc/mdstat` sho
 | `rocm-requirements.txt` | the ROCm/PyTorch wheels with their SHA-256 (`--require-hashes`) |
 | `bench.sh` | llama-bench ROCm (hipBLASLt off/on) vs Vulkan: pp512/pp8192/pp32768, tg128 empty and at 32k; the task-class evals; GPU+NPU in parallel |
 | `models.tsv` | every model with repository commit and SHA-256 of each file |
-| `voice.sh` | Helena's voice on the GPU (hub/voice-2, `docs/helena-decisions/voice-2.md`): whisper.cpp (German Whisper) on `127.0.0.1:13306` and qwentts.cpp (Qwen3-TTS) on `127.0.0.1:13307`, built for gfx1151 on the ROCm tree above; voices designed or cloned; see "Voice" |
+| `voice.sh` | German Whisper on CPU (12 threads, `--no-gpu`) and Qwen3-TTS on ROCm by default; proxy sockets on `127.0.0.1:13306/13307` start backend ports `14306/14307` on demand; `HELENA_VOICE_STT_BACKEND` and `HELENA_VOICE_TTS_BACKEND` select `cpu` or `rocm` |
 | `voice-models.tsv`, `voice-register-voices` | the voice models (commit + SHA-256) and the start hook that registers the voices |
-| `embed.sh` | the embedding model alone (`helena-embed`, llama-server b11166, Qwen3-Embedding-0.6B on `127.0.0.1:13308` with the local AI key) for when Lemonade is stopped (Halogen holds the GPU, `native/halogen/`); same model name, so the index's vectors stay valid |
+| `embed.sh` | Qwen3-Embedding-0.6B on `127.0.0.1:13308`, Vulkan by default (`HELENA_EMBED_BACKEND=rocm` selects ROCm); same model name, so the index's vectors stay valid |
 | `tests/` | `python3 -m unittest discover -s deployment/volition-stack/native/local-ai/tests` |
 
 ## Order
@@ -106,7 +106,7 @@ After step 6 (ROCm is there), in a quiet moment (no deploy, no full test: the tw
 §6, ≈ 3.1 GB with the voice-design model):
 
 ```sh
-sudo ./voice.sh --dry-run install && sudo ./voice.sh install     # models, builds, units, start
+sudo ./voice.sh --dry-run install && sudo ./voice.sh install     # models, builds, units, proxy sockets
 sudo ../hardening/apply.sh firewall                               # the new `voice` loopback ACL
 sudo ../hardening/apply.sh --apply firewall && sudo ../hardening/apply.sh --apply confirm firewall
 sudo ./voice.sh models pull qwen3-tts-1.7b-voicedesign            # 1.18 GB, only to design voices

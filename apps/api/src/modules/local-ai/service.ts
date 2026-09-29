@@ -1213,15 +1213,31 @@ export async function localAiStatus() {
 }
 
 async function readLastGpuReset(): Promise<{
-  at: string; bootId: string; resetNumber: number; restartedUnits: string[]; failedUnits: string[]
+  at: string;
+  bootId: string;
+  resetNumber: number;
+  restartedUnits: string[];
+  failedUnits: string[];
 } | null> {
   try {
     const event = JSON.parse(await readFile('/var/lib/helena-ai/gpu-reset.json', 'utf8'));
-    if (typeof event.at !== 'string' || !Number.isInteger(event.resetNumber) ||
-        !Array.isArray(event.restartedUnits) || !Array.isArray(event.failedUnits)) return null;
-    return { at: event.at, bootId: String(event.bootId ?? ''), resetNumber: event.resetNumber,
-      restartedUnits: event.restartedUnits, failedUnits: event.failedUnits };
-  } catch { return null; }
+    if (
+      typeof event.at !== 'string' ||
+      !Number.isInteger(event.resetNumber) ||
+      !Array.isArray(event.restartedUnits) ||
+      !Array.isArray(event.failedUnits)
+    )
+      return null;
+    return {
+      at: event.at,
+      bootId: String(event.bootId ?? ''),
+      resetNumber: event.resetNumber,
+      restartedUnits: event.restartedUnits,
+      failedUnits: event.failedUnits,
+    };
+  } catch {
+    return null;
+  }
 }
 
 // ── The settings page ──────────────────────────────────────────────────────────────────

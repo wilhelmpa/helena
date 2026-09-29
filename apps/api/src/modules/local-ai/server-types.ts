@@ -532,13 +532,19 @@ export const WHISPER_CPP_DEFAULT_BASE_URL = 'http://127.0.0.1:13306/v1';
 // weights it loaded is the installer's (voice.sh, models.tsv).
 export const WHISPER_CPP_MODEL = 'whisper';
 
-async function voiceUnit(context: ModelServerContext, service: 'stt' | 'tts'): Promise<LocalAiUnit> {
+async function voiceUnit(
+  context: ModelServerContext,
+  service: 'stt' | 'tts',
+): Promise<LocalAiUnit> {
   const port = service === 'stt' ? 13306 : 13307;
-  if (!new RegExp(`^http://(?:127\\.0\\.0\\.1|localhost):${port}(?:/|$)`).test(context.baseUrl)) return 'gpu';
+  if (!new RegExp(`^http://(?:127\\.0\\.0\\.1|localhost):${port}(?:/|$)`).test(context.baseUrl))
+    return 'gpu';
   try {
     const unit = await readFile(`/etc/systemd/system/helena-voice-${service}.service`, 'utf8');
     return /^ExecStart=.*-cpu\//m.test(unit) ? 'cpu' : 'gpu';
-  } catch { return 'gpu'; }
+  } catch {
+    return 'gpu';
+  }
 }
 
 // whisper.cpp's own server (MIT, ggml-org/whisper.cpp examples/server): one model, loaded at

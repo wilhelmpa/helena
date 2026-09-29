@@ -64,6 +64,37 @@ class WatchTest(unittest.TestCase):
             self.assertFalse(any(call.args[0] == "start" for call in systemctl.call_args_list))
             self.assertIn("/dev/kfd", json.loads(watch.STATE.read_text())["failedUnits"])
 
+    def test_stuck_kfd_holder_is_killed_after_timeout(self):
+        with patch.object(watch, "kfd_holders", side_effect=[{123}, {123}, set(), set()]), \
+             patch.object(watch.time, "monotonic", side_effect=[0, 31, 32, 33]), \
+             patch.object(watch.os, "kill") as kill:
+            self.assertTrue(watch.wait_for_kfd())
+            kill.assert_called_once_with(123, watch.signal.SIGKILL)
+
+    def test_halogen_health_failure_keeps_other_gpu_units_stopped(self):
+        with tempfile.TemporaryDirectory() as root, \
+             patch.object(watch, "STATE", Path(root) / "state.json"), \
+             patch.object(watch, "gpu_unit", return_value=True), \
+             patch.object(watch, "systemctl") as systemctl, \
+             patch.object(watch, "wait_for_kfd", return_value=True), \
+             patch.object(watch, "wait_for_health", return_value=False):
+            systemctl.return_value.returncode = 0
+            self.assertTrue(watch.handle("amdgpu: GPU reset(1) succeeded!", "cursor", "boot"))
+            starts = [call.args for call in systemctl.call_args_list if call.args[0] == "start"]
+            self.assertEqual(starts, [("start", "helena-halogen.service")])
+            self.assertIn("helena-halogen.service", json.loads(watch.STATE.read_text())["failedUnits"])
+
+    def test_group_stop_failure_does_not_start_halogen(self):
+        with tempfile.TemporaryDirectory() as root, \
+             patch.object(watch, "STATE", Path(root) / "state.json"), \
+             patch.object(watch, "gpu_unit", return_value=True), \
+             patch.object(watch, "systemctl") as systemctl, \
+             patch.object(watch, "wait_for_kfd", return_value=True):
+            systemctl.side_effect = lambda *args: type("Result", (), {"returncode": int(args[0] == "stop")})()
+            self.assertTrue(watch.handle("amdgpu: GPU reset(1) succeeded!", "cursor", "boot"))
+            self.assertFalse(any(call.args[0] == "start" for call in systemctl.call_args_list))
+            self.assertIn("stop", json.loads(watch.STATE.read_text())["failedUnits"])
+
     def test_other_kernel_messages_do_nothing(self):
         with patch.object(watch, "systemctl") as systemctl:
             self.assertFalse(watch.handle("GPU reset begin!", "cursor", "boot-a"))

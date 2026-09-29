@@ -100,11 +100,13 @@ def handle(message: str, cursor: str, boot_id: str, event_time: datetime | None 
     failures = []
     restarted = []
     proxies = [unit.replace(".service", "-proxy.service") for unit in active if unit in ON_DEMAND]
-    if active and systemctl("stop", *active, *proxies).returncode:
+    stop_failed = bool(active and systemctl("stop", *active, *proxies).returncode)
+    if stop_failed:
         failures.append("stop")
-    if not wait_for_kfd():
+    drained = wait_for_kfd()
+    if not drained:
         failures.append("/dev/kfd")
-    else:
+    if drained and not stop_failed:
         if systemctl("start", "helena-halogen.service").returncode or not wait_for_health():
             failures.append("helena-halogen.service")
         else:
