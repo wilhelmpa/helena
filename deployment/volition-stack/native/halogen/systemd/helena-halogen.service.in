@@ -47,6 +47,9 @@ ExecStart=/usr/bin/podman run --rm --name halogen --replace --pull=never --log-d
   ${HALOGEN_IMAGE}
 # Active only once the model answers (the weights take minutes to map after a boot).
 ExecStartPost=@LIB@/wait-healthy ${HALOGEN_PORT}
+# Flash must never be the OOM victim: the rest of the host gives way first (29.09.,
+# a deploy build plus tests ran the host out of memory and the kernel killed flash_serve).
+ExecStartPost=/bin/sh -c 'for p in $$(pgrep -x flash_serve); do echo -1000 > /proc/$$p/oom_score_adj; done'
 ExecStop=/usr/bin/podman stop -t 60 halogen
 KillMode=mixed
 Delegate=yes

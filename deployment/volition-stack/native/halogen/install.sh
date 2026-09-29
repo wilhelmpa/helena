@@ -264,7 +264,7 @@ install_all() {
   done
 
   say "== settings (once; never overwritten)"
-  if [ -e "$CONF" ]; then say "have $CONF"; else put "$CONF" 0644 root:root < "$here/halogen.conf"; fi
+  if [ -e "$CONF" ]; then say "have $CONF"; else put "$CONF" 0600 root:root < "$here/halogen.conf"; fi
 
   say "== Kingston host memory policy (kernel cmdline is a separate maintenance step)"
   put "$SYSCTL" 0644 root:root < "$here/60-helena-halogen.conf"
