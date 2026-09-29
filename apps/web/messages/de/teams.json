@@ -830,7 +830,19 @@
       "daysHint": "An welchen Wochentagen.",
       "timezoneHint": "Für Arbeitszeit und Tage, z. B. Europe/Berlin.",
       "instructionsHint": "Was er bei jedem Takt prüft. Nur wenn es etwas zu tun gibt, startet ein Lauf.",
-      "schedule": "Takt"
+      "schedule": "Takt",
+      "precheck": "Vorprüfung",
+      "precheckHint": "Im Grenzfall entscheidet erst ein schnelles lokales Modell, ob es Arbeit gibt; ohne Arbeit startet kein Lauf.",
+      "throttled": "Durch Budget gedrosselt",
+      "historyEmpty": "Noch keine Prüfungen.",
+      "skippedMany": "{count}× {reason}",
+      "reasons": {
+        "noWork": "nichts zu tun",
+        "outsideHours": "außerhalb der Arbeitszeit",
+        "precheck": "von der Vorprüfung übersprungen",
+        "runPending": "ein Lauf wartet noch",
+        "other": "übersprungen"
+      }
     },
     "pages": {
       "groups": {
@@ -890,7 +902,11 @@
       "latestResults": "Letzte Ergebnisse",
       "noResults": "Noch keine Läufe.",
       "allSettings": "Alle Einstellungen"
-    }
+    },
+    "groupAgents": "Agenten",
+    "copies": "{count, plural, =0 {Keine Kopien} one {# Kopie} other {# Kopien}}",
+    "moreActionsFor": "Aktionen für {name}",
+    "defaultModel": "Standardmodell"
   },
   "members": {
     "roleSaved": "{name} ist jetzt {role}",

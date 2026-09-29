@@ -43,9 +43,9 @@
     "create": "创建",
     "templates": "模板",
     "empty": "还没有模板",
-    "emptyHint": "在下方添加一个内置模板，或创建一个新模板。",
-    "builtins": "内置模板",
-    "builtinsHint": "添加会将其以你的语言复制到你的库中，之后可以修改。",
+    "emptyHint": "添加下方的示例之一，或自己创建。",
+    "builtins": "示例",
+    "builtinsHint": "以你的语言复制到你的库中，你可以在那里修改。",
     "addToLibrary": "添加到库",
     "added": "已将 {name} 添加到库中。",
     "steps": "{count, plural, other {# 个步骤}}",
@@ -57,7 +57,10 @@
     "tryAgain": "重试",
     "noAccess": "你可能无法查看此团队的工作流。",
     "readOnly": "只有可创建工作流的成员才能在此添加模板。",
-    "noAccessTitle": "无访问权限"
+    "noAccessTitle": "无访问权限",
+    "startsWhen": "启动：{trigger}",
+    "stepsLabel": "步骤",
+    "moreSteps": "另外 {count} 个"
   },
   "starter": {
     "name": "新建工作流",
@@ -592,5 +595,21 @@
     "of": "{project} 中的 {workflow}",
     "step": "步骤：{step}",
     "waitingSince": "自 {time} 起等待"
+  },
+  "kindsOverview": {
+    "workflow": {
+      "title": "工作流",
+      "text": "任务如何进行：一步接一步——代理、审批、通知。"
+    },
+    "schedule": {
+      "title": "日程（例程）",
+      "text": "工作何时自动开始：在固定时间给代理一个任务，例如每天早上八点。",
+      "open": "日程"
+    },
+    "heartbeat": {
+      "title": "心跳",
+      "text": "代理按固定间隔查看是否有工作，只有有工作时才开始。",
+      "open": "团队"
+    }
   }
 }

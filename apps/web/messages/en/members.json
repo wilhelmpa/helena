@@ -103,5 +103,7 @@
       "human": "No person matches this search.",
       "agent": "No AI agent matches this search."
     }
-  }
+  },
+  "agentsOnTeam": "Agents join, leave and get their instructions on the Team page.",
+  "openTeam": "Open Team"
 }

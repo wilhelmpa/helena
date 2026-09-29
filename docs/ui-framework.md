@@ -64,7 +64,7 @@ eslint lehnt alle anderen `rounded-*`-Klassen ab (`rounded`, `rounded-xs`, `roun
 
 In `features/**` und `app/**` sind Tailwind-Klassen für Abstände (`p-4`, `gap-2`, `space-y-3`, `mt-1` …), Schriftgrößen (`text-sm` …) und Radien verboten. Stattdessen:
 
-- `Stack gap={3}` (untereinander), `Inline gap={2} justify="between" wrap` (nebeneinander), `Grid min="card"` bzw. `Grid columns={2}` bzw. `Grid split`, `Box pad={4}`.
+- `Stack gap={3}` (untereinander), `Inline gap={2} justify="between" wrap` (nebeneinander), `Grid min="card"` bzw. `Grid columns={2}` bzw. `Grid split`, `Box pad={4}`. `Grid min="fit"` teilt eine Zeile unter beliebig vielen Karten auf (Kennzahlen des Dashboards), auf dem Handy zweispaltig.
 - `Text size="xs|sm|md|lg" tone="muted|faint|accent|danger|success|warning" mono truncate`.
 - Die Skala: 1 = 4 px, 2 = 8, 3 = 12, 4 = 16, 5 = 24, 6 = 32, 7 = 48.
 
@@ -90,11 +90,11 @@ Funktionen nach dem Vorbild von Hermes, OpenClaw und Paperclip bekommen keine ei
 
 | Funktion | Ort | Baustein |
 |---|---|---|
-| Budgets, Drossel, harter Stopp | Projekt › Einstellungen › Agenten › **Autopilot & Ausführung** (Überschreibung, markiert, „Auf Vorgabe zurücksetzen“); Vorgabe unter **Vorgaben für Projekte** | `SettingsGroup` „Budgets“ (vorhanden) |
-| Dauerhafte Anweisungen | Projekt › **Autopilot & Ausführung** (neue Gruppe „Anweisungen“); für Helena unter **Vorgaben für Projekte** | `SettingsGroup` + `TextArea` |
-| Eskalation | **Agenten und Modelle** (zentrale Regeln, `LocalAiEscalationSection` zieht dorthin, sobald ein Lauf sie befolgt); Agent-Detail nur „Festlegung für diesen Agenten“ | `SettingsGroup` |
+| Budgets, Drossel, harter Stopp | Projekt › Einstellungen › Agenten › **Autopilot & Ausführung** (Überschreibung, markiert, „Auf Vorgabe zurücksetzen“); Vorgabe unter **Vorgaben für Projekte** (`DefaultBudgetsGroup`, gilt für neue Projekte); Anzeige: Dashboard-Kachel „Budgets“, Projektkarten, „Braucht dich“ (aufgebraucht = gestoppt, ab 80 % = gedrosselt) | `SettingsGroup` „Budgets“, `BudgetsTile`, `budgetNeedsYouSource` |
+| Dauerhafte Anweisungen | Projekt › **Autopilot & Ausführung** (Gruppe „Anweisungen“ mit den Projektanweisungen); für Helena unter **Vorgaben für Projekte**; Vorschläge der Agenten übernehmen/ablehnen | `StandingOrdersGroup` |
+| Eskalation | **Agenten und Modelle** (zentrale Regeln, als „Vorbereitet“ markiert, bis die zentrale Laufzeit sie befolgt); Agent-Dialog › Modell & Verhalten nur „Festlegung für diesen Agenten“ | `LocalAiEscalationSection`, `AgentEscalationPin` |
 | Telegram-Kanal | **Benachrichtigungen & Kanäle** › Telegram | vorhanden |
-| Heartbeat, Gedächtnis, Fakten, Skills pro Agent | Agent-Detail (Agent-Dialog) | `DetailView`, `SettingsGroup` |
+| Heartbeat, Gedächtnis, Fakten, Skills pro Agent | Agent-Detail (Agent-Dialog); der Herzschlag zeigt Vorprüfung, Drossel und die letzten Prüfungen gebündelt, der Verlauf bündelt Herzschlag-Läufe | `DetailView`, `SettingsGroup`, `List` |
 | Skills, Selbstlernen | **Skills** (Katalog) | vorhanden |
 | Ziel-Leiter | Helena › Ziele (rechte Spalte, „Warum“), Projekt-Ziele (Zeile und „Warum“ im Ziel), Aufgabendetail („Warum“) | `DetailGroup`, `.ds-ladder`, `.ds-why` |
 | Aufgaben-Übernahme | Aufgabendetail „Bearbeitet von …“ (Lease des Laufs, `GET /issues/:id/claim`) | Eigenschaftszeile |

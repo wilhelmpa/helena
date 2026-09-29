@@ -44,6 +44,9 @@
 
 .tile {
   display: flex;
+  /* A tile that is a button (the System tile) fills its cell like one that is a link
+     (owner, O6: the System tile looked different). */
+  width: 100%;
   min-height: 127px;
   flex-direction: column;
   gap: 10px;
@@ -108,4 +111,74 @@
   .pageTitle {
     font-size: 36px;
   }
+}
+
+/* A project on the dashboard (owner, O7: the projects stand out): a raised tile with the
+   project's colour as a line on its start edge, its name, its key, one line of figures
+   and, when it has one, the bar of its fullest budget. */
+.projectTile {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 8px;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  background: var(--dashboard-raised);
+  padding: 14px 16px 14px 18px;
+  transition: background-color 180ms ease;
+}
+
+.projectTile::before {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  width: 3px;
+  background: var(--project-accent, var(--brand));
+  content: '';
+}
+
+.projectTile:hover,
+.projectTile:focus-visible {
+  background: var(--dashboard-selected);
+  outline: none;
+}
+
+.projectHead {
+  display: flex;
+  min-width: 0;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.projectName {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  color: var(--dashboard-ink);
+  font-size: 15px;
+  font-weight: 560;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.projectKey {
+  flex: none;
+  color: var(--project-accent, var(--brand));
+  font:
+    500 10px/1.4 'JetBrains Mono Variable',
+    'JetBrains Mono',
+    ui-monospace,
+    monospace;
+  letter-spacing: 0.14em;
+}
+
+.projectFacts {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+  color: var(--dashboard-muted);
+  font-size: 12px;
 }

@@ -5,7 +5,7 @@ import type { Routine } from '@/lib/api/endpoints/routines';
 import StatusBadge from '@/components/common/page/StatusBadge';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
-import { aiTeamPath } from '@/utils/paths';
+import { routineEditPath } from '@/utils/paths';
 import { useCronDescription } from '../hooks/useCronDescription';
 import { formatInZone } from '../utils/schedulePreview';
 import { RoutineActionsMenu, type RoutineActions } from './RoutineActionsMenu';
@@ -32,7 +32,7 @@ export function RoutineItem({
         <p dir="auto" className="min-w-0 flex-1 truncate font-medium" title={routine.instructions}>
           {showProject ? (
             <Link
-              href={aiTeamPath(routine.projectKey, 'schedules')}
+              href={routineEditPath(routine.projectKey, routine.id)}
               className="underline-offset-2 hover:underline"
             >
               {routine.title}
@@ -64,7 +64,7 @@ export function RoutineItem({
         <span className="truncate">{routine.agent?.name ?? t('agentLeft')}</span>
         {showProject && (
           <Link
-            href={aiTeamPath(routine.projectKey, 'schedules')}
+            href={routineEditPath(routine.projectKey, routine.id)}
             className="ms-auto shrink-0 font-mono text-muted-foreground hover:underline"
           >
             {routine.projectKey}

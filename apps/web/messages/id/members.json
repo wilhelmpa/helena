@@ -103,5 +103,7 @@
       "human": "Tidak ada orang yang cocok dengan pencarian ini.",
       "agent": "Tidak ada agen AI yang cocok dengan pencarian ini."
     }
-  }
+  },
+  "agentsOnTeam": "Agen bergabung, keluar, dan mendapat instruksinya di halaman Tim.",
+  "openTeam": "Buka Tim"
 }

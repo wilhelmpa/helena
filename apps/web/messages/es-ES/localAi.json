@@ -352,7 +352,7 @@
   "escalation": {
     "title": "Escalado",
     "description": "Cuándo un modelo de suscripción potente sustituye al local: trabajo difícil, respuestas inseguras, fallos.",
-    "draft": "Borrador: aún no activo",
+    "draft": "Se guarda ya; el runtime central sigue las reglas en cuanto esté en uso.",
     "enabled": "Escalado activado",
     "defaultModel": "Modelo por defecto",
     "model": "Modelo",
@@ -374,7 +374,26 @@
       "error": "Error"
     },
     "pinsNone": "Sin elecciones fijas para agentes, proyectos o tareas.",
-    "pins": "{count} elecciones fijas para agentes, proyectos o tareas."
+    "pins": "{count} elecciones fijas para agentes, proyectos o tareas.",
+    "draftBadge": "Preparado",
+    "saved": "Reglas de escalado guardadas",
+    "defaultModelHint": "Se usa cuando una regla no nombra modelo.",
+    "uncertaintyHint": "Por debajo de esta confianza (en %) responde el modelo fuerte.",
+    "failureHint": "Tras estos intentos locales toma el relevo el modelo fuerte.",
+    "failureOn": "Cuenta como fallo",
+    "pinsLabel": "Elecciones fijas",
+    "agentHint": "Las reglas están en «Agentes y modelos».",
+    "pinLabel": "Elección para este agente",
+    "pinSaved": "Elección guardada",
+    "pinModelHint": "Vacío: el modelo por defecto.",
+    "pinModes": {
+      "auto": "Reglas",
+      "local": "Siempre local",
+      "strong": "Siempre fuerte",
+      "autoHint": "Deciden las reglas centrales.",
+      "localHint": "Este agente nunca escala.",
+      "strongHint": "Este agente siempre trabaja con un modelo fuerte."
+    }
   },
   "classGroups": {
     "none": "Aún no hay ningún tipo de trabajo listo: primero hay que superar una evaluación.",

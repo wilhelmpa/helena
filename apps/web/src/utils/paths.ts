@@ -187,6 +187,10 @@ export const settingsPath = (key: string, section: string) =>
 export const aiTeamPath = (key: string, section: string) =>
   `${projectPath(key)}/ai-team/${section}`;
 
+// A schedule opened for editing on its project's Schedules page (owner, O24).
+export const routineEditPath = (key: string, routineId: string) =>
+  `${aiTeamPath(key, 'schedules')}?edit=${encodeURIComponent(routineId)}`;
+
 export const inboxPath = (key: string) => `${projectPath(key)}/inbox`;
 
 // The member's own notification preferences (which events, by which channel, their

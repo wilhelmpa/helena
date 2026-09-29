@@ -896,13 +896,24 @@
     "levelDefault": "Как значение по умолчанию для всех проектов.",
     "autopilotTitle": "Автопилот",
     "instructionsTitle": "Инструкции",
-    "instructionsHint": "Действуют для каждого агента проекта.",
+    "instructionsHint": "Каждый агент проекта следует им в каждом запуске.",
     "instructionsLabel": "Инструкции проекта",
     "instructionsPlaceholder": "Опишите задачи проекта и правила работы.",
-    "instructionsSaved": "Инструкции сохранены"
+    "instructionsSaved": "Инструкции сохранены",
+    "budgetsReset": "Бюджеты возвращены к умолчанию",
+    "budgetsOverridden": "У проекта свои бюджеты",
+    "budgetsDefault": "Как умолчание для всех проектов",
+    "budgetsDefaultHint": "Умолчание задаётся в настройках Helena, раздел «Умолчания проектов»."
   },
   "defaults": {
-    "adminOnly": "Эти значения для всех проектов меняет только администратор."
+    "adminOnly": "Эти значения для всех проектов меняет только администратор.",
+    "budgetsTitle": "Бюджеты новых проектов",
+    "budgetsHint": "С 80 % пульс замедляется, на 100 % работа останавливается. Дни и месяцы в UTC.",
+    "budgetsSaved": "Бюджеты новых проектов сохранены",
+    "budgetsOverridden": "{count, plural, one {У # проекта свои бюджеты.} few {У # проектов свои бюджеты.} many {У # проектов свои бюджеты.} other {У # проекта свои бюджеты.}}",
+    "budgetsNone": "Все проекты следуют этому умолчанию.",
+    "helenaOrdersTitle": "Постоянные указания для Helena",
+    "helenaOrdersHint": "Helena следует им в каждом чате и запуске."
   },
   "uiGallery": {
     "sample": "Sample text",

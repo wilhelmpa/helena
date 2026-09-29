@@ -1,5 +1,6 @@
 import type { Edge, Node } from '@xyflow/react';
 import type { OrganizationAgent } from '@/lib/api/endpoints/organization';
+import type { RingTask } from './organizationRingLayout';
 
 // "Baum": the classic org chart, Home on top, then coordinators, then specialists.
 // Positions are deterministic (sorted by name), so selecting, filtering or a refetch
@@ -13,11 +14,19 @@ const LEVEL_GAP = 30;
 // Stacked specialists hang off a rail on the left of their coordinator.
 const RAIL_INDENT = 40;
 const STACK_GAP = 14;
+// An agent's current tasks hang under its card, as in the ring (owner 29.09.: the same
+// "Aufgaben" in both views): at most four, the fourth names how many more.
+const TASK_HEIGHT = 26;
+const TASK_GAP = 6;
+const TASK_INDENT = 12;
+const TASKS_PER_AGENT = 4;
 
 export interface ChartLayoutOptions {
   // Stack a coordinator's specialists in a column under it instead of a row. Used on
   // Home, where 40+ agents in one row would shrink every card to a dot.
   stackLeaves?: boolean;
+  // The current tasks of the agents, shown under their cards while "Aufgaben" is on.
+  tasks?: RingTask[];
 }
 
 function isLeader(agent: OrganizationAgent) {
@@ -44,8 +53,20 @@ export function organizationChartLayout(
   for (const entries of children.values()) entries.sort((a, b) => a.name.localeCompare(b.name));
   roots.sort((a, b) => Number(b.isHome) - Number(a.isHome) || a.name.localeCompare(b.name));
 
+  const tasksOf = new Map<number, RingTask[]>();
+  for (const task of options.tasks ?? [])
+    tasksOf.set(task.agentId, [...(tasksOf.get(task.agentId) ?? []), task]);
+  const shownTasks = (agent: OrganizationAgent) =>
+    (tasksOf.get(agent.id) ?? []).slice(0, TASKS_PER_AGENT);
+  // The room an agent's tasks take under its card.
+  const taskRoom = (agent: OrganizationAgent) => {
+    const count = shownTasks(agent).length;
+    return count ? TASK_GAP + count * (TASK_HEIGHT + TASK_GAP) : 0;
+  };
   const width = (agent: OrganizationAgent) => (isLeader(agent) ? LEADER_WIDTH : LEAF_WIDTH);
-  const height = (agent: OrganizationAgent) => (isLeader(agent) ? LEADER_HEIGHT : LEAF_HEIGHT);
+  const cardHeight = (agent: OrganizationAgent) => (isLeader(agent) ? LEADER_HEIGHT : LEAF_HEIGHT);
+  // The card and its tasks under it.
+  const height = (agent: OrganizationAgent) => cardHeight(agent) + taskRoom(agent);
   const visible = (agent: OrganizationAgent) =>
     collapsed.has(agent.id) ? [] : (children.get(agent.id) ?? []);
   const stacked = (agent: OrganizationAgent, reports: OrganizationAgent[]) =>
@@ -98,9 +119,31 @@ export function organizationChartLayout(
       type: 'agent',
       position: { x, y },
       width: width(agent),
-      height: height(agent),
+      height: cardHeight(agent),
       data: { agent, reportCount: (children.get(agent.id) ?? []).length },
       draggable: false,
+    });
+    const list = tasksOf.get(agent.id) ?? [];
+    const shown = shownTasks(agent);
+    shown.forEach((task, index) => {
+      const id = `task:${task.id}`;
+      nodes.push({
+        id,
+        type: 'task',
+        position: {
+          x: x + TASK_INDENT,
+          y: y + cardHeight(agent) + TASK_GAP + index * (TASK_HEIGHT + TASK_GAP),
+        },
+        draggable: false,
+        data: { task, more: index === shown.length - 1 ? list.length - shown.length : 0 },
+      });
+      edges.push({
+        id: `${agent.id}-${id}`,
+        source: String(agent.id),
+        target: id,
+        type: 'flow',
+        data: { active: false, accent: task.color, task: true },
+      });
     });
   }
   function place(agent: OrganizationAgent, left: number, y: number) {

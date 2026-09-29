@@ -197,5 +197,31 @@
     "dialogHint": "手动输入的价格不会被导入覆盖。",
     "empty": "未找到价格。",
     "none": "–"
+  },
+  "standingOrders": {
+    "failed": "操作失败。",
+    "sourceOwner": "所有者",
+    "added": "已添加常设指令",
+    "proposal": "提议",
+    "proposedBy": "提议：{source}。确认后生效。",
+    "rejected": "提议已拒绝",
+    "confirmed": "指令即刻生效",
+    "reject": "拒绝",
+    "confirm": "确认",
+    "switchedOn": "指令已开启",
+    "switchedOff": "指令已关闭",
+    "saved": "指令已保存",
+    "newLabel": "新的常设指令",
+    "empty": "一条在每次运行中都生效、直到你关闭为止的规则。",
+    "placeholder": "例如：始终把邮件中的发票归档到“票据”。",
+    "add": "添加",
+    "deleteTitle": "删除此指令？",
+    "deleted": "指令已删除",
+    "editLabel": "修改指令",
+    "inForce": "生效中 · {source}",
+    "off": "已关闭 · {source}",
+    "active": "生效",
+    "actions": "指令操作",
+    "edit": "修改"
   }
 }

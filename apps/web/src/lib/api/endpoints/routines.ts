@@ -45,13 +45,17 @@ export interface Routine {
   catchUp: RoutineCatchUp;
   gateMode: RoutineGateMode;
   gateSource: RoutineGateSource;
+  // Checks before a fire whether there is new work at all (on by default).
+  precheckEnabled?: boolean;
   enabled: boolean;
   nextRunAt: string | null;
   lastRun: {
     id: string;
     status: string;
     outcome: 'created' | 'reopened' | 'skipped' | null;
-    skipReason: 'task-open' | 'missed' | 'gate' | null;
+    // 'no-work': the precheck found nothing new (its last task is still open) and saved the
+    // run (Paperclip's heartbeat precheck).
+    skipReason: 'task-open' | 'missed' | 'gate' | 'no-work' | null;
     gate: {
       mode: RoutineGateMode;
       source: RoutineGateSource;

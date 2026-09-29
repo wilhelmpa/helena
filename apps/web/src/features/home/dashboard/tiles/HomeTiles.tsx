@@ -232,7 +232,7 @@ export function SystemTile() {
   const sub = !summary
     ? ''
     : areas.length > 0
-      ? areas.join(' · ')
+      ? [t('problems', { count }), ...areas].join(' · ')
       : glanceParts.length > 0
         ? glanceParts.join(' · ')
         : t('counts', { services: summary.services.total, agents: summary.agents.total });
@@ -241,7 +241,8 @@ export function SystemTile() {
       onSelect={openSystemDetails}
       label={t('title')}
       status={status}
-      value={!summary ? null : count === 0 ? t('ok') : t('problems', { count })}
+      // A figure like every other tile (owner, O6); the words go to the line under it.
+      value={!summary ? null : count === 0 ? t('ok') : count}
       subTone={status === 'danger' ? 'danger' : status === 'waiting' ? 'waiting' : 'default'}
       sub={sub}
       title={sub}

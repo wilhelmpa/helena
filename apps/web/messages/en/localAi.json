@@ -352,7 +352,7 @@
   "escalation": {
     "title": "Escalation",
     "description": "When a strong subscription model takes over from the local one: hard work, unsure answers, failures.",
-    "draft": "Draft – not active yet",
+    "draft": "Stored now; the central runtime follows the rules once it is in use.",
     "enabled": "Escalation on",
     "defaultModel": "Default model",
     "model": "Model",
@@ -374,7 +374,26 @@
       "error": "Error"
     },
     "pinsNone": "No fixed choices for agents, projects or tasks.",
-    "pins": "{count} fixed choices for agents, projects or tasks."
+    "pins": "{count} fixed choices for agents, projects or tasks.",
+    "draftBadge": "Prepared",
+    "saved": "Escalation rules saved",
+    "defaultModelHint": "Takes over when a rule names no model.",
+    "uncertaintyHint": "Below this confidence (in %) the strong model answers.",
+    "failureHint": "After this many local attempts the strong model takes over.",
+    "failureOn": "Counts as a failure",
+    "pinsLabel": "Fixed choices",
+    "agentHint": "The rules are set in Agents and models.",
+    "pinLabel": "Choice for this agent",
+    "pinSaved": "Choice saved",
+    "pinModelHint": "Empty: the default model.",
+    "pinModes": {
+      "auto": "Rules",
+      "local": "Always local",
+      "strong": "Always strong",
+      "autoHint": "The central rules decide.",
+      "localHint": "This agent never escalates.",
+      "strongHint": "This agent always works on a strong model."
+    }
   },
   "classGroups": {
     "none": "No kind of work is ready yet: pass an eval first.",

@@ -43,9 +43,9 @@
     "create": "Criar",
     "templates": "Modelos",
     "empty": "Ainda não há modelos",
-    "emptyHint": "Adicione um modelo integrado abaixo ou crie um novo.",
-    "builtins": "Modelos integrados",
-    "builtinsHint": "Ao adicionar um, ele é copiado para sua biblioteca no seu idioma, onde você pode alterá-lo.",
+    "emptyHint": "Adicione um dos exemplos abaixo ou crie o seu.",
+    "builtins": "Exemplos",
+    "builtinsHint": "Copiado para sua biblioteca no seu idioma, onde você pode alterá-lo.",
     "addToLibrary": "Adicionar à biblioteca",
     "added": "{name} foi adicionado à biblioteca.",
     "steps": "{count, plural, one {# etapa} other {# etapas}}",
@@ -57,7 +57,10 @@
     "tryAgain": "Tentar novamente",
     "noAccess": "Você pode não ver os fluxos de trabalho desta equipe.",
     "readOnly": "Somente membros que podem criar fluxos de trabalho adicionam modelos aqui.",
-    "noAccessTitle": "Sem acesso"
+    "noAccessTitle": "Sem acesso",
+    "startsWhen": "Começa: {trigger}",
+    "stepsLabel": "Etapas",
+    "moreSteps": "+{count} mais"
   },
   "starter": {
     "name": "Novo fluxo de trabalho",
@@ -592,5 +595,21 @@
     "of": "{workflow} em {project}",
     "step": "Etapa: {step}",
     "waitingSince": "Aguardando desde {time}"
+  },
+  "kindsOverview": {
+    "workflow": {
+      "title": "Fluxo de trabalho",
+      "text": "Como uma tarefa anda: etapas uma após a outra — agentes, aprovações, avisos."
+    },
+    "schedule": {
+      "title": "Agenda (rotina)",
+      "text": "Quando o trabalho começa sozinho: em horários fixos um agente recebe uma tarefa, p. ex. toda manhã às oito.",
+      "open": "Agendas"
+    },
+    "heartbeat": {
+      "title": "Batimento",
+      "text": "Um agente verifica em intervalos fixos se há trabalho para ele e só então começa.",
+      "open": "Equipe"
+    }
   }
 }

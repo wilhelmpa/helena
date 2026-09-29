@@ -144,8 +144,8 @@ export function useUpdateLocalAiJudge() {
   });
 }
 
-export function useEscalation() {
-  return useQuery({ queryKey: escalationKey, queryFn: getEscalation, retry: false });
+export function useEscalation(enabled = true) {
+  return useQuery({ queryKey: escalationKey, queryFn: getEscalation, retry: false, enabled });
 }
 
 export function useUpdateEscalation() {

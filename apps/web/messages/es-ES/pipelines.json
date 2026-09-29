@@ -43,9 +43,9 @@
     "create": "Crear",
     "templates": "Plantillas",
     "empty": "Todavía no hay plantillas",
-    "emptyHint": "Añade una plantilla integrada abajo o crea una nueva.",
-    "builtins": "Plantillas integradas",
-    "builtinsHint": "Al añadir una se copia en tu biblioteca en tu idioma, donde puedes cambiarla.",
+    "emptyHint": "Añade uno de los ejemplos de abajo o crea el tuyo.",
+    "builtins": "Ejemplos",
+    "builtinsHint": "Se copia a tu biblioteca en tu idioma, donde puedes cambiarlo.",
     "addToLibrary": "Añadir a la biblioteca",
     "added": "{name} se ha añadido a la biblioteca.",
     "steps": "{count, plural, one {# paso} other {# pasos}}",
@@ -57,7 +57,10 @@
     "tryAgain": "Inténtalo otra vez",
     "noAccess": "Puede que no veas los flujos de trabajo de este equipo.",
     "readOnly": "Solo los miembros que pueden crear flujos de trabajo añaden plantillas aquí.",
-    "noAccessTitle": "Sin acceso"
+    "noAccessTitle": "Sin acceso",
+    "startsWhen": "Empieza: {trigger}",
+    "stepsLabel": "Pasos",
+    "moreSteps": "+{count} más"
   },
   "starter": {
     "name": "Nuevo flujo de trabajo",
@@ -592,5 +595,21 @@
     "of": "{workflow} en {project}",
     "step": "Paso: {step}",
     "waitingSince": "Esperando desde {time}"
+  },
+  "kindsOverview": {
+    "workflow": {
+      "title": "Flujo de trabajo",
+      "text": "Cómo avanza una tarea: pasos uno tras otro, con agentes, aprobaciones y avisos."
+    },
+    "schedule": {
+      "title": "Horario (rutina)",
+      "text": "Cuándo empieza el trabajo solo: a horas fijas un agente recibe una tarea, p. ej. cada mañana a las ocho.",
+      "open": "Horarios"
+    },
+    "heartbeat": {
+      "title": "Latido",
+      "text": "Un agente mira cada cierto tiempo si hay trabajo para él y solo entonces empieza.",
+      "open": "Equipo"
+    }
   }
 }

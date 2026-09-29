@@ -896,13 +896,24 @@
     "levelDefault": "Wie die Vorgabe für alle Projekte.",
     "autopilotTitle": "Autopilot",
     "instructionsTitle": "Anweisungen",
-    "instructionsHint": "Gelten für jeden Agenten dieses Projekts.",
+    "instructionsHint": "Jeder Agent dieses Projekts befolgt sie in jedem Lauf.",
     "instructionsLabel": "Projektanweisungen",
     "instructionsPlaceholder": "Beschreibe den Auftrag des Projekts und die Arbeitsanweisungen.",
-    "instructionsSaved": "Anweisungen gespeichert"
+    "instructionsSaved": "Anweisungen gespeichert",
+    "budgetsReset": "Budgets auf die Vorgabe zurückgesetzt",
+    "budgetsOverridden": "Dieses Projekt hat eigene Budgets",
+    "budgetsDefault": "Wie die Vorgabe für alle Projekte",
+    "budgetsDefaultHint": "Die Vorgabe steht in Helenas Einstellungen unter „Vorgaben für Projekte“."
   },
   "defaults": {
-    "adminOnly": "Diese Vorgaben für alle Projekte ändert nur der Administrator."
+    "adminOnly": "Diese Vorgaben für alle Projekte ändert nur der Administrator.",
+    "budgetsTitle": "Budgets für neue Projekte",
+    "budgetsHint": "Ab 80 % werden die Herzschläge gedrosselt, bei 100 % stoppt die Arbeit. Tage und Monate in UTC.",
+    "budgetsSaved": "Budgets für neue Projekte gespeichert",
+    "budgetsOverridden": "{count, plural, one {# Projekt hat eigene Budgets.} other {# Projekte haben eigene Budgets.}}",
+    "budgetsNone": "Alle Projekte folgen dieser Vorgabe.",
+    "helenaOrdersTitle": "Dauerhafte Anweisungen für Helena",
+    "helenaOrdersHint": "Helena befolgt sie in jedem Chat und Lauf."
   },
   "uiGallery": {
     "sample": "Beispieltext",

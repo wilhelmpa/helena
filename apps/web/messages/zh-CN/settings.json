@@ -896,13 +896,24 @@
     "levelDefault": "与所有项目的默认值相同。",
     "autopilotTitle": "自动驾驶",
     "instructionsTitle": "指令",
-    "instructionsHint": "适用于此项目的每个代理。",
+    "instructionsHint": "此项目的每个代理在每次运行中都遵循它们。",
     "instructionsLabel": "项目指令",
     "instructionsPlaceholder": "描述项目的使命和运行指令。",
-    "instructionsSaved": "指令已保存"
+    "instructionsSaved": "指令已保存",
+    "budgetsReset": "预算已恢复为默认值",
+    "budgetsOverridden": "此项目有自己的预算",
+    "budgetsDefault": "与所有项目的默认值相同",
+    "budgetsDefaultHint": "默认值在 Helena 设置的“项目默认值”中设置。"
   },
   "defaults": {
-    "adminOnly": "只有管理员可以更改这些适用于所有项目的默认值。"
+    "adminOnly": "只有管理员可以更改这些适用于所有项目的默认值。",
+    "budgetsTitle": "新项目的预算",
+    "budgetsHint": "达到 80 % 时心跳减慢，达到 100 % 时工作停止。日和月按 UTC 计算。",
+    "budgetsSaved": "新项目预算已保存",
+    "budgetsOverridden": "{count, plural, other {# 个项目有自己的预算。}}",
+    "budgetsNone": "所有项目都遵循此默认值。",
+    "helenaOrdersTitle": "Helena 的常设指令",
+    "helenaOrdersHint": "Helena 在每次聊天和运行中都遵循它们。"
   },
   "uiGallery": {
     "sample": "Sample text",

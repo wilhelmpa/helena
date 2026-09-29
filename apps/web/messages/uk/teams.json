@@ -830,7 +830,19 @@
       "daysHint": "У які дні тижня.",
       "timezoneHint": "Для часу й днів, напр. Europe/Berlin.",
       "instructionsHint": "Що перевіряється на кожному такті. Запуск починається лише тоді, коли є робота.",
-      "schedule": "Такт"
+      "schedule": "Такт",
+      "precheck": "Попередня перевірка",
+      "precheckHint": "У межовому випадку швидка локальна модель спершу вирішує, чи є робота; без роботи запуск не починається.",
+      "throttled": "Сповільнено бюджетом",
+      "historyEmpty": "Перевірок ще немає.",
+      "skippedMany": "{count}× {reason}",
+      "reasons": {
+        "noWork": "нічого робити",
+        "outsideHours": "поза робочим часом",
+        "precheck": "пропущено попередньою перевіркою",
+        "runPending": "запуск ще чекає",
+        "other": "пропущено"
+      }
     },
     "pages": {
       "groups": {
@@ -890,7 +902,11 @@
       "latestResults": "Останні результати",
       "noResults": "Запусків ще немає.",
       "allSettings": "Усі налаштування"
-    }
+    },
+    "groupAgents": "Агенти",
+    "copies": "{count, plural, =0 {Немає копій} one {# копія} few {# копії} many {# копій} other {# копії}}",
+    "moreActionsFor": "Дії для {name}",
+    "defaultModel": "Модель за замовчуванням"
   },
   "members": {
     "roleSaved": "{name} тепер {role}",

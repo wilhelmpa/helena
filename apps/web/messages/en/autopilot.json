@@ -197,5 +197,31 @@
     "dialogHint": "A price entered by hand is never overwritten by an import.",
     "empty": "No prices found.",
     "none": "–"
+  },
+  "standingOrders": {
+    "failed": "That did not work.",
+    "sourceOwner": "Owner",
+    "added": "Standing order added",
+    "proposal": "Proposal",
+    "proposedBy": "Proposed: {source}. It applies once you confirm it.",
+    "rejected": "Proposal rejected",
+    "confirmed": "Standing order applies from now on",
+    "reject": "Reject",
+    "confirm": "Confirm",
+    "switchedOn": "Standing order switched on",
+    "switchedOff": "Standing order switched off",
+    "saved": "Standing order saved",
+    "newLabel": "New standing order",
+    "empty": "A rule that holds in every run until you switch it off.",
+    "placeholder": "e.g. Always file invoices from mail under Receipts.",
+    "add": "Add",
+    "deleteTitle": "Delete this standing order?",
+    "deleted": "Standing order deleted",
+    "editLabel": "Change standing order",
+    "inForce": "Applies · {source}",
+    "off": "Switched off · {source}",
+    "active": "Applies",
+    "actions": "Standing order actions",
+    "edit": "Change"
   }
 }

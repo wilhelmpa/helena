@@ -1,4 +1,4 @@
-import type { HTMLAttributes, ReactNode } from 'react';
+import type { CSSProperties, HTMLAttributes, ReactNode } from 'react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import styles from './DashboardPrimitives.module.css';
@@ -30,6 +30,42 @@ export function MonoMeta({ children, className }: { children: ReactNode; classNa
 
 export function DashboardTitle({ children }: { children: ReactNode }) {
   return <h1 className={styles.pageTitle}>{children}</h1>;
+}
+
+// A project on the dashboard: its colour on the start edge, name and key, one line of
+// facts, and an optional footer (its budget bar). The whole tile opens the project.
+export function ProjectTile({
+  href,
+  accent,
+  name,
+  projectKey,
+  facts,
+  footer,
+}: {
+  href: string;
+  // A colour token of the project (utils/projectColor).
+  accent: string;
+  name: ReactNode;
+  projectKey: string;
+  facts?: ReactNode;
+  footer?: ReactNode;
+}) {
+  return (
+    <Link
+      href={href}
+      className={styles.projectTile}
+      style={{ '--project-accent': accent } as CSSProperties}
+    >
+      <span className={styles.projectHead}>
+        <span className={styles.projectName} dir="auto">
+          {name}
+        </span>
+        <span className={styles.projectKey}>{projectKey}</span>
+      </span>
+      {facts && <span className={styles.projectFacts}>{facts}</span>}
+      {footer}
+    </Link>
+  );
 }
 
 export function Tile({
