@@ -15,7 +15,7 @@
     "noMatches": "Nenhum chat corresponde à sua busca.",
     "searchResults": "Resultados da busca",
     "empty": {
-      "active": "Ainda não há chats. Comece um com os agentes acima.",
+      "active": "Ainda não há chats. Comece um com +.",
       "archived": "Nenhum chat arquivado.",
       "trash": "A lixeira está vazia."
     },
@@ -65,7 +65,8 @@
       "dissolve": "Desfazer pasta (os chats ficam)",
       "actions": "Pasta “{name}”",
       "empty": "Vazia: mova chats para cá pelo menu deles."
-    }
+    },
+    "newChatWith": "Novo chat com {name}"
   },
   "empty": {
     "noAgentsTitle": "Nenhum agente para conversar",

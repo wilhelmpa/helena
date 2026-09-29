@@ -303,5 +303,6 @@
   "settingsAutopilotExecution": "Автопилот и исполнение",
   "settingsProjectAccess": "Управление доступами",
   "sidebarHelenaKnowledge": "{appName}",
-  "sidebarTrash": "Корзина"
+  "sidebarTrash": "Корзина",
+  "sidebarChats": "Чаты"
 }

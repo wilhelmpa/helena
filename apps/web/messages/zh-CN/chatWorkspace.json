@@ -15,7 +15,7 @@
     "noMatches": "没有与搜索匹配的聊天。",
     "searchResults": "搜索结果",
     "empty": {
-      "active": "还没有聊天。从上面的代理开始一个吧。",
+      "active": "还没有聊天。点 + 开始一个。",
       "archived": "没有已归档的聊天。",
       "trash": "回收站是空的。"
     },
@@ -65,7 +65,8 @@
       "dissolve": "解散文件夹（聊天保留）",
       "actions": "文件夹“{name}”",
       "empty": "空的：通过聊天的菜单把聊天移到这里。"
-    }
+    },
+    "newChatWith": "与 {name} 开始新聊天"
   },
   "empty": {
     "noAgentsTitle": "没有可以对话的智能体",

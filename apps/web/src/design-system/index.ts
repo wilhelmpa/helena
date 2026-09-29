@@ -5,7 +5,15 @@
 // patterns (SettingsGroup/Row, DetailView; the FilterBar of project data lives in
 // components/layout because it reads the project). Pages and features import only
 // from here; eslint rejects free colours, spacing, radii and type sizes in them.
-export { Tree, TreeItem, TreeGap, TreeAction, useTreeLevel } from './components/Tree';
+export {
+  Tree,
+  TreeItem,
+  TreeGap,
+  TreeAction,
+  TreeNote,
+  TreeSearch,
+  useTreeLevel,
+} from './components/Tree';
 export type { TreeItemProps } from './components/Tree';
 export { StatusDot } from './components/StatusDot';
 export { StatusBox } from './components/StatusBox';

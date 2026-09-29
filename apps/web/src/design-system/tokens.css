@@ -138,6 +138,10 @@
   --space-5: 24px;
   --space-6: 32px;
   --space-7: 48px;
+  /* The chat composer's field: its height for one line and the height of that line, so the
+     text sits in the middle (PromptInputTextarea). */
+  --ds-chat-field-min: 40px;
+  --ds-chat-field-line: 20px;
   /* Radii: five steps, nothing in between (docs/ui-framework.md §Radien).
      sm chips, badges, small marks · md buttons, fields, controls · lg cards, rows,
      menus · xl panels, dialogs, overlays · full pills, avatars, dots. */

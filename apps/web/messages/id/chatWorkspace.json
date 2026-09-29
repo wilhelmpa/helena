@@ -15,7 +15,7 @@
     "noMatches": "Tidak ada obrolan yang cocok dengan pencarianmu.",
     "searchResults": "Hasil pencarian",
     "empty": {
-      "active": "Belum ada obrolan. Mulai satu dari agen di atas.",
+      "active": "Belum ada obrolan. Mulai satu dengan +.",
       "archived": "Tidak ada obrolan yang diarsipkan.",
       "trash": "Sampah kosong."
     },
@@ -65,7 +65,8 @@
       "dissolve": "Bubarkan folder (chat tetap ada)",
       "actions": "Folder „{name}“",
       "empty": "Kosong: pindahkan chat ke sini lewat menunya."
-    }
+    },
+    "newChatWith": "Obrolan baru dengan {name}"
   },
   "empty": {
     "noAgentsTitle": "Tidak ada agen untuk diajak chat",

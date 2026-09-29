@@ -15,7 +15,7 @@
     "noMatches": "Aucun chat ne correspond à votre recherche.",
     "searchResults": "Résultats de recherche",
     "empty": {
-      "active": "Pas encore de chat. Démarrez-en un depuis les agents ci-dessus.",
+      "active": "Pas encore de chats. Démarre-en un avec +.",
       "archived": "Aucun chat archivé.",
       "trash": "La corbeille est vide."
     },
@@ -65,7 +65,8 @@
       "dissolve": "Dissoudre le dossier (les chats restent)",
       "actions": "Dossier « {name} »",
       "empty": "Vide : déplacez des chats ici depuis leur menu."
-    }
+    },
+    "newChatWith": "Nouveau chat avec {name}"
   },
   "empty": {
     "noAgentsTitle": "Aucun agent pour discuter",

@@ -46,3 +46,21 @@ describe('pickActive', () => {
     assert.equal(at('/project/OTHER'), null);
   });
 });
+
+describe('the chat page next to the dashboard (both live at "/")', () => {
+  const home = [
+    { id: 'dashboard', href: '/', exact: true, without: ['thread', 'agent', 'new'] },
+    { id: 'chats', href: '/', exact: true, withAny: ['thread', 'agent', 'new'] },
+    { id: 'tasks', href: '/tasks' },
+  ];
+  const homeAt = (url: string) => {
+    const [pathname = '', search = ''] = url.split('?');
+    return pickActive(home, { pathname, search });
+  };
+  it('the bare address is the dashboard, an open or new chat marks the chats', () => {
+    assert.equal(homeAt('/'), 'dashboard');
+    assert.equal(homeAt('/?agent=3&thread=abc'), 'chats');
+    assert.equal(homeAt('/?agent=3&new=1'), 'chats');
+    assert.equal(homeAt('/tasks'), 'tasks');
+  });
+});

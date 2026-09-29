@@ -42,6 +42,7 @@ import {
   agentActivityPath,
   aiAgentsPath,
   aiTeamPath,
+  chatPath,
   cyclesPath,
   dashboardPath,
   dashboardsPath,
@@ -60,6 +61,7 @@ import { homeNavigation } from './homeNavigation';
 import SidebarApprovalsRefresh from './SidebarApprovalsRefresh';
 import SidebarAreaMenu from './SidebarAreaMenu';
 import SidebarSavedViewItem from './SidebarSavedViewItem';
+import SidebarChats from '@/features/ai-chat/components/sidebar/SidebarChats';
 import SidebarKnowledgeFolders from './SidebarKnowledgeFolders';
 import FileNewFolderDialog from '@/features/project-files/components/FileNewFolderDialog';
 import { useCrossProjectIssuesQuery } from '@/features/home/services/tasks.service';
@@ -256,6 +258,7 @@ export function SidebarProjectTree({
   // Every row the tree can mark, with the pages it stands for.
   const candidates: NavCandidate[] = [
     { id: 'inbox', href: inboxPath(projectKey), also: [`${projectPath(projectKey)}/approvals`] },
+    ...(showAgents ? [{ id: 'chats', href: chatPath(projectKey) }] : []),
     ...(showDashboards
       ? [
           { id: 'dashboard', href: dashboardsPath(projectKey), exact: true },
@@ -337,6 +340,7 @@ export function SidebarProjectTree({
         projects={projects}
         active={is('inbox')}
       />
+      {showAgents && <SidebarChats projectKey={projectKey} active={is('chats')} />}
       <SidebarLabel>{t('sidebarProject')}</SidebarLabel>
       {showDashboards && (
         <TreeItem
@@ -344,7 +348,11 @@ export function SidebarProjectTree({
           label={t('dashboards')}
           href={dashboardsPath(projectKey)}
           icon={<LayoutDashboard />}
-          active={is('dashboard')}
+          // With one dashboard (or none) the row is a plain link, no arrow and no list
+          // (owner, O89); from two on it opens the list.
+          active={
+            is('dashboard') || (dashboards.length === 1 && is(`dashboard:${dashboards[0]!.id}`))
+          }
           actions={
             can('dashboards', 'create') && (
               <TreeAction
@@ -356,7 +364,7 @@ export function SidebarProjectTree({
             )
           }
         >
-          {dashboards.length > 0
+          {dashboards.length > 1
             ? dashboards.map((dashboard) => (
                 <TreeItem
                   key={dashboard.id}
@@ -598,7 +606,9 @@ export function SidebarHomeTree({
 
   const candidates: NavCandidate[] = [
     { id: 'inbox', href: '/inbox', also: ['/approvals', '/mail'] },
-    { id: 'dashboard', href: '/', exact: true },
+    // The start page is the dashboard and, with a chat open or a new one begun, the chat.
+    { id: 'dashboard', href: '/', exact: true, without: ['thread', 'agent', 'new'] },
+    { id: 'chats', href: '/', exact: true, withAny: ['thread', 'agent', 'new'] },
     { id: 'dashboard:all', href: '/dashboard' },
     { id: 'tasks', href: '/tasks', also: ['/issue'] },
     { id: 'goals', href: '/organization?tab=goals' },
@@ -642,6 +652,7 @@ export function SidebarHomeTree({
         projects={projects}
         active={is('inbox')}
       />
+      <SidebarChats projectKey={null} active={is('chats')} />
       <TreeGap />
       <TreeItem
         id="dashboard"

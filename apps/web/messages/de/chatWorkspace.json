@@ -15,7 +15,7 @@
     "noMatches": "Keine Chats gefunden.",
     "searchResults": "Suchergebnisse",
     "empty": {
-      "active": "Noch keine Chats. Starte einen bei den Agenten oben.",
+      "active": "Noch keine Chats. Mit + startest du einen.",
       "archived": "Keine archivierten Chats.",
       "trash": "Der Papierkorb ist leer."
     },
@@ -65,7 +65,8 @@
       "dissolve": "Ordner auflösen (Chats bleiben)",
       "actions": "Ordner „{name}“",
       "empty": "Leer: Chats über ihr Menü hierher verschieben."
-    }
+    },
+    "newChatWith": "Neuer Chat mit {name}"
   },
   "empty": {
     "noAgentsTitle": "Kein Agent für einen Chat",

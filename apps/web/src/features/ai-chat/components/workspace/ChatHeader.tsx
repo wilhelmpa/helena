@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { usePanelHeaderSlot } from '@/context/panelHeaderSlot';
 import { useTranslations } from 'next-intl';
-import { PanelLeft, PanelRight, PanelRightClose, SquarePen } from 'lucide-react';
+import { PanelRight, PanelRightClose, SquarePen } from 'lucide-react';
 import type { AiAgent } from '@/lib/api/endpoints/agents';
 import { WorkspaceHeader } from '@/components/layout/WorkspaceHeader';
 import {
@@ -28,10 +28,8 @@ export interface ChatHeaderProps {
   agent: AiAgent;
   threadId: string | null;
   messages: PlanUIMessage[];
-  onOpenList: () => void;
   onNewChat: (agentId: number) => void;
   onDeleted: (threadId: string) => void;
-  compact: boolean;
   artifactOpen: boolean;
   onToggleArtifact: () => void;
   hasArtifact: boolean;
@@ -40,8 +38,7 @@ export interface ChatHeaderProps {
   inPage?: boolean;
 }
 
-// The bar above the conversation, one filigree row like the tool panel's: opening the
-// list on a narrow layout, the chat's title (renamed on click), a new chat, the artifact
+// The bar above the conversation, one filigree row like the tool panel's: the chat's title (renamed on click), a new chat, the artifact
 // panel's toggle and the chat's own menu. Who the chat is with and how the answer is
 // doing live at the composer (ChatComposer), where they are steered.
 export default function ChatHeader({
@@ -50,10 +47,8 @@ export default function ChatHeader({
   agent,
   threadId,
   messages,
-  onOpenList,
   onNewChat,
   onDeleted,
-  compact,
   artifactOpen,
   onToggleArtifact,
   hasArtifact,
@@ -94,16 +89,6 @@ export default function ChatHeader({
   if (inPage) {
     return (
       <PageToolbar>
-        {compact && (
-          <button
-            type="button"
-            onClick={onOpenList}
-            aria-label={t('list.open')}
-            className={cn(PAGE_CONTROL_CLASS, 'w-8 justify-center px-0')}
-          >
-            <PanelLeft aria-hidden="true" />
-          </button>
-        )}
         <button
           type="button"
           onClick={() => threadId && setRenaming(true)}
@@ -171,16 +156,6 @@ export default function ChatHeader({
       'flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground [&_svg]:size-4';
     return createPortal(
       <>
-        {compact && (
-          <button
-            type="button"
-            onClick={onOpenList}
-            aria-label={t('list.open')}
-            className={control}
-          >
-            <PanelLeft aria-hidden="true" />
-          </button>
-        )}
         <button
           type="button"
           onClick={() => threadId && setRenaming(true)}
@@ -236,17 +211,6 @@ export default function ChatHeader({
 
   return (
     <WorkspaceHeader className="h-10 gap-1 border-sidebar-border bg-transparent px-2">
-      {compact && (
-        <Button
-          variant="ghost"
-          size="icon"
-          className="size-8"
-          onClick={onOpenList}
-          aria-label={t('list.open')}
-        >
-          <PanelLeft className="size-4" />
-        </Button>
-      )}
       <button
         type="button"
         onClick={() => threadId && setRenaming(true)}

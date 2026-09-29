@@ -303,5 +303,6 @@
   "settingsAutopilotExecution": "Автопілот і виконання",
   "settingsProjectAccess": "Керування доступами",
   "sidebarHelenaKnowledge": "{appName}",
-  "sidebarTrash": "Кошик"
+  "sidebarTrash": "Кошик",
+  "sidebarChats": "Чати"
 }

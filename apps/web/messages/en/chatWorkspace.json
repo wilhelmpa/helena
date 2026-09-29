@@ -15,7 +15,7 @@
     "noMatches": "No chats match your search.",
     "searchResults": "Search results",
     "empty": {
-      "active": "No chats yet. Start one from the agents above.",
+      "active": "No chats yet. Start one with +.",
       "archived": "No archived chats.",
       "trash": "Trash is empty."
     },
@@ -65,7 +65,8 @@
       "dissolve": "Dissolve folder (chats stay)",
       "actions": "Folder “{name}”",
       "empty": "Empty: move chats here from their menu."
-    }
+    },
+    "newChatWith": "New chat with {name}"
   },
   "empty": {
     "noAgentsTitle": "No agent to chat with",

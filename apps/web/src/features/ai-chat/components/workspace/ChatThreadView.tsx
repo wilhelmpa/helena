@@ -61,8 +61,6 @@ export interface ChatThreadViewProps {
   onActivity: (threadId: string) => void;
   onThreadDeleted: (threadId: string) => void;
   onNewChat: (agentId: number) => void;
-  onOpenList: () => void;
-  compact: boolean;
   onArtifact: (artifact: Artifact) => void;
   artifactOpen: boolean;
   onToggleArtifact: () => void;
@@ -89,8 +87,6 @@ export default function ChatThreadView({
   onActivity,
   onThreadDeleted,
   onNewChat,
-  onOpenList,
-  compact,
   onArtifact,
   artifactOpen,
   onToggleArtifact,
@@ -300,9 +296,7 @@ export default function ChatThreadView({
       <div className="flex h-full min-h-0 flex-col">
         {/* The start page's masthead; a conversation has its own header row instead, so
             the page never shows two headers. */}
-        {inPage && projectKey === null && homeLanding && (
-          <HomeChatMasthead onOpenList={onOpenList} />
-        )}
+        {inPage && projectKey === null && homeLanding && <HomeChatMasthead />}
         {dock && (
           <ChatDockBar
             dock={dock}
@@ -318,10 +312,8 @@ export default function ChatThreadView({
             agent={agent}
             threadId={threadId}
             messages={plan.messages}
-            onOpenList={onOpenList}
             onNewChat={onNewChat}
             onDeleted={onThreadDeleted}
-            compact={compact}
             artifactOpen={artifactOpen}
             onToggleArtifact={onToggleArtifact}
             hasArtifact={hasArtifact}

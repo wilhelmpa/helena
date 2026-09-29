@@ -2,6 +2,7 @@
 
 import { useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { useDisplayName } from '@/context/displayName';
 import Modal from '@/components/common/overlay/Modal';
 import MarkdownEditor from '@/components/common/editor/MarkdownEditor';
 import { Button } from '@/components/ui/button';
@@ -32,6 +33,7 @@ export default function OrganizationGoalDialog({
   onClose: () => void;
 }) {
   const t = useTranslations('organization');
+  const appName = useDisplayName();
   const tCommon = useTranslations('common');
   const create = useCreateGoal(teamId);
   const titleRef = useRef<HTMLInputElement>(null);
@@ -63,7 +65,7 @@ export default function OrganizationGoalDialog({
   return (
     <Modal
       title={t('goals.new')}
-      scope="HELENA"
+      scope={appName.toLocaleUpperCase()}
       onClose={onClose}
       onOpenAutoFocus={(event) => {
         event.preventDefault();
