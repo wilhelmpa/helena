@@ -1,5 +1,14 @@
 import { asc, eq } from 'drizzle-orm';
-import { agentChatCatalog, aiAgent, db, getSetting, project, setSetting, user } from '@repo/db';
+import {
+  agentChatCatalog,
+  aiAgent,
+  db,
+  getDisplayName,
+  getSetting,
+  project,
+  setSetting,
+  user,
+} from '@repo/db';
 
 // The owner's voice settings (Lokale KI → Sprache; docs/helena-decisions/voice-2.md §5): one
 // app_setting row. What the browser needs (the pause, the voice's speed) comes with `GET
@@ -14,7 +23,7 @@ import { agentChatCatalog, aiAgent, db, getSetting, project, setSetting, user } 
 //               answers typed messages with.
 
 export const VOICE_SETTINGS_KEY = 'voice.settings';
-export const VOICE_GLOSSARY = ['Helena', 'TRADE', 'VERVE', 'Jev', 'Qwen', 'Alpaca'] as const;
+export const VOICE_GLOSSARY = ['TRADE', 'VERVE', 'Jev', 'Qwen', 'Alpaca'] as const;
 
 export interface VocabularyAlias {
   heard: string;
@@ -163,7 +172,7 @@ export async function writeVoiceSettings(patch: Partial<VoiceSettings>): Promise
 // "VERVE"). Whisper takes them as the context of the recording (its `prompt`), which is what
 // makes "Verve" come back as "Verve" rather than "Werbe".
 export async function helenaWords(): Promise<string[]> {
-  const [agents, projects] = await Promise.all([
+  const [agents, projects, displayName] = await Promise.all([
     db
       .select({ name: user.name })
       .from(aiAgent)
@@ -171,10 +180,11 @@ export async function helenaWords(): Promise<string[]> {
       .where(eq(aiAgent.template, false))
       .orderBy(asc(aiAgent.id)),
     db.select({ name: project.name, key: project.key }).from(project).orderBy(asc(project.id)),
+    getDisplayName(),
   ]);
   return uniqueWords(
     [
-      'Helena',
+      displayName,
       ...agents.map((agent) => agent.name),
       ...projects.flatMap((row) => [row.name, row.key]),
     ],
@@ -184,9 +194,13 @@ export async function helenaWords(): Promise<string[]> {
 
 // The prompt a transcription gets: the owner's words first (they are what he added on purpose),
 // then Helena's. A comma list reads to Whisper like the start of a text that uses the words.
-export function vocabularyPrompt(own: string[], helena: string[]): string | null {
+export function vocabularyPrompt(
+  own: string[],
+  helena: string[],
+  displayName = 'Helena',
+): string | null {
   const words = uniqueWords(
-    [...own, ...VOICE_GLOSSARY, ...helena],
+    [...own, displayName, ...VOICE_GLOSSARY, ...helena],
     VOICE_SETTINGS_LIMITS.vocabularyWords,
   );
   return words.length ? `${words.join(', ')}.` : null;

@@ -404,7 +404,7 @@
     "schedule_too_frequent": "该定时任务的运行频率超过了团队允许的上限。",
     "invalid_url": "请输入以 https:// 或 http:// 开头的 URL。",
     "plugin_invalid": "{message}",
-    "plugin_trigger_unsupported": "此触发器按自己的时间表触发，Helena 引擎尚不支持运行。"
+    "plugin_trigger_unsupported": "此触发器按自己的时间表触发，{appName} 引擎尚不支持运行。"
   },
   "runs": {
     "status": {
@@ -574,7 +574,7 @@
     },
     "signing": {
       "title": "Webhook 签名密钥",
-      "hint": "Webhook 步骤用它为请求签名（Standard Webhooks），以便接收方核实请求来自 Helena。",
+      "hint": "Webhook 步骤用它为请求签名（Standard Webhooks），以便接收方核实请求来自 {appName}。",
       "show": "显示",
       "hide": "隐藏",
       "renew": "更新",

@@ -164,8 +164,8 @@
   "sortDefault": "Свой порядок",
   "why": {
     "label": "Зачем",
-    "choose": "Выбрать цель Helena",
-    "none": "Пока не служит ни одной цели Helena.",
+    "choose": "Выбрать цель {appName}",
+    "none": "Пока не служит ни одной цели {appName}.",
     "noneOption": "Без цели"
   }
 }

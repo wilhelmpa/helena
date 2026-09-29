@@ -199,7 +199,7 @@
     "openPreviewLink": "Ouvrir {name} dans un nouvel onglet",
     "loadingPreview": "Chargement de l’aperçu…",
     "previewUnavailable": "Aucun aperçu disponible. Ouvrez le lien pour voir cette page.",
-    "internalPage": "Page Helena",
+    "internalPage": "Page {appName}",
     "internalPreviewUnavailable": "Cette page est indisponible ou vous n’y avez pas accès.",
     "previewNoteCount": "{count, plural, one {# note} many {# notes} other {# notes}}",
     "previewCustomField": "Champ personnalisé",

@@ -98,7 +98,7 @@
     "unreachable": "Not reachable",
     "keys": {
       "file": "Key from file",
-      "stored": "Key stored in Helena",
+      "stored": "Key stored in {appName}",
       "none": "No key",
       "invalid": "Key file not allowed"
     },
@@ -256,22 +256,22 @@
     },
     "pause": {
       "title": "Pause before the answer",
-      "hint": "How long you have to be silent before Helena sends your sentence. Shorter answers faster, longer interrupts you less often.",
+      "hint": "How long you have to be silent before {appName} sends your sentence. Shorter answers faster, longer interrupts you less often.",
       "option": "{seconds} s"
     },
     "words": {
-      "title": "Words Helena should know",
+      "title": "Words {appName} should know",
       "hint": "Names, products and terms, so speech recognition spells them right. It already knows: {words}.",
       "placeholder": "e.g. accountant Miller, Shopify, Kubernetes",
       "save": "Save words"
     },
     "voice": {
       "title": "Voice",
-      "hint": "The local voice Helena answers with in a conversation (Local AI → “Read aloud”).",
+      "hint": "The local voice {appName} answers with in a conversation (Local AI → “Read aloud”).",
       "default": "The server's default voice",
       "none": "No local voice set up yet – until then the browser reads aloud.",
       "preview": "Listen",
-      "sample": "Hi, I am Helena. This is how I sound in a conversation – just tell me what you need.",
+      "sample": "Hi, I am {appName}. This is how I sound in a conversation – just tell me what you need.",
       "previewFailed": "The voice could not be played."
     },
     "model": {

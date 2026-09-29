@@ -21,7 +21,7 @@
   },
   "plugin": {
     "name": "Wissen",
-    "description": "Helenas eigene Wissensquellen und das Erfassen in den Eingang und die Tagesnotiz."
+    "description": "{appName}s eigene Wissensquellen und das Erfassen in den Eingang und die Tagesnotiz."
   },
   "journal": {
     "today": "Heutige Notiz"

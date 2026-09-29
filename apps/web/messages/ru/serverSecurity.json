@@ -2,9 +2,9 @@
   "auditTitle": "Защита сервера",
   "auditDescription": "Ежечасная проверка сервера: брандмауэр, SSH, сертификаты, права и службы. Без секретов.",
   "ownerTitle": "Вход владельца",
-  "ownerDescription": "Что должно быть выполнено, прежде чем Helena станет доступна из интернета.",
+  "ownerDescription": "Что должно быть выполнено, прежде чем {appName} станет доступна из интернета.",
   "edgeTitle": "Доступ извне",
-  "edgeDescription": "Cloudflare Access перед helena.volition.one. Helena сама ещё раз проверяет каждый запрос из туннеля.",
+  "edgeDescription": "Cloudflare Access перед helena.volition.one. {appName} сама ещё раз проверяет каждый запрос из туннеля.",
   "noReport": "Отчёта проверки пока нет. Выполните один раз на сервере:",
   "noReportCommand": "sudo deployment/volition-stack/native/hardening/audit.sh --install-timer",
   "summary": "{failed} открыто · {warnings} предупреждений · {passed} пройдено",
@@ -47,7 +47,7 @@
     "web_production": "API работает в рабочем режиме",
     "web_leftovers": "Нет остатков разработки и читаемых резервных копий в nginx",
     "tunnel_service": "Туннель Cloudflare работает изолированно и без самообновления",
-    "tunnel_edge": "Cloudflare Access настроен в Helena",
+    "tunnel_edge": "Cloudflare Access настроен в {appName}",
     "tunnel_acl": "Вход туннеля доступен только туннелю",
     "tls_certificate": "Сертификат действителен ещё более 14 дней",
     "tls_renewal": "Автоматическое обновление сертификата включено",
@@ -69,9 +69,9 @@
     "files_backups": "Резервные копии базы доступны только своей службе",
     "files_secrets": "Секреты и ключи недоступны другим для чтения",
     "files_agent_code": "Агенты могут читать свой код среды выполнения",
-    "svc_exposure": "Службы Helena изолированы systemd",
+    "svc_exposure": "Службы {appName} изолированы systemd",
     "svc_tools_loopback": "Инструменты доступны только через loopback",
-    "net_voice_acl": "Голосовые серверы доступны только Helena"
+    "net_voice_acl": "Голосовые серверы доступны только {appName}"
   },
   "finding": {
     "net_firewall": {
@@ -91,7 +91,7 @@
       "fail": "Вход из LAN действует и для loopback или самого сервера."
     },
     "net_redis": {
-      "fail": "Redis работает без пароля, и Helena его не использует."
+      "fail": "Redis работает без пароля, и {appName} его не использует."
     },
     "net_syncthing_nat": {
       "warn": "Syncthing просит маршрутизатор (UPnP/NAT-PMP) открыть порт 22000."
@@ -125,7 +125,7 @@
       "fail": "Туннель Cloudflare изолирован не так, как задумано."
     },
     "tunnel_edge": {
-      "fail": "В Helena не задана команда Cloudflare Access (домен/AUD): вход туннеля отклоняет всё."
+      "fail": "В {appName} не задана команда Cloudflare Access (домен/AUD): вход туннеля отклоняет всё."
     },
     "tunnel_acl": {
       "fail": "{why, select, user {Пользователь туннеля {user} не может достучаться до входа туннеля: cloudflared не получает соединения, Cloudflare отвечает 502 (hardening/apply.sh --apply firewall-uids).} other {Любой локальный пользователь достаёт до входа туннеля.}}"
@@ -191,7 +191,7 @@
       "fail": "{count} файлов в {path} может читать только владелец: агенты, которые их загружают, не запускаются."
     },
     "svc_exposure": {
-      "warn": "systemd изолирует службы Helena слабее, чем задумано."
+      "warn": "systemd изолирует службы {appName} слабее, чем задумано."
     },
     "svc_tools_loopback": {
       "fail": "Инструменты доступны не только через loopback."
@@ -221,13 +221,13 @@
     "allowedEmails": "Разрешённые личности",
     "allowedEmailsHint": "Необязательно: только эти адреса, даже если правило Access допускает больше. По одному в строке. Обязательно для входа через Cloudflare.",
     "saved": "Доступ извне сохранён",
-    "signInTitle": "Входить в Helena через вход Cloudflare",
-    "signInDescription": "Вход в Cloudflare Access под разрешённой учётной записью открывает Helena без второго пароля — не дольше 24 часов и не дольше сессии Access. Тогда Access — единственный вход: требуйте там второй фактор (passkey/Touch ID или приложение-аутентификатор). Терминал по-прежнему спрашивает свой код.",
+    "signInTitle": "Входить в {appName} через вход Cloudflare",
+    "signInDescription": "Вход в Cloudflare Access под разрешённой учётной записью открывает {appName} без второго пароля — не дольше 24 часов и не дольше сессии Access. Тогда Access — единственный вход: требуйте там второй фактор (passkey/Touch ID или приложение-аутентификатор). Терминал по-прежнему спрашивает свой код.",
     "signInNeedsSetup": "Нужны домен команды, AUD и хотя бы одна разрешённая учётная запись.",
-    "signInNeedsProof": "У входа туннеля ещё нет подтверждения для Helena: выполните на сервере cloudflare/install.sh --apply entry-token, затем перезапустите API и веб-приложение.",
+    "signInNeedsProof": "У входа туннеля ещё нет подтверждения для {appName}: выполните на сервере cloudflare/install.sh --apply entry-token, затем перезапустите API и веб-приложение.",
     "homeTitle": "Дома автоматически подключаться напрямую",
-    "homeDescription": "На публичном адресе Helena проверяет, отвечает ли {home} с этого устройства, и переходит туда — напрямую через домашнюю сеть, без обхода через Cloudflare. Там вас впустит вход из домашней сети. Chrome один раз попросит доступ к локальной сети.",
-    "homeDescriptionGeneric": "На публичном адресе Helena проверяет, отвечает ли адрес домашней сети с этого устройства, и переходит туда — напрямую через домашнюю сеть, без обхода через Cloudflare.",
+    "homeDescription": "На публичном адресе {appName} проверяет, отвечает ли {home} с этого устройства, и переходит туда — напрямую через домашнюю сеть, без обхода через Cloudflare. Там вас впустит вход из домашней сети. Chrome один раз попросит доступ к локальной сети.",
+    "homeDescriptionGeneric": "На публичном адресе {appName} проверяет, отвечает ли адрес домашней сети с этого устройства, и переходит туда — напрямую через домашнюю сеть, без обхода через Cloudflare.",
     "homeNotSetUp": "Адрес домашней сети не настроен (HELENA_HOME_URL, cloudflare/switch_origin.py --home-host)."
   },
   "signIns": {

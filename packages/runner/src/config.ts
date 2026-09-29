@@ -1,4 +1,5 @@
 import { readFile } from 'node:fs/promises';
+import { runnerDisplayName } from './display-name';
 import type { HermesProfile } from './inventory';
 import type { AgentIsolation } from './isolation';
 import type { CliCommand } from '@helena/sdk';
@@ -330,7 +331,9 @@ function configFrom(fields: Fields, name: string, extraArgs: string[]): RunnerCo
   }
   const args = [...argsFrom(fields.args), ...extraArgs];
   if (agent === 'hermes' && args.includes('--ignore-rules')) {
-    throw new Error('Hermes cannot use --ignore-rules while Helena runtime policy sync is enabled');
+    throw new Error(
+      `Hermes cannot use --ignore-rules while ${runnerDisplayName()} runtime policy sync is enabled`,
+    );
   }
   return {
     name,

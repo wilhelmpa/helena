@@ -424,7 +424,7 @@
         "codex": "Codex"
       },
       "runtimeHermesHint": "Server menyediakan Hermes sendiri dan menjaga profilnya tetap sinkron.",
-      "runtimeCliHint": "Berjalan sebagai layanan seperti agen Hermes, di direktori sendiri. Instruksi, skill, server MCP, alat, model, dan penalaran berasal dari Helena; login dari Akses.",
+      "runtimeCliHint": "Berjalan sebagai layanan seperti agen Hermes, di direktori sendiri. Instruksi, skill, server MCP, alat, model, dan penalaran berasal dari {appName}; login dari Akses.",
       "compression": {
         "title": "Pemadatan konteks",
         "hint": "Obrolan atau run yang panjang mengirim seluruh riwayatnya di setiap panggilan. Mulai ambang batas, Hermes merangkum bagian lama: lebih sedikit token per panggilan, dengan satu panggilan rangkuman dan detail harfiah yang lebih sedikit. Kosong: bawaan instans.",
@@ -443,7 +443,7 @@
       "behaviourTitle": "Perilaku"
     },
     "runtimeConflicts": {
-      "title": "Diubah di luar Helena",
+      "title": "Diubah di luar {appName}",
       "description": "Runtime mengganti file ini dengan versi yang disimpan di sini dan menyimpan versi yang diubah di sampingnya.",
       "takeOver": "Ambil alih",
       "editInLibrary": "Edit di pustaka skill"
@@ -573,8 +573,8 @@
       "toolsetsReadOnly": "Hanya anggota yang dapat mengedit agen yang dapat mematikan toolset.",
       "noToolsets": "Runner tidak melaporkan toolset apa pun.",
       "mcpServers": "Server MCP",
-      "mcpServersHint": "Helena memberikannya ke setiap agen: servernya sendiri dan browser proyek. Nonaktifkan satu dan simpan agar agen tidak memakainya.",
-      "mcpServersReadOnly": "Helena memberikannya ke setiap agen. Hanya anggota yang boleh mengedit agen yang dapat menonaktifkannya.",
+      "mcpServersHint": "{appName} memberikannya ke setiap agen: servernya sendiri dan browser proyek. Nonaktifkan satu dan simpan agar agen tidak memakainya.",
+      "mcpServersReadOnly": "{appName} memberikannya ke setiap agen. Hanya anggota yang boleh mengedit agen yang dapat menonaktifkannya.",
       "noMcpServers": "Tidak ada",
       "libraryMcpServers": "Server MCP tim",
       "libraryMcpServersHint": "Server yang diaktifkan berjalan bersama chat dan eksekusi agen setelah Anda menyimpan.",
@@ -589,7 +589,7 @@
       "origin": {
         "agent": "Dipelajari",
         "hub": "Dari Skills Hub",
-        "plan": "Dari Helena",
+        "plan": "Dari {appName}",
         "bundled": "Bawaan Hermes"
       },
       "memory": "Memori",
@@ -628,14 +628,14 @@
         "enabled": "Belajar mandiri",
         "enabledHint": "Agen menyimpan memori dan membuat skill selama chat dan run; token yang dipakai untuk itu dihitung dalam pemakaiannya. Jika nonaktif, agen tidak menyimpan hal baru dan memorinya tidak dimuat.",
         "curator": "Kurator",
-        "curatorHint": "Kurator Hermes mengarsipkan skill hasil belajar yang tidak dipakai selama 30 hari. Helena memintanya meninjau setiap minggu; di tab Runtime agen, Anda bisa menjalankan tinjauan sekarang dan menyematkan skill yang tidak boleh disentuhnya.",
+        "curatorHint": "Kurator Hermes mengarsipkan skill hasil belajar yang tidak dipakai selama 30 hari. {appName} memintanya meninjau setiap minggu; di tab Runtime agen, Anda bisa menjalankan tinjauan sekarang dan menyematkan skill yang tidak boleh disentuhnya.",
         "reflectionTitle": "Refleksi",
         "reflectionHint": "Giliran lanjutan singkat dalam sesi run yang sama, tepat setelah run berakhir, saat agen hanya menyimpan apa yang diajarkan run tersebut. Token yang dipakai dihitung dalam pemakaian run.",
         "reflectionOff": "Nonaktif",
         "reflectionFailure": "Setelah run gagal atau pengerjaan ulang",
         "reflectionComplex": "Juga setelah run dengan banyak langkah",
-        "restored": "Helena mengembalikan apa yang diubah di luar Helena:",
-        "cronJobs": "{count, plural, other {# tugas di penjadwal Hermes sendiri berjalan}} di luar Helena. Hapus tugas itu di Hermes dan gunakan rutinitas sebagai gantinya.",
+        "restored": "{appName} mengembalikan apa yang diubah di luar {appName}:",
+        "cronJobs": "{count, plural, other {# tugas di penjadwal Hermes sendiri berjalan}} di luar {appName}. Hapus tugas itu di Hermes dan gunakan rutinitas sebagai gantinya.",
         "waiting": "Menunggu runner",
         "failed": "Gagal: {error}",
         "queued": "Runner menjalankannya pada sinkronisasi berikutnya.",
@@ -682,7 +682,7 @@
       "skillEnabled": "{name} aktif",
       "skillsDisabled": "{count} nonaktif",
       "skillClashes": "{count, plural, other {# nama}} dimiliki lebih dari satu skill. Hermes lalu tidak memuat satu pun:",
-      "skillClashesFix": "Lepaskan skill Helena dari agen (skill yang disesuaikan untuk Hermes lalu dipakai) atau ganti namanya di pustaka skill.",
+      "skillClashesFix": "Lepaskan skill {appName} dari agen (skill yang disesuaikan untuk Hermes lalu dipakai) atau ganti namanya di pustaka skill.",
       "moreToolsets": "{count} lainnya"
     },
     "paused": "Dijeda",
@@ -737,13 +737,13 @@
       "rewriteQueued": "Runner menulis ulang profil pada sinkronisasi berikutnya.",
       "drift": {
         "not-linked": "config.yaml bukan tautan ke konfigurasi Hermes bersama.",
-        "managed-config": "Hermes tidak menerapkan konfigurasi yang ditulis Helena.",
-        "mcp-unmanaged": "Server MCP {server} aktif padahal Helena tidak menyediakannya.",
+        "managed-config": "Hermes tidak menerapkan konfigurasi yang ditulis {appName}.",
+        "mcp-unmanaged": "Server MCP {server} aktif padahal {appName} tidak menyediakannya.",
         "mcp-missing": "Server MCP {server} tidak ada atau nonaktif.",
-        "mcp-differs": "Server MCP {server} berjalan dengan pengaturan lain dari Helena.",
+        "mcp-differs": "Server MCP {server} berjalan dengan pengaturan lain dari {appName}.",
         "mcp-unsupported": "Runtime ini tidak dapat menjalankan server MCP {server}.",
         "setting-differs": "Pengaturan {key} berbeda.",
-        "approval-guard": "Perintah berbahaya berjalan tanpa penjaga persetujuan Helena.",
+        "approval-guard": "Perintah berbahaya berjalan tanpa penjaga persetujuan {appName}.",
         "probe-failed": "Profil tidak dapat dibaca."
       },
       "defaults": "Bawaan runtime: {model} ({provider}), penalaran {reasoning}",
@@ -758,7 +758,7 @@
         "notSignedIn": "Runtime belum masuk.",
         "rejected": "Login runtime ditolak: kedaluwarsa atau tidak valid.",
         "runtimeMissing": "{runtime} belum terpasang di server.",
-        "sandboxUnavailable": "Sandbox tidak tersedia: sandbox bawaan Codex tidak bisa berjalan di server ini, jadi Codex berjalan hanya-baca dan hanya menjangkau alat Helena, tanpa shell. Dengan isolasi agen, ia berjalan di unitnya sendiri.",
+        "sandboxUnavailable": "Sandbox tidak tersedia: sandbox bawaan Codex tidak bisa berjalan di server ini, jadi Codex berjalan hanya-baca dan hanya menjangkau alat {appName}, tanpa shell. Dengan isolasi agen, ia berjalan di unitnya sendiri.",
         "notSignedInShort": "Runtime belum masuk",
         "runtimeMissingShort": "Runtime tidak ada",
         "sandboxUnavailableShort": "Sandbox tidak tersedia"

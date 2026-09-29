@@ -50,7 +50,7 @@
     "exportTemplate": "Ekspor sebagai templat",
     "exported": "Templat disimpan: {file}",
     "importTemplate": "Impor departemen dari templat",
-    "importTemplateHint": "Pilih file templat. Helena memeriksa dulu apa yang akan berubah dan baru menulis saat kamu mengimpor.",
+    "importTemplateHint": "Pilih file templat. {appName} memeriksa dulu apa yang akan berubah dan baru menulis saat kamu mengimpor.",
     "templateChooseFile": "Pilih file templat",
     "templateFile": "File: {name}",
     "templateNotJson": "File ini bukan templat yang valid.",
@@ -237,7 +237,7 @@
         "review": "Koordinator meninjau hasilnya.",
         "synchronize": "Ringkasan dan bukti ditulis ke tugas, yang pindah ke Tinjauan atau Selesai."
       },
-      "route": "Jika label tugas cocok dengan kemampuan tepat satu spesialis, atau proyek hanya punya satu, Helena melewati rencana dan menugaskan tugas secara langsung."
+      "route": "Jika label tugas cocok dengan kemampuan tepat satu spesialis, atau proyek hanya punya satu, {appName} melewati rencana dan menugaskan tugas secara langsung."
     },
     "usage": {
       "title": "Pemakaian token",
@@ -278,7 +278,7 @@
     "projectDefault": "Bawaan proyek",
     "noLimit": "Tanpa batas",
     "none": "Tidak ada",
-    "home": "HELENA · MASTER",
+    "home": "{appNameUpper} · MASTER",
     "coordinator": "KOORDINATOR",
     "reviewer": "PENINJAU",
     "specialist": "SPESIALIS",
@@ -348,6 +348,6 @@
     "add": "Tambah",
     "added": "Ditambahkan ke {project}",
     "failed": "Anggota tidak dapat ditambahkan.",
-    "keyOnce": "Salinan berjalan di luar Helena: salin kuncinya sekarang, hanya ditampilkan sekali."
+    "keyOnce": "Salinan berjalan di luar {appName}: salin kuncinya sekarang, hanya ditampilkan sekali."
   }
 }

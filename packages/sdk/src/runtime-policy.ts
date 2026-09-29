@@ -111,6 +111,7 @@ export interface RuntimeCompression {
 
 export interface RuntimePolicySnapshot {
   revision: string;
+  displayName?: string;
   // The agent's configured model (null: the runtime's default). An older server sends none.
   model?: string | null;
   runtimePolicy: {

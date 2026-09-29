@@ -107,7 +107,7 @@
     "hermes": "Hermes",
     "claude": "Claude Code",
     "codex": "Codex",
-    "mcp": "Helena tool",
+    "mcp": "{appName} tool",
     "gateway": "Browser",
     "workflow": "Workflow",
     "approval": "Approval request",
@@ -158,8 +158,8 @@
     "level": "Level {level}",
     "reason": "Why it needs approval",
     "scope": {
-      "workspace": "Inside Helena / project workspace",
-      "external": "Outside Helena / project workspace"
+      "workspace": "Inside {appName} / project workspace",
+      "external": "Outside {appName} / project workspace"
     }
   },
   "prices": {
@@ -185,7 +185,7 @@
     "rateSaved": "Exchange rate saved, prices converted again.",
     "importedAt": "Last updated: {date} ({from})",
     "from": {
-      "snapshot": "list shipped with Helena",
+      "snapshot": "list shipped with {appName}",
       "modelsDev": "models.dev"
     },
     "add": "Enter a price",

@@ -117,9 +117,9 @@
     "undoDone": "Letzten Austausch entfernt. Sende eine neue Nachricht, um davor fortzusetzen.",
     "undoNone": "Nichts rückgängig zu machen.",
     "refusal": {
-      "schedules": "Hermes’ eigene Zeitplan-Befehle laufen nicht über den Chat — nutze stattdessen Helenas Routinen.",
+      "schedules": "Hermes’ eigene Zeitplan-Befehle laufen nicht über den Chat — nutze stattdessen {appName}s Routinen.",
       "approvals": "Freigabe-Befehle laufen nicht über den Chat — nutze die Freigabe-Karte oder die Freigaben-Seite.",
-      "config": "Das ändert die Konfiguration des Agenten selbst — nutze dafür die Agenten-Einstellungen in Helena.",
+      "config": "Das ändert die Konfiguration des Agenten selbst — nutze dafür die Agenten-Einstellungen in {appName}.",
       "outside": "Das kann der Chat nicht."
     },
     "reasoning": "Denkaufwand",
@@ -188,7 +188,7 @@
     "runtimeExternal": "Extern",
     "switch": "Chat mit {agent} – neuen Chat mit einem anderen Agenten beginnen",
     "newChatWith": "Neuer Chat mit …",
-    "switchToHelena": "Neuer Chat mit Helena"
+    "switchToHelena": "Neuer Chat mit {appName}"
   },
   "interrupted": {
     "lost": "Die Verbindung zur Antwort ist abgerissen. {agent} arbeitet vielleicht noch daran.",
@@ -234,7 +234,7 @@
     },
     "problems": {
       "insecureTitle": "Das Mikrofon braucht eine sichere Verbindung",
-      "insecure": "Browser geben das Mikrofon nur über HTTPS frei, und Helena läuft hier noch über http. Bis HTTPS kommt: in Chrome {flag} öffnen, {origin} eintragen, „Enabled“ wählen und Chrome neu starten. Safari und Firefox: erst mit HTTPS.",
+      "insecure": "Browser geben das Mikrofon nur über HTTPS frei, und {appName} läuft hier noch über http. Bis HTTPS kommt: in Chrome {flag} öffnen, {origin} eintragen, „Enabled“ wählen und Chrome neu starten. Safari und Firefox: erst mit HTTPS.",
       "copyFlag": "Adresse kopieren",
       "flagCopied": "Adresse kopiert – in die Adresszeile von Chrome einfügen.",
       "localOnlyDownTitle": "Lokale Transkription gerade nicht erreichbar",
@@ -291,7 +291,7 @@
     "commandScriptHint": "Pfad relativ zum Projektordner. Das Skript bekommt die Aufgabe als JSON und läuft im abgeschotteten Bereich des Projekts; seine Ausgabe ist das Ergebnis.",
     "webhookUrl": "Adresse (HTTPS)",
     "webhookSecretEnv": "Variable mit dem Signaturschlüssel",
-    "webhookHint": "Helena ruft die Adresse signiert nach Standard Webhooks auf. Den Schlüssel (whsec_…) gibst du dem Agenten unter Zugänge als Umgebungsvariable."
+    "webhookHint": "{appName} ruft die Adresse signiert nach Standard Webhooks auf. Den Schlüssel (whsec_…) gibst du dem Agenten unter Zugänge als Umgebungsvariable."
   },
   "context": {
     "task": "Aufgabe {identifier} „{title}“",

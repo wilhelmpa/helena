@@ -404,7 +404,7 @@
     "schedule_too_frequent": "La programación se ejecuta con más frecuencia de la que el equipo permite.",
     "invalid_url": "Introduce una URL que empiece por https:// o http://.",
     "plugin_invalid": "{message}",
-    "plugin_trigger_unsupported": "Este disparador se activa con un horario propio, que el motor de Helena aún no ejecuta."
+    "plugin_trigger_unsupported": "Este disparador se activa con un horario propio, que el motor de {appName} aún no ejecuta."
   },
   "runs": {
     "status": {
@@ -574,7 +574,7 @@
     },
     "signing": {
       "title": "Clave de firma de webhooks",
-      "hint": "Los pasos de webhook firman sus llamadas con ella (Standard Webhooks) para que el receptor compruebe que vienen de Helena.",
+      "hint": "Los pasos de webhook firman sus llamadas con ella (Standard Webhooks) para que el receptor compruebe que vienen de {appName}.",
       "show": "Mostrar",
       "hide": "Ocultar",
       "renew": "Renovar",

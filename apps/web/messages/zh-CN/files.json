@@ -41,10 +41,10 @@
     "folder": "此文件夹为空。",
     "folderHint": "将文件拖到此处或使用上传。",
     "filter": "没有与“{filter}”匹配的条目。",
-    "readOnly": "Helena 以只读方式显示此文件夹。"
+    "readOnly": "{appName} 以只读方式显示此文件夹。"
   },
   "unreadable": {
-    "title": "Helena 无法读取此文件夹",
+    "title": "{appName} 无法读取此文件夹",
     "body": "此工作区属于服务器上的智能体用户。请改为在 VS Code 中打开。",
     "missing": "服务器上不存在此文件夹。"
   },
@@ -128,7 +128,7 @@
     "content": "文件内容",
     "reload": "重新加载",
     "discard": "放弃未保存的草稿？",
-    "editor": "Helena 编辑器",
+    "editor": "{appName} 编辑器",
     "preview": "预览",
     "searching": "正在搜索文件…",
     "searchError": "搜索不可用或访问被拒绝。",

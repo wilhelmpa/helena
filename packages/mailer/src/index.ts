@@ -169,9 +169,14 @@ function escape(s: string): string {
 // Wraps a plain-text body (and an optional link) into the text/html pair the
 // transport needs. Shared so every message in the app looks the same: the HTML part
 // opens with the self-contained Orb SVG and a text fallback from packages/brand.
-export function emailBody(text: string, url?: string | null): { text: string; html: string } {
-  const plain = url ? `${text}\n\n${url}` : text;
+export function emailBody(
+  text: string,
+  url: string | null | undefined,
+  displayName: string,
+): { text: string; html: string } {
+  const message = url ? `${text}\n\n${url}` : text;
+  const plain = displayName ? `${displayName}\n\n${message}` : message;
   const body = escape(text).replace(/\n/g, '<br>');
   const link = url ? `<p><a href="${escape(url)}">${escape(url)}</a></p>` : '';
-  return { text: plain, html: `${mailHeaderHtml()}<p>${body}</p>${link}` };
+  return { text: plain, html: `${mailHeaderHtml(displayName)}<p>${body}</p>${link}` };
 }

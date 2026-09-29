@@ -21,7 +21,7 @@
   },
   "plugin": {
     "name": "知识",
-    "description": "Helena 自己的知识来源，以及快速记录到收件箱和每日笔记。"
+    "description": "{appName} 自己的知识来源，以及快速记录到收件箱和每日笔记。"
   },
   "journal": {
     "today": "今日笔记"

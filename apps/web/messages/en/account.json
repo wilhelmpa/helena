@@ -52,7 +52,7 @@
     "passkeyFallback": "Passkey",
     "passkeysLoadFailed": "Could not load passkeys.",
     "totpTitle": "Authenticator app",
-    "totpDescription": "The code the owner terminal asks for every time it opens (Helena -> Terminal).",
+    "totpDescription": "The code the owner terminal asks for every time it opens ({appName} -> Terminal).",
     "totpStatusEnabled": "Enabled.",
     "totpStatusDisabled": "Not set up.",
     "totpPasswordLabel": "Password",
@@ -71,7 +71,7 @@
     "totpDisableFailed": "Could not turn off the authenticator app.",
     "minLength": "At least {count} characters.",
     "added": "Added {date}",
-    "passkeysElsewhere": "Passkeys belong to {host}. Here on the home network Helena signs you in automatically; add new passkeys on {host}."
+    "passkeysElsewhere": "Passkeys belong to {host}. Here on the home network {appName} signs you in automatically; add new passkeys on {host}."
   },
   "accounts": {
     "label": "Accounts",
@@ -178,7 +178,7 @@
     "showChatByDefault": "Show the chat by default",
     "showChatByDefaultDescription": "The chat panel opens with a project page. Close it any time from its header or the chat icon.",
     "chatAnimation": "Animate chat status",
-    "chatAnimationDescription": "Show the animated status orb in Helena and project chats. Turn off to show a static indicator."
+    "chatAnimationDescription": "Show the animated status orb in {appName} and project chats. Turn off to show a static indicator."
   },
   "shell": {
     "title": "Account"
@@ -187,7 +187,7 @@
     "title": "Notifications",
     "thisDevice": {
       "title": "Push on this device",
-      "description": "Messages from Helena on this phone or computer, even while Helena is not open.",
+      "description": "Messages from {appName} on this phone or computer, even while {appName} is not open.",
       "switch": "Push messages",
       "off": "Off",
       "never": "On, nothing delivered yet",
@@ -202,11 +202,11 @@
     "hints": {
       "insecure": {
         "title": "Push needs a secure connection",
-        "body": "Browsers allow push only over HTTPS or on localhost. Open Helena at its https address once it is set up."
+        "body": "Browsers allow push only over HTTPS or on localhost. Open {appName} at its https address once it is set up."
       },
       "iosInstall": {
-        "title": "On iPhone and iPad, add Helena to the home screen first",
-        "body": "In Safari: Share → “Add to Home Screen”. Then open Helena from the home screen and switch push on here (iOS 16.4 or later)."
+        "title": "On iPhone and iPad, add {appName} to the home screen first",
+        "body": "In Safari: Share → “Add to Home Screen”. Then open {appName} from the home screen and switch push on here (iOS 16.4 or later)."
       },
       "unsupported": {
         "title": "This browser cannot receive push",
@@ -258,7 +258,7 @@
       },
       "agent-replies": {
         "label": "Agent answers",
-        "description": "An answer in the chat is ready while you do not have Helena open."
+        "description": "An answer in the chat is ready while you do not have {appName} open."
       }
     }
   }

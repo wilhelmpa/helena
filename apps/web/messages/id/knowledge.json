@@ -21,7 +21,7 @@
   },
   "plugin": {
     "name": "Pengetahuan",
-    "description": "Sumber pengetahuan milik Helena sendiri, serta pencatatan cepat ke Kotak masuk dan catatan harian."
+    "description": "Sumber pengetahuan milik {appName} sendiri, serta pencatatan cepat ke Kotak masuk dan catatan harian."
   },
   "journal": {
     "today": "Catatan hari ini"

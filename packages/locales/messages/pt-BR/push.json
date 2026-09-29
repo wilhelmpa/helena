@@ -41,7 +41,7 @@
     "noTask": "Uma execução falhou."
   },
   "test": {
-    "title": "Helena",
+    "title": "{appName}",
     "body": "As notificações push funcionam neste dispositivo."
   },
   "subjects": {

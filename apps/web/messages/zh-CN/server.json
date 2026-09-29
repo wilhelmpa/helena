@@ -19,7 +19,7 @@
   "readFailed": "主机助手没有响应，可能当前未在运行。",
   "unavailable": {
     "title": "这里没有可管理的内容",
-    "noHelper": "Helena 在没有主机助手的环境中运行（例如在容器中）。磁盘、备份和风扇需在 Helena 之外管理。",
+    "noHelper": "{appName} 在没有主机助手的环境中运行（例如在容器中）。磁盘、备份和风扇需在 {appName} 之外管理。",
     "failed": "主机助手没有响应。"
   },
   "health": {
@@ -42,9 +42,9 @@
     "espSyncSkipped": "{at}前第二个 EFI 分区未同步：{reason, select, notMounted {{mount} 未挂载} notVfat {{mount} 不是 FAT 分区} sameDevice {两个挂载点是同一个分区} other {已跳过}}。备用盘可能会启动旧版本。",
     "espSyncFailed": "{at}前复制到第二个 EFI 分区失败：{reason, select, sourceIncomplete {第一个分区缺少引导程序} readFailed {第一个分区无法完整读取} noRsync {缺少 rsync} rsyncFailed {写入错误} verifyFailed {副本与原件不一致} other {未知错误}}。复制成功之前，从备用盘启动并不安全。",
     "espRemovableStale": "{mount} 上的应急启动路径 EFI/BOOT {problem, select, missing {不存在} differs {启动的文件与启动项不同} fallback {包含 fbx64.efi，它会自行创建固件启动项} stub {找不到系统分区} other {不正确}}。固件有时会自行从该路径启动。",
-    "bootEntryMissing": "缺少启动项“{label}”。{repair, select, nextBoot {Helena 会在下次启动时创建它。} diskMissing {磁盘恢复后 Helena 会创建它。} other {}}",
-    "bootEntryBroken": "启动项“{label}”无效：{problem, select, noPartuuid {固件改写了它} wrongDisk {它指向另一块磁盘} wrongLoader {它启动的是另一个文件} inactive {它已被停用} other {它不匹配}}。{repair, select, nextBoot {Helena 会在下次启动时修复它。} diskMissing {磁盘恢复后 Helena 会修复它。} other {}}",
-    "bootEntryDuplicate": "启动项“{label}”存在多个。{repair, select, nextBoot {Helena 会在下次启动时清理。} diskMissing {磁盘恢复后 Helena 会清理。} other {}}",
+    "bootEntryMissing": "缺少启动项“{label}”。{repair, select, nextBoot {{appName} 会在下次启动时创建它。} diskMissing {磁盘恢复后 {appName} 会创建它。} other {}}",
+    "bootEntryBroken": "启动项“{label}”无效：{problem, select, noPartuuid {固件改写了它} wrongDisk {它指向另一块磁盘} wrongLoader {它启动的是另一个文件} inactive {它已被停用} other {它不匹配}}。{repair, select, nextBoot {{appName} 会在下次启动时修复它。} diskMissing {磁盘恢复后 {appName} 会修复它。} other {}}",
+    "bootEntryDuplicate": "启动项“{label}”存在多个。{repair, select, nextBoot {{appName} 会在下次启动时清理。} diskMissing {磁盘恢复后 {appName} 会清理。} other {}}",
     "bootLoaderMissing": "{mount} 上缺少引导程序；启动项“{label}”无法启动。",
     "bootEntriesOk": "{count, plural, other {# 个启动项均正常。}}",
     "eventsCritical": "来自 mdadm 或 smartd 的 {count, plural, other {# 条严重报告}}尚未查看。",
@@ -114,7 +114,7 @@
     "checkStarted": "检查正在运行。",
     "checkStopped": "检查已停止。",
     "checkConfirmTitle": "检查镜像？",
-    "checkConfirmBody": "完整读取两块磁盘并进行比较（与每月自动检查相同）。需要几个小时，磁盘会稍微变慢；Helena 继续运行。",
+    "checkConfirmBody": "完整读取两块磁盘并进行比较（与每月自动检查相同）。需要几个小时，磁盘会稍微变慢；{appName} 继续运行。",
     "syncAction": {
       "idle": "空闲",
       "resync": "重新同步",
@@ -176,7 +176,7 @@
       "intro": "如果磁盘在运行中从总线上掉线（日志中有“controller is down”，镜像在没有它的情况下运行，lsblk 不再显示它），它往往并没有损坏。重启通常无法让它回来，冷启动则可以。在此之前，不要更新内核或 GRUB。",
       "step": {
         "poweroff": "正常关机",
-        "poweroffBody": "Helena 和智能体会停止；另一块磁盘上的镜像是完整的。",
+        "poweroffBody": "{appName} 和智能体会停止；另一块磁盘上的镜像是完整的。",
         "powerOn": "重新开机",
         "powerOnBody": "按电源键，或从家庭网络中的另一台电脑通过网络唤醒（Wake-on-LAN）。",
         "smart": "检查 SMART",
@@ -191,7 +191,7 @@
     "replace": {
       "open": "更换磁盘",
       "title": "更换镜像中的一块磁盘",
-      "intro": "逐步操作，附带适用于这台机器的命令。Helena 不会执行这些命令：由你在所有者终端中输入。期间服务器继续在另一块磁盘上运行。",
+      "intro": "逐步操作，附带适用于这台机器的命令。{appName} 不会执行这些命令：由你在所有者终端中输入。期间服务器继续在另一块磁盘上运行。",
       "which": "要取出哪块磁盘？",
       "disk": "磁盘 {letter}",
       "noPlan": "此磁盘没有更换方案：它不属于任何镜像，或者缺少一块健康的第二块磁盘。",
@@ -343,11 +343,11 @@
     },
     "password": {
       "title": "记下备份密码",
-      "explain": "没有此密码就无法读取备份，重新安装后的 Helena 也不行。请把它写在纸上或存入密码管理器。确认后，Helena 将不再显示它。",
+      "explain": "没有此密码就无法读取备份，重新安装后的 {appName} 也不行。请把它写在纸上或存入密码管理器。确认后，{appName} 将不再显示它。",
       "show": "显示密码",
       "written": "我已妥善记下密码。",
       "confirm": "确认",
-      "confirmed": "已确认。Helena 不再显示该密码。"
+      "confirmed": "已确认。{appName} 不再显示该密码。"
     },
     "targets": {
       "title": "异地备份",
@@ -463,7 +463,7 @@
     },
     "guard": {
       "title": "风扇保护",
-      "explain": "当风扇固定在 5 档以下、且 CPU 持续数秒达到 {limit} 或更高时，Helena 会将风扇调到 5 档。低于 {release} 持续两分钟后，恢复你选择的档位。",
+      "explain": "当风扇固定在 5 档以下、且 CPU 持续数秒达到 {limit} 或更高时，{appName} 会将风扇调到 5 档。低于 {release} 持续两分钟后，恢复你选择的档位。",
       "limit": "上限",
       "saved": "已保存。",
       "active": "正将风扇保持在 5 档。",

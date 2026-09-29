@@ -1,4 +1,11 @@
-import { aiAgent, db, issueActivity, pipelineRunStep, projectMember } from '@repo/db';
+import {
+  aiAgent,
+  db,
+  getDisplayName,
+  issueActivity,
+  pipelineRunStep,
+  projectMember,
+} from '@repo/db';
 import { and, eq, like, sql } from 'drizzle-orm';
 import { listColumns } from '#modules/columns/service';
 import { updateIssue } from '#modules/issues/service';
@@ -191,7 +198,12 @@ async function queueStage(
       agentId: agent.id,
       projectId,
       issueId: context.task?.id ?? null,
-      prompt: stagePrompt(state.input, `project:${context.project.key}`, startedByRoutine),
+      prompt: stagePrompt(
+        state.input,
+        `project:${context.project.key}`,
+        startedByRoutine,
+        await getDisplayName(),
+      ),
       maxTurns: team.policy.maxTurns ?? null,
       runBudgetSeconds: team.policy.runBudgetSeconds ?? null,
       expect: { model: team.execution.model, reasoning: team.execution.reasoning },

@@ -164,8 +164,8 @@
   "sortDefault": "自定义顺序",
   "why": {
     "label": "为什么",
-    "choose": "选择 Helena 目标",
-    "none": "尚未服务于任何 Helena 目标。",
+    "choose": "选择 {appName} 目标",
+    "none": "尚未服务于任何 {appName} 目标。",
     "noneOption": "无目标"
   }
 }

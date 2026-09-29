@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef } from 'react';
 import { useTranslations } from 'next-intl';
+import { useDisplayName } from '@/context/displayName';
 import { MessagesSquare } from 'lucide-react';
 import type { ChatListView } from '@/lib/api/endpoints/agentChat';
 import { EmptyState } from '@/design-system';
@@ -61,6 +62,7 @@ export default function ChatListGroups({
   onThreadRemoved,
 }: ChatListGroupsProps) {
   const t = useTranslations('chatWorkspace');
+  const appName = useDisplayName();
   const query = useChatList({ projectKey: projectKey ?? undefined, q, view });
   const chats = chatsOf(query.data);
   // A search ranks by relevance (title, then the member's words, then the agent's), so
@@ -71,8 +73,8 @@ export default function ChatListGroups({
         ? [{ key: 'today', chats, label: t('list.searchResults') }]
         : grouping === 'time'
           ? groupChats(chats, new Date())
-          : groupChatsBy(chats, grouping, 'Helena'),
-    [chats, q, grouping, t],
+          : groupChatsBy(chats, grouping, appName),
+    [chats, q, grouping, t, appName],
   );
   const sentinelRef = useRef<HTMLDivElement>(null);
 

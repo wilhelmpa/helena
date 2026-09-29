@@ -2,9 +2,9 @@
   "auditTitle": "Захист сервера",
   "auditDescription": "Щогодинна перевірка сервера: брандмауер, SSH, сертифікати, права та служби. Без секретів.",
   "ownerTitle": "Вхід власника",
-  "ownerDescription": "Що має бути виконано, перш ніж Helena стане доступною з інтернету.",
+  "ownerDescription": "Що має бути виконано, перш ніж {appName} стане доступною з інтернету.",
   "edgeTitle": "Доступ ззовні",
-  "edgeDescription": "Cloudflare Access перед helena.volition.one. Helena сама ще раз перевіряє кожен запит із тунелю.",
+  "edgeDescription": "Cloudflare Access перед helena.volition.one. {appName} сама ще раз перевіряє кожен запит із тунелю.",
   "noReport": "Звіту перевірки ще немає. Виконайте один раз на сервері:",
   "noReportCommand": "sudo deployment/volition-stack/native/hardening/audit.sh --install-timer",
   "summary": "{failed} відкрито · {warnings} попереджень · {passed} пройдено",
@@ -47,7 +47,7 @@
     "web_production": "API працює в робочому режимі",
     "web_leftovers": "Немає залишків розробки чи читабельних резервних копій у nginx",
     "tunnel_service": "Тунель Cloudflare працює ізольовано й без самооновлення",
-    "tunnel_edge": "Cloudflare Access налаштовано в Helena",
+    "tunnel_edge": "Cloudflare Access налаштовано в {appName}",
     "tunnel_acl": "Вхід тунелю доступний лише тунелю",
     "tls_certificate": "Сертифікат дійсний ще понад 14 днів",
     "tls_renewal": "Автоматичне оновлення сертифіката ввімкнено",
@@ -69,9 +69,9 @@
     "files_backups": "Резервні копії бази доступні лише своїй службі",
     "files_secrets": "Секрети й ключі недоступні іншим для читання",
     "files_agent_code": "Агенти можуть читати свій код середовища виконання",
-    "svc_exposure": "Служби Helena ізольовані systemd",
+    "svc_exposure": "Служби {appName} ізольовані systemd",
     "svc_tools_loopback": "Інструменти доступні лише через loopback",
-    "net_voice_acl": "Голосові сервери доступні лише Helena"
+    "net_voice_acl": "Голосові сервери доступні лише {appName}"
   },
   "finding": {
     "net_firewall": {
@@ -91,7 +91,7 @@
       "fail": "Вхід із LAN діє також для loopback або самого сервера."
     },
     "net_redis": {
-      "fail": "Redis працює без пароля, і Helena його не використовує."
+      "fail": "Redis працює без пароля, і {appName} його не використовує."
     },
     "net_syncthing_nat": {
       "warn": "Syncthing просить маршрутизатор (UPnP/NAT-PMP) відкрити порт 22000."
@@ -125,7 +125,7 @@
       "fail": "Тунель Cloudflare ізольовано не так, як задумано."
     },
     "tunnel_edge": {
-      "fail": "У Helena не задано команду Cloudflare Access (домен/AUD): вхід тунелю відхиляє все."
+      "fail": "У {appName} не задано команду Cloudflare Access (домен/AUD): вхід тунелю відхиляє все."
     },
     "tunnel_acl": {
       "fail": "{why, select, user {Користувач тунелю {user} не може дістатися входу тунелю: cloudflared не отримує з’єднання, Cloudflare відповідає 502 (hardening/apply.sh --apply firewall-uids).} other {Будь-який локальний користувач дістається входу тунелю.}}"
@@ -191,7 +191,7 @@
       "fail": "{count} файлів у {path} може читати лише власник: агенти, що їх завантажують, не запускаються."
     },
     "svc_exposure": {
-      "warn": "systemd ізолює служби Helena слабше, ніж задумано."
+      "warn": "systemd ізолює служби {appName} слабше, ніж задумано."
     },
     "svc_tools_loopback": {
       "fail": "Інструменти доступні не лише через loopback."
@@ -221,13 +221,13 @@
     "allowedEmails": "Дозволені особи",
     "allowedEmailsHint": "Необов’язково: лише ці адреси, навіть якщо правило Access допускає більше. По одній у рядку. Обов’язково для входу через Cloudflare.",
     "saved": "Доступ ззовні збережено",
-    "signInTitle": "Входити в Helena через вхід Cloudflare",
-    "signInDescription": "Вхід у Cloudflare Access як дозволена особа відкриває Helena без іншого пароля — щонайбільше на 24 години й ніколи довше за сесію Access. Тоді Access — єдиний вхід: вимагайте там другий фактор (passkey/Touch ID або застосунок-автентифікатор). Термінал і далі запитує свій код.",
+    "signInTitle": "Входити в {appName} через вхід Cloudflare",
+    "signInDescription": "Вхід у Cloudflare Access як дозволена особа відкриває {appName} без іншого пароля — щонайбільше на 24 години й ніколи довше за сесію Access. Тоді Access — єдиний вхід: вимагайте там другий фактор (passkey/Touch ID або застосунок-автентифікатор). Термінал і далі запитує свій код.",
     "signInNeedsSetup": "Потрібні домен команди, AUD і щонайменше одна дозволена особа.",
-    "signInNeedsProof": "Вхід тунелю ще не має підтвердження для Helena: виконайте на сервері cloudflare/install.sh --apply entry-token, потім перезапустіть API і вебзастосунок.",
+    "signInNeedsProof": "Вхід тунелю ще не має підтвердження для {appName}: виконайте на сервері cloudflare/install.sh --apply entry-token, потім перезапустіть API і вебзастосунок.",
     "homeTitle": "Удома автоматично підключатися напряму",
-    "homeDescription": "На публічній адресі Helena перевіряє, чи відповідає {home} з цього пристрою, і тоді переходить туди — напряму через домашню мережу, без обходу через Cloudflare. Там вас впустить вхід із домашньої мережі. Chrome один раз попросить доступ до локальної мережі.",
-    "homeDescriptionGeneric": "На публічній адресі Helena перевіряє, чи відповідає адреса домашньої мережі з цього пристрою, і тоді переходить туди — напряму через домашню мережу, без обходу через Cloudflare.",
+    "homeDescription": "На публічній адресі {appName} перевіряє, чи відповідає {home} з цього пристрою, і тоді переходить туди — напряму через домашню мережу, без обходу через Cloudflare. Там вас впустить вхід із домашньої мережі. Chrome один раз попросить доступ до локальної мережі.",
+    "homeDescriptionGeneric": "На публічній адресі {appName} перевіряє, чи відповідає адреса домашньої мережі з цього пристрою, і тоді переходить туди — напряму через домашню мережу, без обходу через Cloudflare.",
     "homeNotSetUp": "Адресу домашньої мережі не налаштовано (HELENA_HOME_URL, cloudflare/switch_origin.py --home-host)."
   },
   "signIns": {

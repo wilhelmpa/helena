@@ -164,8 +164,8 @@
   "sortDefault": "الترتيب الخاص",
   "why": {
     "label": "لماذا",
-    "choose": "اختر هدفًا في Helena",
-    "none": "لا يخدم أي هدف في Helena بعد.",
+    "choose": "اختر هدفًا في {appName}",
+    "none": "لا يخدم أي هدف في {appName} بعد.",
     "noneOption": "لا هدف"
   }
 }

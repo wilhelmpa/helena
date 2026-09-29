@@ -806,15 +806,16 @@ function latest(paths: string[]): string[] {
   return [...new Set(paths.reverse())].reverse().slice(-MAX_RESTORED);
 }
 
-const RESTORED_DETAIL =
-  'Files or plugin links changed outside Helena were restored; a changed file is kept next to it.';
+const restoredDetail = (displayName: string) =>
+  `Files or plugin links changed outside ${displayName} were restored; a changed file is kept next to it.`;
 
 // How often the runner reads back what Hermes loads when nothing it knows of changed: the
 // shared configuration can change under it. A new revision, a run or chat answer, a restored
 // file and "Neu schreiben" check at once.
 const PROBE_INTERVAL_MS = 5 * 60_000;
 
-const PROFILE_DRIFT_DETAIL = "The agent's profile differs from Helena's settings.";
+const profileDriftDetail = (displayName: string) =>
+  `The agent's profile differs from ${displayName}'s settings.`;
 const BUNDLED_SKILLS_DETAIL = 'The skills that ship with Hermes could not be seeded:';
 
 // Hermes behind the runtime adapter interface (runtime.ts): brings the agent's Hermes home to
@@ -822,6 +823,9 @@ const BUNDLED_SKILLS_DETAIL = 'The skills that ship with Hermes could not be see
 // load, and reports the result with the agent's status.
 export class HermesPolicySynchronizer implements RuntimeAdapter {
   readonly runtime = 'hermes' as const;
+  private displayName(): string {
+    return this.applied?.displayName ?? 'Helena';
+  }
   private appliedRevision: string | null = null;
   // The snapshot of the applied revision, which each check applies again.
   private applied: RuntimePolicySnapshot | null = null;
@@ -1053,6 +1057,7 @@ export class HermesPolicySynchronizer implements RuntimeAdapter {
       received,
       this.options.localFallback?.(received.model, this.defaults()) ?? null,
     );
+    process.env.VOLITION_DISPLAY_NAME = snapshot.displayName ?? 'Helena';
     const fallback = JSON.stringify(snapshot.hermes?.fallbackModels ?? null);
     const sameRevision = snapshot.revision === this.appliedRevision;
     if (sameRevision && fallback === this.appliedFallback) return false;
@@ -1100,7 +1105,7 @@ export class HermesPolicySynchronizer implements RuntimeAdapter {
         status: 'online',
         detail:
           result.conflicts.length > 0 || restored.length > 0
-            ? RESTORED_DETAIL
+            ? restoredDetail(this.displayName())
             : seeding
               ? `${BUNDLED_SKILLS_DETAIL} ${(result.bundledSkills as { error: string }).error}`
               : null,
@@ -1201,8 +1206,8 @@ export class HermesPolicySynchronizer implements RuntimeAdapter {
     if (this.state && this.state.status === 'online') {
       const drifted = report.drift.length > 0;
       if (drifted && this.state.detail === null) {
-        this.state = { ...this.state, detail: PROFILE_DRIFT_DETAIL };
-      } else if (!drifted && this.state.detail === PROFILE_DRIFT_DETAIL) {
+        this.state = { ...this.state, detail: profileDriftDetail(this.displayName()) };
+      } else if (!drifted && this.state.detail === profileDriftDetail(this.displayName())) {
         this.state = { ...this.state, detail: null };
       }
     }
@@ -1222,7 +1227,7 @@ export class HermesPolicySynchronizer implements RuntimeAdapter {
     const degraded = this.state.status === 'degraded';
     this.state = {
       ...this.state,
-      detail: degraded ? this.state.detail : RESTORED_DETAIL,
+      detail: degraded ? this.state.detail : restoredDetail(this.displayName()),
       conflicts: [...(this.state.conflicts ?? []), ...conflicts].slice(-MAX_CONFLICTS),
       restored: latest([...(this.state.restored ?? []), ...restored]),
     };

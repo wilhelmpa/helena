@@ -1,4 +1,5 @@
 import { createRemoteJWKSet, jwtVerify, type JWTPayload, type JWTVerifyGetKey } from 'jose';
+import { getDisplayName } from '@repo/db';
 
 // An edge access provider: the identity-aware proxy in front of Helena when it is reached
 // from the internet (Cloudflare Access today; Tailscale Funnel, Pomerium or oauth2-proxy
@@ -126,7 +127,7 @@ export const cloudflareAccessProvider: EdgeProvider = {
     if (config.allowedEmails.length > 0 && (!email || !config.allowedEmails.includes(email))) {
       throw new EdgeAccessError(
         'identity_not_allowed',
-        'This identity is not allowed on this Helena instance',
+        `This identity is not allowed on this ${await getDisplayName()} instance`,
       );
     }
     return {

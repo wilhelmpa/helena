@@ -190,7 +190,7 @@
     "log": "Log",
     "reload": "Reload",
     "logEmpty": "No log lines.",
-    "noLogs": "This runtime keeps no log Helena can read.",
+    "noLogs": "This runtime keeps no log {appName} can read.",
     "level": {
       "all": "All",
       "WARNING": "Warnings",
@@ -262,7 +262,7 @@
     "retentionHint": "Days Hermes keeps the transcripts of ended runs and chats. Empty: Hermes' default of 90 days.",
     "saved": "Saved. The runners apply it on their next sync.",
     "usageTitle": "Usage",
-    "usageDescription": "What the agents of a team spent, from Helena's token ledger, with cost by the model price table.",
+    "usageDescription": "What the agents of a team spent, from {appName}'s token ledger, with cost by the model price table.",
     "team": "Team",
     "noTeam": "No team yet.",
     "openUpdates": "Open in Updates",
@@ -270,7 +270,7 @@
     "compressionThreshold": "Compress context from (tokens)",
     "compressionThresholdHint": "For every agent without its own value. 100,000 keeps long chats well below the windows of today’s models without summarising runs mid-work too often.",
     "bundledSkills": "Skills that ship with Hermes",
-    "bundledSkillsHint": "Helena seeds them the same way into every Hermes profile (docx, pdf, xlsx, debugging …). Turn single ones off on the agent. “Only the essential” seeds no new ones; existing ones stay.",
+    "bundledSkillsHint": "{appName} seeds them the same way into every Hermes profile (docx, pdf, xlsx, debugging …). Turn single ones off on the agent. “Only the essential” seeds no new ones; existing ones stay.",
     "bundledSkillsAll": "All",
     "bundledSkillsEssential": "Only the essential"
   }

@@ -71,10 +71,12 @@ describe('files and mail', () => {
   });
 
   test('mail header embeds the Orb and a readable text fallback', () => {
-    const html = mailHeaderHtml();
+    const html = mailHeaderHtml('Helena');
     expect(html).toContain('<svg');
     expect(html).toContain('stroke="currentColor"');
     expect(html).toContain('>Helena</td>');
+    expect(mailHeaderHtml('Atlas')).toContain('>Atlas</td>');
+    expect(mailHeaderHtml('Atlas')).not.toContain('Helena');
     expect(html).not.toContain('██');
   });
 });

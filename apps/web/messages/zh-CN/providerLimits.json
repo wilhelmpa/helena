@@ -58,10 +58,10 @@
   "extraUsage": "额外用量：{used} / {limit}",
   "settings": {
     "auto": "自动读取",
-    "autoHint": "Helena 按此间隔询问运行器；每个登录只问一次，无论有多少代理使用它。",
+    "autoHint": "{appName} 按此间隔询问运行器；每个登录只问一次，无论有多少代理使用它。",
     "autoHintAt": "上次询问于 {time}前。每个登录只问一次，无论有多少代理使用它。",
     "interval": "间隔",
-    "intervalHint": "Helena 读取限额的频率。",
+    "intervalHint": "{appName} 读取限额的频率。",
     "minutes": "{count} 分钟",
     "near": "接近上限起点",
     "nearHint": "达到此比例时窗口变为黄色。",

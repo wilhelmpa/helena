@@ -71,7 +71,7 @@
     "totpDisableFailed": "No se pudo desactivar la aplicación de autenticación.",
     "minLength": "Al menos {count} caracteres.",
     "added": "Añadida el {date}",
-    "passkeysElsewhere": "Las passkeys pertenecen a {host}. Aquí, en la red de casa, Helena inicia tu sesión automáticamente; añade passkeys nuevas en {host}."
+    "passkeysElsewhere": "Las passkeys pertenecen a {host}. Aquí, en la red de casa, {appName} inicia tu sesión automáticamente; añade passkeys nuevas en {host}."
   },
   "accounts": {
     "label": "Cuentas",
@@ -178,7 +178,7 @@
     "showChatByDefault": "Mostrar el chat por defecto",
     "showChatByDefaultDescription": "El panel de chat se abre con una página de proyecto. Ciérralo cuando quiera desde su cabecera o el icono de chat.",
     "chatAnimation": "Animar el estado del chat",
-    "chatAnimationDescription": "Muestra el orbe de estado animado en los chats de Helena y proyectos. Desactivado, el indicador es estático."
+    "chatAnimationDescription": "Muestra el orbe de estado animado en los chats de {appName} y proyectos. Desactivado, el indicador es estático."
   },
   "shell": {
     "title": "Cuenta"
@@ -187,7 +187,7 @@
     "title": "Notificaciones",
     "thisDevice": {
       "title": "Push en este dispositivo",
-      "description": "Mensajes de Helena en este teléfono u ordenador, aunque Helena no esté abierta.",
+      "description": "Mensajes de {appName} en este teléfono u ordenador, aunque {appName} no esté abierta.",
       "switch": "Mensajes push",
       "off": "Desactivado",
       "never": "Activado, aún no se ha entregado nada",
@@ -202,11 +202,11 @@
     "hints": {
       "insecure": {
         "title": "El push necesita una conexión segura",
-        "body": "Los navegadores solo permiten push con HTTPS o en localhost. Abre Helena en su dirección https cuando esté configurada."
+        "body": "Los navegadores solo permiten push con HTTPS o en localhost. Abre {appName} en su dirección https cuando esté configurada."
       },
       "iosInstall": {
-        "title": "En iPhone y iPad, primero añade Helena a la pantalla de inicio",
-        "body": "En Safari: Compartir → «Añadir a pantalla de inicio». Después abre Helena desde la pantalla de inicio y activa el push aquí (iOS 16.4 o posterior)."
+        "title": "En iPhone y iPad, primero añade {appName} a la pantalla de inicio",
+        "body": "En Safari: Compartir → «Añadir a pantalla de inicio». Después abre {appName} desde la pantalla de inicio y activa el push aquí (iOS 16.4 o posterior)."
       },
       "unsupported": {
         "title": "Este navegador no admite push",
@@ -258,7 +258,7 @@
       },
       "agent-replies": {
         "label": "Respuestas de agentes",
-        "description": "Una respuesta del chat está lista mientras no tienes Helena abierta."
+        "description": "Una respuesta del chat está lista mientras no tienes {appName} abierta."
       }
     }
   }

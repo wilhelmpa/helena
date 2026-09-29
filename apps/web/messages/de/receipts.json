@@ -42,7 +42,7 @@
   },
   "review": {
     "emptyTitle": "Nichts zu prüfen",
-    "emptyHint": "Hier landen Zuordnungen, bei denen Helena nicht sicher genug war.",
+    "emptyHint": "Hier landen Zuordnungen, bei denen {appName} nicht sicher genug war.",
     "score": "Regeln",
     "confidence": "KI",
     "confirm": "Zuordnen",
@@ -74,7 +74,7 @@
   },
   "matched": {
     "emptyTitle": "Noch nichts zugeordnet",
-    "emptyHint": "Lade Belege hoch und importiere einen Kontoauszug, dann ordnet Helena sie einander zu.",
+    "emptyHint": "Lade Belege hoch und importiere einen Kontoauszug, dann ordnet {appName} sie einander zu.",
     "unmatch": "Zuordnung lösen"
   },
   "accounts": {

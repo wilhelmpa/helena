@@ -22,12 +22,12 @@
     "deleteClient": "Hapus klien OAuth",
     "deleteClientMessage": "Hapus {name}? Akun tidak bisa masuk lagi dengannya.",
     "engine": {
-      "helena": "Helena",
+      "helena": "{appName}",
       "gog": "gog"
     },
     "engineHint": {
-      "helena": "Helena menyimpan login terenkripsi dan memanggil Google dengan pustaka Google sendiri.",
-      "gog": "Login tetap di keyring gog di server ini; Helena menjangkaunya lewat broker. Tanpa kotak surat di kotak masuk."
+      "helena": "{appName} menyimpan login terenkripsi dan memanggil Google dengan pustaka Google sendiri.",
+      "gog": "Login tetap di keyring gog di server ini; {appName} menjangkaunya lewat broker. Tanpa kotak surat di kotak masuk."
     },
     "status": {
       "ok": "Terhubung",
@@ -51,11 +51,11 @@
     "checked": "{email} dicek",
     "editServices": "Layanan",
     "signInAgain": "Masuk lagi",
-    "moveToHelena": "Pindahkan ke Helena",
+    "moveToHelena": "Pindahkan ke {appName}",
     "remove": "Hapus akun",
     "removeMessage": "Hapus {email}? Agen langsung kehilangan akses; email yang diimpor tetap ada sampai kotak suratnya dihapus.",
     "removeFromGog": "Hapus juga login dari gog",
-    "inGog": "Di gog, belum di Helena",
+    "inGog": "Di gog, belum di {appName}",
     "inGogHint": "gog menyimpan login untuk akun-akun ini. Menampilkannya tidak memindahkan token.",
     "adopt": "Tampilkan",
     "adopted": "{email} ditampilkan",
@@ -75,12 +75,12 @@
   "signIn": {
     "title": "Hubungkan akun Google",
     "againTitle": "Masuk lagi ke {email}",
-    "moveTitle": "Pindahkan {email} ke Helena",
+    "moveTitle": "Pindahkan {email} ke {appName}",
     "engine": "Login disimpan oleh",
     "client": "Klien OAuth",
     "noClient": "Impor klien OAuth terlebih dahulu.",
     "email": "Alamat",
-    "emailHint": "Wajib untuk gog; untuk Helena, Google memilihkan akunnya.",
+    "emailHint": "Wajib untuk gog; untuk {appName}, Google memilihkan akunnya.",
     "services": "Layanan",
     "scope": "Milik",
     "start": "Lanjut",
@@ -88,7 +88,7 @@
     "copyLink": "Salin tautan",
     "linkCopied": "Tautan disalin",
     "pasteStep": "Setelah masuk, browser berakhir di halaman yang tidak termuat (127.0.0.1). Salin alamat lengkap halaman itu dan tempel di sini.",
-    "callbackStep": "Masuk di Google; Helena menyelesaikannya sendiri dan kembali ke sini.",
+    "callbackStep": "Masuk di Google; {appName} menyelesaikannya sendiri dan kembali ke sini.",
     "redirect": "Alamat halaman itu",
     "finish": "Selesai",
     "connected": "{email} terhubung",
@@ -98,7 +98,7 @@
     "title": "Layanan {email}",
     "hint": "Layanan yang dimatikan tidak tersedia bagi agen mana pun.",
     "needsSignIn": "perlu masuk lagi",
-    "gogNoMail": "Akun yang disimpan di gog tidak punya kotak surat di Helena. Pindahkan ke Helena untuk kotak masuk.",
+    "gogNoMail": "Akun yang disimpan di gog tidak punya kotak surat di {appName}. Pindahkan ke {appName} untuk kotak masuk.",
     "saved": "Layanan disimpan"
   },
   "mailbox": {
@@ -183,13 +183,13 @@
   "mcp": {
     "kind": "Server MCP (OAuth)",
     "kindPlural": "Server MCP (OAuth)",
-    "kindHint": "Server MCP yang masuk dengan OAuth. Helena menyimpan tokennya; pustaka server MCP mengirimnya sebagai header Authorization.",
+    "kindHint": "Server MCP yang masuk dengan OAuth. {appName} menyimpan tokennya; pustaka server MCP mengirimnya sebagai header Authorization.",
     "title": "Hubungkan server MCP",
     "againTitle": "Masuk lagi ke {name}",
     "serverUrl": "Alamat server",
     "label": "Nama",
     "scope": "Scope (opsional)",
-    "hint": "Helena menemukan login server, mendaftar di sana, lalu memintamu masuk. Setelah itu pilih koneksi ini sebagai header Authorization server di Server MCP.",
+    "hint": "{appName} menemukan login server, mendaftar di sana, lalu memintamu masuk. Setelah itu pilih koneksi ini sebagai header Authorization server di Server MCP.",
     "open": "Masuk di server",
     "connected": "Server MCP terhubung",
     "signIn": "Masuk lagi",

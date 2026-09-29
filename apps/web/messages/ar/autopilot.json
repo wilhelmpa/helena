@@ -107,7 +107,7 @@
     "hermes": "Hermes",
     "claude": "Claude Code",
     "codex": "Codex",
-    "mcp": "أداة Helena",
+    "mcp": "أداة {appName}",
     "gateway": "المتصفح",
     "workflow": "سير العمل",
     "approval": "طلب موافقة",
@@ -158,8 +158,8 @@
     "level": "المستوى {level}",
     "reason": "لماذا تحتاج موافقة",
     "scope": {
-      "workspace": "داخل هيلينا / مساحة عمل المشروع",
-      "external": "خارج هيلينا / مساحة عمل المشروع"
+      "workspace": "داخل {appName} / مساحة عمل المشروع",
+      "external": "خارج {appName} / مساحة عمل المشروع"
     }
   },
   "prices": {
@@ -185,7 +185,7 @@
     "rateSaved": "تم حفظ سعر الصرف وإعادة تحويل الأسعار.",
     "importedAt": "آخر تحديث: {date} ({from})",
     "from": {
-      "snapshot": "القائمة المرفقة مع Helena",
+      "snapshot": "القائمة المرفقة مع {appName}",
       "modelsDev": "models.dev"
     },
     "add": "إدخال سعر",

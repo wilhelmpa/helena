@@ -1,8 +1,8 @@
 import { runtimeEnv } from './runtimeEnv';
 
 // The product name shown to users: the login panel, the passkey label in the OS
-// picker, and the account page. It is defined once, so a rebrand is one edit.
-export const APP_NAME = 'Helena';
+// picker, and the account page. RuntimeEnvScript supplies the current setting.
+export const APP_NAME = runtimeEnv().displayName ?? 'Helena';
 
 // The page background of each theme (globals.css --background, as hex), for the places
 // that need a literal colour before the stylesheet applies: the browser's theme-color

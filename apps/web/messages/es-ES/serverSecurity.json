@@ -2,9 +2,9 @@
   "auditTitle": "Refuerzo del servidor",
   "auditDescription": "La comprobación horaria del servidor: cortafuegos, SSH, certificados, permisos y servicios. Sin secretos.",
   "ownerTitle": "Inicio de sesión del propietario",
-  "ownerDescription": "Lo que debe cumplirse antes de que Helena sea accesible desde Internet.",
+  "ownerDescription": "Lo que debe cumplirse antes de que {appName} sea accesible desde Internet.",
   "edgeTitle": "Acceso desde fuera",
-  "edgeDescription": "Cloudflare Access delante de helena.volition.one. Helena vuelve a comprobar cada solicitud del túnel.",
+  "edgeDescription": "Cloudflare Access delante de helena.volition.one. {appName} vuelve a comprobar cada solicitud del túnel.",
   "noReport": "Aún no hay informe de auditoría. Ejecuta una vez en el servidor:",
   "noReportCommand": "sudo deployment/volition-stack/native/hardening/audit.sh --install-timer",
   "summary": "{failed} abiertos · {warnings} avisos · {passed} superados",
@@ -47,7 +47,7 @@
     "web_production": "La API funciona en modo de producción",
     "web_leftovers": "Sin restos de desarrollo ni copias de seguridad legibles en nginx",
     "tunnel_service": "El túnel de Cloudflare funciona aislado y sin actualización automática",
-    "tunnel_edge": "Cloudflare Access está configurado en Helena",
+    "tunnel_edge": "Cloudflare Access está configurado en {appName}",
     "tunnel_acl": "Solo el túnel llega a la entrada del túnel",
     "tls_certificate": "Certificado válido durante más de 14 días",
     "tls_renewal": "Renovación automática del certificado activa",
@@ -69,9 +69,9 @@
     "files_backups": "Copias de la base de datos legibles solo por su servicio",
     "files_secrets": "Secretos y claves no legibles por otros",
     "files_agent_code": "Los agentes pueden leer su código de ejecución",
-    "svc_exposure": "Servicios de Helena aislados por systemd",
+    "svc_exposure": "Servicios de {appName} aislados por systemd",
     "svc_tools_loopback": "Herramientas accesibles solo por loopback",
-    "net_voice_acl": "Servidores de voz accesibles solo para Helena"
+    "net_voice_acl": "Servidores de voz accesibles solo para {appName}"
   },
   "finding": {
     "net_firewall": {
@@ -91,7 +91,7 @@
       "fail": "El inicio de sesión de la LAN también vale para loopback o para el propio servidor."
     },
     "net_redis": {
-      "fail": "Redis funciona sin contraseña y Helena no lo usa."
+      "fail": "Redis funciona sin contraseña y {appName} no lo usa."
     },
     "net_syncthing_nat": {
       "warn": "Syncthing pide al router (UPnP/NAT-PMP) que abra el puerto 22000."
@@ -125,7 +125,7 @@
       "fail": "El túnel de Cloudflare no está aislado como debería."
     },
     "tunnel_edge": {
-      "fail": "Helena no tiene ningún equipo de Cloudflare Access (dominio/AUD): la entrada del túnel lo rechaza todo."
+      "fail": "{appName} no tiene ningún equipo de Cloudflare Access (dominio/AUD): la entrada del túnel lo rechaza todo."
     },
     "tunnel_acl": {
       "fail": "{why, select, user {El usuario del túnel {user} no puede llegar a la entrada del túnel: cloudflared no obtiene conexión y Cloudflare responde 502 (hardening/apply.sh --apply firewall-uids).} other {Cualquier usuario local llega a la entrada del túnel.}}"
@@ -191,7 +191,7 @@
       "fail": "{count} archivos en {path} solo los puede leer su propietario: los agentes que los cargan no arrancan."
     },
     "svc_exposure": {
-      "warn": "systemd aísla los servicios de Helena menos de lo previsto."
+      "warn": "systemd aísla los servicios de {appName} menos de lo previsto."
     },
     "svc_tools_loopback": {
       "fail": "Las herramientas son accesibles más allá de loopback."
@@ -221,13 +221,13 @@
     "allowedEmails": "Identidades permitidas",
     "allowedEmailsHint": "Opcional: solo estas direcciones de correo, aunque la política de Access admita más. Una por línea. Necesario para el inicio de sesión de Cloudflare.",
     "saved": "Acceso desde fuera guardado",
-    "signInTitle": "Iniciar sesión en Helena con el inicio de sesión de Cloudflare",
-    "signInDescription": "Quien inicia sesión en Cloudflare Access con una identidad permitida entra en Helena sin otra contraseña, durante 24 horas como máximo y nunca más que la sesión de Access. Access es entonces el único inicio de sesión: exige allí un segundo factor (passkey/Touch ID o una app de autenticación). El terminal sigue pidiendo su código.",
+    "signInTitle": "Iniciar sesión en {appName} con el inicio de sesión de Cloudflare",
+    "signInDescription": "Quien inicia sesión en Cloudflare Access con una identidad permitida entra en {appName} sin otra contraseña, durante 24 horas como máximo y nunca más que la sesión de Access. Access es entonces el único inicio de sesión: exige allí un segundo factor (passkey/Touch ID o una app de autenticación). El terminal sigue pidiendo su código.",
     "signInNeedsSetup": "Necesita el dominio del equipo, el AUD y al menos una identidad permitida.",
-    "signInNeedsProof": "La entrada del túnel aún no tiene prueba para Helena: ejecuta cloudflare/install.sh --apply entry-token en el servidor y reinicia la API y la web.",
+    "signInNeedsProof": "La entrada del túnel aún no tiene prueba para {appName}: ejecuta cloudflare/install.sh --apply entry-token en el servidor y reinicia la API y la web.",
     "homeTitle": "Conectar directamente en casa automáticamente",
-    "homeDescription": "En la dirección pública, Helena comprueba si {home} responde desde este dispositivo y cambia allí: directamente por la red de casa, sin pasar por Cloudflare. Allí te conecta el inicio de sesión de la red de casa. Chrome pide una vez acceso a la red local.",
-    "homeDescriptionGeneric": "En la dirección pública, Helena comprueba si la dirección de la red de casa responde desde este dispositivo y cambia allí: directamente por la red de casa, sin pasar por Cloudflare.",
+    "homeDescription": "En la dirección pública, {appName} comprueba si {home} responde desde este dispositivo y cambia allí: directamente por la red de casa, sin pasar por Cloudflare. Allí te conecta el inicio de sesión de la red de casa. Chrome pide una vez acceso a la red local.",
+    "homeDescriptionGeneric": "En la dirección pública, {appName} comprueba si la dirección de la red de casa responde desde este dispositivo y cambia allí: directamente por la red de casa, sin pasar por Cloudflare.",
     "homeNotSetUp": "No hay dirección de red de casa configurada (HELENA_HOME_URL, cloudflare/switch_origin.py --home-host)."
   },
   "signIns": {

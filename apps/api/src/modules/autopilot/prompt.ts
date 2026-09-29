@@ -7,8 +7,8 @@ import { levelName, levelRules, type LevelRule } from './engine';
 const WHAT: Record<ActionCategory, string> = {
   read: 'read',
   report: 'comment, ask and report on your task',
-  write: 'change Helena and files in your workspace',
-  send: 'send or submit anything outside Helena',
+  write: 'change {appName} and files in your workspace',
+  send: 'send or submit anything outside {appName}',
   delete: 'delete',
   pay: 'pay',
   publish: 'publish, push or deploy',
@@ -16,25 +16,34 @@ const WHAT: Record<ActionCategory, string> = {
   credentials: 'change logins, keys or grants',
 };
 
-function phrase(rule: LevelRule): string {
-  const base = WHAT[rule.category];
+function phrase(rule: LevelRule, displayName: string): string {
+  const base = WHAT[rule.category].replaceAll('{appName}', displayName);
   if (rule.scope === 'workspace') return `${base} inside your workspace`;
   if (rule.scope === 'external') return `${base} outside your workspace`;
   return base;
 }
 
-export function levelInWords(level: AutopilotLevel): { free: string; approval: string } {
+export function levelInWords(
+  level: AutopilotLevel,
+  displayName = 'Helena',
+): { free: string; approval: string } {
   const rules = levelRules(level);
   const join = (items: string[]) => (items.length > 0 ? items.join(', ') : 'nothing');
   return {
-    free: join(rules.filter((r) => r.outcome === 'allow').map(phrase)),
-    approval: join(rules.filter((r) => r.outcome !== 'allow').map(phrase)),
+    free: join(rules.filter((r) => r.outcome === 'allow').map((rule) => phrase(rule, displayName))),
+    approval: join(
+      rules.filter((r) => r.outcome !== 'allow').map((rule) => phrase(rule, displayName)),
+    ),
   };
 }
 
 // The Autopilot section of a run's system prompt.
-export function autopilotRunSection(projectKey: string, level: AutopilotLevel): string {
-  const { free, approval } = levelInWords(level);
+export function autopilotRunSection(
+  projectKey: string,
+  level: AutopilotLevel,
+  displayName = 'Helena',
+): string {
+  const { free, approval } = levelInWords(level, displayName);
   return [
     '## Autopilot',
     `Your Autopilot level in project ${projectKey} is ${levelName(level)}.`,
@@ -42,27 +51,32 @@ export function autopilotRunSection(projectKey: string, level: AutopilotLevel): 
     `A person approves first: ${approval}. For those, call request_approval with the action, ` +
       'its kind and every detail a person needs, then end the run without taking the action.',
     ...(level >= 2
-      ? ['Helena posts a report of what you did without approval on the task after the run.']
+      ? [
+          `${displayName} posts a report of what you did without approval on the task after the run.`,
+        ]
       : []),
-    'Helena checks every tool call against this; a blocked call tells you what to do.',
+    `${displayName} checks every tool call against this; a blocked call tells you what to do.`,
     '',
   ].join('\n');
 }
 
 // The Autopilot section of an agent's SOUL.md: its level in each of its projects, for chats,
 // which carry no run frame.
-export function autopilotSoulSection(projects: { key: string; level: AutopilotLevel }[]): string {
+export function autopilotSoulSection(
+  projects: { key: string; level: AutopilotLevel }[],
+  displayName = 'Helena',
+): string {
   const lines = [
     '## Approvals and Autopilot',
-    'Helena decides on every tool call how independently you may act, by the Autopilot level',
+    `${displayName} decides on every tool call how independently you may act, by the Autopilot level`,
     'of the project you work in. A blocked call says why. When it needs a person,',
     'call request_approval with the action, its kind and every detail the person needs to',
-    'decide, then end the run (in a chat: tell the person) without taking the action. Helena',
+    `decide, then end the run (in a chat: tell the person) without taking the action. ${displayName}`,
     'starts a new run of yours with the decision: act only on an approved request, exactly as',
     'approved. get_approval reads a request.',
   ];
   for (const project of projects) {
-    const { free, approval } = levelInWords(project.level);
+    const { free, approval } = levelInWords(project.level, displayName);
     lines.push(
       '',
       `In project ${project.key}: level ${levelName(project.level)}. Free: ${free}. ` +

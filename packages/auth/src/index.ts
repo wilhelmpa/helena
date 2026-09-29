@@ -1,5 +1,5 @@
 import { randomInt } from 'node:crypto';
-import { db, defaultMemberPermissions } from '@repo/db';
+import { db, defaultMemberPermissions, DEFAULT_DISPLAY_NAME } from '@repo/db';
 import { eq, sql, type SQL } from 'drizzle-orm';
 import { betterAuth, type BetterAuthOptions } from 'better-auth';
 import { createAuthMiddleware, APIError } from 'better-auth/api';
@@ -268,6 +268,7 @@ export const API_KEY_MAX_EXPIRES_IN_DAYS = 365;
 export const API_KEY_MAX_NAME_LENGTH = 32;
 
 export const auth = betterAuth({
+  appName: process.env.APP_NAME ?? DEFAULT_DISPLAY_NAME,
   baseURL: `${baseURL.replace(/\/+$/, '')}/api/auth`,
   basePath: `${new URL(baseURL).pathname.replace(/\/+$/, '')}/api/auth`,
   secret: process.env.BETTER_AUTH_SECRET,
@@ -590,7 +591,6 @@ export const auth = betterAuth({
     // then used to sign in (signIn.passkey). Adds the `passkey` table.
     passkey({
       rpID: passkeyRpID,
-      rpName: process.env.PASSKEY_RP_NAME ?? 'Helena',
       // Expected origin(s) of the WebAuthn ceremony — the frontend origins.
       origin: trustedOrigins,
     }),
@@ -667,7 +667,7 @@ export const auth = betterAuth({
     }),
     // TOTP protects password/username sign-in and owner-terminal step-up. Accounts
     // without a password (SSO or LAN sign-in) can enroll and disable their factor too.
-    twoFactor({ issuer: 'Helena', allowPasswordless: true }),
+    twoFactor({ allowPasswordless: true }),
     // OpenAPI reference for the better-auth handler. Serves a Scalar UI at
     // /api/auth/reference and the raw schema at /api/auth/open-api/generate-schema.
     // The schema is built from every active plugin, so the passkey and apiKey

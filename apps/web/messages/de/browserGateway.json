@@ -1,7 +1,7 @@
 {
   "homeTitle": "Browser",
   "homeDescription": "Die Projekt-Browser: was gerade offen ist, wer steuert und ob ein Agent auf dich wartet.",
-  "homeBrowser": "Helena",
+  "homeBrowser": "{appName}",
   "empty": "Noch keine Projekt-Browser",
   "emptyHint": "Ein Projekt bekommt seinen Browser, wenn es angelegt wird; hier erscheint er, sobald er läuft.",
   "noLiveImage": "Kein Bild",
@@ -35,7 +35,7 @@
     "never": "Nie (immer an)",
     "alwaysOnTitle": "Immer an",
     "alwaysOnFor": "Browser von {name} immer an",
-    "home": "Helena",
+    "home": "{appName}",
     "state": {
       "running": "Läuft",
       "starting": "Startet …",

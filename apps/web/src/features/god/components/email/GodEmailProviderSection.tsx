@@ -1,4 +1,5 @@
 import { useTranslations } from 'next-intl';
+import { useDisplayName } from '@/context/displayName';
 import type { NotificationEncryption } from '@/lib/api/endpoints/notificationSettings';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -23,6 +24,7 @@ const ENCRYPTION_OPTIONS: NotificationEncryption[] = ['none', 'ssl', 'tls'];
 
 export default function GodEmailProviderSection({ form }: { form: GodEmailForm }) {
   const t = useTranslations('god.email');
+  const appName = useDisplayName();
   const { settings } = form;
 
   return (
@@ -47,7 +49,7 @@ export default function GodEmailProviderSection({ form }: { form: GodEmailForm }
               id="email-from"
               value={form.from}
               onChange={(e) => form.setFrom(e.target.value)}
-              placeholder={'Helena <noreply@example.com>'}
+              placeholder={`${appName} <noreply@example.com>`}
             />
             <Text as="p" size="xs" tone="muted">
               {t('fromHint')}

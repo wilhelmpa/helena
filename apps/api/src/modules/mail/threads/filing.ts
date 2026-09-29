@@ -1,5 +1,6 @@
 import {
   db,
+  getDisplayName,
   mailAttachment,
   mailMessage,
   mailThread,
@@ -108,7 +109,7 @@ export async function createTaskFromThread(
     `**From:** ${sender(latest)}  `,
     `**Date:** ${stamp(latest.sentAt)} UTC  `,
     `**Mail:** [${markdownLabel(thread.subject || 'Open')}](${threadHref(target.key, thread.id)})`,
-    `**Helena thread ID:** ${thread.id}`,
+    `**${await getDisplayName()} thread ID:** ${thread.id}`,
     '',
     quote(latest.textBody),
   ];

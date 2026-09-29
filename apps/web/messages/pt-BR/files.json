@@ -41,10 +41,10 @@
     "folder": "Esta pasta está vazia.",
     "folderHint": "Solte arquivos aqui ou use Enviar.",
     "filter": "Nenhuma entrada corresponde a “{filter}”.",
-    "readOnly": "A Helena mostra esta pasta somente para leitura."
+    "readOnly": "A {appName} mostra esta pasta somente para leitura."
   },
   "unreadable": {
-    "title": "A Helena não consegue ler esta pasta",
+    "title": "A {appName} não consegue ler esta pasta",
     "body": "O espaço de trabalho pertence ao usuário dos agentes no servidor. Abra-o no VS Code.",
     "missing": "Esta pasta não existe no servidor."
   },
@@ -128,7 +128,7 @@
     "content": "Conteúdo do arquivo",
     "reload": "Recarregar",
     "discard": "Descartar o rascunho não salvo?",
-    "editor": "Editor da Helena",
+    "editor": "Editor da {appName}",
     "preview": "Prévia",
     "searching": "Pesquisando arquivos…",
     "searchError": "Pesquisa indisponível ou acesso negado.",

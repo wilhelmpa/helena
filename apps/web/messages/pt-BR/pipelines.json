@@ -404,7 +404,7 @@
     "schedule_too_frequent": "O agendamento é executado com mais frequência do que a equipe permite.",
     "invalid_url": "Insira uma URL que comece com https:// ou http://.",
     "plugin_invalid": "{message}",
-    "plugin_trigger_unsupported": "Este gatilho dispara em uma agenda própria, que o motor do Helena ainda não executa."
+    "plugin_trigger_unsupported": "Este gatilho dispara em uma agenda própria, que o motor do {appName} ainda não executa."
   },
   "runs": {
     "status": {
@@ -574,7 +574,7 @@
     },
     "signing": {
       "title": "Chave de assinatura de webhooks",
-      "hint": "As etapas de webhook assinam suas chamadas com ela (Standard Webhooks), para o destinatário verificar que vêm da Helena.",
+      "hint": "As etapas de webhook assinam suas chamadas com ela (Standard Webhooks), para o destinatário verificar que vêm da {appName}.",
       "show": "Mostrar",
       "hide": "Ocultar",
       "renew": "Renovar",

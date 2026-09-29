@@ -404,7 +404,7 @@
     "schedule_too_frequent": "La planification s’exécute plus souvent que ce que l’équipe autorise.",
     "invalid_url": "Saisissez une URL commençant par https:// ou http://.",
     "plugin_invalid": "{message}",
-    "plugin_trigger_unsupported": "Ce déclencheur suit un calendrier qui lui est propre, que le moteur de Helena n'exécute pas encore."
+    "plugin_trigger_unsupported": "Ce déclencheur suit un calendrier qui lui est propre, que le moteur de {appName} n'exécute pas encore."
   },
   "runs": {
     "status": {
@@ -574,7 +574,7 @@
     },
     "signing": {
       "title": "Clé de signature des webhooks",
-      "hint": "Les étapes webhook signent leurs appels avec (Standard Webhooks), pour que le destinataire vérifie qu’ils viennent de Helena.",
+      "hint": "Les étapes webhook signent leurs appels avec (Standard Webhooks), pour que le destinataire vérifie qu’ils viennent de {appName}.",
       "show": "Afficher",
       "hide": "Masquer",
       "renew": "Renouveler",

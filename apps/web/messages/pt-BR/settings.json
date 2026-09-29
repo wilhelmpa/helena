@@ -505,7 +505,7 @@
     "commandCopied": "Comando copiado. Substitua owner/repo, depois execute-o.",
     "nativeConnections": "Conexões de provedor",
     "nativeConnectionsRecommended": "Conexões de provedor · Recomendado",
-    "nativeConnectionsHint": "Autorize um provedor Git, escolha repositórios e deixe o Helena configurar seus webhooks.",
+    "nativeConnectionsHint": "Autorize um provedor Git, escolha repositórios e deixe o {appName} configurar seus webhooks.",
     "nativeConnectProvider": "Conectar {provider}",
     "nativeNoConnections": "Nenhuma conta de provedor conectada ainda. A configuração manual de webhook permanece disponível abaixo.",
     "nativeConnectTitle": "Conectar {provider}",
@@ -543,7 +543,7 @@
     "nativeWebhookError": "Precisa de atenção",
     "nativeDisconnectProvider": "Desconectar provedor",
     "nativeDisconnectRepository": "Desconectar repositório",
-    "nativeDisconnectConfirm": "Desconectar {provider} e remover todos os webhooks gerenciados pelo Helena?",
+    "nativeDisconnectConfirm": "Desconectar {provider} e remover todos os webhooks gerenciados pelo {appName}?",
     "nativeDisconnected": "{provider} desconectado",
     "nativeRepositoryDisconnected": "Repositório desconectado",
     "nativeDisconnectFailed": "Não foi possível desconectar a integração.",
@@ -581,7 +581,7 @@
       },
       "blocked": {
         "label": "Bloqueado",
-        "description": "Sem acesso à internet. Apenas a API do Helena, o gateway do navegador e o modelo de IA do agente continuam acessíveis."
+        "description": "Sem acesso à internet. Apenas a API do {appName}, o gateway do navegador e o modelo de IA do agente continuam acessíveis."
       }
     },
     "allowLabel": "Lista de permissões",
@@ -660,7 +660,7 @@
     "humanInputLabel": "Entrada humanizada",
     "humanInputHint": "Digita e clica com pausas humanizadas em vez de no máximo de velocidade. Desative apenas em um projeto de teste de baixo risco.",
     "allowLocalLabel": "Permitir endereços locais",
-    "allowLocalHint": "Os agentes podem abrir localhost, a rede local e endereços .local. Deixe desligado, a não ser para testar um site local: o navegador roda no servidor, onde esses endereços alcançam o Helena e os outros navegadores.",
+    "allowLocalHint": "Os agentes podem abrir localhost, a rede local e endereços .local. Deixe desligado, a não ser para testar um site local: o navegador roda no servidor, onde esses endereços alcançam o {appName} e os outros navegadores.",
     "lockTimeoutLabel": "Tempo limite do bloqueio",
     "lockTimeoutHint": "Após esse número de segundos sem ação, o controle do navegador por um agente é liberado automaticamente.",
     "seconds": "segundos",
@@ -739,12 +739,12 @@
         "hint": "Os servidores MCP e ferramentas que os agentes usam, e quem pode usá-los."
       },
       "mcps": {
-        "label": "Helena para apps externos",
-        "hint": "Como clientes MCP como o Claude Desktop acessam a Helena."
+        "label": "{appName} para apps externos",
+        "hint": "Como clientes MCP como o Claude Desktop acessam a {appName}."
       },
       "plugins": {
         "label": "Extensões",
-        "hint": "Extensões da Helena."
+        "hint": "Extensões da {appName}."
       },
       "access": {
         "label": "Acessos e conexões",
@@ -848,7 +848,7 @@
       },
       "channels": {
         "label": "Notificações e canais",
-        "hint": "Como a Helena entrega mensagens por e-mail e Telegram."
+        "hint": "Como a {appName} entrega mensagens por e-mail e Telegram."
       }
     },
     "projectPath": "Projeto"
@@ -869,7 +869,7 @@
   },
   "execution": {
     "title": "Execução",
-    "note": "As alterações valem na hora. Valores para todos os projetos ficam nas configurações do Helena.",
+    "note": "As alterações valem na hora. Valores para todos os projetos ficam nas configurações do {appName}.",
     "defaultLabel": "Execução padrão",
     "defaultHint": "Cada agente define com o que trabalha neste projeto.",
     "manageAgents": "Gerenciar agentes",
@@ -903,7 +903,7 @@
     "budgetsReset": "Orçamentos voltaram ao padrão",
     "budgetsOverridden": "Este projeto tem orçamentos próprios",
     "budgetsDefault": "Como o padrão de todos os projetos",
-    "budgetsDefaultHint": "O padrão fica nas configurações da Helena, em “Padrões dos projetos”."
+    "budgetsDefaultHint": "O padrão fica nas configurações da {appName}, em “Padrões dos projetos”."
   },
   "defaults": {
     "adminOnly": "Só o administrador altera estes padrões para todos os projetos.",
@@ -912,8 +912,8 @@
     "budgetsSaved": "Orçamentos dos novos projetos salvos",
     "budgetsOverridden": "{count, plural, one {# projeto tem orçamentos próprios.} other {# projetos têm orçamentos próprios.}}",
     "budgetsNone": "Todos os projetos seguem este padrão.",
-    "helenaOrdersTitle": "Instruções permanentes para a Helena",
-    "helenaOrdersHint": "A Helena as segue em cada chat e execução."
+    "helenaOrdersTitle": "Instruções permanentes para a {appName}",
+    "helenaOrdersHint": "A {appName} as segue em cada chat e execução."
   },
   "uiGallery": {
     "sample": "Sample text",
@@ -956,9 +956,9 @@
     "emptySentence": "Nothing here yet. Create the first one.",
     "light": "Light",
     "dark": "Dark",
-    "agentChip": "Helena · Flash (local)",
+    "agentChip": "{appName} · Flash (local)",
     "statusBox": "Em andamento",
-    "ladderTop": "Publicar a Helena"
+    "ladderTop": "Publicar a {appName}"
   },
   "organization": {
     "label": "Organização",

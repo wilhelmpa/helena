@@ -9,6 +9,7 @@ const handles = (usernames: string[]) => usernames.map((username) => `@${usernam
 
 export function homeAgentSection(
   projects: { key: string; name: string; coordinators: string[] }[],
+  displayName = 'Helena',
 ): string {
   return [
     '## Home agent',
@@ -25,7 +26,7 @@ export function homeAgentSection(
         ]
       : []),
     '',
-    'To get work done in a project, create a task there with the Helena MCP tools, delegate',
+    `To get work done in a project, create a task there with the ${displayName} MCP tools, delegate`,
     "it to the project's coordinator and follow the task until it is done. Answer questions",
     'that span several projects yourself.',
   ].join('\n');
@@ -36,11 +37,11 @@ export function homeAgentSection(
 const SUB_AGENTS: Record<AgentRuntimeKind, string[]> = {
   hermes: [
     'For parallel parts of one run you may start Hermes sub-agents with the delegation',
-    'toolset. They are not Helena agents, and Helena does not show them.',
+    'toolset. They are not {appName} agents, and {appName} does not show them.',
   ],
   claude: [
     'For parallel parts of one run you may start Claude Code subagents with the Task tool.',
-    'They are not Helena agents, and Helena does not show them.',
+    'They are not {appName} agents, and {appName} does not show them.',
   ],
   codex: [],
   command: [],
@@ -53,6 +54,7 @@ export function coordinatorSection(input: {
   managerIsHome?: boolean;
   specialists: string[];
   runtime?: AgentRuntimeKind;
+  displayName?: string;
 }): string {
   const manager =
     input.manager == null
@@ -63,7 +65,9 @@ export function coordinatorSection(input: {
   return [
     '## Agent team',
     `You coordinate the agent team of ${input.projectKeys.join(', ')}${manager}.`,
-    ...SUB_AGENTS[input.runtime ?? 'hermes'],
+    ...SUB_AGENTS[input.runtime ?? 'hermes'].map((line) =>
+      line.replaceAll('{appName}', input.displayName ?? 'Helena'),
+    ),
     "Longer or specialist work goes to the project's specialists through the agent team",
     input.specialists.length > 0
       ? `instead: ${handles(input.specialists)}.`
@@ -90,6 +94,7 @@ export function memberSection(input: {
   coordinators: string[];
   // The other specialists and reviewers of those projects.
   peers: TeamPeer[];
+  displayName?: string;
 }): string {
   const projects = input.projectKeys.join(', ');
   const lead = input.manager
@@ -118,10 +123,10 @@ export function memberSection(input: {
       : []),
     '',
     'Handing your work back:',
-    "- In a stage of the agent team, answer with exactly the JSON the stage asks for. Helena puts it on the task and your coordinator reviews it; do not change the task's status yourself there.",
+    `- In a stage of the agent team, answer with exactly the JSON the stage asks for. ${input.displayName ?? 'Helena'} puts it on the task and your coordinator reviews it; do not change the task's status yourself there.`,
     "- On a task given to you directly, finish with a short comment on it (add_comment): what you did, what is verified, what is left. Then move it to its completed state, or to the project's review column where it has one.",
     `- Tag ${lead ?? 'the person who gave you the task'} in that comment only when they have to act on it.`,
-    '- Before anything with effects outside Helena (push, deploy, send, publish, pay, delete), ask with request_approval where the approval rules require it, then end the run.',
+    `- Before anything with effects outside ${input.displayName ?? 'Helena'} (push, deploy, send, publish, pay, delete), ask with request_approval where the approval rules require it, then end the run.`,
     '- When only a person can decide how to go on, call mark_issue_blocked with one clear question and stop.',
   ].join('\n');
 }
@@ -190,7 +195,7 @@ const manager = alias(aiAgent, 'manager');
 // project work to the coordinators, a coordinator reports to Home and leads the project's
 // specialists, and a specialist or reviewer reports to its coordinator (or whoever the
 // organization chart names) and hands its work back. Empty for an agent outside the chain.
-export async function structureSection(agent: AiAgentRow): Promise<string> {
+export async function structureSection(agent: AiAgentRow, displayName = 'Helena'): Promise<string> {
   const projectIds = agent.projects.map((p) => p.id);
   if (isHomeAgent(agent.agentRole)) {
     const coordinators = await roleHolders(agent.teamId, projectIds, 'coordinator');
@@ -200,6 +205,7 @@ export async function structureSection(agent: AiAgentRow): Promise<string> {
         name: p.name,
         coordinators: coordinators.get(p.id) ?? [],
       })),
+      displayName,
     );
   }
   const [assignment] = await db
@@ -225,6 +231,7 @@ export async function structureSection(agent: AiAgentRow): Promise<string> {
       managerIsHome: assignment.managerRole === 'home',
       specialists: [...new Set([...specialists.values()].flat())],
       runtime: agent.runtimePolicy.runtime ?? 'hermes',
+      displayName,
     });
   }
   // A specialist or reviewer, or an agent the organization chart puts under someone: it
@@ -249,5 +256,6 @@ export async function structureSection(agent: AiAgentRow): Promise<string> {
       others.filter((member) => member.role === 'coordinator').map((member) => member.username),
     ),
     peers: [...peers].map(([username, capabilities]) => ({ username, capabilities })),
+    displayName,
   });
 }

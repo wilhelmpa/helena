@@ -50,7 +50,7 @@
     "exportTemplate": "Exporter comme modèle",
     "exported": "Modèle enregistré : {file}",
     "importTemplate": "Importer un département depuis un modèle",
-    "importTemplateHint": "Choisis un fichier de modèle. Helena vérifie d’abord ce qui changerait et n’écrit rien avant que tu importes.",
+    "importTemplateHint": "Choisis un fichier de modèle. {appName} vérifie d’abord ce qui changerait et n’écrit rien avant que tu importes.",
     "templateChooseFile": "Choisir un fichier de modèle",
     "templateFile": "Fichier : {name}",
     "templateNotJson": "Le fichier n’est pas un modèle valide.",
@@ -237,7 +237,7 @@
         "review": "Le coordinateur relit les résultats.",
         "synchronize": "Le résumé et les preuves sont écrits dans la tâche, qui passe en Revue ou Terminé."
       },
-      "route": "Si les étiquettes de la tâche correspondent aux capacités d’un seul spécialiste, ou si le projet n’en a qu’un, Helena saute la planification et assigne la tâche directement."
+      "route": "Si les étiquettes de la tâche correspondent aux capacités d’un seul spécialiste, ou si le projet n’en a qu’un, {appName} saute la planification et assigne la tâche directement."
     },
     "usage": {
       "title": "Consommation de jetons",
@@ -278,7 +278,7 @@
     "projectDefault": "Par défaut du projet",
     "noLimit": "Sans limite",
     "none": "Aucun",
-    "home": "HELENA · MASTER",
+    "home": "{appNameUpper} · MASTER",
     "coordinator": "COORDINATEUR",
     "reviewer": "RELECTEUR",
     "specialist": "SPÉCIALISTE",
@@ -348,6 +348,6 @@
     "add": "Ajouter",
     "added": "Ajouté à {project}",
     "failed": "Le membre n’a pas pu être ajouté.",
-    "keyOnce": "La copie s’exécute hors de Helena : copiez sa clé maintenant, elle n’est affichée qu’une fois."
+    "keyOnce": "La copie s’exécute hors de {appName} : copiez sa clé maintenant, elle n’est affichée qu’une fois."
   }
 }

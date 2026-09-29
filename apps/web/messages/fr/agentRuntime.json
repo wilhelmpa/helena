@@ -190,7 +190,7 @@
     "log": "Journal",
     "reload": "Recharger",
     "logEmpty": "Aucune ligne de journal.",
-    "noLogs": "Ce runtime ne tient aucun journal que Helena puisse lire.",
+    "noLogs": "Ce runtime ne tient aucun journal que {appName} puisse lire.",
     "level": {
       "all": "Tous",
       "WARNING": "Avertissements",
@@ -262,7 +262,7 @@
     "retentionHint": "Nombre de jours pendant lesquels Hermes conserve les transcriptions des exécutions et chats terminés. Vide : la valeur par défaut de Hermes, 90 jours.",
     "saved": "Enregistré. Les runners l'appliquent à leur prochaine synchronisation.",
     "usageTitle": "Consommation",
-    "usageDescription": "Ce que les agents d'une équipe ont consommé, d'après le registre de tokens de Helena, avec le coût selon la grille tarifaire des modèles.",
+    "usageDescription": "Ce que les agents d'une équipe ont consommé, d'après le registre de tokens de {appName}, avec le coût selon la grille tarifaire des modèles.",
     "team": "Équipe",
     "noTeam": "Aucune équipe pour l'instant.",
     "openUpdates": "Ouvrir dans Mises à jour",
@@ -270,7 +270,7 @@
     "compressionThreshold": "Compresser le contexte à partir de (jetons)",
     "compressionThresholdHint": "Pour chaque agent sans valeur propre. 100 000 garde les longs chats bien sous les fenêtres des modèles actuels, sans résumer trop souvent les exécutions en cours.",
     "bundledSkills": "Compétences fournies avec Hermes",
-    "bundledSkillsHint": "Helena les installe de la même façon dans chaque profil Hermes (docx, pdf, xlsx, débogage…). Désactive-les une à une sur l’agent. « Seulement l’essentiel » n’en ajoute plus ; celles présentes restent.",
+    "bundledSkillsHint": "{appName} les installe de la même façon dans chaque profil Hermes (docx, pdf, xlsx, débogage…). Désactive-les une à une sur l’agent. « Seulement l’essentiel » n’en ajoute plus ; celles présentes restent.",
     "bundledSkillsAll": "Toutes",
     "bundledSkillsEssential": "Seulement l’essentiel"
   }

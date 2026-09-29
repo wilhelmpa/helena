@@ -13,7 +13,7 @@ import {
   unlink,
 } from 'node:fs/promises';
 import path from 'node:path';
-import { db } from '@repo/db';
+import { db, getDisplayName } from '@repo/db';
 import { sql } from 'drizzle-orm';
 import { isSyncConflict, moveEntries } from '@repo/vault';
 import { recordFileWrite, type FileActor } from './provenance';
@@ -59,18 +59,23 @@ export interface FileItem {
   updatedAt: string | null;
 }
 
-function fileSystemError(error: unknown, notFound: string): never {
+async function fileSystemError(error: unknown, notFound: string): Promise<never> {
   const code = errorCode(error);
   if (code === 'ENOENT') throw new HttpError(404, notFound);
   if (code === 'EACCES' || code === 'EPERM') {
-    throw new HttpError(403, 'Helena has no access to this folder', 'not_readable');
+    throw new HttpError(
+      403,
+      `${await getDisplayName()} has no access to this folder`,
+      'not_readable',
+    );
   }
   if (code === 'ENOTDIR') throw new HttpError(400, 'File path is invalid');
   throw error;
 }
 
-function assertWritable(root: FileRoot) {
-  if (!root.writable) throw new HttpError(403, 'This folder is read-only in Helena', 'read_only');
+async function assertWritable(root: FileRoot) {
+  if (!root.writable)
+    throw new HttpError(403, `This folder is read-only in ${await getDisplayName()}`, 'read_only');
 }
 
 function textPath(relative: string): string {
@@ -87,7 +92,7 @@ async function rootDirectory(root: FileRoot): Promise<string> {
   try {
     if ((await stat(root.directory)).isDirectory()) return root.directory;
   } catch (error) {
-    fileSystemError(error, 'Folder not found');
+    return await fileSystemError(error, 'Folder not found');
   }
   throw new HttpError(404, 'Folder not found');
 }
@@ -104,7 +109,7 @@ async function existingEntry(root: FileRoot, relative: string) {
     await assertNoSymlinks(root.directory, relative);
     return { target, info: await lstat(target) };
   } catch (error) {
-    fileSystemError(error, 'File not found');
+    return await fileSystemError(error, 'File not found');
   }
 }
 
@@ -130,7 +135,7 @@ export async function listFolder(root: FileRoot, relative = '') {
     // A root Plan creates on the first write is empty until then; a missing private
     // folder or workspace is reported as missing.
     if (!safe && root.creatable && isMissing(error)) entries = [];
-    else fileSystemError(error, 'Folder not found');
+    else return await fileSystemError(error, 'Folder not found');
   }
   // Hidden entries (.obsidian, .trash, .git) and Syncthing's conflict copies are not
   // the owner's documents.
@@ -208,7 +213,7 @@ export async function createTextFile(
   content: string,
   actor?: FileActor,
 ) {
-  assertWritable(root);
+  await assertWritable(root);
   const requested = textPath(relative);
   const safe = joinPath(parentPath(requested), safeFileName(path.basename(requested)));
   const bytes = Buffer.from(content);
@@ -227,7 +232,7 @@ export async function updateTextFile(
   expectedEtag: string,
   actor?: FileActor,
 ) {
-  assertWritable(root);
+  await assertWritable(root);
   const saved = await db.transaction(async (tx) => {
     // Serializes API writers across processes; a stale second save must conflict.
     await tx.execute(
@@ -245,7 +250,7 @@ export async function updateTextFile(
 }
 
 export async function createFolder(root: FileRoot, relative: string) {
-  assertWritable(root);
+  await assertWritable(root);
   const requested = relativePath(relative);
   if (!requested) throw new HttpError(400, 'Folder name is required');
   const safe = joinPath(parentPath(requested), safeFileName(path.basename(requested), 'Folder'));
@@ -276,7 +281,7 @@ export async function writeUniqueFile(
   actor?: FileActor,
   options: { deferIndex?: boolean } = {},
 ): Promise<string> {
-  assertWritable(root);
+  await assertWritable(root);
   const directory = await folderDirectory(root, relativePath(folder));
   const temporary = path.join(directory, `.${randomUUID()}.part`);
   await writeNewFile(temporary, bytes);
@@ -307,7 +312,7 @@ export async function uploadFiles(
   maxBytes: number,
   actor?: FileActor,
 ): Promise<FileItem[]> {
-  assertWritable(root);
+  await assertWritable(root);
   const safeFolder = relativePath(folder);
   if (files.some((file) => file.size > maxBytes)) {
     throw new HttpError(413, `A file exceeds the ${Math.round(maxBytes / (1024 * 1024))} MB limit`);
@@ -334,7 +339,7 @@ export async function uploadFiles(
 }
 
 export async function moveEntry(root: FileRoot, from: string, to: string, actor?: FileActor) {
-  assertWritable(root);
+  await assertWritable(root);
   const source = relativePath(from);
   const requested = relativePath(to);
   if (!source || !requested) throw new HttpError(400, 'File path is invalid');
@@ -384,7 +389,7 @@ export async function trashEntry(
   relative: string,
   actor?: FileActor,
 ): Promise<void> {
-  assertWritable(root);
+  await assertWritable(root);
   const safe = relativePath(relative);
   if (!safe) throw new HttpError(400, 'File path is invalid');
   const { target } = await existingEntry(root, safe);

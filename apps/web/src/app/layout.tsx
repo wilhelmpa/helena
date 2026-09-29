@@ -4,6 +4,8 @@ import { ThemeProvider } from 'next-themes';
 import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { Providers } from '@/components/providers';
+import { DisplayNameProvider } from '@/context/displayName';
+import { getDisplayName } from '@/i18n/displayName';
 import RuntimeEnvScript from '@/components/runtime-env-script';
 import { localeDirection, type Locale } from '@/i18n/locales';
 import { BRAND_ASSETS } from '@/components/brand/assets';
@@ -46,6 +48,7 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const locale = await getLocale();
+  const displayName = await getDisplayName();
   // The script nonce of this request (src/proxy.ts), for next-themes' inline bootstrap.
   const nonce = (await headers()).get('x-nonce') ?? undefined;
 
@@ -66,9 +69,11 @@ export default async function RootLayout({
           storageKey="itsaplan-theme"
           nonce={nonce}
         >
-          <NextIntlClientProvider>
-            <Providers>{children}</Providers>
-          </NextIntlClientProvider>
+          <DisplayNameProvider name={displayName}>
+            <NextIntlClientProvider>
+              <Providers>{children}</Providers>
+            </NextIntlClientProvider>
+          </DisplayNameProvider>
         </ThemeProvider>
       </body>
     </html>

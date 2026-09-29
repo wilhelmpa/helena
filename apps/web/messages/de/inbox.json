@@ -35,7 +35,7 @@
     "stateChanged": "{who} hat den Status von {from} auf {to} geändert",
     "stateChangedPlain": "{who} hat den Status geändert",
     "approval_requested": "{who} bittet um deine Freigabe",
-    "automation": "Helena"
+    "automation": "{appName}"
   },
   "hub": {
     "scopeProject": "Dieses Projekt",
@@ -55,9 +55,9 @@
     "reset": "Filter zurücksetzen"
   },
   "owner": {
-    "home": "HELENA",
+    "home": "{appNameUpper}",
     "anAgent": "Ein Agent",
-    "defaultAgent": "Helena",
+    "defaultAgent": "{appName}",
     "mentionedBy": "{name} hat dich erwähnt",
     "approvalRequest": "{name} bittet um eine Entscheidung.",
     "workflowWaiting": "Dieser Workflow wartet auf deine Entscheidung.",

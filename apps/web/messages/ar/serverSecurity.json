@@ -2,9 +2,9 @@
   "auditTitle": "تحصين الخادم",
   "auditDescription": "الفحص الساعي للخادم: جدار الحماية وSSH والشهادات والأذونات والخدمات. بلا أسرار.",
   "ownerTitle": "تسجيل دخول المالك",
-  "ownerDescription": "ما يجب أن يتحقق قبل أن تصبح Helena متاحة من الإنترنت.",
+  "ownerDescription": "ما يجب أن يتحقق قبل أن تصبح {appName} متاحة من الإنترنت.",
   "edgeTitle": "الوصول من الخارج",
-  "edgeDescription": "Cloudflare Access أمام helena.volition.one. تتحقق Helena بنفسها مرة أخرى من كل طلب يأتي عبر النفق.",
+  "edgeDescription": "Cloudflare Access أمام helena.volition.one. تتحقق {appName} بنفسها مرة أخرى من كل طلب يأتي عبر النفق.",
   "noReport": "لا يوجد تقرير فحص بعد. شغّل مرة واحدة على الخادم:",
   "noReportCommand": "sudo deployment/volition-stack/native/hardening/audit.sh --install-timer",
   "summary": "{failed} مفتوحة · {warnings} تحذيرات · {passed} ناجحة",
@@ -47,7 +47,7 @@
     "web_production": "واجهة API تعمل في وضع الإنتاج",
     "web_leftovers": "لا بقايا تطوير ولا نسخ احتياطية مقروءة في nginx",
     "tunnel_service": "نفق Cloudflare يعمل معزولًا وبلا تحديث ذاتي",
-    "tunnel_edge": "تم ضبط Cloudflare Access في Helena",
+    "tunnel_edge": "تم ضبط Cloudflare Access في {appName}",
     "tunnel_acl": "النفق وحده يصل إلى مدخل النفق",
     "tls_certificate": "الشهادة صالحة لأكثر من 14 يومًا",
     "tls_renewal": "التجديد التلقائي للشهادة مفعّل",
@@ -69,9 +69,9 @@
     "files_backups": "نسخ قاعدة البيانات مقروءة لخدمتها فقط",
     "files_secrets": "الأسرار والمفاتيح غير مقروءة للآخرين",
     "files_agent_code": "يمكن للوكلاء قراءة شيفرة بيئة التشغيل الخاصة بهم",
-    "svc_exposure": "خدمات Helena معزولة بواسطة systemd",
+    "svc_exposure": "خدمات {appName} معزولة بواسطة systemd",
     "svc_tools_loopback": "الأدوات متاحة عبر loopback فقط",
-    "net_voice_acl": "خوادم الصوت متاحة لـ Helena فقط"
+    "net_voice_acl": "خوادم الصوت متاحة لـ {appName} فقط"
   },
   "finding": {
     "net_firewall": {
@@ -91,7 +91,7 @@
       "fail": "تسجيل الدخول من الشبكة المحلية يسري أيضًا على الاسترجاع المحلي أو على الخادم نفسه."
     },
     "net_redis": {
-      "fail": "يعمل Redis بلا كلمة مرور ولا تستخدمه Helena."
+      "fail": "يعمل Redis بلا كلمة مرور ولا تستخدمه {appName}."
     },
     "net_syncthing_nat": {
       "warn": "يطلب Syncthing من الموجّه (UPnP/NAT-PMP) فتح المنفذ 22000."
@@ -125,7 +125,7 @@
       "fail": "نفق Cloudflare غير معزول كما ينبغي."
     },
     "tunnel_edge": {
-      "fail": "لم يُضبط فريق Cloudflare Access (النطاق/AUD) في Helena: مدخل النفق يرفض كل شيء."
+      "fail": "لم يُضبط فريق Cloudflare Access (النطاق/AUD) في {appName}: مدخل النفق يرفض كل شيء."
     },
     "tunnel_acl": {
       "fail": "{why, select, user {لا يستطيع مستخدم النفق {user} الوصول إلى مدخل النفق: لا يحصل cloudflared على اتصال ويجيب Cloudflare بـ 502 (hardening/apply.sh --apply firewall-uids).} other {يصل أي مستخدم محلي إلى مدخل النفق.}}"
@@ -191,7 +191,7 @@
       "fail": "{count} ملفات في {path} لا يقرؤها إلا مالكها: الوكلاء الذين يحمّلونها لا يبدؤون."
     },
     "svc_exposure": {
-      "warn": "يعزل systemd خدمات Helena أقل مما هو مخطط له."
+      "warn": "يعزل systemd خدمات {appName} أقل مما هو مخطط له."
     },
     "svc_tools_loopback": {
       "fail": "يمكن الوصول إلى الأدوات خارج الاسترجاع المحلي."
@@ -221,13 +221,13 @@
     "allowedEmails": "الهويات المسموح بها",
     "allowedEmailsHint": "اختياري: هذه العناوين فقط، حتى لو سمحت سياسة Access بأكثر. واحد في كل سطر. مطلوب لتسجيل الدخول عبر Cloudflare.",
     "saved": "تم حفظ الوصول من الخارج",
-    "signInTitle": "تسجيل الدخول إلى Helena عبر تسجيل دخول Cloudflare",
-    "signInDescription": "من يسجّل الدخول إلى Cloudflare Access بهوية مسموح بها يدخل إلى Helena دون كلمة مرور أخرى، لمدة 24 ساعة على الأكثر ولا تتجاوز جلسة Access. يصبح Access حينها تسجيل الدخول الوحيد: اطلب هناك عاملاً ثانياً (مفتاح مرور/Touch ID أو تطبيق مصادقة). تبقى الطرفية تطلب رمزها.",
+    "signInTitle": "تسجيل الدخول إلى {appName} عبر تسجيل دخول Cloudflare",
+    "signInDescription": "من يسجّل الدخول إلى Cloudflare Access بهوية مسموح بها يدخل إلى {appName} دون كلمة مرور أخرى، لمدة 24 ساعة على الأكثر ولا تتجاوز جلسة Access. يصبح Access حينها تسجيل الدخول الوحيد: اطلب هناك عاملاً ثانياً (مفتاح مرور/Touch ID أو تطبيق مصادقة). تبقى الطرفية تطلب رمزها.",
     "signInNeedsSetup": "يحتاج إلى نطاق الفريق وAUD وهوية مسموح بها واحدة على الأقل.",
-    "signInNeedsProof": "لا يملك مدخل النفق دليلاً لـ Helena بعد: شغّل ‎cloudflare/install.sh --apply entry-token‎ على الخادم، ثم أعد تشغيل الواجهة البرمجية وتطبيق الويب.",
+    "signInNeedsProof": "لا يملك مدخل النفق دليلاً لـ {appName} بعد: شغّل ‎cloudflare/install.sh --apply entry-token‎ على الخادم، ثم أعد تشغيل الواجهة البرمجية وتطبيق الويب.",
     "homeTitle": "الاتصال المباشر تلقائياً في المنزل",
-    "homeDescription": "على العنوان العام تتحقق Helena مما إذا كان {home} يستجيب من هذا الجهاز، ثم تنتقل إليه: مباشرة عبر الشبكة المنزلية دون المرور عبر Cloudflare. هناك يسجّلك تسجيل دخول الشبكة المنزلية. يطلب Chrome مرة واحدة الوصول إلى الشبكة المحلية.",
-    "homeDescriptionGeneric": "على العنوان العام تتحقق Helena مما إذا كان عنوان الشبكة المنزلية يستجيب من هذا الجهاز، ثم تنتقل إليه: مباشرة عبر الشبكة المنزلية دون المرور عبر Cloudflare.",
+    "homeDescription": "على العنوان العام تتحقق {appName} مما إذا كان {home} يستجيب من هذا الجهاز، ثم تنتقل إليه: مباشرة عبر الشبكة المنزلية دون المرور عبر Cloudflare. هناك يسجّلك تسجيل دخول الشبكة المنزلية. يطلب Chrome مرة واحدة الوصول إلى الشبكة المحلية.",
+    "homeDescriptionGeneric": "على العنوان العام تتحقق {appName} مما إذا كان عنوان الشبكة المنزلية يستجيب من هذا الجهاز، ثم تنتقل إليه: مباشرة عبر الشبكة المنزلية دون المرور عبر Cloudflare.",
     "homeNotSetUp": "لم يُضبط عنوان للشبكة المنزلية (HELENA_HOME_URL، ‏cloudflare/switch_origin.py --home-host)."
   },
   "signIns": {

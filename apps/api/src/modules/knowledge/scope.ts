@@ -1,5 +1,14 @@
 import { and, eq, not, or, sql, type SQL } from 'drizzle-orm';
-import { aiAgent, db, project, projectMember, team, teamRole, user as userTable } from '@repo/db';
+import {
+  aiAgent,
+  db,
+  getDisplayName,
+  project,
+  projectMember,
+  team,
+  teamRole,
+  user as userTable,
+} from '@repo/db';
 import {
   HOME_DIR,
   isHiddenPath,
@@ -129,7 +138,10 @@ export async function vaultScope(
     agent: agent ? { username: agent.username } : null,
     author: agent
       ? { name: person?.name || agent.username, email: `${agent.username}@agents.volition.local` }
-      : { name: person?.name || 'Helena', email: person?.email || 'helena@volition.local' },
+      : {
+          name: person?.name || (await getDisplayName()),
+          email: person?.email || 'helena@volition.local',
+        },
     actor: await knowledgeActor(caller, headers),
   };
 }

@@ -35,7 +35,7 @@
     "stateChanged": "{who} غيّر الحالة من {from} لـ {to}",
     "stateChangedPlain": "غيّر {who} الحالة",
     "approval_requested": "يطلب {who} موافقتك",
-    "automation": "Helena"
+    "automation": "{appName}"
   },
   "hub": {
     "scopeProject": "هذا المشروع",
@@ -55,9 +55,9 @@
     "reset": "إعادة تعيين عوامل التصفية"
   },
   "owner": {
-    "home": "HELENA",
+    "home": "{appNameUpper}",
     "anAgent": "وكيل",
-    "defaultAgent": "Helena",
+    "defaultAgent": "{appName}",
     "mentionedBy": "ذكرك {name}",
     "approvalRequest": "يطلب {name} اتخاذ قرار.",
     "workflowWaiting": "ينتظر سير العمل هذا قرارك.",

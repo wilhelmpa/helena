@@ -127,7 +127,12 @@ export type Messages = typeof defaultMessages;
 
 const NAMESPACES = Object.keys(defaultMessages) as (keyof Messages)[];
 
-export async function loadMessages(locale: Locale): Promise<Messages> {
+export async function loadMessages(locale: Locale, appName = 'Helena'): Promise<Messages> {
+  const messages = await loadRawMessages(locale);
+  return replaceAppName(messages, appName) as Messages;
+}
+
+async function loadRawMessages(locale: Locale): Promise<Messages> {
   if (locale === DEFAULT_LOCALE) return defaultMessages;
 
   const translated = await Promise.all(
@@ -139,6 +144,19 @@ export async function loadMessages(locale: Locale): Promise<Messages> {
 
   // A key still untranslated renders its English text instead of the raw key path.
   return mergeMessages(defaultMessages, Object.fromEntries(translated)) as Messages;
+}
+
+function replaceAppName(tree: MessageTree, appName: string): MessageTree {
+  return Object.fromEntries(
+    Object.entries(tree).map(([key, value]) => [
+      key,
+      typeof value === 'string'
+        ? value
+            .replaceAll('{appNameUpper}', appName.toLocaleUpperCase())
+            .replaceAll('{appName}', appName)
+        : replaceAppName(value, appName),
+    ]),
+  );
 }
 
 type MessageTree = { [key: string]: string | MessageTree };

@@ -36,6 +36,8 @@ import {
   updateInstanceStorageSettings,
   getInstanceRunResumeSettings,
   updateInstanceRunResumeSettings,
+  getInstanceDisplayName,
+  updateInstanceDisplayName,
   getEngineSettingsAdmin,
   updateEngineSettingsAdmin,
   listInstanceUsers,
@@ -242,6 +244,18 @@ export function useUpdateEngineSettingsAdmin() {
       client.setQueryData(qk.instanceEngineSettings, data);
       return client.invalidateQueries({ queryKey: qk.engineSettings });
     },
+  });
+}
+
+export function useInstanceDisplayNameQuery() {
+  return useQuery({ queryKey: qk.instanceDisplayName, queryFn: getInstanceDisplayName });
+}
+
+export function useUpdateInstanceDisplayName() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (displayName: string) => updateInstanceDisplayName({ displayName }),
+    onSuccess: (data) => qc.setQueryData(qk.instanceDisplayName, data),
   });
 }
 

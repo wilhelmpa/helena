@@ -42,7 +42,7 @@
   },
   "review": {
     "emptyTitle": "Tidak ada yang perlu ditinjau",
-    "emptyHint": "Pencocokan yang kurang diyakini Helena menunggu di sini.",
+    "emptyHint": "Pencocokan yang kurang diyakini {appName} menunggu di sini.",
     "score": "Aturan",
     "confidence": "AI",
     "confirm": "Cocokkan",
@@ -74,7 +74,7 @@
   },
   "matched": {
     "emptyTitle": "Belum ada yang dicocokkan",
-    "emptyHint": "Unggah bukti dan impor rekening koran, lalu Helena mencocokkannya.",
+    "emptyHint": "Unggah bukti dan impor rekening koran, lalu {appName} mencocokkannya.",
     "unmatch": "Hapus pencocokan"
   },
   "accounts": {

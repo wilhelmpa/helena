@@ -136,7 +136,7 @@
       "field": "обновил(а) поле",
       "other": "обновил(а)"
     },
-    "automation": "Helena"
+    "automation": "{appName}"
   },
   "pulse": {
     "caption": {

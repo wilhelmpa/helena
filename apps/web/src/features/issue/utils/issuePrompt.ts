@@ -1,6 +1,7 @@
 import type { ProjectDetail } from '@/lib/api/endpoints/projects';
 import type { Issue } from '@/lib/api/endpoints/issues';
 import { issuePath } from '@/utils/paths';
+import { APP_NAME } from '@/utils/app';
 
 // A git-branch-safe handle from the current user: the email local part (or name)
 // with everything but letters and digits removed. "poluosmak.a@gmail.com" ->
@@ -77,7 +78,7 @@ export function buildIssuePrompt(
   tags.push('</issue>');
 
   return [
-    `Work on Helena issue ${issue.identifier}:`,
+    `Work on ${APP_NAME} issue ${issue.identifier}:`,
     '',
     `Suggested branch name: ${branch}`,
     '',

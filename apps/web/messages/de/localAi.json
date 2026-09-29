@@ -98,7 +98,7 @@
     "unreachable": "Nicht erreichbar",
     "keys": {
       "file": "Schlüssel aus Datei",
-      "stored": "Schlüssel in Helena gespeichert",
+      "stored": "Schlüssel in {appName} gespeichert",
       "none": "Kein Schlüssel",
       "invalid": "Schlüsseldatei nicht erlaubt"
     },
@@ -256,22 +256,22 @@
     },
     "pause": {
       "title": "Pause bis zur Antwort",
-      "hint": "So lange musst du schweigen, bis Helena deinen Satz abschickt. Kürzer antwortet schneller, länger unterbricht dich seltener.",
+      "hint": "So lange musst du schweigen, bis {appName} deinen Satz abschickt. Kürzer antwortet schneller, länger unterbricht dich seltener.",
       "option": "{seconds} s"
     },
     "words": {
-      "title": "Wörter, die Helena kennen soll",
+      "title": "Wörter, die {appName} kennen soll",
       "hint": "Namen, Produkte und Fachwörter, damit die Spracherkennung sie richtig schreibt. Von selbst kennt sie: {words}.",
       "placeholder": "z. B. Steuerberater Müller, Shopify, Kubernetes",
       "save": "Wörter speichern"
     },
     "voice": {
       "title": "Stimme",
-      "hint": "Die lokale Stimme, mit der Helena im Gespräch antwortet (Lokale KI → „Vorlesen“).",
+      "hint": "Die lokale Stimme, mit der {appName} im Gespräch antwortet (Lokale KI → „Vorlesen“).",
       "default": "Standardstimme des Servers",
       "none": "Noch keine lokale Stimme eingerichtet – bis dahin liest der Browser vor.",
       "preview": "Probehören",
-      "sample": "Hallo, ich bin Helena. So klinge ich im Gespräch – sag einfach, was du brauchst.",
+      "sample": "Hallo, ich bin {appName}. So klinge ich im Gespräch – sag einfach, was du brauchst.",
       "previewFailed": "Die Stimme konnte nicht abgespielt werden."
     },
     "model": {

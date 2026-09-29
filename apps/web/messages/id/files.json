@@ -41,10 +41,10 @@
     "folder": "Folder ini kosong.",
     "folderHint": "Letakkan berkas di sini atau gunakan Unggah.",
     "filter": "Tidak ada entri yang cocok dengan “{filter}”.",
-    "readOnly": "Helena menampilkan folder ini hanya-baca."
+    "readOnly": "{appName} menampilkan folder ini hanya-baca."
   },
   "unreadable": {
-    "title": "Helena tidak dapat membaca folder ini",
+    "title": "{appName} tidak dapat membaca folder ini",
     "body": "Ruang kerja ini milik pengguna agen di server. Buka di VS Code sebagai gantinya.",
     "missing": "Folder ini tidak ada di server."
   },
@@ -128,7 +128,7 @@
     "content": "Isi file",
     "reload": "Muat ulang",
     "discard": "Buang draf yang belum disimpan?",
-    "editor": "Editor Helena",
+    "editor": "Editor {appName}",
     "preview": "Pratinjau",
     "searching": "Mencari file…",
     "searchError": "Pencarian tidak tersedia atau akses ditolak.",

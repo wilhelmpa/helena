@@ -35,7 +35,7 @@
     "never": "Никогда (всегда включён)",
     "alwaysOnTitle": "Всегда включён",
     "alwaysOnFor": "Браузер {name} всегда включён",
-    "home": "Helena",
+    "home": "{appName}",
     "state": {
       "running": "Работает",
       "starting": "Запускается…",

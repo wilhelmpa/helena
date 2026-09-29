@@ -424,7 +424,7 @@
         "codex": "Codex"
       },
       "runtimeHermesHint": "The server provisions Hermes itself and keeps its profile in sync.",
-      "runtimeCliHint": "Runs as a service like a Hermes agent, in a directory of its own. Instructions, skills, MCP servers, tools, model and reasoning come from Helena; its sign-in from Access (runtime login).",
+      "runtimeCliHint": "Runs as a service like a Hermes agent, in a directory of its own. Instructions, skills, MCP servers, tools, model and reasoning come from {appName}; its sign-in from Access (runtime login).",
       "compression": {
         "title": "Context compression",
         "hint": "A long chat or run sends its whole history with every call. From the threshold on, Hermes summarises the older parts: fewer tokens per call, at the cost of one summarising call and fewer verbatim details. Empty: the instance default.",
@@ -443,7 +443,7 @@
       "behaviourTitle": "Behaviour"
     },
     "runtimeConflicts": {
-      "title": "Changed outside Helena",
+      "title": "Changed outside {appName}",
       "description": "The runtime replaced these files with the version stored here and kept the changed version next to them.",
       "takeOver": "Take over",
       "editInLibrary": "Edit it in the skill library"
@@ -573,8 +573,8 @@
       "toolsetsReadOnly": "Only members who can edit agents can turn toolsets off.",
       "noToolsets": "The runner reported no toolsets.",
       "mcpServers": "MCP servers",
-      "mcpServersHint": "Helena gives every agent these: its own server and the project's browser. Turn one off and save so the agent does not use it.",
-      "mcpServersReadOnly": "Helena gives every agent these. Only members who can edit agents can turn one off.",
+      "mcpServersHint": "{appName} gives every agent these: its own server and the project's browser. Turn one off and save so the agent does not use it.",
+      "mcpServersReadOnly": "{appName} gives every agent these. Only members who can edit agents can turn one off.",
       "noMcpServers": "None",
       "libraryMcpServers": "MCP servers of the team",
       "libraryMcpServersHint": "An enabled server starts with the agent's chats and runs once you save.",
@@ -589,7 +589,7 @@
       "origin": {
         "agent": "Learned",
         "hub": "From the Skills Hub",
-        "plan": "From Helena",
+        "plan": "From {appName}",
         "bundled": "Ships with Hermes"
       },
       "memory": "Memory",
@@ -628,14 +628,14 @@
         "enabled": "Self-learning",
         "enabledHint": "The agent saves memory and creates skills during its chats and runs; the tokens it spends on that count toward its usage. Off, it saves nothing new and its memory is not loaded.",
         "curator": "Curator",
-        "curatorHint": "Hermes' curator archives learned skills that were not used for 30 days. Helena asks it for a review every week; the agent's runtime tab runs one now and pins skills it must leave alone.",
+        "curatorHint": "Hermes' curator archives learned skills that were not used for 30 days. {appName} asks it for a review every week; the agent's runtime tab runs one now and pins skills it must leave alone.",
         "reflectionTitle": "Reflection",
         "reflectionHint": "A short follow-up turn in the run's own session, right after it ends, in which the agent keeps only what that run taught it. Its tokens count toward the run's usage.",
         "reflectionOff": "Off",
         "reflectionFailure": "After a failed run or rework",
         "reflectionComplex": "Also after a run of many steps",
-        "restored": "Helena put back what was changed outside Helena:",
-        "cronJobs": "{count, plural, one {# job in Hermes' own scheduler runs} other {# jobs in Hermes' own scheduler run}} outside Helena. Remove them in Hermes and use a routine instead.",
+        "restored": "{appName} put back what was changed outside {appName}:",
+        "cronJobs": "{count, plural, one {# job in Hermes' own scheduler runs} other {# jobs in Hermes' own scheduler run}} outside {appName}. Remove them in Hermes and use a routine instead.",
         "waiting": "Waiting for the runner",
         "failed": "Failed: {error}",
         "queued": "The runner carries this out on its next sync.",
@@ -682,7 +682,7 @@
       "skillEnabled": "{name} on",
       "skillsDisabled": "{count} off",
       "skillClashes": "{count, plural, one {One name belongs} other {# names belong}} to more than one skill. Hermes then loads none of them:",
-      "skillClashesFix": "Take the Helena skill off the agent (the one adapted to Hermes then serves) or rename it in the skill library.",
+      "skillClashesFix": "Take the {appName} skill off the agent (the one adapted to Hermes then serves) or rename it in the skill library.",
       "moreToolsets": "{count} more"
     },
     "paused": "Paused",
@@ -737,13 +737,13 @@
       "rewriteQueued": "The runner rewrites the profile with its next sync.",
       "drift": {
         "not-linked": "config.yaml is not the link to the shared Hermes configuration.",
-        "managed-config": "Hermes does not apply the configuration Helena wrote.",
-        "mcp-unmanaged": "MCP server {server} is on although Helena does not give it.",
+        "managed-config": "Hermes does not apply the configuration {appName} wrote.",
+        "mcp-unmanaged": "MCP server {server} is on although {appName} does not give it.",
         "mcp-missing": "MCP server {server} is missing or off.",
-        "mcp-differs": "MCP server {server} runs with other settings than in Helena.",
+        "mcp-differs": "MCP server {server} runs with other settings than in {appName}.",
         "mcp-unsupported": "This runtime cannot start MCP server {server}.",
         "setting-differs": "Setting {key} differs.",
-        "approval-guard": "Dangerous commands run without Helena's approval guard.",
+        "approval-guard": "Dangerous commands run without {appName}'s approval guard.",
         "probe-failed": "The profile could not be read."
       },
       "defaults": "Runtime default: {model} ({provider}), reasoning {reasoning}",
@@ -758,7 +758,7 @@
         "notSignedIn": "Runtime not signed in.",
         "rejected": "Runtime login refused: expired or invalid.",
         "runtimeMissing": "{runtime} is not installed on the server.",
-        "sandboxUnavailable": "Sandbox unavailable: Codex’s own sandbox does not start on this server, so Codex runs read-only and reaches only Helena’s tools, no shell. With agent isolation it runs in a unit of its own.",
+        "sandboxUnavailable": "Sandbox unavailable: Codex’s own sandbox does not start on this server, so Codex runs read-only and reaches only {appName}’s tools, no shell. With agent isolation it runs in a unit of its own.",
         "notSignedInShort": "Runtime not signed in",
         "runtimeMissingShort": "Runtime missing",
         "sandboxUnavailableShort": "Sandbox unavailable"

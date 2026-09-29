@@ -2,9 +2,9 @@
   "auditTitle": "Pengerasan server",
   "auditDescription": "Pemeriksaan server setiap jam: firewall, SSH, sertifikat, izin, dan layanan. Tanpa rahasia.",
   "ownerTitle": "Masuk pemilik",
-  "ownerDescription": "Yang harus terpenuhi sebelum Helena dapat dijangkau dari internet.",
+  "ownerDescription": "Yang harus terpenuhi sebelum {appName} dapat dijangkau dari internet.",
   "edgeTitle": "Akses dari luar",
-  "edgeDescription": "Cloudflare Access di depan helena.volition.one. Helena memeriksa ulang setiap permintaan dari terowongan.",
+  "edgeDescription": "Cloudflare Access di depan helena.volition.one. {appName} memeriksa ulang setiap permintaan dari terowongan.",
   "noReport": "Belum ada laporan audit. Jalankan sekali di server:",
   "noReportCommand": "sudo deployment/volition-stack/native/hardening/audit.sh --install-timer",
   "summary": "{failed} terbuka · {warnings} peringatan · {passed} lulus",
@@ -47,7 +47,7 @@
     "web_production": "API berjalan dalam mode produksi",
     "web_leftovers": "Tidak ada sisa pengembangan atau salinan cadangan yang terbaca di nginx",
     "tunnel_service": "Terowongan Cloudflare berjalan terisolasi dan tanpa pembaruan otomatis",
-    "tunnel_edge": "Cloudflare Access sudah diatur di Helena",
+    "tunnel_edge": "Cloudflare Access sudah diatur di {appName}",
     "tunnel_acl": "Hanya terowongan yang mencapai pintu masuk terowongan",
     "tls_certificate": "Sertifikat masih berlaku lebih dari 14 hari",
     "tls_renewal": "Pembaruan sertifikat otomatis aktif",
@@ -69,9 +69,9 @@
     "files_backups": "Cadangan basis data hanya terbaca oleh layanannya",
     "files_secrets": "Rahasia dan kunci tidak terbaca oleh pihak lain",
     "files_agent_code": "Agen dapat membaca kode runtime mereka",
-    "svc_exposure": "Layanan Helena diisolasi oleh systemd",
+    "svc_exposure": "Layanan {appName} diisolasi oleh systemd",
     "svc_tools_loopback": "Alat hanya terjangkau lewat loopback",
-    "net_voice_acl": "Server suara hanya dapat dijangkau Helena"
+    "net_voice_acl": "Server suara hanya dapat dijangkau {appName}"
   },
   "finding": {
     "net_firewall": {
@@ -91,7 +91,7 @@
       "fail": "Login LAN juga berlaku untuk loopback atau server itu sendiri."
     },
     "net_redis": {
-      "fail": "Redis berjalan tanpa kata sandi dan tidak dipakai Helena."
+      "fail": "Redis berjalan tanpa kata sandi dan tidak dipakai {appName}."
     },
     "net_syncthing_nat": {
       "warn": "Syncthing meminta router (UPnP/NAT-PMP) membuka port 22000."
@@ -125,7 +125,7 @@
       "fail": "Tunnel Cloudflare tidak terisolasi sebagaimana mestinya."
     },
     "tunnel_edge": {
-      "fail": "Tidak ada tim Cloudflare Access (domain/AUD) di Helena: pintu masuk tunnel menolak semuanya."
+      "fail": "Tidak ada tim Cloudflare Access (domain/AUD) di {appName}: pintu masuk tunnel menolak semuanya."
     },
     "tunnel_acl": {
       "fail": "{why, select, user {Pengguna tunnel {user} tidak dapat mencapai pintu masuk tunnel: cloudflared tidak mendapat koneksi dan Cloudflare menjawab 502 (hardening/apply.sh --apply firewall-uids).} other {Setiap pengguna lokal dapat mencapai pintu masuk tunnel.}}"
@@ -191,7 +191,7 @@
       "fail": "{count} berkas di {path} hanya dapat dibaca pemiliknya: agen yang memuatnya gagal berjalan."
     },
     "svc_exposure": {
-      "warn": "systemd mengisolasi layanan Helena lebih lemah dari yang direncanakan."
+      "warn": "systemd mengisolasi layanan {appName} lebih lemah dari yang direncanakan."
     },
     "svc_tools_loopback": {
       "fail": "Alat dapat dijangkau di luar loopback."
@@ -221,13 +221,13 @@
     "allowedEmails": "Identitas yang diizinkan",
     "allowedEmailsHint": "Opsional: hanya alamat email ini, meskipun kebijakan Access mengizinkan lebih. Satu per baris. Wajib untuk login Cloudflare.",
     "saved": "Akses dari luar disimpan",
-    "signInTitle": "Masuk ke Helena dengan login Cloudflare",
-    "signInDescription": "Masuk ke Cloudflare Access sebagai identitas yang diizinkan langsung memasukkan Anda ke Helena tanpa kata sandi lain, paling lama 24 jam dan tidak pernah lebih lama dari sesi Access. Access lalu menjadi satu-satunya login: wajibkan faktor kedua di sana (passkey/Touch ID atau aplikasi autentikator). Terminal tetap meminta kodenya.",
+    "signInTitle": "Masuk ke {appName} dengan login Cloudflare",
+    "signInDescription": "Masuk ke Cloudflare Access sebagai identitas yang diizinkan langsung memasukkan Anda ke {appName} tanpa kata sandi lain, paling lama 24 jam dan tidak pernah lebih lama dari sesi Access. Access lalu menjadi satu-satunya login: wajibkan faktor kedua di sana (passkey/Touch ID atau aplikasi autentikator). Terminal tetap meminta kodenya.",
     "signInNeedsSetup": "Memerlukan domain tim, AUD, dan setidaknya satu identitas yang diizinkan.",
-    "signInNeedsProof": "Pintu masuk tunnel belum punya bukti untuk Helena: jalankan cloudflare/install.sh --apply entry-token di server, lalu mulai ulang API dan aplikasi web.",
+    "signInNeedsProof": "Pintu masuk tunnel belum punya bukti untuk {appName}: jalankan cloudflare/install.sh --apply entry-token di server, lalu mulai ulang API dan aplikasi web.",
     "homeTitle": "Otomatis terhubung langsung saat di rumah",
-    "homeDescription": "Di alamat publik, Helena memeriksa apakah {home} merespons dari perangkat ini lalu beralih ke sana: langsung lewat jaringan rumah, tanpa memutar lewat Cloudflare. Login jaringan rumah memasukkan Anda di sana. Chrome sekali meminta akses ke jaringan lokal.",
-    "homeDescriptionGeneric": "Di alamat publik, Helena memeriksa apakah alamat jaringan rumah merespons dari perangkat ini lalu beralih ke sana: langsung lewat jaringan rumah, tanpa memutar lewat Cloudflare.",
+    "homeDescription": "Di alamat publik, {appName} memeriksa apakah {home} merespons dari perangkat ini lalu beralih ke sana: langsung lewat jaringan rumah, tanpa memutar lewat Cloudflare. Login jaringan rumah memasukkan Anda di sana. Chrome sekali meminta akses ke jaringan lokal.",
+    "homeDescriptionGeneric": "Di alamat publik, {appName} memeriksa apakah alamat jaringan rumah merespons dari perangkat ini lalu beralih ke sana: langsung lewat jaringan rumah, tanpa memutar lewat Cloudflare.",
     "homeNotSetUp": "Belum ada alamat jaringan rumah (HELENA_HOME_URL, cloudflare/switch_origin.py --home-host)."
   },
   "signIns": {

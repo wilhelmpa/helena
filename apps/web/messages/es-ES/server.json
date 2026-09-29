@@ -19,7 +19,7 @@
   "readFailed": "El asistente del host no respondió. Puede que ahora mismo no esté en ejecución.",
   "unavailable": {
     "title": "Aquí no hay nada que gestionar",
-    "noHelper": "Helena funciona sin el asistente del host (por ejemplo, en un contenedor). Los discos, las copias de seguridad y los ventiladores se gestionan entonces fuera de Helena.",
+    "noHelper": "{appName} funciona sin el asistente del host (por ejemplo, en un contenedor). Los discos, las copias de seguridad y los ventiladores se gestionan entonces fuera de {appName}.",
     "failed": "El asistente del host no respondió."
   },
   "health": {
@@ -42,9 +42,9 @@
     "espSyncSkipped": "La segunda partición EFI no se actualizó hace {at}: {reason, select, notMounted {{mount} no estaba montada} notVfat {{mount} no es una partición FAT} sameDevice {ambos puntos de montaje son la misma partición} other {se omitió}}. El disco de reserva podría arrancar una versión antigua.",
     "espSyncFailed": "La copia a la segunda partición EFI falló hace {at}: {reason, select, sourceIncomplete {falta el cargador de arranque en la primera} readFailed {la primera no se pudo leer por completo} noRsync {falta rsync} rsyncFailed {error de escritura} verifyFailed {la copia difiere del original} other {error desconocido}}. Arrancar desde el disco de reserva solo vuelve a ser seguro tras una copia correcta.",
     "espRemovableStale": "La ruta de arranque de emergencia EFI/BOOT en {mount} {problem, select, missing {falta} differs {inicia otros archivos que las entradas de arranque} fallback {contiene fbx64.efi, que crearía entradas de firmware propias} stub {no encuentra la partición del sistema} other {no es correcta}}. El firmware a veces arranca esta ruta por su cuenta.",
-    "bootEntryMissing": "Falta la entrada de arranque «{label}». {repair, select, nextBoot {Helena la crea en el próximo arranque.} diskMissing {Helena la crea en cuanto vuelva el disco.} other {}}",
-    "bootEntryBroken": "La entrada de arranque «{label}» no es válida: {problem, select, noPartuuid {el firmware la reescribió} wrongDisk {apunta a otro disco} wrongLoader {inicia otro archivo} inactive {está desactivada} other {no coincide}}. {repair, select, nextBoot {Helena la repara en el próximo arranque.} diskMissing {Helena la repara en cuanto vuelva el disco.} other {}}",
-    "bootEntryDuplicate": "La entrada de arranque «{label}» existe varias veces. {repair, select, nextBoot {Helena lo ordena en el próximo arranque.} diskMissing {Helena lo ordena en cuanto vuelva el disco.} other {}}",
+    "bootEntryMissing": "Falta la entrada de arranque «{label}». {repair, select, nextBoot {{appName} la crea en el próximo arranque.} diskMissing {{appName} la crea en cuanto vuelva el disco.} other {}}",
+    "bootEntryBroken": "La entrada de arranque «{label}» no es válida: {problem, select, noPartuuid {el firmware la reescribió} wrongDisk {apunta a otro disco} wrongLoader {inicia otro archivo} inactive {está desactivada} other {no coincide}}. {repair, select, nextBoot {{appName} la repara en el próximo arranque.} diskMissing {{appName} la repara en cuanto vuelva el disco.} other {}}",
+    "bootEntryDuplicate": "La entrada de arranque «{label}» existe varias veces. {repair, select, nextBoot {{appName} lo ordena en el próximo arranque.} diskMissing {{appName} lo ordena en cuanto vuelva el disco.} other {}}",
     "bootLoaderMissing": "Falta el cargador de arranque en {mount}; la entrada «{label}» no puede arrancar.",
     "bootEntriesOk": "{count, plural, one {La entrada de arranque es correcta.} other {Las # entradas de arranque son correctas.}}",
     "eventsCritical": "{count, plural, one {Un aviso grave} other {# avisos graves}} de mdadm o smartd, todavía sin ver.",
@@ -114,7 +114,7 @@
     "checkStarted": "La comprobación está en curso.",
     "checkStopped": "La comprobación se ha detenido.",
     "checkConfirmTitle": "¿Comprobar el espejo?",
-    "checkConfirmBody": "Lee ambos discos por completo y los compara (lo mismo que la comprobación mensual automática). Tarda unas horas y ralentiza un poco los discos; Helena sigue funcionando.",
+    "checkConfirmBody": "Lee ambos discos por completo y los compara (lo mismo que la comprobación mensual automática). Tarda unas horas y ralentiza un poco los discos; {appName} sigue funcionando.",
     "syncAction": {
       "idle": "Inactivo",
       "resync": "Resincronización",
@@ -176,7 +176,7 @@
       "intro": "Cuando un disco se cae del bus en marcha («controller is down» en el registro, el espejo funciona sin él, lsblk no lo muestra), a menudo no está roto. Un reinicio no suele recuperarlo; un arranque en frío sí. Hasta entonces, nada de actualizaciones del kernel ni de GRUB.",
       "step": {
         "poweroff": "Apagar limpiamente",
-        "poweroffBody": "Helena y los agentes se detienen; el espejo está completo en el otro disco.",
+        "poweroffBody": "{appName} y los agentes se detienen; el espejo está completo en el otro disco.",
         "powerOn": "Volver a encender",
         "powerOnBody": "Con el botón de encendido o por Wake-on-LAN desde otro ordenador de la red doméstica.",
         "smart": "Comprobar SMART",
@@ -191,7 +191,7 @@
     "replace": {
       "open": "Sustituir un disco",
       "title": "Sustituir un disco del espejo",
-      "intro": "Paso a paso, con los comandos para esta máquina. Helena no los ejecuta: los escribes tú en el terminal del propietario. Mientras tanto, el servidor sigue funcionando con el otro disco.",
+      "intro": "Paso a paso, con los comandos para esta máquina. {appName} no los ejecuta: los escribes tú en el terminal del propietario. Mientras tanto, el servidor sigue funcionando con el otro disco.",
       "which": "¿Qué disco sale?",
       "disk": "Disco {letter}",
       "noPlan": "No hay plan para este disco: no forma parte de un espejo o falta un segundo disco sano.",
@@ -343,11 +343,11 @@
     },
     "password": {
       "title": "Anotar la contraseña de la copia de seguridad",
-      "explain": "Sin esta contraseña no se puede leer la copia de seguridad, tampoco Helena tras una reinstalación. Anótala en papel o en tu gestor de contraseñas. Una vez que confirmes, Helena no volverá a mostrarla.",
+      "explain": "Sin esta contraseña no se puede leer la copia de seguridad, tampoco {appName} tras una reinstalación. Anótala en papel o en tu gestor de contraseñas. Una vez que confirmes, {appName} no volverá a mostrarla.",
       "show": "Mostrar contraseña",
       "written": "He anotado la contraseña en un lugar seguro.",
       "confirm": "Confirmar",
-      "confirmed": "Confirmado. Helena ya no muestra la contraseña."
+      "confirmed": "Confirmado. {appName} ya no muestra la contraseña."
     },
     "targets": {
       "title": "Copia externa",
@@ -463,7 +463,7 @@
     },
     "guard": {
       "title": "Protección de ventiladores",
-      "explain": "Si los ventiladores están fijos por debajo del nivel 5 y la CPU se mantiene a {limit} o más durante unos segundos, Helena los pone en el nivel 5. Tras dos minutos por debajo de {release}, vuelve tu nivel.",
+      "explain": "Si los ventiladores están fijos por debajo del nivel 5 y la CPU se mantiene a {limit} o más durante unos segundos, {appName} los pone en el nivel 5. Tras dos minutos por debajo de {release}, vuelve tu nivel.",
       "limit": "Límite",
       "saved": "Guardado.",
       "active": "Ahora mismo mantiene los ventiladores en el nivel 5.",

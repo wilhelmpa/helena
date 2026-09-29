@@ -2,6 +2,13 @@ export { db, listen, databaseRuntimeName, withSettledTransactionCallbacks } from
 export * from './schema';
 export * from './permissions';
 export {
+  DEFAULT_DISPLAY_NAME,
+  DISPLAY_NAME_SETTING_KEY,
+  getDisplayName,
+  setDisplayName,
+  validDisplayName,
+} from './brand';
+export {
   clearSettingsCache,
   forgetSetting,
   getSetting,

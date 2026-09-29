@@ -1,5 +1,6 @@
 import {
   db,
+  getDisplayName,
   aiAgent,
   agentRun,
   issueWorkClaim,
@@ -585,7 +586,7 @@ export async function claimRunnerRun(agent: RunnerAgent): Promise<RunnerRun | nu
         ) +
         (await activeOrderContext(row.projectId, agent.id)) +
         issueWhySection(why) +
-        autopilotRunSection(row.projectKey, autopilot.level) +
+        autopilotRunSection(row.projectKey, autopilot.level, await getDisplayName()) +
         (row.interrupted && !row.sessionId ? INTERRUPTED_RUN : ''),
     attempts: row.attempts,
     claim: row.claim,
@@ -872,12 +873,12 @@ async function requestReflection(
   await db.update(agentRun).set({ reflection }).where(eq(agentRun.id, runId));
   return local
     ? {
-        prompt: reflectionPrompt(reason),
+        prompt: reflectionPrompt(reason, await getDisplayName()),
         ...LOCAL_REFLECTION_LIMITS,
         model: local,
         thinkingLevel: choice?.thinkingLevel ?? null,
       }
-    : { prompt: reflectionPrompt(reason), ...REFLECTION_LIMITS };
+    : { prompt: reflectionPrompt(reason, await getDisplayName()), ...REFLECTION_LIMITS };
 }
 
 // Records the outcome the runner reports. A failure is terminal: the runner ran the

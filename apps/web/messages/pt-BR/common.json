@@ -199,7 +199,7 @@
     "openPreviewLink": "Abrir {name} em uma nova aba",
     "loadingPreview": "Carregando prévia…",
     "previewUnavailable": "Não há prévia disponível. Abra o link para ver esta página.",
-    "internalPage": "Página do Helena",
+    "internalPage": "Página do {appName}",
     "internalPreviewUnavailable": "Esta página não está disponível ou você não tem acesso.",
     "previewNoteCount": "{count, plural, one {# nota} many {# notas} other {# notas}}",
     "previewCustomField": "Campo personalizado",

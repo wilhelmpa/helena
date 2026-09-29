@@ -1,9 +1,9 @@
 {
   "title": "Browser 2.0",
-  "homeBrowser": "Browser Helena",
+  "homeBrowser": "Browser {appName}",
   "which": "Browser",
   "noBrowser": "Tidak ada browser untuk diuji",
-  "noBrowserHint": "Browser Helena maupun browser proyek tidak tersedia di sini.",
+  "noBrowserHint": "Browser {appName} maupun browser proyek tidak tersedia di sini.",
   "noAgents": "Tidak ada agen di browser ini yang memiliki browser proyek. Aktifkan di alat agen.",
   "tabs": {
     "label": "Browser",
@@ -19,14 +19,14 @@
   },
   "connection": {
     "service": "Layanan",
-    "cloudNote": "Yang diputuskan untuk Helena, seperti teks halaman yang terlihat atau email, dikirim ke layanan ini. Kata sandi dan nilai yang diketik tidak.",
-    "localNote": "Server System One milik Anda sendiri. Helena hanya menjangkaunya di alamat ini.",
-    "localModelNote": "Server yang kompatibel dengan OpenAI dengan logprobs (llama.cpp, Lemonade, vLLM). Helena hanya menjangkaunya di alamat ini.",
+    "cloudNote": "Yang diputuskan untuk {appName}, seperti teks halaman yang terlihat atau email, dikirim ke layanan ini. Kata sandi dan nilai yang diketik tidak.",
+    "localNote": "Server System One milik Anda sendiri. {appName} hanya menjangkaunya di alamat ini.",
+    "localModelNote": "Server yang kompatibel dengan OpenAI dengan logprobs (llama.cpp, Lemonade, vLLM). {appName} hanya menjangkaunya di alamat ini.",
     "address": "Alamat",
     "model": "Model",
     "allowPrivate": "Izinkan alamat lokal ini",
-    "allowPrivateHint": "Helena tidak pernah memanggil alamat di jaringan Anda. Ini mengizinkan tepat alamat ini, tidak lebih.",
-    "localAiKey": "Alamat, kunci, dan model berasal dari AI lokal Helena (Administrator → AI lokal, aktifkan „Keputusan“ di sana); tidak ada yang perlu diisi di sini.",
+    "allowPrivateHint": "{appName} tidak pernah memanggil alamat di jaringan Anda. Ini mengizinkan tepat alamat ini, tidak lebih.",
+    "localAiKey": "Alamat, kunci, dan model berasal dari AI lokal {appName} (Administrator → AI lokal, aktifkan „Keputusan“ di sana); tidak ada yang perlu diisi di sini.",
     "key": "Kunci",
     "keyHintTypesafe": "Dari console.typesafe.ai → Keys.",
     "keyHintVercel": "Kunci AI Gateway dari tim Vercel Anda.",
@@ -40,7 +40,7 @@
     "keySourceCredential": "Gunakan kunci API yang sudah ada",
     "keyCredential": "Kredensial kunci API asli",
     "chooseKeyCredential": "Pilih kunci API",
-    "keyCredentialHint": "Helena membaca kunci terbaru dari kredensial ini untuk setiap permintaan. Rotasi cukup dilakukan sekali di sana. Hanya kunci API dari tim ini dan proyek yang sama (atau seluruh tim) yang dapat digunakan. Tidak ada kunci yang disalin atau diungkapkan kepada agen.",
+    "keyCredentialHint": "{appName} membaca kunci terbaru dari kredensial ini untuk setiap permintaan. Rotasi cukup dilakukan sekali di sana. Hanya kunci API dari tim ini dan proyek yang sama (atau seluruh tim) yang dapat digunakan. Tidak ada kunci yang disalin atau diungkapkan kepada agen.",
     "keySourcesLoading": "Memuat kunci API…",
     "keySourceUnavailable": "Tidak ada kunci API yang cocok, atau sumber yang disimpan tidak dapat diakses lagi. Pilih sumber yang valid atau periksa kredensial."
   },
@@ -90,12 +90,12 @@
     "modeHint": "Standard: agen mengeklik langkah demi langkah. Model keputusan: agen boleh menyerahkan pekerjaan browser multi-langkah ke browser_task.",
     "connectionHint": "Diatur di Akses & koneksi → Akses.",
     "teamHint": "Koneksi milik siapa yang ditampilkan.",
-    "overridden": "Bawaan Helena ditimpa",
-    "resetToDefault": "Kembalikan ke bawaan Helena"
+    "overridden": "Bawaan {appName} ditimpa",
+    "resetToDefault": "Kembalikan ke bawaan {appName}"
   },
   "form": {
     "goal": "Tugas",
-    "goalPlaceholder": "mis. Cari \"Helena\" lalu buka hasil pertama",
+    "goalPlaceholder": "mis. Cari \"{appName}\" lalu buka hasil pertama",
     "values": "Nilai untuk diketik",
     "valuesPlaceholder": "email: max@example.com",
     "valuesHint": "Satu per baris, nama: nilai. Nilai diketik, tetapi tidak pernah dikirim ke model keputusan.",

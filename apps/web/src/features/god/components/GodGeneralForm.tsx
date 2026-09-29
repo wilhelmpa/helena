@@ -12,6 +12,7 @@ import { useUpdateInstanceRunResumeSettings } from '../services/god.service';
 import GodEngineSettings from './GodEngineSettings';
 import GodSectionPage from './GodSectionPage';
 import GodProjectDefaultsSettings from './GodProjectDefaultsSettings';
+import GodDisplayNameSetting from './GodDisplayNameSetting';
 
 import { Inline } from '@/design-system';
 
@@ -19,10 +20,12 @@ export default function GodGeneralForm({
   defaults,
   runResume,
   engine,
+  displayName,
 }: {
   defaults: ProjectDefaults;
   runResume: RunResumeSettings;
   engine: EngineSettingsAdmin;
+  displayName: string;
 }) {
   const t = useTranslations('god.general');
   const tCommon = useTranslations('common');
@@ -45,6 +48,7 @@ export default function GodGeneralForm({
 
   return (
     <GodSectionPage slug="general">
+      <GodDisplayNameSetting displayName={displayName} />
       <GodProjectDefaultsSettings defaults={defaults} />
       <SettingsSection title={t('runResume')}>
         <SettingsCard>

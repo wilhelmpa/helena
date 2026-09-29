@@ -35,7 +35,7 @@
     "stateChanged": "{who} 将状态从 {from} 更改为 {to}",
     "stateChangedPlain": "{who} 更改了状态",
     "approval_requested": "{who} 请求你的审批",
-    "automation": "Helena"
+    "automation": "{appName}"
   },
   "hub": {
     "scopeProject": "此项目",
@@ -55,9 +55,9 @@
     "reset": "重置筛选"
   },
   "owner": {
-    "home": "HELENA",
+    "home": "{appNameUpper}",
     "anAgent": "一位代理",
-    "defaultAgent": "Helena",
+    "defaultAgent": "{appName}",
     "mentionedBy": "{name} 提到了你",
     "approvalRequest": "{name} 请求你做出决定。",
     "workflowWaiting": "此工作流正在等待你的决定。",

@@ -98,7 +98,7 @@
     "unreachable": "No accesible",
     "keys": {
       "file": "Clave desde archivo",
-      "stored": "Clave guardada en Helena",
+      "stored": "Clave guardada en {appName}",
       "none": "Sin clave",
       "invalid": "Archivo de clave no permitido"
     },
@@ -256,22 +256,22 @@
     },
     "pause": {
       "title": "Pausa antes de la respuesta",
-      "hint": "Cuánto tiempo debes callar antes de que Helena envíe tu frase. Más corta responde antes; más larga te interrumpe menos.",
+      "hint": "Cuánto tiempo debes callar antes de que {appName} envíe tu frase. Más corta responde antes; más larga te interrumpe menos.",
       "option": "{seconds} s"
     },
     "words": {
-      "title": "Palabras que Helena debe conocer",
+      "title": "Palabras que {appName} debe conocer",
       "hint": "Nombres, productos y términos, para que el reconocimiento de voz los escriba bien. Ya conoce: {words}.",
       "placeholder": "p. ej. asesor fiscal Müller, Shopify, Kubernetes",
       "save": "Guardar palabras"
     },
     "voice": {
       "title": "Voz",
-      "hint": "La voz local con la que Helena responde en una conversación (IA local → «Leer en voz alta»).",
+      "hint": "La voz local con la que {appName} responde en una conversación (IA local → «Leer en voz alta»).",
       "default": "Voz predeterminada del servidor",
       "none": "Aún no hay voz local; hasta entonces lee el navegador.",
       "preview": "Escuchar",
-      "sample": "Hola, soy Helena. Así sueno en una conversación: dime lo que necesitas.",
+      "sample": "Hola, soy {appName}. Así sueno en una conversación: dime lo que necesitas.",
       "previewFailed": "No se pudo reproducir la voz."
     },
     "model": {

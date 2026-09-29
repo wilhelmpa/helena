@@ -98,7 +98,7 @@
     "unreachable": "Tidak terjangkau",
     "keys": {
       "file": "Kunci dari berkas",
-      "stored": "Kunci disimpan di Helena",
+      "stored": "Kunci disimpan di {appName}",
       "none": "Tanpa kunci",
       "invalid": "Berkas kunci tidak diizinkan"
     },
@@ -256,22 +256,22 @@
     },
     "pause": {
       "title": "Jeda sebelum jawaban",
-      "hint": "Berapa lama kamu harus diam sebelum Helena mengirim kalimatmu. Lebih singkat menjawab lebih cepat, lebih lama jarang memotongmu.",
+      "hint": "Berapa lama kamu harus diam sebelum {appName} mengirim kalimatmu. Lebih singkat menjawab lebih cepat, lebih lama jarang memotongmu.",
       "option": "{seconds} dtk"
     },
     "words": {
-      "title": "Kata yang harus dikenal Helena",
+      "title": "Kata yang harus dikenal {appName}",
       "hint": "Nama, produk, dan istilah, agar pengenalan suara menulisnya dengan benar. Yang sudah dikenal: {words}.",
       "placeholder": "mis. konsultan pajak Müller, Shopify, Kubernetes",
       "save": "Simpan kata"
     },
     "voice": {
       "title": "Suara",
-      "hint": "Suara lokal yang dipakai Helena untuk menjawab dalam percakapan (AI lokal → “Bacakan”).",
+      "hint": "Suara lokal yang dipakai {appName} untuk menjawab dalam percakapan (AI lokal → “Bacakan”).",
       "default": "Suara bawaan server",
       "none": "Belum ada suara lokal – sampai saat itu browser yang membacakan.",
       "preview": "Dengarkan",
-      "sample": "Halo, aku Helena. Beginilah suaraku dalam percakapan – bilang saja apa yang kamu butuhkan.",
+      "sample": "Halo, aku {appName}. Beginilah suaraku dalam percakapan – bilang saja apa yang kamu butuhkan.",
       "previewFailed": "Suara tidak dapat diputar."
     },
     "model": {

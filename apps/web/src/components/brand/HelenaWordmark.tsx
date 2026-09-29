@@ -1,4 +1,7 @@
+'use client';
+
 import { wordmarkArt, type WordmarkSize } from '@helena/brand';
+import { useDisplayName } from '@/context/displayName';
 import { cn } from '@/lib/utils';
 
 // The Helena wordmark (packages/brand): HELENA in ANSI Shadow, the block capitals of
@@ -19,6 +22,8 @@ export default function HelenaWordmark({
   className?: string;
   label?: string;
 }) {
+  const appName = useDisplayName();
+  if (appName !== 'Helena') return <span className={className}>{appName}</span>;
   const { width, height, rows } = wordmarkArt(size);
   return (
     <svg
