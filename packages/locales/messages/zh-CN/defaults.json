@@ -46,7 +46,7 @@
     "list": "列表",
     "allTasks": "全部任务"
   },
-  "coordinator": "Hermes {key} 协调员",
+  "coordinator": "{key} 协调员",
   "teamRole": "成员",
   "blocked": {
     "label": "受阻",

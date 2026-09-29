@@ -169,7 +169,7 @@ describe('god projects', () => {
         res.data?.members.find((m) => m.userId === alice.id)!.permissions.members_manage.delete,
       ).toBe(true);
       expect(res.data?.members.find((m) => m.isAgent)).toMatchObject({
-        name: 'Hermes MKT Coordinator',
+        name: 'Coordinator MKT',
         isAgent: true,
       });
     });

@@ -37,7 +37,7 @@ describe('live Home shape without a HOME project', () => {
     expect(tree.data?.agents).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ id: agent.id, username: 'master' }),
-        expect.objectContaining({ username: 'hermes-mkt-coordinator', reportsToAgentId: agent.id }),
+        expect.objectContaining({ username: 'mkt-koordinator', reportsToAgentId: agent.id }),
       ]),
     );
     expect(await db.$count(project, eq(project.key, 'HOME'))).toBe(0);
@@ -62,7 +62,7 @@ describe('live Home shape without a HOME project', () => {
     expect(dashboard.data?.homeDashboard).toBeDefined();
     const agents = await asOwner.teams({ teamId: agent.teamId })['ai-agents'].get();
     expect(agents.data?.find((item) => item.id === agent.id)?.projectScope).toBe('all');
-    const coordinator = agents.data?.find((item) => item.username === 'hermes-mkt-coordinator');
+    const coordinator = agents.data?.find((item) => item.username === 'mkt-koordinator');
     const schedule = await asOwner.projects({ projectKey: 'MKT' }).routines.post({
       idempotencyKey: crypto.randomUUID(),
       agentId: coordinator!.id,

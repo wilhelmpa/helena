@@ -26,7 +26,7 @@ import {
   projectMember,
   user,
 } from '@repo/db';
-import { hermesProjectCoordinatorUsername } from '@repo/agent-naming';
+import { projectCoordinatorUsername } from '@repo/agent-naming';
 import { app, authedApi } from '../../__tests__/helpers/app';
 import { signUpTestUser } from '../../__tests__/helpers/auth';
 import { resetDb } from '../../__tests__/helpers/db';
@@ -115,7 +115,7 @@ async function readFacts(routineStarted = false): Promise<ScenarioFacts> {
     .from(aiAgent)
     .innerJoin(user, eq(user.id, aiAgent.userId));
   // Helena gives every new project its own coordinator: not one of the model's.
-  const coordinator = hermesProjectCoordinatorUsername(SCENARIO.project.key);
+  const coordinator = projectCoordinatorUsername(SCENARIO.project.key);
   const agents = [];
   for (const agent of agentRows) {
     if (agent.username === coordinator) continue;

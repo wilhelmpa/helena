@@ -137,7 +137,7 @@ async function ensureOrg(log: SyncLog, teamId: number): Promise<void> {
   log.log('\n== Coordinator skills and the family department ==');
   const agents = await log.api<AgentRow[]>('GET', `/teams/${teamId}/ai-agents`);
   const skillIds = await teamSkillIds(log, teamId);
-  for (const coordinator of agents.filter((a) => /^hermes-.+-coordinator$/i.test(a.username))) {
+  for (const coordinator of agents.filter((a) => /^[a-z0-9][a-z0-9_-]*-koordinator$/i.test(a.username))) {
     await addAgentSkills(log, teamId, coordinator, [...POOL_COORDINATOR_SKILLS], skillIds);
   }
   const org = await log.api<Organization>('GET', `/teams/${teamId}/organization`);
@@ -154,7 +154,7 @@ async function ensureOrg(log: SyncLog, teamId: number): Promise<void> {
       )) ?? undefined;
     if (!department) return;
   }
-  for (const handle of ['hermes-fam-coordinator', 'hermes-priv-coordinator']) {
+  for (const handle of ['fam-koordinator', 'priv-koordinator']) {
     const current = org.agents.find((a) => a.username === handle);
     if (!current) {
       log.warn(`${handle} not found`);

@@ -310,7 +310,7 @@ export async function projectAgentIds(projectIds?: number[]): Promise<Map<number
       and(
         eq(aiAgent.kind, 'external'),
         ne(aiAgent.username, 'master'),
-        sql`${aiAgent.username} !~ '^hermes-[a-z0-9_-]+-coordinator$'`,
+        sql`${aiAgent.username} !~ '^[a-z0-9][a-z0-9_-]*-koordinator$'`,
         sql`(select count(*) from ${projectMember} where ${projectMember.userId} = ${aiAgent.userId}) = 1`,
         projectIds ? inArray(projectMember.projectId, projectIds) : undefined,
       ),

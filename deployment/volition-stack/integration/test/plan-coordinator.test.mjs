@@ -25,8 +25,8 @@ function fixture({ existing = false, descriptor = false } = {}) {
   const agent = {
     id: 21,
     userId: "agent-user",
-    name: "Hermes SYSQA Coordinator",
-    username: "hermes-sysqa-coordinator",
+    name: "Coordinator SYSQA",
+    username: "sysqa-koordinator",
     kind: "external",
     projects: [project],
   };
@@ -34,7 +34,7 @@ function fixture({ existing = false, descriptor = false } = {}) {
     agent: existing ? structuredClone(agent) : null,
     descriptor: descriptor ? {
       schemaVersion: 1, projectId: 7, teamId: 1, planAgentId: 21,
-      username: "hermes-sysqa-coordinator", cwd: workspace.hostPath,
+      username: "sysqa-koordinator", cwd: workspace.hostPath,
       hermesHome: "/data/hermes/profiles/sysqa", globalHermesHome: "/data/hermes",
       apiKey: "existing-key-value-1234567890",
     } : null,
@@ -76,7 +76,7 @@ function fixture({ existing = false, descriptor = false } = {}) {
   const descriptorStore = {
     read: async (_path, expected) => {
       if (!state.descriptor) return null;
-      assert.equal(expected.username, "hermes-sysqa-coordinator");
+      assert.equal(expected.username, "sysqa-koordinator");
       return structuredClone(state.descriptor);
     },
     write: async (_path, value) => { state.writes += 1; state.descriptor = structuredClone(value); },
@@ -89,7 +89,7 @@ describe("ensurePlanCoordinator", () => {
     const f = fixture();
     f.browser = { cdpUrl: "http://127.0.0.1:19201" };
     const result = await ensurePlanCoordinator(config, project, f);
-    assert.equal(result.username, "hermes-sysqa-coordinator");
+    assert.equal(result.username, "sysqa-koordinator");
     assert.equal(result.hermesIdentity, result.username);
     assert.equal(f.state.created, 1);
     assert.equal(f.state.writes, 1);
@@ -97,7 +97,7 @@ describe("ensurePlanCoordinator", () => {
     assert.equal(f.state.descriptor.cwd, workspace.hostPath);
     assert.equal(f.state.descriptor.hermesHome, "/data/hermes/profiles/sysqa");
     assert.equal(f.state.descriptor.browserCdpUrl, "http://127.0.0.1:19201");
-    assert.equal(f.state.organization.agents[0].runtimeAgentId, "hermes-sysqa-coordinator");
+    assert.equal(f.state.organization.agents[0].runtimeAgentId, "sysqa-koordinator");
     assert.equal(f.state.organization.agents[0].role, "coordinator");
   });
 
@@ -107,6 +107,18 @@ describe("ensurePlanCoordinator", () => {
     assert.equal(f.state.created, 0);
     assert.equal(f.state.rotated, 0);
     assert.equal(f.state.writes, 0);
+  });
+
+  it("rewrites an old coordinator descriptor and organization identity with its existing key", async () => {
+    const f = fixture({ existing: true, descriptor: true });
+    f.state.descriptor.username = "hermes-sysqa-coordinator";
+    f.state.organization.agents[0].runtimeAgentId = "hermes-sysqa-coordinator";
+    const result = await ensurePlanCoordinator(config, project, f);
+    assert.equal(result.descriptorChanged, true);
+    assert.equal(f.state.rotated, 0);
+    assert.equal(f.state.descriptor.apiKey, "existing-key-value-1234567890");
+    assert.equal(f.state.descriptor.username, "sysqa-koordinator");
+    assert.equal(f.state.organization.agents[0].runtimeAgentId, "sysqa-koordinator");
   });
 
   it("rotates only when no private descriptor can recover the key", async () => {
@@ -155,7 +167,7 @@ describe("ensurePlanCoordinator with the Plan control token", () => {
         state.validKey = apiKey;
       }
       return json(200, {
-        agent: { id: 21, userId: "agent-user", username: "hermes-sysqa-coordinator" },
+        agent: { id: 21, userId: "agent-user", username: "sysqa-koordinator" },
         apiKey,
         projectInstructions: "",
         agentInstructions: "",
@@ -189,6 +201,17 @@ describe("ensurePlanCoordinator with the Plan control token", () => {
     assert.equal(state.writes, 1);
   });
 
+  it("keeps the key when a stored descriptor has the old username", async () => {
+    const { state, options } = controlled();
+    await ensurePlanCoordinator(controlConfig, project, options);
+    state.descriptor.username = "hermes-sysqa-coordinator";
+    const result = await ensurePlanCoordinator(controlConfig, project, options);
+    assert.equal(result.descriptorChanged, true);
+    assert.equal(state.issued, 1);
+    assert.equal(state.descriptor.username, "sysqa-koordinator");
+    assert.deepEqual(state.offered, [null, state.validKey]);
+  });
+
   it("rewrites the descriptor with the same key when only the browser changed", async () => {
     const { state, options } = controlled();
     await ensurePlanCoordinator(controlConfig, project, options);
@@ -213,7 +236,7 @@ describe("ensurePlanCoordinator with the Plan control token", () => {
 
   it("never offers the key of a descriptor that belongs to another project", async () => {
     const { state, options } = controlled();
-    state.descriptor = { projectId: 99, username: "hermes-sysqa-coordinator", apiKey: "other-project-key-1234567890" };
+    state.descriptor = { projectId: 99, username: "sysqa-koordinator", apiKey: "other-project-key-1234567890" };
     await ensurePlanCoordinator(controlConfig, project, options);
     assert.deepEqual(state.offered, [null]);
   });

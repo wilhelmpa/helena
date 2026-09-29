@@ -233,8 +233,7 @@ export function allTasksSuffixes(): string[] {
 
 // ── Agents, teams, labels ─────────────────────────────────────────────────────────────
 
-// The display name of a project's coordinator agent ("Hermes-Koordinator VOL"). Its
-// handle stays hermes-<key>-coordinator in every language.
+// The display name of a project's coordinator agent ("Koordinator VOL").
 export function coordinatorName(projectKey: string, locale: Locale): string {
   return defaultNames(locale).coordinator.replace('{key}', projectKey);
 }

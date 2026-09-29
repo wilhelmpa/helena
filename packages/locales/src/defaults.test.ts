@@ -49,6 +49,7 @@ describe('default names catalog', () => {
       expect(keyPaths(file).sort()).toEqual(english);
       for (const text of values(file)) expect(text.trim().length).toBeGreaterThan(0);
       expect(file.coordinator).toContain('{key}');
+      expect(coordinatorName('MKT', locale)).not.toMatch(/Hermes/i);
     }
   });
 
@@ -71,7 +72,7 @@ describe('default names catalog', () => {
     ]);
     expect(defaultViewNames('kanban')[0]).toBe('Kanban');
     expect(defaultViewNames('list')[0]).toBe('List');
-    expect(coordinatorName('MKT', 'en')).toBe('Hermes MKT Coordinator');
+    expect(coordinatorName('MKT', 'en')).toBe('Coordinator MKT');
     expect(defaultRoleName('en')).toBe('Member');
     expect(blockedLabelNames()[0]).toBe('Blocked');
   });
@@ -88,7 +89,7 @@ describe('default names catalog', () => {
     expect(presetIssueTypes('general', 'de')).toEqual([
       { key: 'task', name: 'Aufgabe', color: '#0ea5e9' },
     ]);
-    expect(coordinatorName('VOL', 'de')).toBe('Hermes-Koordinator VOL');
+    expect(coordinatorName('VOL', 'de')).toBe('Koordinator VOL');
     expect(defaultRoleName('de')).toBe('Mitglied');
   });
 

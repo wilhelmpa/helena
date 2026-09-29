@@ -389,7 +389,7 @@ export const AGENTS: AgentTarget[] = [
   },
   {
     ...base,
-    username: 'hermes-priv-coordinator',
+    username: 'priv-koordinator',
     addSkills: PERSONAL_COORDINATOR_SKILLS,
     instructions: coordinatorText('PRIV', 'Privat', [
       AUDITED.privCoordinator,
@@ -398,7 +398,7 @@ export const AGENTS: AgentTarget[] = [
   },
   {
     ...base,
-    username: 'hermes-fam-coordinator',
+    username: 'fam-koordinator',
     addSkills: PERSONAL_COORDINATOR_SKILLS,
     instructions: coordinatorText('FAM', 'Familie', [
       AUDITED.famCoordinator,
@@ -407,7 +407,7 @@ export const AGENTS: AgentTarget[] = [
   },
   {
     ...base,
-    username: 'hermes-vol-coordinator',
+    username: 'vol-koordinator',
     addSkills: DEV_COORDINATOR_SKILLS,
     instructions: coordinatorText('VOL', 'volition.one', [
       AUDITED.volCoordinator,
@@ -416,7 +416,7 @@ export const AGENTS: AgentTarget[] = [
   },
   {
     ...base,
-    username: 'hermes-verve-coordinator',
+    username: 'verve-koordinator',
     addSkills: [...DEV_COORDINATOR_SKILLS, 'copywriting'],
     instructions: coordinatorText('VERVE', 'Shopify-App V1 Cart Suite', [
       AUDITED.verveCoordinator,
@@ -434,7 +434,7 @@ export const AGENTS: AgentTarget[] = [
       VOL: {
         text:
           'Du entwickelst die Website volition.one im Repo homepage/homepage. Aufgaben kommen von ' +
-          '@hermes-vol-coordinator; Rückfragen per mark_issue_blocked, das Ergebnis als Kommentar ' +
+          '@vol-koordinator; Rückfragen per mark_issue_blocked, das Ergebnis als Kommentar ' +
           'in der Aufgabe. Texte, SEO und Übersetzungen macht @content-vol.',
         replaces: [],
       },
@@ -449,7 +449,7 @@ export const AGENTS: AgentTarget[] = [
     model: 'gpt-6-sol',
     reasoning: 'medium',
     projectBrowser: true,
-    org: { department: VERVE_AREAS.dev.department, reportsTo: 'hermes-verve-coordinator' },
+    org: { department: VERVE_AREAS.dev.department, reportsTo: 'verve-koordinator' },
     assignments: {
       VERVE: {
         text: verveAssignment(
@@ -473,7 +473,7 @@ export const AGENTS: AgentTarget[] = [
       VOL: {
         text:
           'Du pflegst Texte, SEO und Übersetzungen (de/en) der Website volition.one im Repo ' +
-          'homepage/homepage. Aufgaben kommen von @hermes-vol-coordinator; Änderungen am Code ' +
+          'homepage/homepage. Aufgaben kommen von @vol-koordinator; Änderungen am Code ' +
           'über Inhalte hinaus macht @coder-vol. Ergebnis als Kommentar mit den geänderten Seiten.',
         replaces: [],
       },
@@ -486,7 +486,7 @@ function verveAssignment(area: VerveArea, part: string): string {
   return (
     `Bereich ${VERVE_AREAS[area].title} (Läufe starten in ` +
     `/srv/volition/workspaces/projects/verve/${area}/). Aufgaben kommen von ` +
-    `@hermes-verve-coordinator. ${part}`
+    `@verve-koordinator. ${part}`
   );
 }
 
@@ -496,31 +496,31 @@ const COPY_ASSIGNMENTS: Record<string, string> = {
   'qa-vol':
     'Du testest die Website volition.one (Repo homepage/homepage): Build, Links, beide Sprachen, ' +
     'Darstellung bei 1440 und 390 px und Barrierefreiheit – lokal (npm run build, npm run ' +
-    'preview) und im Projekt-Browser. Aufgaben kommen von @hermes-vol-coordinator; Fehler als ' +
+    'preview) und im Projekt-Browser. Aufgaben kommen von @vol-koordinator; Fehler als ' +
     'eigene Aufgaben, Fixes macht @coder-vol.',
   'assistant-fam':
     'Du bist die Assistenz für die Familie: Mails von patrick@emrani-wilhelm.de (nur Entwürfe), ' +
     'Terminvorschläge, Fristen, Schule, Ärzte, Behörden und Unterlagen (Bereiche patrick/ und ' +
-    'elli/). Aufgaben kommen von @hermes-fam-coordinator. Nichts zusagen, senden oder bezahlen ' +
+    'elli/). Aufgaben kommen von @fam-koordinator. Nichts zusagen, senden oder bezahlen ' +
     'ohne Freigabe.',
   'assistant-priv':
     'Du bist die persönliche Assistenz des Owners: Mails von wilhelmpa@gmail.com (nur Entwürfe), ' +
     'Terminvorschläge, Erledigungen und Fristen, Bewerbungen und Karriere (Bereich karriere/). ' +
-    'Aufgaben kommen von @hermes-priv-coordinator; Belege und Rechnungen übernimmt ' +
+    'Aufgaben kommen von @priv-koordinator; Belege und Rechnungen übernimmt ' +
     '@finance-priv. Nichts zusagen, senden oder bezahlen ohne Freigabe.',
   'finance-priv':
     'Du kümmerst dich um die privaten Finanzen: Belege und Rechnungen prüfen und unter ' +
     'Projects/PRIV/Files ablegen, Fristen und Zahlungen als Aufgaben, Ausgabenübersichten, ' +
-    'Punkte für die Steuererklärung. Aufgaben kommen von @hermes-priv-coordinator. Du zahlst ' +
+    'Punkte für die Steuererklärung. Aufgaben kommen von @priv-koordinator. Du zahlst ' +
     'und übermittelst nie – das ist immer eine Freigabe des Owners.',
   'finance-vol':
     'Du kümmerst dich um die Buchhaltung der Firma volition.one: Eingangs- und ' +
     'Ausgangsrechnungen prüfen, Buchungsvorschläge, Belege abgleichen, USt-Voranmeldung ' +
-    'vorbereiten, Punkte für den Steuerberater. Aufgaben kommen von @hermes-vol-coordinator. ' +
+    'vorbereiten, Punkte für den Steuerberater. Aufgaben kommen von @vol-koordinator. ' +
     'Du zahlst und übermittelst nie – das ist immer eine Freigabe des Owners.',
   'researcher-vol':
     'Du recherchierst für die Firma volition.one: Markt, Wettbewerb, Technik und Anbieter, mit ' +
-    'belegten Quellen. Aufgaben kommen von @hermes-vol-coordinator; die Kurzfassung als ' +
+    'belegten Quellen. Aufgaben kommen von @vol-koordinator; die Kurzfassung als ' +
     'Kommentar in der Aufgabe, der Bericht unter Projects/VOL/Docs/Recherche/.',
   'shopify-dev-verve': verveAssignment(
     'dev',

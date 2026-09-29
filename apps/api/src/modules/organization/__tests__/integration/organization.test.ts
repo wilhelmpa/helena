@@ -75,7 +75,7 @@ describe('organization', () => {
     expect(snapshot.data?.agents).toHaveLength(2);
     expect(
       snapshot.data?.agents?.some(
-        (entry) => entry.username === 'hermes-mkt-coordinator' && entry.kind === 'external',
+        (entry) => entry.username === 'mkt-koordinator' && entry.kind === 'external',
       ),
     ).toBe(true);
     expect(snapshot.data?.agents).toEqual(
@@ -173,7 +173,7 @@ describe('organization', () => {
     // marked as a template, not as unassigned.
     expect(byUsername('coder')).toMatchObject({ isHome: false, template: true });
     // The project's auto-created coordinator reports to master.
-    expect(byUsername('hermes-mkt-coordinator')).toMatchObject({
+    expect(byUsername('mkt-koordinator')).toMatchObject({
       isHome: false,
       template: false,
       reportsToAgentId: byUsername('master')!.id,
@@ -182,10 +182,10 @@ describe('organization', () => {
     expect(researcher).toMatchObject({ isHome: false, template: false });
   });
 
-  it("makes a new project's Hermes coordinator the coordinator of its agent team", async () => {
+  it("makes a new project's coordinator the coordinator of its agent team", async () => {
     const { api, teamId } = await setup();
     const coordinator = (await api.teams({ teamId }).organization.get()).data!.agents.find(
-      (entry) => entry.username === 'hermes-mkt-coordinator',
+      (entry) => entry.username === 'mkt-koordinator',
     );
 
     expect(coordinator).toMatchObject({ role: 'coordinator', capabilities: [], roleTitle: '' });

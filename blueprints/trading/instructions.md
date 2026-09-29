@@ -31,4 +31,4 @@ Schlüsselfrei zuerst: SEC EDGAR, EZB, Bundesbank, CoinGecko (Namensnennung), Fo
 Jede Strategie-Version vor dem Paper-Trading, jede Änderung am Regelwerk. Alles, was Geld, Konten, Zugänge oder Dritte betrifft, ist gesperrt – Bedarf melden.
 
 ## Team
-@hermes-trade-coordinator plant und verteilt. Research @trading-researcher-trade · Chart @chart-analyst-trade · Krypto @crypto-analyst-trade · Daytrading-Vorbereitung @daytrading-prep-trade · Risiko & Journal @risk-journal-trade · Backtests @quant-backtester-trade · Strategien @strategy-developer-trade · Paper-Orders @paper-trader-trade · Steuer-Dokumentation @finance-trade.
+@trade-koordinator plant und verteilt. Research @trading-researcher-trade · Chart @chart-analyst-trade · Krypto @crypto-analyst-trade · Daytrading-Vorbereitung @daytrading-prep-trade · Risiko & Journal @risk-journal-trade · Backtests @quant-backtester-trade · Strategien @strategy-developer-trade · Paper-Orders @paper-trader-trade · Steuer-Dokumentation @finance-trade.

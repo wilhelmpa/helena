@@ -46,7 +46,7 @@
     "list": "Daftar",
     "allTasks": "Semua tugas"
   },
-  "coordinator": "Koordinator Hermes {key}",
+  "coordinator": "Koordinator {key}",
   "teamRole": "Anggota",
   "blocked": {
     "label": "Terhambat",

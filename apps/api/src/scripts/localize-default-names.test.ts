@@ -20,7 +20,7 @@ async function names(api: Api, projectKey: string) {
     types: project.issueTypes.map((type) => type.name),
     views: views.map((view) => view.name),
     labels: project.labels.map((entry) => entry.name),
-    coordinator: agents.data!.find((agent) => agent.username.endsWith('-coordinator'))!.name,
+    coordinator: agents.data!.find((agent) => agent.username.endsWith('-koordinator'))!.name,
     roles: roles.data!.map((role) => role.name),
   };
 }
@@ -67,7 +67,7 @@ describe('localize default names', () => {
       ['issueType', 'Research', 'Recherche'],
       ['view', 'Kanban', 'Board'],
       ['view', 'List', 'Liste'],
-      ['coordinator', 'Hermes MKT Coordinator', 'Hermes-Koordinator MKT'],
+      ['coordinator', 'Coordinator MKT', 'Koordinator MKT'],
       ['label', 'Blocked', 'Blockiert'],
       ['role', 'Member', 'Mitglied'],
     ]);
@@ -92,7 +92,7 @@ describe('localize default names', () => {
       types: ['Feature', 'Bug', 'Task', 'Technische Schulden', 'Recherche', 'Aufgabe'],
       views: ['Board', 'Liste'],
       labels: ['Blockiert'],
-      coordinator: 'Hermes-Koordinator MKT',
+      coordinator: 'Koordinator MKT',
       roles: ['Mitglied'],
     });
     // An owner who speaks English keeps the English names.

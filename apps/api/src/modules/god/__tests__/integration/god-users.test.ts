@@ -72,7 +72,7 @@ describe('god users', () => {
       expect(agents.data?.items).toEqual(
         expect.arrayContaining([
           expect.objectContaining({ id: agentUserId, isAgent: true }),
-          expect.objectContaining({ name: 'Hermes MKT Coordinator', isAgent: true }),
+          expect.objectContaining({ name: 'Coordinator MKT', isAgent: true }),
         ]),
       );
 
@@ -81,7 +81,7 @@ describe('god users', () => {
         expect.arrayContaining([
           expect.objectContaining({ id: god.id, isAgent: false }),
           expect.objectContaining({ id: agentUserId, isAgent: true }),
-          expect.objectContaining({ name: 'Hermes MKT Coordinator', isAgent: true }),
+          expect.objectContaining({ name: 'Coordinator MKT', isAgent: true }),
         ]),
       );
     });

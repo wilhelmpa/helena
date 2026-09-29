@@ -139,9 +139,9 @@ describe('agent key names', () => {
     const project = (await asOwner.projects.post({ key: 'HOMEPAGE', name: 'Homepage' })).data!;
 
     const coordinator = await bootstrapProjectCoordinator(project.id);
-    expect(coordinator?.agent.username).toBe('hermes-homepage-coordinator');
+    expect(coordinator?.agent.username).toBe('homepage-koordinator');
     expect(coordinator?.apiKey).toEqual(expect.any(String));
-    expect(await keyNames(coordinator!.agent.userId)).toEqual(['agent:Hermes HOMEPAGE Coordinato']);
+    expect(await keyNames(coordinator!.agent.userId)).toEqual(['agent:Coordinator HOMEPAGE']);
     expect(await keyWorks(coordinator!.apiKey!)).toBe(true);
   });
 });
