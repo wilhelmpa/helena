@@ -48,7 +48,8 @@ function fixture({ existing = false, descriptor = false } = {}) {
   };
   const fetchImpl = async (url, init = {}) => {
     assert.equal(init.headers["x-api-key"], config.planApiKey);
-    const pathname = new URL(url).pathname;
+    const parsed = new URL(url);
+    const pathname = parsed.pathname + parsed.search;
     const method = init.method ?? "GET";
     if (method === "GET" && pathname === "/teams/1/ai-agents") return json(200, state.agent ? [state.agent] : []);
     if (method === "GET" && pathname === "/teams/1/ai-agents?projectId=7") return json(200, state.agent ? [state.agent] : []);
@@ -107,6 +108,18 @@ describe("ensurePlanCoordinator", () => {
     assert.equal(f.state.created, 0);
     assert.equal(f.state.rotated, 0);
     assert.equal(f.state.writes, 0);
+  });
+
+  it("does not create a second coordinator when the project role has the old handle", async () => {
+    const f = fixture({ existing: true, descriptor: true });
+    f.state.agent.username = "hermes-sysqa-coordinator";
+    f.state.organization.agents[0].role = "coordinator";
+    await assert.rejects(
+      () => ensurePlanCoordinator(config, project, f),
+      /handle requires migration/,
+    );
+    assert.equal(f.state.created, 0);
+    assert.equal(f.state.rotated, 0);
   });
 
   it("rewrites an old coordinator descriptor and organization identity with its existing key", async () => {

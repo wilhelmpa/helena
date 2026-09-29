@@ -65,3 +65,22 @@ test('the block before the markers is replaced where it is still Helena’s, and
 
   assert.equal(withContextBlock('', block), `${block}\n`);
 });
+
+test('a legacy coordinator context is renewed only for the same project and agent', async () => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'volition-context-'));
+  const coordinator = {id: 'qa-koordinator', planAgentId: 21, workspace: root};
+  const args = [{planUrl: 'https://helena.example.com/'}, {project}, coordinator, {containerPath: '/projects/qa'}];
+  const contextPath = path.join(root, 'PROJECT.json');
+  try {
+    await writeProjectContext(...args);
+    const original = JSON.parse(await fs.readFile(contextPath, 'utf8'));
+    await fs.writeFile(contextPath, JSON.stringify({...original, coordinatorId: 'hermes-qa-coordinator', coordinatorAgentId: undefined}));
+    await writeProjectContext(...args);
+    const renewed = JSON.parse(await fs.readFile(contextPath, 'utf8'));
+    assert.equal(renewed.coordinatorId, 'qa-koordinator');
+    assert.equal(renewed.coordinatorAgentId, 21);
+    await writeProjectContext(...args);
+    await fs.writeFile(contextPath, JSON.stringify({...original, coordinatorAgentId: 99}));
+    await assert.rejects(() => writeProjectContext(...args), /unrelated PROJECT.json/);
+  } finally { await fs.rm(root, {recursive: true, force: true}); }
+});

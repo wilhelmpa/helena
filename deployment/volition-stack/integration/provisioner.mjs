@@ -512,6 +512,7 @@ export function createProvisioner(config, options = {}) {
     const coordinator = planCoordinator
       ? {
           id: planCoordinator.username,
+          planAgentId: planCoordinator.planAgentId,
           workspace: workspace.hostPath,
           hermesHome: path.join(config.hermesHome, "profiles", workspace.slug),
         }

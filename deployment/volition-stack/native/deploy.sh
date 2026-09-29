@@ -351,6 +351,15 @@ if [[ -f $site ]] && grep -qxF -- "$studio" "$site"; then
   fi
 fi
 
+rename_coordinators=false
+if [[ -z $rollback_to ]] && changed apps/api/src/scripts/rename-project-coordinators.ts \
+  apps/api/src/scripts/bootstrap-home-agent.ts \
+  deployment/volition-stack/integration/plan-coordinator.mjs \
+  deployment/volition-stack/integration/project-context.mjs; then
+  rename_coordinators=true
+  systemctl stop volition-provisioning.service
+fi
+
 if changed packages/db/drizzle && [[ -n $rollback_to ]]; then
   echo "NOTE: the rolled-back commit changed migrations; the database keeps them (the backup"
   echo "  written before them is named in: journalctl -u volition-plan-migrate.service)"
@@ -361,6 +370,15 @@ elif changed packages/db/drizzle; then
     bash -c "cd '$live' && /usr/local/bin/bun --env-file=/etc/volition/plan.env apps/api/src/scripts/convert-documents-to-vault.ts"
   echo "migrating the database"
   systemctl start volition-plan-migrate.service
+fi
+
+# Provisioning must not consume queued jobs until the coordinator handles and the
+# stored project identities have been migrated. Its next run renews descriptors
+# and PROJECT.json for the same agent and project.
+if $rename_coordinators; then
+  runuser -u volition-plan -- \
+    bash -c "cd '$live' && /usr/local/bin/bun --env-file=/etc/volition/plan.env apps/api/src/scripts/rename-project-coordinators.ts --apply"
+  restart+=(volition-provisioning.service)
 fi
 
 # Syncthing syncs the vault with the owner's devices. Its setup writes the API key the
