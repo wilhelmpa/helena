@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import type { WidgetInstance } from '@/utils/dashboardWidgets';
@@ -11,7 +12,6 @@ import TradingWatchlist from './TradingWatchlist';
 import TradingTakt from './TradingTakt';
 import TradingDataWidget from './TradingDataWidget';
 import type { TradingWidgetId } from '@/lib/api/endpoints/trading';
-import styles from './TradingDashboard.module.css';
 import { Text } from '@/design-system';
 
 export default function ProjectPluginWidget({
@@ -22,6 +22,9 @@ export default function ProjectPluginWidget({
   projectKey: string;
 }) {
   const t = useTranslations('dashboards.trading');
+  // The account chosen from a widget's own "choose an account" prompt; the saved choice
+  // (the widget's settings while editing) is `widget.config.credentialId`.
+  const [picked, setPicked] = useState<number | undefined>();
   const slots = usePluginUiSlotsQuery();
   const pluginWidget = (slots.data ?? [])
     .map((slot) => pluginDashboardWidget(slot, 'project'))
@@ -48,7 +51,9 @@ export default function ProjectPluginWidget({
           id={id}
           projectKey={projectKey}
           period="today"
-          credentialId={widget.config?.credentialId}
+          credentialId={picked ?? widget.config?.credentialId}
+          onCredentialChange={setPicked}
+          framed={false}
         />
       );
     if (!data.data)
@@ -57,24 +62,10 @@ export default function ProjectPluginWidget({
           {t('loading')}
         </Text>
       );
-    if (pluginWidget.id.endsWith(':kpis'))
-      return (
-        <div className={styles.trading}>
-          <TradingKpis data={data.data} period="today" />
-        </div>
-      );
+    if (pluginWidget.id.endsWith(':kpis')) return <TradingKpis data={data.data} period="today" />;
     if (pluginWidget.id.endsWith(':watchlist'))
-      return (
-        <div className={styles.trading}>
-          <TradingWatchlist data={data.data} period="today" />
-        </div>
-      );
-    if (pluginWidget.id.endsWith(':takt'))
-      return (
-        <div className={styles.trading}>
-          <TradingTakt data={data.data} />
-        </div>
-      );
+      return <TradingWatchlist data={data.data} period="today" framed={false} />;
+    if (pluginWidget.id.endsWith(':takt')) return <TradingTakt data={data.data} framed={false} />;
   }
   if (pluginWidget.view.kind !== 'frame') return null;
   const src = new URL(pluginWidget.view.url);

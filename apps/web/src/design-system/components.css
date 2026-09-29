@@ -2341,6 +2341,9 @@ a.ds-run-card:hover {
 .ds-grid[data-min='fit'] {
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
 }
+.ds-grid[data-min='figure'] {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
 .ds-grid[data-cols='2'] {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
@@ -3043,4 +3046,91 @@ a.ds-run-card:hover {
 .ds-inherited[data-state='inherited'] {
   color: var(--text-3);
   font-size: 12px;
+}
+
+/* ── A line over time (TimeSeriesChart) ─────────────────────────────────── */
+.ds-timeseries {
+  width: 100%;
+  height: 240px;
+  aspect-ratio: auto;
+}
+.ds-timeseries-tip {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface-1);
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--text) 10%, transparent);
+  color: var(--text-2);
+  font-size: 12px;
+}
+.ds-timeseries-tip strong {
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 520;
+}
+
+/* ── A notice inside a page or card (components/Notice.tsx) ──────────────── */
+.ds-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-lg);
+  background: var(--surface-2);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+.ds-notice[data-tone='danger'] {
+  background: color-mix(in srgb, var(--danger) 8%, var(--surface-1));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--danger) 35%, transparent);
+}
+.ds-notice[data-tone='warning'] {
+  background: color-mix(in srgb, var(--status-waiting) 10%, var(--surface-1));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--status-waiting) 40%, transparent);
+}
+.ds-notice-icon {
+  display: inline-flex;
+  flex: none;
+  margin-top: 1px;
+  color: var(--text-3);
+}
+.ds-notice[data-tone='danger'] .ds-notice-icon {
+  color: var(--danger);
+}
+.ds-notice[data-tone='warning'] .ds-notice-icon {
+  color: var(--status-waiting);
+}
+.ds-notice-icon svg {
+  width: 16px;
+  height: 16px;
+}
+.ds-notice-body {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+.ds-notice-title {
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 520;
+}
+.ds-notice-text {
+  color: var(--text-2);
+  font-size: 13px;
+  line-height: 1.45;
+}
+.ds-notice-action {
+  flex: none;
+}
+@media (max-width: 599px) {
+  .ds-notice {
+    flex-wrap: wrap;
+  }
+  .ds-notice-action {
+    width: 100%;
+  }
 }

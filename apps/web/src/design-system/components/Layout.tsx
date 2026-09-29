@@ -132,7 +132,8 @@ export function Inline({
 }
 
 // A responsive grid of cards: as many columns of at least `min` as fit (a gallery; `fit`
-// shares the row among however many there are, like the dashboard's figures), a fixed
+// shares the row among however many there are, like the dashboard's figures; `figure` does
+// the same for long figures such as money, one per row on a phone), a fixed
 // number of equal columns, or `split` (a main column and a side column, 2:1). Every fixed
 // layout becomes one column below 900px.
 export function Grid({
@@ -143,7 +144,7 @@ export function Grid({
   ...props
 }: BoxProps & {
   gap?: Space;
-  min?: 'tile' | 'card' | 'wide' | 'fit';
+  min?: 'tile' | 'card' | 'wide' | 'fit' | 'figure';
   columns?: 2 | 3 | 4;
   split?: boolean;
 }) {

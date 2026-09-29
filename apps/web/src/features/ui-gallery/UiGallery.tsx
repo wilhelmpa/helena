@@ -2,7 +2,18 @@
 
 import { useState, type CSSProperties, type ReactNode } from 'react';
 import { useTranslations } from 'next-intl';
-import { Bot, FileText, Inbox, Plus, Settings2, Target, Trash2, Upload } from 'lucide-react';
+import {
+  Bot,
+  CircleAlert,
+  FileText,
+  Inbox,
+  OctagonAlert,
+  Plus,
+  Settings2,
+  Target,
+  Trash2,
+  Upload,
+} from 'lucide-react';
 import {
   ActionMenu,
   Badge,
@@ -21,6 +32,7 @@ import {
   ListGroup,
   ListRow,
   MonoLabel,
+  Notice,
   Orb,
   Pill,
   PillButton,
@@ -42,6 +54,7 @@ import {
   TextField,
   Th,
   Tip,
+  TimeSeriesChart,
   Tr,
   type Space,
   StatusBox,
@@ -262,6 +275,29 @@ function Blocks() {
             <Text tone="muted">{t('selected')}</Text>
           </Card>
         </Grid>
+        {/* Notice: a state the reader must not miss, inside a page or a card. */}
+        <Stack gap={3}>
+          <Notice title={t('cardTitle')}>{t('hint')}</Notice>
+          <Notice tone="warning" icon={<CircleAlert />} title={t('cardTitle')}>
+            {t('hint')}
+          </Notice>
+          <Notice tone="danger" icon={<OctagonAlert />} title={t('cardTitle')}>
+            {t('hint')}
+          </Notice>
+        </Stack>
+        {/* TimeSeriesChart: one line over time (the equity curve of the trading dashboard). */}
+        <Card title={t('cardTitle')}>
+          <TimeSeriesChart
+            label={t('cardTitle')}
+            tone="success"
+            points={Array.from({ length: 24 }, (_, i) => ({
+              x: Date.UTC(2026, 8, 1 + i),
+              y: 1000 + i * 12 + Math.round(Math.sin(i / 2) * 40),
+            }))}
+            formatX={(x) => new Date(x).toISOString().slice(5, 10)}
+            formatY={(y) => String(y)}
+          />
+        </Card>
       </Section>
 
       <Section title={t('lists')}>

@@ -260,7 +260,201 @@
     "unavailable": "Widget plugin tidak tersedia.",
     "vetoState": "Veto",
     "signalState": "Sinyal",
-    "period": "Periode"
+    "period": "Periode",
+    "widgets": {
+      "updatedAt": "Per {time}",
+      "refresh": "Muat ulang",
+      "connection": {
+        "label": "Akun paper",
+        "choose": "Pilih akun",
+        "loading": "Memuat koneksi …",
+        "none": "Tidak ada koneksi paper."
+      },
+      "problem": {
+        "title": "Tidak ada data",
+        "connectionTitle": "Akun paper tidak ada",
+        "selectConnection": "Belum ada akun paper yang dipilih untuk dasbor ini, atau akun yang dipilih sudah tidak ada. Pilih akun yang datanya ditampilkan di sini.",
+        "noConnection": "Proyek ini belum punya koneksi paper. Tambahkan di Alat → Alpaca Paper.",
+        "connectionUnavailable": "Koneksi paper tidak dapat dijangkau. Periksa di Alat → Alpaca Paper.",
+        "notPaper": "Hanya akun paper yang ditampilkan. Koneksi ini bukan akun paper dan tidak pernah diakses.",
+        "provider": "Alpaca (paper) tidak menjawab (HTTP {status}). Tampilan mencoba lagi setiap 30 detik.",
+        "providerDown": "Server tidak menjawab. Tampilan mencoba lagi setiap 30 detik.",
+        "ordersIncomplete": "Daftar order hari ini tidak lengkap (lebih dari 500 order). Angka tidak ditampilkan sampai daftar lengkap.",
+        "historyIncomplete": "Riwayat akun tidak lengkap sehingga tidak ditampilkan.",
+        "noAccess": "Anda tidak punya hak untuk data ini (baca dasbor dan baca alat).",
+        "generic": "Data trading tidak dapat dimuat.",
+        "retry": "Coba lagi",
+        "retrying": "Memuat …"
+      },
+      "approval": {
+        "none": "Belum disetujui",
+        "pending": "Persetujuan menunggu",
+        "approved": "Disetujui",
+        "rejected": "Ditolak"
+      },
+      "account": {
+        "title": "Akun",
+        "paper": "Paper · bukan uang sungguhan",
+        "active": "Trading aktif",
+        "haltedTitle": "Trading dihentikan",
+        "haltedOwner": "Anda memblokir entri baru (blokir pada koneksi).",
+        "haltedBroker": "Broker memblokir trading untuk akun ini.",
+        "haltedStatus": "Akun tidak aktif (status {status}).",
+        "haltedHint": "Entri baru diblokir; menutup dan membatalkan tetap bisa.",
+        "missingTitle": "Batas belum diatur",
+        "missingText": "Batas ini belum diatur pada koneksi: {names}. Selama belum diatur, setiap order baru ditolak.",
+        "missing": {
+          "maxOrderValueUsd": "Nilai order",
+          "maxPositionValueUsd": "Nilai posisi",
+          "maxRiskPerTradeUsd": "Risiko per transaksi",
+          "dailyLossLimitUsd": "Kerugian harian"
+        },
+        "equity": "Nilai akun",
+        "equityNote": "termasuk posisi terbuka",
+        "cash": "Kas",
+        "buyingPower": "Daya beli",
+        "dayPnl": "Hasil hari ini",
+        "dayPnlNote": "{percent} sejak penutupan kemarin",
+        "dayPnlNone": "tidak ada pembanding",
+        "limitsTitle": "Batas dan pemakaian",
+        "limits": {
+          "dayLoss": "Kerugian harian",
+          "orders": "Order hari ini",
+          "open": "Posisi terbuka",
+          "largest": "Posisi terbesar",
+          "order": "Nilai order tertinggi",
+          "risk": "Risiko tertinggi per transaksi",
+          "of": "{used} dari {limit}",
+          "max": "paling banyak {limit}"
+        },
+        "symbols": "Simbol yang diizinkan: {symbols}",
+        "symbolsAll": "Semua simbol diizinkan",
+        "cryptoOn": "Kripto diizinkan",
+        "cryptoOff": "Kripto tidak diizinkan"
+      },
+      "positions": {
+        "title": "Posisi terbuka",
+        "empty": "Tidak ada posisi terbuka.",
+        "symbol": "Simbol",
+        "qty": "Jumlah",
+        "entry": "Entri",
+        "price": "Harga",
+        "pnl": "Hasil",
+        "stop": "Stop pelindung",
+        "noStop": "Tanpa stop",
+        "strategy": "Strategi",
+        "noStrategy": "tanpa strategi"
+      },
+      "orders": {
+        "title": "Order",
+        "scope": "Tampilkan order",
+        "scopes": {
+          "open": "Terbuka",
+          "today": "Hari ini",
+          "recent": "Terbaru"
+        },
+        "empty": {
+          "open": "Tidak ada order terbuka.",
+          "today": "Belum ada order hari ini.",
+          "recent": "Belum ada order."
+        },
+        "symbol": "Simbol",
+        "side": "Sisi",
+        "kind": "Jenis",
+        "qty": "Jumlah",
+        "price": "Harga",
+        "statusLabel": "Status",
+        "time": "Diterima",
+        "strategy": "Strategi",
+        "noStrategy": "tanpa strategi",
+        "journal": "Jurnal",
+        "limit": "Limit",
+        "stopPrice": "Stop",
+        "atMarket": "harga pasar",
+        "sides": {
+          "buy": "Beli",
+          "sell": "Jual"
+        },
+        "type": {
+          "market": "Pasar",
+          "limit": "Limit",
+          "stop": "Stop",
+          "stop_limit": "Stop limit",
+          "trailing_stop": "Stop mengikuti"
+        },
+        "status": {
+          "filled": "Terisi",
+          "partially_filled": "Terisi sebagian",
+          "new": "Terbuka",
+          "accepted": "Diterima",
+          "pending_new": "Sedang diterima",
+          "held": "Ditahan",
+          "canceled": "Dibatalkan",
+          "expired": "Kedaluwarsa",
+          "replaced": "Diganti",
+          "done_for_day": "Selesai untuk hari ini",
+          "rejected": "Ditolak",
+          "suspended": "Ditangguhkan",
+          "stopped": "Dihentikan"
+        }
+      },
+      "history": {
+        "title": "Riwayat hasil",
+        "periodMeta": {
+          "today": "Hari ini, setiap 5 menit",
+          "week": "Minggu ini, tiap jam",
+          "pilot": "Sejak proyek dimulai, harian"
+        },
+        "empty": "Belum ada riwayat: dalam periode ini ada kurang dari dua nilai akun.",
+        "current": "Nilai akun",
+        "change": {
+          "today": "Hari ini",
+          "week": "Minggu ini",
+          "pilot": "Sejak proyek dimulai"
+        },
+        "chart": "Nilai akun dari waktu ke waktu"
+      },
+      "strategies": {
+        "title": "Strategi dan persetujuan",
+        "empty": "Belum ada strategi di pengetahuan proyek.",
+        "openApprovals": "Persetujuan menunggu: {count}",
+        "grantedApprovals": "Diberikan: {count}",
+        "strategy": "Strategi",
+        "version": "Versi",
+        "statusLabel": "Status",
+        "approval": "Persetujuan",
+        "backtest": "Backtest",
+        "openBacktest": "Buka backtest",
+        "noBacktest": "tanpa backtest",
+        "noteMissing": "Catatan hilang",
+        "decided": "pada {date}",
+        "requested": "diminta pada {date}",
+        "status": {
+          "entwurf": "Draf",
+          "trockenlauf": "Uji kering",
+          "paper": "Paper"
+        }
+      },
+      "decisions": {
+        "title": "Keputusan",
+        "empty": "Belum ada keputusan pada periode ini.",
+        "vetos": "Veto: {count}",
+        "total": "Keputusan: {count}",
+        "class": "Kelas",
+        "jev": "Jev",
+        "local": "Lokal",
+        "other": "Lainnya",
+        "fallback": "Cadangan",
+        "safe": "{count} yakin",
+        "unsure": "{count} ragu",
+        "legend": "Yakin: model cukup yakin dan memutuskan. Ragu: model tidak yakin dan pertanyaan diteruskan. Cadangan: jawaban datang dari koneksi cadangan.",
+        "classes": {
+          "news": "Menyortir berita",
+          "rules": "Memeriksa aturan",
+          "routing": "Membagi tugas"
+        }
+      }
+    }
   },
   "agentCosts": {
     "tokens": "{tokens} token",

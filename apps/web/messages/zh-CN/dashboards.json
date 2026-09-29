@@ -260,7 +260,201 @@
     "unavailable": "插件组件不可用。",
     "vetoState": "否决",
     "signalState": "信号",
-    "period": "期间"
+    "period": "期间",
+    "widgets": {
+      "updatedAt": "截至 {time}",
+      "refresh": "重新加载",
+      "connection": {
+        "label": "模拟账户",
+        "choose": "选择账户",
+        "loading": "正在加载连接 …",
+        "none": "没有可用的模拟连接。"
+      },
+      "problem": {
+        "title": "暂无数据",
+        "connectionTitle": "缺少模拟账户",
+        "selectConnection": "此仪表板尚未选择模拟账户，或所选账户已不存在。请选择要在此显示其数据的账户。",
+        "noConnection": "此项目尚未设置模拟连接。请在“工具 → Alpaca Paper”中添加。",
+        "connectionUnavailable": "无法访问模拟连接。请在“工具 → Alpaca Paper”中检查。",
+        "notPaper": "只显示模拟账户。此连接不是模拟账户，绝不会被查询。",
+        "provider": "Alpaca（模拟）没有响应（HTTP {status}）。页面每 30 秒重试一次。",
+        "providerDown": "服务器没有响应。页面每 30 秒重试一次。",
+        "ordersIncomplete": "今日订单列表不完整（超过 500 笔订单）。在完整之前不显示任何数字。",
+        "historyIncomplete": "账户历史不完整，因此不予显示。",
+        "noAccess": "您没有查看这些数据的权限（读取仪表板和工具）。",
+        "generic": "无法加载交易数据。",
+        "retry": "重试",
+        "retrying": "加载中 …"
+      },
+      "approval": {
+        "none": "未批准",
+        "pending": "待批准",
+        "approved": "已批准",
+        "rejected": "已拒绝"
+      },
+      "account": {
+        "title": "账户",
+        "paper": "模拟 · 非真实资金",
+        "active": "交易正常",
+        "haltedTitle": "交易已暂停",
+        "haltedOwner": "您已禁止新开仓（连接上的暂停开关）。",
+        "haltedBroker": "经纪商已禁止此账户交易。",
+        "haltedStatus": "账户未激活（状态 {status}）。",
+        "haltedHint": "新开仓被禁止；平仓和撤单仍可进行。",
+        "missingTitle": "缺少限额",
+        "missingText": "连接中未设置这些限额：{names}。缺少期间，所有新订单都会被拒绝。",
+        "missing": {
+          "maxOrderValueUsd": "订单金额",
+          "maxPositionValueUsd": "持仓金额",
+          "maxRiskPerTradeUsd": "单笔风险",
+          "dailyLossLimitUsd": "每日亏损"
+        },
+        "equity": "账户价值",
+        "equityNote": "含未平仓头寸",
+        "cash": "现金",
+        "buyingPower": "购买力",
+        "dayPnl": "今日结果",
+        "dayPnlNote": "较昨日收盘 {percent}",
+        "dayPnlNone": "无对比值",
+        "limitsTitle": "限额与使用情况",
+        "limits": {
+          "dayLoss": "每日亏损",
+          "orders": "今日订单",
+          "open": "未平仓头寸",
+          "largest": "最大头寸",
+          "order": "最高订单金额",
+          "risk": "单笔最高风险",
+          "of": "{used} / {limit}",
+          "max": "最多 {limit}"
+        },
+        "symbols": "允许的代码：{symbols}",
+        "symbolsAll": "允许所有代码",
+        "cryptoOn": "允许加密货币",
+        "cryptoOff": "不允许加密货币"
+      },
+      "positions": {
+        "title": "未平仓头寸",
+        "empty": "没有未平仓头寸。",
+        "symbol": "代码",
+        "qty": "数量",
+        "entry": "入场价",
+        "price": "现价",
+        "pnl": "结果",
+        "stop": "保护止损",
+        "noStop": "无止损",
+        "strategy": "策略",
+        "noStrategy": "无策略"
+      },
+      "orders": {
+        "title": "订单",
+        "scope": "显示订单",
+        "scopes": {
+          "open": "未成交",
+          "today": "今日",
+          "recent": "最近"
+        },
+        "empty": {
+          "open": "没有未成交订单。",
+          "today": "今天还没有订单。",
+          "recent": "还没有订单。"
+        },
+        "symbol": "代码",
+        "side": "方向",
+        "kind": "类型",
+        "qty": "数量",
+        "price": "价格",
+        "statusLabel": "状态",
+        "time": "收到时间",
+        "strategy": "策略",
+        "noStrategy": "无策略",
+        "journal": "日志",
+        "limit": "限价",
+        "stopPrice": "止损价",
+        "atMarket": "按市价",
+        "sides": {
+          "buy": "买入",
+          "sell": "卖出"
+        },
+        "type": {
+          "market": "市价",
+          "limit": "限价",
+          "stop": "止损",
+          "stop_limit": "止损限价",
+          "trailing_stop": "跟踪止损"
+        },
+        "status": {
+          "filled": "已成交",
+          "partially_filled": "部分成交",
+          "new": "未成交",
+          "accepted": "已接受",
+          "pending_new": "接受中",
+          "held": "已扣留",
+          "canceled": "已撤销",
+          "expired": "已过期",
+          "replaced": "已替换",
+          "done_for_day": "今日已结束",
+          "rejected": "已拒绝",
+          "suspended": "已暂停",
+          "stopped": "已停止"
+        }
+      },
+      "history": {
+        "title": "结果走势",
+        "periodMeta": {
+          "today": "今日，每 5 分钟",
+          "week": "本周，每小时",
+          "pilot": "自项目开始，每日"
+        },
+        "empty": "暂无走势：此时段内账户价值少于两个。",
+        "current": "账户价值",
+        "change": {
+          "today": "今日",
+          "week": "本周",
+          "pilot": "自项目开始"
+        },
+        "chart": "账户价值走势"
+      },
+      "strategies": {
+        "title": "策略与批准",
+        "empty": "项目知识库中还没有策略。",
+        "openApprovals": "待批准：{count}",
+        "grantedApprovals": "已批准：{count}",
+        "strategy": "策略",
+        "version": "版本",
+        "statusLabel": "状态",
+        "approval": "批准",
+        "backtest": "回测",
+        "openBacktest": "打开回测",
+        "noBacktest": "无回测",
+        "noteMissing": "缺少笔记",
+        "decided": "{date}",
+        "requested": "{date} 申请",
+        "status": {
+          "entwurf": "草稿",
+          "trockenlauf": "试运行",
+          "paper": "模拟"
+        }
+      },
+      "decisions": {
+        "title": "决策",
+        "empty": "此时段内还没有决策。",
+        "vetos": "否决：{count}",
+        "total": "决策：{count}",
+        "class": "类别",
+        "jev": "Jev",
+        "local": "本地",
+        "other": "其他",
+        "fallback": "备用",
+        "safe": "{count} 确定",
+        "unsure": "{count} 不确定",
+        "legend": "确定：模型足够确定并作出了决定。不确定：模型不确定，问题被转交。备用：答案来自备用连接。",
+        "classes": {
+          "news": "新闻分类",
+          "rules": "检查规则",
+          "routing": "任务分配"
+        }
+      }
+    }
   },
   "agentCosts": {
     "tokens": "{tokens} 令牌",
