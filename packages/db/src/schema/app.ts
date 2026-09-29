@@ -1086,6 +1086,22 @@ export const agentChatThread = pgTable(
   ],
 );
 
+// The conversation the member last chose in Home or one project. A null thread is
+// an explicit new chat; deleting a thread also clears the reference automatically.
+export const volitionActiveChat = pgTable(
+  'volition_active_chat',
+  {
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    scope: text('scope').notNull(),
+    threadId: text('thread_id').references(() => agentChatThread.id, { onDelete: 'set null' }),
+    agentId: integer('agent_id').references(() => aiAgent.id, { onDelete: 'set null' }),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.scope] })],
+);
+
 // The non-secret model catalog an external runner publishes for one agent. The
 // The external runner stays authoritative and Plan only stores the choices the chat may
 // present. A runner refreshes this row periodically and after startup.

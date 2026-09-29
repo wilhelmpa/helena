@@ -4,7 +4,13 @@ import { authContext } from '#shared/auth-context';
 import { HttpError } from '#shared/lib';
 import { errors } from '#shared/responses';
 import { getMembership } from '#modules/members/service';
-import { PreferencePatch, PreferenceResponse } from './model';
+import {
+  ActiveChatLocationSchema,
+  ActiveChatQuery,
+  PreferencePatch,
+  PreferenceResponse,
+} from './model';
+import { getActiveChat, setActiveChat } from './active-chat';
 import { getPreferences, isValidTimezone, updatePreferences } from './service';
 import { localeFromAcceptLanguage } from './locale';
 
@@ -20,6 +26,26 @@ export const userPreferenceRoutes = new Elysia({
   detail: { tags: ['Settings'] },
 })
   .use(authContext)
+
+  .get(
+    '/account/active-chat',
+    ({ user, query }) => getActiveChat(requireUser(user).id, query.scope),
+    {
+      query: ActiveChatQuery,
+      response: { 200: ActiveChatLocationSchema, ...errors(400, 401, 404) },
+      detail: { summary: 'Get the current user’s active chat in a scope' },
+    },
+  )
+  .put(
+    '/account/active-chat',
+    ({ user, query, body }) => setActiveChat(requireUser(user).id, query.scope, body),
+    {
+      query: ActiveChatQuery,
+      body: ActiveChatLocationSchema,
+      response: { 200: ActiveChatLocationSchema, ...errors(400, 401, 404) },
+      detail: { summary: 'Remember the current user’s active chat in a scope' },
+    },
+  )
 
   .get(
     '/account/preferences',

@@ -70,3 +70,9 @@ export const PreferencePatch = t.Object({
   hotkeys: t.Optional(HotkeyCombosSchema),
   homeDashboard: t.Optional(HomeDashboardSchema),
 });
+
+export const ActiveChatQuery = t.Object({ scope: t.String({ minLength: 4, maxLength: 120 }) });
+export const ActiveChatLocationSchema = t.Object({
+  agentId: t.Nullable(t.Number()),
+  threadId: t.Nullable(t.String()),
+});

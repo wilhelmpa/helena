@@ -52,6 +52,7 @@ export interface ChatThreadViewProps {
   // The text typed into a new chat so far, kept by the workspace across agent picks.
   newChatDraft: { current: string };
   onThreadCreated: (threadId: string) => void;
+  onActivity: (threadId: string) => void;
   onThreadDeleted: (threadId: string) => void;
   onNewChat: (agentId: number) => void;
   onOpenList: () => void;
@@ -79,6 +80,7 @@ export default function ChatThreadView({
   threadId,
   newChatDraft,
   onThreadCreated,
+  onActivity,
   onThreadDeleted,
   onNewChat,
   onOpenList,
@@ -134,6 +136,17 @@ export default function ChatThreadView({
   const tool = activeTool(plan.messages, plan.status);
   const choices = activity === 'answered' ? pendingChoices(plan.messages) : null;
   const lastMessageId = plan.messages.at(-1)?.id ?? null;
+  const lastMessageRole = plan.messages.at(-1)?.role ?? null;
+  useEffect(() => {
+    if (!threadId || !lastMessageId) return;
+    if (
+      plan.status === 'submitted' ||
+      plan.status === 'streaming' ||
+      (plan.status === 'ready' && lastMessageRole === 'assistant')
+    ) {
+      onActivity(threadId);
+    }
+  }, [threadId, lastMessageId, lastMessageRole, plan.status, onActivity]);
   // A local model fell back to the configured one on the last answer: the chip says who
   // really answered (owner, 28.09.).
   const lastAnswer = plan.messages.findLast((message) => message.role === 'assistant');
@@ -378,6 +391,7 @@ export default function ChatThreadView({
           }
           onSend={(text, options, metadata) => {
             setQueuePaused(false);
+            if (threadId) onActivity(threadId);
             void plan.send(text, options, metadata);
           }}
           onStop={() => void plan.stop()}

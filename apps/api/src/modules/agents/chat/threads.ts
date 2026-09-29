@@ -1,5 +1,5 @@
-import { db, agentChatThread } from '@repo/db';
-import { and, eq, isNotNull, isNull, sql, type SQL } from 'drizzle-orm';
+import { db, agentChatThread, volitionActiveChat } from '@repo/db';
+import { and, eq, inArray, isNotNull, isNull, sql, type SQL } from 'drizzle-orm';
 import { checkPermission, type AuthUser } from '#shared/access';
 import { HttpError } from '#shared/lib';
 import { getIssueProjectId } from '#modules/issues/service';
@@ -279,6 +279,16 @@ export async function setChatPinned(
   return true;
 }
 
+async function clearActiveChats(userId: string, threadIds: string[]) {
+  if (threadIds.length === 0) return;
+  await db
+    .update(volitionActiveChat)
+    .set({ threadId: null, agentId: null })
+    .where(
+      and(eq(volitionActiveChat.userId, userId), inArray(volitionActiveChat.threadId, threadIds)),
+    );
+}
+
 // Moves the chat to the trash, where it stays restorable.
 export async function trashChat(threadId: string, userId: string): Promise<boolean> {
   const rows = await db
@@ -292,6 +302,7 @@ export async function trashChat(threadId: string, userId: string): Promise<boole
       ),
     )
     .returning({ id: agentChatThread.id });
+  if (rows.length > 0) await clearActiveChats(userId, [threadId]);
   return rows.length > 0;
 }
 
@@ -330,6 +341,10 @@ export async function trashAllChats(
     )
     RETURNING id
   `)) as unknown as { id: string }[];
+  await clearActiveChats(
+    userId,
+    rows.map((row) => row.id),
+  );
   return rows.length;
 }
 
