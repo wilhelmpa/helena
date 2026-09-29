@@ -1,10 +1,15 @@
-import { Elysia } from 'elysia';
+import { Elysia, t } from 'elysia';
 import { aiAgent, agentRun, db } from '@repo/db';
 import { and, eq } from 'drizzle-orm';
 import { tradingQuestions, type TradingDecisionKind } from '@helena/trading';
 import { authContext } from '#shared/auth-context';
 import { guards } from '#shared/guards';
-import { assertMcpEnabled, requireProjectAccess, requireUser } from '#shared/access';
+import {
+  assertMcpEnabled,
+  requireProjectAccess,
+  requireTeamPermission,
+  requireUser,
+} from '#shared/access';
 import { HttpError } from '#shared/lib';
 import { isMcpRequest } from '#shared/mcp-request';
 import { commonErrors, errors } from '#shared/responses';
@@ -20,9 +25,11 @@ import {
   strategyApprovalBody,
   tradingDashboardQuery,
   TradingDashboardResponse,
+  tradingWidgetsQuery,
 } from './model';
 import { assertClassificationShape, classificationInput } from './classify-input';
 import { tradingDashboardData } from './dashboard';
+import { tradingWidgetData } from './widget-data';
 
 // The trading decisions as one agent tool (docs/helena-decisions/trading.md §6): sort a news
 // item, check a planned trade against one written rule, or route a task. The questions are
@@ -51,6 +58,24 @@ async function runOf(header: string | null, agentId: number | null): Promise<num
 export const tradingRoutes = new Elysia({ name: 'trading', detail: { tags: ['Trading'] } })
   .use(authContext)
   .use(guards)
+  .get(
+    '/projects/:projectKey/trading/widgets',
+    async ({ project, user, query }) => {
+      await requireTeamPermission(project.teamId, user, 'agent_tools', 'read');
+      return tradingWidgetData(project, query.period ?? 'today', query.credentialId);
+    },
+    {
+      permission: ['dashboards', 'read'],
+      feature: 'dashboards',
+      params: tradingProjectParams,
+      query: tradingWidgetsQuery,
+      response: {
+        200: t.Record(t.String(), t.Object({ data: t.Any(), error: t.Nullable(t.String()) })),
+        ...commonErrors,
+      },
+      detail: { summary: 'Read paper Trading widgets' },
+    },
+  )
   .get(
     '/projects/:projectKey/trading/dashboard',
     ({ project, query }) =>

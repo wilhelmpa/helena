@@ -96,6 +96,15 @@ export interface AlpacaNewsItem {
   url: string;
 }
 
+export interface AlpacaPortfolioHistory {
+  timestamp: number[];
+  equity: Array<number | null>;
+  profit_loss: Array<number | null>;
+  profit_loss_pct: Array<number | null>;
+  base_value?: number;
+  timeframe?: string;
+}
+
 export interface NewOrder {
   symbol: string;
   side: 'buy' | 'sell';
@@ -168,6 +177,16 @@ export class AlpacaPaperClient {
 
   account(): Promise<AlpacaAccount> {
     return this.call('trading', '/v2/account');
+  }
+
+  portfolioHistory(query: {
+    period?: '1D' | '1W';
+    start?: string;
+    timeframe: '5Min' | '1H' | '1D';
+  }): Promise<AlpacaPortfolioHistory> {
+    return this.call('trading', '/v2/account/portfolio/history', {
+      query: { ...query, extended_hours: 'false' },
+    });
   }
 
   positions(): Promise<AlpacaPosition[]> {

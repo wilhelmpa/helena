@@ -7,6 +7,11 @@ export const tradingDashboardQuery = t.Object({
   period: t.Optional(t.Union([t.Literal('today'), t.Literal('week'), t.Literal('pilot')])),
 });
 
+export const tradingWidgetsQuery = t.Object({
+  period: t.Optional(t.Union([t.Literal('today'), t.Literal('week'), t.Literal('pilot')])),
+  credentialId: t.Optional(t.Numeric({ minimum: 1 })),
+});
+
 export const TradingDashboardResponse = t.Object({
   signals: t.Object({ count: t.Number(), note: t.Nullable(t.String()) }),
   vetos: t.Object({ count: t.Number(), note: t.Nullable(t.String()) }),

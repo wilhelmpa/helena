@@ -63,6 +63,7 @@ export interface WidgetConfig {
   // agent_health and webhook_health — the window in days
   days?: number;
   pluginWidgetId?: string;
+  credentialId?: number;
 }
 
 export interface WidgetInstance {

@@ -14,6 +14,7 @@ import {
   projectViewFolder,
 } from '@repo/db';
 import { and, desc, eq, inArray, sql } from 'drizzle-orm';
+import { isDeepStrictEqual } from 'node:util';
 import { nextFireTime } from '#modules/engine/schedules';
 import {
   hypotheticalPercent,
@@ -22,7 +23,7 @@ import {
   type TradingPeriod,
 } from './dashboard-values';
 
-const tradingLayout = [
+export const tradingLayout = [
   {
     id: 'trading-kpis',
     type: 'plugin',
@@ -53,17 +54,45 @@ const tradingLayout = [
     h: 10,
     config: { pluginWidgetId: 'plugin:helena.trading:takt' },
   },
+  ...(
+    [
+      ['account', 'Konto', 0, 13, 6, 6],
+      ['positions', 'Offene Positionen', 6, 13, 6, 6],
+      ['orders', 'Orders', 0, 19, 6, 8],
+      ['history', 'Ergebnis-Verlauf', 6, 19, 6, 8],
+      ['strategies', 'Strategien & Freigaben', 0, 27, 6, 8],
+      ['decisions', 'Entscheidungen', 6, 27, 6, 8],
+    ] as const
+  ).map(([id, title, x, y, w, h]) => ({
+    id: `trading-${id}`,
+    type: 'plugin',
+    title,
+    x,
+    y,
+    w,
+    h,
+    config: { pluginWidgetId: `plugin:helena.trading:${id}` },
+  })),
 ];
 
 export async function ensureTradingDashboard(projectId: number): Promise<void> {
   await db.transaction(async (tx) => {
     await tx.execute(sql`SELECT pg_advisory_xact_lock(${projectId}, 31)`);
     const [existing] = await tx
-      .select({ id: projectDashboard.id })
+      .select({ id: projectDashboard.id, layout: projectDashboard.layout })
       .from(projectDashboard)
       .where(and(eq(projectDashboard.projectId, projectId), eq(projectDashboard.name, 'Trading')))
       .limit(1);
-    if (existing) return;
+    if (existing) {
+      const layout = existing.layout as { id?: string }[];
+      if (Array.isArray(layout) && isDeepStrictEqual(layout, tradingLayout.slice(0, 3))) {
+        await tx
+          .update(projectDashboard)
+          .set({ layout: tradingLayout })
+          .where(eq(projectDashboard.id, existing.id));
+      }
+      return;
+    }
     const [{ position }] = await tx
       .select({ position: sql<number>`COALESCE(MAX(${projectDashboard.position}) + 1, 0)` })
       .from(projectDashboard)
