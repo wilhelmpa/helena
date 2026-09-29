@@ -1534,6 +1534,13 @@
       "when": 1790706689175,
       "tag": "0219_volition_profile_import",
       "breakpoints": true
+    },
+    {
+      "idx": 220,
+      "version": "7",
+      "when": 1790707846694,
+      "tag": "0220_volition_learned_skills",
+      "breakpoints": true
     }
   ]
 }

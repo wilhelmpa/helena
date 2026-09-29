@@ -391,3 +391,95 @@ test('native session paging and search do not count inaccessible private chats',
   expect((await views.get({ query: { q: 'private-hidden' } })).data).toEqual({ hits: [] });
   expect((await views({ sessionId: privateSession }).get({ query: {} })).status).toBe(404);
 });
+
+test('native skills survive switching to Hermes, its reports and a switch back', async () => {
+  const { api, agent, teamId, agentId } = await setup();
+  await agent['agent-runtime'].skills.put({ skill, baseRevision: null });
+  const owner = api.teams({ teamId })['ai-agents']({ agentId });
+  await owner.patch({ runtimePolicy: { ...policy, runtime: 'hermes' } });
+  expect(
+    (
+      await agent['agent-runtime'].status.post({
+        adapter: 'hermes',
+        status: 'online',
+        appliedRevision: 'legacy',
+        capabilities: [],
+        detail: null,
+        learnedSkills: [],
+      })
+    ).status,
+  ).toBe(200);
+  await owner.patch({ runtimePolicy: policy });
+  expect((await agent['agent-runtime'].skills.get()).data![0]!.files).toEqual(skill.files);
+  expect((await agent['agent-runtime'].policy.get()).data!.skills).toContainEqual(
+    expect.objectContaining({ slug: 'learned/deploy' }),
+  );
+});
+
+test('native and imported private chats remain hidden from another team manager', async () => {
+  const { api, agent, teamId, agentId } = await setup();
+  const other = await signUpTestUser({ name: 'Other manager' });
+  const invitation = await api
+    .teams({ teamId })
+    .invites.post({ email: other.email, role: 'manager' });
+  const otherApi = authedApi(other.cookie);
+  expect((await otherApi.invites({ token: invitation.data!.token }).accept.post()).status).toBe(
+    200,
+  );
+  const chat = await api
+    .teams({ teamId })
+    ['ai-agents']({ agentId })
+    .chat.post({ prompt: 'Private owner note' });
+  const threadId = chat.data!.threadId;
+  const native = (await agent['agent-runtime'].sessions.post({ kind: 'chat', threadId })).data!.id;
+  const claimed = (await agent['agent-chats'].claim.post()).data!.message!;
+  expect(
+    (
+      await agent['agent-chats']({ messageId: claimed.id }).result.post(
+        { status: 'success' },
+        { query: { claim: claimed.attempts } },
+      )
+    ).status,
+  ).toBe(204);
+  const imported = await api
+    .teams({ teamId })
+    ['ai-agents']({ agentId })
+    ['profile-import'].post({
+      sourceKey: 'private-owner',
+      apply: true,
+      memory: [],
+      skills: [],
+      sessions: [
+        {
+          id: 'legacy-private',
+          kind: 'chat',
+          threadId,
+          model: null,
+          startedAt: '2026-09-29T10:00:00Z',
+          updatedAt: '2026-09-29T10:00:00Z',
+          items: [
+            {
+              role: 'user',
+              content: 'Private import',
+              text: 'Private import',
+              timestamp: '2026-09-29T10:00:00Z',
+            },
+          ],
+        },
+      ],
+    });
+  expect(imported.status).toBe(200);
+  const importedId = imported.data!.sessions[0]!.sessionId;
+  const foreign = otherApi.teams({ teamId })['ai-agents']({ agentId }).runtime.sessions;
+  expect((await foreign.get({ query: {} })).data).toMatchObject({
+    page: { total: 0, sessions: [] },
+  });
+  expect((await foreign({ sessionId: native }).get({ query: {} })).status).toBe(404);
+  expect((await foreign({ sessionId: importedId }).get({ query: {} })).status).toBe(404);
+  const own = await api
+    .teams({ teamId })
+    ['ai-agents']({ agentId })
+    .runtime.sessions({ sessionId: importedId })
+    .get({ query: {} });
+  expect(own.status).toBe(200);
+});

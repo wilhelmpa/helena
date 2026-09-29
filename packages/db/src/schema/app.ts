@@ -625,6 +625,7 @@ export const aiAgent = pgTable(
     // The content of the skills the agent created in its runtime, from the same report.
     // Kept apart from runtime_state, which every read of the agent returns.
     runtimeLearnedSkills: jsonb('runtime_learned_skills').notNull().default([]),
+    volitionLearnedSkills: jsonb('volition_learned_skills').notNull().default([]),
     // The member who created the agent. An external agent's runner authenticates
     // with the agent's key, so `owner` scope means the runner only receives runs
     // this member triggered; `team` scope, the default, means any member's.

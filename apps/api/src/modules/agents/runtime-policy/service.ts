@@ -462,7 +462,7 @@ export async function reportRuntimeState(
   };
   await db.transaction(async (tx) => {
     const [agent] = await tx
-      .select({ policy: aiAgent.runtimePolicy, skills: aiAgent.runtimeLearnedSkills })
+      .select({ policy: aiAgent.runtimePolicy, skills: aiAgent.volitionLearnedSkills })
       .from(aiAgent)
       .where(eq(aiAgent.id, agentId))
       .for('update');

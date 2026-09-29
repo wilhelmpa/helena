@@ -74,7 +74,7 @@ async function store(tx: Transaction, agent: typeof aiAgent.$inferSelect, skills
   await tx
     .update(aiAgent)
     .set({
-      runtimeLearnedSkills: skills,
+      volitionLearnedSkills: skills,
       runtimeState: {
         ...state,
         inventory: {
@@ -91,7 +91,7 @@ async function store(tx: Transaction, agent: typeof aiAgent.$inferSelect, skills
 
 export async function listNativeSkills(agentId: number) {
   const [agent] = await db
-    .select({ skills: aiAgent.runtimeLearnedSkills })
+    .select({ skills: aiAgent.volitionLearnedSkills })
     .from(aiAgent)
     .where(eq(aiAgent.id, agentId));
   return nativeSkills(agent?.skills)
@@ -109,7 +109,7 @@ export async function saveNativeSkill(
     const agent = await lockedAgent(tx, agentId);
     if ((agent.runtimePolicy as AgentRuntimePolicy).learning === false)
       throw new HttpError(403, 'Learning is disabled');
-    const skills = nativeSkills(agent.runtimeLearnedSkills);
+    const skills = nativeSkills(agent.volitionLearnedSkills);
     const index = skills.findIndex((entry) => entry.path === skill.path);
     const current = skills[index];
     if ((current ? skillRevision(current) : null) !== baseRevision)
@@ -125,7 +125,7 @@ export async function saveNativeSkill(
 export async function nativeSkillAction(agentId: number, path: string, pinned: boolean | null) {
   return db.transaction(async (tx) => {
     const agent = await lockedAgent(tx, agentId);
-    const skills = nativeSkills(agent.runtimeLearnedSkills);
+    const skills = nativeSkills(agent.volitionLearnedSkills);
     const skill = skills.find((entry) => entry.path === path && !entry.archived);
     if (!skill) throw new HttpError(404, 'Learned skill not found');
     if (pinned === null) skill.archived = true;
@@ -138,7 +138,7 @@ export async function nativeCurator(agentId: number, run: boolean) {
   return db.transaction(async (tx) => {
     const agent = await lockedAgent(tx, agentId);
     const paused = (agent.runtimePolicy as AgentRuntimePolicy).curator !== true;
-    const skills = nativeSkills(agent.runtimeLearnedSkills);
+    const skills = nativeSkills(agent.volitionLearnedSkills);
     const archived: string[] = [];
     if (run && !paused) {
       const seen = new Set<string>();
@@ -179,7 +179,7 @@ export async function applyNativeSkillActions(agentId: number): Promise<void> {
       )
       .orderBy(asc(agentRuntimeAction.id));
     if (!actions.length) return;
-    const skills = nativeSkills(agent.runtimeLearnedSkills);
+    const skills = nativeSkills(agent.volitionLearnedSkills);
     for (const action of actions) {
       const skill = skills.find((entry) => entry.path === action.target);
       if (!skill) {

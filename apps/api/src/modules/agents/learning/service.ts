@@ -65,12 +65,19 @@ function toSnapshot(row: StoredAction): RuntimeActionSnapshot {
 
 async function runtimeOf(agentId: number) {
   const [row] = await db
-    .select({ state: aiAgent.runtimeState, learned: aiAgent.runtimeLearnedSkills })
+    .select({
+      state: aiAgent.runtimeState,
+      learned: aiAgent.runtimeLearnedSkills,
+      nativeLearned: aiAgent.volitionLearnedSkills,
+      policy: aiAgent.runtimePolicy,
+    })
     .from(aiAgent)
     .where(eq(aiAgent.id, agentId));
   if (!row) throw new HttpError(404, 'Agent not found');
   const inventory = (row.state as { inventory?: AgentRuntimeInventory | null }).inventory ?? null;
-  return { inventory, learned: Array.isArray(row.learned) ? (row.learned as LearnedSkill[]) : [] };
+  const learned =
+    (row.policy as { runtime?: string }).runtime === 'helena' ? row.nativeLearned : row.learned;
+  return { inventory, learned: Array.isArray(learned) ? (learned as LearnedSkill[]) : [] };
 }
 
 export async function listRuntimeActions(agentId: number): Promise<RuntimeActionRow[]> {

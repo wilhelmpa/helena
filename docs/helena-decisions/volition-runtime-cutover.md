@@ -1,77 +1,128 @@
-# Native runtime cutover: blocked integration candidate
+# Native runtime cutover
 
-Task 113 prepares `hub/zentrale-laufzeit-4` from Release 11 and the incoming
-`hub/zentrale-laufzeit-3`. Keep `HELENA_NATIVE_RUNTIME` off until the missing behavior,
-acceptance tests and UI work below are complete. This branch is not a release approval.
+Keep `HELENA_NATIVE_RUNTIME` disabled on the live instance until Claude accepts the
+backend evidence and completes the outstanding UI. Task 113d makes no deployment or live
+configuration change. The rollout order is Home, coordinators, specialists.
 
-## Missing behavior
+## Native functions
 
-| Requirement | Current implementation | Work before acceptance |
+| Function | Entry point | Behavior |
 | --- | --- | --- |
-| Finished Release 11 fixes | `hub/rel-11-fix` still points at `c32d9f7c5` during task 113; task 112 has uncommitted corrections and an unfinished repeated API run | Integrate the committed result of task 112 before the complete test and acceptance run |
-| Learned skills | `packages/runner/src/helena-runtime.ts` rejects skill actions; `packages/agent-runtime/src/tools/builtin.ts` only loads supplied skills | Native creation, revision, pin/discard and policy handling; preserve script/reference files; prove learning and reuse |
-| Readable native sessions | `apps/api/src/modules/agents/runtime-views/index.ts` asks runtime readers; `packages/runner/src/readers/index.ts` registers only Hermes, Claude and Codex | Read native sessions and transcripts with existing project/chat-owner access checks; expose imported histories without requiring Hermes |
-| Persistent agent instructions | `instructionsOf()` in the native adapter selects only `SOUL.md` | Apply the configured `AGENTS.md` and relevant instruction contributions without duplicating generated context |
-| Profile migration | No Hermes-to-native importer exists | Dry-run by default; explicit profile-to-agent mapping; source snapshots unchanged; idempotence, concurrent-import protection, collision handling and access-preserving session links |
-| Cloud fallback | `KEY_PROVIDERS` has API-key providers; `modelChain()` skips unknown providers, including `openai-codex`; subscription escalation uses a separate follow-up agent | Explicitly map subscription fallbacks to authorized Claude/Codex agents, retain context and cancellation, prove refusal/unavailability inside the sandbox |
-| Bulk runtime selection | Per-agent runtime policy exists | Authorized bulk operation preserving unrelated settings, active-run behavior and a saved per-agent rollback mapping |
-| Model catalog without Hermes | `volition-hermes-catalog.py` imports Hermes modules even for native model catalog construction | Native catalog/provisioning path that works after Hermes removal |
+| Learned skills | `GET/PUT /agent-runtime/skills`, `learn_skill`, existing owner runtime actions | Revision-checked creation and editing; full text script/reference files; pin and archive; originals remain stored |
+| Curator | Existing curator views and requests | Paused unless enabled; archives exact unpinned duplicates; pinned and distinct skills remain |
+| Histories | Existing owner `/runtime/sessions` routes; native runner reader | Lists, searches and pages native/imported transcripts; project and private-chat access checked before paging |
+| Instructions | Runtime policy SOUL and native configuration | SOUL, configured instruction files including AGENTS, agent instructions, project-wide organization and member instructions, context contributions; Hermes-specific operating instructions stay runtime-specific |
+| Runtime selection | `POST /teams/:teamId/ai-agents/runtime-selection` | Dry-run by default; apply requires the returned revision; refuses outstanding runs/chats; preserves model and unrelated policy fields; returns exact rollback mapping |
+| Profile import | `POST /teams/:teamId/ai-agents/:agentId/profile-import` | Team manager only; atomic per profile; dry-run by default; source journal and agent lock make simultaneous retries idempotent; conflicts fail without overwrite |
+| Catalog | Existing catalog script with `VOLITION_NATIVE_CATALOG=on` | System Python, native-policy local models and configured API/subscription models; no Hermes Python modules; native tool discovery uses the runtime/MCP catalog |
+| Cloud fallback | Native model chain and explicit subscription runtime fallback | API-key models run in the loop; `openai-codex` becomes an authorized Codex handover, `claude-code` a Claude handover; API retains project context and cancellation |
 
-## Remaining Hermes dependencies
+Native learned skills have their own `ai_agent.volition_learned_skills` storage; Hermes
+inventory reports cannot overwrite them during rollback. Migration 0219 adds import
+provenance and its journal; 0220 separates native skills from the external-runtime report
+cache. MEMORY/USER revisions and native session rows remain available across runtime changes.
 
-The task evidence `113-hermes-references.txt` lists all files matching `hermes`
-case-insensitively in runner, API, web, SDK, database source and the deployment stack,
-excluding dedicated test directories and test files; it is a textual inventory, not proof
-that dynamically constructed or externally installed references have been discovered.
+The native catalog reads Home's desired runtime from `/agent-runtime/policy`, including
+while the catalog still serves a mixed runtime fleet. Its native-only mode refuses Hermes
+descriptors. Retain the existing mixed runner until the specialist stage is complete.
+New `VOLITION_*` configuration names identify the native catalog; existing compatibility
+paths and descriptor keys keep their names until the separate global renaming step.
 
-| Area | Main paths | Removal step | Rollback |
-| --- | --- | --- | --- |
-| Runner and profiles | `packages/runner/src/{adapters,presets,runtimes,hermes-profile,hermes-settings,local-ai,learning}.ts`, `readers/hermes*`, `limits/hermes.ts` | Retire adapter/profile/readers only after native parity and migration acceptance | Retained Hermes package and unchanged profiles; restore saved agent runtime policies |
-| Catalog and bootstrap | `deployment/volition-stack/integration/scripts/volition-hermes-{catalog.py,bootstrap,runner}` | Separate native catalog and provisioning from Hermes imports | Restore previous scripts and catalog generation |
-| Token keeper | `deployment/volition-stack/native/token-keeper/` | Remove only Hermes views/refresh paths after independent Claude/Codex credentials work | Restore Hermes views from the retained keeper configuration |
-| Updates | `apps/api/src/modules/updates/sources/hermes.ts`, `apps/api/src/modules/runtime-admin/{index,hermes-update}.ts`, `deployment/volition-stack/native/hermes-update/` | Remove Hermes registration/routes/update unit after final retirement | Restore previous registry/routes/unit definitions |
-| Units | `deployment/volition-stack/{integration,native}/systemd/volition-hermes-runner.service`, integration bootstrap service/timer | Replace provisioning and runner units; retire Hermes bootstrap last | Restore old unit definitions and prior runtime descriptors |
-| Isolation | `deployment/volition-stack/isolation/launcher.json`, launcher/configuration code | Retain native/Claude/Codex bindings and priority sockets; remove Hermes runtime/auth binds only after sandbox proof | Restore previous launcher configuration and retained Hermes profile binds |
-| API defaults and capabilities | `apps/api/src/modules/agents/`, `runtime-admin/`, `updates/`, `packages/sdk/src/` | Native default, explicit transition runtime, capability-based operations | Restore each agent's saved runtime/model/policy, not a global forced default |
-| UI and translations | `apps/web/src/components/helena/RuntimePicker.tsx`, agent/runtime/settings features, `apps/web/messages/` | Claude supplies design-system controls and native feature views, then removes transition texts | Previous UI bundle while the compatibility API remains available |
+## Import procedure
 
-## Order for Claude after the blockers are resolved
+Prepare a closed, checkpointed, private copy of each profile. Do not point the importer at
+an active profile. The script opens SQLite read-only, refuses WAL snapshots, symlinks,
+invalid UTF-8, incomplete skills and oversized data, and never changes source files.
+Its supported input is `memories/{MEMORY,USER}.md` (or root files), learned skill directories
+outside `plan-managed`, and `state.db` with Hermes `sessions`/`messages` tables; a
+`sessions.json` export is also accepted. Resolve unsupported files instead of dropping them.
 
-1. Commit and integrate the finished task-112 fixes, reconcile any later migration collision,
-   and pass the requested suites on a private Postgres through `heavy.sh`.
-2. Complete native learning, session views, instructions, bulk selection, migration and
-   fallback; test import twice, conflicting/newer native data, partial failures, file
-   preservation and cross-user/project access with synthetic profiles.
-3. Run coding 12, browser 20, German text and class evaluations sequentially under
-   `flock ~/agent-work/halogen-bench.lock`, through the priority proxy as `background`,
-   with the same Hermes/Flash fixtures; record per-turn input tokens, first answer latency
-   and tool failures; stop immediately on a Halogen failure.
-4. Finish the design-system UI and screenshot acceptance for skills, MEMORY/USER, SOUL,
-   AGENTS.md, learning/dreaming, session histories and bulk runtime selection.
-5. Schedule a cutover window, drain active work, save the database and each agent's full
-   runtime/model/policy mapping, and retain consistent Hermes profile snapshots and the
-   previous release; run the completed importer in dry-run mode and resolve every conflict.
-6. Through the normal release procedure, apply the reconciled migration and release the API,
-   engine, runner bundle, catalog/provisioner and isolation definitions together, with native
-   runtime still disabled; apply the approved import and verify its second pass is unchanged.
-7. Enable native runtime for selected canary agents on
-   `helena-halogen/halogen-qwen3.8-flash-next`; prove chat, tools, learning, resume, approvals,
-   compression, costs, claims/budgets, persistent orders, Telegram and cloud fallback before
-   the remaining agents move; keep Claude/Codex escalation agents on their own runtimes.
-8. After owner acceptance of that state, remove the Hermes dependencies in the table and
-   archive the originals; on failure before retirement, drain native work and restore the
-   saved per-agent settings plus the previous runtime stack, retaining native histories
-   separately because no reverse history migration has been implemented.
+Create a private mapping outside the repository, for example:
 
-No step in this sequence has been executed on the live system by task 113.
+```json
+[
+  {
+    "sourceKey": "profile-home-snapshot-2026-09-29",
+    "profile": "/private/snapshots/home",
+    "teamId": 1,
+    "agentId": 10,
+    "sessions": {
+      "legacy-private-chat-id": { "threadId": "existing-owner-thread-id" }
+    }
+  }
+]
+```
 
-## Validation at handover
+The importer finds existing run and chat links by the original session ID and accepts
+explicit `runId`/`threadId` links only when they belong to the target agent. Private chats
+without their original owner thread are refused. Unlinked terminal histories are available
+only to people who administer the whole team. Originals, titles/content on the source and
+all native messages are retained; no reverse export to Hermes is implemented.
 
-The private database migration passed, as did 51 runtime/runner tests, the native runtime
-package typecheck and formatting. Full Web lint finished with no errors and five warnings.
-The first API run had 16 passes and nine failures because the hardening suite did not enable
-`HELENA_NATIVE_RUNTIME`; its setup now enables and restores that flag, but the repeated API
-run is still pending. The workspace typecheck first stopped on the new fetch test double's
-missing Bun `preconnect` property; that issue is fixed and the package typecheck passes, but
-the remaining workspace checks are pending. Waiting repetitions were cancelled when task
-112 occupied the sole heavy test slot with another full API run. No model eval was started.
+Use a team manager's authorized API connection through `VOLITION_IMPORT_URL` and
+`VOLITION_IMPORT_API_KEY`, supplied through the normal credential mechanism. Never put a
+key in the mapping or command line. Run:
+
+```sh
+bun scripts/volition-profile-import.ts /private/profile-mapping.json
+bun scripts/volition-profile-import.ts /private/profile-mapping.json --apply
+bun scripts/volition-profile-import.ts /private/profile-mapping.json --apply
+```
+
+The second apply must report `unchanged`. Reusing a source key for changed source content,
+a differing existing memory/skill, or an existing session target is a conflict. An unchanged
+retry leaves newer native edits intact. Import is atomic per profile, not across the mapping;
+completed profiles can be retried after another profile failed. Reindexing follows commit.
+
+## Release and rollback sequence for Claude
+
+| Stage | Required actions and checks | Rollback |
+| --- | --- | --- |
+| Preparation | Accept 113d targeted tests, serial workspace typecheck and Flash eval evidence against 98c; complete Claude UI acceptance; reconcile subsequent migration numbers; back up DB, immutable profiles, release and full agent model/policy mappings | Retain the prior release and every original profile; no user traffic has changed |
+| Drain and import | Stop assigning new work; finish/cancel outstanding runs and chats; pause the affected runner during import so its old memory observations cannot replace the selected baseline; dry-run all mapped profiles, resolve conflicts, apply and repeat | Restore the affected agent policy/runner; imported native sessions and skill records remain stored |
+| Home | Enable the native gate only with approved code; preview and apply one Home agent; refresh the mixed catalog, which reads Home's runtime from its policy; verify real owner chat, streaming, tools, private history, resume, memory approval, compression, costs and configured cloud fallback | Drain native work, restore Home's saved model and complete runtime policy through the existing agent PATCH endpoint, regenerate the catalog and verify the previous runtime; retain native data |
+| Coordinators | Move a small group with runtime-selection; save its rollback response; verify delegation, reporting lines, claims, budgets, persistent orders, Telegram, cancellation and resume | Drain and restore the exact saved mapping for this group; do not change Home or unrelated agents |
+| Specialists | Move one project at a time; verify coding/browser tasks, project isolation, learned scripts/reference files, curator, reflection and consolidation | Restore this project's agent mappings after draining; preserve shared library links and native records |
+| Stable native operation | Owner accepts real work across all roles; keep Claude/Codex escalation agents on their own runtimes; repeat the configured cloud failure test in the installed launcher before removing its legacy bindings | Previous mixed release, descriptors and profiles remain available |
+| Native catalog | Set native catalog mode with an operator-owned `VOLITION_RUNTIME_ROOT` and copied runtime descriptors; models come from the native policy plus configured template models; verify every expected agent and the absence of catalog problems before switching runner units | Restore mixed catalog mode and prior descriptors without replacing native histories |
+
+For runtime-selection, send `{agentIds, runtime}` first, save the response, then send the
+same selection with `apply: true` and its `revision`. Any policy/model edit makes that revision
+stale. Rollback uses each saved `runtimePolicy` and `model` through the existing per-agent
+PATCH route; it is not a forced global Hermes default. Keep the native feature gate on while
+native agents remain selected.
+
+## Hermes retirement
+
+The [file inventory](volition-hermes-removal.tsv) assigns all 486 reference files from task
+113 to removal stages. It identifies source references; Claude must also inventory installed
+units, timers, credentials and dynamically generated descriptors on the target host.
+
+1. Prove native-only catalog/provisioning and its model list; retire the Hermes bootstrap
+   and runner units only after their native replacement serves every selected agent.
+2. Remove Hermes runner adapters, profile helpers, legacy session readers and API/SDK
+   compatibility paths; retain imported histories and existing authorization checks.
+3. Remove Hermes views/refresh paths from token keeper; preserve independent Claude/Codex
+   credentials and test both escalation targets without Hermes auth files.
+4. Remove Hermes update sources, update-center routes and update units/timers.
+5. Remove Hermes executable/profile/auth sandbox bindings; keep project-browser, API and
+   priority sockets and the Claude/Codex bindings. Test the installed launcher again.
+6. Claude removes transition-only UI choices/texts after the designed replacement is accepted.
+7. Archive the installation and originals after owner approval. Keep historical migrations;
+   change active defaults/constraints through a new migration, and rename legacy identifiers
+   only in the separate global renaming step.
+
+Rollback remains the saved mixed release, descriptors and exact per-agent mapping until
+retirement is explicitly approved. New native history is retained even when an agent returns
+to Hermes; it is not injected into the old Hermes transcript format.
+
+## Evidence and UI ownership
+
+Task evidence is under `~/agent-work/codex-tasks/113d-*`; the report records the exact commits,
+checks and eval results. A synthetic cloud API in a Bubblewrap user/PID/network namespace
+proves the local-server shutdown path without real cloud credentials. That test does not
+replace installed-launcher and real-credential acceptance during Claude's rollout.
+
+Claude still designs skills, memory, SOUL/AGENTS, learning/dreaming, histories and bulk
+runtime controls using the established design system and RuntimePicker. This task changes
+no visible page, style or layout, so it produces no UI screenshot acceptance.

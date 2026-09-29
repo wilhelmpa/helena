@@ -102,7 +102,7 @@ export async function importProfile(agentId: number, teamId: number, input: Bund
         throw new HttpError(409, `Existing memory differs: ${memory.file}`);
       return !current;
     });
-    const skills = nativeSkills(agent.runtimeLearnedSkills);
+    const skills = nativeSkills(agent.volitionLearnedSkills);
     const addedSkills = data.skills.filter((skill) => {
       const current = skills.find((row) => row.path === skill.path);
       if (
@@ -220,7 +220,7 @@ export async function importProfile(agentId: number, teamId: number, input: Bund
       await tx
         .update(aiAgent)
         .set({
-          runtimeLearnedSkills: learned,
+          volitionLearnedSkills: learned,
           runtimeState: {
             ...state,
             inventory: {
