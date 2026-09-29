@@ -256,7 +256,7 @@ export const localAiUpdateSource: UpdateSource = {
   order: 60,
   apply: applyWhisperUpdate,
   progress: (ref) => helperProgress(ref),
-  hosts: ['github.com', 'huggingface.co', 'ghcr.io', 'raw.githubusercontent.com'],
+  hosts: ['github.com', 'api.github.com', 'huggingface.co', 'ghcr.io', 'raw.githubusercontent.com'],
   async releaseNotes(candidate, context) {
     if (candidate.component !== 'halogen' || !candidate.available) return null;
     return changelogBetween(
@@ -269,7 +269,6 @@ export const localAiUpdateSource: UpdateSource = {
     const servers = (await listModelServers()).filter((server) => server.enabled);
     const whisper = await whisperUpdateCandidate(context);
     const candidates: UpdateCandidate[] = whisper ? [whisper] : [];
-    if (servers.length === 0) return candidates;
     const release = async (repository: string) => {
       try {
         return plain(
@@ -280,6 +279,61 @@ export const localAiUpdateSource: UpdateSource = {
         return null;
       }
     };
+    const inventory = await context.inventory();
+    const voice = inventory?.voice as
+      { qwentts?: { version?: string; present?: boolean } } | undefined;
+    const tts = voice?.qwentts;
+    if (tts && tts.present !== false) {
+      const installed = typeof tts?.version === 'string' ? tts.version : null;
+      let available: string | null = null;
+      let error: string | null = null;
+      try {
+        const latest = await context.fetchJson<{ sha?: string }>(
+          'https://api.github.com/repos/ServeurpersoCom/qwentts.cpp/commits/master',
+        );
+        available = /^[0-9a-f]{40}$/.test(latest.sha ?? '') ? latest.sha!.slice(0, 9) : null;
+      } catch (failure) {
+        error = failure instanceof Error ? failure.message : String(failure);
+      }
+      candidates.push({
+        component: 'qwentts-cpp',
+        name: 'qwentts.cpp (TTS)',
+        installed,
+        available,
+        updateAvailable: Boolean(installed && available && !installed.startsWith(available)),
+        security: false,
+        sourceUrl: 'https://github.com/ServeurpersoCom/qwentts.cpp',
+        applicable: false,
+        hint: HINT,
+        error,
+      });
+    }
+    const embedding = inventory?.embedding as { version?: string; present?: boolean } | undefined;
+    if (embedding && embedding.present !== false) {
+      const installed = typeof embedding?.version === 'string' ? embedding.version : null;
+      const available = await release('ggml-org/llama.cpp');
+      candidates.push({
+        component: 'llama-cpp-embedding',
+        name: 'llama.cpp (Embedding)',
+        installed,
+        available,
+        updateAvailable: Boolean(
+          installed &&
+          available &&
+          /^b\d+$/.test(installed) &&
+          /^b\d+$/.test(available) &&
+          Number(available.slice(1)) > Number(installed.slice(1)),
+        ),
+        security: false,
+        sourceUrl: 'https://github.com/ggml-org/llama.cpp',
+        notesUrl: available
+          ? `https://github.com/ggml-org/llama.cpp/releases/tag/${available}`
+          : null,
+        applicable: false,
+        hint: HINT,
+      });
+    }
+    if (servers.length === 0) return candidates;
     for (const server of servers.filter((entry) => entry.kind === 'halogen'))
       candidates.push(await halogenCandidate(server, context));
     const lemonade = servers.find((server) => server.kind === 'lemonade');

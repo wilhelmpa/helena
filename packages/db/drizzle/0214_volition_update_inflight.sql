@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "volition_update_action_running_source_uq" ON "helena_update_action" USING btree ("source") WHERE "helena_update_action"."state" = 'running';

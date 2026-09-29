@@ -91,7 +91,11 @@ class Log:
 
 
 def run(log: Log | None, args: list[str], *, env: dict | None = None, timeout: int = 600,
-        check: bool = True) -> subprocess.CompletedProcess:
+        check: bool = True, limited: bool = False) -> subprocess.CompletedProcess:
+    if limited and os.geteuid() == 0:
+        args = ["systemd-run", "--scope", "--wait", "--pipe", "--collect",
+                "-p", "MemoryHigh=12G", "-p", "MemoryMax=16G", "-p", "CPUWeight=20",
+                "--", *args]
     if log:
         log.note("$ " + " ".join(args))
     result = subprocess.run(args, env={**os.environ, "LC_ALL": "C", **(env or {})},
@@ -248,11 +252,11 @@ def failed_units() -> list[str]:
     return [line.split()[0] for line in result.stdout.splitlines() if line.strip()][:50]
 
 
-def whisper_status() -> dict:
+def executable_status(unit: str, pattern: str) -> dict:
     """Read only unit state and the running executable link, never argv or environment."""
     unknown = {"present": True, "version": None, "state": "unknown", "versionSource": None}
     try:
-        result = run(None, ["systemctl", "show", "helena-voice-stt.service",
+        result = run(None, ["systemctl", "show", unit,
                            "--property=LoadState,ActiveState,MainPID"], check=False, timeout=10)
         fields = dict(line.split("=", 1) for line in result.stdout.splitlines() if "=" in line)
         if fields.get("LoadState") == "not-found":
@@ -263,12 +267,17 @@ def whisper_status() -> dict:
         if result.returncode or fields.get("LoadState") != "loaded" or state != "active" or not re.fullmatch(r"[1-9][0-9]{0,9}", pid):
             return unknown
         executable = os.readlink(f"/proc/{pid}/exe")
-        match = re.fullmatch(r"/opt/helena-ai/voice/whisper-([0-9]+\.[0-9]+\.[0-9]+)/whisper-server", executable)
+        match = re.fullmatch(pattern, executable)
         if not match:
             return unknown
         return {**unknown, "version": match.group(1), "versionSource": "running-executable-path"}
     except (OSError, subprocess.TimeoutExpired):
         return unknown
+
+
+def whisper_status() -> dict:
+    return executable_status("helena-voice-stt.service",
+        r"/opt/helena-ai/voice/whisper-([0-9]+\.[0-9]+\.[0-9]+)(?:-cpu|-rocm)?/whisper-server")
 
 
 WHISPER_UI = Path('/usr/local/lib/helena-whisper-update/whisper_ui.py')
@@ -309,7 +318,13 @@ def inventory(config: dict) -> dict:
         "runtimes": runtimes_status(config),
         "tools": tools,
         "hostToolApply": list(host_tools.TOOLS),
-        "voice": {"whisper": {**whisper_status(), "update": whisper_readiness()}},
+        "voice": {
+            "whisper": {**whisper_status(), "update": whisper_readiness()},
+            "qwentts": executable_status("helena-voice-tts.service",
+                r"/opt/helena-ai/voice/qwentts-([0-9a-f]{9,40})(?:-rocm|-cpu)?/tts-server"),
+        },
+        "embedding": executable_status("helena-embed.service",
+            r"/opt/helena-ai/llamacpp/(?:rocm|vulkan)-(b[0-9]+)/llama-server"),
         "system": {
             "rebootRequired": Path("/run/reboot-required").exists(),
             "failedUnits": failed_units(),
@@ -377,11 +392,12 @@ def apply_apt(config: dict, packages: list[str], log: Log) -> dict:
     if not chosen:
         return {"upgraded": [], "skipped": skipped, "note": "nothing of it is upgradable any more"}
     before = installed_versions(chosen)
-    run(log, ["apt-get", "install", "--only-upgrade", "-y", "-q",
-              "-o", "DPkg::Lock::Timeout=600",
-              "-o", "Dpkg::Options::=--force-confdef",
-              "-o", "Dpkg::Options::=--force-confold", *chosen],
-        env=env, timeout=int(config["aptTimeoutSeconds"]))
+    with host_tools.quiet_queue(config, hold_seconds=int(config["aptTimeoutSeconds"]) + 120):
+        run(log, ["apt-get", "install", "--only-upgrade", "-y", "-q",
+                  "-o", "DPkg::Lock::Timeout=600",
+                  "-o", "Dpkg::Options::=--force-confdef",
+                  "-o", "Dpkg::Options::=--force-confold", *chosen],
+            env=env, timeout=int(config["aptTimeoutSeconds"]), limited=True)
     after = installed_versions(chosen)
     upgraded = [{"package": package, "from": before[package], "to": after[package]}
                 for package in chosen]
@@ -408,7 +424,7 @@ def apply_cli_runtime(config: dict, runtime: str, version: str, log: Log) -> dic
     with host_tools.quiet_queue(config, hold_seconds=1900):
         before = runtimes_status(config).get(runtime, {}).get("current")
         try:
-            run(log, [installer, "upgrade", runtime, version], timeout=1800)
+            run(log, [installer, "upgrade", runtime, version], timeout=1800, limited=True)
             status = runtimes_status(config).get(runtime, {})
             if status.get("current") != version or status.get("intact") is not True:
                 raise UpdateError(f"{runtime} did not pass the installed-version check")

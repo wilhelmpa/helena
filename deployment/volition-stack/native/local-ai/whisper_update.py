@@ -225,8 +225,8 @@ def build_command(source, name):
              'PrivateNetwork=yes', 'PrivateDevices=yes', 'NoNewPrivileges=yes',
              'ProtectSystem=strict', 'ProtectHome=yes', 'PrivateTmp=yes',
              'ProtectKernelTunables=yes', 'ProtectKernelModules=yes',
-             'ProtectControlGroups=yes', 'RestrictSUIDSGID=yes', 'MemoryMax=8G',
-             'CPUQuota=200%', 'TasksMax=64', 'RuntimeMaxSec=5400',
+             'ProtectControlGroups=yes', 'RestrictSUIDSGID=yes', 'MemoryHigh=12G',
+             'MemoryMax=16G', 'CPUWeight=20', 'CPUQuota=200%', 'TasksMax=64', 'RuntimeMaxSec=5400',
              f'Environment=PATH={ROCM}/bin:/usr/bin:/bin HIP_PATH={SDK} ROCM_PATH={SDK}']
     command = ['systemd-run', '--quiet', '--wait', '--pipe', '--collect', f'--unit={name}']
     for prop in props:
@@ -448,7 +448,10 @@ def acceptance(corpus, *, activate=False):
 
 def restart_stt():
     run(['systemctl', 'daemon-reload'])
-    run(['systemctl', 'restart', STT])
+    if 'DeviceAllow=/dev/kfd' in run(['systemctl', 'cat', STT]):
+        run(['/usr/local/lib/helena-ai/gpu-reset-watch', 'restart-group'])
+    else:
+        run(['systemctl', 'restart', STT])
     wait_health(LIVE_PORT)
 
 

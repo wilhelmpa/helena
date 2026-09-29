@@ -136,7 +136,7 @@ export async function helperProgress(ref: string): Promise<UpdateProgress> {
   return {
     state: status.ok ? 'done' : 'failed',
     log: status.log ?? null,
-    error: status.ok ? null : (status.error ?? 'The update failed'),
+    error: status.ok ? null : `Update fehlgeschlagen: ${status.error ?? 'Ursache unbekannt'}`,
     result: status.result ?? null,
   };
 }

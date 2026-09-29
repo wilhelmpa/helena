@@ -393,6 +393,18 @@ class HostToolsTest(unittest.TestCase):
             mock.call(home, account.pw_uid, account.pw_gid),
         ])
 
+    def test_npm_build_uses_memory_limited_scope_with_private_home(self):
+        with mock.patch.object(h.os, "geteuid", return_value=0), mock.patch.object(
+                h.os, "chown"), mock.patch.object(
+                h.subprocess, "run", return_value=mock.Mock(returncode=0, stdout="")) as execute:
+            h.command(["/usr/bin/node", "npm-cli.js", "ci"], user="nobody", limited=True)
+        command = execute.call_args.args[0]
+        self.assertEqual(command[:2], ["systemd-run", "--scope"])
+        self.assertIn("MemoryHigh=12G", command)
+        self.assertIn("MemoryMax=16G", command)
+        self.assertIn("CPUWeight=20", command)
+        self.assertIn("/usr/sbin/runuser", command)
+
     def test_version_and_frozen_prepared_smoke_use_private_home(self):
         tree = self.root / "code-fixture"
         (tree / "bin").mkdir(parents=True)
