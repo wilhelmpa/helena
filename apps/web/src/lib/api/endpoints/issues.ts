@@ -61,6 +61,9 @@ export interface Issue {
   // The initiative this issue is linked to, expanded to id + title for rendering,
   // or null. Set through updateIssue by initiativeId.
   initiative: InitiativeRef | null;
+  // The goal (an organization goal) the task serves by its own choice, or null. Set through
+  // updateIssue by goalId; the goal a task inherits shows in its "Warum" chain instead.
+  goal: GoalRef | null;
   // The cycle this issue is planned into, expanded to id + name for rendering, or
   // null. Set through updateIssue by cycleId.
   cycle: CycleRef | null;
@@ -150,6 +153,15 @@ export interface InitiativeRef {
   id: number;
   title: string;
   status: InitiativeStatus;
+}
+
+// The goal a task serves: the id plus what to render, and the goal's status the board orders
+// its lanes by and a filter names ("the active goals").
+export type GoalStatus = 'planned' | 'active' | 'achieved' | 'paused';
+export interface GoalRef {
+  id: number;
+  title: string;
+  status: GoalStatus;
 }
 
 // One cycle an issue was in. The cycle history of an issue is a list of these,
@@ -269,6 +281,7 @@ export interface IssueWithWatchers extends IssueRelations {
 export interface NewIssueInput {
   typeId?: number | null;
   initiativeId?: number | null;
+  goalId?: number | null;
   cycleId?: number | null;
   folderId?: number | null;
   assigneeUserId?: string | null;
@@ -291,6 +304,7 @@ export interface BulkIssuePatch {
   columnId?: number;
   typeId?: number | null;
   initiativeId?: number | null;
+  goalId?: number | null;
   cycleId?: number | null;
   folderId?: number | null;
   assigneeUserId?: string | null;
@@ -308,6 +322,7 @@ export interface IssuePatch {
   typeId?: number | null;
   parentId?: number | null;
   initiativeId?: number | null;
+  goalId?: number | null;
   cycleId?: number | null;
   folderId?: number | null;
   assigneeUserId?: string | null;

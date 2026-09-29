@@ -4,6 +4,7 @@
 // shows only the controls that apply to the active view. Missing fields fall
 // back to per-view defaults, so the store grows new options without a migration.
 
+import type { FieldDefaults } from '@/lib/api/endpoints/displayDefaults';
 import type { ProjectFeatureSet } from '@/utils/projectFeatures';
 import type { Sort, WorkItemsView } from '@/utils/viewTypes';
 
@@ -13,15 +14,7 @@ import type { Sort, WorkItemsView } from '@/utils/viewTypes';
 // A `cf:<id>` key groups by a member custom field, which holds one person or agent
 // the way assignee and delegate do.
 export type BuiltinGroupField =
-  | 'none'
-  | 'status'
-  | 'assignee'
-  | 'delegate'
-  | 'priority'
-  | 'type'
-  | 'initiative'
-  | 'cycle'
-  | 'area';
+  'none' | 'status' | 'assignee' | 'delegate' | 'priority' | 'type' | 'goal' | 'cycle' | 'area';
 export type GroupField = BuiltinGroupField | CustomFieldKey;
 
 // Issue properties that can be shown on a Project card or as a Table column.
@@ -34,7 +27,7 @@ export type DisplayProperty =
   | 'type'
   | 'assignee'
   | 'delegate'
-  | 'initiative'
+  | 'goal'
   | 'cycle'
   | 'labels'
   | 'estimatePoints'
@@ -66,7 +59,7 @@ export const DISPLAY_PROPERTIES: DisplayProperty[] = [
   'type',
   'assignee',
   'delegate',
-  'initiative',
+  'goal',
   'cycle',
   'labels',
   'estimatePoints',
@@ -86,7 +79,6 @@ export const DISPLAY_PROPERTIES: DisplayProperty[] = [
 const SECTION_FIELDS: Partial<
   Record<BuiltinGroupField | DisplayProperty, keyof ProjectFeatureSet>
 > = {
-  initiative: 'initiatives',
   cycle: 'cycles',
   estimatePoints: 'pointsEstimate',
   estimateTime: 'timeEstimate',
@@ -105,6 +97,43 @@ export function isFieldEnabled(
 // The display properties a project offers, without the ones whose section is off.
 export function offeredDisplayProperties(features: ProjectFeatureSet): DisplayProperty[] {
   return DISPLAY_PROPERTIES.filter((p) => isFieldEnabled(p, features));
+}
+
+// The columns of a list row that always keep their place, filled or not (owner, 28.09.: the
+// status jumped left and right when a task had no priority or date). The other properties
+// go into the row's meta line, so only they are a choice.
+export const LIST_FIXED_PROPERTIES: DisplayProperty[] = [
+  'id',
+  'assignee',
+  'status',
+  'priority',
+  'dueDate',
+  'labels',
+];
+
+// What a day chip of the calendar can carry after its title: one line, so only the short ones.
+export const CALENDAR_PROPERTIES: DisplayProperty[] = [
+  'id',
+  'priority',
+  'assignee',
+  'goal',
+  'type',
+];
+
+// The properties a layout lets the reader choose ("Felder"): the timeline lays tasks out by
+// date and has none, the list keeps its fixed columns, the calendar chip has room for a few.
+export function fieldChoices(view: WorkItemsView, features: ProjectFeatureSet): DisplayProperty[] {
+  const offered = offeredDisplayProperties(features);
+  switch (view) {
+    case 'list':
+      return offered.filter((p) => !LIST_FIXED_PROPERTIES.includes(p));
+    case 'calendar':
+      return offered.filter((p) => CALENDAR_PROPERTIES.includes(p));
+    case 'timeline':
+      return [];
+    default:
+      return offered;
+  }
 }
 
 // Timeline zoom: how much horizontal space one day gets, which sets whether day
@@ -206,19 +235,34 @@ const DEFAULT_PROPERTIES: Record<WorkItemsView, DisplayProperty[]> = {
     'updated',
   ],
   list: ['id', 'labels', 'assignee'],
-  table: ['priority', 'labels', 'startDate', 'dueDate', 'assignee'],
+  table: ['status', 'priority', 'labels', 'startDate', 'dueDate', 'assignee'],
   timeline: [],
   calendar: [],
 };
 
-export function defaultViewSettings(view: WorkItemsView): ViewSettings {
+// The saved default of a layout ("Als Standard speichern"), cleaned like a stored display:
+// the old name of the goal, unknown keys dropped. Null when nothing valid is saved for it.
+function savedProperties(view: WorkItemsView, saved?: FieldDefaults | null): PropertyKey[] | null {
+  const keys = saved?.[view as keyof FieldDefaults];
+  if (!Array.isArray(keys)) return null;
+  return [...new Set(keys.map((key) => renamed(key) as string))].filter(
+    (key): key is PropertyKey => DISPLAY_VALUES.includes(key) || isCustomFieldKey(key),
+  );
+}
+
+// `fieldDefaults` are the fields the project (or the member for all projects) saved as its
+// default: a display that was never changed starts from them instead of the built-in ones.
+export function defaultViewSettings(
+  view: WorkItemsView,
+  fieldDefaults?: FieldDefaults | null,
+): ViewSettings {
   const group: GroupField = view === 'calendar' ? 'none' : 'status';
   return {
     ...COMMON,
     sort: { ...DEFAULT_SORT },
     group,
     subgroup: 'none',
-    properties: [...DEFAULT_PROPERTIES[view]],
+    properties: savedProperties(view, fieldDefaults) ?? [...DEFAULT_PROPERTIES[view]],
   };
 }
 
@@ -229,12 +273,16 @@ const GROUP_FIELDS: BuiltinGroupField[] = [
   'delegate',
   'priority',
   'type',
-  'initiative',
+  'goal',
   'cycle',
   'area',
 ];
 const DISPLAY_VALUES: string[] = DISPLAY_PROPERTIES;
 const TIMELINE_SCALES: TimelineScale[] = ['week', 'month', 'quarter'];
+
+// The task field "Ziel" was an initiative once and is a goal now: a display saved under the
+// old name keeps its grouping and its column under the new one.
+const renamed = (value: unknown) => (value === 'initiative' ? 'goal' : value);
 
 const isGroupField = (value: unknown): value is GroupField =>
   typeof value === 'string' &&
@@ -282,9 +330,18 @@ function writeStore(store: Store) {
 export function normalizeViewSettings(
   s: Partial<ViewSettings> | null | undefined,
   view: WorkItemsView,
+  fieldDefaults?: FieldDefaults | null,
 ): ViewSettings {
-  const d = defaultViewSettings(view);
+  const d = defaultViewSettings(view, fieldDefaults);
   if (!s) return d;
+  s = {
+    ...s,
+    group: renamed(s.group) as GroupField,
+    subgroup: renamed(s.subgroup) as GroupField,
+    properties: Array.isArray(s.properties)
+      ? ([...new Set((s.properties as unknown[]).map(renamed))] as PropertyKey[])
+      : s.properties,
+  };
   const storedGroup = isGroupField(s.group) ? s.group : d.group;
   // Timeline was previously hard-coded to State while its persisted group was
   // `none`. Normalize that legacy value so existing local and saved views keep
@@ -384,8 +441,12 @@ export function restoreHiddenSections(
 
 // Settings for one project+view, each field validated against the stored partial
 // and falling back to the per-view default.
-export function getViewSettings(projectKey: string, view: WorkItemsView): ViewSettings {
-  return normalizeViewSettings(readStore()[projectKey]?.[view], view);
+export function getViewSettings(
+  projectKey: string,
+  view: WorkItemsView,
+  fieldDefaults?: FieldDefaults | null,
+): ViewSettings {
+  return normalizeViewSettings(readStore()[projectKey]?.[view], view, fieldDefaults);
 }
 
 // A saved view's display snapshot: which layout is active plus that layout's

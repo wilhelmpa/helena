@@ -15,6 +15,7 @@ import {
 } from '@/utils/calendarFields';
 import { useDateFnsLocale } from '@/hooks/useDateFnsLocale';
 import { buildCalendarModel } from '../../utils/calendar';
+import { CalendarChipFace } from './CalendarChipFace';
 import { CalendarMonthNav } from './CalendarMonthNav';
 import { CalendarDayCell } from './CalendarDayCell';
 import { CalendarUnscheduledPanel, UNSCHEDULED_ID } from './CalendarUnscheduledPanel';
@@ -118,6 +119,8 @@ export default function CalendarView({
                   isToday={isSameDay(day, today)}
                   issues={byDay.get(key) ?? []}
                   dot={dot}
+                  properties={settings.properties}
+                  maps={maps}
                   onOpen={onOpenIssue}
                 />
               );
@@ -130,6 +133,8 @@ export default function CalendarView({
           dateField={settings.calendarDateField}
           issues={unscheduled}
           dot={dot}
+          properties={settings.properties}
+          maps={maps}
           onOpen={onOpenIssue}
         />
       </div>
@@ -140,11 +145,12 @@ export default function CalendarView({
       <DragOverlay dropAnimation={null}>
         {activeIssue ? (
           <div className="flex items-center gap-1 rounded-sm bg-background px-1.5 py-0.5 text-xs shadow-md">
-            <span
-              className="inline-block size-1.5 shrink-0 rounded-full"
-              style={{ backgroundColor: dot(activeIssue) }}
+            <CalendarChipFace
+              issue={activeIssue}
+              color={dot(activeIssue)}
+              properties={settings.properties}
+              maps={maps}
             />
-            <span className="truncate text-foreground">{activeIssue.title}</span>
           </div>
         ) : null}
       </DragOverlay>

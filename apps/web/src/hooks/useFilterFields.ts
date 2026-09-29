@@ -3,18 +3,22 @@
 import { useTranslations } from 'next-intl';
 import type { CustomField, MemberScope } from '@/lib/api/endpoints/customFields';
 import type { ProjectDetail } from '@/lib/api/endpoints/projects';
-import type { InitiativeRef } from '@/lib/api/endpoints/issues';
+import type { GoalRef, InitiativeRef } from '@/lib/api/endpoints/issues';
+import type { ProjectPoolGoal } from '@/lib/api/endpoints/projectGoals';
 import type { InitiativeOption } from '@/lib/api/endpoints/initiatives';
 import { useInitiativeOptionsQuery } from '@/services/initiatives.service';
+import { useSortedGoalOptions } from '@/services/goalOptions.service';
 import { CYCLE_STATUS_META } from '@/utils/cycleMeta';
 import { formatDate } from '@/utils/dates';
 import {
   CYCLE_FILTER_STATUSES,
+  GOAL_FILTER_STATUSES,
   INITIATIVE_FILTER_STATUSES,
   PRIORITY_FILTER_VALUES,
   STATE_TYPES,
 } from '@/utils/fieldOptions';
 import { compareByGroupOrder } from '@/utils/initiativeMeta';
+import { GOAL_STATUS_META, compareGoals } from '@/utils/goalMeta';
 import { projectFeatures } from '@/utils/projectFeatures';
 import { uuid } from '@/utils/uuid';
 import {
@@ -69,6 +73,27 @@ function initiativeOptions(project: ProjectDetail, linkable: InitiativeOption[])
     ...[...namedByIssues.values()]
       .sort(compareByGroupOrder)
       .map((i) => ({ value: i.id, label: i.title })),
+  ];
+}
+
+// The goals to offer: the ones a task of the project can serve, so a view can be set up for a
+// goal that carries no task yet, then the ones only the tasks name (a goal of another scope
+// they were linked to), ordered by status and title, so the work under them stays filterable.
+function goalOptions(project: ProjectDetail, linkable: ProjectPoolGoal[]): FieldOption[] {
+  const namedByIssues = new Map<number, GoalRef>();
+  for (const issue of project.issues) if (issue.goal) namedByIssues.set(issue.goal.id, issue.goal);
+  for (const goal of linkable) namedByIssues.delete(goal.id);
+  return [
+    ...linkable.map((goal) => ({
+      value: goal.id,
+      label: goal.title,
+      color: GOAL_STATUS_META[goal.status].color,
+    })),
+    ...[...namedByIssues.values()].sort(compareGoals).map((goal) => ({
+      value: goal.id,
+      label: goal.title,
+      color: GOAL_STATUS_META[goal.status].color,
+    })),
   ];
 }
 
@@ -127,10 +152,12 @@ export function newCondition(spec: FieldSpec): FilterCondition {
 export function useFilterFields(projectKey?: string) {
   const t = useTranslations('filters');
   const initiatives = useInitiativeOptionsQuery(projectKey ?? null).data ?? [];
+  const goals = useSortedGoalOptions(projectKey ?? null);
   const operator = byKey(useTranslations('filters.operators'));
   const stateType = byKey(useTranslations('display.stateTypes'));
   const cycleStatus = byKey(useTranslations('filters.cycleStatus'));
   const initiativeStatus = byKey(useTranslations('filters.initiativeStatus'));
+  const goalStatus = byKey(useTranslations('filters.goalStatus'));
   const priorityLabel = usePriorityLabel();
 
   const booleanOptions: FieldOption[] = [
@@ -216,6 +243,20 @@ export function useFilterFields(projectKey?: string) {
         ],
       },
       {
+        field: 'goal',
+        label: t('fields.goal'),
+        kind: 'set',
+        options: [
+          ...GOAL_FILTER_STATUSES.map((s) => ({
+            value: statusValue(s),
+            label: goalStatus(s),
+            color: GOAL_STATUS_META[s].color,
+          })),
+          { value: null, label: t('unset.goal') },
+          ...withDivider(goalOptions(project, goals)),
+        ],
+      },
+      {
         field: 'cycle',
         label: t('fields.cycle'),
         kind: 'set',
@@ -263,8 +304,12 @@ export function useFilterFields(projectKey?: string) {
     // grouping fields and display properties are.
     const features = projectFeatures(project.project);
     const used = new Set((kept?.conditions ?? []).map((c) => c.field));
-    return specs.filter(
-      (s) => isFieldEnabled(s.field as GroupField, features) || used.has(s.field),
+    // The old initiative filter is offered only where a saved condition still uses it: the
+    // task's "Ziel" is a goal now, and two filters of that name would only confuse.
+    return specs.filter((s) =>
+      s.field === 'initiative'
+        ? used.has(s.field)
+        : isFieldEnabled(s.field as GroupField, features) || used.has(s.field),
     );
   };
 

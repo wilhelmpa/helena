@@ -14,6 +14,8 @@ import {
   customFieldOption,
   initiative,
   cycle,
+  helenaGoalTask,
+  organizationGoal,
   projectViewFolder,
   user,
   containsPattern,
@@ -70,6 +72,7 @@ import {
   isProjectAgent,
 } from '#modules/agents/core/service';
 import { getInitiativeProjectId } from '#modules/initiatives/service';
+import { assertLinkableGoal, setIssueGoal } from '#modules/goals/service';
 import { cycleStatus, getCycleRef, type CycleStatus } from '#modules/cycles/service';
 import { getMembership, projectIdsWithPermission } from '#modules/members/service';
 import { getViewFolder } from '#modules/views/service';
@@ -112,6 +115,10 @@ export interface IssueRow {
   // and status for ordering the lanes of a board grouped by initiative, or null.
   // Filled by attachGroupings; mapIssue alone leaves it null.
   initiative: { id: number; title: string; status: string } | null;
+  // The goal (an organization goal, modules/goals) the task serves by its own choice, or
+  // null. Only the explicit link: the goal a task inherits from its parent or its project
+  // is the "why" chain, not this field. Filled by attachGroupings.
+  goal: { id: number; title: string; status: string } | null;
   // The cycle this issue is planned into, expanded to id + name for rendering and
   // status for filtering by the running or the upcoming ones, or null. Filled by
   // attachGroupings; mapIssue alone leaves it null.
@@ -178,6 +185,7 @@ function mapIssue(row: typeof issue.$inferSelect, projectKey: string): IssueRow 
     identifier: `${projectKey}-${row.sequenceNumber}`,
     typeId: row.typeId,
     initiative: null,
+    goal: null,
     cycle: null,
     folderId: row.folderId,
     assigneeUserId: row.assigneeUserId,
@@ -234,6 +242,7 @@ function snapshot(row: IssueRow): IssueSnapshot {
     columnId: row.columnId,
     typeId: row.typeId,
     initiativeId: row.initiative?.id ?? null,
+    goalId: row.goal?.id ?? null,
     cycleId: row.cycle?.id ?? null,
     folderId: row.folderId,
     assigneeUserId: row.assigneeUserId,
@@ -310,6 +319,7 @@ export interface IssueQuery {
   columnId?: number;
   typeId?: number | null;
   initiativeId?: number | null;
+  goalId?: number | null;
   cycleId?: number | null;
   folderId?: number | null;
   parentId?: number | null;
@@ -385,6 +395,17 @@ export async function searchIssues(
         ? isNull(issue.initiativeId)
         : eq(issue.initiativeId, filters.initiativeId),
     );
+  if (filters.goalId !== undefined) {
+    const linked = db
+      .select({ one: sql`1` })
+      .from(helenaGoalTask)
+      .where(
+        filters.goalId === null
+          ? eq(helenaGoalTask.issueId, issue.id)
+          : and(eq(helenaGoalTask.issueId, issue.id), eq(helenaGoalTask.goalId, filters.goalId)),
+      );
+    conds.push(filters.goalId === null ? sql`not exists (${linked})` : exists(linked));
+  }
   if (filters.cycleId !== undefined)
     conds.push(
       filters.cycleId === null ? isNull(issue.cycleId) : eq(issue.cycleId, filters.cycleId),
@@ -692,8 +713,26 @@ async function attachGroupings(issues: IssueRow[]): Promise<void> {
         or(isNotNull(issue.initiativeId), isNotNull(issue.cycleId)),
       ),
     );
+  const goalRows = await db
+    .select({
+      issueId: helenaGoalTask.issueId,
+      goalId: organizationGoal.id,
+      title: organizationGoal.title,
+      status: organizationGoal.status,
+    })
+    .from(helenaGoalTask)
+    .innerJoin(organizationGoal, eq(organizationGoal.id, helenaGoalTask.goalId))
+    .where(
+      inArray(
+        helenaGoalTask.issueId,
+        issues.map((i) => i.id),
+      ),
+    );
+  const goalByIssue = new Map(goalRows.map((r) => [r.issueId, r]));
   const byIssue = new Map(rows.map((r) => [r.issueId, r]));
   for (const i of issues) {
+    const g = goalByIssue.get(i.id);
+    i.goal = g ? { id: g.goalId, title: g.title, status: g.status } : null;
     const r = byIssue.get(i.id);
     i.initiative =
       r && r.initiativeId != null
@@ -817,8 +856,10 @@ async function loadSnapshot(
       estimateMinutes: issue.estimateMinutes,
       startDate: issue.startDate,
       dueDate: issue.dueDate,
+      goalId: helenaGoalTask.goalId,
     })
     .from(issue)
+    .leftJoin(helenaGoalTask, eq(helenaGoalTask.issueId, issue.id))
     .where(eq(issue.id, id));
   const row = rows[0];
   return row ? { ...row, estimatePoints: numOrNull(row.estimatePoints) } : null;
@@ -1207,6 +1248,8 @@ export interface IssuePatch {
   typeId?: number | null;
   parentId?: number | null;
   initiativeId?: number | null;
+  // The goal the task serves (an organization goal), or null to unlink it.
+  goalId?: number | null;
   cycleId?: number | null;
   folderId?: number | null;
   assigneeUserId?: string | null;
@@ -1255,6 +1298,18 @@ export async function updateIssue(
   );
   await assertAssignments(before.projectId, patch);
   await assertInitiative(before.projectId, patch.initiativeId);
+  // A goal is linked by a person or an agent who may read it; the check runs before any
+  // write, so a refused goal changes nothing.
+  const goalActor = actorId(actor);
+  if (patch.goalId != null) {
+    if (!goalActor) throw new HttpError(400, 'A goal is linked by a person or an agent');
+    const [owner] = await db
+      .select({ teamId: projectTable.teamId })
+      .from(projectTable)
+      .where(eq(projectTable.id, before.projectId));
+    await assertLinkableGoal({ userId: goalActor }, owner!.teamId, patch.goalId);
+  }
+  const goalChanged = patch.goalId !== undefined && patch.goalId !== before.goalId;
   await assertCycle(before.projectId, patch.cycleId, before.cycleId);
   await assertArea(before.projectId, patch.folderId);
   await assertColumn(before.projectId, patch.columnId);
@@ -1305,7 +1360,7 @@ export async function updateIssue(
   if (patch.startDate !== undefined) set.startDate = patch.startDate;
   if (patch.dueDate !== undefined) set.dueDate = patch.dueDate;
 
-  const changed = Object.keys(set).length > 0;
+  const changed = Object.keys(set).length > 0 || goalChanged;
   if (changed) {
     set.updatedAt = sql`now()` as unknown as Date;
     const guard =
@@ -1374,6 +1429,7 @@ export async function updateIssue(
       return rows;
     });
     if (updated.length === 0) return getIssue(id);
+    if (goalChanged) await setIssueGoal({ userId: goalActor ?? '' }, id, patch.goalId ?? null);
   }
   const after = await getIssue(id);
   if (after) {

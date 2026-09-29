@@ -15,6 +15,7 @@ type FilterField =
   | 'priority'
   | 'type'
   | 'initiative'
+  | 'goal'
   | 'cycle'
   | 'area'
   | 'labels'
@@ -95,6 +96,8 @@ function builtinSetValues(
       return issue.initiative
         ? [issue.initiative.id, statusValue(issue.initiative.status)]
         : [null];
+    case 'goal':
+      return issue.goal ? [issue.goal.id, statusValue(issue.goal.status)] : [null];
     case 'cycle':
       return issue.cycle ? [issue.cycle.id, statusValue(issue.cycle.status)] : [null];
     case 'area':

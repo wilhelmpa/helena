@@ -17,7 +17,8 @@ export type BuiltinFilterField =
   | 'delegate' // delegate agent id, or null for "no delegate"
   | 'priority' // priority string, or null for "no priority"
   | 'type' // issue type id, or null for "no type"
-  | 'initiative' // initiative id or `status:<status>`, or null for "no initiative"
+  | 'initiative' // initiative id or `status:<status>`, or null for "no initiative" (an old filter)
+  | 'goal' // goal id or `status:<status>`, or null for "no goal"
   | 'cycle' // cycle id or `status:<status>`, or null for "no cycle"
   | 'area' // area (view folder) id, or null for "no area"
   | 'labels' // label ids (a issue has any/none of the chosen ones)
@@ -119,6 +120,8 @@ function builtinSetValues(
       return issue.initiative
         ? [issue.initiative.id, statusValue(issue.initiative.status)]
         : [null];
+    case 'goal':
+      return issue.goal ? [issue.goal.id, statusValue(issue.goal.status)] : [null];
     case 'cycle':
       return issue.cycle ? [issue.cycle.id, statusValue(issue.cycle.status)] : [null];
     case 'area':

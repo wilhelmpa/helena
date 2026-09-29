@@ -39,6 +39,7 @@ import {
   bulkDeleteIssues,
   createIssue,
 } from '@/lib/api/endpoints/issues';
+import type { ProjectPoolGoal } from '@/lib/api/endpoints/projectGoals';
 import { qk } from '@/services/queryKeys';
 import { forgetWhenUnused } from '@/services/forgetQueries';
 
@@ -53,6 +54,22 @@ interface IssueRemoval {
 interface BulkRemoval {
   ids: number[];
   subtasks?: SubtaskDisposition;
+}
+
+// An issue as it will read once a patch is applied, for the optimistic write. The patch names
+// a goal by id, the issue carries it as { id, title, status }: the title comes from the goal
+// list the picker loaded, and without it the goal stays as it was until the server answers.
+function patched<T extends BoardIssue>(
+  target: T,
+  patch: IssuePatch | BulkIssuePatch,
+  goals: ProjectPoolGoal[] | undefined,
+): T {
+  const { goalId, ...rest } = patch;
+  const next = { ...target, ...rest } as T;
+  if (goalId === undefined) return next;
+  if (goalId === null) return { ...next, goal: null };
+  const goal = goals?.find((candidate) => candidate.id === goalId);
+  return goal ? { ...next, goal: { id: goal.id, title: goal.title, status: goal.status } } : next;
 }
 
 export function useIssueQuery(id: number | null) {
@@ -201,12 +218,18 @@ export function useUpdateIssue(projectKey: string | null) {
       const key = qk.boardIssues(projectKey);
       await qc.cancelQueries({ queryKey: key });
       const prev = qc.getQueryData<BoardIssues>(key);
+      const goals = qc.getQueryData<ProjectPoolGoal[]>(qk.goalOptions(projectKey));
       if (prev) {
         qc.setQueryData<BoardIssues>(key, {
           ...prev,
-          issues: prev.issues.map((t) => (t.id === id ? ({ ...t, ...patch } as BoardIssue) : t)),
+          issues: prev.issues.map((t) => (t.id === id ? patched(t, patch, goals) : t)),
         });
       }
+      // The open task shows its new goal at once, not after the refetch.
+      if (patch.goalId !== undefined)
+        qc.setQueryData<BoardIssue>(qk.issue(id), (detail) =>
+          detail ? patched(detail, { goalId: patch.goalId }, goals) : detail,
+        );
       return { prev, key };
     },
     onError: (_err, _vars, ctx) => {
@@ -231,6 +254,8 @@ function invalidateGroupings(qc: ReturnType<typeof useQueryClient>) {
   void qc.invalidateQueries({ queryKey: qk.anyInitiatives });
   void qc.invalidateQueries({ queryKey: qk.anyCycle });
   void qc.invalidateQueries({ queryKey: qk.anyCycles });
+  // A task's goal moves that goal's progress, which the picker lists.
+  void qc.invalidateQueries({ queryKey: qk.anyGoalOptions });
 }
 
 // Deletes an issue. Drops it from the project detail immediately and discards its
@@ -378,11 +403,10 @@ export function useBulkUpdateIssues(projectKey: string) {
       const prev = qc.getQueryData<BoardIssues>(key);
       if (prev) {
         const idSet = new Set(ids);
+        const goals = qc.getQueryData<ProjectPoolGoal[]>(qk.goalOptions(projectKey));
         qc.setQueryData<BoardIssues>(key, {
           ...prev,
-          issues: prev.issues.map((t) =>
-            idSet.has(t.id) ? ({ ...t, ...patch } as BoardIssue) : t,
-          ),
+          issues: prev.issues.map((t) => (idSet.has(t.id) ? patched(t, patch, goals) : t)),
         });
       }
       return { prev, key };

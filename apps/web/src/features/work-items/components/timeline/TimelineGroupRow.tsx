@@ -5,7 +5,7 @@ import { DEFAULT_COLOR, type IssueGroup } from '@/utils/project';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { GroupDot } from '../shared/GroupDot';
-import { GROUP_H } from '../../utils/timeline';
+import { GROUP_H, quietBar } from '../../utils/timeline';
 
 // A group header row. A row dropped onto it is appended to the group, which
 // reassigns the selected grouping field.
@@ -72,11 +72,11 @@ export function TimelineGroupRow({
       <div className="relative" style={{ width: trackWidth }}>
         {collapsed && aggregateRect && (
           <div
-            className="absolute top-1/2 flex h-4 -translate-y-1/2 cursor-default items-center overflow-hidden rounded-sm px-1.5 text-xs text-white select-none"
+            className="absolute top-1/2 flex h-4 -translate-y-1/2 cursor-default items-center overflow-hidden rounded-sm px-1.5 text-xs text-foreground select-none"
             style={{
               left: aggregateRect.left,
               width: aggregateRect.width,
-              backgroundColor: group.color ?? DEFAULT_COLOR,
+              ...quietBar(group.color ?? DEFAULT_COLOR),
             }}
           >
             <span className="truncate">{group.name}</span>

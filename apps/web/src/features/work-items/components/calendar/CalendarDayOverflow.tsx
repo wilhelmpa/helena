@@ -3,6 +3,9 @@ import { useTranslations } from 'next-intl';
 import type { Issue } from '@/lib/api/endpoints/issues';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import type { Maps } from '@/utils/project';
+import type { PropertyKey } from '@/utils/viewSettings';
+import { CalendarChipFace } from './CalendarChipFace';
 
 // The "+N more" control for a day cell: a popover listing every issue on that day
 // when there are more than the cell shows inline.
@@ -10,11 +13,15 @@ export function CalendarDayOverflow({
   issues,
   hidden,
   dot,
+  properties,
+  maps,
   onOpen,
 }: {
   issues: Issue[];
   hidden: number;
   dot: (issue: Issue) => string;
+  properties: PropertyKey[];
+  maps: Maps;
   onOpen: (id: number) => void;
 }) {
   const t = useTranslations('workItems.calendar');
@@ -46,14 +53,12 @@ export function CalendarDayOverflow({
                   }}
                   className="flex w-full items-center gap-1.5 rounded-sm px-2 py-1 text-left text-xs hover:bg-accent"
                 >
-                  <span
-                    className="inline-block size-1.5 shrink-0 rounded-full"
-                    style={{ backgroundColor: dot(issue) }}
+                  <CalendarChipFace
+                    issue={issue}
+                    color={dot(issue)}
+                    properties={['id', ...properties]}
+                    maps={maps}
                   />
-                  <span className="shrink-0 text-muted-foreground tabular-nums">
-                    {issue.identifier}
-                  </span>
-                  <span className="truncate text-foreground">{issue.title}</span>
                 </button>
               </TooltipTrigger>
               <TooltipContent>{`${issue.identifier} ${issue.title}`}</TooltipContent>

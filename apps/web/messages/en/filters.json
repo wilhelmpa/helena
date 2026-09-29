@@ -27,6 +27,11 @@
     "planned": "Planned goals",
     "proposed": "Proposed goals"
   },
+  "goalStatus": {
+    "active": "Active goals",
+    "planned": "Planned goals",
+    "paused": "Paused goals"
+  },
   "fields": {
     "status": "State",
     "statusType": "State type",
@@ -35,6 +40,7 @@
     "priority": "Priority",
     "type": "Type",
     "initiative": "Goal",
+    "goal": "Goal",
     "cycle": "Cycle",
     "labels": "Labels",
     "dueDate": "Due date",
@@ -48,6 +54,7 @@
     "delegate": "No delegate",
     "type": "No type",
     "initiative": "No goal",
+    "goal": "No goal",
     "cycle": "No cycle",
     "member": "No value",
     "area": "No area"

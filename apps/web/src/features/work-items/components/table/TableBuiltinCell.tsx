@@ -13,6 +13,7 @@ import {
 } from '@/features/issue/components/shared/IssueBadges';
 import { PriorityIcon, StateIcon } from '@/features/issue/components/shared/IssueIcons';
 import { type TableColumn } from '../../utils/table';
+import { StatusBox } from '@/design-system';
 
 const DASH = <span className="text-muted-foreground/40">—</span>;
 
@@ -35,10 +36,12 @@ export function TableBuiltinCell({
       return (
         <div className="flex min-w-0 items-center">
           {col ? (
-            <span className="ds-issue-status" data-state-type={col.stateType}>
-              <StateIcon stateType={col.stateType} color={col.color} />
-              <span>{col.name}</span>
-            </span>
+            <StatusBox
+              stateType={col.stateType}
+              icon={<StateIcon stateType={col.stateType} color={col.color} />}
+            >
+              {col.name}
+            </StatusBox>
           ) : (
             DASH
           )}
@@ -98,11 +101,9 @@ export function TableBuiltinCell({
         </div>
       );
     }
-    case 'initiative':
+    case 'goal':
       return (
-        <div className="truncate text-xs text-muted-foreground">
-          {issue.initiative?.title ?? DASH}
-        </div>
+        <div className="truncate text-xs text-muted-foreground">{issue.goal?.title ?? DASH}</div>
       );
     case 'cycle':
       return (

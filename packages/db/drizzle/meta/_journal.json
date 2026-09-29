@@ -1534,6 +1534,20 @@
       "when": 1790703961270,
       "tag": "0219_owner_terminal_sudo_audit",
       "breakpoints": true
+    },
+    {
+      "idx": 220,
+      "version": "7",
+      "when": 1790708610109,
+      "tag": "0220_work_items_display_defaults",
+      "breakpoints": true
+    },
+    {
+      "idx": 221,
+      "version": "7",
+      "when": 1790708616143,
+      "tag": "0221_work_items_goal_backfill",
+      "breakpoints": true
     }
   ]
 }

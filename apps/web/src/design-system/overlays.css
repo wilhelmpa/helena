@@ -949,3 +949,26 @@ body[data-modal-open='true'] [data-radix-popper-content-wrapper] {
   min-width: 0;
   flex: 1;
 }
+
+/* Menus, popovers, selects and tooltips sit above the one overlay (z-index 55) and above the
+   sidebar when it is opened as a drawer (70): without this they opened behind it, invisible,
+   and nothing in a task could be picked. The Radix wrapper takes its z-index from the
+   content, so the content carries it. The modal rules above (120/121) stay above these. */
+:is(
+  [data-slot='select-content'],
+  [data-slot='popover-content'],
+  [data-slot='dropdown-menu-content'],
+  [data-slot='dropdown-menu-sub-content'],
+  [data-slot='context-menu-content'],
+  [data-slot='context-menu-sub-content'],
+  [data-slot='tooltip-content'],
+  [data-slot='hover-card-content']
+) {
+  z-index: 75;
+}
+:is([data-slot='dialog-overlay'], [data-slot='sheet-overlay'], [data-slot='alert-dialog-overlay']) {
+  z-index: 80;
+}
+:is([data-slot='dialog-content'], [data-slot='sheet-content'], [data-slot='alert-dialog-content']) {
+  z-index: 81;
+}

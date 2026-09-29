@@ -15,6 +15,7 @@ export function useGroupLabels(): GroupLabels {
     noPriority: t('noPriority'),
     noType: t('noType'),
     noInitiative: t('noInitiative'),
+    noGoal: t('noGoal'),
     noCycle: t('noCycle'),
     noArea: t('noArea'),
     noMember: t('noMember'),

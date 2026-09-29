@@ -88,6 +88,9 @@ export const IssueResponse = t.Object({
   // to order the lanes of a board grouped by initiative. Create and update set it
   // through initiativeId.
   initiative: t.Nullable(t.Object({ id: t.Number(), title: t.String(), status: t.String() })),
+  // The goal the issue serves by its own choice (an organization goal), or null: id and
+  // title for rendering, status to filter by the active goals. Set through goalId.
+  goal: t.Nullable(t.Object({ id: t.Number(), title: t.String(), status: t.String() })),
   // The cycle this issue is planned into, or null. It carries id + name for rendering,
   // and status to filter by the running or the upcoming ones. Create and update set it
   // through cycleId.
@@ -295,21 +298,6 @@ export const IssueWithFieldsResponse = t.Composite([
     subtasks: t.Array(IssueRefResponse),
     checklists: t.Array(ChecklistResponse),
     development: t.Array(DevelopmentLinkResponse),
-    // The goal the issue serves (modules/goals), for an agent reading it.
-    goal: t.Optional(
-      t.Nullable(
-        t.Object({
-          id: t.Number(),
-          title: t.String(),
-          status: t.Union([
-            t.Literal('planned'),
-            t.Literal('active'),
-            t.Literal('achieved'),
-            t.Literal('paused'),
-          ]),
-        }),
-      ),
-    ),
   }),
 ]);
 
@@ -495,6 +483,7 @@ export const bulkUpdateIssuesBody = t.Object({
     columnId: t.Optional(t.Integer()),
     typeId: t.Optional(t.Nullable(t.Integer())),
     initiativeId: t.Optional(t.Nullable(t.Integer())),
+    goalId: t.Optional(t.Nullable(t.Integer())),
     cycleId: t.Optional(t.Nullable(t.Integer())),
     folderId: t.Optional(t.Nullable(t.Integer())),
     assigneeUserId: t.Optional(t.Nullable(t.String())),
@@ -538,6 +527,7 @@ export const listIssuesQuery = t.Object({
   columnId: t.Optional(t.Numeric({ description: 'Exact column (state) id.' })),
   typeId: t.Optional(t.Numeric({ description: 'Exact issue type id.' })),
   initiativeId: t.Optional(t.Numeric({ description: 'Exact initiative id.' })),
+  goalId: t.Optional(t.Numeric({ description: 'Exact goal id (from list_goals).' })),
   cycleId: t.Optional(t.Numeric({ description: 'Exact cycle id.' })),
   folderId: t.Optional(t.Numeric({ description: 'Exact area (view folder) id.' })),
   parentId: t.Optional(
@@ -577,6 +567,15 @@ export const updateIssueBody = t.Object({
       t.Integer({
         description:
           'Link this issue to an initiative id, or null to unlink. From list_initiatives.',
+      }),
+    ),
+  ),
+  goalId: t.Optional(
+    t.Nullable(
+      t.Integer({
+        description:
+          'The goal this issue serves, or null to unlink it. From list_goals; it counts the ' +
+          "issue in the goal's progress.",
       }),
     ),
   ),

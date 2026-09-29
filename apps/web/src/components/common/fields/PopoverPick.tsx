@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { Check } from 'lucide-react';
+import { Check, Plus } from 'lucide-react';
 import {
   Command,
   CommandEmpty,
@@ -37,6 +37,14 @@ export interface PickGroup {
   items: PickItem[];
 }
 
+// Naming something that is not in the list yet and creating it right there: a row at the end
+// that reads "Create “query”" while the search text matches no item exactly. `create` runs with
+// the text; the list closes when it resolves.
+export interface PickCreate {
+  label: (query: string) => string;
+  create: (query: string) => void | Promise<void>;
+}
+
 // A Pill trigger opening a searchable list of PickItems in a popover. Closes on
 // select unless `closeOnSelect` is false (labels toggle and stay open). `items`
 // renders as one flat group without a heading (the default). `groups` renders one
@@ -49,9 +57,11 @@ export default function PopoverPick({
   groups,
   closeOnSelect = true,
   align = 'start',
-  contentClassName = 'w-56',
+  contentClassName,
   modal = false,
   readOnly = false,
+  create,
+  width,
 }: {
   trigger: ReactNode;
   inputPlaceholder: string;
@@ -64,16 +74,26 @@ export default function PopoverPick({
   align?: 'start' | 'center' | 'end';
   // The list width (a Tailwind class), for a list whose labels need more room.
   contentClassName?: string;
+  // 'wide' for a list with a second column (a count, a status) after the label.
+  width?: 'default' | 'wide';
   // Set over a surface that swallows pointer events (the React Flow canvas), where
   // an outside click would otherwise not reach the popover and never dismiss it.
   modal?: boolean;
   // When true the pill is shown as-is with no popover — a read-only display of the
   // current value (public shared pages).
   readOnly?: boolean;
+  // Offers to create what the search text names when no item is called that.
+  create?: PickCreate;
 }) {
   const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState('');
 
   if (readOnly) return <ReadOnlyPill>{trigger}</ReadOnlyPill>;
+  const typed = query.trim();
+  const named = [...(items ?? []), ...(groups ?? []).flatMap((group) => group.items)].some(
+    (item) => item.label.trim().toLocaleLowerCase() === typed.toLocaleLowerCase(),
+  );
+  const showCreate = !!create && typed !== '' && !named;
 
   const renderItem = (it: PickItem) => {
     const row = (
@@ -106,13 +126,23 @@ export default function PopoverPick({
   };
 
   return (
-    <Popover modal={modal} open={open} onOpenChange={setOpen}>
+    <Popover
+      modal={modal}
+      open={open}
+      onOpenChange={(next) => {
+        setOpen(next);
+        if (!next) setQuery('');
+      }}
+    >
       <PopoverTrigger asChild>{trigger}</PopoverTrigger>
-      <PopoverContent className={cn('p-0', contentClassName)} align={align}>
+      <PopoverContent
+        className={cn('p-0', width === 'wide' ? 'w-72' : 'w-56', contentClassName)}
+        align={align}
+      >
         <Command>
-          <CommandInput placeholder={inputPlaceholder} />
+          <CommandInput placeholder={inputPlaceholder} value={query} onValueChange={setQuery} />
           <CommandList>
-            {emptyText && <CommandEmpty>{emptyText}</CommandEmpty>}
+            {emptyText && !showCreate && <CommandEmpty>{emptyText}</CommandEmpty>}
             {items && items.length > 0 && <CommandGroup>{items.map(renderItem)}</CommandGroup>}
             {groups?.map(
               (group) =>
@@ -121,6 +151,20 @@ export default function PopoverPick({
                     {group.items.map(renderItem)}
                   </CommandGroup>
                 ),
+            )}
+            {showCreate && (
+              <CommandGroup forceMount>
+                <CommandItem
+                  forceMount
+                  value={`__create ${typed}`}
+                  onSelect={() => {
+                    void Promise.resolve(create.create(typed)).then(() => setOpen(false));
+                  }}
+                >
+                  <Plus />
+                  <span className="flex-1 truncate">{create.label(typed)}</span>
+                </CommandItem>
+              </CommandGroup>
             )}
           </CommandList>
         </Command>

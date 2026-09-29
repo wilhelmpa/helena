@@ -1,5 +1,5 @@
 import { useSession } from '@/lib/auth-client';
-import { Inline } from '@/design-system';
+import { Inline, StatusBox } from '@/design-system';
 import type { BoardIssue } from '@/lib/api/endpoints/issues';
 import type { ProjectDetail } from '@/lib/api/endpoints/projects';
 import { type Maps } from '@/utils/project';
@@ -8,6 +8,7 @@ import type { PropertyKey } from '@/utils/viewSettings';
 import { boardCardData } from '../../utils/boardCardData';
 import { useCardMetaWords } from '../../hooks/useCardMetaWords';
 import { AssigneeAvatar } from '@/features/issue/components/shared/IssueBadges';
+import { StateIcon } from '@/features/issue/components/shared/IssueIcons';
 import { BoardHintPill } from '../shared/BoardHintPill';
 import { IssueIdentifier } from '../shared/IssueIdentifier';
 import { IssueCardLinks } from './IssueCardLinks';
@@ -32,7 +33,7 @@ export function IssueCardBody({
   const { data: session } = useSession();
   const priorityLabel = usePriorityLabel();
   const words = useCardMetaWords();
-  const { importantValue, meta, labels } = boardCardData(
+  const { importantValue, meta, labels, status } = boardCardData(
     issue,
     project,
     maps,
@@ -64,9 +65,17 @@ export function IssueCardBody({
         <div className="board-card-meta truncate text-muted-foreground">{meta.join(' · ')}</div>
       )}
 
-      {(labels.length > 0 || showAssignee || delegate) && (
+      {(labels.length > 0 || showAssignee || delegate || status) && (
         <Inline gap={2} className="min-w-0">
           <Inline gap={1} wrap className="min-w-0 flex-1">
+            {status && (
+              <StatusBox
+                stateType={status.stateType}
+                icon={<StateIcon stateType={status.stateType} color={status.color} />}
+              >
+                {status.name}
+              </StatusBox>
+            )}
             {labels.map((label) => (
               <BoardHintPill key={label.id} name={label.name} />
             ))}

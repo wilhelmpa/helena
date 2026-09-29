@@ -33,6 +33,7 @@
     "priority": "Priority",
     "type": "Type",
     "initiative": "Goal",
+    "goal": "Goal",
     "cycle": "Cycle",
     "labels": "Labels",
     "estimatePoints": "Story points",
@@ -82,11 +83,13 @@
     "assignee": "Assignee",
     "delegate": "Delegate",
     "initiative": "Goal",
+    "goal": "Goal",
     "cycle": "Cycle",
     "labels": "Labels",
     "noAssignee": "No assignee",
     "noDelegate": "No delegate",
     "noInitiative": "No goal",
+    "noGoal": "No goal",
     "noCycle": "No cycle",
     "archive": "Archive",
     "clearSelection": "Clear selection",
@@ -116,6 +119,7 @@
     "noPriority": "No priority",
     "noType": "No type",
     "noInitiative": "No goal",
+    "noGoal": "No goal",
     "noCycle": "No cycle",
     "noMember": "No value",
     "noArea": "No area"
@@ -165,10 +169,39 @@
     "type": "{value}",
     "statusAge": "for {value}",
     "initiative": "Goal: {value}",
+    "goal": "Goal: {value}",
     "cycle": "Cycle {value}",
     "estimatePoints": "{value} pts",
     "estimateTime": "{value}",
     "startDate": "from {value}",
     "dueDate": "due {value}"
+  },
+  "fields": {
+    "button": "Fields",
+    "heading": "Fields",
+    "hint": "Which details cards, rows and columns show.",
+    "preview": "Preview",
+    "previewEmpty": "Once there is a task, you see here what it looks like.",
+    "title": "Title",
+    "listFixed": "ID, status, priority, due date, labels and assignee always keep their column in the list.",
+    "calendarHint": "The calendar has room for a few details.",
+    "none": "No fields chosen",
+    "source": {
+      "project": "Default: this project",
+      "global": "Default: my setting",
+      "builtin": "Default: built-in"
+    },
+    "differs": "Differs from the default",
+    "reset": "Reset",
+    "saveProject": "Save as default for this project",
+    "saveGlobal": "Save for all my projects",
+    "removeProject": "Remove the project default",
+    "savedProject": "Default for this project saved.",
+    "savedGlobal": "Default for all your projects saved.",
+    "removedProject": "Project default removed."
+  },
+  "emptyProject": {
+    "title": "No tasks yet",
+    "text": "A task records what has to be done, by whom and by when."
   }
 }

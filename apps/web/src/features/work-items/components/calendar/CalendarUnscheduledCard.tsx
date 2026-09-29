@@ -5,17 +5,24 @@ import { useIsPhone } from '@/hooks/useIsPhone';
 import { usePermissions } from '@/hooks/usePermissions';
 import { cn } from '@/lib/utils';
 import IssueContextMenu from '@/features/issue/components/actions/IssueContextMenu';
+import type { Maps } from '@/utils/project';
+import type { PropertyKey } from '@/utils/viewSettings';
+import { CalendarChipFace } from './CalendarChipFace';
 
 // A draggable card in the unscheduled panel.
 export function CalendarUnscheduledCard({
   project,
   issue,
   color,
+  properties,
+  maps,
   onOpen,
 }: {
   project: ProjectDetail;
   issue: Issue;
   color: string;
+  properties: PropertyKey[];
+  maps: Maps;
   onOpen: (id: number) => void;
 }) {
   // Drag is disabled on phones so a touch scrolls instead of picking up the issue
@@ -41,12 +48,12 @@ export function CalendarUnscheduledCard({
           isDragging && 'opacity-40',
         )}
       >
-        <span
-          className="inline-block size-1.5 shrink-0 rounded-full"
-          style={{ backgroundColor: color }}
+        <CalendarChipFace
+          issue={issue}
+          color={color}
+          properties={['id', ...properties]}
+          maps={maps}
         />
-        <span className="shrink-0 text-muted-foreground tabular-nums">{issue.identifier}</span>
-        <span className="truncate text-foreground">{issue.title}</span>
       </div>
     </IssueContextMenu>
   );

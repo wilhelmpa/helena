@@ -7,7 +7,12 @@ import { commonErrors } from '#shared/responses';
 import { getIssueProjectId } from '#modules/issues/service';
 import { issueWhy, projectWhyChains } from '#modules/project-goals/ladder';
 import { issueClaim } from '#modules/issues/claim';
-import { IssueWhyResponse, ProjectWhyChainsResponse } from '#modules/project-goals/model';
+import {
+  GoalOptionsResponse,
+  IssueWhyResponse,
+  ProjectWhyChainsResponse,
+} from '#modules/project-goals/model';
+import { projectGoalContext } from '#modules/project-goals/service';
 import { HttpError } from '#shared/lib';
 import {
   GoalDetailResponse,
@@ -44,6 +49,18 @@ export const goalRoutes = new Elysia({ name: 'goals', detail: { tags: ['Goals'] 
     response: { 200: ProjectWhyChainsResponse, ...commonErrors },
     detail: { summary: 'Read goal chains for the project organigram' },
   })
+  // The goals a task of the project can serve (the pick list of a task's "Ziel"): the
+  // project's own, its department's and the team-wide ones, with this project's progress
+  // on each. Read under work items, so a role without the goals pages can still set one.
+  .get(
+    '/projects/:projectKey/goal-options',
+    async ({ project, user }) => (await projectGoalContext(project, requireUser(user))).goals,
+    {
+      permission: ['work_items', 'read'],
+      response: { 200: GoalOptionsResponse, ...commonErrors },
+      detail: { summary: 'List the goals a task of the project can serve' },
+    },
+  )
   .get(
     '/issues/:issueId/why',
     async ({ params }) => {

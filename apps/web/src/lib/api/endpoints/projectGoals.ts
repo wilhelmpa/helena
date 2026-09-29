@@ -30,3 +30,8 @@ export const setProjectPoolGoal = (initiativeId: number, goalId: number | null) 
     `/initiatives/${initiativeId}/pool-goal`,
     { method: 'PUT', body: JSON.stringify({ goalId }) },
   );
+
+// The goals a task of the project can serve (the pick list of a task's "Ziel"): the
+// project's own, its department's and the team-wide ones, with this project's progress.
+export const getGoalOptions = (projectKey: string) =>
+  request<ProjectPoolGoal[]>(`/projects/${projectKey}/goal-options`);

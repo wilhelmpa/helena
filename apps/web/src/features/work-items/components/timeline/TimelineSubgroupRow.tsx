@@ -5,7 +5,7 @@ import { DEFAULT_COLOR, type IssueGroup } from '@/utils/project';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { GroupDot } from '../shared/GroupDot';
-import { SUBGROUP_H } from '../../utils/timeline';
+import { SUBGROUP_H, quietBar } from '../../utils/timeline';
 
 // A sub-group header row (only present when sub-grouped). A row dropped onto it
 // is appended to the sub-section, which reassigns both grouping fields.
@@ -65,11 +65,11 @@ export function TimelineSubgroupRow({
       <div className="relative" style={{ width: trackWidth }}>
         {collapsed && aggregateRect && (
           <div
-            className="absolute top-1/2 flex h-3.5 -translate-y-1/2 cursor-default items-center overflow-hidden rounded-sm px-1.5 text-xs text-white select-none"
+            className="absolute top-1/2 flex h-3.5 -translate-y-1/2 cursor-default items-center overflow-hidden rounded-sm px-1.5 text-xs text-foreground select-none"
             style={{
               left: aggregateRect.left,
               width: aggregateRect.width,
-              backgroundColor: sub.color ?? DEFAULT_COLOR,
+              ...quietBar(sub.color ?? DEFAULT_COLOR),
             }}
           >
             <span className="truncate">{sub.name}</span>

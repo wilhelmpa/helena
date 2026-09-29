@@ -257,13 +257,20 @@ export default function IssueDetailContent({
           imageByUserId={imageByUserId}
         />
       </div>
-      <LastCommentBubble
-        key={issue.id}
-        issueId={issue.id}
-        feedRef={feedRef}
-        imageByUserId={imageByUserId}
-      />
     </>
+  );
+  // The newest comment rises over the bottom of the column while the feed is off screen. It
+  // floats, so it belongs only where nothing to click sits under it: on the page the
+  // properties are a column of their own, in the panel and the inbox they are part of the
+  // column and the card covered them (owner, 29.09.: "in der Aufgabe kann ich nichts
+  // anklicken").
+  const lastComment = (
+    <LastCommentBubble
+      key={issue.id}
+      issueId={issue.id}
+      feedRef={feedRef}
+      imageByUserId={imageByUserId}
+    />
   );
 
   if (layout === 'page') {
@@ -279,6 +286,7 @@ export default function IssueDetailContent({
             {heading}
             {sections}
             {activity}
+            {lastComment}
           </div>
           <aside className="ds-detail-aside">{renderProperties()}</aside>
         </div>

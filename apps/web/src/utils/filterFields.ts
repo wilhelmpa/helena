@@ -44,6 +44,7 @@ export const BUILTIN_FILTER_FIELDS = [
   'priority',
   'type',
   'initiative',
+  'goal',
   'cycle',
   'area',
   'labels',

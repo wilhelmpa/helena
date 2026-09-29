@@ -19,13 +19,14 @@ import {
   withoutHiddenSections,
   type ViewSettings,
 } from '@/utils/viewSettings';
-import { Pencil, Plus } from 'lucide-react';
+import { ListChecks, Pencil, Plus } from 'lucide-react';
 import ViewIconPicker from '@/components/layout/ViewIconPicker';
 import FilterPills from '@/components/layout/FilterPills';
 import { useFilterFields } from '@/hooks/useFilterFields';
 import { PageActions, PageToolbar } from '@/components/layout/PageToolbar';
 import {
   Button,
+  EmptyState,
   Overlay,
   Segmented,
   SettingsGroup,
@@ -45,6 +46,7 @@ import { byKey } from '@/utils/messageKey';
 import { VIEWS, type WorkItemsView } from '@/utils/viewTypes';
 import { useViewsQuery } from '@/services/views.service';
 import BoardDisplayControl from './components/BoardDisplayControl';
+import FieldsControl from './components/FieldsControl';
 import { IssueLinksProvider } from './context/useIssueLinks';
 import { SubtasksProvider } from './context/useSubtasks';
 import KanbanBoard from './components/kanban/KanbanBoard';
@@ -195,6 +197,28 @@ export default function WorkItemsPage() {
   };
 
   function renderView() {
+    // A project with no task at all shows one empty state with the page's main action, not the
+    // bare heads of empty columns and tables (owner, A11/O62). A filter that hides every task
+    // keeps its own empty lanes.
+    if (project!.issues.length === 0 && editor.view !== 'timeline' && can('work_items', 'create')) {
+      return (
+        <EmptyState
+          icon={<ListChecks aria-hidden="true" />}
+          title={t('emptyProject.title')}
+          action={
+            <Button
+              variant="quiet"
+              icon={<Plus aria-hidden="true" />}
+              onClick={() => onAddIssue({})}
+            >
+              {t('newIssue')}
+            </Button>
+          }
+        >
+          {t('emptyProject.text')}
+        </EmptyState>
+      );
+    }
     switch (editor.view) {
       case 'table':
         return (
@@ -243,6 +267,17 @@ export default function WorkItemsPage() {
       onSettingsChange={changeSettings}
       customFields={customFields}
       issueTypes={project.issueTypes}
+    />
+  );
+  const fields = (
+    <FieldsControl
+      view={editor.view}
+      project={project}
+      settings={settings}
+      onSettingsChange={changeSettings}
+      customFields={customFields}
+      issueTypes={project.issueTypes}
+      savedView={editor.activeView != null}
     />
   );
   // A new view from the page's filters is named after them ("Priorität: Hoch"), never
@@ -303,6 +338,7 @@ export default function WorkItemsPage() {
           </>
         )}
         <span className="ds-toolbar-fill" />
+        {fields}
         {display}
         {layoutSwitch}
         {!editor.editing && (

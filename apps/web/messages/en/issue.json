@@ -16,6 +16,7 @@
     "type": "Type",
     "labels": "Labels",
     "initiative": "Goal",
+    "goal": "Goal",
     "cycle": "Cycle",
     "estimatePoints": "Story points",
     "estimateTime": "Time estimate",
@@ -53,6 +54,7 @@
     "assignee": "Assignee",
     "delegate": "Delegate",
     "initiative": "Goal",
+    "goal": "Goal",
     "cycle": "Cycle",
     "dueDate": "Due date",
     "clearDueDate": "Clear due date",
@@ -63,6 +65,7 @@
     "noAssignee": "No assignee",
     "noDelegate": "No delegate",
     "noInitiative": "No goal",
+    "noGoal": "No goal",
     "noCycle": "No cycle",
     "promptCopied": "Prompt copied to clipboard"
   },
@@ -507,5 +510,18 @@
       "needs-review": "needs review",
       "failed": "failed"
     }
+  },
+  "goalSelect": {
+    "label": "Goal",
+    "search": "Search goals …",
+    "empty": "No goals.",
+    "none": "No goal",
+    "createNamed": "Create goal “{title}”",
+    "scopeProject": "This project",
+    "scopeDepartment": "Department",
+    "scopeTeam": "Team-wide",
+    "progress": "{done} of {total} tasks done",
+    "legacy": "Former project goal: {title}. Pick a goal to replace it.",
+    "creating": "Creating goal …"
   }
 }

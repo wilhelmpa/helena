@@ -17,7 +17,8 @@ import { useTranslations } from 'next-intl';
 import type { ProjectDetail } from '@/lib/api/endpoints/projects';
 import { usePermissions } from '@/hooks/usePermissions';
 import { usePriorityLabel } from '@/hooks/usePriorityLabel';
-import { useInitiativeOptionsQuery } from '@/services/initiatives.service';
+import { useSortedGoalOptions } from '@/services/goalOptions.service';
+import { GOAL_STATUS_META } from '@/utils/goalMeta';
 import { CYCLE_STATUS_META } from '@/utils/cycleMeta';
 import { subtaskCount } from '@/utils/subtasks';
 import { cn } from '@/lib/utils';
@@ -45,13 +46,10 @@ export function BulkActionBar({ project }: { project: ProjectDetail }) {
   const { can } = usePermissions();
   const bulk = useBulkActions(project);
   const [confirming, setConfirming] = useState<'delete' | 'archive' | null>(null);
-  // Initiatives are not in the board scaffold. The bulk picker fetches the linkable
-  // (open) ones only while selection is active, and only while the project shows the
-  // Initiatives section (with none loaded the picker is left out).
-  const initiativesKey =
-    selection.isSelecting && project.project.initiativesEnabled ? project.project.key : null;
-  const { data } = useInitiativeOptionsQuery(initiativesKey);
-  const initiatives = data ?? [];
+  // Goals are not in the board scaffold. The bulk picker fetches the ones a task of the
+  // project can serve only while selection is active (with none loaded the picker is left
+  // out).
+  const goals = useSortedGoalOptions(project.project.key, selection.isSelecting);
 
   if (!selection.isSelecting) return null;
 
@@ -152,23 +150,19 @@ export function BulkActionBar({ project }: { project: ProjectDetail }) {
                 </BarMenu>
               )}
 
-              {initiatives.length > 0 && (
-                <BarMenu
-                  icon={<Target className="size-4" />}
-                  label={t('initiative')}
-                  disabled={disabled}
-                >
-                  <DropdownMenuItem onSelect={() => void bulk.patch(ids, { initiativeId: null })}>
+              {goals.length > 0 && (
+                <BarMenu icon={<Target className="size-4" />} label={t('goal')} disabled={disabled}>
+                  <DropdownMenuItem onSelect={() => void bulk.patch(ids, { goalId: null })}>
                     <CircleDashed />
-                    <span className="flex-1">{t('noInitiative')}</span>
+                    <span className="flex-1">{t('noGoal')}</span>
                   </DropdownMenuItem>
-                  {initiatives.map((initiative) => (
+                  {goals.map((goal) => (
                     <DropdownMenuItem
-                      key={initiative.id}
-                      onSelect={() => void bulk.patch(ids, { initiativeId: initiative.id })}
+                      key={goal.id}
+                      onSelect={() => void bulk.patch(ids, { goalId: goal.id })}
                     >
-                      <Target />
-                      <span className="flex-1 truncate">{initiative.title}</span>
+                      {colorDot(GOAL_STATUS_META[goal.status].color)}
+                      <span className="flex-1 truncate">{goal.title}</span>
                     </DropdownMenuItem>
                   ))}
                 </BarMenu>

@@ -44,6 +44,7 @@ import {
   Tip,
   Tr,
   type Space,
+  StatusBox,
 } from '@/design-system';
 import { HELENA_STATUSES } from '@/utils/helenaStatus';
 
@@ -324,10 +325,9 @@ function Blocks() {
               <Orb state="idle" size="dot" />
               <span className="ds-agent-chip-label">{t('agentChip')}</span>
             </span>
-            <span className="ds-issue-status">
-              <Orb state="thinking" size="dot" motionEnabled={false} />
-              <span>{t('statusBox')}</span>
-            </span>
+            <StatusBox icon={<Orb state="thinking" size="dot" motionEnabled={false} />}>
+              {t('statusBox')}
+            </StatusBox>
           </Inline>
           <ol className="ds-ladder">
             <li className="ds-ladder-step">

@@ -170,6 +170,10 @@ export const project = pgTable(
     // outward or risky actions need approval, 3 autonomous within the budget. An agent may
     // carry a stricter level of its own (ai_agent.autopilot_level).
     autopilotLevel: smallint('autopilot_level').notNull().default(3),
+    // The fields the project's task views show by default (a project admin saved them from
+    // a view's "Felder" control): the property keys per layout, e.g. { kanban: ['id',
+    // 'priority'] }. Null while the project keeps the built-in or the member's own default.
+    displayDefaults: jsonb('display_defaults').$type<Record<string, string[]>>(),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
@@ -324,6 +328,9 @@ export const userPreference = pgTable(
     // The release whose "what's new" screen this user has closed. Null until they
     // close one, which is what an account created before the screen existed reads as.
     seenVersion: text('seen_version'),
+    // The fields the member's task views show by default in every project without a
+    // default of its own, per layout: { table: ['priority', 'dueDate'] }. Null until saved.
+    fieldDefaults: jsonb('field_defaults').$type<Record<string, string[]>>(),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },

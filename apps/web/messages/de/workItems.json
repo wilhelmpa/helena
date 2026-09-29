@@ -33,6 +33,7 @@
     "priority": "Priorität",
     "type": "Typ",
     "initiative": "Ziel",
+    "goal": "Ziel",
     "cycle": "Zyklus",
     "labels": "Labels",
     "estimatePoints": "Story Points",
@@ -82,11 +83,13 @@
     "assignee": "Zuständig",
     "delegate": "Delegiert an",
     "initiative": "Ziel",
+    "goal": "Ziel",
     "cycle": "Zyklus",
     "labels": "Labels",
     "noAssignee": "Nicht zugewiesen",
     "noDelegate": "Nicht delegiert",
     "noInitiative": "Kein Ziel",
+    "noGoal": "Kein Ziel",
     "noCycle": "Kein Zyklus",
     "archive": "Archivieren",
     "clearSelection": "Auswahl aufheben",
@@ -116,6 +119,7 @@
     "noPriority": "Keine Priorität",
     "noType": "Kein Typ",
     "noInitiative": "Kein Ziel",
+    "noGoal": "Kein Ziel",
     "noCycle": "Kein Zyklus",
     "noMember": "Kein Wert",
     "noArea": "Kein Bereich"
@@ -165,10 +169,39 @@
     "type": "{value}",
     "statusAge": "seit {value}",
     "initiative": "Ziel: {value}",
+    "goal": "Ziel: {value}",
     "cycle": "Zyklus {value}",
     "estimatePoints": "{value} Pkt.",
     "estimateTime": "{value}",
     "startDate": "ab {value}",
     "dueDate": "fällig {value}"
+  },
+  "fields": {
+    "button": "Felder",
+    "heading": "Felder",
+    "hint": "Welche Angaben Karten, Zeilen und Spalten zeigen.",
+    "preview": "Vorschau",
+    "previewEmpty": "Sobald es eine Aufgabe gibt, siehst du hier, wie sie aussieht.",
+    "title": "Titel",
+    "listFixed": "ID, Status, Priorität, Fälligkeit, Labels und Zuständige stehen in der Liste immer in ihrer Spalte.",
+    "calendarHint": "Der Kalender hat Platz für wenige Angaben.",
+    "none": "Keine Felder gewählt",
+    "source": {
+      "project": "Standard: dieses Projekt",
+      "global": "Standard: meine Einstellung",
+      "builtin": "Standard: Vorgabe"
+    },
+    "differs": "Weicht vom Standard ab",
+    "reset": "Zurücksetzen",
+    "saveProject": "Als Standard für dieses Projekt speichern",
+    "saveGlobal": "Für alle meine Projekte speichern",
+    "removeProject": "Projektstandard entfernen",
+    "savedProject": "Standard für dieses Projekt gespeichert.",
+    "savedGlobal": "Standard für alle deine Projekte gespeichert.",
+    "removedProject": "Projektstandard entfernt."
+  },
+  "emptyProject": {
+    "title": "Noch keine Aufgaben",
+    "text": "Eine Aufgabe hält fest, was zu tun ist, wer es tut und bis wann."
   }
 }

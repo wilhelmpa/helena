@@ -25,6 +25,9 @@ export function IssueWhyRow({ issueId, projectKey }: { issueId: number; projectK
     ...(why.initiative ? [why.initiative.title] : []),
     ...why.parents.map((parent) => parent.identifier),
   ];
+  // The goal the task names itself is its "Ziel" row already; the chain only says more when it
+  // has steps above or below the goal.
+  if (why.source === 'explicit' && steps.length === 1) return null;
   return (
     <IssuePropertyRow label={t('why')}>
       <Link href={initiativesPath(projectKey)} className="ds-why" title={steps.join(' › ')}>

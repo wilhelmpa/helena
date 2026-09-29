@@ -28,6 +28,7 @@
     "priority": "Priority",
     "type": "Type",
     "initiative": "Goal",
+    "goal": "Goal",
     "cycle": "Cycle",
     "area": "Area"
   },
@@ -39,6 +40,7 @@
     "assignee": "Assignee",
     "delegate": "Delegate",
     "initiative": "Goal",
+    "goal": "Goal",
     "cycle": "Cycle",
     "labels": "Labels",
     "estimatePoints": "Story points",

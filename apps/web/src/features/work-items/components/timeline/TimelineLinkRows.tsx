@@ -3,7 +3,7 @@ import { issueColor, type Maps } from '@/utils/project';
 import { cn } from '@/lib/utils';
 import { useLinkRelationLabel } from '@/hooks/useLinkRelationLabel';
 import { useIssueLinks } from '../../context/useIssueLinks';
-import { effSpan, LINK_ROW_H } from '../../utils/timeline';
+import { effSpan, LINK_ROW_H, quietBar } from '../../utils/timeline';
 
 // The issue's relations as sub-rows under its timeline row: the relation and the
 // linked issue on the left, that issue's own bar on the day track. The bars are
@@ -84,11 +84,11 @@ export function TimelineLinkRows({
                   e.preventDefault();
                   onOpen(link.issue.id);
                 }}
-                className="absolute top-1/2 z-10 flex h-4 -translate-y-1/2 cursor-pointer items-center rounded-sm px-1.5 text-white opacity-60"
+                className="absolute top-1/2 z-10 flex h-4 -translate-y-1/2 cursor-pointer items-center rounded-sm px-1.5 text-foreground opacity-60"
                 style={{
                   left: rect.left,
                   width: rect.width,
-                  backgroundColor: issueColor(link.issue, maps),
+                  ...quietBar(issueColor(link.issue, maps)),
                 }}
               >
                 <span className="truncate text-xs leading-none">{link.issue.title}</span>

@@ -36,7 +36,7 @@ export type CardMetaKey =
   | 'statusAge'
   | 'priority'
   | 'type'
-  | 'initiative'
+  | 'goal'
   | 'cycle'
   | 'estimatePoints'
   | 'estimateTime'
@@ -92,18 +92,17 @@ export function boardCardData(
       return item && item !== important ? [`${item.field.name} ${item.value}`] : [];
     }
     switch (property) {
-      case 'status': {
-        const status = maps.columnById.get(issue.columnId)?.name;
-        return status ? [words('status', status)] : [];
-      }
+      // The status is a box of its own on the card (owner, E2), not a word in the line.
+      case 'status':
+        return [];
       case 'priority':
         return issue.priority ? [words('priority', priorityLabel(issue.priority))] : [];
       case 'type': {
         const type = issue.typeId ? maps.typeById.get(issue.typeId) : null;
         return type ? [words('type', type.name)] : [];
       }
-      case 'initiative':
-        return issue.initiative ? [words('initiative', issue.initiative.title)] : [];
+      case 'goal':
+        return issue.goal ? [words('goal', issue.goal.title)] : [];
       case 'cycle':
         return issue.cycle ? [words('cycle', issue.cycle.name)] : [];
       case 'estimatePoints':
@@ -131,7 +130,11 @@ export function boardCardData(
   const labels = properties.includes('labels')
     ? issue.labelIds.flatMap((id) => maps.labelById.get(id) ?? [])
     : [];
-  return { importantValue, meta, labels };
+  const column = properties.includes('status') ? maps.columnById.get(issue.columnId) : undefined;
+  const status = column
+    ? { name: column.name, color: column.color, stateType: column.stateType }
+    : null;
+  return { importantValue, meta, labels, status };
 }
 
 // The properties a board card shows: the view's, without the one its columns already are —

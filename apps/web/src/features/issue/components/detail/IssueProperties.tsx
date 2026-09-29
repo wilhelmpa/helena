@@ -1,6 +1,6 @@
 import { type ReactNode } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
-import { RefreshCw, Target } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 import type { CustomField } from '@/lib/api/endpoints/customFields';
 import type { ProjectDetail } from '@/lib/api/endpoints/projects';
 import type {
@@ -18,7 +18,7 @@ import LabelsSelect from '@/components/common/fields/LabelsSelect';
 import PrioritySelect from '@/components/common/fields/PrioritySelect';
 import StatusSelect from '@/components/common/fields/StatusSelect';
 import TypeSelect from '@/components/common/fields/TypeSelect';
-import InitiativeSelect from '../fields/InitiativeSelect';
+import GoalSelect from '../fields/GoalSelect';
 import CycleSelect from '../fields/CycleSelect';
 import AreaSelect from '../fields/AreaSelect';
 import CycleHistoryBadge from '../fields/CycleHistoryBadge';
@@ -175,24 +175,19 @@ export default function IssueProperties({
           </IssuePropertyRow>
         ),
 
-        project.project.initiativesEnabled && (!readOnly || issue.initiative) && (
-          <IssuePropertyRow key="initiative" label={t('initiative')}>
-            {readOnly ? (
-              // Read-only shows the linked initiative from the issue itself, avoiding
-              // the authenticated initiatives query the editable select runs.
-              <ReadOnlyPill>
-                <Pill active={!!issue.initiative}>
-                  <Target />
-                  <span className="truncate">{issue.initiative?.title ?? t('initiative')}</span>
-                </Pill>
-              </ReadOnlyPill>
-            ) : (
-              <InitiativeSelect
-                projectKey={project.project.key}
-                value={issue.initiative?.id ?? null}
-                onChange={(id) => onPatch({ initiativeId: id })}
-              />
-            )}
+        (!readOnly || issue.goal || issue.initiative) && (
+          <IssuePropertyRow key="goal" label={t('goal')}>
+            <GoalSelect
+              projectKey={project.project.key}
+              projectId={project.project.id}
+              teamId={project.project.teamId}
+              value={issue.goal}
+              // A task still under an old project initiative keeps showing its title until
+              // a goal replaces it.
+              legacy={issue.initiative?.title ?? null}
+              onChange={(goal) => onPatch({ goalId: goal?.id ?? null })}
+              readOnly={readOnly}
+            />
           </IssuePropertyRow>
         ),
 
@@ -365,8 +360,8 @@ export default function IssueProperties({
     'assignee',
     'delegate',
     'claim',
+    'goal',
     'why',
-    'initiative',
     'dueDate',
     'cost',
   ]);

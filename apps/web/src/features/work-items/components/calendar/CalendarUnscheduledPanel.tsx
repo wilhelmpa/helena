@@ -3,7 +3,8 @@ import { useTranslations } from 'next-intl';
 import type { ProjectDetail } from '@/lib/api/endpoints/projects';
 import type { Issue } from '@/lib/api/endpoints/issues';
 import { cn } from '@/lib/utils';
-import { isCustomFieldKey, type DateField } from '@/utils/viewSettings';
+import type { Maps } from '@/utils/project';
+import { isCustomFieldKey, type DateField, type PropertyKey } from '@/utils/viewSettings';
 import { CalendarUnscheduledCard } from './CalendarUnscheduledCard';
 
 // Droppable id for the unscheduled panel; day cells use `day:<YYYY-MM-DD>`.
@@ -15,12 +16,16 @@ export function CalendarUnscheduledPanel({
   dateField,
   issues,
   dot,
+  properties,
+  maps,
   onOpen,
 }: {
   project: ProjectDetail;
   dateField: DateField;
   issues: Issue[];
   dot: (issue: Issue) => string;
+  properties: PropertyKey[];
+  maps: Maps;
   onOpen: (id: number) => void;
 }) {
   const t = useTranslations('workItems.calendar');
@@ -46,6 +51,8 @@ export function CalendarUnscheduledPanel({
             project={project}
             issue={issue}
             color={dot(issue)}
+            properties={properties}
+            maps={maps}
             onOpen={onOpen}
           />
         ))}

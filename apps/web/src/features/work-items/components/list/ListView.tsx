@@ -17,6 +17,7 @@ import { BoardHintPill } from '../shared/BoardHintPill';
 import { DelegateOrb } from '../kanban/DelegateOrb';
 import { boardCardData } from '../../utils/boardCardData';
 import { useCardMetaWords } from '../../hooks/useCardMetaWords';
+import { StatusBox } from '@/design-system';
 
 // The columns of a list row that always keep their place, filled or not (owner, 28.09.:
 // the status jumped left and right when a task had no priority or date).
@@ -96,10 +97,12 @@ export default function ListView({
                         </span>
                         <span className="ds-issue-list-cell" data-col="status">
                           {column && (
-                            <span className="ds-issue-status">
-                              <StateIcon stateType={column.stateType} color={column.color} />
-                              <span>{column.name}</span>
-                            </span>
+                            <StatusBox
+                              stateType={column.stateType}
+                              icon={<StateIcon stateType={column.stateType} color={column.color} />}
+                            >
+                              {column.name}
+                            </StatusBox>
                           )}
                         </span>
                         <span className="ds-issue-list-cell" data-col="priority">
