@@ -1,6 +1,8 @@
 // Voice Orb / Ship Notes. Copyright (c) 2026 Ship Notes. SPDX-License-Identifier: MIT.
 // Source: https://github.com/aqualang89/shipnotes-components/blob/main/components/voice-orb/voice-orb.js
 // Vendored with property setters and external band input; see NOTICE and THIRD-PARTY-LICENSES.md.
+// Helena: a `theme="light"` attribute draws the particles as colour on a light ground (normal
+// alpha blending, deeper tints, a softer halo) instead of adding light to a dark one.
 /* eslint-disable -- vendored third-party code, kept close to upstream */
 (() => {
   if (customElements.get('voice-orb')) return;
@@ -109,6 +111,7 @@
   }`;
   const FS = `
   precision mediump float;
+  uniform float light;
   varying vec3 tint;
   varying float strength, spark;
   void main() {
@@ -117,13 +120,19 @@
     float core=1.0-smoothstep(.18,.64,r);
     float halo=exp(-r*r*4.0)*.24*(1.0-smoothstep(.75,1.0,r));
     float a=(core+halo)*strength;
+    if(light>.5){
+      float alpha=min(1.0,(a+spark*core*.6)*.9);
+      vec3 deep=tint*.62;
+      gl_FragColor=vec4(deep*alpha,alpha);
+      return;
+    }
     vec3 color=tint*a+vec3(1.0,.92,.86)*spark*core;
     gl_FragColor=vec4(color,min(1.0,a+spark*core));
   }`;
 
   class VoiceOrb extends HTMLElement {
     static get observedAttributes() {
-      return ['state', 'particles', 'recording'];
+      return ['state', 'particles', 'recording', 'theme'];
     }
     constructor() {
       super();
@@ -172,6 +181,9 @@
     get state() {
       return STATES.includes(this.getAttribute('state')) ? this.getAttribute('state') : 'idle';
     }
+    get _light() {
+      return this.getAttribute('theme') === 'light';
+    }
     set state(value) {
       this.setAttribute('state', value);
     }
@@ -203,6 +215,7 @@
       if (name === 'state') this._label();
       if (name === 'particles') this._count = 0;
       if (name === 'recording') this._sync();
+      if (name === 'theme') this._paint(this._time, this._weights, this._bands, this._onset);
       if (this._motion?.matches && !this.hasAttribute('recording')) {
         this._weights = weightsFor(this.state);
         this._paint(0, this._weights, [0, 0, 0], 0);
@@ -247,7 +260,7 @@
         this._gl = gl;
         this._program = program;
         this._uniforms = {};
-        for (const n of ['time', 'pixels', 'density', 'weights', 'bands', 'onset'])
+        for (const n of ['time', 'pixels', 'density', 'weights', 'bands', 'onset', 'light'])
           this._uniforms[n] = gl.getUniformLocation(program, n);
         this._auto = matchMedia('(pointer: coarse)').matches ? 6000 : 12000;
         if (!this._lossHandler) {
@@ -365,8 +378,9 @@
         size * 0.48,
       );
       const energy = (weights[1] + weights[3]) * (bands[0] * 0.025 + onset * 0.035);
-      glow.addColorStop(0, `rgba(${rgb},.48)`);
-      glow.addColorStop(0.58, `rgba(${rgb},${0.3 + energy})`);
+      const light = this._light;
+      glow.addColorStop(0, `rgba(${rgb},${light ? 0.2 : 0.48})`);
+      glow.addColorStop(0.58, `rgba(${rgb},${(light ? 0.12 : 0.3) + energy})`);
       glow.addColorStop(1, `rgba(${rgb},0)`);
       h.fillStyle = glow;
       h.fillRect(0, 0, size, size);
@@ -377,6 +391,9 @@
         gl.clearColor(0, 0, 0, 0);
         gl.clear(gl.COLOR_BUFFER_BIT);
         gl.useProgram(this._program);
+        if (light) gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+        else gl.blendFunc(gl.ONE, gl.ONE);
+        gl.uniform1f(u.light, light ? 1 : 0);
         gl.uniform1f(u.time, time);
         gl.uniform1f(u.pixels, size);
         gl.uniform1f(u.density, Math.pow(12000 / count, 0.32));
@@ -389,8 +406,10 @@
     _paint2D(t, w, b, onset, rgb, size) {
       const ctx = this._ctx;
       ctx.clearRect(0, 0, size, size);
-      ctx.globalCompositeOperation = 'lighter';
-      ctx.fillStyle = `rgb(${rgb})`;
+      ctx.globalCompositeOperation = this._light ? 'source-over' : 'lighter';
+      ctx.fillStyle = this._light
+        ? `rgb(${rgb.map((c) => Math.round(c * 0.62))})`
+        : `rgb(${rgb})`;
       for (let i = 0; i < this._count; i++) {
         const o = i * 4,
           n = this._seeds,

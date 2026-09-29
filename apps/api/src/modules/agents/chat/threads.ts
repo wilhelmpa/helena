@@ -310,6 +310,40 @@ export async function restoreChat(threadId: string, userId: string): Promise<boo
   return rows.length > 0;
 }
 
+// "Alle löschen" (owner, 28.09., O4): every listed chat of the member (a project's, or all
+// of them) into the trash, where each can still be restored. A chat whose answer is still
+// being written stays: deleting it would cut the answer off.
+export async function trashAllChats(
+  userId: string,
+  filter: { projectId?: number; view: 'active' | 'archived' },
+): Promise<number> {
+  const { where } = chatQuery(userId, { projectId: filter.projectId, view: filter.view });
+  const rows = (await db.execute(sql`
+    UPDATE agent_chat_thread SET deleted_at = now()
+    WHERE id IN (
+      SELECT t.id FROM agent_chat_thread t
+      WHERE ${where}
+        AND NOT EXISTS (
+          SELECT 1 FROM agent_chat_message lm
+          WHERE lm.thread_id = t.id AND lm.role = 'assistant' AND lm.status IN ('pending', 'streaming')
+        )
+    )
+    RETURNING id
+  `)) as unknown as { id: string }[];
+  return rows.length;
+}
+
+// Empties the member's trash (a project's part of it, or all of it) for good.
+export async function purgeTrash(userId: string, filter: { projectId?: number }): Promise<number> {
+  const { where } = chatQuery(userId, { projectId: filter.projectId, view: 'trash' });
+  const rows = (await db.execute(
+    sql`SELECT t.id FROM agent_chat_thread t WHERE ${where}`,
+  )) as unknown as { id: string }[];
+  let count = 0;
+  for (const row of rows) if (await deleteThread(row.id, userId)) count += 1;
+  return count;
+}
+
 // Deletes a chat in the trash for good, with its messages.
 export async function purgeChat(threadId: string, userId: string): Promise<boolean> {
   const [thread] = await db

@@ -41,7 +41,22 @@
     "deleteConfirmTitle": "Supprimer ce chat ?",
     "deleteConfirmBody": "« {title} » et ses messages passent à la corbeille, où ils restent restaurables.",
     "trashed": "Chat déplacé vers la corbeille.",
-    "purged": "Chat supprimé définitivement."
+    "purged": "Chat supprimé définitivement.",
+    "options": "Liste des discussions",
+    "groupBy": "Regrouper par",
+    "grouping": {
+      "time": "Par date",
+      "project": "Par projet",
+      "agent": "Par agent"
+    },
+    "deleteAll": "Tout supprimer",
+    "deleteAllTitle": "Supprimer toutes les discussions ?",
+    "deleteAllBody": "Les discussions de cette liste vont à la corbeille, où elles peuvent être restaurées. Une discussion en cours de réponse reste.",
+    "emptyTrash": "Vider la corbeille",
+    "emptyTrashTitle": "Vider la corbeille ?",
+    "emptyTrashBody": "Les discussions de la corbeille sont supprimées définitivement avec tous leurs messages.",
+    "trashedAll": "{count, plural, =0 {Aucune discussion déplacée} one {Une discussion dans la corbeille} other {# discussions dans la corbeille}}",
+    "purgedAll": "{count, plural, =0 {La corbeille était vide} one {Une discussion supprimée définitivement} other {# discussions supprimées définitivement}}"
   },
   "empty": {
     "noAgentsTitle": "Aucun agent pour discuter",
@@ -119,7 +134,9 @@
     "dictationUnavailable": "La dictée n'est pas possible ici pour l'instant – cliquez pour savoir pourquoi",
     "autoSpeak": "Lire les réponses à voix haute automatiquement",
     "autoSpeakOn": "Les réponses sont lues à voix haute – cliquez pour désactiver",
-    "queuedList": "En attente d’envoi"
+    "queuedList": "En attente d’envoi",
+    "localModel": "{name} (local)",
+    "fallbackModel": "Repli : {name}"
   },
   "artifact": {
     "title": "Artefact",
@@ -169,7 +186,8 @@
   "agents": {
     "runtimeExternal": "Externe",
     "switch": "Discussion avec {agent} — démarrer une nouvelle discussion avec un autre agent",
-    "newChatWith": "Nouvelle discussion avec …"
+    "newChatWith": "Nouvelle discussion avec …",
+    "switchToHelena": "Nouvelle discussion avec Helena"
   },
   "interrupted": {
     "lost": "La connexion à la réponse a été perdue. {agent} y travaille peut-être encore.",
@@ -273,5 +291,9 @@
     "webhookUrl": "Adresse (HTTPS)",
     "webhookSecretEnv": "Variable contenant la clé de signature",
     "webhookHint": "Helena appelle l'adresse avec une signature Standard Webhooks. Donnez la clé (whsec_…) à l'agent comme variable d'environnement dans Accès."
+  },
+  "context": {
+    "task": "Tâche {identifier} « {title} »",
+    "document": "Document {name}"
   }
 }

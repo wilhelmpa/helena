@@ -2242,3 +2242,64 @@ a.ds-run-card:hover {
 .ds-list-meta :is(select, input, button) {
   font-family: var(--font-sans);
 }
+
+/* ── The agent chip at the composer (ChatAgentMenu) ──────────────────────── */
+/* "Helena · Flash (lokal)": the agent's status orb, who and with which model, one pill of
+   the control height with a clean round edge (owner, 28.09., O2). */
+.ds-agent-chip {
+  display: inline-flex;
+  height: 32px;
+  min-width: 0;
+  max-width: 100%;
+  flex: 0 1 auto;
+  align-items: center;
+  gap: var(--space-2);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-full);
+  background: var(--surface-2);
+  padding: 0 var(--space-3);
+  color: var(--text-2);
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.ds-agent-chip:hover,
+.ds-agent-chip[data-state='open'] {
+  background: var(--surface-3);
+  color: var(--text);
+}
+.ds-agent-chip:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.ds-agent-chip-label {
+  min-width: 0;
+  max-width: 24rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ds-agent-chip > svg {
+  flex: none;
+  color: var(--text-3);
+}
+.ds-agent-menu {
+  width: 18rem;
+  max-height: 24rem;
+  overflow-y: auto;
+}
+.ds-agent-menu-item {
+  gap: var(--space-2);
+}
+.ds-agent-menu-item-text {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+}
+.ds-agent-chip[data-variant='quiet'] {
+  border-color: transparent;
+  background: transparent;
+}
+.ds-agent-chip[data-variant='quiet']:hover {
+  background: var(--surface-2);
+}

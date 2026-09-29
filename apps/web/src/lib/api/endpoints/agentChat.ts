@@ -523,6 +523,20 @@ export const deleteChat = (threadId: string, permanent = false) =>
     method: 'DELETE',
   });
 
+// "Alle löschen": the listed chats (a project's, or all) into the trash; a chat still being
+// answered stays. And the trash emptied for good.
+export const trashAllChats = (filter: { projectKey?: string; view?: 'active' | 'archived' }) =>
+  request<{ count: number }>('/chats/trash-all', {
+    method: 'POST',
+    body: JSON.stringify(filter),
+  });
+
+export const emptyChatTrash = (filter: { projectKey?: string }) =>
+  request<{ count: number }>('/chats/empty-trash', {
+    method: 'POST',
+    body: JSON.stringify(filter),
+  });
+
 export const restoreChat = (threadId: string) =>
   request<void>('/chats/' + encodeURIComponent(threadId) + '/restore', { method: 'POST' });
 

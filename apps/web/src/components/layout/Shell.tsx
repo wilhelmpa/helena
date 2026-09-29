@@ -278,6 +278,16 @@ export default function Shell({
     headerLayout,
     headerExtra,
     workspaceLayout: layoutChoice,
+    currentIssue: (() => {
+      const panelIssue =
+        overlays.openIssueId != null
+          ? project?.issues.find((issue) => issue.id === overlays.openIssueId)
+          : null;
+      if (panelIssue) return { identifier: panelIssue.identifier, title: panelIssue.title };
+      return issueQuery.data
+        ? { identifier: issueQuery.data.identifier, title: issueQuery.data.title }
+        : null;
+    })(),
   };
 
   // The frame (docs/design-system.md §3): the sidebar — full, a 56px rail, or an overlay

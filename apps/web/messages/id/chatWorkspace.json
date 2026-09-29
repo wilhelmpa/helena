@@ -41,7 +41,22 @@
     "deleteConfirmTitle": "Hapus obrolan ini?",
     "deleteConfirmBody": "“{title}” dan pesan-pesannya pindah ke sampah, dan masih bisa dipulihkan dari sana.",
     "trashed": "Obrolan dipindahkan ke sampah.",
-    "purged": "Obrolan dihapus selamanya."
+    "purged": "Obrolan dihapus selamanya.",
+    "options": "Daftar obrolan",
+    "groupBy": "Kelompokkan",
+    "grouping": {
+      "time": "Menurut tanggal",
+      "project": "Menurut proyek",
+      "agent": "Menurut agen"
+    },
+    "deleteAll": "Hapus semua",
+    "deleteAllTitle": "Hapus semua obrolan?",
+    "deleteAllBody": "Obrolan dalam daftar ini dipindahkan ke tempat sampah dan dapat dipulihkan. Obrolan yang masih dijawab tetap ada.",
+    "emptyTrash": "Kosongkan tempat sampah",
+    "emptyTrashTitle": "Kosongkan tempat sampah?",
+    "emptyTrashBody": "Obrolan di tempat sampah dihapus permanen beserta semua pesannya.",
+    "trashedAll": "{count, plural, =0 {Tidak ada obrolan dipindahkan} other {# obrolan di tempat sampah}}",
+    "purgedAll": "{count, plural, =0 {Tempat sampah kosong} other {# obrolan dihapus permanen}}"
   },
   "empty": {
     "noAgentsTitle": "Tidak ada agen untuk diajak chat",
@@ -119,7 +134,9 @@
     "dictationUnavailable": "Dikte tidak bisa dipakai di sini saat ini – klik untuk alasannya",
     "autoSpeak": "Bacakan jawaban secara otomatis",
     "autoSpeakOn": "Jawaban dibacakan – klik untuk mematikan",
-    "queuedList": "Menunggu dikirim"
+    "queuedList": "Menunggu dikirim",
+    "localModel": "{name} (lokal)",
+    "fallbackModel": "Cadangan: {name}"
   },
   "artifact": {
     "title": "Artefak",
@@ -169,7 +186,8 @@
   "agents": {
     "runtimeExternal": "Eksternal",
     "switch": "Chat dengan {agent} — mulai chat baru dengan agen lain",
-    "newChatWith": "Chat baru dengan …"
+    "newChatWith": "Chat baru dengan …",
+    "switchToHelena": "Obrolan baru dengan Helena"
   },
   "interrupted": {
     "lost": "Koneksi ke jawaban terputus. {agent} mungkin masih mengerjakannya.",
@@ -273,5 +291,9 @@
     "webhookUrl": "Alamat (HTTPS)",
     "webhookSecretEnv": "Variabel berisi kunci tanda tangan",
     "webhookHint": "Helena memanggil alamat dengan tanda tangan Standard Webhooks. Berikan kunci (whsec_…) ke agen sebagai variabel lingkungan di Akses."
+  },
+  "context": {
+    "task": "Tugas {identifier} “{title}”",
+    "document": "Dokumen {name}"
   }
 }

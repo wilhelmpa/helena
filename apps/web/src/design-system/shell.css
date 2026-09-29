@@ -1351,3 +1351,28 @@
   visibility: hidden;
   pointer-events: none;
 }
+
+/* The chat tool in the Werkzeug-Panel: the context line, then the chat. */
+.ds-chat-panel {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+}
+.ds-chat-panel .helena-home-context {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ds-chat-panel-loading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.ds-chat-context-item {
+  color: var(--text-2);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  letter-spacing: 0;
+  text-transform: none;
+}

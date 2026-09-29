@@ -2,22 +2,32 @@
 
 import { useEffect, useMemo, useRef } from 'react';
 import { useTranslations } from 'next-intl';
+import { MessagesSquare } from 'lucide-react';
 import type { ChatListView } from '@/lib/api/endpoints/agentChat';
+import { EmptyState } from '@/design-system';
 import { Skeleton } from '@/components/ui/skeleton';
 import { chatsOf, useChatList } from '../../hooks/useChatList';
-import { groupChats, type ChatGroup } from '../../utils/chatGroups';
+import {
+  groupChats,
+  groupChatsBy,
+  type ChatGroup,
+  type ChatGrouping,
+} from '../../utils/chatGroups';
 import ChatListItem from './ChatListItem';
 
 export interface ChatListGroupsProps {
   projectKey: string | null;
   view: ChatListView;
   q?: string;
+  grouping?: ChatGrouping;
   selectedThreadId: string | null;
   onSelectThread: (thread: { id: string; agentId: number }) => void;
   onThreadRemoved: (threadId: string) => void;
 }
 
-function groupLabel(t: ReturnType<typeof useTranslations>, key: ChatGroup['key']): string {
+function groupLabel(t: ReturnType<typeof useTranslations>, group: ChatGroup): string {
+  if (group.label) return group.label;
+  const key = group.key;
   switch (key) {
     case 'pinned':
       return t('list.group.pinned');
@@ -45,6 +55,7 @@ export default function ChatListGroups({
   projectKey,
   view,
   q,
+  grouping = 'time',
   selectedThreadId,
   onSelectThread,
   onThreadRemoved,
@@ -53,10 +64,15 @@ export default function ChatListGroups({
   const query = useChatList({ projectKey: projectKey ?? undefined, q, view });
   const chats = chatsOf(query.data);
   // A search ranks by relevance (title, then the member's words, then the agent's), so
-  // it stays one list; grouping by "when" would scatter the best matches across dates.
+  // it stays one list; grouping it would scatter the best matches.
   const groups = useMemo<ChatGroup[]>(
-    () => (q ? [{ key: 'today', chats }] : groupChats(chats, new Date())),
-    [chats, q],
+    () =>
+      q
+        ? [{ key: 'today', chats, label: t('list.searchResults') }]
+        : grouping === 'time'
+          ? groupChats(chats, new Date())
+          : groupChatsBy(chats, grouping, 'Helena'),
+    [chats, q, grouping, t],
   );
   const sentinelRef = useRef<HTMLDivElement>(null);
 
@@ -74,9 +90,9 @@ export default function ChatListGroups({
 
   if (query.isLoading) {
     return (
-      <div className="min-h-0 flex-1 space-y-1 overflow-y-auto p-2">
+      <div className="ds-chat-list-body">
         {Array.from({ length: 8 }).map((_, index) => (
-          <Skeleton key={index} className="h-8 w-full rounded-md" />
+          <Skeleton key={index} className="ds-chat-list-skeleton" />
         ))}
       </div>
     );
@@ -84,25 +100,20 @@ export default function ChatListGroups({
 
   if (chats.length === 0) {
     return (
-      <p className="min-h-0 flex-1 px-4 py-6 text-center text-sm text-muted-foreground">
-        {q ? t('list.noMatches') : t(`list.empty.${view}`)}
-      </p>
+      <div className="ds-chat-list-body">
+        <EmptyState icon={<MessagesSquare />} fill={false}>
+          {q ? t('list.noMatches') : t(`list.empty.${view}`)}
+        </EmptyState>
+      </div>
     );
   }
 
-  // Styled after the sidebar's groups: a 32px label in 12px medium at 70%, rows packed
-  // 2px apart.
   return (
-    <nav
-      aria-label={t('list.title')}
-      className="min-h-0 flex-1 scrollbar-thin space-y-2 overflow-y-auto px-2 pb-2"
-    >
+    <nav aria-label={t('list.title')} className="ds-chat-list-body">
       {groups.map((group) => (
-        <div key={group.key}>
-          <h3 className="flex h-8 items-center px-2 text-xs font-medium text-sidebar-foreground/70">
-            {q ? t('list.searchResults') : groupLabel(t, group.key)}
-          </h3>
-          <ul className="space-y-0.5">
+        <section key={group.key} className="ds-chat-list-group">
+          <h3 className="ds-chat-list-group-label">{groupLabel(t, group)}</h3>
+          <ul>
             {group.chats.map((chat) => (
               <li key={chat.id}>
                 <ChatListItem
@@ -116,10 +127,10 @@ export default function ChatListGroups({
               </li>
             ))}
           </ul>
-        </div>
+        </section>
       ))}
       <div ref={sentinelRef} />
-      {query.isFetchingNextPage && <Skeleton className="h-8 rounded-md" />}
+      {query.isFetchingNextPage && <Skeleton className="ds-chat-list-skeleton" />}
     </nav>
   );
 }

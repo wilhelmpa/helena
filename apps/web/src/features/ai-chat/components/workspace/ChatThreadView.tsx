@@ -124,6 +124,12 @@ export default function ChatThreadView({
   const tool = activeTool(plan.messages, plan.status);
   const choices = activity === 'answered' ? pendingChoices(plan.messages) : null;
   const lastMessageId = plan.messages.at(-1)?.id ?? null;
+  // A local model fell back to the configured one on the last answer: the chip says who
+  // really answered (owner, 28.09.).
+  const lastAnswer = plan.messages.findLast((message) => message.role === 'assistant');
+  const answeredBy = lastAnswer?.metadata?.localFallback
+    ? (lastAnswer.metadata.model ?? null)
+    : null;
   const [recentDoneId, setRecentDoneId] = useState<string | null>(null);
   const previousActivity = useRef(activity);
   useEffect(() => {
@@ -351,6 +357,7 @@ export default function ChatThreadView({
           onStop={() => void plan.stop()}
           onNewChat={() => onNewChat(agent.id)}
           onPickAgent={onNewChat}
+          answeredBy={answeredBy}
           onRetryLast={() => void plan.regenerate()}
           onReconnect={() => void plan.reconnect()}
           onContinue={() => void plan.send(t('interrupted.continuePrompt'), { agentId: agent.id })}

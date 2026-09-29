@@ -470,6 +470,21 @@ export const deleteChatQuery = t.Object({
   ),
 });
 
+export const trashAllChatsBody = t.Object({
+  projectKey: t.Optional(t.String({ description: 'Only the chats of this project.' })),
+  view: t.Optional(
+    oneOf(['active', 'archived'], {
+      description: 'The list to empty into the trash: the chats (default) or the archive.',
+    }),
+  ),
+});
+
+export const emptyChatTrashBody = t.Object({
+  projectKey: t.Optional(t.String({ description: 'Only the chats of this project.' })),
+});
+
+export const ChatCountResponse = t.Object({ count: t.Integer() });
+
 export const showVersionBody = t.Object({
   messageId: t.Integer({ description: 'The version to show: a message of the chat.' }),
 });

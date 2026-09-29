@@ -2,6 +2,7 @@
 
 import { createElement, useEffect, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { useTheme } from 'next-themes';
 import { useVoiceOrbAudio } from '@/hooks/useVoiceOrbAudio';
 import type { HelenaStatus, VoicePhase } from '@/utils/helenaStatus';
 import styles from './Orb.module.css';
@@ -44,6 +45,10 @@ export default function Orb({
   outputAnalyser?: AnalyserNode | null;
 }) {
   const t = useTranslations('common.status');
+  // On a light ground the particles are drawn as colour, not as added light (owner, 28.09.:
+  // the orb was a heavy dark ball in light mode).
+  const { resolvedTheme } = useTheme();
+  const theme = resolvedTheme === 'light' ? 'light' : 'dark';
   const [animated, setAnimated] = useState<boolean | null>(null);
   const [ready, setReady] = useState(false);
   const [hidden, setHidden] = useState(false);
@@ -139,6 +144,7 @@ export default function Orb({
         !still &&
         createElement('voice-orb', {
           state: visual,
+          theme,
           'aria-hidden': true,
         })}
     </span>

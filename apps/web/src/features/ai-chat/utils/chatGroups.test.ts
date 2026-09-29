@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import type { ChatSummary } from '@/lib/api/endpoints/agentChat';
 import { setDisplayTimezone } from '@/utils/dates';
-import { chatGroupKey, groupChats } from './chatGroups';
+import { chatGroupKey, groupChats, groupChatsBy } from './chatGroups';
 
 setDisplayTimezone('Europe/Berlin');
 
@@ -42,6 +42,54 @@ describe('chat list sections', () => {
         ['yesterday', ['c']],
         ['m:2026-06', ['d']],
         ['m:2026-05', ['e']],
+      ],
+    );
+  });
+});
+
+describe('chat list grouped by project or agent', () => {
+  const summary = (
+    id: string,
+    project: string | null,
+    agent: number,
+    pinned = false,
+  ): ChatSummary =>
+    ({
+      id,
+      pinned,
+      project: project ? { id: 1, key: project, name: `Projekt ${project}` } : null,
+      agent: { id: agent, name: `Agent ${agent}`, username: `a${agent}` },
+    }) as ChatSummary;
+  const list = [
+    summary('pin', 'VOL', 2, true),
+    summary('t1', 'TRADE', 3),
+    summary('h1', null, 1),
+    summary('t2', 'TRADE', 3),
+    summary('v1', 'VOL', 2),
+  ];
+
+  it('puts Helena first, then each project by its newest chat', () => {
+    const groups = groupChatsBy(list, 'project', 'Helena');
+    assert.deepEqual(
+      groups.map((group) => [group.key, group.label, group.chats.map((c) => c.id)]),
+      [
+        ['pinned', undefined, ['pin']],
+        ['p:', 'Helena', ['h1']],
+        ['p:TRADE', 'Projekt TRADE', ['t1', 't2']],
+        ['p:VOL', 'Projekt VOL', ['v1']],
+      ],
+    );
+  });
+
+  it('sections the chats by agent', () => {
+    const groups = groupChatsBy(list, 'agent', 'Helena');
+    assert.deepEqual(
+      groups.map((group) => [group.label, group.chats.map((c) => c.id)]),
+      [
+        [undefined, ['pin']],
+        ['Agent 3', ['t1', 't2']],
+        ['Agent 1', ['h1']],
+        ['Agent 2', ['v1']],
       ],
     );
   });
