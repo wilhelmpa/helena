@@ -1139,12 +1139,13 @@ export async function usageShare(days = 7) {
 // ── The status card ────────────────────────────────────────────────────────────────────
 
 export async function localAiStatus() {
-  const [policy, servers, gpu, npu, usage] = await Promise.all([
+  const [policy, servers, gpu, npu, usage, lastGpuReset] = await Promise.all([
     readLocalAiPolicy(),
     listModelServers(),
     readGpu(),
     npuPresent(),
     usageShare(),
+    readLastGpuReset(),
   ]);
   const loaded = servers.flatMap((server) =>
     (server.status?.loaded ?? []).map((entry) => ({
@@ -1156,6 +1157,7 @@ export async function localAiStatus() {
   const unitLoaded = (unit: LocalAiUnit) => loaded.filter((entry) => entry.unit === unit);
   return {
     guard: localAiGuard(),
+    lastGpuReset,
     enabled: policy.enabled,
     units: {
       gpu: {
@@ -1208,6 +1210,34 @@ export async function localAiStatus() {
         .filter(Number.isFinite),
     ),
   };
+}
+
+async function readLastGpuReset(): Promise<{
+  at: string;
+  bootId: string;
+  resetNumber: number;
+  restartedUnits: string[];
+  failedUnits: string[];
+} | null> {
+  try {
+    const event = JSON.parse(await readFile('/var/lib/helena-ai/gpu-reset.json', 'utf8'));
+    if (
+      typeof event.at !== 'string' ||
+      !Number.isInteger(event.resetNumber) ||
+      !Array.isArray(event.restartedUnits) ||
+      !Array.isArray(event.failedUnits)
+    )
+      return null;
+    return {
+      at: event.at,
+      bootId: String(event.bootId ?? ''),
+      resetNumber: event.resetNumber,
+      restartedUnits: event.restartedUnits,
+      failedUnits: event.failedUnits,
+    };
+  } catch {
+    return null;
+  }
 }
 
 // ── The settings page ──────────────────────────────────────────────────────────────────

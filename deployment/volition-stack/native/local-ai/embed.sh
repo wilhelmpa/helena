@@ -21,7 +21,8 @@ PORT=13308
 CTX=16384
 UBATCH=8192
 LLAMA_TAG=b11166
-BACKEND=${HELENA_EMBED_BACKEND:-rocm}
+BACKEND=${HELENA_EMBED_BACKEND:-vulkan}
+case "$BACKEND" in rocm|vulkan) ;; *) echo "embed.sh: HELENA_EMBED_BACKEND must be rocm or vulkan" >&2; exit 2 ;; esac
 CATALOG=$here/models.tsv
 
 R=${HELENA_AI_TEST_ROOT:-}
@@ -72,6 +73,8 @@ render_unit() {
   sed -e "s#@LLAMA@#/opt/helena-ai/llamacpp/$BACKEND-$LLAMA_TAG/llama-server#g" \
     -e "s#@MODEL@#/var/lib/helena-ai/models/hub/models--$(printf '%s' "$REPO" | sed 's#/#--#')/snapshots/$COMMIT/$FILE#g" \
     -e "s#@ALIAS@#$NAME#g" -e "s#@PORT@#$PORT#g" -e "s#@CTX@#$CTX#g" -e "s#@UBATCH@#$UBATCH#g" \
+    -e "s#@GPU_DEVICE@#$( [ "$BACKEND" = rocm ] && printf 'DeviceAllow=/dev/kfd rw' || true )#g" \
+    -e "s#@ROCBLAS@#$( [ "$BACKEND" = rocm ] && printf 'Environment=ROCBLAS_USE_HIPBLASLT=1' || true )#g" \
     "$here/systemd/helena-embed.service.in"
 }
 
@@ -90,7 +93,8 @@ install_embed() {
   fi
   render_unit | put "$UNIT"
   run systemctl daemon-reload
-  run systemctl enable --now helena-embed.service
+  run systemctl enable helena-embed.service
+  run systemctl restart helena-embed.service
   if [ "$DRY_RUN" = 0 ]; then
     i=0
     until curl -fsS --max-time 3 -H "Authorization: Bearer $(cat "$KEY")" "http://127.0.0.1:$PORT/v1/models" >/dev/null 2>&1; do

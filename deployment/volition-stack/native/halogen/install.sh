@@ -56,6 +56,8 @@ UNIT=$R/etc/systemd/system/helena-halogen.service
 PROXY_SOCKET=$R/etc/systemd/system/helena-halogen-proxy@.socket
 PROXY_SERVICE=$R/etc/systemd/system/helena-halogen-proxy@.service
 NFT=$R/etc/nftables.d/helena-halogen.nft
+SYSCTL=$R/etc/sysctl.d/60-helena-halogen.conf
+THP=$R/etc/tmpfiles.d/60-helena-thp.conf
 
 DRY_RUN=0
 RESTART=0
@@ -264,6 +266,12 @@ install_all() {
   say "== settings (once; never overwritten)"
   if [ -e "$CONF" ]; then say "have $CONF"; else put "$CONF" 0644 root:root < "$here/halogen.conf"; fi
 
+  say "== Kingston host memory policy (kernel cmdline is a separate maintenance step)"
+  put "$SYSCTL" 0644 root:root < "$here/60-helena-halogen.conf"
+  put "$THP" 0644 root:root < "$here/60-helena-thp.conf"
+  run sysctl -p "$SYSCTL"
+  run systemd-tmpfiles --create "$THP"
+
   say "== the forwarder's user (the firewall lets only named users reach the port)"
   if ! id -u "$FWD_USER" >/dev/null 2>&1; then
     run useradd --system --no-create-home --home-dir /nonexistent --shell /usr/sbin/nologin "$FWD_USER"
@@ -310,7 +318,66 @@ install_all() {
   say "\"Halogen\"), or apps/api/src/scripts/local-ai-register.ts --kind halogen (README.md)."
 }
 
+check_value() {
+  if [ "$2" = "$3" ]; then say "ok             $1=$2"
+  else say "DRIFT          $1=${2:-unavailable}; expected $3"; fi
+}
+
+host_status() {
+  for spec in "60-helena-halogen.conf:$SYSCTL" "60-helena-thp.conf:$THP"; do
+    if cmp -s "$here/${spec%%:*}" "${spec#*:}"; then
+      say "host file:     ${spec#*:} current"
+    else
+      say "DRIFT          ${spec#*:} missing or differs (re-run install; see kernel.md)"
+    fi
+  done
+  while read -r key equals expected; do
+    case "$key" in vm.*)
+      actual=$(cat "$R/proc/sys/$(printf '%s' "$key" | tr . /)" 2>/dev/null || true)
+      check_value "$key" "$actual" "$expected" ;;
+    esac
+  done < "$here/60-helena-halogen.conf"
+  for setting in enabled defrag; do
+    actual=$(sed -n 's/.*\[\([^]]*\)\].*/\1/p' "$R/sys/kernel/mm/transparent_hugepage/$setting" 2>/dev/null || true)
+    check_value "THP.$setting" "$actual" madvise
+  done
+  cmdline=$(cat "$R/proc/cmdline" 2>/dev/null || true)
+  for arg in ttm.pages_limit=31457280 amdgpu.noretry=0 iommu=pt; do
+    case " $cmdline " in
+      *" $arg "*) say "kernel:        $arg" ;;
+      *) say "DRIFT          kernel cmdline lacks $arg (review kernel.md; no automatic GRUB changes)" ;;
+    esac
+  done
+  for key in vm/watermark_scale_factor vm/zone_reclaim_mode vm/nr_hugepages kernel/numa_balancing; do
+    say "host observed: $key=$(cat "$R/proc/sys/$key" 2>/dev/null || echo unavailable)"
+  done
+  for name in scaling_driver scaling_governor energy_performance_preference; do
+    say "CPU0 observed: $name=$(cat "$R/sys/devices/system/cpu/cpu0/cpufreq/$name" 2>/dev/null || echo unavailable)"
+  done
+  for name in memory.high memory.max memory.events; do
+    value=$(cat "$R/sys/fs/cgroup/system.slice/helena-halogen.service/$name" 2>/dev/null || echo unavailable)
+    say "cgroup:        $name=$(printf '%s' "$value" | tr '\n' ' ')"
+    case "$name" in memory.high|memory.max) check_value "$name" "$value" max ;; esac
+  done
+  # Inspect the engine, not podman's limit; never read a process environment.
+  engine_found=0
+  for proc in "$R"/proc/[0-9]*; do
+    read -r name 2>/dev/null < "$proc/comm" || continue
+    [ "$name" = flash_serve ] || continue
+    grep -q '/system.slice/helena-halogen.service/' "$proc/cgroup" 2>/dev/null || continue
+    engine_found=1
+    locked=$(awk '/^VmLck:/ {print $2}' "$proc/status" 2>/dev/null || true)
+    say "engine:        pid=${proc##*/}, VmLck=${locked:-unavailable} kB"
+    [ -n "$locked" ] && [ "$locked" != 0 ] || say "DRIFT          engine weights not confirmed mlocked; next planned start with HALOGEN_WEIGHTS_LOCK=1 (kernel.md)"
+    say "engine limit:  $(grep '^Max locked memory' "$proc/limits" 2>/dev/null || echo unavailable)"
+    limit=$(awk '/^Max locked memory/ {print $4 ":" $5}' "$proc/limits" 2>/dev/null || true)
+    check_value "engine.memlock.soft:hard" "$limit" unlimited:unlimited
+  done
+  [ "$engine_found" = 1 ] || say "engine:        unavailable (not running or /proc access restricted)"
+}
+
 status() {
+  host_status
   enabled=$(systemctl is-enabled helena-halogen 2>/dev/null) || true
   active=$(systemctl is-active helena-halogen 2>/dev/null) || true
   say "unit:          ${enabled:-not installed}, ${active:-inactive}"
@@ -337,8 +404,8 @@ status() {
   else
     say "health:        no answer on 127.0.0.1:$PORT"
   fi
-  mem=$(cat /sys/fs/cgroup/system.slice/helena-halogen.service/memory.current 2>/dev/null || true)
-  [ -z "$mem" ] || say "memory:        $(awk -v b="$mem" 'BEGIN { printf "%.1f GB", b / 1e9 }') (the unit's cgroup, pinned weights included)"
+  mem=$(cat "$R/sys/fs/cgroup/system.slice/helena-halogen.service/memory.current" 2>/dev/null || true)
+  [ -z "$mem" ] || say "memory:        $(awk -v b="$mem" 'BEGIN { printf "%.1f GB", b / 1e9 }') charged to the unit (not total weights/GTT; see kernel.md)"
 }
 
 uninstall() {
@@ -348,6 +415,8 @@ uninstall() {
   run systemctl daemon-reload
   run nft delete table inet helena_halogen || true
   run rm -f "$NFT"
+  # Host memory policy also affects other services; retain it until explicitly reviewed.
+  say "kept host policy: $SYSCTL, $THP (see kernel.md for removal)"
   run podman network rm "$NETWORK" || true
   run rm -rf "$LIB"
   if [ "$PURGE" = 1 ]; then
