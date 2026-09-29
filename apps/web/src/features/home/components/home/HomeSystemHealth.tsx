@@ -44,7 +44,7 @@ export default function HomeSystemHealth() {
   return (
     // Two cards side by side (owner, O8: the system page was a list of text without cards):
     // the services with everything that depends on them, and the maintenance loops.
-    <Grid split gap={4}>
+    <Grid columns={2} gap={4}>
       <Card title={t('title')}>
         <Stack gap={3}>
           <ul>

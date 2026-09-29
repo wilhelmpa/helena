@@ -31,7 +31,7 @@ export default function AutomationKinds() {
           </Text>
           {href && (
             <Inline>
-              <ButtonLink href={href} size="small" variant="ghost">
+              <ButtonLink href={href} size="small">
                 {t(`${id}.open`)}
               </ButtonLink>
             </Inline>

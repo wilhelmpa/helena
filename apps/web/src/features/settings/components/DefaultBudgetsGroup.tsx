@@ -17,7 +17,7 @@ import {
 } from '@/features/autopilot/utils/autopilotFormat';
 import { budgetsMatchDefaults } from '@/features/autopilot/utils/budgetDefaults';
 import { useUpdateInstanceProjectDefaults } from '@/features/god/services/god.service';
-import { SettingsGroup, Text } from '@/design-system';
+import { SettingsGroup, SettingsRow } from '@/design-system';
 
 // The budgets a new project starts with (Vorgaben für Projekte; owner 28.09., Paperclip's
 // budgets): tokens, euros and hours per day and month. A project changes its own; the
@@ -80,9 +80,9 @@ export default function DefaultBudgetsGroup({ defaults }: { defaults: ProjectDef
         onChange={(key, value) => setDraft({ ...draft, [key]: value })}
         onBlur={() => void save()}
       />
-      <Text size="xs" tone="muted">
-        {overridden > 0 ? t('budgetsOverridden', { count: overridden }) : t('budgetsNone')}
-      </Text>
+      <SettingsRow
+        label={overridden > 0 ? t('budgetsOverridden', { count: overridden }) : t('budgetsNone')}
+      />
     </SettingsGroup>
   );
 }

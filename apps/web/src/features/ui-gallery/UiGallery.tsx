@@ -248,7 +248,8 @@ function Blocks() {
       </Section>
 
       <Section title={t('surfaces')}>
-        <Grid min="tile" gap={4}>
+        {/* Grid min="fit": the cards share the row however many there are. */}
+        <Grid min="fit" gap={4}>
           <Card title={t('cardTitle')} meta={t('meta')}>
             <Text tone="muted">{sample}</Text>
           </Card>

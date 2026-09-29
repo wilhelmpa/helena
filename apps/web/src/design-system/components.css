@@ -2042,6 +2042,11 @@ a.ds-run-card:hover {
 .ds-grid[data-min='wide'] {
   grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
 }
+/* A row of figures that share the width however many there are (the dashboard's tiles):
+   one row while they fit, wrapping evenly after that. */
+.ds-grid[data-min='fit'] {
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
 .ds-grid[data-cols='2'] {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
@@ -2062,6 +2067,9 @@ a.ds-run-card:hover {
 @media (max-width: 599px) {
   .ds-grid[data-min] {
     grid-template-columns: minmax(0, 1fr);
+  }
+  .ds-grid[data-min='fit'] {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 

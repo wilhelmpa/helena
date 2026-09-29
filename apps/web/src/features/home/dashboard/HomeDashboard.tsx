@@ -15,11 +15,8 @@ import SystemDetailsDialog from './SystemDetailsDialog';
 import WidgetView, { WidgetPlaceholder } from './WidgetView';
 import { columnsOf, sectionBlocks, type Arranged } from './layout';
 import { HomeDashboardProvider, useHomeDashboard, useHomeDashboardValue } from './useHomeDashboard';
-import { Text } from '@/design-system';
+import { Grid, Text } from '@/design-system';
 
-// The figure row: an auto-fit grid of tiles at least 160px wide that wraps to a second row
-// instead of scrolling; two columns on a phone.
-const FIGURE_ROW = 'grid grid-cols-2 gap-[14px] @4xl:grid-cols-4';
 
 // A pair block of half-width sections: two columns on a wide screen (first, third, … left),
 // one column in the reader's order below that. The columns are `display: contents` when
@@ -121,7 +118,9 @@ export default function HomeDashboard() {
       </PageToolbar>
       {/* The page's header names it (Helena / Alle Projekte); the body starts with figures. */}
       <div className="ds-dashboard-body @container">
-        <div className={FIGURE_ROW}>
+        {/* The figure row: the tiles share one row while they fit, then wrap evenly; two
+            columns on a phone. */}
+        <Grid min="fit" gap={3}>
           {figures
             .filter((entry) => entry.visible)
             .map((entry) => (
@@ -137,7 +136,7 @@ export default function HomeDashboard() {
                 )}
               </Fragment>
             ))}
-        </div>
+        </Grid>
         <Sections sections={sections} render={render} />
       </div>
       <CustomizeDialog

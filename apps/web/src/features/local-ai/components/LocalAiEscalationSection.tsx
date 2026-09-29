@@ -89,7 +89,7 @@ function EscalationForm({ settings }: { settings: EscalationSettings }) {
         />
       </SettingsRow>
       {settings.kinds.map((entry) => (
-        <SettingsRow key={entry.kind} label={t(`kinds.${entry.kind}`)} nested>
+        <SettingsRow key={entry.kind} label={t(`kinds.${entry.kind}`)}>
           <Inline gap={2}>
             <ModelField
               label={`${t(`kinds.${entry.kind}`)} · ${t('model')}`}
@@ -145,7 +145,7 @@ function EscalationForm({ settings }: { settings: EscalationSettings }) {
           />
         </Inline>
       </SettingsRow>
-      <SettingsRow label={t('failureOn')} nested>
+      <SettingsRow label={t('failureOn')}>
         <Inline gap={1} wrap>
           {FAILURES.map((failure) => {
             const on = settings.failure.on.includes(failure);
