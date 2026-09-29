@@ -62,10 +62,10 @@ export const goalRoutes = new Elysia({ name: 'goals', detail: { tags: ['Goals'] 
     },
   )
   // "bearbeitet von …": the agent whose run holds the task's work lease right now.
-  .get('/issues/:issueId/claim', ({ params }) => issueClaim(params.issueId), {
+  .get('/issues/:issueId/claim', async ({ params }) => ({ claim: await issueClaim(params.issueId) }), {
     params: issueGoalParams,
     workItem: 'read',
-    response: { 200: t.Nullable(IssueClaimResponse), ...commonErrors },
+    response: { 200: t.Object({ claim: t.Nullable(IssueClaimResponse) }), ...commonErrors },
     detail: {
       summary: 'Get who works on a task right now',
       description:

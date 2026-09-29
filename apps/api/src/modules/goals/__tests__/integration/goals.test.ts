@@ -94,7 +94,7 @@ describe('goals', () => {
       await api.projects({ projectKey: 'MKT' }).issues.post({ title: 'Claimed task', columnId })
     ).data!;
     const claim = () => api.issues({ issueId: created.id }).claim.get();
-    expect((await claim()).data).toBeNull();
+    expect((await claim()).data).toEqual({ claim: null });
 
     const [run] = await db
       .insert(agentRun)
@@ -108,14 +108,14 @@ describe('goals', () => {
     });
     const held = await claim();
     expect(held.status).toBe(200);
-    expect(held.data).toMatchObject({
+    expect(held.data!.claim).toMatchObject({
       agent: { id: agent.id, name: 'Writer', username: 'writer' },
       runId: run!.id,
     });
 
     // An expired lease is free: nobody holds the task.
     await db.update(issueWorkClaim).set({ expiresAt: new Date(Date.now() - 1_000) });
-    expect((await claim()).data).toBeNull();
+    expect((await claim()).data).toEqual({ claim: null });
     expect((await api.issues({ issueId: 999_999 }).claim.get()).status).toBe(404);
   });
 

@@ -27,7 +27,8 @@ export interface IssueClaim {
   since: string;
   expiresAt: string;
 }
-export const getIssueClaim = (id: number) => request<IssueClaim | null>(`/issues/${id}/claim`);
+export const getIssueClaim = async (id: number) =>
+  (await request<{ claim: IssueClaim | null }>(`/issues/${id}/claim`)).claim;
 
 // The subtask disposition as the delete route takes it: a query string, since a
 // DELETE carries no body.
