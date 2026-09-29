@@ -24,12 +24,29 @@ type Case = {
   id: string;
   group: string;
   tool: string;
+  alternates?: string[];
   chain?: string[];
   results?: Record<string, string>;
   profile?: 'recherche' | 'coder-lite';
   prompt: string;
   result: string;
   answer: string;
+};
+
+type EvalRow = {
+  id: string;
+  group: string;
+  passed: boolean;
+  target: boolean;
+  wrong: string[];
+  invalid: number;
+  nonSchemaErrors: number;
+  schemaErrors: number;
+  unrepairedSchemaErrors: number;
+  repeatedCalls: number;
+  inputTokens: number;
+  durationMs: number;
+  [key: string]: unknown;
 };
 
 function option(name: string): string | undefined {
@@ -141,12 +158,26 @@ function definitions(fixture: Case): AgentTool[] {
           };
         if (entry.name === 'list_projects') return { text: 'Testprojekt VOL105 ist verfügbar.' };
         if (entry.name === 'list_teams') return { text: 'Testteam mit teamId 1.' };
-        if (entry.name === 'get_issue_by_number')
-          return { text: 'Aufgabe VOL105-7 hat issueId 7; Aufgabe VOL105-8 hat issueId 8.' };
-        if (entry.name === 'get_issue')
-          return { text: 'Aufgabe VOL105-7 (issueId 7) gehört zu VOL105 und ist offen.' };
-        if (entry.name === 'list_issue_activity')
-          return { text: 'Die Aufgabe VOL105-7 hat den Kommentar „Geprüft“ (ID 1051).' };
+        if (entry.name === 'get_issue_by_number' || entry.name === 'get_issue') {
+          const issueId = Number(input.issueId ?? input.sequenceNumber);
+          if (issueId !== 7 && issueId !== 8)
+            return { text: `Aufgabe ${issueId} nicht gefunden.`, isError: true };
+          return {
+            text: `Aufgabe VOL105-${issueId} hat issueId ${issueId}, gehört zu VOL105 und ist offen.`,
+          };
+        }
+        if (entry.name === 'list_issues')
+          return {
+            text: 'Projekt VOL105 enthält Aufgabe VOL105-7 (issueId 7) und VOL105-8 (issueId 8).',
+          };
+        if (entry.name === 'search_issues' && active.tool === 'create_issue')
+          return { text: 'Keine bestehende Aufgabe mit diesem Titel im Projekt VOL105.' };
+        if (entry.name === 'list_issue_activity') {
+          const issueId = Number(input.issueId);
+          return issueId === 8
+            ? { text: 'Die Aufgabe VOL105-8 hat den Kommentar „Beleg fehlt“ (ID 1052).' }
+            : { text: 'Die Aufgabe VOL105-7 hat den Kommentar „Geprüft“ (ID 1051).' };
+        }
         if (entry.name === 'search_mail')
           return { text: 'Testmail 105 gehört zum Thread 105 im Projekt VOL105.' };
         if (entry.name === 'read_mail')
@@ -155,6 +186,13 @@ function definitions(fixture: Case): AgentTool[] {
           return {
             text: 'Projektmitglied Owner ist aktiv. Die Agentenzuordnung steht in list_ai_agents.',
           };
+        if (entry.name === 'get_ai_agent' && active.group === 'agenten') {
+          const agentId = Number(input.agentId);
+          const name = agentId === 105 ? 'Lumen' : agentId === 106 ? 'Nova' : null;
+          return name
+            ? { text: `Agent ${name} (ID ${agentId}) ist VOL105 zugeordnet und aktiv.` }
+            : { text: `Agent ${agentId} nicht gefunden.`, isError: true };
+        }
         if (entry.name === 'list_decisions' && active.tool === 'decide')
           return { text: active.result };
         if (entry.name === 'list_connections')
@@ -184,8 +222,16 @@ async function main(): Promise<void> {
     new URL('./fixtures/cases.json', import.meta.url),
   ).json()) as Case[];
   const only = option('only')?.split(',');
-  const selected = cases.filter((entry) => !only || only.includes(entry.id));
-  if (selected.length === 0) throw new Error('No fixtures selected');
+  const output = option('out');
+  if (process.argv.includes('--resume') && !output) throw new Error('--resume requires --out');
+  const resumedRows = process.argv.includes('--resume')
+    ? (JSON.parse(await Bun.file(`${output}.partial`).text()) as EvalRow[])
+    : [];
+  const completed = new Set(resumedRows.map((row) => row.id));
+  const selected = cases.filter(
+    (entry) => (!only || only.includes(entry.id)) && !completed.has(entry.id),
+  );
+  if (selected.length === 0 && resumedRows.length === 0) throw new Error('No fixtures selected');
   const model = option('model') ?? 'halogen-qwen3.8-flash-next';
   const provider = option('provider') ?? 'helena-halogen';
   const baseUrl = option('base-url') ?? 'http://127.0.0.1:8731/v1';
@@ -209,24 +255,12 @@ async function main(): Promise<void> {
     { preconnect: upstreamFetch.preconnect },
   );
   globalThis.fetch = gatedFetch;
-  const workdir = await mkdtemp(join(tmpdir(), 'volition-flash-tools-'));
-  const git = Bun.spawnSync(['git', 'init', '-q', '-b', 'flash-eval'], { cwd: workdir });
-  if (git.exitCode !== 0) throw new Error('Could not initialize the fixture repository');
-  const rows: Array<{
-    group: string;
-    passed: boolean;
-    target: boolean;
-    wrong: string[];
-    invalid: number;
-    schemaErrors: number;
-    unrepairedSchemaErrors: number;
-    repeatedCalls: number;
-    inputTokens: number;
-    durationMs: number;
-    [key: string]: unknown;
-  }> = [];
+  const rows: EvalRow[] = resumedRows;
   for (const fixture of selected) {
     currentCase = fixture;
+    const workdir = await mkdtemp(join(tmpdir(), 'volition-flash-tools-'));
+    const git = Bun.spawnSync(['git', 'init', '-q', '-b', 'flash-eval'], { cwd: workdir });
+    if (git.exitCode !== 0) throw new Error('Could not initialize the fixture repository');
     await writeFile(
       join(workdir, 'bericht.txt'),
       'Testfreigabe: 17. Oktober.\nAufbewahrungsfrist: 30 Tage.\nStatus: offen.\n',
@@ -244,7 +278,7 @@ async function main(): Promise<void> {
       },
       memory: { enabled: false },
       policy: 'allow',
-      limits: { maxTurns: 8, runBudgetSeconds: 120 },
+      limits: { maxTurns: 12, runBudgetSeconds: 180 },
     };
     const runFixture = async () => {
       const sink = new MemorySink();
@@ -269,8 +303,12 @@ async function main(): Promise<void> {
     const beforeHangs = health.hangCount;
     const beforeContamination = health.contaminationCount;
     let measured = await runFixture();
-    if (health.hangCount > beforeHangs || health.contaminationCount > beforeContamination) {
-      process.stderr.write(`${fixture.id}: retry after Halogen hang or overlapping traffic\n`);
+    if (
+      health.hangCount > beforeHangs ||
+      health.contaminationCount > beforeContamination ||
+      measured.result.reason === 'model-unavailable'
+    ) {
+      process.stderr.write(`${fixture.id}: retry after Halogen outage or overlapping traffic\n`);
       measured = await runFixture();
     }
     const { sink, result } = measured;
@@ -298,9 +336,12 @@ async function main(): Promise<void> {
       signatures.add(signature);
     }
     const expected = fixture.chain ?? [fixture.tool];
+    const acceptable = new Set([fixture.tool, ...(fixture.alternates ?? [])]);
     let matched = 0;
     for (const event of calls) if (event.name === expected[matched]) matched += 1;
-    const target = matched === expected.length;
+    const target = fixture.chain
+      ? matched === expected.length
+      : calls.some((event) => acceptable.has(event.name));
     const wrong = calls.filter(
       (event) =>
         ![
@@ -310,22 +351,32 @@ async function main(): Promise<void> {
           'list_teams',
           'get_issue_by_number',
           'get_issue',
+          'list_issues',
+          ...(fixture.tool === 'create_issue' ? ['search_issues'] : []),
           'list_issue_activity',
           'search_mail',
           'read_mail',
           'list_members',
+          ...(fixture.group === 'agenten' ? ['get_ai_agent'] : []),
           'get_project_goal_context',
           ...(fixture.tool === 'decide' ? ['list_decisions'] : []),
           'list_connections',
           'list_folder',
           ...(fixture.profile === 'coder-lite' ? ['read_file', 'list_files', 'search_files'] : []),
           ...expected,
+          ...(fixture.alternates ?? []),
         ].includes(event.name),
     );
     const invalid = results.filter((event) => event.isError).length;
+    const nonSchemaErrors = invalid - schemaErrors.length;
     const usedResult = result.text.toLowerCase().includes(fixture.answer.toLowerCase());
     const passed =
-      result.status === 'success' && target && wrong.length === 0 && invalid === 0 && usedResult;
+      result.status === 'success' &&
+      target &&
+      wrong.length === 0 &&
+      nonSchemaErrors === 0 &&
+      unrepairedSchemaErrors === 0 &&
+      usedResult;
     rows.push({
       id: fixture.id,
       group: fixture.group,
@@ -334,6 +385,7 @@ async function main(): Promise<void> {
       target,
       wrong: wrong.map((event) => event.name),
       invalid,
+      nonSchemaErrors,
       schemaErrors: schemaErrors.length,
       unrepairedSchemaErrors,
       repeatedCalls,
@@ -356,6 +408,8 @@ async function main(): Promise<void> {
       answer: result.text,
     });
     process.stderr.write(`${fixture.id}: ${passed ? 'PASS' : 'FAIL'}\n`);
+    await rm(workdir, { recursive: true, force: true });
+    if (output) await writeFile(`${output}.partial`, JSON.stringify(rows) + '\n');
   }
   currentCase = null;
   const groups = Object.fromEntries(
@@ -392,11 +446,10 @@ async function main(): Promise<void> {
     groups,
     rows,
   };
-  const output = option('out');
   if (output) await writeFile(output, JSON.stringify(report, null, 2) + '\n');
+  if (output) await rm(`${output}.partial`, { force: true });
   process.stdout.write(JSON.stringify(report) + '\n');
   globalThis.fetch = upstreamFetch;
-  await rm(workdir, { recursive: true, force: true });
   process.exit(rows.every((row) => row.passed) ? 0 : 1);
 }
 

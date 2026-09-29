@@ -525,7 +525,7 @@ export const issueRoutes = new Elysia({ name: 'issues', detail: { tags: ['Issues
       detail: {
         summary: 'Get an issue by number',
         description:
-          'Get an issue by its project-scoped number: the 42 in "MKT-42". Use this when you were given an identifier; get_issue takes the internal numeric id instead.',
+          'Get an issue by its public identifier. Split at the final hyphen: VOL105-8 means projectKey VOL105 and sequenceNumber 8; MKT-42 means MKT and 42. Use get_issue only for an internal numeric issueId.',
         ...mcpTool('get_issue_by_number'),
       },
     },

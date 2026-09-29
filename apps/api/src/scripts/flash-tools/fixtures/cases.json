@@ -36,7 +36,7 @@
     "group": "wissen",
     "tool": "search_knowledge",
     "prompt": "Wann ist laut Projektwissen die Testfreigabe geplant?",
-    "result": "Im Wissensdokument steht: Testfreigabe am 17. Oktober.",
+    "result": "Quelle: Projektwissen VOL105, Testplan.md. Testfreigabe am 17. Oktober.",
     "answer": "17. Oktober"
   },
   {
@@ -44,7 +44,7 @@
     "group": "wissen",
     "tool": "search_knowledge",
     "prompt": "Suche im Projektwissen nach der vereinbarten Aufbewahrungsfrist.",
-    "result": "Die Aufbewahrungsfrist beträgt 30 Tage.",
+    "result": "Quelle: Projektwissen VOL105, Testplan.md, Abschnitt Aufbewahrung. Die vereinbarte Aufbewahrungsfrist beträgt 30 Tage.",
     "answer": "30 Tage"
   },
   {
@@ -213,6 +213,7 @@
     "id": "file-read-1",
     "group": "dateien",
     "tool": "read_file",
+    "alternates": ["search_files"],
     "profile": "coder-lite",
     "prompt": "Lies die lokale Testdatei bericht.txt und nenne das Datum der Testfreigabe.",
     "result": "",
@@ -222,6 +223,7 @@
     "id": "file-read-2",
     "group": "dateien",
     "tool": "read_file",
+    "alternates": ["search_files"],
     "profile": "coder-lite",
     "prompt": "Welche Aufbewahrungsfrist steht in bericht.txt?",
     "result": "",

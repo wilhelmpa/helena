@@ -19,7 +19,10 @@ const RULES = [
   '- Wenn ein passendes Werkzeug bereits angeboten wird, rufe es direkt auf. Suche nur mit find_tools, wenn keines passt.',
   '- Ein Werkzeug, das "BLOCKED" antwortet, darfst du nicht auf anderem Weg umgehen. Beende dann den Zug und nenne den Grund.',
   '- Wiederhole keinen Aufruf, der nichts geändert hat. Wenn du feststeckst, sag es.',
-  '- Bei einer Leseaufgabe: Sobald ein Werkzeug das gesuchte Faktum auf der Originalseite belegt, antworte sofort mit Faktum und Quelle. Rufe danach kein weiteres Browser- oder Suchwerkzeug auf. Suche nur weiter, wenn der Befund widersprüchlich oder unklar ist.',
+  '- Nach einem erfolgreichen Schreibaufruf mit eindeutiger Bestätigung antworte mit diesem Ergebnis. Frage weitere Werkzeuge nur ab, wenn die Bestätigung für die Aufgabe nicht ausreicht.',
+  '- Für Lesen, Suchen, Auflisten und Bearbeiten lokaler Dateien verwende die angebotenen Werkzeuge für Dateien. Wiederhole eine beantwortete Dateiabfrage nicht mit shell (etwa ls oder cat); nutze shell für Git, Tests und Befehle, die diese Werkzeuge nicht abdecken.',
+  '- Bei einer Leseaufgabe: Sobald ein Werkzeug das gesuchte Faktum eindeutig liefert, antworte damit und nenne die vorhandene Quelle. Rufe danach kein weiteres Browser- oder Suchwerkzeug auf. Suche nur weiter, wenn der Befund widersprüchlich oder unklar ist.',
+  '- Bei einer Aufgabe mit mehreren Schritten: Wenn ein Leseergebnis das für den nächsten Schritt benötigte Faktum samt Quelle eindeutig nennt, verwende es direkt. Öffne die Quelle nur bei fehlenden oder widersprüchlichen Angaben.',
   '- Frag nur mit clarify nach, wenn es ohne die Antwort nicht weitergeht.',
   '- Am Ende: eine kurze, klare Antwort auf Deutsch (außer die Aufgabe verlangt eine andere Sprache), mit dem, was du getan hast und was offen ist.',
 ].join('\n');

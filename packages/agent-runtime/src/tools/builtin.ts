@@ -143,7 +143,7 @@ export function findToolsTool(catalog: () => ToolCatalogEntry[]): AgentTool {
       required: ['query'],
     },
     async execute(input) {
-      const hits = searchCatalog(catalog(), text(input.query));
+      const hits = searchCatalog(catalog(), text(input.query), 4);
       if (hits.length === 0) return { text: 'No tool found. Try other words.' };
       return {
         text: `Now available:\n${hits

@@ -627,7 +627,7 @@ test('discovery keeps at most eight deferred schemas and preserves the stored hi
       {
         calls: [
           { name: 'find_tools', input: { query: 'group2' } },
-          { name: 'group0_tool4', input: {} },
+          { name: 'group0_tool2', input: {} },
         ],
       },
       { text: 'Done.' },
@@ -635,9 +635,29 @@ test('discovery keeps at most eight deferred schemas and preserves the stored hi
     { extraTools, config: { tools: { profile: 'assistent' } } },
   );
   const names = primary.doStreamCalls.at(-1)!.tools!.map((entry) => entry.name);
-  expect(names).toContain('group2_tool17');
+  expect(names).toContain('group2_tool15');
   expect(names).not.toContain('group0_tool0');
   expect(names.filter((name) => name.startsWith('group'))).toHaveLength(8);
   expect(sink.of('tool-result').at(-1)!.output).toBe('ok');
   expect((await sessions.load(result.sessionId))!.items).toHaveLength(8);
+});
+
+test('two searches keep the first discovered tool available', async () => {
+  const extraTools: AgentTool[] = Array.from({ length: 8 }, (_, index) => ({
+    name: `group${Math.floor(index / 4)}_tool${index}`,
+    description: 'A deferred tool',
+    readOnly: true,
+    inputSchema: { type: 'object', properties: {} },
+    execute: async () => ({ text: 'found tool worked' }),
+  }));
+  const { sink } = await run(
+    [
+      { calls: [{ name: 'find_tools', input: { query: 'group0' } }] },
+      { calls: [{ name: 'find_tools', input: { query: 'group1' } }] },
+      { calls: [{ name: 'group0_tool0', input: {} }] },
+      { text: 'Done.' },
+    ],
+    { extraTools, config: { tools: { profile: 'assistent' } } },
+  );
+  expect(sink.of('tool-result')[2]!.output).toBe('found tool worked');
 });
