@@ -67,13 +67,7 @@ export const chatAttachmentRoutes = new Elysia({
       const contentType = await uploadContentType(bytes, filename, body.contentType);
       await assertAttachmentUploadAllowed(project.id, bytes.length, contentType);
       const actor = await knowledgeActor(requireUser(user), request.headers);
-      const file = await storeProjectFile(
-        project.id,
-        CHAT_FILES_FOLDER,
-        filename,
-        bytes,
-        actor,
-      );
+      const file = await storeProjectFile(project.id, CHAT_FILES_FOLDER, filename, bytes, actor);
       let row;
       try {
         row = await createChatAttachment({

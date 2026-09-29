@@ -44,7 +44,13 @@ describe('note boards to the vault', () => {
     const canvas = { nodes: [sticker('a', 'Alt', 'Aus der **Datenbank**')], edges: [] };
     const [publicBoard] = await db
       .insert(noteBoard)
-      .values({ projectId, ownerUserId: null, createdByUserId: ownerId, name: 'Alt: Ideen', canvas })
+      .values({
+        projectId,
+        ownerUserId: null,
+        createdByUserId: ownerId,
+        name: 'Alt: Ideen',
+        canvas,
+      })
       .returning();
     const [privateBoard] = await db
       .insert(noteBoard)

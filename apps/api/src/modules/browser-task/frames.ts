@@ -143,7 +143,10 @@ export async function moveFramesToVault({
     })
     .from(helenaBrowserTaskRun)
     .where(
-      and(like(helenaBrowserTaskRun.finalFrame, 'data:%'), isNull(helenaBrowserTaskRun.finalFramePath)),
+      and(
+        like(helenaBrowserTaskRun.finalFrame, 'data:%'),
+        isNull(helenaBrowserTaskRun.finalFramePath),
+      ),
     )
     .orderBy(asc(helenaBrowserTaskRun.id));
   const report: FrameMigrationReport = {
@@ -168,10 +171,7 @@ export async function moveFramesToVault({
         .update(helenaBrowserTaskRun)
         .set({ finalFramePath: file.path, finalFrameSha256: file.sha256, finalFrame: null })
         .where(
-          and(
-            eq(helenaBrowserTaskRun.id, row.id),
-            isNull(helenaBrowserTaskRun.finalFramePath),
-          ),
+          and(eq(helenaBrowserTaskRun.id, row.id), isNull(helenaBrowserTaskRun.finalFramePath)),
         );
       report.migrated.push({ id: row.id, path: file.path });
     } catch (error) {

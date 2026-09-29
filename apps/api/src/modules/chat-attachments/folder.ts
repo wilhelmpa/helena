@@ -75,7 +75,8 @@ async function filesBelow(
   for (const entry of entries.sort((a, b) => a.name.localeCompare(b.name))) {
     if (entry.name.startsWith('.')) continue;
     const inner = relative ? `${relative}/${entry.name}` : entry.name;
-    if (entry.isSymbolicLink()) skipped.push({ path: joinVaultPath(folder, inner), reason: 'link' });
+    if (entry.isSymbolicLink())
+      skipped.push({ path: joinVaultPath(folder, inner), reason: 'link' });
     else if (entry.isDirectory()) files.push(...(await filesBelow(folder, skipped, inner)));
     else if (entry.isFile()) files.push(inner);
   }
@@ -140,7 +141,10 @@ export async function moveChatFilesToFolder({
       const info = await statOf(source);
       if (!info) continue;
       if (info.isSymbolicLink() || !info.isDirectory()) {
-        report.skipped.push({ path: source, reason: info.isSymbolicLink() ? 'link' : 'not a folder' });
+        report.skipped.push({
+          path: source,
+          reason: info.isSymbolicLink() ? 'link' : 'not a folder',
+        });
         continue;
       }
       const files = await filesBelow(source, report.skipped);

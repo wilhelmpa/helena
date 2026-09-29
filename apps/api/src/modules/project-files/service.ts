@@ -15,13 +15,7 @@ import {
 import path from 'node:path';
 import { db, vaultEntry } from '@repo/db';
 import { inArray, sql } from 'drizzle-orm';
-import {
-  isSyncConflict,
-  moveEntries,
-  splitNote,
-  vaultOrigin,
-  type VaultOrigin,
-} from '@repo/vault';
+import { isSyncConflict, moveEntries, splitNote, vaultOrigin, type VaultOrigin } from '@repo/vault';
 import { recordFileWrite, type FileActor } from './provenance';
 import { HttpError } from '#shared/lib';
 import {
