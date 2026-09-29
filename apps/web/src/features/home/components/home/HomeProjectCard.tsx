@@ -34,6 +34,10 @@ export default function HomeProjectCard({
     { page: 1, pageSize: 1 },
     { stateType: 'open', projectKey: project.key },
   ).data?.total;
+  const started = useCrossProjectIssuesQuery(
+    { page: 1, pageSize: 1 },
+    { stateType: 'started', projectKey: project.key },
+  ).data?.total;
   const budget = leadingBudget(budgets);
   const state = budgetState(budget);
   const used = budget
@@ -48,18 +52,23 @@ export default function HomeProjectCard({
       accent={projectColor(project.key)}
       name={project.name}
       projectKey={project.key}
+      count={open}
+      countLabel={t('openLabel', { count: open ?? 0 })}
+      progress={open ? (started ?? 0) / open : open === 0 ? 0 : null}
+      progressLabel={started != null && open ? t('started', { count: started }) : undefined}
+      live={working > 0 ? t('working', { count: working }) : undefined}
       facts={
-        <>
-          {open != null && <span>{t('open', { count: open })}</span>}
-          {working > 0 && <span>{t('working', { count: working })}</span>}
-          {provisioning?.status === 'failed' && <Pill tone="danger">{t('setupFailed')}</Pill>}
-          {state !== 'ok' && (
-            <Pill tone={state === 'stopped' ? 'danger' : 'warning'}>
-              {t(state === 'stopped' ? 'budgetStopped' : 'budgetThrottled')}
-            </Pill>
-          )}
-          {budget && used && <span>{used}</span>}
-        </>
+        (provisioning?.status === 'failed' || state !== 'ok' || (budget && used)) && (
+          <>
+            {provisioning?.status === 'failed' && <Pill tone="danger">{t('setupFailed')}</Pill>}
+            {state !== 'ok' && (
+              <Pill tone={state === 'stopped' ? 'danger' : 'warning'}>
+                {t(state === 'stopped' ? 'budgetStopped' : 'budgetThrottled')}
+              </Pill>
+            )}
+            {budget && used && <span>{used}</span>}
+          </>
+        )
       }
       footer={budget ? <BudgetBar budget={budget} label={used ?? undefined} /> : undefined}
     />

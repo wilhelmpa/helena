@@ -39,6 +39,11 @@ export function ProjectTile({
   accent,
   name,
   projectKey,
+  count,
+  countLabel,
+  progress,
+  progressLabel,
+  live,
   facts,
   footer,
 }: {
@@ -47,6 +52,14 @@ export function ProjectTile({
   accent: string;
   name: ReactNode;
   projectKey: string;
+  // The big number (open tasks) and what it counts; left out while it loads.
+  count?: number | null;
+  countLabel?: ReactNode;
+  // 0–1: how much of it is moving (tasks in progress of the open ones).
+  progress?: number | null;
+  progressLabel?: ReactNode;
+  // Agents working in it now ("2 arbeiten"), with a pulse.
+  live?: ReactNode;
   facts?: ReactNode;
   footer?: ReactNode;
 }) {
@@ -56,12 +69,33 @@ export function ProjectTile({
       className={styles.projectTile}
       style={{ '--project-accent': accent } as CSSProperties}
     >
-      <span className={styles.projectHead}>
-        <span className={styles.projectName} dir="auto">
-          {name}
-        </span>
+      <span className={styles.projectTop}>
         <span className={styles.projectKey}>{projectKey}</span>
+        {live && (
+          <span className={styles.projectLive}>
+            <span className={styles.projectPulse} aria-hidden="true" />
+            {live}
+          </span>
+        )}
       </span>
+      <span className={styles.projectName} dir="auto">
+        {name}
+      </span>
+      <span className={styles.projectStats}>
+        <span className={styles.projectCount}>{count ?? '–'}</span>
+        {countLabel && <span className={styles.projectCountLabel}>{countLabel}</span>}
+      </span>
+      {progress != null && (
+        <span className={styles.projectProgress}>
+          <span className={styles.projectTrack} aria-hidden="true">
+            <span
+              className={styles.projectFill}
+              style={{ width: `${Math.round(Math.min(1, Math.max(0, progress)) * 100)}%` }}
+            />
+          </span>
+          {progressLabel && <span className={styles.projectProgressLabel}>{progressLabel}</span>}
+        </span>
+      )}
       {facts && <span className={styles.projectFacts}>{facts}</span>}
       {footer}
     </Link>
