@@ -300,6 +300,20 @@ export async function resolveLocalRoute(input: {
   // failed one.
   evalVersion?: number;
 }): Promise<RouteResult> {
+  try {
+    const maintenance = JSON.parse(
+      await readFile(
+        process.env.VOLITION_MODEL_MAINTENANCE_STATE ??
+          '/var/lib/volition/model-maintenance/state.json',
+        'utf8',
+      ),
+    );
+    if (maintenance.version !== 1 || maintenance.admissionPaused !== false)
+      return { refusal: 'server-down', mode: 'only' };
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== 'ENOENT')
+      return { refusal: 'server-down', mode: 'only' };
+  }
   const { evalVersion, ...route } = input;
   const [policy, servers, failed] = await Promise.all([
     readLocalAiPolicy(),

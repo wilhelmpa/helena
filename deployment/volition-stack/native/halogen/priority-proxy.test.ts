@@ -1,5 +1,5 @@
 import { afterEach, expect, test } from 'bun:test';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp, rm, writeFile, rename } from 'node:fs/promises';
 import { createServer, request } from 'node:http';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -358,4 +358,60 @@ test('GET without a body reaches the backend (model list, health)', async () => 
     signal: AbortSignal.timeout(2_000),
   });
   expect(await response.json()).toEqual({ path: '/v1/models', method: 'GET' });
+});
+
+test('administrative pause survives health and config updates until release', async () => {
+  const scheduler = new PriorityScheduler();
+  const active = await scheduler.acquire('normal');
+  scheduler.setAdministrativePaused(true);
+  let started = false;
+  const waiting = scheduler.acquire('background').then((release) => { started = true; return release; });
+  scheduler.setHealthy(true);
+  scheduler.setConfig(DEFAULT_PRIORITY_CONFIG);
+  active!();
+  await tick();
+  expect(started).toBe(false);
+  expect(scheduler.status().administrativePaused).toBe(true);
+  expect(Object.values(scheduler.status().active).every((count) => count === 0)).toBe(true);
+  scheduler.setAdministrativePaused(false);
+  (await waiting)!();
+  expect(started).toBe(true);
+});
+
+test('shared admission check fences queued requests before periodic refresh', async () => {
+  let paused = false;
+  const scheduler = new PriorityScheduler({ ...DEFAULT_PRIORITY_CONFIG, maxConcurrent: 1 });
+  scheduler.admissionCheck = () => paused;
+  const active = await scheduler.acquire('interactive');
+  let admitted = false;
+  const queued = scheduler.acquire('interactive').then((release) => { admitted = true; return release; });
+  paused = true;
+  active!();
+  await tick();
+  expect(admitted).toBe(false);
+  paused = false;
+  scheduler.setAdministrativePaused(false);
+  (await queued)!();
+});
+
+
+test('proxy reads the durable administrative pause and releases queued HTTP work', async () => {
+  const backend = await fakeBackend();
+  const dir = await mkdtemp(join(tmpdir(), 'volition-maintenance-'));
+  const maintenancePath = join(dir, 'state.json');
+  await writeFile(maintenancePath, JSON.stringify({ version: 1, proxyPaused: true }));
+  const proxy = await startPriorityProxy({ hostPorts: [0, 0], backendPorts: [backend.port, backend.port],
+    socketDir: dir, maintenancePath });
+  cleanups.push(async () => { await proxy.close(); await rm(dir, { recursive: true, force: true }); });
+  const url = `http://127.0.0.1:${proxy.ports[0]}`;
+  const waiting = fetch(`${url}/v1/chat/completions`, { method: 'POST', body: '{}' });
+  for (let i = 0; i < 30 && proxy.scheduler.status().queued.normal === 0; i++) await tick();
+  const status = await (await fetch(`${url}/priority/status`)).json();
+  expect(status.administrativePaused).toBe(true);
+  expect(status.active.normal).toBe(0);
+  await writeFile(maintenancePath + '.tmp', JSON.stringify({ version: 1, proxyPaused: false }));
+  await rename(maintenancePath + '.tmp', maintenancePath);
+  const response = await waiting;
+  expect(response.status).toBe(200);
+  await response.text();
 });

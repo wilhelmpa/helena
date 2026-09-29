@@ -1,5 +1,7 @@
 'use client';
 
+import { isLocalModel } from '@/features/local-ai/utils/modelIdentity';
+
 import type { AiChatModel, UnavailableChatModel } from '@/lib/api/endpoints/agentChat';
 import type { AgentRuntimeKind } from '@/lib/api/endpoints/agents';
 import { useTranslations } from 'next-intl';
@@ -14,7 +16,7 @@ import {
 export type RuntimeChoice = AgentRuntimeKind | 'local';
 
 export function runtimeChoice(runtime: AgentRuntimeKind, model: string | null): RuntimeChoice {
-  return runtime === 'hermes' && model?.startsWith('helena-local/') ? 'local' : runtime;
+  return runtime === 'hermes' && isLocalModel(model) ? 'local' : runtime;
 }
 
 // The runtimes the picker offers: Helena's own loop only where the instance switched it on
@@ -62,10 +64,10 @@ export default function RuntimePicker({
   const t = useTranslations('chatWorkspace.runtimePicker');
   const choice = runtimeChoice(runtime, model);
   const availableModels = [...new Map(models.map((entry) => [entry.id, entry])).values()];
-  const localModels = availableModels.filter((entry) => entry.id.startsWith('helena-local/'));
+  const localModels = availableModels.filter((entry) => isLocalModel(entry.id));
   const runtimeModels = availableModels.filter((entry) =>
     choice === 'local'
-      ? entry.id.startsWith('helena-local/')
+      ? isLocalModel(entry.id)
       : choice === 'helena'
         ? entry.local || entry.id.startsWith('helena-')
         : !entry.local && !entry.id.startsWith('helena-'),

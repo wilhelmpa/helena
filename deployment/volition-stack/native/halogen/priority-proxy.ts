@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { chmod, chown, mkdir, unlink } from 'node:fs/promises';
 import { createServer, request, type IncomingMessage, type ServerResponse } from 'node:http';
 import { join } from 'node:path';
@@ -14,6 +15,7 @@ export interface ProxyOptions {
   readConfig?: () => Promise<PriorityConfig>;
   refreshMs?: number;
   healthCheck?: boolean;
+  maintenancePath?: string;
 }
 
 type RequestClass = PriorityClass | 'voice-reply';
@@ -34,6 +36,16 @@ function unavailable(response: ServerResponse, timeoutMs: number): void {
 
 export async function startPriorityProxy(options: ProxyOptions) {
   const scheduler = new PriorityScheduler();
+  scheduler.admissionCheck = () => {
+    try {
+      const value = JSON.parse(readFileSync(options.maintenancePath ??
+        '/var/lib/volition/model-maintenance/state.json', 'utf8'));
+      return value.version !== 1 || value.proxyPaused !== false;
+    } catch (error) {
+      return (error as NodeJS.ErrnoException).code !== 'ENOENT';
+    }
+  };
+  const maintenanceTimer = setInterval(() => scheduler.setAdministrativePaused(false), 100);
   const servers: ReturnType<typeof createServer>[] = [];
   let refreshTimer: ReturnType<typeof setInterval> | undefined;
   let healthTimer: ReturnType<typeof setTimeout> | undefined;
@@ -229,6 +241,7 @@ export async function startPriorityProxy(options: ProxyOptions) {
     }
   } catch (error) {
     closed = true;
+      clearInterval(maintenanceTimer);
     if (refreshTimer) clearInterval(refreshTimer);
     if (healthTimer) clearTimeout(healthTimer);
     await Promise.all(servers.map((server) => new Promise<void>((resolve) => server.close(() => resolve()))));
@@ -242,6 +255,7 @@ export async function startPriorityProxy(options: ProxyOptions) {
     }),
     async close() {
       closed = true;
+      clearInterval(maintenanceTimer);
       if (refreshTimer) clearInterval(refreshTimer);
       if (healthTimer) clearTimeout(healthTimer);
       await Promise.all(servers.map((server) => new Promise<void>((resolve) => server.close(() => resolve()))));

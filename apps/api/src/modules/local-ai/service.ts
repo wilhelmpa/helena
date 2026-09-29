@@ -1,3 +1,11 @@
+import { globalModelStatus } from './global-model';
+import {
+  LOCAL_DEFAULT,
+  localDefaultModel,
+  readMaintenance,
+  assertModelIdle,
+  withModelAdmission,
+} from './maintenance-state';
 import { access, readFile, readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { agentUsage, db, helenaLocalAiEval, helenaModelServer, writeSecret } from '@repo/db';
@@ -207,6 +215,7 @@ export async function checkServer(server: ModelServerRow): Promise<ModelServerRo
 }
 
 export async function checkAllServers(): Promise<void> {
+  if ((await readMaintenance())?.admissionPaused) return;
   for (const server of await listModelServers()) {
     if (!server.enabled) continue;
     try {
@@ -311,6 +320,7 @@ export async function updateModelOptions(
   modelName: string,
   options: LocalModelOptions,
 ) {
+  await assertModelIdle();
   const server = (await listModelServers()).find((row) => row.id === serverId);
   if (!server || server.kind !== LEMONADE) throw new HttpError(404, 'No Lemonade server');
   if (!server.models.some((model) => model.id === modelName))
@@ -341,6 +351,7 @@ function checkKeyFile(source: string | undefined, file: string | null | undefine
 }
 
 export async function createServer(input: ServerInput): Promise<ServerView> {
+  await assertModelIdle();
   const slug = (input.slug ?? DEFAULT_SERVER_SLUG).trim().toLowerCase();
   if (!isModelServerSlug(slug)) throw new HttpError(400, 'The short name may use a–z, 0–9 and -');
   const kind = input.kind ?? LEMONADE;
@@ -377,6 +388,7 @@ export async function createServer(input: ServerInput): Promise<ServerView> {
 }
 
 export async function updateServer(id: number, input: ServerInput): Promise<ServerView> {
+  await assertModelIdle();
   const [row] = await db.select().from(helenaModelServer).where(eq(helenaModelServer.id, id));
   if (!row) throw new HttpError(404, 'No such server');
   if (input.slug !== undefined && input.slug !== row.slug)
@@ -412,6 +424,7 @@ export async function updateServer(id: number, input: ServerInput): Promise<Serv
 }
 
 export async function deleteServer(id: number): Promise<boolean> {
+  await assertModelIdle();
   const rows = await db
     .delete(helenaModelServer)
     .where(eq(helenaModelServer.id, id))
@@ -504,7 +517,16 @@ async function evaluateInto(
 export async function startEval(input: {
   classId: string;
   modelId: string;
-  // Who asked; null for a maintenance script.
+  userId: string | null;
+}) {
+  const result = await withModelAdmission(() => startAdmittedEval(input));
+  if (!result) throw new HttpError(409, 'Model maintenance is pending');
+  return result;
+}
+
+async function startAdmittedEval(input: {
+  classId: string;
+  modelId: string;
   userId: string | null;
 }) {
   const entry = taskClass(input.classId);
@@ -697,6 +719,7 @@ export const PRESET_CLASSES: Record<'sparsam' | 'ausgewogen' | 'qualitaet', stri
 };
 
 export async function updatePolicy(patch: PolicyPatch): Promise<LocalAiPolicy> {
+  await assertModelIdle();
   const [policy, servers, evals] = await Promise.all([
     readLocalAiPolicy(),
     listModelServers(),
@@ -999,6 +1022,8 @@ export async function chooseModelNow(
   model: string | null,
   instead: string | null,
 ): Promise<LocalModelChoice> {
+  if (model === LOCAL_DEFAULT) model = (await localDefaultModel()) ?? 'gpt-6-luna';
+  if (instead === LOCAL_DEFAULT) instead = 'gpt-6-luna';
   const parsed = parseLocalModelId(model);
   if (!model || !parsed) return { model, fallback: null };
   const configured = parseLocalModelId(instead) ? null : instead;
@@ -1207,6 +1232,7 @@ export async function localAiStatus() {
   const load = servers.find((server) => server.status?.load)?.status?.load ?? null;
   const unitLoaded = (unit: LocalAiUnit) => loaded.filter((entry) => entry.unit === unit);
   return {
+    globalModel: await globalModelStatus(),
     halogenPriority,
     localAiPressure: localAiPressureSignal(),
     guard: localAiGuard(),

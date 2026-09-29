@@ -1,3 +1,4 @@
+import { modelPicker } from '#modules/local-ai/model-picker';
 import { Elysia, t } from 'elysia';
 import { authContext } from '#shared/auth-context';
 import { entityGuard, guards } from '#shared/guards';
@@ -435,6 +436,19 @@ export const agentChatRoutes = new Elysia({ name: 'agent-chat', detail: { tags: 
   )
 
   .get(
+    '/teams/:teamId/ai-agents/:agentId/chat/model-picker',
+    async ({ params, membership }) => {
+      const agent = await requireTeamAgent(params.agentId, membership);
+      return modelPicker(params.agentId, agent.template ? membership.teamId : undefined);
+    },
+    {
+      params: agentParams,
+      teamPermission: ['ai_agents', 'read'],
+      detail: { summary: 'List grouped models and resolve the agent default' },
+    },
+  )
+
+  .get(
     '/teams/:teamId/ai-agents/:agentId/chat/catalog',
     async ({ params, membership }) => {
       const agent = await requireTeamAgent(params.agentId, membership);
@@ -589,6 +603,19 @@ export const agentChatRoutes = new Elysia({ name: 'agent-chat', detail: { tags: 
           'Queue another answer to a question of the thread. The answers of a question are ' +
           'its versions; the new one becomes the one the thread shows.',
       },
+    },
+  )
+
+  .get(
+    '/projects/:projectKey/ai-agents/:agentId/chat/model-picker',
+    async ({ params, project, user }) => {
+      await requireProjectAgent(params.agentId, project.id, requireUser(user).id);
+      return modelPicker(params.agentId);
+    },
+    {
+      params: projectAgentParams,
+      permission: ['ai_agents', 'read'],
+      detail: { summary: 'List grouped models and resolve the agent default' },
     },
   )
 

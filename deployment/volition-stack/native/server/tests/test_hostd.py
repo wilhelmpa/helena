@@ -554,31 +554,15 @@ class SystemTests(HostTest):
         third = system.status(self.host, self.config.state_dir)['gpuProcesses']
         self.assertEqual([item['evictedMs5m'] for item in third], [None, None])
 
-    def test_restart_local_ai_restarts_preload_only_after_lemond(self):
-        self.runner.on('/usr/bin/systemctl', 'show',
-                       '--property=LoadState,UnitFileState,ActiveState', 'lemond.service',
-                       out='LoadState=loaded\nUnitFileState=enabled\nActiveState=active\n')
-        self.runner.on('/usr/bin/systemctl', 'restart', '--no-block', 'lemond.service')
-        self.runner.on('/usr/bin/systemctl', 'restart', '--no-block', 'helena-ai-preload.service')
-        result = service.restart_local_ai(service.Context(self.host, self.config, {}), {})
-        self.assertTrue(result['restarted'])
-        self.assertEqual(self.runner.called('/usr/bin/systemctl', 'restart'), [
-            ['/usr/bin/systemctl', 'restart', '--no-block', 'lemond.service'],
-            ['/usr/bin/systemctl', 'restart', '--no-block', 'helena-ai-preload.service'],
-        ])
-
-    def test_restart_local_ai_uses_halogen_when_lemonade_is_disabled(self):
-        self.runner.on('/usr/bin/systemctl', 'show',
-                       '--property=LoadState,UnitFileState,ActiveState', 'lemond.service',
-                       out='LoadState=loaded\nUnitFileState=disabled\nActiveState=inactive\n')
-        self.runner.on('/usr/bin/systemctl', 'show',
-                       '--property=LoadState,UnitFileState,ActiveState', 'helena-halogen.service',
-                       out='LoadState=loaded\nUnitFileState=enabled\nActiveState=active\n')
-        self.runner.on('/usr/bin/systemctl', 'restart', '--no-block', 'helena-halogen.service')
-        self.assertTrue(service.restart_local_ai(service.Context(self.host, self.config, {}), {})['restarted'])
-        self.assertEqual(self.runner.called('/usr/bin/systemctl', 'restart'), [
-            ['/usr/bin/systemctl', 'restart', '--no-block', 'helena-halogen.service'],
-        ])
+    def test_restart_local_ai_queues_shared_maintenance_for_both_servers(self):
+        for server_name in ('halogen', 'lemonade'):
+            value = {'operation': {'id': 'reset-one', 'phase': 'drain', 'target': {'server': server_name}}}
+            with mock.patch.object(service.model_server, 'reset_group', return_value=value) as reset:
+                result = service.restart_local_ai(service.Context(self.host, self.config, {}), {})
+                self.assertFalse(result['restarted'])
+                self.assertEqual(result['maintenance'], value['operation'])
+                reset.assert_called_once_with(self.host)
+            self.assertEqual(self.runner.called('/usr/bin/systemctl', 'restart'), [])
 
     def test_the_gpu_split_is_shown_and_is_not_pressure(self):
         self.write('/proc/meminfo', 'MemTotal:       32497680 kB\nMemAvailable:   22181656 kB\n')
