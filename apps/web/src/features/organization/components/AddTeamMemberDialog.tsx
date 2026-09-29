@@ -168,6 +168,8 @@ export default function AddTeamMemberDialog({
             {source === 'pool' ? t('poolEmpty') : t('templatesEmpty')}
           </EmptyState>
         ) : (
+          // The list scrolls on its own, so the choice below and the buttons stay in view.
+          <div className="max-h-72 overflow-y-auto">
           <List label={source === 'pool' ? t('fromPool') : t('fromTemplate')}>
             {candidates.options.map((option) => (
               <ListRow
@@ -181,6 +183,7 @@ export default function AddTeamMemberDialog({
               />
             ))}
           </List>
+          </div>
         )}
         {candidates.managers.length > 0 && (
           <Field label={t('reportsTo')} hint={t('reportsToHint')} htmlFor="add-member-manager">
