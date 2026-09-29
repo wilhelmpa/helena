@@ -17,7 +17,6 @@ import { columnsOf, sectionBlocks, type Arranged } from './layout';
 import { HomeDashboardProvider, useHomeDashboard, useHomeDashboardValue } from './useHomeDashboard';
 import { Grid, Text } from '@/design-system';
 
-
 // A pair block of half-width sections: two columns on a wide screen (first, third, … left),
 // one column in the reader's order below that. The columns are `display: contents` when
 // narrow, so every section sorts by its place in the reader's order.
