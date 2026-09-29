@@ -96,11 +96,28 @@ Funktionen nach dem Vorbild von Hermes, OpenClaw und Paperclip bekommen keine ei
 | Telegram-Kanal | **Benachrichtigungen & Kanäle** › Telegram | vorhanden |
 | Heartbeat, Gedächtnis, Fakten, Skills pro Agent | Agent-Detail (Agent-Dialog) | `DetailView`, `SettingsGroup` |
 | Skills, Selbstlernen | **Skills** (Katalog) | vorhanden |
-| Ziel-Leiter | Ziele-Seite und Aufgabendetail | `DetailGroup` |
-| Sitzungssuche | globale Suche (⌘K) | Befehlspalette |
+| Ziel-Leiter | Helena › Ziele (rechte Spalte, „Warum“), Projekt-Ziele (Zeile und „Warum“ im Ziel), Aufgabendetail („Warum“) | `DetailGroup`, `.ds-ladder`, `.ds-why` |
+| Aufgaben-Übernahme | Aufgabendetail „Bearbeitet von …“ (Lease des Laufs, `GET /issues/:id/claim`) | Eigenschaftszeile |
+| Sitzungssuche | globale Suche (⌘K) über Chats und Agentenläufe (Wissensindex des Workers) | Befehlspalette |
 
 ## 9. Abnahme
 
 Pro Paket eine Klick-Abnahme im echten Browser über alle betroffenen Seiten: hell und dunkel, Desktop 1440 und Handy 375, Konsole ohne Fehler. Was nicht funktioniert, wird repariert oder verschwindet aus der UI.
 
 Der Einstieg `@/design-system` ist reine Darstellung: Er zieht keinen API-Client, keine Dienste und keine Datenhooks nach sich (Test `design-system/barrel.test.ts`). Komponenten, die Daten lesen (Composer, Agentenwahl, FilterBar mit Projektdaten), liegen außerhalb und bauen selbst auf dem Framework auf.
+
+## 10. Muster aus Paket 3+4 (hub/ui-3a)
+
+- **Agenten-Chip** (`.ds-agent-chip`): wer antwortet, mit welchem Modell, wie Menschen es nennen („Helena · Flash (lokal)“,
+  `utils/modelNames.ts`), bei einem Rückfall zusätzlich „Rückfall: …“. Die Variante `data-variant="quiet"` ist der Ein-Klick-Weg
+  zu Helena, wo ein Projekt-Agent vorn steht.
+- **Orb**: zeigt nur den Zustand dieses Chats (bzw. ob der Agent antworten kann). Arbeit des Agenten anderswo ist ein dezenter
+  Hinweis über dem Composer (`.ds-chat-busy-note`), nie Bewegung des Orbs. Im hellen Design zeichnet `voice-orb theme="light"`
+  Farbe statt Licht; kein dunkler Untergrund.
+- **Drawer in einer Box** (`.ds-drawer-host`/`.ds-drawer`): schwebendes Panel über seiner Box (Chatliste im schmalen Chat), an
+  der Seite des Knopfs, der es öffnet — nie eine zweite Spalte neben der Sidebar.
+- **Terminal-Leiste** (`.ds-terminal-bar`): die Tabs im Look der Panel-Tabs, darunter die Freigabe als ruhige Zeile
+  (`.ds-terminal-grant`).
+- **Aufgabenliste**: jede Gruppe eingefasst (`.ds-issue-list-box`), Zeilen in festen Spalten (Schlüssel · Titel · Status-Box
+  `.ds-issue-status` · Priorität · Fälligkeit · Personen), damit nichts springt.
+- **Zweispaltige Liste/Detail** (`.ds-goals-split`): Karten links, das Gewählte rechts; unter 900 px abwechselnd mit Rückweg.

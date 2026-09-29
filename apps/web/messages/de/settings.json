@@ -944,7 +944,10 @@
     "properties": "Eigenschaften",
     "emptySentence": "Hier liegt noch nichts. Leg das Erste an.",
     "light": "Hell",
-    "dark": "Dunkel"
+    "dark": "Dunkel",
+    "agentChip": "Helena · Flash (lokal)",
+    "statusBox": "In Arbeit",
+    "ladderTop": "Helena veröffentlichen"
   },
   "organization": {
     "label": "Organisation",

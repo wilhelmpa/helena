@@ -944,7 +944,10 @@
     "properties": "Properties",
     "emptySentence": "Nothing here yet. Create the first one.",
     "light": "Light",
-    "dark": "Dark"
+    "dark": "Dark",
+    "agentChip": "Helena · Flash (local)",
+    "statusBox": "En curso",
+    "ladderTop": "Publicar Helena"
   },
   "organization": {
     "label": "Organización",

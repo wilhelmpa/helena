@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
+import { useState, type CSSProperties, type ReactNode } from 'react';
 import { useTranslations } from 'next-intl';
-import { Bot, FileText, Inbox, Plus, Settings2, Trash2, Upload } from 'lucide-react';
+import { Bot, FileText, Inbox, Plus, Settings2, Target, Trash2, Upload } from 'lucide-react';
 import {
   ActionMenu,
   Badge,
@@ -21,6 +21,7 @@ import {
   ListGroup,
   ListRow,
   MonoLabel,
+  Orb,
   Pill,
   PillButton,
   Property,
@@ -315,6 +316,32 @@ function Blocks() {
               </PropertyGrid>
             </DetailGroup>
           </DetailView>
+          {/* Chat, tasks and goals (hub/ui-3a): the agent chip at the composer, a task's
+              status box in the list, a goal's ladder. */}
+          <Inline gap={3} wrap>
+            <span className="ds-agent-chip">
+              <Orb state="idle" size="dot" />
+              <span className="ds-agent-chip-label">{t('agentChip')}</span>
+            </span>
+            <span className="ds-issue-status">
+              <Orb state="thinking" size="dot" motionEnabled={false} />
+              <span>{t('statusBox')}</span>
+            </span>
+          </Inline>
+          <ol className="ds-ladder">
+            <li className="ds-ladder-step">
+              <button type="button">
+                <Target size={14} aria-hidden="true" />
+                <span>{t('ladderTop')}</span>
+              </button>
+            </li>
+            <li className="ds-ladder-step" data-current="true" style={{ '--ds-ladder-depth': 1 } as CSSProperties}>
+              <span className="ds-ladder-self">
+                <Target size={14} aria-hidden="true" />
+                <span>{sample}</span>
+              </span>
+            </li>
+          </ol>
           <Card>
             <EmptyState icon={<Inbox />} action={<Button variant="quiet">{t('newThing')}</Button>}>
               {t('emptySentence')}
