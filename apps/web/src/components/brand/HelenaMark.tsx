@@ -1,32 +1,24 @@
-import { BANDS, MARK_GRID, MARK_RADIUS, TILE, markLayers } from '@helena/brand';
+import { ORB, orbGeometry, type OrbDetail } from '@helena/brand';
 
-// The Helena mark (packages/brand): Helena's torch as pixel art on a 16-pixel grid on
-// Hermes' ink tile, the same drawing as the favicon and the app icons. Hermes carries
-// the caduceus, Helena the torch. The tile is ink in both themes, so the art keeps
-// Hermes' gold, amber and bronze everywhere. `detail` "large" adds the Hermes shadow
-// hairlines; use it from 64px up. Sizes that are whole multiples of 16px, or of 8px on
-// a 2× screen (16, 24, 32, 48, 80), keep the pixels crisp. Decorative; the caller sets
-// the size through `className`.
+// The mark uses the same 100×100 geometry as the generated icons. At 24px, the
+// optical variant widens the ring, core and satellite. The tile follows data-theme.
 export default function HelenaMark({
   className,
-  detail = 'small',
+  detail,
 }: {
   className?: string;
   detail?: 'small' | 'large';
 }) {
+  const optical: OrbDetail =
+    detail === 'small' || (!detail && className?.includes('size-6')) ? 'small' : 'regular';
+  const { stroke, core, satellite } = orbGeometry(optical);
   return (
-    <svg
-      viewBox={`0 0 ${MARK_GRID} ${MARK_GRID}`}
-      fill="none"
-      aria-hidden="true"
-      className={className}
-    >
-      <rect width={MARK_GRID} height={MARK_GRID} rx={MARK_RADIUS} fill={TILE} />
-      <g shapeRendering={detail === 'small' ? 'crispEdges' : undefined}>
-        {markLayers(detail).map((layer, i) => (
-          <path key={i} d={layer.d} fill={BANDS.dark[layer.color]} />
-        ))}
-      </g>
+    <svg viewBox="0 0 100 100" fill="none" aria-hidden="true" className={className}>
+      <style>{`[data-theme='dark'] .volition-orb-tile { fill: ${ORB.tileDark}; }`}</style>
+      <rect className="volition-orb-tile" width="100" height="100" rx="23" fill={ORB.tileLight} />
+      <circle cx="50" cy="52" r="23" stroke={ORB.ring} strokeWidth={stroke} />
+      <circle cx="50" cy="52" r={core} fill={ORB.core} />
+      <circle cx="72" cy="30" r={satellite} fill={ORB.paper} />
     </svg>
   );
 }
