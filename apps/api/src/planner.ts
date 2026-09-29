@@ -68,7 +68,6 @@ import { templateBundleRoutes } from './modules/template-bundles';
 import { modelAvailabilityRoutes } from './modules/model-availability';
 import { escalationRoutes } from './modules/escalation';
 import { localAiRoutes } from './modules/local-ai';
-import { escalationRoutes } from './modules/escalation';
 import { voiceRoutes } from './modules/voice';
 import { agentRunnerRoutes } from './modules/agents/runner';
 import { agentChatRoutes } from './modules/agents/chat';
