@@ -320,7 +320,7 @@ describe('drift detection', () => {
     });
     expect(drift).toContainEqual({ key: 'mcp_servers.shopify-dev', code: 'mcp-missing' });
     expect(statuses.at(-1)?.detail).toBe("The agent's profile differs from Ava's settings.");
-    expect(JSON.stringify(statuses)).not.toContain('9222');
+    expect(JSON.stringify(drift)).not.toContain('9222');
   });
 
   it('reports dangerous commands that no approval guard decides', async () => {
