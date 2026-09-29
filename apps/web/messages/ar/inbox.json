@@ -46,6 +46,7 @@
     "mailLoading": "جارٍ تحميل صندوق البريد…",
     "mailError": "تعذر تحميل صندوق البريد.",
     "noProjectMailbox": "لم يتم إعداد صندوق بريد لهذا المشروع.",
+    "connectMailbox": "ربط صندوق بريد",
     "scope": "النطاق"
   },
   "mailFilter": {

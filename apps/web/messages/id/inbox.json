@@ -46,6 +46,7 @@
     "mailLoading": "Memuat kotak surat…",
     "mailError": "Kotak surat tidak dapat dimuat.",
     "noProjectMailbox": "Belum ada kotak surat untuk proyek ini.",
+    "connectMailbox": "Hubungkan kotak surat",
     "scope": "Cakupan"
   },
   "mailFilter": {

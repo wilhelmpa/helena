@@ -1,6 +1,7 @@
 import { db, projectMember, userPreference } from '@repo/db';
 import { and, asc, eq, sql } from 'drizzle-orm';
 import { DEFAULT_LOCALE, isLocale, type Locale } from './locale';
+import { normalizeChatFolders, type ChatFolder } from './chat-folders';
 
 // A user's own interface preferences, held per account so the same choices apply on
 // every device. One row per user; absent means nothing was changed yet and the
@@ -67,6 +68,8 @@ export interface HomeDashboardPreference {
   dismissed: string[];
   // Kept in the existing per-user JSON preference so no schema migration is needed.
   chatAnimation?: boolean;
+  // The member's own chat folders (O4); a chat is in at most one.
+  chatFolders?: ChatFolder[];
 }
 
 export const EMPTY_HOME_DASHBOARD: HomeDashboardPreference = {
@@ -80,7 +83,7 @@ export const EMPTY_HOME_DASHBOARD: HomeDashboardPreference = {
 export function normalizeHomeDashboard(value: unknown): HomeDashboardPreference {
   if (!value || typeof value !== 'object') return { ...EMPTY_HOME_DASHBOARD };
   const raw = value as Record<string, unknown>;
-  const list = (key: Exclude<keyof HomeDashboardPreference, 'chatAnimation'>) =>
+  const list = (key: Exclude<keyof HomeDashboardPreference, 'chatAnimation' | 'chatFolders'>) =>
     Array.isArray(raw[key])
       ? [...new Set((raw[key] as unknown[]).filter((v): v is string => typeof v === 'string'))]
       : [];
@@ -90,6 +93,9 @@ export function normalizeHomeDashboard(value: unknown): HomeDashboardPreference 
     shown: list('shown'),
     dismissed: list('dismissed'),
     ...(typeof raw.chatAnimation === 'boolean' ? { chatAnimation: raw.chatAnimation } : {}),
+    ...(Array.isArray(raw.chatFolders)
+      ? { chatFolders: normalizeChatFolders(raw.chatFolders) }
+      : {}),
   };
 }
 
@@ -198,6 +204,7 @@ export async function updatePreferences(
       ...current.homeDashboard,
       ...patch.homeDashboard,
       chatAnimation: patch.homeDashboard.chatAnimation ?? current.homeDashboard.chatAnimation,
+      chatFolders: patch.homeDashboard.chatFolders ?? current.homeDashboard.chatFolders,
     });
   }
   await db

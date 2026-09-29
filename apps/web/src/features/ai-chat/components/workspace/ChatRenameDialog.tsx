@@ -10,10 +10,13 @@ export default function ChatRenameDialog({
   initialTitle,
   onClose,
   onConfirm,
+  heading,
 }: {
   initialTitle: string;
   onClose: () => void;
-  onConfirm: (title: string) => Promise<unknown>;
+  onConfirm: (title: string) => Promise<unknown> | unknown;
+  // The dialog's title and the field's name, when it names something else (a folder).
+  heading?: string;
 }) {
   const t = useTranslations('chatWorkspace');
   const tCommon = useTranslations('common');
@@ -33,7 +36,7 @@ export default function ChatRenameDialog({
   }
 
   return (
-    <Modal title={t('list.rename')} onClose={onClose}>
+    <Modal title={heading ?? t('list.rename')} onClose={onClose}>
       <form
         className="space-y-4"
         onSubmit={(event) => {
@@ -47,7 +50,7 @@ export default function ChatRenameDialog({
           value={title}
           onChange={(event) => setTitle(event.target.value)}
           maxLength={80}
-          aria-label={t('list.rename')}
+          aria-label={heading ?? t('list.rename')}
         />
         <div className="flex justify-end gap-2">
           <Button type="button" variant="outline" onClick={onClose} disabled={busy}>

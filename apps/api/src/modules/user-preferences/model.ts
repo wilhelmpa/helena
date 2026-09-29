@@ -35,6 +35,18 @@ export const HomeDashboardSchema = t.Object({
   shown: t.Array(WidgetId, { maxItems: 100 }),
   dismissed: t.Array(WidgetId, { maxItems: 200 }),
   chatAnimation: t.Optional(t.Boolean()),
+  // The member's own chat folders (owner, O4): a name and the chats filed in it, in the
+  // same per-user JSON as Start's arrangement, so no table is needed.
+  chatFolders: t.Optional(
+    t.Array(
+      t.Object({
+        id: t.String({ minLength: 1, maxLength: 64 }),
+        name: t.String({ minLength: 1, maxLength: 80 }),
+        threads: t.Array(t.String({ minLength: 1, maxLength: 80 }), { maxItems: 500 }),
+      }),
+      { maxItems: 50 },
+    ),
+  ),
 });
 
 export const PreferenceResponse = t.Object({

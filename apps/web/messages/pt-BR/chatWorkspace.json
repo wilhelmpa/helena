@@ -56,7 +56,16 @@
     "emptyTrashTitle": "Esvaziar a lixeira?",
     "emptyTrashBody": "As conversas da lixeira são excluídas definitivamente com todas as mensagens.",
     "trashedAll": "{count, plural, =0 {Nenhuma conversa movida} one {Uma conversa na lixeira} other {# conversas na lixeira}}",
-    "purgedAll": "{count, plural, =0 {A lixeira estava vazia} one {Uma conversa excluída definitivamente} other {# conversas excluídas definitivamente}}"
+    "purgedAll": "{count, plural, =0 {A lixeira estava vazia} one {Uma conversa excluída definitivamente} other {# conversas excluídas definitivamente}}",
+    "folders": {
+      "new": "Nova pasta",
+      "moveTo": "Mover para pasta",
+      "takeOut": "Tirar da pasta",
+      "rename": "Renomear pasta",
+      "dissolve": "Desfazer pasta (os chats ficam)",
+      "actions": "Pasta “{name}”",
+      "empty": "Vazia: mova chats para cá pelo menu deles."
+    }
   },
   "empty": {
     "noAgentsTitle": "Nenhum agente para conversar",

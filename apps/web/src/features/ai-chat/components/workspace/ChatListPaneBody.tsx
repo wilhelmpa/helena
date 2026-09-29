@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import {
   Archive,
   ArrowLeft,
+  FolderPlus,
   MoreHorizontal,
   PanelLeftClose,
   SquarePen,
@@ -25,6 +26,10 @@ import {
 } from '@/design-system';
 import ConfirmDialog from '@/components/common/overlay/ConfirmDialog';
 import { useChatListMutations } from '../../hooks/useChatList';
+import { ChatFoldersContext, useChatFolders } from '../../hooks/useChatFolders';
+import { addFolder } from '../../utils/chatFolders';
+import { uuid } from '@/utils/uuid';
+import ChatRenameDialog from './ChatRenameDialog';
 import type { ChatGrouping } from '../../utils/chatGroups';
 import ChatListSearch from './ChatListSearch';
 import ChatListGroups from './ChatListGroups';
@@ -63,6 +68,9 @@ export default function ChatListPaneBody({
   // grouping on the first render cannot differ from the server's markup.
   const [grouping, setGrouping] = useState<ChatGrouping>(storedGrouping);
   const [confirming, setConfirming] = useState(false);
+  const [namingFolder, setNamingFolder] = useState(false);
+  const chatFolders = useChatFolders();
+  const { folders, save: saveFolders } = chatFolders;
   const { search, setSearch, term } = useSearchTerm();
   const { trashAll, emptyTrash } = useChatListMutations();
   const chooseGrouping = (next: ChatGrouping) => {
@@ -76,87 +84,103 @@ export default function ChatListPaneBody({
   const filter = { projectKey: projectKey ?? undefined };
 
   return (
-    <div className="ds-chat-list">
-      <div className="ds-chat-list-head">
-        {agents.length > 0 && (
-          <ChatListRowButton icon={SquarePen} onClick={onNewChat} className="ds-grow">
-            {t('list.newChat')}
+    <ChatFoldersContext.Provider value={chatFolders}>
+      <div className="ds-chat-list">
+        <div className="ds-chat-list-head">
+          {agents.length > 0 && (
+            <ChatListRowButton icon={SquarePen} onClick={onNewChat} className="ds-grow">
+              {t('list.newChat')}
+            </ChatListRowButton>
+          )}
+          <Menu modal={false}>
+            <MenuTrigger asChild>
+              <IconButton label={t('list.options')} size="small">
+                <MoreHorizontal size={16} />
+              </IconButton>
+            </MenuTrigger>
+            <MenuContent align="end">
+              <MenuLabel>{t('list.groupBy')}</MenuLabel>
+              {GROUPINGS.map((option) => (
+                <MenuCheckboxItem
+                  key={option}
+                  checked={grouping === option}
+                  onCheckedChange={() => chooseGrouping(option)}
+                >
+                  {t(`list.grouping.${option}`)}
+                </MenuCheckboxItem>
+              ))}
+              <MenuSeparator />
+              {/* Own folders beside the automatic groups (owner, O4). */}
+              <MenuItem onSelect={() => setNamingFolder(true)}>
+                <FolderPlus size={16} />
+                {t('list.folders.new')}
+              </MenuItem>
+              <MenuSeparator />
+              <MenuItem variant="destructive" onSelect={() => setConfirming(true)}>
+                <Trash2 size={16} />
+                {view === 'trash' ? t('list.emptyTrash') : t('list.deleteAll')}
+              </MenuItem>
+            </MenuContent>
+          </Menu>
+          {/* In the drawer, its close button; the column beside the conversation has
+            nothing to close. */}
+          {mode === 'compact' && (
+            <IconButton label={t('list.close')} size="small" onClick={() => onOpenChange(false)}>
+              <PanelLeftClose size={16} />
+            </IconButton>
+          )}
+        </div>
+        <ChatListSearch value={search} onChange={setSearch} />
+        {view !== 'active' && (
+          <ChatListRowButton icon={ArrowLeft} onClick={() => setView('active')}>
+            {t(view === 'archived' ? 'list.viewArchived' : 'list.viewTrash')}
           </ChatListRowButton>
         )}
-        <Menu modal={false}>
-          <MenuTrigger asChild>
-            <IconButton label={t('list.options')} size="small">
-              <MoreHorizontal size={16} />
-            </IconButton>
-          </MenuTrigger>
-          <MenuContent align="end">
-            <MenuLabel>{t('list.groupBy')}</MenuLabel>
-            {GROUPINGS.map((option) => (
-              <MenuCheckboxItem
-                key={option}
-                checked={grouping === option}
-                onCheckedChange={() => chooseGrouping(option)}
-              >
-                {t(`list.grouping.${option}`)}
-              </MenuCheckboxItem>
-            ))}
-            <MenuSeparator />
-            <MenuItem variant="destructive" onSelect={() => setConfirming(true)}>
-              <Trash2 size={16} />
-              {view === 'trash' ? t('list.emptyTrash') : t('list.deleteAll')}
-            </MenuItem>
-          </MenuContent>
-        </Menu>
-        {/* In the drawer, its close button; the column beside the conversation has
-            nothing to close. */}
-        {mode === 'compact' && (
-          <IconButton label={t('list.close')} size="small" onClick={() => onOpenChange(false)}>
-            <PanelLeftClose size={16} />
-          </IconButton>
+        <ChatListGroups
+          projectKey={projectKey}
+          view={view}
+          q={term}
+          grouping={grouping}
+          selectedThreadId={selectedThreadId}
+          onSelectThread={onSelectThread}
+          onThreadRemoved={onThreadRemoved}
+        />
+        {view === 'active' && (
+          <div className="ds-chat-list-foot">
+            <ChatListRowButton icon={Archive} onClick={() => setView('archived')}>
+              {t('list.viewArchived')}
+            </ChatListRowButton>
+            <ChatListRowButton icon={Trash2} onClick={() => setView('trash')}>
+              {t('list.viewTrash')}
+            </ChatListRowButton>
+          </div>
+        )}
+        {namingFolder && (
+          <ChatRenameDialog
+            heading={t('list.folders.new')}
+            initialTitle=""
+            onClose={() => setNamingFolder(false)}
+            onConfirm={(name) => saveFolders(addFolder(folders, name, uuid()))}
+          />
+        )}
+        {confirming && (
+          <ConfirmDialog
+            title={view === 'trash' ? t('list.emptyTrashTitle') : t('list.deleteAllTitle')}
+            confirmLabel={view === 'trash' ? t('list.emptyTrash') : t('list.deleteAll')}
+            onClose={() => setConfirming(false)}
+            onConfirm={async () => {
+              setConfirming(false);
+              if (view === 'trash') await emptyTrash.mutateAsync(filter);
+              else await trashAll.mutateAsync({ ...filter, view });
+              if (selectedThreadId) onThreadRemoved(selectedThreadId);
+            }}
+          >
+            <Text as="p" tone="muted">
+              {view === 'trash' ? t('list.emptyTrashBody') : t('list.deleteAllBody')}
+            </Text>
+          </ConfirmDialog>
         )}
       </div>
-      <ChatListSearch value={search} onChange={setSearch} />
-      {view !== 'active' && (
-        <ChatListRowButton icon={ArrowLeft} onClick={() => setView('active')}>
-          {t(view === 'archived' ? 'list.viewArchived' : 'list.viewTrash')}
-        </ChatListRowButton>
-      )}
-      <ChatListGroups
-        projectKey={projectKey}
-        view={view}
-        q={term}
-        grouping={grouping}
-        selectedThreadId={selectedThreadId}
-        onSelectThread={onSelectThread}
-        onThreadRemoved={onThreadRemoved}
-      />
-      {view === 'active' && (
-        <div className="ds-chat-list-foot">
-          <ChatListRowButton icon={Archive} onClick={() => setView('archived')}>
-            {t('list.viewArchived')}
-          </ChatListRowButton>
-          <ChatListRowButton icon={Trash2} onClick={() => setView('trash')}>
-            {t('list.viewTrash')}
-          </ChatListRowButton>
-        </div>
-      )}
-      {confirming && (
-        <ConfirmDialog
-          title={view === 'trash' ? t('list.emptyTrashTitle') : t('list.deleteAllTitle')}
-          confirmLabel={view === 'trash' ? t('list.emptyTrash') : t('list.deleteAll')}
-          onClose={() => setConfirming(false)}
-          onConfirm={async () => {
-            setConfirming(false);
-            if (view === 'trash') await emptyTrash.mutateAsync(filter);
-            else await trashAll.mutateAsync({ ...filter, view });
-            if (selectedThreadId) onThreadRemoved(selectedThreadId);
-          }}
-        >
-          <Text as="p" tone="muted">
-            {view === 'trash' ? t('list.emptyTrashBody') : t('list.deleteAllBody')}
-          </Text>
-        </ConfirmDialog>
-      )}
-    </div>
+    </ChatFoldersContext.Provider>
   );
 }

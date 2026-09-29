@@ -46,6 +46,7 @@
     "mailLoading": "Loading mailbox…",
     "mailError": "The mailbox could not be loaded.",
     "noProjectMailbox": "No mailbox is set up for this project.",
+    "connectMailbox": "Connect a mailbox",
     "scope": "Scope"
   },
   "mailFilter": {

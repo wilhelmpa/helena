@@ -56,7 +56,16 @@
     "emptyTrashTitle": "Vider la corbeille ?",
     "emptyTrashBody": "Les discussions de la corbeille sont supprimées définitivement avec tous leurs messages.",
     "trashedAll": "{count, plural, =0 {Aucune discussion déplacée} one {Une discussion dans la corbeille} other {# discussions dans la corbeille}}",
-    "purgedAll": "{count, plural, =0 {La corbeille était vide} one {Une discussion supprimée définitivement} other {# discussions supprimées définitivement}}"
+    "purgedAll": "{count, plural, =0 {La corbeille était vide} one {Une discussion supprimée définitivement} other {# discussions supprimées définitivement}}",
+    "folders": {
+      "new": "Nouveau dossier",
+      "moveTo": "Déplacer dans un dossier",
+      "takeOut": "Sortir du dossier",
+      "rename": "Renommer le dossier",
+      "dissolve": "Dissoudre le dossier (les chats restent)",
+      "actions": "Dossier « {name} »",
+      "empty": "Vide : déplacez des chats ici depuis leur menu."
+    }
   },
   "empty": {
     "noAgentsTitle": "Aucun agent pour discuter",

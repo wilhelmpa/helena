@@ -46,6 +46,7 @@
     "mailLoading": "Chargement de la boîte mail…",
     "mailError": "Impossible de charger la boîte mail.",
     "noProjectMailbox": "Aucune boîte mail n’est configurée pour ce projet.",
+    "connectMailbox": "Connecter une boîte mail",
     "scope": "Portée"
   },
   "mailFilter": {

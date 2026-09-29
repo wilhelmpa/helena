@@ -33,6 +33,14 @@ export interface HomeDashboardPreference {
   shown: string[];
   dismissed: string[];
   chatAnimation?: boolean;
+  // The member's own chat folders (owner, O4): a chat is filed in at most one.
+  chatFolders?: ChatFolder[];
+}
+
+export interface ChatFolder {
+  id: string;
+  name: string;
+  threads: string[];
 }
 
 export interface AccountPreferences {

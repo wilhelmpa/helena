@@ -56,7 +56,16 @@
     "emptyTrashTitle": "Empty the trash?",
     "emptyTrashBody": "The chats in the trash are deleted for good, with all their messages.",
     "trashedAll": "{count, plural, =0 {No chats moved} one {One chat in the trash} other {# chats in the trash}}",
-    "purgedAll": "{count, plural, =0 {The trash was empty} one {One chat deleted for good} other {# chats deleted for good}}"
+    "purgedAll": "{count, plural, =0 {The trash was empty} one {One chat deleted for good} other {# chats deleted for good}}",
+    "folders": {
+      "new": "New folder",
+      "moveTo": "Move to folder",
+      "takeOut": "Take out of the folder",
+      "rename": "Rename folder",
+      "dissolve": "Dissolve folder (chats stay)",
+      "actions": "Folder “{name}”",
+      "empty": "Empty: move chats here from their menu."
+    }
   },
   "empty": {
     "noAgentsTitle": "No agent to chat with",

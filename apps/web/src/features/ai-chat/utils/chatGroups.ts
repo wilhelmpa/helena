@@ -12,13 +12,17 @@ export type ChatGroupKey =
   | `m:${string}`
   // By project (`p:KEY`, `p:` for Helena's own chats) or by agent (`a:<id>`).
   | `p:${string}`
-  | `a:${number}`;
+  | `a:${number}`
+  // One of the member's own folders (`f:<id>`, O4).
+  | `f:${string}`;
 
 export interface ChatGroup {
   key: ChatGroupKey;
   chats: ChatSummary[];
   // The heading of a project or agent group; date groups are named by the list.
   label?: string;
+  // A folder of the member's own (its id): the list shows its heading with its actions.
+  folderId?: string;
 }
 
 // How the list is sorted into sections (owner, 28.09., O4: groups).

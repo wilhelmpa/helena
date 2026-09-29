@@ -13,7 +13,8 @@ import PipelineApprovalCard from '@/features/approvals/components/PipelineApprov
 import AgentActivityRow from '@/features/agent-activity/components/AgentActivityRow';
 import InboxListItem from './InboxListItem';
 import { groupNotifications, NOTIFICATION_GROUP_ORDER } from '../notificationGroups';
-import { Box, Stack } from '@/design-system';
+import { EmptyState, Stack } from '@/design-system';
+import { CheckCircle2 } from 'lucide-react';
 
 // The scrollable notification list. Empty and loading states render in place. New
 // pages load automatically when the bottom sentinel scrolls into view; selection
@@ -92,14 +93,7 @@ export default function InboxList({
     workflowApprovals.length === 0 &&
     errorActivities.length === 0
   ) {
-    return (
-      <Box
-        padX={4}
-        className="flex h-full items-center justify-center text-center text-sm text-muted-foreground"
-      >
-        {t('empty')}
-      </Box>
-    );
+    return <EmptyState icon={<CheckCircle2 />}>{t('empty')}</EmptyState>;
   }
   return (
     <div className="min-h-0 flex-1 overflow-y-auto">

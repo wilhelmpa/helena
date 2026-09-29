@@ -56,7 +56,16 @@
     "emptyTrashTitle": "¿Vaciar la papelera?",
     "emptyTrashBody": "Los chats de la papelera se eliminan definitivamente con todos sus mensajes.",
     "trashedAll": "{count, plural, =0 {Ningún chat movido} one {Un chat en la papelera} other {# chats en la papelera}}",
-    "purgedAll": "{count, plural, =0 {La papelera estaba vacía} one {Un chat eliminado definitivamente} other {# chats eliminados definitivamente}}"
+    "purgedAll": "{count, plural, =0 {La papelera estaba vacía} one {Un chat eliminado definitivamente} other {# chats eliminados definitivamente}}",
+    "folders": {
+      "new": "Nueva carpeta",
+      "moveTo": "Mover a carpeta",
+      "takeOut": "Sacar de la carpeta",
+      "rename": "Renombrar carpeta",
+      "dissolve": "Disolver carpeta (los chats se quedan)",
+      "actions": "Carpeta «{name}»",
+      "empty": "Vacía: mueve chats aquí desde su menú."
+    }
   },
   "empty": {
     "noAgentsTitle": "No hay ningún agente con el que chatear",

@@ -46,6 +46,7 @@
     "mailLoading": "Carregando caixa de entrada…",
     "mailError": "Não foi possível carregar a caixa de entrada.",
     "noProjectMailbox": "Nenhuma caixa de entrada foi configurada para este projeto.",
+    "connectMailbox": "Conectar uma caixa de correio",
     "scope": "Escopo"
   },
   "mailFilter": {

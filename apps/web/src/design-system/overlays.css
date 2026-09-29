@@ -874,6 +874,25 @@ body[data-modal-open='true'] [data-radix-popper-content-wrapper] {
   font-size: 12px;
   font-weight: 500;
 }
+/* One of the member's own folders (O4): the folder symbol, its name, its menu. */
+.ds-chat-list-group-label[data-folder] {
+  gap: var(--space-2);
+  padding-inline-end: var(--space-1);
+  color: var(--text-2);
+}
+.ds-chat-list-group-label[data-folder] > h3 {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  font: inherit;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ds-chat-list-folder-empty {
+  padding: 0 var(--space-2) var(--space-2) calc(var(--space-2) + 22px);
+  color: var(--text-3);
+  font-size: 12px;
+}
 .ds-chat-list-skeleton {
   height: 32px;
   width: 100%;

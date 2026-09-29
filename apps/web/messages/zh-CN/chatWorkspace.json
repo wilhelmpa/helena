@@ -56,7 +56,16 @@
     "emptyTrashTitle": "清空回收站？",
     "emptyTrashBody": "回收站中的聊天及其所有消息将被永久删除。",
     "trashedAll": "{count, plural, =0 {未移动聊天} other {# 个聊天已移至回收站}}",
-    "purgedAll": "{count, plural, =0 {回收站为空} other {已永久删除 # 个聊天}}"
+    "purgedAll": "{count, plural, =0 {回收站为空} other {已永久删除 # 个聊天}}",
+    "folders": {
+      "new": "新建文件夹",
+      "moveTo": "移到文件夹",
+      "takeOut": "移出文件夹",
+      "rename": "重命名文件夹",
+      "dissolve": "解散文件夹（聊天保留）",
+      "actions": "文件夹“{name}”",
+      "empty": "空的：通过聊天的菜单把聊天移到这里。"
+    }
   },
   "empty": {
     "noAgentsTitle": "没有可以对话的智能体",

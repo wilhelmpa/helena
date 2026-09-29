@@ -50,8 +50,14 @@ export function useHomeDashboard(): HomeDashboard {
   const { mutate } = update;
   const save = useCallback(
     (next: HomeDashboardPreference) =>
-      mutate({ homeDashboard: { ...next, chatAnimation: prefs.chatAnimation } }),
-    [mutate, prefs.chatAnimation],
+      mutate({
+        homeDashboard: {
+          ...next,
+          chatAnimation: prefs.chatAnimation,
+          chatFolders: prefs.chatFolders,
+        },
+      }),
+    [mutate, prefs.chatAnimation, prefs.chatFolders],
   );
   return {
     ready: hydrated && !sessionPending && !query.isPending,

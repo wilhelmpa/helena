@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef } from 'react';
 import { useTranslations } from 'next-intl';
-import { MessagesSquare } from 'lucide-react';
+import { Folder, MessagesSquare } from 'lucide-react';
 import type { ChatListView } from '@/lib/api/endpoints/agentChat';
 import { EmptyState } from '@/design-system';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -14,6 +14,9 @@ import {
   type ChatGrouping,
 } from '../../utils/chatGroups';
 import ChatListItem from './ChatListItem';
+import ChatFolderMenu from './ChatFolderMenu';
+import { useChatFoldersContext } from '../../hooks/useChatFolders';
+import { withFolders } from '../../utils/chatFolders';
 
 export interface ChatListGroupsProps {
   projectKey: string | null;
@@ -63,16 +66,23 @@ export default function ChatListGroups({
   const t = useTranslations('chatWorkspace');
   const query = useChatList({ projectKey: projectKey ?? undefined, q, view });
   const chats = chatsOf(query.data);
+  const { folders } = useChatFoldersContext();
+  // The member's own folders stand over the automatic groups of the active list (O4).
+  const shownFolders = useMemo(() => (q || view !== 'active' ? [] : folders), [q, view, folders]);
   // A search ranks by relevance (title, then the member's words, then the agent's), so
   // it stays one list; grouping it would scatter the best matches.
   const groups = useMemo<ChatGroup[]>(
     () =>
       q
         ? [{ key: 'today', chats, label: t('list.searchResults') }]
-        : grouping === 'time'
-          ? groupChats(chats, new Date())
-          : groupChatsBy(chats, grouping, 'Helena'),
-    [chats, q, grouping, t],
+        : withFolders(
+            grouping === 'time'
+              ? groupChats(chats, new Date())
+              : groupChatsBy(chats, grouping, 'Helena'),
+            chats,
+            shownFolders,
+          ),
+    [chats, q, grouping, t, shownFolders],
   );
   const sentinelRef = useRef<HTMLDivElement>(null);
 
@@ -98,7 +108,7 @@ export default function ChatListGroups({
     );
   }
 
-  if (chats.length === 0) {
+  if (chats.length === 0 && shownFolders.length === 0) {
     return (
       <div className="ds-chat-list-body">
         <EmptyState icon={<MessagesSquare />} fill={false}>
@@ -112,7 +122,18 @@ export default function ChatListGroups({
     <nav aria-label={t('list.title')} className="ds-chat-list-body">
       {groups.map((group) => (
         <section key={group.key} className="ds-chat-list-group">
-          <h3 className="ds-chat-list-group-label">{groupLabel(t, group)}</h3>
+          {group.folderId ? (
+            <div className="ds-chat-list-group-label" data-folder>
+              <Folder size={14} aria-hidden="true" />
+              <h3>{group.label}</h3>
+              <ChatFolderMenu folderId={group.folderId} name={group.label ?? ''} />
+            </div>
+          ) : (
+            <h3 className="ds-chat-list-group-label">{groupLabel(t, group)}</h3>
+          )}
+          {group.folderId && group.chats.length === 0 && (
+            <p className="ds-chat-list-folder-empty">{t('list.folders.empty')}</p>
+          )}
           <ul>
             {group.chats.map((chat) => (
               <li key={chat.id}>

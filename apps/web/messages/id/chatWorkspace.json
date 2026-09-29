@@ -56,7 +56,16 @@
     "emptyTrashTitle": "Kosongkan tempat sampah?",
     "emptyTrashBody": "Obrolan di tempat sampah dihapus permanen beserta semua pesannya.",
     "trashedAll": "{count, plural, =0 {Tidak ada obrolan dipindahkan} other {# obrolan di tempat sampah}}",
-    "purgedAll": "{count, plural, =0 {Tempat sampah kosong} other {# obrolan dihapus permanen}}"
+    "purgedAll": "{count, plural, =0 {Tempat sampah kosong} other {# obrolan dihapus permanen}}",
+    "folders": {
+      "new": "Folder baru",
+      "moveTo": "Pindahkan ke folder",
+      "takeOut": "Keluarkan dari folder",
+      "rename": "Ganti nama folder",
+      "dissolve": "Bubarkan folder (chat tetap ada)",
+      "actions": "Folder „{name}“",
+      "empty": "Kosong: pindahkan chat ke sini lewat menunya."
+    }
   },
   "empty": {
     "noAgentsTitle": "Tidak ada agen untuk diajak chat",

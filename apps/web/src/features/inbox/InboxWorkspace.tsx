@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type ReactNode } from 'react';
 import { useTranslations } from 'next-intl';
-import { Users } from 'lucide-react';
+import { Mail, Users } from 'lucide-react';
 import { PageSelect } from '@/components/layout/PageToolbar';
 import { useProjectsQuery } from '@/services/projects.service';
 import type { WorkspaceContentProps } from '@/extensions/panelTools';
@@ -10,7 +10,8 @@ import { useTeamsQuery } from '@/services/teams.service';
 import { useProjectMailAccounts } from '@/services/mail.service';
 import MailInbox from './components/MailInbox';
 import { resolveInboxTeamId } from './inboxTeamScope';
-import { Text } from '@/design-system';
+import { ButtonLink, EmptyState } from '@/design-system';
+import { settingsPath } from '@/utils/paths';
 
 // The mail inbox of the tool panel and of Home's inbox page (`page`). On the page its
 // controls, the team among them, are the page's header row (see MailInbox).
@@ -59,17 +60,21 @@ export default function InboxWorkspace({
       ) : null}
 
       {teams.isPending || projectPending ? (
-        <Text as="p" size="sm" tone="muted" className="p-4">
-          {inboxCopy('loading')}
-        </Text>
+        <EmptyState>{inboxCopy('loading')}</EmptyState>
       ) : projectKey && !projectAccounts.data?.length ? (
-        <Text as="p" size="sm" tone="muted" className="p-4">
+        // A symbol, one sentence and the way to fix it (owner, O62).
+        <EmptyState
+          icon={<Mail />}
+          action={
+            <ButtonLink href={settingsPath(projectKey, 'mail')} size="small">
+              {inboxCopy('connectMailbox')}
+            </ButtonLink>
+          }
+        >
           {inboxCopy('noProjectMailbox')}
-        </Text>
+        </EmptyState>
       ) : teamId == null ? (
-        <Text as="p" size="sm" tone="muted" className="p-4">
-          {teamCopy('manage.empty')}
-        </Text>
+        <EmptyState icon={<Users />}>{teamCopy('manage.empty')}</EmptyState>
       ) : (
         <MailInbox
           key={`${teamId}:${project?.id ?? 'all'}`}

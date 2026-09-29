@@ -46,6 +46,7 @@
     "mailLoading": "Cargando buzón…",
     "mailError": "No se pudo cargar el buzón.",
     "noProjectMailbox": "No hay ningún buzón configurado para este proyecto.",
+    "connectMailbox": "Conectar un buzón",
     "scope": "Alcance"
   },
   "mailFilter": {
