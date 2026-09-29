@@ -2,7 +2,7 @@ import { beforeEach, expect, it } from 'bun:test';
 import { Readable } from 'node:stream';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
-import { aiAgent, db, helenaReceipt } from '@repo/db';
+import { aiAgent, db, helenaReceipt, project as projectTable, team } from '@repo/db';
 import { eq } from 'drizzle-orm';
 import { authedApi } from '#tests/helpers/app';
 import { signUpTestUser } from '#tests/helpers/auth';
@@ -22,6 +22,8 @@ beforeEach(async () => {
   const owner = await signUpTestUser();
   const api = authedApi(owner.cookie);
   const project = (await api.projects.post({ key: 'FAM', name: 'Familie' })).data!;
+  await db.update(projectTable).set({ mcpEnabled: true }).where(eq(projectTable.id, project.id));
+  await db.update(team).set({ mcpEnabled: true }).where(eq(team.id, project.teamId));
   const created = await createAgent(api, 'FAM', {
     name: 'Family agent',
     username: 'family-drive',
