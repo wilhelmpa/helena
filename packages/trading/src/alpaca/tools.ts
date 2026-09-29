@@ -4,6 +4,7 @@ import { indicatorSet } from '../indicators';
 import { checkSignal, STRATEGY } from '../indicators/signal';
 import {
   accountState,
+  AlpacaError,
   AlpacaPaperClient,
   num,
   positionState,
@@ -20,7 +21,7 @@ import {
   type OrderRequest,
 } from './checks';
 import { readKeys, readLimits } from './limits';
-import { normalizedSymbol, pendingExposures } from './pending';
+import { normalizedSymbol, pendingExposures, terminalOrder } from './pending';
 import {
   existingPaperOrder,
   paperIntent,
@@ -255,6 +256,24 @@ async function runChecks(
   pendingOrders?: AlpacaOrder[],
 ): Promise<CheckResult> {
   const { limits, missing } = readLimits(credential);
+  if (order.side === 'buy' && assetClassOf(order.symbol) === 'crypto') {
+    const [account, positions] = await Promise.all([client.account(), client.positions()]);
+    const check = checkOrder({
+      limits,
+      missingLimits: missing,
+      account: accountState(account),
+      positions: positions.map(positionState),
+      pending: [],
+      ordersToday: 0,
+      order,
+      price: 0,
+    });
+    return {
+      ...check,
+      ok: false,
+      violations: ['Crypto entries are disabled until protective exits can be guaranteed.'],
+    };
+  }
   const open = pendingOrders ?? (await client.orders({ status: 'open', limit: 500 }));
   if (open.length >= 500) throw new Error('The pending paper order list is incomplete.');
   const symbols = [...new Set([order.symbol, ...open.map((entry) => entry.symbol)])];
@@ -302,6 +321,117 @@ function orderRequest(input: CheckInput): OrderRequest {
 
 const fixed = (value: number, digits: number) =>
   String(Math.round(value * 10 ** digits) / 10 ** digits);
+
+function protectiveExits(orders: AlpacaOrder[], symbol: string): AlpacaOrder[] {
+  const exits: AlpacaOrder[] = [];
+  const seen = new Set<string>();
+  const visit = (order: AlpacaOrder, attached: boolean) => {
+    if (normalizedSymbol(order.symbol) !== normalizedSymbol(symbol)) return;
+    if (
+      order.side === 'sell' &&
+      !terminalOrder(order) &&
+      (attached || order.type === 'stop' || order.type === 'stop_limit') &&
+      !seen.has(order.id)
+    ) {
+      exits.push(order);
+      seen.add(order.id);
+    }
+    for (const leg of order.legs ?? []) visit(leg, true);
+  };
+  for (const order of orders) visit(order, false);
+  return exits;
+}
+
+async function waitCanceled(client: AlpacaPaperClient, ids: string[]): Promise<void> {
+  for (let attempt = 0; attempt < 10; attempt++) {
+    const orders = await Promise.all(ids.map((id) => client.order(id)));
+    if (orders.some((order) => terminalOrder(order) && order.status !== 'canceled'))
+      throw new Error('A protective exit changed before the close; reconcile the position.');
+    if (orders.every((order) => order.status === 'canceled')) return;
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+  throw new Error('Protective exits are not confirmed canceled; the position was left open.');
+}
+
+async function restoreStop(
+  client: AlpacaPaperClient,
+  stop: AlpacaOrder,
+  qty: number,
+  clientOrderId: string,
+): Promise<void> {
+  if (!stop.stop_price || !(num(stop.stop_price) > 0))
+    throw new Error('The original stop price is unavailable; reconcile protection immediately.');
+  try {
+    const restored = await client.submit({
+      symbol: stop.symbol,
+      side: 'sell',
+      type: 'stop',
+      qty: fixed(qty, 6),
+      stop_price: stop.stop_price,
+      time_in_force: 'gtc',
+      client_order_id: clientOrderId.slice(0, 40) + '-stop',
+    });
+    if (terminalOrder(restored)) throw new Error(`Replacement stop ended with ${restored.status}.`);
+  } catch (error) {
+    try {
+      const restored = await client.orderByClientId(clientOrderId.slice(0, 40) + '-stop');
+      if (terminalOrder(restored))
+        throw new Error(`Replacement stop ended with ${restored.status}.`);
+    } catch {
+      throw new Error(`Could not restore the protective stop: ${String(error)}`);
+    }
+  }
+}
+
+async function settleClose(client: AlpacaPaperClient, order: AlpacaOrder): Promise<AlpacaOrder> {
+  if (terminalOrder(order)) return order;
+  for (let attempt = 0; attempt < 20; attempt++) {
+    const current = await client.order(order.id);
+    if (terminalOrder(current)) return current;
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+  try {
+    await client.cancel(order.id);
+  } catch (error) {
+    const current = await client.order(order.id);
+    if (terminalOrder(current)) return current;
+    throw error;
+  }
+  for (let attempt = 0; attempt < 20; attempt++) {
+    const current = await client.order(order.id);
+    if (terminalOrder(current)) return current;
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+  throw new Error(
+    'The close order is not terminal after cancellation; reconcile the position and protection.',
+  );
+}
+
+function closeJournal(
+  symbol: string,
+  qty: number,
+  order: AlpacaOrder,
+  rationale: string,
+  at: Date,
+) {
+  return [
+    '---',
+    'typ: trade',
+    `trade_id: ${order.client_order_id}`,
+    `symbol: ${symbol}`,
+    'seite: verkauf',
+    `menge: ${fixed(qty, 6)}`,
+    `order_id: ${order.id}`,
+    `status: ${order.status}`,
+    `datum: ${at.toISOString()}`,
+    'konto: paper',
+    '---',
+    '',
+    `# Schließen ${symbol}`,
+    '',
+    `**Begründung:** ${rationale}`,
+  ].join('\n');
+}
 
 // The order as Alpaca takes it. A stock buy carries its stop (OTO) and target (bracket);
 // Alpaca offers no attached exits for crypto, so a crypto position gets its stop as a
@@ -699,7 +829,7 @@ export function alpacaPaperTools(deps: PaperToolDeps = {}): AgentTool<unknown>[]
       name: 'alpaca_paper_cancel_order',
       title: 'Cancel a paper order',
       description:
-        'Cancel a simple opening buy of the Alpaca PAPER account by its id. Attached orders and sell exits are protected from cancellation; manage those through the broker after reviewing their protection.',
+        'Cancel an open paper order by its id. A protective exit of a held position stays in place; use close_position to close the position with its stop.',
       inputSchema: z.object({ orderId: z.string().regex(/^[0-9a-f-]{36}$/i) }),
       category: 'write',
       async handler(input: unknown, ctx: ToolCallContext) {
@@ -708,11 +838,26 @@ export function alpacaPaperTools(deps: PaperToolDeps = {}): AgentTool<unknown>[]
         const client = clientOf(ctx, deps);
         return execution.withAccountLock(ctx, await accountIdOf(client), async () => {
           const order = await client.order(orderId);
+          if (order.id !== orderId) throw new Error('The broker returned a different order.');
+          if (order.status === 'canceled')
+            return { paper: true, canceled: orderId, replayed: true };
+          if (terminalOrder(order))
+            throw new Error(`Order ${orderId} already ended with status ${order.status}.`);
+          const held = (await client.positions()).some(
+            (position) =>
+              normalizedSymbol(position.symbol) === normalizedSymbol(order.symbol) &&
+              num(position.qty) > 0,
+          );
+          const attached =
+            !!order.legs?.length || !!(order.order_class && order.order_class !== 'simple');
           if (
-            order.id !== orderId ||
-            order.side !== 'buy' ||
-            (order.order_class && order.order_class !== 'simple') ||
-            order.legs?.length
+            held &&
+            (order.side === 'buy'
+              ? attached && num(order.filled_qty) > 0
+              : order.type === 'stop' ||
+                order.type === 'stop_limit' ||
+                attached ||
+                !!order.parent_order_id)
           )
             throw new Error(
               'Canceling this order could remove a protective exit. It was left unchanged.',
@@ -730,8 +875,8 @@ export function alpacaPaperTools(deps: PaperToolDeps = {}): AgentTool<unknown>[]
       name: 'alpaca_paper_close_position',
       title: 'Close a paper position',
       description:
-        'Close unreserved long inventory of the Alpaca PAPER account at market, wholly or by percentage. ' +
-        'Allowed after the daily loss limit and while new entries are halted. Existing protective exits reserve inventory and are never canceled by this tool.',
+        'Close a long paper position at market. Protective exits are canceled and confirmed under the account lock before a full close; a rejected close restores the stop. ' +
+        'Allowed after the daily loss limit and while new entries are halted.',
       inputSchema: z.object({
         requestId: z
           .string()
@@ -762,39 +907,135 @@ export function alpacaPaperTools(deps: PaperToolDeps = {}): AgentTool<unknown>[]
             ...request,
           });
           const existing = await existingPaperOrder(client, execution, intent);
-          if (existing) return { paper: true, replayed: true, order: orderView(existing) };
+          if (existing && ['rejected', 'canceled', 'expired'].includes(existing.status))
+            throw new Error(
+              `The paper close ended with status ${existing.status}; reconcile protection.`,
+            );
+          if (existing)
+            return {
+              paper: true,
+              replayed: true,
+              order: orderView(existing),
+              journal: closeJournal(
+                request.symbol,
+                num(existing.qty),
+                existing,
+                request.rationale,
+                now(),
+              ),
+            };
           const open = await reconciledOpenOrders(client, execution, accountId);
           const held = (await client.positions()).find(
             (position) => normalizedSymbol(position.symbol) === normalizedSymbol(request.symbol),
           );
           const qty = (num(held?.qty) * (request.percentage ?? 100)) / 100;
+          const exits = protectiveExits(open, request.symbol);
+          if (exits.length && request.percentage !== undefined && request.percentage < 100)
+            throw new Error(
+              'A partial close with protective exits needs a replacement stop; close the full position.',
+            );
           const orderRequest: OrderRequest = {
             symbol: request.symbol,
             side: 'sell',
             type: 'market',
             qty,
           };
-          const check = await runChecks(client, ctx.credential ?? {}, orderRequest, now(), open);
+          const remaining = open
+            .filter((order) => !exits.some((exit) => exit.id === order.id))
+            .map((order) => ({
+              ...order,
+              legs: order.legs?.filter((leg) => !exits.some((exit) => exit.id === leg.id)),
+            }));
+          const check = await runChecks(
+            client,
+            ctx.credential ?? {},
+            orderRequest,
+            now(),
+            remaining,
+          );
           if (!check.ok) return refusedOrder(check);
-          await execution.beginIntent(ctx, intent);
-          const order = await client.submit({
-            symbol: request.symbol,
-            side: 'sell',
-            type: 'market',
-            qty: fixed(qty, check.assetClass === 'crypto' ? 9 : 6),
-            time_in_force: check.assetClass === 'crypto' ? 'gtc' : 'day',
-            client_order_id: intent.clientOrderId,
-          });
+          if (check.assetClass === 'us_equity' && !(await client.clock()).is_open)
+            throw new Error('The stock market is closed; the protective stop was left unchanged.');
+          const stop = exits.find((order) => order.type === 'stop' || order.type === 'stop_limit');
+          if (exits.length && !stop)
+            throw new Error(
+              'No protective stop can be restored if the close fails. The position was left unchanged.',
+            );
+          let order: AlpacaOrder;
+          let submitted = false;
+          try {
+            for (const exit of exits) {
+              if (!terminalOrder(await client.order(exit.id))) await client.cancel(exit.id);
+            }
+            if (exits.length)
+              await waitCanceled(
+                client,
+                exits.map((exit) => exit.id),
+              );
+            const fresh = await reconciledOpenOrders(client, execution, accountId);
+            const freshPosition = (await client.positions()).find(
+              (position) => normalizedSymbol(position.symbol) === normalizedSymbol(request.symbol),
+            );
+            if (num(freshPosition?.qty) !== num(held?.qty))
+              throw new Error('The held quantity changed during close; reconcile the position.');
+            const freshCheck = await runChecks(
+              client,
+              ctx.credential ?? {},
+              orderRequest,
+              now(),
+              fresh,
+            );
+            if (!freshCheck.ok) throw new Error('The close failed its final inventory check.');
+            if (check.assetClass === 'us_equity' && !(await client.clock()).is_open)
+              throw new Error('The stock market closed during this request.');
+            await execution.beginIntent(ctx, intent);
+            submitted = true;
+            order = await client.submit({
+              symbol: request.symbol,
+              side: 'sell',
+              type: 'market',
+              qty: fixed(qty, check.assetClass === 'crypto' ? 9 : 6),
+              time_in_force: check.assetClass === 'crypto' ? 'gtc' : 'day',
+              client_order_id: intent.clientOrderId,
+            });
+          } catch (error) {
+            if (
+              stop &&
+              (!submitted ||
+                (error instanceof AlpacaError && error.status >= 400 && error.status < 500)) &&
+              (await client.order(stop.id)).status === 'canceled'
+            ) {
+              const current = (await client.positions()).find(
+                (position) =>
+                  normalizedSymbol(position.symbol) === normalizedSymbol(request.symbol),
+              );
+              if (num(current?.qty) > 0)
+                await restoreStop(client, stop, num(current?.qty), intent.clientOrderId);
+            }
+            throw error;
+          }
           if (order.client_order_id !== intent.clientOrderId || !order.id || !order.status)
             throw new Error(
               'The broker did not acknowledge the intended close. Reconcile this requestId before continuing.',
             );
+          order = await settleClose(client, order);
           await execution.finishIntent(intent, order);
+          if (['rejected', 'canceled', 'expired'].includes(order.status)) {
+            const current = (await client.positions()).find(
+              (position) => normalizedSymbol(position.symbol) === normalizedSymbol(request.symbol),
+            );
+            if (stop && num(current?.qty) > 0)
+              await restoreStop(client, stop, num(current?.qty), intent.clientOrderId);
+            throw new Error(
+              `The paper close ended with status ${order.status}; protection was reconciled.`,
+            );
+          }
           return {
             paper: true,
             order: orderView(order),
             assetClass: assetClassOf(request.symbol),
             checks: check,
+            journal: closeJournal(request.symbol, qty, order, request.rationale, now()),
           };
         });
       },

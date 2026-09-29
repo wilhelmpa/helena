@@ -62,6 +62,7 @@ export interface AlpacaOrder {
   side: string;
   type: string;
   order_class?: string;
+  parent_order_id?: string | null;
   time_in_force: string;
   qty: string | null;
   notional: string | null;
