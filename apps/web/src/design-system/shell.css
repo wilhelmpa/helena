@@ -1547,3 +1547,31 @@
   letter-spacing: 0;
   text-transform: none;
 }
+
+/* Code (features/code): code-server in the page, covered by a loading state in the app's
+   colours until its page is there — never a white frame (owner, 29.09.). */
+.ds-code-stage {
+  position: relative;
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  overflow: hidden;
+  background: var(--bg);
+}
+.ds-code-frame-loading {
+  opacity: 0;
+}
+.ds-code-cover {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  background: var(--bg);
+}
+
+/* A control's words that give way on a phone (≤ 600px): the symbol stays, the page title
+   next to it keeps its room (owner, 29.09.: Belege was cut to „Bel…“). */
+@media (max-width: 600px) {
+  .ds-phone-hidden {
+    display: none;
+  }
+}

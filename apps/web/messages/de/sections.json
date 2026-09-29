@@ -70,7 +70,7 @@
     },
     "agent-runtime": {
       "label": "Agenten-Laufzeit",
-      "description": "Der Not-Aus, die Hermes-Installation und ihre Updates, die Fallback-Modelle und Aufbewahrung der Sitzungen für alle Agenten und was die Agenten verbraucht haben."
+      "description": "Der Not-Aus, die Laufzeit und ihre Updates, die Fallback-Modelle und Aufbewahrung der Sitzungen für alle Agenten und was die Agenten verbraucht haben."
     },
     "plugins": {
       "label": "Plugins",

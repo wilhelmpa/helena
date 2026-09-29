@@ -167,7 +167,13 @@
       "open": "Ouvrir dans le navigateur",
       "logs": "Journaux",
       "noLogs": "Aucune sortie."
-    }
+    },
+    "codeLoading": "Chargement de Code …",
+    "codeSlow": "Code ne répond pas pour le moment.",
+    "codeRetry": "Recharger",
+    "codeNoFolder": "Ce projet n’a pas encore de dossier de travail.",
+    "codeNoFolderPending": "Le dossier de travail de ce projet est en cours de préparation.",
+    "codeSettings": "Paramètres du projet"
   },
   "groups": {
     "project": "Projet",

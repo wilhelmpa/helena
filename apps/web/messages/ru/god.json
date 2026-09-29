@@ -356,7 +356,7 @@
   "systemHealth": {
     "title": "Сервисы",
     "service": {
-      "runner": "Раннер Hermes",
+      "runner": "Раннер среды",
       "provisioning": "Провижининг",
       "worker": "Воркер",
       "engine": "Движок Helena"

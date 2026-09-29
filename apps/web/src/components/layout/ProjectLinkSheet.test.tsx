@@ -80,7 +80,7 @@ test('opens a task in the overlay and never frames another project page', async 
       );
     });
     assert.equal(document.querySelector('iframe'), null);
-    assert.equal(document.querySelector('aside')?.getAttribute('aria-label'), 'Trading');
+    assert.equal(document.querySelector('aside')?.getAttribute('aria-label'), 'TRADE · Trading');
     const open = [...document.querySelectorAll('button')].find(
       (button) => button.textContent === nav.openInProject,
     );

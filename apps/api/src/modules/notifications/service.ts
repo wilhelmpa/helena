@@ -498,7 +498,10 @@ export async function listNotifications(
       id: notification.id,
       type: notification.type,
       actorUserId: notification.actorUserId,
-      actorName: notification.actorName,
+      // The sender as named now (an agent is a user; its name is the user's), not the name
+      // copied into the row when it was sent: renamed agents ("Hermes-Koordinator PRIV" →
+      // "Koordinator PRIV") no longer show their old name in the inbox (owner, 29.09.).
+      actorName: sql<string | null>`coalesce(${user.name}, ${notification.actorName})`,
       readAt: notification.readAt,
       snoozedUntil: notification.snoozedUntil,
       createdAt: notification.createdAt,
@@ -521,6 +524,7 @@ export async function listNotifications(
     .innerJoin(project, eq(project.id, notification.projectId))
     .innerJoin(projectColumn, eq(projectColumn.id, issue.columnId))
     .leftJoin(issueActivity, eq(issueActivity.id, notification.sourceActivityId))
+    .leftJoin(user, eq(user.id, notification.actorUserId))
     .where(and(...conds))
     .orderBy(desc(notification.createdAt), desc(notification.id))
     .limit(limit + 1);

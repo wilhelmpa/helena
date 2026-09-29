@@ -167,7 +167,13 @@
       "open": "Buka di browser",
       "logs": "Log",
       "noLogs": "Belum ada log."
-    }
+    },
+    "codeLoading": "Memuat Code …",
+    "codeSlow": "Code sedang tidak merespons.",
+    "codeRetry": "Muat ulang",
+    "codeNoFolder": "Proyek ini belum punya folder kerja.",
+    "codeNoFolderPending": "Folder kerja proyek ini masih disiapkan.",
+    "codeSettings": "Pengaturan proyek"
   },
   "groups": {
     "project": "Proyek",

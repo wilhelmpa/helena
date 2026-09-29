@@ -119,6 +119,11 @@
 .large.ready voice-orb {
   opacity: 1;
 }
+/* An agent that cannot answer right now: the same orb, at rest and without colour. */
+.large.ready.offline voice-orb {
+  opacity: 0.5;
+  filter: grayscale(1);
+}
 /* Without WebGL, with reduced motion or in a hidden tab: the same orb as a still sphere in
    the colour of the state — lit from the top left like the small orbs, without a glow
    (owner, 29.09.). It breathes slowly while something happens. */

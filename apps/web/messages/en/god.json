@@ -356,7 +356,7 @@
   "systemHealth": {
     "title": "Services",
     "service": {
-      "runner": "Hermes runner",
+      "runner": "Runtime runner",
       "provisioning": "Provisioning",
       "worker": "Worker",
       "engine": "Helena engine"

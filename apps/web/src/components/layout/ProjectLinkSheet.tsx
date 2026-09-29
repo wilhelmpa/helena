@@ -82,7 +82,10 @@ export default function ProjectLinkSheet({
       />
     );
 
-  const name = projects.find((project) => project.key === target.key)?.name ?? target.key;
+  const projectName = projects.find((project) => project.key === target.key)?.name;
+  // The head names the project with its key (a bare "Patrick" meant nothing, owner 29.09.).
+  const name =
+    projectName && projectName !== target.key ? `${target.key} · ${projectName}` : target.key;
   const open = () => {
     router.push(target.href);
     close();

@@ -70,7 +70,7 @@
     },
     "agent-runtime": {
       "label": "Runtime de agentes",
-      "description": "La parada de emergencia, la instalación de Hermes y sus actualizaciones, los modelos de respaldo y la conservación de sesiones para todos los agentes, y lo que consumieron los agentes."
+      "description": "La parada de emergencia, el entorno y sus actualizaciones, los modelos de respaldo y la retención de sesiones de todos los agentes, y lo que gastaron."
     },
     "plugins": {
       "label": "Plugins",

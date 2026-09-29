@@ -170,7 +170,13 @@
       "open": "Open in browser",
       "logs": "Logs",
       "noLogs": "No log output."
-    }
+    },
+    "codeLoading": "Loading Code …",
+    "codeSlow": "Code is not answering right now.",
+    "codeRetry": "Reload",
+    "codeNoFolder": "This project has no working folder yet.",
+    "codeNoFolderPending": "This project's working folder is still being set up.",
+    "codeSettings": "Project settings"
   },
   "groups": {
     "project": "Project",

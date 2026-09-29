@@ -356,7 +356,7 @@
   "systemHealth": {
     "title": "Layanan",
     "service": {
-      "runner": "Runner Hermes",
+      "runner": "Runner runtime",
       "provisioning": "Penyediaan",
       "worker": "Worker",
       "engine": "Mesin Helena"

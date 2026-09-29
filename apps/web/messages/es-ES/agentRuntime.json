@@ -120,7 +120,7 @@
     "localPatches": "{count, plural, one {Se conserva # cambio local: {list}} other {Se conservan # cambios locales: {list}}}",
     "kind": {
       "memory-write": "Memoria",
-      "hermes-update": "Actualización de Hermes"
+      "hermes-update": "Actualización del entorno"
     },
     "status": {
       "pending": "En espera",
@@ -233,8 +233,8 @@
   "admin": {
     "stopTitle": "Parada de emergencia",
     "stopDescription": "Detiene a la vez todos los agentes de la instancia. También en el menú de la cuenta.",
-    "hermesTitle": "Hermes",
-    "hermesDescription": "La instalación de Hermes en la que se ejecutan todos los agentes. Una actualización necesita tu aprobación; el script de actualización hace una copia de seguridad y revierte si falla.",
+    "hermesTitle": "Entorno de ejecución",
+    "hermesDescription": "El entorno en el que trabajan todos los agentes. Una actualización necesita tu aprobación; el asistente guarda una copia y revierte si falla.",
     "installed": "Versión instalada: {version}",
     "notChecked": "Todavía sin comprobar.",
     "upToDate": "Actualizado",
@@ -266,10 +266,10 @@
     "team": "Equipo",
     "noTeam": "Todavía no hay equipo.",
     "openUpdates": "Abrir en Actualizaciones",
-    "profilesTitle": "Perfiles de Hermes",
+    "profilesTitle": "Perfiles de agentes",
     "compressionThreshold": "Comprimir el contexto a partir de (tokens)",
     "compressionThresholdHint": "Para cada agente sin valor propio. 100 000 mantiene los chats largos muy por debajo de las ventanas de los modelos actuales sin resumir las ejecuciones con demasiada frecuencia.",
-    "bundledSkills": "Habilidades incluidas con Hermes",
+    "bundledSkills": "Skills incluidas en el entorno",
     "bundledSkillsHint": "Helena las instala igual en cada perfil de Hermes (docx, pdf, xlsx, depuración…). Desactiva las que quieras en el agente. «Solo lo esencial» no instala nuevas; las existentes se quedan.",
     "bundledSkillsAll": "Todas",
     "bundledSkillsEssential": "Solo lo esencial"

@@ -9,7 +9,7 @@
     "openrouter": "OpenRouter"
   },
   "logins": {
-    "hermes": "Hermes",
+    "hermes": "运行环境",
     "codex": "Codex",
     "claude-code": "Claude Code",
     "owner": "所有者"

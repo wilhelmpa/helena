@@ -1,12 +1,17 @@
 'use client';
 
 import { useEffect } from 'react';
+import { runtimeEnv } from '@/utils/runtimeEnv';
+import { isHomeOrigin } from './homeAccess';
 
 // A verified LAN Access token gives this page its hard reload deadline. Reloading
 // closes chat streams and tool WebSockets before any subsequent request can reuse an
 // expired token; nginx then sends the navigation through Cloudflare's login flow.
 export default function LanAccessExpiry() {
   useEffect(() => {
+    // Only the home origin (the LAN) has the endpoint; over the tunnel the request only
+    // put a red 403 into every page's console (owner, 29.09.).
+    if (!isHomeOrigin(window.location.origin, runtimeEnv().homeUrl)) return;
     let expiresAt = 0;
     let timer: ReturnType<typeof setTimeout> | undefined;
     let cancelled = false;

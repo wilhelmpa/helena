@@ -120,7 +120,7 @@
     "localPatches": "{count, plural, zero {لا تغييرات محلية تُنقل} one {يُنقل تغيير محلي واحد: {list}} two {يُنقل تغييران محليان: {list}} few {تُنقل # تغييرات محلية: {list}} many {يُنقل # تغييرًا محليًا: {list}} other {يُنقل # تغيير محلي: {list}}}",
     "kind": {
       "memory-write": "الذاكرة",
-      "hermes-update": "تحديث Hermes"
+      "hermes-update": "تحديث بيئة التشغيل"
     },
     "status": {
       "pending": "في الانتظار",
@@ -233,8 +233,8 @@
   "admin": {
     "stopTitle": "إيقاف طارئ",
     "stopDescription": "يوقف كل وكلاء النسخة دفعة واحدة. متاح أيضًا في قائمة الحساب.",
-    "hermesTitle": "Hermes",
-    "hermesDescription": "تثبيت Hermes الذي يعمل عليه كل الوكلاء. يحتاج التحديث إلى موافقتك؛ ويحتفظ البرنامج المساعد بنسخة احتياطية ويتراجع عند الفشل.",
+    "hermesTitle": "بيئة التشغيل",
+    "hermesDescription": "بيئة التشغيل التي يعمل عليها جميع الوكلاء. يحتاج التحديث إلى موافقتك؛ ويحتفظ المساعد بنسخة احتياطية ويتراجع عند الفشل.",
     "installed": "المثبَّت: {version}",
     "notChecked": "لم يُفحص بعد.",
     "upToDate": "محدَّث",
@@ -266,10 +266,10 @@
     "team": "الفريق",
     "noTeam": "لا يوجد فريق بعد.",
     "openUpdates": "فتح في التحديثات",
-    "profilesTitle": "ملفات Hermes",
+    "profilesTitle": "ملفات الوكلاء",
     "compressionThreshold": "ضغط السياق ابتداءً من (رموز)",
     "compressionThresholdHint": "لكل وكيل ليست له قيمة خاصة. تُبقي 100000 المحادثات الطويلة أدنى بكثير من نوافذ النماذج الحالية دون تلخيص التشغيلات كثيرًا أثناء العمل.",
-    "bundledSkills": "المهارات المرفقة مع Hermes",
+    "bundledSkills": "المهارات المرفقة ببيئة التشغيل",
     "bundledSkillsHint": "تضعها Helena بالطريقة نفسها في كل ملف Hermes (docx وpdf وxlsx والتصحيح…). أوقف ما تشاء منها لدى الوكيل. «الأساسي فقط» لا يضيف جديدًا؛ وتبقى الموجودة.",
     "bundledSkillsAll": "الكل",
     "bundledSkillsEssential": "الأساسي فقط"

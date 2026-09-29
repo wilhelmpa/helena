@@ -113,7 +113,10 @@ function codeUrl(
     return url.toString();
   }
   if (!config.codeUrl) return '';
-  if (!workspacePath) return frameUrl(config.codeUrl);
+  // A project without a known folder gets no editor: bare code-server reopens the folder
+  // that was open last, another project's (29.09.: VOL's Code showed TRADE). Helena's own
+  // Code (no project) opens its workspace root.
+  if (!workspacePath) return projectKey ? '' : frameUrl(config.codeUrl);
   try {
     const url = new URL(config.codeUrl);
     if (url.protocol !== 'http:' && url.protocol !== 'https:') return '';

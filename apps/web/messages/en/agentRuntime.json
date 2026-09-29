@@ -120,7 +120,7 @@
     "localPatches": "{count, plural, one {# local change is carried over: {list}} other {# local changes are carried over: {list}}}",
     "kind": {
       "memory-write": "Memory",
-      "hermes-update": "Hermes update"
+      "hermes-update": "Runtime update"
     },
     "status": {
       "pending": "Waiting",
@@ -233,8 +233,8 @@
   "admin": {
     "stopTitle": "Emergency stop",
     "stopDescription": "Halts every agent of the instance at once. Also in the account menu.",
-    "hermesTitle": "Hermes",
-    "hermesDescription": "The Hermes installation all agents run on. An update needs your approval; the helper keeps a backup and rolls back when it fails.",
+    "hermesTitle": "Runtime",
+    "hermesDescription": "The runtime all agents work on. An update needs your approval; the helper keeps a backup and rolls back when it fails.",
     "installed": "Installed: {version}",
     "notChecked": "Not checked yet.",
     "upToDate": "Up to date",
@@ -266,10 +266,10 @@
     "team": "Team",
     "noTeam": "No team yet.",
     "openUpdates": "Open in Updates",
-    "profilesTitle": "Hermes profiles",
+    "profilesTitle": "Agent profiles",
     "compressionThreshold": "Compress context from (tokens)",
     "compressionThresholdHint": "For every agent without its own value. 100,000 keeps long chats well below the windows of today’s models without summarising runs mid-work too often.",
-    "bundledSkills": "Skills that ship with Hermes",
+    "bundledSkills": "Skills that ship with the runtime",
     "bundledSkillsHint": "Helena seeds them the same way into every Hermes profile (docx, pdf, xlsx, debugging …). Turn single ones off on the agent. “Only the essential” seeds no new ones; existing ones stay.",
     "bundledSkillsAll": "All",
     "bundledSkillsEssential": "Only the essential"

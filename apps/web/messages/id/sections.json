@@ -70,7 +70,7 @@
     },
     "agent-runtime": {
       "label": "Runtime agen",
-      "description": "Stop darurat, instalasi Hermes beserta pembaruannya, model cadangan dan penyimpanan sesi untuk semua agen, serta pemakaian para agen."
+      "description": "Tombol darurat, runtime dan pembaruannya, model cadangan dan retensi sesi untuk semua agen, serta pemakaian agen."
     },
     "plugins": {
       "label": "Plugin",

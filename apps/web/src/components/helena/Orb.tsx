@@ -118,8 +118,10 @@ export default function Orb({
       : state === 'listening' || state === 'thinking' || state === 'speaking'
         ? state
         : 'idle';
-  const still =
-    !motionEnabled || hidden || state === 'error' || state === 'throttled' || state === 'offline';
+  // Offline is the real orb, resting and greyed (owner, 29.09.: a project chat with an
+  // agent whose runner is not connected showed a grey still ball instead of the orb).
+  // Error and throttled keep the still sphere in their warning colour.
+  const still = !motionEnabled || hidden || state === 'error' || state === 'throttled';
   if (size !== 'large') {
     return (
       <span

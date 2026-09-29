@@ -356,7 +356,7 @@
   "systemHealth": {
     "title": "Servicios",
     "service": {
-      "runner": "Ejecutor de Hermes",
+      "runner": "Runner del entorno",
       "provisioning": "Aprovisionamiento",
       "worker": "Worker",
       "engine": "Motor de Helena"
