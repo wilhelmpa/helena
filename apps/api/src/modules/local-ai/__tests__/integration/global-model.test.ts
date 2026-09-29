@@ -2,7 +2,14 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'bun:test'
 import { mkdtemp, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { aiAgent, db, helenaModelServer, setSetting } from '@repo/db';
+import {
+  aiAgent,
+  db,
+  helenaModelServer,
+  helenaLocalAiEval,
+  readLocalAiPolicy,
+  setSetting,
+} from '@repo/db';
 import { eq } from 'drizzle-orm';
 import { api, authedApi } from '#tests/helpers/app';
 import { signUpTestUser } from '#tests/helpers/auth';
@@ -68,6 +75,8 @@ beforeEach(async () => {
     if (parameters.action === 'begin') {
       const next = state('drain');
       next.operation!.id = String(parameters.id);
+      next.operation!.target = parameters.target as NonNullable<MaintenanceState['active']>;
+      next.operation!.previous = parameters.previous as NonNullable<MaintenanceState['active']>;
       await save(next);
       return next;
     }
@@ -260,4 +269,101 @@ describe('global local model API', () => {
     });
     expect(await localDefaultClassFallback('triage')).toBe(false);
   });
+});
+
+it('pairs only the 27B GPU with NPU, gates classes and restores both server flags', async () => {
+  const { client } = await fixture();
+  const [gpu] = await db
+    .select()
+    .from(helenaModelServer)
+    .where(eq(helenaModelServer.slug, 'local'));
+  await db
+    .update(helenaModelServer)
+    .set({ models: [{ ...gpu!.models[0]!, id: 'Qwen3.8-27B-GGUF' }] })
+    .where(eq(helenaModelServer.id, gpu!.id));
+  const [npu] = await db
+    .insert(helenaModelServer)
+    .values({
+      slug: 'volition-npu',
+      name: 'NPU',
+      kind: 'fastflowlm',
+      enabled: false,
+      baseUrl: 'http://127.0.0.1:13306/v1',
+      keySource: 'none',
+    })
+    .returning();
+  expect(
+    (
+      await client.god['local-ai'].default.preview.post({
+        model: 'helena-halogen/Flash',
+        profile: 'local-27b-npu',
+      })
+    ).status,
+  ).toBe(400);
+  const preview = await client.god['local-ai'].default.preview.post({
+    model: 'helena-local/Qwen3.8-27B-GGUF',
+    profile: 'local-27b-npu',
+  });
+  expect(preview.status).toBe(200);
+  expect(preview.data).toMatchObject({
+    npuClasses: ['triage', 'decisions', 'embeddings'],
+    target: { npu: 'qwen3.5:4b' },
+  });
+  const policy = await readLocalAiPolicy();
+  policy.classes.triage = { mode: 'prefer', model: null };
+  policy.classes.decisions = { mode: 'prefer', model: null };
+  await setSetting('localAi.policy', policy);
+  await beginGlobalModel('helena-local/Qwen3.8-27B-GGUF', 'local-27b-npu');
+  let pending = (await readMaintenance())!;
+  pending.operation!.target.npu = 'qwen3.5:2b';
+  pending.operation!.phase = 'commit';
+  await save(pending);
+  await resumeGlobalModel();
+  expect(
+    (await db.select().from(helenaModelServer).where(eq(helenaModelServer.id, npu!.id)))[0]
+      ?.enabled,
+  ).toBe(true);
+  expect((await readLocalAiPolicy()).classes.triage?.mode).toBe('off');
+  const job = (await readUncachedSetting<{ classes: string[]; startedAt: string }>(
+    MAINTENANCE_KEY,
+  ))!;
+  for (const classId of job.classes) {
+    const small = ['triage', 'decisions', 'embeddings'].includes(classId);
+    await db.insert(helenaLocalAiEval).values({
+      classId,
+      serverId: small ? npu!.id : gpu!.id,
+      model: small
+        ? classId === 'embeddings'
+          ? 'embed-gemma:300m'
+          : 'qwen3.5:2b'
+        : 'Qwen3.8-27B-GGUF',
+      score: classId === 'decisions' ? 0 : 1,
+      threshold: 0.85,
+      passed: classId !== 'decisions',
+      cases: 24,
+      ranAt: new Date(Date.parse(job.startedAt) + 1),
+      status: 'done',
+    });
+  }
+  pending = (await readMaintenance())!;
+  pending.operation!.phase = 'eval';
+  pending.admissionPaused = false;
+  await save(pending);
+  await resumeGlobalModel();
+  expect((await readLocalAiPolicy()).classes.triage).toEqual({
+    mode: 'prefer',
+    model: 'helena-volition-npu/qwen3.5:2b',
+  });
+  expect((await readLocalAiPolicy()).classes.decisions?.mode).toBe('off');
+  expect(await localDefaultClassFallback('decisions')).toBe(true);
+  expect((await readLocalAiPolicy()).classes.routines?.model).toBe('helena-local/Qwen3.8-27B-GGUF');
+  pending = (await readMaintenance())!;
+  pending.operation!.phase = 'rollback-commit';
+  await save(pending);
+  await resumeGlobalModel();
+  expect(
+    (await db.select().from(helenaModelServer).where(eq(helenaModelServer.id, npu!.id)))[0]
+      ?.enabled,
+  ).toBe(false);
+  expect((await readLocalAiPolicy()).classes.triage).toEqual(policy.classes.triage);
 });

@@ -1,3 +1,4 @@
+import { verifyNpuDecisionReadout } from '../modules/local-ai/npu-eval';
 // The local AI task-class evals from the command line (docs/helena-decisions/local-ai-platform.md
 // §7): the same cases Administrator → Server → Lokale KI runs, against any OpenAI-compatible
 // server, without Helena's database. For measuring models before they are registered.
@@ -22,6 +23,7 @@ import { LOCAL_AI_THINKING, type LocalAiEvalResult, type LocalAiThinking } from 
 import { tmpdir } from 'node:os';
 import { openAiEvalContext } from '../modules/local-ai/eval-context';
 import { cliJudge } from '../modules/local-ai/judge-cli';
+import { DECISIONS_LOCAL_AI_CLASS } from '../modules/decisions/local-ai-class';
 import { BUILTIN_TASK_CLASSES } from '../modules/local-ai/task-classes';
 
 function argument(name: string): string | null {
@@ -73,7 +75,7 @@ interface Row {
 }
 
 const rows: Row[] = [];
-for (const entry of BUILTIN_TASK_CLASSES) {
+for (const entry of [...BUILTIN_TASK_CLASSES, DECISIONS_LOCAL_AI_CLASS]) {
   if (!entry.evaluate || (only && !only.includes(entry.id))) continue;
   const target = entry.capability === 'embeddings' ? embedModel : model;
   if (!target) continue;
@@ -83,6 +85,8 @@ for (const entry of BUILTIN_TASK_CLASSES) {
   let result: LocalAiEvalResult | null = null;
   let error: string | null = null;
   try {
+    if (process.argv.includes('--npu'))
+      await verifyNpuDecisionReadout({ baseUrl: base, key, model: target, classId: entry.id });
     const judge = judgeCli
       ? {
           chat: cliJudge(

@@ -72,14 +72,18 @@ export const localAiRoutes = new Elysia({
     },
     detail: { summary: 'Read the global local model and durable maintenance progress' },
   })
-  .post('/god/local-ai/default/preview', ({ body }) => previewGlobalModel(body.model), {
-    beforeHandle: ({ user }) => {
-      requireGod(user);
+  .post(
+    '/god/local-ai/default/preview',
+    ({ body }) => previewGlobalModel(body.model, body.profile),
+    {
+      beforeHandle: ({ user }) => {
+        requireGod(user);
+      },
+      body: globalModelBody,
+      detail: { summary: 'Preview affected agents, classes and the 72 GB weight lock' },
     },
-    body: globalModelBody,
-    detail: { summary: 'Preview affected agents, classes and the 72 GB weight lock' },
-  })
-  .post('/god/local-ai/default/apply', ({ body }) => beginGlobalModel(body.model), {
+  )
+  .post('/god/local-ai/default/apply', ({ body }) => beginGlobalModel(body.model, body.profile), {
     beforeHandle: ({ user }) => {
       requireGod(user);
     },

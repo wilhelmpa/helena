@@ -1,0 +1,34 @@
+[Unit]
+Description=Volition small NPU models (FastFlowLM)
+After=network.target lemond.service
+Wants=volition-npu-proxy.socket
+
+[Service]
+Type=simple
+User=lemonade
+Group=lemonade
+SupplementaryGroups=render
+Environment=HOME=/var/lib/lemonade
+LoadCredential=npu.key:/etc/helena/volition-npu.key
+ExecCondition=/usr/bin/python3 -I /usr/local/lib/helena/hostd/helena-hostd model-start-allowed volition-npu.service
+ExecStart=/usr/bin/python3 /usr/local/lib/volition-npu/npu-server.py
+Restart=on-failure
+RestartSec=10
+TimeoutStopSec=30
+MemoryHigh=7G
+MemoryMax=8G
+MemorySwapMax=0
+DevicePolicy=closed
+DeviceAllow=/dev/accel/accel0 rw
+InaccessiblePaths=-/dev/kfd -/dev/dri
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectHome=yes
+ProtectSystem=strict
+ReadWritePaths=/var/lib/lemonade
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+IPAddressDeny=any
+IPAddressAllow=localhost
+
+[Install]
+WantedBy=multi-user.target

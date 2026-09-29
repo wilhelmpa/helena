@@ -1,3 +1,4 @@
+import { verifyNpuDecisionReadout } from './npu-eval';
 import { globalModelStatus } from './global-model';
 import {
   LOCAL_DEFAULT,
@@ -462,6 +463,13 @@ async function evaluateInto(
   let values: Partial<typeof helenaLocalAiEval.$inferInsert>;
   try {
     const key = await readModelServerKey(server);
+    if (server.kind === 'fastflowlm')
+      await verifyNpuDecisionReadout({
+        baseUrl: server.baseUrl,
+        key,
+        model: model.id,
+        classId: entry.id,
+      });
     // The judge of the evals a program cannot check (Deutsch-Texte), as set in Lokale KI; a
     // class that never asks it costs nothing (a run judge queues only when asked).
     const judge = await currentJudge();

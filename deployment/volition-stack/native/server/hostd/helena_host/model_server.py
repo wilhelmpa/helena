@@ -13,6 +13,12 @@ from .common import Host, HostError, atomic_write_json, file_lock
 DIRECTORY = '/var/lib/volition/model-maintenance'
 SERVERS = {'halogen': 'helena-halogen.service', 'lemonade': 'lemond.service'}
 COMPANIONS = ('helena-embed.service', 'helena-voice-stt.service', 'helena-voice-tts.service')
+NPU_UNIT = 'volition-npu.service'
+NPU_SOCKETS = ('volition-npu-proxy.socket', 'volition-npu-proxy.service')
+NPU_MODELS = {'qwen3.5:4b': 7 * 1024**3, 'qwen3.5:2b': 5 * 1024**3}
+RESERVE = 12 * 1024**3
+GPU_27B_BUDGET = 28 * 1024**3
+
 SOCKETS = ('helena-ai-proxy.socket', 'helena-voice-stt-proxy.socket', 'helena-voice-tts-proxy.socket')
 PROXIES = tuple(unit.replace('.socket', '.service') for unit in SOCKETS)
 UNITS = (*SERVERS.values(), *COMPANIONS, 'helena-ai-preload.service', *PROXIES)
@@ -62,11 +68,42 @@ def journal(host: Host, value: dict, event: str):
 
 
 def validate_target(target):
-    if not isinstance(target, dict) or set(target) != {'server', 'model', 'slug'}:
+    if not isinstance(target, dict) or not {'server', 'model', 'slug'} <= set(target) or set(target) - {'server', 'model', 'slug', 'profile', 'npu'}:
         raise HostError('InvalidParameter', 'Expected server, model and slug', parameter='target')
     if target['server'] not in SERVERS or not all(isinstance(target[k], str) and re.fullmatch(r'[A-Za-z0-9_.:/-]{1,200}', target[k]) for k in ('model', 'slug')):
         raise HostError('InvalidParameter', 'Unsupported model target', parameter='target')
+    if target.get('profile') not in (None, 'local-halogen', 'local-27b-npu'):
+        raise HostError('InvalidParameter', 'Unknown local profile', parameter='target')
+    if target.get('profile') == 'local-halogen' and (target['server'] != 'halogen' or target.get('npu')):
+        raise HostError('InvalidParameter', 'Halogen runs without NPU', parameter='target')
+    if target.get('profile') == 'local-27b-npu' and (target['server'] != 'lemonade' or target['model'] != 'Qwen3.8-27B-GGUF' or target.get('npu') not in NPU_MODELS):
+        raise HostError('InvalidParameter', '27B requires a small NPU model', parameter='target')
+    if target.get('npu') and target.get('profile') != 'local-27b-npu':
+        raise HostError('InvalidParameter', 'NPU requires the paired profile', parameter='target')
     return dict(target)
+
+
+def memory(host):
+    raw = host.read('/proc/meminfo') or ''
+    values = {key: int(value) * 1024 for key, value in re.findall(r'^(MemAvailable|Mlocked|MemTotal):\s+(\d+) kB', raw, re.M)}
+    if len(values) != 3:
+        raise HostError('CheckFailed', 'Cannot read memory budget')
+    return values
+
+
+def select_npu(host, previous):
+    values = memory(host)
+    # Estimate Halogen's released lock; startup rechecks actual free memory.
+    reclaim = min(values['Mlocked'], 72 * 1024**3) if previous['server'] == 'halogen' else 0
+    budget = min(values['MemTotal'], values['MemAvailable'] + reclaim) - RESERVE
+    if previous['server'] != 'lemonade' or previous['model'] != 'Qwen3.8-27B-GGUF':
+        budget -= GPU_27B_BUDGET
+    installed = json.loads(host.read('/var/lib/volition-npu/installed.json') or '{}').get('models', [])
+    tags = {row.get('name') for row in installed}
+    for model, footprint in NPU_MODELS.items():
+        if budget >= footprint and model in tags and 'embed-gemma:300m' in tags:
+            return model
+    raise HostError('CheckFailed', 'No installed small NPU model fits without swap')
 
 
 def may_start(host: Host, unit: str) -> bool:
@@ -74,6 +111,8 @@ def may_start(host: Host, unit: str) -> bool:
     if value['startsBlocked']:
         return unit in value['allowedStarts']
     active = value['active']
+    if unit in (NPU_UNIT, *NPU_SOCKETS):
+        return bool(active and active.get('npu'))
     if active and unit in SERVERS.values():
         return unit == SERVERS[active['server']]
     if active and active['server'] != 'lemonade' and unit in ('helena-ai-preload.service', *SOCKETS[:1], *PROXIES[:1]):
@@ -120,6 +159,8 @@ class Driver:
                 self.host.sleep(.2)
         elif phase == 'stop':
             # Stop sockets first in the same systemd transaction as every GPU consumer.
+            if target.get('profile') or op['previous'].get('npu') or op.get('target', {}).get('npu'):
+                self.ctl('stop', *NPU_SOCKETS, NPU_UNIT)
             self.ctl('stop', *SOCKETS, *UNITS)
         elif phase == 'free-gpu':
             for proc in Path(self.host.path('/proc')).glob('[0-9]*'):
@@ -129,6 +170,8 @@ class Driver:
                 except (FileNotFoundError, ProcessLookupError):
                     continue
         elif phase == 'start':
+            if target.get('npu') and memory(self.host)['MemAvailable'] < RESERVE + GPU_27B_BUDGET + NPU_MODELS[target['npu']]:
+                raise HostError('CheckFailed', 'GPU/NPU pair exceeds available memory')
             self.ctl('start', SERVERS[target['server']])
         elif phase == 'health':
             deadline = time.monotonic() + 240
@@ -153,7 +196,30 @@ class Driver:
             if not any(call.get('function', {}).get('name') == 'volition_probe' and
                        json.loads(call['function']['arguments']) == {'ok': True} for call in calls):
                 raise HostError('CheckFailed', 'Model tool probe failed')
+            if target.get('npu'):
+                model = target['npu']
+                self.ctl('stop', NPU_UNIT)
+                if memory(self.host)['MemAvailable'] < RESERVE + NPU_MODELS[model]:
+                    raise HostError('CheckFailed', 'NPU memory reserve is unavailable')
+                atomic_write_json(self.host.path('/var/lib/volition-npu/model.json'), {'model': model}, mode=0o644)
+                self.ctl('start', NPU_UNIT)
+                deadline = time.monotonic() + 240
+                while True:
+                    try:
+                        request = Request('http://127.0.0.1:13307/v1/chat/completions', headers={
+                            'Content-Type': 'application/json'},
+                            data=json.dumps({'model': model, 'messages': [{'role': 'user', 'content': 'Reply OK'}], 'max_tokens': 16}).encode())
+                        with urlopen(request, timeout=180) as response:
+                            if not json.load(response).get('choices'):
+                                raise ValueError('Empty NPU response')
+                        break
+                    except (OSError, ValueError):
+                        if time.monotonic() >= deadline:
+                            raise HostError('CheckFailed', 'NPU probe failed')
+                        self.host.sleep(2)
         elif phase == 'release':
+            if target.get('npu'):
+                self.ctl('start', NPU_SOCKETS[0])
             for unit in op['companions']:
                 if unit == 'helena-ai-proxy.socket' and target['server'] != 'lemonade':
                     continue
@@ -176,13 +242,15 @@ def switch(host: Host, params: dict, driver=None) -> dict:
             raise HostError('InvalidParameter', 'Invalid operation id', parameter='id')
         if action == 'begin':
             if op and op['id'] == identity:
-                if op['target'] != params['target']:
+                if {k: v for k, v in op['target'].items() if k != 'npu'} != {k: v for k, v in params['target'].items() if k != 'npu'}:
                     raise HostError('InvalidParameter', 'Operation target cannot change', parameter='target')
                 return value
             if op and op['phase'] not in TERMINAL:
                 raise HostError('Busy', 'Resume the pending model operation')
             target = validate_target(params['target'])
             previous = value['active'] or validate_target(params['previous'])
+            if target.get('profile') == 'local-27b-npu':
+                target['npu'] = select_npu(host, previous)
             if not value['active']:
                 if host.run(['systemctl', 'is-active', '--quiet', SERVERS[previous['server']]], timeout=10).returncode:
                     raise HostError('CheckFailed', 'Previous model server is not active')
@@ -215,7 +283,7 @@ def switch(host: Host, params: dict, driver=None) -> dict:
         if base == 'block-starts':
             value.update(startsBlocked=True, allowedStarts=[])
         if base == 'start':
-            value['allowedStarts'] = [SERVERS[target['server']]]
+            value['allowedStarts'] = [SERVERS[target['server']]] + ([NPU_UNIT] if target.get('npu') else [])
         if base == 'release':
             value.update(startsBlocked=False, allowedStarts=[])
         journal(host, value, 'started')

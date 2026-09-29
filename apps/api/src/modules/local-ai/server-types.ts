@@ -138,6 +138,41 @@ export const openAiCompatibleServer: ModelServerType = {
   },
 };
 
+export const fastFlowLmServer: ModelServerType = {
+  ...openAiCompatibleServer,
+  id: 'fastflowlm',
+  label: { en: 'FastFlowLM (NPU)', de: 'FastFlowLM (NPU)' },
+  capabilitiesConfigurable: false,
+  async status(context) {
+    const started = Date.now();
+    try {
+      const models = await fastFlowLmServer.models(context);
+      return {
+        reachable: true,
+        version: null,
+        latencyMs: Date.now() - started,
+        error: null,
+        loaded: models.map(({ id, unit, backend }) => ({ id, unit, backend })),
+      };
+    } catch (error) {
+      return unreachable(error);
+    }
+  },
+  async models(context) {
+    return openAiModels(await json(await context.fetch('/models'))).map((model) => ({
+      ...model,
+      unit: 'npu' as const,
+      backend: 'fastflowlm',
+      downloaded: true,
+      loaded: true,
+      capabilities:
+        model.id === 'embed-gemma:300m'
+          ? ['embeddings' as const]
+          : ['chat' as const, 'tools' as const],
+    }));
+  },
+};
+
 function unreachable(error: unknown): ModelServerStatus {
   const message = error instanceof Error ? error.message : String(error);
   return {
@@ -659,6 +694,7 @@ export const BUILTIN_MODEL_SERVERS: ModelServerType[] = [
   lemonadeServer,
   halogenServer,
   openAiCompatibleServer,
+  fastFlowLmServer,
   whisperCppServer,
   qwenTtsServer,
 ];

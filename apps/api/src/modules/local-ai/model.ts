@@ -458,7 +458,10 @@ export const judgeBody = t.Object({
   key: t.Optional(t.Nullable(t.String({ maxLength: 500 }))),
 });
 
-export const globalModelBody = t.Object({ model: t.String({ minLength: 1, maxLength: 300 }) });
+export const globalModelBody = t.Object({
+  model: t.String({ minLength: 1, maxLength: 300 }),
+  profile: t.Optional(t.Union([t.Literal('local-halogen'), t.Literal('local-27b-npu')])),
+});
 export const globalModelResumeBody = t.Object({ rollback: t.Optional(t.Boolean()) });
 export const bulkLocalDefaultBody = t.Object({
   ids: t.Array(t.Integer({ minimum: 1 }), { minItems: 1, maxItems: 1000 }),

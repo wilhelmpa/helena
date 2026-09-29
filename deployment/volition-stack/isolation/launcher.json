@@ -22,11 +22,12 @@
     "egress": "/run/volition-agents/egress.sock",
     "plan": "/run/volition-agents/plan.sock",
     "localai": "/run/volition-agents/helena-ai.sock",
+    "volitionnpu": "/run/volition-agents/volition-npu.sock",
     "halogen": "/run/volition-halogen-priority/normal-8731.sock",
     "halogenquiet": "/run/volition-halogen-priority/normal-8733.sock"
   },
-  "forwards": { "egress": 3128, "plan": 3000, "localai": 13305, "halogen": 8731, "halogenquiet": 8733 },
-  "optionalSockets": ["localai", "halogen", "halogenquiet"],
+  "forwards": { "egress": 3128, "plan": 3000, "localai": 13305, "volitionnpu": 13306, "halogen": 8731, "halogenquiet": 8733 },
+  "optionalSockets": ["localai", "halogen", "halogenquiet", "volitionnpu"],
   "browser": {
     "user": "volition-browser",
     "root": "/var/lib/volition/project-browser/projects",
