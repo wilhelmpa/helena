@@ -9,7 +9,7 @@ import {
   userTelegramAccount,
 } from '@repo/db';
 import { eq } from 'drizzle-orm';
-import { createBot, deliverPending } from './bot';
+import { createBot, deliverPending, approvalTextChunks } from './bot';
 
 function fakeBot() {
   const bot = createBot('fake:token');
@@ -200,4 +200,12 @@ it('continues delivery after a blocked chat and never logs the token from errors
     logger.mockRestore();
     for (const id of ids) await db.delete(user).where(eq(user.id, id));
   }
+});
+
+it('keeps complete long root commands and provenance in bounded Telegram messages', () => {
+  const text = 'Root: command\nLaufzeit nicht beobachtbar\n' + '🙂'.repeat(4096) + '\nEND';
+  const parts = approvalTextChunks(text);
+  expect(parts.join('')).toBe(text);
+  expect(parts.every((part) => part.length <= 3500)).toBe(true);
+  expect(parts.at(-1)?.endsWith('END')).toBe(true);
 });

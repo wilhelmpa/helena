@@ -11,22 +11,6 @@ export interface HookInput {
   cwd?: unknown;
 }
 
-// Claude Code's tools that only read or only talk within the task need no question.
-const READ_TOOLS = new Set([
-  'Read',
-  'Glob',
-  'Grep',
-  'LS',
-  'WebFetch',
-  'WebSearch',
-  'NotebookRead',
-  'TodoWrite',
-  'Task',
-  'Agent',
-  'ExitPlanMode',
-  'BashOutput',
-]);
-
 // Helena's own MCP tools are checked by Helena when they arrive.
 function serverSideMcp(): Set<string> {
   return new Set(
@@ -43,7 +27,7 @@ export function hookQuestion(
   env: Record<string, string | undefined> = process.env,
 ): Record<string, unknown> | null {
   const tool = typeof input.tool_name === 'string' ? input.tool_name : '';
-  if (!tool || READ_TOOLS.has(tool)) return null;
+  if (!tool) return null;
   const args =
     input.tool_input && typeof input.tool_input === 'object'
       ? (input.tool_input as Record<string, unknown>)

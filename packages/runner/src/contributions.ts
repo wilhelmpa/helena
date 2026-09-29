@@ -73,6 +73,7 @@ const helenaMcp: ProfileContribution = {
               // The run the request belongs to (agent_run.id; empty in a chat), which the API
               // records as the provenance of what the agent writes (vault entries, commits).
               { name: RUN_HEADER, value: { env: 'ITSAPLAN_RUN_ID' } },
+              { name: 'x-volition-message', value: { env: 'ITSAPLAN_MESSAGE_ID' } },
             ],
             // An Authorization header must not follow a redirect to another origin.
             hermes: {

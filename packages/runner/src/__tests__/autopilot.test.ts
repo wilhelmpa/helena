@@ -65,8 +65,12 @@ describe('policy hook', () => {
     ITSAPLAN_RUN_ID: '42',
   };
 
-  it('asks nothing for reads and for Helena’s own MCP tools', () => {
-    expect(hookQuestion({ tool_name: 'Read', tool_input: { file_path: 'a' } }, env)).toBeNull();
+  it('reports reads and leaves Helena’s own MCP tools to the server', () => {
+    expect(hookQuestion({ tool_name: 'Read', tool_input: { file_path: 'a' } }, env)).toMatchObject({
+      tool: 'Read',
+      path: 'a',
+      runId: 42,
+    });
     expect(hookQuestion({ tool_name: 'mcp__itsaplan__create_issue' }, env)).toBeNull();
   });
 

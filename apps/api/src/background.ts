@@ -1,3 +1,4 @@
+import { processApprovedRoots } from '#modules/root-access/service';
 import { startLoop } from '@helena/loop';
 import { recordJanitorRun } from '@repo/db';
 import { intEnv } from '#shared/lib';
@@ -33,6 +34,7 @@ const [RUN_JANITOR, RESUME_JANITOR, ENGINE_MAINTENANCE, RUNTIME_JANITOR] = JANIT
 
 // Each job gets a loop of its own, so a long tick of one holds no other back.
 export function startBackgroundJobs(): void {
+  startLoop('volition-root-approvals', processApprovedRoots, () => 1000);
   startLoop('action-runs', processActionRuns, () => intEnv('ACTION_RUN_POLL_INTERVAL_MS', 1000));
   startLoop('inbox-tasks', processInboxTasks, () => intEnv('INBOX_TASK_POLL_INTERVAL_MS', 2000));
   startLoop('telegram-events', processTelegramEvents, () => intEnv('TELEGRAM_EVENT_POLL_MS', 2000));

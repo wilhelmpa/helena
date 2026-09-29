@@ -1513,6 +1513,13 @@
       "when": 1790686952759,
       "tag": "0216_browser_frame_vault",
       "breakpoints": true
+    },
+    {
+      "idx": 217,
+      "version": "7",
+      "when": 1790693876235,
+      "tag": "0217_volition_root_access",
+      "breakpoints": true
     }
   ]
 }

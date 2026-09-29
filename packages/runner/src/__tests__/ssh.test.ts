@@ -44,6 +44,31 @@ function mode(path: string): number {
 }
 
 describe('SSH keys for git', () => {
+  it('selects Home keys for the current project and excludes other project keys', async () => {
+    const dir = join(root, 'keys');
+    const alpha = join(root, 'alpha');
+    const beta = join(root, 'beta');
+    const bin = join(root, 'bin');
+    for (const folder of [alpha, beta, bin]) mkdirSync(folder);
+    writeFileSync(join(bin, 'ssh'), '#!/bin/sh\nprintf "%s\\n" "$@"\n', { mode: 0o700 });
+    const env = await applySshKeys(dir, [
+      { id: 1, label: 'Alpha', updatedAt: 'a', privateKey: KEY(1), workspaces: [alpha] },
+      { id: 2, label: 'Beta', updatedAt: 'a', privateKey: KEY(2), workspaces: [beta] },
+    ]);
+    for (const [cwd, own, other] of [
+      [alpha, 1, 2],
+      [beta, 2, 1],
+    ] as const) {
+      const output = execFileSync('/bin/sh', ['-c', env.GIT_SSH_COMMAND! + ' git@example.test'], {
+        cwd,
+        env: { ...process.env, PATH: bin + ':' + process.env.PATH },
+        encoding: 'utf8',
+      });
+      expect(output).toContain(join(dir, `id_${own}`));
+      expect(output).not.toContain(join(dir, `id_${other}`));
+    }
+  });
+
   it('writes complete private files during concurrent support and key deliveries', async () => {
     const dir = join(root, 'concurrent');
     await Promise.all(
@@ -329,13 +354,15 @@ describe('where a clone lands', () => {
       isolation: { slug: 'vol', profile: 'vol', agentId: 5 },
     };
     expect(jobWorkspace(vol, job, true)).toBe('/srv/volition/workspaces/projects/vol');
-    // The Home agent's runner (runs 90/91 on 2026-09-25) is refused rather than cloning
-    // into Home's workspace.
+    // Home mounts all project workspaces; a project runner keeps its own boundary.
     const home = {
       cwd: '/srv/volition/workspaces/home',
       isolation: { slug: 'home', profile: 'home', agentId: null },
     };
-    expect(() => jobWorkspace(home, job, true)).toThrow(/works in home; the clone belongs to vol/);
+    expect(jobWorkspace(home, job, true)).toBe(job.workspace);
+    expect(() =>
+      jobWorkspace({ ...vol, isolation: { ...vol.isolation, slug: 'other' } }, job, true),
+    ).toThrow(/works in other/);
   });
 
   it("an unisolated runner resolves the folder against the project's workspace, not its own directory", () => {

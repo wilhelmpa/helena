@@ -441,3 +441,5 @@ export {
   priorityProxyBaseUrl,
   type PriorityConfig,
 } from './halogen-priority';
+
+export { runtimeToolObservation, toolsFullyObserved } from './runtime-profile';

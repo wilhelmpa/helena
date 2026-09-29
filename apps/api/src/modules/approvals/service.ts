@@ -381,6 +381,13 @@ export async function decideApprovalRequest(
       if (owner?.role !== 'owner')
         throw new HttpError(403, 'Only a project owner can decide a paper strategy approval.');
     }
+    if ((decided.payload as Record<string, unknown> | null)?.type === 'volition-root') {
+      const { rootOwner, assertRootApprovalPending } = await import('#modules/root-access/service');
+      if ((await rootOwner(decided.agentId)) !== deciderUserId)
+        throw new HttpError(403, 'Only the instance owner may approve root commands');
+      if (input.approved) await assertRootApprovalPending(id);
+      return;
+    }
     const [person] = await tx
       .select({ name: user.name })
       .from(user)
@@ -438,6 +445,8 @@ export async function decideApprovalRequest(
       tx,
     );
   });
+  const { executeRootApproval } = await import('#modules/root-access/service');
+  if (database === db) await executeRootApproval(id, input.approved);
   return (await getApproval(id, database))!;
 }
 

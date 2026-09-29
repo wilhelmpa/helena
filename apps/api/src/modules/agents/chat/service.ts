@@ -1,3 +1,5 @@
+import { toolsFullyObserved } from '@helena/sdk';
+import { ownerOrigin, inheritedChatTaint } from '#modules/root-access/provenance';
 import {
   db,
   agentChatCatalog,
@@ -731,6 +733,8 @@ export async function sendMessage(
         threadId,
         agentId,
         parentId: question.id,
+        rootOrigin: await ownerOrigin(agentId, userId),
+        taintSources: await inheritedChatTaint(threadId, !!input.attachments?.length),
         role: 'assistant',
         ...(held && {
           nextAttemptAt: sql`now() + make_interval(secs => ${SPOKEN_HOLD_SECONDS})`,
@@ -1061,6 +1065,8 @@ async function claimMessage(agent: RunnerAgent): Promise<ClaimedChat | null> {
   const rows = await db.execute(sql`
     UPDATE agent_chat_message m
     SET attempts = m.attempts + 1,
+        observed_runtime = ${agent.runtime},
+        taint_sources = CASE WHEN ${toolsFullyObserved(agent.runtime)} THEN m.taint_sources ELSE m.taint_sources || '["unobserved-runtime"]'::jsonb END,
         status = 'streaming',
         content = '',
         session_id = NULL,

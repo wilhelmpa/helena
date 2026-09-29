@@ -277,6 +277,7 @@ case $command in
     open_shared_code
     install_units
     run systemctl try-restart volition-agent-launcher.service volition-egress.service volition-agent-plan.service
+    migrate apply
     ;;
   open-code)
     # Every deploy: the runtimes' code readable for every agent again (launcher.json sharedCode).

@@ -103,7 +103,7 @@ export function jobWorkspace(
   if (!job.workspace) return own;
   if (isolated) {
     const slug = config.isolation?.slug;
-    if (job.slug && slug !== job.slug) {
+    if (job.slug && slug !== job.slug && slug !== 'home') {
       throw new Error(
         `This agent works in ${slug ?? 'no project'}; the clone belongs to ${job.slug}. ` +
           "Start it with one of that project's agents.",

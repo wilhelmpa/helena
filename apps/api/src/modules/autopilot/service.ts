@@ -1,3 +1,4 @@
+import { observeTool } from '#modules/root-access/provenance';
 import {
   db,
   agentChatMessage,
@@ -330,6 +331,7 @@ export async function decideForRuntime(
   question: RuntimeQuestion,
 ): Promise<EngineDecision> {
   const where = await askedProject(agent, question);
+  await observeTool(agent.id, question, question.tool, !!question.mcp, question);
   const { category, scope } = classifyToolCall({
     runtime: question.runtime,
     tool: question.tool,
