@@ -1482,7 +1482,7 @@
   },
   "src/features/documents/components/DocumentOptionsMenu.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 4
+      "count": 1
     },
     "no-restricted-imports": {
       "count": 1
