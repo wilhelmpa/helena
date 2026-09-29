@@ -351,10 +351,26 @@ export default function KnowledgeListView({
         pills={
           !searching &&
           ofThisKind.length > 0 &&
-          ORIGINS.map((value) => (
-            <KnowledgePill key={value} active={origin === value} onClick={() => setOrigin(value)}>
-              {tOrigin(value)}
-            </KnowledgePill>
+          (narrow ? (
+            // On a phone the four pills would push the search out: one select instead.
+            <PageSelect<FileOrigin | 'all'>
+              label={tOrigin('label')}
+              icon={ListFilter}
+              value={origin}
+              defaultValue="all"
+              onChange={setOrigin}
+              options={ORIGINS.map((value) => ({ value, label: tOrigin(value) }))}
+            />
+          ) : (
+            ORIGINS.map((value) => (
+              <KnowledgePill
+                key={value}
+                active={origin === value}
+                onClick={() => setOrigin(value)}
+              >
+                {tOrigin(value)}
+              </KnowledgePill>
+            ))
           ))
         }
         footer={
