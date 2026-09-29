@@ -13,7 +13,7 @@
     "unavailable": "Akses terminal tidak dapat diverifikasi atau disimpan. Silakan coba lagi."
   },
   "grant": {
-    "active": "Terminal diizinkan hingga {time}",
+    "active": "Terbuka sampai {time}",
     "expired": "Izin terminal telah berakhir.",
     "end": "Akhiri",
     "lan": "Terminal terbuka tanpa kode (LAN)"
@@ -26,7 +26,10 @@
     "helena-dev-codex": "Kembangkan Helena (Codex)",
     "close": "Akhiri sesi",
     "local-qwen36": "Qwen 3.6 lokal (Codex)",
-    "local-qwen38": "Qwen 3.8 lokal (Codex)"
+    "local-qwen38": "Qwen 3.8 lokal (Codex)",
+    "local-flash": "Flash",
+    "add": "Buka terminal",
+    "label": "Terminal"
   },
   "keys": {
     "esc": "Esc",

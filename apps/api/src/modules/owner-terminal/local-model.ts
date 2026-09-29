@@ -1,6 +1,12 @@
 import { modelServerBySlug, readLocalAiPolicy, readModelServerKey } from '@repo/db';
+import { localModelId } from '@helena/sdk';
 import { localCatalogModels } from '#modules/local-ai/service';
-import { lemonadeLoaded, LEMONADE_DEFAULT_BASE_URL } from '#modules/local-ai/server-types';
+import {
+  HALOGEN,
+  HALOGEN_DEFAULT_BASE_URL,
+  lemonadeLoaded,
+  LEMONADE_DEFAULT_BASE_URL,
+} from '#modules/local-ai/server-types';
 import { HttpError } from '#shared/lib';
 import { authorizeLocalTerminal } from './service';
 import { signTerminalPayload, verifyTerminalPayload, type OwnerTerminalAccess } from './token';
@@ -8,12 +14,24 @@ import { signTerminalPayload, verifyTerminalPayload, type OwnerTerminalAccess } 
 export const LOCAL_TERMINAL_MODELS = {
   'local-qwen36': 'Qwen3.6-35B-A3B-MTP-GGUF',
   'local-qwen38': 'Qwen3.8-27B-GGUF',
+  // Qwen3.8 Flash Next on Halogen (native/halogen): "Flash", the owner's local terminal.
+  'local-flash': 'halogen-qwen3.8-flash-next',
 } as const;
 export type LocalTerminalKind = keyof typeof LOCAL_TERMINAL_MODELS;
+
+// Which registered model server serves a local terminal: its slug, its kind and the only
+// addresses it may have (the loopback ports the installers publish).
+const LOCAL_TERMINAL_SERVERS: Record<
+  LocalTerminalKind,
+  { slug: string; kind: string; bases: ReadonlySet<string> }
+> = {
+  'local-qwen36': { slug: 'local', kind: 'lemonade', bases: new Set([LEMONADE_DEFAULT_BASE_URL, 'http://127.0.0.1:13305/v1']) },
+  'local-qwen38': { slug: 'local', kind: 'lemonade', bases: new Set([LEMONADE_DEFAULT_BASE_URL, 'http://127.0.0.1:13305/v1']) },
+  'local-flash': { slug: 'halogen', kind: HALOGEN, bases: new Set([HALOGEN_DEFAULT_BASE_URL]) },
+};
 const MAX_BODY = 2 * 1024 * 1024;
 const MAX_RESPONSE = 16 * 1024 * 1024;
 const TIMEOUT_MS = 120_000;
-const ALLOWED_BASES = new Set([LEMONADE_DEFAULT_BASE_URL, 'http://127.0.0.1:13305/v1']);
 
 function capability(token: string, kind: LocalTerminalKind, purpose: string) {
   const value = verifyTerminalPayload(token);
@@ -64,30 +82,47 @@ export async function bootstrapLocalTerminal(request: Request, kind: LocalTermin
 }
 
 async function localServer(kind: LocalTerminalKind) {
-  const [server, policy] = await Promise.all([modelServerBySlug('local'), readLocalAiPolicy()]);
+  const spec = LOCAL_TERMINAL_SERVERS[kind];
+  const [server, policy] = await Promise.all([modelServerBySlug(spec.slug), readLocalAiPolicy()]);
   const model = LOCAL_TERMINAL_MODELS[kind];
   if (
     !server ||
-    server.kind !== 'lemonade' ||
-    !ALLOWED_BASES.has(server.baseUrl) ||
-    !localCatalogModels(policy, [server]).some((entry) => entry.id === `helena-local/${model}`)
+    server.kind !== spec.kind ||
+    !spec.bases.has(server.baseUrl) ||
+    !localCatalogModels(policy, [server]).some(
+      (entry) => entry.id === localModelId(server.slug, model),
+    )
   ) {
     throw new HttpError(503, 'local_terminal_model_unavailable');
   }
   return server;
 }
 
-async function loadedModels(server: Awaited<ReturnType<typeof localServer>>, signal?: AbortSignal) {
+async function loadedModels(
+  server: Awaited<ReturnType<typeof localServer>>,
+  signal?: AbortSignal,
+): Promise<{ id: string }[]> {
   const key = await readModelServerKey(server);
   if (server.keySource !== 'none' && !key)
     throw new HttpError(503, 'local_terminal_model_unavailable');
-  const health = await fetch(`${server.baseUrl}/health`, {
+  const init = {
     headers: key ? { authorization: `Bearer ${key}` } : {},
-    redirect: 'error',
+    redirect: 'error' as const,
     signal: signal
       ? AbortSignal.any([signal, AbortSignal.timeout(5000)])
       : AbortSignal.timeout(5000),
-  });
+  };
+  // Halogen serves its one model whenever /v1/models lists it (it answers at once, busy or
+  // not); Lemonade says in /health which of its models are loaded.
+  if (server.kind === HALOGEN) {
+    const listed = await fetch(`${server.baseUrl}/models`, init);
+    if (!listed.ok) throw new HttpError(503, 'local_terminal_model_unavailable');
+    const body = (await listed.json()) as { data?: { id?: unknown }[] };
+    return (Array.isArray(body.data) ? body.data : []).flatMap((entry) =>
+      typeof entry?.id === 'string' ? [{ id: entry.id }] : [],
+    );
+  }
+  const health = await fetch(`${server.baseUrl}/health`, init);
   if (!health.ok) throw new HttpError(503, 'local_terminal_model_unavailable');
   return lemonadeLoaded(await health.json());
 }
@@ -95,13 +130,27 @@ async function loadedModels(server: Awaited<ReturnType<typeof localServer>>, sig
 export async function localTerminalOptions() {
   const kinds = Object.keys(LOCAL_TERMINAL_MODELS) as LocalTerminalKind[];
   const servers = await Promise.all(kinds.map((kind) => localServer(kind).catch(() => null)));
-  const server = servers.find((entry) => entry !== null);
-  const loaded = server ? await loadedModels(server).catch(() => []) : [];
-  return kinds.map((kind, index) => ({
-    kind,
-    ready:
-      servers[index] !== null && loaded.some((entry) => entry.id === LOCAL_TERMINAL_MODELS[kind]),
-  }));
+  // Each server is asked once, however many terminals it serves.
+  const loaded = new Map<string, Promise<{ id: string }[]>>();
+  const loadedOf = (server: NonNullable<(typeof servers)[number]>) => {
+    if (!loaded.has(server.slug))
+      loaded.set(
+        server.slug,
+        loadedModels(server).catch(() => []),
+      );
+    return loaded.get(server.slug)!;
+  };
+  return Promise.all(
+    kinds.map(async (kind, index) => {
+      const server = servers[index];
+      return {
+        kind,
+        ready:
+          server != null &&
+          (await loadedOf(server)).some((entry) => entry.id === LOCAL_TERMINAL_MODELS[kind]),
+      };
+    }),
+  );
 }
 
 async function boundedBody(request: Request): Promise<Record<string, unknown>> {

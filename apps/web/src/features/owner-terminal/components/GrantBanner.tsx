@@ -2,60 +2,63 @@
 
 import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { Button } from '@/components/ui/button';
+import { Text } from '@/design-system';
 import { useRevokeOwnerTerminalGrant } from '../services/owner-terminal.service';
 
 function formatTime(iso: string): string {
   return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
-// "Terminal freigegeben bis 08:14 · Beenden" (design §2): the grant is always
-// visible while it is open, and always revocable in one click from here, not
-// just from Home -> Security. No expiry means the owner turned the step-up off
-// for the LAN (Administrator -> Sicherheit): there is no grant to end, so the
-// banner only says so.
+// "Freigegeben bis 08:14 · Beenden" (design §2): the grant is always visible while it is
+// open and revocable in one click from here — a quiet line under the tabs, not a warning
+// bar (owner, 28.09.: stays, but more discreet). No expiry means the owner turned the
+// step-up off for the LAN: there is no grant to end, so it only says so.
 export default function GrantBanner({ expiresAt }: { expiresAt: string | null }) {
-  if (!expiresAt) return <LanBanner />;
-  return <TimedGrantBanner expiresAt={expiresAt} />;
+  if (!expiresAt) {
+    return <LanNote />;
+  }
+  // Keyed: a renewed grant starts fresh instead of carrying "expired" over.
+  return <TimedGrant key={expiresAt} expiresAt={expiresAt} />;
 }
 
-function LanBanner() {
+function LanNote() {
   const t = useTranslations('ownerTerminal.grant');
   return (
-    <div className="flex h-8 shrink-0 items-center border-b px-3 text-xs text-muted-foreground">
-      {t('lan')}
+    <div className="ds-terminal-grant">
+      <Text size="xs" tone="faint">
+        {t('lan')}
+      </Text>
     </div>
   );
 }
 
-function TimedGrantBanner({ expiresAt }: { expiresAt: string }) {
+function TimedGrant({ expiresAt }: { expiresAt: string }) {
   const t = useTranslations('ownerTerminal.grant');
   const revoke = useRevokeOwnerTerminalGrant();
   const [expired, setExpired] = useState(() => new Date(expiresAt).getTime() <= Date.now());
 
   useEffect(() => {
-    setExpired(false);
     const ms = new Date(expiresAt).getTime() - Date.now();
-    if (ms <= 0) {
-      setExpired(true);
-      return;
-    }
+    if (ms <= 0) return;
     const timer = setTimeout(() => setExpired(true), ms);
     return () => clearTimeout(timer);
   }, [expiresAt]);
 
   return (
-    <div className="flex h-8 shrink-0 items-center justify-between border-b bg-warning/10 px-3 text-xs">
-      <span>{expired ? t('expired') : t('active', { time: formatTime(expiresAt) })}</span>
-      <Button
-        variant="ghost"
-        size="sm"
-        className="h-6 px-2 text-xs"
-        disabled={revoke.isPending}
-        onClick={() => revoke.mutate()}
-      >
-        {t('end')}
-      </Button>
+    <div className="ds-terminal-grant">
+      <Text size="xs" tone={expired ? 'warning' : 'faint'}>
+        {expired ? t('expired') : t('active', { time: formatTime(expiresAt) })}
+      </Text>
+      {!expired && (
+        <button
+          type="button"
+          className="ds-terminal-grant-end"
+          disabled={revoke.isPending}
+          onClick={() => revoke.mutate()}
+        >
+          {t('end')}
+        </button>
+      )}
     </div>
   );
 }

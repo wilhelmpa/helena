@@ -50,7 +50,7 @@ function validPayload(overrides = {}) {
 test('every fixed kind is in the router allowlist and nothing else is', () => {
   assert.deepEqual(
     [...KINDS].sort(),
-    ['claude', 'codex', 'helena-dev-claude', 'helena-dev-codex', 'shell', 'local-qwen36', 'local-qwen38'].sort(),
+    ['claude', 'codex', 'helena-dev-claude', 'helena-dev-codex', 'shell', 'local-qwen36', 'local-qwen38', 'local-flash'].sort(),
   );
 });
 

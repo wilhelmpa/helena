@@ -1,10 +1,10 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { X } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import type { OpenTerminalTab } from '../OwnerTerminalPanel';
-const tabKey = (tab: OpenTerminalTab) => `${tab.kind}:${tab.name}`;
+import { tabKey, type OpenTerminalTab } from '../utils/terminalTabs';
 
+// One terminal in the tab strip — the same tab the tool panel's head uses
+// (.ds-panel-tab): a name, X on hover and when selected.
 export default function TerminalTab({
   tab,
   active,
@@ -26,33 +26,32 @@ export default function TerminalTab({
   return (
     <div
       ref={setNodeRef}
-      style={{ transform: CSS.Translate.toString(transform), transition }}
-      className={cn(
-        'group flex h-6 shrink-0 items-center gap-1 rounded-md px-2 text-xs',
-        active ? 'bg-sidebar-accent font-medium' : 'text-muted-foreground hover:bg-sidebar-accent',
-        isDragging && 'z-10 opacity-80',
-      )}
+      style={{
+        transform: CSS.Translate.toString(transform),
+        transition,
+        opacity: isDragging ? 0.8 : undefined,
+      }}
+      className="ds-panel-tab"
     >
       <button
         type="button"
-        className="max-w-32 cursor-pointer truncate"
+        role="tab"
+        aria-selected={active}
+        className="ds-panel-tab-select"
         onClick={onSelect}
         {...attributes}
         {...listeners}
       >
-        {label}
-        {tab.name !== 'main' && (
-          <span className="ms-1 font-mono text-xs opacity-70">{tab.name}</span>
-        )}
+        <span>{label}</span>
       </button>
       <button
         type="button"
-        aria-label={closeLabel}
+        aria-label={`${closeLabel}: ${label}`}
         title={closeLabel}
-        className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
+        className="ds-panel-tab-close"
         onClick={onClose}
       >
-        <X className="size-3" />
+        <X size={13} />
       </button>
     </div>
   );

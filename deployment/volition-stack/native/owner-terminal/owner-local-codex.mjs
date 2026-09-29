@@ -18,6 +18,8 @@ export async function launchLocalCodex(kind, name, {
   const history = await readdir(path.join(codexHome, 'sessions')).catch(() => []);
   const args = localCodexArguments(kind);
   if (history.length) args.push('resume', '--last');
+  // Like the Codex tab: no question before each step (owner, 28.09., O27).
+  args.push('--dangerously-bypass-approvals-and-sandbox');
   const child = spawnImpl('/usr/local/bin/codex', args, {
     stdio: 'inherit',
     env: { ...process.env, CODEX_HOME: codexHome, HELENA_OWNER_LOCAL_TOKEN: state.token },

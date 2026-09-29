@@ -13,7 +13,7 @@
     "unavailable": "Terminal access could not be verified or saved. Please try again."
   },
   "grant": {
-    "active": "Terminal granted until {time}",
+    "active": "Unlocked until {time}",
     "expired": "The terminal grant has expired.",
     "end": "End",
     "lan": "Terminal open without a code (LAN)"
@@ -26,7 +26,10 @@
     "helena-dev-codex": "Develop Helena (Codex)",
     "close": "End session",
     "local-qwen36": "Qwen 3.6 local (Codex)",
-    "local-qwen38": "Qwen 3.8 local (Codex)"
+    "local-qwen38": "Qwen 3.8 local (Codex)",
+    "local-flash": "Flash",
+    "add": "Open terminal",
+    "label": "Terminals"
   },
   "keys": {
     "esc": "Esc",

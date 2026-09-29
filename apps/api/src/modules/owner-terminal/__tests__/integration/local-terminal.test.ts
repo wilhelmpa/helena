@@ -344,18 +344,79 @@ describe('local owner terminal inference', () => {
     expect(await (await request()).json()).toEqual([
       { kind, ready: true },
       { kind: 'local-qwen38', ready: false },
+      { kind: 'local-flash', ready: false },
     ]);
     await db.update(helenaModelServer).set({ checkedAt: new Date(Date.now() - 120_000) });
     expect(await (await request()).json()).toEqual([
       { kind, ready: true },
       { kind: 'local-qwen38', ready: false },
+      { kind: 'local-flash', ready: false },
     ]);
     loaded = [];
     expect(await (await request()).json()).toEqual([
       { kind, ready: false },
       { kind: 'local-qwen38', ready: false },
+      { kind: 'local-flash', ready: false },
     ]);
+    // Lemonade is asked once per request, whatever number of its terminals.
     expect(calls).toHaveLength(3);
+  });
+  it('offers Flash while Halogen lists its model, and sends its answers to Halogen', async () => {
+    const { owner } = await setup();
+    const flash = LOCAL_TERMINAL_MODELS['local-flash'];
+    await db.insert(helenaModelServer).values({
+      slug: 'halogen',
+      name: 'Synthetic Halogen',
+      kind: 'halogen',
+      baseUrl: 'http://127.0.0.1:8731/v1',
+      keySource: 'none',
+      enabled: true,
+      models: [
+        normalizeLocalModel({
+          id: flash,
+          name: flash,
+          capabilities: ['chat', 'tools', 'reasoning'],
+          unit: 'gpu',
+          downloaded: true,
+          loaded: true,
+        })!,
+      ],
+      checkedAt: new Date(),
+      status: { reachable: true, version: '0.14.2', latencyMs: 1, error: null, loaded: [] },
+    });
+    let listed = [flash];
+    const halogenCalls: string[] = [];
+    const lemonadeFetch = globalThis.fetch;
+    globalThis.fetch = Object.assign(
+      async (input: string | URL | Request, init?: RequestInit) => {
+        const url = String(input);
+        if (!url.startsWith('http://127.0.0.1:8731/v1/')) return lemonadeFetch(input, init);
+        expect(init?.redirect).toBe('error');
+        expect(new Headers(init?.headers).get('authorization')).toBeNull();
+        halogenCalls.push(url);
+        return url.endsWith('/models')
+          ? Response.json({ object: 'list', data: listed.map((id) => ({ id })) })
+          : answer();
+      },
+      { preconnect: originalFetch.preconnect },
+    );
+    const request = () =>
+      app.handle(
+        new Request('http://localhost/owner-terminal/local-models', {
+          headers: { cookie: owner.cookie },
+        }),
+      );
+    expect(((await (await request()).json()) as { kind: string; ready: boolean }[]).at(-1)).toEqual(
+      { kind: 'local-flash', ready: true },
+    );
+    listed = [];
+    expect(((await (await request()).json()) as { kind: string; ready: boolean }[]).at(-1)).toEqual(
+      { kind: 'local-flash', ready: false },
+    );
+    expect(halogenCalls).toEqual([
+      'http://127.0.0.1:8731/v1/models',
+      'http://127.0.0.1:8731/v1/models',
+    ]);
   });
   it('bounds input before upstream access', async () => {
     const { capability } = await setup();

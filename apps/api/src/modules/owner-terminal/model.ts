@@ -10,6 +10,7 @@ export const OWNER_TERMINAL_KINDS = [
   'codex',
   'local-qwen36',
   'local-qwen38',
+  'local-flash',
   'helena-dev-claude',
   'helena-dev-codex',
 ] as const;
@@ -69,9 +70,8 @@ export const TokenResponse = t.Object({ token: t.String() });
 
 export const StepUpResponse = t.Object({ expiresAt: t.String() });
 
-export const LocalTerminalKindParam = t.Object({
-  kind: oneOf(['local-qwen36', 'local-qwen38'] as const),
-});
+const LOCAL_TERMINAL_KINDS = ['local-qwen36', 'local-qwen38', 'local-flash'] as const;
+export const LocalTerminalKindParam = t.Object({ kind: oneOf(LOCAL_TERMINAL_KINDS) });
 export const LocalTerminalOptionsResponse = t.Array(
-  t.Object({ kind: oneOf(['local-qwen36', 'local-qwen38'] as const), ready: t.Boolean() }),
+  t.Object({ kind: oneOf(LOCAL_TERMINAL_KINDS), ready: t.Boolean() }),
 );

@@ -13,7 +13,7 @@
     "unavailable": "Die Terminal-Freigabe konnte nicht geprüft oder gespeichert werden. Bitte versuche es erneut."
   },
   "grant": {
-    "active": "Terminal freigegeben bis {time}",
+    "active": "Freigegeben bis {time}",
     "expired": "Die Terminal-Freigabe ist abgelaufen.",
     "end": "Beenden",
     "lan": "Terminal ohne Code (LAN)"
@@ -26,7 +26,10 @@
     "helena-dev-codex": "Helena weiterentwickeln (Codex)",
     "close": "Sitzung beenden",
     "local-qwen36": "Qwen 3.6 lokal (Codex)",
-    "local-qwen38": "Qwen 3.8 lokal (Codex)"
+    "local-qwen38": "Qwen 3.8 lokal (Codex)",
+    "local-flash": "Flash",
+    "add": "Terminal öffnen",
+    "label": "Terminals"
   },
   "keys": {
     "esc": "Esc",

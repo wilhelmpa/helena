@@ -9,10 +9,18 @@ export const OWNER_TERMINAL_KINDS = [
   'codex',
   'local-qwen36',
   'local-qwen38',
+  'local-flash',
   'helena-dev-claude',
   'helena-dev-codex',
 ] as const;
 export type OwnerTerminalKind = (typeof OWNER_TERMINAL_KINDS)[number];
+export type OwnerTerminalLocalKind = Extract<OwnerTerminalKind, `local-${string}`>;
+
+// The terminals the owner works in (owner, 28.09., O26): Shell, Claude Code, Codex and
+// Flash, the local model — each once. The others stay known to the router (sessions of
+// an older browser), but are no longer offered.
+export const OWNER_TERMINAL_OFFERED = ['shell', 'claude', 'codex', 'local-flash'] as const;
+export type OwnerTerminalOfferedKind = (typeof OWNER_TERMINAL_OFFERED)[number];
 
 export interface OwnerTerminalGrant {
   active: boolean;
@@ -79,6 +87,6 @@ export const updateOwnerTerminalSettings = (patch: OwnerTerminalSettingsPatch) =
   });
 
 export const getOwnerTerminalLocalModels = () =>
-  request<{ kind: 'local-qwen36' | 'local-qwen38'; ready: boolean }[]>(
+  request<{ kind: OwnerTerminalLocalKind; ready: boolean }[]>(
     '/owner-terminal/local-models',
   );
