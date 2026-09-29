@@ -40,6 +40,9 @@
 // (locked false, see ScreencastStream's controlBy); {"type":"handover","open":true,"reason",
 // "agentName","since"} while an agent waits for the owner to take over (browser_handover),
 // {"type":"handover","open":false} after. Viewer to server: JSON text, see viewerMessage.
+// {"type":"preview-unreachable","url","name","reason","logs","error"?} or
+// {"type":"navigation-error","url","code","message"} while navigation cannot show a page;
+// {"type":"navigation-clear"} after a successful navigation.
 import {
   activateTab,
   isAgentTitle,
@@ -54,6 +57,13 @@ import { InputSender, viewerMessage } from "./project-browser-input.mjs";
 import { AreaEncoder, chooseTier, sameArea, TIERS } from "./project-browser-video.mjs";
 
 const JPEG_FRAME = 0;
+const navigationStates = new Map();
+function navigationLabel(url) {
+  try {
+    const parsed = new URL(url);
+    return `${parsed.origin}${parsed.pathname}`.slice(0, 300);
+  } catch { return ""; }
+}
 const VIDEO_INIT = 1;
 const VIDEO_FRAGMENT = 2;
 const JPEG_FRAME_CROPPED = 3;
@@ -397,6 +407,8 @@ export class ScreencastStream {
     this.modeWanted = false;
     // The page size last told to the viewers ({type:"page"}).
     this.pageMessage = null;
+    this.pendingDocuments = new Map();
+    this.mainFrameId = null;
     this.zoom = 1;
     // The page size in effect.
     this.size = null;
@@ -454,6 +466,7 @@ export class ScreencastStream {
     this.viewers.add(viewer);
     if (this.dialog) socket.send(JSON.stringify(this.dialog));
     if (this.pageMessage) socket.send(this.pageMessage);
+    if (navigationStates.has(this.port)) socket.send(JSON.stringify(navigationStates.get(this.port)));
     socket.send(JSON.stringify(this.controlMessage()));
     if (handovers.has(this.port)) socket.send(JSON.stringify(handoverMessageFor(this.port)));
     socket.on("message", (data, binary) => {
@@ -1111,6 +1124,10 @@ export class ScreencastStream {
     try {
       ({ sessionId } = await this.connection.send("Target.attachToTarget", { targetId, flatten: true }));
       await this.connection.send("Page.enable", {}, sessionId);
+      await this.connection.send("Network.enable", {}, sessionId);
+      const tree = await this.connection.send("Page.getFrameTree", {}, sessionId);
+      this.mainFrameId = tree.frameTree?.frame?.id ?? null;
+      this.pendingDocuments.clear();
       this.session = sessionId;
     } catch (error) {
       if (sessionId) this.connection.send("Target.detachFromTarget", { sessionId }).catch(() => {});
@@ -1225,6 +1242,26 @@ export class ScreencastStream {
     if (method.startsWith("Target.")) return this.handleTargetEvent(method, params);
     if (sessionId !== this.session) return;
     switch (method) {
+      case "Network.requestWillBeSent":
+        if (params.type === "Document" && params.frameId === this.mainFrameId) {
+          this.pendingDocuments.set(params.requestId, params.request.url);
+        }
+        break;
+      case "Network.loadingFailed": {
+        const url = this.pendingDocuments.get(params.requestId);
+        this.pendingDocuments.delete(params.requestId);
+        if (url && !params.canceled && /^net::ERR_(?!ABORTED)/.test(params.errorText ?? "")) {
+          setNavigationState(this.port, {
+            type: "navigation-error", url: navigationLabel(url),
+            code: params.errorText.slice(5),
+            message: `Navigation failed: ${params.errorText.slice(5)}`,
+          });
+        }
+        break;
+      }
+      case "Network.loadingFinished":
+        this.pendingDocuments.delete(params.requestId);
+        break;
       case "Page.screencastFrame":
         this.receiveFrame(params, sessionId);
         break;
@@ -1235,7 +1272,22 @@ export class ScreencastStream {
         if (params.frameId === this.targetId) this.notePageNavigation(params.reason);
         break;
       case "Page.frameNavigated":
-        if (!params.frame.parentId) this.noteNavigation();
+        if (!params.frame.parentId) {
+          this.mainFrameId = params.frame.id;
+          this.noteNavigation();
+          if (params.frame.url?.startsWith("chrome-error://")) {
+            if (navigationStates.get(this.port)?.type !== "navigation-error") {
+              setNavigationState(this.port, {
+                type: "navigation-error",
+                url: navigationLabel(params.frame.unreachableUrl),
+                code: "CHROME_ERROR_PAGE",
+                message: "Navigation failed: CHROME_ERROR_PAGE",
+              });
+            }
+          } else if (navigationStates.get(this.port)?.type === "navigation-error") {
+            setNavigationState(this.port, null);
+          }
+        }
         break;
       // The dialog is drawn by the browser outside the page, so the stream does not show it.
       case "Page.javascriptDialogOpening":
@@ -1408,6 +1460,12 @@ export function setHandover(port, notice) {
   if (notice) handovers.set(port, notice);
   else if (!handovers.delete(port)) return;
   streams.get(port)?.broadcast(handoverMessageFor(port));
+}
+
+export function setNavigationState(port, state) {
+  if (state) navigationStates.set(port, state);
+  else navigationStates.delete(port);
+  streams.get(port)?.broadcast(state ?? { type: "navigation-clear" });
 }
 
 // The gateway state of one project browser, for the Home overview.

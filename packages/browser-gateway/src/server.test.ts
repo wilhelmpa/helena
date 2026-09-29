@@ -1,5 +1,10 @@
 import { describe, expect, it, mock } from 'bun:test';
-import { GatewayDispatcher, SlugQueue, type HandoverNotice } from './server';
+import {
+  GatewayDispatcher,
+  SlugQueue,
+  type DispatcherOptions,
+  type HandoverNotice,
+} from './server';
 import { ProjectBrowserLocks } from './lock';
 import { SecretGuard } from './redact';
 import type { GatewaySession, SessionProvider } from './session-types';
@@ -39,6 +44,7 @@ function fakeHelenaClient(
     download: mock(async () => ({ path: 'Projects/MKT/Inbox/x' })),
     decide: mock(async () => ({ effect: 'allow' as const })),
     policy: mock(async () => ({})),
+    previews: mock(async () => []),
     ...overrides,
   } as unknown as HelenaClient;
 }
@@ -103,6 +109,8 @@ function dispatcher(
     locks?: ProjectBrowserLocks;
     onHandover?: (slug: string, notice: HandoverNotice | null) => void;
     queue?: SlugQueue;
+    checkPreview?: DispatcherOptions['checkPreview'];
+    onNavigationState?: DispatcherOptions['onNavigationState'];
     lookupHost?: (host: string) => Promise<{ address: string }[]>;
   } = {},
 ) {
@@ -113,6 +121,8 @@ function dispatcher(
     sessions: options.sessions ?? fakeSessions(),
     onHandover: options.onHandover,
     queue: options.queue,
+    checkPreview: options.checkPreview,
+    onNavigationState: options.onNavigationState,
     // Every name resolves publicly unless a test says otherwise: no DNS in unit tests.
     lookupHost: options.lookupHost ?? (async () => [{ address: '93.184.215.14' }]),
   });
@@ -724,6 +734,7 @@ describe('GatewayDispatcher: domain policy (design §8)', () => {
         ),
       }),
       sessions: fakeSessions(session),
+      checkPreview: async (_slug, url) => ({ managed: url.includes(':24032'), state: null }),
     });
     const navigate = await gateway.handle({
       tool: 'browser_navigate',
@@ -747,6 +758,55 @@ describe('GatewayDispatcher: domain policy (design §8)', () => {
       });
       expect(result.ok).toBe(false);
     }
+  });
+
+  it('returns stopped preview details without navigating Chromium', async () => {
+    const session = fakeSession();
+    const states: unknown[] = [];
+    const state = {
+      type: 'preview-unreachable' as const,
+      url: 'http://127.0.0.1:24032/',
+      name: 'main',
+      reason: 'stopped' as const,
+      logs: ['server exited'],
+    };
+    const gateway = dispatcher({
+      sessions: fakeSessions(session),
+      checkPreview: async () => ({ managed: true, state }),
+      onNavigationState: (_slug, value) => states.push(value),
+    });
+    const result = await gateway.handle({
+      tool: 'browser_navigate',
+      agentKey: 'k',
+      args: { url: state.url },
+    });
+    expect(result).toMatchObject({ ok: false, state });
+    expect(states).toEqual([state]);
+    expect(session.navigate).not.toHaveBeenCalled();
+  });
+
+  it('returns a structured connection refusal to the agent and live view', async () => {
+    const states: unknown[] = [];
+    const gateway = dispatcher({
+      sessions: fakeSessions(
+        fakeSession({
+          navigate: mock(async () => {
+            throw new Error('page.goto: net::ERR_CONNECTION_REFUSED');
+          }),
+        }),
+      ),
+      onNavigationState: (_slug, state) => states.push(state),
+    });
+    const result = await gateway.handle({
+      tool: 'browser_navigate',
+      agentKey: 'k',
+      args: { url: 'https://example.com/' },
+    });
+    expect(result).toMatchObject({
+      ok: false,
+      state: { type: 'navigation-error', code: 'ERR_CONNECTION_REFUSED' },
+    });
+    expect(states).toEqual([expect.objectContaining({ code: 'ERR_CONNECTION_REFUSED' })]);
   });
 
   it('allows a domain the list does not name, and applies the policy before every tool', async () => {

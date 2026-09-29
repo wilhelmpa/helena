@@ -11,6 +11,7 @@ import {
   listProjectBrowsers,
   resolveProjectBrowser,
   setGatewayTasks,
+  setGatewayPreviews,
   shutdownProjectBrowserRouter,
 } from "./project-router.mjs";
 import {
@@ -37,6 +38,7 @@ beforeEach(async () => {
 });
 
 afterEach(async () => {
+  setGatewayPreviews(null);
   router?.closeAllConnections?.();
   upstream?.closeAllConnections?.();
   for (const socket of upgraded) socket.destroy();
@@ -103,8 +105,20 @@ function fakeBrowser(tabs = [{ id: PAGE, visible: true }], { scale = 2, rejectFi
       return response.end(JSON.stringify({ webSocketDebuggerUrl: `ws://127.0.0.1:${port}/devtools/browser/x` }));
     }
     if (request.url === "/json/list") {
-      const list = tabs.map(({ id }) => ({ id, type: "page", title: id, url: "https://a.test/" }));
+      const { port } = server.address();
+      const list = tabs.map(({ id }) => ({ id, type: "page", title: id, url: "https://a.test/", webSocketDebuggerUrl: `ws://127.0.0.1:${port}/devtools/page/${id}` }));
       return response.end(JSON.stringify(list));
+    }
+    if (request.url?.startsWith("/json/new?")) {
+      const id = "C".repeat(32);
+      browser.addTab({ id, visible: true });
+      return response.end(JSON.stringify({ id }));
+    }
+    if (request.url?.startsWith("/json/close/")) {
+      const id = request.url.slice("/json/close/".length);
+      const index = tabs.findIndex((tab) => tab.id === id);
+      if (index >= 0) tabs.splice(index, 1);
+      return response.end("true");
     }
     response.end("{}");
   });
@@ -143,6 +157,8 @@ function fakeBrowser(tabs = [{ id: PAGE, visible: true }], { scale = 2, rejectFi
         const pageId = message.sessionId?.slice(2);
         const state = pageStates.get(pageId);
         switch (message.method) {
+          case "Page.navigate":
+            return reply(browser.navigateError ? { errorText: browser.navigateError } : {});
           case "Target.getTargets":
             return reply({ targetInfos: tabs.map(({ id }) => ({ targetId: id, type: "page" })) });
           case "Target.attachToTarget":
@@ -253,6 +269,32 @@ function upgradeStatus(port, path, headers) {
 }
 
 describe("project browser router", () => {
+  it("sends document navigation failures and recovery on the live stream", async () => {
+    const browser = fakeBrowser();
+    upstream = browser.server;
+    await state("demo", 16000, await listen(upstream));
+    router = createProjectBrowserRouter({ root });
+    const viewer = new WebSocket(`ws://127.0.0.1:${await listen(router)}/projects/demo/api/screencast`);
+    const messages = [];
+    viewer.addEventListener("message", (event) => {
+      if (typeof event.data === "string") messages.push(JSON.parse(event.data));
+    });
+    await until(() => browser.sent("Network.enable").length > 0);
+    browser.emit("Network.requestWillBeSent", {
+      requestId: "doc-1", frameId: PAGE, type: "Document",
+      request: { url: "https://example.com/private?token=secret" },
+    });
+    browser.emit("Network.loadingFailed", { requestId: "doc-1", errorText: "net::ERR_CONNECTION_REFUSED" });
+    await until(() => messages.some((message) => message.type === "navigation-error"));
+    assert.deepEqual(messages.find((message) => message.type === "navigation-error"), {
+      type: "navigation-error", url: "https://example.com/private",
+      code: "ERR_CONNECTION_REFUSED", message: "Navigation failed: ERR_CONNECTION_REFUSED",
+    });
+    browser.emit("Page.frameNavigated", { frame: { id: PAGE, url: "https://example.com/" } });
+    await until(() => messages.some((message) => message.type === "navigation-clear"));
+    viewer.close();
+  });
+
   it("emulates Helena's scheme on open and new tabs, with a persistent always-light override", async () => {
     const tabs = [{ id: PAGE, visible: true }, { id: BEHIND, visible: false }];
     const browser = fakeBrowser(tabs);
@@ -1236,6 +1278,46 @@ describe("project browser router", () => {
 });
 
 describe("project browser control", () => {
+  it("returns preview and Chromium failures as structured states without opening a stopped preview", async () => {
+    const browser = fakeBrowser();
+    upstream = browser.server;
+    await state("demo", 16000, await listen(upstream));
+    router = createProjectBrowserRouter({ root });
+    const base = `http://127.0.0.1:${await listen(router)}/projects/demo/api/navigate`;
+    const post = (url) => fetch(base, {
+      method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ id: PAGE, url }),
+    });
+    setGatewayPreviews(async () => [{
+      name: "main", status: "stopped", url: "http://127.0.0.1:24032/",
+      lines: ["server stopped"],
+    }]);
+    const stopped = await post("http://127.0.0.1:24032/");
+    assert.equal(stopped.status, 503);
+    assert.deepEqual((await stopped.json()).state, {
+      type: "preview-unreachable", url: "http://127.0.0.1:24032/",
+      name: "main", reason: "stopped", logs: ["server stopped"],
+    });
+    assert.equal(browser.sent("Page.navigate").length, 0);
+
+    browser.navigateError = "net::ERR_CONNECTION_REFUSED";
+    const failed = await post("https://example.com/");
+    assert.equal(failed.status, 502);
+    assert.equal((await failed.json()).state.code, "ERR_CONNECTION_REFUSED");
+    browser.navigateError = null;
+    assert.equal((await post("https://example.com/")).status, 200);
+
+    browser.navigateError = "net::ERR_CONNECTION_REFUSED";
+    const newTab = await fetch(base.replace(/\/navigate$/, "/new"), {
+      method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ url: "https://down.example/" }),
+    });
+    assert.equal(newTab.status, 502);
+    assert.equal((await newTab.json()).state.code, "ERR_CONNECTION_REFUSED");
+    const tabs = await (await fetch(base.replace(/\/navigate$/, "/tabs"))).json();
+    assert.equal(tabs.tabs.some((tab) => tab.id === "C".repeat(32)), false);
+  });
+
   it("opens web addresses only", () => {
     assert.equal(navigableUrl("example.com/path"), "https://example.com/path");
     assert.equal(navigableUrl(" http://intranet.local "), "http://intranet.local/");

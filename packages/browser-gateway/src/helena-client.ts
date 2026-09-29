@@ -16,6 +16,14 @@ export interface BrowserGatewaySettingsWire {
   previewOrigins?: string[];
 }
 
+export interface ManagedPreview {
+  name: string;
+  status: 'starting' | 'running' | 'stopped' | 'failed';
+  url: string;
+  error?: string;
+  lines: string[];
+}
+
 export interface ResolveResult {
   agentId: number;
   agentName: string;
@@ -292,5 +300,17 @@ export class HelenaClient {
       projects: Record<string, BrowserGatewaySettingsWire & { projectId: number }>;
     };
     return body.projects;
+  }
+
+  async previews(slug: string): Promise<ManagedPreview[]> {
+    const res = await this.#fetch(
+      `${this.#baseUrl}/internal/browser-gateway/previews/${encodeURIComponent(slug)}`,
+      {
+        headers: { authorization: `Bearer ${this.#token}` },
+        signal: AbortSignal.timeout(3000),
+      },
+    );
+    if (!res.ok) throw new HelenaApiError(res.status, await res.text());
+    return ((await res.json()) as { previews: ManagedPreview[] }).previews;
   }
 }

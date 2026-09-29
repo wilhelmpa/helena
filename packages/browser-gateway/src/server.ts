@@ -17,6 +17,11 @@ import { HOME_SLUG, projectSlug } from './project-slug.ts';
 import { originAllowed, previewOriginAllowed, resolvesLocally, type HostLookup } from './domain.ts';
 import type { HelenaClient, ResolveResult } from './helena-client.ts';
 import { HelenaApiError } from './helena-client.ts';
+import {
+  checkPreviewNavigation,
+  navigationError,
+  type NavigationState,
+} from './preview-navigation.ts';
 import type {
   ConsoleLevel,
   FormField,
@@ -45,7 +50,7 @@ export interface GatewayRequest {
 
 export type GatewayResponse =
   | { ok: true; content: string; image?: { data: string; mimeType: string } }
-  | { ok: false; error: string };
+  | { ok: false; error: string; state?: NavigationState };
 
 // What the live view shows while an agent waits for the owner (design §4 browser_handover,
 // §7 CAPTCHA): the reason, who asks, since when.
@@ -84,6 +89,8 @@ export interface DispatcherOptions {
   // Remembers which agent acts on a browser (for the downloads that browser makes) and the
   // project's settings (the page size an agent works at).
   onActor?: (slug: string, agentKey: string, settings: ResolveResult['settings']) => void;
+  onNavigationState?: (slug: string, state: NavigationState | null) => void;
+  checkPreview?: (slug: string, url: string) => ReturnType<typeof checkPreviewNavigation>;
   // How a host an agent navigates to is resolved (tests pass their own).
   lookupHost?: HostLookup;
 }
@@ -172,6 +179,14 @@ function unreachable(error: unknown, fallback = 'The project browser is not reac
     : fallback;
 }
 
+class PreviewNavigationError extends Error {
+  state: Extract<NavigationState, { type: 'preview-unreachable' }>;
+  constructor(state: Extract<NavigationState, { type: 'preview-unreachable' }>) {
+    super(`Preview ${state.name} is ${state.reason}.`);
+    this.state = state;
+  }
+}
+
 export class GatewayDispatcher {
   #ownSlug: string;
   #helena: HelenaClient;
@@ -181,6 +196,8 @@ export class GatewayDispatcher {
   #onHandover: NonNullable<DispatcherOptions['onHandover']>;
   #onActor: NonNullable<DispatcherOptions['onActor']>;
   #lookupHost: HostLookup | undefined;
+  #onNavigationState: NonNullable<DispatcherOptions['onNavigationState']>;
+  #checkPreview: NonNullable<DispatcherOptions['checkPreview']>;
 
   constructor(options: DispatcherOptions) {
     this.#ownSlug = options.ownSlug;
@@ -191,6 +208,10 @@ export class GatewayDispatcher {
     this.#onHandover = options.onHandover ?? (() => {});
     this.#onActor = options.onActor ?? (() => {});
     this.#lookupHost = options.lookupHost;
+    this.#onNavigationState = options.onNavigationState ?? (() => {});
+    this.#checkPreview =
+      options.checkPreview ??
+      ((slug, url) => checkPreviewNavigation(url, () => this.#helena.previews(slug)));
   }
 
   // Resolves which project browser a request targets. Only the connection accepted on the
@@ -302,10 +323,25 @@ export class GatewayDispatcher {
     ) {
       const url = str(request.args, 'url') ?? str(request.args, 'startUrl');
       const host = url ? hostOf(url) : null;
+      const preview =
+        url && host === '127.0.0.1'
+          ? await this.#checkPreview(slug, url)
+          : { managed: false, state: null };
+      if (preview.state) {
+        this.#onNavigationState(slug, preview.state);
+        return {
+          ok: false,
+          error: `Preview ${preview.state.name} is ${preview.state.reason}.`,
+          state: preview.state,
+        };
+      }
+      const managedAllowed =
+        preview.managed && !resolved.settings.domainBlocklist.includes('127.0.0.1');
       if (
         host &&
         !resolved.settings.allowLocalAddresses &&
         !previewOriginAllowed(resolved.settings, url ?? '') &&
+        !managedAllowed &&
         (await resolvesLocally(host, this.#lookupHost))
       ) {
         return {
@@ -315,7 +351,7 @@ export class GatewayDispatcher {
             'For a project dev server, use preview_start and preview_url, then call browser_navigate with the exact returned managed URL. This refusal applies only to the requested address.',
         };
       }
-      if (!host || !originAllowed(resolved.settings, url ?? '')) {
+      if (!host || (!originAllowed(resolved.settings, url ?? '') && !managedAllowed)) {
         return {
           ok: false,
           error: `Navigation to ${url?.slice(0, 200) ?? '(no url)'} is blocked by this project's browser settings or is not an http(s) address.`,
@@ -369,10 +405,20 @@ export class GatewayDispatcher {
           ...(output.image && { image: output.image }),
         };
       } catch (error) {
+        if (error instanceof PreviewNavigationError) {
+          return { ok: false as const, error: error.message, state: error.state };
+        }
+        const url = str(request.args, 'url') ?? str(request.args, 'startUrl') ?? '';
+        const state = navigationError(url, error);
+        if (state) this.#onNavigationState(slug, state);
         const message = error instanceof Error ? error.message : String(error);
         // Playwright's messages carry a call log; the first line says what went wrong.
         const first = message.split('\n')[0]!.slice(0, 500);
-        return { ok: false as const, error: session.guard.redact(first) };
+        return {
+          ok: false as const,
+          error: session.guard.redact(state?.message ?? first),
+          ...(state && { state }),
+        };
       }
     });
   }
@@ -413,7 +459,7 @@ export class GatewayDispatcher {
         if ('refusal' in decided) {
           throw new Error(decided.refusal.ok ? 'Not done.' : decided.refusal.error);
         }
-        await session.navigate(url);
+        await this.#navigate(session, slug, url);
       },
     };
     if (request.tool === 'browser_check') return runCheckTool(ctx);
@@ -639,6 +685,17 @@ export class GatewayDispatcher {
   }
 
   // One dispatch table over the fixed tool list.
+  async #navigate(session: GatewaySession, slug: string, url: string): Promise<string> {
+    const checked = await this.#checkPreview(slug, url);
+    if (checked.state) {
+      this.#onNavigationState(slug, checked.state);
+      throw new PreviewNavigationError(checked.state);
+    }
+    const result = await session.navigate(url);
+    this.#onNavigationState(slug, null);
+    return result;
+  }
+
   async #runTool(
     request: GatewayRequest,
     session: GatewaySession,
@@ -651,7 +708,7 @@ export class GatewayDispatcher {
       case 'browser_navigate': {
         const url = str(args, 'url');
         if (!url) throw new Error('url is required.');
-        return text(await session.navigate(url));
+        return text(await this.#navigate(session, slug, url));
       }
       case 'browser_navigate_back':
         return text(await session.back());
@@ -735,6 +792,14 @@ export class GatewayDispatcher {
         const action = str(args, 'action') as 'list' | 'new' | 'close' | 'select' | undefined;
         if (!action || !['list', 'new', 'close', 'select'].includes(action)) {
           throw new Error('action is required: list, new, close or select.');
+        }
+        const newUrl = str(args, 'url');
+        if (action === 'new' && newUrl) {
+          const checked = await this.#checkPreview(slug, newUrl);
+          if (checked.state) {
+            this.#onNavigationState(slug, checked.state);
+            throw new PreviewNavigationError(checked.state);
+          }
         }
         return text(
           await session.tabs(action, {

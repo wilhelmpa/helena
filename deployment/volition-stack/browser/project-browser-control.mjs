@@ -472,7 +472,11 @@ export async function controlBrowser(port, action, body) {
   switch (action) {
     case "navigate": {
       const url = navigableUrl(body.url);
-      const result = await onPage(port, targetId(body.id), (page) => page.send("Page.navigate", { url }));
+      const result = await onPage(port, targetId(body.id), async (page) => {
+        const navigated = await page.send("Page.navigate", { url });
+        if (navigated?.errorText) await page.send("Page.navigate", { url: "about:blank" }).catch(() => {});
+        return navigated;
+      });
       if (result?.errorText) {
         throw new BrowserControlError(502, `Navigation failed: ${String(result.errorText).slice(0, 200)}`);
       }
@@ -503,7 +507,13 @@ export async function controlBrowser(port, action, body) {
     case "new": {
       // A new tab opens Google unless it was given an address (owner, 2026-09-24).
       const url = body.url ? navigableUrl(body.url) : "https://www.google.com/";
-      const tab = await devtoolsJson(port, `/json/new?${encodeURIComponent(url)}`, "PUT");
+      const tab = await devtoolsJson(port, `/json/new?${encodeURIComponent("about:blank")}`, "PUT");
+      if (!tab?.id) throw new BrowserControlError(502, "The browser did not answer");
+      const result = await onPage(port, targetId(tab.id), (page) => page.send("Page.navigate", { url }));
+      if (result?.errorText) {
+        await devtoolsJson(port, `/json/close/${targetId(tab.id)}`).catch(() => {});
+        throw new BrowserControlError(502, `Navigation failed: ${String(result.errorText).slice(0, 200)}`);
+      }
       return { ok: true, id: tab?.id ?? null };
     }
     default:
