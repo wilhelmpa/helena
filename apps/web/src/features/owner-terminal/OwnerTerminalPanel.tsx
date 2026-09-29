@@ -206,9 +206,13 @@ export default function OwnerTerminalPanel() {
               className="ds-terminal-frame"
               data-active={key === current ? 'true' : 'false'}
               allow="clipboard-read; clipboard-write"
-              onLoad={(event) =>
-                event.currentTarget.contentWindow?.dispatchEvent(new Event('resize'))
-              }
+              onLoad={(event) => {
+                try {
+                  event.currentTarget.contentWindow?.dispatchEvent(new Event('resize'));
+                } catch {
+                  // Not the terminal (its router is down and something else answered).
+                }
+              }}
             />
           );
         })}
