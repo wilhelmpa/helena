@@ -28,9 +28,8 @@ describe('brand tokens in tokens.css', () => {
   });
 
   it('the Orb palette is independent of the ANSI ink token', () => {
-    assert.notEqual(ORB.tileLight.toLowerCase(), TILE.toLowerCase());
-    assert.notEqual(ORB.tileDark.toLowerCase(), ORB.tileLight.toLowerCase());
-    assert.equal(ORB.ring, '#E8A33D');
-    assert.equal(ORB.core, '#F2C14E');
+    assert.notEqual(ORB.ink.toLowerCase(), TILE.toLowerCase());
+    assert.equal(ORB.onDark.length, 3);
+    assert.equal(ORB.onLight.length, 3);
   });
 });

@@ -7,4 +7,6 @@ export const BRAND_ASSETS = {
   icon192: '/brand/icon-192.png',
   icon512: '/brand/icon-512.png',
   iconMaskable: '/brand/icon-maskable-512.png',
+  orbDark: '/brand/orb-dark.png',
+  orbLight: '/brand/orb-light.png',
 } as const;

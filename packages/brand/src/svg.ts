@@ -1,101 +1,130 @@
-import { wordmarkArt, type WordmarkSize } from './art';
-import { BANDS, ORB, type BrandTheme } from './palette';
+import { ORB } from './palette';
+import { WORDMARK_GLYPHS } from './wordmark-glyphs';
 
-const svg = (viewBox: string, body: string) =>
-  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${viewBox}" role="img" aria-label="Helena">${body}</svg>\n`;
+const svg = (viewBox: string, body: string, extra = '') =>
+  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${viewBox}"${extra} role="img" aria-label="AVA">${body}</svg>\n`;
+const n = (v: number) => String(Math.round(v * 100) / 100);
 
-export type OrbVariant = 'tile-light' | 'tile-dark' | 'bare-light' | 'bare-dark' | 'mono';
-export type OrbDetail = 'small' | 'regular';
+// ---------- The vector Orb (48px and below) ----------
 
-export const ORB_GRID = 100;
-export const ORB_RADIUS = 23;
+export type MarkVariant = 'tile-dark' | 'tile-light' | 'bare-dark' | 'bare-light' | 'mono';
+export type OrbScheme = 'dark' | 'light';
 
-export function orbGeometry(detail: OrbDetail) {
-  return detail === 'small'
-    ? { stroke: 9, core: 11, satellite: 7.5 }
-    : { stroke: 7, core: 10, satellite: 6.5 };
+// Disc radius in the 100×100 grid: alone it fills most of the square, on a tile it
+// keeps the tile's margin.
+export const DISC_RADIUS = { bare: 44, tile: 31 } as const;
+
+export function orbStops(scheme: OrbScheme): readonly string[] {
+  return scheme === 'dark' ? ORB.onDark : ORB.onLight;
 }
 
-export interface MarkSvgOptions {
-  variant?: OrbVariant;
-  detail?: OrbDetail;
-  // Percentage of the output edge reserved on each side for maskable icons.
-  inset?: number;
-}
-
-export function orbBody(variant: OrbVariant, detail: OrbDetail): string {
-  const { stroke, core, satellite } = orbGeometry(detail);
-  const mono = variant === 'mono';
-  const ring = mono ? 'currentColor' : ORB.ring;
-  const center = mono ? 'currentColor' : ORB.core;
-  const dot = mono ? 'currentColor' : variant === 'bare-light' ? ORB.tileLight : ORB.paper;
-  const tile =
-    variant === 'tile-light' || variant === 'tile-dark'
-      ? `<rect x="0" y="0" width="100" height="100" rx="23" fill="${variant === 'tile-dark' ? ORB.tileDark : ORB.tileLight}"/>`
-      : '';
+// Linear gradient from lower left to upper right, in the disc's bounding box.
+export function discGradient(id: string, scheme: OrbScheme): string {
+  const stops = orbStops(scheme);
   return (
-    tile +
-    `<circle cx="50" cy="52" r="23" fill="none" stroke="${ring}" stroke-width="${stroke}"/>` +
-    `<circle cx="50" cy="52" r="${core}" fill="${center}"/>` +
-    `<circle cx="72" cy="30" r="${satellite}" fill="${dot}"/>`
+    `<linearGradient id="${id}" x1="0.15" y1="0.85" x2="0.85" y2="0.15">` +
+    stops
+      .map((c, i) => `<stop offset="${n(i / (stops.length - 1))}" stop-color="${c}"/>`)
+      .join('') +
+    `</linearGradient>`
   );
 }
 
-export function markSvg({
-  variant = 'tile-light',
-  detail = 'regular',
-  inset = 0,
-}: MarkSvgOptions = {}): string {
-  if (!inset) return svg('0 0 100 100', orbBody(variant, detail));
-  const background = variant === 'tile-dark' ? ORB.tileDark : ORB.tileLight;
-  const art = orbBody('bare-dark', detail);
+export function discBody(variant: MarkVariant, id = 'ava-orb'): string {
+  if (variant === 'mono')
+    return `<circle cx="50" cy="50" r="${DISC_RADIUS.bare}" fill="currentColor"/>`;
+  const tile = variant === 'tile-dark' ? ORB.ink : variant === 'tile-light' ? ORB.paper : null;
+  const scheme: OrbScheme = variant.endsWith('light') ? 'light' : 'dark';
+  const r = tile ? DISC_RADIUS.tile : DISC_RADIUS.bare;
+  return (
+    `<defs>${discGradient(id, scheme)}</defs>` +
+    (tile ? `<rect width="100" height="100" rx="23" fill="${tile}"/>` : '') +
+    `<circle cx="50" cy="50" r="${r}" fill="url(#${id})"/>`
+  );
+}
+
+export function markSvg(variant: MarkVariant = 'tile-dark'): string {
+  return svg('0 0 100 100', discBody(variant));
+}
+
+// The tab icon: the bare disc, deeper colours on a light browser, brighter on a dark one.
+export function faviconSvg(): string {
   return svg(
     '0 0 100 100',
-    `<rect width="100" height="100" fill="${background}"/><g transform="translate(${inset} ${inset}) scale(${(100 - 2 * inset) / 100})">${art}</g>`,
+    `<style>.d{display:none}@media (prefers-color-scheme: dark){.l{display:none}.d{display:inline}}</style>` +
+      `<g class="l">${discBody('bare-light', 'ava-l')}</g><g class="d">${discBody('bare-dark', 'ava-d')}</g>`,
   );
 }
 
-export function faviconSvg(): string {
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="Helena"><style>.dark { display: none } @media (prefers-color-scheme: dark) { .light { display: none } .dark { display: inline } }</style><g class="light">${orbBody('tile-light', 'small')}</g><g class="dark">${orbBody('tile-dark', 'small')}</g></svg>\n`;
+// ---------- Wordmark ----------
+
+export type WordmarkSize = keyof typeof WORDMARK_GLYPHS;
+export type WordmarkTheme = 'dark' | 'light' | 'mono';
+
+const WORD_COLOR: Record<WordmarkTheme, string> = {
+  dark: ORB.paper,
+  light: ORB.text,
+  mono: 'currentColor',
+};
+
+// The outlines' tight box in font units (cap height from y = -capHeight to the baseline).
+export function wordmarkGeometry(size: WordmarkSize) {
+  const g = WORDMARK_GLYPHS[size];
+  const [x0, y0, x1, y1] = g.box;
+  return {
+    d: g.d,
+    x: x0,
+    y: y0,
+    width: x1 - x0,
+    height: y1 - y0,
+    viewBox: `${n(x0)} ${n(y0)} ${n(x1 - x0)} ${n(y1 - y0)}`,
+  };
 }
 
-function wordmarkBody(size: WordmarkSize, theme: BrandTheme) {
-  const art = wordmarkArt(size);
-  const body = art.rows
-    .map((row) => `<path fill="${BANDS[theme][row.band]}" d="${row.d}"/>`)
-    .join('');
-  return { body, width: art.width, height: art.height, letterHeight: (art.height * 5) / 6 };
+export function wordmarkSvg(size: WordmarkSize, theme: WordmarkTheme): string {
+  const g = wordmarkGeometry(size);
+  return svg(g.viewBox, `<path fill="${WORD_COLOR[theme]}" d="${g.d}"/>`);
 }
 
-export function wordmarkSvg(size: WordmarkSize, theme: BrandTheme): string {
-  const { body, width, height } = wordmarkBody(size, theme);
-  return svg(`0 0 ${width} ${height}`, body);
+// ---------- Lockup and social preview (particle Orb) ----------
+
+// A particle render as an image reference: `href` (a URL or data URI) and the share of
+// the image's width the Orb's diameter fills, the Orb centred.
+export interface OrbImage {
+  href: string;
+  fraction: number;
 }
 
-function lockupBody(theme: BrandTheme) {
-  const word = wordmarkBody('full', theme);
-  const markSize = word.letterHeight * 1.18;
-  const gap = markSize / 6;
-  const markY = (word.letterHeight - markSize) / 2;
+// Orb + wordmark as in the owner's reference: the Orb 1.3 cap heights across, centred
+// on the capitals, 0.62 cap heights before the first letter.
+export const LOCKUP = { orb: 1.3, gap: 0.62 } as const;
+
+function lockupBody(theme: 'dark' | 'light', orb: OrbImage) {
+  const g = wordmarkGeometry('full');
+  const cap = -g.y;
+  const d = cap * LOCKUP.orb;
+  const size = d / orb.fraction;
+  const cy = -cap / 2;
   const body =
-    `<g transform="translate(0 ${markY}) scale(${markSize / ORB_GRID})">${orbBody(theme === 'dark' ? 'tile-dark' : 'tile-light', 'regular')}</g>` +
-    `<g transform="translate(${markSize + gap} 0)">${word.body}</g>`;
-  return { body, width: markSize + gap + word.width, top: markY, bottom: word.height };
+    `<image href="${orb.href}" x="${n(d / 2 - size / 2)}" y="${n(cy - size / 2)}" width="${n(size)}" height="${n(size)}"/>` +
+    `<path fill="${WORD_COLOR[theme]}" transform="translate(${n(d + cap * LOCKUP.gap - g.x)} 0)" d="${g.d}"/>`;
+  return { body, x: 0, y: cy - d / 2, width: d + cap * LOCKUP.gap + g.width, height: d };
 }
 
-export function lockupSvg(theme: BrandTheme): string {
-  const l = lockupBody(theme);
-  return svg(`0 ${l.top} ${l.width} ${l.bottom - l.top}`, l.body);
+export function lockupSvg(theme: 'dark' | 'light', orb: OrbImage): string {
+  const l = lockupBody(theme, orb);
+  return svg(`${n(l.x)} ${n(l.y)} ${n(l.width)} ${n(l.height)}`, l.body);
 }
 
-export function socialPreviewSvg(): string {
-  const l = lockupBody('dark');
-  const scale = 2.2;
-  const x = (1280 - l.width * scale) / 2;
-  const body =
-    `<rect width="1280" height="640" fill="${ORB.tileDark}"/>` +
-    `<g transform="translate(${x} 196) scale(${scale})">${l.body}</g>` +
-    `<text x="640" y="470" text-anchor="middle" font-family="InterVariable, Inter, sans-serif" font-size="30" font-weight="500" fill="#CFC6B8">Mission control for your AI agents</text>` +
-    `<text x="640" y="596" text-anchor="middle" font-family="'JetBrains Mono Variable', 'JetBrains Mono', monospace" font-size="14" fill="#7D7466">self-hosted · open source · runs on Hermes Agent</text>`;
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 640" width="1280" height="640" role="img" aria-label="Helena">${body}</svg>\n`;
+// 1280×640 for link previews: the dark lockup on the renders' ink.
+export function socialPreviewSvg(orb: OrbImage): string {
+  const l = lockupBody('dark', orb);
+  const scale = 620 / l.width;
+  const x = (1280 - l.width * scale) / 2 - l.x * scale;
+  const y = (640 - l.height * scale) / 2 - l.y * scale;
+  return svg(
+    '0 0 1280 640',
+    `<rect width="1280" height="640" fill="${ORB.ink}"/><g transform="translate(${n(x)} ${n(y)}) scale(${scale})">${l.body}</g>`,
+    ' width="1280" height="640"',
+  );
 }

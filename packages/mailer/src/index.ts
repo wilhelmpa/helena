@@ -1,5 +1,5 @@
 import nodemailer from 'nodemailer';
-import { mailHeaderHtml } from '@helena/brand';
+import { MAIL_INLINE_IMAGES, mailHeaderHtml } from '@helena/brand/mail';
 
 // Outbound email transport, shared by the two senders in the app: project
 // notifications (credentials per project) and authentication mail (credentials per
@@ -58,6 +58,12 @@ function fromAddress(config: EmailConfig, provider: 'smtp' | 'resend'): string |
   return null;
 }
 
+// The brand images the HTML shows by Content-ID (the mail header's Orb), sent as inline
+// attachments with the message.
+function inlineImages(html: string) {
+  return MAIL_INLINE_IMAGES.filter((image) => html.includes(`cid:${image.cid}`));
+}
+
 async function sendSmtp(
   smtp: SmtpConfig,
   message: EmailMessage,
@@ -82,6 +88,12 @@ async function sendSmtp(
       subject: message.subject,
       text: message.text,
       html: message.html,
+      attachments: inlineImages(message.html).map((image) => ({
+        filename: image.filename,
+        content: Buffer.from(image.base64, 'base64'),
+        contentType: image.contentType,
+        cid: image.cid,
+      })),
     });
     return { ok: true };
   } catch (err) {
@@ -113,6 +125,12 @@ async function sendResend(
         subject: message.subject,
         text: message.text,
         html: message.html,
+        attachments: inlineImages(message.html).map((image) => ({
+          filename: image.filename,
+          content: image.base64,
+          content_type: image.contentType,
+          content_id: image.cid,
+        })),
       }),
     });
     if (res.ok) return { ok: true };
@@ -168,7 +186,8 @@ function escape(s: string): string {
 
 // Wraps a plain-text body (and an optional link) into the text/html pair the
 // transport needs. Shared so every message in the app looks the same: the HTML part
-// opens with the self-contained Orb SVG and a text fallback from packages/brand.
+// opens with the brand header from packages/brand (the Orb as an inline image, the
+// wordmark as text); sendEmail attaches the image.
 export function emailBody(text: string, url?: string | null): { text: string; html: string } {
   const plain = url ? `${text}\n\n${url}` : text;
   const body = escape(text).replace(/\n/g, '<br>');

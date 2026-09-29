@@ -1,80 +1,93 @@
 import { describe, expect, test } from 'bun:test';
-import { ANSI_COMPACT, ANSI_FULL, HELENA_ANSI, renderAnsi } from './ansi';
-import { mailHeaderHtml } from './mail';
+import { TERMINAL_WORDMARK, terminalWordmark } from './ansi';
+import { MAIL_INLINE_IMAGES, MAIL_ORB_CID, mailHeaderHtml } from './mail';
 import { ORB } from './palette';
 import {
+  DISC_RADIUS,
+  discBody,
   faviconSvg,
   lockupSvg,
   markSvg,
-  orbBody,
-  orbGeometry,
   socialPreviewSvg,
+  wordmarkGeometry,
   wordmarkSvg,
 } from './svg';
+import { WORDMARK_GLYPHS } from './wordmark-glyphs';
 
-const numbers = (d: string) => [...d.matchAll(/-?\d+(?:\.\d+)?/g)].map((m) => Number(m[0]));
+const orb = { href: 'data:image/png;base64,AA==', fraction: 0.94 };
 
-describe('ANSI wordmark', () => {
-  test('every row is 50 cells, as figlet sets HELENA', () => {
-    for (const row of HELENA_ANSI) expect([...row].length).toBe(50);
+describe('vector Orb', () => {
+  test('every variant draws the disc; only tiles carry a background', () => {
+    expect(discBody('bare-dark')).toContain(`r="${DISC_RADIUS.bare}"`);
+    expect(discBody('tile-dark')).toContain(`fill="${ORB.ink}"`);
+    expect(discBody('tile-light')).toContain(`fill="${ORB.paper}"`);
+    expect(discBody('mono')).toBe(
+      `<circle cx="50" cy="50" r="${DISC_RADIUS.bare}" fill="currentColor"/>`,
+    );
+    for (const variant of ['bare-dark', 'bare-light', 'mono'] as const)
+      expect(discBody(variant)).not.toContain('<rect');
   });
 
-  test('the full drawing sits on whole units', () => {
-    const art = renderAnsi(HELENA_ANSI, ANSI_FULL);
-    expect([art.width, art.height]).toEqual([300, 84]);
-    for (const row of art.rows)
-      for (const n of numbers(row.d)) expect(Number.isInteger(n)).toBe(true);
+  test('the gradient runs violet to pink, deeper on light surfaces', () => {
+    for (const c of ORB.onDark) expect(discBody('bare-dark')).toContain(c);
+    for (const c of ORB.onLight) expect(discBody('bare-light')).toContain(c);
   });
 
-  test('the compact drawing has half the size', () => {
-    const art = renderAnsi(HELENA_ANSI, ANSI_COMPACT);
-    expect([art.width, art.height]).toEqual([150, 42]);
-    for (const row of art.rows)
-      for (const n of numbers(row.d)) expect(Number.isInteger(n)).toBe(true);
-  });
-});
-
-describe('orb', () => {
-  test('the regular and small optical geometry is exact', () => {
-    expect(orbGeometry('regular')).toEqual({ stroke: 7, core: 10, satellite: 6.5 });
-    expect(orbGeometry('small')).toEqual({ stroke: 9, core: 11, satellite: 7.5 });
-    const small = orbBody('tile-light', 'small');
-    expect(small).toContain('<rect x="0" y="0" width="100" height="100" rx="23"');
-    expect(small).toContain('cx="50" cy="52" r="23" fill="none"');
-    expect(small).toContain('cx="72" cy="30" r="7.5"');
-  });
-
-  test('all five variants use the specified colours', () => {
-    expect(orbBody('tile-light', 'regular')).toContain(`fill="${ORB.tileLight}"`);
-    expect(orbBody('tile-dark', 'regular')).toContain(`fill="${ORB.tileDark}"`);
-    expect(orbBody('bare-light', 'regular')).toContain(`fill="${ORB.tileLight}"`);
-    expect(orbBody('bare-dark', 'regular')).toContain(`fill="${ORB.paper}"`);
-    expect(orbBody('mono', 'regular')).toContain('stroke="currentColor"');
-    for (const variant of ['bare-light', 'bare-dark', 'mono'] as const)
-      expect(orbBody(variant, 'regular')).not.toContain('<rect');
-  });
-
-  test('favicon switches theme and maskable mark stays within the safe zone', () => {
-    expect(faviconSvg()).toContain('prefers-color-scheme: dark');
-    expect(faviconSvg()).toContain(ORB.tileDark);
-    expect(markSvg({ variant: 'tile-light', inset: 10 })).toContain('translate(10 10) scale(0.8)');
+  test('the favicon follows the colour scheme with distinct gradient ids', () => {
+    const fav = faviconSvg();
+    expect(fav).toContain('prefers-color-scheme: dark');
+    expect(fav).toContain('id="ava-l"');
+    expect(fav).toContain('id="ava-d"');
+    expect(markSvg()).toStartWith('<svg');
   });
 });
 
-describe('files and mail', () => {
-  test('wordmark, lockup and preview render', () => {
+describe('wordmark', () => {
+  test('AVA in Inter Light at 0.32em, and Regular for the compact size', () => {
+    expect(WORDMARK_GLYPHS.full).toMatchObject({ weight: 300, tracking: 0.32 });
+    expect(WORDMARK_GLYPHS.compact).toMatchObject({ weight: 400, tracking: 0.32 });
+    // At least one outline per letter.
+    expect(WORDMARK_GLYPHS.full.d.split('M').length - 1).toBeGreaterThanOrEqual(3);
+  });
+
+  test('the box runs from the cap height to the baseline', () => {
+    const g = wordmarkGeometry('full');
+    expect(g.y).toBe(-1490);
+    expect(g.y + g.height).toBe(0);
+    expect(g.width / g.height).toBeGreaterThan(3);
+  });
+
+  test('themes colour the letters', () => {
+    expect(wordmarkSvg('full', 'dark')).toContain(`fill="${ORB.paper}"`);
+    expect(wordmarkSvg('full', 'light')).toContain(`fill="${ORB.text}"`);
+    expect(wordmarkSvg('compact', 'mono')).toContain('fill="currentColor"');
+  });
+});
+
+describe('lockup, preview, terminal and mail', () => {
+  test('lockup and preview place the particle Orb beside the wordmark', () => {
     for (const theme of ['dark', 'light'] as const) {
-      expect(wordmarkSvg('full', theme)).toStartWith('<svg');
-      expect(lockupSvg(theme)).toContain('aria-label="Helena"');
+      const l = lockupSvg(theme, orb);
+      expect(l).toContain(`<image href="${orb.href}"`);
+      expect(l).toContain('aria-label="AVA"');
     }
-    expect(socialPreviewSvg()).toContain('viewBox="0 0 1280 640"');
+    const preview = socialPreviewSvg(orb);
+    expect(preview).toContain('viewBox="0 0 1280 640"');
+    expect(preview).toContain(`fill="${ORB.ink}"`);
   });
 
-  test('mail header embeds the Orb and a readable text fallback', () => {
+  test('the terminal shows only the spaced name', () => {
+    expect(TERMINAL_WORDMARK).toBe('A V A');
+    expect(terminalWordmark(false)).toBe('A V A');
+    expect(terminalWordmark()).toContain('A V A');
+  });
+
+  test('the mail header references its inline Orb and keeps a text wordmark', () => {
     const html = mailHeaderHtml();
-    expect(html).toContain('<svg');
-    expect(html).toContain('stroke="currentColor"');
-    expect(html).toContain('>Helena</td>');
-    expect(html).not.toContain('██');
+    expect(html).toContain(`src="cid:${MAIL_ORB_CID}"`);
+    expect(html).toContain('letter-spacing:0.32em">AVA</td>');
+    expect(MAIL_INLINE_IMAGES.map((i) => i.cid)).toEqual([MAIL_ORB_CID]);
+    // A PNG: the base64 of its signature.
+    expect(MAIL_INLINE_IMAGES[0]!.base64.startsWith('iVBORw0KGgo')).toBe(true);
   });
 });

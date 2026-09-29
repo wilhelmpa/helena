@@ -1,56 +1,67 @@
-// Deterministic raster output from the single vector source. Run offline with:
-// bun run --cwd packages/brand build:assets
-import { execFileSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+// Deterministic icon and logo files from the brand's sources. Run offline with:
+//   bun run --cwd packages/brand build:assets
+// Sources: the particle Orb renders in ../assets (the app's voice orb, speaking state,
+// 90k particles, no glow, 1024px) for icons and large marks; the vector disc and the
+// Inter wordmark outlines in ../src for everything at 48px and below.
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { Resvg } from '@resvg/resvg-js';
-import { faviconSvg, lockupSvg, markSvg, socialPreviewSvg, wordmarkSvg } from '../src';
+import {
+  faviconSvg,
+  lockupSvg,
+  markSvg,
+  ORB,
+  socialPreviewSvg,
+  wordmarkSvg,
+  type OrbImage,
+} from '../src';
 
+const ASSETS = join(import.meta.dirname, '../assets');
 const OUT = join(import.meta.dirname, '../../../apps/web/public/brand');
-const FONTS = join(import.meta.dirname, '../../../apps/web/public/fonts');
+
+// Where the Orb sits in each 1024px render (centre and diameter in pixels, measured
+// from the particles' extent). The icons use the freestanding renders on ink, so the
+// opacity boost below touches only the particles.
+const RENDERS = {
+  orbDark: { file: 'orb-dark.png', cx: 551, cy: 547, d: 686 },
+  orbLight: { file: 'orb-light.png', cx: 551.5, cy: 547.5, d: 685 },
+} as const;
+type Render = (typeof RENDERS)[keyof typeof RENDERS];
+
+const dataUri = (mime: string, data: Uint8Array | Buffer) =>
+  `data:${mime};base64,${Buffer.from(data).toString('base64')}`;
+const source = (r: Render) => dataUri('image/png', readFileSync(join(ASSETS, r.file)));
 const png = (svg: string, size: number) =>
   new Resvg(svg, { fitTo: { mode: 'width', value: size } }).render().asPng();
 
-// resvg cannot read the bundled WOFF2 fonts. Chromium rasterises the preview with
-// those exact local font files; the temporary HTML is self-contained and removed.
-function previewPng(svg: string): Uint8Array {
-  const temp = mkdtempSync(join(tmpdir(), 'volition-brand-'));
-  const htmlPath = join(temp, 'preview.html');
-  const pngPath = join(temp, 'preview.png');
-  const font = (name: string) => readFileSync(join(FONTS, name)).toString('base64');
-  const html = `<html><head><meta charset="utf-8"><style>
-@font-face{font-family:InterVariable;src:url(data:font/woff2;base64,${font('helena-inter.woff2')}) format('woff2')}
-@font-face{font-family:'JetBrains Mono Variable';src:url(data:font/woff2;base64,${font('helena-jetbrains-mono-latin.woff2')}) format('woff2')}
-html,body{margin:0;width:1280px;height:640px;overflow:hidden}svg{display:block}
-</style></head><body>${svg}</body></html>`;
-  try {
-    writeFileSync(htmlPath, html);
-    execFileSync(
-      'chromium',
-      [
-        '--headless=new',
-        '--no-sandbox',
-        '--disable-gpu',
-        '--disable-dev-shm-usage',
-        '--hide-scrollbars',
-        '--force-device-scale-factor=1',
-        '--window-size=1280,640',
-        '--virtual-time-budget=2000',
-        `--screenshot=${pngPath}`,
-        `file://${htmlPath}`,
-      ],
-      { stdio: 'ignore' },
-    );
-    return readFileSync(pngPath);
-  } finally {
-    rmSync(temp, { recursive: true, force: true });
-  }
+// The render placed so its Orb is centred and `fraction` of the canvas wide; optional
+// background and corner radius (share of the size) for app tiles. The particles are
+// about a pixel each at 1024px: scaled down they average with the transparent canvas and
+// fade, so their opacity is raised by the inverse of the scale (at most 5×) to keep
+// the Orb as vivid as at full size.
+function orbPng(r: Render, size: number, fraction: number, background?: string, radius = 0) {
+  const scale = (fraction * size) / r.d;
+  const boost = Math.min(5, Math.max(1, 1.1 / scale));
+  const x = size / 2 - r.cx * scale;
+  const y = size / 2 - r.cy * scale;
+  const rx = radius * size;
+  const clip = radius ? ' clip-path="url(#t)"' : '';
+  const svg =
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">` +
+    (radius
+      ? `<clipPath id="t"><rect width="${size}" height="${size}" rx="${rx}"/></clipPath>`
+      : '') +
+    `<filter id="b" color-interpolation-filters="sRGB"><feComponentTransfer><feFuncA type="linear" slope="${boost}"/></feComponentTransfer></filter>` +
+    `<g${clip}>` +
+    (background ? `<rect width="${size}" height="${size}" fill="${background}"/>` : '') +
+    `<image href="${source(r)}" x="${x}" y="${y}" width="${1024 * scale}" height="${1024 * scale}" filter="url(#b)"/>` +
+    `</g></svg>`;
+  return png(svg, size);
 }
 
 function ico(images: { size: number; data: Uint8Array }[]): Uint8Array {
   const header = 6 + images.length * 16;
-  const total = header + images.reduce((n, i) => n + i.data.length, 0);
+  const total = header + images.reduce((sum, i) => sum + i.data.length, 0);
   const out = new Uint8Array(total);
   const view = new DataView(out.buffer);
   view.setUint16(2, 1, true);
@@ -70,31 +81,54 @@ function ico(images: { size: number; data: Uint8Array }[]): Uint8Array {
   return out;
 }
 
+// The Orb fills this share of a free-standing image (a little room for stray particles).
+const ORB_FRACTION = 0.94;
+const orbImage = (r: Render, size: number): OrbImage => ({
+  href: dataUri('image/png', orbPng(r, size, ORB_FRACTION)),
+  fraction: ORB_FRACTION,
+});
+
 mkdirSync(OUT, { recursive: true });
 const write = (name: string, data: string | Uint8Array) => writeFileSync(join(OUT, name), data);
-const light = markSvg({ variant: 'tile-light' });
+
+// App icons: the particle Orb, centred and large. iOS rounds apple-touch-icon itself,
+// so it is square; the launcher PNGs are rounded tiles; the maskable one keeps the Orb
+// inside the 80% safe zone on a full-bleed background.
+write('apple-touch-icon.png', orbPng(RENDERS.orbDark, 180, 0.7, ORB.ink));
+write('icon-192.png', orbPng(RENDERS.orbDark, 192, 0.68, ORB.ink, 0.225));
+write('icon-512.png', orbPng(RENDERS.orbDark, 512, 0.68, ORB.ink, 0.225));
+write('icon-maskable-512.png', orbPng(RENDERS.orbDark, 512, 0.46, ORB.ink));
+
+// Tab icons: the vector disc.
 write('favicon.svg', faviconSvg());
-write('mark.svg', light);
-write('mark-dark.svg', markSvg({ variant: 'tile-dark' }));
-write('mark-bare-light.svg', markSvg({ variant: 'bare-light' }));
-write('mark-bare-dark.svg', markSvg({ variant: 'bare-dark' }));
-write('mark-mono.svg', markSvg({ variant: 'mono' }));
-const faviconImages = [16, 32, 48].map((size) => ({
-  size,
-  data: png(markSvg({ variant: 'tile-light', detail: size <= 24 ? 'small' : 'regular' }), size),
-}));
-write('favicon.ico', ico(faviconImages));
-write('apple-touch-icon.png', png(light, 180));
-write('icon-192.png', png(light, 192));
-write('icon-512.png', png(light, 512));
-// The art stays inside the maskable 80% safe zone; its background fills the canvas.
-write('icon-maskable-512.png', png(markSvg({ variant: 'tile-light', inset: 10 }), 512));
+write(
+  'favicon.ico',
+  ico([16, 32, 48].map((size) => ({ size, data: png(markSvg('bare-dark'), size) }))),
+);
+write('mark.svg', markSvg('tile-dark'));
+write('mark-light.svg', markSvg('tile-light'));
+write('mark-bare-light.svg', markSvg('bare-light'));
+write('mark-bare-dark.svg', markSvg('bare-dark'));
+write('mark-mono.svg', markSvg('mono'));
+
+// The particle Orb for the UI (sign-in panel, About): freestanding, for dark and light.
+write('orb-dark.png', orbPng(RENDERS.orbDark, 320, ORB_FRACTION));
+write('orb-light.png', orbPng(RENDERS.orbLight, 320, ORB_FRACTION));
+
 for (const theme of ['dark', 'light'] as const) {
   write(`wordmark-${theme}.svg`, wordmarkSvg('full', theme));
   write(`wordmark-compact-${theme}.svg`, wordmarkSvg('compact', theme));
-  write(`lockup-${theme}.svg`, lockupSvg(theme));
+  const orb = orbImage(theme === 'dark' ? RENDERS.orbDark : RENDERS.orbLight, 160);
+  write(`lockup-${theme}.svg`, lockupSvg(theme, orb));
 }
-const preview = socialPreviewSvg();
+const preview = socialPreviewSvg(orbImage(RENDERS.orbDark, 320));
 write('social-preview.svg', preview);
-write('social-preview.png', previewPng(preview));
+write('social-preview.png', png(preview, 1280));
+
+// The mail header's inline Orb: 72px for 36 CSS pixels on a 2× screen, on the ink bar.
+const mailOrb = orbPng(RENDERS.orbDark, 72, 0.92, ORB.ink);
+writeFileSync(
+  join(import.meta.dirname, '../src/mail-orb.ts'),
+  `// Generated by scripts/build-assets.ts: the mail header's Orb (72px PNG, base64).\nexport const MAIL_ORB_PNG =\n  '${Buffer.from(mailOrb).toString('base64')}';\n`,
+);
 console.log(`brand files written to ${OUT}`);
