@@ -2125,5 +2125,53 @@
     "/views/:viewId/favorite",
     "UI-only",
     "Persönlicher Browser- oder Ansichtsstatus ohne eigenständige Agentenaktion."
+  ],
+  [
+    "GET",
+    "/teams/:teamId/ai-agents/:agentId/chat/:messageId/followups",
+    "UI-only",
+    "Steuerung einer laufenden Antwort aus der Weboberfläche (Einschieben/Danach/Ersetzen); kein Agenten-Werkzeug."
+  ],
+  [
+    "POST",
+    "/teams/:teamId/ai-agents/:agentId/chat/:messageId/followups",
+    "UI-only",
+    "Steuerung einer laufenden Antwort aus der Weboberfläche (Einschieben/Danach/Ersetzen); kein Agenten-Werkzeug."
+  ],
+  [
+    "GET",
+    "/projects/:projectKey/ai-agents/:agentId/chat/:messageId/followups",
+    "UI-only",
+    "Steuerung einer laufenden Antwort aus der Weboberfläche (Einschieben/Danach/Ersetzen); kein Agenten-Werkzeug."
+  ],
+  [
+    "POST",
+    "/projects/:projectKey/ai-agents/:agentId/chat/:messageId/followups",
+    "UI-only",
+    "Steuerung einer laufenden Antwort aus der Weboberfläche (Einschieben/Danach/Ersetzen); kein Agenten-Werkzeug."
+  ],
+  [
+    "GET",
+    "/projects/:projectKey/ai-agents/:agentId/runs/:runId/followups",
+    "UI-only",
+    "Steuerung einer laufenden Antwort aus der Weboberfläche (Einschieben/Danach/Ersetzen); kein Agenten-Werkzeug."
+  ],
+  [
+    "POST",
+    "/projects/:projectKey/ai-agents/:agentId/runs/:runId/followups",
+    "UI-only",
+    "Steuerung einer laufenden Antwort aus der Weboberfläche (Einschieben/Danach/Ersetzen); kein Agenten-Werkzeug."
+  ],
+  [
+    "POST",
+    "/agent-runtime/followups",
+    "intern",
+    "Maschinen- oder Runner-Protokoll; wird vom Dienst selbst aufgerufen."
+  ],
+  [
+    "POST",
+    "/decisions/tool-selection",
+    "intern",
+    "Werkzeug-Vorauswahl der eigenen Laufzeit; wird vom Dienst selbst aufgerufen."
   ]
 ]
