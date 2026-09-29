@@ -230,8 +230,8 @@ describe('project provisioning', () => {
             },
             {
               kind: `board:${boardId}:files`,
-              id: `/Projects/verve/Boards/board-${boardId}`,
-              url: `https://cloud.volition.one/apps/files/files?dir=/Projects/verve/Boards/board-${boardId}&share=must-not-be-stored#private`,
+              id: `/Projects/verve/Files/Boards/board-${boardId}`,
+              url: `https://cloud.volition.one/apps/files/files?dir=/Projects/verve/Files/Boards/board-${boardId}&share=must-not-be-stored#private`,
             },
             {
               kind: 'browser',
@@ -241,7 +241,7 @@ describe('project provisioning', () => {
             {
               kind: `board:${boardId + 1}:files`,
               id: 'not-requested',
-              url: `https://cloud.volition.one/apps/files/files?dir=/Projects/verve/Boards/board-${boardId + 1}`,
+              url: `https://cloud.volition.one/apps/files/files?dir=/Projects/verve/Files/Boards/board-${boardId + 1}`,
             },
             { kind: 'files', id: 'files-2', url: 'javascript:alert(1)' },
             { kind: 'secret', id: 'must-not-be-stored', url: 'https://example.com/secret' },
@@ -328,11 +328,6 @@ describe('project provisioning', () => {
             kind: `board:${view.id}`,
             id: `/projects/verve/boards/board-${view.id}`,
             url: `https://code.volition.one/?folder=%2Fprojects%2Fverve%2Fboards%2Fboard-${view.id}`,
-          },
-          {
-            kind: `board:${view.id}:files`,
-            id: `/Projects/verve/Boards/board-${view.id}`,
-            url: `https://cloud.volition.one/apps/files/files?dir=%2FProjects%2Fverve%2FBoards%2Fboard-${view.id}`,
           },
           {
             kind: 'browser',

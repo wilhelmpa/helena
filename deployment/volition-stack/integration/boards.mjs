@@ -12,7 +12,7 @@ async function safeChild(parent, name) {
   return target;
 }
 
-export async function provisionBoards(config, envelope, workspace, ensureBoardFiles) {
+export async function provisionBoards(config, envelope, workspace) {
   const requested = new Set(envelope.requestedResources);
   const boards = (envelope.boards ?? []).filter((board) => requested.has(board.resource));
   if (boards.length === 0) return [];
@@ -26,18 +26,16 @@ export async function provisionBoards(config, envelope, workspace, ensureBoardFi
     const name = `board-${board.id}`;
     const directory = await safeChild(root, name);
     const boardPath = `${workspace.containerPath}/boards/${name}`;
-    const files = await ensureBoardFiles(workspace.slug, board.id, envelope.project);
     const plan = config.planUrl ? new URL(`/project/${encodeURIComponent(envelope.project.key)}/view/${board.id}`, config.planUrl).toString() : null;
     const metadata = {
       schemaVersion: 1, project: envelope.project, board,
-      links: { plan, files: files.url ?? null }, workspace: boardPath,
+      links: { plan }, workspace: boardPath,
       guidance: 'Use exact API-returned document ids and project-scoped ticket sequence numbers. Store deliverables in the project vault, link both directions, verify every link before marking done. Never put secrets in this registry.',
     };
     await writeJsonAtomic(path.join(directory, 'board.json'), metadata);
     const code = config.codeUrl ? new URL(config.codeUrl) : null;
     code?.searchParams.set('folder', boardPath);
     results.push({ kind: board.resource, id: boardPath, ...(code ? { url: code.toString() } : {}) });
-    results.push({ kind: `${board.resource}:files`, id: files.id, ...(files.url ? { url: files.url } : {}) });
   }
   return results;
 }

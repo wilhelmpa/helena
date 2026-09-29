@@ -62,7 +62,6 @@ const SYSTEM_FOLDER_ICONS: Record<string, LucideIcon> = {
   'Files/Mail': Mail,
   'Files/Chat': MessageSquare,
   'Files/Browser': Globe,
-  'Files/Boards': Network,
   Assets: Images,
   Boards: Network,
   Inbox: Inbox,

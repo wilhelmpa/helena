@@ -40,14 +40,6 @@ describe('classifyRequestedResource', () => {
     }
   });
 
-  it('does not mistake the board:id:files result kind for the board itself', () => {
-    const boardNames = new Map([[9, 'Sprint board']]);
-    assert.deepEqual(classifyRequestedResource('board:9:files', boardNames), {
-      kind: 'other',
-      resource: 'board:9:files',
-    });
-  });
-
   it('rejects a malformed board id rather than matching it loosely', () => {
     const boardNames = new Map([[9, 'Sprint board']]);
     for (const resource of ['board:', 'board:0', 'board:09', 'board:-1', 'board:9a']) {
