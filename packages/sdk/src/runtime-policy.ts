@@ -111,6 +111,8 @@ export interface RuntimeCompression {
 
 export interface RuntimePolicySnapshot {
   revision: string;
+  // Older control planes omit project membership.
+  projects?: { id: number }[];
   displayName?: string;
   // The agent's configured model (null: the runtime's default). An older server sends none.
   model?: string | null;

@@ -168,7 +168,7 @@ export const McpSecretsResponse = t.Object({
 
 export const RuntimeStateBody = t.Object({
   adapter: t.String({ minLength: 1, maxLength: 64 }),
-  status: t.Union([t.Literal('online'), t.Literal('degraded')]),
+  status: t.Union([t.Literal('online'), t.Literal('degraded'), t.Literal('offline')]),
   appliedRevision: t.Nullable(t.String({ maxLength: 128 })),
   capabilities: t.Array(t.String({ minLength: 1, maxLength: 80 }), { maxItems: 64 }),
   detail: t.Nullable(t.String({ maxLength: 500 })),

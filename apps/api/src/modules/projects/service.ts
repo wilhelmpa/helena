@@ -34,6 +34,9 @@ import { getProjectSetting, setProjectSetting } from '#shared/project-settings';
 import { PROJECT_FEATURES, featureLabel, type ProjectFeature } from '#shared/features';
 import { getLimits } from '#shared/limits';
 import { enableProjectBrowser } from '#modules/agents/mcp-servers/service';
+import { deleteThreadsWhere } from '#modules/agents/core/runtime/memory';
+import { deleteAgent, queueAgentRuntime } from '#modules/agents/core/service';
+import { isHomeAgent } from '#modules/agents/core/home-agent';
 import { getProjectDefaults } from '#modules/settings/service';
 import { dropUnusedTeamMembership } from '#modules/scim/reconcile';
 import { deleteObjects } from '#shared/s3';
@@ -994,6 +997,51 @@ export async function setSubtaskAutomationSettings(
 // issues and their columns are deleted by the same cascade, so it is satisfied, and so
 // are the chats started in the project.
 export async function deleteProject(projectId: number): Promise<void> {
+  await deleteThreadsWhere({ projectId });
+  const [target] = await db
+    .select({ teamId: project.teamId, key: project.key })
+    .from(project)
+    .where(eq(project.id, projectId));
+  if (!target) return;
+  const coordinatorUsername = projectCoordinatorUsername(target.key);
+  // Membership cascades alone leave the bot user and runtime of a project-only
+  // specialist behind. Delete it through the regular agent path while the project
+  // still exists, so that path can see its membership and queue runtime cleanup.
+  const members = await db
+    .select({
+      agentId: aiAgent.id,
+      userId: aiAgent.userId,
+      teamId: aiAgent.teamId,
+      username: aiAgent.username,
+      agentRole: aiAgent.agentRole,
+      kind: aiAgent.kind,
+      runnerScope: aiAgent.runnerScope,
+      template: aiAgent.template,
+      projectId: projectMember.projectId,
+    })
+    .from(aiAgent)
+    .innerJoin(projectMember, eq(projectMember.userId, aiAgent.userId))
+    .where(eq(aiAgent.teamId, target.teamId));
+  const byAgent = new Map<number, (typeof members)[number][]>();
+  for (const member of members) {
+    const rows = byAgent.get(member.agentId) ?? [];
+    rows.push(member);
+    byAgent.set(member.agentId, rows);
+  }
+  for (const rows of byAgent.values()) {
+    const agent = rows[0]!;
+    if (agent.template || isHomeAgent(agent.agentRole)) continue;
+    if (!rows.some((row) => row.projectId === projectId)) continue;
+    // The project factory's coordinator is deleted in the transaction below.
+    if (
+      agent.username === coordinatorUsername &&
+      agent.kind === 'external' &&
+      agent.runnerScope === 'owner'
+    )
+      continue;
+    if (rows.length === 1) await deleteAgent(agent.agentId, agent.teamId);
+    else await queueAgentRuntime(agent.userId, [projectId]);
+  }
   // A team membership the SCIM reconciliation granted stands on the project
   // memberships it granted with it, and no group change follows the delete to re-check
   // it, so the members are read while they still exist and re-checked afterwards.
@@ -1020,12 +1068,9 @@ export async function deleteProject(projectId: number): Promise<void> {
       .from(initiativeAttachment)
       .innerJoin(initiative, eq(initiative.id, initiativeAttachment.initiativeId))
       .where(eq(initiative.projectId, projectId));
-    // The project factory creates one dedicated external Hermes user. It is not
-    // project-scoped by a foreign key, because agents can normally be shared by a
-    // team. Its deterministic reserved handle, team, and membership identify the
-    // project-owned coordinator precisely. Remove the backing user before deleting
-    // the project so the team-level username can be reused if the project key is
-    // recreated. The user delete cascades to ai_agent and all agent-owned state.
+    // The project factory's dedicated coordinator is identified by its reserved
+    // handle, team, runner scope and membership. Remove its backing user here so
+    // the handle can be reused when the project key is recreated.
     const [projectRow] = await tx
       .select({
         id: project.id,

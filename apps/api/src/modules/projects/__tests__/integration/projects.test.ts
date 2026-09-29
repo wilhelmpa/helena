@@ -1,6 +1,6 @@
 import { describe, it, expect, afterEach, beforeEach } from 'bun:test';
-import { aiAgent, db, project, projectProvisioningJob } from '@repo/db';
-import { eq } from 'drizzle-orm';
+import { aiAgent, db, project, projectProvisioningJob, user } from '@repo/db';
+import { and, eq, inArray } from 'drizzle-orm';
 import { authedApi, type Api } from '#tests/helpers/app';
 import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
@@ -8,6 +8,8 @@ import { addProjectMember } from '#tests/helpers/members';
 import { createRole, listProjectRoles } from '#tests/helpers/roles';
 import { createAgent, projectIdOf, teamOf } from '#tests/helpers/agents';
 import { clearLimits, setLimits } from '#tests/helpers/limits';
+import { bootstrapHomeAgent } from '../../../../../scripts/bootstrap-home-agent';
+import { cleanupOrphanAgents } from '../../../../../scripts/cleanup-orphan-agents';
 
 // Full integration flow: a real session against the real (test) database.
 // Requires the test DB to be up and migrated:
@@ -877,6 +879,97 @@ describe('projects', () => {
   });
 
   describe('delete', () => {
+    it('deletes its coordinator and project-only specialists, preserving a shared agent', async () => {
+      const { api } = await signUpClient();
+      const first = (await api.projects.post({ key: 'ONE', name: 'One' })).data!;
+      const second = (await api.projects.post({ key: 'TWO', name: 'Two' })).data!;
+      expect((await bootstrapHomeAgent()).status).toBe('ready');
+      const [coordinator] = await db
+        .select({ id: aiAgent.id, userId: aiAgent.userId })
+        .from(aiAgent)
+        .where(and(eq(aiAgent.teamId, first.teamId), eq(aiAgent.username, 'one-koordinator')));
+      const [home] = await db
+        .select({ id: aiAgent.id, userId: aiAgent.userId })
+        .from(aiAgent)
+        .where(and(eq(aiAgent.teamId, first.teamId), eq(aiAgent.agentRole, 'home')));
+      expect(coordinator).toBeDefined();
+      expect(home).toBeDefined();
+      const only = (
+        await createAgent(api, 'ONE', {
+          name: 'Only specialist',
+          username: 'only-one',
+          kind: 'external',
+        })
+      ).data!.agent;
+      const shared = (
+        await createAgent(api, 'ONE', {
+          name: 'Shared specialist',
+          username: 'shared-one',
+          kind: 'external',
+          projectIds: [first.id, second.id],
+        })
+      ).data!.agent;
+
+      expect((await api.projects({ projectKey: 'ONE' }).delete()).status).toBe(204);
+      const remaining = await db
+        .select({ id: aiAgent.id, username: aiAgent.username })
+        .from(aiAgent);
+      expect(remaining).not.toContainEqual(expect.objectContaining({ id: only.id }));
+      expect(remaining).not.toContainEqual(expect.objectContaining({ id: coordinator!.id }));
+      expect(remaining).toContainEqual(expect.objectContaining({ id: home!.id }));
+      expect(remaining).toContainEqual(expect.objectContaining({ id: shared.id }));
+      expect(
+        await db
+          .select({ id: user.id })
+          .from(user)
+          .where(inArray(user.id, [coordinator!.userId, only.userId, home!.userId])),
+      ).toEqual([{ id: home!.userId }]);
+      expect(
+        await db.select({ id: project.id }).from(project).where(eq(project.id, second.id)),
+      ).toHaveLength(1);
+      const agents = await api.teams({ teamId: first.teamId })['ai-agents'].get();
+      expect(agents.data?.find((agent) => agent.id === shared.id)?.projects).toEqual([
+        expect.objectContaining({ id: second.id }),
+      ]);
+    });
+
+    it('lists orphans in dry run and deletes only non-templates on apply, once', async () => {
+      const { api } = await signUpClient();
+      const project = (await api.projects.post({ key: 'ONE', name: 'One' })).data!;
+      const home = await bootstrapHomeAgent();
+      expect(home.status).toBe('ready');
+      const orphan = (
+        await api.teams({ teamId: project.teamId })['ai-agents'].post({
+          name: 'Orphan',
+          username: 'orphan-one',
+          kind: 'external',
+          projectIds: [],
+        })
+      ).data!.agent;
+      const template = (
+        await api.teams({ teamId: project.teamId })['ai-agents'].post({
+          name: 'Template',
+          username: 'template-one',
+          kind: 'external',
+          template: true,
+        })
+      ).data!.agent;
+      const dry = await cleanupOrphanAgents();
+      expect(dry.found).toContainEqual(expect.objectContaining({ id: orphan.id }));
+      expect(dry.found).not.toContainEqual(expect.objectContaining({ id: template.id }));
+      if (home.status === 'ready') {
+        expect(dry.found).not.toContainEqual(expect.objectContaining({ id: home.agentId }));
+      }
+      expect(dry.deleted).toEqual([]);
+      expect((await cleanupOrphanAgents(true)).deleted).toContain(orphan.id);
+      expect((await cleanupOrphanAgents(true)).found).not.toContainEqual(
+        expect.objectContaining({ id: orphan.id }),
+      );
+      expect(
+        await db.select({ id: aiAgent.id }).from(aiAgent).where(eq(aiAgent.id, template.id)),
+      ).toHaveLength(1);
+    });
+
     it('deletes a project and its scoped entities for an owner', async () => {
       const { api } = await signUpClient();
       await api.projects.post({ key: 'MKT', name: 'Marketing' });
