@@ -58,34 +58,7 @@ Not rolled back:
 
 ## Building the web app elsewhere
 
-`next build` needs about 12 GB for a few minutes, which the server with its agents and local
-models cannot spare. Build it on the Mac or a second PC from the exact commit instead; the
-server checks it and installs it, and building on the server stays the fallback when no
-artifact is given.
-
-On the build machine (a clone of the repository with the commit in it; bun and node):
-
-```sh
-python3 deployment/volition-stack/native/web-artifact.py build \
-  --repo ~/agent-clones/plan --commit <full sha> --out ~/helena-web-artifacts
-rsync -a --delete ~/helena-web-artifacts/web-<first 12 of sha>/ \
-  wilhelmpa@kingston-server.local:agent-work/web-artifacts/<first 12 of sha>/
-```
-
-The build runs in a clean worktree at the commit, installs the server's native packages
-(linux-x64) next to the build machine's (`bun install --os=* --cpu=*`), builds with the
-deployment id the server uses (the first 12 characters of the commit), leaves out packages for
-other platforms and writes `manifest.json` and `SHA256SUMS` for every file.
-
-On the server:
-
-```sh
-sudo deployment/volition-stack/native/deploy.sh --expect <full sha> \
-  --web-artifact /home/wilhelmpa/agent-work/web-artifacts/<first 12 of sha> <branch>
-```
-
-`web-release.sh --artifact` first runs `web-artifact.py verify`: the manifest must name the
-checked-out commit, every file must match its checksum with no file missing or added, no link
-may point outside, and every native module must be linux-x64. Anything else stops the
-deployment before the release is installed (and rolls it back). The web app is only built or
-installed when `apps/web` or `bun.lock` changed; otherwise the artifact is not needed.
+`next build` is too heavy for Kingston. Build the Linux x86_64 release on the Mac and
+transfer its tarball as described in [README.md](README.md). The deploy checks the commit,
+lockfile, file hashes and native module architecture before drain and checkout. The web app
+is only installed when `apps/web` or `bun.lock` changed; otherwise the artifact is not needed.

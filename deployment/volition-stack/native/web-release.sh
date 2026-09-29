@@ -5,8 +5,8 @@
 # does that itself when a deployment fails).
 #
 #   sudo deployment/volition-stack/native/web-release.sh                  build it here
-#   sudo deployment/volition-stack/native/web-release.sh --artifact DIR   install a build made
-#                                                                         elsewhere (web-artifact.sh)
+#   sudo deployment/volition-stack/native/web-release.sh --artifact PATH  install a verified
+#                                                                         release archive
 #
 # Building here takes about 12 GB for a few minutes, which the server running Helena, its
 # agents and the local models cannot spare; a build made on another machine from the exact
@@ -16,11 +16,14 @@ set -euo pipefail
 [[ $EUID -eq 0 ]] || { echo "web-release.sh: run with sudo" >&2; exit 1; }
 
 artifact=''
-case ${1:-} in
-  --artifact) artifact=${2:?web-release.sh: --artifact needs a directory} ;;
-  '') ;;
-  *) echo "web-release.sh: unknown option $1" >&2; exit 1 ;;
-esac
+force_local_build=0
+while (($#)); do
+  case $1 in
+    --artifact) artifact=${2:?web-release.sh: --artifact needs a path}; shift 2 ;;
+    --force-local-build) force_local_build=1; shift ;;
+    *) echo "web-release.sh: unknown option $1" >&2; exit 1 ;;
+  esac
+done
 
 live=/srv/volition/source/plan
 web=$live/apps/web
@@ -40,18 +43,39 @@ release=$releases/$(date +%Y%m%d-%H%M%S)-$deployment_id
 if [[ -n $artifact ]]; then
   # A build made elsewhere: it must be of this very commit, complete, unaltered, and for
   # this machine (web-artifact.sh verify checks all of it).
-  python3 "$here/web-artifact.py" verify "$artifact" --commit "$commit"
+  lock_hash=$(sha256sum "$live/bun.lock" | cut -d' ' -f1)
+  if [[ -f $artifact ]]; then
+    stage=$(mktemp -d)
+    trap 'rm -rf "$stage"' EXIT
+    python3 "$here/web-artifact.py" archive "$artifact" --commit "$commit" \
+      --lockfile-sha256 "$lock_hash" --out "$stage"
+    artifact=$stage/web-$deployment_id
+  else
+    python3 "$here/web-artifact.py" verify "$artifact" --commit "$commit" \
+      --lockfile-sha256 "$lock_hash"
+  fi
   standalone=$artifact/standalone
   static=$artifact/static
   public=$artifact/public
 else
+  available_kib=$(awk '/^MemAvailable:|^SwapFree:/ {sum += $2} END {print sum+0}' /proc/meminfo)
+  if ((available_kib < 16 * 1024 * 1024)); then
+    echo "web-release.sh: WARNING: only $((available_kib / 1024 / 1024)) GiB memory + swap available" >&2
+    if ((force_local_build == 0)); then
+      echo 'web-release.sh: refusing local build; pass --force-local-build to override' >&2
+      exit 1
+    fi
+  fi
   # The build writes into .next as the checkout's owner. A development server's own
   # .next/dev is left to whoever runs it.
   mkdir -p "$web/.next"
   chown "$owner" "$web/.next" "$web/next-env.d.ts"
   find "$web/.next" -mindepth 1 -maxdepth 1 ! -name dev -exec chown -R "$owner" {} +
   log=$(mktemp)
-  if ! as_owner env NEXT_DEPLOYMENT_ID="$deployment_id" bash -c "cd '$web' && bun run build" >"$log" 2>&1; then
+  if ! systemd-run --scope -p MemoryHigh=10G -p MemoryMax=14G -p CPUWeight=20 \
+    --uid="$owner" -- env NEXT_DEPLOYMENT_ID="$deployment_id" \
+    VOLITION_GATED_BUILD="${VOLITION_GATED_BUILD:-0}" \
+    bash -c "cd '$web' && bun run build" >"$log" 2>&1; then
     tail -40 "$log" >&2
     rm -f "$log"
     exit 1

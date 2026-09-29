@@ -35,6 +35,12 @@ const nextConfig: NextConfig = {
   allowedDevOrigins: ['kingston-server.local', 'kingston-server', '127.0.0.1'],
   // standalone build for a lean docker image.
   output: 'standalone',
+  // The release scripts only set this after the exact commit passed the full typecheck gate.
+  ...(process.env.VOLITION_GATED_BUILD === '1' ? { typescript: { ignoreBuildErrors: true } } : {}),
+  // Build caching is still experimental in Next 16; opt in on the isolated build host.
+  ...(process.env.VOLITION_TURBOPACK_BUILD_CACHE === '1'
+    ? { experimental: { turbopackFileSystemCacheForBuild: true } }
+    : {}),
   poweredByHeader: false,
   // Set by web-release.sh to the commit being built: Next then notices when an open page
   // belongs to an older release and loads the new one in full on its next navigation.

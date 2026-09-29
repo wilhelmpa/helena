@@ -7,8 +7,9 @@
 #   sudo deployment/volition-stack/native/deploy.sh [options] [branch]   (default: volition/hub)
 #
 #   --expect SHA          refuse unless the branch is exactly this commit (the gated one)
-#   --web-artifact DIR    install the web app from a build made elsewhere (web-artifact.sh)
+#   --web-artifact PATH   install a verified Linux x64 web release archive
 #                         instead of building it here; it must be built from the exact commit
+#   --force-local-build   allow a local build with less than 16 GiB available + swap
 #   --wait-inflight SEC   how long to wait for running agent work to finish first (600)
 #   --allow-inflight      deploy while agent work is running
 #   --no-rollback         on a failure, stop and leave the half-deployed state for inspection
@@ -43,6 +44,7 @@ live=${HELENA_DEPLOY_LIVE:-/srv/volition/source/plan}
 branch=volition/hub
 expect=''
 web_artifact=${HELENA_WEB_ARTIFACT:-}
+force_local_build=0
 wait_inflight=600
 allow_inflight=0
 rollback_enabled=1
@@ -56,6 +58,7 @@ while (($# > 0)); do
   case $1 in
     --expect) expect=$2; shift 2 ;;
     --web-artifact) web_artifact=$2; shift 2 ;;
+    --force-local-build) force_local_build=1; shift ;;
     --wait-inflight) wait_inflight=$2; shift 2 ;;
     --allow-inflight) allow_inflight=1; shift ;;
     --no-rollback) rollback_enabled=0; shift ;;
@@ -66,6 +69,12 @@ while (($# > 0)); do
     *) branch=$1; shift ;;
   esac
 done
+gated_build=0
+if ((continue_run)); then
+  gated_build=${VOLITION_GATED_BUILD:-0}
+elif [[ -n $expect ]]; then
+  gated_build=1
+fi
 self=$(readlink -f "${BASH_SOURCE[0]}")
 owner=$(stat -c %U "$live")
 as_owner() { runuser -u "$owner" -- "$@"; }
@@ -176,6 +185,8 @@ trap bootstrap_note EXIT
 
 # A failure once the checkout moved: run this script again for the way back (see the top).
 ff_done=0
+# A prior deploy.sh already moved the checkout before handing control to this version.
+((continue_run == 0)) || ff_done=1
 prev_web=''
 on_failure() {
   local status=$? line=${1:-?}
@@ -215,13 +226,15 @@ continue_in_target() {
   local args=(--continue)
   ((rollback_enabled)) || args+=(--no-rollback)
   [[ -z $web_artifact ]] || args+=(--web-artifact "$web_artifact")
+  ((force_local_build == 0)) || args+=(--force-local-build)
   if [[ -n $rollback_to ]]; then
     args+=(--rollback-to "$rollback_to" "$rollback_of")
   else
     args+=(--expect "$after" "$after")
   fi
   trap - ERR
-  exec env HELENA_DEPLOY_CONT_BEFORE="$before" bash "$script" "${args[@]}"
+  exec env HELENA_DEPLOY_CONT_BEFORE="$before" VOLITION_GATED_BUILD="$gated_build" \
+    bash "$script" "${args[@]}"
 }
 
 # An install from the checkout whose source this commit no longer has is left out, instead
@@ -265,6 +278,17 @@ if changed packages/runner packages/sdk bun.lock \
   deployment/volition-stack/integration/scripts/volition-hermes-catalog.py \
   deployment/volition-stack/integration/scripts/volition-hermes-runner; then
   runner_affected=true
+fi
+if ((continue_run)); then trap 'on_failure $LINENO' ERR; fi
+if [[ -n $web_artifact && -z $rollback_to ]] && changed apps/web bun.lock; then
+  [[ -n $expect ]] || { echo 'deploy.sh: --web-artifact requires --expect' >&2; exit 1; }
+  lock_hash=$(as_owner git -C "$live" show "$after:bun.lock" | sha256sum | cut -d' ' -f1)
+  artifact_tool=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/web-artifact.py
+  if [[ -f $web_artifact ]]; then
+    python3 "$artifact_tool" archive "$web_artifact" --commit "$after" --lockfile-sha256 "$lock_hash"
+  else
+    python3 "$artifact_tool" verify "$web_artifact" --commit "$after" --lockfile-sha256 "$lock_hash"
+  fi
 fi
 runner_drain="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/runner-drain/runner-drain.py"
 if $runner_affected && [[ -z ${rollback_to:-} && ${continue_run:-0} != 1 ]]; then
@@ -384,7 +408,12 @@ elif changed apps/web bun.lock; then
     "$live/deployment/volition-stack/native/web-release.sh" --artifact "$web_artifact"
   else
     echo "building the web app"
-    "$live/deployment/volition-stack/native/web-release.sh"
+    if ((force_local_build)); then
+      VOLITION_GATED_BUILD="$gated_build" \
+        "$live/deployment/volition-stack/native/web-release.sh" --force-local-build
+    else
+      VOLITION_GATED_BUILD="$gated_build" "$live/deployment/volition-stack/native/web-release.sh"
+    fi
   fi
   restart+=(volition-plan-web.service)
 fi
