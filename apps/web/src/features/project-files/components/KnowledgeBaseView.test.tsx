@@ -70,7 +70,7 @@ beforeEach(async () => {
       });
     if (url.pathname === '/knowledge/bases/rows') {
       if (unsupported)
-        return Response.json({ message: 'formula.next: date(now)' }, { status: 422 });
+        return Response.json({ error: 'formula.next: date(now)' }, { status: 422 });
       const view = url.searchParams.get('view') ?? 'Tabelle';
       return Response.json({
         path: 'Projects/MKT/Docs/Übersicht.base',
