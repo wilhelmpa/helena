@@ -25,8 +25,16 @@ const LOCAL_TERMINAL_SERVERS: Record<
   LocalTerminalKind,
   { slug: string; kind: string; bases: ReadonlySet<string> }
 > = {
-  'local-qwen36': { slug: 'local', kind: 'lemonade', bases: new Set([LEMONADE_DEFAULT_BASE_URL, 'http://127.0.0.1:13305/v1']) },
-  'local-qwen38': { slug: 'local', kind: 'lemonade', bases: new Set([LEMONADE_DEFAULT_BASE_URL, 'http://127.0.0.1:13305/v1']) },
+  'local-qwen36': {
+    slug: 'local',
+    kind: 'lemonade',
+    bases: new Set([LEMONADE_DEFAULT_BASE_URL, 'http://127.0.0.1:13305/v1']),
+  },
+  'local-qwen38': {
+    slug: 'local',
+    kind: 'lemonade',
+    bases: new Set([LEMONADE_DEFAULT_BASE_URL, 'http://127.0.0.1:13305/v1']),
+  },
   'local-flash': { slug: 'halogen', kind: HALOGEN, bases: new Set([HALOGEN_DEFAULT_BASE_URL]) },
 };
 const MAX_BODY = 2 * 1024 * 1024;

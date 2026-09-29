@@ -87,6 +87,4 @@ export const updateOwnerTerminalSettings = (patch: OwnerTerminalSettingsPatch) =
   });
 
 export const getOwnerTerminalLocalModels = () =>
-  request<{ kind: OwnerTerminalLocalKind; ready: boolean }[]>(
-    '/owner-terminal/local-models',
-  );
+  request<{ kind: OwnerTerminalLocalKind; ready: boolean }[]>('/owner-terminal/local-models');

@@ -179,7 +179,6 @@ export default function OwnerTerminalPanel() {
     }
   }
 
-
   return (
     <div className="flex h-full min-h-0 flex-col">
       <TerminalTabBar

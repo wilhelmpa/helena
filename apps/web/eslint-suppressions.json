@@ -3235,19 +3235,8 @@
     }
   },
   "src/features/owner-terminal/OwnerTerminalPanel.tsx": {
-    "better-tailwindcss/no-restricted-classes": {
-      "count": 1
-    },
     "react-hooks/refs": {
       "count": 2
-    },
-    "react-hooks/set-state-in-effect": {
-      "count": 1
-    }
-  },
-  "src/features/owner-terminal/components/GrantBanner.tsx": {
-    "better-tailwindcss/no-restricted-classes": {
-      "count": 6
     },
     "react-hooks/set-state-in-effect": {
       "count": 1
@@ -3263,19 +3252,6 @@
       "count": 7
     },
     "jsx-a11y/no-autofocus": {
-      "count": 1
-    }
-  },
-  "src/features/owner-terminal/components/TerminalTab.tsx": {
-    "better-tailwindcss/no-restricted-classes": {
-      "count": 6
-    }
-  },
-  "src/features/owner-terminal/components/TerminalTabBar.tsx": {
-    "better-tailwindcss/no-restricted-classes": {
-      "count": 2
-    },
-    "no-restricted-imports": {
       "count": 1
     }
   },
