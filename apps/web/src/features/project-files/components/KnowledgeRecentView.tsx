@@ -8,7 +8,7 @@ import type { KnowledgeCrumb } from '@/components/helena/KnowledgeFrame';
 import { listRecentVaultFiles } from '@/lib/api/endpoints/knowledge';
 import type { FileScope } from '@/lib/api/endpoints/projectFiles';
 import { filesScopeKey } from '@/services/files.service';
-import { knowledgeFolderLabel } from '@/utils/knowledgeFolders';
+import { folderPathLabels } from '@/utils/knowledgeFolders';
 import type { FilePermissions } from './FileBrowser';
 import KnowledgeListView, {
   type KnowledgeCreation,
@@ -74,13 +74,9 @@ export default function KnowledgeRecentView({
         .map((file) => {
           const relative = file.path.slice(source.root.length + 1);
           const folders = relative.split('/').slice(0, -1);
-          const folder = folders
-            .map((segment, depth) =>
-              depth === 0 && source.scope.kind === 'project'
-                ? knowledgeFolderLabel(segment, fixed)
-                : segment,
-            )
-            .join(' / ');
+          const folder = folderPathLabels(folders, fixed, source.scope.kind === 'project').join(
+            ' / ',
+          );
           return {
             key: file.path,
             item: {

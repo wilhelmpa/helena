@@ -38,16 +38,13 @@
     "automation": "{appName}"
   },
   "hub": {
-    "scopeProject": "Este proyecto",
-    "scopeAll": "Todos",
     "messages": "Mensajes",
     "updates": "Actualizaciones",
     "loading": "Cargando mensajes…",
     "mailLoading": "Cargando buzón…",
     "mailError": "No se pudo cargar el buzón.",
     "noProjectMailbox": "No hay ningún buzón configurado para este proyecto.",
-    "connectMailbox": "Conectar un buzón",
-    "scope": "Alcance"
+    "connectMailbox": "Conectar un buzón"
   },
   "mailFilter": {
     "read": "Estado de lectura",

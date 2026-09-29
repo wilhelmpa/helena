@@ -1,6 +1,8 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useTheme } from 'next-themes';
+import { cn } from '@/lib/utils';
 import { useWebLinks } from '@/context/webLinks';
 import { installWebLinkNavigation } from '@/utils/webLinkNavigation';
 import { webLinkScope } from '@/utils/webLinkScope';
@@ -20,6 +22,16 @@ export default function MailHtmlFrame({
   const links = useWebLinks();
   const frameRef = useRef<HTMLIFrameElement>(null);
   const [height, setHeight] = useState(120);
+  const { resolvedTheme } = useTheme();
+  const dark = resolvedTheme === 'dark';
+  // The frame paints the app's own surface, read from the tokens, not a colour of its own.
+  const surface = useMemo(
+    () =>
+      typeof document === 'undefined' || !dark
+        ? undefined
+        : getComputedStyle(document.documentElement).getPropertyValue('--surface-1').trim(),
+    [dark],
+  );
 
   useEffect(() => {
     const frame = frameRef.current;
@@ -56,15 +68,15 @@ export default function MailHtmlFrame({
       observer?.disconnect();
       unlink?.();
     };
-  }, [html, allowRemoteImages, links]);
+  }, [html, allowRemoteImages, links, dark, surface]);
 
   return (
     <iframe
       ref={frameRef}
       title="mail"
       sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox"
-      srcDoc={mailFrameDocument({ html, apiBase: mailApiBase(), allowRemoteImages })}
-      className="w-full rounded-sm bg-white"
+      srcDoc={mailFrameDocument({ html, apiBase: mailApiBase(), allowRemoteImages, dark, surface })}
+      className={cn('w-full rounded-sm', !dark && 'bg-white')}
       style={{ height }}
     />
   );

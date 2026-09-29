@@ -4,7 +4,14 @@
     "Files": "Arsip",
     "Assets": "Lampiran",
     "Boards": "Kanvas",
-    "Inbox": "Masuk"
+    "Inbox": "Masuk",
+    "DocsAgents": "Agen",
+    "FilesReceipts": "Bukti",
+    "FilesMail": "Surel",
+    "FilesChat": "Obrolan",
+    "FilesBrowser": "Peramban",
+    "FilesBoards": "Kanvas",
+    "FilesTasks": "Tugas"
   },
   "title": "Berkas",
   "projectDescription": "Dokumen, lampiran, dan kode proyek ini",
@@ -291,5 +298,10 @@
     "restore": "Pulihkan",
     "restoreTo": "Kembalikan ke {path}",
     "restored": "{name} dipulihkan"
+  },
+  "folderKinds": {
+    "system": "Folder sistem",
+    "task": "Folder tugas",
+    "custom": "Folder sendiri"
   }
 }

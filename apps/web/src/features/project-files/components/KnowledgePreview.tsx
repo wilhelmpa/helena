@@ -125,7 +125,7 @@ export default function KnowledgePreview({
       tabs={[{ id: 'file', label: name }]}
       actions={menu}
       onClose={() => void leave(onClose)}
-      onFullscreen={() => void leave(onOpenLarge)}
+      onOpenPage={() => void leave(onOpenLarge)}
       pin={pin}
       className="ds-file-overlay"
       bodyClassName="ds-knowledge-preview"

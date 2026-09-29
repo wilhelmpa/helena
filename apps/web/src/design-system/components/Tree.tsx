@@ -91,6 +91,10 @@ export type TreeItemProps = {
   actions?: ReactNode;
   // Leading icon, only shown in the collapsed sidebar rail.
   icon?: ReactNode;
+  // A small symbol before the label in every state (the kind of a folder of Wissen), and
+  // the kind that colours it.
+  mark?: ReactNode;
+  markKind?: string;
   // Children do not fold (e.g. a folder tree that folds on its own).
   fixed?: boolean;
   // Deeper groups: key under which the folded state is remembered (per user).
@@ -116,6 +120,8 @@ export function TreeItem({
   dot,
   actions,
   icon,
+  mark,
+  markKind,
   fixed = false,
   storageKey,
   defaultOpen = true,
@@ -158,6 +164,11 @@ export function TreeItem({
   const inner = (
     <>
       {icon && <span className="ds-tree-icon">{icon}</span>}
+      {mark && (
+        <span className="ds-tree-mark" data-kind={markKind}>
+          {mark}
+        </span>
+      )}
       <span className="ds-tree-label">{label}</span>
       {collapsible && (
         <span

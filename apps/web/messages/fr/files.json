@@ -4,7 +4,14 @@
     "Files": "Classement",
     "Assets": "Pièces jointes",
     "Boards": "Toiles",
-    "Inbox": "Entrée"
+    "Inbox": "Entrée",
+    "DocsAgents": "Agents",
+    "FilesReceipts": "Justificatifs",
+    "FilesMail": "Courrier",
+    "FilesChat": "Discussions",
+    "FilesBrowser": "Navigateur",
+    "FilesBoards": "Toiles",
+    "FilesTasks": "Tâches"
   },
   "title": "Fichiers",
   "projectDescription": "Documents, pièces jointes et code de ce projet",
@@ -291,5 +298,10 @@
     "restore": "Restaurer",
     "restoreTo": "Remettre à {path}",
     "restored": "{name} est restauré"
+  },
+  "folderKinds": {
+    "system": "Dossier système",
+    "task": "Dossier de tâche",
+    "custom": "Dossier personnel"
   }
 }

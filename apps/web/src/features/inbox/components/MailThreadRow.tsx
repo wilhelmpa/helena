@@ -6,6 +6,7 @@ import type { MailThreadRow as Row } from '@/lib/api/endpoints/mail';
 import { cn } from '@/lib/utils';
 import { mailListDate } from '../utils/mailDates';
 import { Text } from '@/design-system';
+import { ProjectTag } from '@/components/helena/ProjectTag';
 
 export default function MailThreadRow({
   row,
@@ -75,9 +76,8 @@ export default function MailThreadRow({
       </span>
       <Text as="span" size="xs" tone="muted" className="flex items-center gap-1.5 ps-4">
         {showProject && (
-          <Text as="span" size="xs" className="shrink-0 rounded-sm border px-1 font-mono leading-4">
-            {row.projectKey ?? t('home')}
-          </Text>
+          // The same project mark as Wissen's list, so a row says where it belongs.
+          <ProjectTag projectKey={row.projectKey ?? t('home')} />
         )}
         {triage?.category && (
           <span className="shrink-0 rounded-sm border px-1 leading-4">

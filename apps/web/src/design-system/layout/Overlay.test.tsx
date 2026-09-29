@@ -62,3 +62,92 @@ test('the head is actions · pin · full screen · close, and pinning keeps it o
     }
   });
 });
+
+// Full screen is a real switch (O83): the same button enlarges and reduces, Esc leaves full
+// screen before it closes the overlay, and a pinned overlay keeps the state across pages
+// (another host showing the same pin). A thing with a page of its own has its own button.
+test('full screen switches back, Esc leaves it first, and a pinned overlay keeps it', async () => {
+  await withDom('https://ava.example/project/VOL', async (dom) => {
+    Object.defineProperty(globalThis, 'sessionStorage', {
+      configurable: true,
+      value: dom.window.sessionStorage,
+    });
+    const pins = await import('@/utils/overlayPin');
+    pins.resetOverlayPinForTest();
+    const { Overlay } = await import('./Overlay');
+    const { createRoot } = await import('react-dom/client');
+    const root = createRoot(document.querySelector('#root')!);
+    const closed: string[] = [];
+    const opened: string[] = [];
+    const render = (key: string) =>
+      act(async () => {
+        root.render(
+          <NextIntlClientProvider locale="en" timeZone="UTC" messages={{ common }}>
+            <Overlay
+              key={key}
+              label="Plan"
+              tabs={[{ id: 'file', label: 'Plan' }]}
+              onClose={() => closed.push('closed')}
+              onOpenPage={() => opened.push('page')}
+              pin={{ kind: 'file', value: 'Docs/plan.md' }}
+            >
+              <p>Body</p>
+            </Overlay>
+          </NextIntlClientProvider>,
+        );
+      });
+    try {
+      await render('page-a');
+      const tools = () =>
+        [...document.querySelectorAll('.ds-panel-head-tools button')].map(
+          (button) => button.getAttribute('aria-label') ?? button.textContent,
+        );
+      assert.deepEqual(tools(), [
+        common.openAsPage,
+        common.pinOverlay,
+        common.fullscreen,
+        common.close,
+      ]);
+      const aside = () => document.querySelector('aside')!;
+      const full = () => document.querySelector<HTMLButtonElement>('.ds-panel-full')!;
+      await act(async () => full().click());
+      assert.equal(aside().getAttribute('data-full'), 'true');
+      assert.equal(full().getAttribute('aria-label'), common.exitFullscreen);
+      assert.equal(full().getAttribute('aria-pressed'), 'true');
+      // The same button makes it small again.
+      await act(async () => full().click());
+      assert.equal(aside().getAttribute('data-full'), 'false');
+      assert.equal(full().getAttribute('aria-label'), common.fullscreen);
+      // Esc leaves full screen first; only the next Esc closes.
+      await act(async () => full().click());
+      await act(async () => {
+        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+      });
+      assert.equal(aside().getAttribute('data-full'), 'false');
+      assert.deepEqual(closed, []);
+      await act(async () => {
+        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+      });
+      assert.deepEqual(closed, ['closed']);
+      // The page button is its own action.
+      await act(async () =>
+        document.querySelector<HTMLButtonElement>('.ds-panel-open-page')!.click(),
+      );
+      assert.deepEqual(opened, ['page']);
+      // Pinned and large, another page's host shows it large too.
+      await render('page-a2');
+      await act(async () => full().click());
+      await act(async () => document.querySelector<HTMLButtonElement>('.ds-panel-pin')!.click());
+      assert.equal(aside().getAttribute('data-full'), 'true');
+      await render('page-b');
+      assert.equal(aside().getAttribute('data-full'), 'true');
+      // Reduced while pinned stays reduced on the next page.
+      await act(async () => full().click());
+      await render('page-c');
+      assert.equal(aside().getAttribute('data-full'), 'false');
+    } finally {
+      pins.resetOverlayPinForTest();
+      await act(async () => root.unmount());
+    }
+  });
+});

@@ -16,7 +16,7 @@ import SidebarFolderMenu from './SidebarFolderMenu';
 import { filesPath, homeFilesPath } from '@/utils/paths';
 import {
   compareKnowledgeFolders,
-  folderIcon,
+  describeFolder,
   isDirectChildFolder,
   knowledgeFolderLabel,
 } from '@/utils/knowledgeFolders';
@@ -41,6 +41,7 @@ function FolderNode({
   canWrite: boolean;
 }) {
   const fixed = useTranslations('files.fixedFolders');
+  const kinds = useTranslations('files.folderKinds');
   const pathname = usePathname();
   const params = useSearchParams();
   const scopeMatches = scope.kind === 'project' || (params.get('root') ?? 'home') === scope.root;
@@ -74,12 +75,19 @@ function FolderNode({
     }
   };
   const scopeKey = scope.kind === 'project' ? scope.projectKey : `home:${scope.root}`;
+  // What the folder is (a system folder, a task's, the owner's own) decides its name, its
+  // symbol and the mark of its row (O77/O78); its path on disk stays what it is.
+  const info = describeFolder(path, fixed, scope.kind === 'project');
+  const Mark = info.Icon;
   return (
     <>
       <TreeItem
-        label={scope.kind === 'project' && depth === 0 ? knowledgeFolderLabel(name, fixed) : name}
+        label={info.label}
+        title={`${info.label} · ${kinds(info.kind)}`}
         href={folderUrl(scope, path)}
-        icon={createElement(folderIcon(path, scope.kind === 'project'))}
+        icon={createElement(info.Icon)}
+        mark={<Mark aria-hidden="true" size={14} />}
+        markKind={info.kind}
         active={current}
         containsActive={isAncestor}
         storageKey={`folder:${scopeKey}:${path}`}

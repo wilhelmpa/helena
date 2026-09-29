@@ -203,6 +203,18 @@
 .ds-tree-icon {
   display: none;
 }
+/* The kind of a folder of Wissen, before its label: a system folder and the owner's own
+   in the quiet text colour, a task's in the accent. */
+.ds-tree-mark {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  margin-inline-end: var(--space-2);
+  color: var(--text-3);
+}
+.ds-tree-mark[data-kind='task'] {
+  color: var(--accent);
+}
 .ds-tree-label {
   min-width: 0;
   overflow: hidden;

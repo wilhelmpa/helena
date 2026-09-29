@@ -38,16 +38,13 @@
     "automation": "{appName}"
   },
   "hub": {
-    "scopeProject": "هذا المشروع",
-    "scopeAll": "الكل",
     "messages": "الرسائل",
     "updates": "التحديثات",
     "loading": "جارٍ تحميل الرسائل…",
     "mailLoading": "جارٍ تحميل صندوق البريد…",
     "mailError": "تعذر تحميل صندوق البريد.",
     "noProjectMailbox": "لم يتم إعداد صندوق بريد لهذا المشروع.",
-    "connectMailbox": "ربط صندوق بريد",
-    "scope": "النطاق"
+    "connectMailbox": "ربط صندوق بريد"
   },
   "mailFilter": {
     "read": "حالة القراءة",

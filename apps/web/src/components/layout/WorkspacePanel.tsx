@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { PanelHeaderSlotCtx } from '@/context/panelHeaderSlot';
 import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
-import { useIsMobile } from '@/hooks/use-mobile';
 import { useBrowserPreferences } from '@/hooks/useBrowserPreferences';
 import type { WorkspacePanelMode } from '@/hooks/useWorkspacePanel';
 import { browserControlBase } from '@/utils/browserControl';
@@ -62,9 +61,7 @@ export default function WorkspacePanel({
   mode,
   overlay,
   full,
-  closable,
   onToggleMode,
-  onToggleFull,
   onPickTool,
   onCloseArea,
   onClose,
@@ -83,10 +80,7 @@ export default function WorkspacePanel({
   overlay: boolean;
   // The main tool takes the whole window ("Werkzeug groß").
   full: boolean;
-  // The panel may close and float: the standard layout, not on the dual kiosk.
-  closable: boolean;
   onToggleMode: () => void;
-  onToggleFull: () => void;
   onPickTool: (areaId: string, tool: WorkspaceToolId) => void;
   onCloseArea: (areaId: string) => void;
   onClose: () => void;
@@ -98,7 +92,6 @@ export default function WorkspacePanel({
   onChooseLayout: (choice: 'side' | 'split' | 'full') => void;
 }) {
   const t = useTranslations('nav.workspace');
-  const isMobile = useIsMobile();
   const workspaceConfig = runtimeEnv().workspace;
   const provisioning = useProjectProvisioningQuery(contextProjectKey);
   const provisionedResources = useMemo(
@@ -377,25 +370,17 @@ export default function WorkspacePanel({
               canToggleBrowserLossless={false}
               browserLossless={browserPreferences.lossless}
               externalUrl={entry.id === 'browser' || entry.content ? null : entry.url}
-              isMobile={isMobile}
-              full={full}
-              mode={mode}
-              closable={closable}
               picker={null}
               toolbar={entry.id === 'browser' ? browserBar : undefined}
               slotRef={slotRef(entry.area.id)}
               onToggleAdvanced={() => setAdvanced((current) => !current)}
               onToggleBrowserLossless={browserPreferences.toggleLossless}
-              onToggleMode={onToggleMode}
-              onToggleFull={onToggleFull}
               onReload={() =>
                 setFrameReloads((current) => ({
                   ...current,
                   [entry.key]: (current[entry.key] ?? 0) + 1,
                 }))
               }
-              onClose={onClose}
-              tabbed
             />
           </div>
         ) : (

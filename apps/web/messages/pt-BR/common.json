@@ -304,5 +304,6 @@
     "inherited": "Herda de {appName}",
     "overridden": "Alterado para este projeto",
     "reset": "Redefinir"
-  }
+  },
+  "openAsPage": "Abrir como página"
 }

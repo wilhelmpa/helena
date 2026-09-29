@@ -4,6 +4,7 @@ import { act } from 'react';
 import type { Root } from 'react-dom/client';
 import { NextIntlClientProvider } from 'next-intl';
 import { JSDOM } from 'jsdom';
+import common from '../../../../messages/en/common.json';
 import inbox from '../../../../messages/en/inbox.json';
 import issue from '../../../../messages/en/issue.json';
 import InboxDetailHeader from './InboxDetailHeader';
@@ -23,7 +24,7 @@ let originalGlobalDescriptors: Map<string, PropertyDescriptor | undefined>;
 function render({ projectKey = 'TEST', issueSeq = 42, isMobile = false } = {}) {
   act(() =>
     root.render(
-      <NextIntlClientProvider locale="en" messages={{ inbox, issue }} timeZone="UTC">
+      <NextIntlClientProvider locale="en" messages={{ common, inbox, issue }} timeZone="UTC">
         <InboxDetailHeader
           projectKey={projectKey}
           issueSeq={issueSeq}

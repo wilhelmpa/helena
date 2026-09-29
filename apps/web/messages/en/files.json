@@ -4,7 +4,14 @@
     "Files": "Storage",
     "Assets": "Attachments",
     "Boards": "Canvases",
-    "Inbox": "Incoming"
+    "Inbox": "Incoming",
+    "DocsAgents": "Agents",
+    "FilesReceipts": "Receipts",
+    "FilesMail": "Mail",
+    "FilesChat": "Chats",
+    "FilesBrowser": "Browser",
+    "FilesBoards": "Canvases",
+    "FilesTasks": "Tasks"
   },
   "title": "Files",
   "projectDescription": "Documents, attachments and code of this project",
@@ -291,5 +298,10 @@
     "restore": "Restore",
     "restoreTo": "Put back to {path}",
     "restored": "{name} is restored"
+  },
+  "folderKinds": {
+    "system": "System folder",
+    "task": "Task folder",
+    "custom": "Own folder"
   }
 }

@@ -2,19 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import {
-  Code2,
-  Globe2,
-  Mail,
-  Maximize2,
-  Pin,
-  PinOff,
-  MessageSquare,
-  Minimize2,
-  Plus,
-  Terminal,
-  X,
-} from 'lucide-react';
+import { Code2, Globe2, Mail, MessageSquare, Plus, Terminal, X } from 'lucide-react';
+import { OverlayControls } from '@/design-system';
 import { useBrowserControl } from '@/hooks/useBrowserControl';
 import { useOfferedPanelTools } from '@/extensions/panelTools';
 import { usePanelToolLabel } from '@/extensions/pluginPanelTools';
@@ -203,37 +192,20 @@ export default function WorkspaceTabBar({
         </DropdownMenu>
       </div>
       <div className="ds-panel-head-tools">
-        {onTogglePin && layout !== 'full' && (
-          <button
-            type="button"
-            className="ds-icon-button ds-panel-pin"
-            aria-label={pinned ? t('unpin') : t('pin')}
-            title={pinned ? t('unpin') : t('pin')}
-            aria-pressed={pinned}
-            onClick={onTogglePin}
-          >
-            {pinned ? <PinOff size={15} /> : <Pin size={15} />}
-          </button>
-        )}
-        <button
-          type="button"
-          className="ds-icon-button"
-          aria-label={layout === 'full' ? t('side') : t('full')}
-          title={layout === 'full' ? t('side') : t('full')}
-          aria-pressed={layout === 'full'}
-          onClick={() => onChooseLayout('full')}
-        >
-          {layout === 'full' ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
-        </button>
-        <button
-          type="button"
-          className="ds-icon-button"
-          aria-label={t('close')}
-          title={t('close')}
-          onClick={onClose}
-        >
-          <X size={16} />
-        </button>
+        <OverlayControls
+          onTogglePin={onTogglePin && layout !== 'full' ? onTogglePin : undefined}
+          pinned={pinned}
+          full={layout === 'full'}
+          onToggleFull={() => onChooseLayout('full')}
+          onClose={onClose}
+          labels={{
+            pin: t('pin'),
+            unpin: t('unpin'),
+            enterFull: t('full'),
+            exitFull: t('side'),
+            close: t('close'),
+          }}
+        />
       </div>
     </div>
   );

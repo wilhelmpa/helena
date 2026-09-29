@@ -304,5 +304,6 @@
     "inherited": "继承自 {appName}",
     "overridden": "已为此项目更改",
     "reset": "重置"
-  }
+  },
+  "openAsPage": "作为页面打开"
 }

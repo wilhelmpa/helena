@@ -55,7 +55,7 @@ export function WaitingTile() {
   const red = needs.problems > 0 || needs.failures > 0;
   return (
     <FigureTile
-      href={globalInboxPath()}
+      href={globalInboxPath('updates')}
       label={t('widgets.waiting')}
       value={decisions}
       status={red ? 'danger' : (decisions ?? 0) > 0 ? 'waiting' : undefined}

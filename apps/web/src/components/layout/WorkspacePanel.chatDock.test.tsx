@@ -83,9 +83,7 @@ test('the chat moves to the bar behind another tab without remounting', async ()
             mode="overlay"
             overlay
             full={false}
-            closable
             onToggleMode={() => undefined}
-            onToggleFull={() => undefined}
             onPickTool={() => undefined}
             onCloseArea={() => undefined}
             onClose={() => undefined}

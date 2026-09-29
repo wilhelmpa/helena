@@ -304,5 +304,6 @@
     "inherited": "Mewarisi dari {appName}",
     "overridden": "Diubah untuk proyek ini",
     "reset": "Setel ulang"
-  }
+  },
+  "openAsPage": "Buka sebagai halaman"
 }

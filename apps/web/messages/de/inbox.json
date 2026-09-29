@@ -38,16 +38,13 @@
     "automation": "{appName}"
   },
   "hub": {
-    "scopeProject": "Dieses Projekt",
-    "scopeAll": "Alle",
     "messages": "Nachrichten",
     "updates": "Updates",
     "loading": "Nachrichten werden geladen…",
     "mailLoading": "Posteingang wird geladen …",
     "mailError": "Das Postfach konnte nicht geladen werden.",
     "noProjectMailbox": "Für dieses Projekt ist kein Postfach eingerichtet.",
-    "connectMailbox": "Postfach anbinden",
-    "scope": "Umfang"
+    "connectMailbox": "Postfach anbinden"
   },
   "mailFilter": {
     "read": "Lesestatus",

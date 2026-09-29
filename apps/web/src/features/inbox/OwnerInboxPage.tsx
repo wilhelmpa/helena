@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useState, type ReactNode } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import Shell from '@/components/layout/Shell';
@@ -31,7 +31,9 @@ import { useAgentStatus } from '@/utils/helenaStatus';
 import { Card } from '@/components/helena/DashboardPrimitives';
 import { ProjectTag } from '@/components/helena/ProjectTag';
 import { EmptyState, Page } from '@/design-system';
-import { CheckCircle2, CircleAlert, History } from 'lucide-react';
+import { PageTabs } from '@/components/layout/PageToolbar';
+import { Bell, CheckCircle2, CircleAlert, History, MessageSquareText } from 'lucide-react';
+import InboxWorkspace from './InboxWorkspace';
 import PillButton from '@/components/helena/PillButton';
 import styles from './OwnerInboxPage.module.css';
 
@@ -217,7 +219,34 @@ function InboxCard({ item }: { item: OwnerInboxItem }) {
 
 const HOME = '__helena';
 
-function OwnerInboxContent() {
+// Home's inbox has the tabs of a project's (owner 29.09., O82): the mail of every account
+// and project, and what needs the owner (approvals, mentions, runs to read).
+type OwnerInboxTab = 'messages' | 'updates';
+
+function OwnerInboxTabs({
+  tab,
+  waiting,
+  onChange,
+}: {
+  tab: OwnerInboxTab;
+  waiting: number;
+  onChange: (tab: OwnerInboxTab) => void;
+}) {
+  const t = useTranslations('inbox.hub');
+  return (
+    <PageTabs
+      label={t('messages')}
+      value={tab}
+      onChange={onChange}
+      items={[
+        { value: 'messages', label: t('messages'), icon: MessageSquareText },
+        { value: 'updates', label: t('updates'), icon: Bell, count: waiting || undefined },
+      ]}
+    />
+  );
+}
+
+function OwnerInboxUpdates({ tabs }: { tabs: ReactNode }) {
   const t = useTranslations('inbox.owner');
   const { actions, reads, projects, loading, error } = useOwnerInbox();
   const params = useSearchParams();
@@ -249,7 +278,7 @@ function OwnerInboxContent() {
     .filter((item) => selected === 'all' || item.project?.key === selected)
     .slice(0, 5);
   return (
-    <Page>
+    <Page toolbar={tabs}>
       <div className={styles.content}>
         {visible.length > 0 && (
           <div className={styles.headingRow}>
@@ -338,6 +367,34 @@ function OwnerInboxContent() {
       </div>
       <SystemDetailsDialog />
     </Page>
+  );
+}
+
+function OwnerInboxContent() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const params = useSearchParams();
+  const { actions } = useOwnerInbox();
+  // The mail is first, like in a project; ?tab=updates opens what needs the owner (the
+  // tab shows how many are waiting). The tab is in the address, so a link can point at it.
+  const tab: OwnerInboxTab = params.get('tab') === 'updates' ? 'updates' : 'messages';
+  const change = (next: OwnerInboxTab) => {
+    const query = new URLSearchParams(params);
+    if (next === 'updates') {
+      query.set('tab', 'updates');
+      query.delete('thread');
+    } else query.delete('tab');
+    const search = query.toString();
+    router.replace(search ? `${pathname}?${search}` : pathname, { scroll: false });
+  };
+  const tabs = <OwnerInboxTabs tab={tab} waiting={actions.length} onChange={change} />;
+  // The mail runs edge to edge like the project's (O74/O81).
+  return tab === 'messages' ? (
+    <Page variant="bleed">
+      <InboxWorkspace projectKey={null} page leading={tabs} />
+    </Page>
+  ) : (
+    <OwnerInboxUpdates tabs={tabs} />
   );
 }
 

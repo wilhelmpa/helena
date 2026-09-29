@@ -38,16 +38,13 @@
     "automation": "{appName}"
   },
   "hub": {
-    "scopeProject": "Ce projet",
-    "scopeAll": "Tous",
     "messages": "Messages",
     "updates": "Mises à jour",
     "loading": "Chargement des messages…",
     "mailLoading": "Chargement de la boîte mail…",
     "mailError": "Impossible de charger la boîte mail.",
     "noProjectMailbox": "Aucune boîte mail n’est configurée pour ce projet.",
-    "connectMailbox": "Connecter une boîte mail",
-    "scope": "Portée"
+    "connectMailbox": "Connecter une boîte mail"
   },
   "mailFilter": {
     "read": "Statut de lecture",

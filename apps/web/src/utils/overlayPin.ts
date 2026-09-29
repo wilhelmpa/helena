@@ -50,6 +50,45 @@ function write(next: OverlayPin | null) {
   listeners.forEach((listener) => listener());
 }
 
+// Whether the pinned overlay is full screen (owner 29.09., O83). It belongs to the pin, not
+// to the component that shows it: another page's host shows the pin as large as it was.
+export const OVERLAY_FULL_STORAGE_KEY = 'helena:overlay-full';
+let pinnedFull: boolean | undefined;
+const fullListeners = new Set<() => void>();
+
+function readFull(): boolean {
+  if (pinnedFull !== undefined) return pinnedFull;
+  pinnedFull = false;
+  try {
+    pinnedFull = sessionStorage.getItem(OVERLAY_FULL_STORAGE_KEY) === '1';
+  } catch {
+    // no storage: not full.
+  }
+  return pinnedFull;
+}
+
+export function setPinnedOverlayFull(next: boolean) {
+  pinnedFull = next;
+  try {
+    if (next) sessionStorage.setItem(OVERLAY_FULL_STORAGE_KEY, '1');
+    else sessionStorage.removeItem(OVERLAY_FULL_STORAGE_KEY);
+  } catch {
+    // for this page only.
+  }
+  fullListeners.forEach((listener) => listener());
+}
+
+export function usePinnedOverlayFull(): boolean {
+  return useSyncExternalStore(
+    (listener) => {
+      fullListeners.add(listener);
+      return () => fullListeners.delete(listener);
+    },
+    readFull,
+    () => false,
+  );
+}
+
 export function pinOverlay(pin: OverlayPin) {
   write(pin);
 }
@@ -59,12 +98,15 @@ export function unpinOverlay(pin?: OverlayPin) {
   const now = read();
   if (pin && (!now || now.kind !== pin.kind || now.value !== pin.value)) return;
   write(null);
+  setPinnedOverlayFull(false);
 }
 
 export function toggleOverlayPin(pin: OverlayPin) {
   const now = read();
-  if (now && now.kind === pin.kind && now.value === pin.value) write(null);
-  else write(pin);
+  if (now && now.kind === pin.kind && now.value === pin.value) {
+    write(null);
+    setPinnedOverlayFull(false);
+  } else write(pin);
 }
 
 export function pinnedOverlay(): OverlayPin | null {
@@ -74,6 +116,7 @@ export function pinnedOverlay(): OverlayPin | null {
 // Reset between tests.
 export function resetOverlayPinForTest() {
   current = undefined;
+  pinnedFull = undefined;
 }
 
 function subscribe(listener: () => void) {

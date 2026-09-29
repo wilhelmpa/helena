@@ -1,7 +1,6 @@
 import { useState, type ReactNode } from 'react';
-import { Maximize2, Minimize2, X } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { Button } from '@/components/ui/button';
+import { OverlayControls } from '@/design-system';
 import {
   Dialog,
   DialogContent,
@@ -10,7 +9,6 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
-import { useTranslations } from 'next-intl';
 
 // Thin wrapper over shadcn Dialog that keeps the mount/unmount call style used
 // across the app: callers render `{show && <Modal .../>}`, so the dialog is
@@ -19,8 +17,6 @@ import { useTranslations } from 'next-intl';
 // Width step (components/ui/dialog.tsx): default small, wide large, "xl" for a
 // two-column body.
 const SIZE = { false: 'small', true: 'large', xl: 'xlarge' } as const;
-
-const CONTROL_CLASS = 'size-8 text-muted-foreground hover:bg-sidebar-accent hover:text-foreground';
 
 // The fullscreen props of a dialog whose body adapts to fullscreen. On a phone
 // there is no room for anything else, so it is always fullscreen and the toggle
@@ -73,10 +69,6 @@ export default function Modal({
   fullscreen?: boolean;
   onToggleFullscreen?: () => void;
 }) {
-  const t = useTranslations('common');
-  const FullscreenIcon = fullscreen ? Minimize2 : Maximize2;
-  const fullscreenLabel = fullscreen ? t('exitFullscreen') : t('fullscreen');
-
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent
@@ -151,31 +143,12 @@ export default function Modal({
             should be a field of the body, not a control. */}
         {!createLayout && (
           <div className="ds-dialog-tools">
-            {onToggleFullscreen && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className={CONTROL_CLASS}
-                aria-label={fullscreenLabel}
-                title={fullscreenLabel}
-                // Toggling only swaps classes, so keeping the click from moving
-                // focus leaves the caret in the field the user was editing.
-                onMouseDown={(e) => e.preventDefault()}
-                onClick={onToggleFullscreen}
-              >
-                <FullscreenIcon />
-              </Button>
-            )}
-            <Button
-              variant="ghost"
-              size="icon"
-              className={CONTROL_CLASS}
-              aria-label={t('close')}
-              title={t('close')}
-              onClick={onClose}
-            >
-              <X />
-            </Button>
+            <OverlayControls
+              full={fullscreen}
+              onToggleFull={onToggleFullscreen}
+              onClose={onClose}
+              keepFocus
+            />
           </div>
         )}
       </DialogContent>

@@ -4,7 +4,14 @@
     "Files": "Arquivo",
     "Assets": "Anexos",
     "Boards": "Telas",
-    "Inbox": "Entrada"
+    "Inbox": "Entrada",
+    "DocsAgents": "Agentes",
+    "FilesReceipts": "Comprovantes",
+    "FilesMail": "E-mail",
+    "FilesChat": "Chats",
+    "FilesBrowser": "Navegador",
+    "FilesBoards": "Telas",
+    "FilesTasks": "Tarefas"
   },
   "title": "Arquivos",
   "projectDescription": "Documentos, anexos e código deste projeto",
@@ -291,5 +298,10 @@
     "restore": "Restaurar",
     "restoreTo": "Devolver para {path}",
     "restored": "{name} foi restaurado"
+  },
+  "folderKinds": {
+    "system": "Pasta do sistema",
+    "task": "Pasta de tarefa",
+    "custom": "Pasta própria"
   }
 }

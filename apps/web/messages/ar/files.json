@@ -4,7 +4,14 @@
     "Files": "الأرشيف",
     "Assets": "المرفقات",
     "Boards": "اللوحات",
-    "Inbox": "الوارد"
+    "Inbox": "الوارد",
+    "DocsAgents": "الوكلاء",
+    "FilesReceipts": "الإيصالات",
+    "FilesMail": "البريد",
+    "FilesChat": "المحادثات",
+    "FilesBrowser": "المتصفح",
+    "FilesBoards": "اللوحات",
+    "FilesTasks": "المهام"
   },
   "title": "الملفات",
   "projectDescription": "مستندات هذا المشروع ومرفقاته وشيفرته",
@@ -291,5 +298,10 @@
     "restore": "استعادة",
     "restoreTo": "إعادته إلى {path}",
     "restored": "تمت استعادة {name}"
+  },
+  "folderKinds": {
+    "system": "مجلد النظام",
+    "task": "مجلد مهمة",
+    "custom": "مجلد خاص"
   }
 }

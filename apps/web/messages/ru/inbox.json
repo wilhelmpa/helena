@@ -38,16 +38,13 @@
     "automation": "{appName}"
   },
   "hub": {
-    "scopeProject": "Этот проект",
-    "scopeAll": "Все",
     "messages": "Сообщения",
     "updates": "Обновления",
     "loading": "Загрузка сообщений…",
     "mailLoading": "Загрузка почтового ящика…",
     "mailError": "Не удалось загрузить почтовый ящик.",
     "noProjectMailbox": "Для этого проекта не настроен почтовый ящик.",
-    "connectMailbox": "Подключить почтовый ящик",
-    "scope": "Охват"
+    "connectMailbox": "Подключить почтовый ящик"
   },
   "mailFilter": {
     "read": "Статус прочтения",

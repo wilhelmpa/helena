@@ -38,16 +38,13 @@
     "automation": "{appName}"
   },
   "hub": {
-    "scopeProject": "此项目",
-    "scopeAll": "全部",
     "messages": "消息",
     "updates": "更新",
     "loading": "正在加载消息…",
     "mailLoading": "正在加载邮箱…",
     "mailError": "无法加载邮箱。",
     "noProjectMailbox": "此项目尚未设置邮箱。",
-    "connectMailbox": "连接邮箱",
-    "scope": "范围"
+    "connectMailbox": "连接邮箱"
   },
   "mailFilter": {
     "read": "阅读状态",

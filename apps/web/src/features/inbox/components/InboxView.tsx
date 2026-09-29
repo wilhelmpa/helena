@@ -107,7 +107,7 @@ export default function InboxView({
       />
       <div
         className={cn(
-          'flex w-full min-w-0 flex-col bg-card md:max-w-lg md:border-e',
+          'flex w-full min-w-0 flex-col bg-card md:w-96 md:shrink-0 md:border-e',
           selected && 'hidden md:flex',
         )}
       >

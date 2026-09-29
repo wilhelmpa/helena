@@ -4,7 +4,14 @@
     "Files": "Хранилище",
     "Assets": "Вложения",
     "Boards": "Холсты",
-    "Inbox": "Входящие"
+    "Inbox": "Входящие",
+    "DocsAgents": "Агенты",
+    "FilesReceipts": "Чеки",
+    "FilesMail": "Почта",
+    "FilesChat": "Чаты",
+    "FilesBrowser": "Браузер",
+    "FilesBoards": "Холсты",
+    "FilesTasks": "Задачи"
   },
   "title": "Файлы",
   "projectDescription": "Документы, вложения и код этого проекта",
@@ -291,5 +298,10 @@
     "restore": "Восстановить",
     "restoreTo": "Вернуть в {path}",
     "restored": "{name} восстановлен"
+  },
+  "folderKinds": {
+    "system": "Системная папка",
+    "task": "Папка задачи",
+    "custom": "Своя папка"
   }
 }

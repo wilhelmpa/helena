@@ -38,16 +38,13 @@
     "automation": "{appName}"
   },
   "hub": {
-    "scopeProject": "Proyek ini",
-    "scopeAll": "Semua",
     "messages": "Pesan",
     "updates": "Pembaruan",
     "loading": "Memuat pesan…",
     "mailLoading": "Memuat kotak surat…",
     "mailError": "Kotak surat tidak dapat dimuat.",
     "noProjectMailbox": "Belum ada kotak surat untuk proyek ini.",
-    "connectMailbox": "Hubungkan kotak surat",
-    "scope": "Cakupan"
+    "connectMailbox": "Hubungkan kotak surat"
   },
   "mailFilter": {
     "read": "Status baca",

@@ -38,16 +38,13 @@
     "automation": "{appName}"
   },
   "hub": {
-    "scopeProject": "This project",
-    "scopeAll": "All",
     "messages": "Messages",
     "updates": "Updates",
     "loading": "Loading messages…",
     "mailLoading": "Loading mailbox…",
     "mailError": "The mailbox could not be loaded.",
     "noProjectMailbox": "No mailbox is set up for this project.",
-    "connectMailbox": "Connect a mailbox",
-    "scope": "Scope"
+    "connectMailbox": "Connect a mailbox"
   },
   "mailFilter": {
     "read": "Read status",

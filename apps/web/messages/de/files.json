@@ -4,7 +4,14 @@
     "Files": "Ablage",
     "Assets": "Anhänge",
     "Boards": "Leinwände",
-    "Inbox": "Eingang"
+    "Inbox": "Eingang",
+    "DocsAgents": "Agenten",
+    "FilesReceipts": "Belege",
+    "FilesMail": "Mail",
+    "FilesChat": "Chats",
+    "FilesBrowser": "Browser",
+    "FilesBoards": "Leinwände",
+    "FilesTasks": "Aufgaben"
   },
   "title": "Dateien",
   "projectDescription": "Dokumente, Anhänge und Code dieses Projekts",
@@ -291,5 +298,10 @@
     "restore": "Wiederherstellen",
     "restoreTo": "Nach {path} zurücklegen",
     "restored": "{name} ist wiederhergestellt"
+  },
+  "folderKinds": {
+    "system": "Systemordner",
+    "task": "Aufgabenordner",
+    "custom": "Eigener Ordner"
   }
 }

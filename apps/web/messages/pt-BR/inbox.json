@@ -38,16 +38,13 @@
     "automation": "{appName}"
   },
   "hub": {
-    "scopeProject": "Este projeto",
-    "scopeAll": "Todos",
     "messages": "Mensagens",
     "updates": "Atualizações",
     "loading": "Carregando mensagens…",
     "mailLoading": "Carregando caixa de entrada…",
     "mailError": "Não foi possível carregar a caixa de entrada.",
     "noProjectMailbox": "Nenhuma caixa de entrada foi configurada para este projeto.",
-    "connectMailbox": "Conectar uma caixa de correio",
-    "scope": "Escopo"
+    "connectMailbox": "Conectar uma caixa de correio"
   },
   "mailFilter": {
     "read": "Status de leitura",

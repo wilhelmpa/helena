@@ -95,7 +95,7 @@ export default function ProjectLinkSheet({
       label={name}
       tabs={[{ id: 'project', label: name }]}
       onClose={close}
-      onFullscreen={open}
+      onOpenPage={open}
       closeOnOutsideClick
       className="ds-project-link"
     >

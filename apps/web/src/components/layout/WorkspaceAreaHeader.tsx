@@ -1,9 +1,8 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { Button } from '@/components/ui/button';
+import { OverlayControls } from '@/design-system';
 import { cn } from '@/lib/utils';
 import { WORKSPACE_PANEL_HEADER_CLASS } from './WorkspaceHeader';
 
@@ -43,16 +42,7 @@ export default function WorkspaceAreaHeader({
           </div>
         </>
       )}
-      <Button
-        variant="ghost"
-        size="icon"
-        className="size-7 text-muted-foreground hover:text-foreground"
-        onClick={onClose}
-        title={t('closeArea')}
-        aria-label={t('closeArea')}
-      >
-        <X />
-      </Button>
+      <OverlayControls onClose={onClose} labels={{ close: t('closeArea') }} />
     </div>
   );
 }

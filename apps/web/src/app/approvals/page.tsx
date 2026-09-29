@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
 
 export default function Approvals() {
-  redirect('/inbox');
+  redirect('/inbox?tab=updates');
 }

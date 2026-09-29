@@ -1,11 +1,10 @@
 'use client';
 
-import Link from 'next/link';
-import { ChevronLeft, Maximize2 } from 'lucide-react';
+import { ChevronLeft } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { issuePath } from '@/utils/paths';
-import { Inline, Text } from '@/design-system';
+import { Inline, OverlayControls, Text } from '@/design-system';
 
 export default function InboxDetailHeader({
   projectKey,
@@ -33,16 +32,11 @@ export default function InboxDetailHeader({
       <Text as="span" size="xs" tone="muted" className="min-w-0 flex-1 truncate">
         {projectKey}-{issueSeq}
       </Text>
-      <Button
-        asChild
-        variant="ghost"
-        size="icon"
-        className="size-9 text-muted-foreground hover:text-foreground sm:size-7"
-      >
-        <Link href={issuePath(projectKey, issueSeq)} title={openLabel} aria-label={openLabel}>
-          <Maximize2 aria-hidden="true" />
-        </Link>
-      </Button>
+      <OverlayControls
+        openPageHref={issuePath(projectKey, issueSeq)}
+        labels={{ openPage: openLabel }}
+        size="small"
+      />
     </Inline>
   );
 }

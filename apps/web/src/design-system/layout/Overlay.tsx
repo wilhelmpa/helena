@@ -1,13 +1,19 @@
 'use client';
 
 import { useRef, useState, type CSSProperties, type ReactNode } from 'react';
-import { Maximize2, Minimize2, Pin, PinOff, X } from 'lucide-react';
-import { useTranslations } from 'next-intl';
 import { useExitOnEscape } from '@/hooks/useExitOnEscape';
 import { useExitOnClickOutside } from '@/hooks/useExitOnClickOutside';
 import { SidePanelResizeHandle, useSidePanelWidth, type SidePanelKind } from './sidePanelWidth';
 import { PageChromeCtx } from './pageChrome';
-import { toggleOverlayPin, unpinOverlay, useOverlayPin, type OverlayPin } from '@/utils/overlayPin';
+import { OverlayControls } from '../components/OverlayControls';
+import {
+  setPinnedOverlayFull,
+  toggleOverlayPin,
+  unpinOverlay,
+  useOverlayPin,
+  usePinnedOverlayFull,
+  type OverlayPin,
+} from '@/utils/overlayPin';
 
 export type OverlayTab = { id: string; label: ReactNode };
 
@@ -16,8 +22,10 @@ export type OverlayTab = { id: string; label: ReactNode };
 // tool panel — 12px to the window edges, radius 16, the width the user dragged (shared
 // by every overlay) — the same head: segment tabs on the left (one tab when the thing
 // has no views), its own actions, full screen and close on the right. Esc closes it.
-// Full screen covers the page; a thing with a page of its own (a task) opens that page
-// instead (`onFullscreen`).
+// Full screen is a real switch (owner 29.09., O83): the same button makes the overlay large
+// and small again — the symbol turns from "enlarge" to "reduce", Esc leaves full screen
+// first — and a pinned overlay keeps it across pages. A thing with a page of its own (a
+// task, a file) offers that as its own button (`onOpenPage`), not as the full screen.
 export function Overlay({
   label,
   tabs,
@@ -25,7 +33,7 @@ export function Overlay({
   onTab,
   actions,
   onClose,
-  onFullscreen,
+  onOpenPage,
   escape = true,
   closeOnOutsideClick = false,
   className,
@@ -41,8 +49,9 @@ export function Overlay({
   onTab?: (id: string) => void;
   actions?: ReactNode;
   onClose: () => void;
-  // Replaces the in-place full screen (a task opens its two-column page).
-  onFullscreen?: () => void;
+  // The thing's own page (a task's two-column page, a file large in the page): its own
+  // button before pin, full screen and close.
+  onOpenPage?: () => void;
   // Off while something opened from the overlay handles Esc itself.
   escape?: boolean;
   // A click on the page behind closes it (a task; not a form that holds unsaved input).
@@ -56,11 +65,21 @@ export function Overlay({
   pin?: OverlayPin;
   children: ReactNode;
 }) {
-  const t = useTranslations('common');
   const { width } = useSidePanelWidth(kind);
-  const [full, setFull] = useState(false);
+  const [localFull, setLocalFull] = useState(false);
   const pinnedNow = useOverlayPin();
   const pinned = pin != null && pinnedNow?.kind === pin.kind && pinnedNow.value === pin.value;
+  const pinnedFull = usePinnedOverlayFull();
+  // Pinned, the state lives outside this component, so the overlay another page shows for
+  // the pin comes up as large (or small) as it was; unpinned it is this overlay's own.
+  const full = pinned ? pinnedFull : localFull;
+  const setFull = (next: boolean) => (pinned ? setPinnedOverlayFull(next) : setLocalFull(next));
+  const togglePin = () => {
+    if (!pin) return;
+    if (pinned) setLocalFull(pinnedFull);
+    else setPinnedOverlayFull(localFull);
+    toggleOverlayPin(pin);
+  };
   // Closing a pinned overlay unpins it.
   const close = () => {
     if (pin) unpinOverlay(pin);
@@ -105,36 +124,14 @@ export function Overlay({
         </div>
         <div className="ds-panel-head-tools">
           {actions}
-          {pin && (
-            <button
-              type="button"
-              className="ds-icon-button ds-panel-pin"
-              onClick={() => toggleOverlayPin(pin)}
-              aria-pressed={pinned}
-              title={pinned ? t('unpinOverlay') : t('pinOverlay')}
-              aria-label={pinned ? t('unpinOverlay') : t('pinOverlay')}
-            >
-              {pinned ? <PinOff size={15} /> : <Pin size={15} />}
-            </button>
-          )}
-          <button
-            type="button"
-            className="ds-icon-button"
-            onClick={() => (onFullscreen ? onFullscreen() : setFull(!full))}
-            title={full ? t('exitFullscreen') : t('fullscreen')}
-            aria-label={full ? t('exitFullscreen') : t('fullscreen')}
-          >
-            {full ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
-          </button>
-          <button
-            type="button"
-            className="ds-icon-button"
-            onClick={close}
-            title={t('close')}
-            aria-label={t('close')}
-          >
-            <X size={16} />
-          </button>
+          <OverlayControls
+            onOpenPage={onOpenPage}
+            onTogglePin={pin ? togglePin : undefined}
+            pinned={pinned}
+            full={full}
+            onToggleFull={() => setFull(!full)}
+            onClose={close}
+          />
         </div>
       </div>
       <div className={`ds-overlay-body ${bodyClassName ?? ''}`}>

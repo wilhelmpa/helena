@@ -19,7 +19,7 @@ import { useOpenDailyNoteMutation } from '@/services/everything.service';
 import { useProjectQuery } from '@/services/projects.service';
 import { vaultNotePath } from '@/utils/paths';
 import type { FileItem, FileScope } from '@/lib/api/endpoints/projectFiles';
-import { folderIcon, knowledgeFolderLabel } from '@/utils/knowledgeFolders';
+import { describeFolder, folderPathLabels } from '@/utils/knowledgeFolders';
 import type { FileActions } from '../hooks/useFileActions';
 import type { FileEntryDrag } from '../hooks/useFileEntryDrag';
 import { isCanvas, isDoc, renamedFileName } from '../utils/knowledgeKinds';
@@ -67,9 +67,8 @@ export function useKnowledgeCrumbs(
           : roots(scope.root),
     },
     { label: roots('vault'), onSelect: atRoot ? undefined : () => open('') },
-    ...segments.map((segment, index) => ({
-      label:
-        scope.kind === 'project' && index === 0 ? knowledgeFolderLabel(segment, fixed) : segment,
+    ...folderPathLabels(segments, fixed, scope.kind === 'project').map((label, index) => ({
+      label,
       onSelect: () => open(segments.slice(0, index + 1).join('/')),
     })),
   ];
@@ -125,9 +124,7 @@ export default function KnowledgeFolderView({
       ? scope.kind === 'project'
         ? project.data?.project.name || scope.projectKey
         : roots(scope.root)
-      : scope.kind === 'project' && segments.length === 1
-        ? knowledgeFolderLabel(path, fixed)
-        : segments.at(-1);
+      : describeFolder(path, fixed, scope.kind === 'project').label;
   const rank = (item: FileItem) => (isCanvas(item.name) ? 0 : isDoc(item.name) ? 1 : 2);
   const entries: KnowledgeEntry[] = items
     .filter((item) => item.kind === 'file')
@@ -140,11 +137,10 @@ export default function KnowledgeFolderView({
     .map((item) => ({ key: item.path, item, scope, vaultPath: actions.vaultPath(item) }));
   const subfolders = items
     .filter((item) => item.kind === 'folder')
-    .map((item) => ({
-      name: scope.kind === 'project' && !path ? knowledgeFolderLabel(item.name, fixed) : item.name,
-      path: item.path,
-      icon: folderIcon(item.path, scope.kind === 'project'),
-    }));
+    .map((item) => {
+      const info = describeFolder(item.path, fixed, scope.kind === 'project');
+      return { name: info.label, path: item.path, icon: info.Icon, kind: info.kind };
+    });
 
   const more = scope.kind === 'home' && (
     <DropdownMenu>

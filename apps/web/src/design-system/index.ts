@@ -61,6 +61,8 @@ export { default as Dialog, useModalFullscreen } from '@/components/common/overl
 export type { Crumb } from './layout/Page';
 export { SidePanel } from './layout/SidePanel';
 export { Overlay } from './layout/Overlay';
+export { OverlayControls } from './components/OverlayControls';
+export type { OverlayControlsLabels } from './components/OverlayControls';
 export type { OverlayTab } from './layout/Overlay';
 export {
   useSidePanelWidth,

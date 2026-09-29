@@ -4,7 +4,14 @@
     "Files": "Сховище",
     "Assets": "Вкладення",
     "Boards": "Полотна",
-    "Inbox": "Вхідні"
+    "Inbox": "Вхідні",
+    "DocsAgents": "Агенти",
+    "FilesReceipts": "Чеки",
+    "FilesMail": "Пошта",
+    "FilesChat": "Чати",
+    "FilesBrowser": "Браузер",
+    "FilesBoards": "Полотна",
+    "FilesTasks": "Завдання"
   },
   "title": "Файли",
   "projectDescription": "Документи, вкладення та код цього проєкту",
@@ -291,5 +298,10 @@
     "restore": "Відновити",
     "restoreTo": "Повернути до {path}",
     "restored": "{name} відновлено"
+  },
+  "folderKinds": {
+    "system": "Системна тека",
+    "task": "Тека завдання",
+    "custom": "Власна тека"
   }
 }

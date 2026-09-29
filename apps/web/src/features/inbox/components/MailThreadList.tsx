@@ -8,7 +8,8 @@ import { cn } from '@/lib/utils';
 import MailThreadRow from './MailThreadRow';
 import { Text } from '@/design-system';
 
-const ROW_HEIGHT = 76;
+// Sender line, subject line and the third line with its project mark, plus the padding.
+const ROW_HEIGHT = 80;
 
 // A long inbox renders only the rows on screen; the next page loads when the reader
 // nears the end of the ones loaded.

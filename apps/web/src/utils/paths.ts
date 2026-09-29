@@ -91,7 +91,8 @@ export const decisionsPath = () => '/decisions';
 // The Home pages that read across every project: the task list, the inbox and the
 // agent activity, the approvals and the schedules.
 export const tasksPath = () => '/tasks';
-export const globalInboxPath = () => '/inbox';
+// Home's inbox opens on the mail; `updates` opens what needs the owner (approvals, mentions).
+export const globalInboxPath = (tab?: 'updates') => (tab ? `/inbox?tab=${tab}` : '/inbox');
 export const globalAgentActivityPath = () => '/activity';
 // The timeline narrowed to one agent (see activityFiltersFromSearch), in a project or
 // across every project.

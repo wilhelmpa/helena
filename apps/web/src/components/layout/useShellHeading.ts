@@ -16,7 +16,7 @@ import {
   receiptsPath,
   settingsPath,
 } from '@/utils/paths';
-import { knowledgeFolderLabel, type FixedFolderKey } from '@/utils/knowledgeFolders';
+import { describeFolder, type FixedFolderKey } from '@/utils/knowledgeFolders';
 import { projectColor } from '@/utils/projectColor';
 
 export type ShellHeading = { crumbs: Crumb[]; title: string; accent: string };
@@ -27,7 +27,8 @@ export type ShellHeading = { crumbs: Crumb[]; title: string; accent: string };
 function knowledgeTrail(
   search: URLSearchParams | null,
   href: (folder: string) => string | undefined,
-  label: (segment: string, depth: number) => string = (segment) => segment,
+  // `path` is the folder of the segment, from the project's folder on.
+  label: (segment: string, depth: number, path: string) => string = (segment) => segment,
 ): { crumbs: Crumb[]; title: string | null } {
   const file = search?.get('file') ?? null;
   const folder = search?.get('path') ?? '';
@@ -35,13 +36,13 @@ function knowledgeTrail(
   if (!target) return { crumbs: [], title: null };
   const parts = target.split('/').filter(Boolean);
   const crumbs = parts.slice(0, -1).map((segment, depth) => ({
-    label: label(segment, depth),
+    label: label(segment, depth, parts.slice(0, depth + 1).join('/')),
     href: href(parts.slice(0, depth + 1).join('/')),
   }));
   const last = parts.at(-1)!;
   const title = file
     ? last.replace(/\.(md|markdown|canvas|base)$/i, '')
-    : label(last, parts.length - 1);
+    : label(last, parts.length - 1, parts.join('/'));
   return { crumbs, title };
 }
 
@@ -165,10 +166,8 @@ export function useShellHeading({
     const trail = knowledgeTrail(
       search,
       (folder) => filesPath(key, folder),
-      (segment, depth) =>
-        depth === 0
-          ? knowledgeFolderLabel(segment, (fixed: FixedFolderKey) => tFixed(fixed))
-          : segment,
+      (_segment, _depth, folder) =>
+        describeFolder(folder, (fixed: FixedFolderKey) => tFixed(fixed)).label,
     );
     if (trail.title) return heading([project, knowledge, ...trail.crumbs], trail.title);
     if (search?.get('trash') === '1') return heading([project, knowledge], t('sidebarTrash'));

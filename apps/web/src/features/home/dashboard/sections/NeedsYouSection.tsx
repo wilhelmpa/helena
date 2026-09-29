@@ -125,7 +125,7 @@ export default function NeedsYouSection() {
     <DashboardSection
       label={t('widgets.needs-you')}
       count={data.items.length}
-      href={globalInboxPath()}
+      href={globalInboxPath('updates')}
       hrefLabel={tNav('sidebarInbox')}
     >
       {data.isPending && shown.length === 0 ? (

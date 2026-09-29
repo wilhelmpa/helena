@@ -4,7 +4,14 @@
     "Files": "Archivo",
     "Assets": "Adjuntos",
     "Boards": "Lienzos",
-    "Inbox": "Entrada"
+    "Inbox": "Entrada",
+    "DocsAgents": "Agentes",
+    "FilesReceipts": "Recibos",
+    "FilesMail": "Correo",
+    "FilesChat": "Chats",
+    "FilesBrowser": "Navegador",
+    "FilesBoards": "Lienzos",
+    "FilesTasks": "Tareas"
   },
   "title": "Archivos",
   "projectDescription": "Documentos, adjuntos y código de este proyecto",
@@ -291,5 +298,10 @@
     "restore": "Restaurar",
     "restoreTo": "Devolver a {path}",
     "restored": "{name} se ha restaurado"
+  },
+  "folderKinds": {
+    "system": "Carpeta del sistema",
+    "task": "Carpeta de tarea",
+    "custom": "Carpeta propia"
   }
 }
