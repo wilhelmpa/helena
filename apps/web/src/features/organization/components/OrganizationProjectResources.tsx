@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { useProjectProvisioningQuery } from '@/services/projects.service';
 import { useViewsQuery } from '@/services/views.service';
 import { viewPath } from '@/utils/paths';
+import { Box, Inline, Text } from '@/design-system';
 
 // A requested "board" resource names a project view (see packages/db schema:
 // project_view) by id, e.g. "board:9". The view may since have been renamed or
@@ -44,13 +45,22 @@ export default function OrganizationProjectResources({ projectKey }: { projectKe
   const boardNames = new Map((views.data ?? []).map((view) => [view.id, view.name]));
 
   if (provisioning.isPending) {
-    return <p className="mb-4 text-sm text-muted-foreground">{t('loading')}</p>;
+    return (
+      <Text as="p" size="sm" tone="muted" className="mb-4">
+        {t('loading')}
+      </Text>
+    );
   }
   if (provisioning.isError) {
     return (
-      <p className="mb-4 rounded-lg border border-destructive/40 p-3 text-sm text-destructive">
+      <Text
+        as="p"
+        size="sm"
+        tone="danger"
+        className="mb-4 rounded-md border border-destructive/40 p-3"
+      >
         {t('unavailable')}
-      </p>
+      </Text>
     );
   }
 
@@ -60,19 +70,21 @@ export default function OrganizationProjectResources({ projectKey }: { projectKe
     job.status === 'succeeded' ? CheckCircle2 : job.status === 'failed' ? CircleAlert : Clock3;
 
   return (
-    <section className="mb-4 rounded-lg border bg-card p-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
+    <Box as="section" marginBottom={4} pad={4} className="rounded-md border bg-card">
+      <Inline gap={3} justify="between" wrap align="start">
         <div>
           <h2 className="flex items-center gap-2 text-md font-medium">
             <ServerCog className="size-4 text-muted-foreground" /> {t('title')}
           </h2>
-          <p className="mt-1 text-xs text-muted-foreground">{t('description')}</p>
+          <Text as="p" size="xs" tone="muted" className="mt-1">
+            {t('description')}
+          </Text>
         </div>
         <Badge variant="outline" className="gap-1">
           <Icon className="size-3.5" /> {t(`status.${job.status}`)}
         </Badge>
-      </div>
-      <div className="mt-3 flex flex-wrap gap-2">
+      </Inline>
+      <Inline gap={2} marginTop={3} wrap align="stretch">
         {job.requestedResources.map((resource) => {
           const badge = classifyRequestedResource(resource, boardNames);
           if (badge.kind === 'other') {
@@ -100,13 +112,17 @@ export default function OrganizationProjectResources({ projectKey }: { projectKe
             </Link>
           );
         })}
-      </div>
+      </Inline>
       {job.result?.warnings?.map((warning) => (
-        <p key={warning} className="mt-2 text-xs text-status-waiting">
+        <Text as="p" size="xs" tone="warning" key={warning} className="mt-2">
           {warning}
-        </p>
+        </Text>
       ))}
-      {job.lastError ? <p className="mt-2 text-xs text-destructive">{job.lastError}</p> : null}
-    </section>
+      {job.lastError ? (
+        <Text as="p" size="xs" tone="danger" className="mt-2">
+          {job.lastError}
+        </Text>
+      ) : null}
+    </Box>
   );
 }

@@ -294,5 +294,8 @@
   "resizeSidePanel": "Resize side panel",
   "advanced": "Advanced",
   "switchPerson": "Switch person",
-  "searchSettings": "Search settings …"
+  "searchSettings": "Search settings …",
+  "nameList": {
+    "more": "+{count} more"
+  }
 }

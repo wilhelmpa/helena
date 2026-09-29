@@ -251,7 +251,9 @@
     "full": "Vollbild",
     "close": "Panel schließen",
     "closeTab": "{tab} schließen",
-    "reloadView": "Ansicht neu laden"
+    "reloadView": "Ansicht neu laden",
+    "pin": "Anheften: Seite macht Platz",
+    "unpin": "Lösen: schwebt über der Seite"
   },
   "sidebarTeam": "Team",
   "sidebarAgentPool": "Agentenpool",
@@ -276,5 +278,7 @@
   "adminOnly": "Nur der Administrator sieht diese Einstellungen.",
   "sidebarTerminals": "Terminals",
   "sidebarFiles": "Dateien",
-  "settingsExtensions": "Erweiterungen"
+  "settingsExtensions": "Erweiterungen",
+  "settingsAutopilotExecution": "Autopilot & Ausführung",
+  "settingsProjectAccess": "Zugänge verwalten"
 }

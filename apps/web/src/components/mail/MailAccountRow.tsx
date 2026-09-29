@@ -66,7 +66,7 @@ export default function MailAccountRow({
     );
 
   return (
-    <li className="flex flex-col gap-2 rounded-lg border bg-card p-3">
+    <li className="flex flex-col gap-2 rounded-md border bg-card p-3">
       <div className="flex flex-wrap items-center gap-2">
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-medium">{account.name}</p>
@@ -123,7 +123,7 @@ export default function MailAccountRow({
       {status === 'importing' && total > 0 && (
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <div
-            className="h-1.5 flex-1 overflow-hidden rounded bg-muted"
+            className="h-1.5 flex-1 overflow-hidden rounded-sm bg-muted"
             role="progressbar"
             aria-valuenow={percent}
             aria-valuemin={0}

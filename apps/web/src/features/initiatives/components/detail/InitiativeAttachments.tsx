@@ -19,6 +19,7 @@ import {
   useInitiativeAttachmentsQuery,
   useUploadInitiativeAttachment,
 } from '../../services/attachments.service';
+import { Inline, Stack, Text } from '@/design-system';
 
 // The initiative's files, beside its description: upload, look at, download and
 // delete. A row list rather than the issue panel's card grid, because it sits in
@@ -62,7 +63,7 @@ export default function InitiativeAttachments({ initiativeId }: { initiativeId: 
 
   return (
     <div className="relative" {...(canEdit ? dragHandlers : {})}>
-      <div className="flex h-7 items-center justify-between gap-3">
+      <Inline gap={3} justify="between" className="h-7">
         <h2 className="text-xs font-medium text-muted-foreground">{t('title')}</h2>
         {canEdit && (
           <Button
@@ -85,37 +86,51 @@ export default function InitiativeAttachments({ initiativeId }: { initiativeId: 
           className="hidden"
           onChange={(e) => void send(e.target.files)}
         />
-      </div>
+      </Inline>
 
-      {error && <p className="mt-2 text-xs text-destructive">{error}</p>}
+      {error && (
+        <Text as="p" size="xs" tone="danger" className="mt-2">
+          {error}
+        </Text>
+      )}
 
       {items.length === 0 ? (
-        <p className="mt-3 rounded-md border border-dashed p-4 text-center text-sm text-muted-foreground">
+        <Text
+          as="p"
+          size="sm"
+          tone="muted"
+          className="mt-3 rounded-md border border-dashed p-4 text-center"
+        >
           {canEdit ? t('emptyHint') : t('empty')}
-        </p>
+        </Text>
       ) : (
-        <ul className="mt-3 space-y-1">
+        <Stack as="ul" gap={1} marginTop={3}>
           {items.map((a) => {
             const viewable = isImage(a) || isVideo(a);
             return (
-              <li
+              <Inline
+                as="li"
+                gap={2}
+                pad={2}
                 key={a.id}
-                className="group flex items-center gap-2 rounded-md border bg-card p-1.5 transition-colors hover:border-ring/40"
+                className="group rounded-md border bg-card transition-colors hover:border-ring/40"
               >
                 <button
                   type="button"
                   disabled={!viewable}
                   onClick={() => setViewing(a)}
                   aria-label={t('open', { name: a.filename })}
-                  className="relative flex size-10 shrink-0 items-center justify-center overflow-hidden rounded bg-muted enabled:cursor-zoom-in [&_svg]:size-5"
+                  className="relative flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-sm bg-muted enabled:cursor-zoom-in [&_svg]:size-5"
                 >
                   <AttachmentThumb attachment={a} />
                 </button>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-xs" title={a.filename}>
+                  <Text as="p" size="xs" className="truncate" title={a.filename}>
                     {a.filename}
-                  </p>
-                  <p className="text-xs text-muted-foreground">{formatSize(a.sizeBytes)}</p>
+                  </Text>
+                  <Text as="p" size="xs" tone="muted">
+                    {formatSize(a.sizeBytes)}
+                  </Text>
                 </div>
                 <Button variant="ghost" size="icon" className="size-7" asChild>
                   <a
@@ -139,19 +154,24 @@ export default function InitiativeAttachments({ initiativeId }: { initiativeId: 
                     <Trash2 />
                   </Button>
                 )}
-              </li>
+              </Inline>
             );
           })}
-        </ul>
+        </Stack>
       )}
 
       {viewing && <AttachmentViewer attachment={viewing} onClose={() => setViewing(null)} />}
 
       {draggedFiles !== null && (
-        <div className="pointer-events-none absolute inset-0 z-30 flex flex-col items-center justify-center gap-2 rounded-md border-2 border-dashed border-primary bg-background/80 text-primary backdrop-blur-sm">
+        <Stack
+          gap={2}
+          className="pointer-events-none absolute inset-0 z-30 items-center justify-center rounded-md border-2 border-dashed border-primary bg-background/80 text-primary backdrop-blur-sm"
+        >
           <Download className="size-6" />
-          <span className="text-sm font-medium">{t('dropToUpload')}</span>
-        </div>
+          <Text as="span" size="sm" className="font-medium">
+            {t('dropToUpload')}
+          </Text>
+        </Stack>
       )}
     </div>
   );

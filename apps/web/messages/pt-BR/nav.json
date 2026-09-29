@@ -251,7 +251,9 @@
     "full": "Tela cheia",
     "close": "Fechar painel",
     "closeTab": "Fechar {tab}",
-    "reloadView": "Recarregar visualização"
+    "reloadView": "Recarregar visualização",
+    "pin": "Fixar: a página abre espaço",
+    "unpin": "Soltar: flutua sobre a página"
   },
   "sidebarTeam": "Equipe",
   "sidebarAgentPool": "Pool de agentes",
@@ -276,5 +278,7 @@
   "adminOnly": "Só o administrador vê estas configurações.",
   "sidebarTerminals": "Terminais",
   "sidebarFiles": "Arquivos",
-  "settingsExtensions": "Extensões"
+  "settingsExtensions": "Extensões",
+  "settingsAutopilotExecution": "Piloto automático e execução",
+  "settingsProjectAccess": "Gerenciar acessos"
 }

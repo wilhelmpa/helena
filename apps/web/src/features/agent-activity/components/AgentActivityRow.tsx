@@ -10,6 +10,7 @@ import { formatElapsed } from '@/utils/agentUsage';
 import { formatDateTime } from '@/utils/dates';
 import { activityTask } from '../utils/activityDetails';
 import AgentActivityDetails from './AgentActivityDetails';
+import { Inline, Text } from '@/design-system';
 
 const icon = {
   chat: MessageSquare,
@@ -63,12 +64,16 @@ export default function AgentActivityRow({
       <Icon className="mt-0.5 size-4 shrink-0 text-muted-foreground sm:mt-0" />
       <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-0.5">
         <span className="font-medium">{entry.agent?.name ?? entry.workflowId}</span>
-        <span className="text-xs text-muted-foreground">{t(`kinds.${entry.kind}`)}</span>
+        <Text as="span" size="xs" tone="muted">
+          {t(`kinds.${entry.kind}`)}
+        </Text>
         <StatusBadge status={toneOf(entry.status)}>
           {isOneOf(STATUSES, entry.status) ? t(`status.${entry.status}`) : entry.status}
         </StatusBadge>
         {showProject && entry.project && (
-          <span className="font-mono text-xs text-muted-foreground">{entry.project.key}</span>
+          <Text as="span" size="xs" tone="muted" className="font-mono">
+            {entry.project.key}
+          </Text>
         )}
         {task && (
           <Link
@@ -79,7 +84,7 @@ export default function AgentActivityRow({
             {task.label}
           </Link>
         )}
-        <span className="flex flex-wrap items-center gap-x-2 text-xs text-muted-foreground">
+        <Text as="span" size="xs" tone="muted" className="flex flex-wrap items-center gap-x-2">
           {entry.trigger && (
             <span>
               {isOneOf(TRIGGERS, entry.trigger) ? t(`triggers.${entry.trigger}`) : entry.trigger}
@@ -91,9 +96,9 @@ export default function AgentActivityRow({
           {entry.runBudgetSeconds != null && (
             <span>{t('runBudget', { minutes: Math.round(entry.runBudgetSeconds / 60) })}</span>
           )}
-        </span>
+        </Text>
       </div>
-      <div className="flex shrink-0 items-center gap-1 text-xs text-muted-foreground">
+      <Inline gap={1} className="shrink-0 text-xs text-muted-foreground">
         <Tooltip>
           <TooltipTrigger asChild>
             <time dateTime={entry.at}>{relativeTime(entry.at)}</time>
@@ -101,7 +106,7 @@ export default function AgentActivityRow({
           <TooltipContent>{formatDateTime(entry.at)}</TooltipContent>
         </Tooltip>
         <AgentActivityDetails entry={entry} />
-      </div>
+      </Inline>
     </li>
   );
 }

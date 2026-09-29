@@ -13,18 +13,22 @@ import { compactCount } from '../../utils/numbers';
 import GodTeamMembers from './GodTeamMembers';
 import GodTeamProjects from './GodTeamProjects';
 
+import { Box, Inline, Stack, Text } from '@/design-system';
+
 // One number from the team, with a quiet label under it. The counts read as a grid so
 // the size of a team is one glance rather than a list of sentences.
 function Stat({ label, value }: { label: string; value: number }) {
   const t = useTranslations('god.teamPanel');
   return (
-    <div
-      className="rounded-lg border border-sidebar-border bg-card px-3 py-2.5"
+    <Box
+      padX={3}
+      padY={3}
+      className="rounded-md border border-sidebar-border bg-card"
       title={t('statTitle', { label, value })}
     >
       <div className="text-xl font-semibold tabular-nums">{compactCount(value)}</div>
       <div className="text-xs text-muted-foreground">{label}</div>
-    </div>
+    </Box>
   );
 }
 
@@ -67,25 +71,33 @@ export default function GodTeamDetailPanel({
         data-slot="sheet-content"
         className="ml-auto flex h-full w-full flex-col border-s border-sidebar-border bg-background sm:w-[680px] sm:max-w-[92vw]"
       >
-        <div className="flex shrink-0 items-start justify-between gap-3 border-b border-sidebar-border px-4 pt-4 pb-4">
-          <div className="min-w-0 space-y-1.5">
+        <Inline
+          gap={3}
+          align="start"
+          justify="between"
+          padX={4}
+          padTop={4}
+          padBottom={4}
+          className="flex shrink-0 items-start justify-between border-b border-sidebar-border"
+        >
+          <Stack gap={2} className="min-w-0">
             <h2 className="truncate text-md font-semibold">
               {team ? team.name : tCommon('loading')}
             </h2>
             {team && (
-              <div className="flex flex-wrap items-center gap-1.5">
+              <Inline gap={2} wrap className="flex flex-wrap items-center">
                 <Badge
                   variant={team.mcpEnabled ? 'secondary' : 'outline'}
                   className="px-1.5 py-0 text-xs font-medium"
                 >
                   {t(team.mcpEnabled ? 'mcpEnabled' : 'mcpOff')}
                 </Badge>
-                <span className="text-xs text-muted-foreground">
+                <Text as="span" size="xs" tone="muted">
                   {t('created', { date: formatDate(team.createdAt) })}
-                </span>
-              </div>
+                </Text>
+              </Inline>
             )}
-          </div>
+          </Stack>
           <Button
             variant="ghost"
             size="icon"
@@ -95,9 +107,9 @@ export default function GodTeamDetailPanel({
           >
             <X />
           </Button>
-        </div>
+        </Inline>
 
-        <div className="flex-1 space-y-6 overflow-y-auto px-4 py-4">
+        <Stack gap={5} padX={4} padY={4} className="flex-1 overflow-y-auto">
           {!team ? (
             <ListSkeleton rows={5} rowClassName="h-12" />
           ) : (
@@ -112,7 +124,7 @@ export default function GodTeamDetailPanel({
               <GodTeamMembers teamId={teamId} />
             </>
           )}
-        </div>
+        </Stack>
       </div>
     </div>
   );

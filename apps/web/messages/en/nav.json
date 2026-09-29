@@ -251,7 +251,9 @@
     "full": "Full screen",
     "close": "Close panel",
     "closeTab": "Close {tab}",
-    "reloadView": "Reload view"
+    "reloadView": "Reload view",
+    "pin": "Pin: the page makes room",
+    "unpin": "Unpin: floats over the page"
   },
   "sidebarTeam": "Team",
   "sidebarAgentPool": "Agent pool",
@@ -276,5 +278,7 @@
   "adminOnly": "Only the administrator sees these settings.",
   "sidebarTerminals": "Terminals",
   "sidebarFiles": "Files",
-  "settingsExtensions": "Extensions"
+  "settingsExtensions": "Extensions",
+  "settingsAutopilotExecution": "Autopilot & execution",
+  "settingsProjectAccess": "Manage access"
 }

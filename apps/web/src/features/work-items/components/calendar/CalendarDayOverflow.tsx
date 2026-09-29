@@ -44,7 +44,7 @@ export function CalendarDayOverflow({
                     setOpen(false);
                     onOpen(issue.id);
                   }}
-                  className="flex w-full items-center gap-1.5 rounded px-2 py-1 text-left text-xs hover:bg-accent"
+                  className="flex w-full items-center gap-1.5 rounded-sm px-2 py-1 text-left text-xs hover:bg-accent"
                 >
                   <span
                     className="inline-block size-1.5 shrink-0 rounded-full"

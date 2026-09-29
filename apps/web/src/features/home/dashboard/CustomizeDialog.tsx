@@ -22,6 +22,7 @@ import type { DashboardWidget } from '@/extensions/dashboardWidgets';
 import type { HomeDashboardPreference } from '@/lib/api/endpoints/userPreferences';
 import { moveTo, withVisibility, type Arranged } from './layout';
 import { useWidgetLabel } from './WidgetView';
+import { Box } from '@/design-system';
 
 // One widget in "Anpassen": the grip to drag it, its name, the arrows that move it by
 // keyboard or tap, and the switch that shows or hides it.
@@ -127,7 +128,11 @@ function WidgetList({
       </h3>
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
         <SortableContext items={ids} strategy={verticalListSortingStrategy}>
-          <ul className="flex flex-col gap-px rounded-lg border border-sidebar-border bg-card p-1">
+          <Box
+            as="ul"
+            pad={1}
+            className="flex flex-col gap-px rounded-md border border-sidebar-border bg-card"
+          >
             {entries.map((entry, index) => (
               <WidgetRow
                 key={entry.widget.id}
@@ -138,7 +143,7 @@ function WidgetList({
                 onToggle={(visible) => onChange(withVisibility(prefs, entry.widget, visible))}
               />
             ))}
-          </ul>
+          </Box>
         </SortableContext>
       </DndContext>
     </section>

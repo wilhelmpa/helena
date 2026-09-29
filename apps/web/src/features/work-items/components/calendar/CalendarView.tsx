@@ -139,7 +139,7 @@ export default function CalendarView({
           back before reappearing on the new day. */}
       <DragOverlay dropAnimation={null}>
         {activeIssue ? (
-          <div className="flex items-center gap-1 rounded bg-background px-1.5 py-0.5 text-xs shadow-md">
+          <div className="flex items-center gap-1 rounded-sm bg-background px-1.5 py-0.5 text-xs shadow-md">
             <span
               className="inline-block size-1.5 shrink-0 rounded-full"
               style={{ backgroundColor: dot(activeIssue) }}

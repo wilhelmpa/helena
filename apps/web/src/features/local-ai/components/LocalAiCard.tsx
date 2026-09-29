@@ -68,7 +68,7 @@ export default function LocalAiCard({
   return (
     <section
       className={cn(
-        '@container flex flex-col gap-3 rounded-lg border bg-card p-4 text-sm',
+        '@container flex flex-col gap-3 rounded-md border bg-card p-4 text-sm',
         className,
       )}
       aria-labelledby="local-ai-card-title"

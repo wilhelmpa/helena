@@ -18,7 +18,7 @@ export function RoutinesTable({
   const tCommon = useTranslations('common');
   const head = 'h-9 px-3 text-xs font-medium text-muted-foreground';
   return (
-    <div className="overflow-hidden rounded-lg border bg-card">
+    <div className="overflow-hidden rounded-md border bg-card">
       <ul className="divide-y md:hidden">
         {routines.map((routine) => (
           <RoutineItem

@@ -20,7 +20,3 @@
   --trading-card-line: var(--line);
   --trading-button-line: var(--line-strong);
 }
-
-:global(body:has([data-trading-dashboard]) [data-app-header]) {
-  display: none;
-}

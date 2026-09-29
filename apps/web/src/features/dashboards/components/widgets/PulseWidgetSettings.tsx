@@ -2,6 +2,7 @@ import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 import type { PulseUnit } from '@/lib/api/endpoints/analytics';
 import type { WidgetConfig } from '@/utils/dashboardWidgets';
+import { Inline } from '@/design-system';
 
 const UNIT_OPTIONS: PulseUnit[] = ['hour', 'day', 'week'];
 
@@ -16,7 +17,7 @@ export default function PulseWidgetSettings({
   const t = useTranslations('dashboards.pulse');
   const unit = config.granularity ?? 'day';
   return (
-    <div className="flex gap-1">
+    <Inline gap={1} align="stretch">
       {UNIT_OPTIONS.map((option) => (
         <button
           key={option}
@@ -32,6 +33,6 @@ export default function PulseWidgetSettings({
           {t(`unit.${option}`)}
         </button>
       ))}
-    </div>
+    </Inline>
   );
 }

@@ -20,6 +20,40 @@ for (const locale of fs.readdirSync(messagesDir)) {
 
 const jsonProcessor = { meta: { name: '.json' }, ...i18nJson.processors['.json'] };
 
+// The UI framework's style rules (docs/ui-framework.md). Radii: only the five steps of
+// tokens.css (sm chips/badges · md buttons/fields · lg cards/rows/menus · xl panels/dialogs
+// · full pills), everywhere in the app — no rounded, rounded-xs, rounded-2xl…, no
+// rounded-[…].
+const RADIUS_STEPS_ONLY = {
+  pattern:
+    '^(?:[^:\\s]+:)*!?rounded(?:-(?:[trbl]|tl|tr|bl|br|s|e|ss|se|es|ee))?(?:-(?:xs|[2-4]xl|\\[[^\\]]+\\]))?$',
+  message:
+    'Only the radius steps rounded-sm/md/lg/xl/full (tokens.css). See docs/ui-framework.md §Radien.',
+};
+// Pages and features build from the framework's components: no Tailwind classes of their
+// own for spacing, type size or radius (owner 28.09.: "keine eigenen Styles"). Place
+// things with Stack/Inline/Grid/Box, write text with Text, take radii from the
+// components. What a component lacks becomes a variant of it, not an inline class.
+const FRAMEWORK_ONLY = [
+  {
+    pattern:
+      '^(?:[^:\\s]+:)*!?-?(?:p|px|py|pt|pb|ps|pe|pl|pr|m|mx|my|mt|mb|ms|me|ml|mr|gap|gap-x|gap-y|space-x|space-y)-(?:[0-9]+(?:\\.5)?|px)$',
+    message:
+      'No spacing classes in pages and features — use Stack, Inline, Grid or Box from @/design-system (docs/ui-framework.md §Abstände).',
+  },
+  {
+    pattern: '^(?:[^:\\s]+:)*!?text-(?:xs|sm|md|base|xl|2xl|3xl)$',
+    message:
+      'No type-size classes in pages and features — use Text from @/design-system (docs/ui-framework.md §Schrift).',
+  },
+  {
+    pattern:
+      '^(?:[^:\\s]+:)*!?rounded(?:-(?:[trbl]|tl|tr|bl|br|s|e|ss|se|es|ee))?-(?:sm|md|lg|xl)$',
+    message:
+      'No radius classes in pages and features — the component carries its radius (docs/ui-framework.md §Radien).',
+  },
+];
+
 /** @type {import("eslint").Linter.Config[]} */
 export default [
   ...nextJsConfig,
@@ -138,6 +172,16 @@ export default [
       ],
     },
   },
+  // Radii everywhere (framework rule, docs/ui-framework.md §Radien).
+  {
+    files: ['src/**/*.{ts,tsx}'],
+    ignores: ['src/**/*.test.{ts,tsx}'],
+    plugins: { 'better-tailwindcss': betterTailwindcss },
+    settings: { 'better-tailwindcss': { entryPoint: 'src/app/globals.css' } },
+    rules: {
+      'better-tailwindcss/no-restricted-classes': ['error', { restrict: [RADIUS_STEPS_ONLY] }],
+    },
+  },
   // The sidebar is the reference for every surface in the app
   // (docs/volition-design-helena-ui.md): a page never invents its own color or size.
   // `src/components/ui` and `src/components/common` are the building blocks that
@@ -191,6 +235,8 @@ export default [
               message:
                 'No arbitrary Tailwind values here — use a design-system building block or token (docs/design-system.md).',
             },
+            RADIUS_STEPS_ONLY,
+            ...FRAMEWORK_ONLY,
             {
               // A page has no container width of its own: PageBody is full width, reading
               // text is centred by PageBody reading (docs/design-system.md §3).

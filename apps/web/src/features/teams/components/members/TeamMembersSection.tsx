@@ -42,13 +42,20 @@ import TableCard from '@/components/common/page/TableCard';
 // tell them apart; selecting an agent opens the section that configures it. Owners and
 // managers run the list, so only they invite and see the pending invites; only an owner
 // removes a person from it.
-export default function TeamMembersSection({ teamId }: { teamId: number }) {
+export default function TeamMembersSection({
+  teamId,
+  humansOnly = false,
+}: {
+  teamId: number;
+  // Organisation › Menschen (owner, O34): people only; the agents live in Team.
+  humansOnly?: boolean;
+}) {
   const t = useTranslations('teams');
   const tMembers = useTranslations('members');
   const tInvite = useTranslations('teams.invite');
   const tCommon = useTranslations('common');
   const team = useTeam(teamId);
-  const [kind, setKind] = useState<MemberKind>('all');
+  const [kind, setKind] = useState<MemberKind>(humansOnly ? 'human' : 'all');
   const { search, setSearch, term } = useSearchTerm();
   const paging = usePaging();
   const membersQuery = useTeamMembersQuery(teamId, { search: term, kind, ...paging.params });
@@ -91,16 +98,18 @@ export default function TeamMembersSection({ teamId }: { teamId: number }) {
   return (
     <SectionPageView title={t('sections.members.title')} wide>
       <PageToolbar>
-        <PageTabs<MemberKind>
-          label={t('sections.members.title')}
-          value={kind}
-          onChange={onKindChange}
-          items={[
-            { value: 'all', label: tMembers('tabs.all'), icon: UsersRound },
-            { value: 'human', label: tMembers('tabs.people'), icon: UserRound },
-            { value: 'agent', label: tMembers('tabs.agents'), icon: Bot },
-          ]}
-        />
+        {!humansOnly && (
+          <PageTabs<MemberKind>
+            label={t('sections.members.title')}
+            value={kind}
+            onChange={onKindChange}
+            items={[
+              { value: 'all', label: tMembers('tabs.all'), icon: UsersRound },
+              { value: 'human', label: tMembers('tabs.people'), icon: UserRound },
+              { value: 'agent', label: tMembers('tabs.agents'), icon: Bot },
+            ]}
+          />
+        )}
         <PageToolbarSpacer />
         <PageSearch value={search} onChange={onSearchChange} placeholder={searchPlaceholder} />
         <PageActions

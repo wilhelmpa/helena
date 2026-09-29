@@ -47,10 +47,19 @@ export function projectSettingsPages(projectKey: string): ProjectSettingsPage[] 
     page('issue-templates', 'settingsWork', 'Vorlagen'),
     page('configuration', 'settingsWork', 'Unteraufgaben Archiv'),
     page('actions', 'settingsWork', 'Aktionen Knöpfe'),
-    page('agents', 'settingsAgents', 'Standard-Ausführung Modell Tagesbudget', 'settingsExecution'),
-    page('autopilot', 'settingsAgents', 'Autopilot Stufe Budget Freigaben'),
+    page(
+      'autopilot',
+      'settingsAgents',
+      'Autopilot Stufe Budget Freigaben Standard-Ausführung Modell Tagesbudget Vorgabe',
+      'settingsAutopilotExecution',
+    ),
     page('network', 'settingsAgents', 'Netzwerk erlaubte Ziele'),
-    page('environment', 'settingsAgents', 'Umgebung Variablen'),
+    page(
+      'environment',
+      'settingsAgents',
+      'Zugänge Umgebung Variablen Schlüssel Logins Freigaben',
+      'settingsProjectAccess',
+    ),
     page('browser', 'settingsAgents', 'Browser Domains Takt Sperren'),
     page(
       'knowledge',

@@ -14,7 +14,7 @@
   color: var(--foreground);
 }
 .prose :global(.md-content .tableWrapper) {
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   box-shadow: 0 0 0 1px var(--border);
 }
 .prose :global(.md-content table) {
@@ -47,7 +47,7 @@
 }
 .prose :global(.md-content td:first-child p) {
   width: max-content;
-  border-radius: 99px;
+  border-radius: var(--radius-full);
   padding: 1px 8px;
   background: var(--accent);
   color: var(--accent-foreground);

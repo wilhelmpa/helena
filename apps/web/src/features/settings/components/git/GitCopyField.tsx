@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { copyText } from '@/utils/clipboard';
 
+import { Stack, Inline } from '@/design-system';
+
 // A labelled read-only value with a copy button: the payload URL and secret the
 // user pastes into the repository's webhook form. `masked` hides the value until
 // the field is focused.
@@ -30,9 +32,9 @@ export default function GitCopyField({
   }
 
   return (
-    <div className="space-y-1.5">
+    <Stack gap={2}>
       <div className="text-xs font-medium">{label}</div>
-      <div className="flex items-center gap-2">
+      <Inline gap={2} className="flex items-center">
         <Input
           readOnly
           className="font-mono text-xs"
@@ -43,7 +45,7 @@ export default function GitCopyField({
           {tCommon('copy')}
         </Button>
         {action}
-      </div>
-    </div>
+      </Inline>
+    </Stack>
   );
 }

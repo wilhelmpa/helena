@@ -6,7 +6,7 @@ import { GanttChart, Plus, Table2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useShell } from '@/context/shellContext';
 import { usePermissions } from '@/hooks/usePermissions';
-import { WorkspacePageHeader } from '@/components/layout/WorkspaceHeader';
+import { Page } from '@/design-system';
 import {
   PageActions,
   PageTabs,
@@ -48,8 +48,7 @@ export default function CyclesPage({ view }: { view: CyclesView }) {
   const canCreate = can('cycles', 'create');
 
   return (
-    <div className="flex flex-1 flex-col overflow-hidden">
-      <WorkspacePageHeader title={t('title')} />
+    <Page variant="fill" title={t('title')}>
       {/* One row (docs/volition/ui-standard.md): the layouts and the one primary
           action. */}
       <PageToolbar>
@@ -81,6 +80,6 @@ export default function CyclesPage({ view }: { view: CyclesView }) {
       />
 
       {creating && <CycleFormDialog projectKey={projectKey} onClose={() => setCreating(false)} />}
-    </div>
+    </Page>
   );
 }

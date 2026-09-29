@@ -44,7 +44,7 @@ export default function EditorLinkPreviewCard({
       target="_blank"
       rel="noopener noreferrer"
       referrerPolicy="no-referrer"
-      className="block rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      className="block rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring"
       aria-label={t('openPreviewLink', { name: preview?.title || fallbackTitle })}
     >
       {preview?.image && <EditorLinkPreviewImage key={preview.image} src={preview.image} />}
@@ -58,8 +58,8 @@ export default function EditorLinkPreviewCard({
         </div>
         {loading ? (
           <div className="space-y-2 py-1" role="status">
-            <div className="h-3 w-4/5 animate-pulse rounded bg-muted motion-reduce:animate-none" />
-            <div className="h-3 w-3/5 animate-pulse rounded bg-muted motion-reduce:animate-none" />
+            <div className="h-3 w-4/5 animate-pulse rounded-sm bg-muted motion-reduce:animate-none" />
+            <div className="h-3 w-3/5 animate-pulse rounded-sm bg-muted motion-reduce:animate-none" />
             <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <LoaderCircle
                 className="size-3 animate-spin motion-reduce:animate-none"

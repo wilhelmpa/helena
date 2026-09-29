@@ -29,7 +29,7 @@ export default function UpdateGroupCard({
   // The group's summary and risk are the same on every package; the badges read the first.
   const headline = { ...first, security: security.length > 0 };
   return (
-    <div className="flex min-w-0 flex-col gap-2 rounded-lg border border-sidebar-border bg-card p-3">
+    <div className="flex min-w-0 flex-col gap-2 rounded-md border border-sidebar-border bg-card p-3">
       <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
         <span className="min-w-0 truncate text-sm font-medium">{text(first.sourceLabel)}</span>
         <span className="text-xs text-muted-foreground">

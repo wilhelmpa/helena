@@ -10,6 +10,7 @@ import { useSetAgentTokenCeilings } from '../services/organization.service';
 import { parseCeiling } from '../utils/tokenCeilings';
 import OrganizationAgentPause from './OrganizationAgentPause';
 import OrganizationTokenUsage from './OrganizationTokenUsage';
+import { Stack, Text } from '@/design-system';
 
 // Whether the agent takes work, and what its runs may spend.
 export default function OrganizationAgentGovernance({
@@ -28,7 +29,7 @@ export default function OrganizationAgentGovernance({
   const invalid = dailyCeiling === undefined || monthlyCeiling === undefined;
 
   return (
-    <div className="space-y-3 rounded-md border p-3">
+    <Stack gap={3} pad={3} className="rounded-md border">
       <OrganizationAgentPause teamId={teamId} agent={agent} />
       <OrganizationTokenUsage
         label={t('today')}
@@ -42,7 +43,9 @@ export default function OrganizationAgentGovernance({
       />
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="space-y-1 text-sm">
-          <span className="block text-xs text-muted-foreground">{t('dailyCeiling')}</span>
+          <Text as="span" size="xs" tone="muted" className="block">
+            {t('dailyCeiling')}
+          </Text>
           <Input
             inputMode="numeric"
             value={daily}
@@ -52,7 +55,9 @@ export default function OrganizationAgentGovernance({
           />
         </label>
         <label className="space-y-1 text-sm">
-          <span className="block text-xs text-muted-foreground">{t('monthlyCeiling')}</span>
+          <Text as="span" size="xs" tone="muted" className="block">
+            {t('monthlyCeiling')}
+          </Text>
           <Input
             inputMode="numeric"
             value={monthly}
@@ -62,7 +67,9 @@ export default function OrganizationAgentGovernance({
           />
         </label>
       </div>
-      <p className="text-xs text-muted-foreground">{invalid ? t('invalid') : t('hint')}</p>
+      <Text as="p" size="xs" tone="muted">
+        {invalid ? t('invalid') : t('hint')}
+      </Text>
       <div className="flex justify-end">
         <Button
           type="button"
@@ -82,6 +89,6 @@ export default function OrganizationAgentGovernance({
           {t('save')}
         </Button>
       </div>
-    </div>
+    </Stack>
   );
 }

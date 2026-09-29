@@ -55,10 +55,7 @@ export default function IssueCustomFieldPill({
     return (
       <Pill active={on} onClick={() => onChange({ value: !on })}>
         <span
-          className={cn(
-            'size-3 rounded-[3px] border border-input',
-            on && 'border-primary bg-primary',
-          )}
+          className={cn('size-3 rounded-sm border border-input', on && 'border-primary bg-primary')}
         />
         <span className="truncate">{def.name}</span>
       </Pill>

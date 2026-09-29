@@ -10,6 +10,7 @@ import { FilterControl } from '@/components/layout/FilterBar';
 import BoardDisplayControl from '@/features/work-items/components/BoardDisplayControl';
 import CycleHeaderActions, { CycleSummary } from './components/detail/CycleHeader';
 import CycleIssuesBoard, { CYCLE_BOARD_STORE_KEY } from './components/detail/CycleIssuesBoard';
+import { Page } from '@/design-system';
 
 // One cycle: the board of the issues planned into it, under one header row
 // (PageToolbar): the cycle's status, range, goal and progress, the board's filter and
@@ -31,7 +32,7 @@ export default function CycleDetailPage({ cycleId }: { cycleId: number }) {
     );
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
+    <Page variant="fill">
       <PageToolbar>
         <CycleSummary cycle={cycle} />
         <PageToolbarSpacer />
@@ -52,6 +53,6 @@ export default function CycleDetailPage({ cycleId }: { cycleId: number }) {
         <CycleHeaderActions cycle={cycle} projectKey={projectKey} />
       </PageToolbar>
       <CycleIssuesBoard cycle={cycle} board={board} />
-    </div>
+    </Page>
   );
 }

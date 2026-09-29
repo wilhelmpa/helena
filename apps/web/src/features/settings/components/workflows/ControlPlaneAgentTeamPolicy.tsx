@@ -13,6 +13,8 @@ import {
 import { Switch } from '@/components/ui/switch';
 import type { AgentTeamPolicyDraft } from './agentTeamPolicy';
 
+import { Stack, Text } from '@/design-system';
+
 // The limits of the agent-team workflow: where an accepted result goes, whether the
 // coordinator reviews, and the Hermes turns and time each stage may use.
 export default function ControlPlaneAgentTeamPolicy({
@@ -28,7 +30,7 @@ export default function ControlPlaneAgentTeamPolicy({
 
   return (
     <fieldset className="grid gap-3 sm:col-span-3 sm:grid-cols-4">
-      <div className="space-y-1">
+      <Stack gap={1}>
         <Label htmlFor={`${id}-autonomy`}>{t('result')}</Label>
         <Select
           value={value.autonomy}
@@ -49,8 +51,8 @@ export default function ControlPlaneAgentTeamPolicy({
             <SelectItem value="done">{t('autonomyDone')}</SelectItem>
           </SelectContent>
         </Select>
-      </div>
-      <div className="space-y-1">
+      </Stack>
+      <Stack gap={1}>
         <Label htmlFor={`${id}-review`}>{t('review')}</Label>
         <div className="flex h-8 items-center">
           <Switch
@@ -65,8 +67,8 @@ export default function ControlPlaneAgentTeamPolicy({
             }
           />
         </div>
-      </div>
-      <div className="space-y-1">
+      </Stack>
+      <Stack gap={1}>
         <Label htmlFor={`${id}-turns`}>{t('maxTurns')}</Label>
         <Input
           id={`${id}-turns`}
@@ -77,8 +79,8 @@ export default function ControlPlaneAgentTeamPolicy({
           value={value.maxTurns}
           onChange={(event) => onChange({ ...value, maxTurns: event.target.value })}
         />
-      </div>
-      <div className="space-y-1">
+      </Stack>
+      <Stack gap={1}>
         <Label htmlFor={`${id}-budget`}>{t('budgetMinutes')}</Label>
         <Input
           id={`${id}-budget`}
@@ -89,8 +91,10 @@ export default function ControlPlaneAgentTeamPolicy({
           value={value.budgetMinutes}
           onChange={(event) => onChange({ ...value, budgetMinutes: event.target.value })}
         />
-      </div>
-      <p className="text-xs text-muted-foreground sm:col-span-4">{t('hint')}</p>
+      </Stack>
+      <Text as="p" size="xs" tone="muted" className="sm:col-span-4">
+        {t('hint')}
+      </Text>
     </fieldset>
   );
 }

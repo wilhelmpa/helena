@@ -8,6 +8,7 @@ import { useLiveRefresh } from '@/hooks/useLiveRefresh';
 import { usePipelineRun } from '@/services/pipelines.service';
 import { qk } from '@/services/queryKeys';
 import { revScope } from '@/utils/revScopes';
+import { Stack } from '@/design-system';
 
 // The test run as it goes: every step the engine records moves the project's control-plane
 // revision, which reads the run again.
@@ -27,13 +28,13 @@ export default function PipelineTestRunResult({
   if (!run.data) return <ListSkeleton rows={2} rowClassName="h-16" />;
 
   return (
-    <div className="space-y-3">
+    <Stack gap={3}>
       <PipelineRunTimeline run={run.data} canEdit showIssue />
       <div className="flex justify-end">
         <Button size="sm" variant="outline" onClick={onAgain}>
           {t('again')}
         </Button>
       </div>
-    </div>
+    </Stack>
   );
 }

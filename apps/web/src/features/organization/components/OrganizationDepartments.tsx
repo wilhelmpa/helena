@@ -1,15 +1,16 @@
 'use client';
 
 import { useState } from 'react';
-import { FileUp } from 'lucide-react';
+import { Building2, FileUp } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
-import { Button as ActionButton } from '@/design-system';
+import { Button as ActionButton, EmptyState } from '@/design-system';
 import { Input } from '@/components/ui/input';
 import type { OrganizationDepartment } from '@/lib/api/endpoints/organization';
 import { useCreateDepartment } from '../services/organization.service';
 import DepartmentTemplateImportDialog from './DepartmentTemplateImportDialog';
 import OrganizationDepartmentCard from './OrganizationDepartmentCard';
+import { Inline, Stack } from '@/design-system';
 
 export default function OrganizationDepartments({
   teamId,
@@ -24,10 +25,13 @@ export default function OrganizationDepartments({
   const [importing, setImporting] = useState(false);
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <form
-          className="flex max-w-xl min-w-0 flex-1 gap-2"
+    <Stack gap={4}>
+      <Inline gap={3} justify="between" wrap>
+        <Inline
+          as="form"
+          gap={2}
+          align="stretch"
+          className="max-w-xl min-w-0 flex-1"
           onSubmit={(event) => {
             event.preventDefault();
             create.mutate(
@@ -47,22 +51,22 @@ export default function OrganizationDepartments({
           <Button type="submit" variant="outline" disabled={create.isPending || !name.trim()}>
             {t('actions.add')}
           </Button>
-        </form>
+        </Inline>
         <ActionButton icon={<FileUp aria-hidden />} onClick={() => setImporting(true)}>
           {t('departments.importTemplate')}
         </ActionButton>
-      </div>
+      </Inline>
       <DepartmentTemplateImportDialog
         teamId={teamId}
         open={importing}
         onOpenChange={setImporting}
       />
       {departments.length === 0 ? (
-        <p className="rounded-lg border bg-card px-3 py-2 text-sm text-muted-foreground">
+        <EmptyState icon={<Building2 />} fill={false}>
           {t('departments.empty')}
-        </p>
+        </EmptyState>
       ) : (
-        <div className="grid gap-3 xl:grid-cols-2">
+        <Stack gap={2}>
           {departments.map((department) => (
             <OrganizationDepartmentCard
               key={department.id}
@@ -71,8 +75,8 @@ export default function OrganizationDepartments({
               departments={departments}
             />
           ))}
-        </div>
+        </Stack>
       )}
-    </div>
+    </Stack>
   );
 }

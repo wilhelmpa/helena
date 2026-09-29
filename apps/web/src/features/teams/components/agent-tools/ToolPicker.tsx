@@ -104,7 +104,7 @@ export function ToolPicker({
                   <label
                     key={o.toolKey}
                     className={cn(
-                      'flex w-full items-start gap-2.5 rounded-lg border border-transparent px-3 py-2 transition-colors',
+                      'flex w-full items-start gap-2.5 rounded-md border border-transparent px-3 py-2 transition-colors',
                       disabled ? 'cursor-not-allowed' : 'cursor-pointer hover:bg-muted/60',
                     )}
                   >

@@ -62,7 +62,7 @@ export function Tile({
       {value === null ? (
         <span
           aria-hidden="true"
-          className="h-9 w-12 animate-pulse rounded bg-[var(--dashboard-raised)]"
+          className="h-9 w-12 animate-pulse rounded-sm bg-[var(--dashboard-raised)]"
         />
       ) : (
         <span className={cn(styles.value, tone !== 'default' && styles[tone])}>{value}</span>

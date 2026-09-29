@@ -56,7 +56,7 @@ export default function IssueCustomFieldControl({
           {opts.map((o) => (
             <span
               key={o.id}
-              className="rounded px-1.5 py-0.5 text-xs text-white"
+              className="rounded-sm px-1.5 py-0.5 text-xs text-white"
               style={{ backgroundColor: o.color }}
             >
               {o.value}

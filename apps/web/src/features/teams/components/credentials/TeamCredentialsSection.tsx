@@ -126,7 +126,7 @@ export default function TeamCredentialsSection({
             <EmptyState title={t('empty')} description={t('emptyHint')} />
           ) : (
             <>
-              <ul className="divide-y overflow-hidden rounded-lg border border-sidebar-border bg-card">
+              <ul className="divide-y overflow-hidden rounded-md border border-sidebar-border bg-card">
                 {page.data.items.map((entry) => (
                   <CredentialRow
                     key={entry.id}

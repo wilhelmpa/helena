@@ -41,7 +41,7 @@ export default function NewTeamModal({
     <Modal title={t('title')} onClose={onClose} className="pb-3">
       <div className="flex flex-col">
         <div className="flex items-center gap-3">
-          <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-secondary text-secondary-foreground">
+          <div className="flex size-10 shrink-0 items-center justify-center rounded-md bg-secondary text-secondary-foreground">
             <Users className="size-5" />
           </div>
           <input

@@ -16,6 +16,8 @@ import {
 } from '@/components/ui/sheet';
 import { JsonViewer } from './JsonViewer';
 
+import { Text, Box, Stack } from '@/design-system';
+
 // Delivery history for a webhook, in a right-side sidebar. Paged through
 // useWebhookDeliveries, which owns the page size; each delivery expands to show the
 // payload we sent and the response we got back.
@@ -51,7 +53,13 @@ function DeliveriesList({ webhookId }: { webhookId: number }) {
     return <ListSkeleton rows={4} className="p-4" rowClassName="h-12" />;
   }
   if (deliveries.length === 0) {
-    return <p className="p-4 text-sm text-muted-foreground">{t('noDeliveries')}</p>;
+    return (
+      <Box as="p" pad={4}>
+        <Text as="span" size="sm" tone="muted">
+          {t('noDeliveries')}
+        </Text>
+      </Box>
+    );
   }
 
   return (
@@ -61,7 +69,7 @@ function DeliveriesList({ webhookId }: { webhookId: number }) {
           <DeliveryItem key={d.id} delivery={d} />
         ))}
       </div>
-      <div className="p-4">
+      <Box pad={4}>
         {query.hasNextPage ? (
           <Button
             variant="outline"
@@ -73,9 +81,11 @@ function DeliveriesList({ webhookId }: { webhookId: number }) {
             {query.isFetchingNextPage ? tCommon('loading') : t('loadMore')}
           </Button>
         ) : (
-          <p className="text-center text-xs text-muted-foreground">{t('endOfHistory')}</p>
+          <Text as="p" size="xs" tone="muted" className="text-center">
+            {t('endOfHistory')}
+          </Text>
         )}
-      </div>
+      </Box>
     </div>
   );
 }
@@ -103,15 +113,19 @@ function DeliveryItem({ delivery: d }: { delivery: WebhookDelivery }) {
         <StatusBadge status={d.status} />
         <span className="font-mono">{d.eventType}</span>
         {d.attempts > 1 && (
-          <span className="text-muted-foreground">{t('attempts', { count: d.attempts })}</span>
+          <Text as="span" tone="muted">
+            {t('attempts', { count: d.attempts })}
+          </Text>
         )}
-        <span className="truncate text-muted-foreground">{outcome}</span>
-        <span className="ml-auto shrink-0 text-muted-foreground">
+        <Text as="span" tone="muted" className="truncate">
+          {outcome}
+        </Text>
+        <Text as="span" tone="muted" className="ml-auto shrink-0">
           {formatDateTime(d.createdAt)}
-        </span>
+        </Text>
       </button>
       {open && (
-        <div className="space-y-3 px-4 pb-3">
+        <Stack gap={3} padX={4} padBottom={3}>
           <DetailBlock label={t('sent')} value={d.payload} />
           <DetailBlock
             label={
@@ -121,7 +135,7 @@ function DeliveryItem({ delivery: d }: { delivery: WebhookDelivery }) {
             }
             value={d.responseBody ?? d.lastError}
           />
-        </div>
+        </Stack>
       )}
     </div>
   );
@@ -130,14 +144,16 @@ function DeliveryItem({ delivery: d }: { delivery: WebhookDelivery }) {
 function DetailBlock({ label, value }: { label: string; value: unknown }) {
   const t = useTranslations('settings.webhooks');
   return (
-    <div className="space-y-1">
+    <Stack gap={1}>
       <div className="text-xs font-medium text-muted-foreground">{label}</div>
       {value == null || value === '' ? (
-        <p className="text-xs text-muted-foreground">{t('noResponse')}</p>
+        <Text as="p" size="xs" tone="muted">
+          {t('noResponse')}
+        </Text>
       ) : (
         <JsonViewer value={value} />
       )}
-    </div>
+    </Stack>
   );
 }
 

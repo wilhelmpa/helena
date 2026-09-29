@@ -15,7 +15,7 @@ export default function FileEmptyState({
   const t = useTranslations('files.empty');
   const Icon = filter ? SearchX : FolderOpen;
   return (
-    <div className="rounded-lg border border-dashed p-10 text-center">
+    <div className="rounded-md border border-dashed p-10 text-center">
       <Icon className="mx-auto size-8 text-muted-foreground" />
       <p className="mt-3 text-sm font-medium">
         {filter ? t('filter', { filter: filter.trim() }) : t('folder')}

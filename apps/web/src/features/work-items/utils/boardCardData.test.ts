@@ -38,6 +38,7 @@ describe('board card data', () => {
       maps,
       ['cf:2', 'cf:1', 'cf:3'],
       priorityLabel,
+      'In status',
     );
     assert.equal(data.importantValue, '771,35');
     assert.deepEqual(data.meta, ['RSI 57', 'MACD 2,12 / 1,31']);
@@ -45,7 +46,14 @@ describe('board card data', () => {
 
   it('uses the due date when the view has no populated number field', () => {
     setDisplayLocale('de');
-    const data = boardCardData(issue([], '2026-10-03'), project, maps, ['cf:1'], priorityLabel);
+    const data = boardCardData(
+      issue([], '2026-10-03'),
+      project,
+      maps,
+      ['cf:1'],
+      priorityLabel,
+      'In status',
+    );
     assert.equal(data.importantValue, '3. Okt.');
     assert.deepEqual(data.meta, []);
   });
@@ -62,7 +70,13 @@ describe('board card data', () => {
       maps,
       ['cf:4'],
       priorityLabel,
+      'In status',
     );
     assert.deepEqual(data.meta, ['Bewertung positiv']);
+  });
+
+  it('labels the time in the current status', () => {
+    const data = boardCardData(issue([]), project, maps, ['statusAge'], priorityLabel, 'In status');
+    assert.match(data.meta[0], /^In status /);
   });
 });

@@ -16,6 +16,8 @@ import {
 import CustomFieldMeta from './CustomFieldMeta';
 import SettingsCustomFieldDialog, { type FieldFormValues } from './SettingsCustomFieldDialog';
 
+import { Inline, Text, Box } from '@/design-system';
+
 // Which group the add dialog is open for: 'global' for the project-wide field group,
 // or a issue type id for a type-scoped group. null when no dialog is open.
 type AddScope = 'global' | number;
@@ -104,13 +106,17 @@ export default function SettingsCustomFields({ project }: { project: ProjectDeta
 
   return (
     <div>
-      <div className="divide-y overflow-hidden rounded-lg border bg-card">
+      <div className="divide-y overflow-hidden rounded-md border bg-card">
         {groups.map((g) => {
           const key = String(g.scope);
           const open = !collapsed.has(key);
           return (
             <div key={key}>
-              <div className="flex h-10 items-center gap-2 pe-2 transition-colors hover:bg-accent/60">
+              <Inline
+                gap={2}
+                padEnd={2}
+                className="flex h-10 items-center transition-colors hover:bg-accent/60"
+              >
                 <button
                   type="button"
                   onClick={() => toggle(key)}
@@ -125,9 +131,9 @@ export default function SettingsCustomFields({ project }: { project: ProjectDeta
                   />
                   <span className="truncate text-sm font-medium text-foreground">{g.label}</span>
                   {g.fields.length > 0 && (
-                    <span className="text-xs text-muted-foreground tabular-nums">
+                    <Text as="span" size="xs" tone="muted" className="tabular-nums">
                       {g.fields.length}
-                    </span>
+                    </Text>
                   )}
                 </button>
                 {can('create') && (
@@ -142,15 +148,19 @@ export default function SettingsCustomFields({ project }: { project: ProjectDeta
                     <Plus className="size-4" />
                   </Button>
                 )}
-              </div>
+              </Inline>
 
               {open && (
-                <div className="pb-1">
+                <Box padBottom={1}>
                   {g.fields.map(renderField)}
                   {g.fields.length === 0 && (
-                    <p className="py-3 ps-9 text-xs text-muted-foreground">{t('noFields')}</p>
+                    <Box as="p" padY={3} className="ps-9">
+                      <Text as="span" size="xs" tone="muted">
+                        {t('noFields')}
+                      </Text>
+                    </Box>
                   )}
-                </div>
+                </Box>
               )}
             </div>
           );

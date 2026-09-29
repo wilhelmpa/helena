@@ -71,5 +71,6 @@
     "limited": "{provider}：已达上限",
     "limitedUntil": "{provider}：已达上限，{time}后恢复",
     "stale": "{provider}：限额已过时（{time}前读取）"
-  }
+  },
+  "agentsOn": "使用此账号的代理："
 }

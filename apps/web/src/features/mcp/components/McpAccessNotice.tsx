@@ -62,7 +62,7 @@ export default function McpAccessNotice({
   }
 
   return (
-    <div className="space-y-3 rounded-lg border border-dashed px-4 py-3.5">
+    <div className="space-y-3 rounded-md border border-dashed px-4 py-3.5">
       <div className="space-y-1">
         <p className="text-sm font-medium">{t('disabled')}</p>
         <p className="text-sm text-muted-foreground">

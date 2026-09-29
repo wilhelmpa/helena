@@ -38,7 +38,9 @@
     "save": "Сохранить",
     "delete": "Удалить",
     "clearAssignment": "Снять назначение",
-    "saveInstructions": "Сохранить инструкции"
+    "saveInstructions": "Сохранить инструкции",
+    "edit": "Изменить",
+    "close": "Закрыть"
   },
   "departments": {
     "newPlaceholder": "Новый отдел",
@@ -69,7 +71,10 @@
     "skillsNone": "Библиотека навыков пока пуста.",
     "skillsNoMatch": "Подходящих навыков нет.",
     "skillsEmptyWarning": "Без выбранных навыков агенты этого отдела не используют ни одного.",
-    "skillsSaved": "Навыки отдела {name} сохранены"
+    "skillsSaved": "Навыки отдела {name} сохранены",
+    "budgetsAndSkills": "Бюджеты и навыки",
+    "deleteTitle": "Удалить отдел «{name}»?",
+    "deleteHint": "Его проекты останутся без отдела."
   },
   "goals": {
     "newPlaceholder": "Новая цель",
@@ -141,7 +146,9 @@
   },
   "projects": {
     "empty": "В этой команде нет проектов.",
-    "instructionsPlaceholder": "Опишите задачи проекта и правила работы."
+    "instructionsPlaceholder": "Опишите задачи проекта и правила работы.",
+    "assignmentSaved": "Отдел сохранён",
+    "title": "Проекты и их отделы"
   },
   "map": {
     "empty": "Структуры организации пока нет.",
@@ -310,6 +317,7 @@
     "lensWhy": "Зачем",
     "whyEmpty": "Пока ни один агент не работает над задачей этого проекта.",
     "whyNoGoal": "Цель не привязана",
-    "noAgent": "Без агента"
+    "noAgent": "Без агента",
+    "filterLabel": "Статус"
   }
 }

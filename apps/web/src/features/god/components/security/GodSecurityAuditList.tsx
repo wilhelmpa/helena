@@ -6,6 +6,8 @@ import { formatDateTime } from '@/utils/dates';
 import ListSkeleton from '@/components/common/skeleton/ListSkeleton';
 import type { OwnerTerminalAuditEntry } from '@/lib/api/endpoints/owner-terminal';
 
+import { Box, Inline, Text } from '@/design-system';
+
 // The event names the api's audit rows use (owner_terminal_audit_event_check in
 // packages/db/src/schema/app.ts). A plain string column, so this maps each known
 // value to its translated label and falls back to the raw value for one this
@@ -41,30 +43,36 @@ export default function GodSecurityAuditList({
   if (isPending) return <ListSkeleton rows={5} rowClassName="h-8" />;
   if (entries.length === 0) {
     return (
-      <SettingsCard className="p-4 text-sm text-muted-foreground">{t('auditEmpty')}</SettingsCard>
+      <SettingsCard>
+        <Box pad={4}>
+          <Text as="span" size="sm" tone="muted">
+            {t('auditEmpty')}
+          </Text>
+        </Box>
+      </SettingsCard>
     );
   }
 
   return (
-    <SettingsCard className="divide-y p-0">
+    <SettingsCard className="divide-y">
       {entries.map((entry) => (
-        <div key={entry.id} className="flex h-8 items-center gap-3 px-3 text-xs">
-          <span className="w-36 shrink-0 font-mono text-muted-foreground tabular-nums">
+        <Inline gap={3} padX={3} key={entry.id} className="flex h-8 items-center text-xs">
+          <Text as="span" tone="muted" className="w-36 shrink-0 font-mono tabular-nums">
             {formatDateTime(entry.createdAt)}
-          </span>
+          </Text>
           <span className="min-w-0 flex-1 truncate sm:w-32 sm:flex-none">
             {eventLabel(entry.event)}
           </span>
-          <span className="w-20 shrink-0 truncate text-muted-foreground max-md:hidden">
+          <Text as="span" tone="muted" className="w-20 shrink-0 truncate max-md:hidden">
             {entry.kind ?? ''}
-          </span>
-          <span className="min-w-0 flex-1 truncate text-muted-foreground max-lg:hidden">
+          </Text>
+          <Text as="span" tone="muted" className="min-w-0 flex-1 truncate max-lg:hidden">
             {entry.device ?? ''}
-          </span>
-          <span className="w-28 shrink-0 text-end font-mono text-muted-foreground max-sm:hidden">
+          </Text>
+          <Text as="span" tone="muted" className="w-28 shrink-0 text-end font-mono max-sm:hidden">
             {entry.ipAddress ?? ''}
-          </span>
-        </div>
+          </Text>
+        </Inline>
       ))}
     </SettingsCard>
   );

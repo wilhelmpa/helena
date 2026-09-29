@@ -13,6 +13,7 @@ import TeamMcpSection from '@/features/teams/components/mcp/TeamMcpSection';
 import { useTeamsQuery } from '@/services/teams.service';
 import { manageTeamsPath } from '@/utils/paths';
 import { soleTeamId } from '@/utils/homeTeamScope';
+import { Page } from '@/design-system';
 
 export type HomeTeamSection = 'agents' | 'mcps' | 'tools' | 'skills';
 
@@ -39,17 +40,13 @@ export function HomeTeamSectionContent({ section }: { section: HomeTeamSection }
   return (
     <>
       {teams.isPending ? (
-        <div className="p-4">
-          <ListSkeleton rows={3} rowClassName="h-12" />
-        </div>
+        <ListSkeleton rows={3} rowClassName="h-12" />
       ) : teamId == null ? (
-        <div className="flex h-full flex-col p-4">
-          <EmptyState title={t('teamScopeRequired')} description={t('teamScopeRequiredHint')}>
-            <Button asChild size="sm" variant="outline">
-              <Link href={manageTeamsPath()}>{t('manageTeams')}</Link>
-            </Button>
-          </EmptyState>
-        </div>
+        <EmptyState title={t('teamScopeRequired')} description={t('teamScopeRequiredHint')}>
+          <Button asChild size="sm" variant="outline">
+            <Link href={manageTeamsPath()}>{t('manageTeams')}</Link>
+          </Button>
+        </EmptyState>
       ) : (
         <Section teamId={teamId} />
       )}
@@ -61,7 +58,9 @@ export default function HomeTeamSectionPage({ section }: { section: HomeTeamSect
   const t = useTranslations('nav');
   return (
     <Shell globalHome globalTitle={t(navKeys[section])} autoOpenGlobalChat={false}>
-      <HomeTeamSectionContent section={section} />
+      <Page title={t(navKeys[section])}>
+        <HomeTeamSectionContent section={section} />
+      </Page>
     </Shell>
   );
 }

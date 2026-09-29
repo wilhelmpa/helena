@@ -12,6 +12,7 @@ import { usePipelineLabels } from '../../hooks/usePipelineLabels';
 import PipelineIssueList from '../PipelineIssueList';
 import PipelineHookPanel from './PipelineHookPanel';
 import PipelineRoleMapping from './PipelineRoleMapping';
+import { Inline, Stack, Text } from '@/design-system';
 
 // One workflow the project can use. Turning it on is refused with the reason when it
 // cannot run here; the problems below name what to fix.
@@ -38,10 +39,10 @@ export default function PipelineProjectRow({
   const StateIcon = entry.enabled ? CircleCheck : CircleOff;
 
   return (
-    <article className="space-y-3 rounded-lg border bg-card p-4">
-      <div className="flex flex-wrap items-start gap-3">
+    <Stack as="article" gap={3} pad={4} className="rounded-md border bg-card">
+      <Inline gap={3} wrap align="start">
         <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
+          <Inline gap={2} wrap>
             <Link href={editor} className="text-md font-medium hover:underline" dir="auto">
               {pipeline.name}
             </Link>
@@ -49,11 +50,11 @@ export default function PipelineProjectRow({
               {entry.source === 'template' ? t('template') : t('own')}
             </Badge>
             <Badge variant="outline">{labels.trigger(pipeline.definition.trigger)}</Badge>
-          </div>
+          </Inline>
           {pipeline.description && (
-            <p className="mt-1 text-sm text-muted-foreground" dir="auto">
+            <Text as="p" size="sm" tone="muted" className="mt-1" dir="auto">
               {pipeline.description}
-            </p>
+            </Text>
           )}
         </div>
         {editable ? (
@@ -68,12 +69,12 @@ export default function PipelineProjectRow({
             />
           </label>
         ) : (
-          <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <Text as="span" size="xs" tone="muted" className="flex items-center gap-1.5">
             <StateIcon className="size-4" />
             {entry.enabled ? t('enabled') : t('disabled')}
-          </span>
+          </Text>
         )}
-      </div>
+      </Inline>
       {entry.resolvedRoles.length > 0 && (
         <PipelineRoleMapping
           entry={entry}
@@ -88,19 +89,21 @@ export default function PipelineProjectRow({
         <PipelineHookPanel projectKey={projectKey} pipelineId={pipeline.id} editable={editable} />
       )}
       {entry.issues.length > 0 && (
-        <div className="space-y-1">
-          <p className="text-xs font-medium">{t('problems')}</p>
+        <Stack gap={1}>
+          <Text as="p" size="xs" className="font-medium">
+            {t('problems')}
+          </Text>
           <PipelineIssueList issues={entry.issues} />
-        </div>
+        </Stack>
       )}
-      <div className="flex gap-4 text-xs">
+      <Inline gap={4} align="stretch" className="text-xs">
         <Link href={editor} className="text-muted-foreground hover:text-foreground">
           {t('open')}
         </Link>
         <Link href={runs} className="text-muted-foreground hover:text-foreground">
           {t('runs')}
         </Link>
-      </div>
-    </article>
+      </Inline>
+    </Stack>
   );
 }

@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import type { DefinitionIssue } from '@/lib/api/endpoints/pipelines';
 import PipelineIssueList from '../PipelineIssueList';
+import { Inline, Stack, Text } from '@/design-system';
 
 // A card of the builder: the trigger, the roles, the steps.
 export default function PipelineCard({
@@ -17,16 +18,20 @@ export default function PipelineCard({
   children: ReactNode;
 }) {
   return (
-    <section className="space-y-3 rounded-lg border bg-card p-4">
-      <div className="flex items-start justify-between gap-3">
+    <Stack as="section" gap={3} pad={4} className="rounded-md border bg-card">
+      <Inline gap={3} justify="between" align="start">
         <div>
           <h2 className="text-md font-medium">{title}</h2>
-          {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
+          {hint && (
+            <Text as="p" size="xs" tone="muted">
+              {hint}
+            </Text>
+          )}
         </div>
         {action}
-      </div>
+      </Inline>
       {children}
       <PipelineIssueList issues={issues} />
-    </section>
+    </Stack>
   );
 }

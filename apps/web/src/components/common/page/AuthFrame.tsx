@@ -16,7 +16,7 @@ export default function AuthFrame({
   return (
     <div className="flex min-h-svh flex-col items-center justify-center bg-card p-4 md:p-10">
       <div className="flex w-full max-w-sm flex-col gap-4 md:max-w-4xl">
-        <div className="grid overflow-hidden rounded-xl border border-sidebar-border bg-background shadow-[var(--overlay-shadow)] md:grid-cols-2">
+        <div className="grid overflow-hidden rounded-lg border border-sidebar-border bg-background shadow-[var(--overlay-shadow)] md:grid-cols-2">
           <div className="flex min-w-0 flex-col justify-center">{children}</div>
           <BrandPanel subtitle={brandSubtitle} />
         </div>

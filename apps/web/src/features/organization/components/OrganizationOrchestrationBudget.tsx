@@ -10,6 +10,7 @@ import { useSetProjectTokenCeiling } from '../services/organization.service';
 import { parseCeiling } from '../utils/tokenCeilings';
 import OrganizationOrchestrationAgentUsage from './OrganizationOrchestrationAgentUsage';
 import OrganizationTokenUsage from './OrganizationTokenUsage';
+import { Inline, Stack, Text } from '@/design-system';
 
 // The tokens the project's agent runs used this month against its ceiling, and what each
 // of its agents used against theirs.
@@ -28,19 +29,23 @@ export default function OrganizationOrchestrationBudget({
   const ceiling = parseCeiling(monthly);
 
   return (
-    <section className="space-y-3 rounded-lg border bg-card p-4">
+    <Stack as="section" gap={3} pad={4} className="rounded-md border bg-card">
       <div>
         <h2 className="text-md font-medium">{t('tokens.projectTitle')}</h2>
-        <p className="text-xs text-muted-foreground">{t('tokens.projectDescription')}</p>
+        <Text as="p" size="xs" tone="muted">
+          {t('tokens.projectDescription')}
+        </Text>
       </div>
       <OrganizationTokenUsage
         label={t('tokens.thisMonth')}
         used={project.tokensThisMonth}
         ceiling={project.monthlyTokenCeiling}
       />
-      <div className="flex items-end gap-2">
+      <Inline gap={2} align="end">
         <label className="min-w-0 flex-1 space-y-1 text-sm">
-          <span className="block text-xs text-muted-foreground">{t('tokens.monthlyCeiling')}</span>
+          <Text as="span" size="xs" tone="muted" className="block">
+            {t('tokens.monthlyCeiling')}
+          </Text>
           <Input
             inputMode="numeric"
             value={monthly}
@@ -62,11 +67,13 @@ export default function OrganizationOrchestrationBudget({
         >
           {t('actions.save')}
         </Button>
-      </div>
+      </Inline>
       {ceiling === undefined && (
-        <p className="text-xs text-muted-foreground">{t('tokens.invalid')}</p>
+        <Text as="p" size="xs" tone="muted">
+          {t('tokens.invalid')}
+        </Text>
       )}
       <OrganizationOrchestrationAgentUsage agents={agents} />
-    </section>
+    </Stack>
   );
 }

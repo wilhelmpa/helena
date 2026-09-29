@@ -42,7 +42,7 @@ export function CalendarDayChip({
               onOpen(issue.id);
             }}
             className={cn(
-              'flex cursor-pointer items-center gap-1 rounded px-1.5 py-0.5 text-xs transition-colors hover:bg-accent sm:touch-none',
+              'flex cursor-pointer items-center gap-1 rounded-sm px-1.5 py-0.5 text-xs transition-colors hover:bg-accent sm:touch-none',
               isDragging && 'opacity-40',
             )}
           >

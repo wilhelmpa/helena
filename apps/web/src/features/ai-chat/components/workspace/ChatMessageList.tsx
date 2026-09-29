@@ -113,9 +113,9 @@ export default function ChatMessageList(props: ChatMessageListProps) {
   if (props.plan.restoring) {
     return (
       <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 overflow-hidden px-4 py-6">
-        <Skeleton className="ms-auto h-9 w-1/2 rounded-2xl" />
+        <Skeleton className="ms-auto h-9 w-1/2 rounded-xl" />
         <Skeleton className="h-20 w-3/4" />
-        <Skeleton className="ms-auto h-9 w-2/5 rounded-2xl" />
+        <Skeleton className="ms-auto h-9 w-2/5 rounded-xl" />
       </div>
     );
   }

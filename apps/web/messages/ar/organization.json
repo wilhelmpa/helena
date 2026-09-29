@@ -38,7 +38,9 @@
     "save": "حفظ",
     "delete": "حذف",
     "clearAssignment": "إلغاء التعيين",
-    "saveInstructions": "حفظ التعليمات"
+    "saveInstructions": "حفظ التعليمات",
+    "edit": "تعديل",
+    "close": "إغلاق"
   },
   "departments": {
     "newPlaceholder": "قسم جديد",
@@ -69,7 +71,10 @@
     "skillsNone": "مكتبة المهارات فارغة بعد.",
     "skillsNoMatch": "لا توجد مهارة مطابقة.",
     "skillsEmptyWarning": "من دون مهارات مختارة لا يستخدم وكلاء هذا القسم أي مهارة.",
-    "skillsSaved": "تم حفظ مهارات {name}"
+    "skillsSaved": "تم حفظ مهارات {name}",
+    "budgetsAndSkills": "الميزانيات والمهارات",
+    "deleteTitle": "حذف القسم «{name}»؟",
+    "deleteHint": "تبقى مشاريعه وتصبح بلا قسم."
   },
   "goals": {
     "newPlaceholder": "هدف جديد",
@@ -141,7 +146,9 @@
   },
   "projects": {
     "empty": "لا توجد مشاريع في هذا الفريق.",
-    "instructionsPlaceholder": "صف مهمة المشروع وتعليمات تشغيله."
+    "instructionsPlaceholder": "صف مهمة المشروع وتعليمات تشغيله.",
+    "assignmentSaved": "تم حفظ القسم",
+    "title": "المشاريع وأقسامها"
   },
   "map": {
     "empty": "لا يوجد هيكل تنظيمي بعد.",
@@ -310,6 +317,7 @@
     "lensWhy": "لماذا",
     "whyEmpty": "لا يعمل أي وكيل على مهمة في هذا المشروع بعد.",
     "whyNoGoal": "لا يوجد هدف مرتبط",
-    "noAgent": "بلا وكيل"
+    "noAgent": "بلا وكيل",
+    "filterLabel": "الحالة"
   }
 }

@@ -30,7 +30,7 @@ export default function FilterValueEditor({
   if (cond.op === 'is_set' || cond.op === 'is_not_set') return null;
 
   const trigger = (
-    <button type="button" className="h-6 max-w-48 truncate rounded px-1 text-sm hover:bg-accent">
+    <button type="button" className="h-6 max-w-48 truncate rounded-sm px-1 text-sm hover:bg-accent">
       {valuesLabel(spec, cond)}
     </button>
   );

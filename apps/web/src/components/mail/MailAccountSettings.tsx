@@ -13,6 +13,7 @@ import { revScope } from '@/utils/revScopes';
 import MailAccountDialog from './MailAccountDialog';
 import MailAccountRow from './MailAccountRow';
 import MailRuleSettings from './MailRuleSettings';
+import { EmptyState } from '@/design-system';
 
 // The mail accounts of a team, or of one project when projectKey is given, with the
 // import state of each. Home also lists the rules that file new mail under a project.
@@ -84,13 +85,13 @@ export default function MailAccountSettings({
         </p>
       )}
       {accounts.isError ? (
-        <p className="rounded-lg border bg-card px-3 py-2 text-sm text-destructive">
+        <p className="rounded-md border bg-card px-3 py-2 text-sm text-destructive">
           {t('loadError')}
         </p>
       ) : (accounts.data ?? []).length === 0 && accounts.isSuccess ? (
-        <p className="rounded-lg border bg-card px-3 py-2 text-sm text-muted-foreground">
+        <EmptyState icon={<Mail />} fill={false}>
           {t('empty')}
-        </p>
+        </EmptyState>
       ) : (
         <ul className="flex flex-col gap-2">
           {(accounts.data ?? []).map((account) => (

@@ -41,7 +41,7 @@ import SnapshotBrowser from './SnapshotBrowser';
 import { CardHeader, Fact, Facts, HealthLine, ServerSections } from './ServerParts';
 import ServerToolbar from './ServerToolbar';
 
-const CARD = 'min-w-0 space-y-3 rounded-lg border border-sidebar-border bg-card p-4';
+const CARD = 'min-w-0 space-y-3 rounded-md border border-sidebar-border bg-card p-4';
 
 // Server → Backup: restic into the local repository on the RAID. The last run and the next,
 // the password to write down once, when backups run and how many are kept, the snapshots

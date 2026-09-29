@@ -46,7 +46,7 @@ export default function RecipientField({
         {value.map((item) => (
           <span
             key={item.address}
-            className="flex items-center gap-1 rounded bg-muted px-1.5 text-xs"
+            className="flex items-center gap-1 rounded-sm bg-muted px-1.5 text-xs"
           >
             <span dir="auto" title={item.address}>
               {item.name || item.address}
@@ -95,7 +95,7 @@ export default function RecipientField({
             <li key={item.address}>
               <button
                 type="button"
-                className="flex w-full flex-col items-start rounded px-2 py-1 text-start hover:bg-accent"
+                className="flex w-full flex-col items-start rounded-sm px-2 py-1 text-start hover:bg-accent"
                 onMouseDown={(event) => event.preventDefault()}
                 onClick={() => {
                   add([item]);

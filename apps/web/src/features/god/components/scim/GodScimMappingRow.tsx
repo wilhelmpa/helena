@@ -14,6 +14,8 @@ import {
 import type { ScimMappingDraft } from '../../hooks/useGodScimMappingForm';
 import { useInstanceProjectQuery } from '../../services/god.service';
 
+import { Inline } from '@/design-system';
+
 // One project a group grants membership in, and the role it grants there. The custom
 // roles belong to that project, so they are read from its detail; owners bypass the
 // permission matrix and carry none.
@@ -35,7 +37,7 @@ export default function GodScimMappingRow({
   const project = projects.find((p) => p.id === mapping.projectId);
 
   return (
-    <div className="flex items-center gap-2">
+    <Inline gap={2} className="flex items-center">
       <div className="min-w-0 flex-1 truncate text-sm">
         {project ? `${project.name} (${project.key})` : mapping.projectId}
       </div>
@@ -84,6 +86,6 @@ export default function GodScimMappingRow({
       >
         <X className="size-4" />
       </Button>
-    </div>
+    </Inline>
   );
 }

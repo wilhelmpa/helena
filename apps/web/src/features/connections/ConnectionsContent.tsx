@@ -73,7 +73,7 @@ export default function ConnectionsContent({
   ) : items.length === 0 ? (
     <EmptyState title={t('empty')} description={t('emptyHint')} />
   ) : (
-    <div className="flex flex-col divide-y overflow-hidden rounded-lg border bg-card">
+    <div className="flex flex-col divide-y overflow-hidden rounded-md border bg-card">
       {items.map((connection) => (
         <ConnectionRow
           key={connection.id}

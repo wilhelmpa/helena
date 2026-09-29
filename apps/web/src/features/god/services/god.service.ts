@@ -211,10 +211,11 @@ export function useUpdateInstanceTelegramSettings() {
 
 // What a new project starts with on this instance. Projects that already exist are
 // untouched by a change here.
-export function useInstanceProjectDefaultsQuery() {
+export function useInstanceProjectDefaultsQuery(enabled = true) {
   return useQuery({
     queryKey: qk.instanceProjectDefaults,
     queryFn: () => getInstanceProjectDefaults(),
+    enabled,
   });
 }
 

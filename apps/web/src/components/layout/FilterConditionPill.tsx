@@ -68,7 +68,7 @@ export default function FilterConditionPill({
         title={t('remove')}
         aria-label={t('remove')}
         className={cn(
-          'flex size-6 shrink-0 items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground',
+          'flex size-6 shrink-0 items-center justify-center rounded-sm text-muted-foreground hover:bg-accent hover:text-foreground',
           stacked && 'ms-auto',
         )}
       >

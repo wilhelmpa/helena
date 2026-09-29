@@ -10,7 +10,7 @@ function Card({ className, ...props }: React.ComponentProps<'div'>) {
         // No shadow: docs/volition-design-helena-ui.md "nur schwebende Elemente
         // (Popover, Dialog, Befehlspalette) bekommen Schatten" — a card sits flat
         // in the page. gap-4/py-4, not gap-6/py-6: the 4px spacing scale.
-        'flex flex-col gap-4 rounded-lg border border-sidebar-border bg-card py-4 text-card-foreground',
+        'flex flex-col gap-4 rounded-md border border-sidebar-border bg-card py-4 text-card-foreground',
         className,
       )}
       {...props}

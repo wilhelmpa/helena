@@ -25,9 +25,9 @@ export function McpServerPresetPicker({
           key={option.key ?? 'custom'}
           type="button"
           onClick={() => onSelect(option.key)}
-          className="flex w-full items-center gap-3 rounded-lg px-2 py-2 text-start transition-colors hover:bg-muted/60 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+          className="flex w-full items-center gap-3 rounded-md px-2 py-2 text-start transition-colors hover:bg-muted/60 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
         >
-          <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+          <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
             <Server className="size-4" />
           </div>
           <span className="min-w-0">

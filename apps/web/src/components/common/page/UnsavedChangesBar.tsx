@@ -45,7 +45,7 @@ export default function UnsavedChangesBar({
     <div
       role="status"
       className={cn(
-        'fixed inset-x-0 bottom-4 z-40 mx-auto flex w-fit items-center gap-3 rounded-lg border bg-popover px-4 py-2.5 text-sm shadow-[var(--modal-shadow)]',
+        'fixed inset-x-0 bottom-4 z-40 mx-auto flex w-fit items-center gap-3 rounded-md border bg-popover px-4 py-2.5 text-sm shadow-[var(--modal-shadow)]',
         className,
       )}
     >

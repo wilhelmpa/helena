@@ -17,6 +17,8 @@ import {
 import FieldChangeWarning from './FieldChangeWarning';
 import FieldOptionsEditor, { parseOptionValues, type OptionDraft } from './FieldOptionsEditor';
 
+import { Stack, Box, Text, Inline } from '@/design-system';
+
 export interface FieldFormValues {
   name: string;
   fieldType: CustomFieldType;
@@ -102,14 +104,16 @@ export default function SettingsCustomFieldDialog({
 
   return (
     <Modal title={t(initial ? 'editField' : 'addField')} crumb={group} onClose={onClose} wide>
-      <form
-        className="space-y-6"
+      <Stack
+        as="form"
+        gap={5}
+
         onSubmit={(event) => {
           event.preventDefault();
           submit();
         }}
       >
-        <div className="space-y-1.5">
+        <Stack gap={2}>
           <Label htmlFor="custom-field-name">{tCommon('name')}</Label>
           <Input
             id="custom-field-name"
@@ -120,10 +124,10 @@ export default function SettingsCustomFieldDialog({
             placeholder={t('namePlaceholder')}
             className="h-9"
           />
-        </div>
+        </Stack>
 
-        <div className="space-y-4">
-          <div className="space-y-1.5">
+        <Stack gap={4}>
+          <Stack gap={2}>
             <Label>{t('type')}</Label>
             <RadioGroupPrimitive.Root
               value={fieldType}
@@ -151,10 +155,10 @@ export default function SettingsCustomFieldDialog({
               })}
             </RadioGroupPrimitive.Root>
             {typeChanged && <FieldChangeWarning>{t('typeChangeWarning')}</FieldChangeWarning>}
-          </div>
+          </Stack>
 
           {holdsOptions(fieldType) && (
-            <div className="space-y-1.5">
+            <Stack gap={2}>
               <FieldOptionsEditor
                 options={options}
                 onChange={setOptions}
@@ -164,11 +168,11 @@ export default function SettingsCustomFieldDialog({
               {optionsRemoved && (
                 <FieldChangeWarning>{t('optionsRemovedWarning')}</FieldChangeWarning>
               )}
-            </div>
+            </Stack>
           )}
 
           {isMember && (
-            <div className="space-y-1.5">
+            <Stack gap={2}>
               <Label>{t('memberScope')}</Label>
               <RadioGroupPrimitive.Root
                 value={memberScope}
@@ -190,29 +194,44 @@ export default function SettingsCustomFieldDialog({
                 })}
               </RadioGroupPrimitive.Root>
               {scopeNarrowed && <FieldChangeWarning>{t('memberScopeWarning')}</FieldChangeWarning>}
-            </div>
+            </Stack>
           )}
-        </div>
+        </Stack>
 
-        <div className="border-t border-border/50 pt-4">
-          <label className="flex cursor-pointer items-center justify-between gap-4">
+        <Box padTop={4} className="border-t border-border/50">
+          <Inline
+            as="label"
+            gap={4}
+            justify="between"
+            className="flex cursor-pointer items-center justify-between"
+          >
             <span>
-              <span className="text-sm">{t('mainInfo')}</span>
-              <span className="block text-xs text-muted-foreground">{t('mainInfoTooltip')}</span>
+              <Text as="span" size="sm">
+                {t('mainInfo')}
+              </Text>
+              <Text as="span" size="xs" tone="muted" className="block">
+                {t('mainInfoTooltip')}
+              </Text>
             </span>
             <Switch checked={showInBody} onCheckedChange={setShowInBody} />
-          </label>
-        </div>
+          </Inline>
+        </Box>
 
-        <div className="flex justify-end gap-2 border-t border-border/50 pt-4">
+        <Inline
+          gap={2}
+          align="stretch"
+          justify="end"
+          padTop={4}
+          className="flex justify-end border-t border-border/50"
+        >
           <Button type="button" variant="ghost" onClick={onClose}>
             {tCommon('cancel')}
           </Button>
           <Button type="submit" disabled={!name.trim()}>
             {tCommon(initial ? 'save' : 'add')}
           </Button>
-        </div>
-      </form>
+        </Inline>
+      </Stack>
     </Modal>
   );
 }

@@ -27,7 +27,7 @@ function ToolbarButton({
         onMouseDown={(e) => e.preventDefault()}
         onClick={onClick}
         className={cn(
-          'nodrag flex size-7 cursor-pointer items-center justify-center rounded text-black/50 hover:bg-black/10 hover:text-black/80 [&_svg]:size-3.5',
+          'nodrag flex size-7 cursor-pointer items-center justify-center rounded-sm text-black/50 hover:bg-black/10 hover:text-black/80 [&_svg]:size-3.5',
           active && 'bg-black/15 text-black',
         )}
       >

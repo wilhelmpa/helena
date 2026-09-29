@@ -1,11 +1,14 @@
 import { TriangleAlert } from 'lucide-react';
+import { Inline, Text } from '@/design-system';
 
 // What a pending change will do to the values issues already hold.
 export default function FieldChangeWarning({ children }: { children: string }) {
   return (
-    <p className="flex items-start gap-2 rounded-md bg-warning/15 px-2.5 py-2 text-xs">
+    <Inline as="p" gap={2} align="start" padX={3} padY={2} className="rounded-md bg-warning/15">
       <TriangleAlert className="mt-0.5 size-3.5 shrink-0 text-warning" />
-      {children}
-    </p>
+      <Text as="span" size="xs">
+        {children}
+      </Text>
+    </Inline>
   );
 }

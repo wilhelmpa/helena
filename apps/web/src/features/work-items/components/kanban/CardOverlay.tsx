@@ -45,7 +45,7 @@ export function CardOverlay({
               style={{ transform: `translate(${depth * 6}px, ${depth * 6}px)` }}
             />
           ))}
-          <div className="kanban-card board-card relative flex flex-col gap-2 rounded-[14px] px-4 py-[14px] shadow-lg">
+          <div className="kanban-card board-card relative flex flex-col gap-2 rounded-xl px-4 py-[14px] shadow-lg">
             <IssueCardBody issue={issue} project={project} maps={maps} properties={properties} />
             {count > 1 && (
               <Badge className="absolute -top-2 -right-2 rounded-full shadow">{count}</Badge>

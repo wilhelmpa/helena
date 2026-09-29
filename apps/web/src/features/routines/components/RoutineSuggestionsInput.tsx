@@ -9,6 +9,7 @@ import {
   InputGroupInput,
 } from '@/components/ui/input-group';
 import { Popover, PopoverAnchor, PopoverContent } from '@/components/ui/popover';
+import { Text } from '@/design-system';
 
 export interface InputSuggestion {
   value: string;
@@ -133,9 +134,9 @@ export function RoutineSuggestionsInput({
               >
                 <span>{suggestion.label}</span>
                 {suggestion.description && (
-                  <span className="shrink-0 text-xs text-muted-foreground">
+                  <Text as="span" size="xs" tone="muted" className="shrink-0">
                     {suggestion.description}
-                  </span>
+                  </Text>
                 )}
               </CommandItem>
             ))}

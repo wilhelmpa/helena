@@ -30,7 +30,8 @@ import Orb from '@/components/helena/Orb';
 import { useAgentStatus } from '@/utils/helenaStatus';
 import { Card } from '@/components/helena/DashboardPrimitives';
 import { ProjectTag } from '@/components/helena/ProjectTag';
-import EmptyState from '@/components/helena/EmptyState';
+import { EmptyState, Page } from '@/design-system';
+import { CheckCircle2, CircleAlert, History } from 'lucide-react';
 import PillButton from '@/components/helena/PillButton';
 import styles from './OwnerInboxPage.module.css';
 
@@ -248,29 +249,37 @@ function OwnerInboxContent() {
     .filter((item) => selected === 'all' || item.project?.key === selected)
     .slice(0, 5);
   return (
-    <main className={styles.main}>
+    <Page>
       <div className={styles.content}>
-        <div className={styles.headingRow}>
-          <h2>
-            {error && visible.length === 0 ? (
-              t('title')
-            ) : loading && visible.length === 0 ? (
-              t('loadingTitle')
-            ) : visible.length === 0 ? (
-              t('allDone')
-            ) : (
-              <>
-                {t('headingCount', { count: visible.length })}{' '}
-                {t('needsYou', { count: visible.length })}
-              </>
-            )}
-          </h2>
-        </div>
-        {error && <EmptyState className={styles.empty}>{t('loadError')}</EmptyState>}
+        {visible.length > 0 && (
+          <div className={styles.headingRow}>
+            <h2>
+              {error && visible.length === 0 ? (
+                t('title')
+              ) : loading && visible.length === 0 ? (
+                t('loadingTitle')
+              ) : visible.length === 0 ? (
+                t('allDone')
+              ) : (
+                <>
+                  {t('headingCount', { count: visible.length })}{' '}
+                  {t('needsYou', { count: visible.length })}
+                </>
+              )}
+            </h2>
+          </div>
+        )}
+        {error && (
+          <EmptyState icon={<CircleAlert />} fill={false}>
+            {t('loadError')}
+          </EmptyState>
+        )}
         {error && visible.length === 0 ? null : loading && actions.length === 0 ? (
-          <EmptyState className={styles.empty}>{t('loading')}</EmptyState>
+          <EmptyState fill={false}>{t('loading')}</EmptyState>
         ) : visible.length === 0 ? (
-          <EmptyState className={styles.empty}>{t('empty')}</EmptyState>
+          <EmptyState icon={<CheckCircle2 />} fill={false}>
+            {t('empty')}
+          </EmptyState>
         ) : (
           groups.map((group) => (
             <section key={group.key} className={styles.group} aria-label={group.name}>
@@ -288,7 +297,9 @@ function OwnerInboxContent() {
         <section className={styles.reads} aria-labelledby="reads-heading">
           <h2 id="reads-heading">{t('toRead')}</h2>
           {visibleReads.length === 0 ? (
-            <EmptyState className={styles.empty}>{t('noCompletedRuns')}</EmptyState>
+            <EmptyState icon={<History />} fill={false}>
+              {t('noCompletedRuns')}
+            </EmptyState>
           ) : (
             visibleReads.map((entry) => {
               const target = activityDetails(entry);
@@ -326,7 +337,7 @@ function OwnerInboxContent() {
         </section>
       </div>
       <SystemDetailsDialog />
-    </main>
+    </Page>
   );
 }
 

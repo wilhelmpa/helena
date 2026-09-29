@@ -3,6 +3,8 @@ import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
+import { Inline } from '@/design-system';
+
 export function SettingsInlineEditForm({
   name,
   onNameChange,
@@ -25,7 +27,7 @@ export function SettingsInlineEditForm({
   const t = useTranslations('common');
 
   return (
-    <div className="flex items-center gap-2 px-3 py-1.5">
+    <Inline gap={2} padX={3} padY={2} className="flex items-center">
       {leading}
       <Input
         autoFocus
@@ -45,6 +47,6 @@ export function SettingsInlineEditForm({
       <Button variant="ghost" size="sm" className="h-7" onClick={onCancel}>
         {t('cancel')}
       </Button>
-    </div>
+    </Inline>
   );
 }

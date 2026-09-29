@@ -7,7 +7,7 @@ import type { Crumb } from '@/design-system';
 import type { ShellRoute } from '@/hooks/useShellRoute';
 import { useSettingsSectionText } from '@/hooks/useSectionLabels';
 import { SETTINGS_SECTIONS } from '@/utils/settingsSections';
-import { dashboardsPath, organizationPath, projectPath, settingsPath } from '@/utils/paths';
+import { aiTeamPath, dashboardsPath, projectPath, settingsPath } from '@/utils/paths';
 import { projectColor } from '@/utils/projectColor';
 
 export type ShellHeading = { crumbs: Crumb[]; title: string; accent: string };
@@ -44,15 +44,15 @@ export function useShellHeading({
       ? t('workItems')
       : /^\/(files|docs|vault)(\/|$)/.test(pathname)
         ? t('sidebarKnowledge')
-        : /^\/(organization|agents|schedules|workflows|activity|browsers|decisions)(\/|$)/.test(
-              pathname,
-            ) && search.get('tab') !== 'goals'
-          ? t('sidebarAutomation')
-          : /^\/(dashboard|system)(\/|$)/.test(pathname)
-            ? t('dashboards')
-            : /^\/settings(\/|$)/.test(pathname)
-              ? t('settings')
-              : null;
+        : /^\/(organization|agents)(\/|$)/.test(pathname) && search.get('tab') !== 'goals'
+          ? t('sidebarTeam')
+          : /^\/(schedules|workflows|activity|browsers|decisions)(\/|$)/.test(pathname)
+            ? t('sidebarAutomation')
+            : /^\/(dashboard|system)(\/|$)/.test(pathname)
+              ? t('dashboards')
+              : /^\/settings(\/|$)/.test(pathname)
+                ? t('settings')
+                : null;
     const title = globalTitle ?? home;
     return {
       crumbs: [{ label: home, href: '/' }, ...(area && area !== title ? [{ label: area }] : [])],
@@ -96,18 +96,18 @@ export function useShellHeading({
   if (sub === 'receipts') return heading([project], t('receipts'));
   if (sub === 'inbox' || sub === 'approvals') return heading([project], t('sidebarInbox'));
   const automation = t('sidebarAutomation');
-  if (sub === 'organization' || sub === 'ai-agents')
-    return heading(area(automation), t('sidebarTeam'));
+  // Team is its own entry of the sidebar (owner, O55); Automatisierung holds the rest.
+  if (sub === 'organization' || sub === 'ai-agents') return heading([project], t('sidebarTeam'));
+  const schedules = aiTeamPath(key, 'schedules');
   if (sub === 'ai-team')
     return heading(
-      area(automation, organizationPath(key)),
+      area(automation, schedules),
       aiTeamSection && known(aiTeamSection)
         ? sectionText(aiTeamSection).label
         : t('sidebarSchedules'),
     );
-  if (sub === 'workflows') return heading(area(automation, organizationPath(key)), t('workflows'));
-  if (sub === 'activity')
-    return heading(area(automation, organizationPath(key)), t('sidebarHistory'));
+  if (sub === 'workflows') return heading(area(automation, schedules), t('workflows'));
+  if (sub === 'activity') return heading(area(automation, schedules), t('sidebarHistory'));
   if (sub === 'chat') return heading([project], t('chat'));
   if (sub === 'code') return heading([project], t('workspace.code'));
   if (sub === 'browser-lab') return heading([project], t('browserLab'));

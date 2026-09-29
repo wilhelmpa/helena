@@ -31,6 +31,8 @@ import {
   uploadReceipt,
   type ReceiptFilter,
   type ReceiptPatch,
+  getReceiptDedup,
+  setReceiptDedup,
 } from '@/lib/api/endpoints/receipts';
 
 const root = (projectKey: string) => ['receipts', projectKey] as const;
@@ -284,5 +286,21 @@ export function useReceiptOriginalLink(projectKey: string) {
       attach: boolean;
     }) => setReceiptOriginalLink(projectKey, receiptId, primaryReceiptId, attach),
     onSuccess: refresh,
+  });
+}
+
+export function useReceiptDedupQuery(teamId: number | null) {
+  return useQuery({
+    queryKey: ['receipt-dedup', teamId],
+    queryFn: () => getReceiptDedup(teamId!),
+    enabled: teamId != null && teamId > 0,
+  });
+}
+
+export function useSetReceiptDedup(teamId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (autoMerge: boolean) => setReceiptDedup(teamId, autoMerge),
+    onSuccess: (data) => qc.setQueryData(['receipt-dedup', teamId], data),
   });
 }

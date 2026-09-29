@@ -26,6 +26,8 @@ import {
 import { SettingsStateRow } from './SettingsStateRow';
 import SettingsDeleteStateDialog from './SettingsDeleteStateDialog';
 
+import { Stack, Box, Text } from '@/design-system';
+
 // The workflow states, grouped by state type. Each group has its own inline add;
 // states are reordered within their group by drag, edited inline, and deleted.
 export default function SettingsStates({ project }: { project: ProjectDetail }) {
@@ -120,15 +122,21 @@ export default function SettingsStates({ project }: { project: ProjectDetail }) 
   }
 
   return (
-    <div className="space-y-4">
+    <Stack gap={4}>
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <div>
           {STATE_TYPES.map((s) => {
             const group = project.columns.filter((c) => c.stateType === s);
             return (
-              <div key={s} className="mb-6 last:mb-0">
-                <div className="mb-1 flex items-center justify-between border-b pb-1">
-                  <span className="text-xs font-medium text-muted-foreground">{tStateType(s)}</span>
+              <Box marginBottom={5} key={s} className="last:mb-0">
+                <Box
+                  marginBottom={1}
+                  padBottom={1}
+                  className="flex items-center justify-between border-b"
+                >
+                  <Text as="span" size="xs" tone="muted" className="font-medium">
+                    {tStateType(s)}
+                  </Text>
                   {can('create') && (
                     <Button
                       variant="ghost"
@@ -141,8 +149,8 @@ export default function SettingsStates({ project }: { project: ProjectDetail }) 
                       {tCommon('new')}
                     </Button>
                   )}
-                </div>
-                <ItemGroup className="overflow-hidden rounded-lg border bg-card">
+                </Box>
+                <ItemGroup className="overflow-hidden rounded-md border bg-card">
                   {group.length === 0 && addingType !== s && (
                     <SettingsEmpty
                       title={t('emptyTitle', { type: tStateType(s) })}
@@ -212,7 +220,7 @@ export default function SettingsStates({ project }: { project: ProjectDetail }) 
                     />
                   )}
                 </ItemGroup>
-              </div>
+              </Box>
             );
           })}
         </div>
@@ -225,6 +233,6 @@ export default function SettingsStates({ project }: { project: ProjectDetail }) 
           onClose={() => setDeleting(null)}
         />
       )}
-    </div>
+    </Stack>
   );
 }

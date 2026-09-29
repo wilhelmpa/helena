@@ -8,6 +8,8 @@ import { colorDot } from '@/components/common/fields/colorDot';
 import { Button } from '@/components/ui/button';
 import { useSettingsCan } from '../../context/settingsPermission';
 
+import { Box, Inline, Text } from '@/design-system';
+
 // One section of the labels list. A group renders a collapsible header with its
 // labels; the ungrouped bucket is `headerless` and renders its labels directly at
 // the root. The whole section is a drop target, so a label dragged onto it (header
@@ -50,7 +52,7 @@ export function SettingsLabelGroupSection({
   });
   const name = group?.name ?? t('ungrouped');
   const wrapperClass = cn(
-    'rounded-lg transition-colors',
+    'rounded-md transition-colors',
     dragging && 'outline-1 -outline-offset-2 outline-border/60 outline-dashed',
     isOver && 'bg-primary/10 outline-2 outline-primary outline-solid',
   );
@@ -61,7 +63,7 @@ export function SettingsLabelGroupSection({
     if (empty && !dragging) return null;
     return (
       <div ref={setNodeRef} className={wrapperClass}>
-        <div className="pb-1">
+        <Box padBottom={1}>
           {children}
           {empty && (
             <p
@@ -73,7 +75,7 @@ export function SettingsLabelGroupSection({
               {t('dropToUngroup')}
             </p>
           )}
-        </div>
+        </Box>
       </div>
     );
   }
@@ -81,9 +83,12 @@ export function SettingsLabelGroupSection({
   return (
     <div ref={setNodeRef} className={wrapperClass}>
       {editForm ? (
-        <div className="py-1">{editForm}</div>
+        <Box padY={1}>{editForm}</Box>
       ) : (
-        <div className="group/gh flex h-11 items-center gap-1 rounded-md pr-2 transition-colors hover:bg-accent/50">
+        <Inline
+          gap={1}
+          className="group/gh flex h-11 items-center rounded-md pr-2 transition-colors hover:bg-accent/50"
+        >
           <button
             type="button"
             onClick={onToggle}
@@ -101,7 +106,9 @@ export function SettingsLabelGroupSection({
               {name}
             </span>
             {count > 0 && (
-              <span className="text-xs text-muted-foreground tabular-nums">{count}</span>
+              <Text as="span" size="xs" tone="muted" className="tabular-nums">
+                {count}
+              </Text>
             )}
             {isOver && (
               <span className="ml-2 text-xs font-medium text-primary">{t('dropHere')}</span>
@@ -141,11 +148,11 @@ export function SettingsLabelGroupSection({
               <Plus className="size-4" />
             </Button>
           )}
-        </div>
+        </Inline>
       )}
 
       {open && (
-        <div className="pb-1">
+        <Box padBottom={1}>
           {/* Indent the group's labels so they read as children of the group header. */}
           <div className="pl-6">{children}</div>
           {empty && (
@@ -158,7 +165,7 @@ export function SettingsLabelGroupSection({
               {dragging ? t('dropToGroup', { name }) : t('noLabels')}
             </p>
           )}
-        </div>
+        </Box>
       )}
     </div>
   );

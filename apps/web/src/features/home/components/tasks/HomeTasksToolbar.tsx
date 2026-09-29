@@ -5,12 +5,7 @@ import type { CrossProjectIssueFilters } from '@/lib/api/endpoints/issues';
 import type { Project } from '@/lib/api/endpoints/projects';
 import { STATE_TYPES } from '@/utils/fieldOptions';
 import { byKey } from '@/utils/messageKey';
-import {
-  PageSearch,
-  PageSelect,
-  PageToolbar,
-  PageToolbarSpacer,
-} from '@/components/layout/PageToolbar';
+import { PageSearch, PageSelect, PageTabs, PageToolbar, PageToolbarSpacer } from '@/design-system';
 import { PageFilterMenu } from '@/components/layout/PageFilterMenu';
 
 export type HomeTaskGrouping = 'project' | 'state';
@@ -39,10 +34,21 @@ export default function HomeTasksToolbar({
   onGroupingChange: (grouping: HomeTaskGrouping) => void;
 }) {
   const t = useTranslations('workItems.allTasks');
+  const tNav = useTranslations('nav');
   const stateType = byKey(useTranslations('display.stateTypes'));
 
   return (
     <PageToolbar>
+      {/* Meine / Alle offenen: tabs of the one Aufgaben page, not two sidebar rows (O9). */}
+      <PageTabs<'mine' | 'open'>
+        label={tNav('workItems')}
+        value={filters.assignee === 'me' ? 'mine' : 'open'}
+        onChange={(value) => onFiltersChange({ assignee: value === 'mine' ? 'me' : undefined })}
+        items={[
+          { value: 'mine', label: tNav('sidebarMyTasks') },
+          { value: 'open', label: tNav('sidebarOpenTasks') },
+        ]}
+      />
       <PageToolbarSpacer />
       <PageSearch value={search} onChange={onSearchChange} placeholder={t('searchPlaceholder')} />
       <PageFilterMenu

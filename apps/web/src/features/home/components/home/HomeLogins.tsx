@@ -7,6 +7,7 @@ import type { RuntimeLoginsHealth } from '@/lib/api/endpoints/god';
 import { formatDateTime, formatDurationShort } from '@/utils/dates';
 import { KNOWN_PROVIDERS } from '@/features/provider-limits/utils/limitsFormat';
 import { loginRows, staleSince } from '../../utils/runtimeLogins';
+import { Box, Inline, Stack, Text } from '@/design-system';
 
 // The model logins agents share (Hermes' Claude and ChatGPT logins), by what the owner has
 // to do (utils/runtimeLogins): "aktiv · erneuert sich automatisch" while the token keeper
@@ -45,15 +46,15 @@ export default function HomeLogins({ health }: { health: RuntimeLoginsHealth | u
   }
 
   return (
-    <div className="mt-2">
-      <ul className="rounded-lg border bg-card p-1">
-        <li className="flex h-8 min-w-0 items-center gap-2 px-2 text-sm">
+    <Box marginTop={2}>
+      <Box as="ul" pad={1} className="rounded-md border bg-card">
+        <Inline as="li" gap={2} padX={2} className="h-8 min-w-0 text-sm">
           <StatusBadge
             status={problems > 0 ? 'danger' : since || failing > 0 ? 'waiting' : 'success'}
             dotOnly
           />
           <span className="min-w-0 truncate">{t('title')}</span>
-          <span className="ms-auto shrink-0 text-xs text-muted-foreground">
+          <Text as="span" size="xs" tone="muted" className="ms-auto shrink-0">
             {problems > 0
               ? t('summaryProblems', { count: problems })
               : since
@@ -61,14 +62,11 @@ export default function HomeLogins({ health }: { health: RuntimeLoginsHealth | u
                 : failing > 0
                   ? t('summaryRenewing', { count: failing })
                   : t('summaryOk')}
-          </span>
-        </li>
+          </Text>
+        </Inline>
         {rows.map((row) => (
           <li key={row.key} className="min-w-0">
-            <div
-              className="flex h-8 min-w-0 items-center gap-2 px-2 text-sm"
-              title={tokenTimes(row)}
-            >
+            <Inline gap={2} padX={2} className="h-8 min-w-0 text-sm" title={tokenTimes(row)}>
               <StatusBadge status={row.status} dotOnly />
               <span className="min-w-0 truncate">
                 {provider(row.login.provider)}
@@ -87,17 +85,19 @@ export default function HomeLogins({ health }: { health: RuntimeLoginsHealth | u
               >
                 {stateText(row)}
               </span>
-            </div>
+            </Inline>
             {row.needsOwner && (
-              <div className="space-y-1.5 px-2 pb-2">
+              <Stack gap={2} padX={2} padBottom={2}>
                 {row.login.error && (
-                  <p className="text-xs break-words text-muted-foreground">{row.login.error}</p>
+                  <Text as="p" size="xs" tone="muted" className="break-words">
+                    {row.login.error}
+                  </Text>
                 )}
                 {row.login.command && (
                   <>
-                    <p className="text-xs">
+                    <Text as="p" size="xs">
                       {t('relogin', { provider: provider(row.login.provider) })}
-                    </p>
+                    </Text>
                     <CopyableCommand
                       command={row.login.command}
                       copyLabel={t('copyCommand')}
@@ -105,16 +105,16 @@ export default function HomeLogins({ health }: { health: RuntimeLoginsHealth | u
                     />
                   </>
                 )}
-              </div>
+              </Stack>
             )}
           </li>
         ))}
-      </ul>
+      </Box>
       {since && (
-        <p className="mt-1 px-2 text-xs text-status-waiting">
+        <Text as="p" size="xs" tone="warning" className="mt-1 px-2">
           {t('stale', { time: formatDurationShort(since) })}
-        </p>
+        </Text>
       )}
-    </div>
+    </Box>
   );
 }

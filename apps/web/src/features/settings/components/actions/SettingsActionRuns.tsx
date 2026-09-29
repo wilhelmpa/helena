@@ -17,6 +17,8 @@ import {
   TableRow,
 } from '@/components/ui/table';
 
+import { Box, Stack, Text } from '@/design-system';
+
 export function SettingsActionRuns({ project }: { project: ProjectDetail }) {
   const t = useTranslations('settings.actions');
   const projectKey = project.project.key;
@@ -28,15 +30,21 @@ export function SettingsActionRuns({ project }: { project: ProjectDetail }) {
   });
 
   return (
-    <section className="space-y-3 border-t pt-4">
+    <Stack as="section" gap={3} padTop={4} className="border-t">
       <div>
         <h2 className="text-sm font-medium">{t('runHistory')}</h2>
-        <p className="text-xs text-muted-foreground">{t('runHistoryHint')}</p>
+        <Text as="p" size="xs" tone="muted">
+          {t('runHistoryHint')}
+        </Text>
       </div>
       {query.isPending ? (
         <ListSkeleton rows={3} rowClassName="h-10" />
       ) : runs.length === 0 ? (
-        <p className="rounded-lg border p-4 text-sm text-muted-foreground">{t('noRuns')}</p>
+        <Box as="p" pad={4} className="rounded-md border">
+          <Text as="span" size="sm" tone="muted">
+            {t('noRuns')}
+          </Text>
+        </Box>
       ) : (
         <Table className="min-w-[760px] table-fixed">
           <colgroup>
@@ -82,12 +90,17 @@ export function SettingsActionRuns({ project }: { project: ProjectDetail }) {
                     {t(`runStatus.${run.status}`)}
                   </Badge>
                   {run.lastError && (
-                    <p
-                      className="mt-1 line-clamp-2 text-xs text-muted-foreground"
-                      title={run.lastError}
-                    >
-                      {run.lastError}
-                    </p>
+                    <Box as="p" marginTop={1} className="line-clamp-2">
+                      <Text
+                        as="span"
+                        size="xs"
+                        tone="muted"
+
+                        title={run.lastError}
+                      >
+                        {run.lastError}
+                      </Text>
+                    </Box>
                   )}
                 </TableCell>
                 <TableCell className="px-3 py-2 text-end text-xs text-muted-foreground tabular-nums">
@@ -98,7 +111,7 @@ export function SettingsActionRuns({ project }: { project: ProjectDetail }) {
           </TableBody>
         </Table>
       )}
-    </section>
+    </Stack>
   );
 }
 

@@ -55,7 +55,7 @@ export function AccessLoginsSection({
       <h2 id="access-logins-title" className="text-md font-medium">
         {t('title')}
       </h2>
-      <ul className="divide-y overflow-hidden rounded-lg border border-sidebar-border bg-card">
+      <ul className="divide-y overflow-hidden rounded-md border border-sidebar-border bg-card">
         {shared.map((login) => (
           <SharedLoginItem key={login.key} login={login} />
         ))}

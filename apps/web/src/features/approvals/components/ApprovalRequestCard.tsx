@@ -33,7 +33,7 @@ function AgentRequestCard({ request }: { request: ApprovalRequest }) {
   const liveView = LIVE_VIEW_LINK.exec(request.details)?.[0] ?? null;
 
   return (
-    <article className="space-y-3 rounded-lg border bg-card p-4">
+    <article className="space-y-3 rounded-md border bg-card p-4">
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
         <Badge variant="outline">{t(`kind.${request.kind}`)}</Badge>
         <span>

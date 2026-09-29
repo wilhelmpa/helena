@@ -363,7 +363,7 @@ export default function TeamAiAgentFields({
   );
 
   const stack = [
-    <div key="runtime-picker" className="rounded-lg border border-border/60 p-4">
+    <div key="runtime-picker" className="rounded-md border border-border/60 p-4">
       <p className="mb-3 text-xs text-muted-foreground">{tRuntime('summary')}</p>
       {runtimeControls}
     </div>,

@@ -19,7 +19,7 @@ export function IntegrationIcon({
   return (
     <div
       className={cn(
-        'flex shrink-0 items-center justify-center rounded-lg bg-muted text-xs font-semibold text-muted-foreground',
+        'flex shrink-0 items-center justify-center rounded-md bg-muted text-xs font-semibold text-muted-foreground',
         className,
       )}
     >

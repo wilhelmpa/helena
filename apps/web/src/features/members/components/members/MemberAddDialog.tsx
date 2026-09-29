@@ -21,6 +21,7 @@ import {
 } from '@/services/members.service';
 import { useTeamRoleOptionsQuery } from '@/services/roles.service';
 import MemberPicker, { type MemberOption } from './MemberPicker';
+import { Box, Inline, Stack, Text } from '@/design-system';
 
 // The message for each refusal the API can answer with; any other error falls back
 // to 'refused'.
@@ -132,10 +133,12 @@ export default function MemberAddDialog({
       onClose={onClose}
       wide
     >
-      <div className="space-y-4 py-1">
+      <Stack gap={4} padY={1}>
         <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <p className="text-xs font-medium text-muted-foreground">{t('personLabel')}</p>
+          <Stack gap={2}>
+            <Text as="p" size="xs" tone="muted" className="font-medium">
+              {t('personLabel')}
+            </Text>
             <MemberPicker
               candidates={candidates}
               value={target}
@@ -150,11 +153,17 @@ export default function MemberAddDialog({
               canInvite={canInvite}
               disabled={busy}
             />
-            {refusal && <p className="text-xs text-destructive">{refusal}</p>}
-          </div>
+            {refusal && (
+              <Text as="p" size="xs" tone="danger">
+                {refusal}
+              </Text>
+            )}
+          </Stack>
 
-          <div className="space-y-2">
-            <p className="text-xs font-medium text-muted-foreground">{t('roleLabel')}</p>
+          <Stack gap={2}>
+            <Text as="p" size="xs" tone="muted" className="font-medium">
+              {t('roleLabel')}
+            </Text>
             <Select value={role} onValueChange={setRoleValue} disabled={busy}>
               <SelectTrigger className="w-full">
                 <SelectValue placeholder={t('rolePlaceholder')} />
@@ -168,27 +177,31 @@ export default function MemberAddDialog({
                 {canGrantOwner && <SelectItem value={OWNER_VALUE}>{tCommon('owner')}</SelectItem>}
               </SelectContent>
             </Select>
-          </div>
+          </Stack>
         </div>
 
         {target?.kind === 'invite' && (
-          <div className="flex items-center gap-3 rounded-lg border bg-muted/30 px-4 py-3">
+          <Inline gap={3} padX={4} padY={3} className="rounded-md border bg-muted/30">
             <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
               <Mail className="size-4" />
             </span>
             <div className="min-w-0">
-              <p className="truncate text-sm font-medium">{target.email}</p>
-              <p className="text-xs text-muted-foreground">{t('willJoinTeam', { teamName })}</p>
+              <Text as="p" size="sm" className="truncate font-medium">
+                {target.email}
+              </Text>
+              <Text as="p" size="xs" tone="muted">
+                {t('willJoinTeam', { teamName })}
+              </Text>
             </div>
-          </div>
+          </Inline>
         )}
 
-        <div className="flex justify-end border-t pt-4">
+        <Box padTop={4} className="flex justify-end border-t">
           <Button disabled={!target || !role || busy} onClick={submit}>
             {target?.kind === 'invite' ? t('sendInvite') : t('submit')}
           </Button>
-        </div>
-      </div>
+        </Box>
+      </Stack>
     </Modal>
   );
 }

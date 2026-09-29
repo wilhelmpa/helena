@@ -8,6 +8,7 @@ import {
   ArrowUp,
   Check,
   LayoutTemplate,
+  Lock,
   Pencil,
   Plus,
   Target,
@@ -20,6 +21,7 @@ import { dashboardPath, dashboardsPath, initiativesPath } from '@/utils/paths';
 import { projectColor } from '@/utils/projectColor';
 import { useProjectFeatures } from '@/hooks/useProjectFeatures';
 import { Skeleton } from '@/components/ui/skeleton';
+import { EmptyState, Page, Stack } from '@/design-system';
 import {
   PageActions,
   PageToolbar,
@@ -84,18 +86,20 @@ export default function DashboardsPage() {
 
   if (!project || isLoading) {
     return (
-      <div className="flex-1 space-y-4 p-4">
-        <Skeleton className="h-8 w-full max-w-md" />
-        <Skeleton className="h-40 w-full" />
-      </div>
+      <Page>
+        <Stack gap={4}>
+          <Skeleton className="h-8 w-full max-w-md" />
+          <Skeleton className="h-40 w-full" />
+        </Stack>
+      </Page>
     );
   }
 
   if (!can('dashboards', 'read')) {
     return (
-      <div className="flex h-full items-center justify-center px-4 text-center text-sm text-muted-foreground">
-        {t('noAccess')}
-      </div>
+      <Page>
+        <EmptyState icon={<Lock />}>{t('noAccess')}</EmptyState>
+      </Page>
     );
   }
 
@@ -175,10 +179,7 @@ export default function DashboardsPage() {
   }
 
   return (
-    <div
-      className="flex flex-1 flex-col overflow-hidden"
-      style={{ '--dashboard-project': projectColor(projectKey) } as CSSProperties}
-    >
+    <Page>
       <PageToolbar>
         <PageToolbarSpacer />
         <DashboardRowActions
@@ -193,13 +194,11 @@ export default function DashboardsPage() {
         />
       </PageToolbar>
 
-      <div className="flex-1 overflow-y-auto">
-        {/* The page's header names the dashboard; the body starts with its figures. */}
-        <div className="ds-dashboard-body">
-          <DashboardOverview projectKey={projectKey} project={project} />
-          <WidgetGrid projectKey={projectKey} project={project} editor={editor} editing={editing} />
-        </div>
-      </div>
+      {/* The page's header names the dashboard; the body starts with its figures. */}
+      <Stack gap={5} style={{ '--dashboard-project': projectColor(projectKey) } as CSSProperties}>
+        <DashboardOverview projectKey={projectKey} project={project} />
+        <WidgetGrid projectKey={projectKey} project={project} editor={editor} editing={editing} />
+      </Stack>
 
       {deleting && (
         <ConfirmDialog
@@ -233,7 +232,7 @@ export default function DashboardsPage() {
           setNameDialog(null);
         }}
       />
-    </div>
+    </Page>
   );
 }
 

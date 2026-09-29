@@ -32,7 +32,8 @@
     "replace": "Pindahkan",
     "replaced": "{count, plural, =0 {Tidak ada agen yang memakainya.} other {# agen dipindahkan.}}",
     "agentDefault": "Default agen",
-    "seen": "terakhir {time}"
+    "seen": "terakhir {time}",
+    "usedByLabel": "Dipakai oleh"
   },
   "deadLogin": "{model} berjalan lewat {account, select, chatgpt {login ChatGPT} claude {login Claude} other {login}} Hermes, yang {state, select, invalid {tidak valid} other {sudah kedaluwarsa}} – login ulang Hermes atau pilih model dari penyedia lain.",
   "deadLoginDefault": "Default agen berjalan lewat {account, select, chatgpt {login ChatGPT} claude {login Claude} other {login}} Hermes, yang {state, select, invalid {tidak valid} other {sudah kedaluwarsa}} – login ulang Hermes."

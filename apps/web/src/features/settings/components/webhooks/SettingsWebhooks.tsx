@@ -15,6 +15,8 @@ import { SettingsWebhookDialog, type WebhookFormValue } from './SettingsWebhookD
 import { SettingsWebhooksTable } from './SettingsWebhooksTable';
 import { SettingsWebhookDeliveriesSheet } from './SettingsWebhookDeliveriesSheet';
 
+import { Stack } from '@/design-system';
+
 // Project settings tab for outgoing webhooks. Each webhook posts subscribed
 // project events to its URL, signed with a per-webhook secret. Delivery is handled
 // by the server; this tab manages the subscriptions.
@@ -66,14 +68,14 @@ export default function SettingsWebhooks({
       ) : webhooks.length === 0 ? (
         <EmptyState title={t('emptyTitle')} description={t('emptyHint')} />
       ) : (
-        <div className="space-y-4">
+        <Stack gap={4}>
           <SettingsWebhooksTable
             webhooks={webhooks}
             onShowDeliveries={setDeliveriesFor}
             onEdit={setEditing}
             onDelete={setDeleting}
           />
-        </div>
+        </Stack>
       )}
 
       {showDialog && (

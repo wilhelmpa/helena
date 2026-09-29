@@ -4,6 +4,8 @@ import { Check, ChevronDown, ChevronRight, Copy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { copyText } from '@/utils/clipboard';
 
+import { Box, Text } from '@/design-system';
+
 // A lightweight, monochrome JSON tree viewer. Objects and arrays collapse/expand;
 // leaves render inline. Accepts an object or a string that contains JSON (parsed
 // on the fly); a non-JSON string is shown as raw text. A copy button copies the
@@ -36,16 +38,18 @@ export function JsonViewer({ value }: { value: unknown }) {
       </Button>
       {/* JSON reads left to right whatever the interface language is: the payload
           keeps its direction, and its tree disclosure chevrons keep pointing right. */}
-      <div
+      <Box
+        pad={2}
+        padEnd={6}
         dir="ltr"
-        className="max-h-72 overflow-auto rounded-md bg-muted/50 p-2 pe-8 text-start font-mono text-xs leading-relaxed"
+        className="max-h-72 overflow-auto rounded-md bg-muted/50 text-start font-mono text-xs leading-relaxed"
       >
         {isJson ? (
           <JsonNode value={data} depth={0} isLast />
         ) : (
           <pre className="break-all whitespace-pre-wrap">{String(data)}</pre>
         )}
-      </div>
+      </Box>
     </div>
   );
 }
@@ -91,13 +95,13 @@ function JsonNode({
   return (
     <div>
       <div
-        className="flex cursor-pointer rounded hover:bg-accent/40"
+        className="flex cursor-pointer rounded-sm hover:bg-accent/40"
         style={indent}
         onClick={() => setOpen((o) => !o)}
       >
-        <span className="flex w-3.5 shrink-0 items-center text-muted-foreground">
+        <Text as="span" tone="muted" className="flex w-3.5 shrink-0 items-center">
           {open ? <ChevronDown className="size-3" /> : <ChevronRight className="size-3" />}
-        </span>
+        </Text>
         <span className="break-all">
           {keyEl}
           <span className="text-muted-foreground/70">{openBr}</span>
@@ -136,7 +140,11 @@ function JsonNode({
 
 function Leaf({ value }: { value: unknown }) {
   if (typeof value === 'string')
-    return <span className="text-muted-foreground">&quot;{value}&quot;</span>;
+    return (
+      <Text as="span" tone="muted">
+        &quot;{value}&quot;
+      </Text>
+    );
   if (value === null) return <span className="text-muted-foreground/50">null</span>;
   return <span className="text-foreground/80">{String(value)}</span>;
 }

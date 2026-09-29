@@ -7,6 +7,8 @@ import {
   Globe2,
   Mail,
   Maximize2,
+  Pin,
+  PinOff,
   MessageSquare,
   Minimize2,
   Plus,
@@ -44,6 +46,8 @@ export default function WorkspaceTabBar({
   onCloseTab,
   onChooseLayout,
   onClose,
+  pinned = false,
+  onTogglePin,
 }: {
   tabs: Tabs;
   activeTool: string;
@@ -53,6 +57,10 @@ export default function WorkspaceTabBar({
   onCloseTab: (key: string) => void;
   onChooseLayout: (choice: LayoutChoice) => void;
   onClose: () => void;
+  // Pinned, the panel docks beside the page and the page shrinks to the room left
+  // (owner, O31); unpinned it floats over the page.
+  pinned?: boolean;
+  onTogglePin?: () => void;
 }) {
   const t = useTranslations('nav.panelTabs');
   const tNav = useTranslations('nav');
@@ -195,6 +203,18 @@ export default function WorkspaceTabBar({
         </DropdownMenu>
       </div>
       <div className="ds-panel-head-tools">
+        {onTogglePin && layout !== 'full' && (
+          <button
+            type="button"
+            className="ds-icon-button ds-panel-pin"
+            aria-label={pinned ? t('unpin') : t('pin')}
+            title={pinned ? t('unpin') : t('pin')}
+            aria-pressed={pinned}
+            onClick={onTogglePin}
+          >
+            {pinned ? <PinOff size={15} /> : <Pin size={15} />}
+          </button>
+        )}
         <button
           type="button"
           className="ds-icon-button"

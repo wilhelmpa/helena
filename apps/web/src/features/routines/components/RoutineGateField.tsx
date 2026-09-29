@@ -8,6 +8,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { RoutineField } from './RoutineField';
+import { Text } from '@/design-system';
 
 export function RoutineGateField({
   mode,
@@ -61,7 +62,9 @@ export function RoutineGateField({
             </SelectItem>
           </SelectContent>
         </Select>
-        <p className="text-xs text-muted-foreground">{t('gateHint')}</p>
+        <Text as="p" size="xs" tone="muted">
+          {t('gateHint')}
+        </Text>
       </RoutineField>
     </div>
   );

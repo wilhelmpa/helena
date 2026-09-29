@@ -28,7 +28,7 @@ export function SettingsActionsTable({
   const tCommon = useTranslations('common');
 
   return (
-    <div className="overflow-hidden rounded-lg border bg-card">
+    <div className="overflow-hidden rounded-md border bg-card">
       <Table className="min-w-[680px] table-fixed">
         <colgroup>
           <col className="w-[44%]" />

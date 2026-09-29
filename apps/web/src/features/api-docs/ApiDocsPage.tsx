@@ -3,6 +3,7 @@
 import dynamic from 'next/dynamic';
 import { useTheme } from 'next-themes';
 import PageSkeleton from '@/components/common/skeleton/PageSkeleton';
+import { Page } from '@/design-system';
 
 // Scalar is a heavy client-only bundle: keep it out of the shared bundle and off
 // the server.
@@ -14,5 +15,9 @@ const ScalarReference = dynamic(() => import('./components/ScalarReference'), {
 // Mounted at /project/:projectKey/api, but the spec it renders is instance-wide.
 export default function ApiDocsPage() {
   const { resolvedTheme } = useTheme();
-  return <ScalarReference dark={resolvedTheme !== 'light'} />;
+  return (
+    <Page variant="bleed">
+      <ScalarReference dark={resolvedTheme !== 'light'} />
+    </Page>
+  );
 }

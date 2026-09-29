@@ -16,6 +16,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { WIDGET_GROUPS, WIDGET_ICON } from '../utils/widgetCatalog';
+import { Stack, Text } from '@/design-system';
 
 // Picks a widget type from the catalog and adds it to the current dashboard. Widgets
 // are grouped by subject and filtered by a case-insensitive search over the label and
@@ -102,17 +103,17 @@ export default function AddWidgetDialog({
           )}
         </div>
 
-        <div className="max-h-[55vh] space-y-4 overflow-y-auto pe-1">
+        <Stack gap={4} padEnd={1} className="max-h-[55vh] overflow-y-auto">
           {groups.length === 0 &&
             !plugins.some((item) =>
               item.label.toLowerCase().includes(query.trim().toLowerCase()),
             ) && (
-              <p className="py-4 text-center text-sm text-muted-foreground">
+              <Text as="p" size="sm" tone="muted" className="py-4 text-center">
                 {t('noWidgetMatches', { query: query.trim() })}
-              </p>
+              </Text>
             )}
           {groups.map((group) => (
-            <div key={group.key} className="space-y-1.5">
+            <Stack gap={2} key={group.key}>
               <h3 className="px-1 text-xs font-medium text-muted-foreground">
                 {t(`widgetGroups.${group.key}`)}
               </h3>
@@ -124,26 +125,26 @@ export default function AddWidgetDialog({
                       key={type}
                       type="button"
                       onClick={() => add(type)}
-                      className="flex items-start gap-3 rounded-lg border bg-card p-3 text-start transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                      className="flex items-start gap-3 rounded-md border bg-card p-3 text-start transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                     >
                       <Icon className="mt-0.5 size-5 shrink-0 text-muted-foreground" />
                       <span className="min-w-0">
-                        <span className="block text-sm font-medium">
+                        <Text as="span" size="sm" className="block font-medium">
                           {t(`widgets.${type}.label`)}
-                        </span>
-                        <span className="block text-xs text-muted-foreground">
+                        </Text>
+                        <Text as="span" size="xs" tone="muted" className="block">
                           {t(`widgets.${type}.description`)}
-                        </span>
+                        </Text>
                       </span>
                     </button>
                   );
                 })}
               </div>
-            </div>
+            </Stack>
           ))}
           {plugins.filter((item) => item.label.toLowerCase().includes(query.trim().toLowerCase()))
             .length > 0 && (
-            <div className="space-y-1.5">
+            <Stack gap={2}>
               <h3 className="px-1 text-xs font-medium text-muted-foreground">
                 {t('widgetGroups.plugins')}
               </h3>
@@ -159,16 +160,18 @@ export default function AddWidgetDialog({
                         onOpenChange(false);
                         setQuery('');
                       }}
-                      className="flex items-start gap-3 rounded-lg border bg-card p-3 text-start transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                      className="flex items-start gap-3 rounded-md border bg-card p-3 text-start transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                     >
                       <Puzzle className="mt-0.5 size-5 shrink-0 text-muted-foreground" />
-                      <span className="text-sm font-medium">{label}</span>
+                      <Text as="span" size="sm" className="font-medium">
+                        {label}
+                      </Text>
                     </button>
                   ))}
               </div>
-            </div>
+            </Stack>
           )}
-        </div>
+        </Stack>
       </DialogContent>
     </Dialog>
   );

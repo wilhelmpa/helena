@@ -251,7 +251,9 @@
     "full": "Во весь экран",
     "close": "Закрыть панель",
     "closeTab": "Закрыть {tab}",
-    "reloadView": "Перезагрузить вид"
+    "reloadView": "Перезагрузить вид",
+    "pin": "Закрепить: страница освобождает место",
+    "unpin": "Открепить: поверх страницы"
   },
   "sidebarTeam": "Команда",
   "sidebarAgentPool": "Пул агентов",
@@ -276,5 +278,7 @@
   "adminOnly": "Эти настройки видит только администратор.",
   "sidebarTerminals": "Терминалы",
   "sidebarFiles": "Файлы",
-  "settingsExtensions": "Расширения"
+  "settingsExtensions": "Расширения",
+  "settingsAutopilotExecution": "Автопилот и исполнение",
+  "settingsProjectAccess": "Управление доступами"
 }

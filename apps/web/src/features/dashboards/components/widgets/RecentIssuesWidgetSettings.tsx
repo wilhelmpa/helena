@@ -5,6 +5,7 @@ import { EMPTY_FILTER_SET, type FilterSet } from '@/utils/filters';
 import type { WidgetConfig } from '@/utils/dashboardWidgets';
 import FilterBar from '@/components/layout/FilterBar';
 import LimitSelect from './LimitSelect';
+import { Inline, Stack } from '@/design-system';
 
 const SORTS = ['created', 'updated'] as const;
 
@@ -23,9 +24,9 @@ export default function RecentIssuesWidgetSettings({
   const filters: FilterSet = config.filters ?? EMPTY_FILTER_SET;
   if (!project) return null;
   return (
-    <div className="space-y-2">
-      <div className="flex items-center gap-2">
-        <div className="flex gap-1">
+    <Stack gap={2}>
+      <Inline gap={2}>
+        <Inline gap={1} align="stretch">
           {SORTS.map((option) => (
             <button
               key={option}
@@ -41,15 +42,15 @@ export default function RecentIssuesWidgetSettings({
               {t(`sort.${option}`)}
             </button>
           ))}
-        </div>
+        </Inline>
         <LimitSelect value={limit} onChange={(next) => onConfigChange({ limit: next })} />
-      </div>
+      </Inline>
       <FilterBar
         filters={filters}
         onChange={(next) => onConfigChange({ filters: next })}
         project={project}
         customFields={customFields}
       />
-    </div>
+    </Stack>
   );
 }

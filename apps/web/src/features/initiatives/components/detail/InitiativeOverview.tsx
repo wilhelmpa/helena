@@ -6,6 +6,7 @@ import type { ProjectDetail } from '@/lib/api/endpoints/projects';
 import MarkdownEditor from '@/components/common/editor/MarkdownEditor';
 import InitiativeAttachments from './InitiativeAttachments';
 import InitiativeHeader from './InitiativeHeader';
+import { Box, Stack, Text } from '@/design-system';
 
 // The initiative's own text: its title, its properties and its description as
 // markdown, with its files beside them. The numbers and the activity feed are the
@@ -23,8 +24,8 @@ export default function InitiativeOverview({
   return (
     // A container query, not a viewport one: the sidebar takes width off this
     // column, so the viewport says nothing about whether the two fit side by side.
-    <div className="@container w-full p-4">
-      <div className="flex flex-col gap-6 @4xl:flex-row">
+    <Box pad={4} className="@container w-full">
+      <Stack gap={5} className="@4xl:flex-row">
         <div className="max-w-3xl min-w-0 flex-1">
           <InitiativeHeader initiative={initiative} project={project} />
           {hasDescription ? (
@@ -36,13 +37,15 @@ export default function InitiativeOverview({
               editable={false}
             />
           ) : (
-            <p className="mt-4 text-sm text-muted-foreground">{t('noDescription')}</p>
+            <Text as="p" size="sm" tone="muted" className="mt-4">
+              {t('noDescription')}
+            </Text>
           )}
         </div>
-        <aside className="flex flex-col gap-4 @4xl:ms-auto @4xl:w-88 @4xl:shrink-0">
+        <Stack as="aside" gap={4} className="@4xl:ms-auto @4xl:w-88 @4xl:shrink-0">
           <InitiativeAttachments initiativeId={initiative.id} />
-        </aside>
-      </div>
-    </div>
+        </Stack>
+      </Stack>
+    </Box>
   );
 }

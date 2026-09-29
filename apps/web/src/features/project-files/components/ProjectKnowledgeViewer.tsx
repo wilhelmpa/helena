@@ -396,7 +396,7 @@ export default function ProjectKnowledgeViewer({
               type="button"
               key={link.path}
               onClick={() => void openBacklink(backlinkHref(link.path))}
-              className="block w-full rounded-xl bg-card px-3 py-2.5 text-start text-xs text-foreground/85 hover:bg-muted"
+              className="block w-full rounded-lg bg-card px-3 py-2.5 text-start text-xs text-foreground/85 hover:bg-muted"
             >
               {link.title}
             </button>
@@ -438,7 +438,7 @@ export default function ProjectKnowledgeViewer({
                     {lossy && !sourceOnly && (
                       <p
                         role="note"
-                        className="mb-3 rounded-xl bg-muted px-3 py-2 text-xs text-muted-foreground"
+                        className="mb-3 rounded-lg bg-muted px-3 py-2 text-xs text-muted-foreground"
                       >
                         {unified('sourceRequired')}
                       </p>

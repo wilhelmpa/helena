@@ -294,5 +294,8 @@
   "resizeSidePanel": "Redimensionner le panneau latéral",
   "advanced": "Avancé",
   "switchPerson": "Changer de personne",
-  "searchSettings": "Chercher un réglage …"
+  "searchSettings": "Chercher un réglage …",
+  "nameList": {
+    "more": "+{count} de plus"
+  }
 }

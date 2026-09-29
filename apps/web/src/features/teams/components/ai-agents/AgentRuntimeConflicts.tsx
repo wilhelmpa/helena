@@ -51,7 +51,7 @@ export default function AgentRuntimeConflicts({
               <span className="text-xs text-muted-foreground">{t('editInLibrary')}</span>
             )}
           </div>
-          <pre className="max-h-40 overflow-auto rounded bg-muted p-2 text-xs whitespace-pre-wrap">
+          <pre className="max-h-40 overflow-auto rounded-sm bg-muted p-2 text-xs whitespace-pre-wrap">
             {conflict.content}
           </pre>
         </div>

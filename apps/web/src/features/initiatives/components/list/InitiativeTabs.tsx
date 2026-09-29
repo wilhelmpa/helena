@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils';
 import type { InitiativesTab } from '@/utils/paths';
 import { PageTabs, usePageToolbarRoom } from '@/components/layout/PageToolbar';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { Text } from '@/design-system';
 
 export type InitiativeTabItem = { value: InitiativesTab; label: string; count?: number };
 
@@ -88,9 +89,9 @@ function SortableTab({
     >
       <span>{item.label}</span>
       {item.count != null ? (
-        <span className="text-xs font-normal text-muted-foreground tabular-nums">
+        <Text as="span" size="xs" tone="muted" className="font-normal tabular-nums">
           {item.count > 99 ? '99+' : item.count}
-        </span>
+        </Text>
       ) : null}
     </button>
   );

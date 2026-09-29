@@ -9,6 +9,8 @@ import { useIssueBySeqQuery } from '@/services/issues.service';
 import IssueDetailContent from './components/detail/IssueDetailContent';
 import IssueDetailSkeleton from './components/detail/IssueDetailSkeleton';
 import { useTranslations } from 'next-intl';
+import { EmptyState, Page } from '@/design-system';
+import { SearchX } from 'lucide-react';
 
 // The full-page issue view (/project/:projectKey/issue/:sequenceNumber), rendered
 // inside the Shell layout. The URL carries the project-scoped number, resolved to
@@ -35,21 +37,23 @@ export default function IssueViewPage() {
   if (!project) return null;
 
   return (
-    <div {...scrollRestorationProps} className="flex-1 overflow-y-auto">
-      <div className="ds-issue-page">
-        {issueQuery.data ? (
-          <IssueDetailContent
-            project={project}
-            issueId={issueQuery.data.id}
-            layout="page"
-            onDeleted={exit}
-          />
-        ) : issueQuery.isLoading ? (
-          <IssueDetailSkeleton />
-        ) : (
-          <div className="py-4 text-sm text-muted-foreground">{t('notFound')}</div>
-        )}
+    <Page variant="fill">
+      <div {...scrollRestorationProps} className="ds-issue-page-scroll">
+        <div className="ds-issue-page">
+          {issueQuery.data ? (
+            <IssueDetailContent
+              project={project}
+              issueId={issueQuery.data.id}
+              layout="page"
+              onDeleted={exit}
+            />
+          ) : issueQuery.isLoading ? (
+            <IssueDetailSkeleton />
+          ) : (
+            <EmptyState icon={<SearchX />}>{t('notFound')}</EmptyState>
+          )}
+        </div>
       </div>
-    </div>
+    </Page>
   );
 }

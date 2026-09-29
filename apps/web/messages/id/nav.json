@@ -251,7 +251,9 @@
     "full": "Layar penuh",
     "close": "Tutup panel",
     "closeTab": "Tutup {tab}",
-    "reloadView": "Muat ulang tampilan"
+    "reloadView": "Muat ulang tampilan",
+    "pin": "Sematkan: halaman memberi ruang",
+    "unpin": "Lepas: melayang di atas halaman"
   },
   "sidebarTeam": "Tim",
   "sidebarAgentPool": "Kumpulan agen",
@@ -276,5 +278,7 @@
   "adminOnly": "Hanya administrator yang melihat pengaturan ini.",
   "sidebarTerminals": "Terminal",
   "sidebarFiles": "Berkas",
-  "settingsExtensions": "Ekstensi"
+  "settingsExtensions": "Ekstensi",
+  "settingsAutopilotExecution": "Autopilot & eksekusi",
+  "settingsProjectAccess": "Kelola akses"
 }

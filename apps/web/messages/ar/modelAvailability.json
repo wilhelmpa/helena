@@ -32,7 +32,8 @@
     "replace": "تحويل",
     "replaced": "{count, plural, =0 {لم يكن أي وكيل يستخدمه.} one {تم تحويل وكيل واحد.} two {تم تحويل وكيلين.} few {تم تحويل # وكلاء.} many {تم تحويل # وكيلًا.} other {تم تحويل # وكيل.}}",
     "agentDefault": "النموذج الافتراضي للوكيل",
-    "seen": "آخر مرة {time}"
+    "seen": "آخر مرة {time}",
+    "usedByLabel": "يستخدمه"
   },
   "deadLogin": "يعمل {model} عبر {account, select, chatgpt {تسجيل دخول ChatGPT} claude {تسجيل دخول Claude} other {تسجيل الدخول}} في Hermes، وهو {state, select, invalid {غير صالح} other {منتهي الصلاحية}} – سجّل دخول Hermes مجددًا أو اختر نموذجًا من مزوّد آخر.",
   "deadLoginDefault": "يعمل النموذج الافتراضي للوكيل عبر {account, select, chatgpt {تسجيل دخول ChatGPT} claude {تسجيل دخول Claude} other {تسجيل الدخول}} في Hermes، وهو {state, select, invalid {غير صالح} other {منتهي الصلاحية}} – سجّل دخول Hermes مجددًا."

@@ -12,6 +12,7 @@ import { formatInZone } from '../utils/schedulePreview';
 import { RoutineActionsMenu, type RoutineActions } from './RoutineActionsMenu';
 import { RoutineLastRun } from './RoutineLastRun';
 import { RoutineMentionsLine } from './RoutineMentions';
+import { Text } from '@/design-system';
 
 // One routine. Without `actions` the row only reads, the way Home lists the routines of
 // every project.
@@ -36,11 +37,19 @@ export function RoutineRow({
           >
             {routine.projectName}
           </Link>
-          <p className="font-mono text-xs text-muted-foreground">{routine.projectKey}</p>
+          <Text as="p" size="xs" tone="muted" className="font-mono">
+            {routine.projectKey}
+          </Text>
         </TableCell>
       )}
       <TableCell className="px-3 py-2.5 align-top whitespace-normal">
-        <p dir="auto" className="truncate text-sm font-medium" title={routine.instructions}>
+        <Text
+          as="p"
+          size="sm"
+          dir="auto"
+          className="truncate font-medium"
+          title={routine.instructions}
+        >
           {showProject ? (
             <Link
               href={aiTeamPath(routine.projectKey, 'schedules')}
@@ -51,7 +60,7 @@ export function RoutineRow({
           ) : (
             routine.title
           )}
-        </p>
+        </Text>
         <p
           className={cn(
             'mt-0.5 flex min-w-0 items-center gap-1 text-xs',
@@ -62,7 +71,7 @@ export function RoutineRow({
           <span className="truncate">{routine.agent?.name ?? t('agentLeft')}</span>
         </p>
         <RoutineMentionsLine mentions={routine.mentions} />
-        <p className="mt-0.5 flex min-w-0 items-center gap-1 text-xs text-muted-foreground">
+        <Text as="p" size="xs" tone="muted" className="mt-0.5 flex min-w-0 items-center gap-1">
           {routine.mode === 'reopen' ? (
             <RotateCcw className="size-3.5 shrink-0" />
           ) : (
@@ -80,18 +89,20 @@ export function RoutineRow({
               {routine.mode === 'reopen' ? t('taskGone') : t('modeNew')}
             </span>
           )}
-        </p>
+        </Text>
       </TableCell>
       <TableCell className="px-3 py-2.5 align-top whitespace-normal">
-        <p className="text-sm" title={routine.cron}>
+        <Text as="p" size="sm" title={routine.cron}>
           {describe(routine.cron) ?? routine.cron}
-        </p>
-        <p className="mt-0.5 text-xs text-muted-foreground">{routine.timezone}</p>
-        <p className="mt-1 text-xs whitespace-nowrap text-muted-foreground tabular-nums">
+        </Text>
+        <Text as="p" size="xs" tone="muted" className="mt-0.5">
+          {routine.timezone}
+        </Text>
+        <Text as="p" size="xs" tone="muted" className="mt-1 whitespace-nowrap tabular-nums">
           {routine.nextRunAt
             ? t('nextRunAt', { time: formatInZone(routine.nextRunAt, routine.timezone) })
             : t('paused')}
-        </p>
+        </Text>
       </TableCell>
       <TableCell className="px-3 py-2.5 align-top whitespace-normal">
         <RoutineLastRun routine={routine} canEdit={actions?.canEdit ?? false} />

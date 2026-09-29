@@ -53,7 +53,7 @@ export default function NoteBoardTab({
         <DropdownMenu>
           <DropdownMenuTrigger
             aria-label={t('boardOptions')}
-            className="me-1 flex size-5 items-center justify-center rounded text-muted-foreground hover:bg-background/60 hover:text-foreground"
+            className="me-1 flex size-5 items-center justify-center rounded-sm text-muted-foreground hover:bg-background/60 hover:text-foreground"
           >
             <MoreHorizontal className="!size-3.5" />
           </DropdownMenuTrigger>

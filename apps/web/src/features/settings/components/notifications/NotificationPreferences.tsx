@@ -7,6 +7,8 @@ import { NOTIFICATION_EVENTS } from '../../utils/notificationEvents';
 import type { NotificationPreferencesForm } from '../../hooks/useNotificationPreferencesForm';
 import { useTranslations } from 'next-intl';
 
+import { Inline, Stack, Text } from '@/design-system';
+
 // A member's own notification preferences for the project: for each issue event, a
 // checkbox per channel (email, Telegram). Visible to every member (each edits only
 // their own). Email is sent to the account address; Telegram to the account connected
@@ -20,9 +22,9 @@ export default function NotificationPreferences({ form }: { form: NotificationPr
   const t = useTranslations('settings.notifications');
   const { emailEvents, setEmailEvents, telegramEvents, setTelegramEvents } = form;
   return (
-    <div className="flex flex-col gap-6">
+    <Stack gap={5} className="flex flex-col">
       <SettingsSection title={t('eventsTitle')}>
-        <div className="max-w-xl overflow-hidden rounded-lg border bg-card">
+        <div className="max-w-xl overflow-hidden rounded-md border bg-card">
           <div className={`${COLS} h-8 border-b px-3`}>
             <span />
             <ChannelHeader icon={<Mail className="size-3.5" />} label={t('email')} />
@@ -44,16 +46,20 @@ export default function NotificationPreferences({ form }: { form: NotificationPr
       </SettingsSection>
 
       <NotificationTelegramAccount />
-    </div>
+    </Stack>
   );
 }
 
 function ChannelHeader({ icon, label }: { icon: ReactNode; label: string }) {
   return (
-    <span className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
-      {icon}
-      {label}
-    </span>
+    <Inline as="span" gap={2} justify="center">
+      <Text as="span" size="xs" tone="muted">
+        {icon}
+      </Text>
+      <Text as="span" size="xs" tone="muted">
+        {label}
+      </Text>
+    </Inline>
   );
 }
 
@@ -72,7 +78,9 @@ function ChannelRow({
 }) {
   return (
     <div className={`${COLS} min-h-10 px-3 py-1.5`}>
-      <span className="text-sm">{label}</span>
+      <Text as="span" size="sm">
+        {label}
+      </Text>
       <div className="flex justify-center">
         <Checkbox
           checked={emailChecked}

@@ -251,7 +251,9 @@
     "full": "На весь екран",
     "close": "Закрити панель",
     "closeTab": "Закрити {tab}",
-    "reloadView": "Перезавантажити вигляд"
+    "reloadView": "Перезавантажити вигляд",
+    "pin": "Закріпити: сторінка звільняє місце",
+    "unpin": "Відкріпити: поверх сторінки"
   },
   "sidebarTeam": "Команда",
   "sidebarAgentPool": "Пул агентів",
@@ -276,5 +278,7 @@
   "adminOnly": "Ці налаштування бачить лише адміністратор.",
   "sidebarTerminals": "Термінали",
   "sidebarFiles": "Файли",
-  "settingsExtensions": "Розширення"
+  "settingsExtensions": "Розширення",
+  "settingsAutopilotExecution": "Автопілот і виконання",
+  "settingsProjectAccess": "Керування доступами"
 }

@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import type { PipelineDraft } from '../../hooks/usePipelineDraft';
+import { Stack, Text } from '@/design-system';
 
 export default function PipelineMetaFields({
   draft,
@@ -19,17 +20,19 @@ export default function PipelineMetaFields({
 
   if (!editable)
     return (
-      <div className="space-y-1">
-        <p className="text-xs text-muted-foreground">{t('readOnly')}</p>
-        <p className="text-sm whitespace-pre-wrap text-muted-foreground" dir="auto">
+      <Stack gap={1}>
+        <Text as="p" size="xs" tone="muted">
+          {t('readOnly')}
+        </Text>
+        <Text as="p" size="sm" tone="muted" className="whitespace-pre-wrap" dir="auto">
           {draft.description || t('noDescription')}
-        </p>
-      </div>
+        </Text>
+      </Stack>
     );
 
   return (
     <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
-      <div className="space-y-1.5">
+      <Stack gap={2}>
         <Label htmlFor="pipeline-name">{t('name')}</Label>
         <Input
           id="pipeline-name"
@@ -39,8 +42,8 @@ export default function PipelineMetaFields({
           aria-invalid={!draft.name.trim()}
           onChange={(event) => onChange({ name: event.target.value })}
         />
-      </div>
-      <div className="space-y-1.5">
+      </Stack>
+      <Stack gap={2}>
         <Label htmlFor="pipeline-description">{t('description')}</Label>
         <Textarea
           id="pipeline-description"
@@ -51,7 +54,7 @@ export default function PipelineMetaFields({
           placeholder={t('descriptionPlaceholder')}
           onChange={(event) => onChange({ description: event.target.value })}
         />
-      </div>
+      </Stack>
     </div>
   );
 }

@@ -25,6 +25,7 @@ import {
 import { RoutineDialog } from './RoutineDialog';
 import { RoutinesTable } from './RoutinesTable';
 import { uuid } from '@/utils/uuid';
+import { Stack, Text } from '@/design-system';
 
 // The routines of the project, with the dialogs that create, change and delete them.
 export function RoutinesList({
@@ -118,7 +119,7 @@ export function RoutinesList({
           )}
         </EmptyState>
       ) : (
-        <div className="flex flex-col gap-4">
+        <Stack gap={4}>
           <RoutinesTable
             routines={routines}
             actionsFor={(routine) => ({
@@ -136,7 +137,7 @@ export function RoutinesList({
             })}
           />
           <ListPager paging={paging} total={routinesQuery.data?.total ?? 0} />
-        </div>
+        </Stack>
       )}
 
       {editing && (
@@ -161,12 +162,12 @@ export function RoutinesList({
           }}
           onClose={() => setDeleting(null)}
         >
-          <p className="text-sm text-muted-foreground">
+          <Text as="p" size="sm" tone="muted">
             {t.rich('deleteMessage', {
               name: deleting.title,
               v: (chunks) => <span className="font-medium">{chunks}</span>,
             })}
-          </p>
+          </Text>
         </ConfirmDialog>
       )}
     </>

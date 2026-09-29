@@ -251,7 +251,9 @@
     "full": "ملء الشاشة",
     "close": "إغلاق اللوحة",
     "closeTab": "إغلاق {tab}",
-    "reloadView": "إعادة تحميل العرض"
+    "reloadView": "إعادة تحميل العرض",
+    "pin": "تثبيت: تفسح الصفحة المجال",
+    "unpin": "إلغاء التثبيت: يطفو فوق الصفحة"
   },
   "sidebarTeam": "الفريق",
   "sidebarAgentPool": "مجموعة الوكلاء",
@@ -276,5 +278,7 @@
   "adminOnly": "يرى المسؤول فقط هذه الإعدادات.",
   "sidebarTerminals": "الطرفيات",
   "sidebarFiles": "الملفات",
-  "settingsExtensions": "الإضافات"
+  "settingsExtensions": "الإضافات",
+  "settingsAutopilotExecution": "الطيار الآلي والتنفيذ",
+  "settingsProjectAccess": "إدارة الوصول"
 }

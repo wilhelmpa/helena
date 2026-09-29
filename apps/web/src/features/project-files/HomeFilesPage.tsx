@@ -15,6 +15,7 @@ import FileBrowserDialogs, { type FileDialogState } from './components/FileBrows
 import KnowledgeRecentView, { type KnowledgeSource } from './components/KnowledgeRecentView';
 import { useFileNavigationGuard } from './hooks/useFileNavigationGuard';
 import type { HomeFilesRoot } from './components/HomeFilesRoots';
+import { Page } from '@/design-system';
 
 function currentRoot(root: string | null, project: string | null): HomeFilesRoot {
   if (root === 'private' || root === 'templates') return root;
@@ -87,7 +88,7 @@ export default function HomeFilesPage() {
 
   return (
     <Shell globalHome globalTitle={tNav('files')} autoOpenGlobalChat={false}>
-      <div className="flex h-full min-h-0 flex-col">
+      <Page variant="fill" title={tNav('files')}>
         {overview ? (
           <>
             <KnowledgeRecentView
@@ -164,7 +165,7 @@ export default function HomeFilesPage() {
             }
           />
         )}
-      </div>
+      </Page>
     </Shell>
   );
 }

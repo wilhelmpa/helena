@@ -21,6 +21,7 @@ import PipelineProjectRow from './components/project/PipelineProjectRow';
 import WorkflowRunLimitSettings from './components/project/WorkflowRunLimitSettings';
 import WorkflowSigningSecretSettings from './components/project/WorkflowSigningSecretSettings';
 import { useNewPipeline } from './hooks/useNewPipeline';
+import { Stack, Text } from '@/design-system';
 
 // The workflow builder on a project's Workflows page: the templates of the team's
 // library and the project's own workflows, each turned on or off here with the agents
@@ -44,7 +45,7 @@ export default function ProjectPipelinesPanel() {
   const editable = can('actions', 'edit');
 
   return (
-    <section className="mb-6 space-y-3 border-b pb-6">
+    <Stack as="section" gap={3} marginBottom={5} padBottom={5} className="border-b">
       {can('actions', 'create') && (
         <PageToolbar>
           <PageToolbarSpacer />
@@ -60,21 +61,27 @@ export default function ProjectPipelinesPanel() {
       )}
       <div>
         <h2 className="text-md font-medium">{t('title')}</h2>
-        <p className="text-xs text-muted-foreground">{t('hint')}</p>
-        {!editable && <p className="mt-1 text-xs text-muted-foreground">{t('readOnly')}</p>}
+        <Text as="p" size="xs" tone="muted">
+          {t('hint')}
+        </Text>
+        {!editable && (
+          <Text as="p" size="xs" tone="muted" className="mt-1">
+            {t('readOnly')}
+          </Text>
+        )}
       </div>
       <WorkflowRunLimitSettings projectKey={projectKey} editable={editable} />
       <WorkflowSigningSecretSettings projectKey={projectKey} editable={editable} />
       {pipelines.isPending ? null : pipelines.isError ? (
-        <p className="rounded-lg border bg-card px-3 py-2 text-sm text-destructive">
+        <Text as="p" size="sm" tone="danger" className="rounded-md border bg-card px-3 py-2">
           {t('loadFailed')}
-        </p>
+        </Text>
       ) : !pipelines.data.length ? (
-        <p className="rounded-lg border bg-card px-3 py-2 text-sm text-muted-foreground">
+        <Text as="p" size="sm" tone="muted" className="rounded-md border bg-card px-3 py-2">
           {t('empty')}
-        </p>
+        </Text>
       ) : (
-        <div className="space-y-3">
+        <Stack gap={3}>
           {pipelines.data.map((entry) => (
             <PipelineProjectRow
               key={entry.pipeline.id}
@@ -84,7 +91,7 @@ export default function ProjectPipelinesPanel() {
               editable={editable}
             />
           ))}
-        </div>
+        </Stack>
       )}
       {creating && (
         <NameDialog
@@ -100,6 +107,6 @@ export default function ProjectPipelinesPanel() {
           onClose={() => setCreating(false)}
         />
       )}
-    </section>
+    </Stack>
   );
 }

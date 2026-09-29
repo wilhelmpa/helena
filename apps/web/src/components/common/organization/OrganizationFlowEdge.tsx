@@ -63,6 +63,7 @@ export default function OrganizationFlowEdge({
           targetY,
           sourcePosition,
           targetPosition,
+          // An SVG path corner, not a CSS radius.
           borderRadius: 10,
           // One bus per parent (owner 28.09.): straight down, then every line to the
           // same level runs along one shared height just below the parent, then down to

@@ -30,7 +30,7 @@ export default function FileGridTile({
       {...drag.source(item)}
       {...(item.kind === 'folder' ? drag.target(item.path) : {})}
       className={cn(
-        'group relative flex flex-col overflow-hidden rounded-lg border bg-card',
+        'group relative flex flex-col overflow-hidden rounded-md border bg-card',
         drag.over === item.path && 'border-primary bg-primary/10',
         highlighted && 'ring-2 ring-ring',
       )}

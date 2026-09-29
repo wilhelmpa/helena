@@ -1,9 +1,21 @@
 import type { MemberRow } from '@/lib/api/endpoints/members';
+import { Text } from '@/design-system';
 
-// A member's project description (what they do), shown under their name and indented
-// past the avatar so it lines up with the two lines beside it. Renders nothing when
-// unset. Editing is a separate action (MemberDescriptionDialog).
+// A member's project description (what they do), one line under their name, aligned with
+// it; the full text on hover (owner, 28.09.: no paragraphs in the member list). Editing
+// is a separate action (MemberDescriptionDialog).
 export default function MemberDescription({ member }: { member: MemberRow }) {
   if (!member.description) return null;
-  return <span className="ms-[2.625rem] text-xs text-muted-foreground">{member.description}</span>;
+  return (
+    <Text
+      as="span"
+      size="xs"
+      tone="muted"
+      truncate
+      className="ds-row-subline"
+      title={member.description}
+    >
+      {member.description}
+    </Text>
+  );
 }

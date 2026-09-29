@@ -16,7 +16,7 @@ export default function SettingsCard({
   return (
     <div
       className={cn(
-        'divide-sidebar-border overflow-hidden rounded-lg border border-sidebar-border bg-card',
+        'divide-sidebar-border overflow-hidden rounded-md border border-sidebar-border bg-card',
         className,
       )}
     >

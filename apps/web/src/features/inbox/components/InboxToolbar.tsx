@@ -20,6 +20,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Text } from '@/design-system';
 
 const TYPES: NotificationType[] = ['assigned', 'commented', 'state_changed'];
 
@@ -129,7 +130,9 @@ function ToolbarMenu({
           <Icon aria-hidden="true" />
           {room.actions ? <span>{label}</span> : null}
           {count > 0 ? (
-            <span className="text-xs font-normal text-muted-foreground tabular-nums">{count}</span>
+            <Text as="span" size="xs" tone="muted" className="font-normal tabular-nums">
+              {count}
+            </Text>
           ) : null}
         </button>
       </DropdownMenuTrigger>

@@ -22,7 +22,7 @@ export default function DisclosureCard({
     <Collapsible
       open={open}
       onOpenChange={setOpen}
-      className="overflow-hidden rounded-lg border border-sidebar-border bg-card"
+      className="overflow-hidden rounded-md border border-sidebar-border bg-card"
     >
       <div className="flex items-center">
         <CollapsibleTrigger className="flex min-h-10 min-w-0 flex-1 items-center gap-2 px-3 py-2 text-start text-sm transition-colors hover:bg-accent/60">

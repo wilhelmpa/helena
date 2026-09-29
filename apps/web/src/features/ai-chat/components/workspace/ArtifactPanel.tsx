@@ -58,7 +58,7 @@ export default function ArtifactPanel({
       <WorkspaceHeader className="justify-between gap-2 px-3">
         <div className="flex items-center gap-2 overflow-hidden">
           <span className="truncate text-sm font-medium">{t('artifact.title')}</span>
-          <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground uppercase">
+          <span className="shrink-0 rounded-sm bg-muted px-1.5 py-0.5 text-xs text-muted-foreground uppercase">
             {artifact.language}
           </span>
         </div>

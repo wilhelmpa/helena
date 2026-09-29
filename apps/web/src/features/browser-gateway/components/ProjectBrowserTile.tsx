@@ -72,7 +72,7 @@ export default function ProjectBrowserTile({
   return (
     <Link
       href={href}
-      className="group flex min-w-0 flex-col overflow-hidden rounded-lg border bg-card transition-colors hover:bg-accent"
+      className="group flex min-w-0 flex-col overflow-hidden rounded-md border bg-card transition-colors hover:bg-accent"
     >
       <div className="relative flex aspect-video items-center justify-center overflow-hidden border-b bg-muted text-muted-foreground">
         {showPicture ? (

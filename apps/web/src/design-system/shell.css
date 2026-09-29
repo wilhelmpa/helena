@@ -63,7 +63,7 @@
   padding: 0 8px 12px;
 }
 .ds-sidebar-brand > a {
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   color: var(--text);
   font-size: 11px;
   font-weight: 650;
@@ -175,7 +175,7 @@
   height: 32px;
   flex: 1;
   align-items: center;
-  border-radius: 10px;
+  border-radius: var(--radius-lg);
   padding-inline-start: calc(12px + var(--ds-tree-level, 0) * 16px);
   padding-inline-end: 12px;
   color: var(--text);
@@ -217,7 +217,7 @@
   align-items: center;
   justify-content: center;
   margin-inline-start: 4px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   color: var(--text-3);
 }
 .ds-tree-chevron:hover {
@@ -260,7 +260,7 @@
   height: 22px;
   align-items: center;
   justify-content: center;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: var(--surface-2);
   color: var(--text-2);
 }
@@ -286,7 +286,7 @@
   flex: 1;
   align-items: center;
   justify-content: center;
-  border-radius: 11px;
+  border-radius: var(--radius-lg);
   background: transparent;
   color: var(--text-2);
 }
@@ -335,7 +335,7 @@
   flex: 1;
   align-items: center;
   gap: 10px;
-  border-radius: 10px;
+  border-radius: var(--radius-lg);
   padding: 0 8px;
   color: var(--text-2);
   font-size: 13px;
@@ -376,7 +376,7 @@
   flex: none;
   align-items: center;
   justify-content: center;
-  border-radius: 10px;
+  border-radius: var(--radius-lg);
   color: var(--text-3);
 }
 .ds-sidebar-settings:hover {
@@ -582,6 +582,61 @@
   max-width: var(--reading-w);
   margin-inline: auto;
 }
+
+/* ── The page template (layout/PageTemplate.tsx) ─────────────────────────── */
+.ds-page {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+}
+.ds-page-scroll {
+  min-height: 0;
+  flex: 1;
+  overflow-x: hidden;
+  overflow-y: auto;
+  /* A scrollbar that comes and goes must not change the page width (O19). */
+  scrollbar-gutter: stable;
+}
+.ds-page > .ds-page-scroll > .ds-page-body {
+  display: flex;
+  min-height: 100%;
+  flex-direction: column;
+}
+.ds-page[data-page='fill'] > .ds-page-scroll,
+.ds-page[data-page='bleed'] > .ds-page-scroll {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.ds-page[data-page='fill'] > .ds-page-scroll > .ds-page-body {
+  min-height: 0;
+  flex: 1;
+  padding-bottom: var(--page-pad-top);
+}
+.ds-page[data-page='bleed'] > .ds-page-scroll > .ds-page-body {
+  min-height: 0;
+  flex: 1;
+  padding: 0;
+}
+.ds-page[data-page='reading'] > .ds-page-scroll > .ds-page-body > * {
+  width: 100%;
+  max-width: var(--reading-w);
+  margin-inline: auto;
+}
+.ds-page-actions-group {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--space-2);
+}
+.ds-page-inline-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
 @media (max-width: 899px) {
   :root {
     --page-pad-x: 16px;
@@ -640,7 +695,7 @@
   content: '';
   width: 4px;
   height: 44px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   background: var(--text-3);
   opacity: 0.7;
   transition:
@@ -699,7 +754,7 @@
      none of them runs under the + button or out of the panel. */
   overflow-x: auto;
   scrollbar-width: none;
-  border-radius: 10px;
+  border-radius: var(--radius-lg);
   background: var(--surface-2);
   padding: 3px;
 }
@@ -769,7 +824,7 @@
   align-items: center;
   justify-content: center;
   margin-inline-end: 3px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   color: var(--text-3);
   opacity: 0;
 }
@@ -1090,8 +1145,14 @@
 /* A page shown inside another page's frame (a section of Helena's settings, Mein Konto,
    the agent dialog): it takes no second gutter and no scroll box of its own. */
 .settings-modal-existing .ds-section-page,
-.settings-modal-existing .ds-section-page-scroll {
+.settings-modal-existing .ds-section-page-scroll,
+.settings-modal-existing .ds-page,
+.settings-modal-existing .ds-page-scroll {
   overflow: visible;
+}
+.settings-modal-existing .ds-page > .ds-page-scroll > .ds-page-body {
+  min-height: 0;
+  padding: 0;
 }
 .settings-modal-existing .ds-section-page-col {
   min-height: 0;
@@ -1213,4 +1274,38 @@
 }
 .ds-page-search-input::-webkit-search-cancel-button {
   display: none;
+}
+.ds-page-nested {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+.ds-page-nested[data-page-nested='fill'],
+.ds-page-nested[data-page-nested='bleed'] {
+  min-height: 0;
+  flex: 1;
+}
+
+/* A pinned panel (owner, O31): it docks at the right and the page — its header, toolbar
+   and body — shrinks to the room left instead of being covered. */
+@media (min-width: 900px) {
+  .ds-page-content[data-panel='docked'] > :not(.ds-side-panel) {
+    margin-inline-end: calc(var(--helena-side-panel-width, 480px) + var(--space-3));
+  }
+  .ds-main:has(> .ds-page-content[data-panel='docked']) > :is(.ds-page-header, .ds-page-toolbar) {
+    margin-inline-end: calc(var(--helena-side-panel-width, 480px) + var(--space-3));
+  }
+}
+
+/* A toolbar that stays in its block (ShellHeaderRow without a header slot). */
+.ds-local-toolbar {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+.ds-local-toolbar.ds-page-toolbar-standalone {
+  height: auto;
+  padding: 0;
 }

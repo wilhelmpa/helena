@@ -11,6 +11,8 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import SettingsNetworkLogRow from './SettingsNetworkLogRow';
 
+import { Text } from '@/design-system';
+
 type DecisionFilter = 'all' | 'blocked';
 
 // The connection log: the destinations the project's agents reached or were
@@ -40,12 +42,14 @@ export default function SettingsNetworkLog({ projectKey }: { projectKey: string 
       {query.isPending ? (
         <ListSkeleton rows={5} rowClassName="h-10" />
       ) : query.isError ? (
-        <p className="text-sm text-destructive">{t('loadError')}</p>
+        <Text as="p" size="sm" tone="danger">
+          {t('loadError')}
+        </Text>
       ) : items.length === 0 ? (
         <EmptyState title={t('empty')} description={t('emptyHint')} />
       ) : (
         <>
-          <div className="overflow-x-auto rounded-lg border bg-card">
+          <div className="overflow-x-auto rounded-md border bg-card">
             <Table className="min-w-[820px]">
               <TableHeader>
                 <TableRow className="hover:bg-transparent">
@@ -75,7 +79,9 @@ export default function SettingsNetworkLog({ projectKey }: { projectKey: string 
               {query.isFetchingNextPage ? tCommon('loading') : t('loadMore')}
             </Button>
           ) : (
-            <p className="text-center text-xs text-muted-foreground">{t('endOfLog')}</p>
+            <Text as="p" size="xs" tone="muted" className="text-center">
+              {t('endOfLog')}
+            </Text>
           )}
         </>
       )}

@@ -65,7 +65,7 @@ export default function NoteCanvasControls({
   return (
     // A small floating bar on the canvas (it stays with the canvas in fullscreen, where
     // the header is covered): the sidebar surface, 28px controls, 16px icons.
-    <div className="absolute end-3 top-3 z-10 flex items-center gap-0.5 rounded-lg border bg-card p-0.5 shadow-sm">
+    <div className="absolute end-3 top-3 z-10 flex items-center gap-0.5 rounded-md border bg-card p-0.5 shadow-sm">
       {canEdit && (
         <button
           type="button"

@@ -69,7 +69,7 @@ export default function SnapshotBrowser({
                     type="button"
                     onClick={() => setPath(step.path)}
                     className={cn(
-                      'rounded px-1 hover:bg-sidebar-accent',
+                      'rounded-sm px-1 hover:bg-sidebar-accent',
                       index === steps.length - 1 && 'font-medium',
                     )}
                   >

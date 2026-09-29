@@ -5,6 +5,7 @@ import { ChevronDown, Search } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button, Popover, PopoverContent, PopoverTrigger, SearchField } from '@/design-system';
+import { Text } from '@/design-system';
 
 // The skills a department allows, picked from the team's skill library: a button that
 // names how many are chosen, opening a searchable list with a checkbox per skill.
@@ -50,9 +51,13 @@ export default function DepartmentSkillPicker({
           onChange={(event) => setQuery(event.target.value)}
         />
         {skills.length === 0 ? (
-          <p className="px-2 py-2 text-xs text-muted-foreground">{t('skillsNone')}</p>
+          <Text as="p" size="xs" tone="muted" className="px-2 py-2">
+            {t('skillsNone')}
+          </Text>
         ) : shown.length === 0 ? (
-          <p className="px-2 py-2 text-xs text-muted-foreground">{t('skillsNoMatch')}</p>
+          <Text as="p" size="xs" tone="muted" className="px-2 py-2">
+            {t('skillsNoMatch')}
+          </Text>
         ) : (
           <ul className="max-h-72 overflow-auto">
             {shown.map((skill) => {

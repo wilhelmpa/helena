@@ -181,7 +181,7 @@ function RecoverySection({ plan }: { plan: ReturnType<typeof recoveryPlan> }) {
   return (
     <Collapsible
       defaultOpen={plan.missing}
-      className="rounded-lg border border-sidebar-border bg-card"
+      className="rounded-md border border-sidebar-border bg-card"
     >
       <CollapsibleTrigger className="group flex min-h-8 w-full items-center gap-2 px-3 py-1.5 text-start text-sm font-medium hover:bg-sidebar-accent">
         <ChevronRight className="size-4 shrink-0 transition-transform duration-150 group-data-[state=open]:rotate-90 rtl:group-data-[state=closed]:rotate-180" />

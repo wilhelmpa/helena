@@ -52,7 +52,7 @@ export default function IssueTimelineCompact({
           return (
             <div key={lane.label} className="flex items-center gap-1.5">
               <span
-                className="size-2 shrink-0 rounded-xs"
+                className="size-2 shrink-0 rounded-sm"
                 style={{ backgroundColor: lane.color }}
               />
               <span>{lane.label}</span>

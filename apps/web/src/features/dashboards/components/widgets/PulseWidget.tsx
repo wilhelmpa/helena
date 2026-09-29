@@ -5,6 +5,7 @@ import type { WidgetConfig } from '@/utils/dashboardWidgets';
 import { Skeleton } from '@/components/ui/skeleton';
 import { MonoMeta } from '@/components/helena/DashboardPrimitives';
 import { usePulseQuery } from '../../services/analytics.service';
+import { Inline, Stack } from '@/design-system';
 
 const ROWS: Record<PulseUnit, number> = { hour: 24, day: 7, week: 4 };
 const COLUMNS = 14;
@@ -41,13 +42,15 @@ export default function PulseWidget({
   }, [data, unit]);
 
   return (
-    <div className="space-y-4">
+    <Stack gap={4}>
       <MonoMeta>{t(`caption.${unit}`)}</MonoMeta>
       {isLoading ? (
         <Skeleton className="h-28 w-full" />
       ) : (
-        <div
-          className="flex h-28 items-end gap-2"
+        <Inline
+          gap={2}
+          align="end"
+          className="h-28"
           role="img"
           aria-label={t('events', { count: total })}
         >
@@ -62,11 +65,11 @@ export default function PulseWidget({
               }}
             />
           ))}
-        </div>
+        </Inline>
       )}
       <MonoMeta className="text-[var(--dashboard-muted)]">
         {t('events', { count: total })} · {t('active', { count: active })}
       </MonoMeta>
-    </div>
+    </Stack>
   );
 }

@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { Download, FolderOpen, Paperclip } from 'lucide-react';
 import { mailAttachmentUrl, type MailMessageAttachment } from '@/lib/api/endpoints/mail';
 import { filesPath, homeFilesPath } from '@/utils/paths';
+import { Inline } from '@/design-system';
 
 function size(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -29,12 +30,16 @@ export default function MailAttachmentChips({
 }) {
   const t = useTranslations('mail.thread');
   return (
-    <ul className="flex flex-wrap gap-2 border-t px-4 py-2">
+    <Inline as="ul" gap={2} padX={4} padY={2} wrap align="stretch" className="border-t">
       {attachments.map((attachment) => {
         return (
-          <li
+          <Inline
+            as="li"
+            gap={2}
+            padX={2}
+            padY={1}
             key={attachment.id}
-            className="flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs"
+            className="rounded-md border text-xs"
           >
             <Paperclip className="size-3.5 text-muted-foreground" />
             <span dir="auto" className="max-w-56 truncate" title={attachment.vaultPath}>
@@ -57,9 +62,9 @@ export default function MailAttachmentChips({
             >
               <Download className="size-3.5" />
             </a>
-          </li>
+          </Inline>
         );
       })}
-    </ul>
+    </Inline>
   );
 }

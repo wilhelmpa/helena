@@ -11,7 +11,7 @@ export default function EditorLinkPreviewImage({ src }: { src: string }) {
       alt=""
       referrerPolicy="no-referrer"
       onError={() => setFailed(true)}
-      className="aspect-[1.91] w-full rounded-xl bg-muted object-cover outline -outline-offset-1 outline-black/10 dark:outline-white/10"
+      className="aspect-[1.91] w-full rounded-lg bg-muted object-cover outline -outline-offset-1 outline-black/10 dark:outline-white/10"
     />
   );
 }

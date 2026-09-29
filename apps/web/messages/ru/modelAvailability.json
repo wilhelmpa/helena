@@ -32,7 +32,8 @@
     "replace": "Перевести",
     "replaced": "{count, plural, =0 {Ни один агент её не использовал.} one {Переведён # агент.} few {Переведено # агента.} many {Переведено # агентов.} other {Переведено # агента.}}",
     "agentDefault": "По умолчанию агента",
-    "seen": "последний раз {time}"
+    "seen": "последний раз {time}",
+    "usedByLabel": "Используют"
   },
   "deadLogin": "{model} работает через {account, select, chatgpt {вход ChatGPT} claude {вход Claude} other {вход}} Hermes, который {state, select, invalid {недействителен} other {истёк}} – снова войдите в Hermes или выберите модель другого провайдера.",
   "deadLoginDefault": "Модель агента по умолчанию работает через {account, select, chatgpt {вход ChatGPT} claude {вход Claude} other {вход}} Hermes, который {state, select, invalid {недействителен} other {истёк}} – снова войдите в Hermes."

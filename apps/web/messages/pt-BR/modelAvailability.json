@@ -32,7 +32,8 @@
     "replace": "Mudar",
     "replaced": "{count, plural, =0 {Nenhum agente o usava.} one {# agente mudado.} other {# agentes mudados.}}",
     "agentDefault": "Padrão do agente",
-    "seen": "última vez {time}"
+    "seen": "última vez {time}",
+    "usedByLabel": "Usado por"
   },
   "deadLogin": "{model} usa {account, select, chatgpt {o login do ChatGPT} claude {o login do Claude} other {o login}} do Hermes, que {state, select, invalid {não é mais válido} other {expirou}} – faça login no Hermes de novo ou escolha um modelo de outro provedor.",
   "deadLoginDefault": "O padrão do agente usa {account, select, chatgpt {o login do ChatGPT} claude {o login do Claude} other {o login}} do Hermes, que {state, select, invalid {não é mais válido} other {expirou}} – faça login no Hermes de novo."

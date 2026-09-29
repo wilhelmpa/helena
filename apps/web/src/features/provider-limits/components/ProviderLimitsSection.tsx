@@ -29,6 +29,7 @@ import {
 } from '../services/providerLimits.service';
 import { STATE_STATUS, orderedAccounts, orderedWindows } from '../utils/limitsFormat';
 import LimitWindowRow from './LimitWindowRow';
+import { NameList } from '@/design-system';
 
 const INTERVALS = [5, 10, 15, 30, 60];
 const THRESHOLDS = [70, 80, 90, 95];
@@ -229,9 +230,13 @@ function AccountDetails({ account, now }: { account: LimitAccount; now: number }
       </div>
       <div className="space-y-0.5 border-t border-sidebar-border px-4 py-2.5 text-xs text-muted-foreground">
         <p>
-          {account.agents.length > 0
-            ? t('agents', { names: account.agents.map((agent) => agent.name).join(', ') })
-            : t('noAgents')}
+          {account.agents.length > 0 ? (
+            <>
+              {t('agentsOn')} <NameList names={account.agents.map((agent) => agent.name)} />
+            </>
+          ) : (
+            t('noAgents')
+          )}
         </p>
         {extra?.enabled && (
           <p>

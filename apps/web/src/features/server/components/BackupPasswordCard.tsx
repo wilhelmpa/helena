@@ -23,7 +23,7 @@ export default function BackupPasswordCard() {
   const [written, setWritten] = useState(false);
 
   return (
-    <section className="min-w-0 space-y-3 rounded-lg border border-status-waiting/50 bg-card p-4 xl:col-span-2">
+    <section className="min-w-0 space-y-3 rounded-md border border-status-waiting/50 bg-card p-4 xl:col-span-2">
       <CardHeader
         title={
           <span className="flex items-center gap-2">

@@ -1,6 +1,7 @@
 import { useTranslations } from 'next-intl';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAgentWorkloadQuery } from '../../services/analytics.service';
+import { Stack, Text } from '@/design-system';
 
 // Per-agent workload: how many open issues each agent is currently delegated and its
 // lifetime run outcomes (success over total). Rows are ordered by delegated load. No
@@ -12,16 +13,20 @@ export default function AgentWorkloadWidget({ projectKey }: { projectKey: string
 
   if (isLoading) {
     return (
-      <div className="space-y-2">
+      <Stack gap={2}>
         {Array.from({ length: 4 }).map((_, i) => (
           <Skeleton key={i} className="h-7 w-full" />
         ))}
-      </div>
+      </Stack>
     );
   }
 
   if (items.length === 0) {
-    return <p className="py-4 text-center text-sm text-muted-foreground">{t('empty')}</p>;
+    return (
+      <Text as="p" size="sm" tone="muted" className="py-4 text-center">
+        {t('empty')}
+      </Text>
+    );
   }
 
   return (
@@ -45,9 +50,9 @@ export default function AgentWorkloadWidget({ projectKey }: { projectKey: string
                 {a.runsSuccess}/{a.runsTotal}
               </span>
               {a.runsFailed > 0 && (
-                <span className="ml-1 text-xs text-destructive">
+                <Text as="span" size="xs" tone="danger" className="ml-1">
                   {t('failed', { count: a.runsFailed })}
-                </span>
+                </Text>
               )}
             </td>
           </tr>

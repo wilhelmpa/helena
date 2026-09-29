@@ -12,6 +12,8 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { isHttpUrl } from '@/utils/url';
 
+import { Stack, Text, Box, Inline } from '@/design-system';
+
 export interface WebhookFormValue {
   url: string;
   events: WebhookEventType[];
@@ -76,14 +78,16 @@ export function SettingsWebhookDialog({
       onClose={onClose}
       wide
     >
-      <form
-        className="space-y-4"
+      <Stack
+        as="form"
+        gap={4}
+
         onSubmit={(event) => {
           event.preventDefault();
           void submit();
         }}
       >
-        <div className="space-y-1.5">
+        <Stack gap={2}>
           <Label htmlFor="webhook-url">{t('payloadUrl')}</Label>
           <Input
             id="webhook-url"
@@ -99,43 +103,53 @@ export function SettingsWebhookDialog({
             placeholder="https://example.com/webhook"
           />
           {urlInvalid && (
-            <p id="webhook-url-error" className="text-xs text-destructive">
+            <Text as="p" size="xs" tone="danger" id="webhook-url-error">
               {t('invalidUrl')}
-            </p>
+            </Text>
           )}
-        </div>
+        </Stack>
 
-        <div className="space-y-1.5">
-          <span className="text-sm font-medium">{t('events')}</span>
+        <Stack gap={2}>
+          <Text as="span" size="sm" className="font-medium">
+            {t('events')}
+          </Text>
           <div className="grid gap-2 sm:grid-cols-2">
             {WEBHOOK_EVENT_TYPES.map((event) => (
-              <label key={event} className="flex cursor-pointer items-center gap-2">
+              <Inline as="label" gap={2} key={event} className="flex cursor-pointer items-center">
                 <Checkbox
                   checked={events.has(event)}
                   onCheckedChange={(v) => toggleEvent(event, v === true)}
                 />
-                <span className="font-mono text-xs">{event}</span>
-              </label>
+                <Text as="span" size="xs" className="font-mono">
+                  {event}
+                </Text>
+              </Inline>
             ))}
           </div>
-        </div>
+        </Stack>
 
-        <div className="border-t border-border/50 pt-4">
-          <label className="flex w-fit cursor-pointer items-center gap-2 text-sm">
+        <Box padTop={4} className="border-t border-border/50">
+          <Inline as="label" gap={2} className="flex w-fit cursor-pointer items-center text-sm">
             <Checkbox checked={isActive} onCheckedChange={(v) => setIsActive(v === true)} />
             <span>{t('active')}</span>
-          </label>
-        </div>
+          </Inline>
+        </Box>
 
-        <div className="flex justify-end gap-2 border-t border-border/50 pt-4">
+        <Inline
+          gap={2}
+          align="stretch"
+          justify="end"
+          padTop={4}
+          className="flex justify-end border-t border-border/50"
+        >
           <Button type="button" variant="ghost" onClick={onClose} disabled={saving}>
             {tCommon('cancel')}
           </Button>
           <Button type="submit" disabled={!valid || saving}>
             {saving ? pendingLabel : actionLabel}
           </Button>
-        </div>
-      </form>
+        </Inline>
+      </Stack>
     </Modal>
   );
 }

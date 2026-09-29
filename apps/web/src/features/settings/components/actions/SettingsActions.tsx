@@ -18,6 +18,8 @@ import { SettingsActionDialog } from './SettingsActionDialog';
 import { SettingsActionsTable } from './SettingsActionsTable';
 import { SettingsActionRuns } from './SettingsActionRuns';
 
+import { Stack } from '@/design-system';
+
 type ActionSeed = {
   name: string;
   icon: string;
@@ -96,7 +98,7 @@ export default function SettingsActions({
       ) : actions.length === 0 ? (
         <EmptyState title={t('emptyTitle')} description={t('emptyHint')} />
       ) : (
-        <div className="space-y-4">
+        <Stack gap={4}>
           <SettingsActionsTable
             actions={actions}
             project={project}
@@ -108,7 +110,7 @@ export default function SettingsActions({
               updateAction.mutate({ id: action.id, input: { enabled } })
             }
           />
-        </div>
+        </Stack>
       )}
 
       <SettingsActionRuns project={project} />

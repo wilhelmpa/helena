@@ -42,7 +42,7 @@ export function SectionLabel({
 export function RowList({ className, ...props }: ComponentProps<'div'>) {
   return (
     <div
-      className={cn('flex flex-col gap-px rounded-lg border border-sidebar-border p-1', className)}
+      className={cn('flex flex-col gap-px rounded-md border border-sidebar-border p-1', className)}
       {...props}
     />
   );

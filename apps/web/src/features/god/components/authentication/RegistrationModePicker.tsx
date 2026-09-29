@@ -4,6 +4,8 @@ import { useTranslations } from 'next-intl';
 import type { RegistrationMode } from '@/lib/api/endpoints/god';
 import { cn } from '@/lib/utils';
 
+import { Stack, Text } from '@/design-system';
+
 const MODES: RegistrationMode[] = ['open', 'invite', 'closed'];
 
 // Picks how the instance handles registration. One choice of three, each with a
@@ -49,12 +51,14 @@ export default function RegistrationModePicker({
             >
               {active && <Check className="size-3" />}
             </span>
-            <span className="space-y-0.5">
-              <span className="block text-sm font-medium">{t(`${mode}.label`)}</span>
-              <span className="block text-xs text-muted-foreground">
+            <Stack as="span" gap={1}>
+              <Text as="span" size="sm" className="block font-medium">
+                {t(`${mode}.label`)}
+              </Text>
+              <Text as="span" size="xs" tone="muted" className="block">
                 {t(`${mode}.description`)}
-              </span>
-            </span>
+              </Text>
+            </Stack>
           </RadioGroupPrimitive.Item>
         );
       })}

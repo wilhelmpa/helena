@@ -1,6 +1,6 @@
 .card {
   min-width: 0;
-  border-radius: 18px;
+  border-radius: var(--radius-xl);
   background: var(--dashboard-surface);
   box-shadow: 0 0 0 1px color-mix(in srgb, var(--dashboard-ink) 5%, transparent);
 }
@@ -63,7 +63,7 @@
 .progress {
   height: 6px;
   overflow: hidden;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   background: var(--dashboard-track);
 }
 

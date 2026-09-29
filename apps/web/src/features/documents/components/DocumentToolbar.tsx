@@ -47,8 +47,8 @@ export default function DocumentToolbar({
   if (!editor) {
     return (
       <div className="flex h-12 items-center gap-2 px-3 md:px-4" aria-hidden>
-        <div className="h-8 w-28 animate-pulse rounded-lg bg-muted/60" />
-        <div className="h-8 w-48 animate-pulse rounded-lg bg-muted/40" />
+        <div className="h-8 w-28 animate-pulse rounded-md bg-muted/60" />
+        <div className="h-8 w-48 animate-pulse rounded-md bg-muted/40" />
       </div>
     );
   }

@@ -7,6 +7,7 @@ import type { WidgetConfig } from '@/utils/dashboardWidgets';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAgentRunsQuery } from '../../services/analytics.service';
+import { Inline, Stack, Text } from '@/design-system';
 
 // The run statuses the feed can be narrowed to. Their labels are messages under
 // `dashboards.agentRuns.filters`.
@@ -44,20 +45,24 @@ export default function AgentRunsWidget({
   function feed() {
     if (isLoading) {
       return (
-        <div className="space-y-2">
+        <Stack gap={2}>
           {Array.from({ length: 5 }).map((_, i) => (
             <Skeleton key={i} className="h-8 w-full" />
           ))}
-        </div>
+        </Stack>
       );
     }
     if (items.length === 0) {
-      return <p className="py-4 text-center text-sm text-muted-foreground">{t('empty')}</p>;
+      return (
+        <Text as="p" size="sm" tone="muted" className="py-4 text-center">
+          {t('empty')}
+        </Text>
+      );
     }
     return (
-      <ul className="space-y-2">
+      <Stack as="ul" gap={2}>
         {items.map((r) => (
-          <li key={r.id} className="flex items-start gap-2 text-sm">
+          <Inline as="li" gap={2} align="start" key={r.id} className="text-sm">
             <Badge variant={statusVariant(r.status)} className="mt-0.5 shrink-0">
               {t(`status.${r.status}`)}
             </Badge>
@@ -69,23 +74,27 @@ export default function AgentRunsWidget({
                   {projectKey}-{r.issueSequence}
                 </Link>
               )}
-              <span className="ml-1 text-xs text-muted-foreground/70">
+              <Text as="span" size="xs" tone="faint" className="ml-1">
                 {formatDateTime(r.createdAt)}
-              </span>
+              </Text>
               {r.status === 'failed' && r.lastError && (
-                <p className="mt-0.5 truncate text-xs text-destructive">{r.lastError}</p>
+                <Text as="p" size="xs" tone="danger" className="mt-0.5 truncate">
+                  {r.lastError}
+                </Text>
               )}
             </div>
-          </li>
+          </Inline>
         ))}
-      </ul>
+      </Stack>
     );
   }
 
   return (
-    <div className="space-y-3">
-      <p className="text-xs text-muted-foreground">{caption}</p>
+    <Stack gap={3}>
+      <Text as="p" size="xs" tone="muted">
+        {caption}
+      </Text>
       {feed()}
-    </div>
+    </Stack>
   );
 }

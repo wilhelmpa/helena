@@ -334,6 +334,8 @@ export default function WorkspacePanel({
               onCloseTab={onCloseTab}
               onChooseLayout={onChooseLayout}
               onClose={onClose}
+              pinned={mode === 'push'}
+              onTogglePin={onToggleMode}
             />
             <WorkspacePanelHeader
               title={advanced ? t('advanced') : entry.label}

@@ -9,6 +9,7 @@ import MailDraftChips from './MailDraftChips';
 import MailMessageCard from './MailMessageCard';
 import MailThreadHeader from './MailThreadHeader';
 import MailThreadToolbar from './MailThreadToolbar';
+import { Box, Stack, Text } from '@/design-system';
 
 // One thread, oldest message first, scrolled to the newest. Opening a thread marks
 // it read.
@@ -47,9 +48,18 @@ export default function MailReadingPane({
     if (loaded) endRef.current?.scrollIntoView({ block: 'end' });
   }, [loaded]);
 
-  if (thread.isPending) return <p className="p-4 text-sm text-muted-foreground">{t('loading')}</p>;
+  if (thread.isPending)
+    return (
+      <Text as="p" size="sm" tone="muted" className="p-4">
+        {t('loading')}
+      </Text>
+    );
   if (thread.isError || !thread.data)
-    return <p className="p-4 text-sm text-destructive">{t('loadError')}</p>;
+    return (
+      <Text as="p" size="sm" tone="danger" className="p-4">
+        {t('loadError')}
+      </Text>
+    );
 
   const data = thread.data;
   return (
@@ -64,16 +74,16 @@ export default function MailReadingPane({
           onMove={onMove}
           onRemoved={onRemoved}
         />
-        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
+        <Box padX={4} padY={4} className="min-h-0 flex-1 overflow-y-auto">
           <MailThreadHeader thread={data} onMove={onMove} />
           <MailDraftChips drafts={data.drafts} />
-          <div className="mt-4 flex flex-col gap-3">
+          <Stack gap={3} marginTop={4}>
             {data.messages.map((message) => (
               <MailMessageCard key={message.id} message={message} threadId={data.id} />
             ))}
-          </div>
+          </Stack>
           <div ref={endRef} />
-        </div>
+        </Box>
       </div>
     </WebLinkScope>
   );

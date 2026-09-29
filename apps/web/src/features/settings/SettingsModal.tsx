@@ -4,6 +4,7 @@ import { useCallback, useEffect, type MouseEvent } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useTeamsQuery } from '@/services/teams.service';
+import { useSession } from '@/lib/auth-client';
 import { ShellHeaderActionsSlotCtx, ShellHeaderSlotCtx } from '@/context/shellHeaderSlot';
 import { Modal, ModalNavItem } from '@/design-system';
 import SettingsAreaContent from './SettingsAreaContent';
@@ -14,6 +15,7 @@ import {
   SETTINGS_PARAM,
   helenaSettingsPath,
   parseSettingsParam,
+  resolveSettingsLocation,
   settingsModalRoute,
   settingsModalSections,
   withSettingsParam,
@@ -31,7 +33,8 @@ function currentHref() {
   return `${window.location.pathname}${window.location.search}${window.location.hash}`;
 }
 
-function pageOf(location: SettingsLocation) {
+function pageOf(raw: SettingsLocation) {
+  const location = resolveSettingsLocation(raw);
   const known = HELENA_SETTINGS.some((item) => item.slug === location.slug);
   return helenaSettingsPath(known ? location.slug : DEFAULT_SECTION.admin, location.extra);
 }
@@ -55,7 +58,8 @@ export default function SettingsModal() {
   const param = parseSettingsParam(searchParams.get(SETTINGS_PARAM));
   const location = legacy ? null : param?.area === 'account' ? param : null;
   const teamId = useTeamsQuery().data?.[0]?.id ?? null;
-  const sections = settingsModalSections(false).account;
+  const { data: session } = useSession();
+  const sections = settingsModalSections(session?.user.role === 'god').account;
 
   // Moves the modal to `next` (null closes it) without touching the page behind.
   const go = useCallback((next: SettingsLocation | null) => {
@@ -121,9 +125,16 @@ export default function SettingsModal() {
       const detail = (event as CustomEvent<OpenSettingsRequest | undefined>).detail ?? {};
       if (detail.scope && detail.scope !== 'account') {
         const extra = detail.teamId != null ? String(detail.teamId) : detail.tab;
-        router.push(
-          pageOf({ area: 'admin', slug: detail.section ?? DEFAULT_SECTION.admin, extra }),
-        );
+        const target = resolveSettingsLocation({
+          area: 'admin',
+          slug: detail.section ?? DEFAULT_SECTION.admin,
+          extra,
+        });
+        if (target.area === 'admin') {
+          router.push(pageOf(target));
+          return;
+        }
+        go(target);
         return;
       }
       const known = sections.some((item) => item.slug === detail.section);

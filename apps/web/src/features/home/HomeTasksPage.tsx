@@ -14,6 +14,7 @@ import { EmptyState } from '@/components/common/page/EmptyState';
 import ListSkeleton from '@/components/common/skeleton/ListSkeleton';
 import SectionPageView from '@/components/common/page/SectionPageView';
 import { Button } from '@/components/ui/button';
+import { Stack } from '@/design-system';
 import { STATE_TYPES } from '@/utils/fieldOptions';
 import { useCrossProjectIssuesQuery } from './services/tasks.service';
 import HomeTasksToolbar, { type HomeTaskGrouping } from './components/tasks/HomeTasksToolbar';
@@ -86,11 +87,7 @@ export default function HomeTasksPage() {
   };
 
   return (
-    <Shell
-      globalHome
-      globalTitle={filters.assignee === 'me' ? tNav('sidebarMyTasks') : tNav('sidebarOpenTasks')}
-      autoOpenGlobalChat={false}
-    >
+    <Shell globalHome globalTitle={tNav('workItems')} autoOpenGlobalChat={false}>
       <SectionPageView title={tNav('allWorkItems')} wide>
         <HomeTasksToolbar
           projects={projects}
@@ -115,10 +112,10 @@ export default function HomeTasksPage() {
         ) : total === 0 ? (
           <EmptyState title={t('empty')} description={t('emptyHint')} />
         ) : (
-          <div className="flex flex-col gap-4">
+          <Stack gap={4}>
             <HomeTaskList issues={issues} grouping={grouping} />
             <ListPager paging={paging} total={total} />
-          </div>
+          </Stack>
         )}
       </SectionPageView>
     </Shell>

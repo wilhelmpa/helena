@@ -90,7 +90,7 @@ export default function IssueDetailContent({
       <span className="ds-issue-key">{issue.identifier}</span>
       <div className="flex items-start gap-2">
         {issue.archivedAt && (
-          <span className="mt-1 shrink-0 rounded border border-border px-1.5 py-0.5 text-xs font-medium text-muted-foreground uppercase">
+          <span className="mt-1 shrink-0 rounded-sm border border-border px-1.5 py-0.5 text-xs font-medium text-muted-foreground uppercase">
             {t('archived')}
           </span>
         )}

@@ -83,7 +83,7 @@ export default function OrganizationChartNode({ data }: NodeProps<ChartAgentNode
     <div
       data-selected={selected || undefined}
       data-throttled={agent.throttled && !selected ? 'true' : undefined}
-      className={`organization-card group relative rounded-[18px] border bg-card px-[18px] text-start text-card-foreground shadow-[0_8px_22px_color-mix(in_srgb,var(--foreground)_6%,transparent)] transition-[opacity,border-color,box-shadow] duration-200 ${leader ? 'h-[92px] w-[280px] pt-2 pb-4' : 'h-[112px] w-[242px] pt-[14px] pb-4'} ${selected ? 'border-brand ring-[3px] ring-brand/20' : 'border-border hover:border-muted-foreground/40'} ${dimmed ? 'opacity-30' : ''}`}
+      className={`organization-card group relative rounded-xl border bg-card px-[18px] text-start text-card-foreground shadow-[0_8px_22px_color-mix(in_srgb,var(--foreground)_6%,transparent)] transition-[opacity,border-color,box-shadow] duration-200 ${leader ? 'h-[92px] w-[280px] pt-2 pb-4' : 'h-[112px] w-[242px] pt-[14px] pb-4'} ${selected ? 'border-brand ring-[3px] ring-brand/20' : 'border-border hover:border-muted-foreground/40'} ${dimmed ? 'opacity-30' : ''}`}
     >
       <Handle type="target" position={Position.Top} className={handle} isConnectable={false} />
       <Handle

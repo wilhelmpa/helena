@@ -13,6 +13,7 @@ import type {
 } from '@/lib/api/endpoints/organization';
 import { useDeleteGoal, useUpdateGoal } from '../services/organization.service';
 import OrganizationGoalProgress from './OrganizationGoalProgress';
+import { Inline, Stack, Text } from '@/design-system';
 
 export default function OrganizationGoalCard({
   teamId,
@@ -39,8 +40,11 @@ export default function OrganizationGoalCard({
   const [targetDate, setTargetDate] = useState(goal.targetDate ?? '');
 
   return (
-    <form
-      className="space-y-3 rounded-lg border bg-card p-4"
+    <Stack
+      as="form"
+      gap={3}
+      pad={4}
+      className="rounded-md border bg-card"
       onSubmit={(event) => {
         event.preventDefault();
         update.mutate({
@@ -59,11 +63,15 @@ export default function OrganizationGoalCard({
     >
       <div className="grid gap-3 md:grid-cols-2">
         <label className="space-y-1 text-sm">
-          <span className="block text-xs text-muted-foreground">{t('fields.title')}</span>
+          <Text as="span" size="xs" tone="muted" className="block">
+            {t('fields.title')}
+          </Text>
           <Input value={title} maxLength={160} onChange={(event) => setTitle(event.target.value)} />
         </label>
         <label className="space-y-1 text-sm">
-          <span className="block text-xs text-muted-foreground">{t('fields.status')}</span>
+          <Text as="span" size="xs" tone="muted" className="block">
+            {t('fields.status')}
+          </Text>
           <select
             className="ds-field ds-select-native w-full"
             value={status}
@@ -77,7 +85,9 @@ export default function OrganizationGoalCard({
           </select>
         </label>
         <label className="space-y-1 text-sm">
-          <span className="block text-xs text-muted-foreground">{t('fields.department')}</span>
+          <Text as="span" size="xs" tone="muted" className="block">
+            {t('fields.department')}
+          </Text>
           <select
             className="ds-field ds-select-native w-full"
             value={departmentId}
@@ -92,7 +102,9 @@ export default function OrganizationGoalCard({
           </select>
         </label>
         <label className="space-y-1 text-sm">
-          <span className="block text-xs text-muted-foreground">{t('fields.project')}</span>
+          <Text as="span" size="xs" tone="muted" className="block">
+            {t('fields.project')}
+          </Text>
           <select
             className="ds-field ds-select-native w-full"
             value={projectId}
@@ -107,7 +119,9 @@ export default function OrganizationGoalCard({
           </select>
         </label>
         <label className="space-y-1 text-sm">
-          <span className="block text-xs text-muted-foreground">{t('fields.parentGoal')}</span>
+          <Text as="span" size="xs" tone="muted" className="block">
+            {t('fields.parentGoal')}
+          </Text>
           <select
             className="ds-field ds-select-native w-full"
             value={parentGoalId}
@@ -125,7 +139,9 @@ export default function OrganizationGoalCard({
         </label>
       </div>
       <label className="space-y-1 text-sm">
-        <span className="block text-xs text-muted-foreground">{t('fields.targetDate')}</span>
+        <Text as="span" size="xs" tone="muted" className="block">
+          {t('fields.targetDate')}
+        </Text>
         <Input
           type="date"
           value={targetDate}
@@ -133,7 +149,9 @@ export default function OrganizationGoalCard({
         />
       </label>
       <label className="space-y-1 text-sm">
-        <span className="block text-xs text-muted-foreground">{t('fields.description')}</span>
+        <Text as="span" size="xs" tone="muted" className="block">
+          {t('fields.description')}
+        </Text>
         <Textarea
           value={description}
           maxLength={2000}
@@ -141,7 +159,7 @@ export default function OrganizationGoalCard({
         />
       </label>
       <OrganizationGoalProgress teamId={teamId} goal={goal} />
-      <div className="flex justify-end gap-2">
+      <Inline gap={2} justify="end" align="stretch">
         <Button
           type="button"
           variant="ghost"
@@ -160,7 +178,7 @@ export default function OrganizationGoalCard({
         >
           {t('actions.save')}
         </Button>
-      </div>
-    </form>
+      </Inline>
+    </Stack>
   );
 }

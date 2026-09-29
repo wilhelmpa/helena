@@ -195,7 +195,7 @@ export default function CommentComposer({
           title={t('commentAs', { name: authorName })}
         />
         <div className="relative min-w-0 flex-1">
-          <div className="overflow-hidden rounded-lg border bg-muted/20 shadow-xs">
+          <div className="overflow-hidden rounded-md border bg-muted/20 shadow-xs">
             <Textarea
               ref={taRef}
               // `auto` once there is something to read, so a comment keeps the
@@ -219,7 +219,7 @@ export default function CommentComposer({
                 <span />
               ) : (
                 <span className="text-xs text-muted-foreground/70">
-                  <kbd className="rounded bg-muted px-1.5 py-0.5 font-sans text-xs font-medium">
+                  <kbd className="rounded-sm bg-muted px-1.5 py-0.5 font-sans text-xs font-medium">
                     {cmdKey} ↵
                   </kbd>
                   <span className="ml-1.5">{t('toSend')}</span>

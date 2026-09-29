@@ -76,7 +76,7 @@ function ReviewCard({
   const others = item.candidates.filter((c) => c.transaction.id !== item.transaction.id);
 
   return (
-    <article className="rounded-lg border border-sidebar-border bg-card p-1">
+    <article className="rounded-md border border-sidebar-border bg-card p-1">
       <ReceiptLine receipt={item.receipt} onOpen={() => onOpenReceipt(item.receipt.id)} />
       <div className="flex items-center gap-2 px-2 text-xs text-muted-foreground">
         <Link2 className="size-3.5 shrink-0" aria-hidden="true" />

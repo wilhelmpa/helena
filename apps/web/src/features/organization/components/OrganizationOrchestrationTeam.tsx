@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { AgentPausedBadge } from '@/components/common/agent-chat/AgentPausedBadge';
 import type { OrganizationAgent } from '@/lib/api/endpoints/organization';
 import { organizationAgentRole, type OrganizationAgentRole } from '../organizationTree';
+import { Box, Inline, Stack, Text } from '@/design-system';
 
 const ROLES: OrganizationAgentRole[] = ['coordinator', 'specialist', 'reviewer', 'pool'];
 
@@ -20,54 +21,68 @@ export default function OrganizationOrchestrationTeam({ agents }: { agents: Orga
   const t = useTranslations('organization');
 
   return (
-    <section className="space-y-4 rounded-lg border bg-card p-4">
+    <Stack as="section" gap={4} pad={4} className="rounded-md border bg-card">
       <div>
         <h2 className="text-md font-medium">{t('orchestration.teamTitle')}</h2>
-        <p className="text-xs text-muted-foreground">{t('orchestration.teamDescription')}</p>
+        <Text as="p" size="xs" tone="muted">
+          {t('orchestration.teamDescription')}
+        </Text>
       </div>
       {ROLES.map((role) => {
         const members = agents.filter((agent) => organizationAgentRole(agent) === role);
         return (
-          <div key={role} className="space-y-1.5">
+          <Stack gap={2} key={role}>
             <h3 className="text-xs font-medium text-muted-foreground">
               {t(`roles.${role}`)} <span className="tabular-nums">{members.length}</span>
             </h3>
             {members.length === 0 ? (
-              <p className="text-sm text-muted-foreground">{t('values.none')}</p>
+              <Text as="p" size="sm" tone="muted">
+                {t('values.none')}
+              </Text>
             ) : (
               <ul className="divide-y rounded-md border">
                 {members.map((agent) => (
-                  <li key={agent.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 p-2.5">
+                  <Box
+                    as="li"
+                    pad={3}
+                    key={agent.id}
+                    className="flex flex-wrap items-center gap-x-3 gap-y-1"
+                  >
                     <Circle
                       className={`size-2.5 shrink-0 ${statusClass[agent.runtimeState.status]}`}
                     />
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium" dir="auto">
+                      <Text as="p" size="sm" className="truncate font-medium" dir="auto">
                         {agent.name}
-                      </p>
-                      <p className="truncate text-xs text-muted-foreground" dir="auto">
+                      </Text>
+                      <Text as="p" size="xs" tone="muted" className="truncate" dir="auto">
                         {agent.roleTitle || `@${agent.username}`}
-                      </p>
+                      </Text>
                     </div>
-                    <div className="flex flex-wrap gap-1">
+                    <Inline gap={1} wrap align="stretch">
                       <AgentPausedBadge agent={agent} />
                       {agent.capabilities.map((capability) => (
-                        <span
+                        <Text
+                          as="span"
+                          size="xs"
+                          tone="muted"
                           key={capability}
-                          className="rounded border px-1.5 py-0.5 text-xs text-muted-foreground"
+                          className="rounded-sm border px-1.5 py-0.5"
                         >
                           {capability}
-                        </span>
+                        </Text>
                       ))}
-                    </div>
-                  </li>
+                    </Inline>
+                  </Box>
                 ))}
               </ul>
             )}
-          </div>
+          </Stack>
         );
       })}
-      <p className="text-xs text-muted-foreground">{t('orchestration.editRoles')}</p>
-    </section>
+      <Text as="p" size="xs" tone="muted">
+        {t('orchestration.editRoles')}
+      </Text>
+    </Stack>
   );
 }

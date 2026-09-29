@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/select';
 import { ACTION_FILTER } from './ActivityFeedWidget';
 import LimitSelect from './LimitSelect';
+import { Inline } from '@/design-system';
 
 // The action-kind filter, the row count and the board filter set.
 export default function ActivityFeedWidgetSettings({
@@ -28,7 +29,7 @@ export default function ActivityFeedWidgetSettings({
   const limit = config.limit ?? 20;
   if (!project) return null;
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <Inline gap={2} wrap>
       <Select
         value={action ?? 'all'}
         onValueChange={(v) => onConfigChange({ action: v === 'all' ? null : v })}
@@ -51,6 +52,6 @@ export default function ActivityFeedWidgetSettings({
         project={project}
         customFields={customFields}
       />
-    </div>
+    </Inline>
   );
 }

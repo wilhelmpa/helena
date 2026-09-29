@@ -38,7 +38,9 @@
     "save": "保存",
     "delete": "删除",
     "clearAssignment": "清除分配",
-    "saveInstructions": "保存指令"
+    "saveInstructions": "保存指令",
+    "edit": "编辑",
+    "close": "关闭"
   },
   "departments": {
     "newPlaceholder": "新部门",
@@ -69,7 +71,10 @@
     "skillsNone": "技能库还是空的。",
     "skillsNoMatch": "没有匹配的技能。",
     "skillsEmptyWarning": "未选择任何技能时，该部门的智能体不会使用任何技能。",
-    "skillsSaved": "{name} 的技能已保存"
+    "skillsSaved": "{name} 的技能已保存",
+    "budgetsAndSkills": "预算与技能",
+    "deleteTitle": "删除部门“{name}”？",
+    "deleteHint": "其项目保留，之后不属于任何部门。"
   },
   "goals": {
     "newPlaceholder": "新目标",
@@ -141,7 +146,9 @@
   },
   "projects": {
     "empty": "此团队没有项目。",
-    "instructionsPlaceholder": "描述项目的使命和运行指令。"
+    "instructionsPlaceholder": "描述项目的使命和运行指令。",
+    "assignmentSaved": "部门已保存",
+    "title": "项目及其部门"
   },
   "map": {
     "empty": "尚无组织结构。",
@@ -310,6 +317,7 @@
     "lensWhy": "为何",
     "whyEmpty": "尚无代理在处理此项目的任务。",
     "whyNoGoal": "未关联目标",
-    "noAgent": "无代理"
+    "noAgent": "无代理",
+    "filterLabel": "状态"
   }
 }

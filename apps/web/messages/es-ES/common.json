@@ -294,5 +294,8 @@
   "resizeSidePanel": "Cambiar el ancho del panel lateral",
   "advanced": "Avanzado",
   "switchPerson": "Cambiar de persona",
-  "searchSettings": "Buscar ajuste …"
+  "searchSettings": "Buscar ajuste …",
+  "nameList": {
+    "more": "+{count} más"
+  }
 }

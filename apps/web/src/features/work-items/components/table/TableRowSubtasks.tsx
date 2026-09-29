@@ -29,7 +29,7 @@ export function TableRowSubtasks({
           <button
             key={subtask.id}
             type="button"
-            className="-mx-1.5 flex min-w-0 items-center gap-2 rounded px-1.5 py-1 text-left text-xs text-muted-foreground hover:bg-accent/50 hover:text-foreground"
+            className="-mx-1.5 flex min-w-0 items-center gap-2 rounded-sm px-1.5 py-1 text-left text-xs text-muted-foreground hover:bg-accent/50 hover:text-foreground"
             onClick={(e) => {
               e.stopPropagation();
               e.preventDefault();

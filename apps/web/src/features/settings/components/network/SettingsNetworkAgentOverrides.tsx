@@ -13,6 +13,8 @@ import {
 } from '@/components/ui/select';
 import type { AgentNetworkForm as Form } from '../../hooks/useAgentNetworkForm';
 
+import { Text } from '@/design-system';
+
 // Set on the Select to mean "no override": the agent follows the project's mode.
 // Radix Select needs a non-empty string value, so null is not usable directly.
 const FOLLOW_PROJECT = 'project';
@@ -27,7 +29,9 @@ export default function SettingsNetworkAgentOverrides({ form }: { form: Form }) 
   return (
     <SettingsSection title={t('perAgentTitle')} description={t('perAgentHint')}>
       {form.agents.length === 0 ? (
-        <p className="text-xs text-muted-foreground">{t('noAgents')}</p>
+        <Text as="p" size="xs" tone="muted">
+          {t('noAgents')}
+        </Text>
       ) : (
         <SettingsCard className="divide-y divide-border/60">
           {form.agents.map((agent) => {

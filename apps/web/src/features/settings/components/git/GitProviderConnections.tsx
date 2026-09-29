@@ -10,6 +10,8 @@ import GitProviderConnectDialog from './GitProviderConnectDialog';
 import GitProviderConnectionCard from './GitProviderConnectionCard';
 import { GIT_CONNECTION_PROVIDERS, GIT_PROVIDER_CONFIG } from './providerConfig';
 
+import { Box, Stack, Inline, Text } from '@/design-system';
+
 export default function GitProviderConnections({
   projectKey,
   editable,
@@ -32,9 +34,9 @@ export default function GitProviderConnections({
       title={t('nativeConnectionsRecommended')}
       description={t('nativeConnectionsHint')}
     >
-      <div className="space-y-3">
+      <Stack gap={3}>
         {editable && (
-          <div className="flex flex-wrap gap-2">
+          <Inline gap={2} align="stretch" wrap className="flex flex-wrap">
             {GIT_CONNECTION_PROVIDERS.map((providerKey) => (
               <Button
                 key={providerKey}
@@ -48,7 +50,7 @@ export default function GitProviderConnections({
                 })}
               </Button>
             ))}
-          </div>
+          </Inline>
         )}
         {connections.isPending ? (
           <ListSkeleton rows={2} rowClassName="h-24" />
@@ -63,11 +65,13 @@ export default function GitProviderConnections({
           ))
         )}
         {!connections.isPending && connections.data?.length === 0 && (
-          <p className="rounded-md border border-dashed p-4 text-sm text-muted-foreground">
-            {t('nativeNoConnections')}
-          </p>
+          <Box as="p" pad={4} className="rounded-md border border-dashed">
+            <Text as="span" size="sm" tone="muted">
+              {t('nativeNoConnections')}
+            </Text>
+          </Box>
         )}
-      </div>
+      </Stack>
       <GitProviderConnectDialog
         projectKey={projectKey}
         provider={provider}

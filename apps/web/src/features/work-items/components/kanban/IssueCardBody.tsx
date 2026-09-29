@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import { useSession } from '@/lib/auth-client';
 import type { BoardIssue } from '@/lib/api/endpoints/issues';
 import type { ProjectDetail } from '@/lib/api/endpoints/projects';
@@ -29,12 +30,14 @@ export function IssueCardBody({
 }) {
   const { data: session } = useSession();
   const priorityLabel = usePriorityLabel();
+  const tColumns = useTranslations('workItems.columns');
   const { importantValue, meta, labels } = boardCardData(
     issue,
     project,
     maps,
     properties,
     priorityLabel,
+    tColumns('statusAge'),
   );
   const assignee = issue.assigneeUserId ? maps.assigneeById.get(issue.assigneeUserId) : undefined;
   const delegate = issue.delegateUserId ? maps.assigneeById.get(issue.delegateUserId) : undefined;

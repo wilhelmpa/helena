@@ -16,6 +16,7 @@ import { fieldIssues } from '../../utils/issueDisplay';
 import PipelineField from './PipelineField';
 import PipelineNumberInput from './PipelineNumberInput';
 import PipelineTemplateText from './PipelineTemplateText';
+import { Text } from '@/design-system';
 
 const AGENT_MODEL = '__agent';
 
@@ -149,7 +150,9 @@ export default function PipelineAgentStepForm({
           </Select>
         </PipelineField>
       </div>
-      <p className="text-xs text-muted-foreground">{t('limitsHint')}</p>
+      <Text as="p" size="xs" tone="muted">
+        {t('limitsHint')}
+      </Text>
     </>
   );
 }

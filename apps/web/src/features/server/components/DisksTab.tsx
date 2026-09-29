@@ -34,7 +34,7 @@ import ReplaceDiskDialog from './ReplaceDiskDialog';
 import { CardHeader, Fact, Facts, HealthLine, Meter, ServerSections } from './ServerParts';
 import ServerToolbar from './ServerToolbar';
 
-const CARD = 'min-w-0 space-y-3 rounded-lg border border-sidebar-border bg-card p-4';
+const CARD = 'min-w-0 space-y-3 rounded-md border border-sidebar-border bg-card p-4';
 
 // Server → Platten & RAID: the mirror and its rebuilds and checks, each disk with its SMART
 // health, the two EFI partitions and the firmware's boot entries, what mdadm and smartd

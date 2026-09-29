@@ -32,6 +32,7 @@ import { RoutineModeField } from './RoutineModeField';
 import { RoutineNextRuns } from './RoutineNextRuns';
 import type { RoutineTask } from './RoutineTaskField';
 import { RoutineTimezoneInput } from './RoutineTimezoneInput';
+import { Box, Inline, Stack, Text } from '@/design-system';
 
 export function RoutineDialog({
   projectKey,
@@ -110,8 +111,10 @@ export function RoutineDialog({
       onClose={onClose}
       wide
     >
-      <form
-        className="space-y-4"
+      <Stack
+        as="form"
+        gap={4}
+
         onSubmit={(event) => {
           event.preventDefault();
           void submit();
@@ -143,7 +146,11 @@ export function RoutineDialog({
         {/* Markdown like the task it becomes, and "@" offers the project's agents: each
             agent it mentions starts on the task too, on every run. */}
         <RoutineField label={t('instructions')}>
-          <div className="max-h-72 min-h-32 overflow-y-auto rounded-md border border-input bg-transparent px-2.5 py-1.5 text-sm transition-[color,box-shadow] focus-within:border-ring focus-within:ring-2 focus-within:ring-ring/40 dark:bg-input/30">
+          <Box
+            padX={3}
+            padY={2}
+            className="max-h-72 min-h-32 overflow-y-auto rounded-md border border-input bg-transparent text-sm transition-[color,box-shadow] focus-within:border-ring focus-within:ring-2 focus-within:ring-ring/40 dark:bg-input/30"
+          >
             <MarkdownEditor
               className="flex min-h-28 flex-col"
               defaultValue={initial?.instructions ?? ''}
@@ -151,11 +158,11 @@ export function RoutineDialog({
               placeholder={t('instructionsPlaceholder')}
               ariaLabel={t('instructions')}
             />
-          </div>
-          <p className="text-xs text-muted-foreground">
+          </Box>
+          <Text as="p" size="xs" tone="muted">
             {mode === 'new' ? t('instructionsHintNew') : t('instructionsHintReopen')}{' '}
             {t('mentionsHint')}
-          </p>
+          </Text>
           <RoutineMentionsPreview
             projectKey={projectKey}
             instructions={instructions}
@@ -163,7 +170,7 @@ export function RoutineDialog({
           />
         </RoutineField>
 
-        <div className="grid gap-4 border-t border-border/50 pt-4 sm:grid-cols-[2fr_1fr]">
+        <Box padTop={4} className="grid gap-4 border-t border-border/50 sm:grid-cols-[2fr_1fr]">
           <RoutineField htmlFor="routine-schedule" label={t('schedule')}>
             <RoutineCronInput
               id="routine-schedule"
@@ -174,7 +181,7 @@ export function RoutineDialog({
           <RoutineField htmlFor="routine-timezone" label={t('timezone')}>
             <RoutineTimezoneInput id="routine-timezone" value={timezone} onChange={setTimezone} />
           </RoutineField>
-        </div>
+        </Box>
         {schedule.ok && <RoutineNextRuns cron={schedule.cron} timezone={timezone} />}
         <RoutineField htmlFor="routine-catch-up" label={t('catchUp')}>
           <Select value={catchUp} onValueChange={(value) => setCatchUp(value as RoutineCatchUp)}>
@@ -186,7 +193,9 @@ export function RoutineDialog({
               <SelectItem value="once">{t('catchUpOnce')}</SelectItem>
             </SelectContent>
           </Select>
-          <p className="text-xs text-muted-foreground">{t('catchUpHint')}</p>
+          <Text as="p" size="xs" tone="muted">
+            {t('catchUpHint')}
+          </Text>
         </RoutineField>
 
         <RoutineGateField
@@ -199,7 +208,13 @@ export function RoutineDialog({
           }}
         />
 
-        <div className="flex justify-end gap-2 border-t border-border/50 pt-4">
+        <Inline
+          gap={2}
+          padTop={4}
+          justify="end"
+          align="stretch"
+          className="border-t border-border/50"
+        >
           <Button type="button" variant="ghost" onClick={onClose} disabled={saving}>
             {tCommon('cancel')}
           </Button>
@@ -212,8 +227,8 @@ export function RoutineDialog({
                 ? t('save')
                 : t('create')}
           </Button>
-        </div>
-      </form>
+        </Inline>
+      </Stack>
     </Modal>
   );
 }

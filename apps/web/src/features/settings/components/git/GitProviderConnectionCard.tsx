@@ -14,6 +14,8 @@ import {
 import GitRepositoryPickerDialog from './GitRepositoryPickerDialog';
 import { GIT_PROVIDER_CONFIG } from './providerConfig';
 
+import { Box, Inline, Stack, Text } from '@/design-system';
+
 export default function GitProviderConnectionCard({
   projectKey,
   connection,
@@ -59,18 +61,25 @@ export default function GitProviderConnectionCard({
         </ConfirmDialog>
       )}
       <SettingsCard>
-        <div className="flex flex-wrap items-start justify-between gap-4 p-4">
-          <div className="min-w-0 space-y-1">
-            <div className="flex items-center gap-2">
+        <Inline
+          gap={4}
+          align="start"
+          justify="between"
+          wrap
+          pad={4}
+          className="flex flex-wrap items-start justify-between"
+        >
+          <Stack gap={1} className="min-w-0">
+            <Inline gap={2} className="flex items-center">
               <span className="font-medium">{providerLabel}</span>
               <Badge variant="secondary">{t('nativeConnectedStatus')}</Badge>
-            </div>
-            <p className="text-sm text-muted-foreground">
+            </Inline>
+            <Text as="p" size="sm" tone="muted">
               {connection.accountLogin} · {connection.baseUrl}
-            </p>
-          </div>
+            </Text>
+          </Stack>
           {editable && (
-            <div className="flex gap-2">
+            <Inline gap={2} align="stretch" className="flex">
               <Button type="button" variant="outline" size="sm" onClick={() => setPickerOpen(true)}>
                 {t('nativeChooseRepositories')}
               </Button>
@@ -84,17 +93,19 @@ export default function GitProviderConnectionCard({
               >
                 <Trash2 className="size-4" />
               </Button>
-            </div>
+            </Inline>
           )}
-        </div>
+        </Inline>
         <div className="divide-y border-t">
           {connection.repositories.length === 0 ? (
-            <p className="p-4 text-sm text-muted-foreground">
-              {t('nativeNoConnectedRepositories')}
-            </p>
+            <Box as="p" pad={4}>
+              <Text as="span" size="sm" tone="muted">
+                {t('nativeNoConnectedRepositories')}
+              </Text>
+            </Box>
           ) : (
             connection.repositories.map((repository) => (
-              <div key={repository.id} className="flex items-center gap-3 px-4 py-3">
+              <Inline gap={3} padX={4} padY={3} key={repository.id} className="flex items-center">
                 <GitBranch className="size-4 shrink-0 text-muted-foreground" />
                 <div className="min-w-0 flex-1">
                   <a
@@ -107,12 +118,17 @@ export default function GitProviderConnectionCard({
                     <ExternalLink className="ms-1 inline size-3" />
                   </a>
                   {repository.lastError && (
-                    <p
-                      className="mt-0.5 truncate text-xs text-destructive"
-                      title={repository.lastError}
-                    >
-                      {repository.lastError}
-                    </p>
+                    <Box as="p" marginTop={1} className="truncate">
+                      <Text
+                        as="span"
+                        size="xs"
+                        tone="danger"
+
+                        title={repository.lastError}
+                      >
+                        {repository.lastError}
+                      </Text>
+                    </Box>
                   )}
                 </div>
                 <Badge variant={repository.status === 'connected' ? 'secondary' : 'destructive'}>
@@ -132,7 +148,7 @@ export default function GitProviderConnectionCard({
                     <Trash2 className="size-4" />
                   </Button>
                 )}
-              </div>
+              </Inline>
             ))
           )}
         </div>

@@ -12,6 +12,8 @@ import { Item, ItemActions, ItemContent, ItemMedia, ItemTitle } from '@/componen
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useSettingsCan } from '../../context/settingsPermission';
 
+import { Inline, Text } from '@/design-system';
+
 // One sortable state row. The whole row is the sortable node; the grip is the
 // drag handle so the Edit/Delete buttons stay clickable. A backlog state cannot
 // be deleted, so its delete action is hidden.
@@ -65,21 +67,25 @@ export function SettingsStateRow({
       {autoAssignee && (
         <Tooltip>
           <TooltipTrigger asChild>
-            <span className="flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground">
+            <Inline
+              as="span"
+              gap={2}
+              className="flex shrink-0 items-center text-xs text-muted-foreground"
+            >
               <UserPlus className="size-3.5" />
               <Avatar name={autoAssignee.name} image={autoAssignee.image} className="size-4" />
               {autoAssignee.name}
-            </span>
+            </Inline>
           </TooltipTrigger>
           <TooltipContent>{t('autoAssign.rowTitle', { name: autoAssignee.name })}</TooltipContent>
         </Tooltip>
       )}
       {column.wipLimit != null && (
-        <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
+        <Text as="span" size="xs" tone="muted" className="shrink-0 tabular-nums">
           {column.wipMode === 'hard'
             ? t('wip.badgeHard', { limit: column.wipLimit })
             : t('wip.badgeSoft', { limit: column.wipLimit })}
-        </span>
+        </Text>
       )}
       <ItemActions className="opacity-0 group-hover/item:opacity-100">
         {canEdit && (

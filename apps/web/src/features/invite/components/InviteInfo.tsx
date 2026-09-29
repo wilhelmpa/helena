@@ -42,7 +42,7 @@ export default function InviteInfo({ invite }: { invite: InviteView }) {
   const projectRoleLabel =
     invite.role === 'owner' ? tCommon('owner') : (invite.roleName ?? tCommon('member'));
   return (
-    <div className="divide-y divide-sidebar-border rounded-lg border border-sidebar-border bg-card text-start">
+    <div className="divide-y divide-sidebar-border rounded-md border border-sidebar-border bg-card text-start">
       <InfoRow
         icon={<Users className="size-4" />}
         label={t('teamLabel')}

@@ -17,6 +17,7 @@ import { flattenSteps } from '../../utils/editorState';
 import { fieldIssues } from '../../utils/issueDisplay';
 import PipelineField from './PipelineField';
 import PipelineTemplateText from './PipelineTemplateText';
+import { Stack, Text } from '@/design-system';
 
 const NEW = 'new';
 const MAX_OPTIONS = 12;
@@ -134,9 +135,11 @@ export default function PipelineDecisionStepForm({
         </>
       )}
       <PipelineField label={t('thenOptions')} hint={t('thenHint')} issues={issuesOf('thenOptions')}>
-        <div className="flex flex-col gap-1.5">
+        <Stack gap={2}>
           {options.length === 0 && (
-            <p className="text-xs text-muted-foreground">{t('noOptions')}</p>
+            <Text as="p" size="xs" tone="muted">
+              {t('noOptions')}
+            </Text>
           )}
           {options.map((option) => (
             <label key={option} className="flex items-center gap-2 text-sm">
@@ -155,7 +158,7 @@ export default function PipelineDecisionStepForm({
               <span dir="auto">{option}</span>
             </label>
           ))}
-        </div>
+        </Stack>
       </PipelineField>
       <PipelineField label={t('unsure')} htmlFor="step-decision-unsure" hint={t('unsureHint')}>
         <Select

@@ -19,6 +19,8 @@ import {
   useConnectGitRepositories,
 } from '../../services/settings.service';
 
+import { Inline, Box, Stack, Text } from '@/design-system';
+
 export default function GitRepositoryPickerDialog({
   projectKey,
   connection,
@@ -90,34 +92,48 @@ export default function GitRepositoryPickerDialog({
           onChange={(event) => setSearch(event.target.value)}
           placeholder={t('nativeSearchRepositories')}
         />
-        <div className="max-h-80 space-y-1 overflow-y-auto rounded-md border p-2">
+        <Stack gap={1} pad={2} className="max-h-80 overflow-y-auto rounded-md border">
           {repositoriesQuery.isPending && (
-            <p className="p-3 text-sm text-muted-foreground">{t('nativeLoadingRepositories')}</p>
+            <Box as="p" pad={3}>
+              <Text as="span" size="sm" tone="muted">
+                {t('nativeLoadingRepositories')}
+              </Text>
+            </Box>
           )}
           {!repositoriesQuery.isPending && repositories.length === 0 && (
-            <p className="p-3 text-sm text-muted-foreground">{t('nativeNoRepositories')}</p>
+            <Box as="p" pad={3}>
+              <Text as="span" size="sm" tone="muted">
+                {t('nativeNoRepositories')}
+              </Text>
+            </Box>
           )}
           {repositories.map((repository) => {
             const connected = repository.managedRepositoryId !== null;
             return (
-              <label
+              <Inline
+                as="label"
+                gap={3}
+                padX={3}
+                padY={2}
                 key={repository.externalId}
-                className="flex cursor-pointer items-center gap-3 rounded-md px-3 py-2 hover:bg-muted/60"
+                className="flex cursor-pointer items-center rounded-md hover:bg-muted/60"
               >
                 <Checkbox
                   checked={connected || selected.has(repository.externalId)}
                   disabled={connected}
                   onCheckedChange={(value) => toggle(repository.externalId, value === true)}
                 />
-                <span className="min-w-0 flex-1 truncate text-sm">{repository.fullName}</span>
-                <span className="text-xs text-muted-foreground">
+                <Text as="span" size="sm" className="min-w-0 flex-1 truncate">
+                  {repository.fullName}
+                </Text>
+                <Text as="span" size="xs" tone="muted">
                   {connected
                     ? t('nativeAlreadyConnected')
                     : repository.private
                       ? t('nativePrivate')
                       : t('nativePublic')}
-                </span>
-              </label>
+                </Text>
+              </Inline>
             );
           })}
           {repositoriesQuery.hasNextPage && (
@@ -131,7 +147,7 @@ export default function GitRepositoryPickerDialog({
               {t('nativeLoadMore')}
             </Button>
           )}
-        </div>
+        </Stack>
         <DialogFooter>
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
             {t('nativeCancel')}

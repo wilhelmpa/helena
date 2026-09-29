@@ -93,5 +93,7 @@ export function ShellHeaderRow({
       slot,
     );
   }
-  return <WorkspaceHeader className={className}>{children}</WorkspaceHeader>;
+  // No header to go into (a block of a page that saves on its own, LocalChrome; the
+  // 'classic' header layout): the row stands in place, without a frame of its own.
+  return <div className={cn('ds-local-toolbar', className)}>{children}</div>;
 }

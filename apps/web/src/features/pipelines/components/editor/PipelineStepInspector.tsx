@@ -22,6 +22,7 @@ import PipelinePluginFields from './PipelinePluginFields';
 import PipelineStepDetails from './PipelineStepDetails';
 import PipelineWaitStepForm from './PipelineWaitStepForm';
 import PipelineWebhookStepForm from './PipelineWebhookStepForm';
+import { Inline, Stack, Text } from '@/design-system';
 
 // The selected step: a form for its kind, or its values for a reader. Problems of the
 // step no field shows are listed at the top.
@@ -30,17 +31,24 @@ export default function PipelineStepInspector() {
   const { definition, selectedId, editable, issues, change, select } = usePipelineEditor();
   const plugins = usePluginTypes();
   const step = selectedId ? findStep(definition.steps, selectedId) : undefined;
-  if (!step) return <p className="text-sm text-muted-foreground">{t('inspector.empty')}</p>;
+  if (!step)
+    return (
+      <Text as="p" size="sm" tone="muted">
+        {t('inspector.empty')}
+      </Text>
+    );
   const Icon = isPluginStep(step) ? Puzzle : PIPELINE_STEP_ICONS[step.type];
   const plugin = isPluginStep(step) ? plugins.stepInfo(step.type) : null;
   const update = (next: PipelineStep) =>
     change((current) => ({ ...current, steps: replaceStep(current.steps, step.id, next) }));
 
   return (
-    <div key={step.id} className="space-y-4">
-      <div className="flex items-center gap-2">
+    <Stack gap={4} key={step.id}>
+      <Inline gap={2}>
         <Icon className="size-4 text-muted-foreground" />
-        <span className="text-sm font-medium">{plugins.stepLabel(step.type)}</span>
+        <Text as="span" size="sm" className="font-medium">
+          {plugins.stepLabel(step.type)}
+        </Text>
         {editable && (
           <Button
             variant="ghost"
@@ -56,7 +64,7 @@ export default function PipelineStepInspector() {
             <Trash2 />
           </Button>
         )}
-      </div>
+      </Inline>
       <PipelineIssueList issues={unplacedStepIssues(issues, step)} />
       {editable ? (
         <>
@@ -85,9 +93,9 @@ export default function PipelineStepInspector() {
             (plugin ? (
               <>
                 {plugin.description && (
-                  <p className="text-xs text-muted-foreground">
+                  <Text as="p" size="xs" tone="muted">
                     {plugins.text(plugin.description)}
-                  </p>
+                  </Text>
                 )}
                 <PipelinePluginFields
                   idPrefix="step-config"
@@ -99,14 +107,14 @@ export default function PipelineStepInspector() {
                 />
               </>
             ) : (
-              <p className="text-sm text-muted-foreground">
+              <Text as="p" size="sm" tone="muted">
                 {t('inspector.plugin.missing', { type: step.type })}
-              </p>
+              </Text>
             ))}
         </>
       ) : (
         <PipelineStepDetails step={step} />
       )}
-    </div>
+    </Stack>
   );
 }

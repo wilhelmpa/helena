@@ -56,7 +56,7 @@ export default function TradingKpis({
             gap: 10,
             padding: '18px 20px',
             minHeight: 127,
-            borderRadius: 18,
+            borderRadius: 'var(--radius-xl)',
             background: 'var(--trading-card)',
             boxShadow: '0 0 0 1px var(--trading-card-line)',
           }}

@@ -42,7 +42,7 @@ export default function ServerHealthLines() {
         <span className="min-w-0 flex-1 truncate">{t('home.title')}</span>
         <StatusBadge status={healthStatus(state)} dotOnly />
       </Link>
-      <ul className="rounded-lg border bg-card p-1">
+      <ul className="rounded-md border bg-card p-1">
         {problems.map((item) => (
           <HealthLine key={item.id} item={item} />
         ))}

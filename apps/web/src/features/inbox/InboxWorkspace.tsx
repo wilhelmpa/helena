@@ -10,6 +10,7 @@ import { useTeamsQuery } from '@/services/teams.service';
 import { useProjectMailAccounts } from '@/services/mail.service';
 import MailInbox from './components/MailInbox';
 import { resolveInboxTeamId } from './inboxTeamScope';
+import { Text } from '@/design-system';
 
 // The mail inbox of the tool panel and of Home's inbox page (`page`). On the page its
 // controls, the team among them, are the page's header row (see MailInbox).
@@ -58,11 +59,17 @@ export default function InboxWorkspace({
       ) : null}
 
       {teams.isPending || projectPending ? (
-        <p className="p-4 text-sm text-muted-foreground">{inboxCopy('loading')}</p>
+        <Text as="p" size="sm" tone="muted" className="p-4">
+          {inboxCopy('loading')}
+        </Text>
       ) : projectKey && !projectAccounts.data?.length ? (
-        <p className="p-4 text-sm text-muted-foreground">{inboxCopy('noProjectMailbox')}</p>
+        <Text as="p" size="sm" tone="muted" className="p-4">
+          {inboxCopy('noProjectMailbox')}
+        </Text>
       ) : teamId == null ? (
-        <p className="p-4 text-sm text-muted-foreground">{teamCopy('manage.empty')}</p>
+        <Text as="p" size="sm" tone="muted" className="p-4">
+          {teamCopy('manage.empty')}
+        </Text>
       ) : (
         <MailInbox
           key={`${teamId}:${project?.id ?? 'all'}`}

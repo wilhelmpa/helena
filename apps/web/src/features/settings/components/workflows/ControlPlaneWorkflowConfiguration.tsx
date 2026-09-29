@@ -12,6 +12,8 @@ import { useUpdateProjectWorkflow } from '@/services/controlPlaneWorkflows.servi
 import ControlPlaneAgentTeamPolicy from './ControlPlaneAgentTeamPolicy';
 import { agentTeamPolicyConfiguration, agentTeamPolicyDraft } from './agentTeamPolicy';
 
+import { Box, Text, Stack } from '@/design-system';
+
 export default function ControlPlaneWorkflowConfiguration({
   projectKey,
   workflow,
@@ -42,45 +44,57 @@ export default function ControlPlaneWorkflowConfiguration({
 
   if (!editable) {
     return (
-      <div className="grid gap-3 rounded-lg border bg-background p-3 text-sm sm:grid-cols-2">
+      <Box pad={3} className="grid gap-3 rounded-md border bg-background text-sm sm:grid-cols-2">
         <div>
-          <p className="text-xs font-medium text-muted-foreground">{t('instructions')}</p>
-          <p className="mt-1 whitespace-pre-wrap">{instructions || t('notConfigured')}</p>
+          <Text as="p" size="xs" tone="muted" className="font-medium">
+            {t('instructions')}
+          </Text>
+          <Box as="p" marginTop={1} className="whitespace-pre-wrap">
+            {instructions || t('notConfigured')}
+          </Box>
         </div>
         <div>
-          <p className="text-xs font-medium text-muted-foreground">{t('retryLimit')}</p>
-          <p className="mt-1">{retryLimit}</p>
+          <Text as="p" size="xs" tone="muted" className="font-medium">
+            {t('retryLimit')}
+          </Text>
+          <Box as="p" marginTop={1}>
+            {retryLimit}
+          </Box>
         </div>
         {agentTeam && (
           <>
             <div>
-              <p className="text-xs font-medium text-muted-foreground">{t('agentTeam.result')}</p>
-              <p className="mt-1">
+              <Text as="p" size="xs" tone="muted" className="font-medium">
+                {t('agentTeam.result')}
+              </Text>
+              <Box as="p" marginTop={1}>
                 {policy.autonomy === 'done'
                   ? t('agentTeam.autonomyDone')
                   : t('agentTeam.autonomyReview')}
                 {' · '}
                 {policy.reviewRequired ? t('agentTeam.reviewed') : t('agentTeam.notReviewed')}
-              </p>
+              </Box>
             </div>
             <div>
-              <p className="text-xs font-medium text-muted-foreground">
+              <Text as="p" size="xs" tone="muted" className="font-medium">
                 {t('agentTeam.maxTurns')} · {t('agentTeam.budgetMinutes')}
-              </p>
-              <p className="mt-1">
+              </Text>
+              <Box as="p" marginTop={1}>
                 {policy.maxTurns || t('agentTeam.noLimit')} ·{' '}
                 {policy.budgetMinutes || t('agentTeam.noLimit')}
-              </p>
+              </Box>
             </div>
           </>
         )}
-      </div>
+      </Box>
     );
   }
 
   return (
-    <form
-      className="grid gap-3 rounded-lg border bg-background p-3 sm:grid-cols-[1fr_8rem_auto]"
+    <Box
+      as="form"
+      pad={3}
+      className="grid gap-3 rounded-md border bg-background sm:grid-cols-[1fr_8rem_auto]"
       onSubmit={(event) => {
         event.preventDefault();
         update.mutate(
@@ -100,7 +114,7 @@ export default function ControlPlaneWorkflowConfiguration({
         );
       }}
     >
-      <div className="space-y-1">
+      <Stack gap={1}>
         <Label htmlFor={`${workflow.id}-instructions`}>{t('instructions')}</Label>
         <Textarea
           id={`${workflow.id}-instructions`}
@@ -108,8 +122,8 @@ export default function ControlPlaneWorkflowConfiguration({
           onChange={(event) => setInstructions(event.target.value)}
           placeholder={t('instructionsPlaceholder')}
         />
-      </div>
-      <div className="space-y-1">
+      </Stack>
+      <Stack gap={1}>
         <Label htmlFor={`${workflow.id}-retry-limit`}>{t('retryLimit')}</Label>
         <Input
           id={`${workflow.id}-retry-limit`}
@@ -119,7 +133,7 @@ export default function ControlPlaneWorkflowConfiguration({
           value={retryLimit}
           onChange={(event) => setRetryLimit(event.target.value)}
         />
-      </div>
+      </Stack>
       {agentTeam && (
         <ControlPlaneAgentTeamPolicy id={workflow.id} value={policy} onChange={setPolicy} />
       )}
@@ -132,6 +146,6 @@ export default function ControlPlaneWorkflowConfiguration({
       >
         {t('saveConfiguration')}
       </Button>
-    </form>
+    </Box>
   );
 }

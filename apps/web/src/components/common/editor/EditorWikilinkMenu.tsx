@@ -35,7 +35,7 @@ export default function EditorWikilinkMenu({
   if (!items.length) return null;
   return (
     <div
-      className="z-50 max-h-64 w-72 overflow-y-auto rounded-xl border bg-popover p-1 shadow-lg"
+      className="z-50 max-h-64 w-72 overflow-y-auto rounded-lg border bg-popover p-1 shadow-lg"
       role="listbox"
       aria-label="Wiki-Links"
     >
@@ -48,7 +48,7 @@ export default function EditorWikilinkMenu({
           onMouseDown={(event) => event.preventDefault()}
           onClick={() => command(item)}
           onMouseEnter={() => setActive(index)}
-          className={`block w-full rounded-lg px-2 py-1.5 text-start text-sm ${index === selected ? 'bg-accent' : ''}`}
+          className={`block w-full rounded-md px-2 py-1.5 text-start text-sm ${index === selected ? 'bg-accent' : ''}`}
         >
           <span className="block truncate">{item.title}</span>
           <span className="block truncate text-xs text-muted-foreground">{item.path}</span>

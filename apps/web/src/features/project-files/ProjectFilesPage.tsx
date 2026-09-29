@@ -3,7 +3,6 @@
 import { useEffect } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { WorkspacePageHeader } from '@/components/layout/WorkspaceHeader';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useProjectFeatures } from '@/hooks/useProjectFeatures';
 import type { ProjectFileRoot } from '@/lib/api/endpoints/projectFiles';
@@ -12,6 +11,7 @@ import NotesPage from '@/features/notes/NotesPage';
 import { useNoteBoardQuery } from '@/features/notes/services/noteBoards.service';
 import FileBrowser from './components/FileBrowser';
 import { useFileNavigationGuard } from './hooks/useFileNavigationGuard';
+import { EmptyState, Page } from '@/design-system';
 
 function LegacyBoard({
   projectKey,
@@ -40,9 +40,9 @@ function LegacyBoard({
   }, [id, canvas, projectKey, router]);
   if (id !== null && board.data && !board.data.vaultPath) return <NotesPage />;
   return (
-    <div role="status" className="p-6 text-sm text-muted-foreground">
-      {tCanvas('opening')}
-    </div>
+    <Page>
+      <EmptyState>{tCanvas('opening')}</EmptyState>
+    </Page>
   );
 }
 
@@ -69,13 +69,8 @@ export default function ProjectFilesPage() {
   };
   if (!features.documents && features.notes) return <NotesPage />;
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-      {root === 'code' && <WorkspacePageHeader title={t('title')} />}
-      <div
-        className={
-          root === 'vault' ? 'flex min-h-0 flex-1 flex-col' : 'flex min-h-0 flex-1 flex-col p-4'
-        }
-      >
+    <Page variant="fill" title={t('title')}>
+      <div className="flex min-h-0 flex-1 flex-col">
         {boardView ? (
           <LegacyBoard
             projectKey={projectKey}
@@ -114,6 +109,6 @@ export default function ProjectFilesPage() {
           />
         )}
       </div>
-    </div>
+    </Page>
   );
 }

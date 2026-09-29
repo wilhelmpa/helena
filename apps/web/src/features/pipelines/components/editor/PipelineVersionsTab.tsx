@@ -9,6 +9,7 @@ import type { Pipeline, PipelineContext } from '@/lib/api/endpoints/pipelines';
 import { usePipelineVersions } from '@/services/pipelines.service';
 import { formatDateTime } from '@/utils/dates';
 import PipelineVersionView from './PipelineVersionView';
+import { Inline, Text } from '@/design-system';
 
 // Every saved version, newest first. Runs keep the version they started with; an older
 // version opens read-only.
@@ -34,12 +35,16 @@ export default function PipelineVersionsTab({
     );
   if (versions.isPending) return <ListSkeleton rows={3} />;
   if (!versions.data?.length)
-    return <p className="text-sm text-muted-foreground">{t('versions.empty')}</p>;
+    return (
+      <Text as="p" size="sm" tone="muted">
+        {t('versions.empty')}
+      </Text>
+    );
 
   return (
-    <ul className="divide-y overflow-hidden rounded-lg border bg-card">
+    <ul className="divide-y overflow-hidden rounded-md border bg-card">
       {versions.data.map((version) => (
-        <li key={version.id} className="flex flex-wrap items-center gap-3 p-3 text-sm">
+        <Inline as="li" gap={3} pad={3} wrap key={version.id} className="text-sm">
           <span className="font-medium">{t('editor.version', { version: version.version })}</span>
           {version.version === pipeline.version && (
             <Badge variant="secondary">{t('versions.current')}</Badge>
@@ -57,7 +62,7 @@ export default function PipelineVersionsTab({
           >
             {t('versions.open')}
           </Button>
-        </li>
+        </Inline>
       ))}
     </ul>
   );

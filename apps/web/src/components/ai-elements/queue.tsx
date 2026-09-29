@@ -25,7 +25,7 @@ export function QueueItem({ className, ...props }: QueueItemProps) {
   return (
     <li
       className={cn(
-        'group flex min-w-0 items-center gap-2 rounded-lg bg-accent/60 py-1 ps-2.5 pe-1 text-sm text-muted-foreground',
+        'group flex min-w-0 items-center gap-2 rounded-md bg-accent/60 py-1 ps-2.5 pe-1 text-sm text-muted-foreground',
         className,
       )}
       {...props}

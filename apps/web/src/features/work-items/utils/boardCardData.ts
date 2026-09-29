@@ -34,6 +34,7 @@ export function boardCardData(
   maps: Maps,
   properties: PropertyKey[],
   priorityLabel: (priority: string | null) => string,
+  statusAgeLabel: string,
 ) {
   const fields = properties.flatMap((key) => {
     if (!isCustomFieldKey(key)) return [];
@@ -101,7 +102,7 @@ export function boardCardData(
           ? [`Fällig ${formatShortDate(issue.dueDate)}`]
           : [];
       case 'statusAge':
-        return [`Status ${formatDurationShort(issue.statusSince)}`];
+        return [`${statusAgeLabel} ${formatDurationShort(issue.statusSince)}`];
       default:
         return [];
     }

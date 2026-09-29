@@ -7,6 +7,8 @@ import { useProjectsQuery } from '@/services/projects.service';
 import { useCurrentTeam } from '@/components/common/page/useTeamSections';
 import { getBrowserControl } from '@/lib/api/endpoints/browserTask';
 import { InstanceBrowserControlSection } from '@/features/browser-lab/components/InstanceBrowserControlSection';
+import { EmptyState, Page, Stack } from '@/design-system';
+import { Lock } from 'lucide-react';
 
 // The browser default for all projects; the other project defaults (autopilot, MCP, run
 // resume, engine) follow on the same page from GodGeneralPage, once.
@@ -15,9 +17,17 @@ export default function HomeDefaultsPage() {
   const { data: session } = useSession();
   const team = useCurrentTeam();
   if (session?.user.role !== 'god') {
-    return <p className="text-sm text-muted-foreground">{t('adminOnly')}</p>;
+    return (
+      <Page>
+        <EmptyState icon={<Lock />}>{t('adminOnly')}</EmptyState>
+      </Page>
+    );
   }
-  return <AdminHomeDefaults teamId={team?.id ?? null} />;
+  return (
+    <Page>
+      <AdminHomeDefaults teamId={team?.id ?? null} />
+    </Page>
+  );
 }
 
 function AdminHomeDefaults({ teamId }: { teamId: number | null }) {
@@ -34,8 +44,8 @@ function AdminHomeDefaults({ teamId }: { teamId: number | null }) {
   ).length;
 
   return (
-    <div className="space-y-6">
+    <Stack gap={5}>
       <InstanceBrowserControlSection overrideCount={overrideCount} />
-    </div>
+    </Stack>
   );
 }

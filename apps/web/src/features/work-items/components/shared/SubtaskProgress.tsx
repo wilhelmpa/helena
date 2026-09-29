@@ -48,7 +48,10 @@ export function SubtaskProgress({
               e.preventDefault();
               onToggle();
             }}
-            className={cn(className, '-mx-1 rounded px-1 hover:bg-accent/50 hover:text-foreground')}
+            className={cn(
+              className,
+              '-mx-1 rounded-sm px-1 hover:bg-accent/50 hover:text-foreground',
+            )}
           >
             <Chevron className="size-3" />
             {tally}

@@ -681,7 +681,9 @@
     "groups": {
       "you": "Du",
       "allProjects": "Alle Projekte",
-      "system": "System"
+      "system": "System",
+      "development": "Entwicklung",
+      "advanced": "Erweitert"
     },
     "sections": {
       "profile": {
@@ -733,12 +735,12 @@
         "hint": "Fähigkeiten, die Agenten nutzen können."
       },
       "tools": {
-        "label": "Werkzeuge",
-        "hint": "Werkzeuge der Agenten und wer sie nutzen darf."
+        "label": "Werkzeuge & MCP",
+        "hint": "Die MCP-Server und Werkzeuge, die Agenten nutzen, und wer sie nutzen darf."
       },
       "mcps": {
-        "label": "MCP-Server",
-        "hint": "MCP-Server, die Agenten anbinden können."
+        "label": "Helena für externe Apps",
+        "hint": "Wie MCP-Clients wie Claude Desktop auf Helena zugreifen."
       },
       "plugins": {
         "label": "Erweiterungen",
@@ -835,6 +837,18 @@
       "server-power": {
         "label": "Leistung & Lüfter",
         "hint": "Leistungsprofil, Lüfter und Temperaturen."
+      },
+      "ui": {
+        "label": "UI-Bausteine",
+        "hint": "Jeder Baustein des UI-Frameworks mit seinen Varianten, hell und dunkel."
+      },
+      "organization": {
+        "label": "Organisation",
+        "hint": "Menschen, Konten, Teams, Rollen, Projekte und Abteilungen."
+      },
+      "channels": {
+        "label": "Benachrichtigungen & Kanäle",
+        "hint": "Wie Helena Nachrichten per E-Mail und Telegram zustellt."
       }
     },
     "projectPath": "Projekt"
@@ -875,9 +889,112 @@
     "instanceWide": "Für alle Projekte",
     "memoryLabel": "Gedächtnis ohne Freigabe",
     "memoryHint": "Agenten dürfen Erinnerungen direkt speichern.",
-    "perAgent": "Je Agent"
+    "perAgent": "Je Agent",
+    "overridden": "Überschreibt Vorgabe",
+    "resetToDefault": "Auf Vorgabe zurücksetzen",
+    "levelOverridden": "Die Vorgabe für alle Projekte ist Stufe {level}; dieses Projekt weicht davon ab.",
+    "levelDefault": "Wie die Vorgabe für alle Projekte.",
+    "autopilotTitle": "Autopilot",
+    "instructionsTitle": "Anweisungen",
+    "instructionsHint": "Gelten für jeden Agenten dieses Projekts.",
+    "instructionsLabel": "Projektanweisungen",
+    "instructionsPlaceholder": "Beschreibe den Auftrag des Projekts und die Arbeitsanweisungen.",
+    "instructionsSaved": "Anweisungen gespeichert"
   },
   "defaults": {
     "adminOnly": "Diese Vorgaben für alle Projekte ändert nur der Administrator."
+  },
+  "uiGallery": {
+    "sample": "Beispieltext",
+    "tokens": "Tokens",
+    "actions": "Aktionen",
+    "newThing": "Neu anlegen",
+    "upload": "Hochladen",
+    "cancel": "Abbrechen",
+    "delete": "Löschen",
+    "small": "Klein",
+    "disabled": "Gesperrt",
+    "settings": "Einstellungen",
+    "openDialog": "Dialog öffnen",
+    "dialogTitle": "Ein Dialog",
+    "choices": "Auswahl",
+    "tabActive": "Aktiv",
+    "tabPlanned": "Geplant",
+    "tabAll": "Alle",
+    "tree": "Baum",
+    "circle": "Kreis",
+    "filter": "Filter",
+    "fields": "Felder",
+    "name": "Name",
+    "hint": "Ein Satz, der erklärt, was die Einstellung bewirkt.",
+    "search": "Suchen",
+    "description": "Beschreibung",
+    "error": "So kurz erklärt, was falsch ist.",
+    "surfaces": "Flächen",
+    "cardTitle": "Karte",
+    "meta": "vor 5 Min.",
+    "interactive": "Klickbar",
+    "selected": "Ausgewählt",
+    "lists": "Listen und Tabellen",
+    "group": "Gruppe",
+    "agent": "Agent",
+    "patterns": "Muster",
+    "settingsGroup": "Einstellungsgruppe",
+    "danger": "Gefahrenzone",
+    "properties": "Eigenschaften",
+    "emptySentence": "Hier liegt noch nichts. Leg das Erste an.",
+    "light": "Hell",
+    "dark": "Dunkel"
+  },
+  "organization": {
+    "label": "Organisation",
+    "tabs": {
+      "people": "Menschen",
+      "accounts": "Konten",
+      "teams": "Teams",
+      "roles": "Rollen",
+      "projects": "Projekte",
+      "departments": "Abteilungen"
+    }
+  },
+  "channels": {
+    "label": "Kanal",
+    "tabs": {
+      "email": "E-Mail",
+      "telegram": "Telegram"
+    },
+    "email": {
+      "installation": "Absender der Installation",
+      "installationHint": "Über ihn gehen Anmeldungen, Einladungen und Benachrichtigungen.",
+      "team": "Eigener Absender für das Team"
+    },
+    "telegram": {
+      "installation": "Bot der Installation",
+      "installationHint": "Mit ihm verbindest du dein Telegram-Konto; Benachrichtigungen kommen über ihn.",
+      "team": "Eigener Bot für das Team"
+    }
+  },
+  "knowledge": {
+    "receiptsTitle": "Belege",
+    "autoMerge": "Doppelte Belege automatisch zusammenführen",
+    "autoMergeHint": "Derselbe Beleg aus Mail und Upload wird einer. Gilt für alle Projekte des Teams.",
+    "intake": "Belege aus Rechnungs-Mails",
+    "intakeHint": "Der Mail-Einordner übernimmt PDF- und XML-Anhänge als Belege; eingestellt im Entscheider.",
+    "intakeOn": "An · im Entscheider ändern",
+    "intakeOff": "Aus · im Entscheider ändern",
+    "intakeOpen": "Im Entscheider einstellen",
+    "managerOnly": "Stellt ein Team-Admin ein.",
+    "saved": "Gespeichert"
+  },
+  "projectAccess": {
+    "create": "Zugang anlegen",
+    "credentialsTitle": "Zugänge in diesem Projekt",
+    "empty": "Diesem Projekt ist noch kein Zugang freigegeben.",
+    "allAgents": "Alle Agenten des Projekts",
+    "notGranted": "Noch niemand freigegeben",
+    "ownProject": "Nur dieses Projekt",
+    "grants": "Freigaben",
+    "environmentTitle": "Umgebungsvariablen",
+    "environmentHint": "Was die Agenten dieses Projekts aus ihren Zugängen als Variablen bekommen."
   }
 }

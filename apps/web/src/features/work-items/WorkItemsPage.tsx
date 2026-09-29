@@ -23,7 +23,15 @@ import { Pencil, Plus } from 'lucide-react';
 import ViewIconPicker from '@/components/layout/ViewIconPicker';
 import FilterPills from '@/components/layout/FilterPills';
 import { PageActions, PageToolbar } from '@/components/layout/PageToolbar';
-import { Button, Overlay, Segmented, SettingsGroup, SettingsRow, TextField } from '@/design-system';
+import {
+  Button,
+  Overlay,
+  Segmented,
+  SettingsGroup,
+  SettingsRow,
+  TextField,
+  Page,
+} from '@/design-system';
 import {
   Select,
   SelectContent,
@@ -246,7 +254,7 @@ export default function WorkItemsPage() {
   );
 
   return (
-    <>
+    <Page variant="fill">
       <PageToolbar>
         {!editor.editing && (
           <>
@@ -433,6 +441,6 @@ export default function WorkItemsPage() {
           </SubtasksProvider>
         </IssueLinksProvider>
       </div>
-    </>
+    </Page>
   );
 }

@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import type { OrganizationAgent } from '@/lib/api/endpoints/organization';
 import { useProjectWorkflows } from '@/services/controlPlaneWorkflows.service';
 import { workflowsPath } from '@/utils/paths';
+import { Inline, Stack, Text } from '@/design-system';
 
 // Whether the project runs the agent-team workflow, with which limits, and what in the
 // team keeps a delegated task from reaching it.
@@ -32,25 +33,33 @@ export default function OrganizationOrchestrationPolicy({
   ].filter((warning): warning is string => Boolean(warning));
 
   return (
-    <section className="space-y-3 rounded-lg border bg-card p-4">
-      <div className="flex items-start justify-between gap-3">
+    <Stack as="section" gap={3} pad={4} className="rounded-md border bg-card">
+      <Inline gap={3} justify="between" align="start">
         <div>
           <h2 className="flex items-center gap-2 text-md font-medium">
             {t('policyTitle')}
             {flow && <Badge variant="outline">{enabled ? t('on') : t('off')}</Badge>}
           </h2>
-          <p className="text-xs text-muted-foreground">{t('policyDescription')}</p>
+          <Text as="p" size="xs" tone="muted">
+            {t('policyDescription')}
+          </Text>
         </div>
         <Button asChild variant="outline" size="sm">
           <Link href={workflowsPath(projectKey)}>{t('configure')}</Link>
         </Button>
-      </div>
+      </Inline>
       {workflows.isPending ? (
-        <p className="text-sm text-muted-foreground">{t('loading')}</p>
+        <Text as="p" size="sm" tone="muted">
+          {t('loading')}
+        </Text>
       ) : !flow ? (
-        <p className="text-sm text-muted-foreground">{t('unavailable')}</p>
+        <Text as="p" size="sm" tone="muted">
+          {t('unavailable')}
+        </Text>
       ) : !enabled ? (
-        <p className="text-sm text-muted-foreground">{t('offHint')}</p>
+        <Text as="p" size="sm" tone="muted">
+          {t('offHint')}
+        </Text>
       ) : (
         <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-sm">
           <dt className="text-muted-foreground">{t('result')}</dt>
@@ -69,14 +78,16 @@ export default function OrganizationOrchestrationPolicy({
       )}
       {enabled &&
         warnings.map((warning) => (
-          <p
+          <Text
+            as="p"
+            size="xs"
             key={warning}
-            className="flex gap-2 rounded-md bg-status-waiting/10 p-2 text-xs text-status-waiting"
+            className="flex gap-2 rounded-md bg-status-waiting/10 p-2 text-status-waiting"
           >
             <AlertTriangle className="mt-0.5 size-3.5 shrink-0" />
             {warning}
-          </p>
+          </Text>
         ))}
-    </section>
+    </Stack>
   );
 }

@@ -55,7 +55,7 @@ export default function IssueImageAnnotatorToolbar({
           aria-pressed={color === value}
           onClick={() => onColorChange(value)}
           className={cn(
-            'flex size-7 items-center justify-center rounded hover:bg-accent',
+            'flex size-7 items-center justify-center rounded-sm hover:bg-accent',
             color === value && 'bg-accent',
           )}
         >

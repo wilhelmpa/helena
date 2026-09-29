@@ -11,8 +11,8 @@ import {
   Download,
   FileUp,
   FolderOpen,
-  MoreHorizontal,
   Plus,
+  ReceiptText,
   Undo2,
   Upload,
 } from 'lucide-react';
@@ -25,6 +25,8 @@ import {
   MenuContent as DropdownMenuContent,
   MenuItem as DropdownMenuItem,
   MenuTrigger as DropdownMenuTrigger,
+  Button,
+  EmptyState,
 } from '@/design-system';
 import { MonoLabel } from '@/components/helena/DashboardPrimitives';
 import KnowledgeFrame, {
@@ -339,13 +341,13 @@ export default function ReceiptsPage() {
       ) : receipts.length ? (
         receipts.map(receiptRow)
       ) : (
-        <p className="px-3.5 py-3 text-sm text-muted-foreground">
+        <EmptyState icon={<ReceiptText />}>
           {view === 'open'
             ? t('open.noReceipts')
             : view === 'matched'
               ? t('matched.emptyHint')
               : t('emptyAll')}
-        </p>
+        </EmptyState>
       )}
     </div>
   );
@@ -397,11 +399,13 @@ export default function ReceiptsPage() {
       </div>
     ) : (
       <>
-        <KnowledgeListHead
-          name={t('columns.name')}
-          kind={t('columns.detail')}
-          trailing={t('columns.amount')}
-        />
+        {(listed.isPending || receipts.length > 0) && (
+          <KnowledgeListHead
+            name={t('columns.name')}
+            kind={t('columns.detail')}
+            trailing={t('columns.amount')}
+          />
+        )}
         {list}
       </>
     );
@@ -449,22 +453,16 @@ export default function ReceiptsPage() {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button type="button" aria-label={t('more')} className="ds-icon-button">
-                  <MoreHorizontal size={16} />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-64">
-                <DropdownMenuItem
-                  disabled={month === ALL_MONTHS || exporting}
-                  onSelect={() => void exportMonth()}
-                >
-                  <Download />
-                  {month === ALL_MONTHS ? t('actions.exportPickMonth') : t('actions.export')}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            {/* One entry is a button, not a "…" menu (owner, O36). */}
+            <Button
+              variant="quiet"
+              icon={<Download size={16} />}
+              disabled={month === ALL_MONTHS || exporting}
+              title={month === ALL_MONTHS ? t('actions.exportPickMonth') : undefined}
+              onClick={() => void exportMonth()}
+            >
+              {t('actions.export')}
+            </Button>
           </>
         }
         pills={

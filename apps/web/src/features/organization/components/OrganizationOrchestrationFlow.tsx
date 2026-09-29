@@ -1,6 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
+import { Stack, Text } from '@/design-system';
 
 const STAGES = ['coordinate', 'specialize', 'review', 'synchronize'] as const;
 
@@ -9,7 +10,7 @@ export default function OrganizationOrchestrationFlow() {
   const t = useTranslations('organization.orchestration.flow');
 
   return (
-    <section className="space-y-3 rounded-lg border bg-card p-4 text-sm">
+    <Stack as="section" gap={3} pad={4} className="rounded-md border bg-card text-sm">
       <h2 className="text-md font-medium">{t('title')}</h2>
       <div>
         <h3 className="text-xs font-medium text-muted-foreground">{t('directTitle')}</h3>
@@ -18,13 +19,15 @@ export default function OrganizationOrchestrationFlow() {
       <div>
         <h3 className="text-xs font-medium text-muted-foreground">{t('teamTitle')}</h3>
         <p className="mt-1">{t('team')}</p>
-        <ol className="mt-2 list-decimal space-y-1 ps-5">
+        <Stack as="ol" gap={1} marginTop={2} padStart={5} className="list-decimal">
           {STAGES.map((stage) => (
             <li key={stage}>{t(`stages.${stage}`)}</li>
           ))}
-        </ol>
-        <p className="mt-2 text-xs text-muted-foreground">{t('route')}</p>
+        </Stack>
+        <Text as="p" size="xs" tone="muted" className="mt-2">
+          {t('route')}
+        </Text>
       </div>
-    </section>
+    </Stack>
   );
 }

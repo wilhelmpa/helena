@@ -7,6 +7,7 @@ import { SectionLabel } from '@/components/common/page/RowList';
 import { Button } from '@/components/ui/button';
 import { useBuiltinPipelines, useCreatePipelineTemplate } from '@/services/pipelines.service';
 import { useNewPipeline } from '../../hooks/useNewPipeline';
+import { Stack, Text } from '@/design-system';
 
 // The templates Helena ships. Adding one copies it into the library with its names in
 // the reader's language.
@@ -30,16 +31,20 @@ export default function PipelineBuiltinList({
         {builtins.data.map((template) => {
           const input = builtin(template);
           return (
-            <li
+            <Stack
+              as="li"
+              gap={2}
+              padX={3}
+              padY={3}
               key={template.key}
-              className="flex flex-col gap-1.5 rounded-lg border bg-card px-3 py-2.5"
+              className="rounded-md border bg-card"
             >
-              <p className="text-md font-medium" dir="auto">
+              <Text as="p" size="md" className="font-medium" dir="auto">
                 {input.name}
-              </p>
-              <p className="flex-1 text-sm text-muted-foreground" dir="auto">
+              </Text>
+              <Text as="p" size="sm" tone="muted" className="flex-1" dir="auto">
                 {input.description}
-              </p>
+              </Text>
               {canCreate && (
                 <Button
                   size="sm"
@@ -55,7 +60,7 @@ export default function PipelineBuiltinList({
                   <Plus /> {t('addToLibrary')}
                 </Button>
               )}
-            </li>
+            </Stack>
           );
         })}
       </ul>

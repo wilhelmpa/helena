@@ -8,6 +8,7 @@ import { usePluginTypes } from '../../hooks/usePluginTypes';
 import PipelineField from './PipelineField';
 import PipelineNameInput from './PipelineNameInput';
 import PipelinePluginFields from './PipelinePluginFields';
+import { Stack } from '@/design-system';
 
 // The fields the trigger type needs. Statuses and labels are named, so a template
 // reads them as text and a project workflow offers the project's own. A webhook's
@@ -28,7 +29,7 @@ export default function PipelineTriggerFields({
     const info = plugins.triggerInfo(trigger.type);
     if (!info) return null;
     return (
-      <div className="space-y-3 sm:col-span-2">
+      <Stack gap={3} className="sm:col-span-2">
         <PipelinePluginFields
           idPrefix="pipeline-trigger-config"
           schema={info.configSchema}
@@ -36,7 +37,7 @@ export default function PipelineTriggerFields({
           issuesOf={() => []}
           onChange={(config) => onChange({ ...trigger, config })}
         />
-      </div>
+      </Stack>
     );
   }
 

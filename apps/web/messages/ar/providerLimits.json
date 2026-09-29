@@ -71,5 +71,6 @@
     "limited": "{provider}: تم بلوغ الحد",
     "limitedUntil": "{provider}: تم بلوغ الحد، متاح مجددًا بعد {time}",
     "stale": "{provider}: الحدود قديمة (قُرئت قبل {time})"
-  }
+  },
+  "agentsOn": "الوكلاء على هذا الحساب:"
 }

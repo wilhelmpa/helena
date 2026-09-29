@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl';
 export default function ArchivedBadge() {
   const t = useTranslations('common');
   return (
-    <span className="shrink-0 rounded border border-border px-1.5 py-0.5 text-xs text-muted-foreground uppercase">
+    <span className="shrink-0 rounded-sm border border-border px-1.5 py-0.5 text-xs text-muted-foreground uppercase">
       {t('archived')}
     </span>
   );

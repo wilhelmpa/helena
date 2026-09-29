@@ -30,7 +30,7 @@ export default function EditorLinkPreview({ editor }: { editor: Editor }) {
         sideOffset={10}
         collisionPadding={12}
         aria-label={t('linkPreview')}
-        className={`${styles.preview} w-80 max-w-[calc(100vw-24px)] rounded-2xl border-0 bg-popover p-1 text-popover-foreground`}
+        className={`${styles.preview} w-80 max-w-[calc(100vw-24px)] rounded-xl border-0 bg-popover p-1 text-popover-foreground`}
         onOpenAutoFocus={(event) => event.preventDefault()}
         onCloseAutoFocus={(event) => event.preventDefault()}
         onPointerEnter={keepOpen}

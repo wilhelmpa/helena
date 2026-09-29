@@ -13,6 +13,7 @@ import InitiativeStatusSelect from '@/components/common/fields/InitiativeStatusS
 import HealthBadge from '../shared/HealthBadge';
 import HealthInfoPopover from '../shared/HealthInfoPopover';
 import ProgressBar from '@/components/common/ProgressBar';
+import { Inline, Stack } from '@/design-system';
 
 // The top of the initiative's overview: its title (the page's one 16px title) and
 // its properties as pills that patch it inline, with its health and progress. The
@@ -41,11 +42,11 @@ export default function InitiativeHeader({
   };
 
   return (
-    <div className="flex flex-col gap-3">
+    <Stack gap={3}>
       <h1 className="text-base font-semibold" dir="auto">
         {initiative.title}
       </h1>
-      <div className="flex flex-wrap items-center gap-2">
+      <Inline gap={2} wrap>
         <InitiativeStatusSelect
           value={initiative.status}
           onChange={(status) => patch({ status })}
@@ -79,12 +80,12 @@ export default function InitiativeHeader({
           onToggle={toggleLabel}
         />
         <span className="mx-1 hidden h-4 w-px bg-border sm:block" />
-        <div className="flex items-center gap-1">
+        <Inline gap={1}>
           <HealthInfoPopover />
           <HealthBadge health={initiative.health} />
-        </div>
+        </Inline>
         <ProgressBar progress={initiative.progress} />
-      </div>
-    </div>
+      </Inline>
+    </Stack>
   );
 }

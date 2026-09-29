@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Item, ItemActions, ItemContent, ItemTitle } from '@/components/ui/item';
 import { copyText } from '@/utils/clipboard';
+import { Text } from '@/design-system';
 
 const STATUS_VARIANT = { pending: 'secondary', accepted: 'default', rejected: 'outline' } as const;
 
@@ -83,10 +84,10 @@ export default function InviteRow({
             {t(`status.${invite.status}`)}
           </Badge>
         </ItemTitle>
-        <span className="text-xs text-muted-foreground">
+        <Text as="span" size="xs" tone="muted">
           {invitedBy ? t('invitedBy', { name: invitedBy }) : ''}
           {timestamp}
-        </span>
+        </Text>
       </ItemContent>
       <ItemActions className="ms-auto w-full justify-end sm:w-auto">
         {pending && onResend && (

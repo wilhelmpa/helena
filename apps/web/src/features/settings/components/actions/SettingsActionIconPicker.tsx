@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
+import { Box, Text } from '@/design-system';
+
 export function SettingsActionIconPicker({
   value,
   onChange,
@@ -74,9 +76,11 @@ export function SettingsActionIconPicker({
             );
           })}
           {keys.length === 0 && (
-            <p className="col-span-8 py-4 text-center text-xs text-muted-foreground">
-              {t('noIcons')}
-            </p>
+            <Box as="p" padY={4} className="col-span-8 text-center">
+              <Text as="span" size="xs" tone="muted">
+                {t('noIcons')}
+              </Text>
+            </Box>
           )}
         </div>
       </PopoverContent>

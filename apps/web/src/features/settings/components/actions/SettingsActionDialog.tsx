@@ -21,6 +21,8 @@ import {
 import { SettingsActionIconPicker } from './SettingsActionIconPicker';
 import { WorkflowGraphEditor } from './WorkflowGraphEditor';
 
+import { Stack, Inline, Text } from '@/design-system';
+
 export function SettingsActionDialog({
   actionId,
   projectKey,
@@ -87,16 +89,18 @@ export function SettingsActionDialog({
       onClose={onClose}
       wide
     >
-      <form
-        className="space-y-4"
+      <Stack
+        as="form"
+        gap={4}
+
         onSubmit={(event) => {
           event.preventDefault();
           submit();
         }}
       >
-        <div className="space-y-1.5">
+        <Stack gap={2}>
           <Label htmlFor="action-name">{tCommon('name')}</Label>
-          <div className="flex gap-2">
+          <Inline gap={2} align="stretch" className="flex">
             <SettingsActionIconPicker value={icon} onChange={setIcon} />
             <Input
               id="action-name"
@@ -108,10 +112,10 @@ export function SettingsActionDialog({
               placeholder={t('namePlaceholder')}
               className="h-9"
             />
-          </div>
-        </div>
+          </Inline>
+        </Stack>
 
-        <div className="space-y-2">
+        <Stack gap={2}>
           <Label>{t('workflow')}</Label>
           <WorkflowGraphEditor
             workflow={workflow}
@@ -122,13 +126,19 @@ export function SettingsActionDialog({
               preview.reset();
             }}
           />
-          {!isValid && <p className="text-sm text-muted-foreground">{t('workflowNeedsAction')}</p>}
-        </div>
+          {!isValid && (
+            <Text as="p" size="sm" tone="muted">
+              {t('workflowNeedsAction')}
+            </Text>
+          )}
+        </Stack>
 
-        <section className="space-y-2 rounded-xl border p-3">
+        <Stack as="section" gap={2} pad={3} className="rounded-lg border">
           <div>
             <h3 className="text-sm font-medium">{t('testWorkflow')}</h3>
-            <p className="text-xs text-muted-foreground">{t('testWorkflowHint')}</p>
+            <Text as="p" size="xs" tone="muted">
+              {t('testWorkflowHint')}
+            </Text>
           </div>
           {actionId && project.issues.length > 0 ? (
             <div className="flex flex-col gap-2 sm:flex-row">
@@ -154,9 +164,9 @@ export function SettingsActionDialog({
               </Button>
             </div>
           ) : (
-            <p className="text-sm text-muted-foreground">
+            <Text as="p" size="sm" tone="muted">
               {actionId ? t('testNeedsIssue') : t('testAfterSave')}
-            </p>
+            </Text>
           )}
           {preview.data && (
             <Alert>
@@ -173,9 +183,15 @@ export function SettingsActionDialog({
               <AlertDescription>{preview.error.message}</AlertDescription>
             </Alert>
           )}
-        </section>
+        </Stack>
 
-        <div className="flex justify-end gap-2 border-t border-border/50 pt-4">
+        <Inline
+          gap={2}
+          align="stretch"
+          justify="end"
+          padTop={4}
+          className="flex justify-end border-t border-border/50"
+        >
           <Button type="button" variant="ghost" onClick={onClose} disabled={saving}>
             {tCommon('cancel')}
           </Button>
@@ -186,8 +202,8 @@ export function SettingsActionDialog({
                 : t('creating')
               : t(mode === 'edit' ? 'save' : 'create')}
           </Button>
-        </div>
-      </form>
+        </Inline>
+      </Stack>
     </Modal>
   );
 }

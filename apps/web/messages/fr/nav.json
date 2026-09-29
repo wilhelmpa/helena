@@ -251,7 +251,9 @@
     "full": "Plein écran",
     "close": "Fermer le panneau",
     "closeTab": "Fermer {tab}",
-    "reloadView": "Recharger la vue"
+    "reloadView": "Recharger la vue",
+    "pin": "Épingler : la page fait de la place",
+    "unpin": "Détacher : flotte au-dessus de la page"
   },
   "sidebarTeam": "Équipe",
   "sidebarAgentPool": "Pool d’agents",
@@ -276,5 +278,7 @@
   "adminOnly": "Seul l'administrateur voit ces réglages.",
   "sidebarTerminals": "Terminaux",
   "sidebarFiles": "Fichiers",
-  "settingsExtensions": "Extensions"
+  "settingsExtensions": "Extensions",
+  "settingsAutopilotExecution": "Pilote automatique et exécution",
+  "settingsProjectAccess": "Gérer les accès"
 }

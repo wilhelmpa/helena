@@ -16,7 +16,7 @@ export default function PipelineApprovalCard({ approval }: { approval: PipelineA
   const decide = useDecidePipelineApproval();
 
   return (
-    <article className="space-y-3 rounded-lg border bg-card p-4">
+    <article className="space-y-3 rounded-md border bg-card p-4">
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
         <ShieldCheck className="size-4" />
         <span dir="auto">

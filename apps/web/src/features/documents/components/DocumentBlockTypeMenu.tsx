@@ -48,7 +48,7 @@ export default function DocumentBlockTypeMenu({ editor }: { editor: Editor }) {
           type="button"
           variant="ghost"
           size="sm"
-          className="h-8 min-w-[7.75rem] justify-between gap-2 rounded-lg px-2.5 text-xs font-medium text-foreground hover:bg-muted data-[state=open]:bg-muted"
+          className="h-8 min-w-[7.75rem] justify-between gap-2 rounded-md px-2.5 text-xs font-medium text-foreground hover:bg-muted data-[state=open]:bg-muted"
           aria-label={t(active.key)}
         >
           <span className="flex min-w-0 items-center gap-2">

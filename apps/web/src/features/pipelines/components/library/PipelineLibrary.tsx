@@ -15,6 +15,7 @@ import { pipelinePath } from '@/utils/paths';
 import { useNewPipeline } from '../../hooks/useNewPipeline';
 import PipelineBuiltinList from './PipelineBuiltinList';
 import PipelineTemplateList from './PipelineTemplateList';
+import { Stack, Text } from '@/design-system';
 
 // The team's library of workflow templates: its own templates, then the ones Helena
 // ships to add. "Neue Vorlage" is the page's one primary action, in the header row.
@@ -47,13 +48,15 @@ export default function PipelineLibrary({ teamId }: { teamId: number }) {
       ) : !permissions.read ? (
         <EmptyState title={t('noAccessTitle')} description={t('noAccess')} />
       ) : (
-        <div className="flex flex-col gap-5">
+        <Stack gap={5}>
           <PipelineTemplateList teamId={teamId} canDelete={permissions.delete} />
           <PipelineBuiltinList teamId={teamId} canCreate={permissions.create} />
           {!permissions.create && (
-            <p className="px-2 text-xs text-muted-foreground">{t('readOnly')}</p>
+            <Text as="p" size="xs" tone="muted" className="px-2">
+              {t('readOnly')}
+            </Text>
           )}
-        </div>
+        </Stack>
       )}
       {creating && (
         <NameDialog

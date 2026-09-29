@@ -3,6 +3,8 @@ import { useTranslations } from 'next-intl';
 import type { CustomField } from '@/lib/api/endpoints/customFields';
 import { FIELD_TYPE_ICONS, useFieldTypeLabel } from '../../utils/fieldTypes';
 
+import { Inline, Box } from '@/design-system';
+
 // What a field is, at the end of its row: its type, then what that type lets the field
 // hold — the options of a select, or the people a member field is narrowed to.
 export default function CustomFieldMeta({ field }: { field: CustomField }) {
@@ -18,11 +20,11 @@ export default function CustomFieldMeta({ field }: { field: CustomField }) {
   }
 
   return (
-    <span className="flex items-center gap-2">
-      <span className="flex items-center gap-1.5">
+    <Inline as="span" gap={2} className="flex items-center">
+      <Inline as="span" gap={2} className="flex items-center">
         <Icon className="size-3.5 shrink-0" />
         {fieldTypeLabel(field.fieldType)}
-      </span>
+      </Inline>
       {holds != null && (
         <span className="hidden items-center gap-2 sm:flex">
           <ChevronRight className="size-3.5 shrink-0 rtl:rotate-180" />
@@ -30,10 +32,10 @@ export default function CustomFieldMeta({ field }: { field: CustomField }) {
         </span>
       )}
       {field.showInBody && (
-        <span className="rounded bg-primary/10 px-1.5 py-0.5 text-foreground">
+        <Box as="span" padX={2} padY={1} className="rounded-sm bg-primary/10 text-foreground">
           {t('mainInfoMeta')}
-        </span>
+        </Box>
       )}
-    </span>
+    </Inline>
   );
 }

@@ -22,7 +22,7 @@ export default function TradingWatchlist({
         flexDirection: 'column',
         gap: 14,
         padding: 20,
-        borderRadius: 18,
+        borderRadius: 'var(--radius-xl)',
         background: 'var(--trading-card)',
         boxShadow: '0 0 0 1px var(--trading-card-line)',
         minHeight: 0,
@@ -70,7 +70,7 @@ export default function TradingWatchlist({
             <span
               style={{
                 height: 8,
-                borderRadius: 99,
+                borderRadius: 'var(--radius-full)',
                 background: 'var(--trading-bar)',
                 overflow: 'hidden',
                 display: 'block',
@@ -81,7 +81,7 @@ export default function TradingWatchlist({
                   display: 'block',
                   height: '100%',
                   width: `${bar.rsi}%`,
-                  borderRadius: 99,
+                  borderRadius: 'var(--radius-full)',
                   background: color,
                 }}
               />

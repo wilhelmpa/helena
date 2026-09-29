@@ -55,15 +55,22 @@ export default function WorkspaceLayoutHost({
     return () => window.removeEventListener('keydown', onKey);
   }, [full, open, panel]);
 
+  // Pinned (owner, O31): the panel docks at the right and the page gives it the room,
+  // instead of being covered; only beside the page, not full screen or on a phone.
+  const docked = open && !full && panel.mode === 'push' && !layout.phone;
   return (
-    <div className="ds-page-content" data-workspace-layout="standard">
+    <div
+      className="ds-page-content"
+      data-workspace-layout="standard"
+      data-panel={docked ? 'docked' : undefined}
+    >
       {children}
       <SidePanel open={open} full={full} label={t('tabs')}>
         <WorkspacePanel
           areas={toolAreas}
           contextProjectKey={projectKey}
           toolSession={panel.toolSession}
-          mode="overlay"
+          mode={panel.mode}
           overlay
           full={full}
           closable

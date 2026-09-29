@@ -30,7 +30,7 @@ export default function EntityCard({
     <Link
       href={href}
       className={cn(
-        'group flex flex-col gap-3 rounded-lg border border-sidebar-border bg-card p-4 transition-colors hover:bg-accent/60 focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:outline-none',
+        'group flex flex-col gap-3 rounded-md border border-sidebar-border bg-card p-4 transition-colors hover:bg-accent/60 focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:outline-none',
         className,
       )}
     >

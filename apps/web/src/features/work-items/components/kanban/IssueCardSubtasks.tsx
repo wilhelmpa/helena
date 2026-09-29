@@ -46,7 +46,7 @@ export function IssueCardSubtasks({
           e.preventDefault();
           setUnfolded(!open);
         }}
-        className="-mx-1.5 flex items-center gap-1.5 rounded px-1.5 py-0.5 text-xs tracking-wide text-muted-foreground/70 hover:bg-muted/70 hover:text-foreground"
+        className="-mx-1.5 flex items-center gap-1.5 rounded-sm px-1.5 py-0.5 text-xs tracking-wide text-muted-foreground/70 hover:bg-muted/70 hover:text-foreground"
       >
         <Chevron className="size-3 shrink-0 text-muted-foreground" />
         <ListTree className="size-3 shrink-0 text-muted-foreground" />
@@ -79,7 +79,7 @@ export function IssueCardSubtasks({
                     onOpen?.(subtask.id);
                   }}
                   className={cn(
-                    '-mx-1.5 flex items-center gap-2 rounded px-1.5 py-1 text-left',
+                    '-mx-1.5 flex items-center gap-2 rounded-sm px-1.5 py-1 text-left',
                     onOpen && 'cursor-pointer hover:bg-muted/70',
                   )}
                 >

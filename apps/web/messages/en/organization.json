@@ -38,7 +38,9 @@
     "save": "Save",
     "delete": "Delete",
     "clearAssignment": "Clear assignment",
-    "saveInstructions": "Save instructions"
+    "saveInstructions": "Save instructions",
+    "edit": "Edit",
+    "close": "Close"
   },
   "departments": {
     "newPlaceholder": "New department",
@@ -69,7 +71,10 @@
     "skillsNone": "The skill library is still empty.",
     "skillsNoMatch": "No skill matches.",
     "skillsEmptyWarning": "With no skills chosen, the agents of this department use none at all.",
-    "skillsSaved": "Skills of {name} saved"
+    "skillsSaved": "Skills of {name} saved",
+    "budgetsAndSkills": "Budgets and skills",
+    "deleteTitle": "Delete the department “{name}”?",
+    "deleteHint": "Its projects remain and are then without a department."
   },
   "goals": {
     "newPlaceholder": "New goal",
@@ -141,7 +146,9 @@
   },
   "projects": {
     "empty": "This team has no projects.",
-    "instructionsPlaceholder": "Describe the project's mandate and operating instructions."
+    "instructionsPlaceholder": "Describe the project's mandate and operating instructions.",
+    "assignmentSaved": "Department saved",
+    "title": "Projects and their department"
   },
   "map": {
     "empty": "No organization structure yet.",
@@ -310,6 +317,7 @@
     "lensWhy": "Why",
     "whyEmpty": "No agent is working on a task of this project yet.",
     "whyNoGoal": "No goal linked",
-    "noAgent": "No agent"
+    "noAgent": "No agent",
+    "filterLabel": "Status"
   }
 }

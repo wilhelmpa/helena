@@ -35,8 +35,13 @@ const ACCOUNT: ModalSectionDef[] = [
   s('accounts', 'you', { keywords: 'Google GitHub verknüpft' }),
   s('api-keys', 'you', { keywords: 'Token Schlüssel' }),
 ];
+// Tastenkürzel belong to Mein Konto (docs/einstellungen-struktur.md); they are stored for
+// the installation, so only the administrator changes them.
+const ACCOUNT_ADMIN: ModalSectionDef[] = [
+  s('hotkeys', 'you', { admin: true, keywords: 'Tastenkürzel Shortcuts Tasten' }),
+];
 
-// Administrator, part 1: everything that applies to all projects (the owner owns Home).
+// Administrator, part 1: everything that applies to all projects (the owner owns Helena).
 const ALL_PROJECTS: ModalSectionDef[] = [
   s('defaults', 'allProjects', {
     keywords: 'Autopilot Budget Ausführung Gedächtnis Vorgabe neue Projekte Browser-Steuerung',
@@ -50,49 +55,87 @@ const ALL_PROJECTS: ModalSectionDef[] = [
   }),
   s('decisions', 'allProjects', { keywords: 'Entscheider Jev Schwelle Router Protokoll' }),
   s('skills', 'allProjects', { keywords: 'Skill Fähigkeit Bibliothek' }),
-  s('tools', 'allProjects', { keywords: 'Werkzeug Tool MCP-Server Agent' }),
-  s('mcps', 'allProjects', { keywords: 'MCP Server Bibliothek' }),
+  s('tools', 'allProjects', { keywords: 'Werkzeug Tool MCP MCP-Server Agent Integration' }),
   s('plugins', 'allProjects', { keywords: 'Erweiterung Plugin' }),
   s('access', 'allProjects', {
     keywords:
       'Google E-Mail-Konten Web-Logins API-Schlüssel SSH OAuth Zugänge Verbindungen Protokoll',
   }),
   s('devices', 'allProjects', { keywords: 'Geräte Syncthing Sync Obsidian' }),
-  s('structure', 'allProjects', { keywords: 'Abteilungen Struktur Projekte zuordnen' }),
   s('voice', 'allProjects', { keywords: 'Sprache Stimme Vokabular Diktat Whisper' }),
 ];
 
 // Administrator, part 2: the system.
 const SYSTEM: ModalSectionDef[] = [
-  s('users', 'system'),
-  s('teams', 'system'),
-  s('team-members', 'system', { keywords: 'Mitglieder Einladung' }),
-  s('team-roles', 'system', { keywords: 'Rollen Rechte' }),
-  s('projects', 'system'),
-  s('team-notifications', 'system', { keywords: 'E-Mail Telegram Zustellung' }),
+  s('organization', 'system', {
+    keywords:
+      'Organisation Benutzer Konten Menschen Teams Teammitglieder Einladung Rollen Rechte Projekte Abteilungen Struktur',
+  }),
+  s('channels', 'system', {
+    keywords: 'Benachrichtigungen Kanäle E-Mail SMTP Versand Telegram Bot Zustellung',
+  }),
+  s('mcps', 'system', { keywords: 'MCP externe Apps Clients Claude Desktop Zugriff' }),
   s('server', 'system', { keywords: 'Server Übersicht Dienste' }),
   s('server-disks', 'system', { keywords: 'Platten RAID SMART NVMe' }),
   s('server-backup', 'system', { keywords: 'Backup restic Sicherung Wiederherstellen' }),
   s('server-power', 'system', { keywords: 'Leistung Lüfter Profil Temperatur' }),
   s('updates', 'system', { keywords: 'Aktualisierung Version Update-Center' }),
-  s('authentication', 'system', { keywords: 'Anmeldung Registrierung SSO' }),
   s('security', 'system', { keywords: 'Owner-Terminal Audit Härtung Cloudflare Heimnetz' }),
-  s('auth-provider', 'system', { keywords: 'Identitätsanbieter OIDC' }),
-  s('scim', 'system'),
   s('storage', 'system', { keywords: 'Upload Grenzen Kontingent' }),
   s('knowledge', 'system', { keywords: 'Index Suche Quellen' }),
-  s('hotkeys', 'system', { keywords: 'Tastenkürzel' }),
-  s('telegram', 'system'),
-  s('email', 'system', { keywords: 'SMTP Versand' }),
+];
+
+// Rarely needed with one owner (owner, 28.09.): registration, identity providers, SCIM.
+const ADVANCED: ModalSectionDef[] = [
+  s('authentication', 'advanced', { keywords: 'Anmeldung Registrierung SSO' }),
+  s('auth-provider', 'advanced', { keywords: 'Identitätsanbieter OIDC' }),
+  s('scim', 'advanced', { keywords: 'SCIM Verzeichnis' }),
+];
+
+// Administrator, part 3: development — the UI framework's living documentation.
+const DEVELOPMENT: ModalSectionDef[] = [
+  s('ui', 'development', { keywords: 'Galerie Komponenten Design Framework Bausteine' }),
 ];
 
 export function settingsModalSections(admin: boolean): Record<SettingsArea, ModalSectionDef[]> {
-  return { account: ACCOUNT, admin: admin ? HELENA_SETTINGS : [] };
+  return {
+    account: admin ? [...ACCOUNT, ...ACCOUNT_ADMIN] : ACCOUNT,
+    admin: admin ? HELENA_SETTINGS : [],
+  };
 }
 
 // Helena's settings pages, in the order of its sidebar: "Alle Projekte", then "System".
-export const HELENA_SETTINGS: ModalSectionDef[] = [...ALL_PROJECTS, ...SYSTEM];
-export const HELENA_SETTINGS_GROUPS = ['allProjects', 'system'] as const;
+export const HELENA_SETTINGS: ModalSectionDef[] = [
+  ...ALL_PROJECTS,
+  ...SYSTEM,
+  ...ADVANCED,
+  ...DEVELOPMENT,
+];
+export const HELENA_SETTINGS_GROUPS = ['allProjects', 'system', 'advanced', 'development'] as const;
+// Groups the sidebar keeps folded until one of their pages is open.
+export const FOLDED_SETTINGS_GROUPS: readonly string[] = ['advanced', 'development'];
+
+// Where a page moved when the settings were merged (docs/einstellungen-struktur.md, owner
+// 28.09.): old slugs — bookmarks, mail links, /god/…, /account/teams/… — land on the
+// new page and its tab. Hotkeys moved to Mein Konto.
+const MOVED: Record<string, SettingsLocation> = {
+  users: { area: 'admin', slug: 'organization', extra: 'accounts' },
+  teams: { area: 'admin', slug: 'organization', extra: 'teams' },
+  'team-members': { area: 'admin', slug: 'organization', extra: 'people' },
+  'team-roles': { area: 'admin', slug: 'organization', extra: 'roles' },
+  projects: { area: 'admin', slug: 'organization', extra: 'projects' },
+  structure: { area: 'admin', slug: 'organization', extra: 'departments' },
+  'team-notifications': { area: 'admin', slug: 'channels' },
+  email: { area: 'admin', slug: 'channels', extra: 'email' },
+  telegram: { area: 'admin', slug: 'channels', extra: 'telegram' },
+  hotkeys: { area: 'account', slug: 'hotkeys' },
+};
+
+// The current place of a settings location (see MOVED); anything else stays as it is.
+export function resolveSettingsLocation(location: SettingsLocation): SettingsLocation {
+  if (location.area !== 'admin') return location;
+  return MOVED[location.slug] ?? location;
+}
 
 // The page of one of Helena's settings; `extra` is a tab of it (Server → Backup) or a team.
 export function helenaSettingsPath(slug: string, extra?: string) {
@@ -134,6 +177,11 @@ export type SettingsLocation = { area: SettingsArea; slug: string; extra?: strin
 // page of Helena's settings (helenaSettingsPath). Project settings are pages of their own
 // and are not listed here.
 export function settingsModalRoute(pathname: string | null): SettingsLocation | null {
+  const location = oldSettingsRoute(pathname);
+  return location ? resolveSettingsLocation(location) : null;
+}
+
+function oldSettingsRoute(pathname: string | null): SettingsLocation | null {
   if (!pathname) return null;
   if (pathname === '/account/teams') return { area: 'admin', slug: 'teams' };
   const team = pathname.match(/^\/account\/teams\/(\d+)(?:\/([^/]+))?$/);
@@ -177,7 +225,7 @@ export function parseSettingsParam(value: string | null | undefined): SettingsLo
   const area = rawArea === 'home' || rawArea === 'helena' ? 'admin' : rawArea;
   if (!AREAS.includes(area as SettingsArea) || !slug) return null;
   const extra = rest.join('.');
-  return { area: area as SettingsArea, slug, ...(extra ? { extra } : {}) };
+  return resolveSettingsLocation({ area: area as SettingsArea, slug, ...(extra ? { extra } : {}) });
 }
 
 // `href` (a path with its query) with the modal set to `location`, or without it.
