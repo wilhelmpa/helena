@@ -25,9 +25,14 @@ import { getBase, getBaseRows, type BaseRow } from '@/lib/api/endpoints/knowledg
 
 // A column of a view: `note.status` → "status", `file.name` → "name", unless the .base names
 // it (`properties: { note.status: { displayName: Status } }`).
-function columnLabel(column: string, properties: Record<string, unknown> | undefined): string {
+function columnLabel(
+  column: string,
+  properties: Record<string, unknown> | undefined,
+  nameLabel: string,
+): string {
   const named = properties?.[column] as { displayName?: unknown } | undefined;
   if (typeof named?.displayName === 'string' && named.displayName) return named.displayName;
+  if (column === 'file.name' || column === 'file.basename') return nameLabel;
   return column.replace(/^(note|file|formula)\./, '');
 }
 
@@ -56,6 +61,7 @@ export default function KnowledgeBaseView({
   onOpenNote?: (vaultPath: string) => void;
 }) {
   const t = useTranslations('files.base');
+  const tKnowledge = useTranslations('files.knowledge');
   const base = useQuery({ queryKey: ['knowledge-base', path], queryFn: () => getBase(path) });
   const views = (base.data?.definition.views ?? []).filter(
     (view): view is { name: string; type?: string } => typeof view.name === 'string',
@@ -117,6 +123,8 @@ export default function KnowledgeBaseView({
             options={views.map((item) => ({
               value: item.name,
               label: item.name,
+              // The name stays reachable when a narrow screen shows only the icons.
+              title: item.name,
               icon:
                 item.type === 'cards' ? (
                   <LayoutGrid size={13} />
@@ -158,7 +166,7 @@ export default function KnowledgeBaseView({
                   .filter((column) => column !== 'file.name' && column !== 'file.basename')
                   .map((column) => (
                     <Text key={column} size="xs" tone="muted">
-                      {`${columnLabel(column, properties)}: ${cellText(row.values[column])}`}
+                      {`${columnLabel(column, properties, tKnowledge('columns.name'))}: ${cellText(row.values[column])}`}
                     </Text>
                   ))}
               </Stack>
@@ -187,7 +195,7 @@ export default function KnowledgeBaseView({
           <thead>
             <tr>
               {columns.map((column) => (
-                <Th key={column}>{columnLabel(column, properties)}</Th>
+                <Th key={column}>{columnLabel(column, properties, tKnowledge('columns.name'))}</Th>
               ))}
             </tr>
           </thead>
@@ -195,7 +203,7 @@ export default function KnowledgeBaseView({
             {shown.map((row) => (
               <Tr key={row.path} data-base-row={row.path}>
                 {columns.map((column, index) => (
-                  <Td key={column} label={columnLabel(column, properties)}>
+                  <Td key={column} label={columnLabel(column, properties, tKnowledge('columns.name'))}>
                     {index === 0 ? opener(row) : cellText(row.values[column])}
                   </Td>
                 ))}

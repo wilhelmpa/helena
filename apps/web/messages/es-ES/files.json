@@ -264,7 +264,8 @@
     "all": "Todos",
     "systemHint": "Creado por Helena (recibos, adjuntos de correo, exportaciones)",
     "agentHint": "Creado por un agente",
-    "manualHint": "Creado o subido por una persona"
+    "manualHint": "Creado o subido por una persona",
+    "label": "Origen"
   },
   "base": {
     "loading": "Cargando vista …",

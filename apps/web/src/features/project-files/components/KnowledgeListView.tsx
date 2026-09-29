@@ -10,6 +10,7 @@ import {
   FileText,
   Folder,
   FolderOpen,
+  ListFilter,
   Network,
   Paperclip,
   Plus,
@@ -28,8 +29,10 @@ import {
   MenuTrigger,
   PAGE_CONTROL_CLASS,
   PAGE_PRIMARY_CLASS,
+  PageSelect,
   Text,
 } from '@/design-system';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { cn } from '@/lib/utils';
 import KnowledgeFrame, {
   KnowledgeListHead,
@@ -151,6 +154,7 @@ export default function KnowledgeListView({
   const kind: KnowledgeListKind =
     forcedKind ?? (params?.get('kind') === 'files' ? 'files' : 'knowledge');
   const [origin, setOrigin] = useState<FileOrigin | 'all'>('all');
+  const narrow = useMediaQuery('(max-width: 640px)');
   const [preview, setPreview] = useState<KnowledgeEntry | null>(null);
   const [query, setQuery] = useState('');
   const [selectedKey, setSelectedKey] = useState<string | null>(null);

@@ -25,7 +25,8 @@ export interface KnowledgeSource {
 }
 
 const LIMIT = 100;
-const RECEIPT_NOTE = /^Projects\/[^/]+\/Files\/Belege\/.+\.md$/i;
+// Generated snapshots: the receipt notes ("Belege als Notizen") and the agent notes.
+const GENERATED_NOTE = /^Projects\/[^/]+\/(Files\/Belege|Docs\/Agenten)\/.+\.md$/i;
 
 // Level 1 of Wissen (docs/ui-system.md §13): no folder list — the sidebar tree holds the
 // folders — but the latest files across all of them, newest first, with search and the
@@ -66,9 +67,10 @@ export default function KnowledgeRecentView({
   const entries: KnowledgeEntry[] = sources
     .flatMap((source, index) =>
       (results[index]?.data?.items ?? [])
-        // The notes "Belege als Notizen" writes next to each receipt are the Belege view
-        // again; they stay in their folder and out of the latest files.
-        .filter((file) => !RECEIPT_NOTE.test(file.path))
+        // The notes Helena generates next to each receipt and for each agent repeat what the
+        // Belege view and Team show; they stay in their folders (and their views, .base)
+        // and out of the latest files.
+        .filter((file) => !GENERATED_NOTE.test(file.path))
         .map((file) => {
           const relative = file.path.slice(source.root.length + 1);
           const folders = relative.split('/').slice(0, -1);

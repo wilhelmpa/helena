@@ -264,7 +264,8 @@
     "all": "Alle",
     "systemHint": "Von Helena angelegt (Belege, Mail-Anhänge, Exporte)",
     "agentHint": "Von einem Agenten angelegt",
-    "manualHint": "Von einem Menschen angelegt oder hochgeladen"
+    "manualHint": "Von einem Menschen angelegt oder hochgeladen",
+    "label": "Herkunft"
   },
   "base": {
     "loading": "Ansicht wird geladen …",

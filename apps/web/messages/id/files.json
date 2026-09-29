@@ -264,7 +264,8 @@
     "all": "Semua",
     "systemHint": "Dibuat oleh Helena (bukti, lampiran email, ekspor)",
     "agentHint": "Dibuat oleh agen",
-    "manualHint": "Dibuat atau diunggah oleh orang"
+    "manualHint": "Dibuat atau diunggah oleh orang",
+    "label": "Asal"
   },
   "base": {
     "loading": "Memuat tampilan …",

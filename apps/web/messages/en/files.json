@@ -264,7 +264,8 @@
     "all": "All",
     "systemHint": "Made by Helena (receipts, mail attachments, exports)",
     "agentHint": "Made by an agent",
-    "manualHint": "Made or uploaded by a person"
+    "manualHint": "Made or uploaded by a person",
+    "label": "Origin"
   },
   "base": {
     "loading": "Loading view …",

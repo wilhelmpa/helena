@@ -264,7 +264,8 @@
     "all": "全部",
     "systemHint": "由 Helena 创建（票据、邮件附件、导出）",
     "agentHint": "由智能体创建",
-    "manualHint": "由人创建或上传"
+    "manualHint": "由人创建或上传",
+    "label": "来源"
   },
   "base": {
     "loading": "正在加载视图…",

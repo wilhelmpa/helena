@@ -71,6 +71,10 @@ beforeEach(async () => {
               }
             : dom.window[key as 'window'],
     });
+  Object.defineProperty(dom.window, 'matchMedia', {
+    configurable: true,
+    value: () => ({ matches: false, addEventListener() {}, removeEventListener() {} }),
+  });
   const { createRoot } = await import('react-dom/client');
   root = createRoot(document.querySelector('#root')!);
   params = new URLSearchParams();

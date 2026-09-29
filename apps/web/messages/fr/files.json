@@ -264,7 +264,8 @@
     "all": "Tous",
     "systemHint": "Créé par Helena (justificatifs, pièces jointes, exports)",
     "agentHint": "Créé par un agent",
-    "manualHint": "Créé ou téléversé par une personne"
+    "manualHint": "Créé ou téléversé par une personne",
+    "label": "Origine"
   },
   "base": {
     "loading": "Chargement de la vue …",
