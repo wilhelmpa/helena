@@ -119,6 +119,7 @@ export interface RecentVaultFile {
   mime: string | null;
   sizeBytes: number | null;
   updatedAt: string | null;
+  origin?: 'system' | 'agent' | 'manual';
 }
 
 export const listRecentVaultFiles = (root: string, limit = 50) =>

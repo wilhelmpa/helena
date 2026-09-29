@@ -3,6 +3,7 @@ export * from './paths';
 export * from './markdown';
 export * from './base';
 export * from './mime';
+export * from './origin';
 export {
   commitExternalChanges,
   commitVaultPaths,
