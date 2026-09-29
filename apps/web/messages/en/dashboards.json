@@ -260,7 +260,201 @@
     "unavailable": "Plugin widget unavailable.",
     "vetoState": "Veto",
     "signalState": "Signal",
-    "period": "Period"
+    "period": "Period",
+    "widgets": {
+      "updatedAt": "As of {time}",
+      "refresh": "Reload",
+      "connection": {
+        "label": "Paper account",
+        "choose": "Choose account",
+        "loading": "Loading connections …",
+        "none": "No paper connection available."
+      },
+      "problem": {
+        "title": "No data",
+        "connectionTitle": "Paper account missing",
+        "selectConnection": "This project has several paper connections. Choose the account whose data should be shown here.",
+        "noConnection": "No paper connection is set up for this project. Add one under Tools → Alpaca Paper.",
+        "connectionUnavailable": "The paper connection cannot be reached. Check it under Tools → Alpaca Paper.",
+        "notPaper": "Only paper accounts are shown. This connection is not a paper account and is never queried.",
+        "provider": "Alpaca (paper) is not answering (HTTP {status}). This view retries every 30 seconds.",
+        "providerDown": "The server is not answering. This view retries every 30 seconds.",
+        "ordersIncomplete": "Today's order list is incomplete (more than 500 orders). No figures are shown until it is complete.",
+        "historyIncomplete": "The account history is incomplete and is therefore not shown.",
+        "noAccess": "You lack the rights for this data (read dashboards and read tools).",
+        "generic": "The trading data could not be loaded.",
+        "retry": "Try again",
+        "retrying": "Loading …"
+      },
+      "approval": {
+        "none": "Not approved",
+        "pending": "Approval pending",
+        "approved": "Approved",
+        "rejected": "Rejected"
+      },
+      "account": {
+        "title": "Account",
+        "paper": "Paper · no real money",
+        "active": "Trading active",
+        "haltedTitle": "Trading halted",
+        "haltedOwner": "You blocked new entries (the stop on the connection).",
+        "haltedBroker": "The broker has blocked trading for this account.",
+        "haltedStatus": "The account is not active (status {status}).",
+        "haltedHint": "New entries are blocked; closing and cancelling stay possible.",
+        "missingTitle": "Limits missing",
+        "missingText": "These limits are not set on the connection: {names}. While they are missing, every new order is refused.",
+        "missing": {
+          "maxOrderValueUsd": "Order value",
+          "maxPositionValueUsd": "Position value",
+          "maxRiskPerTradeUsd": "Risk per trade",
+          "dailyLossLimitUsd": "Daily loss"
+        },
+        "equity": "Account value",
+        "equityNote": "including open positions",
+        "cash": "Cash",
+        "buyingPower": "Buying power",
+        "dayPnl": "Result today",
+        "dayPnlNote": "{percent} since yesterday’s close",
+        "dayPnlNone": "no comparison value",
+        "limitsTitle": "Limits and usage",
+        "limits": {
+          "dayLoss": "Daily loss",
+          "orders": "Orders today",
+          "open": "Open positions",
+          "largest": "Largest position",
+          "order": "Highest order value",
+          "risk": "Highest risk per trade",
+          "of": "{used} of {limit}",
+          "max": "at most {limit}"
+        },
+        "symbols": "Allowed symbols: {symbols}",
+        "symbolsAll": "All symbols allowed",
+        "cryptoOn": "Crypto allowed",
+        "cryptoOff": "Crypto not allowed"
+      },
+      "positions": {
+        "title": "Open positions",
+        "empty": "No open positions.",
+        "symbol": "Symbol",
+        "qty": "Shares",
+        "entry": "Entry",
+        "price": "Price",
+        "pnl": "Result",
+        "stop": "Protective stop",
+        "noStop": "No stop",
+        "strategy": "Strategy",
+        "noStrategy": "no strategy"
+      },
+      "orders": {
+        "title": "Orders",
+        "scope": "Show orders",
+        "scopes": {
+          "open": "Open",
+          "today": "Today",
+          "recent": "Latest"
+        },
+        "empty": {
+          "open": "No open orders.",
+          "today": "No orders today yet.",
+          "recent": "No orders yet."
+        },
+        "symbol": "Symbol",
+        "side": "Side",
+        "kind": "Type",
+        "qty": "Shares",
+        "price": "Price",
+        "statusLabel": "Status",
+        "time": "Received",
+        "strategy": "Strategy",
+        "noStrategy": "no strategy",
+        "journal": "Journal",
+        "limit": "Limit",
+        "stopPrice": "Stop",
+        "atMarket": "at market price",
+        "sides": {
+          "buy": "Buy",
+          "sell": "Sell"
+        },
+        "type": {
+          "market": "Market",
+          "limit": "Limit",
+          "stop": "Stop",
+          "stop_limit": "Stop limit",
+          "trailing_stop": "Trailing stop"
+        },
+        "status": {
+          "filled": "Filled",
+          "partially_filled": "Partly filled",
+          "new": "Open",
+          "accepted": "Accepted",
+          "pending_new": "Being accepted",
+          "held": "Held",
+          "canceled": "Canceled",
+          "expired": "Expired",
+          "replaced": "Replaced",
+          "done_for_day": "Done for the day",
+          "rejected": "Rejected",
+          "suspended": "Suspended",
+          "stopped": "Stopped"
+        }
+      },
+      "history": {
+        "title": "Result history",
+        "periodMeta": {
+          "today": "Today, every 5 minutes",
+          "week": "This week, hourly",
+          "pilot": "Since project start, daily"
+        },
+        "empty": "No history yet: there are fewer than two account values in this period.",
+        "current": "Account value",
+        "change": {
+          "today": "Today",
+          "week": "This week",
+          "pilot": "Since project start"
+        },
+        "chart": "Account value over time"
+      },
+      "strategies": {
+        "title": "Strategies & approvals",
+        "empty": "No strategy in the project knowledge yet.",
+        "openApprovals": "Pending approvals: {count}",
+        "grantedApprovals": "Granted: {count}",
+        "strategy": "Strategy",
+        "version": "Version",
+        "statusLabel": "Status",
+        "approval": "Approval",
+        "backtest": "Backtest",
+        "openBacktest": "Open backtest",
+        "noBacktest": "no backtest",
+        "noteMissing": "Note missing",
+        "decided": "on {date}",
+        "requested": "requested on {date}",
+        "status": {
+          "entwurf": "Draft",
+          "trockenlauf": "Dry run",
+          "paper": "Paper"
+        }
+      },
+      "decisions": {
+        "title": "Decisions",
+        "empty": "No decisions in this period yet.",
+        "vetos": "Vetoes: {count}",
+        "total": "Decisions: {count}",
+        "class": "Class",
+        "jev": "Jev",
+        "local": "Local",
+        "other": "Other",
+        "fallback": "Fallback",
+        "safe": "{count} sure",
+        "unsure": "{count} unsure",
+        "legend": "Sure: the model was sure enough and decided. Unsure: it was not sure and the question moved on. Fallback: the answer came from the fallback connection.",
+        "classes": {
+          "news": "Sort news",
+          "rules": "Check rule book",
+          "routing": "Route tasks"
+        }
+      }
+    }
   },
   "agentCosts": {
     "tokens": "{tokens} tokens",

@@ -13,7 +13,8 @@ export default function BudgetBar({
   label,
   className,
 }: {
-  budget: BudgetStatus;
+  // Anything with a use ratio and its two thresholds: a budget, a trading limit.
+  budget: Pick<BudgetStatus, 'ratio' | 'warned' | 'reached'>;
   label?: string;
   className?: string;
 }) {

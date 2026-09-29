@@ -1,0 +1,16 @@
+/* One watched symbol: its name, the RSI bar, the reading. */
+.row {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+@media (max-width: 599px) {
+  .row {
+    grid-template-columns: 56px minmax(0, 1fr);
+  }
+  .row > :last-child {
+    grid-column: 1 / -1;
+  }
+}

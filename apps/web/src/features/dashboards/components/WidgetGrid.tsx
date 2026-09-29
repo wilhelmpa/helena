@@ -103,7 +103,7 @@ export default function WidgetGrid({
                 editing={editing}
                 movable={movable}
                 settings={
-                  editing && hasWidgetSettings(widget.type) ? (
+                  editing && hasWidgetSettings(widget) ? (
                     <WidgetSettings
                       widget={widget}
                       onConfigChange={(config) => editor.updateWidget(widget.id, { config })}

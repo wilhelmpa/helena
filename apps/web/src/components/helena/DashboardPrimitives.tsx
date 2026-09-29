@@ -112,6 +112,7 @@ export function Tile({
   href,
   onSelect,
   title,
+  compact = false,
 }: {
   label: ReactNode;
   value: ReactNode | null;
@@ -122,6 +123,8 @@ export function Tile({
   href?: string;
   onSelect?: () => void;
   title?: string;
+  // Money and other long figures: a smaller number and a note that may wrap.
+  compact?: boolean;
 }) {
   const content = (
     <>
@@ -135,7 +138,15 @@ export function Tile({
           className="h-9 w-12 animate-pulse rounded-sm bg-[var(--dashboard-raised)]"
         />
       ) : (
-        <span className={cn(styles.value, tone !== 'default' && styles[tone])}>{value}</span>
+        <span
+          className={cn(
+            styles.value,
+            compact && styles.compactValue,
+            tone !== 'default' && styles[tone],
+          )}
+        >
+          {value}
+        </span>
       )}
       {progress && (
         <span className={styles.progress}>
@@ -148,7 +159,12 @@ export function Tile({
       <span className={styles.note}>{note}</span>
     </>
   );
-  const className = cn(styles.card, styles.tile, (href || onSelect) && styles.interactive);
+  const className = cn(
+    styles.card,
+    styles.tile,
+    compact && styles.compact,
+    (href || onSelect) && styles.interactive,
+  );
   if (href)
     return (
       <Link href={href} className={className} title={title}>
@@ -162,7 +178,7 @@ export function Tile({
       </button>
     );
   return (
-    <Card className={styles.tile} title={title}>
+    <Card className={cn(styles.tile, compact && styles.compact)} title={title}>
       {content}
     </Card>
   );

@@ -86,6 +86,22 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* A tile with a money figure or another long number (the trading account). */
+.compact {
+  min-height: 0;
+  gap: 8px;
+  padding: 16px 18px;
+}
+
+.compactValue {
+  font-size: 24px;
+  letter-spacing: -0.03em;
+}
+
+.compact .note {
+  white-space: normal;
+}
+
 .positive {
   color: var(--dashboard-positive);
 }

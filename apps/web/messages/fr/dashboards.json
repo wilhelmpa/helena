@@ -260,7 +260,201 @@
     "unavailable": "Widget du plugin indisponible.",
     "vetoState": "Veto",
     "signalState": "Signal",
-    "period": "Période"
+    "period": "Période",
+    "widgets": {
+      "updatedAt": "État à {time}",
+      "refresh": "Recharger",
+      "connection": {
+        "label": "Compte paper",
+        "choose": "Choisir un compte",
+        "loading": "Chargement des connexions …",
+        "none": "Aucune connexion paper disponible."
+      },
+      "problem": {
+        "title": "Pas de données",
+        "connectionTitle": "Compte paper manquant",
+        "selectConnection": "Ce projet a plusieurs connexions paper. Choisissez le compte dont les données doivent s’afficher ici.",
+        "noConnection": "Aucune connexion paper n’est configurée pour ce projet. Ajoutez-en une sous Outils → Alpaca Paper.",
+        "connectionUnavailable": "La connexion paper est inaccessible. Vérifiez-la sous Outils → Alpaca Paper.",
+        "notPaper": "Seuls les comptes paper sont affichés. Cette connexion n’est pas un compte paper et n’est jamais interrogée.",
+        "provider": "Alpaca (paper) ne répond pas (HTTP {status}). L’affichage réessaie toutes les 30 secondes.",
+        "providerDown": "Le serveur ne répond pas. L’affichage réessaie toutes les 30 secondes.",
+        "ordersIncomplete": "La liste des ordres du jour est incomplète (plus de 500 ordres). Aucun chiffre n’est affiché tant qu’elle ne l’est pas.",
+        "historyIncomplete": "L’historique du compte est incomplet et n’est donc pas affiché.",
+        "noAccess": "Vous n’avez pas les droits pour ces données (lire les tableaux de bord et les outils).",
+        "generic": "Les données de trading n’ont pas pu être chargées.",
+        "retry": "Réessayer",
+        "retrying": "Chargement …"
+      },
+      "approval": {
+        "none": "Non approuvée",
+        "pending": "Approbation en attente",
+        "approved": "Approuvée",
+        "rejected": "Refusée"
+      },
+      "account": {
+        "title": "Compte",
+        "paper": "Paper · pas d’argent réel",
+        "active": "Trading actif",
+        "haltedTitle": "Trading suspendu",
+        "haltedOwner": "Vous avez bloqué les nouvelles entrées (blocage de la connexion).",
+        "haltedBroker": "Le courtier a bloqué le trading pour ce compte.",
+        "haltedStatus": "Le compte n’est pas actif (statut {status}).",
+        "haltedHint": "Les nouvelles entrées sont bloquées ; clôturer et annuler restent possibles.",
+        "missingTitle": "Limites manquantes",
+        "missingText": "Ces limites ne sont pas définies dans la connexion : {names}. Tant qu’elles manquent, tout nouvel ordre est refusé.",
+        "missing": {
+          "maxOrderValueUsd": "Valeur d’ordre",
+          "maxPositionValueUsd": "Valeur de position",
+          "maxRiskPerTradeUsd": "Risque par trade",
+          "dailyLossLimitUsd": "Perte journalière"
+        },
+        "equity": "Valeur du compte",
+        "equityNote": "positions ouvertes incluses",
+        "cash": "Liquidités",
+        "buyingPower": "Pouvoir d’achat",
+        "dayPnl": "Résultat du jour",
+        "dayPnlNote": "{percent} depuis la clôture d’hier",
+        "dayPnlNone": "pas de valeur de référence",
+        "limitsTitle": "Limites et consommation",
+        "limits": {
+          "dayLoss": "Perte journalière",
+          "orders": "Ordres aujourd’hui",
+          "open": "Positions ouvertes",
+          "largest": "Plus grande position",
+          "order": "Valeur d’ordre maximale",
+          "risk": "Risque maximal par trade",
+          "of": "{used} sur {limit}",
+          "max": "au plus {limit}"
+        },
+        "symbols": "Symboles autorisés : {symbols}",
+        "symbolsAll": "Tous les symboles autorisés",
+        "cryptoOn": "Crypto autorisée",
+        "cryptoOff": "Crypto non autorisée"
+      },
+      "positions": {
+        "title": "Positions ouvertes",
+        "empty": "Aucune position ouverte.",
+        "symbol": "Symbole",
+        "qty": "Quantité",
+        "entry": "Entrée",
+        "price": "Cours",
+        "pnl": "Résultat",
+        "stop": "Stop de protection",
+        "noStop": "Pas de stop",
+        "strategy": "Stratégie",
+        "noStrategy": "sans stratégie"
+      },
+      "orders": {
+        "title": "Ordres",
+        "scope": "Afficher les ordres",
+        "scopes": {
+          "open": "Ouverts",
+          "today": "Aujourd’hui",
+          "recent": "Récents"
+        },
+        "empty": {
+          "open": "Aucun ordre ouvert.",
+          "today": "Aucun ordre aujourd’hui.",
+          "recent": "Aucun ordre pour l’instant."
+        },
+        "symbol": "Symbole",
+        "side": "Sens",
+        "kind": "Type",
+        "qty": "Quantité",
+        "price": "Prix",
+        "statusLabel": "Statut",
+        "time": "Reçu",
+        "strategy": "Stratégie",
+        "noStrategy": "sans stratégie",
+        "journal": "Journal",
+        "limit": "Limite",
+        "stopPrice": "Stop",
+        "atMarket": "au prix du marché",
+        "sides": {
+          "buy": "Achat",
+          "sell": "Vente"
+        },
+        "type": {
+          "market": "Marché",
+          "limit": "Limite",
+          "stop": "Stop",
+          "stop_limit": "Stop limite",
+          "trailing_stop": "Stop suiveur"
+        },
+        "status": {
+          "filled": "Exécuté",
+          "partially_filled": "Partiel",
+          "new": "Ouvert",
+          "accepted": "Accepté",
+          "pending_new": "En cours d’acceptation",
+          "held": "Retenu",
+          "canceled": "Annulé",
+          "expired": "Expiré",
+          "replaced": "Remplacé",
+          "done_for_day": "Terminé pour la journée",
+          "rejected": "Rejeté",
+          "suspended": "Suspendu",
+          "stopped": "Arrêté"
+        }
+      },
+      "history": {
+        "title": "Évolution du résultat",
+        "periodMeta": {
+          "today": "Aujourd’hui, toutes les 5 minutes",
+          "week": "Cette semaine, toutes les heures",
+          "pilot": "Depuis le début du projet, par jour"
+        },
+        "empty": "Pas encore d’historique : moins de deux valeurs de compte sur cette période.",
+        "current": "Valeur du compte",
+        "change": {
+          "today": "Aujourd’hui",
+          "week": "Cette semaine",
+          "pilot": "Depuis le début du projet"
+        },
+        "chart": "Valeur du compte dans le temps"
+      },
+      "strategies": {
+        "title": "Stratégies et approbations",
+        "empty": "Aucune stratégie dans les connaissances du projet pour l’instant.",
+        "openApprovals": "Approbations en attente : {count}",
+        "grantedApprovals": "Accordées : {count}",
+        "strategy": "Stratégie",
+        "version": "Version",
+        "statusLabel": "Statut",
+        "approval": "Approbation",
+        "backtest": "Backtest",
+        "openBacktest": "Ouvrir le backtest",
+        "noBacktest": "pas de backtest",
+        "noteMissing": "Note manquante",
+        "decided": "le {date}",
+        "requested": "demandée le {date}",
+        "status": {
+          "entwurf": "Brouillon",
+          "trockenlauf": "Simulation",
+          "paper": "Paper"
+        }
+      },
+      "decisions": {
+        "title": "Décisions",
+        "empty": "Aucune décision sur cette période.",
+        "vetos": "Vetos : {count}",
+        "total": "Décisions : {count}",
+        "class": "Classe",
+        "jev": "Jev",
+        "local": "Local",
+        "other": "Autres",
+        "fallback": "Repli",
+        "safe": "{count} sûres",
+        "unsure": "{count} incertaines",
+        "legend": "Sûre : le modèle était assez sûr et a décidé. Incertaine : il ne l’était pas et la question a été transmise. Repli : la réponse vient de la connexion de repli.",
+        "classes": {
+          "news": "Classer les actualités",
+          "rules": "Vérifier le règlement",
+          "routing": "Répartir les tâches"
+        }
+      }
+    }
   },
   "agentCosts": {
     "tokens": "{tokens} jetons",

@@ -1,12 +1,20 @@
-import type { TradingDashboardData, TradingPeriod } from '@/lib/api/endpoints/trading';
 import { useLocale, useTranslations } from 'next-intl';
+import { Card, EmptyState, Inline, Stack, Text } from '@/design-system';
+import BudgetBar from '@/components/helena/BudgetBar';
+import type { TradingDashboardData, TradingPeriod } from '@/lib/api/endpoints/trading';
+import styles from './TradingWatchlist.module.css';
 
+// The watched symbols with their RSI: a bar from 0 to 100 that turns red from 70 (overbought,
+// the strategy does not buy) and the state of the last check.
 export default function TradingWatchlist({
   data,
   period,
+  framed = true,
 }: {
   data: TradingDashboardData;
   period: TradingPeriod;
+  // In a card of its own (the trading page); the dashboard grid frames its widgets itself.
+  framed?: boolean;
 }) {
   const t = useTranslations('dashboards.trading');
   const locale = useLocale();
@@ -15,94 +23,43 @@ export default function TradingWatchlist({
     week: 'watchlistWeek',
     pilot: 'watchlistPilot',
   };
-  return (
-    <section
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 14,
-        padding: 20,
-        borderRadius: 'var(--radius-xl)',
-        background: 'var(--trading-card)',
-        boxShadow: '0 0 0 1px var(--trading-card-line)',
-        minHeight: 0,
-      }}
-    >
-      <h2
-        style={{
-          margin: 0,
-          font: "500 10px 'JetBrains Mono', ui-monospace, monospace",
-          letterSpacing: '.18em',
-          color: 'var(--trading-label)',
-        }}
-      >
-        {t(title[period])}
-      </h2>
-      {data.watchlist.length === 0 && (
-        <p style={{ fontSize: 12, color: 'var(--trading-hint)' }}>{t('noData')}</p>
+  const body = (
+    <>
+      {data.watchlist.length === 0 ? (
+        <EmptyState fill={false}>{t('noData')}</EmptyState>
+      ) : (
+        <Stack gap={3}>
+          {data.watchlist.map((bar) => {
+            const overbought = bar.state === 'veto' || bar.rsi >= 70;
+            const state =
+              bar.state === 'veto'
+                ? t('vetoState')
+                : bar.state === 'signal'
+                  ? t('signalState')
+                  : bar.direction;
+            return (
+              <div key={bar.symbol} className={styles.row}>
+                <Text weight="semibold">{bar.symbol}</Text>
+                <BudgetBar
+                  budget={{ ratio: bar.rsi / 100, warned: false, reached: overbought }}
+                  label={`${t('rsiLabel')} ${bar.rsi}`}
+                />
+                <Inline justify="end">
+                  <Text size="xs" mono tone={overbought ? 'danger' : 'muted'} tabular>
+                    {t('rsiLabel')}{' '}
+                    {new Intl.NumberFormat(locale, { maximumFractionDigits: 1 }).format(bar.rsi)} ·{' '}
+                    {state}
+                  </Text>
+                </Inline>
+              </div>
+            );
+          })}
+          <Text size="xs" tone="faint">
+            {t('rsiNote')}
+          </Text>
+        </Stack>
       )}
-      {data.watchlist.map((bar) => {
-        const color =
-          bar.state === 'veto' || bar.rsi >= 70
-            ? 'var(--trading-pink)'
-            : bar.state === 'signal'
-              ? 'var(--trading-green)'
-              : bar.direction === '↘'
-                ? 'var(--trading-hint)'
-                : 'var(--trading-lavender)';
-        const state =
-          bar.state === 'veto'
-            ? t('vetoState')
-            : bar.state === 'signal'
-              ? t('signalState')
-              : bar.direction;
-        return (
-          <div
-            key={bar.symbol}
-            style={{
-              display: 'grid',
-              gridTemplateColumns: '60px minmax(0, 1fr) 120px',
-              alignItems: 'center',
-              gap: 14,
-            }}
-          >
-            <span style={{ fontSize: 15, fontWeight: 520 }}>{bar.symbol}</span>
-            <span
-              style={{
-                height: 8,
-                borderRadius: 'var(--radius-full)',
-                background: 'var(--trading-bar)',
-                overflow: 'hidden',
-                display: 'block',
-              }}
-            >
-              <span
-                style={{
-                  display: 'block',
-                  height: '100%',
-                  width: `${bar.rsi}%`,
-                  borderRadius: 'var(--radius-full)',
-                  background: color,
-                }}
-              />
-            </span>
-            <span
-              style={{
-                font: "400 11px 'JetBrains Mono', ui-monospace, monospace",
-                color: 'var(--trading-soft)',
-                textAlign: 'right',
-              }}
-            >
-              {t('rsiLabel')}{' '}
-              {new Intl.NumberFormat(locale, { maximumFractionDigits: 1 }).format(bar.rsi)} ·{' '}
-              {state}
-            </span>
-          </div>
-        );
-      })}
-      <p style={{ margin: 'auto 0 0', fontSize: 12, color: 'var(--trading-hint)' }}>
-        {t('rsiNote')}
-      </p>
-    </section>
+    </>
   );
+  return framed ? <Card title={t(title[period])}>{body}</Card> : body;
 }

@@ -1,94 +1,56 @@
+import { useLocale, useTranslations } from 'next-intl';
+import { Card, EmptyState, List, ListRow, Stack, Text } from '@/design-system';
 import type { TradingDashboardData } from '@/lib/api/endpoints/trading';
-import { useTranslations } from 'next-intl';
 
-function time(value: string | null): string {
-  return value
-    ? new Intl.DateTimeFormat('de-DE', {
-        timeZone: 'Europe/Berlin',
-        hour: '2-digit',
-        minute: '2-digit',
-      }).format(new Date(value))
-    : '–';
-}
-
-export default function TradingTakt({ data }: { data: TradingDashboardData }) {
+// The clock of the trading routines: when each one last ran and when it runs next. A running
+// routine shows the working dot, a failed one the error dot; a switched-off one is greyed.
+export default function TradingTakt({
+  data,
+  framed = true,
+}: {
+  data: TradingDashboardData;
+  // In a card of its own (the trading page); the dashboard grid frames its widgets itself.
+  framed?: boolean;
+}) {
   const t = useTranslations('dashboards.trading');
-  return (
-    <section
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 10,
-        padding: 20,
-        borderRadius: 'var(--radius-xl)',
-        background: 'var(--trading-card)',
-        boxShadow: '0 0 0 1px var(--trading-card-line)',
-        minHeight: 0,
-      }}
-    >
-      <h2
-        style={{
-          margin: '0 0 4px',
-          font: "500 10px 'JetBrains Mono', ui-monospace, monospace",
-          letterSpacing: '.18em',
-          color: 'var(--trading-label)',
-        }}
-      >
-        {t('takt')}
-      </h2>
-      {data.schedules.length === 0 && (
-        <p style={{ fontSize: 12, color: 'var(--trading-hint)' }}>{t('noData')}</p>
-      )}
-      {data.schedules.map((schedule) => {
-        const dot = !schedule.enabled
-          ? 'var(--trading-hint)'
-          : schedule.status === 'running'
-            ? 'var(--trading-working)'
-            : schedule.status === 'failed'
-              ? 'var(--trading-pink)'
-              : 'var(--trading-lavender)';
-        return (
-          <div
-            key={schedule.id}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 10,
-              minHeight: 36,
-              padding: '4px 12px',
-              borderRadius: 'var(--radius-lg)',
-              background: 'var(--trading-surface)',
-              fontSize: 12,
-            }}
-          >
-            <span
-              style={{
-                width: 7,
-                height: 7,
-                flex: '0 0 7px',
-                borderRadius: '50%',
-                background: dot,
-                boxShadow: `0 0 8px ${dot}`,
-              }}
+  const locale = useLocale();
+  const time = (value: string | null) =>
+    value
+      ? new Intl.DateTimeFormat(locale, { hour: '2-digit', minute: '2-digit' }).format(
+          new Date(value),
+        )
+      : '–';
+  const body = (
+    <>
+      {data.schedules.length === 0 ? (
+        <EmptyState fill={false}>{t('noData')}</EmptyState>
+      ) : (
+        <List label={t('takt')}>
+          {data.schedules.map((schedule) => (
+            <ListRow
+              key={schedule.id}
+              title={<Text tone={schedule.enabled ? 'default' : 'faint'}>{schedule.title}</Text>}
+              dot={
+                !schedule.enabled
+                  ? null
+                  : schedule.status === 'running'
+                    ? 'working'
+                    : schedule.status === 'failed'
+                      ? 'error'
+                      : null
+              }
+              subtitle={
+                <Stack gap={0}>
+                  <Text size="xs" tone="faint" tabular>
+                    {t('last')} {time(schedule.lastRunAt)} · {t('next')} {time(schedule.nextRunAt)}
+                  </Text>
+                </Stack>
+              }
             />
-            <span style={{ flexGrow: 1, minWidth: 0, color: 'var(--trading-secondary)' }}>
-              {schedule.title}
-            </span>
-            <span
-              style={{
-                font: "400 10px 'JetBrains Mono', ui-monospace, monospace",
-                color: 'var(--trading-hint)',
-                textAlign: 'right',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {t('last')} {time(schedule.lastRunAt)}
-              <br />
-              {t('next')} {time(schedule.nextRunAt)}
-            </span>
-          </div>
-        );
-      })}
-    </section>
+          ))}
+        </List>
+      )}
+    </>
   );
+  return framed ? <Card title={t('takt')}>{body}</Card> : body;
 }
