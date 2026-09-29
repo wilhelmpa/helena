@@ -12,11 +12,19 @@ const SYSTEM_FOLDERS = ['Files/Belege', 'Files/Mail', 'Docs/Agenten'];
 // Folders agents fill: the final frames of browser runs.
 const AGENT_FOLDERS = ['Files/Browser'];
 
-function inFolders(vaultPath: string, folders: string[]): boolean {
+// The path inside a project's folder, or inside Home (mail without a project lands in
+// Home/Files/Mail); null elsewhere.
+function insideRoot(vaultPath: string): string | null {
   const parts = vaultPath.split('/');
-  if (parts[0] !== 'Projects' || parts.length < 4) return false;
-  const inProject = parts.slice(2).join('/');
-  return folders.some((folder) => inProject === folder || inProject.startsWith(`${folder}/`));
+  if (parts[0] === 'Projects' && parts.length >= 4) return parts.slice(2).join('/');
+  if (parts[0] === 'Home' && parts.length >= 3) return parts.slice(1).join('/');
+  return null;
+}
+
+function inFolders(vaultPath: string, folders: string[]): boolean {
+  const inside = insideRoot(vaultPath);
+  if (inside === null) return false;
+  return folders.some((folder) => inside === folder || inside.startsWith(`${folder}/`));
 }
 
 export function isSystemVaultPath(vaultPath: string): boolean {

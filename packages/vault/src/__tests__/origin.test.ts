@@ -40,6 +40,7 @@ describe('vaultOrigin', () => {
   test('system folders need the project prefix', () => {
     expect(isSystemVaultPath('Projects/VOL/Files/Belege')).toBe(true);
     expect(isSystemVaultPath('Projects/VOL/Files/Belegexyz/a.pdf')).toBe(false);
-    expect(isSystemVaultPath('Home/Files/Belege/a.pdf')).toBe(false);
+    expect(isSystemVaultPath('Home/Files/Mail/2026/a.pdf')).toBe(true);
+    expect(isSystemVaultPath('Private/Files/Mail/a.pdf')).toBe(false);
   });
 });
