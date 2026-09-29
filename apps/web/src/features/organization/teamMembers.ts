@@ -38,7 +38,9 @@ export function teamMemberCandidates(
       ? []
       : source === 'pool'
         ? agents
-            .filter((agent) => !agent.template && agent.id !== home?.id && !inProject(agent.projects))
+            .filter(
+              (agent) => !agent.template && agent.id !== home?.id && !inProject(agent.projects),
+            )
             .sort(byName)
             .map((agent) => ({
               id: agent.id,
@@ -53,8 +55,7 @@ export function teamMemberCandidates(
   const projectAgents = organization.agents.filter(
     (agent) => !agent.template && !agent.isHome && inProject(agent.projects),
   );
-  const coordinator =
-    projectAgents.find((agent) => agent.role === 'coordinator') ?? null;
+  const coordinator = projectAgents.find((agent) => agent.role === 'coordinator') ?? null;
   const managers = [
     ...(coordinator ? [coordinator] : []),
     ...(home ? [home] : []),

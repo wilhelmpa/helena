@@ -139,7 +139,9 @@ describe('Organigramm „Kreis“', () => {
     assert.ok(distance('99') < distance('2') && distance('2') < distance('20'));
     assert.deepEqual(ring.orbits.slice(0, 3), [distance('99'), distance('2'), distance('20')]);
     // Every line of the middle ends on the first ring.
-    assert.ok(ring.edges.filter((edge) => edge.source === '1').every((edge) => first.includes(edge.target)));
+    assert.ok(
+      ring.edges.filter((edge) => edge.source === '1').every((edge) => first.includes(edge.target)),
+    );
     // No two lines cross (lines that share a node may touch there).
     const cross = (a: [number, number][], b: [number, number][]) => {
       const turn = (p: [number, number], q: [number, number], r: [number, number]) =>

@@ -321,7 +321,9 @@ export function organizationRingLayout({
           top.push(agentNode(head, accent, true, 'parent'));
         continue;
       }
-      const headNodes = entry.heads.sort(byName).map((head) => agentNode(head, accent, true, 'parent'));
+      const headNodes = entry.heads
+        .sort(byName)
+        .map((head) => agentNode(head, accent, true, 'parent'));
       const members: number[] = [];
       const collect = (node: RingNode) => {
         if (node.agent) members.push(node.agent.id);
@@ -336,8 +338,7 @@ export function organizationRingLayout({
         accent,
         members,
         budget: entry.budget,
-        throttled:
-          (entry.budget?.ratio ?? 0) >= 1 || members.some((id) => byId.get(id)?.throttled),
+        throttled: (entry.budget?.ratio ?? 0) >= 1 || members.some((id) => byId.get(id)?.throttled),
       };
       top.push({
         id: `group:${key}`,

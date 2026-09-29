@@ -12,9 +12,30 @@ const organization = {
   projects: [project(10), project(11)],
   agents: [
     { id: 1, name: 'Helena', isHome: true, template: false, role: null, projects: [] },
-    { id: 2, name: 'Koordinator P10', isHome: false, template: false, role: 'coordinator', projects: [project(10)] },
-    { id: 3, name: 'Coder P10', isHome: false, template: false, role: 'specialist', projects: [project(10)] },
-    { id: 4, name: 'Recherche P11', isHome: false, template: false, role: 'specialist', projects: [project(11)] },
+    {
+      id: 2,
+      name: 'Koordinator P10',
+      isHome: false,
+      template: false,
+      role: 'coordinator',
+      projects: [project(10)],
+    },
+    {
+      id: 3,
+      name: 'Coder P10',
+      isHome: false,
+      template: false,
+      role: 'specialist',
+      projects: [project(10)],
+    },
+    {
+      id: 4,
+      name: 'Recherche P11',
+      isHome: false,
+      template: false,
+      role: 'specialist',
+      projects: [project(11)],
+    },
   ] as unknown as OrganizationAgent[],
 } as unknown as Organization;
 const agents = [
