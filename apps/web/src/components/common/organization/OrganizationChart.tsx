@@ -27,8 +27,9 @@ import {
   PillButton,
   Segmented,
 } from '@/design-system';
-import OrganizationChartFlow, { type ChartHover } from './OrganizationChartFlow';
+import OrganizationChartFlow from './OrganizationChartFlow';
 import OrganizationHoverCard from './OrganizationHoverCard';
+import { HoverLayer, createHoverStore } from './organizationHoverStore';
 import OrganizationTaskSheet from './OrganizationTaskSheet';
 import type { ChartAgentData } from './OrganizationChartNode';
 import { organizationChartAgents } from './organizationChartAgents';
@@ -115,7 +116,11 @@ export default function OrganizationChart({
 
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [openTask, setOpenTask] = useState<(RingTask & { projectKey: string }) | null>(null);
-  const [hover, setHover] = useState<ChartHover | null>(null);
+  // The hover card has its own store: a hover must not re-render the chart, whose new
+  // node objects make React Flow re-measure and hide the node under the pointer (the
+  // card flickered on and off, owner 29.09.).
+  const [hoverStore] = useState(createHoverStore);
+  const setHover = hoverStore.set;
   const [collapsed, setCollapsed] = useState<Set<number>>(new Set());
   const [filter, setFilter] = useState<Filter>('all');
   const [search, setSearch] = useState('');
@@ -545,32 +550,29 @@ export default function OrganizationChart({
               setSelectedId(null);
               setHover(null);
             }}
-            // The same card keeps its hover: a re-render of the chart must not start a
-            // new one (a loop of hover → render → hover made the chart flicker, O19).
-            onHover={(next) =>
-              setHover((current) =>
-                current && next && current.node.id === next.node.id ? current : next,
-              )
-            }
+            // The hover store keeps the card for the same node and never re-renders the chart.
+            onHover={setHover}
             label={view === 'tree' ? t('viewTree') : t('viewRing')}
           />
-          {hover && (
-            <OrganizationHoverCard
-              hover={hover}
-              agent={byAgentId.get(Number(hover.node.id)) ?? null}
-              data={hover.node.data}
-              settings={byId.get(Number(hover.node.id)) ?? null}
-              status={statuses.get(Number(hover.node.id)) ?? null}
-              trustLabel={
-                byAgentId.has(Number(hover.node.id))
-                  ? agentData(byAgentId.get(Number(hover.node.id))!).trustLabel
-                  : null
-              }
-              decider={deciderByAgent.get(Number(hover.node.id)) ?? null}
-              taskCount={tasks.filter((task) => task.agentId === Number(hover.node.id)).length}
-              showTasks={showTasks}
-            />
-          )}
+          <HoverLayer store={hoverStore}>
+            {(hover) => (
+              <OrganizationHoverCard
+                hover={hover}
+                agent={byAgentId.get(Number(hover.node.id)) ?? null}
+                data={hover.node.data}
+                settings={byId.get(Number(hover.node.id)) ?? null}
+                status={statuses.get(Number(hover.node.id)) ?? null}
+                trustLabel={
+                  byAgentId.has(Number(hover.node.id))
+                    ? agentData(byAgentId.get(Number(hover.node.id))!).trustLabel
+                    : null
+                }
+                decider={deciderByAgent.get(Number(hover.node.id)) ?? null}
+                taskCount={tasks.filter((task) => task.agentId === Number(hover.node.id)).length}
+                showTasks={showTasks}
+              />
+            )}
+          </HoverLayer>
         </div>
         {delegating.size > 0 && (
           <p className="ds-org-foot">
