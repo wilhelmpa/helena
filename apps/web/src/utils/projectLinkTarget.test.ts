@@ -20,10 +20,7 @@ describe('project links', () => {
   it('names the task of a task link, and no task for other pages', () => {
     assert.equal(projectLinkTarget('/project/OTHER/issue/12', null, origin)?.issue, 12);
     assert.equal(projectLinkTarget('/project/OTHER/activity', 'TRADE', origin)?.issue, undefined);
-    assert.equal(
-      projectLinkTarget('/project/OTHER/issue/12/x', 'TRADE', origin)?.issue,
-      undefined,
-    );
+    assert.equal(projectLinkTarget('/project/OTHER/issue/12/x', 'TRADE', origin)?.issue, undefined);
   });
 
   it('on the Helena pages goes straight to a project page, a task still opens over the page', () => {
