@@ -12,7 +12,8 @@ import { requestDockVoice } from '@/features/voice/utils/dockVoice';
 // Bottom right there is only the orb (owner, 28.09.): the real voice orb (Shipnotes
 // particles, WebGL; a still orb in the same look while the tab is hidden or motion is
 // reduced) in the Home agent's status. A click opens the Home chat in the panel, a long
-// press starts voice. It is hidden on the Home start page, where the orb is the page.
+// press starts voice. It is hidden on the Home start page, where the orb is the page, and on
+// the terminals page.
 export default function HomeDock({ open, onOpen }: { open: boolean; onOpen: () => void }) {
   const pathname = usePathname();
   const t = useTranslations('nav');
@@ -34,7 +35,9 @@ export default function HomeDock({ open, onOpen }: { open: boolean; onOpen: () =
     },
     [],
   );
-  if (pathname === '/' || open) return null;
+  // Hidden where the orb is the page (Home) and over the terminals, whose last line and key
+  // bar it would cover.
+  if (pathname === '/' || pathname === '/terminals' || open) return null;
   return (
     <button
       type="button"
