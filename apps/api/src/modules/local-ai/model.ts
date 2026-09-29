@@ -281,6 +281,12 @@ export const LocalAiStatus = t.Object({
       }),
     ),
   ),
+  localAiPressure: t.Nullable(
+    t.Object({
+      reason: t.Union([t.Literal('overloaded'), t.Literal('unreachable')]),
+      at: t.String(),
+    }),
+  ),
   lastGpuReset: t.Nullable(
     t.Object({
       at: t.String(),

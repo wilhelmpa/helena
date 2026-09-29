@@ -9,9 +9,7 @@ import { domainEventSubscribers, stepType } from './registry';
 import { subscribeEngineTriggers } from './events';
 import { writeStep } from './run-context';
 import { planFire } from './schedules';
-import { db, pipelineRun } from '@repo/db';
-import { eq } from 'drizzle-orm';
-import { localAiHasCapacity } from '#modules/local-ai/pressure';
+import { localAiMayStartRoutine } from '#modules/local-ai/pressure';
 import {
   actionRank,
   StepFailure,
@@ -215,11 +213,7 @@ async function fire(scheduleId: string, scheduledAtIso: string): Promise<void> {
   if (planned) {
     const mayStart = await DBOS.runStep(
       async () => {
-        const [run] = await db
-          .select({ kind: pipelineRun.kind })
-          .from(pipelineRun)
-          .where(eq(pipelineRun.id, planned));
-        return run?.kind !== 'routine' || (await localAiHasCapacity('background'));
+        return localAiMayStartRoutine(planned);
       },
       { name: 'helena:capacity' },
     );

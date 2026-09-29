@@ -49,6 +49,7 @@ import { joinUrl, openAiEvalContext } from './eval-context';
 import { LEMONADE, LEMONADE_DEFAULT_BASE_URL, allowedTokenizerFile } from './server-types';
 import { localAiGuard } from './guard';
 import { currentJudge } from './judge';
+import { localAiPressureSignal } from './pressure';
 import {
   readModelOptions,
   saveModelOptions,
@@ -955,6 +956,13 @@ const VOICE_START_TIMEOUT_MS = 300_000;
 const answers = new Map<number, { up: boolean; at: number }>();
 
 export async function serverAnswers(server: ModelServerRow, now = Date.now()): Promise<boolean> {
+  const pressure = localAiPressureSignal();
+  if (
+    isLocalHalogenUrl(server.baseUrl) &&
+    pressure?.reason === 'unreachable' &&
+    now - Date.parse(pressure.at) < ANSWER_FRESH_MS
+  )
+    return false;
   if (server.status && server.checkedAt && now - server.checkedAt.getTime() <= ANSWER_FRESH_MS)
     return server.status.reachable;
   const asked = answers.get(server.id);
@@ -1185,6 +1193,7 @@ export async function localAiStatus() {
   const unitLoaded = (unit: LocalAiUnit) => loaded.filter((entry) => entry.unit === unit);
   return {
     halogenPriority,
+    localAiPressure: localAiPressureSignal(),
     guard: localAiGuard(),
     lastGpuReset,
     enabled: policy.enabled,

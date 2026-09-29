@@ -7,7 +7,7 @@ import { engineRunning, enqueueWorkflow, insideOperation, RUNS_QUEUE } from './d
 import { ACTIVE_STATUSES } from './lifecycle';
 import { stepType } from './registry';
 import { runWorkflow } from './workflows';
-import { localAiHasCapacity } from '#modules/local-ai/pressure';
+import { localAiMayStartRoutine } from '#modules/local-ai/pressure';
 
 // Starting, signalling, canceling and retrying engine runs. A run is written as a row
 // first (pipeline_run, 'pending'); starting it hands it to the engine as the DBOS
@@ -15,11 +15,7 @@ import { localAiHasCapacity } from '#modules/local-ai/pressure';
 // janitor for a run whose start was lost) finds the workflow that runs it.
 
 export async function startRun(runId: string): Promise<void> {
-  const [planned] = await db
-    .select({ kind: pipelineRun.kind })
-    .from(pipelineRun)
-    .where(eq(pipelineRun.id, runId));
-  if (planned?.kind === 'routine' && !(await localAiHasCapacity('background'))) return;
+  if (!(await localAiMayStartRoutine(runId))) return;
   if (!engineRunning() || insideOperation()) {
     // A step of another run (it created the task this run works on) or a process without
     // the engine enqueues it; any executor's queue takes it.
@@ -199,9 +195,8 @@ export async function startLostRuns(olderThanSeconds = 30): Promise<number> {
     )
     .limit(50);
   let started = 0;
-  const canStartRoutine = await localAiHasCapacity('background');
   for (const row of rows) {
-    if (row.kind === 'routine' && !canStartRoutine) continue;
+    if (row.kind === 'routine' && !(await localAiMayStartRoutine(row.id))) continue;
     await startRunSoon(row.id);
     started++;
   }

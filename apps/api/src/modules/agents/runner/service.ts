@@ -57,7 +57,7 @@ import { WORK_CLASS } from '#modules/local-ai/work-classes';
 import { routinePromptContext } from '#modules/routines/agent-runs';
 import { issueWhy, issueWhySection } from '#modules/project-goals/ladder';
 import { activeOrderContext } from '#modules/standing-orders/service';
-import { localAiHasCapacity } from '#modules/local-ai/pressure';
+import { localAiMayStart, type CapacityCache } from '#modules/local-ai/pressure';
 
 // The queue an agent's runner drains. The runner is a process the operator starts on
 // their own machine; it authenticates with the agent's API key, claims one run at a
@@ -336,8 +336,6 @@ export async function claimRunnerRun(agent: RunnerAgent): Promise<RunnerRun | nu
   await expireExhaustedRuns(agentId);
   await touchRunner(agentId);
   if (await emergencyStopActive()) return null;
-  if (!(await localAiHasCapacity('normal'))) return null;
-  const backgroundCapacity = await localAiHasCapacity('background');
   const { maxResumes } = await getRunResumeSettings();
   // A run whose session has already resumed as often as the instance allows is left
   // pending rather than claimed again: the resume-limit janitor fails it and tells the
@@ -359,23 +357,23 @@ export async function claimRunnerRun(agent: RunnerAgent): Promise<RunnerRun | nu
           sql`, `,
         )})`
       : sql``;
-  const claimable = sql`q.status = 'pending' AND q.next_attempt_at <= now()
-    AND (q.session_id IS NULL OR q.resumes < ${maxResumes})${notHeld}
-    ${backgroundCapacity ? sql`` : sql`AND q.trigger NOT IN ('schedule', 'digest') AND q.work_class IS NULL`}
-    AND (q.issue_id IS NULL OR NOT EXISTS (
-      SELECT 1 FROM issue_work_claim c
-      WHERE c.issue_id = q.issue_id AND c.expires_at > now()
-    ))`;
-  const [next] = await db
-    .select({ projectId: agentRun.projectId, issueId: agentRun.issueId })
+  const candidates = await db
+    .select({
+      id: agentRun.id,
+      projectId: agentRun.projectId,
+      issueId: agentRun.issueId,
+      trigger: agentRun.trigger,
+      model: agentRun.model,
+      workClass: agentRun.workClass,
+      modelCheck: agentRun.modelCheck,
+      sessionId: agentRun.sessionId,
+      createdAt: agentRun.createdAt,
+    })
     .from(agentRun)
     .where(
       and(
         eq(agentRun.agentId, agentId),
         eq(agentRun.status, 'pending'),
-        backgroundCapacity
-          ? undefined
-          : sql`${agentRun.trigger} NOT IN ('schedule', 'digest') AND ${agentRun.workClass} IS NULL`,
         lte(agentRun.nextAttemptAt, sql`now()`),
         sql`(${agentRun.sessionId} IS NULL OR ${agentRun.resumes} < ${maxResumes})`,
         held.length > 0 ? notInArray(agentRun.projectId, held) : undefined,
@@ -385,9 +383,45 @@ export async function claimRunnerRun(agent: RunnerAgent): Promise<RunnerRun | nu
         ))`,
       ),
     )
-    .orderBy(asc(agentRun.nextAttemptAt), asc(agentRun.id))
-    .limit(1);
+    .orderBy(asc(agentRun.nextAttemptAt), asc(agentRun.id));
+  let next: (typeof candidates)[number] | undefined;
+  const capacityCache: CapacityCache = {};
+  for (const candidate of candidates) {
+    const resumedElsewhere =
+      candidate.sessionId !== null &&
+      (candidate.modelCheck as { configured?: { source?: string } } | null)?.configured?.source !==
+        'local';
+    if (
+      await localAiMayStart(
+        {
+          kind:
+            candidate.trigger === 'schedule' ||
+            candidate.trigger === 'digest' ||
+            candidate.workClass
+              ? 'background'
+              : 'normal',
+          model: candidate.model ?? agent.model,
+          fallbackModel: agent.model,
+          workClass: candidate.workClass,
+          resumedElsewhere,
+          createdAt: candidate.createdAt,
+        },
+        fetch,
+        capacityCache,
+      )
+    ) {
+      next = candidate;
+      break;
+    }
+  }
   if (!next || (await enforceAgentLimits(agentId, next.projectId, next.issueId))) return null;
+  const claimable = sql`q.status = 'pending' AND q.next_attempt_at <= now()
+    AND (q.session_id IS NULL OR q.resumes < ${maxResumes})${notHeld}
+    AND q.id = ${next.id}
+    AND (q.issue_id IS NULL OR NOT EXISTS (
+      SELECT 1 FROM issue_work_claim c
+      WHERE c.issue_id = q.issue_id AND c.expires_at > now()
+    ))`;
   const rows = await db.execute(sql`
     WITH candidate AS (
       SELECT q.id, q.issue_id, q.claims

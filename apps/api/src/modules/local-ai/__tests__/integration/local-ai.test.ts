@@ -17,6 +17,7 @@ import {
   settleEvals,
 } from '../../service';
 import { COMPRESSION_CASES } from '../../evals';
+import { LOCAL_AI_MAX_WAIT_MS, localAiMayStart } from '../../pressure';
 
 // Local AI end to end against a fake Lemonade (docs/helena-decisions/local-ai-platform.md): the
 // owner adds the server, a class stays off until its eval passed, the master switch brings the
@@ -506,6 +507,18 @@ describe('local AI takes kinds of work', () => {
 
   const LOCAL = 'helena-local/Qwen3.6-35B-A3B-GGUF';
 
+  const unreachable = (async () => {
+    throw new Error('priority proxy unavailable');
+  }) as unknown as typeof fetch;
+
+  const overloaded = (async () =>
+    Response.json({
+      healthy: true,
+      active: { interactive: 1, realtime: 0, normal: 0, background: 0 },
+      queued: { interactive: 0, realtime: 0, normal: 0, background: 0 },
+      config: { maxConcurrent: 4, reservedInteractive: 1, maxBackground: 2, maxNormal: 3 },
+    })) as unknown as typeof fetch;
+
   // An eval of the class's model that passed, as "Auswerten" stores it.
   async function passed(serverId: number, classId: string, evalVersion: number) {
     await db.insert(helenaLocalAiEval).values({
@@ -552,6 +565,61 @@ describe('local AI takes kinds of work', () => {
       .where(eq(agentRun.id, runId));
     return row?.modelCheck as Record<string, unknown> | null;
   }
+
+  it('claims a cloud digest when the priority proxy is unreachable', async () => {
+    const { asOwner, asRunner, agent } = await setup();
+    await asOwner.god['local-ai'].policy.patch({ enabled: true });
+    const id = await queueWork(agent.id, null);
+    expect((await asRunner['agent-runs'].claim.post()).data!.run).toMatchObject({
+      id,
+      model: 'gpt-5.6-luna',
+    });
+    expect(
+      await localAiMayStart(
+        { kind: 'background', model: 'gpt-5.6-luna', createdAt: new Date() },
+        unreachable,
+      ),
+    ).toBe(true);
+  });
+
+  it('claims a local background run after its bounded wait when the proxy is unreachable', async () => {
+    const { asOwner, asRunner, agent } = await setup();
+    await asOwner.god['local-ai'].policy.patch({ enabled: true });
+    await db.update(aiAgent).set({ model: LOCAL }).where(eq(aiAgent.id, agent.id));
+    const id = await queueWork(agent.id, null, { model: LOCAL });
+    expect((await asRunner['agent-runs'].claim.post()).data!.run).toBeNull();
+    const cloud = await queueWork(agent.id, null, { model: 'gpt-5.6-luna' });
+    expect((await asRunner['agent-runs'].claim.post()).data!.run).toMatchObject({ id: cloud });
+    await asRunner['agent-runs']({ runId: cloud }).result.post({ status: 'success' });
+    await db
+      .update(agentRun)
+      .set({ createdAt: new Date(Date.now() - LOCAL_AI_MAX_WAIT_MS - 1_000) })
+      .where(eq(agentRun.id, id));
+    expect((await asRunner['agent-runs'].claim.post()).data!.run).toMatchObject({ id });
+  });
+
+  it('holds only locally routed background work while the proxy reports load', async () => {
+    const { asOwner, agent, server } = await setup();
+    await asOwner.god['local-ai'].policy.patch({ enabled: true });
+    await passed(server.id, 'summaries', 2);
+    await asOwner.god['local-ai'].policy.patch({ classes: { summaries: { mode: 'prefer' } } });
+    const createdAt = new Date();
+    expect(
+      await localAiMayStart({ kind: 'background', model: 'gpt-5.6-luna', createdAt }, overloaded),
+    ).toBe(true);
+    expect(
+      await localAiMayStart(
+        { kind: 'background', model: agent.model, workClass: 'summaries', createdAt },
+        overloaded,
+      ),
+    ).toBe(false);
+    expect(
+      await localAiMayStart(
+        { kind: 'background', model: agent.model, workClass: 'summaries', createdAt },
+        unreachable,
+      ),
+    ).toBe(true);
+  });
 
   it('offers these kinds of work off and prefer only, and gates them on the eval of their version', async () => {
     const { asOwner, server } = await setup();
