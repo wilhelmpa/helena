@@ -100,6 +100,7 @@ export async function answer(
         ITSAPLAN_MESSAGE_ID: String(message.id),
         ITSAPLAN_SESSION_ID: message.sessionId ?? '',
         ...hermes?.env,
+        VOLITION_HALOGEN_PRIORITY: 'interactive',
       },
       hooks: hermes?.hooks,
       delivered: hermes?.delivered?.names,

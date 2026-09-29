@@ -140,6 +140,29 @@ export const EvalResult = t.Object({
 
 const classSetting = t.Object({ mode, model: t.Nullable(t.String()) });
 
+const halogenPriority = t.Object({
+  maxConcurrent: t.Number(),
+  reservedInteractive: t.Number(),
+  maxInteractive: t.Number(),
+  maxRealtime: t.Number(),
+  maxNormal: t.Number(),
+  maxBackground: t.Number(),
+  realtimeQueueMs: t.Number(),
+  interactiveQueueMs: t.Number(),
+  agingMs: t.Number(),
+  healthProbeMs: t.Number(),
+  healthTimeoutMs: t.Number(),
+  upstreamIdleMs: t.Number(),
+  interactiveMaxTokens: t.Number(),
+  realtimeMaxTokens: t.Number(),
+  queueTimeoutMs: t.Number(),
+  maxQueue: t.Number(),
+  maxQueuedInteractive: t.Number(),
+  maxQueuedRealtime: t.Number(),
+  maxQueuedNormal: t.Number(),
+  maxQueuedBackground: t.Number(),
+});
+
 export const LocalAiPolicy = t.Object({
   enabled: t.Boolean({ description: 'The master switch' }),
   units: t.Object({ gpu: t.Boolean(), npu: t.Boolean(), cpu: t.Boolean() }),
@@ -151,6 +174,7 @@ export const LocalAiPolicy = t.Object({
     t.Literal('eigene'),
   ]),
   initialized: t.Boolean(),
+  halogenPriority,
 });
 
 export const LocalAiSettings = t.Object({
@@ -218,6 +242,51 @@ const loadedEntry = t.Object({
 });
 
 export const LocalAiStatus = t.Object({
+  halogenPriority: t.Optional(
+    t.Nullable(
+      t.Object({
+        config: halogenPriority,
+        healthy: t.Boolean(),
+        active: t.Object({
+          interactive: t.Number(),
+          realtime: t.Number(),
+          normal: t.Number(),
+          background: t.Number(),
+        }),
+        queued: t.Object({
+          interactive: t.Number(),
+          realtime: t.Number(),
+          normal: t.Number(),
+          background: t.Number(),
+        }),
+        oldestWaitMs: t.Number(),
+        oldestWaitMsByClass: t.Object({
+          interactive: t.Number(),
+          realtime: t.Number(),
+          normal: t.Number(),
+          background: t.Number(),
+        }),
+        fallbacks: t.Object({
+          interactive: t.Number(),
+          realtime: t.Number(),
+          normal: t.Number(),
+          background: t.Number(),
+        }),
+        paused: t.Object({
+          interactive: t.Boolean(),
+          realtime: t.Boolean(),
+          normal: t.Boolean(),
+          background: t.Boolean(),
+        }),
+      }),
+    ),
+  ),
+  localAiPressure: t.Nullable(
+    t.Object({
+      reason: t.Union([t.Literal('overloaded'), t.Literal('unreachable')]),
+      at: t.String(),
+    }),
+  ),
   lastGpuReset: t.Nullable(
     t.Object({
       at: t.String(),
@@ -292,6 +361,7 @@ export const LocalAiStatus = t.Object({
 });
 
 export const policyBody = t.Object({
+  halogenPriority: t.Optional(t.Partial(halogenPriority)),
   enabled: t.Optional(t.Boolean()),
   units: t.Optional(
     t.Object({

@@ -11,6 +11,7 @@ export const MAX_RUN_OUTPUT_BYTES = 128 * 1024;
 export const RunnerRunResponse = t.Object({
   id: t.Number(),
   trigger: agentRunTrigger,
+  workClass: t.Nullable(t.String()),
   prompt: t.String(),
   systemPrompt: t.String(),
   attempts: t.Number(),

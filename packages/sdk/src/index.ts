@@ -434,3 +434,10 @@ export {
   type DecisionQuestion,
   type DecisionStatus,
 } from './decisions';
+export {
+  DEFAULT_PRIORITY_CONFIG,
+  isLocalHalogenUrl,
+  normalizeHalogenPriority,
+  priorityProxyBaseUrl,
+  type PriorityConfig,
+} from './halogen-priority';

@@ -26,6 +26,7 @@ export interface Run {
     | 'approval'
     | 'workspace'
     | 'digest';
+  workClass?: string | null;
   prompt: string;
   systemPrompt: string;
   attempts: number;

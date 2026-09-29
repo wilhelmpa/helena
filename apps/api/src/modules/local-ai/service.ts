@@ -23,11 +23,14 @@ import {
   classEvalVersion,
   classModes,
   isLocalProvider,
+  isLocalHalogenUrl,
   isModelServerSlug,
   localModelId,
   localProviderName,
   median,
+  normalizeHalogenPriority,
   parseLocalModelId,
+  priorityProxyBaseUrl,
   type LocalAiMode,
   type LocalAiTaskClass,
   type LocalAiUnit,
@@ -36,6 +39,7 @@ import {
   type ModelServerOptions,
   type ModelServerStatus,
   type ModelServerType,
+  type PriorityConfig,
   type RuntimeLocalAi,
   withConfiguredCapabilities,
 } from '@helena/sdk';
@@ -45,6 +49,7 @@ import { joinUrl, openAiEvalContext } from './eval-context';
 import { LEMONADE, LEMONADE_DEFAULT_BASE_URL, allowedTokenizerFile } from './server-types';
 import { localAiGuard } from './guard';
 import { currentJudge } from './judge';
+import { localAiPressureSignal } from './pressure';
 import {
   readModelOptions,
   saveModelOptions,
@@ -106,8 +111,9 @@ export function validBaseUrl(value: string): string {
 // A path starting with `//` is taken from the server's root (Halogen's `/health` next to its
 // `/v1`), any other is appended to the base URL.
 export function serverUrl(baseUrl: string, path: string): string {
-  if (!path.startsWith('//')) return joinUrl(baseUrl, path);
-  return `${new URL(baseUrl).origin}/${path.replace(/^\/+/, '')}`;
+  const routed = priorityProxyBaseUrl(baseUrl);
+  if (!path.startsWith('//')) return joinUrl(routed, path);
+  return `${new URL(routed).origin}/${path.replace(/^\/+/, '')}`;
 }
 
 export function serverContext(
@@ -126,6 +132,9 @@ export function serverContext(
           accept: 'application/json',
           ...(init?.body !== undefined ? { 'content-type': 'application/json' } : {}),
           ...(key ? { authorization: `Bearer ${key}` } : {}),
+          ...(init?.method === 'POST' && isLocalHalogenUrl(server.baseUrl)
+            ? { 'x-volition-halogen-priority': 'background' }
+            : {}),
         },
         ...(init?.body !== undefined ? { body: JSON.stringify(init.body) } : {}),
         redirect: 'error',
@@ -663,6 +672,7 @@ export interface PolicyPatch {
   units?: Partial<Record<LocalAiUnit, boolean>>;
   classes?: Record<string, { mode?: LocalAiMode; model?: string | null }>;
   preset?: LocalAiPolicy['preset'];
+  halogenPriority?: Partial<LocalAiPolicy['halogenPriority']>;
 }
 
 // The classes each preset puts in `prefer` (only those whose eval passed; the rest stay off).
@@ -695,6 +705,11 @@ export async function updatePolicy(patch: PolicyPatch): Promise<LocalAiPolicy> {
     units: { ...policy.units },
     classes: { ...policy.classes },
   };
+  if (patch.halogenPriority)
+    next.halogenPriority = normalizeHalogenPriority({
+      ...policy.halogenPriority,
+      ...patch.halogenPriority,
+    });
   if (patch.units) {
     for (const unit of LOCAL_AI_UNITS) {
       const flag = patch.units[unit];
@@ -941,6 +956,13 @@ const VOICE_START_TIMEOUT_MS = 300_000;
 const answers = new Map<number, { up: boolean; at: number }>();
 
 export async function serverAnswers(server: ModelServerRow, now = Date.now()): Promise<boolean> {
+  const pressure = localAiPressureSignal();
+  if (
+    isLocalHalogenUrl(server.baseUrl) &&
+    pressure?.reason === 'unreachable' &&
+    now - Date.parse(pressure.at) < ANSWER_FRESH_MS
+  )
+    return false;
   if (server.status && server.checkedAt && now - server.checkedAt.getTime() <= ANSWER_FRESH_MS)
     return server.status.reachable;
   const asked = answers.get(server.id);
@@ -1139,13 +1161,27 @@ export async function usageShare(days = 7) {
 // ── The status card ────────────────────────────────────────────────────────────────────
 
 export async function localAiStatus() {
-  const [policy, servers, gpu, npu, usage, lastGpuReset] = await Promise.all([
+  type Counts = { interactive: number; realtime: number; normal: number; background: number };
+  type PriorityStatus = {
+    config: PriorityConfig;
+    healthy: boolean;
+    active: Counts;
+    queued: Counts;
+    oldestWaitMs: number;
+    oldestWaitMsByClass: Counts;
+    fallbacks: Counts;
+    paused: { interactive: boolean; realtime: boolean; normal: boolean; background: boolean };
+  };
+  const [policy, servers, gpu, npu, usage, lastGpuReset, halogenPriority] = await Promise.all([
     readLocalAiPolicy(),
     listModelServers(),
     readGpu(),
     npuPresent(),
     usageShare(),
     readLastGpuReset(),
+    fetch('http://127.0.0.1:8741/priority/status', { signal: AbortSignal.timeout(1_000) })
+      .then((response) => (response.ok ? (response.json() as Promise<PriorityStatus>) : null))
+      .catch(() => null),
   ]);
   const loaded = servers.flatMap((server) =>
     (server.status?.loaded ?? []).map((entry) => ({
@@ -1156,6 +1192,8 @@ export async function localAiStatus() {
   const load = servers.find((server) => server.status?.load)?.status?.load ?? null;
   const unitLoaded = (unit: LocalAiUnit) => loaded.filter((entry) => entry.unit === unit);
   return {
+    halogenPriority,
+    localAiPressure: localAiPressureSignal(),
     guard: localAiGuard(),
     lastGpuReset,
     enabled: policy.enabled,

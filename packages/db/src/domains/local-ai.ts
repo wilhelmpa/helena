@@ -10,6 +10,9 @@ import {
   type LocalAiUnit,
   type LocalModel,
   type LocalModelCapability,
+  DEFAULT_PRIORITY_CONFIG,
+  normalizeHalogenPriority,
+  type PriorityConfig,
 } from '@helena/sdk';
 import { db } from '../client';
 import { readSecret } from '../secrets';
@@ -56,6 +59,7 @@ export interface LocalAiPolicy {
   preset: LocalAiPreset;
   // The owner has seen the classes the master switch turns on the first time.
   initialized: boolean;
+  halogenPriority: PriorityConfig;
 }
 
 export function defaultLocalAiPolicy(): LocalAiPolicy {
@@ -65,6 +69,7 @@ export function defaultLocalAiPolicy(): LocalAiPolicy {
     classes: {},
     preset: 'ausgewogen',
     initialized: false,
+    halogenPriority: { ...DEFAULT_PRIORITY_CONFIG },
   };
 }
 
@@ -104,6 +109,7 @@ export function normalizeLocalAiPolicy(value: unknown): LocalAiPolicy {
       ? (raw.preset as LocalAiPreset)
       : base.preset,
     initialized: raw.initialized === true,
+    halogenPriority: normalizeHalogenPriority(raw.halogenPriority),
   };
 }
 

@@ -9,6 +9,7 @@ import { domainEventSubscribers, stepType } from './registry';
 import { subscribeEngineTriggers } from './events';
 import { writeStep } from './run-context';
 import { planFire } from './schedules';
+import { localAiMayStartRoutine } from '#modules/local-ai/pressure';
 import {
   actionRank,
   StepFailure,
@@ -209,8 +210,16 @@ async function fire(scheduleId: string, scheduledAtIso: string): Promise<void> {
   const planned = await DBOS.runStep(() => planFire(scheduleId, scheduledAtIso), {
     name: 'helena:fire',
   });
-  if (planned)
+  if (planned) {
+    const mayStart = await DBOS.runStep(
+      async () => {
+        return localAiMayStartRoutine(planned);
+      },
+      { name: 'helena:capacity' },
+    );
+    if (!mayStart) return;
     await DBOS.startWorkflow(runWorkflow, { workflowID: planned, queueName: RUNS_QUEUE })(planned);
+  }
 }
 
 export const fireWorkflow = DBOS.registerWorkflow(fire, { name: 'helena.fire' });

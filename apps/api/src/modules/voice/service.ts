@@ -4,7 +4,7 @@ import {
   type LocalRoute,
   type RouteRefusal,
 } from '@repo/db';
-import type { LocalAiMode } from '@helena/sdk';
+import { isLocalHalogenUrl, priorityProxyBaseUrl, type LocalAiMode } from '@helena/sdk';
 import { HttpError } from '#shared/lib';
 import { joinUrl } from '#modules/local-ai/eval-context';
 import { serverContext, serverType, taskClass } from '#modules/local-ai/service';
@@ -245,13 +245,22 @@ export async function transcribe(input: {
     const started = Date.now();
     let response: Response;
     try {
-      response = await fetch(joinUrl(route.server.baseUrl, '/audio/transcriptions'), {
-        method: 'POST',
-        headers: { accept: 'application/json', ...authorization(key) },
-        body: form,
-        redirect: 'error',
-        signal: AbortSignal.timeout(TRANSCRIBE_TIMEOUT_MS),
-      });
+      response = await fetch(
+        joinUrl(priorityProxyBaseUrl(route.server.baseUrl), '/audio/transcriptions'),
+        {
+          method: 'POST',
+          headers: {
+            accept: 'application/json',
+            ...(isLocalHalogenUrl(route.server.baseUrl)
+              ? { 'x-volition-halogen-priority': 'interactive' }
+              : {}),
+            ...authorization(key),
+          },
+          body: form,
+          redirect: 'error',
+          signal: AbortSignal.timeout(TRANSCRIBE_TIMEOUT_MS),
+        },
+      );
     } catch {
       throw new HttpError(502, 'The local transcription did not answer', 'voice-local-failed');
     }
@@ -400,9 +409,15 @@ export async function synthesize(input: {
   };
   let response: Response;
   try {
-    response = await fetch(joinUrl(route.server.baseUrl, '/audio/speech'), {
+    response = await fetch(joinUrl(priorityProxyBaseUrl(route.server.baseUrl), '/audio/speech'), {
       method: 'POST',
-      headers: { 'content-type': 'application/json', ...authorization(key) },
+      headers: {
+        'content-type': 'application/json',
+        ...(isLocalHalogenUrl(route.server.baseUrl)
+          ? { 'x-volition-halogen-priority': 'interactive' }
+          : {}),
+        ...authorization(key),
+      },
       body: JSON.stringify(body),
       redirect: 'error',
       signal: AbortSignal.timeout(SPEECH_TIMEOUT_MS),

@@ -1,11 +1,13 @@
 import {
   localProviderWithoutThinking,
   parseLocalModelId,
+  priorityProxyBaseUrl,
   type RuntimeDefaults,
   type RuntimeLocalAi,
   type RuntimePolicySnapshot,
 } from '@helena/sdk';
 import { registerProfileContribution } from './contributions';
+import { isolationEnabled } from './isolation';
 
 // Helena's local AI in an agent's Hermes profile (docs/helena-decisions/local-ai-platform.md):
 // while the owner has it on, each local model server becomes a named Hermes provider
@@ -98,6 +100,11 @@ export function hermesLocalAiConfig(
   for (const server of localAi.servers) {
     const provider = (baseUrl: string, thinking: boolean) => ({
       base_url: baseUrl,
+      ...(server.baseUrl.includes(':8731/') || server.baseUrl.includes(':8733/')
+        ? {
+            extra_headers: { 'x-volition-halogen-priority': '${VOLITION_HALOGEN_PRIORITY}' },
+          }
+        : {}),
       ...(server.keyEnv ? { key_env: server.keyEnv } : {}),
       transport: 'chat_completions',
       context_length: server.contextLength,
@@ -117,7 +124,10 @@ export function hermesLocalAiConfig(
       ),
     });
     // The agent's own turns think.
-    providers[server.provider] = provider(server.baseUrl, true);
+    providers[server.provider] = provider(
+      isolationEnabled() ? server.baseUrl : priorityProxyBaseUrl(server.baseUrl),
+      true,
+    );
     // A run whose reasoning is `none` (a kind of work whose eval ran without thinking: the
     // reflection) starts on this one. Hermes finds a provider's `extra_body` by its address, not
     // its name (two providers at one address both get the first one's), so it has an address of
@@ -125,7 +135,9 @@ export function hermesLocalAiConfig(
     // against a recording server, 2026-09-25).
     if (server.noThinkingBaseUrl && server.noThinkingBaseUrl !== server.baseUrl) {
       providers[localProviderWithoutThinking(server.provider)] = provider(
-        server.noThinkingBaseUrl,
+        isolationEnabled()
+          ? server.noThinkingBaseUrl
+          : priorityProxyBaseUrl(server.noThinkingBaseUrl),
         false,
       );
     }

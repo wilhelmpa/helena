@@ -7,7 +7,13 @@ import {
   userPreference,
   type LocalRoute,
 } from '@repo/db';
-import { classEvalVersion, localThinkingFields, type LocalAiChatRequest } from '@helena/sdk';
+import {
+  classEvalVersion,
+  isLocalHalogenUrl,
+  localThinkingFields,
+  priorityProxyBaseUrl,
+  type LocalAiChatRequest,
+} from '@helena/sdk';
 import { joinUrl } from '#modules/local-ai/eval-context';
 import { taskClass } from '#modules/local-ai/service';
 import {
@@ -115,30 +121,36 @@ async function streamAnswer(
   };
 
   try {
-    const response = await fetch(joinUrl(local.server.baseUrl, '/chat/completions'), {
-      method: 'POST',
-      headers: {
-        'content-type': 'application/json',
-        accept: 'text/event-stream',
-        ...(key ? { authorization: `Bearer ${key}` } : {}),
+    const response = await fetch(
+      joinUrl(priorityProxyBaseUrl(local.server.baseUrl), '/chat/completions'),
+      {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          accept: 'text/event-stream',
+          ...(isLocalHalogenUrl(local.server.baseUrl)
+            ? { 'x-volition-halogen-priority': 'interactive' }
+            : {}),
+          ...(key ? { authorization: `Bearer ${key}` } : {}),
+        },
+        body: JSON.stringify({
+          model: local.model,
+          messages: [
+            { role: 'system', content: request.system },
+            { role: 'user', content: request.prompt },
+          ],
+          tools: request.tools?.map((tool) => ({ type: 'function', function: tool })),
+          tool_choice: 'auto',
+          max_tokens: request.maxTokens,
+          temperature: 0.3,
+          stream: true,
+          stream_options: { include_usage: true },
+          ...localThinkingFields(request.thinking ?? 'off'),
+        }),
+        redirect: 'error',
+        signal: abort.signal,
       },
-      body: JSON.stringify({
-        model: local.model,
-        messages: [
-          { role: 'system', content: request.system },
-          { role: 'user', content: request.prompt },
-        ],
-        tools: request.tools?.map((tool) => ({ type: 'function', function: tool })),
-        tool_choice: 'auto',
-        max_tokens: request.maxTokens,
-        temperature: 0.3,
-        stream: true,
-        stream_options: { include_usage: true },
-        ...localThinkingFields(request.thinking ?? 'off'),
-      }),
-      redirect: 'error',
-      signal: abort.signal,
-    });
+    );
     if (!response.ok || !response.body) return { kind: 'hand-over' };
     const reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
     let buffer = '';

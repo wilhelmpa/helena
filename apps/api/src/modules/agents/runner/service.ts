@@ -57,6 +57,7 @@ import { WORK_CLASS } from '#modules/local-ai/work-classes';
 import { routinePromptContext } from '#modules/routines/agent-runs';
 import { issueWhy, issueWhySection } from '#modules/project-goals/ladder';
 import { activeOrderContext } from '#modules/standing-orders/service';
+import { localAiMayStart, type CapacityCache } from '#modules/local-ai/pressure';
 
 // The queue an agent's runner drains. The runner is a process the operator starts on
 // their own machine; it authenticates with the agent's API key, claims one run at a
@@ -154,6 +155,8 @@ export async function getRunnerAgent(userId: string): Promise<RunnerAgent | null
 export interface RunnerRun {
   id: number;
   trigger: AgentRunTrigger;
+  // The background task class, when the run belongs to one.
+  workClass: string | null;
   // The task as the agent should read it: the trigger text framed with what started
   // the run and what to do about it.
   prompt: string;
@@ -193,8 +196,6 @@ type ClaimedRow = Omit<RunnerRun, 'systemPrompt' | 'autopilotLevel'> & {
   projectId: number;
   // The run's own reasoning effort, where it overrides the agent's (a digest run).
   reasoning: string | null;
-  // The kind of work the run is for Lokale KI (agent_run.work_class), or null.
-  workClass: string | null;
   // What the last claim recorded about its model (agent_run.model_check), or null.
   modelCheck: unknown;
   // Claimed before, by a claim that ended without a result: the runner stopped, handed
@@ -356,14 +357,18 @@ export async function claimRunnerRun(agent: RunnerAgent): Promise<RunnerRun | nu
           sql`, `,
         )})`
       : sql``;
-  const claimable = sql`q.status = 'pending' AND q.next_attempt_at <= now()
-    AND (q.session_id IS NULL OR q.resumes < ${maxResumes})${notHeld}
-    AND (q.issue_id IS NULL OR NOT EXISTS (
-      SELECT 1 FROM issue_work_claim c
-      WHERE c.issue_id = q.issue_id AND c.expires_at > now()
-    ))`;
-  const [next] = await db
-    .select({ projectId: agentRun.projectId, issueId: agentRun.issueId })
+  const candidates = await db
+    .select({
+      id: agentRun.id,
+      projectId: agentRun.projectId,
+      issueId: agentRun.issueId,
+      trigger: agentRun.trigger,
+      model: agentRun.model,
+      workClass: agentRun.workClass,
+      modelCheck: agentRun.modelCheck,
+      sessionId: agentRun.sessionId,
+      createdAt: agentRun.createdAt,
+    })
     .from(agentRun)
     .where(
       and(
@@ -378,9 +383,45 @@ export async function claimRunnerRun(agent: RunnerAgent): Promise<RunnerRun | nu
         ))`,
       ),
     )
-    .orderBy(asc(agentRun.nextAttemptAt), asc(agentRun.id))
-    .limit(1);
+    .orderBy(asc(agentRun.nextAttemptAt), asc(agentRun.id));
+  let next: (typeof candidates)[number] | undefined;
+  const capacityCache: CapacityCache = {};
+  for (const candidate of candidates) {
+    const resumedElsewhere =
+      candidate.sessionId !== null &&
+      (candidate.modelCheck as { configured?: { source?: string } } | null)?.configured?.source !==
+        'local';
+    if (
+      await localAiMayStart(
+        {
+          kind:
+            candidate.trigger === 'schedule' ||
+            candidate.trigger === 'digest' ||
+            candidate.workClass
+              ? 'background'
+              : 'normal',
+          model: candidate.model ?? agent.model,
+          fallbackModel: agent.model,
+          workClass: candidate.workClass,
+          resumedElsewhere,
+          createdAt: candidate.createdAt,
+        },
+        fetch,
+        capacityCache,
+      )
+    ) {
+      next = candidate;
+      break;
+    }
+  }
   if (!next || (await enforceAgentLimits(agentId, next.projectId, next.issueId))) return null;
+  const claimable = sql`q.status = 'pending' AND q.next_attempt_at <= now()
+    AND (q.session_id IS NULL OR q.resumes < ${maxResumes})${notHeld}
+    AND q.id = ${next.id}
+    AND (q.issue_id IS NULL OR NOT EXISTS (
+      SELECT 1 FROM issue_work_claim c
+      WHERE c.issue_id = q.issue_id AND c.expires_at > now()
+    ))`;
   const rows = await db.execute(sql`
     WITH candidate AS (
       SELECT q.id, q.issue_id, q.claims
@@ -566,6 +607,7 @@ export async function claimRunnerRun(agent: RunnerAgent): Promise<RunnerRun | nu
   return {
     id: row.id,
     trigger: row.trigger,
+    workClass: row.workClass,
     // A workspace job (a clone) is for the runner itself: its prompt is the job as it was
     // queued, never framed for a model.
     prompt:

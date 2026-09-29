@@ -16,7 +16,13 @@
 //    "tokenizer":"/var/lib/helena-halogen/models/tokenizer/vocab.json"}
 import { readFile, writeFile } from 'node:fs/promises';
 import { homedir } from 'node:os';
-import { systemOneUrl, type DecisionEvalSet, type DecisionQuestion } from '@helena/sdk';
+import {
+  isLocalHalogenUrl,
+  priorityProxyBaseUrl,
+  systemOneUrl,
+  type DecisionEvalSet,
+  type DecisionQuestion,
+} from '@helena/sdk';
 import {
   askByJson,
   askByLogprobs,
@@ -62,10 +68,11 @@ async function keyOf(backend: Backend): Promise<string | null> {
 }
 
 async function postJson(url: string, key: string | null, body: unknown, signal?: AbortSignal) {
-  const res = await fetch(url, {
+  const res = await fetch(priorityProxyBaseUrl(url), {
     method: 'POST',
     headers: {
       'content-type': 'application/json',
+      ...(isLocalHalogenUrl(url) ? { 'x-volition-halogen-priority': 'background' } : {}),
       ...(key ? { authorization: `Bearer ${key}` } : {}),
     },
     body: JSON.stringify(body),

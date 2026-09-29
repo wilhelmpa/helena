@@ -7,6 +7,7 @@ import { HEARTBEAT_PRECHECK_CLASS } from '#modules/decisions/classes';
 import { heartbeatPrecheckQuestions } from '#modules/decisions/questions';
 import { isBorderlineHeartbeat, type HeartbeatCandidate } from './heartbeat-precheck';
 import { heartbeatBudgetThrottled } from '#modules/autopilot/budgets';
+import { localAiHasCapacity, localAiMayStart } from '#modules/local-ai/pressure';
 
 type Candidate = HeartbeatCandidate;
 
@@ -18,6 +19,8 @@ async function precheckHeartbeat(input: {
   now: Date;
 }) {
   try {
+    if (!(await localAiHasCapacity('background')))
+      return { skip: false, reason: 'precheck deferred due local AI load' };
     const setting = await classSetting(input.teamId, HEARTBEAT_PRECHECK_CLASS);
     const outcome = await decide({
       teamId: input.teamId,
@@ -70,14 +73,22 @@ async function precheckHeartbeat(input: {
 
 export async function fireDueAgentHeartbeats(now = new Date()): Promise<number> {
   const due = await db
-    .select({ id: aiAgent.id })
+    .select({ id: aiAgent.id, model: aiAgent.model, dueAt: aiAgent.heartbeatNextAt })
     .from(aiAgent)
     .where(
       and(lte(aiAgent.heartbeatNextAt, now), isNull(aiAgent.pausedAt), eq(aiAgent.template, false)),
     )
     .limit(100);
   let checked = 0;
-  for (const { id } of due) {
+  for (const { id, model, dueAt } of due) {
+    if (
+      !(await localAiMayStart({
+        kind: 'normal',
+        model,
+        createdAt: dueAt ?? now,
+      }))
+    )
+      continue;
     const throttle = await heartbeatBudgetThrottled(id, null);
     const fired = await db.transaction(async (tx) => {
       const [current] = await tx.select().from(aiAgent).where(eq(aiAgent.id, id));
