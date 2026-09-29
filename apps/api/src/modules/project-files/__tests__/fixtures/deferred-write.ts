@@ -14,7 +14,6 @@ mock.module('@repo/vault', () => ({
   splitNote: (content: string) => ({ frontmatterRaw: null, frontmatter: {}, body: content }),
   moveEntries: forbidden,
   resolveVaultPath: forbidden,
-  splitNote: forbidden,
   vaultOrigin: () => 'manual',
 }));
 mock.module('@helena/knowledge', () => ({
