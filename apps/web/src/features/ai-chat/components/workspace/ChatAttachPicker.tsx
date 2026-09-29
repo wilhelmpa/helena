@@ -18,11 +18,11 @@ import ChatVaultFilePicker from './ChatVaultFilePicker';
 export default function ChatAttachPicker({
   scopeKey,
   onUpload,
-  onPickVaultFile,
+  onPickKnowledge,
 }: {
   scopeKey: string;
   onUpload: () => void;
-  onPickVaultFile: (path: string, name: string) => void;
+  onPickKnowledge: (ref: string, title: string, source: string, href: string) => void;
 }) {
   const t = useTranslations('chatWorkspace');
   const [vaultOpen, setVaultOpen] = useState(false);
@@ -40,7 +40,7 @@ export default function ChatAttachPicker({
             <Upload className="size-4" /> {t('composer.uploadFile')}
           </DropdownMenuItem>
           <DropdownMenuItem onSelect={() => setVaultOpen(true)}>
-            <FolderOpen className="size-4" /> {t('composer.fromVault')}
+            <FolderOpen className="size-4" /> {t('composer.attach')}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -48,8 +48,8 @@ export default function ChatAttachPicker({
         <ChatVaultFilePicker
           scopeKey={scopeKey}
           onClose={() => setVaultOpen(false)}
-          onPick={(path, name) => {
-            onPickVaultFile(path, name);
+          onPick={(ref, title, source, href) => {
+            onPickKnowledge(ref, title, source, href);
             setVaultOpen(false);
           }}
         />

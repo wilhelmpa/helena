@@ -51,10 +51,9 @@ import ChatAgentMenu from '@/components/helena/AgentPicker';
 import styles from './HomeChatLanding.module.css';
 import { useTypeToFocus } from '../../hooks/useTypeToFocus';
 
-interface PendingAttachment {
-  path: string;
-  name: string;
-}
+type PendingAttachment =
+  | { path: string; name: string; ref?: never }
+  | { ref: string; name: string; source: string; href: string; path?: never };
 
 export interface ChatComposerProps {
   homeLanding?: boolean;
@@ -237,18 +236,29 @@ export default function ChatComposer({
     }
     const options: PlanSendOptions = {
       agentId: agent.id,
-      files: attachments.map((item) => item.path),
+      files: attachments.flatMap((item) => (item.path ? [item.path] : [])),
+      refs: attachments.flatMap((item) => (item.ref ? [item.ref] : [])),
       model,
       thinkingLevel,
     };
     const metadata: PlanChatMetadata = {
-      attachments: attachments.map((item) => ({
-        kind: 'file' as const,
-        path: item.path,
-        name: item.name,
-        contentType: '',
-        sizeBytes: 0,
-      })),
+      attachments: attachments.map((item) =>
+        item.ref
+          ? {
+              kind: 'knowledge' as const,
+              ref: item.ref,
+              title: item.name,
+              source: item.source,
+              href: item.href,
+            }
+          : {
+              kind: 'file' as const,
+              path: item.path!,
+              name: item.name,
+              contentType: '',
+              sizeBytes: 0,
+            },
+      ),
     };
     // While an answer is still coming (or others wait before it), the message waits its
     // turn instead of being refused or lost.
@@ -378,12 +388,14 @@ export default function ChatComposer({
               <div className="flex flex-wrap gap-1.5 px-1">
                 {attachments.map((attachment) => (
                   <ChatPendingAttachment
-                    key={attachment.path}
+                    key={attachment.ref ?? attachment.path}
                     name={attachment.name}
                     removeLabel={t('composer.removeAttachment', { name: attachment.name })}
                     onRemove={() =>
                       setAttachments((current) =>
-                        current.filter((item) => item.path !== attachment.path),
+                        current.filter(
+                          (item) => (item.ref ?? item.path) !== (attachment.ref ?? attachment.path),
+                        ),
                       )
                     }
                   />
@@ -393,6 +405,7 @@ export default function ChatComposer({
                 )}
               </div>
             )}
+            {dictation.errorText && <p role="alert">{dictation.errorText}</p>}
           </PromptInputHeader>
           <PromptInputBody>
             <PromptInputTextarea
@@ -428,8 +441,8 @@ export default function ChatComposer({
                     <ChatAttachPicker
                       scopeKey={scopeKey}
                       onUpload={() => fileInputRef.current?.click()}
-                      onPickVaultFile={(path, name) =>
-                        setAttachments((current) => [...current, { path, name }])
+                      onPickKnowledge={(ref, name, source, href) =>
+                        setAttachments((current) => [...current, { ref, name, source, href }])
                       }
                     />
                     {dictation.ready && !talking && (
@@ -441,7 +454,10 @@ export default function ChatComposer({
                         recorder={dictation.recorder}
                         onUnavailable={dictation.onUnavailable}
                         onError={dictation.onError}
-                        onBusyChange={setDictating}
+                        onBusyChange={(busy) => {
+                          setDictating(busy);
+                          if (busy) dictation.clearError();
+                        }}
                         labels={{
                           start: dictation.local
                             ? t('composer.dictateLocal')
@@ -459,8 +475,8 @@ export default function ChatComposer({
                 <ChatAttachPicker
                   scopeKey={scopeKey}
                   onUpload={() => fileInputRef.current?.click()}
-                  onPickVaultFile={(path, name) =>
-                    setAttachments((current) => [...current, { path, name }])
+                  onPickKnowledge={(ref, name, source, href) =>
+                    setAttachments((current) => [...current, { ref, name, source, href }])
                   }
                 />
               )}
@@ -490,7 +506,10 @@ export default function ChatComposer({
                       textarea?.setSelectionRange(textarea.value.length, textarea.value.length);
                     })
                   }
-                  onBusyChange={setDictating}
+                  onBusyChange={(busy) => {
+                    setDictating(busy);
+                    if (busy) dictation.clearError();
+                  }}
                   labels={{
                     start: dictation.local ? t('composer.dictateLocal') : t('composer.dictate'),
                     stop: t('composer.stopDictation'),

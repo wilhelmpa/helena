@@ -5,7 +5,25 @@
     "vault": "Notizen & Dateien",
     "mail": "Mails",
     "chat": "Chats",
-    "run": "Agenten-Läufe"
+    "run": "Agenten-Läufe",
+    "goal": "Ziele",
+    "initiative": "Initiativen",
+    "board": "Leinwände",
+    "receipt": "Belege"
+  },
+  "picker": {
+    "search": "Wissen suchen",
+    "kind": "Art filtern",
+    "all": "Alle Arten",
+    "file": "Dateien",
+    "doc": "Docs",
+    "journal": "Journal",
+    "template": "Vorlagen",
+    "note": "Notizen",
+    "image": "Bilder",
+    "browserImage": "Browser-Bilder",
+    "chatFile": "Chat-Dateien",
+    "unavailable": "Wissen ist derzeit nicht erreichbar."
   },
   "capture": {
     "inbox": "Eingang",

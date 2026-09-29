@@ -188,11 +188,13 @@ describe('voice', () => {
     // The saved locale determines the language even if the client sends another one.
     const answer = await upload(owner.cookie, wav(2.5), 'en');
     expect(answer.status).toBe(200);
-    expect(await answer.json()).toMatchObject({
+    const fixtureResult = (await answer.json()) as { latencyMs: number };
+    expect(fixtureResult).toMatchObject({
       text: 'Hallo Home, wie spät ist es?',
       model: 'helena-local/whisper-v3-turbo-FLM',
       durationMs: 2500,
     });
+    expect(fixtureResult.latencyMs).toBeGreaterThanOrEqual(0);
     expect(received[0]?.fileType).toMatch(/^audio\/(x-)?wav$/);
     expect(received).toMatchObject([
       {
@@ -267,6 +269,9 @@ describe('voice', () => {
     const long = await upload(owner.cookie, wav(121));
     expect(long.status).toBe(413);
     expect(await long.json()).toMatchObject({ code: 'voice-too-long' });
+    const oversized = await upload(owner.cookie, new Uint8Array(12 * 1024 * 1024 + 1));
+    expect(oversized.status).toBe(413);
+    expect(await oversized.json()).toMatchObject({ code: 'voice-too-long' });
     const badLanguage = await upload(owner.cookie, wav(1), 'deu');
     expect(badLanguage.status).toBe(400);
     expect(received).toEqual([]);

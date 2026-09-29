@@ -5,7 +5,25 @@
     "vault": "Catatan & berkas",
     "mail": "Email",
     "chat": "Obrolan",
-    "run": "Eksekusi agen"
+    "run": "Eksekusi agen",
+    "goal": "Tujuan",
+    "initiative": "Inisiatif",
+    "board": "Kanvas",
+    "receipt": "Bukti pembayaran"
+  },
+  "picker": {
+    "search": "Cari pengetahuan",
+    "kind": "Filter menurut jenis",
+    "all": "Semua jenis",
+    "file": "Berkas",
+    "doc": "Dokumen",
+    "journal": "Jurnal",
+    "template": "Templat",
+    "note": "Catatan",
+    "image": "Gambar",
+    "browserImage": "Gambar browser",
+    "chatFile": "Berkas obrolan",
+    "unavailable": "Pengetahuan tidak tersedia saat ini."
   },
   "capture": {
     "inbox": "Kotak masuk",

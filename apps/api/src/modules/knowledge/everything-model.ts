@@ -26,6 +26,15 @@ export const findQuery = t.Object({
   limit: t.Optional(t.Numeric({ minimum: 1, maximum: 50, default: 20 })),
 });
 
+// The composer lists recent items before a person types, then searches the same index.
+export const pickerQuery = t.Object({
+  q: t.Optional(t.String({ maxLength: 200 })),
+  sources: t.Optional(t.String({ maxLength: 200 })),
+  kind: t.Optional(t.String({ maxLength: 64 })),
+  project: t.Optional(t.String({ maxLength: 32 })),
+  limit: t.Optional(t.Numeric({ minimum: 1, maximum: 50, default: 20 })),
+});
+
 const Hit = t.Object({
   ref: t.String({ description: 'The item as `<source>:<id>`; read it with read_knowledge.' }),
   source: t.String(),

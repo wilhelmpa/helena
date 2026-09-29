@@ -56,6 +56,7 @@ export async function knowledgeReach(caller: AuthUser, viaMcp: boolean): Promise
       PERMISSION_RESOURCES.filter((resource) => hasPermission(permissions, resource, 'read')),
     );
     if (!row.documentsEnabled) resources.delete('documents');
+    if (row.role === 'owner') resources.add('receipt_admin');
     projects.set(row.projectId, resources);
   }
   const standings = await db
@@ -83,7 +84,21 @@ export async function knowledgeReach(caller: AuthUser, viaMcp: boolean): Promise
       runsTeam(standing.role as TeamStanding) ? PERMISSION_RESOURCES : [],
     );
     if (instanceOwner) resources.add(HOME_VAULT_RESOURCE);
+    if (!agent) resources.add('goal_person');
     teams.set(standing.teamId, resources);
+    if (runsTeam(standing.role as TeamStanding)) {
+      const managedProjects = await db
+        .select({ id: project.id, mcpEnabled: project.mcpEnabled, teamMcpEnabled: team.mcpEnabled })
+        .from(project)
+        .innerJoin(team, eq(team.id, project.teamId))
+        .where(eq(project.teamId, standing.teamId));
+      for (const managed of managedProjects) {
+        if (viaMcp && !(managed.mcpEnabled && managed.teamMcpEnabled)) continue;
+        const permitted = projects.get(managed.id) ?? new Set<string>();
+        permitted.add('receipt_admin');
+        projects.set(managed.id, permitted);
+      }
+    }
   }
   if (agent?.projectScope === 'all') {
     const teamProjects = await db

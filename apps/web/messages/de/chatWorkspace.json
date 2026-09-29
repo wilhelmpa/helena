@@ -260,7 +260,7 @@
       "blocked": "Der Browser hat das Mikrofon nicht freigegeben. Erlaube es in den Website-Einstellungen (das Symbol links in der Adresszeile).",
       "missing": "Kein Mikrofon gefunden.",
       "failed": "Das Mikrofon konnte nicht gestartet werden.",
-      "transcribeFailed": "Die Transkription ist fehlgeschlagen. Versuch es noch einmal.",
+      "transcribeFailed": "Spracherkennung nicht erreichbar oder Aufnahme nicht lesbar. Versuch es noch einmal.",
       "recognitionFailed": "Die Spracherkennung des Browsers antwortet nicht (Chrome schickt die Aufnahme dafür an Google). Mit Administrator → Lokale KI → „Transkription“ schreibt Whisper auf diesem Rechner mit.",
       "voiceFailed": "Die lokale Stimme antwortet nicht. Die Antwort steht im Chat.",
       "nothingHeard": "Nichts verstanden – war das Mikrofon an?",

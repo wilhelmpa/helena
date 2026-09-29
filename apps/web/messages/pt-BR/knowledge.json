@@ -5,7 +5,25 @@
     "vault": "Notas e arquivos",
     "mail": "E-mails",
     "chat": "Chats",
-    "run": "Execuções de agentes"
+    "run": "Execuções de agentes",
+    "goal": "Metas",
+    "initiative": "Iniciativas",
+    "board": "Telas",
+    "receipt": "Comprovantes"
+  },
+  "picker": {
+    "search": "Buscar conhecimento",
+    "kind": "Filtrar por tipo",
+    "all": "Todos os tipos",
+    "file": "Arquivos",
+    "doc": "Docs",
+    "journal": "Diário",
+    "template": "Modelos",
+    "note": "Notas",
+    "image": "Imagens",
+    "browserImage": "Imagens do navegador",
+    "chatFile": "Arquivos do chat",
+    "unavailable": "O conhecimento está indisponível no momento."
   },
   "capture": {
     "inbox": "Caixa de entrada",
