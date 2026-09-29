@@ -306,7 +306,7 @@ describe('push', () => {
       const got = service.received[0]!;
       expect(got.payload).toMatchObject({
         v: 1,
-        title: 'Helena',
+        title: 'Ava',
         body: 'Push funktioniert auf diesem Gerät.',
         url: '/account/notifications',
       });
@@ -606,7 +606,7 @@ describe('push', () => {
       expect(service.received).toHaveLength(1);
       expect(service.received[0]!.payload).toMatchObject({
         category: 'agent-replies',
-        title: 'Helena answered',
+        title: 'Ava answered',
         body: 'The answer is ready.',
         url: '/chat?agent=999999&thread=t1',
         tag: 'chat:t1',

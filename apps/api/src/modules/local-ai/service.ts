@@ -17,6 +17,7 @@ import {
   type ModelServerRow,
 } from '@repo/db';
 import { and, desc, eq, gte, sql } from 'drizzle-orm';
+import { Value } from '@sinclair/typebox/value';
 import {
   CONFIGURABLE_CAPABILITIES,
   LOCAL_AI_UNITS,
@@ -50,6 +51,7 @@ import { LEMONADE, LEMONADE_DEFAULT_BASE_URL, allowedTokenizerFile } from './ser
 import { localAiGuard } from './guard';
 import { currentJudge } from './judge';
 import { localAiPressureSignal } from './pressure';
+import { LocalAiStatus } from './model';
 import {
   readModelOptions,
   saveModelOptions,
@@ -1187,7 +1189,13 @@ export async function localAiStatus() {
     usageShare(),
     readLastGpuReset(),
     fetch('http://127.0.0.1:8741/priority/status', { signal: AbortSignal.timeout(1_000) })
-      .then((response) => (response.ok ? (response.json() as Promise<PriorityStatus>) : null))
+      .then(async (response) => {
+        if (!response.ok) return null;
+        const status: unknown = await response.json();
+        return Value.Check(LocalAiStatus.properties.halogenPriority, status)
+          ? (status as PriorityStatus)
+          : null;
+      })
       .catch(() => null),
   ]);
   const loaded = servers.flatMap((server) =>

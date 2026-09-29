@@ -295,7 +295,7 @@ it('rolls back a chat if saving the queue result fails', async () => {
     const [account] = await db.select().from(userTelegramAccount);
     expect(account.currentThreadId).toBeNull();
     const [event] = await db.select().from(telegramChannelEvent);
-    expect(event.responseText).toBe('Helena could not process this request.');
+    expect(event.responseText).toBe('Ava could not process this request.');
   } finally {
     await db.execute(sql`DROP TRIGGER test_telegram_save_failure ON telegram_channel_event`);
     await db.execute(sql`DROP FUNCTION test_telegram_save_failure()`);

@@ -9,7 +9,7 @@ describe('health', () => {
     const { data, status } = await api.get();
 
     expect(status).toBe(200);
-    expect(data).toEqual({ name: 'Helena api', status: 'ok' });
+    expect(data).toEqual({ name: 'Ava api', status: 'ok' });
   });
 
   it('GET /me without a session reports unauthenticated', async () => {

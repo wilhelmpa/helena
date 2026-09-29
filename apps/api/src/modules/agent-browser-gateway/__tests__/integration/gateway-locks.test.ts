@@ -255,7 +255,7 @@ describe('browser gateway: control lock across agents, projects and the Home-Mas
       ['writer browser_navigate', 'coder browser_click'],
     );
     expect(opsEvents.data!.items.map((item) => `${item.agentName} ${item.tool}`).reverse()).toEqual(
-      ['opsbot browser_snapshot', 'Helena browser_navigate'],
+      ['opsbot browser_snapshot', 'Ava browser_navigate'],
     );
   });
 });

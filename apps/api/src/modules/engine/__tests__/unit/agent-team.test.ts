@@ -172,7 +172,7 @@ describe('agent team stage contract', () => {
   it('tells the coordinator to plan only and names the allowed specialists', () => {
     const prompt = stagePrompt(coordinate, 'project:MKT');
     expect(prompt).toContain('Phase: coordinate');
-    expect(prompt).toContain('Only plan assignments. Helena executes each delegation');
+    expect(prompt).toContain('Only plan assignments. Ava executes each delegation');
     expect(prompt).toContain('If no specialist is needed, return delegations: []');
     expect(prompt).toContain('"agentRef":"agent:writer"');
     expect(prompt).not.toContain('Mastra');

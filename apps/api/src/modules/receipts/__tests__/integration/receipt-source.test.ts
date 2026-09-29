@@ -97,7 +97,7 @@ describe('receipt source navigation', () => {
       ctx.mail.messageRowId,
     );
     const ticket = await ctx.api.issues({ issueId: one.issueId }).get();
-    expect(ticket.data?.description).toContain(`**Helena thread ID:** ${ctx.mail.threadId}`);
+    expect(ticket.data?.description).toContain(`**Ava thread ID:** ${ctx.mail.threadId}`);
     expect(ticket.data?.description).toContain(`/project/FIN/inbox?thread=${ctx.mail.threadId}`);
   });
 

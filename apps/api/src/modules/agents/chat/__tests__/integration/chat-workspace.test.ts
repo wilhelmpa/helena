@@ -481,7 +481,7 @@ describe('chat attachments', () => {
         `- ${image} (image/png)`,
         `- ${path.join(vault, 'Home/Notes/brief.md')} (text/markdown; charset=utf-8)`,
         '',
-        "Tasks the person refers to (read them with Helena's tools):",
+        "Tasks the person refers to (read them with Ava's tools):",
         '- MKT-1 "Landing page"',
       ].join('\n'),
     );

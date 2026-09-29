@@ -482,8 +482,18 @@ describe('local AI', () => {
     ]);
     expect(status.usage).toEqual({ days: 7, localTokens: 0, cloudTokens: 0 });
     expect(await db.select().from(agentUsage)).toEqual([]);
-    const route = await asOwner.god['local-ai'].status.get();
-    expect(route.status).toBe(200);
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = ((input, init) =>
+      String(input) === 'http://127.0.0.1:8741/priority/status'
+        ? Promise.resolve(Response.json({ healthy: true, config: {} }))
+        : originalFetch(input, init)) as typeof fetch;
+    try {
+      const route = await asOwner.god['local-ai'].status.get();
+      expect(route.status).toBe(200);
+      expect(route.data?.halogenPriority).toBeNull();
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
   });
 
   it('refuses a key file outside /etc/helena and a second server of the same name', async () => {
@@ -587,15 +597,24 @@ describe('local AI takes kinds of work', () => {
     await asOwner.god['local-ai'].policy.patch({ enabled: true });
     await db.update(aiAgent).set({ model: LOCAL }).where(eq(aiAgent.id, agent.id));
     const id = await queueWork(agent.id, null, { model: LOCAL });
-    expect((await asRunner['agent-runs'].claim.post()).data!.run).toBeNull();
-    const cloud = await queueWork(agent.id, null, { model: 'gpt-5.6-luna' });
-    expect((await asRunner['agent-runs'].claim.post()).data!.run).toMatchObject({ id: cloud });
-    await asRunner['agent-runs']({ runId: cloud }).result.post({ status: 'success' });
-    await db
-      .update(agentRun)
-      .set({ createdAt: new Date(Date.now() - LOCAL_AI_MAX_WAIT_MS - 1_000) })
-      .where(eq(agentRun.id, id));
-    expect((await asRunner['agent-runs'].claim.post()).data!.run).toMatchObject({ id });
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = ((input, init) =>
+      String(input) === 'http://127.0.0.1:8741/priority/status'
+        ? Promise.reject(new Error('priority proxy unavailable'))
+        : originalFetch(input, init)) as typeof fetch;
+    try {
+      expect((await asRunner['agent-runs'].claim.post()).data!.run).toBeNull();
+      const cloud = await queueWork(agent.id, null, { model: 'gpt-5.6-luna' });
+      expect((await asRunner['agent-runs'].claim.post()).data!.run).toMatchObject({ id: cloud });
+      await asRunner['agent-runs']({ runId: cloud }).result.post({ status: 'success' });
+      await db
+        .update(agentRun)
+        .set({ createdAt: new Date(Date.now() - LOCAL_AI_MAX_WAIT_MS - 1_000) })
+        .where(eq(agentRun.id, id));
+      expect((await asRunner['agent-runs'].claim.post()).data!.run).toMatchObject({ id });
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
   });
 
   it('holds only locally routed background work while the proxy reports load', async () => {

@@ -449,6 +449,10 @@ export const godRoutes = new Elysia({ name: 'god', detail: { tags: ['God'] } })
 
   .get('/god/display-name', async () => ({ displayName: await getDisplayName() }), {
     response: { 200: DisplayNameSchema, ...errors(401, 403) },
+    detail: {
+      summary: 'Read the product display name',
+      description: 'Read the name shown to people throughout this installation.',
+    },
   })
 
   .put(
@@ -460,6 +464,10 @@ export const godRoutes = new Elysia({ name: 'god', detail: { tags: ['God'] } })
     {
       body: DisplayNameSchema,
       response: { 200: DisplayNameSchema, ...errors(400, 401, 403, 422) },
+      detail: {
+        summary: 'Change the product display name',
+        description: 'Set the name shown to people and rename the default Home agent.',
+      },
     },
   )
 

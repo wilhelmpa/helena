@@ -594,8 +594,11 @@ describe('update center: checking', () => {
       ).toBe(403);
       const started = await api.god['update-center'].items({ itemId: whisper.id }).apply.post({});
       expect(started.status).toBe(201);
-      await waitFor(async () => (await followActions()) > 0 || null);
-      const action = (await db.select().from(helenaUpdateAction))[0]!;
+      const action = await waitFor(async () => {
+        await followActions();
+        const [current] = await db.select().from(helenaUpdateAction);
+        return current?.state !== 'running' ? current : null;
+      });
       expect(action.state).toBe(succeeded ? 'done' : 'failed');
       expect(action.result).toMatchObject({
         phase: succeeded ? 'active' : 'restoring',
