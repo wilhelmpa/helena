@@ -79,6 +79,13 @@ function hrefOf(row: EntryRow): string {
 }
 
 function toItem(row: EntryRow, links: KnowledgeLink[], home: InstanceHome): KnowledgeItem | null {
+  // Receipt projections mirror the canonical DB receipt and must not become a
+  // second knowledge/search result for the same economic document.
+  if (
+    row.frontmatter.generated === true &&
+    ['receipt', 'agent'].includes(String(row.frontmatter.type))
+  )
+    return null;
   const scope = scopeOf(row, home);
   if (!scope) return null;
   const changed = iso(row.mtime ?? row.indexedAt);

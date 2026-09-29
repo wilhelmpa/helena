@@ -1,6 +1,7 @@
 export { VaultError } from './errors';
 export * from './paths';
 export * from './markdown';
+export * from './base';
 export * from './mime';
 export {
   commitExternalChanges,

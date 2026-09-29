@@ -5,6 +5,7 @@ import { HttpError } from '#shared/lib';
 import { mcpTool } from '#mcp/generate';
 import { commonErrors, errors } from '#shared/responses';
 import { captureRoutes } from './capture-routes';
+import { baseRoutes } from './bases';
 import { everythingRoutes } from './everything';
 import { vaultGuard } from './guard';
 import {
@@ -73,6 +74,7 @@ export const knowledgeRoutes = new Elysia({
   .use(vaultGuard)
   .use(everythingRoutes)
   .use(captureRoutes)
+  .use(baseRoutes)
   .get(
     '/knowledge/search',
     ({ scope, paths, query }) =>

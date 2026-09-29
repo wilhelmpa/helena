@@ -9,6 +9,10 @@ import { errors } from '#shared/responses';
 import { isMcpRequest } from '#shared/mcp-request';
 import { mcpTool } from '#mcp/generate';
 import {
+  receiptProjectionSetting,
+  setReceiptProjectionSetting,
+} from '#modules/receipts/projection';
+import {
   ProjectResponse,
   SetupJobResponse,
   copyProjectBody,
@@ -268,6 +272,27 @@ export const teamRoutes = new Elysia({ name: 'teams', detail: { tags: ['Teams'] 
       body: t.Object({ autoMerge: t.Boolean() }),
       response: { 200: t.Object({ autoMerge: t.Boolean() }), ...errors(401, 403, 404) },
       detail: { summary: 'Set automatic receipt linking for the team' },
+    },
+  )
+  .get(
+    '/teams/:teamId/receipt-projection',
+    ({ membership }) => receiptProjectionSetting(membership.teamId),
+    {
+      teamMember: true,
+      params: teamParams,
+      response: { 200: t.Object({ enabled: t.Boolean() }), ...errors(401, 403, 404) },
+      detail: { summary: 'Read the optional receipt note projection setting' },
+    },
+  )
+  .put(
+    '/teams/:teamId/receipt-projection',
+    ({ membership, body }) => setReceiptProjectionSetting(membership.teamId, body.enabled),
+    {
+      teamManager: true,
+      params: teamParams,
+      body: t.Object({ enabled: t.Boolean() }),
+      response: { 200: t.Object({ enabled: t.Boolean() }), ...errors(401, 403, 404, 409) },
+      detail: { summary: 'Enable or disable generated receipt notes for this team' },
     },
   )
   .get(

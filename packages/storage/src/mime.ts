@@ -23,6 +23,7 @@ const PLAIN_TEXT_EXTENSIONS = new Set(
 // its registered type (RFC 9512), and FLAC and M4V keep the types browsers play.
 const OVERRIDES: Record<string, string> = {
   canvas: 'application/json',
+  base: 'application/yaml',
   yaml: 'application/yaml',
   yml: 'application/yaml',
   flac: 'audio/flac',
