@@ -20,9 +20,12 @@ export default function DisplaySettingsBody({
   customFields,
   issueTypes,
   showLayout = true,
+  showFields = true,
 }: {
   // The layout tabs; off where the page shows its own layout switch (Aufgaben).
   showLayout?: boolean;
+  // The display properties; off where the page has its own "Felder" control (Aufgaben).
+  showFields?: boolean;
   view: WorkItemsView;
   onViewChange: (view: WorkItemsView) => void;
   settings: ViewSettings;
@@ -49,7 +52,7 @@ export default function DisplaySettingsBody({
         <DisplayCalendarRows settings={settings} customFields={customFields} onChange={set} />
       )}
 
-      {(view === 'kanban' || view === 'table') && (
+      {showFields && (view === 'kanban' || view === 'table') && (
         <DisplayPropertiesSection
           view={view}
           settings={settings}

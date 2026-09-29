@@ -48,6 +48,9 @@ export default function DatePill({
         <Calendar
           mode="single"
           selected={parseDate(value) ?? undefined}
+          // Opens on the month of the date it holds, not on today's: a due date in October was
+          // shown a September calendar with every day but the last row greyed out.
+          defaultMonth={parseDate(value) ?? undefined}
           disabled={disabled}
           onSelect={(d) => {
             onChange(d ? toDateStr(d) : null);

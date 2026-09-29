@@ -2,6 +2,8 @@ import { useDroppable } from '@dnd-kit/core';
 import type { ProjectDetail } from '@/lib/api/endpoints/projects';
 import type { Issue } from '@/lib/api/endpoints/issues';
 import { cn } from '@/lib/utils';
+import type { Maps } from '@/utils/project';
+import type { PropertyKey } from '@/utils/viewSettings';
 import { CalendarDayChip } from './CalendarDayChip';
 import { CalendarDayOverflow } from './CalendarDayOverflow';
 
@@ -17,6 +19,8 @@ export function CalendarDayCell({
   isToday,
   issues,
   dot,
+  properties,
+  maps,
   onOpen,
 }: {
   project: ProjectDetail;
@@ -26,6 +30,8 @@ export function CalendarDayCell({
   isToday: boolean;
   issues: Issue[];
   dot: (issue: Issue) => string;
+  properties: PropertyKey[];
+  maps: Maps;
   onOpen: (id: number) => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: `day:${dateKey}` });
@@ -55,6 +61,8 @@ export function CalendarDayCell({
             project={project}
             issue={issue}
             color={dot(issue)}
+            properties={properties}
+            maps={maps}
             onOpen={onOpen}
           />
         ))}

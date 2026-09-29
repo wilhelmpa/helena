@@ -4,7 +4,7 @@ import { issueColor, type Maps } from '@/utils/project';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useIssueSubtaskFold, useSubtasks } from '../../context/useSubtasks';
-import { effSpan, LINK_ROW_H } from '../../utils/timeline';
+import { effSpan, LINK_ROW_H, quietBar } from '../../utils/timeline';
 
 // The issue's subtasks as sub-rows under its timeline row: each subtask named on
 // the left behind a nesting mark, with its own bar on the day track. How many are
@@ -93,14 +93,11 @@ export function TimelineSubtaskRows({
                       e.preventDefault();
                       onOpen(subtask.id);
                     }}
-                    className="absolute top-1/2 z-10 flex h-3.5 -translate-y-1/2 cursor-pointer items-center rounded-sm px-1.5 text-white opacity-80"
+                    className="absolute top-1/2 z-10 flex h-3.5 -translate-y-1/2 cursor-pointer items-center rounded-sm px-1.5 text-foreground opacity-80"
                     style={{
                       left: rect.left,
                       width: rect.width,
-                      backgroundColor: issueColor(subtask, maps),
-                      borderLeft: span.inferredStart
-                        ? '2px dashed rgba(255,255,255,0.75)'
-                        : undefined,
+                      ...quietBar(issueColor(subtask, maps), span.inferredStart),
                     }}
                   >
                     <span className="truncate text-xs leading-none">{subtask.title}</span>

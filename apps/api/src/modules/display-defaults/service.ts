@@ -4,9 +4,14 @@ import { eq } from 'drizzle-orm';
 // The fields task views show by default (docs/design-system.md, "Felder"): a project's own
 // default and the member's default for every project, both stored as { layout: [keys] }.
 // A view that was never changed follows them; a saved view keeps what it stored.
-export type FieldDefaults = { kanban?: string[]; list?: string[]; table?: string[] };
+export type FieldDefaults = {
+  kanban?: string[];
+  list?: string[];
+  table?: string[];
+  calendar?: string[];
+};
 
-const LAYOUTS = ['kanban', 'list', 'table'] as const;
+const LAYOUTS = ['kanban', 'list', 'table', 'calendar'] as const;
 
 // Only the known layouts, each once, without repeated keys; nothing left means no default.
 function clean(defaults: FieldDefaults | null): FieldDefaults | null {

@@ -45,6 +45,7 @@ import { byKey } from '@/utils/messageKey';
 import { VIEWS, type WorkItemsView } from '@/utils/viewTypes';
 import { useViewsQuery } from '@/services/views.service';
 import BoardDisplayControl from './components/BoardDisplayControl';
+import FieldsControl from './components/FieldsControl';
 import { IssueLinksProvider } from './context/useIssueLinks';
 import { SubtasksProvider } from './context/useSubtasks';
 import KanbanBoard from './components/kanban/KanbanBoard';
@@ -245,6 +246,17 @@ export default function WorkItemsPage() {
       issueTypes={project.issueTypes}
     />
   );
+  const fields = (
+    <FieldsControl
+      view={editor.view}
+      project={project}
+      settings={settings}
+      onSettingsChange={changeSettings}
+      customFields={customFields}
+      issueTypes={project.issueTypes}
+      savedView={editor.activeView != null}
+    />
+  );
   // A new view from the page's filters is named after them ("Priorität: Hoch"), never
   // "Alle" (owner, 28.09.); the name stays editable.
   const suggestedViewName = describeConditions(editor.filters, project, customFields)
@@ -303,6 +315,7 @@ export default function WorkItemsPage() {
           </>
         )}
         <span className="ds-toolbar-fill" />
+        {fields}
         {display}
         {layoutSwitch}
         {!editor.editing && (

@@ -12,6 +12,10 @@ import { applyFilters } from '@/utils/filters';
 import { withoutShownSubtasks } from '@/utils/subtasks';
 import { viewPath } from '@/utils/paths';
 import { useViewEditor } from '@/hooks/useViewEditor';
+import {
+  effectiveFieldDefaults,
+  useDisplayDefaultsQuery,
+} from '@/services/displayDefaults.service';
 import { useSession } from '@/lib/auth-client';
 
 function errorMessage(error: unknown): string | null {
@@ -59,12 +63,18 @@ export function useShellProject(projectKey: string | null, activeViewId: number 
 
   // Saved-views, layout, display and filter editing for the current project. The
   // active view is the route param; selecting a view navigates.
+  const displayDefaults = useDisplayDefaultsQuery(projectKey);
+  const fieldDefaults = useMemo(
+    () => effectiveFieldDefaults(displayDefaults.data).defaults,
+    [displayDefaults.data],
+  );
   const editor = useViewEditor(
     projectKey,
     views,
     activeViewId,
     (id) => projectKey && router.push(viewPath(projectKey, id)),
     session?.user.id ?? null,
+    fieldDefaults,
   );
 
   // The project with the active filters applied to its issues: the active view's

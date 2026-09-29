@@ -6,6 +6,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import { JSDOM } from 'jsdom';
 import { NextIntlClientProvider } from 'next-intl';
 import type { View } from '@/lib/api/endpoints/views';
+import type { FieldDefaults } from '@/lib/api/endpoints/displayDefaults';
 import { defaultViewSettings } from '@/utils/viewSettings';
 import { viewDraftChanged } from '@/utils/viewDraft';
 import messages from '../../messages/en/views.json';
@@ -59,10 +60,18 @@ function sampleView(id = 1): View {
   };
 }
 
-function Probe({ selectedId, userId = 'alice' }: { selectedId: number | null; userId?: string }) {
+function Probe({
+  selectedId,
+  userId = 'alice',
+  fieldDefaults = null,
+}: {
+  selectedId: number | null;
+  userId?: string;
+  fieldDefaults?: FieldDefaults | null;
+}) {
   const [rows, setRows] = useState([sampleView()]);
   const [selected, setSelected] = useState(selectedId);
-  const current = useViewEditor('TEST', rows, selected, setSelected, userId);
+  const current = useViewEditor('TEST', rows, selected, setSelected, userId, fieldDefaults);
   useEffect(() => {
     changeRows = setRows;
     editor = current;
@@ -86,11 +95,15 @@ function setup() {
     });
   }
   let root: Root = createRoot(dom.window.document.getElementById('root')!);
-  const render = (selectedId: number | null, userId?: string) =>
+  const render = (
+    selectedId: number | null,
+    userId?: string,
+    fieldDefaults?: FieldDefaults | null,
+  ) =>
     act(() =>
       root.render(
         <NextIntlClientProvider locale="en" timeZone="UTC" messages={{ views: messages }}>
-          <Probe selectedId={selectedId} userId={userId} />
+          <Probe selectedId={selectedId} userId={userId} fieldDefaults={fieldDefaults} />
         </NextIntlClientProvider>,
       ),
     );
@@ -239,4 +252,35 @@ test('saved JSON key order does not leave a view marked as changed', () => {
     viewDraftChanged({ filters: dbFilters, display: reordered }, { filters, display }),
     false,
   );
+});
+
+test('the All tab starts from the saved default fields, and keeps what the member chose', () => {
+  const app = setup();
+  try {
+    app.render(null, 'alice', null);
+    assert.deepEqual(editor.settings.properties, defaultViewSettings('kanban').properties);
+    // The defaults arrive after the first render (they are a request of their own).
+    app.render(null, 'alice', { kanban: ['id', 'goal'] });
+    assert.deepEqual(editor.settings.properties, ['id', 'goal']);
+    // A project admin saves other defaults: the display nobody changed follows them.
+    app.render(null, 'alice', { kanban: ['id', 'priority'] });
+    assert.deepEqual(editor.settings.properties, ['id', 'priority']);
+    // The member chooses: the choice stays, whatever the defaults say afterwards.
+    act(() => editor.changeSettings({ ...editor.settings, properties: ['dueDate'] }));
+    app.render(null, 'alice', { kanban: ['id', 'labels'] });
+    assert.deepEqual(editor.settings.properties, ['dueDate']);
+  } finally {
+    app.cleanup();
+  }
+});
+
+test('a new layout of a saved view starts from the default fields of that layout', () => {
+  const app = setup();
+  try {
+    app.render(1, 'alice', { list: ['goal'], kanban: ['id'] });
+    act(() => editor.changeView('list'));
+    assert.deepEqual(editor.settings.properties, ['goal']);
+  } finally {
+    app.cleanup();
+  }
 });

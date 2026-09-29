@@ -2,7 +2,12 @@ import { request } from '@/lib/api/core/client';
 
 // The fields the task views show by default: property keys per layout. Saved by a project
 // admin for the whole project, or by a member for every project without one of its own.
-export type FieldDefaults = { kanban?: string[]; list?: string[]; table?: string[] };
+export type FieldDefaults = {
+  kanban?: string[];
+  list?: string[];
+  table?: string[];
+  calendar?: string[];
+};
 export interface DisplayDefaults {
   project: FieldDefaults | null;
   global: FieldDefaults | null;

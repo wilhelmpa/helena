@@ -15,6 +15,7 @@ export const FieldDefaultsSchema = t.Object({
   kanban: t.Optional(Properties),
   list: t.Optional(Properties),
   table: t.Optional(Properties),
+  calendar: t.Optional(Properties),
 });
 
 export const DisplayDefaultsResponse = t.Object({

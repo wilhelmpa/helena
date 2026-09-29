@@ -219,3 +219,14 @@ export function buildTimeline({
 
   return { rows, ...buildDayTrack({ min, max, viewportW, labelW, dayW }) };
 }
+
+// A bar of the timeline in a quiet look (owner, 29.09.): the status colour as a tint of the
+// surface with a stripe at its start, and the text in the normal colour — not the full colour
+// behind white text, which was loud in the dark theme and unreadable in the light one.
+export function quietBar(color: string, dashedStart = false) {
+  return {
+    backgroundColor: `color-mix(in oklab, ${color} 24%, var(--surface-1))`,
+    boxShadow: `inset 0 0 0 1px color-mix(in oklab, ${color} 40%, transparent)`,
+    borderLeft: `3px ${dashedStart ? 'dashed' : 'solid'} ${color}`,
+  } as const;
+}

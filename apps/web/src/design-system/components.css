@@ -1220,8 +1220,21 @@
   gap: 6px;
 }
 @media (max-width: 700px) {
+  /* On a phone the title gets the room: key and status take what they need and the title
+     wraps to two lines instead of ending after eight letters. */
   .ds-issue-list-row {
-    grid-template-columns: 72px minmax(0, 1fr) 112px;
+    height: auto;
+    min-height: 48px;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    padding-block: var(--space-2);
+  }
+  .ds-issue-list-title {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    white-space: normal;
+    overflow-wrap: anywhere;
   }
   .ds-issue-list-meta,
   .ds-issue-list-cell[data-col='priority'],
@@ -1527,14 +1540,14 @@ a.ds-run-card:hover {
 }
 
 /* Task properties: the goal ladder ("Warum") and the cost of its runs. */
+/* The chain of goals above a task, as one line of text that wraps like text: goal › goal › task. */
 .ds-why {
-  display: inline-flex;
+  display: block;
   min-width: 0;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 2px 4px;
-  color: var(--text);
-  font-size: 13px;
+  color: var(--text-2);
+  font-size: 12px;
+  line-height: 20px;
+  overflow-wrap: anywhere;
 }
 .ds-why:hover {
   color: var(--accent);

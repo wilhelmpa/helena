@@ -4,7 +4,7 @@ import { isBlocked } from '@/utils/issueLinks';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { type TimelineDragMode } from '../../hooks/useTimelineDrag';
-import { type Span } from '../../utils/timeline';
+import { quietBar, type Span } from '../../utils/timeline';
 
 const BLOCKED_HATCH =
   'repeating-linear-gradient(45deg, color-mix(in oklab, var(--destructive) 70%, transparent) 0 4px, transparent 4px 9px)';
@@ -49,27 +49,25 @@ export function TimelineBar({
         if (readOnly) onOpen(issue.id);
       }}
       className={cn(
-        'group absolute top-1/2 z-10 flex h-6 -translate-y-1/2 items-center rounded-sm px-1.5 text-white select-none',
+        'group absolute top-1/2 z-10 flex h-6 -translate-y-1/2 items-center rounded-sm px-1.5 text-foreground select-none',
         cursor,
       )}
       style={{
         left: rect.left,
         width: rect.width,
-        backgroundColor: color,
-        // Held up by another issue: red hatching over the fill and a ring around
-        // it. Hatched rather than filled, so the bar keeps showing the issue's
-        // status color underneath.
+        ...quietBar(color, span.inferredStart),
+        // Held up by another issue: red hatching over the fill and a ring around it. Hatched
+        // rather than filled, so the bar keeps showing the issue's status colour underneath.
         backgroundImage: blocked ? BLOCKED_HATCH : undefined,
-        boxShadow: blocked ? '0 0 0 1.5px var(--destructive)' : undefined,
+        ...(blocked ? { boxShadow: '0 0 0 1.5px var(--destructive)' } : {}),
         opacity: span.inferredStart ? 0.8 : 1,
-        borderLeft: span.inferredStart ? '2px dashed rgba(255,255,255,0.75)' : undefined,
       }}
     >
       {!readOnly && (
         <span
           onPointerDown={(e) => onBeginDrag(e, issue, 'start')}
           className="absolute top-0 left-0 h-full w-1.5 cursor-ew-resize opacity-0 group-hover:opacity-100"
-          style={{ background: 'rgba(255,255,255,0.4)' }}
+          style={{ background: 'var(--line-strong)' }}
         />
       )}
       <span className="truncate text-xs leading-none">{issue.title}</span>
@@ -77,7 +75,7 @@ export function TimelineBar({
         <span
           onPointerDown={(e) => onBeginDrag(e, issue, 'end')}
           className="absolute top-0 right-0 h-full w-1.5 cursor-ew-resize opacity-0 group-hover:opacity-100"
-          style={{ background: 'rgba(255,255,255,0.4)' }}
+          style={{ background: 'var(--line-strong)' }}
         />
       )}
     </div>

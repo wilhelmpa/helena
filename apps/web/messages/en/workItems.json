@@ -175,5 +175,29 @@
     "estimateTime": "{value}",
     "startDate": "from {value}",
     "dueDate": "due {value}"
+  },
+  "fields": {
+    "button": "Fields",
+    "heading": "Fields",
+    "hint": "Which details cards, rows and columns show.",
+    "preview": "Preview",
+    "previewEmpty": "Once there is a task, you see here what it looks like.",
+    "title": "Title",
+    "listFixed": "ID, status, priority, due date, labels and assignee always keep their column in the list.",
+    "calendarHint": "The calendar has room for a few details.",
+    "none": "No fields chosen",
+    "source": {
+      "project": "Default: this project",
+      "global": "Default: my setting",
+      "builtin": "Default: built-in"
+    },
+    "differs": "Differs from the default",
+    "reset": "Reset",
+    "saveProject": "Save as default for this project",
+    "saveGlobal": "Save for all my projects",
+    "removeProject": "Remove the project default",
+    "savedProject": "Default for this project saved.",
+    "savedGlobal": "Default for all your projects saved.",
+    "removedProject": "Project default removed."
   }
 }

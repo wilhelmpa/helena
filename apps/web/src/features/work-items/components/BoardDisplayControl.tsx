@@ -62,6 +62,9 @@ export default function BoardDisplayControl({
           customFields={customFields}
           issueTypes={issueTypes}
           showLayout={false}
+          // On the page the fields are the "Felder" control next to this one; the form of a
+          // saved view (which names itself) holds them, since it has no such control.
+          showFields={showLabel}
         />
       </PopoverContent>
     </Popover>

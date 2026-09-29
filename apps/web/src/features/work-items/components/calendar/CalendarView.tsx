@@ -118,6 +118,8 @@ export default function CalendarView({
                   isToday={isSameDay(day, today)}
                   issues={byDay.get(key) ?? []}
                   dot={dot}
+                  properties={settings.properties}
+                  maps={maps}
                   onOpen={onOpenIssue}
                 />
               );

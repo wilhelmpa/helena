@@ -37,7 +37,6 @@ export default function GoalSelect({
   legacy,
   onChange,
   readOnly,
-  className,
 }: {
   projectKey: string;
   projectId: number;
@@ -46,7 +45,6 @@ export default function GoalSelect({
   legacy?: string | null;
   onChange: (goal: GoalRef | null) => void;
   readOnly?: boolean;
-  className?: string;
 }) {
   const t = useTranslations('issue.goalSelect');
   const tStatus = useTranslations('organization.statuses');
@@ -67,11 +65,7 @@ export default function GoalSelect({
   const chosen = value ?? null;
 
   const trigger = (
-    <Pill
-      active={chosen != null}
-      className={className}
-      title={chosen ? undefined : (legacy ?? undefined)}
-    >
+    <Pill active={chosen != null} title={chosen ? undefined : (legacy ?? undefined)}>
       {chosen ? (
         colorDot(GOAL_STATUS_META[chosen.status].color)
       ) : legacy ? (

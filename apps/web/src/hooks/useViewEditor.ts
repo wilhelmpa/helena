@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { addDays, format, startOfWeek } from 'date-fns';
 import { useTranslations } from 'next-intl';
 import type { View } from '@/lib/api/endpoints/views';
+import type { FieldDefaults } from '@/lib/api/endpoints/displayDefaults';
 import type { WorkItemsView } from '@/utils/viewTypes';
 import {
   normalizeView,
@@ -75,10 +76,19 @@ export function useViewEditor(
   activeViewId: number | null,
   onSelectView: (id: number | null) => void,
   userId: string | null,
+  // The fields the project (or the member for every project) saved as its default: a display
+  // nobody changed starts from them ("Felder"). Read again where a new display is built.
+  fieldDefaults: FieldDefaults | null = null,
 ) {
   const t = useTranslations('views');
   const [view, setView] = useState<WorkItemsView>(loadView);
-  const [settings, setSettings] = useState<ViewSettings>(() => defaultViewSettings(loadView()));
+  const [settings, setSettings] = useState<ViewSettings>(() =>
+    defaultViewSettings(loadView(), fieldDefaults),
+  );
+  const defaultsRef = useRef(fieldDefaults);
+  useEffect(() => {
+    defaultsRef.current = fieldDefaults;
+  });
   const [filters, setFilters] = useState<FilterSet>(EMPTY_FILTER_SET);
   // editing is true while the name/Cancel/Save bar is shown. draftName/draftIcon
   // back the name input and icon picker in the bar.
@@ -142,7 +152,7 @@ export function useViewEditor(
       setFilters(allFilters ?? EMPTY_FILTER_SET);
       const allView = loadView();
       setView(allView);
-      if (projectKey) setSettings(getViewSettings(projectKey, allView));
+      if (projectKey) setSettings(getViewSettings(projectKey, allView, defaultsRef.current));
       return;
     }
     const v = views.find((x) => x.id === id);
@@ -176,6 +186,16 @@ export function useViewEditor(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId, projectKey, activeViewId, views]);
 
+  // The saved defaults arrive after the first render, and change when they are saved: the All
+  // tab, which keeps its own display in the browser between visits, follows them wherever the
+  // member did not choose otherwise (its stored choice wins, see getViewSettings).
+  const defaultsKey = JSON.stringify(fieldDefaults);
+  useEffect(() => {
+    if (activeViewId != null || editing || !projectKey) return;
+    setSettings(getViewSettings(projectKey, view, defaultsRef.current));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [defaultsKey]);
+
   // Enters edit mode, seeding the name and icon inputs from the given view (or
   // blank for a new/All-tab draft).
   function beginEdit(from: View | null) {
@@ -195,7 +215,10 @@ export function useViewEditor(
     const name =
       template === 'current' ? (activeView?.name ?? suggestion) : t(`templates.${template}`);
     if (template !== 'current') {
-      const templateSettings = defaultViewSettings(template === 'status' ? 'kanban' : view);
+      const templateSettings = defaultViewSettings(
+        template === 'status' ? 'kanban' : view,
+        defaultsRef.current,
+      );
       if (template === 'status') {
         setView('kanban');
         setSettings({ ...templateSettings, group: 'status' });
@@ -250,11 +273,11 @@ export function useViewEditor(
       // On the All tab (not editing), layout + its settings are the ad-hoc
       // localStorage default.
       localStorage.setItem(VIEW_KEY, next);
-      if (projectKey) setSettings(getViewSettings(projectKey, next));
+      if (projectKey) setSettings(getViewSettings(projectKey, next, defaultsRef.current));
     } else {
       // Start the new layout from its defaults; saved views keep it as a draft.
-      setSettings(defaultViewSettings(next));
-      persistDraft(filters, next, defaultViewSettings(next));
+      setSettings(defaultViewSettings(next, defaultsRef.current));
+      persistDraft(filters, next, defaultViewSettings(next, defaultsRef.current));
     }
   }
 
