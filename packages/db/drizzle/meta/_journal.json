@@ -1492,6 +1492,13 @@
       "when": 1790632465534,
       "tag": "0213_telegram_pairing_identity",
       "breakpoints": true
+    },
+    {
+      "idx": 214,
+      "version": "7",
+      "when": 1790674016294,
+      "tag": "0214_browser_frame_vault",
+      "breakpoints": true
     }
   ]
 }
