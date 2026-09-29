@@ -815,7 +815,9 @@
   height: 14px;
 }
 @media (max-width: 700px) {
-  .ds-segmented > button > span:not(:only-child) {
+  /* A view with an icon shows the icon alone; a tab of words (and its count) keeps them —
+     PageTabs' "Alle 11 · Agenten 7" was an empty box on a phone (Auftrag 117). */
+  .ds-segmented > button > svg ~ span {
     display: none;
   }
   .ds-segmented > button {
@@ -2826,9 +2828,14 @@ a.ds-run-card:hover {
 .ds-org-node-add:focus-visible {
   opacity: 1;
 }
+/* A touch screen has no hover: the "+" to add a member stays at coordinators, departments
+   and projects; "Als Vorlage" is in the list's row menu there. */
 @media (hover: none) {
-  .ds-org-node-add {
+  .ds-org-node-add[data-add] {
     opacity: 1;
+  }
+  .ds-org-node-add:not([data-add]) {
+    display: none;
   }
 }
 /* Team › Liste: the pool under the toolbar, the width of the page. */

@@ -27,8 +27,8 @@ const { chromium, request } = require('playwright-core');
 
 const args = Object.fromEntries(
   process.argv.slice(2).map((arg) => {
-    const [key, value] = arg.replace(/^--/, '').split('=');
-    return [key, value ?? 'true'];
+    const [key, ...value] = arg.replace(/^--/, '').split('=');
+    return [key, value.length > 0 ? value.join('=') : 'true'];
   }),
 );
 const web = process.env.UI_AUDIT_WEB ?? 'http://127.0.0.1:3001';
@@ -143,7 +143,8 @@ function measure() {
       if (transparent(color)) continue;
       if (!tokenOf(color) && out.offenders.length < 12)
         out.offenders.push({ at: describe(element), color });
-      if (dark && luminance(color) > 0.85 && out.white.length < 6)
+      // White in dark: a light surface that is no token (the primary button's lavender is).
+      if (dark && !tokenOf(color) && luminance(color) > 0.85 && out.white.length < 6)
         out.white.push({ at: describe(element), color });
     }
   // Spacing of the page template.
@@ -158,6 +159,7 @@ function measure() {
       return rect.width > 0 && rect.height > 0 && element.children.length === 0;
     });
     out.spacing = {
+      variant: document.querySelector('.ds-page')?.getAttribute('data-page') ?? null,
       padLeft: parseFloat(style.paddingLeft),
       padRight: parseFloat(style.paddingRight),
       padTop: parseFloat(style.paddingTop),
@@ -205,8 +207,10 @@ export function findings(results) {
   };
   for (const group of Object.values(Object.groupBy(results, (r) => `${r.theme}/${r.width}`))) {
     const pageColor = mode(group.map((r) => r.page?.color).filter(Boolean));
-    const padLeft = mode(group.map((r) => r.spacing?.padLeft).filter((v) => v != null));
-    const padTop = mode(group.map((r) => r.spacing?.padTop).filter((v) => v != null));
+    // The template's padding holds for the padded variants; 'bleed' has none by design.
+    const padded = (r) => r.spacing && r.spacing.variant !== 'bleed';
+    const padLeft = mode(group.filter(padded).map((r) => r.spacing.padLeft));
+    const padTop = mode(group.filter(padded).map((r) => r.spacing.padTop));
     for (const r of group) {
       const tag = `${r.theme}/${r.width} ${r.route}`;
       if (r.page && r.page.color !== pageColor)
@@ -216,7 +220,7 @@ export function findings(results) {
       for (const offender of r.offenders)
         out.push(`${tag}: Fläche ohne Token ${offender.color} an ${offender.at}`);
       for (const white of r.white) out.push(`${tag}: Weiß im Dunkeln an ${white.at}`);
-      if (r.spacing && (r.spacing.padLeft !== padLeft || r.spacing.padTop !== padTop))
+      if (padded(r) && (r.spacing.padLeft !== padLeft || r.spacing.padTop !== padTop))
         out.push(
           `${tag}: Abstand ${r.spacing.padLeft}/${r.spacing.padTop} statt ${padLeft}/${padTop}`,
         );

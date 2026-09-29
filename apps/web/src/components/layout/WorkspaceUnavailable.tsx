@@ -1,15 +1,16 @@
 import { PlugZap } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { EmptyState } from '@/design-system';
 
+// A tool this instance has no address for: the same view as a tool that does not answer
+// (EmbedProblem), without the ways to retry.
 export default function WorkspaceUnavailable({ tool }: { tool: string }) {
   const t = useTranslations('nav.workspace');
   return (
-    <div className="flex min-h-0 flex-1 items-center justify-center p-6">
-      <div className="max-w-sm text-center">
-        <PlugZap className="mx-auto mb-3 size-8 text-muted-foreground" />
-        <p className="text-sm font-medium">{t('unavailable', { tool })}</p>
-        <p className="mt-1 text-sm text-muted-foreground">{t('unavailableDescription')}</p>
-      </div>
+    <div className="ds-embed-problem">
+      <EmptyState icon={<PlugZap />} title={t('unavailable', { tool })}>
+        {t('unavailableDescription')}
+      </EmptyState>
     </div>
   );
 }

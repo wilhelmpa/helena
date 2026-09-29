@@ -31,6 +31,7 @@ export default function OrganizationNodeActions({
         type="button"
         className={className}
         data-placement={placement}
+        data-add=""
         aria-label={t('addHere', { name })}
         title={t('addHere', { name })}
         onPointerDown={stop}
@@ -50,6 +51,7 @@ export default function OrganizationNodeActions({
           type="button"
           className={className}
           data-placement={placement}
+          data-add={onAdd ? '' : undefined}
           aria-label={t('nodeMenu', { name })}
           title={t('nodeMenu', { name })}
           onPointerDown={stop}
