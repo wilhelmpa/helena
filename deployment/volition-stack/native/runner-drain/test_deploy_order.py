@@ -54,7 +54,10 @@ class DeployOrderTest(unittest.TestCase):
         script.write_text('\n'.join([
             'set -euo pipefail', 'as_owner() { "$@"; }',
             'live=' + shlex.quote(str(self.repo)),
-            'head=' + self.before, 'before=' + self.before, 'branch=' + target, PREFIX,
+            'head=' + self.before, 'before=' + self.before, 'branch=' + target,
+            # deploy.sh sets these before the prefix (options and the --continue re-exec).
+            'continue_run=0', 'web_artifact=', 'rollback_to=', 'expect=', 'force_local_build=0',
+            PREFIX,
         ]))
         result = subprocess.run(['bash', str(script)], text=True, capture_output=True, env={
             **os.environ, 'PATH': str(self.bin) + ':' + os.environ['PATH'],
