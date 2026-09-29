@@ -133,7 +133,7 @@ async function streamAnswer(
           'content-type': 'application/json',
           accept: 'text/event-stream',
           ...(isLocalHalogenUrl(local.server.baseUrl)
-            ? { 'x-volition-halogen-priority': 'interactive' }
+            ? { 'x-volition-halogen-priority': 'voice-reply' }
             : {}),
           ...(key ? { authorization: `Bearer ${key}` } : {}),
         },

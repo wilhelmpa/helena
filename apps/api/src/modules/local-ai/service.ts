@@ -1164,6 +1164,13 @@ export async function localAiStatus() {
   type Counts = { interactive: number; realtime: number; normal: number; background: number };
   type PriorityStatus = {
     config: PriorityConfig;
+    maxTokensByClass: {
+      interactive: null;
+      'voice-reply': number;
+      realtime: number;
+      normal: null;
+      background: null;
+    };
     healthy: boolean;
     active: Counts;
     queued: Counts;

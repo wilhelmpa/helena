@@ -281,7 +281,7 @@ test('health stall pauses background, realtime falls back, recovery drains backl
   expect(proxy.scheduler.status().queued.background).toBe(0);
 });
 
-test('interactive and realtime requests receive short token ceilings', async () => {
+test('chat and runs retain their token requests; voice reply and realtime are bounded', async () => {
   const received: Record<string, unknown>[] = [];
   const backend = createServer(async (req, res) => {
     if (req.url === '/health') { res.end('{}'); return; }
@@ -297,12 +297,33 @@ test('interactive and realtime requests receive short token ceilings', async () 
   const proxy = await startPriorityProxy({ hostPorts: [0, 0], backendPorts: [port, port], socketDir: dir });
   cleanups.push(async () => { await proxy.close(); await rm(dir, { recursive: true, force: true }); });
   const url = `http://127.0.0.1:${proxy.ports[0]}/v1/chat/completions`;
-  for (const kind of ['realtime', 'interactive']) {
-    const response = await fetch(url, { method: 'POST', body: JSON.stringify({ model: 'fake', max_tokens: 10000 }),
+  const cases = [
+    { kind: 'interactive', body: { model: 'fake', max_tokens: 10_000 } },
+    { kind: 'normal', body: { model: 'fake', max_completion_tokens: 10_000 } },
+    { kind: 'background', body: { model: 'fake' } },
+    { kind: 'voice-reply', body: { model: 'fake', max_tokens: 10_000 } },
+    { kind: 'realtime', body: { model: 'fake', max_completion_tokens: 10_000 } },
+  ];
+  for (const { kind, body } of cases) {
+    const response = await fetch(url, { method: 'POST', body: JSON.stringify(body),
       headers: { 'content-type': 'application/json', 'x-volition-halogen-priority': kind } });
     expect(response.status).toBe(200);
   }
-  expect(received.map((body) => body.max_tokens)).toEqual([64, 512]);
+  expect(received).toEqual([
+    cases[0]!.body,
+    cases[1]!.body,
+    cases[2]!.body,
+    { model: 'fake', max_tokens: 512 },
+    { model: 'fake', max_completion_tokens: 64 },
+  ]);
+  const status = await (await fetch(`http://127.0.0.1:${proxy.ports[0]}/priority/status`)).json();
+  expect(status.maxTokensByClass).toEqual({
+    interactive: null,
+    'voice-reply': 512,
+    realtime: 64,
+    normal: null,
+    background: null,
+  });
 });
 
 test('a stalled upstream releases its slot and pauses admission', async () => {

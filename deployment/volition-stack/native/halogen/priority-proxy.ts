@@ -16,8 +16,11 @@ export interface ProxyOptions {
   healthCheck?: boolean;
 }
 
-function priority(value: string | string[] | undefined): PriorityClass {
-  return value === 'interactive' || value === 'realtime' || value === 'background' ? value : 'normal';
+type RequestClass = PriorityClass | 'voice-reply';
+
+function priority(value: string | string[] | undefined): RequestClass {
+  return value === 'interactive' || value === 'realtime' || value === 'background' ||
+    value === 'voice-reply' ? value : 'normal';
 }
 
 function unavailable(response: ServerResponse, timeoutMs: number): void {
@@ -76,10 +79,21 @@ export async function startPriorityProxy(options: ProxyOptions) {
     async (incoming: IncomingMessage, outgoing: ServerResponse) => {
       if (!fixedClass && incoming.url === '/priority/status' && incoming.method === 'GET') {
         outgoing.setHeader('content-type', 'application/json');
-        outgoing.end(JSON.stringify(scheduler.status()));
+        const status = scheduler.status();
+        outgoing.end(JSON.stringify({
+          ...status,
+          maxTokensByClass: {
+            interactive: null,
+            'voice-reply': status.config.voiceReplyMaxTokens,
+            realtime: status.config.realtimeMaxTokens,
+            normal: null,
+            background: null,
+          },
+        }));
         return;
       }
-      const kind = fixedClass ?? priority(incoming.headers[PRIORITY_HEADER]);
+      const requestClass = fixedClass ?? priority(incoming.headers[PRIORITY_HEADER]);
+      const kind = requestClass === 'voice-reply' ? 'interactive' : requestClass;
       const scheduled = incoming.method === 'POST';
       const disconnected = new AbortController();
       outgoing.on('close', () => {
@@ -100,8 +114,8 @@ export async function startPriorityProxy(options: ProxyOptions) {
       const headers = { ...incoming.headers };
       delete headers[PRIORITY_HEADER];
       delete headers.connection;
-      const tokenLimit = kind === 'realtime' ? scheduler.status().config.realtimeMaxTokens :
-        kind === 'interactive' ? scheduler.status().config.interactiveMaxTokens : null;
+      const tokenLimit = requestClass === 'realtime' ? scheduler.status().config.realtimeMaxTokens :
+        requestClass === 'voice-reply' ? scheduler.status().config.voiceReplyMaxTokens : null;
       let body: Buffer | undefined;
       if (scheduled && tokenLimit && /\/chat\/completions(?:\?|$)/.test(incoming.url ?? '') &&
         String(incoming.headers['content-type'] ?? '').includes('application/json')) {

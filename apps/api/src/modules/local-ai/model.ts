@@ -153,7 +153,7 @@ const halogenPriority = t.Object({
   healthProbeMs: t.Number(),
   healthTimeoutMs: t.Number(),
   upstreamIdleMs: t.Number(),
-  interactiveMaxTokens: t.Number(),
+  voiceReplyMaxTokens: t.Number(),
   realtimeMaxTokens: t.Number(),
   queueTimeoutMs: t.Number(),
   maxQueue: t.Number(),
@@ -246,6 +246,13 @@ export const LocalAiStatus = t.Object({
     t.Nullable(
       t.Object({
         config: halogenPriority,
+        maxTokensByClass: t.Object({
+          interactive: t.Null(),
+          'voice-reply': t.Number(),
+          realtime: t.Number(),
+          normal: t.Null(),
+          background: t.Null(),
+        }),
         healthy: t.Boolean(),
         active: t.Object({
           interactive: t.Number(),
