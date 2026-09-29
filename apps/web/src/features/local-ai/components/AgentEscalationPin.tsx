@@ -36,7 +36,7 @@ export default function AgentEscalationPin({ agentId }: { agentId: number }) {
         <Segmented<Mode>
           label={t('pinLabel')}
           value={mode}
-          onChange={(next) => save(next, next === 'strong' ? pin?.model ?? null : null)}
+          onChange={(next) => save(next, next === 'strong' ? (pin?.model ?? null) : null)}
           options={[
             { value: 'auto', label: t('pinModes.auto') },
             { value: 'local', label: t('pinModes.local') },

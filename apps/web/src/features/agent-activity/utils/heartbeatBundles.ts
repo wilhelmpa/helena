@@ -54,7 +54,5 @@ export function bundleHeartbeats(items: AgentActivityEntry[]): TimelineItem[] {
 
 // The tasks a bundle of heartbeats worked on, each once, newest first.
 export function bundleTasks(entries: AgentActivityEntry[]): string[] {
-  return [
-    ...new Set(entries.flatMap((entry) => (entry.issue ? [entry.issue.identifier] : []))),
-  ];
+  return [...new Set(entries.flatMap((entry) => (entry.issue ? [entry.issue.identifier] : [])))];
 }

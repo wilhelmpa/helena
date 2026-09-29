@@ -6,8 +6,14 @@ describe('Budgets: Vorgabe und Überschreibung', () => {
   const defaults = [{ metric: 'cost' as const, period: 'day' as const, limit: 5 }];
 
   test('gleich der Vorgabe nur bei gleichen Grenzen in gleichen Feldern', () => {
-    assert.equal(budgetsMatchDefaults([{ metric: 'cost', period: 'day', limit: 5 }], defaults), true);
-    assert.equal(budgetsMatchDefaults([{ metric: 'cost', period: 'day', limit: 6 }], defaults), false);
+    assert.equal(
+      budgetsMatchDefaults([{ metric: 'cost', period: 'day', limit: 5 }], defaults),
+      true,
+    );
+    assert.equal(
+      budgetsMatchDefaults([{ metric: 'cost', period: 'day', limit: 6 }], defaults),
+      false,
+    );
     assert.equal(budgetsMatchDefaults([], defaults), false);
     assert.equal(budgetsMatchDefaults([], []), true);
     assert.equal(

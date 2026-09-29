@@ -10,5 +10,8 @@ export function pinsWithAgent(
 ): EscalationPin[] {
   const others = pins.filter((pin) => !(pin.scope === 'agent' && pin.id === agentId));
   if (mode === 'auto') return others;
-  return [...others, { scope: 'agent', id: agentId, mode, model: mode === 'strong' ? model : null }];
+  return [
+    ...others,
+    { scope: 'agent', id: agentId, mode, model: mode === 'strong' ? model : null },
+  ];
 }

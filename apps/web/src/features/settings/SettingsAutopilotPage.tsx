@@ -310,42 +310,42 @@ function ProjectInstructions({ projectKey }: { projectKey: string }) {
   const value = draft ?? entry.instructions;
   return (
     <SettingsRow label={tExecution('instructionsLabel')} htmlFor="project-instructions" stacked>
-        <Stack gap={2}>
-          <TextArea
-            id="project-instructions"
-            rows={4}
-            maxLength={4000}
-            value={value}
-            disabled={!canManage || save.isPending}
-            placeholder={tExecution('instructionsPlaceholder')}
-            onChange={(event) => setDraft(event.target.value)}
-          />
-          {canManage && (
-            <Inline justify="end">
-              <Button
-                size="small"
-                variant="quiet"
-                disabled={draft === null || draft === entry.instructions || save.isPending}
-                onClick={() =>
-                  save.mutate(
-                    {
-                      id: entry.id,
-                      input: { departmentId: entry.departmentId, instructions: value },
+      <Stack gap={2}>
+        <TextArea
+          id="project-instructions"
+          rows={4}
+          maxLength={4000}
+          value={value}
+          disabled={!canManage || save.isPending}
+          placeholder={tExecution('instructionsPlaceholder')}
+          onChange={(event) => setDraft(event.target.value)}
+        />
+        {canManage && (
+          <Inline justify="end">
+            <Button
+              size="small"
+              variant="quiet"
+              disabled={draft === null || draft === entry.instructions || save.isPending}
+              onClick={() =>
+                save.mutate(
+                  {
+                    id: entry.id,
+                    input: { departmentId: entry.departmentId, instructions: value },
+                  },
+                  {
+                    onSuccess: () => {
+                      setDraft(null);
+                      toast.success(tExecution('instructionsSaved'));
                     },
-                    {
-                      onSuccess: () => {
-                        setDraft(null);
-                        toast.success(tExecution('instructionsSaved'));
-                      },
-                    },
-                  )
-                }
-              >
-                {save.isPending ? tCommon('saving') : tCommon('save')}
-              </Button>
-            </Inline>
-          )}
-        </Stack>
+                  },
+                )
+              }
+            >
+              {save.isPending ? tCommon('saving') : tCommon('save')}
+            </Button>
+          </Inline>
+        )}
+      </Stack>
     </SettingsRow>
   );
 }

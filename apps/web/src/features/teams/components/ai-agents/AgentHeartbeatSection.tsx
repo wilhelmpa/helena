@@ -197,9 +197,7 @@ export default function AgentHeartbeatSection({
                         : t(`reasons.${item.reason}`)
                     }
                     meta={
-                      item.count > 1
-                        ? `${time(item.to)} – ${time(item.from)}`
-                        : when(item.from)
+                      item.count > 1 ? `${time(item.to)} – ${time(item.from)}` : when(item.from)
                     }
                   />
                 ),
