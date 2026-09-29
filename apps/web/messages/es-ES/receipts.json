@@ -4,7 +4,8 @@
     "review": "Revisar",
     "matched": "Asignados",
     "accounts": "Cuentas",
-    "all": "Todos los comprobantes"
+    "all": "Todos los comprobantes",
+    "export": "Exportar"
   },
   "month": "Mes",
   "allMonths": "Todos los meses",
@@ -206,5 +207,17 @@
     "einvoice": "Factura electrónica (XML)",
     "mail": "Comprobante de un correo",
     "noPicture": "Sin vista previa para este archivo"
+  },
+  "emptyTitle": "Aún no hay recibos",
+  "export": {
+    "emptyTitle": "Nada que exportar todavía",
+    "emptyHint": "En cuanto haya recibos o movimientos, cada mes estará aquí listo para descargar.",
+    "older": "{count} meses anteriores",
+    "receipts": "{count, plural, one {# recibo} other {# recibos}}",
+    "openReceipts": "{count} abiertos",
+    "openTransactions": "{count, plural, one {# movimiento sin recibo} other {# movimientos sin recibo}}",
+    "done": "{month} descargado",
+    "downloadMonth": "Descargar {month} como ZIP",
+    "download": "ZIP"
   }
 }

@@ -163,7 +163,9 @@
       "doc": "文档",
       "canvas": "画布",
       "folder": "文件夹",
-      "upload": "上传文件"
+      "upload": "上传文件",
+      "base": "视图（表格、卡片、列表）",
+      "firstDoc": "新建文档"
     },
     "filters": {
       "all": "全部",
@@ -184,7 +186,8 @@
       "doc": "文档",
       "pdf": "PDF",
       "image": "图片",
-      "file": "文件"
+      "file": "文件",
+      "base": "视图"
     },
     "dropHint": "将文件拖到此处或<pick>选择</pick>",
     "entries": "{count, plural, other {# 项}}",
@@ -214,7 +217,12 @@
     "othersKnowledge": "另有 {count} 个文档和画布 →",
     "openInPage": "大图打开",
     "download": "下载",
-    "searchFiles": "搜索文件 …"
+    "searchFiles": "搜索文件 …",
+    "emptyTitle": "知识库中还没有内容",
+    "emptyFilesTitle": "还没有文件",
+    "emptyFiles": "PDF、图片和其他文件会放在这里。上传一个或拖到这里。",
+    "onlySubfoldersTitle": "只有子文件夹",
+    "onlySubfolders": "此文件夹中没有文件。请打开其中一个子文件夹。"
   },
   "canvas": {
     "opening": "正在打开画布 …",
@@ -244,5 +252,34 @@
       "task": "插入任务",
       "connect": "连接"
     }
+  },
+  "origin": {
+    "system": "系统",
+    "agent": "智能体",
+    "manual": "手动",
+    "all": "全部",
+    "systemHint": "由 Helena 创建（票据、邮件附件、导出）",
+    "agentHint": "由智能体创建",
+    "manualHint": "由人创建或上传"
+  },
+  "base": {
+    "loading": "正在加载视图…",
+    "readFailed": "无法读取该视图。",
+    "rowsFailed": "无法加载该视图的行。",
+    "unsupported": "此视图使用了 Helena 尚不支持的表达式",
+    "views": "视图",
+    "filter": "筛选行",
+    "count": "{count, plural, other {# 条笔记}}",
+    "countFiltered": "{shown} / {total}",
+    "noMatch": "没有符合筛选的行。",
+    "empty": "没有符合此视图的笔记。",
+    "truncated": "前 {count} 行",
+    "newTitle": "新建视图",
+    "newHint": "视图以表格、卡片或列表显示此文件夹中的笔记；Obsidian 打开的是同一个文件。",
+    "newName": "概览",
+    "create": "创建",
+    "viewTable": "表格",
+    "viewCards": "卡片",
+    "viewList": "列表"
   }
 }

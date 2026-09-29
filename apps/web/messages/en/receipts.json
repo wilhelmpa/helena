@@ -4,7 +4,8 @@
     "review": "Review",
     "matched": "Matched",
     "accounts": "Accounts",
-    "all": "All receipts"
+    "all": "All receipts",
+    "export": "Export"
   },
   "month": "Month",
   "allMonths": "All months",
@@ -206,5 +207,17 @@
     "einvoice": "E-invoice (XML)",
     "mail": "Receipt from a mail",
     "noPicture": "No preview for this file"
+  },
+  "emptyTitle": "No receipts yet",
+  "export": {
+    "emptyTitle": "Nothing to export yet",
+    "emptyHint": "Once there are receipts or bookings, every month is ready to download here.",
+    "older": "{count} older months",
+    "receipts": "{count, plural, one {# receipt} other {# receipts}}",
+    "openReceipts": "{count} open",
+    "openTransactions": "{count, plural, one {# booking without receipt} other {# bookings without receipt}}",
+    "done": "{month} downloaded",
+    "downloadMonth": "Download {month} as ZIP",
+    "download": "ZIP"
   }
 }

@@ -163,7 +163,9 @@
       "doc": "Doc",
       "canvas": "Canvas",
       "folder": "Folder",
-      "upload": "Upload file"
+      "upload": "Upload file",
+      "base": "View (table, cards, list)",
+      "firstDoc": "Create a doc"
     },
     "filters": {
       "all": "All",
@@ -184,7 +186,8 @@
       "doc": "Doc",
       "pdf": "PDF",
       "image": "Image",
-      "file": "File"
+      "file": "File",
+      "base": "View"
     },
     "dropHint": "Drop files here or <pick>choose</pick>",
     "entries": "{count, plural, one {# entry} other {# entries}}",
@@ -214,7 +217,12 @@
     "othersKnowledge": "{count, plural, one {# doc or canvas} other {# docs and canvases}} alongside →",
     "openInPage": "Open large",
     "download": "Download",
-    "searchFiles": "Search files …"
+    "searchFiles": "Search files …",
+    "emptyTitle": "Nothing in Knowledge yet",
+    "emptyFilesTitle": "No files yet",
+    "emptyFiles": "PDFs, images and other files land here. Upload one or drop it here.",
+    "onlySubfoldersTitle": "Only subfolders",
+    "onlySubfolders": "This folder holds no files. Open one of its subfolders."
   },
   "canvas": {
     "opening": "Opening the canvas …",
@@ -244,5 +252,34 @@
       "task": "Insert task",
       "connect": "Connect"
     }
+  },
+  "origin": {
+    "system": "System",
+    "agent": "Agent",
+    "manual": "Manual",
+    "all": "All",
+    "systemHint": "Made by Helena (receipts, mail attachments, exports)",
+    "agentHint": "Made by an agent",
+    "manualHint": "Made or uploaded by a person"
+  },
+  "base": {
+    "loading": "Loading view …",
+    "readFailed": "The view could not be read.",
+    "rowsFailed": "The rows of the view could not be loaded.",
+    "unsupported": "This view uses an expression Helena does not evaluate yet",
+    "views": "Views",
+    "filter": "Filter rows",
+    "count": "{count, plural, one {# note} other {# notes}}",
+    "countFiltered": "{shown} of {total}",
+    "noMatch": "No row matches the filter.",
+    "empty": "No note fits this view.",
+    "truncated": "The first {count} rows",
+    "newTitle": "New view",
+    "newHint": "A view shows the notes of this folder as a table, cards or a list; Obsidian opens the same file.",
+    "newName": "Overview",
+    "create": "Create",
+    "viewTable": "Table",
+    "viewCards": "Cards",
+    "viewList": "List"
   }
 }

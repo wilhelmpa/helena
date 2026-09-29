@@ -163,7 +163,9 @@
       "doc": "Doc",
       "canvas": "Leinwand",
       "folder": "Ordner",
-      "upload": "Datei hochladen"
+      "upload": "Datei hochladen",
+      "base": "Ansicht (Tabelle, Karten, Liste)",
+      "firstDoc": "Doc anlegen"
     },
     "filters": {
       "all": "Alles",
@@ -184,7 +186,8 @@
       "doc": "Doc",
       "pdf": "PDF",
       "image": "Bild",
-      "file": "Datei"
+      "file": "Datei",
+      "base": "Ansicht"
     },
     "dropHint": "Dateien hierher ziehen oder <pick>auswählen</pick>",
     "entries": "{count, plural, one {# Eintrag} other {# Einträge}}",
@@ -214,7 +217,12 @@
     "othersKnowledge": "{count, plural, one {# Dokument oder Leinwand} other {# Dokumente und Leinwände}} daneben →",
     "openInPage": "Groß öffnen",
     "download": "Herunterladen",
-    "searchFiles": "In Dateien suchen …"
+    "searchFiles": "In Dateien suchen …",
+    "emptyTitle": "Noch nichts in Wissen",
+    "emptyFilesTitle": "Noch keine Dateien",
+    "emptyFiles": "PDFs, Bilder und andere Dateien landen hier. Lade eine hoch oder zieh sie hierher.",
+    "onlySubfoldersTitle": "Nur Unterordner",
+    "onlySubfolders": "In diesem Ordner liegen keine Dateien. Öffne einen der Unterordner."
   },
   "canvas": {
     "opening": "Leinwand wird geöffnet …",
@@ -244,5 +252,34 @@
       "task": "Aufgabe einfügen",
       "connect": "Verbinden"
     }
+  },
+  "origin": {
+    "system": "System",
+    "agent": "Agent",
+    "manual": "Manuell",
+    "all": "Alle",
+    "systemHint": "Von Helena angelegt (Belege, Mail-Anhänge, Exporte)",
+    "agentHint": "Von einem Agenten angelegt",
+    "manualHint": "Von einem Menschen angelegt oder hochgeladen"
+  },
+  "base": {
+    "loading": "Ansicht wird geladen …",
+    "readFailed": "Die Ansicht ließ sich nicht lesen.",
+    "rowsFailed": "Die Zeilen der Ansicht ließen sich nicht laden.",
+    "unsupported": "Diese Ansicht nutzt einen Ausdruck, den Helena noch nicht auswertet",
+    "views": "Ansichten",
+    "filter": "Zeilen filtern",
+    "count": "{count, plural, one {# Notiz} other {# Notizen}}",
+    "countFiltered": "{shown} von {total}",
+    "noMatch": "Keine Zeile passt zum Filter.",
+    "empty": "Keine Notiz passt zu dieser Ansicht.",
+    "truncated": "Die ersten {count} Zeilen",
+    "newTitle": "Neue Ansicht",
+    "newHint": "Eine Ansicht zeigt die Notizen dieses Ordners als Tabelle, Karten oder Liste; Obsidian öffnet dieselbe Datei.",
+    "newName": "Übersicht",
+    "create": "Anlegen",
+    "viewTable": "Tabelle",
+    "viewCards": "Karten",
+    "viewList": "Liste"
   }
 }

@@ -4,7 +4,8 @@
     "review": "Проверить",
     "matched": "Сопоставлено",
     "accounts": "Банковские счета",
-    "all": "Все документы"
+    "all": "Все документы",
+    "export": "Экспорт"
   },
   "month": "Месяц",
   "allMonths": "Все месяцы",
@@ -206,5 +207,17 @@
     "einvoice": "Электронный счёт (XML)",
     "mail": "Документ из письма",
     "noPicture": "Нет предпросмотра для этого файла"
+  },
+  "emptyTitle": "Пока нет чеков",
+  "export": {
+    "emptyTitle": "Пока нечего экспортировать",
+    "emptyHint": "Как только появятся чеки или операции, здесь можно будет скачать каждый месяц.",
+    "older": "Ещё месяцев: {count}",
+    "receipts": "{count, plural, one {# чек} few {# чека} many {# чеков} other {# чека}}",
+    "openReceipts": "открыто: {count}",
+    "openTransactions": "{count, plural, one {# операция без чека} few {# операции без чека} many {# операций без чека} other {# операции без чека}}",
+    "done": "{month}: загружено",
+    "downloadMonth": "Скачать {month} в ZIP",
+    "download": "ZIP"
   }
 }

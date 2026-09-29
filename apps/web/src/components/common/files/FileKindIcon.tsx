@@ -6,9 +6,9 @@ import {
   FileSpreadsheet,
   FileText,
   FileVideo,
-  Folder,
 } from 'lucide-react';
 import { fileViewKind } from '@/utils/fileKinds';
+import { folderIcon } from '@/utils/knowledgeFolders';
 import { cn } from '@/lib/utils';
 
 const ICONS = {
@@ -26,14 +26,21 @@ export default function FileKindIcon({
   name,
   contentType,
   folder,
+  folderPath,
   className,
 }: {
   name: string;
   contentType?: string | null;
   folder?: boolean;
+  // A folder of a project's Wissen (relative to the project): Helena's own folders show
+  // their symbol, a person's the normal folder.
+  folderPath?: string;
   className?: string;
 }) {
-  if (folder) return <Folder className={cn('text-amber-500', className)} />;
+  if (folder) {
+    const Icon = folderIcon(folderPath ?? name, folderPath !== undefined);
+    return <Icon className={cn('text-muted-foreground', className)} />;
+  }
   const kind = fileViewKind(name, contentType);
   const Icon = ICONS[kind];
   return (

@@ -4,7 +4,8 @@
     "review": "待审核",
     "matched": "已匹配",
     "accounts": "银行账户",
-    "all": "全部凭证"
+    "all": "全部凭证",
+    "export": "导出"
   },
   "month": "月份",
   "allMonths": "所有月份",
@@ -206,5 +207,17 @@
     "einvoice": "电子发票（XML）",
     "mail": "来自邮件的凭证",
     "noPicture": "此文件无预览"
+  },
+  "emptyTitle": "还没有票据",
+  "export": {
+    "emptyTitle": "暂无可导出的内容",
+    "emptyHint": "一旦有票据或流水，每个月都可以在这里下载。",
+    "older": "更早的 {count} 个月",
+    "receipts": "{count, plural, other {# 张票据}}",
+    "openReceipts": "{count} 个待处理",
+    "openTransactions": "{count, plural, other {# 笔无票据流水}}",
+    "done": "{month} 已下载",
+    "downloadMonth": "将 {month} 下载为 ZIP",
+    "download": "ZIP"
   }
 }

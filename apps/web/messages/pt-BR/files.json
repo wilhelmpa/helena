@@ -163,7 +163,9 @@
       "doc": "Doc",
       "canvas": "Tela",
       "folder": "Pasta",
-      "upload": "Enviar arquivo"
+      "upload": "Enviar arquivo",
+      "base": "Visualização (tabela, cartões, lista)",
+      "firstDoc": "Criar um doc"
     },
     "filters": {
       "all": "Tudo",
@@ -184,7 +186,8 @@
       "doc": "Doc",
       "pdf": "PDF",
       "image": "Imagem",
-      "file": "Arquivo"
+      "file": "Arquivo",
+      "base": "Visualização"
     },
     "dropHint": "Arraste arquivos para cá ou <pick>escolha</pick>",
     "entries": "{count, plural, one {# item} other {# itens}}",
@@ -214,7 +217,12 @@
     "othersKnowledge": "{count, plural, one {# documento ou tela} other {# documentos e telas}} ao lado →",
     "openInPage": "Abrir grande",
     "download": "Baixar",
-    "searchFiles": "Pesquisar arquivos …"
+    "searchFiles": "Pesquisar arquivos …",
+    "emptyTitle": "Ainda nada em Conhecimento",
+    "emptyFilesTitle": "Ainda sem arquivos",
+    "emptyFiles": "PDFs, imagens e outros arquivos chegam aqui. Envie um ou arraste para cá.",
+    "onlySubfoldersTitle": "Somente subpastas",
+    "onlySubfolders": "Esta pasta não contém arquivos. Abra uma das subpastas."
   },
   "canvas": {
     "opening": "Abrindo a tela …",
@@ -244,5 +252,34 @@
       "task": "Inserir tarefa",
       "connect": "Conectar"
     }
+  },
+  "origin": {
+    "system": "Sistema",
+    "agent": "Agente",
+    "manual": "Manual",
+    "all": "Todos",
+    "systemHint": "Criado pela Helena (recibos, anexos de e-mail, exportações)",
+    "agentHint": "Criado por um agente",
+    "manualHint": "Criado ou enviado por uma pessoa"
+  },
+  "base": {
+    "loading": "Carregando visualização …",
+    "readFailed": "Não foi possível ler a visualização.",
+    "rowsFailed": "Não foi possível carregar as linhas da visualização.",
+    "unsupported": "Esta visualização usa uma expressão que a Helena ainda não avalia",
+    "views": "Visualizações",
+    "filter": "Filtrar linhas",
+    "count": "{count, plural, one {# nota} other {# notas}}",
+    "countFiltered": "{shown} de {total}",
+    "noMatch": "Nenhuma linha corresponde ao filtro.",
+    "empty": "Nenhuma nota corresponde a esta visualização.",
+    "truncated": "As primeiras {count} linhas",
+    "newTitle": "Nova visualização",
+    "newHint": "Uma visualização mostra as notas desta pasta como tabela, cartões ou lista; o Obsidian abre o mesmo arquivo.",
+    "newName": "Visão geral",
+    "create": "Criar",
+    "viewTable": "Tabela",
+    "viewCards": "Cartões",
+    "viewList": "Lista"
   }
 }

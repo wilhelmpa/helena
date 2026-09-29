@@ -2242,3 +2242,123 @@ a.ds-run-card:hover {
 .ds-list-meta :is(select, input, button) {
   font-family: var(--font-sans);
 }
+
+/* Wissen › Leinwand (owner, O53): the tools at the bottom of the canvas, each an icon and
+   a label; in the preview on the right only the icons. */
+.ds-canvas-toolbar {
+  position: absolute;
+  inset-inline-start: 50%;
+  bottom: var(--space-5);
+  z-index: 10;
+  display: flex;
+  max-width: calc(100% - var(--space-5));
+  align-items: center;
+  gap: var(--space-1);
+  overflow-x: auto;
+  padding: 6px;
+  transform: translateX(-50%);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--card);
+  box-shadow: var(--shadow-raised);
+  color: var(--text-2);
+  font-size: 12px;
+}
+[dir='rtl'] .ds-canvas-toolbar {
+  transform: translateX(50%);
+}
+.ds-canvas-toolbar[data-compact] {
+  bottom: var(--space-3);
+}
+.ds-canvas-tool {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-md);
+  color: inherit;
+}
+.ds-canvas-tool:hover:not(:disabled) {
+  color: var(--text);
+}
+.ds-canvas-tool[aria-pressed='true'] {
+  background: var(--accent);
+  color: var(--text);
+}
+.ds-canvas-tool:disabled {
+  opacity: 0.5;
+}
+.ds-canvas-toolbar[data-compact] .ds-canvas-tool-label {
+  display: none;
+}
+.ds-canvas-toolbar[data-compact] .ds-canvas-tool {
+  padding: 0 var(--space-2);
+}
+@media (max-width: 640px) {
+  .ds-canvas-tool-label {
+    display: none;
+  }
+}
+.ds-canvas-toolbar-divider {
+  width: 1px;
+  height: 20px;
+  margin: 0 var(--space-2);
+  background: var(--line);
+}
+.ds-canvas-zoom {
+  padding: 0 var(--space-1);
+  font-family: var(--font-mono);
+}
+
+/* Wissen › Ansicht (.base): the name of a row opens its note. */
+.ds-base-open {
+  color: var(--text);
+  text-align: start;
+}
+.ds-base-open:hover {
+  text-decoration: underline;
+}
+.ds-knowledge-base {
+  min-width: 0;
+}
+
+/* The rows of a Wissen/Belege list: one scrolling column. */
+.ds-knowledge-rows {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  overflow-y: auto;
+}
+/* A file opened on the right (Wissen): its meta line, then the doc, canvas, view or viewer
+   filling the rest of the overlay. */
+.ds-knowledge-preview-body {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  padding: var(--space-4) var(--space-5);
+  overflow-y: auto;
+}
+.ds-knowledge-preview-body [data-knowledge-canvas] {
+  min-height: 420px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+}
+
+/* A read-only block of generated text (an agent note in the export preview). */
+.ds-code-block {
+  max-height: 280px;
+  overflow: auto;
+  padding: var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface-2);
+  color: var(--text-2);
+  font: 12px/1.6 var(--font-mono);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}

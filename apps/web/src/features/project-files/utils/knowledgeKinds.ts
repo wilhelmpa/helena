@@ -1,18 +1,31 @@
-import { FileImage, FileText, FileType2, Folder, Network, type LucideIcon } from 'lucide-react';
+import {
+  FileImage,
+  FileText,
+  FileType2,
+  Folder,
+  Network,
+  TableProperties,
+  type LucideIcon,
+} from 'lucide-react';
 import type { FileItem } from '@/lib/api/endpoints/projectFiles';
 
 // The kinds Wissen distinguishes, with one icon each (docs/ui-system.md §8: one icon set,
 // one color).
-export type KnowledgeKind = 'folder' | 'canvas' | 'doc' | 'pdf' | 'image' | 'file';
+export type KnowledgeKind = 'folder' | 'canvas' | 'base' | 'doc' | 'pdf' | 'image' | 'file';
 
 export const isDoc = (name: string) => /\.(md|markdown)$/i.test(name);
 export const isCanvas = (name: string) => /\.canvas$/i.test(name);
+// An Obsidian Base: a YAML view (table, cards, list) over notes.
+export const isBase = (name: string) => /\.base$/i.test(name);
+// What Wissen lists (the rest is Dateien): docs, canvases and views.
+export const isKnowledge = (name: string) => isDoc(name) || isCanvas(name) || isBase(name);
 export const isImage = (name: string) => /\.(png|jpe?g|gif|webp|svg|avif)$/i.test(name);
 export const isPdf = (name: string) => /\.pdf$/i.test(name);
 
 export function knowledgeKind(item: Pick<FileItem, 'kind' | 'name'>): KnowledgeKind {
   if (item.kind === 'folder') return 'folder';
   if (isCanvas(item.name)) return 'canvas';
+  if (isBase(item.name)) return 'base';
   if (isDoc(item.name)) return 'doc';
   if (isPdf(item.name)) return 'pdf';
   if (isImage(item.name)) return 'image';
@@ -22,12 +35,13 @@ export function knowledgeKind(item: Pick<FileItem, 'kind' | 'name'>): KnowledgeK
 export const knowledgeIcons: Record<KnowledgeKind, LucideIcon> = {
   folder: Folder,
   canvas: Network,
+  base: TableProperties,
   doc: FileText,
   pdf: FileType2,
   image: FileImage,
   file: FileText,
 };
 
-// A doc or canvas is shown by its name without the extension.
+// A doc, canvas or view is shown by its name without the extension.
 export const knowledgeDisplayName = (name: string) =>
-  isDoc(name) || isCanvas(name) ? name.replace(/\.(md|markdown|canvas)$/i, '') : name;
+  isKnowledge(name) ? name.replace(/\.(md|markdown|canvas|base)$/i, '') : name;

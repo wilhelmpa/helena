@@ -163,7 +163,9 @@
       "doc": "Doc",
       "canvas": "Kanvas",
       "folder": "Folder",
-      "upload": "Unggah berkas"
+      "upload": "Unggah berkas",
+      "base": "Tampilan (tabel, kartu, daftar)",
+      "firstDoc": "Buat dokumen"
     },
     "filters": {
       "all": "Semua",
@@ -184,7 +186,8 @@
       "doc": "Doc",
       "pdf": "PDF",
       "image": "Gambar",
-      "file": "Berkas"
+      "file": "Berkas",
+      "base": "Tampilan"
     },
     "dropHint": "Seret berkas ke sini atau <pick>pilih</pick>",
     "entries": "{count, plural, other {# entri}}",
@@ -214,7 +217,12 @@
     "othersKnowledge": "{count} dokumen dan kanvas lainnya →",
     "openInPage": "Buka besar",
     "download": "Unduh",
-    "searchFiles": "Cari berkas …"
+    "searchFiles": "Cari berkas …",
+    "emptyTitle": "Belum ada apa pun di Pengetahuan",
+    "emptyFilesTitle": "Belum ada berkas",
+    "emptyFiles": "PDF, gambar, dan berkas lain masuk ke sini. Unggah satu atau seret ke sini.",
+    "onlySubfoldersTitle": "Hanya subfolder",
+    "onlySubfolders": "Folder ini tidak berisi berkas. Buka salah satu subfoldernya."
   },
   "canvas": {
     "opening": "Membuka kanvas …",
@@ -244,5 +252,34 @@
       "task": "Sisipkan tugas",
       "connect": "Hubungkan"
     }
+  },
+  "origin": {
+    "system": "Sistem",
+    "agent": "Agen",
+    "manual": "Manual",
+    "all": "Semua",
+    "systemHint": "Dibuat oleh Helena (bukti, lampiran email, ekspor)",
+    "agentHint": "Dibuat oleh agen",
+    "manualHint": "Dibuat atau diunggah oleh orang"
+  },
+  "base": {
+    "loading": "Memuat tampilan …",
+    "readFailed": "Tampilan tidak dapat dibaca.",
+    "rowsFailed": "Baris tampilan tidak dapat dimuat.",
+    "unsupported": "Tampilan ini memakai ekspresi yang belum dievaluasi Helena",
+    "views": "Tampilan",
+    "filter": "Saring baris",
+    "count": "{count, plural, other {# catatan}}",
+    "countFiltered": "{shown} dari {total}",
+    "noMatch": "Tidak ada baris yang cocok dengan saringan.",
+    "empty": "Tidak ada catatan yang cocok dengan tampilan ini.",
+    "truncated": "{count} baris pertama",
+    "newTitle": "Tampilan baru",
+    "newHint": "Tampilan menampilkan catatan folder ini sebagai tabel, kartu, atau daftar; Obsidian membuka berkas yang sama.",
+    "newName": "Ikhtisar",
+    "create": "Buat",
+    "viewTable": "Tabel",
+    "viewCards": "Kartu",
+    "viewList": "Daftar"
   }
 }

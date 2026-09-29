@@ -17,6 +17,7 @@ import FileNewFolderDialog from '@/features/project-files/components/FileNewFold
 import { filesPath, homeFilesPath } from '@/utils/paths';
 import {
   compareKnowledgeFolders,
+  folderIcon,
   isDirectChildFolder,
   knowledgeFolderLabel,
 } from '@/utils/knowledgeFolders';
@@ -76,11 +77,13 @@ function FolderNode({
     }
   };
   const scopeKey = scope.kind === 'project' ? scope.projectKey : `home:${scope.root}`;
+  const Icon = folderIcon(path, scope.kind === 'project');
   return (
     <>
       <TreeItem
         label={scope.kind === 'project' && depth === 0 ? knowledgeFolderLabel(name, fixed) : name}
         href={folderUrl(scope, path)}
+        icon={<Icon />}
         active={current}
         containsActive={isAncestor}
         storageKey={`folder:${scopeKey}:${path}`}

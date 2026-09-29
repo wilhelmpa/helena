@@ -343,3 +343,18 @@ export const setReceiptDedup = (teamId: number, autoMerge: boolean) =>
     method: 'PUT',
     body: JSON.stringify({ autoMerge }),
   });
+
+// "Belege als Notizen": a read-only Markdown note per receipt next to its original, for
+// Obsidian and the views of Wissen. A team setting, off by default.
+export const getReceiptProjection = (teamId: number) =>
+  request<{ enabled: boolean }>(`/teams/${teamId}/receipt-projection`);
+export const setReceiptProjection = (teamId: number, enabled: boolean) =>
+  request<{ enabled: boolean }>(`/teams/${teamId}/receipt-projection`, {
+    method: 'PUT',
+    body: JSON.stringify({ enabled }),
+  });
+export const rebuildReceiptProjection = (projectKey: string) =>
+  request<{ enabled: boolean; projected: number; changed: number; basePath: string }>(
+    `${base(projectKey)}/projection/rebuild`,
+    { method: 'POST' },
+  );

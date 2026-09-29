@@ -111,7 +111,14 @@ export default function HomeFilesPage() {
               }}
               onCreate={(kind) =>
                 setDialog({
-                  kind: kind === 'doc' ? 'newFile' : kind === 'canvas' ? 'newCanvas' : 'newFolder',
+                  kind:
+                    kind === 'doc'
+                      ? 'newFile'
+                      : kind === 'canvas'
+                        ? 'newCanvas'
+                        : kind === 'base'
+                          ? 'newBase'
+                          : 'newFolder',
                 })
               }
               onUpload={(files) => upload.mutate({ folder: '', files })}

@@ -97,7 +97,11 @@ function useLocation() {
 }
 
 // The level-1 area a row id belongs to ("dashboard", "tasks", …).
-const sectionOf = (id: string | null) => (id ? id.split(':')[0]! : null);
+// The level-1 area a marked row belongs to. Dateien and Belege are views inside Wissen.
+const sectionOf = (id: string | null) => {
+  const head = id ? id.split(':')[0]! : null;
+  return head === 'files' || head === 'receipts' ? 'knowledge' : head;
+};
 
 function SidebarLabel({ children }: { children: ReactNode }) {
   return (
@@ -425,12 +429,16 @@ export function SidebarProjectTree({
         />
       )}
       {showKnowledge && (
+        // One entry, three views of the same files (owner 29.09., UI findings G): Wissen
+        // itself (docs, canvases, views), Dateien (every other file) and Belege; then the
+        // folders, which every view shares.
         <TreeItem
           id="knowledge"
           label={t('sidebarKnowledge')}
           href={filesPath(projectKey)}
           icon={<FolderOpen />}
           active={is('knowledge')}
+          containsActive={within('files') || within('receipts')}
           actions={
             can('documents', 'create') && (
               <TreeAction label={t('sidebarNewFolder')} onClick={() => setNewKnowledgeFolder(true)}>
@@ -439,27 +447,26 @@ export function SidebarProjectTree({
             )
           }
         >
+          {features.documents && can('documents', 'read') && (
+            <TreeItem
+              label={t('sidebarFiles')}
+              href={filesPath(projectKey, '', { kind: 'files' })}
+              icon={<Paperclip />}
+              active={is('files')}
+            />
+          )}
+          {isAdmin && (
+            <SidebarReceiptsItem
+              projectKey={projectKey}
+              active={is('receipts')}
+              activeView={RECEIPT_VIEWS.find((view) => is(`receipts:${view}`)) ?? null}
+            />
+          )}
           <SidebarKnowledgeFolders
             scope={{ kind: 'project', projectKey, root: 'vault' }}
             canWrite={can('documents', 'edit')}
           />
         </TreeItem>
-      )}
-      {features.documents && can('documents', 'read') && (
-        <TreeItem
-          id="files"
-          label={t('sidebarFiles')}
-          href={filesPath(projectKey, '', { kind: 'files' })}
-          icon={<Paperclip />}
-          active={is('files')}
-        />
-      )}
-      {showKnowledge && isAdmin && (
-        <SidebarReceiptsItem
-          projectKey={projectKey}
-          active={is('receipts')}
-          activeView={RECEIPT_VIEWS.find((view) => is(`receipts:${view}`)) ?? null}
-        />
       )}
       {newKnowledgeFolder && (
         <FileNewFolderDialog
@@ -585,7 +592,13 @@ export function SidebarHomeTree({
     ...(isGod ? [{ id: 'dashboard:system', href: '/system' }] : []),
     { id: 'tasks', href: '/tasks', also: ['/issue'] },
     { id: 'goals', href: '/organization?tab=goals' },
-    { id: 'knowledge', href: '/files', without: ['root', 'path', 'file'], also: ['/docs'] },
+    {
+      id: 'knowledge',
+      href: '/files',
+      without: ['root', 'path', 'file', 'kind', 'project'],
+      also: ['/docs'],
+    },
+    { id: 'knowledge:files', href: '/files?kind=files' },
     ...roots.map((root) => ({
       id: `knowledge:${root}`,
       href: `/files?root=${root}`,
@@ -604,11 +617,7 @@ export function SidebarHomeTree({
       : []),
   ];
   const folderOpen = location.pathname === '/files' && location.search.has('path');
-  let activeId = pickActive(candidates, location);
-  // /files without a root is the root the user sees first.
-  if (activeId === 'knowledge' && roots.length > 0) activeId = `knowledge:${currentRoot}`;
-  // Helena's own knowledge is "Wissen" itself; Privat and Vorlagen are its children.
-  if (activeId === 'knowledge:home') activeId = 'knowledge';
+  const activeId = pickActive(candidates, location);
   const activeSection = folderOpen ? 'knowledge' : sectionOf(activeId);
   const is = (id: string) => activeId === id;
   const within = (prefix: string) => activeId?.startsWith(prefix) ?? false;
@@ -651,12 +660,16 @@ export function SidebarHomeTree({
         icon={<Target />}
         active={is('goals')}
       />
+      {/* Wissen: the latest files of every place (Helena, Privat, Vorlagen and the projects),
+          each with where it lives; Dateien the other files; then the places themselves
+          with their folders, so it is clear where a list comes from (owner, O14). */}
       <TreeItem
         id="knowledge"
         label={t('sidebarKnowledge')}
-        href={rootHref(roots[0])}
+        href="/files"
         icon={<FolderOpen />}
         active={is('knowledge')}
+        containsActive={within('knowledge:') || folderOpen}
         actions={
           owner && (
             <TreeAction label={t('sidebarNewFolder')} onClick={() => setNewFolder(true)}>
@@ -665,21 +678,30 @@ export function SidebarHomeTree({
           )
         }
       >
-        {owner && <SidebarKnowledgeFolders scope={{ kind: 'home', root: 'home' }} canWrite />}
-        {roots
-          .filter((root) => root !== 'home')
-          .map((root) => (
-            <TreeItem
-              key={root}
-              label={t(root === 'private' ? 'sidebarPrivate' : 'sidebarTemplates')}
-              href={rootHref(root)}
-              active={is(`knowledge:${root}`)}
-              containsActive={folderOpen && currentRoot === root}
-              storageKey={`home:knowledge:${root}`}
-            >
-              <SidebarKnowledgeFolders scope={{ kind: 'home', root }} canWrite={owner} />
-            </TreeItem>
-          ))}
+        <TreeItem
+          label={t('sidebarFiles')}
+          href="/files?kind=files"
+          icon={<Paperclip />}
+          active={is('knowledge:files')}
+        />
+        {roots.map((root) => (
+          <TreeItem
+            key={root}
+            label={t(
+              root === 'home'
+                ? 'sidebarHelenaKnowledge'
+                : root === 'private'
+                  ? 'sidebarPrivate'
+                  : 'sidebarTemplates',
+            )}
+            href={rootHref(root)}
+            active={is(`knowledge:${root}`)}
+            containsActive={folderOpen && currentRoot === root}
+            storageKey={`home:knowledge:${root}`}
+          >
+            <SidebarKnowledgeFolders scope={{ kind: 'home', root }} canWrite={owner} />
+          </TreeItem>
+        ))}
       </TreeItem>
       {newFolder && (
         <FileNewFolderDialog
@@ -740,7 +762,7 @@ export function SidebarHomeTree({
 // Belege in the Wissen tree (hub/fix-wissen): the entry is every receipt, its children
 // the views — open, to review, matched, accounts — with their counts; the page shows no
 // second row of tabs for them.
-const RECEIPT_VIEWS = ['open', 'review', 'matched', 'accounts'] as const;
+const RECEIPT_VIEWS = ['open', 'review', 'matched', 'export'] as const;
 
 function SidebarReceiptsItem({
   projectKey,

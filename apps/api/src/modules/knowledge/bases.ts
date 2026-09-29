@@ -272,12 +272,14 @@ export const baseRoutes = new Elysia({ name: 'knowledge-bases', detail: { tags: 
         project: locateVaultPath(paths.path).projectKey,
         tags: [] as string[],
         source: '',
-        origin: 'human',
+        // One of the origins every list shows (packages/vault/src/origin.ts).
+        origin: 'manual',
       };
+      const title = paths.path.split('/').at(-1)!.replace(/\.md$/i, '');
       return {
         path: paths.path,
         frontmatter,
-        content: composeNote(frontmatter, '# Title\n', null),
+        content: composeNote(frontmatter, `# ${title}\n`, null),
       };
     },
     {

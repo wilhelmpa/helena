@@ -33,6 +33,9 @@ import {
   type ReceiptPatch,
   getReceiptDedup,
   setReceiptDedup,
+  getReceiptProjection,
+  setReceiptProjection,
+  rebuildReceiptProjection,
 } from '@/lib/api/endpoints/receipts';
 
 const root = (projectKey: string) => ['receipts', projectKey] as const;
@@ -302,5 +305,33 @@ export function useSetReceiptDedup(teamId: number) {
   return useMutation({
     mutationFn: (autoMerge: boolean) => setReceiptDedup(teamId, autoMerge),
     onSuccess: (data) => qc.setQueryData(['receipt-dedup', teamId], data),
+  });
+}
+
+// "Belege als Notizen" (a team setting, off by default) and rebuilding a project's notes.
+export function useReceiptProjectionQuery(teamId: number | null) {
+  return useQuery({
+    queryKey: ['receipt-projection', teamId],
+    queryFn: () => getReceiptProjection(teamId!),
+    enabled: teamId != null && teamId > 0,
+  });
+}
+
+export function useSetReceiptProjection(teamId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (enabled: boolean) => setReceiptProjection(teamId, enabled),
+    onSuccess: (data) => {
+      qc.setQueryData(['receipt-projection', teamId], data);
+      void qc.invalidateQueries({ queryKey: ['files'] });
+    },
+  });
+}
+
+export function useRebuildReceiptProjection(projectKey: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => rebuildReceiptProjection(projectKey),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['files'] }),
   });
 }

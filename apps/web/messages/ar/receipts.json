@@ -4,7 +4,8 @@
     "review": "للمراجعة",
     "matched": "المطابَقة",
     "accounts": "الحسابات",
-    "all": "كل الإيصالات"
+    "all": "كل الإيصالات",
+    "export": "تصدير"
   },
   "month": "الشهر",
   "allMonths": "كل الأشهر",
@@ -206,5 +207,17 @@
     "einvoice": "فاتورة إلكترونية (XML)",
     "mail": "إيصال من بريد",
     "noPicture": "لا معاينة لهذا الملف"
+  },
+  "emptyTitle": "لا توجد إيصالات بعد",
+  "export": {
+    "emptyTitle": "لا شيء للتصدير بعد",
+    "emptyHint": "بمجرد وجود إيصالات أو حركات، يصبح كل شهر جاهزًا للتنزيل هنا.",
+    "older": "{count} أشهر أقدم",
+    "receipts": "{count, plural, zero {لا إيصالات} one {إيصال واحد} two {إيصالان} few {# إيصالات} many {# إيصالًا} other {# إيصال}}",
+    "openReceipts": "{count} مفتوحة",
+    "openTransactions": "{count, plural, zero {لا حركات بلا إيصال} one {حركة واحدة بلا إيصال} two {حركتان بلا إيصال} few {# حركات بلا إيصال} many {# حركة بلا إيصال} other {# حركة بلا إيصال}}",
+    "done": "تم تنزيل {month}",
+    "downloadMonth": "تنزيل {month} بصيغة ZIP",
+    "download": "ZIP"
   }
 }

@@ -280,5 +280,6 @@
   "sidebarFiles": "Dateien",
   "settingsExtensions": "Erweiterungen",
   "settingsAutopilotExecution": "Autopilot & Ausführung",
-  "settingsProjectAccess": "Zugänge verwalten"
+  "settingsProjectAccess": "Zugänge verwalten",
+  "sidebarHelenaKnowledge": "Helena"
 }

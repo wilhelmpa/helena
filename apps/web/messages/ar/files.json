@@ -163,7 +163,9 @@
       "doc": "مستند",
       "canvas": "لوحة",
       "folder": "مجلد",
-      "upload": "رفع ملف"
+      "upload": "رفع ملف",
+      "base": "عرض (جدول، بطاقات، قائمة)",
+      "firstDoc": "إنشاء مستند"
     },
     "filters": {
       "all": "الكل",
@@ -184,7 +186,8 @@
       "doc": "مستند",
       "pdf": "PDF",
       "image": "صورة",
-      "file": "ملف"
+      "file": "ملف",
+      "base": "عرض"
     },
     "dropHint": "اسحب الملفات إلى هنا أو <pick>اخترها</pick>",
     "entries": "{count, plural, zero {لا عناصر} one {عنصر واحد} two {عنصران} few {# عناصر} many {# عنصرًا} other {# عنصر}}",
@@ -214,7 +217,12 @@
     "othersKnowledge": "{count} مستندات ولوحات بجانبها ←",
     "openInPage": "فتح بحجم كبير",
     "download": "تنزيل",
-    "searchFiles": "البحث في الملفات …"
+    "searchFiles": "البحث في الملفات …",
+    "emptyTitle": "لا شيء في المعرفة بعد",
+    "emptyFilesTitle": "لا توجد ملفات بعد",
+    "emptyFiles": "تصل ملفات PDF والصور والملفات الأخرى إلى هنا. ارفع ملفًا أو اسحبه إلى هنا.",
+    "onlySubfoldersTitle": "مجلدات فرعية فقط",
+    "onlySubfolders": "لا يحتوي هذا المجلد على ملفات. افتح أحد مجلداته الفرعية."
   },
   "canvas": {
     "opening": "جارٍ فتح اللوحة …",
@@ -244,5 +252,34 @@
       "task": "إدراج مهمة",
       "connect": "ربط"
     }
+  },
+  "origin": {
+    "system": "النظام",
+    "agent": "وكيل",
+    "manual": "يدوي",
+    "all": "الكل",
+    "systemHint": "أنشأته Helena (إيصالات، مرفقات بريد، تصديرات)",
+    "agentHint": "أنشأه وكيل",
+    "manualHint": "أنشأه أو رفعه شخص"
+  },
+  "base": {
+    "loading": "جارٍ تحميل العرض …",
+    "readFailed": "تعذّرت قراءة العرض.",
+    "rowsFailed": "تعذّر تحميل صفوف العرض.",
+    "unsupported": "يستخدم هذا العرض تعبيرًا لا تقيّمه Helena بعد",
+    "views": "العروض",
+    "filter": "تصفية الصفوف",
+    "count": "{count, plural, zero {لا ملاحظات} one {ملاحظة واحدة} two {ملاحظتان} few {# ملاحظات} many {# ملاحظة} other {# ملاحظة}}",
+    "countFiltered": "{shown} من {total}",
+    "noMatch": "لا يطابق أي صف عامل التصفية.",
+    "empty": "لا توجد ملاحظة تناسب هذا العرض.",
+    "truncated": "أول {count} صفوف",
+    "newTitle": "عرض جديد",
+    "newHint": "يعرض العرض ملاحظات هذا المجلد كجدول أو بطاقات أو قائمة؛ ويفتح Obsidian الملف نفسه.",
+    "newName": "نظرة عامة",
+    "create": "إنشاء",
+    "viewTable": "جدول",
+    "viewCards": "بطاقات",
+    "viewList": "قائمة"
   }
 }

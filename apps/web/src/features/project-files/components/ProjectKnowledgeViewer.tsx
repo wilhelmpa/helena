@@ -5,38 +5,18 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import type { Editor } from '@tiptap/react';
-import {
-  Download,
-  Code2,
-  ClipboardCopy,
-  Link2,
-  MoreHorizontal,
-  Pencil,
-  Trash2,
-  FileCode2,
-  FolderInput,
-} from 'lucide-react';
+import { FileCode2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Button } from '@/components/ui/button';
+import { MenuItem, Page } from '@/design-system';
 import FileViewerContent from '@/components/common/files/FileViewerContent';
 import type { ViewerFile } from '@/components/common/files/FileViewer';
 import WebLinkScope from '@/components/common/WebLinkScope';
 import { useRelativeTime } from '@/context/relativeTimeContext';
 import { getFileReferences, type FileItem, type FileScope } from '@/lib/api/endpoints/projectFiles';
-import { KnowledgeEyebrow, type KnowledgeCrumb } from '@/components/helena/KnowledgeFrame';
 import { MonoLabel } from '@/components/helena/DashboardPrimitives';
 import ResizableSidePanel from '@/components/helena/ResizableSidePanel';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
-import { useProjectQuery } from '@/services/projects.service';
-import { knowledgeFolderLabel } from '@/utils/knowledgeFolders';
 import { filesScopeKey } from '@/services/files.service';
 import {
   useBacklinksQuery,
@@ -51,10 +31,15 @@ import { resolveWikilink, vaultFileUrl } from '@/lib/api/endpoints/knowledge';
 import { parseWikilink, wikilinkTask } from '@/utils/wikilink';
 import { filesPath, vaultNotePath } from '@/utils/paths';
 import type { FileActions } from '../hooks/useFileActions';
+import FileItemMenu from './FileItemMenu';
+import OriginBadge from './OriginBadge';
 import VaultTextEditor from './VaultTextEditor';
 import styles from './ProjectKnowledgeViewer.module.css';
 
-function MarkdownBody({
+// A Markdown file in the formatted editor, saved as it is typed (and on blur). Reports
+// when the editor could not keep every construct of the file (`onLossless(false)`): the
+// caller then shows the source editor instead.
+export function MarkdownBody({
   path,
   editable,
   onDirty,
@@ -185,9 +170,7 @@ export default function ProjectKnowledgeViewer({
   const router = useRouter();
   const relativeTime = useRelativeTime();
   const k = useTranslations('files.knowledge');
-  const fixed = useTranslations('files.fixedFolders');
   const roots = useTranslations('files.roots');
-  const unified = useTranslations('files.unified');
   const dirtyRef = useRef(false);
   const [dirty, setDirty] = useState(false);
   // The formatted editor cannot keep every Markdown construct: such a file opens in the
@@ -220,13 +203,11 @@ export default function ProjectKnowledgeViewer({
     document.addEventListener('click', guard, true);
     return () => document.removeEventListener('click', guard, true);
   }, [source, k]);
-  const t = useTranslations('files.actions');
   const canonical = actions.vaultPath(item) ?? '';
   const markdown = /\.md$/i.test(item.name);
   const note = useVaultNoteQuery(markdown ? canonical : null);
   const backlinks = useBacklinksQuery(canonical);
   const history = useNoteHistoryQuery(canonical, !!canonical);
-  const project = useProjectQuery(scope.kind === 'project' ? scope.projectKey : null);
   const references = useQuery({
     queryKey: [...filesScopeKey(scope), 'references', path],
     queryFn: () => getFileReferences(scope, path),
@@ -235,7 +216,6 @@ export default function ProjectKnowledgeViewer({
   const title = note.data?.title || item.name.replace(/\.(md|markdown|pdf)$/i, '');
   const datedTitle = /^(.*?)\s+(\d{1,2}\.\s+.+)$/.exec(title);
   const tags = note.data ? noteTags(note.data.frontmatter) : [];
-  const code = actions.codeUrl(item);
   const changeSource = async (next: boolean) => {
     if (next && saveRef.current && !(await saveRef.current())) return;
     if (!next && dirtyRef.current && !window.confirm(k('discard'))) return;
@@ -257,100 +237,29 @@ export default function ProjectKnowledgeViewer({
   };
   const projectKey = scope.kind === 'project' ? scope.projectKey : null;
   const wide = useMediaQuery('(min-width: 1024px)');
-  const folder = (target: string): FileItem => ({
-    name: target.split('/').at(-1) ?? target,
-    path: target,
-    kind: 'folder',
-    contentType: null,
-    sizeBytes: null,
-    updatedAt: null,
-  });
-  const segments = path.split('/').slice(0, -1);
-  // The same path eyebrow as the folder list: project · Wissen / folder / …, each a link.
-  const crumbs: KnowledgeCrumb[] = [
-    {
-      label:
-        scope.kind === 'project'
-          ? project.data?.project.name || scope.projectKey
-          : roots(scope.root),
-    },
-    { label: roots('vault'), onSelect: () => actions.open(folder('')) },
-    ...segments.map((segment, index) => ({
-      label:
-        scope.kind === 'project' && index === 0 ? knowledgeFolderLabel(segment, fixed) : segment,
-      onSelect: () => actions.open(folder(segments.slice(0, index + 1).join('/'))),
-    })),
-  ];
+  // The path is the page's breadcrumb (O16); the file's actions sit on the right of the
+  // header like every page's.
+  const menu = (
+    <FileItemMenu
+      item={item}
+      actions={actions}
+      can={{ create: false, edit: canEdit, delete: canDelete }}
+      size="default"
+      extra={
+        markdown &&
+        !lossy && (
+          <MenuItem onSelect={() => void changeSource(!sourceOnly)}>
+            <FileCode2 />
+            {sourceOnly ? k('editor') : k('source')}
+          </MenuItem>
+        )
+      }
+    />
+  );
   const head: ReactNode = (
     <>
-      <div className="flex items-center justify-between gap-3">
-        <KnowledgeEyebrow crumbs={crumbs} />
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label={t('more', { name: item.name })}
-              className="size-9 shrink-0 rounded-full border border-input bg-card text-muted-foreground"
-            >
-              <MoreHorizontal className="size-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            {markdown && !lossy && (
-              <DropdownMenuItem onSelect={() => void changeSource(!sourceOnly)}>
-                <FileCode2 />
-                {sourceOnly ? k('editor') : k('source')}
-              </DropdownMenuItem>
-            )}
-            <DropdownMenuItem asChild>
-              <a href={actions.downloadUrl(item)} download={item.name}>
-                <Download />
-                {t('download')}
-              </a>
-            </DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => void actions.copyPath(item)}>
-              <ClipboardCopy />
-              {k('copyLink')}
-            </DropdownMenuItem>
-            {projectKey && (
-              <DropdownMenuItem onSelect={() => actions.ask('link', item)}>
-                <Link2 />
-                {t('linkToTask')}
-              </DropdownMenuItem>
-            )}
-            {code && (
-              <DropdownMenuItem asChild>
-                <a href={code} target="_blank" rel="noopener noreferrer">
-                  <Code2 />
-                  {t('openInCode')}
-                </a>
-              </DropdownMenuItem>
-            )}
-            {(canEdit || canDelete) && <DropdownMenuSeparator />}
-            {canEdit && (
-              <DropdownMenuItem onSelect={() => actions.ask('rename', item)}>
-                <Pencil />
-                {t('rename')}
-              </DropdownMenuItem>
-            )}
-            {canEdit && (
-              <DropdownMenuItem onSelect={() => actions.ask('move', item)}>
-                <FolderInput />
-                {t('move')}
-              </DropdownMenuItem>
-            )}
-            {canDelete && (
-              <DropdownMenuItem variant="destructive" onSelect={() => actions.ask('trash', item)}>
-                <Trash2 />
-                {t('trash')}
-              </DropdownMenuItem>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
       <h1
-        className="mt-[22px] mb-3 text-[44px] leading-[1.06] font-[520] tracking-[-.055em] break-words text-foreground max-sm:text-[34px]"
+        className="mb-3 text-[44px] leading-[1.06] font-[520] tracking-[-.055em] break-words text-foreground max-sm:text-[34px]"
         dir="auto"
       >
         {datedTitle ? (
@@ -365,6 +274,7 @@ export default function ProjectKnowledgeViewer({
       </h1>
       <div className="flex flex-wrap items-center gap-2.5 text-xs text-muted-foreground">
         <span className="size-[7px] rounded-full bg-brand" />
+        {item.origin && item.origin !== 'manual' && <OriginBadge origin={item.origin} />}
         <span>
           {[
             references.data?.author || history.data?.[0]?.authorName || roots('vault'),
@@ -420,6 +330,7 @@ export default function ProjectKnowledgeViewer({
     </>
   );
   return (
+    <Page variant="bleed" actions={menu}>
     <WebLinkScope projectKey={projectKey}>
       <div
         data-file-preview
@@ -434,25 +345,17 @@ export default function ProjectKnowledgeViewer({
             >
               {markdown ? (
                 source ? (
-                  <>
-                    {lossy && !sourceOnly && (
-                      <p
-                        role="note"
-                        className="mb-3 rounded-lg bg-muted px-3 py-2 text-xs text-muted-foreground"
-                      >
-                        {unified('sourceRequired')}
-                      </p>
-                    )}
-                    <VaultTextEditor
-                      scope={scope}
-                      path={path}
-                      canEdit={canEdit}
-                      onDirty={reportDirty}
-                      vaultPath={canonical}
-                      beforeNavigate={() => true}
-                      sourceOnly
-                    />
-                  </>
+                  // A file the formatted editor cannot keep opens in the source editor,
+                  // without a note about it (owner, O15).
+                  <VaultTextEditor
+                    scope={scope}
+                    path={path}
+                    canEdit={canEdit}
+                    onDirty={reportDirty}
+                    vaultPath={canonical}
+                    beforeNavigate={() => true}
+                    sourceOnly
+                  />
                 ) : (
                   <MarkdownBody
                     path={canonical}
@@ -482,5 +385,6 @@ export default function ProjectKnowledgeViewer({
         )}
       </div>
     </WebLinkScope>
+    </Page>
   );
 }

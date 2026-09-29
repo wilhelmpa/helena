@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import {
   ClipboardCopy,
   Code2,
@@ -9,91 +10,92 @@ import {
   Trash2,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { Button } from '@/components/ui/button';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+  IconButton,
+  Menu,
+  MenuContent,
+  MenuItem,
+  MenuSeparator,
+  MenuTrigger,
+} from '@/design-system';
 import type { FileItem } from '@/lib/api/endpoints/projectFiles';
 import type { FileActions } from '../hooks/useFileActions';
 import type { FilePermissions } from './FileBrowser';
 
-// Everything that can be done with one entry, behind its "more" button.
+// Everything that can be done with one entry, behind its "more" button. `extra` leads the
+// menu with what only the caller offers (a doc's source/editor switch).
 export default function FileItemMenu({
   item,
   actions,
   can,
+  extra,
+  size = 'small',
 }: {
   item: FileItem;
   actions: FileActions;
   can: FilePermissions;
+  extra?: ReactNode;
+  size?: 'default' | 'small';
 }) {
   const t = useTranslations('files.actions');
   const file = item.kind === 'file';
   const code = actions.codeUrl(item);
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="size-7"
-          aria-label={t('more', { name: item.name })}
-        >
+    <Menu>
+      <MenuTrigger asChild>
+        <IconButton size={size} label={t('more', { name: item.name })}>
           <MoreHorizontal />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
+        </IconButton>
+      </MenuTrigger>
+      <MenuContent align="end">
+        {extra}
         {file && (
-          <DropdownMenuItem asChild>
+          <MenuItem asChild>
             <a href={actions.downloadUrl(item)} download={item.name}>
               <Download />
               {t('download')}
             </a>
-          </DropdownMenuItem>
+          </MenuItem>
         )}
         {code && (
-          <DropdownMenuItem asChild>
+          <MenuItem asChild>
             <a href={code} target="_blank" rel="noopener noreferrer">
               <Code2 />
               {t('openInCode')}
             </a>
-          </DropdownMenuItem>
+          </MenuItem>
         )}
         {file && actions.projectKey && (
-          <DropdownMenuItem onSelect={() => actions.ask('link', item)}>
+          <MenuItem onSelect={() => actions.ask('link', item)}>
             <Link2 />
             {t('linkToTask')}
-          </DropdownMenuItem>
+          </MenuItem>
         )}
-        <DropdownMenuItem onSelect={() => void actions.copyPath(item)}>
+        <MenuItem onSelect={() => void actions.copyPath(item)}>
           <ClipboardCopy />
           {t('copyPath')}
-        </DropdownMenuItem>
+        </MenuItem>
         {can.edit && (
           <>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onSelect={() => actions.ask('rename', item)}>
+            <MenuSeparator />
+            <MenuItem onSelect={() => actions.ask('rename', item)}>
               <Pencil />
               {t('rename')}
-            </DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => actions.ask('move', item)}>
+            </MenuItem>
+            <MenuItem onSelect={() => actions.ask('move', item)}>
               <FolderInput />
               {t('move')}
-            </DropdownMenuItem>
+            </MenuItem>
           </>
         )}
         {can.delete && (
-          <DropdownMenuItem variant="destructive" onSelect={() => actions.ask('trash', item)}>
+          <MenuItem variant="destructive" onSelect={() => actions.ask('trash', item)}>
             <Trash2 />
             {t('trash')}
-          </DropdownMenuItem>
+          </MenuItem>
         )}
-      </DropdownMenuContent>
-    </DropdownMenu>
+      </MenuContent>
+    </Menu>
   );
 }

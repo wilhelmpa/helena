@@ -451,3 +451,21 @@ export interface AgentHeartbeatEvent {
 
 export const listAgentHeartbeats = (teamId: number, agentId: number) =>
   request<AgentHeartbeatEvent[]>(`/teams/${teamId}/ai-agents/${agentId}/heartbeats`);
+
+// The project's agents as read-only notes (docs/second-brain-backend-api.md): a preview
+// without writing, and the snapshots written to Projects/<KEY>/Docs/Agenten with a view.
+export interface AgentExportPreview {
+  projectKey: string;
+  generatedAt: string;
+  notes: { path: string; content: string }[];
+  base: { path: string; content: string };
+}
+
+export const previewAgentExport = (projectKey: string) =>
+  request<AgentExportPreview>(`/projects/${encodeURIComponent(projectKey)}/agent-export`);
+
+export const materializeAgentExport = (projectKey: string) =>
+  request<{ projectKey: string; basePath: string; notes: string[]; changed: number }>(
+    `/projects/${encodeURIComponent(projectKey)}/agent-export/materialize`,
+    { method: 'POST' },
+  );

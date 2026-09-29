@@ -4,7 +4,8 @@
     "review": "Revisar",
     "matched": "Associados",
     "accounts": "Contas",
-    "all": "Todos os comprovantes"
+    "all": "Todos os comprovantes",
+    "export": "Exportar"
   },
   "month": "Mês",
   "allMonths": "Todos os meses",
@@ -206,5 +207,17 @@
     "einvoice": "Nota eletrônica (XML)",
     "mail": "Comprovante de um e-mail",
     "noPicture": "Sem pré-visualização para este arquivo"
+  },
+  "emptyTitle": "Ainda sem recibos",
+  "export": {
+    "emptyTitle": "Nada para exportar ainda",
+    "emptyHint": "Assim que houver recibos ou lançamentos, cada mês fica pronto para baixar aqui.",
+    "older": "{count} meses anteriores",
+    "receipts": "{count, plural, one {# recibo} other {# recibos}}",
+    "openReceipts": "{count} em aberto",
+    "openTransactions": "{count, plural, one {# lançamento sem recibo} other {# lançamentos sem recibo}}",
+    "done": "{month} baixado",
+    "downloadMonth": "Baixar {month} como ZIP",
+    "download": "ZIP"
   }
 }
