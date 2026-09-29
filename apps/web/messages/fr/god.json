@@ -233,7 +233,8 @@
       "grant_revoked": "Autorisation révoquée",
       "session_start": "Session démarrée",
       "session_end": "Session terminée",
-      "token_rejected": "Jeton refusé"
+      "token_rejected": "Jeton refusé",
+      "sudo_changed": "Terminal sudo changed"
     },
     "grantActiveOpen": "Accès accordé.",
     "rootAccess": {

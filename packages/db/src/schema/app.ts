@@ -3526,7 +3526,7 @@ export const ownerTerminalAudit = pgTable(
   (t) => [
     check(
       'owner_terminal_audit_event_check',
-      sql`${t.event} IN ('step_up_ok', 'step_up_fail', 'rate_limited', 'grant_revoked', 'session_start', 'session_end', 'token_rejected')`,
+      sql`${t.event} IN ('step_up_ok', 'step_up_fail', 'rate_limited', 'grant_revoked', 'session_start', 'session_end', 'token_rejected', 'sudo_changed')`,
     ),
     index('owner_terminal_audit_user_idx').on(t.userId, t.createdAt.desc()),
     // Backs the rate-limit window query: failures of one user in the last 15 minutes.

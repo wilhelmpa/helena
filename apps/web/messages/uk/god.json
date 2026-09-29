@@ -233,7 +233,8 @@
       "grant_revoked": "Дозвіл відкликано",
       "session_start": "Сеанс розпочато",
       "session_end": "Сеанс завершено",
-      "token_rejected": "Токен відхилено"
+      "token_rejected": "Токен відхилено",
+      "sudo_changed": "Terminal sudo changed"
     },
     "grantActiveOpen": "Доступ надано.",
     "rootAccess": {

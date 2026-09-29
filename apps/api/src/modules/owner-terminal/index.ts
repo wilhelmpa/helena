@@ -21,7 +21,7 @@ import {
   revokeGrant,
   listAudit,
   recordSessionEvent,
-  getOwnerTerminalSettings,
+  getOwnerTerminalSettingsForApi,
   setOwnerTerminalSettings,
 } from './service';
 
@@ -141,24 +141,23 @@ export const ownerTerminalRoutes = new Elysia({
       },
     },
   )
-  .get('/owner-terminal/settings', () => getOwnerTerminalSettings(), {
+  .get('/owner-terminal/settings', () => getOwnerTerminalSettingsForApi(), {
     response: { 200: OwnerTerminalSettingsResponse, ...errors(401, 403) },
     detail: {
       summary: 'Get the owner terminal policy',
-      description:
-        'Which step-up methods count, whether sudo in the browser terminal asks for the ' +
-        'Linux password, and which session kinds record their output.',
+      description: 'Step-up methods, the effective owner sudo rule, and output recording.',
     },
   })
-  .patch('/owner-terminal/settings', ({ body }) => setOwnerTerminalSettings(body), {
-    body: OwnerTerminalSettingsPatch,
-    response: { 200: OwnerTerminalSettingsResponse, ...commonErrors },
-    detail: {
-      summary: 'Update the owner terminal policy',
-      description:
-        '`sudoPasswordRequired` takes effect on the next deploy (setup.sh reads it when ' +
-        'it installs the sudoers policy) -- sudo authorizes by Unix account, not by which ' +
-        'process asked, so nothing at runtime can flip it per request. See the branch ' +
-        'report for why.',
+  .patch(
+    '/owner-terminal/settings',
+    ({ body, request }) => setOwnerTerminalSettings(body, request),
+    {
+      body: OwnerTerminalSettingsPatch,
+      response: { 200: OwnerTerminalSettingsResponse, ...commonErrors, ...errors(502, 503, 504) },
+      detail: {
+        summary: 'Update the owner terminal policy',
+        description:
+          '`sudoWithoutPassword` changes the managed sudoers rule immediately through hostd.',
+      },
     },
-  });
+  );

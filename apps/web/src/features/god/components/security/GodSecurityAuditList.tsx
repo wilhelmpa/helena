@@ -21,6 +21,7 @@ const EVENT_KEYS = [
   'session_start',
   'session_end',
   'token_rejected',
+  'sudo_changed',
 ] as const;
 
 // Newest first, no keystrokes ever shown here (see design §2.4: recording, when a

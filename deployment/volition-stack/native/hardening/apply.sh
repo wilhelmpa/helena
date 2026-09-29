@@ -30,7 +30,7 @@
 #                 include; the owner geo (local-owner/configure.py) includes it
 #   sudo-model    H-07/§8.3: helena-ops is the automation account (sudo without a password,
 #                 SSH key only, password locked); any other blanket NOPASSWD rule (the
-#                 owner's) is moved aside, so the owner types his password for sudo
+#                 owner's) is moved aside; wilhelmpa receives a managed NOPASSWD rule
 #   units         systemd sandboxing drop-ins for the API, web and worker, restarted one
 #                 by one with a health check; a unit that does not come back is rolled back
 #   terminal-key  the owner-terminal signing key readable by the API and the terminal
@@ -517,25 +517,16 @@ sudo_ok() { visudo -c >/dev/null 2>&1; }
 
 step_sudo_model() {
   local ops_sudoers=/etc/sudoers.d/80-helena-ops ops_sshd=/etc/ssh/sshd_config.d/60-helena-ops.conf
+  local owner_sudoers=/etc/sudoers.d/99-volition-owner-terminal
   local home keys status file rules others moved=0 blanket_files=()
-  # 0. Other blanket rules go aside at the end — only while the owner can still reach root
-  #    with his password (group sudo + a %sudo rule, a usable password). Checked first, so a
-  #    refusal changes nothing.
+  # 0. Existing blanket rules go aside after the managed owner rule is installed.
   if blanket_rules /etc/sudoers | awk '{print $1}' | grep -vqxF -- "$ops_user"; then
     die "sudo-model: /etc/sudoers itself grants NOPASSWD: ALL to someone else; change it with visudo by hand"
   fi
   for file in /etc/sudoers.d/*; do
-    [[ -f $file && $file != "$ops_sudoers" ]] || continue
+    [[ -f $file && $file != "$ops_sudoers" && $file != "$owner_sudoers" ]] || continue
     [[ -n $(blanket_rules "$file" | awk -v ops="$ops_user" '$1 != ops') ]] && blanket_files+=("$file")
   done
-  if [[ ${#blanket_files[@]} -gt 0 ]]; then
-    [[ $(passwd -S "$owner_user" 2>/dev/null | awk '{print $2}') == P ]] \
-      || die "sudo-model: $owner_user has no usable password; set one (passwd) before sudo asks for it"
-    if ! id -nG "$owner_user" 2>/dev/null | tr ' ' '\n' | grep -qx sudo \
-       || ! grep -Eq '^[[:space:]]*%sudo[[:space:]]+ALL[[:space:]]*=' /etc/sudoers; then
-      die "sudo-model: $owner_user would lose sudo (not in group sudo, or no %sudo rule in /etc/sudoers)"
-    fi
-  fi
   # 1. The automation account: it exists, it has a key, its password is locked.
   if ! id "$ops_user" >/dev/null 2>&1; then
     say "sudo-model: $ops_user does not exist; creating it (home, bash, no password)"
@@ -585,6 +576,25 @@ step_sudo_model() {
       log "sudo-model: $ops_sudoers installed"
     fi
   fi
+  visudo -cf "$files/99-volition-owner-terminal" >/dev/null || die "sudo-model: owner sudoers rule does not parse"
+  if [[ -e /etc/sudoers.d/.99-volition-owner-terminal.disabled ]]; then
+    say "sudo-model: owner sudo intentionally disabled"
+    if [[ -e $owner_sudoers ]]; then
+      cmp -s "$files/99-volition-owner-terminal" "$owner_sudoers" || die "sudo-model: refusing to remove changed $owner_sudoers"
+      run rm -f "$owner_sudoers"
+      if [[ $apply -eq 1 ]] && ! sudo_ok; then
+        install -m 0440 -o root -g root "$files/99-volition-owner-terminal" "$owner_sudoers"
+        die "sudo-model: visudo -c failed; $owner_sudoers restored"
+      fi
+    fi
+  elif ! cmp -s "$files/99-volition-owner-terminal" "$owner_sudoers"; then
+    [[ -e $owner_sudoers ]] && die "sudo-model: $owner_sudoers differs from the managed rule"
+    say "sudo-model: installing $owner_sudoers"
+    if [[ $apply -eq 1 ]]; then
+      install -m 0440 -o root -g root "$files/99-volition-owner-terminal" "$owner_sudoers"
+      sudo_ok || { rm -f "$owner_sudoers"; die "sudo-model: visudo -c failed for $owner_sudoers"; }
+    fi
+  fi
   # 4. Every other blanket NOPASSWD rule goes aside (checked in step 0).
   for file in "${blanket_files[@]}"; do
     rules=$(blanket_rules "$file" | awk -v ops="$ops_user" '$1 != ops')
@@ -613,12 +623,17 @@ step_sudo_model() {
     [[ $apply -eq 1 ]] && log "sudo-model: blanket rule of $file set aside (backup $backup$file)"
   done
   [[ $moved -eq 1 ]] || say "sudo-model: no other account has NOPASSWD: ALL (already)"
-  [[ $apply -eq 1 ]] && say "sudo-model: done. The owner now types his password for sudo; $ops_user keeps key-only root."
+  [[ $apply -eq 1 ]] && say "sudo-model: done. $owner_user and $ops_user have passwordless sudo."
   true
 }
 rollback_sudo_model() {
   # Puts the owner's moved-aside rules back (the automation account stays as it is).
   local file saved
+  local owner_sudoers=/etc/sudoers.d/99-volition-owner-terminal
+  if [[ -e $owner_sudoers ]]; then
+    cmp -s "$files/99-volition-owner-terminal" "$owner_sudoers" || die "sudo-model: refusing to remove changed $owner_sudoers"
+    run rm -f "$owner_sudoers"
+  fi
   [[ -s $state/sudo-model.moved ]] || { say "sudo-model: nothing was moved aside"; return 0; }
   while read -r file; do
     saved=$(ls -1d "$state"/backup/*"$file" 2>/dev/null | sort | tail -n 1)

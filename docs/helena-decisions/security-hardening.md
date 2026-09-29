@@ -447,20 +447,22 @@ Owner first decides on the `codex-home-server` key. `AllowUsers` defaults to the
 drops the automation account.
 
 **6.3a sudo model** (H-07, §8.3; done live on 2026-09-25 by the orchestrator, the step detects it):
-1. The owner has a usable password (`passwd`), is in group `sudo`, and `/etc/sudoers` has the
-   `%sudo ALL=(ALL:ALL) ALL` rule; `helena-ops` exists with the orchestrator's key in
+1. `helena-ops` exists with the orchestrator's key in
    `~helena-ops/.ssh/authorized_keys` (the step creates a missing account, never a key).
 2. `sudo $H/hardening/apply.sh sudo-model` (dry run: what it would change), then `--apply
    sudo-model`: locks `helena-ops`' password (`passwd -l`), installs
    `sshd_config.d/60-helena-ops.conf` (`sshd -t`, reload), installs `sudoers.d/80-helena-ops`
    (`visudo -cf`, 0440; a live file with the same rule and other comments is left as it is), and
    moves every other `NOPASSWD: ALL` rule in `/etc/sudoers.d` aside into the run's backup (a file
-   with other rules too keeps them; only the blanket line is commented out). It refuses before
-   changing anything when the owner would lose sudo, and never edits `/etc/sudoers` itself.
-3. Check: `ssh helena-ops@kingston-server.local sudo -n true` works with the key; `sudo -k; sudo
-   true` asks the owner for his password; `audit.sh` `auth.sudo` pass.
-4. Rollback (the owner's rule back; `helena-ops` stays): `sudo $H/hardening/apply.sh --apply
-   rollback sudo-model`.
+   with other rules too keeps them; only the blanket line is commented out). It installs
+   `/etc/sudoers.d/99-volition-owner-terminal` for `wilhelmpa` and checks the result with
+   `visudo -c`.
+3. Check: `ssh helena-ops@kingston-server.local sudo -n true` and the owner's `sudo -n true`
+   both work; `audit.sh` `auth.sudo` reports the owner's rule as consciously enabled.
+4. In Administrator → Sicherheit, switch off “Terminals: sudo ohne Passwort” to revoke the
+   managed rule immediately. Hostd records the change and preserves the choice across another
+   installer run. The installer rollback command is `sudo $H/hardening/apply.sh --apply rollback
+   sudo-model`; it removes the managed rule and restores backed-up rules.
 
 **6.4 Units** (a quiet moment, no chat answer or run in flight):
 `--apply units` (API, web, worker one by one with health checks), `--apply terminal-key`,
@@ -618,11 +620,10 @@ automatic rollbacks cover firewall and SSH; backups of every replaced file are u
    applies to the tunnel.
 2. **At home: tunnel (A) or split horizon (B)?** Decided 2026-09-25 (owner): B, with its own name
    `helena-home.volition.one` (the Speedport has no local DNS; §5). A stays the fallback.
-3. **sudo model** (H-07): **decided and live (2026-09-25)** — a separate `helena-ops` account for
-   the orchestrator's SSH automation (NOPASSWD, key-only, LAN-only, password locked) and a sudo
-   password for `wilhelmpa`, so the browser terminal and the AI CLIs in it need the password for
-   root. In the repo as `apply.sh sudo-model` (§6.3a); `audit.sh` `auth.sudo` passes only in that
-   shape and warns for any other account with `NOPASSWD: ALL` (`why=others`) or a `helena-ops` whose
+3. **sudo model** (H-07): a separate `helena-ops` account for the orchestrator's SSH automation
+   (NOPASSWD, key-only, LAN-only, password locked) and a managed NOPASSWD rule for `wilhelmpa`.
+   The switch in Administrator → Sicherheit removes or restores that rule through hostd.
+   `audit.sh` `auth.sudo` reports the managed owner rule as consciously enabled and warns for any other account with `NOPASSWD: ALL` (`why=others`) or a `helena-ops` whose
    password is not locked or whose SSH is not key-only (`why=ops`, `problem=password|ssh|both`).
 4. **Access identity**: Google (recommended) and/or One-time PIN; session 24 h (or 7 d for
    convenience; the owner terminal still asks for TOTP).
@@ -715,9 +716,9 @@ automatic rollbacks cover firewall and SSH; backups of every replaced file are u
   (2026-09-25).
 - `tests/sudo-model-selftest.sh` (private user + mount namespace, scratch sudoers/sshd folders, fake
   passwd/sshd/systemctl/useradd/id/getent, the real visudo): dry run changes nothing; `--apply`
-  locks the account, installs both files, moves the owner's rule aside, `visudo -c` passes and
+  locks the account, installs the ops and owner rules, moves the old owner rule aside, `visudo -c` passes and
   `auth.sudo` passes; a second run is a no-op; a hand-made equal rule is kept; rollback restores the
-  owner's rule; a mixed file keeps its other rules; refusals (owner without password, no key)
+  owner's old rule; a mixed file keeps its other rules; a missing automation key
   change nothing; the audit's `why`/`problem` cases. All pass (2026-09-25).
 - Tunnel entry end to end (throw-away API of this branch + nginx from the template): page, API,
   forged assertion, a client-sent LAN capability, code, browser, both terminals and the sign-in

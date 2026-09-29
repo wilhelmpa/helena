@@ -233,7 +233,8 @@
       "grant_revoked": "授权已撤销",
       "session_start": "会话已开始",
       "session_end": "会话已结束",
-      "token_rejected": "令牌被拒绝"
+      "token_rejected": "令牌被拒绝",
+      "sudo_changed": "Terminal sudo changed"
     },
     "grantActiveOpen": "已授权。",
     "rootAccess": {

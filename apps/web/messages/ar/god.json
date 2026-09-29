@@ -233,7 +233,8 @@
       "grant_revoked": "تم إلغاء التصريح",
       "session_start": "بدأت الجلسة",
       "session_end": "انتهت الجلسة",
-      "token_rejected": "تم رفض الرمز"
+      "token_rejected": "تم رفض الرمز",
+      "sudo_changed": "Terminal sudo changed"
     },
     "grantActiveOpen": "تم منح الوصول.",
     "rootAccess": {

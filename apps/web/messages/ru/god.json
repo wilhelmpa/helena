@@ -233,7 +233,8 @@
       "grant_revoked": "Разрешение отозвано",
       "session_start": "Сессия начата",
       "session_end": "Сессия завершена",
-      "token_rejected": "Токен отклонён"
+      "token_rejected": "Токен отклонён",
+      "sudo_changed": "Terminal sudo changed"
     },
     "grantActiveOpen": "Доступ открыт.",
     "rootAccess": {
