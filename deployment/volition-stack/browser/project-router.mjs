@@ -7,6 +7,7 @@ import {
   BrowserControlError,
   controlBrowser,
   listTabs,
+  navigableUrl,
   readJsonBody,
   setBrowserColorScheme,
   startWindowKeeper,
@@ -19,10 +20,15 @@ import {
   noteViewerAction,
   setViewportAuthority,
   viewportAuthority,
+  setNavigationState,
   watchDesktop,
 } from "./project-browser-screencast.mjs";
 import { browserOverview, browserThumbnail } from "./project-browser-overview.mjs";
 import { acceptWebSocket } from "./websocket.mjs";
+import { checkPreviewNavigation, navigationError } from "../../../packages/browser-gateway/src/preview-navigation.ts";
+
+let gatewayPreviews = null;
+export function setGatewayPreviews(read) { gatewayPreviews = read; }
 
 const SLUG = /^[a-z0-9][a-z0-9-]{0,31}$/;
 const ROUTE = /^\/projects\/([a-z0-9][a-z0-9-]{0,31})(\/.*)?$/;
@@ -235,6 +241,7 @@ async function readBookmarks(file) {
 
 async function handleControl(request, response, target, settingsRoot, idle) {
   const running = browserRuns(idle, target.slug);
+  let body;
   try {
     if (target.api === "color-scheme") {
       if (request.method === "GET") return sendJson(response, 200, await readColorScheme(settingsRoot, target.slug));
@@ -292,7 +299,7 @@ async function handleControl(request, response, target, settingsRoot, idle) {
       return sendJson(response, 200, viewportAuthority(target.cdpPort));
     }
     if (request.method !== "POST") throw new BrowserControlError(405, "Method not allowed");
-    const body = await readJsonBody(request);
+    body = await readJsonBody(request);
     if (target.api === "lock-takeover" || target.api === "lock-release") {
       if (!gatewayLocks) throw new BrowserControlError(503, "The browser gateway is not running");
       const lock = gatewayLocks.of(target.slug);
@@ -302,12 +309,25 @@ async function handleControl(request, response, target, settingsRoot, idle) {
       const state = lock.state();
       return sendJson(response, 200, { holder: state.holder, since: state.since });
     }
+    if ((target.api === "navigate" || target.api === "new") && body.url && gatewayPreviews) {
+      const url = navigableUrl(body.url);
+      const checked = await checkPreviewNavigation(url, () => gatewayPreviews(target.slug));
+      if (checked.state) {
+        setNavigationState(target.cdpPort, checked.state);
+        return sendJson(response, 503, { error: `Preview ${checked.state.name} is ${checked.state.reason}.`, state: checked.state });
+      }
+    }
     noteViewerAction(target.cdpPort);
-    return sendJson(response, 200, await controlBrowser(target.cdpPort, target.api, body));
+    const result = await controlBrowser(target.cdpPort, target.api, body);
+    setNavigationState(target.cdpPort, null);
+    return sendJson(response, 200, result);
   } catch (error) {
+    const state = navigationError(typeof body?.url === "string" ? body.url : "", error);
+    if (state) setNavigationState(target.cdpPort, state);
     const status = error instanceof BrowserControlError ? error.status : 502;
     return sendJson(response, status, {
-      error: error instanceof BrowserControlError ? error.message : "The browser did not answer",
+      error: state?.message ?? (error instanceof BrowserControlError ? error.message : "The browser did not answer"),
+      ...(state && { state }),
     });
   }
 }
@@ -616,7 +636,7 @@ if (import.meta.main) {
   // live views working: the MCP tools then answer that the gateway cannot be reached.
   let gateway = null;
   if (process.env.BROWSER_GATEWAY_TOKEN_FILE) {
-    import("./browser-gateway-server.mjs")
+    const gatewayReady = import("./browser-gateway-server.mjs")
       .then(({ startBrowserGateway }) =>
         startBrowserGateway({
           listBrowsers: () => listProjectBrowsers(root),
@@ -627,7 +647,9 @@ if (import.meta.main) {
           },
           log: (message) => console.log(message),
         }),
-      )
+      );
+    setGatewayPreviews(async (slug) => (await gatewayReady).previews(slug));
+    gatewayReady
       .then((started) => {
         gateway = started;
         setGatewayLocks(started.locks);

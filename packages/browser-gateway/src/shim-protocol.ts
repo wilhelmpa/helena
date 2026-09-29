@@ -7,7 +7,7 @@
 //     {"tool", "args", "agentKey", "runId"?, "messageId"?,
 //      "uploads"?: [{"name","mimeType","data"}, …]}
 //   read one line of JSON back:
-//     {"ok": true, "content": "<text>", "image"?: {"data","mimeType"}} | {"ok": false, "error"}
+//     {"ok": true, "content": "<text>", "image"?: {"data","mimeType"}} | {"ok": false, "error", "state"?}
 //
 // The shim runs as the agent, inside its sandbox: it has no rights of its own and adds only
 // what the agent itself has — its key from the environment and, for browser_file_upload,
@@ -28,6 +28,7 @@ export interface CallToolResult {
   [key: string]: unknown;
   content: ({ type: 'text'; text: string } | { type: 'image'; data: string; mimeType: string })[];
   isError: boolean;
+  structuredContent?: { state: unknown };
 }
 
 // A value Hermes left as its literal "${NAME}" placeholder (the variable was not set) counts
@@ -148,6 +149,7 @@ export function toolResult(response: unknown): CallToolResult {
     ok?: unknown;
     content?: unknown;
     error?: unknown;
+    state?: unknown;
     image?: { data?: unknown; mimeType?: unknown };
   } | null;
   if (answer && answer.ok === true && typeof answer.content === 'string') {
@@ -164,7 +166,13 @@ export function toolResult(response: unknown): CallToolResult {
     return textResult(answer.content, false);
   }
   if (answer && answer.ok === false) {
-    return textResult(String(answer.error ?? 'The browser gateway refused the call.'), true);
+    const result = textResult(
+      String(answer.error ?? 'The browser gateway refused the call.'),
+      true,
+    );
+    if (answer.state && typeof answer.state === 'object')
+      result.structuredContent = { state: answer.state };
+    return result;
   }
   return textResult('The browser gateway answered something unreadable.', true);
 }

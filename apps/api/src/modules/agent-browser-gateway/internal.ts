@@ -7,7 +7,11 @@ import { getSessionFromHeaders } from '@repo/auth';
 import { HttpError } from '#shared/lib';
 import { HOME_SLUG } from '#shared/agent-socket';
 import { isHomeAgent } from '#modules/agents/core/home-agent';
-import { getProjectPreviewOrigins } from '#modules/project-previews/service';
+import {
+  getProjectPreviewOrigins,
+  listProjectPreviews,
+  readProjectPreviewLogs,
+} from '#modules/project-previews/service';
 import { getRunnerAgent, type RunnerAgent } from '../agents/runner/service';
 import { loginCode, loginForOrigin } from './credentials';
 import {
@@ -232,6 +236,34 @@ export const agentBrowserGatewayInternalRoutes = new Elysia({
       const refused = await denied(request);
       if (refused) return refused;
       return privateJson(await browserPowerForRouter());
+    },
+    { detail: { hide: true } },
+  )
+  .get(
+    '/internal/browser-gateway/previews/:slug',
+    async ({ request, params }) => {
+      const refused = await denied(request);
+      if (refused) return refused;
+      if (!SLUG.test(params.slug) || params.slug === HOME_SLUG)
+        return privateJson({ previews: [] });
+      const project = await projectBySlug(params.slug);
+      if (!project) return privateJson({ previews: [] });
+      const previews = await listProjectPreviews(project.key);
+      return privateJson({
+        previews: await Promise.all(
+          previews.map(async (preview) => ({
+            name: preview.name,
+            status: preview.status,
+            url: preview.url,
+            error: preview.error,
+            lines: (
+              await readProjectPreviewLogs(project.key, preview.name, 20).catch(() => ({
+                lines: [],
+              }))
+            ).lines,
+          })),
+        ),
+      });
     },
     { detail: { hide: true } },
   )

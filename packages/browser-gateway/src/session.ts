@@ -470,6 +470,10 @@ export class PatchrightGatewaySession implements GatewaySession {
   // Every page tool's answer, in Playwright MCP's sections: what was done, the tabs (when
   // there are several), the page in front, what waits on it, and what happened meanwhile.
   async #answer(result: string | string[], extra: string[] = []): Promise<string> {
+    if (this.#page.url().startsWith('chrome-error://')) {
+      await this.#page.goto('about:blank').catch(() => {});
+      throw new Error('chrome-error:// navigation failed');
+    }
     const sections: string[] = [];
     const results = (Array.isArray(result) ? result : [result]).filter(Boolean);
     if (results.length) sections.push('### Result', ...results.map((line) => `- ${line}`));
@@ -533,7 +537,12 @@ export class PatchrightGatewaySession implements GatewaySession {
     this.#assertNoDialog();
     const done = await this.#orDialog(
       (async () => {
-        await this.#page.goto(url, { waitUntil: 'domcontentloaded', timeout: LOAD_TIMEOUT_MS });
+        try {
+          await this.#page.goto(url, { waitUntil: 'domcontentloaded', timeout: LOAD_TIMEOUT_MS });
+        } catch (error) {
+          if (/net::ERR_/.test(String(error))) await this.#page.goto('about:blank').catch(() => {});
+          throw error;
+        }
         await this.#settle();
         return `Navigated to ${redactUrl(url)}`;
       })(),
@@ -949,12 +958,19 @@ export class PatchrightGatewaySession implements GatewaySession {
       return ['### Open tabs', ...(await this.#tabLines(pages, options.agentId))].join('\n');
     }
     if (action === 'new') {
+      const previous = this.#page;
       const page = await this.#context.newPage();
       this.#wire(page);
       if (options.agentId !== undefined) this.#tabOwners.set(page, options.agentId);
       this.#page = page;
       if (options.url) {
-        await page.goto(options.url, { waitUntil: 'domcontentloaded', timeout: LOAD_TIMEOUT_MS });
+        try {
+          await page.goto(options.url, { waitUntil: 'domcontentloaded', timeout: LOAD_TIMEOUT_MS });
+        } catch (error) {
+          await page.close().catch(() => {});
+          this.#page = previous;
+          throw error;
+        }
         await this.#settle();
       }
       return this.#answer(`Opened tab ${this.#openPages().indexOf(page)}`);

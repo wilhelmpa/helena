@@ -124,6 +124,12 @@ describe('toolResult', () => {
       content: [{ type: 'text', text: 'no' }],
       isError: true,
     });
+    const state = { type: 'navigation-error', code: 'ERR_CONNECTION_REFUSED' };
+    expect(toolResult({ ok: false, error: 'Navigation failed', state })).toEqual({
+      content: [{ type: 'text', text: 'Navigation failed' }],
+      isError: true,
+      structuredContent: { state },
+    });
     expect(
       toolResult({
         ok: true,

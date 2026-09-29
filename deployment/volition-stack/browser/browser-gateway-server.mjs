@@ -17,7 +17,7 @@
 // packages/browser-gateway/src/shim-protocol.ts, the stdio side of this same contract):
 //   -> {"tool": "browser_navigate", "args": {...}, "agentKey": "...", "runId"?, "messageId"?,
 //       "uploads"?: [{"name","mimeType","data"}, …]}
-//   <- {"ok": true, "content": "...", "image"?: {"data","mimeType"}} | {"ok": false, "error": "..."}
+//   <- {"ok": true, "content": "...", "image"?: {"data","mimeType"}} | {"ok": false, "error": "...", "state"?}
 import { spawn } from "node:child_process";
 import { timingSafeEqual } from "node:crypto";
 import fs from "node:fs/promises";
@@ -41,7 +41,7 @@ import {
 import { readGatewayToken } from "./gateway-token.mjs";
 import * as screencast from "./project-browser-screencast.mjs";
 
-const { setControlState, setHandover } = screencast;
+const { setControlState, setHandover, setNavigationState } = screencast;
 const DEFAULT_AGENT_VIEWPORT = { width: 1440, height: 900 };
 
 // Who owns the page size (docs/volition-design-browser-perfekt.md §3.2): while an agent
@@ -294,6 +294,10 @@ export async function startBrowserGateway({ listBrowsers, ensureBrowser, log = (
         sessions,
         queue,
         onHandover,
+        onNavigationState: (target, state) => {
+          const cdpPort = cdpPorts.get(target);
+          if (cdpPort) setNavigationState(cdpPort, state);
+        },
         onActor: (target, agentKey, settings) => {
           actors.set(target, agentKey);
           if (settings?.agentViewport) viewports.set(target, settings.agentViewport);
@@ -313,6 +317,8 @@ export async function startBrowserGateway({ listBrowsers, ensureBrowser, log = (
       servers.delete(slug);
       dispatchers.delete(slug);
       sessions.drop(slug);
+      const cdpPort = cdpPorts.get(slug);
+      if (cdpPort) setNavigationState(cdpPort, null);
       cdpPorts.delete(slug);
       await fs.rm(socketDirectory(slug), { recursive: true, force: true }).catch(() => {});
       log(`browser gateway: stopped listening for ${slug} (no longer provisioned)`);
@@ -441,6 +447,7 @@ export async function startBrowserGateway({ listBrowsers, ensureBrowser, log = (
   return {
     locks,
     tasks,
+    previews: (slug) => helena.previews(slug),
     home: HOME_SLUG,
     stop() {
       clearInterval(timer);
