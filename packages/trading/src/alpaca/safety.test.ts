@@ -49,6 +49,11 @@ function fixture() {
   let stale = false;
   let authorized = true;
   let held = 0;
+  let rejectClose = false;
+  let rejectCloseResponse = false;
+  let fillStopOnCancel = false;
+  let marketOpen = true;
+  let pendingClose = false;
   const execution: PaperExecution = {
     async withAccountLock(_ctx, _account, work) {
       if (locked) throw new Error('account busy');
@@ -95,13 +100,32 @@ function fixture() {
           ? [{ symbol: 'SPY', qty: String(held), market_value: String(held * 600), side: 'long' }]
           : [],
       );
+    if (u.pathname === '/v2/clock')
+      return json({ timestamp: NOW, is_open: marketOpen, next_open: NOW, next_close: NOW });
     if (u.pathname === '/v2/orders' && method === 'GET') return json(open);
     if (u.pathname === '/v2/orders:by_client_order_id') {
       const found = broker.get(u.searchParams.get('client_order_id')!);
       return found && !concealOrder ? json(found) : json({ message: 'not found' }, 404);
     }
-    if (u.pathname.startsWith('/v2/orders/') && method === 'GET')
-      return json(open.find((o) => u.pathname.endsWith(o.id)));
+    if (u.pathname.startsWith('/v2/orders/') && method === 'GET') {
+      const id = u.pathname.split('/').at(-1);
+      return json(
+        [...open.flatMap((order) => [order, ...(order.legs ?? [])]), ...broker.values()].find(
+          (order) => order.id === id,
+        ),
+      );
+    }
+    if (u.pathname.startsWith('/v2/orders/') && method === 'DELETE') {
+      const id = u.pathname.split('/').at(-1);
+      const order = [
+        ...open.flatMap((root) => [root, ...(root.legs ?? [])]),
+        ...broker.values(),
+      ].find((entry) => entry.id === id);
+      if (!order) return json({ message: 'not found' }, 404);
+      order.status = fillStopOnCancel && order.type === 'stop' ? 'filled' : 'canceled';
+      if (order.status === 'filled') held = 0;
+      return new Response(null, { status: 204 });
+    }
     if (u.pathname === '/v2/stocks/trades/latest')
       return json({
         trades: Object.fromEntries(
@@ -110,15 +134,29 @@ function fixture() {
             .map((symbol) => [symbol, { p: 600, t: stale ? '2026-09-30T15:00:00Z' : NOW }]),
         ),
       });
+    if (u.pathname === '/v1beta3/crypto/us/latest/trades')
+      return json({ trades: { 'BTC/USD': { p: 65000, t: '2026-09-30T15:00:00Z' } } });
     if (u.pathname === '/v2/orders' && method === 'POST') {
       expect(intents.size).toBeGreaterThan(0); // Durable write precedes any broker mutation.
       const body = JSON.parse(String(init?.body));
+      if (rejectClose && body.side === 'sell' && body.type === 'market')
+        return json({ message: 'close rejected' }, 422);
       const order = brokerOrder({
         ...body,
-        status: 'accepted',
+        status:
+          rejectCloseResponse && body.side === 'sell' && body.type === 'market'
+            ? 'rejected'
+            : body.side === 'sell' && body.type === 'market' && !pendingClose
+              ? 'filled'
+              : 'accepted',
+        filled_qty:
+          body.side === 'sell' && body.type === 'market' && !pendingClose && !rejectCloseResponse
+            ? body.qty
+            : '0',
         limit_price: body.limit_price ?? null,
       });
       broker.set(order.client_order_id, order);
+      if (order.status === 'filled' && order.side === 'sell') held = 0;
       if (loseResponse) throw new Error('response lost after broker accepted');
       return json(order);
     }
@@ -165,6 +203,21 @@ function fixture() {
     held: (qty: number) => {
       held = qty;
     },
+    rejectClose: () => {
+      rejectClose = true;
+    },
+    rejectCloseResponse: () => {
+      rejectCloseResponse = true;
+    },
+    fillStopOnCancel: () => {
+      fillStopOnCancel = true;
+    },
+    closeMarket: () => {
+      marketOpen = false;
+    },
+    pendingClose: () => {
+      pendingClose = true;
+    },
   };
 }
 const submit = 'alpaca_paper_submit_order';
@@ -195,13 +248,13 @@ describe('pending inventory reservations', () => {
 });
 
 describe('paper execution safety', () => {
-  test('pending buys use position budget and pending sells cannot be oversold', async () => {
+  test('pending buys use position budget and ordinary pending sells cannot be oversold', async () => {
     const f = fixture();
     f.open.push(brokerOrder());
     expect(await f.call(submit, request)).toMatchObject({ isError: true });
     f.open.length = 0;
     f.held(2);
-    f.open.push(brokerOrder({ side: 'sell', qty: '2', type: 'stop' }));
+    f.open.push(brokerOrder({ side: 'sell', qty: '2', type: 'limit' }));
     expect(
       await f.call('alpaca_paper_close_position', {
         requestId: request.requestId,
@@ -280,12 +333,179 @@ describe('paper execution safety', () => {
   });
   test('protected exits are never canceled', async () => {
     const f = fixture();
+    f.held(1);
     const stop = brokerOrder({ side: 'sell', type: 'stop' });
     f.open.push(stop);
     await expect(f.call('alpaca_paper_cancel_order', { orderId: stop.id })).rejects.toThrow(
       'protective',
     );
     expect(f.writes).toEqual([]);
+  });
+  test('a bracket target cannot cancel its sibling stop while shares are held', async () => {
+    const f = fixture();
+    f.held(1);
+    const target = brokerOrder({
+      side: 'sell',
+      type: 'limit',
+      parent_order_id: crypto.randomUUID(),
+    });
+    f.open.push(target);
+    await expect(f.call('alpaca_paper_cancel_order', { orderId: target.id })).rejects.toThrow(
+      'protective',
+    );
+    expect(f.writes).toEqual([]);
+  });
+  test('an unfilled entry with attached exits can be canceled', async () => {
+    const f = fixture();
+    const stop = brokerOrder({ side: 'sell', type: 'stop', stop_price: '580' });
+    const entry = brokerOrder({ symbol: 'QQQ', order_class: 'oto', legs: [stop] });
+    f.open.push(entry);
+    expect(await f.call('alpaca_paper_cancel_order', { orderId: entry.id })).toMatchObject({
+      canceled: entry.id,
+    });
+    expect(entry.status).toBe('canceled');
+    expect(await f.call('alpaca_paper_cancel_order', { orderId: entry.id })).toMatchObject({
+      replayed: true,
+    });
+    expect(f.writes).toEqual(['DELETE']);
+  });
+  test('an unfilled entry can be canceled while older shares of the symbol are held', async () => {
+    const f = fixture();
+    f.held(1);
+    const entry = brokerOrder({ order_class: 'oto', filled_qty: '0' });
+    f.open.push(entry);
+    expect(await f.call('alpaca_paper_cancel_order', { orderId: entry.id })).toMatchObject({
+      canceled: entry.id,
+    });
+    expect(f.writes).toEqual(['DELETE']);
+  });
+  test('a full close cancels the stop, reconciles and returns a journal; replay does not sell twice', async () => {
+    const f = fixture();
+    f.held(1);
+    const stop = brokerOrder({ side: 'sell', type: 'stop', stop_price: '580' });
+    f.open.push(stop);
+    const close = {
+      requestId: crypto.randomUUID(),
+      symbol: 'SPY',
+      rationale: 'Close the approved test position.',
+    };
+    const result = await f.call('alpaca_paper_close_position', close);
+    expect(result).toMatchObject({ paper: true, order: { side: 'sell' } });
+    expect((result as { journal: string }).journal).toContain('typ: trade');
+    expect(stop.status).toBe('canceled');
+    expect(f.writes).toEqual(['DELETE', 'POST']);
+    expect(await f.call('alpaca_paper_close_position', close)).toMatchObject({ replayed: true });
+    expect(f.writes).toEqual(['DELETE', 'POST']);
+  });
+  test('a rejected close restores the stop and leaves the position held', async () => {
+    const f = fixture();
+    f.held(1);
+    f.rejectClose();
+    const stop = brokerOrder({ side: 'sell', type: 'stop', stop_price: '580' });
+    f.open.push(stop);
+    await expect(
+      f.call('alpaca_paper_close_position', {
+        requestId: crypto.randomUUID(),
+        symbol: 'SPY',
+        rationale: 'Close the approved test position.',
+      }),
+    ).rejects.toThrow('close rejected');
+    expect(f.writes).toEqual(['DELETE', 'POST', 'POST']);
+    expect(
+      [...f.broker.values()].some((order) => order.side === 'sell' && order.type === 'stop'),
+    ).toBe(true);
+  });
+  test('a bracket close cancels its stop and target before selling', async () => {
+    const f = fixture();
+    f.held(1);
+    const stop = brokerOrder({ side: 'sell', type: 'stop', stop_price: '580' });
+    const target = brokerOrder({ side: 'sell', type: 'limit', limit_price: '640' });
+    f.open.push(brokerOrder({ status: 'filled', order_class: 'bracket', legs: [stop, target] }));
+    expect(
+      await f.call('alpaca_paper_close_position', {
+        requestId: crypto.randomUUID(),
+        symbol: 'SPY',
+        rationale: 'Close the bracket protected position.',
+      }),
+    ).toMatchObject({ paper: true, order: { side: 'sell' } });
+    expect(stop.status).toBe('canceled');
+    expect(target.status).toBe('canceled');
+    expect(f.writes).toEqual(['DELETE', 'DELETE', 'POST']);
+  });
+  test('a rejected close response restores the stop', async () => {
+    const f = fixture();
+    f.held(1);
+    f.rejectCloseResponse();
+    const stop = brokerOrder({ side: 'sell', type: 'stop', stop_price: '580' });
+    f.open.push(stop);
+    await expect(
+      f.call('alpaca_paper_close_position', {
+        requestId: crypto.randomUUID(),
+        symbol: 'SPY',
+        rationale: 'Close the approved test position.',
+      }),
+    ).rejects.toThrow('protection was reconciled');
+    expect(f.writes).toEqual(['DELETE', 'POST', 'POST']);
+  });
+  test('a stop fill during cancellation does not trigger a second sell or replacement stop', async () => {
+    const f = fixture();
+    f.held(1);
+    f.fillStopOnCancel();
+    f.open.push(brokerOrder({ side: 'sell', type: 'stop', stop_price: '580' }));
+    await expect(
+      f.call('alpaca_paper_close_position', {
+        requestId: crypto.randomUUID(),
+        symbol: 'SPY',
+        rationale: 'Close the approved test position.',
+      }),
+    ).rejects.toThrow('protective exit changed');
+    expect(f.writes).toEqual(['DELETE']);
+  });
+  test('a held stock keeps its stop while the market is closed', async () => {
+    const f = fixture();
+    f.held(1);
+    f.closeMarket();
+    f.open.push(brokerOrder({ side: 'sell', type: 'stop', stop_price: '580' }));
+    await expect(
+      f.call('alpaca_paper_close_position', {
+        requestId: crypto.randomUUID(),
+        symbol: 'SPY',
+        rationale: 'Close the approved test position.',
+      }),
+    ).rejects.toThrow('market is closed');
+    expect(f.writes).toEqual([]);
+  });
+  test('an unfilled close is canceled and the remaining shares regain a stop', async () => {
+    const f = fixture();
+    f.held(1);
+    f.pendingClose();
+    f.open.push(brokerOrder({ side: 'sell', type: 'stop', stop_price: '580' }));
+    await expect(
+      f.call('alpaca_paper_close_position', {
+        requestId: crypto.randomUUID(),
+        symbol: 'SPY',
+        rationale: 'Close the approved test position.',
+      }),
+    ).rejects.toThrow('protection was reconciled');
+    expect(f.writes).toEqual(['DELETE', 'POST', 'DELETE', 'POST']);
+    expect(
+      [...f.broker.values()].some((order) => order.type === 'stop' && order.status === 'accepted'),
+    ).toBe(true);
+  });
+  test('crypto entry refusal precedes stale trade data', async () => {
+    const f = fixture();
+    const crypto = { ...request, symbol: 'BTC/USD', stopLossPrice: 58000 };
+    const result = await f.call(submit, crypto);
+    expect(result).toMatchObject({ isError: true });
+    expect(
+      (
+        result as { structuredContent: { checks: { violations: string[] } } }
+      ).structuredContent.checks.violations.join(' '),
+    ).toContain('Crypto entries are disabled');
+    expect(f.writes).toEqual([]);
+    expect(await f.call('alpaca_paper_market', { symbols: ['BTC/USD'] })).toMatchObject({
+      prices: { 'BTC/USD': { price: 65000, time: '2026-09-30T15:00:00Z' } },
+    });
   });
   test('replay identity ignores argument key order but includes the account', () => {
     const a = paperIntent(ACCOUNT, 1, request.requestId, { a: 1, b: 2 });
