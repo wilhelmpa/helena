@@ -783,8 +783,11 @@ function SidebarReceiptsItem({
       href={receiptsPath(projectKey)}
       icon={<ReceiptText />}
       active={active}
-      containsActive={activeView != null}
+      containsActive={active || activeView != null}
       storageKey={`${projectKey}:receipts`}
+      // Folded until you are in Belege: the Wissen entry stays short, so the phone menu
+      // opens at its top instead of scrolled down to a deep row.
+      defaultOpen={false}
     >
       {RECEIPT_VIEWS.map((view) => (
         <TreeItem

@@ -71,7 +71,6 @@ export default function DocumentEditor({
             status: note.draft.status,
             dirty: note.dirty,
             editable: canManage,
-            sourceRequired: canManage && lossless === false,
             inspectorOpen,
             labels: {
               back: t('backToDocuments'),

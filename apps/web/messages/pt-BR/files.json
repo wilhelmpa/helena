@@ -142,7 +142,6 @@
     "run": "Execução {run}",
     "formatted": "Texto formatado",
     "source": "Código-fonte Markdown",
-    "sourceRequired": "Este arquivo contém Markdown que o editor formatado não consegue preservar. Edite o código-fonte para manter todo o conteúdo.",
     "sourceEditRejected": "Esta edição não conseguiu preservar as quebras de linha originais. Seu texto anterior não foi alterado. Tente edições menores."
   },
   "knowledge": {
@@ -167,13 +166,6 @@
       "base": "Visualização (tabela, cartões, lista)",
       "firstDoc": "Criar um doc"
     },
-    "filters": {
-      "all": "Tudo",
-      "docs": "Documentos",
-      "canvases": "Telas",
-      "files": "Arquivos",
-      "agents": "De agentes"
-    },
     "columns": {
       "name": "Nome",
       "kind": "Tipo",
@@ -191,9 +183,7 @@
     },
     "dropHint": "Arraste arquivos para cá ou <pick>escolha</pick>",
     "entries": "{count, plural, one {# item} other {# itens}}",
-    "subfolders": "{count, plural, one {# subpasta, na árvore à esquerda} other {# subpastas, na árvore à esquerda}}",
     "emptyFolder": "Esta pasta está vazia. Crie um doc ou arraste arquivos para cá.",
-    "emptyFolderWithSubfolders": "Não há arquivos aqui, só subpastas. Abra-as na árvore à esquerda.",
     "emptyFilter": "Nenhum arquivo deste tipo.",
     "emptyRecent": "Ainda não há arquivos. Crie um doc ou arraste arquivos para cá.",
     "recent": "Alterados recentemente",
@@ -213,9 +203,6 @@
     "history": "Histórico",
     "noHistory": "Ainda sem histórico",
     "discard": "Descartar as alterações não salvas?",
-    "othersFiles": "{count, plural, one {# arquivo} other {# arquivos}} ao lado →",
-    "othersKnowledge": "{count, plural, one {# documento ou tela} other {# documentos e telas}} ao lado →",
-    "openInPage": "Abrir grande",
     "download": "Baixar",
     "searchFiles": "Pesquisar arquivos …",
     "emptyTitle": "Ainda nada em Conhecimento",
@@ -241,8 +228,6 @@
     "zoomIn": "Aumentar zoom",
     "insert": "Inserir",
     "findTask": "Buscar uma tarefa",
-    "eyebrow": "Conhecimento / {path}",
-    "canvases": "Telas",
     "counts": "{cards, plural, one {# cartão} other {# cartões}} · {links, plural, one {# conexão} other {# conexões}}",
     "share": "Compartilhar",
     "tools": {

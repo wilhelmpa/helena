@@ -142,7 +142,6 @@
     "run": "Lauf {run}",
     "formatted": "Formatierter Text",
     "source": "Markdown-Quelltext",
-    "sourceRequired": "Diese Datei enthält Markdown, das der formatierte Editor nicht erhalten kann. Bearbeite den Quelltext, damit alle Inhalte erhalten bleiben.",
     "sourceEditRejected": "Diese Änderung konnte nicht unter Erhalt der ursprünglichen Zeilenenden übernommen werden. Der vorherige Text bleibt erhalten. Versuche kleinere Änderungen."
   },
   "knowledge": {
@@ -167,13 +166,6 @@
       "base": "Ansicht (Tabelle, Karten, Liste)",
       "firstDoc": "Doc anlegen"
     },
-    "filters": {
-      "all": "Alles",
-      "docs": "Dokumente",
-      "canvases": "Leinwände",
-      "files": "Dateien",
-      "agents": "Von Agenten"
-    },
     "columns": {
       "name": "Name",
       "kind": "Art",
@@ -191,9 +183,7 @@
     },
     "dropHint": "Dateien hierher ziehen oder <pick>auswählen</pick>",
     "entries": "{count, plural, one {# Eintrag} other {# Einträge}}",
-    "subfolders": "{count, plural, one {# Unterordner, im Baum links} other {# Unterordner, im Baum links}}",
     "emptyFolder": "Dieser Ordner ist leer. Leg ein Doc an oder zieh Dateien hierher.",
-    "emptyFolderWithSubfolders": "Hier liegen keine Dateien, nur Unterordner. Öffne sie im Baum links.",
     "emptyFilter": "Keine Dateien dieser Art.",
     "emptyRecent": "Noch keine Dateien. Leg ein Doc an oder zieh Dateien hierher.",
     "recent": "Zuletzt geändert",
@@ -213,9 +203,6 @@
     "history": "Verlauf",
     "noHistory": "Noch kein Verlauf",
     "discard": "Ungespeicherte Änderungen verwerfen?",
-    "othersFiles": "{count, plural, one {# Datei} other {# Dateien}} daneben →",
-    "othersKnowledge": "{count, plural, one {# Dokument oder Leinwand} other {# Dokumente und Leinwände}} daneben →",
-    "openInPage": "Groß öffnen",
     "download": "Herunterladen",
     "searchFiles": "In Dateien suchen …",
     "emptyTitle": "Noch nichts in Wissen",
@@ -241,8 +228,6 @@
     "zoomIn": "Vergrößern",
     "insert": "Einfügen",
     "findTask": "Aufgabe suchen",
-    "eyebrow": "Wissen / {path}",
-    "canvases": "Leinwände",
     "counts": "{cards, plural, one {# Karte} other {# Karten}} · {links, plural, one {# Verbindung} other {# Verbindungen}}",
     "share": "Teilen",
     "tools": {

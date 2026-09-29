@@ -142,7 +142,6 @@
     "run": "运行 {run}",
     "formatted": "格式化文本",
     "source": "Markdown 源码",
-    "sourceRequired": "此文件包含格式化编辑器无法保留的 Markdown。请编辑源码以保留全部内容。",
     "sourceEditRejected": "此次编辑无法保留原始换行符。你之前的文本保持不变。请尝试较小的编辑。"
   },
   "knowledge": {
@@ -167,13 +166,6 @@
       "base": "视图（表格、卡片、列表）",
       "firstDoc": "新建文档"
     },
-    "filters": {
-      "all": "全部",
-      "docs": "文档",
-      "canvases": "画布",
-      "files": "文件",
-      "agents": "来自智能体"
-    },
     "columns": {
       "name": "名称",
       "kind": "类型",
@@ -191,9 +183,7 @@
     },
     "dropHint": "将文件拖到此处或<pick>选择</pick>",
     "entries": "{count, plural, other {# 项}}",
-    "subfolders": "{count, plural, other {# 个子文件夹，位于左侧树中}}",
     "emptyFolder": "此文件夹为空。新建文档或将文件拖到此处。",
-    "emptyFolderWithSubfolders": "这里没有文件，只有子文件夹。请在左侧树中打开。",
     "emptyFilter": "没有此类文件。",
     "emptyRecent": "还没有文件。新建文档或将文件拖到此处。",
     "recent": "最近修改",
@@ -213,9 +203,6 @@
     "history": "历史",
     "noHistory": "暂无历史",
     "discard": "放弃未保存的更改？",
-    "othersFiles": "另有 {count} 个文件 →",
-    "othersKnowledge": "另有 {count} 个文档和画布 →",
-    "openInPage": "大图打开",
     "download": "下载",
     "searchFiles": "搜索文件 …",
     "emptyTitle": "知识库中还没有内容",
@@ -241,8 +228,6 @@
     "zoomIn": "放大",
     "insert": "插入",
     "findTask": "查找任务",
-    "eyebrow": "知识 / {path}",
-    "canvases": "画布",
     "counts": "{cards, plural, other {# 张卡片}} · {links, plural, other {# 条连接}}",
     "share": "分享",
     "tools": {

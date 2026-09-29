@@ -142,7 +142,6 @@
     "run": "Ejecución {run}",
     "formatted": "Texto con formato",
     "source": "Código fuente Markdown",
-    "sourceRequired": "Este archivo contiene Markdown que el editor con formato no puede conservar. Edita el código fuente para mantener todo el contenido.",
     "sourceEditRejected": "Esta edición no ha podido conservar los finales de línea originales. Tu texto anterior no ha cambiado. Prueba con ediciones más pequeñas."
   },
   "knowledge": {
@@ -167,13 +166,6 @@
       "base": "Vista (tabla, tarjetas, lista)",
       "firstDoc": "Crear un documento"
     },
-    "filters": {
-      "all": "Todo",
-      "docs": "Documentos",
-      "canvases": "Lienzos",
-      "files": "Archivos",
-      "agents": "De agentes"
-    },
     "columns": {
       "name": "Nombre",
       "kind": "Tipo",
@@ -191,9 +183,7 @@
     },
     "dropHint": "Arrastra archivos aquí o <pick>elige</pick>",
     "entries": "{count, plural, one {# elemento} other {# elementos}}",
-    "subfolders": "{count, plural, one {# subcarpeta, en el árbol de la izquierda} other {# subcarpetas, en el árbol de la izquierda}}",
     "emptyFolder": "Esta carpeta está vacía. Crea un doc o arrastra archivos aquí.",
-    "emptyFolderWithSubfolders": "Aquí no hay archivos, solo subcarpetas. Ábrelas en el árbol de la izquierda.",
     "emptyFilter": "No hay archivos de este tipo.",
     "emptyRecent": "Aún no hay archivos. Crea un doc o arrastra archivos aquí.",
     "recent": "Modificados recientemente",
@@ -213,9 +203,6 @@
     "history": "Historial",
     "noHistory": "Aún sin historial",
     "discard": "¿Descartar los cambios sin guardar?",
-    "othersFiles": "{count, plural, one {# archivo} other {# archivos}} al lado →",
-    "othersKnowledge": "{count, plural, one {# documento o lienzo} other {# documentos y lienzos}} al lado →",
-    "openInPage": "Abrir en grande",
     "download": "Descargar",
     "searchFiles": "Buscar en archivos …",
     "emptyTitle": "Aún no hay nada en Conocimiento",
@@ -241,8 +228,6 @@
     "zoomIn": "Acercar",
     "insert": "Insertar",
     "findTask": "Buscar una tarea",
-    "eyebrow": "Conocimiento / {path}",
-    "canvases": "Lienzos",
     "counts": "{cards, plural, one {# tarjeta} other {# tarjetas}} · {links, plural, one {# conexión} other {# conexiones}}",
     "share": "Compartir",
     "tools": {

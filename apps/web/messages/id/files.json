@@ -142,7 +142,6 @@
     "run": "Eksekusi {run}",
     "formatted": "Teks terformat",
     "source": "Sumber Markdown",
-    "sourceRequired": "File ini berisi Markdown yang tidak dapat dipertahankan oleh editor terformat. Edit sumbernya agar semua isi tetap utuh.",
     "sourceEditRejected": "Pengeditan ini tidak dapat mempertahankan akhir baris asli. Teks Anda sebelumnya tidak berubah. Coba pengeditan yang lebih kecil."
   },
   "knowledge": {
@@ -167,13 +166,6 @@
       "base": "Tampilan (tabel, kartu, daftar)",
       "firstDoc": "Buat dokumen"
     },
-    "filters": {
-      "all": "Semua",
-      "docs": "Dokumen",
-      "canvases": "Kanvas",
-      "files": "Berkas",
-      "agents": "Dari agen"
-    },
     "columns": {
       "name": "Nama",
       "kind": "Jenis",
@@ -191,9 +183,7 @@
     },
     "dropHint": "Seret berkas ke sini atau <pick>pilih</pick>",
     "entries": "{count, plural, other {# entri}}",
-    "subfolders": "{count, plural, other {# subfolder, di pohon sebelah kiri}}",
     "emptyFolder": "Folder ini kosong. Buat doc atau seret berkas ke sini.",
-    "emptyFolderWithSubfolders": "Tidak ada berkas di sini, hanya subfolder. Buka di pohon sebelah kiri.",
     "emptyFilter": "Tidak ada berkas jenis ini.",
     "emptyRecent": "Belum ada berkas. Buat doc atau seret berkas ke sini.",
     "recent": "Baru diubah",
@@ -213,9 +203,6 @@
     "history": "Riwayat",
     "noHistory": "Belum ada riwayat",
     "discard": "Buang perubahan yang belum disimpan?",
-    "othersFiles": "{count} berkas lainnya →",
-    "othersKnowledge": "{count} dokumen dan kanvas lainnya →",
-    "openInPage": "Buka besar",
     "download": "Unduh",
     "searchFiles": "Cari berkas …",
     "emptyTitle": "Belum ada apa pun di Pengetahuan",
@@ -241,8 +228,6 @@
     "zoomIn": "Perbesar",
     "insert": "Sisipkan",
     "findTask": "Cari tugas",
-    "eyebrow": "Pengetahuan / {path}",
-    "canvases": "Kanvas",
     "counts": "{cards, plural, other {# kartu}} · {links, plural, other {# tautan}}",
     "share": "Bagikan",
     "tools": {

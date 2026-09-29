@@ -18,13 +18,11 @@ import type { DocumentEditorDialog } from './DocumentEditorDialogs';
 export default function DocumentOptionsMenu({
   document,
   canEdit,
-  sourceRequired,
   onOpenSource,
   onOpenDialog,
 }: {
   document: VaultDocument;
   canEdit: boolean;
-  sourceRequired: boolean;
   onOpenSource: () => void;
   onOpenDialog: (dialog: DocumentEditorDialog) => void;
 }) {
@@ -48,9 +46,6 @@ export default function DocumentOptionsMenu({
           <Code2 />
           {tFiles('source')}
         </DropdownMenuItem>
-        {sourceRequired && (
-          <p className="px-2 py-1 text-xs text-muted-foreground">{tFiles('sourceRequired')}</p>
-        )}
         <DropdownMenuItem asChild>
           <a href={vaultFileUrl(document.path)} download={baseName(document.path)}>
             <Download />

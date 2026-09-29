@@ -142,7 +142,6 @@
     "run": "Exécution {run}",
     "formatted": "Texte mis en forme",
     "source": "Source Markdown",
-    "sourceRequired": "Ce fichier contient du Markdown que l’éditeur mis en forme ne peut pas conserver. Modifiez la source pour garder tout le contenu.",
     "sourceEditRejected": "Cette modification n’a pas pu conserver les fins de ligne d’origine. Votre texte précédent est inchangé. Essayez des modifications plus petites."
   },
   "knowledge": {
@@ -167,13 +166,6 @@
       "base": "Vue (tableau, cartes, liste)",
       "firstDoc": "Créer un doc"
     },
-    "filters": {
-      "all": "Tout",
-      "docs": "Documents",
-      "canvases": "Toiles",
-      "files": "Fichiers",
-      "agents": "Par des agents"
-    },
     "columns": {
       "name": "Nom",
       "kind": "Type",
@@ -191,9 +183,7 @@
     },
     "dropHint": "Déposez des fichiers ici ou <pick>choisissez</pick>",
     "entries": "{count, plural, one {# élément} other {# éléments}}",
-    "subfolders": "{count, plural, one {# sous-dossier, dans l’arborescence à gauche} other {# sous-dossiers, dans l’arborescence à gauche}}",
     "emptyFolder": "Ce dossier est vide. Créez un doc ou déposez des fichiers ici.",
-    "emptyFolderWithSubfolders": "Aucun fichier ici, seulement des sous-dossiers. Ouvrez-les dans l’arborescence à gauche.",
     "emptyFilter": "Aucun fichier de ce type.",
     "emptyRecent": "Pas encore de fichiers. Créez un doc ou déposez des fichiers ici.",
     "recent": "Modifiés récemment",
@@ -213,9 +203,6 @@
     "history": "Historique",
     "noHistory": "Pas encore d’historique",
     "discard": "Abandonner les modifications non enregistrées ?",
-    "othersFiles": "{count, plural, one {# fichier} other {# fichiers}} à côté →",
-    "othersKnowledge": "{count, plural, one {# document ou canevas} other {# documents et canevas}} à côté →",
-    "openInPage": "Ouvrir en grand",
     "download": "Télécharger",
     "searchFiles": "Rechercher dans les fichiers …",
     "emptyTitle": "Rien encore dans Savoir",
@@ -241,8 +228,6 @@
     "zoomIn": "Zoomer",
     "insert": "Insérer",
     "findTask": "Chercher une tâche",
-    "eyebrow": "Savoir / {path}",
-    "canvases": "Toiles",
     "counts": "{cards, plural, one {# carte} other {# cartes}} · {links, plural, one {# lien} other {# liens}}",
     "share": "Partager",
     "tools": {

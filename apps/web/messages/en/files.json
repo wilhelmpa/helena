@@ -142,7 +142,6 @@
     "run": "Run {run}",
     "formatted": "Formatted text",
     "source": "Markdown source",
-    "sourceRequired": "This file contains Markdown the formatted editor cannot preserve. Edit the source to keep all content.",
     "sourceEditRejected": "This edit could not preserve the original line endings. Your previous text is unchanged. Try smaller edits."
   },
   "knowledge": {
@@ -167,13 +166,6 @@
       "base": "View (table, cards, list)",
       "firstDoc": "Create a doc"
     },
-    "filters": {
-      "all": "All",
-      "docs": "Documents",
-      "canvases": "Canvases",
-      "files": "Files",
-      "agents": "By agents"
-    },
     "columns": {
       "name": "Name",
       "kind": "Kind",
@@ -191,9 +183,7 @@
     },
     "dropHint": "Drop files here or <pick>choose</pick>",
     "entries": "{count, plural, one {# entry} other {# entries}}",
-    "subfolders": "{count, plural, one {# subfolder, in the tree on the left} other {# subfolders, in the tree on the left}}",
     "emptyFolder": "This folder is empty. Create a doc or drop files here.",
-    "emptyFolderWithSubfolders": "No files here, only subfolders. Open them in the tree on the left.",
     "emptyFilter": "No files of this kind.",
     "emptyRecent": "No files yet. Create a doc or drop files here.",
     "recent": "Recently changed",
@@ -213,9 +203,6 @@
     "history": "History",
     "noHistory": "No history yet",
     "discard": "Discard unsaved changes?",
-    "othersFiles": "{count, plural, one {# file} other {# files}} alongside →",
-    "othersKnowledge": "{count, plural, one {# doc or canvas} other {# docs and canvases}} alongside →",
-    "openInPage": "Open large",
     "download": "Download",
     "searchFiles": "Search files …",
     "emptyTitle": "Nothing in Knowledge yet",
@@ -241,8 +228,6 @@
     "zoomIn": "Zoom in",
     "insert": "Insert",
     "findTask": "Find a task",
-    "eyebrow": "Knowledge / {path}",
-    "canvases": "Canvases",
     "counts": "{cards, plural, one {# card} other {# cards}} · {links, plural, one {# link} other {# links}}",
     "share": "Share",
     "tools": {
