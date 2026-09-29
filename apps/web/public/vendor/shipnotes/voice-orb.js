@@ -136,7 +136,7 @@
 
   class VoiceOrb extends HTMLElement {
     static get observedAttributes() {
-      return ['state', 'particles', 'recording', 'theme', 'glow'];
+      return ['state', 'particles', 'recording', 'theme', 'glow', 'orbits'];
     }
     constructor() {
       super();
@@ -264,7 +264,16 @@
         this._gl = gl;
         this._program = program;
         this._uniforms = {};
-        for (const n of ['time', 'pixels', 'density', 'weights', 'bands', 'onset', 'light', 'haloAmount'])
+        for (const n of [
+          'time',
+          'pixels',
+          'density',
+          'weights',
+          'bands',
+          'onset',
+          'light',
+          'haloAmount',
+        ])
           this._uniforms[n] = gl.getUniformLocation(program, n);
         this._auto = matchMedia('(pointer: coarse)').matches ? 6000 : 12000;
         if (!this._lossHandler) {
@@ -356,6 +365,59 @@
         this._gl?.flush();
       }
     }
+    // Ava: thin rings around the particle sphere with small lights travelling on them. Their
+    // tilt, speed and reach follow the state (calm at rest, listening breathes with the
+    // microphone, thinking spins up and adds a ring, speaking pulses with the voice).
+    _orbits(h, time, weights, bands, onset, rgb, size, light) {
+      const [wi, wl, wt, ws] = weights;
+      const dpr = size / Math.max(1, this.clientWidth);
+      const cx = size * 0.5,
+        cy = size * 0.5;
+      const voice = (bands[0] + bands[1] + bands[2]) / 3;
+      const speed = 0.08 * wi + 0.22 * wl + 0.55 * wt + 0.3 * ws;
+      const pulse = 1 + (wl + ws) * (voice * 0.06 + onset * 0.04);
+      const rings = [
+        { r: 0.415, tilt: 0.3, rot: 0.2, dir: 1, show: 1 },
+        { r: 0.455, tilt: 0.2, rot: -0.9, dir: -1, show: 1 },
+        { r: 0.49, tilt: 0.46, rot: 1.35, dir: 1, show: wt + ws * 0.6 },
+      ];
+      h.save();
+      h.lineWidth = Math.max(1, 0.9 * dpr);
+      for (let i = 0; i < rings.length; i++) {
+        const ring = rings[i];
+        if (ring.show < 0.02) continue;
+        const rx = size * ring.r * pulse;
+        const ry = rx * ring.tilt;
+        const angle = ring.rot + time * speed * 0.35 * ring.dir;
+        const alpha = (light ? 0.5 : 0.42) * ring.show;
+        // The back half fades behind the sphere, the front half is drawn clearly.
+        h.strokeStyle = `rgba(${rgb},${alpha * 0.35})`;
+        h.beginPath();
+        h.ellipse(cx, cy, rx, ry, angle, Math.PI, Math.PI * 2);
+        h.stroke();
+        h.strokeStyle = `rgba(${rgb},${alpha})`;
+        h.beginPath();
+        h.ellipse(cx, cy, rx, ry, angle, 0, Math.PI);
+        h.stroke();
+        const lights = 2 + (i === 0 ? 1 : 0);
+        for (let k = 0; k < lights; k++) {
+          const phase = time * speed * (1.4 + i * 0.35) * ring.dir + (k * Math.PI * 2) / lights + i;
+          for (let t = 0; t < 6; t++) {
+            const a = phase - t * 0.045;
+            const ex = Math.cos(a) * rx,
+              ey = Math.sin(a) * ry;
+            const x = cx + ex * Math.cos(angle) - ey * Math.sin(angle);
+            const y = cy + ex * Math.sin(angle) + ey * Math.cos(angle);
+            const behind = Math.sin(a) < 0 ? 0.45 : 1;
+            h.fillStyle = `rgba(${rgb},${(light ? 0.9 : 0.95) * ring.show * behind * (1 - t / 6)})`;
+            h.beginPath();
+            h.arc(x, y, (1.9 - t * 0.22) * dpr, 0, Math.PI * 2);
+            h.fill();
+          }
+        }
+      }
+      h.restore();
+    }
     _paint(time, weights, bands, onset) {
       if (this._lost) return;
       const size = this._canvas.width,
@@ -374,14 +436,16 @@
       const h = this._hctx;
       h.clearRect(0, 0, size, size);
       const glowOn = this.getAttribute('glow') !== 'off';
-      const glow = glowOn && h.createRadialGradient(
-        size * 0.5,
-        size * 0.5,
-        size * 0.1,
-        size * 0.5,
-        size * 0.5,
-        size * 0.48,
-      );
+      const glow =
+        glowOn &&
+        h.createRadialGradient(
+          size * 0.5,
+          size * 0.5,
+          size * 0.1,
+          size * 0.5,
+          size * 0.5,
+          size * 0.48,
+        );
       const energy = (weights[1] + weights[3]) * (bands[0] * 0.025 + onset * 0.035);
       const light = this._light;
       if (glow) {
@@ -391,6 +455,8 @@
         h.fillStyle = glow;
         h.fillRect(0, 0, size, size);
       }
+      if (this.getAttribute('orbits') === 'on')
+        this._orbits(h, time, weights, bands, onset, rgb, size, light);
       if (this._gl) {
         const gl = this._gl,
           u = this._uniforms;
