@@ -123,7 +123,18 @@
     "sheets": "Blätter",
     "sheetEmpty": "Diese Tabelle ist leer.",
     "sheetTruncated": "Angezeigt werden nur die ersten {rows} Zeilen und {columns} Spalten. Lade die Datei herunter, um alles zu sehen.",
-    "download": "Herunterladen"
+    "download": "Herunterladen",
+    "converting": "Wird umgewandelt …",
+    "view": "Ansicht",
+    "table": "Tabelle",
+    "pages": "Seiten",
+    "problems": {
+      "tooLarge": "Die Datei ist zu groß für die Vorschau (über 50 MB).",
+      "damaged": "Die Datei ist beschädigt und lässt sich nicht umwandeln.",
+      "busy": "Die Umwandlung ist gerade ausgelastet. Versuch es gleich noch einmal.",
+      "timeout": "Die Umwandlung hat zu lange gedauert.",
+      "unavailable": "Der Umwandlungsdienst ist nicht erreichbar."
+    }
   },
   "picker": {
     "up": "Einen Ordner nach oben",

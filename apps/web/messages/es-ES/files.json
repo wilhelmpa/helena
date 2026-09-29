@@ -123,7 +123,18 @@
     "sheets": "Hojas",
     "sheetEmpty": "Esta tabla está vacía.",
     "sheetTruncated": "Solo se muestran las primeras {rows} filas y {columns} columnas. Descarga el archivo para verlo todo.",
-    "download": "Descargar"
+    "download": "Descargar",
+    "converting": "Convirtiendo …",
+    "view": "Vista",
+    "table": "Tabla",
+    "pages": "Páginas",
+    "problems": {
+      "tooLarge": "El archivo es demasiado grande para la vista previa (más de 50 MB).",
+      "damaged": "El archivo está dañado y no se puede convertir.",
+      "busy": "El conversor está ocupado. Inténtalo de nuevo en un momento.",
+      "timeout": "La conversión tardó demasiado.",
+      "unavailable": "El servicio de conversión no está disponible."
+    }
   },
   "picker": {
     "up": "Subir una carpeta",

@@ -123,7 +123,18 @@
     "sheets": "Feuilles",
     "sheetEmpty": "Ce tableau est vide.",
     "sheetTruncated": "Seules les {rows} premières lignes et {columns} premières colonnes sont affichées. Télécharge le fichier pour tout voir.",
-    "download": "Télécharger"
+    "download": "Télécharger",
+    "converting": "Conversion en cours …",
+    "view": "Vue",
+    "table": "Tableau",
+    "pages": "Pages",
+    "problems": {
+      "tooLarge": "Le fichier est trop volumineux pour l’aperçu (plus de 50 Mo).",
+      "damaged": "Le fichier est endommagé et ne peut pas être converti.",
+      "busy": "Le convertisseur est occupé. Réessaie dans un instant.",
+      "timeout": "La conversion a pris trop de temps.",
+      "unavailable": "Le service de conversion n’est pas disponible."
+    }
   },
   "picker": {
     "up": "Dossier parent",

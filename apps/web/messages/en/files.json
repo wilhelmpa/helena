@@ -123,7 +123,18 @@
     "sheets": "Sheets",
     "sheetEmpty": "This table is empty.",
     "sheetTruncated": "Only the first {rows} rows and {columns} columns are shown. Download the file to see everything.",
-    "download": "Download"
+    "download": "Download",
+    "converting": "Converting …",
+    "view": "View",
+    "table": "Table",
+    "pages": "Pages",
+    "problems": {
+      "tooLarge": "The file is too large to preview (over 50 MB).",
+      "damaged": "The file is damaged and cannot be converted.",
+      "busy": "The converter is busy. Try again in a moment.",
+      "timeout": "The conversion took too long.",
+      "unavailable": "The conversion service is not available."
+    }
   },
   "picker": {
     "up": "Up one folder",

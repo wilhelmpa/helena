@@ -58,3 +58,14 @@ export function fileQuery(request: Request, roots: readonly string[]): string | 
   if (params.has('download')) query.set('download', '1');
   return query.toString();
 }
+
+// The query of a vault file route: one path, nothing else.
+export function vaultPathQuery(request: Request): string | null {
+  const path = new URL(request.url).searchParams.get('path') ?? '';
+  const hasControlCharacter = [...path].some((character) => {
+    const codePoint = character.codePointAt(0) ?? 0;
+    return codePoint <= 0x1f || codePoint === 0x7f;
+  });
+  if (!path || path.length > MAX_PATH_LENGTH || hasControlCharacter) return null;
+  return new URLSearchParams({ path }).toString();
+}

@@ -123,7 +123,18 @@
     "sheets": "Lembar",
     "sheetEmpty": "Tabel ini kosong.",
     "sheetTruncated": "Hanya {rows} baris dan {columns} kolom pertama yang ditampilkan. Unduh berkas untuk melihat semuanya.",
-    "download": "Unduh"
+    "download": "Unduh",
+    "converting": "Mengonversi …",
+    "view": "Tampilan",
+    "table": "Tabel",
+    "pages": "Halaman",
+    "problems": {
+      "tooLarge": "Berkas terlalu besar untuk pratinjau (lebih dari 50 MB).",
+      "damaged": "Berkas rusak dan tidak dapat dikonversi.",
+      "busy": "Pengonversi sedang sibuk. Coba lagi sebentar lagi.",
+      "timeout": "Konversi terlalu lama.",
+      "unavailable": "Layanan konversi tidak tersedia."
+    }
   },
   "picker": {
     "up": "Naik satu folder",

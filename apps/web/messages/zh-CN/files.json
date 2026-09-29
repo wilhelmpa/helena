@@ -123,7 +123,18 @@
     "sheets": "工作表",
     "sheetEmpty": "此表格为空。",
     "sheetTruncated": "仅显示前 {rows} 行和 {columns} 列。下载文件可查看全部。",
-    "download": "下载"
+    "download": "下载",
+    "converting": "正在转换 …",
+    "view": "视图",
+    "table": "表格",
+    "pages": "页面",
+    "problems": {
+      "tooLarge": "文件过大，无法预览（超过 50 MB）。",
+      "damaged": "文件已损坏，无法转换。",
+      "busy": "转换器繁忙，请稍后再试。",
+      "timeout": "转换耗时过长。",
+      "unavailable": "转换服务不可用。"
+    }
   },
   "picker": {
     "up": "上一级文件夹",
