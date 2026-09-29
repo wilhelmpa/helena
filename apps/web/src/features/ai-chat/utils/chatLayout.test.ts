@@ -23,14 +23,11 @@ describe('chat layout by container width', () => {
       'utf8',
     );
     assert.match(workspace, /@container\/chat/);
-    // …and the list pane is what actually switches between a column and a drawer at
-    // it, so that is where the @3xl breakpoint has to match CHAT_SPLIT_WIDTH.
-    const listPane = await readFile(
-      new URL('../components/workspace/ChatListPane.tsx', import.meta.url),
-      'utf8',
-    );
-    // @3xl is 48rem, 768px at the default root size.
+    // …and the list column (ChatListPane, styled in the design system) is what actually
+    // switches between a column and a drawer at it, so its container query has to match
+    // CHAT_SPLIT_WIDTH: 48rem, 768px at the default root size.
+    const css = await readFile(new URL('../../../design-system/overlays.css', import.meta.url), 'utf8');
     assert.equal(CHAT_SPLIT_WIDTH, 48 * 16);
-    assert.match(listPane, /@3xl\/chat:/);
+    assert.match(css, /@container chat \(min-width: 48rem\) \{\s*\.ds-chat-list-column/);
   });
 });
