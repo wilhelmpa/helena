@@ -1,41 +1,122 @@
 'use client';
 
-import { useCallback } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { chatPath, homeChatPath } from '@/utils/paths';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useChatWorkspaceScope } from '../../hooks/useChatWorkspaceScope';
+import { useActiveChat } from '../../hooks/useActiveChat';
 import ChatWorkspace from './ChatWorkspace';
 import type { ChatLocation } from '../../utils/chatLocation';
 
-// The Home chat page and /project/:projectKey/chat keep the open agent and chat in the
-// address, so a reload or a shared link reopens them — unlike the tool panel's chat
-// (panel/NativeChatWorkspace), which keeps the same location in local state instead,
-// since it is not the page the address bar is naming.
+// A URL with a thread wins. A bare URL resumes the saved chat of this scope.
 export default function ChatWorkspaceRoot({ projectKey }: { projectKey: string | null }) {
   const t = useTranslations('chatWorkspace');
   const router = useRouter();
   const params = useSearchParams();
   const scope = useChatWorkspaceScope(projectKey);
+  const {
+    location: activeLocation,
+    ready: activeReady,
+    set: setActive,
+    validate,
+  } = useActiveChat(projectKey ? `project:${projectKey}` : 'home');
+  const handledUrl = useRef<string | null>(null);
+  const handledActive = useRef<ChatLocation | null>(null);
+  const validatingRoute = useRef<string | null>(null);
+  const restoreSequence = useRef(0);
 
   const agentParam = params.get('agent');
-  const location: ChatLocation = {
-    agentId: agentParam ? Number(agentParam) : null,
-    threadId: params.get('thread'),
-  };
+  const threadParam = params.get('thread');
+  const location = useMemo<ChatLocation>(
+    () => ({ agentId: agentParam ? Number(agentParam) : null, threadId: threadParam }),
+    [agentParam, threadParam],
+  );
+
+  const url = params.toString();
+  const routeKey = `${projectKey ?? 'home'}:${url}`;
+  const intentionalNew = params.has('new') || (params.has('agent') && !params.has('thread'));
+  useEffect(() => {
+    if (!activeReady) return;
+    if (handledUrl.current !== routeKey) {
+      handledUrl.current = routeKey;
+      restoreSequence.current += 1;
+      if (location.threadId || intentionalNew) {
+        handledActive.current = location;
+        setActive(location);
+        return;
+      }
+      validatingRoute.current = routeKey;
+      const sequence = restoreSequence.current;
+      void validate()
+        .then((saved) => {
+          if (validatingRoute.current !== routeKey || restoreSequence.current !== sequence) return;
+          validatingRoute.current = null;
+          if (!saved.threadId && saved.agentId == null) return;
+          handledActive.current = saved;
+          const query = { agent: saved.agentId, thread: saved.threadId };
+          const href = projectKey ? chatPath(projectKey, query) : homeChatPath(query);
+          router.replace(saved.threadId ? href : `${href}&new=1`, { scroll: false });
+        })
+        .catch(() => {
+          validatingRoute.current = null;
+        });
+      return;
+    }
+    if (validatingRoute.current === routeKey) return;
+    const saved = activeLocation;
+    if (
+      saved.threadId &&
+      (saved.threadId !== location.threadId || saved.agentId !== location.agentId) &&
+      (handledActive.current?.threadId !== saved.threadId ||
+        handledActive.current?.agentId !== saved.agentId)
+    ) {
+      handledActive.current = saved;
+      const query = { agent: saved.agentId, thread: saved.threadId };
+      router.replace(projectKey ? chatPath(projectKey, query) : homeChatPath(query), {
+        scroll: false,
+      });
+    }
+    if (saved.threadId == null && location.threadId && handledActive.current?.threadId !== null) {
+      handledActive.current = saved;
+      const href = projectKey ? chatPath(projectKey) : homeChatPath();
+      router.replace(`${href}?new=1`, { scroll: false });
+    }
+  }, [
+    activeReady,
+    activeLocation,
+    routeKey,
+    location,
+    intentionalNew,
+    projectKey,
+    router,
+    setActive,
+    validate,
+  ]);
 
   const onNavigate = useCallback(
     (next: ChatLocation, options?: { replace?: boolean }) => {
       const query = { agent: next.agentId, thread: next.threadId };
       const href = projectKey ? chatPath(projectKey, query) : homeChatPath(query);
-      if (options?.replace) router.replace(href, { scroll: false });
-      else router.push(href, { scroll: false });
+      const target = next.threadId ? href : `${href}${href.includes('?') ? '&' : '?'}new=1`;
+      restoreSequence.current += 1;
+      validatingRoute.current = null;
+      handledActive.current = next;
+      setActive(next);
+      if (options?.replace) router.replace(target, { scroll: false });
+      else router.push(target, { scroll: false });
     },
-    [router, projectKey],
+    [router, projectKey, setActive],
+  );
+  const onActivity = useCallback(
+    (next: ChatLocation) => {
+      if (activeLocation.threadId === next.threadId) setActive(next);
+    },
+    [activeLocation.threadId, setActive],
   );
 
-  if (scope.loading) {
+  if (scope.loading || (!activeReady && !location.threadId && !intentionalNew)) {
     return (
       <div className="flex h-full min-h-0 flex-col gap-4 p-6">
         <Skeleton className="h-9 w-48" />
@@ -60,6 +141,7 @@ export default function ChatWorkspaceRoot({ projectKey }: { projectKey: string |
       agents={scope.agents}
       location={location}
       onNavigate={onNavigate}
+      onActivity={onActivity}
       inPage
     />
   );

@@ -31,6 +31,7 @@ export interface ChatWorkspaceProps {
   // for no new history entry: a new chat getting its thread id is the same place.
   location: ChatLocation;
   onNavigate: (next: ChatLocation, options?: { replace?: boolean }) => void;
+  onActivity?: (next: ChatLocation) => void;
   // The chat page, not the tool panel: the conversation's bar joins the app header.
   inPage?: boolean;
   pageContext?: { projectKey: string | null; path: string };
@@ -49,6 +50,7 @@ export default function ChatWorkspace({
   agents,
   location,
   onNavigate,
+  onActivity,
   inPage = false,
   pageContext,
 }: ChatWorkspaceProps) {
@@ -108,6 +110,13 @@ export default function ChatWorkspace({
       onNavigate({ agentId, threadId: newThreadId }, { replace: true });
     },
     [onNavigate, agentId, threadId],
+  );
+
+  const markThreadActive = useCallback(
+    (activeThreadId: string) => {
+      if (threadId === activeThreadId) onActivity?.({ agentId, threadId: activeThreadId });
+    },
+    [agentId, threadId, onActivity],
   );
 
   // A deleted thread never stays open: the view leaves it (its chat state and cached
@@ -183,6 +192,7 @@ export default function ChatWorkspace({
             threadId={threadId}
             newChatDraft={newChatDraft}
             onThreadCreated={onThreadCreated}
+            onActivity={markThreadActive}
             onThreadDeleted={leaveDeletedThread}
             onNewChat={startNewChat}
             onOpenList={() => setListOpen(true)}
