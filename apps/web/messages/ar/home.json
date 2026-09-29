@@ -78,7 +78,9 @@
     "working": "{count, plural, one {وكيل واحد يعمل} two {وكيلان يعملان} few {# وكلاء يعملون} many {# وكيلًا يعملون} other {# وكيل يعملون}}",
     "setupFailed": "فشل الإعداد",
     "budgetStopped": "متوقف",
-    "budgetThrottled": "مُبطَّأ"
+    "budgetThrottled": "مُبطَّأ",
+    "openLabel": "{count, plural, zero {مهام مفتوحة} one {مهمة مفتوحة} two {مهمتان مفتوحتان} few {مهام مفتوحة} many {مهمة مفتوحة} other {مهمة مفتوحة}}",
+    "started": "{count} قيد التنفيذ"
   },
   "system": {
     "title": "النظام",

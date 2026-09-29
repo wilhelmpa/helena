@@ -78,7 +78,9 @@
     "working": "{count, plural, one {# агент работает} few {# агента работают} many {# агентов работают} other {# агента работают}}",
     "setupFailed": "Настройка не удалась",
     "budgetStopped": "Остановлено",
-    "budgetThrottled": "Замедлено"
+    "budgetThrottled": "Замедлено",
+    "openLabel": "{count, plural, one {открытая задача} few {открытые задачи} many {открытых задач} other {открытых задач}}",
+    "started": "в работе: {count}"
   },
   "system": {
     "title": "Система",

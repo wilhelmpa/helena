@@ -78,7 +78,9 @@
     "working": "{count, plural, other {# agen bekerja}}",
     "setupFailed": "Penyiapan gagal",
     "budgetStopped": "Berhenti",
-    "budgetThrottled": "Diperlambat"
+    "budgetThrottled": "Diperlambat",
+    "openLabel": "{count, plural, other {tugas terbuka}}",
+    "started": "{count} sedang dikerjakan"
   },
   "system": {
     "title": "Sistem",

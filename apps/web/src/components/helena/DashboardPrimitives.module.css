@@ -120,20 +120,26 @@
   position: relative;
   display: flex;
   min-width: 0;
+  min-height: 168px;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
   overflow: hidden;
-  border-radius: var(--radius-lg);
-  background: var(--dashboard-raised);
-  padding: 14px 16px 14px 18px;
-  transition: background-color 180ms ease;
+  border-radius: var(--radius-xl);
+  background: var(--dashboard-surface);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--dashboard-ink) 6%, transparent);
+  padding: 16px 18px 16px;
+  transition:
+    background-color 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease;
 }
 
+/* The project's colour as a line along the top, strong in light and dark. */
 .projectTile::before {
   position: absolute;
-  inset-block: 0;
-  inset-inline-start: 0;
-  width: 3px;
+  inset-inline: 0;
+  inset-block-start: 0;
+  height: 3px;
   background: var(--project-accent, var(--brand));
   content: '';
 }
@@ -141,36 +147,142 @@
 .projectTile:hover,
 .projectTile:focus-visible {
   background: var(--dashboard-selected);
+  box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--project-accent, var(--brand)) 55%, transparent);
   outline: none;
 }
 
-.projectHead {
+@media (prefers-reduced-motion: no-preference) {
+  .projectTile:hover {
+    transform: translateY(-1px);
+  }
+}
+
+.projectTop {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.projectKey {
+  flex: none;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--project-accent, var(--brand)) 14%, transparent);
+  color: var(--project-accent, var(--brand));
+  padding: 3px 7px;
+  font:
+    600 10px/1.4 'JetBrains Mono Variable',
+    'JetBrains Mono',
+    ui-monospace,
+    monospace;
+  letter-spacing: 0.14em;
+}
+
+.projectLive {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 6px;
+  color: var(--dashboard-muted);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.projectPulse {
+  position: relative;
+  width: 7px;
+  height: 7px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--status-running, var(--dashboard-positive));
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .projectPulse::after {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: inherit;
+    animation: project-pulse 1.8s ease-out infinite;
+    content: '';
+  }
+}
+
+@keyframes project-pulse {
+  from {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(2.6);
+  }
+}
+
+.projectName {
+  min-width: 0;
+  overflow: hidden;
+  margin-top: 6px;
+  color: var(--dashboard-ink);
+  font-size: 17px;
+  font-weight: 580;
+  letter-spacing: -0.01em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.projectStats {
   display: flex;
   min-width: 0;
   align-items: baseline;
   gap: 8px;
 }
 
-.projectName {
-  min-width: 0;
-  flex: 1;
-  overflow: hidden;
+.projectCount {
   color: var(--dashboard-ink);
-  font-size: 15px;
-  font-weight: 560;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  font-size: 30px;
+  font-weight: 520;
+  line-height: 1.05;
+  letter-spacing: -0.05em;
+  font-variant-numeric: tabular-nums;
 }
 
-.projectKey {
-  flex: none;
-  color: var(--project-accent, var(--brand));
+.projectCountLabel {
+  color: var(--dashboard-muted);
+  font-size: 12px;
+}
+
+.projectProgress {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 5px;
+  margin-top: auto;
+}
+
+.projectTrack {
+  height: 5px;
+  overflow: hidden;
+  border-radius: var(--radius-full);
+  background: var(--dashboard-track);
+}
+
+.projectFill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--project-accent, var(--brand));
+}
+
+.projectProgressLabel {
+  color: var(--dashboard-label);
   font:
-    500 10px/1.4 'JetBrains Mono Variable',
+    400 10px/1.4 'JetBrains Mono Variable',
     'JetBrains Mono',
     ui-monospace,
     monospace;
-  letter-spacing: 0.14em;
 }
 
 .projectFacts {

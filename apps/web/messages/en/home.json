@@ -78,7 +78,9 @@
     "working": "{count, plural, one {# agent working} other {# agents working}}",
     "setupFailed": "Setup failed",
     "budgetStopped": "Stopped",
-    "budgetThrottled": "Slowed"
+    "budgetThrottled": "Slowed",
+    "openLabel": "{count, plural, one {open task} other {open tasks}}",
+    "started": "{count} in progress"
   },
   "system": {
     "title": "System",
