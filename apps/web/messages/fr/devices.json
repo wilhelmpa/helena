@@ -1,11 +1,11 @@
 {
   "title": "Appareils",
-  "description": "Syncthing tient à jour les notes et fichiers de Helena, des projets et de Private/ sous forme de dossier ordinaire sur votre Mac et votre téléphone : directement à la maison, via des relais chiffrés en déplacement.",
+  "description": "Syncthing tient à jour les notes et fichiers de {appName}, des projets et de Private/ sous forme de dossier ordinaire sur votre Mac et votre téléphone : directement à la maison, via des relais chiffrés en déplacement.",
   "loadError": "Impossible de lire l'état de la synchronisation.",
   "ownerOnly": "Seul le propriétaire de l'instance gère les appareils.",
   "unavailable": {
     "unconfiguredTitle": "Syncthing n'est pas configuré",
-    "unconfigured": "Helena n'a pas de clé valide pour Syncthing sur ce serveur. Installez le paquet Debian syncthing et exécutez <code>deployment/volition-stack/native/syncthing/setup.sh</code> en tant que root.",
+    "unconfigured": "{appName} n'a pas de clé valide pour Syncthing sur ce serveur. Installez le paquet Debian syncthing et exécutez <code>deployment/volition-stack/native/syncthing/setup.sh</code> en tant que root.",
     "unreachableTitle": "Syncthing est injoignable",
     "unreachable": "Syncthing n'est pas installé sur ce serveur, ou le service <code>volition-syncthing</code> ne tourne pas."
   },
@@ -21,7 +21,7 @@
   },
   "folder": {
     "title": "État de la synchronisation",
-    "notSetUp": "Le dossier Helena manque dans Syncthing. Relancez la configuration de Syncthing sur ce serveur.",
+    "notSetUp": "Le dossier {appName} manque dans Syncthing. Relancez la configuration de Syncthing sur ce serveur.",
     "state": {
       "idle": "À jour",
       "scanning": "Analyse",
@@ -44,7 +44,7 @@
     "paused": "En pause",
     "lastSeen": "Vu {time}",
     "neverSeen": "Pas encore vu",
-    "notShared": "Le dossier Helena n'est pas partagé avec cet appareil.",
+    "notShared": "Le dossier {appName} n'est pas partagé avec cet appareil.",
     "remove": "Retirer",
     "removeTitle": "Retirer {name} ?",
     "removeBody": "L'appareil ne se synchronise plus avec ce serveur. Les fichiers restent sur l'appareil."
@@ -54,7 +54,7 @@
     "hint": "N'acceptez que vos propres appareils : un appareil accepté reçoit toutes les notes et tous les fichiers, Private/ compris.",
     "requested": "Demande {time} depuis {address}",
     "accept": "Accepter",
-    "accepted": "{name} accepté. Acceptez maintenant le dossier Helena sur l'appareil."
+    "accepted": "{name} accepté. Acceptez maintenant le dossier {appName} sur l'appareil."
   },
   "conflicts": {
     "title": "Conflits",
@@ -70,11 +70,11 @@
     "step2": "Dans Syncthing, ajoutez un appareil et saisissez l'identifiant d'appareil de ce serveur, ou scannez le code QR.",
     "step2Lan": "Pour synchroniser directement à la maison, saisissez <code>{address}, dynamic</code> comme adresses de l'appareil.",
     "step3": "L'appareil apparaît ensuite plus haut sous « Appareils demandant à se connecter ». Choisissez Accepter.",
-    "step4": "Sur l'appareil, acceptez le dossier Helena dans un dossier nommé Helena : <code>~/Helena</code> sur le Mac, <code>Helena</code> dans le stockage interne sur Android, sous « Sur mon iPhone » dans Möbius Sync sur l'iPhone.",
-    "step5": "Attendez que le dossier affiche « À jour » sur l'appareil. Les notes et fichiers y sont alors des fichiers ordinaires ; les notes s'écrivent le mieux dans Helena, sous Notes.",
+    "step4": "Sur l'appareil, acceptez le dossier {appName} dans un dossier nommé {appName} : <code>~/{appName}</code> sur le Mac, <code>{appName}</code> dans le stockage interne sur Android, sous « Sur mon iPhone » dans Möbius Sync sur l'iPhone.",
+    "step5": "Attendez que le dossier affiche « À jour » sur l'appareil. Les notes et fichiers y sont alors des fichiers ordinaires ; les notes s'écrivent le mieux dans {appName}, sous Notes.",
     "iphoneTitle": "iPhone",
-    "iphone": "Möbius Sync place le dossier Helena sous « Sur mon iPhone », où l'app Fichiers l'affiche. Möbius Sync synchronise tant que l'app est ouverte ou qu'iOS la laisse tourner en arrière-plan.",
+    "iphone": "Möbius Sync place le dossier {appName} sous « Sur mon iPhone », où l'app Fichiers l'affiche. Möbius Sync synchronise tant que l'app est ouverte ou qu'iOS la laisse tourner en arrière-plan.",
     "spaceTitle": "Économiser de l'espace sur le téléphone (facultatif)",
-    "space": "Les motifs d'exclusion ne s'appliquent que sur l'appareil où ils sont saisis. Pour ne pas charger les fichiers de mail sur le téléphone, ouvrez le dossier Helena dans Möbius Sync ou Syncthing-Fork, ajoutez la ligne <code>Files/Mail</code> sous les motifs d'exclusion et enregistrez, de préférence juste après avoir accepté le dossier. Les fichiers restent sur ce serveur et sur les autres appareils."
+    "space": "Les motifs d'exclusion ne s'appliquent que sur l'appareil où ils sont saisis. Pour ne pas charger les fichiers de mail sur le téléphone, ouvrez le dossier {appName} dans Möbius Sync ou Syncthing-Fork, ajoutez la ligne <code>Files/Mail</code> sous les motifs d'exclusion et enregistrez, de préférence juste après avoir accepté le dossier. Les fichiers restent sur ce serveur et sur les autres appareils."
   }
 }

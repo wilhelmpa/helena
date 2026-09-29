@@ -1,4 +1,5 @@
 import { primaryOrigin } from '@repo/net';
+import { getDisplayName } from '@repo/db';
 import { getIssueBySequence, updateIssue } from '#modules/issues/service';
 import { recordActivity, textSide, type ActivityActor } from '#modules/issues/activity';
 import {
@@ -144,7 +145,7 @@ export async function handleGitEvent(
         providerKey,
         event.repo,
         event.number,
-        `Linked to ${items.length === 1 ? 'an issue' : 'issues'} in Helena:\n\n${items.join('\n')}`,
+        `Linked to ${items.length === 1 ? 'an issue' : 'issues'} in ${await getDisplayName()}:\n\n${items.join('\n')}`,
       );
     } catch {
       // Development linking is the primary action. A revoked provider token must

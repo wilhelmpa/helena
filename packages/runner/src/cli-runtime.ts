@@ -321,10 +321,11 @@ const INLINE_SKILL_CHARS = 8_000;
 const INLINE_SKILLS_CHARS = 32_000;
 
 function skillsOf(snapshot: RuntimePolicySnapshot, root: string): SkillFiles {
+  const displayName = snapshot.displayName ?? 'Helena';
   const files: CliFile[] = [
     {
       path: '.claude-plugin/plugin.json',
-      content: `${JSON.stringify({ name: PLUGIN_NAME, version: '1.0.0', description: "The agent's skills from Helena" }, null, 2)}\n`,
+      content: `${JSON.stringify({ name: PLUGIN_NAME, version: '1.0.0', description: `The agent's skills from ${displayName}` }, null, 2)}\n`,
     },
   ];
   const lines: string[] = [];
@@ -345,7 +346,7 @@ function skillsOf(snapshot: RuntimePolicySnapshot, root: string): SkillFiles {
       ? ''
       : [
           '## Skills',
-          'Your skills from Helena. Before you use one, read its SKILL.md with your file tools.',
+          `Your skills from ${displayName}. Before you use one, read its SKILL.md with your file tools.`,
           ...lines,
         ].join('\n');
   let budget = INLINE_SKILLS_CHARS;
@@ -359,9 +360,11 @@ function skillsOf(snapshot: RuntimePolicySnapshot, root: string): SkillFiles {
   const inline =
     bodies.length === 0
       ? ''
-      : ['## Skills', 'Your skills from Helena, as their SKILL.md says them.', ...bodies].join(
-          '\n\n',
-        );
+      : [
+          '## Skills',
+          `Your skills from ${displayName}, as their SKILL.md says them.`,
+          ...bodies,
+        ].join('\n\n');
   return { files, index, inline };
 }
 

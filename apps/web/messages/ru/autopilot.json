@@ -107,7 +107,7 @@
     "hermes": "Hermes",
     "claude": "Claude Code",
     "codex": "Codex",
-    "mcp": "Инструмент Helena",
+    "mcp": "Инструмент {appName}",
     "gateway": "Браузер",
     "workflow": "Процесс",
     "approval": "Запрос одобрения",
@@ -158,8 +158,8 @@
     "level": "Уровень {level}",
     "reason": "Почему нужно одобрение",
     "scope": {
-      "workspace": "Внутри Helena / рабочей папки проекта",
-      "external": "Вне Helena / рабочей папки проекта"
+      "workspace": "Внутри {appName} / рабочей папки проекта",
+      "external": "Вне {appName} / рабочей папки проекта"
     }
   },
   "prices": {
@@ -185,7 +185,7 @@
     "rateSaved": "Курс сохранён, цены пересчитаны.",
     "importedAt": "Обновлено: {date} ({from})",
     "from": {
-      "snapshot": "список из поставки Helena",
+      "snapshot": "список из поставки {appName}",
       "modelsDev": "models.dev"
     },
     "add": "Ввести цену",

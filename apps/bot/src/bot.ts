@@ -1,4 +1,5 @@
 import { Bot } from 'grammy';
+import { getDisplayName } from '@repo/db';
 import {
   confirmTelegramLink,
   decideAlertNotice,
@@ -13,14 +14,12 @@ import {
   queueTelegramMessage,
 } from './db';
 
-function alertSummary(source: string): string {
+function alertSummary(source: string, displayName: string): string {
   if (source === 'helena.logins') return 'A model login needs attention.';
   if (source === 'helena.security') return 'Security checks need attention.';
   if (source === 'helena.local-ai') return 'A local AI server needs attention.';
-  return 'Review Helena for details.';
+  return `Review ${displayName} for details.`;
 }
-
-const HELP = 'Connect this bot from Helena settings with a one-time pairing code.';
 
 export function createBot(token: string): Bot {
   const bot = new Bot(token);
@@ -32,7 +31,10 @@ export function createBot(token: string): Bot {
     }
     const code = ctx.match.trim();
     if (!code) {
-      if (await linkedUser(String(ctx.from.id), String(ctx.chat.id))) await ctx.reply(HELP);
+      if (await linkedUser(String(ctx.from.id), String(ctx.chat.id)))
+        await ctx.reply(
+          `Connect this bot from ${await getDisplayName()} settings with a one-time pairing code.`,
+        );
       else console.warn(`[bot] ignored unknown Telegram user ${ctx.from.id}`);
       return;
     }
@@ -43,7 +45,8 @@ export function createBot(token: string): Bot {
       username: ctx.from.username ?? null,
       firstName: ctx.from.first_name ?? null,
     });
-    if (result.ok) await ctx.reply('Connected to Helena. Send a message to start a chat.');
+    if (result.ok)
+      await ctx.reply(`Connected to ${await getDisplayName()}. Send a message to start a chat.`);
     else console.warn(`[bot] ignored invalid pairing from Telegram user ${ctx.from.id}`);
   });
 
@@ -136,7 +139,10 @@ export async function deliverPending(bot: Bot): Promise<void> {
       if (!alert.chatId) continue;
       await bot.api.sendMessage(
         alert.chatId,
-        `Helena needs you: ${alertSummary(alert.source)}`.slice(0, 4000),
+        `${await getDisplayName()} needs you: ${alertSummary(alert.source, await getDisplayName())}`.slice(
+          0,
+          4000,
+        ),
         {
           reply_markup: {
             inline_keyboard: [
@@ -166,7 +172,7 @@ export async function deliverPending(bot: Bot): Promise<void> {
       const text =
         reply.responseText ??
         (reply.answerStatus === 'failed' || reply.answerStatus === 'canceled'
-          ? 'Helena could not answer this message.'
+          ? `${await getDisplayName()} could not answer this message.`
           : reply.content);
       if (!text) continue;
       for (let offset = 0; offset < text.length; offset += 3500) {

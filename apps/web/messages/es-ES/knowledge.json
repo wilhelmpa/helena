@@ -21,7 +21,7 @@
   },
   "plugin": {
     "name": "Conocimiento",
-    "description": "Las fuentes de conocimiento propias de Helena y la captura rápida en la Bandeja de entrada y en la nota diaria."
+    "description": "Las fuentes de conocimiento propias de {appName} y la captura rápida en la Bandeja de entrada y en la nota diaria."
   },
   "journal": {
     "today": "Nota de hoy"

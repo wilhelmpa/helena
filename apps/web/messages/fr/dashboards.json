@@ -136,7 +136,7 @@
       "field": "a mis à jour un champ de",
       "other": "a mis à jour"
     },
-    "automation": "Helena"
+    "automation": "{appName}"
   },
   "pulse": {
     "caption": {

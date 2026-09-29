@@ -41,7 +41,7 @@
     "noTask": "Sebuah proses gagal."
   },
   "test": {
-    "title": "Helena",
+    "title": "{appName}",
     "body": "Notifikasi push berfungsi di perangkat ini."
   },
   "subjects": {

@@ -188,9 +188,14 @@ function escape(s: string): string {
 // transport needs. Shared so every message in the app looks the same: the HTML part
 // opens with the brand header from packages/brand (the Orb as an inline image, the
 // wordmark as text); sendEmail attaches the image.
-export function emailBody(text: string, url?: string | null): { text: string; html: string } {
-  const plain = url ? `${text}\n\n${url}` : text;
+export function emailBody(
+  text: string,
+  url: string | null | undefined,
+  displayName: string,
+): { text: string; html: string } {
+  const message = url ? `${text}\n\n${url}` : text;
+  const plain = displayName ? `${displayName}\n\n${message}` : message;
   const body = escape(text).replace(/\n/g, '<br>');
   const link = url ? `<p><a href="${escape(url)}">${escape(url)}</a></p>` : '';
-  return { text: plain, html: `${mailHeaderHtml()}<p>${body}</p>${link}` };
+  return { text: plain, html: `${mailHeaderHtml(displayName)}<p>${body}</p>${link}` };
 }

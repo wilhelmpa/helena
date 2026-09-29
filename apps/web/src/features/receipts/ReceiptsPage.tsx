@@ -2,6 +2,7 @@
 
 import { useDeferredValue, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { APP_NAME } from '@/utils/app';
 import {
   ArrowDownLeft,
   ArrowUpRight,
@@ -231,7 +232,7 @@ export default function ReceiptsPage() {
     try {
       saveBlob(
         await downloadMonthExport(projectKey, month),
-        `Helena-Belege_${projectKey}_${month}.zip`,
+        `${APP_NAME}-Belege_${projectKey}_${month}.zip`,
       );
     } catch (error) {
       toast.error(error instanceof Error ? error.message : String(error));

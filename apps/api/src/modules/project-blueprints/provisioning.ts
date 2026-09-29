@@ -1,4 +1,5 @@
 import { lstat } from 'node:fs/promises';
+import { getDisplayName } from '@repo/db';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { absoluteVaultPath, assertNoSymlink, projectFolder } from '@repo/vault';
 import { getProvisioningJob } from '#modules/projects/service';
@@ -21,7 +22,7 @@ export async function waitForBlueprintProvisioning(
     if (!job || job.status === 'failed') {
       throw new Error(
         `Project ${key} provisioning ${job ? 'failed' : 'is missing'}. ` +
-          'Resolve its setup status in Helena, then rerun the blueprint; existing changes are preserved.',
+          `Resolve its setup status in ${await getDisplayName()}, then rerun the blueprint; existing changes are preserved.`,
       );
     }
     if (job.status === 'succeeded') break;
@@ -33,7 +34,7 @@ export async function waitForBlueprintProvisioning(
     if (remaining <= 0) {
       throw new Error(
         `Project ${key} provisioning is still pending. Check the worker and project setup ` +
-          'in Helena, then rerun the blueprint; no project root was created by the blueprint.',
+          `in ${await getDisplayName()}, then rerun the blueprint; no project root was created by the blueprint.`,
       );
     }
     await sleep(Math.min(500, remaining), undefined, { signal });

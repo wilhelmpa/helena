@@ -1,4 +1,5 @@
 import {
+  getDisplayName,
   readModelServerKey,
   resolveLocalRoute,
   type LocalRoute,
@@ -163,13 +164,14 @@ async function transcriptionContext(): Promise<{
 }> {
   const now = Date.now();
   if (!vocabularyCache || now - vocabularyCache.at > VOCABULARY_TTL_MS) {
-    const [settings, words] = await Promise.all([
+    const [settings, words, displayName] = await Promise.all([
       readVoiceSettings(),
-      helenaWords().catch(() => ['Helena']),
+      helenaWords().catch(() => []),
+      getDisplayName(),
     ]);
     vocabularyCache = {
       at: now,
-      prompt: vocabularyPrompt(settings.vocabulary, words),
+      prompt: vocabularyPrompt(settings.vocabulary, words, displayName),
       aliases: settings.vocabularyAliases ?? suggestedAliases(words),
     };
   }

@@ -43,8 +43,8 @@
   "dialog": {
     "title": "更新 {name}？",
     "titleGroup": "{count, plural, other {更新 # 个软件包？}}",
-    "download": "Helena 从供应商下载新版本并安装（{source}）。",
-    "downloadApt": "apt 从 Debian 源下载软件包并安装。Helena 会先备份数据库。",
+    "download": "{appName} 从供应商下载新版本并安装（{source}）。",
+    "downloadApt": "apt 从 Debian 源下载软件包并安装。{appName} 会先备份数据库。",
     "downloadHermes": "Hermes 助手从 Hermes 仓库获取新状态并重新安装。",
     "wayBack": "回退方式：当前版本会保留，可以恢复。",
     "wayBackApt": "回退方式：apt 没有自动回退。更新后日志会给出恢复旧版本的命令。",
@@ -70,10 +70,10 @@
     "cliRuntimes": "智能体运行时",
     "apt": "Debian 软件包",
     "hostTools": "工具",
-    "helena": "Helena"
+    "helena": "{appName}"
   },
   "hints": {
-    "manual": "Helena 中没有安装程序：需手动更新。",
+    "manual": "{appName} 中没有安装程序：需手动更新。",
     "notInstalled": "未安装。",
     "deploy": "随部署一起更新。",
     "hermesOffline": "无法连接 Hermes runner：显示上次检查的状态。"
@@ -81,7 +81,7 @@
   "settings": {
     "title": "设置",
     "schedule": "自动检查",
-    "scheduleDescription": "Helena 按此计划查找新版本。",
+    "scheduleDescription": "{appName} 按此计划查找新版本。",
     "cron": "计划",
     "timezone": "时区",
     "summarize": "用 AI 生成摘要",

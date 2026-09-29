@@ -4,6 +4,7 @@ import {
   type UpdateCheckContext,
   type UpdateApplyRequest,
 } from '@helena/sdk';
+import { getDisplayName } from '@repo/db';
 import { sendHelperRequest } from '../updates/helper';
 import { githubNewest } from '../updates/sources/vendors';
 
@@ -79,6 +80,8 @@ export async function applyWhisperUpdate(request: UpdateApplyRequest) {
     (request.components?.length ?? 1) !== 1 ||
     request.components?.some((entry) => entry.component !== 'whisper-cpp')
   )
-    throw new Error('Only the verified Whisper package can be activated from Helena');
+    throw new Error(
+      `Only the verified Whisper package can be activated from ${await getDisplayName()}`,
+    );
   return { ref: await sendHelperRequest('whisper-ui', { version: request.target }) };
 }

@@ -98,7 +98,7 @@
     "unreachable": "Injoignable",
     "keys": {
       "file": "Clé depuis un fichier",
-      "stored": "Clé enregistrée dans Helena",
+      "stored": "Clé enregistrée dans {appName}",
       "none": "Pas de clé",
       "invalid": "Fichier de clé non autorisé"
     },
@@ -256,22 +256,22 @@
     },
     "pause": {
       "title": "Pause avant la réponse",
-      "hint": "Le silence qu’il faut avant qu’Helena envoie ta phrase. Plus court répond plus vite, plus long t’interrompt moins souvent.",
+      "hint": "Le silence qu’il faut avant qu’{appName} envoie ta phrase. Plus court répond plus vite, plus long t’interrompt moins souvent.",
       "option": "{seconds} s"
     },
     "words": {
-      "title": "Mots qu’Helena doit connaître",
+      "title": "Mots qu’{appName} doit connaître",
       "hint": "Noms, produits et termes, pour que la reconnaissance vocale les écrive correctement. Elle connaît déjà : {words}.",
       "placeholder": "p. ex. comptable Müller, Shopify, Kubernetes",
       "save": "Enregistrer les mots"
     },
     "voice": {
       "title": "Voix",
-      "hint": "La voix locale avec laquelle Helena répond en conversation (IA locale → « Lecture à voix haute »).",
+      "hint": "La voix locale avec laquelle {appName} répond en conversation (IA locale → « Lecture à voix haute »).",
       "default": "Voix par défaut du serveur",
       "none": "Pas encore de voix locale – en attendant, le navigateur lit.",
       "preview": "Écouter",
-      "sample": "Bonjour, je suis Helena. Voici ma voix en conversation – dis-moi simplement ce dont tu as besoin.",
+      "sample": "Bonjour, je suis {appName}. Voici ma voix en conversation – dis-moi simplement ce dont tu as besoin.",
       "previewFailed": "La voix n’a pas pu être lue."
     },
     "model": {

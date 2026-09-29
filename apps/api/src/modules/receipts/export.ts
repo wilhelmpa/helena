@@ -1,6 +1,7 @@
 import { buildMonthExport, type ExportReceipt, type ExportRow } from '@helena/finance';
 import {
   db,
+  getDisplayName,
   helenaBankAccount,
   helenaBankTransaction,
   helenaReceipt,
@@ -162,7 +163,7 @@ export async function monthExport(
   });
   return {
     zip: built.zip,
-    filename: `Helena-Belege_${project.key}_${month}.zip`,
+    filename: `${(await getDisplayName()).replace(/[^\p{L}\p{N}._-]/gu, '_')}-Belege_${project.key}_${month}.zip`,
     files: built.files,
   };
 }

@@ -83,9 +83,11 @@ describe('lockup, preview, terminal and mail', () => {
   });
 
   test('the mail header references its inline Orb and keeps a text wordmark', () => {
-    const html = mailHeaderHtml();
+    const html = mailHeaderHtml('Ava');
     expect(html).toContain(`src="cid:${MAIL_ORB_CID}"`);
-    expect(html).toContain('letter-spacing:0.32em">AVA</td>');
+    expect(html).toContain('letter-spacing:0.32em">Ava</td>');
+    expect(mailHeaderHtml('Atlas')).toContain('>Atlas</td>');
+    expect(mailHeaderHtml('Atlas')).not.toContain('>Ava</td>');
     expect(MAIL_INLINE_IMAGES.map((i) => i.cid)).toEqual([MAIL_ORB_CID]);
     // A PNG: the base64 of its signature.
     expect(MAIL_INLINE_IMAGES[0]!.base64.startsWith('iVBORw0KGgo')).toBe(true);

@@ -126,9 +126,9 @@
     "undoDone": "已移除最后一次问答。发送新消息即可从之前的状态继续。",
     "undoNone": "暂无可撤销的内容。",
     "refusal": {
-      "schedules": "Hermes 自身的调度命令不能从聊天中运行——请改用 Helena 的例程。",
+      "schedules": "Hermes 自身的调度命令不能从聊天中运行——请改用 {appName} 的例程。",
       "approvals": "审批命令不能从聊天中运行——请使用审批卡片或“审批”页面。",
-      "config": "这会更改代理自身的配置——请在 Helena 中使用代理设置进行更改。",
+      "config": "这会更改代理自身的配置——请在 {appName} 中使用代理设置进行更改。",
       "outside": "这不是聊天能做的事。"
     },
     "reasoning": "推理强度",
@@ -197,7 +197,7 @@
     "runtimeExternal": "外部",
     "switch": "正在与 {agent} 对话——与其他智能体开始新对话",
     "newChatWith": "新对话，对象…",
-    "switchToHelena": "与 Helena 新建聊天"
+    "switchToHelena": "与 {appName} 新建聊天"
   },
   "interrupted": {
     "lost": "与回答的连接已断开。{agent} 可能仍在处理。",
@@ -243,7 +243,7 @@
     },
     "problems": {
       "insecureTitle": "麦克风需要安全连接",
-      "insecure": "浏览器只在 HTTPS 下开放麦克风，而这里的 Helena 仍通过 http 运行。在 HTTPS 就绪之前：在 Chrome 中打开 {flag}，填入 {origin}，选择“Enabled”并重启 Chrome。Safari 和 Firefox：需要 HTTPS。",
+      "insecure": "浏览器只在 HTTPS 下开放麦克风，而这里的 {appName} 仍通过 http 运行。在 HTTPS 就绪之前：在 Chrome 中打开 {flag}，填入 {origin}，选择“Enabled”并重启 Chrome。Safari 和 Firefox：需要 HTTPS。",
       "copyFlag": "复制地址",
       "flagCopied": "地址已复制——粘贴到 Chrome 的地址栏。",
       "localOnlyDownTitle": "本地转写暂时不可用",
@@ -300,7 +300,7 @@
     "commandScriptHint": "相对于项目文件夹的路径。脚本以 JSON 接收任务，在项目的隔离区域运行；其输出即为结果。",
     "webhookUrl": "地址（HTTPS）",
     "webhookSecretEnv": "存放签名密钥的变量",
-    "webhookHint": "Helena 按 Standard Webhooks 签名调用该地址。请在“访问”中把密钥（whsec_…）作为环境变量提供给代理。"
+    "webhookHint": "{appName} 按 Standard Webhooks 签名调用该地址。请在“访问”中把密钥（whsec_…）作为环境变量提供给代理。"
   },
   "context": {
     "task": "任务 {identifier}「{title}」",

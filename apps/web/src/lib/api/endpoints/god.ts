@@ -454,6 +454,18 @@ export interface RunResumeSettings {
   maxResumes: number;
 }
 
+export interface DisplayNameSetting {
+  displayName: string;
+}
+
+export const getInstanceDisplayName = () => request<DisplayNameSetting>('/god/display-name');
+
+export const updateInstanceDisplayName = (body: DisplayNameSetting) =>
+  request<DisplayNameSetting>('/god/display-name', {
+    method: 'PUT',
+    body: JSON.stringify(body),
+  });
+
 export const getInstanceRunResumeSettings = () =>
   request<RunResumeSettings>('/god/run-resume-settings');
 

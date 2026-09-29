@@ -58,10 +58,10 @@
   "extraUsage": "Uso extra: {used} de {limit}",
   "settings": {
     "auto": "Ler automaticamente",
-    "autoHint": "O Helena consulta os runners neste intervalo; cada login uma vez, não importa quantos agentes o usem.",
+    "autoHint": "O {appName} consulta os runners neste intervalo; cada login uma vez, não importa quantos agentes o usem.",
     "autoHintAt": "Última consulta há {time}. Cada login uma vez, não importa quantos agentes o usem.",
     "interval": "Intervalo",
-    "intervalHint": "Com que frequência o Helena lê os limites.",
+    "intervalHint": "Com que frequência o {appName} lê os limites.",
     "minutes": "{count} min",
     "near": "Perto a partir de",
     "nearHint": "A partir desta parcela uma janela fica âmbar.",

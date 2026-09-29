@@ -1,6 +1,6 @@
 {
-  "hint": "Los agentes piden aprobación aquí antes de enviar, publicar, pagar o eliminar algo fuera de Helena, y los flujos de trabajo esperan aquí en su punto de aprobación. Tu decisión y tu nota inician el siguiente paso.",
-  "projectHint": "Los agentes piden aprobación aquí antes de enviar, publicar, pagar o eliminar algo fuera de Helena para este proyecto, y sus flujos de trabajo esperan aquí en su punto de aprobación.",
+  "hint": "Los agentes piden aprobación aquí antes de enviar, publicar, pagar o eliminar algo fuera de {appName}, y los flujos de trabajo esperan aquí en su punto de aprobación. Tu decisión y tu nota inician el siguiente paso.",
+  "projectHint": "Los agentes piden aprobación aquí antes de enviar, publicar, pagar o eliminar algo fuera de {appName} para este proyecto, y sus flujos de trabajo esperan aquí en su punto de aprobación.",
   "pending": "Pendientes",
   "decided": "Decididas",
   "filterProject": "Filtrar por proyecto",
@@ -10,7 +10,7 @@
     "decided": "Aún no hay decisiones"
   },
   "emptyHint": {
-    "pending": "Cuando un agente pida aprobación antes de actuar fuera de Helena, la solicitud aparecerá aquí.",
+    "pending": "Cuando un agente pida aprobación antes de actuar fuera de {appName}, la solicitud aparecerá aquí.",
     "decided": "Aquí aparecen las solicitudes aprobadas y rechazadas."
   },
   "kind": {

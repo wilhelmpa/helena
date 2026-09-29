@@ -2,9 +2,9 @@
   "auditTitle": "Server hardening",
   "auditDescription": "The hourly check of the server: firewall, SSH, certificates, permissions and services. No secrets.",
   "ownerTitle": "Owner sign-in",
-  "ownerDescription": "What has to be true before Helena is reachable from the internet.",
+  "ownerDescription": "What has to be true before {appName} is reachable from the internet.",
   "edgeTitle": "Access from outside",
-  "edgeDescription": "Cloudflare Access in front of helena.volition.one. Helena checks every request from the tunnel again itself.",
+  "edgeDescription": "Cloudflare Access in front of helena.volition.one. {appName} checks every request from the tunnel again itself.",
   "noReport": "No audit report yet. Run once on the server:",
   "noReportCommand": "sudo deployment/volition-stack/native/hardening/audit.sh --install-timer",
   "summary": "{failed} open · {warnings} warnings · {passed} passed",
@@ -47,7 +47,7 @@
     "web_production": "API runs in production mode",
     "web_leftovers": "No development leftovers or readable backup copies in nginx",
     "tunnel_service": "Cloudflare tunnel runs sandboxed and without self-update",
-    "tunnel_edge": "Cloudflare Access is configured in Helena",
+    "tunnel_edge": "Cloudflare Access is configured in {appName}",
     "tunnel_acl": "Only the tunnel reaches the tunnel entry",
     "tls_certificate": "Certificate valid for more than 14 days",
     "tls_renewal": "Automatic certificate renewal active",
@@ -69,9 +69,9 @@
     "files_backups": "Database dumps readable only by their service",
     "files_secrets": "Secrets and keys not readable by others",
     "files_agent_code": "Agents can read their runtime code",
-    "svc_exposure": "Helena services sandboxed by systemd",
+    "svc_exposure": "{appName} services sandboxed by systemd",
     "svc_tools_loopback": "Tools reachable over loopback only",
-    "net_voice_acl": "Voice servers reachable only for Helena"
+    "net_voice_acl": "Voice servers reachable only for {appName}"
   },
   "finding": {
     "net_firewall": {
@@ -91,7 +91,7 @@
       "fail": "The LAN sign-in also applies to loopback or the server itself."
     },
     "net_redis": {
-      "fail": "Redis runs without a password and Helena does not use it."
+      "fail": "Redis runs without a password and {appName} does not use it."
     },
     "net_syncthing_nat": {
       "warn": "Syncthing asks the router (UPnP/NAT-PMP) to open port 22000."
@@ -125,7 +125,7 @@
       "fail": "The Cloudflare tunnel is not isolated as intended."
     },
     "tunnel_edge": {
-      "fail": "No Cloudflare Access team (domain/AUD) is set in Helena, so the tunnel entry refuses everything."
+      "fail": "No Cloudflare Access team (domain/AUD) is set in {appName}, so the tunnel entry refuses everything."
     },
     "tunnel_acl": {
       "fail": "{why, select, user {The tunnel user {user} may not reach the tunnel entry: cloudflared gets no connection and Cloudflare answers 502 (hardening/apply.sh --apply firewall-uids).} other {Every local user reaches the tunnel entry.}}"
@@ -191,7 +191,7 @@
       "fail": "{count} files in {path} can only be read by their owner: agents that load them fail to start."
     },
     "svc_exposure": {
-      "warn": "Helena's services are less isolated by systemd than intended."
+      "warn": "{appName}'s services are less isolated by systemd than intended."
     },
     "svc_tools_loopback": {
       "fail": "Tools can be reached beyond loopback."
@@ -221,13 +221,13 @@
     "allowedEmails": "Allowed identities",
     "allowedEmailsHint": "Optional: only these email addresses, even if the Access policy admits more. One per line. Required for the Cloudflare sign-in.",
     "saved": "Access from outside saved",
-    "signInTitle": "Sign in to Helena with the Cloudflare sign-in",
-    "signInDescription": "Signing in to Cloudflare Access as an allowed identity signs you in to Helena without another password, for at most 24 hours and never longer than the Access session. Access is then the only sign-in: require a second factor there (passkey/Touch ID or an authenticator app). The terminal still asks for its code.",
+    "signInTitle": "Sign in to {appName} with the Cloudflare sign-in",
+    "signInDescription": "Signing in to Cloudflare Access as an allowed identity signs you in to {appName} without another password, for at most 24 hours and never longer than the Access session. Access is then the only sign-in: require a second factor there (passkey/Touch ID or an authenticator app). The terminal still asks for its code.",
     "signInNeedsSetup": "Needs the team domain, the AUD and at least one allowed identity.",
-    "signInNeedsProof": "The tunnel entry has no proof for Helena yet: run cloudflare/install.sh --apply entry-token on the server, then restart the API and the web app.",
+    "signInNeedsProof": "The tunnel entry has no proof for {appName} yet: run cloudflare/install.sh --apply entry-token on the server, then restart the API and the web app.",
     "homeTitle": "Connect directly at home automatically",
-    "homeDescription": "On the public address, Helena checks whether {home} answers from this device and then switches there: directly over the home network, without the detour through Cloudflare. The home network sign-in signs you in there. Chrome asks once for access to the local network.",
-    "homeDescriptionGeneric": "On the public address, Helena checks whether the home network address answers from this device and then switches there: directly over the home network, without the detour through Cloudflare.",
+    "homeDescription": "On the public address, {appName} checks whether {home} answers from this device and then switches there: directly over the home network, without the detour through Cloudflare. The home network sign-in signs you in there. Chrome asks once for access to the local network.",
+    "homeDescriptionGeneric": "On the public address, {appName} checks whether the home network address answers from this device and then switches there: directly over the home network, without the detour through Cloudflare.",
     "homeNotSetUp": "No home network address set up (HELENA_HOME_URL, cloudflare/switch_origin.py --home-host).",
     "serviceTokenTitle": "Service access: {label}",
     "serviceTokenDescription": "Cloudflare service token {hint}… acts as {actsAs}, for automated checks. To end it, remove it here and delete the token in Cloudflare.",

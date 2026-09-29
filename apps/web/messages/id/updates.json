@@ -43,8 +43,8 @@
   "dialog": {
     "title": "Perbarui {name}?",
     "titleGroup": "{count, plural, other {Perbarui # paket?}}",
-    "download": "Helena mengunduh versi baru dari vendor dan memasangnya ({source}).",
-    "downloadApt": "apt mengunduh paket dari sumber Debian dan memasangnya. Sebelumnya Helena mencadangkan basis data.",
+    "download": "{appName} mengunduh versi baru dari vendor dan memasangnya ({source}).",
+    "downloadApt": "apt mengunduh paket dari sumber Debian dan memasangnya. Sebelumnya {appName} mencadangkan basis data.",
     "downloadHermes": "Pembantu Hermes mengambil keadaan baru dari repositori Hermes dan memasangnya ulang.",
     "wayBack": "Jalan kembali: versi saat ini disimpan dan dapat dipulihkan.",
     "wayBackApt": "Jalan kembali: apt tidak punya yang otomatis. Setelahnya log menyebutkan perintah untuk versi lama.",
@@ -70,10 +70,10 @@
     "cliRuntimes": "Runtime agen",
     "apt": "Paket Debian",
     "hostTools": "Alat",
-    "helena": "Helena"
+    "helena": "{appName}"
   },
   "hints": {
-    "manual": "Tanpa pemasang di Helena: diperbarui secara manual.",
+    "manual": "Tanpa pemasang di {appName}: diperbarui secara manual.",
     "notInstalled": "Tidak terpasang.",
     "deploy": "Diperbarui bersama deploy.",
     "hermesOffline": "Tidak ada runner Hermes yang terjangkau: keadaan pemeriksaan terakhir."
@@ -81,7 +81,7 @@
   "settings": {
     "title": "Pengaturan",
     "schedule": "Periksa otomatis",
-    "scheduleDescription": "Helena mencari versi baru sesuai jadwal ini.",
+    "scheduleDescription": "{appName} mencari versi baru sesuai jadwal ini.",
     "cron": "Jadwal",
     "timezone": "Zona waktu",
     "summarize": "Ringkas dengan AI",

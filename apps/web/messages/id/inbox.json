@@ -35,7 +35,7 @@
     "stateChanged": "{who} mengubah status dari {from} ke {to}",
     "stateChangedPlain": "{who} mengubah status",
     "approval_requested": "{who} meminta persetujuan Anda",
-    "automation": "Helena"
+    "automation": "{appName}"
   },
   "hub": {
     "scopeProject": "Proyek ini",
@@ -56,9 +56,9 @@
     "reset": "Atur ulang filter"
   },
   "owner": {
-    "home": "HELENA",
+    "home": "{appNameUpper}",
     "anAgent": "Seorang agen",
-    "defaultAgent": "Helena",
+    "defaultAgent": "{appName}",
     "mentionedBy": "{name} menyebut Anda",
     "approvalRequest": "{name} meminta keputusan.",
     "workflowWaiting": "Alur kerja ini menunggu keputusan Anda.",

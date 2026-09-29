@@ -22,12 +22,12 @@
     "deleteClient": "Delete OAuth client",
     "deleteClientMessage": "Delete {name}? Accounts can no longer sign in with it.",
     "engine": {
-      "helena": "Helena",
+      "helena": "{appName}",
       "gog": "gog"
     },
     "engineHint": {
-      "helena": "Helena keeps the sign-in encrypted and calls Google with Google's own libraries.",
-      "gog": "The sign-in stays in gog's keyring on this server; Helena reaches it through the broker. No mailbox in the inbox."
+      "helena": "{appName} keeps the sign-in encrypted and calls Google with Google's own libraries.",
+      "gog": "The sign-in stays in gog's keyring on this server; {appName} reaches it through the broker. No mailbox in the inbox."
     },
     "status": {
       "ok": "Connected",
@@ -51,7 +51,7 @@
     "checked": "{email} checked",
     "editServices": "Services",
     "signInAgain": "Sign in again",
-    "moveToHelena": "Move to Helena",
+    "moveToHelena": "Move to {appName}",
     "remove": "Remove account",
     "removeMessage": "Remove {email}? Agents lose access at once; the imported mail stays until you delete the mailbox.",
     "removeFromGog": "Also remove the sign-in from gog",
@@ -75,12 +75,12 @@
   "signIn": {
     "title": "Connect Google account",
     "againTitle": "Sign in to {email} again",
-    "moveTitle": "Move {email} to Helena",
+    "moveTitle": "Move {email} to {appName}",
     "engine": "Sign-in kept by",
     "client": "OAuth client",
     "noClient": "Import an OAuth client first.",
     "email": "Address",
-    "emailHint": "Needed for gog; for Helena Google preselects the account.",
+    "emailHint": "Needed for gog; for {appName} Google preselects the account.",
     "services": "Services",
     "scope": "Belongs to",
     "start": "Continue",
@@ -88,7 +88,7 @@
     "copyLink": "Copy link",
     "linkCopied": "Link copied",
     "pasteStep": "After signing in, the browser ends on a page that does not load (127.0.0.1). Copy the full address of that page and paste it here.",
-    "callbackStep": "Sign in at Google; Helena finishes on its own and comes back here.",
+    "callbackStep": "Sign in at Google; {appName} finishes on its own and comes back here.",
     "redirect": "Address of that page",
     "finish": "Finish",
     "connected": "{email} connected",
@@ -98,7 +98,7 @@
     "title": "Services of {email}",
     "hint": "A service switched off is not available to any agent.",
     "needsSignIn": "needs a new sign-in",
-    "gogNoMail": "An account kept in gog has no mailbox in Helena. Move it to Helena for the inbox.",
+    "gogNoMail": "An account kept in gog has no mailbox in {appName}. Move it to {appName} for the inbox.",
     "saved": "Services saved"
   },
   "mailbox": {
@@ -183,13 +183,13 @@
   "mcp": {
     "kind": "MCP server (OAuth)",
     "kindPlural": "MCP servers (OAuth)",
-    "kindHint": "An MCP server that signs in with OAuth. Helena keeps the token; the MCP server library sends it as the Authorization header.",
+    "kindHint": "An MCP server that signs in with OAuth. {appName} keeps the token; the MCP server library sends it as the Authorization header.",
     "title": "Connect an MCP server",
     "againTitle": "Sign in to {name} again",
     "serverUrl": "Server address",
     "label": "Name",
     "scope": "Scopes (optional)",
-    "hint": "Helena finds the server's sign-in, registers itself and asks you to sign in. Then pick this connection as the Authorization header of the server under MCP servers.",
+    "hint": "{appName} finds the server's sign-in, registers itself and asks you to sign in. Then pick this connection as the Authorization header of the server under MCP servers.",
     "open": "Sign in at the server",
     "connected": "MCP server connected",
     "signIn": "Sign in again",

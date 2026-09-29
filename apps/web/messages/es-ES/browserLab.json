@@ -1,9 +1,9 @@
 {
   "title": "Browser 2.0",
-  "homeBrowser": "Navegador de Helena",
+  "homeBrowser": "Navegador de {appName}",
   "which": "Navegador",
   "noBrowser": "No hay navegador para probar",
-  "noBrowserHint": "Aquí no está disponible ni el navegador de Helena ni el de ningún proyecto.",
+  "noBrowserHint": "Aquí no está disponible ni el navegador de {appName} ni el de ningún proyecto.",
   "noAgents": "Ningún agente de este navegador tiene el navegador del proyecto. Actívalo en las herramientas del agente.",
   "tabs": {
     "label": "Navegador",
@@ -19,14 +19,14 @@
   },
   "connection": {
     "service": "Servicio",
-    "cloudNote": "Lo que Helena manda decidir, como el texto visible de una página o un correo, va a este servicio. Las contraseñas y los valores tecleados, no.",
-    "localNote": "Un servidor System One propio. Helena solo lo alcanza en esta dirección.",
-    "localModelNote": "Un servidor compatible con OpenAI con logprobs (llama.cpp, Halogen, vLLM). Helena solo lo alcanza en esta dirección.",
+    "cloudNote": "Lo que {appName} manda decidir, como el texto visible de una página o un correo, va a este servicio. Las contraseñas y los valores tecleados, no.",
+    "localNote": "Un servidor System One propio. {appName} solo lo alcanza en esta dirección.",
+    "localModelNote": "Un servidor compatible con OpenAI con logprobs (llama.cpp, Halogen, vLLM). {appName} solo lo alcanza en esta dirección.",
     "address": "Dirección",
     "model": "Modelo",
     "allowPrivate": "Permitir esta dirección local",
-    "allowPrivateHint": "Helena nunca llama a direcciones de tu red. Esto permite exactamente esta dirección, nada más.",
-    "localAiKey": "La dirección, la clave y el modelo vienen de la IA local de Helena (Administrador → IA local, activa allí «Decisiones»); aquí no hay nada que introducir.",
+    "allowPrivateHint": "{appName} nunca llama a direcciones de tu red. Esto permite exactamente esta dirección, nada más.",
+    "localAiKey": "La dirección, la clave y el modelo vienen de la IA local de {appName} (Administrador → IA local, activa allí «Decisiones»); aquí no hay nada que introducir.",
     "key": "Clave",
     "keyHintTypesafe": "De console.typesafe.ai → Keys.",
     "keyHintVercel": "Una clave de AI Gateway de tu equipo de Vercel.",
@@ -40,7 +40,7 @@
     "keySourceCredential": "Usar una clave de API existente",
     "keyCredential": "Credencial de clave de API original",
     "chooseKeyCredential": "Elige una clave de API",
-    "keyCredentialHint": "Helena lee la clave actual de esta credencial en cada solicitud. Rótala allí una sola vez. Solo se pueden usar claves de API de este equipo y del mismo proyecto (o de todo el equipo). Ninguna clave se copia ni se revela a los agentes.",
+    "keyCredentialHint": "{appName} lee la clave actual de esta credencial en cada solicitud. Rótala allí una sola vez. Solo se pueden usar claves de API de este equipo y del mismo proyecto (o de todo el equipo). Ninguna clave se copia ni se revela a los agentes.",
     "keySourcesLoading": "Cargando claves de API…",
     "keySourceUnavailable": "No hay ninguna clave de API adecuada disponible o el origen guardado ya no es accesible. Elige un origen válido o revisa las credenciales."
   },
@@ -90,12 +90,12 @@
     "modeHint": "Standard: los agentes hacen clic paso a paso. Modelo de decisión: los agentes pueden delegar el trabajo de varios pasos a browser_task.",
     "connectionHint": "Se configura en Accesos y conexiones → Accesos.",
     "teamHint": "De quién son las conexiones que se muestran.",
-    "overridden": "Valor predeterminado de Helena sustituido",
-    "resetToDefault": "Restablecer al valor de Helena"
+    "overridden": "Valor predeterminado de {appName} sustituido",
+    "resetToDefault": "Restablecer al valor de {appName}"
   },
   "form": {
     "goal": "Tarea",
-    "goalPlaceholder": "p. ej., busca «Helena» y abre el primer resultado",
+    "goalPlaceholder": "p. ej., busca «{appName}» y abre el primer resultado",
     "values": "Valores para escribir",
     "valuesPlaceholder": "email: max@example.com",
     "valuesHint": "Uno por línea, nombre: valor. Los valores se escriben, pero nunca se envían al modelo de decisión.",

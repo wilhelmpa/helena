@@ -156,6 +156,9 @@
     "joined": "entrou em {date}"
   },
   "general": {
+    "displayName": "Nome do produto",
+    "displayNameHint": "O nome exibido no aplicativo, nos e-mails e na instalação.",
+    "displayNameSaved": "Nome do produto salvo.",
     "about": "Sobre",
     "saved": "Padrões de projeto salvos",
     "projectDefaults": "Padrões de projeto",
@@ -359,7 +362,7 @@
       "runner": "Executor do Hermes",
       "provisioning": "Provisionamento",
       "worker": "Worker",
-      "engine": "Motor da Helena"
+      "engine": "Motor da {appName}"
     },
     "seen": "visto há {time}",
     "lastSeen": "visto pela última vez há {time}",
@@ -419,9 +422,9 @@
   },
   "plugins": {
     "externalTitle": "Plugins externos",
-    "externalDescription": "Um plugin externo roda dentro do Helena com as permissões do Helena. Ative só para plugins em que você confia.",
+    "externalDescription": "Um plugin externo roda dentro do {appName} com as permissões do {appName}. Ative só para plugins em que você confia.",
     "folder": "Pasta de plugins: {path}",
-    "noFolder": "Nenhuma pasta de plugins definida (HELENA_PLUGINS_DIR), então só os plugins próprios do Helena rodam.",
+    "noFolder": "Nenhuma pasta de plugins definida (HELENA_PLUGINS_DIR), então só os plugins próprios do {appName} rodam.",
     "restartHint": "As mudanças valem depois que a API e o worker reiniciam.",
     "foundTitle": "Na pasta de plugins",
     "none": "Nenhum plugin encontrado.",
@@ -439,7 +442,7 @@
     "credentials": "Suas ferramentas usam as credenciais dos seus conectores.",
     "names": {
       "integrations": "Integrações",
-      "mcp": "Ferramentas MCP do Helena",
+      "mcp": "Ferramentas MCP do {appName}",
       "webhooks": "Webhooks",
       "bundles": "Pacotes de modelos",
       "limits": "Limites",
@@ -463,7 +466,7 @@
     },
     "loadFailed": "Não foi possível carregar as extensões.",
     "installedTitle": "Instaladas",
-    "installedDescription": "O que o Helena carregou, com versão e status. As configurações de uma extensão para um projeto ficam nas configurações desse projeto, em Extensões.",
+    "installedDescription": "O que o {appName} carregou, com versão e status. As configurações de uma extensão para um projeto ficam nas configurações desse projeto, em Extensões.",
     "externalSwitch": "Carregar plugins externos",
     "restartTitle": "Reinício",
     "inProjects": "Configurada em",

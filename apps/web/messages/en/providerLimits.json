@@ -58,10 +58,10 @@
   "extraUsage": "Extra usage: {used} of {limit}",
   "settings": {
     "auto": "Read automatically",
-    "autoHint": "Helena asks the runners at this interval; each sign-in is asked once, however many agents use it.",
+    "autoHint": "{appName} asks the runners at this interval; each sign-in is asked once, however many agents use it.",
     "autoHintAt": "Last asked {time} ago. Each sign-in is asked once, however many agents use it.",
     "interval": "Interval",
-    "intervalHint": "How often Helena reads the limits.",
+    "intervalHint": "How often {appName} reads the limits.",
     "minutes": "{count} min",
     "near": "Close from",
     "nearHint": "From this share a window turns amber.",

@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { db, notificationDelivery, getInstanceEmailConfig } from '@repo/db';
+import { db, notificationDelivery, getDisplayName, getInstanceEmailConfig } from '@repo/db';
 import { trustedOrigins } from '@repo/auth';
 import { hasEmailProvider } from '@repo/mailer';
 import { and, eq, sql } from 'drizzle-orm';
@@ -23,7 +23,8 @@ export async function enqueueInviteEmail(
   if (!config || !hasEmailProvider(config)) return false;
 
   const dedupeKey = `project-invite:${invite.id}`;
-  const inviter = invite.invitedByName ?? invite.invitedByEmail ?? 'A Helena user';
+  const displayName = await getDisplayName();
+  const inviter = invite.invitedByName ?? invite.invitedByEmail ?? `A ${displayName} user`;
   const role = invite.role === 'owner' ? 'owner' : (invite.roleName ?? 'member');
   const projectName = project.name.replace(/[\r\n]+/g, ' ');
   const url = new URL(`/invite/${invite.token}`, trustedOrigins[0]).toString();
@@ -52,7 +53,7 @@ export async function enqueueInviteEmail(
       channel: 'email',
       recipient: invite.email,
       payload: {
-        subject: `You were invited to ${projectName} on Helena`,
+        subject: `You were invited to ${projectName} on ${displayName}`,
         text:
           `${inviter} invited you to join ${projectName} as ${role}.\n\n` +
           'Open the invitation to sign in or create an account. ' +

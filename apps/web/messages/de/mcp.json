@@ -24,18 +24,18 @@
     "methodTabsAria": "Verbindungsmethode",
     "method": "OAuth",
     "personalKey": "API-Schlüssel",
-    "description": "Nutze diese Methode für jeden MCP-Client, der OAuth unterstützt, z. B. ChatGPT oder Claude. Du meldest dich mit deinem Helena-Konto an. Der Client erhält nie einen API-Schlüssel.",
+    "description": "Nutze diese Methode für jeden MCP-Client, der OAuth unterstützt, z. B. ChatGPT oder Claude. Du meldest dich mit deinem {appName}-Konto an. Der Client erhält nie einen API-Schlüssel.",
     "discovery": "OAuth-Discovery",
     "steps": {
       "add": "Füge in deinem Client eine MCP-App hinzu.",
       "paste": "Füge den MCP-Endpunkt ein.",
       "choose": "Wähle OAuth, wenn der Client nach der Anmeldemethode fragt.",
-      "signIn": "Melde dich bei Helena an und gib den Zugriff frei."
+      "signIn": "Melde dich bei {appName} an und gib den Zugriff frei."
     },
-    "security": "OAuth verwendet PKCE (S256), dynamische Client-Registrierung und Zugriffstokens, die auf dein Helena-Konto beschränkt sind.",
+    "security": "OAuth verwendet PKCE (S256), dynamische Client-Registrierung und Zugriffstokens, die auf dein {appName}-Konto beschränkt sind.",
     "consent": {
-      "title": "Helena autorisieren",
-      "description": "Erlaube diesem MCP-Client, mit den Berechtigungen deines Helena-Kontos zu handeln.",
+      "title": "{appName} autorisieren",
+      "description": "Erlaube diesem MCP-Client, mit den Berechtigungen deines {appName}-Kontos zu handeln.",
       "missingCode": "Dieser Autorisierungsanfrage fehlt der Zustimmungscode.",
       "cancel": "Abbrechen",
       "pending": "Wird autorisiert…",

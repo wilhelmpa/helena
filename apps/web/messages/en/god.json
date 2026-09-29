@@ -156,6 +156,9 @@
     "joined": "joined {date}"
   },
   "general": {
+    "displayName": "Product name",
+    "displayNameHint": "The name shown across the app, emails and install screen.",
+    "displayNameSaved": "Product name saved.",
     "about": "About",
     "saved": "Project defaults saved",
     "projectDefaults": "Project defaults",
@@ -171,7 +174,7 @@
     "timezoneServer": "Use the server's",
     "savedTimezone": "Time zone saved.",
     "autopilotDefault": "Default Autopilot level",
-    "autopilotDefaultHint": "Used for new projects and Helena agents without their own level. Existing project and agent levels stay unchanged."
+    "autopilotDefaultHint": "Used for new projects and {appName} agents without their own level. Existing project and agent levels stay unchanged."
   },
   "authentication": {
     "saved": "Authentication settings saved",
@@ -359,7 +362,7 @@
       "runner": "Hermes runner",
       "provisioning": "Provisioning",
       "worker": "Worker",
-      "engine": "Helena engine"
+      "engine": "{appName} engine"
     },
     "seen": "seen {time} ago",
     "lastSeen": "last seen {time} ago",
@@ -419,9 +422,9 @@
   },
   "plugins": {
     "externalTitle": "External plugins",
-    "externalDescription": "An external plugin runs inside Helena with Helena's rights. Switch this on only for plugins you trust.",
+    "externalDescription": "An external plugin runs inside {appName} with {appName}'s rights. Switch this on only for plugins you trust.",
     "folder": "Plugin folder: {path}",
-    "noFolder": "No plugin folder is set (HELENA_PLUGINS_DIR), so only Helena's own plugins run.",
+    "noFolder": "No plugin folder is set (HELENA_PLUGINS_DIR), so only {appName}'s own plugins run.",
     "restartHint": "Changes take effect when the API and the worker restart.",
     "foundTitle": "In the plugin folder",
     "none": "No plugins found.",
@@ -439,7 +442,7 @@
     "credentials": "Its tools use the credentials of its connectors.",
     "names": {
       "integrations": "Integrations",
-      "mcp": "Helena MCP tools",
+      "mcp": "{appName} MCP tools",
       "webhooks": "Webhooks",
       "bundles": "Template bundles",
       "limits": "Limits",
@@ -463,7 +466,7 @@
     },
     "loadFailed": "The extensions could not be loaded.",
     "installedTitle": "Installed",
-    "installedDescription": "What Helena has loaded, with version and status. An extension's settings for a project are in that project's settings under Extensions.",
+    "installedDescription": "What {appName} has loaded, with version and status. An extension's settings for a project are in that project's settings under Extensions.",
     "externalSwitch": "Load external plugins",
     "restartTitle": "Restart",
     "inProjects": "Set up in",

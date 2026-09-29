@@ -126,9 +126,9 @@
     "undoDone": "Dernier échange supprimé. Envoyez un nouveau message pour continuer à partir d’avant.",
     "undoNone": "Rien à annuler pour l’instant.",
     "refusal": {
-      "schedules": "Les commandes de planification propres à Hermes ne s’exécutent pas depuis le chat — utilisez plutôt les routines d’Helena.",
+      "schedules": "Les commandes de planification propres à Hermes ne s’exécutent pas depuis le chat — utilisez plutôt les routines d’{appName}.",
       "approvals": "Les commandes d’approbation ne s’exécutent pas depuis le chat — utilisez la carte d’approbation ou la page Approbations.",
-      "config": "Cela modifie la configuration propre de l’agent — utilisez les paramètres de l’agent dans Helena.",
+      "config": "Cela modifie la configuration propre de l’agent — utilisez les paramètres de l’agent dans {appName}.",
       "outside": "Le chat ne peut pas faire cela."
     },
     "reasoning": "Effort de réflexion",
@@ -197,7 +197,7 @@
     "runtimeExternal": "Externe",
     "switch": "Discussion avec {agent} — démarrer une nouvelle discussion avec un autre agent",
     "newChatWith": "Nouvelle discussion avec …",
-    "switchToHelena": "Nouvelle discussion avec Helena"
+    "switchToHelena": "Nouvelle discussion avec {appName}"
   },
   "interrupted": {
     "lost": "La connexion à la réponse a été perdue. {agent} y travaille peut-être encore.",
@@ -243,7 +243,7 @@
     },
     "problems": {
       "insecureTitle": "Le micro a besoin d'une connexion sécurisée",
-      "insecure": "Les navigateurs n'accordent le micro qu'en HTTPS, et Helena tourne ici en http. En attendant HTTPS : ouvrez {flag} dans Chrome, saisissez {origin}, choisissez « Enabled » et redémarrez Chrome. Safari et Firefox : seulement avec HTTPS.",
+      "insecure": "Les navigateurs n'accordent le micro qu'en HTTPS, et {appName} tourne ici en http. En attendant HTTPS : ouvrez {flag} dans Chrome, saisissez {origin}, choisissez « Enabled » et redémarrez Chrome. Safari et Firefox : seulement avec HTTPS.",
       "copyFlag": "Copier l'adresse",
       "flagCopied": "Adresse copiée – collez-la dans la barre d'adresse de Chrome.",
       "localOnlyDownTitle": "La transcription locale est indisponible pour l'instant",
@@ -300,7 +300,7 @@
     "commandScriptHint": "Chemin relatif au dossier du projet. Le script reçoit la tâche en JSON et s'exécute dans l'espace isolé du projet ; sa sortie est le résultat.",
     "webhookUrl": "Adresse (HTTPS)",
     "webhookSecretEnv": "Variable contenant la clé de signature",
-    "webhookHint": "Helena appelle l'adresse avec une signature Standard Webhooks. Donnez la clé (whsec_…) à l'agent comme variable d'environnement dans Accès."
+    "webhookHint": "{appName} appelle l'adresse avec une signature Standard Webhooks. Donnez la clé (whsec_…) à l'agent comme variable d'environnement dans Accès."
   },
   "context": {
     "task": "Tâche {identifier} « {title} »",

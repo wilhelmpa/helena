@@ -42,7 +42,7 @@
   },
   "review": {
     "emptyTitle": "Rien à vérifier",
-    "emptyHint": "Les associations dont Helena n'était pas assez sûre attendent ici.",
+    "emptyHint": "Les associations dont {appName} n'était pas assez sûre attendent ici.",
     "score": "Règles",
     "confidence": "IA",
     "confirm": "Associer",
@@ -74,7 +74,7 @@
   },
   "matched": {
     "emptyTitle": "Rien d'associé pour l'instant",
-    "emptyHint": "Téléversez des justificatifs et importez un relevé bancaire, et Helena les associe.",
+    "emptyHint": "Téléversez des justificatifs et importez un relevé bancaire, et {appName} les associe.",
     "unmatch": "Supprimer l'association"
   },
   "accounts": {

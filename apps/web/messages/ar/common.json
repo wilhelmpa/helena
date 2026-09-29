@@ -199,7 +199,7 @@
     "openPreviewLink": "فتح {name} في علامة تبويب جديدة",
     "loadingPreview": "جارٍ تحميل المعاينة…",
     "previewUnavailable": "المعاينة غير متاحة. افتح الرابط لعرض هذه الصفحة.",
-    "internalPage": "صفحة Helena",
+    "internalPage": "صفحة {appName}",
     "internalPreviewUnavailable": "هذه الصفحة غير متاحة أو ليس لديك صلاحية الوصول إليها.",
     "previewNoteCount": "{count, plural, zero {لا ملاحظات} one {ملاحظة واحدة} two {ملاحظتان} few {# ملاحظات} many {# ملاحظة} other {# ملاحظة}}",
     "previewCustomField": "حقل مخصص",

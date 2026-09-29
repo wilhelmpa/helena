@@ -1,9 +1,9 @@
 {
   "title": "Browser 2.0",
-  "homeBrowser": "Navigateur de Helena",
+  "homeBrowser": "Navigateur de {appName}",
   "which": "Navigateur",
   "noBrowser": "Aucun navigateur à tester",
-  "noBrowserHint": "Ni le navigateur de Helena ni celui d'un projet n'est disponible ici.",
+  "noBrowserHint": "Ni le navigateur de {appName} ni celui d'un projet n'est disponible ici.",
   "noAgents": "Aucun agent de ce navigateur n'a le navigateur du projet. Activez-le dans les outils de l'agent.",
   "tabs": {
     "label": "Navigateur",
@@ -19,14 +19,14 @@
   },
   "connection": {
     "service": "Service",
-    "cloudNote": "Ce que Helena fait décider, comme le texte visible d’une page ou un e-mail, part vers ce service. Les mots de passe et les valeurs saisies, non.",
-    "localNote": "Un serveur System One à vous. Helena ne le joint qu'à cette adresse.",
-    "localModelNote": "Un serveur compatible OpenAI avec logprobs (llama.cpp, Halogen, vLLM). Helena ne l’atteint qu’à cette adresse.",
+    "cloudNote": "Ce que {appName} fait décider, comme le texte visible d’une page ou un e-mail, part vers ce service. Les mots de passe et les valeurs saisies, non.",
+    "localNote": "Un serveur System One à vous. {appName} ne le joint qu'à cette adresse.",
+    "localModelNote": "Un serveur compatible OpenAI avec logprobs (llama.cpp, Halogen, vLLM). {appName} ne l’atteint qu’à cette adresse.",
     "address": "Adresse",
     "model": "Modèle",
     "allowPrivate": "Autoriser cette adresse locale",
-    "allowPrivateHint": "Helena n'appelle jamais les adresses de votre réseau. Ceci autorise exactement cette adresse, rien d'autre.",
-    "localAiKey": "L’adresse, la clé et le modèle viennent de l’IA locale de Helena (Administrateur → IA locale, y activer « Décisions ») ; rien à saisir ici.",
+    "allowPrivateHint": "{appName} n'appelle jamais les adresses de votre réseau. Ceci autorise exactement cette adresse, rien d'autre.",
+    "localAiKey": "L’adresse, la clé et le modèle viennent de l’IA locale de {appName} (Administrateur → IA locale, y activer « Décisions ») ; rien à saisir ici.",
     "key": "Clé",
     "keyHintTypesafe": "Depuis console.typesafe.ai → Keys.",
     "keyHintVercel": "Une clé AI Gateway de votre équipe Vercel.",
@@ -40,7 +40,7 @@
     "keySourceCredential": "Utiliser une clé API existante",
     "keyCredential": "Identifiant de clé API d’origine",
     "chooseKeyCredential": "Choisir une clé API",
-    "keyCredentialHint": "Helena lit la clé actuelle dans cet identifiant à chaque requête. Faites-la tourner une seule fois à cet endroit. Seules les clés API de cette équipe et du même projet (ou de toute l’équipe) sont utilisables. Aucune clé n’est copiée ni divulguée aux agents.",
+    "keyCredentialHint": "{appName} lit la clé actuelle dans cet identifiant à chaque requête. Faites-la tourner une seule fois à cet endroit. Seules les clés API de cette équipe et du même projet (ou de toute l’équipe) sont utilisables. Aucune clé n’est copiée ni divulguée aux agents.",
     "keySourcesLoading": "Chargement des clés API…",
     "keySourceUnavailable": "Aucune clé API correspondante n’est disponible, ou la source enregistrée n’est plus accessible. Choisissez une source valide ou vérifiez les identifiants."
   },
@@ -90,12 +90,12 @@
     "modeHint": "Standard : les agents cliquent pas à pas. Modèle de décision : les agents peuvent confier le travail en plusieurs étapes à browser_task.",
     "connectionHint": "Se configure dans Accès et connexions → Accès.",
     "teamHint": "L'équipe dont les connexions sont listées.",
-    "overridden": "Valeur par défaut de Helena remplacée",
-    "resetToDefault": "Revenir à la valeur de Helena"
+    "overridden": "Valeur par défaut de {appName} remplacée",
+    "resetToDefault": "Revenir à la valeur de {appName}"
   },
   "form": {
     "goal": "Tâche",
-    "goalPlaceholder": "p. ex. Cherche « Helena » et ouvre le premier résultat",
+    "goalPlaceholder": "p. ex. Cherche « {appName} » et ouvre le premier résultat",
     "values": "Valeurs à saisir",
     "valuesPlaceholder": "email: max@example.com",
     "valuesHint": "Une par ligne, nom : valeur. Les valeurs sont saisies mais jamais envoyées au modèle de décision.",

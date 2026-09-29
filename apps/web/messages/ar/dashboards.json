@@ -136,7 +136,7 @@
       "field": "حدّث حقلًا في",
       "other": "حدّث"
     },
-    "automation": "Helena"
+    "automation": "{appName}"
   },
   "pulse": {
     "caption": {

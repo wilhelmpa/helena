@@ -19,7 +19,7 @@
   "readFailed": "L’assistant hôte n’a pas répondu. Il n’est peut-être pas en cours d’exécution.",
   "unavailable": {
     "title": "Rien à gérer ici",
-    "noHelper": "Helena tourne sans l’assistant hôte (dans un conteneur, par exemple). Les disques, les sauvegardes et les ventilateurs se gèrent alors en dehors de Helena.",
+    "noHelper": "{appName} tourne sans l’assistant hôte (dans un conteneur, par exemple). Les disques, les sauvegardes et les ventilateurs se gèrent alors en dehors de {appName}.",
     "failed": "L’assistant hôte n’a pas répondu."
   },
   "health": {
@@ -42,9 +42,9 @@
     "espSyncSkipped": "La seconde partition EFI n’a pas été mise à jour il y a {at} : {reason, select, notMounted {{mount} n’était pas monté} notVfat {{mount} n’est pas une partition FAT} sameDevice {les deux points de montage sont la même partition} other {ignorée}}. Le disque de réserve risque de démarrer une ancienne version.",
     "espSyncFailed": "La copie vers la seconde partition EFI a échoué il y a {at} : {reason, select, sourceIncomplete {le chargeur d’amorçage manque sur la première} readFailed {la première n’a pas pu être lue entièrement} noRsync {rsync est absent} rsyncFailed {erreur d’écriture} verifyFailed {la copie diffère de l’original} other {erreur inconnue}}. Le démarrage sur le disque de réserve n’est de nouveau sûr qu’après une copie réussie.",
     "espRemovableStale": "Le chemin de démarrage de secours EFI/BOOT sur {mount} {problem, select, missing {manque} differs {lance d’autres fichiers que les entrées de démarrage} fallback {contient fbx64.efi, qui créerait ses propres entrées de firmware} stub {ne trouve pas la partition système} other {n’est pas correct}}. Le firmware démarre parfois ce chemin de lui-même.",
-    "bootEntryMissing": "L’entrée de démarrage « {label} » manque. {repair, select, nextBoot {Helena la crée au prochain démarrage.} diskMissing {Helena la crée dès que le disque est de retour.} other {}}",
-    "bootEntryBroken": "L’entrée de démarrage « {label} » n’est pas valide : {problem, select, noPartuuid {le firmware l’a réécrite} wrongDisk {elle pointe vers un autre disque} wrongLoader {elle lance un autre fichier} inactive {elle est désactivée} other {elle ne correspond pas}}. {repair, select, nextBoot {Helena la répare au prochain démarrage.} diskMissing {Helena la répare dès que le disque est de retour.} other {}}",
-    "bootEntryDuplicate": "L’entrée de démarrage « {label} » existe plusieurs fois. {repair, select, nextBoot {Helena fait le ménage au prochain démarrage.} diskMissing {Helena fait le ménage dès que le disque est de retour.} other {}}",
+    "bootEntryMissing": "L’entrée de démarrage « {label} » manque. {repair, select, nextBoot {{appName} la crée au prochain démarrage.} diskMissing {{appName} la crée dès que le disque est de retour.} other {}}",
+    "bootEntryBroken": "L’entrée de démarrage « {label} » n’est pas valide : {problem, select, noPartuuid {le firmware l’a réécrite} wrongDisk {elle pointe vers un autre disque} wrongLoader {elle lance un autre fichier} inactive {elle est désactivée} other {elle ne correspond pas}}. {repair, select, nextBoot {{appName} la répare au prochain démarrage.} diskMissing {{appName} la répare dès que le disque est de retour.} other {}}",
+    "bootEntryDuplicate": "L’entrée de démarrage « {label} » existe plusieurs fois. {repair, select, nextBoot {{appName} fait le ménage au prochain démarrage.} diskMissing {{appName} fait le ménage dès que le disque est de retour.} other {}}",
     "bootLoaderMissing": "Le chargeur d’amorçage manque sur {mount} ; l’entrée « {label} » ne peut pas démarrer.",
     "bootEntriesOk": "{count, plural, one {L’entrée de démarrage est correcte.} other {Les # entrées de démarrage sont correctes.}}",
     "eventsCritical": "{count, plural, one {Un signalement grave de mdadm ou smartd, pas encore consulté} other {# signalements graves de mdadm ou smartd, pas encore consultés}}.",
@@ -116,7 +116,7 @@
     "checkStarted": "La vérification est en cours.",
     "checkStopped": "La vérification a été arrêtée.",
     "checkConfirmTitle": "Vérifier le miroir ?",
-    "checkConfirmBody": "Lit entièrement les deux disques et les compare (comme la vérification mensuelle automatique). Cela prend quelques heures et ralentit un peu les disques ; Helena continue de tourner.",
+    "checkConfirmBody": "Lit entièrement les deux disques et les compare (comme la vérification mensuelle automatique). Cela prend quelques heures et ralentit un peu les disques ; {appName} continue de tourner.",
     "syncAction": {
       "idle": "Au repos",
       "resync": "Resynchronisation",
@@ -178,7 +178,7 @@
       "intro": "Quand un disque tombe du bus en marche (« controller is down » dans le journal, le miroir tourne sans lui, lsblk ne l’affiche plus), il n’est souvent pas défectueux. Un redémarrage ne le ramène généralement pas, un démarrage à froid si. D’ici là, aucune mise à jour du noyau ni de GRUB.",
       "step": {
         "poweroff": "Éteindre proprement",
-        "poweroffBody": "Helena et les agents s’arrêtent ; le miroir est complet sur l’autre disque.",
+        "poweroffBody": "{appName} et les agents s’arrêtent ; le miroir est complet sur l’autre disque.",
         "powerOn": "Rallumer",
         "powerOnBody": "Avec le bouton d’alimentation ou par Wake-on-LAN depuis un autre ordinateur du réseau domestique.",
         "smart": "Vérifier SMART",
@@ -193,7 +193,7 @@
     "replace": {
       "open": "Remplacer un disque",
       "title": "Remplacer un disque du miroir",
-      "intro": "Étape par étape, avec les commandes pour cette machine. Helena ne les exécute pas : vous les saisissez dans le terminal du propriétaire. Pendant ce temps, le serveur continue de tourner sur l’autre disque.",
+      "intro": "Étape par étape, avec les commandes pour cette machine. {appName} ne les exécute pas : vous les saisissez dans le terminal du propriétaire. Pendant ce temps, le serveur continue de tourner sur l’autre disque.",
       "which": "Quel disque retirer ?",
       "disk": "Disque {letter}",
       "noPlan": "Il n’y a pas de plan pour ce disque : il ne fait pas partie d’un miroir, ou il manque un second disque sain.",
@@ -345,11 +345,11 @@
     },
     "password": {
       "title": "Noter le mot de passe de sauvegarde",
-      "explain": "Sans ce mot de passe, la sauvegarde est illisible, y compris pour Helena après une réinstallation. Notez-le sur papier ou dans votre gestionnaire de mots de passe. Une fois la confirmation faite, Helena ne l’affiche plus jamais.",
+      "explain": "Sans ce mot de passe, la sauvegarde est illisible, y compris pour {appName} après une réinstallation. Notez-le sur papier ou dans votre gestionnaire de mots de passe. Une fois la confirmation faite, {appName} ne l’affiche plus jamais.",
       "show": "Afficher le mot de passe",
       "written": "J’ai noté le mot de passe en lieu sûr.",
       "confirm": "Confirmer",
-      "confirmed": "Confirmé. Helena n’affiche plus le mot de passe."
+      "confirmed": "Confirmé. {appName} n’affiche plus le mot de passe."
     },
     "targets": {
       "title": "Hors site",
@@ -465,7 +465,7 @@
     },
     "guard": {
       "title": "Protection des ventilateurs",
-      "explain": "Lorsque les ventilateurs sont fixés sous le niveau 5 et que le CPU reste à {limit} ou plus pendant quelques secondes, Helena les passe au niveau 5. Après deux minutes sous {release}, votre niveau revient.",
+      "explain": "Lorsque les ventilateurs sont fixés sous le niveau 5 et que le CPU reste à {limit} ou plus pendant quelques secondes, {appName} les passe au niveau 5. Après deux minutes sous {release}, votre niveau revient.",
       "limit": "Limite",
       "saved": "Enregistré.",
       "active": "Maintient actuellement les ventilateurs au niveau 5.",

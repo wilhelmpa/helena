@@ -102,6 +102,7 @@ describe('voice settings', () => {
       'Müller, Helena, TRADE, VERVE, Jev, Qwen, Alpaca.',
     );
     expect(vocabularyPrompt([], [])).toBe('Helena, TRADE, VERVE, Jev, Qwen, Alpaca.');
+    expect(vocabularyPrompt([], [], 'Atlas')).toBe('Atlas, TRADE, VERVE, Jev, Qwen, Alpaca.');
   });
 
   it('corrects only complete names and allows editing the defaults', () => {

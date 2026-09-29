@@ -42,7 +42,7 @@
   },
   "review": {
     "emptyTitle": "Nada para revisar",
-    "emptyHint": "Aqui ficam as associações sobre as quais a Helena não tinha certeza suficiente.",
+    "emptyHint": "Aqui ficam as associações sobre as quais a {appName} não tinha certeza suficiente.",
     "score": "Regras",
     "confidence": "IA",
     "confirm": "Associar",
@@ -74,7 +74,7 @@
   },
   "matched": {
     "emptyTitle": "Nada associado ainda",
-    "emptyHint": "Envie comprovantes e importe um extrato bancário, e a Helena os associa.",
+    "emptyHint": "Envie comprovantes e importe um extrato bancário, e a {appName} os associa.",
     "unmatch": "Desfazer a associação"
   },
   "accounts": {

@@ -1,4 +1,5 @@
 import { HttpError } from '#shared/lib';
+import { getDisplayName } from '@repo/db';
 import { assertPublicHttpUrl, pinnedFetch } from '#shared/net';
 import { pipelineStatus } from './providers';
 import type { PipelineEvent, PullRequestEvent, PullRequestState } from './providers';
@@ -795,7 +796,7 @@ export async function installProviderWebhook(
     const response = await providerRequest(input, path, {
       method: existing ? 'PUT' : 'POST',
       body: JSON.stringify({
-        description: 'Helena',
+        description: await getDisplayName(),
         url: payloadUrl,
         active: true,
         secret,

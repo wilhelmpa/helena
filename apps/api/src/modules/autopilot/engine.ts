@@ -1,4 +1,12 @@
-import { db, agentRun, approvalRequest, helenaPolicyDecision, issue, project } from '@repo/db';
+import {
+  db,
+  agentRun,
+  approvalRequest,
+  getDisplayName,
+  helenaPolicyDecision,
+  issue,
+  project,
+} from '@repo/db';
 import { and, eq, lt } from 'drizzle-orm';
 import { intEnv } from '#shared/lib';
 import {
@@ -146,6 +154,7 @@ function agentMessage(
     level: AutopilotLevel;
     command: boolean;
   },
+  displayName = 'Helena',
 ): string {
   if (decision.outcome === 'allow') return '';
   const what = `${facts.category}${facts.category === 'delete' || facts.category === 'execute' ? ` (${facts.scope === 'workspace' ? 'inside' : 'outside'} your workspace)` : ''}`;
@@ -155,7 +164,7 @@ function agentMessage(
         ? 'a budget of yours or of this project is used up'
         : (decision.detail ?? 'a policy forbids it');
     return (
-      `BLOCKED by Helena's Autopilot: this ${what} action is not allowed because ${why}. ` +
+      `BLOCKED by ${displayName}'s Autopilot: this ${what} action is not allowed because ${why}. ` +
       'Do not try to reach the same result another way; end the run and report where you stopped.'
     );
   }
@@ -166,10 +175,10 @@ function agentMessage(
         ? (decision.detail ?? 'a policy asks for it')
         : `the project's Autopilot level ${levelName(facts.level)} asks for it`;
   return (
-    `BLOCKED by Helena's Autopilot: this ${what} action needs a person's approval first (${why}). ` +
-    `If it is needed, call Helena's request_approval tool with kind "${approvalKindOf(facts.category)}", ` +
+    `BLOCKED by ${displayName}'s Autopilot: this ${what} action needs a person's approval first (${why}). ` +
+    `If it is needed, call ${displayName}'s request_approval tool with kind "${approvalKindOf(facts.category)}", ` +
     `the action in one line and every detail a person needs to decide${facts.command ? ', and exactly this command in `command`' : ''}; ` +
-    'then end your run without taking the action. Helena starts a new run of yours with the ' +
+    `then end your run without taking the action. ${displayName} starts a new run of yours with the ` +
     'decision. Do not reach the same result another way.'
   );
 }
@@ -236,12 +245,16 @@ export async function decide(input: DecideInput): Promise<EngineDecision> {
     level: resolved.level,
     levelSource: resolved.source,
     decisionId,
-    message: agentMessage(decision, {
-      category: input.category,
-      scope,
-      level: resolved.level,
-      command: Boolean(input.command),
-    }),
+    message: agentMessage(
+      decision,
+      {
+        category: input.category,
+        scope,
+        level: resolved.level,
+        command: Boolean(input.command),
+      },
+      await getDisplayName(),
+    ),
   };
 }
 

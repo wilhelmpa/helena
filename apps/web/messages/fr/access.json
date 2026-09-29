@@ -22,12 +22,12 @@
     "deleteClient": "Supprimer le client OAuth",
     "deleteClientMessage": "Supprimer {name} ? Les comptes ne pourront plus se connecter avec.",
     "engine": {
-      "helena": "Helena",
+      "helena": "{appName}",
       "gog": "gog"
     },
     "engineHint": {
-      "helena": "Helena conserve la connexion chiffrée et appelle Google avec les bibliothèques de Google.",
-      "gog": "La connexion reste dans le trousseau de gog sur ce serveur ; Helena y accède par le broker. Pas de boîte dans la boîte de réception."
+      "helena": "{appName} conserve la connexion chiffrée et appelle Google avec les bibliothèques de Google.",
+      "gog": "La connexion reste dans le trousseau de gog sur ce serveur ; {appName} y accède par le broker. Pas de boîte dans la boîte de réception."
     },
     "status": {
       "ok": "Connecté",
@@ -51,11 +51,11 @@
     "checked": "{email} vérifié",
     "editServices": "Services",
     "signInAgain": "Se reconnecter",
-    "moveToHelena": "Reprendre dans Helena",
+    "moveToHelena": "Reprendre dans {appName}",
     "remove": "Retirer le compte",
     "removeMessage": "Retirer {email} ? Les agents perdent l’accès immédiatement ; les e-mails importés restent jusqu’à la suppression de la boîte.",
     "removeFromGog": "Retirer aussi la connexion de gog",
-    "inGog": "Dans gog, pas encore dans Helena",
+    "inGog": "Dans gog, pas encore dans {appName}",
     "inGogHint": "gog détient une connexion pour ces comptes. Les afficher ne déplace aucun jeton.",
     "adopt": "Afficher",
     "adopted": "{email} est affiché",
@@ -75,12 +75,12 @@
   "signIn": {
     "title": "Connecter un compte Google",
     "againTitle": "Reconnecter {email}",
-    "moveTitle": "Reprendre {email} dans Helena",
+    "moveTitle": "Reprendre {email} dans {appName}",
     "engine": "Connexion conservée par",
     "client": "Client OAuth",
     "noClient": "Importez d’abord un client OAuth.",
     "email": "Adresse",
-    "emailHint": "Nécessaire pour gog ; pour Helena, Google présélectionne le compte.",
+    "emailHint": "Nécessaire pour gog ; pour {appName}, Google présélectionne le compte.",
     "services": "Services",
     "scope": "Appartient à",
     "start": "Continuer",
@@ -88,7 +88,7 @@
     "copyLink": "Copier le lien",
     "linkCopied": "Lien copié",
     "pasteStep": "Après la connexion, le navigateur arrive sur une page qui ne se charge pas (127.0.0.1). Copiez l’adresse complète de cette page et collez-la ici.",
-    "callbackStep": "Connectez-vous chez Google ; Helena termine seule et revient ici.",
+    "callbackStep": "Connectez-vous chez Google ; {appName} termine seule et revient ici.",
     "redirect": "Adresse de cette page",
     "finish": "Terminer",
     "connected": "{email} connecté",
@@ -98,7 +98,7 @@
     "title": "Services de {email}",
     "hint": "Un service désactivé n’est disponible pour aucun agent.",
     "needsSignIn": "nouvelle connexion requise",
-    "gogNoMail": "Un compte conservé dans gog n’a pas de boîte dans Helena. Reprenez-le dans Helena pour la boîte de réception.",
+    "gogNoMail": "Un compte conservé dans gog n’a pas de boîte dans {appName}. Reprenez-le dans {appName} pour la boîte de réception.",
     "saved": "Services enregistrés"
   },
   "mailbox": {
@@ -183,13 +183,13 @@
   "mcp": {
     "kind": "Serveur MCP (OAuth)",
     "kindPlural": "Serveurs MCP (OAuth)",
-    "kindHint": "Un serveur MCP qui se connecte avec OAuth. Helena conserve le jeton ; la bibliothèque de serveurs MCP l’envoie comme en-tête Authorization.",
+    "kindHint": "Un serveur MCP qui se connecte avec OAuth. {appName} conserve le jeton ; la bibliothèque de serveurs MCP l’envoie comme en-tête Authorization.",
     "title": "Connecter un serveur MCP",
     "againTitle": "Reconnecter {name}",
     "serverUrl": "Adresse du serveur",
     "label": "Nom",
     "scope": "Scopes (facultatif)",
-    "hint": "Helena trouve la connexion du serveur, s’y enregistre et vous demande de vous connecter. Choisissez ensuite cette connexion comme en-tête Authorization du serveur sous Serveurs MCP.",
+    "hint": "{appName} trouve la connexion du serveur, s’y enregistre et vous demande de vous connecter. Choisissez ensuite cette connexion comme en-tête Authorization du serveur sous Serveurs MCP.",
     "open": "Se connecter au serveur",
     "connected": "Serveur MCP connecté",
     "signIn": "Se reconnecter",

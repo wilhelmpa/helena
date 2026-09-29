@@ -58,10 +58,10 @@
   "extraUsage": "Zusatznutzung: {used} von {limit}",
   "settings": {
     "auto": "Automatisch abfragen",
-    "autoHint": "Helena fragt die Runner in diesem Abstand; jede Anmeldung einmal, egal wie viele Agenten sie nutzen.",
+    "autoHint": "{appName} fragt die Runner in diesem Abstand; jede Anmeldung einmal, egal wie viele Agenten sie nutzen.",
     "autoHintAt": "Zuletzt vor {time} gefragt. Jede Anmeldung einmal, egal wie viele Agenten sie nutzen.",
     "interval": "Abstand",
-    "intervalHint": "Wie oft Helena die Limits liest.",
+    "intervalHint": "Wie oft {appName} die Limits liest.",
     "minutes": "{count} Min.",
     "near": "Knapp ab",
     "nearHint": "Ab diesem Anteil wird ein Fenster gelb.",

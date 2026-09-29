@@ -43,8 +43,8 @@
   "dialog": {
     "title": "Update {name}?",
     "titleGroup": "{count, plural, one {Update # package?} other {Update # packages?}}",
-    "download": "Helena downloads the new version from the vendor and installs it ({source}).",
-    "downloadApt": "apt downloads the packages from the Debian sources and installs them. Helena backs up the database first.",
+    "download": "{appName} downloads the new version from the vendor and installs it ({source}).",
+    "downloadApt": "apt downloads the packages from the Debian sources and installs them. {appName} backs up the database first.",
     "downloadHermes": "The Hermes helper fetches the new state from the Hermes repository and reinstalls it.",
     "wayBack": "Way back: the current version is kept and can be restored.",
     "wayBackApt": "Way back: apt has no automatic one. The log names the command for the old versions afterwards.",
@@ -70,10 +70,10 @@
     "cliRuntimes": "Agent runtimes",
     "apt": "Debian packages",
     "hostTools": "Tools",
-    "helena": "Helena"
+    "helena": "{appName}"
   },
   "hints": {
-    "manual": "No installer in Helena: updated by hand.",
+    "manual": "No installer in {appName}: updated by hand.",
     "notInstalled": "Not installed.",
     "deploy": "Updated with the deploy.",
     "hermesOffline": "No Hermes runner reachable: as of the last check."
@@ -81,7 +81,7 @@
   "settings": {
     "title": "Settings",
     "schedule": "Check automatically",
-    "scheduleDescription": "Helena looks for new versions on this schedule.",
+    "scheduleDescription": "{appName} looks for new versions on this schedule.",
     "cron": "Schedule",
     "timezone": "Time zone",
     "summarize": "Summarize with AI",

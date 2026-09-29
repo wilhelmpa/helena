@@ -2,9 +2,9 @@
   "auditTitle": "服务器加固",
   "auditDescription": "每小时对服务器的检查：防火墙、SSH、证书、权限和服务。不含任何机密。",
   "ownerTitle": "所有者登录",
-  "ownerDescription": "Helena 可从互联网访问之前必须满足的条件。",
+  "ownerDescription": "{appName} 可从互联网访问之前必须满足的条件。",
   "edgeTitle": "外部访问",
-  "edgeDescription": "helena.volition.one 前面的 Cloudflare Access。Helena 会再次亲自检查来自隧道的每个请求。",
+  "edgeDescription": "helena.volition.one 前面的 Cloudflare Access。{appName} 会再次亲自检查来自隧道的每个请求。",
   "noReport": "还没有审计报告。请在服务器上运行一次：",
   "noReportCommand": "sudo deployment/volition-stack/native/hardening/audit.sh --install-timer",
   "summary": "{failed} 项未通过 · {warnings} 项警告 · {passed} 项通过",
@@ -47,7 +47,7 @@
     "web_production": "API 以生产模式运行",
     "web_leftovers": "nginx 中没有开发残留或可读的备份副本",
     "tunnel_service": "Cloudflare 隧道隔离运行且不自动更新",
-    "tunnel_edge": "已在 Helena 中配置 Cloudflare Access",
+    "tunnel_edge": "已在 {appName} 中配置 Cloudflare Access",
     "tunnel_acl": "只有隧道能访问隧道入口",
     "tls_certificate": "证书有效期超过 14 天",
     "tls_renewal": "证书自动续期已启用",
@@ -69,9 +69,9 @@
     "files_backups": "数据库备份只有其服务可读",
     "files_secrets": "机密和密钥对他人不可读",
     "files_agent_code": "智能体可以读取其运行时代码",
-    "svc_exposure": "Helena 服务由 systemd 隔离",
+    "svc_exposure": "{appName} 服务由 systemd 隔离",
     "svc_tools_loopback": "工具只能通过回环地址访问",
-    "net_voice_acl": "语音服务器仅供 Helena 访问"
+    "net_voice_acl": "语音服务器仅供 {appName} 访问"
   },
   "finding": {
     "net_firewall": {
@@ -91,7 +91,7 @@
       "fail": "局域网登录也适用于回环地址或服务器本身。"
     },
     "net_redis": {
-      "fail": "Redis 在无密码状态下运行，且 Helena 并不使用它。"
+      "fail": "Redis 在无密码状态下运行，且 {appName} 并不使用它。"
     },
     "net_syncthing_nat": {
       "warn": "Syncthing 请求路由器（UPnP/NAT-PMP）打开端口 22000。"
@@ -125,7 +125,7 @@
       "fail": "Cloudflare 隧道没有按预期隔离。"
     },
     "tunnel_edge": {
-      "fail": "Helena 中未设置 Cloudflare Access 团队（域名/AUD）：隧道入口会拒绝一切请求。"
+      "fail": "{appName} 中未设置 Cloudflare Access 团队（域名/AUD）：隧道入口会拒绝一切请求。"
     },
     "tunnel_acl": {
       "fail": "{why, select, user {隧道用户 {user} 无法访问隧道入口：cloudflared 无法连接，Cloudflare 返回 502（hardening/apply.sh --apply firewall-uids）。} other {任何本地用户都能访问隧道入口。}}"
@@ -191,7 +191,7 @@
       "fail": "{path} 中有 {count} 个文件只有所有者可读：加载它们的智能体无法启动。"
     },
     "svc_exposure": {
-      "warn": "systemd 对 Helena 服务的隔离弱于预期。"
+      "warn": "systemd 对 {appName} 服务的隔离弱于预期。"
     },
     "svc_tools_loopback": {
       "fail": "工具可在回环地址之外访问。"
@@ -221,13 +221,13 @@
     "allowedEmails": "允许的身份",
     "allowedEmailsHint": "可选：只允许这些电子邮件地址，即使 Access 策略允许更多。每行一个。使用 Cloudflare 登录时必填。",
     "saved": "外部访问已保存",
-    "signInTitle": "使用 Cloudflare 登录直接登录 Helena",
-    "signInDescription": "以允许的身份登录 Cloudflare Access 后，无需另一个密码即可登录 Helena，最长 24 小时，且不会超过 Access 会话。此后 Access 是唯一的登录方式：请在那里要求第二因素（通行密钥/Touch ID 或身份验证器应用）。终端仍会要求输入它的代码。",
+    "signInTitle": "使用 Cloudflare 登录直接登录 {appName}",
+    "signInDescription": "以允许的身份登录 Cloudflare Access 后，无需另一个密码即可登录 {appName}，最长 24 小时，且不会超过 Access 会话。此后 Access 是唯一的登录方式：请在那里要求第二因素（通行密钥/Touch ID 或身份验证器应用）。终端仍会要求输入它的代码。",
     "signInNeedsSetup": "需要团队域、AUD 和至少一个允许的身份。",
-    "signInNeedsProof": "隧道入口尚无 Helena 的凭证：请在服务器上运行 cloudflare/install.sh --apply entry-token，然后重启 API 和 Web 应用。",
+    "signInNeedsProof": "隧道入口尚无 {appName} 的凭证：请在服务器上运行 cloudflare/install.sh --apply entry-token，然后重启 API 和 Web 应用。",
     "homeTitle": "在家时自动直连",
-    "homeDescription": "在公共地址上，Helena 会检查 {home} 是否能从此设备访问，若能则切换过去：直接通过家庭网络，不绕道 Cloudflare。在那里家庭网络登录会让你登录。Chrome 会询问一次本地网络访问权限。",
-    "homeDescriptionGeneric": "在公共地址上，Helena 会检查家庭网络地址是否能从此设备访问，若能则切换过去：直接通过家庭网络，不绕道 Cloudflare。",
+    "homeDescription": "在公共地址上，{appName} 会检查 {home} 是否能从此设备访问，若能则切换过去：直接通过家庭网络，不绕道 Cloudflare。在那里家庭网络登录会让你登录。Chrome 会询问一次本地网络访问权限。",
+    "homeDescriptionGeneric": "在公共地址上，{appName} 会检查家庭网络地址是否能从此设备访问，若能则切换过去：直接通过家庭网络，不绕道 Cloudflare。",
     "homeNotSetUp": "尚未设置家庭网络地址（HELENA_HOME_URL，cloudflare/switch_origin.py --home-host）。",
     "serviceTokenTitle": "服务访问：{label}",
     "serviceTokenDescription": "Cloudflare 服务令牌 {hint}… 以 {actsAs} 的身份用于自动检查。要结束，请在此处移除并在 Cloudflare 中删除该令牌。",

@@ -41,6 +41,7 @@ import ProjectLinkSheet from '@/components/layout/ProjectLinkSheet';
 import { useTranslations } from 'next-intl';
 import { Menu as MenuIcon } from 'lucide-react';
 import { PageHeader } from '@/design-system';
+import { useDisplayName } from '@/context/displayName';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useDashboardsQuery } from '@/services/dashboards.service';
 import { useShellHeading } from '@/components/layout/useShellHeading';
@@ -70,6 +71,7 @@ export default function Shell({
   mobileHeaderOnly?: boolean;
 }) {
   const t = useTranslations('nav');
+  const appName = useDisplayName();
   const tShell = useTranslations('shell');
   const router = useRouter();
   const route = useShellRoute();
@@ -334,11 +336,11 @@ export default function Shell({
   const titleKey = headingText.join('\u0000');
   useEffect(() => {
     const previous = document.title;
-    document.title = [...titleKey.split('\u0000'), 'Helena'].filter(Boolean).join(' · ');
+    document.title = [...titleKey.split('\u0000'), appName].filter(Boolean).join(' · ');
     return () => {
       document.title = previous;
     };
-  }, [titleKey]);
+  }, [titleKey, appName]);
   const hideHeader = hideHeaderOnDesktop && !narrow;
   const headerHidden = mobileHeaderOnly ? !narrow : hideHeader;
 

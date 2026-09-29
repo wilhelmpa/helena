@@ -1,6 +1,7 @@
 'use client';
 
 import { Check } from 'lucide-react';
+import { useDisplayName } from '@/context/displayName';
 import type { AiAgent } from '@/lib/api/endpoints/agents';
 import { MenuItem, Text } from '@/design-system';
 import AgentAvatar from '@/components/common/page/AgentAvatar';
@@ -31,7 +32,7 @@ export default function ChatAgentMenuItem({
     run: state?.label,
     runtimeStatus: state?.online === false ? 'offline' : agent.runtimeState.status,
   });
-  const name = agentDisplayName(agent);
+  const name = agentDisplayName(agent, useDisplayName());
 
   return (
     <MenuItem disabled={!selectable} onSelect={onPick} className="ds-agent-menu-item">

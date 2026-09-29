@@ -164,8 +164,8 @@
   "sortDefault": "Ordem própria",
   "why": {
     "label": "Por quê",
-    "choose": "Escolher uma meta da Helena",
-    "none": "Ainda não serve a nenhuma meta da Helena.",
+    "choose": "Escolher uma meta da {appName}",
+    "none": "Ainda não serve a nenhuma meta da {appName}.",
     "noneOption": "Nenhuma meta"
   }
 }

@@ -71,7 +71,7 @@
     "totpDisableFailed": "无法关闭身份验证器应用。",
     "minLength": "至少 {count} 个字符。",
     "added": "添加于 {date}",
-    "passkeysElsewhere": "通行密钥属于 {host}。在家庭网络中 Helena 会自动让你登录；请在 {host} 上添加新的通行密钥。"
+    "passkeysElsewhere": "通行密钥属于 {host}。在家庭网络中 {appName} 会自动让你登录；请在 {host} 上添加新的通行密钥。"
   },
   "accounts": {
     "label": "关联账户",
@@ -178,7 +178,7 @@
     "showChatByDefault": "默认显示聊天",
     "showChatByDefaultDescription": "打开项目页面时同时打开聊天面板。可随时通过面板标题栏或聊天图标关闭。",
     "chatAnimation": "动态显示聊天状态",
-    "chatAnimationDescription": "在 Helena 和项目聊天中显示动态状态球。关闭后显示静态指示器。"
+    "chatAnimationDescription": "在 {appName} 和项目聊天中显示动态状态球。关闭后显示静态指示器。"
   },
   "shell": {
     "title": "账户"
@@ -187,7 +187,7 @@
     "title": "通知",
     "thisDevice": {
       "title": "此设备上的推送",
-      "description": "即使没有打开 Helena，也能在这部手机或电脑上收到 Helena 的消息。",
+      "description": "即使没有打开 {appName}，也能在这部手机或电脑上收到 {appName} 的消息。",
       "switch": "推送消息",
       "off": "关闭",
       "never": "已开启，尚未送达任何消息",
@@ -202,11 +202,11 @@
     "hints": {
       "insecure": {
         "title": "推送需要安全连接",
-        "body": "浏览器只允许通过 HTTPS 或在 localhost 上使用推送。设置好 https 地址后，请通过它打开 Helena。"
+        "body": "浏览器只允许通过 HTTPS 或在 localhost 上使用推送。设置好 https 地址后，请通过它打开 {appName}。"
       },
       "iosInstall": {
-        "title": "在 iPhone 和 iPad 上，请先把 Helena 添加到主屏幕",
-        "body": "在 Safari 中：分享 →“添加到主屏幕”。然后从主屏幕打开 Helena，并在这里开启推送（iOS 16.4 或更高版本）。"
+        "title": "在 iPhone 和 iPad 上，请先把 {appName} 添加到主屏幕",
+        "body": "在 Safari 中：分享 →“添加到主屏幕”。然后从主屏幕打开 {appName}，并在这里开启推送（iOS 16.4 或更高版本）。"
       },
       "unsupported": {
         "title": "此浏览器不支持推送",
@@ -258,7 +258,7 @@
       },
       "agent-replies": {
         "label": "代理回复",
-        "description": "你没有打开 Helena 时，聊天中的回复已完成。"
+        "description": "你没有打开 {appName} 时，聊天中的回复已完成。"
       }
     }
   }

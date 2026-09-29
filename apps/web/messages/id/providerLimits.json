@@ -58,10 +58,10 @@
   "extraUsage": "Pemakaian tambahan: {used} dari {limit}",
   "settings": {
     "auto": "Baca otomatis",
-    "autoHint": "Helena menanyai runner dengan jeda ini; setiap login sekali, berapa pun agen yang memakainya.",
+    "autoHint": "{appName} menanyai runner dengan jeda ini; setiap login sekali, berapa pun agen yang memakainya.",
     "autoHintAt": "Terakhir ditanya {time} lalu. Setiap login sekali, berapa pun agen yang memakainya.",
     "interval": "Jeda",
-    "intervalHint": "Seberapa sering Helena membaca batas.",
+    "intervalHint": "Seberapa sering {appName} membaca batas.",
     "minutes": "{count} mnt",
     "near": "Hampir habis mulai",
     "nearHint": "Mulai porsi ini sebuah jendela menjadi kuning.",

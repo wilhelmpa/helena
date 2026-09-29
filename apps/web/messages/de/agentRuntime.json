@@ -190,7 +190,7 @@
     "log": "Log",
     "reload": "Neu laden",
     "logEmpty": "Keine Log-Zeilen.",
-    "noLogs": "Diese Laufzeit führt kein Log, das Helena lesen kann.",
+    "noLogs": "Diese Laufzeit führt kein Log, das {appName} lesen kann.",
     "level": {
       "all": "Alle",
       "WARNING": "Warnungen",
@@ -262,7 +262,7 @@
     "retentionHint": "Tage, die Hermes die Transkripte beendeter Läufe und Chats behält. Leer: Hermes' Vorgabe von 90 Tagen.",
     "saved": "Gespeichert. Die Runner übernehmen es beim nächsten Abgleich.",
     "usageTitle": "Verbrauch",
-    "usageDescription": "Was die Agenten eines Teams verbraucht haben, aus Helenas Token-Buch, mit Kosten nach der Modell-Preistabelle.",
+    "usageDescription": "Was die Agenten eines Teams verbraucht haben, aus {appName}s Token-Buch, mit Kosten nach der Modell-Preistabelle.",
     "team": "Team",
     "noTeam": "Noch kein Team.",
     "openUpdates": "In Updates öffnen",
@@ -270,7 +270,7 @@
     "compressionThreshold": "Kontext verdichten ab (Tokens)",
     "compressionThresholdHint": "Für jeden Agenten ohne eigenen Wert. 100 000 hält lange Chats deutlich unter den Fenstern heutiger Modelle, ohne Läufe mitten in der Arbeit zu oft zusammenzufassen.",
     "bundledSkills": "Mitgelieferte Hermes-Skills",
-    "bundledSkillsHint": "Helena legt sie in jedem Hermes-Profil gleich an (docx, pdf, xlsx, Debugging …). Einzelne schaltest du beim Agenten aus. „Nur die nötigsten“ legt keine neuen mehr an; vorhandene bleiben.",
+    "bundledSkillsHint": "{appName} legt sie in jedem Hermes-Profil gleich an (docx, pdf, xlsx, Debugging …). Einzelne schaltest du beim Agenten aus. „Nur die nötigsten“ legt keine neuen mehr an; vorhandene bleiben.",
     "bundledSkillsAll": "Alle",
     "bundledSkillsEssential": "Nur die nötigsten"
   }

@@ -6,6 +6,7 @@ import type {
   OAuthTokens,
 } from '@modelcontextprotocol/sdk/shared/auth.js';
 import { assertPublicHttpUrl, UrlNotAllowedError } from '@repo/net';
+import { getDisplayName } from '@repo/db';
 import { HttpError } from '#shared/lib';
 import {
   getAccount,
@@ -66,6 +67,7 @@ class StoredProvider implements OAuthClientProvider {
   constructor(
     private readonly row: AccountRow,
     stored: Stored,
+    private readonly displayName: string,
   ) {
     this.data = { ...stored };
   }
@@ -76,7 +78,7 @@ class StoredProvider implements OAuthClientProvider {
 
   get clientMetadata(): OAuthClientMetadata {
     return {
-      client_name: 'Helena',
+      client_name: this.displayName,
       redirect_uris: [this.redirectUrl],
       grant_types: ['authorization_code', 'refresh_token'],
       response_types: ['code'],
@@ -185,7 +187,7 @@ export interface McpSignInStart {
 }
 
 async function runAuth(row: AccountRow, stored: Stored, code?: string) {
-  const provider = new StoredProvider(row, stored);
+  const provider = new StoredProvider(row, stored, await getDisplayName());
   const { serverUrl, scope } = readable(row);
   try {
     const result = await auth(provider, {

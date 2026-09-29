@@ -2,6 +2,7 @@ import { constants } from 'node:fs';
 import { lstat, mkdir, open, readdir, rename } from 'node:fs/promises';
 import { basename, join } from 'node:path';
 import { atomicWrite, digest } from './files';
+import { runnerDisplayName } from './display-name';
 import {
   installedSkillNames,
   MAX_MEMORY_BYTES,
@@ -102,7 +103,7 @@ async function learnedSkillDir(
     throw new Error('The skill path is invalid');
   }
   if (segments[0] === PLAN_CATEGORY && (segments.length === 1 || planSkills.has(segments[1]))) {
-    throw new Error("Helena's own skills are changed in Helena");
+    throw new Error(`${runnerDisplayName()}'s own skills are changed in ${runnerDisplayName()}`);
   }
   let current = join(hermesHome, 'skills');
   for (const segment of segments) {

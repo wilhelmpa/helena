@@ -199,7 +199,7 @@
     "openPreviewLink": "Відкрити {name} у новій вкладці",
     "loadingPreview": "Завантаження попереднього перегляду…",
     "previewUnavailable": "Попередній перегляд недоступний. Відкрийте посилання, щоб переглянути цю сторінку.",
-    "internalPage": "Сторінка Helena",
+    "internalPage": "Сторінка {appName}",
     "internalPreviewUnavailable": "Ця сторінка недоступна, або у вас немає доступу.",
     "previewNoteCount": "{count, plural, one {# нотатка} few {# нотатки} many {# нотаток} other {# нотатки}}",
     "previewCustomField": "Власне поле",

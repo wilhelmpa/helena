@@ -1,5 +1,6 @@
 import { BRAND_ASSETS } from '@/components/brand/assets';
-import { APP_NAME, THEME_COLOR_LIGHT } from '@/utils/app';
+import { THEME_COLOR_LIGHT } from '@/utils/app';
+import { getDisplayName } from '@/i18n/displayName';
 
 // The install manifest. The icons are the particle Orb (packages/brand, public/brand):
 // PNG tiles for launchers and a maskable one whose Orb sits inside the 80% safe zone so a
@@ -14,14 +15,15 @@ import { APP_NAME, THEME_COLOR_LIGHT } from '@/utils/app';
 // display_override: an installed Helena may hide its title bar (the browser offers a
 // toggle); the window buttons then sit in Helena's header row (globals.css,
 // "display-mode: window-controls-overlay"). Otherwise a normal app window.
-export const dynamic = 'force-static';
+export const dynamic = 'force-dynamic';
 
-export function GET() {
+export async function GET() {
+  const appName = await getDisplayName();
   return Response.json(
     {
       id: '/',
-      name: APP_NAME,
-      short_name: APP_NAME,
+      name: appName,
+      short_name: appName,
       start_url: '/',
       scope: '/',
       display: 'standalone',
@@ -39,6 +41,11 @@ export function GET() {
         },
       ],
     },
-    { headers: { 'Content-Type': 'application/manifest+json; charset=utf-8' } },
+    {
+      headers: {
+        'Content-Type': 'application/manifest+json; charset=utf-8',
+        'Cache-Control': 'no-store',
+      },
+    },
   );
 }

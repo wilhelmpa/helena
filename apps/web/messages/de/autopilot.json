@@ -107,7 +107,7 @@
     "hermes": "Hermes",
     "claude": "Claude Code",
     "codex": "Codex",
-    "mcp": "Helena-Werkzeug",
+    "mcp": "{appName}-Werkzeug",
     "gateway": "Browser",
     "workflow": "Workflow",
     "approval": "Freigabe-Anfrage",
@@ -158,8 +158,8 @@
     "level": "Stufe {level}",
     "reason": "Warum eine Freigabe",
     "scope": {
-      "workspace": "Innerhalb von Helena / Projektordner",
-      "external": "Außerhalb von Helena / Projektordner"
+      "workspace": "Innerhalb von {appName} / Projektordner",
+      "external": "Außerhalb von {appName} / Projektordner"
     }
   },
   "prices": {

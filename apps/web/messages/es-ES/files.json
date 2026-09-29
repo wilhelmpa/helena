@@ -41,10 +41,10 @@
     "folder": "Esta carpeta está vacía.",
     "folderHint": "Suelta archivos aquí o usa Subir.",
     "filter": "Ninguna entrada coincide con «{filter}».",
-    "readOnly": "Helena muestra esta carpeta en solo lectura."
+    "readOnly": "{appName} muestra esta carpeta en solo lectura."
   },
   "unreadable": {
-    "title": "Helena no puede leer esta carpeta",
+    "title": "{appName} no puede leer esta carpeta",
     "body": "El espacio de trabajo pertenece al usuario de los agentes en el servidor. Ábrelo en VS Code.",
     "missing": "Esta carpeta no existe en el servidor."
   },
@@ -128,7 +128,7 @@
     "content": "Contenido del archivo",
     "reload": "Recargar",
     "discard": "¿Descartar el borrador sin guardar?",
-    "editor": "Editor de Helena",
+    "editor": "Editor de {appName}",
     "preview": "Vista previa",
     "searching": "Buscando archivos…",
     "searchError": "Búsqueda no disponible o acceso denegado.",

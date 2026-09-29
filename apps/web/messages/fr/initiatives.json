@@ -164,8 +164,8 @@
   "sortDefault": "Ordre personnalisé",
   "why": {
     "label": "Pourquoi",
-    "choose": "Choisir un objectif Helena",
-    "none": "Ne sert encore aucun objectif Helena.",
+    "choose": "Choisir un objectif {appName}",
+    "none": "Ne sert encore aucun objectif {appName}.",
     "noneOption": "Aucun objectif"
   }
 }
