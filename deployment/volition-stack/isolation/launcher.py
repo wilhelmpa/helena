@@ -680,17 +680,12 @@ class Launcher:
         if slug == self.config.home_slug:
             from migrate import registry_projects
             git_roots += [os.path.join(self.config.workspace_root, item) for item, _ in registry_projects(self.config)]
-        entries = [(name, value) for root in git_roots for name, value in [('safe.directory', root), ('safe.directory', root + '/*')]]
         # No core.sharedRepository: git would set setgid on directories, which the agent
         # units forbid (RestrictSUIDSGID); shared writing comes from the isolation ACLs.
         env.setdefault('GIT_AUTHOR_NAME', f'Volition {slug}')
         env.setdefault('GIT_AUTHOR_EMAIL', f'volition+{slug}@localhost')
         env.setdefault('GIT_COMMITTER_NAME', env['GIT_AUTHOR_NAME'])
         env.setdefault('GIT_COMMITTER_EMAIL', env['GIT_AUTHOR_EMAIL'])
-        env['GIT_CONFIG_COUNT'] = str(len(entries))
-        for index, (name, value) in enumerate(entries):
-            env[f'GIT_CONFIG_KEY_{index}'] = name
-            env[f'GIT_CONFIG_VALUE_{index}'] = value
         vault_rw, vault_ro = self.vault_binds(slug, key)
         return {
             'slug': slug,
@@ -705,10 +700,36 @@ class Launcher:
             'env': env,
             'cwd': cwd,
             'workspace': workspace,
+            'git_roots': git_roots,
             'vault_rw': [p for p in vault_rw if os.path.isdir(p)],
             'vault_ro': [p for p in vault_ro if os.path.isdir(p)],
             'limits': self.limits(request.get('limits')),
         }
+
+    def write_git_config(self, slug: str, account: pwd.struct_passwd, roots: list[str]) -> tuple[str, str]:
+        directory = os.path.join(RUNTIME_ROOT, slug)
+        directory_fd = open_path_nofollow(directory)
+        try:
+            info = os.fstat(directory_fd)
+            if info.st_uid != os.geteuid() or info.st_mode & 0o022:
+                raise IsolationError('git', 'the runtime directory is not launcher-owned')
+            name = f'git-{secrets.token_hex(12)}.config'
+            fd = os.open(name, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW | os.O_CLOEXEC,
+                         0o600, dir_fd=directory_fd)
+            try:
+                with os.fdopen(fd, 'w') as handle:
+                    os.fchown(handle.fileno(), os.geteuid(), account.pw_gid)
+                    os.fchmod(handle.fileno(), 0o640)
+                    handle.write('[safe]\n')
+                    for root in roots:
+                        path = _safe_path(root, 'git safe directory')
+                        handle.write(f'\tdirectory = {path}\n\tdirectory = {path}/*\n')
+            except BaseException:
+                os.unlink(name, dir_fd=directory_fd)
+                raise
+        finally:
+            os.close(directory_fd)
+        return os.path.join(directory, name), os.path.join(RUNTIME_ROOT, name)
 
     async def run(self, request: dict, reader, writer, caller: str) -> None:
         checked = self.check_run(request)
@@ -737,7 +758,12 @@ class Launcher:
         ]
         await self.reserve(slug)
         try:
-            await self.stream(command, unit, checked['env'], reader, writer)
+            git_config, visible_config = self.write_git_config(slug, account, checked['git_roots'])
+            try:
+                checked['env']['GIT_CONFIG_GLOBAL'] = visible_config
+                await self.stream(command, unit, checked['env'], reader, writer)
+            finally:
+                os.unlink(git_config)
         finally:
             await self.release(slug)
         log(f'{caller}: {unit} ({runtime.name}) finished')
