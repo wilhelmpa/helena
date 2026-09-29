@@ -208,16 +208,19 @@ export function SystemTile() {
   const items = serverHealthItems(server.data);
   const machine = serverProblems(items);
   const machineStatus = SERVER_STATUS[serverState(items)];
-  const status =
-    summary && machineStatus && RANK[machineStatus] > RANK[summary.status as keyof typeof RANK]
+  const vaultDown = health.data?.vault?.state === 'down';
+  const status = vaultDown
+    ? 'danger'
+    : summary && machineStatus && RANK[machineStatus] > RANK[summary.status as keyof typeof RANK]
       ? machineStatus
       : summary?.status;
-  const count = (summary?.problems.length ?? 0) + machine.length;
+  const count = (summary?.problems.length ?? 0) + machine.length + (vaultDown ? 1 : 0);
   const areas = summary
     ? [
         ...new Set([
           ...summary.problems.map((problem) => t(`areas.${PROBLEM_AREA[problem.key]}`)),
           ...(machine.length > 0 ? [t('areas.server')] : []),
+          ...(vaultDown ? ['Vault'] : []),
         ]),
       ]
     : [];

@@ -1,13 +1,17 @@
 import { fileReferences } from './references';
+import { stat } from 'node:fs/promises';
 import { Elysia, t } from 'elysia';
 import { authContext } from '#shared/auth-context';
 import { knowledgeActor } from '#modules/knowledge/reach';
-import { canAccess, vaultScope } from '#modules/knowledge/scope';
+import { canAccess, vaultScope, type VaultScope } from '#modules/knowledge/scope';
 import { isMcpRequest } from '#shared/mcp-request';
 import { requireUser } from '#shared/access';
 import { guards } from '#shared/guards';
 import { noContent } from '#shared/http';
 import { HttpError } from '#shared/lib';
+import { absoluteVaultPath, joinVaultPath, parentPath } from '@repo/vault';
+import { movePath, trashPath, vaultCall } from '#modules/knowledge/service';
+import { relativePath } from './paths';
 import { commonErrors, errors } from '#shared/responses';
 import { getStorageSettings, MB } from '#modules/settings/service';
 import {
@@ -29,20 +33,48 @@ import {
   projectRawQuery,
   uploadBody,
 } from './model';
-import { homeRoot, projectRoot, type HomeRootName } from './roots';
+import { homeRoot, projectRoot, type FileRoot, type HomeRootName } from './roots';
 import {
   createFolder,
   createTextFile,
   updateTextFile,
   fileResponse,
   listFolder,
-  moveEntry,
   readTextFile,
-  trashEntry,
   uploadFiles,
 } from './service';
 
 const maxUploadBytes = async () => (await getStorageSettings()).maxAttachmentMb * MB;
+
+function pathInVault(root: FileRoot, relative: string): string {
+  if (!root.vaultPath) throw new HttpError(400, 'File path is invalid');
+  const safe = relativePath(relative);
+  if (!safe) throw new HttpError(400, 'File path is invalid');
+  return joinVaultPath(root.vaultPath, safe);
+}
+
+function moveVaultEntry(root: FileRoot, scope: VaultScope, from: string, to: string) {
+  const source = pathInVault(root, from);
+  const destination = pathInVault(root, to);
+  if (!canAccess(scope, source, 'write') || !canAccess(scope, destination, 'write')) {
+    throw new HttpError(403, 'This folder is outside your vault access');
+  }
+  return vaultCall(async () => {
+    const parent = await stat(absoluteVaultPath(parentPath(destination))).catch(() => null);
+    if (!parent) throw new HttpError(404, 'Target folder not found');
+    if (!parent.isDirectory()) throw new HttpError(400, 'The target is not a folder');
+    await movePath(scope, source, destination);
+    return { path: relativePath(to) };
+  });
+}
+
+function trashVaultEntry(root: FileRoot, scope: VaultScope, relative: string) {
+  const target = pathInVault(root, relative);
+  if (!canAccess(scope, target, 'write')) {
+    throw new HttpError(403, 'This folder is outside your vault access');
+  }
+  return vaultCall(() => trashPath(scope, target));
+}
 
 // Two sets of routes over the same operations. The project routes browse the project's
 // vault folder ("vault") and its workspace ("code", read-only) under the documents
@@ -66,7 +98,7 @@ export const projectFileRoutes = new Elysia({
           if (!canAccess(scope, fileRoot.vaultPath!, action)) {
             throw new HttpError(403, 'This folder is outside your vault access');
           }
-          return { fileRoot, fileActor: scope.actor };
+          return { fileRoot, fileActor: scope.actor, fileScope: scope };
         },
       };
     },
@@ -220,11 +252,11 @@ export const projectFileRoutes = new Elysia({
   .post(
     '/projects/:projectKey/files/move',
     async ({ project, body, user, request }) =>
-      moveEntry(
+      moveVaultEntry(
         projectRoot(project.key),
+        await vaultScope(requireUser(user), isMcpRequest(request.headers), request.headers),
         body.from,
         body.to,
-        await knowledgeActor(requireUser(user), request.headers),
       ),
     {
       permission: ['documents', 'edit'],
@@ -240,10 +272,10 @@ export const projectFileRoutes = new Elysia({
   .delete(
     '/projects/:projectKey/files',
     async ({ project, query, user, request }) => {
-      await trashEntry(
+      await trashVaultEntry(
         projectRoot(project.key),
+        await vaultScope(requireUser(user), isMcpRequest(request.headers), request.headers),
         query.path,
-        await knowledgeActor(requireUser(user), request.headers),
       );
       return noContent();
     },
@@ -348,7 +380,7 @@ export const projectFileRoutes = new Elysia({
   )
   .post(
     '/files/move',
-    ({ fileRoot, fileActor, body }) => moveEntry(fileRoot, body.from, body.to, fileActor),
+    ({ fileRoot, fileScope, body }) => moveVaultEntry(fileRoot, fileScope, body.from, body.to),
     {
       homeRoot: true,
       query: homeRootQuery,
@@ -359,8 +391,8 @@ export const projectFileRoutes = new Elysia({
   )
   .delete(
     '/files',
-    async ({ fileRoot, fileActor, query }) => {
-      await trashEntry(fileRoot, query.path, fileActor);
+    async ({ fileRoot, fileScope, query }) => {
+      await trashVaultEntry(fileRoot, fileScope, query.path);
       return noContent();
     },
     {

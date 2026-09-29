@@ -6,6 +6,14 @@ import { request, uploadFile } from '@/lib/api/core/client';
 
 export type VaultEntryKind = 'note' | 'file' | 'folder';
 
+export interface VaultDeletePreview {
+  path: string;
+  kind: 'file' | 'folder';
+  count: number;
+  items: string[];
+  confirmation: string;
+}
+
 export interface VaultTreeItem {
   path: string;
   name: string;
@@ -152,8 +160,14 @@ export const moveVaultPath = (from: string, to: string) =>
     body: JSON.stringify({ from, to }),
   });
 
-export const trashVaultPath = (path: string) =>
-  request<{ path: string }>('/knowledge/trash', { method: 'POST', body: JSON.stringify({ path }) });
+export const getVaultDeletePreview = (path: string) =>
+  request<VaultDeletePreview>(`/knowledge/delete-preview?${query({ path })}`);
+
+export const trashVaultPath = (path: string, confirmContents?: string) =>
+  request<{ path: string }>('/knowledge/trash', {
+    method: 'POST',
+    body: JSON.stringify({ path, confirmContents }),
+  });
 
 export const listVaultTrash = (path: string) =>
   request<TrashedNote[]>(`/knowledge/trash?${query({ path })}`);

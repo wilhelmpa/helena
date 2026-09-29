@@ -20,6 +20,8 @@ import {
   mailThread,
   agentChatMessage,
   agentChatThread,
+  noteBoard,
+  helenaBrowserTaskRun,
 } from '@repo/db';
 import { noteTitle, type Frontmatter, type NoteLink } from './markdown';
 import { baseName, isNotePath, locateVaultPath } from './paths';
@@ -192,6 +194,18 @@ async function moveFileReferences(
       })
       .where(and(owner, matches(table.vaultPath)));
   }
+  await tx
+    .update(noteBoard)
+    .set({
+      vaultPath: sql`${to}::text || substr(${noteBoard.vaultPath}, char_length(${from}::text) + 1)`,
+    })
+    .where(and(scope(noteBoard.projectId), matches(noteBoard.vaultPath)));
+  await tx
+    .update(helenaBrowserTaskRun)
+    .set({
+      finalFramePath: sql`${to}::text || substr(${helenaBrowserTaskRun.finalFramePath}, char_length(${from}::text) + 1)`,
+    })
+    .where(matches(helenaBrowserTaskRun.finalFramePath));
   const chats = tx
     .select({ id: agentChatThread.id })
     .from(agentChatThread)

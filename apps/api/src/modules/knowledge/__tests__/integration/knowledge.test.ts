@@ -9,6 +9,7 @@ import { resetDb } from '#tests/helpers/db';
 import { addProjectMember } from '#tests/helpers/members';
 import { createRole } from '#tests/helpers/roles';
 import { bootstrapHomeAgent } from '../../../../scripts/bootstrap-home-agent';
+import { makePdf } from '../../../receipts/__tests__/pdf';
 
 const root = () => process.env.PROJECT_VAULT_ROOT!;
 const hasGit = Bun.which('git') !== null;
@@ -233,6 +234,78 @@ describe('knowledge', () => {
 
       expect((await asOwner.knowledge.restore.post({ path: to })).status).toBe(200);
       expect((await read(asOwner, to)).data?.content).toBe('Handbook');
+    });
+
+    it('updates wiki links and requires a preview and confirmation before trashing a folder', async () => {
+      const { asOwner } = await setup();
+      const from = 'Projects/MKT/Docs/Sub/Old.md';
+      const to = 'Projects/MKT/Docs/Sub/New.md';
+      await write(asOwner, from, 'Original');
+      await write(
+        asOwner,
+        'Projects/MKT/Docs/Links.md',
+        '[[Old]] [[Projects/MKT/Docs/Sub/Old|label]]',
+      );
+
+      expect((await asOwner.knowledge.move.post({ from, to })).status).toBe(200);
+      expect((await read(asOwner, 'Projects/MKT/Docs/Links.md')).data?.content).toBe(
+        '[[New]] [[Projects/MKT/Docs/Sub/New|label]]',
+      );
+      const folder = 'Projects/MKT/Docs/Sub';
+      const preview = await asOwner.knowledge['delete-preview'].get({ query: { path: folder } });
+      expect(preview.data).toMatchObject({ kind: 'folder', count: 1, items: [to] });
+      expect((await asOwner.knowledge.trash.post({ path: folder })).status).toBe(409);
+      expect(
+        (await asOwner.knowledge.trash.post({ path: folder, confirmContents: '0'.repeat(64) }))
+          .status,
+      ).toBe(409);
+      expect(
+        (
+          await asOwner.knowledge.trash.post({
+            path: folder,
+            confirmContents: preview.data!.confirmation,
+          })
+        ).status,
+      ).toBe(200);
+      expect((await read(asOwner, to)).status).toBe(404);
+      expect((await asOwner.knowledge.restore.post({ path: folder })).status).toBe(200);
+      expect((await read(asOwner, to)).data?.content).toBe('Original');
+      expect(
+        (await asOwner.knowledge.move.post({ from: 'Projects/MKT/Docs', to: 'Projects/MKT/Other' }))
+          .status,
+      ).toBe(403);
+      expect((await asOwner.knowledge.trash.post({ path: 'Projects/MKT/Files' })).status).toBe(403);
+    });
+
+    it('protects receipt originals from moves and trash', async () => {
+      const { asOwner } = await setup();
+      const file = new File([makePdf(['Invoice', 'Total: 12.00 EUR'])], 'bill.pdf', {
+        type: 'application/pdf',
+      });
+      const uploaded = await asOwner.projects({ projectKey: 'MKT' }).receipts.post({ file });
+      expect(uploaded.status).toBe(201);
+      if (!uploaded.data || !('vaultPath' in uploaded.data))
+        throw new Error('Receipt upload failed');
+      const original = uploaded.data.vaultPath;
+      expect(
+        (await asOwner.knowledge.move.post({ from: original, to: `${original}.renamed` })).status,
+      ).toBe(403);
+      expect((await asOwner.knowledge.trash.post({ path: original })).status).toBe(403);
+      expect((await read(asOwner, original)).status).toBe(200);
+    });
+
+    it('lists only reachable trash entries at the Vault root', async () => {
+      const { asOwner } = await setup();
+      await asOwner.projects.post({ key: 'OPS', name: 'Operations' });
+      const own = 'Projects/MKT/Docs/Own.md';
+      const other = 'Projects/OPS/Docs/Other.md';
+      await write(asOwner, own, 'own');
+      await write(asOwner, other, 'other');
+      await asOwner.knowledge.trash.post({ path: own });
+      await asOwner.knowledge.trash.post({ path: other });
+      const member = await addProjectMember(asOwner, 'MKT');
+      const result = await member.knowledge.trash.get({ query: { path: '' } });
+      expect(result.data?.map((item) => item.path)).toEqual([own]);
     });
 
     it('shows a renamed note under its new name in the tree', async () => {

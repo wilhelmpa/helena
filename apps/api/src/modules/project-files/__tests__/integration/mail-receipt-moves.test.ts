@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'bun:test';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import path from 'node:path';
-import { eq, sql } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { db, helenaReceipt, mailAttachment, mailMessage, vaultEntry } from '@repo/db';
 import { readExportZip } from '@helena/finance';
 import { indexVaultPaths } from '@repo/vault';
@@ -92,8 +92,8 @@ async function assertOriginal(cookie: string, attachmentId: number, receiptId: n
   );
 }
 
-describe('mail and receipt originals follow canonical vault moves', () => {
-  it('keeps downloads, export, source folder and deduplication after folder and file moves', async () => {
+describe('mail and receipt originals in the Vault', () => {
+  it('protects a filed original and its folder while keeping downloads and deduplication', async () => {
     const { owner, api, files, attachment, input, mail } = await setup();
     const [id] = await intakeMailReceipts(input);
     const before = (
@@ -101,39 +101,40 @@ describe('mail and receipt originals follow canonical vault moves', () => {
     )[0].attachmentFolder!;
     await files.folders.post({ path: 'Archive' });
     expect((await files.move.post({ from: 'Files/Mail', to: 'Archive/Invoices' })).status).toBe(
-      200,
+      403,
     );
-    const moved = attachment.vaultPath.replace(
-      'Projects/FIN/Files/Mail',
-      'Projects/FIN/Archive/Invoices',
-    );
-    expect((await receiptRow(id)).vaultPath).toBe(moved);
     expect(
-      (await db.select().from(mailMessage).where(eq(mailMessage.id, mail.messageRowId)))[0]
-        .attachmentFolder,
-    ).toBe(before.replace('Projects/FIN/Files/Mail', 'Projects/FIN/Archive/Invoices'));
-    await assertOriginal(owner.cookie, attachment.id, id);
-    expect(
-      (await files.move.post({ from: relative(moved), to: 'Archive/Invoice-renamed.xml' })).status,
-    ).toBe(200);
-    await assertOriginal(owner.cookie, attachment.id, id);
-    expect((await receiptRow(id)).vaultPath).toBe('Projects/FIN/Archive/Invoice-renamed.xml');
+      (
+        await files.move.post({
+          from: relative(attachment.vaultPath),
+          to: 'Archive/Invoice-renamed.xml',
+        })
+      ).status,
+    ).toBe(403);
     expect(
       (
         await api.knowledge.move.post({
-          from: 'Projects/FIN/Archive/Invoice-renamed.xml',
+          from: attachment.vaultPath,
           to: 'Projects/FIN/Archive/Invoice-final.xml',
         })
       ).status,
-    ).toBe(200);
+    ).toBe(403);
+    expect(
+      (await files.delete({}, { query: { path: relative(attachment.vaultPath) } })).status,
+    ).toBe(403);
+    expect((await receiptRow(id)).vaultPath).toBe(attachment.vaultPath);
+    expect(
+      (await db.select().from(mailMessage).where(eq(mailMessage.id, mail.messageRowId)))[0]
+        .attachmentFolder,
+    ).toBe(before);
     await assertOriginal(owner.cookie, attachment.id, id);
     expect(await intakeMailReceipts(input)).toEqual([id]);
     expect(await db.select().from(helenaReceipt)).toHaveLength(1);
     const originals = readdirSync(path.join(vault, 'Projects/FIN'), { recursive: true }).filter(
       (name) => String(name).endsWith('.xml'),
     );
-    expect(originals).toEqual(['Archive/Invoice-final.xml']);
-    expect(existsSync(path.join(vault, attachment.vaultPath))).toBe(false);
+    expect(originals).toHaveLength(1);
+    expect(existsSync(path.join(vault, attachment.vaultPath))).toBe(true);
   });
 
   it('can file an unindexed attachment after moving it and blocks an unsafe later thread transfer', async () => {
@@ -156,7 +157,7 @@ describe('mail and receipt originals follow canonical vault moves', () => {
     await assertOriginal(owner.cookie, attachment.id, id);
   });
 
-  it('updates only the owning project even when another project has a stale reference to the source', async () => {
+  it('protects a receipt even when another project has a stale reference to it', async () => {
     const { owner, api, files, attachment, input, project } = await setup();
     const [id] = await intakeMailReceipts(input);
     await api.projects.post({ key: 'OTHER', name: 'Other' });
@@ -189,8 +190,8 @@ describe('mail and receipt originals follow canonical vault moves', () => {
     expect(
       (await files.move.post({ from: relative(attachment.vaultPath), to: 'Docs/Original.xml' }))
         .status,
-    ).toBe(200);
-    expect((await receiptRow(id)).vaultPath).toBe('Projects/FIN/Docs/Original.xml');
+    ).toBe(403);
+    expect((await receiptRow(id)).vaultPath).toBe(attachment.vaultPath);
     expect((await receiptRow(foreignId)).vaultPath).toBe(attachment.vaultPath);
     expect(
       (
@@ -202,7 +203,7 @@ describe('mail and receipt originals follow canonical vault moves', () => {
     ).toBe(attachment.vaultPath);
   });
 
-  it('rolls back the filesystem and all references together when the database rejects a move', async () => {
+  it('leaves linked tasks and references untouched when a protected move is denied', async () => {
     const { owner, api, view, files, attachment, input } = await setup();
     const [id] = await intakeMailReceipts(input);
     const issue = (
@@ -218,35 +219,28 @@ describe('mail and receipt originals follow canonical vault moves', () => {
       ).status,
     ).toBe(201);
     await files.folders.post({ path: 'Docs' });
-    await db.execute(
-      sql`ALTER TABLE helena_receipt ADD CONSTRAINT test_reject_vault_move CHECK (vault_path <> 'Projects/FIN/Docs/Rejected.xml')`,
+    expect(
+      (await files.move.post({ from: relative(attachment.vaultPath), to: 'Docs/Rejected.xml' }))
+        .status,
+    ).toBe(403);
+    expect(
+      (
+        await api.knowledge.move.post({
+          from: attachment.vaultPath,
+          to: 'Projects/FIN/Docs/Rejected.xml',
+        })
+      ).status,
+    ).toBe(403);
+    expect(existsSync(path.join(vault, attachment.vaultPath))).toBe(true);
+    expect(existsSync(path.join(vault, 'Projects/FIN/Docs/Rejected.xml'))).toBe(false);
+    expect((await api.issues({ issueId: issue.id }).attachments.get()).data![0].vaultPath).toBe(
+      attachment.vaultPath,
     );
-    try {
-      expect(
-        (await files.move.post({ from: relative(attachment.vaultPath), to: 'Docs/Rejected.xml' }))
-          .status,
-      ).toBe(500);
-      expect(
-        (
-          await api.knowledge.move.post({
-            from: attachment.vaultPath,
-            to: 'Projects/FIN/Docs/Rejected.xml',
-          })
-        ).status,
-      ).toBe(500);
-      expect(existsSync(path.join(vault, attachment.vaultPath))).toBe(true);
-      expect(existsSync(path.join(vault, 'Projects/FIN/Docs/Rejected.xml'))).toBe(false);
-      expect((await api.issues({ issueId: issue.id }).attachments.get()).data![0].vaultPath).toBe(
-        attachment.vaultPath,
-      );
-      expect((await receiptRow(id)).vaultPath).toBe(attachment.vaultPath);
-      await assertOriginal(owner.cookie, attachment.id, id);
-    } finally {
-      await db.execute(sql`ALTER TABLE helena_receipt DROP CONSTRAINT test_reject_vault_move`);
-    }
+    expect((await receiptRow(id)).vaultPath).toBe(attachment.vaultPath);
+    await assertOriginal(owner.cookie, attachment.id, id);
   });
 
-  it('records the actor for upload and RFC822 intake and retains body downloads after a Belege rename', async () => {
+  it('records the actor for upload and RFC822 intake and protects the Belege folder', async () => {
     const { owner, api, files, messageInput } = await setup();
     const form = new FormData();
     form.append('file', new File([xml], 'Invoice.xml', { type: 'application/xml' }));
@@ -283,16 +277,16 @@ describe('mail and receipt originals follow canonical vault moves', () => {
       ).toBe(`user:${owner.userId}`);
     }
     expect((await files.move.post({ from: 'Files/Belege', to: 'Files/Receipts' })).status).toBe(
-      200,
+      403,
     );
-    expect((await receiptRow(id)).vaultPath).toBe(body.vaultPath.replace('/Belege/', '/Receipts/'));
+    expect((await receiptRow(id)).vaultPath).toBe(body.vaultPath);
     const download = await raw(owner.cookie, `/projects/FIN/receipts/${id}/file`);
     expect(download.status).toBe(200);
     expect(await download.text()).toBe(original);
     expect(
       (await api.projects({ projectKey: 'FIN' }).receipts({ receiptId: uploaded.id }).get()).data!
         .vaultPath,
-    ).toContain('/Files/Receipts/');
+    ).toContain('/Files/Belege/');
     const exported = await raw(owner.cookie, '/projects/FIN/receipts/export?month=2026-09');
     const zip = readExportZip(new Uint8Array(await exported.arrayBuffer()));
     expect(

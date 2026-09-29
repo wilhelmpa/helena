@@ -142,6 +142,28 @@ describe('note boards as JSON Canvas', () => {
     ).toBe(true);
   });
 
+  it('updates a canvas file node and its board hash when a Vault note moves', async () => {
+    const from = 'Projects/MKT/Docs/Old.md';
+    const to = 'Projects/MKT/Docs/New.md';
+    await api.knowledge.notes.put({ path: from, content: 'old' });
+    const board = await boards(api).post({ name: 'Links' });
+    const file = board.data!.vaultPath!;
+    const canvas = await readCanvas(file);
+    canvas.nodes.push({ id: 'f', type: 'file', x: 0, y: 0, width: 200, height: 100, file: from });
+    await writeFile(path.join(root(), file), JSON.stringify(canvas));
+    await indexVaultPaths([file]);
+
+    expect((await api.knowledge.move.post({ from, to })).status).toBe(200);
+    expect((await readCanvas(file)).nodes[0]?.file).toBe(to);
+    expect(
+      (
+        await boards(api)({ boardId: board.data!.id }).patch({
+          canvas: { nodes: [sticker('note', 'After move', 'content')], edges: [] },
+        })
+      ).status,
+    ).toBe(200);
+  });
+
   it('turns a canvas made elsewhere into a board and drops a board whose file is gone', async () => {
     const relative = 'Projects/MKT/Boards/Aus Obsidian.canvas';
     await mkdir(path.dirname(path.join(root(), relative)), { recursive: true });
