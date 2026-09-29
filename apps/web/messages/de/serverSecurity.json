@@ -228,7 +228,11 @@
     "homeTitle": "Zu Hause automatisch direkt verbinden",
     "homeDescription": "Unter der öffentlichen Adresse prüft Helena, ob {home} von diesem Gerät aus antwortet, und wechselt dann dorthin – direkt über das Heimnetz, ohne Umweg über Cloudflare. Dort meldet dich die Heimnetz-Anmeldung an. Chrome fragt einmal nach Zugriff aufs lokale Netzwerk.",
     "homeDescriptionGeneric": "Unter der öffentlichen Adresse prüft Helena, ob die Heimnetz-Adresse von diesem Gerät aus antwortet, und wechselt dann dorthin – direkt über das Heimnetz, ohne Umweg über Cloudflare.",
-    "homeNotSetUp": "Keine Heimnetz-Adresse eingerichtet (HELENA_HOME_URL, cloudflare/switch_origin.py --home-host)."
+    "homeNotSetUp": "Keine Heimnetz-Adresse eingerichtet (HELENA_HOME_URL, cloudflare/switch_origin.py --home-host).",
+    "serviceTokenTitle": "Dienst-Zugang: {label}",
+    "serviceTokenDescription": "Cloudflare-Service-Token {hint}… handelt als {actsAs}, für automatische Prüfungen. Zum Beenden hier entfernen und den Token in Cloudflare löschen.",
+    "serviceTokenRemove": "Entfernen",
+    "serviceTokenRemoved": "Dienst-Zugang entfernt"
   },
   "signIns": {
     "title": "Anmeldungen ohne Passwort",

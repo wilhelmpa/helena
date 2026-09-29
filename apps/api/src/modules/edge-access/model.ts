@@ -21,6 +21,8 @@ export const EdgeAccessSettingsDto = t.Object({
   allowedEmails: t.Array(t.String()),
   signIn: t.Boolean(),
   homeAutoConnect: t.Boolean(),
+  // Service tokens acting for an allowed identity; the client id only as its first characters.
+  serviceTokens: t.Array(t.Object({ hint: t.String(), actsAs: t.String(), label: t.String() })),
   // The home network's own origin (HELENA_HOME_URL), when this instance has one.
   homeUrl: t.Union([t.String(), t.Null()]),
   // Whether the tunnel entry's proof is known to the api (cloudflare/install.sh
@@ -37,6 +39,17 @@ export const EdgeAccessPatchBody = t.Object({
   allowedEmails: t.Optional(t.Array(t.String({ maxLength: 254 }), { maxItems: 50 })),
   signIn: t.Optional(t.Boolean()),
   homeAutoConnect: t.Optional(t.Boolean()),
+  serviceTokens: t.Optional(
+    t.Array(
+      t.Object({
+        clientId: t.String({ maxLength: 64 }),
+        actsAs: t.String({ maxLength: 254 }),
+        label: t.Optional(t.String({ maxLength: 64 })),
+      }),
+      { maxItems: 5 },
+    ),
+  ),
+  removeServiceTokens: t.Optional(t.Array(t.String({ maxLength: 16 }), { maxItems: 5 })),
 });
 
 export const SignInEventDto = t.Object({

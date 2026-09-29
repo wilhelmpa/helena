@@ -7,6 +7,7 @@ import SettingsCard from '@/components/common/page/SettingsCard';
 import SettingsRow from '@/components/common/page/SettingsRow';
 import StatusBadge from '@/components/common/page/StatusBadge';
 import PageSaveAction from '@/components/common/page/PageSaveAction';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
@@ -68,6 +69,15 @@ export default function EdgeAccessForm({ settings }: { settings: EdgeAccessSetti
     } catch {
       // The api's reason (a malformed team domain or tag) arrives through the global
       // mutation error toast.
+    }
+  }
+
+  async function removeToken(hint: string) {
+    try {
+      await update.mutateAsync({ removeServiceTokens: [hint] });
+      toast.success(t('serviceTokenRemoved'));
+    } catch {
+      // The api's reason arrives through the global mutation error toast.
     }
   }
 
@@ -143,6 +153,23 @@ export default function EdgeAccessForm({ settings }: { settings: EdgeAccessSetti
             />
           }
         />
+        {settings.serviceTokens.map((token) => (
+          <SettingsRow
+            key={token.hint}
+            title={t('serviceTokenTitle', { label: token.label })}
+            description={t('serviceTokenDescription', { hint: token.hint, actsAs: token.actsAs })}
+            control={
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={update.isPending}
+                onClick={() => void removeToken(token.hint)}
+              >
+                {t('serviceTokenRemove')}
+              </Button>
+            }
+          />
+        ))}
       </SettingsCard>
     </>
   );

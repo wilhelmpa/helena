@@ -29,12 +29,18 @@ import { homeConfig, homeUrl, listSignInEvents } from './sign-in';
 import { securityStatus } from './status';
 
 export { edgeGuard, edgeEntry, EDGE_ENTRY_HEADER } from './service';
+import { serviceTokenHint } from './providers';
 
 const withConfigured = async () => {
   const settings = await getEdgeAccessSettings();
   const token = process.env.HELENA_EDGE_ENTRY_TOKEN;
   return {
     ...settings,
+    serviceTokens: (settings.serviceTokens ?? []).map(({ clientId, actsAs, label }) => ({
+      hint: serviceTokenHint(clientId),
+      actsAs,
+      label,
+    })),
     homeUrl: homeUrl(),
     entryProof: Boolean(token && token.length >= 32),
     configured: edgeAccessConfigured(settings),

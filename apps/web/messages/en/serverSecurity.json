@@ -228,7 +228,11 @@
     "homeTitle": "Connect directly at home automatically",
     "homeDescription": "On the public address, Helena checks whether {home} answers from this device and then switches there: directly over the home network, without the detour through Cloudflare. The home network sign-in signs you in there. Chrome asks once for access to the local network.",
     "homeDescriptionGeneric": "On the public address, Helena checks whether the home network address answers from this device and then switches there: directly over the home network, without the detour through Cloudflare.",
-    "homeNotSetUp": "No home network address set up (HELENA_HOME_URL, cloudflare/switch_origin.py --home-host)."
+    "homeNotSetUp": "No home network address set up (HELENA_HOME_URL, cloudflare/switch_origin.py --home-host).",
+    "serviceTokenTitle": "Service access: {label}",
+    "serviceTokenDescription": "Cloudflare service token {hint}… acts as {actsAs}, for automated checks. To end it, remove it here and delete the token in Cloudflare.",
+    "serviceTokenRemove": "Remove",
+    "serviceTokenRemoved": "Service access removed"
   },
   "signIns": {
     "title": "Sign-ins without a password",

@@ -228,7 +228,11 @@
     "homeTitle": "Otomatis terhubung langsung saat di rumah",
     "homeDescription": "Di alamat publik, Helena memeriksa apakah {home} merespons dari perangkat ini lalu beralih ke sana: langsung lewat jaringan rumah, tanpa memutar lewat Cloudflare. Login jaringan rumah memasukkan Anda di sana. Chrome sekali meminta akses ke jaringan lokal.",
     "homeDescriptionGeneric": "Di alamat publik, Helena memeriksa apakah alamat jaringan rumah merespons dari perangkat ini lalu beralih ke sana: langsung lewat jaringan rumah, tanpa memutar lewat Cloudflare.",
-    "homeNotSetUp": "Belum ada alamat jaringan rumah (HELENA_HOME_URL, cloudflare/switch_origin.py --home-host)."
+    "homeNotSetUp": "Belum ada alamat jaringan rumah (HELENA_HOME_URL, cloudflare/switch_origin.py --home-host).",
+    "serviceTokenTitle": "Akses layanan: {label}",
+    "serviceTokenDescription": "Token layanan Cloudflare {hint}… bertindak sebagai {actsAs}, untuk pemeriksaan otomatis. Untuk mengakhiri, hapus di sini dan hapus token di Cloudflare.",
+    "serviceTokenRemove": "Hapus",
+    "serviceTokenRemoved": "Akses layanan dihapus"
   },
   "signIns": {
     "title": "Login tanpa kata sandi",

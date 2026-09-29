@@ -28,7 +28,7 @@ export async function verifyEdgeSignIn(headers: Headers) {
     throw new EdgeSignInRefused('identity_not_allowed', 'This identity may not sign in here');
   }
   return {
-    provider: identity.provider,
+    provider: identity.serviceToken ? `${identity.provider}:service-token` : identity.provider,
     email: identity.email,
     expiresAt: identity.expiresAt ? new Date(identity.expiresAt) : null,
   };

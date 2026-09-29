@@ -8,6 +8,9 @@ import {
   normalizeEmail,
   type EdgeAccessConfig,
   type EdgeIdentity,
+  normalizeClientId,
+  serviceTokenHint,
+  type EdgeServiceToken,
 } from './providers';
 import { verifyLanAccess } from './lan';
 
@@ -46,6 +49,7 @@ function defaultSettings(): EdgeAccessSettings {
     teamDomain: '',
     audiences: [],
     allowedEmails: [],
+    serviceTokens: [],
     signIn: false,
     homeAutoConnect: true,
     updatedAt: null,
@@ -79,6 +83,29 @@ export interface EdgeAccessPatch {
   allowedEmails?: string[];
   signIn?: boolean;
   homeAutoConnect?: boolean;
+  // Replaces the service tokens (full client ids); `removeServiceTokens` drops them by hint.
+  serviceTokens?: { clientId: string; actsAs: string; label?: string }[];
+  removeServiceTokens?: string[];
+}
+
+const CLIENT_ID = /^[a-f0-9]{32}$/;
+
+function nextServiceTokens(
+  patch: EdgeAccessPatch,
+  current: EdgeServiceToken[],
+): EdgeServiceToken[] {
+  let tokens = patch.serviceTokens
+    ? patch.serviceTokens.map((token) => ({
+        clientId: normalizeClientId(token.clientId),
+        actsAs: normalizeEmail(token.actsAs),
+        label: (token.label ?? '').trim().slice(0, 64) || 'Service token',
+      }))
+    : (current ?? []);
+  const remove = patch.removeServiceTokens ?? [];
+  if (remove.length > 0) {
+    tokens = tokens.filter((token) => !remove.includes(serviceTokenHint(token.clientId)));
+  }
+  return tokens;
 }
 
 // Saves the settings after the provider accepted them. Clearing the team domain and the
@@ -94,6 +121,7 @@ export async function setEdgeAccessSettings(patch: EdgeAccessPatch): Promise<Edg
     allowedEmails: uniqueList(patch.allowedEmails ?? current.allowedEmails, normalizeEmail),
     signIn: patch.signIn ?? current.signIn,
     homeAutoConnect: patch.homeAutoConnect ?? current.homeAutoConnect,
+    serviceTokens: nextServiceTokens(patch, current.serviceTokens ?? []),
     updatedAt: new Date().toISOString(),
   };
   const provider = edgeProvider(next.provider);
@@ -105,6 +133,18 @@ export async function setEdgeAccessSettings(patch: EdgeAccessPatch): Promise<Edg
   }
   if (next.allowedEmails.some((email) => !/^[^\s@]+@[^\s@]+$/.test(email))) {
     throw new HttpError(400, 'An allowed identity must be an email address');
+  }
+  const tokens = next.serviceTokens ?? [];
+  if (tokens.length > 5) throw new HttpError(400, 'At most five service tokens');
+  if (tokens.some((token) => !CLIENT_ID.test(token.clientId))) {
+    throw new HttpError(400, 'A service token client id is 32 hexadecimal characters');
+  }
+  if (new Set(tokens.map((token) => serviceTokenHint(token.clientId))).size !== tokens.length) {
+    throw new HttpError(400, 'Two service tokens share the same client id');
+  }
+  // A token only ever acts for a person the owner already admits by name.
+  if (tokens.some((token) => !next.allowedEmails.includes(token.actsAs))) {
+    throw new HttpError(400, 'A service token must act as an allowed identity');
   }
   // The Cloudflare sign-in opens a session for the verified identity: only with the
   // provider set up and the identities named here, never "whoever Access lets in".

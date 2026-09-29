@@ -228,7 +228,11 @@
     "homeTitle": "الاتصال المباشر تلقائياً في المنزل",
     "homeDescription": "على العنوان العام تتحقق Helena مما إذا كان {home} يستجيب من هذا الجهاز، ثم تنتقل إليه: مباشرة عبر الشبكة المنزلية دون المرور عبر Cloudflare. هناك يسجّلك تسجيل دخول الشبكة المنزلية. يطلب Chrome مرة واحدة الوصول إلى الشبكة المحلية.",
     "homeDescriptionGeneric": "على العنوان العام تتحقق Helena مما إذا كان عنوان الشبكة المنزلية يستجيب من هذا الجهاز، ثم تنتقل إليه: مباشرة عبر الشبكة المنزلية دون المرور عبر Cloudflare.",
-    "homeNotSetUp": "لم يُضبط عنوان للشبكة المنزلية (HELENA_HOME_URL، ‏cloudflare/switch_origin.py --home-host)."
+    "homeNotSetUp": "لم يُضبط عنوان للشبكة المنزلية (HELENA_HOME_URL، ‏cloudflare/switch_origin.py --home-host).",
+    "serviceTokenTitle": "وصول الخدمة: {label}",
+    "serviceTokenDescription": "رمز خدمة Cloudflare {hint}… يعمل بصفة {actsAs} للفحوص التلقائية. لإنهائه، أزله هنا واحذف الرمز في Cloudflare.",
+    "serviceTokenRemove": "إزالة",
+    "serviceTokenRemoved": "تمت إزالة وصول الخدمة"
   },
   "signIns": {
     "title": "تسجيلات دخول دون كلمة مرور",

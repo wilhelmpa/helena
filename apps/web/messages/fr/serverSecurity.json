@@ -228,7 +228,11 @@
     "homeTitle": "Se connecter directement à la maison, automatiquement",
     "homeDescription": "Sur l’adresse publique, Helena vérifie si {home} répond depuis cet appareil, puis y bascule : directement par le réseau domestique, sans détour par Cloudflare. La connexion du réseau domestique vous y connecte. Chrome demande une fois l’accès au réseau local.",
     "homeDescriptionGeneric": "Sur l’adresse publique, Helena vérifie si l’adresse du réseau domestique répond depuis cet appareil, puis y bascule : directement par le réseau domestique, sans détour par Cloudflare.",
-    "homeNotSetUp": "Aucune adresse de réseau domestique configurée (HELENA_HOME_URL, cloudflare/switch_origin.py --home-host)."
+    "homeNotSetUp": "Aucune adresse de réseau domestique configurée (HELENA_HOME_URL, cloudflare/switch_origin.py --home-host).",
+    "serviceTokenTitle": "Accès de service : {label}",
+    "serviceTokenDescription": "Le jeton de service Cloudflare {hint}… agit en tant que {actsAs}, pour les vérifications automatiques. Pour y mettre fin, retirez-le ici et supprimez le jeton dans Cloudflare.",
+    "serviceTokenRemove": "Retirer",
+    "serviceTokenRemoved": "Accès de service retiré"
   },
   "signIns": {
     "title": "Connexions sans mot de passe",
