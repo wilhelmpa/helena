@@ -15,13 +15,9 @@ import { startRecognitionEar } from './recognitionEar';
 import { MicrophoneError } from './recorder';
 import { createEarcon, type Earcon } from './earcon';
 import { stopSpeaking } from './speak';
-import {
-  createBrowserSpeaker,
-  createLocalSpeaker,
-  type SpeakerEvents,
-  type VoiceSpeaker,
-} from './speakers';
+import { createResilientSpeaker, type SpeakerEvents, type VoiceSpeaker } from './speakers';
 import { DEFAULT_PAUSE_MS } from '../utils/voiceSettings';
+import { BRIDGES, preloadedPhrases, spokenLanguage, toolUpdate } from '../utils/voicePhrases';
 import { startVadEar, type ConversationEar, type EarEvents } from './vadListener';
 
 // Runs the conversation mode (utils/conversation.ts is its turn-taking): owns the ear (the voice
@@ -71,6 +67,7 @@ export interface ConversationDeps {
   openEar?(events: EarEvents, pauseMs: number): Promise<ConversationEar>;
   speakerFactory?(speaker: Speaker, events: SpeakerEvents, speed: number): VoiceSpeaker | null;
   bridgeDelayMs?: number;
+  progressIntervalMs?: number;
 }
 
 interface Utterance {
@@ -89,10 +86,7 @@ const WAITING_CHIME_MS = 1_600;
 // this long (speechChunks.settledTail): the runner sends text every 150 ms while it comes.
 const TAIL_QUIET_MS = 100;
 const BRIDGE_DELAY_MS = 120;
-
-export function bridgePhrase(language: string): string {
-  return language === 'de' ? 'Moment …' : 'One moment …';
-}
+const PROGRESS_INTERVAL_MS = 6_000;
 
 function pageLanguage(): string | null {
   const lang = (document.documentElement.lang || '').slice(0, 2).toLowerCase();
@@ -123,6 +117,16 @@ export class ConversationController {
   private bridgeDueAt = 0;
   private bridgeActive = false;
   private bridgeSinceAnswer = false;
+  private bridgeIndex = -1;
+  private bridgeText: string | null = null;
+  private progressTimer = 0;
+  private lastProgressAt = 0;
+  private activeTool: string | null = null;
+  private answerReading = false;
+  // The answer whose voice failure was reported already.
+  private voiceProblemFor: string | null = null;
+  private progressEnabled = true;
+  private readFullAnswers = true;
   private earcon: Earcon | null = null;
   // How long a pause ends a turn, and how fast the browser's voice reads (the owner's settings).
   private pauseMs = DEFAULT_PAUSE_MS;
@@ -154,11 +158,16 @@ export class ConversationController {
     speed?: number;
     immediateResponse?: boolean;
     bridgeEnabled?: boolean;
+    progressEnabled?: boolean;
+    readFullAnswers?: boolean;
   }): void {
     if (options.pauseMs) this.pauseMs = options.pauseMs;
     if (options.speed) this.speed = options.speed;
     if (options.immediateResponse !== undefined) this.immediateResponse = options.immediateResponse;
     if (options.bridgeEnabled !== undefined) this.bridgeEnabled = options.bridgeEnabled;
+    if (options.progressEnabled !== undefined) this.progressEnabled = options.progressEnabled;
+    if (options.readFullAnswers !== undefined) this.readFullAnswers = options.readFullAnswers;
+    if (!this.progressEnabled) window.clearTimeout(this.progressTimer);
   }
 
   // Starts from a click: the voice is unlocked before anything waits.
@@ -177,8 +186,11 @@ export class ConversationController {
     this.utterances = [];
     this.bridgeActive = false;
     this.bridgeSinceAnswer = false;
+    this.answerReading = false;
+    this.activeTool = null;
     this.voice = this.createVoice(this.speaker);
     this.voice?.unlock();
+    this.voice?.preload(preloadedPhrases(pageLanguage() ?? 'de'));
     this.earcon = createEarcon();
     if (wakeText !== undefined) this.earcon.play();
     this.dispatch({ type: 'start' });
@@ -208,10 +220,16 @@ export class ConversationController {
   }
 
   // The chat moved on: new messages, an answer streaming or done, messages waiting to be sent.
-  update(messages: ConversationMessage[], busy: boolean, queued: number): void {
+  update(
+    messages: ConversationMessage[],
+    busy: boolean,
+    queued: number,
+    tool: string | null = null,
+  ): void {
     this.messages = messages;
     this.busy = busy;
     this.queued = queued;
+    this.activeTool = tool;
     if (this.state.active === 'off') return;
     if (busy) this.sawBusy = true;
     if (this.state.awaitingAnswer && this.sawBusy && !busy && queued === 0) {
@@ -219,6 +237,7 @@ export class ConversationController {
       this.dispatch({ type: 'answerEnded' });
     }
     this.readAnswer();
+    this.scheduleProgress();
   }
 
   // ── Effects ──────────────────────────────────────────────────────────────────────────
@@ -244,6 +263,9 @@ export class ConversationController {
               this.earcon?.play();
           }, WAITING_CHIME_MS);
         this.scheduleBridge();
+        this.answerReading = false;
+        this.lastProgressAt = performance.now();
+        this.scheduleProgress();
         this.sawBusy = this.busy;
         window.clearTimeout(this.sendTimer);
         this.sendTimer = window.setTimeout(() => {
@@ -261,6 +283,7 @@ export class ConversationController {
       case 'dropReading':
         this.voice?.clear();
         this.bridgeActive = false;
+        window.clearTimeout(this.progressTimer);
         if (this.reading) this.reading.dropped = true;
         return;
       case 'stopAll':
@@ -271,6 +294,7 @@ export class ConversationController {
         window.clearTimeout(this.tailTimer);
         window.clearTimeout(this.chimeTimer);
         window.clearTimeout(this.bridgeTimer);
+        window.clearTimeout(this.progressTimer);
         this.earcon?.close();
         this.earcon = null;
         this.marks = null;
@@ -282,6 +306,8 @@ export class ConversationController {
         this.reading = null;
         this.bridgeActive = false;
         this.bridgeSinceAnswer = false;
+        this.bridgeText = null;
+        this.activeTool = null;
         return;
     }
   }
@@ -357,12 +383,15 @@ export class ConversationController {
         this.dispatch({ type: 'speakerStarted' });
       },
       onIdle: () => {
+        this.bridgeActive = false;
         this.ear?.setGuarded(false);
         this.dispatch({ type: 'speakerIdle' });
       },
-      onAudible: () => {
+      onAudible: (text) => {
         this.recordFirstTone();
-        if (this.bridgeActive) return;
+        if (text === this.bridgeText || preloadedPhrases(pageLanguage() ?? 'de').includes(text))
+          return;
+        this.bridgeActive = false;
         this.bridgeSinceAnswer = false;
         this.heard();
       },
@@ -370,26 +399,24 @@ export class ConversationController {
       onError: (text: string) => this.voiceFailed(text),
     };
     if (this.deps.speakerFactory) return this.deps.speakerFactory(speaker, events, this.speed);
-    if (speaker.engine === 'local') return createLocalSpeaker(events);
-    if (speaker.engine === 'browser') return createBrowserSpeaker(events, { rate: this.speed });
-    return null;
+    if (speaker.engine === 'none') return null;
+    // Helena's voice, kept: a failed piece is asked for again, and the browser's voice reads
+    // only where Helena's stays unreachable (said in the composer), until the next answer.
+    return createResilientSpeaker(events, { speaker, rate: this.speed });
   }
 
-  // Helena's voice failed on a piece: in "prefer" the browser's voices read on (from that piece),
-  // in "only" the answer stays unread. Said once.
-  private voiceFailed(text: string): void {
-    const failed = this.voice;
-    if (!failed) return;
+  // The voice gave up on a piece (Helena's asked for again and, without a browser fallback, still
+  // failing — or the browser's own voice failed): said once per answer. It does not change voices
+  // (createResilientSpeaker does that, visibly, and only when Helena's stays unreachable).
+  private voiceFailed(_text: string): void {
+    if (!this.voice) return;
+    const answer = this.reading?.id ?? '';
+    if (this.voiceProblemFor === answer) return;
+    this.voiceProblemFor = answer;
     this.deps.onProblem('voice-failed');
+    // The rest of this answer stays unread (Helena's voice, no fallback): the voice is idle.
+    if (this.voice.engine === 'local') this.voice.drain();
     this.dispatch({ type: 'error' });
-    if (failed.engine !== 'local') return;
-    const rest = this.bridgeActive ? [] : [text, ...failed.drain()];
-    if (this.bridgeActive) failed.clear();
-    failed.destroy();
-    const fallback = this.speaker.engine === 'local' ? this.speaker.fallback : null;
-    this.speaker = fallback ? { engine: 'browser' } : { engine: 'none' };
-    this.voice = this.createVoice(this.speaker);
-    for (const piece of rest) this.voice?.enqueue(piece);
     this.deps.refreshStatus();
   }
 
@@ -438,14 +465,18 @@ export class ConversationController {
     );
     if (index < 0) return;
     const message = this.messages[index]!;
-    if (this.reading?.id !== message.id)
+    if (this.reading?.id !== message.id) {
       this.reading = { id: message.id, offset: 0, dropped: false, chunks: 0 };
+      // Helena's voice is tried again from every new answer, also after a fallback.
+      this.voice.renew?.();
+    }
     if (this.reading.dropped) return;
     if (message.text.trim() && this.marks?.sentAt && !this.marks.answerAt) {
       this.marks.answerAt = performance.now();
       performance.mark('volition-voice-first-text');
       window.clearTimeout(this.chimeTimer);
       window.clearTimeout(this.bridgeTimer);
+      window.clearTimeout(this.progressTimer);
       this.dispatch({ type: 'answerStarted' });
     }
     const streaming = this.busy && index === this.messages.length - 1;
@@ -466,28 +497,15 @@ export class ConversationController {
 
   private handOver(text: string, final: boolean): void {
     if (!this.reading || !this.voice) return;
-    const switchToAnswerVoice = () => {
-      if (!this.bridgeActive) return;
-      this.voice?.clear();
-      this.bridgeActive = false;
-    };
-    if (/```|~~~|^\s*\|.+\|\s*$/m.test(text) && this.reading.chunks === 0) {
-      switchToAnswerVoice();
-      this.reading.dropped = true;
-      this.voice.enqueue(
-        pageLanguage() === 'de' ? 'Die Details stehen im Chat.' : 'I put the details in the chat.',
-      );
-      return;
-    }
     const next = nextSpeechChunks(text, this.reading.offset, final, pageLanguage() ?? 'de');
     this.reading.offset = next.offset;
-    if (next.chunks.length) switchToAnswerVoice();
+    if (next.chunks.length) {
+      this.answerReading = true;
+      window.clearTimeout(this.progressTimer);
+    }
     for (const chunk of next.chunks) {
-      if (this.reading.chunks >= 3) {
+      if (!this.readFullAnswers && this.reading.chunks >= 3) {
         this.reading.dropped = true;
-        this.voice.enqueue(
-          pageLanguage() === 'de' ? 'Mehr steht im Chat.' : 'There is more in the chat.',
-        );
         break;
       }
       this.reading.chunks += 1;
@@ -513,10 +531,48 @@ export class ConversationController {
           return;
         this.bridgeActive = true;
         this.bridgeSinceAnswer = true;
+        const phrases = BRIDGES[spokenLanguage(pageLanguage() ?? 'de')];
+        this.bridgeIndex = (this.bridgeIndex + 1) % phrases.length;
+        this.bridgeText = phrases[this.bridgeIndex]!;
         this.dispatch({ type: 'waiting' });
-        this.voice.enqueue(bridgePhrase(pageLanguage() ?? 'de'));
+        this.voice.enqueue(this.bridgeText);
       },
       Math.max(0, this.bridgeDueAt - performance.now()),
+    );
+  }
+
+  private scheduleProgress(): void {
+    window.clearTimeout(this.progressTimer);
+    if (
+      !this.progressEnabled ||
+      !this.state.awaitingAnswer ||
+      this.answerReading ||
+      !this.activeTool
+    )
+      return;
+    const generation = this.generation;
+    const interval = this.deps.progressIntervalMs ?? PROGRESS_INTERVAL_MS;
+    this.progressTimer = window.setTimeout(
+      () => {
+        if (
+          generation !== this.generation ||
+          !this.progressEnabled ||
+          !this.state.awaitingAnswer ||
+          this.answerReading
+        )
+          return;
+        if (
+          !this.state.userSpeaking &&
+          !this.state.readingPaused &&
+          this.voice &&
+          this.activeTool
+        ) {
+          this.voice.enqueue(toolUpdate(this.activeTool, pageLanguage() ?? 'de'));
+        }
+        this.lastProgressAt = performance.now();
+        this.scheduleProgress();
+      },
+      Math.max(0, interval - (performance.now() - this.lastProgressAt)),
     );
   }
 

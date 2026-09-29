@@ -243,6 +243,8 @@
     }
   },
   "voice": {
+    "progress": { "title": "进度播报", "hint": "Ava 简短说明正在做什么。" },
+    "readFull": { "title": "完整朗读回答", "hint": "Ava 朗读完整回答，并简要介绍代码和表格。" },
     "wake": {
       "title": "Listen for “Ava”",
       "hint": "The microphone stays open while a chat page is open. Before “Ava”, only on-device recognition processes your voice; nothing is saved.",

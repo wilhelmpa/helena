@@ -250,6 +250,14 @@
       "availabilityHint": "Funktioniert nur, wenn der Browser ein deutsches Offline-Sprachpaket bereits installiert hat. {appName} lädt keines herunter."
     },
     "title": "Sprache im Chat",
+    "progress": {
+      "title": "Zwischenmeldungen",
+      "hint": "Ava sagt kurz, woran sie gerade arbeitet."
+    },
+    "readFull": {
+      "title": "Antworten ganz vorlesen",
+      "hint": "Ava liest die gesamte Antwort vor und fasst Code und Tabellen kurz zusammen."
+    },
     "loading": "Lädt …",
     "failed": "Die Spracheinstellungen konnten nicht geladen werden.",
     "aliases": {

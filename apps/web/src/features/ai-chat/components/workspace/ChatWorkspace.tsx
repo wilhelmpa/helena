@@ -176,6 +176,7 @@ export default function ChatWorkspace({
         open={listOpen}
         onOpenChange={setListOpen}
         selectedThreadId={threadId}
+        openChat={threadId != null ? (summary.data ?? null) : null}
         onSelectThread={selectThread}
         onThreadRemoved={leaveDeletedThread}
         onNewChat={() => startNewChat(null)}

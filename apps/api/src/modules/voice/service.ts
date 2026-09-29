@@ -111,6 +111,8 @@ export async function voiceStatus() {
       speed: settings.speed,
       immediateResponse: settings.immediateResponse,
       bridgeEnabled: settings.bridgeEnabled,
+      progressEnabled: settings.progressEnabled,
+      readFullAnswers: settings.readFullAnswers,
       fallbackTimeoutMs: settings.fallbackTimeoutMs,
     },
     limits: {

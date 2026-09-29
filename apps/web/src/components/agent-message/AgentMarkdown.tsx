@@ -27,6 +27,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import {
   MessageResponse,
   MessageResponseProvider,
+  NO_BLOCK_LIMIT,
   type MessageResponseProps,
 } from '@/components/ai-elements/message';
 
@@ -269,8 +270,11 @@ export function AgentMarkdownProvider({ source, renderers, children }: AgentMark
       // No math renderer is loaded, so `$$` (a shell's `$$`, jQuery's `$$eval`) is never
       // "completed" into a formula while an answer streams.
       remend: { katex: false },
-      codeBlockMaxHeight: 480,
-      tableMaxHeight: 480,
+      // No block scrolls inside the transcript: a long code block or table grows in the
+      // flow, and only the conversation scrolls (code and tables still scroll sideways).
+      // Streamdown reads 0 as "no limit" (it only sets a height for a truthy value).
+      codeBlockMaxHeight: NO_BLOCK_LIMIT,
+      tableMaxHeight: NO_BLOCK_LIMIT,
     }),
     [plugins, translations, mermaidOptions],
   );

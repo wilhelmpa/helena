@@ -36,6 +36,8 @@ export interface VoiceSettings {
   pauseMs: number;
   immediateResponse: boolean;
   bridgeEnabled: boolean;
+  progressEnabled: boolean;
+  readFullAnswers: boolean;
   fallbackTimeoutMs: number;
   vocabulary: string[];
   vocabularyAliases: VocabularyAlias[] | null;
@@ -61,6 +63,8 @@ export const DEFAULT_VOICE_SETTINGS: VoiceSettings = {
   pauseMs: 300,
   immediateResponse: true,
   bridgeEnabled: true,
+  progressEnabled: true,
+  readFullAnswers: true,
   fallbackTimeoutMs: 800,
   vocabulary: [],
   vocabularyAliases: null,
@@ -152,6 +156,10 @@ export function normalizeVoiceSettings(raw: unknown): VoiceSettings {
         : defaults.immediateResponse,
     bridgeEnabled:
       typeof value.bridgeEnabled === 'boolean' ? value.bridgeEnabled : defaults.bridgeEnabled,
+    progressEnabled:
+      typeof value.progressEnabled === 'boolean' ? value.progressEnabled : defaults.progressEnabled,
+    readFullAnswers:
+      typeof value.readFullAnswers === 'boolean' ? value.readFullAnswers : defaults.readFullAnswers,
     fallbackTimeoutMs: Math.round(
       clamp(
         value.fallbackTimeoutMs,

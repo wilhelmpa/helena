@@ -6,7 +6,10 @@ import { LocalFallbackLine } from '@/features/local-ai/components/LocalFallbackL
 import { useMemo } from 'react';
 import { AgentMessageParts } from '@/components/agent-message/AgentMessageParts';
 import type { RenderTool } from '@/components/agent-message/AgentToolGroup';
+import type { AgentRuntimeKind } from '@/lib/api/endpoints/agents';
+import { shortModel } from '@/features/local-ai/utils/localAi';
 import { chatSources } from '../../utils/chatSources';
+import { chatExecution } from '../../utils/chatExecution';
 import type { PlanUIMessage } from '../../utils/chatMessages';
 import type { Artifact } from '../../utils/artifacts';
 import { ARTIFACT_RENDERERS, ArtifactOpenContext } from './ChatArtifactCard';
@@ -19,6 +22,9 @@ export interface ChatMessageBubbleAssistantProps {
   message: PlanUIMessage;
   streaming: boolean;
   projectKey: string | null;
+  // The runtime of the agent that answers: what names the execution when the answer's own
+  // report does not.
+  agentRuntime?: AgentRuntimeKind;
   onShowArtifact: (artifact: Artifact) => void;
 }
 
@@ -35,6 +41,7 @@ export default function ChatMessageBubbleAssistant({
   message,
   streaming,
   projectKey,
+  agentRuntime,
   onShowArtifact,
 }: ChatMessageBubbleAssistantProps) {
   const tr = useTranslations('chatWorkspace.runtimePicker');
@@ -54,16 +61,8 @@ export default function ChatMessageBubbleAssistant({
   );
   const check = message.metadata?.modelCheck;
   const usedModel = check?.used?.model ?? null;
-  const usedRuntime = check?.runtime;
-  const execution = usedModel?.startsWith('helena-local/')
-    ? tr('local')
-    : usedRuntime === 'claude' || usedRuntime === 'claude-code'
-      ? tr('claude')
-      : usedRuntime === 'codex'
-        ? tr('codex')
-        : usedRuntime === 'hermes'
-          ? tr('hermes')
-          : usedRuntime;
+  const executionKind = chatExecution(check, agentRuntime);
+  const execution = executionKind ? tr(executionKind) : null;
 
   return (
     <ArtifactOpenContext.Provider value={onShowArtifact}>
@@ -85,7 +84,8 @@ export default function ChatMessageBubbleAssistant({
         )}
         {!streaming && check?.used && (
           <p className="text-xs text-muted-foreground">
-            {tr('via')} {execution ?? tr('unknownRuntime')} · {usedModel ?? tr('unknownModel')}
+            {execution ? `${tr('via')} ${execution} · ` : ''}
+            {usedModel ? shortModel(usedModel) : tr('unknownModel')}
           </p>
         )}
         {!streaming && message.metadata?.via === 'voice' && (

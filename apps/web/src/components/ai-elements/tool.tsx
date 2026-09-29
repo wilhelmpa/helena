@@ -10,7 +10,7 @@ import type { DynamicToolUIPart, ToolUIPart } from 'ai';
 import { CheckCircle2, ChevronRight, CircleDashed, ShieldAlert, XCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { MessageResponse } from './message';
+import { MessageResponse, NO_BLOCK_LIMIT } from './message';
 
 export type ToolPart = ToolUIPart | DynamicToolUIPart;
 export type ToolState = ToolPart['state'];
@@ -120,7 +120,7 @@ function ToolCode({ value, label }: { value: unknown; label: ReactNode }) {
       <MessageResponse
         mode="static"
         className="agent-tool-code mt-1"
-        codeBlockMaxHeight={240}
+        codeBlockMaxHeight={NO_BLOCK_LIMIT}
         lineNumbers={false}
         controls={{ code: { copy: true, download: false } }}
       >

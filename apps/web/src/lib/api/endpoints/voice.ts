@@ -23,6 +23,8 @@ export interface VoiceStatus {
     speed: number;
     immediateResponse: boolean;
     bridgeEnabled: boolean;
+    progressEnabled: boolean;
+    readFullAnswers: boolean;
     fallbackTimeoutMs: number;
   };
   limits: { maxSeconds: number; maxBytes: number; maxSpeechChars: number };
@@ -84,6 +86,8 @@ export interface VoiceSettings {
   pauseMs: number;
   immediateResponse: boolean;
   bridgeEnabled: boolean;
+  progressEnabled: boolean;
+  readFullAnswers: boolean;
   fallbackTimeoutMs: number;
   // Words the transcription should know, beyond Helena's own names.
   vocabulary: string[];
@@ -115,6 +119,8 @@ export type VoiceSettingsPatch = Partial<
     | 'pauseMs'
     | 'immediateResponse'
     | 'bridgeEnabled'
+    | 'progressEnabled'
+    | 'readFullAnswers'
     | 'fallbackTimeoutMs'
     | 'vocabulary'
     | 'vocabularyAliases'
