@@ -1,5 +1,6 @@
 import { asc, eq } from 'drizzle-orm';
 import { agentChatCatalog, aiAgent, db, getSetting, project, setSetting, user } from '@repo/db';
+import type { PronunciationEntry } from './tts-text';
 
 // The owner's voice settings (Lokale KI → Sprache; docs/helena-decisions/voice-2.md §5): one
 // app_setting row. What the browser needs (the pause, the voice's speed) comes with `GET
@@ -27,6 +28,7 @@ export interface VoiceSettings {
   vocabularyAliases: VocabularyAlias[] | null;
   voice: string | null;
   speed: number;
+  pronunciationLexicon: PronunciationEntry[];
   replyModel: string | null;
   replyThinkingLevel: string | null;
 }
@@ -38,6 +40,7 @@ export const VOICE_SETTINGS_LIMITS = {
   vocabularyWords: 60,
   vocabularyWordLength: 60,
   vocabularyAliases: 60,
+  pronunciationLexicon: 100,
 } as const;
 
 export const DEFAULT_VOICE_SETTINGS: VoiceSettings = {
@@ -46,6 +49,7 @@ export const DEFAULT_VOICE_SETTINGS: VoiceSettings = {
   vocabularyAliases: null,
   voice: null,
   speed: 1,
+  pronunciationLexicon: [],
   replyModel: null,
   replyThinkingLevel: null,
 };
@@ -101,6 +105,25 @@ function normalizeAliases(raw: unknown): VocabularyAlias[] | null {
   return aliases;
 }
 
+function normalizePronunciations(raw: unknown): PronunciationEntry[] {
+  if (!Array.isArray(raw)) return [];
+  const seen = new Set<string>();
+  const entries: PronunciationEntry[] = [];
+  for (const value of raw) {
+    if (!value || typeof value !== 'object') continue;
+    const item = value as Record<string, unknown>;
+    const wordValue = word(item.word);
+    const pronunciation = word(item.pronunciation);
+    if (!wordValue || !pronunciation || /[\n\r<>]/.test(wordValue + pronunciation)) continue;
+    const key = wordValue.toLocaleLowerCase('de-DE');
+    if (seen.has(key)) continue;
+    seen.add(key);
+    entries.push({ word: wordValue, pronunciation });
+    if (entries.length >= VOICE_SETTINGS_LIMITS.pronunciationLexicon) break;
+  }
+  return entries;
+}
+
 export function normalizeVoiceSettings(raw: unknown): VoiceSettings {
   const value = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
   const defaults = DEFAULT_VOICE_SETTINGS;
@@ -113,6 +136,7 @@ export function normalizeVoiceSettings(raw: unknown): VoiceSettings {
     vocabularyAliases: normalizeAliases(value.vocabularyAliases),
     voice: optionalText(value.voice, 120),
     speed: Math.round(clamp(value.speed, VOICE_SETTINGS_LIMITS.speed, defaults.speed) * 100) / 100,
+    pronunciationLexicon: normalizePronunciations(value.pronunciationLexicon),
     replyModel: optionalText(value.replyModel, 200),
     replyThinkingLevel: value.replyModel ? optionalText(value.replyThinkingLevel, 40) : null,
   };

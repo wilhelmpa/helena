@@ -83,6 +83,13 @@ const settingsFields = {
     t.String({ maxLength: 120, description: "The local voice; null: the server's" }),
   ),
   speed: t.Number({ minimum: 0.7, maximum: 1.4 }),
+  pronunciationLexicon: t.Array(
+    t.Object({
+      word: t.String({ minLength: 1, maxLength: 60 }),
+      pronunciation: t.String({ minLength: 1, maxLength: 60 }),
+    }),
+    { maxItems: 100, description: 'Additional or overriding pronunciations for speech' },
+  ),
   replyModel: t.Nullable(
     t.String({
       maxLength: 200,
@@ -94,6 +101,7 @@ const settingsFields = {
 
 export const VoiceSettingsResponse = t.Object({
   ...settingsFields,
+  defaultPronunciations: t.Array(t.Object({ word: t.String(), pronunciation: t.String() })),
   suggestedAliases: t.Array(t.Object({ heard: t.String(), written: t.String() })),
   helenaWords: t.Array(t.String(), {
     description: 'The names Helena adds to the vocabulary itself (agents, projects)',

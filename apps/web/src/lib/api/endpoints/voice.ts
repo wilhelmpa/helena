@@ -83,6 +83,8 @@ export interface VoiceSettings {
   // The local voice; null: the speech server's default.
   voice: string | null;
   speed: number;
+  pronunciationLexicon: { word: string; pronunciation: string }[];
+  defaultPronunciations: { word: string; pronunciation: string }[];
   // The model agents answer spoken turns with; null: their usual one.
   replyModel: string | null;
   replyThinkingLevel: string | null;
@@ -106,6 +108,7 @@ export type VoiceSettingsPatch = Partial<
     | 'vocabularyAliases'
     | 'voice'
     | 'speed'
+    | 'pronunciationLexicon'
     | 'replyModel'
     | 'replyThinkingLevel'
   >

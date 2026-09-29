@@ -346,6 +346,23 @@ describe('the voice on the GPU (qwentts.cpp)', () => {
       language: 'German',
       seed: 7,
     });
+    await asOwner.god.voice.settings.patch({
+      pronunciationLexicon: [{ word: 'Claude', pronunciation: 'Kloud' }],
+    });
+    const normalized = await app.handle(
+      new Request('http://localhost/voice/speech', {
+        method: 'POST',
+        headers: { cookie: owner.cookie, 'content-type': 'application/json' },
+        body: JSON.stringify({ text: 'Claude prüft 12,50 €.', language: 'de' }),
+      }),
+    );
+    expect(normalized.status).toBe(200);
+    await normalized.arrayBuffer();
+    expect(
+      received.filter((entry) => entry.path === '/q/v1/audio/speech').at(-1)?.json,
+    ).toMatchObject({
+      input: 'Kloud prüft zwölf Euro und fünfzig Cent.',
+    });
   });
 });
 

@@ -84,12 +84,22 @@ describe('voice settings', () => {
       speed: 1.4,
       vocabulary: ['Verve', 'x'.repeat(60)],
       vocabularyAliases: null,
+      pronunciationLexicon: [],
       voice: null,
       replyModel: null,
       // No reasoning without a model.
       replyThinkingLevel: null,
     });
     expect(normalizeVoiceSettings(null).pauseMs).toBe(600);
+    expect(
+      normalizeVoiceSettings({
+        pronunciationLexicon: [
+          { word: 'Claude', pronunciation: 'Kloud' },
+          { word: 'claude', pronunciation: 'ignored' },
+          { word: '', pronunciation: 'empty' },
+        ],
+      }).pronunciationLexicon,
+    ).toEqual([{ word: 'Claude', pronunciation: 'Kloud' }]);
   });
 
   it('puts the owner’s words before Helena’s', () => {
