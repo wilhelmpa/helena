@@ -12,6 +12,11 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 
 export type MessageResponseProps = ComponentProps<typeof Streamdown>;
 
+// For Streamdown's `codeBlockMaxHeight` / `tableMaxHeight`: no height limit, so a long block
+// grows in the flow instead of scrolling inside the conversation (Streamdown only sets a
+// height, and a vertical scrollbar, for a truthy value; its own default is 400 / 300).
+export const NO_BLOCK_LIMIT = 0;
+
 // What every MessageResponse below it renders with unless it says otherwise: the
 // plugins, custom renderers, translations and controls an app configures once (Helena's
 // are in components/agent-message/AgentMarkdown), so reasoning and tool output read the

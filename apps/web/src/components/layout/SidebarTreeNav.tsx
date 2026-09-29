@@ -302,7 +302,8 @@ export function SidebarProjectTree({
           {
             id: 'team',
             href: organizationPath(projectKey),
-            also: [aiAgentsPath(projectKey), `${projectPath(projectKey)}/chat`],
+            // The chat is no row of the tree (the Orb dock opens it): its page marks nothing.
+            also: [aiAgentsPath(projectKey)],
           },
           { id: 'automation:schedules', href: aiTeamPath(projectKey, 'schedules') },
           { id: 'automation:workflows', href: workflowsPath(projectKey) },

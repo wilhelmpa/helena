@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { useTranslations } from 'next-intl';
 import { Folder, MessagesSquare } from 'lucide-react';
-import type { ChatListView } from '@/lib/api/endpoints/agentChat';
+import type { ChatListView, ChatSummary } from '@/lib/api/endpoints/agentChat';
 import { EmptyState } from '@/design-system';
 import { Skeleton } from '@/components/ui/skeleton';
 import { chatsOf, useChatList } from '../../hooks/useChatList';
@@ -17,6 +17,7 @@ import ChatListItem from './ChatListItem';
 import ChatFolderMenu from './ChatFolderMenu';
 import { useChatFoldersContext } from '../../hooks/useChatFolders';
 import { withFolders } from '../../utils/chatFolders';
+import { withOpenChat } from '../../utils/chatListWithOpen';
 
 export interface ChatListGroupsProps {
   projectKey: string | null;
@@ -24,6 +25,7 @@ export interface ChatListGroupsProps {
   q?: string;
   grouping?: ChatGrouping;
   selectedThreadId: string | null;
+  openChat?: ChatSummary | null;
   onSelectThread: (thread: { id: string; agentId: number }) => void;
   onThreadRemoved: (threadId: string) => void;
 }
@@ -60,12 +62,17 @@ export default function ChatListGroups({
   q,
   grouping = 'time',
   selectedThreadId,
+  openChat,
   onSelectThread,
   onThreadRemoved,
 }: ChatListGroupsProps) {
   const t = useTranslations('chatWorkspace');
   const query = useChatList({ projectKey: projectKey ?? undefined, q, view });
-  const chats = chatsOf(query.data);
+  const loaded = chatsOf(query.data);
+  const chats = useMemo(
+    () => withOpenChat(loaded, openChat, view, !!q),
+    [loaded, openChat, view, q],
+  );
   const { folders } = useChatFoldersContext();
   // The member's own folders stand over the automatic groups of the active list (O4).
   const shownFolders = useMemo(() => (q || view !== 'active' ? [] : folders), [q, view, folders]);

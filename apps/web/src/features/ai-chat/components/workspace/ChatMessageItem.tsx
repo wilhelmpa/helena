@@ -75,6 +75,7 @@ function ChatMessageItem({
                 message={message}
                 streaming={streaming}
                 projectKey={projectKey}
+                agentRuntime={agent.runtimePolicy.runtime ?? 'hermes'}
                 onShowArtifact={onShowArtifact}
               />
             </BubbleContent>

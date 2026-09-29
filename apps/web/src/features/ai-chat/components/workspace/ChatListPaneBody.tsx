@@ -58,6 +58,7 @@ export default function ChatListPaneBody({
   mode,
   onOpenChange,
   selectedThreadId,
+  openChat,
   onSelectThread,
   onThreadRemoved,
   onNewChat,
@@ -142,6 +143,7 @@ export default function ChatListPaneBody({
           q={term}
           grouping={grouping}
           selectedThreadId={selectedThreadId}
+          openChat={openChat}
           onSelectThread={onSelectThread}
           onThreadRemoved={onThreadRemoved}
         />

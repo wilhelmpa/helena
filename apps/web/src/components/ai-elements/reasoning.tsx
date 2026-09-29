@@ -178,7 +178,7 @@ export const ReasoningContent = memo(function ReasoningContent({
       )}
       {...props}
     >
-      <div className="ms-1.5 max-h-80 overflow-y-auto border-s border-sidebar-border ps-3 text-sm text-muted-foreground">
+      <div className="ms-1.5 border-s border-sidebar-border ps-3 text-sm text-muted-foreground">
         <MessageResponse dir="auto" isAnimating={isStreaming} className="space-y-2">
           {children}
         </MessageResponse>

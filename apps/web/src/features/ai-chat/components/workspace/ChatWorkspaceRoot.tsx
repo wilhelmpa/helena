@@ -1,12 +1,13 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { chatPath, homeChatPath } from '@/utils/paths';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useChatWorkspaceScope } from '../../hooks/useChatWorkspaceScope';
 import { useActiveChat } from '../../hooks/useActiveChat';
+import { useChatSummary } from '../../hooks/useChatSummary';
 import ChatWorkspace from './ChatWorkspace';
 import type { ChatLocation } from '../../utils/chatLocation';
 
@@ -34,11 +35,37 @@ export default function ChatWorkspaceRoot({ projectKey }: { projectKey: string |
     [agentParam, threadParam],
   );
 
+  // A chat lives in the scope it was started in (its project, or Helena's own). One opened
+  // from somewhere else — an activity entry, a link — inside another project's chat page would
+  // sit beside a list that does not hold it, and the server refuses to remember it as this
+  // project's chat: it moves to the page of its own scope instead. Helena's page lists every
+  // chat, so only a project page checks.
+  // The chats this page opened or created itself are in its scope by construction (and one
+  // just created has no record yet to wait for while its answer streams).
+  const [ownThreads, setOwnThreads] = useState<ReadonlySet<string>>(new Set());
+  const checked =
+    projectKey && location.threadId && !ownThreads.has(location.threadId)
+      ? location.threadId
+      : null;
+  const summary = useChatSummary(checked);
+  const threadProject = summary.data ? (summary.data.project?.key ?? null) : undefined;
+  const foreignThread =
+    projectKey != null && threadProject !== undefined && threadProject !== projectKey;
+  const resolvingScope = checked != null && (summary.isLoading || foreignThread);
+  useEffect(() => {
+    const chat = summary.data;
+    if (!foreignThread || !chat) return;
+    const query = { agent: chat.agent.id, thread: chat.id };
+    router.replace(chat.project ? chatPath(chat.project.key, query) : homeChatPath(query), {
+      scroll: false,
+    });
+  }, [foreignThread, summary.data, router]);
+
   const url = params.toString();
   const routeKey = `${projectKey ?? 'home'}:${url}`;
   const intentionalNew = params.has('new') || (params.has('agent') && !params.has('thread'));
   useEffect(() => {
-    if (!activeReady) return;
+    if (!activeReady || resolvingScope) return;
     if (handledUrl.current !== routeKey) {
       handledUrl.current = routeKey;
       restoreSequence.current += 1;
@@ -85,6 +112,7 @@ export default function ChatWorkspaceRoot({ projectKey }: { projectKey: string |
     }
   }, [
     activeReady,
+    resolvingScope,
     activeLocation,
     routeKey,
     location,
@@ -103,6 +131,8 @@ export default function ChatWorkspaceRoot({ projectKey }: { projectKey: string |
       restoreSequence.current += 1;
       validatingRoute.current = null;
       handledActive.current = next;
+      const opened = next.threadId;
+      if (opened) setOwnThreads((current) => new Set(current).add(opened));
       setActive(next);
       if (options?.replace) router.replace(target, { scroll: false });
       else router.push(target, { scroll: false });
@@ -116,7 +146,7 @@ export default function ChatWorkspaceRoot({ projectKey }: { projectKey: string |
     [activeLocation.threadId, setActive],
   );
 
-  if (scope.loading || (!activeReady && !location.threadId && !intentionalNew)) {
+  if (scope.loading || resolvingScope || (!activeReady && !location.threadId && !intentionalNew)) {
     return (
       <div className="flex h-full min-h-0 flex-col gap-4 p-6">
         <Skeleton className="h-9 w-48" />
