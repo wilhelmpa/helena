@@ -128,6 +128,7 @@ export const LabRun = t.Object({
   agentId: t.Nullable(t.Number()),
   agentName: t.Nullable(t.String()),
   chatThreadId: t.Nullable(t.String()),
+  finalFramePath: t.Nullable(t.String()),
   finalFrame: t.Nullable(t.String()),
   createdAt: t.String(),
   finishedAt: t.Nullable(t.String()),
