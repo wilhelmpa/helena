@@ -121,8 +121,8 @@
     float halo=exp(-r*r*4.0)*.24*(1.0-smoothstep(.75,1.0,r));
     float a=(core+halo)*strength;
     if(light>.5){
-      float alpha=min(1.0,(a+spark*core*.6)*.9);
-      vec3 deep=tint*.62;
+      float alpha=min(1.0,(a+spark*core*.6)*.4);
+      vec3 deep=tint*.86;
       gl_FragColor=vec4(deep*alpha,alpha);
       return;
     }
