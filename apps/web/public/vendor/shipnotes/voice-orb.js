@@ -3,6 +3,8 @@
 // Vendored with property setters and external band input; see NOTICE and THIRD-PARTY-LICENSES.md.
 // Helena: a `theme="light"` attribute draws the particles as colour on a light ground (normal
 // alpha blending, deeper tints, a softer halo) instead of adding light to a dark one.
+// Helena: `glow="off"` drops the halo canvas behind the particles and each particle's soft
+// halo, so the orb reads as crisp particles without a glowing cloud (owner, 29.09.).
 /* eslint-disable -- vendored third-party code, kept close to upstream */
 (() => {
   if (customElements.get('voice-orb')) return;
@@ -112,13 +114,14 @@
   const FS = `
   precision mediump float;
   uniform float light;
+  uniform float haloAmount;
   varying vec3 tint;
   varying float strength, spark;
   void main() {
     float r=length(gl_PointCoord-.5)*2.0;
     if(r>1.0)discard;
     float core=1.0-smoothstep(.18,.64,r);
-    float halo=exp(-r*r*4.0)*.24*(1.0-smoothstep(.75,1.0,r));
+    float halo=exp(-r*r*4.0)*.24*haloAmount*(1.0-smoothstep(.75,1.0,r));
     float a=(core+halo)*strength;
     if(light>.5){
       float alpha=min(1.0,(a+spark*core*.6)*.4);
@@ -132,7 +135,7 @@
 
   class VoiceOrb extends HTMLElement {
     static get observedAttributes() {
-      return ['state', 'particles', 'recording', 'theme'];
+      return ['state', 'particles', 'recording', 'theme', 'glow'];
     }
     constructor() {
       super();
@@ -260,7 +263,7 @@
         this._gl = gl;
         this._program = program;
         this._uniforms = {};
-        for (const n of ['time', 'pixels', 'density', 'weights', 'bands', 'onset', 'light'])
+        for (const n of ['time', 'pixels', 'density', 'weights', 'bands', 'onset', 'light', 'haloAmount'])
           this._uniforms[n] = gl.getUniformLocation(program, n);
         this._auto = matchMedia('(pointer: coarse)').matches ? 6000 : 12000;
         if (!this._lossHandler) {
@@ -369,7 +372,8 @@
       );
       const h = this._hctx;
       h.clearRect(0, 0, size, size);
-      const glow = h.createRadialGradient(
+      const glowOn = this.getAttribute('glow') !== 'off';
+      const glow = glowOn && h.createRadialGradient(
         size * 0.5,
         size * 0.5,
         size * 0.1,
@@ -379,11 +383,13 @@
       );
       const energy = (weights[1] + weights[3]) * (bands[0] * 0.025 + onset * 0.035);
       const light = this._light;
-      glow.addColorStop(0, `rgba(${rgb},${light ? 0.2 : 0.48})`);
-      glow.addColorStop(0.58, `rgba(${rgb},${(light ? 0.12 : 0.3) + energy})`);
-      glow.addColorStop(1, `rgba(${rgb},0)`);
-      h.fillStyle = glow;
-      h.fillRect(0, 0, size, size);
+      if (glow) {
+        glow.addColorStop(0, `rgba(${rgb},${light ? 0.2 : 0.48})`);
+        glow.addColorStop(0.58, `rgba(${rgb},${(light ? 0.12 : 0.3) + energy})`);
+        glow.addColorStop(1, `rgba(${rgb},0)`);
+        h.fillStyle = glow;
+        h.fillRect(0, 0, size, size);
+      }
       if (this._gl) {
         const gl = this._gl,
           u = this._uniforms;
@@ -394,6 +400,7 @@
         if (light) gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
         else gl.blendFunc(gl.ONE, gl.ONE);
         gl.uniform1f(u.light, light ? 1 : 0);
+        gl.uniform1f(u.haloAmount, glowOn ? 1 : 0);
         gl.uniform1f(u.time, time);
         gl.uniform1f(u.pixels, size);
         gl.uniform1f(u.density, Math.pow(12000 / count, 0.32));

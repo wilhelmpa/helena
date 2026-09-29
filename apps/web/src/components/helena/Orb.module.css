@@ -120,8 +120,8 @@
   opacity: 1;
 }
 /* Without WebGL, with reduced motion or in a hidden tab: the same orb as a still sphere in
-   the colour of the state — lit from the top left like the small orbs, a soft glow around
-   it; no blurred blob (owner, 28.09.). It breathes slowly while something happens. */
+   the colour of the state — lit from the top left like the small orbs, without a glow
+   (owner, 29.09.). It breathes slowly while something happens. */
 .static {
   display: block;
   width: 46%;
@@ -135,9 +135,7 @@
     var(--orb-color) 62%,
     color-mix(in srgb, var(--orb-color), var(--orb-shade) var(--orb-shade-mix)) 100%
   );
-  box-shadow:
-    0 0 1.5rem color-mix(in srgb, var(--orb-color), transparent 55%),
-    0 0 4rem color-mix(in srgb, var(--orb-color), transparent 80%);
+  box-shadow: none;
 }
 /* On a light ground: a lighter sphere and a faint halo, no dark ball. */
 :global([data-theme='light']) .static {
@@ -148,7 +146,7 @@
     color-mix(in srgb, var(--orb-color) 72%, white) 72%,
     var(--orb-color) 100%
   );
-  box-shadow: 0 0 2.5rem color-mix(in srgb, var(--orb-color), transparent 78%);
+  box-shadow: none;
 }
 .large:is(.listening, .thinking, .tool, .speaking, .waiting) .static {
   animation: breathe 3.2s ease-in-out infinite;
