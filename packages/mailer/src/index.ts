@@ -168,8 +168,7 @@ function escape(s: string): string {
 
 // Wraps a plain-text body (and an optional link) into the text/html pair the
 // transport needs. Shared so every message in the app looks the same: the HTML part
-// opens with Helena's wordmark (packages/brand), set as text so it shows without
-// loading images.
+// opens with the self-contained Orb SVG and a text fallback from packages/brand.
 export function emailBody(text: string, url?: string | null): { text: string; html: string } {
   const plain = url ? `${text}\n\n${url}` : text;
   const body = escape(text).replace(/\n/g, '<br>');

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, it } from 'node:test';
-import { BANDS, TILE, type BandColor } from '@helena/brand';
+import { BANDS, ORB, TILE, type BandColor } from '@helena/brand';
 
 // The design system's tokens.css repeats the brand's colours as CSS tokens (a
 // stylesheet cannot import them); this keeps the two in step.
@@ -23,7 +23,14 @@ describe('brand tokens in tokens.css', () => {
     });
   }
 
-  it('the ink is the tile colour', () => {
+  it('the ANSI ink token remains aligned with the wordmark palette', () => {
     assert.equal(token(light, 'ink'), TILE.toLowerCase());
+  });
+
+  it('the Orb palette is independent of the ANSI ink token', () => {
+    assert.notEqual(ORB.tileLight.toLowerCase(), TILE.toLowerCase());
+    assert.notEqual(ORB.tileDark.toLowerCase(), ORB.tileLight.toLowerCase());
+    assert.equal(ORB.ring, '#E8A33D');
+    assert.equal(ORB.core, '#F2C14E');
   });
 });

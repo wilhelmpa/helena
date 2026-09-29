@@ -1,4 +1,4 @@
-export { BANDS, HERMES, TILE, type BandColor, type BrandTheme } from './palette';
+export { BANDS, HERMES, ORB, TILE, type BandColor, type BrandTheme } from './palette';
 export {
   ANSI_COMPACT,
   ANSI_FULL,
@@ -8,14 +8,19 @@ export {
   type AnsiArt,
   type AnsiGeometry,
 } from './ansi';
-export { TORCH, echoLayers, pixelLayers, type PixelMap } from './pixel';
+export { wordmarkArt, type WordmarkSize } from './art';
 export {
-  MARK_GRID,
-  MARK_RADIUS,
-  markLayers,
-  wordmarkArt,
-  type MarkLayer,
-  type WordmarkSize,
-} from './art';
-export { lockupSvg, markSvg, socialPreviewSvg, wordmarkSvg, type MarkSvgOptions } from './svg';
+  ORB_GRID,
+  ORB_RADIUS,
+  faviconSvg,
+  lockupSvg,
+  markSvg,
+  orbBody,
+  orbGeometry,
+  socialPreviewSvg,
+  wordmarkSvg,
+  type MarkSvgOptions,
+  type OrbDetail,
+  type OrbVariant,
+} from './svg';
 export { mailHeaderHtml } from './mail';
