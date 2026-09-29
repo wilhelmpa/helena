@@ -6,6 +6,7 @@ import {
   approvalRequest,
   connectorAction,
   integrationCredential,
+  project,
   user,
 } from '@repo/db';
 import { and, asc, eq, inArray, isNotNull, sql } from 'drizzle-orm';
@@ -18,6 +19,7 @@ import { recordAgentUses, type UseAction } from '#modules/agents/credentials/del
 import { ENV_KINDS } from '#modules/agents/credentials/env';
 import { listAccounts, getAccount, type AccountRow } from './store';
 import { googleReadable, googleToolContext } from './google/engine';
+import { saveDriveToVault } from './google/drive-vault';
 import { decideConnectorAction } from './policy';
 
 // Carrying out a connector tool call for an agent: find the account it names among the
@@ -187,7 +189,10 @@ async function runNow(
   summary: string,
 ): Promise<ToolCallResult> {
   try {
-    const result = await tool.handler(input, await googleToolContext(account));
+    const result = await tool.handler(input, {
+      ...(await googleToolContext(account)),
+      saveToVault: (file) => saveDriveToVault(caller, file),
+    });
     await audit(caller, account, 'called', category, `${tool.name}: ${summary}`);
     return { status: 'done', result };
   } catch (error) {
@@ -326,7 +331,21 @@ async function runApproved(action: typeof connectorAction.$inferSelect): Promise
         )
       : Promise.resolve();
   try {
-    const result = await tool.handler(input, await googleToolContext(account));
+    const context = await googleToolContext(account);
+    if (tool.name === 'google_drive_save_to_vault') {
+      const [projectRow] = await db
+        .select({ id: project.id, key: project.key })
+        .from(project)
+        .where(eq(project.id, action.projectId!));
+      if (!agent || !projectRow) throw new Error('The agent or project no longer exists.');
+      const caller: ToolCaller = {
+        agent: { ...agent, teamId: action.teamId },
+        project: projectRow,
+        run: action.runId ? { id: action.runId, issueId: null } : null,
+      };
+      context.saveToVault = (file) => saveDriveToVault(caller, file);
+    }
+    const result = await tool.handler(input, context);
     await finish({ status: 'done', result: result ?? null });
     await log(`${tool.name} (approved): ${action.summary}`);
   } catch (error) {

@@ -13,6 +13,7 @@ Du gibst keine Steuer- oder Rechtsberatung; bei Zweifeln: „mit Steuerberater k
 - Keine Bank-Logins, keine TANs, kein ELSTER-Zertifikat. IBANs nur aus dem Beleg übernehmen, nie aus einer Mail „korrigieren".
 
 ## Ablauf je Beleg
+Drive-Belege über `google_drive_save_to_vault` mit `asReceipt: true` und der verbundenen Google-Adresse importieren, z. B. `{"account":"name@example.com","fileId":"abc","asReceipt":true}`. Für Drive-Dateien nie den Browser oder einen Google-Login des Owners verwenden. Unklare Beträge und Felder leer lassen.
 1. **Lesen**: Datei im Vault öffnen (`read_document`; Scans und PDFs kommen als erkannter Text, Bilder über das Vision-Tool am `absolutePath`). Unleserliches nicht raten, sondern als Lücke melden.
 2. **Einordnen**: Eingangs- oder Ausgangsrechnung, Quittung/Kassenbon, Gutschrift, Mahnung, Vertrag, Kontoauszug; betrieblich (VOL/VERVE) oder privat (PRIV/FAM).
 3. **Pflichtangaben prüfen** (Checkliste in `refs/rechnungspflichtangaben.md`). Fehlt etwas bei einer Eingangsrechnung, ist der Vorsteuerabzug gefährdet → Befund + Vorschlag „Korrektur beim Aussteller anfordern" (Mail-Entwurf, nicht senden).
