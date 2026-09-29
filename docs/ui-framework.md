@@ -8,13 +8,13 @@ Stand 28.09.2026 (hub/ui-2). Verbindlich für jede Seite, jedes Feature und jede
 
 Es gibt einen einzigen Einstieg: `@/design-system` (`apps/web/src/design-system/index.ts`). Seiten, Features und Plugin-Slots importieren nur von dort.
 
-| Bereich | Bausteine |
-|---|---|
-| Tokens | `tokens.css`: Farben hell/dunkel, Abstände `--space-1…7`, Radien `--radius-sm/md/lg/xl/full`, Seitenmaße. Tailwind liest dieselben Werte (`globals.css` `@theme`). |
-| Layout | `Page` (Seitenschablone), `PageToolbar`, `PageTabs`/`Tabs`, `PageSearch`, `PageSelect`, `PageActions`, `SidePanel`, `Overlay`, `Modal`, `Dialog` |
-| Anordnung | `Stack`, `Inline`, `Grid`, `Box` (Abstände nur aus der Skala), `Text` (Schriftgrößen und Töne) |
+| Bereich   | Bausteine                                                                                                                                                                                                                                                                                                    |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Tokens    | `tokens.css`: Farben hell/dunkel, Abstände `--space-1…7`, Radien `--radius-sm/md/lg/xl/full`, Seitenmaße. Tailwind liest dieselben Werte (`globals.css` `@theme`).                                                                                                                                           |
+| Layout    | `Page` (Seitenschablone), `PageToolbar`, `PageTabs`/`Tabs`, `PageSearch`, `PageSelect`, `PageActions`, `SidePanel`, `Overlay`, `Modal`, `Dialog`                                                                                                                                                             |
+| Anordnung | `Stack`, `Inline`, `Grid`, `Box` (Abstände nur aus der Skala), `Text` (Schriftgrößen und Töne)                                                                                                                                                                                                               |
 | Bausteine | `Card`, `List`/`ListGroup`/`ListRow`, `Table`/`Th`/`Tr`/`Td`, `Pill`/`Badge`, `PillButton`, `Segmented`, `Button`/`ButtonLink`/`IconButton`, `TextField`/`TextArea`/`SearchField`/`Field`, `Switch`, `EmptyState`, `Menu…`, `ActionMenu`, `Tip`, `NameList`, `StatusDot`, `StatusPill`, `Orb`, `LocalChrome` |
-| Muster | `SettingsGroup`/`SettingsRow`, `FilterBar` (in `@/components/layout/FilterBar`, liest Projektdaten), `DetailView`/`DetailHeader`/`DetailGroup`/`PropertyGrid`, `Section`, `MonoLabel` |
+| Muster    | `SettingsGroup`/`SettingsRow`, `FilterBar` (in `@/components/layout/FilterBar`, liest Projektdaten), `DetailView`/`DetailHeader`/`DetailGroup`/`PropertyGrid`, `Section`, `MonoLabel`                                                                                                                        |
 
 Die **Galerie** zeigt jeden Baustein mit allen Varianten, hell und dunkel nebeneinander: Helena › Einstellungen › Entwicklung › UI-Bausteine (`/settings/ui`). Sie ist lebende Doku und Abnahmefläche für Screenshots.
 
@@ -50,13 +50,13 @@ Jede Route im App-Rahmen rendert genau eine `<Page>`. Der Test `src/app/pageTemp
 
 Fünf Stufen, sonst nichts:
 
-| Token / Klasse | Wert | Wofür |
-|---|---|---|
-| `--radius-sm` / `rounded-sm` | 6 px | Chips, Badges, kleine Marken |
-| `--radius-md` / `rounded-md` | 8 px | Buttons, Eingabefelder, Bedienelemente |
-| `--radius-lg` / `rounded-lg` | 12 px | Karten, Zeilen, Menüs |
-| `--radius-xl` / `rounded-xl` | 16 px | Panels, Dialoge, Overlays |
-| `--radius-full` / `rounded-full` | voll | Pillen, Avatare, Punkte |
+| Token / Klasse                   | Wert  | Wofür                                  |
+| -------------------------------- | ----- | -------------------------------------- |
+| `--radius-sm` / `rounded-sm`     | 6 px  | Chips, Badges, kleine Marken           |
+| `--radius-md` / `rounded-md`     | 8 px  | Buttons, Eingabefelder, Bedienelemente |
+| `--radius-lg` / `rounded-lg`     | 12 px | Karten, Zeilen, Menüs                  |
+| `--radius-xl` / `rounded-xl`     | 16 px | Panels, Dialoge, Overlays              |
+| `--radius-full` / `rounded-full` | voll  | Pillen, Avatare, Punkte                |
 
 eslint lehnt alle anderen `rounded-*`-Klassen ab (`rounded`, `rounded-xs`, `rounded-2xl`, `rounded-[…]`). Der Test `src/design-system/radius.test.ts` prüft `border-radius` in CSS und `borderRadius` in Style-Objekten.
 
@@ -88,17 +88,17 @@ Plugin-Slots (Dashboard-Widgets, Panel-Werkzeuge, Einstellungsseiten eines Proje
 
 Funktionen nach dem Vorbild von Hermes, OpenClaw und Paperclip bekommen keine eigene Oberfläche. Sie gehen in bestehende Seiten, gebaut mit diesem Framework, und zuerst gilt: Braucht sie überhaupt eine sichtbare Einstellung?
 
-| Funktion | Ort | Baustein |
-|---|---|---|
-| Budgets, Drossel, harter Stopp | Projekt › Einstellungen › Agenten › **Autopilot & Ausführung** (Überschreibung, markiert, „Auf Vorgabe zurücksetzen“); Vorgabe unter **Vorgaben für Projekte** (`DefaultBudgetsGroup`, gilt für neue Projekte); Anzeige: Dashboard-Kachel „Budgets“, Projektkarten, „Braucht dich“ (aufgebraucht = gestoppt, ab 80 % = gedrosselt) | `SettingsGroup` „Budgets“, `BudgetsTile`, `budgetNeedsYouSource` |
-| Dauerhafte Anweisungen | Projekt › **Autopilot & Ausführung** (Gruppe „Anweisungen“ mit den Projektanweisungen); für Helena unter **Vorgaben für Projekte**; Vorschläge der Agenten übernehmen/ablehnen | `StandingOrdersGroup` |
-| Eskalation | **Agenten und Modelle** (zentrale Regeln, als „Vorbereitet“ markiert, bis die zentrale Laufzeit sie befolgt); Agent-Dialog › Modell & Verhalten nur „Festlegung für diesen Agenten“ | `LocalAiEscalationSection`, `AgentEscalationPin` |
-| Telegram-Kanal | **Benachrichtigungen & Kanäle** › Telegram | vorhanden |
-| Heartbeat, Gedächtnis, Fakten, Skills pro Agent | Agent-Detail (Agent-Dialog); der Herzschlag zeigt Vorprüfung, Drossel und die letzten Prüfungen gebündelt, der Verlauf bündelt Herzschlag-Läufe | `DetailView`, `SettingsGroup`, `List` |
-| Skills, Selbstlernen | **Skills** (Katalog) | vorhanden |
-| Ziel-Leiter | Helena › Ziele (rechte Spalte, „Warum“), Projekt-Ziele (Zeile und „Warum“ im Ziel), Aufgabendetail („Warum“) | `DetailGroup`, `.ds-ladder`, `.ds-why` |
-| Aufgaben-Übernahme | Aufgabendetail „Bearbeitet von …“ (Lease des Laufs, `GET /issues/:id/claim`) | Eigenschaftszeile |
-| Sitzungssuche | globale Suche (⌘K) über Chats und Agentenläufe (Wissensindex des Workers) | Befehlspalette |
+| Funktion                                        | Ort                                                                                                                                                                                                                                                                                                                                | Baustein                                                         |
+| ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| Budgets, Drossel, harter Stopp                  | Projekt › Einstellungen › Agenten › **Autopilot & Ausführung** (Überschreibung, markiert, „Auf Vorgabe zurücksetzen“); Vorgabe unter **Vorgaben für Projekte** (`DefaultBudgetsGroup`, gilt für neue Projekte); Anzeige: Dashboard-Kachel „Budgets“, Projektkarten, „Braucht dich“ (aufgebraucht = gestoppt, ab 80 % = gedrosselt) | `SettingsGroup` „Budgets“, `BudgetsTile`, `budgetNeedsYouSource` |
+| Dauerhafte Anweisungen                          | Projekt › **Autopilot & Ausführung** (Gruppe „Anweisungen“ mit den Projektanweisungen); für Helena unter **Vorgaben für Projekte**; Vorschläge der Agenten übernehmen/ablehnen                                                                                                                                                     | `StandingOrdersGroup`                                            |
+| Eskalation                                      | **Agenten und Modelle** (zentrale Regeln, als „Vorbereitet“ markiert, bis die zentrale Laufzeit sie befolgt); Agent-Dialog › Modell & Verhalten nur „Festlegung für diesen Agenten“                                                                                                                                                | `LocalAiEscalationSection`, `AgentEscalationPin`                 |
+| Telegram-Kanal                                  | **Benachrichtigungen & Kanäle** › Telegram                                                                                                                                                                                                                                                                                         | vorhanden                                                        |
+| Heartbeat, Gedächtnis, Fakten, Skills pro Agent | Agent-Detail (Agent-Dialog); der Herzschlag zeigt Vorprüfung, Drossel und die letzten Prüfungen gebündelt, der Verlauf bündelt Herzschlag-Läufe                                                                                                                                                                                    | `DetailView`, `SettingsGroup`, `List`                            |
+| Skills, Selbstlernen                            | **Skills** (Katalog)                                                                                                                                                                                                                                                                                                               | vorhanden                                                        |
+| Ziel-Leiter                                     | Helena › Ziele (rechte Spalte, „Warum“), Projekt-Ziele (Zeile und „Warum“ im Ziel), Aufgabendetail („Warum“)                                                                                                                                                                                                                       | `DetailGroup`, `.ds-ladder`, `.ds-why`                           |
+| Aufgaben-Übernahme                              | Aufgabendetail „Bearbeitet von …“ (Lease des Laufs, `GET /issues/:id/claim`)                                                                                                                                                                                                                                                       | Eigenschaftszeile                                                |
+| Sitzungssuche                                   | globale Suche (⌘K) über Chats und Agentenläufe (Wissensindex des Workers)                                                                                                                                                                                                                                                          | Befehlspalette                                                   |
 
 ## 9. Abnahme
 
@@ -128,7 +128,7 @@ Der Einstieg `@/design-system` ist reine Darstellung: Er zieht keinen API-Client
 - **Ein Pfad:** Der Breadcrumb der Shell ist der ganze Pfad (Projekt · Wissen · Ordner … / Datei); die Seite wiederholt ihn nicht. Aktionen der Datei stehen rechts im Kopf (`Page actions`).
 - **Öffnen:** Ein Klick öffnet jede Datei rechts im einen Overlay (`KnowledgePreview`). Darunter stehen die Aktionen der Datei **mit Namen** (`FileActionBar`: Herunterladen, Link kopieren, An Chat anhängen, Umbenennen, Verschieben, In den Papierkorb; Seltenes unter „Weitere Aktionen“) – nie ein namenloses „…“. Dieselbe Liste zeichnet das Zeilenmenü (`useFileActionItems`), eine neue Aktion wird einmal ergänzt. „Als Seite öffnen“ (Pfeil im Kopf) oder Doppelklick öffnet groß in der Seite; **Vollbild** macht das Overlay groß und wieder klein (siehe §12).
 - **Ein Feld, kein Rahmen im Rahmen:** Die Datei sitzt auf einer Fläche (`--surface-2`, ohne eigenen Rand); der Innenabstand des Datei-Overlays ist `--space-3`. Alles, was Text ist (md, txt), öffnet im Markdown-Editor **formatiert** (`DocumentEditorField`: Werkzeugleiste oben, sichtbare Fläche, Cursor in Textfarbe), der Quelltext ist der Umschalter „Formatiert | Quelltext“ darüber. Was der Editor nicht exakt behalten kann, öffnet direkt als Quelltext (editierbar).
-- **Viewer** (`components/common/files/FileViewerContent`, immer auf einer Fläche): Text/Code mit Hervorhebung, Tabellen (CSV/TSV, später Excel-Blätter) als `SheetView` (Blatt-Umschalter, erste Zeile als Kopf, Kopf bleibt stehen, nur die ersten 500 Zeilen × 60 Spalten), PDF (Browser-Viewer), Bild mit Zoom, Audio/Video, Office-Dateien (`FileViewerOffice`: PDF bzw. Blätter des Umwandlers, bis dahin der extrahierte Text) und für alles andere `FileViewerFallback` (Symbol, Name, Art, Größe, Herunterladen).
+- **Viewer** (`components/common/files/FileViewerContent`, immer auf einer Fläche): Text/Code mit Hervorhebung, Tabellen (CSV/TSV, später Excel-Blätter) als `SheetView` (Blatt-Umschalter, erste Zeile als Kopf, Kopf bleibt stehen, nur die ersten 500 Zeilen × 60 Spalten), PDF (Browser-Viewer), Bild mit Zoom, Audio/Video, Office-Dateien (`FileViewerOffice`, Auftrag 127: der eigene Umwandler des Servers macht Dokumente und Folien zu Seiten (PDF), eine Tabelle zu Blättern mit „Tabelle | Seiten“; geht es nicht – zu groß, beschädigt, Zeitlimit, Dienst aus –, steht der Grund im Klartext, dazu der extrahierte Text bzw. der Download; die Adressen laufen über `/protected-media/knowledge/preview/file`) und für alles andere `FileViewerFallback` (Symbol, Name, Art, Größe, Herunterladen).
 - **Ordnerarten** (`utils/knowledgeFolders.ts`, `describeFolder`): **System** (Dokumente, Ablage, Anhänge, Leinwände, Eingang und die von Helena angelegten Agenten, Belege, Mail, Chats, Browser, Aufgaben – jeweils mit eigenem Symbol), **Aufgabe** (`Files/Tasks/<KEY-n>`, Symbol Häkchen in der Akzentfarbe) und **eigene** (Symbol Ordner, Name genau wie getippt). Was Helena aus einem Slug anlegt (Chat-Ordner „planung-relaunch“), zeigt einen lesbaren Namen mit großem Anfangsbuchstaben. Pfade auf der Platte ändern sich nie, nur die Anzeige. Baum (`TreeItem mark`), Ordnerseite, Liste („Ort“, `FolderMark`) und Overlay fragen dieselbe Stelle.
 - **Herkunft:** `OriginBadge` (System, Agent) neben dem Namen; manuelle Dateien tragen keine Marke. Filter „Alle · Manuell · Agent · System“ in der Werkzeugzeile, auf dem Handy als ein `PageSelect`. Helenas eigene Ordner haben ein eigenes Symbol (`folderIcon`), Ordner von Menschen das normale.
 - **Leerzustände:** `EmptyState` mit Titel, einem Satz und der Hauptaktion (Doc anlegen, Datei hochladen, Beleg hochladen); ein Ordner nur mit Unterordnern bietet sie als Knöpfe an. Nie Spaltenköpfe über einer leeren Liste.

@@ -36,7 +36,7 @@ export const previewFileUrl = (vaultPath: string) =>
 // Converts the file (the server keeps the result by the file's hash, so the frame that loads
 // it next is quick) and says why it failed: too large (413), damaged (422), busy or not
 // running (503), too slow (504).
-export async function convertPreviewPdf(vaultPath: string): Promise<void> {
+export async function convertPreviewPdf(vaultPath: string): Promise<true> {
   const response = await fetch(`${API_URL}/knowledge/preview/file?${query(vaultPath)}`, {
     credentials: 'include',
     cache: 'no-store',
@@ -54,4 +54,5 @@ export async function convertPreviewPdf(vaultPath: string): Promise<void> {
     throw new ApiError(response.status, message, code);
   }
   await response.arrayBuffer();
+  return true;
 }

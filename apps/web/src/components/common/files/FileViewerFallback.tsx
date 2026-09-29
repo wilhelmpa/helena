@@ -23,7 +23,9 @@ export default function FileViewerFallback({
   reason?: string;
 }) {
   const t = useTranslations('files.viewer');
-  const meta = [contentType, sizeBytes !== null ? formatSize(sizeBytes) : null]
+  // The kind by its extension (DOCX): the content type of an office file is a long string.
+  const extension = name.includes('.') ? name.split('.').at(-1)!.toUpperCase() : contentType;
+  const meta = [extension, sizeBytes !== null ? formatSize(sizeBytes) : null]
     .filter(Boolean)
     .join(' · ');
   return (
