@@ -9,6 +9,10 @@ import { Type as T, type Static, type TSchema } from '@sinclair/typebox';
 import type { OAuth2Client } from 'google-auth-library';
 import { buildMime } from '@repo/mail';
 import { randomUUID } from 'node:crypto';
+import { Readable } from 'node:stream';
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
 import type { ActionCategory, ConnectorTool } from '../sdk';
 import type { GoogleServiceId } from './services';
 
@@ -24,6 +28,15 @@ export interface GoogleToolContext {
   auth?: OAuth2Client;
   // The gog engine: runs one allowlisted gog command for the account.
   gog?: (command: string, args: string[], stdin?: string) => Promise<unknown>;
+  saveToVault?: (input: {
+    stream: Readable;
+    fileId: string;
+    name: string;
+    mimeType: string;
+    modifiedTime: string | null;
+    folder: string;
+    asReceipt: boolean;
+  }) => Promise<unknown>;
 }
 
 // Tests point the API clients at a local fake of Google.
@@ -61,7 +74,7 @@ interface GoogleToolSpec<S extends TSchema> {
   input: S;
   category: ActionCategory | ((input: Static<S>) => ActionCategory);
   summarize(input: Static<S>): string;
-  helena(input: Static<S>, auth: OAuth2Client): Promise<unknown>;
+  helena(input: Static<S>, auth: OAuth2Client, ctx: GoogleToolContext): Promise<unknown>;
   gog?: {
     command: string;
     args(input: Static<S>): string[];
@@ -93,7 +106,7 @@ function tool<S extends TSchema>(spec: GoogleToolSpec<S>): GoogleTool {
       const typed = input as Static<S>;
       if (ctx.engine === 'helena') {
         if (!ctx.auth) throw new Error('The account is not signed in to Helena.');
-        return bounded(await spec.helena(typed, ctx.auth));
+        return bounded(await spec.helena(typed, ctx.auth, ctx));
       }
       if (!spec.gog || !ctx.gog) {
         throw new Error(`${spec.name} is not available for an account kept in gog.`);
@@ -538,6 +551,44 @@ const EXPORTS: Record<string, string> = {
   'application/vnd.google-apps.spreadsheet': 'text/csv',
   'application/vnd.google-apps.presentation': 'text/plain',
 };
+const MAX_DRIVE_BYTES = 50 * 1024 * 1024;
+
+async function pdfText(bytes: Buffer): Promise<string> {
+  if (bytes.length > MAX_DRIVE_BYTES) throw new Error('Drive PDF exceeds the 50 MB limit.');
+  const directory = await mkdtemp(path.join(tmpdir(), 'volition-drive-pdf-'));
+  try {
+    const file = path.join(directory, 'file.pdf');
+    await writeFile(file, bytes);
+    const proc = Bun.spawn(['pdftotext', '-layout', file, '-'], {
+      stdout: 'pipe',
+      stderr: 'ignore',
+    });
+    const chunks: Buffer[] = [];
+    let size = 0;
+    const reader = proc.stdout.getReader();
+    const timeout = setTimeout(() => proc.kill(), 30_000);
+    try {
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const room = MAX_TEXT * 4 - size;
+        if (room <= 0) {
+          proc.kill();
+          break;
+        }
+        chunks.push(Buffer.from(value.subarray(0, room)));
+        size += Math.min(value.length, room);
+      }
+      const code = await proc.exited;
+      return code === 0 || size >= MAX_TEXT * 4 ? clip(Buffer.concat(chunks).toString('utf8')) : '';
+    } finally {
+      clearTimeout(timeout);
+      await reader.cancel().catch(() => undefined);
+    }
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+}
 
 const DRIVE_TOOLS = [
   tool({
@@ -567,7 +618,7 @@ const DRIVE_TOOLS = [
     service: 'drive',
     category: 'read',
     description:
-      'Read a Drive file: its details, and its text for Google Docs, Sheets (as CSV), Slides and plain text files.',
+      'Drive-Datei samt PDF-Text lesen. Für Drive-Dateien nie den Browser verwenden. Beispiel: {"account":"me@example.com","fileId":"abc"}.',
     input: T.Object({ fileId: T.String({ maxLength: 300 }) }),
     summarize: (input) => `Read Drive file ${input.fileId}`,
     async helena(input, auth) {
@@ -591,8 +642,79 @@ const DRIVE_TOOLS = [
           { responseType: 'text' },
         );
         text = String(content.data ?? '');
+      } else if (mime === 'application/pdf') {
+        if (Number(meta.data.size ?? 0) > MAX_DRIVE_BYTES)
+          throw new Error('Drive PDF exceeds the 50 MB limit.');
+        const content = await api.files.get(
+          { fileId: input.fileId, alt: 'media', supportsAllDrives: true },
+          { responseType: 'stream' },
+        );
+        const chunks: Buffer[] = [];
+        let size = 0;
+        const stream = content.data as Readable;
+        for await (const chunk of stream) {
+          const bytes = Buffer.from(chunk as Uint8Array);
+          size += bytes.length;
+          if (size > MAX_DRIVE_BYTES) {
+            stream.destroy();
+            throw new Error('Drive PDF exceeds the 50 MB limit.');
+          }
+          chunks.push(bytes);
+        }
+        text = await pdfText(Buffer.concat(chunks));
       }
       return { file: meta.data, text: clip(text) };
+    },
+  }),
+  tool({
+    name: 'google_drive_save_to_vault',
+    service: 'drive',
+    category: 'write',
+    description:
+      'Drive-Datei im Projekt-Vault speichern; asReceipt legt sie als Beleg ab. Für Drive-Dateien nie den Browser verwenden. Beispiel: {"account":"me@example.com","fileId":"abc","folder":"Files/Belege","asReceipt":true}.',
+    input: T.Object({
+      fileId: T.String({ maxLength: 300 }),
+      folder: T.Optional(T.String({ maxLength: 1024, default: 'Files' })),
+      name: T.Optional(T.String({ maxLength: 300 })),
+      asReceipt: T.Optional(T.Boolean()),
+    }),
+    summarize: (input) => `Save Drive file ${input.fileId} to vault`,
+    async helena(input, auth, ctx) {
+      if (!ctx.saveToVault) throw new Error('Vault access is unavailable.');
+      const api = driveApi(auth);
+      const meta = await api.files.get({
+        fileId: input.fileId,
+        fields: FILE_FIELDS,
+        supportsAllDrives: true,
+      });
+      const sourceMime = meta.data.mimeType ?? 'application/octet-stream';
+      if (
+        sourceMime === 'application/vnd.google-apps.folder' ||
+        sourceMime === 'application/vnd.google-apps.shortcut'
+      )
+        throw new Error('Drive folders and shortcuts are not files.');
+      const exported = sourceMime.startsWith('application/vnd.google-apps.');
+      const mimeType = exported ? 'application/pdf' : sourceMime;
+      const name =
+        input.name ??
+        (exported ? `${meta.data.name ?? input.fileId}.pdf` : (meta.data.name ?? input.fileId));
+      if (!exported && Number(meta.data.size ?? 0) > MAX_DRIVE_BYTES)
+        throw new Error('Drive file exceeds the 50 MB limit.');
+      const content = exported
+        ? await api.files.export({ fileId: input.fileId, mimeType }, { responseType: 'stream' })
+        : await api.files.get(
+            { fileId: input.fileId, alt: 'media', supportsAllDrives: true },
+            { responseType: 'stream' },
+          );
+      return ctx.saveToVault({
+        stream: content.data as Readable,
+        fileId: input.fileId,
+        name,
+        mimeType,
+        modifiedTime: meta.data.modifiedTime ?? null,
+        folder: input.folder ?? 'Files',
+        asReceipt: input.asReceipt ?? false,
+      });
     },
   }),
   tool({

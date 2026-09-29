@@ -26,6 +26,7 @@ export type EInvoiceSource = { kind: 'embedded'; name: string } | { kind: 'file'
 // The part of the facts the table has no column for; kept in helena_receipt.details.
 // A type, not an interface: it must fit the route schema's record of unknown values.
 export type ReceiptDetails = {
+  driveSource?: string;
   mailBody?: MailBodyProvenance;
   mailSource?: { messageId: number; threadId: number; kind: 'attachment' | 'body' };
   profile?: string | null;

@@ -141,6 +141,12 @@ export async function uploadReceipt(
   project: Project,
   file: File,
   userId: string,
+  options: {
+    source?: string;
+    fileDate?: string | null;
+    actorRef?: string;
+    runId?: number | null;
+  } = {},
 ): Promise<ReceiptDetailView> {
   assertReceiptFile(file.name);
   if (file.size > MAX_RECEIPT_BYTES) throw new HttpError(413, 'A receipt may have at most 25 MB.');
@@ -159,10 +165,11 @@ export async function uploadReceipt(
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
-  const month = (facts.invoiceDate ?? new Date().toISOString()).slice(0, 7);
+  const month = (facts.invoiceDate ?? options.fileDate ?? new Date().toISOString()).slice(0, 7);
   const root = projectRoot(project.key);
   const relative = await writeUniqueFile(root, `Files/Belege/${month}`, name, bytes, {
-    ref: `user:${userId}`,
+    ref: options.actorRef ?? `user:${userId}`,
+    runId: options.runId ?? null,
   });
   const enabled = await autoMergeEnabled(project.teamId);
   const id = await db.transaction(async (tx) => {
@@ -180,6 +187,7 @@ export async function uploadReceipt(
         sha256,
         createdByUserId: userId,
         ...extractedColumns(facts),
+        ...(options.source ? { details: { ...facts.details, driveSource: options.source } } : {}),
       })
       .onConflictDoNothing()
       .returning({ id: helenaReceipt.id });
