@@ -135,7 +135,7 @@ describe('buildOrganizationTree', () => {
       const coordinator = {
         ...agentBase,
         id: 4,
-        username: 'hermes-vol-coordinator',
+        username: 'vol-koordinator',
         role: 'coordinator',
         reportsToAgentId: 1,
       } as const;
@@ -181,7 +181,7 @@ describe('buildOrganizationTree', () => {
         {
           ...agentBase,
           id: 4,
-          username: 'hermes-vol-coordinator',
+          username: 'vol-koordinator',
           name: 'VOL Coordinator',
           role: 'coordinator',
           reportsToAgentId: 1,
@@ -228,7 +228,7 @@ describe('buildOrganizationTree', () => {
       const homeNode = tree[0].agents[0];
       assert.equal(homeNode?.agent.username, 'master');
       const coordinatorNode = homeNode?.reports[0];
-      assert.equal(coordinatorNode?.agent.username, 'hermes-vol-coordinator');
+      assert.equal(coordinatorNode?.agent.username, 'vol-koordinator');
       assert.equal(coordinatorNode?.reports[0]?.agent.username, 'coder-vol');
     });
 
@@ -270,7 +270,7 @@ describe('buildOrganizationTree', () => {
           .concat({
             ...agentBase,
             id: 3,
-            username: 'hermes-priv-coordinator',
+            username: 'priv-koordinator',
             name: 'PRIV Coordinator',
             role: 'coordinator',
             reportsToAgentId: 1,
@@ -284,12 +284,12 @@ describe('buildOrganizationTree', () => {
       // The VOL coordinator (its project is in "Volition") and its specialist sit in the
       // department under Home; the PRIV coordinator (no department) reports directly.
       assert.equal(home.departments?.[0].department?.name, 'Volition');
-      assert.equal(home.departments?.[0].agents[0].agent.username, 'hermes-vol-coordinator');
+      assert.equal(home.departments?.[0].agents[0].agent.username, 'vol-koordinator');
       assert.equal(home.departments?.[0].agents[0].reports[0].agent.username, 'coder-vol');
       assert.equal(countAgents(home.departments![0]), 2);
       assert.deepEqual(
         home.reports.map((report) => report.agent.username),
-        ['hermes-priv-coordinator'],
+        ['priv-koordinator'],
       );
       assert.equal(
         tree.find((node) => node.kind === 'department'),
@@ -304,7 +304,7 @@ describe('buildOrganizationTree', () => {
           agent.id === 4 ? { ...agent, departmentId: 99 } : agent,
         ),
       } as Organization);
-      assert.equal(tree[0].agents[0].reports[0]?.agent.username, 'hermes-vol-coordinator');
+      assert.equal(tree[0].agents[0].reports[0]?.agent.username, 'vol-koordinator');
     });
 
     test('the pool template lands in its own bucket, not in "no department" or "unassigned"', () => {

@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import {
+  createEvent,
   consoleLogger,
   normalizeUpdateCandidate,
   updatePriority,
@@ -22,8 +23,8 @@ import {
   writeBackup,
 } from '@repo/db';
 import { and, desc, eq, inArray, isNotNull, notInArray, sql } from 'drizzle-orm';
-import { HttpError, iso } from '#shared/lib';
-import { host } from '#shared/helena';
+import { HttpError, iso, pgErrorCode } from '#shared/lib';
+import { events, host } from '#shared/helena';
 import { systemHealth } from '#modules/god/system-health';
 import { readChatCatalog } from '#modules/agents/chat/service';
 import {
@@ -488,7 +489,7 @@ export async function applyUpdate(
   expectedVersion?: string,
 ): Promise<number> {
   const [row] = await db.select().from(helenaUpdate).where(eq(helenaUpdate.id, itemId));
-  if (!row) throw new HttpError(404, 'Update not found');
+  if (!row) throw new HttpError(404, 'Update nicht gefunden');
   if (automatic) {
     const settings = await getUpdateSettings();
     if (
@@ -504,7 +505,8 @@ export async function applyUpdate(
       throw new HttpError(409, 'The automatic update is no longer eligible');
   }
   const source = host.updateSources.get(row.source);
-  if (!source?.apply) throw new HttpError(409, 'This component cannot be updated from Helena');
+  if (!source?.apply)
+    throw new HttpError(409, 'Diese Komponente kann hier nicht aktualisiert werden');
   let rows = [row];
   if (scope !== 'item') {
     if (!row.groupKey) throw new HttpError(400, 'This component has no group');
@@ -521,13 +523,15 @@ export async function applyUpdate(
       );
   }
   rows = rows.filter((entry) => entry.updateAvailable && entry.applicable && entry.available);
-  if (rows.length === 0) throw new HttpError(409, 'There is nothing to update');
+  if (rows.length === 0) throw new HttpError(409, 'Kein anwendbares Update vorhanden');
+  if (!(await quietForUpdate()))
+    throw new HttpError(409, 'Ein Agentenlauf, Chat oder anderes Update läuft noch');
   const component = scope === 'item' ? row.component : `${row.groupKey}:${scope}`;
   const [running] = await db
     .select({ id: helenaUpdateAction.id })
     .from(helenaUpdateAction)
     .where(and(eq(helenaUpdateAction.source, row.source), eq(helenaUpdateAction.state, 'running')));
-  if (running) throw new HttpError(409, 'An update of this source is already running');
+  if (running) throw new HttpError(409, 'Ein Update dieser Quelle läuft bereits');
   let backupPath: string | null = null;
   if (source.backupFirst) {
     // An upgrade of the database server or a library it uses must have a way back.
@@ -540,21 +544,28 @@ export async function applyUpdate(
       );
     }
   }
-  const [action] = await db
-    .insert(helenaUpdateAction)
-    .values({
-      source: row.source,
-      component,
-      name: scope === 'item' ? row.name : `${row.groupKey} (${rows.length})`,
-      components: rows.map((entry) => entry.component),
-      fromVersion: scope === 'item' ? row.installed : null,
-      toVersion: scope === 'item' ? row.available : null,
-      state: 'running',
-      automatic,
-      backupPath,
-      requestedByUserId: userId,
-    })
-    .returning({ id: helenaUpdateAction.id });
+  let action: { id: number } | undefined;
+  try {
+    [action] = await db
+      .insert(helenaUpdateAction)
+      .values({
+        source: row.source,
+        component,
+        name: scope === 'item' ? row.name : `${row.groupKey} (${rows.length})`,
+        components: rows.map((entry) => entry.component),
+        fromVersion: scope === 'item' ? row.installed : null,
+        toVersion: scope === 'item' ? row.available : null,
+        state: 'running',
+        automatic,
+        backupPath,
+        requestedByUserId: userId,
+      })
+      .returning({ id: helenaUpdateAction.id });
+  } catch (error) {
+    if (pgErrorCode(error) === '23505')
+      throw new HttpError(409, 'Ein Update dieser Quelle läuft bereits');
+    throw error;
+  }
   const actionId = action!.id;
   try {
     const started = await source.apply(
@@ -576,7 +587,11 @@ export async function applyUpdate(
   } catch (error) {
     await finishAction(actionId, {
       state: 'failed',
-      error: (error instanceof Error ? error.message : String(error)).slice(0, 500),
+      error:
+        `Update fehlgeschlagen: ${error instanceof Error ? error.message : String(error)}`.slice(
+          0,
+          500,
+        ),
     });
   }
   return actionId;
@@ -683,7 +698,22 @@ async function finishAction(
     error?: string | null;
     result?: Record<string, unknown> | null;
   },
+  recheck = true,
 ): Promise<void> {
+  let recheckFailed: string[] = [];
+  const [running] = await db
+    .select({ source: helenaUpdateAction.source })
+    .from(helenaUpdateAction)
+    .where(and(eq(helenaUpdateAction.id, actionId), eq(helenaUpdateAction.state, 'running')));
+  if (!running) return;
+  if (recheck) {
+    try {
+      recheckFailed = (await runUpdateCheck({ only: running.source, manual: true })).failed;
+    } catch (error) {
+      log.warn(`recheck after update ${actionId}: ${String(error)}`);
+      recheckFailed = [running.source];
+    }
+  }
   const [action] = await db
     .update(helenaUpdateAction)
     .set({
@@ -698,10 +728,23 @@ async function finishAction(
     })
     .where(and(eq(helenaUpdateAction.id, actionId), eq(helenaUpdateAction.state, 'running')))
     .returning({ source: helenaUpdateAction.source });
-  // What is installed now: the source is asked again, past any cache (Hermes' last check).
-  // In the background: the Hermes check waits minutes for its runner, and this runs while
-  // the list is read.
-  if (action) void runUpdateCheck({ only: action.source, manual: true }).catch(() => {});
+  if (!action) return;
+  const publish = async (phase: 'finished' | 'checked', failed: string[] = []) => {
+    try {
+      await events.publish(
+        createEvent({
+          type: 'helena.updates.status',
+          subject: `actions/${actionId}`,
+          data: { actionId, source: action.source, phase, state: progress.state, failed },
+          actor: 'system',
+        }),
+      );
+    } catch (error) {
+      log.warn(`update status event ${actionId}: ${String(error)}`);
+    }
+  };
+  await publish('finished');
+  if (recheck) await publish('checked', recheckFailed);
 }
 
 // Follows every update that is running to its end. Called when the list is read and by the
@@ -717,12 +760,16 @@ export async function followActions(now = Date.now()): Promise<number> {
     // A helper that never took the request, or never finished it (its unit gives up after
     // two hours), would block every further update of the source.
     if ((!action.ref && age > UNSTARTED_AFTER_MS) || age > UNFINISHED_AFTER_MS) {
-      await finishAction(action.id, {
-        state: 'failed',
-        error: action.ref
-          ? 'The update did not finish in time; look at the helper (journalctl -u helena-update)'
-          : 'The update did not start',
-      });
+      await finishAction(
+        action.id,
+        {
+          state: 'failed',
+          error: action.ref
+            ? 'The update did not finish in time; look at the helper (journalctl -u helena-update)'
+            : 'The update did not start',
+        },
+        false,
+      );
       finished += 1;
       continue;
     }

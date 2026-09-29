@@ -77,6 +77,27 @@ describe('Cloudflare Access provider', () => {
     );
   });
 
+  it('lets a mapped service token act for its allowed identity, and no other token', async () => {
+    const clientId = 'c'.repeat(32);
+    const strict = {
+      ...config,
+      allowedEmails: ['owner@example.com'],
+      serviceTokens: [{ clientId, actsAs: 'owner@example.com', label: 'Headless' }],
+    };
+    const mapped = await sign({ email: undefined, common_name: `${clientId}.access` });
+    const identity = await cloudflareAccessProvider.verify(headers(mapped), strict);
+    expect(identity).toMatchObject({ email: 'owner@example.com', serviceToken: clientId });
+    const other = await sign({ email: undefined, common_name: `${'d'.repeat(32)}.access` });
+    expect(await refusal(cloudflareAccessProvider.verify(headers(other), strict))).toBe(
+      'identity_not_allowed',
+    );
+    // A person's login is never rewritten by a token mapping.
+    const person = await sign({ email: 'someone@example.com', common_name: clientId });
+    expect(await refusal(cloudflareAccessProvider.verify(headers(person), strict))).toBe(
+      'identity_not_allowed',
+    );
+  });
+
   it('accepts only a Cloudflare team domain and 64-hex audience tags', () => {
     expect(cloudflareAccessProvider.validate(config)).toBeNull();
     for (const teamDomain of ['evil.example.com', 'x.cloudflareaccess.com.evil.net', '']) {

@@ -199,7 +199,7 @@ describe('workflows of a project', () => {
     expect(listed).toHaveLength(1);
     expect(listed[0]).toMatchObject({ source: 'template', enabled: false });
     expect(listed[0]!.resolvedRoles).toMatchObject([
-      { key: 'lead', source: 'match', agent: { username: 'hermes-mkt-coordinator' } },
+      { key: 'lead', source: 'match', agent: { username: 'mkt-koordinator' } },
       { key: 'coder', source: null, agent: null },
     ]);
 

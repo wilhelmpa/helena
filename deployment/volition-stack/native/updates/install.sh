@@ -71,6 +71,8 @@ fi
 if [ "$mode" = refresh ]; then
   [ -x /usr/local/libexec/helena-update ] || { echo "not installed; run install.sh first" >&2; exit 1; }
   copy_programs
+  run install -m 0644 -o root -g root "$here/helena-update.service" /etc/systemd/system/helena-update.service
+  run systemctl daemon-reload
   echo "refreshed the helper and the runtime installer"
   exit 0
 fi

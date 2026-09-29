@@ -254,7 +254,7 @@ def _extract(entries, reader, destination, seen, links) -> None:
 
 
 def command(args: list[str], *, cwd: Path | None = None, user: str | None = None,
-            timeout: int = 60) -> str:
+            timeout: int = 60, limited: bool = False) -> str:
     # A version command may create configuration even inside a frozen installation.
     # Never use a passwd HOME, an owner's profile, shared /tmp or the release tree.
     with tempfile.TemporaryDirectory(prefix="helena-host-tool-", dir="/tmp") as temporary:
@@ -276,6 +276,10 @@ def command(args: list[str], *, cwd: Path | None = None, user: str | None = None
         if user and os.geteuid() == 0:
             args = ["/usr/sbin/runuser", "--preserve-environment", "-u", user, "--",
                     "setpriv", "--no-new-privs", "--", *args]
+        if limited and os.geteuid() == 0:
+            args = ["systemd-run", "--scope", "--wait", "--pipe", "--collect",
+                    "-p", "MemoryHigh=12G", "-p", "MemoryMax=16G", "-p", "CPUWeight=20",
+                    "--", *args]
         result = subprocess.run(args, cwd=cwd, env=env, text=True, stdout=subprocess.PIPE,
                                 stderr=subprocess.STDOUT, timeout=timeout)
         if result.returncode:
@@ -384,12 +388,13 @@ def prepare_wetty(tree: Path, version: str, asset: dict, log) -> None:
     flags = ["--ignore-scripts", "--omit=dev", "--no-audit", "--no-fund", "--loglevel=error"]
     log.note("Resolve Wetty's exact version and verify every dependency's registry integrity")
     command([str(node), str(npm), "install", "--package-lock-only", *flags], cwd=tree,
-            user="nobody", timeout=600)
+            user="nobody", timeout=600, limited=True)
     npm_lock(json.loads((tree / "package-lock.json").read_text()), version, asset["digest"])
-    command([str(node), str(npm), "ci", *flags], cwd=tree, user="nobody", timeout=600)
+    command([str(node), str(npm), "ci", *flags], cwd=tree, user="nobody", timeout=600,
+            limited=True)
     log.note("Compile only verified node-pty with installed tools and local Node headers; no lifecycle scripts")
     command([str(node), str(gyp), "rebuild", "--nodedir=" + str(node_root)],
-            cwd=tree / "node_modules/node-pty", user="nobody", timeout=600)
+            cwd=tree / "node_modules/node-pty", user="nobody", timeout=600, limited=True)
     own_tree(tree, "root")
     (tree / "bin").mkdir()
     (tree / "bin/wetty").symlink_to("../node_modules/wetty/build/main.js")

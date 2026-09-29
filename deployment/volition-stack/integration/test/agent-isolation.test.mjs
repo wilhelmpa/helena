@@ -93,7 +93,7 @@ function fakeLauncher(calls) {
 const coordinator = async (_config, project) => ({
   planAgentId: 21,
   planAgentUserId: "agent-user",
-  username: `hermes-${project.key.toLowerCase()}-coordinator`,
+  username: `${project.key.toLowerCase()}-koordinator`,
   descriptorChanged: false,
   organization: { projectInstructions: "" },
 });

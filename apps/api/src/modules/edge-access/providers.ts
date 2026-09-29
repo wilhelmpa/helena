@@ -19,6 +19,8 @@ export interface EdgeIdentity {
   email: string | null;
   subject: string;
   expiresAt: string | null;
+  // Set when a Cloudflare service token acted for `email` (EdgeServiceToken).
+  serviceToken?: string;
 }
 
 export class EdgeAccessError extends Error {
@@ -41,6 +43,31 @@ export interface EdgeAccessConfig {
   // Optional second gate at the origin: only these identities, whatever the Access policy
   // lets in. Empty = every identity the policy admits.
   allowedEmails: string[];
+  // Service tokens the owner lets act for an allowed identity (EdgeServiceToken).
+  serviceTokens?: EdgeServiceToken[];
+}
+
+// A Cloudflare service token acting for an allowed identity: automated checks (the headless
+// browser, the integrity checks) reach the instance through Access without a person's login.
+// Only the owner maps a token to an identity (Administrator → Sicherheit); an unmapped
+// service token carries no email and stays refused by the allow list.
+export interface EdgeServiceToken {
+  // The token's client id, stored without Cloudflare's ".access" suffix.
+  clientId: string;
+  actsAs: string;
+  label: string;
+}
+
+export function normalizeClientId(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/\.access$/, '');
+}
+
+// The short form shown in the UI and used to remove a token; the full client id stays here.
+export function serviceTokenHint(clientId: string): string {
+  return clientId.slice(0, 8);
 }
 
 export interface EdgeProvider {
@@ -116,7 +143,17 @@ export const cloudflareAccessProvider: EdgeProvider = {
     } catch {
       throw new EdgeAccessError('invalid_assertion', 'The Cloudflare Access assertion is invalid');
     }
-    const email = typeof payload.email === 'string' ? normalizeEmail(payload.email) : null;
+    let email = typeof payload.email === 'string' ? normalizeEmail(payload.email) : null;
+    // A service token's assertion names its client id in `common_name` and no person.
+    let serviceToken: string | undefined;
+    if (!email && typeof payload.common_name === 'string' && payload.common_name) {
+      const clientId = normalizeClientId(payload.common_name);
+      const mapped = (config.serviceTokens ?? []).find((entry) => entry.clientId === clientId);
+      if (mapped) {
+        email = normalizeEmail(mapped.actsAs);
+        serviceToken = clientId;
+      }
+    }
     const subject =
       typeof payload.sub === 'string' && payload.sub
         ? payload.sub
@@ -135,6 +172,7 @@ export const cloudflareAccessProvider: EdgeProvider = {
       subject,
       expiresAt:
         typeof payload.exp === 'number' ? new Date(payload.exp * 1000).toISOString() : null,
+      ...(serviceToken ? { serviceToken } : {}),
     };
   },
 };

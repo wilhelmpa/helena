@@ -10,6 +10,8 @@ run() { if [ "${DRY_RUN:-0}" = 1 ]; then echo "would: $*"; else "$@"; fi; }
 
 run install -m 0755 -o root -g root "$here/helena-hermes-update" /usr/local/libexec/helena-hermes-update
 if [ "${1:-}" = "--refresh" ]; then
+  run install -m 0644 -o root -g root "$here/helena-hermes-update.service" /etc/systemd/system/helena-hermes-update.service
+  run systemctl daemon-reload
   echo "refreshed Hermes helper (no fetch, install or service restart)"
   exit 0
 fi

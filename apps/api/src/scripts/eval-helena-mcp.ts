@@ -37,7 +37,7 @@ import {
   vaultEntry,
 } from '@repo/db';
 import { absoluteVaultPath, indexVaultPaths, writeVaultFile } from '@repo/vault';
-import { hermesProjectCoordinatorUsername } from '@repo/agent-naming';
+import { projectCoordinatorUsername } from '@repo/agent-naming';
 import { isLocalProvider } from '@helena/sdk';
 import { and, eq, inArray, sql } from 'drizzle-orm';
 import { createProject, deleteProject, getProvisioningJob } from '#modules/projects/service';
@@ -438,7 +438,7 @@ async function seedProject(
         eq(aiAgent.teamId, owner.teamId),
         eq(projectMember.projectId, projectRow.id),
         existingAgentId === null
-          ? eq(aiAgent.username, hermesProjectCoordinatorUsername(key))
+          ? eq(aiAgent.username, projectCoordinatorUsername(key))
           : eq(aiAgent.id, existingAgentId),
       ),
     )

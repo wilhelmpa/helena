@@ -61,6 +61,8 @@ export interface EdgeAccessSettings {
   signIn: boolean;
   // At home, the app on the public name switches to the home network's own origin.
   homeAutoConnect: boolean;
+  // Service tokens acting for an allowed identity (client id only as a short hint).
+  serviceTokens: { hint: string; actsAs: string; label: string }[];
   homeUrl: string | null;
   // Whether the API knows the tunnel entry's proof (cloudflare/install.sh entry-token).
   entryProof: boolean;
@@ -73,7 +75,7 @@ export type EdgeAccessPatch = Partial<
     EdgeAccessSettings,
     'provider' | 'teamDomain' | 'audiences' | 'allowedEmails' | 'signIn' | 'homeAutoConnect'
   >
->;
+> & { removeServiceTokens?: string[] };
 
 // A sign-in Helena opened without a password (or refused): the Cloudflare sign-in (`edge`)
 // or the LAN owner sign-in (`local_owner`).

@@ -105,7 +105,7 @@ describe('projects', () => {
       });
     });
 
-    it('creates one project-bound Hermes coordinator with the owner-scoped runner policy', async () => {
+    it('creates one project-bound coordinator with the owner-scoped runner policy', async () => {
       const { user, api } = await signUpClient();
       const created = await api.projects.post({
         key: 'MKT',
@@ -117,8 +117,8 @@ describe('projects', () => {
 
       expect(agents.data).toEqual([
         expect.objectContaining({
-          name: 'Hermes MKT Coordinator',
-          username: 'hermes-mkt-coordinator',
+          name: 'Coordinator MKT',
+          username: 'mkt-koordinator',
           kind: 'external',
           ownerUserId: user.userId,
           runnerScope: 'owner',
@@ -155,7 +155,7 @@ describe('projects', () => {
       expect(members.status).toBe(200);
       expect(members.data?.items).toHaveLength(1);
       expect(members.data?.items?.[0]).toMatchObject({
-        username: 'hermes-new-coordinator',
+        username: 'new-koordinator',
         role: 'member',
         isAgent: true,
       });
@@ -798,7 +798,7 @@ describe('projects', () => {
       expect(roles.data?.map((r) => r.name).sort()).toEqual(['Editor', 'Member']);
     });
 
-    // Each project keeps its own Hermes coordinator and an agent keeps to its one
+    // Each project keeps its own coordinator and an agent keeps to its one
     // project, so a same-team copy starts with a coordinator of its own and nothing else.
     it('creates a separate coordinator in a same-team copy and takes no agent along', async () => {
       const { api } = await signUpClient();
@@ -811,7 +811,7 @@ describe('projects', () => {
       const copied = await api.teams({ teamId })['ai-agents'].get({
         query: { projectId: await projectIdOf(api, 'DST') },
       });
-      expect(copied.data?.map((agent) => agent.username)).toEqual(['hermes-dst-coordinator']);
+      expect(copied.data?.map((agent) => agent.username)).toEqual(['dst-koordinator']);
       expect(copied.data?.[0]).toMatchObject({ runnerScope: 'owner' });
       const all = await api.teams({ teamId })['ai-agents'].get();
       expect(all.data).toHaveLength(3);
@@ -894,7 +894,7 @@ describe('projects', () => {
       expect((await api.projects.get()).data).toHaveLength(0);
     });
 
-    it('removes its Hermes coordinator so its key can be recreated', async () => {
+    it('removes its coordinator so its key can be recreated', async () => {
       const { api } = await signUpClient();
       const first = await api.projects.post({ key: 'MKT', name: 'Marketing' });
       expect(first.status).toBe(201);
@@ -905,7 +905,7 @@ describe('projects', () => {
         await db
           .select({ username: aiAgent.username })
           .from(aiAgent)
-          .where(eq(aiAgent.username, 'hermes-mkt-coordinator')),
+          .where(eq(aiAgent.username, 'mkt-koordinator')),
       ).toEqual([]);
 
       const recreated = await api.projects.post({
@@ -916,9 +916,7 @@ describe('projects', () => {
       const agents = await api
         .teams({ teamId: recreated.data!.teamId })
         ['ai-agents'].get({ query: { projectId: recreated.data!.id } });
-      expect(agents.data).toEqual([
-        expect.objectContaining({ username: 'hermes-mkt-coordinator' }),
-      ]);
+      expect(agents.data).toEqual([expect.objectContaining({ username: 'mkt-koordinator' })]);
     });
 
     it('returns 404 for an unknown project', async () => {

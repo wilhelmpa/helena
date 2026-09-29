@@ -113,6 +113,9 @@ export const helenaUpdateAction = pgTable(
     uniqueIndex('helena_update_action_running_uq')
       .on(t.source, t.component)
       .where(sql`${t.state} = 'running'`),
+    uniqueIndex('volition_update_action_running_source_uq')
+      .on(t.source)
+      .where(sql`${t.state} = 'running'`),
   ],
 );
 

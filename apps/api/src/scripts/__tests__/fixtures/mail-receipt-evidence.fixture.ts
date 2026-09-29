@@ -252,15 +252,8 @@ moduleMock('receipts/dedup', {
     return [];
   },
 });
-// "Belege als Notizen" is off for this intake; its own tests cover the projection.
-moduleMock('receipts/projection', {
-  rebuildReceiptProjection: async () => ({
-    enabled: false,
-    projected: 0,
-    changed: 0,
-    basePath: '',
-  }),
-});
+// The second-brain projection rebuild after an intake has its own integration test.
+moduleMock('receipts/projection', { rebuildReceiptProjection: async () => {} });
 moduleMock('receipts/source', {
   receiptSourceLinks: () => assert.fail('Source links must not be rendered during intake'),
 });

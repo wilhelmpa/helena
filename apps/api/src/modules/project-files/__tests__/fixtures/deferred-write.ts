@@ -11,6 +11,7 @@ globalThis.fetch = forbidden as unknown as typeof fetch;
 mock.module('@repo/db', () => ({ db: new Proxy({}, { get: forbidden }), vaultEntry: {} }));
 mock.module('@repo/vault', () => ({
   isSyncConflict: () => false,
+  splitNote: (content: string) => ({ frontmatterRaw: null, frontmatter: {}, body: content }),
   moveEntries: forbidden,
   resolveVaultPath: forbidden,
   splitNote: forbidden,

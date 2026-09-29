@@ -49,7 +49,7 @@ function envelope(overrides = {}) {
 function fakeCoordinator(calls) {
   return async (_config, project, options) => {
     calls.push({ project, options });
-    const id = "hermes-" + project.key.toLowerCase() + "-coordinator";
+    const id = project.key.toLowerCase() + "-koordinator";
     return {
       planAgentId: 21,
       planAgentUserId: "agent-user",
@@ -94,7 +94,7 @@ describe("createProvisioner", () => {
     assert.ok(await reloadId());
   });
 
-  it("provisions a Hermes coordinator and requests one drained catalog reload", async () => {
+  it("provisions a coordinator and requests one drained catalog reload", async () => {
     const coordinatorCalls = [];
     const commandCalls = [];
     const provisioner = createProvisioner(config(), {
@@ -116,14 +116,14 @@ describe("createProvisioner", () => {
     assert.deepEqual(commandCalls, []);
     assert.match(await reloadId(), /^[0-9a-f-]{36}$/);
     assert.deepEqual(first.resources.map((item) => item.kind), ["workspace", "registry", "coordinator", "files"]);
-    assert.equal(first.resources[2].id, "hermes-demo-coordinator");
+    assert.equal(first.resources[2].id, "demo-koordinator");
 
     const registry = JSON.parse(await fs.readFile(path.join(root, "state/projects/demo.json"), "utf8"));
-    assert.equal(registry.resources.coordinator.id, "hermes-demo-coordinator");
+    assert.equal(registry.resources.coordinator.id, "demo-koordinator");
     assert.equal(registry.resources.coordinator.hermesHome, path.join(root, "hermes/profiles/demo"));
     assert.equal("apiKey" in registry.resources.coordinator, false);
     const context = JSON.parse(await fs.readFile(path.join(root, "projects/demo/PROJECT.json"), "utf8"));
-    assert.equal(context.coordinatorId, "hermes-demo-coordinator");
+    assert.equal(context.coordinatorId, "demo-koordinator");
   });
 
   it("requests a runner reload only when a provisioning run changed the descriptor", async () => {

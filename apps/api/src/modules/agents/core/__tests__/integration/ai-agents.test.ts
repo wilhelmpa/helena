@@ -594,17 +594,14 @@ describe('ai agents', () => {
     const all = await agents(asOwner, teamId).get();
     expect(all.data?.map((a) => a.username).sort()).toEqual([
       'eng-bot',
-      'hermes-eng-coordinator',
-      'hermes-mkt-coordinator',
+      'eng-koordinator',
       'mkt-bot',
+      'mkt-koordinator',
     ]);
     const filtered = await agents(asOwner, teamId).get({
       query: { projectId: await projectIdOf(asOwner, 'ENG') },
     });
-    expect(filtered.data?.map((a) => a.username).sort()).toEqual([
-      'eng-bot',
-      'hermes-eng-coordinator',
-    ]);
+    expect(filtered.data?.map((a) => a.username).sort()).toEqual(['eng-bot', 'eng-koordinator']);
   });
 
   it('attaches an agent to a second project and detaches it again', async () => {
@@ -716,10 +713,10 @@ describe('ai agents', () => {
       // The owner sees both specialists and both automatic project coordinators.
       const all = await agents(asOwner, teamId).get();
       expect(all.data?.map((a) => a.username).sort()).toEqual([
-        'hermes-mkt-coordinator',
-        'hermes-ops-coordinator',
         'mkt-bot',
+        'mkt-koordinator',
         'ops-bot',
+        'ops-koordinator',
       ]);
     });
   });

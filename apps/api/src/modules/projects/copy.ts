@@ -31,7 +31,7 @@ import {
   mapProject,
   seedLocale,
   targetTeam,
-  createHermesProjectCoordinator,
+  createProjectCoordinator,
   newProjectAgentUserIds,
   type ProjectRow,
 } from './service';
@@ -302,7 +302,7 @@ export async function copyProject(
         })),
       );
     }
-    await createHermesProjectCoordinator(tx, {
+    await createProjectCoordinator(tx, {
       projectId: proj.id,
       teamId: ownerTeam.id,
       projectKey: proj.key,

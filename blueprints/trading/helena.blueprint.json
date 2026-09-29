@@ -65,13 +65,13 @@
   "agents": [
     {
       "template": "trading-researcher",
-      "assignment": "Markt-Research für TRADE: Nachrichtenlage und Termine der Watchlist, Unternehmenszahlen und Bewertung, Makro. Ablage in Docs/Research/ und Docs/Märkte/. Aufgaben kommen von @hermes-trade-coordinator; Chartfragen gehen an @chart-analyst-trade, Krypto an @crypto-analyst-trade, Strategie-Ideen als Idee an @strategy-developer-trade.",
+      "assignment": "Markt-Research für TRADE: Nachrichtenlage und Termine der Watchlist, Unternehmenszahlen und Bewertung, Makro. Ablage in Docs/Research/ und Docs/Märkte/. Aufgaben kommen von @trade-koordinator; Chartfragen gehen an @chart-analyst-trade, Krypto an @crypto-analyst-trade, Strategie-Ideen als Idee an @strategy-developer-trade.",
       "projectBrowser": true,
       "tools": [{ "connector": "alpaca_paper", "names": ["alpaca_news"] }]
     },
     {
       "template": "chart-analyst",
-      "assignment": "Chart-Analyse für TRADE: Trend, Levels, ATR und Regime für Watchlist und Setups der freigegebenen Strategien, Daten über alpaca_paper_bars. Ablage in Docs/Research/ und den Instrument-Notizen in Docs/Märkte/. Aufgaben von @hermes-trade-coordinator und @daytrading-prep-trade.",
+      "assignment": "Chart-Analyse für TRADE: Trend, Levels, ATR und Regime für Watchlist und Setups der freigegebenen Strategien, Daten über alpaca_paper_bars. Ablage in Docs/Research/ und den Instrument-Notizen in Docs/Märkte/. Aufgaben von @trade-koordinator und @daytrading-prep-trade.",
       "projectBrowser": true,
       "tools": [
         {
@@ -87,7 +87,7 @@
     },
     {
       "template": "crypto-analyst",
-      "assignment": "Krypto-Analyse für TRADE: Marktlage, Tokenomics, On-Chain, Börsen- und Verwahrrisiken; Krypto-Morgenbriefing. Ablage in Docs/Research/ und Docs/Märkte/. Aufgaben von @hermes-trade-coordinator; Strategie-Ideen an @strategy-developer-trade.",
+      "assignment": "Krypto-Analyse für TRADE: Marktlage, Tokenomics, On-Chain, Börsen- und Verwahrrisiken; Krypto-Morgenbriefing. Ablage in Docs/Research/ und Docs/Märkte/. Aufgaben von @trade-koordinator; Strategie-Ideen an @strategy-developer-trade.",
       "projectBrowser": true
     },
     {
@@ -118,7 +118,7 @@
     },
     {
       "template": "quant-backtester",
-      "assignment": "Backtests für TRADE: Gate B des Strategie-Labors, Skripte im Arbeitsbereich unter strategie-labor/backtests/<id>/v<version>/, Berichte in Docs/Backtests/, Dateien als Anhang der Aufgabe. Aufträge von @strategy-developer-trade und @hermes-trade-coordinator; fehlende Python-Pakete meldest du.",
+      "assignment": "Backtests für TRADE: Gate B des Strategie-Labors, Skripte im Arbeitsbereich unter strategie-labor/backtests/<id>/v<version>/, Berichte in Docs/Backtests/, Dateien als Anhang der Aufgabe. Aufträge von @strategy-developer-trade und @trade-koordinator; fehlende Python-Pakete meldest du.",
       "tools": [
         {
           "connector": "alpaca_paper",

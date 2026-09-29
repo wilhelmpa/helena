@@ -348,7 +348,7 @@ describe('agent MCP servers', () => {
   it('switches the project browser on for the coordinator of a new project', async () => {
     const { asOwner, teamId } = await setup();
     const agents = await asOwner.teams({ teamId })['ai-agents'].get();
-    const coordinator = agents.data!.find((a) => a.username === 'hermes-mkt-coordinator')!;
+    const coordinator = agents.data!.find((a) => a.username === 'mkt-koordinator')!;
     const read = await agentServers(asOwner, teamId, coordinator.id).get();
     expect(read.data?.map((s) => s.name)).toContain('projekt-browser');
   });

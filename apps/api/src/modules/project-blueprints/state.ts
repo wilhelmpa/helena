@@ -28,7 +28,7 @@ import { normalizeRuntimePolicy } from '#modules/agents/core/service';
 import { BROWSER_GATEWAY_MCP_SERVER_NAME } from '#modules/agents/mcp-servers/service';
 import { getAgentNetwork } from '#modules/agent-egress/service';
 import { listViewFolders } from '#modules/views/service';
-import { hermesProjectCoordinatorInstructions } from '#modules/projects/service';
+import { projectCoordinatorInstructions } from '#modules/projects/service';
 import { projectFilePath, templateFilePath, type BlueprintState, type StateAgent } from './plan';
 
 // What a project blueprint is planned against: the team's rows, read only.
@@ -281,9 +281,6 @@ export async function loadBlueprintState(
     credentials: credentials.map((row) => ({ ...row, label: row.label ?? row.kind })),
     agentTools,
     connectorTools,
-    defaultCoordinatorInstructions: hermesProjectCoordinatorInstructions(
-      key,
-      blueprint.project.name,
-    ),
+    defaultCoordinatorInstructions: projectCoordinatorInstructions(key, blueprint.project.name),
   };
 }

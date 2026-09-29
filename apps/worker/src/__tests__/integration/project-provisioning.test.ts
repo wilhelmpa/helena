@@ -68,7 +68,7 @@ describe('project provisioning', () => {
     const writer = await insertAgent(owner.id, 'writer', [created.id]);
     await insertAgent(owner.id, 'shared', [created.id, other.id]);
     await insertAgent(owner.id, 'master', [created.id]);
-    await insertAgent(owner.id, `hermes-agt${owner.id}-coordinator`, [created.id]);
+    await insertAgent(owner.id, `agt${owner.id}-koordinator`, [created.id]);
     await insertAgent(owner.id, 'elsewhere', [other.id]);
     // Runs on Claude Code, in a runtime of its own like a Hermes agent.
     const claude = await insertAgent(owner.id, 'claude-coder', [created.id]);

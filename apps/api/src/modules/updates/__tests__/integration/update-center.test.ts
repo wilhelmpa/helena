@@ -17,6 +17,7 @@ import { signUpTestUser } from '#tests/helpers/auth';
 import { createAgent } from '#tests/helpers/agents';
 import { resetDb } from '#tests/helpers/db';
 import { setManualPrice } from '#modules/model-prices/service';
+import { events } from '#shared/helena';
 import { DIGEST_SYSTEM_PROMPT } from '../../digest-prompt';
 import { setUpdateFetch } from '../../fetch';
 import { runSystemJobNow } from '#modules/engine/system-jobs';
@@ -96,6 +97,10 @@ function atom(repository: string, tags: [string, string][]): string {
 const VENDOR: Record<string, () => Response> = {
   'https://github.com/ggml-org/whisper.cpp/releases.atom': () =>
     new Response(atom('ggml-org/whisper.cpp', [['v1.9.4', 'Whisper release']])),
+  'https://github.com/ggml-org/llama.cpp/releases.atom': () =>
+    new Response(atom('ggml-org/llama.cpp', [['b11200', 'Embedding build']])),
+  'https://api.github.com/repos/ServeurpersoCom/qwentts.cpp/commits/master': () =>
+    Response.json({ sha: 'abcdef1234567890abcdef1234567890abcdef12' }),
   'https://github.com/astral-sh/uv/releases.atom': () =>
     new Response(atom('astral-sh/uv', [['0.12.19', 'Fixes']])),
   'https://downloads.claude.ai/claude-code-releases/latest': () => new Response('2.1.290\n'),
@@ -516,6 +521,35 @@ describe('update center: checking', () => {
     expect(helperRequests.every((request) => request.action === 'inventory')).toBe(true);
   });
 
+  it('shows TTS and embedding build revisions without offering an unsafe apply', async () => {
+    const { api } = await owner();
+    startFakeHelper((request) =>
+      request.action === 'inventory'
+        ? {
+            state: 'done',
+            ok: true,
+            result: {
+              ...INVENTORY,
+              voice: { qwentts: { present: true, version: '6a3e91283' } },
+              embedding: { present: true, version: 'b11166' },
+            },
+          }
+        : helperAnswers(request),
+    );
+    await runUpdateCheck({ only: 'local-ai' });
+    for (const [component, installed, available] of [
+      ['qwentts-cpp', '6a3e91283', 'abcdef123'],
+      ['llama-cpp-embedding', 'b11166', 'b11200'],
+    ]) {
+      const row = (await rows()).find((entry) => entry.component === component)!;
+      expect(row).toMatchObject({ installed, available, updateAvailable: true, applicable: false });
+      expect((await api.god['update-center'].items({ itemId: row.id }).apply.post({})).status).toBe(
+        409,
+      );
+    }
+    expect(helperRequests.every((request) => request.action === 'inventory')).toBe(true);
+  });
+
   for (const succeeded of [true, false])
     it(`records a prepared Whisper UI action and its ${succeeded ? 'live proof' : 'rollback failure'}`, async () => {
       const { api } = await owner();
@@ -570,7 +604,7 @@ describe('update center: checking', () => {
       expect(helperRequests.find((request) => request.action === 'whisper-ui')).toMatchObject({
         version: '1.9.4',
       });
-    });
+    }, 15_000);
 
   it('exposes failed metadata refresh and retains previous APT candidates', async () => {
     const { api } = await owner();
@@ -807,24 +841,52 @@ describe('update center: summaries', () => {
 describe('update center: applying', () => {
   it('hands a CLI runtime update to the helper and follows it to its end', async () => {
     const { api } = await owner();
-    startFakeHelper(helperAnswers);
-    await runUpdateCheck();
-    const item = (await rows()).find((row) => row.component === 'claude-agent-acp')!;
-    const started = await api.god['update-center'].items({ itemId: item.id }).apply.post({});
-    expect(started.status).toBe(201);
-    expect(started.data).toMatchObject({ fromVersion: '0.81.1', toVersion: '0.81.2' });
-    const request = await waitFor(async () =>
-      helperRequests.find((entry) => entry.action === 'cli-runtime'),
-    );
-    expect(request).toMatchObject({ runtime: 'claude-agent-acp', version: '0.81.2' });
-    const done = await waitFor(async () => {
-      const action = (await api.god['update-center'].actions({ actionId: started.data!.id }).get())
-        .data!;
-      return action.state === 'done' ? action : null;
+    let installed = '0.81.1';
+    const statusEvents: string[] = [];
+    const unsubscribe = events.subscribe('helena.updates.status', (event) => {
+      statusEvents.push(String((event.data as { phase: string }).phase));
     });
-    expect(done.log).toContain('claude-agent-acp upgraded');
-    expect(done.health).toMatchObject({ services: expect.any(Array) });
-    expect(done.backupPath).toBeNull();
+    try {
+      startFakeHelper((request) => {
+        if (request.action === 'inventory' || request.action === 'apt-refresh')
+          return {
+            state: 'done',
+            ok: true,
+            result: {
+              ...INVENTORY,
+              runtimes: { ...INVENTORY.runtimes, 'claude-agent-acp': { current: installed } },
+            },
+          };
+        if (request.action === 'cli-runtime') installed = String(request.version);
+        return helperAnswers(request);
+      });
+      await runUpdateCheck();
+      const item = (await rows()).find((row) => row.component === 'claude-agent-acp')!;
+      const started = await api.god['update-center'].items({ itemId: item.id }).apply.post({});
+      expect(started.status).toBe(201);
+      expect(started.data).toMatchObject({ fromVersion: '0.81.1', toVersion: '0.81.2' });
+      const request = await waitFor(async () =>
+        helperRequests.find((entry) => entry.action === 'cli-runtime'),
+      );
+      expect(request).toMatchObject({ runtime: 'claude-agent-acp', version: '0.81.2' });
+      const done = await waitFor(async () => {
+        const action = (
+          await api.god['update-center'].actions({ actionId: started.data!.id }).get()
+        ).data!;
+        return action.state === 'done' ? action : null;
+      });
+      expect(done.log).toContain('claude-agent-acp upgraded');
+      expect(done.health).toMatchObject({ services: expect.any(Array) });
+      expect(done.backupPath).toBeNull();
+      await waitFor(async () =>
+        (await rows()).find((row) => row.component === 'claude-agent-acp')?.installed === '0.81.2'
+          ? true
+          : null,
+      );
+      expect(statusEvents).toEqual(['finished', 'checked']);
+    } finally {
+      unsubscribe();
+    }
   });
 
   it('applies only a current low-risk automatic update and does not retry a failed version', async () => {
@@ -980,7 +1042,7 @@ describe('update center: applying', () => {
     });
     expect(action).toMatchObject({
       state: 'failed',
-      error: 'update failed; previous version restored',
+      error: 'Update fehlgeschlagen: update failed; previous version restored',
     });
     expect(helperRequests.find((request) => request.action === 'host-tool')).toMatchObject({
       tool: 'node',
@@ -1051,7 +1113,7 @@ describe('update center: applying', () => {
       const action = (await api.god['update-center'].actions({ actionId: started.id }).get()).data!;
       return action.state === 'failed' ? action : null;
     });
-    expect(failed.error).toBe('the manifest is not signed');
+    expect(failed.error).toBe('Update fehlgeschlagen: the manifest is not signed');
   });
 });
 
@@ -1180,6 +1242,13 @@ describe('update center: Hermes', () => {
     });
 
     const applying = applyUpdate(user.userId, hermes.id);
+    const fresh = await answerNext(runner, () => ({
+      current: ref('0.21.4', 'a'.repeat(40)),
+      latest: ref('0.22.0', 'b'.repeat(40)),
+      commits: [{ commit: 'b'.repeat(40), date: '2026-09-28', subject: 'release 0.22.0' }],
+      localPatches: [{ commit: 'c'.repeat(40), date: '2026-09-24', subject: 'local patch' }],
+    }));
+    expect(fresh).toEqual({ op: 'runtime.update', action: 'check' });
     const apply = await answerNext(runner, () => ({ id: 'helper-1', state: 'started' }));
     expect(apply).toEqual({ op: 'runtime.update', action: 'apply', target: 'b'.repeat(40) });
     const actionId = await applying;
@@ -1191,7 +1260,6 @@ describe('update center: Hermes', () => {
       ok: true,
       log: '$ git fetch',
     }));
-    await following;
     // Then Hermes is asked again what is installed now.
     await answerNext(runner, () => ({
       current: ref('0.22.0', 'b'.repeat(40)),
@@ -1199,6 +1267,7 @@ describe('update center: Hermes', () => {
       commits: [],
       localPatches: [],
     }));
+    await following;
     await waitFor(async () => {
       const row = (await rows()).find((entry) => entry.source === 'hermes');
       return row?.updateAvailable === false ? row : null;

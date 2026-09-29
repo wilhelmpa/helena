@@ -204,7 +204,7 @@ export class DemoSeed {
     home: Agent | undefined,
   ): Promise<OrgAgent | null> {
     const org = await this.api<{ agents: OrgAgent[] }>('GET', `/teams/${teamId}/organization`);
-    const username = `hermes-${project.key.toLowerCase()}-coordinator`;
+    const username = `${project.key.toLowerCase()}-koordinator`;
     const coordinator = org.agents.find((a) => a.username.toLowerCase() === username);
     if (!coordinator) {
       this.warn(`project ${project.key} has no coordinator @${username}`);
@@ -313,7 +313,7 @@ export class DemoSeed {
     const key = DEMO_ROUTINE.projectKey;
     const org = await this.api<{ agents: OrgAgent[] }>('GET', `/teams/${teamId}/organization`);
     const coordinator = org.agents.find(
-      (a) => a.username.toLowerCase() === `hermes-${key.toLowerCase()}-coordinator`,
+      (a) => a.username.toLowerCase() === `${key.toLowerCase()}-koordinator`,
     );
     if (!coordinator) {
       this.warn(`no coordinator in ${key}; the routine is left out`);

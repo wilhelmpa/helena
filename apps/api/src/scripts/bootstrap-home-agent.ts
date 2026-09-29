@@ -19,9 +19,9 @@ import {
   type AgentRuntimeKind,
 } from '#modules/agents/core/service';
 import {
-  createHermesProjectCoordinator,
-  hermesProjectCoordinatorUsername,
-  isHermesProjectCoordinatorUsername,
+  createProjectCoordinator,
+  projectCoordinatorUsername,
+  isProjectCoordinatorUsername,
 } from '#modules/projects/service';
 import { getDefaultRoleId } from '#modules/roles/service';
 import { projectLocale } from '#modules/user-preferences/service';
@@ -97,7 +97,7 @@ export async function bootstrapProjectCoordinator(
     .limit(1);
   if (!target) return null;
 
-  const username = hermesProjectCoordinatorUsername(target.key);
+  const username = projectCoordinatorUsername(target.key);
   let [agent] = await db
     .select({ id: aiAgent.id, userId: aiAgent.userId, username: aiAgent.username })
     .from(aiAgent)
@@ -109,7 +109,7 @@ export async function bootstrapProjectCoordinator(
       projectLocale(target.id),
     ]);
     await db.transaction((tx) =>
-      createHermesProjectCoordinator(tx, {
+      createProjectCoordinator(tx, {
         projectId: target.id,
         teamId: target.teamId,
         projectKey: target.key,
@@ -201,7 +201,7 @@ export async function bootstrapProjectAgent(
     !agent ||
     isHomeAgent(agent.agentRole) ||
     agent.projectScope === 'all' ||
-    isHermesProjectCoordinatorUsername(agent.username) ||
+    isProjectCoordinatorUsername(agent.username) ||
     agent.projects !== 1
   ) {
     return null;

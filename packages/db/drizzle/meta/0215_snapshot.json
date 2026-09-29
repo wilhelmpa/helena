@@ -1,6 +1,6 @@
 {
-  "id": "4866dffd-3d33-4fe8-b07e-0612673c223e",
-  "prevId": "c289a310-6608-4b1e-81a7-b2b973a5b397",
+  "id": "dee3c526-a15e-4aec-8a93-68d722e00fe3",
+  "prevId": "4866dffd-3d33-4fe8-b07e-0612673c223e",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -23631,6 +23631,18 @@
         },
         "chat_thread_id": {
           "name": "chat_thread_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "final_frame_path": {
+          "name": "final_frame_path",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "final_frame_sha256": {
+          "name": "final_frame_sha256",
           "type": "text",
           "primaryKey": false,
           "notNull": false

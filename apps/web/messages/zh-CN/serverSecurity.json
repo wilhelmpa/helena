@@ -228,7 +228,11 @@
     "homeTitle": "在家时自动直连",
     "homeDescription": "在公共地址上，Helena 会检查 {home} 是否能从此设备访问，若能则切换过去：直接通过家庭网络，不绕道 Cloudflare。在那里家庭网络登录会让你登录。Chrome 会询问一次本地网络访问权限。",
     "homeDescriptionGeneric": "在公共地址上，Helena 会检查家庭网络地址是否能从此设备访问，若能则切换过去：直接通过家庭网络，不绕道 Cloudflare。",
-    "homeNotSetUp": "尚未设置家庭网络地址（HELENA_HOME_URL，cloudflare/switch_origin.py --home-host）。"
+    "homeNotSetUp": "尚未设置家庭网络地址（HELENA_HOME_URL，cloudflare/switch_origin.py --home-host）。",
+    "serviceTokenTitle": "服务访问：{label}",
+    "serviceTokenDescription": "Cloudflare 服务令牌 {hint}… 以 {actsAs} 的身份用于自动检查。要结束，请在此处移除并在 Cloudflare 中删除该令牌。",
+    "serviceTokenRemove": "移除",
+    "serviceTokenRemoved": "服务访问已移除"
   },
   "signIns": {
     "title": "无密码登录",

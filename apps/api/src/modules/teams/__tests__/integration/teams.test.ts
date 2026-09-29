@@ -161,7 +161,7 @@ describe('teams', () => {
         agentId: null,
       });
       expect(
-        members.data?.items.find((member) => member.username === 'hermes-mkt-coordinator'),
+        members.data?.items.find((member) => member.username === 'mkt-koordinator'),
       ).toMatchObject({ role: 'agent' });
 
       const projects = await api.teams({ teamId }).projects.get();

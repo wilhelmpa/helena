@@ -187,7 +187,7 @@ describe('the trading blueprint, applied', () => {
     ]);
 
     // The coordinator got the blueprint's instructions, the copies their assignments.
-    const coordinator = await agentRow(teamId, 'hermes-trade-coordinator');
+    const coordinator = await agentRow(teamId, 'trade-koordinator');
     expect(coordinator.instructions).toBe(blueprint.coordinator!.instructions!);
     const trader = await agentRow(teamId, 'paper-trader-trade');
     expect(trader.template).toBe(false);

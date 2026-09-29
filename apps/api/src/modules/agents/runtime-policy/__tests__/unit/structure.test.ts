@@ -4,10 +4,10 @@ import { coordinatorSection, homeAgentSection, memberSection } from '../../struc
 describe('homeAgentSection', () => {
   it('names the coordinator of each project', () => {
     const text = homeAgentSection([
-      { key: 'MKT', name: 'Marketing', coordinators: ['hermes-mkt-coordinator'] },
+      { key: 'MKT', name: 'Marketing', coordinators: ['mkt-koordinator'] },
       { key: 'OPS', name: 'Ops', coordinators: [] },
     ]);
-    expect(text).toContain('- MKT — "Marketing": @hermes-mkt-coordinator');
+    expect(text).toContain('- MKT — "Marketing": @mkt-koordinator');
     expect(text).toContain('- OPS — "Ops": no coordinator');
   });
 
@@ -55,8 +55,8 @@ describe('memberSection', () => {
   const base = {
     role: 'specialist' as const,
     projectKeys: ['VOL'],
-    manager: 'hermes-vol-coordinator',
-    coordinators: ['hermes-vol-coordinator'],
+    manager: 'vol-koordinator',
+    coordinators: ['vol-koordinator'],
     peers: [{ username: 'content-vol', capabilities: ['content', 'seo'] }],
   };
 
@@ -64,7 +64,7 @@ describe('memberSection', () => {
     const text = memberSection(base);
     expect(text).toStartWith('## Agent team');
     expect(text).toContain(
-      'You are a specialist in the agent team of VOL and report to @hermes-vol-coordinator.',
+      'You are a specialist in the agent team of VOL and report to @vol-koordinator.',
     );
     expect(text).toContain('@content-vol (content, seo)');
     expect(text).toContain('answer with exactly the JSON the stage asks for');

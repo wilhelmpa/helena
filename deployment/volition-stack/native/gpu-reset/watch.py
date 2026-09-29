@@ -78,24 +78,7 @@ def save(event: dict) -> None:
     os.replace(temp, STATE)
 
 
-def handle(message: str, cursor: str, boot_id: str, event_time: datetime | None = None) -> bool:
-    match = RESET.search(message)
-    if not match:
-        return False
-    event_time = event_time or datetime.now(timezone.utc)
-    try:
-        old = json.loads(STATE.read_text())
-    except (FileNotFoundError, ValueError):
-        old = {}
-    if cursor == old.get("cursor") and boot_id == old.get("bootId"):
-        return False
-    previous = datetime.fromisoformat(old["eventAt"]) if old.get("bootId") == boot_id and old.get("eventAt") else None
-    if previous and 0 <= (event_time - previous).total_seconds() < 60:
-        old["cursor"] = cursor
-        old["suppressedResets"] = old.get("suppressedResets", 0) + 1
-        save(old)
-        return False
-
+def restart_group() -> tuple[list[str], list[str]]:
     active = [unit for unit in UNITS if gpu_unit(unit) and systemctl("is-active", "--quiet", unit).returncode == 0]
     failures = []
     restarted = []
@@ -124,6 +107,27 @@ def handle(message: str, cursor: str, boot_id: str, event_time: datetime | None 
                 if socket not in restarted and systemctl("start", socket).returncode:
                     failures.append(socket)
 
+    return restarted, failures
+
+
+def handle(message: str, cursor: str, boot_id: str, event_time: datetime | None = None) -> bool:
+    match = RESET.search(message)
+    if not match:
+        return False
+    event_time = event_time or datetime.now(timezone.utc)
+    try:
+        old = json.loads(STATE.read_text())
+    except (FileNotFoundError, ValueError):
+        old = {}
+    if cursor == old.get("cursor") and boot_id == old.get("bootId"):
+        return False
+    previous = datetime.fromisoformat(old["eventAt"]) if old.get("bootId") == boot_id and old.get("eventAt") else None
+    if previous and 0 <= (event_time - previous).total_seconds() < 60:
+        old["cursor"] = cursor
+        old["suppressedResets"] = old.get("suppressedResets", 0) + 1
+        save(old)
+        return False
+    restarted, failures = restart_group()
     event = {"at": datetime.now(timezone.utc).isoformat(), "eventAt": event_time.isoformat(),
              "bootId": boot_id, "resetNumber": int(match.group(1)), "cursor": cursor,
              "restartedUnits": restarted, "failedUnits": failures, "suppressedResets": 0}
@@ -133,6 +137,12 @@ def handle(message: str, cursor: str, boot_id: str, event_time: datetime | None 
 
 
 def main() -> int:
+    if sys.argv[1:] == ["restart-group"]:
+        restarted, failures = restart_group()
+        print(f"GPU-Gruppe: gestartet {restarted}, Fehler {failures}", flush=True)
+        return 1 if failures else 0
+    if len(sys.argv) != 1:
+        return 2
     boot_id = Path("/proc/sys/kernel/random/boot_id").read_text().strip()
     try:
         previous = json.loads(STATE.read_text())

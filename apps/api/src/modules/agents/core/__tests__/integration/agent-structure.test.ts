@@ -55,13 +55,13 @@ describe('Home agent', () => {
     const homeUser = (await teamAgent(asOwner, teamId, 'master')).userId;
 
     const projectAgents = await agents(asOwner, teamId).get({ query: { projectId: project.id } });
-    expect(projectAgents.data!.map((a) => a.username)).toEqual(['hermes-mkt-coordinator']);
+    expect(projectAgents.data!.map((a) => a.username)).toEqual(['mkt-koordinator']);
     const teamAgents = await agents(asOwner, teamId).get();
     expect(teamAgents.data!.map((a) => a.username)).toContain('master');
 
     const detail = await asOwner.projects({ projectKey: 'MKT' }).get();
     expect(detail.data!.assignees.map((a) => a.userId)).not.toContain(homeUser);
-    expect(detail.data!.assignees.map((a) => a.username)).toContain('hermes-mkt-coordinator');
+    expect(detail.data!.assignees.map((a) => a.username)).toContain('mkt-koordinator');
 
     const members = await asOwner.projects({ projectKey: 'MKT' }).members.get();
     expect(members.data!.items.map((m) => m.userId)).not.toContain(homeUser);
@@ -75,12 +75,12 @@ describe('Home agent', () => {
     const workload = await asOwner
       .projects({ projectKey: 'MKT' })
       .analytics['agent-workload'].get();
-    expect(workload.data!.map((a) => a.agentName)).toEqual(['Hermes MKT Coordinator']);
+    expect(workload.data!.map((a) => a.agentName)).toEqual(['Coordinator MKT']);
 
     const scoped = await asOwner
       .teams({ teamId })
       .organization.get({ query: { projectId: project.id } });
-    expect(scoped.data!.agents.map((a) => a.username)).toEqual(['hermes-mkt-coordinator']);
+    expect(scoped.data!.agents.map((a) => a.username)).toEqual(['mkt-koordinator']);
     const whole = await asOwner.teams({ teamId }).organization.get();
     expect(whole.data!.agents.map((a) => a.username)).toContain('master');
   });
@@ -158,7 +158,7 @@ describe('project coordinators', () => {
     const { asOwner, teamId, home } = await setup();
     await asOwner.projects.post({ key: 'OPS', name: 'Ops' });
 
-    for (const username of ['hermes-mkt-coordinator', 'hermes-ops-coordinator']) {
+    for (const username of ['mkt-koordinator', 'ops-koordinator']) {
       expect(await organizationAgent(asOwner, teamId, username)).toMatchObject({
         role: 'coordinator',
         reportsToAgentId: home.id,
@@ -180,7 +180,7 @@ describe('agents created in a project', () => {
     });
     expect(created.status).toBe(201);
     expect(created.data!.agent.projects.map((p) => p.key)).toEqual(['MKT']);
-    const coordinator = await organizationAgent(asOwner, teamId, 'hermes-mkt-coordinator');
+    const coordinator = await organizationAgent(asOwner, teamId, 'mkt-koordinator');
     expect(await organizationAgent(asOwner, teamId, 'writer')).toMatchObject({
       role: 'specialist',
       reportsToAgentId: coordinator.id,
@@ -347,7 +347,7 @@ describe('templates', () => {
       skillCount: 1,
     });
     expect(copied.data!.agent.projects.map((p) => p.key)).toEqual(['MKT']);
-    const coordinator = await organizationAgent(asOwner, teamId, 'hermes-mkt-coordinator');
+    const coordinator = await organizationAgent(asOwner, teamId, 'mkt-koordinator');
     expect(await organizationAgent(asOwner, teamId, 'designer-mkt')).toMatchObject({
       role: 'specialist',
       reportsToAgentId: coordinator.id,
@@ -458,7 +458,7 @@ describe('SOUL.md of the structure', () => {
     const policy = await home.api['agent-runtime'].policy.get();
     const soul = policy.data!.runtimePolicy.files[0].content;
     expect(soul).toContain('## Home agent');
-    expect(soul).toContain('- MKT — "Marketing": @hermes-mkt-coordinator');
+    expect(soul).toContain('- MKT — "Marketing": @mkt-koordinator');
     expect(soul).toContain("delegate\nit to the project's coordinator");
   });
 
@@ -494,7 +494,7 @@ describe('SOUL.md of the structure', () => {
     const soul = policy.data!.runtimePolicy.files[0].content;
     expect(soul).toContain('## Agent team');
     expect(soul).toContain('You are a specialist in the agent team of MKT and report to');
-    expect(soul).toContain('@hermes-mkt-coordinator');
+    expect(soul).toContain('@mkt-koordinator');
     expect(soul).toContain('Handing your work back:');
     expect(soul).not.toContain('## Home agent');
   });

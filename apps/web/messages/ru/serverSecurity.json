@@ -228,7 +228,11 @@
     "homeTitle": "Дома автоматически подключаться напрямую",
     "homeDescription": "На публичном адресе Helena проверяет, отвечает ли {home} с этого устройства, и переходит туда — напрямую через домашнюю сеть, без обхода через Cloudflare. Там вас впустит вход из домашней сети. Chrome один раз попросит доступ к локальной сети.",
     "homeDescriptionGeneric": "На публичном адресе Helena проверяет, отвечает ли адрес домашней сети с этого устройства, и переходит туда — напрямую через домашнюю сеть, без обхода через Cloudflare.",
-    "homeNotSetUp": "Адрес домашней сети не настроен (HELENA_HOME_URL, cloudflare/switch_origin.py --home-host)."
+    "homeNotSetUp": "Адрес домашней сети не настроен (HELENA_HOME_URL, cloudflare/switch_origin.py --home-host).",
+    "serviceTokenTitle": "Служебный доступ: {label}",
+    "serviceTokenDescription": "Служебный токен Cloudflare {hint}… действует как {actsAs} для автоматических проверок. Чтобы завершить, удалите его здесь и удалите токен в Cloudflare.",
+    "serviceTokenRemove": "Удалить",
+    "serviceTokenRemoved": "Служебный доступ удалён"
   },
   "signIns": {
     "title": "Входы без пароля",

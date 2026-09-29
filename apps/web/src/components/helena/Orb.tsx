@@ -145,6 +145,7 @@ export default function Orb({
         createElement('voice-orb', {
           state: visual,
           theme,
+          glow: 'off',
           'aria-hidden': true,
         })}
     </span>

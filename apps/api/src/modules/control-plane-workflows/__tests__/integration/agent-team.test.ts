@@ -43,7 +43,7 @@ async function setup() {
   const view = await asOwner.projects({ projectKey: 'MKT' }).get();
   const organization = asOwner.teams({ teamId }).organization;
   const coordinator = (await organization.get()).data!.agents.find(
-    (agent) => agent.username === 'hermes-mkt-coordinator',
+    (agent) => agent.username === 'mkt-koordinator',
   )!;
   await organization.agents({ agentId: coordinator.id }).put({ role: 'coordinator' });
   const columns = view.data!.columns;
@@ -185,7 +185,7 @@ describe('agent team runs', () => {
         acceptanceCriteria: ['Hero section', 'Mobile layout', 'No regressions'],
         labels: [],
       },
-      coordinator: { agentRef: 'agent:hermes-mkt-coordinator', role: 'coordinator' },
+      coordinator: { agentRef: 'agent:mkt-koordinator', role: 'coordinator' },
       specialists: [
         { agentRef: 'agent:designer', capabilities: ['frontend'] },
         { agentRef: 'agent:writer', capabilities: ['docs', 'copy'] },
@@ -631,7 +631,7 @@ describe('agent team runs', () => {
     const refused = await asOwner.issues({ issueId: other.id })['agent-team'].post({});
     expect(refused.status).toBe(409);
     expect(refused.error?.value).toMatchObject({
-      error: 'The coordinator @hermes-mkt-coordinator is paused',
+      error: 'The coordinator @mkt-koordinator is paused',
     });
   });
 
@@ -646,7 +646,7 @@ describe('agent team runs', () => {
         objective: 'Write the brief',
         acceptanceCriteria: ['The work item is done as its description asks.'],
       },
-      specialists: [{ agentRef: 'agent:hermes-mkt-coordinator', role: 'coordinator' }],
+      specialists: [{ agentRef: 'agent:mkt-koordinator', role: 'coordinator' }],
     });
     const work = await waitForAgentRun(started.runId, 'team.s1');
     expect(work.agentId).toBe(coordinator.id);
