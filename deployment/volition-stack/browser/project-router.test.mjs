@@ -1297,6 +1297,7 @@ describe("project browser control", () => {
     assert.deepEqual((await stopped.json()).state, {
       type: "preview-unreachable", url: "http://127.0.0.1:24032/",
       name: "main", reason: "stopped", logs: ["server stopped"],
+      nextStep: "Start the preview with preview_start, then use the returned URL.",
     });
     assert.equal(browser.sent("Page.navigate").length, 0);
 
