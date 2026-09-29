@@ -2013,6 +2013,13 @@ a.ds-run-card:hover {
 .ds-issue-prop-value [data-slot='button'] {
   white-space: nowrap;
 }
+/* A finger needs more than a pointer: the pills of a task's properties get a taller hit area
+   on touch screens, inside the row's own height. */
+@media (pointer: coarse) {
+  .ds-issue-prop-value button {
+    min-height: 34px;
+  }
+}
 .ds-run .ds-more-toggle {
   margin-inline-start: -8px;
 }

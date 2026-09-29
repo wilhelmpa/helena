@@ -82,13 +82,19 @@ describe('board card data', () => {
     assert.match(data.meta[0]!, /^seit /);
   });
 
-  it('leaves the status out where the column already names it', () => {
+  it('leaves the status out where the column already names it, and boxes it where it does not', () => {
     const withColumn = {
       ...maps,
       columnById: new Map([[1, { id: 1, name: 'Neu' }]]),
     } as unknown as Maps;
     const shown = boardCardData(issue([]), project, withColumn, ['status'], priorityLabel, words);
-    assert.deepEqual(shown.meta, ['Neu']);
+    // The status is a box of its own on the card, not a word in the meta line.
+    assert.deepEqual(shown.meta, []);
+    assert.equal(shown.status?.name, 'Neu');
+    assert.equal(
+      boardCardData(issue([]), project, withColumn, ['priority'], priorityLabel, words).status,
+      null,
+    );
     assert.deepEqual(cardProperties({ properties: ['status', 'priority'], group: 'status' }), [
       'priority',
     ]);

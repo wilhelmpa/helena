@@ -8,6 +8,7 @@ import type { PropertyKey } from '@/utils/viewSettings';
 import { boardCardData } from '../../utils/boardCardData';
 import { useCardMetaWords } from '../../hooks/useCardMetaWords';
 import { AssigneeAvatar } from '@/features/issue/components/shared/IssueBadges';
+import { StateIcon } from '@/features/issue/components/shared/IssueIcons';
 import { BoardHintPill } from '../shared/BoardHintPill';
 import { IssueIdentifier } from '../shared/IssueIdentifier';
 import { IssueCardLinks } from './IssueCardLinks';
@@ -32,7 +33,7 @@ export function IssueCardBody({
   const { data: session } = useSession();
   const priorityLabel = usePriorityLabel();
   const words = useCardMetaWords();
-  const { importantValue, meta, labels } = boardCardData(
+  const { importantValue, meta, labels, status } = boardCardData(
     issue,
     project,
     maps,
@@ -64,9 +65,15 @@ export function IssueCardBody({
         <div className="board-card-meta truncate text-muted-foreground">{meta.join(' · ')}</div>
       )}
 
-      {(labels.length > 0 || showAssignee || delegate) && (
+      {(labels.length > 0 || showAssignee || delegate || status) && (
         <Inline gap={2} className="min-w-0">
           <Inline gap={1} wrap className="min-w-0 flex-1">
+            {status && (
+              <span className="ds-issue-status" data-state-type={status.stateType}>
+                <StateIcon stateType={status.stateType} color={status.color} />
+                <span>{status.name}</span>
+              </span>
+            )}
             {labels.map((label) => (
               <BoardHintPill key={label.id} name={label.name} />
             ))}
