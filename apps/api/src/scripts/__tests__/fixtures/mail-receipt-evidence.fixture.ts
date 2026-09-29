@@ -141,7 +141,7 @@ const db = {
 mock.module('@repo/db', () => ({ db, getSetting: async () => null, ...tables }));
 mock.module('drizzle-orm', () =>
   Object.fromEntries(
-    ['and', 'count', 'desc', 'eq', 'ilike', 'inArray', 'isNotNull', 'like', 'or', 'sql'].map((key) => [
+    ['and', 'count', 'desc', 'eq', 'ilike', 'inArray', 'isNotNull', 'or', 'sql'].map((key) => [
       key,
       () => null,
     ]),
@@ -251,6 +251,10 @@ moduleMock('receipts/dedup', {
     for (const id of newIds) assert.ok(receipts.some((receipt) => receipt.id === id));
     return [];
   },
+});
+// "Belege als Notizen" is off for this intake; its own tests cover the projection.
+moduleMock('receipts/projection', {
+  rebuildReceiptProjection: async () => ({ enabled: false, projected: 0, changed: 0, basePath: '' }),
 });
 moduleMock('receipts/source', {
   receiptSourceLinks: () => assert.fail('Source links must not be rendered during intake'),
