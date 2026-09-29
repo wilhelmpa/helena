@@ -124,13 +124,14 @@
     float halo=exp(-r*r*4.0)*.24*haloAmount*(1.0-smoothstep(.75,1.0,r));
     float a=(core+halo)*strength;
     if(light>.5){
-      float alpha=min(1.0,(a+spark*core*.6)*.4);
-      vec3 deep=tint*.86;
+      float alpha=min(1.0,(a*1.35+spark*core*.6)*.9);
+      vec3 deep=pow(tint,vec3(2.4))*.92;
       gl_FragColor=vec4(deep*alpha,alpha);
       return;
     }
-    vec3 color=tint*a+vec3(1.0,.92,.86)*spark*core;
-    gl_FragColor=vec4(color,min(1.0,a+spark*core));
+    float lit=a*1.75;
+    vec3 color=tint*lit+vec3(1.0,.92,.86)*spark*core;
+    gl_FragColor=vec4(color,min(1.0,lit+spark*core));
   }`;
 
   class VoiceOrb extends HTMLElement {
