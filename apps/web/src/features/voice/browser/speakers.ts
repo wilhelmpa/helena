@@ -1,6 +1,7 @@
 import { speakText } from '@/lib/api/endpoints/voice';
 import { Pcm16Decoder, SampleBatcher } from '../utils/pcm';
 import { bestVoice } from '../utils/voicePick';
+import { markVoiceOutput } from './voiceOutput';
 
 // The conversation mode's voice: pieces of an answer (whole sentences, see speechChunks) are
 // queued as they arrive and read one after the other. Two engines behind one interface:
@@ -68,10 +69,12 @@ export function createBrowserSpeaker(
   // Each utterance's end belongs to its own turn; a cancel must not start the next one.
   let turn = 0;
   let wasBusy = false;
+  const outputId = Symbol('browser-voice');
 
   const setBusy = (busy: boolean) => {
     if (busy === wasBusy) return;
     wasBusy = busy;
+    markVoiceOutput(outputId, busy);
     if (busy) events.onStart();
     else events.onIdle();
   };
@@ -157,6 +160,7 @@ export function createBrowserSpeaker(
     destroy() {
       queue.length = 0;
       halt();
+      setBusy(false);
     },
   };
 }
@@ -241,6 +245,7 @@ export function createLocalSpeaker(
   let paused = false;
   let turn = 0;
   let wasBusy = false;
+  const outputId = Symbol('local-voice');
 
   const audioContext = () => {
     if (!context) {
@@ -258,6 +263,7 @@ export function createLocalSpeaker(
   const setBusy = (busy: boolean) => {
     if (busy === wasBusy) return;
     wasBusy = busy;
+    markVoiceOutput(outputId, busy);
     if (busy) events.onStart();
     else events.onIdle();
   };
@@ -418,6 +424,7 @@ export function createLocalSpeaker(
     destroy() {
       stopSources();
       forget(queue.splice(0));
+      setBusy(false);
       events.onAnalyser?.(null);
       analyser?.disconnect();
       analyser = null;

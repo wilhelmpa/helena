@@ -1,0 +1,258 @@
+[
+  {
+    "file": "ava-kal-0.85.wav",
+    "wake": true,
+    "phrase": "Ava, mach das Licht an",
+    "voice": "kal",
+    "tempo": 0.85,
+    "noise": false
+  },
+  {
+    "file": "eywa-kal-0.85.wav",
+    "wake": true,
+    "phrase": "Eywa, mach das Licht an",
+    "voice": "kal",
+    "tempo": 0.85,
+    "noise": false
+  },
+  {
+    "file": "ewa-kal-0.85.wav",
+    "wake": true,
+    "phrase": "Ewa, mach das Licht an",
+    "voice": "kal",
+    "tempo": 0.85,
+    "noise": false
+  },
+  {
+    "file": "aiwa-kal-0.85.wav",
+    "wake": true,
+    "phrase": "Aiwa, mach das Licht an",
+    "voice": "kal",
+    "tempo": 0.85,
+    "noise": false
+  },
+  {
+    "file": "aber-kal-0.85.wav",
+    "wake": false,
+    "phrase": "Aber mach das Licht an",
+    "voice": "kal",
+    "tempo": 0.85,
+    "noise": false
+  },
+  {
+    "file": "eva-kal-0.85.wav",
+    "wake": false,
+    "phrase": "Eva macht das Licht an",
+    "voice": "kal",
+    "tempo": 0.85,
+    "noise": false
+  },
+  {
+    "file": "hawaii-kal-0.85.wav",
+    "wake": false,
+    "phrase": "Hawaii liegt weit weg",
+    "voice": "kal",
+    "tempo": 0.85,
+    "noise": false
+  },
+  {
+    "file": "einwandfrei-kal-0.85.wav",
+    "wake": false,
+    "phrase": "Das ist einwandfrei",
+    "voice": "kal",
+    "tempo": 0.85,
+    "noise": false
+  },
+  {
+    "file": "ava-kal-1.20-noise.wav",
+    "wake": true,
+    "phrase": "Ava, mach das Licht an",
+    "voice": "kal",
+    "tempo": 1.2,
+    "noise": true
+  },
+  {
+    "file": "eywa-kal-1.20-noise.wav",
+    "wake": true,
+    "phrase": "Eywa, mach das Licht an",
+    "voice": "kal",
+    "tempo": 1.2,
+    "noise": true
+  },
+  {
+    "file": "ewa-kal-1.20.wav",
+    "wake": true,
+    "phrase": "Ewa, mach das Licht an",
+    "voice": "kal",
+    "tempo": 1.2,
+    "noise": false
+  },
+  {
+    "file": "aiwa-kal-1.20.wav",
+    "wake": true,
+    "phrase": "Aiwa, mach das Licht an",
+    "voice": "kal",
+    "tempo": 1.2,
+    "noise": false
+  },
+  {
+    "file": "aber-kal-1.20-noise.wav",
+    "wake": false,
+    "phrase": "Aber mach das Licht an",
+    "voice": "kal",
+    "tempo": 1.2,
+    "noise": true
+  },
+  {
+    "file": "eva-kal-1.20-noise.wav",
+    "wake": false,
+    "phrase": "Eva macht das Licht an",
+    "voice": "kal",
+    "tempo": 1.2,
+    "noise": true
+  },
+  {
+    "file": "hawaii-kal-1.20.wav",
+    "wake": false,
+    "phrase": "Hawaii liegt weit weg",
+    "voice": "kal",
+    "tempo": 1.2,
+    "noise": false
+  },
+  {
+    "file": "einwandfrei-kal-1.20.wav",
+    "wake": false,
+    "phrase": "Das ist einwandfrei",
+    "voice": "kal",
+    "tempo": 1.2,
+    "noise": false
+  },
+  {
+    "file": "ava-slt-0.85.wav",
+    "wake": true,
+    "phrase": "Ava, mach das Licht an",
+    "voice": "slt",
+    "tempo": 0.85,
+    "noise": false
+  },
+  {
+    "file": "eywa-slt-0.85.wav",
+    "wake": true,
+    "phrase": "Eywa, mach das Licht an",
+    "voice": "slt",
+    "tempo": 0.85,
+    "noise": false
+  },
+  {
+    "file": "ewa-slt-0.85.wav",
+    "wake": true,
+    "phrase": "Ewa, mach das Licht an",
+    "voice": "slt",
+    "tempo": 0.85,
+    "noise": false
+  },
+  {
+    "file": "aiwa-slt-0.85.wav",
+    "wake": true,
+    "phrase": "Aiwa, mach das Licht an",
+    "voice": "slt",
+    "tempo": 0.85,
+    "noise": false
+  },
+  {
+    "file": "aber-slt-0.85.wav",
+    "wake": false,
+    "phrase": "Aber mach das Licht an",
+    "voice": "slt",
+    "tempo": 0.85,
+    "noise": false
+  },
+  {
+    "file": "eva-slt-0.85.wav",
+    "wake": false,
+    "phrase": "Eva macht das Licht an",
+    "voice": "slt",
+    "tempo": 0.85,
+    "noise": false
+  },
+  {
+    "file": "hawaii-slt-0.85.wav",
+    "wake": false,
+    "phrase": "Hawaii liegt weit weg",
+    "voice": "slt",
+    "tempo": 0.85,
+    "noise": false
+  },
+  {
+    "file": "einwandfrei-slt-0.85.wav",
+    "wake": false,
+    "phrase": "Das ist einwandfrei",
+    "voice": "slt",
+    "tempo": 0.85,
+    "noise": false
+  },
+  {
+    "file": "ava-slt-1.20-noise.wav",
+    "wake": true,
+    "phrase": "Ava, mach das Licht an",
+    "voice": "slt",
+    "tempo": 1.2,
+    "noise": true
+  },
+  {
+    "file": "eywa-slt-1.20-noise.wav",
+    "wake": true,
+    "phrase": "Eywa, mach das Licht an",
+    "voice": "slt",
+    "tempo": 1.2,
+    "noise": true
+  },
+  {
+    "file": "ewa-slt-1.20.wav",
+    "wake": true,
+    "phrase": "Ewa, mach das Licht an",
+    "voice": "slt",
+    "tempo": 1.2,
+    "noise": false
+  },
+  {
+    "file": "aiwa-slt-1.20.wav",
+    "wake": true,
+    "phrase": "Aiwa, mach das Licht an",
+    "voice": "slt",
+    "tempo": 1.2,
+    "noise": false
+  },
+  {
+    "file": "aber-slt-1.20-noise.wav",
+    "wake": false,
+    "phrase": "Aber mach das Licht an",
+    "voice": "slt",
+    "tempo": 1.2,
+    "noise": true
+  },
+  {
+    "file": "eva-slt-1.20-noise.wav",
+    "wake": false,
+    "phrase": "Eva macht das Licht an",
+    "voice": "slt",
+    "tempo": 1.2,
+    "noise": true
+  },
+  {
+    "file": "hawaii-slt-1.20.wav",
+    "wake": false,
+    "phrase": "Hawaii liegt weit weg",
+    "voice": "slt",
+    "tempo": 1.2,
+    "noise": false
+  },
+  {
+    "file": "einwandfrei-slt-1.20.wav",
+    "wake": false,
+    "phrase": "Das ist einwandfrei",
+    "voice": "slt",
+    "tempo": 1.2,
+    "noise": false
+  }
+]

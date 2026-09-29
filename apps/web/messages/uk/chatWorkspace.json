@@ -200,6 +200,10 @@
     "hint": "Продовжити в терміналі: hermes --resume {id} (або claude --resume {id})"
   },
   "voice": {
+    "wakeListening": "listening for Ava",
+    "wakeChecking": "Checking on-device Ava recognition …",
+    "wakePaused": "Ava recognition paused while audio plays",
+    "wakeUnavailable": "Ava recognition is unavailable here",
     "startConversation": "Почати розмову — говорити й слухати без рук",
     "endConversation": "Завершити розмову",
     "placeholder": "Просто говоріть — або друкуйте …",

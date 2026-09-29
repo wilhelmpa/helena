@@ -3,12 +3,27 @@
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
+import { SettingsGroup, SettingsRow, Switch } from '@/design-system';
 import SectionPageView from '@/components/common/page/SectionPageView';
 import SettingsCard from '@/components/common/page/SettingsCard';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import type { VoiceSettings, VocabularyAlias } from '@/lib/api/endpoints/voice';
 import { useUpdateVoiceSettings, useVoiceSettings } from '../hooks/useVoiceSettings';
+import { useWakeWordSetting } from '../hooks/useWakeWordSetting';
+
+function WakeWordSetting() {
+  const t = useTranslations('localAi.voice.wake');
+  const { enabled, setEnabled } = useWakeWordSetting();
+  return (
+    <SettingsGroup>
+      <SettingsRow label={t('title')} description={t('hint')} htmlFor="voice-wake-word">
+        <Switch id="voice-wake-word" checked={enabled} onCheckedChange={setEnabled} />
+      </SettingsRow>
+      <SettingsRow label={t('availability')} description={t('availabilityHint')} />
+    </SettingsGroup>
+  );
+}
 
 function Editor({ settings }: { settings: VoiceSettings }) {
   const t = useTranslations('localAi.voice');
@@ -101,6 +116,7 @@ export default function AccountVoicePage() {
   const settings = useVoiceSettings();
   return (
     <SectionPageView title={t('title')}>
+      <WakeWordSetting />
       {settings.data ? (
         <Editor
           key={JSON.stringify([

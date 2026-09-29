@@ -243,6 +243,12 @@
     }
   },
   "voice": {
+    "wake": {
+      "title": "Auf „Ava“ hören",
+      "hint": "Das Mikrofon bleibt offen, solange eine Chatseite offen ist. Vor „Ava“ verarbeitet nur die lokale Erkennung deine Stimme; es wird nichts gespeichert.",
+      "availability": "Lokale Erkennung",
+      "availabilityHint": "Funktioniert nur, wenn der Browser ein deutsches Offline-Sprachpaket bereits installiert hat. Helena lädt keines herunter."
+    },
     "title": "Sprache im Chat",
     "loading": "Lädt …",
     "failed": "Die Spracheinstellungen konnten nicht geladen werden.",

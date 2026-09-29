@@ -200,6 +200,10 @@
     "hint": "Continue in a terminal: hermes --resume {id} (or claude --resume {id})"
   },
   "voice": {
+    "wakeListening": "listening for Ava",
+    "wakeChecking": "Checking on-device Ava recognition …",
+    "wakePaused": "Ava recognition paused while audio plays",
+    "wakeUnavailable": "Ava recognition is unavailable here",
     "startConversation": "Start a conversation – talk and listen hands-free",
     "endConversation": "End the conversation",
     "placeholder": "Just speak – or type …",

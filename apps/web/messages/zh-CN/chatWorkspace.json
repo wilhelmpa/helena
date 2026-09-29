@@ -200,6 +200,10 @@
     "hint": "在终端中继续：hermes --resume {id}（或 claude --resume {id}）"
   },
   "voice": {
+    "wakeListening": "listening for Ava",
+    "wakeChecking": "Checking on-device Ava recognition …",
+    "wakePaused": "Ava recognition paused while audio plays",
+    "wakeUnavailable": "Ava recognition is unavailable here",
     "startConversation": "开始对话——免手动说话和收听",
     "endConversation": "结束对话",
     "placeholder": "直接说话——或输入 …",

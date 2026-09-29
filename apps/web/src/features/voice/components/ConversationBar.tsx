@@ -3,13 +3,29 @@
 import { useTranslations } from 'next-intl';
 import { Square, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Pill } from '@/design-system';
 import type { Conversation } from '../hooks/useConversation';
 
 // Voice controls and the latest recognized text; the Orb displays the phase.
 export default function ConversationBar({ conversation }: { conversation: Conversation }) {
   const t = useTranslations('chatWorkspace.voice');
   const { phase, heard, misheard, timings } = conversation;
-  if (phase === 'off') return null;
+  if (phase === 'off') {
+    if (conversation.wakeWordStatus === 'off') return null;
+    return (
+      <Pill role="status">
+        {t(
+          conversation.wakeWordStatus === 'listening'
+            ? 'wakeListening'
+            : conversation.wakeWordStatus === 'checking'
+              ? 'wakeChecking'
+              : conversation.wakeWordStatus === 'paused'
+                ? 'wakePaused'
+                : 'wakeUnavailable',
+        )}
+      </Pill>
+    );
+  }
 
   return (
     <div

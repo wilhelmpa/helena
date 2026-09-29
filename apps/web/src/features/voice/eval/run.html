@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="de">
+  <meta charset="utf-8" />
+  <title>Ava wake-word evaluation</title>
+  <button id="run">Run offline recognition evaluation</button>
+  <pre id="result"></pre>
+  <script type="module">
+    const output = document.querySelector('#result');
+    const button = document.querySelector('#run');
+    const names = /^(?:ava|eywa|ewa|aiwa)(?=$|[\s,.:;!?])/iu;
+    button.addEventListener('click', async () => {
+      button.disabled = true;
+      const Recognition = window.SpeechRecognition;
+      if (!Recognition?.available) {
+        output.textContent = 'UNAVAILABLE: browser has no on-device SpeechRecognition.available().';
+        return;
+      }
+      const availability = await Recognition.available({ langs: ['de-DE'], processLocally: true });
+      if (availability !== 'available') {
+        output.textContent = `UNAVAILABLE: German offline pack is ${availability}; no download was started.`;
+        return;
+      }
+      const manifest = await (await fetch('./manifest.json')).json();
+      const results = [];
+      for (const entry of manifest) {
+        const audio = new Audio(`./recordings/${entry.file}`);
+        audio.preload = 'auto';
+        await new Promise((resolve, reject) => {
+          audio.addEventListener('canplay', resolve, { once: true });
+          audio.addEventListener('error', reject, { once: true });
+        });
+        const stream = audio.captureStream?.();
+        const track = stream?.getAudioTracks()[0];
+        if (!track) throw new Error('This browser cannot capture the recording as an audio track.');
+        const recognition = new Recognition();
+        if (!('processLocally' in recognition))
+          throw new Error('Local recognition is not enforced.');
+        recognition.processLocally = true;
+        recognition.lang = 'de-DE';
+        recognition.continuous = true;
+        let transcript = '';
+        const finished = new Promise((resolve) => {
+          const timer = setTimeout(() => {
+            recognition.abort();
+            resolve('timeout');
+          }, 15000);
+          recognition.onresult = (event) => {
+            transcript = Array.from(event.results)
+              .filter((result) => result.isFinal)
+              .map((result) => result[0].transcript)
+              .join(' ');
+          };
+          recognition.onerror = (event) => {
+            clearTimeout(timer);
+            resolve(event.error);
+          };
+          recognition.onend = () => {
+            clearTimeout(timer);
+            resolve(null);
+          };
+        });
+        const started = performance.now();
+        recognition.start(track);
+        await audio.play();
+        await new Promise((resolve) => audio.addEventListener('ended', resolve, { once: true }));
+        recognition.stop();
+        const error = await finished;
+        const detected = names.test(transcript.trimStart());
+        results.push({
+          ...entry,
+          transcript,
+          detected,
+          error,
+          durationSeconds: audio.duration,
+          elapsedMs: Math.round(performance.now() - started),
+        });
+        output.textContent = JSON.stringify(results, null, 2);
+      }
+      const positives = results.filter((entry) => entry.wake);
+      const negatives = results.filter((entry) => !entry.wake);
+      output.textContent = JSON.stringify(
+        {
+          recall: positives.filter((entry) => entry.detected).length / positives.length,
+          falsePositives: negatives.filter((entry) => entry.detected).length,
+          negativeHours:
+            negatives.reduce((total, entry) => total + entry.durationSeconds, 0) / 3600,
+          results,
+        },
+        null,
+        2,
+      );
+    });
+  </script>
+</html>
