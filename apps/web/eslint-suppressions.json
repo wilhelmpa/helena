@@ -2016,11 +2016,6 @@
       "count": 2
     }
   },
-  "src/features/initiatives/components/detail/InitiativeOverview.tsx": {
-    "better-tailwindcss/no-restricted-classes": {
-      "count": 4
-    }
-  },
   "src/features/initiatives/components/detail/InitiativeProgress.tsx": {
     "better-tailwindcss/no-restricted-classes": {
       "count": 3
@@ -3093,11 +3088,6 @@
   "src/features/organization/components/OrganizationDepartments.tsx": {
     "better-tailwindcss/no-restricted-classes": {
       "count": 4
-    }
-  },
-  "src/features/organization/components/OrganizationGoalDialog.tsx": {
-    "better-tailwindcss/no-restricted-classes": {
-      "count": 1
     }
   },
   "src/features/organization/components/OrganizationGoalNode.tsx": {

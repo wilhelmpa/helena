@@ -37,7 +37,11 @@ export default function OrganizationGoalLadder({
   return (
     <ol className="ds-ladder" aria-label={t('goals.ladder')}>
       {above.map((step, index) => (
-        <li key={step.id} className="ds-ladder-step" style={{ '--ds-ladder-depth': index } as CSSProperties}>
+        <li
+          key={step.id}
+          className="ds-ladder-step"
+          style={{ '--ds-ladder-depth': index } as CSSProperties}
+        >
           <button type="button" onClick={() => onSelect(step.id)}>
             <Target size={14} aria-hidden="true" />
             <span>{step.title}</span>
