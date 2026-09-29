@@ -311,9 +311,10 @@ export default function OrganizationChart({
       view === 'tree'
         ? organizationChartLayout(agents, collapsed, delegating, {
             stackLeaves: ringLevel === 'home' || ringLevel === 'department',
+            tasks,
           })
         : null,
-    [agents, collapsed, delegating, ringLevel, view],
+    [agents, collapsed, delegating, ringLevel, tasks, view],
   );
   const ring = useMemo(
     () =>
@@ -459,15 +460,14 @@ export default function OrganizationChart({
             { value: 'ring', label: t('viewRing') },
           ]}
         />
-        {view === 'ring' && (
-          <PillButton
-            tone={showTasks ? 'active' : 'neutral'}
-            aria-pressed={showTasks}
-            onClick={() => setParams({ orgTasks: showTasks ? null : '1' })}
-          >
-            {t('tasksToggle')}
-          </PillButton>
-        )}
+        {/* The same "Aufgaben" in both views, at the same place (owner, 29.09.). */}
+        <PillButton
+          tone={showTasks ? 'active' : 'neutral'}
+          aria-pressed={showTasks}
+          onClick={() => setParams({ orgTasks: showTasks ? null : '1' })}
+        >
+          {t('tasksToggle')}
+        </PillButton>
         {/* The status filter is one of the page's tabs (owner, O20: one pattern). */}
         <PageTabs<Filter>
           label={t('filterLabel')}

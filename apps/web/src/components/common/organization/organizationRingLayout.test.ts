@@ -287,4 +287,30 @@ describe('Organigramm „Baum“ auf Home', () => {
         .every((edge) => edge.sourceHandle === 'rail'),
     );
   });
+
+  test('Aufgaben hängen wie im Kreis an ihrem Agenten, das Team rückt darunter', () => {
+    const tasks = [1, 2, 3, 4, 5].map((id) => ({
+      id,
+      identifier: `P10-${id}`,
+      title: 'Aufgabe',
+      agentId: 2,
+      color: 'var(--status-idle)',
+    }));
+    const without = organizationChartLayout(agents, new Set(), new Set(), { stackLeaves: true });
+    const tree = organizationChartLayout(agents, new Set(), new Set(), {
+      stackLeaves: true,
+      tasks,
+    });
+    const shown = tree.nodes.filter((node) => node.type === 'task');
+    assert.equal(shown.length, 4);
+    assert.equal(shown.at(-1)!.data.more, 1);
+    const coordinator = tree.nodes.find((node) => node.id === '2')!;
+    assert.ok(shown.every((node) => node.position.y > coordinator.position.y));
+    assert.equal(tree.edges.filter((edge) => edge.target.startsWith('task:')).length, 4);
+    // The coordinator's team starts below its tasks.
+    const firstLeaf = (layout: typeof tree) => layout.nodes.find((node) => node.id === '20')!;
+    assert.ok(firstLeaf(tree).position.y > firstLeaf(without).position.y);
+    const lastTask = shown.at(-1)!;
+    assert.ok(firstLeaf(tree).position.y > lastTask.position.y);
+  });
 });

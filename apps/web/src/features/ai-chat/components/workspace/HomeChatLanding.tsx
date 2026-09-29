@@ -20,6 +20,7 @@ import { useSession } from '@/lib/auth-client';
 import '@/extensions/homeWidgets';
 import { useNeedsYou } from '@/features/home/dashboard/useNeedsYou';
 import { startCards } from '@/features/home/utils/startCards';
+import { openSystemDetails } from '@/features/home/dashboard/systemDetails';
 import styles from './HomeChatLanding.module.css';
 
 const subscribe = () => () => {};
@@ -123,8 +124,11 @@ export function HomeChatActivityCards() {
                 <span className={styles.cardMeta}>{entry.detail || entry.projectKey || ''}</span>
               </>
             );
-            return entry.href ? (
-              <Link key={entry.key} href={entry.href} className={styles.card}>
+            // The health overview lives on the dashboard: a problem that opens it there.
+            const href =
+              entry.href ?? (entry.onSelect === openSystemDetails ? '/dashboard?system=1' : null);
+            return href ? (
+              <Link key={entry.key} href={href} className={styles.card}>
                 {body}
               </Link>
             ) : (
