@@ -1,3 +1,12 @@
+import { importProfile } from './import';
+import { profileImportBody, ProfileImportResponse } from './model';
+import { teamParams } from '#modules/teams/model';
+import { selectRuntimes } from './selection';
+import { runtimeSelectionBody, RuntimeSelectionResponse } from './model';
+import { readNativeRuntime } from './readers';
+import { nativeReadBody, NativeReadResponse } from './model';
+import { listNativeSkills, saveNativeSkill } from './skills';
+import { nativeSkillWriteBody, NativeSkillResponse, NativeSkillsResponse } from './model';
 import './consolidation';
 import { Elysia } from 'elysia';
 import { guards } from '#shared/guards';
@@ -48,6 +57,29 @@ export const nativeRuntimeRoutes = new Elysia({
   detail: { tags: ['Agent Runtime'] },
 })
   .use(runnerAuth)
+  .post('/agent-runtime/read', ({ agent, body }) => readNativeRuntime(agent.id, body), {
+    runnerAgent: true,
+    body: nativeReadBody,
+    response: { 200: NativeReadResponse, ...errors(400, 401, 403, 404, 409) },
+    detail: {
+      summary: 'Read the native sessions and maintain learned skills of the calling agent',
+    },
+  })
+  .get('/agent-runtime/skills', ({ agent }) => listNativeSkills(agent.id), {
+    runnerAgent: true,
+    response: { 200: NativeSkillsResponse, ...errors(401, 403) },
+    detail: { summary: 'Read learned native skills and their revisions' },
+  })
+  .put(
+    '/agent-runtime/skills',
+    ({ agent, body }) => saveNativeSkill(agent.id, body.skill, body.baseRevision),
+    {
+      runnerAgent: true,
+      body: nativeSkillWriteBody,
+      response: { 200: NativeSkillResponse, ...errors(400, 401, 403, 409, 413) },
+      detail: { summary: 'Create or revise a learned native skill with its files' },
+    },
+  )
   .post(
     '/agent-runtime/sessions',
     ({ agent, body }) =>
@@ -138,6 +170,33 @@ export const nativeRuntimeRoutes = new Elysia({
 
   .use(authContext)
   .use(guards)
+  .post(
+    '/teams/:teamId/ai-agents/:agentId/profile-import',
+    async ({ params, membership, body }) => {
+      await agentForPerson(params.agentId, membership);
+      return importProfile(params.agentId, params.teamId, body);
+    },
+    {
+      params: agentParams,
+      body: profileImportBody,
+      teamManager: true,
+      response: { 200: ProfileImportResponse, ...commonErrors, ...errors(409, 413) },
+      detail: { summary: 'Preview or atomically import an unchanged Hermes profile snapshot' },
+    },
+  )
+  .post(
+    '/teams/:teamId/ai-agents/runtime-selection',
+    ({ membership, body }) => selectRuntimes(membership, body),
+    {
+      params: teamParams,
+      body: runtimeSelectionBody,
+      teamPermission: ['ai_agents', 'edit'],
+      response: { 200: RuntimeSelectionResponse, ...commonErrors, ...errors(409) },
+      detail: {
+        summary: 'Preview or apply a runtime selection and return the exact rollback mapping',
+      },
+    },
+  )
   // Whether an agent can be put on Helena's own loop here (the switch HELENA_NATIVE_RUNTIME):
   // the agent editor offers it only then.
   .get(

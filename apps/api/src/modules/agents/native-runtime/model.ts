@@ -1,3 +1,4 @@
+import { learnedSkill } from '../learning/model';
 import { t } from 'elysia';
 
 // Request and response shapes of Helena's own agent loop (runtime `helena`): its sessions and
@@ -168,4 +169,113 @@ export const factCorrectionBody = t.Object({
 
 export const RuntimesResponse = t.Object({
   helena: t.Boolean({ description: "Whether Helena's own agent loop can run an agent here." }),
+});
+
+export const nativeSkillWriteBody = t.Object({
+  skill: learnedSkill,
+  baseRevision: t.Nullable(t.String({ pattern: '^[a-f0-9]{64}$' })),
+});
+export const NativeSkillResponse = t.Intersect([
+  learnedSkill,
+  t.Object({
+    revision: t.String(),
+    pinned: t.Optional(t.Boolean()),
+    archived: t.Optional(t.Boolean()),
+  }),
+]);
+export const NativeSkillsResponse = t.Array(NativeSkillResponse);
+
+export const nativeReadBody = t.Union([
+  t.Object({
+    op: t.Literal('sessions.list'),
+    limit: t.Optional(t.Integer({ minimum: 1, maximum: 100 })),
+    offset: t.Optional(t.Integer({ minimum: 0 })),
+  }),
+  t.Object({
+    op: t.Literal('sessions.search'),
+    query: t.String({ minLength: 1, maxLength: 500 }),
+    limit: t.Optional(t.Integer({ minimum: 1, maximum: 100 })),
+  }),
+  t.Object({
+    op: t.Literal('sessions.transcript'),
+    sessionId: t.String(),
+    offset: t.Optional(t.Integer({ minimum: 0 })),
+    limit: t.Optional(t.Integer({ minimum: 1, maximum: 500 })),
+  }),
+  t.Object({ op: t.Literal('curator.status') }),
+  t.Object({ op: t.Literal('curator.run') }),
+  t.Object({
+    op: t.Literal('curator.set'),
+    skill: t.String(),
+    action: t.Union([t.Literal('pin'), t.Literal('unpin')]),
+  }),
+]);
+export const NativeReadResponse = t.Unknown();
+
+export const runtimeSelectionBody = t.Object({
+  agentIds: t.Array(t.Integer({ minimum: 1 }), { minItems: 1, maxItems: 100, uniqueItems: true }),
+  runtime: t.Union([
+    t.Literal('helena'),
+    t.Literal('hermes'),
+    t.Literal('claude'),
+    t.Literal('codex'),
+  ]),
+  apply: t.Optional(t.Boolean({ default: false })),
+  revision: t.Optional(t.String({ pattern: '^[a-f0-9]{64}$' })),
+});
+export const RuntimeSelectionResponse = t.Object({
+  applied: t.Boolean(),
+  revision: t.String(),
+  runtime: t.String(),
+  agentIds: t.Array(t.Number()),
+  busyAgentIds: t.Array(t.Number()),
+  rollback: t.Array(
+    t.Object({ agentId: t.Number(), model: t.Nullable(t.String()), runtimePolicy: t.Unknown() }),
+  ),
+});
+
+export const profileImportBody = t.Object({
+  sourceKey: t.String({ minLength: 1, maxLength: 200 }),
+  apply: t.Optional(t.Boolean({ default: false })),
+  memory: t.Array(
+    t.Object({
+      file: t.Union([t.Literal('MEMORY.md'), t.Literal('USER.md')]),
+      content: t.String({ maxLength: 16384 }),
+    }),
+    { maxItems: 2 },
+  ),
+  skills: t.Array(learnedSkill, { maxItems: 100 }),
+  sessions: t.Array(
+    t.Object({
+      id: t.String({ minLength: 1, maxLength: 200 }),
+      kind: t.Union([t.Literal('run'), t.Literal('chat'), t.Literal('reflection')]),
+      model: t.Nullable(t.String({ maxLength: 200 })),
+      runId: t.Optional(t.Integer({ minimum: 1 })),
+      threadId: t.Optional(t.String({ maxLength: 200 })),
+      startedAt: t.String({ format: 'date-time' }),
+      updatedAt: t.String({ format: 'date-time' }),
+      items: t.Array(
+        t.Object({
+          role: t.Union([
+            t.Literal('system'),
+            t.Literal('user'),
+            t.Literal('assistant'),
+            t.Literal('tool'),
+          ]),
+          content: t.Union([t.String({ maxLength: 524288 }), t.Array(t.Any(), { maxItems: 100 })]),
+          text: t.String({ maxLength: 20000 }),
+          timestamp: t.String({ format: 'date-time' }),
+        }),
+        { maxItems: 10000 },
+      ),
+    }),
+    { maxItems: 1000 },
+  ),
+});
+export const ProfileImportResponse = t.Object({
+  applied: t.Boolean(),
+  unchanged: t.Boolean(),
+  memory: t.Number(),
+  skills: t.Number(),
+  sessions: t.Array(t.Object({ sourceId: t.String(), sessionId: t.String() })),
 });

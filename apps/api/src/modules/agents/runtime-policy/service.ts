@@ -1,3 +1,9 @@
+import {
+  applyNativeSkillActions,
+  listNativeSkills,
+  learnedInventory,
+  nativeSkills,
+} from '../native-runtime/skills';
 import { readEscalation } from '#modules/escalation/service';
 import { createHash } from 'node:crypto';
 import { db, aiAgent, getDisplayName } from '@repo/db';
@@ -56,6 +62,7 @@ import {
 export async function runtimePolicySnapshot(agentRef: RunnerAgent) {
   const agent = await getAgentById(agentRef.id, agentRef.teamId);
   if (!agent) throw new Error('Agent not found');
+  if (agent.runtimePolicy.runtime === 'helena') await applyNativeSkillActions(agent.id);
   const [runtimeDefaults, baseline, localAi, displayName] = await Promise.all([
     getAgentRuntimeDefaults(),
     memoryBaseline(agent.id),
@@ -132,7 +139,20 @@ export async function runtimePolicySnapshot(agentRef: RunnerAgent) {
       name,
       instructions,
     })),
-    skills,
+    skills:
+      agent.runtimePolicy.runtime === 'helena'
+        ? [
+            ...skills,
+            ...(await listNativeSkills(agent.id)).map((skill) => ({
+              id: 0,
+              slug: `learned/${skill.path}`,
+              name: skill.name,
+              description: skill.name,
+              markdown: skill.markdown,
+              files: skill.files,
+            })),
+          ]
+        : skills,
     configuredTools: tools.map(({ id, toolKey, integrationKey }) => ({
       id,
       toolKey,
@@ -440,10 +460,29 @@ export async function reportRuntimeState(
     account: normalizeRuntimeAccount(state.account ?? null),
     reportedAt: new Date().toISOString(),
   };
-  await db
-    .update(aiAgent)
-    .set({ runtimeState: value, runtimeLearnedSkills: learnedSkills, lastSeenAt: new Date() })
-    .where(eq(aiAgent.id, agentId));
+  await db.transaction(async (tx) => {
+    const [agent] = await tx
+      .select({ policy: aiAgent.runtimePolicy, skills: aiAgent.runtimeLearnedSkills })
+      .from(aiAgent)
+      .where(eq(aiAgent.id, agentId))
+      .for('update');
+    const native = (agent?.policy as AgentRuntimePolicy)?.runtime === 'helena';
+    if (native) {
+      value.inventory ??= { toolsets: [], mcpServers: [], skills: [], memory: [], cronJobs: 0 };
+      value.inventory.skills = [
+        ...value.inventory.skills.filter((skill) => skill.origin !== 'agent'),
+        ...learnedInventory(nativeSkills(agent?.skills)),
+      ];
+    }
+    await tx
+      .update(aiAgent)
+      .set({
+        runtimeState: value,
+        ...(!native && { runtimeLearnedSkills: learnedSkills }),
+        lastSeenAt: new Date(),
+      })
+      .where(eq(aiAgent.id, agentId));
+  });
   const done = await completeRuntimeActions(agentId, actions);
   await completeMemoryWrites(agentId, done, actions);
   await recordMemoryProposals(agentId, memoryProposals);

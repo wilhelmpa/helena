@@ -77,6 +77,7 @@ export interface AgentRuntimeConfig {
   model: string;
   reasoning?: string | null;
   fallbackModels?: string[];
+  runtimeFallback?: string;
   servers: ModelServer[];
   instructions?: string;
   // Absolute: the files and shell tools stay below it.
@@ -147,6 +148,12 @@ export function parseConfig(value: unknown): AgentRuntimeConfig {
   if (value.fallbackModels != null && !Array.isArray(value.fallbackModels)) {
     fail('fallbackModels must be a list');
   }
+  if (
+    value.runtimeFallback != null &&
+    (typeof value.runtimeFallback !== 'string' ||
+      !/^runtime:(codex|claude)(\/[A-Za-z0-9._/-]+)?$/.test(value.runtimeFallback))
+  )
+    fail('Invalid subscription runtime fallback');
   if (value.policy != null && value.policy !== 'helena' && value.policy !== 'allow') {
     fail('policy must be helena or allow');
   }

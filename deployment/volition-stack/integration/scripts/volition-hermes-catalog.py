@@ -442,9 +442,9 @@ def cli_models(runtime: str, hermes_models: list[dict[str, Any]]) -> list[dict[s
         # Helena's own loop drives Helena's local model servers (and API-key providers the
         # agent is given); its models are the local ones the catalog lists.
         return [
-            {key: value for key, value in model.items() if key != 'provider'}
-            for model in hermes_models
-            if str(model.get('provider', '')).startswith('helena-')
+            dict(model) for model in hermes_models
+            if str(model.get('provider', '')).startswith(('helena-', 'volition-'))
+            or model.get('provider') in ('anthropic', 'openai', 'openrouter')
         ]
     return [
         {key: value for key, value in model.items() if key != 'provider'}
@@ -505,6 +505,7 @@ def descriptor_entries(
     browser_root: Path | None = None,
     isolated: bool = False,
     problems: list[str] | None = None,
+    native: bool = False,
 ) -> list[dict[str, Any]]:
     """One runner entry per descriptor. With `problems`, a descriptor that cannot be served is
     left out and named there, so one broken agent does not keep every other one from starting;
@@ -515,7 +516,7 @@ def descriptor_entries(
     profiles_root = (global_home / 'profiles').resolve(strict=False)
     for descriptor_path in sorted(root.glob('*.json')):
         try:
-            entry = descriptor_entry(descriptor_path, global_home, profiles_root, browser_root, isolated)
+            entry = descriptor_entry(descriptor_path, global_home, profiles_root, browser_root, isolated, native)
         except RuntimeError as exc:
             if problems is None:
                 raise
@@ -531,6 +532,7 @@ def descriptor_entry(
     profiles_root: Path,
     browser_root: Path | None,
     isolated: bool,
+    native: bool = False,
 ) -> dict[str, Any]:
     private_file(descriptor_path, 'Hermes runner descriptor')
     try:
@@ -570,6 +572,8 @@ def descriptor_entry(
     ):
         raise RuntimeError('Hermes runner descriptor conflicts with its project')
     runtime = descriptor_runtime(item)
+    if native and runtime == 'hermes':
+        raise RuntimeError('Native catalog refuses a Hermes descriptor')
     if runtime in CLI_RUNTIMES:
         return cli_entry(runtime, username, item, home, slug, descriptor_path.stem, isolated)
     if isolated:
@@ -650,6 +654,25 @@ def browser_harness_command() -> str | None:
     return command if isinstance(command, str) and command.startswith('/') else None
 
 
+def native_catalog_models(models: object) -> list[dict[str, Any]]:
+    """Explicit operator configuration, without Hermes imports or credential discovery."""
+    if not isinstance(models, list) or not models:
+        raise RuntimeError('Native catalog requires configured models')
+    result = []
+    seen = set()
+    for model in models:
+        if not isinstance(model, dict) or not isinstance(model.get('id'), str) or not isinstance(model.get('provider'), str):
+            raise RuntimeError('Invalid native model catalog')
+        key = (model['provider'], model['id'])
+        if key in seen:
+            continue
+        seen.add(key)
+        result.append({key: value for key, value in model.items() if key in (
+            'id', 'provider', 'name', 'reasoning', 'thinkingLevels', 'thinkingDefault', 'contextLength', 'vision',
+        )})
+    return result
+
+
 def write_runtime(
     template_path: Path,
     output_path: Path,
@@ -659,22 +682,37 @@ def write_runtime(
     browser_root: Path | None = None,
     plugin_root: Path = PLAN_PLUGIN_ROOT,
     problems: list[str] | None = None,
+    native: bool = False,
 ) -> tuple[str, int, int]:
     problems = [] if problems is None else problems
     payload = json.loads(template_path.read_text(encoding='utf-8'))
-    payload['hermes'] = {**profile, 'plugins': plan_plugins(plugin_root)}
-    provider, _default_model = configured_route()
-    if provider:
-        payload['provider'] = provider
+    if native:
+        for key in ('hermes', 'command', 'args', 'provider', 'outputFormat'):
+            payload.pop(key, None)
+        payload['agent'] = 'helena'
+        payload['models'] = native_catalog_models(payload.get('models', []))
+        provider = ''
     else:
-        payload.pop('provider', None)
-    payload['models'] = catalog_models(provider)
+        payload['hermes'] = {**profile, 'plugins': plan_plugins(plugin_root)}
+        provider, _default_model = configured_route()
+        if provider:
+            payload['provider'] = provider
+        else:
+            payload.pop('provider', None)
+        payload['models'] = catalog_models(provider)
 
     home_key = os.environ.get('ITSAPLAN_API_KEY', '').strip()
     if len(home_key) < 16 or len(home_key) > 2048 or '\n' in home_key:
         raise RuntimeError('The Home runner credential is unavailable')
     isolated = isolation_enabled()
-    if isolated:
+    if native:
+        home = {
+            'name': 'volition-home', 'apiKey': home_key, 'agent': 'helena',
+            'cwd': HOME_WORKSPACE, 'models': cli_models('helena', payload['models']),
+            'env': {'HELENA_AGENT_HOME': str(global_home / 'profiles' / 'home')},
+            **({'isolation': {'slug': 'home', 'profile': 'home', 'agentId': None}} if isolated else {}),
+        }
+    elif isolated:
         # Home runs as Home's user in a profile of its own (the migration copied its state
         # there); the global home holds the runner's keys and is nobody's profile.
         home = {
@@ -701,7 +739,7 @@ def write_runtime(
             },
         }
     agents = [home]
-    for entry in descriptor_entries(descriptor_root, global_home, browser_root, isolated, problems):
+    for entry in descriptor_entries(descriptor_root, global_home, browser_root, isolated, problems, native):
         runtime = entry.pop('runtime', 'hermes')
         if runtime in CLI_RUNTIMES:
             # The runner's shared settings, without what only Hermes takes.
@@ -762,23 +800,27 @@ def main(argv: list[str]) -> int:
     if len(argv) != 3:
         print('usage: volition-hermes-catalog.py TEMPLATE OUTPUT', file=sys.stderr)
         return 2
-    global_home = Path(os.environ.get('HERMES_HOME', '')).resolve(strict=True)
+    native = os.environ.get('VOLITION_NATIVE_CATALOG') == 'on'
+    root_env = 'VOLITION_RUNTIME_ROOT' if native else 'HERMES_HOME'
+    global_home = Path(os.environ.get(root_env, '')).resolve(strict=True)
     descriptor_root = Path(os.environ.get('HERMES_RUNNER_DESCRIPTOR_ROOT', str(global_home / 'run' / 'agents')))
     browser_root_value = os.environ.get(
         'HERMES_PROJECT_BROWSER_ROOT',
         '/var/lib/volition/project-browser/projects',
     ).strip()
     browser_root = Path(browser_root_value) if browser_root_value else None
-    profile: dict[str, Any] = hermes_profile()
-    require_browser_toolset(profile)
-    require_approval_guard(hermes_approvals())
-    harness = browser_harness_command()
-    if harness:
-        profile['browserHarness'] = harness
+    profile: dict[str, Any] = {}
+    if not native:
+        profile = hermes_profile()
+        require_browser_toolset(profile)
+        require_approval_guard(hermes_approvals())
+        harness = browser_harness_command()
+        if harness:
+            profile['browserHarness'] = harness
     problems: list[str] = []
     provider, count, agents = write_runtime(
         Path(argv[1]), Path(argv[2]), descriptor_root, global_home, profile, browser_root,
-        problems=problems,
+        problems=problems, native=native,
     )
     for problem in problems:
         print(f'Hermes catalog: left out {problem}', file=sys.stderr)

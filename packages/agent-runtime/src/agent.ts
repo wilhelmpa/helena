@@ -16,6 +16,7 @@ import {
   clarifyTool,
   findToolsTool,
   memoryTool,
+  learnSkillTool,
   sessionSearchTool,
   skillTool,
   type ToolCatalogEntry,
@@ -192,6 +193,7 @@ export async function runAgent(input: AgentRunInput): Promise<LoopResult> {
     let memory: MemoryState | null = null;
     if (helena && config.memory?.enabled !== false) {
       tools.push(memoryTool(helena), sessionSearchTool(helena));
+      if (helena.saveSkill) tools.push(learnSkillTool(helena));
       memory = await helena.memory().catch((error) => {
         process.stderr.write(`helena-agent: memory unavailable: ${String(error)}\n`);
         return null;

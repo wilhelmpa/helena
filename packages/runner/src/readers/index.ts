@@ -2,6 +2,7 @@ import { runShort } from '../cli-runtime';
 import { Redactor } from '../redact';
 import { answerLimitsRead, limitsCapable } from '../limits';
 import { answerLoginRead } from '../runtime-account';
+import { nativeReaders } from './native';
 import { hermesReaders } from './hermes';
 import { claudeReaders, codexReaders } from './jsonl';
 import {
@@ -17,6 +18,7 @@ export type { ReaderContext, RuntimeReaders, RuntimeRequest, RuntimeRequestOp } 
 // op missing from its `ops`, is reported to Helena as a capability it does not have.
 const READERS: Record<string, RuntimeReaders> = {
   hermes: hermesReaders,
+  helena: nativeReaders,
   claude: claudeReaders,
   codex: codexReaders,
 };

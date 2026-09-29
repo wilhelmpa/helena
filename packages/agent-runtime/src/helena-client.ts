@@ -32,6 +32,16 @@ export interface SessionHit {
   updatedAt: string;
 }
 
+export interface LearnedRuntimeSkill {
+  path: string;
+  name: string;
+  markdown: string;
+  files: { path: string; content: string }[];
+  otherFiles: number;
+  truncated: boolean;
+  revision?: string;
+}
+
 export interface HelenaApi {
   decide(question: PolicyQuestion & { runtime: 'helena'; workspace?: string }): Promise<Decision>;
   createSession(input: {
@@ -49,6 +59,8 @@ export interface HelenaApi {
   memory(): Promise<MemoryState>;
   note(text: string): Promise<void>;
   proposeMemory(file: string, content: string, reason: string): Promise<{ status: string }>;
+  learnedSkills?(): Promise<LearnedRuntimeSkill[]>;
+  saveSkill?(skill: LearnedRuntimeSkill, baseRevision: string | null): Promise<LearnedRuntimeSkill>;
   searchSessions(query: string, limit?: number): Promise<SessionHit[]>;
 }
 
@@ -105,6 +117,14 @@ export class HelenaClient implements HelenaApi {
     }
     if (response.status === 204) return undefined as T;
     return (await response.json()) as T;
+  }
+
+  learnedSkills(): Promise<LearnedRuntimeSkill[]> {
+    return this.request('GET', '/agent-runtime/skills');
+  }
+
+  saveSkill(skill: LearnedRuntimeSkill, baseRevision: string | null): Promise<LearnedRuntimeSkill> {
+    return this.request('PUT', '/agent-runtime/skills', { skill, baseRevision });
   }
 
   // Denied whenever Helena cannot be asked: a policy that cannot be checked does not hold.

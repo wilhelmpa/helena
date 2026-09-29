@@ -7,6 +7,15 @@ runtime_file=/var/lib/volition/hermes/run/itsaplan-runner.json
 catalog_script=/usr/local/libexec/volition-hermes-catalog.py
 descriptor_root=/var/lib/volition/hermes/run/agents
 restart_request=/var/lib/volition/hermes/run/restart-request.json
+catalog_python=/var/lib/volition/hermes/venv/bin/python
+if [ "${VOLITION_NATIVE_CATALOG:-}" = on ]; then
+  VOLITION_RUNTIME_ROOT=${VOLITION_RUNTIME_ROOT:-/var/lib/volition/runtime}
+  runtime_file="$VOLITION_RUNTIME_ROOT/run/itsaplan-runner.json"
+  descriptor_root="$VOLITION_RUNTIME_ROOT/run/agents"
+  restart_request="$VOLITION_RUNTIME_ROOT/run/restart-request.json"
+  catalog_python=/usr/bin/python3
+  export VOLITION_RUNTIME_ROOT
+fi
 
 [ -s "$credential_file" ] || { echo "The Plan runner credential is unavailable." >&2; exit 1; }
 ITSAPLAN_API_KEY=$(cat "$credential_file")
@@ -16,15 +25,21 @@ export ITSAPLAN_API_KEY
 export HERMES_RUNNER_DESCRIPTOR_ROOT="$descriptor_root"
 export HERMES_RUNNER_RESTART_REQUEST_PATH="$restart_request"
 export HERMES_PROJECT_BROWSER_ROOT=/var/lib/volition/project-browser/projects
-export HERMES_HOME=/var/lib/volition/hermes
-export HOME=/var/lib/volition/hermes
-export PYTHONPATH=/srv/volition/source/hermes
-export PATH=/var/lib/volition/hermes/venv/bin:/usr/local/bin:/usr/bin:/bin
+if [ "${VOLITION_NATIVE_CATALOG:-}" = on ]; then
+  export HOME="$VOLITION_RUNTIME_ROOT"
+  export PATH=/usr/local/bin:/usr/bin:/bin
+  unset HERMES_HOME PYTHONPATH
+else
+  export HERMES_HOME=/var/lib/volition/hermes
+  export HOME=/var/lib/volition/hermes
+  export PYTHONPATH=/srv/volition/source/hermes
+  export PATH=/var/lib/volition/hermes/venv/bin:/usr/local/bin:/usr/bin:/bin
+fi
 
 # A runner that cannot start says why in Helena's health overview (Administrator), not only
 # in the journal, before systemd tries again. Best effort: Helena may be down as well.
 report_failure() {
-  HELENA_RUNNER_ERROR="$1" /var/lib/volition/hermes/venv/bin/python - "$template_file" <<'PY' || true
+  HELENA_RUNNER_ERROR="$1" "$catalog_python" - "$template_file" <<'PY' || true
 import json, os, sys, urllib.request
 url = json.load(open(sys.argv[1], encoding="utf-8")).get("url", "http://127.0.0.1:3000").rstrip("/")
 lines = [line.strip() for line in os.environ["HELENA_RUNNER_ERROR"].splitlines() if line.strip()]
@@ -43,9 +58,9 @@ PY
 # the catalog is built, the runner will notice after startup and reload once more.
 HERMES_RUNNER_RESTART_BASELINE=$(cat "$restart_request" 2>/dev/null || true)
 export HERMES_RUNNER_RESTART_BASELINE
-catalog_errors=$(mktemp /var/lib/volition/hermes/run/.catalog-errors.XXXXXX)
+catalog_errors=$(mktemp "$(dirname "$runtime_file")/.catalog-errors.XXXXXX")
 trap 'rm -f "$catalog_errors"' EXIT
-if ! /var/lib/volition/hermes/venv/bin/python "$catalog_script" "$template_file" "$runtime_file" 2>"$catalog_errors"; then
+if ! "$catalog_python" "$catalog_script" "$template_file" "$runtime_file" 2>"$catalog_errors"; then
   cat "$catalog_errors" >&2
   report_failure "$(cat "$catalog_errors")"
   exit 1

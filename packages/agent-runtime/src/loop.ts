@@ -258,7 +258,7 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
     escalation: Escalation,
     lastText: string,
   ): Promise<LoopResult | 'switched' | null> => {
-    if (config.escalation?.central && escalation.reason === 'failure') {
+    if (!escalation.target && config.escalation?.central && escalation.reason === 'failure') {
       const central = centralEscalation(
         config.escalation,
         input.prompt,
@@ -273,10 +273,15 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
     if (
       !target ||
       switchedTo ||
-      (!config.escalation?.central && config.escalation?.mode === 'never')
+      (!escalation.target && !config.escalation?.central && config.escalation?.mode === 'never')
     )
       return null;
-    if (escalation.reason === 'failure' && config.escalation?.onFailure === false) return null;
+    if (
+      !escalation.target &&
+      escalation.reason === 'failure' &&
+      config.escalation?.onFailure === false
+    )
+      return null;
     if (isRuntimeTarget(target)) {
       sink.emit({
         type: 'escalate',
@@ -428,6 +433,8 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
       const escalated = await escalate(
         {
           reason: 'failure',
+          ...(config.runtimeFallback &&
+            isProviderFailure(lastError) && { target: config.runtimeFallback }),
           detail: lastError instanceof StepAbort ? lastError.why : 'model-unavailable',
         },
         lastText,

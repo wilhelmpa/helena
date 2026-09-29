@@ -198,3 +198,59 @@ export function sessionSearchTool(api: HelenaApi): AgentTool {
     },
   };
 }
+
+export function learnSkillTool(api: HelenaApi): AgentTool {
+  return {
+    name: 'learn_skill',
+    description:
+      'Read your learned skills and revisions with action list. Save a reusable procedure with action save, name, path, markdown, files and baseRevision (null for creation, the read revision for edits). Preserve all reference and script files. Never store secrets.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        action: { type: 'string', enum: ['list', 'save'] },
+        path: { type: 'string' },
+        name: { type: 'string' },
+        markdown: { type: 'string' },
+        baseRevision: { type: ['string', 'null'] },
+        files: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: { path: { type: 'string' }, content: { type: 'string' } },
+            required: ['path', 'content'],
+          },
+        },
+      },
+      required: ['action'],
+    },
+    async execute(input) {
+      if (input.action === 'list' && api.learnedSkills)
+        return { text: JSON.stringify(await api.learnedSkills()) };
+      if (input.action !== 'save' || !api.saveSkill) return error('Unsupported skill action');
+      if (input.baseRevision !== null && typeof input.baseRevision !== 'string')
+        return error('Read the current skill revision before saving');
+      const files = Array.isArray(input.files) ? input.files : [];
+      if (
+        files.some(
+          (file) => !file || typeof file.path !== 'string' || typeof file.content !== 'string',
+        )
+      )
+        return error('Invalid skill files');
+      const saved = await api.saveSkill(
+        {
+          path: text(input.path),
+          name: text(input.name),
+          markdown: text(input.markdown),
+          files,
+          truncated: false,
+          otherFiles: 0,
+        },
+        input.baseRevision,
+      );
+      return {
+        text: JSON.stringify({ path: saved.path, revision: saved.revision }),
+        changed: true,
+      };
+    },
+  };
+}

@@ -1,5 +1,6 @@
 import type { AgentRuntimeConfig, ModelServer } from '@helena/agent-runtime';
 import { localProviderWithoutThinking, priorityProxyBaseUrl } from '@helena/sdk';
+import { readerCapabilities } from './readers';
 import type { RunnerConfig } from './config';
 import { collectProfile, mcpSecretVariable, type CollectedProfile } from './contributions';
 import { digest } from './files';
@@ -71,7 +72,7 @@ export function localServers(snapshot: RuntimePolicySnapshot): ModelServer[] {
 
 function instructionsOf(snapshot: RuntimePolicySnapshot): string {
   return snapshot.runtimePolicy.files
-    .filter((file) => file.path === 'SOUL.md')
+    .filter((file) => file.kind === 'instructions')
     .map((file) => file.content.trim())
     .join('\n\n');
 }
@@ -85,11 +86,18 @@ export function helenaAgentConfig(
   runner: Pick<RunnerConfig, 'url' | 'cwd'>,
 ): Omit<AgentRuntimeConfig, 'workdir'> & { workdir?: string } {
   const helena = snapshot.helena ?? {};
+  const fallbacks = snapshot.hermes?.fallbackModels ?? [];
+  const subscription = fallbacks.find((entry) =>
+    ['openai-codex', 'claude-code'].includes(entry.provider),
+  );
   return {
     model: snapshot.model ?? '',
-    fallbackModels: (snapshot.hermes?.fallbackModels ?? []).map(
-      (entry) => `${entry.provider}/${entry.model}`,
-    ),
+    fallbackModels: fallbacks
+      .filter((entry) => !['openai-codex', 'claude-code'].includes(entry.provider))
+      .map((entry) => `${entry.provider}/${entry.model}`),
+    ...(subscription && {
+      runtimeFallback: `runtime:${subscription.provider === 'openai-codex' ? 'codex' : 'claude'}/${subscription.model}`,
+    }),
     servers: [...localServers(snapshot), ...KEY_PROVIDERS],
     instructions: instructionsOf(snapshot),
     ...(runner.cwd && { workdir: runner.cwd }),
@@ -224,7 +232,7 @@ export class HelenaRuntimeAdapter implements RuntimeAdapter {
       error:
         action.kind === 'write-memory' || action.kind === 'rewrite-profile'
           ? null
-          : "Helena's own runtime keeps no learned skill files",
+          : 'Skill action was not applied by the native API',
     }));
     const status: RuntimeStatus = {
       adapter: 'helena',
@@ -235,21 +243,24 @@ export class HelenaRuntimeAdapter implements RuntimeAdapter {
         'model',
         'reasoning',
         'managed-skills',
+        'learning',
         'managed-mcp-servers',
         'memory',
-        'sessions',
+        ...readerCapabilities('helena'),
       ],
       ...(applied && {
         inventory: {
-          toolsets: [],
+          toolsets: ['native'],
           mcpServers: applied.collected.runtimeServers,
-          skills: (snapshot.skills ?? []).map((skill) => ({
-            name: skill.name,
-            category: 'helena',
-            description: skill.description.slice(0, 300),
-            origin: 'plan' as const,
-            pinned: false,
-          })),
+          skills: (snapshot.skills ?? [])
+            .filter((skill) => !skill.slug.startsWith('learned/'))
+            .map((skill) => ({
+              name: skill.name,
+              category: 'helena',
+              description: skill.description.slice(0, 300),
+              origin: 'plan' as const,
+              pinned: false,
+            })),
           // The loop reads its memory from Helena itself; reported as it is there, the memory
           // editor shows and edits it like any agent's.
           memory: (snapshot.memoryWrites?.baseline ?? []).map((entry) => ({

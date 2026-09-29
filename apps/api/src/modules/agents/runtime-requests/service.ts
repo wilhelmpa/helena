@@ -1,3 +1,5 @@
+import type { SessionViewer } from '../runtime-views/session-access';
+import { NATIVE_READ_OPS, readNativeRuntime } from '../native-runtime/readers';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { db, agentRuntimeRequest, aiAgent } from '@repo/db';
 import { and, eq, lt, sql } from 'drizzle-orm';
@@ -83,6 +85,28 @@ export async function queueRuntimeRequest(
   request: RuntimeRequest,
   userId: string | null,
 ): Promise<number> {
+  const [agent] = await db
+    .select({ policy: aiAgent.runtimePolicy })
+    .from(aiAgent)
+    .where(eq(aiAgent.id, agentId));
+  const native =
+    (agent?.policy as { runtime?: string })?.runtime === 'helena' &&
+    NATIVE_READ_OPS.some((op) => op === request.op);
+  if (native) {
+    const result = await readNativeRuntime(agentId, request);
+    const [answered] = await db
+      .insert(agentRuntimeRequest)
+      .values({
+        agentId,
+        request,
+        requestedByUserId: userId,
+        status: 'answered',
+        result,
+        answeredAt: new Date(),
+      })
+      .returning({ id: agentRuntimeRequest.id });
+    return answered!.id;
+  }
   await assertRunnerPresent(agentId);
   const [row] = await db
     .insert(agentRuntimeRequest)
@@ -119,8 +143,19 @@ export async function getRuntimeRequest(
 export async function askRuntime<T = unknown>(
   agentId: number,
   request: RuntimeRequest,
-  options: { userId: string | null; timeoutMs?: number },
+  options: { userId: string | null; timeoutMs?: number; viewer?: SessionViewer },
 ): Promise<T> {
+  if (options.viewer) {
+    const [agent] = await db
+      .select({ policy: aiAgent.runtimePolicy })
+      .from(aiAgent)
+      .where(eq(aiAgent.id, agentId));
+    if (
+      (agent?.policy as { runtime?: string })?.runtime === 'helena' &&
+      request.op.startsWith('sessions.')
+    )
+      return (await readNativeRuntime(agentId, request, options.viewer)) as T;
+  }
   const id = await queueRuntimeRequest(agentId, request, options.userId);
   const deadline = Date.now() + (options.timeoutMs ?? 20_000);
   for (;;) {

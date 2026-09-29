@@ -1,7 +1,9 @@
 import { db, aiAgent, agentRuntimeAction, agentSkillLink } from '@repo/db';
 import { and, asc, eq, inArray, isNull } from 'drizzle-orm';
+import { applyNativeSkillActions } from '../native-runtime/skills';
 import { HttpError, iso } from '#shared/lib';
 import type { AgentRuntimeInventory } from '../core/service';
+import { isDisallowedRef } from '../skills/skill-format';
 import { createSkillFromFiles, type SkillRow } from '../skills/service';
 import type {
   createRuntimeActionBody,
@@ -145,7 +147,19 @@ export async function queueRuntimeAction(
       : input.kind === 'write-memory'
         ? { content: input.content, baseSha256: input.baseSha256 }
         : {};
-  return db.transaction((tx) => insertAction(tx, agentId, input.kind, target, payload));
+  const action = await db.transaction((tx) =>
+    insertAction(tx, agentId, input.kind, target, payload),
+  );
+  const [agent] = await db
+    .select({ policy: aiAgent.runtimePolicy })
+    .from(aiAgent)
+    .where(eq(aiAgent.id, agentId));
+  if (
+    (agent?.policy as { runtime?: string })?.runtime === 'helena' &&
+    input.kind !== 'write-memory'
+  )
+    await applyNativeSkillActions(agentId);
+  return action;
 }
 
 // A done action is deleted; a failed one keeps its error, which the owner sees. Returns the
@@ -211,7 +225,7 @@ export async function promoteLearnedSkill(
   if (skill.truncated || !skill.markdown.trim()) {
     throw new HttpError(409, 'The skill is too large to take over');
   }
-  if (skill.otherFiles > 0) {
+  if (skill.otherFiles > 0 || skill.files.some((file) => isDisallowedRef(file.path))) {
     throw new HttpError(409, 'The skill has files the skill library cannot hold, such as scripts');
   }
   const created = await createSkillFromFiles(teamId, {

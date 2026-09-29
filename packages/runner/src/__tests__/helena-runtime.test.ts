@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'bun:test';
+import { describe, expect, it, test } from 'bun:test';
 import { mkdtemp, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -286,4 +286,35 @@ process.stdin.on('end', () => {
       process.argv[1] = argv1;
     }
   });
+});
+
+test('native configuration preserves all instruction contributions and maps subscription fallback', () => {
+  const config = helenaAgentConfig(
+    {
+      ...snapshot,
+      runtimePolicy: {
+        files: [
+          {
+            kind: 'instructions',
+            path: 'SOUL.md',
+            content: 'Soul\nOrganization\nProject\nContext contract',
+          },
+          { kind: 'instructions', path: 'AGENTS.md', content: 'Additional instruction' },
+        ],
+      },
+      hermes: {
+        fallbackModels: [
+          { provider: 'openai-codex', model: 'gpt-6-astra' },
+          { provider: 'openai', model: 'api-model' },
+        ],
+      },
+    },
+    [],
+    { url: 'http://127.0.0.1:3000' },
+  );
+  expect(config.instructions).toBe(
+    'Soul\nOrganization\nProject\nContext contract\n\nAdditional instruction',
+  );
+  expect(config.runtimeFallback).toBe('runtime:codex/gpt-6-astra');
+  expect(config.fallbackModels).toEqual(['openai/api-model']);
 });

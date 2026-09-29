@@ -11,7 +11,12 @@ export function readerContext(config: RunnerConfig): ReaderContext {
       ? (config.env.HERMES_HOME ?? process.env.HERMES_HOME ?? '')
       : (config.env.HOME ?? process.env.HOME ?? '');
   if (!home) throw new Error(`The ${runtime} runtime has no home directory to read`);
-  return { runtime, home, cwd: config.cwd ?? null, env: config.env };
+  return {
+    runtime,
+    home,
+    cwd: config.cwd ?? null,
+    env: { ...config.env, ITSAPLAN_URL: config.url, ITSAPLAN_API_KEY: config.apiKey },
+  };
 }
 
 const SECRET_NAME = /(KEY|TOKEN|SECRET|PASSWORD|PASSWD|CREDENTIAL)/i;

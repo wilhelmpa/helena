@@ -45,6 +45,7 @@ export const helenaAgentSession = pgTable(
     runId: integer('run_id').references(() => agentRun.id, { onDelete: 'set null' }),
     chatThreadId: text('chat_thread_id'),
     model: text('model'),
+    importedFrom: jsonb('imported_from'),
     // The summary that stands in the prompt for the items up to `compacted_through`; the
     // items stay.
     summary: text('summary'),
@@ -164,4 +165,18 @@ export const helenaFactEntityLink = pgTable(
     primaryKey({ columns: [t.factId, t.entityId] }),
     index('helena_fact_entity_link_entity_idx').on(t.entityId),
   ],
+);
+
+export const volitionProfileImport = pgTable(
+  'volition_profile_import',
+  {
+    agentId: integer('agent_id')
+      .notNull()
+      .references(() => aiAgent.id, { onDelete: 'cascade' }),
+    sourceKey: text('source_key').notNull(),
+    fingerprint: text('fingerprint').notNull(),
+    sessions: jsonb('sessions').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.agentId, t.sourceKey] })],
 );
