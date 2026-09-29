@@ -1,7 +1,9 @@
 import { speakText } from '@/lib/api/endpoints/voice';
 import { Pcm16Decoder, SampleBatcher } from '../utils/pcm';
 import { bestVoice } from '../utils/voicePick';
+import type { Speaker } from '../utils/voiceEngine';
 import { markVoiceOutput } from './voiceOutput';
+import { setVoiceFallback } from './voiceFallback';
 
 // The conversation mode's voice: pieces of an answer (whole sentences, see speechChunks) are
 // queued as they arrive and read one after the other. Two engines behind one interface:
@@ -31,6 +33,8 @@ export interface VoiceSpeaker {
   busy(): boolean;
   // Called from a click (the conversation's start): lets audio play without another gesture.
   unlock(): void;
+  // A new answer starts: a voice that fell back to the browser's tries Helena's again.
+  renew?(): void;
   destroy(): void;
 }
 
@@ -453,6 +457,218 @@ export function createLocalSpeaker(
       analyser = null;
       void context?.close();
       context = null;
+    },
+  };
+}
+
+// ── One voice that keeps going ───────────────────────────────────────────────────────────
+
+// How often, and after how long, a piece Helena's voice failed on is tried again before the
+// browser's voice takes over.
+const LOCAL_RETRY_DELAYS_MS = [250, 900];
+
+export interface ResilientOptions {
+  // Who reads (voiceEngine.pickSpeaker): Helena's voice with the browser's as its fallback, or
+  // the browser's alone.
+  speaker: Speaker;
+  rate?: number;
+  makeLocal?: (events: SpeakerEvents) => VoiceSpeaker;
+  makeBrowser?: (events: SpeakerEvents, options: { rate?: number }) => VoiceSpeaker;
+  retryDelaysMs?: number[];
+  // The browser's voice reads because Helena's could not be reached (true), or Helena's voice is
+  // back (false). Also published as voiceFallbackActive() for the composer's notice.
+  onFallback?: (active: boolean) => void;
+}
+
+// The voice everything reads with (the conversation, the read-aloud button, "read everything").
+// One failed piece is no reason to change voices: Helena's voice is asked for it again (twice,
+// with a short wait: the model server is often only busy) and only when that fails as well is
+// the browser's voice used — for what is still to read, said in the composer — and Helena's
+// voice is tried again from the next answer (renew). Where the browser has no fallback ("only
+// local") the failure is reported and the rest of that answer stays unread.
+export function createResilientSpeaker(
+  events: SpeakerEvents,
+  options: ResilientOptions,
+): VoiceSpeaker {
+  const makeLocal = options.makeLocal ?? createLocalSpeaker;
+  const makeBrowser = options.makeBrowser ?? createBrowserSpeaker;
+  const delays = options.retryDelaysMs ?? LOCAL_RETRY_DELAYS_MS;
+  const wantsLocal = options.speaker.engine === 'local';
+  const canFallBack = options.speaker.engine === 'local' && options.speaker.fallback === 'browser';
+
+  let local: VoiceSpeaker | null = null;
+  let browser: VoiceSpeaker | null = null;
+  let active: VoiceSpeaker | null = null;
+  let fallback = false;
+  let renewWhenIdle = false;
+  let failures = 0;
+  // Events of a voice that is being emptied to pass its pieces on are not the listener's.
+  let swapping = false;
+  let busy = false;
+  // Pieces waiting for the retry of Helena's voice.
+  let held: string[] | null = null;
+  let retryTimer: ReturnType<typeof setTimeout> | null = null;
+  let paused = false;
+  let destroyed = false;
+
+  const setBusy = (next: boolean) => {
+    if (next === busy) return;
+    busy = next;
+    if (next) events.onStart();
+    else events.onIdle();
+  };
+  const setFallback = (next: boolean) => {
+    if (next === fallback) return;
+    fallback = next;
+    setVoiceFallback(next);
+    options.onFallback?.(next);
+  };
+
+  const innerEvents = (engine: 'local' | 'browser'): SpeakerEvents => ({
+    onStart: () => {
+      if (!swapping) setBusy(true);
+    },
+    onIdle: () => {
+      if (swapping || held) return;
+      // A fallback that has read what it had hands back to Helena's voice.
+      if (engine === 'browser' && renewWhenIdle) toLocal();
+      setBusy(false);
+    },
+    onAudible: (text) => {
+      if (engine === 'local') failures = 0;
+      events.onAudible?.(text);
+    },
+    onAnalyser: (analyser) => events.onAnalyser?.(analyser),
+    onError: (text, error) => {
+      if (engine === 'local' && wantsLocal) localFailed(text, error);
+      else events.onError?.(text, error);
+    },
+  });
+
+  const localVoice = () => (local ??= makeLocal(innerEvents('local')));
+  const browserVoice = () =>
+    (browser ??= makeBrowser(innerEvents('browser'), { rate: options.rate }));
+
+  const toLocal = () => {
+    renewWhenIdle = false;
+    failures = 0;
+    active = localVoice();
+    setFallback(false);
+  };
+
+  const flushHeld = () => {
+    retryTimer = null;
+    const pieces = held;
+    held = null;
+    if (!pieces || destroyed) return;
+    for (const piece of pieces) active?.enqueue(piece);
+    if (pieces.length === 0 || !active?.busy()) setBusy(false);
+  };
+
+  const localFailed = (text: string, error: unknown) => {
+    const failed = local;
+    if (!failed) return;
+    swapping = true;
+    const rest = [text, ...failed.drain(), ...(held ?? [])];
+    swapping = false;
+    held = null;
+    failures += 1;
+    if (failures <= delays.length) {
+      held = rest;
+      if (retryTimer) clearTimeout(retryTimer);
+      if (!paused) retryTimer = setTimeout(flushHeld, delays[failures - 1]);
+      return;
+    }
+    if (canFallBack) {
+      renewWhenIdle = false;
+      active = browserVoice();
+      setFallback(true);
+      for (const piece of rest) active.enqueue(piece);
+      return;
+    }
+    // Nothing to fall back to: said once, this answer stays unread; the next tries again.
+    failures = 0;
+    setBusy(false);
+    events.onError?.(text, error);
+  };
+
+  active = wantsLocal ? localVoice() : options.speaker.engine === 'browser' ? browserVoice() : null;
+
+  const all = () => [local, browser].filter((voice): voice is VoiceSpeaker => voice != null);
+
+  return {
+    get engine() {
+      return active?.engine ?? 'local';
+    },
+    enqueue(text) {
+      if (destroyed || !text.trim() || !active) return;
+      if (held) {
+        held.push(text);
+        return;
+      }
+      active.enqueue(text);
+    },
+    preload(texts) {
+      if (wantsLocal) localVoice().preload(texts);
+    },
+    pause() {
+      paused = true;
+      if (retryTimer) clearTimeout(retryTimer);
+      retryTimer = null;
+      for (const voice of all()) voice.pause();
+    },
+    resume() {
+      if (!paused) return;
+      paused = false;
+      for (const voice of all()) voice.resume();
+      if (held && !retryTimer) retryTimer = setTimeout(flushHeld, 0);
+    },
+    clear() {
+      paused = false;
+      held = null;
+      if (retryTimer) clearTimeout(retryTimer);
+      retryTimer = null;
+      swapping = true;
+      for (const voice of all()) voice.clear();
+      swapping = false;
+      setBusy(false);
+    },
+    drain() {
+      paused = false;
+      const rest = held ?? [];
+      held = null;
+      if (retryTimer) clearTimeout(retryTimer);
+      retryTimer = null;
+      swapping = true;
+      const queued = active?.drain() ?? [];
+      swapping = false;
+      setBusy(false);
+      return [...queued, ...rest];
+    },
+    renew() {
+      if (!fallback) {
+        failures = 0;
+        return;
+      }
+      if (browser?.busy()) renewWhenIdle = true;
+      else toLocal();
+    },
+    reading: () => (held ? held.slice(0, 2).join(' ') : (active?.reading() ?? '')),
+    busy: () => held != null || (active?.busy() ?? false),
+    unlock() {
+      // Helena's voice plays through Web Audio, which needs the click that starts a reading.
+      if (wantsLocal) localVoice().unlock();
+    },
+    destroy() {
+      destroyed = true;
+      held = null;
+      if (retryTimer) clearTimeout(retryTimer);
+      retryTimer = null;
+      swapping = true;
+      for (const voice of all()) voice.destroy();
+      swapping = false;
+      setBusy(false);
+      setFallback(false);
     },
   };
 }

@@ -320,7 +320,22 @@ describe('conversation controller with fake ear and speaker', () => {
     h.controller.stop();
   });
 
-  it('shows a TTS error, keeps text in chat, and accepts another turn', async () => {
+  it('does not change voices when a piece fails: the voice keeps its own recovery', async () => {
+    const h = harness();
+    await h.ready();
+    h.utter('Hallo');
+    await new Promise((resolve) => setTimeout(resolve, 12));
+    const first = h.speaker;
+    h.failVoice('Ich schau kurz nach.');
+    // Reported once for the answer, and no second voice (the browser's) was made in its place.
+    h.failVoice('Noch ein Stück.');
+    assert.deepEqual(h.problems, ['voice-failed']);
+    assert.deepEqual(h.engines, ['local']);
+    assert.equal(h.speaker, first);
+    h.controller.stop();
+  });
+
+  it('shows a TTS error once, keeps text in chat, and tries the voice again for the next answer', async () => {
     const h = harness();
     await h.ready();
     h.controller.setEngines({ engine: 'local' }, { engine: 'local', fallback: null });
@@ -330,7 +345,8 @@ describe('conversation controller with fake ear and speaker', () => {
     assert.deepEqual(h.problems, ['voice-failed']);
     assert.equal(conversationPhase(h.controller.snapshot), 'error');
     h.controller.update([{ id: 'a', role: 'assistant', text: 'Antwort als Text.' }], false, 0);
-    assert.deepEqual(h.spoken, ['Ich schau kurz nach.']);
+    // No permanent silence: the next answer goes to the voice again (which asks Helena's voice).
+    assert.deepEqual(h.spoken, ['Ich schau kurz nach.', 'Antwort als Text.']);
     h.utter('Neue Frage');
     assert.equal(h.controller.snapshot.active, 'on');
     assert.equal(h.controller.snapshot.error, false);

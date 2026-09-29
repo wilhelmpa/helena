@@ -2,7 +2,7 @@
 
 import { useMemo, useSyncExternalStore } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { getVoiceStatus } from '@/lib/api/endpoints/voice';
+import { getVoiceStatus, type VoiceStatus } from '@/lib/api/endpoints/voice';
 import { clampPause } from '../utils/voiceSettings';
 import {
   detectBrowserVoice,
@@ -24,6 +24,14 @@ export function useVoiceStatus() {
     refetchInterval: 120_000,
     retry: false,
   });
+}
+
+// Helena's voice was chosen (Lokale KI → Vorlesen "prefer" or "only") but the model server does not
+// take it now: what reads instead, said in the composer.
+function speakerNotice(status: VoiceStatus | null): 'browser' | 'nothing' | null {
+  const path = status?.speech;
+  if (!path || path.mode === 'off' || path.local) return null;
+  return path.mode === 'only' ? 'nothing' : 'browser';
 }
 
 const NOTHING: BrowserVoice = {
@@ -48,6 +56,9 @@ export function useVoice(): {
   browser: BrowserVoice;
   listener: Listener;
   speaker: Speaker;
+  // Helena's voice is wanted but cannot be reached now: the browser's reads instead ('browser'),
+  // or nothing does ('nothing', "Nur lokal"). Null when it works or is not wanted.
+  speakerNotice: 'browser' | 'nothing' | null;
   maxSeconds: number;
   // How long a pause ends a conversation turn, and how fast the voice reads (Sprache settings).
   pauseMs: number;
@@ -69,6 +80,7 @@ export function useVoice(): {
       browser: browser ?? NOTHING,
       listener: pickListener(known, browser ?? NOTHING),
       speaker: pickSpeaker(known, browser ?? NOTHING),
+      speakerNotice: speakerNotice(known),
       maxSeconds: known?.limits.maxSeconds ?? 120,
       pauseMs: clampPause(known?.settings?.pauseMs),
       speed: known?.settings?.speed ?? 1,

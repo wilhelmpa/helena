@@ -15,12 +15,7 @@ import { startRecognitionEar } from './recognitionEar';
 import { MicrophoneError } from './recorder';
 import { createEarcon, type Earcon } from './earcon';
 import { stopSpeaking } from './speak';
-import {
-  createBrowserSpeaker,
-  createLocalSpeaker,
-  type SpeakerEvents,
-  type VoiceSpeaker,
-} from './speakers';
+import { createResilientSpeaker, type SpeakerEvents, type VoiceSpeaker } from './speakers';
 import { DEFAULT_PAUSE_MS } from '../utils/voiceSettings';
 import { BRIDGES, preloadedPhrases, spokenLanguage, toolUpdate } from '../utils/voicePhrases';
 import { startVadEar, type ConversationEar, type EarEvents } from './vadListener';
@@ -128,6 +123,8 @@ export class ConversationController {
   private lastProgressAt = 0;
   private activeTool: string | null = null;
   private answerReading = false;
+  // The answer whose voice failure was reported already.
+  private voiceProblemFor: string | null = null;
   private progressEnabled = true;
   private readFullAnswers = true;
   private earcon: Earcon | null = null;
@@ -402,27 +399,24 @@ export class ConversationController {
       onError: (text: string) => this.voiceFailed(text),
     };
     if (this.deps.speakerFactory) return this.deps.speakerFactory(speaker, events, this.speed);
-    if (speaker.engine === 'local') return createLocalSpeaker(events);
-    if (speaker.engine === 'browser') return createBrowserSpeaker(events, { rate: this.speed });
-    return null;
+    if (speaker.engine === 'none') return null;
+    // Helena's voice, kept: a failed piece is asked for again, and the browser's voice reads
+    // only where Helena's stays unreachable (said in the composer), until the next answer.
+    return createResilientSpeaker(events, { speaker, rate: this.speed });
   }
 
-  // Helena's voice failed on a piece: in "prefer" the browser's voices read on (from that piece),
-  // in "only" the answer stays unread. Said once.
-  private voiceFailed(text: string): void {
-    const failed = this.voice;
-    if (!failed) return;
+  // The voice gave up on a piece (Helena's asked for again and, without a browser fallback, still
+  // failing — or the browser's own voice failed): said once per answer. It does not change voices
+  // (createResilientSpeaker does that, visibly, and only when Helena's stays unreachable).
+  private voiceFailed(_text: string): void {
+    if (!this.voice) return;
+    const answer = this.reading?.id ?? '';
+    if (this.voiceProblemFor === answer) return;
+    this.voiceProblemFor = answer;
     this.deps.onProblem('voice-failed');
+    // The rest of this answer stays unread (Helena's voice, no fallback): the voice is idle.
+    if (this.voice.engine === 'local') this.voice.drain();
     this.dispatch({ type: 'error' });
-    if (failed.engine !== 'local') return;
-    const queued = failed.drain();
-    if (queued[0] === text) queued.shift();
-    const rest = [text, ...queued];
-    failed.destroy();
-    const fallback = this.speaker.engine === 'local' ? this.speaker.fallback : null;
-    this.speaker = fallback ? { engine: 'browser' } : { engine: 'none' };
-    this.voice = this.createVoice(this.speaker);
-    for (const piece of rest) this.voice?.enqueue(piece);
     this.deps.refreshStatus();
   }
 
@@ -471,8 +465,11 @@ export class ConversationController {
     );
     if (index < 0) return;
     const message = this.messages[index]!;
-    if (this.reading?.id !== message.id)
+    if (this.reading?.id !== message.id) {
       this.reading = { id: message.id, offset: 0, dropped: false, chunks: 0 };
+      // Helena's voice is tried again from every new answer, also after a fallback.
+      this.voice.renew?.();
+    }
     if (this.reading.dropped) return;
     if (message.text.trim() && this.marks?.sentAt && !this.marks.answerAt) {
       this.marks.answerAt = performance.now();

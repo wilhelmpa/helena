@@ -38,6 +38,7 @@ import type { PlanSendOptions } from '../../services/planChatTransport';
 import type { ChatAgentState } from '../../utils/agentPresence';
 import type { ComposerActivity, PendingChoices } from '../../utils/composerActivity';
 import ChatAutoSpeakToggle from './ChatAutoSpeakToggle';
+import ChatVoiceNotice from './ChatVoiceNotice';
 import ChatComposerQueue, { type QueuedMessage } from './ChatComposerQueue';
 import { ChatPendingAttachment } from './ChatAttachmentChip';
 import ChatSlashMenu from './ChatSlashMenu';
@@ -78,8 +79,9 @@ export interface ChatComposerProps {
   // undefined while none has completed.
   contextTokens: number | null | undefined;
   // Answers are read aloud when complete.
-  autoSpeak: boolean;
-  onAutoSpeakChange: (on: boolean) => void;
+  // "Read everything" of this chat.
+  readAll: boolean;
+  onReadAllChange: (on: boolean) => void;
   // The hands-free conversation mode (features/voice).
   conversation: Conversation;
   dockSheet?: boolean;
@@ -134,8 +136,8 @@ export default function ChatComposer({
   onRemoveQueued,
   choices,
   contextTokens,
-  autoSpeak,
-  onAutoSpeakChange,
+  readAll,
+  onReadAllChange,
   conversation,
   dockSheet = false,
   typeToFocus = false,
@@ -337,6 +339,7 @@ export default function ChatComposer({
         >
           <PromptInputHeader>
             <ConversationBar conversation={conversation} />
+            <ChatVoiceNotice active={readAll || talking} />
             <ChatComposerQueue
               queue={queue}
               agentName={agent.name}
@@ -448,7 +451,7 @@ export default function ChatComposer({
                         }}
                       />
                     )}
-                    <ChatAutoSpeakToggle on={autoSpeak} onChange={onAutoSpeakChange} />
+                    <ChatAutoSpeakToggle on={readAll} onChange={onReadAllChange} />
                   </PopoverContent>
                 </Popover>
               )}
@@ -495,7 +498,7 @@ export default function ChatComposer({
                   }}
                 />
               )}
-              {!homeLanding && <ChatAutoSpeakToggle on={autoSpeak} onChange={onAutoSpeakChange} />}
+              {!homeLanding && <ChatAutoSpeakToggle on={readAll} onChange={onReadAllChange} />}
               <ChatAgentMenu
                 scopeKey={scopeKey}
                 agent={agent}

@@ -29,9 +29,11 @@ import {
   pendingChoices,
 } from '../../utils/composerActivity';
 import { agentDisplayName } from '../../utils/agentChip';
-import { useAutoSpeak } from '../../hooks/useAutoSpeak';
+import { useReadAll } from '../../hooks/useReadAll';
 import { messageText } from '../../utils/chatMessages';
+import { answerToRead } from '../../utils/readAloud';
 import { speak } from '@/features/voice/browser/speak';
+import { useVoice } from '@/features/voice/hooks/useVoice';
 import { useConversation } from '@/features/voice/hooks/useConversation';
 import { useVoiceProblem } from '@/features/voice/hooks/useVoiceProblem';
 import type { QueuedMessage } from './ChatComposerQueue';
@@ -183,6 +185,8 @@ export default function ChatThreadView({
   // (waiting its turn while an answer is still coming), and each new answer is read aloud
   // while it streams.
   const reportVoice = useVoiceProblem();
+  // How the question sent last in this session was given: a spoken one is answered aloud.
+  const lastQuestionVia = useRef<'voice' | null>(null);
   const voiceMessages = useMemo(
     () =>
       plan.messages.map((message) => ({
@@ -208,6 +212,7 @@ export default function ChatThreadView({
       if (plan.busy || queue.length > 0) {
         setQueue((current) => [...current, { id: uuid(), text, options, metadata: {} }]);
       } else {
+        lastQuestionVia.current = options.via ?? null;
         void plan.send(text, options, {});
       }
     },
@@ -242,9 +247,12 @@ export default function ChatThreadView({
     conversation.dismissNotice();
   }, [conversation, reportVoice]);
 
-  // With "read answers aloud" on, an answer is spoken as soon as it is complete (not one that
-  // was stopped or failed) — unless a conversation reads it already.
-  const [autoSpeak, setAutoSpeak] = useAutoSpeak();
+  // A complete answer is read aloud when it answers a question that was spoken, or in a chat
+  // where "read everything" is on (not one that was stopped or failed) — never one to a typed
+  // question otherwise, and not while a conversation reads it already. With the voice the
+  // conversation uses (Helena's local voice, the browser's only where that is unreachable).
+  const [readAll, setReadAll] = useReadAll(threadId);
+  const voice = useVoice();
   const wasBusy = useRef(false);
   useEffect(() => {
     if (plan.busy) {
@@ -253,11 +261,14 @@ export default function ChatThreadView({
     }
     if (!wasBusy.current) return;
     wasBusy.current = false;
-    const last = plan.messages.at(-1);
-    if (!autoSpeak || talking || last?.role !== 'assistant') return;
-    if (last.metadata?.stopped || last.metadata?.error || last.metadata?.interrupted) return;
-    speak(messageText(last));
-  }, [plan.busy, plan.messages, autoSpeak, talking]);
+    const text = answerToRead({
+      messages: plan.messages,
+      readAll,
+      talking,
+      lastQuestionVia: lastQuestionVia.current,
+    });
+    if (text) speak(text, { speaker: voice.speaker, speed: voice.speed });
+  }, [plan.busy, plan.messages, readAll, talking, voice.speaker, voice.speed]);
 
   // One send per turn: between handing a message to the chat and the chat reporting it
   // busy there is a render in which it still looks idle; the next status change (the
@@ -272,6 +283,7 @@ export default function ChatThreadView({
     const [next, ...rest] = queue;
     dispatching.current = true;
     setQueue(rest);
+    lastQuestionVia.current = next!.options.via ?? null;
     void plan.send(next!.text, next!.options, next!.metadata);
   }, [plan, queue, queuePaused]);
 
@@ -377,8 +389,8 @@ export default function ChatThreadView({
           onRemoveQueued={(id) => setQueue((current) => current.filter((item) => item.id !== id))}
           choices={choices}
           contextTokens={summary.data?.contextTokens}
-          autoSpeak={autoSpeak}
-          onAutoSpeakChange={setAutoSpeak}
+          readAll={readAll}
+          onReadAllChange={setReadAll}
           conversation={conversation}
           threadId={threadId}
           projectKey={projectKey}
@@ -394,6 +406,7 @@ export default function ChatThreadView({
           onSend={(text, options, metadata) => {
             setQueuePaused(false);
             if (threadId) onActivity(threadId);
+            lastQuestionVia.current = options.via ?? null;
             void plan.send(text, options, metadata);
           }}
           onStop={() => void plan.stop()}
