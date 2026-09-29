@@ -17,6 +17,7 @@ import StepUpDialog from './components/StepUpDialog';
 import GrantBanner from './components/GrantBanner';
 import TerminalTabBar from './components/TerminalTabBar';
 import MobileKeyBar from './components/MobileKeyBar';
+import OwnerTerminalFrame from './components/OwnerTerminalFrame';
 import { attachTerminalClipboard } from './utils/terminalClipboard';
 import { terminalClipboardToasts } from './utils/terminalClipboardToasts';
 import {
@@ -82,6 +83,9 @@ export default function OwnerTerminalPanel() {
       : activeKey;
   const frames = useRef<Record<string, HTMLIFrameElement | null>>({});
   const area = useRef<HTMLDivElement | null>(null);
+  // Frames appear once their terminal answers (OwnerTerminalFrame); each load attaches
+  // copy, paste and the theme to the frames now there.
+  const [loads, setLoads] = useState(0);
 
   useEffect(() => {
     const loaded = loadTabs();
@@ -134,7 +138,7 @@ export default function OwnerTerminalPanel() {
       .filter((frame): frame is HTMLIFrameElement => !!frame)
       .map((frame) => attachTerminalClipboard(frame, notes.copied, notes.pending));
     return () => cleanups.forEach((cleanup) => cleanup());
-  }, [tabs, grant.data?.active, t]);
+  }, [tabs, grant.data?.active, t, loads]);
 
   useEffect(() => {
     if (!grant.data?.active) return;
@@ -142,7 +146,7 @@ export default function OwnerTerminalPanel() {
       .filter((frame): frame is HTMLIFrameElement => !!frame)
       .map((frame) => attachTerminalTheme(frame, resolvedTheme === 'light' ? 'light' : 'dark'));
     return () => cleanups.forEach((cleanup) => cleanup());
-  }, [tabs, grant.data?.active, resolvedTheme]);
+  }, [tabs, grant.data?.active, resolvedTheme, loads]);
 
   if (grant.isLoading) return null;
   if (!grant.data?.active) return <StepUpDialog onSuccess={() => grant.refetch()} />;
@@ -195,20 +199,19 @@ export default function OwnerTerminalPanel() {
         {shown.map((tab) => {
           const key = tabKey(tab);
           return (
-            <iframe
+            <OwnerTerminalFrame
               key={key}
-              ref={(el) => {
+              frameRef={(el) => {
                 frames.current[key] = el;
               }}
               src={`/focus/owner-terminal/${tab.kind}/${tab.name}/`}
               title={`${t(`kinds.${tab.kind}`)} ${tab.name}`}
-              loading="lazy"
-              className="ds-terminal-frame"
-              data-active={key === current ? 'true' : 'false'}
-              allow="clipboard-read; clipboard-write"
-              onLoad={(event) => {
+              active={key === current}
+              onClose={() => closeTab(key)}
+              onLoaded={(frame) => {
+                setLoads((value) => value + 1);
                 try {
-                  event.currentTarget.contentWindow?.dispatchEvent(new Event('resize'));
+                  frame.contentWindow?.dispatchEvent(new Event('resize'));
                 } catch {
                   // Not the terminal (its router is down and something else answered).
                 }

@@ -309,5 +309,11 @@
   "context": {
     "task": "Aufgabe {identifier} „{title}“",
     "document": "Dokument {name}"
+  },
+  "dock": {
+    "expand": "Chat aufklappen",
+    "collapse": "Chat zuklappen",
+    "openTab": "Als Tab öffnen",
+    "empty": "Frag {agent} …"
   }
 }

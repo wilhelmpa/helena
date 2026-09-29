@@ -19,6 +19,8 @@ export { TextField, TextArea, Field, SearchField } from './components/Field';
 export { Switch } from '@/components/ui/switch';
 export { Card } from './components/Card';
 export { Section, MonoLabel, EmptyState } from './components/Section';
+export { EmbedProblem } from './components/EmbedProblem';
+export { EmbedConnecting } from './components/EmbedConnecting';
 export { Box, Stack, Inline, Grid, Text } from './components/Layout';
 export type { Space, TextSize, TextTone } from './components/Layout';
 export { ActionMenu, Tip } from './components/ActionMenu';

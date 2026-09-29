@@ -174,7 +174,22 @@
     "codeRetry": "Neu laden",
     "codeNoFolder": "Für dieses Projekt gibt es noch keinen Arbeitsordner.",
     "codeNoFolderPending": "Der Arbeitsordner dieses Projekts wird noch eingerichtet.",
-    "codeSettings": "Projekt-Einstellungen"
+    "codeSettings": "Projekt-Einstellungen",
+    "chatDockResize": "Höhe des Chats ändern",
+    "frameProblem": {
+      "title": "{tool} ist nicht erreichbar",
+      "reasons": {
+        "unreachable": "Der Dienst antwortet nicht. Er startet vielleicht gerade neu, oder das Netz hat gewechselt.",
+        "status": "Der Dienst meldet einen Fehler ({status}).",
+        "forbidden": "Kein Zugriff. Melde dich neu an oder gib den Zugang frei.",
+        "timeout": "Keine Antwort in der vorgesehenen Zeit.",
+        "blocked": "Der Browser hat die Seite nicht angezeigt (abgelehnt oder blockiert)."
+      },
+      "retrying": "Verbindet sich neu, sobald er wieder antwortet.",
+      "reload": "Neu laden",
+      "close": "Tab schließen",
+      "connecting": "Verbinde mit {tool} …"
+    }
   },
   "groups": {
     "project": "Projekt",

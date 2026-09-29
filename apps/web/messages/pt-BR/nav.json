@@ -173,7 +173,22 @@
     "codeRetry": "Recarregar",
     "codeNoFolder": "Este projeto ainda não tem pasta de trabalho.",
     "codeNoFolderPending": "A pasta de trabalho deste projeto ainda está sendo preparada.",
-    "codeSettings": "Configurações do projeto"
+    "codeSettings": "Configurações do projeto",
+    "chatDockResize": "Alterar a altura do chat",
+    "frameProblem": {
+      "title": "{tool} não está acessível",
+      "reasons": {
+        "unreachable": "O serviço não responde. Talvez esteja reiniciando ou a rede mudou.",
+        "status": "O serviço relata um erro ({status}).",
+        "forbidden": "Sem acesso. Entre novamente ou libere o acesso.",
+        "timeout": "Sem resposta a tempo.",
+        "blocked": "O navegador não exibiu a página (recusada ou bloqueada)."
+      },
+      "retrying": "Reconecta assim que voltar a responder.",
+      "reload": "Recarregar",
+      "close": "Fechar aba",
+      "connecting": "Conectando a {tool} …"
+    }
   },
   "groups": {
     "project": "Projeto",

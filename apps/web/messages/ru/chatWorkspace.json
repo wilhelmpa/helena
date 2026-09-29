@@ -309,5 +309,11 @@
   "context": {
     "task": "Задача {identifier} «{title}»",
     "document": "Документ {name}"
+  },
+  "dock": {
+    "expand": "Развернуть чат",
+    "collapse": "Свернуть чат",
+    "openTab": "Открыть во вкладке",
+    "empty": "Спросите {agent} …"
   }
 }

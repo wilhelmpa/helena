@@ -309,5 +309,11 @@
   "context": {
     "task": "任务 {identifier}「{title}」",
     "document": "文档 {name}"
+  },
+  "dock": {
+    "expand": "展开聊天",
+    "collapse": "收起聊天",
+    "openTab": "作为标签页打开",
+    "empty": "问问 {agent} …"
   }
 }

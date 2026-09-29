@@ -4,6 +4,9 @@ import { useEffect, useRef } from 'react';
 import { useTheme } from 'next-themes';
 import { cn } from '@/lib/utils';
 import { attachCodeTheme } from '@/utils/codeTheme';
+import { EmbedConnecting, EmbedProblem } from '@/design-system';
+import { useFrameGuard } from '@/hooks/useFrameGuard';
+import { usePanelToolClose } from '@/context/panelToolTab';
 
 export default function WorkspaceFrame({
   url,
@@ -14,6 +17,7 @@ export default function WorkspaceFrame({
   sandbox,
   helenaCode = false,
   onLoaded,
+  onClose,
 }: {
   url: string;
   title: string;
@@ -25,24 +29,40 @@ export default function WorkspaceFrame({
   helenaCode?: boolean;
   // The frame's page has loaded (the host may cover it until then).
   onLoaded?: () => void;
+  // "Tab schließen" of the view shown when it does not answer; the panel's tab by default.
+  onClose?: () => void;
 }) {
   const frame = useRef<HTMLIFrameElement>(null);
   const { resolvedTheme } = useTheme();
-  const previousReloadToken = useRef(reloadToken);
+  // Shown only once the address answers, Ava's own view when it does not (Auftrag 116);
+  // "Neu laden" asks again and loads a fresh frame.
+  const guard = useFrameGuard({ url, active, reloadToken });
+  const closeTab = usePanelToolClose();
 
   useEffect(() => {
     if (!helenaCode) return;
     return attachCodeTheme(url, resolvedTheme === 'light' ? 'light' : 'dark');
   }, [helenaCode, resolvedTheme, url]);
 
-  useEffect(() => {
-    if (previousReloadToken.current === reloadToken) return;
-    previousReloadToken.current = reloadToken;
-    if (frame.current) frame.current.src = url;
-  }, [reloadToken, url]);
+  if (!guard.showFrame) {
+    if (!active) return null;
+    return guard.state.phase === 'failed' ? (
+      <EmbedProblem
+        tool={title}
+        reason={guard.state.reason}
+        status={guard.state.status}
+        retrying={guard.state.retrying}
+        onReload={guard.retry}
+        onClose={onClose ?? closeTab ?? undefined}
+      />
+    ) : (
+      <EmbedConnecting tool={title} />
+    );
+  }
 
   return (
     <iframe
+      key={guard.session}
       ref={frame}
       src={url}
       title={title}
@@ -54,6 +74,7 @@ export default function WorkspaceFrame({
       )}
       style={helenaCode ? { colorScheme: resolvedTheme === 'light' ? 'light' : 'dark' } : undefined}
       onLoad={(event) => {
+        guard.onLoad(event.currentTarget);
         onLoaded?.();
         if (!helenaCode) return;
         try {

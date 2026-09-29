@@ -176,7 +176,22 @@
     "codeRetry": "Reload",
     "codeNoFolder": "This project has no working folder yet.",
     "codeNoFolderPending": "This project's working folder is still being set up.",
-    "codeSettings": "Project settings"
+    "codeSettings": "Project settings",
+    "chatDockResize": "Resize the chat",
+    "frameProblem": {
+      "title": "{tool} cannot be reached",
+      "reasons": {
+        "unreachable": "The service does not answer. It may be restarting, or the network changed.",
+        "status": "The service reports an error ({status}).",
+        "forbidden": "No access. Sign in again or grant access.",
+        "timeout": "No answer in time.",
+        "blocked": "The browser did not show the page (refused or blocked)."
+      },
+      "retrying": "Reconnects as soon as it answers again.",
+      "reload": "Reload",
+      "close": "Close tab",
+      "connecting": "Connecting to {tool} …"
+    }
   },
   "groups": {
     "project": "Project",

@@ -318,6 +318,43 @@
   margin-top: var(--space-2);
 }
 
+/* ── An embedded tool that does not answer (Auftrag 116) ─────────────────── */
+.ds-embed-problem,
+.ds-embed-connecting {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  background: var(--surface-1);
+}
+.ds-embed-problem .ds-empty-action {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-2);
+}
+.ds-embed-problem-retry {
+  display: block;
+  margin-top: var(--space-2);
+  color: var(--text-3);
+  font-size: 12px;
+}
+.ds-embed-connecting {
+  align-items: center;
+  justify-content: center;
+  color: var(--text-3);
+  font-size: 12px;
+  animation: ds-embed-connecting-in 0.2s ease-out 0.8s both;
+}
+@keyframes ds-embed-connecting-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 /* ── Status dot (after the text, never before) ───────────────────────────── */
 .ds-status-dot {
   width: 7px;

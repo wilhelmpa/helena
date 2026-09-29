@@ -173,7 +173,22 @@
     "codeRetry": "重新加载",
     "codeNoFolder": "此项目还没有工作文件夹。",
     "codeNoFolderPending": "此项目的工作文件夹仍在设置中。",
-    "codeSettings": "项目设置"
+    "codeSettings": "项目设置",
+    "chatDockResize": "调整聊天高度",
+    "frameProblem": {
+      "title": "无法连接 {tool}",
+      "reasons": {
+        "unreachable": "服务没有响应。它可能正在重启，或者网络已切换。",
+        "status": "服务报告了一个错误（{status}）。",
+        "forbidden": "没有访问权限。请重新登录或授予访问权限。",
+        "timeout": "未在规定时间内响应。",
+        "blocked": "浏览器没有显示该页面（被拒绝或被阻止）。"
+      },
+      "retrying": "一旦恢复响应就会自动重新连接。",
+      "reload": "重新加载",
+      "close": "关闭标签页",
+      "connecting": "正在连接 {tool} …"
+    }
   },
   "groups": {
     "project": "项目",

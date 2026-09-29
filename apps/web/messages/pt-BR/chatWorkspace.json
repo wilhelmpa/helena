@@ -309,5 +309,11 @@
   "context": {
     "task": "Tarefa {identifier} “{title}”",
     "document": "Documento {name}"
+  },
+  "dock": {
+    "expand": "Abrir o chat",
+    "collapse": "Recolher o chat",
+    "openTab": "Abrir como aba",
+    "empty": "Pergunte a {agent} …"
   }
 }
