@@ -65,7 +65,13 @@ describe('Mitglied hinzufügen', () => {
     );
     const withCopy = [
       ...agents,
-      { id: 30, name: 'Vorlage Coder P10', template: false, sourceTemplateId: 9, projects: [project(10)] },
+      {
+        id: 30,
+        name: 'Vorlage Coder P10',
+        template: false,
+        sourceTemplateId: 9,
+        projects: [project(10)],
+      },
     ] as unknown as AiAgent[];
     assert.deepEqual(teamMemberCandidates(organization, withCopy, 10, 'template').options, []);
     assert.equal(teamMemberCandidates(organization, withCopy, 11, 'template').options.length, 1);
