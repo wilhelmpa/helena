@@ -8,6 +8,7 @@ import { NextIntlClientProvider } from 'next-intl';
 import { JSDOM } from 'jsdom';
 import type { FileScope } from '@/lib/api/endpoints/projectFiles';
 import chatWorkspace from '../../../../../messages/en/chatWorkspace.json';
+import knowledge from '../../../../../messages/en/knowledge.json';
 
 const { mock } = createRequire(import.meta.url)('bun:test') as {
   mock: { module(specifier: string, factory: () => Record<string, unknown>): void };
@@ -33,7 +34,19 @@ mock.module('@/lib/api/endpoints/projectFiles', () => ({
     return [{ path: `${path}/uploaded.pdf`, name: 'uploaded.pdf', kind: 'file' }];
   },
 }));
-// Modal mechanics are unrelated; the real picker still fetches, navigates and selects.
+// The picker lists canonical knowledge refs from the server (119); the ref is what it hands on.
+const searches: string[] = [];
+mock.module('@/lib/api/endpoints/everything', () => ({
+  listAttachableKnowledge: async (search: string) => {
+    searches.push(search);
+    return {
+      items: [{ ref: pickerRef, title: 'Cycle.md', source: 'vault', href: pickerHref }],
+    };
+  },
+}));
+let pickerRef = '';
+let pickerHref = '';
+// Modal mechanics are unrelated; the real picker still fetches and selects.
 mock.module('@/components/ui/dialog', () => ({
   Dialog: ({ children }: { children: ReactNode }) => <div>{children}</div>,
   DialogContent: ({ children }: { children: ReactNode }) => <div>{children}</div>,
@@ -83,7 +96,7 @@ test('real picker and upload hook hand canonical paths to the composer and its c
   const render = (child: ReactNode) =>
     act(async () =>
       root.render(
-        <NextIntlClientProvider locale="en" timeZone="UTC" messages={{ chatWorkspace }}>
+        <NextIntlClientProvider locale="en" timeZone="UTC" messages={{ chatWorkspace, knowledge }}>
           <QueryClientProvider client={qc}>{child}</QueryClientProvider>
         </NextIntlClientProvider>,
       ),
@@ -113,6 +126,8 @@ test('real picker and upload hook hand canonical paths to the composer and its c
       ['team:1', 'Home', '/files?root=home&path=Files%2Fproof&file=Files%2Fproof%2FCycle.md'],
     ]) {
       let picked: string | undefined;
+      pickerRef = `${prefix}/Files/proof/Cycle.md`;
+      pickerHref = href;
       await render(
         <ChatVaultFilePicker
           key={scopeKey}
@@ -123,14 +138,9 @@ test('real picker and upload hook hand canonical paths to the composer and its c
           }}
         />,
       );
-      await click('Files');
-      await click('proof');
       await click('Cycle.md');
       assert.equal(picked, `${prefix}/Files/proof/Cycle.md`);
-      assert.deepEqual(
-        listings.slice(-3).map((item) => item.path),
-        ['', 'Files', 'Files/proof'],
-      );
+      assert.ok(searches.length > 0);
       const html = renderToStaticMarkup(
         <ChatAttachmentChip
           attachment={{
