@@ -121,3 +121,13 @@ Der Einstieg `@/design-system` ist reine Darstellung: Er zieht keinen API-Client
 - **Aufgabenliste**: jede Gruppe eingefasst (`.ds-issue-list-box`), Zeilen in festen Spalten (Schlüssel · Titel · Status-Box
   `.ds-issue-status` · Priorität · Fälligkeit · Personen), damit nichts springt.
 - **Zweispaltige Liste/Detail** (`.ds-goals-split`): Karten links, das Gewählte rechts; unter 900 px abwechselnd mit Rückweg.
+
+## 11. Wissen, Dateien, Belege (hub/ui-3c, Befund G)
+
+- **Ein Menüpunkt, drei Sichten** auf dieselben Dateien: „Wissen“ (Docs, Leinwände, Ansichten `.base`), darunter „Dateien“ (alle übrigen Dateien) und „Belege“ mit Offen · Prüfen · Zugeordnet · Export, dann die Ordner. Kein zweiter Tab-Streifen auf der Seite. Der feste Ordner `Files` heißt „Ablage“, damit er nicht mit der Sicht „Dateien“ verwechselt wird. Auf Helena-Ebene: Wissen (alles, jede Datei mit Ort und Projekt), Dateien, Helena, Privat, Vorlagen.
+- **Ein Pfad:** Der Breadcrumb der Shell ist der ganze Pfad (Projekt · Wissen · Ordner … / Datei); die Seite wiederholt ihn nicht. Aktionen der Datei stehen rechts im Kopf (`Page actions`).
+- **Öffnen:** Ein Klick öffnet jede Datei rechts im einen Overlay (`KnowledgePreview`): ein Doc im Editor (speichert selbst), eine Leinwand, eine Ansicht, PDF, Bild. Vollbild im Overlay oder Doppelklick öffnet groß in der Seite.
+- **Herkunft:** `OriginBadge` (System, Agent) neben dem Namen; manuelle Dateien tragen keine Marke. Filter „Alle · Manuell · Agent · System“ in der Werkzeugzeile, auf dem Handy als ein `PageSelect`. Helenas eigene Ordner haben ein eigenes Symbol (`folderIcon`), Ordner von Menschen das normale.
+- **Leerzustände:** `EmptyState` mit Titel, einem Satz und der Hauptaktion (Doc anlegen, Datei hochladen, Beleg hochladen); ein Ordner nur mit Unterordnern bietet sie als Knöpfe an. Nie Spaltenköpfe über einer leeren Liste.
+- **Ansichten (`.base`):** `KnowledgeBaseView` zeigt Tabelle, Karten oder Liste (`Segmented`), filtert die Zeilen und öffnet die Notiz einer Zeile; nicht auswertbare Ausdrücke sagt sie offen. „Neu › Ansicht“ legt eine Ansicht über den Ordner an.
+- **Einstellungen › Wissen & Belege:** Belege zusammenführen, Beleg-Eingang, „Belege als Notizen“ (+ neu aufbauen), Bankkonten, Agenten als Notizen (Vorschau, in Wissen ablegen).

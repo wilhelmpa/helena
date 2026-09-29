@@ -6,9 +6,10 @@ import FileNewNoteDialog from './FileNewNoteDialog';
 import FileRenameDialog from './FileRenameDialog';
 import FileTrashDialog from './FileTrashDialog';
 import FileNewCanvasDialog from './FileNewCanvasDialog';
+import FileNewBaseDialog from './FileNewBaseDialog';
 
 export type FileDialogState =
-  | { kind: 'newFolder' | 'newFile' | 'newCanvas' }
+  | { kind: 'newFolder' | 'newFile' | 'newCanvas' | 'newBase' }
   | { kind: 'rename' | 'move' | 'trash' | 'link'; item: FileItem }
   | null;
 
@@ -43,6 +44,15 @@ export default function FileBrowserDialogs({
     case 'newCanvas':
       return (
         <FileNewCanvasDialog
+          scope={scope}
+          folder={folder}
+          onCreated={onCreatedFile}
+          onClose={onClose}
+        />
+      );
+    case 'newBase':
+      return (
+        <FileNewBaseDialog
           scope={scope}
           folder={folder}
           onCreated={onCreatedFile}

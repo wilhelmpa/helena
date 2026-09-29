@@ -35,6 +35,7 @@ import {
   TASK_IDENTIFIER,
   trashVaultPath,
   VaultError,
+  vaultOrigin,
   walkVault,
   writeVaultFile,
   type Frontmatter,
@@ -218,7 +219,13 @@ export async function writeNote(
 
 async function titlesBelow(folder: string) {
   const rows = await db
-    .select({ path: vaultEntry.path, title: vaultEntry.title, mtime: vaultEntry.mtime })
+    .select({
+      path: vaultEntry.path,
+      title: vaultEntry.title,
+      mtime: vaultEntry.mtime,
+      frontmatter: vaultEntry.frontmatter,
+      lastAuthor: vaultEntry.lastAuthor,
+    })
     .from(vaultEntry)
     .where(pathOrBelow(folder));
   return new Map(rows.map((row) => [row.path, row]));
@@ -286,6 +293,11 @@ export async function listRecent(scope: VaultScope, root: string, limit: number)
       mime: mimeFromName(relative),
       sizeBytes: size,
       updatedAt: iso(mtime),
+      origin: vaultOrigin({
+        path: relative,
+        frontmatter: indexed.get(relative)?.frontmatter,
+        lastAuthor: indexed.get(relative)?.lastAuthor,
+      }),
     })),
   };
 }

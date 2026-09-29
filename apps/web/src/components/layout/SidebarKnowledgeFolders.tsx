@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, type DragEvent } from 'react';
+import { createElement, useState, type DragEvent } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Plus } from 'lucide-react';
@@ -17,6 +17,7 @@ import FileNewFolderDialog from '@/features/project-files/components/FileNewFold
 import { filesPath, homeFilesPath } from '@/utils/paths';
 import {
   compareKnowledgeFolders,
+  folderIcon,
   isDirectChildFolder,
   knowledgeFolderLabel,
 } from '@/utils/knowledgeFolders';
@@ -81,6 +82,7 @@ function FolderNode({
       <TreeItem
         label={scope.kind === 'project' && depth === 0 ? knowledgeFolderLabel(name, fixed) : name}
         href={folderUrl(scope, path)}
+        icon={createElement(folderIcon(path, scope.kind === 'project'))}
         active={current}
         containsActive={isAncestor}
         storageKey={`folder:${scopeKey}:${path}`}

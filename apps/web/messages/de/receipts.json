@@ -4,7 +4,8 @@
     "review": "Prüfen",
     "matched": "Zugeordnet",
     "accounts": "Konten",
-    "all": "Alle Belege"
+    "all": "Alle Belege",
+    "export": "Export"
   },
   "month": "Monat",
   "allMonths": "Alle Monate",
@@ -206,5 +207,17 @@
     "einvoice": "E-Rechnung (XML)",
     "mail": "Beleg aus einer Mail",
     "noPicture": "Keine Vorschau für diese Datei"
+  },
+  "emptyTitle": "Noch keine Belege",
+  "export": {
+    "emptyTitle": "Noch nichts zu exportieren",
+    "emptyHint": "Sobald Belege oder Buchungen da sind, steht hier jeder Monat zum Herunterladen bereit.",
+    "older": "{count} ältere Monate",
+    "receipts": "{count, plural, one {# Beleg} other {# Belege}}",
+    "openReceipts": "{count} offen",
+    "openTransactions": "{count, plural, one {# Buchung ohne Beleg} other {# Buchungen ohne Beleg}}",
+    "done": "{month} heruntergeladen",
+    "downloadMonth": "{month} als ZIP herunterladen",
+    "download": "ZIP"
   }
 }

@@ -1,7 +1,6 @@
 'use client';
 
 import {
-  Fragment,
   useEffect,
   useRef,
   type ComponentType,
@@ -9,7 +8,6 @@ import {
   type ReactNode,
   type RefObject,
 } from 'react';
-import Link from 'next/link';
 import { Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Page, PageToolbarSpacer } from '@/design-system';
@@ -23,46 +21,6 @@ export interface KnowledgeCrumb {
   label: string;
   href?: string;
   onSelect?: () => void;
-}
-
-export function KnowledgeEyebrow({
-  crumbs,
-  className,
-}: {
-  crumbs: KnowledgeCrumb[];
-  className?: string;
-}) {
-  return (
-    <nav
-      aria-label={crumbs.map((crumb) => crumb.label).join(' / ')}
-      className={cn('ds-knowledge-path', className)}
-    >
-      {crumbs.map((crumb, index) => (
-        <Fragment key={`${index}:${crumb.label}`}>
-          {index > 0 && (
-            <span aria-hidden="true" className="opacity-60">
-              {index === 1 ? '·' : '/'}
-            </span>
-          )}
-          {crumb.href ? (
-            <Link href={crumb.href} className="truncate rounded-sm hover:underline">
-              {crumb.label}
-            </Link>
-          ) : crumb.onSelect ? (
-            <button
-              type="button"
-              onClick={crumb.onSelect}
-              className="truncate rounded-sm uppercase hover:underline"
-            >
-              {crumb.label}
-            </button>
-          ) : (
-            <span className="truncate">{crumb.label}</span>
-          )}
-        </Fragment>
-      ))}
-    </nav>
-  );
 }
 
 export function KnowledgeSearch({
@@ -266,7 +224,6 @@ export function useListKeyboard({
 }
 
 export default function KnowledgeFrame({
-  crumbs,
   title,
   search,
   actions,
@@ -275,7 +232,8 @@ export default function KnowledgeFrame({
   footer,
   frameProps,
 }: {
-  crumbs: KnowledgeCrumb[];
+  // The place of the list; the shell's breadcrumb shows it, the page does not repeat it.
+  crumbs?: KnowledgeCrumb[];
   title: ReactNode;
   search?: ReactNode;
   actions?: ReactNode;
@@ -284,9 +242,9 @@ export default function KnowledgeFrame({
   footer?: ReactNode;
   frameProps?: Record<string, unknown>;
 }) {
-  // The page template: the header (the shell) names the place and carries "+ Neu" on the
-  // right; search and filters sit in the toolbar row like on every page; a deeper folder
-  // shows its path over the list.
+  // The page template: the header (the shell) names the place — its breadcrumb is the whole
+  // path, so the page repeats none of it (O16) — and carries "+ Neu" on the right; search
+  // and filters sit in the toolbar row like on every page.
   return (
     <Page
       variant="fill"
@@ -306,7 +264,6 @@ export default function KnowledgeFrame({
           <h1 className="sr-only" dir="auto">
             {title}
           </h1>
-          {crumbs.length > 2 && <KnowledgeEyebrow crumbs={crumbs.slice(1)} />}
           {children}
           {footer}
         </section>

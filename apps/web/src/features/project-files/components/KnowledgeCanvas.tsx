@@ -23,7 +23,18 @@ import {
 import '@xyflow/react/dist/style.css';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
-import { Minus, Plus } from 'lucide-react';
+import {
+  FileText,
+  Link2,
+  ListTodo,
+  Minus,
+  MousePointer2,
+  Plus,
+  Spline,
+  StickyNote,
+  type LucideIcon,
+} from 'lucide-react';
+import { IconButton, Page, Pill } from '@/design-system';
 import FilePickerDialog from '@/components/common/files/FilePickerDialog';
 import IssuePickerDialog from '@/components/common/overlay/IssuePickerDialog';
 import {
@@ -132,6 +143,14 @@ function CanvasCard({ id, data }: NodeProps<CardNode>) {
 
 const CANVAS_TOOLS = ['select', 'card', 'doc', 'task', 'connect'] as const;
 type CanvasTool = (typeof CANVAS_TOOLS)[number];
+// One icon per tool (owner, O53: a canvas has its own heading and symbols).
+const TOOL_ICONS: Record<CanvasTool, LucideIcon> = {
+  select: MousePointer2,
+  card: StickyNote,
+  doc: FileText,
+  task: ListTodo,
+  connect: Spline,
+};
 
 function splitText(text: string) {
   const match = /^# ([^\n]+)(?:\n+|$)/.exec(text);
@@ -168,19 +187,22 @@ function toHref(record: CanvasRecord, scope: FileScope) {
 function CanvasSurface({
   scope,
   path,
-  name,
   editable,
   item,
   actions,
   can,
+  compact = false,
 }: {
   scope: FileScope;
   path: string;
   name: string;
   editable: boolean;
   item: FileItem;
-  actions: FileActions;
+  actions?: FileActions;
   can: FilePermissions;
+  // In the preview on the right: the overlay's head names the canvas and holds its
+  // actions, so the canvas shows only its surface and its tools.
+  compact?: boolean;
 }) {
   const file = useQuery({
     queryKey: ['knowledge-canvas', scope, path],
@@ -204,8 +226,15 @@ function CanvasSurface({
   const { screenToFlowPosition, zoomIn, zoomOut, getZoom, setViewport } = useReactFlow();
   const [zoom, setZoom] = useState(100);
   useEffect(() => {
-    if (window.innerWidth < 640) void setViewport({ x: -55, y: 100, zoom: 1 });
-  }, [setViewport]);
+    if (!compact && window.innerWidth < 640) void setViewport({ x: -55, y: 100, zoom: 1 });
+  }, [compact, setViewport]);
+  // The preview fits the cards once they are measured; the zoom label follows.
+  const cardCount = nodes.length;
+  useEffect(() => {
+    if (!compact || cardCount === 0) return;
+    const timer = window.setTimeout(() => setZoom(Math.round(getZoom() * 100)), 120);
+    return () => window.clearTimeout(timer);
+  }, [compact, cardCount, getZoom]);
   const edit = useCallback(
     (id: string, field: 'title' | 'body', value: string) => {
       setNodes((current) =>
@@ -270,7 +299,7 @@ function CanvasSurface({
             target: edge.toNode,
             sourceHandle: vertical ? 'bottom' : 'right',
             targetHandle: vertical ? 'top' : 'left',
-            style: { stroke: '#ffffff45', strokeWidth: 1.2 },
+            style: { stroke: 'var(--line-strong)', strokeWidth: 1.2 },
             type: 'default',
           };
         }),
@@ -400,41 +429,23 @@ function CanvasSurface({
   };
   const connect = useCallback(
     (connection: Connection) => {
-      setEdges((current) => addEdge({ ...connection, style: { stroke: '#ffffff45' } }, current));
+      setEdges((current) =>
+        addEdge({ ...connection, style: { stroke: 'var(--line-strong)' } }, current),
+      );
       markDirty();
     },
     [setEdges, markDirty],
   );
-  return (
+  const counts = t('counts', { cards: nodes.length, links: edges.length });
+  const surface = (
     <div
       data-knowledge-canvas
       data-project-knowledge
       className="relative min-h-0 flex-1 overflow-hidden bg-background text-foreground"
     >
-      <div className="pointer-events-none absolute inset-s-9 top-6 z-10 max-sm:inset-s-4">
-        <p className="font-mono text-[10px] tracking-[.23em] text-muted-foreground">
-          {t('eyebrow', {
-            path: path.split('/').slice(0, -1).join(' / ') || t('canvases'),
-          }).toLocaleUpperCase()}
-        </p>
-        <h1 className="mt-2 text-[24px] font-[520] tracking-[-.02em]">
-          {name.replace(/\.canvas$/i, '')}
-        </h1>
-      </div>
-      <div className="absolute inset-e-9 top-8 z-10 flex items-center gap-2 text-xs text-muted-foreground max-sm:inset-s-4 max-sm:inset-e-auto max-sm:top-28">
-        <span className="rounded-full bg-card px-3 py-2">
-          {t('counts', { cards: nodes.length, links: edges.length })}
-        </span>
-        <button
-          type="button"
-          onClick={() => void actions.copyPath(item)}
-          className="rounded-full border border-border bg-card px-3 py-2 text-foreground"
-        >
-          {t('share')}
-        </button>
-        <FileItemMenu item={item} actions={actions} can={can} />
-        <span className="sr-only">{saving ? t('saving') : t('saved')}</span>
-      </div>
+      <span className="sr-only" role="status">
+        {saving ? t('saving') : t('saved')}
+      </span>
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -457,12 +468,16 @@ function CanvasSurface({
         nodesDraggable={editable}
         nodesConnectable={editable && tool === 'connect'}
         defaultViewport={{ x: 0, y: 0, zoom: 1 }}
+        // In the narrow preview every card should be in sight, and the zoom says so.
+        fitView={compact}
+        fitViewOptions={{ padding: 0.15, maxZoom: 1 }}
+        onMoveEnd={(_event, viewport) => setZoom(Math.round(viewport.zoom * 100))}
         proOptions={{ hideAttribution: true }}
         className="!bg-background"
       >
         <Background variant={BackgroundVariant.Dots} gap={22} size={1} color="var(--line-strong)" />
       </ReactFlow>
-      <div className="absolute inset-s-1/2 bottom-6 z-10 flex max-w-[calc(100%-20px)] -translate-x-1/2 items-center gap-1 overflow-x-auto rounded-xl border border-border bg-card p-1.5 text-xs text-muted-foreground shadow-md">
+      <div className="ds-canvas-toolbar" data-compact={compact ? '' : undefined}>
         {CANVAS_TOOLS.map((key) => (
           <button
             key={key}
@@ -480,33 +495,38 @@ function CanvasSurface({
                 }
               }
             }}
-            className={`shrink-0 rounded-lg px-3 py-2 ${tool === key ? 'bg-accent text-foreground' : 'hover:text-foreground'}`}
+            aria-pressed={tool === key}
+            className="ds-canvas-tool"
           >
-            {t(`tools.${key}`)}
+            {(() => {
+              const Icon = TOOL_ICONS[key];
+              return <Icon size={14} aria-hidden="true" />;
+            })()}
+            <span className="ds-canvas-tool-label">{t(`tools.${key}`)}</span>
           </button>
         ))}
-        <span className="mx-2 h-6 w-px bg-border" />
-        <button
-          type="button"
-          aria-label={t('zoomOut')}
+        <span className="ds-canvas-toolbar-divider" aria-hidden="true" />
+        <IconButton
+          size="small"
+          label={t('zoomOut')}
           onClick={() => {
             void zoomOut();
             setZoom(Math.round((getZoom() * 100) / 1.2));
           }}
         >
           <Minus size={14} aria-hidden="true" />
-        </button>
-        <span className="px-1 font-mono">{`${zoom} %`}</span>
-        <button
-          type="button"
-          aria-label={t('zoomIn')}
+        </IconButton>
+        <span className="ds-canvas-zoom">{`${zoom} %`}</span>
+        <IconButton
+          size="small"
+          label={t('zoomIn')}
           onClick={() => {
             void zoomIn();
             setZoom(Math.round(getZoom() * 120));
           }}
         >
           <Plus size={14} aria-hidden="true" />
-        </button>
+        </IconButton>
       </div>
       {picker === 'file' && (
         <FilePickerDialog
@@ -537,16 +557,37 @@ function CanvasSurface({
       )}
     </div>
   );
+  if (compact || !actions) return surface;
+  // The canvas as a page: the header names it (breadcrumb · title, O16/O53), its counts,
+  // "copy link" and the file menu sit on the right like every page's actions.
+  return (
+    <Page
+      variant="bleed"
+      actions={
+        <>
+          <Pill>{counts}</Pill>
+          <IconButton label={t('share')} onClick={() => void actions.copyPath(item)}>
+            <Link2 size={15} />
+          </IconButton>
+          <FileItemMenu item={item} actions={actions} can={can} />
+        </>
+      }
+    >
+      {surface}
+    </Page>
+  );
 }
 
+// A JSON Canvas file of Wissen: cards, linked docs and tasks, connections.
 export default function KnowledgeCanvas(props: {
   scope: FileScope;
   path: string;
   name: string;
   editable: boolean;
   item: FileItem;
-  actions: FileActions;
+  actions?: FileActions;
   can: FilePermissions;
+  compact?: boolean;
 }) {
   return (
     <ReactFlowProvider>

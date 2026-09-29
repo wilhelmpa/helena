@@ -18,7 +18,7 @@ import { useOpenDailyNoteMutation } from '@/services/everything.service';
 import { useProjectQuery } from '@/services/projects.service';
 import { vaultNotePath } from '@/utils/paths';
 import type { FileItem, FileScope } from '@/lib/api/endpoints/projectFiles';
-import { knowledgeFolderLabel } from '@/utils/knowledgeFolders';
+import { folderIcon, knowledgeFolderLabel } from '@/utils/knowledgeFolders';
 import type { FileActions } from '../hooks/useFileActions';
 import type { FileEntryDrag } from '../hooks/useFileEntryDrag';
 import { isCanvas, isDoc } from '../utils/knowledgeKinds';
@@ -87,6 +87,7 @@ export default function KnowledgeFolderView({
   onOpen,
   onNewFile,
   onNewCanvas,
+  onNewBase,
   onNewFolder,
   onUpload,
 }: {
@@ -100,6 +101,7 @@ export default function KnowledgeFolderView({
   onOpen: (item: FileItem) => void;
   onNewFile: () => void;
   onNewCanvas: () => void;
+  onNewBase: () => void;
   onNewFolder: () => void;
   onUpload: (files: File[]) => void;
 }) {
@@ -134,7 +136,13 @@ export default function KnowledgeFolderView({
         a.name.localeCompare(b.name, 'de'),
     )
     .map((item) => ({ key: item.path, item, scope, vaultPath: actions.vaultPath(item) }));
-  const subfolders = items.filter((item) => item.kind === 'folder').length;
+  const subfolders = items
+    .filter((item) => item.kind === 'folder')
+    .map((item) => ({
+      name: scope.kind === 'project' && !path ? knowledgeFolderLabel(item.name, fixed) : item.name,
+      path: item.path,
+      icon: folderIcon(item.path, scope.kind === 'project'),
+    }));
 
   const more = scope.kind === 'home' && (
     <DropdownMenu>
@@ -176,14 +184,22 @@ export default function KnowledgeFolderView({
         can={can}
         onOpen={(entry) => onOpen(entry.item)}
         onCreate={(kind) =>
-          kind === 'doc' ? onNewFile() : kind === 'canvas' ? onNewCanvas() : onNewFolder()
+          kind === 'doc'
+            ? onNewFile()
+            : kind === 'canvas'
+              ? onNewCanvas()
+              : kind === 'base'
+                ? onNewBase()
+                : onNewFolder()
         }
+        kind="all"
         onUpload={onUpload}
         menuFor={(entry) => <FileItemMenu item={entry.item} actions={actions} can={can} />}
         rowPropsFor={(entry) => drag.source(entry.item)}
         more={more}
-        note={subfolders > 0 ? t('subfolders', { count: subfolders }) : undefined}
-        emptyText={subfolders > 0 ? t('emptyFolderWithSubfolders') : t('emptyFolder')}
+        subfolders={subfolders}
+        onOpenFolder={(folder) => actions.open(folderItem(folder))}
+        emptyText={t('emptyFolder')}
       />
       {templateOpen && (
         <DocumentTemplateDialog

@@ -1,7 +1,7 @@
 {
   "fixedFolders": {
     "Docs": "Dokumen",
-    "Files": "Berkas",
+    "Files": "Arsip",
     "Assets": "Lampiran",
     "Boards": "Kanvas",
     "Inbox": "Masuk"
@@ -142,7 +142,6 @@
     "run": "Eksekusi {run}",
     "formatted": "Teks terformat",
     "source": "Sumber Markdown",
-    "sourceRequired": "File ini berisi Markdown yang tidak dapat dipertahankan oleh editor terformat. Edit sumbernya agar semua isi tetap utuh.",
     "sourceEditRejected": "Pengeditan ini tidak dapat mempertahankan akhir baris asli. Teks Anda sebelumnya tidak berubah. Coba pengeditan yang lebih kecil."
   },
   "knowledge": {
@@ -163,14 +162,9 @@
       "doc": "Doc",
       "canvas": "Kanvas",
       "folder": "Folder",
-      "upload": "Unggah berkas"
-    },
-    "filters": {
-      "all": "Semua",
-      "docs": "Dokumen",
-      "canvases": "Kanvas",
-      "files": "Berkas",
-      "agents": "Dari agen"
+      "upload": "Unggah berkas",
+      "base": "Tampilan (tabel, kartu, daftar)",
+      "firstDoc": "Buat dokumen"
     },
     "columns": {
       "name": "Nama",
@@ -184,13 +178,12 @@
       "doc": "Doc",
       "pdf": "PDF",
       "image": "Gambar",
-      "file": "Berkas"
+      "file": "Berkas",
+      "base": "Tampilan"
     },
     "dropHint": "Seret berkas ke sini atau <pick>pilih</pick>",
     "entries": "{count, plural, other {# entri}}",
-    "subfolders": "{count, plural, other {# subfolder, di pohon sebelah kiri}}",
     "emptyFolder": "Folder ini kosong. Buat doc atau seret berkas ke sini.",
-    "emptyFolderWithSubfolders": "Tidak ada berkas di sini, hanya subfolder. Buka di pohon sebelah kiri.",
     "emptyFilter": "Tidak ada berkas jenis ini.",
     "emptyRecent": "Belum ada berkas. Buat doc atau seret berkas ke sini.",
     "recent": "Baru diubah",
@@ -210,11 +203,13 @@
     "history": "Riwayat",
     "noHistory": "Belum ada riwayat",
     "discard": "Buang perubahan yang belum disimpan?",
-    "othersFiles": "{count} berkas lainnya →",
-    "othersKnowledge": "{count} dokumen dan kanvas lainnya →",
-    "openInPage": "Buka besar",
     "download": "Unduh",
-    "searchFiles": "Cari berkas …"
+    "searchFiles": "Cari berkas …",
+    "emptyTitle": "Belum ada apa pun di Pengetahuan",
+    "emptyFilesTitle": "Belum ada berkas",
+    "emptyFiles": "PDF, gambar, dan berkas lain masuk ke sini. Unggah satu atau seret ke sini.",
+    "onlySubfoldersTitle": "Hanya subfolder",
+    "onlySubfolders": "Folder ini tidak berisi berkas. Buka salah satu subfoldernya."
   },
   "canvas": {
     "opening": "Membuka kanvas …",
@@ -233,8 +228,6 @@
     "zoomIn": "Perbesar",
     "insert": "Sisipkan",
     "findTask": "Cari tugas",
-    "eyebrow": "Pengetahuan / {path}",
-    "canvases": "Kanvas",
     "counts": "{cards, plural, other {# kartu}} · {links, plural, other {# tautan}}",
     "share": "Bagikan",
     "tools": {
@@ -243,6 +236,40 @@
       "doc": "Sisipkan dokumen",
       "task": "Sisipkan tugas",
       "connect": "Hubungkan"
-    }
+    },
+    "newTitle": "Kanvas baru",
+    "newHint": "Susun dan hubungkan kartu, dokumen, dan tugas dengan bebas; Obsidian membuka berkas yang sama.",
+    "newName": "Kanvas baru",
+    "create": "Buat"
+  },
+  "origin": {
+    "system": "Sistem",
+    "agent": "Agen",
+    "manual": "Manual",
+    "all": "Semua",
+    "systemHint": "Dibuat oleh Helena (bukti, lampiran email, ekspor)",
+    "agentHint": "Dibuat oleh agen",
+    "manualHint": "Dibuat atau diunggah oleh orang",
+    "label": "Asal"
+  },
+  "base": {
+    "loading": "Memuat tampilan …",
+    "readFailed": "Tampilan tidak dapat dibaca.",
+    "rowsFailed": "Baris tampilan tidak dapat dimuat.",
+    "unsupported": "Tampilan ini memakai ekspresi yang belum dievaluasi Helena",
+    "views": "Tampilan",
+    "filter": "Saring baris",
+    "count": "{count, plural, other {# catatan}}",
+    "countFiltered": "{shown} dari {total}",
+    "noMatch": "Tidak ada baris yang cocok dengan saringan.",
+    "empty": "Tidak ada catatan yang cocok dengan tampilan ini.",
+    "truncated": "{count} baris pertama",
+    "newTitle": "Tampilan baru",
+    "newHint": "Tampilan menampilkan catatan folder ini sebagai tabel, kartu, atau daftar; Obsidian membuka berkas yang sama.",
+    "newName": "Ikhtisar",
+    "create": "Buat",
+    "viewTable": "Tabel",
+    "viewCards": "Kartu",
+    "viewList": "Daftar"
   }
 }

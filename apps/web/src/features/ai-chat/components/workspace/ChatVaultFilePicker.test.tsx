@@ -155,8 +155,8 @@ test('real picker and upload hook hand canonical paths to the composer and its c
         />,
       );
       await click('Upload');
-      assert.deepEqual(uploaded, [`${prefix}/Chat Uploads/uploaded.pdf`]);
-      assert.equal(uploads.at(-1)?.path, 'Chat Uploads');
+      assert.deepEqual(uploaded, [`${prefix}/Files/Chat/uploaded.pdf`]);
+      assert.equal(uploads.at(-1)?.path, 'Files/Chat');
       assert.deepEqual(
         uploads.at(-1)?.scope,
         scopeKey === 'VOL'

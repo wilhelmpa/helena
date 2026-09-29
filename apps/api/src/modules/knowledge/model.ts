@@ -4,6 +4,13 @@ const vaultPath = (description: string) => t.String({ maxLength: 1024, descripti
 
 const EntryKind = t.Union([t.Literal('note'), t.Literal('file'), t.Literal('folder')]);
 
+// Who made a file (packages/vault/src/origin.ts): Helena itself, an agent, or a person.
+export const VaultOriginSchema = t.Union([
+  t.Literal('system'),
+  t.Literal('agent'),
+  t.Literal('manual'),
+]);
+
 export const pathQuery = t.Object({
   path: vaultPath('Vault-relative path, e.g. "Projects/VOL/Docs/Spec.md".'),
 });
@@ -142,6 +149,7 @@ export const RecentResponse = t.Object({
       mime: t.Nullable(t.String()),
       sizeBytes: t.Nullable(t.Number()),
       updatedAt: t.Nullable(t.String()),
+      origin: VaultOriginSchema,
     }),
   ),
 });

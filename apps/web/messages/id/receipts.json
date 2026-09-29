@@ -4,7 +4,8 @@
     "review": "Tinjau",
     "matched": "Cocok",
     "accounts": "Rekening",
-    "all": "Semua bukti"
+    "all": "Semua bukti",
+    "export": "Ekspor"
   },
   "month": "Bulan",
   "allMonths": "Semua bulan",
@@ -206,5 +207,17 @@
     "einvoice": "E-faktur (XML)",
     "mail": "Bukti dari email",
     "noPicture": "Tidak ada pratinjau untuk berkas ini"
+  },
+  "emptyTitle": "Belum ada bukti",
+  "export": {
+    "emptyTitle": "Belum ada yang bisa diekspor",
+    "emptyHint": "Begitu ada bukti atau transaksi, setiap bulan siap diunduh di sini.",
+    "older": "{count} bulan sebelumnya",
+    "receipts": "{count, plural, other {# bukti}}",
+    "openReceipts": "{count} terbuka",
+    "openTransactions": "{count, plural, other {# transaksi tanpa bukti}}",
+    "done": "{month} diunduh",
+    "downloadMonth": "Unduh {month} sebagai ZIP",
+    "download": "ZIP"
   }
 }

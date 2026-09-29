@@ -29,7 +29,7 @@ for await (const absolute of notes(root)) {
     project,
     tags: [],
     source: '',
-    origin: 'human',
+    origin: 'manual',
   };
   const missing = Object.fromEntries(
     Object.entries(proposal).filter(([key]) => !(key in note.frontmatter)),

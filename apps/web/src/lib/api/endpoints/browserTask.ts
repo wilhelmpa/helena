@@ -173,6 +173,8 @@ export interface LabRun {
   agentId: number | null;
   agentName: string | null;
   chatThreadId: string | null;
+  // The vault path of the run's last page; finalFrame is a data: URL of a run from before.
+  finalFramePath: string | null;
   finalFrame: string | null;
   createdAt: string;
   finishedAt: string | null;
