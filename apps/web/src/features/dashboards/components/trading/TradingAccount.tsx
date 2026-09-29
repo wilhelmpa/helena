@@ -130,7 +130,7 @@ export default function TradingAccount({
         </Notice>
       )}
 
-      <Grid min="fit" gap={3}>
+      <Grid min="figure" gap={3}>
         <Tile compact label={t('equity')} value={money(data.equity)} note={t('equityNote')} />
         <Tile compact label={t('cash')} value={money(data.cash)} />
         <Tile compact label={t('buyingPower')} value={money(data.buyingPower)} />

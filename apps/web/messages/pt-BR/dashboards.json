@@ -273,7 +273,7 @@
       "problem": {
         "title": "Sem dados",
         "connectionTitle": "Conta paper ausente",
-        "selectConnection": "Este projeto tem várias conexões paper. Escolha a conta cujos dados devem aparecer aqui.",
+        "selectConnection": "Nenhuma conta paper está escolhida para este painel, ou a escolhida não existe mais. Escolha a conta cujos dados devem aparecer aqui.",
         "noConnection": "Este projeto não tem conexão paper. Adicione uma em Ferramentas → Alpaca Paper.",
         "connectionUnavailable": "A conexão paper está inacessível. Verifique-a em Ferramentas → Alpaca Paper.",
         "notPaper": "Apenas contas paper são exibidas. Esta conexão não é uma conta paper e nunca é consultada.",

@@ -2,7 +2,7 @@
 
 import { CircleAlert, PlugZap } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { Button, EmptyState } from '@/design-system';
+import { Button, Notice } from '@/design-system';
 import type { TradingProblem as Problem } from '../../utils/tradingErrors';
 import TradingConnectionChoice from './TradingConnectionChoice';
 
@@ -31,8 +31,8 @@ export default function TradingProblem({
         : t('providerDown')
       : t(problem.kind);
   return (
-    <EmptyState
-      fill={false}
+    <Notice
+      tone={connectionProblem ? 'neutral' : 'warning'}
       icon={connectionProblem ? <PlugZap /> : <CircleAlert />}
       title={t(connectionProblem ? 'connectionTitle' : 'title')}
       action={
@@ -46,6 +46,6 @@ export default function TradingProblem({
       }
     >
       {text}
-    </EmptyState>
+    </Notice>
   );
 }

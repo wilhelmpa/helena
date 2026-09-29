@@ -273,7 +273,7 @@
       "problem": {
         "title": "暂无数据",
         "connectionTitle": "缺少模拟账户",
-        "selectConnection": "此项目有多个模拟连接。请选择要在此显示其数据的账户。",
+        "selectConnection": "此仪表板尚未选择模拟账户，或所选账户已不存在。请选择要在此显示其数据的账户。",
         "noConnection": "此项目尚未设置模拟连接。请在“工具 → Alpaca Paper”中添加。",
         "connectionUnavailable": "无法访问模拟连接。请在“工具 → Alpaca Paper”中检查。",
         "notPaper": "只显示模拟账户。此连接不是模拟账户，绝不会被查询。",

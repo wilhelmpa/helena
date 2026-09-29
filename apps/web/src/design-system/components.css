@@ -2341,6 +2341,9 @@ a.ds-run-card:hover {
 .ds-grid[data-min='fit'] {
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
 }
+.ds-grid[data-min='figure'] {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
 .ds-grid[data-cols='2'] {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }

@@ -38,6 +38,12 @@ export function TimeSeriesChart({
   // The time in the tooltip (defaults to the tick).
   formatTip?: (x: number) => string;
 }) {
+  // A flat line (no trades yet) would collapse the value axis into one tick: give it room.
+  const ys = points.map((point) => point.y);
+  const low = Math.min(...ys);
+  const high = Math.max(...ys);
+  const pad = Math.max((high - low) * 0.08, Math.abs(high) * 0.001, 1);
+  const domain: [number, number] = [low - pad, high + pad];
   const gradient = `ds-timeseries-${useId().replace(/:/g, '')}`;
   const config: ChartConfig = { value: { label, color: COLOR[tone] } };
   return (
@@ -71,7 +77,7 @@ export function TimeSeriesChart({
         <YAxis
           orientation="right"
           type="number"
-          domain={['auto', 'auto']}
+          domain={domain}
           tickFormatter={formatY}
           tickLine={false}
           axisLine={false}

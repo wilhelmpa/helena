@@ -14,6 +14,7 @@ import { useUpdateDashboard } from '@/services/dashboards.service';
 import { usePluginUiSlotsQuery } from '@/services/plugins.service';
 import { pluginDashboardWidget } from '@/extensions/pluginDashboardWidgets';
 import {
+  Card,
   Grid,
   Page,
   PageActions,
@@ -23,7 +24,9 @@ import {
   Stack,
   Text,
 } from '@/design-system';
-import { usePaperConnections } from '../hooks/useTradingWidgets';
+import { usePaperConnections, useTradingWidgets } from '../hooks/useTradingWidgets';
+import { problemOfMessage } from '../utils/tradingErrors';
+import TradingProblem from './trading/TradingProblem';
 import TradingKpis from './TradingKpis';
 import TradingWatchlist from './TradingWatchlist';
 import TradingTakt from './TradingTakt';
@@ -39,8 +42,8 @@ const DATA_WIDGETS: TradingWidgetId[] = [
   'strategies',
   'decisions',
 ];
-// Cards that share a row on a wide screen.
-const PAIRS: TradingWidgetId[][] = [['strategies', 'decisions']];
+// The cards that read the paper account; strategies and decisions come from Ava itself.
+const ACCOUNT_WIDGETS: TradingWidgetId[] = ['account', 'history', 'positions', 'orders'];
 
 export default function TradingDashboard({
   dashboard,
@@ -95,6 +98,17 @@ export default function TradingDashboard({
     });
   }
 
+  // No account chosen (several connections) or none set up: one prompt instead of four cards
+  // that say the same. Strategies and decisions do not need the account and stay.
+  const answer = useTradingWidgets(projectKey, period, credentialId);
+  const accountError = answer.data?.account.error;
+  const connectionProblem = accountError ? problemOfMessage(accountError) : null;
+  const needsConnection =
+    connectionProblem &&
+    (connectionProblem.kind === 'selectConnection' || connectionProblem.kind === 'noConnection')
+      ? connectionProblem
+      : null;
+
   const card = (id: TradingWidgetId) => (
     <TradingDataWidget
       key={id}
@@ -107,19 +121,26 @@ export default function TradingDashboard({
   );
   const shown = DATA_WIDGETS.filter(has);
   const rendered: React.ReactNode[] = [];
+  let prompted = false;
   for (const id of shown) {
-    const pair = PAIRS.find((entry) => entry[0] === id);
-    const partner = pair?.[1];
-    if (pair && partner && shown.includes(partner)) {
-      rendered.push(
-        <Grid key={`${id}-${partner}`} gap={4} columns={2}>
-          {card(id)}
-          {card(partner)}
-        </Grid>,
-      );
-    } else if (!PAIRS.some((entry) => entry[1] === id && shown.includes(entry[0]!))) {
-      rendered.push(card(id));
+    if (needsConnection && ACCOUNT_WIDGETS.includes(id)) {
+      if (!prompted) {
+        prompted = true;
+        rendered.push(
+          <Card key="connection" title={t('widgets.connection.label')}>
+            <TradingProblem
+              problem={needsConnection}
+              credentialId={credentialId}
+              onCredentialChange={chooseConnection}
+              onRetry={() => void answer.refetch()}
+              retrying={answer.isFetching}
+            />
+          </Card>,
+        );
+      }
+      continue;
     }
+    rendered.push(card(id));
   }
 
   // The page template (docs/ui-framework.md): the header names the dashboard, the

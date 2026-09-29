@@ -273,7 +273,7 @@
       "problem": {
         "title": "No data",
         "connectionTitle": "Paper account missing",
-        "selectConnection": "This project has several paper connections. Choose the account whose data should be shown here.",
+        "selectConnection": "No paper account is chosen for this dashboard, or the chosen one no longer exists. Choose the account whose data should be shown here.",
         "noConnection": "No paper connection is set up for this project. Add one under Tools → Alpaca Paper.",
         "connectionUnavailable": "The paper connection cannot be reached. Check it under Tools → Alpaca Paper.",
         "notPaper": "Only paper accounts are shown. This connection is not a paper account and is never queried.",

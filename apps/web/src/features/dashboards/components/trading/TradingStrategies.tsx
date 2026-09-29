@@ -20,8 +20,16 @@ export default function TradingStrategies({ data }: { data: TradingStrategiesDat
   const orphans = data.approvals.filter(
     (approval) => !known.has(`${approval.strategyId}@${approval.version}`),
   );
-  const open = data.approvals.filter((approval) => approval.status === 'pending').length;
-  const granted = data.approvals.filter((approval) => approval.status === 'approved').length;
+  const everyApproval = [
+    ...new Map(
+      [
+        ...data.approvals,
+        ...data.items.flatMap((item) => (item.approval ? [item.approval] : [])),
+      ].map((approval) => [approval.id, approval]),
+    ).values(),
+  ];
+  const open = everyApproval.filter((approval) => approval.status === 'pending').length;
+  const granted = everyApproval.filter((approval) => approval.status === 'approved').length;
   if (data.items.length === 0 && orphans.length === 0)
     return (
       <EmptyState fill={false} icon={<FlaskConical />}>

@@ -273,7 +273,7 @@
       "problem": {
         "title": "Keine Daten",
         "connectionTitle": "Paper-Konto fehlt",
-        "selectConnection": "Dieses Projekt hat mehrere Paper-Verbindungen. Wähle das Konto, dessen Daten hier stehen sollen.",
+        "selectConnection": "Für dieses Dashboard ist kein Paper-Konto gewählt, oder das gewählte gibt es nicht mehr. Wähle das Konto, dessen Daten hier stehen sollen.",
         "noConnection": "Für dieses Projekt ist keine Paper-Verbindung angelegt. Lege sie unter Werkzeuge → Alpaca Paper an.",
         "connectionUnavailable": "Die Paper-Verbindung ist nicht zugänglich. Prüfe sie unter Werkzeuge → Alpaca Paper.",
         "notPaper": "Es werden nur Paper-Konten angezeigt. Diese Verbindung ist kein Paper-Konto und wird nie abgefragt.",
