@@ -83,9 +83,11 @@ describe("browser navigation result", () => {
         error instanceof BrowserControlError && error.status === 502 &&
         error.message === "Navigation failed: net::ERR_BLOCKED_BY_CLIENT",
     );
-    assert.deepEqual(fixture.commands, [{
-      method: "Page.navigate", params: { url: "http://127.0.0.1:24032/" },
-    }]);
+    // A failed navigation leaves the tab on about:blank instead of Chrome's error page (126).
+    assert.deepEqual(fixture.commands, [
+      { method: "Page.navigate", params: { url: "http://127.0.0.1:24032/" } },
+      { method: "Page.navigate", params: { url: "about:blank" } },
+    ]);
     assert.equal(fixture.closed(), true);
   });
 
