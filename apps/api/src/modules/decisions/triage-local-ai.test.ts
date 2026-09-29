@@ -10,9 +10,9 @@ import {
 } from './classes';
 import { BUILTIN_TASK_CLASSES } from '#modules/local-ai/task-classes';
 
-test('mail and task assignment use the evaluated triage route with a cloud fallback', () => {
+test('mail and task assignment use the Flash decision route with a cloud first stage', () => {
   for (const classId of [MAIL_CLASS, TASK_TRIAGE_CLASS, AGENT_ROUTING_CLASS]) {
-    expect(localAiClassForDecision(classId)).toBe('triage');
+    expect(localAiClassForDecision(classId)).toBe('decisions');
     expect(BUILTIN_DECISION_CLASSES.find((entry) => entry.id === classId)?.input.cloud).toBe(
       'allowed',
     );

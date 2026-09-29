@@ -2,7 +2,7 @@ import { getSetting, setSetting } from '@repo/db';
 import { normalizeEscalation, type EscalationPatch, type EscalationSettings } from './rules';
 
 // The escalation rules as one setting (rules.ts). The Administrator reads and changes them in
-// Lokale KI → Eskalation; native runtime snapshots carry the effective rules.
+// Lokale KI → Eskalation; native snapshots and failed local runs use these rules.
 
 export const ESCALATION_SETTING_KEY = 'helena.escalation';
 

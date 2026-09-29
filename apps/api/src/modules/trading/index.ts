@@ -109,6 +109,7 @@ export const tradingRoutes = new Elysia({ name: 'trading', detail: { tags: ['Tra
         classId: asked.classId,
         context: input.context,
         localOnly: input.localOnly,
+        allowPrivateJev: true,
         questions: asked.questions,
         subject: `trading:${body.kind}`,
         projectId: project.id,
