@@ -207,7 +207,6 @@ export default function KnowledgeListView({
     onOpen: (index) => shown[index] && setPreview(shown[index]),
   });
   const pending = searching ? hits.some((hit) => hit.isPending) : loading;
-  const mixedProjects = new Set(entries.map((entry) => entry.projectKey ?? '')).size > 1;
   // A note a view (.base) lists opens in the same place.
   const openVaultPath = (vaultPath: string) => {
     const base = preview ?? selected;
@@ -255,8 +254,9 @@ export default function KnowledgeListView({
     </Menu>
   );
 
+  // In Home every file of a project carries its project, so it is clear where it lives.
   const where = (entry: KnowledgeEntry) =>
-    entry.projectKey && mixedProjects ? (
+    entry.projectKey ? (
       <Inline gap={1}>
         <ProjectTag projectKey={entry.projectKey} />
         <Text truncate>{entry.location}</Text>
@@ -415,10 +415,7 @@ export default function KnowledgeListView({
                 entry.location
               ) : (
                 <Inline gap={2}>
-                  {entryOrigin && entryOrigin !== 'manual' && (
-                    <OriginBadge origin={entryOrigin} />
-                  )}
-                  <Text size="xs" tone="muted" truncate>
+                  <Text size="xs" tone="muted">
                     {t(`kinds.${entryKind}`)}
                   </Text>
                   {entry.location !== undefined && (
@@ -436,7 +433,16 @@ export default function KnowledgeListView({
                   key={entry.key}
                   index={index}
                   icon={knowledgeIcons[entryKind]}
-                  name={knowledgeDisplayName(entry.item.name)}
+                  name={
+                    entryOrigin && entryOrigin !== 'manual' ? (
+                      <Inline gap={2} as="span">
+                        <Text truncate>{knowledgeDisplayName(entry.item.name)}</Text>
+                        <OriginBadge origin={entryOrigin} />
+                      </Inline>
+                    ) : (
+                      knowledgeDisplayName(entry.item.name)
+                    )
+                  }
                   title={entry.vaultPath ?? entry.item.name}
                   detail={detail}
                   trailing={entry.item.updatedAt ? relativeTime(entry.item.updatedAt) : '—'}

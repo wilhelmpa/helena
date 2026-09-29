@@ -462,6 +462,7 @@ export function SidebarProjectTree({
               activeView={RECEIPT_VIEWS.find((view) => is(`receipts:${view}`)) ?? null}
             />
           )}
+          <TreeGap />
           <SidebarKnowledgeFolders
             scope={{ kind: 'project', projectKey, root: 'vault' }}
             canWrite={can('documents', 'edit')}
@@ -788,7 +789,6 @@ function SidebarReceiptsItem({
       active={active}
       containsActive={activeView != null}
       storageKey={`${projectKey}:receipts`}
-      defaultOpen={false}
     >
       {RECEIPT_VIEWS.map((view) => (
         <TreeItem

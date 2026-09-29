@@ -15,7 +15,8 @@ import {
 
 const fixedFolders: Record<string, string> = {
   Docs: 'Dokumente',
-  Files: 'Dateien',
+  // Not "Dateien": that is the view of every file next to Wissen and Belege.
+  Files: 'Ablage',
   Assets: 'Anhänge',
   Boards: 'Leinwände',
   Inbox: 'Eingang',
