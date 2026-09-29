@@ -125,7 +125,15 @@ const ToolCallResultEvent = t.Object({
   role: t.Optional(t.Literal('tool')),
   // AG-UI has no error flag on a result, so a failed tool says so in the event's
   // metadata, with MCP's name for it: `{ isError: true }`, `content` being the error.
-  metadata: t.Optional(t.Object({ isError: t.Optional(t.Boolean()) })),
+  metadata: t.Optional(
+    t.Object({
+      isError: t.Optional(t.Boolean()),
+      outcome: t.Optional(
+        t.Union([t.Literal('ok'), t.Literal('nonzero_with_output'), t.Literal('error')]),
+      ),
+      exitCode: t.Optional(t.Union([t.Integer(), t.Null()])),
+    }),
+  ),
   // The same flag as runners before AG-UI 1.0 sent it (accepted for one release).
   isError: t.Optional(t.Boolean()),
 });

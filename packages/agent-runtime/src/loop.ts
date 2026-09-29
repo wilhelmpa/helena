@@ -551,6 +551,10 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
         id: call.id,
         output: result.output.text,
         ...(result.output.isError && { isError: true }),
+        ...(result.output.outcome && {
+          outcome: result.output.outcome,
+          exitCode: result.output.exitCode,
+        }),
       });
       const limited =
         result.output.text.length > DEFAULTS.toolResultChars

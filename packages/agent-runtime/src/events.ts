@@ -10,7 +10,14 @@ export type AgentEvent =
   | { type: 'text'; delta: string }
   | { type: 'thinking'; delta: string }
   | { type: 'tool-call'; id: string; name: string; input: string }
-  | { type: 'tool-result'; id: string; output: string; isError?: boolean }
+  | {
+      type: 'tool-result';
+      id: string;
+      output: string;
+      isError?: boolean;
+      outcome?: 'ok' | 'nonzero_with_output' | 'error';
+      exitCode?: number | null;
+    }
   // The context size of the last model call (tokens read, cache included, and written).
   | { type: 'usage'; inputTokens: number; outputTokens: number }
   | SpendEvent

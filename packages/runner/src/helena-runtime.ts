@@ -109,6 +109,7 @@ export function helenaAgentConfig(
     },
     skills: (snapshot.skills ?? []).map((skill) => ({
       name: skill.slug,
+      displayName: skill.name,
       description: skill.description || skill.name,
       markdown: skill.markdown,
       files: skill.files,

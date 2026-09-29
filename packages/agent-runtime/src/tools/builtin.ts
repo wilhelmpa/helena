@@ -1,7 +1,7 @@
 import { memorySection } from '../prompt';
 import type { SkillEntry } from '../config';
 import type { HelenaApi } from '../helena-client';
-import { error, text, type AgentTool } from './types';
+import { error, text, type AgentTool, type ToolOutput } from './types';
 
 // The loop's own tools: asking the person (clarify), finding more tools, loading a skill,
 // the agent's memory and the search over past sessions.
@@ -161,10 +161,14 @@ export function skillTool(skills: SkillEntry[], used?: (name: string) => Promise
     kind: 'meta',
     readOnly: true,
     description:
-      'Load the instructions of one of your skills (listed in the system prompt) before you do what it covers. With `file`, one of its extra files.',
+      'Load and follow a matching skill before acting. With file, load a reference or script source (execution still requires shell policy). Follow the returned offset instructions until every page is read before acting.',
     inputSchema: {
       type: 'object',
-      properties: { name: { type: 'string' }, file: { type: 'string' } },
+      properties: {
+        name: { type: 'string' },
+        file: { type: 'string' },
+        offset: { type: 'integer', minimum: 0 },
+      },
       required: ['name'],
     },
     async execute(input) {
@@ -173,17 +177,31 @@ export function skillTool(skills: SkillEntry[], used?: (name: string) => Promise
       if (!skill)
         return error(`No skill ${name}. Skills: ${skills.map((entry) => entry.name).join(', ')}`);
       const file = text(input.file).trim();
+      const offset = input.offset ?? 0;
+      if (typeof offset !== 'number' || !Number.isInteger(offset) || offset < 0)
+        return error('Invalid offset.');
+      const page = (content: string): ToolOutput => {
+        if (offset > content.length) return error('Offset is beyond the file.');
+        const end = offset + 24_000;
+        return {
+          text:
+            content.slice(offset, end) +
+            (end < content.length
+              ? `\n[More content: call load_skill with the same name/file and offset=${end}; read all pages before acting.]`
+              : ''),
+        };
+      };
       if (!file) {
         await used?.(skill.name);
-        const extra = (skill.files ?? []).map((entry) => entry.path);
-        return {
-          text: extra.length
-            ? `${skill.markdown}\n\n(Extra files: ${extra.join(', ')})`
-            : skill.markdown,
-        };
+        const extra = (skill.files ?? []).map(
+          (entry) => `load_skill(${JSON.stringify({ name: skill.name, file: entry.path })})`,
+        );
+        return page(
+          extra.length ? `${skill.markdown}\n\n(Extra files: ${extra.join(', ')})` : skill.markdown,
+        );
       }
       const found = (skill.files ?? []).find((entry) => entry.path === file);
-      return found ? { text: found.content } : error(`The skill has no file ${file}.`);
+      return found ? page(found.content) : error(`The skill has no file ${file}.`);
     },
   };
 }

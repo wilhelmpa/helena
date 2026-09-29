@@ -4,7 +4,7 @@ import { iso, rethrowDuplicate, HttpError } from '#shared/lib';
 import { putObject, getObjectText, deleteObjects } from '#shared/s3';
 import { onTemplateRelevantChange } from '../core/template-sync';
 import { allowedSkillIds, assertAllowedSkills } from '#modules/organization/skills';
-import { parseFrontmatter, isDisallowedRef } from './skill-format';
+import { parseFrontmatter, isDisallowedRef, runtimeReferencePath } from './skill-format';
 
 // Data access for the team skill library, shared by every project the team owns. A
 // skill's SKILL.md and reference files live in the S3 object store under s3_prefix;
@@ -164,7 +164,7 @@ export interface NewSkillFromFilesInput extends NewSkillInput {
 }
 
 // Keeps a relative reference path safe as an object key: rejects traversal and
-// unusual characters, and drops disallowed (executable) file types. Returns null
+// unusual characters, and drops binary executable file types. Returns null
 // when the path cannot be used.
 function sanitizeRefPath(path: string): string | null {
   const segs = path.split('/').filter((s) => s && s !== '.');
@@ -262,8 +262,7 @@ export async function updateSkill(
   return getSkill(id, teamId);
 }
 
-// Adds a reference file to a skill. Rejects executable files (no scripts in a
-// skill). The path is the sanitized file name under refs/.
+// Reference uploads are stored as source; execution requires the runtime shell policy.
 export async function addReference(
   id: number,
   teamId: number,
@@ -352,16 +351,6 @@ export interface RuntimeSkillBundle {
   description: string;
   markdown: string;
   files: { path: string; content: string }[];
-}
-
-function runtimeReferencePath(path: string): boolean {
-  const segments = path.split('/');
-  return (
-    segments.length > 0 &&
-    segments.length <= 8 &&
-    segments.every((segment) => /^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(segment)) &&
-    /\.(?:md|markdown)$/i.test(segments[segments.length - 1] ?? '')
-  );
 }
 
 export async function listAgentRuntimeSkills(agentId: number): Promise<RuntimeSkillBundle[]> {
