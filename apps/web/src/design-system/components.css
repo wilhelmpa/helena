@@ -1213,7 +1213,7 @@
 }
 @media (max-width: 700px) {
   .ds-issue-list-row {
-    grid-template-columns: 76px minmax(0, 1fr) auto;
+    grid-template-columns: 72px minmax(0, 1fr) 112px;
   }
   .ds-issue-list-meta,
   .ds-issue-list-cell[data-col='priority'],
