@@ -389,6 +389,21 @@ export async function createProjectCoordinator(
   },
 ): Promise<void> {
   const username = projectCoordinatorUsername(input.projectKey);
+  await tx.execute(sql`select pg_advisory_xact_lock(101, ${input.projectId})`);
+  const [projectCoordinator] = await tx
+    .select({ id: aiAgent.id })
+    .from(aiAgent)
+    .innerJoin(projectMember, eq(projectMember.userId, aiAgent.userId))
+    .innerJoin(organizationAgentAssignment, eq(organizationAgentAssignment.agentId, aiAgent.id))
+    .where(
+      and(
+        eq(aiAgent.teamId, input.teamId),
+        eq(projectMember.projectId, input.projectId),
+        eq(organizationAgentAssignment.role, 'coordinator'),
+      ),
+    )
+    .limit(1);
+  if (projectCoordinator) return;
   // Old versions left a coordinator behind when its project was deleted. Recover
   // that unbound, reserved identity before creating the replacement so upgrading
   // an existing instance does not turn a delete/recreate into a unique-index 500.

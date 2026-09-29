@@ -18,11 +18,7 @@ import {
   regenerateKey,
   type AgentRuntimeKind,
 } from '#modules/agents/core/service';
-import {
-  createProjectCoordinator,
-  projectCoordinatorUsername,
-  isProjectCoordinatorUsername,
-} from '#modules/projects/service';
+import { createProjectCoordinator, isProjectCoordinatorUsername } from '#modules/projects/service';
 import { getDefaultRoleId } from '#modules/roles/service';
 import { projectLocale } from '#modules/user-preferences/service';
 import { enableProjectBrowser } from '#modules/agents/mcp-servers/service';
@@ -97,11 +93,18 @@ export async function bootstrapProjectCoordinator(
     .limit(1);
   if (!target) return null;
 
-  const username = projectCoordinatorUsername(target.key);
   let [agent] = await db
     .select({ id: aiAgent.id, userId: aiAgent.userId, username: aiAgent.username })
     .from(aiAgent)
-    .where(and(eq(aiAgent.teamId, target.teamId), eq(aiAgent.username, username)))
+    .innerJoin(projectMember, eq(projectMember.userId, aiAgent.userId))
+    .innerJoin(organizationAgentAssignment, eq(organizationAgentAssignment.agentId, aiAgent.id))
+    .where(
+      and(
+        eq(aiAgent.teamId, target.teamId),
+        eq(projectMember.projectId, target.id),
+        eq(organizationAgentAssignment.role, 'coordinator'),
+      ),
+    )
     .limit(1);
   if (!agent) {
     const [roleId, locale] = await Promise.all([
@@ -122,7 +125,15 @@ export async function bootstrapProjectCoordinator(
     [agent] = await db
       .select({ id: aiAgent.id, userId: aiAgent.userId, username: aiAgent.username })
       .from(aiAgent)
-      .where(and(eq(aiAgent.teamId, target.teamId), eq(aiAgent.username, username)))
+      .innerJoin(projectMember, eq(projectMember.userId, aiAgent.userId))
+      .innerJoin(organizationAgentAssignment, eq(organizationAgentAssignment.agentId, aiAgent.id))
+      .where(
+        and(
+          eq(aiAgent.teamId, target.teamId),
+          eq(projectMember.projectId, target.id),
+          eq(organizationAgentAssignment.role, 'coordinator'),
+        ),
+      )
       .limit(1);
   }
   if (!agent) throw new Error('The project coordinator could not be created');

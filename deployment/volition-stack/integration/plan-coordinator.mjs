@@ -274,10 +274,20 @@ function findExactAgent(agents, username) {
 }
 
 async function ensurePlanAgent(config, fetchImpl, project, username, expectedName = coordinatorName(project)) {
+  const organization = await planGet(config, fetchImpl, `/teams/${project.teamId}/organization`, "Reading coordinator role");
+  const coordinators = organization?.agents?.filter((item) =>
+    item.role === "coordinator" && item.projects?.some((member) => member.id === project.id)) ?? [];
+  if (coordinators.length > 1) throw new PlanCoordinatorError("Multiple coordinators are assigned to this project");
   const listPath = `/teams/${project.teamId}/ai-agents?projectId=${project.id}`;
   let projectAgents = await planGet(config, fetchImpl, listPath, "Listing project agents");
   if (!Array.isArray(projectAgents)) throw new PlanCoordinatorError("Helena returned an invalid agent list");
-  let agent = findExactAgent(projectAgents, username);
+  let agent = coordinators.length
+    ? projectAgents.find((item) => item.id === coordinators[0].id)
+    : findExactAgent(projectAgents, username);
+  if (coordinators.length && !agent) throw new PlanCoordinatorError("The coordinator role has no project agent");
+  if (agent && agent.username?.toLowerCase() !== username) {
+    throw new PlanCoordinatorError("The project coordinator handle requires migration");
+  }
   let apiKey = null;
 
   if (!agent) {

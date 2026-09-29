@@ -27,6 +27,15 @@ AUDIT = section(r'^audit_script=.*\n[\s\S]*?^fi$') if 'audit_script=' in DEPLOY 
 
 
 class DeployChangesTest(unittest.TestCase):
+    def test_coordinator_rename_pauses_provisioning_before_migration(self):
+        stop = DEPLOY.index('systemctl stop volition-provisioning.service')
+        migrate = DEPLOY.index('systemctl start volition-plan-migrate.service')
+        rename = DEPLOY.index('rename-project-coordinators.ts --apply')
+        resume = DEPLOY.index('restart+=(volition-provisioning.service)', rename)
+        self.assertLess(stop, migrate)
+        self.assertLess(migrate, rename)
+        self.assertLess(rename, resume)
+
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory(prefix='helena-deploy-diff-')
         self.addCleanup(self.temporary.cleanup)

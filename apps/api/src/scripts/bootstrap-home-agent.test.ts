@@ -163,6 +163,23 @@ describe('Project coordinator bootstrap', () => {
     expect(await keyWorks(replaced!.apiKey!)).toBe(true);
   });
 
+  it('reuses the coordinator assigned to a project under its legacy handle', async () => {
+    const project = await createdProject();
+    const first = await bootstrapProjectCoordinator(project.id);
+    await db
+      .update(aiAgent)
+      .set({ username: 'hermes-coord-coordinator' })
+      .where(eq(aiAgent.id, first!.agent.id));
+
+    const second = await bootstrapProjectCoordinator(project.id, first!.apiKey!);
+    expect(second?.agent).toMatchObject({
+      id: first!.agent.id,
+      username: 'hermes-coord-coordinator',
+    });
+    expect(second?.apiKey).toBeNull();
+    expect(await db.$count(aiAgent)).toBe(1);
+  });
+
   it("does not accept another agent's key as the coordinator's", async () => {
     const project = await createdProject();
     const home = await bootstrapHomeAgent();

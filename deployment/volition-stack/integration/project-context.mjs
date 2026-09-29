@@ -89,13 +89,19 @@ export async function writeProjectContext(config, envelope, coordinator, workspa
     const existingStat = await fs.lstat(contextPath);
     if (!existingStat.isFile() || existingStat.isSymbolicLink() || existingStat.size > 64 * 1024) throw new Error('Existing project context is not a bounded regular file');
     const prior = JSON.parse(await fs.readFile(contextPath, 'utf8'));
-    if (prior.schemaVersion !== 1 || prior.project?.id !== envelope.project.id || prior.project?.key !== envelope.project.key || prior.coordinatorId !== coordinator.id || typeof prior.ticketLinkRule !== 'string') throw new Error('Refusing to overwrite unrelated PROJECT.json');
+    const legacyId = `hermes-${envelope.project.key === 'VERV' ? 'verve' : envelope.project.key.toLowerCase()}-coordinator`;
+    const sameCoordinator = prior.coordinatorId === coordinator.id &&
+      (prior.coordinatorAgentId == null || prior.coordinatorAgentId === coordinator.planAgentId);
+    const legacyCoordinator = prior.coordinatorId === legacyId &&
+      prior.coordinatorAgentId == null && Number.isSafeInteger(coordinator.planAgentId);
+    if (prior.schemaVersion !== 1 || prior.project?.id !== envelope.project.id || prior.project?.key !== envelope.project.key || !(sameCoordinator || legacyCoordinator) || typeof prior.ticketLinkRule !== 'string') throw new Error('Refusing to overwrite unrelated PROJECT.json');
   } catch (error) { if (error.code !== 'ENOENT') throw error; }
   await writeJsonAtomic(contextPath, {
     schemaVersion: 1,
     project: envelope.project,
     organizationInstructions,
     coordinatorId: coordinator.id,
+    coordinatorAgentId: coordinator.planAgentId,
     workspace: workspace.containerPath,
     links: {helena: projectUrl, plan: projectUrl, documents: projectUrl ? `${projectUrl}/docs` : null, files: projectUrl ? `${projectUrl}/files` : null, code: code?.toString() ?? null},
     ticketLinkRule: 'Use the project key and ticket sequenceNumber, never the database issue id.',
