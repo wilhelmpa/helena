@@ -16,7 +16,13 @@ export function budgetState(budget: Pick<BudgetStatus, 'ratio' | 'reached'> | nu
 export function leadingBudget(budgets: BudgetStatus[] | undefined): BudgetStatus | null {
   if (!budgets?.length) return null;
   return budgets.reduce((top, item) =>
-    item.reached !== top.reached ? (item.reached ? item : top) : item.ratio > top.ratio ? item : top,
+    item.reached !== top.reached
+      ? item.reached
+        ? item
+        : top
+      : item.ratio > top.ratio
+        ? item
+        : top,
   );
 }
 

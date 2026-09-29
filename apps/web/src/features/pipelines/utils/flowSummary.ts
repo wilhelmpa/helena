@@ -3,7 +3,10 @@ import type { PipelineDefinition, PipelineStep } from '@/lib/api/endpoints/pipel
 // A workflow's steps in the order they run, by name, for a card that shows what the
 // workflow does at a glance (owner, O25: the templates were not understandable). A branch
 // counts as its own name; its lanes are left out.
-export function flowSummary(definition: Pick<PipelineDefinition, 'steps'>, limit = 6): {
+export function flowSummary(
+  definition: Pick<PipelineDefinition, 'steps'>,
+  limit = 6,
+): {
   names: string[];
   more: number;
 } {

@@ -38,8 +38,19 @@ describe('Budgets: Drossel und harter Stopp', () => {
 
   test('Hinweise: gestoppte zuerst, dann nach Füllstand, nur was bremst', () => {
     const alerts = budgetAlerts([
-      { scope: 'project', id: 12, name: 'Trading', projectKey: 'TRADE', budgets: [budget('cost', 0.9)] },
-      { scope: 'agent', id: 5, name: 'Coder VOL', budgets: [budget('tokens', 1.1), budget('cost', 0.1)] },
+      {
+        scope: 'project',
+        id: 12,
+        name: 'Trading',
+        projectKey: 'TRADE',
+        budgets: [budget('cost', 0.9)],
+      },
+      {
+        scope: 'agent',
+        id: 5,
+        name: 'Coder VOL',
+        budgets: [budget('tokens', 1.1), budget('cost', 0.1)],
+      },
       { scope: 'department', id: 2, name: 'Volition', budgets: undefined },
     ]);
     assert.deepEqual(

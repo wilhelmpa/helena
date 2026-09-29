@@ -128,7 +128,12 @@ export function HomeChatActivityCards() {
                 {body}
               </Link>
             ) : (
-              <button key={entry.key} type="button" className={styles.card} onClick={entry.onSelect}>
+              <button
+                key={entry.key}
+                type="button"
+                className={styles.card}
+                onClick={entry.onSelect}
+              >
                 {body}
               </button>
             );

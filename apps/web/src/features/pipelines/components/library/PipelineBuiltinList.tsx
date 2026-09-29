@@ -35,7 +35,9 @@ export default function PipelineBuiltinList({
             <Card
               key={template.key}
               title={<span dir="auto">{input.name}</span>}
-              meta={t('startsWhen', { trigger: tTriggers(input.definition.trigger.type as 'manual') })}
+              meta={t('startsWhen', {
+                trigger: tTriggers(input.definition.trigger.type as 'manual'),
+              })}
             >
               <Stack gap={3}>
                 <Text size="sm" tone="muted" dir="auto">

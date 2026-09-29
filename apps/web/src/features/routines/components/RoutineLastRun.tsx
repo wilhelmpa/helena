@@ -64,8 +64,8 @@ export function RoutineLastRun({
       : run.skipReason === 'no-work'
         ? t('outcome.noWork')
         : run.outcome && identifier
-        ? t.rich(`outcome.${run.outcome}`, { identifier, task })
-        : null;
+          ? t.rich(`outcome.${run.outcome}`, { identifier, task })
+          : null;
   return (
     <Stack gap={1}>
       <Inline gap={2}>
