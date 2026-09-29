@@ -20,12 +20,31 @@ export const rootAccessRoutes = new Elysia({ name: 'volition-root-access' })
       },
     },
   })
-  .get('/god/root-access', () => rootSettings(), { rootOwner: true })
+  .get('/god/root-access', () => rootSettings(), {
+    rootOwner: true,
+    detail: {
+      summary: 'Read the root access settings',
+      description:
+        "Whether the Home agent may run root commands (the owner's revocation switch) and " +
+        'how its requests are handled.',
+    },
+  })
   .put('/god/root-access', ({ body, owner }) => setRootSettings(body, owner.id), {
     rootOwner: true,
     body: rootSettingsBody,
+    detail: {
+      summary: 'Change the root access settings',
+      description: 'Turn root access for the Home agent on or off. Only the owner can change it.',
+    },
   })
-  .get('/god/root-access/audit', () => rootAudit(), { rootOwner: true })
+  .get('/god/root-access/audit', () => rootAudit(), {
+    rootOwner: true,
+    detail: {
+      summary: 'Read the root access audit',
+      description:
+        'The non-blocking audit log of root commands: who asked, the command, its origin and outcome.',
+    },
+  })
   .post(
     '/agent-root',
     ({ agent, request, body }) =>

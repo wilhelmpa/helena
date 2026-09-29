@@ -157,7 +157,7 @@ describe('the goal of a task', () => {
 
     const migration = readFileSync(
       new URL(
-        '../../../../../../../packages/db/drizzle/0218_work_items_goal_backfill.sql',
+        '../../../../../../../packages/db/drizzle/0221_work_items_goal_backfill.sql',
         import.meta.url,
       ),
       'utf8',
