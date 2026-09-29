@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import type { ProjectDetail } from '@/lib/api/endpoints/projects';
 import type { FilterCondition, FilterValue } from '@/utils/filters';
@@ -32,7 +32,14 @@ export default function FilterValueEditor({
 }) {
   const t = useTranslations('filters');
   const { booleanOptions, valuesLabel } = useFilterFields();
-  const [open, setOpen] = useState(defaultOpen);
+  const [open, setOpen] = useState(false);
+  // Opened only once the condition's editor around it has taken the focus: opened with it,
+  // the editor's own focus would count as a click outside and close the list at once.
+  useEffect(() => {
+    if (!defaultOpen) return;
+    const timer = setTimeout(() => setOpen(true), 60);
+    return () => clearTimeout(timer);
+  }, [defaultOpen]);
 
   if (cond.op === 'is_set' || cond.op === 'is_not_set') return null;
 
@@ -102,6 +109,8 @@ export default function FilterValueEditor({
         align="start"
         className="max-h-72 w-72 overflow-auto p-1"
         onEscapeKeyDown={() => onEscape?.()}
+        // Focus moving back into the condition's editor is not a reason to close the list.
+        onFocusOutside={(event) => event.preventDefault()}
       >
         {options.map((o) => {
           const checked = cond.values.some((v) => v === o.value);
