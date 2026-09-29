@@ -50,7 +50,8 @@ export default function AddTeamMemberDialog({
   const tCommon = useTranslations('common');
   const teamId = organization.teamId;
   const queryClient = useQueryClient();
-  const agents = useAiAgentsQuery(teamId).data ?? [];
+  const agentsQuery = useAiAgentsQuery(teamId);
+  const agents = useMemo(() => agentsQuery.data ?? [], [agentsQuery.data]);
   const copy = useCopyAiAgentTemplate(teamId);
   const [source, setSource] = useState<MemberSource>('pool');
   const [chosenProject, setChosenProject] = useState<number | null>(
