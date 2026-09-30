@@ -4,9 +4,9 @@ import type { ReactNode } from 'react';
 import { useTranslations } from 'next-intl';
 import { More } from './DetailView';
 
-// Settings (docs/design-system.md §4): a card per topic with a title, rows of label +
-// one sentence + the control on the right (56px), at most six rows; the rest under
-// "Erweitert".
+// Settings (docs/design-system.md §4): a group per topic — its title and one sentence over a
+// card of rows: label + one sentence + the control on the right (56px), at most six rows; the
+// rest under "Erweitert". The older SettingsSection/SettingsCard draw the same.
 export function SettingsGroup({
   title,
   description,
@@ -32,8 +32,10 @@ export function SettingsGroup({
           {description && <p>{description}</p>}
         </header>
       )}
-      <div className="ds-settings-rows">{children}</div>
-      {advanced && <More label={advancedLabel ?? t('advanced')}>{advanced}</More>}
+      <div className="ds-settings-rows">
+        {children}
+        {advanced && <More label={advancedLabel ?? t('advanced')}>{advanced}</More>}
+      </div>
     </section>
   );
 }

@@ -52,4 +52,12 @@ describe('radius steps', () => {
     }
     assert.deepEqual(wrong, []);
   });
+
+  // Buttons are 8px like every control (owner 29.09.); only chips, filters and status pills
+  // are pills. A `.ds-button` that went round again would make buttons and fields disagree.
+  it('the design system button has the radius of a field, not of a pill', () => {
+    const css = readFileSync(join(srcDir, 'design-system/components.css'), 'utf8');
+    const rule = /\.ds-button \{[^}]*\}/.exec(css)?.[0] ?? '';
+    assert.match(rule, /border-radius:\s*var\(--radius-field\)/);
+  });
 });

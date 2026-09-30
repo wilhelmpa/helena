@@ -9,7 +9,8 @@
   align-items: center;
   justify-content: center;
   gap: var(--space-2);
-  border-radius: var(--radius-pill);
+  /* 8px like every control (owner 29.09.); the pill shape is for chips and filters only. */
+  border-radius: var(--radius-field);
   padding: 0 var(--space-3);
   font-size: 13px;
   font-weight: 500;
@@ -700,18 +701,15 @@
 }
 
 /* ── Settings ────────────────────────────────────────────────────────────── */
+/* One settings group (owner 30.09.: every group looks the same - SettingsGroup and the older
+   SettingsSection/SettingsCard): its title and one sentence over ONE box that holds its rows. */
 .ds-settings-group {
   display: flex;
   flex-direction: column;
-  border-radius: var(--radius-card);
-  background: var(--surface-1);
-  box-shadow: var(--shadow-card);
+  gap: var(--space-3);
 }
 .ds-settings-group + .ds-settings-group {
   margin-top: var(--space-5);
-}
-.ds-settings-group-head {
-  padding: var(--space-4) var(--space-4) var(--space-2);
 }
 .ds-settings-group-head h3 {
   color: var(--text);
@@ -726,7 +724,11 @@
 .ds-settings-rows {
   display: flex;
   flex-direction: column;
+  overflow: hidden;
   container-type: inline-size;
+  border-radius: var(--radius-card);
+  background: var(--surface-1);
+  box-shadow: var(--shadow-card);
 }
 .ds-settings-row {
   display: flex;
@@ -790,8 +792,9 @@
   flex-direction: column;
   align-items: stretch;
 }
-.ds-settings-group > .ds-more {
-  padding: 0 var(--space-4) var(--space-3);
+.ds-settings-rows > .ds-more {
+  border-top: 1px solid var(--line);
+  padding: var(--space-2) var(--space-4) var(--space-3);
 }
 /* Narrow — a phone, or a settings group in a narrow overlay: the control goes below. */
 @container (max-width: 440px) {
@@ -2041,9 +2044,18 @@ a.ds-run-card:hover {
 .ds-settings-section {
   display: flex;
   width: 100%;
-  max-width: 880px;
   flex-direction: column;
   gap: var(--space-3);
+}
+/* The body of a settings group (SettingsCard): the card of every box (owner 30.09.). */
+.ds-settings-card {
+  overflow: hidden;
+  border-radius: var(--radius-card);
+  background: var(--surface-1);
+  box-shadow: var(--shadow-card);
+}
+.ds-settings-card.divide-y > * + * {
+  border-color: var(--line);
 }
 .ds-settings-section-head {
   display: flex;
@@ -2053,12 +2065,12 @@ a.ds-run-card:hover {
 }
 .ds-settings-section-head h3 {
   color: var(--text);
-  font-size: 14px;
-  font-weight: 560;
+  font-size: 13px;
+  font-weight: 520;
 }
 .ds-settings-section-head p {
   margin-top: 2px;
-  color: var(--text-3);
+  color: var(--text-2);
   font-size: 12px;
 }
 .ds-settings-section-body {

@@ -37,15 +37,10 @@ export function SectionLabel({
   );
 }
 
-// The frame around a group of rows: 1px sidebar-border hairline, 4px inset, rows
-// separated by 1px of air rather than lines — the sidebar menu's own rhythm.
+// The frame around a group of rows: the one box of the design system (ListBox), 4px inset,
+// rows separated by 1px of air rather than lines — the sidebar menu's own rhythm.
 export function RowList({ className, ...props }: ComponentProps<'div'>) {
-  return (
-    <div
-      className={cn('flex flex-col gap-px rounded-md border border-sidebar-border p-1', className)}
-      {...props}
-    />
-  );
+  return <div className={cn('ds-list-box flex flex-col gap-px p-1', className)} {...props} />;
 }
 
 export const ROW_CLASS =

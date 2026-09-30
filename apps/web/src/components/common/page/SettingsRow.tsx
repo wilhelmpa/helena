@@ -34,15 +34,13 @@ export default function SettingsRow({
           'aria-describedby': control.props['aria-describedby'] ?? `${id}-description`,
         })
       : control;
+  // The same row as the design system's SettingsRow (ds-settings-row), with the wiring that
+  // names the control by the title and describes it by the description.
   return (
-    <div className="flex min-h-14 items-center justify-between gap-4 px-4 py-3 max-sm:flex-col max-sm:items-stretch">
-      <div className="min-w-0 flex-1 space-y-0.5">
-        <div id={`${id}-title`} className="text-sm font-medium">
-          {title}
-        </div>
-        <p id={`${id}-description`} className="text-xs text-muted-foreground">
-          {description}
-        </p>
+    <div className="ds-settings-row">
+      <div className="ds-settings-row-text">
+        <span id={`${id}-title`}>{title}</span>
+        <p id={`${id}-description`}>{description}</p>
         {note && (
           <Alert className="mt-2 w-fit bg-status-waiting/10 px-3 py-2 text-status-waiting">
             <Info />
@@ -50,7 +48,7 @@ export default function SettingsRow({
           </Alert>
         )}
       </div>
-      <div className="shrink-0">{named}</div>
+      <div className="ds-settings-row-control">{named}</div>
     </div>
   );
 }
