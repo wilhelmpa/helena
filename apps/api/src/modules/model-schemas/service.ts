@@ -29,13 +29,20 @@ type State = {
   active: string;
   schemas: Record<string, ModelSchema>;
   projects: Record<string, string>;
-  history: {
-    revision: number;
-    active: string;
-    schemas: Record<string, ModelSchema>;
-    projects: Record<string, string>;
-  }[];
+  history: HistoryEntry[];
 };
+// What an apply changed on agents, as the agents were before it: their role and own values.
+// An undo puts them back with the schema state. Entries written before this existed have none.
+type SavedAgent = { agentId: number; modelRole: string; modelOverrides: Record<string, unknown> };
+type HistoryEntry = {
+  revision: number;
+  active: string;
+  schemas: Record<string, ModelSchema>;
+  projects: Record<string, string>;
+  agents?: SavedAgent[];
+};
+// How many applies can be taken back one after the other.
+export const UNDO_DEPTH = 10;
 type Change = {
   agentId: number;
   role?: string;
@@ -353,6 +360,15 @@ export async function modelMatrix(teamId?: number, projectId?: number) {
   const schema = state.schemas[classSchemaId]!;
   return {
     revision: state.revision,
+    // What an undo can take back: the last applies, newest last, and how many agents each
+    // changed (null: written before agent changes were kept, only the schemas come back).
+    undo: {
+      depth: state.history.length,
+      steps: state.history.map((entry) => ({
+        revision: entry.revision,
+        agents: entry.agents ? entry.agents.length : null,
+      })),
+    },
     active: state.active,
     schemas: state.schemas,
     profiles: LOCAL_PROFILE_TEMPLATES,
@@ -439,7 +455,25 @@ export async function syncAgentModel(agentId: number) {
   await db.update(aiAgent).set(desired).where(eq(aiAgent.id, agentId));
   return true;
 }
-export function nextState(current: State, patch: MatrixPatch): State {
+// The agents a change touches, as they are now (what an undo restores).
+export function savedAgents(agents: Row[], changes: Change[]): SavedAgent[] {
+  return changes.flatMap((change) => {
+    const row = agents.find((entry) => entry.id === change.agentId);
+    return row
+      ? [
+          {
+            agentId: row.id,
+            modelRole: row.modelRole,
+            modelOverrides: structuredClone(row.modelOverrides),
+          },
+        ]
+      : [];
+  });
+}
+// An undo takes back the last apply: the schema state, and the roles and own values of the
+// agents it changed. It goes one step further back each time (up to UNDO_DEPTH) and is not
+// itself put on the history.
+export function nextState(current: State, patch: MatrixPatch, saved: SavedAgent[] = []): State {
   const state: State = structuredClone(current);
   if (patch.undo) {
     const previous = state.history.pop();
@@ -447,6 +481,8 @@ export function nextState(current: State, patch: MatrixPatch): State {
     state.active = previous.active;
     state.schemas = previous.schemas;
     state.projects = previous.projects;
+    state.revision = current.revision + 1;
+    return state;
   } else {
     if (patch.schema) state.schemas[patch.schema.id] = patch.schema;
     if (patch.removeSchema) {
@@ -475,8 +511,9 @@ export function nextState(current: State, patch: MatrixPatch): State {
     active: current.active,
     schemas: current.schemas,
     projects: current.projects,
+    ...(saved.length && { agents: saved }),
   });
-  state.history = state.history.slice(-10);
+  state.history = state.history.slice(-UNDO_DEPTH);
   state.revision = current.revision + 1;
   return state;
 }
@@ -486,9 +523,18 @@ export function changedRows(
   current: State,
   next: State,
   changes: Change[],
+  restore: SavedAgent[] = [],
 ) {
   const override = new Map<number, Record<string, unknown>>();
   const roles = new Map<number, string>();
+  // The saved values are what the agent had before the change being taken back, and were
+  // checked when they were written: they replace the current ones as they are.
+  for (const saved of restore) {
+    const row = agents.find((entry) => entry.id === saved.agentId);
+    if (!row) continue;
+    override.set(row.id, structuredClone(saved.modelOverrides));
+    if (saved.modelRole !== row.modelRole) roles.set(row.id, saved.modelRole);
+  }
   for (const change of changes) {
     const row = agents.find((entry) => entry.id === change.agentId);
     if (!row) throw new HttpError(404, `Unknown agent ${change.agentId}`);
@@ -556,14 +602,21 @@ export async function previewMatrix(patch: MatrixPatch) {
   const current = await readModelState();
   if (patch.expectedRevision !== current.revision)
     throw new HttpError(409, 'Schema revision changed');
-  const next = nextState(current, patch);
   const { agents, memberships } = await inventory();
+  const next = nextState(current, patch, savedAgents(agents, patch.agents ?? []));
   const projectIds = new Set(
     (await db.select({ id: project.id }).from(project)).map((entry) => entry.id),
   );
   for (const change of patch.projects ?? [])
     if (!projectIds.has(change.projectId)) throw new HttpError(404, 'Unknown project');
-  const rows = changedRows(agents, memberships, current, next, patch.agents ?? []);
+  const rows = changedRows(
+    agents,
+    memberships,
+    current,
+    next,
+    patch.agents ?? [],
+    patch.undo ? (current.history.at(-1)?.agents ?? []) : [],
+  );
   return {
     revision: current.revision,
     nextRevision: next.revision,
@@ -587,9 +640,16 @@ export async function applyMatrix(patch: MatrixPatch) {
     const current = stateOf(stored?.value);
     if (current.revision !== patch.expectedRevision)
       throw new HttpError(409, 'Schema revision changed');
-    const next = nextState(current, patch);
     const { agents, memberships } = await inventory();
-    const rows = changedRows(agents, memberships, current, next, patch.agents ?? []);
+    const next = nextState(current, patch, savedAgents(agents, patch.agents ?? []));
+    const rows = changedRows(
+      agents,
+      memberships,
+      current,
+      next,
+      patch.agents ?? [],
+      patch.undo ? (current.history.at(-1)?.agents ?? []) : [],
+    );
     await tx
       .insert(appSetting)
       .values({ key: KEY, value: next })

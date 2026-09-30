@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'bun:test';
-import { changedRows, defaultState, nextState, resolveRow } from './service';
+import {
+  UNDO_DEPTH,
+  changedRows,
+  defaultState,
+  nextState,
+  resolveRow,
+  savedAgents,
+} from './service';
 import { inferModelRole } from '../../scripts/model-schema-migrate';
 import { failureDecision } from '#modules/agents/runner/escalation';
 import { migrateEscalationValue, migrateSchemaEscalations } from './migration';
@@ -72,6 +79,60 @@ describe('model schema resolution', () => {
     expect(preview[1]?.after.cells.model).toEqual({ value: 'custom-model', source: 'own' });
     const restored = nextState(after, { expectedRevision: 1, undo: true });
     expect(resolveRow(agent, [], restored).cells.runtime.value).toBe('helena');
+  });
+
+  it('undo goes back one apply at a time, is not itself put on the history and is bounded', () => {
+    const start = defaultState();
+    const one = nextState(start, { expectedRevision: 0, active: 'nur-codex' });
+    const two = nextState(one, { expectedRevision: 1, active: 'nur-claude' });
+    const back = nextState(two, { expectedRevision: 2, undo: true });
+    expect(back.active).toBe('nur-codex');
+    expect(back.revision).toBe(3);
+    expect(back.history).toHaveLength(1);
+    const first = nextState(back, { expectedRevision: 3, undo: true });
+    expect(first.active).toBe('nur-lokal');
+    expect(first.history).toHaveLength(0);
+    expect(() => nextState(first, { expectedRevision: 4, undo: true })).toThrow();
+    let state = start;
+    for (let index = 0; index < UNDO_DEPTH + 5; index += 1)
+      state = nextState(state, { expectedRevision: state.revision, active: 'nur-codex' });
+    expect(state.history).toHaveLength(UNDO_DEPTH);
+  });
+
+  it('keeps the agents an apply changed and puts their role and own values back on undo', () => {
+    const before = defaultState();
+    const own = {
+      ...agent,
+      id: 2,
+      modelRole: 'general',
+      modelOverrides: { model: 'custom-model' },
+    };
+    const patchAgents = [
+      { agentId: 1, role: 'reviewer', values: { reasoning: 'low' as const } },
+      { agentId: 2, values: { model: null } },
+    ];
+    const saved = savedAgents([agent, own], patchAgents);
+    expect(saved).toEqual([
+      { agentId: 1, modelRole: 'coder', modelOverrides: {} },
+      { agentId: 2, modelRole: 'general', modelOverrides: { model: 'custom-model' } },
+    ]);
+    const applied = nextState(before, { expectedRevision: 0, agents: patchAgents }, saved);
+    expect(applied.history.at(-1)?.agents).toEqual(saved);
+    // The agents as the apply left them.
+    const after = [
+      { ...agent, modelRole: 'reviewer', modelOverrides: { reasoning: 'low' } },
+      { ...own, modelOverrides: {} },
+    ];
+    const undone = nextState(applied, { expectedRevision: 1, undo: true });
+    const rows = changedRows(after, [], applied, undone, [], applied.history.at(-1)?.agents);
+    const byId = new Map(rows.map((row) => [row.row.id, row]));
+    expect(byId.get(1)?.role).toBe('coder');
+    expect(byId.get(1)?.overrides).toEqual({});
+    expect(byId.get(1)?.after.cells.reasoning.source).toBe('schema');
+    expect(byId.get(2)?.overrides).toEqual({ model: 'custom-model' });
+    expect(byId.get(2)?.after.cells.model).toEqual({ value: 'custom-model', source: 'own' });
+    // An agent deleted meanwhile is skipped, an undo without saved agents changes none.
+    expect(changedRows([], [], applied, undone, [], saved)).toEqual([]);
   });
 
   it('previews the canonical policy and uses it for the runner decision', () => {
