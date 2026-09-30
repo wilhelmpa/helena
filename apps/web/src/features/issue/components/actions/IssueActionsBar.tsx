@@ -25,8 +25,7 @@ import { ApplyActionDialog, DeleteIssueDialog, matchedActions } from './IssueAct
 import { buildIssueBranchName, buildIssuePrompt } from '../../utils/issuePrompt';
 import { useSession } from '@/lib/auth-client';
 import { shareIssuePath } from '@/utils/paths';
-import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { ActionMenu, type ActionMenuItem } from '@/design-system';
 import {
   PageActions,
   PageToolbar,
@@ -49,14 +48,15 @@ export default function IssueActionsBar({
 }: {
   project: ProjectDetail;
   issue: IssueDetailRow;
-  // 'row' wraps the buttons in a right-aligned row of its own. 'header' renders
-  // them bare, at the smaller size the side panel's header row uses. 'toolbar' puts
-  // them into the page's header row (PageToolbar) — the full-page issue view.
+  // 'row' wraps the "..." menu in a right-aligned row of its own. 'header' renders it bare,
+  // for the overlay's head. 'toolbar' puts the actions into the page's header bar
+  // (PageToolbar) — the full-page issue view.
   variant?: 'row' | 'header' | 'toolbar';
   onDeleted?: () => void;
 }) {
   const t = useTranslations('issue.actionsBar');
   const tCommands = useTranslations('issue.commands');
+  const tCommon = useTranslations('common');
   const { can } = usePermissions();
   const { data: session } = useSession();
   const qc = useQueryClient();
@@ -109,128 +109,64 @@ export default function IssueActionsBar({
     toast.success(t('branchCopied'));
   }
 
-  // In the panel header the action buttons sit next to the size-7 expand/close
-  // buttons, so they match that size; the row uses the roomier size.
-  const btnSize = variant === 'header' ? 'icon-xs' : 'icon-sm';
-
-  const buttons = (
-    <div className={variant === 'header' ? 'flex items-center gap-0.5' : 'flex flex-wrap gap-1.5'}>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            variant="ghost"
-            size={btnSize}
-            className="text-muted-foreground hover:text-foreground"
-            onClick={copyLink}
-          >
-            <Share2 className="size-4" />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>{t('copyShortLink')}</TooltipContent>
-      </Tooltip>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            variant="ghost"
-            size={btnSize}
-            className="text-muted-foreground hover:text-foreground"
-            onClick={copyBranch}
-          >
-            <GitBranch className="size-4" />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>{t('copyBranch')}</TooltipContent>
-      </Tooltip>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            variant="ghost"
-            size={btnSize}
-            className="text-muted-foreground hover:text-foreground"
-            onClick={copyPrompt}
-          >
-            {copied ? (
-              <Check className="size-4 text-green-500" />
-            ) : (
-              <ClipboardCopy className="size-4" />
-            )}
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>{copied ? t('copied') : t('copyPrompt')}</TooltipContent>
-      </Tooltip>
-      {canEdit && (
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size={btnSize}
-              className={
-                issue.shareToken ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'
-              }
-              onClick={() => setSharing(true)}
-            >
-              <Globe className="size-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            {issue.shareToken ? t('sharedPublicly') : t('sharePublicly')}
-          </TooltipContent>
-        </Tooltip>
-      )}
-      {issueActions.map((a) => {
-        const Icon = actionIcon(a.icon);
-        return (
-          <Tooltip key={a.id}>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size={btnSize}
-                className="text-muted-foreground hover:text-foreground"
-                onClick={() => setConfirmingAction(a)}
-              >
-                <Icon className="size-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>{a.name}</TooltipContent>
-          </Tooltip>
-        );
-      })}
-      {canEdit && (
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size={btnSize}
-              className="text-muted-foreground hover:text-foreground"
-              onClick={() => (issue.archivedAt ? restoreIssue.mutate(issue.id) : archive(issue))}
-            >
-              {issue.archivedAt ? (
-                <ArchiveRestore className="size-4" />
-              ) : (
-                <Archive className="size-4" />
-              )}
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>{issue.archivedAt ? t('restore') : t('archive')}</TooltipContent>
-        </Tooltip>
-      )}
-      {canDelete && (
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size={btnSize}
-              className="text-muted-foreground hover:text-destructive"
-              onClick={() => setConfirmingDelete(true)}
-            >
-              <Trash2 className="size-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>{t('delete')}</TooltipContent>
-        </Tooltip>
-      )}
-    </div>
-  );
+  // One list of what can be done with the task: in the overlay's head and in the panel it is
+  // ONE "..." menu (ActionMenu), on the task's page the page's own action row (below).
+  const menuItems: ActionMenuItem[] = [
+    { id: 'link', label: t('copyShortLink'), icon: <Share2 />, onSelect: () => void copyLink() },
+    {
+      id: 'branch',
+      label: t('copyBranch'),
+      icon: <GitBranch />,
+      onSelect: () => void copyBranch(),
+    },
+    {
+      id: 'prompt',
+      label: copied ? t('copied') : t('copyPrompt'),
+      icon: copied ? <Check /> : <ClipboardCopy />,
+      onSelect: () => void copyPrompt(),
+    },
+    ...(canEdit
+      ? [
+          {
+            id: 'share',
+            label: issue.shareToken ? t('sharedPublicly') : t('sharePublicly'),
+            icon: <Globe />,
+            onSelect: () => setSharing(true),
+          },
+        ]
+      : []),
+    ...issueActions.map((a) => {
+      const Icon = actionIcon(a.icon);
+      return {
+        id: `action-${a.id}`,
+        label: a.name,
+        icon: <Icon />,
+        onSelect: () => setConfirmingAction(a),
+      };
+    }),
+    ...(canEdit
+      ? [
+          {
+            id: 'archive',
+            label: issue.archivedAt ? t('restore') : t('archive'),
+            icon: issue.archivedAt ? <ArchiveRestore /> : <Archive />,
+            onSelect: () => (issue.archivedAt ? restoreIssue.mutate(issue.id) : archive(issue)),
+          },
+        ]
+      : []),
+    ...(canDelete
+      ? [
+          {
+            id: 'delete',
+            label: t('delete'),
+            icon: <Trash2 />,
+            danger: true,
+            onSelect: () => setConfirmingDelete(true),
+          },
+        ]
+      : []),
+  ];
+  const menu = <ActionMenu label={tCommon('more')} items={menuItems} />;
 
   // The same actions as the page's header row: icons with their tooltip, delete in
   // the "…" menu.
@@ -290,9 +226,9 @@ export default function IssueActionsBar({
           <PageActions actions={toolbarActions} />
         </PageToolbar>
       ) : variant === 'header' ? (
-        buttons
+        menu
       ) : (
-        <div className="mb-3 flex justify-end px-1">{buttons}</div>
+        <div className="mb-3 flex justify-end px-1">{menu}</div>
       )}
 
       {confirmingDelete && (

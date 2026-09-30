@@ -1,7 +1,6 @@
 'use client';
 
 import { Fragment, useMemo, useState } from 'react';
-import { X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type {
   PermissionAction,
@@ -10,10 +9,6 @@ import type {
   Permissions,
   Role,
 } from '@/lib/api/endpoints/roles';
-import { useExitOnEscape } from '@/hooks/useExitOnEscape';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { useCreateRole, useUpdateRole } from '@/services/roles.service';
 import { MatrixCheckbox } from './MatrixCheckbox';
 import {
@@ -23,7 +18,7 @@ import {
   orderActions,
 } from '@/utils/permissions';
 import { usePermissionLabels } from '@/hooks/usePermissionLabels';
-import { Table, Th, Tr, Td } from '@/design-system';
+import { Button, Field, Overlay, Table, TextField, Th, Tr, Td } from '@/design-system';
 
 // The check state of a set of cells: all on, all off, or mixed.
 function triState(values: boolean[]): boolean | 'indeterminate' {
@@ -33,7 +28,7 @@ function triState(values: boolean[]): boolean | 'indeterminate' {
 }
 
 // Create or edit a role of a team in a right-hand side panel, over the team panel
-// it was opened from. Escape or a backdrop click closes it. The permission matrix
+// it was opened from (the one overlay, Esc closes it). The permission matrix
 // groups resources and offers quick toggles per column (all resources) and per
 // group. On failure the reason is toasted globally and the panel stays open.
 export default function RoleEditorPanel({
@@ -57,8 +52,6 @@ export default function RoleEditorPanel({
   const createRole = useCreateRole(teamId);
   const updateRole = useUpdateRole(teamId);
   const busy = createRole.isPending || updateRole.isPending;
-
-  useExitOnEscape(onClose);
 
   const supports = useMemo(() => catalogSupport(catalog), [catalog]);
   const resourceKeys = useMemo(() => catalog.resources.map((r) => r.key), [catalog.resources]);
@@ -98,145 +91,125 @@ export default function RoleEditorPanel({
     }
   }
 
+  const title = role ? t('editorTitleEdit') : t('editorTitleNew');
   return (
-    <div
-      data-role-editor
-      className="fixed inset-0 z-50 flex bg-black/20"
-      onClick={(e) => e.target === e.currentTarget && onClose()}
+    <Overlay
+      label={title}
+      tabs={[{ id: 'role', label: title }]}
+      onClose={onClose}
+      className="ds-role-overlay"
+      width="wide"
     >
-      <div
-        data-slot="sheet-content"
-        className="ml-auto flex h-full w-full flex-col border-s border-sidebar-border bg-background sm:w-[680px] sm:max-w-[92vw]"
-      >
-        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-sidebar-border px-4 py-4">
-          <h2 className="min-w-0 truncate text-md font-semibold">
-            {role ? t('editorTitleEdit') : t('editorTitleNew')}
-          </h2>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="size-7"
-            onClick={onClose}
-            title={tCommon('close')}
-          >
-            <X />
-          </Button>
-        </div>
+      <div className="ds-overlay-form" data-role-editor>
+        <Field label={tCommon('name')} htmlFor="role-name">
+          <TextField
+            id="role-name"
+            autoFocus
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder={t('namePlaceholder')}
+          />
+        </Field>
 
-        <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4">
-          <div className="space-y-1.5">
-            <Label htmlFor="role-name">{tCommon('name')}</Label>
-            <Input
-              id="role-name"
-              autoFocus
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder={t('namePlaceholder')}
-            />
-          </div>
-
-          <Table stack={false}>
-            <thead>
-              <Tr>
-                <Th>{t('resourceColumn')}</Th>
-                {actions.map((action) => {
-                  const state = triState(cellsFor(resourceKeys, [action]));
-                  return (
-                    <Th key={action}>
-                      <div className="flex flex-col items-center gap-1">
-                        <span className="text-xs font-medium text-muted-foreground">
-                          {actionLabel(action)}
-                        </span>
-                        <MatrixCheckbox
-                          checked={state}
-                          onCheckedChange={() => apply(resourceKeys, [action], state !== true)}
-                          title={t('toggleActionAll', { action: actionLabel(action) })}
-                          aria-label={t('toggleActionAll', { action: actionLabel(action) })}
-                        />
-                      </div>
-                    </Th>
-                  );
-                })}
-              </Tr>
-            </thead>
-            <tbody>
-              {groups.map((group) => {
-                const groupState = triState(cellsFor(group.resources, actions));
+        <Table stack={false}>
+          <thead>
+            <Tr>
+              <Th>{t('resourceColumn')}</Th>
+              {actions.map((action) => {
+                const state = triState(cellsFor(resourceKeys, [action]));
                 return (
-                  <Fragment key={group.key}>
-                    <Tr className="bg-muted/40">
-                      <Td>
-                        <div className="flex items-center gap-2">
-                          <MatrixCheckbox
-                            checked={groupState}
-                            onCheckedChange={() =>
-                              apply(group.resources, actions, groupState !== true)
-                            }
-                            title={t('toggleGroupAll', { group: groupLabel(group.key) })}
-                            aria-label={t('toggleGroupAll', { group: groupLabel(group.key) })}
-                          />
-                          <span className="text-xs font-medium">{groupLabel(group.key)}</span>
-                        </div>
-                      </Td>
-                      {actions.map((action) => {
-                        const state = triState(cellsFor(group.resources, [action]));
-                        return (
-                          <Td alignment="center" key={action}>
-                            <MatrixCheckbox
-                              checked={state}
-                              onCheckedChange={() =>
-                                apply(group.resources, [action], state !== true)
-                              }
-                              title={t('toggleActionGroup', {
-                                action: actionLabel(action),
-                                group: groupLabel(group.key),
-                              })}
-                              aria-label={t('toggleActionGroup', {
-                                action: actionLabel(action),
-                                group: groupLabel(group.key),
-                              })}
-                            />
-                          </Td>
-                        );
-                      })}
-                    </Tr>
-                    {group.resources.map((resource) => (
-                      <Tr key={resource}>
-                        <Td>{resourceLabel(resource)}</Td>
-                        {actions.map((action) => (
-                          <Td alignment="center" key={action}>
-                            {supports(resource, action) && (
-                              <MatrixCheckbox
-                                checked={matrix[resource][action]}
-                                onCheckedChange={() =>
-                                  apply([resource], [action], !matrix[resource][action])
-                                }
-                                aria-label={t('cellAria', {
-                                  resource: resourceLabel(resource),
-                                  action: actionLabel(action),
-                                })}
-                              />
-                            )}
-                          </Td>
-                        ))}
-                      </Tr>
-                    ))}
-                  </Fragment>
+                  <Th key={action}>
+                    <div className="flex flex-col items-center gap-1">
+                      <span className="text-xs font-medium text-muted-foreground">
+                        {actionLabel(action)}
+                      </span>
+                      <MatrixCheckbox
+                        checked={state}
+                        onCheckedChange={() => apply(resourceKeys, [action], state !== true)}
+                        title={t('toggleActionAll', { action: actionLabel(action) })}
+                        aria-label={t('toggleActionAll', { action: actionLabel(action) })}
+                      />
+                    </div>
+                  </Th>
                 );
               })}
-            </tbody>
-          </Table>
-        </div>
+            </Tr>
+          </thead>
+          <tbody>
+            {groups.map((group) => {
+              const groupState = triState(cellsFor(group.resources, actions));
+              return (
+                <Fragment key={group.key}>
+                  <Tr className="bg-muted/40">
+                    <Td>
+                      <div className="flex items-center gap-2">
+                        <MatrixCheckbox
+                          checked={groupState}
+                          onCheckedChange={() =>
+                            apply(group.resources, actions, groupState !== true)
+                          }
+                          title={t('toggleGroupAll', { group: groupLabel(group.key) })}
+                          aria-label={t('toggleGroupAll', { group: groupLabel(group.key) })}
+                        />
+                        <span className="text-xs font-medium">{groupLabel(group.key)}</span>
+                      </div>
+                    </Td>
+                    {actions.map((action) => {
+                      const state = triState(cellsFor(group.resources, [action]));
+                      return (
+                        <Td alignment="center" key={action}>
+                          <MatrixCheckbox
+                            checked={state}
+                            onCheckedChange={() => apply(group.resources, [action], state !== true)}
+                            title={t('toggleActionGroup', {
+                              action: actionLabel(action),
+                              group: groupLabel(group.key),
+                            })}
+                            aria-label={t('toggleActionGroup', {
+                              action: actionLabel(action),
+                              group: groupLabel(group.key),
+                            })}
+                          />
+                        </Td>
+                      );
+                    })}
+                  </Tr>
+                  {group.resources.map((resource) => (
+                    <Tr key={resource}>
+                      <Td>{resourceLabel(resource)}</Td>
+                      {actions.map((action) => (
+                        <Td alignment="center" key={action}>
+                          {supports(resource, action) && (
+                            <MatrixCheckbox
+                              checked={matrix[resource][action]}
+                              onCheckedChange={() =>
+                                apply([resource], [action], !matrix[resource][action])
+                              }
+                              aria-label={t('cellAria', {
+                                resource: resourceLabel(resource),
+                                action: actionLabel(action),
+                              })}
+                            />
+                          )}
+                        </Td>
+                      ))}
+                    </Tr>
+                  ))}
+                </Fragment>
+              );
+            })}
+          </tbody>
+        </Table>
 
-        <div className="flex shrink-0 items-center justify-end gap-2 border-t px-4 py-3">
-          <Button variant="outline" onClick={onClose} disabled={busy}>
+        <div className="ds-overlay-footer">
+          <Button onClick={onClose} disabled={busy}>
             {tCommon('cancel')}
           </Button>
-          <Button onClick={save} disabled={busy || !name.trim()}>
+          <Button variant="primary" onClick={save} disabled={busy || !name.trim()}>
             {role ? t('saveRole') : t('createRole')}
           </Button>
         </div>
       </div>
-    </div>
+    </Overlay>
   );
 }

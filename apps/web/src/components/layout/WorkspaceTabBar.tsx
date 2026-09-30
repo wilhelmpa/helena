@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { Code2, Globe2, Mail, MessageSquare, Plus, Terminal, X } from 'lucide-react';
-import { OverlayControls } from '@/design-system';
+import { Code2, Globe2, Mail, MessageSquare, Plus, Terminal } from 'lucide-react';
+import { OverlayHead, type OverlayTab } from '@/design-system';
+import { useSheetMode } from '@/utils/dock';
 import { useBrowserControl } from '@/hooks/useBrowserControl';
 import { useOfferedPanelTools } from '@/extensions/panelTools';
 import { usePanelToolLabel } from '@/extensions/pluginPanelTools';
@@ -57,6 +58,7 @@ export default function WorkspaceTabBar({
   const offered = useOfferedPanelTools();
   const labelOf = usePanelToolLabel();
   const [dragged, setDragged] = useState<string | null>(null);
+  const sheet = useSheetMode();
   const browserKeys = browser.tabs.map((tab) => `browser:${tab.id}`);
   const browserIds = browser.tabs.map((tab) => tab.id);
   const browserIdList = browserIds.join('\u0000');
@@ -94,77 +96,65 @@ export default function WorkspaceTabBar({
     if (browserBase) browser.act({ action: 'new' });
   };
 
+  const tabList: OverlayTab[] = ordered.map((key) => {
+    const browserTab = key.startsWith('browser:')
+      ? browser.tabs.find((tab) => tab.id === key.slice(8))
+      : null;
+    const tool = key.startsWith('browser:') ? 'browser' : key.slice(5);
+    const definition = tools[tool as keyof typeof tools];
+    const registered = offered.find((entry) => entry.id === tool);
+    const Icon = definition ?? registered?.Icon ?? Globe2;
+    const builtInLabel =
+      tool === 'chat'
+        ? tNav('sidebarHome')
+        : tool === 'browser'
+          ? tNav('workspace.browser')
+          : tool === 'terminal'
+            ? tNav('workspace.terminal')
+            : tool === 'code'
+              ? tNav('workspace.code')
+              : tool === 'mail'
+                ? tNav('mail')
+                : null;
+    const label = browserTab?.title || builtInLabel || labelOf(registered) || tool;
+    return {
+      id: key,
+      label,
+      title: label,
+      icon:
+        tool === 'chat' ? (
+          <span className="ds-tool-orb" aria-hidden="true" />
+        ) : (
+          <Icon className="size-3.5" />
+        ),
+      onClose: () => close(key),
+      closeLabel: t('closeTab', { tab: label }),
+    };
+  });
+
   return (
-    <div className="ds-panel-head">
-      <div role="tablist" aria-label={t('tabs')} className="ds-panel-tabs">
-        <div className="ds-panel-tabs-track">
-          {ordered.map((key) => {
-            const browserTab = key.startsWith('browser:')
-              ? browser.tabs.find((tab) => tab.id === key.slice(8))
-              : null;
-            const tool = key.startsWith('browser:') ? 'browser' : key.slice(5);
-            const definition = tools[tool as keyof typeof tools];
-            const registered = offered.find((entry) => entry.id === tool);
-            const Icon = definition ?? registered?.Icon ?? Globe2;
-            const builtInLabel =
-              tool === 'chat'
-                ? tNav('sidebarHome')
-                : tool === 'browser'
-                  ? tNav('workspace.browser')
-                  : tool === 'terminal'
-                    ? tNav('workspace.terminal')
-                    : tool === 'code'
-                      ? tNav('workspace.code')
-                      : tool === 'mail'
-                        ? 'Mail'
-                        : null;
-            const label = browserTab?.title || builtInLabel || labelOf(registered) || tool;
-            return (
-              <div
-                key={key}
-                className="ds-panel-tab"
-                draggable
-                onDragStart={(event) => {
-                  setDragged(key);
-                  event.dataTransfer.effectAllowed = 'move';
-                  event.dataTransfer.setData('text/plain', key);
-                  event.dataTransfer.setData('application/x-helena-tab', key);
-                }}
-                onDragOver={(event) => event.preventDefault()}
-                onDrop={(event) => {
-                  event.preventDefault();
-                  if (dragged) tabs.move(dragged, key, ordered);
-                  setDragged(null);
-                }}
-                onDragEnd={() => setDragged(null)}
-              >
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={activeKey === key}
-                  className="ds-panel-tab-select"
-                  onClick={() => select(key)}
-                  title={label}
-                >
-                  {tool === 'chat' ? (
-                    <span className="ds-tool-orb" aria-hidden="true" />
-                  ) : (
-                    <Icon className="size-3.5" />
-                  )}
-                  <span>{label}</span>
-                </button>
-                <button
-                  type="button"
-                  className="ds-panel-tab-close"
-                  aria-label={t('closeTab', { tab: label })}
-                  onClick={() => close(key)}
-                >
-                  <X size={12} />
-                </button>
-              </div>
-            );
-          })}
-        </div>
+    <OverlayHead
+      label={t('tabs')}
+      tabs={tabList}
+      activeTab={activeKey}
+      onTab={select}
+      tabProps={(tab) => ({
+        draggable: true,
+        onDragStart: (event) => {
+          setDragged(tab.id);
+          event.dataTransfer.effectAllowed = 'move';
+          event.dataTransfer.setData('text/plain', tab.id);
+          event.dataTransfer.setData('application/x-helena-tab', tab.id);
+        },
+        onDragOver: (event) => event.preventDefault(),
+        onDrop: (event) => {
+          event.preventDefault();
+          if (dragged) tabs.move(dragged, tab.id, ordered);
+          setDragged(null);
+        },
+        onDragEnd: () => setDragged(null),
+      })}
+      addTab={
         <DropdownMenu>
           <DropdownMenuTrigger
             className="ds-icon-button"
@@ -190,23 +180,21 @@ export default function WorkspaceTabBar({
             ))}
           </DropdownMenuContent>
         </DropdownMenu>
-      </div>
-      <div className="ds-panel-head-tools">
-        <OverlayControls
-          onTogglePin={onTogglePin && layout !== 'full' ? onTogglePin : undefined}
-          pinned={pinned}
-          full={layout === 'full'}
-          onToggleFull={() => onChooseLayout('full')}
-          onClose={onClose}
-          labels={{
-            pin: t('pin'),
-            unpin: t('unpin'),
-            enterFull: t('full'),
-            exitFull: t('side'),
-            close: t('close'),
-          }}
-        />
-      </div>
-    </div>
+      }
+      controls={{
+        onTogglePin: onTogglePin && layout !== 'full' && !sheet ? onTogglePin : undefined,
+        pinned,
+        full: layout === 'full',
+        onToggleFull: () => onChooseLayout('full'),
+        onClose,
+        labels: {
+          pin: t('pin'),
+          unpin: t('unpin'),
+          enterFull: t('full'),
+          exitFull: t('side'),
+          close: t('close'),
+        },
+      }}
+    />
   );
 }

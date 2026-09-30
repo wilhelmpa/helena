@@ -3,7 +3,8 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useTranslations } from 'next-intl';
 import type { WorkspaceLayoutState } from '@/hooks/useWorkspaceLayout';
-import { SidePanel } from '@/design-system';
+import { SidePanel, useSidePanelWidth } from '@/design-system';
+import { useDock, useSheetMode } from '@/utils/dock';
 import WorkspacePanel, { type PanelArea } from './WorkspacePanel';
 
 // The room under the page header (docs/design-system.md §3, owner 28.09. 10:00): the
@@ -55,15 +56,15 @@ export default function WorkspaceLayoutHost({
     return () => window.removeEventListener('keydown', onKey);
   }, [full, open, panel]);
 
-  // Pinned (owner, O31): the panel docks at the right and the page gives it the room,
-  // instead of being covered; only beside the page, not full screen or on a phone.
-  const docked = open && !full && panel.mode === 'push' && !layout.phone;
+  // Pinned (owner, O31, O103): the panel docks at the right and the whole main area - header
+  // bar and page - gives it the room instead of being covered; only beside the page, not full
+  // screen and not below 1024px, where every panel is a sheet (utils/dock.ts).
+  const sheet = useSheetMode();
+  const { width: panelWidth } = useSidePanelWidth();
+  const docked = open && !full && panel.mode === 'push' && !sheet;
+  useDock('panel', docked ? panelWidth : null);
   return (
-    <div
-      className="ds-page-content"
-      data-workspace-layout="standard"
-      data-panel={docked ? 'docked' : undefined}
-    >
+    <div className="ds-page-content" data-workspace-layout="standard">
       {children}
       <SidePanel open={open} full={full} label={t('tabs')}>
         <WorkspacePanel

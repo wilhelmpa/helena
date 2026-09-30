@@ -46,6 +46,7 @@ import { Menu as MenuIcon } from 'lucide-react';
 import { PageHeader } from '@/design-system';
 import { useDisplayName } from '@/context/displayName';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { useDockedWidth } from '@/utils/dock';
 import { useDashboardsQuery } from '@/services/dashboards.service';
 import { useShellHeading } from '@/components/layout/useShellHeading';
 import { isTypingTarget } from '@/utils/hotkeys';
@@ -322,7 +323,16 @@ export default function Shell({
   // right is an overlay over the page; the page keeps its full width.
   const narrow = useMediaQuery('(max-width: 899px)');
   const medium = useMediaQuery('(max-width: 1099px)');
-  const sidebarMode = narrow ? 'hidden' : medium || !navigation.sidebarOpen ? 'rail' : 'full';
+  // A docked panel or overlay takes its room from the page (O103): where that would leave
+  // the page too narrow, the sidebar steps back to its rail.
+  const dockedWidth = useDockedWidth();
+  const compact = useMediaQuery('(max-width: 1399px)');
+  const crowded = dockedWidth > 0 && compact;
+  const sidebarMode = narrow
+    ? 'hidden'
+    : medium || crowded || !navigation.sidebarOpen
+      ? 'rail'
+      : 'full';
   // The overlay sidebar belongs to the page it was opened on: a new page closes it.
   const [overlayPath, setOverlayPath] = useState<string | null>(null);
   const sidebarOverlay = overlayPath === pathname;
@@ -397,6 +407,7 @@ export default function Shell({
               <main className="ds-main">
                 {!headerHidden && (
                   <PageHeader
+                    crumbs={heading.trail}
                     title={heading.title}
                     actionsRef={setHeaderSlot}
                     barRef={setPageBarSlot}

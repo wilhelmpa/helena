@@ -1,11 +1,12 @@
 'use client';
 
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { useExitOnEscape } from '@/hooks/useExitOnEscape';
 import { useExitOnClickOutside } from '@/hooks/useExitOnClickOutside';
 import { SidePanelResizeHandle, useSidePanelWidth, type SidePanelKind } from './sidePanelWidth';
 import { PageChromeCtx } from './pageChrome';
-import { OverlayControls } from '../components/OverlayControls';
+import { OverlayHead, type OverlayTab } from './OverlayHead';
+import { useDock, useSheetMode } from '@/utils/dock';
 import {
   setPinnedOverlayFull,
   toggleOverlayPin,
@@ -14,8 +15,6 @@ import {
   usePinnedOverlayFull,
   type OverlayPin,
 } from '@/utils/overlayPin';
-
-export type OverlayTab = { id: string; label: ReactNode };
 
 // The one overlay on the right (docs/design-system.md §3/§9, owner 28.09.): a task, a
 // run, an agent's settings and a file preview all open in it. Same place and shape as the
@@ -40,6 +39,7 @@ export function Overlay({
   bodyClassName,
   width: kind = 'default',
   pin,
+  startFull = false,
   children,
 }: {
   label: string;
@@ -63,17 +63,24 @@ export function Overlay({
   // What this overlay shows, when it can be pinned: pinned, it stays open when the page
   // changes (utils/overlayPin), like the chat panel (Auftrag 117).
   pin?: OverlayPin;
+  // Opens large (a shared page's read-only task); the button still makes it small again.
+  startFull?: boolean;
   children: ReactNode;
 }) {
   const { width } = useSidePanelWidth(kind);
-  const [localFull, setLocalFull] = useState(false);
+  const [localFull, setLocalFull] = useState(startFull);
   const pinnedNow = useOverlayPin();
   const pinned = pin != null && pinnedNow?.kind === pin.kind && pinnedNow.value === pin.value;
   const pinnedFull = usePinnedOverlayFull();
+  // Below 1024px an overlay is a sheet over the whole screen: no pin, nothing to dock.
+  const sheet = useSheetMode();
   // Pinned, the state lives outside this component, so the overlay another page shows for
   // the pin comes up as large (or small) as it was; unpinned it is this overlay's own.
   const full = pinned ? pinnedFull : localFull;
   const setFull = (next: boolean) => (pinned ? setPinnedOverlayFull(next) : setLocalFull(next));
+  // Pinned and not full screen, the page gives it the room (O103): header bar and page get
+  // exactly as narrow as the overlay is wide.
+  useDock('overlay', pinned && !full && !sheet ? width : null);
   const togglePin = () => {
     if (!pin) return;
     if (pinned) setLocalFull(pinnedFull);
@@ -88,13 +95,6 @@ export function Overlay({
   useExitOnEscape(() => (full ? setFull(false) : close()), escape);
   const active = activeTab ?? tabs[0]?.id;
   const surface = useRef<HTMLElement>(null);
-  const track = useRef<HTMLDivElement>(null);
-  // The open tab stays in view when the row of tabs scrolls (a narrow screen).
-  useEffect(() => {
-    track.current
-      ?.querySelector('[aria-selected="true"]')
-      ?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
-  }, [active]);
   useExitOnClickOutside(surface, () => {
     // Pinned, it stays while the page behind is used.
     if (closeOnOutsideClick && !full && !pinned) onClose();
@@ -111,36 +111,21 @@ export function Overlay({
       style={{ '--ds-panel-w': `${width}px` } as CSSProperties}
     >
       {!full && <SidePanelResizeHandle kind={kind} />}
-      <div className="ds-panel-head">
-        <div className="ds-panel-tabs">
-          <div ref={track} className="ds-panel-tabs-track" role="tablist" aria-label={label}>
-            {tabs.map((tab) => (
-              <div key={tab.id} className="ds-panel-tab">
-                <button
-                  type="button"
-                  role="tab"
-                  className="ds-panel-tab-select"
-                  aria-selected={tab.id === active}
-                  onClick={() => onTab?.(tab.id)}
-                >
-                  <span>{tab.label}</span>
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-        <div className="ds-panel-head-tools">
-          {actions}
-          <OverlayControls
-            onOpenPage={onOpenPage}
-            onTogglePin={pin ? togglePin : undefined}
-            pinned={pinned}
-            full={full}
-            onToggleFull={() => setFull(!full)}
-            onClose={close}
-          />
-        </div>
-      </div>
+      <OverlayHead
+        label={label}
+        tabs={tabs}
+        activeTab={active}
+        onTab={onTab}
+        actions={actions}
+        controls={{
+          onOpenPage,
+          onTogglePin: pin && !sheet ? togglePin : undefined,
+          pinned,
+          full,
+          onToggleFull: () => setFull(!full),
+          onClose: close,
+        }}
+      />
       <div className={`ds-overlay-body ${bodyClassName ?? ''}`}>
         <PageChromeCtx.Provider value="modal">{children}</PageChromeCtx.Provider>
       </div>

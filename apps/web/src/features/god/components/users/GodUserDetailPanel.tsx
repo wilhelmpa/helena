@@ -1,16 +1,14 @@
 'use client';
 
 import { useState, type ReactNode } from 'react';
-import { Bot, FolderOpen, MailWarning, Shield, Trash2, TriangleAlert, X } from 'lucide-react';
+import { Bot, FolderOpen, MailWarning, Shield, Trash2, TriangleAlert } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 import { formatDate, formatDateTime } from '@/utils/dates';
-import { useExitOnEscape } from '@/hooks/useExitOnEscape';
 import Avatar from '@/components/common/Avatar';
 import ConfirmDialog from '@/components/common/overlay/ConfirmDialog';
 import ListSkeleton from '@/components/common/skeleton/ListSkeleton';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { usePermissionCatalogQuery } from '@/services/roles.service';
 import { useDeleteInstanceUser, useInstanceUserQuery } from '../../services/god.service';
@@ -18,7 +16,7 @@ import { useProviderList } from '../../hooks/useProviderList';
 import GodUserProjectCard from './GodUserProjectCard';
 import GodUserVerifyButton from './GodUserVerifyButton';
 
-import { Box, Stack, Inline, Text } from '@/design-system';
+import { Box, Button, Overlay, Stack, Inline, Text } from '@/design-system';
 
 // One fact in the account grid: a quiet label with the value under it. Reading down
 // a column beats a row of label/value pairs when the values differ in length.
@@ -31,9 +29,9 @@ function Fact({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
-// One account in a right-hand side panel (the same surface the role editor uses):
-// the account facts and every project it can reach, each with the permissions its
-// membership resolves to. Escape or a backdrop click closes it.
+// One account in the one overlay on the right (the same surface the role editor uses): the
+// account facts and every project it can reach, each with the permissions its membership
+// resolves to. Esc closes it (the confirmation first).
 export default function GodUserDetailPanel({
   userId,
   onClose,
@@ -55,11 +53,6 @@ export default function GodUserDetailPanel({
   // who can manage them, so the API refuses unless they are deleted along with it.
   const soleOwned = (user?.projects ?? []).filter((p) => p.role === 'owner' && p.ownerCount === 1);
 
-  // Escape closes the confirm dialog first; the panel stays until it is gone.
-  useExitOnEscape(() => {
-    if (!confirming) onClose();
-  });
-
   // An instance owner keeps god mode reachable, and an agent's bot user belongs to
   // its AI Agent config. The API refuses both; the button is hidden for them too.
   const removable = user ? user.role !== 'god' && !user.isAgent : false;
@@ -71,198 +64,170 @@ export default function GodUserDetailPanel({
     onClose();
   }
 
+  const name = user ? user.name || user.email : tCommon('loading');
   return (
-    <div
-      data-slot="sheet-overlay"
-      className="fixed inset-0 z-40 flex bg-black/20"
-      onClick={(e) => e.target === e.currentTarget && onClose()}
-    >
-      <div
-        data-slot="sheet-content"
-        className="ml-auto flex h-full w-full flex-col border-s border-sidebar-border bg-background sm:w-[680px] sm:max-w-[92vw]"
+    <>
+      <Overlay
+        label={name}
+        tabs={[{ id: 'user', label: name }]}
+        onClose={onClose}
+        escape={!confirming}
+        className="ds-god-overlay"
+        width="wide"
       >
-        <Inline
-          gap={3}
-          align="start"
-          justify="between"
-          padX={4}
-          padTop={4}
-          padBottom={4}
-          className="flex shrink-0 items-start justify-between border-b border-sidebar-border"
-        >
-          <Inline gap={3} align="start" className="flex min-w-0 items-start">
-            <Avatar
-              name={user?.name || user?.email || '?'}
-              image={user?.image}
-              className="size-11 shrink-0 text-sm"
-            />
-            <Stack gap={2} className="min-w-0">
-              <h2 className="truncate text-md font-semibold">
-                {user ? user.name || user.email : tCommon('loading')}
-              </h2>
-              <Text as="p" size="xs" tone="muted" className="truncate">
-                {user?.email}
-              </Text>
-              {user && (
-                <Inline gap={2} wrap padTop={1} className="flex flex-wrap items-center">
-                  {user.role === 'god' ? (
-                    <Badge className="gap-1">
-                      <Shield className="size-3" />
-                      {t('instanceOwner')}
-                    </Badge>
-                  ) : (
-                    <Badge variant="secondary" className="px-1.5 py-0 text-xs font-medium">
-                      {t('user')}
-                    </Badge>
-                  )}
-                  {user.isAgent && (
-                    <Badge variant="secondary" className="gap-1 px-1.5 py-0 text-xs font-medium">
-                      <Bot className="size-3" />
-                      {t('aiAgent')}
-                    </Badge>
-                  )}
-                  {user.emailVerified && (
-                    <Badge variant="outline" className="px-1.5 py-0 text-xs font-medium">
-                      {t('emailVerified')}
-                    </Badge>
-                  )}
-                </Inline>
-              )}
-            </Stack>
-          </Inline>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="size-7"
-            onClick={onClose}
-            title={tCommon('close')}
-          >
-            <X />
-          </Button>
-        </Inline>
-
-        <Stack gap={5} padX={4} padY={4} className="flex-1 overflow-y-auto">
-          {!user ? (
-            <ListSkeleton rows={5} rowClassName="h-12" />
-          ) : (
-            <>
-              {!user.emailVerified && (
-                <Inline
-                  gap={3}
-                  align="start"
-                  pad={4}
-                  className="flex items-start rounded-md border border-sidebar-border bg-card"
-                >
-                  <MailWarning className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
-                  <Stack gap={1} className="min-w-0 flex-1">
-                    <Text as="p" size="sm" className="font-medium">
-                      {t('unconfirmedTitle')}
-                    </Text>
-                    <Text as="p" size="xs" tone="muted">
-                      {t('unconfirmedHint')}
-                    </Text>
-                  </Stack>
-                  <GodUserVerifyButton userId={user.id} />
-                </Inline>
-              )}
-
-              <section className="grid grid-cols-2 gap-x-6 gap-y-5">
-                <Fact label={t('signInMethods')}>
-                  {user.providers.length ? (
-                    providerList(user.providers)
-                  ) : (
-                    <Text as="span" tone="muted">
-                      {t('noProviders')}
-                    </Text>
-                  )}
-                </Fact>
-                <Fact label={t('projects')}>
-                  {user.projectCount === 0 ? (
-                    <Text as="span" tone="muted">
-                      {t('noProjects')}
-                    </Text>
-                  ) : (
-                    user.projectCount
-                  )}
-                </Fact>
-                <Fact label={t('registered')}>{formatDate(user.createdAt)}</Fact>
-                <Fact label={t('lastSeen')}>
-                  {user.lastSeenAt ? (
-                    formatDateTime(user.lastSeenAt)
-                  ) : (
-                    <Text as="span" tone="muted">
-                      {t('neverSignedIn')}
-                    </Text>
-                  )}
-                </Fact>
-              </section>
-
-              <Stack as="section" gap={3}>
-                <Inline gap={2} align="baseline" className="flex items-baseline">
-                  <h3 className="text-sm font-medium">{t('projectAccess')}</h3>
-                  {user.projects.length > 0 && (
-                    <Text as="span" size="xs" tone="muted">
-                      {user.projects.length}
-                    </Text>
-                  )}
-                </Inline>
-                {user.projects.length === 0 ? (
-                  <Stack
-                    gap={2}
-                    padX={4}
-                    padY={5}
-                    className="flex flex-col items-center rounded-md border border-dashed border-sidebar-border text-center"
+        <div className="ds-overlay-form">
+          <Stack gap={5}>
+            {user && (
+              <Inline gap={3} align="start" className="flex min-w-0 items-start">
+                <Avatar
+                  name={user.name || user.email || '?'}
+                  image={user.image}
+                  className="size-11 shrink-0 text-sm"
+                />
+                <Stack gap={2} className="min-w-0">
+                  <Text as="p" size="xs" tone="muted" className="truncate">
+                    {user.email}
+                  </Text>
+                  <Inline gap={2} wrap className="flex flex-wrap items-center">
+                    {user.role === 'god' ? (
+                      <Badge className="gap-1">
+                        <Shield className="size-3" />
+                        {t('instanceOwner')}
+                      </Badge>
+                    ) : (
+                      <Badge variant="secondary" className="px-1.5 py-0 text-xs font-medium">
+                        {t('user')}
+                      </Badge>
+                    )}
+                    {user.isAgent && (
+                      <Badge variant="secondary" className="gap-1 px-1.5 py-0 text-xs font-medium">
+                        <Bot className="size-3" />
+                        {t('aiAgent')}
+                      </Badge>
+                    )}
+                    {user.emailVerified && (
+                      <Badge variant="outline" className="px-1.5 py-0 text-xs font-medium">
+                        {t('emailVerified')}
+                      </Badge>
+                    )}
+                  </Inline>
+                </Stack>
+              </Inline>
+            )}
+            {!user ? (
+              <ListSkeleton rows={5} rowClassName="h-12" />
+            ) : (
+              <>
+                {!user.emailVerified && (
+                  <Inline
+                    gap={3}
+                    align="start"
+                    pad={4}
+                    className="flex items-start rounded-md border border-sidebar-border bg-card"
                   >
-                    <FolderOpen className="size-5 text-muted-foreground" />
-                    <Text as="p" size="sm" className="font-medium">
-                      {t('noAccessTitle')}
-                    </Text>
-                    <Text as="p" size="xs" tone="muted" className="max-w-[36ch]">
-                      {t('noAccessHint')}
-                    </Text>
-                  </Stack>
-                ) : (
-                  <Stack gap={2}>
-                    {user.projects.map((p) => (
-                      <GodUserProjectCard
-                        key={p.projectId}
-                        project={p}
-                        catalog={catalogQuery.data}
-                      />
-                    ))}
-                  </Stack>
+                    <MailWarning className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+                    <Stack gap={1} className="min-w-0 flex-1">
+                      <Text as="p" size="sm" className="font-medium">
+                        {t('unconfirmedTitle')}
+                      </Text>
+                      <Text as="p" size="xs" tone="muted">
+                        {t('unconfirmedHint')}
+                      </Text>
+                    </Stack>
+                    <GodUserVerifyButton userId={user.id} />
+                  </Inline>
                 )}
-              </Stack>
-            </>
-          )}
-        </Stack>
 
-        {removable && (
-          <Inline
-            gap={4}
-            justify="between"
-            padX={4}
-            padY={3}
-            className="flex shrink-0 items-center justify-between border-t border-sidebar-border"
-          >
-            <Text as="p" size="xs" tone="muted">
-              {t('deleteHint')}
-            </Text>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="shrink-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
-              onClick={() => {
-                setWithProjects(false);
-                setConfirming(true);
-              }}
-            >
-              <Trash2 />
-              {tCommon('delete')}
-            </Button>
-          </Inline>
-        )}
-      </div>
+                <section className="grid grid-cols-2 gap-x-6 gap-y-5">
+                  <Fact label={t('signInMethods')}>
+                    {user.providers.length ? (
+                      providerList(user.providers)
+                    ) : (
+                      <Text as="span" tone="muted">
+                        {t('noProviders')}
+                      </Text>
+                    )}
+                  </Fact>
+                  <Fact label={t('projects')}>
+                    {user.projectCount === 0 ? (
+                      <Text as="span" tone="muted">
+                        {t('noProjects')}
+                      </Text>
+                    ) : (
+                      user.projectCount
+                    )}
+                  </Fact>
+                  <Fact label={t('registered')}>{formatDate(user.createdAt)}</Fact>
+                  <Fact label={t('lastSeen')}>
+                    {user.lastSeenAt ? (
+                      formatDateTime(user.lastSeenAt)
+                    ) : (
+                      <Text as="span" tone="muted">
+                        {t('neverSignedIn')}
+                      </Text>
+                    )}
+                  </Fact>
+                </section>
+
+                <Stack as="section" gap={3}>
+                  <Inline gap={2} align="baseline" className="flex items-baseline">
+                    <h3 className="text-sm font-medium">{t('projectAccess')}</h3>
+                    {user.projects.length > 0 && (
+                      <Text as="span" size="xs" tone="muted">
+                        {user.projects.length}
+                      </Text>
+                    )}
+                  </Inline>
+                  {user.projects.length === 0 ? (
+                    <Stack
+                      gap={2}
+                      padX={4}
+                      padY={5}
+                      className="flex flex-col items-center rounded-md border border-dashed border-sidebar-border text-center"
+                    >
+                      <FolderOpen className="size-5 text-muted-foreground" />
+                      <Text as="p" size="sm" className="font-medium">
+                        {t('noAccessTitle')}
+                      </Text>
+                      <Text as="p" size="xs" tone="muted" className="max-w-[36ch]">
+                        {t('noAccessHint')}
+                      </Text>
+                    </Stack>
+                  ) : (
+                    <Stack gap={2}>
+                      {user.projects.map((p) => (
+                        <GodUserProjectCard
+                          key={p.projectId}
+                          project={p}
+                          catalog={catalogQuery.data}
+                        />
+                      ))}
+                    </Stack>
+                  )}
+                </Stack>
+              </>
+            )}
+          </Stack>
+
+          {removable && (
+            <div className="ds-overlay-footer">
+              <Text as="p" size="xs" tone="muted" className="ds-overlay-footer-start">
+                {t('deleteHint')}
+              </Text>
+              <Button
+                variant="danger"
+                icon={<Trash2 />}
+                onClick={() => {
+                  setWithProjects(false);
+                  setConfirming(true);
+                }}
+              >
+                {tCommon('delete')}
+              </Button>
+            </div>
+          )}
+        </div>
+      </Overlay>
 
       {confirming && user && (
         <ConfirmDialog
@@ -337,6 +302,6 @@ export default function GodUserDetailPanel({
           </Stack>
         </ConfirmDialog>
       )}
-    </div>
+    </>
   );
 }

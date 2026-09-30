@@ -8,14 +8,14 @@ import type { MemberRole } from '@/lib/api/endpoints/members';
 import type { TeamProject, TeamRole } from '@/lib/api/endpoints/teams';
 import { useSession } from '@/lib/auth-client';
 import { projectPath } from '@/utils/paths';
-import RowAction from '@/components/common/RowAction';
+import { ActionMenu, type ActionMenuItem } from '@/design-system';
 import NewProjectModal from '@/components/layout/NewProjectModal';
 import TeamProjectDeleteDialog from './TeamProjectDeleteDialog';
 import TeamProjectEditModal from './TeamProjectEditModal';
 import TeamProjectLeaveDialog from './TeamProjectLeaveDialog';
 
 // What the reader may do with one project of the team, as the actions of the panel
-// header. Editing and copying follow their rank in the team — a manager does both,
+// head, as one "..." menu. Editing and copying follow their rank in the team — a manager does both,
 // an owner also deletes — while leaving follows their membership in the project,
 // which its last owner, and anyone a provisioned group put there, cannot give up.
 export default function TeamProjectActions({
@@ -30,6 +30,7 @@ export default function TeamProjectActions({
   viewer: { role: MemberRole; source: 'invite' | 'scim' } | null;
 }) {
   const t = useTranslations('projects');
+  const tCommon = useTranslations('common');
   const router = useRouter();
   const { data: session } = useSession();
   const [editing, setEditing] = useState(false);
@@ -44,25 +45,44 @@ export default function TeamProjectActions({
   const canEdit = teamRole !== 'member';
   const canDelete = teamRole === 'owner';
 
+  const items: ActionMenuItem[] = [
+    ...(canEdit
+      ? [
+          {
+            id: 'edit',
+            label: t('editAction'),
+            icon: <Pencil />,
+            onSelect: () => setEditing(true),
+          },
+          { id: 'copy', label: t('copyAction'), icon: <Copy />, onSelect: () => setCopying(true) },
+        ]
+      : []),
+    ...(canLeave
+      ? [
+          {
+            id: 'leave',
+            label: t('leaveAction'),
+            icon: <LogOut />,
+            onSelect: () => setLeaving(true),
+          },
+        ]
+      : []),
+    ...(canDelete
+      ? [
+          {
+            id: 'delete',
+            label: t('deleteAction'),
+            icon: <Trash2 />,
+            danger: true,
+            onSelect: () => setDeleting(true),
+          },
+        ]
+      : []),
+  ];
+
   return (
-    <div className="flex items-center gap-1">
-      {canEdit && (
-        <>
-          <RowAction icon={Pencil} label={t('editAction')} onClick={() => setEditing(true)} />
-          <RowAction icon={Copy} label={t('copyAction')} onClick={() => setCopying(true)} />
-        </>
-      )}
-      {canLeave && (
-        <RowAction icon={LogOut} label={t('leaveAction')} onClick={() => setLeaving(true)} />
-      )}
-      {canDelete && (
-        <RowAction
-          icon={Trash2}
-          label={t('deleteAction')}
-          destructive
-          onClick={() => setDeleting(true)}
-        />
-      )}
+    <>
+      <ActionMenu label={tCommon('more')} items={items} />
 
       {editing && (
         <TeamProjectEditModal teamId={teamId} project={project} onClose={() => setEditing(false)} />
@@ -95,6 +115,6 @@ export default function TeamProjectActions({
           onClose={() => setLeaving(false)}
         />
       )}
-    </div>
+    </>
   );
 }

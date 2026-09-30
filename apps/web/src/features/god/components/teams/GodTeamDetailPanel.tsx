@@ -1,19 +1,16 @@
 'use client';
 
-import { X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { InstanceTeam } from '@/lib/api/endpoints/god';
 import { formatDate } from '@/utils/dates';
-import { useExitOnEscape } from '@/hooks/useExitOnEscape';
 import ListSkeleton from '@/components/common/skeleton/ListSkeleton';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { useInstanceTeamQuery } from '../../services/god.service';
 import { compactCount } from '../../utils/numbers';
 import GodTeamMembers from './GodTeamMembers';
 import GodTeamProjects from './GodTeamProjects';
 
-import { Box, Inline, Stack, Text } from '@/design-system';
+import { Box, Inline, Overlay, Stack, Text } from '@/design-system';
 
 // One number from the team, with a quiet label under it. The counts read as a grid so
 // the size of a team is one glance rather than a list of sentences.
@@ -44,9 +41,9 @@ const STATS = [
   { key: 'roles', count: (team: InstanceTeam) => team.roleCount },
 ] as const;
 
-// One team in a right-hand side panel (the same surface the user and project
-// directories use): what the team holds, the projects it owns and everyone in it,
-// each list searched and paged on its own. Escape or a backdrop click closes it.
+// One team in the one overlay on the right (the same surface the user and project directories
+// use): what the team holds, the projects it owns and everyone in it, each list searched and
+// paged on its own. Esc closes it.
 export default function GodTeamDetailPanel({
   teamId,
   onClose,
@@ -59,73 +56,42 @@ export default function GodTeamDetailPanel({
   const teamQuery = useInstanceTeamQuery(teamId);
   const team = teamQuery.data;
 
-  useExitOnEscape(onClose);
-
   return (
-    <div
-      data-slot="sheet-overlay"
-      className="fixed inset-0 z-40 flex bg-black/20"
-      onClick={(e) => e.target === e.currentTarget && onClose()}
+    <Overlay
+      label={team ? team.name : tCommon('loading')}
+      tabs={[{ id: 'team', label: team ? team.name : tCommon('loading') }]}
+      onClose={onClose}
+      className="ds-god-overlay"
+      width="wide"
     >
-      <div
-        data-slot="sheet-content"
-        className="ml-auto flex h-full w-full flex-col border-s border-sidebar-border bg-background sm:w-[680px] sm:max-w-[92vw]"
-      >
-        <Inline
-          gap={3}
-          align="start"
-          justify="between"
-          padX={4}
-          padTop={4}
-          padBottom={4}
-          className="flex shrink-0 items-start justify-between border-b border-sidebar-border"
-        >
-          <Stack gap={2} className="min-w-0">
-            <h2 className="truncate text-md font-semibold">
-              {team ? team.name : tCommon('loading')}
-            </h2>
-            {team && (
-              <Inline gap={2} wrap className="flex flex-wrap items-center">
-                <Badge
-                  variant={team.mcpEnabled ? 'secondary' : 'outline'}
-                  className="px-1.5 py-0 text-xs font-medium"
-                >
-                  {t(team.mcpEnabled ? 'mcpEnabled' : 'mcpOff')}
-                </Badge>
-                <Text as="span" size="xs" tone="muted">
-                  {t('created', { date: formatDate(team.createdAt) })}
-                </Text>
-              </Inline>
-            )}
-          </Stack>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="size-7"
-            onClick={onClose}
-            title={tCommon('close')}
-          >
-            <X />
-          </Button>
-        </Inline>
+      <Stack gap={5}>
+        {!team ? (
+          <ListSkeleton rows={5} rowClassName="h-12" />
+        ) : (
+          <>
+            <Inline gap={2} wrap className="flex flex-wrap items-center">
+              <Badge
+                variant={team.mcpEnabled ? 'secondary' : 'outline'}
+                className="px-1.5 py-0 text-xs font-medium"
+              >
+                {t(team.mcpEnabled ? 'mcpEnabled' : 'mcpOff')}
+              </Badge>
+              <Text as="span" size="xs" tone="muted">
+                {t('created', { date: formatDate(team.createdAt) })}
+              </Text>
+            </Inline>
 
-        <Stack gap={5} padX={4} padY={4} className="flex-1 overflow-y-auto">
-          {!team ? (
-            <ListSkeleton rows={5} rowClassName="h-12" />
-          ) : (
-            <>
-              <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-                {STATS.map((s) => (
-                  <Stat key={s.key} label={t(`stats.${s.key}`)} value={s.count(team)} />
-                ))}
-              </div>
+            <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+              {STATS.map((s) => (
+                <Stat key={s.key} label={t(`stats.${s.key}`)} value={s.count(team)} />
+              ))}
+            </div>
 
-              <GodTeamProjects teamId={teamId} />
-              <GodTeamMembers teamId={teamId} />
-            </>
-          )}
-        </Stack>
-      </div>
-    </div>
+            <GodTeamProjects teamId={teamId} />
+            <GodTeamMembers teamId={teamId} />
+          </>
+        )}
+      </Stack>
+    </Overlay>
   );
 }

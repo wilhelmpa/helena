@@ -1,15 +1,12 @@
 import { HelpCircle } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { API_URL } from '@/lib/api/core/client';
-import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { useState } from 'react';
-import { Segmented, Stack } from '@/design-system';
+import { Button, Overlay, Segmented, Stack } from '@/design-system';
 import { AgentRunnerCodeBlock } from './AgentRunnerCodeBlock';
 import { AgentRunnerHelpStep } from './AgentRunnerHelpStep';
 
-// How to get a runner going, in a sheet that slides up from the bottom of the agent
-// editor. It is a walkthrough rather than a field, so it stays out of the form until
+// How to get a runner going, in the one overlay on the right. It is a walkthrough rather than a field, so it stays out of the form until
 // asked for.
 //
 // One tab per coding agent, each holding the files to copy as they stand: the MCP
@@ -157,45 +154,44 @@ export const RUN_COMMAND = 'npx -y @itsaplan/runner';
 
 export function AgentRunnerHelpSheet() {
   const t = useTranslations('teams.agents');
+  const [open, setOpen] = useState(false);
 
   return (
-    <Sheet>
-      <SheetTrigger asChild>
-        <Button type="button" variant="outline" size="sm" className="gap-1.5">
-          <HelpCircle className="size-4" />
-          {t('runnerHelpOpen')}
-        </Button>
-      </SheetTrigger>
-      {/* Full height with the scroll inside: the tabs hold snippets of different
-          lengths, and a sheet that resized to each of them would jump under the
-          pointer. */}
-      <SheetContent side="bottom" className="flex h-dvh flex-col">
-        <SheetHeader>
-          <SheetTitle>{t('runnerHelpTitle')}</SheetTitle>
-        </SheetHeader>
-        <div className="mx-auto w-full max-w-[720px] flex-1 space-y-4 overflow-y-auto px-4 pb-8">
-          <AgentRunnerHelpStep n={1} title={t('runnerHelpKey')}>
-            <p className="text-xs text-muted-foreground">{t('runnerHelpKeyHint')}</p>
-          </AgentRunnerHelpStep>
+    <>
+      <Button icon={<HelpCircle />} size="small" onClick={() => setOpen(true)}>
+        {t('runnerHelpOpen')}
+      </Button>
+      {open && (
+        <Overlay
+          label={t('runnerHelpTitle')}
+          tabs={[{ id: 'help', label: t('runnerHelpTitle') }]}
+          onClose={() => setOpen(false)}
+          width="wide"
+        >
+          <div className="mx-auto w-full max-w-[720px] space-y-4">
+            <AgentRunnerHelpStep n={1} title={t('runnerHelpKey')}>
+              <p className="text-xs text-muted-foreground">{t('runnerHelpKeyHint')}</p>
+            </AgentRunnerHelpStep>
 
-          <AgentRunnerHelpStep n={2} title={t('runnerHelpMcp')}>
-            <p className="text-xs text-muted-foreground">{t('runnerHelpMcpHint')}</p>
-          </AgentRunnerHelpStep>
+            <AgentRunnerHelpStep n={2} title={t('runnerHelpMcp')}>
+              <p className="text-xs text-muted-foreground">{t('runnerHelpMcpHint')}</p>
+            </AgentRunnerHelpStep>
 
-          <AgentRunnerHelpStep n={3} title={t('runnerHelpTool')}>
-            <p className="text-xs text-muted-foreground">{t('runnerHelpToolHint')}</p>
-          </AgentRunnerHelpStep>
+            <AgentRunnerHelpStep n={3} title={t('runnerHelpTool')}>
+              <p className="text-xs text-muted-foreground">{t('runnerHelpToolHint')}</p>
+            </AgentRunnerHelpStep>
 
-          <AgentRunnerHelpStep n={4} title={t('runnerHelpRun')}>
-            <RunnerFiles />
-          </AgentRunnerHelpStep>
+            <AgentRunnerHelpStep n={4} title={t('runnerHelpRun')}>
+              <RunnerFiles />
+            </AgentRunnerHelpStep>
 
-          <AgentRunnerHelpStep n={5} title={t('runnerHelpCheck')}>
-            <p className="text-xs text-muted-foreground">{t('runnerHelpCheckHint')}</p>
-          </AgentRunnerHelpStep>
-        </div>
-      </SheetContent>
-    </Sheet>
+            <AgentRunnerHelpStep n={5} title={t('runnerHelpCheck')}>
+              <p className="text-xs text-muted-foreground">{t('runnerHelpCheckHint')}</p>
+            </AgentRunnerHelpStep>
+          </div>
+        </Overlay>
+      )}
+    </>
   );
 }
 

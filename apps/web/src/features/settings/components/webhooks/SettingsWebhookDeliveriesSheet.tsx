@@ -7,18 +7,11 @@ import { useWebhookDeliveries } from '@/services/webhooks.service';
 import ListSkeleton from '@/components/common/skeleton/ListSkeleton';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet';
 import { JsonViewer } from './JsonViewer';
 
-import { Text, Box, Stack } from '@/design-system';
+import { Overlay, Text, Box, Stack } from '@/design-system';
 
-// Delivery history for a webhook, in a right-side sidebar. Paged through
+// Delivery history for a webhook, in the one overlay on the right. Paged through
 // useWebhookDeliveries, which owns the page size; each delivery expands to show the
 // payload we sent and the response we got back.
 export function SettingsWebhookDeliveriesSheet({
@@ -30,16 +23,19 @@ export function SettingsWebhookDeliveriesSheet({
 }) {
   const t = useTranslations('settings.webhooks');
 
+  if (!webhook) return null;
   return (
-    <Sheet open={webhook != null} onOpenChange={(open) => !open && onClose()}>
-      <SheetContent side="right" className="w-full gap-0 p-0 sm:max-w-xl">
-        <SheetHeader className="border-b">
-          <SheetTitle>{t('deliveryHistory')}</SheetTitle>
-          <SheetDescription className="truncate font-mono text-xs">{webhook?.url}</SheetDescription>
-        </SheetHeader>
-        {webhook && <DeliveriesList webhookId={webhook.id} />}
-      </SheetContent>
-    </Sheet>
+    <Overlay
+      label={t('deliveryHistory')}
+      tabs={[{ id: 'deliveries', label: t('deliveryHistory') }]}
+      onClose={onClose}
+      bodyClassName="is-flush"
+    >
+      <Text as="p" size="xs" tone="muted" className="truncate px-6 py-3 font-mono">
+        {webhook.url}
+      </Text>
+      <DeliveriesList webhookId={webhook.id} />
+    </Overlay>
   );
 }
 

@@ -3,6 +3,7 @@
 import { projectSettingsPages } from '@/features/settings/projectSettingsPages';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import type { Crumb } from '@/design-system';
 import type { ShellRoute } from '@/hooks/useShellRoute';
 import { useSettingsSectionText } from '@/hooks/useSectionLabels';
 import { SETTINGS_SECTIONS } from '@/utils/settingsSections';
@@ -17,11 +18,10 @@ import {
 } from '@/utils/paths';
 import { describeFolder, type FixedFolderKey } from '@/utils/knowledgeFolders';
 
-// Where the page sits, for the window's title only (`Aufgaben · volition.one · Ava`): the page
-// shows no breadcrumb (owner 30.09., O104), its name in the header is `title`.
-export type HeadingTrailItem = { label: string; href?: string };
-export type ShellHeading = { trail: HeadingTrailItem[]; title: string };
-type Crumb = HeadingTrailItem;
+// The header's breadcrumb (owner 30.09., O104): `trail` is where the page sits (project, area,
+// parent page - quiet, each a link back), `title` the page itself, the last part of the
+// breadcrumb. The window's title is built from the same.
+export type ShellHeading = { trail: Crumb[]; title: string };
 
 // The folders above an open folder or file of Wissen, each a link, and the title: the file
 // (by its name without extension) or the folder. `fixed` translates a project's fixed

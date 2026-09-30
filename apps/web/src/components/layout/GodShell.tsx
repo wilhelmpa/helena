@@ -41,6 +41,7 @@ export default function GodShell({
     <StandaloneShell
       defaultSidebarOpen={defaultSidebarOpen}
       sidebar={<GodSidebar />}
+      crumbs={section ? [{ label: t('godMode'), href: godPath(GOD_SECTIONS[0]!.slug) }] : []}
       title={section ? god.section(section.slug).label : t('godMode')}
     >
       {isGod && children}

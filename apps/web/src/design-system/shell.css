@@ -554,12 +554,68 @@
 .ds-page-heading {
   display: flex;
   min-width: 0;
-  /* The name keeps its room; the controls after it give way first, then the name. */
+  /* The breadcrumb is at most half the bar: a longer one gives up its middle, the rest of
+     the bar is the page's controls (which fold on their own). */
   flex: 0 1 auto;
+  max-width: 50%;
+  align-items: center;
+}
+/* The breadcrumb (owner 30.09., O104): the earlier parts small, quiet and clickable, the last
+   part - the page's name - large. It shortens its middle before it cuts a word. */
+.ds-page-crumbs {
+  display: flex;
+  min-width: 0;
   align-items: baseline;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.ds-page-crumb {
+  display: inline-flex;
+  min-width: 0;
+  /* Never cut to a stub: the middle parts go, then the name is cut. */
+  flex: none;
+  align-items: center;
+  color: var(--text-3);
+  font-size: 13px;
+}
+.ds-page-crumb > :is(a, span) {
+  min-width: 0;
+  max-width: 14rem;
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+  text-overflow: ellipsis;
+}
+.ds-page-crumb a {
+  color: inherit;
+}
+.ds-page-crumb a:hover {
+  color: var(--text);
+}
+.ds-page-crumb-sep {
+  width: 14px;
+  height: 14px;
+  flex: none;
+  margin-inline: 4px;
+  color: var(--text-3);
+}
+[dir='rtl'] .ds-page-crumb-sep {
+  transform: scaleX(-1);
+}
+.ds-page-crumb-gap {
+  display: none;
+  align-items: center;
+  color: var(--text-3);
+  font-size: 13px;
+}
+.ds-page-crumbs[data-collapsed='true'] > .ds-page-crumb[data-crumb='middle'] {
+  display: none;
+}
+.ds-page-crumbs[data-collapsed='true'] > .ds-page-crumb-gap {
+  display: inline-flex;
 }
 .ds-page-title {
   min-width: 0;
+  flex: 0 1 auto;
   overflow: hidden;
   color: var(--text);
   font-size: 18px;
@@ -595,6 +651,7 @@
   }
   .ds-page-header .ds-page-heading {
     height: var(--page-header-h);
+    max-width: none;
     flex: 1 1 0;
     align-items: center;
   }
@@ -763,7 +820,7 @@
   background: var(--accent);
   opacity: 1;
 }
-@media (max-width: 767px) {
+@media (max-width: 1023px) {
   .ds-side-panel,
   .ds-side-panel[data-full='true'] {
     inset: 0;
@@ -1561,15 +1618,11 @@
   flex: 1;
 }
 
-/* A pinned panel (owner, O31): it docks at the right and the page — its header, toolbar
-   and body — shrinks to the room left instead of being covered. */
-@media (min-width: 900px) {
-  .ds-page-content[data-panel='docked'] > :not(.ds-side-panel) {
-    margin-inline-end: calc(var(--helena-side-panel-width, 480px) + var(--space-3));
-  }
-  .ds-main:has(> .ds-page-content[data-panel='docked']) > .ds-page-header {
-    margin-inline-end: calc(var(--helena-side-panel-width, 480px) + var(--space-3));
-  }
+/* A pinned panel or overlay (owner, O31, O103): it docks at the right and the main area - the
+   header bar, the toolbar and the page - is exactly as much narrower as it is wide
+   (utils/dock.ts publishes the room); nothing lies under it. */
+.ds-main {
+  margin-inline-end: var(--ds-dock-inset, 0px);
 }
 
 /* A toolbar that stays in its block (ShellHeaderRow without a header slot). */

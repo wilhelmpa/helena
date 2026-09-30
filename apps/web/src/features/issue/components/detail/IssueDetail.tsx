@@ -23,10 +23,12 @@ export default function IssueDetail({
 }) {
   const t = useTranslations('issue');
   const [issue, setIssue] = useState<IssueDetailRow | null>(null);
-  const title = issue ? `${issue.identifier} · ${issue.title}` : '';
+  // The tab names the task by its number; its title is the heading of the body (editable).
+  const title = issue?.identifier ?? '';
 
   // The task in the one overlay on the right (docs/design-system.md §9): a tab naming the
-  // task, its actions, its page (two columns), full screen and close.
+  // task, its actions as one "..." menu, its page (two columns), pin, full screen and close.
+  // A click on the page behind does not close it: it holds what is being written.
   return (
     <Overlay
       label={title || t('openAsPage')}
@@ -39,7 +41,6 @@ export default function IssueDetail({
       onClose={onClose}
       pin={{ kind: 'issue', value: `${project.project.key}:${issueId}` }}
       onOpenPage={() => onExpand(issue?.sequenceNumber ?? null)}
-      closeOnOutsideClick
       className="ds-issue-overlay"
       bodyClassName="ds-issue-overlay-body"
     >

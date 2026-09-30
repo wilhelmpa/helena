@@ -70,10 +70,11 @@ export function OverlayControls({
           href={openPageHref}
           {...common}
           className="ds-icon-button ds-panel-open-page"
+          data-control="open"
           title={label.openPage}
           aria-label={label.openPage}
         >
-          <ArrowUpRight size={15} aria-hidden="true" />
+          <ArrowUpRight size={16} aria-hidden="true" />
         </Link>
       ) : (
         onOpenPage && (
@@ -82,11 +83,12 @@ export function OverlayControls({
             {...common}
             {...guard}
             className="ds-icon-button ds-panel-open-page"
+            data-control="open"
             onClick={onOpenPage}
             title={label.openPage}
             aria-label={label.openPage}
           >
-            <ArrowUpRight size={15} aria-hidden="true" />
+            <ArrowUpRight size={16} aria-hidden="true" />
           </button>
         )
       )}
@@ -96,12 +98,13 @@ export function OverlayControls({
           {...common}
           {...guard}
           className="ds-icon-button ds-panel-pin"
+          data-control="pin"
           onClick={onTogglePin}
           aria-pressed={pinned}
           title={pinned ? label.unpin : label.pin}
           aria-label={pinned ? label.unpin : label.pin}
         >
-          {pinned ? <PinOff size={15} aria-hidden="true" /> : <Pin size={15} aria-hidden="true" />}
+          {pinned ? <PinOff size={16} aria-hidden="true" /> : <Pin size={16} aria-hidden="true" />}
         </button>
       )}
       {onToggleFull && (
@@ -110,15 +113,16 @@ export function OverlayControls({
           {...common}
           {...guard}
           className="ds-icon-button ds-panel-full"
+          data-control="full"
           onClick={onToggleFull}
           aria-pressed={full === true}
           title={full ? label.exitFull : label.enterFull}
           aria-label={full ? label.exitFull : label.enterFull}
         >
           {full ? (
-            <Minimize2 size={15} aria-hidden="true" />
+            <Minimize2 size={16} aria-hidden="true" />
           ) : (
-            <Maximize2 size={15} aria-hidden="true" />
+            <Maximize2 size={16} aria-hidden="true" />
           )}
         </button>
       )}
@@ -128,6 +132,7 @@ export function OverlayControls({
           {...common}
           {...guard}
           className="ds-icon-button ds-panel-close"
+          data-control="close"
           onClick={onClose}
           title={label.close}
           aria-label={label.close}

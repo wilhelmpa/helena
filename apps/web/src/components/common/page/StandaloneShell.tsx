@@ -6,7 +6,7 @@ import { WebLinksContext } from '@/context/webLinks';
 import { useWebLinkNavigation } from '@/hooks/useWebLinkNavigation';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { ShellHeaderActionsSlotCtx, ShellHeaderSlotCtx } from '@/context/shellHeaderSlot';
-import { PageHeader } from '@/design-system';
+import { PageHeader, type Crumb } from '@/design-system';
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { EmergencyStopBanner } from '@/features/agent-runtime/components/EmergencyStop';
 import SettingsModal from '@/features/settings/SettingsModal';
@@ -15,18 +15,21 @@ import { openSettingsModal, settingsModalRoute } from '@/features/settings/setti
 // The frame of an area that lives outside the project shell — the Administrator
 // (/god) and the account (/account) — built exactly like the main Shell, so the three
 // read as one app: the sidebar on the side, then the app's ONE 56px header bar (PageHeader:
-// the sidebar toggle, the page's name, the page's own toolbar and its main action; below
-// 900px the toolbar folds under the name).
+// the sidebar toggle, the breadcrumb ending in the page's name, the page's own toolbar and its
+// main action; below 900px the toolbar folds under the breadcrumb).
 export default function StandaloneShell({
   defaultSidebarOpen,
   sidebar,
   title,
+  crumbs,
   children,
 }: {
   defaultSidebarOpen: boolean;
   sidebar: ReactNode;
-  // The page's name (no breadcrumb, owner 30.09., O104).
+  // The page's name, the last part of the header's breadcrumb (owner 30.09., O104).
   title: string;
+  // Where the page sits, before its name.
+  crumbs?: Crumb[];
   children: ReactNode;
 }) {
   const router = useRouter();
@@ -63,6 +66,7 @@ export default function StandaloneShell({
             {sidebar}
             <SidebarInset className="min-w-0">
               <PageHeader
+                crumbs={crumbs}
                 title={title}
                 titleRef={titleRef}
                 actionsRef={setHeaderSlot}
