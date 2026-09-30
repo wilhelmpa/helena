@@ -206,7 +206,7 @@ class Driver:
                 deadline = time.monotonic() + 240
                 while True:
                     try:
-                        request = Request('http://127.0.0.1:13307/v1/chat/completions', headers={
+                        request = Request('http://127.0.0.1:13310/v1/chat/completions', headers={
                             'Content-Type': 'application/json'},
                             data=json.dumps({'model': model, 'messages': [{'role': 'user', 'content': 'Reply OK'}], 'max_tokens': 16}).encode())
                         with urlopen(request, timeout=180) as response:

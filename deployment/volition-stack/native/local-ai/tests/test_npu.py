@@ -1,9 +1,11 @@
 import http.client
 import importlib.util
+import json
 import subprocess
 import threading
 import unittest
 from pathlib import Path
+from unittest.mock import MagicMock, patch
 
 HERE = Path(__file__).resolve().parents[1]
 spec = importlib.util.spec_from_file_location('npu', HERE / 'npu-server.py')
@@ -12,6 +14,41 @@ spec.loader.exec_module(npu)
 
 
 class NpuTest(unittest.TestCase):
+    def test_start_and_gateway_leave_voice_ports_available(self):
+        def contents(path):
+            if str(path).endswith('model.json'):
+                return json.dumps({'model': 'qwen3.5:2b'})
+            if str(path) == '/proc/meminfo':
+                return 'MemAvailable: 52428800 kB\n'
+            return 'test-only-key'
+
+        installed = MagicMock(stdout=json.dumps({'models': [
+            {'name': 'qwen3.5:2b'}, {'name': npu.EMBED},
+        ]}))
+        with patch.object(Path, 'read_text', contents), \
+             patch.dict(npu.os.environ, {'CREDENTIALS_DIRECTORY': '/test-only'}), \
+             patch.object(npu.subprocess, 'run', return_value=installed), \
+             patch.object(npu.subprocess, 'Popen') as child, \
+             patch.object(npu, 'ThreadingHTTPServer') as server, \
+             patch.object(npu.threading, 'Thread'):
+            npu.main()
+        server.assert_called_once_with(('127.0.0.1', 13309), npu.Gateway)
+        command = child.call_args.args[0]
+        self.assertEqual(command[command.index('--port') + 1], '13310')
+
+        handler = object.__new__(npu.Gateway)
+        handler.headers = {'Authorization': 'Bearer test-only-key'}
+        handler.server = MagicMock(key='test-only-key', model='qwen3.5:2b')
+        handler.path, handler.command = '/v1/models', 'GET'
+        handler.connection, handler.rfile, handler.wfile = MagicMock(), MagicMock(), MagicMock()
+        handler.rfile.read.return_value = b''
+        handler.send_response = handler.send_header = handler.end_headers = MagicMock()
+        with patch.object(npu.http.client, 'HTTPConnection') as connection:
+            response = connection.return_value.getresponse.return_value
+            response.status = 200
+            handler.forward()
+        connection.assert_called_once_with('127.0.0.1', 13310, timeout=180)
+
     def test_install_dry_run_and_preserved_key(self):
         for operation in ('install', 'uninstall'):
             result = subprocess.run([str(HERE / 'npu-install.sh'), '--dry-run', operation], capture_output=True, text=True)

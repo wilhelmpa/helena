@@ -4,7 +4,7 @@ Requires=volition-npu-proxy.socket
 After=volition-npu-proxy.socket volition-npu.service
 
 [Service]
-ExecStart=/usr/lib/systemd/systemd-socket-proxyd --exit-idle-time=10min 127.0.0.1:13306
+ExecStart=/usr/lib/systemd/systemd-socket-proxyd --exit-idle-time=10min 127.0.0.1:13309
 DynamicUser=yes
 PrivateTmp=yes
 NoNewPrivileges=yes

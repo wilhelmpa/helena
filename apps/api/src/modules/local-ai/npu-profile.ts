@@ -1,7 +1,7 @@
 import type { ModelTarget } from './maintenance-state';
 
 export const NPU_SLUG = 'volition-npu';
-export const NPU_BASE = 'http://127.0.0.1:13306/v1';
+export const NPU_BASE = 'http://127.0.0.1:13309/v1';
 export const NPU_EMBED = 'embed-gemma:300m';
 // Combo eval 29.09.: the 4B NPU model failed, the 2B carries triage, routines and helpers.
 export const NPU_CHAT_MODELS = ['qwen3.5:2b'] as const;

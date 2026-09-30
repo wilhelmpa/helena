@@ -60,7 +60,7 @@ def main():
     if args.samples < 3:
         parser.error('Use at least three samples')
     gpu = (args.gpu_base, args.gpu_model, args.gpu_key_file.read_text().strip() if args.gpu_key_file else '')
-    npu = ('http://127.0.0.1:13306/v1', args.npu_model, args.npu_key_file.read_text().strip())
+    npu = ('http://127.0.0.1:13309/v1', args.npu_model, args.npu_key_file.read_text().strip())
     with args.lock.open('a') as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)
         completion(*gpu)

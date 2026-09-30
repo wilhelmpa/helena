@@ -288,7 +288,7 @@ it('pairs only the 27B GPU with NPU, gates classes and restores both server flag
       name: 'NPU',
       kind: 'fastflowlm',
       enabled: false,
-      baseUrl: 'http://127.0.0.1:13306/v1',
+      baseUrl: 'http://127.0.0.1:13309/v1',
       keySource: 'none',
     })
     .returning();

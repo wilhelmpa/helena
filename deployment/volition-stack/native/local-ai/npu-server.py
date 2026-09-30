@@ -11,6 +11,9 @@ from pathlib import Path
 
 MODELS = ('qwen3.5:4b', 'qwen3.5:2b')
 EMBED = 'embed-gemma:300m'
+# Voice proxies occupy 13306/13307 in both local profiles.
+GATEWAY_PORT = 13309
+WORKER_PORT = 13310
 
 
 class Gateway(BaseHTTPRequestHandler):
@@ -55,7 +58,7 @@ class Gateway(BaseHTTPRequestHandler):
                         return
                     data['max_tokens'] = data.get('max_tokens', 512)
                 raw = json.dumps(data).encode()
-            upstream = http.client.HTTPConnection('127.0.0.1', 13307, timeout=180)
+            upstream = http.client.HTTPConnection('127.0.0.1', WORKER_PORT, timeout=180)
             try:
                 upstream.request(self.command, self.path, body=raw or None, headers={'Content-Type': 'application/json'})
                 response = upstream.getresponse()
@@ -105,9 +108,9 @@ def main():
     key = (Path(os.environ['CREDENTIALS_DIRECTORY']) / 'npu.key').read_text().strip()
     if not key:
         raise SystemExit('Empty NPU key')
-    child = subprocess.Popen(['/usr/bin/flm', 'serve', model, '--host', '127.0.0.1', '--port', '13307',
+    child = subprocess.Popen(['/usr/bin/flm', 'serve', model, '--host', '127.0.0.1', '--port', str(WORKER_PORT),
                               '--ctx-len', '8192', '--embed', '1', '--cors', '0', '--q-len', '2'])
-    server = ThreadingHTTPServer(('127.0.0.1', 13306), Gateway)
+    server = ThreadingHTTPServer(('127.0.0.1', GATEWAY_PORT), Gateway)
     server.key, server.model = key, model
     threading.Thread(target=lambda: (child.wait(), server.shutdown()), daemon=True).start()
     try:

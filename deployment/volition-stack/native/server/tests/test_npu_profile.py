@@ -79,6 +79,19 @@ class NpuProfileTest(unittest.TestCase):
             driver.perform('probe', PAIR, {'operation': {}})
         self.assertEqual(ctl.call_args.args, ('stop', m.NPU_UNIT))
 
+    def test_npu_probe_uses_its_worker_instead_of_tts(self):
+        driver = m.Driver(self.host)
+        tool_answer = {'choices': [{'message': {'tool_calls': [{'function': {
+            'name': 'volition_probe', 'arguments': '{"ok":true}',
+        }}]}}]}
+        with patch.object(driver, 'ctl'), \
+             patch.object(driver, 'http', return_value=tool_answer), \
+             patch.object(m, 'urlopen') as request:
+            request.return_value.__enter__.return_value.read.return_value = b'{"choices":[{}]}'
+            driver.perform('probe', PAIR, {'operation': {}})
+        self.assertEqual(request.call_args.args[0].full_url,
+                         'http://127.0.0.1:13310/v1/chat/completions')
+
     def test_stop_npu_before_gpu_and_unit_isolation(self):
         driver = m.Driver(self.host)
         with patch.object(driver, 'ctl') as ctl:
