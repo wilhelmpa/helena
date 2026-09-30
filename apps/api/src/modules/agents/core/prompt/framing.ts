@@ -69,7 +69,12 @@ export function runModePreamble(trigger: RunForPrompt['trigger']): string {
 }
 
 export function framePrompt(run: RunForPrompt): string {
-  if (run.trigger === 'schedule' || run.trigger === 'manual' || run.trigger === 'heartbeat') {
+  if (
+    run.trigger === 'schedule' ||
+    run.trigger === 'manual' ||
+    run.trigger === 'heartbeat' ||
+    run.trigger === 'escalation'
+  ) {
     return `Carry out the following task:\n\n${run.prompt}`;
   }
   const ref = run.issueIdentifier ?? `#${run.issueId}`;

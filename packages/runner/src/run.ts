@@ -12,6 +12,12 @@ import { SpendReader } from './spend';
 import { observeLimits } from './limits/context';
 import { runCwd } from './workdir';
 import { SecretMask } from '@helena/sdk';
+import {
+  delegationWorktree,
+  repositoryHead,
+  reviewCommitMatches,
+  type DelegationResult,
+} from './delegation';
 
 // `stop` is aborted when the heartbeat says the run was canceled or is no longer this
 // runner's, and when the runner stops. The command is killed and nothing is reported.
@@ -160,40 +166,92 @@ export async function perform(
   // Reported as soon as it is known, not only with the result: a crash before the run
   // reports keeps this session for the next claim to resume. Best effort -- a stale
   // claim or a server that predates this route is not fatal to the run itself.
-  const outcome = await execute(
-    {
-      ...config,
-      cwd: runCwd(config.cwd, run.workdir),
-      args: [...config.args, ...(hermes?.args ?? [])],
-    },
-    {
-      ...task,
-      systemPrompt: withInstructions(hermes?.instructions, task.systemPrompt, task.sessionId),
-      toolsets: hermes?.toolsets ?? null,
-      env: {
-        ...task.env,
-        ...hermes?.env,
-        VOLITION_HALOGEN_PRIORITY: backgroundRun(run) ? 'background' : 'normal',
-      },
-      hooks: hermes?.hooks,
-      delivered: hermes?.delivered?.names,
-      ...(hermes?.input && { input: hermes.input }),
-    },
-    {
-      onData: (chunk) => {
-        usage.write(chunk);
-        spend.write(chunk);
-        logins.write(chunk);
-        answer.write(chunk);
-        escalation.write(chunk);
-        timeline.stream.write(chunk);
-        limits?.write(chunk);
-      },
-      onSessionId: saveSession,
-      signal: stop.signal,
-      work: { kind: backgroundRun(run) ? 'background' : 'run', id: run.id },
-    },
-  );
+  const started = Date.now();
+  let delegated: Awaited<ReturnType<typeof delegationWorktree>> | null = null;
+  let reviewBase: string | null = null;
+  let preparationError: string | null = null;
+  if (run.trigger === 'escalation') {
+    try {
+      if (!config.cwd) throw new Error('The project workspace is required for delegation');
+      delegated = await delegationWorktree(config.cwd, run.id);
+    } catch (error) {
+      preparationError = error instanceof Error ? error.message : String(error);
+    }
+  }
+  if (run.review) {
+    try {
+      if (!config.cwd) throw new Error('The project workspace is required for review');
+      reviewBase = await repositoryHead(runCwd(config.cwd, run.workdir) ?? config.cwd);
+    } catch (error) {
+      preparationError = error instanceof Error ? error.message : String(error);
+    }
+  }
+  let outcome: Outcome = preparationError
+    ? { status: 'failed', output: '', error: preparationError }
+    : await execute(
+        {
+          ...config,
+          cwd: delegated?.path ?? runCwd(config.cwd, run.workdir),
+          args: [...config.args, ...(hermes?.args ?? [])],
+        },
+        {
+          ...task,
+          systemPrompt: withInstructions(hermes?.instructions, task.systemPrompt, task.sessionId),
+          toolsets: hermes?.toolsets ?? null,
+          env: {
+            ...task.env,
+            ...hermes?.env,
+            VOLITION_HALOGEN_PRIORITY: backgroundRun(run) ? 'background' : 'normal',
+          },
+          hooks: hermes?.hooks,
+          delivered: hermes?.delivered?.names,
+          ...(hermes?.input && { input: hermes.input }),
+        },
+        {
+          onData: (chunk) => {
+            usage.write(chunk);
+            spend.write(chunk);
+            logins.write(chunk);
+            answer.write(chunk);
+            escalation.write(chunk);
+            timeline.stream.write(chunk);
+            limits?.write(chunk);
+          },
+          onSessionId: saveSession,
+          signal: stop.signal,
+          work: { kind: backgroundRun(run) ? 'background' : 'run', id: run.id },
+        },
+      );
+  let delegation: DelegationResult | null = null;
+  if (delegated && outcome.status === 'success' && !stop.signal.aborted) {
+    try {
+      delegation = await delegated.result(answer.text() ?? outcome.output, Date.now() - started);
+      if (mask.text(delegation.diff) !== delegation.diff)
+        throw new Error('The delegated diff contains a redacted value');
+      delegation.finalMessage = mask.text(delegation.finalMessage).slice(0, 8_000);
+      if (Buffer.byteLength(JSON.stringify(delegation), 'utf8') > 128 * 1024)
+        throw new Error('The delegated result exceeds 128 KiB');
+    } catch (error) {
+      outcome = {
+        ...outcome,
+        status: 'failed',
+        error: error instanceof Error ? error.message : String(error),
+      };
+    }
+  }
+  if (run.review && outcome.status === 'success' && !stop.signal.aborted) {
+    try {
+      const head = await repositoryHead(runCwd(config.cwd, run.workdir) ?? config.cwd!);
+      if (!reviewCommitMatches(reviewBase!, head, answer.text() ?? outcome.output))
+        throw new Error('The reviewer did not create the reported commit');
+    } catch (error) {
+      outcome = {
+        ...outcome,
+        status: 'failed',
+        error: error instanceof Error ? error.message : String(error),
+      };
+    }
+  }
   timeline.stop();
   await limits?.end();
   if (stop.signal.aborted) {
@@ -241,12 +299,13 @@ export async function perform(
   // The answer and the error are the command's own words: masked like its timeline.
   const result = {
     ...settled,
+    ...(delegation && { delegation }),
     ...(handedOver && {
       escalation: { ...handedOver, handover: mask.text(handedOver.handover) },
     }),
     ...(settled.error !== undefined && { error: mask.text(settled.error) }),
     // The answer itself, where the command prints an event stream (Claude Code, Codex).
-    output: mask.text(answer.text() ?? settled.output),
+    output: delegation ? JSON.stringify(delegation) : mask.text(answer.text() ?? settled.output),
     usage: outcome.usage ?? usage.value(),
     spend:
       outcome.spend ??
@@ -271,6 +330,7 @@ export async function perform(
     }
   };
   await reportUntilTaken(send, options.lost ?? stop.signal, options.wait);
+  await delegated?.remove().catch(() => {});
   return { outcome, reflection };
 }
 

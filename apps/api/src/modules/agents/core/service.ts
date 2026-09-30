@@ -83,6 +83,7 @@ export interface AgentRuntimePolicy {
   // Which runtime runs the agent. Unset is Hermes, which the server provisions itself; a
   // Other agents run on the runner selected in their project descriptor.
   runtime?: AgentRuntimeKind;
+  escalation?: AgentEscalationPolicy;
   // Settings of Helena's own loop (runtime `helena`).
   helena?: AgentHelenaSettings;
   commandScript?: string;
@@ -97,6 +98,52 @@ export interface AgentRuntimePolicy {
   chatReflection?: boolean;
   chatReflectionIdleMinutes?: number;
   chatReflectionEveryTurns?: number;
+}
+
+export interface AgentEscalationPolicy {
+  target: 'claude' | 'codex';
+  model: string | null;
+  afterFailures: number;
+  onResumeLimit: boolean;
+  onRequest: boolean;
+  maxDepth: number;
+}
+
+export const DEFAULT_AGENT_ESCALATION: AgentEscalationPolicy = {
+  target: 'codex',
+  model: 'gpt-6-sol',
+  afterFailures: 0,
+  onResumeLimit: false,
+  onRequest: true,
+  maxDepth: 1,
+};
+
+export function normalizeAgentEscalation(value: unknown): AgentEscalationPolicy {
+  const raw = value && typeof value === 'object' ? (value as Partial<AgentEscalationPolicy>) : {};
+  const integer = (candidate: unknown, fallback: number, maximum: number) =>
+    typeof candidate === 'number' &&
+    Number.isInteger(candidate) &&
+    candidate >= 0 &&
+    candidate <= maximum
+      ? candidate
+      : fallback;
+  return {
+    target: raw.target === 'claude' ? 'claude' : 'codex',
+    model:
+      typeof raw.model === 'string' && /^[A-Za-z0-9][A-Za-z0-9._:+@/-]{0,199}$/.test(raw.model)
+        ? raw.model
+        : raw.model === null || raw.target === 'claude'
+          ? null
+          : DEFAULT_AGENT_ESCALATION.model,
+    afterFailures: integer(raw.afterFailures, DEFAULT_AGENT_ESCALATION.afterFailures, 5),
+    onResumeLimit:
+      typeof raw.onResumeLimit === 'boolean'
+        ? raw.onResumeLimit
+        : DEFAULT_AGENT_ESCALATION.onResumeLimit,
+    onRequest:
+      typeof raw.onRequest === 'boolean' ? raw.onRequest : DEFAULT_AGENT_ESCALATION.onRequest,
+    maxDepth: integer(raw.maxDepth, DEFAULT_AGENT_ESCALATION.maxDepth, 1),
+  };
 }
 
 export interface AgentCompression {
@@ -408,6 +455,7 @@ export function normalizeRuntimePolicy(value: unknown): AgentRuntimePolicy {
     // Hermes is the default and is left out, so an agent's policy keeps its revision.
     ...(agentRuntimes().includes(policy.runtime as AgentRuntimeKind) &&
       policy.runtime !== 'hermes' && { runtime: policy.runtime }),
+    ...(policy.escalation && { escalation: normalizeAgentEscalation(policy.escalation) }),
     ...(helenaSettings(policy.helena) && { helena: helenaSettings(policy.helena) }),
     ...(commandScript &&
       commandScript.length <= 256 &&
