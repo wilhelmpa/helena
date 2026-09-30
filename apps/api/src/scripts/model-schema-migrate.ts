@@ -2,42 +2,10 @@ import { eq } from 'drizzle-orm';
 import { isDeepStrictEqual } from 'node:util';
 import { runVolitionScript } from '../../../../scripts/volition-script-runtime';
 import type { TemplateFieldGroup } from '../modules/agents/core/template-sync';
-import { MODEL_ROLES } from '../modules/model-schemas/templates';
 
-const ROLE_WORDS: [RegExp, string][] = [
-  [/koordinat|coordinat|lead/i, 'coordinator'],
-  [/programm|cod(er|ing)|entwick|software/i, 'coder'],
-  [/review|prüf|qualit/i, 'reviewer'],
-  [/plan|architekt/i, 'planning'],
-  [/research|recherche|suche/i, 'research'],
-  [/content|seo|text|redak/i, 'content'],
-  [/assistenz|assistant/i, 'assistant'],
-  [/finanz|beleg|buchhalt|rechnung/i, 'finance'],
-  [/trad|signal|markt/i, 'trading'],
-  [/browser|operator/i, 'browser'],
-  [/support|hilfe/i, 'support'],
-  [/devops|betrieb|infra/i, 'devops'],
-];
-export function inferModelRole(
-  agent: { agentRole: string; username: string },
-  assignment?: {
-    role: string | null;
-    roleTitle: string;
-    capabilities: string[];
-  } | null,
-): string {
-  if (agent.agentRole === 'home') return 'home';
-  if (assignment?.role === 'coordinator' || assignment?.role === 'reviewer') return assignment.role;
-  for (const words of [
-    assignment?.roleTitle,
-    (assignment?.capabilities ?? []).join(' '),
-    agent.username,
-  ]) {
-    for (const [pattern, role] of ROLE_WORDS) if (pattern.test(words ?? '')) return role;
-  }
-  if (assignment?.role && MODEL_ROLES.includes(assignment.role as never)) return assignment.role;
-  return 'general';
-}
+import { MODEL_TEMPLATES } from '../modules/model-schemas/templates';
+import { inferModelRole } from '../modules/model-schemas/roles';
+export { inferModelRole } from '../modules/model-schemas/roles';
 
 export async function modelSchemaMigration(apply = false, progress = (_message: string) => {}) {
   const {
@@ -67,6 +35,7 @@ export async function modelSchemaMigration(apply = false, progress = (_message: 
     readModelState,
     syncAgentModel,
   } = await import('../modules/model-schemas/service');
+  const { readEscalation, writeEscalation } = await import('../modules/escalation/service');
   progress('Reading model schemas, agents and template links.');
   const [state, agents, assignments, skills, tools, mcpServers, drift, matrix] = await Promise.all([
     readModelState(),
@@ -103,6 +72,28 @@ export async function modelSchemaMigration(apply = false, progress = (_message: 
     modelProjectionDrift(),
     modelMatrix(),
   ]);
+  const currentEscalation = await readEscalation();
+  const globalEscalation = {
+    ...currentEscalation,
+    enabled: true,
+    defaultModel:
+      currentEscalation.defaultModel === 'gpt-6-sol'
+        ? 'gpt-6.1-sol'
+        : currentEscalation.defaultModel,
+    failure: {
+      ...currentEscalation.failure,
+      enabled: true,
+      localAttempts: 2,
+      on: ['tests-failed', 'loop', 'timeout', 'error'] as (
+        'tests-failed' | 'loop' | 'timeout' | 'error'
+      )[],
+    },
+    ...(state.active === 'nur-lokal' && {
+      kinds: currentEscalation.kinds.map((kind) => ({ ...kind, enabled: false })),
+      uncertainty: { ...currentEscalation.uncertainty, enabled: false },
+    }),
+  };
+  const globalEscalationMigration = !isDeepStrictEqual(currentEscalation, globalEscalation);
   const [catalogs, availability, priceRows] = await Promise.all([
     db
       .select({ agentId: agentChatCatalog.agentId, models: agentChatCatalog.models })
@@ -151,10 +142,17 @@ export async function modelSchemaMigration(apply = false, progress = (_message: 
     const role = inferModelRole(agent, assignment);
     const policy = agent.policy as { escalation?: unknown } | null;
     const raw = agent.overrides.escalation;
+    const inheritedLocalDefault =
+      matrix.agents.find((row) => row.id === agent.id)?.schemaId === 'nur-lokal' &&
+      isDeepStrictEqual(
+        policy?.escalation,
+        MODEL_TEMPLATES['nur-lokal']!.roles.general!.escalation,
+      );
     const escalation =
       raw != null
         ? migrateEscalationValue(raw, policy?.escalation)
         : policy?.escalation &&
+            !inheritedLocalDefault &&
             !isDeepStrictEqual(
               normalizeAgentEscalation(policy.escalation),
               matrix.agents.find((row) => row.id === agent.id)?.cells.escalation.value ??
@@ -224,6 +222,7 @@ export async function modelSchemaMigration(apply = false, progress = (_message: 
     for (const repair of templateRepairs)
       for (const group of repair.groups)
         await resetCopyToTemplate(repair.agentId, repair.teamId, group);
+  if (apply && globalEscalationMigration) await writeEscalation(globalEscalation);
   const sync = apply ? await modelProjectionDrift() : [];
   for (const id of sync) await syncAgentModel(id);
   const [skillsAfter, toolsAfter, mcpAfter, instructionsAfter] = apply
@@ -269,6 +268,7 @@ export async function modelSchemaMigration(apply = false, progress = (_message: 
       (changes.length > 0 ||
         cloudSchemas.length > 0 ||
         schemaEscalationMigration ||
+        globalEscalationMigration ||
         sync.length > 0 ||
         templateRepairs.length > 0),
     agents: audit,
@@ -277,6 +277,14 @@ export async function modelSchemaMigration(apply = false, progress = (_message: 
     cloudSchemaChanges: cloud.changes,
     cloudAgentUpgrades: cloudUpgrades,
     schemaEscalationMigration,
+    globalEscalationMigration,
+    globalEscalation,
+    missingToolProfiles: agents
+      .filter(
+        (agent) =>
+          !(agent.policy as { helena?: { toolProfile?: string } } | null)?.helena?.toolProfile,
+      )
+      .map((agent) => agent.id),
     projectionDrift: drift,
     templateRepairs,
     synced: sync.length,

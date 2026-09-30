@@ -16,6 +16,8 @@ import {
   COMBO_EVAL_CANDIDATES,
   MODEL_COLUMNS,
   MODEL_ROLES,
+  ROLE_TOOL_PROFILES,
+  type ModelRole,
   MODEL_TEMPLATES,
   LOCAL_PROFILE_TEMPLATES,
   type ModelColumn,
@@ -156,7 +158,7 @@ function projectedPolicy(
   delete helena.escalation;
   return {
     ...policy,
-    ...(policy.helena ? { helena } : {}),
+    helena: { ...helena, toolProfile: helena.toolProfile || values.toolProfile || 'assistent' },
     runtime: values.runtime,
     reasoningEffort: values.reasoning,
     escalation: normalizeAgentEscalation(values.escalation),
@@ -243,6 +245,11 @@ function validateDecision(value: ModelValues['decision']) {
 }
 function validateValues(value: Partial<ModelValues>) {
   if (
+    value.toolProfile !== undefined &&
+    !['assistent', 'recherche', 'coder-lite', 'voll'].includes(value.toolProfile)
+  )
+    throw new HttpError(400, 'Invalid tool profile');
+  if (
     value.runtime !== undefined &&
     !['helena', 'claude', 'codex', 'hermes', 'command', 'webhook'].includes(value.runtime)
   )
@@ -311,6 +318,8 @@ export function resolveRow(row: Row, memberships: Membership[], state: State) {
   const schema =
     state.schemas[schemaId] ?? state.schemas[state.active] ?? MODEL_TEMPLATES['nur-lokal']!;
   const base = schema.roles[row.modelRole] ?? schema.roles.general;
+  const toolProfile =
+    base?.toolProfile ?? ROLE_TOOL_PROFILES[row.modelRole as ModelRole] ?? 'assistent';
   const cells = {} as {
     [K in ModelColumn]: {
       value: ModelValues[K];
@@ -340,6 +349,7 @@ export function resolveRow(row: Row, memberships: Membership[], state: State) {
     role: row.modelRole,
     project: member ? { id: member.projectId, key: member.projectKey } : null,
     schemaId,
+    toolProfile,
     cells,
   };
 }
@@ -420,13 +430,17 @@ export async function agentDecisionSetting(agentId: number) {
   return row.cells.decision.source === 'own' ? row.cells.decision.value : null;
 }
 function projectionOf(agent: Row, memberships: Membership[], state: State) {
-  const cells = resolveRow(agent, memberships, state).cells;
+  const row = resolveRow(agent, memberships, state);
+  const cells = row.cells;
   const values = Object.fromEntries(
     MODEL_COLUMNS.map((key) => [key, cells[key].value]),
   ) as ModelValues;
   return {
     model: ['command', 'webhook'].includes(cells.runtime.value) ? agent.model : cells.model.value,
-    runtimePolicy: projectedPolicy(agent.runtimePolicy as Record<string, unknown>, values),
+    runtimePolicy: projectedPolicy(agent.runtimePolicy as Record<string, unknown>, {
+      ...values,
+      toolProfile: row.toolProfile,
+    }),
   };
 }
 export async function modelProjectionDrift() {
@@ -668,7 +682,10 @@ export async function applyMatrix(patch: MatrixPatch) {
       const cells = entry.after.cells;
       const policy = projectedPolicy(
         entry.row.runtimePolicy as Record<string, unknown>,
-        Object.fromEntries(MODEL_COLUMNS.map((key) => [key, cells[key].value])) as ModelValues,
+        {
+          ...Object.fromEntries(MODEL_COLUMNS.map((key) => [key, cells[key].value])),
+          toolProfile: entry.after.toolProfile,
+        } as ModelValues,
       );
       const updated = await tx
         .update(aiAgent)

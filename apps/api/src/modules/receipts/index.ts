@@ -70,9 +70,8 @@ import { rebuildReceiptProjection } from './projection';
 
 // Receipt matching (Belege, docs/helena-decisions/decisions.md §7): a project's bank accounts
 // and statement imports, its receipts, the matches between them, the review list and the
-// month's export for the tax advisor. Finance data is sensitive: every route is for the
-// project's administrators (its owner, or an owner or manager of the team).
-// JSON routes are MCP tools and keep the same projectAdmin guard.
+// month's export for the tax advisor. Finance agents may list and read their project's
+// receipts; all other finance actions require project or team administration.
 
 // An invoice mail's attachments become receipts of the project the classifier filed it in.
 useReceiptIntake(intakeMailReceipts);
@@ -369,7 +368,7 @@ export const receiptRoutes = new Elysia({
   // ── Receipts ─────────────────────────────────────────────────────────────────────────
 
   .get(base, async ({ project, query }) => ({ receipts: await listReceipts(project.id, query) }), {
-    projectAdmin: true,
+    receiptReader: true,
     query: listQuery,
     response: { 200: t.Object({ receipts: t.Array(Receipt) }), ...commonErrors },
     detail: {
@@ -514,7 +513,7 @@ export const receiptRoutes = new Elysia({
     ({ project, params, user, request }) =>
       getReceipt(project.id, params.receiptId, requireUser(user), request.headers),
     {
-      projectAdmin: true,
+      receiptReader: true,
       params: receiptParams,
       response: { 200: ReceiptDetail, ...commonErrors },
       detail: {

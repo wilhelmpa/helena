@@ -342,8 +342,54 @@ describe('native runtime hardening', () => {
     expect(after.revision).not.toBe(before.revision);
     expect(after.helena?.escalation?.central).toMatchObject({
       enabled: true,
-      defaultModel: 'gpt-6-sol',
+      defaultModel: 'gpt-6.1-sol',
+      failure: { localAttempts: 2 },
     });
+  });
+
+  it('filters compaction entries, battle notes and test markers without removing durable facts', () => {
+    const result = consolidateNotes(
+      '',
+      [
+        '- 09:00 [compaction:session:1] ## Goal old summary\ncontinuation of the summary\n- 10:00 Kundin Eva bevorzugt Rechnungen per PDF.\n- 11:00 Hinweis zum Battle-Test: temporäre Aufgabe\n- 12:00 Test-Notiz: Farbe Violett\n- 13:00 INJECT-OK-4711',
+      ],
+      [],
+    );
+    expect(result.content).toBe('- Kundin Eva bevorzugt Rechnungen per PDF.');
+    expect(result.filtered).toBe(5);
+  });
+
+  it('lets only the team owner dream and records the filtered pending result', async () => {
+    const { api, agent, owner, project, runner } = await setup();
+    const route = api.teams({ teamId: project.teamId })['ai-agents']({ agentId: agent.id }).dream;
+    expect((await route.get()).data).toEqual([]);
+    expect(
+      (
+        await runner
+          .teams({ teamId: project.teamId })
+          ['ai-agents']({ agentId: agent.id })
+          .dream.post()
+      ).status,
+    ).toBe(403);
+    const date = new Date();
+    await approvedNote(agent.id, owner.userId, 'Lieferantin Eva benötigt eine PDF-Rechnung.', date);
+    await approvedNote(agent.id, owner.userId, '[compaction:session:1] compressed summary', date);
+    await approvedNote(agent.id, owner.userId, 'Battle-Test: temporäre Farbe Violett', date);
+    const stranger = await signUpTestUser({ name: 'Stranger' });
+    const denied = await authedApi(stranger.cookie)
+      .teams({ teamId: project.teamId })
+      ['ai-agents']({ agentId: agent.id })
+      .dream.post();
+    expect(denied.status).toBe(404);
+    const response = await route.post();
+    expect(response.status).toBe(200);
+    expect(response.data?.[0]).toMatchObject({
+      trigger: 'manual',
+      status: 'succeeded',
+      result: { status: 'pending', filtered: 2 },
+    });
+    expect((await memoryState(agent.id)).files).toHaveLength(0);
+    expect((await route.get()).data?.[0]).toMatchObject({ result: { filtered: 2 } });
   });
 
   it('registers the nightly engine job and records one consolidation step per native agent', async () => {
@@ -365,6 +411,7 @@ describe('native runtime hardening', () => {
       new Date('2026-09-27T12:00:00Z'),
     );
     const job = systemJob('helena.memory-consolidation')!;
+    expect(job.runWhenNew).toBe(true);
     expect(await job.schedule()).toEqual({
       enabled: true,
       cron: '0 3 * * *',
