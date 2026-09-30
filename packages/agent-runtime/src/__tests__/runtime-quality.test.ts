@@ -290,6 +290,7 @@ test('actual input usage compresses a pure chat before completing it', async () 
 
 test('memory reads reuse the run snapshot and refresh it after a write', async () => {
   let reads = 0;
+  let noted = false;
   const writes: string[] = [];
   let sessionId = 'session-a';
   const initial = {
@@ -300,10 +301,14 @@ test('memory reads reuse the run snapshot and refresh it after a write', async (
   const api = {
     memory: async () => {
       reads++;
-      return initial;
+      return {
+        ...initial,
+        notes: noted ? [{ day: '2026-09-30', content: '- 22:00 New useful fact.\n' }] : [],
+      };
     },
     note: async (_content: string, session: string) => {
       writes.push(session);
+      noted = true;
     },
     proposeMemory: async (_file: string, _content: string, _reason: string, session: string) => {
       writes.push(session);
@@ -317,7 +322,9 @@ test('memory reads reuse the run snapshot and refresh it after a write', async (
     );
   }
   expect(reads).toBe(0);
-  await tool.execute({ action: 'note', content: 'New useful fact.' }, context);
+  expect((await tool.execute({ action: 'note', content: 'New useful fact.' }, context)).text).toBe(
+    "Saved today's note.",
+  );
   await tool.execute({ action: 'read', query: 'deadline' }, context);
   expect(reads).toBe(1);
   sessionId = 'session-b';
@@ -328,6 +335,17 @@ test('memory reads reuse the run snapshot and refresh it after a write', async (
   await tool.execute({ action: 'read', query: 'deadline' }, context);
   expect(reads).toBe(2);
   expect(writes).toEqual(['session-a', 'session-b']);
+});
+
+test('memory notes distinguish an approval proposal from a confirmed saved note', async () => {
+  const api = {
+    note: async () => {},
+    memory: async () => ({ files: [], notes: [], approval: true }),
+  } as unknown as HelenaApi;
+  const tool = memoryTool(api);
+  expect((await tool.execute({ action: 'note', content: 'Useful procedure.' }, context)).text).toBe(
+    "Submitted today's note for owner approval.",
+  );
 });
 
 test('each profile directly offers its core tools and only research/full offer the browser', () => {

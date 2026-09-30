@@ -48,7 +48,11 @@ export function skillQuality(skill: LearnedSkill): string[] {
     )
   )
     issues.push('Description must state a reusable trigger');
-  if (/\b(?:one[- ]?off|one[- ]?time|einmalig|einmalige|nur diesmal)\b/iu.test(skill.markdown))
+  if (
+    /\b(?:one[- ]?off|one[- ]?time|einmalig|einmalige|nur diesmal)\b/iu.test(
+      `${meta.description ?? ''}\n${steps}`,
+    )
+  )
     issues.push('A one-time result is not a reusable procedure');
   return issues;
 }

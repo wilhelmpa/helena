@@ -66,3 +66,26 @@ test('refuses one-off source tasks, secrets and access paths', () => {
 test('compares a new skill against the same learned procedure', () => {
   expect(similarSkill(skill, { ...skill, path: 'duplicate' })).toBe(true);
 });
+
+test('permits warnings and examples about one-off inputs while refusing one-off procedures', () => {
+  expect(
+    skillQuality({
+      ...skill,
+      markdown: skill.markdown.replace(
+        'Keep quoted delimiters inside fields.',
+        'Do not store one-off markers or real data in the skill; it must stay reusable.',
+      ),
+    }),
+  ).toEqual([]);
+  for (const markdown of [
+    skill.markdown.replace('a monthly CSV report', 'a one-off CSV report'),
+    skill.markdown.replace(
+      'Inspect the delimiter and decimal format.',
+      'Read this one-time result.',
+    ),
+  ]) {
+    expect(skillQuality({ ...skill, markdown })).toContain(
+      'A one-time result is not a reusable procedure',
+    );
+  }
+});

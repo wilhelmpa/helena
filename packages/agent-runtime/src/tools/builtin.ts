@@ -268,10 +268,26 @@ export function memoryTool(
       const content = text(input.content).trim();
       if (!content) return error('No content.');
       if (action === 'note') {
-        await api.note(content.slice(0, 2000), sessionId?.());
-        cached = null;
+        const note = content.slice(0, 2000);
+        await api.note(note, sessionId?.());
+        cached = await api.memory().catch(() => null);
+        const normalized = note.replace(/\s+/g, ' ').trim().toLowerCase();
+        const saved = cached?.notes.some((entry) =>
+          entry.content.split('\n').some(
+            (line) =>
+              line
+                .replace(/^-\s+\d{2}:\d{2}\s+/, '')
+                .replace(/\s+/g, ' ')
+                .trim()
+                .toLowerCase() === normalized,
+          ),
+        );
         return {
-          text: "Today's note was submitted under the agent's memory approval setting.",
+          text: saved
+            ? "Saved today's note."
+            : cached?.approval
+              ? "Submitted today's note for owner approval."
+              : 'The note request succeeded, but the note is not yet visible in memory.',
           changed: true,
         };
       }
