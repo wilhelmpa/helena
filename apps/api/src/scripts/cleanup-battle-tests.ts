@@ -16,7 +16,8 @@ const END = '2026-09-30T22:00:00Z';
 const MARKER = /^\s*(?:#+\s*)?(?:\[Battle-Test\]|battle-test-[a-z0-9-]+)/i;
 type Item = { id: number | string; label: string };
 
-async function battleFiles(): Promise<string[]> {
+async function battleFiles(abschluss175 = false): Promise<string[]> {
+  const marker = abschluss175 ? /^\s*(?:#+\s*)?\[Abschluss-175\]/i : MARKER;
   const base = 'Projects/VOL/Inbox';
   const found: string[] = [];
   async function visit(relative: string) {
@@ -30,9 +31,12 @@ async function battleFiles(): Promise<string[]> {
       info.size < 1024 * 1024 &&
       /\.(md|txt|json|canvas|ya?ml)$/i.test(relative)
     ) {
-      const today = info.mtime >= new Date(START) && info.mtime < new Date(END);
+      const today = info.mtime >= new Date(START) && (abschluss175 || info.mtime < new Date(END));
       const content = await readFile(path, 'utf8');
-      if (today && (MARKER.test(content) || /battle[- ]test/i.test(relative))) found.push(relative);
+      const named = abschluss175
+        ? /^\[Abschluss-175\]/i.test(relative.split('/').at(-1) ?? '')
+        : /battle[- ]test/i.test(relative);
+      if (today && (marker.test(content) || named)) found.push(relative);
     }
   }
   try {
@@ -46,12 +50,14 @@ async function battleFiles(): Promise<string[]> {
 }
 
 export async function cleanupBattleTests(
-  options: { apply?: boolean; log?: (line: string) => void } = {},
+  options: { apply?: boolean; abschluss175?: boolean; log?: (line: string) => void } = {},
 ) {
   if (!process.env.DATABASE_URL) throw new Error('DATABASE_URL is required');
   const client = postgres(process.env.DATABASE_URL, { max: 1, prepare: false });
   const log = options.log ?? console.log;
-  const files = await battleFiles();
+  const files = await battleFiles(options.abschluss175);
+  const marker = options.abschluss175 ? '^\\[Abschluss-175\\]' : '^\\[Battle-Test\\]|^battle-test-';
+  const skillName = options.abschluss175 ? '[Abschluss-175] Skill' : 'battle-test-meta-description';
   try {
     const plan = await client.begin(async (tx) => {
       if (!options.apply) await tx`set transaction read only`;
@@ -59,32 +65,33 @@ export async function cleanupBattleTests(
       const tasks = await tx<Item[]>`
         select i.id, p.key || '-' || i.sequence_number || ': ' || i.title as label
         from issue i join project p on p.id = i.project_id
-        where i.created_at >= ${START} and i.created_at < ${END}
-          and ((p.key = 'VOL' and position('[Battle-Test]' in i.title) > 0)
-            or (p.key = 'TRADE' and i.sequence_number = 57 and i.title = 'Kurzer Marktüberblick SPY (Testlauf)'))`;
+        where i.created_at >= ${START} and (${!!options.abschluss175} or i.created_at < ${END})
+          and ((${!!options.abschluss175} and p.key in ('VOL', 'TRADE') and i.title ~* ${marker})
+            or (${!options.abschluss175} and ((p.key = 'VOL' and position('[Battle-Test]' in i.title) > 0)
+              or (p.key = 'TRADE' and i.sequence_number = 57 and i.title = 'Kurzer Marktüberblick SPY (Testlauf)'))))`;
       const taskIds = tasks.map((row) => Number(row.id));
       const routines = await tx<Item[]>`
         select s.id, s.title as label from helena_schedule s join project p on p.id = s.project_id
         where p.key in ('VOL', 'TRADE') and s.kind = 'routine'
           and (s.task_id = any(${taskIds}::int[]) or
-            (s.created_at >= ${START} and s.created_at < ${END}
-              and (s.title ~* '^\\[Battle-Test\\]|^battle-test-' or s.instructions ~* '^\\[Battle-Test\\]|^battle-test-')))`;
+            (s.created_at >= ${START} and (${!!options.abschluss175} or s.created_at < ${END})
+              and (s.title ~* ${marker} or s.instructions ~* ${marker})))`;
       const routineIds = routines.map((row) => String(row.id));
       const chats = await tx<Item[]>`
         select t.id, coalesce(t.title, 'Test chat') as label from agent_chat_thread t
         left join project p on p.id = t.project_id
         where t.issue_id = any(${taskIds}::int[]) or
-          (t.created_at >= ${START} and t.created_at < ${END} and p.key in ('VOL', 'TRADE')
-            and (t.title ~* '^\\[Battle-Test\\]|^battle-test-' or exists (
+          (t.created_at >= ${START} and (${!!options.abschluss175} or t.created_at < ${END}) and p.key in ('VOL', 'TRADE')
+            and (t.title ~* ${marker} or exists (
               select 1 from agent_chat_message m where m.thread_id = t.id and m.role = 'user'
                 and m.id = (select min(first.id) from agent_chat_message first where first.thread_id = t.id and first.role = 'user')
-                and m.content ~* '^\\[Battle-Test\\]|^battle-test-')))`;
+                and m.content ~* ${marker})))`;
       const chatIds = chats.map((row) => String(row.id));
       const runs = await tx<Item[]>`
         select r.id, coalesce(r.title, r.kind) as label from pipeline_run r join project p on p.id = r.project_id
         where r.issue_id = any(${taskIds}::int[]) or r.schedule_id = any(${routineIds}::text[])
-          or (r.created_at >= ${START} and r.created_at < ${END} and p.key in ('VOL', 'TRADE')
-            and r.title ~* '^\\[Battle-Test\\]|^battle-test-')`;
+          or (r.created_at >= ${START} and (${!!options.abschluss175} or r.created_at < ${END}) and p.key in ('VOL', 'TRADE')
+            and r.title ~* ${marker})`;
       const runIds = runs.map((row) => String(row.id));
       const agentRuns = await tx<Item[]>`
         select r.id, 'Agent run ' || r.id as label from agent_run r
@@ -93,25 +100,30 @@ export async function cleanupBattleTests(
       const agentRunIds = agentRuns.map((row) => Number(row.id));
       const facts = await tx<Item[]>`
         select id, 'Marked Battle-Test fact ' || id as label from helena_fact
-        where created_at >= ${START} and created_at < ${END} and deleted_at is null
-          and (content ~* '^\\[Battle-Test\\]|^battle-test-' or 'battle-test' = any(tags))`;
+        where created_at >= ${START} and (${!!options.abschluss175} or created_at < ${END}) and deleted_at is null
+          and (content ~* ${marker} or ${options.abschluss175 ? 'abschluss-175' : 'battle-test'} = any(tags))`;
       const skills = await tx<(Item & { team_id: number })[]>`
         select s.id, s.name as label, s.team_id from agent_skill s
-        where s.name = 'battle-test-meta-description'
-          and s.created_at >= ${START} and s.created_at < ${END}
+        where s.name = ${skillName}
+          and s.created_at >= ${START} and (${!!options.abschluss175} or s.created_at < ${END})
           and exists (select 1 from agent_skill_link l where l.skill_id = s.id and l.agent_id = 12)
           and not exists (select 1 from agent_skill_link l where l.skill_id = s.id and l.agent_id <> 12)`;
       const nativeSkills = await tx<{ id: string; label: string; needs_review: boolean }[]>`
         select s->>'path' as id, s->>'name' as label,
           exists (select 1 from jsonb_array_elements(coalesce(s->'history', '[]'::jsonb)) h where h->>'status' = 'pending') as needs_review
         from ai_agent a cross join lateral jsonb_array_elements(a.volition_learned_skills) s
-        where a.id = 12 and s->>'name' = 'battle-test-meta-description'
+        where a.id = 12 and s->>'name' = ${skillName}
           and coalesce((s->>'archived')::boolean, false) = false
-          and (s->>'createdAt')::timestamptz >= ${START} and (s->>'createdAt')::timestamptz < ${END}`;
+          and (s->>'createdAt')::timestamptz >= ${START} and (${!!options.abschluss175} or (s->>'createdAt')::timestamptz < ${END})`;
       const plan = { tasks, routines, chats, runs, agentRuns, facts, skills, nativeSkills, files };
       log(
         JSON.stringify(
-          { mode: options.apply ? 'apply' : 'dry-run', date: '2026-09-30 Europe/Berlin', ...plan },
+          {
+            mode: options.apply ? 'apply' : 'dry-run',
+            selection: options.abschluss175 ? 'Abschluss-175' : 'Battle-Test',
+            date: '2026-09-30 Europe/Berlin',
+            ...plan,
+          },
           null,
           2,
         ),
@@ -147,7 +159,7 @@ export async function cleanupBattleTests(
         else log(`Skipped changed skill ${skill.id}`);
       }
       for (const skill of plan.nativeSkills) await nativeSkillAction(12, skill.id, null);
-      const currentFiles = new Set(await battleFiles());
+      const currentFiles = new Set(await battleFiles(options.abschluss175));
       for (const relative of plan.files) {
         if (!currentFiles.has(relative)) {
           log(`Skipped changed file ${relative}`);
@@ -165,7 +177,10 @@ export async function cleanupBattleTests(
 }
 
 if (import.meta.main) {
-  if (process.argv.slice(2).some((arg) => arg !== '--apply'))
-    throw new Error('Usage: cleanup-battle-tests.ts [--apply]');
-  await cleanupBattleTests({ apply: process.argv.includes('--apply') });
+  if (process.argv.slice(2).some((arg) => !['--apply', '--abschluss-175'].includes(arg)))
+    throw new Error('Usage: cleanup-battle-tests.ts [--abschluss-175] [--apply]');
+  await cleanupBattleTests({
+    apply: process.argv.includes('--apply'),
+    abschluss175: process.argv.includes('--abschluss-175'),
+  });
 }

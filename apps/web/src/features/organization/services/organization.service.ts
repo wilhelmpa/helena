@@ -38,11 +38,11 @@ import { qk } from '@/services/queryKeys';
 import type { BudgetInput } from '@/lib/api/endpoints/autopilot';
 
 export function useOrganizationQuery(teamId: number | null, projectId?: number) {
+  const enabled = teamId != null && teamId > 0;
   return useQuery({
-    queryKey:
-      teamId == null ? ['organization', 'none'] : [...qk.organization(teamId), projectId ?? 'all'],
+    queryKey: enabled ? [...qk.organization(teamId), projectId ?? 'all'] : ['organization', 'none'],
     queryFn: () => getOrganization(teamId!, projectId),
-    enabled: teamId != null,
+    enabled,
   });
 }
 

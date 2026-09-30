@@ -111,3 +111,39 @@ it('lists marked September 30 objects without writes and applies only that selec
   expect((await cleanupBattleTests({ log: () => {} })).tasks).toHaveLength(0);
   expect(logs.every((line) => JSON.parse(line).mode)).toBe(true);
 });
+
+it('isolates Abschluss-175 objects and includes work created after midnight', async () => {
+  const owner = await signUpTestUser();
+  const api = authedApi(owner.cookie);
+  await api.projects.post({ key: 'VOL', name: 'Volition' });
+  const view = (await api.projects({ projectKey: 'VOL' }).get()).data!;
+  const create = async (title: string) =>
+    (
+      await api.projects({ projectKey: 'VOL' }).issues.post({
+        title,
+        columnId: view.columns[0]!.id,
+      })
+    ).data!;
+  const marked = await create('[Abschluss-175] disposable task');
+  const other = await create('[Battle-Test] other assignment');
+  const real = await create('Keep the [Abschluss-175] findings');
+  const afterMidnight = new Date('2026-10-01T00:30:00Z');
+  await db.update(issue).set({ createdAt: afterMidnight }).where(eq(issue.id, marked.id));
+  await db
+    .update(issue)
+    .set({ createdAt: new Date('2026-09-30T10:00:00Z') })
+    .where(eq(issue.id, other.id));
+  const inbox = join(process.env.PROJECT_VAULT_ROOT!, 'Projects/VOL/Inbox');
+  await mkdir(inbox, { recursive: true });
+  const file = join(inbox, '[Abschluss-175] result.md');
+  await writeFile(file, '# [Abschluss-175] result');
+  await utimes(file, afterMidnight, afterMidnight);
+  const plan = await cleanupBattleTests({ abschluss175: true, log: () => {} });
+  expect(plan.tasks.map((row) => Number(row.id))).toEqual([marked.id]);
+  expect(plan.files).toEqual(['Projects/VOL/Inbox/[Abschluss-175] result.md']);
+  expect((await api.issues({ issueId: marked.id }).get()).status).toBe(200);
+  await cleanupBattleTests({ abschluss175: true, apply: true, log: () => {} });
+  expect((await api.issues({ issueId: marked.id }).get()).status).toBe(404);
+  expect((await api.issues({ issueId: other.id }).get()).status).toBe(200);
+  expect((await api.issues({ issueId: real.id }).get()).status).toBe(200);
+});
