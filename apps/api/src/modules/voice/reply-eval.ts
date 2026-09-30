@@ -1,5 +1,10 @@
 import type { LocalAiEvalCaseResult, LocalAiEvalContext, LocalAiEvalResult } from '@helena/sdk';
-import { HAND_OVER_TOOL, voiceReplyRequest, type VoiceReplyInput } from './reply-request';
+import {
+  HAND_OVER_TOOL,
+  isTextHandOver,
+  voiceReplyRequest,
+  type VoiceReplyInput,
+} from './reply-request';
 import { otherLanguage } from './transcript';
 
 // The eval of Helena's voice reply (class `voice-reply`, docs/helena-decisions/voice-2.md §4):
@@ -142,7 +147,8 @@ export async function evaluateVoiceReply(context: LocalAiEvalContext): Promise<L
     );
     tokens += answer.outputTokens ?? 0;
     seconds += answer.latencyMs / 1000;
-    const handedOver = answer.toolCalls.some((call) => call.name === HAND_OVER_TOOL);
+    const handedOver =
+      answer.toolCalls.some((call) => call.name === HAND_OVER_TOOL) || isTextHandOver(answer.text);
     const detail = judge(item, answer.text, handedOver);
     cases.push({ id: item.id, passed: detail === null, detail, latencyMs: answer.latencyMs });
   }

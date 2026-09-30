@@ -30,6 +30,7 @@ import type { AgUiEventBody } from '#modules/agents/chat/model';
 import {
   VOICE_REPLY_CLASS,
   committed,
+  isTextHandOver,
   parseStreamLine,
   voiceReplyNow,
   voiceReplyRequest,
@@ -190,6 +191,7 @@ async function streamAnswer(
       }
     }
     if (!open) {
+      if (isTextHandOver(held)) return { kind: 'hand-over' };
       // Nothing but held-back text (a very short answer) or nothing at all.
       if (!held.trim()) return { kind: 'fallback' };
       say(held);

@@ -1,4 +1,9 @@
-import { verifyNpuDecisionReadout } from '../modules/local-ai/npu-eval';
+import {
+  NpuDecisionReadoutError,
+  verifyNpuDecisionReadout,
+  type NpuDecisionReadoutReport,
+} from '../modules/local-ai/npu-eval';
+import { retrySocketClosed, type SocketRetry } from './local-ai-eval-retry';
 // The local AI task-class evals from the command line (docs/helena-decisions/local-ai-platform.md
 // §7): the same cases Administrator → Server → Lokale KI runs, against any OpenAI-compatible
 // server, without Helena's database. For measuring models before they are registered.
@@ -7,6 +12,8 @@ import { verifyNpuDecisionReadout } from '../modules/local-ai/npu-eval';
 //     --key-file /etc/helena/local-ai.key --model Qwen3.6-35B-A3B-GGUF \
 //     [--embed-model Qwen3-Embedding-0.6B-GGUF] [--classes triage,summaries] \
 //     [--thinking off|low|medium|high] [--json out.json | --json -]
+//     [--npu --npu-backend fastflowlm --npu-timeout-ms 30000]
+// Backend/model defaults: VOLITION_NPU_DECISION_TIMEOUTS_MS='{"fastflowlm":{"gemma4-it:e2b":30000}}'.
 //
 // Prints one line per class: score, threshold, passed, thinking, median latency, tokens per
 // second, and the failed cases. Each class runs with its own `thinking` unless --thinking
@@ -39,6 +46,13 @@ const embedModel = argument('embed-model');
 const only = argument('classes')?.split(',').filter(Boolean) ?? null;
 const jsonOut = argument('json');
 const thinkingArgument = argument('thinking');
+const npuBackend = argument('npu-backend') ?? 'fastflowlm';
+const npuTimeoutArgument = argument('npu-timeout-ms');
+const npuTimeoutMs = npuTimeoutArgument === null ? undefined : Number(npuTimeoutArgument);
+if (npuTimeoutMs !== undefined && (!Number.isSafeInteger(npuTimeoutMs) || npuTimeoutMs <= 0)) {
+  console.error('--npu-timeout-ms must be a positive integer');
+  process.exit(2);
+}
 const judgeBase = argument('judge-base') ?? process.env.LOCAL_AI_JUDGE_BASE_URL;
 const judgeModel = argument('judge-model') ?? process.env.LOCAL_AI_JUDGE_MODEL ?? 'claude-opus-4-6';
 const judgeCli = argument('judge-cli');
@@ -72,11 +86,14 @@ interface Row {
   score100: number | null;
   error: string | null;
   seconds: number;
+  npuReadout: NpuDecisionReadoutReport | null;
+  retries: SocketRetry[];
 }
 
 const rows: Row[] = [];
 for (const entry of [...BUILTIN_TASK_CLASSES, DECISIONS_LOCAL_AI_CLASS]) {
-  if (!entry.evaluate || (only && !only.includes(entry.id))) continue;
+  const evaluate = entry.evaluate;
+  if (!evaluate || (only && !only.includes(entry.id))) continue;
   const target = entry.capability === 'embeddings' ? embedModel : model;
   if (!target) continue;
   const thinking =
@@ -84,30 +101,46 @@ for (const entry of [...BUILTIN_TASK_CLASSES, DECISIONS_LOCAL_AI_CLASS]) {
   const started = Date.now();
   let result: LocalAiEvalResult | null = null;
   let error: string | null = null;
+  let npuReadout: NpuDecisionReadoutReport | null = null;
+  const retries: SocketRetry[] = [];
   try {
-    if (process.argv.includes('--npu'))
-      await verifyNpuDecisionReadout({ baseUrl: base, key, model: target, classId: entry.id });
-    const judge = judgeCli
-      ? {
-          chat: cliJudge(
+    result = await retrySocketClosed(
+      async () => {
+        if (process.argv.includes('--npu'))
+          npuReadout = await verifyNpuDecisionReadout({
+            baseUrl: base,
+            key,
+            model: target,
+            classId: entry.id,
+            backend: npuBackend,
+            timeoutMs: npuTimeoutMs,
+          });
+        let judge: ReturnType<typeof openAiEvalContext>['chat'] | undefined;
+        if (judgeCli)
+          judge = cliJudge(
             judgeCli as 'claude' | 'codex',
             judgeModel,
             process.env.TMPDIR ?? tmpdir(),
-          ),
-        }
-      : judgeBase
-        ? openAiEvalContext({ baseUrl: judgeBase, key: judgeKey, model: judgeModel })
-        : null;
-    result = await entry.evaluate(
-      openAiEvalContext({
-        baseUrl: base,
-        key,
-        model: target,
-        thinking: thinking ?? 'off',
-        judge: judge?.chat,
-      }),
+          );
+        else if (judgeBase)
+          judge = openAiEvalContext({ baseUrl: judgeBase, key: judgeKey, model: judgeModel }).chat;
+        return evaluate(
+          openAiEvalContext({
+            baseUrl: base,
+            key,
+            model: target,
+            thinking: thinking ?? 'off',
+            judge,
+          }),
+        );
+      },
+      (retry) => {
+        retries.push(retry);
+        say(`    ${entry.id}: socket closed; retrying once after ${retry.delayMs} ms`);
+      },
     );
   } catch (caught) {
+    if (caught instanceof NpuDecisionReadoutError) npuReadout = caught.report;
     error = caught instanceof Error ? caught.message : String(caught);
   }
   rows.push({
@@ -118,6 +151,8 @@ for (const entry of [...BUILTIN_TASK_CLASSES, DECISIONS_LOCAL_AI_CLASS]) {
     result,
     score100: entry.id === 'deutsch-texte' && result ? Math.round(result.score * 100) : null,
     error,
+    npuReadout,
+    retries,
     seconds: (Date.now() - started) / 1000,
   });
   const score = result ? result.score.toFixed(2) : 'error';
@@ -131,6 +166,12 @@ for (const entry of [...BUILTIN_TASK_CLASSES, DECISIONS_LOCAL_AI_CLASS]) {
     say(`    ${failed.id}: ${failed.detail ?? ''}`);
   }
   if (error) say(`    error: ${error}`);
+  if (npuReadout)
+    say(
+      `    NPU readout: timeout ${npuReadout.timeoutMs} ms; ${npuReadout.timeouts.length} timeouts; ${npuReadout.failures.length} decision failures; ${npuReadout.errors.length} backend errors`,
+    );
+  if (retries.length)
+    say(`    socket retry: ${result ? 'completed' : 'failed'} (${retries.length})`);
 }
 
 const report = `${JSON.stringify({ base, rows }, null, 2)}\n`;
