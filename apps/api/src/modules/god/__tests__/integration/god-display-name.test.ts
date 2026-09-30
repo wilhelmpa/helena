@@ -4,6 +4,7 @@ import { api, app } from '#tests/helpers/app';
 import { resetDb } from '#tests/helpers/db';
 import { addUser, setup } from '../helpers';
 import { bootstrapHomeAgent } from '../../../../scripts/bootstrap-home-agent';
+import { normalizeOpenApiResponse } from '../../../../openapi';
 
 describe('display name setting', () => {
   beforeEach(resetDb);
@@ -21,6 +22,13 @@ describe('display name setting', () => {
     expect(document.tags.find((tag: { name: string }) => tag.name === 'Routines').description).toBe(
       'Tasks created or reopened for an agent on a schedule, run by the Atlas engine',
     );
+    const branded = await normalizeOpenApiResponse(new Request('http://localhost/docs/json'), {
+      info: { title: 'Ava API', description: 'Available Avatars in Ava and Helena' },
+      paths: {},
+    });
+    expect(branded).toMatchObject({
+      info: { title: 'Atlas API', description: 'Available Avatars in Atlas and Atlas' },
+    });
   });
 
   it('lets only the administrator write a valid name', async () => {
