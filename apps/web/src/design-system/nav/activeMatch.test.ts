@@ -47,20 +47,25 @@ describe('pickActive', () => {
   });
 });
 
-describe('the chat page next to the dashboard (both live at "/")', () => {
+describe('the Home chat and the dashboard (owner O98/O99)', () => {
+  // "/" is the Home chat, whichever chat it shows; the dashboard has its own page.
   const home = [
-    { id: 'dashboard', href: '/', exact: true, without: ['thread', 'agent', 'new'] },
-    { id: 'chats', href: '/', exact: true, withAny: ['thread', 'agent', 'new'] },
+    { id: 'chats', href: '/', exact: true },
+    { id: 'dashboard', href: '/dashboard' },
     { id: 'tasks', href: '/tasks' },
   ];
   const homeAt = (url: string) => {
     const [pathname = '', search = ''] = url.split('?');
     return pickActive(home, { pathname, search });
   };
-  it('the bare address is the dashboard, an open or new chat marks the chats', () => {
-    assert.equal(homeAt('/'), 'dashboard');
+  it('the bare address and any open or new chat mark the chats, not the dashboard', () => {
+    assert.equal(homeAt('/'), 'chats');
     assert.equal(homeAt('/?agent=3&thread=abc'), 'chats');
     assert.equal(homeAt('/?agent=3&new=1'), 'chats');
     assert.equal(homeAt('/tasks'), 'tasks');
+  });
+  it('the dashboard marks itself in every view', () => {
+    assert.equal(homeAt('/dashboard'), 'dashboard');
+    assert.equal(homeAt('/dashboard?view=projects'), 'dashboard');
   });
 });

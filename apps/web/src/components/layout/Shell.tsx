@@ -122,13 +122,13 @@ export default function Shell({
   }, [kioskDual]);
   // Plugins' panel tools join the built-ins once the API lists them.
   usePluginPanelTools();
-  // A page that already is a tool (code, inbox, chat) is not shown a second time beside
+  // A page that already is a tool (code, chat) is not shown a second time beside
   // itself — two chats side by side, one of them not the page's. Helena's start page is
   // her chat too: a chat panel left open elsewhere laid itself over it after navigating
   // back or reloading (owner, 29.09.).
   const pathname = usePathname();
   const routedTool =
-    route.sub === 'code' || route.sub === 'inbox' || route.sub === 'chat'
+    route.sub === 'code' || route.sub === 'chat'
       ? route.sub
       : pathname === '/chat' || (globalHome && pathname === '/')
         ? 'chat'
@@ -291,7 +291,10 @@ export default function Shell({
     customFields,
     onOpenIssue: openIssue,
     onAddIssue: addIssue,
-    onChatWithAgent: () => workspaceLayout.showTool('chat'),
+    onChatWithAgent: (agentId) => {
+      setChatThreadRequest({ agentId, threadId: null });
+      workspaceLayout.showTool('chat');
+    },
     onOpenChatThread: (agentId, threadId) => {
       setChatThreadRequest({ agentId, threadId });
       workspaceLayout.showTool('chat');
@@ -439,7 +442,14 @@ export default function Shell({
                 </WorkspaceLayoutHost>
               </main>
 
-              <HomeDock open={workspaceOpen} onOpen={workspaceLayout.openHome} />
+              <HomeDock
+                open={workspaceOpen}
+                projectKey={projectKey}
+                onOpen={(chat) => {
+                  if (chat) setChatThreadRequest(chat);
+                  workspaceLayout.openHome();
+                }}
+              />
               <ProjectLinkSheet currentProjectKey={projectKey} projects={projects} />
 
               <CommandLayer

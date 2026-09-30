@@ -17,9 +17,6 @@ export type NavCandidate = {
   exact?: boolean;
   // Query keys that must be absent for the row to match (e.g. 'path' on a folder root).
   without?: string[];
-  // Query keys of which at least one must be present (the chat page carries `thread`,
-  // `agent` or `new`; its bare address is the dashboard).
-  withAny?: string[];
 };
 
 function splitHref(href: string): { path: string; query: URLSearchParams } {
@@ -43,7 +40,6 @@ export function matchScore(candidate: NavCandidate, location: NavLocation): numb
   const search =
     typeof location.search === 'string' ? new URLSearchParams(location.search) : location.search;
   if (candidate.without?.some((key) => search.has(key))) return -1;
-  if (candidate.withAny && !candidate.withAny.some((key) => search.has(key))) return -1;
   const { path, query } = splitHref(candidate.href);
   let best = pathScore(location.pathname, path, candidate.exact ?? false, true);
   if (best >= 0) {

@@ -29,7 +29,7 @@ export type ShellContext = {
   onChatWithAgent: (agentId: number) => void;
   // Opens the chat panel on one of the reader's conversations. The request is held
   // until the panel has opened it.
-  onOpenChatThread: (agentId: number, threadId: string) => void;
+  onOpenChatThread: (agentId: number, threadId: string | null) => void;
   // The chat tool is open in the panel: the chat list of the sidebar then opens a chat there,
   // instead of taking the page away from the reader (owner, O87).
   chatPanelOpen: boolean;
@@ -48,7 +48,8 @@ export type ShellContext = {
   currentIssue?: { identifier: string; title: string } | null;
 };
 
-export type ChatThreadRequest = { agentId: number; threadId: string };
+// `threadId` null: a new conversation with the agent.
+export type ChatThreadRequest = { agentId: number; threadId: string | null };
 
 export const ShellCtx = createContext<ShellContext | null>(null);
 

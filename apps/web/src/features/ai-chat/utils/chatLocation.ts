@@ -5,6 +5,9 @@ export interface ChatLocation {
   threadId: string | null;
 }
 
+export const sameChatLocation = (a: ChatLocation, b: ChatLocation): boolean =>
+  a.agentId === b.agentId && a.threadId === b.threadId;
+
 // Where to go once a thread was deleted: away from it when it is the one open — a new
 // chat with the same agent, so nothing of the deleted conversation stays on screen and
 // nothing more can be written into it — and nowhere (null) when another one was.

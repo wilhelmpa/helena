@@ -9,7 +9,7 @@ import { useChatWorkspaceScope } from '../../hooks/useChatWorkspaceScope';
 import { useActiveChat } from '../../hooks/useActiveChat';
 import { useChatSummary } from '../../hooks/useChatSummary';
 import ChatWorkspace from './ChatWorkspace';
-import type { ChatLocation } from '../../utils/chatLocation';
+import { sameChatLocation, type ChatLocation } from '../../utils/chatLocation';
 
 // A URL with a thread wins. A bare URL resumes the saved chat of this scope.
 export default function ChatWorkspaceRoot({ projectKey }: { projectKey: string | null }) {
@@ -25,6 +25,9 @@ export default function ChatWorkspaceRoot({ projectKey }: { projectKey: string |
   } = useActiveChat(projectKey ? `project:${projectKey}` : 'home');
   const handledUrl = useRef<string | null>(null);
   const handledActive = useRef<ChatLocation | null>(null);
+  // What this page just saved as the open chat: the saved location catches up a moment later,
+  // and until it has, the old one must not pull the page back to it.
+  const awaitingSave = useRef<ChatLocation | null>(null);
   const validatingRoute = useRef<string | null>(null);
   const restoreSequence = useRef(0);
 
@@ -68,9 +71,11 @@ export default function ChatWorkspaceRoot({ projectKey }: { projectKey: string |
     if (!activeReady || resolvingScope) return;
     if (handledUrl.current !== routeKey) {
       handledUrl.current = routeKey;
+      awaitingSave.current = null;
       restoreSequence.current += 1;
       if (location.threadId || intentionalNew) {
         handledActive.current = location;
+        awaitingSave.current = location;
         setActive(location);
         return;
       }
@@ -93,6 +98,10 @@ export default function ChatWorkspaceRoot({ projectKey }: { projectKey: string |
     }
     if (validatingRoute.current === routeKey) return;
     const saved = activeLocation;
+    if (awaitingSave.current) {
+      if (!sameChatLocation(saved, awaitingSave.current)) return;
+      awaitingSave.current = null;
+    }
     if (
       saved.threadId &&
       (saved.threadId !== location.threadId || saved.agentId !== location.agentId) &&
@@ -131,6 +140,7 @@ export default function ChatWorkspaceRoot({ projectKey }: { projectKey: string |
       restoreSequence.current += 1;
       validatingRoute.current = null;
       handledActive.current = next;
+      awaitingSave.current = next;
       const opened = next.threadId;
       if (opened) setOwnThreads((current) => new Set(current).add(opened));
       setActive(next);

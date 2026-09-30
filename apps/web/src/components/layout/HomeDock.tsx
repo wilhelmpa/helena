@@ -6,24 +6,35 @@ import { useTranslations } from 'next-intl';
 import { Orb } from '@/design-system';
 import { useAgentStatus } from '@/utils/helenaStatus';
 import { useAgentWorkStates } from '@/hooks/useAgentWorkStates';
-import { useChatWorkspaceScope } from '@/features/ai-chat/hooks/useChatWorkspaceScope';
+import { useMainChat } from '@/features/ai-chat/hooks/useMainChat';
+import type { ChatThreadRequest } from '@/context/shellContext';
 import { requestDockVoice } from '@/features/voice/utils/dockVoice';
 
 // Bottom right there is only the orb (owner, 28.09.): the real voice orb (Shipnotes
 // particles, WebGL; a still orb in the same look while the tab is hidden or motion is
-// reduced) in the Home agent's status. A click opens the Home chat in the panel, a long
-// press starts voice. It is hidden on the Home start page, where the orb is the page, and on
-// the terminals page.
-export default function HomeDock({ open, onOpen }: { open: boolean; onOpen: () => void }) {
+// reduced) in the status of the place's main agent. A click opens the chat with that agent
+// in the panel — in a project its coordinator, in Home Ava, never a picker first (owner,
+// O105; the agent is switched in the composer) —, a long press starts voice. It is hidden on
+// the Home start page, where the orb is the page, and on the terminals page.
+export default function HomeDock({
+  open,
+  projectKey,
+  onOpen,
+}: {
+  open: boolean;
+  projectKey: string | null;
+  onOpen: (chat: ChatThreadRequest | null) => void;
+}) {
   const pathname = usePathname();
   const t = useTranslations('nav');
-  const home = useChatWorkspaceScope(null);
-  const homeId = home.agents[0]?.id ?? 0;
-  // The dock stands for the Home chat: its orb rests while Helena works elsewhere (other
-  // chats, runs, the local model busy for others — owner, 28.09.) and only asks for the owner
-  // when a run of hers waits for him.
-  const waiting = useAgentWorkStates().get(homeId) === 'waiting';
-  const status = useAgentStatus(homeId, { run: waiting ? 'waiting' : null });
+  const main = useMainChat(projectKey);
+  const mainId = main.agent?.id ?? 0;
+  // The dock stands for the main agent's chat: its orb rests while the agent works elsewhere
+  // (other chats, runs, the local model busy for others — owner, 28.09.) and only asks for the
+  // owner when a run of hers waits for him.
+  const waiting = useAgentWorkStates().get(mainId) === 'waiting';
+  const status = useAgentStatus(mainId, { run: waiting ? 'waiting' : null });
+  const openMain = () => onOpen(main.location);
   const hold = useRef<ReturnType<typeof setTimeout> | null>(null);
   const clearHold = () => {
     if (hold.current) clearTimeout(hold.current);
@@ -44,11 +55,11 @@ export default function HomeDock({ open, onOpen }: { open: boolean; onOpen: () =
       className="ds-dock"
       aria-label={t('dockOpen')}
       title={t('dockOpen')}
-      onClick={onOpen}
+      onClick={openMain}
       onPointerDown={() => {
         clearHold();
         hold.current = setTimeout(() => {
-          onOpen();
+          openMain();
           requestDockVoice();
           hold.current = null;
         }, 650);

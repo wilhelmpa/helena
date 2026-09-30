@@ -606,10 +606,9 @@ export function SidebarHomeTree({
 
   const candidates: NavCandidate[] = [
     { id: 'inbox', href: '/inbox', also: ['/approvals', '/mail'] },
-    // The start page is the dashboard and, with a chat open or a new one begun, the chat.
-    { id: 'dashboard', href: '/', exact: true, without: ['thread', 'agent', 'new'] },
-    { id: 'chats', href: '/', exact: true, withAny: ['thread', 'agent', 'new'] },
-    { id: 'dashboard:all', href: '/dashboard' },
+    // The start page is the Home chat (the logo leads there, owner O99); the dashboard is its own page.
+    { id: 'chats', href: '/', exact: true },
+    { id: 'dashboard', href: '/dashboard' },
     { id: 'tasks', href: '/tasks', also: ['/issue'] },
     { id: 'goals', href: '/organization?tab=goals' },
     {
@@ -657,12 +656,10 @@ export function SidebarHomeTree({
       <TreeItem
         id="dashboard"
         label={t('dashboards')}
-        href="/"
+        href="/dashboard"
         icon={<LayoutDashboard />}
         active={is('dashboard')}
-      >
-        <TreeItem label={t('sidebarAllProjects')} href="/dashboard" active={is('dashboard:all')} />
-      </TreeItem>
+      />
       <TreeItem
         id="tasks"
         label={t('workItems')}

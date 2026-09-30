@@ -17,6 +17,7 @@ import { useSession } from '@/lib/auth-client';
 import type { Project } from '@/lib/api/endpoints/projects';
 import type { View } from '@/lib/api/endpoints/views';
 import HelenaMark from '@/components/brand/HelenaMark';
+import { useLogoHref } from '@/features/ai-chat/hooks/useMainChat';
 import SidebarAccountRow from '@/components/brand/SidebarAccountRow';
 import { Tip } from '@/design-system';
 import SidebarProjectSwitcher from './SidebarProjectSwitcher';
@@ -62,6 +63,7 @@ export default function AppSidebar({
 }) {
   const t = useTranslations('nav');
   const appName = useDisplayName();
+  const logoHref = useLogoHref();
   const locale = useLocale();
   const teamIds = [...new Set(projects.map((project) => project.teamId))];
   const homeTeamId = teamIds.length === 1 ? teamIds[0]! : null;
@@ -97,7 +99,7 @@ export default function AppSidebar({
   return (
     <nav className="ds-sidebar" aria-label={t('sidebarProject')}>
       <div className="ds-sidebar-brand">
-        <Link href="/" title={t('sidebarHome')}>
+        <Link href={logoHref} title={t('sidebarHome')}>
           {/* The orb mark beside the name; in the rail (56px) the mark stands alone. */}
           <HelenaMark className="ds-brand-orb" />
           <span className="ds-brand-full">{appName.toUpperCase()}</span>
