@@ -25,7 +25,11 @@ for (const ids of [
       port: 0,
       async fetch(request) {
         if (request.method !== 'POST') return new Response(null, { status: 405 });
-        const message = await request.json();
+        const message = (await request.json()) as {
+          id?: number;
+          method: string;
+          params: { protocolVersion: string };
+        };
         if (message.id === undefined) return new Response(null, { status: 202 });
         const result =
           message.method === 'initialize'
