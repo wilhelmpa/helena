@@ -23,6 +23,21 @@ function files(dir: string, ext: RegExp): string[] {
 const read = (path: string) => readFileSync(join(srcDir, path), 'utf8');
 
 describe('one box', () => {
+  // Dark: a wide soft shadow on a dark page is a black smear under every box (owner 30.09.: "unter
+  // den Elementen ein langer Schatten ... im Dark Mode"). The dark card shadow stays tight.
+  it('the dark card shadow is tight (no long shadow under boxes)', () => {
+    const tokens = read('design-system/tokens.css');
+    const dark = tokens.slice(tokens.lastIndexOf('--shadow-card:'));
+    const value = /--shadow-card:([^;]+);/.exec(dark)![1]!;
+    for (const layer of value.split(/,(?![^(]*\))/)) {
+      const [, y = '0px', blur = '0px'] = layer.trim().split(/\s+/);
+      assert.ok(
+        parseFloat(y) <= 2 && parseFloat(blur) <= 4,
+        `dark --shadow-card layer too wide: ${layer.trim()}`,
+      );
+    }
+  });
+
   it('no stylesheet outside the design system draws a card', () => {
     const wrong: string[] = [];
     for (const file of files(srcDir, /\.css$/)) {

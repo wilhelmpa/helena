@@ -1,9 +1,11 @@
 import { Fragment, useLayoutEffect, useRef, useState, type ReactNode, type Ref } from 'react';
 import Link from 'next/link';
 import { ChevronRight } from 'lucide-react';
+import { PAGE_HEADING_VISIBLE } from './pageChrome';
 
 // Every page is made of these (docs/design-system.md §3, owner 30.09., O104):
-//   PageHeader   ONE 56px bar. At its left a compact breadcrumb whose last part IS the page's
+//   PageHeader   ONE 56px bar (breadcrumb and title only while PAGE_HEADING_VISIBLE, see pageChrome).
+//                At its left a compact breadcrumb whose last part IS the page's
 //                title (18px, the earlier parts - project, area, parent page - quiet and
 //                clickable, 13px); there is no second title beside it. Right after it, in the
 //                bar's own slot (`bar`), every control of the page at fixed places: views ->
@@ -25,6 +27,7 @@ export function PageHeader({
   bar,
   lead,
   titleRef,
+  showHeading = PAGE_HEADING_VISIBLE,
 }: {
   // Where the page sits, before its own name: project, area, parent page.
   crumbs?: Crumb[];
@@ -39,6 +42,10 @@ export function PageHeader({
   // Before the breadcrumb: the sidebar button on a narrow window.
   lead?: ReactNode;
   titleRef?: Ref<HTMLDivElement>;
+  // Breadcrumb and title in the bar (the one switch PAGE_HEADING_VISIBLE); hidden, they stay in
+  // the page for assistive technology and the page's controls take their room (from 900px up: on
+  // a phone the sidebar is out of sight, so the page keeps its name there).
+  showHeading?: boolean;
 }) {
   const heading = useRef<HTMLElement | null>(null);
   // How far the breadcrumb has given way: 0 whole, 1 the middle parts are one "...", 2 the
@@ -72,7 +79,11 @@ export function PageHeader({
   }, [level, crumbs, title]);
   const foldable = crumbs.length > 1;
   return (
-    <header className="ds-page-header" data-app-header="">
+    <header
+      className="ds-page-header"
+      data-app-header=""
+      data-heading={showHeading ? undefined : 'hidden'}
+    >
       {lead}
       <div className="ds-page-heading" ref={titleRef}>
         <nav

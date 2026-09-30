@@ -113,7 +113,9 @@
   --project-color-4: #8dc7f3;
   --project-color-5: #e8cc83;
 
-  --shadow-card: 0 0 0 1px var(--line), 0 1px 0 #ffffff08, 0 8px 24px #00000059;
+  /* Dark: a soft shadow on a dark page reads as a black smear under every card and list box
+     (owner 30.09.): only the hairline, the faint top light and a tight 1px shadow. */
+  --shadow-card: 0 0 0 1px var(--line), 0 1px 0 #ffffff08, 0 1px 2px #00000040;
   --shadow-raised: 0 0 0 1px var(--line), 0 12px 32px #00000073;
   --shadow-overlay: 0 0 0 1px var(--line-strong), 0 18px 40px #00000080;
   --shadow-panel: 0 0 0 1px var(--line-strong), 0 24px 60px #0000004d;

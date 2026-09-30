@@ -656,6 +656,22 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+/* The breadcrumb and title switched off (PAGE_HEADING_VISIBLE in layout/pageChrome.ts): they stay in
+   the page for assistive technology, the page's controls take their room. Only from 900px up; a
+   phone has no sidebar in sight to name the page, so its bar keeps the title. */
+@media (min-width: 900px) {
+  .ds-page-header[data-heading='hidden'] .ds-page-heading {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    border: 0;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
 .ds-page-actions {
   display: flex;
   flex: none;

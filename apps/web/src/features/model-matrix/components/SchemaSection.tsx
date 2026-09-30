@@ -147,7 +147,7 @@ export function SchemaSection({
           </Button>
         }
       >
-        <Grid min="card" gap={3}>
+        <Grid min="card">
           {schemas.map((schema) => {
             const use = schemaUse(matrix, schema.id);
             return (

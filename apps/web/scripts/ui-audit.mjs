@@ -280,6 +280,16 @@ function measureContent() {
     const inset = el.matches('.ds-card[data-tone="inset"]');
     const other = el.matches('.ds-card[data-tone="node"], .ds-card[data-tone="popover"]');
     if (other) continue;
+    // On a phone a stacked table's rows are cards of their own and the list box around them gives
+    // way (no surface, no shadow): its rows are the boxes then (components.css, `ds-matrix-box`).
+    if (
+      innerWidth < 900 &&
+      el.matches('.ds-list-box') &&
+      transparent(style.backgroundColor) &&
+      !shadowShows(style.boxShadow) &&
+      el.querySelector('.ds-table:not([data-stack="off"])')
+    )
+      continue;
     out.boxes.push({
       at: describe(el),
       kind: inset ? 'inset' : el.classList.contains('ds-card') ? 'card' : 'list',
@@ -494,11 +504,21 @@ function measureEdges() {
   const headerBox = header.getBoundingClientRect();
   const visible = (element) => element && getComputedStyle(element).display !== 'none';
   const menu = header.querySelector('.ds-page-menu-button');
-  const first = visible(menu)
-    ? menu.querySelector('svg')
-    : header.querySelector('.ds-page-crumb, .ds-page-title');
   const bar = header.querySelector('.ds-page-bar');
   const phone = innerWidth < 900;
+  // The breadcrumb and title are switched off from 900px up (PAGE_HEADING_VISIBLE, layout/pageChrome.ts):
+  // then the bar's first control starts the header; a bar without controls starts nothing.
+  const headingHidden = !phone && header.getAttribute('data-heading') === 'hidden';
+  const barControls = visible(bar)
+    ? [...bar.querySelectorAll('button, a, input, nav, [role=tablist]')].filter(
+        (element) => element.getBoundingClientRect().width > 0,
+      )
+    : [];
+  const first = visible(menu)
+    ? menu.querySelector('svg')
+    : headingHidden
+      ? (barControls[0] ?? null)
+      : header.querySelector('.ds-page-crumb, .ds-page-title');
   const barFirst =
     phone && visible(bar)
       ? [...bar.querySelectorAll('button, a, input, nav, [role=tablist]')].find(
@@ -553,7 +573,9 @@ function measureEdges() {
       '.ds-main > .ds-page-toolbar, .ds-page-crumbs ~ .ds-page-crumbs',
     ).length,
     phone,
-    crumb: round(first.getBoundingClientRect().left - mainBox.left),
+    // Nothing in the bar (switched-off heading, no controls): the page's own padding is the reference.
+    crumb: first ? round(first.getBoundingClientRect().left - mainBox.left) : null,
+    headingHidden,
     bar: barFirst ? round(barFirst.getBoundingClientRect().left - mainBox.left) : null,
     content: content == null ? null : round(content - mainBox.left),
     contentAt: leftmost,

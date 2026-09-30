@@ -114,7 +114,7 @@ export function SchemaRoles({
             {t('schemaEditor.roles.emptyText')}
           </EmptyState>
         ) : (
-          <Grid min="wide" gap={3}>
+          <Grid min="wide">
             {present.map((role) => {
               const entry = schemaRoleValues(matrix, pending, schema.id, role);
               if (!entry) return null;
