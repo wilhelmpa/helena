@@ -15,6 +15,7 @@ import browserGateway from '../../messages/en/browserGateway.json';
 import browserLab from '../../messages/en/browserLab.json';
 import chatWorkspace from '../../messages/en/chatWorkspace.json';
 import common from '../../messages/en/common.json';
+import catalog from '../../messages/en/catalog.json';
 import cycles from '../../messages/en/cycles.json';
 import dashboards from '../../messages/en/dashboards.json';
 import decisions from '../../messages/en/decisions.json';
@@ -105,6 +106,7 @@ const defaultMessages = {
   god,
   newProject,
   teams,
+  catalog,
   updates,
   organization,
   connections,

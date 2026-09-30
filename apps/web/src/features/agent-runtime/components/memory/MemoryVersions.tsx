@@ -3,11 +3,10 @@
 import { useMemo, useState } from 'react';
 import { History } from 'lucide-react';
 import { useFormatter, useTranslations } from 'next-intl';
-import { EmptyState, List, ListRow, Pill, Stack } from '@/design-system';
+import { EmptyState, List, ListRow, Pill, Stack, TextDiff } from '@/design-system';
 import ListSkeleton from '@/components/common/skeleton/ListSkeleton';
 import type { MemoryRevision } from '@/lib/api/endpoints/agentRuntime';
 import { useMemoryRevisions } from '../../services/agentRuntime.service';
-import TextDiff from '../TextDiff';
 
 // Every version of the memory files Ava saw, newest first, each next to the one before it of
 // the same file; who wrote it (the agent, you, found in the runtime).

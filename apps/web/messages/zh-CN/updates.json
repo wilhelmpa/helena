@@ -127,5 +127,6 @@
   "autoApplied": "已自动应用：{name}",
   "autoRolledBack": "已回滚",
   "autoFailedShort": "更新失败",
-  "autoFailed": "自动更新失败：{name}"
+  "autoFailed": "自动更新失败：{name}",
+  "openInCatalog": "在目录中检查"
 }

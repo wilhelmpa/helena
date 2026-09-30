@@ -127,5 +127,6 @@
   "autoApplied": "Застосовано автоматично: {name}",
   "autoRolledBack": "Відкочено",
   "autoFailedShort": "Оновлення не вдалося",
-  "autoFailed": "Автоматичне оновлення не вдалося: {name}"
+  "autoFailed": "Автоматичне оновлення не вдалося: {name}",
+  "openInCatalog": "Перевірити в каталозі"
 }

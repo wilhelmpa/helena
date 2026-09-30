@@ -127,5 +127,6 @@
   "autoApplied": "Appliquée automatiquement : {name}",
   "autoRolledBack": "Annulée",
   "autoFailedShort": "Échec de la mise à jour",
-  "autoFailed": "Échec de la mise à jour automatique : {name}"
+  "autoFailed": "Échec de la mise à jour automatique : {name}",
+  "openInCatalog": "Vérifier dans le catalogue"
 }

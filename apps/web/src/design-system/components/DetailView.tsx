@@ -60,8 +60,14 @@ export function DetailGroup({
   );
 }
 
-export function PropertyGrid({ children }: { children: ReactNode }) {
-  return <dl className="ds-props">{children}</dl>;
+// Label/value pairs in two columns; `columns={1}` for a narrow place (an overlay), where two
+// columns of label and value would each be too tight to read.
+export function PropertyGrid({ children, columns = 2 }: { children: ReactNode; columns?: 1 | 2 }) {
+  return (
+    <dl className="ds-props" data-columns={columns}>
+      {children}
+    </dl>
+  );
 }
 
 export function Property({ label, children }: { label: ReactNode; children: ReactNode }) {

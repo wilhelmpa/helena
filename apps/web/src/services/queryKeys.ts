@@ -248,6 +248,18 @@ export const qk = {
   agentSkillOptions: (teamId: number) => ['agentSkills', teamId, 'options'] as const,
   agentSkill: (teamId: number, skillId: number) =>
     ['agentSkills', teamId, 'skill', skillId] as const,
+  // The curated catalog of a team: sources, the searched items, one item's preview and
+  // diffs, the agents' proposals. A write invalidates at the team prefix.
+  catalog: (teamId: number) => ['catalog', teamId] as const,
+  catalogSources: (teamId: number) => ['catalog', teamId, 'sources'] as const,
+  catalogItems: (teamId: number, params: unknown, q: string) =>
+    ['catalog', teamId, 'items', params, q] as const,
+  catalogIndex: (teamId: number) => ['catalog', teamId, 'index'] as const,
+  catalogPreview: (teamId: number, itemId: number) =>
+    ['catalog', teamId, 'preview', itemId] as const,
+  catalogDiff: (teamId: number, itemId: number, from: number, to: number) =>
+    ['catalog', teamId, 'diff', itemId, from, to] as const,
+  catalogProposals: (teamId: number) => ['catalog', teamId, 'proposals'] as const,
   // The team's configured tools (its Tools section) and the tools enabled on one agent
   // (the agent editor's Tools section).
   configuredTools: (teamId: number) => ['configuredTools', teamId] as const,

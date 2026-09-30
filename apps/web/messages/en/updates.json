@@ -127,5 +127,6 @@
   "autoApplied": "Applied automatically: {name}",
   "autoRolledBack": "Rolled back",
   "autoFailedShort": "Update failed",
-  "autoFailed": "Automatic update failed: {name}"
+  "autoFailed": "Automatic update failed: {name}",
+  "openInCatalog": "Review in the catalog"
 }

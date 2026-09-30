@@ -65,6 +65,11 @@ type RowProps = {
   // never a button in a button, and not hidden until hover like `actions`.
   control?: ReactNode;
   selected?: boolean;
+  // The title is a sentence: it wraps to as many lines as it needs instead of ending in "…".
+  wrap?: boolean;
+  // On a phone the meta and the control leave the line of the title and stand under it, so a
+  // row with pills or buttons keeps room for its text.
+  stack?: boolean;
   href?: string;
   onSelect?: () => void;
 } & Omit<HTMLAttributes<HTMLDivElement>, 'title' | 'onSelect'>;
@@ -78,6 +83,8 @@ export function ListRow({
   actions,
   control,
   selected,
+  wrap = false,
+  stack = false,
   href,
   onSelect,
   className,
@@ -98,6 +105,8 @@ export function ListRow({
     <div
       role="listitem"
       className={`ds-list-row ${selected ? 'is-selected' : ''} ${className ?? ''}`}
+      data-wrap={wrap ? '' : undefined}
+      data-stack={stack ? '' : undefined}
       {...props}
     >
       {href ? (

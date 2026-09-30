@@ -127,5 +127,6 @@
   "autoApplied": "طُبّق تلقائيًا: {name}",
   "autoRolledBack": "تم التراجع",
   "autoFailedShort": "فشل التحديث",
-  "autoFailed": "فشل التحديث التلقائي: {name}"
+  "autoFailed": "فشل التحديث التلقائي: {name}",
+  "openInCatalog": "المراجعة في الفهرس"
 }
