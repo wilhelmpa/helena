@@ -307,9 +307,9 @@
   },
   "openAsPage": "فتح كصفحة",
   "limit": {
-    "count": "{used} / {limit} حرفًا",
+    "count": "{used, number} / {limit, number} حرفًا",
     "tooLong": "طويل جدًا – اختصره أو اطلب دمجه.",
-    "nearlyFull": "شبه ممتلئ: تبقّى {left} حرفًا.",
+    "nearlyFull": "شبه ممتلئ: تبقّى {left, number} حرفًا.",
     "truncated": "اختُصر من أجل النموذج."
   }
 }

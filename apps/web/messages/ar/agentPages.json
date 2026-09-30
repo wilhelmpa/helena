@@ -165,7 +165,15 @@
       "removeTitle": "إزالة الحقيقة؟",
       "removeBody": "سيُخفى «{fact}» ولن يُستخدم بعد الآن.",
       "save": "حفظ",
-      "cancel": "إلغاء"
+      "cancel": "إلغاء",
+      "categories": {
+        "general": "عام",
+        "project": "مشروع",
+        "preference": "تفضيل",
+        "person": "شخص",
+        "decision": "قرار",
+        "memory": "ذاكرة"
+      }
     },
     "versions": {
       "title": "إصدارات الذاكرة",

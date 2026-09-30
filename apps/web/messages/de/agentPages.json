@@ -165,7 +165,15 @@
       "removeTitle": "Fakt entfernen?",
       "removeBody": "„{fact}“ wird ausgeblendet und nicht mehr benutzt.",
       "save": "Speichern",
-      "cancel": "Abbrechen"
+      "cancel": "Abbrechen",
+      "categories": {
+        "general": "Allgemein",
+        "project": "Projekt",
+        "preference": "Vorliebe",
+        "person": "Person",
+        "decision": "Entscheidung",
+        "memory": "Gedächtnis"
+      }
     },
     "versions": {
       "title": "Versionen des Gedächtnisses",

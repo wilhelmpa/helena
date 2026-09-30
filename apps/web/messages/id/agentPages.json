@@ -165,7 +165,15 @@
       "removeTitle": "Hapus fakta?",
       "removeBody": "“{fact}” disembunyikan dan tidak dipakai lagi.",
       "save": "Simpan",
-      "cancel": "Batal"
+      "cancel": "Batal",
+      "categories": {
+        "general": "Umum",
+        "project": "Proyek",
+        "preference": "Preferensi",
+        "person": "Orang",
+        "decision": "Keputusan",
+        "memory": "Memori"
+      }
     },
     "versions": {
       "title": "Versi memori",

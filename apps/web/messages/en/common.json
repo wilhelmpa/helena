@@ -307,9 +307,9 @@
   },
   "openAsPage": "Open as page",
   "limit": {
-    "count": "{used} / {limit} characters",
+    "count": "{used, number} / {limit, number} characters",
     "tooLong": "Too long – please shorten it or have it consolidated.",
-    "nearlyFull": "Nearly full: {left} characters left.",
+    "nearlyFull": "Nearly full: {left, number} characters left.",
     "truncated": "Shortened for the model."
   }
 }

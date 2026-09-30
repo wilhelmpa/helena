@@ -165,7 +165,15 @@
       "removeTitle": "Удалить факт?",
       "removeBody": "«{fact}» скрывается и больше не используется.",
       "save": "Сохранить",
-      "cancel": "Отмена"
+      "cancel": "Отмена",
+      "categories": {
+        "general": "Общее",
+        "project": "Проект",
+        "preference": "Предпочтение",
+        "person": "Человек",
+        "decision": "Решение",
+        "memory": "Память"
+      }
     },
     "versions": {
       "title": "Версии памяти",

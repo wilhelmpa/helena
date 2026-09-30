@@ -165,7 +165,15 @@
       "removeTitle": "Retirer le fait ?",
       "removeBody": "« {fact} » est masqué et n’est plus utilisé.",
       "save": "Enregistrer",
-      "cancel": "Annuler"
+      "cancel": "Annuler",
+      "categories": {
+        "general": "Général",
+        "project": "Projet",
+        "preference": "Préférence",
+        "person": "Personne",
+        "decision": "Décision",
+        "memory": "Mémoire"
+      }
     },
     "versions": {
       "title": "Versions de la mémoire",

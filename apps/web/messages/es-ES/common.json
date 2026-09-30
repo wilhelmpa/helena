@@ -307,9 +307,9 @@
   },
   "openAsPage": "Abrir como página",
   "limit": {
-    "count": "{used} / {limit} caracteres",
+    "count": "{used, number} / {limit, number} caracteres",
     "tooLong": "Demasiado largo: acórtalo o pide que se consolide.",
-    "nearlyFull": "Casi lleno: quedan {left} caracteres.",
+    "nearlyFull": "Casi lleno: quedan {left, number} caracteres.",
     "truncated": "Acortado para el modelo."
   }
 }

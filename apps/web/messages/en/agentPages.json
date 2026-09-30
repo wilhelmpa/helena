@@ -165,7 +165,15 @@
       "removeTitle": "Remove fact?",
       "removeBody": "\"{fact}\" is hidden and no longer used.",
       "save": "Save",
-      "cancel": "Cancel"
+      "cancel": "Cancel",
+      "categories": {
+        "general": "General",
+        "project": "Project",
+        "preference": "Preference",
+        "person": "Person",
+        "decision": "Decision",
+        "memory": "Memory"
+      }
     },
     "versions": {
       "title": "Versions of the memory",

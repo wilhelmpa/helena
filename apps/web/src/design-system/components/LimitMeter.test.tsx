@@ -9,9 +9,9 @@ import { LimitMeter } from './LimitMeter';
 const messages = {
   common: {
     limit: {
-      count: '{used} / {limit} Zeichen',
+      count: '{used, number} / {limit, number} Zeichen',
       tooLong: 'Zu lang – bitte kürzen oder konsolidieren lassen.',
-      nearlyFull: 'Fast voll: noch {left} Zeichen frei.',
+      nearlyFull: 'Fast voll: noch {left, number} Zeichen frei.',
       truncated: 'Wird für das Modell gekürzt.',
     },
   },

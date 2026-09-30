@@ -307,9 +307,9 @@
   },
   "openAsPage": "Buka sebagai halaman",
   "limit": {
-    "count": "{used} / {limit} karakter",
+    "count": "{used, number} / {limit, number} karakter",
     "tooLong": "Terlalu panjang – persingkat atau minta dikonsolidasikan.",
-    "nearlyFull": "Hampir penuh: sisa {left} karakter.",
+    "nearlyFull": "Hampir penuh: sisa {left, number} karakter.",
     "truncated": "Dipersingkat untuk model."
   }
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { useExitOnEscape } from '@/hooks/useExitOnEscape';
 import { useExitOnClickOutside } from '@/hooks/useExitOnClickOutside';
 import { SidePanelResizeHandle, useSidePanelWidth, type SidePanelKind } from './sidePanelWidth';
@@ -88,6 +88,13 @@ export function Overlay({
   useExitOnEscape(() => (full ? setFull(false) : close()), escape);
   const active = activeTab ?? tabs[0]?.id;
   const surface = useRef<HTMLElement>(null);
+  const track = useRef<HTMLDivElement>(null);
+  // The open tab stays in view when the row of tabs scrolls (a narrow screen).
+  useEffect(() => {
+    track.current
+      ?.querySelector('[aria-selected="true"]')
+      ?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
+  }, [active]);
   useExitOnClickOutside(surface, () => {
     // Pinned, it stays while the page behind is used.
     if (closeOnOutsideClick && !full && !pinned) onClose();
@@ -106,7 +113,7 @@ export function Overlay({
       {!full && <SidePanelResizeHandle kind={kind} />}
       <div className="ds-panel-head">
         <div className="ds-panel-tabs">
-          <div className="ds-panel-tabs-track" role="tablist" aria-label={label}>
+          <div ref={track} className="ds-panel-tabs-track" role="tablist" aria-label={label}>
             {tabs.map((tab) => (
               <div key={tab.id} className="ds-panel-tab">
                 <button

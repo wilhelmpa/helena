@@ -165,7 +165,15 @@
       "removeTitle": "Remover o fato?",
       "removeBody": "“{fact}” fica oculto e deixa de ser usado.",
       "save": "Salvar",
-      "cancel": "Cancelar"
+      "cancel": "Cancelar",
+      "categories": {
+        "general": "Geral",
+        "project": "Projeto",
+        "preference": "Preferência",
+        "person": "Pessoa",
+        "decision": "Decisão",
+        "memory": "Memória"
+      }
     },
     "versions": {
       "title": "Versões da memória",

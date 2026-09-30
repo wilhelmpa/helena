@@ -214,10 +214,10 @@ function SheetBody({
         />
       )}
 
-      <div className={cn('flex min-h-0 flex-1', activeTab && 'hidden')}>
+      <div className={cn('flex min-h-0 min-w-0 flex-1', activeTab && 'hidden')}>
         <div
           className={cn(
-            'flex min-h-0 flex-1 basis-0 flex-col',
+            'flex min-h-0 min-w-0 flex-1 basis-0 flex-col',
             !inModal && 'border-e border-border/60',
           )}
         >

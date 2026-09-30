@@ -135,13 +135,18 @@ function FactRow({
 }) {
   const t = useTranslations('agentPages.memory.facts');
   const format = useFormatter();
+  // The agent names a category itself; the usual ones read in the person's language.
+  const categoryLabel = (category: string) =>
+    t.has(`categories.${category}` as 'categories.general')
+      ? t(`categories.${category}` as 'categories.general')
+      : category;
   const percent = Math.round(fact.trust * 100);
   return (
     <>
       <div className="ds-fact-main">
         <p dir="auto">{fact.content}</p>
         <Inline gap={2} wrap>
-          <Pill>{fact.category}</Pill>
+          <Pill>{categoryLabel(fact.category)}</Pill>
           {fact.project && <Pill>{fact.project}</Pill>}
           <span
             className="ds-fact-trust"

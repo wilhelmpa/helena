@@ -861,6 +861,24 @@ body[data-modal-open='true'] [data-radix-popper-content-wrapper] {
   width: 240px;
   max-width: 100%;
 }
+/* Views of a page in the agent dialog: the row of options scrolls on a narrow screen instead of
+   running out of the page. */
+.ds-agent-page .ds-segmented {
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.ds-agent-page .ds-segmented::-webkit-scrollbar {
+  display: none;
+}
+.ds-agent-page .ds-segmented > button {
+  flex: none;
+}
+@container (max-width: 620px) {
+  .ds-skills-search {
+    width: 100%;
+  }
+}
 .ds-link-button {
   display: inline;
   color: var(--accent);
