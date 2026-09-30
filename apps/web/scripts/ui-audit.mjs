@@ -16,6 +16,9 @@
 //                frame plus a fill without a box class); boxes next to each other 16px apart, sections
 //                in <Sections> 32px; every empty state has its symbol, a page's own in one place; the
 //                section title is 15/520, the small label 10px, the group head 32px high
+//   orb          (owner 30.09.: "Orb verdeckt nichts") on a desktop (>= 900px, where the orb floats at the
+//                bottom right) every scroller is scrolled to its end at a short window and nothing that
+//                can be read or clicked may lie under the orb;
 //   overlays     (O102, O103) the chat panel, a task, an agent, a file, a receipt (UI_AUDIT_RECEIPT=1)
 //                and the settings modal are
 //                opened and compared: head height, control order and size, distance to the
@@ -30,7 +33,7 @@
 // UI_AUDIT_CHROME names the Chrome or Chromium binary it drives.
 import { writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
-import { contentFindings, edgeFindings, overlayFindings } from './ui-audit-rules.mjs';
+import { contentFindings, edgeFindings, orbFindings, overlayFindings } from './ui-audit-rules.mjs';
 
 // playwright-core, as the browser gateway uses it (no browsers of its own: UI_AUDIT_CHROME).
 const require = createRequire(
@@ -402,6 +405,65 @@ function measureContent() {
   return out;
 }
 
+// Runs in the page (desktop, after the window was made short): every scroller to its end, then what
+// lies under the orb (.ds-dock): something to click, read or see. A large box (a drop zone, a page
+// wide block) is not "something under it": its own children are.
+function measureOrb() {
+  const dock = document.querySelector('.ds-dock');
+  const main = document.querySelector('.ds-main');
+  if (!dock || !main) return { none: true };
+  const rect = dock.getBoundingClientRect();
+  const orb = { l: rect.left, t: rect.top, r: rect.right, b: rect.bottom };
+  for (let pass = 0; pass < 3; pass++)
+    for (const el of main.querySelectorAll('*')) {
+      const style = getComputedStyle(el);
+      if (/(auto|scroll)/.test(style.overflowY) && el.scrollHeight > el.clientHeight + 1)
+        el.scrollTop = el.scrollHeight;
+    }
+  const describe = (el) => {
+    const cls = typeof el.className === 'string' ? el.className.split(/\s+/).filter(Boolean) : [];
+    const text = (el.textContent ?? el.getAttribute('aria-label') ?? '').trim().slice(0, 28);
+    return `${el.tagName.toLowerCase()}${cls.length ? '.' + cls.slice(0, 2).join('.') : ''} "${text}"`;
+  };
+  // What is visible of an element: its box clipped by every scroller or hidden overflow around it.
+  const visible = (el, box) => {
+    let clip = { l: box.left, t: box.top, r: box.right, b: box.bottom };
+    for (let node = el.parentElement; node && node !== document.body; node = node.parentElement) {
+      const style = getComputedStyle(node);
+      if (style.overflowX === 'visible' && style.overflowY === 'visible') continue;
+      const around = node.getBoundingClientRect();
+      clip = {
+        l: Math.max(clip.l, around.left),
+        t: Math.max(clip.t, around.top),
+        r: Math.min(clip.r, around.right),
+        b: Math.min(clip.b, around.bottom),
+      };
+    }
+    return clip.r > clip.l && clip.b > clip.t ? clip : null;
+  };
+  const hits = [];
+  for (const el of main.querySelectorAll('*')) {
+    if (el.closest('.ds-dock')) continue;
+    const style = getComputedStyle(el);
+    if (style.visibility === 'hidden' || style.display === 'none' || style.opacity === '0')
+      continue;
+    const action = el.matches(
+      'a[href], button, input, select, textarea, [role=button], [role=tab], [role=checkbox], [role=switch]',
+    );
+    const leaf = el.children.length === 0 && (el.textContent ?? '').trim().length > 0;
+    if (!action && !leaf) continue;
+    const box = el.getBoundingClientRect();
+    if (box.width < 1 || box.height < 1) continue;
+    // A box that spans most of the page (a drop zone, a card) is not read or clicked at its corner.
+    if (action && (box.width > 480 || box.height > 240)) continue;
+    const clip = visible(el, box);
+    if (!clip) continue;
+    if (clip.l < orb.r && clip.r > orb.l && clip.t < orb.b && clip.b > orb.t)
+      hits.push(`${action ? 'Aktion' : 'Text'} ${describe(el)}`);
+  }
+  return { hits: [...new Set(hits)].slice(0, 6) };
+}
+
 // Runs in the page: where the header, the toolbar row and the first content start (O92, O104).
 function measureEdges() {
   // A shadow of only transparent layers (a hover outline kept for later) is no box.
@@ -763,7 +825,15 @@ async function main() {
         });
         const edges = await page.evaluate(measureEdges).catch(() => ({ none: true }));
         const content = await page.evaluate(measureContent).catch(() => ({ none: true }));
-        results.push({ route, theme, width, ...measured, edges, content });
+        // The orb floats over the page on a desktop; a short window makes every page scroll.
+        let orb = { none: true };
+        if (width >= 900) {
+          await page.setViewportSize({ width, height: 600 });
+          await page.waitForTimeout(400);
+          orb = await page.evaluate(measureOrb).catch(() => ({ none: true }));
+          await page.setViewportSize({ width, height: 900 });
+        }
+        results.push({ route, theme, width, ...measured, edges, content, orb });
       }
       if (!args['no-overlays']) {
         const scenes = await overlayScenes(page, { phone: width < 1024 });
@@ -780,6 +850,7 @@ async function main() {
       ...findings(results),
       ...edgeFindings(results),
       ...contentFindings(results),
+      ...orbFindings(results),
       ...overlays.flatMap((entry) => overlayFindings(entry.scenes, entry)),
     ],
   };

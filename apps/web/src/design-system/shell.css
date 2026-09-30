@@ -1041,6 +1041,20 @@
 .ds-dock > span {
   pointer-events: none;
 }
+/* The orb floats over the bottom right corner (owner 30.09.: "Orb verdeckt nichts"): a scroller
+   that reaches it - HomeDock marks it, utils/orbClearance.ts - ends with an empty piece of the
+   orb's height, so its last row scrolls clear. The orb (64px) + its edge distance (24px) + air. */
+:root {
+  --orb-clear: 96px;
+}
+@media (min-width: 900px) {
+  [data-orb-clear]::after {
+    display: block;
+    height: var(--orb-clear);
+    flex: none;
+    content: '';
+  }
+}
 /* A phone (owner 30.09.): the orb is part of the top bar, at its right end, instead of floating over
    the page - where it covered titles, list actions and the composer. The particle orb draws in the
    middle ~70% of its box, so a 52px box is a ~36px orb in the 56px bar; the bar keeps that room free

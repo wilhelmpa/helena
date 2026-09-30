@@ -193,3 +193,15 @@ export function contentFindings(results) {
   }
   return out;
 }
+
+// The desktop orb (owner 30.09.: "Orb verdeckt nichts"): at the end of every scroller nothing that
+// can be read or clicked lies under it. `orb` = what measureOrb() found: { hits: ['Aktion a "Speichern"'] }.
+export function orbFindings(results) {
+  const out = [];
+  for (const r of results) {
+    if (!r.orb || r.orb.none) continue;
+    for (const hit of r.orb.hits ?? [])
+      out.push(`${r.theme}/${r.width} ${r.route}: der Orb verdeckt ${hit}`);
+  }
+  return out;
+}

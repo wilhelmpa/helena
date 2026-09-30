@@ -284,3 +284,20 @@ describe('content rules', () => {
     assert.equal(found.length, 4);
   });
 });
+
+describe('ui audit: the orb covers nothing', () => {
+  const at = (orb: unknown, route = '/tasks') => [{ route, theme: 'light', width: 1440, orb }];
+
+  it('accepts a page whose end is clear of the orb, and a page without one', () => {
+    assert.deepEqual(rules.orbFindings(at({ hits: [] })), []);
+    assert.deepEqual(rules.orbFindings(at({ none: true })), []);
+  });
+
+  it('names what lies under the orb', () => {
+    const found = rules.orbFindings(
+      at({ hits: ['Aktion button "Chat öffnen"', 'Text span "vor 1 Monat"'] }),
+    );
+    assert.equal(found.length, 2);
+    assert.match(found[0], /light\/1440 \/tasks: der Orb verdeckt Aktion button "Chat öffnen"/);
+  });
+});
