@@ -67,8 +67,8 @@ export async function planProfiles(profilesRoot: string): Promise<Mapping[]> {
       // A run resumed after an approval or a restart continues its Hermes session, so one
       // session can belong to several runs of the same agent: it belongs to the run that
       // started it, the earliest.
-      if (existing.runId && 'runId' in next) {
-        sessions[link.sessionId] = { ...existing, runId: Math.min(existing.runId, next.runId) };
+      if (existing.runId && 'runId' in link) {
+        sessions[link.sessionId] = { ...existing, runId: Math.min(existing.runId, link.runId) };
         continue;
       }
       if (
