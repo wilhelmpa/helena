@@ -1,5 +1,6 @@
 [Unit]
-Description=Volition encrypted offsite backup
+# Docker package G only; native offsite copies are managed by helena-hostd.
+Description=Volition Docker legacy encrypted offsite backup
 After=volition-backup.service network-online.target
 
 [Service]

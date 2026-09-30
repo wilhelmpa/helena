@@ -22,6 +22,8 @@ Decision and alternatives: `docs/helena-decisions/server-admin.md`.
 | `helena-boot-entries.service` | at every boot: the firmware entries "Debian" / "Debian (Reserve)" point at their ESPs (`helena-hostd boot-repair`) |
 | `helena-hostd boot-layout` (`install.sh boot-layout`) | once: the entries onto Debian's own `EFI/debian`, which apt keeps current (`--rollback`: back to `EFI/helena-raid`) |
 
+`VaultBackupIntegrity()` uses this same backup configuration and the backup's `helena` tag. It has no parameters and returns only coverage and restore-probe status for `/srv/volition/vault`; file contents and credentials stay inside hostd. The native vault audit writes disabled, missing, stale or unreadable backup findings to `/var/lib/volition/plan/vault-integrity.json`; a completed report exits successfully even when its state is `down`, while an aborted audit exits with failure.
+
 ## Protocol
 
 [Varlink](https://varlink.org) (JSON + NUL over the Unix socket), systemd's own IPC. The API's

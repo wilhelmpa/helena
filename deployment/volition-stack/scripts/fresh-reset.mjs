@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// Docker package G only; backup markers and container volumes belong to the legacy stack.
 import { createHash, randomBytes, randomInt, randomUUID } from 'node:crypto';
 import {
   chmod,

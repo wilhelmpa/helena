@@ -14,6 +14,9 @@ import sys
 from datetime import datetime, timezone
 from urllib.parse import unquote, urlsplit
 
+sys.path.insert(0, str(Path(__file__).parent / 'server' / 'hostd'))
+from helena_host.varlink import call
+
 
 IGNORED = {'.git', '.obsidian', '.trash', '.stfolder', '.stversions'}
 
@@ -236,12 +239,16 @@ def scan(root, index, receipts, project_users=None, backup=None, git=None):
 
     if backup is None:
         issue('backup_unchecked', 'Vault')
+    elif backup.get('state', 'ok') != 'ok':
+        code = {'disabled': 'backup_disabled', 'no_snapshot': 'backup_no_snapshot',
+                'stale': 'backup_stale'}.get(backup.get('state'), 'backup_unchecked')
+        issue(code, 'Vault')
     else:
         paths = set(backup.get('paths', []))
         sample = next((p for p, kind in disk.items() if kind == 'file' and p.startswith(('Home/', 'Projects/', 'Private/'))), None)
-        if not paths or not any(p.endswith('/srv/volition/vault') or '/srv/volition/vault/' in p for p in paths):
+        if not backup.get('vault_present', any(p == '/srv/volition/vault' or p.startswith('/srv/volition/vault/') for p in paths)):
             issue('backup_missing', 'Vault')
-        if not any('/srv/volition/vault/Private/' in p for p in paths):
+        if not backup.get('private_present', any(p.startswith('/srv/volition/vault/Private/') for p in paths)):
             issue('backup_private_missing', 'Private')
         if not backup.get('sample_ok'):
             issue('backup_restore', sample or 'Vault')
@@ -265,21 +272,16 @@ def git_state(folder):
 
 
 def backup_state():
-    snapshots = json.loads(command('restic', 'snapshots', '--json', '--tag', 'volition', timeout=300))
-    latest = max(snapshots, key=lambda s: s['time'])
-    if (datetime.now(timezone.utc) - datetime.fromisoformat(latest['time'].replace('Z', '+00:00'))).total_seconds() > 36 * 3600:
-        raise RuntimeError('The last Vault backup is older than 36 hours')
-    nodes = [json.loads(line) for line in command('restic', 'ls', latest['id'], '--json', timeout=300).splitlines() if line]
-    paths = [node['path'] for node in nodes if node.get('struct_type') == 'node']
-    sample = next((node for node in nodes if node.get('struct_type') == 'node'
-                   and node.get('type') == 'file' and node.get('size', 0) > 0
-                   and node['path'].startswith('/srv/volition/vault/')
-                   and '/.git/' not in node['path'] and '/.trash/' not in node['path']), None)
-    sample_ok = False
-    if sample:
-        restored = command('restic', 'dump', latest['id'], sample['path'], timeout=300, binary=True)
-        sample_ok = len(restored) == sample['size']
-    return {'paths': paths, 'sample_ok': sample_ok}
+    try:
+        reply = call('/run/helena-hostd/hostd.sock', 'io.helena.hostd.VaultBackupIntegrity', timeout=600)
+        parameters = reply.get('parameters') if isinstance(reply, dict) else None
+        result = parameters.get('result') if isinstance(parameters, dict) else None
+        if isinstance(reply, dict) and 'error' not in reply and isinstance(result, dict) and result.get('state') in (
+                'ok', 'disabled', 'no_snapshot', 'stale', 'unavailable', 'error'):
+            return result
+    except (OSError, ValueError, TypeError):
+        pass
+    return {'state': 'error'}
 
 
 def project_users():
@@ -324,7 +326,7 @@ def main():
         os.chmod(temporary, 0o644)
         temporary.replace(args.report)
     print(rendered)
-    return result['state'] != 'ok'
+    return any(item['code'] == 'check_failed' for item in result['findings'])
 
 
 if __name__ == '__main__':
