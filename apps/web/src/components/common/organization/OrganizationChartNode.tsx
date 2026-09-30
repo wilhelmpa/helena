@@ -20,6 +20,8 @@ export interface ChartAgentData extends Record<string, unknown> {
   selected: boolean;
   dimmed: boolean;
   reportCount: number;
+  // A row with many reports shows them narrower and without the decider line (tree view).
+  compact?: boolean;
   showCollapse: boolean;
   collapsed: boolean;
   onToggle: (id: number) => void;
@@ -48,6 +50,7 @@ export default function OrganizationChartNode({ data }: NodeProps<ChartAgentNode
     selected,
     dimmed,
     reportCount,
+    compact = false,
     showCollapse,
     collapsed,
     onToggle,
@@ -87,16 +90,9 @@ export default function OrganizationChartNode({ data }: NodeProps<ChartAgentNode
     <div
       data-selected={selected || undefined}
       data-throttled={agent.throttled && !selected ? 'true' : undefined}
-      className={`organization-card group relative rounded-xl border bg-card px-[18px] text-start text-card-foreground transition-[opacity,border-color,box-shadow] duration-200 ${leader ? 'h-[92px] w-[280px] pt-2 pb-4' : 'h-[112px] w-[242px] pt-[14px] pb-4'} ${selected ? 'border-brand ring-[3px] ring-brand/20' : 'border-border hover:border-muted-foreground/40'} ${dimmed ? 'opacity-30' : ''}`}
+      className={`organization-card group relative rounded-xl border bg-card ${compact ? 'px-3.5' : 'px-[18px]'} text-start text-card-foreground transition-[opacity,border-color,box-shadow] duration-200 ${leader ? (compact ? 'h-[92px] w-[224px] pt-2 pb-4' : 'h-[92px] w-[280px] pt-2 pb-4') : compact ? 'h-[92px] w-[176px] pt-2.5 pb-3' : 'h-[112px] w-[242px] pt-[14px] pb-4'} ${selected ? 'border-brand ring-[3px] ring-brand/20' : 'border-border hover:border-muted-foreground/40'} ${dimmed ? 'opacity-30' : ''}`}
     >
       <Handle type="target" position={Position.Top} className={handle} isConnectable={false} />
-      <Handle
-        id="side"
-        type="target"
-        position={Position.Left}
-        className={handle}
-        isConnectable={false}
-      />
       {/* The click reaches the chart (onNodeClick), which tells a click (settings) from a
           double click (the agent's own ring). */}
       <button
@@ -131,7 +127,7 @@ export default function OrganizationChartNode({ data }: NodeProps<ChartAgentNode
         >
           {modelLine}
         </span>
-        {!leader && (
+        {!leader && !compact && (
           <span className="mt-1 block truncate text-[12px] text-muted-foreground">
             {t('decider')}: {decider ?? t('noDecider')} · {effectiveTrust}
           </span>
@@ -164,14 +160,6 @@ export default function OrganizationChartNode({ data }: NodeProps<ChartAgentNode
         onSaveTemplate={data.onSaveTemplate}
       />
       <Handle type="source" position={Position.Bottom} className={handle} isConnectable={false} />
-      <Handle
-        id="rail"
-        type="source"
-        position={Position.Bottom}
-        className={handle}
-        style={{ left: 20 }}
-        isConnectable={false}
-      />
     </div>
   );
 }

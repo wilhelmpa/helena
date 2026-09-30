@@ -291,16 +291,16 @@ describe('Organigramm-Ebenen', () => {
 });
 
 describe('Organigramm „Baum“ auf Home', () => {
-  test('Spezialisten hängen gestapelt an ihrem Koordinator', () => {
-    const tree = organizationChartLayout(agents, new Set(), new Set(), { stackLeaves: true });
+  test('Spezialisten stehen in einer Zeile unter ihrem Koordinator (O93)', () => {
+    const tree = organizationChartLayout(agents, new Set(), new Set());
     const coordinator = tree.nodes.find((node) => node.id === '2')!;
     const leaves = tree.nodes.filter((node) => [20, 21, 22].includes(Number(node.id)));
-    assert.ok(leaves.every((leaf) => leaf.position.x === coordinator.position.x + 40));
-    assert.ok(leaves[0]!.position.y < leaves[1]!.position.y);
+    assert.equal(new Set(leaves.map((leaf) => leaf.position.y)).size, 1);
+    assert.ok(leaves.every((leaf) => leaf.position.y > coordinator.position.y));
     assert.ok(
       tree.edges
         .filter((edge) => edge.source === '2')
-        .every((edge) => edge.sourceHandle === 'rail'),
+        .every((edge) => edge.sourceHandle === undefined),
     );
   });
 
@@ -312,11 +312,8 @@ describe('Organigramm „Baum“ auf Home', () => {
       agentId: 2,
       color: 'var(--status-idle)',
     }));
-    const without = organizationChartLayout(agents, new Set(), new Set(), { stackLeaves: true });
-    const tree = organizationChartLayout(agents, new Set(), new Set(), {
-      stackLeaves: true,
-      tasks,
-    });
+    const without = organizationChartLayout(agents, new Set(), new Set());
+    const tree = organizationChartLayout(agents, new Set(), new Set(), { tasks });
     const shown = tree.nodes.filter((node) => node.type === 'task');
     assert.equal(shown.length, 4);
     assert.equal(shown.at(-1)!.data.more, 1);

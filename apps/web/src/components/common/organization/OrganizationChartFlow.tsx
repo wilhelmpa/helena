@@ -45,6 +45,9 @@ const nodeTypes: NodeTypes = {
 };
 const edgeTypes = { flow: OrganizationFlowEdge };
 const PADDING = 32;
+// The smallest zoom the tree fits itself to: one row of many reports stays one row, the
+// cards are compact, and what does not fit at this zoom is panned.
+const TREE_MIN_ZOOM = 0.7;
 // How long a click waits for a second one before it counts as a single click.
 const DOUBLE_CLICK_MS = 240;
 
@@ -142,7 +145,9 @@ function Flow({
       const ring = view === 'ring';
       // The tree too (owner, 29.09.: its cards were as tiny as the ring): its smallest text
       // is 12px as well, so both stop at the same readable zoom and are panned beyond it.
-      const minimum = RING_MIN_ZOOM;
+      // A wide tree fits by zoom down to TREE_MIN_ZOOM (a row of ten reports is one row, owner
+      // 30.09., O93) and is panned sideways beyond it.
+      const minimum = ring ? RING_MIN_ZOOM : TREE_MIN_ZOOM;
       const zoom = Math.min(
         1,
         Math.max(
@@ -257,7 +262,7 @@ function Flow({
         fitView
         fitViewOptions={{
           padding: 0.08,
-          minZoom: RING_MIN_ZOOM,
+          minZoom: view === 'ring' ? RING_MIN_ZOOM : TREE_MIN_ZOOM,
           maxZoom: 1,
         }}
         nodes={nodes}

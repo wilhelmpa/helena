@@ -2,27 +2,31 @@ import type { Edge, Node } from '@xyflow/react';
 import type { OrganizationAgent } from '@/lib/api/endpoints/organization';
 import type { RingTask } from './organizationRingLayout';
 
-// "Baum": the classic org chart, Home on top, then coordinators, then specialists.
+// "Baum": the classic org chart, Home on top, then coordinators, then specialists — the
+// real hierarchy (owner 30.09., O93): one level is one row, everyone who reports to the same
+// manager stands beside the others in that row, and a line runs only from a manager to its
+// direct reports (one shared line above the row, then down to each). A row that gets wide is
+// not wrapped into a second one — its cards turn compact and the chart fits by zoom and can
+// be panned sideways.
 // Positions are deterministic (sorted by name), so selecting, filtering or a refetch
 // never moves a card; only collapsing a branch changes the layout.
 export const LEADER_WIDTH = 280;
 export const LEADER_HEIGHT = 92;
 export const LEAF_WIDTH = 242;
 export const LEAF_HEIGHT = 112;
+// The compact card of a row with many reports (see COMPACT_FROM): narrower, without the
+// decider line, so ten specialists fit a screen at a readable zoom.
+export const COMPACT_LEADER_WIDTH = 224;
+export const COMPACT_LEAF_WIDTH = 176;
+export const COMPACT_LEAF_HEIGHT = 92;
+// A manager with more reports than this shows them compact.
+export const COMPACT_FROM = 4;
 const X_GAP = 16;
 // Room between a leader and its reports for a clear trunk and the shared line (owner
 // 29.09.: the lines from the coordinator to its specialists were not to be seen).
 const LEVEL_GAP = 56;
 // Every report of a leader hangs from one horizontal line this far above its row.
 export const BUS_OFFSET = 24;
-// Specialists without reports of their own wrap into rows of at most four; the trunk runs
-// down the middle gap to the next row, which is wider so the line never touches a card.
-export const LEAVES_PER_ROW = 4;
-const ROW_X_GAP = 32;
-const ROW_GAP = 56;
-// Stacked specialists hang off a rail on the left of their coordinator.
-const RAIL_INDENT = 40;
-const STACK_GAP = 14;
 // An agent's current tasks hang under its card, as in the ring (owner 29.09.: the same
 // "Aufgaben" in both views): at most four, the fourth names how many more.
 // The task pill's height as the ring draws it (.ds-ring-task).
@@ -32,9 +36,6 @@ const TASK_INDENT = 12;
 const TASKS_PER_AGENT = 4;
 
 export interface ChartLayoutOptions {
-  // Stack a coordinator's specialists in a column under it instead of a row. Used on
-  // Home, where 40+ agents in one row would shrink every card to a dot.
-  stackLeaves?: boolean;
   // The current tasks of the agents, shown under their cards while "Aufgaben" is on.
   tasks?: RingTask[];
 }
@@ -73,24 +74,24 @@ export function organizationChartLayout(
     const count = shownTasks(agent).length;
     return count ? TASK_GAP + count * (TASK_HEIGHT + TASK_GAP) : 0;
   };
-  const width = (agent: OrganizationAgent) => (isLeader(agent) ? LEADER_WIDTH : LEAF_WIDTH);
-  const cardHeight = (agent: OrganizationAgent) => (isLeader(agent) ? LEADER_HEIGHT : LEAF_HEIGHT);
+  // The reports of a manager with many of them are compact, so the row stays one row.
+  const compact = new Set<number>();
+  for (const reports of children.values())
+    if (reports.length > COMPACT_FROM) for (const report of reports) compact.add(report.id);
+  const width = (agent: OrganizationAgent) =>
+    isLeader(agent)
+      ? compact.has(agent.id)
+        ? COMPACT_LEADER_WIDTH
+        : LEADER_WIDTH
+      : compact.has(agent.id)
+        ? COMPACT_LEAF_WIDTH
+        : LEAF_WIDTH;
+  const cardHeight = (agent: OrganizationAgent) =>
+    isLeader(agent) ? LEADER_HEIGHT : compact.has(agent.id) ? COMPACT_LEAF_HEIGHT : LEAF_HEIGHT;
   // The card and its tasks under it.
   const height = (agent: OrganizationAgent) => cardHeight(agent) + taskRoom(agent);
   const visible = (agent: OrganizationAgent) =>
     collapsed.has(agent.id) ? [] : (children.get(agent.id) ?? []);
-  const allLeaves = (reports: OrganizationAgent[]) =>
-    reports.every((report) => visible(report).length === 0);
-  // Rows of specialists under a leader (only leaves; a report with its own reports keeps the
-  // classic subtree layout).
-  const wrapped = (agent: OrganizationAgent, reports: OrganizationAgent[]) =>
-    !stacked(agent, reports) && reports.length > LEAVES_PER_ROW && allLeaves(reports);
-  const rowWidth = (count: number) => count * LEAF_WIDTH + Math.max(0, count - 1) * ROW_X_GAP;
-  const stacked = (agent: OrganizationAgent, reports: OrganizationAgent[]) =>
-    Boolean(options.stackLeaves) &&
-    !agent.isHome &&
-    reports.length > 1 &&
-    reports.every((report) => (children.get(report.id) ?? []).length === 0);
 
   // A cycle in reportsTo must not recurse forever: every agent is placed once.
   const measured = new Map<number, number>();
@@ -102,11 +103,7 @@ export function organizationChartLayout(
     measuring.add(agent.id);
     const reports = visible(agent);
     let result = width(agent);
-    if (reports.length && stacked(agent, reports)) {
-      result = Math.max(result, RAIL_INDENT + LEAF_WIDTH);
-    } else if (reports.length && wrapped(agent, reports)) {
-      result = Math.max(result, rowWidth(LEAVES_PER_ROW));
-    } else if (reports.length) {
+    if (reports.length) {
       const sum =
         reports.reduce((total, report) => total + measure(report), 0) +
         X_GAP * (reports.length - 1);
@@ -117,15 +114,25 @@ export function organizationChartLayout(
     return result;
   }
 
+  // A level is one row: every agent of a depth stands at the same height, below the
+  // tallest card (with its tasks) of the level above.
+  const depthOf = new Map<number, number>();
+  const rowHeight: number[] = [];
+  function levelOf(agent: OrganizationAgent, depth: number) {
+    if (depthOf.has(agent.id)) return;
+    depthOf.set(agent.id, depth);
+    rowHeight[depth] = Math.max(rowHeight[depth] ?? 0, height(agent));
+    for (const report of visible(agent)) levelOf(report, depth + 1);
+  }
+  for (const root of roots) levelOf(root, 0);
+  const rowTop: number[] = [0];
+  for (let depth = 1; depth <= rowHeight.length; depth++)
+    rowTop[depth] = rowTop[depth - 1]! + (rowHeight[depth - 1] ?? 0) + LEVEL_GAP;
+
   const nodes: Node[] = [];
   const edges: Edge[] = [];
   const placed = new Set<number>();
-  const edge = (
-    source: OrganizationAgent,
-    target: OrganizationAgent,
-    rail: boolean,
-    busY?: number,
-  ): Edge => {
+  const edge = (source: OrganizationAgent, target: OrganizationAgent, busY: number): Edge => {
     const active = delegating.has(target.id);
     return {
       id: `${source.id}-${target.id}`,
@@ -133,8 +140,7 @@ export function organizationChartLayout(
       target: String(target.id),
       type: 'flow',
       animated: active,
-      ...(rail ? { sourceHandle: 'rail', targetHandle: 'side' } : {}),
-      data: { active, rail, ...(busY != null ? { busY } : {}) },
+      data: { active, busY },
     };
   };
   function node(agent: OrganizationAgent, x: number, y: number) {
@@ -144,7 +150,11 @@ export function organizationChartLayout(
       position: { x, y },
       width: width(agent),
       height: cardHeight(agent),
-      data: { agent, reportCount: (children.get(agent.id) ?? []).length },
+      data: {
+        agent,
+        reportCount: (children.get(agent.id) ?? []).length,
+        ...(compact.has(agent.id) && { compact: true }),
+      },
       draggable: false,
     });
     const list = tasksOf.get(agent.id) ?? [];
@@ -170,55 +180,27 @@ export function organizationChartLayout(
       });
     });
   }
-  function place(agent: OrganizationAgent, left: number, y: number) {
+  function place(agent: OrganizationAgent, left: number) {
     if (placed.has(agent.id)) return;
     placed.add(agent.id);
     const total = measure(agent);
     const reports = visible(agent).filter((report) => !placed.has(report.id));
-    if (reports.length && stacked(agent, reports)) {
-      const x = left + (total - Math.max(width(agent), RAIL_INDENT + LEAF_WIDTH)) / 2;
-      node(agent, x, y);
-      let top = y + height(agent) + LEVEL_GAP;
-      for (const report of reports) {
-        placed.add(report.id);
-        node(report, x + RAIL_INDENT, top);
-        edges.push(edge(agent, report, true));
-        top += height(report) + STACK_GAP;
-      }
-      return;
-    }
-    if (reports.length && wrapped(agent, reports)) {
-      node(agent, left + (total - width(agent)) / 2, y);
-      let top = y + height(agent) + LEVEL_GAP;
-      for (let start = 0; start < reports.length; start += LEAVES_PER_ROW) {
-        const row = reports.slice(start, start + LEAVES_PER_ROW);
-        let x = left + (total - rowWidth(row.length)) / 2;
-        for (const report of row) {
-          placed.add(report.id);
-          node(report, x, top);
-          edges.push(edge(agent, report, false, top - BUS_OFFSET));
-          x += LEAF_WIDTH + ROW_X_GAP;
-        }
-        top += Math.max(...row.map(height)) + ROW_GAP;
-      }
-      return;
-    }
-    node(agent, left + (total - width(agent)) / 2, y);
-    const childTop = y + height(agent) + LEVEL_GAP;
+    node(agent, left + (total - width(agent)) / 2, rowTop[depthOf.get(agent.id) ?? 0] ?? 0);
+    const childTop = rowTop[(depthOf.get(agent.id) ?? 0) + 1] ?? 0;
     const childrenWidth =
       reports.reduce((sum, report) => sum + measure(report), 0) +
       X_GAP * Math.max(0, reports.length - 1);
     let cursor = left + (total - childrenWidth) / 2;
     for (const report of reports) {
-      edges.push(edge(agent, report, false, childTop - BUS_OFFSET));
-      place(report, cursor, childTop);
+      edges.push(edge(agent, report, childTop - BUS_OFFSET));
+      place(report, cursor);
       cursor += measure(report) + X_GAP;
     }
   }
   let cursor = 0;
   for (const root of roots) {
     if (placed.has(root.id)) continue;
-    place(root, cursor, 0);
+    place(root, cursor);
     cursor += measure(root) + X_GAP * 2;
   }
   return { nodes, edges };

@@ -2,7 +2,13 @@ import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
 import type { OrganizationAgent } from '@/lib/api/endpoints/organization';
 import { organizationChartAgents } from './organizationChartAgents';
-import { BUS_OFFSET, LEAVES_PER_ROW, organizationChartLayout } from './organizationChartLayout';
+import {
+  BUS_OFFSET,
+  COMPACT_FROM,
+  COMPACT_LEAF_WIDTH,
+  LEAF_WIDTH,
+  organizationChartLayout,
+} from './organizationChartLayout';
 import { organizationChartState } from './organizationChartState';
 import type { AgentActivityEntry } from '@/lib/api/endpoints/agentActivity';
 
@@ -68,24 +74,75 @@ describe('Organigramm', () => {
     assert.equal(organizationChartState(agents[1]!, [entry('failed')], false), 'error');
   });
 
-  test('Spezialisten hängen an einer Linie und brechen in Viererreihen um', () => {
+  test('alle Spezialisten eines Koordinators stehen in einer Zeile an einer Linie (O93)', () => {
     const team = [agent(2, null, 7), ...Array.from({ length: 10 }, (_, i) => agent(10 + i, 2, 7))];
     const chart = organizationChartLayout(team, new Set(), new Set());
     const lead = chart.nodes.find((node) => node.id === '2')!;
     const leaves = chart.nodes.filter((node) => node.id !== '2');
-    const rows = [...new Set(leaves.map((node) => node.position.y))].sort((a, b) => a - b);
-    assert.equal(rows.length, Math.ceil(10 / LEAVES_PER_ROW));
-    for (const top of rows)
-      assert.ok(leaves.filter((node) => node.position.y === top).length <= LEAVES_PER_ROW);
-    assert.ok(rows[0]! > lead.position.y);
-    // Every line of a row runs along the same height, just above that row.
+    // One level is one row, however many reports there are.
+    assert.deepEqual([...new Set(leaves.map((node) => node.position.y))].length, 1);
+    assert.ok(leaves[0]!.position.y > lead.position.y);
+    // The row is one row: no card overlaps its neighbour, and they do not wrap.
+    const xs = leaves.map((node) => node.position.x).sort((a, b) => a - b);
+    for (let i = 1; i < xs.length; i++)
+      assert.ok(xs[i]! >= xs[i - 1]! + (leaves[0]!.width ?? 0), 'cards side by side');
+    // Many reports are shown compact, so the row stays narrow enough to fit by zoom.
+    assert.ok(leaves.every((node) => node.width === COMPACT_LEAF_WIDTH));
+    assert.ok(leaves.every((node) => (node.data as { compact?: boolean }).compact));
+    // A line runs only from the manager to a direct report, all along one shared height.
+    assert.equal(chart.edges.length, 10);
+    assert.ok(chart.edges.every((edge) => edge.source === '2'));
     for (const edge of chart.edges) {
       const target = chart.nodes.find((node) => node.id === edge.target)!;
       assert.equal((edge.data as { busY?: number }).busY, target.position.y - BUS_OFFSET);
     }
-    // The trunk runs through the middle gap of a full row, never through a card.
-    const trunk = lead.position.x + (lead.width ?? 0) / 2;
-    for (const node of leaves.filter((item) => item.position.y !== rows.at(-1)))
-      assert.ok(trunk < node.position.x || trunk > node.position.x + (node.width ?? 0));
+  });
+
+  test('bis zu vier Berichte behalten die volle Karte', () => {
+    const team = [
+      agent(2, null, 7),
+      ...Array.from({ length: COMPACT_FROM }, (_, i) => agent(10 + i, 2, 7)),
+    ];
+    const chart = organizationChartLayout(team, new Set(), new Set());
+    assert.ok(
+      chart.nodes.filter((node) => node.id !== '2').every((node) => node.width === LEAF_WIDTH),
+    );
+  });
+
+  test('jede Ebene ist eine Zeile über alle Zweige, auch wenn ein Koordinator Aufgaben trägt', () => {
+    const team = [
+      agent(1, null, null, true),
+      agent(2, 1, 7),
+      agent(3, 1, 8),
+      agent(20, 2, 7),
+      agent(21, 2, 7),
+      agent(30, 3, 8),
+    ];
+    const tasks = [1, 2].map((id) => ({
+      id,
+      identifier: `P7-${id}`,
+      title: 'Aufgabe',
+      agentId: 2,
+      color: 'var(--status-idle)',
+    }));
+    const chart = organizationChartLayout(team, new Set(), new Set(), { tasks });
+    const y = (id: string) => chart.nodes.find((node) => node.id === id)!.position.y;
+    assert.equal(y('2'), y('3'));
+    assert.equal(y('20'), y('30'));
+    assert.equal(y('21'), y('30'));
+    // The specialists stand below the coordinator's tasks.
+    const lastTask = Math.max(
+      ...chart.nodes.filter((node) => node.type === 'task').map((node) => node.position.y + 32),
+    );
+    assert.ok(y('20') > lastTask);
+    // Only manager → direct report lines (plus the dotted task lines).
+    const reporting = chart.edges.filter((edge) => !edge.target.startsWith('task:'));
+    assert.deepEqual(reporting.map((edge) => `${edge.source}>${edge.target}`).sort(), [
+      '1>2',
+      '1>3',
+      '2>20',
+      '2>21',
+      '3>30',
+    ]);
   });
 });
