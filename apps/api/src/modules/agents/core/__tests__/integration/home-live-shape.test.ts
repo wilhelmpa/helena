@@ -96,9 +96,10 @@ describe('live Home shape without a HOME project', () => {
     expect(
       (await asHome.knowledge.documents.get({ query: { path: 'Home/Docs/Overview.md' } })).status,
     ).toBe(200);
+    // Owner 30.09.: Home/Ava has every right, the owner's private vault included.
     expect(
       (await asHome.knowledge.documents.get({ query: { path: 'Private/Diary.md' } })).status,
-    ).toBe(403);
+    ).toBe(200);
     const terminal = authedApi((await signUpTestUser({ name: 'Second owner check' })).cookie);
     expect((await asOwner['owner-terminal'].grant.get()).status).toBe(200);
     expect((await terminal['owner-terminal'].grant.get()).status).toBe(403);
