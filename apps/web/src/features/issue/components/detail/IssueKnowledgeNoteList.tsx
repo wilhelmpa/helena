@@ -1,4 +1,4 @@
-import { EmptyState, Card } from '@/design-system';
+import { Card, Notice } from '@/design-system';
 import Link from 'next/link';
 import { FileText, Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -40,11 +40,7 @@ export default function IssueKnowledgeNoteList({
   }
 
   if (!notes.data?.length) {
-    return (
-      <EmptyState boxed fill={false}>
-        {t('empty', { link: `[[${identifier}]]` })}
-      </EmptyState>
-    );
+    return <Notice>{t('empty', { link: `[[${identifier}]]` })}</Notice>;
   }
 
   return (

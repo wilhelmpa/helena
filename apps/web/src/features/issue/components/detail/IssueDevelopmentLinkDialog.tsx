@@ -1,4 +1,4 @@
-import { EmptyState, Card, Segmented } from '@/design-system';
+import { Card, Segmented, Notice } from '@/design-system';
 import { useEffect, useMemo, useState } from 'react';
 import { Check, GitPullRequest } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -86,13 +86,9 @@ export default function IssueDevelopmentLinkDialog({
           <DialogDescription>{t('linkExistingDescription')}</DialogDescription>
         </DialogHeader>
         {repositoriesQuery.isPending ? (
-          <EmptyState boxed fill={false}>
-            {t('loadingRepositories')}
-          </EmptyState>
+          <Notice>{t('loadingRepositories')}</Notice>
         ) : repositoriesQuery.data?.length === 0 ? (
-          <EmptyState boxed fill={false}>
-            {t('noConnectedRepositories')}
-          </EmptyState>
+          <Notice>{t('noConnectedRepositories')}</Notice>
         ) : (
           <>
             <div className="flex gap-2">

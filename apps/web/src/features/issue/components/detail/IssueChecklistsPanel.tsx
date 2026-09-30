@@ -1,4 +1,4 @@
-import { EmptyState } from '@/design-system';
+import { Notice } from '@/design-system';
 import { useState } from 'react';
 import { closestCenter, type DragEndEvent } from '@dnd-kit/core';
 import DndContext from '@/components/common/dnd/DndContext';
@@ -57,9 +57,7 @@ export default function IssueChecklistsPanel({ issue }: { issue: IssueWithWatche
       {open && (
         <>
           {checklists.length === 0 && !adding ? (
-            <EmptyState boxed fill={false}>
-              {canEdit ? t('emptyHint') : t('empty')}
-            </EmptyState>
+            <Notice>{canEdit ? t('emptyHint') : t('empty')}</Notice>
           ) : (
             <DndContext
               sensors={sensors}

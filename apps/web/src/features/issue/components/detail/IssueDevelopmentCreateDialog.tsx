@@ -1,4 +1,4 @@
-import { EmptyState, Card } from '@/design-system';
+import { Card, Notice } from '@/design-system';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
@@ -117,13 +117,9 @@ export default function IssueDevelopmentCreateDialog({
           <DialogDescription>{t('createPullRequestDescription')}</DialogDescription>
         </DialogHeader>
         {repositoriesQuery.isPending ? (
-          <EmptyState boxed fill={false}>
-            {t('loadingRepositories')}
-          </EmptyState>
+          <Notice>{t('loadingRepositories')}</Notice>
         ) : repositoriesQuery.data?.length === 0 ? (
-          <EmptyState boxed fill={false}>
-            {t('noConnectedRepositories')}
-          </EmptyState>
+          <Notice>{t('noConnectedRepositories')}</Notice>
         ) : (
           <div className="space-y-4">
             <label className="block space-y-1.5 text-sm">

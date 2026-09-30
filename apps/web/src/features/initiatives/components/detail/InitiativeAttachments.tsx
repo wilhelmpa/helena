@@ -19,7 +19,7 @@ import {
   useInitiativeAttachmentsQuery,
   useUploadInitiativeAttachment,
 } from '../../services/attachments.service';
-import { Inline, Stack, Text, Card, EmptyState } from '@/design-system';
+import { Inline, Stack, Text, Card, Notice } from '@/design-system';
 
 // The initiative's files, beside its description: upload, look at, download and
 // delete. A row list rather than the issue panel's card grid, because it sits in
@@ -95,9 +95,7 @@ export default function InitiativeAttachments({ initiativeId }: { initiativeId: 
       )}
 
       {items.length === 0 ? (
-        <EmptyState boxed fill={false}>
-          {canEdit ? t('emptyHint') : t('empty')}
-        </EmptyState>
+        <Notice>{canEdit ? t('emptyHint') : t('empty')}</Notice>
       ) : (
         <Stack as="ul" gap={1} marginTop={3}>
           {items.map((a) => {
