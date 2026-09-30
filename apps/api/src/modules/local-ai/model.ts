@@ -1,4 +1,5 @@
 import { t } from 'elysia';
+import { Type } from '@sinclair/typebox';
 
 const unit = t.Union([t.Literal('gpu'), t.Literal('npu'), t.Literal('cpu')]);
 const mode = t.Union([t.Literal('off'), t.Literal('prefer'), t.Literal('only')], {
@@ -140,6 +141,8 @@ export const EvalResult = t.Object({
 
 const classSetting = t.Object({ mode, model: t.Nullable(t.String()) });
 
+const priorityWaitTimes = t.Object({ count: t.Number(), p50: t.Number(), max: t.Number() });
+
 const halogenPriority = t.Object({
   maxConcurrent: t.Number(),
   reservedInteractive: t.Number(),
@@ -150,6 +153,9 @@ const halogenPriority = t.Object({
   realtimeQueueMs: t.Number(),
   interactiveQueueMs: t.Number(),
   agingMs: t.Number(),
+  minBackgroundSlots: Type.Integer({ minimum: 1, maximum: 3 }),
+  maxBackgroundWaitMs: Type.Integer({ minimum: 1_000, maximum: 120_000 }),
+  waitTimeSampleSize: Type.Integer({ minimum: 1, maximum: 4_096 }),
   healthProbeMs: t.Number(),
   healthTimeoutMs: t.Number(),
   healthFailureThreshold: t.Number(),
@@ -276,6 +282,14 @@ export const LocalAiStatus = t.Object({
           normal: t.Number(),
           background: t.Number(),
         }),
+        waitTimesMsByClass: t.Optional(
+          t.Object({
+            interactive: priorityWaitTimes,
+            realtime: priorityWaitTimes,
+            normal: priorityWaitTimes,
+            background: priorityWaitTimes,
+          }),
+        ),
         fallbacks: t.Object({
           interactive: t.Number(),
           realtime: t.Number(),

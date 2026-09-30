@@ -3,7 +3,7 @@ import {
   verifyNpuDecisionReadout,
   type NpuDecisionReadoutReport,
 } from '../modules/local-ai/npu-eval';
-import { retrySocketClosed, type SocketRetry } from './local-ai-eval-retry';
+import { retryLocalAiEval, type EvalRetry } from './local-ai-eval-retry';
 // The local AI task-class evals from the command line (docs/helena-decisions/local-ai-platform.md
 // §7): the same cases Administrator → Server → Lokale KI runs, against any OpenAI-compatible
 // server, without Helena's database. For measuring models before they are registered.
@@ -87,7 +87,7 @@ interface Row {
   error: string | null;
   seconds: number;
   npuReadout: NpuDecisionReadoutReport | null;
-  retries: SocketRetry[];
+  retries: EvalRetry[];
 }
 
 const rows: Row[] = [];
@@ -102,9 +102,9 @@ for (const entry of [...BUILTIN_TASK_CLASSES, DECISIONS_LOCAL_AI_CLASS]) {
   let result: LocalAiEvalResult | null = null;
   let error: string | null = null;
   let npuReadout: NpuDecisionReadoutReport | null = null;
-  const retries: SocketRetry[] = [];
+  const retries: EvalRetry[] = [];
   try {
-    result = await retrySocketClosed(
+    result = await retryLocalAiEval(
       async () => {
         if (process.argv.includes('--npu'))
           npuReadout = await verifyNpuDecisionReadout({
@@ -136,7 +136,9 @@ for (const entry of [...BUILTIN_TASK_CLASSES, DECISIONS_LOCAL_AI_CLASS]) {
       },
       (retry) => {
         retries.push(retry);
-        say(`    ${entry.id}: socket closed; retrying once after ${retry.delayMs} ms`);
+        say(
+          `    ${entry.id}: ${retry.reason}; attempt ${retry.attempt} after ${retry.delayMs} ms (${retry.error})`,
+        );
       },
     );
   } catch (caught) {
@@ -171,7 +173,7 @@ for (const entry of [...BUILTIN_TASK_CLASSES, DECISIONS_LOCAL_AI_CLASS]) {
       `    NPU readout: timeout ${npuReadout.timeoutMs} ms; ${npuReadout.timeouts.length} timeouts; ${npuReadout.failures.length} decision failures; ${npuReadout.errors.length} backend errors`,
     );
   if (retries.length)
-    say(`    socket retry: ${result ? 'completed' : 'failed'} (${retries.length})`);
+    say(`    backend retry: ${result ? 'completed' : 'failed'} (${retries.length})`);
 }
 
 const report = `${JSON.stringify({ base, rows }, null, 2)}\n`;
