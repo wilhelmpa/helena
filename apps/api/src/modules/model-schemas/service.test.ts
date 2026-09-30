@@ -37,13 +37,14 @@ describe('model schema resolution', () => {
     const before = defaultState();
     const schemas = ['nur-codex', 'nur-claude'].map((id) => ({
       ...structuredClone(before.schemas[id]!),
+      id: `custom-${id}`,
       description: 'Updated model schema',
     }));
     const after = nextState(before, { expectedRevision: before.revision, schemas });
     expect(after.revision).toBe(before.revision + 1);
     expect(after.history).toHaveLength(1);
-    expect(after.schemas['nur-codex']!.description).toBe('Updated model schema');
-    expect(after.schemas['nur-claude']!.description).toBe('Updated model schema');
+    expect(after.schemas['custom-nur-codex']!.description).toBe('Updated model schema');
+    expect(after.schemas['custom-nur-claude']!.description).toBe('Updated model schema');
     expect(nextState(after, { expectedRevision: after.revision, undo: true }).schemas).toEqual(
       before.schemas,
     );

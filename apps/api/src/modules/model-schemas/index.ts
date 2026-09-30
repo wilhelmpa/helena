@@ -1,40 +1,87 @@
 import { Elysia, t } from 'elysia';
+import { aiAgent, db } from '@repo/db';
+import { eq } from 'drizzle-orm';
 import { authContext } from '#shared/auth-context';
-import { requireGod } from '#shared/access';
+import { requireUser } from '#shared/access';
+import { HttpError } from '#shared/lib';
+import { errors } from '#shared/responses';
+import { mcpTool } from '#mcp/generate';
 import { globalModelStatus } from '#modules/local-ai/global-model';
 import { listClassViews } from '#modules/decisions/settings';
 import { effectiveBrowserControl } from '#modules/browser-task/settings';
-import { applyMatrix, modelMatrix, previewMatrix, type MatrixPatch } from './service';
+import {
+  applyMatrix,
+  modelMatrix,
+  previewMatrix,
+  createSchema,
+  updateSchema,
+  updateSchemaRole,
+  removeSchema,
+  listSchemas,
+  getSchema,
+  schemaAudit,
+  type MatrixPatch,
+} from './service';
+import {
+  createBody,
+  updateBody,
+  revisionBody,
+  schemaParams,
+  roleBody,
+  roleParams,
+  patchBody,
+  schemaResponse,
+  listResponse,
+  matrixResponse,
+  previewResponse,
+} from './model';
 
-const patchBody = t.Object({
-  expectedRevision: t.Number({ minimum: 0 }),
-  active: t.Optional(t.String()),
-  projects: t.Optional(
-    t.Array(t.Object({ projectId: t.Number(), schemaId: t.Nullable(t.String()) })),
-  ),
-  agents: t.Optional(
-    t.Array(
-      t.Object({
-        agentId: t.Number(),
-        role: t.Optional(t.String()),
-        values: t.Record(t.String(), t.Any()),
-      }),
-    ),
-  ),
-  schema: t.Optional(t.Any()),
-  removeSchema: t.Optional(t.String()),
-  undo: t.Optional(t.Boolean()),
-});
+const failures = errors(400, 401, 403, 404, 409);
 
 export const modelSchemaRoutes = new Elysia({
   name: 'model-schemas',
   detail: { tags: ['Model Schemas'] },
 })
   .use(authContext)
+  .macro({
+    modelSchemaAdmin: {
+      resolve: async ({ user }) => {
+        const caller = requireUser(user);
+        if (caller.role !== 'god') {
+          const [agent] = await db
+            .select({ role: aiAgent.agentRole })
+            .from(aiAgent)
+            .where(eq(aiAgent.userId, caller.id));
+          if (agent?.role !== 'home') throw new HttpError(403, 'Model schemas are owner/Home-only');
+        }
+        return { schemaActorId: caller.id };
+      },
+    },
+  })
+  .get('/god/model-schemas', () => listSchemas(), {
+    modelSchemaAdmin: true,
+    response: { 200: listResponse, ...failures },
+    detail: {
+      summary: 'List model schemas and available models',
+      description:
+        'Returns matrix revision, active schema, immutable built-ins, editable custom schemas, roles, columns and the runtime-specific model catalog. Example: {}.',
+      ...mcpTool('list_model_schemas'),
+    },
+  })
+  .get('/god/model-schemas/audit', ({ query }) => schemaAudit(query.limit ?? 50), {
+    modelSchemaAdmin: true,
+    query: t.Object({ limit: t.Optional(t.Numeric({ minimum: 1, maximum: 100, multipleOf: 1 })) }),
+    response: { 200: t.Any(), ...failures },
+    detail: {
+      summary: 'Read model schema audit entries',
+      description:
+        'Returns newest changes first, including actor, revision, timestamp, patch and before/after settings. Example: {"limit":20}.',
+      ...mcpTool('list_model_schema_audit'),
+    },
+  })
   .get(
     '/god/model-schemas/matrix',
-    async ({ user, query }) => {
-      requireGod(user);
+    async ({ query }) => {
       const teamId = query.teamId ? Number(query.teamId) : undefined;
       const projectId = query.projectId ? Number(query.projectId) : undefined;
       const matrix = await modelMatrix(teamId, projectId);
@@ -48,41 +95,138 @@ export const modelSchemaRoutes = new Elysia({
       return { ...matrix, local, decisions, browser };
     },
     {
+      modelSchemaAdmin: true,
       query: t.Object({ teamId: t.Optional(t.Numeric()), projectId: t.Optional(t.Numeric()) }),
+      response: {
+        200: t.Unsafe<
+          Awaited<ReturnType<typeof modelMatrix>> & {
+            local: Awaited<ReturnType<typeof globalModelStatus>>;
+            decisions: Awaited<ReturnType<typeof listClassViews>>;
+            browser: Awaited<ReturnType<typeof effectiveBrowserControl>> | null;
+          }
+        >(matrixResponse),
+        ...failures,
+      },
       detail: {
         summary: 'Get the model matrix',
         description:
-          'Read model assignments and their schema, project or owner source, with local model and browser configuration.',
+          'Read active schema, matrix revision and effective assignments with schema/project/own sources. Example: {}.',
+        ...mcpTool('get_model_schema_matrix'),
       },
     },
   )
+  .get('/god/model-schemas/:schemaId', ({ params }) => getSchema(params.schemaId), {
+    modelSchemaAdmin: true,
+    params: schemaParams,
+    response: { 200: schemaResponse, ...failures },
+    detail: {
+      summary: 'Read one model schema',
+      description:
+        'Returns schema, builtIn flag, active schema id and current matrix revision. Example: {"schemaId":"nur-codex"}.',
+      ...mcpTool('get_model_schema'),
+    },
+  })
   .post(
-    '/god/model-schemas/preview',
-    ({ user, body }) => {
-      requireGod(user);
-      return previewMatrix(body as MatrixPatch);
+    '/god/model-schemas',
+    ({ body, schemaActorId, set }) => {
+      set.status = 201;
+      return createSchema(body, schemaActorId);
     },
     {
-      body: patchBody,
+      modelSchemaAdmin: true,
+      body: createBody,
+      response: { 201: schemaResponse, ...failures },
       detail: {
-        summary: 'Preview model matrix changes',
+        summary: 'Create or copy a custom model schema',
         description:
-          'Preview the affected agents and effective model settings without applying the proposed matrix changes.',
+          'Creates a draft with empty roles/classes, or copies copyFrom. Built-ins can only be copied. expectedRevision is the global matrix revision; stale writes return 409. Example: {"expectedRevision":0,"id":"custom","name":"Custom","copyFrom":"nur-codex"}.',
+        ...mcpTool('create_model_schema'),
       },
     },
   )
+  .patch(
+    '/god/model-schemas/:schemaId',
+    ({ params, body, schemaActorId }) => updateSchema(params.schemaId, body, schemaActorId),
+    {
+      modelSchemaAdmin: true,
+      params: schemaParams,
+      body: updateBody,
+      response: { 200: schemaResponse, ...failures },
+      detail: {
+        summary: 'Rename or describe a custom model schema',
+        description:
+          'Updates metadata with optimistic concurrency. Built-ins return 409. Example: {"schemaId":"custom","expectedRevision":1,"name":"My schema","description":"Personal settings"}.',
+        ...mcpTool('update_model_schema'),
+      },
+    },
+  )
+  .patch(
+    '/god/model-schemas/:schemaId/roles/:role',
+    ({ params, body, schemaActorId }) =>
+      updateSchemaRole(params.schemaId, params.role, body, schemaActorId),
+    {
+      modelSchemaAdmin: true,
+      params: roleParams,
+      body: roleBody,
+      response: { 200: schemaResponse, ...failures },
+      detail: {
+        summary: 'Edit cells of a custom schema role',
+        description:
+          'Partial row update: runtime, model, reasoning (null for no explicit level), escalation, browser, decision, device. Validates model/runtime and reasoning against the available catalog. A new role starts from the schema general role or local defaults. Active assignments are reprojected; own overrides remain. NPU decisions currently return 409 because evaluation has not passed. Example: {"schemaId":"custom","role":"general","expectedRevision":2,"values":{"runtime":"codex","model":"gpt-6.1-sol","reasoning":"high"}}.',
+        ...mcpTool('update_model_schema_role'),
+      },
+    },
+  )
+  .delete(
+    '/god/model-schemas/:schemaId',
+    ({ params, body, schemaActorId }) =>
+      removeSchema(params.schemaId, body.expectedRevision, schemaActorId),
+    {
+      modelSchemaAdmin: true,
+      params: schemaParams,
+      body: revisionBody,
+      response: { 200: t.Object({ revision: t.Integer(), deleted: t.String() }), ...failures },
+      detail: {
+        summary: 'Delete a custom model schema',
+        description:
+          'Refuses built-ins, active schemas and project-bound schemas with 409. Example: {"schemaId":"custom","expectedRevision":3}.',
+        ...mcpTool('delete_model_schema'),
+      },
+    },
+  )
+  .post('/god/model-schemas/preview', ({ body }) => previewMatrix(body as MatrixPatch), {
+    modelSchemaAdmin: true,
+    body: patchBody,
+    response: {
+      200: t.Unsafe<Awaited<ReturnType<typeof previewMatrix>>>(previewResponse),
+      ...failures,
+    },
+    detail: {
+      summary: 'Preview model matrix changes',
+      description:
+        'Validates without writing. Returns affectedAgents, cell changes, nextRevision and retainedOverrides with agent ids and columns. Custom schemas need a general role and available catalog models to activate. Example: {"expectedRevision":3,"active":"custom"}.',
+      ...mcpTool(
+        'preview_model_schema_changes',
+        { readOnlyHint: true, destructiveHint: false },
+        'read',
+      ),
+    },
+  })
   .post(
     '/god/model-schemas/apply',
-    ({ user, body }) => {
-      requireGod(user);
-      return applyMatrix(body as MatrixPatch);
-    },
+    ({ body, schemaActorId }) => applyMatrix(body as MatrixPatch, schemaActorId),
     {
+      modelSchemaAdmin: true,
       body: patchBody,
+      response: {
+        200: t.Unsafe<Awaited<ReturnType<typeof previewMatrix>>>(previewResponse),
+        ...failures,
+      },
       detail: {
         summary: 'Apply model matrix changes',
         description:
-          'Apply model schema and assignment changes after checking the expected matrix revision.',
+          'Applies the preview patch transactionally, with revision checking and an audit entry. Built-ins cannot be edited. Own overrides remain. Example: {"expectedRevision":3,"active":"custom"}.',
+        ...mcpTool('apply_model_schema_changes'),
       },
     },
   );

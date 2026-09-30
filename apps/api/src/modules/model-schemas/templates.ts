@@ -59,7 +59,7 @@ export type DecisionValue = {
 export type ModelValues = {
   runtime: 'helena' | 'claude' | 'codex' | 'hermes' | 'command' | 'webhook';
   model: string;
-  reasoning: 'low' | 'medium' | 'high' | 'xhigh';
+  reasoning: string | null;
   escalation: AgentEscalationPolicy;
   browser: 'standard' | 'jev' | 'combined';
   decision: DecisionValue;
