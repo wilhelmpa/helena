@@ -62,6 +62,9 @@ export default function PopoverPick({
   readOnly = false,
   create,
   width,
+  search = true,
+  footer,
+  onOpenChange,
 }: {
   trigger: ReactNode;
   inputPlaceholder: string;
@@ -84,6 +87,12 @@ export default function PopoverPick({
   readOnly?: boolean;
   // Offers to create what the search text names when no item is called that.
   create?: PickCreate;
+  // A short list needs no search field.
+  search?: boolean;
+  // Under the list, outside it: where the value comes from and the way back.
+  footer?: ReactNode;
+  // Called when the list opens or closes.
+  onOpenChange?: (open: boolean) => void;
 }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -131,6 +140,7 @@ export default function PopoverPick({
       open={open}
       onOpenChange={(next) => {
         setOpen(next);
+        onOpenChange?.(next);
         if (!next) setQuery('');
       }}
     >
@@ -140,7 +150,9 @@ export default function PopoverPick({
         align={align}
       >
         <Command>
-          <CommandInput placeholder={inputPlaceholder} value={query} onValueChange={setQuery} />
+          {search && (
+            <CommandInput placeholder={inputPlaceholder} value={query} onValueChange={setQuery} />
+          )}
           <CommandList>
             {emptyText && !showCreate && <CommandEmpty>{emptyText}</CommandEmpty>}
             {items && items.length > 0 && <CommandGroup>{items.map(renderItem)}</CommandGroup>}
@@ -168,6 +180,7 @@ export default function PopoverPick({
             )}
           </CommandList>
         </Command>
+        {footer}
       </PopoverContent>
     </Popover>
   );

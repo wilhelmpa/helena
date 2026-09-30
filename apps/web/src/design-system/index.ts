@@ -49,6 +49,9 @@ export { NameList } from './components/NameList';
 export type { ActionMenuItem } from './components/ActionMenu';
 export { List, ListGroup, ListRow } from './components/List';
 export { Table, Th, Tr, Td } from './components/Table';
+export { MatrixCell, MatrixCellButton, MatrixNote, MatrixBar } from './components/Matrix';
+export type { MatrixMark } from './components/Matrix';
+export { Checkbox } from '@/components/ui/checkbox';
 export {
   DetailView,
   DetailHeader,

@@ -414,5 +414,277 @@
     "active": "Läuft lokal",
     "ready": "Bereit",
     "more": "Weitere Arten von Arbeit ({count})"
+  },
+  "modelMatrix": {
+    "search": "Suchen …",
+    "noResults": "Nichts gefunden",
+    "reset": "Zurücksetzen",
+    "loadFailed": "Die Modell-Matrix konnte nicht geladen werden",
+    "mark": {
+      "own": "Eigene Einstellung",
+      "changed": "Geändert, noch nicht übernommen"
+    },
+    "note": {
+      "own": "Eigene Einstellung dieses Agenten",
+      "staged": "Geändert, noch nicht übernommen",
+      "schema": "Erbt vom Schema „{schema}“",
+      "project": "Erbt vom Projekt-Schema „{schema}“"
+    },
+    "columns": {
+      "runtime": "Laufzeit",
+      "model": "Modell",
+      "reasoning": "Denktiefe",
+      "escalation": "Eskalation",
+      "browser": "Browser-Steuerung",
+      "decision": "Entscheider",
+      "device": "Gerät"
+    },
+    "runtime": {
+      "helena": "{appName}-Laufzeit",
+      "claude": "Claude Code",
+      "codex": "Codex",
+      "hermes": "Hermes (Cloud)",
+      "command": "Befehl",
+      "webhook": "Webhook"
+    },
+    "reasoning": {
+      "low": "Niedrig",
+      "medium": "Mittel",
+      "high": "Hoch",
+      "xhigh": "Sehr hoch"
+    },
+    "browser": {
+      "standard": "Standard",
+      "jev": "Jev",
+      "combined": "Kombiniert"
+    },
+    "browserHint": {
+      "standard": "{appName}-Browser",
+      "jev": "schnell, Cloud",
+      "combined": "Jev, dann Standard"
+    },
+    "device": {
+      "gpu": "GPU",
+      "npu": "NPU",
+      "cloud": "Cloud",
+      "cpu": "CPU",
+      "npuNote": "Die NPU trägt nur kleine Aufgabenklassen, keine Agentenläufe."
+    },
+    "model": {
+      "localDefault": "Lokales Standardmodell",
+      "local": "lokal",
+      "none": "Kein Modell"
+    },
+    "decision": {
+      "backends": {
+        "jev": "Jev (Cloud)",
+        "jev-local": "Jev, dann lokal",
+        "local-jev": "Lokal, dann Jev",
+        "gpu": "Lokal (GPU)",
+        "npu": "NPU"
+      },
+      "from": "ab {percent} %",
+      "backend": "Entscheider",
+      "threshold": "Sicherheit ab (%)",
+      "thresholdHint": "Darunter greift der Rückfall.",
+      "fallback": "Rückfall",
+      "fallbacks": {
+        "gpu": "Lokal",
+        "coordinator": "Koordinator",
+        "none": "Keiner"
+      },
+      "privateData": "Enthält private Inhalte",
+      "npuNote": "Die NPU hat die Entscheider-Auswertung nicht bestanden."
+    },
+    "escalation": {
+      "off": "Aus",
+      "to": "an {target}",
+      "toAgent": "an einen Agenten",
+      "targets": {
+        "codex": "Codex",
+        "claude": "Claude"
+      },
+      "triggers": {
+        "failures": "nach {count, plural, one {# Fehlschlag} other {# Fehlschlägen}}",
+        "stalled": "bei Hängern",
+        "request": "auf Anfrage"
+      },
+      "enable": "Eskalation",
+      "target": "Ziel",
+      "model": "Modell",
+      "afterFailures": "Nach Fehlschlägen",
+      "never": "nie",
+      "onResumeLimit": "Bei Hängern (Wiederanlaufgrenze)",
+      "onRequest": "Auf Anfrage des Agenten",
+      "toAgentNote": "Dieser Agent eskaliert an einen anderen Agenten. Das ändert die Matrix nicht."
+    },
+    "roles": {
+      "home": "Home",
+      "coordinator": "Koordinator",
+      "coder": "Coder",
+      "reviewer": "Prüfer",
+      "planning": "Planung",
+      "research": "Recherche",
+      "content": "Inhalte",
+      "assistant": "Assistent",
+      "finance": "Finanzen",
+      "trading": "Trading",
+      "browser": "Browser",
+      "support": "Support",
+      "devops": "DevOps",
+      "general": "Allgemein"
+    },
+    "groups": {
+      "home": "Home",
+      "coordinator": "Koordinatoren",
+      "specialist": "Spezialisten"
+    },
+    "agents": {
+      "title": "Agenten",
+      "description": "Laufzeit, Modell und mehr je Agent. Ein Klick auf einen Wert ändert ihn; übernommen wird erst nach der Vorschau.",
+      "agent": "Agent",
+      "roleOf": "Rolle von {name}",
+      "allProjects": "Alle Projekte",
+      "emptyTitle": "Keine Agenten",
+      "empty": "Für diesen Filter gibt es keine Agenten."
+    },
+    "select": {
+      "all": "Alle auswählen",
+      "agent": "{name} auswählen"
+    },
+    "bulk": {
+      "title": "Sammeländerung",
+      "selected": "{count, plural, one {# Agent ausgewählt} other {# Agenten ausgewählt}}",
+      "set": "{column} ändern",
+      "note": "Gilt für {count} ausgewählte Agenten",
+      "reset": "Auf Schema zurücksetzen",
+      "clear": "Auswahl aufheben"
+    },
+    "legend": {
+      "own": "eigene Einstellung",
+      "changed": "geändert, noch nicht übernommen",
+      "inherited": "ohne Punkt: erbt vom Schema oder Projekt"
+    },
+    "bar": {
+      "changes": "{count, plural, one {# Änderung} other {# Änderungen}} nicht übernommen",
+      "agents": "{count, plural, one {# Agent} other {# Agenten}}",
+      "schema": "Schema oder Profil",
+      "discard": "Verwerfen",
+      "review": "Vorschau und anwenden"
+    },
+    "preview": {
+      "title": "Änderungen prüfen",
+      "loading": "Prüfe, was sich ändert …",
+      "affects": "{count, plural, one {Wirkt auf einen Agenten} other {Wirkt auf # Agenten}}",
+      "nobody": "Kein Agent ändert sich. Geändert wird nur das Schema oder das Profil.",
+      "failed": "Die Prüfung ist fehlgeschlagen",
+      "cancel": "Abbrechen",
+      "apply": "Anwenden",
+      "source": {
+        "schema": "Schema",
+        "project": "Projekt",
+        "own": "eigen"
+      }
+    },
+    "conflict": {
+      "title": "Zwischenzeitlich geändert",
+      "text": "Die Modell-Einstellungen wurden geändert, während du gearbeitet hast. Lade neu und prüfe die Änderungen noch einmal; deine Auswahl bleibt erhalten.",
+      "reload": "Neu laden"
+    },
+    "apply": {
+      "done": "Änderungen übernommen. Mit „Rückgängig“ nimmst du sie zurück.",
+      "partial": "Nur ein Teil der Änderungen wurde übernommen. Die Ansicht wird neu geladen."
+    },
+    "undo": {
+      "button": "Rückgängig",
+      "title": "Letzte Änderung rückgängig machen",
+      "done": "Rückgängig gemacht"
+    },
+    "header": {
+      "title": "Profil und Schema",
+      "description": "Das lokale Profil bestimmt, welche Geräte für lokale Modelle bereitstehen. Das Schema legt fest, welche Laufzeit, welches Modell und welche Denktiefe jede Rolle bekommt.",
+      "profile": "Lokales Profil",
+      "status": "Zustand",
+      "switching": "Umschaltung läuft …",
+      "ready": "Bereit · lokales Modell: {model}",
+      "noModel": "keines",
+      "switchDevices": "Geräte umschalten",
+      "switchFailed": "Umschaltung fehlgeschlagen",
+      "switchFailedText": "Die letzte Umschaltung ist mit einem Fehler beendet. In den Einstellungen für Lokale KI kannst du sie fortsetzen oder zurücknehmen.",
+      "schema": "Schema",
+      "projectSchema": "Schema für {project}",
+      "projectInherits": "Folgt dem aktiven Schema",
+      "inherit": "Wie das aktive Schema"
+    },
+    "profiles": {
+      "local-halogen": "Nur GPU mit Flash, NPU aus",
+      "local-27b-npu": "GPU mit Qwen3.8-27B, NPU für kleine Aufgaben"
+    },
+    "schemas": {
+      "nur-lokal": "Alle Agenten laufen lokal; bei Fehlschlägen, Hängern oder auf Anfrage übernimmt Codex.",
+      "gemischt": "Routine lokal, Codex für Programmierarbeit, Claude für Planung und Texte.",
+      "nur-codex": "Alle Agenten laufen auf Codex.",
+      "nur-claude": "Alle Agenten laufen auf Claude."
+    },
+    "classes": {
+      "title": "Aufgabenklassen",
+      "description": "Welches Gerät und Modell welche Art von Arbeit trägt und ob die Auswertung bestanden ist. Geändert wird das unter Lokale KI und Entscheider.",
+      "openLocal": "Lokale KI öffnen",
+      "openDecisions": "Entscheider öffnen",
+      "class": "Aufgabenklasse",
+      "device": "Gerät",
+      "model": "Modell",
+      "eval": "Auswertung",
+      "also": "Weitere getestet",
+      "groups": {
+        "chat": "Chat-Aufgaben",
+        "decision": "Entscheidungen",
+        "other": "Sprache und Suche"
+      },
+      "devices": {
+        "gpu": "GPU",
+        "npu": "NPU",
+        "cpu": "CPU",
+        "cloud": "Cloud",
+        "vulkan": "GPU (Vulkan)"
+      },
+      "evals": {
+        "passed": "bestanden",
+        "failed": "durchgefallen",
+        "untested": "offen"
+      },
+      "configuredVoice": "eingestellte Stimme",
+      "names": {
+        "triage": "Triage und Zuordnung",
+        "routines": "Routinen-Agenten",
+        "hermes-helpers": "Hilfsaufrufe der Laufzeit",
+        "summaries": "Zusammenfassungen",
+        "reflection": "Reflexion nach Läufen",
+        "voice-reply": "Sprach-Schnellantwort",
+        "coordinator-triage": "Koordinator-Triage",
+        "embeddings": "Suche (Embeddings)",
+        "tts": "Vorlesen",
+        "stt": "Diktat",
+        "helena_model-router": "Modellwahl",
+        "helena_mail": "Mails einordnen",
+        "helena_receipts": "Belege zuordnen",
+        "helena_general": "Allgemeine Entscheidungen",
+        "helena_browser": "Browser-Vorstufe",
+        "tasks_triage": "Aufgaben einordnen",
+        "agents_routing": "Agenten zuweisen",
+        "helena_trading_news": "Trading: News bewerten",
+        "helena_trading_rules": "Trading: Regelprüfung",
+        "helena_trading_routing": "Trading: Zuordnung",
+        "helena_routine_gate": "Routinen-Freigabe",
+        "routines_precheck": "Heartbeat-Vorprüfung"
+      }
+    },
+    "errors": {
+      "npuClass": "Die NPU übernimmt diese Aufgabenklasse erst nach bestandener Auswertung.",
+      "npuDecision": "Die NPU hat die Entscheider-Auswertung nicht bestanden.",
+      "unknown": "Ein Agent, Projekt oder Schema gibt es nicht mehr. Lade die Seite neu.",
+      "invalid": "Ein Wert ist nicht zulässig. Prüfe die Einstellungen der geänderten Zellen.",
+      "rejected": "Der Server hat die Änderung abgelehnt. Es wurde nichts geändert."
+    }
   }
 }
