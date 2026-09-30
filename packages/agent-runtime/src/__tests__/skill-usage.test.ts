@@ -51,19 +51,33 @@ test('full skill, reference and script source remain available and unknown files
   const full = await tool.execute({ name: 'test' }, ctx);
   expect(full.text).toContain(skill.markdown);
   expect(full.text).toContain('scripts/check.py');
-  expect((await tool.execute({ name: 'test', file: 'scripts/check.py' }, ctx)).text).toBe(
+  expect((await tool.execute({ name: 'test', file: 'scripts/check.py' }, ctx)).text).toContain(
     'print("verified")',
   );
   expect((await tool.execute({ name: 'test', file: '../private' }, ctx)).isError).toBe(true);
 });
 
 test('large skill pages are explicit and can be loaded completely below the loop output limit', async () => {
-  const content = 'A'.repeat(24_000) + 'B'.repeat(24_000) + 'C';
-  const tool = skillTool([{ name: 'large', description: 'large procedure', markdown: content }]);
+  const lines = Array.from({ length: 60 }, (_, index) => `${index}: ${'body '.repeat(160)}`);
+  const tool = skillTool([
+    { name: 'large', description: 'large procedure', markdown: lines.join('\n') },
+  ]);
   const ctx = { workdir: '/tmp', env: {}, signal: new AbortController().signal };
-  expect((await tool.execute({ name: 'large' }, ctx)).text).toContain('offset=24000');
-  expect((await tool.execute({ name: 'large', offset: 24000 }, ctx)).text).toContain(
-    'offset=48000',
-  );
-  expect((await tool.execute({ name: 'large', offset: 48000 }, ctx)).text).toBe('C');
+  const read: string[] = [];
+  let offset = 0;
+  for (;;) {
+    const page = await tool.execute({ name: 'large', offset }, ctx);
+    expect(page.isError).not.toBe(true);
+    expect(page.text.length).toBeLessThan(12_000);
+    const [body, marker] = page.text.split('\n(');
+    read.push(...body!.split('\n'));
+    const next = marker!.match(/^Next offset: (\d+)/);
+    if (!next) {
+      expect(marker).toBe('End of file)');
+      break;
+    }
+    expect(Number(next[1])).toBeGreaterThan(offset);
+    offset = Number(next[1]);
+  }
+  expect(read).toEqual(lines);
 });

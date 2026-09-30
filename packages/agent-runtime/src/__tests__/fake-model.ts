@@ -4,8 +4,13 @@ import type { ModelFactory } from '../models';
 
 // A scripted model for the loop's tests: each call to it takes the next turn of the script.
 export type Turn =
-  | { text: string; reasoning?: string; inputTokens?: number }
-  | { calls: { name: string; input: unknown; id?: string }[]; text?: string; inputTokens?: number }
+  | { text: string; reasoning?: string; inputTokens?: number; finishReason?: 'stop' | 'length' }
+  | {
+      calls: { name: string; input: unknown; id?: string }[];
+      text?: string;
+      inputTokens?: number;
+      finishReason?: 'stop' | 'length';
+    }
   | { error: string }
   | { hang: true };
 
@@ -46,18 +51,37 @@ function partsOf(turn: Turn): LanguageModelV4StreamPart[] {
   parts.push({
     type: 'finish',
     finishReason: {
-      unified: 'calls' in turn ? 'tool-calls' : 'stop',
-      raw: 'calls' in turn ? 'tool_calls' : 'stop',
+      unified: turn.finishReason ?? ('calls' in turn ? 'tool-calls' : 'stop'),
+      raw: turn.finishReason ?? ('calls' in turn ? 'tool_calls' : 'stop'),
     },
     usage: usage(turn.inputTokens),
   });
   return parts;
 }
 
-export function scriptedModel(script: Turn[], options: { summary?: string } = {}) {
+export function scriptedModel(
+  script: Turn[],
+  options: { summary?: string; summaryFinishReason?: 'stop' | 'length' } = {},
+) {
   let index = 0;
   const model = new MockLanguageModelV4({
-    doStream: async ({ abortSignal }) => {
+    doStream: async ({ abortSignal, prompt }) => {
+      if (
+        prompt.some(
+          (message) =>
+            message.role === 'system' &&
+            message.content.startsWith('Erstelle eine einzige flache Zusammenfassung'),
+        )
+      ) {
+        return {
+          stream: convertArrayToReadableStream(
+            partsOf({
+              text: options.summary ?? 'Zusammenfassung.',
+              finishReason: options.summaryFinishReason ?? 'stop',
+            }),
+          ),
+        };
+      }
       const turn = script[Math.min(index++, script.length - 1)]!;
       if ('error' in turn) throw new Error(turn.error);
       if ('hang' in turn) {
@@ -70,7 +94,10 @@ export function scriptedModel(script: Turn[], options: { summary?: string } = {}
     },
     doGenerate: async () => ({
       content: [{ type: 'text', text: options.summary ?? 'Zusammenfassung.' }],
-      finishReason: { unified: 'stop', raw: 'stop' },
+      finishReason: {
+        unified: options.summaryFinishReason ?? 'stop',
+        raw: options.summaryFinishReason ?? 'stop',
+      },
       usage: usage(),
       warnings: [],
     }),

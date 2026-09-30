@@ -379,7 +379,7 @@ describe('agent loop', () => {
     });
     expect(result.status).toBe('success');
     const stored = await sessions.load(result.sessionId);
-    expect(stored!.summary).toContain('## Stand\nZusammenfassung.');
+    expect(stored!.summary).toBe('Zusammenfassung.');
     expect(stored!.compactedThrough).toBeGreaterThan(0);
   });
 
@@ -431,7 +431,7 @@ describe('agent loop', () => {
     });
     const stored = await sessions.load(result.sessionId);
     expect(result.status).toBe('success');
-    expect(stored!.summary).toContain('## Stand');
+    expect(stored!.summary).toBe('Zusammenfassung.');
     expect(stored!.items.length).toBeGreaterThan(24);
     const lastPrompt = JSON.stringify(primary.doStreamCalls.at(-1)!.prompt);
     expect(lastPrompt).toContain('long-23.txt');

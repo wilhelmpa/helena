@@ -105,6 +105,27 @@ test('native reflection saves a skill and the next run uses it with fewer task c
   );
 });
 
+test('a double JSON encoded skill create preserves markdown and its quoted content', async () => {
+  const f = fixture();
+  const markdown = `${skill.markdown}\nQuoted example: "abc"; umlaut: ä.\n`;
+  const { sink } = await f.run([
+    {
+      calls: [
+        {
+          name: 'skill_manage',
+          input: JSON.stringify(
+            JSON.stringify({ action: 'create', ...skill, markdown, baseRevision: null }),
+          ),
+        },
+      ],
+    },
+    { text: 'Done.' },
+  ]);
+  expect(f.skills).toHaveLength(1);
+  expect(f.skills[0]!.markdown).toBe(markdown);
+  expect(sink.of('tool-result')[0]!.isError).not.toBe(true);
+});
+
 test('disabled learning and trivial tasks never enter reflection', async () => {
   const f = fixture();
   const disabled = await f.run([...work, { text: 'Done.' }, creation], false);
