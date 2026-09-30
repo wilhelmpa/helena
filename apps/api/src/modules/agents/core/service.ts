@@ -1640,6 +1640,8 @@ export async function updateAgent(
       const policy = normalizeRuntimePolicy(patch.runtimePolicy);
       overrides.runtime = policy.runtime ?? 'hermes';
       overrides.reasoning = policy.reasoningEffort;
+      if (policy.helena?.toolProfile) overrides.toolProfile = policy.helena.toolProfile;
+      else delete overrides.toolProfile;
       if (policy.escalation) {
         overrides.escalation = policy.escalation;
       }

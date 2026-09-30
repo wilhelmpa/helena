@@ -134,6 +134,10 @@ export async function initialAgentModel(input: {
     (!source || source.overrides.reasoning !== undefined)
   )
     own.reasoning = input.runtimePolicy.reasoningEffort;
+  const explicitProfile = (input.runtimePolicy?.helena as Record<string, unknown> | undefined)
+    ?.toolProfile;
+  if (explicitProfile && (!source || source.overrides.toolProfile !== undefined))
+    own.toolProfile = explicitProfile;
   const explicitEscalation = input.runtimePolicy?.escalation;
   if (explicitEscalation && (!source || source.overrides.escalation !== undefined)) {
     own.escalation = normalizeAgentEscalation(explicitEscalation);
@@ -142,23 +146,36 @@ export async function initialAgentModel(input: {
     role,
     overrides: own,
     model: (own.model as string | undefined) ?? values.model,
-    runtimePolicy: projectedPolicy(input.runtimePolicy ?? {}, {
-      ...values,
-      runtime: (own.runtime as ModelValues['runtime']) ?? values.runtime,
-      reasoning: (own.reasoning as ModelValues['reasoning']) ?? values.reasoning,
-      escalation: (own.escalation as ModelValues['escalation']) ?? values.escalation,
-    }),
+    runtimePolicy: projectedPolicy(
+      input.runtimePolicy ?? {},
+      {
+        ...values,
+        runtime: (own.runtime as ModelValues['runtime']) ?? values.runtime,
+        reasoning: (own.reasoning as ModelValues['reasoning']) ?? values.reasoning,
+        escalation: (own.escalation as ModelValues['escalation']) ?? values.escalation,
+      },
+      own,
+    ),
   };
 }
 function projectedPolicy(
   policy: Record<string, unknown>,
   values: ModelValues,
+  overrides: Record<string, unknown> = {},
+  inheritedProfile = values.toolProfile,
 ): Record<string, unknown> {
   const helena = { ...((policy.helena ?? {}) as Record<string, unknown>) };
   delete helena.escalation;
   return {
     ...policy,
-    helena: { ...helena, toolProfile: helena.toolProfile || values.toolProfile || 'assistent' },
+    helena: {
+      ...helena,
+      toolProfile:
+        overrides.toolProfile ||
+        (helena.toolProfile !== inheritedProfile ? helena.toolProfile : undefined) ||
+        values.toolProfile ||
+        'assistent',
+    },
     runtime: values.runtime,
     reasoningEffort: values.reasoning,
     escalation: normalizeAgentEscalation(values.escalation),
@@ -319,7 +336,10 @@ export function resolveRow(row: Row, memberships: Membership[], state: State) {
     state.schemas[schemaId] ?? state.schemas[state.active] ?? MODEL_TEMPLATES['nur-lokal']!;
   const base = schema.roles[row.modelRole] ?? schema.roles.general;
   const toolProfile =
-    base?.toolProfile ?? ROLE_TOOL_PROFILES[row.modelRole as ModelRole] ?? 'assistent';
+    (row.modelOverrides.toolProfile as ModelValues['toolProfile']) ??
+    base?.toolProfile ??
+    ROLE_TOOL_PROFILES[row.modelRole as ModelRole] ??
+    'assistent';
   const cells = {} as {
     [K in ModelColumn]: {
       value: ModelValues[K];
@@ -437,10 +457,14 @@ function projectionOf(agent: Row, memberships: Membership[], state: State) {
   ) as ModelValues;
   return {
     model: ['command', 'webhook'].includes(cells.runtime.value) ? agent.model : cells.model.value,
-    runtimePolicy: projectedPolicy(agent.runtimePolicy as Record<string, unknown>, {
-      ...values,
-      toolProfile: row.toolProfile,
-    }),
+    runtimePolicy: projectedPolicy(
+      agent.runtimePolicy as Record<string, unknown>,
+      {
+        ...values,
+        toolProfile: row.toolProfile,
+      },
+      agent.modelOverrides,
+    ),
   };
 }
 export async function modelProjectionDrift() {
@@ -559,6 +583,10 @@ export function changedRows(
       roles.set(row.id, change.role);
     }
     const values = { ...row.modelOverrides };
+    const profile = (row.runtimePolicy as { helena?: { toolProfile?: string } }).helena
+      ?.toolProfile;
+    if (profile && profile !== resolveRow(row, memberships, current).toolProfile)
+      values.toolProfile ??= profile;
     if (change.role !== undefined) values.role = change.role;
     for (const [key, value] of Object.entries(change.values)) {
       if (!MODEL_COLUMNS.includes(key as ModelColumn))
@@ -595,7 +623,13 @@ export function changedRows(
         role: roles.get(row.id),
       };
     })
-    .filter((entry) => entry.changes.length || entry.overrides || entry.role);
+    .filter(
+      (entry) =>
+        entry.changes.length ||
+        entry.overrides ||
+        entry.role ||
+        entry.before.toolProfile !== entry.after.toolProfile,
+    );
 }
 export async function previewMatrix(patch: MatrixPatch) {
   if (
@@ -641,7 +675,9 @@ export async function previewMatrix(patch: MatrixPatch) {
   return {
     revision: current.revision,
     nextRevision: next.revision,
-    affectedAgents: rows.filter((row) => row.changes.length || row.role).length,
+    affectedAgents: rows.filter(
+      (row) => row.changes.length || row.role || row.before.toolProfile !== row.after.toolProfile,
+    ).length,
     changes: rows.map(({ row, changes, role }) => ({
       agentId: row.id,
       username: row.username,
@@ -686,6 +722,8 @@ export async function applyMatrix(patch: MatrixPatch) {
           ...Object.fromEntries(MODEL_COLUMNS.map((key) => [key, cells[key].value])),
           toolProfile: entry.after.toolProfile,
         } as ModelValues,
+        entry.overrides ?? entry.row.modelOverrides,
+        entry.before.toolProfile,
       );
       const updated = await tx
         .update(aiAgent)

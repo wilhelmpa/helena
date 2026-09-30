@@ -7,7 +7,7 @@ import { modelSchemaMigration } from '../../../../scripts/model-schema-migrate';
 import { escalationPolicy } from '#modules/agents/runner/escalation';
 import { aiAgent, appSetting, db } from '@repo/db';
 import { eq } from 'drizzle-orm';
-import { defaultState } from '../../service';
+import { applyMatrix, defaultState, modelMatrix } from '../../service';
 
 const own = {
   target: 'codex' as const,
@@ -39,6 +39,80 @@ async function setup() {
 
 describe('matrix escalation policy', () => {
   beforeEach(resetDb);
+
+  it('updates inherited profiles after a role change and preserves explicit profiles', async () => {
+    const previous = process.env.HELENA_NATIVE_RUNTIME;
+    process.env.HELENA_NATIVE_RUNTIME = 'on';
+    try {
+      const { api } = await setup();
+      const inherited = (
+        await createAgent(api, 'MAT', {
+          name: 'Coder',
+          username: 'coder-inherited',
+          kind: 'external',
+        })
+      ).data!.agent;
+      const explicit = (
+        await createAgent(api, 'MAT', {
+          name: 'Coder',
+          username: 'coder-explicit',
+          kind: 'external',
+          runtimePolicy: {
+            runtime: 'helena',
+            reasoningEffort: null,
+            toolAllow: [],
+            toolDeny: [],
+            mcpGrants: [],
+            files: [],
+            helena: { toolProfile: 'voll' },
+          },
+        })
+      ).data!.agent;
+      expect(inherited.runtimePolicy.helena?.toolProfile).toBe('voll');
+      expect(explicit.runtimePolicy.helena?.toolProfile).toBe('voll');
+      const state = await modelMatrix();
+      await applyMatrix({
+        expectedRevision: state.revision,
+        agents: [inherited, explicit].map((agent) => ({
+          agentId: agent.id,
+          role: 'research',
+          values: {},
+        })),
+      });
+      for (const [agent, profile] of [
+        [inherited, 'recherche'],
+        [explicit, 'voll'],
+      ] as const) {
+        const after = await api
+          .teams({ teamId: agent.teamId })
+          ['ai-agents']({ agentId: agent.id })
+          .get();
+        expect(after.data!.runtimePolicy.helena?.toolProfile).toBe(profile);
+      }
+      const next = await modelMatrix();
+      await applyMatrix({
+        expectedRevision: next.revision,
+        agents: [inherited, explicit].map((agent) => ({
+          agentId: agent.id,
+          role: 'assistant',
+          values: {},
+        })),
+      });
+      for (const [agent, profile] of [
+        [inherited, 'assistent'],
+        [explicit, 'voll'],
+      ] as const) {
+        const after = await api
+          .teams({ teamId: agent.teamId })
+          ['ai-agents']({ agentId: agent.id })
+          .get();
+        expect(after.data!.runtimePolicy.helena?.toolProfile).toBe(profile);
+      }
+    } finally {
+      if (previous === undefined) delete process.env.HELENA_NATIVE_RUNTIME;
+      else process.env.HELENA_NATIVE_RUNTIME = previous;
+    }
+  });
 
   it('fills role tool profiles and escalation in dry-run/apply without replacing owner profiles', async () => {
     const previous = process.env.HELENA_NATIVE_RUNTIME;
