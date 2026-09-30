@@ -280,6 +280,16 @@ function measureContent() {
     const inset = el.matches('.ds-card[data-tone="inset"]');
     const other = el.matches('.ds-card[data-tone="node"], .ds-card[data-tone="popover"]');
     if (other) continue;
+    // On a phone a stacked table's rows are cards of their own and the list box around them gives
+    // way (no surface, no shadow): its rows are the boxes then (components.css, `ds-matrix-box`).
+    if (
+      innerWidth < 900 &&
+      el.matches('.ds-list-box') &&
+      transparent(style.backgroundColor) &&
+      !shadowShows(style.boxShadow) &&
+      el.querySelector('.ds-table:not([data-stack="off"])')
+    )
+      continue;
     out.boxes.push({
       at: describe(el),
       kind: inset ? 'inset' : el.classList.contains('ds-card') ? 'card' : 'list',
