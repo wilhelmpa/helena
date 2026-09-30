@@ -517,7 +517,7 @@ describe('knowledge', () => {
       expect(found.data?.items).toEqual([]);
     });
 
-    it('lets the Home agent read and write every project and Home', async () => {
+    it('lets the Home agent read and write every project, Home and Private', async () => {
       const { asOwner } = await setup();
       const home = await bootstrapHomeAgent();
       if (home.status !== 'ready') throw new Error('Home agent was not provisioned');
@@ -528,9 +528,11 @@ describe('knowledge', () => {
       expect((await read(asHome, 'Projects/MKT/Docs/Plan.md')).status).toBe(200);
       expect((await write(asHome, 'Projects/MKT/Docs/Home.md', 'x')).status).toBe(200);
       expect((await write(asHome, 'Home/Docs/Overview.md', 'Overview')).status).toBe(200);
-      expect((await read(asHome, 'Private/Diary.md')).status).toBe(403);
+      // Owner 30.09.: Home/Ava has every right, the owner's private vault included.
+      expect((await read(asHome, 'Private/Diary.md')).status).toBe(200);
+      expect((await write(asHome, 'Private/Ava.md', 'x')).status).toBe(200);
       const root = await asHome.knowledge.folders.get({ query: {} });
-      expect(root.data?.items.map((item) => item.name)).not.toContain('Private');
+      expect(root.data?.items.map((item) => item.name)).toContain('Private');
     });
 
     it('lets an all-project agent read project knowledge without entering Home or Private', async () => {
