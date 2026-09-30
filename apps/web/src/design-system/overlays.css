@@ -424,18 +424,6 @@ body[data-modal-open='true'] [data-radix-popper-content-wrapper] {
   flex-direction: column;
   gap: 8px;
 }
-.ds-agent-overview-runs {
-  overflow: hidden;
-  margin: 0;
-  padding: 0;
-  border-radius: var(--radius-xl);
-  background: var(--surface-1);
-  box-shadow: var(--shadow-card);
-  list-style: none;
-}
-.ds-agent-overview-runs li + li {
-  border-top: 1px solid var(--line);
-}
 .ds-agent-overview-links {
   display: flex;
   flex-wrap: wrap;
@@ -1105,4 +1093,55 @@ body[data-modal-open='true'] [data-radix-popper-content-wrapper] {
 }
 .ds-limit[data-state='full'] .ds-limit-bar > span {
   background: var(--danger);
+}
+
+/* Runs and sessions of an agent, in the same frame as its other pages. */
+.ds-run-state {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-family: var(--font-sans);
+}
+.ds-run-state svg {
+  width: 12px;
+  height: 12px;
+  animation: ds-spin 1s linear infinite;
+}
+.ds-run-state[data-status='failed'] {
+  color: var(--danger);
+}
+.ds-run-state[data-status='pending'] {
+  color: var(--accent);
+}
+.ds-sessions-search {
+  flex: 1;
+  max-width: 420px;
+}
+.ds-mark {
+  border-radius: var(--radius-sm);
+  background: var(--accent-soft);
+  padding: 0 2px;
+  color: var(--text);
+}
+/* The detail of a run sits on the same edge as the pages around it. */
+.ds-agent-overlay .ds-run {
+  padding: 24px 28px 32px;
+}
+.ds-agent-overlay .ds-run > * {
+  width: 100%;
+  max-width: 760px;
+  margin-inline: 0;
+}
+.ds-agent-overlay .ds-run > .ds-run-back {
+  width: auto;
+}
+@container (max-width: 620px) {
+  .ds-agent-overlay .ds-run {
+    padding: 16px;
+  }
+}
+@keyframes ds-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }

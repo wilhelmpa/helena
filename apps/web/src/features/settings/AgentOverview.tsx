@@ -169,13 +169,11 @@ export default function AgentOverview({
         ) : latest.length === 0 ? (
           <p className="ds-agent-overview-about">{t('noResults')}</p>
         ) : (
-          <ul className="ds-agent-overview-runs">
+          <List label={t('latestResults')}>
             {latest.map((run) => (
-              <li key={run.id}>
-                <RunRow run={run} onOpen={() => onRun(run.id)} />
-              </li>
+              <RunRow key={run.id} run={run} onOpen={() => onRun(run.id)} />
             ))}
-          </ul>
+          </List>
         )}
       </section>
 

@@ -1,22 +1,31 @@
 'use client';
 
 import { useState } from 'react';
-import { Archive, ArchiveRestore, LoaderCircle } from 'lucide-react';
+import { Archive, ArchiveRestore, History, LoaderCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
+import {
+  Button,
+  EmptyState,
+  IconButton,
+  Inline,
+  List,
+  ListRow,
+  Stack,
+  Switch,
+  Text,
+} from '@/design-system';
 import type { AgentRun } from '@/lib/api/endpoints/agents';
 import { useAgentRuns, useSetAgentRunArchived } from '@/services/aiAgents.service';
 import { useRelativeTime } from '@/context/relativeTimeContext';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
 import ListSkeleton from '@/components/common/skeleton/ListSkeleton';
 import { compactTokens } from '@/utils/agentUsage';
-import AutopilotLevelBadge from '@/features/autopilot/components/AutopilotLevelBadge';
+import { AgentPage, AgentPages } from '@/features/teams/components/ai-agents/AgentPage';
 import RunView from './RunView';
 import { isModelRefusal } from '@/features/model-availability/utils/modelFailure';
 
-// The agent's runs, newest first; one opens as its timeline ("Gläserner Lauf").
+// The agent's runs, newest first; one opens as its timeline ("Gläserner Lauf"). Same frame,
+// list and empty state as the other pages of the agent.
 export default function AgentRunsPanel({
   teamId,
   agentId,
@@ -39,7 +48,11 @@ export default function AgentRunsPanel({
       />
     );
   }
-  return <RunList teamId={teamId} agentId={agentId} onOpen={onRunChange} />;
+  return (
+    <AgentPages>
+      <RunList teamId={teamId} agentId={agentId} onOpen={onRunChange} />
+    </AgentPages>
+  );
 }
 
 function RunList({
@@ -52,6 +65,8 @@ function RunList({
   onOpen: (runId: number) => void;
 }) {
   const t = useTranslations('agentRuntime.runs');
+  const tPage = useTranslations('agentPages.runs');
+  const tTabs = useTranslations('agentRuntime.tabs');
   const tCommon = useTranslations('common');
   // Runs are never deleted: a finished one is archived out of this list, and the switch
   // shows the archived ones again.
@@ -59,145 +74,124 @@ function RunList({
   const query = useAgentRuns(teamId, agentId, showArchived);
   const archive = useSetAgentRunArchived(teamId, agentId);
   const runs = query.data?.pages.flatMap((page) => page.items) ?? [];
-  const toggle = (
-    <label className="mb-3 flex items-center justify-end gap-2 text-xs text-muted-foreground">
-      {t('showArchived')}
-      <Switch size="sm" checked={showArchived} onCheckedChange={setShowArchived} />
-    </label>
-  );
-  if (query.isPending) return <ListSkeleton rows={5} className="p-4" rowClassName="h-11" />;
-  if (runs.length === 0)
-    return (
-      <div className="p-4">
-        {toggle}
-        <p className="text-sm text-muted-foreground">{t('empty')}</p>
-      </div>
-    );
+
   return (
-    <div className="min-h-0 flex-1 overflow-y-auto p-4">
-      {toggle}
-      <ul className="divide-y divide-border/50 overflow-hidden rounded-md bg-card">
-        {runs.map((run) => {
-          const archived = Boolean(run.archivedAt);
-          return (
-            <li key={run.id} className="flex items-center">
-              <div className="min-w-0 flex-1">
-                <RunRow run={run} onOpen={() => onOpen(run.id)} />
-              </div>
-              {run.status !== 'pending' && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="me-1 size-8 shrink-0 text-muted-foreground"
-                  title={archived ? t('unarchive') : t('archive')}
-                  aria-label={archived ? t('unarchive') : t('archive')}
-                  disabled={archive.isPending}
-                  onClick={() =>
-                    archive.mutate(
-                      { runId: run.id, archived: !archived },
-                      { onError: () => toast.error(t('archiveFailed')) },
-                    )
+    <AgentPage
+      title={tTabs('runs')}
+      hint={tPage('hint')}
+      actions={
+        <Inline gap={2}>
+          <Text size="xs" tone="muted">
+            {t('showArchived')}
+          </Text>
+          <Switch
+            size="sm"
+            checked={showArchived}
+            aria-label={t('showArchived')}
+            onCheckedChange={setShowArchived}
+          />
+        </Inline>
+      }
+    >
+      {query.isPending ? (
+        <ListSkeleton rows={5} rowClassName="h-11" />
+      ) : runs.length === 0 ? (
+        <EmptyState fill={false} icon={<History />} title={t('empty')}>
+          {tPage('emptyHint')}
+        </EmptyState>
+      ) : (
+        <Stack gap={3}>
+          <List label={tTabs('runs')}>
+            {runs.map((run) => {
+              const archived = Boolean(run.archivedAt);
+              return (
+                <RunRow
+                  key={run.id}
+                  run={run}
+                  onOpen={() => onOpen(run.id)}
+                  actions={
+                    run.status !== 'pending' ? (
+                      <IconButton
+                        size="small"
+                        label={archived ? t('unarchive') : t('archive')}
+                        disabled={archive.isPending}
+                        onClick={() =>
+                          archive.mutate(
+                            { runId: run.id, archived: !archived },
+                            { onError: () => toast.error(t('archiveFailed')) },
+                          )
+                        }
+                      >
+                        {archived ? <ArchiveRestore /> : <Archive />}
+                      </IconButton>
+                    ) : undefined
                   }
-                >
-                  {archived ? (
-                    <ArchiveRestore className="size-4" />
-                  ) : (
-                    <Archive className="size-4" />
-                  )}
-                </Button>
-              )}
-            </li>
-          );
-        })}
-      </ul>
-      {query.hasNextPage && (
-        <Button
-          variant="outline"
-          size="sm"
-          className="mt-3 w-full"
-          disabled={query.isFetchingNextPage}
-          onClick={() => void query.fetchNextPage()}
-        >
-          {query.isFetchingNextPage ? tCommon('loading') : t('loadMore')}
-        </Button>
+                />
+              );
+            })}
+          </List>
+          {query.hasNextPage && (
+            <Button disabled={query.isFetchingNextPage} onClick={() => void query.fetchNextPage()}>
+              {query.isFetchingNextPage ? tCommon('loading') : t('loadMore')}
+            </Button>
+          )}
+        </Stack>
       )}
-    </div>
+    </AgentPage>
   );
 }
 
-export function RunRow({ run, onOpen }: { run: AgentRun; onOpen: () => void }) {
+// One run as a row of a list: what it was for, how it went and when; the notes worth a look
+// (archived, waiting for an answer, model refused or changed, autopilot level, tokens) stand
+// under it as one quiet line.
+export function RunRow({
+  run,
+  onOpen,
+  actions,
+}: {
+  run: AgentRun;
+  onOpen: () => void;
+  actions?: React.ReactNode;
+}) {
   const t = useTranslations('agentRuntime.runs');
   const tModel = useTranslations('modelAvailability');
+  const tAutopilot = useTranslations('autopilot');
   const relativeTime = useRelativeTime();
   const subject = run.issueIdentifier
     ? `${run.issueIdentifier}${run.issueTitle ? ` · ${run.issueTitle}` : ''}`
     : t(`trigger.${run.trigger}`);
+  const notes = [
+    run.archivedAt ? t('archived') : null,
+    run.blockedQuestion ? t('blocked') : null,
+    isModelRefusal(run.failure) ? tModel('refusedShort') : null,
+    run.modelRoute?.routed ? `→ ${run.modelRoute.toModel}` : null,
+    run.modelCheck && run.modelCheck.mismatch.length > 0 ? t('modelMismatch') : null,
+    run.autopilotLevel != null && run.autopilotLevel >= 0 && run.autopilotLevel <= 3
+      ? tAutopilot('badge', { level: run.autopilotLevel })
+      : null,
+    run.contextTokens !== undefined ? compactTokens(run.contextTokens) : null,
+  ].filter(Boolean);
   return (
-    <button
-      type="button"
-      onClick={onOpen}
-      className="flex w-full items-center gap-2 px-3 py-2.5 text-start text-sm hover:bg-accent"
-    >
-      <Badge
-        variant={
-          run.status === 'failed'
-            ? 'destructive'
-            : run.status === 'pending'
-              ? 'outline'
-              : 'secondary'
-        }
-        className="shrink-0"
-      >
-        {run.status === 'pending' ? (
-          <span className="inline-flex items-center gap-1">
-            <LoaderCircle className="size-3 animate-spin" />
-            {t('running')}
+    <ListRow
+      title={subject}
+      subtitle={notes.length > 0 ? notes.join(' · ') : undefined}
+      meta={
+        <>
+          <span className="ds-run-state" data-status={run.status}>
+            {run.status === 'pending' ? (
+              <>
+                <LoaderCircle aria-hidden="true" />
+                {t('running')}
+              </>
+            ) : (
+              t(`status.${run.status}`)
+            )}
           </span>
-        ) : (
-          t(`status.${run.status}`)
-        )}
-      </Badge>
-      <span className="min-w-0 flex-1 truncate">{subject}</span>
-      <AutopilotLevelBadge level={run.autopilotLevel} />
-      {run.archivedAt && (
-        <Badge variant="outline" className="shrink-0 text-muted-foreground">
-          {t('archived')}
-        </Badge>
-      )}
-      {run.blockedQuestion && (
-        <Badge variant="outline" className="shrink-0 border-status-waiting/50 text-status-waiting">
-          {t('blocked')}
-        </Badge>
-      )}
-      {isModelRefusal(run.failure) && (
-        <Badge
-          variant="outline"
-          className="shrink-0 border-destructive/50 text-destructive"
-          title={run.lastError ?? undefined}
-        >
-          {tModel('refusedShort')}
-        </Badge>
-      )}
-      {run.modelRoute?.routed && (
-        <Badge
-          variant="outline"
-          className="shrink-0"
-          title={`${run.modelRoute.fromModel} → ${run.modelRoute.toModel}`}
-        >
-          {`→ ${run.modelRoute.toModel}`}
-        </Badge>
-      )}
-      {run.modelCheck && run.modelCheck.mismatch.length > 0 && (
-        <Badge variant="outline" className="shrink-0 border-status-waiting/50 text-status-waiting">
-          {t('modelMismatch')}
-        </Badge>
-      )}
-      {run.contextTokens !== undefined && (
-        <span className="shrink-0 text-xs text-muted-foreground" dir="ltr">
-          {compactTokens(run.contextTokens)}
-        </span>
-      )}
-      <span className="shrink-0 text-xs text-muted-foreground">{relativeTime(run.createdAt)}</span>
-    </button>
+          <span>{relativeTime(run.createdAt)}</span>
+        </>
+      }
+      actions={actions}
+      onSelect={onOpen}
+    />
   );
 }

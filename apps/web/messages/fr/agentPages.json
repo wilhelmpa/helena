@@ -268,11 +268,19 @@
       "areas": {
         "memory": "Mémoire",
         "user": "À votre sujet",
-        "note": "Note du jour",
+        "dailyNote": "Note du jour",
         "soul": "Personnalité",
-        "instructions": "Instructions",
+        "agentInstructions": "Instructions",
         "projectInstructions": "Instructions du projet"
       }
     }
+  },
+  "runs": {
+    "hint": "Ce sur quoi l’agent a travaillé, les plus récentes en premier. Un clic affiche l’exécution complète.",
+    "emptyHint": "Dès que l’agent reçoit une tâche, son exécution apparaît ici."
+  },
+  "sessions": {
+    "hint": "Les conversations de l’agent avec le modèle, les plus récentes en premier ; recherche possible.",
+    "emptyHint": "Les sessions naissent des exécutions et des chats de l’agent."
   }
 }

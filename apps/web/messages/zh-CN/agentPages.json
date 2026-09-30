@@ -268,11 +268,19 @@
       "areas": {
         "memory": "记忆",
         "user": "关于你",
-        "note": "每日笔记",
+        "dailyNote": "每日笔记",
         "soul": "个性",
-        "instructions": "指令",
+        "agentInstructions": "指令",
         "projectInstructions": "项目指令"
       }
     }
+  },
+  "runs": {
+    "hint": "代理处理过的工作，最新的在前。点击可查看完整运行。",
+    "emptyHint": "代理一收到任务，它的运行就会显示在这里。"
+  },
+  "sessions": {
+    "hint": "代理与模型的对话，最新的在前；可搜索。",
+    "emptyHint": "会话来自代理的运行和聊天。"
   }
 }

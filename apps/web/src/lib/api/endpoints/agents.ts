@@ -261,7 +261,7 @@ export interface AiAgent {
   createdAt: string;
   apiKeyStart: string | null;
   // What each part of the agent's context may hold and how much it uses, per area
-  // ('memory', 'user', 'note', 'soul', 'instructions', 'projectInstructions'). Absent from a
+  // ('memory', 'user', 'dailyNote', 'soul', 'agentInstructions', 'projectInstructions'). Absent from a
   // server without the limits; the interface then shows none.
   sizeLimits?: Record<string, { used: number; limit: number; truncated?: boolean }>;
   // How many skills and configured tools are enabled.

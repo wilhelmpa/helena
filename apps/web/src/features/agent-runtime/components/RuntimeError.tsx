@@ -2,6 +2,7 @@
 
 import { CircleAlert } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { Notice } from '@/design-system';
 import { ApiError } from '@/lib/api/core/client';
 
 // Why a read of the agent's runtime failed, in words: its runner is away, did not answer in
@@ -21,10 +22,5 @@ export default function RuntimeError({ error }: { error: unknown }) {
             : error instanceof Error && error.message
               ? error.message
               : t('failed');
-  return (
-    <p className="flex items-start gap-2 text-sm text-muted-foreground">
-      <CircleAlert className="mt-0.5 size-4 shrink-0" />
-      <span>{text}</span>
-    </p>
-  );
+  return <Notice icon={<CircleAlert />}>{text}</Notice>;
 }

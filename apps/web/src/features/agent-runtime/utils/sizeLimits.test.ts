@@ -23,7 +23,8 @@ describe('size limits', () => {
         memory: { used: 1840, limit: 2200 },
         user: { used: 12, limit: 1375, truncated: true },
         soul: { used: 5, limit: 0 },
-        note: 'x',
+        dailyNote: 'x',
+        instructions: { used: 1, limit: 10 },
       },
     } as never);
     assert.deepEqual(limits, {
@@ -32,6 +33,23 @@ describe('size limits', () => {
     });
     assert.deepEqual(agentSizeLimits(null), {});
     assert.deepEqual(agentSizeLimits({} as never), {});
+  });
+
+  it('reads exactly the areas the API names', () => {
+    const limits = agentSizeLimits({
+      sizeLimits: {
+        dailyNote: { used: 3, limit: 4000 },
+        agentInstructions: { used: 1, limit: 20000 },
+        projectInstructions: { used: 2, limit: 8000, truncated: true },
+        soul: { used: 5, limit: 20000 },
+      },
+    } as never);
+    assert.deepEqual(Object.keys(limits).sort(), [
+      'agentInstructions',
+      'dailyNote',
+      'projectInstructions',
+      'soul',
+    ]);
   });
 
   it('maps a memory file to its area', () => {

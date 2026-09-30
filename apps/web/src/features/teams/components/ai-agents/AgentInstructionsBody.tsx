@@ -81,8 +81,8 @@ export default function AgentInstructionsBody({
           />
           <LimitMeter
             used={value.instructions.length}
-            limit={limits.instructions?.limit}
-            truncated={limits.instructions?.truncated}
+            limit={limits.agentInstructions?.limit}
+            truncated={limits.agentInstructions?.truncated}
           />
         </div>
       </SettingsGroup>
