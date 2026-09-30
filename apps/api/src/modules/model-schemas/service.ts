@@ -148,7 +148,7 @@ function projectedPolicy(
   delete helena.escalation;
   return {
     ...policy,
-    ...(policy.helena && { helena }),
+    ...(policy.helena ? { helena } : {}),
     runtime: values.runtime,
     reasoningEffort: values.reasoning,
     escalation: normalizeAgentEscalation(values.escalation),

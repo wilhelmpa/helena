@@ -153,6 +153,11 @@ describe('matrix escalation policy', () => {
         kind: 'external',
         runtimePolicy: {
           runtime: 'codex',
+          files: [],
+          reasoningEffort: null,
+          toolAllow: [],
+          toolDeny: [],
+          mcpGrants: [],
           escalation: { ...own, target: 'claude', model: null, afterFailures: 5 },
         },
       })
@@ -173,7 +178,14 @@ describe('matrix escalation policy', () => {
         name: 'Coder',
         username: 'coder',
         kind: 'external',
-        runtimePolicy: { runtime: 'codex' },
+        runtimePolicy: {
+          runtime: 'codex',
+          files: [],
+          reasoningEffort: null,
+          toolAllow: [],
+          toolDeny: [],
+          mcpGrants: [],
+        },
       })
     ).data!;
     const initial = (await matrix.matrix.get()).data!;

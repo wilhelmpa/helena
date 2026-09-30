@@ -101,6 +101,10 @@ describe('model schema resolution', () => {
       attempts: 1,
       failures: 1,
       error: 'Tests failed',
+      runtime: 'helena',
+      model: 'helena-halogen/halogen-qwen3.8-flash-next',
+      configuredModel: 'helena-halogen/halogen-qwen3.8-flash-next',
+      modelSource: 'local',
     };
     expect(failureDecision(policy, run)).toBeNull();
     expect(failureDecision(policy, { ...run, failures: 2 })?.model).toBe('claude-opus-5-5');
@@ -170,12 +174,12 @@ describe('model schema resolution', () => {
       onRequest: false,
     };
     const expected = {
-      target: 'claude',
+      target: 'claude' as const,
       model: 'claude-opus-5-5',
       afterFailures: 3,
       onResumeLimit: true,
       onRequest: false,
-      maxDepth: 1,
+      maxDepth: 1 as const,
     };
     expect(migrateEscalationValue(old)).toEqual(expected);
     expect(migrateEscalationValue(old, { ...expected, afterFailures: 1 })).toEqual({
