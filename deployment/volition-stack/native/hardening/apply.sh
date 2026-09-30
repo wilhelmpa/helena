@@ -287,7 +287,7 @@ rollback_journald() {
 
 # The accounts of each uid set of the loopback ACLs (files/helena-hardening.nft.in). The
 # ruleset names them by number, so an account created later is added by "firewall-uids".
-UID_SETS="cdp_uids router_uids tool_uids syncthing_gui_uids tunnel_uids voice_uids"
+UID_SETS="cdp_uids router_uids tool_uids syncthing_gui_uids tunnel_uids voice_uids volition_npu_uids"
 set_users() { # set_users SET → the account names
   case "$1" in
     cdp_uids) echo "volition-browser volition-hermes $owner_user" ;;
@@ -296,6 +296,7 @@ set_users() { # set_users SET → the account names
     syncthing_gui_uids) echo "volition-sync volition-plan $owner_user" ;;
     tunnel_uids) echo "$tunnel_user" ;;
     voice_uids) echo "volition-plan helena-plan" ;;
+    volition_npu_uids) echo "lemonade" ;;
   esac
 }
 render_nft() { # render_nft OUT
@@ -309,6 +310,7 @@ render_nft() { # render_nft OUT
     -e "s|@UIDS_SYNCTHING@|$(uids $(set_users syncthing_gui_uids))|" \
     -e "s|@UIDS_TUNNEL@|$(uids $(set_users tunnel_uids))|" \
     -e "s|@UIDS_VOICE@|$(uids $(set_users voice_uids))|" \
+    -e "s|@UIDS_VOLITION_NPU@|$(uids $(set_users volition_npu_uids))|" \
     -e "s|@TUNNEL_PORT@|$tunnel_port|" \
     "$files/helena-hardening.nft.in" >"$1"
 }

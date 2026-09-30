@@ -75,6 +75,15 @@ table inet helena_hardening {
 		typeof meta skuid
 		elements = { @UIDS_VOICE@ }
 	}
+	# The authenticated NPU gateway forwards to an unkeyed FLM worker.
+	set volition_npu_ports {
+		type inet_service
+		elements = { 13310 }
+	}
+	set volition_npu_uids {
+		typeof meta skuid
+		elements = { @UIDS_VOLITION_NPU@ }
+	}
 	set tunnel_ports {
 		type inet_service
 		elements = { @TUNNEL_PORT@ }
@@ -118,5 +127,6 @@ table inet helena_hardening {
 		oif "lo" tcp dport @syncthing_gui_ports meta skuid != @syncthing_gui_uids counter reject with tcp reset comment "helena:acl-syncthing"
 		oif "lo" tcp dport @tunnel_ports meta skuid != @tunnel_uids counter reject with tcp reset comment "helena:acl-tunnel"
 		oif "lo" tcp dport @voice_ports meta skuid != @voice_uids counter reject with tcp reset comment "helena:acl-voice"
+		oif "lo" tcp dport @volition_npu_ports meta skuid != @volition_npu_uids counter reject with tcp reset comment "volition:acl-npu"
 	}
 }
