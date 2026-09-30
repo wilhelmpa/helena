@@ -685,6 +685,15 @@
       "unknown": "Ein Agent, Projekt oder Schema gibt es nicht mehr. Lade die Seite neu.",
       "invalid": "Ein Wert ist nicht zulässig. Prüfe die Einstellungen der geänderten Zellen.",
       "rejected": "Der Server hat die Änderung abgelehnt. Es wurde nichts geändert."
+    },
+    "columnsShort": {
+      "runtime": "Laufzeit",
+      "model": "Modell",
+      "reasoning": "Denktiefe",
+      "escalation": "Eskalation",
+      "browser": "Browser",
+      "decision": "Entscheider",
+      "device": "Gerät"
     }
   }
 }

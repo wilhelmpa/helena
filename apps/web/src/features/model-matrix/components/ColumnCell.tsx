@@ -114,7 +114,8 @@ export function ColumnCell({
     return (
       <MatrixCell
         aria-label={shown ?? `${name}: ${labels.value(column, value)}`}
-        label={shown ?? labels.value(column, value)}
+        label={shown ?? labels.parts(column, value).label}
+        detail={shown ? undefined : labels.parts(column, value).detail}
         mark={bulk ? null : mark}
         markLabel={markLabel}
         disabled={disabled}
@@ -132,7 +133,8 @@ export function ColumnCell({
     return (
       <MatrixCell
         aria-label={shown ?? `${name}: ${labels.value(column, value)}`}
-        label={shown ?? labels.value(column, value)}
+        label={shown ?? labels.parts(column, value).label}
+        detail={shown ? undefined : labels.parts(column, value).detail}
         mark={bulk ? null : mark}
         markLabel={markLabel}
         disabled={disabled}

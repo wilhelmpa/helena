@@ -122,7 +122,9 @@ export function AgentMatrix({
           </Th>
           <Th>{t('agents.agent')}</Th>
           {COLUMN_ORDER.map((column) => (
-            <Th key={column}>{t(`columns.${column}`)}</Th>
+            <Th key={column} title={t(`columns.${column}`)}>
+              {t(`columnsShort.${column}`)}
+            </Th>
           ))}
         </tr>
       </thead>
@@ -186,9 +188,7 @@ export function AgentMatrix({
                           key={column}
                           label={t(`columns.${column}`)}
                           className={
-                            column === 'escalation' || column === 'decision'
-                              ? 'ds-matrix-wide'
-                              : 'ds-matrix-nowrap'
+                            column === 'escalation' ? 'ds-matrix-wide' : 'ds-matrix-nowrap'
                           }
                         >
                           <ColumnCell

@@ -685,6 +685,15 @@
       "unknown": "An agent, project or schema no longer exists. Reload the page.",
       "invalid": "A value is not allowed. Check the settings of the changed cells.",
       "rejected": "The server refused the change. Nothing was changed."
+    },
+    "columnsShort": {
+      "runtime": "Runtime",
+      "model": "Model",
+      "reasoning": "Thinking",
+      "escalation": "Escalation",
+      "browser": "Browser",
+      "decision": "Decider",
+      "device": "Device"
     }
   }
 }

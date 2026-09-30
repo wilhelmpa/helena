@@ -3195,8 +3195,7 @@ a.ds-run-card:hover {
   overflow: hidden;
   color: var(--text-3);
   font-size: 11px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.35;
 }
 .ds-matrix-cell-chevron {
   display: none;
@@ -3221,7 +3220,10 @@ a.ds-run-card:hover {
   color: var(--status-waiting);
 }
 .ds-matrix-wide {
-  min-width: 210px;
+  min-width: 285px;
+}
+.ds-matrix-nowrap .ds-matrix-cell-detail {
+  white-space: nowrap;
 }
 .ds-matrix-nowrap .ds-matrix-cell-label {
   display: block;

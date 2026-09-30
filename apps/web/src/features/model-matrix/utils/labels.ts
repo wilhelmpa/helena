@@ -23,9 +23,10 @@ export function useMatrixLabels(names?: ReadonlyMap<string, string>) {
       `${t(`decision.backends.${value.backend}`)} · ${t('decision.from', {
         percent: Math.round(value.threshold * 100),
       })}`;
-    const escalation = (raw: unknown) => {
+    // An escalation reads "an Codex" with its triggers under it.
+    const escalationParts = (raw: unknown) => {
       const view = readEscalation(raw);
-      if (escalationOff(view)) return t('escalation.off');
+      if (escalationOff(view)) return { label: t('escalation.off'), detail: undefined };
       const target = view.toAgent
         ? t('escalation.toAgent')
         : t('escalation.to', { target: t(`escalation.targets.${view.target ?? 'codex'}`) });
@@ -34,8 +35,16 @@ export function useMatrixLabels(names?: ReadonlyMap<string, string>) {
           ? t('escalation.triggers.failures', { count: view.afterFailures })
           : t(`escalation.triggers.${trigger}`),
       );
-      return [target, ...triggers].join(' · ');
+      return { label: target, detail: triggers.join(' · ') || undefined };
     };
+    const escalation = (raw: unknown) => {
+      const { label, detail } = escalationParts(raw);
+      return detail ? `${label} · ${detail}` : label;
+    };
+    const decisionParts = (value: MatrixDecision) => ({
+      label: t(`decision.backends.${value.backend}`),
+      detail: t('decision.from', { percent: Math.round(value.threshold * 100) }),
+    });
     const value = (column: MatrixColumn, raw: unknown): string => {
       switch (column) {
         case 'runtime':
@@ -56,7 +65,23 @@ export function useMatrixLabels(names?: ReadonlyMap<string, string>) {
       return '';
     };
     const cell = (column: MatrixColumn, entry: MatrixCellValue) => value(column, entry.value);
-    return { t, model, decision, escalation, value, cell, appName };
+    // What a cell shows: the value, and for the two long ones a second, quieter line.
+    const parts = (column: MatrixColumn, raw: unknown): { label: string; detail?: string } =>
+      column === 'escalation'
+        ? escalationParts(raw)
+        : column === 'decision'
+          ? decisionParts(raw as MatrixDecision)
+          : { label: value(column, raw) };
+    return {
+      parts,
+      t,
+      model,
+      decision,
+      escalation,
+      value,
+      cell,
+      appName,
+    };
   }, [t, names, appName]);
 }
 export type MatrixLabels = ReturnType<typeof useMatrixLabels>;
