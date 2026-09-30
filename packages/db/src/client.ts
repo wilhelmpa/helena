@@ -24,6 +24,10 @@ export const db = observeTransactionCallbacks(
   drizzle(observePostgresQueries(queryClient), { schema }),
 );
 
+export async function closeDatabase(): Promise<void> {
+  await queryClient.end({ timeout: 1 });
+}
+
 // Postgres LISTEN on one channel, over a connection of its own that postgres-js
 // re-establishes (and listens on again) after it drops. `onNotify` receives each
 // NOTIFY's payload. Resolves once the LISTEN is in place.

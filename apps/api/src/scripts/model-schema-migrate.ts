@@ -1,29 +1,8 @@
 import { eq } from 'drizzle-orm';
 import { isDeepStrictEqual } from 'node:util';
-import { normalizeAgentEscalation } from '../modules/agents/core/service';
-import {
-  migrateEscalationValue,
-  migrateSchemaEscalations,
-} from '../modules/model-schemas/migration';
-import {
-  aiAgent,
-  appSetting,
-  agentMcpServerLink,
-  agentSkillLink,
-  agentToolLink,
-  db,
-  organizationAgentAssignment,
-} from '@repo/db';
-import { resetCopyToTemplate, type TemplateFieldGroup } from '../modules/agents/core/template-sync';
+import { runVolitionScript } from '../../../../scripts/volition-script-runtime';
+import type { TemplateFieldGroup } from '../modules/agents/core/template-sync';
 import { MODEL_ROLES } from '../modules/model-schemas/templates';
-import {
-  applyMatrix,
-  modelProjectionDrift,
-  modelMatrix,
-  previewMatrix,
-  readModelState,
-  syncAgentModel,
-} from '../modules/model-schemas/service';
 
 const ROLE_WORDS: [RegExp, string][] = [
   [/koordinat|coordinat|lead/i, 'coordinator'],
@@ -60,7 +39,30 @@ export function inferModelRole(
   return 'general';
 }
 
-export async function modelSchemaMigration(apply = false) {
+export async function modelSchemaMigration(apply = false, progress = (_message: string) => {}) {
+  const {
+    aiAgent,
+    appSetting,
+    agentMcpServerLink,
+    agentSkillLink,
+    agentToolLink,
+    db,
+    organizationAgentAssignment,
+  } = await import('@repo/db');
+  progress('Loading model schema services.');
+  const { normalizeAgentEscalation } = await import('../modules/agents/core/service');
+  const { migrateEscalationValue, migrateSchemaEscalations } =
+    await import('../modules/model-schemas/migration');
+  const { resetCopyToTemplate } = await import('../modules/agents/core/template-sync');
+  const {
+    applyMatrix,
+    modelProjectionDrift,
+    modelMatrix,
+    previewMatrix,
+    readModelState,
+    syncAgentModel,
+  } = await import('../modules/model-schemas/service');
+  progress('Reading model schemas, agents and template links.');
   const [state, agents, assignments, skills, tools, mcpServers, drift, matrix] = await Promise.all([
     readModelState(),
     db
@@ -126,6 +128,7 @@ export async function modelSchemaMigration(apply = false) {
       ? [{ agentId: agent.id, ...(roleChange && { role }), values }]
       : [];
   });
+  progress('Computing model migration preview.');
   const preview = await previewMatrix({ expectedRevision: state.revision, agents: changes });
   const sameIds = (items: { agentId: number; id: number }[], left: number, right: number) =>
     JSON.stringify(
@@ -170,6 +173,7 @@ export async function modelSchemaMigration(apply = false) {
       sourceTemplateId: agent.sourceTemplateId,
     };
   });
+  if (apply) progress('Applying model schema changes and template repairs.');
   if (apply && (changes.length || schemaEscalationMigration))
     await applyMatrix({ expectedRevision: state.revision, agents: changes });
   if (apply)
@@ -234,7 +238,18 @@ export async function modelSchemaMigration(apply = false) {
 
 if (import.meta.main) {
   const args = process.argv.slice(2);
-  if (args.some((arg) => arg !== '--apply'))
-    throw new Error('Usage: bun model-schema-migrate.ts [--apply]');
-  console.log(JSON.stringify(await modelSchemaMigration(args.includes('--apply')), null, 2));
+  await runVolitionScript(
+    'model-schema-migrate',
+    args.includes('--apply'),
+    async ({ progress, onClose }) => {
+      if (args.some((arg) => arg !== '--apply'))
+        throw new Error('Usage: bun model-schema-migrate.ts [--apply]');
+      progress('Loading database modules.');
+      const { closeDatabase } = await import('@repo/db');
+      onClose(closeDatabase);
+      console.log(
+        JSON.stringify(await modelSchemaMigration(args.includes('--apply'), progress), null, 2),
+      );
+    },
+  );
 }

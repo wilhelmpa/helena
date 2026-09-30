@@ -1,14 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { isDeepStrictEqual } from 'node:util';
-import {
-  appSetting,
-  db,
-  forgetSetting,
-  helenaDecisionClassSetting,
-  helenaDecisionEval,
-  helenaModelServer,
-  integrationCredential,
-} from '@repo/db';
+import { runVolitionScript } from '../../../../scripts/volition-script-runtime';
 import { and, desc, eq, inArray } from 'drizzle-orm';
 import {
   availableModel,
@@ -22,7 +14,17 @@ const JEV_ID = 46;
 const STAGE_KEY = (teamId: number) => `decisions.jev-first-stage.team.${teamId}`;
 const POLICY_KEY = 'localAi.policy';
 
-export async function migrateDecisionProfile(apply = false) {
+export async function migrateDecisionProfile(apply = false, progress = (_message: string) => {}) {
+  const {
+    appSetting,
+    db,
+    forgetSetting,
+    helenaDecisionClassSetting,
+    helenaDecisionEval,
+    helenaModelServer,
+    integrationCredential,
+  } = await import('@repo/db');
+  progress('Reading decision connections 36 and 46.');
   const credentials = await db
     .select({
       id: integrationCredential.id,
@@ -54,6 +56,7 @@ export async function migrateDecisionProfile(apply = false) {
     throw new Error(
       'Decision connection providers do not match the expected local-logit and Jev types.',
     );
+  progress('Reading stored model server availability.');
   const servers = await db
     .select()
     .from(helenaModelServer)
@@ -70,6 +73,7 @@ export async function migrateDecisionProfile(apply = false) {
     Date.now() - npu.checkedAt.getTime() < 10 * 60_000
       ? availableModel(npu.slug, npu.models)
       : null;
+  progress('Reading decision settings and local AI policy.');
   const [settings, classes] = await Promise.all([
     db
       .select()
@@ -122,6 +126,7 @@ export async function migrateDecisionProfile(apply = false) {
       })
       .map(([id]) => id),
   };
+  progress('Reading decision evaluation results.');
   const evaluations = await db
     .select({
       classId: helenaDecisionEval.classId,
@@ -162,6 +167,7 @@ export async function migrateDecisionProfile(apply = false) {
     ),
   };
   if (apply) {
+    progress('Applying decision profile changes in a transaction.');
     await db.transaction(async (tx) => {
       if (changes.connection)
         await tx
@@ -206,9 +212,22 @@ export async function migrateDecisionProfile(apply = false) {
 }
 
 if (import.meta.main) {
-  if (process.argv.slice(2).some((arg) => arg !== '--apply'))
-    throw new Error('Usage: bun apps/api/src/scripts/decision-profile-migrate.ts [--apply]');
-  console.log(
-    JSON.stringify(await migrateDecisionProfile(process.argv.includes('--apply')), null, 2),
+  await runVolitionScript(
+    'decision-profile-migrate',
+    process.argv.includes('--apply'),
+    async ({ progress, onClose }) => {
+      if (process.argv.slice(2).some((arg) => arg !== '--apply'))
+        throw new Error('Usage: bun apps/api/src/scripts/decision-profile-migrate.ts [--apply]');
+      progress('Loading database modules.');
+      const { closeDatabase } = await import('@repo/db');
+      onClose(closeDatabase);
+      console.log(
+        JSON.stringify(
+          await migrateDecisionProfile(process.argv.includes('--apply'), progress),
+          null,
+          2,
+        ),
+      );
+    },
   );
 }
