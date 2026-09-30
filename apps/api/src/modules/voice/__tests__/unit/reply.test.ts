@@ -98,9 +98,15 @@ describe('voice reply eval', () => {
   });
 });
 
-
 test('voice prefix and hand-over schema stay identical between turns', () => {
-  const input = { agentName: 'Home', personName: 'Test', language: 'de', now: '10:00', turns: [], question: 'Hallo' };
+  const input = {
+    agentName: 'Home',
+    personName: 'Test',
+    language: 'de',
+    now: '10:00',
+    turns: [],
+    question: 'Hallo',
+  };
   const first = voiceReplyRequest(input);
   const next = voiceReplyRequest({ ...input, now: '10:01', question: 'Wie spät ist es?' });
   expect(next.system).toBe(first.system);
@@ -108,6 +114,13 @@ test('voice prefix and hand-over schema stay identical between turns', () => {
   expect(next.prompt).toContain('10:01');
   expect(first.maxTokens).toBeLessThanOrEqual(128);
   expect(first.thinking).toBe('off');
-  const long = voiceReplyRequest({ ...input, turns: Array.from({ length: 20 }, () => ({ role: 'user' as const, text: 'a'.repeat(1200), mine: false })) });
+  const long = voiceReplyRequest({
+    ...input,
+    turns: Array.from({ length: 20 }, () => ({
+      role: 'user' as const,
+      text: 'a'.repeat(1200),
+      mine: false,
+    })),
+  });
   expect(long.prompt.length).toBeLessThan(3000);
 });

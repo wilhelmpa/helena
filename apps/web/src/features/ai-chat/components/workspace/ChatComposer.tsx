@@ -490,7 +490,10 @@ export default function ChatComposer({
                     {dictation.ready && !talking && (
                       <SpeechInput
                         value={value}
-                        onChange={(text) => { dictated.current = true; setValue(text); }}
+                        onChange={(text) => {
+                          dictated.current = true;
+                          setValue(text);
+                        }}
                         maxLength={CHAT_PROMPT_LIMIT}
                         engine={dictation.engine}
                         recorder={dictation.recorder}
@@ -498,7 +501,10 @@ export default function ChatComposer({
                         onError={dictation.onError}
                         onBusyChange={(busy) => {
                           setDictating(busy);
-                          if (busy) { dictation.clearError(); conversation.prepareReply(); }
+                          if (busy) {
+                            dictation.clearError();
+                            conversation.prepareReply();
+                          }
                         }}
                         labels={{
                           start: dictation.local
@@ -535,7 +541,10 @@ export default function ChatComposer({
               {!homeLanding && dictation.ready && !talking && (
                 <SpeechInput
                   value={value}
-                  onChange={(text) => { dictated.current = true; setValue(text); }}
+                  onChange={(text) => {
+                    dictated.current = true;
+                    setValue(text);
+                  }}
                   maxLength={CHAT_PROMPT_LIMIT}
                   engine={dictation.engine}
                   recorder={dictation.recorder}
@@ -550,7 +559,10 @@ export default function ChatComposer({
                   }
                   onBusyChange={(busy) => {
                     setDictating(busy);
-                    if (busy) { dictation.clearError(); conversation.prepareReply(); }
+                    if (busy) {
+                      dictation.clearError();
+                      conversation.prepareReply();
+                    }
                   }}
                   labels={{
                     start: dictation.local ? t('composer.dictateLocal') : t('composer.dictate'),

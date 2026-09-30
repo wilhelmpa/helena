@@ -229,6 +229,7 @@ export class ConversationController {
     this.prepareReply();
     const now = performance.now();
     this.marks = { stoppedAt: now, heardAt: now, sentAt: now };
+    performance.mark('volition-voice-speech-ended', { startTime: now });
     this.state = { ...initialConversation, active: 'on', awaitingAnswer: true };
     this.bridgeDueAt = now + (this.deps.bridgeDelayMs ?? BRIDGE_DELAY_MS);
     this.lastProgressAt = now;
@@ -370,7 +371,7 @@ export class ConversationController {
         performance.mark('volition-voice-speech-ended', {
           startTime: Math.max(0, this.marks.stoppedAt),
         });
-        this.bridgeDueAt = now + (this.deps.bridgeDelayMs ?? BRIDGE_DELAY_MS);
+        this.bridgeDueAt = this.marks.stoppedAt + (this.deps.bridgeDelayMs ?? BRIDGE_DELAY_MS);
         this.scheduleBridge();
         this.utterances.push({ samples, text, reading: this.voice?.reading() ?? '' });
         this.dispatch({ type: 'speechEnd' });

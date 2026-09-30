@@ -179,7 +179,11 @@ export class PriorityScheduler {
     };
     if (this.active[kind] >= cap[kind]) return false;
     if (kind === 'realtime') return true;
-    if (this.config.maxConcurrent > 1 && this.total() - this.active.realtime >= this.config.maxConcurrent - 1) return false;
+    if (
+      this.config.maxConcurrent > 1 &&
+      this.total() - this.active.realtime >= this.config.maxConcurrent - 1
+    )
+      return false;
     if (kind === 'interactive') return true;
     if (
       this.total() - this.active.interactive - this.active.realtime >=
@@ -193,7 +197,9 @@ export class PriorityScheduler {
   }
 
   private choose(): Waiting | undefined {
-    const realtime = this.waiting.find((item) => item.kind === 'realtime' && this.eligible(item.kind));
+    const realtime = this.waiting.find(
+      (item) => item.kind === 'realtime' && this.eligible(item.kind),
+    );
     if (realtime) return realtime;
     const background = this.agedBackground();
     if (

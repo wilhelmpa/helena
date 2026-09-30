@@ -27,7 +27,8 @@ function priority(value: string | string[] | undefined): RequestClass {
   return value === 'interactive' ||
     value === 'realtime' ||
     value === 'background' ||
-    (value === 'voice-reply' || value === 'voice-agent')
+    value === 'voice-reply' ||
+    value === 'voice-agent'
     ? value
     : 'normal';
 }
@@ -143,7 +144,10 @@ export async function startPriorityProxy(options: ProxyOptions) {
         return;
       }
       const requestClass = fixedClass ?? priority(incoming.headers[PRIORITY_HEADER]);
-      const kind = requestClass === 'voice-reply' || requestClass === 'voice-agent' ? 'realtime' : requestClass;
+      const kind =
+        requestClass === 'voice-reply' || requestClass === 'voice-agent'
+          ? 'realtime'
+          : requestClass;
       const scheduled = incoming.method === 'POST';
       const disconnected = new AbortController();
       outgoing.on('close', () => {

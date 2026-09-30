@@ -288,7 +288,8 @@ export default function ChatThreadView({
       talking,
       lastQuestionVia: lastQuestionVia.current,
     });
-    if (text && lastQuestionVia.current !== 'voice') speak(text, { speaker: voice.speaker, speed: voice.speed });
+    if (text && lastQuestionVia.current !== 'voice')
+      speak(text, { speaker: voice.speaker, speed: voice.speed });
   }, [plan.busy, plan.messages, readAll, talking, voice.speaker, voice.speed]);
 
   // One send per turn: between handing a message to the chat and the chat reporting it

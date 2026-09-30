@@ -197,6 +197,19 @@ describe('conversation controller with fake ear and speaker', () => {
     disabled.controller.stop();
   });
 
+  it('starts a cached bridge within 500 ms of speech end without adding another VAD pause', async () => {
+    const h = harness(undefined, 0, 120);
+    await h.ready();
+    const before = performance.getEntriesByName('volition-voice-first-tone').length;
+    h.utter('Hallo');
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    const ended = performance.getEntriesByName('volition-voice-speech-ended').at(-1);
+    const tone = performance.getEntriesByName('volition-voice-first-tone')[before];
+    assert.ok(ended && tone);
+    assert.ok(tone.startTime - ended.startTime < 500);
+    h.controller.stop();
+  });
+
   it('stays under one second with a simulated 300 ms first-audio delay', async () => {
     const h = harness(undefined, 300, 120);
     await h.ready();
@@ -354,7 +367,6 @@ describe('conversation controller with fake ear and speaker', () => {
   });
 });
 
-
 describe('dictated reply', () => {
   it('reuses the speech queue for a bridge and streams the first sentence without starting a conversation', async () => {
     const h = harness();
@@ -365,7 +377,11 @@ describe('dictated reply', () => {
     await new Promise((resolve) => setTimeout(resolve, 12));
     assert.equal(h.sent.length, 0);
     assert.ok(h.spoken.some((text) => /prüfe|schau|Frage/.test(text)));
-    h.controller.update([{ id: 'reply', role: 'assistant', text: 'Die Hauptstadt ist Paris.' }], true, 0);
+    h.controller.update(
+      [{ id: 'reply', role: 'assistant', text: 'Die Hauptstadt ist Paris.' }],
+      true,
+      0,
+    );
     await new Promise((resolve) => setTimeout(resolve, 8));
     assert.ok(h.spoken.includes('Die Hauptstadt ist Paris.'));
     h.controller.stop();

@@ -264,17 +264,20 @@ export async function runAgent(input: AgentRunInput): Promise<LoopResult> {
       );
     }
     tools.push(...(input.extraTools ?? []));
-    const direct = input.env?.VOLITION_VOICE === '1'
+    const voice = input.env?.VOLITION_VOICE === '1';
+    const direct = voice
       ? new Set(LOOP_TOOLS.filter((name) => tools.some((entry) => entry.name === name)))
       : directTools(profile, tools, config.tools?.core);
-    for (const hit of searchCatalog(
-      tools
-        .filter((entry) => !direct.has(entry.name))
-        .map(({ name, description }) => ({ name, description })),
-      input.prompt,
-      4,
-    ))
-      direct.add(hit.name);
+    if (!voice) {
+      for (const hit of searchCatalog(
+        tools
+          .filter((entry) => !direct.has(entry.name))
+          .map(({ name, description }) => ({ name, description })),
+        input.prompt,
+        4,
+      ))
+        direct.add(hit.name);
+    }
     const catalog = (): ToolCatalogEntry[] =>
       tools
         .filter(

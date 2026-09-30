@@ -429,6 +429,7 @@ test('chat and runs retain their token requests; voice reply and realtime are bo
     { kind: 'background', body: { model: 'fake' } },
     { kind: 'voice-reply', body: { model: 'fake', max_tokens: 10_000 } },
     { kind: 'realtime', body: { model: 'fake', max_completion_tokens: 10_000 } },
+    { kind: 'voice-agent', body: { model: 'fake', max_tokens: 10_000 } },
   ];
   for (const { kind, body } of cases) {
     const response = await fetch(url, {
@@ -444,6 +445,7 @@ test('chat and runs retain their token requests; voice reply and realtime are bo
     cases[2]!.body,
     { model: 'fake', max_tokens: 512 },
     { model: 'fake', max_completion_tokens: 64 },
+    cases[5]!.body,
   ]);
   const status = await (await fetch(`http://127.0.0.1:${proxy.ports[0]}/priority/status`)).json();
   expect(status.maxTokensByClass).toEqual({
@@ -642,17 +644,61 @@ test('proxy distinguishes a full queue from an unhealthy backend', async () => {
 
 test('voice has its own slot while three chats are running', async () => {
   const scheduler = new PriorityScheduler();
-  const chats = await Promise.all(Array.from({ length: 3 }, () => scheduler.acquire('interactive')));
+  const chats = await Promise.all(
+    Array.from({ length: 3 }, () => scheduler.acquire('interactive')),
+  );
   const voice = await scheduler.acquire('realtime');
-  try { expect(voice).toBeFunction(); } finally { voice?.(); chats.forEach((release) => release?.()); }
+  try {
+    expect(voice).toBeFunction();
+  } finally {
+    voice?.();
+    chats.forEach((release) => release?.());
+  }
 });
 
 test('the fourth chat cannot occupy the voice reservation', async () => {
   const scheduler = new PriorityScheduler();
-  const chats = await Promise.all(Array.from({ length: 3 }, () => scheduler.acquire('interactive')));
+  const chats = await Promise.all(
+    Array.from({ length: 3 }, () => scheduler.acquire('interactive')),
+  );
   const abort = new AbortController();
   const fourth = scheduler.acquire('interactive', abort.signal);
   await tick();
-  try { expect(scheduler.status().queued.interactive).toBe(1); }
-  finally { abort.abort(); (await fourth)?.(); chats.forEach((release) => release?.()); }
+  try {
+    expect(scheduler.status().queued.interactive).toBe(1);
+  } finally {
+    abort.abort();
+    (await fourth)?.();
+    chats.forEach((release) => release?.());
+  }
+});
+
+test('queued voice overtakes chat and aged background work', async () => {
+  let now = 0;
+  const scheduler = new PriorityScheduler(
+    { ...DEFAULT_PRIORITY_CONFIG, maxConcurrent: 1, reservedInteractive: 0 },
+    () => now,
+  );
+  const held = await scheduler.acquire('realtime');
+  const order: string[] = [];
+  const background = scheduler.acquire('background').then((release) => {
+    order.push('background');
+    return release;
+  });
+  const chat = scheduler.acquire('interactive').then((release) => {
+    order.push('chat');
+    return release;
+  });
+  now = 46000;
+  const voice = scheduler.acquire('realtime').then((release) => {
+    order.push('voice');
+    return release;
+  });
+  held!();
+  const releaseVoice = await voice;
+  expect(order).toEqual(['voice']);
+  releaseVoice!();
+  const releaseBackground = await background;
+  releaseBackground!();
+  (await chat)!();
 });

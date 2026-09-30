@@ -157,14 +157,14 @@ export function buildSystemPrompt(input: {
   const now = input.now ?? new Date();
   const sections = [
     RULES,
-    ...(input.contextWarnings?.length
-      ? [`## Context warnings\n${input.contextWarnings.join('\n')}`]
-      : []),
     input.instructions?.trim() ?? '',
     `Arbeitsordner: ${input.workdir}`,
     ...input.serverInstructions.map(
       (entry) => `## Hinweise zu ${entry.server}\n${cut(entry.text.trim(), 6000)}`,
     ),
+    ...(input.contextWarnings?.length
+      ? [`## Context warnings\n${input.contextWarnings.join('\n')}`]
+      : []),
     input.runContext?.trim() ?? '',
     `Heute: ${now.toISOString().slice(0, 10)}`,
     memorySection(input.memory, input.query),
