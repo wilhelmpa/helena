@@ -144,6 +144,7 @@ describe('conversation controller with fake ear and speaker', () => {
     const h = harness(async () => ({ text: 'unused' }), 0, 5, 'mach das Licht an');
     await h.ready();
     assert.deepEqual(h.sent, ['mach das Licht an']);
+    h.controller.stop();
   });
 
   it('bridges once, streams the first sentence, then listens after the final audio', async () => {
