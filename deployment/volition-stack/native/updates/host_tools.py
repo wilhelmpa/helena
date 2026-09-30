@@ -277,7 +277,7 @@ def command(args: list[str], *, cwd: Path | None = None, user: str | None = None
             args = ["/usr/sbin/runuser", "--preserve-environment", "-u", user, "--",
                     "setpriv", "--no-new-privs", "--", *args]
         if limited and os.geteuid() == 0:
-            args = ["systemd-run", "--scope", "--wait", "--pipe", "--collect",
+            args = ["systemd-run", "--scope", "--collect",
                     "-p", "MemoryHigh=12G", "-p", "MemoryMax=16G", "-p", "CPUWeight=20",
                     "--", *args]
         result = subprocess.run(args, cwd=cwd, env=env, text=True, stdout=subprocess.PIPE,
