@@ -27,6 +27,7 @@ export const valuesBody = t.Object({
   browser: oneOf(['standard', 'jev', 'combined'] as const),
   decision,
   device: oneOf(['gpu', 'npu', 'cloud', 'cpu'] as const),
+  toolProfile: t.Optional(oneOf(['assistent', 'recherche', 'coder-lite', 'voll'] as const)),
 });
 export const createBody = t.Object({
   ...revisionBody.properties,

@@ -204,7 +204,11 @@ export async function validateSchema(schema: ModelSchema) {
     if (!MODEL_ROLES.includes(role as never)) throw new HttpError(400, `Unknown role ${role}`);
     if (MODEL_COLUMNS.some((column) => values[column] === undefined))
       throw new HttpError(400, `Incomplete role ${role}`);
-    if (Object.keys(values).some((column) => !MODEL_COLUMNS.includes(column as ModelColumn)))
+    if (
+      Object.keys(values).some(
+        (column) => column !== 'toolProfile' && !MODEL_COLUMNS.includes(column as ModelColumn),
+      )
+    )
       throw new HttpError(400, `Unknown column in role ${role}`);
     validateValues(values);
   }

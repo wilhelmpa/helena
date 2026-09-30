@@ -275,6 +275,8 @@ describe('editable model schemas', () => {
         })
       ).status,
     ).toBe(201);
+    expect((await call('GET', '/copy')).body.schema.roles).toEqual(original!.roles);
+    expect((await call('GET', '/copy')).body.schema.roles.home!.toolProfile).toBe('voll');
     expect(
       (
         await call('PATCH', '/copy', {
