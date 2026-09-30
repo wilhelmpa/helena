@@ -117,10 +117,10 @@ export default function WorkspacePanel({
   const entryOf = useCallback(
     (id: WorkspaceToolId): WorkspaceTool => {
       const view = registered.find((entry) => entry.id === id)?.view;
-      if (view?.kind === 'frame') return { id: 'connections', url: view.url, advancedUrl: '' };
+      if (view?.kind === 'frame') return { id, url: view.url, advancedUrl: '' };
       return (
         (tools as Record<string, WorkspaceTool | undefined>)[id] ?? {
-          id: 'connections',
+          id,
           url: '',
           advancedUrl: '',
         }

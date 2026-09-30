@@ -23,8 +23,6 @@ beforeEach(() => {
       projectWorkspacePaths: {},
       homeWorkspacePath: '',
       browserUrl: 'https://helena.test/browser/projects/home/vnc.html',
-      inboxUrl: '',
-      connectionsUrl: '',
     },
   };
   requests = [];

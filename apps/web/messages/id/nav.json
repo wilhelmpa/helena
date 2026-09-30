@@ -80,8 +80,6 @@
     "browser": "Peramban",
     "browserLossless": "Streaming lossless (PNG)",
     "files": "Berkas",
-    "inbox": "Kotak masuk",
-    "connections": "Koneksi",
     "advanced": "Lanjutan",
     "openExternal": "Buka {tool} di tab baru",
     "unavailable": "{tool} belum dikonfigurasi",

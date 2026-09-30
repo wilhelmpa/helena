@@ -83,8 +83,6 @@
     "browser": "Browser",
     "browserLossless": "Lossless streaming (PNG)",
     "files": "Files",
-    "inbox": "Inbox",
-    "connections": "Connections",
     "advanced": "Advanced",
     "openExternal": "Open {tool} in a new tab",
     "unavailable": "{tool} is not configured",

@@ -364,7 +364,7 @@ function OwnerInboxContent() {
   // The mail runs edge to edge like the project's (O74/O81).
   return tab === 'messages' ? (
     <Page variant="bleed">
-      <InboxWorkspace projectKey={null} page leading={tabs} />
+      <InboxWorkspace projectKey={null} leading={tabs} />
     </Page>
   ) : (
     <OwnerInboxUpdates tabs={tabs} />

@@ -80,8 +80,6 @@
     "browser": "Браузер",
     "browserLossless": "Трансляция без потерь (PNG)",
     "files": "Файлы",
-    "inbox": "Входящие",
-    "connections": "Подключения",
     "advanced": "Дополнительно",
     "openExternal": "Открыть {tool} в новой вкладке",
     "unavailable": "{tool} не настроен",

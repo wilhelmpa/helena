@@ -37,8 +37,6 @@ export interface WorkspaceRuntimeEnv {
   // was open last, another project's (2026-09-24: Start showed PRIV).
   homeWorkspacePath?: string;
   browserUrl: string;
-  inboxUrl: string;
-  connectionsUrl: string;
 }
 
 declare global {
@@ -78,8 +76,6 @@ const emptyWorkspace = (): WorkspaceRuntimeEnv => ({
   codeUrl: '',
   projectWorkspacePaths: {},
   browserUrl: '',
-  inboxUrl: '',
-  connectionsUrl: '',
 });
 
 export function appOrigins(): string[] {
@@ -116,8 +112,6 @@ export function serverRuntimeEnv(origin: string | null = null): RuntimeEnv {
         readOrigin('HOME_WORKSPACE_PATH') ||
         (readOrigin('CODE_URL') ? '/srv/volition/workspaces' : ''),
       browserUrl: url('BROWSER_URL'),
-      inboxUrl: url('INBOX_URL'),
-      connectionsUrl: url('CONNECTIONS_URL'),
     },
   };
 }

@@ -5,7 +5,6 @@ import { useTranslations } from 'next-intl';
 import { Mail, Users } from 'lucide-react';
 import { PageSelect } from '@/components/layout/PageToolbar';
 import { useProjectsQuery } from '@/services/projects.service';
-import type { WorkspaceContentProps } from '@/extensions/panelTools';
 import { useTeamsQuery } from '@/services/teams.service';
 import { useProjectMailAccounts } from '@/services/mail.service';
 import MailInbox from './components/MailInbox';
@@ -13,13 +12,15 @@ import { resolveInboxTeamId } from './inboxTeamScope';
 import { ButtonLink, EmptyState } from '@/design-system';
 import { settingsPath } from '@/utils/paths';
 
-// The mail inbox of the tool panel and of Home's inbox page (`page`). On the page its
+// The mail inbox of Home's inbox page (no longer a tool of the panel, owner O106). Its
 // controls, the team among them, are the page's header row (see MailInbox).
 export default function InboxWorkspace({
   projectKey,
-  page = false,
   leading,
-}: WorkspaceContentProps & { page?: boolean; leading?: ReactNode }) {
+}: {
+  projectKey: string | null;
+  leading?: ReactNode;
+}) {
   const teamCopy = useTranslations('teams');
   const inboxCopy = useTranslations('inbox.hub');
   const teams = useTeamsQuery();
@@ -42,23 +43,6 @@ export default function InboxWorkspace({
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      {!page && !projectKey && (teams.data?.length ?? 0) > 1 ? (
-        <label className="flex items-center gap-2 border-b px-3 py-2 text-sm">
-          <span className="text-muted-foreground">{teamCopy('info.team')}</span>
-          <select
-            className="ds-field ds-select-native"
-            value={teamId ?? ''}
-            onChange={(event) => setTeamId(Number(event.target.value))}
-          >
-            {teams.data?.map((team) => (
-              <option key={team.id} value={team.id}>
-                {team.name}
-              </option>
-            ))}
-          </select>
-        </label>
-      ) : null}
-
       {teams.isPending || projectPending ? (
         <EmptyState>{inboxCopy('loading')}</EmptyState>
       ) : projectKey && !projectAccounts.data?.length ? (
@@ -80,9 +64,9 @@ export default function InboxWorkspace({
           key={`${teamId}:${project?.id ?? 'all'}`}
           teamId={teamId}
           projectId={project?.id}
-          toolbar={page}
+          toolbar
           leading={
-            page && !projectKey && (teams.data?.length ?? 0) > 1 ? (
+            !projectKey && (teams.data?.length ?? 0) > 1 ? (
               <>
                 {leading}
                 <PageSelect

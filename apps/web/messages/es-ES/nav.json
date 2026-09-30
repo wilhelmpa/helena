@@ -80,8 +80,6 @@
     "browser": "Navegador",
     "browserLossless": "Transmisión sin pérdidas (PNG)",
     "files": "Archivos",
-    "inbox": "Bandeja de entrada",
-    "connections": "Conexiones",
     "advanced": "Avanzado",
     "openExternal": "Abrir {tool} en una pestaña nueva",
     "unavailable": "{tool} no está configurado",

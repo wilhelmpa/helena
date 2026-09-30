@@ -5,16 +5,7 @@ import type { ProvisionedProjectResource } from '@/lib/api/endpoints/projects';
 // The built-in panel tools, whose frame addresses come from the deployment. Which tools
 // the panel has, their order, icons and labels is the panel tool registry
 // (extensions/panelTools.tsx), where plugins add theirs.
-export const WORKSPACE_TOOL_IDS = [
-  'chat',
-  'terminal',
-  'code',
-  'notes',
-  'browser',
-  'inbox',
-  'mail',
-  'connections',
-] as const;
+export const WORKSPACE_TOOL_IDS = ['chat', 'terminal', 'code', 'notes', 'browser', 'mail'] as const;
 
 export type BuiltinWorkspaceToolId = (typeof WORKSPACE_TOOL_IDS)[number];
 
@@ -22,7 +13,7 @@ export type BuiltinWorkspaceToolId = (typeof WORKSPACE_TOOL_IDS)[number];
 export type WorkspaceToolId = string;
 
 export interface WorkspaceTool {
-  id: BuiltinWorkspaceToolId;
+  id: WorkspaceToolId;
   url: string;
   advancedUrl: string;
 }
@@ -217,20 +208,12 @@ export function workspaceTools(
       advancedUrl: '',
     },
     mail: { id: 'mail', url: '', advancedUrl: '' },
-    inbox: { id: 'inbox', url: frameUrl(config.inboxUrl), advancedUrl: '' },
-    connections: { id: 'connections', url: frameUrl(config.connectionsUrl), advancedUrl: '' },
   } satisfies Record<BuiltinWorkspaceToolId, WorkspaceTool>;
   return tools;
 }
 
 export function workspaceFrameOrigins(config: WorkspaceRuntimeEnv): string[] {
-  const candidates = [
-    config.terminalUrl,
-    config.codeUrl,
-    config.browserUrl,
-    config.inboxUrl,
-    config.connectionsUrl,
-  ];
+  const candidates = [config.terminalUrl, config.codeUrl, config.browserUrl];
   const origins = new Set<string>();
   for (const value of candidates) {
     try {

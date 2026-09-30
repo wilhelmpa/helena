@@ -80,8 +80,6 @@
     "browser": "浏览器",
     "browserLossless": "无损传输（PNG）",
     "files": "文件",
-    "inbox": "收件箱",
-    "connections": "连接",
     "advanced": "高级",
     "openExternal": "在新标签页中打开{tool}",
     "unavailable": "尚未配置{tool}",

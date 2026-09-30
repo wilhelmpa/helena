@@ -80,8 +80,6 @@
     "browser": "Браузер",
     "browserLossless": "Трансляція без втрат (PNG)",
     "files": "Файли",
-    "inbox": "Вхідні",
-    "connections": "Підключення",
     "advanced": "Додатково",
     "openExternal": "Відкрити {tool} у новій вкладці",
     "unavailable": "{tool} не налаштовано",

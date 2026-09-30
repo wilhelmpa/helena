@@ -80,8 +80,6 @@
     "browser": "المتصفح",
     "browserLossless": "بث بلا فقدان (PNG)",
     "files": "الملفات",
-    "inbox": "البريد الوارد",
-    "connections": "الاتصالات",
     "advanced": "متقدم",
     "openExternal": "فتح {tool} في علامة تبويب جديدة",
     "unavailable": "لم تتم تهيئة {tool}",

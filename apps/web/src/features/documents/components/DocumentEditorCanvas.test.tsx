@@ -99,8 +99,6 @@ beforeEach(async () => {
       projectWorkspacePaths: {},
       homeWorkspacePath: '',
       browserUrl: '',
-      inboxUrl: '',
-      connectionsUrl: '',
     },
   };
   for (const name of globals)
