@@ -345,9 +345,15 @@ def execute(ctx, ident):
             command(ctx, owner(ctx, ['git', '-C', repo, 'worktree', 'add', '--detach', tree, value['expected']]), 30)
             try:
                 command(ctx, owner(ctx, [work + '/heavy.sh', 'env', '--chdir=' + tree, 'bun', 'install', '--offline', '--frozen-lockfile', '--ignore-scripts']), 300)
+                test_env = ['NODE_ENV=test', 'DATABASE_URL=' + db_url,
+                    'APP_URL=http://localhost:3001', 'API_URL=http://localhost:3000',
+                    'BETTER_AUTH_SECRET=volition-development-test-only',
+                    'APP_ENCRYPTION_KEY=volition-development-test-only']
+                command(ctx, owner(ctx, [work + '/heavy.sh', 'env', '--chdir=' + tree,
+                    *test_env, 'SKIP_PRE_MIGRATION_BACKUP=1',
+                    'bun', 'packages/db/src/migrate.ts']), 300)
                 output = command(ctx, owner(ctx, [work + '/heavy.sh', 'env', '--chdir=' + tree,
-                    'DATABASE_URL=' + db_url, 'APP_URL=http://localhost:3001', 'API_URL=http://localhost:3000',
-                    'BETTER_AUTH_SECRET=volition-development-test-only', 'APP_ENCRYPTION_KEY=volition-development-test-only',
+                    *test_env,
                     'bun', 'test', '--preload=' + tree + '/apps/api/src/__tests__/helpers/preload.ts', *value['testFiles']]), 3600)
             finally:
                 command(ctx, owner(ctx, ['git', '-C', repo, 'worktree', 'remove', '--force', tree]), 30)

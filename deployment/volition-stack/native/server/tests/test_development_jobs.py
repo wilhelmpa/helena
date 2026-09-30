@@ -26,6 +26,21 @@ class DevelopmentJobs(unittest.TestCase):
     def tearDown(self):
         self.temp.cleanup()
 
+    def test_targeted_tests_migrate_the_private_database_and_enable_test_guards(self):
+        self.ctx.config.data['development']['testDatabaseUrl'] = 'postgresql://volition@127.0.0.1:55474/volition_test'
+        result = jobs.start(self.ctx, {'operation': 'tests', 'branch': 'hub/test',
+            'expected': 'a' * 40, 'dryRun': False,
+            'testFiles': ['apps/api/src/modules/model-schemas/service.test.ts']})
+        jobs.execute(self.ctx, result['id'])
+        commands = [argv for argv in self.calls if 'bun' in argv]
+        migration = next(argv for argv in commands if 'packages/db/src/migrate.ts' in argv)
+        tests = next(argv for argv in commands if 'test' in argv)
+        self.assertIn('NODE_ENV=test', tests)
+        self.assertIn('NODE_ENV=test', migration)
+        self.assertIn('SKIP_PRE_MIGRATION_BACKUP=1', migration)
+        self.assertLess(commands.index(migration), commands.index(tests))
+        self.assertEqual(jobs.result(self.ctx, {'id': result['id']})['status'], 'success')
+
     def test_every_release_tool_has_a_side_effect_free_dry_run(self):
         for operation in ('gate', 'build', 'probe', 'deploy', 'verify'):
             result = jobs.start(self.ctx, {'operation': operation, 'branch': 'hub/test',
