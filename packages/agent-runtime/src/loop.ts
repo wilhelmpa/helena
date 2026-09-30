@@ -797,8 +797,8 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
     if (compressing && model.local) {
       return {
         ...model.providerOptions,
-        [model.provider]: {
-          ...model.providerOptions[model.provider],
+        [providerOptionsKey(model.provider)]: {
+          ...model.providerOptions[providerOptionsKey(model.provider)],
           reasoningEffort: 'none',
           chat_template_kwargs: { enable_thinking: false },
         },

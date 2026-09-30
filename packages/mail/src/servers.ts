@@ -67,14 +67,16 @@ export function connectionError(error: unknown): string {
   if (!error || typeof error !== 'object') return 'Connection failed';
   const value = error as {
     authenticationFailed?: boolean;
-    responseText?: string;
-    response?: string;
-    code?: string;
-    message?: string;
+    responseText?: unknown;
+    response?: unknown;
+    code?: unknown;
+    message?: unknown;
   };
   if (value.authenticationFailed) return 'Authentication failed';
-  const text = value.responseText ?? value.response ?? value.message ?? value.code ?? '';
-  return text.replace(/\s+/g, ' ').trim().slice(0, 300) || 'Connection failed';
+  const text = [value.responseText, value.response, value.message, value.code].find(
+    (candidate): candidate is string => typeof candidate === 'string' && candidate.trim() !== '',
+  );
+  return text?.replace(/\s+/g, ' ').trim().slice(0, 300) || 'Connection failed';
 }
 
 export async function testImapConnection(settings: MailServerSettings): Promise<string | null> {

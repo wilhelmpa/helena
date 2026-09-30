@@ -912,6 +912,17 @@ class Keeper:
 # ── Command line ──────────────────────────────────────────────────────────────────────────
 
 
+def report_login_problems(status: dict) -> None:
+    problems = [login for login in status['logins'] if login['managed'] and login['state'] in ('invalid', 'expired', 'error')]
+    for login in problems:
+        state = login['state']
+        error = login.get('error') or ''
+        if state == 'error' and error.startswith('Login check is temporarily unavailable'):
+            state = 'check deferred'
+        print(f"helena-token-keeper: {login['provider']} {login.get('label') or login['id']}: {state}"
+              f"{' (' + error + ')' if error else ''}", file=sys.stderr)
+
+
 def parse(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(prog='helena-token-keeper', description=__doc__.split('\n\n')[0])
     parser.add_argument('command', choices=['tick', 'views', 'status'])
@@ -963,10 +974,7 @@ def main(argv: Optional[list[str]] = None) -> int:
     except TimeoutError as exc:
         print(f'helena-token-keeper: {exc}', file=sys.stderr)
         return 0
-    problems = [login for login in status['logins'] if login['managed'] and login['state'] in ('invalid', 'expired', 'error')]
-    for login in problems:
-        print(f"helena-token-keeper: {login['provider']} {login.get('label') or login['id']}: {login['state']}"
-              f"{' (' + login['error'] + ')' if login.get('error') else ''}", file=sys.stderr)
+    report_login_problems(status)
     # A dead login is the status' news, not a failure of the keeper: the unit only fails when
     # the keeper itself could not do its work (no view written).
     return 1 if any(not view.get('ok') for view in status['views'].values()) else 0

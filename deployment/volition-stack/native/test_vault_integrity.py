@@ -70,6 +70,16 @@ class VaultIntegrityTest(unittest.TestCase):
         self.assertTrue({'backup_missing', 'backup_private_missing'} <=
                         self.codes(backup={'paths': paths, 'sample_ok': True}))
 
+    def test_backup_accepts_an_empty_private_directory(self):
+        self.assertEqual(self.codes(backup={
+            'paths': ['/srv/volition/vault/Home/note.md', '/srv/volition/vault/Private'],
+            'sample_ok': True,
+        }), set())
+        self.assertIn('backup_private_missing', self.codes(backup={
+            'paths': ['/srv/volition/vault/Home/note.md', '/srv/volition/vault/Private-other'],
+            'sample_ok': True,
+        }))
+
     def test_backup_uses_hostd_and_handles_unavailable_helper(self):
         with patch.object(audit, 'call', return_value={'parameters': {'result': {'state': 'no_snapshot'}}}) as call:
             self.assertEqual(audit.backup_state(), {'state': 'no_snapshot'})
@@ -140,6 +150,17 @@ class VaultIntegrityTest(unittest.TestCase):
         with patch.object(audit, 'command', return_value='user:vp-other:rwx\n'):
             codes = self.codes(project_users={'ABC': 'vp-abc', 'XYZ': 'vp-other'})
         self.assertTrue({'home_acl', 'project_acl', 'foreign_project_acl', 'project_missing'} <= codes)
+
+    def test_private_acl_allows_home_but_rejects_project_agents(self):
+        # launcher.vault_binds gives only Home the owner's private vault.
+        for entries, rejected in (
+            ('user:vp-home:rwx\ndefault:user:vp-home:rwx\n', False),
+            ('user:vp-abc:rwx\n', True),
+            ('default:user:vp-abc:rwx\n', True),
+            ('user:vp-home:rwx\nuser:vp-abc:rwx\n', True),
+        ):
+            with self.subTest(entries=entries), patch.object(audit, 'command', return_value=entries):
+                self.assertEqual('private_acl' in self.codes(project_users={'ABC': 'vp-abc'}), rejected)
 
 
 if __name__ == '__main__':
