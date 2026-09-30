@@ -2307,5 +2307,53 @@
     "/teams/:teamId/organization/goals/:goalId/budgets",
     "admin",
     "Organization goal budget administration."
+  ],
+  [
+    "GET",
+    "/teams/:teamId/trash-retention",
+    "UI-only",
+    "Owner-Einstellung der Papierkorb-Frist (Team/Projekt); kein Agentenwerkzeug."
+  ],
+  [
+    "PUT",
+    "/teams/:teamId/trash-retention",
+    "UI-only",
+    "Owner-Einstellung der Papierkorb-Frist (Team/Projekt); kein Agentenwerkzeug."
+  ],
+  [
+    "GET",
+    "/projects/:projectKey/trash-retention",
+    "UI-only",
+    "Owner-Einstellung der Papierkorb-Frist (Team/Projekt); kein Agentenwerkzeug."
+  ],
+  [
+    "PUT",
+    "/projects/:projectKey/trash-retention",
+    "UI-only",
+    "Owner-Einstellung der Papierkorb-Frist (Team/Projekt); kein Agentenwerkzeug."
+  ],
+  [
+    "POST",
+    "/teams/:teamId/trash/:kind/empty",
+    "UI-only",
+    "Endgültiges Löschen des Papierkorbs nur mit Owner-Bestätigung in der UI; kein Agentenwerkzeug."
+  ],
+  [
+    "POST",
+    "/projects/:projectKey/trash/:kind/empty",
+    "UI-only",
+    "Endgültiges Löschen des Papierkorbs nur mit Owner-Bestätigung in der UI; kein Agentenwerkzeug."
+  ],
+  [
+    "GET",
+    "/teams/:teamId/trash-activity",
+    "UI-only",
+    "Protokoll des Papierkorb-Aufräumers für die Einstellungsseite; kein Agentenwerkzeug."
+  ],
+  [
+    "GET",
+    "/projects/:projectKey/trash-activity",
+    "UI-only",
+    "Protokoll des Papierkorb-Aufräumers für die Einstellungsseite; kein Agentenwerkzeug."
   ]
 ]
