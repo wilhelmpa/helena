@@ -305,5 +305,11 @@
     "overridden": "Für dieses Projekt geändert",
     "reset": "Zurücksetzen"
   },
-  "openAsPage": "Als Seite öffnen"
+  "openAsPage": "Als Seite öffnen",
+  "limit": {
+    "count": "{used} / {limit} Zeichen",
+    "tooLong": "Zu lang – bitte kürzen oder konsolidieren lassen.",
+    "nearlyFull": "Fast voll: noch {left} Zeichen frei.",
+    "truncated": "Wird für das Modell gekürzt."
+  }
 }

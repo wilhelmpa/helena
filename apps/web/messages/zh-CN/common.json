@@ -305,5 +305,11 @@
     "overridden": "已为此项目更改",
     "reset": "重置"
   },
-  "openAsPage": "作为页面打开"
+  "openAsPage": "作为页面打开",
+  "limit": {
+    "count": "{used} / {limit} 个字符",
+    "tooLong": "太长了 – 请缩短，或让系统整合。",
+    "nearlyFull": "快满了：还剩 {left} 个字符。",
+    "truncated": "已为模型缩短。"
+  }
 }

@@ -11,6 +11,7 @@ import { copyText } from '@/utils/clipboard';
 import { compactTokens } from '@/utils/agentUsage';
 import { useRuntimeSessions, useTranscript } from '../services/agentRuntime.service';
 import { transcriptToMessages } from '../utils/messages';
+import { sessionTitle } from '../utils/sessionTitle';
 import RuntimeError from './RuntimeError';
 import TranscriptMessages from './TranscriptMessages';
 
@@ -48,16 +49,6 @@ export default function AgentSessionsPanel({
       onOpen={(id, session) => setOpen({ id, session })}
     />
   );
-}
-
-// What a session was in Helena (the task of its run, the title of its chat), else the
-// runtime's own title.
-function sessionTitle(session: RuntimeSession | null | undefined, fallback: string): string {
-  const link = session?.link;
-  if (link?.issueIdentifier) {
-    return link.issueTitle ? `${link.issueIdentifier} · ${link.issueTitle}` : link.issueIdentifier;
-  }
-  return link?.chatTitle ?? session?.title ?? session?.preview ?? fallback;
 }
 
 function SessionList({

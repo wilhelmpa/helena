@@ -203,6 +203,7 @@ function AgentDialogFrame({
                   setPickedRun(id);
                   setTab('runs');
                 }}
+                onTab={setTab}
               />
             )}
             <div

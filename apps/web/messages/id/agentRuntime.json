@@ -7,7 +7,8 @@
     "memory": "Memori",
     "usage": "Pemakaian",
     "runtime": "Runtime",
-    "overview": "Ringkasan"
+    "overview": "Ringkasan",
+    "skills": "Skills"
   },
   "runs": {
     "empty": "Belum ada run.",

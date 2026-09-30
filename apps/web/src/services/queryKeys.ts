@@ -281,6 +281,8 @@ export const qk = {
   // What an agent learned: the actions waiting for its runner, and one learned skill.
   agentRuntimeActions: (teamId: number, agentId: number) =>
     ['aiAgents', teamId, agentId, 'runtime-actions'] as const,
+  agentNativeSkills: (teamId: number, agentId: number) =>
+    ['aiAgents', teamId, agentId, 'nativeSkills'] as const,
   learnedSkill: (teamId: number, agentId: number, path: string) =>
     ['aiAgents', teamId, agentId, 'learned-skill', path] as const,
   // The agent's reflections on its chats.

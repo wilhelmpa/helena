@@ -305,5 +305,11 @@
     "overridden": "Diubah untuk proyek ini",
     "reset": "Setel ulang"
   },
-  "openAsPage": "Buka sebagai halaman"
+  "openAsPage": "Buka sebagai halaman",
+  "limit": {
+    "count": "{used} / {limit} karakter",
+    "tooLong": "Terlalu panjang – persingkat atau minta dikonsolidasikan.",
+    "nearlyFull": "Hampir penuh: sisa {left} karakter.",
+    "truncated": "Dipersingkat untuk model."
+  }
 }

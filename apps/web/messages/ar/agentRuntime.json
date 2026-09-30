@@ -7,7 +7,8 @@
     "memory": "الذاكرة",
     "usage": "الاستهلاك",
     "runtime": "بيئة التشغيل",
-    "overview": "نظرة عامة"
+    "overview": "نظرة عامة",
+    "skills": "Skills"
   },
   "runs": {
     "empty": "لا توجد تشغيلات بعد.",

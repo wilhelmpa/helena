@@ -33,6 +33,50 @@ export interface LearnedSkill {
   truncated: boolean;
 }
 
+// One version of a skill the agent keeps in its own runtime: who wrote it, when, in which
+// session, and the text before and after. `pending` waits for the owner's decision.
+export interface SkillChange {
+  id: string;
+  version: number;
+  at: string;
+  // 'agent:<id>', 'user:<id>', 'curator' or 'runtime-action:<id>'.
+  actor: string;
+  sessionId: string | null;
+  // 'create', 'update', 'pin', 'unpin', 'archive', 'restore', 'approve', 'reject',
+  // 'archive:unused' or 'merge:<path>'.
+  action: string;
+  status: 'applied' | 'pending' | 'rejected';
+  before: Pick<LearnedSkill, 'markdown' | 'files'> | null;
+  after: Pick<LearnedSkill, 'markdown' | 'files'>;
+}
+
+// A learned skill of the agent's own runtime with its history, for the owner's review.
+export interface NativeSkill extends LearnedSkill {
+  revision: string;
+  version?: number;
+  useCount?: number;
+  lastUsedAt?: string;
+  createdAt?: string;
+  // Only proposed so far (new skill waiting for approval).
+  proposed?: boolean;
+  pinned?: boolean;
+  archived?: boolean;
+  history?: SkillChange[];
+}
+
+export const listNativeSkills = (teamId: number, agentId: number) =>
+  request<NativeSkill[]>(`/teams/${teamId}/ai-agents/${agentId}/learned-skills/history`);
+
+export const reviewNativeSkill = (
+  teamId: number,
+  agentId: number,
+  input: { path: string; revision: string; action: 'approve' | 'reject' | 'restore' },
+) =>
+  request<NativeSkill>(`/teams/${teamId}/ai-agents/${agentId}/learned-skills/review`, {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
+
 export const listRuntimeActions = (teamId: number, agentId: number) =>
   request<RuntimeAction[]>(`/teams/${teamId}/ai-agents/${agentId}/runtime-actions`);
 

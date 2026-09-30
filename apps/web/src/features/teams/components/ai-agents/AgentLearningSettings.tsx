@@ -1,6 +1,8 @@
+'use client';
+
+import { Moon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { Switch } from '@/components/ui/switch';
-import { SettingsGroup, SettingsRow } from '@/design-system';
+import { LimitMeter, Pill, SettingsGroup, SettingsRow, Switch } from '@/design-system';
 import {
   Select,
   SelectContent,
@@ -9,100 +11,121 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import type { AgentRuntimePolicy } from '@/lib/api/endpoints/agents';
+import {
+  LIMIT_AREAS,
+  type LimitArea,
+  type SizeLimits,
+} from '@/features/agent-runtime/utils/sizeLimits';
 import { CHAT_REFLECTION_BOUNDS, chatReflectionOf, learningOf } from '../../utils/agentLearning';
 import BoundedNumberInput from './BoundedNumberInput';
 import { TeamSettingState } from '../TeamSettingState';
 
 const REFLECTION_MODES = ['off', 'failure', 'complex'] as const;
 
-// Whether the agent learns in its chats and runs, whether Hermes' curator may archive
-// what it learned, whether its memory writes wait for the owner, and when it reflects on a run: a short follow-up turn of the run's
-// own session, right after it ends. Saved with the agent; the runner applies all three
-// on its next sync.
+// How an agent learns, in words that need no knowledge of what runs underneath: whether it
+// learns from what it does, tidies its skills, shows its changes first, looks back after runs
+// and chats; the nightly consolidation of its notes ("Träumen"); and how much text each part
+// of its context may hold. Saved with the agent.
 export default function AgentLearningSettings({
   policy,
   canEdit,
   onChange,
+  dreams,
+  limits,
 }: {
   policy: AgentRuntimePolicy;
   canEdit: boolean;
   onChange: (policy: AgentRuntimePolicy) => void;
+  // Whether the agent's runtime consolidates its notes at night.
+  dreams: boolean;
+  limits: SizeLimits;
 }) {
-  const t = useTranslations('teams.agents.abilities.learning');
+  const t = useTranslations('agentPages.learning');
   const current = learningOf(policy);
   const rows = [
-    { key: 'learning', on: current.learning, label: t('enabled'), hint: t('enabledHint') },
-    { key: 'curator', on: current.curator, label: t('curator'), hint: t('curatorHint') },
-    // The agent's memory writes wait on the approvals page only when enabled.
-    {
-      key: 'memoryApproval',
-      on: policy.memoryApproval === true,
-      label: t('memoryApproval'),
-      hint: t('memoryApprovalHint'),
-    },
+    { key: 'learning', on: current.learning },
+    { key: 'curator', on: current.curator },
+    { key: 'memoryApproval', on: policy.memoryApproval === true },
   ] as const;
+  const shownLimits = LIMIT_AREAS.filter((area) => limits[area]);
 
   return (
-    <SettingsGroup title={t('groupTitle')} description={canEdit ? t('hint') : t('readOnly')}>
-      {rows.map((row) => (
-        <SettingsRow key={row.key} label={row.label} description={row.hint}>
+    <>
+      <SettingsGroup
+        title={t('learn.title')}
+        description={canEdit ? t('learn.hint') : t('readOnly')}
+      >
+        {rows.map((row) => (
+          <SettingsRow
+            key={row.key}
+            label={t(`${row.key}.label`)}
+            description={t(`${row.key}.hint`)}
+          >
+            {canEdit ? (
+              <Switch
+                aria-label={t(`${row.key}.label`)}
+                checked={row.on}
+                onCheckedChange={(checked) => onChange({ ...policy, [row.key]: checked })}
+              />
+            ) : (
+              <TeamSettingState on={row.on} />
+            )}
+          </SettingsRow>
+        ))}
+        <SettingsRow label={t('reflection.label')} description={t('reflection.hint')}>
           {canEdit ? (
-            <Switch
-              aria-label={row.label}
-              checked={row.on}
-              onCheckedChange={(checked) => onChange({ ...policy, [row.key]: checked })}
-            />
+            <Select
+              value={current.reflection}
+              onValueChange={(value) =>
+                onChange({ ...policy, reflection: value as AgentRuntimePolicy['reflection'] })
+              }
+            >
+              <SelectTrigger className="w-60 shrink-0" aria-label={t('reflection.label')}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {REFLECTION_MODES.map((mode) => (
+                  <SelectItem key={mode} value={mode}>
+                    {t(`reflection.${mode}`)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           ) : (
-            <TeamSettingState on={row.on} />
+            <span className="ds-agent-overview-value">{t(`reflection.${current.reflection}`)}</span>
           )}
         </SettingsRow>
-      ))}
-      <SettingsRow label={t('reflectionTitle')} description={t('reflectionHint')}>
-        {canEdit ? (
-          <Select
-            value={current.reflection}
-            onValueChange={(value) =>
-              onChange({ ...policy, reflection: value as AgentRuntimePolicy['reflection'] })
-            }
-          >
-            <SelectTrigger className="w-60 shrink-0" aria-label={t('reflectionTitle')}>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {REFLECTION_MODES.map((mode) => (
-                <SelectItem key={mode} value={mode}>
-                  {t(
-                    mode === 'off'
-                      ? 'reflectionOff'
-                      : mode === 'failure'
-                        ? 'reflectionFailure'
-                        : 'reflectionComplex',
-                  )}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        ) : (
-          <span className="shrink-0 text-sm text-muted-foreground">
-            {t(
-              current.reflection === 'off'
-                ? 'reflectionOff'
-                : current.reflection === 'failure'
-                  ? 'reflectionFailure'
-                  : 'reflectionComplex',
-            )}
-          </span>
-        )}
-      </SettingsRow>
-      <AgentChatReflectionRow policy={policy} canEdit={canEdit} onChange={onChange} />
-    </SettingsGroup>
+        <ChatReflectionRows policy={policy} canEdit={canEdit} onChange={onChange} />
+      </SettingsGroup>
+
+      {dreams && (
+        <SettingsGroup title={t('dream.title')} description={t('dream.hint')}>
+          <SettingsRow label={t('dream.label')} description={t('dream.text')}>
+            <Pill icon={<Moon />}>{t('dream.when')}</Pill>
+          </SettingsRow>
+        </SettingsGroup>
+      )}
+
+      {shownLimits.length > 0 && (
+        <SettingsGroup title={t('limits.title')} description={t('limits.hint')}>
+          {shownLimits.map((area: LimitArea) => (
+            <SettingsRow key={area} label={t(`limits.areas.${area}`)} stacked>
+              <LimitMeter
+                used={limits[area]!.used}
+                limit={limits[area]!.limit}
+                truncated={limits[area]!.truncated}
+              />
+            </SettingsRow>
+          ))}
+        </SettingsGroup>
+      )}
+    </>
   );
 }
 
-// Learning from chats (docs/helena-decisions/agent-context.md §5): whether the agent reflects
-// on a chat once it has gone quiet, after how many quiet minutes and after how many of the
-// person's messages at the latest.
-function AgentChatReflectionRow({
+// Learning from chats: whether the agent looks back on a chat once it has gone quiet, after how
+// many quiet minutes and after how many of your messages at the latest.
+function ChatReflectionRows({
   policy,
   canEdit,
   onChange,
@@ -111,15 +134,15 @@ function AgentChatReflectionRow({
   canEdit: boolean;
   onChange: (policy: AgentRuntimePolicy) => void;
 }) {
-  const t = useTranslations('teams.agents.abilities.learning');
+  const t = useTranslations('agentPages.learning.chats');
   const current = chatReflectionOf(policy);
   const learning = policy.learning ?? true;
   return (
     <>
-      <SettingsRow label={t('chatReflection')} description={t('chatReflectionHint')}>
+      <SettingsRow label={t('label')} description={t('hint')}>
         {canEdit ? (
           <Switch
-            aria-label={t('chatReflection')}
+            aria-label={t('label')}
             checked={current.enabled}
             disabled={!learning}
             onCheckedChange={(checked) => onChange({ ...policy, chatReflection: checked })}
@@ -129,9 +152,9 @@ function AgentChatReflectionRow({
         )}
       </SettingsRow>
       {current.enabled && (
-        <SettingsRow label={t('chatReflectionWhen')} nested>
+        <SettingsRow label={t('when')} nested>
           <span className="ds-inline-unit">
-            {t('chatReflectionIdle')}
+            {t('idle')}
             <BoundedNumberInput
               bounds={CHAT_REFLECTION_BOUNDS.idleMinutes}
               placeholder="10"
@@ -143,7 +166,7 @@ function AgentChatReflectionRow({
             />
           </span>
           <span className="ds-inline-unit">
-            {t('chatReflectionTurns')}
+            {t('turns')}
             <BoundedNumberInput
               bounds={CHAT_REFLECTION_BOUNDS.everyTurns}
               placeholder="20"

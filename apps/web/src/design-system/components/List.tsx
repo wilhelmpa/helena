@@ -61,6 +61,9 @@ type RowProps = {
   meta?: ReactNode;
   dot?: StatusDotTone | null;
   actions?: ReactNode;
+  // A control that stays visible beside the row (a switch): outside the row's button, so it is
+  // never a button in a button, and not hidden until hover like `actions`.
+  control?: ReactNode;
   selected?: boolean;
   href?: string;
   onSelect?: () => void;
@@ -73,6 +76,7 @@ export function ListRow({
   meta,
   dot,
   actions,
+  control,
   selected,
   href,
   onSelect,
@@ -107,6 +111,7 @@ export function ListRow({
       ) : (
         <div className="ds-list-main">{body}</div>
       )}
+      {control && <span className="ds-list-control">{control}</span>}
       {actions && <span className="ds-list-actions">{actions}</span>}
     </div>
   );

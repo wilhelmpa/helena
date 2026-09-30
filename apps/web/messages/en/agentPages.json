@@ -1,0 +1,270 @@
+{
+  "editor": {
+    "label": "Editor view",
+    "formatted": "Formatted",
+    "source": "Source",
+    "lossy": "Opened as source, because formatting would change the text."
+  },
+  "skills": {
+    "title": "Skills",
+    "hint": "Reusable guides the agent loads when needed: from the library, shipped with it, or learned by itself.",
+    "viewsLabel": "Skills view",
+    "views": {
+      "assigned": "Assigned",
+      "library": "Library",
+      "proposals": "Proposals",
+      "archive": "Archive"
+    },
+    "search": "Search skills",
+    "kinds": {
+      "learned": "Learned",
+      "library": "From the library",
+      "installed": "Installed",
+      "bundled": "Built in"
+    },
+    "back": "All skills",
+    "proposal": "Proposal",
+    "archived": "Archived",
+    "pinned": "Pinned",
+    "version": "Version {version}",
+    "uses": "{count, plural, one {Used # time} other {Used # times}}",
+    "lastUsed": "last {when}",
+    "loadNameHint": "How the agent loads this skill",
+    "pendingTitle": "A change is waiting for you",
+    "pendingText": "On {when} the agent proposed a new version. It only applies once you accept it.",
+    "tabs": {
+      "content": "Content",
+      "history": "History ({count})"
+    },
+    "runtimeSkill": "This skill is part of the agent's basic equipment. You can switch it on and off.",
+    "noContent": "The content of this skill is not available yet.",
+    "empty": {
+      "assigned": "No skills assigned yet",
+      "library": "The library is empty",
+      "proposals": "No open proposals",
+      "archive": "Nothing archived",
+      "search": "Nothing found for \"{query}\""
+    },
+    "emptyHint": {
+      "assigned": "Add skills from the library or let the agent learn on its own.",
+      "library": "You create new skills in the skill library.",
+      "proposals": "New or changed skills the agent proposes appear here.",
+      "archive": "Skills that you or the tidy-up put away can be found here again."
+    },
+    "proposalsTitle": "{count, plural, one {# proposal is waiting for you} other {# proposals are waiting for you}}",
+    "proposalsText": "The agent proposed new or changed skills.",
+    "proposalsOpen": "Review",
+    "libraryHint": "Skills of the library apply to every agent you assign them to.",
+    "libraryOpen": "Open library",
+    "switch": "{name} for this agent",
+    "menu": "Actions for {name}",
+    "actions": {
+      "open": "Open",
+      "pin": "Pin",
+      "unpin": "Unpin",
+      "archive": "Archive",
+      "restore": "Restore",
+      "promote": "Add to the library",
+      "approve": "Accept",
+      "reject": "Reject"
+    },
+    "history": {
+      "title": "Versions of the skill",
+      "empty": "This skill has no history yet.",
+      "pending": "Waiting for approval",
+      "rejected": "Rejected",
+      "versionOf": "Version {version}",
+      "session": "Go to session",
+      "sameText": "The text stayed the same."
+    },
+    "actor": {
+      "agent": "Agent",
+      "user": "You",
+      "curator": "Tidy-up",
+      "owner": "At your request",
+      "system": "System"
+    },
+    "action": {
+      "create": "Created",
+      "update": "Changed",
+      "pin": "Pinned",
+      "unpin": "Unpinned",
+      "archive": "Archived",
+      "restore": "Restored",
+      "approve": "Accepted",
+      "reject": "Rejected",
+      "merge": "Merged with a similar skill",
+      "archiveUnused": "Archived after a long time unused",
+      "discard-skill": "Archived",
+      "pin-skill": "Pinned",
+      "other": "Changed"
+    },
+    "reviewed": {
+      "approve": "The change is accepted.",
+      "reject": "The change is rejected.",
+      "restore": "The skill is active again."
+    }
+  },
+  "memory": {
+    "title": "Memory",
+    "approvalOn": "Changes the agent makes to its memory wait for your approval; until then the approved version applies.",
+    "approvalOff": "The agent changes its memory itself. Every version is kept under \"Versions\".",
+    "viewsLabel": "Memory view",
+    "views": {
+      "memory": "Memory",
+      "notes": "Daily notes",
+      "facts": "Facts",
+      "proposals": "Proposals",
+      "versions": "Versions"
+    },
+    "pendingTitle": "{count, plural, one {# change is waiting for approval} other {# changes are waiting for approval}}",
+    "pendingText": "The agent wants to change something in its memory.",
+    "pendingOpen": "Review",
+    "noPending": "Nothing is waiting for approval.",
+    "notEditable": "This agent only reports its memory; it can change it itself.",
+    "files": {
+      "memory": {
+        "title": "What the agent remembers",
+        "hint": "Experience, rules and hints it has at hand in every conversation."
+      },
+      "user": {
+        "title": "What the agent knows about you",
+        "hint": "Your name, your preferences and how you like to work."
+      }
+    },
+    "edit": "Edit",
+    "clear": "Clear",
+    "clearTitle": "Clear \"{title}\"?",
+    "clearBody": "The agent loses these entries. Earlier versions are kept under \"Versions\".",
+    "empty": "Nothing remembered yet.",
+    "truncated": "Only the beginning of the file is shown.",
+    "size": "{chars, plural, one {# character} other {# characters}}",
+    "entryLabel": "Entry {index}",
+    "removeEntry": "Remove entry {index}",
+    "addEntry": "Add entry",
+    "placeholder": "What the agent should remember …",
+    "notes": {
+      "title": "Daily notes",
+      "empty": "No daily notes yet",
+      "emptyHint": "What the agent writes down during the day appears here, sorted by day.",
+      "lines": "{count, plural, one {# entry} other {# entries}}"
+    },
+    "facts": {
+      "count": "{count, plural, one {# fact} other {# facts}}",
+      "search": "Search facts",
+      "noMatch": "No fact matches \"{query}\".",
+      "empty": "No facts yet",
+      "emptyHint": "What the agent files as established knowledge appears here, with the trust it has earned.",
+      "trust": "{value} % trust",
+      "trustHint": "Confirmed {confirmations}×, helpful {helpful}×",
+      "contradicted": "possible contradiction",
+      "menu": "Actions for this fact",
+      "confirm": "Correct",
+      "edit": "Edit",
+      "remove": "Remove",
+      "removeTitle": "Remove fact?",
+      "removeBody": "\"{fact}\" is hidden and no longer used.",
+      "save": "Save",
+      "cancel": "Cancel"
+    },
+    "versions": {
+      "title": "Versions of the memory",
+      "empty": "No versions yet",
+      "emptyHint": "Every version of the memory is kept here, with the difference to the one before.",
+      "file": {
+        "memory": "What the agent remembers",
+        "user": "What the agent knows about you"
+      },
+      "source": {
+        "agent": "By the agent",
+        "owner": "Edited by you",
+        "observed": "Found in the agent"
+      }
+    }
+  },
+  "instructions": {
+    "soul": {
+      "title": "Personality",
+      "hint": "Who the agent is and how it presents itself (SOUL). It comes first in every conversation.",
+      "placeholder": "Tone, attitude and principles of the agent …"
+    },
+    "own": {
+      "title": "Instructions",
+      "hint": "What this agent should and should not do. They add to the personality.",
+      "placeholder": "Instructions for the agent …"
+    },
+    "files": {
+      "title": "More instruction files",
+      "hint": "Additional Markdown files the agent gets along with its instructions.",
+      "none": "No further files.",
+      "remove": "Remove {name}",
+      "name": "Name of the new file",
+      "namePlaceholder": "rules or team/rules",
+      "add": "Add file",
+      "invalid": "Letters, digits, dot, hyphen and underscore only; separate folders with \"/\".",
+      "taken": "This file already exists."
+    },
+    "inherited": {
+      "title": "Inherits from",
+      "hint": "This also applies to the agent; you can only read it here.",
+      "template": "Template \"{name}\"",
+      "templateUnknown": "Template",
+      "follows": "The instructions follow the template whenever it changes.",
+      "differs": "This copy differs from the template.",
+      "reset": "Reset to template",
+      "project": "Project {key} · {name}"
+    }
+  },
+  "learning": {
+    "readOnly": "Only members who may edit agents can change this.",
+    "learn": {
+      "title": "Learning",
+      "hint": "Saved with the agent and applies from the next conversation."
+    },
+    "learning": {
+      "label": "Learn skills from experience",
+      "hint": "The agent keeps what it learns at work: new skills and entries in its memory. The cost counts towards its usage. Off: it saves nothing new."
+    },
+    "curator": {
+      "label": "Tidy up skills",
+      "hint": "Duplicate skills are merged and long-unused ones archived. Pinned skills stay untouched; nothing is lost."
+    },
+    "memoryApproval": {
+      "label": "Show changes first",
+      "hint": "New or changed skills and memory entries wait for your approval instead of applying at once."
+    },
+    "reflection": {
+      "label": "Look back after runs",
+      "hint": "Right after a run the agent notes in a short follow-up what it learned from it.",
+      "off": "Off",
+      "failure": "After failures and rework",
+      "complex": "Also after long runs"
+    },
+    "chats": {
+      "label": "Look back after chats",
+      "hint": "When a chat rests for a while, the agent notes what it learned about you and your wishes.",
+      "when": "When",
+      "idle": "after minutes of quiet",
+      "turns": "after messages at the latest"
+    },
+    "dream": {
+      "title": "Dreaming",
+      "hint": "Tidying up in the background, without you doing anything.",
+      "label": "Consolidate at night",
+      "text": "Every night the agent moves what lasts from the daily notes into its memory and drops duplicates.",
+      "when": "daily at 3 am"
+    },
+    "limits": {
+      "title": "Size limits",
+      "hint": "How much text each part of the context may hold. The model only sees what is beyond it shortened. Adjustable later.",
+      "areas": {
+        "memory": "Memory",
+        "user": "About you",
+        "note": "Daily note",
+        "soul": "Personality",
+        "instructions": "Instructions",
+        "projectInstructions": "Project instructions"
+      }
+    }
+  }
+}

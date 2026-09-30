@@ -9,6 +9,8 @@ import {
   type RuntimeActionInput,
   getLearnedSkill,
   listChatReflections,
+  listNativeSkills,
+  reviewNativeSkill,
   listRuntimeActions,
   promoteLearnedSkill,
   queueRuntimeAction,
@@ -49,14 +51,18 @@ export function useLearnedSkillQuery(teamId: number, agentId: number, path: stri
 }
 
 // The runner carries an action out later, so its queueing is confirmed.
-export function useQueueRuntimeAction(teamId: number, agentId: number) {
+// `native`: the agent's own runtime, which carries out a skill action at once.
+export function useQueueRuntimeAction(teamId: number, agentId: number, native = false) {
   const t = useTranslations('teams.agents.abilities.learning');
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (input: RuntimeActionInput) => queueRuntimeAction(teamId, agentId, input),
-    onSuccess: () => {
-      toast.success(t('queued'));
+    onSuccess: (_action, input) => {
+      toast.success(t(native && input.kind !== 'write-memory' ? 'applied' : 'queued'));
       void qc.invalidateQueries({ queryKey: qk.agentRuntimeActions(teamId, agentId) });
+      // An agent with its own runtime carries a skill action out at once: read the skills again.
+      void qc.invalidateQueries({ queryKey: qk.agentNativeSkills(teamId, agentId) });
+      void qc.invalidateQueries({ queryKey: qk.teamAiAgents(teamId) });
     },
   });
 }
@@ -71,6 +77,7 @@ export function usePromoteLearnedSkill(teamId: number, agentId: number) {
       void qc.invalidateQueries({ queryKey: qk.agentSkills(teamId) });
       void qc.invalidateQueries({ queryKey: qk.agentSkillLinks(teamId, agentId) });
       void qc.invalidateQueries({ queryKey: qk.agentRuntimeActions(teamId, agentId) });
+      void qc.invalidateQueries({ queryKey: qk.agentNativeSkills(teamId, agentId) });
     },
   });
 }
@@ -81,5 +88,34 @@ export function useChatReflectionsQuery(teamId: number, agentId: number | null) 
     queryKey: qk.agentChatReflections(teamId, agentId ?? 0),
     queryFn: () => listChatReflections(teamId, agentId!),
     enabled: agentId != null,
+  });
+}
+
+// The skills the agent keeps in its own runtime, with every version. An agent of another
+// runtime has none (the list is empty); its learned skills come from its inventory.
+export function useNativeSkillsQuery(teamId: number, agentId: number | null) {
+  return useQuery({
+    queryKey: qk.agentNativeSkills(teamId, agentId ?? 0),
+    queryFn: () => listNativeSkills(teamId, agentId!),
+    enabled: agentId != null,
+  });
+}
+
+// The owner's decision on a proposed or archived skill: apply the change, reject it, or
+// bring an archived skill back.
+export function useReviewNativeSkill(teamId: number, agentId: number) {
+  const t = useTranslations('agentPages.skills');
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: {
+      path: string;
+      revision: string;
+      action: 'approve' | 'reject' | 'restore';
+    }) => reviewNativeSkill(teamId, agentId, input),
+    onSuccess: (_skill, input) => {
+      toast.success(t(`reviewed.${input.action}`));
+      void qc.invalidateQueries({ queryKey: qk.agentNativeSkills(teamId, agentId) });
+      void qc.invalidateQueries({ queryKey: qk.teamAiAgents(teamId) });
+    },
   });
 }

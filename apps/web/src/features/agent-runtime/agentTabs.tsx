@@ -1,12 +1,13 @@
 'use client';
 
 import type { ComponentType } from 'react';
-import { Brain, Gauge, MessagesSquare, Server, Waypoints } from 'lucide-react';
+import { Brain, Gauge, MessagesSquare, Server, Sparkles, Waypoints } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { AiAgent } from '@/lib/api/endpoints/agents';
 import AgentMemoryPanel from './components/AgentMemoryPanel';
 import AgentRunsPanel from './components/AgentRunsPanel';
 import AgentRuntimePanel from './components/AgentRuntimePanel';
+import AgentSkillsPanel from './components/AgentSkillsPanel';
 import AgentSessionsPanel from './components/AgentSessionsPanel';
 import UsageReport from './components/UsageReport';
 
@@ -23,12 +24,14 @@ export interface AgentTabProps {
   onRunChange: (runId: number | null) => void;
   // Opens a run in the runs tab.
   onOpenRun: (runId: number) => void;
+  // Switches to another tab of the agent (a skill's session is found under the sessions).
+  onOpenTab: (tab: string) => void;
 }
 
 export interface AgentTab {
   id: string;
   // Key under agentRuntime.tabs.
-  label: 'runs' | 'sessions' | 'memory' | 'usage' | 'runtime';
+  label: 'skills' | 'runs' | 'sessions' | 'memory' | 'usage' | 'runtime';
   icon: LucideIcon;
   order: number;
   kinds: AiAgent['kind'][];
@@ -38,6 +41,16 @@ export interface AgentTab {
 }
 
 export const AGENT_TABS: AgentTab[] = [
+  {
+    id: 'skills',
+    label: 'skills',
+    icon: Sparkles,
+    order: 5,
+    kinds: ['external'],
+    component: ({ teamId, agent, canEdit, onOpenTab }) => (
+      <AgentSkillsPanel teamId={teamId} agent={agent} canEdit={canEdit} onOpenTab={onOpenTab} />
+    ),
+  },
   {
     id: 'runs',
     label: 'runs',
@@ -63,7 +76,7 @@ export const AGENT_TABS: AgentTab[] = [
     id: 'memory',
     label: 'memory',
     icon: Brain,
-    order: 30,
+    order: 8,
     kinds: ['external'],
     component: ({ teamId, agent, canEdit }) => (
       <AgentMemoryPanel teamId={teamId} agent={agent} canEdit={canEdit} />

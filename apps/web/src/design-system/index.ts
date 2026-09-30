@@ -17,6 +17,7 @@ export {
 export type { TreeItemProps } from './components/Tree';
 export { StatusDot } from './components/StatusDot';
 export { StatusBox } from './components/StatusBox';
+export { LimitMeter } from './components/LimitMeter';
 export { ToolbarPopover } from './components/ToolbarPopover';
 // The searchable pick list of a field (status, priority, goal …) in a popover: one
 // implementation, with groups, a trailing note per row and "create what I typed".

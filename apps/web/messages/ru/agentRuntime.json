@@ -7,7 +7,8 @@
     "memory": "Память",
     "usage": "Расход",
     "runtime": "Среда выполнения",
-    "overview": "Обзор"
+    "overview": "Обзор",
+    "skills": "Skills"
   },
   "runs": {
     "empty": "Запусков пока нет.",

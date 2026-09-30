@@ -56,8 +56,6 @@ const ALLOWED: Record<string, string> = {
   'features/ui-gallery/UiGallery.tsx': 'the gallery of the building blocks',
   'features/notes/components/NoteCanvasControls.tsx':
     'the full screen of a canvas inside a page, not the head of an overlay or panel',
-  'features/teams/components/ai-agents/AgentInstructionsField.tsx':
-    'enlarges a text field, not an overlay',
 };
 
 describe('overlay controls guard', () => {

@@ -1,9 +1,8 @@
 'use client';
 
 import { useId } from 'react';
-import { Cpu, Plus, Trash2 } from 'lucide-react';
+import { Cpu } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { SettingsGroup, SettingsRow } from '@/design-system';
 import { Input } from '@/components/ui/input';
@@ -150,64 +149,6 @@ export default function AgentRuntimePolicySection({
                 value={policy.mcpGrants.join('\n')}
                 onChange={(event) => patchPolicy({ mcpGrants: lines(event.target.value) })}
               />
-            </div>
-
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium">{t('managedFiles')}</p>
-                  <p className="text-xs text-muted-foreground">{t('managedFilesHint')}</p>
-                </div>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  onClick={() =>
-                    patchPolicy({
-                      files: [...policy.files, { kind: 'instructions', path: '', content: '' }],
-                    })
-                  }
-                >
-                  <Plus className="me-1 size-3.5" /> {t('addFile')}
-                </Button>
-              </div>
-              {policy.files.map((file, index) => (
-                <div key={`${index}-${file.path}`} className="space-y-2 rounded-md border p-3">
-                  <div className="flex gap-2">
-                    <Input
-                      aria-label={t('filePathLabel', { index: index + 1 })}
-                      placeholder={t('filePathPlaceholder')}
-                      value={file.path}
-                      onChange={(event) => {
-                        const files = [...policy.files];
-                        files[index] = { ...file, path: event.target.value };
-                        patchPolicy({ files });
-                      }}
-                    />
-                    <Button
-                      type="button"
-                      size="icon"
-                      variant="ghost"
-                      aria-label={t('removeFile', { index: index + 1 })}
-                      onClick={() =>
-                        patchPolicy({ files: policy.files.filter((_, i) => i !== index) })
-                      }
-                    >
-                      <Trash2 className="size-4" />
-                    </Button>
-                  </div>
-                  <Textarea
-                    rows={6}
-                    aria-label={t('fileContentLabel', { index: index + 1 })}
-                    value={file.content}
-                    onChange={(event) => {
-                      const files = [...policy.files];
-                      files[index] = { ...file, content: event.target.value };
-                      patchPolicy({ files });
-                    }}
-                  />
-                </div>
-              ))}
             </div>
           </div>
         }

@@ -206,6 +206,7 @@ function SheetBody({
           canEdit={canEdit}
           runId={runId}
           onRunChange={setRunId}
+          onOpenTab={setTab}
           onOpenRun={(id) => {
             setRunId(id);
             setTab('runs');

@@ -29,7 +29,8 @@ export default function DocumentToolbar({
   wrap = false,
 }: {
   editor: Editor | null;
-  onUploadImage: (file: File) => Promise<{ url: string; filename: string }>;
+  // Without it (an agent's instructions, no vault to store an image in) the image button is left out.
+  onUploadImage?: (file: File) => Promise<{ url: string; filename: string }>;
   // In a narrow overlay the buttons wrap onto a second row instead of scrolling out of sight.
   wrap?: boolean;
 }) {
@@ -180,7 +181,7 @@ export default function DocumentToolbar({
         >
           <Table2 />
         </DocumentToolbarButton>
-        <DocumentImageMenu editor={editor} onUpload={onUploadImage} />
+        {onUploadImage && <DocumentImageMenu editor={editor} onUpload={onUploadImage} />}
       </div>
 
       <div className="ms-auto flex shrink-0 items-center gap-0.5 border-s ps-2">

@@ -32,6 +32,7 @@ import {
   ListGroup,
   ListRow,
   MonoLabel,
+  LimitMeter,
   Notice,
   Orb,
   Pill,
@@ -44,6 +45,7 @@ import {
   SettingsGroup,
   SettingsRow,
   Stack,
+  Switch,
   StatusDot,
   StatusPill,
   Table,
@@ -285,6 +287,15 @@ function Blocks() {
             {t('hint')}
           </Notice>
         </Stack>
+        {/* LimitMeter: how much of a size limit a text uses (ok, nearly full, too long). */}
+        <Card title={t('cardTitle')}>
+          <Stack gap={4}>
+            <LimitMeter used={1200} limit={2200} />
+            <LimitMeter used={2050} limit={2200} />
+            <LimitMeter used={2300} limit={2200} />
+            <LimitMeter used={900} limit={2200} truncated />
+          </Stack>
+        </Card>
         {/* TimeSeriesChart: one line over time (the equity curve of the trading dashboard). */}
         <Card title={t('cardTitle')}>
           <TimeSeriesChart
@@ -311,6 +322,15 @@ function Blocks() {
                 subtitle={t('meta')}
                 dot="working"
                 selected
+              />
+              {/* A control that stays visible beside the row (a switch), outside its button. */}
+              <ListRow
+                icon={<FileText size={16} />}
+                title={sample}
+                subtitle={t('meta')}
+                meta="3×"
+                control={<Switch size="sm" checked aria-label={sample} />}
+                onSelect={() => undefined}
               />
             </ListGroup>
           </List>

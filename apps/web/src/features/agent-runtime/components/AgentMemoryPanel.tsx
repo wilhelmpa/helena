@@ -1,22 +1,32 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import { useFormatter, useTranslations } from 'next-intl';
+import { useState } from 'react';
+import { useTranslations } from 'next-intl';
+import { Notice, Segmented, Stack, Text } from '@/design-system';
 import type { AiAgent } from '@/lib/api/endpoints/agents';
-import type { MemoryRevision } from '@/lib/api/endpoints/agentRuntime';
-import { Badge } from '@/components/ui/badge';
-import { SectionLabel } from '@/components/common/page/RowList';
-import ListSkeleton from '@/components/common/skeleton/ListSkeleton';
-import { cn } from '@/lib/utils';
-import AgentMemoryFiles from '@/features/teams/components/ai-agents/AgentMemoryFiles';
+import { AgentPage, AgentPages } from '@/features/teams/components/ai-agents/AgentPage';
 import { useRuntimeActionsQuery } from '@/features/teams/services/agentLearning.service';
 import { canActOnLearning } from '@/features/teams/utils/agentLearning';
-import { useMemoryRevisions, useProposals } from '../services/agentRuntime.service';
+import {
+  useAgentFacts,
+  useAgentNotes,
+  useMemoryRevisions,
+  useProposals,
+} from '../services/agentRuntime.service';
+import { memoryFilesOf } from '../utils/memoryFiles';
+import { agentSizeLimits, memoryArea } from '../utils/sizeLimits';
+import MemoryFactsView from './memory/MemoryFactsView';
+import MemoryFileCard from './memory/MemoryFileCard';
+import MemoryNotesView from './memory/MemoryNotesView';
+import MemoryVersions from './memory/MemoryVersions';
 import ProposalCard from './ProposalCard';
-import TextDiff from './TextDiff';
 
-// The agent's memory: the files as its runtime holds them now (edited here, written by the
-// runner), the writes of the agent that wait for the owner, and every version Helena saw.
+type MemoryView = 'memory' | 'notes' | 'facts' | 'proposals' | 'versions';
+
+// The agent's memory in five views: what it remembers (MEMORY and USER, as readable entries),
+// its daily notes, its facts with their trust, what it proposes and waits for you, and every
+// version of the files. Where the agent's runtime carries out edits, the files are edited
+// right here.
 export default function AgentMemoryPanel({
   teamId,
   agent,
@@ -26,104 +36,104 @@ export default function AgentMemoryPanel({
   agent: AiAgent;
   canEdit: boolean;
 }) {
-  const t = useTranslations('agentRuntime.memory');
-  const inventory = agent.runtimeState.inventory;
+  const t = useTranslations('agentPages.memory');
   const acting = canActOnLearning(agent.runtimeState) ? agent.id : null;
   const actions = useRuntimeActionsQuery(teamId, acting).data;
-  const pending = useProposals('pending').data?.filter(
-    (proposal) => proposal.kind === 'memory-write' && proposal.agentId === agent.id,
-  );
+  const revisions = useMemoryRevisions(teamId, agent.id);
+  const notes = useAgentNotes(teamId, agent.id);
+  const facts = useAgentFacts(teamId, agent.id);
+  const pending =
+    useProposals('pending').data?.filter(
+      (proposal) => proposal.kind === 'memory-write' && proposal.agentId === agent.id,
+    ) ?? [];
   const approval = agent.runtimePolicy.memoryApproval === true;
+  const limits = agentSizeLimits(agent);
+  const [view, setView] = useState<MemoryView>('memory');
+
+  const files = memoryFilesOf(agent.runtimeState.inventory?.memory, revisions.data);
+  const options: { value: MemoryView; label: string; count?: number }[] = [
+    { value: 'memory', label: t('views.memory') },
+    { value: 'notes', label: t('views.notes'), count: notes.data?.length },
+    { value: 'facts', label: t('views.facts'), count: facts.data?.length },
+    ...(pending.length > 0 || view === 'proposals'
+      ? [{ value: 'proposals' as const, label: t('views.proposals'), count: pending.length }]
+      : []),
+    { value: 'versions', label: t('views.versions') },
+  ];
 
   return (
-    <div className="min-h-0 flex-1 space-y-6 overflow-y-auto p-4">
-      <p className="text-xs text-muted-foreground">
-        {approval ? t('approvalOn') : t('approvalOff')}
-      </p>
-      {pending && pending.length > 0 && (
-        <section className="space-y-2">
-          <SectionLabel>{t('pending', { count: pending.length })}</SectionLabel>
-          {pending.map((proposal) => (
-            <ProposalCard key={proposal.id} proposal={proposal} />
-          ))}
-        </section>
-      )}
-      {inventory ? (
-        <AgentMemoryFiles
-          memory={inventory.memory}
-          controls={acting === null || !canEdit ? null : { agentId: acting, actions }}
-        />
-      ) : (
-        <p className="text-sm text-muted-foreground">{t('notReported')}</p>
-      )}
-      <MemoryHistory teamId={teamId} agentId={agent.id} />
-    </div>
-  );
-}
-
-function MemoryHistory({ teamId, agentId }: { teamId: number; agentId: number }) {
-  const t = useTranslations('agentRuntime.memory');
-  const format = useFormatter();
-  const revisions = useMemoryRevisions(teamId, agentId);
-  const [open, setOpen] = useState<number | null>(null);
-  // Each version next to the one before it of the same file.
-  const previous = useMemo(() => {
-    const map = new Map<number, MemoryRevision | undefined>();
-    const rows = revisions.data ?? [];
-    rows.forEach((row, index) =>
-      map.set(
-        row.id,
-        rows.slice(index + 1).find((older) => older.file === row.file),
-      ),
-    );
-    return map;
-  }, [revisions.data]);
-
-  return (
-    <section className="space-y-2">
-      <SectionLabel>{t('history')}</SectionLabel>
-      {revisions.isPending ? (
-        <ListSkeleton rows={3} rowClassName="h-9" />
-      ) : !revisions.data?.length ? (
-        <p className="text-sm text-muted-foreground">{t('noHistory')}</p>
-      ) : (
-        <ul className="divide-y divide-border/50 overflow-hidden rounded-md bg-card">
-          {revisions.data.map((revision) => (
-            <li key={revision.id}>
-              <button
-                type="button"
-                onClick={() => setOpen(open === revision.id ? null : revision.id)}
-                className={cn(
-                  'flex w-full items-center gap-2 px-3 py-2 text-start text-sm hover:bg-accent',
-                  open === revision.id && 'bg-accent',
+    <AgentPages>
+      <AgentPage title={t('title')} hint={approval ? t('approvalOn') : t('approvalOff')}>
+        <Segmented
+          label={t('viewsLabel')}
+          value={view}
+          onChange={setView}
+          options={options.map((option) => ({
+            value: option.value,
+            label: (
+              <>
+                {option.label}
+                {option.count != null && option.count > 0 && (
+                  <span className="ds-segment-count">{option.count}</span>
                 )}
-              >
-                <span className="font-mono text-xs">{revision.file}</span>
-                <Badge variant="outline" className="shrink-0">
-                  {t(`source.${revision.source}`)}
-                </Badge>
-                <span className="min-w-0 flex-1 truncate text-xs text-muted-foreground">
-                  {revision.userName ?? ''}
-                </span>
-                <span className="shrink-0 text-xs text-muted-foreground">
-                  {format.dateTime(new Date(revision.createdAt), {
-                    dateStyle: 'medium',
-                    timeStyle: 'short',
-                  })}
-                </span>
+              </>
+            ),
+          }))}
+        />
+
+        {view !== 'proposals' && pending.length > 0 && (
+          <Notice
+            tone="warning"
+            title={t('pendingTitle', { count: pending.length })}
+            action={
+              <button type="button" className="ds-link-button" onClick={() => setView('proposals')}>
+                {t('pendingOpen')}
               </button>
-              {open === revision.id && (
-                <div className="px-3 pb-3">
-                  <TextDiff
-                    before={previous.get(revision.id)?.content ?? ''}
-                    after={revision.content}
-                  />
-                </div>
-              )}
-            </li>
-          ))}
-        </ul>
-      )}
-    </section>
+            }
+          >
+            {t('pendingText')}
+          </Notice>
+        )}
+
+        {view === 'memory' && (
+          <Stack gap={4}>
+            {files.map((entry) => (
+              <MemoryFileCard
+                key={entry.file}
+                teamId={teamId}
+                agentId={agent.id}
+                entry={entry}
+                title={t(`files.${memoryArea(entry.file)}.title`)}
+                hint={t(`files.${memoryArea(entry.file)}.hint`)}
+                actions={actions}
+                editable={acting !== null && canEdit}
+                limit={limits[memoryArea(entry.file)]}
+              />
+            ))}
+            {acting === null && (
+              <Text size="xs" tone="muted">
+                {t('notEditable')}
+              </Text>
+            )}
+          </Stack>
+        )}
+        {view === 'notes' && <MemoryNotesView teamId={teamId} agentId={agent.id} />}
+        {view === 'facts' && (
+          <MemoryFactsView teamId={teamId} agentId={agent.id} canEdit={canEdit} />
+        )}
+        {view === 'proposals' && (
+          <Stack gap={3}>
+            {pending.length === 0 ? (
+              <Text size="sm" tone="muted">
+                {t('noPending')}
+              </Text>
+            ) : (
+              pending.map((proposal) => <ProposalCard key={proposal.id} proposal={proposal} />)
+            )}
+          </Stack>
+        )}
+        {view === 'versions' && <MemoryVersions teamId={teamId} agentId={agent.id} />}
+      </AgentPage>
+    </AgentPages>
   );
 }

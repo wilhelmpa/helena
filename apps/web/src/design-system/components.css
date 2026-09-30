@@ -441,10 +441,19 @@
   white-space: nowrap;
 }
 .ds-list-meta {
+  display: inline-flex;
   flex: none;
+  align-items: center;
+  gap: var(--space-2);
   color: var(--text-3);
   font-family: var(--font-mono);
   font-size: 12px;
+}
+.ds-list-control {
+  display: flex;
+  flex: none;
+  align-items: center;
+  padding-inline-end: var(--space-3);
 }
 .ds-list-actions {
   display: flex;
