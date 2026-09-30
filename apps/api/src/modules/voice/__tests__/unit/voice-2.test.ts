@@ -178,10 +178,11 @@ describe('the voice reply request', () => {
   it('offers nothing but the hand-over, and reads the conversation', () => {
     expect(request.tools?.map((tool) => tool.name)).toEqual([HAND_OVER_TOOL]);
     expect(request.thinking).toBe('off');
-    expect(request.system).toContain('14:35');
+    expect(request.system).not.toContain('14:35');
     expect(request.system).toContain('German');
     expect(request.prompt).toBe(
-      'The conversation so far:\nPerson: Was steht an?\nYou: Drei Dinge.\n\n' +
+      'Current local date and time: Freitag, 26. September 2026 um 14:35\n' +
+        'The conversation so far:\nPerson: Was steht an?\nYou: Drei Dinge.\n\n' +
         'The person says now: Sag das kürzer.',
     );
   });
