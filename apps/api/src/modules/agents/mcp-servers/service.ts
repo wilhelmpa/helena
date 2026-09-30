@@ -427,6 +427,7 @@ export type RuntimeMcpValue = { name: string; value: string } | { name: string; 
 
 export interface RuntimeMcpServer {
   name: string;
+  catalogManaged?: boolean;
   transport: McpTransport;
   command: string | null;
   args: string[];
@@ -444,15 +445,18 @@ function runtimeValues(value: unknown): RuntimeMcpValue[] {
 }
 
 export async function agentRuntimeMcpServers(agentId: number): Promise<RuntimeMcpServer[]> {
-  return (await linkedRecords(agentId)).map((row) => ({
-    name: row.name,
-    transport: row.transport as McpTransport,
-    command: row.command,
-    args: Array.isArray(row.args) ? (row.args as string[]) : [],
-    url: row.url,
-    env: runtimeValues(row.env),
-    headers: runtimeValues(row.headers),
-  }));
+  return (await linkedRecords(agentId))
+    .filter((row) => !row.catalogManaged || process.env.AGENT_ISOLATION === 'on')
+    .map((row) => ({
+      name: row.name,
+      catalogManaged: row.catalogManaged,
+      transport: row.transport as McpTransport,
+      command: row.command,
+      args: Array.isArray(row.args) ? (row.args as string[]) : [],
+      url: row.url,
+      env: runtimeValues(row.env),
+      headers: runtimeValues(row.headers),
+    }));
 }
 
 // The names of the agent's MCP servers that reference each secret, by secret id.

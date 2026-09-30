@@ -27,6 +27,7 @@ import { labelRoutes } from './modules/labels';
 import { aiAgentRoutes } from './modules/agents/core';
 import { integrationRoutes } from './modules/agents/integrations';
 import { agentSkillRoutes } from './modules/agents/skills';
+import { catalogRoutes } from './modules/catalog';
 import { agentToolRoutes } from './modules/agents/tools';
 import { agentMcpServerRoutes } from './modules/agents/mcp-servers';
 import { credentialRoutes } from './modules/agents/credentials';
@@ -210,6 +211,7 @@ export const planner = new Elysia({ name: 'planner' })
   .use(aiAgentRoutes)
   .use(integrationRoutes)
   .use(agentSkillRoutes)
+  .use(catalogRoutes)
   .use(agentToolRoutes)
   .use(agentMcpServerRoutes)
   .use(credentialRoutes)
