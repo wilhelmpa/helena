@@ -1,5 +1,9 @@
 'use client';
 
+import { useState } from 'react';
+import { toast } from 'sonner';
+import ConfirmDialog from '@/components/common/overlay/ConfirmDialog';
+import { useDeleteSchemaRole } from '../services/modelMatrix.service';
 import { Copy, Plus } from 'lucide-react';
 import {
   Button,
@@ -51,6 +55,8 @@ export function SchemaRoles({
   onCopy: () => void;
 }) {
   const { t } = labels;
+  const [removing, setRemoving] = useState<string | null>(null);
+  const remove = useDeleteSchemaRole();
   const builtIn = schema.builtIn === true;
   const editable = !builtIn && catalog.length > 0;
   const present = ROLES.filter(
@@ -67,68 +73,98 @@ export function SchemaRoles({
     onSelect: () => onAdd(role),
   }));
   return (
-    <Section
-      title={t('schemaEditor.roles.title', { name: schema.name })}
-      description={builtIn ? t('schemaEditor.roles.builtIn') : t('schemaEditor.roles.custom')}
-      actions={
-        builtIn ? (
-          <Button icon={<Copy size={14} />} onClick={onCopy}>
-            {t('schemaEditor.roles.copyToEdit')}
-          </Button>
-        ) : (
-          missing.length > 0 && (
-            <PopoverPick
-              trigger={
-                <PillButton icon={<Plus size={14} />} disabled={!editable}>
-                  {t('schemaEditor.roles.add')}
-                </PillButton>
-              }
-              inputPlaceholder={t('search')}
-              emptyText={t('noResults')}
-              align="end"
-              items={addItems}
-            />
-          )
-        )
-      }
-    >
-      {catalogFailed && !builtIn && (
-        <Notice tone="warning" title={t('schemaEditor.roles.catalogFailed')}>
-          {t('schemaEditor.roles.catalogFailedText')}
-        </Notice>
-      )}
-      {!builtIn && !general && (
-        <Notice tone="warning" title={t('schemaEditor.roles.needsGeneral')}>
-          {t('schemaEditor.roles.needsGeneralText')}
-        </Notice>
-      )}
-      {present.length === 0 ? (
-        <EmptyState fill={false} title={t('schemaEditor.roles.emptyTitle')}>
-          {t('schemaEditor.roles.emptyText')}
-        </EmptyState>
-      ) : (
-        <Grid min="wide" gap={3}>
-          {present.map((role) => {
-            const entry = schemaRoleValues(matrix, pending, schema.id, role);
-            if (!entry) return null;
-            return (
-              <SchemaRoleCard
-                key={role}
-                roleId={role}
-                values={entry.values}
-                staged={entry.staged as ReadonlySet<MatrixColumn>}
-                added={entry.added}
-                editable={editable}
-                catalog={catalog}
-                labels={labels}
-                onChange={(column, value) => onCell(role, column, value)}
-                onReset={(column) => onReset(role, column)}
-                onDiscard={() => onDiscard(role)}
+    <>
+      <Section
+        title={t('schemaEditor.roles.title', { name: schema.name })}
+        description={builtIn ? t('schemaEditor.roles.builtIn') : t('schemaEditor.roles.custom')}
+        actions={
+          builtIn ? (
+            <Button icon={<Copy size={14} />} onClick={onCopy}>
+              {t('schemaEditor.roles.copyToEdit')}
+            </Button>
+          ) : (
+            missing.length > 0 && (
+              <PopoverPick
+                trigger={
+                  <PillButton icon={<Plus size={14} />} disabled={!editable}>
+                    {t('schemaEditor.roles.add')}
+                  </PillButton>
+                }
+                inputPlaceholder={t('search')}
+                emptyText={t('noResults')}
+                align="end"
+                items={addItems}
               />
-            );
-          })}
-        </Grid>
+            )
+          )
+        }
+      >
+        {catalogFailed && !builtIn && (
+          <Notice tone="warning" title={t('schemaEditor.roles.catalogFailed')}>
+            {t('schemaEditor.roles.catalogFailedText')}
+          </Notice>
+        )}
+        {!builtIn && !general && (
+          <Notice tone="warning" title={t('schemaEditor.roles.needsGeneral')}>
+            {t('schemaEditor.roles.needsGeneralText')}
+          </Notice>
+        )}
+        {present.length === 0 ? (
+          <EmptyState fill={false} title={t('schemaEditor.roles.emptyTitle')}>
+            {t('schemaEditor.roles.emptyText')}
+          </EmptyState>
+        ) : (
+          <Grid min="wide" gap={3}>
+            {present.map((role) => {
+              const entry = schemaRoleValues(matrix, pending, schema.id, role);
+              if (!entry) return null;
+              return (
+                <SchemaRoleCard
+                  key={role}
+                  roleId={role}
+                  values={entry.values}
+                  staged={entry.staged as ReadonlySet<MatrixColumn>}
+                  added={entry.added}
+                  editable={editable}
+                  catalog={catalog}
+                  labels={labels}
+                  onChange={(column, value) => onCell(role, column, value)}
+                  onReset={(column) => onReset(role, column)}
+                  onDiscard={() => onDiscard(role)}
+                  onRemove={
+                    !builtIn && !entry.added && role !== 'general'
+                      ? () => setRemoving(role)
+                      : undefined
+                  }
+                />
+              );
+            })}
+          </Grid>
+        )}
+      </Section>
+      {removing && (
+        <ConfirmDialog
+          title={t('schemaEditor.roleDelete.title', { name: t(`roles.${removing}` as never) })}
+          confirmLabel={t('schemaEditor.roleDelete.confirm')}
+          onClose={() => setRemoving(null)}
+          onConfirm={async () => {
+            try {
+              await remove.mutateAsync({
+                id: schema.id,
+                role: removing,
+                expectedRevision: matrix.revision,
+              });
+            } catch (error) {
+              toast.error(t('schemaEditor.roleDelete.failed'));
+              throw error;
+            }
+            onDiscard(removing);
+            setRemoving(null);
+          }}
+        >
+          <p>{t('schemaEditor.roleDelete.text')}</p>
+        </ConfirmDialog>
       )}
-    </Section>
+    </>
   );
 }

@@ -780,6 +780,28 @@
         "discard": "Descartar",
         "catalogFailed": "No se pudieron cargar las opciones",
         "catalogFailedText": "Sin la lista de modelos disponibles no se pueden cambiar los valores. Recarga la página."
+      },
+      "roleDelete": {
+        "menu": "Actions for {name}",
+        "title": "Remove role {name}?",
+        "confirm": "Remove",
+        "text": "Agents using this role will inherit General. Their own overrides are retained.",
+        "failed": "The role could not be removed. Reload the schema and check its General fallback."
+      },
+      "audit": {
+        "title": "Schema audit log",
+        "entry": "Revision {revision} · {action}",
+        "empty": "No schema changes yet.",
+        "failed": "The schema audit log could not be loaded.",
+        "actions": {
+          "apply": "Applied",
+          "create": "Created",
+          "update": "Updated",
+          "update-role": "Role updated",
+          "delete-role": "Role removed",
+          "delete": "Deleted",
+          "undo": "Undone"
+        }
       }
     }
   }

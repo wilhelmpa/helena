@@ -91,6 +91,9 @@ export const listResponse = t.Object({
   roles: t.Array(t.String()),
   columns: t.Array(t.String()),
   catalog: t.Array(catalogModel),
+  runtimes: t.Array(
+    t.Object({ runtime: t.String(), selectable: t.Boolean(), reason: t.Nullable(t.String()) }),
+  ),
 });
 export const previewResponse = t.Object({
   revision: t.Integer(),

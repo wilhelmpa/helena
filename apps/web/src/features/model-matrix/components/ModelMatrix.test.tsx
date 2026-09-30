@@ -237,6 +237,34 @@ describe('Kopf: Rückgängig über die Historie des Servers', () => {
       </Harness>,
     );
 
+  it('bietet beide lokalen Profile auch bei einem mitgelieferten Schema an', () => {
+    const html = wrap(
+      <Harness>
+        {(labels) => (
+          <MatrixHeader
+            matrix={{
+              ...matrix,
+              schemas: { ...matrix.schemas, 'nur-lokal': { ...schema, builtIn: true } },
+              profiles: [
+                { id: 'local-halogen', name: 'Lokal Halogen' },
+                { id: 'local-27b-npu', name: 'Lokal 27B + NPU' },
+              ] as MatrixProfile[],
+            }}
+            pending={EMPTY_PENDING}
+            project={null}
+            labels={labels}
+            onProfile={noop}
+            onProjectSchema={noop}
+            onUndo={noop}
+            undoSteps={0}
+          />
+        )}
+      </Harness>,
+    );
+    assert.match(html, /role="tablist"/);
+    assert.match(html, /Lokal 27B \+ NPU/);
+  });
+
   it('nennt, wie viele Schritte der Server zurücknehmen kann', () => {
     assert.match(header(4), /bis zu 4 Schritte/);
     assert.doesNotMatch(header(4), /Noch nichts zum Rückgängigmachen/);
@@ -379,6 +407,12 @@ describe('Rollen eines Schemas als Karten', () => {
     assert.doesNotMatch(html, /ds-matrix-cell"/);
     assert.match(html, /ds-matrix-value/);
     assert.match(html, /GPT-6 Sol/);
+  });
+
+  it('bietet Entfernen nur für gespeicherte Zusatzrollen an', () => {
+    assert.match(role({ onRemove: noop }), /Entfernen/);
+    assert.doesNotMatch(role({ roleId: 'general', onRemove: noop }), /Entfernen/);
+    assert.doesNotMatch(role({ added: true, onRemove: noop }), /Entfernen/);
   });
 
   it('kennzeichnet geänderte Zellen und neue Rollen', () => {

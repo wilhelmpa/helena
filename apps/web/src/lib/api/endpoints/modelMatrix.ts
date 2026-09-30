@@ -78,7 +78,7 @@ export interface MatrixClass {
 }
 
 export interface MatrixSchema {
-  // Set by the server: a built-in schema cannot be changed, only copied.
+  // Built-in roles and metadata are immutable; their local profile remains selectable.
   builtIn?: boolean;
   id: string;
   name: string;
@@ -192,6 +192,7 @@ export interface SchemaList {
   roles: string[];
   columns: string[];
   catalog: SchemaCatalogModel[];
+  runtimes: { runtime: MatrixRuntime; selectable: boolean; reason: string | null }[];
 }
 export const getModelSchemas = () => request<SchemaList>('/god/model-schemas');
 
@@ -223,3 +224,19 @@ export const deleteModelSchema = (schemaId: string, expectedRevision: number) =>
     method: 'DELETE',
     body: JSON.stringify({ expectedRevision }),
   });
+
+export const deleteModelSchemaRole = (schemaId: string, role: string, expectedRevision: number) =>
+  request<SchemaResult>(`/god/model-schemas/${schemaId}/roles/${role}`, {
+    method: 'DELETE',
+    body: JSON.stringify({ expectedRevision }),
+  });
+
+export interface SchemaAuditEntry {
+  revision: number;
+  actorId: string | null;
+  at: string;
+  action: string;
+  schemaIds: string[];
+}
+export const getModelSchemaAudit = () =>
+  request<{ entries: SchemaAuditEntry[] }>('/god/model-schemas/audit?limit=10');

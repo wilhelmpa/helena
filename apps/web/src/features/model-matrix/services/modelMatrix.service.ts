@@ -5,6 +5,8 @@ import {
   applyModelMatrix,
   createModelSchema,
   deleteModelSchema,
+  deleteModelSchemaRole,
+  getModelSchemaAudit,
   getModelMatrix,
   getModelSchemas,
   previewModelMatrix,
@@ -93,5 +95,22 @@ export function useDeleteSchema() {
       deleteModelSchema(input.id, input.expectedRevision),
     meta: { suppressErrorToast: true },
     onSuccess: () => client.invalidateQueries({ queryKey: ['modelMatrix'] }),
+  });
+}
+
+export function useDeleteSchemaRole() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { id: string; role: string; expectedRevision: number }) =>
+      deleteModelSchemaRole(input.id, input.role, input.expectedRevision),
+    meta: { suppressErrorToast: true },
+    onSuccess: () => client.invalidateQueries({ queryKey: ['modelMatrix'] }),
+  });
+}
+
+export function useSchemaAudit() {
+  return useQuery({
+    queryKey: ['modelMatrix', 'audit'],
+    queryFn: getModelSchemaAudit,
   });
 }

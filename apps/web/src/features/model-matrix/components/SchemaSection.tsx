@@ -28,6 +28,7 @@ import { changeRoleCell, schemaIdFor, schemaUse } from '../utils/schemaEdit';
 import { SchemaCard } from './SchemaCard';
 import { SchemaDialog, type SchemaDialogMode } from './SchemaDialog';
 import { SchemaRoles } from './SchemaRoles';
+import { SchemaAudit } from './SchemaAudit';
 
 // The schemas: a card each with what can be done to it, and under them the roles of the one
 // that is shown. Creating, copying, renaming and deleting are written at once; the values of a
@@ -186,6 +187,8 @@ export function SchemaSection({
           onCopy={() => setDialog({ kind: 'copy', from: shown })}
         />
       )}
+
+      <SchemaAudit labels={labels} schemas={matrix.schemas} />
 
       {dialog && (
         <SchemaDialog

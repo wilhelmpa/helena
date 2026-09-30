@@ -1,6 +1,7 @@
 'use client';
 
-import { Button, Card, Pill, Property, PropertyGrid } from '@/design-system';
+import { Trash2 } from 'lucide-react';
+import { ActionMenu, Button, Card, Pill, Property, PropertyGrid } from '@/design-system';
 import type {
   MatrixColumn,
   MatrixValues,
@@ -22,6 +23,7 @@ export function SchemaRoleCard({
   onChange,
   onReset,
   onDiscard,
+  onRemove,
 }: {
   roleId: string;
   values: MatrixValues;
@@ -35,22 +37,39 @@ export function SchemaRoleCard({
   onChange: (column: MatrixColumn, value: MatrixValues[MatrixColumn]) => void;
   onReset: (column: MatrixColumn) => void;
   onDiscard: () => void;
+  onRemove?: () => void;
 }) {
   const { t } = labels;
   return (
     <Card
       title={t(`roles.${roleId}` as never)}
       actions={
-        added ? (
-          <>
-            <Pill tone="warning">{t('schemaEditor.roles.new')}</Pill>
-            <Button size="small" variant="ghost" onClick={onDiscard}>
-              {t('schemaEditor.roles.discard')}
-            </Button>
-          </>
-        ) : staged.size > 0 ? (
-          <Pill tone="warning">{t('schemaEditor.roles.changed')}</Pill>
-        ) : undefined
+        <>
+          {added ? (
+            <>
+              <Pill tone="warning">{t('schemaEditor.roles.new')}</Pill>
+              <Button size="small" variant="ghost" onClick={onDiscard}>
+                {t('schemaEditor.roles.discard')}
+              </Button>
+            </>
+          ) : staged.size > 0 ? (
+            <Pill tone="warning">{t('schemaEditor.roles.changed')}</Pill>
+          ) : null}
+          {onRemove && !added && roleId !== 'general' && (
+            <ActionMenu
+              label={t('schemaEditor.roleDelete.menu', { name: t(`roles.${roleId}` as never) })}
+              items={[
+                {
+                  id: 'remove',
+                  label: t('schemaEditor.roleDelete.confirm'),
+                  icon: <Trash2 />,
+                  danger: true,
+                  onSelect: onRemove,
+                },
+              ]}
+            />
+          )}
+        </>
       }
       data-role={roleId}
     >

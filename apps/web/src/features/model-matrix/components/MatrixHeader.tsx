@@ -6,7 +6,6 @@ import {
   ButtonLink,
   Inline,
   Notice,
-  Pill,
   PillButton,
   PopoverPick,
   Segmented,
@@ -48,8 +47,6 @@ export function MatrixHeader({
   const schemaId = targetSchemaId(matrix, pending);
   const schema = matrix.schemas[schemaId];
   const profileId = pending.profile ?? schema?.profile;
-  // The server does not write the profile of a schema that ships with the app.
-  const profileLocked = schema?.builtIn === true;
   const schemas = Object.values(matrix.schemas).sort((a, b) => {
     const ia = BUILT_IN_SCHEMAS.indexOf(a.id);
     const ib = BUILT_IN_SCHEMAS.indexOf(b.id);
@@ -79,29 +76,18 @@ export function MatrixHeader({
         })),
       ]
     : [];
-  const profile = matrix.profiles.find((entry) => entry.id === profileId);
   return (
     <SettingsGroup title={t('header.title')} description={t('header.description')}>
       <SettingsRow
         label={t('header.profile')}
-        description={
-          profileLocked
-            ? t('header.profileLocked')
-            : profileId
-              ? t(`profiles.${profileId}` as never)
-              : undefined
-        }
+        description={profileId ? t(`profiles.${profileId}` as never) : undefined}
       >
-        {profileLocked ? (
-          <Pill>{profile?.name ?? profileId}</Pill>
-        ) : (
-          <Segmented
-            label={t('header.profile')}
-            value={profileId ?? ''}
-            options={matrix.profiles.map((entry) => ({ value: entry.id, label: entry.name }))}
-            onChange={onProfile}
-          />
-        )}
+        <Segmented
+          label={t('header.profile')}
+          value={profileId ?? ''}
+          options={matrix.profiles.map((entry) => ({ value: entry.id, label: entry.name }))}
+          onChange={onProfile}
+        />
       </SettingsRow>
       <SettingsRow
         label={t('header.status')}

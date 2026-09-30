@@ -17,6 +17,7 @@ import {
   updateSchema,
   updateSchemaRole,
   removeSchema,
+  removeSchemaRole,
   listSchemas,
   getSchema,
   schemaAudit,
@@ -64,7 +65,7 @@ export const modelSchemaRoutes = new Elysia({
     detail: {
       summary: 'List model schemas and available models',
       description:
-        'Returns matrix revision, active schema, immutable built-ins, editable custom schemas, roles, columns and the runtime-specific model catalog. Example: {}.',
+        'Returns matrix revision, active schema, built-ins with selectable local profiles, editable custom schemas, roles, columns and the runtime-specific model catalog and runtime selectability (command/webhook have no model catalog). Example: {}.',
       ...mcpTool('list_model_schemas'),
     },
   })
@@ -174,6 +175,23 @@ export const modelSchemaRoutes = new Elysia({
         description:
           'Partial row update: runtime, model, reasoning (null for no explicit level), escalation, browser, decision, device. Validates model/runtime and reasoning against the available catalog. A new role starts from the schema general role or local defaults. Active assignments are reprojected; own overrides remain. NPU decisions currently return 409 because evaluation has not passed. Example: {"schemaId":"custom","role":"general","expectedRevision":2,"values":{"runtime":"codex","model":"gpt-6.1-sol","reasoning":"high"}}.',
         ...mcpTool('update_model_schema_role'),
+      },
+    },
+  )
+  .delete(
+    '/god/model-schemas/:schemaId/roles/:role',
+    ({ params, body, schemaActorId }) =>
+      removeSchemaRole(params.schemaId, params.role, body.expectedRevision, schemaActorId),
+    {
+      modelSchemaAdmin: true,
+      params: roleParams,
+      body: revisionBody,
+      response: { 200: schemaResponse, ...failures },
+      detail: {
+        summary: 'Remove a custom schema role',
+        description:
+          'Refuses built-ins and the mandatory general role with 409. Agents using this role inherit general; without that fallback removal returns 409. Preserves own overrides, reprojects agents and records an audit entry. Example: {"schemaId":"custom","role":"coder","expectedRevision":3}.',
+        ...mcpTool('delete_model_schema_role'),
       },
     },
   )

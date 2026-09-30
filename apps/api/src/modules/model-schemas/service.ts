@@ -487,6 +487,22 @@ export function savedAgents(agents: Row[], changes: Change[]): SavedAgent[] {
       : [];
   });
 }
+function validateBuiltInApplication(schema: ModelSchema, current: ModelSchema) {
+  if (isDeepStrictEqual(schema, current)) return;
+  const profile = LOCAL_PROFILE_TEMPLATES.find((entry) => entry.id === schema.profile);
+  if (!profile) throw new HttpError(400, 'Unknown local profile');
+  const expected = {
+    ...current,
+    profile: profile.id,
+    classes: profile.classes,
+    npuSlots: profile.npuSlots,
+    gpuSlots: profile.gpuSlots,
+    speechRecognition: profile.speechRecognition,
+  };
+  if (!isDeepStrictEqual(schema, expected))
+    throw new HttpError(409, 'Built-in schemas cannot be changed');
+}
+
 // An undo takes back the last apply: the schema state, and the roles and own values of the
 // agents it changed. It goes one step further back each time (up to UNDO_DEPTH) and is not
 // itself put on the history.
@@ -503,7 +519,7 @@ export function nextState(current: State, patch: MatrixPatch, saved: SavedAgent[
   } else {
     for (const schema of [...(patch.schemas ?? []), ...(patch.schema ? [patch.schema] : [])]) {
       if (MODEL_TEMPLATES[schema.id])
-        throw new HttpError(409, 'Built-in schemas cannot be changed');
+        validateBuiltInApplication(schema, current.schemas[schema.id]!);
       state.schemas[schema.id] = schema;
     }
     if (patch.removeSchema) {
@@ -603,6 +619,30 @@ export function changedRows(
     })
     .filter((entry) => entry.changes.length || entry.overrides || entry.role);
 }
+function validateRoleRemoval(
+  current: State,
+  schemas: ModelSchema[],
+  agents: Row[],
+  memberships: Membership[],
+) {
+  for (const schema of schemas) {
+    const previous = current.schemas[schema.id];
+    if (!previous) continue;
+    for (const role of Object.keys(previous.roles).filter((role) => !schema.roles[role])) {
+      if (role === 'general') throw new HttpError(409, 'The general role cannot be removed');
+      if (
+        !schema.roles.general &&
+        agents.some(
+          (agent) =>
+            agent.modelRole === role &&
+            resolveRow(agent, memberships, current).schemaId === schema.id,
+        )
+      )
+        throw new HttpError(409, 'Role is still in use and has no general fallback');
+    }
+  }
+}
+
 export async function previewMatrix(patch: MatrixPatch, copied = false) {
   if (
     patch.undo &&
@@ -630,7 +670,10 @@ export async function previewMatrix(patch: MatrixPatch, copied = false) {
   if (patch.expectedRevision !== current.revision)
     throw new HttpError(409, 'Schema revision changed');
   for (const schema of schemas) {
-    if (MODEL_TEMPLATES[schema.id]) throw new HttpError(409, 'Built-in schemas cannot be changed');
+    if (MODEL_TEMPLATES[schema.id]) {
+      validateBuiltInApplication(schema, current.schemas[schema.id]!);
+      continue;
+    }
     if (!copied) {
       const catalog = await schemaCatalog();
       for (const [role, values] of Object.entries(schema.roles)) {
@@ -640,6 +683,7 @@ export async function previewMatrix(patch: MatrixPatch, copied = false) {
     }
   }
   const { agents, memberships } = await inventory();
+  validateRoleRemoval(current, schemas, agents, memberships);
   const next = nextState(current, patch, savedAgents(agents, patch.agents ?? []));
   const activated = new Set([
     ...(patch.active ? [patch.active] : []),
@@ -717,6 +761,12 @@ export async function applyMatrix(
     if (current.revision !== patch.expectedRevision)
       throw new HttpError(409, 'Schema revision changed');
     const { agents, memberships } = await inventory();
+    validateRoleRemoval(
+      current,
+      [...(patch.schemas ?? []), ...(patch.schema ? [patch.schema] : [])],
+      agents,
+      memberships,
+    );
     const next = nextState(current, patch, savedAgents(agents, patch.agents ?? []));
     const rows = changedRows(
       agents,
@@ -779,16 +829,25 @@ export async function applyMatrix(
 
 export async function listSchemas() {
   const state = await readModelState();
+  const catalog = await schemaCatalog();
   return {
     revision: state.revision,
     active: state.active,
+    runtimes: ['helena', 'claude', 'codex', 'hermes', 'command', 'webhook'].map((runtime) => {
+      const selectable = catalog.some((model) => model.runtime === runtime);
+      return {
+        runtime,
+        selectable,
+        reason: selectable ? null : 'No model catalog for this runtime',
+      };
+    }),
     schemas: Object.values(state.schemas).map((schema) => ({
       ...schema,
       builtIn: !!MODEL_TEMPLATES[schema.id],
     })),
     roles: [...MODEL_ROLES],
     columns: [...MODEL_COLUMNS],
-    catalog: await schemaCatalog(),
+    catalog,
   };
 }
 
@@ -868,6 +927,21 @@ export async function updateSchemaRole(
     ...input.values,
   };
   await applyMatrix({ expectedRevision: input.expectedRevision, schema }, actorId, 'update-role');
+  return getSchema(id);
+}
+
+export async function removeSchemaRole(
+  id: string,
+  role: string,
+  expectedRevision: number,
+  actorId: string,
+) {
+  const schema = await ownSchema(id, expectedRevision);
+  if (!MODEL_ROLES.includes(role as never)) throw new HttpError(400, 'Unknown role');
+  if (role === 'general') throw new HttpError(409, 'The general role cannot be removed');
+  if (!schema.roles[role]) throw new HttpError(404, 'Unknown schema role');
+  delete schema.roles[role];
+  await applyMatrix({ expectedRevision, schema }, actorId, 'delete-role');
   return getSchema(id);
 }
 

@@ -780,6 +780,28 @@
         "discard": "Verwerfen",
         "catalogFailed": "Die Auswahl konnte nicht geladen werden",
         "catalogFailedText": "Ohne die Liste der verfügbaren Modelle lassen sich die Werte nicht ändern. Lade die Seite neu."
+      },
+      "roleDelete": {
+        "menu": "Aktionen für {name}",
+        "title": "Rolle {name} entfernen?",
+        "confirm": "Entfernen",
+        "text": "Agenten mit dieser Rolle folgen danach Allgemein. Ihre eigenen Einstellungen bleiben erhalten.",
+        "failed": "Die Rolle konnte nicht entfernt werden. Lade das Schema neu und prüfe den Rückfall auf Allgemein."
+      },
+      "audit": {
+        "title": "Schema-Protokoll",
+        "entry": "Revision {revision} · {action}",
+        "empty": "Noch keine Schema-Änderungen.",
+        "failed": "Das Schema-Protokoll konnte nicht geladen werden.",
+        "actions": {
+          "apply": "Angewendet",
+          "create": "Erstellt",
+          "update": "Bearbeitet",
+          "update-role": "Rolle bearbeitet",
+          "delete-role": "Rolle entfernt",
+          "delete": "Gelöscht",
+          "undo": "Rückgängig gemacht"
+        }
       }
     }
   }

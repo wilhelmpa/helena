@@ -8,13 +8,23 @@ import { bootstrapHomeAgent } from '../../../../scripts/bootstrap-home-agent';
 import { routeTools } from '#mcp/generate';
 import { dispatchTool } from '#mcp/dispatch';
 import type { ModelSchema } from '../../templates';
-import { agentDecisionSetting } from '../../service';
+import { agentDecisionSetting, defaultState } from '../../service';
+import { appSetting, db } from '@repo/db';
+import { eq } from 'drizzle-orm';
 
 type Reply = {
   revision: number;
   active: string;
   schema: ModelSchema & { builtIn: boolean };
   schemas: Record<string, ModelSchema>;
+  profiles: {
+    id: ModelSchema['profile'];
+    classes: ModelSchema['classes'];
+    npuSlots: number;
+    gpuSlots: number;
+    speechRecognition: ModelSchema['speechRecognition'];
+  }[];
+  runtimes: { runtime: string; selectable: boolean; reason: string | null }[];
   catalog: { id: string }[];
   entries: { revision: number; actorId: string; action: string; schemaIds: string[] }[];
   retainedOverrides: { agentId: number; columns: string[] }[];
@@ -75,6 +85,176 @@ async function setup() {
 
 describe('editable model schemas', () => {
   beforeEach(resetDb);
+
+  it('switches both local profiles on a built-in through preview/apply and still activates and binds built-ins', async () => {
+    const { call, api } = await setup();
+    const projectId = (await api.projects({ projectKey: 'SCH' }).get()).data!.project.id;
+    let revision = 0;
+    const original = (await call('GET', '/matrix')).body.schemas['nur-lokal']!;
+    for (const profileId of ['local-27b-npu', 'local-halogen'] as const) {
+      const matrix = (await call('GET', '/matrix')).body;
+      const profile = matrix.profiles.find((entry) => entry.id === profileId)!;
+      const { builtIn: _builtIn, ...stored } = matrix.schemas['nur-lokal']! as ModelSchema & {
+        builtIn: boolean;
+      };
+      const schema = {
+        ...stored,
+        profile: profile.id,
+        classes: profile.classes,
+        npuSlots: profile.npuSlots,
+        gpuSlots: profile.gpuSlots,
+        speechRecognition: profile.speechRecognition,
+      };
+      const patch = { expectedRevision: revision, active: 'nur-lokal', schema };
+      expect((await call('POST', '/preview', patch)).status).toBe(200);
+      expect((await call('GET', '/matrix')).body.revision).toBe(revision);
+      expect((await call('POST', '/apply', patch)).status).toBe(200);
+      revision++;
+      expect((await call('GET', '/nur-lokal')).body.schema).toMatchObject({
+        ...schema,
+        builtIn: true,
+      });
+      expect((await call('GET', '/nur-lokal')).body.schema.roles).toEqual(original.roles);
+    }
+    const unchanged = (await call('GET', '/matrix')).body.schemas['nur-codex'];
+    const patch = {
+      expectedRevision: revision,
+      active: 'nur-codex',
+      schema: unchanged,
+      projects: [{ projectId, schemaId: 'nur-codex' }],
+    };
+    expect((await call('POST', '/preview', patch)).status).toBe(200);
+    expect((await call('POST', '/apply', patch)).status).toBe(200);
+    revision++;
+    expect((await call('GET', '/matrix')).body.active).toBe('nur-codex');
+    const local = (await call('GET', '/nur-lokal')).body.schema;
+    for (const schema of [
+      { ...local, name: 'Edited' },
+      {
+        ...local,
+        roles: { ...local.roles, general: { ...local.roles.general!, model: 'edited' } },
+      },
+      { ...local, gpuSlots: 8 },
+      { ...local, classes: {} },
+      { ...local, jevPrivate: !local.jevPrivate },
+    ])
+      expect((await call('POST', '/apply', { expectedRevision: revision, schema })).status).toBe(
+        409,
+      );
+    expect((await call('GET', '/matrix')).body.revision).toBe(revision);
+    expect(
+      (await call('PATCH', '/nur-lokal', { expectedRevision: revision, name: 'Edited' })).status,
+    ).toBe(409);
+  });
+
+  it('removes a custom role with general fallback, preserves overrides, audits and protects general and built-ins', async () => {
+    const { call, api, created } = await setup();
+    await call('POST', '', { expectedRevision: 0, id: 'custom', name: 'Custom' });
+    await call('PATCH', '/custom/roles/general', {
+      expectedRevision: 1,
+      values: { runtime: 'codex', model: 'gpt-6.1-sol', reasoning: 'high' },
+    });
+    await call('PATCH', '/custom/roles/coder', {
+      expectedRevision: 2,
+      values: {
+        model: 'plain-model',
+        reasoning: null,
+        escalation: {
+          target: 'codex',
+          model: null,
+          afterFailures: 0,
+          onResumeLimit: false,
+          onRequest: false,
+          maxDepth: 0,
+        },
+      },
+    });
+    await call('POST', '/apply', {
+      expectedRevision: 3,
+      active: 'custom',
+      agents: [{ agentId: created.agent.id, role: 'coder', values: { browser: 'jev' } }],
+    });
+    expect((await call('DELETE', '/custom/roles/general', { expectedRevision: 4 })).status).toBe(
+      409,
+    );
+    expect((await call('DELETE', '/nur-codex/roles/coder', { expectedRevision: 4 })).status).toBe(
+      409,
+    );
+    expect((await call('DELETE', '/custom/roles/unknown', { expectedRevision: 4 })).status).toBe(
+      400,
+    );
+    expect((await call('DELETE', '/custom/roles/planning', { expectedRevision: 4 })).status).toBe(
+      404,
+    );
+    expect((await call('DELETE', '/custom/roles/coder', { expectedRevision: 3 })).status).toBe(409);
+    expect((await call('DELETE', '/custom/roles/coder', { expectedRevision: 4 })).status).toBe(200);
+    expect((await call('GET', '/custom')).body.schema.roles.coder).toBeUndefined();
+    const matrix = (await api.god['model-schemas'].matrix.get()).data!;
+    const agent = matrix.agents.find((row) => row.id === created.agent.id)!;
+    expect(agent.role).toBe('coder');
+    expect(agent.cells.model.value).toBe('gpt-6.1-sol');
+    expect(agent.cells.browser).toEqual({ value: 'jev', source: 'own' });
+    expect((await call('GET', '/audit')).body.entries[0]).toMatchObject({
+      action: 'delete-role',
+      schemaIds: ['custom'],
+    });
+    expect(
+      (
+        await call('POST', '/apply', {
+          expectedRevision: 5,
+          schema: { ...matrix.schemas.custom!, roles: {} },
+        })
+      ).status,
+    ).toBe(409);
+    expect((await call('POST', '/apply', { expectedRevision: 5, undo: true })).status).toBe(200);
+    expect((await call('GET', '/custom')).body.schema.roles.coder).toBeDefined();
+  });
+
+  it('refuses removing a used legacy role without general fallback through API and batch apply', async () => {
+    const { call, created } = await setup();
+    await call('POST', '/apply', {
+      expectedRevision: 0,
+      agents: [{ agentId: created.agent.id, role: 'coder', values: {} }],
+    });
+    const state = defaultState();
+    const source = state.schemas['nur-codex']!;
+    state.revision = 1;
+    state.active = 'legacy';
+    state.schemas.legacy = {
+      ...source,
+      id: 'legacy',
+      name: 'Legacy',
+      roles: { coder: source.roles.coder! },
+    };
+    await db
+      .update(appSetting)
+      .set({ value: state })
+      .where(eq(appSetting.key, 'volition.modelSchemas'));
+    expect((await call('DELETE', '/legacy/roles/coder', { expectedRevision: 1 })).status).toBe(409);
+    expect(
+      (
+        await call('POST', '/apply', {
+          expectedRevision: 1,
+          schema: { ...state.schemas.legacy, roles: {} },
+        })
+      ).status,
+    ).toBe(409);
+    expect((await call('GET', '/legacy')).body.schema.roles.coder).toBeDefined();
+  });
+
+  it('marks command and webhook as unselectable in the schema catalog response', async () => {
+    const { call } = await setup();
+    const list = (await call('GET', '')).body;
+    for (const runtime of ['command', 'webhook']) {
+      expect(list.runtimes.find((entry) => entry.runtime === runtime)).toMatchObject({
+        selectable: false,
+        reason: expect.any(String),
+      });
+    }
+    expect(list.runtimes.find((entry) => entry.runtime === 'codex')).toMatchObject({
+      selectable: true,
+    });
+  });
 
   it('creates an empty draft, copies built-ins, renames, deletes and audits without changing originals', async () => {
     const { call, owner } = await setup();
@@ -256,7 +436,7 @@ describe('editable model schemas', () => {
     const home = await bootstrapHomeAgent();
     if (home.status !== 'ready') throw new Error('Home missing');
     const tools = routeTools(app).filter((tool) => tool.path.startsWith(base));
-    expect(tools).toHaveLength(10);
+    expect(tools).toHaveLength(11);
     const tool = tools.find((tool) => tool.name === 'create_model_schema')!;
     expect(tool).toBeDefined();
     const result = await dispatchTool(
@@ -268,6 +448,25 @@ describe('editable model schemas', () => {
     );
     expect(result.isError).toBe(false);
     expect((await call('GET', '/home-copy', undefined, owner.cookie)).status).toBe(200);
+    const removeRole = tools.find((tool) => tool.name === 'delete_model_schema_role')!;
+    expect(removeRole).toBeDefined();
+    const removed = await dispatchTool(
+      app,
+      removeRole,
+      { schemaId: 'home-copy', role: 'coder', expectedRevision: 1 },
+      { kind: 'api-key', apiKey: home.apiKey! },
+      { viaMcpEndpoint: false },
+    );
+    expect(removed.isError).toBe(false);
+    expect((await call('GET', '/home-copy')).body.schema.roles.coder).toBeUndefined();
+    const denied = await dispatchTool(
+      app,
+      removeRole,
+      { schemaId: 'home-copy', role: 'reviewer', expectedRevision: 2 },
+      { kind: 'api-key', apiKey: created.apiKey! },
+      { viaMcpEndpoint: false },
+    );
+    expect(denied.isError).toBe(true);
   });
 
   it('keeps project-bound schemas until unbound and projects active edits onto agents', async () => {

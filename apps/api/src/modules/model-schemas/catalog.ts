@@ -26,6 +26,7 @@ export async function schemaCatalog() {
   const models = new Map<string, ChatCatalogModel & { runtime: string }>();
   for (const row of rows) {
     const runtime = runtimeOfPolicy(row.policy);
+    if (runtime === 'command' || runtime === 'webhook') continue;
     for (const model of annotateCatalog(row.models as ChatCatalogModel[], runtime, availability)
       .models) {
       if (model.local || parseLocalModelId(model.id) || model.id === LOCAL_DEFAULT) continue;
