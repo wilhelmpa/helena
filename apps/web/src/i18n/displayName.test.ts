@@ -73,4 +73,25 @@ describe('display name', () => {
       assert.doesNotMatch(source, /['"`]([^'"`]*Helena[^'"`]*)['"`]/);
     }
   });
+
+  it('keeps fixed product text out of the service worker, the API title and what agents tell', () => {
+    // Quoted strings, comments stripped: a comment may say Helena, a string a person or an agent
+    // reads says Ava (owner naming rule 29.09.: visible name Ava, internal names stay).
+    const quoted = (path: string) => {
+      const code = readFileSync(new URL(path, import.meta.url), 'utf8')
+        .replace(/\/\*[\s\S]*?\*\//g, '')
+        .replace(/(^|[^:'"`])\/\/[^\n]*/g, '$1');
+      return [...code.matchAll(/(['"`])((?:(?!\1)[^\n\\]|\\.)*?)\1/g)].map((match) => match[2]!);
+    };
+    for (const path of [
+      '../../public/sw.js',
+      '../../../api/src/app.ts',
+      '../../../../packages/connectors/src/google/tools.ts',
+      '../../../../packages/connectors/src/google/oauth.ts',
+      '../../../../packages/browser-gateway/src/server.ts',
+      '../../../../packages/browser-gateway/src/task/run.ts',
+    ]) {
+      for (const text of quoted(path)) assert.doesNotMatch(text, /\bHelena\b/, `${path}: ${text}`);
+    }
+  });
 });

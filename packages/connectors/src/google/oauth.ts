@@ -122,7 +122,7 @@ export async function finishGoogleAuth(
   }
   if (!tokens.refresh_token) {
     throw new GoogleAuthError(
-      'Google returned no refresh token. Remove Helena under myaccount.google.com → Security → Third-party access and sign in again.',
+      'Google returned no refresh token. Remove Ava under myaccount.google.com → Security → Third-party access and sign in again.',
     );
   }
   if (!tokens.access_token) throw new GoogleAuthError('Google returned no access token.');
