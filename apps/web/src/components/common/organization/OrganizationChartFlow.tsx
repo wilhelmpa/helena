@@ -29,6 +29,7 @@ import { useMediaQuery } from '@/hooks/useMediaQuery';
 import OrganizationFlowEdge from './OrganizationFlowEdge';
 import OrganizationChartNode from './OrganizationChartNode';
 import { RING_MIN_ZOOM } from './organizationRingLayout';
+import { TREE_MIN_ZOOM, TREE_PADDING } from './organizationChartLayout';
 import {
   OrganizationRingGroup,
   OrganizationRingHub,
@@ -44,10 +45,7 @@ const nodeTypes: NodeTypes = {
   task: OrganizationRingTask,
 };
 const edgeTypes = { flow: OrganizationFlowEdge };
-const PADDING = 32;
-// The smallest zoom the tree fits itself to: one row of many reports stays one row, the
-// cards are compact, and what does not fit at this zoom is panned.
-const TREE_MIN_ZOOM = 0.7;
+const PADDING = TREE_PADDING;
 // How long a click waits for a second one before it counts as a single click.
 const DOUBLE_CLICK_MS = 240;
 
@@ -68,6 +66,8 @@ interface FlowProps {
   // Changes only when the chart itself changes (view, level), never on a click, so
   // opening an agent never moves or zooms the chart.
   fitKey: string;
+  // The smallest zoom the tree is fitted to (short cards allow a smaller one).
+  minZoom?: number;
   // A single click (or Enter) on a node.
   onActivate: (node: Node) => void;
   // A double click (or Shift+Enter): open the node's own ring.
@@ -91,6 +91,7 @@ function Flow({
   edges,
   orbits,
   fitKey,
+  minZoom = TREE_MIN_ZOOM,
   onActivate,
   onDrill,
   onPaneClick,
@@ -120,8 +121,25 @@ function Flow({
       const internals = nodes
         .map((node) => flow.getInternalNode(node.id))
         .filter((node): node is NonNullable<typeof node> => node != null && !!node.measured.width);
-      if (internals.length === 0) return false;
-      const nodeBounds = getNodesBounds(internals);
+      // The tree's cards have the size the layout gave them: fitting from that (not from what
+      // was measured, which for sized nodes React Flow does not report) fits it at once, on
+      // load and after the layout changed (short cards).
+      const sized = view === 'tree' ? nodes.filter((node) => node.width && node.height) : [];
+      if (internals.length === 0 && sized.length === 0) return false;
+      const nodeBounds = sized.length
+        ? (() => {
+            const xs = sized.map((node) => node.position.x);
+            const ys = sized.map((node) => node.position.y);
+            const right = Math.max(...sized.map((node) => node.position.x + node.width!));
+            const bottom = Math.max(...sized.map((node) => node.position.y + node.height!));
+            return {
+              x: Math.min(...xs),
+              y: Math.min(...ys),
+              width: right - Math.min(...xs),
+              height: bottom - Math.min(...ys),
+            };
+          })()
+        : getNodesBounds(internals);
       // The ring's orbits count into its bounds.
       const outer = view === 'ring' && orbits.length ? Math.max(...orbits) : 0;
       const bounds = outer
@@ -147,7 +165,7 @@ function Flow({
       // is 12px as well, so both stop at the same readable zoom and are panned beyond it.
       // A wide tree fits by zoom down to TREE_MIN_ZOOM (a row of ten reports is one row, owner
       // 30.09., O93) and is panned sideways beyond it.
-      const minimum = ring ? RING_MIN_ZOOM : TREE_MIN_ZOOM;
+      const minimum = ring ? RING_MIN_ZOOM : minZoom;
       const zoom = Math.min(
         1,
         Math.max(
@@ -161,7 +179,15 @@ function Flow({
       const tooWide = bounds.width * zoom > width - PADDING * 2;
       const tooTall = bounds.height * zoom > height - PADDING * 2;
       // The ring's middle (the hub) sits at the flow's origin.
-      const x = ring && tooWide ? width / 2 : (width - bounds.width * zoom) / 2 - bounds.x * zoom;
+      // Too wide even at the smallest zoom: the tree starts at its left edge (with its margin),
+      // so the first card is never cut; what does not fit is panned.
+      const x = ring
+        ? tooWide
+          ? width / 2
+          : (width - bounds.width * zoom) / 2 - bounds.x * zoom
+        : tooWide
+          ? PADDING - bounds.x * zoom
+          : (width - bounds.width * zoom) / 2 - bounds.x * zoom;
       const y = tooTall
         ? ring
           ? height / 2
@@ -170,17 +196,23 @@ function Flow({
       void flow.setViewport({ x, y, zoom }, { duration: animate && !reduced ? 320 : 0 });
       return true;
     },
-    [flow, height, nodes, orbits, reduced, view, width],
+    [flow, height, minZoom, nodes, orbits, reduced, view, width],
   );
 
   // Fit again when the chart's place changes size (the page settling, the window), not
   // only on a new view: a fit into a stage that was still growing leaves the chart off.
   useEffect(() => {
-    const key = `${fitKey}:${Math.round(width)}x${Math.round(height)}:${initialized ? 'all' : 'some'}`;
+    // The chart's own extent is part of the key: agents that arrive after the first fit (or a
+    // layout that changed) fit again.
+    const extent = nodes.reduce(
+      (max, node) => Math.max(max, node.position.x + (node.width ?? 0)),
+      0,
+    );
+    const key = `${fitKey}:${Math.round(width)}x${Math.round(height)}:${initialized ? 'all' : 'some'}:${nodes.length}:${Math.round(extent)}`;
     if (!panZoomReady || !width || !height || fitted.current === key) return;
     const sameView = fitted.current?.startsWith(`${fitKey}:`) ?? false;
     if (fit(fitted.current != null && !sameView)) fitted.current = key;
-  }, [fit, fitKey, height, initialized, panZoomReady, width]);
+  }, [fit, fitKey, height, initialized, nodes, panZoomReady, width]);
 
   useEffect(
     () => () => {
@@ -257,12 +289,14 @@ function Flow({
       onKeyDown={onKeyDown}
     >
       <ReactFlow
-        // The first fit is React Flow's own (it knows when the nodes are measured); later
-        // fits on a new view or a resized stage come from the effect above.
-        fitView
+        // The ring's first fit is React Flow's own (it knows when the nodes are measured); the
+        // tree's cards have the size the layout gave them, so its fit (and every later one, on
+        // a new view or a resized stage) comes from the effect above — React Flow's would
+        // centre a chart that is too wide and cut its first card.
+        fitView={view === 'ring'}
         fitViewOptions={{
           padding: 0.08,
-          minZoom: view === 'ring' ? RING_MIN_ZOOM : TREE_MIN_ZOOM,
+          minZoom: view === 'ring' ? RING_MIN_ZOOM : minZoom,
           maxZoom: 1,
         }}
         nodes={nodes}

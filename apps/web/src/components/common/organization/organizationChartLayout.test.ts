@@ -6,7 +6,11 @@ import {
   BUS_OFFSET,
   COMPACT_FROM,
   COMPACT_LEAF_WIDTH,
+  LEADER_WIDTH,
   LEAF_WIDTH,
+  SHORT_HEIGHT,
+  SHORT_LEAF_WIDTH,
+  chartWidth,
   organizationChartLayout,
 } from './organizationChartLayout';
 import { organizationChartState } from './organizationChartState';
@@ -144,5 +148,28 @@ describe('Organigramm', () => {
       '2>21',
       '3>30',
     ]);
+  });
+
+  test('kurze Karten: alle unter der Spitze zweizeilig und schmal, eine Ebene bleibt eine Zeile (O96)', () => {
+    const team = [
+      agent(1, null, null, true),
+      agent(2, 1, 7),
+      agent(3, 1, 8),
+      ...Array.from({ length: 9 }, (_, i) => agent(10 + i, 2, 7)),
+      agent(30, 3, 8),
+    ];
+    const compact = organizationChartLayout(team, new Set(), new Set());
+    const short = organizationChartLayout(team, new Set(), new Set(), { density: 'short' });
+    assert.ok(chartWidth(short.nodes) < chartWidth(compact.nodes));
+    const below = short.nodes.filter((node) => node.id !== '1');
+    assert.ok(below.every((node) => (node.data as { short?: boolean }).short));
+    assert.ok(below.every((node) => node.height === SHORT_HEIGHT));
+    assert.equal(short.nodes.find((node) => node.id === '1')!.width, LEADER_WIDTH);
+    const leaves = short.nodes.filter((node) => Number(node.id) >= 10);
+    assert.equal(new Set(leaves.map((node) => node.position.y)).size, 1);
+    assert.ok(leaves.every((node) => node.width === SHORT_LEAF_WIDTH));
+    // No card overlaps its neighbour.
+    const xs = leaves.map((node) => node.position.x).sort((a, b) => a - b);
+    for (let i = 1; i < xs.length; i++) assert.ok(xs[i]! >= xs[i - 1]! + SHORT_LEAF_WIDTH);
   });
 });
