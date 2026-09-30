@@ -41,8 +41,7 @@ export function rootDecision(input: {
   unrestricted?: boolean;
   agentRole?: string;
 }): 'immediate' | 'approval' {
-  if (input.unrestricted && input.agentRole === 'home' && input.runtime === 'helena')
-    return 'immediate';
+  if (input.unrestricted && input.agentRole === 'home') return 'immediate';
   return toolsFullyObserved(input.runtime ?? '') &&
     input.taintSources.length === 0 &&
     (!input.directOnly || input.origin === 'owner-direct')

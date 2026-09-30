@@ -17,25 +17,23 @@ if [[ ! "$name" =~ ^[a-z0-9][a-z0-9-]{0,31}$ ]]; then
 fi
 
 dev_clone=$HOME/volition/plan
+ava_launcher=$(dirname -- "$(realpath -- "$0")")/owner-ava-tools.mjs
 
 # The owner's main agents run without asking before each step (owner, 28.09., O27/O28:
 # "volle Rechte ohne Rückfragen"). The tabs sit behind the terminal's own step-up and
 # belong to the owner's own account; what that account may do with sudo is sudoers'
 # decision (hardening/apply.sh sudo-model and hostd), not this script's.
-claude_full=(--dangerously-skip-permissions)
-codex_full=(--dangerously-bypass-approvals-and-sandbox)
-
 case "$kind" in
   shell)
     command=(bash -l)
     workdir=$HOME
     ;;
   claude)
-    command=("$HOME/.local/bin/claude" "${claude_full[@]}")
+    command=(/usr/bin/node "$ava_launcher" launch "$kind" "$name")
     workdir=$HOME
     ;;
   codex)
-    command=(/usr/local/bin/codex)
+    command=(/usr/bin/node "$ava_launcher" launch "$kind" "$name")
     workdir=$HOME
     ;;
   local-qwen36 | local-qwen38 | local-flash)
@@ -43,18 +41,11 @@ case "$kind" in
     workdir=$HOME
     ;;
   helena-dev-claude)
-    # --add-dir also makes Claude Code read that directory's CLAUDE.md as extra
-    # project context, which is the handoff (~/volition/CLAUDE.md) the design
-    # asks for: the dev clone (~/volition/plan) is its own git repository, and
-    # Claude Code does not read a CLAUDE.md above a repository boundary on its own.
-    command=("$HOME/.local/bin/claude" --add-dir "$HOME/volition")
+    command=(/usr/bin/node "$ava_launcher" launch "$kind" "$name")
     workdir=$dev_clone
     ;;
   helena-dev-codex)
-    # Codex's own AGENTS.md discovery walks up from the working directory; no
-    # flag equivalent to Claude Code's --add-dir was found for also handing it
-    # ~/volition/CLAUDE.md specifically (see the branch report's open items).
-    command=(/usr/local/bin/codex)
+    command=(/usr/bin/node "$ava_launcher" launch "$kind" "$name")
     workdir=$dev_clone
     ;;
   *)
@@ -102,7 +93,7 @@ if ! "${tmux[@]}" has-session -t "=$session" 2>/dev/null; then
     codex | helena-dev-codex)
       # Codex has no id to choose up front; it continues the newest session of the
       # working directory, and starts a new one where there is none.
-      command=(bash -c '"$1" resume --last "$2" || exec "$1" "$2"' codex "${command[0]}" "${codex_full[0]}")
+      command=(bash -c '"$1" "$2" launch "$3" "$4" resume --last || exec "$1" "$2" launch "$3" "$4"' codex /usr/bin/node "$ava_launcher" "$kind" "$name")
       ;;
   esac
 fi

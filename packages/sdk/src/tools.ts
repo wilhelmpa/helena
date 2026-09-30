@@ -31,7 +31,9 @@ export interface ToolCallContext {
 }
 
 export type CallerAuth =
-  { kind: 'api-key'; apiKey: string } | { kind: 'oauth'; accessToken: string };
+  | { kind: 'api-key'; apiKey: string }
+  | { kind: 'oauth'; accessToken: string }
+  | { kind: 'owner-terminal'; accessToken: string };
 
 export interface AgentTool<Input = Record<string, unknown>, Output = unknown> {
   // The MCP tool name, unique across Helena: `[A-Za-z0-9_-]{1,64}`.

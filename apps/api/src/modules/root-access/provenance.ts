@@ -7,7 +7,12 @@ import { and, eq, sql } from 'drizzle-orm';
 import { HttpError } from '#shared/lib';
 import { taintSourcesOf } from './policy';
 
-export type Work = { runtime?: string; runId?: number | null; messageId?: number | null };
+export type Work = {
+  runtime?: string;
+  runId?: number | null;
+  messageId?: number | null;
+  ownerTerminal?: boolean;
+};
 
 export async function ownerOrigin(agentId: number, userId: string): Promise<string> {
   const [owner] = await db
@@ -19,6 +24,12 @@ export async function ownerOrigin(agentId: number, userId: string): Promise<stri
 }
 
 export async function workProvenance(agentId: number, work: Work) {
+  if (work.ownerTerminal)
+    return {
+      origin: 'owner-direct',
+      runtime: work.runtime ?? 'unknown',
+      taintSources: ['owner-terminal', 'unobserved-terminal-history'],
+    };
   if (!!work.runId === !!work.messageId)
     throw new HttpError(400, 'Exactly one active run or chat answer is required');
   const table = work.runId ? agentRun : agentChatMessage;

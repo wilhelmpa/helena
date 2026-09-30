@@ -2,6 +2,7 @@ import { spawn } from 'node:child_process';
 import { mkdir, readdir } from 'node:fs/promises';
 import path from 'node:path';
 import { localCodexArguments, readLocalState } from './owner-local-model.mjs';
+import { avaCodexArguments } from './owner-ava-tools.mjs';
 
 // Executed inside the existing owner tmux server, never as a service agent UID.
 // Each tab has its own Codex history/config; the owner's cloud login is untouched.
@@ -16,7 +17,7 @@ export async function launchLocalCodex(kind, name, {
   const codexHome = path.join(stateRoot, 'codex');
   await mkdir(codexHome, { recursive: true, mode: 0o700 });
   const history = await readdir(path.join(codexHome, 'sessions')).catch(() => []);
-  const args = localCodexArguments(kind);
+  const args = [...localCodexArguments(kind), ...avaCodexArguments(kind, name, ownerHome)];
   if (history.length) args.push('resume', '--last');
   // Like the Codex tab: no question before each step (owner, 28.09., O27).
   args.push('--dangerously-bypass-approvals-and-sandbox');

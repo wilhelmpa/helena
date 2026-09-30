@@ -1100,6 +1100,7 @@ export class CliRuntimeAdapter implements RuntimeAdapter {
         ? this.gate
         : undefined;
     return {
+      unrestrictedHome: this.applied?.snapshot.agent?.agentRole === 'home',
       ...(this.runtime === 'codex' && { sandbox: this.sandbox() }),
       ...(gate && { startGate: gate }),
       output: (chunk) => reader.write(chunk),

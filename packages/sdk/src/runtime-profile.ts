@@ -52,6 +52,7 @@ export interface StartGate {
 // What an adapter asks of the one command a run or chat answer starts.
 export interface CommandHooks {
   sandbox?: CommandSandbox;
+  unrestrictedHome?: boolean;
   startGate?: StartGate;
   // Sees the command's output as it arrives.
   output?(chunk: string): void;

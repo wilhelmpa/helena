@@ -125,7 +125,12 @@ describe('root broker', () => {
       expect(patched.status).toBe(200);
       expect((await asHome['agent-runtime'].policy.get()).data?.helena).toMatchObject({
         toolProfile: 'voll',
-        coreTools: ['run_as_root'],
+        coreTools: expect.arrayContaining([
+          'run_as_root',
+          'run_development_operation',
+          'get_development_job',
+          'enqueue_codex_task',
+        ]),
       });
       const requested = await asHome
         .projects({ projectKey: 'ROOT' })
@@ -197,7 +202,8 @@ describe('root broker', () => {
     );
   });
   it('asks after a read, then executes exactly the approved command once', async () => {
-    const { request, asHome, asOwner, messageId } = await setup();
+    const { request, asHome, asOwner, messageId, owner } = await setup();
+    await setRootSettings({ enabled: true, directOnly: true, unrestricted: false }, owner.userId);
     await asHome['agent-policy'].decide.post({ runtime: 'hermes', messageId, tool: 'WebFetch' });
     const pending = await request('/agent-root', {
       command: 'id -u',
@@ -219,24 +225,29 @@ describe('root broker', () => {
     ).toBe(409);
     expect(calls.filter((method) => method === 'RunPrivileged')).toHaveLength(1);
   });
-  it('treats the actual Codex unit as tainted even when the desired runtime is Hermes', async () => {
-    const { request, asOwner } = await setup('codex');
-    const pending = await request('/agent-root', { command: 'id -u', reason: 'CLI request' });
-    expect(pending.data.status).toBe('pending');
-    const card = await asOwner.approvals({ approvalId: pending.data.approvalId! }).get();
-    expect(card.data?.details).toContain('Laufzeit nicht beobachtbar');
-    expect(calls).not.toContain('RunPrivileged');
-    expect(
-      (
-        await asOwner
-          .approvals({ approvalId: pending.data.approvalId! })
-          .decision.post({ approved: true })
-      ).status,
-    ).toBe(200);
-    expect(calls).toContain('RunPrivileged');
-  });
+  it.each(['codex', 'claude'])(
+    'executes Home on %s immediately and retains unobserved-runtime audit',
+    async (runtime) => {
+      const { request, asOwner } = await setup(runtime);
+      const result = await request('/agent-root', { command: 'id -u', reason: 'CLI request' });
+      expect(result.data.status).toBe('success');
+      expect(result.data.approvalId).toBeNull();
+      const audit = await request('/god/root-access/audit', undefined, true);
+      expect(audit.data).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            runtime,
+            status: 'success',
+            taintSources: expect.arrayContaining(['Laufzeit nicht beobachtbar']),
+          }),
+        ]),
+      );
+      expect((await asOwner.approvals.get()).data?.items).toEqual([]);
+    },
+  );
   it('invalidates outstanding approvals when the owner revokes access', async () => {
     const { request, asOwner, owner } = await setup('claude');
+    await setRootSettings({ enabled: true, directOnly: true, unrestricted: false }, owner.userId);
     const pending = await request('/agent-root', { command: 'id -u', reason: 'CLI request' });
     expect(pending.data.status).toBe('pending');
     await setRootSettings({ enabled: false, directOnly: true }, owner.userId);

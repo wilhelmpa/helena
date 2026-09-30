@@ -4,6 +4,7 @@ import type { McpRouteTool } from './generate';
 import { MCP_LOOPBACK_HEADER, setMcpOAuthToken } from '../shared/mcp-request';
 import type { McpCredential } from './credential';
 import { structuredResult, type StructuredResult } from './result';
+import { OWNER_TOOLS_HEADER } from '#modules/owner-terminal/ava-tools';
 
 // Methods that carry a request body; the rest put their arguments in the query.
 
@@ -70,6 +71,9 @@ export async function dispatchTool(
       ...(opts.agentProject ? { [AGENT_PROJECT_HEADER]: opts.agentProject } : {}),
       ...(credential.kind === 'api-key' ? { 'x-api-key': credential.apiKey } : {}),
       ...(credential.kind === 'session' ? { cookie: credential.cookie } : {}),
+      ...(credential.kind === 'owner-terminal'
+        ? { [OWNER_TOOLS_HEADER]: credential.accessToken }
+        : {}),
       // Marks this as an MCP call so guards enforce the per-project MCP toggle.
       ...(opts.viaMcpEndpoint ? { [MCP_LOOPBACK_HEADER]: '1' } : {}),
     },

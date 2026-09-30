@@ -28,6 +28,7 @@ export interface RuntimeTaskSettings {
   // The sandbox of the commands the model runs, for a runtime that has one of its own
   // (Codex). Unset: the runtime's default for an operator's own runner.
   sandbox?: CommandSandbox;
+  unrestrictedHome?: boolean;
   // Helena's Autopilot level for this run or chat answer (absent on an older server), and
   // the command a runtime with pre-tool hooks runs to ask Helena's policy engine.
   autopilotLevel?: number | null;

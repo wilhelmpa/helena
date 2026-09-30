@@ -156,7 +156,7 @@ def build(args):
     tree = work / 'tree'
     try:
         run(['git', '-C', args.repo, 'worktree', 'add', '--detach', str(tree), commit])
-        run(['bun', 'install', '--frozen-lockfile'], cwd=tree)
+        run(['bun', 'install', '--frozen-lockfile', *(['--offline'] if args.offline else [])], cwd=tree)
         env = dict(os.environ, NEXT_DEPLOYMENT_ID=ident, NEXT_TELEMETRY_DISABLED='1')
         run(['bun', 'run', 'build'], cwd=tree / 'apps/web', env=env)
         out = package(tree, commit, args.out)
@@ -283,6 +283,7 @@ def main(argv=None):
     b.add_argument('--repo', required=True)
     b.add_argument('--commit', required=True)
     b.add_argument('--out', required=True)
+    b.add_argument('--offline', action='store_true')
     p = commands.add_parser('package')
     p.add_argument('--tree', required=True)
     p.add_argument('--commit', required=True)

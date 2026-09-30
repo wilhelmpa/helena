@@ -37,6 +37,7 @@ import { edgeGuard, edgeVerifyRoutes, mountSecurityRoutes } from './modules/edge
 import { crossSiteRefusal } from './shared/cross-site';
 import { engineHookRoutes } from './modules/engine';
 import { ownerLocalInferenceRoutes } from './modules/owner-terminal/local-inference';
+import { ownerAvaToolsRoutes } from './modules/owner-terminal/ava-tools';
 import { issueProxyToken } from './modules/owner-terminal/service';
 import { OwnerTerminalKindParam, type OwnerTerminalKind } from './modules/owner-terminal/model';
 import pkg from '../../../package.json';
@@ -124,6 +125,7 @@ export const app = new Elysia()
   .use(agentBrowserGatewayInternalRoutes)
   .use(browserTaskInternalRoutes)
   .use(ownerLocalInferenceRoutes)
+  .use(ownerAvaToolsRoutes)
   // OpenAPI docs. Mounted on the main app (outside the planner's session guard)
   // so the UI at /docs and the spec at /docs/json are reachable without a
   // session. The spec is generated from the `t` schemas on every route.

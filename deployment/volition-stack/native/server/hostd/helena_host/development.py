@@ -5,6 +5,7 @@ import fcntl
 import os
 import re
 import stat
+import signal
 from contextlib import contextmanager
 
 from .common import HostError, iso
@@ -157,3 +158,75 @@ def release(ctx, _):
     sha = ctx.host.run(['git', '-C', '/srv/volition/source/plan', 'rev-parse', 'HEAD'], timeout=5)
     return {'liveSha': sha.stdout.strip() if sha.returncode == 0 and re.fullmatch(r'[a-f0-9]{40}', sha.stdout.strip()) else None,
             'gates': gates}
+
+
+def queue_control(ctx, params):
+    number = params['number']
+    action = params['action']
+    if not 1 <= number <= 999999999 or action not in ('stop', 'requeue'):
+        raise HostError('InvalidParameter', 'Invalid queue action')
+    with directory(work_path(ctx) + '/codex-tasks') as fd:
+        lock = open_file(fd, '.volition-queue.lock', os.O_RDWR | os.O_CREAT)
+        try:
+            fcntl.flock(lock, fcntl.LOCK_EX)
+            names = [name for name in os.listdir(fd) if (match := TASK.fullmatch(name)) and int(match[1]) == number and not name.endswith(('-bericht.md', '-last.md'))]
+            if len(names) != 1:
+                raise HostError('NotFound', 'One unambiguous task file is required')
+            read(fd, names[0])
+            queue = open_file(fd, 'queue.txt', os.O_RDWR | os.O_CREAT)
+            try:
+                if os.fstat(queue).st_size > 1048576:
+                    raise HostError('Busy', 'Queue is too large to rewrite safely')
+                lines = os.read(queue, 1048576).decode('utf-8').splitlines()
+                lines = [line for line in lines if line != names[0]]
+                processes = status(ctx, {})['running']
+                if action == 'requeue':
+                    if any(item['number'] == number for item in processes):
+                        raise HostError('Busy', 'Stop the running task before requeueing')
+                    lines.append(names[0])
+                else:
+                    for item in processes:
+                        if item['number'] != number:
+                            continue
+                        pidfd = os.pidfd_open(item['pid'])
+                        try:
+                            with open(f"/proc/{item['pid']}/cmdline", 'rb') as handle:
+                                argv = handle.read(65536).split(b'\x00')
+                            output = f"{work_path(ctx)}/codex-tasks/{number:03d}-last.md".encode()
+                            if b'exec' not in argv or not any(b'codex' in arg for arg in argv) or output not in argv:
+                                raise HostError('Busy', 'Task process changed before stopping')
+                            signal.pidfd_send_signal(pidfd, signal.SIGTERM)
+                        finally:
+                            os.close(pidfd)
+                os.ftruncate(queue, 0)
+                os.lseek(queue, 0, os.SEEK_SET)
+                os.write(queue, ('\n'.join(lines) + ('\n' if lines else '')).encode())
+                os.fsync(queue)
+            finally:
+                os.close(queue)
+        finally:
+            os.close(lock)
+    return {'number': number, 'action': action}
+
+
+def set_max(ctx, params):
+    maximum = params['maximum']
+    if isinstance(maximum, bool) or not 1 <= maximum <= 5:
+        raise HostError('InvalidParameter', 'Codex concurrency must be between one and five')
+    with directory(work_path(ctx) + '/codex-tasks') as fd:
+        lock = open_file(fd, '.volition-queue.lock', os.O_RDWR | os.O_CREAT)
+        try:
+            fcntl.flock(lock, fcntl.LOCK_EX)
+            file = open_file(fd, 'max.txt', os.O_CREAT | os.O_RDWR)
+            try:
+                if os.geteuid() == 0:
+                    owner = os.fstat(fd)
+                    os.fchown(file, owner.st_uid, owner.st_gid)
+                os.ftruncate(file, 0)
+                os.write(file, (str(maximum) + '\n').encode())
+                os.fsync(file)
+            finally:
+                os.close(file)
+        finally:
+            os.close(lock)
+    return {'maximum': maximum}

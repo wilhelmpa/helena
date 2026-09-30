@@ -111,3 +111,36 @@ class Development(unittest.TestCase):
         release = self.call('DevelopmentRelease')
         self.assertEqual(release['liveSha'], 'a' * 40)
         self.assertEqual(release['gates'][0]['summary'], [' 42 pass', ' 0 fail'])
+
+    def test_queue_stop_requeue_and_concurrency_limit(self):
+        task = self.enqueue()
+        self.call('DevelopmentQueueControl', number=task['number'], action='requeue')
+        self.assertEqual(self.call('DevelopmentStatus')['queue'], [task['file']])
+        self.call('DevelopmentQueueControl', number=task['number'], action='stop')
+        self.assertEqual(self.call('DevelopmentStatus')['queue'], [])
+        self.call('DevelopmentQueueControl', number=task['number'], action='requeue')
+        self.assertEqual(self.call('DevelopmentStatus')['queue'], [task['file']])
+        self.assertEqual(self.call('DevelopmentMax', maximum=5), {'maximum': 5})
+        with open(self.tasks + '/max.txt') as file:
+            self.assertEqual(file.read(), '5\n')
+        for maximum in (0, 6, True, 1.5):
+            with self.assertRaises(VarlinkError):
+                self.call('DevelopmentMax', maximum=maximum)
+        os.unlink(self.tasks + '/max.txt')
+        os.symlink(self.tasks + '/' + task['file'], self.tasks + '/max.txt')
+        with self.assertRaises(VarlinkError):
+            self.call('DevelopmentMax', maximum=1)
+
+    def test_queue_control_preserves_entries_before_the_log_tail_limit(self):
+        task = self.enqueue()
+        original = '200-other.md\n' * 7000 + task['file'] + '\n'
+        with open(self.tasks + '/queue.txt', 'w') as file:
+            file.write(original)
+        self.call('DevelopmentQueueControl', number=task['number'], action='stop')
+        with open(self.tasks + '/queue.txt') as file:
+            self.assertEqual(file.read(), '200-other.md\n' * 7000)
+        with open(self.tasks + '/queue.txt', 'w') as file:
+            file.write('x' * 1048577)
+        with self.assertRaises(VarlinkError):
+            self.call('DevelopmentQueueControl', number=task['number'], action='stop')
+        self.assertEqual(os.stat(self.tasks + '/queue.txt').st_size, 1048577)

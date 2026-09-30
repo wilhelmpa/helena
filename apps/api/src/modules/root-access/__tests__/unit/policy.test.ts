@@ -102,9 +102,9 @@ describe('root launcher attribution', () => {
 });
 
 describe('unrestricted Home root', () => {
-  it('ignores taint and origin only for Home on its native runtime', () => {
+  it('ignores taint and origin for Home on every runtime', () => {
     for (const agentRole of ['home', 'agent'])
-      for (const runtime of ['helena', 'hermes', 'codex', 'unknown'])
+      for (const runtime of ['helena', 'hermes', 'claude', 'codex', 'unknown'])
         for (const unrestricted of [true, false]) {
           expect(
             rootDecision({
@@ -115,9 +115,7 @@ describe('unrestricted Home root', () => {
               agentRole,
               unrestricted,
             }),
-          ).toBe(
-            agentRole === 'home' && runtime === 'helena' && unrestricted ? 'immediate' : 'approval',
-          );
+          ).toBe(agentRole === 'home' && unrestricted ? 'immediate' : 'approval');
         }
   });
 });

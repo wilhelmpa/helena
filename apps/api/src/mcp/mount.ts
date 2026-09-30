@@ -7,6 +7,11 @@ import type { McpApp } from './types';
 import type { McpCredential } from './credential';
 import { agentSocketProject, checkAgentSocket } from '../shared/agent-socket';
 import { HttpError } from '../shared/lib';
+import {
+  OWNER_TOOLS_HEADER,
+  ownerToolsUser,
+  ownerToolsRuntime,
+} from '#modules/owner-terminal/ava-tools';
 
 function refused(error: unknown): Response {
   const status = error instanceof HttpError ? error.status : 403;
@@ -67,7 +72,8 @@ export function mountMcp(app: any): void {
         const server = await buildMcpServer(mcpApp, credential, userId, {
           runId,
           agentUnit: request.headers.get('x-volition-agent-unit'),
-          agentRuntime: request.headers.get('x-volition-agent-runtime'),
+          agentRuntime:
+            ownerToolsRuntime(request) ?? request.headers.get('x-volition-agent-runtime'),
           messageId: Number(request.headers.get('x-volition-message')) || null,
           agentProject: agentSocketProject(request.headers),
         });
@@ -79,6 +85,17 @@ export function mountMcp(app: any): void {
         return transport.handleRequest(request, { parsedBody: body });
       };
 
+      if (request.headers.has(OWNER_TOOLS_HEADER)) {
+        try {
+          const caller = await ownerToolsUser(request);
+          return serve(
+            { kind: 'owner-terminal', accessToken: request.headers.get(OWNER_TOOLS_HEADER)! },
+            caller.id,
+          );
+        } catch (error) {
+          return refused(error);
+        }
+      }
       const apiKey = extractApiKey(request);
       // An isolated agent reaches this endpoint only through the agent socket, which
       // names its project; there it has to use the key of an agent of that project.

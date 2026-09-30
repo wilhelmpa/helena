@@ -1,6 +1,7 @@
 import { Elysia } from 'elysia';
 import { rootOwner } from '#modules/root-access/service';
 import { developmentOperation } from './service';
+import { configureDevelopmentProject } from './project';
 import { getRunnerAgent } from '#modules/agents/runner/service';
 import { HttpError } from '#shared/lib';
 import { authContext } from '#shared/auth-context';
@@ -14,6 +15,15 @@ import {
   DevelopmentReportResponse,
   DevelopmentStatusResponse,
   DevelopmentReleaseResponse,
+  developmentOperationBody,
+  developmentJobParams,
+  DevelopmentJobResponse,
+  developmentQueueBody,
+  DevelopmentQueueResponse,
+  developmentMaxBody,
+  DevelopmentMaxResponse,
+  developmentProjectBody,
+  DevelopmentProjectResponse,
 } from './model';
 
 export const developmentRoutes = new Elysia({ name: 'volition-development' })
@@ -50,7 +60,10 @@ export const developmentRoutes = new Elysia({ name: 'volition-development' })
   )
   .get(
     '/agent-development/status',
-    () => developmentOperation<Static<typeof DevelopmentStatusResponse>>('DevelopmentStatus'),
+    ({ developmentAgent }) =>
+      developmentOperation<Static<typeof DevelopmentStatusResponse>>('DevelopmentStatus', {
+        actor: `agent:${developmentAgent.id}`,
+      }),
     {
       developmentHome: true,
       response: { 200: DevelopmentStatusResponse, ...commonErrors, ...errors(409, 502, 503, 504) },
@@ -62,8 +75,11 @@ export const developmentRoutes = new Elysia({ name: 'volition-development' })
   )
   .get(
     '/agent-development/reports/:number',
-    ({ params }) =>
-      developmentOperation<Static<typeof DevelopmentReportResponse>>('DevelopmentReport', params),
+    ({ params, developmentAgent }) =>
+      developmentOperation<Static<typeof DevelopmentReportResponse>>('DevelopmentReport', {
+        ...params,
+        actor: `agent:${developmentAgent.id}`,
+      }),
     {
       developmentHome: true,
       params: developmentNumberParams,
@@ -76,13 +92,122 @@ export const developmentRoutes = new Elysia({ name: 'volition-development' })
   )
   .get(
     '/agent-development/release',
-    () => developmentOperation<Static<typeof DevelopmentReleaseResponse>>('DevelopmentRelease'),
+    ({ developmentAgent }) =>
+      developmentOperation<Static<typeof DevelopmentReleaseResponse>>('DevelopmentRelease', {
+        actor: `agent:${developmentAgent.id}`,
+      }),
     {
       developmentHome: true,
       response: { 200: DevelopmentReleaseResponse, ...commonErrors, ...errors(409, 502, 503, 504) },
       detail: {
         summary: 'Read the latest gate summaries and live checkout SHA for Home',
         ...mcpTool('get_development_release', undefined, 'read'),
+      },
+    },
+  )
+  .post(
+    '/agent-development/operations',
+    ({ body, developmentAgent }) => {
+      const { operation, ...parameters } = body;
+      const methods = {
+        worktree: 'DevelopmentWorktree',
+        merge: 'DevelopmentMerge',
+        review: 'DevelopmentReview',
+        gate: 'DevelopmentGate',
+        tests: 'DevelopmentTests',
+        build: 'DevelopmentBuild',
+        probe: 'DevelopmentProbe',
+        deploy: 'DevelopmentDeploy',
+        verify: 'DevelopmentVerify',
+      };
+      const input =
+        operation === 'tests' && 'testFiles' in parameters
+          ? { ...parameters, tests: { files: parameters.testFiles }, testFiles: undefined }
+          : parameters;
+      if ('testFiles' in input) delete input.testFiles;
+      return developmentOperation<Static<typeof DevelopmentJobResponse>>(methods[operation], {
+        ...input,
+        actor: `agent:${developmentAgent.id}`,
+      });
+    },
+    {
+      developmentHome: true,
+      body: developmentOperationBody,
+      response: { 200: DevelopmentJobResponse, ...commonErrors, ...errors(409, 502, 503, 504) },
+      detail: {
+        summary: 'Start a typed Ava development job',
+        description:
+          'Operations: worktree (target branch/name), merge (target branch), review (evidence), gate, tests (testFiles), build/deploy (pauseHalogen), probe on :3091, verify (smoke and integrity). Every stage binds to branch and full expected SHA. dryRun=true only records a plan, with no subprocess or live mutation. Real build/probe/deploy require successful review and gate; deploy also requires build and probe. Read completion with get_development_job.',
+        ...mcpTool('run_development_operation', undefined, 'execute'),
+      },
+    },
+  )
+  .get(
+    '/agent-development/jobs/:id',
+    ({ params, developmentAgent }) =>
+      developmentOperation<Static<typeof DevelopmentJobResponse>>('DevelopmentJob', {
+        ...params,
+        actor: `agent:${developmentAgent.id}`,
+      }),
+    {
+      developmentHome: true,
+      params: developmentJobParams,
+      response: { 200: DevelopmentJobResponse, ...commonErrors, ...errors(409, 502, 503, 504) },
+      detail: {
+        summary: 'Read a development job result and report',
+        ...mcpTool('get_development_job', undefined, 'read'),
+      },
+    },
+  )
+  .post(
+    '/agent-development/tasks/:number/control',
+    ({ params, body, developmentAgent }) =>
+      developmentOperation<Static<typeof DevelopmentQueueResponse>>('DevelopmentQueueControl', {
+        ...params,
+        ...body,
+        actor: `agent:${developmentAgent.id}`,
+      }),
+    {
+      developmentHome: true,
+      params: developmentNumberParams,
+      body: developmentQueueBody,
+      response: { 200: DevelopmentQueueResponse, ...commonErrors, ...errors(409, 502, 503, 504) },
+      detail: {
+        summary: 'Stop or requeue one Codex task',
+        ...mcpTool('control_codex_task', undefined, 'execute'),
+      },
+    },
+  )
+  .post(
+    '/agent-development/queue/maximum',
+    ({ body, developmentAgent }) =>
+      developmentOperation<Static<typeof DevelopmentMaxResponse>>('DevelopmentMax', {
+        ...body,
+        actor: `agent:${developmentAgent.id}`,
+      }),
+    {
+      developmentHome: true,
+      body: developmentMaxBody,
+      response: { 200: DevelopmentMaxResponse, ...commonErrors, ...errors(409, 502, 503, 504) },
+      detail: {
+        summary: 'Set Codex queue concurrency from one to five',
+        ...mcpTool('set_codex_maximum', undefined, 'write'),
+      },
+    },
+  )
+  .post(
+    '/agent-development/project',
+    ({ body, developmentAgent }) =>
+      configureDevelopmentProject(developmentAgent.id, body.runtime, body.dryRun),
+    {
+      developmentHome: true,
+      body: developmentProjectBody,
+      response: { 200: DevelopmentProjectResponse, ...commonErrors, ...errors(409, 502, 503, 504) },
+      detail: {
+        summary: 'Configure HELENA #15 as Ava Entwicklung and select its coordinator runtime',
+        description:
+          'Reuses the existing project and coordinator, imports ava-entwicklung, assigns Reviewer/Coder and links the canonical handoff as a knowledge document. dryRun=true plans the existing records.',
+        ...mcpTool('configure_development_project', undefined, 'write'),
       },
     },
   );
