@@ -9,6 +9,17 @@ export type UpdateKind = 'runtime' | 'system' | 'tool' | 'app';
 export type UpdateRisk = 'low' | 'medium' | 'high';
 export type UpdateScope = 'item' | 'group' | 'security';
 
+export interface ModelNotice {
+  repository: string | null;
+  revision: string | null;
+  sizeBytes: number | null;
+  license: string | null;
+  date: string | null;
+  fits: boolean;
+  reason: string | null;
+  baseline: string | null;
+}
+
 export interface UpdateItem {
   id: number;
   source: string;
@@ -38,6 +49,7 @@ export interface UpdateItem {
   applicable: boolean;
   hint: LocalizedText | null;
   detail: string | null;
+  modelNotice?: ModelNotice | null;
   error: string | null;
   availableSince: string | null;
   checkedAt: string;
@@ -93,6 +105,7 @@ export interface UpdateCenter {
     error: string | null;
   }[];
   items: UpdateItem[];
+  newModels?: UpdateItem[];
   actions: UpdateAction[];
   settings: UpdateSettings;
   digest: {

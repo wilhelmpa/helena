@@ -34,6 +34,7 @@ import {
 } from '../../service';
 import { pickDigestModel } from '../../digest';
 import { getUpdateSettings, setUpdateSettings } from '../../settings';
+import { configuredModelWatch } from '#modules/local-ai/model-watch-config';
 
 // The update center end to end, with the vendors' endpoints and the root helper played by
 // the test: what a check stores, the digest runs a Hermes runner claims and answers, and an
@@ -488,7 +489,7 @@ describe('update center: checking', () => {
     expect(state.items.at(-1)!.updateAvailable).toBe(false);
   });
 
-  it('removes watched models and checks Halogen through its own source', async () => {
+  it('separates configured model revisions from software updates and refuses model apply', async () => {
     const { api } = await owner();
     const local = Bun.serve({
       hostname: '127.0.0.1',
@@ -523,15 +524,39 @@ describe('update center: checking', () => {
         },
       ]);
       const requested: string[] = [];
+      const watched = await configuredModelWatch(
+        await db.select().from(helenaModelServer),
+        [],
+        null,
+      );
       setUpdateFetch(async (url) => {
         requested.push(url);
         if (url.startsWith('https://ghcr.io/token')) return Response.json({});
         if (url.endsWith('/tags/list')) return Response.json({ tags: ['0.14.2', '0.14.3'] });
+        if (url.startsWith('https://huggingface.co/api/models?'))
+          return Response.json([{ id: 'Qwen/Qwen4-60B-A6B' }, { id: 'unsloth/Qwen4-235B-GGUF' }]);
+        const source = watched.find(
+          (entry) => url === `https://huggingface.co/api/models/${entry.repo}?blobs=true`,
+        );
+        if (source)
+          return Response.json({
+            id: source.repo,
+            sha: 'b'.repeat(40),
+            lastModified: '2026-09-30T08:00:00Z',
+            cardData: { license: 'apache-2.0' },
+            siblings: source.files.map((rfilename) => ({
+              rfilename,
+              lfs: {
+                size: source.repo?.includes('Flash-Next-GGUF') ? 50_000_000_000 : 1_000_000_000,
+              },
+            })),
+          });
         return VENDOR[url]?.() ?? new Response('', { status: 404 });
       });
       startFakeHelper(helperAnswers);
       await runUpdateCheck({ only: 'local-ai' });
-      const items = (await api.god['update-center'].get()).data!.items;
+      const state = (await api.god['update-center'].get()).data!;
+      const items = state.items;
       expect(
         items.filter((item) => item.source === 'local-ai').map((item) => item.component),
       ).toEqual(['halogen']);
@@ -540,7 +565,43 @@ describe('update center: checking', () => {
         available: '0.14.3',
         hint: { i18n: 'localAi.updates.halogenHint' },
       });
-      expect(requested.some((url) => url.includes('huggingface.co'))).toBe(false);
+      expect(state.newModels).toHaveLength(3);
+      expect(state.newModels.every((item) => !item.applicable && !item.autoAllowed)).toBe(true);
+      expect(
+        state.newModels.find(
+          (item) => item.modelNotice?.repository === 'unsloth/Qwen3.8-Flash-Next-GGUF',
+        ),
+      ).toMatchObject({
+        updateAvailable: true,
+        modelNotice: {
+          revision: 'b'.repeat(40),
+          sizeBytes: 150_000_000_000,
+          license: 'apache-2.0',
+          date: new Date('2026-09-30T08:00:00.000Z'),
+          fits: false,
+        },
+      });
+      expect(items.some((item) => item.component.startsWith('watch:'))).toBe(false);
+      const modelIds = new Set(state.newModels.map((item) => item.id));
+      expect(
+        (await digestTargets()).some((target) => target.rowIds.some((id) => modelIds.has(id))),
+      ).toBe(false);
+      const actionsBefore = helperRequests.length;
+      expect(
+        (await api.god['update-center'].items({ itemId: state.newModels[0]!.id }).apply.post({}))
+          .status,
+      ).toBe(409);
+      expect(helperRequests).toHaveLength(actionsBefore);
+      expect(
+        requested
+          .filter((url) => url.includes('huggingface.co'))
+          .every((url) => url.startsWith('https://huggingface.co/api/models')),
+      ).toBe(true);
+      expect(
+        (await rows()).some((row) =>
+          ['watch:qwen4-moe', 'watch:qwen-flash-next'].includes(row.component),
+        ),
+      ).toBe(false);
     } finally {
       local.stop(true);
     }

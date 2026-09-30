@@ -280,6 +280,19 @@ def whisper_status() -> dict:
         r"/opt/helena-ai/voice/whisper-([0-9]+\.[0-9]+\.[0-9]+)(?:-cpu|-rocm)?/whisper-server")
 
 
+def model_files(unit: str) -> list[str]:
+    try:
+        result = run(None, ['systemctl', 'show', unit, '--property=ExecStart', '--value'],
+                     check=False, timeout=10)
+        if result.returncode:
+            return []
+        return list(dict.fromkeys(Path(path).name for path in re.findall(
+            r'(?:--model|--codec|--vad-model|-m)\s+(/(?:var/lib/helena-ai|var/lib/helena-voice)/[^\s;}]+)',
+            result.stdout)))
+    except (OSError, subprocess.TimeoutExpired):
+        return []
+
+
 WHISPER_UI = Path('/usr/local/lib/helena-whisper-update/whisper_ui.py')
 
 
@@ -319,12 +332,15 @@ def inventory(config: dict) -> dict:
         "tools": tools,
         "hostToolApply": list(host_tools.TOOLS),
         "voice": {
-            "whisper": {**whisper_status(), "update": whisper_readiness()},
-            "qwentts": executable_status("helena-voice-tts.service",
+            "whisper": {**whisper_status(), "update": whisper_readiness(),
+                        "modelFiles": model_files('helena-voice-stt.service')},
+            "qwentts": {**executable_status("helena-voice-tts.service",
                 r"/opt/helena-ai/voice/qwentts-([0-9a-f]{9,40})(?:-rocm|-cpu)?/tts-server"),
+                        "modelFiles": model_files('helena-voice-tts.service')},
         },
-        "embedding": executable_status("helena-embed.service",
+        "embedding": {**executable_status("helena-embed.service",
             r"/opt/helena-ai/llamacpp/(?:rocm|vulkan)-(b[0-9]+)/llama-server"),
+                      "modelFiles": model_files('helena-embed.service')},
         "system": {
             "rebootRequired": Path("/run/reboot-required").exists(),
             "failedUnits": failed_units(),

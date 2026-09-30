@@ -3,6 +3,8 @@ import {
   NPU_BASE,
   NPU_SLUG,
   NPU_CLASSES,
+  NPU_CHAT_MODELS,
+  MODEL_MEMORY,
   npuClassModel,
   type LocalProfile,
 } from './npu-profile';
@@ -93,12 +95,13 @@ export async function previewGlobalModel(modelId: string, profile?: LocalProfile
   if (profile === 'local-halogen' && target.server !== 'halogen')
     throw new HttpError(400, 'The Halogen profile requires Halogen');
   if (profile === 'local-27b-npu') {
-    if (target.server !== 'lemonade' || target.model !== 'Qwen3.8-27B-GGUF')
+    const definition = LOCAL_PROFILES.find((entry) => entry.id === profile)!;
+    if (target.server !== 'lemonade' || target.model !== definition.model)
       throw new HttpError(400, 'The paired profile requires Qwen3.8-27B-GGUF');
     const npu = (await listModelServers()).find((row) => row.slug === NPU_SLUG);
     if (npu?.kind !== 'fastflowlm' || npu.baseUrl !== NPU_BASE)
       throw new HttpError(400, 'Register the managed NPU server first');
-    target.npu = 'qwen3.5:4b';
+    target.npu = NPU_CHAT_MODELS[0];
   }
   if (profile) target.profile = profile;
   const agents = await db
@@ -112,8 +115,8 @@ export async function previewGlobalModel(modelId: string, profile?: LocalProfile
     classes,
     previous: await localDefaultModel(),
     npuClasses: target.npu ? NPU_CLASSES : [],
-    npuSelection: target.npu ? ['qwen3.5:4b', 'qwen3.5:2b'] : [],
-    memoryReserveGiB: 12,
+    npuSelection: target.npu ? [...NPU_CHAT_MODELS] : [],
+    memoryReserveGiB: MODEL_MEMORY.reserveGiB,
     weightLockGb: 72,
     simultaneousLargeModels: false,
     requiresGroupStop: true,
