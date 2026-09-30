@@ -52,6 +52,9 @@ sys.exit(subprocess.run(args[work + 2:], cwd=args[work + 1]).returncode)
         self.shell = self.root / 'owner-terminal-shell'
         self.shell.write_text(script.replace('/usr/bin/tmux', str(tmux))
                              .replace('/usr/local/bin/codex', str(self.managed)))
+        self.ava_helper = self.root / 'owner-ava-tools.mjs'
+        self.ava_helper.write_text((HERE / 'owner-ava-tools.mjs').read_text()
+                                  .replace('/usr/local/bin/codex', str(self.managed)))
         self.env = {
             'HOME': str(self.home), 'CODEX_HOME': str(self.codex_home),
             'PATH': f'{legacy.parent}:{os.environ["PATH"]}',
@@ -91,8 +94,19 @@ sys.exit(subprocess.run(args[work + 2:], cwd=args[work + 1]).returncode)
                     actual = json.loads(result.stdout)
                     self.assertEqual(actual['version'], version)
                     # Full rights without a question before each step (owner, 28.09., O27).
-                    self.assertEqual(actual['args'], [
-                        'resume', '--last', '--dangerously-bypass-approvals-and-sandbox'])
+                    mcp_args = json.dumps([str(self.ava_helper), 'mcp', kind, 'fixture'],
+                                          separators=(',', ':'))
+                    self.assertEqual(actual['args'][:4], [
+                        '--dangerously-bypass-approvals-and-sandbox', '-c',
+                        'mcp_servers.volition={command="/usr/bin/node",args=' + mcp_args +
+                        ',tool_timeout_sec=180}', '-c'])
+                    self.assertEqual(actual['args'][5:], ['resume', '--last'])
+                    self.assertTrue(actual['args'][4].startswith('developer_instructions='))
+                    handoff = json.loads(actual['args'][4].removeprefix('developer_instructions='))
+                    self.assertIn('Home-Agent des Owners', handoff)
+                    self.assertIn(str(self.home / 'volition/CLAUDE.md'), handoff)
+                    self.assertIn('Audit und der Root-Hauptschalter', handoff)
+                    self.assertIn('ava-entwicklung', handoff)
                     self.assertEqual(actual['home'], str(self.home))
                     self.assertEqual(actual['codexHome'], str(self.codex_home))
                     self.assertEqual(actual['cwd'], str(self.home if kind == 'codex'
