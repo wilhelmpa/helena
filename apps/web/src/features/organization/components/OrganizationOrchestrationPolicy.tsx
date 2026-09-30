@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import type { OrganizationAgent } from '@/lib/api/endpoints/organization';
 import { useProjectWorkflows } from '@/services/controlPlaneWorkflows.service';
 import { workflowsPath } from '@/utils/paths';
-import { Inline, Text, Card } from '@/design-system';
+import { Card, Inline, Notice, Text } from '@/design-system';
 
 // Whether the project runs the agent-team workflow, with which limits, and what in the
 // team keeps a delegated task from reaching it.
@@ -78,15 +78,9 @@ export default function OrganizationOrchestrationPolicy({
       )}
       {enabled &&
         warnings.map((warning) => (
-          <Text
-            as="p"
-            size="xs"
-            key={warning}
-            className="flex gap-2 rounded-md bg-status-waiting/10 p-2 text-status-waiting"
-          >
-            <AlertTriangle className="mt-0.5 size-3.5 shrink-0" />
+          <Notice key={warning} tone="warning" icon={<AlertTriangle />}>
             {warning}
-          </Text>
+          </Notice>
         ))}
     </Card>
   );

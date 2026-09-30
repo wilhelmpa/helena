@@ -47,7 +47,7 @@ export default function HomeLogins({ health }: { health: RuntimeLoginsHealth | u
 
   return (
     <Box marginTop={2}>
-      <Card as="ul" pad="none">
+      <Card as="ul" pad="list">
         <Inline as="li" gap={2} padX={2} className="h-8 min-w-0 text-sm">
           <StatusBadge
             status={problems > 0 ? 'danger' : since || failing > 0 ? 'waiting' : 'success'}

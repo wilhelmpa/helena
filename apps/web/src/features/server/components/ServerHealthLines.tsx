@@ -43,7 +43,7 @@ export default function ServerHealthLines() {
         <span className="min-w-0 flex-1 truncate">{t('home.title')}</span>
         <StatusBadge status={healthStatus(state)} dotOnly />
       </Link>
-      <Card as="ul" pad="none">
+      <Card as="ul" pad="list">
         {problems.map((item) => (
           <HealthLine key={item.id} item={item} />
         ))}

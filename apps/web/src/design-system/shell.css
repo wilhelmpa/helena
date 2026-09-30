@@ -1597,7 +1597,7 @@
   max-width: 188px;
   gap: var(--space-2);
   border-radius: var(--radius-full);
-  padding: 0 var(--space-4) 0 var(--space-3);
+  padding: 0 var(--box-pad-tight);
   text-align: start;
 }
 .ds-ring-pill[data-head] {

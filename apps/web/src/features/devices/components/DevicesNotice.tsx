@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react';
+import { Notice } from '@/design-system';
 
+// A hint of the device page: the design system's notice (warning tone).
 export default function DevicesNotice({
   title,
   children,
@@ -8,9 +10,8 @@ export default function DevicesNotice({
   children: ReactNode;
 }) {
   return (
-    <div className="rounded-md border border-status-waiting/30 bg-status-waiting/10 px-3 py-2.5 text-sm">
-      {title ? <p className="font-medium">{title}</p> : null}
-      <p className={title ? 'mt-1 text-muted-foreground' : undefined}>{children}</p>
-    </div>
+    <Notice tone="warning" title={title}>
+      {children}
+    </Notice>
   );
 }

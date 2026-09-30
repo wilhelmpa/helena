@@ -40,7 +40,7 @@ export default function OrganizationOrchestrationTeam({ agents }: { agents: Orga
                 {t('values.none')}
               </Text>
             ) : (
-              <ul className="divide-y rounded-md border">
+              <Card as="ul" tone="inset" pad="none" className="divide-y">
                 {members.map((agent) => (
                   <Box
                     as="li"
@@ -75,7 +75,7 @@ export default function OrganizationOrchestrationTeam({ agents }: { agents: Orga
                     </Inline>
                   </Box>
                 ))}
-              </ul>
+              </Card>
             )}
           </Stack>
         );

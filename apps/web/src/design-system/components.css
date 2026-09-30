@@ -225,6 +225,9 @@
 .ds-card[data-layout='row'] {
   flex-direction: row;
 }
+.ds-card[data-pad='list'] {
+  padding: var(--box-list-pad);
+}
 .ds-card[data-pad='tight'] {
   padding: var(--box-pad-tight);
 }

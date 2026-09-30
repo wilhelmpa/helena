@@ -9,14 +9,15 @@ import type { Space } from './Layout';
 //              ("LÄUFT GERADE") - a figure tile or dashboard section, not a form card
 //   meta       12px under the head; actions stand at the right of the head
 //   pad        'normal' 16 (default), 'tight' 12 (a card inside a chart or a grid of small
-//              cards), 'roomy' 24 (a document), 'none' (a list or table that has its own rows)
+//              cards), 'roomy' 24 (a document), 'list' 4 (rows with a hover fill of their own,
+//              like ListBox padded), 'none' (a table that has its own cells)
 //   gap        the distance between the parts inside (Space, default 12px)
 //   tone       'inset' is a box in a box: surface-2, radius 8, no shadow, no frame of its own;
 //              'node' is a fixed-size card of a chart (the org chart's agent): the same box, its
 //                     content centred, the same side padding, `selected` draws the accent ring;
 //              'popover' is the box that floats over a page (hover card): the overlay shadow
 //   as         the element (section, article, li, a - a link card)
-export type CardPad = 'none' | 'tight' | 'normal' | 'roomy';
+export type CardPad = 'none' | 'list' | 'tight' | 'normal' | 'roomy';
 export type CardTone = 'default' | 'inset' | 'node' | 'popover';
 
 export function Card({
@@ -64,7 +65,7 @@ export function Card({
   const Heading: ElementType = headingAs ?? 'div';
   return (
     <Tag
-      className={`ds-card ${interactive ? 'is-interactive' : ''} ${selected ? 'is-selected' : ''} ${className ?? ''}`}
+      className={`ds-card ${interactive ? 'is-interactive' : ''} ${selected && tone !== 'node' ? 'is-selected' : ''} ${className ?? ''}`}
       data-pad={pad === 'normal' ? undefined : pad}
       data-tone={tone === 'default' ? undefined : tone}
       data-selected={tone === 'node' && selected ? '' : undefined}
