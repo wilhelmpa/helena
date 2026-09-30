@@ -303,7 +303,7 @@ describe('the policy and its routes', () => {
       maxNormal: 1,
       maxBackground: 1,
       realtimeQueueMs: 750,
-      interactiveQueueMs: 5_000,
+      interactiveQueueMs: 30_000,
       agingMs: 15_000,
       healthProbeMs: 3_000,
       healthTimeoutMs: 2_000,
