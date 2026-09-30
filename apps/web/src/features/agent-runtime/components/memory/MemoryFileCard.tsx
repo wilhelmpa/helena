@@ -113,7 +113,7 @@ export default function MemoryFileCard({
           )}
           {limit ? (
             <LimitMeter
-              used={entry.chars ?? entry.content.length}
+              used={limit.used || (entry.chars ?? entry.content.length)}
               limit={limit.limit}
               truncated={limit.truncated}
             />
