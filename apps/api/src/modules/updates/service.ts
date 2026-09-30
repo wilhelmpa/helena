@@ -19,17 +19,19 @@ import {
   getSetting,
   helenaUpdate,
   helenaUpdateAction,
+  helenaSystemJob,
   user,
   setSetting,
   writeBackup,
 } from '@repo/db';
-import { and, desc, eq, inArray, isNotNull, notInArray, sql } from 'drizzle-orm';
+import { and, desc, eq, inArray, isNotNull, notInArray, or, sql } from 'drizzle-orm';
 import { HttpError, iso, pgErrorCode } from '#shared/lib';
 import { events, host } from '#shared/helena';
 import { systemHealth } from '#modules/god/system-health';
 import { readChatCatalog } from '#modules/agents/chat/service';
 import {
   DigestRefused,
+  digestModelAvailable,
   digestPrompt,
   hermesAgents,
   digestRunState,
@@ -290,20 +292,29 @@ export async function digestTargets(): Promise<DigestTarget[]> {
   const rows = await db
     .select()
     .from(helenaUpdate)
-    .where(eq(helenaUpdate.updateAvailable, true))
+    .where(or(eq(helenaUpdate.updateAvailable, true), isNotNull(helenaUpdate.summary)))
     .orderBy(helenaUpdate.source, helenaUpdate.component);
   const pending = await pendingRuns(
     rows.map((row) => row.summaryRunId).filter((id): id is number => id !== null),
   );
+  const modelAvailable = await digestModelAvailable();
   const byTarget = new Map<string, Row[]>();
   for (const row of rows) {
-    const id = row.groupKey ? `${row.source}\0${row.groupKey}` : `${row.source}\0#${row.id}`;
+    const id =
+      row.groupKey && row.updateAvailable
+        ? `${row.source}\0${row.groupKey}`
+        : `${row.source}\0#${row.id}`;
     byTarget.set(id, [...(byTarget.get(id) ?? []), row]);
   }
   const targets: DigestTarget[] = [];
   for (const group of byTarget.values()) {
     const key = summaryKey(group);
-    if (group.every((row) => row.summaryFor === key && row.summary)) continue;
+    if (
+      group.every(
+        (row) => row.summaryFor === key && row.summary && modelAvailable(row.summaryModel),
+      )
+    )
+      continue;
     // A run about exactly this is still going.
     if (
       group.every(
@@ -314,7 +325,7 @@ export async function digestTargets(): Promise<DigestTarget[]> {
       continue;
     targets.push({
       source: group[0]!.source,
-      group: group[0]!.groupKey,
+      group: group[0]!.updateAvailable ? group[0]!.groupKey : null,
       rowIds: group.map((row) => row.id),
       key,
     });
@@ -366,6 +377,10 @@ export async function queueDigests(): Promise<number> {
   for (const target of targets) {
     try {
       if (!agent) throw new DigestRefused('No Hermes agent can write the summary');
+      await db
+        .update(helenaUpdate)
+        .set({ summaryRunId: null, summaryRunFor: target.key, summaryError: null })
+        .where(inArray(helenaUpdate.id, target.rowIds));
       const subject = await subjectOf(target);
       if (!subject) continue;
       const choice = await pickDigestModel(agent.id, settings);
@@ -379,7 +394,7 @@ export async function queueDigests(): Promise<number> {
       const message = (error instanceof Error ? error.message : String(error)).slice(0, 500);
       await db
         .update(helenaUpdate)
-        .set({ summaryError: message })
+        .set({ summaryRunFor: null, summaryError: message })
         .where(inArray(helenaUpdate.id, target.rowIds));
     }
   }
@@ -498,6 +513,7 @@ export async function applyUpdate(
       row.available !== expectedVersion ||
       !row.summary ||
       row.summaryFor !== summaryKey([row]) ||
+      !(await digestModelAvailable())(row.summaryModel) ||
       row.risk !== 'low' ||
       row.breaking !== false ||
       !supportsAutomaticUpdate(row.source, row.component) ||
@@ -624,6 +640,7 @@ export async function runAutoUpdates(sleep: (ms: number) => Promise<void>): Prom
   if (!owner) return;
   const settings = await getUpdateSettings();
   const rows = await db.select().from(helenaUpdate).where(eq(helenaUpdate.updateAvailable, true));
+  const modelAvailable = await digestModelAvailable();
   const quietDeadline = Date.now() + 2 * 60 * 60_000;
   for (const row of rows) {
     if (
@@ -634,6 +651,7 @@ export async function runAutoUpdates(sleep: (ms: number) => Promise<void>): Prom
       row.breaking !== false ||
       !supportsAutomaticUpdate(row.source, row.component) ||
       row.summaryFor !== summaryKey([row]) ||
+      !modelAvailable(row.summaryModel) ||
       updateMode(settings, row.source, row.component) !== 'auto'
     )
       continue;
@@ -899,6 +917,15 @@ export async function listUpdateItems(
 ): Promise<UpdateItemView[]> {
   settings ??= await getUpdateSettings();
   const rows = await db.select().from(helenaUpdate);
+  const modelAvailable = await digestModelAvailable();
+  const [job] = await db
+    .select()
+    .from(helenaSystemJob)
+    .where(eq(helenaSystemJob.id, 'helena.updates'));
+  const checking =
+    job?.lastStatus === 'running' &&
+    job.lastStartedAt !== null &&
+    Date.now() - job.lastStartedAt.getTime() < 60 * 60_000;
   const pending = await pendingRuns(
     rows.map((row) => row.summaryRunId).filter((id): id is number => id !== null),
   );
@@ -916,7 +943,8 @@ export async function listUpdateItems(
   const labels = new Map(sources().map(({ source }) => [source.id, source]));
   return rows
     .map((row): UpdateItemView => {
-      const current = row.summaryFor === keyOf(row) && row.summary !== null;
+      const current =
+        row.summaryFor === keyOf(row) && row.summary !== null && modelAvailable(row.summaryModel);
       const autoAllowed =
         current &&
         row.applicable &&
@@ -941,7 +969,10 @@ export async function listUpdateItems(
         summary: current ? row.summary : null,
         highlights: current ? (row.highlights ?? []) : [],
         summaryCurrent: current,
-        summaryPending: row.summaryRunId !== null && pending.has(row.summaryRunId),
+        summaryPending:
+          (row.summaryRunFor === keyOf(row) &&
+            (row.summaryRunId === null || pending.has(row.summaryRunId))) ||
+          (!current && settings.summarize && row.updateAvailable && !row.summaryError && checking),
         summaryModel: current ? row.summaryModel : null,
         summaryRunId: row.summaryRunId,
         summaryError: row.summaryError,

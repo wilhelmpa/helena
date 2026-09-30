@@ -1,15 +1,24 @@
-import { agentRun, aiAgent, db, projectMember, user } from '@repo/db';
+import {
+  agentRun,
+  aiAgent,
+  db,
+  listModelServers,
+  readLocalAiPolicy,
+  projectMember,
+  user,
+} from '@repo/db';
 import { and, asc, desc, eq, sql } from 'drizzle-orm';
-import { isUpdateRisk, type UpdateRisk } from '@helena/sdk';
+import { isUpdateRisk, localModelId, parseLocalModelId, type UpdateRisk } from '@helena/sdk';
 import { readChatCatalog, type ChatCatalogModel } from '#modules/agents/chat/service';
 import { isHomeAgent } from '#modules/agents/core/home-agent';
 import { normalizeRuntimePolicy } from '#modules/agents/core/service';
 import { registerBuiltins } from '#modules/engine/builtin/index';
 import { policyDecider } from '#modules/engine/registry';
 import { price } from '#modules/model-prices/service';
+import { effectiveModel } from '#modules/local-ai/service';
 import { WORK_CLASS } from '#modules/local-ai/work-classes';
 import { bumpControlPlaneRevision } from '#modules/sync/service';
-import { refusedModels } from './settings';
+import { getUpdateSettings, refusedModels } from './settings';
 import type { UpdateSettings } from './settings';
 
 // The summary of what a new version changes, written by a small model (owner, 2026-09-24:
@@ -222,6 +231,41 @@ export async function hermesAgents(): Promise<{ id: number; username: string; na
 
 type CatalogEntry = ChatCatalogModel & { listed?: boolean; verified?: boolean; variantOf?: string };
 
+// Runtime reports may name a local model without its server prefix.
+export async function digestModelAvailable(): Promise<(model: string | null) => boolean> {
+  const [servers, policy, settings] = await Promise.all([
+    listModelServers(),
+    readLocalAiPolicy(),
+    getUpdateSettings(),
+  ]);
+  const agent = await pickDigestAgent(settings);
+  const catalog = agent ? await readChatCatalog(agent.id) : null;
+  return (model) => {
+    if (!model) return false;
+    const parsed = parseLocalModelId(model);
+    const local = servers.flatMap((server) =>
+      server.models
+        .filter((entry) =>
+          parsed ? server.slug === parsed.slug && entry.id === parsed.model : entry.id === model,
+        )
+        .map((entry) => ({ server, entry })),
+    );
+    if (parsed || local.length)
+      return local.some(
+        ({ server, entry }) =>
+          (server.kind !== 'lemonade' || entry.downloaded === true) &&
+          effectiveModel(localModelId(server.slug, entry.id), policy, [server]) !== null,
+      );
+    if (!catalog?.updatedAt) return true;
+    const entry = catalog.models.find((entry) => entry.id === model) as CatalogEntry | undefined;
+    return (
+      !!entry &&
+      entry.verified !== false &&
+      !(entry.verified === undefined && entry.listed === false)
+    );
+  };
+}
+
 // "Automatisch": the cheapest model of the agent's catalog that has a price and that the
 // account serves. A model the catalog marks unverified (hub/model-availability) or one a
 // digest run was refused on lately is left out; so are large-context variants.
@@ -243,6 +287,8 @@ export async function pickDigestModel(
   const refused = await refusedModels();
   const usable = catalog.filter(
     (entry) =>
+      !entry.local &&
+      !parseLocalModelId(entry.id) &&
       !entry.variantOf &&
       !/-\d+k$/.test(entry.id) &&
       entry.verified !== false &&

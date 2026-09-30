@@ -48,7 +48,7 @@ import {
   runtimeLocalAi,
   type EvalView,
 } from '../../service';
-import { MODEL_WATCH, atomTags, familyOf, newerInFamily, newestWatched } from '../../integrations';
+import { atomTags, familyOf, newerInFamily } from '../../integrations';
 import { BUILTIN_TASK_CLASSES } from '../../task-classes';
 import { openAiEvalContext } from '../../eval-context';
 
@@ -721,24 +721,6 @@ describe('the update check', () => {
       ]),
     ).toBe('unsloth/Qwen3.7-35B-A3B-GGUF');
     expect(newerInFamily('unsloth/Qwen3.6-35B-A3B-GGUF', [])).toBeNull();
-  });
-
-  it('watches families that do not fit yet, from their baseline on', () => {
-    const flash = MODEL_WATCH.find((entry) => entry.id === 'qwen-flash-next')!;
-    const models = [
-      { id: 'Qwen/Qwen3.8-Flash-Next', createdAt: '2026-08-26T10:00:00Z' },
-      { id: 'Qwen/Qwen3.8-Flash-Next-Mini', createdAt: '2026-10-02T10:00:00Z' },
-      { id: 'Qwen/Qwen3.9-27B', createdAt: '2026-10-05T10:00:00Z' },
-    ];
-    expect(newestWatched(flash, models)?.id).toBe('Qwen/Qwen3.8-Flash-Next-Mini');
-    expect(newestWatched(flash, models.slice(0, 1))).toBeNull();
-    const qwen4 = MODEL_WATCH.find((entry) => entry.id === 'qwen4-moe')!;
-    expect(
-      newestWatched(qwen4, [
-        { id: 'Qwen/Qwen4-32B', createdAt: '2026-11-01T00:00:00Z' },
-        { id: 'Qwen/Qwen4-60B-A6B', createdAt: '2026-11-02T00:00:00Z' },
-      ])?.id,
-    ).toBe('Qwen/Qwen4-60B-A6B');
   });
 });
 

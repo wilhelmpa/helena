@@ -10,6 +10,7 @@ import {
   helenaSystemJob,
   helenaUpdate,
   helenaUpdateAction,
+  helenaModelServer,
 } from '@repo/db';
 import { asc, eq, inArray } from 'drizzle-orm';
 import { apiKeyApi, authedApi } from '#tests/helpers/app';
@@ -21,10 +22,11 @@ import { events } from '#shared/helena';
 import { DIGEST_SYSTEM_PROMPT } from '../../digest-prompt';
 import { setUpdateFetch } from '../../fetch';
 import { runSystemJobNow } from '#modules/engine/system-jobs';
-import { UPDATES_JOB_ID } from '../../job';
+import { runUpdatesJob, UPDATES_JOB_ID } from '../../job';
 import {
   applyUpdate,
   collectDigests,
+  digestTargets,
   followActions,
   queueDigests,
   runAutoUpdates,
@@ -407,6 +409,7 @@ describe('update center: checking', () => {
       'cli-runtimes',
       'apt',
       'host-tools',
+      'volition-catalog',
       'helena',
       // Local AI's own source (helena.local-ai): check only, empty without a model server.
       'local-ai',
@@ -483,6 +486,64 @@ describe('update center: checking', () => {
     expect(state.counts).toEqual({ updates: 6, security: 3, applicable: 4 });
     expect(state.items.slice(0, 3).every((item) => item.security)).toBe(true);
     expect(state.items.at(-1)!.updateAvailable).toBe(false);
+  });
+
+  it('removes watched models and checks Halogen through its own source', async () => {
+    const { api } = await owner();
+    const local = Bun.serve({
+      hostname: '127.0.0.1',
+      port: 0,
+      fetch(request) {
+        const path = new URL(request.url).pathname;
+        if (path === '/health')
+          return Response.json({ status: 'ok', model: 'flash', version: { api: '0.14.2' } });
+        if (path === '/v1/models')
+          return Response.json({ data: [{ id: 'flash', context_length: 65536 }] });
+        return new Response('', { status: 404 });
+      },
+    });
+    try {
+      expect(
+        (
+          await api.god['local-ai'].servers.post({
+            slug: 'halogen',
+            kind: 'halogen',
+            baseUrl: `http://127.0.0.1:${local.port}/v1`,
+            keySource: 'none',
+          })
+        ).status,
+      ).toBe(200);
+      await db.insert(helenaUpdate).values([
+        { source: 'local-ai', component: 'watch:qwen4-moe', name: 'Qwen4 MoE', kind: 'tool' },
+        {
+          source: 'local-ai',
+          component: 'watch:qwen-flash-next',
+          name: 'Qwen Flash-Next',
+          kind: 'tool',
+        },
+      ]);
+      const requested: string[] = [];
+      setUpdateFetch(async (url) => {
+        requested.push(url);
+        if (url.startsWith('https://ghcr.io/token')) return Response.json({});
+        if (url.endsWith('/tags/list')) return Response.json({ tags: ['0.14.2', '0.14.3'] });
+        return VENDOR[url]?.() ?? new Response('', { status: 404 });
+      });
+      startFakeHelper(helperAnswers);
+      await runUpdateCheck({ only: 'local-ai' });
+      const items = (await api.god['update-center'].get()).data!.items;
+      expect(
+        items.filter((item) => item.source === 'local-ai').map((item) => item.component),
+      ).toEqual(['halogen']);
+      expect(items.find((item) => item.component === 'halogen')).toMatchObject({
+        installed: '0.14.2',
+        available: '0.14.3',
+        hint: { i18n: 'localAi.updates.halogenHint' },
+      });
+      expect(requested.some((url) => url.includes('huggingface.co'))).toBe(false);
+    } finally {
+      local.stop(true);
+    }
   });
 
   it('reports native Whisper independently of model servers and refuses apply', async () => {
@@ -774,6 +835,136 @@ describe('update center: summaries', () => {
     expect(view).toMatchObject({ summaryCurrent: true, summaryPending: false, risk: 'low' });
   });
 
+  it('replaces summaries from a disabled local model using the configured cloud model', async () => {
+    const { api } = await owner();
+    const { agent, runner } = await hermesAgent(api);
+    await setUpdateSettings({ model: 'helena-test-mini' });
+    const created = await api.god['local-ai'].servers.post({
+      slug: 'retired',
+      baseUrl: 'http://127.0.0.1:1/v1',
+      kind: 'lemonade',
+      keySource: 'none',
+      enabled: false,
+    });
+    expect(created.status).toBe(200);
+    // Persist the cached probe of the retired server, as before it was disabled.
+    await db
+      .update(helenaModelServer)
+      .set({
+        models: [
+          {
+            id: 'Qwen3.6-35B-A3B-MTP-GGUF',
+            name: 'Old Qwen',
+            sizeBytes: null,
+            backend: null,
+            unit: 'gpu',
+            capabilities: ['chat'],
+            contextLength: 65536,
+            loaded: false,
+            downloaded: true,
+          },
+        ],
+      })
+      .where(eq(helenaModelServer.id, created.data!.id));
+    startFakeHelper(helperAnswers);
+    await runUpdateCheck();
+    const all = await rows();
+    const codex = all.find((row) => row.component === 'codex')!;
+    const claude = all.find((row) => row.component === 'claude')!;
+    for (const row of [codex, claude])
+      await db
+        .update(helenaUpdate)
+        .set({
+          summary: 'Earlier summary',
+          summaryFor: row.available,
+          risk: 'low',
+          breaking: false,
+          summaryModel: row.id === codex.id ? 'Qwen3.6-35B-A3B-MTP-GGUF' : 'helena-test-mini',
+        })
+        .where(eq(helenaUpdate.id, row.id));
+    const view = (await api.god['update-center'].get()).data!.items;
+    expect(view.find((row) => row.id === codex.id)).toMatchObject({
+      summaryCurrent: false,
+      summary: null,
+    });
+    expect(view.find((row) => row.id === claude.id)).toMatchObject({ summaryCurrent: true });
+    const targets = await digestTargets();
+    expect(targets.some((target) => target.rowIds.includes(codex.id))).toBe(true);
+    expect(targets.some((target) => target.rowIds.includes(claude.id))).toBe(false);
+    expect(await queueDigests()).toBe(5);
+    expect(await queueDigests()).toBe(0);
+    expect(await pickDigestModel(agent.id, await getUpdateSettings())).toMatchObject({
+      model: 'helena-test-mini',
+    });
+    const claimed = (await runner['agent-runs'].claim.post()).data!.run!;
+    expect(claimed.model).toBe('helena-test-mini');
+  });
+
+  it('queues and collects summaries automatically after a manual check', async () => {
+    const { api } = await owner();
+    const { runner } = await hermesAgent(api);
+    await setUpdateSettings({ model: 'helena-test-mini' });
+    startFakeHelper(helperAnswers);
+    await runUpdatesJob({
+      trigger: 'manual',
+      scheduledFor: null,
+      step: (_name, fn) => fn(),
+      async sleep() {
+        const view = (await api.god['update-center'].get()).data!.items;
+        expect(view.some((item) => item.summaryPending)).toBe(true);
+        for (;;) {
+          const run = (await runner['agent-runs'].claim.post()).data!.run;
+          if (!run) break;
+          expect(run.model).toBe('helena-test-mini');
+          expect(
+            (
+              await runner['agent-runs']({ runId: run.id }).result.post({
+                status: 'success',
+                output: '{"summary":"Current summary","risk":"low","breaking":false}',
+              })
+            ).status,
+          ).toBe(200);
+        }
+      },
+    });
+    const view = (await api.god['update-center'].get()).data!.items.filter(
+      (item) => item.updateAvailable,
+    );
+    expect(view.every((item) => item.summaryCurrent && !item.summaryPending)).toBe(true);
+    expect(
+      helperRequests.some((request) =>
+        ['host-tool', 'runtime', 'apt-upgrade'].includes(String(request.action)),
+      ),
+    ).toBe(false);
+  });
+
+  it('reports summary preparation while release notes are still loading', async () => {
+    const { api } = await owner();
+    await hermesAgent(api);
+    await setUpdateSettings({ model: 'helena-test-mini' });
+    startFakeHelper(helperAnswers);
+    await runUpdateCheck();
+    const entered = Promise.withResolvers<void>();
+    const release = Promise.withResolvers<void>();
+    setUpdateFetch(async () => {
+      entered.resolve();
+      await release.promise;
+      return new Response('Notes');
+    });
+    const queue = queueDigests();
+    try {
+      await entered.promise;
+      const view = (await api.god['update-center'].get()).data!.items;
+      expect(view.some((item) => item.summaryPending && item.summaryRunId === null)).toBe(true);
+    } finally {
+      release.resolve();
+      await queue;
+    }
+    expect(
+      (await api.god['update-center'].get()).data!.items.filter((item) => item.summaryPending),
+    ).toHaveLength(6);
+  });
+
   it('moves to the next cheapest model when the account refuses one', async () => {
     const { user, api } = await owner();
     const { agent, runner } = await hermesAgent(api);
@@ -914,11 +1105,23 @@ describe('update center: applying', () => {
     ).toBe(400);
     await db
       .update(helenaUpdate)
-      .set({ risk: 'low', breaking: false, summary: 'Safe', summaryFor: acp.available })
+      .set({
+        risk: 'low',
+        breaking: false,
+        summary: 'Safe',
+        summaryModel: 'helena-test-mini',
+        summaryFor: acp.available,
+      })
       .where(eq(helenaUpdate.id, acp.id));
     await db
       .update(helenaUpdate)
-      .set({ risk: 'high', breaking: false, summary: 'Risky', summaryFor: node.available })
+      .set({
+        risk: 'high',
+        breaking: false,
+        summary: 'Risky',
+        summaryModel: 'helena-test-mini',
+        summaryFor: node.available,
+      })
       .where(eq(helenaUpdate.id, node.id));
     expect(
       (await api.god['update-center'].get()).data!.items.find((item) => item.id === acp.id)?.mode,

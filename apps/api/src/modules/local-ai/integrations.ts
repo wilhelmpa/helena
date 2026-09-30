@@ -160,54 +160,6 @@ interface HfModel {
   createdAt?: string;
 }
 
-// Model families that do not fit the machine yet but may soon (a smaller or distilled release):
-// a repository newer than `since` whose name matches shows up as "neues Modell verfügbar",
-// to be measured before anything changes. (docs/helena-decisions/local-ai-platform.md §5.1)
-export const MODEL_WATCH: {
-  id: string;
-  name: string;
-  author: string;
-  search: string;
-  match: RegExp;
-  since: string;
-  why: string;
-}[] = [
-  {
-    id: 'qwen-flash-next',
-    name: 'Qwen Flash-Next',
-    author: 'Qwen',
-    search: 'Flash-Next',
-    match: /Flash-Next/i,
-    since: '2026-08-27T00:00:00Z',
-    why: 'Qwen3.8-Flash-Next (125B-A6B + n-gram table, ~180B, Qwen Community License) does not fit 96 GiB; a smaller or distilled release might',
-  },
-  {
-    id: 'qwen4-moe',
-    name: 'Qwen4 MoE',
-    author: 'Qwen',
-    search: 'Qwen4',
-    match: /^Qwen\/Qwen4[.-].*A\d+B/i,
-    since: '2026-09-01T00:00:00Z',
-    why: 'a Qwen4 MoE with few active parameters (A3B–A10B) may replace the workhorse',
-  },
-];
-
-// The newest repository of a watched family created after its baseline, or null.
-export function newestWatched(
-  entry: Pick<(typeof MODEL_WATCH)[number], 'match' | 'since'>,
-  models: HfModel[],
-): HfModel | null {
-  const since = Date.parse(entry.since);
-  return (
-    models
-      .filter((model) => model.id && entry.match.test(model.id))
-      .filter((model) => Date.parse(model.createdAt ?? model.lastModified ?? '') > since)
-      .sort((a, b) =>
-        (b.createdAt ?? b.lastModified ?? '').localeCompare(a.createdAt ?? a.lastModified ?? ''),
-      )[0] ?? null
-  );
-}
-
 async function serverFacts(server: ModelServerRow) {
   const key = await readModelServerKey(server);
   const context = serverContext(server, key, 5_000);
@@ -357,23 +309,24 @@ export const localAiUpdateSource: UpdateSource = {
       });
       const facts = await serverFacts(lemonade);
       const flm = await release('ROCm/FastFlowLM');
-      candidates.push({
-        component: 'fastflowlm',
-        name: 'FastFlowLM (NPU)',
-        installed: plain(facts.flm),
-        available: flm,
-        updateAvailable: newer(flm, plain(facts.flm)),
-        security: false,
-        sourceUrl: 'https://github.com/ROCm/FastFlowLM',
-        group: 'local-ai',
-        applicable: false,
-        hint: HINT,
-      });
+      if (facts.flm)
+        candidates.push({
+          component: 'fastflowlm',
+          name: 'FastFlowLM (NPU)',
+          installed: plain(facts.flm),
+          available: flm,
+          updateAvailable: newer(flm, plain(facts.flm)),
+          security: false,
+          sourceUrl: 'https://github.com/ROCm/FastFlowLM',
+          group: 'local-ai',
+          applicable: false,
+          hint: HINT,
+        });
     }
-    for (const server of servers) {
+    for (const server of servers.filter((entry) => entry.kind === 'lemonade')) {
       for (const model of server.models) {
         const repo = model.checkpoint?.split(':')[0];
-        if (!repo || model.downloaded === false) continue;
+        if (!repo || model.downloaded !== true) continue;
         try {
           const info = await context.fetchJson<HfModel>(
             `https://huggingface.co/api/models/${repo}`,
@@ -416,29 +369,6 @@ export const localAiUpdateSource: UpdateSource = {
             error: String(error).slice(0, 200),
           });
         }
-      }
-    }
-    for (const entry of MODEL_WATCH) {
-      try {
-        const models = await context.fetchJson<HfModel[]>(
-          `https://huggingface.co/api/models?author=${encodeURIComponent(entry.author)}&search=${encodeURIComponent(entry.search)}&sort=createdAt&direction=-1&limit=20`,
-        );
-        const found = newestWatched(entry, Array.isArray(models) ? models : []);
-        candidates.push({
-          component: `watch:${entry.id}`,
-          name: entry.name,
-          installed: null,
-          available: found?.id ?? null,
-          updateAvailable: found !== null,
-          security: false,
-          sourceUrl: found?.id ? `https://huggingface.co/${found.id}` : null,
-          group: 'local-ai-models',
-          applicable: false,
-          hint: HINT,
-          detail: entry.why,
-        });
-      } catch (error) {
-        context.log.warn(`watch ${entry.id}: ${String(error)}`);
       }
     }
     return candidates;

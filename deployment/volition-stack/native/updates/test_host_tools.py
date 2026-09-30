@@ -232,6 +232,37 @@ class HostToolsTest(unittest.TestCase):
         self.assertEqual(command.call_args_list, [mock.call(["systemctl", "restart", "volition-plan-api.service"], timeout=60)] * 2)
         self.assertIn("Rollback succeeded", "\n".join(self.log.lines))
 
+    def test_wetty_335_pins_manifest_and_restores_on_failed_smoke(self):
+        version = "3.3.5"
+        digest = "sha512-" + "a" * 86 + "=="
+        url = "https://registry.npmjs.org/wetty/-/wetty-3.3.5.tgz"
+        with mock.patch.object(h, "metadata", return_value={"name": "wetty", "version": version,
+                "dist": {"tarball": url, "integrity": digest}}):
+            asset = h.release_asset("wetty", version, self.root)
+        self.assertEqual(asset["digest"], digest)
+        tree = self.installed_tree("wetty", version)
+        pointer = tree.parent / "current"
+        old = pointer.resolve()
+        with mock.patch.object(h, "quiet_queue", return_value=contextlib.nullcontext()), mock.patch.object(
+                h, "command", return_value=""), mock.patch.object(h, "service_smoke") as smoke:
+            result = h.activate(self.config, "wetty", tree, self.log)
+        self.assertEqual(result["to"], version)
+        self.assertEqual(result["units"], ["volition-terminal.service"])
+        smoke.assert_called_once_with(["volition-terminal.service"])
+        self.assertEqual(pointer.resolve(), tree)
+        pointer.unlink()
+        pointer.symlink_to(old.name)
+        bindir = Path(self.config["hostToolsBin"])
+        (bindir / "wetty").unlink()
+        (bindir / "wetty").symlink_to("/fixture/old/wetty")
+        with mock.patch.object(h, "quiet_queue", return_value=contextlib.nullcontext()), mock.patch.object(
+                h, "command", return_value=""), mock.patch.object(h, "service_smoke",
+                side_effect=[h.ToolError("not active"), None]):
+            with self.assertRaisesRegex(h.ToolError, "previous version restored"):
+                h.activate(self.config, "wetty", tree, self.log)
+        self.assertEqual(pointer.resolve(), old)
+        self.assertEqual(os.readlink(bindir / "wetty"), "/fixture/old/wetty")
+
     def test_terminal_smoke_checks_active_unit_without_http(self):
         with mock.patch.object(h.urllib.request, "build_opener") as build, mock.patch.object(
                 h, "command") as command:
