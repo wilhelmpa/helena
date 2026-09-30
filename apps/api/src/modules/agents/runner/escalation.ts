@@ -1,7 +1,14 @@
 import { and, desc, eq, isNull, ne, sql } from 'drizzle-orm';
 import { agentRun, aiAgent, db, getSetting, projectMember } from '@repo/db';
+import { parseLocalModelId } from '@helena/sdk';
 import { DEFAULT_ESCALATION, escalate } from '#modules/escalation/rules';
+import {
+  loadModelAvailability,
+  runtimeOfPolicy,
+  type ModelAvailabilityIndex,
+} from '#modules/model-availability/service';
 import { createComment } from '#modules/issues/activity';
+import { sameModel, type ModelCheck } from '../runtime-sync/model-check';
 import {
   normalizeAgentEscalation,
   normalizeRuntimePolicy,
@@ -32,6 +39,22 @@ export function failureKind(error: string | null) {
   return 'error' as const;
 }
 
+function escalationDestination(
+  policy: AgentEscalationPolicy,
+  runtime: string,
+  availability?: ModelAvailabilityIndex,
+) {
+  const target = policy.target ?? (runtime === 'claude' ? 'claude' : 'codex');
+  const model =
+    policy.model ??
+    (target === 'claude'
+      ? 'claude-opus-5-5'
+      : availability?.refusal('codex', 'gpt-6.1-sol')
+        ? 'gpt-6-sol'
+        : 'gpt-6.1-sol');
+  return { target, model };
+}
+
 export function failureDecision(
   policy: AgentEscalationPolicy,
   run: {
@@ -43,19 +66,35 @@ export function failureDecision(
     attempts: number;
     error: string | null;
     failures: number;
+    runtime: string;
+    model: string | null;
+    configuredModel: string | null;
+    modelSource: string | null;
   },
+  availability?: ModelAvailabilityIndex,
 ) {
   if (policy.maxDepth === 0 || run.trigger === 'escalation' || run.continuedFromRunId != null)
     return null;
   const resumeLimit = /resume limit/i.test(run.error ?? '');
   if (resumeLimit ? !policy.onResumeLimit : policy.afterFailures === 0) return null;
+  if (!['claude', 'codex', 'helena'].includes(run.runtime) && !policy.target && !policy.model)
+    return null;
+  const destination = escalationDestination(policy, run.runtime, availability);
+  if (run.model && sameModel(destination.model, run.model)) return null;
+  if (
+    run.configuredModel &&
+    run.modelSource !== 'local' &&
+    run.modelSource !== 'default' &&
+    !parseLocalModelId(run.configuredModel)
+  )
+    return null;
   const kind = failureKind(run.error);
   const count = Math.max(run.attempts, run.failures);
   const decision = escalate(
     {
       ...DEFAULT_ESCALATION,
       enabled: true,
-      defaultModel: policy.model ?? (policy.target === 'claude' ? 'claude-opus-5-5' : 'gpt-6-sol'),
+      defaultModel: destination.model,
       failure: {
         enabled: true,
         on: [kind],
@@ -248,15 +287,21 @@ export async function queueEscalation(
       output: agentRun.output,
       lastError: agentRun.lastError,
       actorUserId: aiAgent.userId,
+      runtimePolicy: aiAgent.runtimePolicy,
     })
     .from(agentRun)
     .innerJoin(aiAgent, eq(aiAgent.id, agentRun.agentId))
     .where(eq(agentRun.id, run.id));
   if (!source || source.trigger === 'escalation' || source.continuedFromRunId != null)
     return { runId: null, error: null };
-  const target = await targetAgent(agentId, run.projectId, policy.target);
+  const destination = escalationDestination(
+    policy,
+    runtimeOfPolicy(source.runtimePolicy),
+    await loadModelAvailability(),
+  );
+  const target = await targetAgent(agentId, run.projectId, destination.target);
   if (!target) {
-    const error = `Kein ${policy.target}-Agent im Projekt verfügbar.`;
+    const error = `Kein ${destination.target}-Agent im Projekt verfügbar.`;
     await failOrigin(run.id, run.issueId, source.actorUserId, error);
     return { runId: null, error };
   }
@@ -279,7 +324,6 @@ export async function queueEscalation(
           )
           .orderBy(desc(agentRun.id))
           .limit(4);
-  const model = policy.model ?? (policy.target === 'claude' ? 'claude-opus-5-5' : 'gpt-6-sol');
   const prompt = delegationBrief({
     runId: run.id,
     prompt: source.prompt,
@@ -310,7 +354,7 @@ export async function queueEscalation(
         trigger: 'escalation',
         sourceActivityId: null,
         prompt,
-        model,
+        model: destination.model,
         continuedFromRunId: run.id,
       })
       .returning({ id: agentRun.id });
@@ -329,8 +373,13 @@ export async function queueFailedRunEscalation(runId: number): Promise<void> {
       attempts: agentRun.attempts,
       trigger: agentRun.trigger,
       continuedFromRunId: agentRun.continuedFromRunId,
+      model: agentRun.model,
+      modelCheck: agentRun.modelCheck,
+      agentModel: aiAgent.model,
+      runtimePolicy: aiAgent.runtimePolicy,
     })
     .from(agentRun)
+    .innerJoin(aiAgent, eq(aiAgent.id, agentRun.agentId))
     .where(and(eq(agentRun.id, runId), eq(agentRun.status, 'failed')));
   if (!run) return;
   const policy = await escalationPolicy(run.agentId);
@@ -350,22 +399,39 @@ export async function queueFailedRunEscalation(runId: number): Promise<void> {
           .orderBy(desc(agentRun.id))
           .limit(5);
   const failures = recent.length ? recent.findIndex((item) => item.status !== 'failed') : -1;
-  const decision = failureDecision(policy, {
-    trigger: run.trigger,
-    continuedFromRunId: run.continuedFromRunId,
-    agentId: run.agentId,
-    projectId: run.projectId,
-    issueId: run.issueId,
-    attempts: run.attempts,
-    error: run.lastError,
-    failures: failures < 0 ? recent.length : failures,
-  });
+  const check = run.modelCheck as ModelCheck | null;
+  const runtime = runtimeOfPolicy(run.runtimePolicy);
+  const decision = failureDecision(
+    policy,
+    {
+      trigger: run.trigger,
+      continuedFromRunId: run.continuedFromRunId,
+      agentId: run.agentId,
+      projectId: run.projectId,
+      issueId: run.issueId,
+      attempts: run.attempts,
+      error: run.lastError,
+      failures: failures < 0 ? recent.length : failures,
+      runtime,
+      model: check?.used?.model ?? check?.configured.model ?? run.model ?? run.agentModel,
+      configuredModel: run.model ?? check?.configured.model ?? run.agentModel,
+      modelSource:
+        run.model && !parseLocalModelId(run.model)
+          ? 'run'
+          : check?.configured.source === 'local'
+            ? 'local'
+            : run.agentModel && !parseLocalModelId(run.agentModel)
+              ? 'agent'
+              : (check?.configured.source ?? null),
+    },
+    await loadModelAvailability(),
+  );
   if (!decision) return;
   await queueEscalation(
     run.agentId,
     { id: runId, projectId: run.projectId, issueId: run.issueId },
     {
-      target: `runtime:${policy.target}/${decision.model}`,
+      target: `runtime:${policy.target ?? (runtime === 'claude' ? 'claude' : 'codex')}/${decision.model}`,
       reason: decision.reason,
       detail: `${decision.count} Fehlversuche; ${run.lastError ?? 'kein Fehlertext'}`.slice(0, 200),
       handover: 'Setze die Aufgabe nach dem fehlgeschlagenen lokalen Lauf fort.',
