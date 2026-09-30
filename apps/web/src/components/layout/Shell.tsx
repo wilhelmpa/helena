@@ -46,6 +46,8 @@ import { Menu as MenuIcon } from 'lucide-react';
 import { PageHeader } from '@/design-system';
 import { useDisplayName } from '@/context/displayName';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { useSession } from '@/lib/auth-client';
+import { useSidebarWidth } from '@/utils/sidebarWidth';
 import { useDockedWidth } from '@/utils/dock';
 import { useDashboardsQuery } from '@/services/dashboards.service';
 import { useShellHeading } from '@/components/layout/useShellHeading';
@@ -326,6 +328,8 @@ export default function Shell({
   // A docked panel or overlay takes its room from the page (O103): where that would leave
   // the page too narrow, the sidebar steps back to its rail.
   const dockedWidth = useDockedWidth();
+  const { data: sidebarSession } = useSession();
+  const sidebarWidth = useSidebarWidth(sidebarSession?.user.id).width;
   const compact = useMediaQuery('(max-width: 1399px)');
   const crowded = dockedWidth > 0 && compact;
   const sidebarMode = narrow
@@ -372,7 +376,13 @@ export default function Shell({
               open={navigation.sidebarOpen}
               onOpenChange={navigation.setSidebarOpen}
               className="ds-app"
-              style={{ '--sidebar-width': '248px' } as CSSProperties}
+              style={
+                {
+                  '--sidebar-width': '248px',
+                  // The member's own width (O110); the rail, the overlay and the phone keep the token.
+                  ...(sidebarMode === 'full' ? { '--sidebar-w': `${sidebarWidth}px` } : {}),
+                } as CSSProperties
+              }
               data-sidebar={sidebarMode}
               data-sidebar-open={sidebarOverlay ? 'true' : 'false'}
             >
@@ -392,6 +402,7 @@ export default function Shell({
                 onSelectTool={selectWorkspaceTool}
                 activeTool={workspaceOpen ? activeWorkspaceTool : null}
                 rail={sidebarMode === 'rail' && !sidebarOverlay}
+                resizable={sidebarMode === 'full'}
                 onToggleRail={() =>
                   medium
                     ? setSidebarOverlay(!sidebarOverlay)

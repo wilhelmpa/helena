@@ -301,5 +301,6 @@
   "settingsProjectAccess": "Управление доступами",
   "sidebarHelenaKnowledge": "{appName}",
   "sidebarTrash": "Корзина",
-  "sidebarChats": "Чаты"
+  "sidebarChats": "Чаты",
+  "sidebarResize": "Ширина боковой панели (перетащить, стрелки, двойной щелчок — по умолчанию)"
 }

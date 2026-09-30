@@ -301,5 +301,6 @@
   "settingsProjectAccess": "Manage access",
   "sidebarHelenaKnowledge": "{appName}",
   "sidebarTrash": "Trash",
-  "sidebarChats": "Chats"
+  "sidebarChats": "Chats",
+  "sidebarResize": "Sidebar width (drag, arrow keys, double-click for default)"
 }

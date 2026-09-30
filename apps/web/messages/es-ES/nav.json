@@ -301,5 +301,6 @@
   "settingsProjectAccess": "Gestionar accesos",
   "sidebarHelenaKnowledge": "{appName}",
   "sidebarTrash": "Papelera",
-  "sidebarChats": "Chats"
+  "sidebarChats": "Chats",
+  "sidebarResize": "Ancho de la barra lateral (arrastrar, flechas, doble clic = estándar)"
 }

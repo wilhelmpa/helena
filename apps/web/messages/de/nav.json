@@ -301,5 +301,6 @@
   "settingsProjectAccess": "Zugänge verwalten",
   "sidebarHelenaKnowledge": "{appName}",
   "sidebarTrash": "Papierkorb",
-  "sidebarChats": "Chats"
+  "sidebarChats": "Chats",
+  "sidebarResize": "Breite der Seitenleiste (Ziehen, Pfeiltasten, Doppelklick = Standard)"
 }

@@ -172,6 +172,8 @@
   --row-table: 40px;
   --control-h: 32px;
   --sidebar-w: 248px;
+  --sidebar-w-min: 200px;
+  --sidebar-w-max: 480px;
   --sidebar-rail-w: 56px;
   --page-header-h: 56px;
   --page-toolbar-h: 44px;

@@ -301,5 +301,6 @@
   "settingsProjectAccess": "管理访问",
   "sidebarHelenaKnowledge": "{appName}",
   "sidebarTrash": "回收站",
-  "sidebarChats": "聊天"
+  "sidebarChats": "聊天",
+  "sidebarResize": "侧边栏宽度（拖动、方向键、双击恢复默认）"
 }

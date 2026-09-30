@@ -301,5 +301,6 @@
   "settingsProjectAccess": "إدارة الوصول",
   "sidebarHelenaKnowledge": "{appName}",
   "sidebarTrash": "سلة المهملات",
-  "sidebarChats": "المحادثات"
+  "sidebarChats": "المحادثات",
+  "sidebarResize": "عرض الشريط الجانبي (اسحب، مفاتيح الأسهم، نقر مزدوج للافتراضي)"
 }

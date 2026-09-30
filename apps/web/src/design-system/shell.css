@@ -13,6 +13,15 @@
   background: var(--bg);
   color: var(--text);
 }
+.ds-app[data-sidebar='full'] {
+  /* The member's chosen width (--sidebar-w, set by the shell), kept between the smallest and
+     largest width and always leaving the page 560px. */
+  --ds-sidebar-now: min(
+    max(var(--sidebar-w), var(--sidebar-w-min)),
+    var(--sidebar-w-max),
+    max(var(--sidebar-w-min), calc(100vw - 560px))
+  );
+}
 .ds-app[data-sidebar='rail'] {
   --ds-sidebar-now: var(--sidebar-rail-w);
 }
@@ -38,6 +47,25 @@
   flex: 1;
   flex-direction: column;
   overflow: hidden;
+}
+
+/* The grip on the sidebar's inner edge (owner, O110): a strip inside the sidebar (which clips
+   what lies outside it), lit on hover, focus and while dragged like every other grip. */
+.ds-sidebar-grip {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  inset-inline-end: 0;
+  z-index: 2;
+  background: transparent !important;
+}
+.ds-sidebar-grip:hover,
+.ds-sidebar-grip:focus-visible {
+  box-shadow: inset -2px 0 0 var(--accent);
+}
+[dir='rtl'] .ds-sidebar-grip:hover,
+[dir='rtl'] .ds-sidebar-grip:focus-visible {
+  box-shadow: inset 2px 0 0 var(--accent);
 }
 
 /* ── Sidebar ─────────────────────────────────────────────────────────────── */

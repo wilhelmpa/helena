@@ -301,5 +301,6 @@
   "settingsProjectAccess": "Gérer les accès",
   "sidebarHelenaKnowledge": "{appName}",
   "sidebarTrash": "Corbeille",
-  "sidebarChats": "Chats"
+  "sidebarChats": "Chats",
+  "sidebarResize": "Largeur de la barre latérale (glisser, flèches, double-clic = défaut)"
 }

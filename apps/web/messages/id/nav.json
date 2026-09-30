@@ -301,5 +301,6 @@
   "settingsProjectAccess": "Kelola akses",
   "sidebarHelenaKnowledge": "{appName}",
   "sidebarTrash": "Tempat sampah",
-  "sidebarChats": "Obrolan"
+  "sidebarChats": "Obrolan",
+  "sidebarResize": "Lebar bilah samping (seret, tombol panah, klik ganda = standar)"
 }
