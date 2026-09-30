@@ -241,9 +241,19 @@ describe('engine chaos', () => {
         .select()
         .from(pipelineRun)
         .where(eq(pipelineRun.scheduleId, routine.id));
-      if (routineRuns.length > 0 && routineRuns.every((row) => row.status === 'succeeded')) break;
+      if (routineRuns.length > 0 && routineRuns.every((row) => row.status === 'waiting')) break;
       await Bun.sleep(200);
     }
+    expect(routineRuns).toHaveLength(1);
+    expect(routineRuns[0]).toMatchObject({ status: 'waiting', trigger: 'schedule' });
+    const pending = await db
+      .select()
+      .from(agentRun)
+      .where(eq(agentRun.issueId, routineRuns[0]!.issueId!));
+    expect(pending).toHaveLength(1);
+    expect(pending[0]!.status).toBe('pending');
+    await finishAgentRun(pending[0]!.id, { output: 'Completed the scheduled check.' });
+    await waitForStatus(routineRuns[0]!.id, 'succeeded');
     // Give a late second fire time to show up.
     await Bun.sleep(1_500);
     routineRuns = await db.select().from(pipelineRun).where(eq(pipelineRun.scheduleId, routine.id));
