@@ -234,3 +234,16 @@ Plan und Bestandsaufnahme: `docs/ui-konsistenz-refactor.md` (Mac-Doku). Was gilt
 - **Ein Knopf:** `Button` hat 8 px Radius (`--radius-field`), Pillen nur für Chips und Filter (`radius.test.ts`).
 - **Seiten:** Ansichten fügen keinen eigenen Rand hinzu, die Seitenschablone paddet (Tabelle, Liste, Kalender, Ziele hatten einen zweiten). Ein Dokument steht in einer Box mit Verweisen und Verlauf als Karten daneben (`ds-doc-page`).
 - **Guards:** `src/app/overlayGuard.test.ts` (kein Sheet, kein handgemachter Scrim/Kopf/680-px-Panel, Ausnahmen mit Begründung), `overlayControlsGuard.test.ts`, `toolbarGuard.test.ts`, `uiAudit.test.ts` (die Regeln des Audits), `utils/dock.test.tsx`, `design-system/layout/Overlay.test.tsx` (Anheften nimmt Platz), `radius.test.ts`. Messung im echten Browser: `apps/web/scripts/ui-audit.mjs` (Kanten > 1 px, Kopfhöhe, Knopfreihenfolge und -größe, Abstand zum Fensterrand, Innenabstand, Esc-Folge, Hauptbereich vor/nach dem Anheften).
+
+## 18. Chat-Sidebar als Organigramm und Sidebar-Breite (O109, O110)
+
+- Die Chats der Sidebar stehen nach der Agenten-Hierarchie (`reportsToAgentId`): Ava oben, darunter
+  die Koordinatoren, darunter ihre Spezialisten (`chatAgentTree` in `features/ai-chat/utils/chatSections.ts`,
+  gerendert mit dem Design-System-`TreeItem`). Agenten ohne Chats erscheinen nur als Halter eines Astes;
+  im Projekt zeigt der Baum nur den Ast der Agenten des Projekts. Die Zahl an einer Zeile ist die
+  Chatzahl des ganzen Astes.
+- Die Sidebar ist per Ziehen an ihrer Innenkante verstellbar (`SidebarResizeGrip`, der vorhandene
+  `ResizeGrip` mit `onReset`, `onDragStart/End` und Werten fuer Hilfstechnik): 200 bis 480 px, die Seite
+  behaelt mindestens 560 px, Pfeiltasten 10 px (Shift 50), Doppelklick/Enter = Standard 248 px. Die
+  Breite liegt pro Nutzer im Browser (`helena:sidebar-width:<userId>`, `utils/sidebarWidth.ts`).
+  Rail, Overlay-Sidebar und Handy behalten den Token `--sidebar-w`.
