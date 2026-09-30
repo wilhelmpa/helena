@@ -21,6 +21,7 @@ export interface AgentActivityEntry {
   durationMs: number | null;
   inputTokens: number | null;
   outputTokens: number | null;
+  trashCounts?: { chat: number; vault: number };
 }
 
 export interface AgentActivityCursor {

@@ -47,6 +47,7 @@ import {
 import { reindexVaultPaths } from '@helena/knowledge';
 import { HttpError, iso } from '#shared/lib';
 import { attachmentResponseHeaders, safeAttachmentFilename } from '#modules/attachments/storage';
+import { vaultRetentionDates } from '#modules/trash/service';
 import { canAccess, readableEntries, type VaultScope } from './scope';
 
 const MAX_TREE_ITEMS = 5000;
@@ -704,11 +705,13 @@ export async function restorePath(scope: VaultScope, relative: string) {
 export async function listTrashed(scope: VaultScope, root: string) {
   const items = await listTrash(root);
   if (root === '' && scope.private) items.push(...(await listTrash('Private')));
-  return items
+  const dated = await vaultRetentionDates(items);
+  return dated
     .filter((item) => canAccess(scope, item.path, 'read'))
     .map((item) => ({
       path: item.path,
       trashedAt: iso(item.trashedAt),
+      purgeAt: item.purgeAt,
     }));
 }
 

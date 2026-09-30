@@ -1,3 +1,4 @@
+import { trashRoutes } from './modules/trash';
 import { rootAccessRoutes } from '#modules/root-access/index';
 import { modelSchemaRoutes } from './modules/model-schemas';
 import { RateLimitedError } from '@repo/auth';
@@ -204,6 +205,7 @@ export const planner = new Elysia({ name: 'planner' })
   .use(projectRoutes)
   .use(projectBlueprintRoutes)
   .use(teamRoutes)
+  .use(trashRoutes)
   .use(memberRoutes)
   .use(roleRoutes)
   .use(inviteRoutes)

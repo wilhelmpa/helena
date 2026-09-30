@@ -91,6 +91,7 @@ export interface LinkedNote {
 export interface TrashedNote {
   path: string;
   trashedAt: string;
+  purgeAt: string | null;
 }
 
 // A copy Syncthing kept where two devices changed a note at the same time.

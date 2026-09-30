@@ -81,6 +81,7 @@ export const appSecret = pgTable('app_secret', {
 export const team = pgTable('team', {
   id: serial('id').primaryKey(),
   name: text('name').notNull(),
+  trashRetentionDays: integer('trash_retention_days').notNull().default(30),
   agentContextLimits: jsonb('agent_context_limits').notNull().default({}),
   // Whether the team is reachable through the MCP server at all. Off closes both the
   // team's own resources (agents, skills, tools, roles, integrations) and every
@@ -128,6 +129,7 @@ export const project = pgTable(
   'project',
   {
     id: serial('id').primaryKey(),
+    trashRetentionDays: integer('trash_retention_days'),
     teamId: integer('team_id')
       .notNull()
       .references(() => team.id, { onDelete: 'cascade' }),

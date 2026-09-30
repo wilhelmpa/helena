@@ -2,12 +2,26 @@ import { randomUUID } from 'node:crypto';
 import { lstatSync } from 'node:fs';
 import { cp, lstat, mkdir, open, readdir, readFile, rename, rm, stat } from 'node:fs/promises';
 import path from 'node:path';
+import {
+  db,
+  knowledgeItem,
+  vaultEntry,
+  vaultMove,
+  noteBoard,
+  issueAttachment,
+  initiativeAttachment,
+  chatAttachment,
+  helenaReceipt,
+} from '@repo/db';
+import { and, eq, inArray, or, sql, type AnyColumn } from 'drizzle-orm';
+import { deleteObject } from '@repo/storage';
 import { isMissing, isUnreadable, VaultError } from './errors';
 import { sha256Of } from './indexer';
 import {
   absoluteVaultPath,
   isSyncConflict,
   isWithin,
+  isHiddenPath,
   joinVaultPath,
   parentPath,
   PRIVATE_DIR,
@@ -162,11 +176,12 @@ function trashPathOf(relative: string): string {
   return joinVaultPath(PRIVATE_DIR, TRASH_DIR, relative.slice(PRIVATE_DIR.length + 1));
 }
 
-interface TrashRecord {
+export interface TrashRecord {
   original: string;
   target: string;
   trashedAt: string;
   recordPath: string;
+  legacy?: boolean;
 }
 
 function canonicalRecordPath(value: string): boolean {
@@ -207,6 +222,11 @@ async function trashRecords(root: string): Promise<TrashRecord[]> {
       !canonicalRecordPath(record.original) ||
       !canonicalRecordPath(record.target) ||
       !isWithin(record.target, root) ||
+      record.target === root ||
+      isWithin(record.target, `${root}/.records`) ||
+      !record.original ||
+      isHiddenPath(record.original) ||
+      trashRoot(record.original) !== root ||
       !Number.isFinite(Date.parse(record.trashedAt))
     )
       continue;
@@ -215,14 +235,71 @@ async function trashRecords(root: string): Promise<TrashRecord[]> {
       target: record.target,
       trashedAt: record.trashedAt,
       recordPath,
+      ...(record.legacy === true ? { legacy: true } : {}),
     });
   }
   return records;
 }
 
+let trashLock: Promise<unknown> = Promise.resolve();
+
+async function withTrashLock<T>(operation: () => Promise<T>): Promise<T> {
+  const result = trashLock
+    .catch(() => {})
+    .then(async () => {
+      const connection = await db.$client.reserve();
+      try {
+        await connection`select pg_advisory_lock(hashtextextended('volition-vault-trash', 0))`;
+        return await operation();
+      } finally {
+        try {
+          await connection`select pg_advisory_unlock(hashtextextended('volition-vault-trash', 0))`;
+        } finally {
+          connection.release();
+        }
+      }
+    });
+  trashLock = result;
+  return result;
+}
+
+export async function listVaultTrashRecords(): Promise<TrashRecord[]> {
+  const records = (
+    await Promise.all([trashRecords(TRASH_DIR), trashRecords(`${PRIVATE_DIR}/${TRASH_DIR}`)])
+  ).flat();
+  const items = [...(await listTrash('')), ...(await listTrash(PRIVATE_DIR))];
+  for (const item of items) {
+    if (
+      records.some(
+        (record) =>
+          record.original === item.path && record.trashedAt === item.trashedAt.toISOString(),
+      )
+    )
+      continue;
+    const target = trashPathOf(item.path);
+    if (records.some((record) => isWithin(target, record.target))) continue;
+    records.push({
+      original: item.path,
+      target,
+      trashedAt: item.trashedAt.toISOString(),
+      legacy: true,
+      recordPath: `legacy:${target}:${item.trashedAt.toISOString()}`,
+    });
+  }
+  return records;
+}
+
+export async function trashVaultPath(relative: string): Promise<string> {
+  return withTrashLock(() => trashPathUnlocked(relative));
+}
+
+export async function restoreVaultPath(relative: string): Promise<void> {
+  return withTrashLock(() => restorePathUnlocked(relative));
+}
+
 // Moves a file or folder to the trash, the way Obsidian's ".trash" works. Returns the
 // path in the trash.
-export async function trashVaultPath(relative: string): Promise<string> {
+async function trashPathUnlocked(relative: string): Promise<string> {
   const first = trashPathOf(relative);
   let target = first;
   const records = await trashRecords(trashRoot(relative));
@@ -232,7 +309,7 @@ export async function trashVaultPath(relative: string): Promise<string> {
     );
     if (parentRecord) {
       target = withSuffix(parentRecord.target, number) + target.slice(parentRecord.target.length);
-    } else if (await exists(target)) {
+    } else if (records.some((record) => record.target === target) || (await exists(target))) {
       target = withSuffix(first, number);
     } else break;
     if (number > 1000) throw new VaultError(409, 'No free trash path is available');
@@ -255,7 +332,7 @@ export async function trashVaultPath(relative: string): Promise<string> {
 }
 
 // Moves a file back from the trash to where it was. `relative` is the original path.
-export async function restoreVaultPath(relative: string): Promise<void> {
+async function restorePathUnlocked(relative: string): Promise<void> {
   const records = (await trashRecords(trashRoot(relative)))
     .filter((record) => record.original === relative)
     .sort((a, b) => a.trashedAt.localeCompare(b.trashedAt));
@@ -266,41 +343,125 @@ export async function restoreVaultPath(relative: string): Promise<void> {
   if (record) await rm(absoluteVaultPath(record.recordPath));
 }
 
-export async function purgeVaultTrash(input: {
+export interface VaultTrashPurgeInput {
   olderThanDays: number;
   apply?: boolean;
   confirmTargets?: string[];
-}): Promise<{ targets: string[]; applied: boolean }> {
+  now?: Date;
+  select?: (record: TrashRecord) => boolean;
+  onPurge?: (record: TrashRecord) => Promise<void>;
+}
+
+async function cleanTrashReferences(record: TrashRecord): Promise<void> {
+  const below = (column: AnyColumn) =>
+    or(
+      eq(column, record.original),
+      eq(column, record.target),
+      sql`starts_with(${column}, ${record.original + '/'})`,
+      sql`starts_with(${column}, ${record.target + '/'})`,
+    );
+  const candidates = await db
+    .select({ path: vaultEntry.path })
+    .from(vaultEntry)
+    .where(below(vaultEntry.path));
+  const knowledge = await db
+    .select({ path: knowledgeItem.itemId })
+    .from(knowledgeItem)
+    .where(and(eq(knowledgeItem.source, 'vault'), below(knowledgeItem.itemId)));
+  const paths = [...new Set([...candidates, ...knowledge].map((row) => row.path))].filter(
+    (relative) => isWithin(relative, record.original) || isWithin(relative, record.target),
+  );
+  const missing: string[] = [];
+  for (const relative of paths) if (!(await exists(relative))) missing.push(relative);
+  await db.transaction(async (tx) => {
+    if (missing.length) {
+      await tx.delete(vaultEntry).where(inArray(vaultEntry.path, missing));
+      await tx
+        .delete(knowledgeItem)
+        .where(and(eq(knowledgeItem.source, 'vault'), inArray(knowledgeItem.itemId, missing)));
+    }
+    const boards = await tx
+      .select({ id: noteBoard.id, path: noteBoard.vaultPath })
+      .from(noteBoard)
+      .where(below(noteBoard.vaultPath));
+    for (const board of boards)
+      if (board.path && !(await exists(board.path))) {
+        await tx.delete(noteBoard).where(eq(noteBoard.id, board.id));
+      }
+    for (const table of [issueAttachment, initiativeAttachment, chatAttachment]) {
+      const rows = await tx
+        .select({ id: table.id, path: table.vaultPath, key: table.s3Key })
+        .from(table)
+        .where(below(table.vaultPath));
+      for (const row of rows)
+        if (row.path && !(await exists(row.path))) {
+          if (row.key) await deleteObject(row.key);
+          await tx.delete(table).where(eq(table.id, row.id));
+        }
+    }
+    if (!(await exists(record.original))) {
+      await tx.delete(vaultMove).where(or(below(vaultMove.fromPath), below(vaultMove.toPath)));
+    }
+  });
+}
+
+export async function purgeVaultTrash(
+  input: VaultTrashPurgeInput,
+): Promise<{ targets: string[]; applied: boolean }> {
   if (
     !Number.isInteger(input.olderThanDays) ||
-    input.olderThanDays < 1 ||
+    input.olderThanDays < 0 ||
     input.olderThanDays > 3650
   ) {
-    throw new VaultError(400, 'olderThanDays must be between 1 and 3650');
+    throw new VaultError(400, 'olderThanDays must be between 0 and 3650');
   }
-  const before = Date.now() - input.olderThanDays * 86_400_000;
-  const allRecords = (
-    await Promise.all([trashRecords(TRASH_DIR), trashRecords(`${PRIVATE_DIR}/${TRASH_DIR}`)])
-  ).flat();
-  const records = allRecords
-    .filter((record) => Date.parse(record.trashedAt) < before)
-    .filter(
-      (record) =>
-        !allRecords.some((other) => other !== record && isWithin(other.target, record.target)),
-    )
-    .sort((a, b) => a.target.localeCompare(b.target));
-  const targets = records.map((record) => record.target);
-  if (input.apply) {
-    if (JSON.stringify([...(input.confirmTargets ?? [])].sort()) !== JSON.stringify(targets)) {
-      throw new VaultError(409, 'The trash changed; run the dry run again before applying');
+  return withTrashLock(async () => {
+    const before = (input.now ?? new Date()).getTime() - input.olderThanDays * 86_400_000;
+    const allRecords = await listVaultTrashRecords();
+    const receipts = await db.select({ path: helenaReceipt.vaultPath }).from(helenaReceipt);
+    const records = allRecords
+      .filter((record) => input.olderThanDays === 0 || Date.parse(record.trashedAt) < before)
+      .filter((record) => !receipts.some((receipt) => isWithin(receipt.path, record.original)))
+      .filter((record) => input.select?.(record) ?? true)
+      .filter(
+        (record) =>
+          !allRecords.some((other) => other !== record && isWithin(other.target, record.target)),
+      )
+      .sort((a, b) => a.target.localeCompare(b.target));
+    const targets = records.map((record) => record.target);
+    if (input.apply) {
+      if (JSON.stringify([...(input.confirmTargets ?? [])].sort()) !== JSON.stringify(targets)) {
+        throw new VaultError(409, 'The trash changed; run the dry run again before applying');
+      }
+      for (const record of records) {
+        if (record.recordPath.startsWith('legacy:')) {
+          record.recordPath = joinVaultPath(
+            trashRoot(record.original),
+            '.records',
+            `${randomUUID()}.json`,
+          );
+          await writeVaultFile(
+            record.recordPath,
+            Buffer.from(
+              JSON.stringify({
+                original: record.original,
+                target: record.target,
+                trashedAt: record.trashedAt,
+                legacy: true,
+              }),
+            ),
+            null,
+          );
+        }
+        await assertNoSymlink(record.target);
+        await rm(absoluteVaultPath(record.target), { recursive: true, force: true });
+        await cleanTrashReferences(record);
+        await input.onPurge?.(record);
+        await rm(absoluteVaultPath(record.recordPath), { force: true });
+      }
     }
-    for (const record of records) {
-      await assertNoSymlink(record.target);
-      await rm(absoluteVaultPath(record.target), { recursive: true, force: true });
-      await rm(absoluteVaultPath(record.recordPath));
-    }
-  }
-  return { targets, applied: input.apply === true };
+    return { targets, applied: input.apply === true };
+  });
 }
 
 export interface SyncConflict {

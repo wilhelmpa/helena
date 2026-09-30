@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { db, agentChatThread, volitionActiveChat } from '@repo/db';
 import { and, eq, inArray, isNotNull, isNull, sql, type SQL } from 'drizzle-orm';
 import { checkPermission, type AuthUser } from '#shared/access';
@@ -24,6 +25,7 @@ export interface ChatSummary {
   running: boolean;
   archivedAt: string | null;
   deletedAt: string | null;
+  purgeAt: string | null;
   snippet?: string;
   match?: ThreadMatch;
   createdAt: string;
@@ -69,6 +71,7 @@ interface ChatRow {
   running: boolean;
   archivedAt: Date | string | null;
   deletedAt: Date | string | null;
+  retentionDays: number;
   snippet: string | null;
   rank: number | null;
   createdAt: Date | string;
@@ -101,6 +104,10 @@ function summary(row: ChatRow): ChatSummary {
     running: row.running,
     archivedAt: row.archivedAt ? iso(row.archivedAt) : null,
     deletedAt: row.deletedAt ? iso(row.deletedAt) : null,
+    purgeAt:
+      row.deletedAt && row.retentionDays > 0
+        ? new Date(new Date(row.deletedAt).getTime() + row.retentionDays * 86_400_000).toISOString()
+        : null,
     ...(row.snippet ? { snippet: row.snippet } : {}),
     ...(row.rank != null ? { match: (['title', 'user', 'assistant'] as const)[row.rank - 1] } : {}),
     createdAt: iso(row.createdAt),
@@ -179,6 +186,7 @@ async function readChats(
            ) AS running,
            t.archived_at AS "archivedAt",
            t.deleted_at AS "deletedAt",
+           coalesce(p.trash_retention_days, tm.trash_retention_days) AS "retentionDays",
            hit.snippet,
            ${rank} AS rank,
            t.created_at AS "createdAt",
@@ -192,6 +200,7 @@ async function readChats(
                 ELSE cu.input_tokens + COALESCE(cu.output_tokens, 0) END AS "contextTokens"
     FROM agent_chat_thread t
     JOIN ai_agent a ON a.id = t.agent_id
+    JOIN team tm ON tm.id = a.team_id
     JOIN "user" u ON u.id = a.user_id
     LEFT JOIN project p ON p.id = t.project_id
     LEFT JOIN issue i ON i.id = t.issue_id
@@ -355,7 +364,9 @@ export async function purgeTrash(userId: string, filter: { projectId?: number })
     sql`SELECT t.id FROM agent_chat_thread t WHERE ${where}`,
   )) as unknown as { id: string }[];
   let count = 0;
-  for (const row of rows) if (await deleteThread(row.id, userId)) count += 1;
+  const audit = { batchId: randomUUID(), trigger: 'manual' as const };
+  for (const row of rows)
+    if (await deleteThread(row.id, userId, { trashOnly: true, audit })) count += 1;
   return count;
 }
 
@@ -372,5 +383,8 @@ export async function purgeChat(threadId: string, userId: string): Promise<boole
       ),
     );
   if (!thread) return false;
-  return deleteThread(threadId, userId);
+  return deleteThread(threadId, userId, {
+    trashOnly: true,
+    audit: { batchId: randomUUID(), trigger: 'manual' },
+  });
 }

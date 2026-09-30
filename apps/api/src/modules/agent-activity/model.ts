@@ -42,6 +42,7 @@ export const ActivityEntryResponse = t.Object({
   durationMs: t.Nullable(t.Number()),
   inputTokens: t.Nullable(t.Number()),
   outputTokens: t.Nullable(t.Number()),
+  trashCounts: t.Optional(t.Object({ chat: t.Integer(), vault: t.Integer() })),
 });
 
 export const ActivityCursor = t.Object({ at: t.String(), id: t.String() });

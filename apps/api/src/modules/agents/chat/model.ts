@@ -452,6 +452,7 @@ export const ChatSummaryResponse = t.Object({
   running: t.Boolean({ description: 'An answer is being produced.' }),
   archivedAt: t.Nullable(t.String()),
   deletedAt: t.Nullable(t.String()),
+  purgeAt: t.Nullable(t.String()),
   snippet: t.Optional(t.String()),
   match: t.Optional(oneOf(['title', 'user', 'assistant'])),
   createdAt: t.String(),
@@ -504,6 +505,7 @@ export const trashAllChatsBody = t.Object({
 });
 
 export const emptyChatTrashBody = t.Object({
+  confirmed: t.Literal(true),
   projectKey: t.Optional(t.String({ description: 'Only the chats of this project.' })),
 });
 
