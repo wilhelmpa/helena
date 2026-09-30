@@ -235,3 +235,71 @@ describe('matrix escalation policy', () => {
     expect((await origin['agent-runs'].claim.post()).data!.run).toBeNull();
   });
 });
+
+describe('matrix undo through the server history', () => {
+  beforeEach(resetDb);
+
+  it('takes back one apply at a time, agents included, and reports how far it can go', async () => {
+    const { matrix, created } = await setup();
+    const id = created.agent.id;
+    const read = async () => {
+      const data = (await matrix.matrix.get()).data!;
+      return { data, row: data.agents.find((entry) => entry.id === id)! };
+    };
+    const first = await read();
+    expect(first.data.undo).toEqual({ depth: 0, steps: [] });
+    const originalRole = first.row.role;
+    const one = await matrix.apply.post({
+      expectedRevision: first.data.revision,
+      agents: [{ agentId: id, values: { reasoning: 'low' } }],
+    });
+    expect(one.error).toBeNull();
+    const afterOne = await read();
+    expect(afterOne.data.undo.depth).toBe(1);
+    expect(afterOne.data.undo.steps[0]?.agents).toBe(1);
+    expect(afterOne.row.cells.reasoning).toEqual({ value: 'low', source: 'own' });
+    const two = await matrix.apply.post({
+      expectedRevision: afterOne.data.revision,
+      agents: [{ agentId: id, role: 'reviewer', values: { model: 'gpt-6-sol', reasoning: null } }],
+    });
+    expect(two.error).toBeNull();
+    const afterTwo = await read();
+    expect(afterTwo.data.undo.depth).toBe(2);
+    expect(afterTwo.row.role).toBe('reviewer');
+    expect(afterTwo.row.cells.reasoning.source).toBe('schema');
+    expect(afterTwo.row.cells.model).toEqual({ value: 'gpt-6-sol', source: 'own' });
+
+    // A stale revision is refused, nothing changes.
+    const stale = await matrix.apply.post({ expectedRevision: afterOne.data.revision, undo: true });
+    expect(Number(stale.error?.status)).toBe(409);
+
+    const undoTwo = await matrix.apply.post({
+      expectedRevision: afterTwo.data.revision,
+      undo: true,
+    });
+    expect(undoTwo.error).toBeNull();
+    const backToOne = await read();
+    expect(backToOne.data.undo.depth).toBe(1);
+    expect(backToOne.row.role).toBe(originalRole);
+    expect(backToOne.row.cells.reasoning).toEqual({ value: 'low', source: 'own' });
+    expect(backToOne.row.cells.model.source).toBe('schema');
+    const stored = await db.select().from(aiAgent).where(eq(aiAgent.id, id));
+    expect(stored[0]?.modelOverrides).toEqual({ reasoning: 'low' });
+
+    const undoOne = await matrix.apply.post({
+      expectedRevision: backToOne.data.revision,
+      undo: true,
+    });
+    expect(undoOne.error).toBeNull();
+    const backToStart = await read();
+    expect(backToStart.data.undo.depth).toBe(0);
+    expect(backToStart.row.cells.reasoning.source).toBe('schema');
+    expect(backToStart.row.cells).toEqual(first.row.cells);
+
+    const nothing = await matrix.apply.post({
+      expectedRevision: backToStart.data.revision,
+      undo: true,
+    });
+    expect(Number(nothing.error?.status)).toBe(409);
+  });
+});
