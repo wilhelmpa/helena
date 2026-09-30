@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl';
 import { AgentPausedBadge } from '@/components/common/agent-chat/AgentPausedBadge';
 import type { OrganizationAgent } from '@/lib/api/endpoints/organization';
 import { organizationAgentRole, type OrganizationAgentRole } from '../organizationTree';
-import { Box, Inline, Stack, Text, Card } from '@/design-system';
+import { Box, Card, Inline, Pill, Stack, Text } from '@/design-system';
 
 const ROLES: OrganizationAgentRole[] = ['coordinator', 'specialist', 'reviewer', 'pool'];
 
@@ -62,15 +62,7 @@ export default function OrganizationOrchestrationTeam({ agents }: { agents: Orga
                     <Inline gap={1} wrap align="stretch">
                       <AgentPausedBadge agent={agent} />
                       {agent.capabilities.map((capability) => (
-                        <Text
-                          as="span"
-                          size="xs"
-                          tone="muted"
-                          key={capability}
-                          className="rounded-sm border px-1.5 py-0.5"
-                        >
-                          {capability}
-                        </Text>
+                        <Pill key={capability}>{capability}</Pill>
                       ))}
                     </Inline>
                   </Box>

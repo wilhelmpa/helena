@@ -685,14 +685,15 @@
     flex-wrap: wrap;
     row-gap: 0;
   }
+  /* The bar is 56px with its line, like on a desktop: the first row is one pixel less. */
   .ds-page-header .ds-page-heading {
-    height: var(--page-header-h);
+    height: calc(var(--page-header-h) - 1px);
     max-width: none;
     flex: 1 1 0;
     align-items: center;
   }
   .ds-page-header .ds-page-actions {
-    height: var(--page-header-h);
+    height: calc(var(--page-header-h) - 1px);
   }
   .ds-page-header .ds-page-bar {
     order: 3;
@@ -1056,7 +1057,7 @@
   .ds-app:has(.ds-dock) .ds-page-header::after {
     order: 2;
     width: 36px;
-    height: var(--page-header-h);
+    height: calc(var(--page-header-h) - 1px);
     flex: none;
     content: '';
   }
