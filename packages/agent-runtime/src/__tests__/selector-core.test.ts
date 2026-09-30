@@ -12,7 +12,7 @@ test('mail triage is offered directly to the assistant without tool discovery', 
     description: 'Triage mail',
     kind: 'normal',
     readOnly: false,
-    inputSchema: { type: 'object' },
+    inputSchema: { type: 'object', properties: {} },
     execute: async () => ({ text: 'Done.' }),
   };
   expect(directTools('assistent', [triage]).has(triage.name)).toBe(true);
