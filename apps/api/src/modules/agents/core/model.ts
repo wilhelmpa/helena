@@ -95,7 +95,7 @@ export const runtimePolicy = t.Object({
   ),
   escalation: t.Optional(
     t.Object({
-      target: t.Union([t.Literal('claude'), t.Literal('codex')]),
+      target: t.Optional(t.Union([t.Literal('claude'), t.Literal('codex')])),
       model: t.Nullable(t.String({ maxLength: 200 })),
       afterFailures: t.Integer({ minimum: 0, maximum: 5 }),
       onResumeLimit: t.Boolean(),

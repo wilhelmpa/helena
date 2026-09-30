@@ -96,6 +96,104 @@ describe('delegated escalation', () => {
     return { ...context, coderRunner: apiKeyApi(coder.apiKey!) };
   }
 
+  for (const runtime of ['claude', 'codex', 'helena'] as const) {
+    it(`uses the ${runtime} default destination for a failed local run`, async () => {
+      const previous = process.env.HELENA_NATIVE_RUNTIME;
+      if (runtime === 'helena') process.env.HELENA_NATIVE_RUNTIME = 'on';
+      try {
+        const { asOwner, asRunner, coderRunner, agent, columnId, teamId } = await agents();
+        const route = asOwner.teams({ teamId })['ai-agents']({ agentId: agent.id });
+        const runtimePolicy = (await route.get()).data!.runtimePolicy;
+        expect(
+          (
+            await route.patch({
+              runtimePolicy: {
+                ...runtimePolicy,
+                runtime,
+                escalation: {
+                  model: null,
+                  afterFailures: 1,
+                  onResumeLimit: true,
+                  onRequest: true,
+                  maxDepth: 1,
+                },
+              },
+            })
+          ).status,
+        ).toBe(200);
+        const targetRuntime = runtime === 'claude' ? 'claude' : 'codex';
+        const target = (await asOwner.teams({ teamId })['ai-agents'].get()).data!.find(
+          (candidate) => candidate.username === 'coder',
+        )!;
+        const targetRoute = asOwner.teams({ teamId })['ai-agents']({ agentId: target.id });
+        expect(
+          (
+            await targetRoute.patch({
+              runtimePolicy: {
+                ...(await targetRoute.get()).data!.runtimePolicy,
+                runtime: targetRuntime,
+              },
+            })
+          ).status,
+        ).toBe(200);
+        await queueRun(asOwner, columnId, agent.username);
+        const origin = (await asRunner['agent-runs'].claim.post()).data!.run!;
+        const local = 'helena-halogen/halogen-qwen3.8-flash-next';
+        expect(
+          (
+            await asRunner['agent-runs']({ runId: origin.id }).result.post({
+              status: 'failed',
+              error: 'Tests failed',
+              runtime: {
+                requested: { model: local, reasoning: null, provider: 'helena-halogen' },
+                defaults: null,
+                used: { model: local, reasoning: null, provider: 'helena-halogen' },
+              },
+            })
+          ).status,
+        ).toBe(200);
+        const delegated = (await coderRunner['agent-runs'].claim.post()).data!.run!;
+        expect(delegated.trigger).toBe('escalation');
+        expect(delegated.model).toBe(runtime === 'claude' ? 'claude-opus-5-5' : 'gpt-6.1-sol');
+      } finally {
+        if (previous === undefined) delete process.env.HELENA_NATIVE_RUNTIME;
+        else process.env.HELENA_NATIVE_RUNTIME = previous;
+      }
+    });
+  }
+
+  for (const reportedModel of ['gpt-6-luna', null]) {
+    it(`does not queue another run on a cloud pin with requested model ${reportedModel}`, async () => {
+      const { asOwner, asRunner, coderRunner, agent, columnId, teamId } = await agents();
+      expect(
+        (
+          await asOwner
+            .teams({ teamId })
+            ['ai-agents']({ agentId: agent.id })
+            .patch({ model: 'gpt-6-luna' })
+        ).status,
+      ).toBe(200);
+      await queueRun(asOwner, columnId, agent.username);
+      const origin = (await asRunner['agent-runs'].claim.post()).data!.run!;
+      expect(origin.model).toBe('gpt-6-luna');
+      expect(
+        (
+          await asRunner['agent-runs']({ runId: origin.id }).result.post({
+            status: 'failed',
+            error: 'Tests failed',
+            runtime: {
+              requested: { model: reportedModel, reasoning: null, provider: 'openai' },
+              defaults: { model: 'gpt-6-luna', reasoning: null, provider: 'openai' },
+              used: { model: 'gpt-6-luna', reasoning: null, provider: 'openai' },
+            },
+          })
+        ).status,
+      ).toBe(200);
+      expect((await coderRunner['agent-runs'].claim.post()).data!.run).toBeNull();
+      expect((await asRunner['agent-runs'].claim.post()).data!.run).toBeNull();
+    });
+  }
+
   it('returns a synthetic diff for independent review and records the accepted commit', async () => {
     const { asOwner, asRunner, coderRunner, agent, columnId } = await agents();
     const issue = await queueRun(asOwner, columnId, agent.username);

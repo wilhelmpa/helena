@@ -102,7 +102,7 @@ export interface AgentRuntimePolicy {
 }
 
 export interface AgentEscalationPolicy {
-  target: 'claude' | 'codex';
+  target?: 'claude' | 'codex';
   model: string | null;
   afterFailures: number;
   onResumeLimit: boolean;
@@ -112,7 +112,7 @@ export interface AgentEscalationPolicy {
 
 export const DEFAULT_AGENT_ESCALATION: AgentEscalationPolicy = {
   target: 'codex',
-  model: 'gpt-6-sol',
+  model: 'gpt-6.1-sol',
   afterFailures: 0,
   onResumeLimit: false,
   onRequest: true,
@@ -129,13 +129,11 @@ export function normalizeAgentEscalation(value: unknown): AgentEscalationPolicy 
       ? candidate
       : fallback;
   return {
-    target: raw.target === 'claude' ? 'claude' : 'codex',
+    ...((raw.target === 'claude' || raw.target === 'codex') && { target: raw.target }),
     model:
       typeof raw.model === 'string' && /^[A-Za-z0-9][A-Za-z0-9._:+@/-]{0,199}$/.test(raw.model)
         ? raw.model
-        : raw.model === null || raw.target === 'claude'
-          ? null
-          : DEFAULT_AGENT_ESCALATION.model,
+        : null,
     afterFailures: integer(raw.afterFailures, DEFAULT_AGENT_ESCALATION.afterFailures, 5),
     onResumeLimit:
       typeof raw.onResumeLimit === 'boolean'
