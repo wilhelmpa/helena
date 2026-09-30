@@ -1040,6 +1040,27 @@
 .ds-dock > span {
   pointer-events: none;
 }
+/* A phone (owner 30.09.): the orb is part of the top bar, at its right end, instead of floating over
+   the page - where it covered titles, list actions and the composer. The particle orb draws in the
+   middle ~70% of its box, so a 52px box is a ~36px orb in the 56px bar; the bar keeps that room free
+   (the spacer after its controls) and the page's content never meets it. */
+@media (max-width: 899px) {
+  .ds-dock {
+    top: calc(env(safe-area-inset-top, 0px) + 2px);
+    right: calc(var(--page-pad-x) - 8px + env(safe-area-inset-right, 0px));
+    bottom: auto;
+    width: 52px;
+    height: 52px;
+    --orb-size: 52px;
+  }
+  .ds-app:has(.ds-dock) .ds-page-header::after {
+    order: 2;
+    width: 36px;
+    height: var(--page-header-h);
+    flex: none;
+    content: '';
+  }
+}
 
 /* Installed app without a title bar (display_override): header and sidebar head are the
    title bar; their controls stay clickable. */
