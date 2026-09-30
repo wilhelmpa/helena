@@ -1,3 +1,4 @@
+import { Card } from '@/design-system';
 import { X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { ProjectDetail } from '@/lib/api/endpoints/projects';
@@ -42,11 +43,12 @@ export default function FilterConditionPill({
   const t = useTranslations('filters');
   const { operatorLabel } = useFilterFields();
   return (
-    <div
-      className={cn(
-        'flex items-center gap-1 rounded-md border bg-card py-0.5 ps-2 pe-0.5 text-sm',
-        stacked && 'min-h-8',
-      )}
+    <Card
+      tone="inset"
+      layout="row"
+      pad="list"
+      gap={1}
+      className={cn('items-center text-sm', stacked && 'min-h-8')}
     >
       <span className={cn('font-medium text-foreground', stacked && 'w-32 shrink-0 truncate')}>
         {spec.label}
@@ -86,6 +88,6 @@ export default function FilterConditionPill({
       >
         <X className="size-3.5" />
       </button>
-    </div>
+    </Card>
   );
 }

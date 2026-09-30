@@ -19,7 +19,7 @@ import {
   useUpdateIssueType,
 } from '../../services/settings.service';
 
-import { Box, Inline, Stack, Text, Table, Td, Th, Tr } from '@/design-system';
+import { Box, Inline, Stack, Text, Table, Td, Th, Tr, Card } from '@/design-system';
 
 // The project's issue types. Adding is opened from the page header (the `adding`
 // flag is lifted to the page); the add form itself is inline in this list.
@@ -120,7 +120,7 @@ export default function SettingsIssueTypes({
 
   return (
     <Stack gap={4}>
-      <div className="overflow-hidden rounded-md border bg-card">
+      <Card pad="none" className="overflow-hidden">
         <Table stack={false} className="table-fixed md:min-w-[640px]">
           <colgroup>
             <col className="w-[46%]" />
@@ -215,7 +215,7 @@ export default function SettingsIssueTypes({
             )}
           </tbody>
         </Table>
-      </div>
+      </Card>
 
       {deleting && (
         <SettingsConfirmDeleteDialog

@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils';
 import { Label } from '@/components/ui/label';
 import { normalizeDomain } from '../../utils/domainList';
 
-import { Stack, Inline, Text } from '@/design-system';
+import { Stack, Inline, Text, FieldFrame } from '@/design-system';
 
 // A domain list edited as chips: type a domain, press Enter/comma/space or blur to add
 // it, backspace on the empty field to drop the last one. Used for the browser gateway's
@@ -51,12 +51,7 @@ export default function DomainListField({
           {t('domainCount', { count: domains.length, max })}
         </span>
       </Inline>
-      <div
-        className={cn(
-          'flex min-h-9 flex-wrap items-center gap-1.5 rounded-md border bg-background px-2 py-1.5 focus-within:ring-2 focus-within:ring-ring/50',
-          disabled && 'opacity-60',
-        )}
-      >
+      <FieldFrame className={cn(disabled && 'opacity-60')}>
         {domains.map((domain) => (
           <Inline
             as="span"
@@ -103,7 +98,7 @@ export default function DomainListField({
             }}
           />
         )}
-      </div>
+      </FieldFrame>
       {hint && (
         <Text as="p" size="xs" tone="muted">
           {hint}

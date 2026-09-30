@@ -356,7 +356,7 @@ async function routineHasNoWork(row: ScheduleRow, runId: string): Promise<boolea
       and(
         eq(pipelineRun.scheduleId, row.id),
         isNotNull(pipelineRun.issueId),
-        inArray(pipelineRun.status, ['succeeded', 'skipped']),
+        inArray(pipelineRun.status, ['succeeded', 'skipped', 'failed', 'running', 'waiting']),
         ne(pipelineRun.id, runId),
       ),
     )

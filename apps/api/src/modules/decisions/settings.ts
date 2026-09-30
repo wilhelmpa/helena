@@ -12,6 +12,7 @@ import { connectionIsLocal, loadConnection } from '#modules/browser-task/connect
 import { decisionClass, decisionClasses } from './classes';
 import { evalAllows, latestEval, type EvalView } from './evals-runner';
 import { classSetting, effectiveThreshold, effectiveTimeout } from './service';
+import { jevDecisionPolicy } from './jev-policy';
 
 // The settings of the decision classes (Administrator → Entscheidungen): which connection
 // answers each class, its threshold and failsafe, whether the log keeps the input, the
@@ -147,13 +148,22 @@ async function classView(
   stats: Map<string, ClassStats>,
 ): Promise<ClassView> {
   const setting = await classSetting(teamId, cls.id);
-  const threshold = effectiveThreshold(cls, setting);
+  const connection = setting.credentialId ? await loadConnection(setting.credentialId) : null;
+  const calibrated = jevDecisionPolicy(
+    cls.id,
+    connection?.backend.id ?? '',
+    effectiveThreshold(cls, setting),
+    setting.threshold,
+  );
+  const threshold = calibrated.threshold;
   const latest = setting.credentialId
     ? await latestEval(teamId, cls.id, setting.credentialId)
     : null;
-  const allowed = setting.credentialId
-    ? await evalAllows(teamId, cls.id, setting.credentialId, threshold)
-    : ({ ok: false, reason: 'no_connection' } as const);
+  const unavailableReason = calibrated.enabled ? 'no_connection' : 'jev_calibration_abstains';
+  const allowed =
+    setting.credentialId && calibrated.enabled
+      ? await evalAllows(teamId, cls.id, setting.credentialId, threshold)
+      : ({ ok: false, reason: unavailableReason } as const);
   return {
     id: cls.id,
     label: cls.label,
@@ -265,8 +275,16 @@ export async function updateClassSetting(
   };
   if (next.enabled) {
     if (!next.credentialId) throw new HttpError(409, 'no_connection');
-    const threshold = next.threshold ?? cls.defaults.threshold;
-    const allowed = await evalAllows(teamId, classId, next.credentialId, threshold);
+    const connection = await loadConnection(next.credentialId);
+    const calibrated = jevDecisionPolicy(
+      classId,
+      connection?.backend.id ?? '',
+      next.threshold ?? cls.defaults.threshold,
+      next.threshold,
+    );
+    const allowed = calibrated.enabled
+      ? await evalAllows(teamId, classId, next.credentialId, calibrated.threshold)
+      : { ok: false as const, reason: 'jev_calibration_abstains' };
     if (!allowed.ok) {
       // Switching on needs the eval; a change of connection or threshold that the eval does
       // not cover switches the class off instead of refusing the change.

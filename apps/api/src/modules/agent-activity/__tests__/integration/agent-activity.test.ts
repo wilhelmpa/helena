@@ -165,6 +165,81 @@ async function fullTimeline() {
 describe('agent activity', () => {
   beforeEach(resetDb);
 
+  async function failedChat() {
+    const ctx = await setup();
+    const sent = (
+      await ctx.asOwner
+        .projects({ projectKey: 'MKT' })
+        ['ai-agents']({ agentId: ctx.agent.id })
+        .chat.post({ prompt: 'Please answer' })
+    ).data!;
+    const claimed = (await ctx.asRunner['agent-chats'].claim.post()).data!.message!;
+    await ctx.asRunner['agent-chats']({ messageId: claimed.id }).result.post({
+      status: 'failed',
+      error: 'Test failure',
+    });
+    return { ...ctx, sent, messageId: claimed.id };
+  }
+
+  it('keeps failed chat history but clears attention after successful continuation', async () => {
+    const ctx = await failedChat();
+    const read = () => activity(ctx.asOwner);
+    expect(
+      (await read()).data!.items.find((row) => row.id === `chat:${ctx.messageId}`)
+        ?.requiresAttention,
+    ).toBe(true);
+    await ctx.asOwner
+      .projects({ projectKey: 'MKT' })
+      ['ai-agents']({ agentId: ctx.agent.id })
+      .chat.post({ prompt: 'Continue', threadId: ctx.sent.threadId });
+    const claimed = (await ctx.asRunner['agent-chats'].claim.post()).data!.message!;
+    await ctx.asRunner['agent-chats']({ messageId: claimed.id }).result.post({ status: 'success' });
+    expect(
+      (await read()).data!.items.find((row) => row.id === `chat:${ctx.messageId}`),
+    ).toMatchObject({ status: 'failed', requiresAttention: false });
+  });
+
+  it('a successful answer on an unrelated branch keeps the original failure open', async () => {
+    const ctx = await failedChat();
+    await ctx.asOwner
+      .projects({ projectKey: 'MKT' })
+      ['ai-agents']({ agentId: ctx.agent.id })
+      .chat.post({ prompt: 'A different question', threadId: ctx.sent.threadId, parentId: null });
+    const claimed = (await ctx.asRunner['agent-chats'].claim.post()).data!.message!;
+    await ctx.asRunner['agent-chats']({ messageId: claimed.id }).result.post({ status: 'success' });
+    expect(
+      (await activity(ctx.asOwner)).data!.items.find((row) => row.id === `chat:${ctx.messageId}`)
+        ?.requiresAttention,
+    ).toBe(true);
+  });
+
+  it('all read clears the callers failed chats and preserves other users failures', async () => {
+    const ctx = await failedChat();
+    const other = await signUpTestUser({ name: 'Other' });
+    await authedApi(other.cookie).notifications['read-all'].post({});
+    expect(
+      (await activity(ctx.asOwner)).data!.items.find((row) => row.id === `chat:${ctx.messageId}`)
+        ?.requiresAttention,
+    ).toBe(true);
+    expect((await ctx.asOwner.notifications['read-all'].post({})).data!.count).toBe(1);
+    expect(
+      (await activity(ctx.asOwner)).data!.items.find((row) => row.id === `chat:${ctx.messageId}`),
+    ).toMatchObject({ status: 'failed', requiresAttention: false });
+  });
+
+  it('reading a failed answer acknowledges it durably', async () => {
+    const ctx = await failedChat();
+    await ctx.asOwner
+      .projects({ projectKey: 'MKT' })
+      ['ai-agents']({ agentId: ctx.agent.id })
+      .threads({ threadId: ctx.sent.threadId })
+      .messages.get({ query: {} });
+    expect(
+      (await activity(ctx.asOwner)).data!.items.find((row) => row.id === `chat:${ctx.messageId}`)
+        ?.requiresAttention,
+    ).toBe(false);
+  });
+
   it('lists chat answers, agent runs and workflow runs newest first', async () => {
     const { asOwner, agent, issue, stageRunId, chat, projectId } = await fullTimeline();
 

@@ -1,5 +1,6 @@
 'use client';
 
+import { Card } from '@/design-system';
 import { useTranslations } from 'next-intl';
 import type { AnalyticsStats } from '@/lib/api/endpoints/analytics';
 
@@ -20,10 +21,10 @@ export default function TeamProjectStats({ stats }: { stats: AnalyticsStats }) {
   return (
     <div className="grid grid-cols-3 gap-2">
       {STATS.map((key) => (
-        <div key={key} className="rounded-md border border-sidebar-border bg-card px-3 py-2.5">
+        <Card pad="tight" key={key}>
           <div className="text-xl font-semibold tabular-nums">{stats[key]}</div>
           <div className="text-xs text-muted-foreground">{t(key)}</div>
-        </div>
+        </Card>
       ))}
     </div>
   );

@@ -137,7 +137,8 @@ export async function vaultScope(
     templates: owner
       ? { read: true, write: true }
       : { read: homeAgent || readsProjects, write: false },
-    private: owner,
+    // Owner 30.09.: Home/Ava has every right, the private vault included.
+    private: owner || homeAgent,
     agent: agent ? { username: agent.username } : null,
     author: agent
       ? { name: person?.name || agent.username, email: `${agent.username}@agents.volition.local` }

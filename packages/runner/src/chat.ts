@@ -104,7 +104,8 @@ export async function answer(
         VOLITION_WORK_CLAIM: String(message.attempts ?? ''),
         ITSAPLAN_SESSION_ID: message.sessionId ?? '',
         ...hermes?.env,
-        VOLITION_HALOGEN_PRIORITY: 'interactive',
+        VOLITION_HALOGEN_PRIORITY: message.via === 'voice' ? 'voice-agent' : 'interactive',
+        ...(message.via === 'voice' && { VOLITION_VOICE: '1' }),
       },
       hooks: hermes?.hooks,
       delivered: hermes?.delivered?.names,
@@ -119,7 +120,7 @@ export async function answer(
         limits?.write(chunk);
       },
       signal: stop.signal,
-      work: { kind: 'chat', id: message.id },
+      work: { kind: message.via === 'voice' ? 'voice' : 'chat', id: message.id },
     },
   ).finally(() => clearInterval(flushing));
   await limits?.end();

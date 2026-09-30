@@ -1,3 +1,4 @@
+import { Card } from '@/design-system';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Bot, User } from 'lucide-react';
 import type { Assignee } from '@/lib/api/endpoints/projects';
@@ -195,7 +196,7 @@ export default function CommentComposer({
           title={t('commentAs', { name: authorName })}
         />
         <div className="relative min-w-0 flex-1">
-          <div className="overflow-hidden rounded-md border bg-muted/20 shadow-xs">
+          <Card tone="inset" pad="none" gap={0} className="overflow-hidden">
             <Textarea
               ref={taRef}
               // `auto` once there is something to read, so a comment keeps the
@@ -236,7 +237,7 @@ export default function CommentComposer({
                 </Button>
               </div>
             </div>
-          </div>
+          </Card>
 
           {menu && matches.length > 0 && (
             <Popover open>

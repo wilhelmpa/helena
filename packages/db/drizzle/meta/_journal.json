@@ -1611,6 +1611,13 @@
       "when": 1790756104914,
       "tag": "0230_volition_trash_retention",
       "breakpoints": true
+    },
+    {
+      "idx": 231,
+      "version": "7",
+      "when": 1790779197780,
+      "tag": "0231_volition_chat_attention",
+      "breakpoints": true
     }
   ]
 }

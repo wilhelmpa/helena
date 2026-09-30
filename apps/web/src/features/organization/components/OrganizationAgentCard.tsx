@@ -15,7 +15,7 @@ import { parseCapabilities } from '../capabilities';
 import { useClearAgentAssignment, useSetAgentAssignment } from '../services/organization.service';
 import OrganizationAgentGovernance from './OrganizationAgentGovernance';
 import OrganizationAgentProjectInstruction from './OrganizationAgentProjectInstruction';
-import { Inline, Stack, Text } from '@/design-system';
+import { Inline, Stack, Text, Card } from '@/design-system';
 
 export default function OrganizationAgentCard({
   teamId,
@@ -41,7 +41,7 @@ export default function OrganizationAgentCard({
   const [capabilities, setCapabilities] = useState(agent.capabilities.join(', '));
 
   return (
-    <Stack gap={4} pad={4} className="rounded-md border bg-card">
+    <Card gap={4}>
       <div>
         <Inline gap={2} wrap>
           <h3 className="text-md font-medium" dir="auto">
@@ -194,6 +194,6 @@ export default function OrganizationAgentCard({
           {t('actions.save')}
         </Button>
       </Inline>
-    </Stack>
+    </Card>
   );
 }

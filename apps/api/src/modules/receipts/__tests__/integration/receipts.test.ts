@@ -6,6 +6,8 @@ import { absoluteVaultPath, findEntry } from '@repo/vault';
 import { readExportZip } from '@helena/finance';
 import { db, helenaBankTransaction, helenaDecision, helenaMailClassification } from '@repo/db';
 import { eq, sql } from 'drizzle-orm';
+import { createAgent } from '#tests/helpers/agents';
+import { apiKeyApi } from '#tests/helpers/app';
 import { app, authedApi } from '#tests/helpers/app';
 import { signUpTestUser, type TestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
@@ -968,6 +970,59 @@ describe('receipts', () => {
     expect((await http.call<{ receipts: ReceiptView[] }>('GET', '')).data.receipts).toHaveLength(0);
   });
 
+  it('grants finance agents receipt reads in their own project while refusing writes and other roles', async () => {
+    const api = authedApi(owner.cookie);
+    const receipt = await http.upload<ReceiptDetailView>(
+      '',
+      'finance.xml',
+      ublInvoice({
+        id: 'ROLE-1',
+        issue: '2026-09-01',
+        due: '2026-09-15',
+        gross: '59.00',
+        net: '49.58',
+      }),
+      'application/xml',
+    );
+    expect(receipt.status).toBe(201);
+    const finance = (
+      await createAgent(api, 'FIN', {
+        name: 'Finance',
+        username: 'finance-agent',
+        kind: 'external',
+      })
+    ).data!;
+    const coder = (
+      await createAgent(api, 'FIN', { name: 'Coder', username: 'coder-agent', kind: 'external' })
+    ).data!;
+    const financeApi = apiKeyApi(finance.apiKey!);
+    expect((await financeApi.projects({ projectKey: 'FIN' }).receipts.get()).status).toBe(200);
+    expect(
+      (
+        await financeApi
+          .projects({ projectKey: 'FIN' })
+          .receipts({ receiptId: receipt.data.id })
+          .get()
+      ).data,
+    ).toMatchObject({ id: receipt.data.id });
+    expect(
+      (
+        await financeApi
+          .projects({ projectKey: 'FIN' })
+          .receipts({ receiptId: receipt.data.id })
+          .patch({ status: 'ignored' })
+      ).status,
+    ).toBe(403);
+    expect(
+      (await apiKeyApi(coder.apiKey!).projects({ projectKey: 'FIN' }).receipts.get()).status,
+    ).toBe(403);
+    await api.projects.post({ key: 'OUT', name: 'Outside' });
+    expect((await financeApi.projects({ projectKey: 'OUT' }).receipts.get()).status).toBe(403);
+    expect((await financeApi.projects({ projectKey: 'FIN' }).receipts.accounts.get()).status).toBe(
+      403,
+    );
+  });
+
   it('keeps receipt tools within project administrators and project boundaries', async () => {
     const stranger = await signUpTestUser();
     await authedApi(stranger.cookie).projects.post({ key: 'OTHER', name: 'Other project' });
@@ -985,7 +1040,11 @@ describe('receipts', () => {
     expect(all.length).toBeGreaterThan(20);
     expect(untaggedRoutes(receiptRoutes)).toHaveLength(4);
     for (const tool of routeTools(app).filter((tool) => receiptRoutes(tool.path))) {
-      expect(tool.permission).toEqual(['project_admin', 'admin']);
+      expect(tool.permission).toEqual(
+        ['list_receipts', 'read_receipt'].includes(tool.name)
+          ? ['receipts', 'read']
+          : ['project_admin', 'admin'],
+      );
     }
   });
 });

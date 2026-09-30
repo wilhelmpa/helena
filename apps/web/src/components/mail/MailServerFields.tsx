@@ -1,5 +1,6 @@
 'use client';
 
+import { Card } from '@/design-system';
 import { useTranslations } from 'next-intl';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -52,7 +53,7 @@ export default function MailServerFields({
     );
   };
   return (
-    <div className="flex flex-col gap-3 rounded-md border p-3">
+    <Card tone="inset" pad="tight">
       {server('imap')}
       {server('smtp')}
       <div className="flex flex-col gap-1.5">
@@ -63,6 +64,6 @@ export default function MailServerFields({
           onChange={(event) => onChange({ username: event.target.value })}
         />
       </div>
-    </div>
+    </Card>
   );
 }

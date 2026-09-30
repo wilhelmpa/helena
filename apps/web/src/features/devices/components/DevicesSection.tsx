@@ -1,3 +1,4 @@
+import { Card } from '@/design-system';
 import type { ReactNode } from 'react';
 
 export default function DevicesSection({
@@ -10,10 +11,10 @@ export default function DevicesSection({
   children: ReactNode;
 }) {
   return (
-    <section className="rounded-md border bg-card p-4">
+    <Card as="section">
       <h2 className="text-md font-medium">{title}</h2>
       {hint ? <p className="mt-0.5 text-xs text-muted-foreground">{hint}</p> : null}
       <div className="mt-3">{children}</div>
-    </section>
+    </Card>
   );
 }

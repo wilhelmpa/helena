@@ -24,6 +24,7 @@ import { costOfUsage } from '#modules/model-prices/service';
 import { decisionClass, localAiClassForDecision } from './classes';
 import { firstStageChatGuard } from './chat-stage';
 import { decisionAttempts } from './attempts';
+import { jevDecisionPolicy } from './jev-policy';
 import { withStageGuard } from './stage-request';
 import {
   firstStageCandidate,
@@ -354,12 +355,14 @@ export async function decide(request: DecideRequest): Promise<DecideOutcome> {
   }
   const chatAllowsStage = await firstStageChatGuard(request).catch(() => async () => false);
   // A stage-setting or eval lookup failure skips the optimization. The existing path stays.
+  const stagePolicy = jevDecisionPolicy(cls.id, 'typesafe', threshold, setting.threshold);
   const stage =
     (!agentDecision || ['jev', 'jev-local', 'local-jev'].includes(agentDecision.backend)) &&
     (!request.localOnly || request.allowPrivateJev === true) &&
     (await chatAllowsStage().catch(() => false)) &&
-    JSON.stringify({ context: request.context, questions: request.questions }).length <= 16000
-      ? await firstStageCandidate(request.teamId, cls.id, threshold).catch(() => null)
+    JSON.stringify({ context: request.context, questions: request.questions }).length <= 16000 &&
+    stagePolicy.enabled
+      ? await firstStageCandidate(request.teamId, cls.id, stagePolicy.threshold).catch(() => null)
       : null;
   const stillEnabled = async (credentialId: number) =>
     (await chatAllowsStage()) &&
@@ -416,6 +419,16 @@ export async function decide(request: DecideRequest): Promise<DecideOutcome> {
         continue;
       }
       connection = found.connection;
+      const attemptPolicy = jevDecisionPolicy(
+        cls.id,
+        connection.backend.id,
+        threshold,
+        setting.threshold,
+      );
+      if (!attemptPolicy.enabled) {
+        last = { status: 'no_backend', message: 'jev_calibration_abstains', connection };
+        continue;
+      }
       // Reserve a share of the same total time budget for each remaining attempt.
       const share = Math.max(1, Math.floor(remaining / (attempts.length - index)));
       const budget = isStage ? Math.min(share, stage!.policy.timeoutMs) : share;
@@ -432,14 +445,15 @@ export async function decide(request: DecideRequest): Promise<DecideOutcome> {
       if (isStage && !(await stillEnabled(credentialId))) continue;
       const readiness = result.answers[FIRST_STAGE_READINESS];
       const semanticEscalation = Boolean(
-        isStage && (readiness?.choice !== 'ready' || readiness.confidence < threshold),
+        isStage &&
+        (readiness?.choice !== 'ready' || readiness.confidence < attemptPolicy.threshold),
       );
       const outcome = await record(
         request,
         cls,
         setting,
         connection,
-        threshold,
+        attemptPolicy.threshold,
         result,
         semanticEscalation,
       );

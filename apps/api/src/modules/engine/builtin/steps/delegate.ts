@@ -7,7 +7,7 @@ import {
   pipelineRunStep,
   projectMember,
 } from '@repo/db';
-import { and, desc, eq, inArray, isNotNull, ne, sql } from 'drizzle-orm';
+import { and, desc, eq, gte, inArray, isNotNull, ne, or, sql } from 'drizzle-orm';
 import { listColumns, type ColumnRow } from '#modules/columns/service';
 import {
   createIssue,
@@ -22,8 +22,11 @@ import { WORK_CLASS } from '#modules/local-ai/work-classes';
 import { bumpControlPlaneRevision } from '#modules/sync/service';
 import { publishDomainEvent as publishBusEvent } from '#shared/helena';
 import type { DelegateStep } from '#modules/pipelines/definition';
+import { MENTION_STARTED } from '#modules/routines/agent-runs';
 import { routineMentions, startRoutineMentions } from '#modules/routines/mentions';
-import { loadRun, stepRow, writeStep } from '../../run-context';
+import { engineWaitSeconds } from '../../dbos';
+import { cancelStepRun, stepRunStatus } from '../../agent-runs';
+import { loadRun, setRunStatus, stepRow, writeStep } from '../../run-context';
 import {
   StepFailure,
   type StepContext,
@@ -57,6 +60,9 @@ export interface DelegateResult {
 interface DelegateState {
   taskId?: number;
   commented?: boolean;
+  agentRunIds?: number[];
+  teamRunIds?: string[];
+  deadline?: number;
 }
 
 function isOpenTask(task: IssueRow, columns: ColumnRow[]): boolean {
@@ -76,7 +82,7 @@ async function previousTask(runId: string, scheduleId: string | null): Promise<n
         eq(pipelineRun.scheduleId, scheduleId),
         ne(pipelineRun.id, runId),
         isNotNull(pipelineRun.issueId),
-        inArray(pipelineRun.status, ['succeeded', 'skipped']),
+        inArray(pipelineRun.status, ['succeeded', 'skipped', 'failed', 'running', 'waiting']),
       ),
     )
     .orderBy(desc(pipelineRun.scheduledFor), desc(pipelineRun.createdAt))
@@ -126,13 +132,68 @@ async function finish(
 ): Promise<DelegateResult> {
   await db
     .update(pipelineRun)
-    .set({ issueId: result.taskId, updatedAt: new Date() })
+    .set({ issueId: result.taskId, result, updatedAt: new Date() })
     .where(eq(pipelineRun.id, runId));
+  const existing = await stepRow(runId, at);
+  const since = existing!.startedAt;
+  const teams =
+    result.outcome === 'skipped'
+      ? []
+      : await db
+          .select({ id: pipelineRun.id })
+          .from(pipelineRun)
+          .where(
+            and(
+              eq(pipelineRun.issueId, result.taskId),
+              eq(pipelineRun.kind, 'agent_team'),
+              or(
+                gte(pipelineRun.createdAt, since),
+                inArray(pipelineRun.status, ['pending', 'running', 'waiting']),
+              ),
+            ),
+          );
+  const mentions =
+    result.outcome === 'skipped'
+      ? []
+      : await db
+          .select({ id: pipelineRunStep.agentRunId })
+          .from(pipelineRunStep)
+          .where(
+            and(
+              eq(pipelineRunStep.runId, runId),
+              eq(pipelineRunStep.outcome, MENTION_STARTED),
+              isNotNull(pipelineRunStep.agentRunId),
+            ),
+          );
+  const agents =
+    result.outcome === 'skipped' || teams.length
+      ? []
+      : await db
+          .select({ id: agentRun.id })
+          .from(agentRun)
+          .where(
+            and(
+              eq(agentRun.issueId, result.taskId),
+              eq(agentRun.agentId, step.agentId),
+              or(
+                and(eq(agentRun.workClass, WORK_CLASS.routines), gte(agentRun.createdAt, since)),
+                eq(agentRun.status, 'pending'),
+              ),
+            ),
+          );
   await writeStep(runId, step, at, {
-    status: 'succeeded',
+    status: result.outcome === 'skipped' ? 'succeeded' : 'waiting',
     outcome: result.outcome,
-    state: { taskId: result.taskId, result },
-    finishedAt: new Date(),
+    state: {
+      taskId: result.taskId,
+      result,
+      agentRunIds: [
+        ...new Set([...agents.map((row) => row.id), ...mentions.map((row) => row.id!)]),
+      ],
+      teamRunIds: teams.map((row) => row.id),
+      deadline: Date.now() + 7_200_000,
+    },
+    finishedAt: result.outcome === 'skipped' ? new Date() : null,
   });
   await announce(runId, projectId, step, result);
   await bumpControlPlaneRevision(projectId);
@@ -146,7 +207,7 @@ async function dispatch(
 ): Promise<DelegateResult | null> {
   const existing = await stepRow(runId, at);
   const stored = (existing?.state ?? {}) as DelegateState & { result?: DelegateResult };
-  if (existing?.status === 'succeeded' && stored.result) return stored.result;
+  if (stored.result) return stored.result;
   const context = await loadRun(runId);
   const { project, run } = context;
   if (run.dryRun) {
@@ -300,6 +361,43 @@ async function dispatch(
   });
 }
 
+async function workStatus(
+  runId: string,
+  at: StepExecution,
+): Promise<{ done: boolean; error: string | null }> {
+  const row = await stepRow(runId, at);
+  const state = row?.state as DelegateState;
+  const agentIds = state.agentRunIds ?? [];
+  const teamIds = state.teamRunIds ?? [];
+  let done = true;
+  for (const id of agentIds) {
+    const run = await stepRunStatus(id);
+    if (run.status === 'failed' || run.status === 'canceled' || run.blockedQuestion)
+      return {
+        done: false,
+        error: run.blockedQuestion ?? run.error ?? 'The routine agent run failed or was canceled',
+      };
+    if (run.status === 'pending') done = false;
+  }
+  for (const id of teamIds) {
+    const [run] = await db
+      .select({ status: pipelineRun.status, error: pipelineRun.error })
+      .from(pipelineRun)
+      .where(eq(pipelineRun.id, id));
+    if (!run || ['failed', 'canceled', 'rejected'].includes(run.status))
+      return { done: false, error: run?.error ?? 'The routine agent team failed or was canceled' };
+    if (['pending', 'running', 'waiting'].includes(run.status)) done = false;
+  }
+  if (!done && Date.now() >= (state.deadline ?? Infinity))
+    return { done: false, error: 'The routine agent work timed out after two hours' };
+  if (done)
+    await writeStep(runId, { type: 'delegate', name: row!.name }, at, {
+      status: 'succeeded',
+      finishedAt: new Date(),
+    });
+  return { done, error: null };
+}
+
 export const delegateStep: WorkflowStepType<Step> = {
   type: 'delegate',
   // Routines are made on the Schedules page; the builder does not offer the step.
@@ -323,10 +421,41 @@ export const delegateStep: WorkflowStepType<Step> = {
       dispatch(context.run.id, context.step, context.execution),
     );
     if (!result) return { kind: 'end', status: 'succeeded', result: { outcome: 'dry-run' } };
+    if (result.outcome !== 'skipped') {
+      for (;;) {
+        const progress = await context.op('work:progress', () =>
+          workStatus(context.run.id, context.execution),
+        );
+        if (progress.error) {
+          await context.op('work:cancel', () =>
+            delegateStep.cancel!(context.run.id, context.execution),
+          );
+          throw new StepFailure(`The routine agent work failed: ${progress.error}`);
+        }
+        if (progress.done) break;
+        await context.op('work:waiting', () => setRunStatus(context.run.id, 'waiting'));
+        await context.waitForSignal('agent-run', engineWaitSeconds(15));
+      }
+    }
     return {
       kind: 'end',
       status: result.outcome === 'skipped' ? 'skipped' : 'succeeded',
       result,
     };
+  },
+  async cancel(runId, at) {
+    const row = await stepRow(runId, at);
+    const state = row?.state as DelegateState | null;
+    for (const id of state?.agentRunIds ?? []) await cancelStepRun(id);
+    for (const id of state?.teamRunIds ?? []) {
+      const [run] = await db
+        .select({ status: pipelineRun.status })
+        .from(pipelineRun)
+        .where(eq(pipelineRun.id, id));
+      if (run && ['pending', 'running', 'waiting'].includes(run.status)) {
+        const { cancelEngineRun } = await import('../../runs');
+        await cancelEngineRun(id);
+      }
+    }
   },
 };

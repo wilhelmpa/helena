@@ -243,7 +243,8 @@
       "directOnly": "Root nur auf direkten Owner-Auftrag",
       "audit": "Root-Aufrufe (letzte 100)",
       "refresh": "Aktualisieren",
-      "boundary": "Widerruf beendet nur von der Root-Stelle gestartete Units. Durch Befehle angelegte Dienste, Cronjobs und sudoers-Änderungen müssen gesondert zurückgenommen werden."
+      "boundary": "Widerruf beendet nur von der Root-Stelle gestartete Units. Durch Befehle angelegte Dienste, Cronjobs und sudoers-Änderungen müssen gesondert zurückgenommen werden.",
+      "unrestricted": "Root nach fremden Inhalten ohne Rückfrage"
     }
   },
   "storage": {

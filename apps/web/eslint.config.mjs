@@ -42,6 +42,13 @@ const FRAMEWORK_ONLY = [
       'No spacing classes in pages and features — use Stack, Inline, Grid or Box from @/design-system (docs/ui-framework.md §Abstände).',
   },
   {
+    // A box is the design system's Card / ListBox (owner 30.09.: "gleiche Boxen"): surface, frame,
+    // shadow and padding come from it, never from a page's own classes (docs/ui-framework.md §19).
+    pattern: '^(?:[^:\\s]+:)*!?(?:bg-card|bg-popover|border|shadow|shadow-(?:xs|sm|md|lg|xl|2xl))$',
+    message:
+      'No hand-drawn box in pages and features - use Card, ListBox, TableCard or SettingsGroup from @/design-system (docs/ui-framework.md §19).',
+  },
+  {
     pattern: '^(?:[^:\\s]+:)*!?text-(?:xs|sm|md|base|xl|2xl|3xl)$',
     message:
       'No type-size classes in pages and features — use Text from @/design-system (docs/ui-framework.md §Schrift).',

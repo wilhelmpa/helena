@@ -16,7 +16,7 @@ import {
 import CustomFieldMeta from './CustomFieldMeta';
 import SettingsCustomFieldDialog, { type FieldFormValues } from './SettingsCustomFieldDialog';
 
-import { Inline, Text, Box } from '@/design-system';
+import { Inline, Text, Box, Card } from '@/design-system';
 
 // Which group the add dialog is open for: 'global' for the project-wide field group,
 // or a issue type id for a type-scoped group. null when no dialog is open.
@@ -106,7 +106,7 @@ export default function SettingsCustomFields({ project }: { project: ProjectDeta
 
   return (
     <div>
-      <div className="divide-y overflow-hidden rounded-md border bg-card">
+      <Card pad="none" className="divide-y overflow-hidden">
         {groups.map((g) => {
           const key = String(g.scope);
           const open = !collapsed.has(key);
@@ -165,7 +165,7 @@ export default function SettingsCustomFields({ project }: { project: ProjectDeta
             </div>
           );
         })}
-      </div>
+      </Card>
 
       {addingScope !== null && (
         <SettingsCustomFieldDialog

@@ -15,6 +15,7 @@ from .common import HostError, atomic_write_json, json_load_file
 DEFAULT_CONFIG_PATH = '/etc/helena/hostd.json'
 
 DEFAULT_CONFIG: dict = {
+    'development': {'workDir': '/home/wilhelmpa/agent-work'},
     # Unix users that may call the helper (the API's user). Root always may.
     'callers': ['volition-plan'],
     'stateDir': '/var/lib/helena/hostd',

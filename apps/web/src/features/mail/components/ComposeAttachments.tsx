@@ -1,5 +1,6 @@
 'use client';
 
+import { Pill } from '@/design-system';
 import { useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { FolderOpen, Paperclip, Upload, X } from 'lucide-react';
@@ -35,23 +36,21 @@ export default function ComposeAttachments({
       {draft.attachments.length > 0 && (
         <ul className="flex flex-wrap gap-1.5">
           {draft.attachments.map((item) => (
-            <li
-              key={item.ref}
-              className="flex items-center gap-1 rounded-md border px-2 py-0.5 text-xs"
-            >
-              <Paperclip className="size-3 text-muted-foreground" />
-              <span dir="auto" className="max-w-48 truncate" title={item.filename}>
-                {item.filename}
-              </span>
-              {editable && (
-                <button
-                  type="button"
-                  aria-label={t('removeAttachment', { name: item.filename })}
-                  onClick={() => remove(item.ref)}
-                >
-                  <X className="size-3" />
-                </button>
-              )}
+            <li key={item.ref}>
+              <Pill icon={<Paperclip />}>
+                <span dir="auto" className="max-w-48 truncate" title={item.filename}>
+                  {item.filename}
+                </span>
+                {editable && (
+                  <button
+                    type="button"
+                    aria-label={t('removeAttachment', { name: item.filename })}
+                    onClick={() => remove(item.ref)}
+                  >
+                    <X className="size-3" />
+                  </button>
+                )}
+              </Pill>
             </li>
           ))}
         </ul>

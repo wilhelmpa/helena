@@ -8,9 +8,14 @@ export interface PriorityConfig {
   realtimeQueueMs: number;
   interactiveQueueMs: number;
   agingMs: number;
+  minBackgroundSlots: number;
+  maxBackgroundWaitMs: number;
+  waitTimeSampleSize: number;
   healthProbeMs: number;
   healthTimeoutMs: number;
+  healthFailureThreshold: number;
   upstreamIdleMs: number;
+  nonStreamingTimeoutMs: number;
   voiceReplyMaxTokens: number;
   realtimeMaxTokens: number;
   queueTimeoutMs: number;
@@ -31,9 +36,14 @@ export const DEFAULT_PRIORITY_CONFIG: PriorityConfig = {
   realtimeQueueMs: 750,
   interactiveQueueMs: 30_000,
   agingMs: 15_000,
-  healthProbeMs: 3_000,
-  healthTimeoutMs: 2_000,
+  minBackgroundSlots: 1,
+  maxBackgroundWaitMs: 45_000,
+  waitTimeSampleSize: 128,
+  healthProbeMs: 5_000,
+  healthTimeoutMs: 10_000,
+  healthFailureThreshold: 3,
   upstreamIdleMs: 60_000,
+  nonStreamingTimeoutMs: 900_000,
   voiceReplyMaxTokens: 512,
   realtimeMaxTokens: 64,
   queueTimeoutMs: 30_000,
@@ -65,19 +75,30 @@ export function normalizeHalogenPriority(value: unknown): PriorityConfig {
   };
   const maxConcurrent = integer('maxConcurrent', 2, 4);
   const maxQueue = integer('maxQueue', 1, 512);
+  const reservedInteractive = Math.min(integer('reservedInteractive', 1, 3), maxConcurrent - 1);
+  const maxBackground = Math.min(integer('maxBackground', 1, 3), maxConcurrent - 1);
   return {
     maxConcurrent,
-    reservedInteractive: Math.min(integer('reservedInteractive', 1, 3), maxConcurrent - 1),
+    reservedInteractive,
     maxInteractive: Math.min(integer('maxInteractive', 1, 4), maxConcurrent),
     maxRealtime: Math.min(integer('maxRealtime', 1, 4), maxConcurrent),
     maxNormal: Math.min(integer('maxNormal', 1, 4), maxConcurrent - 1),
-    maxBackground: Math.min(integer('maxBackground', 1, 3), maxConcurrent - 1),
+    maxBackground,
     realtimeQueueMs: integer('realtimeQueueMs', 100, 5_000),
     interactiveQueueMs: integer('interactiveQueueMs', 100, 300_000),
     agingMs: integer('agingMs', 1_000, 120_000),
+    minBackgroundSlots: Math.min(
+      integer('minBackgroundSlots', 1, 3),
+      maxBackground,
+      maxConcurrent - reservedInteractive,
+    ),
+    maxBackgroundWaitMs: integer('maxBackgroundWaitMs', 1_000, 120_000),
+    waitTimeSampleSize: integer('waitTimeSampleSize', 1, 4_096),
     healthProbeMs: integer('healthProbeMs', 500, 30_000),
     healthTimeoutMs: integer('healthTimeoutMs', 250, 60_000),
+    healthFailureThreshold: integer('healthFailureThreshold', 1, 20),
     upstreamIdleMs: integer('upstreamIdleMs', 1_000, 120_000),
+    nonStreamingTimeoutMs: integer('nonStreamingTimeoutMs', 60_000, 3_600_000),
     voiceReplyMaxTokens: integer('voiceReplyMaxTokens', 32, 4_096),
     realtimeMaxTokens: integer('realtimeMaxTokens', 8, 512),
     queueTimeoutMs: integer('queueTimeoutMs', 1_000, 120_000),

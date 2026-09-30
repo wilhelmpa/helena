@@ -1,5 +1,6 @@
 'use client';
 
+import { CodeBlock } from '@/design-system';
 import { ReceiptOriginals } from './ReceiptOriginals';
 import { useState } from 'react';
 import Link from 'next/link';
@@ -201,7 +202,7 @@ export default function ReceiptBody({
         <section>
           <SectionLabel>{t('detail.match')}</SectionLabel>
           {receipt.match ? (
-            <RowList className="bg-card">
+            <RowList>
               <div className="flex h-8 min-w-0 items-center gap-2 px-2 text-sm">
                 <MethodBadge method={receipt.match.method} />
                 <span className="min-w-0 flex-1 truncate" dir="auto">
@@ -222,7 +223,7 @@ export default function ReceiptBody({
             </RowList>
           ) : (
             <div className="flex flex-col gap-2">
-              <RowList className="bg-card">
+              <RowList>
                 {candidates.isPending ? (
                   <RowEmpty>{t('detail.loading')}</RowEmpty>
                 ) : (candidates.data ?? []).length === 0 ? (
@@ -274,9 +275,7 @@ export default function ReceiptBody({
       {receipt.textExcerpt && (
         <section>
           <SectionLabel>{t('detail.text')}</SectionLabel>
-          <pre className="max-h-64 overflow-auto rounded-md border border-sidebar-border bg-card p-3 text-xs whitespace-pre-wrap text-muted-foreground">
-            {receipt.textExcerpt}
-          </pre>
+          <CodeBlock>{receipt.textExcerpt}</CodeBlock>
         </section>
       )}
 

@@ -1,3 +1,4 @@
+import { Card } from '@/design-system';
 import { useState } from 'react';
 import type { SubtaskDisposition, SubtaskMode } from '@/lib/api/endpoints/issues';
 import { cn } from '@/lib/utils';
@@ -40,7 +41,7 @@ export default function SubtaskDisposalChoice({
   ];
 
   return (
-    <div className="space-y-2 rounded-md border p-3">
+    <Card tone="inset" pad="tight" gap={2}>
       <p className="text-sm text-foreground">
         {t('intro', { issues: removedIssueIds.length, count })} {t('choose', { count })}
       </p>
@@ -88,6 +89,6 @@ export default function SubtaskDisposalChoice({
           onClose={() => setPicking(false)}
         />
       )}
-    </div>
+    </Card>
   );
 }

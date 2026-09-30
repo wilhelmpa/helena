@@ -1150,6 +1150,7 @@ export const agentChatMessage = pgTable(
       .notNull()
       .references(() => aiAgent.id, { onDelete: 'cascade' }),
     role: text('role').notNull(),
+    attentionSeenAt: timestamp('attention_seen_at', { withTimezone: true }),
     // The message this one follows. An edited question or a regenerated answer is a
     // second child of the same parent, so the thread is a tree of versions.
     parentId: integer('parent_id').references((): AnyPgColumn => agentChatMessage.id, {

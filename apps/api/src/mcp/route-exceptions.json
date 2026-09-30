@@ -1,5 +1,11 @@
 [
   [
+    "POST",
+    "/owner-terminal/ava/:kind/bootstrap",
+    "auth",
+    "Nativer Austausch eines Owner-Terminal-Grants für Home-MCP; kein Agentenwerkzeug."
+  ],
+  [
     "ALL",
     "/api/auth/*",
     "auth",
@@ -2249,12 +2255,6 @@
   ["GET", "/agent-runtime/model-matrix", "intern", "Runner model configuration protocol."],
   [
     "GET",
-    "/god/model-schemas/matrix",
-    "admin",
-    "Instance model schema administration; /god has no individual MCP tools (118b)."
-  ],
-  [
-    "GET",
     "/issues/:issueId/autopilot/budgets",
     "admin",
     "Autopilot budget configuration for the owner settings editor."
@@ -2282,18 +2282,6 @@
     "/teams/:teamId/organization/goals/:goalId/budgets",
     "admin",
     "Organization goal budget configuration for the settings editor."
-  ],
-  [
-    "POST",
-    "/god/model-schemas/apply",
-    "admin",
-    "Apply instance model schema changes; /god administration (118b)."
-  ],
-  [
-    "POST",
-    "/god/model-schemas/preview",
-    "admin",
-    "Preview instance model schema changes; /god administration (118b)."
   ],
   ["PUT", "/issues/:issueId/autopilot/budgets", "admin", "Autopilot budget administration."],
   [
@@ -2355,5 +2343,17 @@
     "/projects/:projectKey/trash-activity",
     "UI-only",
     "Protokoll des Papierkorb-Aufräumers für die Einstellungsseite; kein Agentenwerkzeug."
+  ],
+  [
+    "GET",
+    "/teams/:teamId/ai-agents/:agentId/dream",
+    "admin",
+    "Gedächtniskonsolidierung und Protokoll sind dem Team-Owner vorbehalten."
+  ],
+  [
+    "POST",
+    "/teams/:teamId/ai-agents/:agentId/dream",
+    "admin",
+    "Gedächtniskonsolidierung und Protokoll sind dem Team-Owner vorbehalten."
   ]
 ]

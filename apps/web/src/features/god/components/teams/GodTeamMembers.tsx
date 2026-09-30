@@ -1,18 +1,17 @@
 'use client';
 
-import { Bot } from 'lucide-react';
+import { Bot, Search } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { formatShortDate } from '@/utils/dates';
 import { useSearchTerm } from '@/hooks/useSearchTerm';
 import Avatar from '@/components/common/Avatar';
 import ListSkeleton from '@/components/common/skeleton/ListSkeleton';
 import { EmptyState } from '@/components/common/page/EmptyState';
-import SearchInput from '@/components/common/SearchInput';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useInstanceTeamMembersQuery } from '../../services/god.service';
 
-import { Inline, Text, Stack } from '@/design-system';
+import { Inline, SearchField, Text, Stack, Card } from '@/design-system';
 
 // Everyone in the team, people and agents alike, a page at a time. The rank is the
 // fixed team one, so there is no permission matrix to unfold behind the row.
@@ -36,10 +35,12 @@ export default function GodTeamMembers({ teamId }: { teamId: number }) {
         )}
       </Inline>
 
-      <SearchInput
+      <SearchField
+        icon={<Search aria-hidden="true" size={14} />}
         value={search}
-        onChange={setSearch}
+        onChange={(event) => setSearch(event.target.value)}
         placeholder={t('searchMembers')}
+        aria-label={t('searchMembers')}
         className="w-full"
       />
 
@@ -54,13 +55,7 @@ export default function GodTeamMembers({ teamId }: { teamId: number }) {
         <>
           <Stack gap={2}>
             {members.map((m) => (
-              <Inline
-                gap={3}
-                padX={3}
-                padY={3}
-                key={m.userId}
-                className="flex items-center rounded-md border border-sidebar-border bg-card"
-              >
+              <Card layout="row" pad="tight" key={m.userId} className="items-center">
                 <Avatar name={m.name || m.email} image={m.image} className="size-8 shrink-0" />
                 <div className="flex min-w-0 flex-1 flex-col">
                   <Text as="span" size="sm" className="truncate">
@@ -80,7 +75,7 @@ export default function GodTeamMembers({ teamId }: { teamId: number }) {
                 <Text as="span" size="xs" tone="muted" className="hidden sm:inline">
                   {t('joined', { date: formatShortDate(m.joinedAt) })}
                 </Text>
-              </Inline>
+              </Card>
             ))}
           </Stack>
           {membersQuery.hasNextPage && (

@@ -382,20 +382,21 @@ export async function issueProxyToken(request: Request, kind: OwnerTerminalKind)
   const { userId, sessionId } = await requireSession(request);
   const grant = await currentGrantRow(userId, sessionId);
   if (!grant && !(await lanBypass(request))) throw new HttpError(403, 'No active terminal grant');
-  const access = kind.startsWith('local-')
-    ? {
-        grantId: grant?.id ?? null,
-        grantCreatedAt: grant ? iso(grant.createdAt) : null,
-        grantExpiresAt: grant ? iso(grant.expiresAt) : null,
-        lanIp: grant ? null : clientIp(request),
-        expiresAt: Math.floor(
-          Math.min(
-            grant?.expiresAt.getTime() ?? Date.now() + GRANT_HOURS * 3600_000,
-            Date.now() + GRANT_HOURS * 3600_000,
-          ) / 1000,
-        ),
-      }
-    : undefined;
+  const access =
+    kind !== 'shell'
+      ? {
+          grantId: grant?.id ?? null,
+          grantCreatedAt: grant ? iso(grant.createdAt) : null,
+          grantExpiresAt: grant ? iso(grant.expiresAt) : null,
+          lanIp: grant ? null : clientIp(request),
+          expiresAt: Math.floor(
+            Math.min(
+              grant?.expiresAt.getTime() ?? Date.now() + GRANT_HOURS * 3600_000,
+              Date.now() + GRANT_HOURS * 3600_000,
+            ) / 1000,
+          ),
+        }
+      : undefined;
   return mintOwnerTerminalToken(sessionId, kind, access);
 }
 
@@ -404,7 +405,7 @@ export async function issueProxyToken(request: Request, kind: OwnerTerminalKind)
 export async function authorizeLocalTerminal(
   sessionId: string,
   access: OwnerTerminalAccess,
-): Promise<void> {
+): Promise<string> {
   const [owner] = await db
     .select({ userId: user.id })
     .from(session)
@@ -435,4 +436,5 @@ export async function authorizeLocalTerminal(
   ) {
     throw new HttpError(403, 'local_terminal_access_expired');
   }
+  return owner.userId;
 }

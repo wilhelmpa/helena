@@ -2,7 +2,7 @@ import { useTranslations } from 'next-intl';
 import StatusBadge from '@/components/common/page/StatusBadge';
 import type { AgentSyncSummary } from '@/lib/api/endpoints/god';
 import { syncStatus } from '@/features/teams/utils/agentProfileSync';
-import { Box, Inline, Text } from '@/design-system';
+import { Inline, Text, Card } from '@/design-system';
 
 // Whether every agent's runtime runs on its settings in Helena: how many are in sync, and
 // each one that is not, with why. A report, not a control.
@@ -11,7 +11,7 @@ export default function HomeAgentSync({ summary }: { summary: AgentSyncSummary }
   const ts = useTranslations('teams.agents.profileSync');
   if (summary.total === 0) return null;
   return (
-    <Box as="ul" pad={1} className="rounded-md border bg-card">
+    <Card as="ul" pad="list">
       <Inline as="li" gap={2} padX={2} className="h-8 min-w-0 text-sm">
         <StatusBadge status={summary.synced === summary.total ? 'success' : 'waiting'} dotOnly />
         <span className="min-w-0 truncate">{t('title')}</span>
@@ -41,6 +41,6 @@ export default function HomeAgentSync({ summary }: { summary: AgentSyncSummary }
           </Text>
         </Inline>
       ))}
-    </Box>
+    </Card>
   );
 }

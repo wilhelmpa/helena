@@ -378,16 +378,34 @@ if [[ -e $NGINX_TUNNEL_SITE ]]; then
   grep -q "listen 127.0.0.1:$TUNNEL_PORT" "$NGINX_TUNNEL_SITE" || problems+=("not bound to 127.0.0.1:$TUNNEL_PORT")
   grep -Eq 'volition_local_owner_token|helena_owner_capability' "$NGINX_TUNNEL_SITE" && problems+=("owner token referenced")
   # Proxy locations, including internal auth, need their own header snippet. Only the
-  # exact local-capability block containing nothing but return 404 is exempt.
+  # exact local-capability denial and the constrained public service worker are exempt.
   if ! n_loc=$(python3 -I - "$NGINX_TUNNEL_SITE" 2>/dev/null <<'PY'
 import pathlib, re, sys
 text = pathlib.Path(sys.argv[1]).read_text()
 deny = (r'(?m)^[ \t]*location[ \t]+~[ \t]+'
         + re.escape('^/(backend/|api/)?owner-terminal/local/')
         + r'[ \t]*\{\s*return[ \t]+404[ \t]*;\s*\}[ \t]*(?=\n|$)')
+worker_directives = [
+    'auth_request off',
+    'proxy_pass http://127.0.0.1:3001/sw.js',
+    'proxy_set_header Host $host',
+    'proxy_set_header Cookie ""',
+    'proxy_set_header Authorization ""',
+    'proxy_set_header X-Helena-Entry ""',
+    'proxy_redirect off',
+    'add_header Cache-Control "no-cache" always',
+    'add_header Service-Worker-Allowed "/" always',
+]
+worker_body = ''.join(
+    r'\s*' + r'[ \t]+'.join(re.escape(token) for token in directive.split()) + r'[ \t]*;'
+    for directive in worker_directives
+)
+worker = (r'(?m)^[ \t]*location[ \t]+=[ \t]+/sw\.js[ \t]*\{'
+          + worker_body + r'\s*\}[ \t]*(?=\n|$)')
 # A mapped error can forward a return instead of denying the request.
 if not re.search(r'\berror_page\b', text):
     text = re.sub(deny, '', text)
+text = re.sub(worker, '', text)
 print(len(re.findall(r'(?m)^[ \t]*location[ \t]+', text)))
 PY
   ); then
@@ -399,7 +417,7 @@ PY
   grep -Eq '^[[:space:]]*auth_request[[:space:]]+/_helena_edge[[:space:]]*;' "$NGINX_TUNNEL_SITE" || problems+=("no edge auth_request")
   ((${#problems[@]})) \
     && record web.tunnel_entry web critical fail "$(IFS=';'; echo "${problems[*]}")" \
-    || record web.tunnel_entry web critical pass "loopback only, no owner token, edge check on every location"
+    || record web.tunnel_entry web critical pass "loopback only, no owner token, protected entries guarded; public service worker constrained"
 else
   record web.tunnel_entry web critical skip "no tunnel site installed"
 fi

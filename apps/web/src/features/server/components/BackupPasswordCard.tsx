@@ -1,5 +1,6 @@
 'use client';
 
+import { Card } from '@/design-system';
 import { useState } from 'react';
 import { Eye, KeyRound } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -23,7 +24,7 @@ export default function BackupPasswordCard() {
   const [written, setWritten] = useState(false);
 
   return (
-    <section className="min-w-0 space-y-3 rounded-md border border-status-waiting/50 bg-card p-4 xl:col-span-2">
+    <Card as="section" className="xl:col-span-2">
       <CardHeader
         title={
           <span className="flex items-center gap-2">
@@ -72,6 +73,6 @@ export default function BackupPasswordCard() {
           </Button>
         </div>
       )}
-    </section>
+    </Card>
   );
 }

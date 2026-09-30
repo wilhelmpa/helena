@@ -81,7 +81,7 @@
     "loadError": "Não foi possível carregar alguns itens. Atualize a página.",
     "loading": "Carregando Inbox…",
     "empty": "Nada está esperando por você agora.",
-    "toRead": "PARA LER",
+    "toRead": "Para ler",
     "noCompletedRuns": "Ainda não há execuções concluídas.",
     "runCompleted": "{name} · Execução concluída",
     "tags": {

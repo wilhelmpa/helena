@@ -25,6 +25,7 @@ export type RuntimeId = 'hermes' | 'claude' | 'codex' | (string & {});
 export const runtimeToolObservation: Readonly<Record<string, boolean>> = {
   hermes: true,
   central: true,
+  helena: true,
   claude: false,
   codex: false,
 };
@@ -51,6 +52,7 @@ export interface StartGate {
 // What an adapter asks of the one command a run or chat answer starts.
 export interface CommandHooks {
   sandbox?: CommandSandbox;
+  unrestrictedHome?: boolean;
   startGate?: StartGate;
   // Sees the command's output as it arrives.
   output?(chunk: string): void;

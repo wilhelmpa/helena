@@ -27,10 +27,11 @@ import {
   Button,
   EmptyState,
   IconButton,
+  ListBox,
+  MonoLabel,
   Stack,
   Text,
 } from '@/design-system';
-import { MonoLabel } from '@/components/helena/DashboardPrimitives';
 import KnowledgeFrame, {
   KnowledgeListHead,
   KnowledgeRow,
@@ -361,12 +362,16 @@ export default function ReceiptsPage() {
       <Stack gap={5} className="min-h-0 flex-1 overflow-y-auto">
         <Stack gap={2}>
           <MonoLabel>{`${t('open.receipts')} · ${receipts.length}`}</MonoLabel>
-          {list}
+          {receipts.length ? <ListBox padded>{list}</ListBox> : list}
         </Stack>
         <Stack gap={2}>
           <MonoLabel>{`${t('open.transactions')} · ${openTransactions.data?.length ?? 0}`}</MonoLabel>
           {(openTransactions.data ?? []).length ? (
-            (openTransactions.data ?? []).map((transaction) => transactionRow(transaction, false))
+            <ListBox padded>
+              {(openTransactions.data ?? []).map((transaction) =>
+                transactionRow(transaction, false),
+              )}
+            </ListBox>
           ) : (
             <EmptyState icon={<Check />} title={t('open.noTransactions')} fill={false} />
           )}
@@ -374,7 +379,9 @@ export default function ReceiptsPage() {
         {(ignored.data ?? []).length > 0 && (
           <Stack gap={2}>
             <MonoLabel>{`${t('open.ignored')} · ${ignored.data!.length}`}</MonoLabel>
-            {ignored.data!.map((transaction) => transactionRow(transaction, true))}
+            <ListBox padded>
+              {ignored.data!.map((transaction) => transactionRow(transaction, true))}
+            </ListBox>
           </Stack>
         )}
       </Stack>
@@ -396,6 +403,7 @@ export default function ReceiptsPage() {
       <KnowledgeFrame
         crumbs={crumbs}
         title={title}
+        boxed={(view === 'all' || view === 'matched') && receipts.length > 0}
         frameProps={{ 'data-receipts': view }}
         search={
           view !== 'export' && (

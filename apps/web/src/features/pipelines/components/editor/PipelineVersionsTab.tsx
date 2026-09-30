@@ -9,7 +9,7 @@ import type { Pipeline, PipelineContext } from '@/lib/api/endpoints/pipelines';
 import { usePipelineVersions } from '@/services/pipelines.service';
 import { formatDateTime } from '@/utils/dates';
 import PipelineVersionView from './PipelineVersionView';
-import { Inline, Text } from '@/design-system';
+import { Inline, Text, Card } from '@/design-system';
 
 // Every saved version, newest first. Runs keep the version they started with; an older
 // version opens read-only.
@@ -42,7 +42,7 @@ export default function PipelineVersionsTab({
     );
 
   return (
-    <ul className="divide-y overflow-hidden rounded-md border bg-card">
+    <Card as="ul" pad="none" className="divide-y overflow-hidden">
       {versions.data.map((version) => (
         <Inline as="li" gap={3} pad={3} wrap key={version.id} className="text-sm">
           <span className="font-medium">{t('editor.version', { version: version.version })}</span>
@@ -64,6 +64,6 @@ export default function PipelineVersionsTab({
           </Button>
         </Inline>
       ))}
-    </ul>
+    </Card>
   );
 }

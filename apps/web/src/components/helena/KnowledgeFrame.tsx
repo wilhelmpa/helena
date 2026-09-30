@@ -3,7 +3,7 @@
 import { useEffect, useRef, type ComponentType, type KeyboardEvent, type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 import KnowledgeRowName from './KnowledgeRowName';
-import { Page, PageSearch, PageToolbarSpacer } from '@/design-system';
+import { ListBox, Page, PageSearch, PageToolbarSpacer } from '@/design-system';
 
 // One page pattern for Wissen and Belege (docs/ui-system.md §8, WissenOrdner.dc.html):
 // the sidebar tree picks the place, the page shows a header (mono eyebrow with the path,
@@ -200,6 +200,7 @@ export default function KnowledgeFrame({
   children,
   footer,
   frameProps,
+  boxed = false,
 }: {
   // The place of the list; the shell's breadcrumb shows it, the page does not repeat it.
   crumbs?: KnowledgeCrumb[];
@@ -210,6 +211,9 @@ export default function KnowledgeFrame({
   children: ReactNode;
   footer?: ReactNode;
   frameProps?: Record<string, unknown>;
+  // The list sits in its box (ListBox, O108): where there are rows; an empty state stands
+  // on the page like on every other page.
+  boxed?: boolean;
 }) {
   // The page template: the header (the shell) names the place — its breadcrumb is the whole
   // path, so the page repeats none of it (O16) — and carries "+ Neu" on the right; search
@@ -233,7 +237,7 @@ export default function KnowledgeFrame({
           <h1 className="sr-only" dir="auto">
             {title}
           </h1>
-          {children}
+          {boxed ? <ListBox>{children}</ListBox> : children}
           {footer}
         </section>
       </div>

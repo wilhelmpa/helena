@@ -1,10 +1,10 @@
 'use client';
 
+import { CopyValue } from '@/design-system';
 import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
 import { twoFactor } from '@/lib/auth-client';
-import { copyText } from '@/utils/clipboard';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -78,13 +78,7 @@ export default function AccountSecurityTotpEnrollDialog({
           >
             <div className="space-y-1.5">
               <Label>{t('totpSecretLabel')}</Label>
-              <button
-                type="button"
-                className="block w-full truncate rounded-md border px-2 py-1.5 text-start font-mono text-xs"
-                onClick={() => void copyText(secret)}
-              >
-                {secret}
-              </button>
+              <CopyValue value={secret} label={t('totpSecretLabel')} />
               <p className="text-xs text-muted-foreground">{t('totpSecretHint')}</p>
             </div>
             <div className="space-y-1.5">

@@ -1,5 +1,6 @@
 'use client';
 
+import { Card, PillButton } from '@/design-system';
 import { useQueryClient } from '@tanstack/react-query';
 import { Fan, Gauge, Leaf, Scale, Zap } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -15,7 +16,6 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import type { PowerProfile, PowerStatus } from '@/lib/api/endpoints/server';
-import { cn } from '@/lib/utils';
 import { formatDurationShort } from '@/utils/dates';
 import {
   serverKeys,
@@ -29,7 +29,6 @@ import { fansChoice, formatCelsius, formatWatts, type ServerTab } from '../utils
 import { CardHeader, Fact, Facts, ServerSections } from './ServerParts';
 import ServerToolbar from './ServerToolbar';
 
-const CARD = 'min-w-0 space-y-3 rounded-md border border-sidebar-border bg-card p-4';
 const PROFILES: { value: PowerProfile; icon: typeof Leaf }[] = [
   { value: 'saver', icon: Leaf },
   { value: 'balanced', icon: Scale },
@@ -52,19 +51,16 @@ function Choice({
   label?: string;
 }) {
   return (
-    <button
-      type="button"
+    <PillButton
+      tone={selected ? 'active' : 'neutral'}
       aria-pressed={selected}
       aria-label={label}
       disabled={disabled}
       onClick={onClick}
-      className={cn(
-        'inline-flex h-8 min-w-10 items-center justify-center gap-1.5 rounded-md border border-sidebar-border px-3 text-sm transition-colors hover:bg-sidebar-accent disabled:pointer-events-none disabled:opacity-50 [&_svg]:size-4',
-        selected && 'bg-sidebar-accent font-medium',
-      )}
+      className="disabled:pointer-events-none disabled:opacity-50"
     >
       {children}
-    </button>
+    </PillButton>
   );
 }
 
@@ -97,7 +93,7 @@ export default function PowerTab({ tabs }: { tabs: ServerTab[] }) {
       ) : (
         <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
           {!data.available.ec && !data.available.os && (
-            <section className={`${CARD} xl:col-span-2`}>
+            <Card as="section" className="xl:col-span-2">
               <CardHeader title={t('notInstalled.title')} />
               <p className="text-sm text-muted-foreground">
                 {t('notInstalled.description', { board: data.board ?? '–' })}
@@ -107,7 +103,7 @@ export default function PowerTab({ tabs }: { tabs: ServerTab[] }) {
                 copyLabel={tCommon('copy')}
                 copiedLabel={tCommon('copied')}
               />
-            </section>
+            </Card>
           )}
           {(data.available.ec || data.available.os) && <ProfileCard data={data} />}
           {data.available.ec && <FansCard data={data} />}
@@ -129,7 +125,7 @@ function ProfileCard({ data }: { data: PowerStatus }) {
   const ryzenadj = data.ryzenadj;
 
   return (
-    <section className={`${CARD} xl:col-span-2`}>
+    <Card as="section" className="xl:col-span-2">
       <CardHeader title={t('profile.title')}>
         {active === 'mixed' && (
           <span className="text-xs text-status-waiting">{t('profile.mixed')}</span>
@@ -218,7 +214,7 @@ function ProfileCard({ data }: { data: PowerStatus }) {
           }
         />
       </div>
-    </section>
+    </Card>
   );
 }
 
@@ -235,7 +231,7 @@ function Layer({
 }) {
   const t = useTranslations('server.power');
   return (
-    <div className="min-w-0 space-y-0.5 rounded-md border border-sidebar-border p-3">
+    <Card tone="inset" pad="tight" className="min-w-0 space-y-0.5">
       <div className="flex items-center gap-2 text-xs text-muted-foreground">
         <StatusBadge status={available ? 'success' : 'idle'} dotOnly />
         {title}
@@ -244,7 +240,7 @@ function Layer({
         {available ? value : t('layer.unavailable')}
       </div>
       {available && detail && <div className="text-xs text-muted-foreground">{detail}</div>}
-    </div>
+    </Card>
   );
 }
 
@@ -261,7 +257,7 @@ function FansCard({ data }: { data: PowerStatus }) {
     });
 
   return (
-    <section className={CARD}>
+    <Card as="section">
       <CardHeader
         title={
           <span className="flex items-center gap-2">
@@ -324,7 +320,7 @@ function FansCard({ data }: { data: PowerStatus }) {
           </li>
         ))}
       </ul>
-    </section>
+    </Card>
   );
 }
 
@@ -342,7 +338,7 @@ function TemperatureCard({ data }: { data: PowerStatus }) {
     return sensor.label ?? sensor.sensor;
   };
   return (
-    <section className={CARD}>
+    <Card as="section">
       <CardHeader title={t('temperatures.title')} />
       <Facts className="sm:grid-cols-2 xl:grid-cols-2">
         {data.ec?.temperatureC != null && (
@@ -360,7 +356,7 @@ function TemperatureCard({ data }: { data: PowerStatus }) {
           </Fact>
         ))}
       </Facts>
-    </section>
+    </Card>
   );
 }
 
@@ -369,7 +365,7 @@ function GuardCard({ data }: { data: PowerStatus }) {
   const set = useSetGuardLimit();
   const limit = data.guard.limit ?? 90;
   return (
-    <section className={CARD}>
+    <Card as="section">
       <CardHeader title={t('guard.title')} />
       <p className="text-xs text-muted-foreground">
         {t('guard.explain', {
@@ -405,6 +401,6 @@ function GuardCard({ data }: { data: PowerStatus }) {
             ? t('guard.watching')
             : t('guard.waitingForDriver')}
       </p>
-    </section>
+    </Card>
   );
 }

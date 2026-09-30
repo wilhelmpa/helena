@@ -1,5 +1,6 @@
 'use client';
 
+import { Card } from '@/design-system';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { Reply } from 'lucide-react';
@@ -40,9 +41,14 @@ export default function IssueMailsPanel({
       {open && (
         <ul className="flex flex-col gap-2">
           {threads.data!.map((thread) => (
-            <li
+            <Card
+              tone="inset"
+              as="li"
+              layout="row"
+              pad="tight"
+              gap={2}
               key={thread.id}
-              className="flex items-start gap-2 rounded-md border px-3 py-2 text-sm"
+              className="items-start text-sm"
             >
               <Link
                 href={`${inboxPath(projectKey)}?thread=${thread.id}`}
@@ -72,7 +78,7 @@ export default function IssueMailsPanel({
                   {t('reply')}
                 </Button>
               )}
-            </li>
+            </Card>
           ))}
         </ul>
       )}

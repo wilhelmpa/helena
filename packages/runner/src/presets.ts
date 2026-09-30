@@ -27,9 +27,17 @@ export type PresetTaskSettings = RuntimeTaskSettings;
 // Claude Code asks Helena's policy engine before each tool call through a PreToolUse hook
 // (the runner's `policy-hook`). At Autopilot level 0 it plans only: it proposes, it changes
 // nothing.
-function claudeAutopilotArgs({ autopilotLevel, policyHook }: PresetTaskSettings): string[] {
+function claudeAutopilotArgs({
+  autopilotLevel,
+  policyHook,
+  unrestrictedHome,
+}: PresetTaskSettings): string[] {
   return [
-    ...(autopilotLevel === 0 ? ['--permission-mode', 'plan'] : []),
+    ...(unrestrictedHome
+      ? ['--permission-mode', 'bypassPermissions', '--dangerously-skip-permissions']
+      : autopilotLevel === 0
+        ? ['--permission-mode', 'plan']
+        : []),
     ...(policyHook
       ? [
           '--settings',
@@ -133,12 +141,16 @@ export const PRESETS: Record<PresetName, Preset> = {
     head: (sessionId) => [...(sessionId ? ['exec', 'resume', sessionId] : ['exec']), '--json'],
     // Both `exec` and `exec resume` take -m and -c. Codex has no hook to ask Helena before a
     // tool call; at Autopilot level 0 its sandbox is read-only, so it can only propose.
-    taskArgs: ({ model, thinkingLevel, sandbox, autopilotLevel, toolEnv }) => [
+    taskArgs: ({ model, thinkingLevel, sandbox, autopilotLevel, toolEnv, unrestrictedHome }) => [
       ...(model ? ['-m', model] : []),
       ...(thinkingLevel ? ['-c', `model_reasoning_effort=${JSON.stringify(thinkingLevel)}`] : []),
       ...codexToolEnvArgs(toolEnv),
-      '-c',
-      `sandbox_mode=${JSON.stringify(autopilotLevel === 0 ? 'read-only' : (sandbox ?? 'workspace-write'))}`,
+      ...(unrestrictedHome
+        ? ['--dangerously-bypass-approvals-and-sandbox']
+        : [
+            '-c',
+            `sandbox_mode=${JSON.stringify(autopilotLevel === 0 ? 'read-only' : (sandbox ?? 'workspace-write'))}`,
+          ]),
     ],
     tail: ['-'],
   },

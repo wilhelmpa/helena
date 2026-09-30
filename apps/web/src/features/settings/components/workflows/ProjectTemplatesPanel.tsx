@@ -27,7 +27,7 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import SettingsConfirmDeleteDialog from '@/features/settings/components/crud/SettingsConfirmDeleteDialog';
 
-import { Box, Inline, Text, Stack } from '@/design-system';
+import { Box, Card, EmptyState, Grid, Inline, Section, Stack, Text } from '@/design-system';
 
 export function ProjectTemplatesPanel({ project }: { project: ProjectDetail }) {
   const t = useTranslations('settings.actions');
@@ -53,33 +53,23 @@ export function ProjectTemplatesPanel({ project }: { project: ProjectDetail }) {
   }
 
   return (
-    <Stack as="section" gap={3} padTop={4} className="border-t">
-      <Inline
-        gap={3}
-        align="start"
-        justify="between"
-        wrap
-        className="flex flex-wrap items-start justify-between"
-      >
-        <div>
-          <h2 className="text-md font-medium">{t('templates')}</h2>
-          <Text as="p" size="xs" tone="muted">
-            {t('templatesHint')}
-          </Text>
-        </div>
-        {isOwner && (
+    <Section
+      title={t('templates')}
+      description={t('templatesHint')}
+      actions={
+        isOwner ? (
           <Button type="button" size="sm" variant="outline" onClick={() => setCapturing(true)}>
             <Plus className="size-4" /> {t('captureTemplate')}
           </Button>
-        )}
-      </Inline>
-
+        ) : undefined
+      }
+    >
       {templates.isPending ? (
         <ListSkeleton rows={2} rowClassName="h-20" />
       ) : templates.data?.length ? (
-        <div className="grid gap-3 lg:grid-cols-2">
+        <Grid columns={2}>
           {templates.data.map((template) => (
-            <Box as="article" pad={4} key={template.id} className="rounded-md border bg-card">
+            <Card as="article" key={template.id}>
               <Inline
                 gap={3}
                 align="start"
@@ -138,15 +128,11 @@ export function ProjectTemplatesPanel({ project }: { project: ProjectDetail }) {
                   </Inline>
                 )}
               </Inline>
-            </Box>
+            </Card>
           ))}
-        </div>
+        </Grid>
       ) : (
-        <Box as="p" pad={4} className="rounded-md border bg-card">
-          <Text as="span" size="sm" tone="muted">
-            {t('noTemplates')}
-          </Text>
-        </Box>
+        <EmptyState boxed>{t('noTemplates')}</EmptyState>
       )}
 
       {capturing && (
@@ -224,6 +210,6 @@ export function ProjectTemplatesPanel({ project }: { project: ProjectDetail }) {
           }}
         />
       )}
-    </Stack>
+    </Section>
   );
 }

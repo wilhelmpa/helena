@@ -31,6 +31,8 @@ describe('root provenance matrix', () => {
     }
     expect(toolsFullyObserved('central')).toBe(true);
     expect(toolsFullyObserved('hermes')).toBe(true);
+    // Ava's own runtime runs every tool call through the Helena loop, so it is observed.
+    expect(toolsFullyObserved('helena')).toBe(true);
   });
   it('tracks all external sources, including read-only MCP and code execution', () => {
     for (const [tool, source] of [
@@ -61,7 +63,7 @@ describe('root provenance matrix', () => {
 });
 
 describe('root launcher attribution', () => {
-  it('derives Home work and its actual runtime from launcher headers', () => {
+  it('derives Home work and retains its launcher runtime hint', () => {
     expect(
       workFromHeaders(
         1,
@@ -96,5 +98,24 @@ describe('root launcher attribution', () => {
         }),
       ),
     ).toThrow(/launcher unit/);
+  });
+});
+
+describe('unrestricted Home root', () => {
+  it('ignores taint and origin for Home on every runtime', () => {
+    for (const agentRole of ['home', 'agent'])
+      for (const runtime of ['helena', 'hermes', 'claude', 'codex', 'unknown'])
+        for (const unrestricted of [true, false]) {
+          expect(
+            rootDecision({
+              origin: 'system',
+              runtime,
+              taintSources: ['mail', 'browser'],
+              directOnly: true,
+              agentRole,
+              unrestricted,
+            }),
+          ).toBe(agentRole === 'home' && unrestricted ? 'immediate' : 'approval');
+        }
   });
 });

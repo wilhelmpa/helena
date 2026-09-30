@@ -1,4 +1,5 @@
 import { workFromHeaders } from './provenance';
+import { ownerToolsRuntime } from '#modules/owner-terminal/ava-tools';
 import { Elysia } from 'elysia';
 import { authContext } from '#shared/auth-context';
 import { requireGod } from '#shared/access';
@@ -48,14 +49,20 @@ export const rootAccessRoutes = new Elysia({ name: 'volition-root-access' })
   .post(
     '/agent-root',
     ({ agent, request, body }) =>
-      requestRoot(agent, workFromHeaders(agent.id, request.headers), body),
+      requestRoot(
+        agent,
+        ownerToolsRuntime(request)
+          ? { runtime: ownerToolsRuntime(request), ownerTerminal: true }
+          : workFromHeaders(agent.id, request.headers),
+        body,
+      ),
     {
       runnerAgent: true,
       body: rootCommandBody,
       detail: {
         summary: 'Run a root command for the Home agent',
         description:
-          'Run a root command with its reason. Untrusted or unobservable work creates an owner approval; approval executes the stored command. The result is recorded under Administrator / Security.',
+          'Run a root command with its reason. Home work on every runtime runs immediately when unrestricted mode is enabled. Provenance and results remain audited; the owner can revoke access.',
         ...mcpTool('run_as_root', undefined, 'report'),
       },
     },

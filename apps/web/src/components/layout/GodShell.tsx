@@ -7,7 +7,6 @@ import { useSession } from '@/lib/auth-client';
 import StandaloneShell from '@/components/common/page/StandaloneShell';
 import SectionPageSkeleton from '@/components/common/skeleton/SectionPageSkeleton';
 import GodSidebar from '@/components/layout/GodSidebar';
-import HeaderCrumbs from '@/components/layout/HeaderCrumbs';
 import { useGodSectionText } from '@/hooks/useSectionLabels';
 import { GOD_SECTIONS } from '@/utils/godSections';
 import { godPath } from '@/utils/paths';
@@ -42,18 +41,8 @@ export default function GodShell({
     <StandaloneShell
       defaultSidebarOpen={defaultSidebarOpen}
       sidebar={<GodSidebar />}
-      title={
-        section ? (
-          <HeaderCrumbs
-            items={[
-              { label: t('godMode'), href: godPath(GOD_SECTIONS[0]!.slug) },
-              { label: god.section(section.slug).label },
-            ]}
-          />
-        ) : (
-          t('godMode')
-        )
-      }
+      crumbs={section ? [{ label: t('godMode'), href: godPath(GOD_SECTIONS[0]!.slug) }] : []}
+      title={section ? god.section(section.slug).label : t('godMode')}
     >
       {isGod && children}
       {!isGod && sessionSettled && (

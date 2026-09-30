@@ -1,38 +1,3 @@
-.card {
-  min-width: 0;
-  border-radius: var(--radius-xl);
-  background: var(--dashboard-surface);
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--dashboard-ink) 5%, transparent);
-}
-
-.raised {
-  background: var(--dashboard-raised);
-}
-
-.selected {
-  background: var(--dashboard-selected);
-}
-
-.label {
-  color: var(--dashboard-label);
-  font:
-    500 10px/1.4 'JetBrains Mono Variable',
-    'JetBrains Mono',
-    ui-monospace,
-    monospace;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-}
-
-.meta {
-  color: var(--dashboard-label);
-  font:
-    400 10px/1.4 'JetBrains Mono Variable',
-    'JetBrains Mono',
-    ui-monospace,
-    monospace;
-}
-
 .pageTitle {
   margin-top: 8px;
   color: var(--dashboard-ink);
@@ -43,24 +8,11 @@
 }
 
 .tile {
-  display: flex;
   /* A tile that is a button (the System tile) fills its cell like one that is a link
-     (owner, O6: the System tile looked different). */
+     (owner, O6: the System tile looked different). The box itself is the design system's
+     Card: radius, surface, shadow and padding are its tokens. */
   width: 100%;
-  min-height: 127px;
-  flex-direction: column;
-  gap: 10px;
-  padding: 18px 20px;
-  text-align: start;
-}
-
-.interactive {
-  transition: background-color 180ms ease;
-}
-
-.interactive:hover,
-.interactive:focus-visible {
-  background: var(--dashboard-selected);
+  min-height: 120px;
 }
 
 .progress {
@@ -89,8 +41,6 @@
 /* A tile with a money figure or another long number (the trading account). */
 .compact {
   min-height: 0;
-  gap: 8px;
-  padding: 16px 18px;
 }
 
 .compactValue {
@@ -140,12 +90,7 @@
   flex-direction: column;
   gap: 6px;
   overflow: hidden;
-  border-radius: var(--radius-xl);
-  background: var(--dashboard-surface);
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--dashboard-ink) 6%, transparent);
-  padding: 16px 18px 16px;
   transition:
-    background-color 180ms ease,
     box-shadow 180ms ease,
     transform 180ms ease;
 }
@@ -162,7 +107,6 @@
 
 .projectTile:hover,
 .projectTile:focus-visible {
-  background: var(--dashboard-selected);
   box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--project-accent, var(--brand)) 55%, transparent);
   outline: none;
 }

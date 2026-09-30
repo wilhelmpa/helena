@@ -47,6 +47,8 @@ export interface Conversation {
   micStream: MediaStream | null;
   outputAnalyser: AnalyserNode | null;
   wakeWordStatus: WakeWordStatus | 'off';
+  prepareReply: () => void;
+  followReply: () => void;
   start: () => void;
   stop: () => void;
   interrupt: () => void;
@@ -196,6 +198,8 @@ export function useConversation(options: ConversationOptions): Conversation {
             : outputActive
               ? 'paused'
               : wakeStatus,
+      prepareReply: () => controller().prepareReply(),
+      followReply: () => controller().followReply(latest.current.messages),
       start,
       stop: () => controller().stop(),
       interrupt: () => controller().interrupt(),

@@ -87,6 +87,9 @@ repository() {
   if ! as_plan "${git[@]}" rev-parse -q --verify HEAD >/dev/null; then
     as_plan "${git[@]}" add -A
     as_plan "${git[@]}" commit -q --allow-empty -m "Start the vault history"
+  elif ! as_plan "${git[@]}" diff --quiet HEAD -- .gitignore; then
+    as_plan "${git[@]}" add -- .gitignore
+    as_plan "${git[@]}" commit -q --only -m "Update vault ignore rules" -- .gitignore
   fi
 }
 

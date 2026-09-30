@@ -53,7 +53,6 @@
   "downloadConflictCopy": "Baixar cópia",
   "deleteConflictCopy": "Excluir cópia em conflito",
   "details": "Detalhes da nota",
-  "detailsDescription": "As propriedades desta nota e as notas que apontam para ela.",
   "openDetails": "Mostrar detalhes",
   "closeDetails": "Ocultar detalhes",
   "properties": "Propriedades",

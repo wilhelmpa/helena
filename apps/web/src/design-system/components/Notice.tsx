@@ -30,7 +30,7 @@ export function Notice({
       )}
       <div className="ds-notice-body">
         {title && <p className="ds-notice-title">{title}</p>}
-        {children && <p className="ds-notice-text">{children}</p>}
+        {children && <div className="ds-notice-text">{children}</div>}
       </div>
       {action && <div className="ds-notice-action">{action}</div>}
     </div>

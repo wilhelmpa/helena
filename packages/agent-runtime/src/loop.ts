@@ -1,5 +1,5 @@
 import type { TurnInstructions } from './followups';
-import { generateText, jsonSchema, streamText, tool, type ModelMessage, type ToolSet } from 'ai';
+import { jsonSchema, streamText, tool, type ModelMessage, type ToolSet } from 'ai';
 import { DEFAULTS, type AgentRuntimeConfig } from './config';
 import {
   escalationTarget,
@@ -369,11 +369,49 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
   let nudged = false;
   let emptyAnswerNudged = false;
   let lastText = '';
+  let continuedText = '';
+  let lengthContinuations = 0;
   let turns = 0;
   const contextOf = () => chain[0]!.contextLength;
   const compressAt = () =>
     config.limits?.compressAtTokens ?? Math.min(12_000, Math.floor(contextOf() * 0.6));
   let lastInputTokens = 0;
+  let compressionAttemptThrough = 0;
+  let compressionFailed = false;
+
+  function contextMessages(): ModelMessage[] {
+    return [
+      ...(summary
+        ? [
+            {
+              role: 'user' as const,
+              content: `Zusammenfassung des bisherigen Verlaufs:\n${summary}`,
+            },
+          ]
+        : []),
+      ...shrinkOld(
+        entries.filter((entry) => entry.seq > compactedThrough),
+        step,
+      ),
+    ];
+  }
+
+  async function maybeCompress() {
+    if (compressionFailed) return;
+    const chars =
+      input.system.length +
+      JSON.stringify(contextMessages()).length +
+      [...active].reduce(
+        (total, name) => total + JSON.stringify(toolsByName.get(name)!.inputSchema).length,
+        0,
+      );
+    if (Math.max(lastInputTokens, Math.ceil(chars / 4)) <= compressAt()) return;
+    await compress().catch((error) => {
+      compressionFailed = true;
+      process.stderr.write(`helena-agent: compression failed: ${messageOf(error)}\n`);
+    });
+    lastInputTokens = 0;
+  }
 
   const consumeInstructions = async () => {
     if (!input.followups) return false;
@@ -392,6 +430,8 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
       lastText = '';
       nudged = false;
       emptyAnswerNudged = false;
+      continuedText = '';
+      lengthContinuations = 0;
       watch = new FailureWatch();
     }
     return batch.items.length > 0;
@@ -434,27 +474,11 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
     }
 
     // ── compression ──
-    if (lastInputTokens > compressAt()) {
-      await compress().catch((error) => {
-        process.stderr.write(`helena-agent: compression failed: ${messageOf(error)}\n`);
-      });
-      lastInputTokens = 0;
-    }
+    await maybeCompress();
 
     step += 1;
     turns += 1;
-    const visible = entries.filter((entry) => entry.seq > compactedThrough);
-    const messages: ModelMessage[] = [
-      ...(summary
-        ? [
-            {
-              role: 'user' as const,
-              content: `Zusammenfassung des bisherigen Verlaufs:\n${summary}`,
-            },
-          ]
-        : []),
-      ...shrinkOld(visible, step),
-    ];
+    const messages = contextMessages();
     const toolSet: ToolSet = {};
     let offered: Set<string> = active;
     if (input.selectTools) {
@@ -466,17 +490,22 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
         .catch(() => null);
       const selected = names?.filter((name) => toolsByName.has(name));
       if (selected?.length) {
-        offered = new Set(selected);
+        offered = new Set([...input.direct, ...selected].filter((name) => toolsByName.has(name)));
         for (const name of discovered) offered.add(name);
         if (toolsByName.has('find_tools')) offered.add('find_tools');
         for (const name of offered) active.add(name);
       }
     }
-    for (const name of offered) {
+    for (const name of [...offered].sort()) {
       const entry = toolsByName.get(name)!;
       toolSet[name] = tool({
         description: entry.description,
-        inputSchema: jsonSchema(entry.inputSchema as Parameters<typeof jsonSchema>[0]),
+        inputSchema: jsonSchema(entry.inputSchema as Parameters<typeof jsonSchema>[0], {
+          validate: (value) =>
+            value && typeof value === 'object' && !Array.isArray(value)
+              ? { success: true, value }
+              : { success: false, error: new Error('Tool arguments must be a JSON object') },
+        }),
       });
     }
 
@@ -578,7 +607,7 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
       inputTokens: outcome.usage.inputTokens,
       outputTokens: outcome.usage.outputTokens,
     });
-    if (outcome.text.trim()) lastText = outcome.text.trim();
+    if (outcome.text.trim()) lastText = (continuedText + outcome.text).trim();
 
     const assistantContent: Exclude<
       Extract<ModelMessage, { role: 'assistant' }>['content'],
@@ -605,6 +634,27 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
         step,
       );
       if (await consumeInstructions()) continue;
+      if (outcome.finishReason === 'length') {
+        if (lengthContinuations >= 3 || turns >= maxTurns) {
+          return finish({ status: 'failed', text: lastText, exitCode: 1, reason: 'output-length' });
+        }
+        lengthContinuations++;
+        continuedText += outcome.text;
+        await save(
+          [
+            {
+              role: 'user',
+              content:
+                '(Helena) Deine Ausgabe hat das Tokenlimit erreicht und ist unvollständig. Setze exakt an der Abbruchstelle fort, ohne den bisherigen Text zu wiederholen.',
+            },
+          ],
+          step,
+        );
+        continue;
+      }
+      if (continuedText && !outcome.text.trim()) {
+        return finish({ status: 'failed', text: lastText, exitCode: 1, reason: 'output-length' });
+      }
       // A local model sometimes ends its turn announcing what it is about to do ("Ich schaue
       // mir die Seite an.") instead of doing it: it is told once to go on.
       if (!nudged && turns < maxTurns && isAnnouncement(outcome.text)) {
@@ -638,6 +688,7 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
         }
         return finish({ status: 'failed', text: '', exitCode: 1, reason: 'empty-answer' });
       }
+      await maybeCompress();
       return finish({ status: 'success', text: lastText, exitCode: 0 });
     }
 
@@ -743,6 +794,16 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
   // ── helpers that need the loop's state ──
 
   function turnOptions(model: ResolvedModel, compressing = false) {
+    if (compressing && model.local) {
+      return {
+        ...model.providerOptions,
+        [model.provider]: {
+          ...model.providerOptions[model.provider],
+          reasoningEffort: 'none',
+          chat_template_kwargs: { enable_thinking: false },
+        },
+      };
+    }
     if (
       !model.local ||
       config.reasoning ||
@@ -838,12 +899,27 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
       reasoningTokens: 0,
     };
     let streamError: unknown = null;
+    let finishReason: string | undefined;
     try {
       const result = streamText({
         model: requestModel,
         instructions: input.system,
         messages,
         tools,
+        repairToolCall: async ({ toolCall }) => {
+          if (toolCall.toolName !== 'skill_manage') return null;
+          try {
+            let parsed: unknown = JSON.parse(toolCall.input);
+            for (let depth = 0; depth < 2 && typeof parsed === 'string'; depth++) {
+              parsed = JSON.parse(parsed);
+            }
+            return parsed && typeof parsed === 'object' && !Array.isArray(parsed)
+              ? { ...toolCall, input: JSON.stringify(parsed) }
+              : null;
+          } catch {
+            return null;
+          }
+        },
         abortSignal: controller.signal,
         maxRetries: 0,
         maxOutputTokens: config.limits?.maxOutputTokens ?? DEFAULTS.maxOutputTokens,
@@ -889,6 +965,7 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
             break;
           }
           case 'finish-step': {
+            finishReason = part.finishReason;
             const u = part.usage;
             usage.inputTokens += u.inputTokens ?? 0;
             usage.outputTokens += u.outputTokens ?? 0;
@@ -916,7 +993,7 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
     if (why === 'model-busy') throw new LocalModelBusy();
     if (why) throw new StepAbort(why);
     if (streamError) throw streamError;
-    return { text, calls, usage };
+    return { text, calls, usage, finishReason };
   }
 
   function toolName(call: { name: string; input: unknown }): string {
@@ -1034,43 +1111,59 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
     const keepFrom = step - 5;
     const old = entries.filter((entry) => entry.seq > compactedThrough && entry.step < keepFrom);
     if (old.length < 4) return;
-    const through = old.at(-1)!.seq;
-    const transcript = redactSecrets(
-      old.map((entry) => `${entry.message.role}: ${renderForSummary(entry.message)}`).join('\n'),
-    );
-    let next = summary;
-    for (let offset = 0; offset < transcript.length; offset += 20_000) {
-      const result = await generateText({
-        model: chain[0]!.model,
-        providerOptions: turnOptions(chain[0]!, true) as never,
-        maxOutputTokens: 1500,
-        instructions:
-          'Schreibe ausschließlich eine Zusammenfassung auf Deutsch mit genau diesen Überschriften: ' +
-          'Ziel, Stand, Entscheidungen, Offene Aufgaben, Wichtige Referenzen. ' +
-          'Erhalte wichtige Fakten, Dateipfade und Werkzeugergebnisse. Schreibe nie eine Frage oder ' +
-          'eine Aufforderung an den Nutzer. Keine Geheimnisse. Höchstens 400 Wörter.',
-        prompt: `${next ? `Frühere Zusammenfassung:\n${next}\n\n` : ''}Verlauf:\n${transcript.slice(offset, offset + 20_000)}`,
-        abortSignal: AbortSignal.any([
-          input.signal,
-          AbortSignal.timeout(
-            Math.max(1, Math.min(stepMs, Math.floor(budgetMs - (now() - budgetStarted)))),
-          ),
-        ]),
-        maxRetries: 0,
-      });
-      spend.inputTokens += result.usage.inputTokens ?? 0;
-      spend.outputTokens += result.usage.outputTokens ?? 0;
-      spend.cacheReadTokens += result.usage.inputTokenDetails?.cacheReadTokens ?? 0;
-      spend.cacheWriteTokens += result.usage.inputTokenDetails?.cacheWriteTokens ?? 0;
-      spend.reasoningTokens += result.usage.outputTokenDetails?.reasoningTokens ?? 0;
-      next =
-        structuredSummary(redactSecrets(result.text)) ??
-        structuredSummary(
-          `Verlauf und Werkzeugergebnisse: ${`${next ?? ''}\n${transcript.slice(offset, offset + 20_000)}`.replace(/\?(?=\s|$)/g, '.').slice(-6_000)}`,
-        );
-      if (!next || looksSecret(next)) return;
+    let transcript = '';
+    let through = compactedThrough;
+    let included = 0;
+    while (included < old.length) {
+      const start = included;
+      const lines: string[] = [];
+      do {
+        const entry = old[included++]!;
+        lines.push(`${entry.message.role}: ${renderForSummary(entry.message)}`);
+      } while (included < old.length && old[included]!.step === old[start]!.step);
+      const next = lines.join('\n') + '\n';
+      if (transcript.length + next.length > 120_000) {
+        included = start;
+        break;
+      }
+      transcript += next;
+      through = old[included - 1]!.seq;
     }
-    if (!next || looksSecret(next)) return;
+    if (included < 4) return;
+    if (through <= compressionAttemptThrough) return;
+    compressionAttemptThrough = through;
+    const result = streamText({
+      model: chain[0]!.model,
+      providerOptions: turnOptions(chain[0]!, true) as never,
+      maxOutputTokens: 4096,
+      instructions:
+        'Erstelle eine einzige flache Zusammenfassung aus dem bisherigen Stand und dem neuen Verlauf. Integriere frühere Zusammenfassungen inhaltlich; zitiere oder verschachtele sie nicht. Verwende jeden Abschnitt genau einmal: Ziel, Entscheidungen, Ergebnisse, offene Punkte. Behalte Fakten, Kennungen, Termine, Pfade und Quellen exakt bei; entferne Wiederholungen und überholte Angaben. Keine Geheimnisse. Deutsch, höchstens 600 Wörter.',
+      prompt: redactSecrets(
+        `${summary ? `Frühere Zusammenfassung:\n${summary}\n\n` : ''}Verlauf:\n${transcript}`,
+      ),
+      abortSignal: AbortSignal.any([
+        input.signal,
+        AbortSignal.timeout(
+          Math.max(1, Math.min(stepMs, Math.floor(budgetMs - (now() - budgetStarted)))),
+        ),
+      ]),
+      maxRetries: 0,
+    });
+    const [text, usage, finishReason] = await Promise.all([
+      result.text,
+      result.usage,
+      result.finishReason,
+    ]);
+    spend.inputTokens += usage.inputTokens ?? 0;
+    spend.outputTokens += usage.outputTokens ?? 0;
+    spend.cacheReadTokens += usage.inputTokenDetails?.cacheReadTokens ?? 0;
+    spend.cacheWriteTokens += usage.inputTokenDetails?.cacheWriteTokens ?? 0;
+    spend.reasoningTokens += usage.outputTokenDetails?.reasoningTokens ?? 0;
+    if (finishReason !== 'stop') throw new Error(`summary-output-${finishReason}`);
+    const next = redactSecrets(text).trim();
+    if (!next) throw new Error('summary-empty');
+    if (!structuredSummary(next)) throw new Error('summary-invalid');
+    if (looksSecret(next)) return;
     if (input.note) {
       const flush = next.replace(/\s+/g, ' ');
       for (let offset = 0; offset < flush.length; offset += 1600) {
@@ -1151,10 +1244,10 @@ export function resultEvent(result: {
 }
 
 function renderForSummary(message: ModelMessage): string {
-  if (typeof message.content === 'string') return message.content.slice(0, 4000);
+  if (typeof message.content === 'string') return message.content;
   return message.content
     .map((part) => {
-      if (part.type === 'text') return part.text.slice(0, 4000);
+      if (part.type === 'text') return part.text;
       if (part.type === 'tool-call')
         return `[ruft ${part.toolName} ${JSON.stringify(part.input).slice(0, 300)}]`;
       if (part.type === 'tool-result') {

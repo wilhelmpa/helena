@@ -1,5 +1,6 @@
 'use client';
 
+import { ListBox, Card } from '@/design-system';
 import { useState } from 'react';
 import { ArrowLeft, File, Folder, History, Link2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -78,66 +79,68 @@ export default function SnapshotBrowser({
                 </span>
               ))}
             </nav>
-            <div className="min-h-0 flex-1 overflow-y-auto rounded-md border border-sidebar-border">
-              {folder.isPending ? (
-                <ListSkeleton rows={6} className="p-2" rowClassName="h-8" />
-              ) : folder.isError ? (
-                <p className="p-3 text-sm text-muted-foreground">{t('notFound')}</p>
-              ) : (
-                <ul className="divide-y divide-sidebar-border">
-                  {path !== '/' && (
-                    <li>
-                      <button
-                        type="button"
-                        onClick={() => setPath(parentPath(path))}
-                        className="flex h-9 w-full items-center gap-2 px-3 text-sm hover:bg-sidebar-accent"
-                      >
-                        <ArrowLeft className="size-4 text-muted-foreground" />
-                        {t('up')}
-                      </button>
-                    </li>
-                  )}
-                  {(folder.data?.entries ?? []).map((entry) => (
-                    <li key={entry.path} className="flex min-h-9 items-center gap-2 px-3 text-sm">
-                      {entry.type === 'dir' ? (
+            <ListBox className="flex min-h-0 flex-1 flex-col">
+              <div className="min-h-0 flex-1 overflow-y-auto">
+                {folder.isPending ? (
+                  <ListSkeleton rows={6} className="p-2" rowClassName="h-8" />
+                ) : folder.isError ? (
+                  <p className="p-3 text-sm text-muted-foreground">{t('notFound')}</p>
+                ) : (
+                  <ul className="divide-y divide-sidebar-border">
+                    {path !== '/' && (
+                      <li>
                         <button
                           type="button"
-                          onClick={() => setPath(entry.path)}
-                          className="flex min-w-0 flex-1 items-center gap-2 text-start hover:underline"
+                          onClick={() => setPath(parentPath(path))}
+                          className="flex h-9 w-full items-center gap-2 px-3 text-sm hover:bg-sidebar-accent"
                         >
-                          <Folder className="size-4 shrink-0 text-muted-foreground" />
-                          <span className="truncate" dir="auto">
-                            {entry.name}
-                          </span>
+                          <ArrowLeft className="size-4 text-muted-foreground" />
+                          {t('up')}
                         </button>
-                      ) : (
-                        <span className="flex min-w-0 flex-1 items-center gap-2">
-                          {entry.type === 'symlink' ? (
-                            <Link2 className="size-4 shrink-0 text-muted-foreground" />
-                          ) : (
-                            <File className="size-4 shrink-0 text-muted-foreground" />
-                          )}
-                          <span className="truncate" dir="auto">
-                            {entry.name}
+                      </li>
+                    )}
+                    {(folder.data?.entries ?? []).map((entry) => (
+                      <li key={entry.path} className="flex min-h-9 items-center gap-2 px-3 text-sm">
+                        {entry.type === 'dir' ? (
+                          <button
+                            type="button"
+                            onClick={() => setPath(entry.path)}
+                            className="flex min-w-0 flex-1 items-center gap-2 text-start hover:underline"
+                          >
+                            <Folder className="size-4 shrink-0 text-muted-foreground" />
+                            <span className="truncate" dir="auto">
+                              {entry.name}
+                            </span>
+                          </button>
+                        ) : (
+                          <span className="flex min-w-0 flex-1 items-center gap-2">
+                            {entry.type === 'symlink' ? (
+                              <Link2 className="size-4 shrink-0 text-muted-foreground" />
+                            ) : (
+                              <File className="size-4 shrink-0 text-muted-foreground" />
+                            )}
+                            <span className="truncate" dir="auto">
+                              {entry.name}
+                            </span>
                           </span>
+                        )}
+                        <span className="hidden shrink-0 text-xs text-muted-foreground sm:inline">
+                          {entry.type === 'file' ? formatDiskSize(entry.size) : ''}
+                          {entry.mtime ? ` · ${formatDateTime(entry.mtime)}` : ''}
                         </span>
-                      )}
-                      <span className="hidden shrink-0 text-xs text-muted-foreground sm:inline">
-                        {entry.type === 'file' ? formatDiskSize(entry.size) : ''}
-                        {entry.mtime ? ` · ${formatDateTime(entry.mtime)}` : ''}
-                      </span>
-                      <Button variant="ghost" size="sm" onClick={() => setRestoring(entry)}>
-                        <History />
-                        <span className="sr-only sm:not-sr-only">{t('restore')}</span>
-                      </Button>
-                    </li>
-                  ))}
-                  {folder.data && folder.data.entries.length === 0 && (
-                    <li className="p-3 text-sm text-muted-foreground">{t('empty')}</li>
-                  )}
-                </ul>
-              )}
-            </div>
+                        <Button variant="ghost" size="sm" onClick={() => setRestoring(entry)}>
+                          <History />
+                          <span className="sr-only sm:not-sr-only">{t('restore')}</span>
+                        </Button>
+                      </li>
+                    ))}
+                    {folder.data && folder.data.entries.length === 0 && (
+                      <li className="p-3 text-sm text-muted-foreground">{t('empty')}</li>
+                    )}
+                  </ul>
+                )}
+              </div>
+            </ListBox>
             {folder.data?.truncated && (
               <p className="text-xs text-muted-foreground">{t('truncated')}</p>
             )}
@@ -214,16 +217,19 @@ function RestoreForm({
       </p>
       <div role="radiogroup" aria-label={t('restoreWhat')} className="space-y-2">
         {(['copy', 'original'] as const).map((value) => (
-          <button
-            key={value}
+          <Card
+            as="button"
             type="button"
             role="radio"
+            tone="inset"
+            interactive
+            selected={mode === value}
+            pad="tight"
+            gap={1}
+            key={value}
             aria-checked={mode === value}
             onClick={() => setMode(value)}
-            className={cn(
-              'block w-full space-y-0.5 rounded-md border border-sidebar-border p-3 text-start text-sm hover:bg-sidebar-accent',
-              mode === value && 'bg-sidebar-accent',
-            )}
+            className="w-full text-sm"
           >
             <span className="block font-medium">{t(`mode.${value}`)}</span>
             <span className="block text-xs text-muted-foreground">
@@ -233,7 +239,7 @@ function RestoreForm({
                   : t('mode.copyRoot')
                 : t('mode.originalExplain')}
             </span>
-          </button>
+          </Card>
         ))}
       </div>
       {mode === 'original' && (

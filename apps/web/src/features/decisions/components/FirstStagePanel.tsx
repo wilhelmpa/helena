@@ -1,5 +1,6 @@
 'use client';
 
+import { Card } from '@/design-system';
 import { useTranslations } from 'next-intl';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
@@ -35,7 +36,7 @@ export function FirstStagePanel({
     (entry) => ['typesafe', 'vercel'].includes(entry.provider) && entry.projectKey === null,
   );
   return (
-    <section className="space-y-4 rounded-md border border-sidebar-border bg-card p-4">
+    <Card as="section" gap={4}>
       <div className="flex items-center justify-between gap-4">
         <h2 className="font-medium">{t('title')}</h2>
         <Switch
@@ -105,6 +106,6 @@ export function FirstStagePanel({
         pending={update.isPending}
         onUpdate={update.mutate}
       />
-    </section>
+    </Card>
   );
 }

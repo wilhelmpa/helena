@@ -428,7 +428,8 @@
       "own": "Ajuste propio de este agente",
       "staged": "Cambiado, aún sin aplicar",
       "schema": "Hereda del esquema «{schema}»",
-      "project": "Hereda del esquema del proyecto «{schema}»"
+      "project": "Hereda del esquema del proyecto «{schema}»",
+      "inSchema": "Valor de este esquema"
     },
     "columns": {
       "runtime": "Entorno de ejecución",
@@ -451,7 +452,8 @@
       "low": "Bajo",
       "medium": "Medio",
       "high": "Alto",
-      "xhigh": "Muy alto"
+      "xhigh": "Muy alto",
+      "default": "Valor predeterminado del modelo"
     },
     "browser": {
       "standard": "Estándar",
@@ -584,6 +586,10 @@
         "schema": "esquema",
         "project": "proyecto",
         "own": "propio"
+      },
+      "retained": {
+        "title": "{count, plural, one {# agente conserva sus propios ajustes} other {# agentes conservan sus propios ajustes}}",
+        "text": "El propio agente definió estos valores. No cambian, aunque el esquema diga otra cosa."
       }
     },
     "conflict": {
@@ -615,10 +621,12 @@
       "switchDevices": "Cambiar dispositivos",
       "switchFailed": "El cambio ha fallado",
       "switchFailedText": "El último cambio terminó con un error. Puedes reanudarlo o revertirlo en los ajustes de IA local.",
-      "schema": "Esquema",
+      "schema": "Esquema activo",
       "projectSchema": "Esquema para {project}",
       "projectInherits": "Sigue el esquema activo",
-      "inherit": "Como el esquema activo"
+      "inherit": "Como el esquema activo",
+      "schemaHint": "No se ha encontrado ningún esquema",
+      "profileLocked": "El perfil local de un esquema incluido no se puede cambiar. Copia el esquema para elegir otro perfil."
     },
     "profiles": {
       "local-halogen": "Solo GPU con Flash, NPU desactivada",
@@ -688,7 +696,13 @@
       "npuDecision": "La NPU no superó la evaluación del decisor.",
       "unknown": "Un agente, proyecto o esquema ya no existe. Recarga la página.",
       "invalid": "Un valor no está permitido. Revisa los ajustes de las celdas cambiadas.",
-      "rejected": "El servidor rechazó el cambio. No se ha modificado nada."
+      "rejected": "El servidor rechazó el cambio. No se ha modificado nada.",
+      "reasoning": "La profundidad de razonamiento elegida no encaja con el modelo.",
+      "modelUnavailable": "Un modelo elegido no está disponible para este entorno de ejecución.",
+      "needsGeneral": "El esquema necesita el rol «General» antes de poder activarse.",
+      "inUse": "El esquema todavía se está usando.",
+      "builtIn": "Los esquemas incluidos no se pueden cambiar. Copia primero el esquema.",
+      "role": "Un rol del esquema está incompleto. Recarga la página e inténtalo de nuevo."
     },
     "columnsShort": {
       "runtime": "Entorno",
@@ -698,6 +712,97 @@
       "browser": "Navegador",
       "decision": "Decisor",
       "device": "Dispositivo"
+    },
+    "discard": "Descartar",
+    "schemaEditor": {
+      "title": "Esquemas",
+      "description": "Un esquema decide qué entorno de ejecución, modelo y profundidad de razonamiento recibe cada rol. Los esquemas incluidos están protegidos, pero se pueden copiar.",
+      "new": "Nuevo esquema",
+      "noDescription": "Sin descripción",
+      "roleCount": "{count, plural, one {# rol} other {# roles}}",
+      "activate": "Activar",
+      "activateUndo": "Deshacer la activación",
+      "view": "Ver roles",
+      "editRoles": "Editar roles",
+      "badge": {
+        "active": "Activo",
+        "activating": "Se activará",
+        "builtIn": "Incluido",
+        "custom": "Propio",
+        "projects": "{count, plural, one {# proyecto} other {# proyectos}}"
+      },
+      "menu": {
+        "label": "Acciones para {name}",
+        "copy": "Copiar",
+        "edit": "Renombrar y describir",
+        "delete": "Eliminar",
+        "deleteInUse": "Eliminar (en uso)"
+      },
+      "dialog": {
+        "createTitle": "Nuevo esquema",
+        "copyTitle": "Copiar «{name}»",
+        "editTitle": "Renombrar y describir el esquema",
+        "copyNote": "La copia toma todos los roles de «{name}» y después se puede cambiar libremente.",
+        "emptyNote": "El nuevo esquema está vacío. Añades los roles después; para activarlo hace falta al menos «General».",
+        "name": "Nombre",
+        "namePlaceholder": "p. ej. Mi mezcla",
+        "description": "Descripción",
+        "descriptionHint": "Una frase sobre cuándo encaja este esquema.",
+        "copyName": "{name} (copia)",
+        "create": "Crear",
+        "save": "Guardar",
+        "cancel": "Cancelar",
+        "failed": "No se pudo guardar el esquema"
+      },
+      "delete": {
+        "title": "¿Eliminar «{name}»?",
+        "text": "Se elimina el esquema. Ningún agente ni proyecto lo sigue ahora, así que nadie notará ningún cambio.",
+        "confirm": "Eliminar",
+        "failed": "No se pudo eliminar el esquema. Está activo o asignado a un proyecto."
+      },
+      "toast": {
+        "created": "Esquema creado",
+        "updated": "Esquema guardado",
+        "deleted": "Esquema eliminado"
+      },
+      "roles": {
+        "title": "Roles en «{name}»",
+        "builtIn": "Este esquema está incluido y protegido. Crea una copia para cambiar los roles.",
+        "custom": "Haz clic en un valor para cambiarlo. Los cambios solo se aplican tras la vista previa.",
+        "copyToEdit": "Crear una copia para editar",
+        "add": "Añadir rol",
+        "emptyTitle": "Aún no hay roles",
+        "emptyText": "Añade primero el rol «General». Se aplica a todos los agentes cuyo rol el esquema no nombra.",
+        "needsGeneral": "Falta el rol «General»",
+        "needsGeneralText": "Sin él, el esquema no se puede activar.",
+        "new": "Nuevo",
+        "changed": "Cambiado",
+        "discard": "Descartar",
+        "catalogFailed": "No se pudieron cargar las opciones",
+        "catalogFailedText": "Sin la lista de modelos disponibles no se pueden cambiar los valores. Recarga la página."
+      },
+      "roleDelete": {
+        "menu": "Actions for {name}",
+        "title": "Remove role {name}?",
+        "confirm": "Remove",
+        "text": "Agents using this role will inherit General. Their own overrides are retained.",
+        "failed": "The role could not be removed. Reload the schema and check its General fallback."
+      },
+      "audit": {
+        "title": "Schema audit log",
+        "entry": "Revision {revision} · {action}",
+        "empty": "No schema changes yet.",
+        "failed": "The schema audit log could not be loaded.",
+        "actions": {
+          "apply": "Applied",
+          "create": "Created",
+          "update": "Updated",
+          "update-role": "Role updated",
+          "delete-role": "Role removed",
+          "delete": "Deleted",
+          "undo": "Undone"
+        }
+      }
     }
   }
 }

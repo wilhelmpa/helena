@@ -1,32 +1,15 @@
-import type { CSSProperties, HTMLAttributes, ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
+import { Card } from '@/design-system/components/Card';
+import { MonoLabel } from '@/design-system/components/Section';
 import styles from './DashboardPrimitives.module.css';
 
-export function Card({
-  as: Element = 'section',
-  variant = 'surface',
-  className,
-  ...props
-}: HTMLAttributes<HTMLElement> & {
-  as?: 'section' | 'article' | 'div';
-  variant?: 'surface' | 'raised' | 'selected';
-}) {
-  return (
-    <Element
-      className={cn(styles.card, variant !== 'surface' && styles[variant], className)}
-      {...props}
-    />
-  );
-}
-
-export function MonoLabel({ children, className }: { children: ReactNode; className?: string }) {
-  return <span className={cn(styles.label, className)}>{children}</span>;
-}
-
-export function MonoMeta({ children, className }: { children: ReactNode; className?: string }) {
-  return <span className={cn(styles.meta, className)}>{children}</span>;
-}
+// The box, the mono label and the mono meta are the design system's own (docs/ui-framework.md
+// §19): a dashboard has no card of its own. They are re-exported here for the widgets that
+// import them from this file.
+export { Card } from '@/design-system/components/Card';
+export { MonoLabel, MonoMeta } from '@/design-system/components/Section';
 
 export function DashboardTitle({ children }: { children: ReactNode }) {
   return <h1 className={styles.pageTitle}>{children}</h1>;
@@ -64,8 +47,11 @@ export function ProjectTile({
   footer?: ReactNode;
 }) {
   return (
-    <Link
+    <Card
+      as={Link}
       href={href}
+      interactive
+      gap={2}
       className={styles.projectTile}
       style={{ '--project-accent': accent } as CSSProperties}
     >
@@ -98,7 +84,7 @@ export function ProjectTile({
       )}
       {facts && <span className={styles.projectFacts}>{facts}</span>}
       {footer}
-    </Link>
+    </Card>
   );
 }
 
@@ -159,26 +145,30 @@ export function Tile({
       <span className={styles.note}>{note}</span>
     </>
   );
-  const className = cn(
-    styles.card,
-    styles.tile,
-    compact && styles.compact,
-    (href || onSelect) && styles.interactive,
-  );
+  const className = cn(styles.tile, compact && styles.compact);
+  const tooltip = title;
   if (href)
     return (
-      <Link href={href} className={className} title={title}>
+      <Card as={Link} href={href} interactive gap={2} tooltip={tooltip} className={className}>
         {content}
-      </Link>
+      </Card>
     );
   if (onSelect)
     return (
-      <button type="button" onClick={onSelect} className={className} title={title}>
+      <Card
+        as="button"
+        type="button"
+        onClick={onSelect}
+        interactive
+        gap={2}
+        tooltip={tooltip}
+        className={className}
+      >
         {content}
-      </button>
+      </Card>
     );
   return (
-    <Card className={cn(styles.tile, compact && styles.compact)} title={title}>
+    <Card gap={2} tooltip={tooltip} className={className}>
       {content}
     </Card>
   );

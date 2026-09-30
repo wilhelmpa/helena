@@ -249,7 +249,6 @@
     "tools": "Werkzeuge",
     "pickTool": "{tool} · Werkzeug wechseln",
     "swap": "tauschen",
-    "closeArea": "Bereich schließen",
     "back": "Zurück",
     "backHint": "Zurück zum vorigen Layout",
     "full": "Werkzeug groß",
@@ -302,5 +301,6 @@
   "settingsProjectAccess": "Zugänge verwalten",
   "sidebarHelenaKnowledge": "{appName}",
   "sidebarTrash": "Papierkorb",
-  "sidebarChats": "Chats"
+  "sidebarChats": "Chats",
+  "sidebarResize": "Breite der Seitenleiste (Ziehen, Pfeiltasten, Doppelklick = Standard)"
 }

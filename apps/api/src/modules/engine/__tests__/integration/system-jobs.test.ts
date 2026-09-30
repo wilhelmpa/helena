@@ -181,6 +181,33 @@ describe('system jobs', () => {
     expect(eagerRuns).toBe(1);
   });
 
+  it('starts a previously registered eager job whose first run was never started', async () => {
+    const id = `volition.test-missed-first-${Date.now()}`;
+    let count = 0;
+    registerSystemJob({
+      id,
+      runWhenNew: true,
+      schedule: async () => ({ enabled: true, cron: '0 3 * * *', timezone: 'Europe/Berlin' }),
+      async run(context) {
+        await context.step('count', async () => {
+          count++;
+        });
+      },
+    });
+    const now = new Date();
+    await db
+      .insert(helenaSystemJob)
+      .values({ id, scheduleKey: '0 3 * * *|Europe/Berlin', firedThrough: now });
+    await fireDueSystemJobs(now);
+    await fireDueSystemJobs(now);
+    const deadline = Date.now() + 10000;
+    while (count === 0 && Date.now() < deadline) await Bun.sleep(50);
+    expect(count).toBe(1);
+    const status = await systemJobState(id);
+    expect(status.lastStartedAt).not.toBeNull();
+    expect(status.lastTrigger).toBe('schedule');
+  });
+
   it('runs by hand, records a failure with its reason', async () => {
     expect((await runSystemJobNow(JOB)).started).toBe(true);
     await waitForStatus('succeeded');

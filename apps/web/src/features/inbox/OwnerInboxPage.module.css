@@ -1,40 +1,6 @@
-.content {
-  width: 100%;
-  line-height: normal;
-}
-
-.eyebrow,
-.reads h2 {
-  margin: 0;
-  color: var(--text-3);
-  font: 500 11px var(--font-mono);
-  letter-spacing: 0.23em;
-}
-
-.headingRow {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  gap: var(--space-5);
-  margin: 0 0 var(--space-5);
-}
-
-.headingRow h2 {
-  margin: 0;
-  font-size: 18px;
-  line-height: 1.3;
-  letter-spacing: -0.01em;
-  font-weight: 520;
-}
-
 .card {
-  display: flex;
-  gap: var(--space-4);
-  margin-bottom: var(--space-3);
-  padding: var(--space-4) var(--space-5);
-  border-radius: var(--radius-card);
-  background: var(--surface-1);
-  box-shadow: var(--shadow-card);
+  /* The box is the design system's Card. */
+  min-width: 0;
 }
 
 .dot {
@@ -118,31 +84,11 @@
   background: var(--surface-2);
 }
 
-.reads {
-  margin-top: var(--space-6);
-  padding-top: var(--space-4);
-  border-top: 1px solid var(--line);
-}
-.reads h2 {
-  margin-bottom: var(--space-3);
-  color: var(--text-3);
-}
 .readRow {
-  display: flex;
   align-items: center;
-  gap: var(--space-3);
   min-height: 44px;
-  margin-bottom: var(--space-2);
-  padding: var(--space-2) var(--space-4);
-  border-radius: var(--radius-card);
-  background: var(--surface-1);
-  box-shadow: var(--shadow-card);
   color: var(--text);
   font-size: 13px;
-  text-decoration: none;
-}
-.readRow:hover {
-  background: var(--surface-2);
 }
 .readRow span:first-child {
   min-width: 54px;
@@ -161,11 +107,6 @@
   font: 400 11px var(--font-mono);
   white-space: nowrap;
 }
-.empty {
-  padding: var(--space-5);
-  color: var(--text-2);
-  font-size: 13px;
-}
 
 @keyframes pulse {
   50% {
@@ -179,41 +120,9 @@
   }
 }
 @media (max-width: 700px) {
-  .main {
-    padding: var(--space-4) var(--space-4) var(--space-6);
-  }
-  .headingRow {
-    display: block;
-    margin-bottom: var(--space-4);
-  }
-  .card {
-    gap: var(--space-3);
-    padding: var(--space-4);
-  }
   .time {
     max-width: 55px;
     overflow: hidden;
     text-overflow: ellipsis;
   }
-}
-
-/* One group per project (owner 28.09.: hierarchical by project), Helena first. */
-.group {
-  margin-bottom: var(--space-5);
-}
-.groupHead {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  margin: 0 0 var(--space-2) var(--space-1);
-  color: var(--text-2);
-  font-size: 12px;
-}
-.groupHead strong {
-  color: var(--text);
-  font-weight: 520;
-}
-.groupCount {
-  color: var(--text-3);
-  font-variant-numeric: tabular-nums;
 }

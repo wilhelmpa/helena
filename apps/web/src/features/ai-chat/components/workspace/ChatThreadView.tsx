@@ -26,7 +26,7 @@ import { useChatDock } from '@/context/chatDock';
 import ChatMessageList from './ChatMessageList';
 import ChatComposer from '@/components/helena/Composer';
 import ChatNewChatIntro from './ChatNewChatIntro';
-import { HomeChatActivityCards, HomeChatHero, HomeChatMasthead } from './HomeChatLanding';
+import { HomeChatActivityCards, HomeChatHero } from './HomeChatLanding';
 import ChatRestoreError from './ChatRestoreError';
 import {
   activeTool,
@@ -288,7 +288,8 @@ export default function ChatThreadView({
       talking,
       lastQuestionVia: lastQuestionVia.current,
     });
-    if (text) speak(text, { speaker: voice.speaker, speed: voice.speed });
+    if (text && lastQuestionVia.current !== 'voice')
+      speak(text, { speaker: voice.speaker, speed: voice.speed });
   }, [plan.busy, plan.messages, readAll, talking, voice.speaker, voice.speed]);
 
   // One send per turn: between handing a message to the chat and the chat reporting it
@@ -305,15 +306,13 @@ export default function ChatThreadView({
     dispatching.current = true;
     setQueue(rest);
     lastQuestionVia.current = next!.options.via ?? null;
+    if (next!.options.via === 'voice') conversation.followReply();
     void plan.send(next!.text, next!.options, next!.metadata);
-  }, [plan, queue, queuePaused]);
+  }, [plan, queue, queuePaused, conversation]);
 
   return (
     <WebLinkScope projectKey={scopeKey.startsWith('team:') ? null : scopeKey}>
       <div className="flex h-full min-h-0 flex-col">
-        {/* The start page's masthead; a conversation has its own header row instead, so
-            the page never shows two headers. */}
-        {inPage && projectKey === null && homeLanding && <HomeChatMasthead />}
         {dock && (
           <ChatDockBar
             dock={dock}
@@ -438,6 +437,7 @@ export default function ChatThreadView({
             setQueuePaused(false);
             if (threadId) onActivity(threadId);
             lastQuestionVia.current = options.via ?? null;
+            if (options.via === 'voice') conversation.followReply();
             void plan.send(text, options, metadata);
           }}
           onStop={() => void plan.stop()}

@@ -1,3 +1,4 @@
+import { Notice } from '@/design-system';
 import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import type { ProjectDetail } from '@/lib/api/endpoints/projects';
@@ -76,11 +77,7 @@ export default function IssueSubtasksPanel({
         />
       );
     if (issue.subtasks.length === 0)
-      return (
-        <p className="rounded-md border border-dashed p-4 text-center text-sm text-muted-foreground">
-          {canEdit ? t('emptyHint') : t('empty')}
-        </p>
-      );
+      return <Notice>{canEdit ? t('emptyHint') : t('empty')}</Notice>;
     return issue.subtasks.map((subtask) => (
       <IssueRefRow
         key={subtask.id}

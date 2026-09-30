@@ -7,7 +7,7 @@ import { NOTIFICATION_EVENTS } from '../../utils/notificationEvents';
 import type { NotificationPreferencesForm } from '../../hooks/useNotificationPreferencesForm';
 import { useTranslations } from 'next-intl';
 
-import { Inline, Stack, Text } from '@/design-system';
+import { Inline, Stack, Text, Card } from '@/design-system';
 
 // A member's own notification preferences for the project: for each issue event, a
 // checkbox per channel (email, Telegram). Visible to every member (each edits only
@@ -24,7 +24,7 @@ export default function NotificationPreferences({ form }: { form: NotificationPr
   return (
     <Stack gap={5} className="flex flex-col">
       <SettingsSection title={t('eventsTitle')}>
-        <div className="max-w-xl overflow-hidden rounded-md border bg-card">
+        <Card pad="none" className="max-w-xl overflow-hidden">
           <div className={`${COLS} h-8 border-b px-3`}>
             <span />
             <ChannelHeader icon={<Mail className="size-3.5" />} label={t('email')} />
@@ -42,7 +42,7 @@ export default function NotificationPreferences({ form }: { form: NotificationPr
               />
             ))}
           </div>
-        </div>
+        </Card>
       </SettingsSection>
 
       <NotificationTelegramAccount />

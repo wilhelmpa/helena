@@ -25,7 +25,7 @@ import {
   type LocalAiPolicy,
   type ModelServerRow,
 } from '@repo/db';
-import { and, desc, eq, gte, sql } from 'drizzle-orm';
+import { and, desc, eq, gte, isNull, sql } from 'drizzle-orm';
 import { Value } from '@sinclair/typebox/value';
 import {
   CONFIGURABLE_CAPABILITIES,
@@ -638,8 +638,8 @@ export async function latestEvals(): Promise<EvalView[]> {
     .select({ row: helenaLocalAiEval, slug: helenaModelServer.slug })
     .from(helenaLocalAiEval)
     .innerJoin(helenaModelServer, eq(helenaModelServer.id, helenaLocalAiEval.serverId))
-    .where(eq(helenaLocalAiEval.status, 'done'))
-    .orderBy(desc(helenaLocalAiEval.ranAt))
+    .where(and(eq(helenaLocalAiEval.status, 'done'), isNull(helenaLocalAiEval.error)))
+    .orderBy(desc(helenaLocalAiEval.ranAt), desc(helenaLocalAiEval.id))
     .limit(500);
   const seen = new Set<string>();
   const result: EvalView[] = [];
@@ -664,7 +664,7 @@ export async function evalsInProgress(): Promise<EvalView[]> {
         gte(helenaLocalAiEval.ranAt, new Date(Date.now() - EVAL_STALE_MS)),
       ),
     )
-    .orderBy(desc(helenaLocalAiEval.ranAt));
+    .orderBy(desc(helenaLocalAiEval.ranAt), desc(helenaLocalAiEval.id));
   return rows.map(({ row, slug }) => evalView(row, slug));
 }
 
@@ -1212,6 +1212,7 @@ export async function localAiStatus() {
     queued: Counts;
     oldestWaitMs: number;
     oldestWaitMsByClass: Counts;
+    waitTimesMsByClass?: Record<keyof Counts, { count: number; p50: number; max: number }>;
     fallbacks: Counts;
     paused: { interactive: boolean; realtime: boolean; normal: boolean; background: boolean };
   };

@@ -81,7 +81,7 @@
     "loadError": "Beberapa item tidak dapat dimuat. Muat ulang halaman.",
     "loading": "Memuat Inbox…",
     "empty": "Tidak ada yang menunggu Anda saat ini.",
-    "toRead": "UNTUK DIBACA",
+    "toRead": "Untuk dibaca",
     "noCompletedRuns": "Belum ada proses yang selesai.",
     "runCompleted": "{name} · Proses selesai",
     "tags": {

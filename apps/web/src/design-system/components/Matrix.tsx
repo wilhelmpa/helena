@@ -10,6 +10,7 @@ import { Popover, PopoverContent, PopoverTrigger } from './Menu';
 // cards — plus these pieces:
 //   MatrixCellButton  the value as a quiet button; a dot says where it comes from
 //   MatrixCell        the button with a free panel (a form) under it
+//   MatrixValue       a value that cannot be changed here, laid out like the button
 //   MatrixNote        the line at the foot of a panel: where the value comes from + the way back
 //   MatrixBar         the bar that holds the changes made and not yet applied
 // A cell offering a plain list uses PopoverPick (with `trigger` = MatrixCellButton).
@@ -50,6 +51,16 @@ export const MatrixCellButton = forwardRef<
     </button>
   );
 });
+
+// A value shown where a cell would be, when it cannot be changed (a built-in schema).
+export function MatrixValue({ label, detail }: { label: ReactNode; detail?: ReactNode }) {
+  return (
+    <span className="ds-matrix-value">
+      <span className="ds-matrix-cell-label">{label}</span>
+      {detail && <span className="ds-matrix-cell-detail">{detail}</span>}
+    </span>
+  );
+}
 
 export function MatrixCell({
   children,

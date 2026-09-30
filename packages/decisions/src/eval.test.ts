@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test';
-import type { DecisionEvalSet } from '@helena/sdk';
+import type { DecisionAnswer, DecisionEvalSet } from '@helena/sdk';
 import { runDecisionEval } from './eval';
 
 const q = {
@@ -54,5 +54,24 @@ describe('runDecisionEval', () => {
     });
     expect(report.passed).toBe(false);
     expect(report.errors).toHaveLength(4);
+  });
+  it('excludes missing answers and semantic abstentions even at threshold zero', async () => {
+    const report = await runDecisionEval(set, 0, async (context) => {
+      if (context === 'eins') throw new Error('unavailable');
+      const answers: Record<string, DecisionAnswer> = {};
+      if (context !== 'zwei') answers.q = { choice: 'uncertain', confidence: 1, probabilities: {} };
+      return {
+        answers,
+        latencyMs: 1,
+        inputTokens: 0,
+        outputTokens: 0,
+        model: 'm',
+      };
+    });
+    expect(report.answered).toBe(0);
+    expect(report.byQuestion.q!.answered).toBe(0);
+    expect(report.precision).toBeNull();
+    expect(report.coverage).toBe(0);
+    expect(report.passed).toBe(false);
   });
 });

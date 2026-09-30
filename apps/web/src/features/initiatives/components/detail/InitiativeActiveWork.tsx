@@ -6,7 +6,7 @@ import type { ProjectDetail } from '@/lib/api/endpoints/projects';
 import { useShell } from '@/context/shellContext';
 import { StateIcon } from '@/features/issue/components/shared/IssueIcons';
 import Avatar from '@/components/common/Avatar';
-import { Box } from '@/design-system';
+import { Box, Card } from '@/design-system';
 
 // The initiative's issues currently in progress (state group 'started'), listed so
 // the overview shows what is actively being worked on, not just the counts.
@@ -37,7 +37,7 @@ export default function InitiativeActiveWork({
       <h3 className="mb-3 text-xs font-medium text-muted-foreground">
         {t('inProgress')} <span className="tabular-nums">· {rows.length}</span>
       </h3>
-      <ul className="divide-border overflow-hidden rounded-md border bg-card">
+      <Card as="ul" pad="none" className="divide-border overflow-hidden">
         {rows.map(({ issue, column }) => {
           const owner = issue.assigneeUserId ? assignees.get(issue.assigneeUserId) : null;
           return (
@@ -68,7 +68,7 @@ export default function InitiativeActiveWork({
             </li>
           );
         })}
-      </ul>
+      </Card>
     </Box>
   );
 }

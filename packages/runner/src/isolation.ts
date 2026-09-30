@@ -29,7 +29,7 @@ export interface AgentIsolation {
   runtime?: string;
 }
 
-export type WorkKind = 'run' | 'chat' | 'helper' | 'background';
+export type WorkKind = 'run' | 'chat' | 'voice' | 'helper' | 'background';
 
 export interface LaunchRequest {
   slug: string;

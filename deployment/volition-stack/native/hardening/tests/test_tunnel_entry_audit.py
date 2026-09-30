@@ -54,6 +54,26 @@ class TunnelEntryAuditTests(unittest.TestCase):
     def test_unrelated_deny_has_no_blanket_exemption(self):
         self.assertIn('web.tunnel_entry|fail|', self.audit(TEMPLATE.replace(LOCATION, 'location /other/')))
 
+    def test_public_worker_exemption_is_exact_and_credential_free(self):
+        variants = (
+            TEMPLATE.replace('location = /sw.js', 'location /sw.js'),
+            TEMPLATE.replace('location = /sw.js', 'location = /other.js'),
+            TEMPLATE.replace('proxy_pass http://127.0.0.1:3001/sw.js;',
+                             'proxy_pass http://127.0.0.1:3000/backend/;'),
+            TEMPLATE.replace('proxy_set_header Cookie "";', 'proxy_set_header Cookie $http_cookie;'),
+            TEMPLATE.replace('proxy_set_header Authorization "";',
+                             'proxy_set_header Authorization $http_authorization;'),
+            TEMPLATE.replace('proxy_set_header X-Helena-Entry "";',
+                             'proxy_set_header X-Helena-Entry internal;'),
+            TEMPLATE.replace('location = /sw.js {',
+                             'location = /sw.js { rewrite ^ /backend/ break;'),
+        )
+        for config in variants:
+            with self.subTest(config=config):
+                report = self.audit(config)
+                self.assertIn('web.tunnel_entry|fail|', report)
+                self.assertIn('1 location(s) without the tunnel headers', report)
+
     def test_error_page_mapping_keeps_the_deny_under_the_header_check(self):
         for separator in (' ', '\n    '):
             with self.subTest(separator=separator):

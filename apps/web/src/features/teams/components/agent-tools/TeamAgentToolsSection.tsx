@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { ToolConfigDialog } from './ToolConfigDialog';
 import TeamAgentTools from './TeamAgentTools';
 import TeamMcpServers from './TeamMcpServers';
-import { ToolSectionHeader } from './ToolSectionHeader';
+import { Section, Sections } from '@/design-system';
 
 // The tools of a team: the MCP servers its Hermes agents start, and the external
 // integrations the agents of its projects call, each bound to one of the team's
@@ -33,27 +33,26 @@ export default function TeamAgentToolsSection({ teamId }: { teamId: number }) {
       ) : !permissions.read ? (
         <p className="text-sm text-muted-foreground">{t('tools.noAccess')}</p>
       ) : (
-        <div className="space-y-6">
+        <Sections>
           <TeamMcpServers
             teamId={teamId}
             canManage={team?.role === 'owner' || team?.role === 'manager'}
           />
-          <section className="space-y-3">
-            <ToolSectionHeader
-              title={t('tools.title')}
-              hint={t('tools.hint')}
-              action={
-                permissions.create ? (
-                  <Button variant="outline" size="sm" onClick={() => setCreating(true)}>
-                    <Plus className="size-3.5" />
-                    {t('tools.add')}
-                  </Button>
-                ) : undefined
-              }
-            />
+          <Section
+            title={t('tools.title')}
+            description={t('tools.hint')}
+            actions={
+              permissions.create ? (
+                <Button variant="outline" size="sm" onClick={() => setCreating(true)}>
+                  <Plus className="size-3.5" />
+                  {t('tools.add')}
+                </Button>
+              ) : undefined
+            }
+          >
             <TeamAgentTools teamId={teamId} catalog={catalog} permissions={permissions} />
-          </section>
-        </div>
+          </Section>
+        </Sections>
       )}
 
       {creating && team && (

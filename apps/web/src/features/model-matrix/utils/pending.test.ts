@@ -11,10 +11,16 @@ import {
   agentGroup,
   buildPatch,
   clearAgentColumn,
+  clearSchemaCell,
+  discardSchema,
+  discardSchemaRole,
   isEmpty,
   pendingCount,
+  pruneSchemaRole,
+  schemaRoleValues,
   setAgentRole,
   setAgentValue,
+  setSchemaCells,
 } from './pending';
 
 const values = {
@@ -124,5 +130,108 @@ describe('Vorgemerkte Änderungen der Matrix', () => {
     assert.equal(agentGroup('home'), 'home');
     assert.equal(agentGroup('general', 'coordinator'), 'coordinator');
     assert.equal(agentGroup('coder', 'specialist'), 'specialist');
+  });
+});
+
+describe('Vorgemerkte Änderungen an den Rollen eines eigenen Schemas', () => {
+  const own = (): ModelMatrix => {
+    const base = matrix([]);
+    return {
+      ...base,
+      schemas: {
+        ...base.schemas,
+        eigenes: {
+          ...schema('eigenes', 'local-halogen'),
+          roles: { general: values as never },
+        },
+      },
+    } as never;
+  };
+
+  test('eine geänderte Zelle zählt einmal und geht als ganzes Schema an den Server', () => {
+    const pending = setSchemaCells(EMPTY_PENDING, 'eigenes', 'general', { reasoning: 'low' });
+    assert.equal(pendingCount(pending), 1);
+    const patch = buildPatch(own(), pending);
+    assert.equal(patch.schema?.id, 'eigenes');
+    assert.equal(patch.schema?.roles.general?.reasoning, 'low');
+    assert.equal(patch.schema?.roles.general?.model, 'volition-local-default');
+    assert.equal('builtIn' in (patch.schema ?? {}), false);
+  });
+
+  test('das Zurücksetzen einer Zelle räumt die Rolle und das Schema ab', () => {
+    let pending = setSchemaCells(EMPTY_PENDING, 'eigenes', 'general', { reasoning: 'low' });
+    pending = clearSchemaCell(pending, 'eigenes', 'general', 'reasoning');
+    assert.equal(isEmpty(pending), true);
+    assert.deepEqual(pending.schemas, {});
+  });
+
+  test('ein Wert, der wieder dem gespeicherten entspricht, ist keine Änderung mehr', () => {
+    const pending = pruneSchemaRole(
+      setSchemaCells(EMPTY_PENDING, 'eigenes', 'general', { reasoning: 'high', device: 'cpu' }),
+      own(),
+      'eigenes',
+      'general',
+    );
+    assert.deepEqual(pending.schemas.eigenes?.general?.values, { device: 'cpu' });
+  });
+
+  test('eine neue Rolle beginnt bei der Rolle „Allgemein“ des Schemas', () => {
+    const pending = setSchemaCells(EMPTY_PENDING, 'eigenes', 'coder', {}, true);
+    assert.equal(pendingCount(pending), 1);
+    const entry = schemaRoleValues(own(), pending, 'eigenes', 'coder');
+    assert.equal(entry?.added, true);
+    assert.equal(entry?.values.model, 'volition-local-default');
+    const patch = buildPatch(own(), pending);
+    assert.deepEqual(Object.keys(patch.schema?.roles ?? {}).sort(), ['coder', 'general']);
+  });
+
+  test('ein leeres Schema ohne „Allgemein“ übernimmt die lokalen Vorgaben', () => {
+    const base = own();
+    const empty = {
+      ...base,
+      schemas: { ...base.schemas, leer: { ...base.schemas.eigenes!, id: 'leer', roles: {} } },
+    } as ModelMatrix;
+    const pending = setSchemaCells(EMPTY_PENDING, 'leer', 'general', {}, true);
+    assert.equal(schemaRoleValues(empty, pending, 'leer', 'general')?.values.runtime, 'helena');
+  });
+
+  test('eine verworfene Rolle und ein gelöschtes Schema verschwinden aus der Liste', () => {
+    let pending = setSchemaCells(EMPTY_PENDING, 'eigenes', 'coder', {}, true);
+    pending = setSchemaCells(pending, 'eigenes', 'general', { device: 'cpu' });
+    assert.equal(pendingCount(discardSchemaRole(pending, 'eigenes', 'coder')), 1);
+    assert.deepEqual(discardSchema(pending, 'eigenes').schemas, {});
+  });
+
+  test('Profil und Rollen desselben Schemas gehen in einer Schema-Änderung', () => {
+    const base = own();
+    const active = { ...base, active: 'eigenes' } as ModelMatrix;
+    const pending = {
+      ...setSchemaCells(EMPTY_PENDING, 'eigenes', 'general', { device: 'cpu' }),
+      profile: 'local-27b-npu',
+    };
+    const patch = buildPatch(active, pending);
+    assert.equal(patch.schema?.profile, 'local-27b-npu');
+    assert.equal(patch.schema?.roles.general?.device, 'cpu');
+    assert.equal(patch.schemas, undefined);
+  });
+
+  test('mehrere Schemata gehen als Liste, ohne dass eines doppelt vorkommt', () => {
+    const base = own();
+    const two = {
+      ...base,
+      schemas: {
+        ...base.schemas,
+        zweites: { ...base.schemas.eigenes!, id: 'zweites' },
+      },
+    } as ModelMatrix;
+    const pending = setSchemaCells(
+      setSchemaCells(EMPTY_PENDING, 'eigenes', 'general', { device: 'cpu' }),
+      'zweites',
+      'general',
+      { device: 'cpu' },
+    );
+    const patch = buildPatch(two, pending);
+    assert.equal(patch.schema, undefined);
+    assert.deepEqual(patch.schemas?.map((entry) => entry.id).sort(), ['eigenes', 'zweites']);
   });
 });

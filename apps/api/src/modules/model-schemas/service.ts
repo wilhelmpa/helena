@@ -12,10 +12,13 @@ import { isDeepStrictEqual } from 'node:util';
 import { HttpError } from '#shared/lib';
 import { normalizeAgentEscalation } from '#modules/agents/core/service';
 import { migrateSchemaEscalations, migrateEscalationValue } from './migration';
+import { schemaCatalog, validateCatalogValues } from './catalog';
 import {
   COMBO_EVAL_CANDIDATES,
   MODEL_COLUMNS,
   MODEL_ROLES,
+  ROLE_TOOL_PROFILES,
+  type ModelRole,
   MODEL_TEMPLATES,
   LOCAL_PROFILE_TEMPLATES,
   type ModelColumn,
@@ -132,6 +135,10 @@ export async function initialAgentModel(input: {
     (!source || source.overrides.reasoning !== undefined)
   )
     own.reasoning = input.runtimePolicy.reasoningEffort;
+  const explicitProfile = (input.runtimePolicy?.helena as Record<string, unknown> | undefined)
+    ?.toolProfile;
+  if (explicitProfile && (!source || source.overrides.toolProfile !== undefined))
+    own.toolProfile = explicitProfile;
   const explicitEscalation = input.runtimePolicy?.escalation;
   if (explicitEscalation && (!source || source.overrides.escalation !== undefined)) {
     own.escalation = normalizeAgentEscalation(explicitEscalation);
@@ -140,45 +147,69 @@ export async function initialAgentModel(input: {
     role,
     overrides: own,
     model: (own.model as string | undefined) ?? values.model,
-    runtimePolicy: projectedPolicy(input.runtimePolicy ?? {}, {
-      ...values,
-      runtime: (own.runtime as ModelValues['runtime']) ?? values.runtime,
-      reasoning: (own.reasoning as ModelValues['reasoning']) ?? values.reasoning,
-      escalation: (own.escalation as ModelValues['escalation']) ?? values.escalation,
-    }),
+    runtimePolicy: projectedPolicy(
+      input.runtimePolicy ?? {},
+      {
+        ...values,
+        runtime: (own.runtime as ModelValues['runtime']) ?? values.runtime,
+        reasoning: (own.reasoning as ModelValues['reasoning']) ?? values.reasoning,
+        escalation: (own.escalation as ModelValues['escalation']) ?? values.escalation,
+      },
+      own,
+    ),
   };
 }
 function projectedPolicy(
   policy: Record<string, unknown>,
   values: ModelValues,
+  overrides: Record<string, unknown> = {},
+  inheritedProfile = values.toolProfile,
 ): Record<string, unknown> {
   const helena = { ...((policy.helena ?? {}) as Record<string, unknown>) };
   delete helena.escalation;
   return {
     ...policy,
-    ...(policy.helena ? { helena } : {}),
+    helena: {
+      ...helena,
+      toolProfile:
+        overrides.toolProfile ||
+        (helena.toolProfile !== inheritedProfile ? helena.toolProfile : undefined) ||
+        values.toolProfile ||
+        'assistent',
+    },
     runtime: values.runtime,
     reasoningEffort: values.reasoning,
     escalation: normalizeAgentEscalation(values.escalation),
   };
 }
-async function validateSchema(schema: ModelSchema) {
+export async function validateSchema(schema: ModelSchema) {
   if (!schema || typeof schema !== 'object') throw new HttpError(400, 'Invalid schema');
   if (
     !/^[a-z][a-z0-9-]{1,63}$/.test(schema.id) ||
-    !schema.name?.trim() ||
+    typeof schema.name !== 'string' ||
+    !schema.name.trim() ||
+    schema.name.length > 120 ||
     typeof schema.description !== 'string' ||
-    !schema.roles?.general ||
+    schema.description.length > 2000 ||
+    !schema.roles ||
+    typeof schema.roles !== 'object' ||
+    Array.isArray(schema.roles) ||
     !schema.classes ||
     typeof schema.classes !== 'object'
   )
-    throw new HttpError(400, 'Schema needs an id, name and general role');
+    throw new HttpError(400, 'Schema needs an id, name and roles');
   if (!LOCAL_PROFILE_TEMPLATES.some((profile) => profile.id === schema.profile))
     throw new HttpError(400, 'Unknown local profile');
   for (const [role, values] of Object.entries(schema.roles)) {
     if (!MODEL_ROLES.includes(role as never)) throw new HttpError(400, `Unknown role ${role}`);
     if (MODEL_COLUMNS.some((column) => values[column] === undefined))
       throw new HttpError(400, `Incomplete role ${role}`);
+    if (
+      Object.keys(values).some(
+        (column) => column !== 'toolProfile' && !MODEL_COLUMNS.includes(column as ModelColumn),
+      )
+    )
+      throw new HttpError(400, `Unknown column in role ${role}`);
     validateValues(values);
   }
   for (const [id, placement] of Object.entries(schema.classes ?? {})) {
@@ -243,6 +274,11 @@ function validateDecision(value: ModelValues['decision']) {
 }
 function validateValues(value: Partial<ModelValues>) {
   if (
+    value.toolProfile !== undefined &&
+    !['assistent', 'recherche', 'coder-lite', 'voll'].includes(value.toolProfile)
+  )
+    throw new HttpError(400, 'Invalid tool profile');
+  if (
     value.runtime !== undefined &&
     !['helena', 'claude', 'codex', 'hermes', 'command', 'webhook'].includes(value.runtime)
   )
@@ -254,7 +290,8 @@ function validateValues(value: Partial<ModelValues>) {
     throw new HttpError(400, 'Invalid model');
   if (
     value.reasoning !== undefined &&
-    !['low', 'medium', 'high', 'xhigh'].includes(value.reasoning)
+    value.reasoning !== null &&
+    (typeof value.reasoning !== 'string' || !value.reasoning.trim() || value.reasoning.length > 32)
   )
     throw new HttpError(400, 'Invalid reasoning');
   if (value.browser !== undefined && !['standard', 'jev', 'combined'].includes(value.browser))
@@ -311,6 +348,11 @@ export function resolveRow(row: Row, memberships: Membership[], state: State) {
   const schema =
     state.schemas[schemaId] ?? state.schemas[state.active] ?? MODEL_TEMPLATES['nur-lokal']!;
   const base = schema.roles[row.modelRole] ?? schema.roles.general;
+  const toolProfile =
+    (row.modelOverrides.toolProfile as ModelValues['toolProfile']) ??
+    base?.toolProfile ??
+    ROLE_TOOL_PROFILES[row.modelRole as ModelRole] ??
+    'assistent';
   const cells = {} as {
     [K in ModelColumn]: {
       value: ModelValues[K];
@@ -340,6 +382,7 @@ export function resolveRow(row: Row, memberships: Membership[], state: State) {
     role: row.modelRole,
     project: member ? { id: member.projectId, key: member.projectKey } : null,
     schemaId,
+    toolProfile,
     cells,
   };
 }
@@ -371,7 +414,12 @@ export async function modelMatrix(teamId?: number, projectId?: number) {
       })),
     },
     active: state.active,
-    schemas: state.schemas,
+    schemas: Object.fromEntries(
+      Object.entries(state.schemas).map(([id, schema]) => [
+        id,
+        { ...schema, builtIn: !!MODEL_TEMPLATES[id] },
+      ]),
+    ),
     profiles: LOCAL_PROFILE_TEMPLATES,
     projects: state.projects,
     agents: rows,
@@ -417,16 +465,26 @@ export async function agentDecisionSetting(agentId: number) {
   const agent = agents.find((entry) => entry.id === agentId);
   if (!agent) return null;
   const row = resolveRow(agent, memberships, state);
-  return row.cells.decision.source === 'own' ? row.cells.decision.value : null;
+  return row.cells.decision.source === 'own' || !Object.hasOwn(MODEL_TEMPLATES, row.schemaId)
+    ? row.cells.decision.value
+    : null;
 }
 function projectionOf(agent: Row, memberships: Membership[], state: State) {
-  const cells = resolveRow(agent, memberships, state).cells;
+  const row = resolveRow(agent, memberships, state);
+  const cells = row.cells;
   const values = Object.fromEntries(
     MODEL_COLUMNS.map((key) => [key, cells[key].value]),
   ) as ModelValues;
   return {
     model: ['command', 'webhook'].includes(cells.runtime.value) ? agent.model : cells.model.value,
-    runtimePolicy: projectedPolicy(agent.runtimePolicy as Record<string, unknown>, values),
+    runtimePolicy: projectedPolicy(
+      agent.runtimePolicy as Record<string, unknown>,
+      {
+        ...values,
+        toolProfile: row.toolProfile,
+      },
+      agent.modelOverrides,
+    ),
   };
 }
 export async function modelProjectionDrift() {
@@ -471,6 +529,22 @@ export function savedAgents(agents: Row[], changes: Change[]): SavedAgent[] {
       : [];
   });
 }
+function validateBuiltInApplication(schema: ModelSchema, current: ModelSchema) {
+  if (isDeepStrictEqual(schema, current)) return;
+  const profile = LOCAL_PROFILE_TEMPLATES.find((entry) => entry.id === schema.profile);
+  if (!profile) throw new HttpError(400, 'Unknown local profile');
+  const expected = {
+    ...current,
+    profile: profile.id,
+    classes: profile.classes,
+    npuSlots: profile.npuSlots,
+    gpuSlots: profile.gpuSlots,
+    speechRecognition: profile.speechRecognition,
+  };
+  if (!isDeepStrictEqual(schema, expected))
+    throw new HttpError(409, 'Built-in schemas cannot be changed');
+}
+
 // An undo takes back the last apply: the schema state, and the roles and own values of the
 // agents it changed. It goes one step further back each time (up to UNDO_DEPTH) and is not
 // itself put on the history.
@@ -485,11 +559,15 @@ export function nextState(current: State, patch: MatrixPatch, saved: SavedAgent[
     state.revision = current.revision + 1;
     return state;
   } else {
-    if (patch.schema) state.schemas[patch.schema.id] = patch.schema;
-    for (const schema of patch.schemas ?? []) state.schemas[schema.id] = schema;
+    for (const schema of [...(patch.schemas ?? []), ...(patch.schema ? [patch.schema] : [])]) {
+      if (MODEL_TEMPLATES[schema.id])
+        validateBuiltInApplication(schema, current.schemas[schema.id]!);
+      state.schemas[schema.id] = schema;
+    }
     if (patch.removeSchema) {
       if (MODEL_TEMPLATES[patch.removeSchema])
         throw new HttpError(409, 'Built-in schemas cannot be removed');
+      if (!state.schemas[patch.removeSchema]) throw new HttpError(404, 'Unknown schema');
       if (
         patch.removeSchema === state.active ||
         Object.values(state.projects).includes(patch.removeSchema)
@@ -545,6 +623,10 @@ export function changedRows(
       roles.set(row.id, change.role);
     }
     const values = { ...row.modelOverrides };
+    const profile = (row.runtimePolicy as { helena?: { toolProfile?: string } }).helena
+      ?.toolProfile;
+    if (profile && profile !== resolveRow(row, memberships, current).toolProfile)
+      values.toolProfile ??= profile;
     if (change.role !== undefined) values.role = change.role;
     for (const [key, value] of Object.entries(change.values)) {
       if (!MODEL_COLUMNS.includes(key as ModelColumn))
@@ -581,9 +663,39 @@ export function changedRows(
         role: roles.get(row.id),
       };
     })
-    .filter((entry) => entry.changes.length || entry.overrides || entry.role);
+    .filter(
+      (entry) =>
+        entry.changes.length ||
+        entry.overrides ||
+        entry.role ||
+        entry.before.toolProfile !== entry.after.toolProfile,
+    );
 }
-export async function previewMatrix(patch: MatrixPatch) {
+function validateRoleRemoval(
+  current: State,
+  schemas: ModelSchema[],
+  agents: Row[],
+  memberships: Membership[],
+) {
+  for (const schema of schemas) {
+    const previous = current.schemas[schema.id];
+    if (!previous) continue;
+    for (const role of Object.keys(previous.roles).filter((role) => !schema.roles[role])) {
+      if (role === 'general') throw new HttpError(409, 'The general role cannot be removed');
+      if (
+        !schema.roles.general &&
+        agents.some(
+          (agent) =>
+            agent.modelRole === role &&
+            resolveRow(agent, memberships, current).schemaId === schema.id,
+        )
+      )
+        throw new HttpError(409, 'Role is still in use and has no general fallback');
+    }
+  }
+}
+
+export async function previewMatrix(patch: MatrixPatch, copied = false) {
   if (
     patch.undo &&
     (patch.active ||
@@ -609,8 +721,43 @@ export async function previewMatrix(patch: MatrixPatch) {
   const current = await readModelState();
   if (patch.expectedRevision !== current.revision)
     throw new HttpError(409, 'Schema revision changed');
+  for (const schema of schemas) {
+    if (MODEL_TEMPLATES[schema.id]) {
+      validateBuiltInApplication(schema, current.schemas[schema.id]!);
+      continue;
+    }
+    if (!copied) {
+      const catalog = await schemaCatalog();
+      for (const [role, values] of Object.entries(schema.roles)) {
+        if (!isDeepStrictEqual(values, current.schemas[schema.id]?.roles[role]))
+          validateCatalogValues(values, catalog);
+      }
+    }
+  }
   const { agents, memberships } = await inventory();
+  validateRoleRemoval(current, schemas, agents, memberships);
   const next = nextState(current, patch, savedAgents(agents, patch.agents ?? []));
+  const activated = new Set([
+    ...(patch.active ? [patch.active] : []),
+    ...(patch.projects ?? []).flatMap((entry) => (entry.schemaId ? [entry.schemaId] : [])),
+    ...schemas
+      .filter(
+        (schema) =>
+          (schema.id === next.active || Object.values(next.projects).includes(schema.id)) &&
+          !isDeepStrictEqual(schema.roles, current.schemas[schema.id]?.roles),
+      )
+      .map((schema) => schema.id),
+  ]);
+  const custom = [...activated].filter((id) => !MODEL_TEMPLATES[id]);
+  if (custom.length) {
+    const catalog = await schemaCatalog();
+    for (const id of custom) {
+      const schema = next.schemas[id]!;
+      if (!schema.roles.general)
+        throw new HttpError(400, 'Schema needs a general role before applying');
+      for (const values of Object.values(schema.roles)) validateCatalogValues(values, catalog);
+    }
+  }
   const projectIds = new Set(
     (await db.select({ id: project.id }).from(project)).map((entry) => entry.id),
   );
@@ -627,7 +774,22 @@ export async function previewMatrix(patch: MatrixPatch) {
   return {
     revision: current.revision,
     nextRevision: next.revision,
-    affectedAgents: rows.filter((row) => row.changes.length || row.role).length,
+    retainedOverrides: agents
+      .map((agent) => {
+        const after =
+          rows.find((row) => row.row.id === agent.id)?.after ??
+          resolveRow(agent, memberships, next);
+        return {
+          agentId: agent.id,
+          username: agent.username,
+          schemaId: after.schemaId,
+          columns: MODEL_COLUMNS.filter((column) => after.cells[column].source === 'own'),
+        };
+      })
+      .filter((agent) => agent.columns.length),
+    affectedAgents: rows.filter(
+      (row) => row.changes.length || row.role || row.before.toolProfile !== row.after.toolProfile,
+    ).length,
     changes: rows.map(({ row, changes, role }) => ({
       agentId: row.id,
       username: row.username,
@@ -636,8 +798,13 @@ export async function previewMatrix(patch: MatrixPatch) {
     })),
   };
 }
-export async function applyMatrix(patch: MatrixPatch) {
-  const preview = await previewMatrix(patch);
+export async function applyMatrix(
+  patch: MatrixPatch,
+  actorId: string | null = null,
+  action = 'apply',
+  copied = false,
+) {
+  const preview = await previewMatrix(patch, copied);
   await db.transaction(async (tx) => {
     await tx.execute(sql`select pg_advisory_xact_lock(121225)`);
     const [stored] = await tx
@@ -648,6 +815,12 @@ export async function applyMatrix(patch: MatrixPatch) {
     if (current.revision !== patch.expectedRevision)
       throw new HttpError(409, 'Schema revision changed');
     const { agents, memberships } = await inventory();
+    validateRoleRemoval(
+      current,
+      [...(patch.schemas ?? []), ...(patch.schema ? [patch.schema] : [])],
+      agents,
+      memberships,
+    );
     const next = nextState(current, patch, savedAgents(agents, patch.agents ?? []));
     const rows = changedRows(
       agents,
@@ -668,7 +841,12 @@ export async function applyMatrix(patch: MatrixPatch) {
       const cells = entry.after.cells;
       const policy = projectedPolicy(
         entry.row.runtimePolicy as Record<string, unknown>,
-        Object.fromEntries(MODEL_COLUMNS.map((key) => [key, cells[key].value])) as ModelValues,
+        {
+          ...Object.fromEntries(MODEL_COLUMNS.map((key) => [key, cells[key].value])),
+          toolProfile: entry.after.toolProfile,
+        } as ModelValues,
+        entry.overrides ?? entry.row.modelOverrides,
+        entry.before.toolProfile,
       );
       const updated = await tx
         .update(aiAgent)
@@ -686,6 +864,158 @@ export async function applyMatrix(patch: MatrixPatch) {
         .returning({ id: aiAgent.id });
       if (!updated.length) throw new HttpError(409, 'Agent settings changed during apply');
     }
+    await tx.insert(appSetting).values({
+      key: `volition.modelSchemas.audit.${next.revision}`,
+      value: {
+        revision: next.revision,
+        actorId,
+        at: new Date().toISOString(),
+        action: patch.undo ? 'undo' : action,
+        schemaIds: [
+          ...(patch.schemas ?? []).map((schema) => schema.id),
+          ...(patch.schema ? [patch.schema.id] : []),
+          ...(patch.removeSchema ? [patch.removeSchema] : []),
+        ],
+        patch,
+        before: { active: current.active, schemas: current.schemas, projects: current.projects },
+        after: { active: next.active, schemas: next.schemas, projects: next.projects },
+        changes: preview.changes,
+      },
+    });
   });
   return preview;
+}
+
+export async function listSchemas() {
+  const state = await readModelState();
+  const catalog = await schemaCatalog();
+  return {
+    revision: state.revision,
+    active: state.active,
+    runtimes: ['helena', 'claude', 'codex', 'hermes', 'command', 'webhook'].map((runtime) => {
+      const selectable = catalog.some((model) => model.runtime === runtime);
+      return {
+        runtime,
+        selectable,
+        reason: selectable ? null : 'No model catalog for this runtime',
+      };
+    }),
+    schemas: Object.values(state.schemas).map((schema) => ({
+      ...schema,
+      builtIn: !!MODEL_TEMPLATES[schema.id],
+    })),
+    roles: [...MODEL_ROLES],
+    columns: [...MODEL_COLUMNS],
+    catalog,
+  };
+}
+
+export async function getSchema(id: string) {
+  const state = await readModelState();
+  if (!Object.hasOwn(state.schemas, id)) throw new HttpError(404, 'Unknown schema');
+  const schema = state.schemas[id];
+  if (!schema) throw new HttpError(404, 'Unknown schema');
+  return {
+    revision: state.revision,
+    active: state.active,
+    schema: { ...schema, builtIn: !!MODEL_TEMPLATES[id] },
+  };
+}
+
+export async function createSchema(
+  input: {
+    expectedRevision: number;
+    id: string;
+    name: string;
+    description?: string;
+    copyFrom?: string;
+  },
+  actorId: string,
+) {
+  const state = await readModelState();
+  if (input.expectedRevision !== state.revision)
+    throw new HttpError(409, 'Schema revision changed');
+  if (state.schemas[input.id]) throw new HttpError(409, 'Schema id already exists');
+  const source = input.copyFrom ? state.schemas[input.copyFrom] : MODEL_TEMPLATES['nur-lokal'];
+  if (!source) throw new HttpError(404, 'Unknown source schema');
+  const schema: ModelSchema = {
+    ...structuredClone(source),
+    id: input.id,
+    name: input.name.trim(),
+    description: input.description?.trim() ?? (input.copyFrom ? source.description : ''),
+    ...(input.copyFrom ? {} : { roles: {}, classes: {} }),
+  };
+  await applyMatrix({ expectedRevision: input.expectedRevision, schema }, actorId, 'create', true);
+  return getSchema(input.id);
+}
+
+async function ownSchema(id: string, expectedRevision: number) {
+  const state = await readModelState();
+  if (state.revision !== expectedRevision) throw new HttpError(409, 'Schema revision changed');
+  if (MODEL_TEMPLATES[id]) throw new HttpError(409, 'Built-in schemas cannot be changed');
+  const schema = state.schemas[id];
+  if (!schema) throw new HttpError(404, 'Unknown schema');
+  return structuredClone(schema);
+}
+
+export async function updateSchema(
+  id: string,
+  input: { expectedRevision: number; name?: string; description?: string },
+  actorId: string,
+) {
+  const schema = await ownSchema(id, input.expectedRevision);
+  if (input.name === undefined && input.description === undefined)
+    throw new HttpError(400, 'No fields to change');
+  if (input.name !== undefined) schema.name = input.name.trim();
+  if (input.description !== undefined) schema.description = input.description.trim();
+  await applyMatrix({ expectedRevision: input.expectedRevision, schema }, actorId, 'update');
+  return getSchema(id);
+}
+
+export async function updateSchemaRole(
+  id: string,
+  role: string,
+  input: { expectedRevision: number; values: Partial<ModelValues> },
+  actorId: string,
+) {
+  const schema = await ownSchema(id, input.expectedRevision);
+  if (!MODEL_ROLES.includes(role as never)) throw new HttpError(400, 'Unknown role');
+  if (!Object.keys(input.values).length) throw new HttpError(400, 'No cells to change');
+  schema.roles[role] = {
+    ...(schema.roles[role] ?? schema.roles.general ?? MODEL_TEMPLATES['nur-lokal']!.roles.general!),
+    ...input.values,
+  };
+  await applyMatrix({ expectedRevision: input.expectedRevision, schema }, actorId, 'update-role');
+  return getSchema(id);
+}
+
+export async function removeSchemaRole(
+  id: string,
+  role: string,
+  expectedRevision: number,
+  actorId: string,
+) {
+  const schema = await ownSchema(id, expectedRevision);
+  if (!MODEL_ROLES.includes(role as never)) throw new HttpError(400, 'Unknown role');
+  if (role === 'general') throw new HttpError(409, 'The general role cannot be removed');
+  if (!schema.roles[role]) throw new HttpError(404, 'Unknown schema role');
+  delete schema.roles[role];
+  await applyMatrix({ expectedRevision, schema }, actorId, 'delete-role');
+  return getSchema(id);
+}
+
+export async function removeSchema(id: string, expectedRevision: number, actorId: string) {
+  await ownSchema(id, expectedRevision);
+  const result = await applyMatrix({ expectedRevision, removeSchema: id }, actorId, 'delete');
+  return { revision: result.nextRevision, deleted: id };
+}
+
+export async function schemaAudit(limit: number) {
+  const entries = await db
+    .select({ value: appSetting.value })
+    .from(appSetting)
+    .where(sql`${appSetting.key} like 'volition.modelSchemas.audit.%'`)
+    .orderBy(sql`(${appSetting.value}->>'revision')::bigint desc`)
+    .limit(limit);
+  return { entries: entries.map((entry) => entry.value) };
 }

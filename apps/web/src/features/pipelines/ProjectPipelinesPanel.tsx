@@ -21,7 +21,7 @@ import PipelineProjectRow from './components/project/PipelineProjectRow';
 import WorkflowRunLimitSettings from './components/project/WorkflowRunLimitSettings';
 import WorkflowSigningSecretSettings from './components/project/WorkflowSigningSecretSettings';
 import { useNewPipeline } from './hooks/useNewPipeline';
-import { Stack, Text } from '@/design-system';
+import { EmptyState, Notice, Sections, SettingsGroup, Stack } from '@/design-system';
 
 // The workflow builder on a project's Workflows page: the templates of the team's
 // library and the project's own workflows, each turned on or off here with the agents
@@ -45,7 +45,7 @@ export default function ProjectPipelinesPanel() {
   const editable = can('actions', 'edit');
 
   return (
-    <Stack as="section" gap={3} marginBottom={5} padBottom={5} className="border-b">
+    <Sections as="section">
       {can('actions', 'create') && (
         <PageToolbar>
           <PageToolbarSpacer />
@@ -59,29 +59,19 @@ export default function ProjectPipelinesPanel() {
           />
         </PageToolbar>
       )}
-      <div>
-        <h2 className="text-md font-medium">{t('title')}</h2>
-        <Text as="p" size="xs" tone="muted">
-          {t('hint')}
-        </Text>
-        {!editable && (
-          <Text as="p" size="xs" tone="muted" className="mt-1">
-            {t('readOnly')}
-          </Text>
-        )}
-      </div>
-      <WorkflowRunLimitSettings projectKey={projectKey} editable={editable} />
-      <WorkflowSigningSecretSettings projectKey={projectKey} editable={editable} />
+      <SettingsGroup
+        title={t('title')}
+        description={editable ? t('hint') : `${t('hint')} ${t('readOnly')}`}
+      >
+        <WorkflowRunLimitSettings projectKey={projectKey} editable={editable} />
+        <WorkflowSigningSecretSettings projectKey={projectKey} editable={editable} />
+      </SettingsGroup>
       {pipelines.isPending ? null : pipelines.isError ? (
-        <Text as="p" size="sm" tone="danger" className="rounded-md border bg-card px-3 py-2">
-          {t('loadFailed')}
-        </Text>
+        <Notice tone="danger">{t('loadFailed')}</Notice>
       ) : !pipelines.data.length ? (
-        <Text as="p" size="sm" tone="muted" className="rounded-md border bg-card px-3 py-2">
-          {t('empty')}
-        </Text>
+        <EmptyState boxed>{t('empty')}</EmptyState>
       ) : (
-        <Stack gap={3}>
+        <Stack gap={4}>
           {pipelines.data.map((entry) => (
             <PipelineProjectRow
               key={entry.pipeline.id}
@@ -107,6 +97,6 @@ export default function ProjectPipelinesPanel() {
           onClose={() => setCreating(false)}
         />
       )}
-    </Stack>
+    </Sections>
   );
 }

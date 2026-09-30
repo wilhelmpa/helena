@@ -1,6 +1,8 @@
 import type { ComponentProps, ReactNode } from 'react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
+import { GroupHead } from '@/design-system/components/Section';
+import { ListBox } from '@/design-system/components/ListBox';
 
 // The sidebar's list look for the main area and the panels (docs/volition-design-helena-
 // ui.md "Die Sidebar ist die Referenz"): a group label, then 32px rows — 16px icon, 14px
@@ -14,38 +16,24 @@ export function SectionLabel({
   children,
   icon,
   trailing,
-  className,
-  as: Tag = 'h2',
+  as,
 }: {
   children: ReactNode;
   icon?: ReactNode;
   trailing?: ReactNode;
-  className?: string;
   as?: 'h2' | 'h3' | 'div';
 }) {
   return (
-    <Tag
-      className={cn(
-        'flex h-8 items-center gap-1.5 px-2 text-xs font-medium text-muted-foreground [&>svg]:size-3.5 [&>svg]:shrink-0',
-        className,
-      )}
-    >
-      {icon}
-      <span className="min-w-0 flex-1 truncate">{children}</span>
-      {trailing}
-    </Tag>
+    <GroupHead as={as} icon={icon} actions={trailing}>
+      {children}
+    </GroupHead>
   );
 }
 
-// The frame around a group of rows: 1px sidebar-border hairline, 4px inset, rows
-// separated by 1px of air rather than lines — the sidebar menu's own rhythm.
+// The frame around a group of rows: the one box of the design system (ListBox), 4px inset,
+// rows separated by 1px of air rather than lines — the sidebar menu's own rhythm.
 export function RowList({ className, ...props }: ComponentProps<'div'>) {
-  return (
-    <div
-      className={cn('flex flex-col gap-px rounded-md border border-sidebar-border p-1', className)}
-      {...props}
-    />
-  );
+  return <ListBox padded className={cn('ds-row-list', className)} {...props} />;
 }
 
 export const ROW_CLASS =

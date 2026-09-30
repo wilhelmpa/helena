@@ -2,6 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import SettingsSection from '@/components/common/page/SettingsSection';
+import { Sections } from '@/design-system';
 import SecurityAuditPanel from './components/SecurityAuditPanel';
 import OwnerFactorsCard from './components/OwnerFactorsCard';
 import EdgeAccessForm from './components/EdgeAccessForm';
@@ -17,7 +18,7 @@ export default function SecurityStatusSections() {
   const edge = useEdgeAccessQuery();
 
   return (
-    <>
+    <Sections>
       <SettingsSection title={t('auditTitle')} description={t('auditDescription')}>
         <SecurityAuditPanel audit={status.data?.audit} isPending={status.isPending} />
       </SettingsSection>
@@ -32,6 +33,6 @@ export default function SecurityStatusSections() {
       <SettingsSection title={t('signIns.title')} description={t('signIns.description')}>
         <SignInEventsList />
       </SettingsSection>
-    </>
+    </Sections>
   );
 }

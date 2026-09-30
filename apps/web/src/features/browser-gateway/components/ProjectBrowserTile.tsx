@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { AppWindow, Bot, CircleSlash, Hand, Loader2, Moon, UserRound } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRelativeTime } from '@/context/relativeTimeContext';
+import { Card } from '@/design-system';
 import { browserThumbnailUrl, type RouterBrowserState } from '@/utils/browserOverview';
 
 // One project browser on Home's "Browser" overview (design §5: "eine Kachel pro
@@ -70,10 +71,7 @@ export default function ProjectBrowserTile({
     );
 
   return (
-    <Link
-      href={href}
-      className="group flex min-w-0 flex-col overflow-hidden rounded-md border bg-card transition-colors hover:bg-accent"
-    >
+    <Card as={Link} href={href} interactive pad="none" gap={0} className="group overflow-hidden">
       <div className="relative flex aspect-video items-center justify-center overflow-hidden border-b bg-muted text-muted-foreground">
         {showPicture ? (
           // eslint-disable-next-line @next/next/no-img-element -- a live picture from the browser router, not a file Next could optimize.
@@ -115,6 +113,6 @@ export default function ProjectBrowserTile({
         </p>
         <p className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">{status}</p>
       </div>
-    </Link>
+    </Card>
   );
 }

@@ -9,7 +9,8 @@
   align-items: center;
   justify-content: center;
   gap: var(--space-2);
-  border-radius: var(--radius-pill);
+  /* 8px like every control (owner 29.09.); the pill shape is for chips and filters only. */
+  border-radius: var(--radius-field);
   padding: 0 var(--space-3);
   font-size: 13px;
   font-weight: 500;
@@ -136,6 +137,25 @@
   background: var(--danger-soft);
   color: var(--danger);
 }
+.ds-pill[data-size='sm'] {
+  height: 20px;
+  gap: 4px;
+  padding: 0 var(--space-2);
+  font-size: 11px;
+}
+.ds-pill[data-size='sm'] svg {
+  width: 12px;
+  height: 12px;
+}
+.ds-pill[data-fit] {
+  min-width: 0;
+  max-width: 100%;
+  flex: 0 1 auto;
+}
+a.ds-pill,
+button.ds-pill {
+  text-decoration: none;
+}
 .ds-pill-button:hover {
   background: var(--surface-3);
   color: var(--text);
@@ -161,6 +181,25 @@
   resize: vertical;
 }
 .ds-field:focus {
+  background: color-mix(in srgb, var(--surface-2) 70%, var(--surface-3));
+}
+.ds-field-frame {
+  display: flex;
+  min-height: var(--control-h);
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  border-radius: var(--radius-field);
+  background: var(--surface-2);
+  padding: var(--space-1) var(--space-2);
+  color: var(--text);
+  font-size: 13px;
+}
+.ds-field-frame[data-area] {
+  display: block;
+  padding: var(--space-2) var(--space-3);
+}
+.ds-field-frame:focus-within {
   background: color-mix(in srgb, var(--surface-2) 70%, var(--surface-3));
 }
 .ds-field-group {
@@ -209,14 +248,38 @@
 }
 
 /* ── Card, section, labels, empty ────────────────────────────────────────── */
+/* THE box (owner 30.09., docs/ui-framework.md §19): Card, Tile, form groups and info blocks.
+   Its distances are the box tokens of tokens.css, nothing here is a number of its own. */
 .ds-card {
   display: flex;
+  min-width: 0;
   flex-direction: column;
-  gap: var(--space-2);
+  gap: var(--box-gap);
   border-radius: var(--radius-card);
   background: var(--surface-1);
-  padding: var(--space-4);
+  padding: var(--box-pad);
   box-shadow: var(--shadow-card);
+}
+.ds-card[data-layout='row'] {
+  flex-direction: row;
+}
+.ds-card[data-pad='list'] {
+  padding: var(--box-list-pad);
+}
+.ds-card[data-pad='tight'] {
+  padding: var(--box-pad-tight);
+}
+.ds-card[data-pad='roomy'] {
+  padding: var(--box-pad-roomy);
+}
+.ds-card[data-pad='none'] {
+  padding: 0;
+}
+/* A box in a box: its own surface, no shadow, a smaller radius. */
+.ds-card[data-tone='inset'] {
+  border-radius: var(--radius-md);
+  background: var(--surface-2);
+  box-shadow: none;
 }
 .ds-card.is-interactive {
   cursor: pointer;
@@ -225,14 +288,48 @@
 .ds-card.is-interactive:hover {
   background: var(--surface-2);
 }
+.ds-card[data-tone='inset'].is-interactive:hover {
+  background: var(--surface-3);
+}
 .ds-card.is-selected {
   background: var(--surface-3);
+}
+/* A chart node: the box at a size its chart gives it; the content is centred, so the padding is
+   the same on every side whatever the text. */
+.ds-card[data-tone='node'] {
+  position: relative;
+  justify-content: center;
+  gap: 0;
+  padding: 0 var(--box-pad-tight);
+  transition:
+    opacity var(--dur),
+    box-shadow var(--dur);
+}
+.ds-card[data-tone='node']:hover {
+  box-shadow: var(--shadow-raised);
+}
+.ds-card[data-tone='node'][data-selected] {
+  box-shadow:
+    0 0 0 2px var(--accent),
+    var(--shadow-card);
+}
+.ds-card[data-tone='popover'] {
+  padding: var(--box-pad-tight);
+  gap: 2px;
+  box-shadow: var(--shadow-overlay);
+}
+a.ds-card,
+button.ds-card {
+  color: inherit;
+  text-align: start;
+  text-decoration: none;
 }
 .ds-card-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-3);
+  min-height: var(--space-5);
 }
 .ds-card-title {
   min-width: 0;
@@ -240,23 +337,62 @@
   font-size: 13px;
   font-weight: 520;
 }
+.ds-card-eyebrow {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ds-card-actions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--space-2);
+  margin-inline-start: auto;
+}
 .ds-card-meta {
   color: var(--text-3);
   font-size: 12px;
 }
+/* A section: its head (title, one sentence, actions), then its content - the head sits
+   --section-head-gap above it; sections stand --section-gap apart (SettingsGroup too). */
 .ds-section {
   display: flex;
   flex-direction: column;
-  gap: var(--space-5);
+  gap: var(--section-head-gap);
 }
-.ds-section + .ds-section {
-  margin-top: var(--space-6);
+:not(.ds-sections) > .ds-section + .ds-section {
+  margin-top: var(--section-gap);
+}
+.ds-sections {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--section-gap);
+}
+.ds-section-body {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--stack-gap);
 }
 .ds-section-head {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: var(--space-4);
+}
+/* On a phone the action goes under the words instead of squeezing them. */
+@media (max-width: 599px) {
+  .ds-section-head {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-3);
+  }
+  .ds-section-head > .ds-section-actions {
+    align-self: flex-start;
+  }
 }
 .ds-section-title {
   color: var(--text);
@@ -265,17 +401,42 @@
   letter-spacing: -0.01em;
 }
 .ds-section-description {
-  margin-top: 4px;
+  margin-top: 2px;
   color: var(--text-2);
   font-size: 13px;
 }
+/* The small mono label: widget titles, list group heads, column heads, a tile's name. */
 .ds-mono-label {
   color: var(--text-3);
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: var(--label-size);
   font-weight: 500;
   letter-spacing: var(--label-tracking);
   text-transform: uppercase;
+}
+.ds-row-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.ds-group-head {
+  display: flex;
+  height: 32px;
+  align-items: center;
+  gap: var(--space-2);
+  padding-inline: var(--space-2);
+}
+.ds-group-head-label {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ds-mono-meta {
+  color: var(--text-3);
+  font-family: var(--font-mono);
+  font-size: var(--label-size);
 }
 .ds-empty {
   display: flex;
@@ -289,8 +450,10 @@
   text-align: center;
 }
 .ds-empty[data-fill] {
-  flex: 1;
-  min-height: 240px;
+  min-height: max(240px, 60vh);
+}
+.ds-empty[data-boxed] {
+  padding: var(--space-6) var(--space-4);
 }
 .ds-empty-icon {
   display: inline-flex;
@@ -372,6 +535,16 @@
 }
 .ds-status-dot[data-tone='error'] {
   background: var(--danger);
+}
+.ds-status-dot[data-tone='unread'] {
+  background: var(--accent);
+}
+.ds-status-dot[data-tone='quiet'] {
+  background: var(--text-3);
+  opacity: 0.6;
+}
+.ds-status-dot[data-bare] {
+  margin-inline-start: 0;
 }
 @keyframes ds-pulse {
   50% {
@@ -700,33 +873,39 @@
 }
 
 /* ── Settings ────────────────────────────────────────────────────────────── */
+/* One settings group (owner 30.09.: every group looks the same - SettingsGroup and the older
+   SettingsSection/SettingsCard): its title and one sentence over ONE box that holds its rows. */
 .ds-settings-group {
   display: flex;
   flex-direction: column;
-  border-radius: var(--radius-card);
-  background: var(--surface-1);
-  box-shadow: var(--shadow-card);
+  gap: var(--section-head-gap);
 }
-.ds-settings-group + .ds-settings-group {
-  margin-top: var(--space-5);
+:not(.ds-sections) > .ds-settings-group + .ds-settings-group,
+:not(.ds-sections) > .ds-settings-section + .ds-settings-section {
+  margin-top: var(--section-gap);
 }
-.ds-settings-group-head {
-  padding: var(--space-4) var(--space-4) var(--space-2);
-}
-.ds-settings-group-head h3 {
+/* The head of a settings group is the head of every section (Section: 15/520 + 13). */
+.ds-settings-group-head h3,
+.ds-settings-section-head h3 {
   color: var(--text);
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 520;
+  letter-spacing: -0.01em;
 }
-.ds-settings-group-head p {
+.ds-settings-group-head p,
+.ds-settings-section-head p {
   margin-top: 2px;
   color: var(--text-2);
-  font-size: 12px;
+  font-size: 13px;
 }
 .ds-settings-rows {
   display: flex;
   flex-direction: column;
+  overflow: hidden;
   container-type: inline-size;
+  border-radius: var(--radius-card);
+  background: var(--surface-1);
+  box-shadow: var(--shadow-card);
 }
 .ds-settings-row {
   display: flex;
@@ -790,8 +969,9 @@
   flex-direction: column;
   align-items: stretch;
 }
-.ds-settings-group > .ds-more {
-  padding: 0 var(--space-4) var(--space-3);
+.ds-settings-rows > .ds-more {
+  border-top: 1px solid var(--line);
+  padding: var(--space-2) var(--space-4) var(--space-3);
 }
 /* Narrow — a phone, or a settings group in a narrow overlay: the control goes below. */
 @container (max-width: 440px) {
@@ -1154,7 +1334,6 @@
 .ds-issue-list {
   height: 100%;
   overflow-y: auto;
-  padding: 16px var(--page-pad-x) var(--page-pad-bottom);
 }
 .ds-issue-list-group + .ds-issue-list-group {
   margin-top: 12px;
@@ -1182,11 +1361,29 @@
   color: var(--text-3);
 }
 /* A group's tasks in one framed box, like the table (owner, 28.09., O43/O45). */
-.ds-issue-list-box {
+.ds-issue-list-box,
+.ds-list-box,
+.ds-doc-card {
   overflow: hidden;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-card);
   background: var(--surface-1);
+  box-shadow: var(--shadow-card);
+}
+/* A box whose rows have a hover fill of their own keeps a little air to its edge. */
+.ds-list-box[data-padded] {
+  padding: var(--box-list-pad);
+}
+/* A row inside a padded box has the box's radius less its padding. */
+.ds-list-box[data-padded] .ds-list-row {
+  border-radius: var(--radius-md);
+}
+/* The rows of a Wissen/Belege list in their box: a little air to the box's edge. */
+.ds-list-box > .ds-column-heads {
+  padding-top: var(--space-3);
+  padding-bottom: var(--space-1);
+}
+.ds-list-box > .ds-knowledge-rows {
+  padding: var(--space-2);
 }
 /* One row in fixed columns: key · title (+ other properties) · status · priority · due ·
    labels and people. The fixed ones keep their width when empty, so nothing jumps. */
@@ -1756,9 +1953,9 @@ a.ds-run-card:hover {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  border: 1px solid var(--line);
   border-radius: var(--radius-card);
   background: var(--surface-1);
+  box-shadow: var(--shadow-card);
 }
 .ds-activity-row {
   display: flex;
@@ -1835,7 +2032,7 @@ a.ds-run-card:hover {
   display: flex;
   min-height: 0;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: var(--stack-gap);
 }
 /* Helena › Ziele (owner, 28.09., O11): the goals as cards on the left, the chosen one on the
    right. Below 900px they take turns: the list, or the goal with a way back. */
@@ -1843,32 +2040,16 @@ a.ds-run-card:hover {
   display: grid;
   align-items: start;
   grid-template-columns: minmax(280px, 380px) minmax(0, 1fr);
-  gap: var(--space-5);
+  gap: var(--stack-gap);
 }
 .ds-goals-list {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
+  gap: var(--stack-gap);
 }
 .ds-goal-card {
-  display: flex;
-  min-width: 0;
-  flex-direction: column;
-  gap: var(--space-1);
+  /* The box is the design system's Card; a sub-goal steps in. */
   margin-inline-start: calc(var(--ds-goal-depth, 0) * 20px);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-lg);
-  background: var(--surface-1);
-  padding: var(--space-3);
-  text-align: start;
-  transition: background-color 0.15s;
-}
-.ds-goal-card:hover {
-  background: var(--surface-2);
-}
-.ds-goal-card[aria-current='true'] {
-  border-color: var(--accent);
-  background: var(--surface-2);
 }
 .ds-goal-card-head {
   display: flex;
@@ -1944,10 +2125,6 @@ a.ds-run-card:hover {
 }
 .ds-goals-detail {
   min-width: 0;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-lg);
-  background: var(--surface-1);
-  padding: var(--space-5);
 }
 .ds-goal-detail {
   display: flex;
@@ -2021,8 +2198,8 @@ a.ds-run-card:hover {
   .ds-goal-card {
     margin-inline-start: calc(var(--ds-goal-depth, 0) * 12px);
   }
-  .ds-goals-detail {
-    padding: var(--space-4);
+  .ds-goals-detail[data-pad] {
+    padding: var(--box-pad);
   }
 }
 
@@ -2031,9 +2208,18 @@ a.ds-run-card:hover {
 .ds-settings-section {
   display: flex;
   width: 100%;
-  max-width: 880px;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: var(--section-head-gap);
+}
+/* The body of a settings group (SettingsCard): the card of every box (owner 30.09.). */
+.ds-settings-card {
+  overflow: hidden;
+  border-radius: var(--radius-card);
+  background: var(--surface-1);
+  box-shadow: var(--shadow-card);
+}
+.ds-settings-card.divide-y > * + * {
+  border-color: var(--line);
 }
 .ds-settings-section-head {
   display: flex;
@@ -2041,21 +2227,11 @@ a.ds-run-card:hover {
   justify-content: space-between;
   gap: var(--space-4);
 }
-.ds-settings-section-head h3 {
-  color: var(--text);
-  font-size: 14px;
-  font-weight: 560;
-}
-.ds-settings-section-head p {
-  margin-top: 2px;
-  color: var(--text-3);
-  font-size: 12px;
-}
 .ds-settings-section-body {
   display: flex;
   min-width: 0;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: var(--stack-gap);
 }
 /* A task as a page: the page template gives the gutter; the task scrolls in it. */
 .ds-issue-page-scroll {
@@ -2095,7 +2271,7 @@ a.ds-run-card:hover {
   display: flex;
   width: 100%;
   flex-direction: column;
-  gap: var(--space-5);
+  gap: var(--stack-gap);
 }
 /* Touch screens have no hover: a list row's "…" stays visible, after the date. */
 @media (hover: none) {
@@ -2107,21 +2283,20 @@ a.ds-run-card:hover {
   }
 }
 
-/* Aufgaben → Tabelle: a card in the page gutter. */
+/* Aufgaben → Tabelle: a card on the page's own padding (the page template pads, the view adds
+   no gutter of its own - owner 30.09., O107). */
 .ds-work-table {
   height: 100%;
   overflow: auto;
-  padding: var(--space-4) var(--page-pad-x);
 }
 .ds-work-table-card {
   overflow: clip;
-  border: 1px solid var(--line);
   border-radius: var(--radius-card);
   background: var(--surface-1);
+  box-shadow: var(--shadow-card);
 }
 .ds-work-calendar {
   gap: var(--space-4);
-  padding: var(--space-4) var(--page-pad-x);
 }
 
 /* A department's budgets in its settings card. */
@@ -2205,13 +2380,11 @@ a.ds-run-card:hover {
 
 /* Ziele (features/initiatives): the goals of a project as one framed list. */
 .ds-goal-list-pad {
-  padding: 0 var(--page-pad-x) var(--page-pad-bottom);
+  min-width: 0;
 }
 .ds-goal-list {
-  overflow: hidden;
-  border-radius: var(--radius-card);
-  background: var(--surface-1);
-  box-shadow: var(--shadow-card);
+  /* The box is the ListBox's (ds-list-box). */
+  list-style: none;
 }
 .ds-goal-list > li + li {
   border-top: 1px solid var(--line);
@@ -2291,9 +2464,6 @@ a.ds-run-card:hover {
   justify-content: flex-end;
 }
 @media (max-width: 900px) {
-  .ds-goal-list-pad {
-    padding: 0 var(--space-4) var(--space-6);
-  }
   .ds-goal-row {
     grid-template-columns: 8px minmax(0, 1fr) 96px;
   }
@@ -2661,6 +2831,8 @@ a.ds-run-card:hover {
    and the toolbar (owner, 30.09., O91). */
 .ds-board {
   margin-inline: calc(var(--space-3) * -1);
+  /* The same at the top: the heading of the columns starts the page's padding below the bar. */
+  margin-top: calc(var(--space-3) * -1);
 }
 /* Wide enough for a title on one or two lines (owner, 28.09.: narrow cards, titles
    breaking). On a phone a column is 82% of the screen, so the next one shows at the edge
@@ -2831,11 +3003,6 @@ a.ds-run-card:hover {
    heading the size of a task's title, the text the size of a task's description. */
 .ds-overlay-body.ds-knowledge-preview .ds-knowledge-preview-body {
   padding: 0;
-}
-/* The file overlay's inner distance is small (owner 29.09., O75): the file sits close to the
-   edge, one surface, no second frame around preview or text. */
-.ds-overlay-body.ds-knowledge-preview {
-  padding: var(--space-3) var(--space-3) var(--space-4);
 }
 .ds-knowledge-preview .md-content {
   font-size: 15px;
@@ -3079,7 +3246,7 @@ a.ds-run-card:hover {
 }
 /* Team › Liste: the pool under the toolbar, the width of the page. */
 .ds-team-pool {
-  padding-top: var(--space-2);
+  padding: var(--space-2);
 }
 
 /* Where a project setting stands against Ava's default (InheritedMark, Auftrag 117). */
@@ -3124,8 +3291,8 @@ a.ds-run-card:hover {
   display: flex;
   align-items: flex-start;
   gap: var(--space-3);
-  padding: var(--space-3) var(--space-4);
-  border-radius: var(--radius-lg);
+  padding: var(--box-pad-tight) var(--box-pad);
+  border-radius: var(--radius-card);
   background: var(--surface-2);
   box-shadow: inset 0 0 0 1px var(--line);
 }
@@ -3243,6 +3410,12 @@ a.ds-run-card:hover {
   height: 12px;
   flex: none;
   color: var(--text-3);
+}
+.ds-matrix-value {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  padding: 2px var(--space-2);
 }
 .ds-matrix-role {
   padding: 0;
@@ -3378,6 +3551,15 @@ a.ds-run-card:hover {
 .ds-matrix-group-row:hover .ds-td {
   background: transparent;
 }
+/* On a narrow screen the rows are cards of their own, so the box around them gives way. */
+@media (max-width: 900px) {
+  .ds-list-box.ds-matrix-box {
+    overflow: visible;
+    padding: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+}
 @media (max-width: 900px) {
   .ds-table:not([data-stack='off']) .ds-tr.ds-matrix-group-row {
     margin: var(--space-3) 0 0;
@@ -3473,4 +3655,113 @@ a.ds-run-card:hover {
   line-height: 1.6;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
+}
+
+/* A document on its page (Wissen, owner 30.09., O107/O108): in ONE box like every main surface,
+   on the same edges as the header - the title, its line, the editor - and its links and
+   history in cards beside it (under it on a narrow page). */
+.ds-doc-page {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  align-items: start;
+  gap: var(--space-4);
+}
+.ds-doc-card {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--overlay-pad);
+  overflow: visible;
+}
+.ds-doc-head {
+  display: flex;
+  flex-direction: column;
+}
+.ds-doc-title {
+  color: var(--text);
+  font-size: 24px;
+  font-weight: 520;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+.ds-doc-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  color: var(--text-3);
+  font-size: 12px;
+}
+.ds-doc-meta-fill {
+  flex: 1;
+}
+.ds-doc-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+.ds-doc-body {
+  min-width: 0;
+  color: var(--text-2);
+}
+.ds-doc-aside {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+.ds-doc-backlink {
+  display: block;
+  width: 100%;
+  border-radius: var(--radius-field);
+  padding: var(--space-2) var(--space-3);
+  color: var(--text-2);
+  font-size: 12px;
+  text-align: start;
+}
+.ds-doc-backlink:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+@media (max-width: 1099px) {
+  .ds-doc-page {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* A pane beside another in a split page (the inbox / mail list, the document tree): the box's
+   surface, a line at the edge that meets the other pane. One rule for every split pane. */
+.ds-pane {
+  border-inline-end: 1px solid var(--line);
+  background: var(--surface-1);
+}
+/* The head row of a table that scrolls under it: it stays on top, on the table box's surface. */
+.ds-sticky-head {
+  position: sticky;
+  top: 0;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-1);
+}
+/* Below 768px a split pane is the whole page: no edge line. */
+@media (max-width: 767px) {
+  .ds-pane {
+    border-inline-end: 0;
+  }
+}
+
+/* The symbol tile of a list row (IconTile): 32px, the inset surface, no frame. */
+.ds-icon-tile {
+  display: inline-flex;
+  width: 32px;
+  height: 32px;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  background: var(--surface-2);
+  color: var(--text-3);
 }

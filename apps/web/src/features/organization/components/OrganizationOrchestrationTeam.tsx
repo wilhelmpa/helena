@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl';
 import { AgentPausedBadge } from '@/components/common/agent-chat/AgentPausedBadge';
 import type { OrganizationAgent } from '@/lib/api/endpoints/organization';
 import { organizationAgentRole, type OrganizationAgentRole } from '../organizationTree';
-import { Box, Inline, Stack, Text } from '@/design-system';
+import { Box, Card, Inline, Pill, Stack, Text } from '@/design-system';
 
 const ROLES: OrganizationAgentRole[] = ['coordinator', 'specialist', 'reviewer', 'pool'];
 
@@ -21,7 +21,7 @@ export default function OrganizationOrchestrationTeam({ agents }: { agents: Orga
   const t = useTranslations('organization');
 
   return (
-    <Stack as="section" gap={4} pad={4} className="rounded-md border bg-card">
+    <Card as="section" gap={4}>
       <div>
         <h2 className="text-md font-medium">{t('orchestration.teamTitle')}</h2>
         <Text as="p" size="xs" tone="muted">
@@ -40,7 +40,7 @@ export default function OrganizationOrchestrationTeam({ agents }: { agents: Orga
                 {t('values.none')}
               </Text>
             ) : (
-              <ul className="divide-y rounded-md border">
+              <Card as="ul" tone="inset" pad="none" className="divide-y">
                 {members.map((agent) => (
                   <Box
                     as="li"
@@ -62,20 +62,12 @@ export default function OrganizationOrchestrationTeam({ agents }: { agents: Orga
                     <Inline gap={1} wrap align="stretch">
                       <AgentPausedBadge agent={agent} />
                       {agent.capabilities.map((capability) => (
-                        <Text
-                          as="span"
-                          size="xs"
-                          tone="muted"
-                          key={capability}
-                          className="rounded-sm border px-1.5 py-0.5"
-                        >
-                          {capability}
-                        </Text>
+                        <Pill key={capability}>{capability}</Pill>
                       ))}
                     </Inline>
                   </Box>
                 ))}
-              </ul>
+              </Card>
             )}
           </Stack>
         );
@@ -83,6 +75,6 @@ export default function OrganizationOrchestrationTeam({ agents }: { agents: Orga
       <Text as="p" size="xs" tone="muted">
         {t('orchestration.editRoles')}
       </Text>
-    </Stack>
+    </Card>
   );
 }

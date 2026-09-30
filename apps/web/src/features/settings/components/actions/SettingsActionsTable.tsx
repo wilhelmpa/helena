@@ -3,7 +3,7 @@ import type { ActionDef } from '@/lib/api/endpoints/actions';
 import type { CustomField } from '@/lib/api/endpoints/customFields';
 import type { ProjectDetail } from '@/lib/api/endpoints/projects';
 import { SettingsActionRow } from './SettingsActionRow';
-import { Table, Th, Tr } from '@/design-system';
+import { Table, Th, Tr, Card } from '@/design-system';
 
 interface SettingsActionsTableProps {
   actions: ActionDef[];
@@ -28,7 +28,7 @@ export function SettingsActionsTable({
   const tCommon = useTranslations('common');
 
   return (
-    <div className="overflow-hidden rounded-md border bg-card">
+    <Card pad="none" className="overflow-hidden">
       <Table stack={false} className="min-w-[680px] table-fixed">
         <colgroup>
           <col className="w-[44%]" />
@@ -57,6 +57,6 @@ export function SettingsActionsTable({
           ))}
         </tbody>
       </Table>
-    </div>
+    </Card>
   );
 }

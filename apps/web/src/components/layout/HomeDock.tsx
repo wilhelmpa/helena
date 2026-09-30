@@ -9,6 +9,7 @@ import { useAgentWorkStates } from '@/hooks/useAgentWorkStates';
 import { useMainChat } from '@/features/ai-chat/hooks/useMainChat';
 import type { ChatThreadRequest } from '@/context/shellContext';
 import { requestDockVoice } from '@/features/voice/utils/dockVoice';
+import { useOrbClearance } from '@/utils/orbClearance';
 
 // Bottom right there is only the orb (owner, 28.09.): the real voice orb (Shipnotes
 // particles, WebGL; a still orb in the same look while the tab is hidden or motion is
@@ -48,7 +49,10 @@ export default function HomeDock({
   );
   // Hidden where the orb is the page (Home) and over the terminals, whose last line and key
   // bar it would cover.
-  if (pathname === '/' || pathname === '/terminals' || open) return null;
+  const shown = !(pathname === '/' || pathname === '/terminals' || open);
+  // Where it floats, what scrolls under it ends with room for it (utils/orbClearance.ts).
+  useOrbClearance(shown);
+  if (!shown) return null;
   return (
     <button
       type="button"

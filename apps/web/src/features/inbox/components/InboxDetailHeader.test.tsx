@@ -78,7 +78,8 @@ describe('InboxDetailHeader', () => {
     assert.equal(link.getAttribute('title'), issue.openAsPage);
     assert.equal(link.tabIndex, 0);
     assert.equal(link.getAttribute('target'), null);
-    assert.equal(document.querySelector('button'), null);
+    // No way back on a wide screen: only the tab that names the task, no other button.
+    assert.equal(document.querySelector('button:not([role="tab"])'), null);
     assert.ok(document.querySelector('#root')?.textContent?.includes('TEST-42'));
   });
 

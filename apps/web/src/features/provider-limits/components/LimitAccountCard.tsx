@@ -1,5 +1,6 @@
 'use client';
 
+import { ListBox } from '@/design-system';
 import Link from 'next/link';
 import { Gauge } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -38,13 +39,8 @@ export default function LimitAccountCard({
   const login = name.login(account);
   const windows = orderedWindows(account.windows);
   const resetAt = account.nextResetAt ? Date.parse(account.nextResetAt) : null;
-  return (
-    <div
-      className={cn(
-        'flex min-w-0 flex-col gap-px',
-        framed && 'rounded-md border border-sidebar-border bg-card p-1',
-      )}
-    >
+  const rows = (
+    <>
       <Link href={LIMITS_ADMIN_HREF} className={cn(ROW_CLASS, ROW_INTERACTIVE_CLASS)}>
         <Gauge />
         <span className="min-w-0 shrink truncate font-medium">{name.provider(account)}</span>
@@ -81,6 +77,13 @@ export default function LimitAccountCard({
           <span>{t('resetCredits', { count: account.resetCredits })}</span>
         )}
       </p>
-    </div>
+    </>
+  );
+  return framed ? (
+    <ListBox padded className="flex min-w-0 flex-col gap-px">
+      {rows}
+    </ListBox>
+  ) : (
+    <div className="flex min-w-0 flex-col gap-px">{rows}</div>
   );
 }

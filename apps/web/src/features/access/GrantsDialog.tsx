@@ -1,5 +1,6 @@
 'use client';
 
+import { Card } from '@/design-system';
 import { useMemo, useState } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -153,7 +154,7 @@ export function GrantsDialog({
             {rows.length === 0 ? (
               <p className="text-sm text-muted-foreground">{t('empty')}</p>
             ) : (
-              <ul className="divide-y overflow-y-auto rounded-md border border-sidebar-border bg-card">
+              <Card as="ul" pad="none" className="divide-y overflow-y-auto">
                 {rows.map((row, index) => (
                   <li
                     key={`${keyOf(row)}-${row.service ?? ''}-${index}`}
@@ -206,7 +207,7 @@ export function GrantsDialog({
                     </Button>
                   </li>
                 ))}
-              </ul>
+              </Card>
             )}
             <div className="flex items-center gap-2">
               <Select value={adding} onValueChange={setAdding}>

@@ -218,3 +218,21 @@ test('a failed control channel cannot discard completed tool results', async () 
   expect(session!.items.map((item) => item.message.role)).toEqual(['user', 'assistant', 'tool']);
   expect(JSON.stringify(session!.items)).toContain('Committed result');
 });
+
+test('a new instruction after a length continuation discards the previous partial answer', async () => {
+  const f = fixture([
+    { text: 'Old partial. ', finishReason: 'length' },
+    { text: 'Old continuation. ', finishReason: 'length' },
+    { text: 'Updated answer.' },
+  ]);
+  const emit = f.sink.emit.bind(f.sink);
+  f.sink.emit = (event) => {
+    emit(event);
+    if (event.type === 'text' && event.delta === 'Old continuation. ') f.push('inject');
+  };
+  const result = await runLoop(f.input);
+  expect(result).toMatchObject({ status: 'success', text: 'Updated answer.', steps: 3 });
+  const stored = await f.sessions.load(result.sessionId);
+  expect(JSON.stringify(stored!.items)).toContain('Old partial. ');
+  expect(JSON.stringify(stored!.items)).toContain('Use the new instruction.');
+});

@@ -42,7 +42,7 @@ export function TableSectionHeader({
       id={dropId}
       disabled={disabled}
       onDrop={onDrop}
-      className="group/section flex items-center justify-between bg-muted/40 px-4 py-1.5"
+      className="group/section flex items-center justify-between bg-muted px-4 py-1.5"
     >
       <button
         type="button"

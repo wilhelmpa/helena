@@ -3,10 +3,10 @@ import {
   verifyNpuDecisionReadout,
   type NpuDecisionReadoutReport,
 } from '../modules/local-ai/npu-eval';
-import { retrySocketClosed, type SocketRetry } from './local-ai-eval-retry';
+import { retryLocalAiEval, type EvalRetry } from './local-ai-eval-retry';
 // The local AI task-class evals from the command line (docs/helena-decisions/local-ai-platform.md
 // §7): the same cases Administrator → Server → Lokale KI runs, against any OpenAI-compatible
-// server, without Helena's database. For measuring models before they are registered.
+// server. Registered servers persist valid evaluations when DATABASE_URL is configured.
 //
 //   bun apps/api/src/scripts/local-ai-eval.ts --base http://127.0.0.1:13305/api/v1 \
 //     --key-file /etc/helena/local-ai.key --model Qwen3.6-35B-A3B-GGUF \
@@ -87,7 +87,7 @@ interface Row {
   error: string | null;
   seconds: number;
   npuReadout: NpuDecisionReadoutReport | null;
-  retries: SocketRetry[];
+  retries: EvalRetry[];
 }
 
 const rows: Row[] = [];
@@ -102,9 +102,9 @@ for (const entry of [...BUILTIN_TASK_CLASSES, DECISIONS_LOCAL_AI_CLASS]) {
   let result: LocalAiEvalResult | null = null;
   let error: string | null = null;
   let npuReadout: NpuDecisionReadoutReport | null = null;
-  const retries: SocketRetry[] = [];
+  const retries: EvalRetry[] = [];
   try {
-    result = await retrySocketClosed(
+    result = await retryLocalAiEval(
       async () => {
         if (process.argv.includes('--npu'))
           npuReadout = await verifyNpuDecisionReadout({
@@ -136,12 +136,31 @@ for (const entry of [...BUILTIN_TASK_CLASSES, DECISIONS_LOCAL_AI_CLASS]) {
       },
       (retry) => {
         retries.push(retry);
-        say(`    ${entry.id}: socket closed; retrying once after ${retry.delayMs} ms`);
+        const detail =
+          retry.reason === 'socket_closed'
+            ? `socket closed; retrying once after ${retry.delayMs} ms`
+            : `${retry.reason}; attempt ${retry.attempt} after ${retry.delayMs} ms`;
+        say(`    ${entry.id}: ${detail} (${retry.error})`);
       },
     );
   } catch (caught) {
     if (caught instanceof NpuDecisionReadoutError) npuReadout = caught.report;
     error = caught instanceof Error ? caught.message : String(caught);
+  }
+  if (result && !process.env.DATABASE_URL)
+    say(`    ${entry.id}: evaluation not saved (DATABASE_URL is not configured)`);
+  if (result && process.env.DATABASE_URL) {
+    const { storeCliEval } = await import('./local-ai-eval-store');
+    const saved = await storeCliEval({
+      baseUrl: base,
+      model: target,
+      entry,
+      result,
+      ranAt: new Date(started),
+    });
+    say(
+      `    ${entry.id}: ${saved ? 'evaluation saved' : 'server not registered uniquely; evaluation not saved'}`,
+    );
   }
   rows.push({
     classId: entry.id,
@@ -170,8 +189,10 @@ for (const entry of [...BUILTIN_TASK_CLASSES, DECISIONS_LOCAL_AI_CLASS]) {
     say(
       `    NPU readout: timeout ${npuReadout.timeoutMs} ms; ${npuReadout.timeouts.length} timeouts; ${npuReadout.failures.length} decision failures; ${npuReadout.errors.length} backend errors`,
     );
-  if (retries.length)
-    say(`    socket retry: ${result ? 'completed' : 'failed'} (${retries.length})`);
+  if (retries.length) {
+    const kind = retries.every((retry) => retry.reason === 'socket_closed') ? 'socket' : 'backend';
+    say(`    ${kind} retry: ${result ? 'completed' : 'failed'} (${retries.length})`);
+  }
 }
 
 const report = `${JSON.stringify({ base, rows }, null, 2)}\n`;

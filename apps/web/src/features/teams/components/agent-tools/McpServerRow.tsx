@@ -1,3 +1,4 @@
+import { IconTile } from '@/design-system';
 import { KeyRound, Lock, Pencil, Server, Trash2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { McpServer } from '@/lib/api/endpoints/agentMcpServers';
@@ -31,9 +32,9 @@ export function McpServerRow({
 
   return (
     <li className="flex items-start gap-3 py-3">
-      <div className="flex size-8 shrink-0 items-center justify-center rounded-md border border-sidebar-border bg-background text-muted-foreground">
+      <IconTile>
         <Server className="size-4" />
-      </div>
+      </IconTile>
       <div className="min-w-0 flex-1 space-y-1">
         <div className="flex items-center gap-2">
           <span

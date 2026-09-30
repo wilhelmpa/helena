@@ -54,8 +54,8 @@ class VaultIntegrityTest(unittest.TestCase):
 
     def test_backup_report_states_preserve_other_checks(self):
         for state, code in (('disabled', 'backup_disabled'), ('no_snapshot', 'backup_no_snapshot'),
-                            ('stale', 'backup_stale'), ('unavailable', 'backup_unchecked'),
-                            ('error', 'backup_unchecked')):
+                            ('stale', 'backup_stale'), ('unavailable', 'backup_unavailable'),
+                            ('error', 'backup_check_failed')):
             with self.subTest(state=state):
                 report = audit.scan(self.root, self.index, [], backup={'state': state}, git=self.git)
                 self.assertEqual(report['state'], 'down')
@@ -81,6 +81,11 @@ class VaultIntegrityTest(unittest.TestCase):
                 self.assertEqual(audit.backup_state(), {'state': 'error'})
         with patch.object(audit, 'call', side_effect=OSError('test socket missing')):
             self.assertEqual(audit.backup_state(), {'state': 'error'})
+
+    def test_no_backup_check_is_pending(self):
+        result = audit.scan(self.root, self.index, [], backup=None, git=self.git)
+        self.assertEqual(result['state'], 'unknown')
+        self.assertEqual(result['findings'], [{'code': 'backup_unchecked', 'path': 'Vault', 'detail': ''}])
 
     def test_findings_write_report_with_successful_exit(self):
         with tempfile.TemporaryDirectory() as output:

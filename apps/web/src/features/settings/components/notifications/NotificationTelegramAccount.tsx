@@ -7,7 +7,7 @@ import SettingsSection from '@/components/common/page/SettingsSection';
 import { useTelegramAccountLabel, useTelegramAccountQuery } from '@/services/telegram.service';
 import { useTranslations } from 'next-intl';
 
-import { Inline, Text } from '@/design-system';
+import { Card, Inline, Text } from '@/design-system';
 
 // Where the member's Telegram notifications go. There is nothing to fill in here:
 // the chat comes from the Telegram account connected to their profile, which is the
@@ -27,12 +27,7 @@ export default function NotificationTelegramAccount() {
 
   return (
     <SettingsSection title={t('telegramAccount')} description={t('telegramAccountHint')}>
-      <Inline
-        gap={4}
-        justify="between"
-        pad={3}
-        className="flex items-center justify-between rounded-md border bg-card sm:max-w-xl"
-      >
+      <Card layout="row" pad="tight" gap={4} className="items-center justify-between sm:max-w-xl">
         <Inline gap={3} className="flex min-w-0 items-center">
           <Send className="size-4 shrink-0 text-muted-foreground" />
           <Text as="span" size="sm" className="truncate">
@@ -44,7 +39,7 @@ export default function NotificationTelegramAccount() {
             <Link href="/account/accounts">{tAccounts('connect')}</Link>
           </Button>
         )}
-      </Inline>
+      </Card>
     </SettingsSection>
   );
 }

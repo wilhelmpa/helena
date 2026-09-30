@@ -1,5 +1,6 @@
 'use client';
 
+import { Pill } from '@/design-system';
 import { useTranslations } from 'next-intl';
 import { Gauge } from 'lucide-react';
 import type { AutopilotLevel } from '@/lib/api/endpoints/autopilot';
@@ -21,17 +22,14 @@ export default function AutopilotLevelBadge({
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <span
+        <Pill
+          tone={level === 3 ? 'warning' : 'neutral'}
+          icon={<Gauge className="size-3" />}
           aria-label={t('badgeTitle', { level, name })}
-          className={cn(
-            'inline-flex h-5 shrink-0 items-center gap-0.5 rounded-sm border border-sidebar-border bg-card px-1 text-xs font-medium text-muted-foreground tabular-nums',
-            level === 3 && 'text-status-waiting',
-            className,
-          )}
+          className={cn('shrink-0 tabular-nums', className)}
         >
-          <Gauge className="size-3" />
           {t('badge', { level })}
-        </span>
+        </Pill>
       </TooltipTrigger>
       <TooltipContent>{t('badgeTitle', { level, name })}</TooltipContent>
     </Tooltip>

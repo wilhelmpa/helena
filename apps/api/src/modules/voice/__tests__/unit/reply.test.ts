@@ -1,6 +1,6 @@
-import { describe, expect, it } from 'bun:test';
+import { describe, expect, it, test } from 'bun:test';
 import type { LocalAiEvalContext } from '@helena/sdk';
-import { committed, HAND_OVER_TOOL, isTextHandOver } from '../../reply-request';
+import { committed, HAND_OVER_TOOL, isTextHandOver, voiceReplyRequest } from '../../reply-request';
 import { evaluateVoiceReply, VOICE_REPLY_CASES, VOICE_REPLY_THRESHOLD } from '../../reply-eval';
 
 const MARKERS = [
@@ -96,4 +96,31 @@ describe('voice reply eval', () => {
     expect(result.cases.find((item) => item.id === 'hello')?.passed).toBe(false);
     expect(result.score).toBeLessThan(VOICE_REPLY_THRESHOLD);
   });
+});
+
+test('voice prefix and hand-over schema stay identical between turns', () => {
+  const input = {
+    agentName: 'Home',
+    personName: 'Test',
+    language: 'de',
+    now: '10:00',
+    turns: [],
+    question: 'Hallo',
+  };
+  const first = voiceReplyRequest(input);
+  const next = voiceReplyRequest({ ...input, now: '10:01', question: 'Wie spät ist es?' });
+  expect(next.system).toBe(first.system);
+  expect(next.tools).toEqual(first.tools);
+  expect(next.prompt).toContain('10:01');
+  expect(first.maxTokens).toBeLessThanOrEqual(128);
+  expect(first.thinking).toBe('off');
+  const long = voiceReplyRequest({
+    ...input,
+    turns: Array.from({ length: 20 }, () => ({
+      role: 'user' as const,
+      text: 'a'.repeat(1200),
+      mine: false,
+    })),
+  });
+  expect(long.prompt.length).toBeLessThan(3000);
 });

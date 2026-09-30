@@ -1,22 +1,19 @@
 'use client';
 
-import { X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { TeamProject, TeamRole } from '@/lib/api/endpoints/teams';
 import { formatDate, formatDateTime } from '@/utils/dates';
-import { useExitOnEscape } from '@/hooks/useExitOnEscape';
 import { useTeamProjectQuery } from '@/services/teams.service';
 import { useSession } from '@/lib/auth-client';
 import ListSkeleton from '@/components/common/skeleton/ListSkeleton';
-import { Button } from '@/components/ui/button';
+import { Overlay, Stack } from '@/design-system';
 import TeamProjectActions from './TeamProjectActions';
 import TeamProjectMembers from './TeamProjectMembers';
 import TeamProjectStats from './TeamProjectStats';
 
-// One project of the team in a right-hand side panel (the same surface the role
-// editor uses): what the project is and what the reader may do with it in the
-// header, then how its issues stand and who can reach it. Escape or a backdrop click
-// closes it.
+// One project of the team in the one overlay on the right (the same surface the role editor
+// uses): what the project is and what the reader may do with it in the head, then how its
+// issues stand and who can reach it. Esc closes it.
 export default function TeamProjectPanel({
   teamId,
   teamName,
@@ -31,11 +28,8 @@ export default function TeamProjectPanel({
   onClose: () => void;
 }) {
   const t = useTranslations('teams.panel');
-  const tCommon = useTranslations('common');
   const { data: detail } = useTeamProjectQuery(teamId, project.id);
   const { data: session } = useSession();
-
-  useExitOnEscape(onClose);
 
   // An owner or manager of the team manages the members of every project it owns, and
   // so does an owner of the project itself; anyone else acts through the member
@@ -50,84 +44,58 @@ export default function TeamProjectPanel({
   const canReadInvites = runsProject || viewer?.permissions.members_invite.read === true;
 
   return (
-    <div
-      data-slot="sheet-overlay"
-      className="fixed inset-0 z-40 flex bg-black/20"
-      onClick={(e) => e.target === e.currentTarget && onClose()}
+    <Overlay
+      label={project.name}
+      tabs={[{ id: 'project', label: `${project.key} · ${project.name}` }]}
+      actions={
+        <TeamProjectActions teamId={teamId} teamRole={teamRole} project={project} viewer={viewer} />
+      }
+      onClose={onClose}
+      className="ds-team-project-overlay"
+      width="wide"
     >
-      <div
-        data-slot="sheet-content"
-        className="ml-auto flex h-full w-full flex-col border-s border-sidebar-border bg-background sm:w-[680px] sm:max-w-[92vw]"
-      >
-        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-sidebar-border px-4 py-4">
-          <div className="flex min-w-0 items-center gap-2">
-            <span className="shrink-0 rounded-sm bg-secondary px-1.5 py-0.5 text-xs font-medium text-secondary-foreground">
-              {project.key}
-            </span>
-            <h2 className="truncate text-md font-semibold">{project.name}</h2>
-          </div>
-          <div className="flex shrink-0 items-center gap-1">
-            <TeamProjectActions
+      <Stack gap={6}>
+        {!detail ? (
+          <ListSkeleton rows={5} rowClassName="h-12" />
+        ) : (
+          <>
+            <section className="space-y-3">
+              {project.description && (
+                <p dir="auto" className="text-sm text-foreground">
+                  {project.description}
+                </p>
+              )}
+              <div className="flex flex-wrap items-baseline justify-between gap-2 text-xs text-muted-foreground">
+                <span>{t('created', { date: formatDate(project.createdAt) })}</span>
+                <span>
+                  {t('lastActivity', {
+                    value: detail.lastActivityAt
+                      ? formatDateTime(detail.lastActivityAt)
+                      : t('noActivity'),
+                  })}
+                </span>
+              </div>
+              <TeamProjectStats stats={detail.stats} />
+            </section>
+
+            <TeamProjectMembers
               teamId={teamId}
-              teamRole={teamRole}
-              project={project}
-              viewer={viewer}
+              projectId={project.id}
+              projectKey={project.key}
+              ownerCount={project.owners.length}
+              viewerId={session?.user.id}
+              projectName={project.name}
+              teamName={teamName}
+              canEdit={canEdit}
+              canDelete={canDelete}
+              canAdd={canAdd}
+              canInvite={canInvite}
+              canGrantOwner={runsProject}
+              canReadInvites={canReadInvites}
             />
-            <Button
-              variant="ghost"
-              size="icon"
-              className="size-7"
-              onClick={onClose}
-              title={tCommon('close')}
-            >
-              <X />
-            </Button>
-          </div>
-        </div>
-
-        <div className="flex-1 space-y-6 overflow-y-auto px-4 py-4">
-          {!detail ? (
-            <ListSkeleton rows={5} rowClassName="h-12" />
-          ) : (
-            <>
-              <section className="space-y-3">
-                {project.description && (
-                  <p dir="auto" className="text-sm text-foreground">
-                    {project.description}
-                  </p>
-                )}
-                <div className="flex flex-wrap items-baseline justify-between gap-2 text-xs text-muted-foreground">
-                  <span>{t('created', { date: formatDate(project.createdAt) })}</span>
-                  <span>
-                    {t('lastActivity', {
-                      value: detail.lastActivityAt
-                        ? formatDateTime(detail.lastActivityAt)
-                        : t('noActivity'),
-                    })}
-                  </span>
-                </div>
-                <TeamProjectStats stats={detail.stats} />
-              </section>
-
-              <TeamProjectMembers
-                teamId={teamId}
-                projectId={project.id}
-                projectKey={project.key}
-                ownerCount={project.owners.length}
-                viewerId={session?.user.id}
-                projectName={project.name}
-                teamName={teamName}
-                canEdit={canEdit}
-                canDelete={canDelete}
-                canAdd={canAdd}
-                canInvite={canInvite}
-                canGrantOwner={runsProject}
-                canReadInvites={canReadInvites}
-              />
-            </>
-          )}
-        </div>
-      </div>
-    </div>
+          </>
+        )}
+      </Stack>
+    </Overlay>
   );
 }

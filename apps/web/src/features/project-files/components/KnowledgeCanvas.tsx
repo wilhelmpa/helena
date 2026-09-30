@@ -34,7 +34,7 @@ import {
   StickyNote,
   type LucideIcon,
 } from 'lucide-react';
-import { IconButton, Page, Pill } from '@/design-system';
+import { IconButton, Page, Pill, Card } from '@/design-system';
 import FilePickerDialog from '@/components/common/files/FilePickerDialog';
 import IssuePickerDialog from '@/components/common/overlay/IssuePickerDialog';
 import {
@@ -82,9 +82,9 @@ const borderColors = ['#645274', '#395e50', '#65483d', '#6b562b'];
 
 function CanvasCard({ id, data }: NodeProps<CardNode>) {
   return (
-    <div
-      className="group h-full w-full rounded-xl border bg-card px-4 py-3.5 shadow-sm"
-      style={{ borderColor: data.color }}
+    <Card
+      className="group h-full w-full"
+      style={{ boxShadow: `inset 0 0 0 1px ${data.color}, var(--shadow-card)` }}
     >
       <Handle
         type="target"
@@ -137,7 +137,7 @@ function CanvasCard({ id, data }: NodeProps<CardNode>) {
         id="bottom"
         className="!size-1.5 !border-0 !bg-muted-foreground !opacity-0 group-hover:!opacity-100"
       />
-    </div>
+    </Card>
   );
 }
 

@@ -1,5 +1,6 @@
 'use client';
 
+import { Card } from '@/design-system';
 import { useState } from 'react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
@@ -186,14 +187,14 @@ export default function MailAccountDialog({
           </Button>
         </div>
         {googlePicked ? (
-          <div className="flex flex-col items-start gap-2 rounded-md border bg-card p-3">
+          <Card pad="tight" gap={2} className="items-start">
             <p className="text-sm text-muted-foreground">{tAccess('gmailHint')}</p>
             <Button asChild size="sm" variant="outline">
               <Link href={accessPath('google')} onClick={onClose}>
                 {t('googleConnect')}
               </Link>
             </Button>
-          </div>
+          </Card>
         ) : google ? (
           <div className="flex flex-col gap-1">
             <p className="text-xs text-muted-foreground">{t('googleHint')}</p>
@@ -233,14 +234,14 @@ export default function MailAccountDialog({
               ))}
             </div>
             {result && (
-              <ul className="flex flex-col gap-1 rounded-md border p-2 text-xs">
+              <Card tone="inset" as="ul" pad="tight" gap={1} className="text-xs">
                 <li className={result.imap ? 'text-destructive' : ''}>
                   IMAP: {result.imap ?? t('ok')}
                 </li>
                 <li className={result.smtp ? 'text-destructive' : ''}>
                   SMTP: {result.smtp ?? t('ok')}
                 </li>
-              </ul>
+              </Card>
             )}
             <div className="flex flex-wrap justify-end gap-2">
               <Button

@@ -140,6 +140,7 @@ export class HelenaClient implements HelenaApi {
         'x-api-key': this.apiKey,
         ...(body !== undefined && { 'content-type': 'application/json' }),
         ...(this.ids.runId !== null && { 'x-helena-run': String(this.ids.runId) }),
+        ...(this.ids.messageId !== null && { 'x-volition-message': String(this.ids.messageId) }),
       },
       ...(body !== undefined && { body: JSON.stringify(body) }),
       signal: AbortSignal.timeout(timeoutMs),

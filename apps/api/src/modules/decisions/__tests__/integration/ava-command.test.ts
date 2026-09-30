@@ -10,12 +10,14 @@ import { TOOL_SELECTION_CLASS } from '../../tool-selection-questions';
 let server: ReturnType<typeof Bun.serve>;
 let uncertain = false;
 let calls = 0;
+let decisionDelayMs = 0;
 beforeAll(() => {
   server = Bun.serve({
     hostname: '127.0.0.1',
     port: 0,
     async fetch(request) {
       calls++;
+      if (decisionDelayMs) await Bun.sleep(decisionDelayMs);
       const body = (await request.json()) as {
         state: { prompt?: string };
         questions: Record<string, { criteria: Record<string, unknown> }>;
@@ -60,6 +62,7 @@ beforeEach(async () => {
   await resetDb();
   uncertain = false;
   calls = 0;
+  decisionDelayMs = 0;
 });
 
 async function setup(classId = AVA_COMMAND_CLASS) {
@@ -126,6 +129,7 @@ async function setup(classId = AVA_COMMAND_CLASS) {
 
 test('a spoken command creates exactly one task through the existing guarded tool', async () => {
   const { api, agentId, column } = await setup();
+  decisionDelayMs = 100;
   const sent = await api
     .projects({ projectKey: 'AVA' })
     ['ai-agents']({ agentId })
@@ -134,6 +138,19 @@ test('a spoken command creates exactly one task through the existing guarded too
       via: 'voice',
     });
   expect(sent.status).toBe(200);
+  expect((await api.projects({ projectKey: 'AVA' }).issues.get()).data).toHaveLength(0);
+  const thread = api
+    .projects({ projectKey: 'AVA' })
+    ['ai-agents']({ agentId })
+    .threads({ threadId: sent.data!.threadId });
+  let done = false;
+  for (let i = 0; i < 200; i++) {
+    const messages = (await thread.messages.get()).data!.items;
+    done = messages.some((message) => message.role === 'assistant' && message.durationMs != null);
+    if (done) break;
+    await Bun.sleep(10);
+  }
+  expect(done).toBe(true);
   const tasks = await api.projects({ projectKey: 'AVA' }).issues.get();
   expect(tasks.data?.map((task) => task.title)).toEqual(['Budget prüfen']);
   expect(calls).toBeGreaterThanOrEqual(3);

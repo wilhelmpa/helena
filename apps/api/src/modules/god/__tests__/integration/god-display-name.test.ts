@@ -4,6 +4,7 @@ import { api, app } from '#tests/helpers/app';
 import { resetDb } from '#tests/helpers/db';
 import { addUser, setup } from '../helpers';
 import { bootstrapHomeAgent } from '../../../../scripts/bootstrap-home-agent';
+import { normalizeOpenApiResponse } from '../../../../openapi';
 
 describe('display name setting', () => {
   beforeEach(resetDb);
@@ -16,7 +17,21 @@ describe('display name setting', () => {
     await app.handle(new Request('http://localhost/api/auth/get-session'));
     expect((await auth.$context).appName).toBe('Atlas');
     const spec = await app.handle(new Request('http://localhost/docs/json'));
-    expect(await spec.json()).toMatchObject({ info: { title: 'Atlas API' } });
+    const document = (await spec.json()) as {
+      info: { title: string };
+      tags: { name: string; description: string }[];
+    };
+    expect(document.info.title).toBe('Atlas API');
+    expect(document.tags.find((tag) => tag.name === 'Routines')?.description).toBe(
+      'Tasks created or reopened for an agent on a schedule, run by the Atlas engine',
+    );
+    const branded = await normalizeOpenApiResponse(new Request('http://localhost/docs/json'), {
+      info: { title: 'Ava API', description: 'Available Avatars in Ava and Helena' },
+      paths: {},
+    });
+    expect(branded).toMatchObject({
+      info: { title: 'Atlas API', description: 'Available Avatars in Atlas and Atlas' },
+    });
   });
 
   it('lets only the administrator write a valid name', async () => {

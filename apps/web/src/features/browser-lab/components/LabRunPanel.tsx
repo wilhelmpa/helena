@@ -1,3 +1,4 @@
+import { Card } from '@/design-system';
 import Link from 'next/link';
 import { Loader2, MessageSquare, RotateCcw, Square } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
@@ -145,7 +146,7 @@ export function LabRunPanel({
       )}
 
       {run.steps.length > 0 && (
-        <ol className="divide-y divide-border/60 rounded-md border border-sidebar-border bg-card">
+        <Card as="ol" pad="none" className="divide-y divide-border/60">
           {run.steps.map((step, index) => (
             <li key={index} className="flex items-start gap-2 px-3 py-2 text-sm">
               <span className="w-5 shrink-0 text-end text-xs text-muted-foreground">
@@ -170,11 +171,11 @@ export function LabRunPanel({
               </span>
             </li>
           ))}
-        </ol>
+        </Card>
       )}
 
       {!active && (run.summary || run.result?.url) && (
-        <div className="space-y-1 rounded-md border border-sidebar-border bg-card px-3 py-2 text-sm">
+        <Card pad="tight" gap={1} className="text-sm">
           {run.summary && <p className="whitespace-pre-wrap">{run.summary}</p>}
           {run.result?.url && (
             <p dir="ltr" className="truncate text-xs text-muted-foreground">
@@ -192,7 +193,7 @@ export function LabRunPanel({
               {run.result.candidates.map((c) => `${c.element} (${c.probability})`).join(', ')}
             </p>
           ) : null}
-        </div>
+        </Card>
       )}
       {chatHref && (
         <Link
@@ -208,7 +209,7 @@ export function LabRunPanel({
         <img
           src={run.finalFramePath ? vaultFileUrl(run.finalFramePath) : run.finalFrame!}
           alt={t('finalFrame')}
-          className="w-full rounded-md border border-sidebar-border"
+          className="w-full rounded-md ring-1 ring-border"
         />
       )}
     </div>

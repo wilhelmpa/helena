@@ -1,3 +1,4 @@
+import { Card, Notice } from '@/design-system';
 import { useLocale, useTranslations } from 'next-intl';
 import { ExternalLink, Loader2, PlugZap } from 'lucide-react';
 import type { CredentialEntry } from '@/lib/api/endpoints/credentials';
@@ -135,7 +136,7 @@ export function CredentialDecisionModelFields({
       </div>
 
       {backend?.location === 'local' && !local && (
-        <div className="flex items-start justify-between gap-4 rounded-md border border-sidebar-border bg-card px-3 py-2">
+        <Card layout="row" pad="tight" gap={4} className="items-start justify-between">
           <div className="space-y-0.5">
             <Label htmlFor="decision-private">{t('allowPrivate')}</Label>
             <p className="text-xs text-muted-foreground">{t('allowPrivateHint')}</p>
@@ -145,7 +146,7 @@ export function CredentialDecisionModelFields({
             checked={value.allowPrivateAddress}
             onCheckedChange={(allowPrivateAddress) => onChange({ allowPrivateAddress })}
           />
-        </div>
+        </Card>
       )}
 
       {!local && (
@@ -203,9 +204,7 @@ export function CredentialDecisionModelFields({
           )}
         </div>
       ) : local ? (
-        <p className="rounded-md border border-sidebar-border bg-card px-3 py-2 text-sm text-muted-foreground">
-          {t('localAiKey')}
-        </p>
+        <Notice>{t('localAiKey')}</Notice>
       ) : (
         <CredentialSecretInput
           label={t('key')}

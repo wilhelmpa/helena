@@ -29,6 +29,7 @@ import {
   queueRuntimeRequest,
 } from '#modules/agents/runtime-requests/service';
 import { mergeSameSubscriptions } from './merge';
+import { runtimeOfPolicy } from '#modules/model-availability/runtime';
 
 // How much of each subscription's limits is used (docs/helena-decisions/provider-limits.md).
 // The numbers come from the usage-limit sources (@helena/sdk usage-limits.ts): the runners
@@ -246,8 +247,14 @@ export async function listProviderLimits(now: Date = new Date()): Promise<{
         )
         .orderBy(asc(aiAgent.id))
     : [];
+  const active = await db
+    .select({ policy: aiAgent.runtimePolicy })
+    .from(aiAgent)
+    .where(eq(aiAgent.template, false));
+  const runtimes = new Set(active.map((agent) => runtimeOfPolicy(agent.policy)));
   const accounts: ProviderLimitView[] = [];
   for (const row of rows) {
+    if (row.source === 'hermes' && !runtimes.has('hermes')) continue;
     const agents = links
       .filter((link) => link.limitId === row.id)
       .map((link) => ({ id: link.id, name: link.name }));
@@ -318,7 +325,13 @@ export async function agentLimitState(agentId: number, now = new Date()): Promis
   if (ids.length === 0) return 'unknown';
   const { accounts } = await listProviderLimits(now);
   const mine = new Set(ids.map((row) => row.id));
-  return worstState(accounts.filter((account) => mine.has(account.id)).map((a) => a.state));
+  return worstState(
+    accounts
+      .filter(
+        (account) => mine.has(account.id) || account.agents.some((agent) => agent.id === agentId),
+      )
+      .map((a) => a.state),
+  );
 }
 
 // ── Asking ──────────────────────────────────────────────────────────────────────────────

@@ -1,5 +1,6 @@
 'use client';
 
+import { FieldFrame, Card } from '@/design-system';
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { X } from 'lucide-react';
@@ -42,7 +43,7 @@ export default function RecipientField({
   return (
     <div className="relative flex items-start gap-2 text-sm">
       <span className="w-10 shrink-0 pt-1.5 text-muted-foreground">{label}</span>
-      <div className="flex min-h-8 flex-1 flex-wrap items-center gap-1 rounded-md border px-1.5 py-1">
+      <FieldFrame className="flex-1">
         {value.map((item) => (
           <span
             key={item.address}
@@ -88,9 +89,15 @@ export default function RecipientField({
             }}
           />
         )}
-      </div>
+      </FieldFrame>
       {suggestions.length > 0 && text.trim().length >= 2 && (
-        <ul className="absolute inset-x-12 top-full z-20 mt-1 rounded-md border bg-popover p-1 shadow-md">
+        <Card
+          as="ul"
+          tone="popover"
+          pad="list"
+          gap={0}
+          className="absolute inset-x-12 top-full z-20 mt-1"
+        >
           {suggestions.map((item) => (
             <li key={item.address}>
               <button
@@ -107,7 +114,7 @@ export default function RecipientField({
               </button>
             </li>
           ))}
-        </ul>
+        </Card>
       )}
     </div>
   );

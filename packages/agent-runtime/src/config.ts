@@ -28,7 +28,7 @@ export type ToolProfile = 'assistent' | 'recherche' | 'coder-lite' | 'voll';
 
 export interface ToolSettings {
   profile?: ToolProfile;
-  // Helena MCP tools every profile carries directly, by name; the rest are found with find_tools.
+  // Additional MCP tools offered directly alongside the profile's core tools.
   core?: string[];
   // Seconds one tool call may take, a shell command, and all browser tools of the command
   // together (the owner's hard limit per browser task).

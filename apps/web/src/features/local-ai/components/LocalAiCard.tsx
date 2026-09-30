@@ -9,6 +9,7 @@ import { Switch } from '@/components/ui/switch';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import type { LocalAiStatus, LocalAiUnit } from '@/lib/api/endpoints/localAi';
 import { cn } from '@/lib/utils';
+import { Card, Grid, Inline } from '@/design-system';
 import {
   useLocalAiSettings,
   useLocalAiStatus,
@@ -66,22 +67,22 @@ export default function LocalAiCard({
     : [];
 
   return (
-    <section
-      className={cn(
-        '@container flex flex-col gap-3 rounded-md border bg-card p-4 text-sm',
-        className,
-      )}
-      aria-labelledby="local-ai-card-title"
-    >
-      <header className="flex items-center gap-2">
-        <Cpu className="size-4 text-muted-foreground" aria-hidden />
-        <h2 id="local-ai-card-title" className="text-md font-semibold">
+    <Card
+      as="section"
+      headingAs="h2"
+      className={cn('@container text-sm', className)}
+      aria-label={t('title')}
+      title={
+        <Inline gap={2}>
+          <Cpu className="size-4 text-muted-foreground" aria-hidden />
           {t('title')}
-        </h2>
-        <StatusBadge status={badge.status} className="text-xs">
-          {badge.label}
-        </StatusBadge>
-        <div className="ms-auto flex items-center gap-2">
+          <StatusBadge status={badge.status} className="text-xs">
+            {badge.label}
+          </StatusBadge>
+        </Inline>
+      }
+      actions={
+        <>
           {update.isPending && <LoaderCircle className="size-4 animate-spin" aria-hidden />}
           <Switch
             aria-label={t('card.master')}
@@ -89,11 +90,11 @@ export default function LocalAiCard({
             disabled={!data || noServer || update.isPending}
             onCheckedChange={(enabled) => update.mutate({ enabled }, { onError })}
           />
-        </div>
-      </header>
-
+        </>
+      }
+    >
       {data && (
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+        <Grid columns={3}>
           {UNITS.map((unit) => (
             <UnitTile
               key={unit}
@@ -103,11 +104,11 @@ export default function LocalAiCard({
               onToggle={(allowed) => update.mutate({ units: { [unit]: allowed } }, { onError })}
             />
           ))}
-        </div>
+        </Grid>
       )}
 
       {classes.length > 0 && (
-        <ul className="divide-y rounded-md border" aria-label={t('card.classes')}>
+        <Card as="ul" tone="inset" pad="none" className="divide-y" aria-label={t('card.classes')}>
           {classes.map((entry) => {
             const toggle = classToggle(entry);
             return (
@@ -137,7 +138,7 @@ export default function LocalAiCard({
               </li>
             );
           })}
-        </ul>
+        </Card>
       )}
 
       <JevToggle />
@@ -157,7 +158,7 @@ export default function LocalAiCard({
           <ExternalLink className="size-3" aria-hidden />
         </Link>
       </footer>
-    </section>
+    </Card>
   );
 }
 
@@ -178,7 +179,7 @@ function UnitTile({
   const loaded = entry.loaded.map((model) => shortModel(model.modelId));
   const memory = unit === 'gpu' ? gpuMemory(status.units.gpu) : null;
   return (
-    <div className="flex min-w-0 flex-col gap-1 rounded-md border px-3 py-2">
+    <Card tone="inset" pad="tight" gap={1}>
       <div className="flex items-center gap-2">
         <span className="font-medium">{t(`units.${unit}`)}</span>
         {unit !== 'gpu' && (
@@ -213,6 +214,6 @@ function UnitTile({
       ) : (
         <span className="text-xs text-muted-foreground">{t('card.noModel')}</span>
       )}
-    </div>
+    </Card>
   );
 }

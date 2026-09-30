@@ -28,7 +28,7 @@ export default function ProjectsSection() {
       ) : list.length === 0 ? (
         <RowEmpty icon={<FolderKanban />}>{t('projects.empty')}</RowEmpty>
       ) : (
-        <Grid min="tile" gap={3}>
+        <Grid min="tile">
           {list.map((project) => (
             <HomeProjectCard
               key={project.id}

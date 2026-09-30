@@ -21,7 +21,7 @@ import {
   getMailClassification,
 } from '@/lib/api/endpoints/mailTriage';
 import { cn } from '@/lib/utils';
-import { Inline, Stack, Text } from '@/design-system';
+import { Inline, Text, Card, PillButton } from '@/design-system';
 
 const key = (threadId: number) => ['mail-classification', threadId] as const;
 
@@ -90,12 +90,7 @@ export function MailClassificationCard({ threadId }: { threadId: number }) {
   const suggested = classification.actions.filter((action) => action.note === 'suggested');
 
   return (
-    <Stack
-      gap={2}
-      padX={3}
-      padY={2}
-      className="rounded-md border border-sidebar-border bg-card text-sm"
-    >
+    <Card pad="tight" gap={2} className="text-sm">
       <Inline gap={2} wrap>
         <Split className="size-4 text-muted-foreground" aria-hidden />
         <Select
@@ -146,18 +141,14 @@ export function MailClassificationCard({ threadId }: { threadId: number }) {
             ))}
           </SelectContent>
         </Select>
-        <button
-          type="button"
-          className={cn(
-            'inline-flex h-7 items-center gap-1 rounded-md border border-sidebar-border px-2 text-xs hover:bg-accent',
-            classification.needsReply ? 'text-foreground' : 'text-muted-foreground',
-          )}
+        <PillButton
+          tone={classification.needsReply ? 'active' : 'neutral'}
+          icon={<Reply aria-hidden />}
           aria-pressed={classification.needsReply === true}
           onClick={() => correct.mutate({ needsReply: !classification.needsReply })}
         >
-          <Reply className="size-3.5" aria-hidden />
           {classification.needsReply ? t('needsReply') : t('noReply')}
-        </button>
+        </PillButton>
         {classification.status !== 'classified' && (
           <Text as="span" size="xs" tone="muted">
             {classification.status === 'failed' ? t('failed') : t('unsure')}
@@ -192,6 +183,6 @@ export function MailClassificationCard({ threadId }: { threadId: number }) {
           )}
         </Inline>
       )}
-    </Stack>
+    </Card>
   );
 }

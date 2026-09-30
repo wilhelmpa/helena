@@ -1,5 +1,6 @@
 'use client';
 
+import { Card } from '@/design-system';
 import Link from 'next/link';
 import { RefreshCw } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -48,7 +49,7 @@ export default function AgentProfileSync({
   const checkedAt = sync.profile?.checkedAt ?? null;
 
   return (
-    <div className="space-y-2 rounded-md border bg-card p-3">
+    <Card pad="tight" gap={2}>
       <div className="flex min-h-8 flex-wrap items-center gap-x-3 gap-y-1">
         <StatusBadge status={syncStatus(sync.state)} className="text-sm">
           {t(`state.${sync.state}`)}
@@ -135,6 +136,6 @@ export default function AgentProfileSync({
           )}
         </p>
       )}
-    </div>
+    </Card>
   );
 }

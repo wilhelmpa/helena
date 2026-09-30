@@ -63,6 +63,7 @@ import {
   Tr,
   type Space,
   StatusBox,
+  Sections,
 } from '@/design-system';
 import { HELENA_STATUSES } from '@/utils/helenaStatus';
 
@@ -94,7 +95,7 @@ function Blocks() {
   const [dialog, setDialog] = useState(false);
   const sample = t('sample');
   return (
-    <Stack gap={6}>
+    <Sections>
       <Section title={t('tokens')}>
         <Stack gap={4}>
           <Specimen name="surface / text">
@@ -430,7 +431,7 @@ function Blocks() {
           </Card>
         </Stack>
       </Section>
-    </Stack>
+    </Sections>
   );
 }
 

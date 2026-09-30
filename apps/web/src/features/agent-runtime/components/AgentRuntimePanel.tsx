@@ -1,5 +1,6 @@
 'use client';
 
+import { CodeBlock } from '@/design-system';
 import { useId, useState } from 'react';
 import {
   CheckCircle2,
@@ -80,9 +81,7 @@ function VersionRow({ teamId, agentId }: { teamId: number; agentId: number }) {
       ) : version.error ? (
         <RuntimeError error={version.error} />
       ) : (
-        <p className="rounded-md bg-card px-3 py-2 font-mono text-xs" dir="ltr">
-          {version.data?.detail ?? version.data?.version ?? '—'}
-        </p>
+        <CodeBlock>{version.data?.detail ?? version.data?.version ?? '—'}</CodeBlock>
       )}
     </section>
   );
@@ -130,12 +129,7 @@ function Health({ teamId, agentId }: { teamId: number; agentId: number }) {
               {format.relativeTime(new Date(health.data.checkedAt))}
             </span>
           </p>
-          <pre
-            dir="ltr"
-            className="max-h-96 overflow-auto rounded-md bg-card p-3 font-mono text-xs leading-relaxed whitespace-pre-wrap"
-          >
-            {health.data.report}
-          </pre>
+          <CodeBlock>{health.data.report}</CodeBlock>
         </div>
       ) : (
         <p className="text-sm text-muted-foreground">{t('healthHint')}</p>
@@ -195,12 +189,7 @@ function Curator({
           {status.data?.paused && (
             <p className="text-sm text-muted-foreground">{t('curatorPaused')}</p>
           )}
-          <pre
-            dir="ltr"
-            className="overflow-auto rounded-md bg-card p-3 font-mono text-xs leading-relaxed whitespace-pre-wrap"
-          >
-            {status.data?.report}
-          </pre>
+          <CodeBlock>{status.data?.report}</CodeBlock>
           {canEdit && (
             <form
               className="flex flex-wrap items-center gap-2"
@@ -296,12 +285,7 @@ function Logs({ teamId, agentId }: { teamId: number; agentId: number }) {
       ) : !logs.data?.lines.length ? (
         <p className="text-sm text-muted-foreground">{t('logEmpty')}</p>
       ) : (
-        <pre
-          dir="ltr"
-          className="max-h-128 overflow-auto rounded-md bg-card p-3 font-mono text-xs leading-relaxed whitespace-pre-wrap"
-        >
-          {logs.data.lines.join('\n')}
-        </pre>
+        <CodeBlock>{logs.data.lines.join('\n')}</CodeBlock>
       )}
     </section>
   );

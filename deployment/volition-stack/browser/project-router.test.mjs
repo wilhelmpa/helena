@@ -279,7 +279,8 @@ describe("project browser router", () => {
     viewer.addEventListener("message", (event) => {
       if (typeof event.data === "string") messages.push(JSON.parse(event.data));
     });
-    await until(() => browser.sent("Network.enable").length > 0);
+    await until(() => messages.some((message) => message.type === "tab"));
+    assert.ok(browser.sent("Network.enable").length > 0);
     browser.emit("Network.requestWillBeSent", {
       requestId: "doc-1", frameId: PAGE, type: "Document",
       request: { url: "https://example.com/private?token=secret" },

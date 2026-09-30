@@ -122,12 +122,6 @@
     },
     "language": "Sprache",
     "languageDescription": "Die Sprache der Oberfläche, deiner E-Mails und des Telegram-Bots.",
-    "headerLayout": "Kopfzeile",
-    "headerLayoutDescription": "Einreihig fasst Kopfzeile und Ansichts-Tabs in einer Zeile zusammen und verschiebt Sprache, Design und Konto in die Seitenleiste. Klassisch behält Kopfzeile und Ansichts-Tabs in zwei Zeilen, mit diesen Reglern in der Kopfzeile.",
-    "headerLayoutOptions": {
-      "single": "Einreihig",
-      "classic": "Klassisch (zweizeilig)"
-    },
     "timezone": "Zeitzone",
     "timezoneDescription": "Wähle die Zeitzone, in der du arbeitest.",
     "timezonePlaceholder": "Zeitzone auswählen",

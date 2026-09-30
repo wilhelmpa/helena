@@ -93,6 +93,6 @@ test('native deploy restarts the router from the checkout containing both helper
   assert.ok(!deploy.includes('restart+=(helena-owner-tmux.service)'));
   assert.ok(!setup.includes('restart helena-owner-tmux'));
   const nginx = await readFile(new URL('./nginx-owner-terminal.conf', import.meta.url), 'utf8');
-  assert.ok(nginx.includes('location ~ ^/(backend/|api/)?owner-terminal/local/'));
+  assert.ok(nginx.includes('location ~ ^/(backend/|api/)?owner-terminal/(local|ava)/'));
   assert.ok(nginx.includes('local-qwen36|local-qwen38|local-flash'));
 });

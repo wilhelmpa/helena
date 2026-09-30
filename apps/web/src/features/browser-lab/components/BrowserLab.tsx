@@ -1,5 +1,6 @@
 'use client';
 
+import { Card, EmptyState } from '@/design-system';
 import Link from 'next/link';
 import { useCallback, useState, useSyncExternalStore } from 'react';
 import { ExternalLink, KeyRound } from 'lucide-react';
@@ -36,7 +37,7 @@ const serverOrigin = () => null;
 function NoKey() {
   const t = useTranslations('browserLab.noKey');
   return (
-    <div className="space-y-3 rounded-md border border-sidebar-border bg-card p-4">
+    <Card>
       <p className="text-sm font-medium">{t('title')}</p>
       <p className="text-sm text-muted-foreground">{t('body')}</p>
       <ul className="space-y-1 text-sm">
@@ -69,7 +70,7 @@ function NoKey() {
           {t('toAccess')}
         </Link>
       </Button>
-    </div>
+    </Card>
   );
 }
 
@@ -140,11 +141,11 @@ export default function BrowserLab({ scope }: { scope: LabScope }) {
       <div className="min-w-0 space-y-4">
         {noConnections && <NoKey />}
         {options.data.agents.length === 0 ? (
-          <p className="rounded-md border border-sidebar-border bg-card p-4 text-sm text-muted-foreground">
+          <EmptyState boxed fill={false}>
             {t('noAgents')}
-          </p>
+          </EmptyState>
         ) : (
-          <div className="rounded-md border border-sidebar-border bg-card p-4">
+          <Card>
             <LabForm
               options={options.data}
               draft={draft}
@@ -153,10 +154,10 @@ export default function BrowserLab({ scope }: { scope: LabScope }) {
               running={start.isPending}
               canStandard={scope.kind === 'project'}
             />
-          </div>
+          </Card>
         )}
         {current && (
-          <div className="rounded-md border border-sidebar-border bg-card p-4">
+          <Card>
             <LabRunPanel
               run={current}
               chatHref={
@@ -168,12 +169,12 @@ export default function BrowserLab({ scope }: { scope: LabScope }) {
               onCancel={() => cancel.mutate(current.id)}
               onRerun={() => rerun(current)}
             />
-          </div>
+          </Card>
         )}
       </div>
       <div className="flex min-w-0 flex-col gap-4">
         {showLive && (
-          <div className="flex h-[min(70vh,44rem)] min-h-80 flex-col overflow-hidden rounded-md border border-sidebar-border bg-card">
+          <Card pad="none" className="h-[min(70vh,44rem)] min-h-80 overflow-hidden">
             <WorkspaceBrowserLive
               base={base}
               active
@@ -181,7 +182,7 @@ export default function BrowserLab({ scope }: { scope: LabScope }) {
               followAgent={followAgent}
               className="flex-1"
             />
-          </div>
+          </Card>
         )}
         <section className="space-y-2">
           <h2 className="text-md font-medium">{t('table.title')}</h2>

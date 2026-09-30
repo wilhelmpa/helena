@@ -131,6 +131,20 @@ export function Inline({
   );
 }
 
+// The sections of a page under each other, --section-gap apart (docs/ui-framework.md §19):
+// Section, SettingsGroup and their older twins. Boxes among themselves stand --stack-gap apart
+// (Stack gap 4); a page never sets the distance between its sections by hand.
+export function Sections({ as: Tag = 'div', className, ...props }: Omit<BoxProps, 'pad'>) {
+  const { style, ...rest } = strip(props);
+  return (
+    <Tag
+      className={`ds-sections ${className ?? ''}`}
+      style={{ ...boxStyle(props), ...style }}
+      {...rest}
+    />
+  );
+}
+
 // A responsive grid of cards: as many columns of at least `min` as fit (a gallery; `fit`
 // shares the row among however many there are, like the dashboard's figures; `figure` does
 // the same for long figures such as money, one per row on a phone), a fixed

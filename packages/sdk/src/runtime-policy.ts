@@ -114,6 +114,7 @@ export interface RuntimeCompression {
 // Settings of Helena's own loop (runtime `helena`, docs/helena-decisions/zentrale-laufzeit.md):
 // the tools of the agent's role and when it hands a task to a bigger model.
 export interface RuntimeHelenaSettings {
+  coreTools?: string[];
   toolProfile?: 'assistent' | 'recherche' | 'coder-lite' | 'voll';
   escalation?: {
     mode?: 'auto' | 'never' | 'always';
@@ -132,6 +133,7 @@ export interface RuntimeHelenaSettings {
 
 export interface RuntimePolicySnapshot {
   revision: string;
+  agent?: { id?: number; name?: string; username?: string; agentRole?: 'agent' | 'home' };
   // Older control planes omit project membership.
   projects?: { id: number }[];
   displayName?: string;

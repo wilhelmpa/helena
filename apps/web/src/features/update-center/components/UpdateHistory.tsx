@@ -1,5 +1,6 @@
 'use client';
 
+import { CodeBlock } from '@/design-system';
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { RowEmpty, RowList, SectionLabel } from '@/components/common/page/RowList';
@@ -26,7 +27,7 @@ export default function UpdateHistory({ actions }: { actions: UpdateAction[] }) 
   return (
     <section className="min-w-0">
       <SectionLabel>{t('history')}</SectionLabel>
-      <RowList className="bg-card">
+      <RowList>
         {actions.length === 0 ? (
           <RowEmpty>{t('noHistory')}</RowEmpty>
         ) : (
@@ -118,12 +119,7 @@ function HistoryRow({ action }: { action: UpdateAction }) {
         {action.log && (
           <div className="space-y-1">
             <span className="text-muted-foreground">{t('action.log')}</span>
-            <pre
-              className="max-h-64 overflow-auto rounded-md border border-sidebar-border bg-background p-2 font-mono text-xs leading-snug whitespace-pre-wrap"
-              dir="ltr"
-            >
-              {action.log}
-            </pre>
+            <CodeBlock>{action.log}</CodeBlock>
           </div>
         )}
       </div>

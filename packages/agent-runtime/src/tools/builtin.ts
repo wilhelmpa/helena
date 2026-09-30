@@ -1,7 +1,7 @@
 import { memorySection } from '../prompt';
 import type { SkillEntry } from '../config';
-import type { HelenaApi } from '../helena-client';
-import { error, text, type AgentTool, type ToolOutput } from './types';
+import type { HelenaApi, MemoryState } from '../helena-client';
+import { error, text, type AgentTool } from './types';
 
 // The loop's own tools: asking the person (clarify), finding more tools, loading a skill,
 // the agent's memory and the search over past sessions.
@@ -166,13 +166,14 @@ export function skillTool(
     kind: 'meta',
     readOnly: true,
     description:
-      'Load and follow a matching skill before acting. The tool is load_skill; name is its argument, and load_name is not a tool. With file, load a reference or script source (execution still requires shell policy). Follow the returned offset instructions until every page is read before acting.',
+      'Load and follow a matching skill before acting. The tool is load_skill; name is its argument, and load_name is not a tool. With file, load a reference or script source (execution still requires shell policy). Follow the returned offset instructions until every page is read before acting. offset is a zero-based line index; limit is the number of lines. Use next offset for the next page.',
     inputSchema: {
       type: 'object',
       properties: {
         name: { type: 'string' },
         file: { type: 'string' },
         offset: { type: 'integer', minimum: 0 },
+        limit: { type: 'integer', minimum: 1, maximum: 500 },
       },
       required: ['name'],
     },
@@ -187,28 +188,44 @@ export function skillTool(
         );
       const file = text(input.file).trim();
       const offset = input.offset ?? 0;
-      if (typeof offset !== 'number' || !Number.isInteger(offset) || offset < 0)
-        return error('Invalid offset.');
-      const page = (content: string): ToolOutput => {
-        if (offset > content.length) return error('Offset is beyond the file.');
-        const end = offset + 24_000;
+      const limit = input.limit ?? 200;
+      if (
+        typeof offset !== 'number' ||
+        !Number.isInteger(offset) ||
+        offset < 0 ||
+        typeof limit !== 'number' ||
+        !Number.isInteger(limit) ||
+        limit < 1 ||
+        limit > 500
+      )
+        return error('offset must be a nonnegative line index and limit must be 1–500 lines');
+      const page = (content: string, extra: string[] = []) => {
+        const lines = content.split('\n');
+        if (offset > lines.length) return error('Offset is beyond the file.');
+        let end = offset;
+        let chars = 0;
+        while (end < Math.min(offset + limit, lines.length)) {
+          const size = lines[end]!.length + 1;
+          if (chars + size > 10_000) break;
+          chars += size;
+          end++;
+        }
+        if (end === offset && offset < lines.length)
+          return error('A skill line exceeds 10000 characters. Split it into shorter lines.');
         return {
           text:
-            content.slice(offset, end) +
-            (end < content.length
-              ? `\n[More content: call load_skill with the same name/file and offset=${end}; read all pages before acting.]`
-              : ''),
+            lines.slice(offset, end).join('\n') +
+            (end < lines.length
+              ? `\n(Next offset: ${end}; total lines: ${lines.length})`
+              : '\n(End of file)') +
+            (extra.length ? `\n(Extra files: ${extra.join(', ')})` : ''),
         };
       };
       if (!file) {
-        loaded.add(skill.name);
         await used?.(skill.name);
-        const extra = (skill.files ?? []).map(
-          (entry) => `load_skill(${JSON.stringify({ name: skill.name, file: entry.path })})`,
-        );
-        return page(
-          extra.length ? `${skill.markdown}\n\n(Extra files: ${extra.join(', ')})` : skill.markdown,
-        );
+        loaded.add(skill.name);
+        const extra = (skill.files ?? []).map((entry) => entry.path);
+        return page(skill.markdown, extra);
       }
       const found = (skill.files ?? []).find((entry) => entry.path === file);
       if (found) loaded.add(skill.name);
@@ -222,10 +239,15 @@ export function skillTool(
 const MEMORY_RULE =
   'Keep only what is not obvious and helps later: decisions, preferences, where things are, procedures that worked. Never a secret, a key or a password.';
 
-export function memoryTool(api: HelenaApi, sessionId?: () => string | undefined): AgentTool {
+export function memoryTool(
+  api: HelenaApi,
+  sessionId?: () => string | undefined,
+  initial?: MemoryState | null,
+): AgentTool {
+  let cached = initial;
   return {
     name: 'memory',
-    description: `Your long-term memory in Helena. action "read" searches MEMORY.md, USER.md and recent daily notes with query (bounded excerpts); "note" adds a line to today's note; "propose" replaces MEMORY.md or USER.md (the owner may review it). ${MEMORY_RULE}`,
+    description: `Your long-term memory in Helena. Relevant excerpts are already in the prompt; read only for missing details, not every round. action "read" searches MEMORY.md, USER.md and recent daily notes with query; "note" adds a durable fact; "propose" replaces MEMORY.md or USER.md (the owner may review it). ${MEMORY_RULE}`,
     inputSchema: {
       type: 'object',
       properties: {
@@ -240,13 +262,14 @@ export function memoryTool(api: HelenaApi, sessionId?: () => string | undefined)
     async execute(input) {
       const action = text(input.action);
       if (action === 'read') {
-        const state = await api.memory();
+        const state = cached ?? (cached = await api.memory());
         return { text: memorySection(state, text(input.query), 6000) || '(no matching memory)' };
       }
       const content = text(input.content).trim();
       if (!content) return error('No content.');
       if (action === 'note') {
         await api.note(content.slice(0, 2000), sessionId?.());
+        cached = null;
         return {
           text: "Today's note was submitted under the agent's memory approval setting.",
           changed: true,
@@ -257,6 +280,7 @@ export function memoryTool(api: HelenaApi, sessionId?: () => string | undefined)
         if (file !== 'MEMORY.md' && file !== 'USER.md')
           return error('file must be MEMORY.md or USER.md');
         const answer = await api.proposeMemory(file, content, text(input.reason), sessionId?.());
+        cached = null;
         return {
           text:
             answer.status === 'pending'

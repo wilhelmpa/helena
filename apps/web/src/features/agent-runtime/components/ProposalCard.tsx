@@ -10,7 +10,7 @@ import type {
 } from '@/lib/api/endpoints/agentRuntime';
 import { formatDateTime } from '@/utils/dates';
 import { useDecideProposal } from '../services/agentRuntime.service';
-import { TextDiff } from '@/design-system';
+import { TextDiff, Card } from '@/design-system';
 
 // A change an agent's runtime raised for the owner: a memory write of the agent, shown as a
 // diff of the file, or an update of Hermes with what it brings. Pending, it offers the
@@ -20,7 +20,7 @@ export default function ProposalCard({ proposal }: { proposal: RuntimeProposal }
   const decide = useDecideProposal();
 
   return (
-    <article className="space-y-3 rounded-md border bg-card p-4">
+    <Card as="article">
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
         <Badge variant="outline">{t(`kind.${proposal.kind}`)}</Badge>
         {proposal.agentName && (
@@ -59,7 +59,7 @@ export default function ProposalCard({ proposal }: { proposal: RuntimeProposal }
           {proposal.error ? ` · ${proposal.error}` : ''}
         </p>
       )}
-    </article>
+    </Card>
   );
 }
 

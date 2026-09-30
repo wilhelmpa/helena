@@ -32,7 +32,7 @@ import { RoutineModeField } from './RoutineModeField';
 import { RoutineNextRuns } from './RoutineNextRuns';
 import type { RoutineTask } from './RoutineTaskField';
 import { RoutineTimezoneInput } from './RoutineTimezoneInput';
-import { Box, Inline, Stack, Text } from '@/design-system';
+import { Box, Inline, Stack, Text, FieldFrame } from '@/design-system';
 
 export function RoutineDialog({
   projectKey,
@@ -146,11 +146,7 @@ export function RoutineDialog({
         {/* Markdown like the task it becomes, and "@" offers the project's agents: each
             agent it mentions starts on the task too, on every run. */}
         <RoutineField label={t('instructions')}>
-          <Box
-            padX={3}
-            padY={2}
-            className="max-h-72 min-h-32 overflow-y-auto rounded-md border border-input bg-transparent text-sm transition-[color,box-shadow] focus-within:border-ring focus-within:ring-2 focus-within:ring-ring/40 dark:bg-input/30"
-          >
+          <FieldFrame area className="max-h-72 min-h-32 overflow-y-auto text-sm">
             <MarkdownEditor
               className="flex min-h-28 flex-col"
               defaultValue={initial?.instructions ?? ''}
@@ -158,7 +154,7 @@ export function RoutineDialog({
               placeholder={t('instructionsPlaceholder')}
               ariaLabel={t('instructions')}
             />
-          </Box>
+          </FieldFrame>
           <Text as="p" size="xs" tone="muted">
             {mode === 'new' ? t('instructionsHintNew') : t('instructionsHintReopen')}{' '}
             {t('mentionsHint')}

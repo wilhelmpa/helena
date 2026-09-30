@@ -21,7 +21,7 @@ import {
 import { BrowserControlSection } from '@/features/browser-lab/components/BrowserControlSection';
 import DomainListField from './DomainListField';
 
-import { Stack, Inline, Text } from '@/design-system';
+import { Stack, Inline, Text, Sections } from '@/design-system';
 
 // The browser gateway settings tab (design volition-design-browser-gateway.md §8, "Projekt
 // → Einstellungen → Browser"): the domain blocklist and optional allowlist a project's
@@ -83,7 +83,7 @@ export default function SettingsBrowserGateway({ project }: { project: ProjectDe
   };
 
   return (
-    <Stack gap={5}>
+    <Sections>
       <BrowserControlSection projectKey={projectKey} editable={editable} />
       <SettingsSection title={t('accessTitle')} description={t('accessHint')}>
         <SettingsCard>
@@ -206,6 +206,6 @@ export default function SettingsBrowserGateway({ project }: { project: ProjectDe
           />
         </SettingsCard>
       </SettingsSection>
-    </Stack>
+    </Sections>
   );
 }

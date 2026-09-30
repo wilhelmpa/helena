@@ -276,6 +276,8 @@ describe('Hermes source', () => {
       `import os
 from types import SimpleNamespace
 def fetch_account_usage(provider):
+    if provider == "anthropic":
+        return SimpleNamespace(provider=provider, raw={"organization": {"uuid": "org-1"}, "email": "owner@example.com"})
     if provider != "openai-codex":
         return None
     assert os.environ["HERMES_HOME"].endswith("profiles/vol")
@@ -311,7 +313,8 @@ def fetch_account_usage(provider):
     // A profile without its own login shares the root's.
     expect(probes[0]!.key).toBe(`hermes:${root}:anthropic,openai-codex`);
     const snapshots = await probes[0]!.run();
-    expect(snapshots).toHaveLength(1);
+    expect(snapshots).toHaveLength(2);
+    expect(snapshots[1]!.account).toBe(accountHash('anthropic', 'org-1'));
     expect(snapshots[0]!.account).toBe(accountHash('openai-codex', 'acct-1'));
     expect(snapshots[0]!.windows.map((w) => w.id)).toEqual(['weekly', 'codex_spark:session']);
     expect(snapshots[0]!.resetCredits).toBe(2);
@@ -319,6 +322,7 @@ def fetch_account_usage(provider):
     expect(text).not.toContain('example.com');
     expect(text).not.toContain('acct-1');
     expect(text).not.toContain('user-1');
+    expect(text).not.toContain('org-1');
   });
 
   it('keys a profile with its own login by the profile', async () => {

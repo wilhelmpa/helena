@@ -116,6 +116,7 @@ async function managed(
     // Whether Codex' own sandbox starts (`codex sandbox -- true`).
     ownSandbox?: boolean;
     toolDeny?: string[];
+    agentRole?: 'agent' | 'home';
   } = {},
 ) {
   const home = await mkdtemp(join(tmpdir(), 'helena-agent-home-'));
@@ -124,7 +125,15 @@ async function managed(
   const asked: { work: unknown }[] = [];
   const grant = options.grant ?? null;
   const client: RuntimePolicyClient = {
-    runtimePolicy: async () => snapshot(options.toolDeny),
+    runtimePolicy: async () => ({
+      ...snapshot(options.toolDeny),
+      agent: {
+        id: 1,
+        name: 'Synthetic agent',
+        username: 'volition-test',
+        agentRole: options.agentRole ?? 'agent',
+      },
+    }),
     reportRuntimeStatus: async (status) => {
       statuses.push(structuredClone(status));
     },
@@ -197,6 +206,26 @@ async function managed(
   const adapter = new CliRuntimeAdapter(runtime, config, client, Date.now, program, appServer);
   return { home, statuses, asked, probes, config, adapter, program };
 }
+
+describe('Home rights from the server policy', () => {
+  it.each(['claude', 'codex'] as const)(
+    'passes Home rights to %s tasks and chat answers only for Home',
+    async (runtime) => {
+      for (const agentRole of ['home', 'agent'] as const) {
+        const { adapter } = await managed(runtime, {
+          agentRole,
+          localLogin: true,
+          ownSandbox: true,
+        });
+        for (const work of [{ runId: 1 }, { messageId: 1 }]) {
+          expect((await adapter.runSettings(work)).hooks?.unrestrictedHome).toBe(
+            agentRole === 'home',
+          );
+        }
+      }
+    },
+  );
+});
 
 describe('a Claude Code agent Helena provisioned', () => {
   it('keeps its skills and its runtime state in its own home', async () => {

@@ -2,7 +2,6 @@ import { Info } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { MAX_AGENT_NETWORK_DOMAINS } from '@/lib/api/endpoints/agentNetwork';
 import { cn } from '@/lib/utils';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
@@ -13,7 +12,7 @@ import type { AgentNetworkForm as Form } from '../../hooks/useAgentNetworkForm';
 import AgentNetworkModePicker from './AgentNetworkModePicker';
 import SettingsNetworkAgentOverrides from './SettingsNetworkAgentOverrides';
 
-import { Stack, Text, Inline } from '@/design-system';
+import { Stack, Text, Inline, Sections, Notice } from '@/design-system';
 
 // The mode, the allow/deny lists, the mail-port switch and the per-agent overrides.
 // The Save action lives in the page header; this only holds the fields and the
@@ -24,11 +23,8 @@ export default function SettingsNetworkForm({ form }: { form: Form }) {
   const allowActive = form.allowListActive;
 
   return (
-    <Stack gap={5}>
-      <Alert className="border-blue-500/20 bg-blue-500/10 text-blue-700 dark:text-blue-300">
-        <Info />
-        <AlertDescription className="text-xs text-current">{t('isolationNote')}</AlertDescription>
-      </Alert>
+    <Sections>
+      <Notice icon={<Info />}>{t('isolationNote')}</Notice>
 
       <SettingsSection title={t('accessTitle')} description={t('accessHint')}>
         <SettingsCard className="divide-y divide-border/60">
@@ -85,7 +81,7 @@ export default function SettingsNetworkForm({ form }: { form: Form }) {
           {form.errorMessage}
         </Text>
       )}
-    </Stack>
+    </Sections>
   );
 }
 

@@ -1,5 +1,6 @@
 'use client';
 
+import { Sections } from '@/design-system';
 import { useLocale, useTranslations } from 'next-intl';
 import SettingsCard from '@/components/common/page/SettingsCard';
 import SettingsRow from '@/components/common/page/SettingsRow';
@@ -32,7 +33,7 @@ export function RouterPanel({ teamId }: { teamId: number }) {
   const names = new Map(data.agents.map((agent) => [agent.id, agent.name]));
 
   return (
-    <div className="space-y-8">
+    <Sections>
       <SettingsSection title={t('agents')} description={t('agentsHint')}>
         <SettingsCard className="divide-y divide-border/60">
           {data.agents.length === 0 ? (
@@ -125,6 +126,6 @@ export function RouterPanel({ teamId }: { teamId: number }) {
           </SettingsCard>
         )}
       </SettingsSection>
-    </div>
+    </Sections>
   );
 }

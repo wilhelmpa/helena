@@ -5,6 +5,7 @@ import {
   requireProjectPermission,
   requireProjectOwner,
   requireProjectAdmin,
+  requireReceiptReader,
   requireTeamRunsProject,
   requireMemberAdmin,
   requireSelfOrMemberAdmin,
@@ -26,7 +27,7 @@ import type { PermissionResource, PermissionAction } from './permissions';
 // A [resource, action] pair naming one cell of the role permission matrix.
 export type Permission = [PermissionResource, PermissionAction];
 // Project administration is a standing check, not a cell of the role matrix.
-export type DeclaredPermission = Permission | ['project_admin', 'admin'];
+export type DeclaredPermission = Permission | ['project_admin', 'admin'] | ['receipts', 'read'];
 
 // The slice of the request context an entity guard reads. Annotated explicitly
 // because the factory is defined outside a plugin, so there is no context to
@@ -186,6 +187,17 @@ export const guards = new Elysia({ name: 'guards' }).use(authContext).macro({
     return {
       async resolve({ params, user, request }) {
         const project = await requireProjectOwner((params as ProjectKeyParams).projectKey, user);
+        assertMcpEnabled(project, isMcpRequest(request.headers));
+        return { project };
+      },
+    };
+  },
+
+  receiptReader(_enabled: boolean) {
+    return {
+      detail: { 'x-permission': ['receipts', 'read'] } as DocumentDecoration,
+      async resolve({ params, user, request }) {
+        const project = await requireReceiptReader((params as ProjectKeyParams).projectKey, user);
         assertMcpEnabled(project, isMcpRequest(request.headers));
         return { project };
       },

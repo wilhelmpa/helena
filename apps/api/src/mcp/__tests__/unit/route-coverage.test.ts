@@ -70,7 +70,11 @@ describe('MCP route coverage', () => {
     const receipts = tools.filter((tool) => tool.path.startsWith('/projects/:projectKey/receipts'));
     expect(receipts.length).toBeGreaterThan(20);
     for (const tool of receipts) {
-      expect(tool.permission).toEqual(['project_admin', 'admin']);
+      expect(tool.permission).toEqual(
+        ['list_receipts', 'read_receipt'].includes(tool.name)
+          ? ['receipts', 'read']
+          : ['project_admin', 'admin'],
+      );
       expect(tool.pathParams).toContain('projectKey');
     }
     expect(tools.find((tool) => tool.name === 'list_receipts')?.category).toBe('read');

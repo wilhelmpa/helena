@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl';
 import { Download, FolderOpen, Paperclip } from 'lucide-react';
 import { mailAttachmentUrl, type MailMessageAttachment } from '@/lib/api/endpoints/mail';
 import { filesPath, homeFilesPath } from '@/utils/paths';
-import { Inline } from '@/design-system';
+import { Inline, Pill } from '@/design-system';
 
 function size(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -33,36 +33,30 @@ export default function MailAttachmentChips({
     <Inline as="ul" gap={2} padX={4} padY={2} wrap align="stretch" className="border-t">
       {attachments.map((attachment) => {
         return (
-          <Inline
-            as="li"
-            gap={2}
-            padX={2}
-            padY={1}
-            key={attachment.id}
-            className="rounded-md border text-xs"
-          >
-            <Paperclip className="size-3.5 text-muted-foreground" />
-            <span dir="auto" className="max-w-56 truncate" title={attachment.vaultPath}>
-              {attachment.filename}
-            </span>
-            <span className="text-muted-foreground">{size(attachment.size)}</span>
-            <Link
-              href={filesHref(attachment.vaultPath)}
-              title={t('openInFiles')}
-              aria-label={t('openInFiles')}
-              className="text-muted-foreground hover:text-foreground"
-            >
-              <FolderOpen className="size-3.5" />
-            </Link>
-            <a
-              href={mailAttachmentUrl(attachment.id)}
-              title={t('download')}
-              aria-label={t('download')}
-              className="text-muted-foreground hover:text-foreground"
-            >
-              <Download className="size-3.5" />
-            </a>
-          </Inline>
+          <li key={attachment.id}>
+            <Pill icon={<Paperclip />}>
+              <span dir="auto" className="max-w-56 truncate" title={attachment.vaultPath}>
+                {attachment.filename}
+              </span>
+              <span className="text-muted-foreground">{size(attachment.size)}</span>
+              <Link
+                href={filesHref(attachment.vaultPath)}
+                title={t('openInFiles')}
+                aria-label={t('openInFiles')}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <FolderOpen className="size-3.5" />
+              </Link>
+              <a
+                href={mailAttachmentUrl(attachment.id)}
+                title={t('download')}
+                aria-label={t('download')}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <Download className="size-3.5" />
+              </a>
+            </Pill>
+          </li>
         );
       })}
     </Inline>

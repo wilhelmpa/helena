@@ -4,7 +4,7 @@ import { useState, type CSSProperties, type ReactNode } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Plus, Target } from 'lucide-react';
-import { Button, EmptyState } from '@/design-system';
+import { Button, Card, EmptyState } from '@/design-system';
 import { PageActions, PageToolbar, PageToolbarSpacer } from '@/components/layout/PageToolbar';
 import type {
   OrganizationDepartment,
@@ -116,9 +116,14 @@ export default function OrganizationGoals({
               const percent =
                 progress.total > 0 ? Math.round((progress.done / progress.total) * 100) : 0;
               return (
-                <button
+                <Card
+                  as="button"
                   key={goal.id}
                   type="button"
+                  interactive
+                  selected={goal.id === selected?.id}
+                  pad="tight"
+                  gap={1}
                   className="ds-goal-card"
                   aria-current={goal.id === selected?.id ? 'true' : undefined}
                   style={{ '--ds-goal-depth': depth } as CSSProperties}
@@ -153,11 +158,11 @@ export default function OrganizationGoals({
                       <span style={{ width: `${percent}%` }} />
                     </span>
                   )}
-                </button>
+                </Card>
               );
             })}
           </nav>
-          <section className="ds-goals-detail">
+          <Card as="section" pad="roomy" className="ds-goals-detail">
             {selected && (
               <OrganizationGoalDetail
                 key={selected.id}
@@ -171,7 +176,7 @@ export default function OrganizationGoals({
                 onDeleted={() => select(null)}
               />
             )}
-          </section>
+          </Card>
         </div>
       )}
     </div>

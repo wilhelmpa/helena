@@ -1,11 +1,14 @@
-import { db, pipelineRun, pipelineRunStep } from '@repo/db';
+import { aiAgent, db, pipelineRun, pipelineRunStep } from '@repo/db';
 import { and, eq, inArray, isNull } from 'drizzle-orm';
 import { listColumns } from '#modules/columns/service';
-import { createIssue } from '#modules/issues/service';
+import { markIssueBlocked } from '#modules/issues/blocked';
+import { createIssue, updateIssue } from '#modules/issues/service';
+import { findState } from '@helena/locales/defaults';
 import { getMembership } from '#modules/members/service';
 import { bumpControlPlaneRevision } from '#modules/sync/service';
 import type { PipelineDefinition } from '#modules/pipelines/definition';
 import { clip, loadRun, runInfo, setRunStatus, stepRow, writeStep } from './run-context';
+import { stepType } from './registry';
 import type { RunInfo, StepDefinition, StepExecution } from './sdk';
 
 // The run's own records the interpreter writes around its steps: beginning a run
@@ -155,6 +158,49 @@ export async function finishRun(
   if (row) await bumpControlPlaneRevision(row.projectId);
 }
 
+async function reportTaskFailure(
+  runId: string,
+  at: StepExecution | null,
+  message: string,
+): Promise<void> {
+  const context = await loadRun(runId, false);
+  if (!context.task || context.run.dryRun || !['agent_team', 'routine'].includes(context.run.kind))
+    return;
+  const notice = {
+    stepId: `${at?.stepId ?? 'run'}.failure-notice`,
+    iteration: at?.iteration ?? 1,
+    seq: at?.seq ?? 0,
+  };
+  if ((await stepRow(runId, notice))?.status === 'succeeded') return;
+  const teamStep = context.definition.steps.find((step) => step.type === 'agent_team') as
+    { team?: { coordinator?: { agentRef?: string } } } | undefined;
+  const coordinator = teamStep?.team?.coordinator?.agentRef?.slice('agent:'.length);
+  let actor = context.run.agentId ? eq(aiAgent.id, context.run.agentId) : null;
+  if (!actor && coordinator) actor = eq(aiAgent.username, coordinator);
+  if (!actor) return;
+  const [agent] = await db
+    .select({ userId: aiAgent.userId })
+    .from(aiAgent)
+    .where(and(eq(aiAgent.teamId, context.project.teamId), actor));
+  if (!agent) return;
+  await markIssueBlocked({
+    issueId: context.task.id,
+    projectId: context.project.id,
+    actorUserId: agent.userId,
+    question: `Agent work failed: ${clip(message, 2000)}. Please check the result or configuration and retry the run.`,
+    updateRun: false,
+  });
+  const columns = await listColumns(context.project.id);
+  const target =
+    findState(columns, 'Review') ?? columns.find((column) => column.stateType === 'unstarted');
+  if (target && context.task.columnId !== target.id)
+    await updateIssue(context.task.id, { columnId: target.id }, { system: 'Workflow' });
+  await writeStep(runId, { type: 'notify', name: 'Agent work needs input' }, notice, {
+    status: 'succeeded',
+    finishedAt: new Date(),
+  });
+}
+
 // Records why the run fails: on the step execution it failed in, when it has one, and on
 // the run.
 export async function failRun(
@@ -184,7 +230,12 @@ export async function failRun(
           ),
         );
   }
-  await finishRun(runId, 'failed', undefined, message);
+  try {
+    if (at && step?.type === 'agent_team') await stepType(step.type)?.cancel?.(runId, at);
+    await reportTaskFailure(runId, at, message);
+  } finally {
+    await finishRun(runId, 'failed', undefined, message);
+  }
 }
 
 // Whether a person canceled the run.

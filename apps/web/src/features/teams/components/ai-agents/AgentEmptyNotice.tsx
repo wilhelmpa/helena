@@ -1,3 +1,4 @@
+import { Card } from '@/design-system';
 import Link from 'next/link';
 import { ArrowUpRight, type LucideIcon } from 'lucide-react';
 
@@ -21,7 +22,7 @@ export function AgentEmptyNotice({
   linkLabel?: string;
 }) {
   return (
-    <div className="flex items-start gap-3 rounded-md border border-sidebar-border bg-card px-4 py-3.5">
+    <Card layout="row" className="items-start">
       <Icon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
       <div className="min-w-0 space-y-1">
         <p className="text-sm font-medium">{title}</p>
@@ -36,6 +37,6 @@ export function AgentEmptyNotice({
           </Link>
         )}
       </div>
-    </div>
+    </Card>
   );
 }

@@ -84,13 +84,13 @@ RESERVED_ENV = {
 # approval guard) are the runtime's.
 RESERVED_ENV_PREFIXES = ('VOLITION_AGENT_', 'SYSTEMD_')
 PROXY_ENV = {'http_proxy', 'https_proxy', 'all_proxy', 'no_proxy', 'ftp_proxy'}
-WORK_KINDS = {'run': 'r', 'chat': 'c', 'helper': 'h', 'background': 'b'}
+WORK_KINDS = {'run': 'r', 'chat': 'c', 'voice': 'c', 'helper': 'h', 'background': 'b'}
 
 
 def work_socket(name: str, path: str, work_kind: str) -> str:
     if name not in ('halogen', 'halogenquiet'):
         return path
-    priority = 'chat' if work_kind == 'chat' else 'background' if work_kind in ('helper', 'background') else 'normal'
+    priority = 'voice' if work_kind == 'voice' else 'chat' if work_kind == 'chat' else 'background' if work_kind in ('helper', 'background') else 'normal'
     return path.replace('/normal-', f'/{priority}-')
 REQUEST_KEYS = {
     'ping': {'v', 'op'},
@@ -218,13 +218,13 @@ class Launcher:
         return os.path.join(self.config.workspace_root, slug)
 
     def vault_binds(self, slug: str, key: str | None) -> tuple[list[str], list[str]]:
-        """(read-write, read-only) vault folders: the project's own, or for Home its own folder
-        and every project vault and workspace."""
+        """(read-write, read-only) vault folders: the project's own, or for Home its own folder,
+        the owner's private vault and every project vault and workspace."""
         root = self.config.vault_root
         if slug == self.config.home_slug:
             from migrate import registry_projects
             projects = registry_projects(self.config)
-            return [os.path.join(root, 'Home'),
+            return [os.path.join(root, 'Home'), os.path.join(root, 'Private'),
                     *[os.path.join(root, 'Projects', project_key) for _, project_key in projects],
                     *[os.path.join(self.config.workspace_root, project_slug) for project_slug, _ in projects]], []
         return [os.path.join(root, 'Projects', key)], []

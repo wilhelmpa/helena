@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
+import { useState, type MouseEvent, type ReactNode } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
@@ -28,9 +28,8 @@ import { formatTime } from '@/utils/dates';
 import { projectColor } from '@/utils/projectColor';
 import Orb from '@/components/helena/Orb';
 import { useAgentStatus } from '@/utils/helenaStatus';
-import { Card } from '@/components/helena/DashboardPrimitives';
 import { ProjectTag } from '@/components/helena/ProjectTag';
-import { EmptyState, Page } from '@/design-system';
+import { Card, EmptyState, GroupHead, Page, Section, Sections, Stack } from '@/design-system';
 import { CheckCircle2, CircleAlert, History } from 'lucide-react';
 import InboxWorkspace from './InboxWorkspace';
 import OwnerInboxTabs, { type OwnerInboxTab } from './OwnerInboxTabs';
@@ -102,7 +101,7 @@ function InboxCard({ item }: { item: OwnerInboxItem }) {
   const busy = approvalDecision.isPending || stepDecision.isPending || mentionRead.isPending;
 
   return (
-    <Card as="article" className={styles.card}>
+    <Card as="article" layout="row" gap={4} className={styles.card}>
       <Orb state={status} size="dot" className={styles.dot} />
       <div className={styles.cardContent}>
         <span className={styles.tag} style={{ color: projectColor(item.projectKey) }}>
@@ -252,24 +251,32 @@ function OwnerInboxUpdates({ tabs }: { tabs: ReactNode }) {
     .slice(0, 5);
   return (
     <Page toolbar={tabs}>
-      <div className={styles.content}>
+      <Sections>
         {visible.length > 0 && (
-          <div className={styles.headingRow}>
-            <h2>
-              {error && visible.length === 0 ? (
-                t('title')
-              ) : loading && visible.length === 0 ? (
-                t('loadingTitle')
-              ) : visible.length === 0 ? (
-                t('allDone')
-              ) : (
-                <>
-                  {t('headingCount', { count: visible.length })}{' '}
-                  {t('needsYou', { count: visible.length })}
-                </>
-              )}
-            </h2>
-          </div>
+          <Section
+            title={
+              <>
+                {t('headingCount', { count: visible.length })}{' '}
+                {t('needsYou', { count: visible.length })}
+              </>
+            }
+          >
+            {groups.map((group) => (
+              <section key={group.key} aria-label={group.name}>
+                <GroupHead
+                  count={group.items.length}
+                  icon={group.key !== HOME ? <ProjectTag projectKey={group.key} plain /> : null}
+                >
+                  {group.name}
+                </GroupHead>
+                <Stack gap={4}>
+                  {group.items.map((item) => (
+                    <InboxCard key={item.key} item={item} />
+                  ))}
+                </Stack>
+              </section>
+            ))}
+          </Section>
         )}
         {error && (
           <EmptyState icon={<CircleAlert />} fill={false}>
@@ -282,24 +289,10 @@ function OwnerInboxUpdates({ tabs }: { tabs: ReactNode }) {
           <EmptyState icon={<CheckCircle2 />} fill={false}>
             {t('empty')}
           </EmptyState>
-        ) : (
-          groups.map((group) => (
-            <section key={group.key} className={styles.group} aria-label={group.name}>
-              <h2 className={styles.groupHead}>
-                {group.key !== HOME ? <ProjectTag projectKey={group.key} plain /> : null}
-                <strong>{group.name}</strong>
-                <span className={styles.groupCount}>{group.items.length}</span>
-              </h2>
-              {group.items.map((item) => (
-                <InboxCard key={item.key} item={item} />
-              ))}
-            </section>
-          ))
-        )}
-        <section className={styles.reads} aria-labelledby="reads-heading">
-          <h2 id="reads-heading">{t('toRead')}</h2>
+        ) : null}
+        <Section title={t('toRead')}>
           {visibleReads.length === 0 ? (
-            <EmptyState icon={<History />} fill={false}>
+            <EmptyState icon={<History />} boxed>
               {t('noCompletedRuns')}
             </EmptyState>
           ) : (
@@ -314,11 +307,15 @@ function OwnerInboxUpdates({ tabs }: { tabs: ReactNode }) {
                       ? agentActivityPath(entry.project.key)
                       : globalAgentActivityPath();
               return (
-                <Link
+                <Card
+                  as={Link}
                   key={entry.id}
                   href={href}
+                  interactive
+                  pad="tight"
+                  layout="row"
                   className={styles.readRow}
-                  onClick={(event) => {
+                  onClick={(event: MouseEvent) => {
                     if (target?.kind !== 'run') return;
                     event.preventDefault();
                     openRun(target.agentId, target.runId);
@@ -332,12 +329,12 @@ function OwnerInboxUpdates({ tabs }: { tabs: ReactNode }) {
                       t('runCompleted', { name: entry.agent?.name ?? t('anAgent') })}
                   </span>
                   <time dateTime={entry.at}>{formatTime(entry.at)}</time>
-                </Link>
+                </Card>
               );
             })
           )}
-        </section>
-      </div>
+        </Section>
+      </Sections>
       <SystemDetailsDialog />
     </Page>
   );
@@ -363,7 +360,7 @@ function OwnerInboxContent() {
   const tabs = <OwnerInboxTabs tab={tab} waiting={actions.length} onChange={change} />;
   // The mail runs edge to edge like the project's (O74/O81).
   return tab === 'messages' ? (
-    <Page variant="bleed">
+    <Page variant="split">
       <InboxWorkspace projectKey={null} leading={tabs} />
     </Page>
   ) : (

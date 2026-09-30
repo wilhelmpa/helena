@@ -1,5 +1,6 @@
 'use client';
 
+import { Card } from '@/design-system';
 import { useState, type ReactNode } from 'react';
 import { ListFilter } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -52,11 +53,11 @@ export function AccessLogSection({ teamId, leading }: { teamId: number; leading:
         <EmptyState title={t('empty')} description="" />
       ) : (
         <div className="flex flex-col gap-4">
-          <ul className="divide-y overflow-hidden rounded-md border border-sidebar-border bg-card">
+          <Card as="ul" pad="none" className="divide-y overflow-hidden">
             {audit.items.map((entry) => (
               <AuditRow key={entry.id} entry={entry} showCredential />
             ))}
-          </ul>
+          </Card>
           <ListPager paging={paging} total={audit.total} />
         </div>
       )}

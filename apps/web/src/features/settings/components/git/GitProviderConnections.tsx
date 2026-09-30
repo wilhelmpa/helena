@@ -10,7 +10,7 @@ import GitProviderConnectDialog from './GitProviderConnectDialog';
 import GitProviderConnectionCard from './GitProviderConnectionCard';
 import { GIT_CONNECTION_PROVIDERS, GIT_PROVIDER_CONFIG } from './providerConfig';
 
-import { Box, Stack, Inline, Text } from '@/design-system';
+import { Stack, Inline, EmptyState } from '@/design-system';
 
 export default function GitProviderConnections({
   projectKey,
@@ -65,11 +65,9 @@ export default function GitProviderConnections({
           ))
         )}
         {!connections.isPending && connections.data?.length === 0 && (
-          <Box as="p" pad={4} className="rounded-md border border-dashed">
-            <Text as="span" size="sm" tone="muted">
-              {t('nativeNoConnections')}
-            </Text>
-          </Box>
+          <EmptyState boxed fill={false}>
+            {t('nativeNoConnections')}
+          </EmptyState>
         )}
       </Stack>
       <GitProviderConnectDialog

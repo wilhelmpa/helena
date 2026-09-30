@@ -1,6 +1,8 @@
 import { eq } from 'drizzle-orm';
 import {
   db,
+  aiAgent,
+  listModelServers,
   getDisplayName,
   readModelServerKey,
   resolveLocalRoute,
@@ -12,11 +14,18 @@ import {
   classEvalVersion,
   isLocalHalogenUrl,
   localThinkingFields,
+  parseLocalModelId,
   priorityProxyBaseUrl,
   type LocalAiChatRequest,
 } from '@helena/sdk';
 import { joinUrl } from '#modules/local-ai/eval-context';
-import { taskClass } from '#modules/local-ai/service';
+import { taskClass, effectiveModelNow } from '#modules/local-ai/service';
+import {
+  LOCAL_DEFAULT,
+  localDefaultModel,
+  readMaintenance,
+} from '#modules/local-ai/maintenance-state';
+import { runtimeOfPolicy } from '#modules/model-availability/service';
 import {
   appendEvents,
   finishSpokenAnswer,
@@ -38,28 +47,28 @@ import {
 } from './reply-request';
 import { readVoiceSettings } from './settings';
 
-// Helena's voice reply (Lokale KI → "Sprachantwort", class `voice-reply`;
-// docs/helena-decisions/voice-2.md §4). A spoken question goes to the agent like a typed one,
-// and an agent's turn takes seconds before its first word (the runner starts its runtime, the
-// model reads the session: 5 s measured on 2026-09-26). In a conversation that is a long
-// silence. So a small, fast local model hears the question first:
-//
-// - what the conversation and general knowledge answer (a greeting, "hörst du mich?", thanks,
-//   "sag das kürzer", the time, a general question) it answers itself, in a sentence or two,
-//   within a fraction of a second, streamed into the chat like any answer;
-// - everything that needs the agent — its tools, the owner's data, doing something — it hands
-//   on at once (the tool `hand_to_agent`), and the agent's runner answers as it always does.
-//
-// It never acts and never sees anything but the conversation: no tools but the hand-over, no
-// Helena data. Its answer is marked (`via = 'voice'`) and names its model. Off by default; like
-// every local class it can only be switched on once its eval (reply-eval.ts) passed.
-
+// Native agents answer on their own local model; other runtimes use the evaluated voice class.
 // The total cap also covers a model that began but then stalled.
 const TOTAL_MS = 20_000;
 // Written to the chat in steps like a runner's (packages/runner chat.ts).
 const FLUSH_MS = 120;
 
-async function route(): Promise<LocalRoute | null> {
+async function route(agentId: number): Promise<LocalRoute | null> {
+  if ((await readMaintenance())?.admissionPaused) return null;
+  const [agent] = await db
+    .select({ runtimePolicy: aiAgent.runtimePolicy, model: aiAgent.model })
+    .from(aiAgent)
+    .where(eq(aiAgent.id, agentId));
+  if (agent && runtimeOfPolicy(agent.runtimePolicy) === 'helena') {
+    const modelId = await effectiveModelNow(
+      agent.model === LOCAL_DEFAULT ? await localDefaultModel() : agent.model,
+    );
+    const parsed = parseLocalModelId(modelId);
+    if (!parsed || !modelId) return null;
+    const server = (await listModelServers()).find((entry) => entry.slug === parsed.slug);
+    if (!server) return null;
+    return { server, model: parsed.model, modelId, unit: 'gpu', mode: 'prefer' };
+  }
   const entry = taskClass(VOICE_REPLY_CLASS);
   if (!entry) return null;
   const result = await resolveLocalRoute({
@@ -151,6 +160,7 @@ async function streamAnswer(
           temperature: 0.3,
           stream: true,
           stream_options: { include_usage: true },
+          reasoning_effort: 'none',
           ...localThinkingFields(request.thinking ?? 'off'),
         }),
         redirect: 'error',
@@ -239,7 +249,7 @@ async function person(
 }
 
 export async function answerSpokenQuestion(job: SpokenAnswerJob): Promise<void> {
-  const [local, settings] = await Promise.all([route(), readVoiceSettings()]);
+  const [local, settings] = await Promise.all([route(job.agentId), readVoiceSettings()]);
   if (!local || !(await takeHeldAnswer(job.agentId, job.messageId))) {
     await releaseHeldAnswer(job.agentId, job.messageId);
     return;
@@ -262,7 +272,11 @@ export async function answerSpokenQuestion(job: SpokenAnswerJob): Promise<void> 
     turns: conversation.turns.slice(0, -1),
     question: question.text,
   });
-  const outcome = await streamAnswer(job, local, request, settings.fallbackTimeoutMs);
+  // A cold Flash prefix can take a second before its first token.
+  const firstTokenMs = isLocalHalogenUrl(local.server.baseUrl)
+    ? Math.max(settings.fallbackTimeoutMs, 1_500)
+    : settings.fallbackTimeoutMs;
+  const outcome = await streamAnswer(job, local, request, firstTokenMs);
   if (outcome.kind === 'hand-over') {
     await releaseHeldAnswer(job.agentId, job.messageId);
     return;
@@ -283,9 +297,9 @@ export async function answerSpokenQuestion(job: SpokenAnswerJob): Promise<void> 
 }
 
 registerSpokenAnswerer({
-  async available() {
+  async available(agentId) {
     const settings = await readVoiceSettings();
-    return settings.immediateResponse && (await route()) !== null;
+    return settings.immediateResponse && (await route(agentId)) !== null;
   },
   answer: (job) => answerSpokenQuestion(job),
 });

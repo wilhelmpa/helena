@@ -1,5 +1,6 @@
 'use client';
 
+import { Card } from '@/design-system';
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { FileText, Play, Square, AppWindow } from 'lucide-react';
@@ -33,7 +34,7 @@ export default function ProjectPreviewRow({
   });
   const running = preview.status === 'running' || preview.status === 'starting';
   return (
-    <section className="min-w-0 space-y-2 rounded-md border bg-card p-3">
+    <Card as="section" pad="tight" gap={2} className="min-w-0">
       <div className="flex flex-wrap items-center gap-2">
         <strong className="min-w-0 font-medium break-all">{preview.name}</strong>
         <span className="text-xs text-muted-foreground" role="status">
@@ -77,6 +78,6 @@ export default function ProjectPreviewRow({
         </Button>
       </div>
       {logs && <ProjectPreviewLogs projectKey={projectKey} name={preview.name} />}
-    </section>
+    </Card>
   );
 }

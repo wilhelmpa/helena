@@ -58,7 +58,7 @@ export default function InboxPage() {
   // Edge to edge (owner 29.09., O74): the list and the reading pane run to the sides of
   // the page; only the header row above them keeps the page's margin.
   return (
-    <Page variant="bleed">
+    <Page variant="split">
       {activeTab === 'messages' ? (
         <MailInbox
           teamId={project.project.teamId}

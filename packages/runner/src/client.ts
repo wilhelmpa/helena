@@ -60,6 +60,7 @@ export interface Run {
 // where the coding agent session already holds it and only the new message is sent. Null
 // there means no session yet: start one and report the id it got.
 export interface ChatMessage {
+  via?: 'voice';
   projectId?: number | null;
   id: number;
   attempts?: number;

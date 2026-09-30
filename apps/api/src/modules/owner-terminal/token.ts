@@ -2,7 +2,7 @@ import { createHmac, timingSafeEqual } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 
 // Native hardening limits this key to the API and owner-terminal systemd units.
-// CLI processes receive only an inference-scoped capability, never this key.
+// CLI processes receive scoped terminal capabilities, never this key.
 const keyPath = () => process.env.OWNER_TERMINAL_KEY_PATH ?? '/etc/volition/owner-terminal.key';
 
 // Matches the router: a 60-second window is long enough for one request/reconnect

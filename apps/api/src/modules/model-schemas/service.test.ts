@@ -33,17 +33,45 @@ const membership = (projectId: number) => ({
 });
 
 describe('model schema resolution', () => {
+  it('sets role profiles and Codex/Claude escalation destinations in local schemas', () => {
+    const roles = defaultState().schemas['nur-lokal']!.roles;
+    expect(roles.coder!.toolProfile).toBe('voll');
+    expect(roles.research!.toolProfile).toBe('recherche');
+    expect(roles.assistant!.toolProfile).toBe('assistent');
+    expect(roles.coder!.escalation).toMatchObject({
+      target: 'codex',
+      model: 'gpt-6.1-sol',
+      afterFailures: 2,
+      onResumeLimit: true,
+      onRequest: true,
+    });
+    expect(roles.finance!.escalation).toMatchObject({
+      target: 'claude',
+      model: 'claude-sonnet-5-5',
+    });
+    expect(roles.planning!.escalation).toMatchObject({
+      target: 'claude',
+      model: 'claude-opus-5-5',
+    });
+    const legacy = defaultState();
+    legacy.schemas['nur-lokal']!.roles.finance!.escalation = { ...roles.general!.escalation };
+    expect(
+      migrateSchemaEscalations(legacy).schemas['nur-lokal']!.roles.finance!.escalation,
+    ).toEqual(roles.finance!.escalation);
+  });
+
   it('applies multiple schemas in one revision and restores both on undo', () => {
     const before = defaultState();
     const schemas = ['nur-codex', 'nur-claude'].map((id) => ({
       ...structuredClone(before.schemas[id]!),
+      id: `custom-${id}`,
       description: 'Updated model schema',
     }));
     const after = nextState(before, { expectedRevision: before.revision, schemas });
     expect(after.revision).toBe(before.revision + 1);
     expect(after.history).toHaveLength(1);
-    expect(after.schemas['nur-codex']!.description).toBe('Updated model schema');
-    expect(after.schemas['nur-claude']!.description).toBe('Updated model schema');
+    expect(after.schemas['custom-nur-codex']!.description).toBe('Updated model schema');
+    expect(after.schemas['custom-nur-claude']!.description).toBe('Updated model schema');
     expect(nextState(after, { expectedRevision: after.revision, undo: true }).schemas).toEqual(
       before.schemas,
     );

@@ -100,7 +100,7 @@ export const notificationRoutes = new Elysia({
     {
       body: markAllReadBody,
       response: { 200: AffectedCountResponse, ...errors(401) },
-      detail: { summary: 'Mark all notifications read' },
+      detail: { summary: 'Mark all notifications and failed chat answers read' },
     },
   )
 

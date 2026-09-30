@@ -12,13 +12,14 @@ import {
   projectProvisioningJob,
   serviceHeartbeat,
 } from '@repo/db';
-import { and, desc, eq, gt, inArray, lt, sql } from 'drizzle-orm';
+import { and, desc, eq, gt, lt, sql } from 'drizzle-orm';
 import { iso } from '#shared/lib';
 import { RESUME_LIMIT_ERROR } from '#modules/agents/runner/service';
 import { runtimeSyncSummary } from '#modules/agents/runtime-sync/service';
 import { engineExecutorId, engineRunning } from '#modules/engine/dbos';
 import { nextFireTime } from '#modules/engine/schedules';
 import { modelAvailabilityHealth } from '#modules/model-availability/service';
+import { unresolvedAgentFailure, unresolvedPipelineFailure } from '#modules/pipelines/unresolved';
 import { runFailures } from '#modules/pipelines/runs';
 import { runtimeLogins } from '#modules/runtime-logins/service';
 import { vaultIntegrity } from './vault-integrity';
@@ -141,13 +142,11 @@ async function runCounts() {
   const [failed] = await db
     .select({ count: sql<number>`count(*)::int` })
     .from(agentRun)
-    .where(
-      and(eq(agentRun.status, 'failed'), gt(agentRun.finishedAt, sql`now() - interval '1 day'`)),
-    );
+    .where(and(unresolvedAgentFailure, gt(agentRun.finishedAt, sql`now() - interval '1 day'`)));
   const [needsReview] = await db
     .select({ count: sql<number>`count(*)::int` })
     .from(agentRun)
-    .where(and(eq(agentRun.status, 'failed'), eq(agentRun.lastError, RESUME_LIMIT_ERROR)));
+    .where(and(unresolvedAgentFailure, eq(agentRun.lastError, RESUME_LIMIT_ERROR)));
   const [provisioning] = await db
     .select({ count: sql<number>`count(*)::int` })
     .from(projectProvisioningJob)
@@ -175,7 +174,7 @@ async function engineHealth() {
       queued: sql<number>`count(*) filter (where ${pipelineRun.status} = 'pending')::int`,
       active: sql<number>`count(*) filter (where ${pipelineRun.status} = 'running')::int`,
       waiting: sql<number>`count(*) filter (where ${pipelineRun.status} = 'waiting')::int`,
-      failedLastDay: sql<number>`count(*) filter (where ${pipelineRun.status} = 'failed' and ${pipelineRun.finishedAt} > now() - interval '1 day')::int`,
+      failedLastDay: sql<number>`count(*) filter (where ${unresolvedPipelineFailure} and ${pipelineRun.finishedAt} > now() - interval '1 day')::int`,
     })
     .from(pipelineRun);
   // A running run nobody moved for a while, with no agent run of it still pending.
@@ -225,7 +224,7 @@ async function engineHealth() {
     .from(pipelineRun)
     .innerJoin(project, eq(project.id, pipelineRun.projectId))
     .leftJoin(pipeline, eq(pipeline.id, pipelineRun.pipelineId))
-    .where(inArray(pipelineRun.status, ['failed']))
+    .where(unresolvedPipelineFailure)
     .orderBy(desc(pipelineRun.finishedAt))
     .limit(5);
   const explained = await runFailures(failures.map((row) => row.runId));

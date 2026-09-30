@@ -1,5 +1,6 @@
 'use client';
 
+import { Card } from '@/design-system';
 import { createContext, useContext } from 'react';
 import { Code2, FileCode, LoaderCircle } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -22,11 +23,15 @@ export default function ChatArtifactCard({
   const Icon = pending ? LoaderCircle : artifact.language === 'svg' ? FileCode : Code2;
 
   return (
-    <button
+    <Card
+      as="button"
       type="button"
+      layout="row"
+      interactive
+      pad="tight"
       disabled={pending}
       onClick={() => onOpen(artifact)}
-      className="my-3 flex w-full items-center gap-3 rounded-md border bg-card p-3 text-start transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:pointer-events-none"
+      className="my-3 w-full items-center disabled:pointer-events-none"
     >
       <span className="grid size-9 shrink-0 place-items-center rounded-md bg-muted">
         <Icon className={pending ? 'size-4 animate-spin' : 'size-4'} />
@@ -37,7 +42,7 @@ export default function ChatArtifactCard({
         </span>
         <span className="block text-xs text-muted-foreground uppercase">{artifact.language}</span>
       </span>
-    </button>
+    </Card>
   );
 }
 

@@ -1,5 +1,6 @@
 'use client';
 
+import { Card } from '@/design-system';
 import { useTranslations } from 'next-intl';
 import { AUTOPILOT_LEVELS, type AutopilotLevel } from '@/lib/api/endpoints/autopilot';
 import { cn } from '@/lib/utils';
@@ -24,20 +25,20 @@ export default function AutopilotLevelPicker({
         {AUTOPILOT_LEVELS.map((level) => {
           const active = level === value;
           return (
-            <button
-              key={level}
+            <Card
+              as="button"
               type="button"
               role="radio"
               aria-checked={active}
+              tone="inset"
+              interactive
+              selected={active}
+              pad="tight"
+              gap={1}
+              key={level}
               disabled={disabled}
               onClick={() => onChange(level)}
-              className={cn(
-                'flex min-h-16 flex-col items-start gap-1 rounded-md border px-3 py-2 text-start transition-colors',
-                '-outline-offset-1 focus-visible:outline-1 focus-visible:outline-ring disabled:pointer-events-none disabled:opacity-50',
-                active
-                  ? 'border-primary bg-accent'
-                  : 'border-sidebar-border bg-card hover:bg-accent/60',
-              )}
+              className="min-h-16 items-start disabled:pointer-events-none disabled:opacity-50"
             >
               <span className="flex items-center gap-2">
                 <span
@@ -68,7 +69,7 @@ export default function AutopilotLevelPicker({
                   />
                 ))}
               </span>
-            </button>
+            </Card>
           );
         })}
       </div>

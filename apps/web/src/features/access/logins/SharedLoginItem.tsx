@@ -1,5 +1,6 @@
 'use client';
 
+import { IconTile } from '@/design-system';
 import { useTranslations } from 'next-intl';
 import CopyableCommand from '@/components/common/page/CopyableCommand';
 import StatusBadge from '@/components/common/page/StatusBadge';
@@ -46,9 +47,9 @@ export function SharedLoginItem({ login }: { login: SharedLogin }) {
 
   return (
     <li className="flex items-start gap-3 px-4 py-3">
-      <div className="flex size-8 shrink-0 items-center justify-center rounded-md border border-sidebar-border bg-background text-muted-foreground">
+      <IconTile>
         <CredentialKindIcon kind="runtime_login" className="size-4" />
-      </div>
+      </IconTile>
       <div className="min-w-0 flex-1 space-y-1">
         <div className="flex flex-wrap items-center gap-2">
           <span className="truncate text-sm font-medium">{provider}</span>

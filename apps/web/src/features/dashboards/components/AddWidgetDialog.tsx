@@ -16,7 +16,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { WIDGET_GROUPS, WIDGET_ICON } from '../utils/widgetCatalog';
-import { Stack, Text } from '@/design-system';
+import { Stack, Text, Card } from '@/design-system';
 
 // Picks a widget type from the catalog and adds it to the current dashboard. Widgets
 // are grouped by subject and filtered by a case-insensitive search over the label and
@@ -121,11 +121,16 @@ export default function AddWidgetDialog({
                 {group.types.map((type) => {
                   const Icon = WIDGET_ICON[type];
                   return (
-                    <button
-                      key={type}
+                    <Card
+                      as="button"
                       type="button"
+                      layout="row"
+                      tone="inset"
+                      interactive
+                      pad="tight"
+                      key={type}
                       onClick={() => add(type)}
-                      className="flex items-start gap-3 rounded-md border bg-card p-3 text-start transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                      className="items-start"
                     >
                       <Icon className="mt-0.5 size-5 shrink-0 text-muted-foreground" />
                       <span className="min-w-0">
@@ -136,7 +141,7 @@ export default function AddWidgetDialog({
                           {t(`widgets.${type}.description`)}
                         </Text>
                       </span>
-                    </button>
+                    </Card>
                   );
                 })}
               </div>
@@ -152,21 +157,26 @@ export default function AddWidgetDialog({
                 {plugins
                   .filter((item) => item.label.toLowerCase().includes(query.trim().toLowerCase()))
                   .map(({ widget, label }) => (
-                    <button
-                      key={widget.id}
+                    <Card
+                      as="button"
                       type="button"
+                      layout="row"
+                      tone="inset"
+                      interactive
+                      pad="tight"
+                      key={widget.id}
                       onClick={() => {
                         onAddPlugin(widget, label);
                         onOpenChange(false);
                         setQuery('');
                       }}
-                      className="flex items-start gap-3 rounded-md border bg-card p-3 text-start transition-colors hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                      className="items-start"
                     >
                       <Puzzle className="mt-0.5 size-5 shrink-0 text-muted-foreground" />
                       <Text as="span" size="sm" className="font-medium">
                         {label}
                       </Text>
-                    </button>
+                    </Card>
                   ))}
               </div>
             </Stack>

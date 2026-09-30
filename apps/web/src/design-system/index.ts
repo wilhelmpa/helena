@@ -28,15 +28,16 @@ export type { PickItem, PickGroup, PickCreate } from '@/components/common/fields
 export type { StatusDotTone } from './components/StatusDot';
 export { Button, ButtonAnchor, ButtonLink, IconButton } from './components/Button';
 export type { ButtonVariant } from './components/Button';
-export { Pill, PillButton, Pill as Badge } from './components/Pill';
+export { Pill, PillButton, PillLink, Pill as Badge } from './components/Pill';
 export { Segmented } from './components/Segmented';
 export { SegmentToggle } from './components/SegmentToggle';
 export { InheritedMark } from './components/InheritedMark';
 export type { SegmentOption } from './components/Segmented';
 export type { PillTone } from './components/Pill';
-export { TextField, TextArea, Field, SearchField } from './components/Field';
+export { TextField, TextArea, Field, FieldFrame, SearchField } from './components/Field';
 export { Switch } from '@/components/ui/switch';
 export { Card } from './components/Card';
+export { IconTile } from './components/IconTile';
 export { Notice } from './components/Notice';
 export type { NoticeTone } from './components/Notice';
 export { TextDiff } from './components/TextDiff';
@@ -44,17 +45,24 @@ export { CodeBlock } from './components/CodeBlock';
 export { CopyValue } from './components/CopyValue';
 export { TimeSeriesChart } from './components/TimeSeriesChart';
 export type { TimeSeriesPoint, TimeSeriesTone } from './components/TimeSeriesChart';
-export { Section, MonoLabel, EmptyState } from './components/Section';
+export { Section, GroupHead, MonoLabel, MonoMeta, EmptyState } from './components/Section';
 export { EmbedProblem } from './components/EmbedProblem';
 export { EmbedConnecting } from './components/EmbedConnecting';
-export { Box, Stack, Inline, Grid, Text } from './components/Layout';
+export { Box, Stack, Inline, Grid, Sections, Text } from './components/Layout';
 export type { Space, TextSize, TextTone } from './components/Layout';
 export { ActionMenu, Tip } from './components/ActionMenu';
 export { NameList } from './components/NameList';
 export type { ActionMenuItem } from './components/ActionMenu';
 export { List, ListGroup, ListRow } from './components/List';
+export { ListBox } from './components/ListBox';
 export { Table, Th, Tr, Td } from './components/Table';
-export { MatrixCell, MatrixCellButton, MatrixNote, MatrixBar } from './components/Matrix';
+export {
+  MatrixCell,
+  MatrixCellButton,
+  MatrixNote,
+  MatrixBar,
+  MatrixValue,
+} from './components/Matrix';
 export type { MatrixMark } from './components/Matrix';
 export { Checkbox } from '@/components/ui/checkbox';
 export {
@@ -67,7 +75,8 @@ export {
 } from './components/DetailView';
 export { SettingsGroup, SettingsRow } from './components/SettingsGroup';
 export * from './components/Menu';
-export { PageHeader, PageToolbarRow, PageBody } from './layout/Page';
+export { PageHeader, PageBody } from './layout/Page';
+export type { Crumb } from './layout/Page';
 export { Page } from './layout/PageTemplate';
 export { LocalChrome } from './layout/LocalChrome';
 export type { PageVariant } from './layout/PageTemplate';
@@ -85,12 +94,12 @@ export {
 } from './layout/PageToolbar';
 export type { PageTab, PageAction, PageSelectOption } from './layout/PageToolbar';
 export { default as Dialog, useModalFullscreen } from '@/components/common/overlay/Modal';
-export type { Crumb } from './layout/Page';
 export { SidePanel } from './layout/SidePanel';
 export { Overlay } from './layout/Overlay';
+export { OverlayHead } from './layout/OverlayHead';
 export { OverlayControls } from './components/OverlayControls';
 export type { OverlayControlsLabels } from './components/OverlayControls';
-export type { OverlayTab } from './layout/Overlay';
+export type { OverlayTab } from './layout/OverlayHead';
 export {
   useSidePanelWidth,
   SidePanelResizeHandle,

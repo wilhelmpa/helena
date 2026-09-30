@@ -8,11 +8,19 @@ import {
   it,
   setDefaultTimeout,
 } from 'bun:test';
-import { agentRun, db, issue as issueTable, issueActivity, pipelineRun } from '@repo/db';
+import {
+  agentRun,
+  db,
+  issue as issueTable,
+  issueActivity,
+  notification,
+  pipelineRun,
+} from '@repo/db';
 import { and, asc, eq } from 'drizzle-orm';
 import { authedApi, type Api } from '#tests/helpers/app';
 import { signUpTestUser } from '#tests/helpers/auth';
 import { createAgent } from '#tests/helpers/agents';
+import { listActivity } from '#modules/agent-activity/service';
 import { recordModelUnavailable } from '#modules/model-availability/service';
 import {
   answerStep,
@@ -405,29 +413,31 @@ describe('agent team runs', () => {
     await enableAgentTeam(asOwner);
     const task = await createIssue(asOwner, columnId);
     const started = (await asOwner.issues({ issueId: task.id })['agent-team'].post({})).data!;
-    await answerStep(started.runId, 'team.coordinate', {
-      output: json({
-        summary: 'Plan.',
-        delegations: [
-          {
-            assignmentId: 'a',
-            agentRef: 'agent:designer',
-            objective: 'A',
-            acceptanceCriteria: ['A'],
-            dependsOn: ['b'],
-          },
-          {
-            assignmentId: 'b',
-            agentRef: 'agent:writer',
-            objective: 'B',
-            acceptanceCriteria: ['B'],
-            dependsOn: ['a'],
-          },
-        ],
-      }),
-    });
+    for (let attempt = 0; attempt < 3; attempt++)
+      await answerStep(started.runId, 'team.coordinate', {
+        output: json({
+          summary: 'Plan.',
+          delegations: [
+            {
+              assignmentId: 'a',
+              agentRef: 'agent:designer',
+              objective: 'A',
+              acceptanceCriteria: ['A'],
+              dependsOn: ['b'],
+            },
+            {
+              assignmentId: 'b',
+              agentRef: 'agent:writer',
+              objective: 'B',
+              acceptanceCriteria: ['B'],
+              dependsOn: ['a'],
+            },
+          ],
+        }),
+      });
     const failed = await waitForStatus(started.runId, 'failed');
-    expect(failed.error).toBe('Assignment dependencies form a cycle');
+    expect(failed.error).toContain('delegations.dependsOn');
+    expect(failed.error).toContain('cycle');
     expect((await runSteps(started.runId)).map((row) => row.stepId)).not.toContain('team.s1');
   });
 
@@ -442,11 +452,16 @@ describe('agent team runs', () => {
     expect(first.workClass).toBe('coordinator-triage');
     const second = await waitForAgentRun(started.runId, 'team.coordinate');
     expect(second.id).not.toBe(first.id);
+    expect(second.prompt).toContain(
+      'Your previous answer failed validation: The agent did not answer with one JSON object',
+    );
+    expect(second.prompt).toContain('no plan');
+    expect(second.prompt).toContain('do not repeat tools');
     expect(second.workClass).toBeNull();
   });
 
   it('runs a stage again with backoff when its answer is unusable, up to the attempts', async () => {
-    const { asOwner, teamId, columnId } = await setup();
+    const { asOwner, owner, teamId, columnId, column } = await setup();
     await specialist(asOwner, teamId, 'designer', ['frontend']);
     await enableAgentTeam(asOwner, { reviewRequired: false });
     const task = await createIssue(asOwner, columnId);
@@ -457,10 +472,66 @@ describe('agent team runs', () => {
       error: 'Crashed',
     });
     expect(second.id).not.toBe(first.id);
+    expect(second.prompt).toContain('I did it, trust me.');
+    expect(second.prompt).toContain('do not repeat tools');
     const third = await answerStep(started.runId, 'team.s1', { output: 'still no json' });
     const failed = await waitForStatus(started.runId, 'failed');
     expect(failed.error).toContain('failed after 3 attempts');
     expect(new Set([first.id, second.id, third.id]).size).toBe(3);
+    expect((await asOwner.issues({ issueId: task.id }).get()).data!.columnId).toBe(
+      column('Review'),
+    );
+    const comments = await db
+      .select()
+      .from(issueActivity)
+      .where(and(eq(issueActivity.issueId, task.id), eq(issueActivity.kind, 'comment')));
+    expect(comments.some((comment) => comment.body?.includes('failed after 3 attempts'))).toBe(
+      true,
+    );
+    expect(
+      (
+        await db
+          .select()
+          .from(notification)
+          .where(and(eq(notification.userId, owner.userId), eq(notification.issueId, task.id)))
+      ).length,
+    ).toBeGreaterThan(0);
+    expect((await listActivity(owner.userId, { cursor: null })).items).toContainEqual(
+      expect.objectContaining({
+        id: `workflow:${started.runId}`,
+        status: 'failed',
+        issue: expect.objectContaining({ id: task.id }),
+      }),
+    );
+  });
+
+  it('corrects invalid evidence without repeating the specialist work', async () => {
+    const { asOwner, teamId, columnId } = await setup();
+    await specialist(asOwner, teamId, 'designer', ['frontend']);
+    await enableAgentTeam(asOwner, { reviewRequired: false });
+    const task = await createIssue(asOwner, columnId);
+    const started = (await asOwner.issues({ issueId: task.id })['agent-team'].post({})).data!;
+    await answerStep(started.runId, 'team.s1', {
+      output: json({
+        summary: 'Astro documentation checked.',
+        evidence: [{ kind: 'unknown', ref: 'https://docs.astro.build/', label: 'Astro' }],
+      }),
+    });
+    const corrected = await answerStep(started.runId, 'team.s1', {
+      output:
+        'Done.\n```json\n' +
+        json({
+          summary: 'Astro documentation checked.',
+          evidence: [{ kind: 'source', ref: 'https://docs.astro.build/', label: 'Astro' }],
+        }) +
+        '\n```\nEnd.',
+    });
+    expect(corrected.prompt).toContain('evidence[0].kind must be comment|artifact|test|link');
+    expect(corrected.prompt).toContain('Astro documentation checked.');
+    const done = await waitForStatus(started.runId, 'succeeded');
+    expect((done.result as { evidence: unknown[] }).evidence).toEqual([
+      { kind: 'link', ref: 'https://docs.astro.build/', label: 'Astro' },
+    ]);
   });
 
   it('fails a stage at once when the provider refuses its model for good, and names it', async () => {

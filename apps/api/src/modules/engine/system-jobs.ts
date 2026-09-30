@@ -78,7 +78,7 @@ export async function fireDueSystemJobs(now = new Date()): Promise<number> {
     const schedule = await job.schedule();
     if (!schedule.enabled) continue;
     const { row, created } = await jobRow(job, schedule, now);
-    if (created && job.runWhenNew) {
+    if (job.runWhenNew && (created || !row.lastStartedAt)) {
       // One id for every replica that sees the job first at the same moment.
       await DBOS.startWorkflow(jobWorkflow, { workflowID: `job:${job.id}:first` })(
         job.id,

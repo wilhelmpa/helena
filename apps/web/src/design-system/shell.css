@@ -13,6 +13,15 @@
   background: var(--bg);
   color: var(--text);
 }
+.ds-app[data-sidebar='full'] {
+  /* The member's chosen width (--sidebar-w, set by the shell), kept between the smallest and
+     largest width and always leaving the page 560px. */
+  --ds-sidebar-now: min(
+    max(var(--sidebar-w), var(--sidebar-w-min)),
+    var(--sidebar-w-max),
+    max(var(--sidebar-w-min), calc(100vw - 560px))
+  );
+}
 .ds-app[data-sidebar='rail'] {
   --ds-sidebar-now: var(--sidebar-rail-w);
 }
@@ -38,6 +47,25 @@
   flex: 1;
   flex-direction: column;
   overflow: hidden;
+}
+
+/* The grip on the sidebar's inner edge (owner, O110): a strip inside the sidebar (which clips
+   what lies outside it), lit on hover, focus and while dragged like every other grip. */
+.ds-sidebar-grip {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  inset-inline-end: 0;
+  z-index: 2;
+  background: transparent !important;
+}
+.ds-sidebar-grip:hover,
+.ds-sidebar-grip:focus-visible {
+  box-shadow: inset -2px 0 0 var(--accent);
+}
+[dir='rtl'] .ds-sidebar-grip:hover,
+[dir='rtl'] .ds-sidebar-grip:focus-visible {
+  box-shadow: inset 2px 0 0 var(--accent);
 }
 
 /* ── Sidebar ─────────────────────────────────────────────────────────────── */
@@ -554,35 +582,72 @@
 .ds-page-heading {
   display: flex;
   min-width: 0;
-  flex: 1;
-  align-items: baseline;
-  gap: 10px;
+  /* The breadcrumb is at most half the bar: a longer one gives up its middle, the rest of
+     the bar is the page's controls (which fold on their own). */
+  flex: 0 1 auto;
+  max-width: 50%;
+  align-items: center;
 }
+/* The breadcrumb (owner 30.09., O104): the earlier parts small, quiet and clickable, the last
+   part - the page's name - large. It shortens its middle before it cuts a word. */
 .ds-page-crumbs {
   display: flex;
   min-width: 0;
-  flex-shrink: 1;
   align-items: baseline;
-  gap: 0;
   overflow: hidden;
-  color: var(--ds-crumb, var(--accent));
-  font-family: var(--font-mono);
-  font-size: 10px;
-  font-weight: 500;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
   white-space: nowrap;
 }
-.ds-page-crumbs a:hover {
+.ds-page-crumb {
+  display: inline-flex;
+  min-width: 0;
+  /* Never cut to a stub: the middle parts go, then the name is cut. */
+  flex: none;
+  align-items: center;
+  color: var(--text-3);
+  font-size: 13px;
+}
+.ds-page-crumb > :is(a, span) {
+  min-width: 0;
+  max-width: 14rem;
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+  text-overflow: ellipsis;
+}
+.ds-page-crumb a {
+  color: inherit;
+}
+.ds-page-crumb a:hover {
   color: var(--text);
 }
-.ds-page-crumb-slash {
-  padding-inline-start: 10px;
+.ds-page-crumb-sep {
+  width: 14px;
+  height: 14px;
+  flex: none;
+  margin-inline: 4px;
   color: var(--text-3);
-  letter-spacing: 0;
+}
+[dir='rtl'] .ds-page-crumb-sep {
+  transform: scaleX(-1);
+}
+.ds-page-crumb-gap {
+  display: none;
+  align-items: center;
+  color: var(--text-3);
+  font-size: 13px;
+}
+.ds-page-crumbs[data-level='1'] > .ds-page-crumb[data-crumb='middle'] {
+  display: none;
+}
+.ds-page-crumbs[data-level='1'] > .ds-page-crumb-gap {
+  display: inline-flex;
+}
+/* Still cut: the page's name alone. */
+.ds-page-crumbs[data-level='2'] > .ds-page-crumb {
+  display: none;
 }
 .ds-page-title {
   min-width: 0;
+  flex: 0 1 auto;
   overflow: hidden;
   color: var(--text);
   font-size: 18px;
@@ -596,6 +661,8 @@
   flex: none;
   align-items: center;
   gap: var(--space-2);
+  /* At the bar's right end, also when the page has no controls of its own in front of it. */
+  margin-inline-start: auto;
 }
 .ds-page-actions:empty {
   display: none;
@@ -604,24 +671,51 @@
   display: none;
 }
 @media (max-width: 899px) {
+  /* The menu button is 40px wide around a 16px symbol: pulled out by the 12px around it, the
+     symbol stands on the page's left edge like the bar under it and the content (O104). */
   .ds-page-menu-button {
     display: flex;
-    margin-inline-start: -8px;
+    margin-inline-start: -12px;
+  }
+  /* A phone: the name and the main action stay in the 56px bar, the page's controls fold
+     under them into a 44px row of the same bar. */
+  .ds-page-header {
+    height: auto;
+    min-height: var(--page-header-h);
+    flex-wrap: wrap;
+    row-gap: 0;
+  }
+  /* The bar is 56px with its line, like on a desktop: the first row is one pixel less. */
+  .ds-page-header .ds-page-heading {
+    height: calc(var(--page-header-h) - 1px);
+    max-width: none;
+    flex: 1 1 0;
+    align-items: center;
+  }
+  .ds-page-header .ds-page-actions {
+    height: calc(var(--page-header-h) - 1px);
+  }
+  .ds-page-header .ds-page-bar {
+    order: 3;
+    height: var(--page-toolbar-h);
+    flex: 1 0 100%;
+    padding-bottom: var(--space-1);
   }
 }
-.ds-page-toolbar {
+/* The page's controls, in the ONE header bar right after the name (owner 30.09., O104).
+   Empty (a page without toolbar) it takes no room and no gap. */
+.ds-page-bar {
   position: relative;
   display: flex;
-  height: var(--page-toolbar-h);
-  flex: none;
+  min-width: 0;
+  flex: 1 1 0;
   align-items: center;
   gap: var(--space-2);
-  padding: 0 var(--page-pad-x);
 }
-.ds-page-toolbar:empty,
-.ds-page-toolbar:not(:has(> :not(:empty))),
-/* Only dividers left (a page put its spacer, nothing else): no row. */
-.ds-page-toolbar:not(:has(button, input, select, textarea, a, [role], label)) {
+.ds-page-bar:empty,
+.ds-page-bar:not(:has(> :not(:empty))),
+/* Only dividers left (a page put its spacer, nothing else): no bar. */
+.ds-page-bar:not(:has(button, input, select, textarea, a, [role], label)) {
   display: none;
 }
 .ds-page-body {
@@ -658,7 +752,8 @@
   flex-direction: column;
 }
 .ds-page[data-page='fill'] > .ds-page-scroll,
-.ds-page[data-page='bleed'] > .ds-page-scroll {
+.ds-page[data-page='bleed'] > .ds-page-scroll,
+.ds-page[data-page='split'] > .ds-page-scroll {
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -668,7 +763,8 @@
   flex: 1;
   padding-bottom: var(--page-pad-top);
 }
-.ds-page[data-page='bleed'] > .ds-page-scroll > .ds-page-body {
+.ds-page[data-page='bleed'] > .ds-page-scroll > .ds-page-body,
+.ds-page[data-page='split'] > .ds-page-scroll > .ds-page-body {
   min-height: 0;
   flex: 1;
   padding: 0;
@@ -763,7 +859,7 @@
   background: var(--accent);
   opacity: 1;
 }
-@media (max-width: 767px) {
+@media (max-width: 1023px) {
   .ds-side-panel,
   .ds-side-panel[data-full='true'] {
     inset: 0;
@@ -781,7 +877,8 @@
 /* Panel head: segment tabs on the left, full screen and close on the right. */
 .ds-panel-head {
   display: flex;
-  height: 56px;
+  height: var(--overlay-head-h);
+  flex: none;
   align-items: center;
   gap: var(--space-2);
   border-bottom: 1px solid var(--line);
@@ -911,7 +1008,7 @@
    tool puts something into it, so the chat never shows a second title row. */
 .ds-panel-subbar {
   display: flex;
-  height: 44px;
+  height: var(--subbar-h);
   align-items: center;
   gap: 4px;
   border-bottom: 1px solid var(--line);
@@ -943,6 +1040,41 @@
 }
 .ds-dock > span {
   pointer-events: none;
+}
+/* The orb floats over the bottom right corner (owner 30.09.: "Orb verdeckt nichts"): a scroller
+   that reaches it - HomeDock marks it, utils/orbClearance.ts - ends with an empty piece of the
+   orb's height, so its last row scrolls clear. The orb (64px) + its edge distance (24px) + air. */
+:root {
+  --orb-clear: 96px;
+}
+@media (min-width: 900px) {
+  [data-orb-clear]::after {
+    display: block;
+    height: var(--orb-clear);
+    flex: none;
+    content: '';
+  }
+}
+/* A phone (owner 30.09.): the orb is part of the top bar, at its right end, instead of floating over
+   the page - where it covered titles, list actions and the composer. The particle orb draws in the
+   middle ~70% of its box, so a 52px box is a ~36px orb in the 56px bar; the bar keeps that room free
+   (the spacer after its controls) and the page's content never meets it. */
+@media (max-width: 899px) {
+  .ds-dock {
+    top: calc(env(safe-area-inset-top, 0px) + 2px);
+    right: calc(var(--page-pad-x) - 8px + env(safe-area-inset-right, 0px));
+    bottom: auto;
+    width: 52px;
+    height: 52px;
+    --orb-size: 52px;
+  }
+  .ds-app:has(.ds-dock) .ds-page-header::after {
+    order: 2;
+    width: 36px;
+    height: calc(var(--page-header-h) - 1px);
+    flex: none;
+    content: '';
+  }
 }
 
 /* Installed app without a title bar (display_override): header and sidebar head are the
@@ -1071,10 +1203,6 @@
 .helena-home-context strong {
   color: var(--accent);
   font-weight: 500;
-}
-.ds-page-crumb-sep {
-  padding: 0 6px;
-  letter-spacing: 0;
 }
 
 /* Controls of the page toolbar and header (PageToolbar): one 32px control look. */
@@ -1229,7 +1357,7 @@
 .ds-issue-overlay-body {
   min-height: 0;
   overflow-y: auto;
-  padding: var(--space-5);
+  padding: var(--overlay-pad);
 }
 .ds-overlay-body.is-flush {
   display: flex;
@@ -1340,12 +1468,6 @@
 .ds-panel-tab-select:only-child {
   padding-inline-end: 10px;
 }
-/* A phone shows only the page's title in its header (the menu opens the tree). */
-@media (max-width: 600px) {
-  .ds-page-crumbs {
-    display: none;
-  }
-}
 /* A department on the ring is a React Flow node of type "group", which the library
    frames as a square box of its own: the circle is the whole node. */
 .react-flow__node-group:has(> div > .organization-ring-group),
@@ -1362,10 +1484,22 @@
   margin-top: var(--space-1);
 }
 /* A used-up budget or a throttled agent: a clear border, no glow (owner, O71). */
-.organization-ring-group[data-throttled='true'],
-.organization-card[data-throttled='true'] {
+.organization-hover-card {
+  display: none;
+}
+@media (hover: hover) {
+  .organization-hover-card {
+    display: flex;
+  }
+}
+.organization-ring-group[data-throttled='true'] {
   border-color: var(--status-throttled) !important;
   border-width: 2px !important;
+}
+.organization-card[data-throttled='true'] {
+  box-shadow:
+    0 0 0 2px var(--status-throttled),
+    var(--shadow-card);
 }
 
 /* ── Team › Kreis (components/common/organization, owner 29.09., O71) ──────────────
@@ -1478,7 +1612,7 @@
   max-width: 188px;
   gap: var(--space-2);
   border-radius: var(--radius-full);
-  padding: 0 var(--space-4) 0 var(--space-3);
+  padding: 0 var(--box-pad-tight);
   text-align: start;
 }
 .ds-ring-pill[data-head] {
@@ -1571,15 +1705,11 @@
   flex: 1;
 }
 
-/* A pinned panel (owner, O31): it docks at the right and the page — its header, toolbar
-   and body — shrinks to the room left instead of being covered. */
-@media (min-width: 900px) {
-  .ds-page-content[data-panel='docked'] > :not(.ds-side-panel) {
-    margin-inline-end: calc(var(--helena-side-panel-width, 480px) + var(--space-3));
-  }
-  .ds-main:has(> .ds-page-content[data-panel='docked']) > :is(.ds-page-header, .ds-page-toolbar) {
-    margin-inline-end: calc(var(--helena-side-panel-width, 480px) + var(--space-3));
-  }
+/* A pinned panel or overlay (owner, O31, O103): it docks at the right and the main area - the
+   header bar, the toolbar and the page - is exactly as much narrower as it is wide
+   (utils/dock.ts publishes the room); nothing lies under it. */
+.ds-main {
+  margin-inline-end: var(--ds-dock-inset, 0px);
 }
 
 /* A toolbar that stays in its block (ShellHeaderRow without a header slot). */

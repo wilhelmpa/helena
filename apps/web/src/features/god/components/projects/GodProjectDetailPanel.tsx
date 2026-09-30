@@ -1,34 +1,27 @@
 'use client';
 
-import { Users, X } from 'lucide-react';
+import { Users } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { InstanceProjectDetail } from '@/lib/api/endpoints/god';
 import { formatDate, formatDateTime } from '@/utils/dates';
-import { useExitOnEscape } from '@/hooks/useExitOnEscape';
 import ListSkeleton from '@/components/common/skeleton/ListSkeleton';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import MemberAccessCard from '@/components/common/permissions/MemberAccessCard';
 import { usePermissionCatalogQuery } from '@/services/roles.service';
 import { useInstanceProjectQuery } from '../../services/god.service';
 import { compactCount } from '../../utils/numbers';
 
-import { Box, Inline, Stack, Text } from '@/design-system';
+import { Inline, Overlay, Stack, Text, Card, EmptyState } from '@/design-system';
 
 // One number from the project, with a quiet label under it. The counts read as a
 // grid so the size of a project is one glance rather than a list of sentences.
 function Stat({ label, value }: { label: string; value: number }) {
   const t = useTranslations('god.projectPanel');
   return (
-    <Box
-      padX={3}
-      padY={3}
-      className="rounded-md border border-sidebar-border bg-card"
-      title={t('statTitle', { label, value })}
-    >
+    <Card pad="tight" tooltip={t('statTitle', { label, value })}>
       <div className="text-xl font-semibold tabular-nums">{compactCount(value)}</div>
       <div className="text-xs text-muted-foreground">{label}</div>
-    </Box>
+    </Card>
   );
 }
 
@@ -46,9 +39,9 @@ const STATS = [
   { key: 'tools', count: (p: InstanceProjectDetail) => p.toolCount },
 ] as const;
 
-// One project in a right-hand side panel (the same surface the user directory uses):
-// what the project holds, and every member with the permissions their membership
-// resolves to. Escape or a backdrop click closes it.
+// One project in the one overlay on the right (the same surface the user directory uses): what
+// the project holds, and every member with the permissions their membership resolves to. Esc
+// closes it.
 export default function GodProjectDetailPanel({
   projectId,
   onClose,
@@ -62,132 +55,88 @@ export default function GodProjectDetailPanel({
   const catalogQuery = usePermissionCatalogQuery();
   const project = projectQuery.data;
 
-  useExitOnEscape(onClose);
-
   return (
-    <div
-      data-slot="sheet-overlay"
-      className="fixed inset-0 z-40 flex bg-black/20"
-      onClick={(e) => e.target === e.currentTarget && onClose()}
+    <Overlay
+      label={project ? project.name : tCommon('loading')}
+      tabs={[
+        {
+          id: 'project',
+          label: project ? `${project.key} · ${project.name}` : tCommon('loading'),
+        },
+      ]}
+      onClose={onClose}
+      className="ds-god-overlay"
+      width="wide"
     >
-      <div
-        data-slot="sheet-content"
-        className="ml-auto flex h-full w-full flex-col border-s border-sidebar-border bg-background sm:w-[680px] sm:max-w-[92vw]"
-      >
-        <Inline
-          gap={3}
-          align="start"
-          justify="between"
-          padX={4}
-          padTop={4}
-          padBottom={4}
-          className="flex shrink-0 items-start justify-between border-b border-sidebar-border"
-        >
-          <Stack gap={2} className="min-w-0">
-            <Inline gap={2} className="flex min-w-0 items-center">
-              <Box
-                as="span"
-                padX={2}
-                padY={1}
-                className="shrink-0 rounded-sm bg-secondary text-xs font-medium text-secondary-foreground"
-              >
-                {project?.key ?? '…'}
-              </Box>
-              <h2 className="truncate text-md font-semibold">
-                {project ? project.name : tCommon('loading')}
-              </h2>
-            </Inline>
-            {project?.description && (
+      <Stack gap={5}>
+        {project && (
+          <Stack gap={2}>
+            {project.description && (
               <Text as="p" size="xs" tone="muted" className="line-clamp-2">
                 {project.description}
               </Text>
             )}
-            {project && (
-              <Inline gap={2} wrap padTop={1} className="flex flex-wrap items-center">
-                <Badge
-                  variant={project.mcpEnabled ? 'secondary' : 'outline'}
-                  className="px-1.5 py-0 text-xs font-medium"
-                >
-                  {t(project.mcpEnabled ? 'mcpEnabled' : 'mcpOff')}
-                </Badge>
-                <Text as="span" size="xs" tone="muted">
-                  {t('created', { date: formatDate(project.createdAt) })}
-                </Text>
-              </Inline>
-            )}
+            <Inline gap={2} wrap className="flex flex-wrap items-center">
+              <Badge
+                variant={project.mcpEnabled ? 'secondary' : 'outline'}
+                className="px-1.5 py-0 text-xs font-medium"
+              >
+                {t(project.mcpEnabled ? 'mcpEnabled' : 'mcpOff')}
+              </Badge>
+              <Text as="span" size="xs" tone="muted">
+                {t('created', { date: formatDate(project.createdAt) })}
+              </Text>
+            </Inline>
           </Stack>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="size-7"
-            onClick={onClose}
-            title={tCommon('close')}
-          >
-            <X />
-          </Button>
-        </Inline>
+        )}
+        {!project ? (
+          <ListSkeleton rows={5} rowClassName="h-12" />
+        ) : (
+          <>
+            <Stack as="section" gap={3}>
+              <div className="text-xs text-muted-foreground">
+                {t('lastActivity', {
+                  value: project.lastActivityAt
+                    ? formatDateTime(project.lastActivityAt)
+                    : t('noActivity'),
+                })}
+              </div>
+              <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
+                {STATS.map((s) => (
+                  <Stat key={s.key} label={t(`stats.${s.key}`)} value={s.count(project)} />
+                ))}
+              </div>
+            </Stack>
 
-        <Stack gap={5} padX={4} padY={4} className="flex-1 overflow-y-auto">
-          {!project ? (
-            <ListSkeleton rows={5} rowClassName="h-12" />
-          ) : (
-            <>
-              <Stack as="section" gap={3}>
-                <div className="text-xs text-muted-foreground">
-                  {t('lastActivity', {
-                    value: project.lastActivityAt
-                      ? formatDateTime(project.lastActivityAt)
-                      : t('noActivity'),
-                  })}
-                </div>
-                <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
-                  {STATS.map((s) => (
-                    <Stat key={s.key} label={t(`stats.${s.key}`)} value={s.count(project)} />
-                  ))}
-                </div>
-              </Stack>
-
-              <Stack as="section" gap={3}>
-                <Inline gap={2} align="baseline" className="flex items-baseline">
-                  <h3 className="text-sm font-medium">{t('members')}</h3>
-                  {project.members.length > 0 && (
-                    <Text as="span" size="xs" tone="muted">
-                      {project.members.length}
-                    </Text>
-                  )}
-                </Inline>
-                {project.members.length === 0 ? (
-                  <Stack
-                    gap={2}
-                    padX={4}
-                    padY={5}
-                    className="flex flex-col items-center rounded-md border border-dashed border-sidebar-border text-center"
-                  >
-                    <Users className="size-5 text-muted-foreground" />
-                    <Text as="p" size="sm" className="font-medium">
-                      {t('noMembersTitle')}
-                    </Text>
-                    <Text as="p" size="xs" tone="muted" className="max-w-[36ch]">
-                      {t('noMembersHint')}
-                    </Text>
-                  </Stack>
-                ) : (
-                  <Stack gap={2}>
-                    {project.members.map((m) => (
-                      <MemberAccessCard
-                        key={m.userId}
-                        member={m}
-                        permissions={m.permissions}
-                        catalog={catalogQuery.data}
-                      />
-                    ))}
-                  </Stack>
+            <Stack as="section" gap={3}>
+              <Inline gap={2} align="baseline" className="flex items-baseline">
+                <h3 className="text-sm font-medium">{t('members')}</h3>
+                {project.members.length > 0 && (
+                  <Text as="span" size="xs" tone="muted">
+                    {project.members.length}
+                  </Text>
                 )}
-              </Stack>
-            </>
-          )}
-        </Stack>
-      </div>
-    </div>
+              </Inline>
+              {project.members.length === 0 ? (
+                <EmptyState boxed fill={false} icon={<Users />} title={t('noMembersTitle')}>
+                  {t('noMembersHint')}
+                </EmptyState>
+              ) : (
+                <Stack gap={2}>
+                  {project.members.map((m) => (
+                    <MemberAccessCard
+                      key={m.userId}
+                      member={m}
+                      permissions={m.permissions}
+                      catalog={catalogQuery.data}
+                    />
+                  ))}
+                </Stack>
+              )}
+            </Stack>
+          </>
+        )}
+      </Stack>
+    </Overlay>
   );
 }

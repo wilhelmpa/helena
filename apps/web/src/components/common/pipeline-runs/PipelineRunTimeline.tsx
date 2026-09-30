@@ -1,5 +1,6 @@
 'use client';
 
+import { Card } from '@/design-system';
 import type { PipelineRun, PipelineRunStep } from '@/lib/api/endpoints/pipelines';
 import ApprovalDecisionForm from '@/components/common/ApprovalDecisionForm';
 import { useDecidePipelineApproval } from '@/services/pipelines.service';
@@ -33,7 +34,7 @@ export default function PipelineRunTimeline({
     run.steps.some((step) => step.kind === 'approval' && step.status === 'waiting');
 
   return (
-    <article className="space-y-3 rounded-md border bg-card p-3">
+    <Card as="article" pad="tight">
       <PipelineRunHeader run={run} showIssue={showIssue} />
       {knownFailure(run.failure) ? (
         <ModelFailureNote
@@ -66,6 +67,6 @@ export default function PipelineRunTimeline({
         />
       )}
       {canEdit && <PipelineRunControls run={run} />}
-    </article>
+    </Card>
   );
 }

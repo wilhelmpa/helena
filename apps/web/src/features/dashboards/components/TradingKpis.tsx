@@ -20,7 +20,7 @@ export default function TradingKpis({
     pilot: 'signalsPilot',
   };
   return (
-    <Grid min="fit" gap={3}>
+    <Grid min="fit">
       <Tile
         label={t(signalLabel[period])}
         value={String(data.signals.count)}

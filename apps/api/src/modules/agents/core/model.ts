@@ -854,3 +854,22 @@ export const threadListQuery = t.Object({
     t.Boolean({ description: 'Return the starred conversations instead of the page.' }),
   ),
 });
+
+export const AgentDreamHistory = t.Array(
+  t.Object({
+    startedAt: t.String(),
+    finishedAt: t.Nullable(t.String()),
+    trigger: t.Union([t.Literal('manual'), t.Literal('schedule')]),
+    status: t.Union([t.Literal('running'), t.Literal('succeeded'), t.Literal('failed')]),
+    result: t.Optional(
+      t.Object({
+        status: t.String(),
+        duplicates: t.Number(),
+        conflicts: t.Number(),
+        omitted: t.Number(),
+        filtered: t.Number(),
+      }),
+    ),
+    error: t.Optional(t.String()),
+  }),
+);

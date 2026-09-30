@@ -4,13 +4,13 @@ import { useTranslations } from 'next-intl';
 import { useSearchTerm } from '@/hooks/useSearchTerm';
 import ListSkeleton from '@/components/common/skeleton/ListSkeleton';
 import { EmptyState } from '@/components/common/page/EmptyState';
-import SearchInput from '@/components/common/SearchInput';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useInstanceTeamProjectsQuery } from '../../services/god.service';
 import { compactCount } from '../../utils/numbers';
 
-import { Box, Inline, Text, Stack } from '@/design-system';
+import { Search } from 'lucide-react';
+import { Box, Inline, SearchField, Text, Stack, Card } from '@/design-system';
 
 // The projects a team owns, a page at a time. The search runs on the server, so it
 // reaches the projects the loaded pages do not hold.
@@ -34,10 +34,12 @@ export default function GodTeamProjects({ teamId }: { teamId: number }) {
         )}
       </Inline>
 
-      <SearchInput
+      <SearchField
+        icon={<Search aria-hidden="true" size={14} />}
         value={search}
-        onChange={setSearch}
+        onChange={(event) => setSearch(event.target.value)}
         placeholder={t('searchProjects')}
+        aria-label={t('searchProjects')}
         className="w-full"
       />
 
@@ -52,14 +54,7 @@ export default function GodTeamProjects({ teamId }: { teamId: number }) {
         <>
           <Stack gap={2}>
             {projects.map((p) => (
-              <Inline
-                gap={2}
-                wrap
-                padX={3}
-                padY={3}
-                key={p.id}
-                className="flex flex-wrap items-center rounded-md border border-sidebar-border bg-card"
-              >
+              <Card layout="row" pad="tight" gap={2} key={p.id} className="flex-wrap items-center">
                 <Box
                   as="span"
                   padX={2}
@@ -83,7 +78,7 @@ export default function GodTeamProjects({ teamId }: { teamId: number }) {
                     members: compactCount(p.memberCount),
                   })}
                 </Text>
-              </Inline>
+              </Card>
             ))}
           </Stack>
           {projectsQuery.hasNextPage && (

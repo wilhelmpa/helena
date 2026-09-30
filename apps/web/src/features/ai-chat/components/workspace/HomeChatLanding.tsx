@@ -1,8 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import { useLocale, useTranslations } from 'next-intl';
-import { useSyncExternalStore, type ReactNode } from 'react';
+import { useTranslations } from 'next-intl';
+import type { ReactNode } from 'react';
+import { Activity } from 'lucide-react';
+import { Card, PageActions } from '@/design-system';
 import {
   useHomeActiveActivity,
   HOME_ACTIVE_STATUSES,
@@ -22,50 +24,27 @@ import { startCards } from '@/features/home/utils/startCards';
 import { openSystemDetails } from '@/features/home/dashboard/systemDetails';
 import styles from './HomeChatLanding.module.css';
 
-const subscribe = () => () => {};
 // The start cards show only what cannot be hidden (problems and decisions).
 const NOTHING_HIDDEN: ReadonlySet<string> = new Set();
 
-function useHomeDate() {
-  const locale = useLocale();
-  return useSyncExternalStore(
-    subscribe,
-    () =>
-      new Intl.DateTimeFormat(locale, { weekday: 'long', day: 'numeric', month: 'long' }).format(
-        new Date(),
-      ),
-    () => null,
-  );
-}
-
-export function HomeChatMasthead() {
+// Who is working right now: the one action of the Home chat page's header bar (owner 30.09.,
+// O104: the page has the standard bar like every page, no bar of its own).
+export function HomeChatWorking() {
   const t = useTranslations('homeChat');
-  const today = useHomeDate();
-  const appName = useDisplayName();
   const activity = useHomeActiveActivity();
   const active = (activity.data?.items ?? []).filter(
     (entry) => HOME_ACTIVE_STATUSES.has(entry.status) && entry.agent,
   );
   const working = new Set(active.map((entry) => entry.agent!.id)).size;
-
   return (
-    <div className={styles.masthead}>
-      <div className={styles.location}>
-        <strong>{appName.toLocaleUpperCase()}</strong>
-        <span>·</span>
-        <span>{today?.toLocaleUpperCase() ?? ''}</span>
-      </div>
-      <div className={styles.mastheadRight}>
-        <Link
-          href={runningActivityHref(active, null)}
-          className={styles.working}
-          title={t('workingOpen')}
-        >
-          <span className={working ? styles.pulse : styles.quietDot} />
-          {t('working', { count: working })}
-        </Link>
-      </div>
-    </div>
+    <PageActions
+      primary={{
+        id: 'working',
+        label: t('working', { count: working }),
+        icon: Activity,
+        href: runningActivityHref(active, null),
+      }}
+    />
   );
 }
 
@@ -92,10 +71,16 @@ export function HomeChatActivityCards() {
   return (
     <div className={styles.cards} aria-label={t('recent')}>
       {cards.length === 0 && !activity.isPending ? (
-        <Link href={globalAgentActivityPath()} className={styles.emptyCard}>
+        <Card
+          as={Link}
+          href={globalAgentActivityPath()}
+          interactive
+          gap={2}
+          className={styles.emptyCard}
+        >
           {t('empty')}
           <span>{t('activity')}</span>
-        </Link>
+        </Card>
       ) : (
         cards.map((card) => {
           if (card.kind === 'needs') {
@@ -116,25 +101,42 @@ export function HomeChatActivityCards() {
             const href =
               entry.href ?? (entry.onSelect === openSystemDetails ? '/dashboard?system=1' : null);
             return href ? (
-              <Link key={entry.key} href={href} className={styles.card}>
+              <Card
+                as={Link}
+                key={entry.key}
+                href={href}
+                interactive
+                gap={2}
+                className={styles.card}
+              >
                 {body}
-              </Link>
+              </Card>
             ) : (
-              <button
+              <Card
+                as="button"
                 key={entry.key}
                 type="button"
+                interactive
+                gap={2}
                 className={styles.card}
                 onClick={entry.onSelect}
               >
                 {body}
-              </button>
+              </Card>
             );
           }
           const { entry } = card;
           const active = card.kind === 'running';
           const accent = projectColor(entry.project?.key ?? 'VOL');
           return (
-            <Link key={entry.id} href={activityHref(entry)} className={styles.card}>
+            <Card
+              as={Link}
+              key={entry.id}
+              href={activityHref(entry)}
+              interactive
+              gap={2}
+              className={styles.card}
+            >
               <span className={styles.cardTag} style={{ color: accent }}>
                 <span className={styles.cardDot} style={{ backgroundColor: accent }} />
                 {entry.project?.key ?? appName.toLocaleUpperCase()}
@@ -146,7 +148,7 @@ export function HomeChatActivityCards() {
                 {entry.agent?.name ?? tActivity(`kinds.${entry.kind}`)} ·{' '}
                 {active ? t('recent') : `${t('finished')} ${formatDurationShort(entry.at)}`}
               </span>
-            </Link>
+            </Card>
           );
         })
       )}

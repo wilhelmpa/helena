@@ -15,6 +15,7 @@ import { isHomeAgent } from '#modules/agents/core/home-agent';
 import { browserGatewayEnabledForAgent } from '#modules/agent-browser-gateway/service';
 import { BROWSER_CLASS, decisionClass } from '#modules/decisions/classes';
 import { firstStageCandidate } from '#modules/decisions/first-stage';
+import { jevDecisionPolicy } from '#modules/decisions/jev-policy';
 import { firstStageChatState } from '#modules/decisions/chat-stage';
 import {
   classSetting,
@@ -30,7 +31,15 @@ type Caller = Pick<TaskRow, 'teamId' | 'projectId' | 'agentId' | 'runId' | 'chat
 
 export async function optionalBrowserStage(teamId: number) {
   const cls = decisionClass(BROWSER_CLASS)!;
-  const threshold = effectiveThreshold(cls, await classSetting(teamId, BROWSER_CLASS));
+  const setting = await classSetting(teamId, BROWSER_CLASS);
+  const calibrated = jevDecisionPolicy(
+    BROWSER_CLASS,
+    'typesafe',
+    effectiveThreshold(cls, setting),
+    setting.threshold,
+  );
+  if (!calibrated.enabled) return null;
+  const threshold = Math.max(calibrated.threshold, effectiveThreshold(cls, setting));
   const stage = await firstStageCandidate(teamId, BROWSER_CLASS, threshold);
   if (!stage) return null;
   const permitted = await usableDecisionConnection(teamId, cls, stage.connection.credentialId);

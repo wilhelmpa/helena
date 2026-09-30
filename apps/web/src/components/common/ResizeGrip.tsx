@@ -12,6 +12,10 @@ export default function ResizeGrip({
   className,
   style,
   onDrag,
+  onDragStart,
+  onDragEnd,
+  onReset,
+  value,
   axis = 'x',
 }: {
   label: string;
@@ -21,6 +25,14 @@ export default function ResizeGrip({
   // How far the pointer moved along this axis since the drag started: 'x' sizes a
   // column (a grip on its side), 'y' a row (a grip on its top or bottom edge).
   onDrag: (delta: number) => void;
+  // A caller that sizes from the width at the start of the drag (delta is measured from it)
+  // takes that width here.
+  onDragStart?: () => void;
+  onDragEnd?: () => void;
+  // A double click or Enter puts the size back to its default.
+  onReset?: () => void;
+  // The size now, for assistive technology (aria-valuenow, in px).
+  value?: { now: number; min: number; max: number };
   axis?: 'x' | 'y';
 }) {
   // The drag listens on the window, since the pointer leaves the 6px grip as soon
@@ -31,6 +43,7 @@ export default function ResizeGrip({
 
   function beginResize(e: React.PointerEvent) {
     e.preventDefault();
+    onDragStart?.();
     const start = axis === 'x' ? e.clientX : e.clientY;
     const grip = e.currentTarget as HTMLDivElement;
     const pointerId = e.pointerId;
@@ -47,6 +60,7 @@ export default function ResizeGrip({
       document.documentElement.style.cursor = '';
       document.documentElement.style.userSelect = '';
       endDrag.current = null;
+      onDragEnd?.();
     };
     endDrag.current = onUp;
     grip.addEventListener('pointermove', onMove);
@@ -61,6 +75,7 @@ export default function ResizeGrip({
     const step = e.shiftKey ? 50 : 10;
     if (e.key === (axis === 'x' ? 'ArrowLeft' : 'ArrowUp')) onDrag(-step);
     else if (e.key === (axis === 'x' ? 'ArrowRight' : 'ArrowDown')) onDrag(step);
+    else if (e.key === 'Enter' && onReset) onReset();
     else return;
     e.preventDefault();
   }
@@ -73,10 +88,14 @@ export default function ResizeGrip({
       role="separator"
       aria-orientation={axis === 'x' ? 'vertical' : 'horizontal'}
       aria-label={label}
+      aria-valuenow={value?.now}
+      aria-valuemin={value?.min}
+      aria-valuemax={value?.max}
       // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
       tabIndex={0}
       onPointerDown={beginResize}
       onKeyDown={onKeyDown}
+      onDoubleClick={onReset}
       style={style}
       className={cn(
         'touch-none outline-none select-none hover:bg-primary/40 focus-visible:bg-primary/40',

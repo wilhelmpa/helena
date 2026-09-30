@@ -1,5 +1,6 @@
 'use client';
 
+import { Card } from '@/design-system';
 import Link from 'next/link';
 import { ExternalLink, LoaderCircle, ShieldAlert, TriangleAlert } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
@@ -128,7 +129,7 @@ export default function UpdateCard({
   const t = useTranslations('updates');
   const text = useSourceText();
   return (
-    <div className="flex min-w-0 flex-col gap-2 rounded-md border border-sidebar-border bg-card p-3">
+    <Card pad="tight" gap={2} className="min-w-0">
       <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
         <span className="min-w-0 truncate text-sm font-medium" dir="auto">
           {item.name}
@@ -184,6 +185,6 @@ export default function UpdateCard({
           </span>
         )}
       </p>
-    </div>
+    </Card>
   );
 }

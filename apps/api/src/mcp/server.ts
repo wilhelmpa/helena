@@ -133,8 +133,18 @@ export async function buildMcpServer(
   const granted = [...routes.values()].some((route) => route.connector)
     ? await visibleConnectors(userId)
     : new Set<string>();
+  const [homeCaller] = await db
+    .select({ role: aiAgent.agentRole })
+    .from(aiAgent)
+    .where(eq(aiAgent.userId, userId))
+    .limit(1);
   const listed = () =>
     servedTools().filter((tool) => {
+      if (
+        routes.get(tool.name)?.path.startsWith('/agent-development/') &&
+        homeCaller?.role !== 'home'
+      )
+        return false;
       const connector = routes.get(tool.name)?.connector;
       return !connector || granted.has(connector);
     });

@@ -28,3 +28,10 @@ export {
   type EvalReport,
 } from './eval';
 export { letterBias, singleTokenIds, type TokenIds } from './tokens';
+export {
+  acceptsDecision,
+  calibrateThreshold,
+  scoreDecisions,
+  splitDecisionCases,
+  type CalibrationRow,
+} from './calibration';
