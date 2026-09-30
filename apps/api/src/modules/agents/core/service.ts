@@ -31,6 +31,7 @@ import { notHomeAgent } from './home-agent';
 import { nextHeartbeatAt, validateHeartbeatClock, type HeartbeatClock } from './heartbeat-time';
 import { copyAgentBudgets, copyAgentLevel } from '#modules/autopilot/copy';
 import { agentModelRefusal } from '#modules/model-availability/service';
+import { initialAgentModel, syncAgentModel } from '#modules/model-schemas/service';
 import {
   onTemplateRelevantChange,
   runtimePolicyGroupsChanged,
@@ -159,7 +160,7 @@ export interface AgentHelenaSettings {
 
 const TOOL_PROFILES = ['assistent', 'recherche', 'coder-lite', 'voll'] as const;
 const ESCALATION_TARGET =
-  /^(runtime:(claude|codex)(\/[A-Za-z0-9._:-]{1,80})?|[a-z0-9][a-z0-9-]{0,40}\/[A-Za-z0-9._:/-]{1,120})$/;
+  /^(agent:[1-9]\d*|runtime:(claude|codex)(\/[A-Za-z0-9._:-]{1,80})?|[a-z0-9][a-z0-9-]{0,40}\/[A-Za-z0-9._:/-]{1,120})$/;
 
 // The settings of Helena's own loop as stored: only known fields, in their bounds.
 export function helenaSettings(value: unknown): AgentHelenaSettings | undefined {
@@ -1295,6 +1296,14 @@ export async function createAgent(
   // An agent joins a project the way a person accepting an invite does: on the team's
   // default role, changed per project from the project's member list afterwards.
   const roleId = await getDefaultRoleId(teamId);
+  const schemaModel = await initialAgentModel({
+    home: input.agentRole === 'home',
+    projectIds,
+    projectScope: input.projectScope,
+    sourceTemplateId: input.sourceTemplateId,
+    model: input.model,
+    runtimePolicy: input.runtimePolicy as Record<string, unknown> | undefined,
+  });
 
   const clock: HeartbeatClock = {
     heartbeatIntervalMinutes: input.heartbeatIntervalMinutes ?? null,
@@ -1320,11 +1329,13 @@ export async function createAgent(
           userId,
           username: input.username,
           agentRole: input.agentRole ?? 'agent',
+          modelRole: schemaModel.role,
+          modelOverrides: schemaModel.overrides,
           projectScope: input.projectScope ?? 'selected',
           kind: 'external',
-          model: input.model ?? null,
+          model: schemaModel.model,
           instructions: input.instructions ?? null,
-          runtimePolicy: normalizeRuntimePolicy(input.runtimePolicy),
+          runtimePolicy: normalizeRuntimePolicy(schemaModel.runtimePolicy),
           triggerOnMention: input.triggerOnMention ?? false,
           triggerOnAssign: input.triggerOnAssign ?? false,
           ...clock,
@@ -1554,6 +1565,28 @@ export async function updateAgent(
   }
 
   const set: Partial<typeof aiAgent.$inferInsert> = {};
+  if (patch.model !== undefined || patch.runtimePolicy !== undefined) {
+    const [stored] = await db
+      .select({ overrides: aiAgent.modelOverrides })
+      .from(aiAgent)
+      .where(eq(aiAgent.id, id));
+    const overrides = { ...stored?.overrides };
+    if (patch.model !== undefined) overrides.model = patch.model;
+    if (patch.runtimePolicy !== undefined) {
+      const policy = normalizeRuntimePolicy(patch.runtimePolicy);
+      overrides.runtime = policy.runtime ?? 'hermes';
+      overrides.reasoning = policy.reasoningEffort;
+      if (policy.helena?.escalation) {
+        overrides.escalation = {
+          target: policy.helena.escalation.target ?? null,
+          failures: policy.helena.escalation.onFailure ? 1 : 0,
+          stalledSteps: 0,
+          onRequest: policy.helena.escalation.mode !== 'never',
+        };
+      }
+    }
+    set.modelOverrides = overrides;
+  }
   if (patch.username !== undefined) {
     await assertUsernameFree(teamId, patch.username, id);
     set.username = patch.username;
@@ -1634,6 +1667,7 @@ export async function updateAgent(
   const projectsChanged =
     projectIds.length !== previousProjectIds.length ||
     projectIds.some((projectId) => !previousProjectIds.includes(projectId));
+  if (projectsChanged) await syncAgentModel(id);
   // The runner descriptor names the agent by its username, and only a Hermes agent has one.
   const runtimeChanged =
     patch.runtimePolicy !== undefined &&

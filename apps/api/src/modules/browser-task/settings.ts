@@ -4,6 +4,7 @@ import { getProjectSetting, setProjectSetting } from '#shared/project-settings';
 import type { DecisionPolicyKind } from '@helena/sdk';
 import { loadConnection, type DecisionConnection } from './connection';
 import { optionalBrowserStage } from './first-stage';
+import { agentBrowserMode } from '#modules/model-schemas/service';
 
 // "Browser-Steuerung" (docs/helena-decisions/browser-task.md §3.3): how a project's agents drive
 // its browser. "Standard (wie bisher)": step by step with their own model, the fast path's tools
@@ -150,7 +151,7 @@ export interface EffectiveBrowserControl {
   firstStage?: { revision: string | null; timeoutMs: number };
   enabled: boolean;
   // Where the answer came from.
-  source: 'project' | 'instance';
+  source: 'project' | 'instance' | 'agent';
   connection: DecisionConnection | null;
   policy: DecisionPolicyKind;
   minConfidence: number | null;
@@ -165,11 +166,14 @@ export interface EffectiveBrowserControl {
 export async function effectiveBrowserControl(scope: {
   teamId: number;
   projectId: number | null;
+  agentId?: number;
 }): Promise<EffectiveBrowserControl> {
   const own =
     scope.projectId === null
       ? DEFAULT_PROJECT_CONTROL
       : await getProjectBrowserControl(scope.projectId);
+  const selectedMode = scope.agentId ? await agentBrowserMode(scope.agentId) : null;
+  const agentMode = own.mode !== 'inherit' && selectedMode?.source !== 'own' ? null : selectedMode;
   const chosen =
     own.mode === 'inherit'
       ? { ...(await getInstanceBrowserControl()), source: 'instance' as const }
@@ -182,6 +186,24 @@ export async function effectiveBrowserControl(scope: {
     minConfidence: null,
     label: 'Standard',
   };
+  if (agentMode?.value === 'standard') return { ...off, source: 'agent', problem: null };
+  if (
+    agentMode?.value === 'combined' ||
+    (agentMode?.value === 'jev' && chosen.mode !== 'decision')
+  ) {
+    const stage = await optionalBrowserStage(scope.teamId).catch(() => null);
+    if (stage)
+      return {
+        enabled: true,
+        source: 'agent',
+        connection: stage.connection,
+        policy: 'jev',
+        minConfidence: stage.threshold,
+        label: stage.connection.label,
+        problem: null,
+        firstStage: { revision: stage.policy.revision, timeoutMs: stage.policy.timeoutMs },
+      };
+  }
   if (chosen.mode !== 'decision') {
     if (own.mode === 'inherit') {
       const stage = await optionalBrowserStage(scope.teamId).catch(() => null);

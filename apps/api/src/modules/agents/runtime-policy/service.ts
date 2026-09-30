@@ -92,7 +92,13 @@ export async function runtimePolicySnapshot(agentRef: RunnerAgent) {
     ? (
         await Promise.all(
           agent.projects.map(async (project) =>
-            (await effectiveBrowserControl({ teamId: agent.teamId, projectId: project.id })).enabled
+            (
+              await effectiveBrowserControl({
+                teamId: agent.teamId,
+                projectId: project.id,
+                agentId: agent.id,
+              })
+            ).enabled
               ? project.key
               : null,
           ),

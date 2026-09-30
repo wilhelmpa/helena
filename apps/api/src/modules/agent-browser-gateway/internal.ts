@@ -275,7 +275,11 @@ export const agentBrowserGatewayInternalRoutes = new Elysia({
       const [enabled, settings, control, previewOrigins] = await Promise.all([
         browserGatewayEnabledForAgent(agent.id, agent.teamId),
         project ? getBrowserGatewaySettings(project.id) : { ...DEFAULT_BROWSER_GATEWAY_SETTINGS },
-        effectiveBrowserControl({ teamId: agent.teamId, projectId: project?.id ?? null }),
+        effectiveBrowserControl({
+          teamId: agent.teamId,
+          projectId: project?.id ?? null,
+          agentId: agent.id,
+        }),
         project ? getProjectPreviewOrigins(project.key) : [],
       ]);
       const lab =
@@ -445,6 +449,7 @@ export const agentBrowserGatewayInternalRoutes = new Elysia({
       const control = await effectiveBrowserControl({
         teamId: agent.teamId,
         projectId: project?.id ?? null,
+        agentId: agent.id,
       });
       if (typeof body.agentKey === 'string' && body.agentKey.startsWith('lab:')) {
         return openLabTask(body.agentKey.slice(4), control);

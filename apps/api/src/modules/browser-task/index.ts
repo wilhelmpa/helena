@@ -56,7 +56,7 @@ async function controlView(project: { id: number; teamId: number }) {
     setting,
     effective: {
       enabled: effective.enabled,
-      source: effective.source,
+      source: effective.source === 'agent' ? 'project' : effective.source,
       label: effective.label,
       policy: effective.policy,
       credentialId: effective.connection?.credentialId ?? null,

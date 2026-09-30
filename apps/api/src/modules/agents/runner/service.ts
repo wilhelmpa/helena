@@ -11,7 +11,7 @@ import {
   project,
   projectMember,
 } from '@repo/db';
-import { and, asc, eq, inArray, lt, lte, notInArray, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, lt, lte, ne, notInArray, sql } from 'drizzle-orm';
 import { HttpError } from '#shared/lib';
 import { type ContextUsage } from '../chat-usage';
 import { enforceAgentLimits } from '../governance';
@@ -62,6 +62,9 @@ import { WORK_CLASS } from '#modules/local-ai/work-classes';
 import { routinePromptContext } from '#modules/routines/agent-runs';
 import { readEscalation } from '#modules/escalation/service';
 import { failedRunEscalation } from './escalation';
+import { failureKind } from './escalation';
+import { agentEscalation } from '#modules/model-schemas/service';
+import { escalationReason } from '#modules/model-schemas/templates';
 import { issueWhy, issueWhySection } from '#modules/project-goals/ladder';
 import { activeOrderContext } from '#modules/standing-orders/service';
 import { localAiMayStart, type CapacityCache } from '#modules/local-ai/pressure';
@@ -963,10 +966,10 @@ async function requestReflection(
     : { prompt: reflectionPrompt(reason, await getDisplayName()), ...REFLECTION_LIMITS };
 }
 
-async function queueFailedRunEscalation(runId: number): Promise<void> {
+async function queueFailedRunEscalation(runId: number): Promise<boolean> {
   const settings = await readEscalation();
-  if (!settings.enabled) return;
-  await db.transaction(async (tx) => {
+  if (!settings.enabled) return false;
+  return db.transaction(async (tx) => {
     const [row] = await tx
       .select({
         id: agentRun.id,
@@ -986,13 +989,13 @@ async function queueFailedRunEscalation(runId: number): Promise<void> {
       .innerJoin(aiAgent, eq(aiAgent.id, agentRun.agentId))
       .where(and(eq(agentRun.id, runId), eq(agentRun.status, 'failed')))
       .for('update');
-    if (!row) return;
+    if (!row) return false;
     const [alreadyQueued] = await tx
       .select({ id: agentRun.id })
       .from(agentRun)
       .where(eq(agentRun.continuedFromRunId, runId))
       .limit(1);
-    if (alreadyQueued) return;
+    if (alreadyQueued) return true;
     const plan = failedRunEscalation(settings, {
       agentId: row.agentId,
       projectId: row.projectId,
@@ -1008,7 +1011,7 @@ async function queueFailedRunEscalation(runId: number): Promise<void> {
       attempts: row.attempts,
       error: row.lastError,
     });
-    if (!plan) return;
+    if (!plan) return false;
     const instruction = `The local attempt failed (${plan.reason}). Continue the task with ${plan.model}. Review the previous attempt and correct its failure.`;
     await tx.insert(agentRun).values({
       agentId: row.agentId,
@@ -1021,6 +1024,7 @@ async function queueFailedRunEscalation(runId: number): Promise<void> {
       continuedFromRunId: runId,
       taintSources: row.sessionId ? ['continued-session'] : [],
     });
+    return true;
   });
 }
 
@@ -1143,13 +1147,62 @@ export async function finishRun(
         }
       : null,
   );
-  if (status === 'failed') await queueFailedRunEscalation(runId);
+  if (status === 'failed') {
+    const queued = await queueFailedRunEscalation(runId);
+    if (!queued && row.trigger !== 'escalation') {
+      const configured = await agentEscalation(agent.id);
+      const recent = await db
+        .select({ attempts: agentRun.attempts, status: agentRun.status })
+        .from(agentRun)
+        .where(
+          and(
+            eq(agentRun.agentId, agent.id),
+            eq(agentRun.projectId, row.projectId),
+            row.issueId === null ? undefined : eq(agentRun.issueId, row.issueId),
+            inArray(agentRun.status, ['success', 'failed']),
+            ne(agentRun.trigger, 'escalation'),
+          ),
+        )
+        .orderBy(desc(agentRun.id))
+        .limit(20);
+      let consecutiveFailures = 0;
+      for (const item of recent) {
+        if (item.status !== 'failed') break;
+        consecutiveFailures += 1;
+      }
+      const reason = escalationReason(configured, {
+        attempts: Math.max(recent[0]?.attempts ?? 0, consecutiveFailures),
+        toolCalls: result.toolCalls ?? 0,
+        failure: failureKind(row.lastError),
+      });
+      if (configured?.target && reason) {
+        await queueEscalation(
+          agent.id,
+          { id: runId, projectId: row.projectId, issueId: row.issueId },
+          {
+            target: configured.target,
+            reason,
+            detail: row.lastError,
+            handover: result.output ?? row.lastError ?? 'Continue the task.',
+          },
+        );
+      }
+    }
+  }
   // "Handeln & berichten": what the run did without approval, on its task.
   await postAutopilotReport(runId);
   const paused = await enforceAgentLimits(agent.id, row.projectId, row.issueId);
   // Helena's own loop handed the task to a bigger model: the follow-up run takes it from
   // here, so this one reflects on nothing.
-  if (result.escalation && status === 'success') {
+  if (
+    result.escalation &&
+    status === 'success' &&
+    escalationReason(await agentEscalation(agent.id), {
+      attempts: 0,
+      toolCalls: 0,
+      failure: 'request',
+    })
+  ) {
     await queueEscalation(
       agent.id,
       { id: runId, projectId: row.projectId, issueId: row.issueId },
