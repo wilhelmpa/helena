@@ -17,24 +17,28 @@ process.env.STORAGE_ROOT = mkdtempSync(join(tmpdir(), 'helena-test-storage-'));
 // The run works on its own copy of the test database (see clone-db.ts). This runs before
 // any test file imports @repo/db, whose client reads DATABASE_URL once.
 const url = process.env.DATABASE_URL;
+let dropClone: (() => Promise<void>) | undefined;
 if (url && process.env.NODE_ENV === 'test' && process.env.HELENA_TEST_DB_CLONE !== '0') {
   const clone = await cloneTestDatabase(url);
   if (clone) {
     process.env.DATABASE_URL = clone.url;
-    afterAll(async () => {
-      // The engine keeps connections to the copy; it stops before the copy goes (the
-      // drop ends whatever it leaves open).
-      const { stopEngine } = await import('#modules/engine/dbos');
-      await Promise.race([stopEngine().catch(() => {}), Bun.sleep(3_000)]);
-      await clone.drop();
-    }, 30_000);
+    dropClone = clone.drop;
   }
 }
 
 // The engine's schema exists from the start, so the task events of files that do not run
 // the engine can be queued (helpers/engine.ts).
 if (process.env.NODE_ENV === 'test' && process.env.DATABASE_URL) {
+  await import('./reindex');
   const { launchEngine, stopEngine } = await import('#modules/engine/dbos');
   await launchEngine();
   await stopEngine();
+  afterAll(async () => {
+    if (dropClone) {
+      await Promise.race([stopEngine().catch(() => {}), Bun.sleep(3_000)]);
+    }
+    const { drainReindexes } = await import('./reindex');
+    await drainReindexes();
+    await dropClone?.();
+  }, 30_000);
 }
