@@ -79,6 +79,7 @@ export default function CatalogUpdates({
       <div key={item.id}>
         <ListRow
           wrap
+          stack
           icon={<PackageCheck />}
           title={item.name}
           subtitle={[

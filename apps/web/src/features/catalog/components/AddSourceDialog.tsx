@@ -92,7 +92,7 @@ export default function AddSourceDialog({
             {t('addedNoEntries.text')}
           </Notice>
         )}
-        <CatalogError error={error} />
+        <CatalogError error={error} compact={added} />
         <Inline gap={2} justify="end">
           <Button onClick={onClose} disabled={busy}>
             {added ? tCommon('close') : tCommon('cancel')}

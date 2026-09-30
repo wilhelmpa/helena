@@ -27,6 +27,7 @@ export function CatalogRow({
   const newVersion = hasNewVersion(item);
   return (
     <ListRow
+      stack
       icon={skill ? <Sparkles /> : <Plug />}
       title={item.name}
       subtitle={[sourceLabel(item.source), item.description].filter(Boolean).join(' · ')}

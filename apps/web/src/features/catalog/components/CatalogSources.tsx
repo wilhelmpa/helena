@@ -89,6 +89,7 @@ export default function CatalogSources({ teamId, onAdd }: { teamId: number; onAd
             <div key={source.id}>
               <ListRow
                 wrap
+                stack
                 icon={source.kind.startsWith('github') ? <GitBranch /> : <Package />}
                 title={sourceLabel(source.locator)}
                 subtitle={[

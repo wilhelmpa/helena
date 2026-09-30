@@ -104,6 +104,7 @@ export default function PreviewVersions({
         {revisions.map((revision) => (
           <ListRow
             key={revision.id}
+            stack
             title={shortPin(revision.pin)}
             subtitle={format.dateTime(new Date(revision.createdAt), {
               dateStyle: 'medium',

@@ -127,5 +127,6 @@
   "autoApplied": "Diterapkan otomatis: {name}",
   "autoRolledBack": "Dikembalikan",
   "autoFailedShort": "Pembaruan gagal",
-  "autoFailed": "Pembaruan otomatis gagal: {name}"
+  "autoFailed": "Pembaruan otomatis gagal: {name}",
+  "openInCatalog": "Periksa di katalog"
 }

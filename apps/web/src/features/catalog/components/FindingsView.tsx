@@ -69,6 +69,7 @@ export function FindingList({
           icon={finding.severity === 'info' ? <Info /> : <CircleAlert />}
           title={sentence(finding)}
           wrap
+          stack
           subtitle={finding.path || undefined}
           meta={<Pill tone={TONE[finding.severity]}>{t(`severity.${finding.severity}`)}</Pill>}
         />

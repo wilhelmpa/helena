@@ -11,6 +11,7 @@ import type { UpdateAction, UpdateItem, UpdateScope } from '@/lib/api/endpoints/
 import { cn } from '@/lib/utils';
 import { byKey } from '@/utils/messageKey';
 import { agentActivityForAgentPath } from '@/utils/paths';
+import { helenaSettingsPath } from '@/features/settings/settingsModalCatalog';
 import { RISK_STATUS, versionStep } from '../utils/updateFormat';
 
 // A translator for the texts a source sends: a string, an i18n key or one per locale.
@@ -158,6 +159,14 @@ export default function UpdateCard({
           </span>
         )}
         {item.hint && <span>{text(item.hint)}</span>}
+        {item.source === 'volition-catalog' && (
+          <Link
+            href={helenaSettingsPath('skills', 'updates')}
+            className="underline-offset-2 hover:underline"
+          >
+            {t('openInCatalog')}
+          </Link>
+        )}
         {item.notesUrl && (
           <a
             href={item.notesUrl}

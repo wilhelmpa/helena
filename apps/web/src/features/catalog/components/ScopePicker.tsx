@@ -1,6 +1,6 @@
 'use client';
 
-import { Bot, FolderKanban, Library, Shield } from 'lucide-react';
+import { Bot, FolderKanban, Shield } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import {
   Inline,
@@ -68,10 +68,10 @@ export default function ScopePicker({
         value={value.mode}
         onChange={(mode) => set({ mode })}
         options={[
-          { value: 'library', label: t('modes.library'), icon: <Library /> },
-          { value: 'project', label: t('modes.project'), icon: <FolderKanban /> },
-          { value: 'agent', label: t('modes.agent'), icon: <Bot /> },
-          { value: 'role', label: t('modes.role'), icon: <Shield /> },
+          { value: 'library', label: t('modes.library') },
+          { value: 'project', label: t('modes.project') },
+          { value: 'agent', label: t('modes.agent') },
+          { value: 'role', label: t('modes.role') },
         ]}
       />
       <Text size="xs" tone="muted">

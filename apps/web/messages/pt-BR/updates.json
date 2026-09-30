@@ -127,5 +127,6 @@
   "autoApplied": "Aplicada automaticamente: {name}",
   "autoRolledBack": "Revertida",
   "autoFailedShort": "Falha na atualização",
-  "autoFailed": "Falha na atualização automática: {name}"
+  "autoFailed": "Falha na atualização automática: {name}",
+  "openInCatalog": "Verificar no catálogo"
 }

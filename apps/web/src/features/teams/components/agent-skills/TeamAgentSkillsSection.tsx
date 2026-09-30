@@ -24,7 +24,9 @@ import { hasNewVersion } from '@/features/catalog/utils/catalog';
 import { SkillCreateDialog } from './SkillCreateDialog';
 import TeamAgentSkills from './TeamAgentSkills';
 
-type Open = { itemId: number; tab: PreviewTab; proposal: CatalogProposal | null };
+// `at` is the tab it was opened from: leaving that tab closes it, so an overlay never hangs over
+// a page it does not belong to.
+type Open = { itemId: number; tab: PreviewTab; proposal: CatalogProposal | null; at: CatalogTab };
 
 // The skill library of a team: the SKILL.md documents its projects' agents load on demand,
 // shared by every one of them. The owner also sees the curated catalog next to it — search
@@ -45,7 +47,7 @@ export default function TeamAgentSkillsSection({ teamId }: { teamId: number }) {
   const [query, setQuery] = useState('');
   const fromAddress = Number(search.get('entry')) || null;
   const [open, setOpen] = useState<Open | null>(
-    fromAddress ? { itemId: fromAddress, tab: 'overview', proposal: null } : null,
+    fromAddress ? { itemId: fromAddress, tab: 'overview', proposal: null, at: tab } : null,
   );
   const proposals = useCatalogProposalsQuery(owner ? teamId : null);
   const index = useCatalogIndex(owner ? teamId : null);
@@ -108,7 +110,7 @@ export default function TeamAgentSkillsSection({ teamId }: { teamId: number }) {
           teamId={teamId}
           query={query}
           openId={open?.itemId ?? null}
-          onOpen={(itemId) => setOpen({ itemId, tab: 'overview', proposal: null })}
+          onOpen={(itemId) => setOpen({ itemId, tab: 'overview', proposal: null, at: tab })}
           onOpenSources={() => router.push(hrefOf('sources'))}
         />
       ) : tab === 'sources' ? (
@@ -116,12 +118,16 @@ export default function TeamAgentSkillsSection({ teamId }: { teamId: number }) {
       ) : tab === 'proposals' ? (
         <CatalogProposals
           teamId={teamId}
-          onOpen={(proposal) => setOpen({ itemId: proposal.itemId, tab: 'adopt', proposal })}
+          onOpen={(proposal) =>
+            setOpen({ itemId: proposal.itemId, tab: 'adopt', proposal, at: tab })
+          }
         />
       ) : (
         <CatalogUpdates
           teamId={teamId}
-          onOpen={(itemId, previewTab) => setOpen({ itemId, tab: previewTab, proposal: null })}
+          onOpen={(itemId, previewTab) =>
+            setOpen({ itemId, tab: previewTab, proposal: null, at: tab })
+          }
         />
       )}
 
@@ -139,7 +145,7 @@ export default function TeamAgentSkillsSection({ teamId }: { teamId: number }) {
           onClose={() => setAddingSource(false)}
         />
       )}
-      {open && (
+      {open && open.at === tab && (
         <PreviewOverlay
           key={`${open.itemId}-${open.proposal?.id ?? 0}`}
           teamId={teamId}
