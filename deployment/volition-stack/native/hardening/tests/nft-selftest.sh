@@ -13,6 +13,7 @@ work=$(mktemp -d "${TMPDIR:-/tmp}/helena-nft-test.XXXXXX")
 trap 'rm -rf "$work"' EXIT
 sed -e 's|@LAN4@|192.168.2.0/24|' -e 's|@UIDS_CDP@|0|' -e 's|@UIDS_ROUTER@|0|' \
   -e 's|@UIDS_TOOLS@|0|' -e 's|@UIDS_SYNCTHING@|0|' -e 's|@UIDS_TUNNEL@|0|' -e 's|@UIDS_VOICE@|0|' \
+  -e 's|@UIDS_VOLITION_NPU@|0|' \
   -e 's|@TUNNEL_PORT@|8090|' "$here/files/helena-hardening.nft.in" >"$work/rules.nft"
 
 cat >"$work/inside.sh" <<'INNER'
@@ -38,6 +39,7 @@ def serve(port, family=socket.AF_INET, host="0.0.0.0"):
     threading.Thread(target=loop, daemon=True).start()
 serve(80)
 serve(80, socket.AF_INET6, "::")
+serve(13310, host="127.0.0.1")
 def attempt(src, dst, port):
     c = socket.socket(socket.AF_INET6 if ":" in dst else socket.AF_INET); c.settimeout(2)
     try:
@@ -68,6 +70,17 @@ for name, got in results.items():
     good = got == expected[name]
     ok &= good
     print(("PASS " if good else "FAIL ") + f"{name}: {got} (expected {expected[name]})")
+# Removing this caller from the worker's uid set must close only the worker.
+for index, allowed in enumerate((True, False, True)):
+    if not allowed:
+        subprocess.run(['nft', 'flush', 'set', 'inet', 'helena_hardening', 'volition_npu_uids'], check=True)
+    elif index == 2:
+        subprocess.run(['nft', 'add', 'element', 'inet', 'helena_hardening', 'volition_npu_uids', '{ 0 }'], check=True)
+    got = attempt(None, '127.0.0.1', 13310)
+    want = 'open' if allowed else 'refused'
+    good = got == want
+    ok &= good
+    print(('PASS ' if good else 'FAIL ') + f'NPU worker uid allowed={allowed}: {got} (expected {want})')
 sys.exit(0 if ok else 1)
 PY
 # Inbound: a peer in its own namespace behind the veth, once from the home network and

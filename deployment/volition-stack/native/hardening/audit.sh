@@ -200,6 +200,13 @@ else
       record net.voice_acl network high fail "every local user reaches the voice servers (13306, 13307): apply.sh firewall"
     fi
   fi
+  if [[ -e /etc/systemd/system/volition-npu.service ]]; then
+    if grep -q 'volition:acl-npu' <<<"$nft_rules"; then
+      record net.volition_npu_acl network high pass "the unkeyed NPU worker (13310) is limited to root and its gateway user"
+    else
+      record net.volition_npu_acl network high fail "the NPU worker lacks its loopback ACL: apply.sh firewall"
+    fi
+  fi
 fi
 
 # Listeners on a wildcard or LAN address. Allowed from the network: SSH, HTTP(S),
@@ -670,7 +677,7 @@ exposed_tools() {
   ss -H -ltn 2>/dev/null | awk '{print $4}' | while read -r addr; do
     local port=${addr##*:} host=${addr%:*}
     case "$port" in
-      3000|3001|6082|8384|8443|8444|18443|13306|13307|14306|14307|9222|1920[0-9]|192[1-9][0-9]|1608[0-9]|1609[0-9]|"$TUNNEL_PORT") ;;
+      3000|3001|6082|8384|8443|8444|18443|13306|13307|13309|13310|14306|14307|9222|1920[0-9]|192[1-9][0-9]|1608[0-9]|1609[0-9]|"$TUNNEL_PORT") ;;
       *) continue ;;
     esac
     case "$host" in
