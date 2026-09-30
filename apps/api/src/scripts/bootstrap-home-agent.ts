@@ -14,7 +14,7 @@ import { and, asc, eq, isNull, sql } from 'drizzle-orm';
 
 import { HOME_AGENT_USERNAME, isHomeAgent } from '#modules/agents/core/home-agent';
 import {
-  AGENT_RUNTIMES,
+  agentRuntimes,
   createAgent,
   regenerateKey,
   type AgentRuntimeKind,
@@ -52,6 +52,9 @@ export interface ProjectCoordinatorBootstrapResult {
   apiKey: string | null;
   projectInstructions: string;
   agentInstructions: string;
+  // What runs the coordinator: Hermes, or the runtime its policy selects (Helena's own loop,
+  // Claude Code, Codex), which the provisioning writes into its runner descriptor.
+  runtime: AgentRuntimeKind;
 }
 
 async function isAgentKey(userId: string, apiKey: string): Promise<boolean> {
@@ -141,7 +144,10 @@ export async function bootstrapProjectCoordinator(
   if (!agent) throw new Error('The project coordinator could not be created');
   const apiKey = await currentOrNewKey(agent, target.teamId, currentApiKey);
   const [full] = await db
-    .select({ instructions: aiAgent.instructions })
+    .select({
+      instructions: aiAgent.instructions,
+      runtime: sql<string | null>`${aiAgent.runtimePolicy}->>'runtime'`,
+    })
     .from(aiAgent)
     .where(eq(aiAgent.id, agent.id))
     .limit(1);
@@ -169,6 +175,7 @@ export async function bootstrapProjectCoordinator(
     apiKey,
     projectInstructions: assignment?.instructions ?? '',
     agentInstructions: full?.instructions ?? '',
+    runtime: agentRuntimes().find((kind) => kind === full?.runtime) ?? 'hermes',
   };
 }
 
@@ -219,7 +226,7 @@ export async function bootstrapProjectAgent(
   ) {
     return null;
   }
-  const runtime = AGENT_RUNTIMES.find((kind) => kind === agent.runtime) ?? 'hermes';
+  const runtime = agentRuntimes().find((kind) => kind === agent.runtime) ?? 'hermes';
   return {
     agent: { id: agent.id, userId: agent.userId, username: agent.username },
     apiKey: await currentOrNewKey(agent, agent.teamId, currentApiKey),

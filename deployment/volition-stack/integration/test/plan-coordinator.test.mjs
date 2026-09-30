@@ -165,8 +165,8 @@ describe("ensurePlanCoordinator with the Plan control token", () => {
     hermesRunnerDescriptorRoot: "/data/hermes/run/agents",
   };
 
-  function controlled() {
-    const state = { validKey: null, issued: 0, offered: [], writes: 0, descriptor: null };
+  function controlled(runtime) {
+    const state = { validKey: null, issued: 0, offered: [], writes: 0, descriptor: null, runtime };
     const fetchImpl = async (url, init) => {
       assert.equal(new URL(url).pathname, "/internal/bootstrap/project-coordinator");
       assert.equal(init.headers.Authorization, `Bearer ${controlConfig.planControlToken}`);
@@ -184,6 +184,7 @@ describe("ensurePlanCoordinator with the Plan control token", () => {
         apiKey,
         projectInstructions: "",
         agentInstructions: "",
+        ...(state.runtime ? { runtime: state.runtime } : {}),
       });
     };
     const descriptorStore = {
@@ -192,6 +193,23 @@ describe("ensurePlanCoordinator with the Plan control token", () => {
     };
     return { state, options: { fetchImpl, descriptorStore, workspace } };
   }
+
+  it("names the coordinator's selected runtime in its descriptor and rewrites it on a change", async () => {
+    const { state, options } = controlled("helena");
+    const first = await ensurePlanCoordinator(controlConfig, project, options);
+    assert.equal(first.descriptorChanged, true);
+    assert.equal(state.descriptor.runtime, "helena");
+
+    state.runtime = "hermes";
+    const back = await ensurePlanCoordinator(controlConfig, project, options);
+    assert.equal(back.descriptorChanged, true);
+    assert.equal("runtime" in state.descriptor, false);
+
+    state.runtime = undefined;
+    const older = await ensurePlanCoordinator(controlConfig, project, options);
+    assert.equal(older.descriptorChanged, false);
+    assert.equal("runtime" in state.descriptor, false);
+  });
 
   it("issues a key and writes the descriptor when none exists", async () => {
     const { state, options } = controlled();

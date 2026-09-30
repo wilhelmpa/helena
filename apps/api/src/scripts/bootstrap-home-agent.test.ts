@@ -160,6 +160,35 @@ describe('Project coordinator bootstrap', () => {
     expect(await keyWorks(replaced!.apiKey!)).toBe(true);
   });
 
+  it("names the coordinator's runtime from its policy, Hermes when the policy names none", async () => {
+    const project = await createdProject();
+    const first = await bootstrapProjectCoordinator(project.id);
+    expect(first?.runtime).toBe('hermes');
+    const [row] = await db
+      .select({ policy: aiAgent.runtimePolicy })
+      .from(aiAgent)
+      .where(eq(aiAgent.id, first!.agent.id));
+    await db
+      .update(aiAgent)
+      .set({ runtimePolicy: { ...(row!.policy as AgentRuntimePolicy), runtime: 'helena' } })
+      .where(eq(aiAgent.id, first!.agent.id));
+    // Without the switch HELENA_NATIVE_RUNTIME the API does not know the runtime: Hermes.
+    const saved = process.env.HELENA_NATIVE_RUNTIME;
+    delete process.env.HELENA_NATIVE_RUNTIME;
+    try {
+      expect((await bootstrapProjectCoordinator(project.id, first!.apiKey!))?.runtime).toBe(
+        'hermes',
+      );
+      process.env.HELENA_NATIVE_RUNTIME = 'on';
+      const native = await bootstrapProjectCoordinator(project.id, first!.apiKey!);
+      expect(native?.runtime).toBe('helena');
+      expect(native?.apiKey).toBeNull();
+    } finally {
+      if (saved === undefined) delete process.env.HELENA_NATIVE_RUNTIME;
+      else process.env.HELENA_NATIVE_RUNTIME = saved;
+    }
+  });
+
   it('reuses the coordinator assigned to a project under its legacy handle', async () => {
     const project = await createdProject();
     const first = await bootstrapProjectCoordinator(project.id);

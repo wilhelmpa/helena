@@ -547,11 +547,14 @@ async function ensureKeyedDescriptor(config, project, options, { name, route, bo
 async function ensureControlledCoordinator(config, project, options) {
   const slug = coordinatorSlug(project);
   const username = `${slug}-koordinator`;
-  const { result, agent, descriptorChanged } = await ensureKeyedDescriptor(config, project, options, {
+  const { result, agent, descriptorChanged, runtime } = await ensureKeyedDescriptor(config, project, options, {
     name: slug,
     route: '/internal/bootstrap/project-coordinator',
     body: { projectId: project.id },
     isAgent: (_id, candidate) => candidate === username,
+    // The coordinator runs on the runtime its policy selects, like the project's agents; an
+    // older Helena names none, and then it is a Hermes agent.
+    runtimeOf: (answer) => answer?.runtime ?? 'hermes',
   });
   return {
     planAgentId: agent.id,
@@ -559,6 +562,7 @@ async function ensureControlledCoordinator(config, project, options) {
     username: agent.username,
     hermesIdentity: agent.username,
     descriptorChanged,
+    runtime,
     organization: {
       projectInstructions: result.projectInstructions ?? '',
       agentInstructions: result.agentInstructions ?? '',
