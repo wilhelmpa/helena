@@ -6,6 +6,7 @@ import { loadConnection } from '#modules/browser-task/connection';
 import { costOfUsage } from '#modules/model-prices/service';
 import { decisionClass } from './classes';
 import { askConnection, classSetting, effectiveThreshold } from './service';
+import { jevDecisionPolicy } from './jev-policy';
 
 // The eval of a decision class on one connection (docs/helena-decisions/decisions.md §8): the
 // class's labelled cases asked exactly as the feature asks them, scored by code. It runs in the
@@ -134,6 +135,12 @@ export async function evalAllows(
   if (connection?.backend.id === 'local-logit' && latest.model !== connection.model)
     return { ok: false, reason: 'no_eval' };
   if (!latest.passed) return { ok: false, reason: 'eval_failed' };
+  if (
+    connection &&
+    ['typesafe', 'vercel'].includes(connection.backend.id) &&
+    latest.precision !== 1
+  )
+    return { ok: false, reason: 'eval_failed' };
   if (threshold + 1e-9 < latest.threshold) return { ok: false, reason: 'eval_threshold' };
   return { ok: true };
 }
@@ -153,7 +160,13 @@ export async function startEval(
   const connection = await loadConnection(credentialId);
   if (!connection || connection.teamId !== teamId)
     throw new HttpError(400, 'That decision model connection is not one of this team.');
-  const threshold = input.threshold ?? effectiveThreshold(cls, setting);
+  const calibrated = jevDecisionPolicy(
+    classId,
+    connection.backend.id,
+    input.threshold ?? effectiveThreshold(cls, setting),
+    input.threshold ?? setting.threshold,
+  );
+  const threshold = calibrated.threshold;
   // One eval per class and connection at a time.
   const [busy] = await db
     .select({ id: helenaDecisionEval.id, createdAt: helenaDecisionEval.createdAt })
@@ -187,7 +200,10 @@ export async function startEval(
     let error: string | null = null;
     try {
       report = await runDecisionEval(
-        cls.eval!,
+        {
+          ...cls.eval!,
+          ...(['typesafe', 'vercel'].includes(connection.backend.id) && { minPrecision: 1 }),
+        },
         threshold,
         async (context, questions) => {
           const result = await askConnection(

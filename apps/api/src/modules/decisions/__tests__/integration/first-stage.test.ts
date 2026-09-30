@@ -753,7 +753,7 @@ it('revokes a team stage after a quick master off/on before the next poll', asyn
 });
 
 for (const mode of ['on', 'off', 'uncertain', 'in-flight-off'] as const) {
-  it(`applies ${mode} at the actual existing mail classifier`, async () => {
+  it(`keeps unvalidated mail on the primary backend with stage mode ${mode}`, async () => {
     const { api, teamId, project, primary, jev } = await setup({ timeoutMs: 3000 });
     for (const id of [primary, jev]) await passed(teamId, MAIL_CLASS, id);
     const { accountId, inboxId } = await insertMailAccount(teamId, project.id);
@@ -797,7 +797,7 @@ for (const mode of ['on', 'off', 'uncertain', 'in-flight-off'] as const) {
     });
     if (mode === 'uncertain') behavior.jev = 'uncertain';
     if (mode === 'in-flight-off') {
-      behavior.jev = 'wait';
+      behavior.primary = 'wait';
       gate = new Promise<void>((resolve) => {
         release = resolve;
       });
@@ -805,16 +805,17 @@ for (const mode of ['on', 'off', 'uncertain', 'in-flight-off'] as const) {
     const pending = classifyMessage(teamId, config, message.messageRowId, null, project.id);
     try {
       if (mode === 'in-flight-off') {
-        await waitForStage();
+        const deadline = Date.now() + 1000;
+        while (!calls.includes('primary') && Date.now() < deadline) await Bun.sleep(5);
+        expect(calls).toEqual(['primary']);
         await policy.patch({ useCases: { [MAIL_CLASS]: { enabled: false, cloudAllowed: false } } });
+        release?.();
       }
       const result = await pending;
       expect(result).not.toBeNull();
       expect(result?.issueId).toBeNull();
       expect(result?.actions.some((action) => action.kind === 'task')).toBe(false);
-      expect(calls).toEqual(
-        mode === 'on' ? ['jev'] : mode === 'off' ? ['primary'] : ['jev', 'primary'],
-      );
+      expect(calls).toEqual(['primary']);
     } finally {
       release?.();
       await pending;

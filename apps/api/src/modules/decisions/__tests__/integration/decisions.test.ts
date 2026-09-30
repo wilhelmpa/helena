@@ -765,8 +765,8 @@ describe('the mail classifier', () => {
       project: projectOptionId('PRIV'),
       category: 'notification',
       priority: 'normal',
-      needs_reply: 0.1,
-      create_task: 0.1,
+      needs_reply: 'no',
+      create_task: 'no',
       task_eligibility: 'tk_mailbox_notice',
     };
     await switchOn(asOwner, teamId, MAIL_CLASS, credentialId, {
@@ -847,8 +847,8 @@ describe('the mail classifier', () => {
       project: projectOptionId('PRIV'),
       category: 'invoice',
       priority: 'normal',
-      needs_reply: 0.1,
-      create_task: 0.9,
+      needs_reply: 'no',
+      create_task: 'yes',
       task_eligibility: 'actionable',
     };
     const config = mailTriageConfig({
@@ -1225,8 +1225,8 @@ describe('the mail classifier', () => {
       project: projectOptionId('PRIV'),
       category: 'invoice',
       priority: 'normal',
-      needs_reply: 0.1,
-      create_task: 0.9,
+      needs_reply: 'no',
+      create_task: 'yes',
       task_eligibility: 'actionable',
     };
     const config = mailTriageConfig({ project: 'suggest', task: 'suggest' });
@@ -1276,8 +1276,8 @@ describe('the mail classifier', () => {
       project: projectOptionId('PRIV'),
       category: 'advertising',
       priority: 'high',
-      needs_reply: 0.9,
-      create_task: 0.9,
+      needs_reply: 'yes',
+      create_task: 'yes',
     };
     const config = mailTriageConfig({ task: 'auto' });
     const ad = await insertMessage({
@@ -1299,7 +1299,7 @@ describe('the mail classifier', () => {
     answers = {
       ...answers,
       category: 'notification',
-      create_task: 0.1,
+      create_task: 'no',
       task_eligibility: 'tk_mailbox_notice',
     };
     const tk = await insertMessage({
@@ -1325,7 +1325,7 @@ describe('the mail classifier', () => {
       ['notification', 'uncertain', 0.94],
       ['notification', 'tk_mailbox_notice', 0.51],
     ] as const) {
-      answers = { ...answers, category, task_eligibility: eligibility, create_task: 0.99 };
+      answers = { ...answers, category, task_eligibility: eligibility, create_task: 'yes' };
       answerConfidence = { task_eligibility: confidence };
       const message = await insertMessage({
         teamId,
@@ -1380,8 +1380,8 @@ describe('the mail classifier', () => {
         project: 'none',
         category: category!,
         priority: 'high',
-        needs_reply: 0.1,
-        create_task: 0.99,
+        needs_reply: 'no',
+        create_task: 'yes',
         task_eligibility: eligibility!,
       };
       const message = await insertMessage({
@@ -1437,11 +1437,15 @@ describe('the mail classifier', () => {
         project: 'none',
         category: 'notification',
         priority: 'high',
-        needs_reply: 0.1,
-        create_task: taskProbability,
+        needs_reply: 'no',
+        create_task: 'yes',
         task_eligibility: eligibility,
       };
-      answerConfidence = { task_eligibility: confidence, category: categoryConfidence };
+      answerConfidence = {
+        task_eligibility: confidence,
+        category: categoryConfidence,
+        create_task: taskProbability,
+      };
       const message = await insertMessage({
         teamId,
         accountId,
@@ -1495,8 +1499,8 @@ describe('the mail classifier', () => {
       project: projectOptionId('OTHER'),
       category: 'invoice',
       priority: 'normal',
-      needs_reply: 0.1,
-      create_task: 0.99,
+      needs_reply: 'no',
+      create_task: 'yes',
       task_eligibility: 'uncertain',
     };
     const config = mailTriageConfig({ task: 'auto', receipts: 'auto', accountIds: [accountId] });
@@ -1585,8 +1589,8 @@ describe('the mail classifier', () => {
       project: projectOptionId(project.key),
       category: 'invoice',
       priority: 'normal',
-      needs_reply: 0.1,
-      create_task: 0.1,
+      needs_reply: 'no',
+      create_task: 'no',
       task_eligibility: 'no_action',
     };
     const original = await insertMessage({
@@ -1698,8 +1702,8 @@ describe('the mail classifier', () => {
       project: projectOptionId('PRIV'),
       category: 'advertising',
       priority: 'low',
-      needs_reply: 0.1,
-      create_task: 0.1,
+      needs_reply: 'no',
+      create_task: 'no',
     };
     let retryMessageId = 0;
     for (let index = 0; index < 21; index += 1) {
