@@ -36,9 +36,9 @@ export function mailFrameDocument(input: {
 
 const INVERT = 'invert(1) hue-rotate(180deg)';
 
-function darkStyle(surface = '#141218'): string {
+function darkStyle(surface = '#1a1820'): string {
   // Only a plain colour goes into the document: the value comes from the app's own CSS.
-  const color = /^#[0-9a-f]{3,8}$/i.test(surface) ? surface : '#141218';
+  const color = /^#[0-9a-f]{3,8}$/i.test(surface) ? surface : '#1a1820';
   return [
     `:root{color-scheme:dark;background:${color}}`,
     `body{background:transparent;filter:${INVERT};mix-blend-mode:lighten}`,

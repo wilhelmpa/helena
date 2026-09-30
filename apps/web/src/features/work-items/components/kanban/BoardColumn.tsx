@@ -114,7 +114,7 @@ export function BoardColumn({
       )}
     >
       <div
-        className="relative mb-1 flex min-h-4 items-center justify-between gap-1 px-1 pt-0.5"
+        className="relative mb-1 flex min-h-4 items-center justify-between gap-1 pt-0.5"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="board-column-heading flex min-w-0 items-center gap-2 truncate text-muted-foreground">
