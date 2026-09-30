@@ -490,7 +490,7 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
         .catch(() => null);
       const selected = names?.filter((name) => toolsByName.has(name));
       if (selected?.length) {
-        offered = new Set(selected);
+        offered = new Set([...input.direct, ...selected].filter((name) => toolsByName.has(name)));
         for (const name of discovered) offered.add(name);
         if (toolsByName.has('find_tools')) offered.add('find_tools');
         for (const name of offered) active.add(name);

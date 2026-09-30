@@ -30,15 +30,23 @@ function selectionClient(selectTools: NonNullable<HelenaApi['selectTools']>): He
   };
 }
 
-test('tool preselection narrows the model catalog and keeps find_tools', async () => {
+test('tool preselection keeps the profile core and find_tools', async () => {
   const { primary, result } = await run([{ text: 'Done.' }], {
     prompt: 'Read the file.',
     helena: selectionClient(async () => ({ names: ['read_file'] })),
   });
   expect(result.status).toBe('success');
   expect(primary.doStreamCalls[0]!.tools?.map((tool) => tool.name).sort()).toEqual([
+    'clarify',
+    'edit_file',
     'find_tools',
+    'list_files',
+    'memory',
     'read_file',
+    'search_files',
+    'search_sessions',
+    'shell',
+    'write_file',
   ]);
 });
 
