@@ -136,9 +136,11 @@ for (const entry of [...BUILTIN_TASK_CLASSES, DECISIONS_LOCAL_AI_CLASS]) {
       },
       (retry) => {
         retries.push(retry);
-        say(
-          `    ${entry.id}: ${retry.reason}; attempt ${retry.attempt} after ${retry.delayMs} ms (${retry.error})`,
-        );
+        const detail =
+          retry.reason === 'socket_closed'
+            ? `socket closed; retrying once after ${retry.delayMs} ms`
+            : `${retry.reason}; attempt ${retry.attempt} after ${retry.delayMs} ms`;
+        say(`    ${entry.id}: ${detail} (${retry.error})`);
       },
     );
   } catch (caught) {
@@ -172,8 +174,10 @@ for (const entry of [...BUILTIN_TASK_CLASSES, DECISIONS_LOCAL_AI_CLASS]) {
     say(
       `    NPU readout: timeout ${npuReadout.timeoutMs} ms; ${npuReadout.timeouts.length} timeouts; ${npuReadout.failures.length} decision failures; ${npuReadout.errors.length} backend errors`,
     );
-  if (retries.length)
-    say(`    backend retry: ${result ? 'completed' : 'failed'} (${retries.length})`);
+  if (retries.length) {
+    const kind = retries.every((retry) => retry.reason === 'socket_closed') ? 'socket' : 'backend';
+    say(`    ${kind} retry: ${result ? 'completed' : 'failed'} (${retries.length})`);
+  }
 }
 
 const report = `${JSON.stringify({ base, rows }, null, 2)}\n`;
