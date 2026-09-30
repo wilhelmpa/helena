@@ -9,6 +9,7 @@ import type {
   MatrixSchema,
   MatrixValues,
   ModelMatrix,
+  SchemaCatalogModel,
 } from '@/lib/api/endpoints/modelMatrix';
 import type { OrganizationAgent } from '@/lib/api/endpoints/organization';
 import localAi from '../../../../messages/de/localAi.json';
@@ -18,6 +19,8 @@ import { EMPTY_PENDING, setAgentValue } from '../utils/pending';
 import { AgentMatrix } from './AgentMatrix';
 import { ClassMatrix } from './ClassMatrix';
 import { MatrixHeader } from './MatrixHeader';
+import { SchemaCard } from './SchemaCard';
+import { SchemaRoleCard } from './SchemaRoleCard';
 
 const wrap = (node: React.ReactNode) =>
   renderToStaticMarkup(
@@ -226,7 +229,6 @@ describe('Kopf: Rückgängig über die Historie des Servers', () => {
             project={null}
             labels={labels}
             onProfile={noop}
-            onSchema={noop}
             onProjectSchema={noop}
             onUndo={noop}
             undoSteps={undoSteps}
@@ -234,6 +236,34 @@ describe('Kopf: Rückgängig über die Historie des Servers', () => {
         )}
       </Harness>,
     );
+
+  it('bietet beide lokalen Profile auch bei einem mitgelieferten Schema an', () => {
+    const html = wrap(
+      <Harness>
+        {(labels) => (
+          <MatrixHeader
+            matrix={{
+              ...matrix,
+              schemas: { ...matrix.schemas, 'nur-lokal': { ...schema, builtIn: true } },
+              profiles: [
+                { id: 'local-halogen', name: 'Lokal Halogen' },
+                { id: 'local-27b-npu', name: 'Lokal 27B + NPU' },
+              ] as MatrixProfile[],
+            }}
+            pending={EMPTY_PENDING}
+            project={null}
+            labels={labels}
+            onProfile={noop}
+            onProjectSchema={noop}
+            onUndo={noop}
+            undoSteps={0}
+          />
+        )}
+      </Harness>,
+    );
+    assert.match(html, /role="tablist"/);
+    assert.match(html, /Lokal 27B \+ NPU/);
+  });
 
   it('nennt, wie viele Schritte der Server zurücknehmen kann', () => {
     assert.match(header(4), /bis zu 4 Schritte/);
@@ -244,5 +274,153 @@ describe('Kopf: Rückgängig über die Historie des Servers', () => {
     const html = header(0);
     assert.match(html, /Noch nichts zum Rückgängigmachen/);
     assert.match(html, /disabled=""/);
+  });
+});
+
+describe('Schemata als Karten', () => {
+  const custom: MatrixSchema = {
+    ...schema,
+    id: 'eigenes',
+    name: 'Mein Mix',
+    description: 'Routine lokal, der Rest Codex.',
+    roles: { general: values, coder: { ...values, runtime: 'codex', model: 'gpt-6-sol' } },
+  };
+  const card = (over: Partial<Parameters<typeof SchemaCard>[0]> = {}) =>
+    wrap(
+      <Harness>
+        {(labels) => (
+          <SchemaCard
+            schema={custom}
+            labels={labels}
+            active={false}
+            activating={false}
+            projects={[]}
+            selected={false}
+            onSelect={noop}
+            onActivate={noop}
+            onCopy={noop}
+            onEdit={noop}
+            onDelete={noop}
+            {...over}
+          />
+        )}
+      </Harness>,
+    );
+
+  it('nennt Name, Beschreibung, Rollen und Laufzeiten', () => {
+    const html = card();
+    assert.match(html, /Mein Mix/);
+    assert.match(html, /Routine lokal, der Rest Codex\./);
+    assert.match(html, /2 Rollen/);
+    assert.match(html, /Ava-Laufzeit, Codex/);
+    assert.match(html, /Eigenes/);
+    assert.match(html, /Rollen bearbeiten/);
+    assert.match(html, /Aktivieren/);
+  });
+
+  it('zeigt, ob das Schema aktiv ist oder gerade dazu gewählt wurde', () => {
+    assert.match(card({ active: true }), /Aktiv/);
+    assert.doesNotMatch(card({ active: true }), /Aktivieren/);
+    const staged = card({ activating: true });
+    assert.match(staged, /Wird aktiviert/);
+    assert.match(staged, /Aktivierung zurücknehmen/);
+  });
+
+  it('ein mitgeliefertes Schema wird nur angesehen und trägt unsere Beschreibung', () => {
+    const html = card({ schema: { ...schema, builtIn: true } });
+    assert.match(html, /Mitgeliefert/);
+    assert.match(html, /Rollen ansehen/);
+    assert.match(html, /Alle Agenten laufen lokal/);
+  });
+
+  it('nennt die Projekte, die dem Schema folgen', () => {
+    const html = card({ projects: ['VOL', 'FAM'] });
+    assert.match(html, /2 Projekte/);
+    assert.match(html, /title="VOL, FAM"/);
+  });
+});
+
+describe('Rollen eines Schemas als Karten', () => {
+  const catalog: SchemaCatalogModel[] = [
+    {
+      id: 'volition-local-default',
+      name: '',
+      runtime: 'helena',
+      reasoning: false,
+      thinkingLevels: [],
+      thinkingDefault: null,
+    },
+    {
+      id: 'gpt-6-sol',
+      name: 'GPT-6 Sol',
+      runtime: 'codex',
+      reasoning: true,
+      thinkingLevels: ['low', 'high'],
+      thinkingDefault: null,
+    },
+  ];
+  const role = (over: Partial<Parameters<typeof SchemaRoleCard>[0]> = {}) =>
+    wrap(
+      <Harness>
+        {(labels) => (
+          <SchemaRoleCard
+            roleId="coder"
+            values={{ ...values, runtime: 'codex', model: 'gpt-6-sol', reasoning: null }}
+            staged={new Set()}
+            added={false}
+            editable
+            catalog={catalog}
+            labels={labels}
+            onChange={noop}
+            onReset={noop}
+            onDiscard={noop}
+            {...over}
+          />
+        )}
+      </Harness>,
+    );
+
+  it('zeigt jede Spalte der Rolle in Worten', () => {
+    const html = role();
+    assert.match(html, /Coder/);
+    for (const column of [
+      'Laufzeit',
+      'Modell',
+      'Denktiefe',
+      'Eskalation',
+      'Browser-Steuerung',
+      'Entscheider',
+      'Gerät',
+    ])
+      assert.match(html, new RegExp(column));
+    assert.match(html, /GPT-6 Sol/);
+    assert.match(html, /Standard des Modells/);
+    assert.doesNotMatch(html, /volition-local-default|runtime:codex/);
+  });
+
+  it('ein eigenes Schema bietet die Werte als Knöpfe an', () => {
+    assert.match(role(), /ds-matrix-cell/);
+  });
+
+  it('ein mitgeliefertes Schema zeigt die Werte nur', () => {
+    const html = role({ editable: false });
+    assert.doesNotMatch(html, /ds-matrix-cell"/);
+    assert.match(html, /ds-matrix-value/);
+    assert.match(html, /GPT-6 Sol/);
+  });
+
+  it('bietet Entfernen nur für gespeicherte Zusatzrollen an', () => {
+    assert.match(role({ onRemove: noop }), /Entfernen/);
+    assert.doesNotMatch(role({ roleId: 'general', onRemove: noop }), /Entfernen/);
+    assert.doesNotMatch(role({ added: true, onRemove: noop }), /Entfernen/);
+  });
+
+  it('kennzeichnet geänderte Zellen und neue Rollen', () => {
+    const changed = role({ staged: new Set(['reasoning'] as const) });
+    assert.match(changed, /data-kind="changed"/);
+    assert.match(changed, /Geändert/);
+    const added = role({ added: true });
+    assert.match(added, /Neu/);
+    assert.match(added, /Verwerfen/);
   });
 });

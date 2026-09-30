@@ -5,7 +5,7 @@
 - `intern`: machine, runner, webhook or internal transport endpoint.
 - `binär`: file transfer or streamed payload unsuitable for the JSON tool dispatcher.
 - `auth`: sign-in, session, OAuth callback or interactive account linking.
-- `admin`: instance or credential control plane, including `/god` routes excluded by Auftrag 118b.
+- `admin`: instance or credential control plane, including `/god` routes excluded by Auftrag 118b; model schema tools are explicitly enabled for the owner and Home by Auftrag 163.
 - `UI-only`: personal browser state, picker or public share view.
 
 Catalog tools dispatch to the original route with the caller's key. The route's authentication, team and project guards continue to enforce access. A catalog entry carries an action category and gets its input and output schemas from the route.

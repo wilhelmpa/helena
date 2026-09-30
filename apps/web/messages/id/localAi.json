@@ -428,7 +428,8 @@
       "own": "Pengaturan sendiri agen ini",
       "staged": "Diubah, belum diterapkan",
       "schema": "Mewarisi dari skema “{schema}”",
-      "project": "Mewarisi dari skema proyek “{schema}”"
+      "project": "Mewarisi dari skema proyek “{schema}”",
+      "inSchema": "Nilai skema ini"
     },
     "columns": {
       "runtime": "Runtime",
@@ -451,7 +452,8 @@
       "low": "Rendah",
       "medium": "Sedang",
       "high": "Tinggi",
-      "xhigh": "Sangat tinggi"
+      "xhigh": "Sangat tinggi",
+      "default": "Bawaan model"
     },
     "browser": {
       "standard": "Standar",
@@ -584,6 +586,10 @@
         "schema": "skema",
         "project": "proyek",
         "own": "sendiri"
+      },
+      "retained": {
+        "title": "{count, plural, other {# agen mempertahankan pengaturannya sendiri}}",
+        "text": "Nilai ini ditetapkan oleh agen sendiri. Nilai tidak berubah, meskipun skema menyatakan hal lain."
       }
     },
     "conflict": {
@@ -615,10 +621,12 @@
       "switchDevices": "Alihkan perangkat",
       "switchFailed": "Peralihan gagal",
       "switchFailedText": "Peralihan terakhir berakhir dengan kesalahan. Anda dapat melanjutkan atau membatalkannya di pengaturan AI lokal.",
-      "schema": "Skema",
+      "schema": "Skema aktif",
       "projectSchema": "Skema untuk {project}",
       "projectInherits": "Mengikuti skema aktif",
-      "inherit": "Seperti skema aktif"
+      "inherit": "Seperti skema aktif",
+      "schemaHint": "Skema tidak ditemukan",
+      "profileLocked": "Profil lokal skema bawaan tidak dapat diubah. Salin skema untuk memilih profil lain."
     },
     "profiles": {
       "local-halogen": "Hanya GPU dengan Flash, NPU mati",
@@ -688,7 +696,13 @@
       "npuDecision": "NPU tidak lulus evaluasi pengambil keputusan.",
       "unknown": "Agen, proyek, atau skema sudah tidak ada. Muat ulang halaman.",
       "invalid": "Ada nilai yang tidak diizinkan. Periksa pengaturan sel yang diubah.",
-      "rejected": "Server menolak perubahan. Tidak ada yang diubah."
+      "rejected": "Server menolak perubahan. Tidak ada yang diubah.",
+      "reasoning": "Kedalaman berpikir yang dipilih tidak cocok dengan model.",
+      "modelUnavailable": "Model yang dipilih tidak tersedia untuk runtime ini.",
+      "needsGeneral": "Skema memerlukan peran “Umum” sebelum dapat diaktifkan.",
+      "inUse": "Skema masih digunakan.",
+      "builtIn": "Skema bawaan tidak dapat diubah. Salin skema terlebih dahulu.",
+      "role": "Salah satu peran skema tidak lengkap. Muat ulang halaman dan coba lagi."
     },
     "columnsShort": {
       "runtime": "Runtime",
@@ -698,6 +712,97 @@
       "browser": "Browser",
       "decision": "Keputusan",
       "device": "Perangkat"
+    },
+    "discard": "Buang",
+    "schemaEditor": {
+      "title": "Skema",
+      "description": "Skema menentukan runtime, model, dan kedalaman berpikir untuk setiap peran. Skema bawaan dilindungi, tetapi dapat disalin.",
+      "new": "Skema baru",
+      "noDescription": "Tanpa deskripsi",
+      "roleCount": "{count, plural, other {# peran}}",
+      "activate": "Aktifkan",
+      "activateUndo": "Batalkan pengaktifan",
+      "view": "Lihat peran",
+      "editRoles": "Ubah peran",
+      "badge": {
+        "active": "Aktif",
+        "activating": "Akan diaktifkan",
+        "builtIn": "Bawaan",
+        "custom": "Milik sendiri",
+        "projects": "{count, plural, other {# proyek}}"
+      },
+      "menu": {
+        "label": "Tindakan untuk {name}",
+        "copy": "Salin",
+        "edit": "Ubah nama dan deskripsi",
+        "delete": "Hapus",
+        "deleteInUse": "Hapus (sedang digunakan)"
+      },
+      "dialog": {
+        "createTitle": "Skema baru",
+        "copyTitle": "Salin “{name}”",
+        "editTitle": "Ubah nama dan deskripsi skema",
+        "copyNote": "Salinan membawa semua peran “{name}” dan setelahnya dapat diubah bebas.",
+        "emptyNote": "Skema baru masih kosong. Peran ditambahkan setelahnya; untuk mengaktifkannya dibutuhkan minimal “Umum”.",
+        "name": "Nama",
+        "namePlaceholder": "mis. Campuran saya",
+        "description": "Deskripsi",
+        "descriptionHint": "Satu kalimat tentang kapan skema ini cocok.",
+        "copyName": "{name} (salinan)",
+        "create": "Buat",
+        "save": "Simpan",
+        "cancel": "Batal",
+        "failed": "Skema tidak dapat disimpan"
+      },
+      "delete": {
+        "title": "Hapus “{name}”?",
+        "text": "Skema dihapus. Tidak ada agen atau proyek yang mengikutinya saat ini, jadi tidak ada yang berubah bagi siapa pun.",
+        "confirm": "Hapus",
+        "failed": "Skema tidak dapat dihapus. Skema aktif atau ditetapkan ke sebuah proyek."
+      },
+      "toast": {
+        "created": "Skema dibuat",
+        "updated": "Skema disimpan",
+        "deleted": "Skema dihapus"
+      },
+      "roles": {
+        "title": "Peran di “{name}”",
+        "builtIn": "Skema ini bawaan dan dilindungi. Buat salinan untuk mengubah peran.",
+        "custom": "Klik nilai untuk mengubahnya. Perubahan baru diterapkan setelah pratinjau.",
+        "copyToEdit": "Buat salinan untuk diubah",
+        "add": "Tambah peran",
+        "emptyTitle": "Belum ada peran",
+        "emptyText": "Tambahkan dulu peran “Umum”. Peran ini berlaku untuk semua agen yang perannya tidak disebut skema.",
+        "needsGeneral": "Peran “Umum” belum ada",
+        "needsGeneralText": "Tanpanya skema tidak dapat diaktifkan.",
+        "new": "Baru",
+        "changed": "Diubah",
+        "discard": "Buang",
+        "catalogFailed": "Pilihan tidak dapat dimuat",
+        "catalogFailedText": "Tanpa daftar model yang tersedia, nilai tidak dapat diubah. Muat ulang halaman."
+      },
+      "roleDelete": {
+        "menu": "Actions for {name}",
+        "title": "Remove role {name}?",
+        "confirm": "Remove",
+        "text": "Agents using this role will inherit General. Their own overrides are retained.",
+        "failed": "The role could not be removed. Reload the schema and check its General fallback."
+      },
+      "audit": {
+        "title": "Schema audit log",
+        "entry": "Revision {revision} · {action}",
+        "empty": "No schema changes yet.",
+        "failed": "The schema audit log could not be loaded.",
+        "actions": {
+          "apply": "Applied",
+          "create": "Created",
+          "update": "Updated",
+          "update-role": "Role updated",
+          "delete-role": "Role removed",
+          "delete": "Deleted",
+          "undo": "Undone"
+        }
+      }
     }
   }
 }

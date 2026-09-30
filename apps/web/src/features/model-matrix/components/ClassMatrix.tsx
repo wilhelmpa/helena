@@ -2,7 +2,18 @@
 
 import { Fragment } from 'react';
 import { useTranslations } from 'next-intl';
-import { ButtonLink, Inline, Pill, Table, Td, Text, Th, Tr, type PillTone } from '@/design-system';
+import {
+  ButtonLink,
+  Inline,
+  ListBox,
+  Pill,
+  Table,
+  Td,
+  Text,
+  Th,
+  Tr,
+  type PillTone,
+} from '@/design-system';
 import type { EvalStatus, MatrixClass, MatrixDecision } from '@/lib/api/endpoints/modelMatrix';
 import { helenaSettingsPath } from '@/features/settings/settingsModalCatalog';
 import { classModelLabel } from '../utils/modelLabels';
@@ -53,71 +64,73 @@ export function ClassMatrix({ classes, labels }: { classes: MatrixClass[]; label
           {t('classes.openDecisions')}
         </ButtonLink>
       </Inline>
-      <Table label={t('classes.title')} className="ds-matrix">
-        <thead>
-          <tr>
-            <Th>{t('classes.class')}</Th>
-            <Th>{t('classes.device')}</Th>
-            <Th>{t('classes.model')}</Th>
-            <Th>{t('classes.eval')}</Th>
-            <Th>{t('classes.also')}</Th>
-          </tr>
-        </thead>
-        <tbody>
-          {GROUPS.map((group) => {
-            const inGroup = classes.filter((entry) => groupOf(entry.id) === group);
-            if (!inGroup.length) return null;
-            return (
-              <Fragment key={group}>
-                <Tr className="ds-matrix-group-row">
-                  <Td colSpan={5}>{t(`classes.groups.${group}`)}</Td>
-                </Tr>
-                {inGroup.map((entry) => (
-                  <Tr key={entry.id}>
-                    <Td label={t('classes.class')}>
-                      <Text weight="medium">{className(entry.id)}</Text>
-                    </Td>
-                    <Td label={t('classes.device')}>{t(`classes.devices.${entry.device}`)}</Td>
-                    <Td label={t('classes.model')}>
-                      <span>{classModelLabel(entry.model, words)}</span>
-                      {decision(entry.decision) && (
-                        <Text as="div" size="xs" tone="faint">
-                          {decision(entry.decision)}
-                        </Text>
-                      )}
-                    </Td>
-                    <Td label={t('classes.eval')}>
-                      <Pill tone={TONE[entry.eval]}>
-                        {t(`classes.evals.${entry.eval}`)}
-                        {score(entry.score)}
-                      </Pill>
-                    </Td>
-                    <Td label={t('classes.also')}>
-                      {entry.candidates.length === 0 ? (
-                        <Text tone="faint">–</Text>
-                      ) : (
-                        <Inline gap={1} wrap>
-                          {entry.candidates.map((candidate) => (
-                            <Pill
-                              key={`${candidate.device}-${candidate.model}`}
-                              tone={TONE[candidate.eval]}
-                              title={t(`classes.evals.${candidate.eval}`)}
-                            >
-                              {t(`classes.devices.${candidate.device}`)} ·{' '}
-                              {classModelLabel(candidate.model, words)}
-                              {score(candidate.score)}
-                            </Pill>
-                          ))}
-                        </Inline>
-                      )}
-                    </Td>
+      <ListBox padded className="ds-matrix-box">
+        <Table label={t('classes.title')} className="ds-matrix">
+          <thead>
+            <tr>
+              <Th>{t('classes.class')}</Th>
+              <Th>{t('classes.device')}</Th>
+              <Th>{t('classes.model')}</Th>
+              <Th>{t('classes.eval')}</Th>
+              <Th>{t('classes.also')}</Th>
+            </tr>
+          </thead>
+          <tbody>
+            {GROUPS.map((group) => {
+              const inGroup = classes.filter((entry) => groupOf(entry.id) === group);
+              if (!inGroup.length) return null;
+              return (
+                <Fragment key={group}>
+                  <Tr className="ds-matrix-group-row">
+                    <Td colSpan={5}>{t(`classes.groups.${group}`)}</Td>
                   </Tr>
-                ))}
-              </Fragment>
-            );
-          })}
-        </tbody>
-      </Table>
+                  {inGroup.map((entry) => (
+                    <Tr key={entry.id}>
+                      <Td label={t('classes.class')}>
+                        <Text weight="medium">{className(entry.id)}</Text>
+                      </Td>
+                      <Td label={t('classes.device')}>{t(`classes.devices.${entry.device}`)}</Td>
+                      <Td label={t('classes.model')}>
+                        <span>{classModelLabel(entry.model, words)}</span>
+                        {decision(entry.decision) && (
+                          <Text as="div" size="xs" tone="faint">
+                            {decision(entry.decision)}
+                          </Text>
+                        )}
+                      </Td>
+                      <Td label={t('classes.eval')}>
+                        <Pill tone={TONE[entry.eval]}>
+                          {t(`classes.evals.${entry.eval}`)}
+                          {score(entry.score)}
+                        </Pill>
+                      </Td>
+                      <Td label={t('classes.also')}>
+                        {entry.candidates.length === 0 ? (
+                          <Text tone="faint">–</Text>
+                        ) : (
+                          <Inline gap={1} wrap>
+                            {entry.candidates.map((candidate) => (
+                              <Pill
+                                key={`${candidate.device}-${candidate.model}`}
+                                tone={TONE[candidate.eval]}
+                                title={t(`classes.evals.${candidate.eval}`)}
+                              >
+                                {t(`classes.devices.${candidate.device}`)} ·{' '}
+                                {classModelLabel(candidate.model, words)}
+                                {score(candidate.score)}
+                              </Pill>
+                            ))}
+                          </Inline>
+                        )}
+                      </Td>
+                    </Tr>
+                  ))}
+                </Fragment>
+              );
+            })}
+          </tbody>
+        </Table>
+      </ListBox>
     </>
   );
 }

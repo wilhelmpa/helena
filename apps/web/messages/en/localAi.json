@@ -428,7 +428,8 @@
       "own": "This agent's own setting",
       "staged": "Changed, not applied yet",
       "schema": "Inherits from the schema “{schema}”",
-      "project": "Inherits from the project schema “{schema}”"
+      "project": "Inherits from the project schema “{schema}”",
+      "inSchema": "This schema's value"
     },
     "columns": {
       "runtime": "Runtime",
@@ -451,7 +452,8 @@
       "low": "Low",
       "medium": "Medium",
       "high": "High",
-      "xhigh": "Very high"
+      "xhigh": "Very high",
+      "default": "The model's default"
     },
     "browser": {
       "standard": "Standard",
@@ -584,6 +586,10 @@
         "schema": "schema",
         "project": "project",
         "own": "own"
+      },
+      "retained": {
+        "title": "{count, plural, one {# agent keeps its own settings} other {# agents keep their own settings}}",
+        "text": "The agent set these values itself. They do not change, even if the schema says otherwise."
       }
     },
     "conflict": {
@@ -615,10 +621,12 @@
       "switchDevices": "Switch devices",
       "switchFailed": "Switch failed",
       "switchFailedText": "The last switch ended with an error. You can resume or revert it in the Local AI settings.",
-      "schema": "Schema",
+      "schema": "Active schema",
       "projectSchema": "Schema for {project}",
       "projectInherits": "Follows the active schema",
-      "inherit": "Like the active schema"
+      "inherit": "Like the active schema",
+      "schemaHint": "No schema found",
+      "profileLocked": "The local profile of a built-in schema cannot be changed. Copy the schema to choose another profile."
     },
     "profiles": {
       "local-halogen": "GPU only with Flash, NPU off",
@@ -688,7 +696,13 @@
       "npuDecision": "The NPU did not pass the decider evaluation.",
       "unknown": "An agent, project or schema no longer exists. Reload the page.",
       "invalid": "A value is not allowed. Check the settings of the changed cells.",
-      "rejected": "The server refused the change. Nothing was changed."
+      "rejected": "The server refused the change. Nothing was changed.",
+      "reasoning": "The chosen thinking depth does not fit the model.",
+      "modelUnavailable": "A chosen model is not available for this runtime.",
+      "needsGeneral": "The schema needs the role “General” before it can become active.",
+      "inUse": "The schema is still in use.",
+      "builtIn": "Built-in schemas cannot be changed. Copy the schema first.",
+      "role": "A role of the schema is incomplete. Reload the page and try again."
     },
     "columnsShort": {
       "runtime": "Runtime",
@@ -698,6 +712,97 @@
       "browser": "Browser",
       "decision": "Decider",
       "device": "Device"
+    },
+    "discard": "Discard",
+    "schemaEditor": {
+      "title": "Schemas",
+      "description": "A schema decides which runtime, model and thinking depth each role gets. Built-in schemas are protected, but you can copy them.",
+      "new": "New schema",
+      "noDescription": "No description",
+      "roleCount": "{count, plural, one {# role} other {# roles}}",
+      "activate": "Activate",
+      "activateUndo": "Undo activation",
+      "view": "View roles",
+      "editRoles": "Edit roles",
+      "badge": {
+        "active": "Active",
+        "activating": "Will be activated",
+        "builtIn": "Built-in",
+        "custom": "Custom",
+        "projects": "{count, plural, one {# project} other {# projects}}"
+      },
+      "menu": {
+        "label": "Actions for {name}",
+        "copy": "Copy",
+        "edit": "Rename and describe",
+        "delete": "Delete",
+        "deleteInUse": "Delete (in use)"
+      },
+      "dialog": {
+        "createTitle": "New schema",
+        "copyTitle": "Copy “{name}”",
+        "editTitle": "Rename and describe schema",
+        "copyNote": "The copy takes over every role of “{name}” and can be changed freely afterwards.",
+        "emptyNote": "The new schema is empty. You add the roles afterwards; it needs at least “General” to be activated.",
+        "name": "Name",
+        "namePlaceholder": "e.g. My mix",
+        "description": "Description",
+        "descriptionHint": "One sentence on when this schema fits.",
+        "copyName": "{name} (copy)",
+        "create": "Create",
+        "save": "Save",
+        "cancel": "Cancel",
+        "failed": "The schema could not be saved"
+      },
+      "delete": {
+        "title": "Delete “{name}”?",
+        "text": "The schema is removed. No agent and no project follows it right now, so nothing changes for anyone.",
+        "confirm": "Delete",
+        "failed": "The schema could not be deleted. It is active or assigned to a project."
+      },
+      "toast": {
+        "created": "Schema created",
+        "updated": "Schema saved",
+        "deleted": "Schema deleted"
+      },
+      "roles": {
+        "title": "Roles in “{name}”",
+        "builtIn": "This schema is built in and protected. Create a copy to change roles.",
+        "custom": "Click a value to change it. Changes are applied only after the preview.",
+        "copyToEdit": "Create a copy to edit",
+        "add": "Add role",
+        "emptyTitle": "No roles yet",
+        "emptyText": "Add the role “General” first. It applies to every agent whose role the schema does not name.",
+        "needsGeneral": "The role “General” is missing",
+        "needsGeneralText": "Without it the schema cannot be activated.",
+        "new": "New",
+        "changed": "Changed",
+        "discard": "Discard",
+        "catalogFailed": "The choices could not be loaded",
+        "catalogFailedText": "Without the list of available models the values cannot be changed. Reload the page."
+      },
+      "roleDelete": {
+        "menu": "Actions for {name}",
+        "title": "Remove role {name}?",
+        "confirm": "Remove",
+        "text": "Agents using this role will inherit General. Their own overrides are retained.",
+        "failed": "The role could not be removed. Reload the schema and check its General fallback."
+      },
+      "audit": {
+        "title": "Schema audit log",
+        "entry": "Revision {revision} · {action}",
+        "empty": "No schema changes yet.",
+        "failed": "The schema audit log could not be loaded.",
+        "actions": {
+          "apply": "Applied",
+          "create": "Created",
+          "update": "Updated",
+          "update-role": "Role updated",
+          "delete-role": "Role removed",
+          "delete": "Deleted",
+          "undo": "Undone"
+        }
+      }
     }
   }
 }
