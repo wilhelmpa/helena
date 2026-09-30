@@ -57,6 +57,49 @@ const snapshot: RuntimePolicySnapshot = {
   },
 };
 
+test('native configuration truncates SOUL with a model-sized limit and reports the cut', () => {
+  const long = 'A'.repeat(70_000);
+  const modified: RuntimePolicySnapshot = {
+    ...snapshot,
+    contextLimits: { soul: 20_000, skillDescription: 60, loadedSkills: 2 },
+    runtimePolicy: { files: [{ kind: 'instructions', path: 'SOUL.md', content: long }] },
+    localAi: {
+      servers: [
+        {
+          ...snapshot.localAi!.servers[0]!,
+          contextLength: 256_000,
+          models: [
+            { id: 'halogen-qwen3.8-flash-next', contextLength: 256_000, vision: false },
+            { id: 'halogen-27b', contextLength: 32_768, vision: false },
+          ],
+        },
+      ],
+      helpers: [],
+    },
+  };
+  const config = helenaAgentConfig(modified, [], { url: 'http://localhost:3001', cwd: '/tmp' });
+  expect(config.instructions!.length).toBeLessThanOrEqual(61_440);
+  expect(config.instructions).toContain('Context truncated');
+  expect(config.contextWarnings?.[0]).toContain('70000 to');
+  const smaller = helenaAgentConfig({ ...modified, model: 'helena-halogen/halogen-27b' }, [], {
+    url: 'http://localhost:3001',
+    cwd: '/tmp',
+  });
+  expect(smaller.instructions!.length).toBeLessThanOrEqual(20_000);
+  const overridden = helenaAgentConfig(
+    {
+      ...modified,
+      runtimePolicy: {
+        ...modified.runtimePolicy,
+        contextLimits: { soul: 1000 },
+      },
+    },
+    [],
+    { url: 'http://localhost:3001', cwd: '/tmp' },
+  );
+  expect(overridden.instructions!.length).toBeLessThanOrEqual(1000);
+});
+
 describe('the helena runtime', () => {
   it('uses the host priority proxy and preserves the forwarded sandbox addresses', () => {
     const isolation = process.env.AGENT_ISOLATION;

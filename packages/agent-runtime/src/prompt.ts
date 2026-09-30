@@ -18,6 +18,8 @@ const RULES = [
   '- Du arbeitest selbständig mit deinen Werkzeugen, bis die Aufgabe erledigt ist. Rufe Werkzeuge direkt auf; erfinde keine Ergebnisse.',
   '- Prüfe vor jeder Handlung und beim Phasenwechsel den Skill-Index. Lade passende Skills mit load_skill vollständig, bevor du handelst; befolge ihre Pflichtschritte und lade benötigte Referenzen/Skripte über load_skill mit file. Keine unpassenden Skills auf Vorrat laden.',
   '- Skill-Schritte müssen im Arbeitsverlauf anhand tatsächlicher Aktionen und Ergebnisse nachvollziehbar sein. Ein Skill-Aufruf allein erfüllt die Anleitung nicht. Melde fehlende Dateien oder nicht ausführbare Pflichtschritte; erfinde keine Ausführung.',
+  '- Übernimm die Werkzeugargumente aus einer geladenen Skill-Referenz exakt, ohne zusätzliche Beschreibungen oder erfundene Dateinamen. Wenn alle verlangten Schritte bestätigt wurden, antworte mit den bestätigten Ergebnissen und beende den Zug.',
+  '- Ein Skill kann die Entdeckung eines Ablaufs beschreiben. Für ausdrücklich gleiches, unverändertes Eingabeformat mit gespeicherten geprüften Standardwerten überspringst du erneute Entdeckungsaufrufe und wendest den gespeicherten Ablauf direkt an; die Ergebnisprüfung bleibt Pflicht. Prüfe Regeln oder Format erneut, sobald sie geändert oder unklar sind oder der gespeicherte Ablauf fehlschlägt.',
   '- Für Coder gelten die zugeordneten Prozess-Skills phasenweise: brainstorming vor neuer Gestaltung, writing-plans vor mehrschrittiger Umsetzung, test-driven-development während der Umsetzung, systematic-debugging bei Fehlern, verification-before-completion vor Erfolgsmeldungen und requesting-code-review vor Übergabe. Beachte den jeweiligen Geltungsbereich und ausdrückliche Nutzeranweisungen.',
   '- Wenn ein Werkzeug fehlt, suche es mit find_tools.',
   '- Terminal: Verwende mehrere kleine Aufrufe. Sichere optionale Dateien mit if test -f DATEI; then …; fi oder (test -f DATEI && …) || true ab. Nutze ; für unabhängige Prüfungen, && nur bei echter Abhängigkeit. Ein Rückgabecode ungleich 0 ist kein Beweis, dass die gesamte Ausgabe unbrauchbar ist: Prüfe exitCode/outcome und nutze bestätigte Teilergebnisse; fehlgeschlagene Tests bleiben fehlgeschlagen.',
@@ -102,7 +104,13 @@ export function skillTrigger(skill: SkillEntry): string {
     .slice(0, 280);
 }
 
-export function skillIndex(skills: SkillEntry[], role = '', query = ''): string {
+export function skillIndex(
+  skills: SkillEntry[],
+  role = '',
+  query = '',
+  maxSkills = Infinity,
+  descriptionChars = 60,
+): string {
   if (skills.length === 0) return '';
   const terms = (role + ' ' + query).toLowerCase().match(/[\p{L}\p{N}_-]{3,}/gu) ?? [];
   const score = (skill: SkillEntry) => {
@@ -114,15 +122,19 @@ export function skillIndex(skills: SkillEntry[], role = '', query = ''): string 
   };
   const lines = [...skills]
     .sort((a, b) => score(b) - score(a))
+    .slice(0, maxSkills)
     .map(
       (skill) =>
-        `- ${skill.displayName ?? skill.name} [load_skill name=${JSON.stringify(skill.name)}]: ${(
+        `- ${skill.displayName ?? skill.name} [load_skill({"name":${JSON.stringify(skill.name)}})]: ${(
           skill.description ||
           skill.displayName ||
           skill.name
         )
           .replace(/\s+/g, ' ')
-          .slice(0, 160)} | Wann verwenden: ${skillTrigger(skill)}`,
+          .slice(
+            0,
+            descriptionChars,
+          )} | Wann verwenden: ${skillTrigger(skill).slice(0, descriptionChars)}`,
     );
   return `## Deine Skills (nach Rolle/Aufgabe priorisiert; passende vollständig mit load_skill laden)\n${lines.join('\n')}`;
 }
@@ -137,16 +149,27 @@ export function buildSystemPrompt(input: {
   workdir: string;
   workspaceState?: string;
   role?: string;
+  contextWarnings?: string[];
+  contextLimits?: import('@helena/sdk').ContextLimits;
   now?: Date;
 }): string {
   const now = input.now ?? new Date();
   const sections = [
     RULES,
+    ...(input.contextWarnings?.length
+      ? [`## Context warnings\n${input.contextWarnings.join('\n')}`]
+      : []),
     input.instructions?.trim() ?? '',
     input.runContext?.trim() ?? '',
     `Arbeitsordner: ${input.workdir}\nHeute: ${now.toISOString().slice(0, 10)}`,
     memorySection(input.memory, input.query),
-    skillIndex(input.skills, input.role, input.query),
+    skillIndex(
+      input.skills,
+      input.role,
+      input.query,
+      input.contextLimits?.loadedSkills,
+      input.contextLimits?.skillDescription,
+    ),
     input.workspaceState ?? '',
     ...input.serverInstructions.map(
       (entry) => `## Hinweise zu ${entry.server}\n${cut(entry.text.trim(), 6000)}`,

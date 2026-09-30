@@ -84,7 +84,10 @@ export function runtimePolicyGroupsChanged(previous: unknown, next: unknown): Te
   if (prev.maxTurns !== nxt.maxTurns || prev.runBudgetSeconds !== nxt.runBudgetSeconds) {
     groups.push('budgets');
   }
-  if (JSON.stringify(prev.files ?? []) !== JSON.stringify(nxt.files ?? [])) {
+  if (
+    JSON.stringify(prev.files ?? []) !== JSON.stringify(nxt.files ?? []) ||
+    JSON.stringify(prev.contextLimits ?? {}) !== JSON.stringify(nxt.contextLimits ?? {})
+  ) {
     groups.push('instructions');
   }
   return groups;
@@ -196,7 +199,10 @@ function mergedRuntimePolicy(
   groups: TemplateFieldGroup[],
 ): RuntimePolicyLike {
   const next = { ...current };
-  if (groups.includes('instructions')) next.files = template.files ?? [];
+  if (groups.includes('instructions')) {
+    next.files = template.files ?? [];
+    next.contextLimits = template.contextLimits ?? {};
+  }
   if (groups.includes('model')) next.reasoningEffort = template.reasoningEffort ?? null;
   if (groups.includes('approvals')) {
     next.toolAllow = template.toolAllow ?? [];

@@ -16,7 +16,7 @@ export const ProposalResponse = t.Object({
   title: t.String(),
   payload: t.Unknown({
     description:
-      'memory-write: { file, before, after, baseSha256, sha256 }. hermes-update: { from, to, ' +
+      'memory-write: { file, before, after, baseSha256, sha256 } or { type: fact, input, scope }. hermes-update: { from, to, ' +
       'commits, notes }.',
   }),
   agentId: t.Nullable(t.Number()),
@@ -57,6 +57,7 @@ export const MemoryRevisionListResponse = t.Array(
     content: t.String(),
     sha256: t.String(),
     source: t.Union([t.Literal('agent'), t.Literal('owner'), t.Literal('observed')]),
+    sourceContext: t.Nullable(t.Unknown()),
     proposalId: t.Nullable(t.Number()),
     userName: t.Nullable(t.String()),
     createdAt: t.String(),

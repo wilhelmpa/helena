@@ -18,7 +18,7 @@ import {
   helenaBudget,
 } from '@repo/db';
 import { and, asc, eq, inArray, isNull, ne, notInArray, or, sql } from 'drizzle-orm';
-import { normalizeRuntimeAccount, type RuntimeAccount } from '@helena/sdk';
+import { normalizeContextLimits, normalizeRuntimeAccount, type RuntimeAccount } from '@helena/sdk';
 import { API_KEY_MAX_NAME_LENGTH, auth } from '@repo/auth';
 import { iso, HttpError, rethrowDuplicate } from '#shared/lib';
 import { listAgentMemberFieldIds } from '#modules/custom-fields/service';
@@ -77,6 +77,7 @@ export interface AgentRuntimePolicy {
   reflection?: ReflectionMode;
   // Unset: memory writes take effect without approval.
   memoryApproval?: boolean;
+  contextLimits?: import('@helena/sdk').ContextLimits;
   skillsDisabled?: string[];
   // Unset or null: the instance's default list. Empty: no fallback.
   fallbackModels?: { provider: string; model: string }[] | null;
@@ -391,6 +392,7 @@ export function normalizeRuntimePolicy(value: unknown): AgentRuntimePolicy {
       reflection: policy.reflection,
     }),
     memoryApproval: policy.memoryApproval === true,
+    ...(policy.contextLimits && { contextLimits: normalizeContextLimits(policy.contextLimits) }),
     ...(Array.isArray(policy.skillsDisabled) && { skillsDisabled: strings(policy.skillsDisabled) }),
     ...(Array.isArray(policy.fallbackModels) && {
       fallbackModels: policy.fallbackModels

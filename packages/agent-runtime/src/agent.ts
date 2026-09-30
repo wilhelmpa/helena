@@ -212,16 +212,23 @@ export async function runAgent(input: AgentRunInput): Promise<LoopResult> {
     }
     if (skills.length > 0)
       tools.push(
-        skillTool(skills, async (name) => {
-          if (!usedSkills.has(name)) {
-            await helena?.skillUsed?.(name);
-            usedSkills.add(name);
-          }
-        }),
+        skillTool(
+          skills,
+          async (name) => {
+            if (!usedSkills.has(name)) {
+              await helena?.skillUsed?.(name, learningSession);
+              usedSkills.add(name);
+            }
+          },
+          config.contextLimits?.loadedSkills ?? 8,
+        ),
       );
     let memory: MemoryState | null = null;
     if (helena && config.memory?.enabled !== false) {
-      tools.push(memoryTool(helena), sessionSearchTool(helena));
+      tools.push(
+        memoryTool(helena, () => learningSession),
+        sessionSearchTool(helena),
+      );
       if (helena.saveSkill)
         tools.push(
           learnSkillTool(helena, {
@@ -260,6 +267,8 @@ export async function runAgent(input: AgentRunInput): Promise<LoopResult> {
 
     const system = buildSystemPrompt({
       instructions: config.instructions,
+      contextWarnings: config.contextWarnings,
+      contextLimits: config.contextLimits,
       runContext: input.runContext,
       memory,
       query: input.prompt,
@@ -269,6 +278,8 @@ export async function runAgent(input: AgentRunInput): Promise<LoopResult> {
       role: `${profile} ${(config.instructions ?? '').split('\n')[0]}`,
       workspaceState: await workspaceState(config.workdir, input.env),
     });
+    for (const warning of config.contextWarnings ?? [])
+      process.stderr.write(`helena-agent: context warning: ${warning}\n`);
 
     // The decision service's view of the task (Helena's `decide` tool), asked only where the
     // owner set a confidence threshold for the hand-over.
@@ -383,11 +394,11 @@ export async function runAgent(input: AgentRunInput): Promise<LoopResult> {
       env: input.env,
       signal: input.signal,
       deferFinal: true,
-      ...(helena && { note: (text: string) => helena.note(text) }),
+      ...(helena && { note: (text: string) => helena.note(text, learningSession) }),
     }).finally(() => inbox?.stop());
     // Failed skill use can propose a correction; only successful work can create a skill.
     allowSkillCreate = result.status === 'success' && result.testsGreen !== false;
-    if (helena && shouldReflect(config, result) && !input.signal.aborted) {
+    if (helena && shouldReflect(config, result, input.prompt) && !input.signal.aborted) {
       const reflection = await runLoop({
         config: {
           ...config,
@@ -452,19 +463,29 @@ export const REFLECTION_SYSTEM = [
   'For a successful nontrivial multi-step task: decide whether you discovered a reusable procedure. Only then use skill_manage list, then create or improve a similar existing skill.',
   'For a loaded skill that failed or required a deviation: propose a precise patch grounded in the observed evidence. Never create a new skill from a failed task or claim an untested fix was verified.',
   'If a loaded skill worked unchanged, keep it unchanged. A new input, date or routine success does not justify adding examples or a revision.',
-  'Write a reusable procedure, not a transcript of the discovery. Separate one-time discovery from per-use validation. Put verified defaults directly in the Steps: for matching unchanged inputs, apply these values without repeating inspection or lookup. Only rediscover when conditions changed or execution rejects the saved procedure; keep per-use validation.',
+  'Write a reusable procedure, not a transcript of the discovery. Separate one-time discovery from per-use validation. The Steps MUST start with the direct action using the exact verified defaults for unchanged matching inputs; explicitly skip inspection and rule lookup then. Describe inspection only as a conditional branch for changed or unknown inputs or a rejected action. A procedure that repeats every discovery call saves no steps and must not be stored.',
   'Skills need YAML frontmatter name and description (when to use), ## Steps, ## Pitfalls and ## Examples, each with concrete content. Generalize inputs; preserve useful reference files. Prefer improving over duplicating.',
   'Do not learn from trivial answers, one-off results, unsuccessful procedures or requests to persist secrets. Never save keys, passwords, tokens or credential paths.',
   'Keep non-obvious stable facts with fact_store and brief notes with memory. Do not repeat the task or its output.',
   'If nothing reusable or new was learned, answer only "nothing".',
 ].join('\n');
 
-export function shouldReflect(config: AgentRuntimeConfig, result: LoopResult): boolean {
+export function shouldReflect(config: AgentRuntimeConfig, result: LoopResult, task = ''): boolean {
+  const recurring =
+    /\b(?:monthly|weekly|recurring|repeated|every month|every week|monatlich(?:e|en|er|es)?|wöchentlich(?:e|en|er|es)?|regelmäßig(?:e|en|er|es)?|wiederkehrend(?:e|en|er|es)?)\b/iu.test(
+      task,
+    );
+  const oneOff =
+    /\b(?:one[- ]?off|one[- ]?time|einmalig|einmalige|momentan(?:en|e|er)?|current counter|aktuelle zähler)\b/iu.test(
+      task,
+    );
   return (
     config.memory?.enabled !== false &&
     config.kind !== 'reflection' &&
+    (!task || !oneOff) &&
     ((result.status === 'success' &&
       result.spend.toolCalls >= REFLECTION_MIN_TOOL_CALLS &&
+      (!task || recurring || result.spend.toolCalls >= 10) &&
       result.testsGreen !== false) ||
       ((result.status === 'failed' || result.status === 'success') &&
         result.toolsUsed.includes('load_skill')))

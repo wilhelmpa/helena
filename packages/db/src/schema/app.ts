@@ -81,6 +81,7 @@ export const appSecret = pgTable('app_secret', {
 export const team = pgTable('team', {
   id: serial('id').primaryKey(),
   name: text('name').notNull(),
+  agentContextLimits: jsonb('agent_context_limits').notNull().default({}),
   // Whether the team is reachable through the MCP server at all. Off closes both the
   // team's own resources (agents, skills, tools, roles, integrations) and every
   // project it owns, whatever each project's own flag says.
@@ -2043,6 +2044,7 @@ export const agentMemoryRevision = pgTable(
     content: text('content').notNull(),
     sha256: text('sha256').notNull(),
     source: text('source').notNull(),
+    sourceContext: jsonb('source_context'),
     proposalId: integer('proposal_id').references(() => agentProposal.id, {
       onDelete: 'set null',
     }),

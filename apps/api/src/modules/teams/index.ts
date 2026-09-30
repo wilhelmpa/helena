@@ -1,4 +1,7 @@
 import { Elysia, t } from 'elysia';
+import { db, team } from '@repo/db';
+import { eq } from 'drizzle-orm';
+import { effectiveContextLimits, normalizeContextLimits } from '@helena/sdk';
 import { requireUser } from '#shared/access';
 import { authContext } from '#shared/auth-context';
 import { guards } from '#shared/guards';
@@ -45,6 +48,7 @@ import {
   teamProjectParams,
   memberListQuery,
   updateTeamBody,
+  agentContextLimitsBody,
   updateTeamMcpBody,
 } from './model';
 import {
@@ -119,6 +123,39 @@ export const teamRoutes = new Elysia({ name: 'teams', detail: { tags: ['Teams'] 
           'holds, and what you may do with them. Its members and its projects are listed ' +
           'by their own routes.',
       },
+    },
+  )
+
+  .get(
+    '/teams/:teamId/agent-context-limits',
+    async ({ membership }) => {
+      const [row] = await db
+        .select({ limits: team.agentContextLimits })
+        .from(team)
+        .where(eq(team.id, membership.teamId));
+      return effectiveContextLimits(row?.limits, null);
+    },
+    {
+      teamMember: true,
+      params: teamParams,
+      response: { 200: agentContextLimitsBody, ...errors(401, 403, 404) },
+    },
+  )
+  .put(
+    '/teams/:teamId/agent-context-limits',
+    async ({ membership, body }) => {
+      const limits = normalizeContextLimits(body);
+      await db
+        .update(team)
+        .set({ agentContextLimits: limits })
+        .where(eq(team.id, membership.teamId));
+      return effectiveContextLimits(limits, null);
+    },
+    {
+      teamOwner: true,
+      params: teamParams,
+      body: agentContextLimitsBody,
+      response: { 200: agentContextLimitsBody, ...errors(400, 401, 403, 404) },
     },
   )
 

@@ -9,6 +9,7 @@ import { mcpTool } from '#mcp/generate';
 import { teamParams } from '#modules/teams/model';
 import { runsTeam } from '#modules/teams/service';
 import { isHomeHandle } from './home-agent';
+import { agentContextSizeView, agentSizeLimits } from './context-limits';
 import {
   listAgents,
   createAgent,
@@ -132,8 +133,15 @@ export const aiAgentRoutes = new Elysia({ name: 'ai-agents', detail: { tags: ['A
   .use(guards)
   .get(
     '/teams/:teamId/ai-agents',
-    ({ membership, query }) =>
-      listAgents(membership.teamId, query.projectId, agentScopeOf(membership)),
+    async ({ membership, query }) => {
+      const agents = await listAgents(membership.teamId, query.projectId, agentScopeOf(membership));
+      return Promise.all(
+        agents.map(async (agent) => ({
+          ...agent,
+          sizeLimits: await agentSizeLimits(agent.id, membership.teamId),
+        })),
+      );
+    },
     {
       params: teamParams,
       query: agentListQuery,
@@ -151,7 +159,10 @@ export const aiAgentRoutes = new Elysia({ name: 'ai-agents', detail: { tags: ['A
 
   .get(
     '/teams/:teamId/ai-agents/:agentId',
-    ({ params, membership }) => requireVisibleAgent(params.agentId, membership),
+    async ({ params, membership }) => ({
+      ...(await requireVisibleAgent(params.agentId, membership)),
+      sizeLimits: await agentSizeLimits(params.agentId, membership.teamId),
+    }),
     {
       params: agentParams,
       teamPermission: ['ai_agents', 'read'],
@@ -160,6 +171,34 @@ export const aiAgentRoutes = new Elysia({ name: 'ai-agents', detail: { tags: ['A
         summary: 'Get an AI agent',
         description: 'Get an AI agent by id with its config.',
         ...mcpTool('get_ai_agent'),
+      },
+    },
+  )
+
+  .get(
+    '/teams/:teamId/ai-agents/:agentId/context-sizes',
+    async ({ params, membership }) => {
+      await requireVisibleAgent(params.agentId, membership);
+      return agentContextSizeView(params.agentId, membership.teamId);
+    },
+    {
+      params: agentParams,
+      teamPermission: ['ai_agents', 'read'],
+      response: {
+        200: t.Object({
+          modelContextTokens: t.Number(),
+          areas: t.Array(
+            t.Object({
+              key: t.String(),
+              size: t.Number(),
+              limit: t.Number(),
+              truncated: t.Boolean(),
+              charsBefore: t.Number(),
+              charsAfter: t.Number(),
+            }),
+          ),
+        }),
+        ...commonErrors,
       },
     },
   )

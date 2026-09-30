@@ -18,9 +18,15 @@ import {
 import { registerSystemJob, type SystemJobContext } from '#modules/engine/system-jobs';
 import { memoryBaseline } from '../memory/service';
 import { nativeRuntimeEnabled, normalizeRuntimePolicy } from '../core/service';
-import { listNotes, MEMORY_LIMIT, noteFile, proposeMemory } from './memory';
+import { agentContextLimits } from '../core/context-limits';
+import { listNotes, noteFile, proposeMemory } from './memory';
 
-export function consolidateNotes(baseline: string, notes: string[], facts: FactRow[]) {
+export function consolidateNotes(
+  baseline: string,
+  notes: string[],
+  facts: FactRow[],
+  limit = 2200,
+) {
   const lines = baseline.trim() ? [baseline.trim()] : [];
   const known = new Set(
     baseline.split('\n').map((line) =>
@@ -65,7 +71,7 @@ export function consolidateNotes(baseline: string, notes: string[], facts: FactR
         conflicts++;
         continue;
       }
-      if ([...lines, `- ${content}`].join('\n').length > MEMORY_LIMIT) {
+      if ([...lines, `- ${content}`].join('\n').length > limit) {
         omitted++;
         continue;
       }
@@ -120,6 +126,7 @@ export async function consolidateAgentMemory(agentId: number, now = new Date()) 
     before,
     notes.map((note) => note.content),
     facts,
+    (await agentContextLimits(agentId)).memory,
   );
   if (result.content.trim() === before.trim()) return { ...result, status: 'unchanged' };
   return {

@@ -1,5 +1,15 @@
+import { createHash } from 'node:crypto';
 import { and, desc, eq, inArray, isNull, or, sql, type SQL } from 'drizzle-orm';
-import { aiAgent, db, helenaFact, helenaFactEntity, helenaFactEntityLink, project } from '@repo/db';
+import {
+  agentProposal,
+  agentRun,
+  aiAgent,
+  db,
+  helenaFact,
+  helenaFactEntity,
+  helenaFactEntityLink,
+  project,
+} from '@repo/db';
 import {
   contradictionOf,
   contradictions,
@@ -15,6 +25,7 @@ import {
   toBytes,
   trustAfter,
   TRUST,
+  isTransientTask,
   type FactRow,
 } from '@helena/facts';
 import {
@@ -28,6 +39,10 @@ import {
 import type { AuthUser } from '#shared/access';
 import { HttpError } from '#shared/lib';
 import { knowledgeReach } from '#modules/knowledge/reach';
+import { memoryApproval } from '../memory/service';
+
+type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+type Executor = typeof db | Transaction;
 
 // Helena's fact store (docs/helena-decisions/zentrale-laufzeit.md §8.2): Hermes' holographic
 // memory principle, in Postgres and for every runtime (Helena's MCP tools fact_store and
@@ -139,8 +154,12 @@ async function writeScope(
   throw new HttpError(400, 'Name the project the fact belongs to (`project`)');
 }
 
-async function loadFacts(where: SQL, limit = MAX_SCAN): Promise<LoadedFact[]> {
-  const rows = await db
+async function loadFacts(
+  where: SQL,
+  limit = MAX_SCAN,
+  executor: Executor = db,
+): Promise<LoadedFact[]> {
+  const rows = await executor
     .select({
       id: helenaFact.id,
       teamId: helenaFact.teamId,
@@ -202,11 +221,12 @@ async function linkEntities(
   factId: number,
   scope: { teamId: number; projectId: number | null },
   names: string[],
+  executor: Executor = db,
 ): Promise<void> {
-  await db.delete(helenaFactEntityLink).where(eq(helenaFactEntityLink.factId, factId));
+  await executor.delete(helenaFactEntityLink).where(eq(helenaFactEntityLink.factId, factId));
   for (const name of names) {
     const lower = name.toLowerCase();
-    const [existing] = await db
+    const [existing] = await executor
       .select({ id: helenaFactEntity.id })
       .from(helenaFactEntity)
       .where(
@@ -221,14 +241,17 @@ async function linkEntities(
     const entityId =
       existing?.id ??
       (
-        await db
+        await executor
           .insert(helenaFactEntity)
           .values({ teamId: scope.teamId, projectId: scope.projectId, name, nameLower: lower })
           .onConflictDoNothing()
           .returning({ id: helenaFactEntity.id })
       )[0]?.id;
     if (entityId) {
-      await db.insert(helenaFactEntityLink).values({ factId, entityId }).onConflictDoNothing();
+      await executor
+        .insert(helenaFactEntityLink)
+        .values({ factId, entityId })
+        .onConflictDoNothing();
     }
   }
 }
@@ -240,11 +263,19 @@ async function readableFact(caller: Caller, id: number | undefined): Promise<Loa
   return fact;
 }
 
-async function add(caller: Caller, input: FactInput, source: Record<string, unknown>) {
+export async function addApprovedFact(
+  tx: Transaction,
+  agentId: number | null,
+  scope: { teamId: number; projectId: number | null },
+  input: FactInput,
+  source: Record<string, unknown>,
+) {
   const content = (input.content ?? '').trim();
   const refused = refuseFact(content);
   if (refused) throw new HttpError(400, refused);
-  const scope = await writeScope(caller, input.project);
+  await tx.execute(
+    sql`select pg_advisory_xact_lock(hashtextextended(${`volition-fact:${scope.teamId}:${scope.projectId ?? 0}`}, 0))`,
+  );
   const entities = extractEntities(content, input.entities ?? []);
   const draft: FactRow = {
     id: 0,
@@ -256,33 +287,48 @@ async function add(caller: Caller, input: FactInput, source: Record<string, unkn
     hrr: encodeFact(content, entities),
   };
   const sameScope = and(
-    readable(caller),
+    isNull(helenaFact.deletedAt),
     eq(helenaFact.teamId, scope.teamId),
     scope.projectId === null
       ? isNull(helenaFact.projectId)
       : eq(helenaFact.projectId, scope.projectId),
   )!;
-  const neighbours = await loadFacts(sameScope, 500);
+  const neighbours = await loadFacts(sameScope, 500, tx);
   // The same fact again, from another session: confirmed, not stored twice.
   const known = neighbours.find((fact) => sameFact(fact, draft));
   if (known) {
     const trust = trustAfter(known.trust, 'confirmed');
-    await db
+    await tx
       .update(helenaFact)
       .set({ trust, confirmations: sql`${helenaFact.confirmations} + 1`, updatedAt: new Date() })
       .where(eq(helenaFact.id, known.id));
-    await reindex([known.id]);
     return {
-      status: 'confirmed' as const,
-      fact: view({ ...known, trust, confirmations: known.confirmations + 1 }),
+      result: {
+        status: 'confirmed' as const,
+        fact: view({ ...known, trust, confirmations: known.confirmations + 1 }),
+      },
+      indexed: [known.id],
     };
   }
-  const [row] = await db
+  if (agentId !== null) {
+    const [{ count }] = await tx
+      .select({ count: sql<number>`count(*)::int` })
+      .from(helenaFact)
+      .where(
+        and(
+          eq(helenaFact.agentId, agentId),
+          isNull(helenaFact.deletedAt),
+          sql`${helenaFact.createdAt} >= now() - interval '1 day'`,
+        ),
+      );
+    if (count >= 10) throw new HttpError(429, 'Daily learned fact limit reached');
+  }
+  const [row] = await tx
     .insert(helenaFact)
     .values({
       teamId: scope.teamId,
       projectId: scope.projectId,
-      agentId: caller.agent?.id ?? null,
+      agentId,
       content,
       category: draft.category,
       tags: (input.tags ?? [])
@@ -295,29 +341,100 @@ async function add(caller: Caller, input: FactInput, source: Record<string, unkn
     })
     .returning({ id: helenaFact.id });
   const id = row!.id;
-  await linkEntities(id, scope, entities);
+  await linkEntities(id, scope, entities, tx);
   // What the new fact contradicts loses trust and points at it (contradiction with decay).
   const found = neighbours
     .map((fact) => contradictionOf<FactRow>(fact, { ...draft, id }))
     .filter((hit): hit is NonNullable<typeof hit> => hit !== null);
   for (const hit of found) {
-    await db
+    await tx
       .update(helenaFact)
       .set({ trust: trustAfter(hit.a.trust, 'contradicted'), contradictedBy: id })
       .where(eq(helenaFact.id, hit.a.id));
   }
-  await reindex([id, ...found.map((hit) => hit.a.id)]);
-  const [stored] = await loadFacts(eq(helenaFact.id, id), 1);
+  const [stored] = await loadFacts(eq(helenaFact.id, id), 1, tx);
   return {
-    status: 'added' as const,
-    fact: view(stored!),
-    contradicts: found.map((hit) => ({
-      id: hit.a.id,
-      content: hit.a.content,
-      shared: hit.shared,
-      score: Math.round(hit.score * 1000) / 1000,
-    })),
+    result: {
+      status: 'added' as const,
+      fact: view(stored!),
+      contradicts: found.map((hit) => ({
+        id: hit.a.id,
+        content: hit.a.content,
+        shared: hit.shared,
+        score: Math.round(hit.score * 1000) / 1000,
+      })),
+    },
+    indexed: [id, ...found.map((hit) => hit.a.id)],
   };
+}
+
+export const reindexApprovedFacts = reindex;
+
+async function add(caller: Caller, input: FactInput, source: Record<string, unknown>) {
+  const content = (input.content ?? '').trim();
+  const refused = refuseFact(content);
+  if (refused) throw new HttpError(400, refused);
+  if (caller.agent && typeof source.runId === 'number') {
+    const [run] = await db
+      .select({ prompt: agentRun.prompt })
+      .from(agentRun)
+      .where(and(eq(agentRun.id, source.runId), eq(agentRun.agentId, caller.agent.id)));
+    if (!run) throw new HttpError(403, 'Run does not belong to the agent');
+    if (isTransientTask(run.prompt))
+      throw new HttpError(400, 'Temporary one-time lookups do not become facts');
+  }
+  const scope = await writeScope(caller, input.project);
+  if (caller.agent && (await memoryApproval(caller.agent.id))) {
+    const fingerprint = createHash('sha256')
+      .update(JSON.stringify([scope, content]))
+      .digest('hex');
+    return db.transaction(async (tx) => {
+      await tx
+        .select({ id: aiAgent.id })
+        .from(aiAgent)
+        .where(eq(aiAgent.id, caller.agent!.id))
+        .for('update');
+      const [existing] = await tx
+        .select({ id: agentProposal.id, status: agentProposal.status })
+        .from(agentProposal)
+        .where(
+          and(
+            eq(agentProposal.agentId, caller.agent!.id),
+            eq(agentProposal.kind, 'memory-write'),
+            eq(agentProposal.externalId, `fact:${fingerprint}`),
+          ),
+        );
+      if (existing) return { status: existing.status, id: existing.id };
+      const [{ count }] = await tx
+        .select({ count: sql<number>`count(*)::int` })
+        .from(agentProposal)
+        .where(
+          and(
+            eq(agentProposal.agentId, caller.agent!.id),
+            eq(agentProposal.kind, 'memory-write'),
+            sql`${agentProposal.payload}->>'type' = 'fact'`,
+            sql`${agentProposal.createdAt} >= now() - interval '1 day'`,
+          ),
+        );
+      if (count >= 10) throw new HttpError(429, 'Daily fact proposal limit reached');
+      const [proposal] = await tx
+        .insert(agentProposal)
+        .values({
+          agentId: caller.agent!.id,
+          kind: 'memory-write',
+          externalId: `fact:${fingerprint}`,
+          title: `Fact: ${content.slice(0, 80)}`,
+          payload: { type: 'fact', scope, input: { ...input, content }, source },
+        })
+        .returning({ id: agentProposal.id });
+      return { status: 'pending' as const, id: proposal!.id };
+    });
+  }
+  const stored = await db.transaction((tx) =>
+    addApprovedFact(tx, caller.agent?.id ?? null, scope, input, source),
+  );
+  await reindex(stored.indexed);
+  return stored.result;
 }
 
 async function search(caller: Caller, input: FactInput) {
@@ -360,6 +477,12 @@ export async function factStore(
   source: Record<string, unknown> = {},
 ) {
   const limit = Math.min(Math.max(input.limit ?? 10, 1), 50);
+  if (
+    caller.agent &&
+    ['update', 'remove'].includes(input.action) &&
+    (await memoryApproval(caller.agent.id))
+  )
+    throw new HttpError(403, 'Fact changes require owner review; use the memory editor');
   switch (input.action) {
     case 'add':
       return add(caller, input, source);

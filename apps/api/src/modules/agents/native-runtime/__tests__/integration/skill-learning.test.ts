@@ -1,4 +1,6 @@
 import { afterEach, beforeEach, expect, test } from 'bun:test';
+import { aiAgent, db, helenaAgentSession } from '@repo/db';
+import { eq } from 'drizzle-orm';
 import { apiKeyApi, authedApi } from '#tests/helpers/app';
 import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
@@ -92,6 +94,82 @@ test('versions learned procedures, records use without invalidating revisions an
   expect(
     (await agent['agent-runtime'].skills.put({ skill, baseRevision: first.data!.revision })).status,
   ).toBe(409);
+});
+
+test('reverts a learned skill to an exact prior version and rejects stale revisions', async () => {
+  const { agent, ownerAgent } = await setup();
+  const first = (await agent['agent-runtime'].skills.put({ skill, baseRevision: null })).data!;
+  const revised = (
+    await agent['agent-runtime'].skills.put({
+      skill: { ...skill, markdown: skill.markdown + '\nCheck headers first.' },
+      baseRevision: first.revision,
+    })
+  ).data!;
+  const restored = await ownerAgent['learned-skills'].review.post({
+    path: skill.path,
+    revision: revised.revision,
+    action: 'revert',
+    version: 1,
+  });
+  expect(restored.status).toBe(200);
+  expect(restored.data!.markdown).toBe(skill.markdown);
+  expect(restored.data!.history!.at(-1)).toMatchObject({ action: 'revert:1', version: 3 });
+  expect(
+    (
+      await ownerAgent['learned-skills'].review.post({
+        path: skill.path,
+        revision: revised.revision,
+        action: 'revert',
+        version: 2,
+      })
+    ).status,
+  ).toBe(409);
+});
+
+test('marks a learned skill without benefit when its loaded follow-up takes more steps', async () => {
+  const { agent, ownerAgent } = await setup();
+  const baseline = (await agent['agent-runtime'].sessions.post({ kind: 'run' })).data!;
+  const loaded = (await agent['agent-runtime'].sessions.post({ kind: 'run' })).data!;
+  const steps = (names: string[]) => [
+    {
+      seq: 1,
+      step: 1,
+      message: {
+        role: 'assistant',
+        content: names.map((name, index) => ({
+          type: 'tool-call',
+          toolCallId: `${index}`,
+          toolName: name,
+          input: {},
+        })),
+      },
+      text: names.join(', '),
+    },
+  ];
+  await agent['agent-runtime']
+    .sessions({ sessionId: baseline.id })
+    .items.post({ items: steps(['inspect', 'validate', 'import']) });
+  await agent['agent-runtime']
+    .sessions({ sessionId: loaded.id })
+    .items.post({ items: steps(['load_skill', 'inspect', 'validate', 'import']) });
+  await agent['agent-runtime'].skills.put({ skill, baseRevision: null, sessionId: baseline.id });
+  await agent['agent-runtime'].skills.use.post({ name: skill.name, sessionId: loaded.id });
+  await db
+    .update(helenaAgentSession)
+    .set({ updatedAt: new Date(Date.now() - 120_000) })
+    .where(eq(helenaAgentSession.id, loaded.id));
+  const curator = (await agent['agent-runtime'].read.post({ op: 'curator.run' })).data as {
+    report: string;
+  };
+  expect(JSON.parse(curator.report).quality).toContainEqual(
+    expect.objectContaining({
+      path: skill.path,
+      issues: expect.arrayContaining(['No measured step benefit']),
+    }),
+  );
+  const [measured] = (await ownerAgent['learned-skills'].history.get()).data!;
+  expect(measured!.benefit).toBe('no-benefit');
+  expect(measured!.comparison).toMatchObject({ baselineSteps: 3, loadedSteps: 4 });
 });
 
 test('holds new skills for human approval and restores archives', async () => {
@@ -209,11 +287,15 @@ test('requires improvement of similar skills and blocks unsafe content and unsup
 
 test('curator proposals respect approval and expose quality checks', async () => {
   const { agent, ownerAgent } = await setup();
-  await agent['agent-runtime'].skills.put({ skill, baseRevision: null });
-  await agent['agent-runtime'].skills.put({
-    skill: { ...skill, path: 'copy' },
-    baseRevision: null,
-  });
+  const first = (await agent['agent-runtime'].skills.put({ skill, baseRevision: null })).data!;
+  const [stored] = await db
+    .select({ id: aiAgent.id })
+    .from(aiAgent)
+    .where(eq(aiAgent.username, 'learner'));
+  await db
+    .update(aiAgent)
+    .set({ volitionLearnedSkills: [first, { ...first, path: 'copy' }] })
+    .where(eq(aiAgent.id, stored!.id));
   await ownerAgent.patch({ runtimePolicy: { ...policy, memoryApproval: true } });
   const curated = (await agent['agent-runtime'].read.post({ op: 'curator.run' })).data as {
     report: string;

@@ -6,7 +6,8 @@ import { runAgent } from '../agent';
 import type { AgentRuntimeConfig } from '../config';
 import { MemorySink } from '../events';
 import type { HelenaApi } from '../helena-client';
-import { MemorySessionStore } from '../session';
+import { FileSessionStore, MemorySessionStore } from '../session';
+import { structuredSummary } from '../loop';
 import type { AgentTool } from '../tools/types';
 import { factoryOf, scriptedModel, type Turn } from './fake-model';
 
@@ -378,8 +379,80 @@ describe('agent loop', () => {
     });
     expect(result.status).toBe('success');
     const stored = await sessions.load(result.sessionId);
-    expect(stored!.summary).toBe('Zusammenfassung.');
+    expect(stored!.summary).toContain('## Stand\nZusammenfassung.');
     expect(stored!.compactedThrough).toBeGreaterThan(0);
+  });
+
+  test('keeps the original session when the memory flush fails', async () => {
+    const sessions = new MemorySessionStore();
+    let flushes = 0;
+    const helena = selectionClient(async () => ({ names: [] }));
+    helena.note = async () => {
+      flushes++;
+      throw new Error('simulated crash before compaction');
+    };
+    const script: Turn[] = Array.from({ length: 8 }, (_, index) => ({
+      calls: [{ name: 'write_file', input: { path: `file${index}.txt`, content: `${index}` } }],
+      inputTokens: 5000,
+    }));
+    script.push({ text: 'Done.', inputTokens: 100 });
+    const { result } = await run(script, {
+      sessions,
+      helena,
+      config: { memory: { enabled: false }, limits: { compressAtTokens: 4000 } },
+    });
+    const stored = await sessions.load(result.sessionId);
+    expect(flushes).toBeGreaterThan(0);
+    expect(stored!.summary).toBeNull();
+    expect(stored!.compactedThrough).toBe(0);
+    expect(stored!.items.length).toBeGreaterThan(8);
+  });
+
+  test('keeps recent turns verbatim after a session exceeds its model context', async () => {
+    const sessions = new MemorySessionStore();
+    const script: Turn[] = Array.from({ length: 24 }, (_, index) => ({
+      calls: [{ name: 'write_file', input: { path: `long-${index}.txt`, content: `${index}` } }],
+      inputTokens: 5000,
+    }));
+    script.push({ text: 'Done.', inputTokens: 100 });
+    const { result, primary } = await run(script, {
+      sessions,
+      config: {
+        limits: { compressAtTokens: 4000, maxTurns: 30 },
+        servers: [
+          {
+            provider: 'local',
+            kind: 'openai-compatible',
+            baseUrl: 'http://127.0.0.1:1/v1',
+            contextLength: 2048,
+          },
+        ],
+      },
+    });
+    const stored = await sessions.load(result.sessionId);
+    expect(result.status).toBe('success');
+    expect(stored!.summary).toContain('## Stand');
+    expect(stored!.items.length).toBeGreaterThan(24);
+    const lastPrompt = JSON.stringify(primary.doStreamCalls.at(-1)!.prompt);
+    expect(lastPrompt).toContain('long-23.txt');
+  });
+});
+
+test('compression never turns a clarifying question into a summary', () => {
+  expect(structuredSummary('Can you clarify what to keep?')).toBeNull();
+  expect(structuredSummary('Ziel: Aufgabe fertig.')).toContain('## Stand');
+  expect(structuredSummary('Reference: https://example.test/?id=7')).toContain('?id=7');
+});
+
+test('file compaction accepts an identical retry and keeps the prior checkpoint on conflict', async () => {
+  const store = new FileSessionStore(await workdir());
+  const id = await store.create();
+  await store.compact(id, '## Ziel\nFinish the task', 7);
+  await store.compact(id, '## Ziel\nFinish the task', 7);
+  await expect(store.compact(id, 'Different summary', 7)).rejects.toThrow('reload');
+  expect(await store.load(id)).toMatchObject({
+    compactedThrough: 7,
+    summary: '## Ziel\nFinish the task',
   });
 });
 
@@ -463,7 +536,7 @@ describe('reflection', () => {
         },
         { text: 'nichts weiter' },
       ],
-      { helena, config: { policy: 'allow' } },
+      { helena, config: { policy: 'allow' }, prompt: 'Every week create and verify this file.' },
     );
     expect(result.status).toBe('success');
     expect(notes).toEqual(['x.txt liegt im Arbeitsordner']);

@@ -11,6 +11,7 @@ import {
 import { and, desc, eq, inArray, sql } from 'drizzle-orm';
 import { HttpError, iso } from '#shared/lib';
 import type { AgentRuntimeInventory } from '../core/service';
+import { agentContextLimits } from '../core/context-limits';
 
 // The history of an agent's memory files and the owner's say over what the agent writes.
 // Every version Helena sees is kept (agent_memory_revision). While the agent's memory writes
@@ -69,6 +70,7 @@ export interface MemoryProposalReport {
   content: string;
   sha256: string;
   baseSha256: string;
+  sourceContext?: { sessionId: string; runId: number | null } | null;
 }
 
 // Memory writes the runner held back become proposals. A newer write to the same file
@@ -104,6 +106,7 @@ export async function recordMemoryProposals(
         after: report.content,
         baseSha256: report.baseSha256,
         sha256: report.sha256,
+        sourceContext: report.sourceContext ?? null,
       };
       await tx
         .insert(agentProposal)
@@ -171,15 +174,69 @@ export async function decideMemoryProposal(
       .returning();
     if (!proposal) throw new HttpError(409, 'This proposal has already been decided');
     if (!approved || !proposal.agentId) return;
-    const payload = proposal.payload as { file: MemoryFile; after: string; baseSha256?: string };
+    const factPayload = proposal.payload as {
+      type?: string;
+      scope?: { teamId: number; projectId: number | null };
+      input?: import('../native-runtime/facts').FactInput;
+      source?: Record<string, unknown>;
+    };
+    if (factPayload.type === 'fact') {
+      if (!factPayload.scope || !factPayload.input)
+        throw new HttpError(400, 'Invalid fact proposal');
+      const { addApprovedFact } = await import('../native-runtime/facts');
+      const stored = await addApprovedFact(
+        tx,
+        proposal.agentId,
+        factPayload.scope,
+        factPayload.input,
+        {
+          ...factPayload.source,
+          proposalId: proposal.id,
+        },
+      );
+      await tx
+        .update(agentProposal)
+        .set({ status: 'applied' })
+        .where(eq(agentProposal.id, proposal.id));
+      return { facts: stored.indexed };
+    }
+    const payload = proposal.payload as {
+      file: MemoryFile | string;
+      after: string;
+      baseSha256?: string;
+      sourceContext?: unknown;
+    };
+    const limits = await agentContextLimits(proposal.agentId);
+    const limit =
+      payload.file === 'USER.md'
+        ? limits.user
+        : payload.file.startsWith('notes/')
+          ? limits.dailyNote
+          : limits.memory;
+    if (payload.after.length > limit)
+      throw new HttpError(
+        413,
+        `${payload.file} has ${payload.after.length} characters; limit is ${limit}. Consolidate it first.`,
+      );
     const [agent] = await tx
       .select({ policy: aiAgent.runtimePolicy })
       .from(aiAgent)
       .where(eq(aiAgent.id, proposal.agentId))
       .for('update');
-    const [base] = (await memoryBaseline(proposal.agentId, tx)).filter(
-      (entry) => entry.file === payload.file,
-    );
+    const noteFile = /^notes\/\d{4}-\d{2}-\d{2}\.md$/.test(payload.file);
+    const [base] = noteFile
+      ? await tx
+          .select({ sha256: agentMemoryRevision.sha256 })
+          .from(agentMemoryRevision)
+          .where(
+            and(
+              eq(agentMemoryRevision.agentId, proposal.agentId),
+              eq(agentMemoryRevision.file, payload.file),
+            ),
+          )
+          .orderBy(desc(agentMemoryRevision.id))
+          .limit(1)
+      : (await memoryBaseline(proposal.agentId, tx)).filter((entry) => entry.file === payload.file);
     if ((agent?.policy as { runtime?: string })?.runtime === 'helena') {
       if (payload.baseSha256 !== (base?.sha256 ?? sha256(''))) {
         throw new HttpError(409, 'Memory changed after this proposal; review a new proposal');
@@ -190,6 +247,7 @@ export async function decideMemoryProposal(
         content: payload.after,
         sha256: sha256(payload.after),
         source: 'agent',
+        sourceContext: payload.sourceContext ?? null,
         proposalId: proposal.id,
         userId,
       });
@@ -199,6 +257,7 @@ export async function decideMemoryProposal(
         .where(eq(agentProposal.id, proposal.id));
       return `${proposal.agentId}:${payload.file}`;
     }
+    if (noteFile) throw new HttpError(409, 'Native note requires a native runtime');
     await tx
       .delete(agentRuntimeAction)
       .where(
@@ -219,7 +278,10 @@ export async function decideMemoryProposal(
       },
     });
   });
-  if (indexed) {
+  if (indexed && typeof indexed === 'object') {
+    const { reindexApprovedFacts } = await import('../native-runtime/facts');
+    await reindexApprovedFacts(indexed.facts);
+  } else if (indexed) {
     await reindexItems(agentMemorySource, [indexed]).catch((error: unknown) => {
       console.error('[agent-memory] approved revision reindex failed', error);
     });
@@ -272,6 +334,7 @@ export interface MemoryRevisionRow {
   content: string;
   sha256: string;
   source: 'agent' | 'owner' | 'observed';
+  sourceContext: { sessionId?: string; runId?: number | null } | null;
   proposalId: number | null;
   userName: string | null;
   createdAt: string;
@@ -289,6 +352,7 @@ export async function listMemoryRevisions(
       content: agentMemoryRevision.content,
       sha256: agentMemoryRevision.sha256,
       source: agentMemoryRevision.source,
+      sourceContext: agentMemoryRevision.sourceContext,
       proposalId: agentMemoryRevision.proposalId,
       userName: user.name,
       createdAt: agentMemoryRevision.createdAt,
@@ -307,6 +371,7 @@ export async function listMemoryRevisions(
     ...row,
     file: row.file as MemoryFile,
     source: row.source as MemoryRevisionRow['source'],
+    sourceContext: row.sourceContext as MemoryRevisionRow['sourceContext'],
     createdAt: iso(row.createdAt),
   }));
 }

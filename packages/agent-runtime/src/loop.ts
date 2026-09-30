@@ -13,6 +13,7 @@ import type { EventSink, ResultEvent, SpendEvent } from './events';
 import type { Decision } from './helena-client';
 import type { ResolvedModel } from './models';
 import { messageText, type SessionItem, type SessionStore } from './session';
+import { looksSecret, redactSecrets } from '@helena/facts';
 import type { AgentTool, PolicyQuestion, ToolOutput } from './tools/types';
 
 // Helena's agent loop. One model call per step through the AI SDK (streaming, the tools
@@ -612,14 +613,15 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
     let deferCalls = await instructionsPending();
     for (const call of outcome.calls) {
       spend.toolCalls += 1;
-      toolsUsed.add(call.name);
+      const observedName = toolName(call);
+      toolsUsed.add(observedName);
       const inputJson = JSON.stringify(call.input ?? {});
-      sink.emit({ type: 'tool-call', id: call.id, name: call.name, input: inputJson });
+      sink.emit({ type: 'tool-call', id: call.id, name: observedName, input: inputJson });
       const result =
         deferCalls || input.followups?.signal.aborted
           ? { output: { text: 'Not executed: a new instruction takes priority.', isError: true } }
           : await runTool(call);
-      if (call.invalid || result.unknown) invalid += 1;
+      if (result.unknown || (call.invalid && result.output.isError)) invalid += 1;
       sink.emit({
         type: 'tool-result',
         id: call.id,
@@ -830,6 +832,16 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
     return { text, calls, usage };
   }
 
+  function toolName(call: { name: string; input: unknown }): string {
+    return call.name === 'load_name' &&
+      typeof call.input === 'object' &&
+      call.input !== null &&
+      'name' in call.input &&
+      typeof call.input.name === 'string'
+      ? 'load_skill'
+      : call.name;
+  }
+
   async function runTool(call: {
     id: string;
     name: string;
@@ -837,8 +849,9 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
     invalid: boolean;
     error?: string;
   }): Promise<{ output: ToolOutput; unknown?: boolean }> {
-    const entry = toolsByName.get(call.name);
-    if (!entry || !active.has(call.name)) {
+    const actualName = toolName(call);
+    const entry = toolsByName.get(actualName);
+    if (!entry || !active.has(actualName)) {
       return {
         unknown: true,
         output: {
@@ -849,7 +862,10 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
         },
       };
     }
-    if (call.invalid) {
+    if (
+      call.invalid &&
+      !(actualName === 'load_skill' && /unavailable tool ['"]load_name['"]/.test(call.error ?? ''))
+    ) {
       return {
         output: {
           text: `The arguments did not match the tool's schema${call.error ? ` (${call.error})` : ''}. Send valid JSON for ${call.name}.`,
@@ -926,47 +942,92 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
     }
   }
 
-  // The messages before the last few steps become one summary, written by the model the run
-  // is on; they stay in the session, only the prompt gets shorter. What the summary keeps
-  // goes into today's note first (the flush before the compression).
+  // The original messages remain durable; only the prompt replaces them with a summary.
   async function compress(): Promise<void> {
     const keepFrom = step - 5;
     const old = entries.filter((entry) => entry.seq > compactedThrough && entry.step < keepFrom);
     if (old.length < 4) return;
     const through = old.at(-1)!.seq;
-    const transcript = old
-      .map((entry) => `${entry.message.role}: ${renderForSummary(entry.message)}`)
-      .join('\n')
-      .slice(-120_000);
-    const result = await generateText({
-      model: chain[0]!.model,
-      providerOptions: turnOptions(chain[0]!, true) as never,
-      maxOutputTokens: 1500,
-      instructions:
-        'Fasse den bisherigen Verlauf einer Agenten-Sitzung knapp zusammen: Aufgabe, Entscheidungen, Ergebnisse von Werkzeugen, geänderte Dateien, offene Punkte. Keine Geheimnisse. Deutsch, höchstens 400 Wörter.',
-      prompt: `${summary ? `Frühere Zusammenfassung:\n${summary}\n\n` : ''}Verlauf:\n${transcript}`,
-      abortSignal: AbortSignal.any([
-        input.signal,
-        AbortSignal.timeout(
-          Math.max(1, Math.min(stepMs, Math.floor(budgetMs - (now() - budgetStarted)))),
-        ),
-      ]),
-      maxRetries: 0,
-    });
-    spend.inputTokens += result.usage.inputTokens ?? 0;
-    spend.outputTokens += result.usage.outputTokens ?? 0;
-    spend.cacheReadTokens += result.usage.inputTokenDetails?.cacheReadTokens ?? 0;
-    spend.cacheWriteTokens += result.usage.inputTokenDetails?.cacheWriteTokens ?? 0;
-    spend.reasoningTokens += result.usage.outputTokenDetails?.reasoningTokens ?? 0;
-    const next = result.text.trim();
-    if (!next) return;
+    const transcript = redactSecrets(
+      old.map((entry) => `${entry.message.role}: ${renderForSummary(entry.message)}`).join('\n'),
+    );
+    let next = summary;
+    for (let offset = 0; offset < transcript.length; offset += 20_000) {
+      const result = await generateText({
+        model: chain[0]!.model,
+        providerOptions: turnOptions(chain[0]!, true) as never,
+        maxOutputTokens: 1500,
+        instructions:
+          'Schreibe ausschließlich eine Zusammenfassung auf Deutsch mit genau diesen Überschriften: ' +
+          'Ziel, Stand, Entscheidungen, Offene Aufgaben, Wichtige Referenzen. ' +
+          'Erhalte wichtige Fakten, Dateipfade und Werkzeugergebnisse. Schreibe nie eine Frage oder ' +
+          'eine Aufforderung an den Nutzer. Keine Geheimnisse. Höchstens 400 Wörter.',
+        prompt: `${next ? `Frühere Zusammenfassung:\n${next}\n\n` : ''}Verlauf:\n${transcript.slice(offset, offset + 20_000)}`,
+        abortSignal: AbortSignal.any([
+          input.signal,
+          AbortSignal.timeout(
+            Math.max(1, Math.min(stepMs, Math.floor(budgetMs - (now() - budgetStarted)))),
+          ),
+        ]),
+        maxRetries: 0,
+      });
+      spend.inputTokens += result.usage.inputTokens ?? 0;
+      spend.outputTokens += result.usage.outputTokens ?? 0;
+      spend.cacheReadTokens += result.usage.inputTokenDetails?.cacheReadTokens ?? 0;
+      spend.cacheWriteTokens += result.usage.inputTokenDetails?.cacheWriteTokens ?? 0;
+      spend.reasoningTokens += result.usage.outputTokenDetails?.reasoningTokens ?? 0;
+      next =
+        structuredSummary(redactSecrets(result.text)) ??
+        structuredSummary(
+          `Verlauf und Werkzeugergebnisse: ${`${next ?? ''}\n${transcript.slice(offset, offset + 20_000)}`.replace(/\?(?=\s|$)/g, '.').slice(-6_000)}`,
+        );
+      if (!next || looksSecret(next)) return;
+    }
+    if (!next || looksSecret(next)) return;
+    if (input.note) {
+      const flush = next.replace(/\s+/g, ' ');
+      for (let offset = 0; offset < flush.length; offset += 1600) {
+        const marker = `[compaction:${sessionId}:${through}:${offset / 1600}]`;
+        await input.note(`${marker} ${flush.slice(offset, offset + 1600)}`);
+      }
+    }
+    await sessions.compact(sessionId!, next, through);
     summary = next;
     compactedThrough = through;
-    await sessions.compact(sessionId!, summary, compactedThrough);
-    await input
-      .note?.(`Kontext komprimiert (Sitzung ${sessionId}): ${next.slice(0, 600)}`)
-      .catch(() => {});
   }
+}
+
+export function structuredSummary(text: string): string | null {
+  const body = text.trim();
+  if (
+    !body ||
+    (body.endsWith('?') && !body.includes('\n')) ||
+    /\b(?:can you|could you|kannst du|könntest du|please clarify|bitte kläre)\b[^\n]*\?/i.test(
+      body,
+    ) ||
+    /^(?:frage|question|clarif|bitte (?:sag|teile|kläre))/i.test(body)
+  )
+    return null;
+  const headings = ['Ziel', 'Stand', 'Entscheidungen', 'Offene Aufgaben', 'Wichtige Referenzen'];
+  if (headings.every((heading) => new RegExp(`^#{0,3}\\s*${heading}:?\\s*$`, 'mi').test(body))) {
+    return headings
+      .map((heading, index) => {
+        const start = new RegExp(`^#{0,3}\\s*${heading}:?\\s*$`, 'mi').exec(body)!;
+        const rest = body.slice(start.index + start[0].length);
+        const following = headings[index + 1];
+        const end = following
+          ? new RegExp(`^#{0,3}\\s*${following}:?\\s*$`, 'mi').exec(rest)?.index
+          : undefined;
+        return `## ${heading}\n${rest.slice(0, end).trim().slice(0, 1500) || 'Nicht angegeben.'}`;
+      })
+      .join('\n\n');
+  }
+  return headings
+    .map(
+      (heading) =>
+        `## ${heading}\n${heading === 'Stand' ? body.slice(0, 6_000) : 'Nicht angegeben.'}`,
+    )
+    .join('\n\n');
 }
 
 // A short answer that only says what the model is going to do next.

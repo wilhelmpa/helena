@@ -1,4 +1,5 @@
 import type { RuntimeLocalAi } from './local-ai';
+import type { ContextLimits } from './context-limits';
 import type { McpServerSpec, RuntimeId } from './runtime-profile';
 
 // What Helena hands a runner for one agent (GET /agent-runtime/policy): its instructions,
@@ -136,12 +137,15 @@ export interface RuntimePolicySnapshot {
   model?: string | null;
   runtimePolicy: {
     files: RuntimePolicyFile[];
+    contextLimits?: ContextLimits;
     commandScript?: string;
     webhookUrl?: string;
     webhookSecretEnv?: string;
     // The Hermes toolsets and MCP servers of the Hermes configuration the agent may not use.
     toolDeny?: string[];
   };
+  contextLimits?: ContextLimits;
+  contextOverrides?: ContextLimits;
   skills: RuntimeSkill[];
   // The MCP servers of the team library enabled on the agent. An older server sends none.
   mcpServers?: RuntimeMcpServer[];

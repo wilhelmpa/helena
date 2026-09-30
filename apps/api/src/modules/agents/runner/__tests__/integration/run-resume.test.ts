@@ -54,6 +54,16 @@ describe('run resume', () => {
     delete process.env.AGENT_RUN_MAX_ATTEMPTS;
   });
 
+  it('gives a pending run to only one parallel claimant of the same agent', async () => {
+    const { asOwner, asRunner, agent, columnId } = await setup();
+    await queueRun(asOwner, columnId, agent.username);
+    const claims = await Promise.all([
+      asRunner['agent-runs'].claim.post(),
+      asRunner['agent-runs'].claim.post(),
+    ]);
+    expect(claims.map((result) => result.data?.run).filter(Boolean)).toHaveLength(1);
+  });
+
   it("saves a run's session as soon as the runner reports it, claim-fenced like every other route", async () => {
     const { asOwner, asRunner, agent, columnId } = await setup();
     await queueRun(asOwner, columnId, agent.username);

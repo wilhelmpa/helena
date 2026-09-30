@@ -3,6 +3,8 @@ import { apiKeyApi, authedApi } from '#tests/helpers/app';
 import { signUpTestUser } from '#tests/helpers/auth';
 import { resetDb } from '#tests/helpers/db';
 import { createAgent } from '#tests/helpers/agents';
+import { aiAgent, db } from '@repo/db';
+import { eq } from 'drizzle-orm';
 
 const policy = {
   runtime: 'helena' as const,
@@ -15,8 +17,9 @@ const policy = {
 };
 const skill = {
   path: 'deploy',
-  name: 'Deploy',
-  markdown: '# Deploy\nCheck the release.',
+  name: 'deploy',
+  markdown:
+    '---\nname: deploy\ndescription: Use when deploying a release with a verified backup\n---\n## Steps\n1. Check the release candidate and its tests.\n2. Verify the backup before deployment.\n## Pitfalls\nDo not deploy without a verified backup.\n## Examples\nFor a weekly release, check tests and backup before deployment.',
   files: [{ path: 'scripts/check.sh', content: 'exit 0\n' }],
   otherFiles: 0,
   truncated: false,
@@ -63,7 +66,10 @@ describe('native runtime parity', () => {
     expect((await agent['agent-runtime'].skills.put({ skill, baseRevision: null })).status).toBe(
       409,
     );
-    const changed = { ...skill, markdown: '# Deploy\nCheck release and backup.' };
+    const changed = {
+      ...skill,
+      markdown: skill.markdown + '\nVerify the staging status afterward.',
+    };
     const revised = await agent['agent-runtime'].skills.put({
       skill: changed,
       baseRevision: first.data!.revision,
@@ -116,11 +122,11 @@ describe('native runtime parity', () => {
 
   it('curates duplicate content, preserves pinned skills and obeys the pause policy', async () => {
     const { agent, api, teamId, agentId } = await setup();
-    await agent['agent-runtime'].skills.put({ skill, baseRevision: null });
-    await agent['agent-runtime'].skills.put({
-      skill: { ...skill, path: 'copy' },
-      baseRevision: null,
-    });
+    const first = (await agent['agent-runtime'].skills.put({ skill, baseRevision: null })).data!;
+    await db
+      .update(aiAgent)
+      .set({ volitionLearnedSkills: [first, { ...first, path: 'copy' }] })
+      .where(eq(aiAgent.id, agentId));
     await agent['agent-runtime'].read.post({ op: 'curator.set', action: 'pin', skill: 'copy' });
     expect((await agent['agent-runtime'].read.post({ op: 'curator.run' })).status).toBe(200);
     expect((await agent['agent-runtime'].skills.get()).data!.map((s) => s.path)).toEqual(['copy']);
@@ -270,12 +276,12 @@ describe('profile import', () => {
     ]);
     const learned = (await agent['agent-runtime'].skills.get()).data![0]!;
     await agent['agent-runtime'].skills.put({
-      skill: { ...skill, markdown: '# A newer native version' },
+      skill: { ...skill, markdown: skill.markdown + '\nA newer native version.' },
       baseRevision: learned.revision,
     });
     expect((await endpoint.post({ ...bundle, apply: true })).data!.unchanged).toBe(true);
     expect((await agent['agent-runtime'].skills.get()).data![0]!.markdown).toBe(
-      '# A newer native version',
+      skill.markdown + '\nA newer native version.',
     );
     expect((await endpoint.post({ ...bundle, sourceKey: 'another', apply: true })).status).toBe(
       409,
