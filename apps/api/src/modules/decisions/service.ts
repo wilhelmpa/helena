@@ -271,6 +271,7 @@ export async function usableDecisionConnection(
   return {
     connection: {
       ...connection,
+      ...(cls.id === 'helena.mail' ? { priority: 'normal' as const } : {}),
       ...(connection.keySource === 'local-ai'
         ? { localAiClassId: localAiClassForDecision(cls.id) }
         : {}),

@@ -23,6 +23,7 @@ export const TriageBatchResponse = t.Object({
       status: t.String(),
       issueId: t.Nullable(t.Number()),
       actionFailed: t.Boolean(),
+      error: t.Optional(t.String()),
     }),
   ),
 });

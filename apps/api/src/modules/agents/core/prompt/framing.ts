@@ -3,6 +3,7 @@ import { parseMentionHandles } from '#shared/mentions';
 import { PROJECT_DESCRIPTION_LIMIT } from '#modules/projects/model';
 import type { RoutinePromptContext } from '#modules/routines/agent-runs';
 import type { AgentRunTrigger } from '../../model';
+import { isMailTriageRoutine } from '#modules/mail-triage/routine-policy';
 
 // Frames a triggered run into the text an agent receives: the framed user
 // prompt (framePrompt) and the system-instruction blocks about the run mode
@@ -119,6 +120,15 @@ function frameRoutineDelegation(
     ...areaLine(run),
     'Read the issue for context, then do the work it needs with your tools.',
   ];
+  if (isMailTriageRoutine(routine.title))
+    lines.push(
+      'This is a mail triage control cycle. Call run_mail_triage first, using this project.',
+      'Repeat only while hasMore=true AND failed=0. Stop immediately on any failure; never retry failed batches in this cycle.',
+      'The API records the batch results and closes this control task when processing is complete.',
+      'Uncertain classifications remain visible in the inbox; they do not block this control task.',
+      'Use the saved classification and existing task links. Do not read every mail or repeat all historic incident checks.',
+      'Do the requested checks briefly, add one short report, then end the run. Never send or delete mail.',
+    );
   if (routine.startedUsernames.length > 0) {
     lines.push(
       '',

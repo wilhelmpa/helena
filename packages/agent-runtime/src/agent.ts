@@ -51,8 +51,15 @@ export const CORE_HELENA_TOOLS = [
 const PROFILE_TOOLS: Record<ToolProfile, string[]> = {
   'coder-lite': [],
   recherche: ['capture_web_page'],
-  assistent: ['search_mail', 'read_mail', 'draft_reply', 'request_mail_send'],
-  voll: ['capture_web_page', 'search_mail', 'read_mail', 'draft_reply', 'request_mail_send'],
+  assistent: ['run_mail_triage', 'search_mail', 'read_mail', 'draft_reply', 'request_mail_send'],
+  voll: [
+    'capture_web_page',
+    'run_mail_triage',
+    'search_mail',
+    'read_mail',
+    'draft_reply',
+    'request_mail_send',
+  ],
 };
 
 const LOOP_TOOLS = ['clarify', 'find_tools', 'load_skill', 'memory', 'search_sessions'];

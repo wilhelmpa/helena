@@ -20,6 +20,7 @@ import {
 import { getMembership } from '#modules/members/service';
 import { WORK_CLASS } from '#modules/local-ai/work-classes';
 import { bumpControlPlaneRevision } from '#modules/sync/service';
+import { finishRoutineTriage, routineTriageError } from '#modules/mail-triage/routine';
 import { publishDomainEvent as publishBusEvent } from '#shared/helena';
 import type { DelegateStep } from '#modules/pipelines/definition';
 import { MENTION_STARTED } from '#modules/routines/agent-runs';
@@ -49,7 +50,23 @@ import {
 
 type Step = DelegateStep & { [field: string]: unknown };
 
-const ROUTINE_RUN = { workClass: WORK_CLASS.routines };
+function routineDelegation(runId: string, at: StepExecution) {
+  return {
+    workClass: WORK_CLASS.routines,
+    onQueued: async (agentRunId: number) => {
+      await db
+        .update(pipelineRunStep)
+        .set({ agentRunId })
+        .where(
+          and(
+            eq(pipelineRunStep.runId, runId),
+            eq(pipelineRunStep.stepId, at.stepId),
+            eq(pipelineRunStep.iteration, at.iteration),
+          ),
+        );
+    },
+  };
+}
 
 export interface DelegateResult {
   outcome: 'created' | 'reopened' | 'skipped';
@@ -135,7 +152,11 @@ async function finish(
     .set({ issueId: result.taskId, result, updatedAt: new Date() })
     .where(eq(pipelineRun.id, runId));
   const existing = await stepRow(runId, at);
-  const since = existing!.startedAt;
+  const [fire] = await db
+    .select({ createdAt: pipelineRun.createdAt })
+    .from(pipelineRun)
+    .where(eq(pipelineRun.id, runId));
+  const since = fire!.createdAt;
   const teams =
     result.outcome === 'skipped'
       ? []
@@ -188,7 +209,11 @@ async function finish(
       taskId: result.taskId,
       result,
       agentRunIds: [
-        ...new Set([...agents.map((row) => row.id), ...mentions.map((row) => row.id!)]),
+        ...new Set([
+          ...(existing?.agentRunId ? [existing.agentRunId] : []),
+          ...agents.map((row) => row.id),
+          ...mentions.map((row) => row.id!),
+        ]),
       ],
       teamRunIds: teams.map((row) => row.id),
       deadline: Date.now() + 7_200_000,
@@ -235,7 +260,7 @@ async function dispatch(
   // A task this fire created before a restart: only its delegation may be missing.
   if (stored.taskId && step.mode === 'new') {
     const created = await getIssue(stored.taskId);
-    if (created) await enqueueDelegateRun(created, actor, ROUTINE_RUN);
+    if (created) await enqueueDelegateRun(created, actor, routineDelegation(runId, at));
     return finish(runId, step, at, project.id, {
       outcome: 'created',
       skipReason: null,
@@ -296,7 +321,7 @@ async function dispatch(
         },
         actor,
         {
-          delegation: ROUTINE_RUN,
+          delegation: routineDelegation(runId, at),
           // The routine files the task, not its author: nobody follows it by that.
           subscribeAuthor: false,
           afterInsert: async (tx, issueId) => {
@@ -350,10 +375,10 @@ async function dispatch(
     task.id,
     { columnId: unstarted.id, delegateUserId: agent.userId },
     actor,
-    { delegation: ROUTINE_RUN, quiet: true },
+    { delegation: routineDelegation(runId, at), quiet: true },
   );
   if (after && task.delegateUserId === agent.userId)
-    await enqueueDelegateRun(after, actor, ROUTINE_RUN);
+    await enqueueDelegateRun(after, actor, routineDelegation(runId, at));
   return finish(runId, step, at, project.id, {
     outcome: 'reopened',
     skipReason: null,
@@ -390,11 +415,15 @@ async function workStatus(
   }
   if (!done && Date.now() >= (state.deadline ?? Infinity))
     return { done: false, error: 'The routine agent work timed out after two hours' };
-  if (done)
+  if (done) {
+    const error = await routineTriageError(runId);
+    if (error) return { done: false, error };
+    await finishRoutineTriage(runId, null);
     await writeStep(runId, { type: 'delegate', name: row!.name }, at, {
       status: 'succeeded',
       finishedAt: new Date(),
     });
+  }
   return { done, error: null };
 }
 

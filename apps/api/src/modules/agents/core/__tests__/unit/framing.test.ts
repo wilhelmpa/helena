@@ -190,6 +190,18 @@ describe('a routine run', () => {
     expect(alone).not.toContain('also started');
   });
 
+  it('bounds mail triage and closes its control cycle independently of uncertain mail', () => {
+    const text = framePrompt({
+      ...delegation,
+      routine: { ...routine, title: 'Mail-Triage · fixture@example.test' },
+    });
+    expect(text).toContain('Call run_mail_triage first');
+    expect(text).toContain('hasMore=true AND failed=0');
+    expect(text).toContain('Stop immediately on any failure');
+    expect(text).toContain('they do not block this control task');
+    expect(framePrompt(delegation)).not.toContain('mail triage control cycle');
+  });
+
   it('frames a mentioned agent with the instructions, its delegate and the others', () => {
     const text = framePrompt(mention);
     expect(text).toContain('The routine "Weekly check" of your project names you');
