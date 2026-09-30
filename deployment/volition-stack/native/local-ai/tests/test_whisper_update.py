@@ -205,6 +205,12 @@ class PreparePackageTest(unittest.TestCase):
         self.stack = ExitStack()
         self.addCleanup(self.stack.close)
         root = Path(self.temporary.name)
+        processes = root / 'proc'
+        processes.mkdir()
+        self.processes = processes
+        path_glob = Path.glob
+        self.stack.enter_context(patch.object(update.Path, 'glob', autospec=True,
+            side_effect=lambda path, pattern: path_glob(processes if path == Path('/proc') else path, pattern)))
         self.destination = root / 'voice/whisper-1.9.4'
         self.destination.parent.mkdir()
         self.state = root / 'state'
@@ -239,6 +245,14 @@ class PreparePackageTest(unittest.TestCase):
         if args[:2] == ['readelf', '-d']:
             return 'Shared library: [libc.so.6]'
         self.fail(f'Unexpected command: {args}')
+
+    def test_full_gate_refuses_the_build_before_starting_systemd(self):
+        process = self.processes / '1'
+        process.mkdir()
+        (process / 'cmdline').write_bytes(b'/bin/bash\0/home/test/agent-work/full-test.sh\0hub/test\0')
+        with self.assertRaisesRegex(RuntimeError, 'full-test.sh'):
+            update.prepare(Path('/reviewed'))
+        self.assertFalse(any(command[0] == 'systemd-run' for command in self.calls))
 
     def test_prepare_is_readable_under_private_umask_and_repeat_does_not_build(self):
         previous = os.umask(0o077)
