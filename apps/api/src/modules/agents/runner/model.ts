@@ -27,6 +27,7 @@ export const RunnerRunResponse = t.Object({
   maxTurns: t.Nullable(t.Number()),
   runBudgetSeconds: t.Nullable(t.Number()),
   workdir: t.Nullable(t.String()),
+  review: t.Boolean(),
   sessionId: t.Nullable(
     t.String({
       description:
@@ -124,6 +125,16 @@ export const resultBody = t.Object({
           "The task Helena's own loop handed to a bigger model: Helena queues the follow-up run.",
       },
     ),
+  ),
+  delegation: t.Optional(
+    t.Object({
+      status: t.Literal('success'),
+      touchedFiles: t.Array(t.String({ maxLength: 512 }), { maxItems: 500 }),
+      finalMessage: t.String({ maxLength: 8_000 }),
+      version: t.Literal('1'),
+      durationMs: t.Integer({ minimum: 0 }),
+      diff: t.String({ maxLength: 100_000 }),
+    }),
   ),
 });
 

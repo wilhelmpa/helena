@@ -21,6 +21,9 @@ export interface Run {
   trigger:
     | 'mention'
     | 'delegation'
+    | 'subtask'
+    | 'heartbeat'
+    | 'escalation'
     | 'field'
     | 'schedule'
     | 'manual'
@@ -45,6 +48,7 @@ export interface Run {
   // The folder of the issue's area below `cwd`, where the run starts. Absent on a server
   // that predates area folders.
   workdir?: string | null;
+  review?: boolean;
   // The coding agent session to resume, when the runner that held this run before died
   // mid run and reported one. Absent on a server that predates run resume.
   sessionId?: string | null;
@@ -369,6 +373,14 @@ export class Client {
       failure?: RuntimeFailure;
       // The task Helena's own loop handed to a bigger model: Helena starts the follow-up run.
       escalation?: { target: string; reason: string; detail: string | null; handover: string };
+      delegation?: {
+        status: 'success';
+        touchedFiles: string[];
+        finalMessage: string;
+        version: '1';
+        durationMs: number;
+        diff: string;
+      };
     },
   ): Promise<ReflectionRequest | null> {
     const res = await this.post(`/agent-runs/${runId}/result${claimQuery(claim)}`, result);

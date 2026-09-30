@@ -93,6 +93,16 @@ export const runtimePolicy = t.Object({
       },
     ),
   ),
+  escalation: t.Optional(
+    t.Object({
+      target: t.Union([t.Literal('claude'), t.Literal('codex')]),
+      model: t.Nullable(t.String({ maxLength: 200 })),
+      afterFailures: t.Integer({ minimum: 0, maximum: 5 }),
+      onResumeLimit: t.Boolean(),
+      onRequest: t.Boolean(),
+      maxDepth: t.Integer({ minimum: 0, maximum: 1 }),
+    }),
+  ),
   helena: t.Optional(
     t.Object(
       {

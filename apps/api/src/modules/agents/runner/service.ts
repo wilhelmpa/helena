@@ -39,7 +39,13 @@ import { routeRequest } from '#modules/model-router/service';
 import { DIGEST_SYSTEM_PROMPT } from '#modules/updates/digest-prompt';
 import { JUDGE_SYSTEM_PROMPT, JUDGE_WORK_CLASS } from '#modules/local-ai/judge-prompt';
 import { MAX_RUN_OUTPUT_BYTES, type reflectionBody } from './model';
-import { queueEscalation, type EscalationReport } from './escalation';
+import {
+  completeDelegation,
+  queueEscalation,
+  queueFailedRunEscalation,
+  type DelegationResult,
+  type EscalationReport,
+} from './escalation';
 import { recordUsage, type Spend } from '../usage/service';
 import { emergencyStopActive } from '#modules/emergency-stop/service';
 import {
@@ -61,8 +67,6 @@ import {
 import { chooseModelNow, classModelNow, type LocalFallback } from '#modules/local-ai/service';
 import { WORK_CLASS } from '#modules/local-ai/work-classes';
 import { routinePromptContext } from '#modules/routines/agent-runs';
-import { readEscalation } from '#modules/escalation/service';
-import { failedRunEscalation } from './escalation';
 import { issueWhy, issueWhySection } from '#modules/project-goals/ladder';
 import { activeOrderContext } from '#modules/standing-orders/service';
 import { localAiMayStart, type CapacityCache } from '#modules/local-ai/pressure';
@@ -190,6 +194,7 @@ export interface RunnerRun {
   // The folder of the issue's area, relative to the working directory of the agent's
   // runtime, which is the project workspace. The runner starts the run there.
   workdir: string | null;
+  review: boolean;
   // The coding agent session to resume, when the runner that held this run before died
   // mid run and reported one: the runner passes this to the command instead of starting
   // a fresh session. Null for a run claimed for the first time, or resumed past its limit.
@@ -491,6 +496,8 @@ async function claimAdmittedRun(agent: RunnerAgent): Promise<RunnerRun | null> {
       r.model_check AS "modelCheck",
       r.session_id AS "sessionId",
       r.resumes,
+      EXISTS (SELECT 1 FROM agent_run parent
+        WHERE parent.id = r.continued_from_run_id AND parent.trigger = 'escalation') AS "review",
       (r.continued_from_run_id IS NOT NULL AND r.resumes = 1) AS "continuation",
       (SELECT p.key FROM project p WHERE p.id = r.project_id) AS "projectKey",
       (SELECT p.name FROM project p WHERE p.id = r.project_id) AS "projectName",
@@ -678,6 +685,7 @@ async function claimAdmittedRun(agent: RunnerAgent): Promise<RunnerRun | null> {
     maxTurns: row.maxTurns ?? agent.maxTurns,
     runBudgetSeconds: row.runBudgetSeconds ?? agent.runBudgetSeconds,
     workdir: worksInProjectWorkspace(agent) ? row.issueAreaFolder : null,
+    review: row.review,
     sessionId: row.sessionId,
     autopilotLevel: autopilot.level,
   };
@@ -965,67 +973,6 @@ async function requestReflection(
     : { prompt: reflectionPrompt(reason, await getDisplayName()), ...REFLECTION_LIMITS };
 }
 
-async function queueFailedRunEscalation(runId: number): Promise<void> {
-  const settings = await readEscalation();
-  if (!settings.enabled) return;
-  await db.transaction(async (tx) => {
-    const [row] = await tx
-      .select({
-        id: agentRun.id,
-        agentId: agentRun.agentId,
-        projectId: agentRun.projectId,
-        issueId: agentRun.issueId,
-        prompt: agentRun.prompt,
-        sessionId: agentRun.sessionId,
-        model: agentRun.model,
-        modelCheck: agentRun.modelCheck,
-        attempts: agentRun.attempts,
-        lastError: agentRun.lastError,
-        agentModel: aiAgent.model,
-        runtimePolicy: aiAgent.runtimePolicy,
-      })
-      .from(agentRun)
-      .innerJoin(aiAgent, eq(aiAgent.id, agentRun.agentId))
-      .where(and(eq(agentRun.id, runId), eq(agentRun.status, 'failed')))
-      .for('update');
-    if (!row) return;
-    const [alreadyQueued] = await tx
-      .select({ id: agentRun.id })
-      .from(agentRun)
-      .where(eq(agentRun.continuedFromRunId, runId))
-      .limit(1);
-    if (alreadyQueued) return;
-    const plan = failedRunEscalation(settings, {
-      agentId: row.agentId,
-      projectId: row.projectId,
-      issueId: row.issueId,
-      runtime: runtimeOfPolicy(normalizeRuntimePolicy(row.runtimePolicy)),
-      agentModel: row.agentModel,
-      model: row.model,
-      configuredModel:
-        (row.modelCheck as { configured?: { model?: string | null } } | null)?.configured?.model ??
-        null,
-      modelSource:
-        (row.modelCheck as { configured?: { source?: string } } | null)?.configured?.source ?? null,
-      attempts: row.attempts,
-      error: row.lastError,
-    });
-    if (!plan) return;
-    const instruction = `The local attempt failed (${plan.reason}). Continue the task with ${plan.model}. Review the previous attempt and correct its failure.`;
-    await tx.insert(agentRun).values({
-      agentId: row.agentId,
-      projectId: row.projectId,
-      issueId: row.issueId,
-      trigger: 'manual',
-      prompt: row.sessionId ? instruction : `${row.prompt}\n\n${instruction}`,
-      model: plan.model,
-      sessionId: row.sessionId,
-      continuedFromRunId: runId,
-      taintSources: row.sessionId ? ['continued-session'] : [],
-    });
-  });
-}
-
 // Records the outcome the runner reports. A failure is terminal: the runner ran the
 // command and it failed, so re-serving the same run would just repeat it. A run in
 // which the agent reported itself blocked ends as a success whatever the command did
@@ -1047,6 +994,7 @@ export async function finishRun(
     runtime?: RunModelReport;
     failure?: RuntimeFailure;
     escalation?: EscalationReport;
+    delegation?: DelegationResult;
   },
   claim?: number,
 ): Promise<{ reflection: ReflectionRequest | null } | null> {
@@ -1106,7 +1054,7 @@ export async function finishRun(
   });
   const row = rows[0];
   if (!row) return null;
-  const status = row.status as 'success' | 'failed';
+  let status = row.status as 'success' | 'failed';
   // What the run taught about its model: a refusal takes it out of the pickers, a success
   // confirms it.
   await learnFromOutcome({
@@ -1124,6 +1072,14 @@ export async function finishRun(
     sessionId: result.sessionId,
     spend: result.spend,
   });
+  const completion = await completeDelegation(
+    runId,
+    status,
+    result.output ?? null,
+    row.lastError,
+    result.delegation,
+  );
+  if (completion) status = completion.status;
   await recordAgentRunFinished(
     {
       id: runId,
@@ -1134,7 +1090,7 @@ export async function finishRun(
       agentUserId: agent.userId,
     },
     status,
-    row.lastError,
+    completion?.error ?? row.lastError,
     status === 'failed' && result.failure
       ? {
           code: result.failure.code,
@@ -1149,6 +1105,7 @@ export async function finishRun(
   // "Handeln & berichten": what the run did without approval, on its task.
   await postAutopilotReport(runId);
   const paused = await enforceAgentLimits(agent.id, row.projectId, row.issueId);
+  if (completion) return { reflection: null };
   // Helena's own loop handed the task to a bigger model: the follow-up run takes it from
   // here, so this one reflects on nothing.
   if (result.escalation && status === 'success') {

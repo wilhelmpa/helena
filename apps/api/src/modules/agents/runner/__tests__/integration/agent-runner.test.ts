@@ -5,7 +5,13 @@ import { resetDb } from '#tests/helpers/db';
 import { createAgent, projectIdOf, teamOf } from '#tests/helpers/agents';
 import { cancelStepRun, queueStepRun } from '#modules/engine/agent-runs';
 import { registerBuiltins } from '#modules/engine/builtin/index';
-import { agentRun, db, issueWorkClaim, organizationProjectAssignment } from '@repo/db';
+import {
+  agentRun,
+  db,
+  issueActivity,
+  issueWorkClaim,
+  organizationProjectAssignment,
+} from '@repo/db';
 import { expireExhaustedRuns } from '../../service';
 import { eq, sql } from 'drizzle-orm';
 
@@ -46,6 +52,190 @@ async function queueRun(asOwner: Api, columnId: number, username: string) {
 }
 
 registerBuiltins();
+
+describe('delegated escalation', () => {
+  beforeEach(resetDb);
+
+  async function agents() {
+    const context = await setup();
+    const coder = (
+      await createAgent(context.asOwner, 'MKT', {
+        name: 'Coding Bot',
+        username: 'coder',
+        kind: 'external',
+      })
+    ).data!;
+    const originRoute = context.asOwner
+      .teams({ teamId: context.teamId })
+      ['ai-agents']({ agentId: context.agent.id });
+    const original = (await originRoute.get()).data!.runtimePolicy;
+    expect(
+      (
+        await originRoute.patch({
+          runtimePolicy: {
+            ...original,
+            escalation: {
+              target: 'codex',
+              model: 'gpt-6-sol',
+              afterFailures: 1,
+              onResumeLimit: true,
+              onRequest: true,
+              maxDepth: 1,
+            },
+          },
+        })
+      ).status,
+    ).toBe(200);
+    const coderRoute = context.asOwner
+      .teams({ teamId: context.teamId })
+      ['ai-agents']({ agentId: coder.agent.id });
+    const coderPolicy = (await coderRoute.get()).data!.runtimePolicy;
+    expect(
+      (await coderRoute.patch({ runtimePolicy: { ...coderPolicy, runtime: 'codex' } })).status,
+    ).toBe(200);
+    return { ...context, coderRunner: apiKeyApi(coder.apiKey!) };
+  }
+
+  it('returns a synthetic diff for independent review and records the accepted commit', async () => {
+    const { asOwner, asRunner, coderRunner, agent, columnId } = await agents();
+    const issue = await queueRun(asOwner, columnId, agent.username);
+    const origin = (await asRunner['agent-runs'].claim.post()).data!.run!;
+    expect(
+      (
+        await asRunner['agent-runs']({ runId: origin.id }).result.post({
+          status: 'failed',
+          error: 'Tests failed',
+        })
+      ).status,
+    ).toBe(200);
+    const delegated = (await coderRunner['agent-runs'].claim.post()).data!.run!;
+    expect(delegated.trigger).toBe('escalation');
+    expect(delegated.prompt).toContain('Tests failed');
+    const diff = 'diff --git a/src/api.ts b/src/api.ts\n+fixed';
+    const delegation = {
+      status: 'success' as const,
+      touchedFiles: ['src/api.ts'],
+      finalMessage: 'Fixed endpoint',
+      version: '1' as const,
+      durationMs: 120,
+      diff,
+    };
+    expect(
+      (
+        await coderRunner['agent-runs']({ runId: delegated.id }).result.post({
+          status: 'success',
+          output: JSON.stringify(delegation),
+          delegation,
+        })
+      ).status,
+    ).toBe(200);
+    const review = (await asRunner['agent-runs'].claim.post()).data!.run!;
+    expect(review.review).toBe(true);
+    expect(review.prompt).toContain(diff);
+    const commit = 'a'.repeat(40);
+    const report = {
+      status: 'accepted',
+      changedTestsChecked: true,
+      gates: [{ command: 'bun test', passed: true }],
+      commit,
+      message: 'Reviewed',
+    };
+    expect(
+      (
+        await asRunner['agent-runs']({ runId: review.id }).result.post({
+          status: 'success',
+          output: JSON.stringify(report),
+        })
+      ).status,
+    ).toBe(200);
+    const comments = await db
+      .select({ body: issueActivity.body })
+      .from(issueActivity)
+      .where(eq(issueActivity.issueId, issue.id));
+    expect(comments.some((comment) => comment.body?.includes(commit))).toBe(true);
+    const [recovered] = await db
+      .select({ status: agentRun.status, lastError: agentRun.lastError })
+      .from(agentRun)
+      .where(eq(agentRun.id, origin.id));
+    expect(recovered).toEqual({ status: 'success', lastError: null });
+    expect((await coderRunner['agent-runs'].claim.post()).data!.run).toBeNull();
+  });
+
+  it('surfaces an escalation failure without starting another escalation', async () => {
+    const { asOwner, asRunner, coderRunner, agent, columnId } = await agents();
+    await queueRun(asOwner, columnId, agent.username);
+    const origin = (await asRunner['agent-runs'].claim.post()).data!.run!;
+    await asRunner['agent-runs']({ runId: origin.id }).result.post({
+      status: 'failed',
+      error: 'Tests failed',
+    });
+    const delegated = (await coderRunner['agent-runs'].claim.post()).data!.run!;
+    expect(
+      (
+        await coderRunner['agent-runs']({ runId: delegated.id }).result.post({
+          status: 'failed',
+          error: 'Workspace unavailable',
+        })
+      ).status,
+    ).toBe(200);
+    const runs = await db
+      .select({ id: agentRun.id, status: agentRun.status, lastError: agentRun.lastError })
+      .from(agentRun);
+    expect(runs).toHaveLength(2);
+    expect(runs.find((run) => run.id === origin.id)).toMatchObject({
+      status: 'failed',
+      lastError: 'Workspace unavailable',
+    });
+    expect((await coderRunner['agent-runs'].claim.post()).data!.run).toBeNull();
+  });
+
+  it('blocks adoption when the reviewer reports a red gate', async () => {
+    const { asOwner, asRunner, coderRunner, agent, columnId } = await agents();
+    await queueRun(asOwner, columnId, agent.username);
+    const origin = (await asRunner['agent-runs'].claim.post()).data!.run!;
+    await asRunner['agent-runs']({ runId: origin.id }).result.post({
+      status: 'failed',
+      error: 'Tests failed',
+    });
+    const delegated = (await coderRunner['agent-runs'].claim.post()).data!.run!;
+    const delegation = {
+      status: 'success' as const,
+      touchedFiles: ['src/api.ts'],
+      finalMessage: 'Fixed endpoint',
+      version: '1' as const,
+      durationMs: 120,
+      diff: 'diff --git a/src/api.ts b/src/api.ts\n+fixed',
+    };
+    await coderRunner['agent-runs']({ runId: delegated.id }).result.post({
+      status: 'success',
+      output: JSON.stringify(delegation),
+      delegation,
+    });
+    const review = (await asRunner['agent-runs'].claim.post()).data!.run!;
+    const report = {
+      status: 'accepted',
+      changedTestsChecked: true,
+      gates: [{ command: 'bun test', passed: false }],
+      commit: 'a'.repeat(40),
+      message: 'Failed',
+    };
+    expect(
+      (
+        await asRunner['agent-runs']({ runId: review.id }).result.post({
+          status: 'success',
+          output: JSON.stringify(report),
+        })
+      ).status,
+    ).toBe(200);
+    const [row] = await db
+      .select({ status: agentRun.status, lastError: agentRun.lastError })
+      .from(agentRun)
+      .where(eq(agentRun.id, review.id));
+    expect(row).toMatchObject({ status: 'failed' });
+    expect(row.lastError).toContain('Prüfung/Übernahme fehlgeschlagen');
+    expect((await coderRunner['agent-runs'].claim.post()).data!.run).toBeNull();
+  });
+});
 
 describe('agent runner queue', () => {
   beforeEach(async () => {
