@@ -43,6 +43,9 @@ export async function modelSchemaMigration(apply = false, progress = (_message: 
   const {
     aiAgent,
     appSetting,
+    agentChatCatalog,
+    helenaModelAvailability,
+    helenaModelPrice,
     agentMcpServerLink,
     agentSkillLink,
     agentToolLink,
@@ -53,6 +56,8 @@ export async function modelSchemaMigration(apply = false, progress = (_message: 
   const { normalizeAgentEscalation } = await import('../modules/agents/core/service');
   const { migrateEscalationValue, migrateSchemaEscalations } =
     await import('../modules/model-schemas/migration');
+  const { migrateCloudModels, cloudAgentUpgrades, cloudModelAudit } =
+    await import('../modules/model-schemas/cloud-model-migration');
   const { resetCopyToTemplate } = await import('../modules/agents/core/template-sync');
   const {
     applyMatrix,
@@ -98,6 +103,32 @@ export async function modelSchemaMigration(apply = false, progress = (_message: 
     modelProjectionDrift(),
     modelMatrix(),
   ]);
+  const [catalogs, availability, priceRows] = await Promise.all([
+    db
+      .select({ agentId: agentChatCatalog.agentId, models: agentChatCatalog.models })
+      .from(agentChatCatalog),
+    db
+      .select({
+        runtime: helenaModelAvailability.runtime,
+        model: helenaModelAvailability.model,
+        state: helenaModelAvailability.state,
+      })
+      .from(helenaModelAvailability),
+    db.select({ model: helenaModelPrice.model }).from(helenaModelPrice),
+  ]);
+  const cloudAudit = cloudModelAudit(
+    catalogs.map((entry) => {
+      const policy = agents.find((agent) => agent.id === entry.agentId)?.policy as {
+        runtime?: string;
+      } | null;
+      return {
+        runtime: policy?.runtime ?? 'hermes',
+        models: Array.isArray(entry.models) ? (entry.models as { id: string }[]) : [],
+      };
+    }),
+    availability,
+    priceRows,
+  );
   const [stored] = await db
     .select({ value: appSetting.value })
     .from(appSetting)
@@ -105,6 +136,15 @@ export async function modelSchemaMigration(apply = false, progress = (_message: 
   const schemaEscalationMigration = Boolean(
     stored?.value &&
     !isDeepStrictEqual(stored.value, migrateSchemaEscalations(stored.value as typeof state)),
+  );
+  const cloud = migrateCloudModels(state.schemas);
+  const cloudSchemas = [...new Set(cloud.changes.map((change) => change.schema))].map(
+    (id) => cloud.schemas[id]!,
+  );
+  const cloudUpgrades = cloudAgentUpgrades(
+    agents,
+    matrix.agents.map((row) => ({ id: row.id, schema: row.schemaId, role: row.role })),
+    cloud.changes,
   );
   const changes = agents.flatMap((agent) => {
     const assignment = assignments.find((item) => item.agentId === agent.id);
@@ -129,7 +169,11 @@ export async function modelSchemaMigration(apply = false, progress = (_message: 
       : [];
   });
   progress('Computing model migration preview.');
-  const preview = await previewMatrix({ expectedRevision: state.revision, agents: changes });
+  const preview = await previewMatrix({
+    expectedRevision: state.revision,
+    agents: changes,
+    schemas: cloudSchemas,
+  });
   const sameIds = (items: { agentId: number; id: number }[], left: number, right: number) =>
     JSON.stringify(
       items
@@ -174,8 +218,8 @@ export async function modelSchemaMigration(apply = false, progress = (_message: 
     };
   });
   if (apply) progress('Applying model schema changes and template repairs.');
-  if (apply && (changes.length || schemaEscalationMigration))
-    await applyMatrix({ expectedRevision: state.revision, agents: changes });
+  if (apply && (changes.length || schemaEscalationMigration || cloudSchemas.length))
+    await applyMatrix({ expectedRevision: state.revision, agents: changes, schemas: cloudSchemas });
   if (apply)
     for (const repair of templateRepairs)
       for (const group of repair.groups)
@@ -223,11 +267,15 @@ export async function modelSchemaMigration(apply = false, progress = (_message: 
     applied:
       apply &&
       (changes.length > 0 ||
+        cloudSchemas.length > 0 ||
         schemaEscalationMigration ||
         sync.length > 0 ||
         templateRepairs.length > 0),
     agents: audit,
     after,
+    cloudModelAudit: cloudAudit,
+    cloudSchemaChanges: cloud.changes,
+    cloudAgentUpgrades: cloudUpgrades,
     schemaEscalationMigration,
     projectionDrift: drift,
     templateRepairs,

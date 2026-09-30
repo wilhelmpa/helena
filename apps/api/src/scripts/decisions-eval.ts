@@ -40,28 +40,42 @@ import { RECEIPT_EVAL } from '../modules/decisions/evals/receipts';
 import { ROUTER_EVAL } from '../modules/decisions/evals/router';
 import { AVA_COMMAND_EVAL } from '../modules/decisions/evals/ava-befehle';
 import { TOOL_SELECTION_EVAL } from '../modules/decisions/evals/tool-selection';
-import { PAPER_PRECHECK_EVAL } from '@helena/trading';
+import { PAPER_PRECHECK_EVAL, RULE_EVAL, ROUTING_EVAL, NEWS_EVAL } from '@helena/trading';
+import { BROWSER_EVAL } from '../modules/decisions/evals/browser';
+import { TASK_TRIAGE_EVAL } from '../modules/decisions/evals/task-triage';
+import { AGENT_ROUTING_EVAL } from '../modules/decisions/evals/agent-routing';
+import { ROUTINE_GATE_EVAL } from '../modules/decisions/evals/routine-gate';
+import { HEARTBEAT_PRECHECK_EVAL } from '../modules/decisions/evals/heartbeat-precheck';
 
-interface Backend {
+export interface DecisionEvalBackend {
   name: string;
   protocol: 'systemone' | 'openai-logprobs' | 'openai-json' | 'connection';
   credentialId?: number;
   url: string;
   keyFile?: string;
+  keyEnv?: string;
   model: string;
   debias?: boolean;
   // A Hugging Face vocab.json: logit_bias by token id (Halogen) instead of by text.
   tokenizer?: string;
 }
 
-const SETS: Record<string, { set: DecisionEvalSet; threshold: number }> = {
+export const DECISION_EVAL_SETS: Record<string, { set: DecisionEvalSet; threshold: number }> = {
   'ava-befehle': { set: AVA_COMMAND_EVAL, threshold: 0.98 },
   'tool-selection': { set: TOOL_SELECTION_EVAL, threshold: 0.95 },
   'paper-precheck': { set: PAPER_PRECHECK_EVAL, threshold: 0.95 },
-  router: { set: ROUTER_EVAL, threshold: 0.6 },
+  router: { set: ROUTER_EVAL, threshold: 0.8 },
   mail: { set: MAIL_EVAL, threshold: 0.7 },
-  receipts: { set: RECEIPT_EVAL, threshold: 0.85 },
+  receipts: { set: RECEIPT_EVAL, threshold: 0.95 },
   general: { set: GENERIC_EVAL, threshold: 0.7 },
+  browser: { set: BROWSER_EVAL, threshold: 0.95 },
+  'task-triage': { set: TASK_TRIAGE_EVAL, threshold: 0.85 },
+  'agent-routing': { set: AGENT_ROUTING_EVAL, threshold: 0.85 },
+  'routine-gate': { set: ROUTINE_GATE_EVAL, threshold: 0.8 },
+  'heartbeat-precheck': { set: HEARTBEAT_PRECHECK_EVAL, threshold: 0.8 },
+  'trading-rules': { set: RULE_EVAL, threshold: 0.85 },
+  'trading-routing': { set: ROUTING_EVAL, threshold: 0.7 },
+  'trading-news': { set: NEWS_EVAL, threshold: 0.7 },
 };
 
 function arg(name: string): string | undefined {
@@ -69,7 +83,8 @@ function arg(name: string): string | undefined {
   return index >= 0 ? process.argv[index + 1] : undefined;
 }
 
-async function keyOf(backend: Backend): Promise<string | null> {
+async function keyOf(backend: DecisionEvalBackend): Promise<string | null> {
+  if (backend.keyEnv) return process.env[backend.keyEnv] ?? null;
   if (!backend.keyFile) return null;
   return (await readFile(backend.keyFile.replace(/^~/, homedir()), 'utf8')).trim() || null;
 }
@@ -83,15 +98,20 @@ async function postJson(url: string, key: string | null, body: unknown, signal?:
       ...(key ? { authorization: `Bearer ${key}` } : {}),
     },
     body: JSON.stringify(body),
-    signal,
+    signal: signal ?? AbortSignal.timeout(180_000),
+    redirect: 'error',
   });
-  if (!res.ok) throw new Error(`HTTP ${res.status}: ${(await res.text()).slice(0, 200)}`);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json();
 }
 
 // `concurrency` bounds the requests of the whole eval: the cases at a time, and the questions of
 // one case at a time (1 keeps a single request in flight on a shared local server).
-async function asker(backend: Backend, debias: boolean, concurrency: number) {
+export async function decisionEvalAsker(
+  backend: DecisionEvalBackend,
+  debias: boolean,
+  concurrency: number,
+) {
   if (backend.protocol === 'connection') {
     if (backend.credentialId !== 46)
       throw new Error('This synthetic Jev eval requires connection 46.');
@@ -173,7 +193,7 @@ function pct(value: number | null): string {
 
 async function main() {
   const classes = (arg('classes') ?? 'router,mail,receipts,general').split(',');
-  const backends = JSON.parse(arg('backends') ?? '[]') as Backend[];
+  const backends = JSON.parse(arg('backends') ?? '[]') as DecisionEvalBackend[];
   const concurrency = Number(arg('concurrency') ?? 2);
   const debias = process.argv.includes('--debias');
   const out = arg('out');
@@ -185,9 +205,9 @@ async function main() {
     report: EvalReport;
   }[] = [];
   for (const backend of backends) {
-    const ask = await asker(backend, debias, concurrency);
+    const ask = await decisionEvalAsker(backend, debias, concurrency);
     for (const name of classes) {
-      const entry = SETS[name];
+      const entry = DECISION_EVAL_SETS[name];
       if (!entry) throw new Error(`unknown class ${name}`);
       const started = Date.now();
       const report = await runDecisionEval(entry.set, entry.threshold, ask, { concurrency });
@@ -210,4 +230,4 @@ async function main() {
   if (out) await writeFile(out, JSON.stringify({ at: new Date().toISOString(), results }, null, 2));
 }
 
-await main();
+if (import.meta.main) await main();

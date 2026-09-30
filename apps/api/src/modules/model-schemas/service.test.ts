@@ -33,6 +33,23 @@ const membership = (projectId: number) => ({
 });
 
 describe('model schema resolution', () => {
+  it('applies multiple schemas in one revision and restores both on undo', () => {
+    const before = defaultState();
+    const schemas = ['nur-codex', 'nur-claude'].map((id) => ({
+      ...structuredClone(before.schemas[id]!),
+      description: 'Updated model schema',
+    }));
+    const after = nextState(before, { expectedRevision: before.revision, schemas });
+    expect(after.revision).toBe(before.revision + 1);
+    expect(after.history).toHaveLength(1);
+    expect(after.schemas['nur-codex']!.description).toBe('Updated model schema');
+    expect(after.schemas['nur-claude']!.description).toBe('Updated model schema');
+    expect(nextState(after, { expectedRevision: after.revision, undo: true }).schemas).toEqual(
+      before.schemas,
+    );
+    expect(before.schemas['nur-codex']!.description).not.toBe('Updated model schema');
+  });
+
   it('inherits a project schema only with one project membership', () => {
     const state = defaultState();
     state.projects[1] = 'nur-codex';
