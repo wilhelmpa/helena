@@ -4,6 +4,7 @@ import { Handle, Position, type Node, type NodeProps } from '@xyflow/react';
 import { useTranslations } from 'next-intl';
 import type { CSSProperties, ReactNode } from 'react';
 import Orb from '@/components/helena/Orb';
+import { Card } from '@/design-system';
 import BudgetBar, { fullestBudget } from '@/components/helena/BudgetBar';
 import type { AiAgent } from '@/lib/api/endpoints/agents';
 import type { OrganizationAgent } from '@/lib/api/endpoints/organization';
@@ -91,10 +92,11 @@ export default function OrganizationChartNode({ data }: NodeProps<ChartAgentNode
       : null;
   if (short) {
     return (
-      <div
-        data-selected={selected || undefined}
+      <Card
+        tone="node"
+        selected={selected}
         data-throttled={agent.throttled && !selected ? 'true' : undefined}
-        className={`organization-card group relative rounded-xl border bg-card px-2.5 text-start text-card-foreground transition-[opacity,border-color,box-shadow] duration-200 ${leader ? 'h-16 w-[152px]' : 'h-16 w-[120px]'} ${selected ? 'border-brand ring-[3px] ring-brand/20' : 'border-border hover:border-muted-foreground/40'} ${dimmed ? 'opacity-30' : ''}`}
+        className={`organization-card group text-start ${leader ? 'h-16 w-[152px]' : 'h-16 w-[120px]'} ${dimmed ? 'opacity-30' : ''}`}
       >
         <Handle type="target" position={Position.Top} className={handle} isConnectable={false} />
         <button
@@ -133,14 +135,15 @@ export default function OrganizationChartNode({ data }: NodeProps<ChartAgentNode
           </button>
         )}
         <Handle type="source" position={Position.Bottom} className={handle} isConnectable={false} />
-      </div>
+      </Card>
     );
   }
   return (
-    <div
-      data-selected={selected || undefined}
+    <Card
+      tone="node"
+      selected={selected}
       data-throttled={agent.throttled && !selected ? 'true' : undefined}
-      className={`organization-card group relative rounded-xl border bg-card ${compact ? 'px-3.5' : 'px-[18px]'} text-start text-card-foreground transition-[opacity,border-color,box-shadow] duration-200 ${leader ? (compact ? 'h-[92px] w-[224px] pt-2 pb-4' : 'h-[92px] w-[280px] pt-2 pb-4') : compact ? 'h-[92px] w-[176px] pt-2.5 pb-3' : 'h-[112px] w-[242px] pt-[14px] pb-4'} ${selected ? 'border-brand ring-[3px] ring-brand/20' : 'border-border hover:border-muted-foreground/40'} ${dimmed ? 'opacity-30' : ''}`}
+      className={`organization-card group text-start ${leader ? (compact ? 'h-[92px] w-[224px]' : 'h-[92px] w-[280px]') : compact ? 'h-[92px] w-[176px]' : 'h-[112px] w-[242px]'} ${dimmed ? 'opacity-30' : ''}`}
     >
       <Handle type="target" position={Position.Top} className={handle} isConnectable={false} />
       {/* The click reaches the chart (onNodeClick), which tells a click (settings) from a
@@ -210,7 +213,7 @@ export default function OrganizationChartNode({ data }: NodeProps<ChartAgentNode
         onSaveTemplate={data.onSaveTemplate}
       />
       <Handle type="source" position={Position.Bottom} className={handle} isConnectable={false} />
-    </div>
+    </Card>
   );
 }
 

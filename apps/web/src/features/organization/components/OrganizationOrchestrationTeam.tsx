@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl';
 import { AgentPausedBadge } from '@/components/common/agent-chat/AgentPausedBadge';
 import type { OrganizationAgent } from '@/lib/api/endpoints/organization';
 import { organizationAgentRole, type OrganizationAgentRole } from '../organizationTree';
-import { Box, Inline, Stack, Text } from '@/design-system';
+import { Box, Inline, Stack, Text, Card } from '@/design-system';
 
 const ROLES: OrganizationAgentRole[] = ['coordinator', 'specialist', 'reviewer', 'pool'];
 
@@ -21,7 +21,7 @@ export default function OrganizationOrchestrationTeam({ agents }: { agents: Orga
   const t = useTranslations('organization');
 
   return (
-    <Stack as="section" gap={4} pad={4} className="rounded-md border bg-card">
+    <Card as="section" gap={4}>
       <div>
         <h2 className="text-md font-medium">{t('orchestration.teamTitle')}</h2>
         <Text as="p" size="xs" tone="muted">
@@ -83,6 +83,6 @@ export default function OrganizationOrchestrationTeam({ agents }: { agents: Orga
       <Text as="p" size="xs" tone="muted">
         {t('orchestration.editRoles')}
       </Text>
-    </Stack>
+    </Card>
   );
 }

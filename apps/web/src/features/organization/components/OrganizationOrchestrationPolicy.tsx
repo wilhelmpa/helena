@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import type { OrganizationAgent } from '@/lib/api/endpoints/organization';
 import { useProjectWorkflows } from '@/services/controlPlaneWorkflows.service';
 import { workflowsPath } from '@/utils/paths';
-import { Inline, Stack, Text } from '@/design-system';
+import { Inline, Text, Card } from '@/design-system';
 
 // Whether the project runs the agent-team workflow, with which limits, and what in the
 // team keeps a delegated task from reaching it.
@@ -33,7 +33,7 @@ export default function OrganizationOrchestrationPolicy({
   ].filter((warning): warning is string => Boolean(warning));
 
   return (
-    <Stack as="section" gap={3} pad={4} className="rounded-md border bg-card">
+    <Card as="section">
       <Inline gap={3} justify="between" align="start">
         <div>
           <h2 className="flex items-center gap-2 text-md font-medium">
@@ -88,6 +88,6 @@ export default function OrganizationOrchestrationPolicy({
             {warning}
           </Text>
         ))}
-    </Stack>
+    </Card>
   );
 }

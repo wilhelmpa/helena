@@ -9,7 +9,7 @@ import PipelineRolesCard from './PipelineRolesCard';
 import PipelineStepInspector from './PipelineStepInspector';
 import PipelineStepsCard from './PipelineStepsCard';
 import PipelineTriggerCard from './PipelineTriggerCard';
-import { Box, Overlay, Stack } from '@/design-system';
+import { Overlay, Stack, Card } from '@/design-system';
 
 // The workflow top to bottom: trigger, roles and the steps, with the selected step's
 // inspector beside them, or in a sheet on a phone.
@@ -38,9 +38,9 @@ export default function PipelineBuilder({ header }: { header?: ReactNode }) {
           </Overlay>
         )
       ) : (
-        <Box as="aside" pad={4} className="sticky top-0 rounded-md border bg-card">
+        <Card as="aside" className="sticky top-0">
           <PipelineStepInspector />
-        </Box>
+        </Card>
       )}
     </div>
   );

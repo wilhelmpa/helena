@@ -10,7 +10,7 @@ import { useSetAgentTokenCeilings } from '../services/organization.service';
 import { parseCeiling } from '../utils/tokenCeilings';
 import OrganizationAgentPause from './OrganizationAgentPause';
 import OrganizationTokenUsage from './OrganizationTokenUsage';
-import { Stack, Text } from '@/design-system';
+import { Card, Text } from '@/design-system';
 
 // Whether the agent takes work, and what its runs may spend.
 export default function OrganizationAgentGovernance({
@@ -29,7 +29,7 @@ export default function OrganizationAgentGovernance({
   const invalid = dailyCeiling === undefined || monthlyCeiling === undefined;
 
   return (
-    <Stack gap={3} pad={3} className="rounded-md border">
+    <Card tone="inset" pad="tight">
       <OrganizationAgentPause teamId={teamId} agent={agent} />
       <OrganizationTokenUsage
         label={t('today')}
@@ -89,6 +89,6 @@ export default function OrganizationAgentGovernance({
           {t('save')}
         </Button>
       </div>
-    </Stack>
+    </Card>
   );
 }

@@ -10,7 +10,7 @@ import { useSetProjectTokenCeiling } from '../services/organization.service';
 import { parseCeiling } from '../utils/tokenCeilings';
 import OrganizationOrchestrationAgentUsage from './OrganizationOrchestrationAgentUsage';
 import OrganizationTokenUsage from './OrganizationTokenUsage';
-import { Inline, Stack, Text } from '@/design-system';
+import { Inline, Text, Card } from '@/design-system';
 
 // The tokens the project's agent runs used this month against its ceiling, and what each
 // of its agents used against theirs.
@@ -29,7 +29,7 @@ export default function OrganizationOrchestrationBudget({
   const ceiling = parseCeiling(monthly);
 
   return (
-    <Stack as="section" gap={3} pad={4} className="rounded-md border bg-card">
+    <Card as="section">
       <div>
         <h2 className="text-md font-medium">{t('tokens.projectTitle')}</h2>
         <Text as="p" size="xs" tone="muted">
@@ -74,6 +74,6 @@ export default function OrganizationOrchestrationBudget({
         </Text>
       )}
       <OrganizationOrchestrationAgentUsage agents={agents} />
-    </Stack>
+    </Card>
   );
 }

@@ -8,7 +8,7 @@ import { compactTokens } from '@/utils/agentUsage';
 import { formatDate } from '@/utils/dates';
 import { revScope } from '@/utils/revScopes';
 import { useAgentUsageQuery } from '../services/organization.service';
-import { Stack, Text } from '@/design-system';
+import { Text, Card } from '@/design-system';
 
 // The tokens the project's agent runs used this month, and per task closed this month
 // that agents worked on.
@@ -23,7 +23,7 @@ export default function OrganizationOrchestrationUsage({ projectKey }: { project
   const data = usage.data;
 
   return (
-    <Stack as="section" gap={3} pad={4} className="rounded-md border bg-card">
+    <Card as="section">
       <div>
         <h2 className="text-md font-medium">{t('title')}</h2>
         {data && (
@@ -65,6 +65,6 @@ export default function OrganizationOrchestrationUsage({ projectKey }: { project
           </div>
         </dl>
       )}
-    </Stack>
+    </Card>
   );
 }

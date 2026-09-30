@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { usePipelineTemplates } from '@/services/pipelines.service';
 import PipelineTemplateRow from './PipelineTemplateRow';
 import { Workflow } from 'lucide-react';
-import { EmptyState, Inline, Text } from '@/design-system';
+import { EmptyState, Inline, Text, Card } from '@/design-system';
 
 export default function PipelineTemplateList({
   teamId,
@@ -53,11 +53,11 @@ export default function PipelineTemplateList({
           {t('emptyHint')}
         </EmptyState>
       ) : (
-        <ul className="divide-y overflow-hidden rounded-md border bg-card">
+        <Card as="ul" pad="none" className="divide-y overflow-hidden">
           {rows.map((pipeline) => (
             <PipelineTemplateRow key={pipeline.id} pipeline={pipeline} canDelete={canDelete} />
           ))}
-        </ul>
+        </Card>
       )}
     </section>
   );

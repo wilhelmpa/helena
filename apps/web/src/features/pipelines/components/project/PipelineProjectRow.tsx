@@ -12,7 +12,7 @@ import { usePipelineLabels } from '../../hooks/usePipelineLabels';
 import PipelineIssueList from '../PipelineIssueList';
 import PipelineHookPanel from './PipelineHookPanel';
 import PipelineRoleMapping from './PipelineRoleMapping';
-import { Inline, Stack, Text } from '@/design-system';
+import { Inline, Stack, Text, Card } from '@/design-system';
 
 // One workflow the project can use. Turning it on is refused with the reason when it
 // cannot run here; the problems below name what to fix.
@@ -39,7 +39,7 @@ export default function PipelineProjectRow({
   const StateIcon = entry.enabled ? CircleCheck : CircleOff;
 
   return (
-    <Stack as="article" gap={3} pad={4} className="rounded-md border bg-card">
+    <Card as="article">
       <Inline gap={3} wrap align="start">
         <div className="min-w-0 flex-1">
           <Inline gap={2} wrap>
@@ -104,6 +104,6 @@ export default function PipelineProjectRow({
           {t('runs')}
         </Link>
       </Inline>
-    </Stack>
+    </Card>
   );
 }

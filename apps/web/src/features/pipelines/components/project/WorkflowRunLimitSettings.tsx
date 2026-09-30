@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { usePipelineRunLimit, useSetPipelineRunLimit } from '@/services/pipelines.service';
-import { Inline, Stack, Text } from '@/design-system';
+import { Inline, SettingsRow, Text } from '@/design-system';
 
 const MIN = 1;
 const MAX = 1000;
@@ -48,14 +48,8 @@ export default function WorkflowRunLimitSettings({
   }
 
   return (
-    <Stack gap={2} padBottom={5} className="border-b sm:flex-row sm:items-center sm:gap-3">
-      <div className="min-w-0 flex-1">
-        <h3 className="text-sm font-medium">{t('title')}</h3>
-        <Text as="p" size="xs" tone="muted">
-          {t('hint')}
-        </Text>
-      </div>
-      <Inline gap={2} className="shrink-0">
+    <SettingsRow label={t('title')} description={t('hint')}>
+      <Inline gap={2}>
         <Input
           id={INPUT_ID}
           type="number"
@@ -82,6 +76,6 @@ export default function WorkflowRunLimitSettings({
           </Button>
         )}
       </Inline>
-    </Stack>
+    </SettingsRow>
   );
 }
