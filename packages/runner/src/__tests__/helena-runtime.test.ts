@@ -11,7 +11,7 @@ import {
   type AgUiEvent,
 } from '../agui';
 import { presetOf, type RunnerConfig } from '../config';
-import { execute } from '../execute';
+import { commandFor, execute } from '../execute';
 import { helenaAgentConfig, HelenaRuntimeAdapter, localServers } from '../helena-runtime';
 import type { RuntimePolicyClient, RuntimeStatus } from '../policy';
 import { presetArgv, PRESETS } from '../presets';
@@ -384,4 +384,24 @@ test('native configuration preserves all instruction contributions and maps subs
   );
   expect(config.runtimeFallback).toBe('runtime:codex/gpt-6-astra');
   expect(config.fallbackModels).toEqual(['openai/api-model']);
+});
+
+describe('the command that starts the helena runtime', () => {
+  const argv = ['--stdin-json', '--model', 'helena-halogen/flash'];
+  it('runs the loop as a subcommand of this runner when it starts the command itself', () => {
+    expect(commandFor(PRESETS.helena, argv, false, '/usr/bin/node', '/runner/cli.js')).toEqual([
+      '/usr/bin/node',
+      ['/runner/cli.js', 'helena-agent', ...argv],
+    ]);
+  });
+  it('sends an isolated command only its own arguments; the launcher adds node, script and subcommand', () => {
+    const [bin, args] = commandFor(PRESETS.helena, argv, true, '/usr/bin/node', '/runner/cli.js');
+    expect(bin).toBe('helena-agent');
+    expect(args).toEqual(argv);
+    expect(args).not.toContain('/runner/cli.js');
+  });
+  it('leaves the other runtimes as they are', () => {
+    expect(commandFor(PRESETS.hermes, ['chat'], true)).toEqual(['hermes', ['chat']]);
+    expect(commandFor(PRESETS.hermes, ['chat'], false)).toEqual(['hermes', ['chat']]);
+  });
 });

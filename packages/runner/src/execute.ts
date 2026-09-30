@@ -260,11 +260,21 @@ function spawnArgs(
       toolEnv: task.delivered?.length ? { delivered: task.delivered, present } : null,
     },
   );
-  // A subcommand of this runner's own bundle (Helena's own loop) runs on the same Node with the
-  // same script; the isolation launcher's preset names both itself.
-  if ((preset as { runnerSubcommand?: boolean }).runnerSubcommand && process.argv[1]) {
-    return [process.execPath, [process.argv[1], preset.bin, ...argv]];
-  }
+  return commandFor(preset, argv, isolationEnabled());
+}
+
+// A subcommand of this runner's own bundle (Helena's own loop) runs on the same Node with the
+// same script. The isolation launcher's preset names Node, the script and the subcommand
+// itself (launcher.json `fixedArgs`), so an isolated command sends only its own arguments:
+// sending the prefix too made the loop read the script path as an unknown argument.
+export function commandFor(
+  preset: Pick<CliCommand, 'bin'> & { runnerSubcommand?: boolean },
+  argv: string[],
+  isolated: boolean,
+  node: string = process.execPath,
+  script: string | undefined = process.argv[1],
+): [string, string[]] {
+  if (preset.runnerSubcommand && script && !isolated) return [node, [script, preset.bin, ...argv]];
   return [preset.bin, argv];
 }
 
