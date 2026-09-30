@@ -4,12 +4,14 @@ import http from 'node:http';
 import net from 'node:net';
 import path from 'node:path';
 import { promisify } from 'node:util';
+import { fileURLToPath } from 'node:url';
 
 const host = process.env.TERMINAL_HOST ?? '127.0.0.1';
 const port = Number(process.env.TERMINAL_PORT ?? 8444);
 const projectsRoot = process.env.PROJECTS_ROOT ?? '/srv/volition/workspaces/projects';
 const runtimeRoot = process.env.TERMINAL_RUNTIME_ROOT ?? '/run/volition-terminal';
 const wetty = process.env.WETTY_BIN ?? '/usr/local/bin/wetty';
+const wettyLauncher = fileURLToPath(new URL('../terminal/wetty-local-command.mjs', import.meta.url));
 const shell = process.env.TERMINAL_SHELL ?? '/usr/local/libexec/volition-terminal-shell';
 const tmux = process.env.TMUX_BIN ?? '/usr/bin/tmux';
 const sweepIntervalMs = Number(process.env.TERMINAL_SWEEP_INTERVAL_MS ?? 60_000);
@@ -126,12 +128,11 @@ async function session(slug) {
     const socketPath = path.join(runtimeRoot, `${slug}.sock`);
     await rm(socketPath, { force: true });
     const base = `${publicPrefix}/${slug}`;
-    const child = spawn(wetty, [
+    const child = spawn(process.execPath, [
+      wettyLauncher, '--wetty', wetty,
       '--socket', socketPath,
       '--base', base,
       '--command', `${shell} ${slug}`,
-      '--allow-iframe',
-      '--log-level', 'warn',
     ], { stdio: ['ignore', 'inherit', 'inherit'] });
     child.once('exit', () => {
       if (sessions.get(slug)?.child === child) sessions.delete(slug);

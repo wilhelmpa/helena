@@ -496,6 +496,7 @@ fi
 # they follow the repository once installed (updates/install.sh).
 if [[ -x /usr/local/libexec/helena-update ]] &&
   changed deployment/volition-stack/native/updates deployment/volition-stack/native/runtimes \
+    deployment/volition-stack/native/terminal/wetty-local-command.mjs \
     deployment/volition-stack/native/local-ai/whisper_update.py \
     deployment/volition-stack/native/local-ai/whisper_acceptance.py \
     deployment/volition-stack/native/local-ai/whisper_ui.py; then
@@ -528,6 +529,7 @@ if changed deployment/volition-stack/native/terminal/tmux.conf &&
     /usr/local/lib/volition-isolation/tmux.conf
 fi
 if changed deployment/volition-stack/native/terminal/project-terminal-router.mjs \
+  deployment/volition-stack/native/terminal/wetty-local-command.mjs \
   deployment/volition-stack/native/systemd/volition-terminal.service; then
   install_from_checkout -m 0644 "$live/deployment/volition-stack/native/systemd/volition-terminal.service" /etc/systemd/system/
   systemctl daemon-reload
@@ -586,6 +588,7 @@ if changed deployment/volition-stack/native/nginx/project-terminal.conf; then
 fi
 
 if changed deployment/volition-stack/native/owner-terminal \
+  deployment/volition-stack/native/terminal/wetty-local-command.mjs \
   ':(exclude)deployment/volition-stack/native/owner-terminal/tmux.conf'; then
   "$live/deployment/volition-stack/native/owner-terminal/setup.sh"
   restart+=(volition-owner-terminal.service)

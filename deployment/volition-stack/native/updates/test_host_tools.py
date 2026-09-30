@@ -244,11 +244,12 @@ class HostToolsTest(unittest.TestCase):
         pointer = tree.parent / "current"
         old = pointer.resolve()
         with mock.patch.object(h, "quiet_queue", return_value=contextlib.nullcontext()), mock.patch.object(
-                h, "command", return_value=""), mock.patch.object(h, "service_smoke") as smoke:
+                h, "command", return_value=""), mock.patch.object(h, "affected_units", return_value=h.UNITS["wetty"]), mock.patch.object(
+                h, "session_smoke"), mock.patch.object(h, "service_smoke") as smoke:
             result = h.activate(self.config, "wetty", tree, self.log)
         self.assertEqual(result["to"], version)
-        self.assertEqual(result["units"], ["volition-terminal.service"])
-        smoke.assert_called_once_with(["volition-terminal.service"])
+        self.assertEqual(result["units"], ["volition-terminal.service", "volition-owner-terminal.service"])
+        smoke.assert_called_once_with(["volition-terminal.service", "volition-owner-terminal.service"])
         self.assertEqual(pointer.resolve(), tree)
         pointer.unlink()
         pointer.symlink_to(old.name)
@@ -256,12 +257,58 @@ class HostToolsTest(unittest.TestCase):
         (bindir / "wetty").unlink()
         (bindir / "wetty").symlink_to("/fixture/old/wetty")
         with mock.patch.object(h, "quiet_queue", return_value=contextlib.nullcontext()), mock.patch.object(
-                h, "command", return_value=""), mock.patch.object(h, "service_smoke",
-                side_effect=[h.ToolError("not active"), None]):
+                h, "command", return_value=""), mock.patch.object(h, "affected_units", return_value=h.UNITS["wetty"]), mock.patch.object(
+                h, "session_smoke"), mock.patch.object(h, "service_smoke", side_effect=[h.ToolError("not active"), None]):
             with self.assertRaisesRegex(h.ToolError, "previous version restored"):
                 h.activate(self.config, "wetty", tree, self.log)
         self.assertEqual(pointer.resolve(), old)
         self.assertEqual(os.readlink(bindir / "wetty"), "/fixture/old/wetty")
+
+    def test_session_failure_rolls_back_even_with_no_active_consumers(self):
+        for tool in ("wetty", "code-server"):
+            with self.subTest(tool=tool):
+                tree = self.installed_tree(tool, "3.3.5")
+                pointer = tree.parent / "current"
+                old = pointer.resolve()
+                link = Path(self.config["hostToolsBin"]) / tool
+                previous = os.readlink(link)
+                with mock.patch.object(h, "quiet_queue", return_value=contextlib.nullcontext()), mock.patch.object(
+                        h, "affected_units", return_value=[]), mock.patch.object(h, "command") as run, mock.patch.object(
+                        h, "session_smoke", create=True, side_effect=[h.ToolError("login prompt"), None]) as smoke:
+                    with self.assertRaisesRegex(h.ToolError, "previous version restored.*login prompt"):
+                        h.activate(self.config, tool, tree, self.log)
+                self.assertEqual(pointer.resolve(), old)
+                self.assertEqual(os.readlink(link), previous)
+                self.assertEqual(smoke.call_args_list, [mock.call(tool, link), mock.call(tool, Path(previous).resolve())])
+                run.assert_not_called()
+
+    def test_session_failure_with_failed_rollback_requires_operator_check(self):
+        tree = self.installed_tree("wetty", "3.3.5")
+        previous = os.readlink(tree.parent / "current")
+        with mock.patch.object(h, "quiet_queue", return_value=contextlib.nullcontext()), mock.patch.object(
+                h, "affected_units", return_value=[]), mock.patch.object(h, "session_smoke", create=True,
+                side_effect=h.ToolError("no prompt")):
+            with self.assertRaisesRegex(h.ToolError, "rollback smoke failed"):
+                h.activate(self.config, "wetty", tree, self.log)
+        self.assertEqual(os.readlink(tree.parent / "current"), previous)
+
+    def test_node_update_smokes_wetty_with_candidate_node(self):
+        tree = self.installed_tree("node", "24.22.0")
+        binary = tree / "bin/node"
+        with mock.patch.object(h, "command", return_value="v24.22.0"), mock.patch.object(
+                h.Path, "is_file", return_value=True), mock.patch.object(h, "session_smoke", create=True) as smoke:
+            h.binary_smoke("node", tree, "24.22.0")
+        smoke.assert_called_once_with("wetty", Path("/usr/local/bin/wetty"), binary)
+        self.assertIn("volition-owner-terminal.service", h.UNITS["node"])
+        self.assertIn("volition-owner-terminal.service", h.UNITS["wetty"])
+
+    @unittest.skipUnless(os.environ.get("VOLITION_HOST_SESSION_TEST") == "1", "opt-in installed packages")
+    def test_installed_wetty_versions_and_code_server_sessions(self):
+        self.assertNotEqual(os.geteuid(), 0, "regression must exercise unprivileged local execution")
+        for version in ("3.3.3", "3.3.5"):
+            with self.subTest(wetty=version):
+                h.session_smoke("wetty", Path("/opt/helena/host-tools/wetty") / version / "bin/wetty")
+        h.session_smoke("code-server", Path("/opt/helena/host-tools/code-server/4.139.1/bin/code-server"))
 
     def test_terminal_smoke_checks_active_unit_without_http(self):
         with mock.patch.object(h.urllib.request, "build_opener") as build, mock.patch.object(
@@ -452,7 +499,9 @@ class HostToolsTest(unittest.TestCase):
         self.addCleanup(tree.chmod, 0o755)
         self.assertFalse(tree.stat().st_mode & 0o222)
         self.assertEqual(h.command([str(binary), "--version"], user="nobody").strip(), "4.139.1")
-        h.binary_smoke("code-server", tree, "4.139.1")
+        with mock.patch.object(h, "session_smoke") as smoke:
+            h.binary_smoke("code-server", tree, "4.139.1")
+        smoke.assert_called_once_with("code-server", binary)
         self.assertFalse((tree / ".config").exists())
         self.assertEqual(sorted(p.name for p in tree.iterdir()), ["bin"])
 

@@ -36,9 +36,10 @@ UNPACK_LIMIT = 3 * 1024 * 1024 * 1024
 UNITS = {
     "bun": ["volition-plan-api.service", "volition-plan-worker.service"],
     "node": ["volition-plan-web.service", "volition-provisioning.service",
-             "volition-terminal.service", "volition-project-browser-router.service"],
+             "volition-terminal.service", "volition-owner-terminal.service",
+             "volition-project-browser-router.service"],
     "code-server": ["volition-code.service"],
-    "wetty": ["volition-terminal.service"],
+    "wetty": ["volition-terminal.service", "volition-owner-terminal.service"],
     "kasmvnc": [],
     "uv": [],
 }
@@ -462,14 +463,12 @@ def prepare(tool: str, version: str, parent: Path, log) -> Path:
         return destination
 
 
-def pty_smoke(node: Path, wetty: Path) -> None:
-    # A real PTY spawn catches ABI mismatches and missing spawn-helper, not just imports.
-    script = ("const p=require(process.argv[1]);const t=p.spawn('/bin/sh',['-c','printf helena-pty'],"
-              "{env:{PATH:'/usr/bin:/bin'},cols:80,rows:24});let text='';"
-              "t.onData(x=>text+=x);t.onExit(()=>process.exit(text.includes('helena-pty')?0:1));"
-              "setTimeout(()=>process.exit(2),3000).unref();")
-    command([str(node), "-e", script, str(wetty / "node_modules/node-pty")],
-            cwd=wetty, user="nobody", timeout=10)
+def session_smoke(tool: str, binary: Path, node: Path = Path("/usr/local/bin/node")) -> None:
+    script = Path(__file__).with_name("host-tool-session-smoke.mjs")
+    try:
+        command([str(node), str(script), tool, str(binary)], user="nobody", timeout=20)
+    except (ToolError, subprocess.TimeoutExpired) as error:
+        raise ToolError(tool + " isolated session smoke failed") from error
 
 
 def uv_pair_smoke(bindir: Path, version: str | None = None) -> str:
@@ -504,12 +503,12 @@ def binary_smoke(tool: str, tree: Path, version: str) -> None:
     if not re.search(r"(?<![0-9.])v?" + re.escape(version) +
                      (r"(?![0-9])" if tool == "kasmvnc" else r"(?![0-9.])"), output):
         raise ToolError("prepared executable does not report the requested version")
-    if tool == "wetty":
-        pty_smoke(Path("/usr/local/bin/node"), tree)
+    if tool in ("wetty", "code-server"):
+        session_smoke(tool, binary)
     elif tool == "node":
-        wetty = Path("/usr/local/bin/wetty").resolve().parent.parent.parent.parent
-        if (wetty / "node_modules/node-pty").is_dir():
-            pty_smoke(binary, wetty)
+        wetty = Path("/usr/local/bin/wetty")
+        if wetty.is_file():
+            session_smoke("wetty", wetty, binary)
 
 
 def affected_units(tool: str) -> list[str]:
@@ -616,6 +615,10 @@ def activate(config: dict, tool: str, tree: Path, log) -> dict:
                 temp.write_text(kasm_dropin(current))
                 os.replace(temp, dropin)
                 command(["systemctl", "daemon-reload"])
+            if tool in ("wetty", "code-server"):
+                session_smoke(tool, bindir / tool)
+            elif tool == "node" and (bindir / "wetty").is_file():
+                session_smoke("wetty", bindir / "wetty", bindir / "node")
             if units:
                 log.note("Restarting only: " + ", ".join(units))
                 command(["systemctl", "restart", *units], timeout=60)
@@ -636,6 +639,10 @@ def activate(config: dict, tool: str, tree: Path, log) -> dict:
                     dropin.chmod(old_dropin_mode)
                 command(["systemctl", "daemon-reload"])
             try:
+                if tool in ("wetty", "code-server"):
+                    session_smoke(tool, old_binary)
+                elif tool == "node" and (bindir / "wetty").is_file():
+                    session_smoke("wetty", bindir / "wetty", old_binary)
                 if units:
                     command(["systemctl", "restart", *units], timeout=60)
                 service_smoke(units)
