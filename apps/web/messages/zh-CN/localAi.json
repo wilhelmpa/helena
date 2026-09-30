@@ -243,8 +243,14 @@
     }
   },
   "voice": {
-    "progress": { "title": "进度播报", "hint": "Ava 简短说明正在做什么。" },
-    "readFull": { "title": "完整朗读回答", "hint": "Ava 朗读完整回答，并简要介绍代码和表格。" },
+    "progress": {
+      "title": "进度播报",
+      "hint": "Ava 简短说明正在做什么。"
+    },
+    "readFull": {
+      "title": "完整朗读回答",
+      "hint": "Ava 朗读完整回答，并简要介绍代码和表格。"
+    },
     "wake": {
       "title": "Listen for “Ava”",
       "hint": "The microphone stays open while a chat page is open. Before “Ava”, only on-device recognition processes your voice; nothing is saved.",
@@ -408,5 +414,286 @@
     "active": "本地运行中",
     "ready": "就绪",
     "more": "更多工作类型（{count}）"
+  },
+  "modelMatrix": {
+    "search": "Search …",
+    "noResults": "Nothing found",
+    "reset": "Reset",
+    "loadFailed": "The model matrix could not be loaded",
+    "mark": {
+      "own": "Own setting",
+      "changed": "Changed, not applied yet"
+    },
+    "note": {
+      "own": "This agent's own setting",
+      "staged": "Changed, not applied yet",
+      "schema": "Inherits from the schema “{schema}”",
+      "project": "Inherits from the project schema “{schema}”"
+    },
+    "columns": {
+      "runtime": "Runtime",
+      "model": "Model",
+      "reasoning": "Thinking depth",
+      "escalation": "Escalation",
+      "browser": "Browser control",
+      "decision": "Decider",
+      "device": "Device"
+    },
+    "runtime": {
+      "helena": "{appName} runtime",
+      "claude": "Claude Code",
+      "codex": "Codex",
+      "hermes": "Hermes (cloud)",
+      "command": "Command",
+      "webhook": "Webhook"
+    },
+    "reasoning": {
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High",
+      "xhigh": "Very high"
+    },
+    "browser": {
+      "standard": "Standard",
+      "jev": "Jev",
+      "combined": "Combined"
+    },
+    "browserHint": {
+      "standard": "{appName} browser",
+      "jev": "fast, cloud",
+      "combined": "Jev, then standard"
+    },
+    "device": {
+      "gpu": "GPU",
+      "npu": "NPU",
+      "cloud": "Cloud",
+      "cpu": "CPU",
+      "npuNote": "The NPU only carries small task classes, never agent runs."
+    },
+    "model": {
+      "localDefault": "Local default model",
+      "local": "local",
+      "none": "No model"
+    },
+    "decision": {
+      "backends": {
+        "jev": "Jev (cloud)",
+        "jev-local": "Jev, then local",
+        "local-jev": "Local, then Jev",
+        "gpu": "Local (GPU)",
+        "npu": "NPU"
+      },
+      "from": "from {percent} %",
+      "backend": "Decider",
+      "threshold": "Confidence from (%)",
+      "thresholdHint": "Below it the fallback takes over.",
+      "fallback": "Fallback",
+      "fallbacks": {
+        "gpu": "Local",
+        "coordinator": "Coordinator",
+        "none": "None"
+      },
+      "privateData": "Contains private content",
+      "npuNote": "The NPU did not pass the decider evaluation."
+    },
+    "escalation": {
+      "off": "Off",
+      "to": "to {target}",
+      "toAgent": "to an agent",
+      "targets": {
+        "codex": "Codex",
+        "claude": "Claude"
+      },
+      "triggers": {
+        "failures": "after {count, plural, one {# failure} other {# failures}}",
+        "stalled": "when stuck",
+        "request": "on request"
+      },
+      "enable": "Escalation",
+      "target": "Target",
+      "model": "Model",
+      "afterFailures": "After failures",
+      "never": "never",
+      "onResumeLimit": "When stuck (resume limit)",
+      "onRequest": "On the agent's request",
+      "toAgentNote": "This agent escalates to another agent. The matrix does not change that."
+    },
+    "roles": {
+      "home": "Home",
+      "coordinator": "Coordinator",
+      "coder": "Coder",
+      "reviewer": "Reviewer",
+      "planning": "Planning",
+      "research": "Research",
+      "content": "Content",
+      "assistant": "Assistant",
+      "finance": "Finance",
+      "trading": "Trading",
+      "browser": "Browser",
+      "support": "Support",
+      "devops": "DevOps",
+      "general": "General"
+    },
+    "groups": {
+      "home": "Home",
+      "coordinator": "Coordinators",
+      "specialist": "Specialists"
+    },
+    "agents": {
+      "title": "Agents",
+      "description": "Runtime, model and more per agent. A click on a value changes it; nothing is applied before the preview.",
+      "agent": "Agent",
+      "roleOf": "Role of {name}",
+      "allProjects": "All projects",
+      "emptyTitle": "No agents",
+      "empty": "There are no agents for this filter."
+    },
+    "select": {
+      "all": "Select all",
+      "agent": "Select {name}"
+    },
+    "bulk": {
+      "title": "Change several",
+      "selected": "{count, plural, one {# agent selected} other {# agents selected}}",
+      "set": "Change {column}",
+      "note": "Applies to {count} selected agents",
+      "reset": "Reset to schema",
+      "clear": "Clear selection"
+    },
+    "legend": {
+      "own": "own setting",
+      "changed": "changed, not applied yet",
+      "inherited": "no dot: inherits from the schema or project"
+    },
+    "bar": {
+      "changes": "{count, plural, one {# change} other {# changes}} not applied",
+      "agents": "{count, plural, one {# agent} other {# agents}}",
+      "schema": "schema or profile",
+      "discard": "Discard",
+      "review": "Preview and apply"
+    },
+    "preview": {
+      "title": "Review changes",
+      "loading": "Checking what changes …",
+      "affects": "{count, plural, one {Affects one agent} other {Affects # agents}}",
+      "nobody": "No agent changes. Only the schema or the profile changes.",
+      "failed": "The check failed",
+      "cancel": "Cancel",
+      "apply": "Apply",
+      "source": {
+        "schema": "schema",
+        "project": "project",
+        "own": "own"
+      }
+    },
+    "conflict": {
+      "title": "Changed in the meantime",
+      "text": "The model settings changed while you were working. Reload and review the changes again; your selection is kept.",
+      "reload": "Reload"
+    },
+    "apply": {
+      "done": "Changes applied. “Undo” takes them back.",
+      "partial": "Only part of the changes was applied. The view is reloading."
+    },
+    "undo": {
+      "button": "Undo",
+      "title": "Undo the last change",
+      "done": "Undone"
+    },
+    "header": {
+      "title": "Profile and schema",
+      "description": "The local profile decides which devices are available for local models. The schema decides which runtime, model and thinking depth each role gets.",
+      "profile": "Local profile",
+      "status": "State",
+      "switching": "Switching …",
+      "ready": "Ready · local model: {model}",
+      "noModel": "none",
+      "switchDevices": "Switch devices",
+      "switchFailed": "Switch failed",
+      "switchFailedText": "The last switch ended with an error. You can resume or revert it in the Local AI settings.",
+      "schema": "Schema",
+      "projectSchema": "Schema for {project}",
+      "projectInherits": "Follows the active schema",
+      "inherit": "Like the active schema"
+    },
+    "profiles": {
+      "local-halogen": "GPU only with Flash, NPU off",
+      "local-27b-npu": "GPU with Qwen3.8-27B, NPU for small tasks"
+    },
+    "schemas": {
+      "nur-lokal": "All agents run locally; Codex takes over on failures, when stuck or on request.",
+      "gemischt": "Routine work local, Codex for coding, Claude for planning and texts.",
+      "nur-codex": "All agents run on Codex.",
+      "nur-claude": "All agents run on Claude."
+    },
+    "classes": {
+      "title": "Task classes",
+      "description": "Which device and model carries which kind of work, and whether its evaluation passed. It is changed under Local AI and Deciders.",
+      "openLocal": "Open Local AI",
+      "openDecisions": "Open deciders",
+      "class": "Task class",
+      "device": "Device",
+      "model": "Model",
+      "eval": "Evaluation",
+      "also": "Also tested",
+      "groups": {
+        "chat": "Chat tasks",
+        "decision": "Decisions",
+        "other": "Speech and search"
+      },
+      "devices": {
+        "gpu": "GPU",
+        "npu": "NPU",
+        "cpu": "CPU",
+        "cloud": "Cloud",
+        "vulkan": "GPU (Vulkan)"
+      },
+      "evals": {
+        "passed": "passed",
+        "failed": "failed",
+        "untested": "open"
+      },
+      "configuredVoice": "configured voice",
+      "names": {
+        "triage": "Triage and assignment",
+        "routines": "Routine agents",
+        "hermes-helpers": "Runtime helper calls",
+        "summaries": "Summaries",
+        "reflection": "Reflection after runs",
+        "voice-reply": "Voice quick reply",
+        "coordinator-triage": "Coordinator triage",
+        "embeddings": "Search (embeddings)",
+        "tts": "Read aloud",
+        "stt": "Dictation",
+        "helena_model-router": "Model choice",
+        "helena_mail": "Sort mail",
+        "helena_receipts": "Match receipts",
+        "helena_general": "General decisions",
+        "helena_browser": "Browser first stage",
+        "tasks_triage": "Sort tasks",
+        "agents_routing": "Assign agents",
+        "helena_trading_news": "Trading: rate news",
+        "helena_trading_rules": "Trading: rule check",
+        "helena_trading_routing": "Trading: routing",
+        "helena_routine_gate": "Routine gate",
+        "routines_precheck": "Heartbeat pre-check"
+      }
+    },
+    "errors": {
+      "npuClass": "The NPU only takes this task class after a passed evaluation.",
+      "npuDecision": "The NPU did not pass the decider evaluation.",
+      "unknown": "An agent, project or schema no longer exists. Reload the page.",
+      "invalid": "A value is not allowed. Check the settings of the changed cells.",
+      "rejected": "The server refused the change. Nothing was changed."
+    },
+    "columnsShort": {
+      "runtime": "Runtime",
+      "model": "Model",
+      "reasoning": "Thinking",
+      "escalation": "Escalation",
+      "browser": "Browser",
+      "decision": "Decider",
+      "device": "Device"
+    }
   }
 }

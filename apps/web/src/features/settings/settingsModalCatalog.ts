@@ -47,7 +47,8 @@ const ALL_PROJECTS: ModalSectionDef[] = [
     keywords: 'Autopilot Budget Ausführung Gedächtnis Vorgabe neue Projekte Browser-Steuerung',
   }),
   s('agents', 'allProjects', {
-    keywords: 'Claude Code Codex Hermes Laufzeit Anmeldung Modell Fallback Not-Aus Preise',
+    keywords:
+      'Claude Code Codex Hermes Laufzeit Anmeldung Modell Fallback Not-Aus Preise Matrix Schema Profil Denktiefe Eskalation',
   }),
   s('local-ai', 'allProjects', {
     keywords: 'Halogen Flash Qwen GPU Embedding Vulkan Sprache Vorladen Schutz Klassen',
