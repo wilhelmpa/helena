@@ -54,6 +54,18 @@ beforeAll(async () => {
     );
   }
   await writeFile(join(profile, 'skills', 'learned', 'reference.txt'), 'Synthetic reference.');
+  // A skill Hermes ships (listed in .bundled_manifest) is not the agent's own and is skipped,
+  // even with a file too large to import.
+  await mkdir(join(profile, 'skills', 'creative', 'bundled-demo'), { recursive: true });
+  await writeFile(join(profile, 'skills', 'creative', 'bundled-demo', 'SKILL.md'), '# Bundled');
+  await writeFile(
+    join(profile, 'skills', 'creative', 'bundled-demo', 'big.md'),
+    'x'.repeat(200_000),
+  );
+  await writeFile(
+    join(profile, 'skills', '.bundled_manifest'),
+    'bundled-demo:3241aa768bdd9dc923b92e8939373de8\n',
+  );
   for (const name of ['auth.json', '.env', 'tokens.json', 'vault.json']) {
     await writeFile(join(profile, name), 'MUST NOT BE COPIED', { mode: 0 });
     await writeFile(join(profile, 'skills', 'learned', name), 'MUST NOT BE COPIED', { mode: 0 });
