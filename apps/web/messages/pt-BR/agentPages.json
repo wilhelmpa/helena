@@ -268,11 +268,19 @@
       "areas": {
         "memory": "Memória",
         "user": "Sobre você",
-        "note": "Nota diária",
+        "dailyNote": "Nota diária",
         "soul": "Personalidade",
-        "instructions": "Instruções",
+        "agentInstructions": "Instruções",
         "projectInstructions": "Instruções do projeto"
       }
     }
+  },
+  "runs": {
+    "hint": "No que o agente trabalhou, as mais recentes primeiro. Um clique mostra a execução completa.",
+    "emptyHint": "Assim que o agente recebe uma tarefa, a execução dele aparece aqui."
+  },
+  "sessions": {
+    "hint": "As conversas do agente com o modelo, as mais recentes primeiro; com pesquisa.",
+    "emptyHint": "As sessões surgem das execuções e dos chats do agente."
   }
 }

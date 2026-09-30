@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { type Editor } from '@tiptap/react';
 import { BubbleMenu } from '@tiptap/react/menus';
 import {
@@ -139,10 +139,14 @@ export default function EditorSelectionMenu({
     setLinkDraft(null);
   }
 
+  // Stable: a new `options` object at every render re-registers the menu's plugin, which is one
+  // more editor transaction, which renders again (O97, see EditorTableMenu).
+  const options = useMemo(() => ({ placement, onHide: () => setLinkDraft(null) }), [placement]);
+
   return (
     <BubbleMenu
       editor={editor}
-      options={{ placement, onHide: () => setLinkDraft(null) }}
+      options={options}
       className="flex items-center gap-0.5 rounded-md border bg-popover p-1 shadow-md"
     >
       {linkDraft !== null ? (

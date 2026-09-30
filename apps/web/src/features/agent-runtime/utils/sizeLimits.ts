@@ -6,7 +6,7 @@ import type { AiAgent } from '@/lib/api/endpoints/agents';
 // server sends none, and then nothing about limits is shown — except where the API's own
 // hard cap applies.
 export type LimitArea =
-  'memory' | 'user' | 'note' | 'soul' | 'instructions' | 'projectInstructions';
+  'memory' | 'user' | 'dailyNote' | 'soul' | 'agentInstructions' | 'projectInstructions';
 
 export interface SizeLimit {
   used: number;
@@ -20,9 +20,9 @@ export type SizeLimits = Partial<Record<LimitArea, SizeLimit>>;
 export const LIMIT_AREAS: LimitArea[] = [
   'memory',
   'user',
-  'note',
+  'dailyNote',
   'soul',
-  'instructions',
+  'agentInstructions',
   'projectInstructions',
 ];
 

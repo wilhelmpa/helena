@@ -96,7 +96,8 @@ export function AgentSheetForm({
   // A text over its limit cannot be saved; the editor says which one and what to do.
   const limits = agentSizeLimits(agent);
   const tooLong =
-    (limits.instructions != null && value.instructions.length > limits.instructions.limit) ||
+    (limits.agentInstructions != null &&
+      value.instructions.length > limits.agentInstructions.limit) ||
     (limits.soul != null && soulOf(value.runtimePolicy.files).length > limits.soul.limit);
 
   const createAgent = useCreateAiAgent(teamId);

@@ -268,11 +268,19 @@
       "areas": {
         "memory": "Gedächtnis",
         "user": "Über dich",
-        "note": "Tagesnotiz",
+        "dailyNote": "Tagesnotiz",
         "soul": "Persönlichkeit",
-        "instructions": "Anweisungen",
+        "agentInstructions": "Anweisungen",
         "projectInstructions": "Projektanweisungen"
       }
     }
+  },
+  "runs": {
+    "hint": "Was der Agent gearbeitet hat, neueste zuerst. Ein Klick zeigt den ganzen Lauf.",
+    "emptyHint": "Sobald der Agent eine Aufgabe bekommt, erscheint der Lauf hier."
+  },
+  "sessions": {
+    "hint": "Die Unterhaltungen des Agenten mit dem Modell, neueste zuerst; durchsuchbar.",
+    "emptyHint": "Sitzungen entstehen bei Läufen und Chats des Agenten."
   }
 }

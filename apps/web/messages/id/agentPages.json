@@ -268,11 +268,19 @@
       "areas": {
         "memory": "Memori",
         "user": "Tentang Anda",
-        "note": "Catatan harian",
+        "dailyNote": "Catatan harian",
         "soul": "Kepribadian",
-        "instructions": "Instruksi",
+        "agentInstructions": "Instruksi",
         "projectInstructions": "Instruksi proyek"
       }
     }
+  },
+  "runs": {
+    "hint": "Yang dikerjakan agen, terbaru lebih dulu. Satu klik menampilkan seluruh run.",
+    "emptyHint": "Begitu agen mendapat tugas, run-nya muncul di sini."
+  },
+  "sessions": {
+    "hint": "Percakapan agen dengan model, terbaru lebih dulu; dapat dicari.",
+    "emptyHint": "Sesi berasal dari run dan chat agen."
   }
 }
