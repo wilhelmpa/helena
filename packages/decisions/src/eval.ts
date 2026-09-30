@@ -73,7 +73,13 @@ export async function runDecisionEval(
   ask: EvalAsk,
   options: { concurrency?: number; signal?: AbortSignal } = {},
 ): Promise<EvalReport> {
-  const scored: { case: string; question: string; ok: boolean; confidence: number }[] = [];
+  const scored: {
+    case: string;
+    question: string;
+    ok: boolean;
+    confidence: number;
+    eligible: boolean;
+  }[] = [];
   const failures: EvalFailure[] = [];
   const errors: EvalReport['errors'] = [];
   const latencies: number[] = [];
@@ -94,7 +100,7 @@ export async function runDecisionEval(
           error: (error instanceof Error ? error.message : String(error)).slice(0, 200),
         });
         for (const [question, expected] of Object.entries(item.expected)) {
-          scored.push({ case: item.id, question, ok: false, confidence: 0 });
+          scored.push({ case: item.id, question, ok: false, confidence: 0, eligible: false });
           failures.push({
             case: item.id,
             question,
@@ -113,8 +119,9 @@ export async function runDecisionEval(
         const answer = result.answers[question];
         const wanted = [expected].flat();
         const ok = !!answer && wanted.includes(answer.choice);
-        scored.push({ case: item.id, question, ok, confidence: answer?.confidence ?? 0 });
-        if (!ok || (answer?.confidence ?? 0) < threshold) {
+        const eligible = !!answer && !['uncertain', 'unsure'].includes(answer.choice);
+        scored.push({ case: item.id, question, ok, confidence: answer?.confidence ?? 0, eligible });
+        if (!ok || !eligible || (answer?.confidence ?? 0) < threshold) {
           failures.push({
             case: item.id,
             question,
@@ -129,7 +136,7 @@ export async function runDecisionEval(
   await Promise.all(Array.from({ length: Math.max(1, options.concurrency ?? 2) }, () => worker()));
 
   const at = (t: number) => {
-    const above = scored.filter((entry) => entry.confidence >= t);
+    const above = scored.filter((entry) => entry.eligible && entry.confidence >= t);
     return {
       answered: above.length,
       correctAnswered: above.filter((entry) => entry.ok).length,
@@ -145,7 +152,7 @@ export async function runDecisionEval(
     });
     score.questions += 1;
     if (entry.ok) score.correct += 1;
-    if (entry.confidence >= threshold) {
+    if (entry.eligible && entry.confidence >= threshold) {
       score.answered += 1;
       if (entry.ok) score.correctAnswered += 1;
     }
