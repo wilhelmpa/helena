@@ -589,6 +589,8 @@ export const aiAgent = pgTable(
     username: text('username').notNull(),
     // Home is an explicit identity; its handle remains a mention address only.
     agentRole: text('agent_role').notNull().default('agent'),
+    modelRole: text('model_role').notNull().default('general'),
+    modelOverrides: jsonb('model_overrides').notNull().default({}).$type<Record<string, unknown>>(),
     // Membership rows still enforce the per-project permission matrix. `all` keeps
     // the agent attached when another project of its team is created.
     projectScope: text('project_scope').notNull().default('selected'),

@@ -19,6 +19,7 @@ import {
   type SystemOneReply,
 } from '#modules/browser-task/connection';
 import { recordUsage } from '#modules/agents/usage/service';
+import { agentDecisionSetting } from '#modules/model-schemas/service';
 import { costOfUsage } from '#modules/model-prices/service';
 import { decisionClass, localAiClassForDecision } from './classes';
 import { firstStageChatGuard } from './chat-stage';
@@ -328,7 +329,8 @@ export async function decide(request: DecideRequest): Promise<DecideOutcome> {
   if (!cls) throw new HttpError(404, `Unknown decision class ${request.classId}.`);
   checkQuestions(request.questions);
   const setting = await classSetting(request.teamId, cls.id);
-  const threshold = effectiveThreshold(cls, setting);
+  const agentDecision = request.agentId ? await agentDecisionSetting(request.agentId) : null;
+  const threshold = setting.threshold ?? agentDecision?.threshold ?? cls.defaults.threshold;
   if (!setting.enabled) return emptyOutcome('off', request.questions, threshold, null);
   const timeoutMs = effectiveTimeout(cls, setting);
   const started = Date.now();
@@ -353,6 +355,7 @@ export async function decide(request: DecideRequest): Promise<DecideOutcome> {
   const chatAllowsStage = await firstStageChatGuard(request).catch(() => async () => false);
   // A stage-setting or eval lookup failure skips the optimization. The existing path stays.
   const stage =
+    (!agentDecision || ['jev', 'jev-local', 'local-jev'].includes(agentDecision.backend)) &&
     (!request.localOnly || request.allowPrivateJev === true) &&
     (await chatAllowsStage().catch(() => false)) &&
     JSON.stringify({ context: request.context, questions: request.questions }).length <= 16000
@@ -361,11 +364,33 @@ export async function decide(request: DecideRequest): Promise<DecideOutcome> {
   const stillEnabled = async (credentialId: number) =>
     (await chatAllowsStage()) &&
     (await stageStillEnabled(request.teamId, cls.id, credentialId, stage?.policy.revision));
-  const attempts = decisionAttempts(
+  let attempts = decisionAttempts(
     stage?.connection.credentialId,
     setting.credentialId,
     setting.fallbackCredentialId,
   );
+  if (agentDecision) {
+    const withLocal = await Promise.all(
+      attempts.map(async (attempt) => ({
+        attempt,
+        local: ((connection) => (connection ? connectionIsLocal(connection) : false))(
+          await loadConnection(attempt.credentialId),
+        ),
+      })),
+    );
+    attempts = withLocal
+      .filter(({ local }) => {
+        if (agentDecision.backend === 'jev') return !local;
+        if (agentDecision.backend === 'gpu' || agentDecision.backend === 'npu') return local;
+        if (agentDecision.backend === 'jev-local')
+          return !local || agentDecision.fallback === 'gpu';
+        return local || agentDecision.fallback === 'gpu';
+      })
+      .sort((a, b) =>
+        agentDecision.backend === 'local-jev' ? Number(b.local) - Number(a.local) : 0,
+      )
+      .map(({ attempt }) => attempt);
+  }
   let partial: DecideOutcome | null = null;
   let partialIsStage = false;
   let last: { status: DecisionStatus; message: string; connection: DecisionConnection | null } = {

@@ -191,7 +191,11 @@ export async function taskSystemOne(
         'This page exceeds the optional Jev stage limit. Continue with step tools.',
       );
     }
-    const control = await effectiveBrowserControl({ teamId: row.teamId, projectId: row.projectId });
+    const control = await effectiveBrowserControl({
+      teamId: row.teamId,
+      projectId: row.projectId,
+      agentId: row.agentId ?? undefined,
+    });
     const questions = browserQuestions(request.questions);
     const cls = decisionClass(BROWSER_CLASS)!;
     const setting = await classSetting(row.teamId, BROWSER_CLASS);

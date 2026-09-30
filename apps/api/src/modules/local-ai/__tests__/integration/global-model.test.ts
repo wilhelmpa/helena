@@ -306,12 +306,12 @@ it('pairs only the 27B GPU with NPU, gates classes and restores both server flag
   });
   expect(preview.status).toBe(200);
   expect(preview.data).toMatchObject({
-    npuClasses: ['triage', 'decisions', 'embeddings'],
-    target: { npu: 'qwen3.5:4b' },
+    npuClasses: ['triage', 'routines', 'hermes-helpers'],
+    target: { npu: 'qwen3.5:2b' },
   });
   const policy = await readLocalAiPolicy();
   policy.classes.triage = { mode: 'prefer', model: null };
-  policy.classes.decisions = { mode: 'prefer', model: null };
+  policy.classes['hermes-helpers'] = { mode: 'prefer', model: null };
   await setSetting('localAi.policy', policy);
   await beginGlobalModel('helena-local/Qwen3.8-27B-GGUF', 'local-27b-npu');
   let pending = (await readMaintenance())!;
@@ -328,18 +328,14 @@ it('pairs only the 27B GPU with NPU, gates classes and restores both server flag
     MAINTENANCE_KEY,
   ))!;
   for (const classId of job.classes) {
-    const small = ['triage', 'decisions', 'embeddings'].includes(classId);
+    const small = ['triage', 'routines', 'hermes-helpers'].includes(classId);
     await db.insert(helenaLocalAiEval).values({
       classId,
       serverId: small ? npu!.id : gpu!.id,
-      model: small
-        ? classId === 'embeddings'
-          ? 'embed-gemma:300m'
-          : 'qwen3.5:2b'
-        : 'Qwen3.8-27B-GGUF',
-      score: classId === 'decisions' ? 0 : 1,
+      model: small ? 'qwen3.5:2b' : 'Qwen3.8-27B-GGUF',
+      score: classId === 'hermes-helpers' ? 0 : 1,
       threshold: 0.85,
-      passed: classId !== 'decisions',
+      passed: classId !== 'hermes-helpers',
       cases: 24,
       ranAt: new Date(Date.parse(job.startedAt) + 1),
       status: 'done',
@@ -354,9 +350,11 @@ it('pairs only the 27B GPU with NPU, gates classes and restores both server flag
     mode: 'prefer',
     model: 'helena-volition-npu/qwen3.5:2b',
   });
-  expect((await readLocalAiPolicy()).classes.decisions?.mode).toBe('off');
-  expect(await localDefaultClassFallback('decisions')).toBe(true);
-  expect((await readLocalAiPolicy()).classes.routines?.model).toBe('helena-local/Qwen3.8-27B-GGUF');
+  expect((await readLocalAiPolicy()).classes['hermes-helpers']?.mode).toBe('off');
+  expect(await localDefaultClassFallback('hermes-helpers')).toBe(true);
+  expect((await readLocalAiPolicy()).classes.routines?.model).toBe(
+    'helena-volition-npu/qwen3.5:2b',
+  );
   pending = (await readMaintenance())!;
   pending.operation!.phase = 'rollback-commit';
   await save(pending);

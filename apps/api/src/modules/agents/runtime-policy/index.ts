@@ -13,6 +13,7 @@ import {
   RuntimeStateResponse,
 } from './model';
 import { reportRuntimeState, runtimePolicySnapshot } from './service';
+import { modelMatrix } from '#modules/model-schemas/service';
 
 // Runtime-neutral control-plane adapter contract. A runner authenticates as exactly
 // one external agent, reads that agent's non-secret desired policy, applies what its
@@ -24,6 +25,10 @@ export const agentRuntimePolicyRoutes = new Elysia({
   detail: { tags: ['Agent Runtime'] },
 })
   .use(runnerAuth)
+  .get('/agent-runtime/model-matrix', ({ agent }) => modelMatrix(agent.teamId), {
+    runnerAgent: true,
+    detail: { summary: 'Read effective model settings and their sources for this team' },
+  })
   .get('/agent-runtime/policy', ({ agent }) => runtimePolicySnapshot(agent), {
     runnerAgent: true,
     response: { 200: RuntimePolicySnapshotResponse, ...errors(401, 403) },

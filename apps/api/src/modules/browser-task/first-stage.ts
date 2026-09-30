@@ -107,6 +107,7 @@ export async function captureBrowserStage(
   const current = await effectiveBrowserControl({
     teamId: caller.teamId,
     projectId: caller.projectId,
+    agentId: caller.agentId ?? undefined,
   });
   const chat = await firstStageChatState(caller);
   if (
@@ -136,7 +137,11 @@ export async function browserStageStillEnabled(row: TaskRow): Promise<boolean> {
     .from(helenaBrowserTaskRun)
     .where(eq(helenaBrowserTaskRun.id, row.id));
   if (!currentRow || currentRow.cancelledAt || currentRow.finishedAt) return false;
-  const current = await effectiveBrowserControl({ teamId: row.teamId, projectId: row.projectId });
+  const current = await effectiveBrowserControl({
+    teamId: row.teamId,
+    projectId: row.projectId,
+    agentId: row.agentId ?? undefined,
+  });
   const chat = await firstStageChatState(row);
   return Boolean(
     current.firstStage &&

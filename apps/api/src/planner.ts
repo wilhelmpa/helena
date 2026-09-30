@@ -1,4 +1,5 @@
 import { rootAccessRoutes } from '#modules/root-access/index';
+import { modelSchemaRoutes } from './modules/model-schemas';
 import { RateLimitedError } from '@repo/auth';
 import { projectTemplateRoutes } from './modules/project-templates';
 import { controlPlaneWorkflowRoutes } from './modules/control-plane-workflows';
@@ -123,6 +124,7 @@ const plannerOperations = new Elysia({ name: 'planner-operations' })
   .use(modelPriceRoutes)
   .use(autopilotRoutes)
   .use(rootAccessRoutes)
+  .use(modelSchemaRoutes)
   .use(pipelineRoutes)
   .use(mailAccountRoutes)
   .use(mailThreadRoutes)

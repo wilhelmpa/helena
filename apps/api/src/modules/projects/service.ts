@@ -36,6 +36,7 @@ import { getLimits } from '#shared/limits';
 import { enableProjectBrowser } from '#modules/agents/mcp-servers/service';
 import { deleteAgent, queueAgentRuntime } from '#modules/agents/core/service';
 import { isHomeAgent } from '#modules/agents/core/home-agent';
+import { initialAgentModel } from '#modules/model-schemas/service';
 import { getProjectDefaults } from '#modules/settings/service';
 import { dropUnusedTeamMembership } from '#modules/scim/reconcile';
 import { deleteObjects } from '#shared/s3';
@@ -443,6 +444,19 @@ export async function createProjectCoordinator(
     emailVerified: false,
     role: 'user',
   });
+  const schemaModel = await initialAgentModel({
+    home: false,
+    role: 'coordinator',
+    projectIds: [input.projectId],
+    runtimePolicy: {
+      reasoningEffort: null,
+      toolAllow: [],
+      toolDeny: [],
+      mcpGrants: ['itsaplan'],
+      files: [],
+      memoryApproval: false,
+    },
+  });
   const [agent] = await tx
     .insert(aiAgent)
     .values({
@@ -450,18 +464,14 @@ export async function createProjectCoordinator(
       userId,
       username,
       kind: 'external',
+      modelRole: schemaModel.role,
+      modelOverrides: schemaModel.overrides,
+      model: schemaModel.model,
       instructions: projectCoordinatorInstructions(input.projectKey, input.projectName),
       triggerOnMention: true,
       triggerOnAssign: true,
       delegationDelaySec: 0,
-      runtimePolicy: {
-        reasoningEffort: null,
-        toolAllow: [],
-        toolDeny: [],
-        mcpGrants: ['itsaplan'],
-        files: [],
-        memoryApproval: false,
-      },
+      runtimePolicy: schemaModel.runtimePolicy,
       ownerUserId: input.ownerUserId,
       runnerScope: 'owner',
     })

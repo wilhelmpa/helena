@@ -98,7 +98,7 @@ export async function previewGlobalModel(modelId: string, profile?: LocalProfile
     const npu = (await listModelServers()).find((row) => row.slug === NPU_SLUG);
     if (npu?.kind !== 'fastflowlm' || npu.baseUrl !== NPU_BASE)
       throw new HttpError(400, 'Register the managed NPU server first');
-    target.npu = 'qwen3.5:4b';
+    target.npu = 'qwen3.5:2b';
   }
   if (profile) target.profile = profile;
   const agents = await db
@@ -112,7 +112,7 @@ export async function previewGlobalModel(modelId: string, profile?: LocalProfile
     classes,
     previous: await localDefaultModel(),
     npuClasses: target.npu ? NPU_CLASSES : [],
-    npuSelection: target.npu ? ['qwen3.5:4b', 'qwen3.5:2b'] : [],
+    npuSelection: target.npu ? ['qwen3.5:2b'] : [],
     memoryReserveGiB: 12,
     weightLockGb: 72,
     simultaneousLargeModels: false,
@@ -358,6 +358,7 @@ export async function bulkLocalDefault(ids: number[], apply: boolean) {
       .update(aiAgent)
       .set({
         model: LOCAL_DEFAULT,
+        modelOverrides: sql`${aiAgent.modelOverrides} || ${JSON.stringify({ model: LOCAL_DEFAULT, runtime: 'hermes' })}::jsonb`,
         templateOverrides: sql`CASE WHEN ${aiAgent.sourceTemplateId} IS NOT NULL AND NOT (${aiAgent.templateOverrides} @> '["model"]'::jsonb) THEN ${aiAgent.templateOverrides} || '["model"]'::jsonb ELSE ${aiAgent.templateOverrides} END`,
         runtimePolicy: sql`jsonb_set(coalesce(${aiAgent.runtimePolicy}, '{}'::jsonb), '{runtime}', '"hermes"'::jsonb)`,
       })
