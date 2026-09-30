@@ -1,4 +1,10 @@
-export { db, listen, databaseRuntimeName, withSettledTransactionCallbacks } from './client';
+export {
+  db,
+  listen,
+  closeDatabase,
+  databaseRuntimeName,
+  withSettledTransactionCallbacks,
+} from './client';
 export * from './schema';
 export * from './permissions';
 export {
