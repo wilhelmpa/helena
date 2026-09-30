@@ -19,6 +19,27 @@ export const MODEL_ROLES = [
   'general',
 ] as const;
 export type ModelRole = (typeof MODEL_ROLES)[number];
+export const ROLE_REASONING: Record<ModelRole, 'high' | 'medium'> = {
+  home: 'high',
+  coordinator: 'high',
+  coder: 'high',
+  reviewer: 'high',
+  planning: 'high',
+  finance: 'high',
+  trading: 'high',
+  devops: 'high',
+  research: 'medium',
+  content: 'medium',
+  assistant: 'medium',
+  support: 'medium',
+  general: 'medium',
+  browser: 'medium',
+};
+export const CLOUD_AGENT_MODELS = {
+  codex: 'gpt-6.1-sol',
+  claude: 'claude-sonnet-5-5',
+} as const;
+
 export const MODEL_COLUMNS = [
   'runtime',
   'model',
@@ -45,6 +66,7 @@ export type ModelValues = {
   device: 'gpu' | 'npu' | 'cloud' | 'cpu';
 };
 export type ClassPlacement = {
+  backend?: string;
   device: 'gpu' | 'npu' | 'cpu' | 'cloud' | 'vulkan';
   model: string;
   eval: 'passed' | 'failed' | 'untested';
@@ -137,16 +159,6 @@ function classes(profile: ModelSchema['profile']): Record<string, ClassPlacement
 function roles(kind: 'local' | 'mixed' | 'codex' | 'claude'): Record<string, ModelValues> {
   const values: Record<string, ModelValues> = {};
   for (const role of MODEL_ROLES) {
-    const deep = [
-      'home',
-      'coordinator',
-      'coder',
-      'reviewer',
-      'planning',
-      'finance',
-      'trading',
-      'devops',
-    ].includes(role);
     const runtime =
       kind === 'local'
         ? 'helena'
@@ -159,20 +171,11 @@ function roles(kind: 'local' | 'mixed' | 'codex' | 'claude'): Record<string, Mod
               : ['planning', 'finance', 'content'].includes(role)
                 ? 'claude'
                 : 'helena';
-    const model =
-      runtime === 'helena'
-        ? localModel
-        : runtime === 'codex'
-          ? deep
-            ? 'gpt-6-sol'
-            : 'gpt-6-luna'
-          : deep
-            ? 'claude-opus-5-5'
-            : 'claude-sonnet-5-5';
+    const model = runtime === 'helena' ? localModel : CLOUD_AGENT_MODELS[runtime];
     values[role] = {
       runtime,
       model,
-      reasoning: deep ? 'high' : 'medium',
+      reasoning: ROLE_REASONING[role],
       escalation:
         runtime === 'helena'
           ? { ...localEscalation }

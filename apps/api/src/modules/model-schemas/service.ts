@@ -54,6 +54,7 @@ export type MatrixPatch = {
   projects?: { projectId: number; schemaId: string | null }[];
   agents?: Change[];
   schema?: ModelSchema;
+  schemas?: ModelSchema[];
   removeSchema?: string;
   undo?: boolean;
 };
@@ -485,6 +486,7 @@ export function nextState(current: State, patch: MatrixPatch, saved: SavedAgent[
     return state;
   } else {
     if (patch.schema) state.schemas[patch.schema.id] = patch.schema;
+    for (const schema of patch.schemas ?? []) state.schemas[schema.id] = schema;
     if (patch.removeSchema) {
       if (MODEL_TEMPLATES[patch.removeSchema])
         throw new HttpError(409, 'Built-in schemas cannot be removed');
@@ -586,6 +588,7 @@ export async function previewMatrix(patch: MatrixPatch) {
     patch.undo &&
     (patch.active ||
       patch.schema ||
+      patch.schemas?.length ||
       patch.removeSchema ||
       patch.projects?.length ||
       patch.agents?.length)
@@ -599,6 +602,10 @@ export async function previewMatrix(patch: MatrixPatch) {
   )
     throw new HttpError(400, 'Duplicate changes in one batch');
   if (patch.schema) await validateSchema(patch.schema);
+  const schemas = [...(patch.schemas ?? []), ...(patch.schema ? [patch.schema] : [])];
+  if (new Set(schemas.map((schema) => schema.id)).size !== schemas.length)
+    throw new HttpError(400, 'Duplicate schemas in one batch');
+  for (const schema of patch.schemas ?? []) await validateSchema(schema);
   const current = await readModelState();
   if (patch.expectedRevision !== current.revision)
     throw new HttpError(409, 'Schema revision changed');
