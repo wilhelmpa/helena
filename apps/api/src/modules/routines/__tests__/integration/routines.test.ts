@@ -32,6 +32,8 @@ import {
   stopEngineRuns,
   stopTestEngine,
   waitForStatus,
+  waitForRun,
+  answerStep,
 } from '#tests/helpers/engine';
 import { clearLimits, setLimits } from '#tests/helpers/limits';
 import { addProjectMember } from '#tests/helpers/members';
@@ -123,7 +125,7 @@ async function fire(scheduleId: string, at: Date, now = at.getTime()) {
   if (runId) {
     const { startRun } = await import('#modules/engine/runs');
     await startRun(runId);
-    return waitForStatus(runId, 'succeeded', 'skipped', 'failed');
+    return waitForStatus(runId, 'waiting', 'succeeded', 'skipped', 'failed');
   }
   return null;
 }
@@ -563,7 +565,7 @@ describe('routines', () => {
     const routine = routines(asOwner)({ routineId: created.id });
     const first = await routine.run.post();
     expect(first.status).toBe(202);
-    const ran = await waitForStatus(first.data!.runId, 'succeeded');
+    const ran = await waitForStatus(first.data!.runId, 'waiting', 'succeeded');
     expect(ran.result).toMatchObject({ outcome: 'created', skipReason: null });
     const [task] = await db.select().from(issueTable).where(eq(issueTable.id, ran.issueId!));
     expect(task).toMatchObject({
@@ -602,11 +604,11 @@ describe('routines', () => {
 
     await asOwner.issues({ issueId: task!.id }).patch({ columnId: column('Done') });
     const third = (await routine.run.post()).data!;
-    const next = await waitForStatus(third.runId, 'succeeded');
+    const next = await waitForStatus(third.runId, 'waiting', 'succeeded');
     expect(next.issueId).not.toBe(task!.id);
     const history = (await routine.runs.get({ query: {} })).data!;
     expect(history.total).toBe(3);
-    expect(history.items.map((item) => item.status)).toEqual(['succeeded', 'skipped', 'succeeded']);
+    expect(history.items.map((item) => item.status)).toEqual(['waiting', 'skipped', 'waiting']);
   });
 
   it('reopens a finished task: back to unstarted, a comment and a new run of the agent', async () => {
@@ -620,7 +622,7 @@ describe('routines', () => {
       await routines(asOwner).post(routineBody(agent.id, { mode: 'reopen', taskId: task.id }))
     ).data!;
     const run = (await routines(asOwner)({ routineId: created.id }).run.post()).data!;
-    const reopened = await waitForStatus(run.runId, 'succeeded');
+    const reopened = await waitForStatus(run.runId, 'waiting', 'succeeded');
     expect(reopened.result).toMatchObject({ outcome: 'reopened', taskId: task.id });
     const [after] = await db.select().from(issueTable).where(eq(issueTable.id, task.id));
     expect(after).toMatchObject({ columnId: column('Todo'), delegateUserId: agent.userId });
@@ -635,9 +637,13 @@ describe('routines', () => {
     expect(runs.map((run) => run.workClass)).toEqual(['routines']);
     // A manual fire uses the same task even while its agent run is pending.
     const again = (await routines(asOwner)({ routineId: created.id }).run.post()).data!;
-    const repeated = await waitForStatus(again.runId, 'succeeded');
+    const repeated = await waitForStatus(again.runId, 'waiting', 'succeeded');
     expect(repeated.result).toMatchObject({ outcome: 'reopened', taskId: task.id });
     expect(await db.select().from(agentRun).where(eq(agentRun.issueId, task.id))).toHaveLength(1);
+    expect(repeated.status).toBe('waiting');
+    await finishAgentRun(runs[0]!.id, { output: 'Completed the reopened task.' });
+    await waitForStatus(run.runId, 'succeeded');
+    await waitForStatus(again.runId, 'succeeded');
   });
 
   it('runs now on an initially open task without creating another task', async () => {
@@ -649,7 +655,7 @@ describe('routines', () => {
       await routines(asOwner).post(routineBody(agent.id, { mode: 'reopen', taskId: task.id }))
     ).data!;
     const fire = (await routines(asOwner)({ routineId: created.id }).run.post()).data!;
-    const run = await waitForStatus(fire.runId, 'succeeded');
+    const run = await waitForStatus(fire.runId, 'waiting', 'succeeded');
     expect(run).toMatchObject({
       issueId: task.id,
       result: { outcome: 'reopened', skipReason: null, taskId: task.id },
@@ -677,7 +683,7 @@ describe('routines', () => {
     const monday = new Date('2026-09-21T09:00:00.000Z');
     const first = await fire(created.id, monday);
     expect(first).toMatchObject({
-      status: 'succeeded',
+      status: 'waiting',
       issueId: task.id,
       result: { outcome: 'reopened', skipReason: null },
     });
@@ -703,7 +709,7 @@ describe('routines', () => {
     const wednesday = new Date('2026-09-23T09:00:00.000Z');
     const resumed = await fire(created.id, wednesday);
     expect(resumed).toMatchObject({
-      status: 'succeeded',
+      status: 'waiting',
       issueId: task.id,
       result: { outcome: 'reopened', skipReason: null },
     });
@@ -717,7 +723,7 @@ describe('routines', () => {
       .data!;
     const monday = new Date('2026-09-21T07:00:00.000Z');
     const first = await fire(created.id, monday);
-    expect(first).toMatchObject({ status: 'succeeded', trigger: 'schedule' });
+    expect(first).toMatchObject({ status: 'waiting', trigger: 'schedule' });
     // The same time fired again (a replica, a backfill) runs nothing new.
     expect(await planFire(created.id, monday.toISOString(), monday.getTime())).toBeNull();
     // Ten minutes late is still on time; more is missed, and only the newest missed time
@@ -729,7 +735,7 @@ describe('routines', () => {
     expect(await planFire(created.id, wednesday.toISOString(), later)).toBeNull();
     const runs = await runsOf(created.id);
     expect(runs.map((run) => [run.scheduledFor!.toISOString(), run.status, run.result])).toEqual([
-      [monday.toISOString(), 'succeeded', expect.objectContaining({ outcome: 'created' })],
+      [monday.toISOString(), 'waiting', expect.objectContaining({ outcome: 'created' })],
       [wednesday.toISOString(), 'skipped', { outcome: 'skipped', skipReason: 'missed' }],
     ]);
   });
@@ -747,7 +753,7 @@ describe('routines', () => {
     expect(runId).not.toBeNull();
     const { startRun } = await import('#modules/engine/runs');
     await startRun(runId!);
-    await waitForStatus(runId!, 'succeeded');
+    await waitForStatus(runId!, 'waiting', 'succeeded');
     expect((await runsOf(created.id)).map((run) => run.scheduledFor!.toISOString())).toEqual([
       wednesday.toISOString(),
     ]);
@@ -771,7 +777,7 @@ describe('routines', () => {
     expect(await fireDueSchedules(now)).toBe(0);
     expect((await scheduleRow(created.id)).firedThrough).toEqual(due);
     const [run] = await waitForRuns(created.id, 1);
-    await waitForStatus(run!.id, 'succeeded');
+    await waitForStatus(run!.id, 'waiting', 'succeeded');
     // A clock set back an hour fires nothing again.
     expect(await fireDueSchedules(new Date(now.getTime() - 3_600_000))).toBe(0);
     const runs = await runsOf(created.id);
@@ -792,12 +798,12 @@ describe('routines', () => {
       .where(eq(helenaSchedule.id, created.id));
     expect(await fireDueSchedules(now)).toBe(1);
     const [run] = await waitForRuns(created.id, 1);
-    const done = await waitForStatus(run!.id, 'succeeded', 'skipped');
+    const done = await waitForStatus(run!.id, 'waiting', 'succeeded', 'skipped');
     const due = latestFireTime('0 * * * *', 'Europe/Berlin', since, now)!;
     expect(done.scheduledFor).toEqual(due);
     // Less than ten minutes after the hour the time is still on time and runs.
     const late = now.getTime() - due.getTime() > MISSED_GRACE_MS;
-    expect(done.status).toBe(late ? 'skipped' : 'succeeded');
+    expect(done.status).toBe(late ? 'skipped' : 'waiting');
     if (late) expect(done.result).toEqual({ outcome: 'skipped', skipReason: 'missed' });
     expect(await runsOf(created.id)).toHaveLength(1);
   });
@@ -825,5 +831,106 @@ describe('routines', () => {
     expect((await routines(asMember).post(routineBody(agent.id))).status).toBe(403);
     const stranger = authedApi((await signUpTestUser()).cookie);
     expect((await routines(stranger).post(routineBody(agent.id))).status).toBe(403);
+  });
+});
+
+describe('battle-test F10 routine work status', () => {
+  async function startRoutine(instructions = 'Summarize the week.') {
+    const setupResult = await setup();
+    const { asOwner, agent } = setupResult;
+    const saved = (await routines(asOwner).post(routineBody(agent.id, { instructions }))).data!;
+    const started = (await routines(asOwner)({ routineId: saved.id }).run.post({})).data!;
+    const run = await waitForStatus(started.runId, 'waiting', 'succeeded', 'failed');
+    expect(run.status).toBe('waiting');
+    expect(run.finishedAt).toBeNull();
+    const work = await db
+      .select()
+      .from(agentRun)
+      .where(eq(agentRun.issueId, run.issueId!))
+      .orderBy(asc(agentRun.id));
+    return { ...setupResult, saved, run, work };
+  }
+
+  it('F10 records the real compression failure and releases the task from In Progress', async () => {
+    const { asOwner, run, work, column } = await startRoutine();
+    await asOwner.issues({ issueId: run.issueId! }).patch({ columnId: column('In Progress') });
+    await finishAgentRun(work[0]!.id, {
+      status: 'failed',
+      output: 'Only half a sentence',
+      error: 'helena-agent: compression failed: The operation was aborted due to timeout',
+    });
+    const failed = await waitForStatus(run.id, 'failed');
+    expect(failed.error).toContain('compression failed: The operation was aborted due to timeout');
+    expect((await asOwner.issues({ issueId: run.issueId! }).get()).data!.columnId).toBe(
+      column('Review'),
+    );
+    const comments = await db
+      .select()
+      .from(issueActivity)
+      .where(and(eq(issueActivity.issueId, run.issueId!), eq(issueActivity.kind, 'comment')));
+    expect(comments.some((comment) => comment.body?.includes('compression failed'))).toBe(true);
+  });
+
+  it('F10 succeeds only when the direct agent work succeeds', async () => {
+    const { run, work } = await startRoutine();
+    await finishAgentRun(work[0]!.id, { output: 'Weekly report complete.' });
+    expect((await waitForStatus(run.id, 'succeeded')).finishedAt).not.toBeNull();
+  });
+
+  it('F10 waits for mentioned agents and mirrors a mention failure', async () => {
+    const { asOwner, agent } = await setup();
+    const extra = (
+      await createAgent(asOwner, 'MKT', {
+        name: 'Research',
+        username: 'research',
+        triggerOnMention: true,
+      } as never)
+    ).data!.agent;
+    const saved = (
+      await routines(asOwner).post(
+        routineBody(agent.id, { instructions: '@research research; writer report.' }),
+      )
+    ).data!;
+    const started = (await routines(asOwner)({ routineId: saved.id }).run.post({})).data!;
+    const run = await waitForStatus(started.runId, 'waiting', 'succeeded');
+    expect(run.status).toBe('waiting');
+    const work = await db.select().from(agentRun).where(eq(agentRun.issueId, run.issueId!));
+    await finishAgentRun(work.find((row) => row.agentId === agent.id)!.id, { output: 'Done.' });
+    await Bun.sleep(1200);
+    expect((await waitForRun(run.id, (row) => row.status === 'waiting')).finishedAt).toBeNull();
+    await finishAgentRun(work.find((row) => row.agentId === extra.id)!.id, {
+      status: 'failed',
+      error: 'Research timed out',
+    });
+    expect((await waitForStatus(run.id, 'failed')).error).toContain('Research timed out');
+  });
+
+  it('F10 waits for a delegated agent team and mirrors its failure', async () => {
+    const { asOwner, teamId, agent } = await setup();
+    const organization = asOwner.teams({ teamId }).organization;
+    const coordinator = (await organization.get()).data!.agents.find(
+      (row) => row.username === 'mkt-koordinator',
+    )!;
+    await organization.agents({ agentId: coordinator.id }).put({ role: 'coordinator' });
+    await organization.agents({ agentId: agent.id }).put({ role: 'specialist', capabilities: [] });
+    await asOwner
+      .projects({ projectKey: 'MKT' })
+      ['control-plane'].workflows({ workflowId: 'agent-team' })
+      .put({ enabled: true, capabilityRefs: [], configuration: { reviewRequired: false } });
+    const saved = (await routines(asOwner).post(routineBody(coordinator.id))).data!;
+    const started = (await routines(asOwner)({ routineId: saved.id }).run.post({})).data!;
+    const fire = await waitForStatus(started.runId, 'waiting', 'succeeded');
+    expect(fire.status).toBe('waiting');
+    const [team] = await db
+      .select()
+      .from(pipelineRun)
+      .where(and(eq(pipelineRun.issueId, fire.issueId!), eq(pipelineRun.kind, 'agent_team')));
+    await answerStep(team!.id, 'team.s1', {
+      status: 'failed',
+      error: 'compression failed',
+      failure: { code: 'model-unavailable', retryable: false },
+    });
+    await waitForStatus(team!.id, 'failed');
+    expect((await waitForStatus(fire.id, 'failed')).error).toContain('compression failed');
   });
 });

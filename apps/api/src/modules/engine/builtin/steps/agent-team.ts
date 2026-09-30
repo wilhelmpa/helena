@@ -141,6 +141,7 @@ interface StageState {
   deadline?: number;
   result?: StageResult;
   failure?: string;
+  correction?: { error: string; output: string | null };
   // Why the stage failed, where the runtime's words said (a model the provider does not
   // serve this account): the run view words it in the reader's language.
   runtimeFailure?: RuntimeFailure;
@@ -203,6 +204,7 @@ async function queueStage(
         `project:${context.project.key}`,
         startedByRoutine,
         await getDisplayName(),
+        state.correction,
       ),
       maxTurns: team.policy.maxTurns ?? null,
       runBudgetSeconds: team.policy.runBudgetSeconds ?? null,
@@ -345,6 +347,7 @@ async function advanceStages(
     }
     const run = await stepRunStatus(row.agentRunId);
     let attemptError: string | null = null;
+    let correction: StageState['correction'];
     if (run.status === 'pending') {
       if (Date.now() < (state.deadline ?? Infinity)) continue;
       await cancelStepRun(row.agentRunId);
@@ -384,6 +387,7 @@ async function advanceStages(
         continue;
       } catch (error) {
         attemptError = error instanceof Error ? error.message : String(error);
+        correction = { error: attemptError, output: run.output?.slice(0, 16_000) ?? null };
       }
     } else
       attemptError =
@@ -410,7 +414,7 @@ async function advanceStages(
         status: 'running',
         agentRunId: null,
         error: clip(attemptError, 2_000),
-        state: { ...state, retryAt: Date.now() + delay },
+        state: { ...state, correction, retryAt: Date.now() + delay },
       });
       wakeInMs = Math.min(wakeInMs ?? delay, delay);
       continue;

@@ -57,6 +57,7 @@ export async function markIssueBlocked(input: {
   projectId: number;
   actorUserId: string;
   question: string;
+  updateRun?: boolean;
 }): Promise<{ comment: FeedItemRow; runId: number | null }> {
   const [agent] = await db
     .select({ id: aiAgent.id, managerOwnerUserId: manager.ownerUserId })
@@ -86,6 +87,7 @@ export async function markIssueBlocked(input: {
     body: [...handles, `**${blockedCommentPrefix(locale)}** ${input.question.trim()}`].join(' '),
     asksForInput: true,
   });
+  if (input.updateRun === false) return { comment, runId: null };
   const [run] = await db
     .update(agentRun)
     .set({ blockedQuestion: input.question.trim() })
