@@ -1182,11 +1182,21 @@
   color: var(--text-3);
 }
 /* A group's tasks in one framed box, like the table (owner, 28.09., O43/O45). */
-.ds-issue-list-box {
+.ds-issue-list-box,
+.ds-list-box,
+.ds-doc-card {
   overflow: hidden;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-card);
   background: var(--surface-1);
+  box-shadow: var(--shadow-card);
+}
+/* The rows of a Wissen/Belege list in their box: a little air to the box's edge. */
+.ds-list-box > .ds-column-heads {
+  padding-top: var(--space-3);
+  padding-bottom: var(--space-1);
+}
+.ds-list-box > .ds-knowledge-rows {
+  padding: var(--space-2);
 }
 /* One row in fixed columns: key · title (+ other properties) · status · priority · due ·
    labels and people. The fixed ones keep their width when empty, so nothing jumps. */
@@ -2832,11 +2842,6 @@ a.ds-run-card:hover {
 .ds-overlay-body.ds-knowledge-preview .ds-knowledge-preview-body {
   padding: 0;
 }
-/* The file overlay's inner distance is small (owner 29.09., O75): the file sits close to the
-   edge, one surface, no second frame around preview or text. */
-.ds-overlay-body.ds-knowledge-preview {
-  padding: var(--space-3) var(--space-3) var(--space-4);
-}
 .ds-knowledge-preview .md-content {
   font-size: 15px;
 }
@@ -3473,4 +3478,80 @@ a.ds-run-card:hover {
   line-height: 1.6;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
+}
+
+/* A document on its page (Wissen, owner 30.09., O107/O108): in ONE box like every main surface,
+   on the same edges as the header - the title, its line, the editor - and its links and
+   history in cards beside it (under it on a narrow page). */
+.ds-doc-page {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  align-items: start;
+  gap: var(--space-4);
+}
+.ds-doc-card {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--overlay-pad);
+  overflow: visible;
+}
+.ds-doc-head {
+  display: flex;
+  flex-direction: column;
+}
+.ds-doc-title {
+  color: var(--text);
+  font-size: 24px;
+  font-weight: 520;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+.ds-doc-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  color: var(--text-3);
+  font-size: 12px;
+}
+.ds-doc-meta-fill {
+  flex: 1;
+}
+.ds-doc-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+.ds-doc-body {
+  min-width: 0;
+  color: var(--text-2);
+}
+.ds-doc-aside {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+.ds-doc-backlink {
+  display: block;
+  width: 100%;
+  border-radius: var(--radius-field);
+  padding: var(--space-2) var(--space-3);
+  color: var(--text-2);
+  font-size: 12px;
+  text-align: start;
+}
+.ds-doc-backlink:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+@media (max-width: 1099px) {
+  .ds-doc-page {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }

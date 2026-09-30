@@ -27,6 +27,7 @@ export function OverlayHead({
   tabs,
   activeTab,
   onTab,
+  lead,
   addTab,
   tabProps,
   actions,
@@ -37,6 +38,8 @@ export function OverlayHead({
   tabs: OverlayTab[];
   activeTab?: string;
   onTab?: (id: string) => void;
+  // Before the tabs: a way back (a phone shows the list or the detail).
+  lead?: ReactNode;
   // After the tabs: the "+" that opens another (the tool panel).
   addTab?: ReactNode;
   // What each tab's frame needs besides the look (drag to reorder, the tool panel).
@@ -55,6 +58,7 @@ export function OverlayHead({
   }, [active]);
   return (
     <div className="ds-panel-head" data-overlay-head="">
+      {lead}
       <div className="ds-panel-tabs">
         <div ref={track} className="ds-panel-tabs-track" role="tablist" aria-label={label}>
           {tabs.map((tab) => (

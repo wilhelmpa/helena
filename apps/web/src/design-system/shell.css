@@ -838,7 +838,8 @@
 /* Panel head: segment tabs on the left, full screen and close on the right. */
 .ds-panel-head {
   display: flex;
-  height: 56px;
+  height: var(--overlay-head-h);
+  flex: none;
   align-items: center;
   gap: var(--space-2);
   border-bottom: 1px solid var(--line);
@@ -968,7 +969,7 @@
    tool puts something into it, so the chat never shows a second title row. */
 .ds-panel-subbar {
   display: flex;
-  height: 44px;
+  height: var(--subbar-h);
   align-items: center;
   gap: 4px;
   border-bottom: 1px solid var(--line);
@@ -1282,7 +1283,7 @@
 .ds-issue-overlay-body {
   min-height: 0;
   overflow-y: auto;
-  padding: var(--space-5);
+  padding: var(--overlay-pad);
 }
 .ds-overlay-body.is-flush {
   display: flex;

@@ -1,16 +1,18 @@
 'use client';
 
-import { useEffect, useRef, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import { Search, X } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { PageChromeCtx } from './pageChrome';
+import { OverlayHead } from './OverlayHead';
 import { useHydrated } from '@/hooks/useHydrated';
 import { useTranslations } from 'next-intl';
 
 // The one large modal (docs/design-system.md §3): 1200 × 800, full screen on a phone,
-// for an agent's settings; small (880 × 640) for Mein Konto. Tabs on top, the sections on the
-// left, a search with results and their path. The page behind never changes: the modal
-// only lies over it, and Esc closes it.
+// small (880 × 640) for Mein Konto. Its head is the head of every overlay (OverlayHead: the tab
+// naming it, an optional search, then full screen and close), the sections on the left, a
+// search with results and their path. The page behind never changes: the modal only lies over
+// it, and Esc closes it (out of full screen first).
 
 export type ModalTab = { id: string; label: ReactNode; dot?: string };
 export type ModalSectionItem = { id: string; label: ReactNode; danger?: boolean };
@@ -27,7 +29,7 @@ export function Modal({
   searchPlaceholder,
   nav,
   children,
-  header,
+  title,
   testId,
   size = 'large',
 }: {
@@ -43,8 +45,8 @@ export function Modal({
   // The left column: the sections of the current tab, or the search results.
   nav?: ReactNode;
   children: ReactNode;
-  // Replaces the tab row (the agent dialog shows the agent instead).
-  header?: ReactNode;
+  // Names the modal when it has no tabs: the one tab of its head.
+  title?: ReactNode;
   testId?: string;
   // 'small': Mein Konto (the only settings that still open as a modal).
   size?: 'large' | 'small';
@@ -53,6 +55,7 @@ export function Modal({
   const placeholder = searchPlaceholder ?? t('searchSettings');
   const dialog = useRef<HTMLElement>(null);
   const hydrated = useHydrated();
+  const [full, setFull] = useState(false);
   useEffect(() => {
     if (!open) return;
     const previous = document.body.style.overflow;
@@ -69,7 +72,8 @@ export function Modal({
         return;
       event.preventDefault();
       event.stopPropagation();
-      onClose();
+      if (full) setFull(false);
+      else onClose();
     }
     document.addEventListener('keydown', onKey);
     return () => {
@@ -77,7 +81,7 @@ export function Modal({
       delete document.body.dataset.modalOpen;
       document.removeEventListener('keydown', onKey);
     };
-  }, [open, onClose]);
+  }, [open, onClose, full]);
 
   // The section in view in the scrolling row of sections on a phone.
   useEffect(() => {
@@ -99,31 +103,20 @@ export function Modal({
         aria-modal="true"
         aria-label={label}
         className={size === 'small' ? 'ds-modal is-small' : 'ds-modal'}
+        data-full={full ? 'true' : 'false'}
         data-testid={testId}
       >
-        <header className="ds-modal-head">
-          {header ??
-            (tabs && (
-              <div className="ds-modal-tabs" role="tablist" aria-label={label}>
-                {tabs.map((tab) => (
-                  <button
-                    key={tab.id}
-                    type="button"
-                    role="tab"
-                    aria-selected={tab.id === activeTab}
-                    className={tab.id === activeTab ? 'is-active' : ''}
-                    onClick={() => onTab?.(tab.id)}
-                  >
-                    {tab.dot && (
-                      <span className="ds-modal-tab-dot" style={{ background: tab.dot }} />
-                    )}
-                    {tab.label}
-                  </button>
-                ))}
-              </div>
-            ))}
-          <div className="ds-modal-tools">
-            {onSearch && (
+        <OverlayHead
+          label={label}
+          tabs={
+            tabs
+              ? tabs.map((tab) => ({ id: tab.id, label: tab.label }))
+              : [{ id: 'title', label: title ?? label }]
+          }
+          activeTab={activeTab}
+          onTab={onTab}
+          actions={
+            onSearch && (
               <label className="ds-modal-search">
                 <Search size={14} aria-hidden="true" />
                 <input
@@ -133,18 +126,10 @@ export function Modal({
                   aria-label={placeholder}
                 />
               </label>
-            )}
-            <button
-              type="button"
-              className="ds-modal-close"
-              onClick={onClose}
-              aria-label={t('close')}
-              title={`${t('close')} (Esc)`}
-            >
-              <X size={16} />
-            </button>
-          </div>
-        </header>
+            )
+          }
+          controls={{ full, onToggleFull: () => setFull(!full), onClose }}
+        />
         <div className={`ds-modal-main ${nav ? '' : 'is-single'}`}>
           {nav && (
             <nav className="ds-modal-nav" aria-label={label}>

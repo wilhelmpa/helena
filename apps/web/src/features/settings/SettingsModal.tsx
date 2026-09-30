@@ -185,7 +185,7 @@ export default function SettingsModal() {
       label={t('tabs.account')}
       onClose={close}
       testId="settings-modal"
-      header={<h2 className="ds-modal-title">{t('tabs.account')}</h2>}
+      title={t('tabs.account')}
       nav={sections.map((item) => (
         <ModalNavItem
           key={item.slug}

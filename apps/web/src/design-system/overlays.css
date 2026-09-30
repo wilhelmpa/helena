@@ -32,68 +32,16 @@
   width: min(880px, calc(100vw - 48px));
   height: min(640px, calc(100dvh - 48px));
 }
-.ds-modal-title {
-  color: var(--text);
-  font-size: 14px;
-  font-weight: 560;
-}
-.ds-modal-head {
-  display: flex;
-  min-height: 64px;
-  flex: none;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-4);
-  border-bottom: 1px solid var(--line);
-  padding: 12px 16px 12px 20px;
-}
-.ds-modal-tabs {
-  display: flex;
-  min-width: 0;
-  align-items: center;
-  gap: 2px;
-  overflow-x: auto;
-  border-radius: var(--radius-lg);
-  background: var(--surface-2);
-  padding: 4px;
-  scrollbar-width: none;
-}
-.ds-modal-tabs button {
-  display: flex;
-  height: 32px;
-  flex: none;
-  align-items: center;
-  gap: 8px;
-  border-radius: var(--radius-field);
-  padding: 0 14px;
-  color: var(--text-2);
-  font-size: 13px;
-  font-weight: 500;
-  white-space: nowrap;
-}
-.ds-modal-tabs button:hover {
-  color: var(--text);
-}
-.ds-modal-tabs button.is-active {
-  background: var(--surface-1);
-  color: var(--text);
-  box-shadow: 0 1px 2px #0000001a;
-}
-.ds-modal-tab-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-}
-.ds-modal-tools {
-  display: flex;
-  flex: none;
-  align-items: center;
-  gap: var(--space-2);
+/* Full screen in place: the same switch as every overlay's head. */
+.ds-modal[data-full='true'],
+.ds-modal.is-small[data-full='true'] {
+  width: calc(100vw - 24px);
+  height: calc(100dvh - 24px);
 }
 .ds-modal-search {
   display: flex;
-  width: 280px;
-  height: 36px;
+  width: 240px;
+  height: var(--control-h);
   align-items: center;
   gap: 8px;
   border-radius: var(--radius-field);
@@ -108,19 +56,6 @@
   background: transparent;
   color: var(--text);
   font-size: 13px;
-}
-.ds-modal-close {
-  display: flex;
-  width: 36px;
-  height: 36px;
-  align-items: center;
-  justify-content: center;
-  border-radius: var(--radius-field);
-  color: var(--text-2);
-}
-.ds-modal-close:hover {
-  background: var(--surface-3);
-  color: var(--text);
 }
 .ds-modal-main {
   display: grid;
@@ -181,7 +116,7 @@
   min-width: 0;
   min-height: 0;
   overflow-y: auto;
-  padding: 24px 32px 48px;
+  padding: var(--overlay-pad);
 }
 .ds-modal-pane-head {
   display: flex;
@@ -214,36 +149,9 @@
     padding-top: env(safe-area-inset-top);
     padding-bottom: env(safe-area-inset-bottom);
   }
-  /* One line for the title (or the tabs) and the close X (owner 29.09., Auftrag 117); the
-     search, when there is one, takes the line below. */
-  .ds-modal-head {
-    min-height: 56px;
-    flex-wrap: wrap;
-    gap: var(--space-2);
-    padding: 10px 12px;
-  }
-  .ds-modal-head > .ds-modal-title {
-    min-width: 0;
-    flex: 1;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  .ds-modal-tabs {
-    min-width: 0;
-    flex: 1;
-  }
-  .ds-modal-tools {
-    display: contents;
-  }
-  .ds-modal-close {
-    order: 1;
-    margin-inline-start: auto;
-  }
+  /* The search sits in the head next to the tab; on a phone the tab keeps its room. */
   .ds-modal-search {
-    order: 2;
-    width: auto;
-    flex: 1 1 100%;
+    width: 40vw;
   }
   .ds-modal-main {
     grid-template-columns: minmax(0, 1fr);
@@ -282,7 +190,7 @@
     white-space: nowrap;
   }
   .ds-modal-pane {
-    padding: 16px 16px 32px;
+    padding: var(--space-4);
   }
 }
 

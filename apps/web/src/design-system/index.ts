@@ -53,6 +53,7 @@ export { ActionMenu, Tip } from './components/ActionMenu';
 export { NameList } from './components/NameList';
 export type { ActionMenuItem } from './components/ActionMenu';
 export { List, ListGroup, ListRow } from './components/List';
+export { ListBox } from './components/ListBox';
 export { Table, Th, Tr, Td } from './components/Table';
 export { MatrixCell, MatrixCellButton, MatrixNote, MatrixBar } from './components/Matrix';
 export type { MatrixMark } from './components/Matrix';
