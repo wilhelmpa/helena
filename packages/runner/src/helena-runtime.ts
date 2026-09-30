@@ -145,6 +145,9 @@ export function helenaAgentConfig(
       runtimeFallback: `runtime:${subscription.provider === 'openai-codex' ? 'codex' : 'claude'}/${subscription.model}`,
     }),
     servers: [...localServers(snapshot), ...KEY_PROVIDERS],
+    ...(helena.localModelQueueSeconds !== undefined && {
+      limits: { localModelQueueSeconds: helena.localModelQueueSeconds },
+    }),
     instructions: context.text,
     contextWarnings: context.warnings,
     contextLimits: limits,

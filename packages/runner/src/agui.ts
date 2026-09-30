@@ -341,6 +341,11 @@ export class AnswerStream {
         this.sawPartialText = true;
         this.appendText(event.delta);
         return;
+      case 'status':
+        this.appendThinking(`${event.message}\n`);
+        this.drainThinking(true);
+        this.closeReasoning();
+        return;
       case 'thinking':
         this.appendThinking(event.delta);
         return;

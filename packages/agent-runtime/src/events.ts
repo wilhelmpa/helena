@@ -9,6 +9,14 @@ export type AgentEvent =
   | { type: 'model'; id: string }
   | { type: 'text'; delta: string }
   | { type: 'thinking'; delta: string }
+  | {
+      type: 'status';
+      status: 'model-queued';
+      model: string;
+      message: string;
+      retryAfterMs: number;
+      remainingMs: number;
+    }
   | { type: 'tool-call'; id: string; name: string; input: string }
   | {
       type: 'tool-result';
