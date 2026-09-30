@@ -33,6 +33,40 @@ async function task(id: string) {
   return found;
 }
 
+test('native browser failures retain the result error with empty stderr', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'volition-fake-browser-error-'));
+  const entry = join(directory, 'native.ts');
+  const message = 'Cannot connect to API: Unable to connect.';
+  await writeFile(
+    entry,
+    `console.log(JSON.stringify({type:'result',text:'',exitCode:1,
+    reason:'model-unavailable',error:${JSON.stringify(message)}}));process.exit(1);`,
+  );
+  try {
+    const row = await evaluateBrowserTask(await task('local-product-info'), {
+      model: 'fake',
+      provider: 'local',
+      hermes: '',
+      profile: '',
+      cwd: directory,
+      maxTurns: 12,
+      runBudget: 240,
+      runtime: {
+        kind: 'helena',
+        entry,
+        baseUrl: 'http://127.0.0.1:1/v1',
+        mcp: { command: 'unused', args: [], env: {} },
+      },
+      reset: async () => {},
+      readPage: async () => null,
+    });
+    expect(row.aborted).toBe(true);
+    expect(row.error).toBe(message);
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
 test('the suite uses the twenty local fixture tasks of the gateway eval', async () => {
   const tasks = await loadTasks(BASE);
   expect(tasks).toHaveLength(20);

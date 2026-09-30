@@ -12,7 +12,12 @@ import {
 import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
-import { HELENA_AGENT_ENTRY, helenaMetrics, hermesMetrics } from '../agentic-coding/run';
+import {
+  HELENA_AGENT_ENTRY,
+  helenaMetrics,
+  hermesMetrics,
+  nativeEvalError,
+} from '../agentic-coding/run';
 
 // The browser tasks of packages/browser-gateway/eval/tasks.ts, as far as this script uses them.
 // They are loaded at run time: that file belongs to the gateway package, whose types (DOM,
@@ -453,7 +458,9 @@ export async function evaluateBrowserTask(task: BrowserEvalTask, options: Evalua
     tools: events.map((event) => event.name.replace(/^mcp_+projekt_browser_+/, '')),
     answer: answer.slice(0, 400),
     finalUrl: page?.url ?? null,
-    error: output.code === 0 ? null : output.stderr.slice(-300),
+    error:
+      (runtime.kind === 'helena' ? nativeEvalError(output.stdout) : null) ??
+      (output.code === 0 ? null : output.stderr.slice(-300)),
   };
 }
 

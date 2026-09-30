@@ -102,3 +102,26 @@ test('Helena metrics count errors, repeats, abort and tokens', () => {
     outputTokens: 30,
   });
 });
+
+test('native failures retain the result error when stderr is empty', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'volition-fake-native-error-'));
+  const entry = join(directory, 'native.ts');
+  const message = 'Cannot connect to API: Unable to connect.';
+  await writeFile(
+    entry,
+    `console.log(JSON.stringify({ type: 'result', text: '', exitCode: 1,
+      reason: 'model-unavailable', error: ${JSON.stringify(message)} }));
+process.exit(1);`,
+  );
+  try {
+    const result = await evaluateCodingTask(CODING_TASKS[0]!, 'fake', 'local', {
+      kind: 'helena',
+      entry,
+      baseUrl: 'http://127.0.0.1:1/v1',
+    });
+    expect(result.aborted).toBe(true);
+    expect(result.error).toBe(message);
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
