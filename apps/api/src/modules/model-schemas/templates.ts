@@ -1,3 +1,4 @@
+import { type AgentEscalationPolicy } from '#modules/agents/core/service';
 import { LOCAL_PROFILES } from '#modules/local-ai/npu-profile';
 import { DECISION_THRESHOLDS, LOCAL_ONLY_CLASSES } from '../../scripts/decision-profile';
 
@@ -28,31 +29,6 @@ export const MODEL_COLUMNS = [
   'device',
 ] as const;
 export type ModelColumn = (typeof MODEL_COLUMNS)[number];
-export type EscalationValue = {
-  target: string | null;
-  failures: number;
-  stalledSteps: number;
-  onRequest: boolean;
-};
-export function escalationReason(
-  setting: EscalationValue | null,
-  input: {
-    attempts: number;
-    toolCalls: number;
-    failure: 'error' | 'tests-failed' | 'loop' | 'timeout' | 'request';
-  },
-): string | null {
-  if (!setting?.target) return null;
-  if (input.failure === 'request') return setting.onRequest ? 'requested' : null;
-  if (setting.failures > 0 && input.attempts >= setting.failures) return 'repeated failure';
-  if (
-    ['loop', 'timeout'].includes(input.failure) &&
-    setting.stalledSteps > 0 &&
-    input.toolCalls >= setting.stalledSteps
-  )
-    return 'stalled';
-  return null;
-}
 export type DecisionValue = {
   backend: 'jev' | 'gpu' | 'npu' | 'jev-local' | 'local-jev';
   threshold: number;
@@ -63,7 +39,7 @@ export type ModelValues = {
   runtime: 'helena' | 'claude' | 'codex' | 'hermes' | 'command' | 'webhook';
   model: string;
   reasoning: 'low' | 'medium' | 'high' | 'xhigh';
-  escalation: EscalationValue;
+  escalation: AgentEscalationPolicy;
   browser: 'standard' | 'jev' | 'combined';
   decision: DecisionValue;
   device: 'gpu' | 'npu' | 'cloud' | 'cpu';
@@ -89,13 +65,22 @@ export type ModelSchema = {
 };
 
 const localModel = 'volition-local-default';
-const localEscalation = {
-  target: 'runtime:codex/gpt-6-sol',
-  failures: 2,
-  stalledSteps: 12,
+const localEscalation: AgentEscalationPolicy = {
+  target: 'codex',
+  model: 'gpt-6.1-sol',
+  afterFailures: 2,
+  onResumeLimit: true,
   onRequest: true,
+  maxDepth: 1,
 };
-const cloudEscalation = { target: null, failures: 0, stalledSteps: 0, onRequest: true };
+const cloudEscalation: AgentEscalationPolicy = {
+  target: 'codex',
+  model: 'gpt-6.1-sol',
+  afterFailures: 0,
+  onResumeLimit: false,
+  onRequest: false,
+  maxDepth: 0,
+};
 const thresholds = DECISION_THRESHOLDS;
 const localOnly = new Set(Object.keys(LOCAL_ONLY_CLASSES));
 const coordinatorFallback = new Set(['tasks.triage', 'agents.routing']);
@@ -188,7 +173,13 @@ function roles(kind: 'local' | 'mixed' | 'codex' | 'claude'): Record<string, Mod
       runtime,
       model,
       reasoning: deep ? 'high' : 'medium',
-      escalation: runtime === 'helena' ? { ...localEscalation } : { ...cloudEscalation },
+      escalation:
+        runtime === 'helena'
+          ? { ...localEscalation }
+          : {
+              ...cloudEscalation,
+              ...(runtime === 'claude' && { target: 'claude', model: 'claude-opus-5-5' }),
+            },
       browser: 'jev',
       decision: { backend: 'jev-local', threshold: 0.8, fallback: 'gpu', privateData: false },
       device: runtime === 'helena' ? 'gpu' : 'cloud',
@@ -202,7 +193,7 @@ export const MODEL_TEMPLATES: Record<string, ModelSchema> = {
     id: 'nur-lokal',
     name: 'Nur lokal',
     description:
-      'Local default for agent runs; configured escalation on failure, stalls or request.',
+      'Local default for agent runs; configured escalation after two failures, at the resume limit or on request.',
     profile: 'local-halogen',
     roles: roles('local'),
     classes: classes('local-halogen'),

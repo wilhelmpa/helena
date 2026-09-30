@@ -1,5 +1,13 @@
+import { eq } from 'drizzle-orm';
+import { isDeepStrictEqual } from 'node:util';
+import { normalizeAgentEscalation } from '../modules/agents/core/service';
+import {
+  migrateEscalationValue,
+  migrateSchemaEscalations,
+} from '../modules/model-schemas/migration';
 import {
   aiAgent,
+  appSetting,
   agentMcpServerLink,
   agentSkillLink,
   agentToolLink,
@@ -11,6 +19,7 @@ import { MODEL_ROLES } from '../modules/model-schemas/templates';
 import {
   applyMatrix,
   modelProjectionDrift,
+  modelMatrix,
   previewMatrix,
   readModelState,
   syncAgentModel,
@@ -52,7 +61,7 @@ export function inferModelRole(
 }
 
 export async function modelSchemaMigration(apply = false) {
-  const [state, agents, assignments, skills, tools, mcpServers, drift] = await Promise.all([
+  const [state, agents, assignments, skills, tools, mcpServers, drift, matrix] = await Promise.all([
     readModelState(),
     db
       .select({
@@ -85,12 +94,36 @@ export async function modelSchemaMigration(apply = false) {
       .select({ agentId: agentMcpServerLink.agentId, id: agentMcpServerLink.mcpServerId })
       .from(agentMcpServerLink),
     modelProjectionDrift(),
+    modelMatrix(),
   ]);
+  const [stored] = await db
+    .select({ value: appSetting.value })
+    .from(appSetting)
+    .where(eq(appSetting.key, 'volition.modelSchemas'));
+  const schemaEscalationMigration = Boolean(
+    stored?.value &&
+    !isDeepStrictEqual(stored.value, migrateSchemaEscalations(stored.value as typeof state)),
+  );
   const changes = agents.flatMap((agent) => {
     const assignment = assignments.find((item) => item.agentId === agent.id);
     const role = inferModelRole(agent, assignment);
-    return role !== agent.role && agent.overrides.role === undefined
-      ? [{ agentId: agent.id, role, values: {} }]
+    const policy = agent.policy as { escalation?: unknown } | null;
+    const raw = agent.overrides.escalation;
+    const escalation =
+      raw != null
+        ? migrateEscalationValue(raw, policy?.escalation)
+        : policy?.escalation &&
+            !isDeepStrictEqual(
+              normalizeAgentEscalation(policy.escalation),
+              matrix.agents.find((row) => row.id === agent.id)?.cells.escalation.value ??
+                state.schemas[state.active]?.roles[agent.role]?.escalation,
+            )
+          ? normalizeAgentEscalation(policy.escalation)
+          : undefined;
+    const values = escalation && !isDeepStrictEqual(raw, escalation) ? { escalation } : {};
+    const roleChange = role !== agent.role && agent.overrides.role === undefined;
+    return roleChange || Object.keys(values).length
+      ? [{ agentId: agent.id, ...(roleChange && { role }), values }]
       : [];
   });
   const preview = await previewMatrix({ expectedRevision: state.revision, agents: changes });
@@ -137,7 +170,7 @@ export async function modelSchemaMigration(apply = false) {
       sourceTemplateId: agent.sourceTemplateId,
     };
   });
-  if (apply && changes.length)
+  if (apply && (changes.length || schemaEscalationMigration))
     await applyMatrix({ expectedRevision: state.revision, agents: changes });
   if (apply)
     for (const repair of templateRepairs)
@@ -164,7 +197,15 @@ export async function modelSchemaMigration(apply = false) {
         return {
           ...entry,
           currentRole: change?.role ?? entry.currentRole,
-          own: change ? [...entry.own, 'role'] : entry.own,
+          own: change
+            ? [
+                ...new Set([
+                  ...entry.own,
+                  ...Object.keys(change.values),
+                  ...(change.role ? ['role'] : []),
+                ]),
+              ]
+            : entry.own,
           skills: skillsAfter.filter((row) => row.agentId === entry.id).length,
           tools: toolsAfter.filter((row) => row.agentId === entry.id).length,
           mcpServers: mcpAfter.filter((row) => row.agentId === entry.id).length,
@@ -175,9 +216,15 @@ export async function modelSchemaMigration(apply = false) {
       })
     : audit;
   return {
-    applied: apply && (changes.length > 0 || sync.length > 0 || templateRepairs.length > 0),
+    applied:
+      apply &&
+      (changes.length > 0 ||
+        schemaEscalationMigration ||
+        sync.length > 0 ||
+        templateRepairs.length > 0),
     agents: audit,
     after,
+    schemaEscalationMigration,
     projectionDrift: drift,
     templateRepairs,
     synced: sync.length,
