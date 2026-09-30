@@ -198,3 +198,9 @@ for (const entry of [...BUILTIN_TASK_CLASSES, DECISIONS_LOCAL_AI_CLASS]) {
 const report = `${JSON.stringify({ base, rows }, null, 2)}\n`;
 if (jsonOut === '-') process.stdout.write(report);
 else if (jsonOut) writeFileSync(jsonOut, report);
+
+// Persisted evals open a Postgres pool; release it so the CLI also releases its bench lock.
+if (process.env.DATABASE_URL) {
+  const { closeDatabase } = await import('@repo/db');
+  await closeDatabase();
+}

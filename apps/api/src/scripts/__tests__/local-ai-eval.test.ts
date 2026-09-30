@@ -2,7 +2,11 @@ import { expect, it } from 'bun:test';
 import { createServer, type RequestListener } from 'node:http';
 import { resolve } from 'node:path';
 
-async function runEval(handler: RequestListener, args: string[]) {
+async function runEval(
+  handler: RequestListener,
+  args: string[],
+  environment: Record<string, string> = {},
+) {
   const server = createServer(handler);
   await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
   const address = server.address();
@@ -21,16 +25,17 @@ async function runEval(handler: RequestListener, args: string[]) {
         ...args,
       ],
       {
-        env: { PATH: process.env.PATH ?? '' },
+        env: { PATH: process.env.PATH ?? '', ...environment },
         stdout: 'pipe',
         stderr: 'pipe',
       },
     );
+    const deadline = setTimeout(() => child.kill('SIGKILL'), 8_000);
     const [stdout, stderr, exitCode] = await Promise.all([
       new Response(child.stdout).text(),
       new Response(child.stderr).text(),
       child.exited,
-    ]);
+    ]).finally(() => clearTimeout(deadline));
     expect(exitCode).toBe(0);
     return { report: JSON.parse(stdout), stderr };
   } finally {
@@ -38,6 +43,24 @@ async function runEval(handler: RequestListener, args: string[]) {
     await new Promise<void>((resolve) => server.close(() => resolve()));
   }
 }
+
+it.skipIf(!process.env.DATABASE_URL)(
+  'exits after writing its report with database persistence configured',
+  async () => {
+    const { report, stderr } = await runEval(
+      (_request, response) => {
+        response.setHeader('content-type', 'application/json');
+        response.end(JSON.stringify({ choices: [{ message: { content: 'hand_to_agent' } }] }));
+      },
+      ['--classes', 'voice-reply'],
+      { DATABASE_URL: process.env.DATABASE_URL!, NODE_ENV: 'test' },
+    );
+    expect(report.rows).toHaveLength(1);
+    expect(report.rows[0].result).not.toBeNull();
+    expect(stderr).toContain('server not registered uniquely');
+  },
+  12_000,
+);
 
 it('marks an actual socket disconnect and successful retry in CLI text and JSON', async () => {
   let requests = 0;
