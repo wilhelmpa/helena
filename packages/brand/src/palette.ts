@@ -20,7 +20,7 @@ export type BrandTheme = keyof typeof BANDS;
 // noise, so a vector disc in the same gradient (violet lower left, pink upper right)
 // stands for it. `ink` is the renders' background.
 export const ORB = {
-  ink: '#0B0A0E',
+  ink: '#121016',
   paper: '#F6F4EF',
   text: '#1B1B1F',
   onDark: ['#6C4CF5', '#B356DC', '#FF5C9E'],

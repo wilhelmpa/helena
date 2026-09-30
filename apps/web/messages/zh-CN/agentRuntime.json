@@ -73,7 +73,11 @@
     "unarchive": "恢复",
     "archived": "已归档",
     "showArchived": "显示已归档",
-    "archiveFailed": "无法归档此运行。"
+    "archiveFailed": "无法归档此运行。",
+    "steerTitle": "控制运行",
+    "steerPlaceholder": "给正在运行的任务的指令……",
+    "steerSend": "发送",
+    "steerInstructions": "指令"
   },
   "sessions": {
     "search": "搜索所有会话",

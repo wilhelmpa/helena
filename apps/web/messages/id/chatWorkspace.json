@@ -324,6 +324,7 @@
       "applied": "diterapkan",
       "queued": "dijadwalkan"
     },
-    "listLabel": "Instruksi untuk jawaban yang berjalan"
+    "listLabel": "Instruksi untuk jawaban yang berjalan",
+    "openNext": "Buka eksekusi berikutnya"
   }
 }

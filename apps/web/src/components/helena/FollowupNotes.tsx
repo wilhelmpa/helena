@@ -9,7 +9,15 @@ import FollowupIcon from './FollowupIcon';
 // they said, how it was sent (inject / after / replace) and whether the agent has taken it
 // over yet — "wartet" until it does. One quiet line each, on the member's side like their
 // own messages.
-export default function FollowupNotes({ items }: { items: Followup[] }) {
+export default function FollowupNotes({
+  items,
+  onOpenNext,
+}: {
+  items: Followup[];
+  // An "after" instruction the server made the next run: opens it (a run view has a list
+  // of runs to open it in; the chat shows the next turn as its own question instead).
+  onOpenNext?: (id: number) => void;
+}) {
   const t = useTranslations('chatWorkspace.followups');
   if (items.length === 0) return null;
   return (
@@ -33,6 +41,15 @@ export default function FollowupNotes({ items }: { items: Followup[] }) {
             <Pill tone={item.state === 'applied' ? 'success' : 'neutral'}>
               {t(`state.${item.state}`)}
             </Pill>
+            {onOpenNext && item.state === 'queued' && item.nextId != null && (
+              <button
+                type="button"
+                className="underline underline-offset-2 hover:text-foreground"
+                onClick={() => onOpenNext(item.nextId!)}
+              >
+                {t('openNext')}
+              </button>
+            )}
           </span>
         </li>
       ))}

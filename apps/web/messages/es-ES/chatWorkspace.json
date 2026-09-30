@@ -324,6 +324,7 @@
       "applied": "aplicada",
       "queued": "programada"
     },
-    "listLabel": "Instrucciones a la respuesta en curso"
+    "listLabel": "Instrucciones a la respuesta en curso",
+    "openNext": "Abrir la siguiente ejecución"
   }
 }

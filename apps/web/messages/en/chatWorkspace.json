@@ -324,6 +324,7 @@
       "applied": "taken over",
       "queued": "scheduled"
     },
-    "listLabel": "Instructions to the running answer"
+    "listLabel": "Instructions to the running answer",
+    "openNext": "Open the next run"
   }
 }

@@ -73,7 +73,11 @@
     "unarchive": "Вернуть",
     "archived": "В архиве",
     "showArchived": "Показать архивные",
-    "archiveFailed": "Не удалось архивировать запуск."
+    "archiveFailed": "Не удалось архивировать запуск.",
+    "steerTitle": "Управление запуском",
+    "steerPlaceholder": "Указание для текущего запуска …",
+    "steerSend": "Отправить",
+    "steerInstructions": "Указания"
   },
   "sessions": {
     "search": "Искать во всех сессиях",

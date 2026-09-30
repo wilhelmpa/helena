@@ -73,7 +73,11 @@
     "unarchive": "Повернути",
     "archived": "В архіві",
     "showArchived": "Показати архівні",
-    "archiveFailed": "Не вдалося архівувати запуск."
+    "archiveFailed": "Не вдалося архівувати запуск.",
+    "steerTitle": "Керування запуском",
+    "steerPlaceholder": "Вказівка для поточного запуску …",
+    "steerSend": "Надіслати",
+    "steerInstructions": "Вказівки"
   },
   "sessions": {
     "search": "Шукати в усіх сесіях",

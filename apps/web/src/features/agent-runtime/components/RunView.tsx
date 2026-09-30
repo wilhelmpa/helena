@@ -40,6 +40,7 @@ import ModelFailureNote from '@/features/model-availability/components/ModelFail
 import { knownFailure } from '@/features/model-availability/utils/modelFailure';
 import RunResults from './RunResults';
 import RunSteps from './RunSteps';
+import RunSteer from './RunSteer';
 
 type View = 'timeline' | 'transcript' | 'logs';
 
@@ -192,6 +193,17 @@ export default function RunView({
             </div>
           )}
         </DetailGroup>
+
+        {run.projectKey && (
+          <RunSteer
+            projectKey={run.projectKey}
+            agentId={agentId}
+            runId={run.id}
+            live={live}
+            events={events}
+            onOpenRun={onOpenRun}
+          />
+        )}
 
         <DetailGroup title={t('steps')}>
           <RunSteps events={events} />

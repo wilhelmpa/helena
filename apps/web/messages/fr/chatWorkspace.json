@@ -324,6 +324,7 @@
       "applied": "prise en compte",
       "queued": "planifiée"
     },
-    "listLabel": "Instructions à la réponse en cours"
+    "listLabel": "Instructions à la réponse en cours",
+    "openNext": "Ouvrir l’exécution suivante"
   }
 }

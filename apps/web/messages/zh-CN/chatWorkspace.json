@@ -324,6 +324,7 @@
       "applied": "已采纳",
       "queued": "已排期"
     },
-    "listLabel": "对进行中回答的指令"
+    "listLabel": "对进行中回答的指令",
+    "openNext": "打开下一次运行"
   }
 }

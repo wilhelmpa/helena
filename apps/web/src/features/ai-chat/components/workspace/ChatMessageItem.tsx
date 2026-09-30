@@ -11,8 +11,7 @@ import type { PlanUIMessage } from '../../utils/chatMessages';
 import ChatMessageBubbleUser from './ChatMessageBubbleUser';
 import ChatMessageBubbleAssistant from './ChatMessageBubbleAssistant';
 import ChatBranchNav from './ChatBranchNav';
-import FollowupNotes from '@/components/helena/FollowupNotes';
-import type { Followup } from '@/lib/api/endpoints/agentFollowups';
+import ChatAnswerFollowups from './ChatAnswerFollowups';
 import ChatMessageActions from './ChatMessageActions';
 import ChatMessageMeta, { ChatMessageTime } from './ChatMessageMeta';
 
@@ -30,8 +29,9 @@ export interface ChatMessageItemProps {
   onEdit: (messageId: string, text: string) => void;
   onShowArtifact: (artifact: Artifact) => void;
   onSwitchVersion: (messageId: string) => void;
-  // The instructions given while this answer ran (see ChatFollowupNotes).
-  followups?: Followup[];
+  // Where the chat lives (project key or `team:<id>`): the instructions given while this
+  // answer ran are read for it and shown under it.
+  scopeKey: string;
 }
 
 // One turn of the transcript, claude.ai-style: the member's words in a quiet bubble on
@@ -50,7 +50,7 @@ function ChatMessageItem({
   onEdit,
   onShowArtifact,
   onSwitchVersion,
-  followups,
+  scopeKey,
 }: ChatMessageItemProps) {
   const isUser = message.role === 'user';
   const streaming = isLast && !isUser && (status === 'streaming' || status === 'submitted');
@@ -86,7 +86,16 @@ function ChatMessageItem({
             </BubbleContent>
           )}
         </Bubble>
-        {!isUser && followups && followups.length > 0 && <FollowupNotes items={followups} />}
+        {!isUser && /^\d+$/.test(message.id) && (
+          <ChatAnswerFollowups
+            target={{
+              scopeKey,
+              agentId: message.metadata?.agentId ?? agent.id,
+              kind: 'chat',
+              id: Number(message.id),
+            }}
+          />
+        )}
         {!editing && !streaming && (
           <MessageFooter className="h-7 gap-1">
             {isUser ? null : <ChatMessageTime message={message} />}

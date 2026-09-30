@@ -324,6 +324,7 @@
       "applied": "übernommen",
       "queued": "eingeplant"
     },
-    "listLabel": "Anweisungen an die laufende Antwort"
+    "listLabel": "Anweisungen an die laufende Antwort",
+    "openNext": "Nächsten Lauf öffnen"
   }
 }

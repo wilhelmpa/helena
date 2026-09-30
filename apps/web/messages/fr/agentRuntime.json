@@ -73,7 +73,11 @@
     "unarchive": "Restaurer",
     "archived": "Archivée",
     "showArchived": "Afficher les archivées",
-    "archiveFailed": "L'exécution n'a pas pu être archivée."
+    "archiveFailed": "L'exécution n'a pas pu être archivée.",
+    "steerTitle": "Piloter l’exécution",
+    "steerPlaceholder": "Instruction pour l’exécution en cours …",
+    "steerSend": "Envoyer",
+    "steerInstructions": "Instructions"
   },
   "sessions": {
     "search": "Rechercher dans toutes les sessions",

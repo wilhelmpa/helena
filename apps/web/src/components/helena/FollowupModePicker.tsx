@@ -21,10 +21,13 @@ export default function FollowupModePicker({
   modes,
   mode,
   onChange,
+  showLabel = false,
 }: {
   modes: FollowupMode[];
   mode: FollowupMode;
   onChange: (mode: FollowupMode) => void;
+  // The mode's name beside its icon always; in the composer it shows by the composer's width.
+  showLabel?: boolean;
 }) {
   const t = useTranslations('chatWorkspace.followups');
   if (modes.length < 2) return null;
@@ -40,7 +43,9 @@ export default function FollowupModePicker({
           title={t(`hint.${mode}`)}
         >
           <FollowupIcon mode={mode} className="size-3.5 shrink-0" />
-          <span className="hidden @md/composer:inline">{t(`mode.${mode}`)}</span>
+          <span className={showLabel ? 'inline' : 'hidden @md/composer:inline'}>
+            {t(`mode.${mode}`)}
+          </span>
           <ChevronDown className="size-3.5 shrink-0" />
         </Button>
       </DropdownMenuTrigger>

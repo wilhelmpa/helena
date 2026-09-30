@@ -73,7 +73,11 @@
     "unarchive": "Restore",
     "archived": "Archived",
     "showArchived": "Show archived",
-    "archiveFailed": "The run could not be archived."
+    "archiveFailed": "The run could not be archived.",
+    "steerTitle": "Steer the run",
+    "steerPlaceholder": "Instruction to the running run …",
+    "steerSend": "Send",
+    "steerInstructions": "Instructions"
   },
   "sessions": {
     "search": "Search every session",
