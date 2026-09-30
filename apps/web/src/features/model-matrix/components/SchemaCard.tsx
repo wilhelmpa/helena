@@ -78,7 +78,7 @@ export function SchemaCard({
         />
       }
     >
-      <Stack gap={3}>
+      <Stack gap={3} grow>
         <Inline gap={1} wrap>
           {active && <Pill tone="success">{t('schemaEditor.badge.active')}</Pill>}
           {activating && !active && (
@@ -98,17 +98,17 @@ export function SchemaCard({
             ? ` · ${runtimes.map((runtime) => labels.value('runtime', runtime as MatrixRuntime)).join(', ')}`
             : ''}
         </Text>
-        <Inline gap={2} wrap>
-          <Button size="small" variant={selected ? 'quiet' : 'ghost'} onClick={onSelect}>
-            {builtIn ? t('schemaEditor.view') : t('schemaEditor.editRoles')}
-          </Button>
-          {!active && (
-            <Button size="small" variant="ghost" onClick={onActivate}>
-              {activating ? t('schemaEditor.activateUndo') : t('schemaEditor.activate')}
-            </Button>
-          )}
-        </Inline>
       </Stack>
+      <Inline gap={2} wrap>
+        <Button size="small" variant={selected ? 'quiet' : 'ghost'} onClick={onSelect}>
+          {builtIn ? t('schemaEditor.view') : t('schemaEditor.editRoles')}
+        </Button>
+        {!active && (
+          <Button size="small" variant="ghost" onClick={onActivate}>
+            {activating ? t('schemaEditor.activateUndo') : t('schemaEditor.activate')}
+          </Button>
+        )}
+      </Inline>
     </Card>
   );
 }

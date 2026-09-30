@@ -259,6 +259,17 @@
   justify-content: space-between;
   gap: var(--space-4);
 }
+/* On a phone the action goes under the words instead of squeezing them. */
+@media (max-width: 599px) {
+  .ds-section-head {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-3);
+  }
+  .ds-section-head > .ds-section-actions {
+    align-self: flex-start;
+  }
+}
 .ds-section-title {
   color: var(--text);
   font-size: 15px;
