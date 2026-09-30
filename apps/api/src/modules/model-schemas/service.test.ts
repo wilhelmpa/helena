@@ -84,6 +84,8 @@ describe('model schema resolution', () => {
   it('undo goes back one apply at a time, is not itself put on the history and is bounded', () => {
     const start = defaultState();
     const one = nextState(start, { expectedRevision: 0, active: 'nur-codex' });
+    // A change of the schema alone keeps an empty list of agents (older entries have none).
+    expect(one.history.at(-1)?.agents).toEqual([]);
     const two = nextState(one, { expectedRevision: 1, active: 'nur-claude' });
     const back = nextState(two, { expectedRevision: 2, undo: true });
     expect(back.active).toBe('nur-codex');

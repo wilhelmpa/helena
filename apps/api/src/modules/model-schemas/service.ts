@@ -511,7 +511,7 @@ export function nextState(current: State, patch: MatrixPatch, saved: SavedAgent[
     active: current.active,
     schemas: current.schemas,
     projects: current.projects,
-    ...(saved.length && { agents: saved }),
+    agents: saved,
   });
   state.history = state.history.slice(-UNDO_DEPTH);
   state.revision = current.revision + 1;
