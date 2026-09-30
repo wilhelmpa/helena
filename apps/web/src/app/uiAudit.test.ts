@@ -48,8 +48,12 @@ describe('edge rules', () => {
     assert.match(found[0], /Werkzeugzeile/);
   });
 
-  it('leaves a split or canvas page its own edge', () => {
+  it('leaves a split or canvas page its own edge, and wants a split list on the sidebar edge', () => {
     assert.deepEqual(rules.edgeFindings(at(edges({ variant: 'bleed', content: 0, gap: 0 }))), []);
+    assert.deepEqual(rules.edgeFindings(at(edges({ variant: 'split', content: 0, gap: 0 }))), []);
+    const found = rules.edgeFindings(at(edges({ variant: 'split', content: 32, gap: 24 })));
+    assert.equal(found.length, 1);
+    assert.match(found[0], /Split-Liste/);
   });
 });
 

@@ -719,7 +719,8 @@
   flex-direction: column;
 }
 .ds-page[data-page='fill'] > .ds-page-scroll,
-.ds-page[data-page='bleed'] > .ds-page-scroll {
+.ds-page[data-page='bleed'] > .ds-page-scroll,
+.ds-page[data-page='split'] > .ds-page-scroll {
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -729,7 +730,8 @@
   flex: 1;
   padding-bottom: var(--page-pad-top);
 }
-.ds-page[data-page='bleed'] > .ds-page-scroll > .ds-page-body {
+.ds-page[data-page='bleed'] > .ds-page-scroll > .ds-page-body,
+.ds-page[data-page='split'] > .ds-page-scroll > .ds-page-body {
   min-height: 0;
   flex: 1;
   padding: 0;

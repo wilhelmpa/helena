@@ -28,6 +28,11 @@ export function edgeFindings(results) {
     // On a phone the controls fold under the breadcrumb: the same left edge.
     if (e.bar != null && differs(e.bar, e.crumb))
       out.push(`${tag}: Werkzeugzeile beginnt bei ${e.bar} px, Kopfzeile bei ${e.crumb} px`);
+    // A split page (list and detail) starts at the sidebar's edge: no padding in front of it.
+    if (e.variant === 'split' && e.content != null && e.content > TOLERANCE)
+      out.push(
+        `${tag}: Split-Liste beginnt bei ${e.content} px statt an der Kante der Seitenleiste`,
+      );
     if (EDGE_EXEMPT.has(e.variant) || e.content == null) continue;
     if (differs(e.content, e.crumb))
       out.push(

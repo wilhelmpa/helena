@@ -12,7 +12,6 @@ export default function WorkspacePanelHeader({
   canToggleBrowserLossless,
   browserLossless,
   externalUrl,
-  picker,
   toolbar,
   slotRef,
   onToggleAdvanced,
@@ -25,8 +24,6 @@ export default function WorkspacePanelHeader({
   canToggleBrowserLossless: boolean;
   browserLossless: boolean;
   externalUrl: string | null | undefined;
-  // Picks the tool this area shows (WorkspaceToolPicker).
-  picker: ReactNode;
   // Shown in place of the title, such as the browser's address bar.
   toolbar?: ReactNode;
   // Receives the slot the showing tool may fill with its own bar (PanelHeaderSlotCtx);
@@ -40,7 +37,6 @@ export default function WorkspacePanelHeader({
   const tCommon = useTranslations('common');
   return (
     <div className="ds-panel-subbar">
-      {picker}
       {toolbar ? (
         <>
           {toolbar}

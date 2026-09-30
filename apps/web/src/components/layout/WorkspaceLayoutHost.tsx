@@ -75,8 +75,6 @@ export default function WorkspaceLayoutHost({
           overlay
           full={full}
           onToggleMode={panel.toggleMode}
-          onPickTool={layout.pickTool}
-          onCloseArea={layout.closeArea}
           onClose={() => {
             setFull(false);
             panel.setOpen(false);
