@@ -2355,5 +2355,17 @@
     "/projects/:projectKey/trash-activity",
     "UI-only",
     "Protokoll des Papierkorb-Aufräumers für die Einstellungsseite; kein Agentenwerkzeug."
+  ],
+  [
+    "GET",
+    "/teams/:teamId/ai-agents/:agentId/dream",
+    "admin",
+    "Gedächtniskonsolidierung und Protokoll sind dem Team-Owner vorbehalten."
+  ],
+  [
+    "POST",
+    "/teams/:teamId/ai-agents/:agentId/dream",
+    "admin",
+    "Gedächtniskonsolidierung und Protokoll sind dem Team-Owner vorbehalten."
   ]
 ]

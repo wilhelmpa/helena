@@ -24,9 +24,11 @@ import {
   copyTemplateIntoProject,
   saveAgentAsTemplate,
 } from './service';
+import { consolidateAgentMemory, dreamHistory } from '../native-runtime/consolidation';
 import { resetCopyToTemplate } from './template-sync';
 import {
   AgentRunArchiveResponse,
+  AgentDreamHistory,
   AgentRunPageResponse,
   agentRunParams,
   AiAgentListResponse,
@@ -172,6 +174,34 @@ export const aiAgentRoutes = new Elysia({ name: 'ai-agents', detail: { tags: ['A
         description: 'Get an AI agent by id with its config.',
         ...mcpTool('get_ai_agent'),
       },
+    },
+  )
+
+  .post(
+    '/teams/:teamId/ai-agents/:agentId/dream',
+    async ({ params, membership }) => {
+      await requireVisibleAgent(params.agentId, membership);
+      await consolidateAgentMemory(params.agentId, new Date(), 'manual');
+      return dreamHistory(params.agentId);
+    },
+    {
+      teamOwner: true,
+      params: agentParams,
+      response: { 200: AgentDreamHistory, ...commonErrors, ...errors(409) },
+      detail: { summary: 'Consolidate agent memory now' },
+    },
+  )
+  .get(
+    '/teams/:teamId/ai-agents/:agentId/dream',
+    async ({ params, membership }) => {
+      await requireVisibleAgent(params.agentId, membership);
+      return dreamHistory(params.agentId);
+    },
+    {
+      teamOwner: true,
+      params: agentParams,
+      response: { 200: AgentDreamHistory, ...commonErrors },
+      detail: { summary: 'Read agent memory consolidation status and history' },
     },
   )
 

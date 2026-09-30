@@ -19,6 +19,22 @@ export const MODEL_ROLES = [
   'general',
 ] as const;
 export type ModelRole = (typeof MODEL_ROLES)[number];
+export const ROLE_TOOL_PROFILES: Record<ModelRole, 'assistent' | 'recherche' | 'voll'> = {
+  home: 'voll',
+  coordinator: 'voll',
+  coder: 'voll',
+  reviewer: 'voll',
+  devops: 'voll',
+  trading: 'voll',
+  research: 'recherche',
+  planning: 'assistent',
+  content: 'assistent',
+  assistant: 'assistent',
+  finance: 'assistent',
+  browser: 'recherche',
+  support: 'assistent',
+  general: 'assistent',
+};
 export const ROLE_REASONING: Record<ModelRole, 'high' | 'medium'> = {
   home: 'high',
   coordinator: 'high',
@@ -57,6 +73,7 @@ export type DecisionValue = {
   privateData: boolean;
 };
 export type ModelValues = {
+  toolProfile?: 'assistent' | 'recherche' | 'coder-lite' | 'voll';
   runtime: 'helena' | 'claude' | 'codex' | 'hermes' | 'command' | 'webhook';
   model: string;
   reasoning: 'low' | 'medium' | 'high' | 'xhigh';
@@ -175,10 +192,17 @@ function roles(kind: 'local' | 'mixed' | 'codex' | 'claude'): Record<string, Mod
     values[role] = {
       runtime,
       model,
+      toolProfile: ROLE_TOOL_PROFILES[role],
       reasoning: ROLE_REASONING[role],
       escalation:
         runtime === 'helena'
-          ? { ...localEscalation }
+          ? {
+              ...localEscalation,
+              ...(['planning', 'finance', 'content'].includes(role) && {
+                target: 'claude' as const,
+                model: role === 'planning' ? 'claude-opus-5-5' : CLOUD_AGENT_MODELS.claude,
+              }),
+            }
           : {
               ...cloudEscalation,
               ...(runtime === 'claude' && { target: 'claude', model: 'claude-opus-5-5' }),
