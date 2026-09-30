@@ -1,3 +1,4 @@
+import { Card, Notice } from '@/design-system';
 import Link from 'next/link';
 import { FileText, Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -24,22 +25,22 @@ export default function IssueKnowledgeNoteList({
 
   if (notes.isError) {
     return (
-      <button
+      <Card
+        as="button"
         type="button"
-        className="w-full rounded-md border border-dashed px-3 py-4 text-xs text-muted-foreground hover:text-foreground"
+        tone="inset"
+        interactive
+        pad="tight"
+        className="w-full items-center text-center text-xs text-muted-foreground"
         onClick={() => void notes.refetch()}
       >
         {t('loadFailed')}
-      </button>
+      </Card>
     );
   }
 
   if (!notes.data?.length) {
-    return (
-      <p className="rounded-md border border-dashed px-3 py-4 text-center text-xs text-muted-foreground">
-        {t('empty', { link: `[[${identifier}]]` })}
-      </p>
-    );
+    return <Notice>{t('empty', { link: `[[${identifier}]]` })}</Notice>;
   }
 
   return (

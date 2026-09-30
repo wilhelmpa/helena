@@ -1,5 +1,6 @@
 'use client';
 
+import { Card } from '@/design-system';
 import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { KeyRound, Laptop, Mail, RefreshCw } from 'lucide-react';
@@ -67,7 +68,7 @@ export default function ConnectionsContent({ leading }: { leading?: ReactNode })
   ) : items.length === 0 ? (
     <EmptyState title={t('empty')} description={t('emptyHint')} />
   ) : (
-    <div className="flex flex-col divide-y overflow-hidden rounded-md border bg-card">
+    <Card pad="none" className="divide-y overflow-hidden">
       {items.map((connection) => (
         <ConnectionRow
           key={connection.id}
@@ -76,7 +77,7 @@ export default function ConnectionsContent({ leading }: { leading?: ReactNode })
           onAction={(requested) => action.mutate({ id: connection.id, action: requested })}
         />
       ))}
-    </div>
+    </Card>
   );
 
   return (

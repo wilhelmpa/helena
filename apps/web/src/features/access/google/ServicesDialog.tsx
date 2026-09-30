@@ -1,5 +1,6 @@
 'use client';
 
+import { Card } from '@/design-system';
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
@@ -63,7 +64,7 @@ export function ServicesDialog({
   return (
     <Modal title={t('title', { email: account.email })} description={t('hint')} onClose={onClose}>
       <div className="flex flex-col gap-4">
-        <ul className="divide-y rounded-md border border-sidebar-border bg-card">
+        <Card as="ul" pad="none" className="divide-y">
           {account.services.map((service) => (
             <li key={service.id} className="flex min-h-10 items-center gap-3 px-3 py-1.5">
               <span className="flex-1 text-sm">{tGoogle(`services.${service.id}`)}</span>
@@ -79,7 +80,7 @@ export function ServicesDialog({
               />
             </li>
           ))}
-        </ul>
+        </Card>
         {account.engine === 'gog' && enabled.has('mail') && (
           <p className="text-xs text-muted-foreground">{t('gogNoMail')}</p>
         )}

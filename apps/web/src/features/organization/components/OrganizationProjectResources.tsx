@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { useProjectProvisioningQuery } from '@/services/projects.service';
 import { useViewsQuery } from '@/services/views.service';
 import { viewPath } from '@/utils/paths';
-import { Box, Inline, Text } from '@/design-system';
+import { Card, Inline, Notice, Text } from '@/design-system';
 
 // A requested "board" resource names a project view (see packages/db schema:
 // project_view) by id, e.g. "board:9". The view may since have been renamed or
@@ -52,16 +52,7 @@ export default function OrganizationProjectResources({ projectKey }: { projectKe
     );
   }
   if (provisioning.isError) {
-    return (
-      <Text
-        as="p"
-        size="sm"
-        tone="danger"
-        className="mb-4 rounded-md border border-destructive/40 p-3"
-      >
-        {t('unavailable')}
-      </Text>
-    );
+    return <Notice tone="danger">{t('unavailable')}</Notice>;
   }
 
   const job = provisioning.data;
@@ -70,7 +61,7 @@ export default function OrganizationProjectResources({ projectKey }: { projectKe
     job.status === 'succeeded' ? CheckCircle2 : job.status === 'failed' ? CircleAlert : Clock3;
 
   return (
-    <Box as="section" marginBottom={4} pad={4} className="rounded-md border bg-card">
+    <Card as="section">
       <Inline gap={3} justify="between" wrap align="start">
         <div>
           <h2 className="flex items-center gap-2 text-md font-medium">
@@ -123,6 +114,6 @@ export default function OrganizationProjectResources({ projectKey }: { projectKe
           {job.lastError}
         </Text>
       ) : null}
-    </Box>
+    </Card>
   );
 }

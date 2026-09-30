@@ -29,7 +29,7 @@ import {
 } from '../services/providerLimits.service';
 import { STATE_STATUS, orderedAccounts, orderedWindows } from '../utils/limitsFormat';
 import LimitWindowRow from './LimitWindowRow';
-import { NameList } from '@/design-system';
+import { NameList, Sections } from '@/design-system';
 
 const INTERVALS = [5, 10, 15, 30, 60];
 const THRESHOLDS = [70, 80, 90, 95];
@@ -44,7 +44,7 @@ export default function ProviderLimitsSection() {
   const now = useNow();
 
   return (
-    <div id="limits" className="scroll-mt-4 space-y-6">
+    <Sections id="limits" className="scroll-mt-4">
       <SettingsSection
         title={t('title')}
         action={
@@ -80,7 +80,7 @@ export default function ProviderLimitsSection() {
           </div>
         </SettingsSection>
       )}
-    </div>
+    </Sections>
   );
 }
 

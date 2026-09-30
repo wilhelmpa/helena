@@ -1,6 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
+import { Card } from '@/design-system';
 import { useTranslations } from 'next-intl';
 import type { AiAgent } from '@/lib/api/endpoints/agents';
 import type { OrganizationAgent, OrganizationDepartment } from '@/lib/api/endpoints/organization';
@@ -128,12 +129,13 @@ export default function OrganizationHoverCard({
     );
   }
   return (
-    <div
+    <Card
+      tone="popover"
       role="tooltip"
-      className="organization-hover-card pointer-events-none absolute z-20 hidden flex-col gap-0.5 rounded-xl bg-popover p-3 text-popover-foreground shadow-[0_0_0_1px_var(--border),0_12px_32px_color-mix(in_srgb,var(--foreground)_14%,transparent)] [@media(hover:hover)]:flex"
+      className="organization-hover-card pointer-events-none absolute z-20"
       style={{ left, top, width: CARD_WIDTH }}
     >
       {body}
-    </div>
+    </Card>
   );
 }

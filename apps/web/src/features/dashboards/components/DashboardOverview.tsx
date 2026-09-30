@@ -19,13 +19,30 @@ import { runningActivityHref } from '@/features/agent-activity/utils/runningLink
 import { formatDurationShort } from '@/utils/dates';
 import { useAgentStatus } from '@/utils/helenaStatus';
 import Orb from '@/components/helena/Orb';
-import { Card, MonoLabel, MonoMeta, Tile } from '@/components/helena/DashboardPrimitives';
-import { Stack, Text } from '@/design-system';
+import { Card, MonoMeta, Tile } from '@/components/helena/DashboardPrimitives';
+import { Grid, Stack, Text } from '@/design-system';
 
 const OPEN = new Set(['backlog', 'unstarted', 'started']);
 const WORKING = new Set(['running', 'streaming']);
 const WAITING = new Set(['waiting', 'suspended']);
 const APPROVAL_PAGE = { page: 1, pageSize: 3 };
+
+// A row of a dashboard card that opens something: an inset (a box in the box), 44px high.
+function InsetRow({ href, children }: { href: string; children: React.ReactNode }) {
+  return (
+    <Card
+      as={Link}
+      href={href}
+      tone="inset"
+      interactive
+      pad="tight"
+      layout="row"
+      className="min-h-11 items-center text-xs"
+    >
+      {children}
+    </Card>
+  );
+}
 
 function ActivityRow({ entry, projectKey }: { entry: AgentActivityEntry; projectKey: string }) {
   const status = useAgentStatus(entry.agent!.id, {
@@ -36,10 +53,7 @@ function ActivityRow({ entry, projectKey }: { entry: AgentActivityEntry; project
     ? issuePath(projectKey, entry.issue.sequenceNumber)
     : agentActivityForAgentPath(entry.agent!.id, projectKey);
   return (
-    <Link
-      href={href}
-      className="flex min-h-11 items-center gap-3 rounded-lg bg-[var(--dashboard-raised)] px-3 text-xs text-[var(--dashboard-ink)] transition-colors hover:bg-[var(--dashboard-selected)]"
-    >
+    <InsetRow href={href}>
       <Orb state={status} size="small" />
       <span className="min-w-0 flex-1 truncate">
         <span className="font-medium">{entry.agent!.name}</span>
@@ -48,7 +62,7 @@ function ActivityRow({ entry, projectKey }: { entry: AgentActivityEntry; project
         </span>
       </span>
       <MonoMeta className="shrink-0">{formatDurationShort(entry.at)}</MonoMeta>
-    </Link>
+    </InsetRow>
   );
 }
 
@@ -62,11 +76,7 @@ function OverviewCard({
   children: React.ReactNode;
 }) {
   return (
-    <Card className="flex min-h-48 flex-col gap-3 p-5">
-      <div className="flex items-center justify-between">
-        <MonoLabel>{label}</MonoLabel>
-        <MonoMeta>{count}</MonoMeta>
-      </div>
+    <Card eyebrow={label} actions={<MonoMeta>{count}</MonoMeta>} className="min-h-48">
       <Stack gap={2}>{children}</Stack>
     </Card>
   );
@@ -121,7 +131,7 @@ export default function DashboardOverview({
 
   return (
     <Stack gap={4}>
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-[14px]">
+      <Grid min="fit">
         <Tile
           label={t('openTasks')}
           value={open.length}
@@ -141,8 +151,8 @@ export default function DashboardOverview({
           note={t('approvalsAndQuestions')}
           tone={needs > 0 ? 'attention' : 'default'}
         />
-      </div>
-      <div className="grid gap-[14px] xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+      </Grid>
+      <Grid split>
         <OverviewCard label={t('running')} count={working.length}>
           {working.length ? (
             working
@@ -154,17 +164,13 @@ export default function DashboardOverview({
             </Text>
           )}
         </OverviewCard>
-        <div className="flex min-w-0 flex-col gap-[14px]">
+        <Stack gap={4}>
           <OverviewCard label={t('needsYou')} count={needs}>
             {approvals.data?.items.map((approval) => (
-              <Link
-                key={approval.id}
-                href={projectApprovalsPath(projectKey)}
-                className="flex min-h-11 items-center gap-3 rounded-lg bg-[var(--dashboard-raised)] px-3 text-xs text-[var(--dashboard-ink)] hover:bg-[var(--dashboard-selected)]"
-              >
+              <InsetRow key={approval.id} href={projectApprovalsPath(projectKey)}>
                 <Orb state="waiting" size="small" />
                 <span className="min-w-0 flex-1 truncate">{approval.action}</span>
-              </Link>
+              </InsetRow>
             ))}
             {waitingWithoutApproval.slice(0, 3).map((entry) => (
               <ActivityRow key={entry.id} entry={entry} projectKey={projectKey} />
@@ -188,8 +194,8 @@ export default function DashboardOverview({
               </Text>
             )}
           </OverviewCard>
-        </div>
-      </div>
+        </Stack>
+      </Grid>
     </Stack>
   );
 }

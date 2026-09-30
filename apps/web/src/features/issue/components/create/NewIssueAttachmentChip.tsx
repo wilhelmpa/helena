@@ -36,13 +36,13 @@ export default function NewIssueAttachmentChip({
           <button
             type="button"
             aria-label={t('preview', { name: item.filename })}
-            className="relative flex size-full items-center justify-center overflow-hidden rounded-md border bg-muted hover:border-ring"
+            className="relative flex size-full items-center justify-center overflow-hidden rounded-md bg-muted ring-1 ring-border hover:ring-ring"
           >
             <AttachmentThumb attachment={item} />
           </button>
         </PopoverTrigger>
         <PopoverContent side="top" align="start" className="w-64 space-y-2 p-2">
-          <div className="relative flex h-40 items-center justify-center overflow-hidden rounded-md border bg-muted">
+          <div className="relative flex h-40 items-center justify-center overflow-hidden rounded-md bg-muted ring-1 ring-border">
             <AttachmentThumb attachment={item} sizes="240px" />
           </div>
           <div className="min-w-0">
@@ -95,7 +95,7 @@ export default function NewIssueAttachmentChip({
         onClick={() => onRemove(item.id)}
         aria-label={t('remove', { name: item.filename })}
         title={t('removeShort')}
-        className="absolute -end-2 -top-2 flex size-4 items-center justify-center rounded-full border bg-popover text-muted-foreground opacity-0 shadow-sm transition-opacity group-hover:opacity-100 hover:text-destructive focus-visible:opacity-100"
+        className="absolute -end-2 -top-2 flex size-4 items-center justify-center rounded-full bg-popover text-muted-foreground opacity-0 ring-1 ring-border transition-opacity group-hover:opacity-100 hover:text-destructive focus-visible:opacity-100"
       >
         <X className="size-3" />
       </button>

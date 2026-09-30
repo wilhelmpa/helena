@@ -17,7 +17,7 @@ import { revScope } from '@/utils/revScopes';
 import ControlPlaneWorkflowConfiguration from './ControlPlaneWorkflowConfiguration';
 import ControlPlaneWorkflowRuntime from './ControlPlaneWorkflowRuntime';
 
-import { Box, Text, Stack, Inline } from '@/design-system';
+import { Box, Card, EmptyState, Inline, Notice, Section, Stack, Text } from '@/design-system';
 
 export function ControlPlaneWorkflowPanel({
   projectId,
@@ -41,35 +41,21 @@ export function ControlPlaneWorkflowPanel({
   });
 
   return (
-    <Stack as="section" gap={3}>
-      <h2 className="text-md font-medium">{t('title')}</h2>
+    <Section title={t('title')}>
       {workflows.isPending ? (
         <Text as="p" size="sm" tone="muted">
           {t('loading')}
         </Text>
       ) : workflows.isError ? (
-        <Box as="p" pad={3} className="rounded-md border border-destructive/40 bg-card">
-          <Text as="span" size="sm" tone="danger">
-            {t('unavailable')}
-            {workflows.error instanceof Error && workflows.error.message ? (
-              <Box as="span" marginTop={1} className="block">
-                <Text as="span" size="xs" tone="muted">
-                  {workflows.error.message}
-                </Text>
-              </Box>
-            ) : null}
-          </Text>
-        </Box>
+        <Notice tone="danger" title={t('unavailable')}>
+          {workflows.error instanceof Error ? workflows.error.message : null}
+        </Notice>
       ) : !workflows.data?.length ? (
-        <Box as="p" pad={4} className="rounded-md border border-dashed bg-card">
-          <Text as="span" size="sm" tone="muted">
-            {t('empty')}
-          </Text>
-        </Box>
+        <EmptyState boxed>{t('empty')}</EmptyState>
       ) : (
         <Stack gap={3}>
           {workflows.data?.map((workflow) => (
-            <Box as="article" pad={4} key={workflow.id} className="rounded-md border bg-card">
+            <Card as="article" key={workflow.id}>
               <Inline gap={3} align="start" wrap className="flex flex-wrap items-start">
                 <button
                   type="button"
@@ -149,10 +135,10 @@ export function ControlPlaneWorkflowPanel({
                   />
                 </Stack>
               )}
-            </Box>
+            </Card>
           ))}
         </Stack>
       )}
-    </Stack>
+    </Section>
   );
 }

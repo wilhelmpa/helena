@@ -1,5 +1,6 @@
 'use client';
 
+import { Card } from '@/design-system';
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
@@ -66,7 +67,7 @@ export default function MailAccountRow({
     );
 
   return (
-    <li className="flex flex-col gap-2 rounded-md border bg-card p-3">
+    <Card as="li" pad="tight" gap={2}>
       <div className="flex flex-wrap items-center gap-2">
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-medium">{account.name}</p>
@@ -174,6 +175,6 @@ export default function MailAccountRow({
           <p className="text-sm text-muted-foreground">{t('removeBody')}</p>
         </ConfirmDialog>
       )}
-    </li>
+    </Card>
   );
 }

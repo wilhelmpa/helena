@@ -17,7 +17,7 @@ import { cn } from '@/lib/utils';
 import { useIssueSearchQuery } from '@/services/issues.service';
 import { useTeamProjectOptionsQuery } from '@/services/teams.service';
 import PipelineField from './PipelineField';
-import { Box, Stack, Text } from '@/design-system';
+import { Box, Stack, Text, ListBox } from '@/design-system';
 
 // The task a test run works on, found by search. A template can run in any project of
 // the team, so its project is picked first.
@@ -72,33 +72,41 @@ export default function PipelineTestRunForm({
             placeholder={t('search')}
             onChange={(event) => setQuery(event.target.value)}
           />
-          <ul className="max-h-60 overflow-y-auto rounded-md border">
-            {hits.length === 0 ? (
-              <Box as="li" padX={3} padY={2} className="text-sm text-muted-foreground">
-                {query.trim() ? t('noMatches') : t('typeToSearch')}
-              </Box>
-            ) : (
-              hits.map((hit) => (
-                <li key={hit.id}>
-                  <button
-                    type="button"
-                    className={cn(
-                      'flex w-full items-baseline gap-2 px-3 py-1.5 text-start text-sm hover:bg-accent',
-                      picked === hit.id && 'bg-accent',
-                    )}
-                    onClick={() => setPicked(hit.id)}
-                  >
-                    <Text as="span" size="xs" tone="muted" className="shrink-0 font-mono" dir="ltr">
-                      {hit.identifier}
-                    </Text>
-                    <span className="truncate" dir="auto">
-                      {hit.title}
-                    </span>
-                  </button>
-                </li>
-              ))
-            )}
-          </ul>
+          <ListBox>
+            <ul className="max-h-60 overflow-y-auto">
+              {hits.length === 0 ? (
+                <Box as="li" padX={3} padY={2} className="text-sm text-muted-foreground">
+                  {query.trim() ? t('noMatches') : t('typeToSearch')}
+                </Box>
+              ) : (
+                hits.map((hit) => (
+                  <li key={hit.id}>
+                    <button
+                      type="button"
+                      className={cn(
+                        'flex w-full items-baseline gap-2 px-3 py-1.5 text-start text-sm hover:bg-accent',
+                        picked === hit.id && 'bg-accent',
+                      )}
+                      onClick={() => setPicked(hit.id)}
+                    >
+                      <Text
+                        as="span"
+                        size="xs"
+                        tone="muted"
+                        className="shrink-0 font-mono"
+                        dir="ltr"
+                      >
+                        {hit.identifier}
+                      </Text>
+                      <span className="truncate" dir="auto">
+                        {hit.title}
+                      </span>
+                    </button>
+                  </li>
+                ))
+              )}
+            </ul>
+          </ListBox>
         </PipelineField>
       )}
       <div className="flex justify-end">

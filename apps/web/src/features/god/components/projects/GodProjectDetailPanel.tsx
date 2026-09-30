@@ -11,22 +11,17 @@ import { usePermissionCatalogQuery } from '@/services/roles.service';
 import { useInstanceProjectQuery } from '../../services/god.service';
 import { compactCount } from '../../utils/numbers';
 
-import { Box, Inline, Overlay, Stack, Text } from '@/design-system';
+import { Inline, Overlay, Stack, Text, Card, EmptyState } from '@/design-system';
 
 // One number from the project, with a quiet label under it. The counts read as a
 // grid so the size of a project is one glance rather than a list of sentences.
 function Stat({ label, value }: { label: string; value: number }) {
   const t = useTranslations('god.projectPanel');
   return (
-    <Box
-      padX={3}
-      padY={3}
-      className="rounded-md border border-sidebar-border bg-card"
-      title={t('statTitle', { label, value })}
-    >
+    <Card pad="tight" tooltip={t('statTitle', { label, value })}>
       <div className="text-xl font-semibold tabular-nums">{compactCount(value)}</div>
       <div className="text-xs text-muted-foreground">{label}</div>
-    </Box>
+    </Card>
   );
 }
 
@@ -123,20 +118,9 @@ export default function GodProjectDetailPanel({
                 )}
               </Inline>
               {project.members.length === 0 ? (
-                <Stack
-                  gap={2}
-                  padX={4}
-                  padY={5}
-                  className="flex flex-col items-center rounded-md border border-dashed border-sidebar-border text-center"
-                >
-                  <Users className="size-5 text-muted-foreground" />
-                  <Text as="p" size="sm" className="font-medium">
-                    {t('noMembersTitle')}
-                  </Text>
-                  <Text as="p" size="xs" tone="muted" className="max-w-[36ch]">
-                    {t('noMembersHint')}
-                  </Text>
-                </Stack>
+                <EmptyState boxed fill={false} icon={<Users />} title={t('noMembersTitle')}>
+                  {t('noMembersHint')}
+                </EmptyState>
               ) : (
                 <Stack gap={2}>
                   {project.members.map((m) => (

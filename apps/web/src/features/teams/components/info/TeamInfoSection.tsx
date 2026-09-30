@@ -1,5 +1,6 @@
 'use client';
 
+import { Sections } from '@/design-system';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
@@ -61,7 +62,7 @@ export default function TeamInfoSection({ teamId }: { teamId: number }) {
           saving={renameTeam.isPending}
         />
       )}
-      <div className="space-y-6">
+      <Sections>
         <SettingsSection title={t('team')} description={t('teamHint')}>
           <SettingsCard className="space-y-4 p-4">
             {isOwner ? (
@@ -113,7 +114,7 @@ export default function TeamInfoSection({ teamId }: { teamId: number }) {
             }
           />
         )}
-      </div>
+      </Sections>
 
       {leaving && <TeamLeaveDialog team={team} onClose={() => setLeaving(false)} />}
     </SectionPageView>

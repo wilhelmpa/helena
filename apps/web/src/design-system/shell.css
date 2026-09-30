@@ -685,14 +685,15 @@
     flex-wrap: wrap;
     row-gap: 0;
   }
+  /* The bar is 56px with its line, like on a desktop: the first row is one pixel less. */
   .ds-page-header .ds-page-heading {
-    height: var(--page-header-h);
+    height: calc(var(--page-header-h) - 1px);
     max-width: none;
     flex: 1 1 0;
     align-items: center;
   }
   .ds-page-header .ds-page-actions {
-    height: var(--page-header-h);
+    height: calc(var(--page-header-h) - 1px);
   }
   .ds-page-header .ds-page-bar {
     order: 3;
@@ -1039,6 +1040,41 @@
 }
 .ds-dock > span {
   pointer-events: none;
+}
+/* The orb floats over the bottom right corner (owner 30.09.: "Orb verdeckt nichts"): a scroller
+   that reaches it - HomeDock marks it, utils/orbClearance.ts - ends with an empty piece of the
+   orb's height, so its last row scrolls clear. The orb (64px) + its edge distance (24px) + air. */
+:root {
+  --orb-clear: 96px;
+}
+@media (min-width: 900px) {
+  [data-orb-clear]::after {
+    display: block;
+    height: var(--orb-clear);
+    flex: none;
+    content: '';
+  }
+}
+/* A phone (owner 30.09.): the orb is part of the top bar, at its right end, instead of floating over
+   the page - where it covered titles, list actions and the composer. The particle orb draws in the
+   middle ~70% of its box, so a 52px box is a ~36px orb in the 56px bar; the bar keeps that room free
+   (the spacer after its controls) and the page's content never meets it. */
+@media (max-width: 899px) {
+  .ds-dock {
+    top: calc(env(safe-area-inset-top, 0px) + 2px);
+    right: calc(var(--page-pad-x) - 8px + env(safe-area-inset-right, 0px));
+    bottom: auto;
+    width: 52px;
+    height: 52px;
+    --orb-size: 52px;
+  }
+  .ds-app:has(.ds-dock) .ds-page-header::after {
+    order: 2;
+    width: 36px;
+    height: calc(var(--page-header-h) - 1px);
+    flex: none;
+    content: '';
+  }
 }
 
 /* Installed app without a title bar (display_override): header and sidebar head are the
@@ -1448,10 +1484,22 @@
   margin-top: var(--space-1);
 }
 /* A used-up budget or a throttled agent: a clear border, no glow (owner, O71). */
-.organization-ring-group[data-throttled='true'],
-.organization-card[data-throttled='true'] {
+.organization-hover-card {
+  display: none;
+}
+@media (hover: hover) {
+  .organization-hover-card {
+    display: flex;
+  }
+}
+.organization-ring-group[data-throttled='true'] {
   border-color: var(--status-throttled) !important;
   border-width: 2px !important;
+}
+.organization-card[data-throttled='true'] {
+  box-shadow:
+    0 0 0 2px var(--status-throttled),
+    var(--shadow-card);
 }
 
 /* ── Team › Kreis (components/common/organization, owner 29.09., O71) ──────────────
@@ -1564,7 +1612,7 @@
   max-width: 188px;
   gap: var(--space-2);
   border-radius: var(--radius-full);
-  padding: 0 var(--space-4) 0 var(--space-3);
+  padding: 0 var(--box-pad-tight);
   text-align: start;
 }
 .ds-ring-pill[data-head] {

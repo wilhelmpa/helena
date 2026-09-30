@@ -13,7 +13,7 @@ import { usePluginTypes } from '../../hooks/usePluginTypes';
 import { useStepSummary } from '../../hooks/useStepSummary';
 import { isProjectIssue, stepIssues } from '../../utils/issueDisplay';
 import PipelineConditionLanes from './PipelineConditionLanes';
-import { Text } from '@/design-system';
+import { Text, Card } from '@/design-system';
 
 // A step in its lane: its kind, name, what it does and how many problems it has. A
 // click selects it for the inspector; the grip reorders it, by pointer or keyboard.
@@ -36,11 +36,13 @@ export default function PipelineStepCard({ step }: { step: PipelineStep }) {
       style={{ transform: CSS.Translate.toString(transform), transition }}
       className={cn('relative', isDragging && 'z-10 opacity-60')}
     >
-      <div
-        className={cn(
-          'flex items-start gap-1 rounded-md border bg-background p-2 transition-colors',
-          selectedId === step.id && 'border-foreground/25 bg-accent',
-        )}
+      <Card
+        tone="inset"
+        layout="row"
+        pad="tight"
+        gap={1}
+        selected={selectedId === step.id}
+        className="items-start"
       >
         {editable && (
           <button
@@ -81,7 +83,7 @@ export default function PipelineStepCard({ step }: { step: PipelineStep }) {
             </Badge>
           )}
         </button>
-      </div>
+      </Card>
       {isBranching(step) && <PipelineConditionLanes step={step} />}
     </li>
   );

@@ -5,7 +5,7 @@ import { CircleAlert, Paperclip, Reply, Sparkles, Star } from 'lucide-react';
 import type { MailThreadRow as Row } from '@/lib/api/endpoints/mail';
 import { cn } from '@/lib/utils';
 import { mailListDate } from '../utils/mailDates';
-import { Text } from '@/design-system';
+import { Text, Pill } from '@/design-system';
 import { ProjectTag } from '@/components/helena/ProjectTag';
 
 export default function MailThreadRow({
@@ -80,9 +80,7 @@ export default function MailThreadRow({
           <ProjectTag projectKey={row.projectKey ?? t('home')} />
         )}
         {triage?.category && (
-          <span className="shrink-0 rounded-sm border px-1 leading-4">
-            {tTriage(`categories.${triage.category}` as never)}
-          </span>
+          <Pill size="sm">{tTriage(`categories.${triage.category}` as never)}</Pill>
         )}
         {row.suggestedProjectKey && (
           <span className="flex shrink-0 items-center gap-0.5" title={t('suggested')}>

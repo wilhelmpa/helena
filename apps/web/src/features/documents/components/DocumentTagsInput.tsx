@@ -1,5 +1,6 @@
 'use client';
 
+import { FieldFrame } from '@/design-system';
 import { useState } from 'react';
 import { X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -26,7 +27,7 @@ export default function DocumentTagsInput({
   if (!editable && tags.length === 0) return <p className="text-sm">{t('noValue')}</p>;
 
   return (
-    <div className="flex min-h-8 flex-wrap items-center gap-1 rounded-md border bg-background px-1.5 py-1 focus-within:ring-2 focus-within:ring-ring/50">
+    <FieldFrame>
       {tags.map((tag) => (
         <span
           key={tag}
@@ -66,6 +67,6 @@ export default function DocumentTagsInput({
           }}
         />
       )}
-    </div>
+    </FieldFrame>
   );
 }

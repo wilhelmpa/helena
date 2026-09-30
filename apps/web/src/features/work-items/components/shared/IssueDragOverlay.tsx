@@ -1,3 +1,4 @@
+import { Card } from '@/design-system';
 import { DragOverlay } from '@dnd-kit/core';
 import type { Issue } from '@/lib/api/endpoints/issues';
 
@@ -12,12 +13,12 @@ export function IssueDragOverlay({ issue }: { issue: Issue | null }) {
   return (
     <DragOverlay dropAnimation={null}>
       {issue ? (
-        <div className="flex max-w-[360px] items-center gap-2 rounded-md border bg-background px-3 py-2 text-sm shadow-lg">
+        <Card tone="popover" layout="row" gap={2} className="max-w-[360px] items-center text-sm">
           <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
             {issue.identifier}
           </span>
           <span className="truncate text-foreground">{issue.title}</span>
-        </div>
+        </Card>
       ) : null}
     </DragOverlay>
   );

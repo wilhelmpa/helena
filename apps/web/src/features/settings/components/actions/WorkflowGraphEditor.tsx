@@ -25,7 +25,7 @@ import {
 import { SettingsEffectEditor } from './SettingsEffectEditor';
 import { uuid } from '@/utils/uuid';
 
-import { Inline, Stack, Box } from '@/design-system';
+import { Inline, Stack, Box, Card } from '@/design-system';
 
 export function WorkflowGraphEditor({
   workflow,
@@ -142,7 +142,7 @@ export function WorkflowGraphEditor({
             <Badge variant="outline">{branchLabel}</Badge>
           </div>
         )}
-        <Box pad={4} className="rounded-lg border bg-background shadow-sm">
+        <Card tone="inset">
           <Inline
             gap={2}
             justify="between"
@@ -200,7 +200,7 @@ export function WorkflowGraphEditor({
               onChange={(config) => updateNode(node.id, config)}
             />
           )}
-        </Box>
+        </Card>
         {node.type === 'condition' ? (
           <div className="grid gap-4 md:grid-cols-2">
             {(['true', 'false'] as const).map((branch) => {

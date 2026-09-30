@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils';
 import type { LabRun } from '@/lib/api/endpoints/browserTask';
 import { formatDateTime } from '@/utils/dates';
 import { formatCost, formatSeconds, isLabStatus, statusVariant } from './LabRunPanel';
-import { Table, Th, Tr, Td } from '@/design-system';
+import { Table, Th, Tr, Td, Card } from '@/design-system';
 
 // Every browser task of this browser, the tests and the agents' own, newest first: which backend,
 // how it ended, how long, how many decisions and tokens, what it cost — the comparison.
@@ -22,7 +22,7 @@ export function LabRunsTable({
   const locale = useLocale();
   if (runs.length === 0) return <p className="px-1 text-sm text-muted-foreground">{t('empty')}</p>;
   return (
-    <div className="overflow-x-auto rounded-md border border-sidebar-border bg-card">
+    <Card pad="none" className="overflow-x-auto">
       <Table stack={false} className="min-w-[640px]">
         <thead>
           <Tr>
@@ -77,6 +77,6 @@ export function LabRunsTable({
           ))}
         </tbody>
       </Table>
-    </div>
+    </Card>
   );
 }

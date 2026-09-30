@@ -26,7 +26,7 @@ import {
 import { SettingsStateRow } from './SettingsStateRow';
 import SettingsDeleteStateDialog from './SettingsDeleteStateDialog';
 
-import { Stack, Box, Text } from '@/design-system';
+import { Stack, Box, Text, ListBox } from '@/design-system';
 
 // The workflow states, grouped by state type. Each group has its own inline add;
 // states are reordered within their group by drag, edited inline, and deleted.
@@ -150,76 +150,80 @@ export default function SettingsStates({ project }: { project: ProjectDetail }) 
                     </Button>
                   )}
                 </Box>
-                <ItemGroup className="overflow-hidden rounded-md border bg-card">
-                  {group.length === 0 && addingType !== s && (
-                    <SettingsEmpty
-                      title={t('emptyTitle', { type: tStateType(s) })}
-                      description={t('emptyHint')}
-                    />
-                  )}
-                  <SortableContext
-                    items={group.map((c) => c.id)}
-                    strategy={verticalListSortingStrategy}
-                  >
-                    {group.map((c) =>
-                      editingId === c.id ? (
-                        <SettingsInlineEditForm
-                          key={c.id}
-                          name={editName}
-                          onNameChange={setEditName}
-                          placeholder={t('namePlaceholder')}
-                          submitLabel={tCommon('save')}
-                          onSubmit={() => void saveEdit(c)}
-                          onCancel={() => setEditingId(null)}
-                          leading={<SettingsColorField value={editColor} onChange={setEditColor} />}
-                          trailing={
-                            <>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <span>
-                                    <AssigneeSelect
-                                      assignees={project.assignees}
-                                      value={editAutoAssign}
-                                      onChange={setEditAutoAssign}
-                                      placeholder={t('autoAssign.none')}
-                                    />
-                                  </span>
-                                </TooltipTrigger>
-                                <TooltipContent>{t('autoAssign.help')}</TooltipContent>
-                              </Tooltip>
-                              <SettingsWipLimitField
-                                limit={editWip.limit}
-                                mode={editWip.mode}
-                                onChange={(limit, mode) => setEditWip({ limit, mode })}
-                              />
-                            </>
-                          }
-                        />
-                      ) : (
-                        <SettingsStateRow
-                          key={c.id}
-                          column={c}
-                          autoAssignee={project.assignees.find(
-                            (a) => a.userId === c.autoAssignUserId,
-                          )}
-                          onEdit={() => startEdit(c)}
-                          onDelete={() => setDeleting(c)}
-                        />
-                      ),
+                <ListBox>
+                  <ItemGroup>
+                    {group.length === 0 && addingType !== s && (
+                      <SettingsEmpty
+                        title={t('emptyTitle', { type: tStateType(s) })}
+                        description={t('emptyHint')}
+                      />
                     )}
-                  </SortableContext>
-                  {addingType === s && (
-                    <SettingsInlineEditForm
-                      name={name}
-                      onNameChange={setName}
-                      placeholder={t('namePlaceholder')}
-                      submitLabel={tCommon('add')}
-                      onSubmit={() => void add(s)}
-                      onCancel={() => setAddingType(null)}
-                      leading={<SettingsColorField value={color} onChange={setColor} />}
-                    />
-                  )}
-                </ItemGroup>
+                    <SortableContext
+                      items={group.map((c) => c.id)}
+                      strategy={verticalListSortingStrategy}
+                    >
+                      {group.map((c) =>
+                        editingId === c.id ? (
+                          <SettingsInlineEditForm
+                            key={c.id}
+                            name={editName}
+                            onNameChange={setEditName}
+                            placeholder={t('namePlaceholder')}
+                            submitLabel={tCommon('save')}
+                            onSubmit={() => void saveEdit(c)}
+                            onCancel={() => setEditingId(null)}
+                            leading={
+                              <SettingsColorField value={editColor} onChange={setEditColor} />
+                            }
+                            trailing={
+                              <>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <span>
+                                      <AssigneeSelect
+                                        assignees={project.assignees}
+                                        value={editAutoAssign}
+                                        onChange={setEditAutoAssign}
+                                        placeholder={t('autoAssign.none')}
+                                      />
+                                    </span>
+                                  </TooltipTrigger>
+                                  <TooltipContent>{t('autoAssign.help')}</TooltipContent>
+                                </Tooltip>
+                                <SettingsWipLimitField
+                                  limit={editWip.limit}
+                                  mode={editWip.mode}
+                                  onChange={(limit, mode) => setEditWip({ limit, mode })}
+                                />
+                              </>
+                            }
+                          />
+                        ) : (
+                          <SettingsStateRow
+                            key={c.id}
+                            column={c}
+                            autoAssignee={project.assignees.find(
+                              (a) => a.userId === c.autoAssignUserId,
+                            )}
+                            onEdit={() => startEdit(c)}
+                            onDelete={() => setDeleting(c)}
+                          />
+                        ),
+                      )}
+                    </SortableContext>
+                    {addingType === s && (
+                      <SettingsInlineEditForm
+                        name={name}
+                        onNameChange={setName}
+                        placeholder={t('namePlaceholder')}
+                        submitLabel={tCommon('add')}
+                        onSubmit={() => void add(s)}
+                        onCancel={() => setAddingType(null)}
+                        leading={<SettingsColorField value={color} onChange={setColor} />}
+                      />
+                    )}
+                  </ItemGroup>
+                </ListBox>
               </Box>
             );
           })}

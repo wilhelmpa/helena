@@ -8,7 +8,7 @@ import { formatDateTime } from '@/utils/dates';
 import { useRemoteImages } from '../services/mail.service';
 import MailAttachmentChips from './MailAttachmentChips';
 import MailHtmlFrame from './MailHtmlFrame';
-import { Box, Inline, Text } from '@/design-system';
+import { Box, Inline, Text, Card } from '@/design-system';
 
 function names(list: MailAddress[]): string {
   return list.map((item) => item.name || item.address).join(', ');
@@ -25,7 +25,7 @@ export default function MailMessageCard({
   const remote = useRemoteImages(threadId);
   const blocked = message.hasRemoteImages && !message.allowRemoteImages;
   return (
-    <article className="rounded-md border bg-card">
+    <Card as="article" pad="none">
       <Box
         as="header"
         padX={4}
@@ -80,6 +80,6 @@ export default function MailMessageCard({
         )}
       </Box>
       {message.attachments.length > 0 && <MailAttachmentChips attachments={message.attachments} />}
-    </article>
+    </Card>
   );
 }

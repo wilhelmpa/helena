@@ -1,5 +1,6 @@
 'use client';
 
+import { Card } from '@/design-system';
 import { useState } from 'react';
 import {
   Archive,
@@ -64,11 +65,11 @@ export function BulkActionBar({ project }: { project: ProjectDetail }) {
   return (
     <>
       <div className="pointer-events-none fixed inset-x-0 bottom-6 z-50 flex justify-center">
-        <div
-          className={cn(
-            'pointer-events-auto flex items-center gap-1 rounded-md border bg-popover p-1 pl-3 shadow-lg',
-            disabled && 'opacity-70',
-          )}
+        <Card
+          tone="popover"
+          layout="row"
+          gap={1}
+          className={cn('pointer-events-auto items-center', disabled && 'opacity-70')}
         >
           <span className="pr-1 text-sm font-medium whitespace-nowrap">
             {t('selected', { count: ids.length })}
@@ -276,7 +277,7 @@ export function BulkActionBar({ project }: { project: ProjectDetail }) {
             </TooltipTrigger>
             <TooltipContent>{t('clearSelection')}</TooltipContent>
           </Tooltip>
-        </div>
+        </Card>
       </div>
 
       {confirming && (

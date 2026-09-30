@@ -1,5 +1,6 @@
 'use client';
 
+import { Card } from '@/design-system';
 import { useState, type ReactNode } from 'react';
 import { ListFilter } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -126,7 +127,7 @@ export default function TeamCredentialsSection({
             <EmptyState title={t('empty')} description={t('emptyHint')} />
           ) : (
             <>
-              <ul className="divide-y overflow-hidden rounded-md border border-sidebar-border bg-card">
+              <Card as="ul" pad="none" className="divide-y overflow-hidden">
                 {page.data.items.map((entry) => (
                   <CredentialRow
                     key={entry.id}
@@ -139,7 +140,7 @@ export default function TeamCredentialsSection({
                     }
                   />
                 ))}
-              </ul>
+              </Card>
               <ListPager paging={paging} total={page.data.total} />
             </>
           )}

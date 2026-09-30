@@ -1,3 +1,4 @@
+import { Card, Notice } from '@/design-system';
 import { Code2, Lock } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
@@ -20,7 +21,7 @@ export default function FileLoadError({
 
   if (unreadable || missing) {
     return (
-      <div className="rounded-md border p-4">
+      <Card>
         <Lock className="size-6 text-muted-foreground" />
         <p className="mt-3 text-sm font-medium">
           {unreadable ? t('unreadable.title') : t('unreadable.missing')}
@@ -34,15 +35,19 @@ export default function FileLoadError({
             </a>
           </Button>
         )}
-      </div>
+      </Card>
     );
   }
   return (
-    <div className="rounded-md border border-destructive/30 bg-destructive/10 p-4">
-      <p className="text-sm text-destructive">{t('loadError')}</p>
-      <Button variant="outline" size="sm" className="mt-3" onClick={onRetry}>
-        {t('retry')}
-      </Button>
-    </div>
+    <Notice
+      tone="danger"
+      action={
+        <Button variant="outline" size="sm" onClick={onRetry}>
+          {t('retry')}
+        </Button>
+      }
+    >
+      {t('loadError')}
+    </Notice>
   );
 }

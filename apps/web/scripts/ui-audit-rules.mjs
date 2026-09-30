@@ -122,3 +122,86 @@ export function overlayFindings(scenes, { theme, width }) {
   }
   return out;
 }
+
+// The content of every page (owner 30.09.: "gleiche Abstände, gleiche Hintergründe, gleiche
+// Boxen"): the page ground is the ground token; every box is THE box (radius 12, surface-1, the
+// card shadow, 16px inside) or an inset (radius 8, surface-2); boxes and sections stand the same
+// distance apart; a page's own empty state has its symbol in the same place; section titles have one
+// size. `content` = what measureContent() found in the browser:
+//   { ground: { ok, token }, boxes: [{ at, kind, radius, bg, shadow, pad }], rogue: [at],
+//     gaps: [{ a, b, gap }], sectionGaps: [{ gap }], empty: [{ icon, fill, height, expected }], heads: [...] }
+export const BOX = { radius: '12px', pad: 16, gap: 16, sectionGap: 32, inset: '8px' };
+
+export function contentFindings(results) {
+  const out = [];
+  for (const r of results) {
+    const c = r.content;
+    if (!c || c.none) continue;
+    const tag = `${r.theme}/${r.width} ${r.route}`;
+    if (c.ground && !c.ground.ok)
+      out.push(`${tag}: Seitengrund ${c.ground.color} ist nicht das Grund-Token`);
+    for (const box of c.boxes) {
+      const label = `${box.at}`;
+      if (box.kind === 'inset') {
+        if (box.radius !== BOX.inset)
+          out.push(`${tag}: Einschub ${label} hat Radius ${box.radius} statt ${BOX.inset}`);
+        if (box.bg !== '--surface-2' && !(box.selected && box.bg === '--surface-3'))
+          out.push(`${tag}: Einschub ${label} liegt auf ${box.bg} statt --surface-2`);
+        continue;
+      }
+      if (box.radius !== BOX.radius)
+        out.push(`${tag}: Box ${label} hat Radius ${box.radius} statt ${BOX.radius}`);
+      if (box.bg !== '--surface-1' && box.bg !== '--surface-2' && box.bg !== '--surface-3')
+        out.push(`${tag}: Box ${label} hat den Hintergrund ${box.bg}, kein Flächen-Token`);
+      if (box.kind === 'card' && box.bg === '--surface-1' && !box.shadow)
+        out.push(`${tag}: Box ${label} hat keinen Kartenschatten`);
+      if (
+        box.kind === 'card' &&
+        box.pad != null &&
+        box.pad.some((v) => differs(v, BOX.pad)) &&
+        !box.padVariant
+      )
+        out.push(
+          `${tag}: Karte ${label} hat Innenabstand ${box.pad.join('/')} px statt ${BOX.pad} px`,
+        );
+    }
+    for (const at of c.rogue) out.push(`${tag}: eigene Box ${at} statt Card/ListBox`);
+    for (const g of c.gaps)
+      if (differs(g.gap, BOX.gap))
+        out.push(
+          `${tag}: Boxen ${g.a} / ${g.b} stehen ${g.gap} px auseinander statt ${BOX.gap} px`,
+        );
+    for (const g of c.sectionGaps)
+      if (differs(g.gap, BOX.sectionGap))
+        out.push(
+          `${tag}: Abschnitte ${g.a} / ${g.b} stehen ${g.gap} px auseinander statt ${BOX.sectionGap} px`,
+        );
+    for (const e of c.empty) {
+      if (!e.icon) out.push(`${tag}: Leerzustand ohne Symbol`);
+      if (e.fill && e.height < e.expected - 2)
+        out.push(`${tag}: Leerzustand ist ${e.height} px hoch statt ${e.expected} px`);
+    }
+    for (const h of c.heads) {
+      if (h.kind === 'section' && (h.size !== 15 || h.weight !== 520))
+        out.push(`${tag}: Abschnittstitel "${h.text}" ist ${h.size}/${h.weight} statt 15/520`);
+      if (h.kind === 'label' && h.size !== 10)
+        out.push(`${tag}: Kleinbeschriftung "${h.text}" ist ${h.size} px statt 10 px`);
+      if (h.kind === 'group' && differs(h.height, 32))
+        out.push(`${tag}: Gruppenkopf "${h.text}" ist ${h.height} px hoch statt 32 px`);
+      if (h.kind === 'stray') out.push(`${tag}: Überschrift "${h.text}" ohne Baustein (${h.at})`);
+    }
+  }
+  return out;
+}
+
+// The desktop orb (owner 30.09.: "Orb verdeckt nichts"): at the end of every scroller nothing that
+// can be read or clicked lies under it. `orb` = what measureOrb() found: { hits: ['Aktion a "Speichern"'] }.
+export function orbFindings(results) {
+  const out = [];
+  for (const r of results) {
+    if (!r.orb || r.orb.none) continue;
+    for (const hit of r.orb.hits ?? [])
+      out.push(`${r.theme}/${r.width} ${r.route}: der Orb verdeckt ${hit}`);
+  }
+  return out;
+}

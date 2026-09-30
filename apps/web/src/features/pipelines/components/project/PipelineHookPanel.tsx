@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { API_URL } from '@/lib/api/core/client';
 import { usePipelineHook, usePipelineHookControl } from '@/services/engine.service';
 import { formatDateTime } from '@/utils/dates';
-import { Inline, Stack, Text } from '@/design-system';
+import { Inline, Text, Card } from '@/design-system';
 
 // The address a sender posts to for a workflow with a webhook trigger, in this project.
 // Its secret is shown once, when the address is created or given a new secret; a sender
@@ -33,7 +33,7 @@ export default function PipelineHookPanel({
   const create = async () => setSecret((await control.create.mutateAsync()).secret);
 
   return (
-    <Stack gap={3} pad={3} className="rounded-md border bg-background">
+    <Card tone="inset" pad="tight">
       <Inline gap={2} wrap>
         <Webhook className="size-4 text-muted-foreground" />
         <Text as="span" size="sm" className="font-medium">
@@ -105,6 +105,6 @@ export default function PipelineHookPanel({
           </Text>
         </ConfirmDialog>
       )}
-    </Stack>
+    </Card>
   );
 }

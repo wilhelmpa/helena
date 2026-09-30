@@ -1,5 +1,6 @@
 'use client';
 
+import { Card } from '@/design-system';
 import Link from 'next/link';
 import { useQueryClient } from '@tanstack/react-query';
 import { useLocale, useTranslations } from 'next-intl';
@@ -49,7 +50,7 @@ export default function OverviewTab({ tabs }: { tabs: ServerTab[] }) {
         onRefresh={() => void qc.invalidateQueries({ queryKey: serverKeys.all })}
       />
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-        <section className="space-y-3 rounded-md border border-sidebar-border bg-card p-4">
+        <Card as="section">
           <CardHeader title={t('overview.machine')} />
           {data ? (
             <Facts>
@@ -77,9 +78,9 @@ export default function OverviewTab({ tabs }: { tabs: ServerTab[] }) {
           ) : (
             <ListSkeleton rows={2} />
           )}
-        </section>
+        </Card>
 
-        <section className="space-y-3 rounded-md border border-sidebar-border bg-card p-4">
+        <Card as="section">
           <CardHeader title={t('overview.memory')} />
           {data ? (
             <Facts>
@@ -116,9 +117,9 @@ export default function OverviewTab({ tabs }: { tabs: ServerTab[] }) {
           ) : (
             <ListSkeleton rows={2} />
           )}
-        </section>
+        </Card>
 
-        <section className="space-y-3 rounded-md border border-sidebar-border bg-card p-4 xl:col-span-2">
+        <Card as="section" className="xl:col-span-2">
           <CardHeader title={t('overview.localAiGuard')}>
             <Button
               variant="outline"
@@ -158,9 +159,9 @@ export default function OverviewTab({ tabs }: { tabs: ServerTab[] }) {
           ) : (
             <ListSkeleton rows={1} />
           )}
-        </section>
+        </Card>
 
-        <section className="space-y-2 rounded-md border border-sidebar-border bg-card p-4 xl:col-span-2">
+        <Card as="section" gap={2} className="xl:col-span-2">
           <CardHeader title={t('overview.health')} />
           {overview.data ? (
             <div className="grid grid-cols-1 gap-x-6 gap-y-3 lg:grid-cols-2">
@@ -194,7 +195,7 @@ export default function OverviewTab({ tabs }: { tabs: ServerTab[] }) {
               {t('overview.helper', { version: overview.data.helper.version })}
             </p>
           )}
-        </section>
+        </Card>
         <ServerSections area="overview" />
       </div>
     </>

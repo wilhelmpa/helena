@@ -11,7 +11,7 @@ import { useCreateColumn, useUpdateColumn } from '../../services/settings.servic
 import type { PlannedState } from '../../utils/statesTransfer';
 import { useTransferActionLabel } from '../../utils/transferAction';
 
-import { Stack, Text, Inline } from '@/design-system';
+import { Stack, Text, Inline, ListBox } from '@/design-system';
 
 // Confirms a states paste before applying it: lists each incoming state, its group,
 // and whether it is created or updates an existing state's color. On confirm, new
@@ -67,31 +67,33 @@ export default function StatesImportDialog({
         <Text as="p" size="xs" tone="muted">
           {t('importSummary', { count: applicable.length })}
         </Text>
-        <div className="max-h-[50vh] divide-y divide-border/60 overflow-y-auto rounded-md border border-border/60">
-          {planned.map((state) => (
-            <Inline
-              gap={3}
-              padX={3}
-              padY={3}
-              key={`${state.stateType}:${state.name}`}
-              className="flex items-center"
-            >
-              {colorDot(state.color)}
-              <Text as="span" size="sm" className="min-w-0 flex-1 truncate font-medium">
-                {state.name}
-              </Text>
-              <Text as="span" size="xs" tone="muted" className="shrink-0">
-                {tStateType(state.stateType)}
-              </Text>
-              <Badge
-                variant={state.action === 'unchanged' ? 'outline' : 'secondary'}
-                className="shrink-0 px-1.5 py-0 text-xs font-normal"
+        <ListBox>
+          <div className="max-h-[50vh] divide-y divide-border/60 overflow-y-auto">
+            {planned.map((state) => (
+              <Inline
+                gap={3}
+                padX={3}
+                padY={3}
+                key={`${state.stateType}:${state.name}`}
+                className="flex items-center"
               >
-                {actionLabel(state.action)}
-              </Badge>
-            </Inline>
-          ))}
-        </div>
+                {colorDot(state.color)}
+                <Text as="span" size="sm" className="min-w-0 flex-1 truncate font-medium">
+                  {state.name}
+                </Text>
+                <Text as="span" size="xs" tone="muted" className="shrink-0">
+                  {tStateType(state.stateType)}
+                </Text>
+                <Badge
+                  variant={state.action === 'unchanged' ? 'outline' : 'secondary'}
+                  className="shrink-0 px-1.5 py-0 text-xs font-normal"
+                >
+                  {actionLabel(state.action)}
+                </Badge>
+              </Inline>
+            ))}
+          </div>
+        </ListBox>
         <Inline gap={2} align="stretch" justify="end" className="flex justify-end">
           <Button variant="outline" onClick={onClose} disabled={busy}>
             {tCommon('cancel')}

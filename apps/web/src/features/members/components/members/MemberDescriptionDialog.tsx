@@ -7,10 +7,9 @@ import type { MemberRow } from '@/lib/api/endpoints/members';
 import Avatar from '@/components/common/Avatar';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useSetMemberDescription } from '@/services/members.service';
-import { Box, Inline, Stack, Text } from '@/design-system';
+import { Box, Inline, Stack, Text, TextArea } from '@/design-system';
 
 // The "Edit" action for a member's project description: a button that opens a
 // centered dialog with a textarea. A member edits their own; editing anyone else's
@@ -91,7 +90,7 @@ export default function MemberDescriptionDialog({
                 </Inline>
               </Stack>
               <Stack gap={4} className="w-full items-end">
-                <Textarea
+                <TextArea
                   autoFocus
                   maxLength={500}
                   value={value}
@@ -100,7 +99,7 @@ export default function MemberDescriptionDialog({
                   onKeyDown={(e) => {
                     if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') void save();
                   }}
-                  className="min-h-40 w-full rounded-lg border-0 bg-card p-4 text-base leading-relaxed shadow-sm focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                  className="min-h-40 w-full text-base leading-relaxed"
                 />
                 <Button
                   size="lg"

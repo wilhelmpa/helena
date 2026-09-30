@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useAgentEnvironmentQuery } from '@/services/credentials.service';
 import { accessPath } from '@/utils/paths';
-import { EmptyState } from '@/design-system';
+import { EmptyState, Card } from '@/design-system';
 
 // The environment variables from Zugänge that reach an agent's runs, or those of a project's
 // agents (docs/helena-decisions/agent-env.md): names and where they come from, never a
@@ -41,7 +41,7 @@ export function EnvironmentVariableList({
           {t('empty')}
         </EmptyState>
       ) : (
-        <ul className="divide-y divide-sidebar-border overflow-hidden rounded-md border border-sidebar-border bg-card">
+        <Card as="ul" pad="none" className="divide-y divide-sidebar-border overflow-hidden">
           {variables.map((variable) => (
             <li key={variable.credentialId} className="flex items-center gap-3 px-3 py-2">
               {variable.secret ? (
@@ -65,7 +65,7 @@ export function EnvironmentVariableList({
               )}
             </li>
           ))}
-        </ul>
+        </Card>
       )}
       <Button asChild variant="outline" size="sm">
         <Link href={accessPath('credentials')}>

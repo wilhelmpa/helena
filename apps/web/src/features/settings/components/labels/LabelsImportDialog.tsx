@@ -17,7 +17,7 @@ import {
 import type { LabelsImportPlan, PlannedGroup, PlannedLabel } from '../../utils/labelsTransfer';
 import { useTransferActionLabel } from '../../utils/transferAction';
 
-import { Inline, Text, Stack } from '@/design-system';
+import { Inline, Text, Stack, ListBox } from '@/design-system';
 
 function ItemRow({
   color,
@@ -135,11 +135,13 @@ export default function LabelsImportDialog({
             <Text as="p" size="xs" tone="muted" className="font-medium">
               {t('groups')}
             </Text>
-            <div className="divide-y divide-border/60 overflow-hidden rounded-md border border-border/60">
-              {plan.groups.map((g) => (
-                <ItemRow key={g.name} color={g.color} name={g.name} action={g.action} />
-              ))}
-            </div>
+            <ListBox>
+              <div className="divide-y divide-border/60">
+                {plan.groups.map((g) => (
+                  <ItemRow key={g.name} color={g.color} name={g.name} action={g.action} />
+                ))}
+              </div>
+            </ListBox>
           </Stack>
         )}
 
@@ -148,17 +150,19 @@ export default function LabelsImportDialog({
             <Text as="p" size="xs" tone="muted" className="font-medium">
               {t('labels')}
             </Text>
-            <div className="max-h-[40vh] divide-y divide-border/60 overflow-y-auto rounded-md border border-border/60">
-              {plan.labels.map((l) => (
-                <ItemRow
-                  key={l.name}
-                  color={l.color}
-                  name={l.name}
-                  meta={l.group ?? t('ungrouped')}
-                  action={l.action}
-                />
-              ))}
-            </div>
+            <ListBox>
+              <div className="max-h-[40vh] divide-y divide-border/60 overflow-y-auto">
+                {plan.labels.map((l) => (
+                  <ItemRow
+                    key={l.name}
+                    color={l.color}
+                    name={l.name}
+                    meta={l.group ?? t('ungrouped')}
+                    action={l.action}
+                  />
+                ))}
+              </div>
+            </ListBox>
           </Stack>
         )}
 

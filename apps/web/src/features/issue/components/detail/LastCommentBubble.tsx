@@ -1,3 +1,4 @@
+import { Card } from '@/design-system';
 import { useEffect, useState, type RefObject } from 'react';
 import { X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -70,13 +71,15 @@ export default function LastCommentBubble({
     // z-50 and the end edge put it over the floating chat button at z-40.
     <div className="pointer-events-none sticky bottom-4 z-50 h-0" aria-hidden={!shown}>
       <div className="flex -translate-y-full justify-end">
-        <div
+        <Card
+          tone="popover"
+          layout="row"
+          gap={1}
+          // It floats over the page: the box that floats (the overlay shadow), on an opaque
+          // surface. Hidden by opacity rather than unmounted, so a turn that ends fades out
+          // as it came in.
           className={cn(
-            // Same fill, outline and radius as a comment in the feed, on an opaque
-            // background because it floats over the page.
-            'flex max-w-sm items-start gap-1 rounded-md border border-black/4 bg-background py-2 ps-3 pe-2 shadow-[var(--overlay-shadow)] transition duration-300 ease-out hover:bg-muted/40 motion-reduce:transition-none dark:border-white/8',
-            // Hidden by opacity rather than unmounted, so a turn that ends fades out
-            // as it came in.
+            'max-w-sm items-start transition duration-300 ease-out motion-reduce:transition-none',
             shown ? 'pointer-events-auto translate-y-0 opacity-100' : 'translate-y-2 opacity-0',
           )}
         >
@@ -115,7 +118,7 @@ export default function LastCommentBubble({
           >
             <X className="size-3.5" />
           </button>
-        </div>
+        </Card>
       </div>
     </div>
   );

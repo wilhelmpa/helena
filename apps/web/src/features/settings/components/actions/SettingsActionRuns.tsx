@@ -9,7 +9,7 @@ import { formatDateTime } from '@/utils/dates';
 import ListSkeleton from '@/components/common/skeleton/ListSkeleton';
 import { Badge } from '@/components/ui/badge';
 
-import { Box, Stack, Text, Table, Td, Th, Tr } from '@/design-system';
+import { Box, Stack, Text, Table, Td, Th, Tr, EmptyState } from '@/design-system';
 
 export function SettingsActionRuns({ project }: { project: ProjectDetail }) {
   const t = useTranslations('settings.actions');
@@ -32,11 +32,9 @@ export function SettingsActionRuns({ project }: { project: ProjectDetail }) {
       {query.isPending ? (
         <ListSkeleton rows={3} rowClassName="h-10" />
       ) : runs.length === 0 ? (
-        <Box as="p" pad={4} className="rounded-md border">
-          <Text as="span" size="sm" tone="muted">
-            {t('noRuns')}
-          </Text>
-        </Box>
+        <EmptyState boxed fill={false}>
+          {t('noRuns')}
+        </EmptyState>
       ) : (
         <Table stack={false} className="min-w-[760px] table-fixed">
           <colgroup>

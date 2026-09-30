@@ -11,6 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Card } from '@/design-system';
 import LocalAiJevPanel from './LocalAiJevPanel';
 
 export default function JevToggle() {
@@ -21,7 +22,7 @@ export default function JevToggle() {
   const teamId = managed.find((team) => team.id === chosen)?.id ?? managed[0]?.id ?? null;
   const query = useDecisionClassesQuery(teamId);
   return (
-    <section className="space-y-3 rounded-md border p-3" aria-label={t('title')}>
+    <Card as="section" tone="inset" pad="tight" aria-label={t('title')}>
       {managed.length > 1 && (
         <Select value={String(teamId)} onValueChange={(value) => setChosen(Number(value))}>
           <SelectTrigger aria-label={t('team')}>
@@ -45,6 +46,6 @@ export default function JevToggle() {
       ) : query.data ? (
         <LocalAiJevPanel key={teamId} teamId={teamId} data={query.data} />
       ) : null}
-    </section>
+    </Card>
   );
 }

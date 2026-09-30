@@ -1,5 +1,6 @@
 'use client';
 
+import { Card } from '@/design-system';
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useRelativeTime } from '@/context/relativeTimeContext';
@@ -63,7 +64,7 @@ export default function PolicyDecisionLog({ projectKey }: { projectKey: string }
           </button>
         ))}
       </div>
-      <div className="overflow-hidden rounded-md border border-sidebar-border bg-card">
+      <Card pad="none" className="overflow-hidden">
         {query.isLoading ? (
           <div className="p-3">
             <ListSkeleton rows={4} rowClassName="h-8" />
@@ -77,7 +78,7 @@ export default function PolicyDecisionLog({ projectKey }: { projectKey: string }
             ))}
           </ul>
         )}
-      </div>
+      </Card>
       {items.length < total && (
         <Button variant="outline" size="sm" onClick={() => setPages((n) => n + 1)}>
           {t('logMore')}

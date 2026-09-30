@@ -38,7 +38,7 @@ export default function DocumentSidebar({
 
   return (
     <aside
-      className={cn('flex w-full shrink-0 flex-col border-e bg-card md:w-72', className)}
+      className={cn('ds-pane flex w-full shrink-0 flex-col md:w-72', className)}
       aria-label={t('treeLabel')}
     >
       {showTrash && (

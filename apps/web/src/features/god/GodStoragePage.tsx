@@ -1,5 +1,6 @@
 'use client';
 
+import { Sections } from '@/design-system';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
@@ -89,7 +90,7 @@ function StorageForm({ settings }: { settings: FormState }) {
         disabled={!dirty || !valid}
         saving={update.isPending}
       />
-      <div className="space-y-6">
+      <Sections>
         <SettingsSection title={t('fileSize')} description={t('fileSizeHint')}>
           <SettingsCard className="grid gap-4 p-4 sm:grid-cols-2">
             <div className="space-y-1.5">
@@ -150,7 +151,7 @@ function StorageForm({ settings }: { settings: FormState }) {
             <p className="text-xs text-muted-foreground">{t('quotaNote')}</p>
           </SettingsCard>
         </SettingsSection>
-      </div>
+      </Sections>
     </GodSectionPage>
   );
 }

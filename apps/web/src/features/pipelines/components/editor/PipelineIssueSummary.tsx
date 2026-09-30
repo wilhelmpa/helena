@@ -4,7 +4,7 @@ import { useTranslations } from 'next-intl';
 import { usePipelineEditor } from '../../context/pipelineEditor';
 import { splitIssues } from '../../utils/issueDisplay';
 import PipelineIssueList from '../PipelineIssueList';
-import { Stack, Text } from '@/design-system';
+import { Stack, Text, Card } from '@/design-system';
 
 // Every problem of the draft above the builder. A problem of a step selects it.
 export default function PipelineIssueSummary() {
@@ -14,7 +14,7 @@ export default function PipelineIssueSummary() {
   if (issues.length === 0) return null;
 
   return (
-    <Stack gap={3} pad={4} className="rounded-md border bg-card">
+    <Card>
       {blocking.length > 0 && (
         <Stack gap={2}>
           <Text as="p" size="sm" tone="danger" className="font-medium">
@@ -34,6 +34,6 @@ export default function PipelineIssueSummary() {
           <PipelineIssueList issues={warnings} onSelect={select} />
         </Stack>
       )}
-    </Stack>
+    </Card>
   );
 }

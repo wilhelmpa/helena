@@ -21,7 +21,7 @@ import {
 } from '@/services/members.service';
 import { useTeamRoleOptionsQuery } from '@/services/roles.service';
 import MemberPicker, { type MemberOption } from './MemberPicker';
-import { Box, Inline, Stack, Text } from '@/design-system';
+import { Box, Stack, Text, Card } from '@/design-system';
 
 // The message for each refusal the API can answer with; any other error falls back
 // to 'refused'.
@@ -181,7 +181,7 @@ export default function MemberAddDialog({
         </div>
 
         {target?.kind === 'invite' && (
-          <Inline gap={3} padX={4} padY={3} className="rounded-md border bg-muted/30">
+          <Card tone="inset" layout="row" gap={3} className="items-center">
             <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
               <Mail className="size-4" />
             </span>
@@ -193,7 +193,7 @@ export default function MemberAddDialog({
                 {t('willJoinTeam', { teamName })}
               </Text>
             </div>
-          </Inline>
+          </Card>
         )}
 
         <Box padTop={4} className="flex justify-end border-t">

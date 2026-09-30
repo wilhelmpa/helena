@@ -1,5 +1,6 @@
 'use client';
 
+import { Card } from '@/design-system';
 import type { ReactNode } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { resolveText } from '@helena/sdk/web';
@@ -107,12 +108,9 @@ export function ServerSections({ area }: { area: string }) {
   return (
     <>
       {sections.map((section) => (
-        <section
-          key={section.id}
-          className="min-w-0 rounded-md border border-sidebar-border bg-card p-4"
-        >
+        <Card as="section" key={section.id} className="min-w-0">
           <section.Component />
-        </section>
+        </Card>
       ))}
     </>
   );

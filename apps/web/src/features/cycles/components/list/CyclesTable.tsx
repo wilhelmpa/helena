@@ -1,5 +1,6 @@
 'use client';
 
+import { Card } from '@/design-system';
 import { Fragment, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import type { Cycle } from '@/lib/api/endpoints/cycles';
@@ -37,7 +38,7 @@ export default function CyclesTable({
 
   return (
     <div className="flex-1 overflow-auto p-4">
-      <div className="min-w-[760px] overflow-hidden rounded-md border bg-card">
+      <Card pad="none" className="min-w-[760px] overflow-hidden">
         <div
           className="grid h-8 items-center gap-3 border-b px-3 text-xs text-muted-foreground"
           style={{ gridTemplateColumns: GRID }}
@@ -83,7 +84,7 @@ export default function CyclesTable({
             onTransfer={setTransferring}
           />
         )}
-      </div>
+      </Card>
 
       {transferring && (
         <TransferIssuesDialog

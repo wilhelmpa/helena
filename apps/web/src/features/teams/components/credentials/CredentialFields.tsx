@@ -1,3 +1,4 @@
+import { Notice } from '@/design-system';
 import { useTranslations } from 'next-intl';
 import type { CredentialEntry } from '@/lib/api/endpoints/credentials';
 import { Input } from '@/components/ui/input';
@@ -93,9 +94,7 @@ export function CredentialFields({
         (entry ? (
           <CredentialSshKey teamId={teamId} entry={entry} onChange={onKeyChange} />
         ) : (
-          <p className="rounded-md border border-sidebar-border bg-card px-3 py-2 text-sm text-muted-foreground">
-            {t('ssh.generatedOnSave')}
-          </p>
+          <Notice>{t('ssh.generatedOnSave')}</Notice>
         ))}
 
       <div className="space-y-1.5">

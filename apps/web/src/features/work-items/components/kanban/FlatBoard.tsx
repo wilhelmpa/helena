@@ -1,3 +1,4 @@
+import { Card } from '@/design-system';
 import DndContext from '@/components/common/dnd/DndContext';
 import { toast } from 'sonner';
 import { ChevronDown, Eye } from 'lucide-react';
@@ -186,7 +187,7 @@ export default function FlatBoard({
         )}
 
         {hiddenGroups.length > 0 && (
-          <div className="ml-auto w-64 shrink-0 self-start rounded-md border p-2">
+          <Card tone="inset" pad="tight" gap={0} className="ml-auto w-64 shrink-0 self-start">
             <div className="flex w-full items-center gap-1.5 px-1 py-1 text-sm font-medium text-muted-foreground">
               <ChevronDown className="size-4" />
               {settings.group === 'status' ? t('hiddenColumns') : t('hiddenGroups')}
@@ -225,7 +226,7 @@ export default function FlatBoard({
                 </div>
               ))}
             </div>
-          </div>
+          </Card>
         )}
       </div>
 

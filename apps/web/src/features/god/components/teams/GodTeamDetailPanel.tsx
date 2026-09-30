@@ -10,22 +10,17 @@ import { compactCount } from '../../utils/numbers';
 import GodTeamMembers from './GodTeamMembers';
 import GodTeamProjects from './GodTeamProjects';
 
-import { Box, Inline, Overlay, Stack, Text } from '@/design-system';
+import { Inline, Overlay, Stack, Text, Card } from '@/design-system';
 
 // One number from the team, with a quiet label under it. The counts read as a grid so
 // the size of a team is one glance rather than a list of sentences.
 function Stat({ label, value }: { label: string; value: number }) {
   const t = useTranslations('god.teamPanel');
   return (
-    <Box
-      padX={3}
-      padY={3}
-      className="rounded-md border border-sidebar-border bg-card"
-      title={t('statTitle', { label, value })}
-    >
+    <Card pad="tight" tooltip={t('statTitle', { label, value })}>
       <div className="text-xl font-semibold tabular-nums">{compactCount(value)}</div>
       <div className="text-xs text-muted-foreground">{label}</div>
-    </Box>
+    </Card>
   );
 }
 

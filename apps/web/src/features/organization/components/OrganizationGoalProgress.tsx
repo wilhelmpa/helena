@@ -15,7 +15,7 @@ import {
   useGoalDetailQuery,
   useLinkGoalTask,
 } from '../services/organization.service';
-import { Inline, Stack, Text } from '@/design-system';
+import { Card, Inline, Stack, Text } from '@/design-system';
 
 // A task identifier ("VOL-12") as the parts its page is addressed by.
 function taskHref(identifier: string): string | null {
@@ -82,7 +82,7 @@ export default function OrganizationGoalProgress({
       )}
 
       {proposals.map((note) => (
-        <Stack gap={2} pad={3} key={note.id} className="rounded-md border bg-accent/40">
+        <Card tone="inset" pad="tight" gap={2} key={note.id}>
           <p>
             {t('goals.proposal', {
               author: author(note),
@@ -112,7 +112,7 @@ export default function OrganizationGoalProgress({
               {t('goals.accept')}
             </Button>
           </Inline>
-        </Stack>
+        </Card>
       ))}
 
       <button

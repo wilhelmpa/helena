@@ -1,3 +1,4 @@
+import { Pill } from '@/design-system';
 import { Check, Circle, LoaderCircle, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { AgentTeamRun } from '@/lib/api/endpoints/issues';
@@ -21,18 +22,21 @@ export default function IssueAgentTeamSteps({ run }: { run: AgentTeamRun }) {
         return (
           <li key={step} className="flex items-center gap-1">
             {index > 0 && <span className="text-muted-foreground/50">›</span>}
-            <span
-              className={cn(
-                'flex items-center gap-1 rounded-full border px-2 py-0.5',
-                status === 'succeeded' && 'border-status-success/40 text-status-success',
-                status === 'running' && 'border-status-running/40 text-status-running',
-                status === 'failed' && 'border-destructive/40 text-destructive',
-                !(status in icon) && 'text-muted-foreground',
-              )}
+            <Pill
+              size="sm"
+              tone={
+                status === 'succeeded'
+                  ? 'success'
+                  : status === 'running'
+                    ? 'active'
+                    : status === 'failed'
+                      ? 'danger'
+                      : 'neutral'
+              }
+              icon={<Icon className={cn(status === 'running' && 'animate-spin')} />}
             >
-              <Icon className={cn('size-3', status === 'running' && 'animate-spin')} />
               {t(step)}
-            </span>
+            </Pill>
           </li>
         );
       })}

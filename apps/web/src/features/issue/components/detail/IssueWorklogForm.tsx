@@ -1,5 +1,6 @@
 'use client';
 
+import { Card } from '@/design-system';
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import type { WorklogInput } from '@/lib/api/endpoints/worklogs';
@@ -43,7 +44,7 @@ export default function IssueWorklogForm({
   }
 
   return (
-    <div className="rounded-md border p-3">
+    <Card tone="inset" pad="tight">
       <div className="flex flex-wrap items-center gap-2">
         <Input
           autoFocus
@@ -85,6 +86,6 @@ export default function IssueWorklogForm({
           {tCommon('save')}
         </Button>
       </div>
-    </div>
+    </Card>
   );
 }

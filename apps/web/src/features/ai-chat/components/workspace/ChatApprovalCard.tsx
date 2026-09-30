@@ -1,5 +1,6 @@
 'use client';
 
+import { Card } from '@/design-system';
 import { useMemo, useState } from 'react';
 import type { DynamicToolUIPart } from 'ai';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -69,7 +70,7 @@ export default function ChatApprovalCard({ tool }: { tool: DynamicToolUIPart }) 
   const request = query.data;
 
   return (
-    <div className="max-w-md space-y-2.5 rounded-md border border-status-waiting/40 bg-background p-3">
+    <Card tone="inset" pad="tight" className="max-w-md">
       <div className="flex items-center gap-2 text-xs text-muted-foreground">
         <ShieldQuestion className="size-4 shrink-0 text-status-waiting" />
         {request ? (
@@ -125,6 +126,6 @@ export default function ChatApprovalCard({ tool }: { tool: DynamicToolUIPart }) 
       ) : (
         <p className="text-sm text-muted-foreground">{t('approval.loading')}</p>
       )}
-    </div>
+    </Card>
   );
 }

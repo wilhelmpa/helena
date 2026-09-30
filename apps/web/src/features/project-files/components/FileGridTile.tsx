@@ -2,6 +2,7 @@ import FileKindIcon from '@/components/common/files/FileKindIcon';
 import type { FileItem } from '@/lib/api/endpoints/projectFiles';
 import { fileViewKind } from '@/utils/fileKinds';
 import { formatSize } from '@/utils/fileSize';
+import { Card } from '@/design-system';
 import { cn } from '@/lib/utils';
 import type { FileActions } from '../hooks/useFileActions';
 import type { FileEntryDrag } from '../hooks/useFileEntryDrag';
@@ -26,14 +27,13 @@ export default function FileGridTile({
 }) {
   const image = item.kind === 'file' && fileViewKind(item.name, item.contentType) === 'image';
   return (
-    <div
+    <Card
       {...drag.source(item)}
       {...(item.kind === 'folder' ? drag.target(item.path) : {})}
-      className={cn(
-        'group relative flex flex-col overflow-hidden rounded-md border bg-card',
-        drag.over === item.path && 'border-primary bg-primary/10',
-        highlighted && 'ring-2 ring-ring',
-      )}
+      pad="none"
+      gap={0}
+      selected={drag.over === item.path}
+      className={cn('group relative overflow-hidden', highlighted && 'ring-2 ring-ring')}
     >
       <button
         type="button"
@@ -63,6 +63,6 @@ export default function FileGridTile({
         </div>
         <FileItemMenu item={item} actions={actions} can={can} />
       </div>
-    </div>
+    </Card>
   );
 }

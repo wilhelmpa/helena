@@ -187,7 +187,7 @@ export default function MailInbox({
       )}
       <div className="flex min-h-0 flex-1">
         <MailThreadList
-          className={`w-full bg-card md:w-96 md:shrink-0 md:border-e ${selectedId ? 'hidden md:flex' : 'flex'}`}
+          className={`ds-pane w-full md:w-96 md:shrink-0 ${selectedId ? 'hidden md:flex' : 'flex'}`}
           rows={rows}
           selectedId={selectedId}
           showProject={projectId == null}

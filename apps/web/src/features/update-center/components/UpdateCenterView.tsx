@@ -17,6 +17,7 @@ import UpdateCurrentList from './UpdateCurrentList';
 import UpdateSettingsSection from './UpdateSettingsSection';
 import { useApplyUpdate, useUpdateCenter } from '../services/updateCenter.service';
 import { groupItems, runningAction, splitItems } from '../utils/updateFormat';
+import { Sections, Stack } from '@/design-system';
 
 // The update center's page content (owner, 2026-09-24: "alles updaten … regelmäßig nach
 // Updates suchen … den Status auch im Dashboard anzeigen"): every component Helena runs on
@@ -70,31 +71,33 @@ export default function UpdateCenterView() {
   }
 
   return (
-    <>
+    <Sections>
       <UpdateCheckStatus center={center} />
 
       {open.length > 0 && (
-        <section className="min-w-0 space-y-2">
+        <section className="min-w-0">
           <SectionLabel>{t('open')}</SectionLabel>
-          {groupItems(open).map((group) =>
-            group.items.length > 1 || group.items[0]!.group ? (
-              <UpdateGroupCard
-                key={group.key}
-                items={group.items}
-                running={runningAction(center, group.items[0]!)}
-                agentId={center.digest.agentId}
-                onApply={(item, scope) => setConfirming({ item, scope })}
-              />
-            ) : (
-              <UpdateCard
-                key={group.key}
-                item={group.items[0]!}
-                running={runningAction(center, group.items[0]!)}
-                agentId={center.digest.agentId}
-                onApply={(item, scope) => setConfirming({ item, scope })}
-              />
-            ),
-          )}
+          <Stack gap={4}>
+            {groupItems(open).map((group) =>
+              group.items.length > 1 || group.items[0]!.group ? (
+                <UpdateGroupCard
+                  key={group.key}
+                  items={group.items}
+                  running={runningAction(center, group.items[0]!)}
+                  agentId={center.digest.agentId}
+                  onApply={(item, scope) => setConfirming({ item, scope })}
+                />
+              ) : (
+                <UpdateCard
+                  key={group.key}
+                  item={group.items[0]!}
+                  running={runningAction(center, group.items[0]!)}
+                  agentId={center.digest.agentId}
+                  onApply={(item, scope) => setConfirming({ item, scope })}
+                />
+              ),
+            )}
+          </Stack>
         </section>
       )}
 
@@ -114,6 +117,6 @@ export default function UpdateCenterView() {
           onClose={() => setConfirming(null)}
         />
       )}
-    </>
+    </Sections>
   );
 }

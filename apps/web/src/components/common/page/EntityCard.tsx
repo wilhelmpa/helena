@@ -1,3 +1,4 @@
+import { Card } from '@/design-system';
 import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
@@ -27,13 +28,7 @@ export default function EntityCard({
   className?: string;
 }) {
   return (
-    <Link
-      href={href}
-      className={cn(
-        'group flex flex-col gap-3 rounded-md border border-sidebar-border bg-card p-4 transition-colors hover:bg-accent/60 focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:outline-none',
-        className,
-      )}
-    >
+    <Card as={Link} href={href} interactive className={cn('group', className)}>
       <div className="flex items-start gap-2.5">
         {icon && <div className="shrink-0">{icon}</div>}
         <div className="min-w-0 flex-1">
@@ -52,6 +47,6 @@ export default function EntityCard({
           {footer}
         </div>
       )}
-    </Link>
+    </Card>
   );
 }

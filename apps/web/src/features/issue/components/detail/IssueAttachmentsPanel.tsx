@@ -1,3 +1,4 @@
+import { Notice } from '@/design-system';
 import { useRef, useState } from 'react';
 import { Download, Plus } from 'lucide-react';
 import type { Attachment } from '@/lib/api/endpoints/attachments';
@@ -127,9 +128,7 @@ export default function IssueAttachmentsPanel({
 
       {open &&
         (items.length === 0 ? (
-          <p className="rounded-md border border-dashed p-4 text-center text-sm text-muted-foreground">
-            {readOnly ? t('empty') : t('emptyHint')}
-          </p>
+          <Notice>{readOnly ? t('empty') : t('emptyHint')}</Notice>
         ) : (
           <div className="grid grid-cols-[repeat(auto-fill,minmax(8.5rem,1fr))] gap-2">
             {items.map((a) => (

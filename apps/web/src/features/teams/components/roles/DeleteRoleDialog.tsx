@@ -1,5 +1,6 @@
 'use client';
 
+import { Card } from '@/design-system';
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import type { Role } from '@/lib/api/endpoints/roles';
@@ -55,14 +56,14 @@ export default function DeleteRoleDialog({
     return (
       <div className="space-y-3">
         <p className="text-sm text-muted-foreground">{t('deleteInUse')}</p>
-        <ul className="space-y-1 rounded-md border border-sidebar-border bg-card p-3 text-sm">
+        <Card as="ul" pad="tight" gap={1} className="text-sm">
           {counts.map((entry) => (
             <li key={entry.label} className="flex items-center justify-between gap-3">
               <span className="text-muted-foreground">{entry.label}</span>
               <span className="font-medium tabular-nums">{entry.n}</span>
             </li>
           ))}
-        </ul>
+        </Card>
         {targets.length === 0 ? (
           <p className="text-sm text-destructive">{t('noTargetRole')}</p>
         ) : (

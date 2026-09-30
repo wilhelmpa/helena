@@ -1,5 +1,6 @@
 'use client';
 
+import { Notice, Stack, CodeBlock } from '@/design-system';
 import { TriangleAlert } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
@@ -28,34 +29,30 @@ export default function AgentRuntimeConflicts({
   const t = useTranslations('teams.agents.runtimeConflicts');
   if (conflicts.length === 0) return null;
   return (
-    <div className="space-y-2 rounded-md border border-status-waiting/40 bg-status-waiting/5 p-3">
-      <p className="flex items-center gap-2 text-sm font-medium">
-        <TriangleAlert className="size-4 text-status-waiting" />
-        {t('title')}
-      </p>
-      <p className="text-xs text-muted-foreground">{t('description')}</p>
-      {conflicts.map((conflict) => (
-        <div key={conflict.path} className="space-y-1.5">
-          <div className="flex items-center justify-between gap-2">
-            <code className="text-xs">{conflict.path}</code>
-            {conflict.path === 'SOUL.md' ? (
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                onClick={() => onTakeOver(ownSoulContent(conflict.content))}
-              >
-                {t('takeOver')}
-              </Button>
-            ) : (
-              <span className="text-xs text-muted-foreground">{t('editInLibrary')}</span>
-            )}
+    <Notice tone="warning" icon={<TriangleAlert />} title={t('title')}>
+      <Stack gap={2}>
+        <p>{t('description')}</p>
+        {conflicts.map((conflict) => (
+          <div key={conflict.path} className="space-y-1.5">
+            <div className="flex items-center justify-between gap-2">
+              <code className="text-xs">{conflict.path}</code>
+              {conflict.path === 'SOUL.md' ? (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => onTakeOver(ownSoulContent(conflict.content))}
+                >
+                  {t('takeOver')}
+                </Button>
+              ) : (
+                <span className="text-xs text-muted-foreground">{t('editInLibrary')}</span>
+              )}
+            </div>
+            <CodeBlock>{conflict.content}</CodeBlock>
           </div>
-          <pre className="max-h-40 overflow-auto rounded-sm bg-muted p-2 text-xs whitespace-pre-wrap">
-            {conflict.content}
-          </pre>
-        </div>
-      ))}
-    </div>
+        ))}
+      </Stack>
+    </Notice>
   );
 }

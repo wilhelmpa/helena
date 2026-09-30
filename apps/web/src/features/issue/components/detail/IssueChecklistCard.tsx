@@ -1,3 +1,4 @@
+import { Card } from '@/design-system';
 import { useState } from 'react';
 import { closestCenter, type DragEndEvent } from '@dnd-kit/core';
 import DndContext from '@/components/common/dnd/DndContext';
@@ -59,10 +60,13 @@ export default function IssueChecklistCard({
   }
 
   return (
-    <div
+    <Card
       ref={setNodeRef}
+      tone="inset"
+      pad="tight"
+      gap={0}
       style={{ transform: CSS.Transform.toString(transform), transition }}
-      className={cn('group/list rounded-md border p-2', isDragging && 'opacity-40')}
+      className={cn('group/list', isDragging && 'opacity-40')}
     >
       <IssueChecklistHeader
         checklist={checklist}
@@ -127,6 +131,6 @@ export default function IssueChecklistCard({
             <Plus className="size-4" /> {t('addItemButton')}
           </Button>
         ))}
-    </div>
+    </Card>
   );
 }

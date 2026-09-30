@@ -12,7 +12,7 @@ import RegistrationModePicker from './RegistrationModePicker';
 import { useGodPolicyForm } from '../../hooks/useGodPolicyForm';
 import PageSaveAction from '@/components/common/page/PageSaveAction';
 
-import { Stack } from '@/design-system';
+import { Sections } from '@/design-system';
 
 // The registration policy and the sign-in options. The provider credentials live
 // under Integrations (Email provider, Auth provider).
@@ -43,7 +43,7 @@ export default function GodAuthenticationForm({
   return (
     <GodSectionPage slug="authentication">
       <PageSaveAction onSave={() => void save()} disabled={!policy.dirty} saving={policy.saving} />
-      <Stack gap={5}>
+      <Sections>
         <SettingsSection title={t('registration')} description={t('registrationHint')}>
           <SettingsCard className="divide-y divide-border/60">
             <RegistrationModePicker
@@ -106,7 +106,7 @@ export default function GodAuthenticationForm({
             />
           </SettingsCard>
         </SettingsSection>
-      </Stack>
+      </Sections>
     </GodSectionPage>
   );
 }

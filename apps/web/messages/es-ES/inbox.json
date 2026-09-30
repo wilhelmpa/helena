@@ -81,7 +81,7 @@
     "loadError": "No se pudieron cargar algunos elementos. Actualiza la página.",
     "loading": "Cargando Inbox…",
     "empty": "Ahora mismo no hay nada pendiente.",
-    "toRead": "PARA LEER",
+    "toRead": "Para leer",
     "noCompletedRuns": "Todavía no hay ejecuciones completadas.",
     "runCompleted": "{name} · Ejecución completada",
     "tags": {

@@ -58,11 +58,8 @@ export default function OrganizationDepartmentCard({
     );
 
   return (
-    <Stack
+    <Card
       as="form"
-      gap={3}
-      pad={4}
-      className="rounded-md border bg-card"
       onSubmit={(event) => {
         event.preventDefault();
         update.mutate(
@@ -155,6 +152,6 @@ export default function OrganizationDepartmentCard({
           {t('departments.deleteHint')}
         </ConfirmDialog>
       )}
-    </Stack>
+    </Card>
   );
 }

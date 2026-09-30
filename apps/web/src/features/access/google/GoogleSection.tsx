@@ -1,5 +1,6 @@
 'use client';
 
+import { Card } from '@/design-system';
 import { useState, type ReactNode } from 'react';
 import { FileUp, Plus, Trash2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -122,7 +123,7 @@ export function GoogleSection({ teamId, leading }: { teamId: number; leading: Re
                 ))}
             </EmptyState>
           ) : (
-            <ul className="divide-y overflow-hidden rounded-md border border-sidebar-border bg-card">
+            <Card as="ul" pad="none" className="divide-y overflow-hidden">
               {data.accounts.map((account) => (
                 <GoogleAccountRow
                   key={account.id}
@@ -132,14 +133,14 @@ export function GoogleSection({ teamId, leading }: { teamId: number; leading: Re
                   onAction={(action) => onAction(account, action)}
                 />
               ))}
-            </ul>
+            </Card>
           )}
 
           {canManage && (gog.data?.unlisted.length ?? 0) > 0 && (
             <section className="flex flex-col gap-2">
               <h2 className="text-md font-medium">{t('inGog')}</h2>
               <p className="text-xs text-muted-foreground">{t('inGogHint')}</p>
-              <ul className="divide-y overflow-hidden rounded-md border border-sidebar-border bg-card">
+              <Card as="ul" pad="none" className="divide-y overflow-hidden">
                 {gog.data!.unlisted.map((entry) => (
                   <li key={entry.email} className="flex items-center gap-3 px-4 py-2.5">
                     <span dir="ltr" className="min-w-0 flex-1 truncate text-sm">
@@ -160,14 +161,14 @@ export function GoogleSection({ teamId, leading }: { teamId: number; leading: Re
                     </Button>
                   </li>
                 ))}
-              </ul>
+              </Card>
             </section>
           )}
 
           {data.clients.length > 0 && (
             <section className="flex flex-col gap-2">
               <h2 className="text-md font-medium">{t('clients')}</h2>
-              <ul className="divide-y overflow-hidden rounded-md border border-sidebar-border bg-card">
+              <Card as="ul" pad="none" className="divide-y overflow-hidden">
                 {data.clients.map((client) => (
                   <li key={client.id} className="flex items-center gap-3 px-4 py-2.5">
                     <div className="min-w-0 flex-1">
@@ -195,7 +196,7 @@ export function GoogleSection({ teamId, leading }: { teamId: number; leading: Re
                     )}
                   </li>
                 ))}
-              </ul>
+              </Card>
             </section>
           )}
         </div>

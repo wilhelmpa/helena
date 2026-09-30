@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import { Gauge } from 'lucide-react';
 import { toast } from 'sonner';
 import { useLocale, useTranslations } from 'next-intl';
-import { SettingsGroup, SettingsRow } from '@/design-system';
+import { SettingsGroup, SettingsRow, Sections } from '@/design-system';
 import type { AiAgent } from '@/lib/api/endpoints/agents';
 import { AUTOPILOT_LEVELS, type AutopilotLevel, type Usage } from '@/lib/api/endpoints/autopilot';
 import {
@@ -104,7 +104,7 @@ export default function AgentAutopilotSection({
       {!data || !draft ? (
         <p className="text-xs text-muted-foreground">{tCommon('loading')}</p>
       ) : (
-        <div className="space-y-5">
+        <Sections>
           {data.paused && (reachedBudget || data.pauseReason) && (
             <p className="rounded-md bg-status-waiting/10 px-3 py-2 text-xs text-status-waiting">
               {reachedBudget
@@ -228,7 +228,7 @@ export default function AgentAutopilotSection({
               </div>
             )}
           </SettingsGroup>
-        </div>
+        </Sections>
       )}
     </AgentFormSection>
   );

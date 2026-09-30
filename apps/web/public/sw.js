@@ -26,7 +26,7 @@ function readPush(event) {
     const data = event.data.json();
     return data && typeof data === 'object' ? data : null;
   } catch {
-    return { title: 'Helena', body: event.data.text() };
+    return { title: 'Ava', body: event.data.text() };
   }
 }
 
@@ -37,7 +37,7 @@ function samePath(url) {
 
 self.addEventListener('push', (event) => {
   const data = readPush(event) ?? {};
-  const title = typeof data.title === 'string' && data.title ? data.title : 'Helena';
+  const title = typeof data.title === 'string' && data.title ? data.title : 'Ava';
   const options = {
     body: typeof data.body === 'string' ? data.body : '',
     icon: ICON,

@@ -20,6 +20,7 @@ import {
   Stack,
   Text,
   TextArea,
+  Sections,
 } from '@/design-system';
 import { useTeam } from '@/services/teams.service';
 import {
@@ -158,7 +159,7 @@ function AutopilotPage({ projectKey }: { projectKey: string }) {
           {!data || !draft ? (
             <ListSkeleton rows={6} rowClassName="h-10" />
           ) : (
-            <Stack gap={6}>
+            <Sections>
               <SettingsGroup title={tExecution('autopilotTitle')}>
                 <SettingsRow
                   label={t('levelTitle')}
@@ -275,7 +276,7 @@ function AutopilotPage({ projectKey }: { projectKey: string }) {
               <Section title={t('logTitle')}>
                 <PolicyDecisionLog projectKey={projectKey} />
               </Section>
-            </Stack>
+            </Sections>
           )}
         </RequirePermission>
       </SettingsResourceProvider>

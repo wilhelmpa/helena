@@ -6,7 +6,7 @@ import CopyableValue from '@/components/common/page/CopyableValue';
 import ConfirmDialog from '@/components/common/overlay/ConfirmDialog';
 import { Button } from '@/components/ui/button';
 import { useRotateSigningSecret, useSigningSecret } from '@/services/engine.service';
-import { Inline, Stack, Text } from '@/design-system';
+import { Inline, SettingsRow, Text } from '@/design-system';
 
 // The key the webhook steps of the project's workflows sign their requests with (Standard
 // Webhooks), for the receiver to check that a request comes from Helena. Read only when a
@@ -26,15 +26,9 @@ export default function WorkflowSigningSecretSettings({
   if (!editable) return null;
 
   return (
-    <Stack gap={3} padBottom={5} className="border-b">
-      <Stack gap={2} className="sm:flex-row sm:items-center sm:gap-3">
-        <div className="min-w-0 flex-1">
-          <h3 className="text-sm font-medium">{t('title')}</h3>
-          <Text as="p" size="xs" tone="muted">
-            {t('hint')}
-          </Text>
-        </div>
-        <Inline gap={2} align="stretch" className="shrink-0">
+    <>
+      <SettingsRow label={t('title')} description={t('hint')}>
+        <Inline gap={2} align="stretch">
           <Button size="sm" variant="outline" onClick={() => setShown(!shown)}>
             {shown ? t('hide') : t('show')}
           </Button>
@@ -42,9 +36,11 @@ export default function WorkflowSigningSecretSettings({
             {t('renew')}
           </Button>
         </Inline>
-      </Stack>
+      </SettingsRow>
       {shown && secret.data && (
-        <CopyableValue title={t('secret')} value={secret.data.secret} copyLabel={t('copy')} />
+        <SettingsRow label={t('secret')} stacked nested>
+          <CopyableValue title={t('secret')} value={secret.data.secret} copyLabel={t('copy')} />
+        </SettingsRow>
       )}
       {renewing && (
         <ConfirmDialog
@@ -62,6 +58,6 @@ export default function WorkflowSigningSecretSettings({
           </Text>
         </ConfirmDialog>
       )}
-    </Stack>
+    </>
   );
 }

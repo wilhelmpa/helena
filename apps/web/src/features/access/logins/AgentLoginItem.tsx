@@ -1,5 +1,6 @@
 'use client';
 
+import { IconTile } from '@/design-system';
 import { useState } from 'react';
 import { KeyRound, LogIn, LogOut, MoreHorizontal, RefreshCw } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -89,9 +90,9 @@ export function AgentLoginItem({
       id={`login-agent-${login.agentId}`}
       className={cn('flex items-start gap-3 px-4 py-3', highlighted && 'bg-accent/50')}
     >
-      <div className="flex size-8 shrink-0 items-center justify-center rounded-md border border-sidebar-border bg-background text-muted-foreground">
+      <IconTile>
         <CredentialKindIcon kind="runtime_login" className="size-4" />
-      </div>
+      </IconTile>
       <div className="min-w-0 flex-1 space-y-1">
         <div className="flex flex-wrap items-center gap-2">
           <span className="truncate text-sm font-medium">{login.name}</span>

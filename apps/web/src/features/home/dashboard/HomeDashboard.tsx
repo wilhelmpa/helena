@@ -144,7 +144,7 @@ export default function HomeDashboard() {
         <div className="ds-dashboard-body @container">
           {/* The figure row: the tiles share one row while they fit, then wrap evenly; two
             columns on a phone. */}
-          <Grid min="fit" gap={3}>
+          <Grid min="fit">
             {figures
               .filter((entry) => entry.visible)
               .map((entry) => (

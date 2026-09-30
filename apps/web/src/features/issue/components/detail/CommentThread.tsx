@@ -1,3 +1,4 @@
+import { Card } from '@/design-system';
 import { useState } from 'react';
 import type { FeedItem } from '@/lib/api/endpoints/activity';
 import { useSession } from '@/lib/auth-client';
@@ -54,7 +55,7 @@ export default function CommentThread({
   collect(root, 0);
 
   return (
-    <li className="overflow-hidden rounded-md border border-black/4 bg-muted/40 shadow-xs dark:border-white/8 dark:bg-background/60">
+    <Card as="li" tone="inset" pad="none" gap={0} className="overflow-hidden">
       {rows.map((row, index) => (
         <div
           key={row.item.id}
@@ -86,7 +87,7 @@ export default function CommentThread({
           />
         </div>
       )}
-    </li>
+    </Card>
   );
 }
 

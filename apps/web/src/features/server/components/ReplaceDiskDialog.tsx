@@ -1,5 +1,6 @@
 'use client';
 
+import { Card } from '@/design-system';
 import { useState } from 'react';
 import { ChevronRight } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -14,7 +15,6 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import type { StorageStatus } from '@/lib/api/endpoints/server';
-import { cn } from '@/lib/utils';
 import { formatDiskSize } from '../utils/serverFormat';
 import { recoveryPlan, replacementPlan } from '../utils/replaceDisk';
 
@@ -64,21 +64,24 @@ export default function ReplaceDiskDialog({
           <legend className="text-xs font-medium text-muted-foreground">{t('which')}</legend>
           <div className="flex flex-wrap gap-2">
             {candidates.map((disk) => (
-              <button
-                key={disk.kname}
+              <Card
+                as="button"
                 type="button"
+                tone="inset"
+                interactive
+                selected={selected === disk.kname}
+                pad="tight"
+                gap={0}
+                key={disk.kname}
                 aria-pressed={selected === disk.kname}
                 onClick={() => setSelected(disk.kname)}
-                className={cn(
-                  'rounded-md border border-sidebar-border px-3 py-1.5 text-start text-sm hover:bg-sidebar-accent',
-                  selected === disk.kname && 'bg-sidebar-accent font-medium',
-                )}
+                className="text-sm"
               >
                 {disk.letter ? t('disk', { letter: disk.letter }) : disk.kname}
                 <span className="block text-xs text-muted-foreground">
                   {disk.model ?? '–'} · {formatDiskSize(disk.sizeBytes)}
                 </span>
-              </button>
+              </Card>
             ))}
           </div>
         </fieldset>
@@ -179,44 +182,43 @@ function RecoverySection({ plan }: { plan: ReturnType<typeof recoveryPlan> }) {
     <CopyableCommand command={value} copyLabel={tCopy('copy')} copiedLabel={tCopy('copied')} />
   );
   return (
-    <Collapsible
-      defaultOpen={plan.missing}
-      className="rounded-md border border-sidebar-border bg-card"
-    >
-      <CollapsibleTrigger className="group flex min-h-8 w-full items-center gap-2 px-3 py-1.5 text-start text-sm font-medium hover:bg-sidebar-accent">
-        <ChevronRight className="size-4 shrink-0 transition-transform duration-150 group-data-[state=open]:rotate-90 rtl:group-data-[state=closed]:rotate-180" />
-        {t('open', { letter: plan.letter })}
-      </CollapsibleTrigger>
-      <CollapsibleContent className="space-y-4 px-3 pt-1 pb-3">
-        <p className="text-sm text-muted-foreground">{t('intro')}</p>
-        <ol className="space-y-4">
-          <Step n={1} title={t('step.poweroff')}>
-            <p className="text-sm text-muted-foreground">{t('step.poweroffBody')}</p>
-            {command(plan.commands.poweroff)}
-          </Step>
-          <Step n={2} title={t('step.powerOn')}>
-            <p className="text-sm text-muted-foreground">{t('step.powerOnBody')}</p>
-          </Step>
-          <Step n={3} title={t('step.smart')}>
-            <p className="text-sm text-muted-foreground">{t('step.smartBody')}</p>
-            {command(plan.commands.smart)}
-          </Step>
-          <Step n={4} title={t('step.readd')}>
-            <p className="text-sm text-muted-foreground">{t('step.readdBody')}</p>
-            {command(plan.commands.readd)}
-          </Step>
-          <Step n={5} title={t('step.esp')}>
-            <p className="text-sm text-muted-foreground">
-              {t('step.espBody', { mount: plan.espMount })}
-            </p>
-            {command(plan.commands.esp)}
-            {command(plan.commands.bootCheck)}
-            {command(plan.commands.bootRepair)}
-            {command(plan.commands.espCopy)}
-          </Step>
-        </ol>
-        <p className="text-sm">{t('replaceWhen')}</p>
-      </CollapsibleContent>
+    <Collapsible asChild defaultOpen={plan.missing}>
+      <Card pad="none" gap={0}>
+        <CollapsibleTrigger className="group flex min-h-8 w-full items-center gap-2 px-3 py-1.5 text-start text-sm font-medium hover:bg-sidebar-accent">
+          <ChevronRight className="size-4 shrink-0 transition-transform duration-150 group-data-[state=open]:rotate-90 rtl:group-data-[state=closed]:rotate-180" />
+          {t('open', { letter: plan.letter })}
+        </CollapsibleTrigger>
+        <CollapsibleContent className="space-y-4 px-3 pt-1 pb-3">
+          <p className="text-sm text-muted-foreground">{t('intro')}</p>
+          <ol className="space-y-4">
+            <Step n={1} title={t('step.poweroff')}>
+              <p className="text-sm text-muted-foreground">{t('step.poweroffBody')}</p>
+              {command(plan.commands.poweroff)}
+            </Step>
+            <Step n={2} title={t('step.powerOn')}>
+              <p className="text-sm text-muted-foreground">{t('step.powerOnBody')}</p>
+            </Step>
+            <Step n={3} title={t('step.smart')}>
+              <p className="text-sm text-muted-foreground">{t('step.smartBody')}</p>
+              {command(plan.commands.smart)}
+            </Step>
+            <Step n={4} title={t('step.readd')}>
+              <p className="text-sm text-muted-foreground">{t('step.readdBody')}</p>
+              {command(plan.commands.readd)}
+            </Step>
+            <Step n={5} title={t('step.esp')}>
+              <p className="text-sm text-muted-foreground">
+                {t('step.espBody', { mount: plan.espMount })}
+              </p>
+              {command(plan.commands.esp)}
+              {command(plan.commands.bootCheck)}
+              {command(plan.commands.bootRepair)}
+              {command(plan.commands.espCopy)}
+            </Step>
+          </ol>
+          <p className="text-sm">{t('replaceWhen')}</p>
+        </CollapsibleContent>
+      </Card>
     </Collapsible>
   );
 }

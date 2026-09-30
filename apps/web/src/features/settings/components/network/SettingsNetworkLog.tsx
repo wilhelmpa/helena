@@ -10,7 +10,7 @@ import SettingsSection from '@/components/common/page/SettingsSection';
 import { Button } from '@/components/ui/button';
 import SettingsNetworkLogRow from './SettingsNetworkLogRow';
 
-import { Text, Table, Th, Tr } from '@/design-system';
+import { Text, Table, Th, Tr, Card } from '@/design-system';
 
 type DecisionFilter = 'all' | 'blocked';
 
@@ -48,7 +48,7 @@ export default function SettingsNetworkLog({ projectKey }: { projectKey: string 
         <EmptyState title={t('empty')} description={t('emptyHint')} />
       ) : (
         <>
-          <div className="overflow-x-auto rounded-md border bg-card">
+          <Card pad="none" className="overflow-x-auto">
             <Table stack={false} className="min-w-[820px]">
               <thead>
                 <Tr className="hover:bg-transparent">
@@ -66,7 +66,7 @@ export default function SettingsNetworkLog({ projectKey }: { projectKey: string 
                 ))}
               </tbody>
             </Table>
-          </div>
+          </Card>
           {query.hasNextPage ? (
             <Button
               variant="outline"

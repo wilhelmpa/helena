@@ -19,7 +19,7 @@ import {
   useInitiativeAttachmentsQuery,
   useUploadInitiativeAttachment,
 } from '../../services/attachments.service';
-import { Inline, Stack, Text } from '@/design-system';
+import { Inline, Stack, Text, Card, Notice } from '@/design-system';
 
 // The initiative's files, beside its description: upload, look at, download and
 // delete. A row list rather than the issue panel's card grid, because it sits in
@@ -95,25 +95,19 @@ export default function InitiativeAttachments({ initiativeId }: { initiativeId: 
       )}
 
       {items.length === 0 ? (
-        <Text
-          as="p"
-          size="sm"
-          tone="muted"
-          className="mt-3 rounded-md border border-dashed p-4 text-center"
-        >
-          {canEdit ? t('emptyHint') : t('empty')}
-        </Text>
+        <Notice>{canEdit ? t('emptyHint') : t('empty')}</Notice>
       ) : (
         <Stack as="ul" gap={1} marginTop={3}>
           {items.map((a) => {
             const viewable = isImage(a) || isVideo(a);
             return (
-              <Inline
+              <Card
                 as="li"
+                layout="row"
+                pad="tight"
                 gap={2}
-                pad={2}
                 key={a.id}
-                className="group rounded-md border bg-card transition-colors hover:border-ring/40"
+                className="group items-center"
               >
                 <button
                   type="button"
@@ -154,7 +148,7 @@ export default function InitiativeAttachments({ initiativeId }: { initiativeId: 
                     <Trash2 />
                   </Button>
                 )}
-              </Inline>
+              </Card>
             );
           })}
         </Stack>

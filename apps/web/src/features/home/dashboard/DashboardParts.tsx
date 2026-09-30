@@ -4,7 +4,7 @@ import { ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import StatusBadge, { type Status } from '@/components/common/page/StatusBadge';
 import { ROW_CLASS } from '@/components/common/page/RowList';
-import { Card, MonoLabel, Tile } from '@/components/helena/DashboardPrimitives';
+import { Card, MonoLabel, MonoMeta, Tile } from '@/components/helena/DashboardPrimitives';
 
 // The building blocks of Start's widgets (docs/helena-decisions/dashboard.md). Every widget
 // is one of two things, in the sidebar's material: a figure tile in the row at the top, or
@@ -32,13 +32,19 @@ export function DashboardSection({
   className?: string;
 }) {
   return (
-    <Card className={cn('flex min-w-0 flex-col gap-2 p-5', className)}>
-      <h2 className="flex min-h-7 min-w-0 items-center gap-1">
-        <MonoLabel className="min-w-0 flex-1 truncate">{label}</MonoLabel>
-        {count ? <span className="px-1 font-mono tabular-nums">{count}</span> : null}
-        {actions}
-        {href && hrefLabel ? <CardLink href={href}>{hrefLabel}</CardLink> : null}
-      </h2>
+    <Card
+      gap={2}
+      eyebrow={label}
+      headingAs="h2"
+      actions={
+        <>
+          {count ? <MonoMeta>{count}</MonoMeta> : null}
+          {actions}
+          {href && hrefLabel ? <CardLink href={href}>{hrefLabel}</CardLink> : null}
+        </>
+      }
+      className={className}
+    >
       {children}
     </Card>
   );

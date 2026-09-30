@@ -1,5 +1,6 @@
 'use client';
 
+import { Card } from '@/design-system';
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
@@ -68,7 +69,7 @@ export default function ApplyUpdateDialog({
         </AlertDialogHeader>
         <AlertDialogDescription asChild>
           <div className="space-y-3 text-sm text-foreground">
-            <ul className="max-h-48 space-y-1 overflow-y-auto rounded-md border border-sidebar-border bg-card p-2 text-xs">
+            <Card as="ul" pad="tight" gap={1} className="max-h-48 overflow-y-auto text-xs">
               {items.map((entry) => (
                 <li key={entry.id} className="flex min-w-0 items-baseline gap-2">
                   <span className="min-w-0 truncate font-medium" dir="auto">
@@ -79,7 +80,7 @@ export default function ApplyUpdateDialog({
                   </span>
                 </li>
               ))}
-            </ul>
+            </Card>
             <p>
               {apt
                 ? t('dialog.downloadApt')

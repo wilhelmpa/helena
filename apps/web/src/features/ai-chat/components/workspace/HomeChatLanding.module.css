@@ -44,33 +44,15 @@
   display: grid;
   width: min(760px, calc(100% - 32px));
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
+  gap: var(--stack-gap);
   margin: 18px auto 28px;
   text-align: left;
 }
 
 .card,
 .emptyCard {
-  display: flex;
-  min-width: 0;
+  /* The box is the design system's Card. */
   min-height: 84px;
-  flex-direction: column;
-  gap: 6px;
-  padding: 14px 16px;
-  border-radius: var(--radius-xl);
-  background: var(--surface-1);
-  box-shadow: 0 0 0 1px var(--line);
-}
-
-.card:hover,
-.emptyCard:hover {
-  background: var(--surface-2);
-}
-
-/* A "Braucht dich" card that opens a dialog instead of a page. */
-button.card {
-  cursor: pointer;
-  text-align: start;
 }
 
 .cardTag {

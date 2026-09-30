@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import type { OrganizationAgentProject } from '@/lib/api/endpoints/organization';
 import { useSetAgentProjectInstructions } from '../services/organization.service';
-import { Stack } from '@/design-system';
+import { Card } from '@/design-system';
 
 export default function OrganizationAgentProjectInstruction({
   teamId,
@@ -22,11 +22,11 @@ export default function OrganizationAgentProjectInstruction({
   const [instructions, setInstructions] = useState(project.instructions);
 
   return (
-    <Stack
+    <Card
       as="form"
+      tone="inset"
+      pad="tight"
       gap={2}
-      pad={3}
-      className="rounded-md border"
       onSubmit={(event) => {
         event.preventDefault();
         save.mutate({ agentId, projectId: project.id, instructions });
@@ -46,6 +46,6 @@ export default function OrganizationAgentProjectInstruction({
           {t('actions.saveInstructions')}
         </Button>
       </div>
-    </Stack>
+    </Card>
   );
 }

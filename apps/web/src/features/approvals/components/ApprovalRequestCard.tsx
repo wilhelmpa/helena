@@ -1,5 +1,6 @@
 'use client';
 
+import { Card } from '@/design-system';
 import Link from 'next/link';
 import { AppWindow } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -33,7 +34,7 @@ function AgentRequestCard({ request }: { request: ApprovalRequest }) {
   const liveView = LIVE_VIEW_LINK.exec(request.details)?.[0] ?? null;
 
   return (
-    <article className="space-y-3 rounded-md border bg-card p-4">
+    <Card as="article">
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
         <Badge variant="outline">{t(`kind.${request.kind}`)}</Badge>
         <span>
@@ -80,6 +81,6 @@ function AgentRequestCard({ request }: { request: ApprovalRequest }) {
       ) : (
         <ApprovalDecisionSummary request={request} />
       )}
-    </article>
+    </Card>
   );
 }

@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { ListBox } from '@/design-system';
 import { cn } from '@/lib/utils';
 
 // The frame of a list table: the one box of the design system (ListBox: surface-1, radius 12,
@@ -12,7 +13,5 @@ export default function TableCard({
   className?: string;
   children: ReactNode;
 }) {
-  return (
-    <div className={cn('ds-list-box [&_[data-slot=table-head]]:px-3', className)}>{children}</div>
-  );
+  return <ListBox className={cn('[&_[data-slot=table-head]]:px-3', className)}>{children}</ListBox>;
 }

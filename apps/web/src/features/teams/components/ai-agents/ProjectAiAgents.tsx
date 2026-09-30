@@ -16,7 +16,7 @@ import { AgentMetaChip } from './AgentMetaChip';
 import { AgentTriggers } from './AgentTriggers';
 import ProjectAgentAssignmentDialog from './ProjectAgentAssignmentDialog';
 import TableCard from '@/components/common/page/TableCard';
-import { Table, Td, Th, Tr } from '@/design-system';
+import { Table, Td, Th, Tr, IconTile } from '@/design-system';
 
 // The agents working in this project. The server leaves the Home agent out. Their role
 // and instructions here are project-specific fields of the membership.
@@ -78,9 +78,9 @@ export default function ProjectAiAgents({ onNewAgent }: { onNewAgent: () => void
                 <Tr key={agent.id} className="group/item">
                   <Td className="py-3 whitespace-normal">
                     <div className="flex min-w-0 items-center gap-2.5">
-                      <div className="flex size-8 shrink-0 items-center justify-center rounded-md border bg-background text-muted-foreground">
+                      <IconTile>
                         <Bot className="size-4" />
-                      </div>
+                      </IconTile>
                       <div className="flex min-w-0 flex-col gap-0.5">
                         <div className="flex min-w-0 items-center gap-2">
                           <span className="truncate text-sm font-medium">{agent.name}</span>

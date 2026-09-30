@@ -26,7 +26,7 @@ import {
 import { SettingsLabelGroupSection } from './SettingsLabelGroupSection';
 import { SettingsLabelsAddMenu } from './SettingsLabelsAddMenu';
 
-import { Box, Stack, Inline } from '@/design-system';
+import { Box, Stack, Card } from '@/design-system';
 
 // A tree of labels: each group is a collapsible node holding its labels, and
 // ungrouped labels sit directly at the root alongside the groups. A group's header
@@ -265,15 +265,10 @@ export default function SettingsLabels({ project }: { project: ProjectDetail }) 
 
         <DragOverlay>
           {activeLabel ? (
-            <Inline
-              gap={2}
-              padX={2}
-              padY={1}
-              className="flex items-center rounded-md bg-popover text-sm shadow-lg"
-            >
+            <Card tone="popover" layout="row" pad="tight" gap={2} className="items-center text-sm">
               {colorDot(activeLabel.color)}
               {activeLabel.name}
-            </Inline>
+            </Card>
           ) : null}
         </DragOverlay>
       </DndContext>

@@ -11,7 +11,7 @@ import { useCreateIssueType, useUpdateIssueType } from '../../services/settings.
 import type { PlannedIssueType } from '../../utils/issueTypesTransfer';
 import { useTransferActionLabel } from '../../utils/transferAction';
 
-import { Stack, Text, Inline } from '@/design-system';
+import { Stack, Text, Inline, ListBox } from '@/design-system';
 
 // Confirms an issue types paste before applying it: lists each incoming type and
 // whether it is created or updates an existing type's color. On confirm, new types are
@@ -67,22 +67,24 @@ export default function IssueTypesImportDialog({
         <Text as="p" size="xs" tone="muted">
           {t('importSummary', { count: applicable.length })}
         </Text>
-        <div className="max-h-[50vh] divide-y divide-border/60 overflow-y-auto rounded-md border border-border/60">
-          {planned.map((type) => (
-            <Inline gap={3} padX={3} padY={3} key={type.name} className="flex items-center">
-              {colorDot(type.color)}
-              <Text as="span" size="sm" className="min-w-0 flex-1 truncate font-medium">
-                {type.name}
-              </Text>
-              <Badge
-                variant={type.action === 'unchanged' ? 'outline' : 'secondary'}
-                className="shrink-0 px-1.5 py-0 text-xs font-normal"
-              >
-                {actionLabel(type.action)}
-              </Badge>
-            </Inline>
-          ))}
-        </div>
+        <ListBox>
+          <div className="max-h-[50vh] divide-y divide-border/60 overflow-y-auto">
+            {planned.map((type) => (
+              <Inline gap={3} padX={3} padY={3} key={type.name} className="flex items-center">
+                {colorDot(type.color)}
+                <Text as="span" size="sm" className="min-w-0 flex-1 truncate font-medium">
+                  {type.name}
+                </Text>
+                <Badge
+                  variant={type.action === 'unchanged' ? 'outline' : 'secondary'}
+                  className="shrink-0 px-1.5 py-0 text-xs font-normal"
+                >
+                  {actionLabel(type.action)}
+                </Badge>
+              </Inline>
+            ))}
+          </div>
+        </ListBox>
         <Inline gap={2} align="stretch" justify="end" className="flex justify-end">
           <Button variant="outline" onClick={onClose} disabled={busy}>
             {tCommon('cancel')}

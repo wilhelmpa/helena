@@ -62,7 +62,7 @@ export function AccountsTab({
         <SectionLabel trailing={<span className="tabular-nums">{accounts.length}</span>}>
           {t('title')}
         </SectionLabel>
-        <RowList className="bg-card">
+        <RowList>
           {accounts.length === 0 && <RowEmpty>{t('none')}</RowEmpty>}
           {accounts.map((account) =>
             editing === account.id ? (
@@ -131,7 +131,7 @@ export function AccountsTab({
         <SectionLabel trailing={<span className="tabular-nums">{imports.length}</span>}>
           {t('imports')}
         </SectionLabel>
-        <RowList className="bg-card">
+        <RowList>
           {imports.length === 0 && <RowEmpty>{t('noImports')}</RowEmpty>}
           {imports.map((entry) => (
             <div key={entry.id} className="flex min-w-0 flex-col">

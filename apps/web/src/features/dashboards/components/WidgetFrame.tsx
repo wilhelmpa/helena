@@ -44,7 +44,7 @@ export default function WidgetFrame({
     widget.type === 'plugin' ? 'Plugin-Widget' : t.has(labelKey) ? t(labelKey) : widget.type;
   const title = widget.title || defaultTitle;
   return (
-    <Card className="flex h-full flex-col overflow-hidden p-5">
+    <Card gap={0} className="h-full overflow-hidden">
       <Inline as="header" gap={2} marginBottom={3} className="h-7 shrink-0">
         {movable && (
           <button

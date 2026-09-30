@@ -4,12 +4,11 @@ import { useTranslations } from 'next-intl';
 import type { McpServer } from '@/lib/api/endpoints/agentMcpServers';
 import { useDeleteMcpServer, useMcpServersQuery } from '@/services/agentMcpServers.service';
 import { Button } from '@/components/ui/button';
-import { EmptyState } from '@/components/common/page/EmptyState';
 import ListSkeleton from '@/components/common/skeleton/ListSkeleton';
 import ConfirmDialog from '@/components/common/overlay/ConfirmDialog';
 import { McpServerDialog } from './McpServerDialog';
 import { McpServerRow } from './McpServerRow';
-import { ToolSectionHeader } from './ToolSectionHeader';
+import { Card, EmptyState, Section } from '@/design-system';
 
 // The team's MCP server library. A Hermes agent starts the servers enabled on it, which
 // is done on the agent's page. A server runs a command with the team's secrets, so only the
@@ -28,25 +27,26 @@ export default function TeamMcpServers({
   const deleteServer = useDeleteMcpServer(teamId);
 
   return (
-    <section className="space-y-3">
-      <ToolSectionHeader
-        title={t('title')}
-        hint={canManage ? t('hint') : `${t('hint')} ${t('managerOnly')}`}
-        action={
-          canManage ? (
-            <Button variant="outline" size="sm" onClick={() => setEditing('new')}>
-              <Plus className="size-3.5" />
-              {t('add')}
-            </Button>
-          ) : undefined
-        }
-      />
+    <Section
+      title={t('title')}
+      description={canManage ? t('hint') : `${t('hint')} ${t('managerOnly')}`}
+      actions={
+        canManage ? (
+          <Button variant="outline" size="sm" onClick={() => setEditing('new')}>
+            <Plus className="size-3.5" />
+            {t('add')}
+          </Button>
+        ) : undefined
+      }
+    >
       {!servers ? (
         <ListSkeleton rows={2} rowClassName="h-12" />
       ) : servers.length === 0 ? (
-        <EmptyState title={t('empty')} description={t('emptyHint')} />
+        <EmptyState boxed title={t('empty')}>
+          {t('emptyHint')}
+        </EmptyState>
       ) : (
-        <ul className="divide-y">
+        <Card as="ul" pad="none" className="divide-y overflow-hidden">
           {servers.map((server) => (
             <McpServerRow
               key={server.id}
@@ -56,7 +56,7 @@ export default function TeamMcpServers({
               onDelete={() => setDeleting(server)}
             />
           ))}
-        </ul>
+        </Card>
       )}
 
       {editing && (
@@ -81,6 +81,6 @@ export default function TeamMcpServers({
           </div>
         </ConfirmDialog>
       )}
-    </section>
+    </Section>
   );
 }

@@ -1,3 +1,4 @@
+import { Card } from '@/design-system';
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Badge } from '@/components/ui/badge';
@@ -28,7 +29,7 @@ export default function IssueAgentTeamRun({
   const tokens = agentTeamTokens(run);
 
   return (
-    <div className="space-y-2 rounded-md border p-3">
+    <Card tone="inset" pad="tight" gap={2}>
       <div className="flex flex-wrap items-center gap-2 text-xs">
         <Badge variant={run.status === 'failed' ? 'destructive' : 'outline'}>
           {isKnownStatus(run.status) ? t(`status.${run.status}`) : run.status}
@@ -87,6 +88,6 @@ export default function IssueAgentTeamRun({
           ))}
         </ol>
       )}
-    </div>
+    </Card>
   );
 }

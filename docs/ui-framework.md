@@ -247,3 +247,48 @@ Plan und Bestandsaufnahme: `docs/ui-konsistenz-refactor.md` (Mac-Doku). Was gilt
   behaelt mindestens 560 px, Pfeiltasten 10 px (Shift 50), Doppelklick/Enter = Standard 248 px. Die
   Breite liegt pro Nutzer im Browser (`helena:sidebar-width:<userId>`, `utils/sidebarWidth.ts`).
   Rail, Overlay-Sidebar und Handy behalten den Token `--sidebar-w`.
+
+## 19. Inhalte der Hauptseiten: gleiche Abstände, Hintergründe, Boxen (Owner 30.09.)
+
+Owner: „Die Hauptseiten-Inhalte anschauen: gleiche Abstände, gleiche Hintergründe, gleiche Boxen, sodass alles harmonisch ist.“ Zusammen mit §17 (Kopfleiste, Overlays) ist damit die ganze Seite festgelegt: oben die eine Leiste, darunter dieser Satz Regeln. Alle Werte stehen als Tokens in `tokens.css` („Content boxes“), kein Baustein schreibt eine eigene Zahl.
+
+**Die Regeln (Tokens):**
+
+| Was | Wert | Token |
+|---|---|---|
+| Seitengrund | `--bg`, immer; keine Seite färbt ihn um | `--bg` |
+| Box | `surface-1`, Radius 12, Kartenschatten, **16 px** Innenabstand, **12 px** zwischen den Teilen | `--box-pad`, `--box-gap`, `--radius-card`, `--shadow-card` |
+| Enge Box (Kachel im Diagramm, kleine Karte im Raster) | 12 px Innenabstand | `--box-pad-tight` |
+| Geräumige Box (Dokument, Ziel-Detail) | 24 px | `--box-pad-roomy` |
+| Einschub (Box in einer Box: Notiz, Unterformular) | `surface-2`, Radius 8, kein Schatten | `--radius-md` |
+| Abstand zwischen Boxen (untereinander UND nebeneinander) | **16 px** | `--stack-gap` |
+| Abstand zwischen Abschnitten (Titel + Inhalt) | **32 px** | `--section-gap` |
+| Abschnittstitel → seine Box | 12 px | `--section-head-gap` |
+| Abschnittstitel | 15 px / 520 (`Section`, `SettingsGroup`, `SettingsSection`), optional ein Satz 13 px darunter | |
+| Kleinbeschriftung (Widget-Name, Gruppenkopf, Spaltenkopf, Kachel-Name) | Mono 10 px, Großbuchstaben, Sperrung `--label-tracking` | `--label-size` |
+| Gruppenkopf über einer Liste | 32 px hoch, Kleinbeschriftung + Zähler (`GroupHead`) | |
+| Leerzustand | immer mit Symbol (Vorgabe: Ablage), ein Satz, optional Titel und Aktion; der der Seite steht in einem Block von 60 vh, damit das Symbol überall an derselben Stelle sitzt; in einer Box (`boxed`) kompakt | |
+| Hell und dunkel | dieselben Stufen: Grund `bg`, Box `surface-1`, Einschub/Hover `surface-2`, Auswahl `surface-3` | |
+
+**Bausteine (alle in `@/design-system`, jeder Rahmen aus genau einem):**
+
+- **`Card`** ist DIE Box: `title` (13/520) oder `eyebrow` (Kleinbeschriftung, für Widgets/Kacheln), `meta`, `actions`, `pad` (`normal` 16 · `tight` 12 · `roomy` 24 · `list` 4 für Zeilen mit eigenem Hover · `none` für Tabellen mit eigenen Zellen), `gap`, `layout="row"`, `as` (section, article, li, ul, `Link`, `button`), `interactive`, `selected`, `headingAs`, `tooltip`. Töne: `inset` (Box in Box), `node` (Karte fester Größe im Diagramm, Inhalt mittig, `selected` = Akzentring; Organigramm-Knoten), `popover` (schwebende Karte, Overlay-Schatten; Hover-Karte). Kacheln (`Tile`, `ProjectTile`), Dashboard-Abschnitte, Inbox-Karten, Startseiten-Karten, Ziele, Agenten-/Abteilungskarten, Workflow-Karten sind alle `Card`.
+- **`ListBox`** (Listen, mit `padded` 4 px Luft, Zeilen bekommen Radius 8), **`TableCard`** (ist eine `ListBox`), **`RowList`** (Zeilenliste mit `SectionLabel`), **`SettingsGroup`/`SettingsRow`** (+ `SettingsSection`/`SettingsCard`, dieselbe Optik) zeichnen dieselbe Box. Eine Liste, die selbst scrollt, steht in der `ListBox`, die Zeilen in einem Kind mit `overflow-y-auto` (die Box schneidet ab, `overflow-*` auf ihr selbst greift nicht).
+- **`Section`** (Titel, Satz, Aktionen; Inhalt mit `--stack-gap`), **`Sections`** (mehrere Abschnitte untereinander, `--section-gap`), **`GroupHead`**, **`MonoLabel`/`MonoMeta`**, **`EmptyState`** (`fill` / `boxed`), **`Notice`** (getönte Hinweise, Radius wie die Box; `tone` neutral/warning/danger, Text darf Absätze und Listen enthalten; ersetzt das frühere shadcn-`Alert`).
+- **Kleine Bausteine, die sonst jede Seite selbst gerahmt hätte:** `Pill` (`size="sm"` = 20 px für das Etikett in einer dichten Zeile, `tone`), `PillButton`, `PillLink` (ein Chip, der klickt oder verlinkt); `IconTile` (32-px-Kachel mit dem Symbol einer Zeile: Login, Werkzeug, Skill, Verbindung); `FieldFrame` (Rahmen eines Feldes mit mehr als einer Eingabe: Tags, Empfänger, Editor; `area` für den Editor-Block; gleiche Fläche, gleicher Radius, gleicher Fokus wie `TextField`); `CodeBlock` (jeder Befehl, Log und Rohtext in Mono, nie ein eigenes `<pre>`); `CopyValue` (ein Wert, der mit einem Klick kopiert wird); `TextArea` (das Mehrzeilenfeld). Ein Karten-Knopf ist `Card as="button"` (`interactive`, `selected`, `disabled`), ein Karten-Link `Card as={Link}`, eine Auswahlkarte im Dialog `tone="inset"`.
+- **Split-Flächen:** `.ds-pane` (Liste neben Detail: Inbox, Mail, Dokumentbaum; Fläche `surface-1`, Linie zur Nachbarfläche, unter 768 px ohne Linie), `.ds-sticky-head` (Kopfzeile einer scrollenden Tabelle).
+- `DashboardPrimitives` hat keine eigene Karte, kein eigenes Label mehr: `Card`, `MonoLabel`, `MonoMeta` sind Re-Exporte des Design-Systems.
+
+**Der Orb und was darunter scrollt:**
+
+- *Handy (< 900 px):* Er sitzt in der Kopfleiste am rechten Ende (52-px-Fläche, der Partikel-Orb zeichnet sich in ~70 % davon) statt unten rechts über der Seite; die Leiste hält den Platz frei (`.ds-page-header::after`), sodass er nie Titel, Steuerungen, Listenaktionen oder das Eingabefeld verdeckt.
+- *Desktop (≥ 900 px):* Er schwebt unten rechts (64 px, 24 px vom Rand) und verdeckt beim Scrollen nichts. **An einer Stelle:** `HomeDock` ruft `useOrbClearance` (`utils/orbClearance.ts`); der Hook fragt mit `elementsFromPoint` an einem Gitter aus 4 × 4 Punkten über dem Orb, welche Scroller (`overflow-y: auto|scroll`, die überlaufen) unter ihm liegen, und markiert sie mit `data-orb-clear`. Ein markierter Scroller endet mit einem leeren Stück in Höhe des Orbs (`[data-orb-clear]::after`, `--orb-clear` 96 px in `shell.css`), seine letzte Zeile scrollt also frei. Das gilt für jede Seite, Liste und Tabelle, keine Seite polstert sich selbst; eine Seite, die nicht überläuft, bekommt nichts (das Ende gilt nicht als Inhalt, sie scrollt nie wegen des Orbs). Neu gemessen wird bei Routenwechsel, Größenänderung und Änderungen im Hauptbereich (gedrosselt). Er fehlt weiter auf Start (dort ist er die Seite), im Terminal und bei offenem Panel.
+- Messung: `ui-audit.mjs` (`measureOrb`, `orbFindings`) verkleinert das Fenster auf 600 px Höhe, scrollt jeden Scroller ans Ende und meldet alles, was zu lesen oder zu klicken ist und unter dem Orb liegt (große Flächen wie eine Ablagezone zählen nicht). Getestet in `utils/orbClearance.test.ts` und `uiAudit.test.ts`.
+
+**Nicht mehr erlaubt (Guard):**
+
+- In Seiten und Features (`features/**`, `app/**`) sperrt ESLint die Klassen `bg-card`, `bg-popover`, `border` (ganzer Rahmen) und `shadow-*` (`better-tailwindcss/no-restricted-classes`); zusammen mit den schon gesperrten Radien, Abständen und Schriftgrößen kann eine Seite keine eigene Box zeichnen. Bestand steht in `eslint-suppressions.json` und wird nur kürzer (`bunx eslint --prune-suppressions .`).
+- `src/design-system/boxGuard.test.ts`: kein Modul-CSS und kein Feature-CSS setzt `--shadow-card`, `Card`/`Tile` werden nicht nachgebaut.
+- Messung im echten Browser: `apps/web/scripts/ui-audit.mjs` misst jede Route (hell/dunkel, 1440/390) auf Seitengrund, jede Box (Radius, Hintergrund-Token, Schatten, Innenabstand der Karten), handgemalte Boxen (Rahmen + Füllung ohne Box-Klasse), den Abstand nebeneinanderliegender Boxen (16 px), den Abstand der Abschnitte in `Sections` (32 px), das Symbol jedes Leerzustands samt seiner Lage und die Schriftgrößen der Titel (`contentFindings` in `ui-audit-rules.mjs`, getestet in `uiAudit.test.ts`).
+
+**Umstellung:** Runde 1: 70 handgemalte Karten (`rounded-md border bg-card`) per Codemod auf `Card` (Radius 8 + Rahmen wurde Radius 12 + Kartenschatten). Runde 2 (Codemod `card-codemod.mjs` mit `CARD_ANY_BORDER`, dazu Handarbeit): `bg-card` in `src` 78 → 2 Stellen (übrig: der Anhangs-Chip `ui/attachment.tsx` und die Kopfzeilen-Konstante `WorkspaceHeader`, deren Test die Klassen prüft), Rahmen und Schatten in `features/**` und `app/**` 259 → 20 Stellen (gezählt über `features/**` und `app/**`, Klassen `bg-card`, `bg-popover`, `border`, `shadow*`). Was blieb, sind Bedienelemente und Schwebendes: Auswahlpunkte und Farbmuster (`rounded-full border`), Haftnotiz und Kanban-Geisterkarten, Popover/Toast-Schatten, das Etikett am Browser-Bild. Doppelte Bausteine sind weg: `components/ui/card.tsx` und `components/helena/Card.tsx` (nirgends benutzt), `ui/alert.tsx` (→ `Notice`), `ui/table.tsx` (nirgends benutzt), `TableCard` zeichnet die `ListBox`, `common/fields/Pill` ist der `PillButton`. `eslint-suppressions.json`: 5884 → 5228 Zähler, 878 → 868 Dateien.

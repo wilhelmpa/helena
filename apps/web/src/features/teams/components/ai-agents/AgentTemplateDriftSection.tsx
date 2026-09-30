@@ -1,5 +1,6 @@
 'use client';
 
+import { Card } from '@/design-system';
 import { LayoutTemplate, RotateCcw } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Badge } from '@/components/ui/badge';
@@ -37,7 +38,7 @@ export default function AgentTemplateDriftSection({ agent }: { agent: AiAgent })
   const overridden = new Set(agent.templateOverrides);
 
   return (
-    <div className="space-y-2 rounded-md border border-sidebar-border bg-card p-3">
+    <Card pad="tight" gap={2}>
       <p className="flex items-center gap-2 text-sm font-medium">
         <LayoutTemplate className="size-4 text-muted-foreground" />
         {template ? t('copyOf', { name: template.name }) : t('copyOfUnknown')}
@@ -74,6 +75,6 @@ export default function AgentTemplateDriftSection({ agent }: { agent: AiAgent })
           );
         })}
       </div>
-    </div>
+    </Card>
   );
 }

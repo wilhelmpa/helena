@@ -1,5 +1,6 @@
 'use client';
 
+import { Card } from '@/design-system';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { PenLine, PenSquare } from 'lucide-react';
@@ -55,11 +56,16 @@ export default function ComposeDraftList({
           <p className="text-sm text-muted-foreground">{t('noDrafts')}</p>
         )}
         {(drafts.data ?? []).map((draft) => (
-          <button
-            key={draft.id}
+          <Card
+            as="button"
             type="button"
+            tone="inset"
+            interactive
+            pad="tight"
+            gap={1}
+            key={draft.id}
             onClick={() => setComposeDraft(draft.id)}
-            className="flex flex-col items-start gap-0.5 rounded-md border bg-card px-3 py-2 text-start text-sm transition-colors hover:bg-accent"
+            className="items-start text-sm"
           >
             <span className="flex w-full items-center gap-1.5">
               <PenLine className="size-3.5 shrink-0 text-muted-foreground" />
@@ -74,7 +80,7 @@ export default function ComposeDraftList({
               {t(`status.${draft.status}`)}
               {draft.createdByName && ` · ${t('by', { name: draft.createdByName })}`}
             </span>
-          </button>
+          </Card>
         ))}
       </section>
     </div>

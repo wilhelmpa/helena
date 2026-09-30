@@ -1,8 +1,8 @@
+import { Card } from '@/design-system';
 import { useEffect, useRef, useState } from 'react';
 import type { ProjectDetail } from '@/lib/api/endpoints/projects';
 import { groupDefaults, type IssueGroup } from '@/utils/project';
 import { useCreateIssue, useSetFieldValue } from '@/services/issues.service';
-import { cn } from '@/lib/utils';
 
 export default function InlineColumnCreate({
   project,
@@ -49,7 +49,7 @@ export default function InlineColumnCreate({
   }
 
   return (
-    <div className={cn('rounded-md bg-card p-2', compact ? 'w-56' : 'mx-2 mb-2')}>
+    <Card pad="tight" className={compact ? 'w-56' : 'mx-2 mb-2'}>
       <input
         ref={inputRef}
         aria-label={`Neue Aufgabe in ${group.name}`}
@@ -66,6 +66,6 @@ export default function InlineColumnCreate({
         className="w-full min-w-0 bg-transparent text-sm outline-none"
       />
       {error && <p className="mt-1 text-xs text-destructive">{error}</p>}
-    </div>
+    </Card>
   );
 }

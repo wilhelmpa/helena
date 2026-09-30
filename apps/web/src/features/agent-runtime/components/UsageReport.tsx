@@ -2,13 +2,14 @@
 
 import { useState } from 'react';
 import { useFormatter, useTranslations } from 'next-intl';
+import TableCard from '@/components/common/page/TableCard';
 import ListSkeleton from '@/components/common/skeleton/ListSkeleton';
 import { PAGE_CONTROL_ACTIVE_CLASS, PAGE_CONTROL_CLASS } from '@/components/layout/PageToolbar';
 import { cn } from '@/lib/utils';
 import type { UsageDimension, UsageRow } from '@/lib/api/endpoints/agentRuntime';
 import { compactTokens, formatElapsed } from '@/utils/agentUsage';
 import { useAgentUsage } from '../services/agentRuntime.service';
-import { Table, Th, Tr, Td } from '@/design-system';
+import { Table, Th, Tr, Td, Card } from '@/design-system';
 
 const PERIODS = [7, 30, 90] as const;
 
@@ -91,7 +92,7 @@ export default function UsageReport({
             <Stat label={t('entries')} value={String(report.data.total.entries)} />
           </div>
           {report.data.unpriced && <p className="text-xs text-muted-foreground">{t('unpriced')}</p>}
-          <div className="overflow-x-auto rounded-md bg-card">
+          <TableCard>
             <Table stack={false}>
               <thead>
                 <Tr>
@@ -130,7 +131,7 @@ export default function UsageReport({
                 ))}
               </tbody>
             </Table>
-          </div>
+          </TableCard>
         </>
       )}
     </div>
@@ -158,9 +159,9 @@ function cell(
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-md bg-card px-3 py-2">
+    <Card tone="inset" pad="tight" gap={0}>
       <p className="text-xs text-muted-foreground">{label}</p>
       <p className="text-md font-medium tabular-nums">{value}</p>
-    </div>
+    </Card>
   );
 }

@@ -42,7 +42,7 @@ export default function InitiativesList({
 
   return (
     <div className="ds-goal-list-pad">
-      <ul className="ds-goal-list" aria-label={t('title')}>
+      <ul className="ds-list-box ds-goal-list" aria-label={t('title')}>
         {initiatives.map((it) => (
           <InitiativeRow
             key={it.id}

@@ -67,7 +67,7 @@ export class HelenaDecisionClient implements DecisionClient {
     } catch (error) {
       if (error instanceof HelenaApiError)
         throw new DecisionError(`http_${error.status}`, error.message);
-      throw new DecisionError('unreachable', 'Helena did not answer.');
+      throw new DecisionError('unreachable', 'Ava did not answer.');
     }
   }
 }
@@ -148,7 +148,7 @@ async function start(
     });
   } catch (error) {
     if (error instanceof HelenaApiError) throw new Error(error.message);
-    throw new Error('Could not reach Helena.');
+    throw new Error('Could not reach Ava.');
   }
 }
 
@@ -196,7 +196,7 @@ function authorizer(ctx: TaskContext, taskToken?: string) {
     } catch (error) {
       return {
         effect: 'deny',
-        reason: error instanceof HelenaApiError ? error.message : 'Helena did not answer',
+        reason: error instanceof HelenaApiError ? error.message : 'Ava did not answer',
       };
     }
   };

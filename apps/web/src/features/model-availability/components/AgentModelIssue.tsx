@@ -1,5 +1,6 @@
 'use client';
 
+import { Notice, Stack } from '@/design-system';
 import { AlertTriangle, RotateCcw } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
@@ -39,33 +40,31 @@ export default function AgentModelIssue({
   const clear = useClearModelAvailability();
   if (!refusal && deadLogin)
     return (
-      <div
-        role="alert"
-        className="space-y-2 rounded-md border border-destructive/40 bg-destructive/5 p-3 text-sm"
-      >
-        <p className="flex items-start gap-2 text-destructive" dir="auto">
-          <AlertTriangle className="mt-0.5 size-4 shrink-0" />
-          <span>
-            {model
-              ? t('deadLogin', {
-                  model,
-                  account: accountOf(deadLogin.provider),
-                  state: deadLogin.state,
-                })
-              : t('deadLoginDefault', {
-                  account: accountOf(deadLogin.provider),
-                  state: deadLogin.state,
-                })}
-          </span>
-        </p>
-        {canEdit && deadLogin.command && (
-          <CopyableCommand
-            command={deadLogin.command}
-            copyLabel={tSync('copyCommand')}
-            copiedLabel={tSync('copied')}
-          />
-        )}
-      </div>
+      <Notice tone="danger" icon={<AlertTriangle />}>
+        <Stack gap={2}>
+          <p dir="auto">
+            <span>
+              {model
+                ? t('deadLogin', {
+                    model,
+                    account: accountOf(deadLogin.provider),
+                    state: deadLogin.state,
+                  })
+                : t('deadLoginDefault', {
+                    account: accountOf(deadLogin.provider),
+                    state: deadLogin.state,
+                  })}
+            </span>
+          </p>
+          {canEdit && deadLogin.command && (
+            <CopyableCommand
+              command={deadLogin.command}
+              copyLabel={tSync('copyCommand')}
+              copiedLabel={tSync('copied')}
+            />
+          )}
+        </Stack>
+      </Notice>
     );
   if (!refusal && !templateModel) return null;
   if (!refusal)
@@ -75,46 +74,44 @@ export default function AgentModelIssue({
       </p>
     );
   return (
-    <div
-      role="alert"
-      className="space-y-2 rounded-md border border-destructive/40 bg-destructive/5 p-3 text-sm"
-    >
-      <p className="flex items-start gap-2 text-destructive" dir="auto">
-        <AlertTriangle className="mt-0.5 size-4 shrink-0" />
-        <span>
-          {t('refused', {
-            model: refusal.id,
-            account: accountOf(refusal.provider, runtime, refusal.id),
-          })}
-        </span>
-      </p>
-      <p className="text-xs text-muted-foreground" dir="auto">
-        {refusal.detail ? `${t('providerSaid', { detail: refusal.detail })} · ` : ''}
-        {t('since', { time: formatDateTime(refusal.since) })}
-      </p>
-      {canEdit && (
-        <div className="flex flex-wrap gap-2">
-          <Button type="button" size="sm" variant="outline" onClick={onUseDefault}>
-            {t('useDefault')}
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant="ghost"
-            title={t('retryHint')}
-            disabled={clear.isPending}
-            onClick={() =>
-              clear.mutate(
-                { teamId, entryId: refusal.findingId },
-                { onSuccess: () => toast.success(t('retried', { model: refusal.id })) },
-              )
-            }
-          >
-            <RotateCcw className="size-3.5" />
-            {t('retry')}
-          </Button>
-        </div>
-      )}
-    </div>
+    <Notice tone="danger" icon={<AlertTriangle />}>
+      <Stack gap={2}>
+        <p dir="auto">
+          <span>
+            {t('refused', {
+              model: refusal.id,
+              account: accountOf(refusal.provider, runtime, refusal.id),
+            })}
+          </span>
+        </p>
+        <p className="text-xs text-muted-foreground" dir="auto">
+          {refusal.detail ? `${t('providerSaid', { detail: refusal.detail })} · ` : ''}
+          {t('since', { time: formatDateTime(refusal.since) })}
+        </p>
+        {canEdit && (
+          <div className="flex flex-wrap gap-2">
+            <Button type="button" size="sm" variant="outline" onClick={onUseDefault}>
+              {t('useDefault')}
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              title={t('retryHint')}
+              disabled={clear.isPending}
+              onClick={() =>
+                clear.mutate(
+                  { teamId, entryId: refusal.findingId },
+                  { onSuccess: () => toast.success(t('retried', { model: refusal.id })) },
+                )
+              }
+            >
+              <RotateCcw className="size-3.5" />
+              {t('retry')}
+            </Button>
+          </div>
+        )}
+      </Stack>
+    </Notice>
   );
 }

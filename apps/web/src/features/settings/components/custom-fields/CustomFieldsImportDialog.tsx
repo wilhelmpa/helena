@@ -11,7 +11,7 @@ import { useCreateCustomField, useCreateIssueType } from '../../services/setting
 import { useFieldTypeLabel } from '../../utils/fieldTypes';
 import type { CustomFieldsImportPlan } from '../../utils/customFieldsTransfer';
 
-import { Stack, Text, Inline } from '@/design-system';
+import { Stack, Text, Inline, ListBox } from '@/design-system';
 
 // Confirms a custom fields paste before applying it. Lists any issue types that will be
 // created for scoped fields and each field with its target scope and whether it is new
@@ -87,33 +87,40 @@ export default function CustomFieldsImportDialog({
               })
             : t('importSummary', { count: toCreate.length })}
         </Text>
-        <div className="max-h-[50vh] divide-y divide-border/60 overflow-y-auto rounded-md border border-border/60">
-          {plan.fields.map((field) => (
-            <Inline
-              gap={3}
-              padX={3}
-              padY={3}
-              key={`${field.type ?? 'global'}:${field.name}`}
-              className="flex items-center"
-            >
-              <Text as="span" size="sm" className="min-w-0 flex-1 truncate font-medium">
-                {field.name}
-              </Text>
-              <Text as="span" size="xs" tone="muted" className="shrink-0">
-                {fieldTypeLabel(field.fieldType)}
-              </Text>
-              <Text as="span" size="xs" tone="muted" className="w-28 shrink-0 truncate text-right">
-                {field.type ?? t('globalShort')}
-              </Text>
-              <Badge
-                variant={field.action === 'skip' ? 'outline' : 'secondary'}
-                className="w-14 shrink-0 justify-center px-1.5 py-0 text-xs font-normal"
+        <ListBox>
+          <div className="max-h-[50vh] divide-y divide-border/60 overflow-y-auto">
+            {plan.fields.map((field) => (
+              <Inline
+                gap={3}
+                padX={3}
+                padY={3}
+                key={`${field.type ?? 'global'}:${field.name}`}
+                className="flex items-center"
               >
-                {t(field.action === 'create' ? 'actionNew' : 'actionExists')}
-              </Badge>
-            </Inline>
-          ))}
-        </div>
+                <Text as="span" size="sm" className="min-w-0 flex-1 truncate font-medium">
+                  {field.name}
+                </Text>
+                <Text as="span" size="xs" tone="muted" className="shrink-0">
+                  {fieldTypeLabel(field.fieldType)}
+                </Text>
+                <Text
+                  as="span"
+                  size="xs"
+                  tone="muted"
+                  className="w-28 shrink-0 truncate text-right"
+                >
+                  {field.type ?? t('globalShort')}
+                </Text>
+                <Badge
+                  variant={field.action === 'skip' ? 'outline' : 'secondary'}
+                  className="w-14 shrink-0 justify-center px-1.5 py-0 text-xs font-normal"
+                >
+                  {t(field.action === 'create' ? 'actionNew' : 'actionExists')}
+                </Badge>
+              </Inline>
+            ))}
+          </div>
+        </ListBox>
         <Inline gap={2} align="stretch" justify="end" className="flex justify-end">
           <Button variant="outline" onClick={onClose} disabled={busy}>
             {tCommon('cancel')}

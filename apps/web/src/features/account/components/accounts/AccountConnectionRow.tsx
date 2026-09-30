@@ -1,5 +1,6 @@
 'use client';
 
+import { IconTile } from '@/design-system';
 import type { ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { useTranslations } from 'next-intl';
@@ -50,9 +51,7 @@ export default function AccountConnectionRow({
   return (
     <div className="flex items-center justify-between gap-4 px-4 py-3">
       <div className="flex min-w-0 items-center gap-3">
-        <span className="flex size-8 shrink-0 items-center justify-center rounded-md border border-sidebar-border bg-background">
-          {icon}
-        </span>
+        <IconTile>{icon}</IconTile>
         <div className="min-w-0">
           <div className="text-sm font-medium">{name}</div>
           <p className="truncate text-xs text-muted-foreground">{connectedTo ?? description}</p>
