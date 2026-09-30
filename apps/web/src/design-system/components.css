@@ -433,6 +433,10 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.ds-list-row[data-wrap] :is(.ds-list-title, .ds-list-subtitle) {
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
 .ds-list-subtitle {
   overflow: hidden;
   color: var(--text-3);
@@ -630,6 +634,9 @@
   .ds-props {
     grid-template-columns: minmax(0, 1fr);
   }
+}
+.ds-props[data-columns='1'] {
+  grid-template-columns: minmax(0, 1fr);
 }
 .ds-prop {
   display: grid;
@@ -3370,4 +3377,76 @@ a.ds-run-card:hover {
   .ds-matrix-wide {
     min-width: 0;
   }
+}
+
+/* ── Diff (TextDiff.tsx) ──────────────────────────────────────────────── */
+.ds-diff {
+  max-height: 320px;
+  margin: 0;
+  overflow: auto;
+  border-radius: var(--radius-lg);
+  background: var(--surface-2);
+  padding: var(--space-2) var(--space-3);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.ds-diff-line {
+  display: block;
+  color: var(--text-2);
+}
+.ds-diff-line[data-change='added'] {
+  background: color-mix(in srgb, var(--status-done) 16%, transparent);
+  color: var(--text);
+}
+.ds-diff-line[data-change='removed'] {
+  background: color-mix(in srgb, var(--danger) 14%, transparent);
+  color: var(--text);
+  text-decoration: line-through;
+  text-decoration-color: color-mix(in srgb, var(--danger) 60%, transparent);
+}
+
+/* ── A value shortened with a copy button (CopyValue.tsx) ─────────────── */
+.ds-copy-value {
+  display: inline-flex;
+  max-width: 100%;
+  align-items: center;
+  gap: var(--space-1);
+  border-radius: var(--radius-sm);
+  padding: 2px 6px;
+  color: var(--text-2);
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+.ds-copy-value:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+.ds-copy-value-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ds-copy-value svg {
+  flex: none;
+  color: var(--text-3);
+}
+
+/* ── A block of monospaced text (CodeBlock.tsx) ───────────────────────── */
+.ds-code {
+  max-height: 360px;
+  margin: 0;
+  overflow: auto;
+  border-radius: var(--radius-lg);
+  background: var(--surface-2);
+  padding: var(--space-3);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }

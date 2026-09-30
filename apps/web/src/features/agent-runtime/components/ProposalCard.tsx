@@ -10,7 +10,7 @@ import type {
 } from '@/lib/api/endpoints/agentRuntime';
 import { formatDateTime } from '@/utils/dates';
 import { useDecideProposal } from '../services/agentRuntime.service';
-import TextDiff from './TextDiff';
+import { TextDiff } from '@/design-system';
 
 // A change an agent's runtime raised for the owner: a memory write of the agent, shown as a
 // diff of the file, or an update of Hermes with what it brings. Pending, it offers the

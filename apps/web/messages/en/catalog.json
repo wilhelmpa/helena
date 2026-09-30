@@ -1,0 +1,397 @@
+{
+  "tabsLabel": "Views of the skill management",
+  "tabs": {
+    "library": "Library",
+    "catalog": "Catalog",
+    "sources": "Sources",
+    "proposals": "Suggestions",
+    "updates": "Updates"
+  },
+  "browser": {
+    "search": "Search the catalog",
+    "title": "Catalog entries",
+    "kindSkill": "Skill",
+    "kindMcp": "MCP server",
+    "notInspected": "Not inspected",
+    "licenseUnknown": "License unknown",
+    "installed": "Installed",
+    "installedAt": "Installed · {pin}",
+    "newVersion": "New version",
+    "noMatch": {
+      "title": "Nothing found",
+      "text": "There is no catalog entry for “{query}”."
+    },
+    "noSources": {
+      "title": "No sources yet",
+      "text": "The catalog lists only what you add as a source yourself: a GitHub repository or an MCP package. Add a source first."
+    },
+    "noItems": {
+      "title": "No entries yet",
+      "text": "Your sources are added but not read yet. Refresh them so their entries appear here."
+    },
+    "toSources": "Go to sources"
+  },
+  "sources": {
+    "title": "Catalog sources",
+    "intro": "A source is a GitHub repository or a package you chose. The catalog looks nowhere else. Disabling a source keeps entries you already installed and their way back.",
+    "empty": {
+      "title": "No sources yet",
+      "text": "Add a GitHub repository with skills or an MCP package so the catalog can show entries."
+    },
+    "kinds": {
+      "github-skills": "Skills from GitHub",
+      "npm-mcp": "MCP package (npm)",
+      "pypi-mcp": "MCP package (PyPI)",
+      "github-mcp": "MCP server from GitHub"
+    },
+    "on": "Active",
+    "off": "Disabled",
+    "entries": "{count, plural, one {1 entry} other {# entries}}",
+    "noEntries": "Not read yet",
+    "justRefreshed": "just refreshed: {count, plural, one {1 entry found} other {# entries found}}",
+    "addedOn": "added on {date}",
+    "refresh": "Refresh",
+    "refreshing": "Reading …",
+    "disable": "Disable",
+    "enable": "Enable",
+    "disableTitle": "Disable source",
+    "disableText": "“{name}” will then deliver no new entries or versions. What you already installed stays pinned to its version and can still be rolled back.",
+    "add": {
+      "open": "Add source",
+      "title": "Add source",
+      "kind": "Kind of source",
+      "kinds": {
+        "github-skills": "Skills (GitHub)",
+        "npm-mcp": "MCP (npm)",
+        "pypi-mcp": "MCP (PyPI)",
+        "github-mcp": "MCP (GitHub)"
+      },
+      "locator": "Address or package name",
+      "hints": {
+        "github-skills": "A GitHub repository with folders that contain a SKILL.md.",
+        "npm-mcp": "The name of an MCP server on npm, for example @company/mcp-files.",
+        "pypi-mcp": "The name of an MCP server on PyPI.",
+        "github-mcp": "A GitHub repository with a package.json whose package is published on npm."
+      },
+      "placeholders": {
+        "github-skills": "https://github.com/owner/repository",
+        "npm-mcp": "@company/mcp-files",
+        "pypi-mcp": "mcp-weather",
+        "github-mcp": "https://github.com/owner/repository"
+      },
+      "role": "What is the source for?",
+      "roleHint": "Optional. The text appears in the search, for example “Development” or “Research”.",
+      "rolePlaceholder": "Development",
+      "submit": "Add and read",
+      "adding": "Adding …",
+      "addedNoEntries": {
+        "title": "The source is added but not read yet",
+        "text": "The entries could not be loaded just now. You can refresh the source in the list later."
+      }
+    }
+  },
+  "preview": {
+    "title": "Entry",
+    "kindSkill": "Skill",
+    "kindMcp": "MCP server",
+    "installedYes": "Installed",
+    "newVersion": "New version inspected",
+    "blockedTag": "Blocked",
+    "reviewTag": "To review",
+    "loadFailed": {
+      "title": "The entry cannot be loaded",
+      "text": "It no longer exists or you lack permission. Close this view and try again."
+    },
+    "tabs": {
+      "overview": "Overview",
+      "files": "Files",
+      "versions": "Versions",
+      "adopt": "Adopt"
+    },
+    "properties": "Details",
+    "kind": "Kind",
+    "origin": "Origin",
+    "sourceOff": "Source disabled",
+    "version": "Inspected version",
+    "versionLabel": "Version",
+    "license": "License",
+    "licenseUnknown": "unknown",
+    "size": "Size",
+    "checksum": "Checksum",
+    "checksumLabel": "Checksum of the version",
+    "inspectedAt": "Inspected on",
+    "installed": "Installed",
+    "installedNo": "No",
+    "pinnedTo": "pinned to {pin}",
+    "skillText": "Text of the skill",
+    "notInspected": {
+      "title": "Not inspected yet",
+      "text": "This entry has no inspected version yet. The inspection reads the current state of the source, freezes it and looks for anything unusual."
+    },
+    "inspecting": "Inspecting …",
+    "inspectNow": "Inspect now",
+    "mcp": {
+      "title": "Start command and environment",
+      "command": "Start command (offline, in the isolated agent environment)",
+      "environment": "Required environment variables",
+      "permissions": "Observed access",
+      "permission": {
+        "isolated agent sandbox": "Runs only in the isolated agent environment.",
+        "configured egress": "Network access only to approved addresses.",
+        "network access through agent egress": "Calls the network (through the agent's approvals).",
+        "project filesystem access": "Reads or writes files in the project folder.",
+        "subprocess execution": "Starts other programs."
+      }
+    }
+  },
+  "files": {
+    "title": "Files of the inspected version",
+    "notInspected": "Files can be viewed only after the inspection.",
+    "empty": "This version contains no files.",
+    "summary": "{count, plural, one {1 file} other {# files}}, {scripts, plural, =0 {no scripts} one {1 script} other {# scripts}}",
+    "script": "Script",
+    "hidden": "Hidden",
+    "hiddenText": "The content is not shown because it looks like a password or key.",
+    "unreadable": "The content cannot be read as text."
+  },
+  "verdict": {
+    "blocked": {
+      "title": "Blocked – cannot be adopted",
+      "text": "The inspection found something that rules out adoption. The reasons are listed below."
+    },
+    "review": {
+      "title": "To review – only with your confirmation",
+      "text": "The inspection found anything unusual. Read it through. Adoption works only once you explicitly confirm."
+    },
+    "clean": {
+      "title": "Nothing unusual",
+      "text": "License, version, checksum and content look fine."
+    }
+  },
+  "findings": {
+    "title": "Inspection findings",
+    "severity": {
+      "block": "Blocked",
+      "review": "To review",
+      "info": "Note"
+    },
+    "unknownLicense": "unknown",
+    "license": "The license “{license}” is not confirmed as compatible with AGPL-3.0.",
+    "pin": "There is no exact version number. Without a fixed version nothing can be adopted pinned.",
+    "hash": "The package has no checksum that could prove its content.",
+    "unscanned-dependencies": "The package brings {count, plural, one {1 dependency} other {# dependencies}} that {count, plural, one {is} other {are}} neither fixed nor inspected.",
+    "executable": "Contains executable code or a script that runs on install.",
+    "executableSkill": "Contains an executable script. Adoption does not import it, only the text.",
+    "network-shell": "An executable file calls the network or the shell.",
+    "secret": "The file probably contains a password or key. Its content is not shown.",
+    "prompt-injection": "The text contains wording meant to make an agent ignore its instructions.",
+    "skill-format": "The SKILL.md file is missing or has no name or description."
+  },
+  "versions": {
+    "title": "Inspected versions",
+    "installedTag": "Installed",
+    "previousTag": "Way back",
+    "latestTag": "Latest",
+    "newer": {
+      "title": "New version {pin} is inspected",
+      "text": "See below what changed. The installed version stays until you update.",
+      "action": "Update …"
+    },
+    "count": "{count, plural, one {1 inspected version} other {# inspected versions}}",
+    "checkNew": "Check for a new version",
+    "checking": "Checking …",
+    "onlyOne": "There is only one inspected version so far. Once a new one is inspected you will see here what changed.",
+    "changes": "Changes",
+    "searchVersion": "Search version",
+    "from": "From {pin}",
+    "to": "To {pin}",
+    "pickTwo": "Pick two different versions to compare them.",
+    "diffFailed": "The comparison cannot be loaded",
+    "added": "{count} new",
+    "removed": "{count} removed",
+    "changed": "{count} changed",
+    "newFindings": "New findings in this version",
+    "goneFindings": "{count, plural, one {1 earlier finding is resolved} other {# earlier findings are resolved}}",
+    "fileNew": "New",
+    "fileGone": "Removed",
+    "fileChanged": "Changed",
+    "fileHidden": "The content is not shown because it looks like a password or key.",
+    "noChanges": "There are no differences between these versions."
+  },
+  "adopt": {
+    "notInspected": {
+      "title": "Inspect first, then adopt",
+      "text": "Only an inspected, frozen version is adopted. Inspect the entry first."
+    },
+    "inspecting": "Inspecting …",
+    "inspectNow": "Inspect now",
+    "proposal": {
+      "title": "Suggestion from {agent}",
+      "agent": "an agent",
+      "forAgent": "Assignment"
+    },
+    "forWhom": "Who should get it?",
+    "mcpHint": "MCP servers run only in the isolated agent environment. If it is off, {appName} refuses the installation.",
+    "acknowledge": "I have read the findings and adopt the version anyway.",
+    "done": "Adopted and pinned to {pin}.",
+    "acceptProposal": "Adopt suggestion",
+    "rejectProposal": "Decline",
+    "reassign": "Change assignment",
+    "update": "Update to version {pin}",
+    "adopt": "Adopt version {pin}",
+    "rollback": {
+      "title": "Way back",
+      "text": "The previous version {pin} is kept. You can return to it at any time.",
+      "action": "Roll back to version {pin}",
+      "confirm": "Roll back",
+      "confirmText": "“{name}” will be rolled back to the previous version {pin}. The assignment stays."
+    }
+  },
+  "scope": {
+    "label": "Assignment",
+    "modes": {
+      "library": "Library",
+      "project": "Project",
+      "agent": "Agent",
+      "role": "Role"
+    },
+    "hints": {
+      "library": "The entry goes only into the team's library. No agent uses it until you assign it.",
+      "project": "All agents of this project get the entry.",
+      "agent": "Only this one agent gets the entry.",
+      "role": "All agents with this role get the entry, optionally only in one project."
+    },
+    "searchProject": "Search project",
+    "noProjects": "No project found",
+    "pickProject": "Pick a project",
+    "searchAgent": "Search agent",
+    "noAgents": "No agent found",
+    "pickAgent": "Pick an agent",
+    "searchRole": "Search role",
+    "noRoles": "No role found",
+    "pickRole": "Pick a role",
+    "anyProject": "In every project",
+    "unknownProject": "unknown project",
+    "unknownAgent": "unknown agent",
+    "unknownRole": "unknown role",
+    "phrase": {
+      "agent": "Agent {name}",
+      "role": "Role {name}",
+      "roleInProject": "Role {name} in {project}",
+      "project": "Project {name}",
+      "library": "Only in the library, not assigned to any agent"
+    }
+  },
+  "proposals": {
+    "empty": {
+      "title": "No suggestions",
+      "text": "Agents can suggest skills from the catalog. You decide whether a suggestion is adopted; an agent never installs anything itself."
+    },
+    "nonePending": "All suggestions are decided.",
+    "itemNumber": "Entry {id}",
+    "by": "Suggested by {agent} · {when}",
+    "anAgent": "an agent",
+    "kindSkill": "Skill",
+    "kindMcp": "MCP server",
+    "review": "View and adopt",
+    "reject": "Decline",
+    "decided": "Already decided",
+    "state": {
+      "accepted": "Adopted",
+      "rejected": "Declined",
+      "pending": "Open"
+    }
+  },
+  "updates": {
+    "title": "Installed entries",
+    "intro": "These are the installed entries with their pinned version. “Check for updates” reads the newest state of every source and inspects it. Nothing changes until you adopt a new version.",
+    "empty": {
+      "title": "Nothing installed yet",
+      "text": "As soon as you adopt an entry from the catalog it appears here with its version."
+    },
+    "kindSkill": "Skill",
+    "kindMcp": "MCP server",
+    "pinnedTo": "pinned to {pin}",
+    "upToDate": "just checked, nothing new",
+    "available": "New: {pin}",
+    "current": "No update known",
+    "showChanges": "View changes",
+    "check": "Check",
+    "checking": "Checking …",
+    "checkAll": "Check for updates",
+    "checkingAll": "Checking …",
+    "news": "{count, plural, one {1 entry has a new version} other {# entries have new versions}}",
+    "newsText": "Open the entry, look at the difference and the new inspection, then update.",
+    "sourceOff": "Source disabled"
+  },
+  "errors": {
+    "blocked": {
+      "title": "Adoption not possible",
+      "text": "The inspection of this version has a blocking finding. It cannot be adopted."
+    },
+    "acknowledge": {
+      "title": "Confirmation missing",
+      "text": "The version has findings you have to confirm first."
+    },
+    "sourceDisabled": {
+      "title": "The source is disabled",
+      "text": "Enable the source under “Sources” to read it or adopt anything new."
+    },
+    "isolation": {
+      "title": "The isolated agent environment is off",
+      "text": "MCP servers may run only in the isolated agent environment. Switch it on first, then the server can be installed."
+    },
+    "noPrevious": {
+      "title": "No earlier version",
+      "text": "There is no previous version to roll back to."
+    },
+    "decided": {
+      "title": "Already decided",
+      "text": "This suggestion has already been decided. Reload the list."
+    },
+    "gone": {
+      "title": "No longer in the source",
+      "text": "The entry is no longer present in the source."
+    },
+    "noPin": {
+      "title": "No fixed version",
+      "text": "The source names no immutable version. Without one nothing is adopted."
+    },
+    "changed": {
+      "title": "Content has changed",
+      "text": "Different content now sits under the same version. That should never happen. Do not adopt it and check the source."
+    },
+    "tooLarge": {
+      "title": "Too large",
+      "text": "The package or its metadata is larger than allowed."
+    },
+    "registry": {
+      "title": "Unexpected address",
+      "text": "The archive is no longer in the chosen source. It was not loaded."
+    },
+    "integrity": {
+      "title": "Checksum does not match",
+      "text": "The content does not match what the source states. It was not adopted."
+    },
+    "unreachable": {
+      "title": "Source not reachable",
+      "text": "{appName} could not read the source. Check the connection and try again later."
+    },
+    "invalidSource": {
+      "title": "Invalid source",
+      "text": "A source is exactly one GitHub repository or one package name. Check the spelling."
+    },
+    "forbidden": {
+      "title": "No permission",
+      "text": "Only the owner of the team may manage the catalog."
+    },
+    "conflict": {
+      "title": "Action not possible",
+      "text": "The current state does not allow this action. Reload the view and try again."
+    },
+    "generic": {
+      "title": "That did not work",
+      "text": "Try again. If it keeps failing, the reason is in the log."
+    }
+  }
+}

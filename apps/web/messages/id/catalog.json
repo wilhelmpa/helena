@@ -1,0 +1,397 @@
+{
+  "tabsLabel": "Tampilan pengelolaan skill",
+  "tabs": {
+    "library": "Pustaka",
+    "catalog": "Katalog",
+    "sources": "Sumber",
+    "proposals": "Saran",
+    "updates": "Pembaruan"
+  },
+  "browser": {
+    "search": "Cari di katalog",
+    "title": "Entri katalog",
+    "kindSkill": "Skill",
+    "kindMcp": "Server MCP",
+    "notInspected": "Belum diperiksa",
+    "licenseUnknown": "Lisensi tidak diketahui",
+    "installed": "Terpasang",
+    "installedAt": "Terpasang · {pin}",
+    "newVersion": "Versi baru",
+    "noMatch": {
+      "title": "Tidak ditemukan",
+      "text": "Tidak ada entri katalog untuk “{query}”."
+    },
+    "noSources": {
+      "title": "Belum ada sumber",
+      "text": "Katalog hanya menampilkan apa yang Anda tambahkan sebagai sumber: repositori GitHub atau paket MCP. Tambahkan sumber terlebih dahulu."
+    },
+    "noItems": {
+      "title": "Belum ada entri",
+      "text": "Sumber Anda sudah ditambahkan tetapi belum dibaca. Segarkan agar entrinya muncul di sini."
+    },
+    "toSources": "Ke sumber"
+  },
+  "sources": {
+    "title": "Sumber katalog",
+    "intro": "Sumber adalah repositori GitHub atau paket yang Anda pilih. Katalog tidak mencari di tempat lain. Menonaktifkan sumber tetap menyimpan entri yang sudah terpasang beserta jalan kembalinya.",
+    "empty": {
+      "title": "Belum ada sumber",
+      "text": "Tambahkan repositori GitHub berisi skill atau paket MCP agar katalog dapat menampilkan entri."
+    },
+    "kinds": {
+      "github-skills": "Skill dari GitHub",
+      "npm-mcp": "Paket MCP (npm)",
+      "pypi-mcp": "Paket MCP (PyPI)",
+      "github-mcp": "Server MCP dari GitHub"
+    },
+    "on": "Aktif",
+    "off": "Nonaktif",
+    "entries": "{count, plural, other {# entri}}",
+    "noEntries": "Belum dibaca",
+    "justRefreshed": "baru disegarkan: {count, plural, other {# entri ditemukan}}",
+    "addedOn": "ditambahkan pada {date}",
+    "refresh": "Segarkan",
+    "refreshing": "Membaca …",
+    "disable": "Nonaktifkan",
+    "enable": "Aktifkan",
+    "disableTitle": "Nonaktifkan sumber",
+    "disableText": "“{name}” tidak akan lagi memberi entri atau versi baru. Yang sudah Anda pasang tetap disematkan pada versinya dan masih bisa dikembalikan.",
+    "add": {
+      "open": "Tambah sumber",
+      "title": "Tambah sumber",
+      "kind": "Jenis sumber",
+      "kinds": {
+        "github-skills": "Skill (GitHub)",
+        "npm-mcp": "MCP (npm)",
+        "pypi-mcp": "MCP (PyPI)",
+        "github-mcp": "MCP (GitHub)"
+      },
+      "locator": "Alamat atau nama paket",
+      "hints": {
+        "github-skills": "Repositori GitHub dengan folder yang berisi SKILL.md.",
+        "npm-mcp": "Nama server MCP di npm, misalnya @perusahaan/mcp-berkas.",
+        "pypi-mcp": "Nama server MCP di PyPI.",
+        "github-mcp": "Repositori GitHub dengan package.json yang paketnya diterbitkan di npm."
+      },
+      "placeholders": {
+        "github-skills": "https://github.com/pemilik/repositori",
+        "npm-mcp": "@perusahaan/mcp-berkas",
+        "pypi-mcp": "mcp-cuaca",
+        "github-mcp": "https://github.com/pemilik/repositori"
+      },
+      "role": "Untuk apa sumber ini?",
+      "roleHint": "Opsional. Teks ini muncul di pencarian, misalnya “Pengembangan” atau “Riset”.",
+      "rolePlaceholder": "Pengembangan",
+      "submit": "Tambah dan baca",
+      "adding": "Menambahkan …",
+      "addedNoEntries": {
+        "title": "Sumber sudah ditambahkan tetapi belum dibaca",
+        "text": "Entri tidak dapat dimuat saat ini. Anda dapat menyegarkan sumber ini nanti di daftar."
+      }
+    }
+  },
+  "preview": {
+    "title": "Entri",
+    "kindSkill": "Skill",
+    "kindMcp": "Server MCP",
+    "installedYes": "Terpasang",
+    "newVersion": "Versi baru sudah diperiksa",
+    "blockedTag": "Diblokir",
+    "reviewTag": "Perlu ditinjau",
+    "loadFailed": {
+      "title": "Entri tidak dapat dimuat",
+      "text": "Entri sudah tidak ada atau Anda tidak punya izin. Tutup tampilan ini dan coba lagi."
+    },
+    "tabs": {
+      "overview": "Ringkasan",
+      "files": "Berkas",
+      "versions": "Versi",
+      "adopt": "Terapkan"
+    },
+    "properties": "Rincian",
+    "kind": "Jenis",
+    "origin": "Asal",
+    "sourceOff": "Sumber nonaktif",
+    "version": "Versi yang diperiksa",
+    "versionLabel": "Versi",
+    "license": "Lisensi",
+    "licenseUnknown": "tidak diketahui",
+    "size": "Ukuran",
+    "checksum": "Checksum",
+    "checksumLabel": "Checksum versi",
+    "inspectedAt": "Diperiksa pada",
+    "installed": "Terpasang",
+    "installedNo": "Tidak",
+    "pinnedTo": "disematkan pada {pin}",
+    "skillText": "Teks skill",
+    "notInspected": {
+      "title": "Belum diperiksa",
+      "text": "Entri ini belum punya versi yang diperiksa. Pemeriksaan membaca keadaan sumber saat ini, membekukannya, dan mencari hal yang tidak biasa."
+    },
+    "inspecting": "Memeriksa …",
+    "inspectNow": "Periksa sekarang",
+    "mcp": {
+      "title": "Perintah mulai dan lingkungan",
+      "command": "Perintah mulai (offline, di lingkungan agen yang terisolasi)",
+      "environment": "Variabel lingkungan yang dibutuhkan",
+      "permissions": "Akses yang teramati",
+      "permission": {
+        "isolated agent sandbox": "Hanya berjalan di lingkungan agen yang terisolasi.",
+        "configured egress": "Akses jaringan hanya ke alamat yang diizinkan.",
+        "network access through agent egress": "Memanggil jaringan (lewat izin agen).",
+        "project filesystem access": "Membaca atau menulis berkas di folder proyek.",
+        "subprocess execution": "Menjalankan program lain."
+      }
+    }
+  },
+  "files": {
+    "title": "Berkas versi yang diperiksa",
+    "notInspected": "Berkas baru bisa dilihat setelah pemeriksaan.",
+    "empty": "Versi ini tidak berisi berkas.",
+    "summary": "{count, plural, other {# berkas}}, {scripts, plural, =0 {tanpa skrip} other {# skrip}}",
+    "script": "Skrip",
+    "hidden": "Disembunyikan",
+    "hiddenText": "Isinya tidak ditampilkan karena tampak seperti kata sandi atau kunci.",
+    "unreadable": "Isinya tidak dapat dibaca sebagai teks."
+  },
+  "verdict": {
+    "blocked": {
+      "title": "Diblokir – tidak dapat diterapkan",
+      "text": "Pemeriksaan menemukan sesuatu yang menghalangi penerapan. Alasannya tercantum di bawah."
+    },
+    "review": {
+      "title": "Perlu ditinjau – hanya dengan konfirmasi Anda",
+      "text": "Pemeriksaan menemukan hal yang tidak biasa. Bacalah. Penerapan baru bisa dilakukan setelah Anda mengonfirmasinya secara tegas."
+    },
+    "clean": {
+      "title": "Tidak ada yang tidak biasa",
+      "text": "Lisensi, versi, checksum, dan isi tidak bermasalah."
+    }
+  },
+  "findings": {
+    "title": "Temuan pemeriksaan",
+    "severity": {
+      "block": "Diblokir",
+      "review": "Perlu ditinjau",
+      "info": "Catatan"
+    },
+    "unknownLicense": "tidak diketahui",
+    "license": "Lisensi “{license}” belum dikonfirmasi kompatibel dengan AGPL-3.0.",
+    "pin": "Tidak ada nomor versi yang pasti. Tanpa versi tetap, tidak ada yang bisa diterapkan dengan sematan.",
+    "hash": "Paket tidak memiliki checksum yang dapat membuktikan isinya.",
+    "unscanned-dependencies": "Paket membawa {count, plural, other {# dependensi yang belum ditetapkan dan belum diperiksa}}.",
+    "executable": "Berisi kode yang dapat dijalankan atau skrip yang berjalan saat pemasangan.",
+    "executableSkill": "Berisi skrip yang dapat dijalankan. Penerapan tidak mengimpornya, hanya teksnya.",
+    "network-shell": "Berkas yang dapat dijalankan memanggil jaringan atau shell.",
+    "secret": "Berkas ini kemungkinan berisi kata sandi atau kunci. Isinya tidak ditampilkan.",
+    "prompt-injection": "Teks berisi kalimat yang dimaksudkan agar agen mengabaikan instruksinya.",
+    "skill-format": "Berkas SKILL.md tidak ada atau tidak memiliki nama atau deskripsi."
+  },
+  "versions": {
+    "title": "Versi yang diperiksa",
+    "installedTag": "Terpasang",
+    "previousTag": "Jalan kembali",
+    "latestTag": "Terbaru",
+    "newer": {
+      "title": "Versi baru {pin} sudah diperiksa",
+      "text": "Lihat di bawah apa yang berubah. Versi terpasang tetap sampai Anda memperbarui.",
+      "action": "Perbarui …"
+    },
+    "count": "{count, plural, other {# versi diperiksa}}",
+    "checkNew": "Cari versi baru",
+    "checking": "Memeriksa …",
+    "onlyOne": "Baru ada satu versi yang diperiksa. Setelah versi baru diperiksa, Anda akan melihat di sini apa yang berubah.",
+    "changes": "Perubahan",
+    "searchVersion": "Cari versi",
+    "from": "Dari {pin}",
+    "to": "Ke {pin}",
+    "pickTwo": "Pilih dua versi berbeda untuk dibandingkan.",
+    "diffFailed": "Perbandingan tidak dapat dimuat",
+    "added": "{count} baru",
+    "removed": "{count} dihapus",
+    "changed": "{count} diubah",
+    "newFindings": "Temuan baru di versi ini",
+    "goneFindings": "{count, plural, other {# temuan sebelumnya sudah teratasi}}",
+    "fileNew": "Baru",
+    "fileGone": "Dihapus",
+    "fileChanged": "Diubah",
+    "fileHidden": "Isinya tidak ditampilkan karena tampak seperti kata sandi atau kunci.",
+    "noChanges": "Tidak ada perbedaan antara versi-versi ini."
+  },
+  "adopt": {
+    "notInspected": {
+      "title": "Periksa dulu, baru terapkan",
+      "text": "Hanya versi yang sudah diperiksa dan dibekukan yang diterapkan. Periksa entri ini terlebih dahulu."
+    },
+    "inspecting": "Memeriksa …",
+    "inspectNow": "Periksa sekarang",
+    "proposal": {
+      "title": "Saran dari {agent}",
+      "agent": "sebuah agen",
+      "forAgent": "Penugasan"
+    },
+    "forWhom": "Untuk siapa berlaku?",
+    "mcpHint": "Server MCP hanya berjalan di lingkungan agen yang terisolasi. Jika tidak aktif, {appName} menolak pemasangan.",
+    "acknowledge": "Saya sudah membaca temuannya dan tetap menerapkan versi ini.",
+    "done": "Diterapkan dan disematkan pada {pin}.",
+    "acceptProposal": "Terapkan saran",
+    "rejectProposal": "Tolak",
+    "reassign": "Ubah penugasan",
+    "update": "Perbarui ke versi {pin}",
+    "adopt": "Terapkan versi {pin}",
+    "rollback": {
+      "title": "Jalan kembali",
+      "text": "Versi sebelumnya {pin} disimpan. Anda dapat kembali kapan saja.",
+      "action": "Kembalikan ke versi {pin}",
+      "confirm": "Kembalikan",
+      "confirmText": "“{name}” akan dikembalikan ke versi sebelumnya {pin}. Penugasan tetap."
+    }
+  },
+  "scope": {
+    "label": "Penugasan",
+    "modes": {
+      "library": "Pustaka",
+      "project": "Proyek",
+      "agent": "Agen",
+      "role": "Peran"
+    },
+    "hints": {
+      "library": "Entri hanya masuk ke pustaka tim. Tidak ada agen yang memakainya sampai Anda menugaskannya.",
+      "project": "Semua agen proyek ini mendapat entri tersebut.",
+      "agent": "Hanya agen ini yang mendapat entri tersebut.",
+      "role": "Semua agen dengan peran ini mendapat entri tersebut, bila mau hanya di satu proyek."
+    },
+    "searchProject": "Cari proyek",
+    "noProjects": "Proyek tidak ditemukan",
+    "pickProject": "Pilih proyek",
+    "searchAgent": "Cari agen",
+    "noAgents": "Agen tidak ditemukan",
+    "pickAgent": "Pilih agen",
+    "searchRole": "Cari peran",
+    "noRoles": "Peran tidak ditemukan",
+    "pickRole": "Pilih peran",
+    "anyProject": "Di setiap proyek",
+    "unknownProject": "proyek tidak dikenal",
+    "unknownAgent": "agen tidak dikenal",
+    "unknownRole": "peran tidak dikenal",
+    "phrase": {
+      "agent": "Agen {name}",
+      "role": "Peran {name}",
+      "roleInProject": "Peran {name} di {project}",
+      "project": "Proyek {name}",
+      "library": "Hanya di pustaka, tidak ditugaskan ke agen mana pun"
+    }
+  },
+  "proposals": {
+    "empty": {
+      "title": "Tidak ada saran",
+      "text": "Agen dapat menyarankan skill dari katalog. Anda yang memutuskan apakah saran diterapkan; agen tidak pernah memasang apa pun sendiri."
+    },
+    "nonePending": "Semua saran sudah diputuskan.",
+    "itemNumber": "Entri {id}",
+    "by": "Disarankan oleh {agent} · {when}",
+    "anAgent": "sebuah agen",
+    "kindSkill": "Skill",
+    "kindMcp": "Server MCP",
+    "review": "Lihat dan terapkan",
+    "reject": "Tolak",
+    "decided": "Sudah diputuskan",
+    "state": {
+      "accepted": "Diterapkan",
+      "rejected": "Ditolak",
+      "pending": "Terbuka"
+    }
+  },
+  "updates": {
+    "title": "Entri terpasang",
+    "intro": "Berikut entri terpasang beserta versi yang disematkan. “Cari pembaruan” membaca keadaan terbaru setiap sumber dan memeriksanya. Tidak ada yang berubah sampai Anda menerapkan versi baru.",
+    "empty": {
+      "title": "Belum ada yang terpasang",
+      "text": "Begitu Anda menerapkan entri dari katalog, entri itu muncul di sini beserta versinya."
+    },
+    "kindSkill": "Skill",
+    "kindMcp": "Server MCP",
+    "pinnedTo": "disematkan pada {pin}",
+    "upToDate": "baru diperiksa, tidak ada yang baru",
+    "available": "Baru: {pin}",
+    "current": "Tidak ada pembaruan diketahui",
+    "showChanges": "Lihat perubahan",
+    "check": "Periksa",
+    "checking": "Memeriksa …",
+    "checkAll": "Cari pembaruan",
+    "checkingAll": "Mencari …",
+    "news": "{count, plural, other {# entri punya versi baru}}",
+    "newsText": "Buka entri, lihat perbedaan dan pemeriksaan barunya, lalu perbarui.",
+    "sourceOff": "Sumber nonaktif"
+  },
+  "errors": {
+    "blocked": {
+      "title": "Penerapan tidak dapat dilakukan",
+      "text": "Pemeriksaan versi ini punya temuan yang memblokir. Versi ini tidak dapat diterapkan."
+    },
+    "acknowledge": {
+      "title": "Konfirmasi belum ada",
+      "text": "Versi ini punya temuan yang harus Anda konfirmasi lebih dulu."
+    },
+    "sourceDisabled": {
+      "title": "Sumber dinonaktifkan",
+      "text": "Aktifkan sumber di “Sumber” untuk membacanya atau menerapkan hal baru."
+    },
+    "isolation": {
+      "title": "Lingkungan agen terisolasi tidak aktif",
+      "text": "Server MCP hanya boleh berjalan di lingkungan agen yang terisolasi. Aktifkan dulu, lalu server dapat dipasang."
+    },
+    "noPrevious": {
+      "title": "Tidak ada versi sebelumnya",
+      "text": "Tidak ada versi sebelumnya untuk dikembalikan."
+    },
+    "decided": {
+      "title": "Sudah diputuskan",
+      "text": "Saran ini sudah diputuskan. Muat ulang daftar."
+    },
+    "gone": {
+      "title": "Tidak ada lagi di sumber",
+      "text": "Entri ini sudah tidak ada di sumber."
+    },
+    "noPin": {
+      "title": "Tidak ada versi tetap",
+      "text": "Sumber tidak menyebut versi yang tidak berubah. Tanpa itu tidak ada yang diterapkan."
+    },
+    "changed": {
+      "title": "Isi berubah",
+      "text": "Sekarang ada isi lain di bawah versi yang sama. Ini seharusnya tidak pernah terjadi. Jangan diterapkan dan periksa sumbernya."
+    },
+    "tooLarge": {
+      "title": "Terlalu besar",
+      "text": "Paket atau metadatanya lebih besar dari yang diizinkan."
+    },
+    "registry": {
+      "title": "Alamat tak terduga",
+      "text": "Arsip tidak lagi berada di sumber yang dipilih. Arsip tidak dimuat."
+    },
+    "integrity": {
+      "title": "Checksum tidak cocok",
+      "text": "Isinya tidak sesuai dengan keterangan sumber. Isinya tidak diterapkan."
+    },
+    "unreachable": {
+      "title": "Sumber tidak dapat dijangkau",
+      "text": "{appName} tidak dapat membaca sumber. Periksa koneksi dan coba lagi nanti."
+    },
+    "invalidSource": {
+      "title": "Sumber tidak valid",
+      "text": "Sumber adalah tepat satu repositori GitHub atau satu nama paket. Periksa penulisannya."
+    },
+    "forbidden": {
+      "title": "Tidak ada izin",
+      "text": "Hanya pemilik tim yang boleh mengelola katalog."
+    },
+    "conflict": {
+      "title": "Tindakan tidak dapat dilakukan",
+      "text": "Keadaan saat ini tidak mengizinkan tindakan ini. Muat ulang tampilan dan coba lagi."
+    },
+    "generic": {
+      "title": "Tidak berhasil",
+      "text": "Coba lagi. Jika tetap gagal, penyebabnya ada di log."
+    }
+  }
+}

@@ -19,6 +19,8 @@ import {
   Badge,
   Button,
   Card,
+  CodeBlock,
+  CopyValue,
   DetailGroup,
   DetailHeader,
   DetailView,
@@ -53,6 +55,7 @@ import {
   Td,
   Text,
   TextArea,
+  TextDiff,
   TextField,
   Th,
   Tip,
@@ -323,6 +326,13 @@ function Blocks() {
                 dot="working"
                 selected
               />
+              {/* A title that is a sentence wraps instead of ending in an ellipsis. */}
+              <ListRow
+                icon={<FileText size={16} />}
+                wrap
+                title={`${sample} ${sample} ${sample} ${sample} ${sample} ${sample} ${sample} ${sample}`}
+                subtitle={t('meta')}
+              />
               {/* A control that stays visible beside the row (a switch), outside its button. */}
               <ListRow
                 icon={<FileText size={16} />}
@@ -372,7 +382,17 @@ function Blocks() {
                 <Property label={t('name')}>{sample}</Property>
                 <Property label={t('agent')}>{t('agent')}</Property>
               </PropertyGrid>
+              {/* One column for a narrow place (an overlay); a long value is shortened and copied. */}
+              <PropertyGrid columns={1}>
+                <Property label={t('name')}>
+                  <CopyValue value="9f2c41d7b0e35a86" display="9f2c41d7" label={t('name')} />
+                </Property>
+              </PropertyGrid>
             </DetailGroup>
+            <Stack gap={2}>
+              <TextDiff before={`${sample}\n${t('meta')}`} after={`${sample}\n${t('agent')}`} />
+              <CodeBlock>{`${sample}\n${t('meta')}`}</CodeBlock>
+            </Stack>
           </DetailView>
           {/* Chat, tasks and goals (hub/ui-3a): the agent chip at the composer, a task's
               status box in the list, a goal's ladder. */}

@@ -1,0 +1,397 @@
+{
+  "tabsLabel": "Visões da gestão de skills",
+  "tabs": {
+    "library": "Biblioteca",
+    "catalog": "Catálogo",
+    "sources": "Fontes",
+    "proposals": "Sugestões",
+    "updates": "Atualizações"
+  },
+  "browser": {
+    "search": "Pesquisar no catálogo",
+    "title": "Entradas do catálogo",
+    "kindSkill": "Skill",
+    "kindMcp": "Servidor MCP",
+    "notInspected": "Não verificado",
+    "licenseUnknown": "Licença desconhecida",
+    "installed": "Instalado",
+    "installedAt": "Instalado · {pin}",
+    "newVersion": "Nova versão",
+    "noMatch": {
+      "title": "Nada encontrado",
+      "text": "Não há nenhuma entrada do catálogo para “{query}”."
+    },
+    "noSources": {
+      "title": "Ainda não há fontes",
+      "text": "O catálogo lista apenas o que você adiciona como fonte: um repositório do GitHub ou um pacote MCP. Adicione primeiro uma fonte."
+    },
+    "noItems": {
+      "title": "Ainda não há entradas",
+      "text": "Suas fontes foram adicionadas, mas ainda não foram lidas. Atualize-as para que as entradas apareçam aqui."
+    },
+    "toSources": "Ir para as fontes"
+  },
+  "sources": {
+    "title": "Fontes do catálogo",
+    "intro": "Uma fonte é um repositório do GitHub ou um pacote que você escolheu. O catálogo não procura em nenhum outro lugar. Ao desativar uma fonte, as entradas já instaladas e o caminho de volta são mantidos.",
+    "empty": {
+      "title": "Ainda não há fontes",
+      "text": "Adicione um repositório do GitHub com skills ou um pacote MCP para que o catálogo possa mostrar entradas."
+    },
+    "kinds": {
+      "github-skills": "Skills do GitHub",
+      "npm-mcp": "Pacote MCP (npm)",
+      "pypi-mcp": "Pacote MCP (PyPI)",
+      "github-mcp": "Servidor MCP do GitHub"
+    },
+    "on": "Ativa",
+    "off": "Desativada",
+    "entries": "{count, plural, one {1 entrada} other {# entradas}}",
+    "noEntries": "Ainda não lida",
+    "justRefreshed": "atualizada agora: {count, plural, one {1 entrada encontrada} other {# entradas encontradas}}",
+    "addedOn": "adicionada em {date}",
+    "refresh": "Atualizar",
+    "refreshing": "Lendo …",
+    "disable": "Desativar",
+    "enable": "Ativar",
+    "disableTitle": "Desativar fonte",
+    "disableText": "“{name}” deixará de fornecer novas entradas e versões. O que você já instalou continua fixado na sua versão e ainda pode ser revertido.",
+    "add": {
+      "open": "Adicionar fonte",
+      "title": "Adicionar fonte",
+      "kind": "Tipo de fonte",
+      "kinds": {
+        "github-skills": "Skills (GitHub)",
+        "npm-mcp": "MCP (npm)",
+        "pypi-mcp": "MCP (PyPI)",
+        "github-mcp": "MCP (GitHub)"
+      },
+      "locator": "Endereço ou nome do pacote",
+      "hints": {
+        "github-skills": "Um repositório do GitHub com pastas que contêm um SKILL.md.",
+        "npm-mcp": "O nome de um servidor MCP no npm, por exemplo @empresa/mcp-arquivos.",
+        "pypi-mcp": "O nome de um servidor MCP no PyPI.",
+        "github-mcp": "Um repositório do GitHub com package.json cujo pacote está publicado no npm."
+      },
+      "placeholders": {
+        "github-skills": "https://github.com/proprietario/repositorio",
+        "npm-mcp": "@empresa/mcp-arquivos",
+        "pypi-mcp": "mcp-clima",
+        "github-mcp": "https://github.com/proprietario/repositorio"
+      },
+      "role": "Para que serve a fonte?",
+      "roleHint": "Opcional. O texto aparece na pesquisa, por exemplo “Desenvolvimento” ou “Pesquisa”.",
+      "rolePlaceholder": "Desenvolvimento",
+      "submit": "Adicionar e ler",
+      "adding": "Adicionando …",
+      "addedNoEntries": {
+        "title": "A fonte foi adicionada, mas ainda não foi lida",
+        "text": "Não foi possível carregar as entradas agora. Você pode atualizar a fonte mais tarde na lista."
+      }
+    }
+  },
+  "preview": {
+    "title": "Entrada",
+    "kindSkill": "Skill",
+    "kindMcp": "Servidor MCP",
+    "installedYes": "Instalado",
+    "newVersion": "Nova versão verificada",
+    "blockedTag": "Bloqueado",
+    "reviewTag": "Para revisar",
+    "loadFailed": {
+      "title": "Não foi possível carregar a entrada",
+      "text": "Ela não existe mais ou você não tem permissão. Feche esta visão e tente novamente."
+    },
+    "tabs": {
+      "overview": "Visão geral",
+      "files": "Arquivos",
+      "versions": "Versões",
+      "adopt": "Adotar"
+    },
+    "properties": "Detalhes",
+    "kind": "Tipo",
+    "origin": "Origem",
+    "sourceOff": "Fonte desativada",
+    "version": "Versão verificada",
+    "versionLabel": "Versão",
+    "license": "Licença",
+    "licenseUnknown": "desconhecida",
+    "size": "Tamanho",
+    "checksum": "Soma de verificação",
+    "checksumLabel": "Soma de verificação da versão",
+    "inspectedAt": "Verificada em",
+    "installed": "Instalado",
+    "installedNo": "Não",
+    "pinnedTo": "fixado em {pin}",
+    "skillText": "Texto do skill",
+    "notInspected": {
+      "title": "Ainda não verificado",
+      "text": "Esta entrada ainda não tem uma versão verificada. A verificação lê o estado atual da fonte, o congela e procura qualquer coisa incomum."
+    },
+    "inspecting": "Verificando …",
+    "inspectNow": "Verificar agora",
+    "mcp": {
+      "title": "Comando de início e ambiente",
+      "command": "Comando de início (offline, no ambiente isolado do agente)",
+      "environment": "Variáveis de ambiente necessárias",
+      "permissions": "Acessos observados",
+      "permission": {
+        "isolated agent sandbox": "Executa apenas no ambiente isolado do agente.",
+        "configured egress": "Acesso à rede somente a endereços liberados.",
+        "network access through agent egress": "Chama a rede (pelas liberações do agente).",
+        "project filesystem access": "Lê ou grava arquivos na pasta do projeto.",
+        "subprocess execution": "Inicia outros programas."
+      }
+    }
+  },
+  "files": {
+    "title": "Arquivos da versão verificada",
+    "notInspected": "Os arquivos só podem ser vistos depois da verificação.",
+    "empty": "Esta versão não contém arquivos.",
+    "summary": "{count, plural, one {1 arquivo} other {# arquivos}}, {scripts, plural, =0 {nenhum script} one {1 script} other {# scripts}}",
+    "script": "Script",
+    "hidden": "Oculto",
+    "hiddenText": "O conteúdo não é exibido porque parece uma senha ou uma chave.",
+    "unreadable": "O conteúdo não pode ser lido como texto."
+  },
+  "verdict": {
+    "blocked": {
+      "title": "Bloqueado – não pode ser adotado",
+      "text": "A verificação encontrou algo que impede a adoção. Os motivos estão listados abaixo."
+    },
+    "review": {
+      "title": "Para revisar – somente com sua confirmação",
+      "text": "A verificação encontrou algo incomum. Leia com atenção. A adoção só funciona depois que você confirmar expressamente."
+    },
+    "clean": {
+      "title": "Nada de incomum",
+      "text": "Licença, versão, soma de verificação e conteúdo estão sem problemas."
+    }
+  },
+  "findings": {
+    "title": "Achados da verificação",
+    "severity": {
+      "block": "Bloqueado",
+      "review": "Para revisar",
+      "info": "Observação"
+    },
+    "unknownLicense": "desconhecida",
+    "license": "A licença “{license}” não está confirmada como compatível com a AGPL-3.0.",
+    "pin": "Não há um número de versão exato. Sem uma versão fixa, nada pode ser adotado fixado.",
+    "hash": "O pacote não tem a soma de verificação que poderia comprovar seu conteúdo.",
+    "unscanned-dependencies": "O pacote traz {count, plural, one {1 dependência que não está fixada nem verificada} other {# dependências que não estão fixadas nem verificadas}}.",
+    "executable": "Contém código executável ou um script que roda na instalação.",
+    "executableSkill": "Contém um script executável. A adoção não o importa, apenas o texto.",
+    "network-shell": "Um arquivo executável chama a rede ou o shell.",
+    "secret": "O arquivo provavelmente contém uma senha ou chave. Seu conteúdo não é exibido.",
+    "prompt-injection": "O texto contém formulações feitas para levar um agente a ignorar suas instruções.",
+    "skill-format": "O arquivo SKILL.md não existe ou não tem nome nem descrição."
+  },
+  "versions": {
+    "title": "Versões verificadas",
+    "installedTag": "Instalada",
+    "previousTag": "Caminho de volta",
+    "latestTag": "Mais recente",
+    "newer": {
+      "title": "A nova versão {pin} foi verificada",
+      "text": "Veja abaixo o que mudou. A versão instalada permanece até você atualizar.",
+      "action": "Atualizar …"
+    },
+    "count": "{count, plural, one {1 versão verificada} other {# versões verificadas}}",
+    "checkNew": "Procurar nova versão",
+    "checking": "Verificando …",
+    "onlyOne": "Até agora há apenas uma versão verificada. Assim que uma nova for verificada, você verá aqui o que mudou.",
+    "changes": "Alterações",
+    "searchVersion": "Procurar versão",
+    "from": "De {pin}",
+    "to": "Para {pin}",
+    "pickTwo": "Escolha duas versões diferentes para compará-las.",
+    "diffFailed": "Não foi possível carregar a comparação",
+    "added": "{count} novos",
+    "removed": "{count} removidos",
+    "changed": "{count} alterados",
+    "newFindings": "Novos achados nesta versão",
+    "goneFindings": "{count, plural, one {1 achado anterior foi resolvido} other {# achados anteriores foram resolvidos}}",
+    "fileNew": "Novo",
+    "fileGone": "Removido",
+    "fileChanged": "Alterado",
+    "fileHidden": "O conteúdo não é exibido porque parece uma senha ou uma chave.",
+    "noChanges": "Não há diferenças entre estas versões."
+  },
+  "adopt": {
+    "notInspected": {
+      "title": "Primeiro verificar, depois adotar",
+      "text": "Somente uma versão verificada e congelada é adotada. Verifique a entrada primeiro."
+    },
+    "inspecting": "Verificando …",
+    "inspectNow": "Verificar agora",
+    "proposal": {
+      "title": "Sugestão de {agent}",
+      "agent": "um agente",
+      "forAgent": "Atribuição"
+    },
+    "forWhom": "Para quem deve valer?",
+    "mcpHint": "Servidores MCP só rodam no ambiente isolado do agente. Se ele estiver desligado, {appName} recusa a instalação.",
+    "acknowledge": "Li os achados e adoto a versão mesmo assim.",
+    "done": "Adotada e fixada em {pin}.",
+    "acceptProposal": "Adotar sugestão",
+    "rejectProposal": "Recusar",
+    "reassign": "Alterar atribuição",
+    "update": "Atualizar para a versão {pin}",
+    "adopt": "Adotar a versão {pin}",
+    "rollback": {
+      "title": "Caminho de volta",
+      "text": "A versão anterior {pin} está guardada. Você pode voltar a ela a qualquer momento.",
+      "action": "Voltar para a versão {pin}",
+      "confirm": "Reverter",
+      "confirmText": "“{name}” voltará à versão anterior {pin}. A atribuição é mantida."
+    }
+  },
+  "scope": {
+    "label": "Atribuição",
+    "modes": {
+      "library": "Biblioteca",
+      "project": "Projeto",
+      "agent": "Agente",
+      "role": "Papel"
+    },
+    "hints": {
+      "library": "A entrada vai apenas para a biblioteca da equipe. Nenhum agente a usa até você atribuí-la.",
+      "project": "Todos os agentes deste projeto recebem a entrada.",
+      "agent": "Somente este agente recebe a entrada.",
+      "role": "Todos os agentes com este papel recebem a entrada, se quiser apenas em um projeto."
+    },
+    "searchProject": "Procurar projeto",
+    "noProjects": "Nenhum projeto encontrado",
+    "pickProject": "Escolher projeto",
+    "searchAgent": "Procurar agente",
+    "noAgents": "Nenhum agente encontrado",
+    "pickAgent": "Escolher agente",
+    "searchRole": "Procurar papel",
+    "noRoles": "Nenhum papel encontrado",
+    "pickRole": "Escolher papel",
+    "anyProject": "Em todos os projetos",
+    "unknownProject": "projeto desconhecido",
+    "unknownAgent": "agente desconhecido",
+    "unknownRole": "papel desconhecido",
+    "phrase": {
+      "agent": "Agente {name}",
+      "role": "Papel {name}",
+      "roleInProject": "Papel {name} em {project}",
+      "project": "Projeto {name}",
+      "library": "Somente na biblioteca, sem atribuição a nenhum agente"
+    }
+  },
+  "proposals": {
+    "empty": {
+      "title": "Sem sugestões",
+      "text": "Os agentes podem sugerir skills do catálogo. Você decide se uma sugestão é adotada; um agente nunca instala nada por conta própria."
+    },
+    "nonePending": "Todas as sugestões foram decididas.",
+    "itemNumber": "Entrada {id}",
+    "by": "Sugerido por {agent} · {when}",
+    "anAgent": "um agente",
+    "kindSkill": "Skill",
+    "kindMcp": "Servidor MCP",
+    "review": "Ver e adotar",
+    "reject": "Recusar",
+    "decided": "Já decididas",
+    "state": {
+      "accepted": "Adotada",
+      "rejected": "Recusada",
+      "pending": "Aberta"
+    }
+  },
+  "updates": {
+    "title": "Entradas instaladas",
+    "intro": "Aqui estão as entradas instaladas com sua versão fixada. “Procurar atualizações” lê o estado mais recente de cada fonte e o verifica. Nada muda até você adotar uma nova versão.",
+    "empty": {
+      "title": "Nada instalado ainda",
+      "text": "Assim que você adotar uma entrada do catálogo, ela aparecerá aqui com sua versão."
+    },
+    "kindSkill": "Skill",
+    "kindMcp": "Servidor MCP",
+    "pinnedTo": "fixado em {pin}",
+    "upToDate": "verificado agora, nada de novo",
+    "available": "Nova: {pin}",
+    "current": "Nenhuma atualização conhecida",
+    "showChanges": "Ver alterações",
+    "check": "Verificar",
+    "checking": "Verificando …",
+    "checkAll": "Procurar atualizações",
+    "checkingAll": "Procurando …",
+    "news": "{count, plural, one {1 entrada tem uma nova versão} other {# entradas têm novas versões}}",
+    "newsText": "Abra a entrada, veja a diferença e a nova verificação e depois atualize.",
+    "sourceOff": "Fonte desativada"
+  },
+  "errors": {
+    "blocked": {
+      "title": "Adoção não é possível",
+      "text": "A verificação desta versão tem um achado bloqueante. Ela não pode ser adotada."
+    },
+    "acknowledge": {
+      "title": "Falta a confirmação",
+      "text": "A versão tem achados que você precisa confirmar antes."
+    },
+    "sourceDisabled": {
+      "title": "A fonte está desativada",
+      "text": "Ative a fonte em “Fontes” para lê-la ou adotar algo novo."
+    },
+    "isolation": {
+      "title": "O ambiente isolado do agente está desligado",
+      "text": "Servidores MCP só podem rodar no ambiente isolado do agente. Ligue-o primeiro, então o servidor poderá ser instalado."
+    },
+    "noPrevious": {
+      "title": "Sem versão anterior",
+      "text": "Não há versão anterior para a qual voltar."
+    },
+    "decided": {
+      "title": "Já decidido",
+      "text": "Esta sugestão já foi decidida. Recarregue a lista."
+    },
+    "gone": {
+      "title": "Não está mais na fonte",
+      "text": "A entrada não existe mais na fonte."
+    },
+    "noPin": {
+      "title": "Sem versão fixa",
+      "text": "A fonte não informa uma versão imutável. Sem ela, nada é adotado."
+    },
+    "changed": {
+      "title": "O conteúdo mudou",
+      "text": "Agora há outro conteúdo sob a mesma versão. Isso nunca deveria acontecer. Não a adote e verifique a fonte."
+    },
+    "tooLarge": {
+      "title": "Grande demais",
+      "text": "O pacote ou seus metadados são maiores do que o permitido."
+    },
+    "registry": {
+      "title": "Endereço inesperado",
+      "text": "O arquivo não está mais na fonte escolhida. Ele não foi carregado."
+    },
+    "integrity": {
+      "title": "A soma de verificação não confere",
+      "text": "O conteúdo não corresponde ao que a fonte informa. Ele não foi adotado."
+    },
+    "unreachable": {
+      "title": "Fonte inacessível",
+      "text": "{appName} não conseguiu ler a fonte. Verifique a conexão e tente novamente mais tarde."
+    },
+    "invalidSource": {
+      "title": "Fonte inválida",
+      "text": "Uma fonte é exatamente um repositório do GitHub ou um nome de pacote. Verifique a grafia."
+    },
+    "forbidden": {
+      "title": "Sem permissão",
+      "text": "Somente o proprietário da equipe pode gerenciar o catálogo."
+    },
+    "conflict": {
+      "title": "Ação não é possível",
+      "text": "O estado atual não permite esta ação. Recarregue a visão e tente novamente."
+    },
+    "generic": {
+      "title": "Não funcionou",
+      "text": "Tente novamente. Se continuar falhando, o motivo está no registro."
+    }
+  }
+}

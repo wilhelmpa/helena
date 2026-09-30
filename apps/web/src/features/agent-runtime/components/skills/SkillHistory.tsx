@@ -2,11 +2,10 @@
 
 import { useState } from 'react';
 import { useFormatter, useTranslations } from 'next-intl';
-import { Button, List, ListRow, Pill, Stack, Text } from '@/design-system';
+import { Button, List, ListRow, Pill, Stack, Text, TextDiff } from '@/design-system';
 import type { NativeSkill, SkillChange } from '@/lib/api/endpoints/agentLearning';
 import { useRelativeTime } from '@/context/relativeTimeContext';
 import { actorOf, changeKind } from '../../utils/skillEntries';
-import TextDiff from '../TextDiff';
 
 // Every version of a learned skill, newest first: what happened (created, changed, pinned,
 // archived …), who did it, when, in which session, and the text before and after. A version

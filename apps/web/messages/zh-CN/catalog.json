@@ -1,0 +1,397 @@
+{
+  "tabsLabel": "技能管理视图",
+  "tabs": {
+    "library": "库",
+    "catalog": "目录",
+    "sources": "来源",
+    "proposals": "建议",
+    "updates": "更新"
+  },
+  "browser": {
+    "search": "搜索目录",
+    "title": "目录条目",
+    "kindSkill": "技能",
+    "kindMcp": "MCP 服务器",
+    "notInspected": "未检查",
+    "licenseUnknown": "许可证未知",
+    "installed": "已安装",
+    "installedAt": "已安装 · {pin}",
+    "newVersion": "新版本",
+    "noMatch": {
+      "title": "没有找到",
+      "text": "目录中没有与“{query}”相关的条目。"
+    },
+    "noSources": {
+      "title": "还没有来源",
+      "text": "目录只列出您自己添加为来源的内容：一个 GitHub 仓库或一个 MCP 包。请先添加来源。"
+    },
+    "noItems": {
+      "title": "还没有条目",
+      "text": "您的来源已添加，但尚未读取。请刷新它们，条目才会出现在这里。"
+    },
+    "toSources": "前往来源"
+  },
+  "sources": {
+    "title": "目录来源",
+    "intro": "来源是您选择的 GitHub 仓库或软件包。目录不会去别处查找。停用来源后，已安装的条目及其回退版本仍会保留。",
+    "empty": {
+      "title": "还没有来源",
+      "text": "添加一个包含技能的 GitHub 仓库或一个 MCP 包，目录才能显示条目。"
+    },
+    "kinds": {
+      "github-skills": "来自 GitHub 的技能",
+      "npm-mcp": "MCP 包（npm）",
+      "pypi-mcp": "MCP 包（PyPI）",
+      "github-mcp": "来自 GitHub 的 MCP 服务器"
+    },
+    "on": "已启用",
+    "off": "已停用",
+    "entries": "{count, plural, other {# 个条目}}",
+    "noEntries": "尚未读取",
+    "justRefreshed": "刚刚刷新：{count, plural, other {找到 # 个条目}}",
+    "addedOn": "添加于 {date}",
+    "refresh": "刷新",
+    "refreshing": "正在读取…",
+    "disable": "停用",
+    "enable": "启用",
+    "disableTitle": "停用来源",
+    "disableText": "停用后，“{name}”不再提供新的条目和版本。已安装的内容仍固定在其版本上，并且仍可回退。",
+    "add": {
+      "open": "添加来源",
+      "title": "添加来源",
+      "kind": "来源类型",
+      "kinds": {
+        "github-skills": "技能（GitHub）",
+        "npm-mcp": "MCP（npm）",
+        "pypi-mcp": "MCP（PyPI）",
+        "github-mcp": "MCP（GitHub）"
+      },
+      "locator": "地址或包名",
+      "hints": {
+        "github-skills": "一个 GitHub 仓库，其文件夹中包含 SKILL.md。",
+        "npm-mcp": "npm 上的 MCP 服务器名称，例如 @company/mcp-files。",
+        "pypi-mcp": "PyPI 上的 MCP 服务器名称。",
+        "github-mcp": "带有 package.json 的 GitHub 仓库，其软件包已发布到 npm。"
+      },
+      "placeholders": {
+        "github-skills": "https://github.com/owner/repository",
+        "npm-mcp": "@company/mcp-files",
+        "pypi-mcp": "mcp-weather",
+        "github-mcp": "https://github.com/owner/repository"
+      },
+      "role": "这个来源用于什么？",
+      "roleHint": "可选。该文字会出现在搜索中，例如“开发”或“调研”。",
+      "rolePlaceholder": "开发",
+      "submit": "添加并读取",
+      "adding": "正在添加…",
+      "addedNoEntries": {
+        "title": "来源已添加，但尚未读取",
+        "text": "刚才无法加载条目。您可以稍后在列表中刷新该来源。"
+      }
+    }
+  },
+  "preview": {
+    "title": "条目",
+    "kindSkill": "技能",
+    "kindMcp": "MCP 服务器",
+    "installedYes": "已安装",
+    "newVersion": "新版本已检查",
+    "blockedTag": "已阻止",
+    "reviewTag": "待审查",
+    "loadFailed": {
+      "title": "无法加载该条目",
+      "text": "它已不存在，或您没有权限。请关闭此视图后重试。"
+    },
+    "tabs": {
+      "overview": "概览",
+      "files": "文件",
+      "versions": "版本",
+      "adopt": "采用"
+    },
+    "properties": "详情",
+    "kind": "类型",
+    "origin": "来源",
+    "sourceOff": "来源已停用",
+    "version": "已检查的版本",
+    "versionLabel": "版本",
+    "license": "许可证",
+    "licenseUnknown": "未知",
+    "size": "大小",
+    "checksum": "校验和",
+    "checksumLabel": "版本校验和",
+    "inspectedAt": "检查时间",
+    "installed": "已安装",
+    "installedNo": "否",
+    "pinnedTo": "固定在 {pin}",
+    "skillText": "技能文本",
+    "notInspected": {
+      "title": "尚未检查",
+      "text": "该条目还没有已检查的版本。检查会读取来源的当前状态，将其固定，并查找异常之处。"
+    },
+    "inspecting": "正在检查…",
+    "inspectNow": "立即检查",
+    "mcp": {
+      "title": "启动命令与环境",
+      "command": "启动命令（离线，在隔离的代理环境中）",
+      "environment": "所需环境变量",
+      "permissions": "观察到的访问",
+      "permission": {
+        "isolated agent sandbox": "只在隔离的代理环境中运行。",
+        "configured egress": "只访问已放行的网络地址。",
+        "network access through agent egress": "调用网络（通过代理的放行）。",
+        "project filesystem access": "读取或写入项目文件夹中的文件。",
+        "subprocess execution": "启动其他程序。"
+      }
+    }
+  },
+  "files": {
+    "title": "已检查版本的文件",
+    "notInspected": "检查之后才能查看文件。",
+    "empty": "此版本不包含文件。",
+    "summary": "{count, plural, other {# 个文件}}，{scripts, plural, =0 {没有脚本} other {其中 # 个脚本}}",
+    "script": "脚本",
+    "hidden": "已隐藏",
+    "hiddenText": "由于内容看起来像密码或密钥，因此不显示。",
+    "unreadable": "内容无法作为文本读取。"
+  },
+  "verdict": {
+    "blocked": {
+      "title": "已阻止——无法采用",
+      "text": "检查发现了会阻止采用的问题。原因列在下方。"
+    },
+    "review": {
+      "title": "待审查——需要您确认",
+      "text": "检查发现了一些异常。请仔细阅读。只有在您明确确认后才能采用。"
+    },
+    "clean": {
+      "title": "没有异常",
+      "text": "许可证、版本、校验和与内容均无异常。"
+    }
+  },
+  "findings": {
+    "title": "检查结果",
+    "severity": {
+      "block": "已阻止",
+      "review": "待审查",
+      "info": "提示"
+    },
+    "unknownLicense": "未知",
+    "license": "许可证“{license}”未被确认与 AGPL-3.0 兼容。",
+    "pin": "没有确切的版本号。没有固定版本，就无法固定采用任何内容。",
+    "hash": "该软件包缺少可证明其内容的校验和。",
+    "unscanned-dependencies": "该软件包带有 {count, plural, other {# 个既未固定也未检查的依赖}}。",
+    "executable": "包含可执行代码，或在安装时运行的脚本。",
+    "executableSkill": "包含可执行脚本。采用时不会导入脚本，只导入文本。",
+    "network-shell": "某个可执行文件调用了网络或 Shell。",
+    "secret": "该文件可能包含密码或密钥，其内容不会显示。",
+    "prompt-injection": "文本中含有意在让代理无视其指令的措辞。",
+    "skill-format": "缺少 SKILL.md 文件，或其中没有名称或描述。"
+  },
+  "versions": {
+    "title": "已检查的版本",
+    "installedTag": "已安装",
+    "previousTag": "回退版本",
+    "latestTag": "最新",
+    "newer": {
+      "title": "新版本 {pin} 已检查",
+      "text": "请在下方查看有何变化。在您更新之前，已安装的版本保持不变。",
+      "action": "更新…"
+    },
+    "count": "{count, plural, other {# 个已检查的版本}}",
+    "checkNew": "检查新版本",
+    "checking": "正在检查…",
+    "onlyOne": "目前只有一个已检查的版本。一旦有新版本被检查，您就能在这里看到变化。",
+    "changes": "变更",
+    "searchVersion": "搜索版本",
+    "from": "从 {pin}",
+    "to": "到 {pin}",
+    "pickTwo": "请选择两个不同的版本进行比较。",
+    "diffFailed": "无法加载比较结果",
+    "added": "新增 {count}",
+    "removed": "移除 {count}",
+    "changed": "修改 {count}",
+    "newFindings": "此版本的新发现",
+    "goneFindings": "{count, plural, other {之前的 # 个发现已解决}}",
+    "fileNew": "新增",
+    "fileGone": "已移除",
+    "fileChanged": "已修改",
+    "fileHidden": "由于内容看起来像密码或密钥，因此不显示。",
+    "noChanges": "这些版本之间没有差异。"
+  },
+  "adopt": {
+    "notInspected": {
+      "title": "先检查，再采用",
+      "text": "只有经过检查并固定的版本才会被采用。请先检查该条目。"
+    },
+    "inspecting": "正在检查…",
+    "inspectNow": "立即检查",
+    "proposal": {
+      "title": "来自 {agent} 的建议",
+      "agent": "某个代理",
+      "forAgent": "分配"
+    },
+    "forWhom": "对谁生效？",
+    "mcpHint": "MCP 服务器只在隔离的代理环境中运行。若该环境未开启，{appName} 会拒绝安装。",
+    "acknowledge": "我已阅读检查结果，仍然采用此版本。",
+    "done": "已采用并固定在 {pin}。",
+    "acceptProposal": "采用建议",
+    "rejectProposal": "拒绝",
+    "reassign": "更改分配",
+    "update": "更新到版本 {pin}",
+    "adopt": "采用版本 {pin}",
+    "rollback": {
+      "title": "回退",
+      "text": "上一个版本 {pin} 已保存。您随时可以回到它。",
+      "action": "回退到版本 {pin}",
+      "confirm": "回退",
+      "confirmText": "“{name}”将回退到上一个版本 {pin}。分配保持不变。"
+    }
+  },
+  "scope": {
+    "label": "分配",
+    "modes": {
+      "library": "库",
+      "project": "项目",
+      "agent": "代理",
+      "role": "角色"
+    },
+    "hints": {
+      "library": "该条目只进入团队的库。在您分配之前，没有代理会使用它。",
+      "project": "该项目的所有代理都会获得此条目。",
+      "agent": "只有这一个代理获得此条目。",
+      "role": "拥有此角色的所有代理都会获得此条目，也可只限于某个项目。"
+    },
+    "searchProject": "搜索项目",
+    "noProjects": "没有找到项目",
+    "pickProject": "选择项目",
+    "searchAgent": "搜索代理",
+    "noAgents": "没有找到代理",
+    "pickAgent": "选择代理",
+    "searchRole": "搜索角色",
+    "noRoles": "没有找到角色",
+    "pickRole": "选择角色",
+    "anyProject": "所有项目",
+    "unknownProject": "未知项目",
+    "unknownAgent": "未知代理",
+    "unknownRole": "未知角色",
+    "phrase": {
+      "agent": "代理 {name}",
+      "role": "角色 {name}",
+      "roleInProject": "{project} 中的角色 {name}",
+      "project": "项目 {name}",
+      "library": "仅在库中，未分配给任何代理"
+    }
+  },
+  "proposals": {
+    "empty": {
+      "title": "没有建议",
+      "text": "代理可以从目录中推荐技能。是否采用由您决定；代理不会自己安装任何东西。"
+    },
+    "nonePending": "所有建议都已处理。",
+    "itemNumber": "条目 {id}",
+    "by": "{agent} 建议 · {when}",
+    "anAgent": "某个代理",
+    "kindSkill": "技能",
+    "kindMcp": "MCP 服务器",
+    "review": "查看并采用",
+    "reject": "拒绝",
+    "decided": "已处理",
+    "state": {
+      "accepted": "已采用",
+      "rejected": "已拒绝",
+      "pending": "待处理"
+    }
+  },
+  "updates": {
+    "title": "已安装的条目",
+    "intro": "这里列出已安装的条目及其固定的版本。“检查更新”会读取每个来源的最新状态并进行检查。在您采用新版本之前，什么都不会改变。",
+    "empty": {
+      "title": "尚未安装任何内容",
+      "text": "您一旦采用目录中的条目，它就会连同版本出现在这里。"
+    },
+    "kindSkill": "技能",
+    "kindMcp": "MCP 服务器",
+    "pinnedTo": "固定在 {pin}",
+    "upToDate": "刚检查过，没有新内容",
+    "available": "新版本：{pin}",
+    "current": "未知有更新",
+    "showChanges": "查看变更",
+    "check": "检查",
+    "checking": "正在检查…",
+    "checkAll": "检查更新",
+    "checkingAll": "正在查找…",
+    "news": "{count, plural, other {有 # 个条目有新版本}}",
+    "newsText": "打开条目，查看差异和新的检查结果，然后再更新。",
+    "sourceOff": "来源已停用"
+  },
+  "errors": {
+    "blocked": {
+      "title": "无法采用",
+      "text": "此版本的检查有阻止性的发现，无法采用。"
+    },
+    "acknowledge": {
+      "title": "缺少确认",
+      "text": "此版本有需要您先确认的发现。"
+    },
+    "sourceDisabled": {
+      "title": "来源已停用",
+      "text": "请在“来源”中启用该来源，以读取它或采用新内容。"
+    },
+    "isolation": {
+      "title": "隔离的代理环境未开启",
+      "text": "MCP 服务器只允许在隔离的代理环境中运行。请先开启它，然后才能安装该服务器。"
+    },
+    "noPrevious": {
+      "title": "没有更早的版本",
+      "text": "没有可以回退到的上一个版本。"
+    },
+    "decided": {
+      "title": "已处理",
+      "text": "这条建议已经处理过。请刷新列表。"
+    },
+    "gone": {
+      "title": "来源中已不存在",
+      "text": "该条目已不在来源中。"
+    },
+    "noPin": {
+      "title": "没有固定版本",
+      "text": "来源没有给出不可变的版本。没有它，就不会采用任何内容。"
+    },
+    "changed": {
+      "title": "内容已改变",
+      "text": "同一版本下现在是不同的内容。这本不应发生。请不要采用，并检查来源。"
+    },
+    "tooLarge": {
+      "title": "太大",
+      "text": "该软件包或其元数据超过了允许的大小。"
+    },
+    "registry": {
+      "title": "意外的地址",
+      "text": "该归档已不在所选来源中，未被加载。"
+    },
+    "integrity": {
+      "title": "校验和不匹配",
+      "text": "内容与来源的说明不符，未被采用。"
+    },
+    "unreachable": {
+      "title": "无法访问来源",
+      "text": "{appName} 无法读取该来源。请检查网络连接，稍后再试。"
+    },
+    "invalidSource": {
+      "title": "来源无效",
+      "text": "来源只能是一个 GitHub 仓库或一个包名。请检查拼写。"
+    },
+    "forbidden": {
+      "title": "没有权限",
+      "text": "只有团队所有者才能管理目录。"
+    },
+    "conflict": {
+      "title": "无法执行此操作",
+      "text": "当前状态不允许此操作。请刷新视图后重试。"
+    },
+    "generic": {
+      "title": "没有成功",
+      "text": "请重试。如果仍然失败，原因会记录在日志中。"
+    }
+  }
+}
