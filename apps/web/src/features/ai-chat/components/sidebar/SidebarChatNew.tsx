@@ -15,14 +15,21 @@ export function SidebarChatNewInAgent({
   projectKey,
   agentId,
   name,
+  hoverOnly = false,
 }: {
   projectKey: string | null;
   agentId: number;
   name: string;
+  // In an agent's group: left out on a touch screen, where the area's "+" does the same.
+  hoverOnly?: boolean;
 }) {
   const t = useTranslations('chatWorkspace');
   return (
-    <TreeAction label={t('list.newChatWith', { name })} href={chatHref(projectKey, { agentId })}>
+    <TreeAction
+      label={t('list.newChatWith', { name })}
+      href={chatHref(projectKey, { agentId })}
+      hoverOnly={hoverOnly}
+    >
       <Plus />
     </TreeAction>
   );

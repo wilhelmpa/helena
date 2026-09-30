@@ -70,3 +70,24 @@ export function agentOrderByRole(
     agent.agentRole === 'home' ? 0 : roleOf(agent.id) === 'coordinator' ? 1 : 2;
   return [...agents].sort((a, b) => rank(a) - rank(b)).map((agent) => agent.id);
 }
+
+// A list that mixes projects (Home) names the project of a chat at the end of its row —
+// only where the projects differ: the chats of one project's agent all say the same
+// (owner, O100: chips only when needed). A project's own sidebar never does.
+export function mixesProjects(chats: ChatSummary[], inProject: boolean): boolean {
+  if (inProject) return false;
+  return new Set(chats.map((chat) => chat.project?.key ?? '')).size > 1;
+}
+
+// The chats of a group as shown: the first few, the rest folded into a "further n" row — but
+// all of them once the reader opened the group or the open chat is among the folded ones.
+export function foldedChats(
+  chats: ChatSummary[],
+  limit: number,
+  open: boolean,
+  holdsActive: (chats: ChatSummary[]) => boolean,
+): { shown: ChatSummary[]; hidden: number } {
+  const showAll = open || holdsActive(chats.slice(limit));
+  const shown = showAll ? chats : chats.slice(0, limit);
+  return { shown, hidden: chats.length - shown.length };
+}

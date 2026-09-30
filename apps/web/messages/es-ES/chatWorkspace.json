@@ -37,7 +37,6 @@
     "deleteAllTitle": "¿Eliminar todos los chats?",
     "deleteAllBody": "Los chats de esta lista van a la papelera, donde se pueden restaurar. Un chat que aún se está respondiendo se queda.",
     "emptyTrash": "Vaciar papelera",
-    "emptyTrashTitle": "¿Vaciar la papelera?",
     "emptyTrashBody": "Los chats de la papelera se eliminan definitivamente con todos sus mensajes.",
     "trashedAll": "{count, plural, =0 {Ningún chat movido} one {Un chat en la papelera} other {# chats en la papelera}}",
     "purgedAll": "{count, plural, =0 {La papelera estaba vacía} one {Un chat eliminado definitivamente} other {# chats eliminados definitivamente}}",
@@ -50,7 +49,12 @@
       "actions": "Carpeta «{name}»",
       "empty": "Vacía: mueve chats aquí desde su menú."
     },
-    "newChatWith": "Nuevo chat con {name}"
+    "newChatWith": "Nuevo chat con {name}",
+    "more": "{count} más",
+    "showChats": "Mostrar chats",
+    "showArchived": "Mostrar archivados",
+    "showTrash": "Mostrar papelera",
+    "emptyTrashCount": "{count, plural, =0 {La papelera está vacía} one {¿Eliminar un chat definitivamente?} other {¿Eliminar # chats definitivamente?}}"
   },
   "empty": {
     "noAgentsTitle": "No hay ningún agente con el que chatear",

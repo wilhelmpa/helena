@@ -10,6 +10,7 @@ export {
   TreeItem,
   TreeGap,
   TreeAction,
+  TreeMoreButton,
   TreeNote,
   TreeSearch,
   TreeScroll,

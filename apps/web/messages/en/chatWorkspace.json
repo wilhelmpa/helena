@@ -37,7 +37,6 @@
     "deleteAllTitle": "Delete all chats?",
     "deleteAllBody": "The chats of this list go to the trash, where they can be restored. A chat that is still being answered stays.",
     "emptyTrash": "Empty trash",
-    "emptyTrashTitle": "Empty the trash?",
     "emptyTrashBody": "The chats in the trash are deleted for good, with all their messages.",
     "trashedAll": "{count, plural, =0 {No chats moved} one {One chat in the trash} other {# chats in the trash}}",
     "purgedAll": "{count, plural, =0 {The trash was empty} one {One chat deleted for good} other {# chats deleted for good}}",
@@ -50,7 +49,12 @@
       "actions": "Folder “{name}”",
       "empty": "Empty: move chats here from their menu."
     },
-    "newChatWith": "New chat with {name}"
+    "newChatWith": "New chat with {name}",
+    "more": "{count} more",
+    "showChats": "Show chats",
+    "showArchived": "Show archive",
+    "showTrash": "Show trash",
+    "emptyTrashCount": "{count, plural, =0 {The trash is empty} one {Delete one chat for good?} other {Delete # chats for good?}}"
   },
   "empty": {
     "noAgentsTitle": "No agent to chat with",

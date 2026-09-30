@@ -265,7 +265,7 @@
 /* A long list inside a tree section: a bounded box that scrolls by itself, so the sidebar's
    navigation below it stays in view whatever the number of rows (owner, O94). */
 .ds-tree-scroll {
-  max-height: clamp(7rem, 26vh, 18rem);
+  max-height: clamp(9rem, 38vh, 26rem);
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -300,8 +300,11 @@
   }
   /* Without hover the actions always stand at the end of the row: the text and a count keep
      clear of them. */
-  .ds-tree-line:has(> .ds-tree-actions) > .ds-tree-row {
+  .ds-tree-line:has(> .ds-tree-actions > :not(.ds-tree-action-hover)) > .ds-tree-row {
     padding-inline-end: 40px;
+  }
+  .ds-tree-action.ds-tree-action-hover {
+    display: none;
   }
 }
 .ds-tree-action {

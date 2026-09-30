@@ -1,16 +1,16 @@
 'use client';
 
-import { useContext, useEffect, useMemo, useRef } from 'react';
+import { useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { Archive, Folder, MessagesSquare, Pin, Trash2 } from 'lucide-react';
+import { ArrowLeft, Folder, MessagesSquare, Pin, Search } from 'lucide-react';
 import Avatar from '@/components/common/Avatar';
 import { useDisplayName } from '@/context/displayName';
 import { ShellCtx } from '@/context/shellContext';
 import { useSearchTerm } from '@/hooks/useSearchTerm';
 import type { ChatListView, ChatSummary } from '@/lib/api/endpoints/agentChat';
 import { Skeleton } from '@/components/ui/skeleton';
-import { TreeItem, TreeNote, TreeScroll, TreeSearch } from '@/design-system';
+import { TreeAction, TreeItem, TreeNote, TreeScroll, TreeSearch } from '@/design-system';
 import { chatPath } from '@/utils/paths';
 import { chatsOf, useChatList } from '../../hooks/useChatList';
 import { ChatFoldersContext, useChatFolders } from '../../hooks/useChatFolders';
@@ -18,13 +18,18 @@ import { useChatSummary } from '../../hooks/useChatSummary';
 import { useChatWorkspaceScope } from '../../hooks/useChatWorkspaceScope';
 import { agentDisplayName } from '../../utils/agentChip';
 import { chatHref } from '../../utils/chatHref';
-import { agentOrderByRole, chatSections } from '../../utils/chatSections';
+import {
+  agentOrderByRole,
+  chatSections,
+  foldedChats,
+  mixesProjects,
+} from '../../utils/chatSections';
 import { useOrganizationQuery } from '@/features/organization/services/organization.service';
 import { withOpenChat } from '../../utils/chatListWithOpen';
 import SidebarChatRow from './SidebarChatRow';
 import SidebarChatFolderMenu from './SidebarChatFolderMenu';
 import SidebarChatNew, { SidebarChatNewInAgent } from './SidebarChatNew';
-import { SidebarChatsMenu, SidebarChatTrashMenu } from './SidebarChatsMenu';
+import { SidebarChatsMenu, SidebarChatTrashEmpty } from './SidebarChatsMenu';
 
 // Reads the next page when the end of the list scrolls into view.
 function useLoadMore(query: {
@@ -56,7 +61,7 @@ function Loading() {
   );
 }
 
-// The archive and the trash: their chats as rows, read only once the group is opened.
+// The archive and the trash: their chats as rows, read only once the view is opened.
 function SidebarChatsOfView({
   view,
   projectKey,
@@ -81,6 +86,7 @@ function SidebarChatsOfView({
           view={view}
           projectKey={projectKey}
           active={false}
+          showProject={projectKey == null}
           onRemoved={onRemoved}
         />
       ))}
@@ -89,10 +95,14 @@ function SidebarChatsOfView({
   );
 }
 
-// The chat list in the sidebar (owner, O87), a level-1 area of the tree like the others:
-// the pinned chats, the member's own folders and one section per agent — the home agent,
-// the coordinator, the specialists — each with a "+" for a new chat with it; a search;
-// the archive and the trash at the foot. The chat page beside it shows only the
+// More than this many chats of one agent are folded into a "further n" row.
+const SHOWN = 5;
+
+// The chat list in the sidebar (owner, O87, made quieter in O100), a level-1 area of the
+// tree like the others: the pinned chats, the member's own folders and one group per agent
+// — the home agent, the coordinator, the specialists — each with its number of chats.
+// Search is a field that opens on request; the archive and the trash are views the "…" of
+// the area switches to, not rows of their own. The chat page beside it shows only the
 // conversation. `active` says the tree marks this area (the chat page is open).
 export default function SidebarChats({
   projectKey,
@@ -110,6 +120,9 @@ export default function SidebarChats({
   const scope = useChatWorkspaceScope(projectKey);
   const chatFolders = useChatFolders();
   const { search, setSearch, term } = useSearchTerm();
+  const [searching, setSearching] = useState(false);
+  const [view, setView] = useState<ChatListView>('active');
+  const [expanded, setExpanded] = useState<string[]>([]);
   const query = useChatList({ projectKey: projectKey ?? undefined, q: term, view: 'active' });
   const more = useLoadMore(query);
 
@@ -155,13 +168,16 @@ export default function SidebarChats({
   const openInPanel = inPanel
     ? (chat: ChatSummary) => shell?.onOpenChatThread(chat.agent.id, chat.id)
     : undefined;
-  const row = (chat: ChatSummary) => (
+  const mixes = (list: ChatSummary[]) => mixesProjects(list, projectKey != null);
+  const row = (chat: ChatSummary, showProject: boolean, mark?: ReactNode) => (
     <SidebarChatRow
       key={chat.id}
       chat={chat}
       view="active"
       projectKey={projectKey}
       active={active && chat.id === activeThreadId}
+      showProject={showProject}
+      mark={mark}
       onRemoved={removed}
       onOpenInPanel={openInPanel}
     />
@@ -169,6 +185,81 @@ export default function SidebarChats({
   const holdsActive = (list: ChatSummary[]) => list.some((chat) => chat.id === activeThreadId);
   const storage = (name: string) => `chats:${projectKey ?? 'home'}:${name}`;
   const empty = !query.isLoading && chats.length === 0 && sections.folders.length === 0;
+  const closeSearch = () => {
+    setSearching(false);
+    setSearch('');
+  };
+  const changeView = (next: ChatListView) => {
+    setView(next);
+    closeSearch();
+  };
+
+  // The rows of a group: all but the first few fold into a "further n" row.
+  const rows = (id: string, list: ChatSummary[], showProject: boolean) => {
+    const { shown, hidden } = foldedChats(list, SHOWN, expanded.includes(id), holdsActive);
+    return (
+      <>
+        {shown.map((chat) => row(chat, showProject))}
+        {hidden > 0 && (
+          <TreeItem
+            label={t('list.more', { count: hidden })}
+            onSelect={() => setExpanded((current) => [...current, id])}
+          />
+        )}
+      </>
+    );
+  };
+  const group = (
+    id: string,
+    label: string,
+    list: ChatSummary[],
+    extra: { mark?: ReactNode; actions?: ReactNode; open?: boolean } = {},
+  ) => (
+    <TreeItem
+      key={id}
+      label={label}
+      mark={extra.mark}
+      count={list.length}
+      actions={extra.actions}
+      storageKey={storage(id)}
+      defaultOpen={extra.open ?? false}
+      containsActive={holdsActive(list)}
+    >
+      {rows(id, list, mixes(list))}
+    </TreeItem>
+  );
+
+  // Every group is folded, except the pinned chats — or, without any, the first agent — and
+  // the one holding the open chat: the list is an overview first.
+  const groupList = (
+    <>
+      {sections.pinned.length > 0 &&
+        group('pinned', t('list.group.pinned'), sections.pinned, {
+          mark: <Pin size={16} aria-hidden="true" />,
+          open: true,
+        })}
+      {sections.folders.map(({ folder, chats: filed }) =>
+        group(`folder:${folder.id}`, folder.name, filed, {
+          mark: <Folder size={16} aria-hidden="true" />,
+          actions: <SidebarChatFolderMenu folderId={folder.id} name={folder.name} />,
+        }),
+      )}
+      {sections.agents.map(({ agent, chats: own }, index) =>
+        group(`agent:${agent.id}`, agentName(agent.id, agent.name), own, {
+          mark: <Avatar name={agent.name} className="size-4" aria-hidden />,
+          open: index === 0 && sections.pinned.length === 0,
+          actions: (
+            <SidebarChatNewInAgent
+              projectKey={projectKey}
+              agentId={agent.id}
+              name={agentName(agent.id, agent.name)}
+              hoverOnly
+            />
+          ),
+        }),
+      )}
+    </>
+  );
 
   return (
     <ChatFoldersContext.Provider value={chatFolders}>
@@ -180,82 +271,56 @@ export default function SidebarChats({
         active={active && !markedInList}
         actions={
           <>
+            {view === 'active' && (
+              <TreeAction
+                label={t('list.search')}
+                onClick={() => (searching ? closeSearch() : setSearching(true))}
+              >
+                <Search />
+              </TreeAction>
+            )}
             <SidebarChatNew projectKey={projectKey} agents={agents} />
-            <SidebarChatsMenu projectKey={projectKey} onCleared={cleared} />
+            <SidebarChatsMenu
+              projectKey={projectKey}
+              view={view}
+              onView={changeView}
+              onCleared={cleared}
+            />
           </>
         }
       >
-        <TreeSearch value={search} onChange={setSearch} label={t('list.search')} />
+        {searching && view === 'active' && (
+          <TreeSearch
+            value={search}
+            onChange={setSearch}
+            label={t('list.search')}
+            focusOnOpen
+            onEscape={closeSearch}
+          />
+        )}
         <TreeScroll label={tNav('sidebarChats')}>
-          {query.isLoading && <Loading />}
-          {empty && <TreeNote>{term ? t('list.noMatches') : t('list.empty.active')}</TreeNote>}
-          {term ? (
-            chats.map(row)
-          ) : (
+          {view !== 'active' && (
+            // The archive or the trash: one group headed by a way back, its chats below it.
+            <TreeItem
+              label={t(view === 'archived' ? 'list.viewArchived' : 'list.viewTrash')}
+              mark={<ArrowLeft size={16} aria-hidden="true" />}
+              title={t('list.showChats')}
+              onSelect={() => changeView('active')}
+              actions={
+                view === 'trash' ? <SidebarChatTrashEmpty projectKey={projectKey} /> : undefined
+              }
+              fixed
+            >
+              <SidebarChatsOfView view={view} projectKey={projectKey} onRemoved={removed} />
+            </TreeItem>
+          )}
+          {view === 'active' && (
             <>
-              {sections.pinned.length > 0 && (
-                <TreeItem
-                  label={t('list.group.pinned')}
-                  mark={<Pin size={14} aria-hidden="true" />}
-                  storageKey={storage('pinned')}
-                  containsActive={holdsActive(sections.pinned)}
-                >
-                  {sections.pinned.map(row)}
-                </TreeItem>
-              )}
-              {sections.folders.map(({ folder, chats: filed }) => (
-                <TreeItem
-                  key={folder.id}
-                  label={folder.name}
-                  mark={<Folder size={14} aria-hidden="true" />}
-                  storageKey={storage(`folder:${folder.id}`)}
-                  containsActive={holdsActive(filed)}
-                  actions={<SidebarChatFolderMenu folderId={folder.id} name={folder.name} />}
-                >
-                  {filed.length > 0 ? (
-                    filed.map(row)
-                  ) : (
-                    <TreeNote>{t('list.folders.empty')}</TreeNote>
-                  )}
-                </TreeItem>
-              ))}
-              {sections.agents.map(({ agent, chats: own }) => (
-                <TreeItem
-                  key={agent.id}
-                  label={agentName(agent.id, agent.name)}
-                  mark={<Avatar name={agent.name} className="size-4" aria-hidden />}
-                  storageKey={storage(`agent:${agent.id}`)}
-                  containsActive={holdsActive(own)}
-                  actions={
-                    <SidebarChatNewInAgent
-                      projectKey={projectKey}
-                      agentId={agent.id}
-                      name={agentName(agent.id, agent.name)}
-                    />
-                  }
-                >
-                  {own.map(row)}
-                </TreeItem>
-              ))}
+              {query.isLoading && <Loading />}
+              {empty && <TreeNote>{term ? t('list.noMatches') : t('list.empty.active')}</TreeNote>}
+              {term ? chats.map((chat) => row(chat, mixes(chats))) : groupList}
               <div ref={more} />
               {query.isFetchingNextPage && <Loading />}
-              <TreeItem
-                label={t('list.viewArchived')}
-                mark={<Archive size={14} aria-hidden="true" />}
-                storageKey={storage('archived')}
-                defaultOpen={false}
-              >
-                <SidebarChatsOfView view="archived" projectKey={projectKey} onRemoved={removed} />
-              </TreeItem>
-              <TreeItem
-                label={t('list.viewTrash')}
-                mark={<Trash2 size={14} aria-hidden="true" />}
-                storageKey={storage('trash')}
-                defaultOpen={false}
-                actions={<SidebarChatTrashMenu projectKey={projectKey} />}
-              >
-                <SidebarChatsOfView view="trash" projectKey={projectKey} onRemoved={removed} />
-              </TreeItem>
             </>
           )}
         </TreeScroll>

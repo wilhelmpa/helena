@@ -10,12 +10,14 @@ import {
   useMemo,
   useRef,
   useState,
+  forwardRef,
   type AnchorHTMLAttributes,
+  type ComponentProps,
   type ReactElement,
   type ReactNode,
 } from 'react';
 import Link from 'next/link';
-import { ChevronDown, ChevronRight, Search } from 'lucide-react';
+import { ChevronDown, ChevronRight, MoreHorizontal, Search } from 'lucide-react';
 import { useLocalValue } from '@/hooks/useLocalValue';
 import { SearchField } from './Field';
 import { StatusDot, type StatusDotTone } from './StatusDot';
@@ -115,21 +117,32 @@ export function TreeSearch({
   value,
   onChange,
   label,
+  focusOnOpen = false,
+  onEscape,
 }: {
   value: string;
   onChange: (value: string) => void;
   label: string;
+  // A field that opens on request takes the cursor, and Escape closes it again.
+  focusOnOpen?: boolean;
+  onEscape?: () => void;
 }) {
   const level = useContext(LevelCtx);
+  const input = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (focusOnOpen) input.current?.focus();
+  }, [focusOnOpen]);
   return (
     <div className="ds-tree-search" style={{ '--ds-tree-level': level } as React.CSSProperties}>
       <SearchField
+        ref={input}
         icon={<Search aria-hidden="true" />}
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={label}
         aria-label={label}
         dir="auto"
+        onKeyDown={onEscape ? (event) => event.key === 'Escape' && onEscape() : undefined}
       />
     </div>
   );
@@ -317,29 +330,48 @@ export function TreeAction({
   label,
   onClick,
   href,
+  hoverOnly = false,
   children,
 }: {
   label: string;
   onClick?: () => void;
   href?: string;
+  // Only where a pointer can hover: on a touch screen (where row actions always show) the
+  // area's own action does the same, so the row stays quiet.
+  hoverOnly?: boolean;
   children: ReactNode;
 }) {
+  const className = hoverOnly ? 'ds-tree-action ds-tree-action-hover' : 'ds-tree-action';
   return href ? (
-    <Link href={href} className="ds-tree-action" aria-label={label} title={label}>
+    <Link href={href} className={className} aria-label={label} title={label}>
       {children}
     </Link>
   ) : (
-    <button
-      type="button"
-      className="ds-tree-action"
-      aria-label={label}
-      title={label}
-      onClick={onClick}
-    >
+    <button type="button" className={className} aria-label={label} title={label} onClick={onClick}>
       {children}
     </button>
   );
 }
+
+// The "…" of a row or an area: the trigger of its options menu. A Radix trigger hands it its
+// props and ref, so it passes both on. Same place and size as every other row action.
+export const TreeMoreButton = forwardRef<
+  HTMLButtonElement,
+  Omit<ComponentProps<'button'>, 'children'> & { label: string }
+>(function TreeMoreButton({ label, ...props }, ref) {
+  return (
+    <button
+      ref={ref}
+      type="button"
+      className="ds-tree-action"
+      aria-label={label}
+      title={label}
+      {...props}
+    >
+      <MoreHorizontal />
+    </button>
+  );
+});
 
 export function useTreeLevel() {
   return useContext(LevelCtx);

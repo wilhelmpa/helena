@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { FolderX, MoreHorizontal, Pencil } from 'lucide-react';
-import { Menu, MenuContent, MenuItem, MenuTrigger } from '@/design-system';
+import { FolderX, Pencil } from 'lucide-react';
+import { Menu, MenuContent, MenuItem, MenuTrigger, TreeMoreButton } from '@/design-system';
 import { useChatFoldersContext } from '../../hooks/useChatFolders';
 import { removeFolder, renameFolder } from '../../utils/chatFolders';
 import ChatRenameDialog from '../workspace/ChatRenameDialog';
@@ -24,14 +24,7 @@ export default function SidebarChatFolderMenu({
     <>
       <Menu modal={false}>
         <MenuTrigger asChild>
-          <button
-            type="button"
-            className="ds-tree-action"
-            aria-label={t('list.folders.actions', { name })}
-            title={t('list.folders.actions', { name })}
-          >
-            <MoreHorizontal />
-          </button>
+          <TreeMoreButton label={t('list.folders.actions', { name })} />
         </MenuTrigger>
         <MenuContent align="start">
           <MenuItem onSelect={() => setRenaming(true)}>

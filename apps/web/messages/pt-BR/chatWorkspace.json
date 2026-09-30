@@ -37,7 +37,6 @@
     "deleteAllTitle": "Excluir todas as conversas?",
     "deleteAllBody": "As conversas desta lista vão para a lixeira, onde podem ser restauradas. Uma conversa que ainda está sendo respondida permanece.",
     "emptyTrash": "Esvaziar lixeira",
-    "emptyTrashTitle": "Esvaziar a lixeira?",
     "emptyTrashBody": "As conversas da lixeira são excluídas definitivamente com todas as mensagens.",
     "trashedAll": "{count, plural, =0 {Nenhuma conversa movida} one {Uma conversa na lixeira} other {# conversas na lixeira}}",
     "purgedAll": "{count, plural, =0 {A lixeira estava vazia} one {Uma conversa excluída definitivamente} other {# conversas excluídas definitivamente}}",
@@ -50,7 +49,12 @@
       "actions": "Pasta “{name}”",
       "empty": "Vazia: mova chats para cá pelo menu deles."
     },
-    "newChatWith": "Novo chat com {name}"
+    "newChatWith": "Novo chat com {name}",
+    "more": "Mais {count}",
+    "showChats": "Mostrar chats",
+    "showArchived": "Mostrar arquivados",
+    "showTrash": "Mostrar lixeira",
+    "emptyTrashCount": "{count, plural, =0 {A lixeira está vazia} one {Excluir uma conversa definitivamente?} other {Excluir # conversas definitivamente?}}"
   },
   "empty": {
     "noAgentsTitle": "Nenhum agente para conversar",

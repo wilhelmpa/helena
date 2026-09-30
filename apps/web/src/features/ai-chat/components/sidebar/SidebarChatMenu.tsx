@@ -8,7 +8,6 @@ import {
   Folder,
   FolderMinus,
   FolderPlus,
-  MoreHorizontal,
   Pencil,
   Pin,
   PinOff,
@@ -25,6 +24,7 @@ import {
   MenuSubTrigger,
   MenuTrigger,
   Text,
+  TreeMoreButton,
 } from '@/design-system';
 import { uuid } from '@/utils/uuid';
 import { useChatFoldersContext } from '../../hooks/useChatFolders';
@@ -62,14 +62,7 @@ export default function SidebarChatMenu({
     <>
       <Menu modal={false}>
         <MenuTrigger asChild>
-          <button
-            type="button"
-            className="ds-tree-action"
-            aria-label={t('list.moreActions')}
-            title={t('list.moreActions')}
-          >
-            <MoreHorizontal />
-          </button>
+          <TreeMoreButton label={t('list.moreActions')} />
         </MenuTrigger>
         <MenuContent align="start">
           {view === 'trash' ? (
