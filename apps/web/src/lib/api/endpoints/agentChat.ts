@@ -471,6 +471,7 @@ export interface ChatSummary {
   running: boolean;
   archivedAt: string | null;
   deletedAt: string | null;
+  purgeAt: string | null;
   snippet?: string;
   match?: 'title' | 'user' | 'assistant';
   createdAt: string;
@@ -541,7 +542,7 @@ export const trashAllChats = (filter: { projectKey?: string; view?: 'active' | '
 export const emptyChatTrash = (filter: { projectKey?: string }) =>
   request<{ count: number }>('/chats/empty-trash', {
     method: 'POST',
-    body: JSON.stringify(filter),
+    body: JSON.stringify({ ...filter, confirmed: true }),
   });
 
 export const restoreChat = (threadId: string) =>

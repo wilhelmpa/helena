@@ -25,6 +25,7 @@ export interface ActivityEntry {
   durationMs: number | null;
   inputTokens: number | null;
   outputTokens: number | null;
+  trashCounts?: { chat: number; vault: number };
 }
 
 export type ActivityNotice = 'workflow-runs-unavailable' | 'workflow-runs-limited';

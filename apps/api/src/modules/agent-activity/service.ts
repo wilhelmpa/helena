@@ -24,6 +24,7 @@ import {
   type ActivityPage,
 } from './entry';
 import type { ActivityKind } from './model';
+import { purgeActivityEntries } from '#modules/trash/service';
 import { workflowRunEntries } from './workflow-runs';
 
 // One timeline of what the agents did: their chat answers, their runs, and the runs of
@@ -196,12 +197,28 @@ async function readTimeline(input: {
   const { filters } = input;
   const limit = Math.min(Math.max(filters.limit ?? 25, 1), 100);
   const wants = (kind: ActivityKind) => !filters.kind || filters.kind === kind;
-  const [runs, chats, workflows] = await Promise.all([
+  const [runs, chats, workflows, purges] = await Promise.all([
     wants('agent-run') ? agentRunEntries(input.runProjectIds, filters, limit) : [],
     wants('chat') ? chatEntries(input.userId, input.chatProject, filters, limit) : [],
     workflowRunEntries(input.workflowProjectIds, filters, limit),
+    wants('workflow-run') && !filters.agentId
+      ? purgeActivityEntries(
+          input.runProjectIds,
+          input.userId,
+          filters.cursor,
+          limit + 1,
+          input.chatProject === null,
+        )
+      : [],
   ]);
-  const merged = [...runs, ...chats, ...workflows].sort(compareEntries);
+  const purgeEntries: ActivityEntry[] = purges.map((entry) => ({
+    ...emptyEntry,
+    ...entry,
+    kind: 'workflow-run',
+    status: 'succeeded',
+    workflowId: 'volition.trash-cleanup',
+  }));
+  const merged = [...runs, ...chats, ...workflows, ...purgeEntries].sort(compareEntries);
   const items = merged.slice(0, limit);
   const last = items.at(-1);
   return {

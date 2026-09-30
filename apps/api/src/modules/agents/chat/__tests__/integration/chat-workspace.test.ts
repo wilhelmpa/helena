@@ -218,9 +218,9 @@ describe('chat list', () => {
     // Another member's list is untouched by their own "Alle löschen".
     const asMember = await addProjectMember(asOwner, 'MKT');
     expect((await asMember.chats['trash-all'].post({})).data!.count).toBe(0);
-    expect((await asMember.chats['empty-trash'].post({})).data!.count).toBe(0);
+    expect((await asMember.chats['empty-trash'].post({ confirmed: true })).data!.count).toBe(0);
 
-    const emptied = await asOwner.chats['empty-trash'].post({});
+    const emptied = await asOwner.chats['empty-trash'].post({ confirmed: true });
     expect(emptied.data!.count).toBe(2);
     expect((await asOwner.chats.get({ query: { view: 'trash' } })).data!.total).toBe(0);
     expect((await asOwner.chats({ threadId: running.data!.threadId }).get()).status).toBe(200);

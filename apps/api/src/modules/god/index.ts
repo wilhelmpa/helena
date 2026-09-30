@@ -24,7 +24,8 @@ import {
   validDisplayName,
 } from '@repo/db';
 import { emailBody, hasEmailProvider, sendEmail } from '@repo/mailer';
-import { purgeVaultTrash, VaultError } from '@repo/vault';
+import { VaultError } from '@repo/vault';
+import { purgeVaultTrashAudited } from '#modules/trash/service';
 import { authContext } from '#shared/auth-context';
 import { requireGod } from '#shared/access';
 import { engineSettings, setDefaultTimezone } from '#modules/engine/settings';
@@ -172,7 +173,7 @@ export const godRoutes = new Elysia({ name: 'god', detail: { tags: ['God'] } })
     '/god/vault-trash/purge',
     async ({ body }) => {
       try {
-        return await purgeVaultTrash(body);
+        return await purgeVaultTrashAudited(body);
       } catch (error) {
         if (error instanceof VaultError)
           throw new HttpError(error.status, error.message, error.code);
@@ -181,7 +182,7 @@ export const godRoutes = new Elysia({ name: 'god', detail: { tags: ['God'] } })
     },
     {
       body: t.Object({
-        olderThanDays: t.Integer({ minimum: 1, maximum: 3650 }),
+        olderThanDays: t.Integer({ minimum: 0, maximum: 3650 }),
         apply: t.Optional(t.Boolean()),
         confirmTargets: t.Optional(t.Array(t.String())),
       }),

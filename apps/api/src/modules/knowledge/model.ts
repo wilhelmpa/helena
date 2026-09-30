@@ -241,7 +241,9 @@ export const PathResponse = t.Object({ path: t.String() });
 
 export const ResolveResponse = t.Object({ path: t.Nullable(t.String()) });
 
-export const TrashListResponse = t.Array(t.Object({ path: t.String(), trashedAt: t.String() }));
+export const TrashListResponse = t.Array(
+  t.Object({ path: t.String(), trashedAt: t.String(), purgeAt: t.Nullable(t.String()) }),
+);
 
 export const ConflictListResponse = t.Array(
   t.Object({ path: t.String(), original: t.String(), updatedAt: t.String() }),

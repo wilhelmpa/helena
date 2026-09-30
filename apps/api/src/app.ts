@@ -147,6 +147,7 @@ export const app = new Elysia()
         servers: [{ url: apiUrl, description: 'Configured public API origin' }],
         tags: [
           { name: 'Projects', description: 'Projects and the full work items view' },
+          { name: 'Trash', description: 'Trash retention, purging and activity' },
           { name: 'Teams', description: 'Teams that own projects' },
           { name: 'Members', description: 'Project membership and roles' },
           { name: 'Roles', description: 'Project roles and their permissions' },

@@ -17,6 +17,14 @@ import {
   agentChatFavorite,
   agentChatMessage,
   agentChatThread,
+  agentChatUsage,
+  helenaAgentSession,
+  knowledgeItem,
+  project,
+  team,
+  volitionTrashPurge,
+  userTelegramAccount,
+  helenaBrowserTaskRun,
   aiAgent,
   user,
 } from '@repo/db';
@@ -43,8 +51,8 @@ import { setTimeout as sleep } from 'node:timers/promises';
 import { emergencyStopActive } from '#modules/emergency-stop/service';
 import { recordUsage, type Spend } from '../usage/service';
 import { HttpError, intEnv, iso } from '#shared/lib';
-import { deleteContextUsage, recordContextUsage, type ContextUsage } from '../chat-usage';
-import { deleteFavorite, FAVORITES_LIMIT } from '../chat-favorites';
+import { recordContextUsage, type ContextUsage } from '../chat-usage';
+import { FAVORITES_LIMIT } from '../chat-favorites';
 import {
   likePattern,
   searchTerm,
@@ -552,15 +560,101 @@ export async function renameThread(
   return rows.length > 0;
 }
 
-export async function deleteThread(threadId: string, userId: string): Promise<boolean> {
-  const rows = await db
-    .delete(agentChatThread)
-    .where(and(eq(agentChatThread.id, threadId), eq(agentChatThread.userId, userId)))
-    .returning({ id: agentChatThread.id });
-  if (rows.length === 0) return false;
-  await deleteContextUsage(threadId);
-  await deleteFavorite(threadId);
-  return true;
+export async function deleteThread(
+  threadId: string,
+  userId: string,
+  options: {
+    trashOnly?: boolean;
+    retentionNow?: Date;
+    audit?: { batchId: string; trigger: 'manual' | 'schedule' };
+  } = {},
+): Promise<boolean> {
+  return db.transaction(async (tx) => {
+    const [thread] = await tx
+      .select()
+      .from(agentChatThread)
+      .where(and(eq(agentChatThread.id, threadId), eq(agentChatThread.userId, userId)))
+      .for('update');
+    if (!thread || (options.trashOnly && !thread.deletedAt)) return false;
+    const [agent] = await tx
+      .select({ teamId: aiAgent.teamId })
+      .from(aiAgent)
+      .where(eq(aiAgent.id, thread.agentId));
+    if (options.retentionNow) {
+      const [owningTeam] = await tx
+        .select({ days: team.trashRetentionDays })
+        .from(team)
+        .where(eq(team.id, agent!.teamId))
+        .for('share');
+      const [current] =
+        thread.projectId === null
+          ? []
+          : await tx
+              .select({ days: project.trashRetentionDays })
+              .from(project)
+              .where(eq(project.id, thread.projectId))
+              .for('share');
+      const days = current?.days ?? owningTeam!.days;
+      if (
+        !thread.deletedAt ||
+        days === 0 ||
+        thread.deletedAt.getTime() >= options.retentionNow.getTime() - days * 86_400_000
+      )
+        return false;
+    }
+    if (options.trashOnly) {
+      const [live] = await tx
+        .select({ id: agentChatMessage.id })
+        .from(agentChatMessage)
+        .where(
+          and(
+            eq(agentChatMessage.threadId, threadId),
+            inArray(agentChatMessage.status, LIVE_STATUSES),
+          ),
+        )
+        .limit(1);
+      if (live) return false;
+    }
+    const messages = await tx
+      .select({ id: agentChatMessage.id })
+      .from(agentChatMessage)
+      .where(eq(agentChatMessage.threadId, threadId));
+    if (messages.length)
+      await tx.delete(knowledgeItem).where(
+        and(
+          eq(knowledgeItem.source, 'chat'),
+          inArray(
+            knowledgeItem.itemId,
+            messages.map((message) => String(message.id)),
+          ),
+        ),
+      );
+    await tx
+      .update(userTelegramAccount)
+      .set({ currentThreadId: null })
+      .where(eq(userTelegramAccount.currentThreadId, threadId));
+    await tx
+      .update(helenaBrowserTaskRun)
+      .set({ chatThreadId: null })
+      .where(eq(helenaBrowserTaskRun.chatThreadId, threadId));
+    await tx.delete(helenaAgentSession).where(eq(helenaAgentSession.chatThreadId, threadId));
+    await tx.delete(agentChatUsage).where(eq(agentChatUsage.threadId, threadId));
+    await tx.delete(agentChatFavorite).where(eq(agentChatFavorite.threadId, threadId));
+    if (options.audit) {
+      await tx
+        .insert(volitionTrashPurge)
+        .values({
+          id: `chat:${threadId}`,
+          teamId: agent!.teamId,
+          projectId: thread.projectId,
+          kind: 'chat',
+          ...options.audit,
+        })
+        .onConflictDoNothing();
+    }
+    await tx.delete(agentChatThread).where(eq(agentChatThread.id, threadId));
+    return true;
+  });
 }
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];

@@ -48,6 +48,7 @@ export function launchEngine(): Promise<void> {
     // subscribers before the first run.
     await import('./workflows');
     await import('./system-jobs');
+    await import('../trash/job');
     const { registerBuiltins } = await import('./builtin/index');
     registerBuiltins();
     const { subscribeEngineTriggers } = await import('./events');

@@ -1,5 +1,6 @@
 import { readFollowups, submitFollowup } from '../native-runtime/followups';
 import { followupBody, FollowupResponse, FollowupsResponse } from '../native-runtime/model';
+import { chatTrashGuard } from '#modules/trash/guard';
 import { modelPicker } from '#modules/local-ai/model-picker';
 import { Elysia, t } from 'elysia';
 import { authContext } from '#shared/auth-context';
@@ -147,6 +148,7 @@ export const agentChatRoutes = new Elysia({ name: 'agent-chat', detail: { tags: 
   .use(authContext)
   .use(guards)
   .use(runnerAuth)
+  .use(chatTrashGuard)
   .macro({
     chatIssue: entityGuard('work_items', 'Issue not found', (p) =>
       getIssueProjectId(Number(p.issueId)),
@@ -222,6 +224,7 @@ export const agentChatRoutes = new Elysia({ name: 'agent-chat', detail: { tags: 
     },
     {
       body: emptyChatTrashBody,
+      chatTrashAdmin: 'empty',
       response: { 200: ChatCountResponse, ...commonErrors },
       detail: {
         summary: 'Empty the chat trash',
@@ -306,6 +309,7 @@ export const agentChatRoutes = new Elysia({ name: 'agent-chat', detail: { tags: 
     {
       params: chatParams,
       query: deleteChatQuery,
+      chatTrashAdmin: 'single',
       response: { 204: t.Void(), ...commonErrors },
       detail: {
         summary: 'Delete a chat',

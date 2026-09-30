@@ -43,6 +43,8 @@ export {
   MAX_NOTE_BYTES,
   moveVaultPath,
   purgeVaultTrash,
+  listVaultTrashRecords,
+  type TrashRecord,
   readVaultFile,
   restoreVaultPath,
   trashVaultPath,
