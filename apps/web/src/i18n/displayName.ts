@@ -1,10 +1,24 @@
 import { cache } from 'react';
-import { serverRuntimeEnv } from '@/utils/runtimeEnv';
 
+const DEFAULT_DISPLAY_NAME = 'Ava';
+
+// Read on the server for every page, so it goes to the API directly: API_URL is the public
+// address behind the edge's sign-in (Cloudflare Access), which answers a server-side request
+// with its login page. A missing or unreachable name falls back to the default rather than
+// failing the page (2026-09-30: every page answered 500 behind the edge).
 export const getDisplayName = cache(async (): Promise<string> => {
-  const apiUrl = serverRuntimeEnv().apiUrl;
-  const response = await fetch(`${apiUrl}/display-name`, { cache: 'no-store' });
-  if (!response.ok) throw new Error('Could not read display name');
-  const data: { displayName: string } = await response.json();
-  return data.displayName;
+  const api = (process.env.SERVICE_URL_API || 'http://127.0.0.1:3000').replace(/\/+$/, '');
+  try {
+    const response = await fetch(`${api}/display-name`, {
+      cache: 'no-store',
+      signal: AbortSignal.timeout(3000),
+    });
+    if (!response.ok) return DEFAULT_DISPLAY_NAME;
+    const data = (await response.json()) as { displayName?: unknown };
+    return typeof data.displayName === 'string' && data.displayName.trim()
+      ? data.displayName
+      : DEFAULT_DISPLAY_NAME;
+  } catch {
+    return DEFAULT_DISPLAY_NAME;
+  }
 });
