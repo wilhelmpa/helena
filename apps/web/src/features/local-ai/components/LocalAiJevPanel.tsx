@@ -1,5 +1,6 @@
 'use client';
 
+import { Card } from '@/design-system';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { Badge } from '@/components/ui/badge';
@@ -42,7 +43,7 @@ export default function LocalAiJevPanel({
         onSave={save.mutate}
       />
       {policy.enabled && (
-        <div className="divide-y rounded-md border">
+        <Card pad="none" className="divide-y">
           {(['mail', 'browser', 'tradingNews'] as const).map((useCase) => (
             <LocalAiJevUseCase
               key={useCase}
@@ -52,7 +53,7 @@ export default function LocalAiJevPanel({
               onSave={save.mutate}
             />
           ))}
-        </div>
+        </Card>
       )}
       <p className="text-xs text-muted-foreground">{t('scopeHint')}</p>
       <Link href="/decisions" className="text-xs underline underline-offset-2">

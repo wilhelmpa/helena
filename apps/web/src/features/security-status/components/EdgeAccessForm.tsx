@@ -124,7 +124,7 @@ export default function EdgeAccessForm({ settings }: { settings: EdgeAccessSetti
           <p className="text-xs text-muted-foreground">{t('allowedEmailsHint')}</p>
         </div>
       </SettingsCard>
-      <SettingsCard className="mt-3 divide-y p-0">
+      <SettingsCard className="divide-y p-0">
         <SettingsRow
           title={t('signInTitle')}
           description={t('signInDescription')}

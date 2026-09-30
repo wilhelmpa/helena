@@ -27,7 +27,7 @@ export default function PipelineBuiltinList({
 
   return (
     <Section title={t('builtins')} description={t('builtinsHint')}>
-      <Grid columns={2} gap={3}>
+      <Grid columns={2}>
         {builtins.data.map((template) => {
           const input = builtin(template);
           const flow = flowSummary(input.definition);

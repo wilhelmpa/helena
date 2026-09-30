@@ -9,6 +9,7 @@ import { PageToolbar } from '@/components/layout/PageToolbar';
 import { BrowserPageTabs } from '@/features/browser-lab/components/BrowserPageTabs';
 import { projectPath } from '@/utils/paths';
 import { HOME_BROWSER_SLUG } from '@/utils/browserOverview';
+import { Grid } from '@/design-system';
 import ProjectBrowserTile from './components/ProjectBrowserTile';
 import {
   useBrowserGatewayOverviewQuery,
@@ -59,7 +60,7 @@ export default function HomeBrowserPage() {
         ) : tiles.length === 0 ? (
           <EmptyState title={t('empty')} description={t('emptyHint')} />
         ) : (
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,17rem),1fr))] gap-3">
+          <Grid min="card">
             {tiles.map((tile) => (
               <ProjectBrowserTile
                 key={tile.key}
@@ -70,7 +71,7 @@ export default function HomeBrowserPage() {
                 version={version}
               />
             ))}
-          </div>
+          </Grid>
         )}
       </SectionPageView>
     </Shell>

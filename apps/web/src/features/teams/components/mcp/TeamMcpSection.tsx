@@ -1,5 +1,6 @@
 'use client';
 
+import { Sections } from '@/design-system';
 import { useTranslations } from 'next-intl';
 import { useTeam, useTeamProjectOptionsQuery, useUpdateTeamMcp } from '@/services/teams.service';
 import SectionPageView from '@/components/common/page/SectionPageView';
@@ -26,7 +27,7 @@ export default function TeamMcpSection({ teamId }: { teamId: number }) {
 
   return (
     <SectionPageView title={t('title')} wide>
-      <div className="space-y-6">
+      <Sections>
         <SettingsSection title={t('access')}>
           <SettingsCard>
             <div className="flex items-center justify-between gap-4 px-4 py-3">
@@ -90,7 +91,7 @@ export default function TeamMcpSection({ teamId }: { teamId: number }) {
             <McpConnectionGuide />
           </>
         )}
-      </div>
+      </Sections>
     </SectionPageView>
   );
 }

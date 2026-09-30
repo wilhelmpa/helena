@@ -16,6 +16,7 @@ import {
   Stack,
   Text,
   type PickItem,
+  Sections,
 } from '@/design-system';
 import { ApiError } from '@/lib/api/core/client';
 import type {
@@ -307,7 +308,7 @@ export default function ModelMatrixPage({ teamId }: { teamId: number }) {
     );
 
   return (
-    <Stack gap={5}>
+    <Sections>
       <MatrixHeader
         matrix={matrix}
         pending={pending}
@@ -458,7 +459,7 @@ export default function ModelMatrixPage({ teamId }: { teamId: number }) {
           onClose={() => setDialog(null)}
         />
       )}
-    </Stack>
+    </Sections>
   );
 }
 

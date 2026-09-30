@@ -19,7 +19,7 @@ import {
   Page,
   PageActions,
   Section,
-  Stack,
+  Sections,
 } from '@/design-system';
 import ListSkeleton from '@/components/common/skeleton/ListSkeleton';
 import { helenaSettingsPath } from './settingsModalCatalog';
@@ -67,7 +67,7 @@ export default function SettingsEnvironmentPage() {
         ) : undefined
       }
     >
-      <Stack gap={6}>
+      <Sections>
         {/* Isolation made visible (owner, O42): what is the project's own and what Helena
             granted it, and that nothing else reaches its agents. */}
         <Section title={t('credentialsTitle')} description={t('credentialsHint')}>
@@ -110,7 +110,7 @@ export default function SettingsEnvironmentPage() {
         <Section title={t('environmentTitle')} description={t('environmentHint')}>
           <EnvironmentVariableList teamId={teamId} target={{ projectId }} />
         </Section>
-      </Stack>
+      </Sections>
       {granting && (
         <GrantsDialog
           teamId={teamId}

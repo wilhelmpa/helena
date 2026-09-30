@@ -23,6 +23,7 @@ import { RouterPanel } from './components/RouterPanel';
 import { useDecisionClassesQuery } from '@/services/decisions.service';
 import { classKey } from './utils/format';
 import { FirstStagePanel } from './components/FirstStagePanel';
+import { Card, Sections, Stack } from '@/design-system';
 
 export type DecisionsTab = 'classes' | 'router' | 'log';
 
@@ -110,9 +111,9 @@ export function DecisionsContent({ tab: initial = 'classes' }: { tab?: Decisions
             status={logStatus === 'all' ? '' : logStatus}
           />
         ) : (
-          <div className="space-y-10 pb-8">
+          <Stack gap={4}>
             {data.connections.length === 0 && (
-              <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-sidebar-border bg-card px-4 py-3">
+              <Card layout="row" pad="tight" className="flex-wrap items-center justify-between">
                 <p className="text-sm text-muted-foreground">{t('noConnections')}</p>
                 <Button asChild variant="outline" size="sm">
                   <Link href={accessPath('credentials')}>
@@ -120,27 +121,29 @@ export function DecisionsContent({ tab: initial = 'classes' }: { tab?: Decisions
                     {t('toAccess')}
                   </Link>
                 </Button>
-              </div>
+              </Card>
             )}
-            {data.firstStage && (
-              <FirstStagePanel
-                teamId={teamId}
-                policy={data.firstStage}
-                classes={data.classes}
-                connections={data.connections}
-              />
-            )}
-            {data.classes
-              .filter((cls) => cls.id !== 'helena.browser')
-              .map((cls) => (
-                <DecisionClassCard
-                  key={cls.id}
+            <Sections>
+              {data.firstStage && (
+                <FirstStagePanel
                   teamId={teamId}
-                  cls={cls}
+                  policy={data.firstStage}
+                  classes={data.classes}
                   connections={data.connections}
                 />
-              ))}
-          </div>
+              )}
+              {data.classes
+                .filter((cls) => cls.id !== 'helena.browser')
+                .map((cls) => (
+                  <DecisionClassCard
+                    key={cls.id}
+                    teamId={teamId}
+                    cls={cls}
+                    connections={data.connections}
+                  />
+                ))}
+            </Sections>
+          </Stack>
         )}
       </SectionPageView>
     </>

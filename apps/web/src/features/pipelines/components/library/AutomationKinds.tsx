@@ -15,7 +15,7 @@ export default function AutomationKinds() {
     { id: 'heartbeat', icon: HeartPulse, href: '/organization' },
   ] as const;
   return (
-    <Grid columns={3} gap={3}>
+    <Grid columns={3}>
       {kinds.map(({ id, icon: Icon, href }) => (
         <Card
           key={id}

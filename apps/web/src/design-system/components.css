@@ -321,7 +321,7 @@ button.ds-card {
   flex-direction: column;
   gap: var(--section-head-gap);
 }
-.ds-section + .ds-section {
+:not(.ds-sections) > .ds-section + .ds-section {
   margin-top: var(--section-gap);
 }
 .ds-sections {
@@ -329,12 +329,6 @@ button.ds-card {
   min-width: 0;
   flex-direction: column;
   gap: var(--section-gap);
-}
-/* The gap comes from the wrapper, not from the sections' own top margins. */
-.ds-sections > .ds-section,
-.ds-sections > .ds-settings-group,
-.ds-sections > .ds-settings-section {
-  margin-top: 0;
 }
 .ds-section-body {
   display: flex;
@@ -834,7 +828,8 @@ button.ds-card {
   flex-direction: column;
   gap: var(--section-head-gap);
 }
-.ds-settings-group + .ds-settings-group {
+:not(.ds-sections) > .ds-settings-group + .ds-settings-group,
+:not(.ds-sections) > .ds-settings-section + .ds-settings-section {
   margin-top: var(--section-gap);
 }
 /* The head of a settings group is the head of every section (Section: 15/520 + 13). */
@@ -2184,7 +2179,7 @@ a.ds-run-card:hover {
   display: flex;
   min-width: 0;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: var(--stack-gap);
 }
 /* A task as a page: the page template gives the gutter; the task scrolls in it. */
 .ds-issue-page-scroll {
@@ -2336,10 +2331,8 @@ a.ds-run-card:hover {
   min-width: 0;
 }
 .ds-goal-list {
-  overflow: hidden;
-  border-radius: var(--radius-card);
-  background: var(--surface-1);
-  box-shadow: var(--shadow-card);
+  /* The box is the ListBox's (ds-list-box). */
+  list-style: none;
 }
 .ds-goal-list > li + li {
   border-top: 1px solid var(--line);
@@ -2419,9 +2412,6 @@ a.ds-run-card:hover {
   justify-content: flex-end;
 }
 @media (max-width: 900px) {
-  .ds-goal-list-pad {
-    padding: 0 var(--space-4) var(--space-6);
-  }
   .ds-goal-row {
     grid-template-columns: 8px minmax(0, 1fr) 96px;
   }
