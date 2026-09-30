@@ -52,7 +52,7 @@ function fixture() {
         policy: 'allow',
         tools: { core: ['inspect', 'normalize', 'verify'] },
       },
-      prompt: 'Import this CSV and validate totals.',
+      prompt: 'Import this monthly CSV and validate totals.',
       sink,
       sessions: new MemorySessionStore(),
       helena: api,

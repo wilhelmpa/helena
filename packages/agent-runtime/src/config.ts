@@ -82,6 +82,8 @@ export interface AgentRuntimeConfig {
   runtimeFallback?: string;
   servers: ModelServer[];
   instructions?: string;
+  contextLimits?: import('@helena/sdk').ContextLimits;
+  contextWarnings?: string[];
   // Absolute: the files and shell tools stay below it.
   workdir: string;
   // Where Helena's API answers and the variable its key is in. Absent in an eval without Helena.

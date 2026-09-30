@@ -1,0 +1,68 @@
+import { expect, test } from 'bun:test';
+import {
+  oneOffSkillSource,
+  similarSkill,
+  skillQuality,
+  validateNativeSkill,
+} from '../../skill-quality';
+
+const skill = {
+  path: 'monthly-import',
+  name: 'monthly-import',
+  markdown: [
+    '---',
+    'name: monthly-import',
+    'description: Use when importing a monthly CSV report',
+    '---',
+    '## Steps',
+    '1. Inspect the delimiter and decimal format.',
+    '2. Validate totals, then import.',
+    '## Pitfalls',
+    'Keep quoted delimiters inside fields.',
+    '## Examples',
+    'A semicolon report with 1,20 imports as 1.20.',
+  ].join('\n'),
+  files: [],
+  otherFiles: 0,
+  truncated: false,
+};
+
+test('requires a reusable multi-step procedure and a matching Agent Skills header', () => {
+  expect(skillQuality(skill)).toEqual([]);
+  expect(
+    skillQuality({
+      ...skill,
+      markdown: skill.markdown.replace('2. Validate totals, then import.', ''),
+    }),
+  ).toContain('At least two concrete procedure steps required');
+  expect(
+    skillQuality({
+      ...skill,
+      markdown: skill.markdown.replace(
+        'Use when importing a monthly CSV report',
+        'Import this one report',
+      ),
+    }),
+  ).toContain('Description must state a reusable trigger');
+  expect(skillQuality({ ...skill, name: 'other' })).toContain(
+    'Frontmatter name must match the lowercase skill name',
+  );
+});
+
+test('refuses one-off source tasks, secrets and access paths', () => {
+  expect(oneOffSkillSource('Read three current counters and sum them once.')).toBe(true);
+  expect(oneOffSkillSource('Import the monthly CSV and validate totals.')).toBe(false);
+  expect(() =>
+    validateNativeSkill({
+      ...skill,
+      markdown: `${skill.markdown}\nRead /home/user/.ssh/id_ed25519`,
+    }),
+  ).toThrow();
+  expect(() =>
+    validateNativeSkill({ ...skill, markdown: `${skill.markdown}\npassword=synthetic-secret` }),
+  ).toThrow();
+});
+
+test('compares a new skill against the same learned procedure', () => {
+  expect(similarSkill(skill, { ...skill, path: 'duplicate' })).toBe(true);
+});

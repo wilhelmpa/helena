@@ -102,7 +102,7 @@ export const nativeRuntimeRoutes = new Elysia({
   .post(
     '/agent-runtime/skills/use',
     async ({ agent, body }) => {
-      await recordSkillUse(agent.id, body.name);
+      await recordSkillUse(agent.id, body.name, body.sessionId);
       return { ok: true as const };
     },
     {
@@ -177,7 +177,7 @@ export const nativeRuntimeRoutes = new Elysia({
   .post(
     '/agent-runtime/memory/notes',
     async ({ agent, body }) => {
-      await addNote(agent.id, body.text);
+      await addNote(agent.id, body.text, new Date(), body.sessionId);
       return { ok: true };
     },
     {
@@ -189,7 +189,8 @@ export const nativeRuntimeRoutes = new Elysia({
   )
   .post(
     '/agent-runtime/memory/proposals',
-    ({ agent, body }) => proposeMemory(agent.id, body.file, body.content),
+    ({ agent, body }) =>
+      proposeMemory(agent.id, body.file, body.content, undefined, body.sessionId),
     {
       runnerAgent: true,
       body: memoryProposalBody,

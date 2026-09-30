@@ -17,6 +17,8 @@ export const RuntimePolicySnapshotResponse = t.Object({
   instructions: t.Nullable(t.String()),
   model: t.Nullable(t.String()),
   runtimePolicy,
+  contextLimits: t.Optional(t.Record(t.String(), t.Number())),
+  contextOverrides: t.Optional(t.Record(t.String(), t.Number())),
   projects: t.Array(
     t.Object({ id: t.Number(), key: t.String(), name: t.String(), instructions: t.String() }),
   ),

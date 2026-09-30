@@ -20,6 +20,8 @@ import { addNote, memoryState, proposeMemory } from '../../memory';
 import { consolidateAgentMemory, consolidateNotes } from '../../consolidation';
 import { decideMemoryProposal } from '../../../memory/service';
 import { reportRuntimeState } from '../../../runtime-policy/service';
+import { compactSession } from '../../sessions';
+import { getRunnerAgent } from '../../../runner/service';
 import {
   agentMemorySource,
   agentSessionSource,
@@ -80,6 +82,44 @@ async function setup() {
   };
 }
 
+async function approvedNote(agentId: number, userId: string, text: string, at = new Date()) {
+  await addNote(agentId, text, at);
+  const pending = (await db.select().from(agentProposal))
+    .filter(
+      (row) =>
+        row.agentId === agentId && row.status === 'pending' && row.title.startsWith('notes/'),
+    )
+    .sort((a, b) => b.id - a.id)[0];
+  expect(pending).toBeDefined();
+  await decideMemoryProposal(pending!.id, true, userId, null);
+}
+
+async function killDuringUncommittedWrite(statement: string) {
+  const code = `import { db } from '@repo/db'; import { sql } from 'drizzle-orm';
+    await db.transaction(async (tx) => { await tx.execute(sql.raw(${JSON.stringify(statement)}));
+      process.stdout.write('READY\\n'); await Bun.sleep(30000); });`;
+  const child = Bun.spawn(['bun', '-e', code], {
+    cwd: process.cwd(),
+    env: process.env,
+    stdout: 'pipe',
+    stderr: 'pipe',
+  });
+  const reader = child.stdout.getReader();
+  try {
+    const chunk = await Promise.race([
+      reader.read(),
+      Bun.sleep(5000).then(() => {
+        throw new Error('Child did not reach the write');
+      }),
+    ]);
+    expect(new TextDecoder().decode(chunk.value)).toContain('READY');
+  } finally {
+    child.kill('SIGKILL');
+    await child.exited;
+    reader.releaseLock();
+  }
+}
+
 describe('native runtime hardening', () => {
   let previousNativeRuntime: string | undefined;
   beforeEach(async () => {
@@ -92,10 +132,127 @@ describe('native runtime hardening', () => {
     if (previousNativeRuntime === undefined) delete process.env.HELENA_NATIVE_RUNTIME;
     else process.env.HELENA_NATIVE_RUNTIME = previousNativeRuntime;
   });
+  it('enforces team memory limits and a per-agent override at the exact stored boundary', async () => {
+    const { agent, project, api } = await setup();
+    const updated = await api.teams({ teamId: project.teamId })['agent-context-limits'].put({
+      memory: 12,
+      dailyNote: 14,
+    });
+    expect(updated.status).toBe(200);
+    expect((await proposeMemory(agent.id, 'MEMORY.md', 'x'.repeat(11))).status).toBe('pending');
+    await expect(proposeMemory(agent.id, 'MEMORY.md', 'x'.repeat(12))).rejects.toThrow(
+      'limit is 12',
+    );
+    await expect(addNote(agent.id, 'this is too long')).rejects.toThrow('limit is 14');
+    const [row] = await db
+      .select({ policy: aiAgent.runtimePolicy })
+      .from(aiAgent)
+      .where(eq(aiAgent.id, agent.id));
+    await db
+      .update(aiAgent)
+      .set({ runtimePolicy: { ...(row!.policy as object), contextLimits: { memory: 20 } } })
+      .where(eq(aiAgent.id, agent.id));
+    expect((await proposeMemory(agent.id, 'MEMORY.md', 'y'.repeat(19))).status).toBe('pending');
+    await expect(proposeMemory(agent.id, 'MEMORY.md', 'y'.repeat(20))).rejects.toThrow(
+      'limit is 20',
+    );
+    const sizes = (
+      await api
+        .teams({ teamId: project.teamId })
+        ['ai-agents']({ agentId: agent.id })
+        ['context-sizes'].get()
+    ).data!;
+    expect(sizes.areas.find((area) => area.key === 'memory')?.limit).toBe(20);
+    expect(sizes.areas.find((area) => area.key === 'dailyNote')?.limit).toBe(14);
+    const detail = (
+      await api.teams({ teamId: project.teamId })['ai-agents']({ agentId: agent.id }).get()
+    ).data!;
+    expect(detail.sizeLimits?.memory).toEqual({ used: 0, limit: 20, truncated: false });
+    expect(detail.sizeLimits?.dailyNote?.limit).toBe(14);
+    const list = (await api.teams({ teamId: project.teamId })['ai-agents'].get()).data!;
+    expect(list.find((entry) => entry.id === agent.id)?.sizeLimits?.memory.limit).toBe(20);
+  });
+  it('refuses a temporary counter result as memory even when the model asks to save it', async () => {
+    const { agent, runner } = await setup();
+    const session = (await runner['agent-runtime'].sessions.post({ kind: 'run' })).data!;
+    await runner['agent-runtime'].sessions({ sessionId: session.id }).items.post({
+      items: [
+        {
+          seq: 1,
+          step: 1,
+          message: {
+            role: 'user',
+            content: 'Read the three current counters once and report their sum.',
+          },
+          text: 'Read the three current counters once and report their sum.',
+        },
+      ],
+    });
+    expect(
+      (
+        await runner['agent-runtime'].memory.notes.post({
+          text: 'alpha=1 beta=2 gamma=3',
+          sessionId: session.id,
+        })
+      ).status,
+    ).toBe(400);
+    expect(
+      await db.select().from(agentMemoryRevision).where(eq(agentMemoryRevision.agentId, agent.id)),
+    ).toHaveLength(0);
+    expect(
+      await db.select().from(agentProposal).where(eq(agentProposal.agentId, agent.id)),
+    ).toHaveLength(0);
+  });
+  it('preserves committed session, skill and memory state when a writer process dies', async () => {
+    const { agent, runner } = await setup();
+    const session = (await runner['agent-runtime'].sessions.post({ kind: 'run' })).data!;
+    await killDuringUncommittedWrite(
+      `UPDATE helena_agent_session SET summary='partial', compacted_through=9 WHERE id='${session.id}'`,
+    );
+    const [stored] = await db
+      .select()
+      .from(helenaAgentSession)
+      .where(eq(helenaAgentSession.id, session.id));
+    expect(stored!.summary).toBeNull();
+    expect(stored!.compactedThrough).toBe(0);
+    await killDuringUncommittedWrite(
+      `UPDATE ai_agent SET volition_learned_skills='[{"path":"partial"}]'::jsonb WHERE id=${agent.id}`,
+    );
+    const [afterSkill] = await db
+      .select({ skills: aiAgent.volitionLearnedSkills })
+      .from(aiAgent)
+      .where(eq(aiAgent.id, agent.id));
+    expect(afterSkill!.skills).toEqual([]);
+    await killDuringUncommittedWrite(
+      `INSERT INTO agent_memory_revision(agent_id,file,content,sha256,source) VALUES (${agent.id},'MEMORY.md','partial','partial','agent')`,
+    );
+    expect(
+      await db.select().from(agentMemoryRevision).where(eq(agentMemoryRevision.agentId, agent.id)),
+    ).toHaveLength(0);
+  });
+  it('serializes parallel compactions and permits an identical retry', async () => {
+    const { agent, runner } = await setup();
+    const session = (await runner['agent-runtime'].sessions.post({ kind: 'run' })).data!;
+    const runnerAgent = (await getRunnerAgent(agent.userId))!;
+    const results = await Promise.allSettled([
+      compactSession(runnerAgent, session.id, 'First summary', 8),
+      compactSession(runnerAgent, session.id, 'Second summary', 8),
+    ]);
+    expect(results.filter((result) => result.status === 'fulfilled')).toHaveLength(1);
+    expect(results.filter((result) => result.status === 'rejected')).toHaveLength(1);
+    const [stored] = await db
+      .select()
+      .from(helenaAgentSession)
+      .where(eq(helenaAgentSession.id, session.id));
+    await compactSession(runnerAgent, session.id, stored!.summary!, 8);
+    expect(stored!.compactedThrough).toBe(8);
+  });
   it('does not roll back approved native memory from a stale runner inventory', async () => {
     const { agent, owner } = await setup();
     await proposeMemory(agent.id, 'MEMORY.md', 'Approved revision');
-    const [proposal] = await db.select().from(agentProposal);
+    const proposal = (await db.select().from(agentProposal)).find(
+      (row) => row.status === 'pending',
+    )!;
     await decideMemoryProposal(proposal!.id, true, owner.userId, null);
     await reportRuntimeState(agent.id, {
       adapter: 'helena',
@@ -115,28 +272,49 @@ describe('native runtime hardening', () => {
   });
   it('consolidates past notes once and applies the approved database revision', async () => {
     const { agent, owner } = await setup();
-    await addNote(agent.id, 'Use concise answers.', new Date('2026-09-26T12:00:00Z'));
-    await addNote(agent.id, 'Use concise answers.', new Date('2026-09-27T12:00:00Z'));
-    await addNote(agent.id, 'Today remains a note.', new Date('2026-09-28T12:00:00Z'));
+    await approvedNote(
+      agent.id,
+      owner.userId,
+      'Use concise answers.',
+      new Date('2026-09-26T12:00:00Z'),
+    );
+    await approvedNote(
+      agent.id,
+      owner.userId,
+      'Use concise answers.',
+      new Date('2026-09-27T12:00:00Z'),
+    );
+    await approvedNote(
+      agent.id,
+      owner.userId,
+      'Today remains a note.',
+      new Date('2026-09-28T12:00:00Z'),
+    );
     const now = new Date('2026-09-28T01:00:00Z');
     const result = await consolidateAgentMemory(agent.id, now);
     expect(result?.status).toBe('pending');
     expect(result?.duplicates).toBe(1);
     expect((await memoryState(agent.id)).files).toHaveLength(0);
     await consolidateAgentMemory(agent.id, now);
-    const proposals = await db.select().from(agentProposal);
+    const proposals = (await db.select().from(agentProposal)).filter(
+      (row) => row.status === 'pending',
+    );
     expect(proposals).toHaveLength(1);
     await decideMemoryProposal(proposals[0]!.id, true, owner.userId, null);
     expect((await memoryState(agent.id)).files[0]!.content).toBe('- Use concise answers.\n');
     expect((await consolidateAgentMemory(agent.id, now))?.status).toBe('unchanged');
   });
   it('checks persisted facts within the agent project scope before consolidating', async () => {
-    const { agent, runner, project, other } = await setup();
+    const { agent, owner, runner, project, other } = await setup();
     await runner['agent-facts'].post({
       action: 'add',
       content: 'Deploy-Tag ist Montag',
       entities: ['Deploy-Tag'],
     });
+    const factProposal = (await db.select().from(agentProposal)).find((row) =>
+      row.title.startsWith('Fact:'),
+    )!;
+    await decideMemoryProposal(factProposal.id, true, owner.userId, null);
     await db.insert(helenaFact).values({
       teamId: project.teamId,
       projectId: other.id,
@@ -144,9 +322,9 @@ describe('native runtime hardening', () => {
       category: 'memory',
     });
     const yesterday = new Date('2026-09-27T12:00:00Z');
-    await addNote(agent.id, 'Deploy-Tag ist Montag', yesterday);
-    await addNote(agent.id, 'Deploy-Tag ist Freitag', yesterday);
-    await addNote(agent.id, 'Foreign project note', yesterday);
+    await approvedNote(agent.id, owner.userId, 'Deploy-Tag ist Montag', yesterday);
+    await approvedNote(agent.id, owner.userId, 'Deploy-Tag ist Freitag', yesterday);
+    await approvedNote(agent.id, owner.userId, 'Foreign project note', yesterday);
     const result = await consolidateAgentMemory(agent.id, new Date('2026-09-28T01:00:00Z'));
     expect(result).toMatchObject({
       duplicates: 1,
@@ -170,7 +348,12 @@ describe('native runtime hardening', () => {
 
   it('registers the nightly engine job and records one consolidation step per native agent', async () => {
     const { agent, owner } = await setup();
-    await addNote(agent.id, 'A durable nightly note.', new Date('2026-09-27T12:00:00Z'));
+    await approvedNote(
+      agent.id,
+      owner.userId,
+      'A durable nightly note.',
+      new Date('2026-09-27T12:00:00Z'),
+    );
     const job = systemJob('helena.memory-consolidation')!;
     expect(await job.schedule()).toEqual({
       enabled: true,
@@ -188,20 +371,60 @@ describe('native runtime hardening', () => {
       sleep: async () => {},
     });
     expect(steps).toEqual(['date', 'agents', `memory:${agent.id}`]);
-    const [proposal] = await db.select().from(agentProposal);
+    const proposal = (await db.select().from(agentProposal)).find(
+      (row) => row.status === 'pending',
+    )!;
     await decideMemoryProposal(proposal!.id, false, owner.userId, 'Not durable');
     await consolidateAgentMemory(agent.id, new Date('2026-09-28T01:00:00Z'));
     expect((await memoryState(agent.id)).files).toHaveLength(0);
-    const [rejected] = await db.select().from(agentProposal);
+    const rejected = (await db.select().from(agentProposal)).find((row) => row.id === proposal.id);
     expect(rejected!.status).toBe('rejected');
   });
 
   it('serializes concurrent daily notes without losing either line', async () => {
-    const { agent } = await setup();
+    const { agent, owner } = await setup();
     await Promise.all([addNote(agent.id, 'Alpha line'), addNote(agent.id, 'Beta line')]);
+    const pending = (await db.select().from(agentProposal)).find(
+      (row) => row.status === 'pending' && row.title.startsWith('notes/'),
+    )!;
+    await decideMemoryProposal(pending.id, true, owner.userId, null);
     const state = await memoryState(agent.id);
     expect(state.notes.at(-1)!.content).toContain('Alpha line');
     expect(state.notes.at(-1)!.content).toContain('Beta line');
+  });
+
+  it('holds notes and facts for approval with session provenance and deduplicates retries', async () => {
+    const { agent, owner, runner } = await setup();
+    const session = (await runner['agent-runtime'].sessions.post({ kind: 'run' })).data!;
+    await runner['agent-runtime'].memory.notes.post({
+      text: 'Monthly report uses verified totals.',
+      sessionId: session.id,
+    });
+    expect((await memoryState(agent.id)).notes).toEqual([]);
+    const [note] = (await db.select().from(agentProposal)).filter(
+      (row) => row.status === 'pending',
+    );
+    await decideMemoryProposal(note!.id, true, owner.userId, null);
+    const [revision] = await db.select().from(agentMemoryRevision);
+    expect(revision!.sourceContext).toMatchObject({ sessionId: session.id });
+    expect((await memoryState(agent.id)).notes.at(-1)!.content).toContain('verified totals');
+    const input = {
+      action: 'add' as const,
+      content: 'Monthly report totals are verified before import',
+    };
+    const [first, retry] = await Promise.all([
+      runner['agent-facts'].post(input),
+      runner['agent-facts'].post(input),
+    ]);
+    expect(first.data!.status).toBe('pending');
+    expect(retry.data!.status).toBe('pending');
+    expect((await runner['agent-facts'].post({ action: 'list' })).data!.facts).toEqual([]);
+    const pending = (await db.select().from(agentProposal)).filter(
+      (row) => row.status === 'pending',
+    );
+    expect(pending).toHaveLength(1);
+    await decideMemoryProposal(pending[0]!.id, true, owner.userId, null);
+    expect((await runner['agent-facts'].post({ action: 'list' })).data!.facts).toHaveLength(1);
   });
 
   it('rejects foreign chat and run references when creating sessions', async () => {
@@ -356,7 +579,7 @@ describe('native runtime hardening', () => {
     expect(answer!.content).toContain('Handover failed');
   });
   it('pages sessions sharing a timestamp and latest memory revisions without omissions', async () => {
-    const { agent, project } = await setup();
+    const { agent, owner, project } = await setup();
     await db.insert(helenaAgentSession).values(
       [0, 1, 2].map(() => ({
         agentId: agent.id,
@@ -374,15 +597,20 @@ describe('native runtime hardening', () => {
       cursor = page.cursor;
     } while (cursor);
     expect(new Set(ids).size).toBe(3);
-    await addNote(agent.id, 'First note', new Date('2026-09-20T10:00:00Z'));
-    await addNote(agent.id, 'Second note', new Date('2026-09-21T10:00:00Z'));
-    await addNote(agent.id, 'First note updated', new Date('2026-09-20T12:00:00Z'));
+    await approvedNote(agent.id, owner.userId, 'First note', new Date('2026-09-20T10:00:00Z'));
+    await approvedNote(agent.id, owner.userId, 'Second note', new Date('2026-09-21T10:00:00Z'));
+    await approvedNote(
+      agent.id,
+      owner.userId,
+      'First note updated',
+      new Date('2026-09-20T12:00:00Z'),
+    );
     const first = await agentMemorySource.list({ cursor: null, since: null, limit: 1 });
     const second = await agentMemorySource.list({ cursor: first.cursor, since: null, limit: 1 });
     expect(new Set([...first.items, ...second.items].map((item) => item.id)).size).toBe(2);
   });
   it('indexes the three sources with project and private ACL in hybrid search', async () => {
-    const { agent, project, other } = await setup();
+    const { agent, owner, project, other } = await setup();
     const facts = await db
       .insert(helenaFact)
       .values(
@@ -395,7 +623,7 @@ describe('native runtime hardening', () => {
         })),
       )
       .returning();
-    await addNote(agent.id, 'Quartz private memory');
+    await approvedNote(agent.id, owner.userId, 'Quartz private memory');
     const memory = (await agentMemorySource.list({ cursor: null, since: null, limit: 50 })).items;
     const sessions = await db
       .insert(helenaAgentSession)

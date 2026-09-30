@@ -1,12 +1,30 @@
 import { createHash } from 'node:crypto';
-import { aiAgent, agentRuntimeAction, helenaAgentSession, db } from '@repo/db';
+import {
+  aiAgent,
+  agentRuntimeAction,
+  helenaAgentSession,
+  helenaAgentSessionItem,
+  db,
+} from '@repo/db';
 import { and, asc, eq, inArray, isNull } from 'drizzle-orm';
-import { looksSecret } from '@helena/facts';
 import { HttpError } from '#shared/lib';
-import { parseFrontmatter } from '../skills/skill-format';
 import { listAgentRuntimeSkills } from '../skills/service';
 import type { LearnedSkill } from '../learning/service';
 import type { AgentRuntimePolicy, AgentRuntimeState } from '../core/service';
+import {
+  oneOffSkillSource,
+  similarSkill,
+  skillDescription,
+  skillQuality,
+  validateNativeSkill,
+} from './skill-quality';
+export {
+  oneOffSkillSource,
+  similarSkill,
+  skillDescription,
+  skillQuality,
+  validateNativeSkill,
+} from './skill-quality';
 
 export interface SkillChange {
   id: string;
@@ -28,50 +46,21 @@ export type NativeSkill = LearnedSkill & {
   version?: number;
   createdAt?: string;
   lastUsedAt?: string;
+  lastUseSessionId?: string;
   useCount?: number;
+  benefit?: 'useful' | 'no-benefit';
+  comparison?: {
+    baselineSteps: number;
+    loadedSteps: number;
+    baselineSessionId: string;
+    loadedSessionId: string;
+  };
   history?: SkillChange[];
 };
 
 function contentOf(skill: LearnedSkill): LearnedSkill {
   const { path, name, markdown, files, otherFiles, truncated } = skill;
   return { path, name, markdown, files, otherFiles, truncated };
-}
-
-export function similarSkill(a: LearnedSkill, b: LearnedSkill): boolean {
-  const words = (text: string) => new Set(text.toLowerCase().match(/[\p{L}\p{N}]+/gu) ?? []);
-  const overlap = (a: Set<string>, b: Set<string>) => {
-    const intersection = [...a].filter((word) => b.has(word)).length;
-    return intersection / Math.max(1, a.size + b.size - intersection);
-  };
-  const body = (s: LearnedSkill) =>
-    s.markdown.replace(/^---[\s\S]*?---/, '').replace(/^#+.*$/gm, '');
-  return (
-    a.name.toLowerCase() === b.name.toLowerCase() ||
-    overlap(words(a.name), words(b.name)) >= 0.8 ||
-    (words(body(a)).size >= 12 && overlap(words(body(a)), words(body(b))) >= 0.85)
-  );
-}
-
-export function skillDescription(skill: LearnedSkill): string {
-  return parseFrontmatter(skill.markdown).description ?? skill.name;
-}
-
-export function skillQuality(skill: LearnedSkill): string[] {
-  const issues: string[] = [];
-  try {
-    validateNativeSkill(skill);
-  } catch {
-    issues.push('Unsafe or incomplete skill');
-  }
-  const meta = parseFrontmatter(skill.markdown);
-  if (!meta.name || !meta.description) issues.push('Name and when-to-use description required');
-  if (meta.name !== skill.name || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(meta.name ?? ''))
-    issues.push('Frontmatter name must match the lowercase skill name');
-  for (const heading of ['Steps', 'Pitfalls', 'Examples']) {
-    if (!new RegExp(String.raw`^## ${heading}\s*\n\s*\S`, 'm').test(skill.markdown))
-      issues.push(`Nonempty ${heading} section required`);
-  }
-  return issues;
 }
 
 function change(
@@ -123,29 +112,6 @@ export function skillRevision(skill: NativeSkill): string {
       ]),
     )
     .digest('hex');
-}
-
-export function validateNativeSkill(skill: LearnedSkill): void {
-  const safe = (path: string) =>
-    path
-      .split('/')
-      .every((part) => /^[A-Za-z0-9_.-]+$/.test(part) && part !== '.' && part !== '..');
-  if (!safe(skill.path) || skill.files.some((file) => !safe(file.path) || file.path === 'SKILL.md'))
-    throw new HttpError(400, 'Invalid skill path');
-  if (new Set(skill.files.map((file) => file.path)).size !== skill.files.length)
-    throw new HttpError(400, 'Duplicate skill file');
-  if (skill.truncated || skill.otherFiles || !skill.markdown.trim())
-    throw new HttpError(400, 'A native skill must include its complete content and files');
-  const content = [
-    skill.path,
-    skill.name,
-    skill.markdown,
-    ...skill.files.flatMap((file) => [file.path, file.content]),
-  ];
-  const credentialPath =
-    /(?:\.ssh\/|\.aws\/|\.kube\/config|\.env(?:[./\s]|$)|\.npmrc|id_(?:rsa|ed25519)|\/(?:secrets?|credentials?)\/|\.(?:pem|key)(?:\s|$)|[?&](?:key|token|secret)=)/i;
-  if (content.some((text) => looksSecret(text) || credentialPath.test(text)))
-    throw new HttpError(400, 'The skill looks like it holds a secret');
 }
 
 async function lockedAgent(tx: Transaction, agentId: number) {
@@ -217,8 +183,7 @@ export async function saveNativeSkill(
   options: { sessionId?: string | null; structured?: boolean } = {},
 ) {
   validateNativeSkill(skill);
-  if (options.structured && skillQuality(skill).length)
-    throw new HttpError(400, skillQuality(skill).join('; '));
+  if (skillQuality(skill).length) throw new HttpError(400, skillQuality(skill).join('; '));
   return db.transaction(async (tx) => {
     const agent = await lockedAgent(tx, agentId);
     if ((agent.runtimePolicy as AgentRuntimePolicy).learning === false)
@@ -234,13 +199,35 @@ export async function saveNativeSkill(
           ),
         );
       if (!session) throw new HttpError(403, 'Session does not belong to the agent');
+      if (!baseRevision) {
+        const source = await tx
+          .select({ text: helenaAgentSessionItem.text })
+          .from(helenaAgentSessionItem)
+          .where(
+            and(
+              eq(helenaAgentSessionItem.sessionId, options.sessionId),
+              eq(helenaAgentSessionItem.role, 'user'),
+            ),
+          )
+          .orderBy(asc(helenaAgentSessionItem.seq))
+          .limit(3);
+        if (source.some((item) => oneOffSkillSource(item.text)))
+          throw new HttpError(400, 'One-time lookups cannot create learned skills');
+      }
     }
     const skills = nativeSkills(agent.volitionLearnedSkills);
+    const recent = skills
+      .flatMap((entry) => entry.history ?? [])
+      .filter(
+        (event) =>
+          event.actor === `agent:${agentId}` && Date.parse(event.at) > Date.now() - 86_400_000,
+      ).length;
+    if (recent >= 5) throw new HttpError(429, 'Daily learned skill limit reached');
     const index = skills.findIndex((entry) => entry.path === skill.path);
     const current = skills[index];
     if ((current ? skillRevision(current) : null) !== baseRevision)
       throw new HttpError(409, 'The skill changed; read its current revision first');
-    if (index < 0 && options.structured) {
+    if (index < 0) {
       const duplicate = skills.find((entry) => similarSkill(entry, skill));
       if (duplicate)
         throw new HttpError(409, `Similar skill: ${duplicate.path}; read and improve its revision`);
@@ -313,6 +300,29 @@ export function unusedNativeSkill(skill: NativeSkill, now: number): boolean {
   );
 }
 
+async function sessionSteps(tx: Transaction, sessionId: string): Promise<number> {
+  const rows = await tx
+    .select({ content: helenaAgentSessionItem.content })
+    .from(helenaAgentSessionItem)
+    .where(
+      and(
+        eq(helenaAgentSessionItem.sessionId, sessionId),
+        eq(helenaAgentSessionItem.role, 'assistant'),
+      ),
+    );
+  return rows.reduce((count, row) => {
+    const message = row.content as { content?: unknown };
+    if (!Array.isArray(message.content)) return count;
+    return (
+      count +
+      message.content.filter(
+        (part: { type?: string; toolName?: string }) =>
+          part.type === 'tool-call' && !['memory', 'skill_manage'].includes(part.toolName ?? ''),
+      ).length
+    );
+  }, 0);
+}
+
 export async function nativeCurator(agentId: number, run: boolean) {
   return db.transaction(async (tx) => {
     const agent = await lockedAgent(tx, agentId);
@@ -325,6 +335,38 @@ export async function nativeCurator(agentId: number, run: boolean) {
       const now = Date.now();
       for (const skill of [...skills].sort((a, b) => Number(!!b.pinned) - Number(!!a.pinned))) {
         if (skill.archived || skill.proposed) continue;
+        const baselineSessionId = skill.history?.find(
+          (event) => event.action === 'create' && event.status === 'applied',
+        )?.sessionId;
+        if (
+          !skill.comparison &&
+          baselineSessionId &&
+          skill.lastUseSessionId &&
+          baselineSessionId !== skill.lastUseSessionId
+        ) {
+          const [loaded] = await tx
+            .select({ updatedAt: helenaAgentSession.updatedAt })
+            .from(helenaAgentSession)
+            .where(
+              and(
+                eq(helenaAgentSession.id, skill.lastUseSessionId),
+                eq(helenaAgentSession.agentId, agentId),
+              ),
+            );
+          if (loaded && now - loaded.updatedAt.getTime() > 60_000) {
+            const baselineSteps = await sessionSteps(tx, baselineSessionId);
+            const loadedSteps = await sessionSteps(tx, skill.lastUseSessionId);
+            if (baselineSteps > 0 && loadedSteps > 0) {
+              skill.benefit = loadedSteps < baselineSteps ? 'useful' : 'no-benefit';
+              skill.comparison = {
+                baselineSteps,
+                loadedSteps,
+                baselineSessionId,
+                loadedSessionId: skill.lastUseSessionId,
+              };
+            }
+          }
+        }
         skill.createdAt ??= new Date(now).toISOString();
         const duplicate = seen.find(
           (entry) =>
@@ -364,7 +406,13 @@ export async function nativeCurator(agentId: number, run: boolean) {
         priority: 'background',
         quality: skills
           .filter((skill) => !skill.archived)
-          .map((skill) => ({ path: skill.path, issues: skillQuality(skill) })),
+          .map((skill) => ({
+            path: skill.path,
+            issues: [
+              ...skillQuality(skill),
+              ...(skill.benefit === 'no-benefit' ? ['No measured step benefit'] : []),
+            ],
+          })),
       }),
     };
   });
@@ -413,7 +461,7 @@ export async function applyNativeSkillActions(agentId: number): Promise<void> {
   });
 }
 
-export async function recordSkillUse(agentId: number, name: string) {
+export async function recordSkillUse(agentId: number, name: string, sessionId?: string) {
   await db.transaction(async (tx) => {
     const agent = await lockedAgent(tx, agentId);
     const skills = nativeSkills(agent.volitionLearnedSkills);
@@ -424,6 +472,14 @@ export async function recordSkillUse(agentId: number, name: string) {
         !entry.proposed,
     );
     if (!skill) return;
+    if (sessionId) {
+      const [session] = await tx
+        .select({ id: helenaAgentSession.id })
+        .from(helenaAgentSession)
+        .where(and(eq(helenaAgentSession.id, sessionId), eq(helenaAgentSession.agentId, agentId)));
+      if (!session) throw new HttpError(403, 'Session does not belong to the agent');
+      skill.lastUseSessionId = sessionId;
+    }
     skill.useCount = (skill.useCount ?? 0) + 1;
     skill.lastUsedAt = new Date().toISOString();
     await store(tx, agent, skills);
@@ -434,8 +490,9 @@ export async function reviewNativeSkill(
   agentId: number,
   path: string,
   revision: string,
-  action: 'approve' | 'reject' | 'restore',
+  action: 'approve' | 'reject' | 'restore' | 'revert',
   userId: string,
+  version?: number,
 ) {
   return db.transaction(async (tx) => {
     const agent = await lockedAgent(tx, agentId);
@@ -444,7 +501,18 @@ export async function reviewNativeSkill(
     if (!skill) throw new HttpError(404, 'Learned skill not found');
     if (skillRevision(skill) !== revision) throw new HttpError(409, 'Skill revision changed');
     const pending = skill.history?.find((event) => event.status === 'pending');
-    if (action === 'restore') {
+    if (action === 'revert') {
+      if (pending) throw new HttpError(409, 'Review the pending proposal first');
+      const previous = skill.history?.find(
+        (event) => event.version === version && event.status === 'applied',
+      );
+      if (!previous) throw new HttpError(404, 'Skill version not found');
+      validateNativeSkill(previous.after);
+      const event = change(skill, previous.after, `user:${userId}`, `revert:${version}`, 'applied');
+      Object.assign(skill, previous.after);
+      skill.version = event.version;
+      skill.history = [...(skill.history ?? []), event];
+    } else if (action === 'restore') {
       if (skill.proposed || pending) throw new HttpError(409, 'Review the pending proposal first');
       const event = change(skill, skill, `user:${userId}`, 'restore', 'applied');
       skill.history = [...(skill.history ?? []), event];

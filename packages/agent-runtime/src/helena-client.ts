@@ -75,15 +75,20 @@ export interface HelenaApi {
   ): Promise<void>;
   compact(id: string, summary: string, compactedThrough: number): Promise<void>;
   memory(): Promise<MemoryState>;
-  note(text: string): Promise<void>;
-  proposeMemory(file: string, content: string, reason: string): Promise<{ status: string }>;
+  note(text: string, sessionId?: string): Promise<void>;
+  proposeMemory(
+    file: string,
+    content: string,
+    reason: string,
+    sessionId?: string,
+  ): Promise<{ status: string }>;
   learnedSkills?(includeArchived?: boolean): Promise<LearnedRuntimeSkill[]>;
   saveSkill?(
     skill: LearnedRuntimeSkill,
     baseRevision: string | null,
     options?: { sessionId?: string; structured?: boolean },
   ): Promise<LearnedRuntimeSkill>;
-  skillUsed?(name: string): Promise<void>;
+  skillUsed?(name: string, sessionId?: string): Promise<void>;
   searchSessions(query: string, limit?: number): Promise<SessionHit[]>;
 }
 
@@ -184,8 +189,8 @@ export class HelenaClient implements HelenaApi {
     return this.request('PUT', '/agent-runtime/skills', { skill, baseRevision, ...options });
   }
 
-  async skillUsed(name: string): Promise<void> {
-    await this.request('POST', '/agent-runtime/skills/use', { name });
+  async skillUsed(name: string, sessionId?: string): Promise<void> {
+    await this.request('POST', '/agent-runtime/skills/use', { name, sessionId });
   }
 
   // Denied whenever Helena cannot be asked: a policy that cannot be checked does not hold.
@@ -262,12 +267,22 @@ export class HelenaClient implements HelenaApi {
     return this.request<MemoryState>('GET', '/agent-runtime/memory');
   }
 
-  async note(text: string): Promise<void> {
-    await this.request('POST', '/agent-runtime/memory/notes', { text });
+  async note(text: string, sessionId?: string): Promise<void> {
+    await this.request('POST', '/agent-runtime/memory/notes', { text, sessionId });
   }
 
-  proposeMemory(file: string, content: string, reason: string): Promise<{ status: string }> {
-    return this.request('POST', '/agent-runtime/memory/proposals', { file, content, reason });
+  proposeMemory(
+    file: string,
+    content: string,
+    reason: string,
+    sessionId?: string,
+  ): Promise<{ status: string }> {
+    return this.request('POST', '/agent-runtime/memory/proposals', {
+      file,
+      content,
+      reason,
+      sessionId,
+    });
   }
 
   async searchSessions(query: string, limit = 8): Promise<SessionHit[]> {

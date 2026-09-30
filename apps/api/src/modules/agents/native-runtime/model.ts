@@ -54,12 +54,16 @@ export const MemoryStateResponse = t.Object({
   approval: t.Boolean(),
 });
 
-export const noteBody = t.Object({ text: t.String({ minLength: 1, maxLength: 4000 }) });
+export const noteBody = t.Object({
+  text: t.String({ minLength: 1, maxLength: 4000 }),
+  sessionId: t.Optional(t.String({ format: 'uuid' })),
+});
 
 export const memoryProposalBody = t.Object({
   file: t.Union([t.Literal('MEMORY.md'), t.Literal('USER.md')]),
   content: t.String({ maxLength: 20_000 }),
   reason: t.Optional(t.String({ maxLength: 1000 })),
+  sessionId: t.Optional(t.String({ format: 'uuid' })),
 });
 
 export const MemoryProposalResponse = t.Object({
@@ -67,7 +71,12 @@ export const MemoryProposalResponse = t.Object({
 });
 
 export const NotesResponse = t.Array(
-  t.Object({ day: t.String(), content: t.String(), updatedAt: t.String() }),
+  t.Object({
+    day: t.String(),
+    content: t.String(),
+    updatedAt: t.String(),
+    sourceContext: t.Nullable(t.Unknown()),
+  }),
 );
 
 const factView = t.Object({
@@ -190,6 +199,15 @@ export const NativeSkillResponse = t.Object({
   proposed: t.Optional(t.Boolean()),
   pinned: t.Optional(t.Boolean()),
   archived: t.Optional(t.Boolean()),
+  benefit: t.Optional(t.Union([t.Literal('useful'), t.Literal('no-benefit')])),
+  comparison: t.Optional(
+    t.Object({
+      baselineSteps: t.Number(),
+      loadedSteps: t.Number(),
+      baselineSessionId: t.String(),
+      loadedSessionId: t.String(),
+    }),
+  ),
 });
 export const NativeSkillsResponse = t.Array(NativeSkillResponse);
 
@@ -288,11 +306,20 @@ export const ProfileImportResponse = t.Object({
   sessions: t.Array(t.Object({ sourceId: t.String(), sessionId: t.String() })),
 });
 
-export const nativeSkillUseBody = t.Object({ name: t.String({ minLength: 1, maxLength: 128 }) });
+export const nativeSkillUseBody = t.Object({
+  name: t.String({ minLength: 1, maxLength: 128 }),
+  sessionId: t.Optional(t.String({ format: 'uuid' })),
+});
 export const nativeSkillReviewBody = t.Object({
   path: t.String({ minLength: 1, maxLength: 260 }),
   revision: t.String({ pattern: '^[a-f0-9]{64}$' }),
-  action: t.Union([t.Literal('approve'), t.Literal('reject'), t.Literal('restore')]),
+  action: t.Union([
+    t.Literal('approve'),
+    t.Literal('reject'),
+    t.Literal('restore'),
+    t.Literal('revert'),
+  ]),
+  version: t.Optional(t.Integer({ minimum: 1 })),
 });
 
 export const nativeSkillListQuery = t.Object({ includeArchived: t.Optional(t.Literal('true')) });

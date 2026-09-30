@@ -69,7 +69,14 @@ export const agentLearningRoutes = new Elysia({
     async ({ params, membership, body, user }) => {
       await requireAgent(params.agentId, membership);
       await agentForPerson(params.agentId, membership);
-      return reviewNativeSkill(params.agentId, body.path, body.revision, body.action, user!.id);
+      return reviewNativeSkill(
+        params.agentId,
+        body.path,
+        body.revision,
+        body.action,
+        user!.id,
+        body.version,
+      );
     },
     {
       params: agentParams,

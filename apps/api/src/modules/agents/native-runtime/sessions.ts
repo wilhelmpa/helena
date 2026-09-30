@@ -163,15 +163,24 @@ export async function compactSession(
   compactedThrough: number,
 ): Promise<void> {
   const session = await ownSession(agent, id);
-  // The summary may only move forward: a late retry of an older compaction changes nothing.
-  await db
+  // A retry with the same checkpoint must not replace a newer or different summary.
+  const changed = await db
     .update(helenaAgentSession)
     .set({ summary: summary.slice(0, 40_000), compactedThrough, updatedAt: new Date() })
     .where(
       and(
         eq(helenaAgentSession.id, session.id),
-        sql`${helenaAgentSession.compactedThrough} <= ${compactedThrough}`,
+        sql`${helenaAgentSession.compactedThrough} < ${compactedThrough}`,
       ),
-    );
+    )
+    .returning({ id: helenaAgentSession.id });
+  if (!changed.length) {
+    const [current] = await db
+      .select({ summary: helenaAgentSession.summary, through: helenaAgentSession.compactedThrough })
+      .from(helenaAgentSession)
+      .where(eq(helenaAgentSession.id, session.id));
+    if (current?.through !== compactedThrough || current.summary !== summary)
+      throw new HttpError(409, 'Session compaction changed; reload the session');
+  }
   reindexLater(session.id);
 }

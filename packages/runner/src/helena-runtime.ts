@@ -1,5 +1,11 @@
 import type { AgentRuntimeConfig, ModelServer } from '@helena/agent-runtime';
-import { localProviderWithoutThinking, priorityProxyBaseUrl } from '@helena/sdk';
+import {
+  contextFileLimit,
+  effectiveContextLimits,
+  localProviderWithoutThinking,
+  priorityProxyBaseUrl,
+  truncateContext,
+} from '@helena/sdk';
 import { readerCapabilities } from './readers';
 import type { RunnerConfig } from './config';
 import { collectProfile, mcpSecretVariable, type CollectedProfile } from './contributions';
@@ -70,11 +76,46 @@ export function localServers(snapshot: RuntimePolicySnapshot): ModelServer[] {
   return servers;
 }
 
-function instructionsOf(snapshot: RuntimePolicySnapshot): string {
-  return snapshot.runtimePolicy.files
+function instructionsOf(snapshot: RuntimePolicySnapshot) {
+  const limits = effectiveContextLimits(
+    snapshot.contextLimits,
+    snapshot.runtimePolicy.contextLimits,
+  );
+  const provider = snapshot.model?.split('/')[0];
+  const model = snapshot.model?.split('/').slice(1).join('/');
+  const local = snapshot.localAi?.servers.find((server) => server.provider === provider);
+  const window =
+    local?.models.find((entry) => entry.id === model)?.contextLength ??
+    local?.contextLength ??
+    KEY_PROVIDERS.find((server) => server.provider === provider)?.contextLength ??
+    131_072;
+  const warnings: string[] = [];
+  const text = snapshot.runtimePolicy.files
     .filter((file) => file.kind === 'instructions')
-    .map((file) => file.content.trim())
+    .map((file) => {
+      const key =
+        file.path === 'SOUL.md'
+          ? 'soul'
+          : file.path.includes('project')
+            ? 'projectInstructions'
+            : file.path.includes('agent')
+              ? 'agentInstructions'
+              : 'teamInstructions';
+      const cut = truncateContext(
+        file.content.trim(),
+        contextFileLimit(
+          window,
+          limits[key],
+          snapshot.contextOverrides?.[key] !== undefined ||
+            snapshot.runtimePolicy.contextLimits?.[key] !== undefined,
+        ),
+      );
+      if (cut.truncated)
+        warnings.push(`${file.path}: truncated ${cut.charsBefore} to ${cut.charsAfter} characters`);
+      return cut.content;
+    })
     .join('\n\n');
+  return { text, warnings };
 }
 
 // The loop's configuration for one agent (packages/agent-runtime config.ts). The model of a
@@ -86,6 +127,11 @@ export function helenaAgentConfig(
   runner: Pick<RunnerConfig, 'url' | 'cwd'>,
 ): Omit<AgentRuntimeConfig, 'workdir'> & { workdir?: string } {
   const helena = snapshot.helena ?? {};
+  const context = instructionsOf(snapshot);
+  const limits = effectiveContextLimits(
+    snapshot.contextLimits,
+    snapshot.runtimePolicy.contextLimits,
+  );
   const fallbacks = snapshot.hermes?.fallbackModels ?? [];
   const subscription = fallbacks.find((entry) =>
     ['openai-codex', 'claude-code'].includes(entry.provider),
@@ -99,7 +145,9 @@ export function helenaAgentConfig(
       runtimeFallback: `runtime:${subscription.provider === 'openai-codex' ? 'codex' : 'claude'}/${subscription.model}`,
     }),
     servers: [...localServers(snapshot), ...KEY_PROVIDERS],
-    instructions: instructionsOf(snapshot),
+    instructions: context.text,
+    contextWarnings: context.warnings,
+    contextLimits: limits,
     ...(runner.cwd && { workdir: runner.cwd }),
     helena: { url: runner.url, apiKeyEnv: 'ITSAPLAN_API_KEY' },
     mcpServers: specs,
@@ -110,7 +158,7 @@ export function helenaAgentConfig(
     skills: (snapshot.skills ?? []).map((skill) => ({
       name: skill.slug,
       displayName: skill.name,
-      description: skill.description || skill.name,
+      description: (skill.description || skill.name).slice(0, limits.skillDescription),
       markdown: skill.markdown,
       files: skill.files,
     })),
@@ -209,7 +257,7 @@ export class HelenaRuntimeAdapter implements RuntimeAdapter {
     return {
       hash: profileDigest({
         revision: applied.revision,
-        instructions: digest(instructionsOf(applied.snapshot)),
+        instructions: digest(instructionsOf(applied.snapshot).text),
         skills: (applied.snapshot.skills ?? []).map((skill) => [
           skill.slug,
           digest(skill.markdown),

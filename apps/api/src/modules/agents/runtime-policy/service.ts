@@ -7,9 +7,16 @@ import {
 } from '../native-runtime/skills';
 import { readEscalation } from '#modules/escalation/service';
 import { createHash } from 'node:crypto';
-import { db, aiAgent, getDisplayName } from '@repo/db';
+import { db, aiAgent, team, getDisplayName } from '@repo/db';
 import { eq } from 'drizzle-orm';
-import { normalizeRuntimeAccount, type RuntimeCompression } from '@helena/sdk';
+import {
+  contextFileLimit,
+  effectiveContextLimits,
+  normalizeContextLimits,
+  normalizeRuntimeAccount,
+  truncateContext,
+  type RuntimeCompression,
+} from '@helena/sdk';
 import { HttpError } from '#shared/lib';
 
 import {
@@ -63,6 +70,10 @@ import {
 export async function runtimePolicySnapshot(agentRef: RunnerAgent) {
   const agent = await getAgentById(agentRef.id, agentRef.teamId);
   if (!agent) throw new Error('Agent not found');
+  const [teamSettings] = await db
+    .select({ contextLimits: team.agentContextLimits })
+    .from(team)
+    .where(eq(team.id, agent.teamId));
   if (agent.runtimePolicy.runtime === 'helena') await applyNativeSkillActions(agent.id);
   const [runtimeDefaults, baseline, localAi, displayName] = await Promise.all([
     getAgentRuntimeDefaults(),
@@ -82,6 +93,21 @@ export async function runtimePolicySnapshot(agentRef: RunnerAgent) {
       agentVaultAccess(agentRef.userId),
       pendingRuntimeActions(agent.id),
     ]);
+  const limits = effectiveContextLimits(
+    teamSettings?.contextLimits,
+    agent.runtimePolicy.contextLimits,
+  );
+  const overrides = {
+    ...normalizeContextLimits(teamSettings?.contextLimits),
+    ...normalizeContextLimits(agent.runtimePolicy.contextLimits),
+  };
+  const selectedModel = agent.model?.split('/') ?? [];
+  const localModel = localAi?.servers.find((entry) => entry.provider === selectedModel[0]);
+  const contextTokens =
+    localModel?.models.find((entry) => entry.id === selectedModel.slice(1).join('/'))
+      ?.contextLength ??
+    localModel?.contextLength ??
+    131_072;
   // The gateway is the agent's browser only when the legacy fallback is off.
   const browserGateway =
     mcpServers.some((server) => server.name === BROWSER_GATEWAY_MCP_SERVER_NAME) &&
@@ -125,6 +151,9 @@ export async function runtimePolicySnapshot(agentRef: RunnerAgent) {
           kind: 'instructions' as const,
           path: 'SOUL.md',
           content: soul(agentRef, agent, displayName, {
+            limits,
+            overrides,
+            contextTokens,
             structure,
             goals,
             areas,
@@ -179,6 +208,8 @@ export async function runtimePolicySnapshot(agentRef: RunnerAgent) {
       approval: agent.runtimePolicy.memoryApproval === true && baseline.length > 0,
       baseline,
     },
+    contextLimits: limits,
+    contextOverrides: overrides,
     hermes: {
       skillsDisabled: agent.agentRole === 'home' ? [] : (agent.runtimePolicy.skillsDisabled ?? []),
       fallbackModels: agent.runtimePolicy.fallbackModels ?? runtimeDefaults.fallbackModels,
@@ -253,6 +284,9 @@ function soul(
     browserGateway: boolean;
     autopilot: { key: string; level: AutopilotLevel }[];
     browserTask?: string[];
+    limits: ReturnType<typeof effectiveContextLimits>;
+    overrides: import('@helena/sdk').ContextLimits;
+    contextTokens: number;
   },
 ): string {
   const {
@@ -264,7 +298,19 @@ function soul(
     browserGateway,
     autopilot,
     browserTask = [],
+    limits,
+    overrides,
+    contextTokens,
   } = sections;
+  const bounded = (text: string, key: keyof typeof limits, label: string) => {
+    const cut = truncateContext(
+      text,
+      contextFileLimit(contextTokens, limits[key], overrides[key] !== undefined),
+    );
+    return cut.truncated
+      ? `${cut.content}\n[Context warning: ${label} truncated ${cut.charsBefore} to ${cut.charsAfter} characters]`
+      : cut.content;
+  };
   const files = [...config.runtimePolicy.files].sort((a, b) => a.path.localeCompare(b.path));
   const own = [
     files.find((file) => file.path === 'SOUL.md')?.content.trim(),
@@ -277,18 +323,7 @@ function soul(
     .filter(Boolean)
     .join('\n\n');
   const instructions = agent.instructions?.trim();
-  return [
-    own ||
-      `You are ${config.name} (@${agent.username}), an agent of this team. Be direct: a short ` +
-        'question gets a short answer, and finished work gets a short report of what changed, ' +
-        'what is verified and what is left.',
-    SOUL_GENERATED_MARKER,
-    ...files
-      .filter((file) => file.path !== 'SOUL.md' && file.content.trim())
-      .map((file) => `## ${file.path}\n\n${file.content.trim()}`),
-    ...(instructions ? [`## Instructions\n\n${instructions}`] : []),
-    projectsPreamble(agent.projects).trim(),
-    ...agent.projects.map((project) => projectInstructionsPreamble(project).trim()),
+  const teamText = [
     areas,
     knowledge,
     structure,
@@ -299,8 +334,6 @@ function soul(
     ...((config.runtimePolicy.runtime ?? 'hermes') === 'hermes'
       ? [hermesPreamble(displayName)]
       : []),
-    // The shared project browser can use a granted login for every runtime. Agents on
-    // Hermes' legacy browser keep its separate vault instructions.
     ...(browserGateway
       ? [projectBrowserLoginPreamble(webLogins)]
       : webLogins && (config.runtimePolicy.runtime ?? 'hermes') === 'hermes'
@@ -310,6 +343,34 @@ function soul(
     previewPreamble(displayName),
     chartPreamble().trim(),
     attachmentPreamble().trim(),
+  ]
+    .filter(Boolean)
+    .join('\n\n');
+  return [
+    own
+      ? bounded(own, 'soul', 'SOUL.md')
+      : `You are ${config.name} (@${agent.username}), an agent of this team. Be direct: a short ` +
+        'question gets a short answer, and finished work gets a short report of what changed, ' +
+        'what is verified and what is left.',
+    SOUL_GENERATED_MARKER,
+    ...files
+      .filter((file) => file.path !== 'SOUL.md' && file.content.trim())
+      .map(
+        (file) =>
+          `## ${file.path}\n\n${bounded(file.content.trim(), 'teamInstructions', file.path)}`,
+      ),
+    ...(instructions
+      ? [`## Instructions\n\n${bounded(instructions, 'agentInstructions', 'Agent instructions')}`]
+      : []),
+    projectsPreamble(agent.projects).trim(),
+    ...agent.projects.map((project) =>
+      bounded(
+        projectInstructionsPreamble(project).trim(),
+        'projectInstructions',
+        `Project ${project.key} instructions`,
+      ),
+    ),
+    bounded(teamText, 'teamInstructions', 'Team and Ava instructions'),
   ]
     .filter(Boolean)
     .join('\n\n')

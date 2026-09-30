@@ -27,6 +27,19 @@ export const createTeamBody = t.Object({
 });
 
 export const updateTeamBody = t.Partial(createTeamBody);
+export const agentContextLimitsBody = t.Partial(
+  t.Object({
+    memory: t.Integer({ minimum: 1, maximum: 500000 }),
+    user: t.Integer({ minimum: 1, maximum: 500000 }),
+    dailyNote: t.Integer({ minimum: 1, maximum: 500000 }),
+    soul: t.Integer({ minimum: 1, maximum: 500000 }),
+    agentInstructions: t.Integer({ minimum: 1, maximum: 500000 }),
+    projectInstructions: t.Integer({ minimum: 1, maximum: 500000 }),
+    teamInstructions: t.Integer({ minimum: 1, maximum: 500000 }),
+    skillDescription: t.Integer({ minimum: 1, maximum: 500000 }),
+    loadedSkills: t.Integer({ minimum: 1, maximum: 100 }),
+  }),
+);
 
 // A team DTO (TeamRow from the service).
 export const TeamResponse = t.Object({

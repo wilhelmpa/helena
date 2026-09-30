@@ -104,6 +104,12 @@ export class MemorySessionStore implements SessionStore {
   async compact(id: string, summary: string, compactedThrough: number): Promise<void> {
     const session = this.sessions.get(id);
     if (!session) throw new Error('session not found');
+    if (
+      session.compactedThrough > compactedThrough ||
+      (session.compactedThrough === compactedThrough && session.summary !== summary)
+    )
+      throw new Error('session compaction changed; reload the session');
+    if (session.compactedThrough === compactedThrough) return;
     session.summary = summary;
     session.compactedThrough = compactedThrough;
   }
@@ -121,7 +127,7 @@ export class FileSessionStore implements SessionStore {
   private async save(session: StoredSession): Promise<void> {
     await mkdir(this.dir, { recursive: true, mode: 0o700 });
     const path = this.path(session.id);
-    const temp = `${path}.${process.pid}.tmp`;
+    const temp = `${path}.${process.pid}.${randomUUID()}.tmp`;
     await writeFile(temp, JSON.stringify(session), { mode: 0o600 });
     await rename(temp, path);
   }
@@ -153,6 +159,12 @@ export class FileSessionStore implements SessionStore {
   async compact(id: string, summary: string, compactedThrough: number): Promise<void> {
     const session = await this.load(id);
     if (!session) throw new Error('session not found');
+    if (
+      session.compactedThrough > compactedThrough ||
+      (session.compactedThrough === compactedThrough && session.summary !== summary)
+    )
+      throw new Error('session compaction changed; reload the session');
+    if (session.compactedThrough === compactedThrough) return;
     await this.save({ ...session, summary, compactedThrough });
   }
 }

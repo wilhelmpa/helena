@@ -7,8 +7,10 @@ import {
   encodeFact,
   extractEntities,
   fromBytes,
+  isTransientTask,
   probe,
   reason,
+  redactSecrets,
   refuseFact,
   related,
   rerank,
@@ -146,5 +148,11 @@ describe('entities and the guard', () => {
     expect(refuseFact('password: hunter22')).not.toBeNull();
     expect(refuseFact('x'.repeat(600))).not.toBeNull();
     expect(refuseFact('Der Owner mag kurze Antworten.')).toBeNull();
+    expect(redactSecrets('Status: done; password=synthetic-eval-secret.')).not.toContain(
+      'synthetic-eval-secret',
+    );
+    expect(refuseFact('Never read /home/user/.ssh/id_ed25519')).not.toBeNull();
+    expect(isTransientTask('Read all three current counters and give their sum once.')).toBe(true);
+    expect(isTransientTask('Import the monthly CSV with verified totals.')).toBe(false);
   });
 });

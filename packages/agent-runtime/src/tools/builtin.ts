@@ -155,13 +155,18 @@ export function findToolsTool(catalog: () => ToolCatalogEntry[]): AgentTool {
   };
 }
 
-export function skillTool(skills: SkillEntry[], used?: (name: string) => Promise<void>): AgentTool {
+export function skillTool(
+  skills: SkillEntry[],
+  used?: (name: string) => Promise<void>,
+  maxLoaded = 8,
+): AgentTool {
+  const loaded = new Set<string>();
   return {
     name: 'load_skill',
     kind: 'meta',
     readOnly: true,
     description:
-      'Load and follow a matching skill before acting. With file, load a reference or script source (execution still requires shell policy). Follow the returned offset instructions until every page is read before acting.',
+      'Load and follow a matching skill before acting. The tool is load_skill; name is its argument, and load_name is not a tool. With file, load a reference or script source (execution still requires shell policy). Follow the returned offset instructions until every page is read before acting.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -176,6 +181,10 @@ export function skillTool(skills: SkillEntry[], used?: (name: string) => Promise
       const skill = skills.find((entry) => entry.name.toLowerCase() === name);
       if (!skill)
         return error(`No skill ${name}. Skills: ${skills.map((entry) => entry.name).join(', ')}`);
+      if (!loaded.has(skill.name) && loaded.size >= maxLoaded)
+        return error(
+          `Skill loading limit ${maxLoaded} reached. Finish with the skills already loaded.`,
+        );
       const file = text(input.file).trim();
       const offset = input.offset ?? 0;
       if (typeof offset !== 'number' || !Number.isInteger(offset) || offset < 0)
@@ -192,6 +201,7 @@ export function skillTool(skills: SkillEntry[], used?: (name: string) => Promise
         };
       };
       if (!file) {
+        loaded.add(skill.name);
         await used?.(skill.name);
         const extra = (skill.files ?? []).map(
           (entry) => `load_skill(${JSON.stringify({ name: skill.name, file: entry.path })})`,
@@ -201,6 +211,7 @@ export function skillTool(skills: SkillEntry[], used?: (name: string) => Promise
         );
       }
       const found = (skill.files ?? []).find((entry) => entry.path === file);
+      if (found) loaded.add(skill.name);
       return found ? page(found.content) : error(`The skill has no file ${file}.`);
     },
   };
@@ -211,7 +222,7 @@ export function skillTool(skills: SkillEntry[], used?: (name: string) => Promise
 const MEMORY_RULE =
   'Keep only what is not obvious and helps later: decisions, preferences, where things are, procedures that worked. Never a secret, a key or a password.';
 
-export function memoryTool(api: HelenaApi): AgentTool {
+export function memoryTool(api: HelenaApi, sessionId?: () => string | undefined): AgentTool {
   return {
     name: 'memory',
     description: `Your long-term memory in Helena. action "read" searches MEMORY.md, USER.md and recent daily notes with query (bounded excerpts); "note" adds a line to today's note; "propose" replaces MEMORY.md or USER.md (the owner may review it). ${MEMORY_RULE}`,
@@ -235,14 +246,17 @@ export function memoryTool(api: HelenaApi): AgentTool {
       const content = text(input.content).trim();
       if (!content) return error('No content.');
       if (action === 'note') {
-        await api.note(content.slice(0, 2000));
-        return { text: "Added to today's note.", changed: true };
+        await api.note(content.slice(0, 2000), sessionId?.());
+        return {
+          text: "Today's note was submitted under the agent's memory approval setting.",
+          changed: true,
+        };
       }
       if (action === 'propose') {
         const file = text(input.file);
         if (file !== 'MEMORY.md' && file !== 'USER.md')
           return error('file must be MEMORY.md or USER.md');
-        const answer = await api.proposeMemory(file, content, text(input.reason));
+        const answer = await api.proposeMemory(file, content, text(input.reason), sessionId?.());
         return {
           text:
             answer.status === 'pending'

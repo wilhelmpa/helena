@@ -1,5 +1,12 @@
 import { dispatchFollowups } from '../native-runtime/followups';
-import { toolsFullyObserved } from '@helena/sdk';
+import {
+  contextFileLimit,
+  effectiveContextLimits,
+  normalizeContextLimits,
+  toolsFullyObserved,
+  truncateContext,
+  type ContextLimits,
+} from '@helena/sdk';
 import { withModelAdmission, LOCAL_DEFAULT } from '#modules/local-ai/maintenance-state';
 import { localDefaultClassFallback } from '#modules/local-ai/global-model';
 import {
@@ -11,6 +18,7 @@ import {
   organizationProjectAssignment,
   project,
   projectMember,
+  team,
 } from '@repo/db';
 import { and, asc, eq, inArray, lt, lte, notInArray, sql } from 'drizzle-orm';
 import { HttpError } from '#shared/lib';
@@ -101,6 +109,8 @@ export interface RunnerAgent {
   // A chat names all of them in the system prompt; a run names the one it works in.
   projects: RunnerProject[];
   instructions: string | null;
+  contextLimits?: ContextLimits;
+  contextOverrides?: ContextLimits;
   model: string | null;
   thinkingLevel: string | null;
   // The run limits of the agent's runtime policy, for a run that sets none itself.
@@ -126,8 +136,10 @@ export async function getRunnerAgent(userId: string): Promise<RunnerAgent | null
       instructions: aiAgent.instructions,
       model: aiAgent.model,
       runtimePolicy: aiAgent.runtimePolicy,
+      teamContextLimits: team.agentContextLimits,
     })
     .from(aiAgent)
+    .innerJoin(team, eq(team.id, aiAgent.teamId))
     .where(eq(aiAgent.userId, userId))
     .limit(1);
   const row = rows[0];
@@ -157,6 +169,11 @@ export async function getRunnerAgent(userId: string): Promise<RunnerAgent | null
     agentRole: row.agentRole as 'agent' | 'home',
     projectScope: row.projectScope as 'selected' | 'all',
     projects,
+    contextLimits: effectiveContextLimits(row.teamContextLimits, policy.contextLimits),
+    contextOverrides: {
+      ...normalizeContextLimits(row.teamContextLimits),
+      ...normalizeContextLimits(policy.contextLimits),
+    },
     thinkingLevel: policy.reasoningEffort,
     maxTurns: policy.maxTurns ?? null,
     runBudgetSeconds: policy.runBudgetSeconds ?? null,
@@ -722,17 +739,44 @@ function buildSystemPrompt(
   project: Pick<RunnerProject, 'key' | 'name' | 'description'>,
   run: RunForPrompt & Pick<ClaimedRow, 'projectInstructions' | 'agentProjectInstructions'>,
 ): string {
+  const limits = effectiveContextLimits(null, agent.contextLimits);
   const instructions = agent.instructions?.trim();
+  const own = instructions
+    ? truncateContext(
+        instructions,
+        contextFileLimit(
+          131_072,
+          limits.agentInstructions,
+          agent.contextOverrides?.agentInstructions !== undefined,
+        ),
+      )
+    : null;
+  const projectText = projectInstructionsPreamble({
+    key: project.key,
+    projectInstructions: run.projectInstructions,
+    agentProjectInstructions: run.agentProjectInstructions,
+  });
+  const projectCut = truncateContext(
+    projectText,
+    contextFileLimit(
+      131_072,
+      limits.projectInstructions,
+      agent.contextOverrides?.projectInstructions !== undefined,
+    ),
+  );
   return (
     projectPreamble(project) +
     runModePreamble(run.trigger) +
     peopleContext(run) +
-    projectInstructionsPreamble({
-      key: project.key,
-      projectInstructions: run.projectInstructions,
-      agentProjectInstructions: run.agentProjectInstructions,
-    }) +
-    (instructions ? `## Instructions\n${instructions}\n` : '')
+    projectCut.content +
+    (own ? `## Instructions\n${own.content}\n` : '') +
+    [projectCut, own]
+      .filter((item) => item?.truncated)
+      .map(
+        (item) =>
+          `\n[Context warning: truncated ${item!.charsBefore} to ${item!.charsAfter} characters]\n`,
+      )
+      .join('')
   );
 }
 

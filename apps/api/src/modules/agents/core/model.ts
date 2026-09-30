@@ -167,6 +167,21 @@ export const runtimePolicy = t.Object({
         'with a diff. Unset, they take effect without approval.',
     }),
   ),
+  contextLimits: t.Optional(
+    t.Partial(
+      t.Object({
+        memory: t.Integer({ minimum: 1, maximum: 500000 }),
+        user: t.Integer({ minimum: 1, maximum: 500000 }),
+        dailyNote: t.Integer({ minimum: 1, maximum: 500000 }),
+        soul: t.Integer({ minimum: 1, maximum: 500000 }),
+        agentInstructions: t.Integer({ minimum: 1, maximum: 500000 }),
+        projectInstructions: t.Integer({ minimum: 1, maximum: 500000 }),
+        teamInstructions: t.Integer({ minimum: 1, maximum: 500000 }),
+        skillDescription: t.Integer({ minimum: 1, maximum: 500000 }),
+        loadedSkills: t.Integer({ minimum: 1, maximum: 100 }),
+      }),
+    ),
+  ),
   skillsDisabled: t.Optional(
     t.Array(t.String({ minLength: 1, maxLength: 128 }), {
       maxItems: 300,
@@ -422,6 +437,19 @@ const configFields = {
 export const AiAgentResponse = t.Object({
   id: t.Number(),
   teamId: t.Number(),
+  sizeLimits: t.Optional(
+    t.Record(
+      t.Union([
+        t.Literal('memory'),
+        t.Literal('user'),
+        t.Literal('dailyNote'),
+        t.Literal('soul'),
+        t.Literal('agentInstructions'),
+        t.Literal('projectInstructions'),
+      ]),
+      t.Object({ used: t.Number(), limit: t.Number(), truncated: t.Boolean() }),
+    ),
+  ),
   agentRole: t.Union([t.Literal('agent'), t.Literal('home')]),
   projectScope: t.Union([t.Literal('selected'), t.Literal('all')]),
   projects: t.Array(
