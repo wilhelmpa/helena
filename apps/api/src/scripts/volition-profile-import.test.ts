@@ -54,6 +54,18 @@ beforeAll(async () => {
     );
   }
   await writeFile(join(profile, 'skills', 'learned', 'reference.txt'), 'Synthetic reference.');
+  // A skill Hermes ships (listed in .bundled_manifest) is not the agent's own and is skipped,
+  // even with a file too large to import.
+  await mkdir(join(profile, 'skills', 'creative', 'bundled-demo'), { recursive: true });
+  await writeFile(join(profile, 'skills', 'creative', 'bundled-demo', 'SKILL.md'), '# Bundled');
+  await writeFile(
+    join(profile, 'skills', 'creative', 'bundled-demo', 'big.md'),
+    'x'.repeat(200_000),
+  );
+  await writeFile(
+    join(profile, 'skills', '.bundled_manifest'),
+    'bundled-demo:3241aa768bdd9dc923b92e8939373de8\n',
+  );
   for (const name of ['auth.json', '.env', 'tokens.json', 'vault.json']) {
     await writeFile(join(profile, name), 'MUST NOT BE COPIED', { mode: 0 });
     await writeFile(join(profile, 'skills', 'learned', name), 'MUST NOT BE COPIED', { mode: 0 });
@@ -200,6 +212,33 @@ databaseTest(
     expect((await cli(['--plan', path, '--profiles-root', join(directory, 'profiles')])).code).toBe(
       1,
     );
+  },
+);
+
+databaseTest(
+  'plan gives a session continued by resumed runs to its first run, but refuses a run on a chat session',
+  async () => {
+    await sql`insert into agent_run(id,agent_id,project_id,prompt,status,session_id) values(1452,145,145,'Resumed','success','run-fixture'),(1451,145,145,'Resumed','success','run-fixture') on conflict do nothing`;
+    try {
+      const path = join(directory, 'plan-resumed', 'mapping.json');
+      const result = await cli(['--plan', path, '--profiles-root', join(directory, 'profiles')]);
+      expect(result.code).toBe(0);
+      const rows = (await Bun.file(path).json()) as Mapping[];
+      expect(rows.find((row) => row.agentId === 145)?.sessions).toEqual(mapping.sessions);
+      await sql`insert into agent_run(id,agent_id,project_id,prompt,status,session_id) values(1453,145,145,'Crossed','success','private-fixture') on conflict do nothing`;
+      const crossed = await cli([
+        '--plan',
+        join(directory, 'plan-crossed', 'mapping.json'),
+        '--profiles-root',
+        join(directory, 'profiles'),
+      ]);
+      expect(crossed.code).toBe(1);
+      expect(crossed.stderr + crossed.stdout).toContain(
+        'Ambiguous session ownership for agent 145',
+      );
+    } finally {
+      await sql`delete from agent_run where id in (1451,1452,1453)`;
+    }
   },
 );
 

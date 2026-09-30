@@ -124,6 +124,14 @@ export async function readProfile(mapping: Mapping, withSessions = true) {
   const skillsRoot = join(root, 'skills');
   try {
     if ((await lstat(skillsRoot)).isSymbolicLink()) throw new Error('Skills must not be a symlink');
+    // Hermes lists the skills it ships in skills/.bundled_manifest ("name:hash" per line).
+    // They come with the runtime, not from the agent's learning, so they are not imported.
+    const bundled = new Set<string>();
+    if (await Bun.file(join(skillsRoot, '.bundled_manifest')).exists())
+      for (const line of (await safeFile(join(skillsRoot, '.bundled_manifest'))).split('\n')) {
+        const name = line.split(':')[0]?.trim();
+        if (name) bundled.add(name);
+      }
     async function scan(relative: string) {
       for (const entry of (await readdir(join(skillsRoot, relative), { withFileTypes: true })).sort(
         (a, b) => a.name.localeCompare(b.name),
@@ -135,6 +143,7 @@ export async function readProfile(mapping: Mapping, withSessions = true) {
         const path = relative ? `${relative}/${entry.name}` : entry.name;
         const directory = join(skillsRoot, path);
         if (await Bun.file(join(directory, 'SKILL.md')).exists()) {
+          if (bundled.has(entry.name)) continue;
           const files = await filesBelow(directory);
           const markdown = files.find((file) => file.path === 'SKILL.md')!.content;
           skills.push({
