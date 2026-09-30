@@ -1,3 +1,4 @@
+import { Card } from '@/design-system';
 import type { ReactNode } from 'react';
 import { useTranslations } from 'next-intl';
 import { useRelativeTime } from '@/context/relativeTimeContext';
@@ -19,14 +20,14 @@ export default function DevicesConflicts() {
     content = (
       <ul dir="ltr" className="space-y-2">
         {items.map((item) => (
-          <li key={item.path} className="rounded-md border px-3 py-2">
+          <Card as="li" key={item.path} tone="inset" pad="tight" gap={0}>
             <code className="block text-xs font-medium break-all">{item.path}</code>
             <p className="mt-1 text-xs text-muted-foreground">
               {t('original', { path: item.originalPath })}
               {' · '}
               {t('modified', { time: relativeTime(item.modifiedAt) })}
             </p>
-          </li>
+          </Card>
         ))}
       </ul>
     );

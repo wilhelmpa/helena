@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Segmented, Stack } from '@/design-system';
+import { Segmented, Stack, Notice } from '@/design-system';
 import { useCreateSkill, useDiscoverGithubSkills } from '@/services/agentSkills.service';
 import { useTranslations } from 'next-intl';
 
@@ -315,16 +315,12 @@ export function SkillCreateDialog({
 
         {source === 'github' && (
           <Stack gap={4}>
-            <div className="flex gap-2.5 rounded-md border border-status-waiting/30 bg-status-waiting/10 p-3 text-status-waiting">
-              <TriangleAlert className="mt-px size-4 shrink-0" />
-              <div className="space-y-1.5 text-xs leading-relaxed">
-                <p className="font-medium">{t('trustWarning')}</p>
-                <ul className="list-disc space-y-0.5 ps-4 text-status-waiting/90">
-                  <li>{t('trustWarning1')}</li>
-                  <li>{t('trustWarning2')}</li>
-                </ul>
-              </div>
-            </div>
+            <Notice tone="warning" icon={<TriangleAlert />} title={t('trustWarning')}>
+              <ul className="list-disc ps-4">
+                <li>{t('trustWarning1')}</li>
+                <li>{t('trustWarning2')}</li>
+              </ul>
+            </Notice>
 
             <div className="space-y-1.5">
               <Label>{t('githubUrl')}</Label>

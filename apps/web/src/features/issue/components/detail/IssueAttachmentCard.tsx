@@ -1,3 +1,4 @@
+import { Card } from '@/design-system';
 import { type DragEvent } from 'react';
 import { Download, FileWarning, Link2, PenLine, Plus, Trash2 } from 'lucide-react';
 import type { Attachment } from '@/lib/api/endpoints/attachments';
@@ -46,13 +47,15 @@ export default function IssueAttachmentCard({
     : {
         draggable: true,
         onDragStart: (e: DragEvent<HTMLElement>) => onDragStart(e, attachment),
-        title: t('dragIntoDescription'),
+        tooltip: t('dragIntoDescription'),
       };
 
   return (
-    <div
+    <Card
       {...dragProps}
-      className={`group relative flex flex-col overflow-hidden rounded-md border bg-card transition-colors hover:border-ring/40 ${
+      pad="none"
+      gap={0}
+      className={`group relative overflow-hidden ${
         readOnly ? '' : 'cursor-grab active:cursor-grabbing'
       }`}
     >
@@ -83,7 +86,13 @@ export default function IssueAttachmentCard({
             They sit on one opaque bar because the preview under them is a
             screenshot as often as not, and icons alone drown in it. */}
         <div className="pointer-events-none absolute inset-0 bg-black/30 p-1.5 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 max-sm:opacity-100">
-          <div className="pointer-events-auto mx-auto flex w-fit items-center gap-0.5 rounded-md border bg-popover p-0.5 shadow-lg shadow-black/30">
+          <Card
+            tone="popover"
+            layout="row"
+            pad="list"
+            gap={1}
+            className="pointer-events-auto mx-auto w-fit items-center"
+          >
             {!readOnly && missing && (
               <Button
                 variant="ghost"
@@ -146,7 +155,7 @@ export default function IssueAttachmentCard({
                 <Trash2 />
               </Button>
             )}
-          </div>
+          </Card>
         </div>
       </div>
 
@@ -156,6 +165,6 @@ export default function IssueAttachmentCard({
         </p>
         <p className="text-xs text-muted-foreground">{formatSize(attachment.sizeBytes)}</p>
       </div>
-    </div>
+    </Card>
   );
 }

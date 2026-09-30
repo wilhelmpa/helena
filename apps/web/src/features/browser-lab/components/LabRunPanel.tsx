@@ -175,7 +175,7 @@ export function LabRunPanel({
       )}
 
       {!active && (run.summary || run.result?.url) && (
-        <div className="space-y-1 rounded-md border border-sidebar-border bg-card px-3 py-2 text-sm">
+        <Card pad="tight" gap={1} className="text-sm">
           {run.summary && <p className="whitespace-pre-wrap">{run.summary}</p>}
           {run.result?.url && (
             <p dir="ltr" className="truncate text-xs text-muted-foreground">
@@ -193,7 +193,7 @@ export function LabRunPanel({
               {run.result.candidates.map((c) => `${c.element} (${c.probability})`).join(', ')}
             </p>
           ) : null}
-        </div>
+        </Card>
       )}
       {chatHref && (
         <Link
@@ -209,7 +209,7 @@ export function LabRunPanel({
         <img
           src={run.finalFramePath ? vaultFileUrl(run.finalFramePath) : run.finalFrame!}
           alt={t('finalFrame')}
-          className="w-full rounded-md border border-sidebar-border"
+          className="w-full rounded-md ring-1 ring-border"
         />
       )}
     </div>

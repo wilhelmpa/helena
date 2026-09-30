@@ -19,7 +19,7 @@ import {
   useConnectGitRepositories,
 } from '../../services/settings.service';
 
-import { Inline, Box, Stack, Text } from '@/design-system';
+import { Inline, Box, Text, Card } from '@/design-system';
 
 export default function GitRepositoryPickerDialog({
   projectKey,
@@ -92,7 +92,7 @@ export default function GitRepositoryPickerDialog({
           onChange={(event) => setSearch(event.target.value)}
           placeholder={t('nativeSearchRepositories')}
         />
-        <Stack gap={1} pad={2} className="max-h-80 overflow-y-auto rounded-md border">
+        <Card tone="inset" pad="tight" gap={1} className="max-h-80 overflow-y-auto">
           {repositoriesQuery.isPending && (
             <Box as="p" pad={3}>
               <Text as="span" size="sm" tone="muted">
@@ -147,7 +147,7 @@ export default function GitRepositoryPickerDialog({
               {t('nativeLoadMore')}
             </Button>
           )}
-        </Stack>
+        </Card>
         <DialogFooter>
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
             {t('nativeCancel')}

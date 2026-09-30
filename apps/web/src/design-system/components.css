@@ -137,6 +137,25 @@
   background: var(--danger-soft);
   color: var(--danger);
 }
+.ds-pill[data-size='sm'] {
+  height: 20px;
+  gap: 4px;
+  padding: 0 var(--space-2);
+  font-size: 11px;
+}
+.ds-pill[data-size='sm'] svg {
+  width: 12px;
+  height: 12px;
+}
+.ds-pill[data-fit] {
+  min-width: 0;
+  max-width: 100%;
+  flex: 0 1 auto;
+}
+a.ds-pill,
+button.ds-pill {
+  text-decoration: none;
+}
 .ds-pill-button:hover {
   background: var(--surface-3);
   color: var(--text);
@@ -162,6 +181,25 @@
   resize: vertical;
 }
 .ds-field:focus {
+  background: color-mix(in srgb, var(--surface-2) 70%, var(--surface-3));
+}
+.ds-field-frame {
+  display: flex;
+  min-height: var(--control-h);
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  border-radius: var(--radius-field);
+  background: var(--surface-2);
+  padding: var(--space-1) var(--space-2);
+  color: var(--text);
+  font-size: 13px;
+}
+.ds-field-frame[data-area] {
+  display: block;
+  padding: var(--space-2) var(--space-3);
+}
+.ds-field-frame:focus-within {
   background: color-mix(in srgb, var(--surface-2) 70%, var(--surface-3));
 }
 .ds-field-group {
@@ -3667,4 +3705,37 @@ a.ds-run-card:hover {
   .ds-doc-page {
     grid-template-columns: minmax(0, 1fr);
   }
+}
+
+/* A pane beside another in a split page (the inbox / mail list, the document tree): the box's
+   surface, a line at the edge that meets the other pane. One rule for every split pane. */
+.ds-pane {
+  border-inline-end: 1px solid var(--line);
+  background: var(--surface-1);
+}
+/* The head row of a table that scrolls under it: it stays on top, on the table box's surface. */
+.ds-sticky-head {
+  position: sticky;
+  top: 0;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-1);
+}
+/* Below 768px a split pane is the whole page: no edge line. */
+@media (max-width: 767px) {
+  .ds-pane {
+    border-inline-end: 0;
+  }
+}
+
+/* The symbol tile of a list row (IconTile): 32px, the inset surface, no frame. */
+.ds-icon-tile {
+  display: inline-flex;
+  width: 32px;
+  height: 32px;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  background: var(--surface-2);
+  color: var(--text-3);
 }

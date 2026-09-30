@@ -1,3 +1,4 @@
+import { Card } from '@/design-system';
 import { ExternalLink, GitBranch, GitPullRequest, Unlink } from 'lucide-react';
 import { useFormatter, useTranslations } from 'next-intl';
 import type { DevelopmentLink } from '@/lib/api/endpoints/git';
@@ -32,7 +33,7 @@ export default function IssueDevelopmentLinkCard({
   const ciUrl = link.checkStatus ? null : link.pipelineUrl;
 
   return (
-    <div className="rounded-md border px-3 py-2.5">
+    <Card tone="inset" pad="tight">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -101,6 +102,6 @@ export default function IssueDevelopmentLinkCard({
         </div>
       </div>
       <IssueDevelopmentChecks checks={link.checks} />
-    </div>
+    </Card>
   );
 }

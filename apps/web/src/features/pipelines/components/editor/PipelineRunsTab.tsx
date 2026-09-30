@@ -13,7 +13,7 @@ import { qk } from '@/services/queryKeys';
 import { useTeamProjectOptionsQuery } from '@/services/teams.service';
 import { revScope } from '@/utils/revScopes';
 import { ALL_RUNS as ALL, useRunFilters } from './PipelineRunsFilter';
-import { Stack, Text } from '@/design-system';
+import { Stack, EmptyState, Notice } from '@/design-system';
 
 // The runs of the workflow, newest first. A template runs in every project of the team,
 // so its runs can be narrowed to one; the list stays live for that project. The filters
@@ -47,13 +47,11 @@ export default function PipelineRunsTab({
       {runs.isPending ? (
         <ListSkeleton rows={3} rowClassName="h-24" />
       ) : runs.isError ? (
-        <Text as="p" size="sm" tone="danger" className="rounded-md border bg-card px-3 py-2">
-          {t('loadFailed')}
-        </Text>
+        <Notice tone="danger">{t('loadFailed')}</Notice>
       ) : runs.data.items.length === 0 ? (
-        <Text as="p" size="sm" tone="muted" className="rounded-md border bg-card px-3 py-2">
+        <EmptyState boxed fill={false}>
           {t('empty')}
-        </Text>
+        </EmptyState>
       ) : (
         <>
           <Stack gap={3}>

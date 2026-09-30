@@ -1,3 +1,4 @@
+import { Card } from '@/design-system';
 import { useState } from 'react';
 import type { DevelopmentLink } from '@/lib/api/endpoints/git';
 import { usePersistedOpen } from '../../hooks/usePersistedOpen';
@@ -48,13 +49,16 @@ export default function IssueDevelopmentPanel({
       {open && (
         <div className="space-y-2">
           {links.length === 0 && (
-            <button
+            <Card
+              as="button"
               type="button"
-              className="w-full rounded-md border border-dashed px-4 py-5 text-center text-sm text-muted-foreground hover:border-border hover:bg-muted/30 hover:text-foreground"
+              tone="inset"
+              interactive
+              className="w-full items-center text-center text-sm text-muted-foreground"
               onClick={() => setLinkOpen(true)}
             >
               {t('empty')}
-            </button>
+            </Card>
           )}
           {links.map((link) => (
             <IssueDevelopmentLinkCard

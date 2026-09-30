@@ -1,6 +1,6 @@
 'use client';
 
-import { Card } from '@/design-system';
+import { Card, CodeBlock } from '@/design-system';
 import { useLocale, useTranslations } from 'next-intl';
 import { EmptyState } from '@/components/common/page/EmptyState';
 import ListSkeleton from '@/components/common/skeleton/ListSkeleton';
@@ -137,9 +137,7 @@ function Row({ entry, teamId }: { entry: DecisionLogEntry; teamId: number }) {
       {entry.inputText && (
         <details className="text-xs text-muted-foreground">
           <summary className="cursor-pointer">{t('input')}</summary>
-          <pre className="mt-1 max-h-48 overflow-auto rounded-md bg-card p-2 whitespace-pre-wrap">
-            {entry.inputText}
-          </pre>
+          <CodeBlock>{entry.inputText}</CodeBlock>
         </details>
       )}
     </div>

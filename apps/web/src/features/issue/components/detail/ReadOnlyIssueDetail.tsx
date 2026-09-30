@@ -1,3 +1,4 @@
+import { Pill } from '@/design-system';
 import type { SharedIssueBundle } from '@/lib/api/endpoints/share';
 import { toPublicProjectDetail } from '@/utils/publicProject';
 import { usePersistedOpen, usePersistedOpenGroups } from '../../hooks/usePersistedOpen';
@@ -47,9 +48,9 @@ export default function ReadOnlyIssueDetail({
       <div className="w-full max-w-3xl min-w-0">
         <div className="flex items-center gap-2">
           {issue.archivedAt && (
-            <span className="shrink-0 rounded-sm border border-border px-1.5 py-0.5 text-xs font-medium text-muted-foreground uppercase">
+            <Pill size="sm" className="uppercase">
               {t('archived')}
-            </span>
+            </Pill>
           )}
           <span className="text-xs text-muted-foreground tabular-nums">{issue.identifier}</span>
         </div>

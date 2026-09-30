@@ -1,5 +1,6 @@
 'use client';
 
+import { CodeBlock, Card } from '@/design-system';
 import { useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -20,7 +21,6 @@ import {
   importBundle,
   type BundleReport,
 } from '@/lib/api/endpoints/templateBundles';
-import { cn } from '@/lib/utils';
 
 // "Vorlagen importieren": a template bundle (docs/helena-decisions/template-bundles.md)
 // into the team, from the bundles on offer (Helena's agent pool, plugins' packs) or from a
@@ -87,18 +87,21 @@ export function TemplateBundleImportDialog({
         <div className="space-y-3">
           <div className="space-y-1">
             {(offers.data ?? []).map((entry) => (
-              <button
-                key={entry.id}
+              <Card
+                as="button"
                 type="button"
+                tone="inset"
+                interactive
+                pad="tight"
+                gap={0}
+                selected={offer === entry.id}
+                key={entry.id}
                 onClick={() => {
                   setOffer(entry.id);
                   setFile(null);
                   setReport(null);
                 }}
-                className={cn(
-                  'flex w-full flex-col items-start rounded-md border bg-card px-3 py-2 text-start hover:bg-accent',
-                  offer === entry.id && 'border-primary bg-accent',
-                )}
+                className="w-full items-start"
               >
                 <span className="font-medium">
                   {entry.label} <span className="text-muted-foreground">{entry.version}</span>
@@ -110,7 +113,7 @@ export function TemplateBundleImportDialog({
                     servers: entry.mcpServers,
                   })}
                 </span>
-              </button>
+              </Card>
             ))}
             <input
               ref={input}
@@ -149,9 +152,7 @@ export function TemplateBundleImportDialog({
                   warnings: report.warnings,
                 })}
               </p>
-              <pre className="max-h-64 overflow-auto rounded-md border bg-card p-2 text-xs whitespace-pre-wrap">
-                {report.lines.join('\n').trim()}
-              </pre>
+              <CodeBlock>{report.lines.join('\n').trim()}</CodeBlock>
             </div>
           ) : null}
         </div>

@@ -1,3 +1,4 @@
+import { FieldFrame } from '@/design-system';
 import { useId, useState } from 'react';
 import { Check } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -62,7 +63,7 @@ export function CredentialSecretInput({
           )}
         </div>
       ) : (
-        <div className="flex items-center justify-between gap-2 rounded-md border px-3 py-1.5">
+        <FieldFrame className="justify-between gap-2">
           <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground">
             {removed ? (
               t('removed')
@@ -96,7 +97,7 @@ export function CredentialSecretInput({
               </>
             )}
           </div>
-        </div>
+        </FieldFrame>
       )}
       <p className="text-xs text-muted-foreground">{hint ?? t('secretHint')}</p>
     </div>

@@ -19,7 +19,7 @@ export default function UpdateCurrentList({
   return (
     <section className="min-w-0">
       <SectionLabel>{t(title)}</SectionLabel>
-      <RowList className="bg-card">
+      <RowList>
         {current.map((item) => (
           <div
             key={item.id}

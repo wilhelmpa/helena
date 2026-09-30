@@ -1,5 +1,6 @@
 'use client';
 
+import { Card, ListBox, Pill } from '@/design-system';
 import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Archive, FolderSearch, ShieldCheck, TestTube2 } from 'lucide-react';
@@ -40,8 +41,6 @@ import BackupTargetsCard from './BackupTargetsCard';
 import SnapshotBrowser from './SnapshotBrowser';
 import { CardHeader, Fact, Facts, HealthLine, ServerSections } from './ServerParts';
 import ServerToolbar from './ServerToolbar';
-
-const CARD = 'min-w-0 space-y-3 rounded-md border border-sidebar-border bg-card p-4';
 
 // Server → Backup: restic into the local repository on the RAID. The last run and the next,
 // the password to write down once, when backups run and how many are kept, the snapshots
@@ -138,7 +137,7 @@ function StatusCard({ data }: { data: BackupReading }) {
   const health = useAreaHealth('backup').filter((item) => item.id === 'backup:last');
   const last = data.last.backup;
   return (
-    <section className={CARD}>
+    <Card as="section">
       <CardHeader title={t('status')} />
       <ul>
         {health.map((item) => (
@@ -175,7 +174,7 @@ function StatusCard({ data }: { data: BackupReading }) {
           {t('unreadable', { count: last.unreadable ?? 0 })}
         </p>
       )}
-    </section>
+    </Card>
   );
 }
 
@@ -192,7 +191,7 @@ function ScheduleCard({ data }: { data: BackupReading }) {
   const keeps = Object.values(retention).some((value) => value > 0);
 
   return (
-    <section className={CARD}>
+    <Card as="section">
       <CardHeader title={t('schedule.title')}>
         {dirty && (
           <Button
@@ -263,19 +262,21 @@ function ScheduleCard({ data }: { data: BackupReading }) {
         ))}
       </div>
       {!keeps && <p className="text-xs text-destructive">{t('retention.keepSomething')}</p>}
-      <div className="divide-y divide-sidebar-border rounded-md border border-sidebar-border">
-        <ToggleRow
-          label={t('checkWeekly')}
-          checked={data.checkWeekly}
-          onChange={(checkWeekly) => save.mutate({ checkWeekly })}
-        />
-        <ToggleRow
-          label={t('restoreTestMonthly')}
-          checked={data.restoreTestMonthly}
-          onChange={(restoreTestMonthly) => save.mutate({ restoreTestMonthly })}
-        />
-      </div>
-    </section>
+      <ListBox>
+        <div className="divide-y divide-sidebar-border">
+          <ToggleRow
+            label={t('checkWeekly')}
+            checked={data.checkWeekly}
+            onChange={(checkWeekly) => save.mutate({ checkWeekly })}
+          />
+          <ToggleRow
+            label={t('restoreTestMonthly')}
+            checked={data.restoreTestMonthly}
+            onChange={(restoreTestMonthly) => save.mutate({ restoreTestMonthly })}
+          />
+        </div>
+      </ListBox>
+    </Card>
   );
 }
 
@@ -302,7 +303,7 @@ function SnapshotsCard({ ownerHome }: { ownerHome: string | null }) {
   const [browsing, setBrowsing] = useState<string | null>(null);
   const list = snapshots.data?.snapshots ?? [];
   return (
-    <section className={`${CARD} xl:col-span-2`}>
+    <Card as="section" className="xl:col-span-2">
       <CardHeader title={t('snapshots.title')}>
         {list.length > 0 && (
           <span className="text-xs text-muted-foreground">
@@ -315,31 +316,33 @@ function SnapshotsCard({ ownerHome }: { ownerHome: string | null }) {
       ) : list.length === 0 ? (
         <p className="text-sm text-muted-foreground">{t('snapshots.none')}</p>
       ) : (
-        <ul className="max-h-96 divide-y divide-sidebar-border overflow-y-auto rounded-md border border-sidebar-border">
-          {list.map((snapshot) => (
-            <li
-              key={snapshot.id}
-              className="flex min-h-10 flex-wrap items-center gap-x-3 gap-y-1 px-3 py-1.5 text-sm"
-            >
-              <span className="min-w-0 flex-1">
-                {formatDateTime(snapshot.time)}
-                <span className="text-muted-foreground" dir="ltr">
-                  {' · '}
-                  {snapshot.shortId}
+        <ListBox>
+          <ul className="max-h-96 divide-y divide-sidebar-border overflow-y-auto">
+            {list.map((snapshot) => (
+              <li
+                key={snapshot.id}
+                className="flex min-h-10 flex-wrap items-center gap-x-3 gap-y-1 px-3 py-1.5 text-sm"
+              >
+                <span className="min-w-0 flex-1">
+                  {formatDateTime(snapshot.time)}
+                  <span className="text-muted-foreground" dir="ltr">
+                    {' · '}
+                    {snapshot.shortId}
+                  </span>
                 </span>
-              </span>
-              <span className="text-xs text-muted-foreground">
-                {snapshot.dataAddedBytes != null
-                  ? t('snapshots.added', { size: formatDiskSize(snapshot.dataAddedBytes) })
-                  : ''}
-              </span>
-              <Button variant="ghost" size="sm" onClick={() => setBrowsing(snapshot.id)}>
-                <FolderSearch />
-                {t('snapshots.browse')}
-              </Button>
-            </li>
-          ))}
-        </ul>
+                <span className="text-xs text-muted-foreground">
+                  {snapshot.dataAddedBytes != null
+                    ? t('snapshots.added', { size: formatDiskSize(snapshot.dataAddedBytes) })
+                    : ''}
+                </span>
+                <Button variant="ghost" size="sm" onClick={() => setBrowsing(snapshot.id)}>
+                  <FolderSearch />
+                  {t('snapshots.browse')}
+                </Button>
+              </li>
+            ))}
+          </ul>
+        </ListBox>
       )}
       {browsing && (
         <SnapshotBrowser
@@ -348,7 +351,7 @@ function SnapshotsCard({ ownerHome }: { ownerHome: string | null }) {
           onClose={() => setBrowsing(null)}
         />
       )}
-    </section>
+    </Card>
   );
 }
 
@@ -378,7 +381,7 @@ function ChecksCard({ data }: { data: BackupReading }) {
   const t = useTranslations('server.backup');
   const test = data.last['restore-test'];
   return (
-    <section className={CARD}>
+    <Card as="section">
       <CardHeader title={t('checks.title')} />
       <ul>
         <RunLine label={t('checks.maintenance')} result={data.last.maintenance} />
@@ -406,7 +409,7 @@ function ChecksCard({ data }: { data: BackupReading }) {
           restoreTest: data.next['restore-test'] ? formatDateTime(data.next['restore-test']) : '–',
         })}
       </p>
-    </section>
+    </Card>
   );
 }
 
@@ -414,7 +417,7 @@ function RestoresCard({ data }: { data: BackupReading }) {
   const t = useTranslations('server.backup');
   if (data.restores.length === 0) return null;
   return (
-    <section className={CARD}>
+    <Card as="section">
       <CardHeader title={t('restores.title')} />
       <ul className="space-y-2">
         {data.restores.slice(0, 8).map((job) => (
@@ -447,27 +450,25 @@ function RestoresCard({ data }: { data: BackupReading }) {
           </li>
         ))}
       </ul>
-    </section>
+    </Card>
   );
 }
 
 function PathsCard({ paths }: { paths: string[] }) {
   const t = useTranslations('server.backup');
   return (
-    <section className={CARD}>
+    <Card as="section">
       <CardHeader title={t('paths.title')} />
       <p className="text-xs text-muted-foreground">{t('paths.explain')}</p>
       <ul className="flex flex-wrap gap-1.5">
         {paths.map((path) => (
-          <li
-            key={path}
-            dir="ltr"
-            className="rounded-md border border-sidebar-border px-2 py-0.5 font-mono text-xs"
-          >
-            {path}
+          <li key={path}>
+            <Pill size="sm" dir="ltr" className="font-mono">
+              {path}
+            </Pill>
           </li>
         ))}
       </ul>
-    </section>
+    </Card>
   );
 }

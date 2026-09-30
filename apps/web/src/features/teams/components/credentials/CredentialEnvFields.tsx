@@ -1,3 +1,4 @@
+import { Card } from '@/design-system';
 import { useTranslations } from 'next-intl';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -44,7 +45,7 @@ export function CredentialEnvFields({
 }) {
   const t = useTranslations('credentials.env');
   return (
-    <div className="space-y-3 rounded-md border border-sidebar-border bg-card px-3 py-2.5">
+    <Card pad="tight">
       <div className="flex items-center justify-between gap-2">
         <label htmlFor="credential-env-toggle" className="cursor-pointer">
           <span className="text-sm">{t('toggle')}</span>
@@ -57,6 +58,6 @@ export function CredentialEnvFields({
         />
       </div>
       {value.envEnabled && <CredentialEnvName value={value} onChange={onChange} />}
-    </div>
+    </Card>
   );
 }

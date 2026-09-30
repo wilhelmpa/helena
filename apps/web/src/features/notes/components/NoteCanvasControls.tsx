@@ -1,5 +1,6 @@
 'use client';
 
+import { Card } from '@/design-system';
 import { Maximize2, Minimize2, Plus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { NoteBoardVisibility } from '@/lib/api/endpoints/noteBoards';
@@ -65,7 +66,7 @@ export default function NoteCanvasControls({
   return (
     // A small floating bar on the canvas (it stays with the canvas in fullscreen, where
     // the header is covered): the sidebar surface, 28px controls, 16px icons.
-    <div className="absolute end-3 top-3 z-10 flex items-center gap-0.5 rounded-md border bg-card p-0.5 shadow-sm">
+    <Card layout="row" pad="list" gap={1} className="absolute end-3 top-3 z-10 items-center">
       {canEdit && (
         <button
           type="button"
@@ -86,6 +87,6 @@ export default function NoteCanvasControls({
         </TooltipTrigger>
         <TooltipContent>{fullscreen ? t('exitFullscreen') : t('fullscreen')}</TooltipContent>
       </Tooltip>
-    </div>
+    </Card>
   );
 }

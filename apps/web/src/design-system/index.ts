@@ -28,15 +28,16 @@ export type { PickItem, PickGroup, PickCreate } from '@/components/common/fields
 export type { StatusDotTone } from './components/StatusDot';
 export { Button, ButtonAnchor, ButtonLink, IconButton } from './components/Button';
 export type { ButtonVariant } from './components/Button';
-export { Pill, PillButton, Pill as Badge } from './components/Pill';
+export { Pill, PillButton, PillLink, Pill as Badge } from './components/Pill';
 export { Segmented } from './components/Segmented';
 export { SegmentToggle } from './components/SegmentToggle';
 export { InheritedMark } from './components/InheritedMark';
 export type { SegmentOption } from './components/Segmented';
 export type { PillTone } from './components/Pill';
-export { TextField, TextArea, Field, SearchField } from './components/Field';
+export { TextField, TextArea, Field, FieldFrame, SearchField } from './components/Field';
 export { Switch } from '@/components/ui/switch';
 export { Card } from './components/Card';
+export { IconTile } from './components/IconTile';
 export { Notice } from './components/Notice';
 export type { NoticeTone } from './components/Notice';
 export { TextDiff } from './components/TextDiff';

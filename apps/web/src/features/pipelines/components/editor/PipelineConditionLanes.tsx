@@ -7,7 +7,7 @@ import type { BranchingStep } from '@/lib/api/endpoints/pipelines';
 import { usePipelineEditor } from '../../context/pipelineEditor';
 import { replaceStep, type Branch } from '../../utils/editorState';
 import PipelineStepLane from './PipelineStepLane';
-import { Box, Inline, Stack, Text } from '@/design-system';
+import { Box, Inline, Text, Card } from '@/design-system';
 
 const BRANCHES: { branch: Branch; end: 'thenEnd' | 'elseEnd' }[] = [
   { branch: 'then', end: 'thenEnd' },
@@ -25,7 +25,7 @@ export default function PipelineConditionLanes({ step }: { step: BranchingStep }
     <Box marginTop={1} padStart={3} className="@container ms-4 border-s">
       <div className="grid gap-2 @lg:grid-cols-2">
         {BRANCHES.map(({ branch, end }) => (
-          <Stack gap={1} pad={2} key={branch} className="min-w-0 rounded-md border border-dashed">
+          <Card tone="inset" pad="tight" gap={1} key={branch} className="min-w-0">
             <Inline gap={2} justify="between">
               <Badge variant="outline" className="max-w-full truncate">
                 {step.type === 'decision'
@@ -56,7 +56,7 @@ export default function PipelineConditionLanes({ step }: { step: BranchingStep }
               )}
             </Inline>
             <PipelineStepLane lane={{ parentId: step.id, branch }} steps={step[branch]} />
-          </Stack>
+          </Card>
         ))}
       </div>
     </Box>

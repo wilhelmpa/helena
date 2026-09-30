@@ -1,7 +1,7 @@
 'use client';
 
+import { Notice, Stack } from '@/design-system';
 import { useTranslations } from 'next-intl';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import type { AgentInventorySkill } from '@/lib/api/endpoints/agents';
 import { skillNameClashes } from '../../utils/agentAbilities';
 
@@ -14,8 +14,8 @@ export default function AgentSkillClashes({ skills }: { skills: AgentInventorySk
   const clashes = skillNameClashes(skills);
   if (clashes.length === 0) return null;
   return (
-    <Alert variant="destructive">
-      <AlertDescription className="space-y-1">
+    <Notice tone="danger">
+      <Stack gap={1}>
         <p>{t('skillClashes', { count: clashes.length })}</p>
         <ul className="list-disc ps-4">
           {clashes.map((clash) => (
@@ -28,7 +28,7 @@ export default function AgentSkillClashes({ skills }: { skills: AgentInventorySk
           ))}
         </ul>
         <p className="text-xs">{t('skillClashesFix')}</p>
-      </AlertDescription>
-    </Alert>
+      </Stack>
+    </Notice>
   );
 }

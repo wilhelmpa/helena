@@ -1,5 +1,6 @@
 'use client';
 
+import { Card } from '@/design-system';
 import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
@@ -62,7 +63,7 @@ export default function McpAccessNotice({
   }
 
   return (
-    <div className="space-y-3 rounded-md border border-dashed px-4 py-3.5">
+    <Card tone="inset">
       <div className="space-y-1">
         <p className="text-sm font-medium">{t('disabled')}</p>
         <p className="text-sm text-muted-foreground">
@@ -72,6 +73,6 @@ export default function McpAccessNotice({
         </p>
       </div>
       {action}
-    </div>
+    </Card>
   );
 }

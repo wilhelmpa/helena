@@ -1,6 +1,7 @@
 import {
   forwardRef,
   useId,
+  type HTMLAttributes,
   type InputHTMLAttributes,
   type ReactNode,
   type TextareaHTMLAttributes,
@@ -21,6 +22,26 @@ export const TextArea = forwardRef<
 >(function TextArea({ className, ...props }, ref) {
   return <textarea ref={ref} className={`ds-field ds-field-area ${className ?? ''}`} {...props} />;
 });
+
+// The frame of a field that holds more than one input: tags, recipients, a rich-text editor.
+// The same surface, radius and focus as a TextField; `area` is the block of an editor (padding
+// on all sides, no row layout).
+export function FieldFrame({
+  area = false,
+  className,
+  children,
+  ...props
+}: HTMLAttributes<HTMLDivElement> & { area?: boolean }) {
+  return (
+    <div
+      className={`ds-field-frame ${className ?? ''}`}
+      data-area={area ? '' : undefined}
+      {...props}
+    >
+      {children}
+    </div>
+  );
+}
 
 // A labelled field with its hint and its error text.
 export function Field({

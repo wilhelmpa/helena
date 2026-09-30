@@ -1,6 +1,6 @@
 import { FileText, Trash2, Upload } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { StatusDot } from '@/design-system';
+import { StatusDot, Card } from '@/design-system';
 import { useTranslations } from 'next-intl';
 
 // One entry in the skill's file explorer. SKILL.md is pinned and cannot be
@@ -78,7 +78,15 @@ export function SkillFileList({
         })}
       </div>
       {canEdit && (
-        <label className="mt-2 flex cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed border-border py-2 text-xs text-muted-foreground hover:border-foreground/30 hover:text-foreground">
+        <Card
+          as="label"
+          tone="inset"
+          interactive
+          layout="row"
+          pad="tight"
+          gap={2}
+          className="mt-2 items-center justify-center text-xs text-muted-foreground"
+        >
           <Upload className="size-3.5" />
           {t('addReference')}
           <input
@@ -90,7 +98,7 @@ export function SkillFileList({
               e.target.value = '';
             }}
           />
-        </label>
+        </Card>
       )}
     </div>
   );

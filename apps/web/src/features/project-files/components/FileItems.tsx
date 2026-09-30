@@ -1,3 +1,4 @@
+import { ListBox } from '@/design-system';
 import { fileRawUrl, type FileItem, type FileScope } from '@/lib/api/endpoints/projectFiles';
 import type { FileActions } from '../hooks/useFileActions';
 import type { FileEntryDrag } from '../hooks/useFileEntryDrag';
@@ -42,17 +43,19 @@ export default function FileItems({
     );
   }
   return (
-    <ul className="divide-y rounded-md border">
-      {items.map((item) => (
-        <FileListRow
-          key={item.path}
-          item={item}
-          actions={actions}
-          can={can}
-          drag={drag}
-          highlighted={highlighted === item.path}
-        />
-      ))}
-    </ul>
+    <ListBox>
+      <ul className="divide-y">
+        {items.map((item) => (
+          <FileListRow
+            key={item.path}
+            item={item}
+            actions={actions}
+            can={can}
+            drag={drag}
+            highlighted={highlighted === item.path}
+          />
+        ))}
+      </ul>
+    </ListBox>
   );
 }

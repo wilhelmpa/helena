@@ -1,6 +1,6 @@
+import { Box, Notice } from '@/design-system';
 import { cloneElement, Fragment, isValidElement, useId, type ReactNode } from 'react';
 import { Info } from 'lucide-react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 
 // One row inside a settings group: name and description on the left, the control
 // (usually a switch) on the right. `note` is what has to be done before the control
@@ -42,10 +42,11 @@ export default function SettingsRow({
         <span id={`${id}-title`}>{title}</span>
         <p id={`${id}-description`}>{description}</p>
         {note && (
-          <Alert className="mt-2 w-fit bg-status-waiting/10 px-3 py-2 text-status-waiting">
-            <Info />
-            <AlertDescription className="text-xs text-current">{note}</AlertDescription>
-          </Alert>
+          <Box marginTop={2}>
+            <Notice tone="warning" icon={<Info />}>
+              {note}
+            </Notice>
+          </Box>
         )}
       </div>
       <div className="ds-settings-row-control">{named}</div>

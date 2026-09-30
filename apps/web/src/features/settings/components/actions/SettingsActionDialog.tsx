@@ -7,7 +7,6 @@ import type { FilterSet } from '@/utils/filters';
 import { isEmptyEffect } from '@/utils/actions';
 import { usePreviewAction } from '@/services/actions.service';
 import Modal from '@/components/common/overlay/Modal';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -21,7 +20,7 @@ import {
 import { SettingsActionIconPicker } from './SettingsActionIconPicker';
 import { WorkflowGraphEditor } from './WorkflowGraphEditor';
 
-import { Stack, Inline, Text } from '@/design-system';
+import { Stack, Inline, Text, Notice, Card } from '@/design-system';
 
 export function SettingsActionDialog({
   actionId,
@@ -133,7 +132,7 @@ export function SettingsActionDialog({
           )}
         </Stack>
 
-        <Stack as="section" gap={2} pad={3} className="rounded-lg border">
+        <Card tone="inset" as="section" pad="tight" gap={2}>
           <div>
             <h3 className="text-sm font-medium">{t('testWorkflow')}</h3>
             <Text as="p" size="xs" tone="muted">
@@ -169,21 +168,15 @@ export function SettingsActionDialog({
             </Text>
           )}
           {preview.data && (
-            <Alert>
-              <AlertDescription>
-                {t('testResult', {
-                  steps: preview.data.path.length,
-                  actions: preview.data.effects.length,
-                })}
-              </AlertDescription>
-            </Alert>
+            <Notice>
+              {t('testResult', {
+                steps: preview.data.path.length,
+                actions: preview.data.effects.length,
+              })}
+            </Notice>
           )}
-          {preview.error && (
-            <Alert variant="destructive">
-              <AlertDescription>{preview.error.message}</AlertDescription>
-            </Alert>
-          )}
-        </Stack>
+          {preview.error && <Notice tone="danger">{preview.error.message}</Notice>}
+        </Card>
 
         <Inline
           gap={2}

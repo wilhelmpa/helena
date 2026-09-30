@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { usePipelineTemplates } from '@/services/pipelines.service';
 import PipelineTemplateRow from './PipelineTemplateRow';
 import { Workflow } from 'lucide-react';
-import { EmptyState, Inline, Text, Card } from '@/design-system';
+import { EmptyState, Text, Card } from '@/design-system';
 
 export default function PipelineTemplateList({
   teamId,
@@ -36,18 +36,12 @@ export default function PipelineTemplateList({
       {templates.isPending ? (
         <ListSkeleton rows={3} rowClassName="h-14" />
       ) : templates.isError ? (
-        <Inline
-          gap={3}
-          padX={3}
-          padY={2}
-          wrap
-          className="rounded-md border bg-card text-sm text-destructive"
-        >
+        <Card layout="row" pad="tight" className="flex-wrap text-sm text-destructive">
           {t('loadFailed')}
           <Button size="sm" variant="outline" onClick={() => void templates.refetch()}>
             {t('tryAgain')}
           </Button>
-        </Inline>
+        </Card>
       ) : rows.length === 0 ? (
         <EmptyState icon={<Workflow />} fill={false}>
           {t('emptyHint')}

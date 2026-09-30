@@ -1,3 +1,4 @@
+import { EmptyState } from '@/design-system';
 import { useState } from 'react';
 import type { ProjectDetail } from '@/lib/api/endpoints/projects';
 import type { IssueLinkInputKind, IssueRelations } from '@/lib/api/endpoints/issues';
@@ -73,9 +74,9 @@ export default function IssueLinksPanel({
 
       {open &&
         (links.length === 0 ? (
-          <p className="rounded-md border border-dashed p-4 text-center text-sm text-muted-foreground">
+          <EmptyState boxed fill={false}>
             {t('emptyHint')}
-          </p>
+          </EmptyState>
         ) : (
           <div className="flex flex-col gap-3">
             {groups.map((group) => (

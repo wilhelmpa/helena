@@ -3,7 +3,7 @@ import type { IntegrationCredential } from '@/lib/api/endpoints/integrations';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useTranslations } from 'next-intl';
-import { Td, Tr } from '@/design-system';
+import { Td, Tr, IconTile } from '@/design-system';
 
 // One credential as a table row: the integration name and optional account label,
 // the redacted fields as badges, and edit/delete actions gated by permission.
@@ -28,9 +28,9 @@ export function CredentialRow({
     <Tr className="group/item">
       <Td className="py-3 whitespace-normal">
         <div className="flex min-w-0 items-center gap-2.5">
-          <div className="flex size-8 shrink-0 items-center justify-center rounded-md border border-sidebar-border bg-background text-muted-foreground">
+          <IconTile>
             <KeyRound className="size-4" />
-          </div>
+          </IconTile>
           <div className="flex min-w-0 flex-col gap-0.5">
             <span className="truncate text-sm font-medium text-foreground">{integrationLabel}</span>
             {credential.label && (

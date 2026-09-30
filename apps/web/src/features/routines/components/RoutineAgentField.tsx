@@ -10,7 +10,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { RoutineField } from './RoutineField';
-import { Inline, Stack, Text } from '@/design-system';
+import { Stack, Text, Card } from '@/design-system';
 
 // The agent a routine delegates its task to. Only an agent that runs when it is
 // delegated to can take one — and only a real agent: a pool template runs nowhere, so
@@ -53,7 +53,7 @@ export function RoutineAgentField({
         </Text>
       )}
       {agent?.triggerOnAssign && agent.kind === 'external' && (
-        <Inline gap={3} padX={3} padY={3} align="start" className="rounded-md border bg-card">
+        <Card layout="row" pad="tight" className="items-start">
           <Terminal className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
           <Stack gap={1} className="min-w-0 flex-1">
             <Text as="p" size="xs" tone="muted">
@@ -61,7 +61,7 @@ export function RoutineAgentField({
             </Text>
             <AgentRunnerStatus agent={agent} />
           </Stack>
-        </Inline>
+        </Card>
       )}
     </RoutineField>
   );

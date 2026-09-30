@@ -16,7 +16,7 @@ import { useProviderList } from '../../hooks/useProviderList';
 import GodUserProjectCard from './GodUserProjectCard';
 import GodUserVerifyButton from './GodUserVerifyButton';
 
-import { Box, Button, Overlay, Stack, Inline, Text, Card } from '@/design-system';
+import { Box, Button, Overlay, Stack, Inline, Text, Card, EmptyState } from '@/design-system';
 
 // One fact in the account grid: a quiet label with the value under it. Reading down
 // a column beats a row of label/value pairs when the values differ in length.
@@ -119,12 +119,7 @@ export default function GodUserDetailPanel({
             ) : (
               <>
                 {!user.emailVerified && (
-                  <Inline
-                    gap={3}
-                    align="start"
-                    pad={4}
-                    className="flex items-start rounded-md border border-sidebar-border bg-card"
-                  >
+                  <Card layout="row" className="items-start">
                     <MailWarning className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
                     <Stack gap={1} className="min-w-0 flex-1">
                       <Text as="p" size="sm" className="font-medium">
@@ -135,7 +130,7 @@ export default function GodUserDetailPanel({
                       </Text>
                     </Stack>
                     <GodUserVerifyButton userId={user.id} />
-                  </Inline>
+                  </Card>
                 )}
 
                 <section className="grid grid-cols-2 gap-x-6 gap-y-5">
@@ -179,20 +174,9 @@ export default function GodUserDetailPanel({
                     )}
                   </Inline>
                   {user.projects.length === 0 ? (
-                    <Stack
-                      gap={2}
-                      padX={4}
-                      padY={5}
-                      className="flex flex-col items-center rounded-md border border-dashed border-sidebar-border text-center"
-                    >
-                      <FolderOpen className="size-5 text-muted-foreground" />
-                      <Text as="p" size="sm" className="font-medium">
-                        {t('noAccessTitle')}
-                      </Text>
-                      <Text as="p" size="xs" tone="muted" className="max-w-[36ch]">
-                        {t('noAccessHint')}
-                      </Text>
-                    </Stack>
+                    <EmptyState boxed fill={false} icon={<FolderOpen />} title={t('noAccessTitle')}>
+                      {t('noAccessHint')}
+                    </EmptyState>
                   ) : (
                     <Stack gap={2}>
                       {user.projects.map((p) => (

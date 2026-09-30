@@ -1,3 +1,4 @@
+import { EmptyState, Card, Segmented } from '@/design-system';
 import { useEffect, useMemo, useState } from 'react';
 import { Check, GitPullRequest } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -85,13 +86,13 @@ export default function IssueDevelopmentLinkDialog({
           <DialogDescription>{t('linkExistingDescription')}</DialogDescription>
         </DialogHeader>
         {repositoriesQuery.isPending ? (
-          <div className="rounded-md border border-dashed px-4 py-6 text-center text-sm text-muted-foreground">
+          <EmptyState boxed fill={false}>
             {t('loadingRepositories')}
-          </div>
+          </EmptyState>
         ) : repositoriesQuery.data?.length === 0 ? (
-          <div className="rounded-md border border-dashed px-4 py-6 text-center text-sm text-muted-foreground">
+          <EmptyState boxed fill={false}>
             {t('noConnectedRepositories')}
-          </div>
+          </EmptyState>
         ) : (
           <>
             <div className="flex gap-2">
@@ -113,30 +114,25 @@ export default function IssueDevelopmentLinkDialog({
                   ))}
                 </SelectContent>
               </Select>
-              <div className="flex rounded-md border p-0.5">
-                {(['open', 'all'] as const).map((value) => (
-                  <Button
-                    key={value}
-                    type="button"
-                    size="sm"
-                    variant={state === value ? 'secondary' : 'ghost'}
-                    className="h-7 rounded-sm px-2.5"
-                    onClick={() => {
-                      setState(value);
-                      setSelectedNumber(null);
-                    }}
-                  >
-                    {t(value === 'open' ? 'openOnly' : 'allPullRequests')}
-                  </Button>
-                ))}
-              </div>
+              <Segmented
+                value={state}
+                label={t('searchPullRequests')}
+                options={[
+                  { value: 'open', label: t('openOnly') },
+                  { value: 'all', label: t('allPullRequests') },
+                ]}
+                onChange={(value) => {
+                  setState(value);
+                  setSelectedNumber(null);
+                }}
+              />
             </div>
             <Input
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               placeholder={t('searchPullRequests')}
             />
-            <div className="max-h-80 space-y-1 overflow-y-auto rounded-md border p-1.5">
+            <Card tone="inset" pad="tight" gap={1} className="max-h-80 overflow-y-auto">
               {pullRequestsQuery.isPending && (
                 <p className="p-3 text-sm text-muted-foreground">{t('loadingPullRequests')}</p>
               )}
@@ -182,7 +178,7 @@ export default function IssueDevelopmentLinkDialog({
                   {t('loadMore')}
                 </Button>
               )}
-            </div>
+            </Card>
           </>
         )}
         <DialogFooter>

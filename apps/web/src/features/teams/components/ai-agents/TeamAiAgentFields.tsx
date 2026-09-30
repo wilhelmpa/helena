@@ -5,7 +5,7 @@ import type { AiAgent } from '@/lib/api/endpoints/agents';
 import type { AiChatModel, UnavailableChatModel } from '@/lib/api/endpoints/agentChat';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
-import { SettingsGroup, SettingsRow } from '@/design-system';
+import { SettingsGroup, SettingsRow, Card } from '@/design-system';
 import { type AgentFormValue } from '../../utils/agentForm';
 import { AgentFormSection } from './AgentFormSection';
 import AgentAccessSection from './AgentAccessSection';
@@ -390,10 +390,10 @@ export default function TeamAiAgentFields({
   );
 
   const stack = [
-    <div key="runtime-picker" className="rounded-md border border-border/60 p-4">
-      <p className="mb-3 text-xs text-muted-foreground">{tRuntime('summary')}</p>
+    <Card key="runtime-picker" tone="inset">
+      <p className="text-xs text-muted-foreground">{tRuntime('summary')}</p>
       {runtimeControls}
-    </div>,
+    </Card>,
     basicsSection,
     instructionsSection,
     projectsSection,

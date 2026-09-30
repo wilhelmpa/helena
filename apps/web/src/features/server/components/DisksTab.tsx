@@ -1,5 +1,6 @@
 'use client';
 
+import { Card } from '@/design-system';
 import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { HardDriveDownload, LifeBuoy, Play, Square, Stethoscope } from 'lucide-react';
@@ -33,8 +34,6 @@ import {
 import ReplaceDiskDialog from './ReplaceDiskDialog';
 import { CardHeader, Fact, Facts, HealthLine, Meter, ServerSections } from './ServerParts';
 import ServerToolbar from './ServerToolbar';
-
-const CARD = 'min-w-0 space-y-3 rounded-md border border-sidebar-border bg-card p-4';
 
 // Server → Platten & RAID: the mirror and its rebuilds and checks, each disk with its SMART
 // health, the two EFI partitions and the firmware's boot entries, what mdadm and smartd
@@ -79,10 +78,10 @@ export default function DisksTab({ tabs }: { tabs: ServerTab[] }) {
             <ArrayCard key={array.kname} array={array} storage={storage} />
           ))}
           {storage.arrays.length === 0 && (
-            <section className={CARD}>
+            <Card as="section">
               <CardHeader title={t('arrays')} />
               <p className="text-sm text-muted-foreground">{t('noArrays')}</p>
-            </section>
+            </Card>
           )}
           <BootCard storage={storage} />
           {storage.disks.map((disk) => (
@@ -119,7 +118,7 @@ function ArrayCard({ array, storage }: { array: RaidArray; storage: StorageStatu
     storage.disks.find((disk) => disk.partitions.some((part) => part.kname === device));
 
   return (
-    <section className={CARD}>
+    <Card as="section">
       <CardHeader title={t('arrayTitle', { name: array.name, level: array.level ?? '' })}>
         {array.syncAction === 'idle' && array.degraded === 0 && (
           <Button variant="outline" size="sm" onClick={() => setConfirmStart(true)}>
@@ -214,7 +213,7 @@ function ArrayCard({ array, storage }: { array: RaidArray; storage: StorageStatu
           <p className="text-sm">{t('checkConfirmBody')}</p>
         </ConfirmDialog>
       )}
-    </section>
+    </Card>
   );
 }
 
@@ -224,7 +223,7 @@ function DiskCard({ disk }: { disk: HostDisk }) {
   const selfTest = useStartSelfTest();
   const smart = disk.smart && !disk.smart.error ? disk.smart : null;
   return (
-    <section className={CARD}>
+    <Card as="section">
       <CardHeader
         title={
           <span className="flex min-w-0 items-center gap-2">
@@ -291,7 +290,7 @@ function DiskCard({ disk }: { disk: HostDisk }) {
           {disk.mountpoints.length > 0 ? ` · ${disk.mountpoints.join(', ')}` : ''}
         </p>
       )}
-    </section>
+    </Card>
   );
 }
 
@@ -321,7 +320,7 @@ function BootCard({ storage }: { storage: StorageStatus }) {
         : 'unknown';
 
   return (
-    <section className={CARD}>
+    <Card as="section">
       <CardHeader title={t('boot.title')}>
         {storage.reserveEntry && !nextIsReserve && (
           <Button variant="outline" size="sm" onClick={() => setConfirm(true)}>
@@ -411,7 +410,7 @@ function BootCard({ storage }: { storage: StorageStatus }) {
           <p className="text-sm">{t('boot.confirmBody')}</p>
         </ConfirmDialog>
       )}
-    </section>
+    </Card>
   );
 }
 
@@ -428,7 +427,7 @@ function EventsCard({ events }: { events: HostEvents | null }) {
     return tCodes.has(code as never) ? read(code) : code;
   };
   return (
-    <section className={`${CARD} xl:col-span-2`}>
+    <Card as="section" className="xl:col-span-2">
       <CardHeader title={t('title')}>
         {events && events.unseen > 0 && list[0] && (
           <Button
@@ -481,6 +480,6 @@ function EventsCard({ events }: { events: HostEvents | null }) {
           ))}
         </ul>
       )}
-    </section>
+    </Card>
   );
 }

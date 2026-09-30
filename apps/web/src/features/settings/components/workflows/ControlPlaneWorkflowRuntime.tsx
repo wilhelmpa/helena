@@ -13,7 +13,7 @@ import { useWorkflowRuns } from '@/services/controlPlaneWorkflows.service';
 import { qk } from '@/services/queryKeys';
 import { revScope } from '@/utils/revScopes';
 
-import { Box, Stack, Inline, Text } from '@/design-system';
+import { Box, Stack, Inline, Text, Card } from '@/design-system';
 
 function scrollIntoView(element: HTMLElement | null) {
   element?.scrollIntoView({ block: 'center' });
@@ -55,7 +55,7 @@ export default function ControlPlaneWorkflowRuntime({
         <h4 className="text-xs font-medium text-muted-foreground">{t('graph')}</h4>
         <ol className="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
           {workflow.steps.map((step, index) => (
-            <Box as="li" pad={3} key={step.id} className="rounded-md border bg-background">
+            <Card tone="inset" as="li" pad="tight" key={step.id}>
               <Inline gap={2} className="flex items-center text-sm font-medium">
                 <Text
                   as="span"
@@ -74,7 +74,7 @@ export default function ControlPlaneWorkflowRuntime({
                   {text(`${step.id}.description`, step.description)}
                 </Text>
               </Box>
-            </Box>
+            </Card>
           ))}
         </ol>
       </Stack>

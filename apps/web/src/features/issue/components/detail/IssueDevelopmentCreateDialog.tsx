@@ -1,3 +1,4 @@
+import { EmptyState, Card } from '@/design-system';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
@@ -116,13 +117,13 @@ export default function IssueDevelopmentCreateDialog({
           <DialogDescription>{t('createPullRequestDescription')}</DialogDescription>
         </DialogHeader>
         {repositoriesQuery.isPending ? (
-          <div className="rounded-md border border-dashed px-4 py-6 text-center text-sm text-muted-foreground">
+          <EmptyState boxed fill={false}>
             {t('loadingRepositories')}
-          </div>
+          </EmptyState>
         ) : repositoriesQuery.data?.length === 0 ? (
-          <div className="rounded-md border border-dashed px-4 py-6 text-center text-sm text-muted-foreground">
+          <EmptyState boxed fill={false}>
             {t('noConnectedRepositories')}
-          </div>
+          </EmptyState>
         ) : (
           <div className="space-y-4">
             <label className="block space-y-1.5 text-sm">
@@ -226,10 +227,17 @@ export default function IssueDevelopmentCreateDialog({
                   </SelectContent>
                 </Select>
               </label>
-              <label className="flex items-center gap-2 self-end rounded-md border px-3 py-2 text-sm">
+              <Card
+                as="label"
+                tone="inset"
+                layout="row"
+                pad="tight"
+                gap={2}
+                className="items-center self-end text-sm"
+              >
                 <Checkbox checked={draft} onCheckedChange={(value) => setDraft(value === true)} />
                 <span>{t('createAsDraft')}</span>
-              </label>
+              </Card>
             </div>
             {sourceBranch && targetBranch && sourceBranch === targetBranch && (
               <p className="text-sm text-destructive">{t('branchesMustDiffer')}</p>

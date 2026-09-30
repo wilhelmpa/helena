@@ -1,5 +1,6 @@
 'use client';
 
+import { Card } from '@/design-system';
 import { useState, type FormEvent } from 'react';
 import { Mail, Users } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -120,7 +121,7 @@ export default function TeamInviteDialog({
           </div>
         </div>
 
-        <div className="flex items-center gap-3 rounded-md border border-sidebar-border bg-card px-4 py-3">
+        <Card layout="row" className="items-center">
           <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
             <Mail className="size-4" />
           </span>
@@ -128,7 +129,7 @@ export default function TeamInviteDialog({
             {address && <p className="truncate text-sm font-medium">{address}</p>}
             <p className="text-xs text-muted-foreground">{t(`roleHint.${role}`)}</p>
           </div>
-        </div>
+        </Card>
 
         <div className="flex justify-end border-t pt-4">
           <Button type="submit" disabled={createInvite.isPending || !address}>

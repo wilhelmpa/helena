@@ -1,5 +1,6 @@
 'use client';
 
+import { Card } from '@/design-system';
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
@@ -51,9 +52,13 @@ export default function MailRuleSettings({
       </div>
       <ul className="flex flex-col gap-1">
         {(rules.data ?? []).map((rule) => (
-          <li
+          <Card
+            as="li"
+            layout="row"
+            pad="tight"
+            gap={2}
             key={rule.id}
-            className="flex items-center gap-2 rounded-md border bg-card px-3 py-1.5 text-sm"
+            className="items-center text-sm"
           >
             <span className="font-mono text-xs">
               {rule.matchType === 'domain' ? `@${rule.value}` : rule.value}
@@ -72,82 +77,87 @@ export default function MailRuleSettings({
                 <X />
               </Button>
             )}
-          </li>
+          </Card>
         ))}
       </ul>
       {canEdit && (
-        <form
-          className="grid gap-2 rounded-md border bg-card p-3 sm:grid-cols-2"
-          onSubmit={(event) => {
-            event.preventDefault();
-            if (!projectId || !value.trim()) return;
-            create.mutate(
-              { accountId, matchType, value: value.trim(), projectId, applyToExisting: existing },
-              {
-                onSuccess: (created) => {
-                  setValue('');
-                  toast.success(t('added', { count: created.movedThreads }));
+        <Card tone="inset" pad="tight">
+          <form
+            className="grid gap-2 sm:grid-cols-2"
+            onSubmit={(event) => {
+              event.preventDefault();
+              if (!projectId || !value.trim()) return;
+              create.mutate(
+                { accountId, matchType, value: value.trim(), projectId, applyToExisting: existing },
+                {
+                  onSuccess: (created) => {
+                    setValue('');
+                    toast.success(t('added', { count: created.movedThreads }));
+                  },
                 },
-              },
-            );
-          }}
-        >
-          <div className="flex gap-2">
-            <Select value={matchType} onValueChange={(next) => setMatchType(next as MailRuleMatch)}>
-              <SelectTrigger className="w-32">
+              );
+            }}
+          >
+            <div className="flex gap-2">
+              <Select
+                value={matchType}
+                onValueChange={(next) => setMatchType(next as MailRuleMatch)}
+              >
+                <SelectTrigger className="w-32">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="domain">{t('domain')}</SelectItem>
+                  <SelectItem value="address">{t('address')}</SelectItem>
+                </SelectContent>
+              </Select>
+              <Input
+                value={value}
+                onChange={(event) => setValue(event.target.value)}
+                placeholder={t(matchType === 'domain' ? 'domainPlaceholder' : 'addressPlaceholder')}
+              />
+            </div>
+            <Select
+              value={accountId == null ? ALL : String(accountId)}
+              onValueChange={(next) => setAccountId(next === ALL ? null : Number(next))}
+            >
+              <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="domain">{t('domain')}</SelectItem>
-                <SelectItem value="address">{t('address')}</SelectItem>
+                <SelectItem value={ALL}>{t('allAccounts')}</SelectItem>
+                {accounts.map((account) => (
+                  <SelectItem key={account.id} value={String(account.id)}>
+                    {account.address}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
-            <Input
-              value={value}
-              onChange={(event) => setValue(event.target.value)}
-              placeholder={t(matchType === 'domain' ? 'domainPlaceholder' : 'addressPlaceholder')}
+            <MailProjectSelect
+              teamId={teamId}
+              value={projectId}
+              onChange={setProjectId}
+              label={t('project')}
+              allowHome={false}
             />
-          </div>
-          <Select
-            value={accountId == null ? ALL : String(accountId)}
-            onValueChange={(next) => setAccountId(next === ALL ? null : Number(next))}
-          >
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={ALL}>{t('allAccounts')}</SelectItem>
-              {accounts.map((account) => (
-                <SelectItem key={account.id} value={String(account.id)}>
-                  {account.address}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <MailProjectSelect
-            teamId={teamId}
-            value={projectId}
-            onChange={setProjectId}
-            label={t('project')}
-            allowHome={false}
-          />
-          <label className="flex items-center gap-2 self-end text-sm">
-            <Checkbox
-              checked={existing}
-              onCheckedChange={(checked) => setExisting(checked === true)}
-            />
-            {t('applyToExisting')}
-          </label>
-          <Button
-            type="submit"
-            size="sm"
-            variant="outline"
-            className="sm:col-span-2 sm:justify-self-end"
-            disabled={!projectId || !value.trim() || create.isPending}
-          >
-            {t('add')}
-          </Button>
-        </form>
+            <label className="flex items-center gap-2 self-end text-sm">
+              <Checkbox
+                checked={existing}
+                onCheckedChange={(checked) => setExisting(checked === true)}
+              />
+              {t('applyToExisting')}
+            </label>
+            <Button
+              type="submit"
+              size="sm"
+              variant="outline"
+              className="sm:col-span-2 sm:justify-self-end"
+              disabled={!projectId || !value.trim() || create.isPending}
+            >
+              {t('add')}
+            </Button>
+          </form>
+        </Card>
       )}
     </section>
   );

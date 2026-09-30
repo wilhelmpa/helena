@@ -1,4 +1,4 @@
-import type { CSSProperties, ElementType, HTMLAttributes, ReactNode } from 'react';
+import type { CSSProperties, ElementType, HTMLAttributes, ReactNode, Ref } from 'react';
 import type { Space } from './Layout';
 
 // THE box of a page (docs/ui-framework.md §19, owner 30.09.: "gleiche Boxen"): surface-1, radius
@@ -59,6 +59,9 @@ export function Card({
   // A link card or a button card keeps its element's own attributes.
   href?: string;
   type?: string;
+  disabled?: boolean;
+  // A dragged or measured card (React 19: a ref is a prop).
+  ref?: Ref<HTMLElement>;
   onClick?: HTMLAttributes<HTMLElement>['onClick'];
 }) {
   const head = title ?? eyebrow;

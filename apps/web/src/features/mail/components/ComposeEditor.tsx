@@ -1,5 +1,6 @@
 'use client';
 
+import { FieldFrame } from '@/design-system';
 import { useRef, useState } from 'react';
 import type { Editor } from '@tiptap/react';
 import { useTranslations } from 'next-intl';
@@ -125,7 +126,7 @@ export default function ComposeEditor({ draft }: { draft: MailDraft }) {
           placeholder={t('subject')}
           aria-label={t('subject')}
         />
-        <div className="min-h-48 flex-1 rounded-md border px-3 py-2">
+        <FieldFrame area className="min-h-48 flex-1">
           <MarkdownEditor
             defaultValue={draft.bodyText}
             editable={editable}
@@ -139,7 +140,7 @@ export default function ComposeEditor({ draft }: { draft: MailDraft }) {
             }}
             placeholder={t('bodyPlaceholder')}
           />
-        </div>
+        </FieldFrame>
         <ComposeAttachments draft={draft} editable={editable} />
       </div>
       {editable && (

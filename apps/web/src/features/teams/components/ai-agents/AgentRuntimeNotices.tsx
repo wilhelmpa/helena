@@ -1,5 +1,5 @@
+import { Notice } from '@/design-system';
 import { useTranslations } from 'next-intl';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import type { AgentRuntimeState } from '@/lib/api/endpoints/agents';
 
 // What the runner found in the agent's Hermes home that Plan does not manage: files and
@@ -13,20 +13,14 @@ export default function AgentRuntimeNotices({ state }: { state: AgentRuntimeStat
   return (
     <div className="space-y-2">
       {restored.length > 0 && (
-        <Alert>
-          <AlertDescription>
-            {t('restored')}{' '}
-            <span dir="ltr" className="font-mono text-xs">
-              {restored.join(', ')}
-            </span>
-          </AlertDescription>
-        </Alert>
+        <Notice>
+          {t('restored')}{' '}
+          <span dir="ltr" className="font-mono text-xs">
+            {restored.join(', ')}
+          </span>
+        </Notice>
       )}
-      {cronJobs > 0 && (
-        <Alert variant="destructive">
-          <AlertDescription>{t('cronJobs', { count: cronJobs })}</AlertDescription>
-        </Alert>
-      )}
+      {cronJobs > 0 && <Notice tone="danger">{t('cronJobs', { count: cronJobs })}</Notice>}
     </div>
   );
 }

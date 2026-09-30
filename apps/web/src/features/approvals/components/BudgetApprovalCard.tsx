@@ -1,5 +1,6 @@
 'use client';
 
+import { Card } from '@/design-system';
 import Link from 'next/link';
 import { useState } from 'react';
 import { CircleCheck, CircleX, Gauge } from 'lucide-react';
@@ -68,7 +69,7 @@ export default function BudgetApprovalCard({ request }: { request: ApprovalReque
   }
 
   return (
-    <article className="space-y-3 rounded-md border border-status-waiting/40 bg-card p-4">
+    <Card as="article">
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
         <span className="inline-flex items-center gap-1 font-medium text-status-waiting">
           <Gauge className="size-3.5" />
@@ -136,7 +137,7 @@ export default function BudgetApprovalCard({ request }: { request: ApprovalReque
       ) : (
         <BudgetCardOutcome request={request} />
       )}
-    </article>
+    </Card>
   );
 }
 

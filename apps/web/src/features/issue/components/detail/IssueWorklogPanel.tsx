@@ -1,5 +1,6 @@
 'use client';
 
+import { EmptyState } from '@/design-system';
 import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -79,9 +80,9 @@ export default function IssueWorklogPanel({
           )}
 
           {entries.length === 0 && !adding ? (
-            <p className="rounded-md border border-dashed p-4 text-center text-sm text-muted-foreground">
+            <EmptyState boxed fill={false}>
               {canLog ? t('emptyHint') : t('empty')}
-            </p>
+            </EmptyState>
           ) : (
             <div className="flex flex-col">
               {entries.map((entry) =>

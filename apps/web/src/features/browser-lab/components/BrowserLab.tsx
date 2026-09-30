@@ -1,6 +1,6 @@
 'use client';
 
-import { Card } from '@/design-system';
+import { Card, EmptyState } from '@/design-system';
 import Link from 'next/link';
 import { useCallback, useState, useSyncExternalStore } from 'react';
 import { ExternalLink, KeyRound } from 'lucide-react';
@@ -141,9 +141,9 @@ export default function BrowserLab({ scope }: { scope: LabScope }) {
       <div className="min-w-0 space-y-4">
         {noConnections && <NoKey />}
         {options.data.agents.length === 0 ? (
-          <p className="rounded-md border border-sidebar-border bg-card p-4 text-sm text-muted-foreground">
+          <EmptyState boxed fill={false}>
             {t('noAgents')}
-          </p>
+          </EmptyState>
         ) : (
           <Card>
             <LabForm
