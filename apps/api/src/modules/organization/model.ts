@@ -129,6 +129,7 @@ const GoalResponse = t.Object({
   // (modules/goals), and the status proposals of agents that wait for a decision.
   progress: t.Optional(GoalProgressResponse),
   pendingProposals: t.Optional(t.Number()),
+  budgets: t.Optional(t.Array(BudgetStatusSchema)),
 });
 
 const AgentProjectResponse = t.Object({

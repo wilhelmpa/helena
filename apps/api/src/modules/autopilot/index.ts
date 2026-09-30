@@ -1,27 +1,32 @@
-import { Elysia } from 'elysia';
+import { Elysia, t } from 'elysia';
+import { db, issue, project } from '@repo/db';
+import { eq } from 'drizzle-orm';
 import { authContext } from '#shared/auth-context';
-import { guards } from '#shared/guards';
+import { entityGuard, guards } from '#shared/guards';
 import { requireUser } from '#shared/access';
 import { HttpError } from '#shared/lib';
 import { paginate } from '#shared/pagination';
 import { accessErrors, commonErrors, errors } from '#shared/responses';
 import { isAgentUser } from '#modules/agents/core/service';
+import { getIssueProjectId } from '#modules/issues/service';
 import { runnerAuth } from '#modules/agents/runner-auth';
 import { getApproval } from '#modules/approvals/service';
 import { approvalGuards } from '#modules/approvals/guards';
 import { ApprovalResponse, approvalParams } from '#modules/approvals/model';
 import type { AutopilotLevel } from '@helena/policy';
 import { onTemplateRelevantChange } from '#modules/agents/core/template-sync';
-import { setBudgets } from './budgets';
+import { budgetStatuses, setBudgets } from './budgets';
 import { setAgentLevel, setProjectLevel } from './levels';
 import {
   AgentAutopilotResponse,
+  BudgetStatusSchema,
   agentAutopilotParams,
   DecideResponse,
   DecisionPageResponse,
   ProjectAutopilotResponse,
   budgetDecisionBody,
   budgetsBody,
+  issueBudgetParams,
   decideBody,
   decisionsQuery,
   setAgentLevelBody,
@@ -39,6 +44,16 @@ async function refuseAgentKey(userId: string): Promise<void> {
   if (await isAgentUser(userId)) throw new HttpError(403, 'An agent cannot change the Autopilot');
 }
 
+async function issueTeamId(issueId: number): Promise<number> {
+  const [row] = await db
+    .select({ teamId: project.teamId })
+    .from(issue)
+    .innerJoin(project, eq(project.id, issue.projectId))
+    .where(eq(issue.id, issueId));
+  if (!row) throw new HttpError(404, 'Issue not found');
+  return row.teamId;
+}
+
 // Helena's Autopilot: how independently the agents of a project act, their budgets, the log
 // of the policy engine's decisions, and the engine itself for the runtimes that ask it.
 export const autopilotRoutes = new Elysia({ name: 'autopilot', detail: { tags: ['Autopilot'] } })
@@ -46,6 +61,42 @@ export const autopilotRoutes = new Elysia({ name: 'autopilot', detail: { tags: [
   .use(guards)
   .use(approvalGuards)
   .use(runnerAuth)
+  .macro({
+    issueBudget: entityGuard('ai_agents', 'Issue not found', (params) =>
+      getIssueProjectId(Number(params.issueId)),
+    ),
+  })
+  .get(
+    '/issues/:issueId/autopilot/budgets',
+    ({ params }) => budgetStatuses({ issueIds: [params.issueId] }),
+    {
+      params: issueBudgetParams,
+      issueBudget: 'read',
+      response: { 200: t.Array(BudgetStatusSchema), ...accessErrors },
+      detail: { summary: 'Get task budgets and consumption' },
+    },
+  )
+  .put(
+    '/issues/:issueId/autopilot/budgets',
+    async ({ params, body, user }) => {
+      const userId = requireUser(user).id;
+      await refuseAgentKey(userId);
+      await setBudgets(
+        await issueTeamId(params.issueId),
+        { issueId: params.issueId },
+        body.budgets,
+        userId,
+      );
+      return budgetStatuses({ issueIds: [params.issueId] });
+    },
+    {
+      params: issueBudgetParams,
+      body: budgetsBody,
+      issueBudget: 'edit',
+      response: { 200: t.Array(BudgetStatusSchema), ...commonErrors },
+      detail: { summary: 'Set task budgets' },
+    },
+  )
   .get('/projects/:projectKey/autopilot', ({ project }) => projectAutopilot(project.id), {
     permission: ['ai_agents', 'read'],
     response: { 200: ProjectAutopilotResponse, ...accessErrors },
@@ -89,7 +140,7 @@ export const autopilotRoutes = new Elysia({ name: 'autopilot', detail: { tags: [
       detail: {
         summary: "Set the project's budgets",
         description:
-          'Tokens, euros (estimated from the model prices) or seconds of work per UTC day or ' +
+          'Tokens, euros (estimated from the model prices) or seconds of work per UTC day, week or ' +
           'month for all agent work in the project. A null limit removes that budget; budgets ' +
           'not named stay. Agent keys are refused.',
       },
@@ -173,7 +224,7 @@ export const autopilotRoutes = new Elysia({ name: 'autopilot', detail: { tags: [
       detail: {
         summary: "Set an agent's budgets",
         description:
-          'Tokens, euros (estimated) or seconds of work per UTC day or month for everything the ' +
+          'Tokens, euros (estimated) or seconds of work per UTC day, week or month for everything the ' +
           'agent does, runs and chats. A null limit removes that budget. Only team owners and managers can change it.',
       },
     },

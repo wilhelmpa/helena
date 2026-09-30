@@ -2,6 +2,7 @@ import { t } from 'elysia';
 import { pageQueryFields, pageResponse } from '#shared/pagination';
 
 export const agentAutopilotParams = t.Object({ teamId: t.Numeric(), agentId: t.Numeric() });
+export const issueBudgetParams = t.Object({ issueId: t.Numeric() });
 
 export const ActionCategorySchema = t.Union(
   [
@@ -42,7 +43,7 @@ const LevelSource = t.Union([
 export const autopilotLevel = t.Integer({ minimum: 0, maximum: 3 });
 
 const Metric = t.Union([t.Literal('tokens'), t.Literal('cost'), t.Literal('time')]);
-const Period = t.Union([t.Literal('day'), t.Literal('month')]);
+const Period = t.Union([t.Literal('day'), t.Literal('week'), t.Literal('month')]);
 
 export const LevelRuleSchema = t.Object({
   category: ActionCategorySchema,
@@ -58,10 +59,18 @@ export const LevelRulesSchema = t.Array(
 
 export const BudgetStatusSchema = t.Object({
   id: t.Number(),
-  scope: t.Union([t.Literal('agent'), t.Literal('project'), t.Literal('department')]),
+  scope: t.Union([
+    t.Literal('issue'),
+    t.Literal('agent'),
+    t.Literal('project'),
+    t.Literal('goal'),
+    t.Literal('department'),
+  ]),
   agentId: t.Nullable(t.Number()),
+  issueId: t.Nullable(t.Number()),
   projectId: t.Nullable(t.Number()),
   departmentId: t.Nullable(t.Number()),
+  goalId: t.Nullable(t.Number()),
   metric: Metric,
   period: Period,
   limit: t.Number(),
@@ -71,6 +80,7 @@ export const BudgetStatusSchema = t.Object({
   periodStart: t.String(),
   warned: t.Boolean(),
   reached: t.Boolean(),
+  throttled: t.Boolean(),
   graceRuns: t.Number(),
   unpricedTokens: t.Number(),
 });
@@ -109,7 +119,7 @@ export const budgetsBody = t.Object({
         }),
       ),
     }),
-    { maxItems: 6 },
+    { maxItems: 9 },
   ),
 });
 
