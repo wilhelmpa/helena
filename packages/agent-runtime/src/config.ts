@@ -44,6 +44,7 @@ export interface Limits {
   runBudgetSeconds?: number;
   firstChunkSeconds?: number;
   chunkSeconds?: number;
+  // Optional hard limit per model call; the run budget applies when omitted.
   stepSeconds?: number;
   maxOutputTokens?: number;
   localModelQueueSeconds?: number;
@@ -110,7 +111,6 @@ export const DEFAULTS = {
   chatModelQueueSeconds: 180,
   firstChunkSeconds: 30,
   chunkSeconds: 30,
-  stepSeconds: 60,
   maxOutputTokens: 4096,
   toolTimeoutSeconds: 120,
   shellTimeoutSeconds: 300,

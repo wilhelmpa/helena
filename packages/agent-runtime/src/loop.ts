@@ -133,7 +133,8 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
   );
   const maxTurns = config.limits?.maxTurns ?? DEFAULTS.maxTurns;
   const firstChunkMs = (config.limits?.firstChunkSeconds ?? DEFAULTS.firstChunkSeconds) * 1000;
-  const stepMs = (config.limits?.stepSeconds ?? DEFAULTS.stepSeconds) * 1000;
+  const stepMs =
+    config.limits?.stepSeconds === undefined ? budgetMs : config.limits.stepSeconds * 1000;
   const chunkMs = (config.limits?.chunkSeconds ?? DEFAULTS.chunkSeconds) * 1000;
   const toolTimeoutMs = (config.tools?.toolTimeoutSeconds ?? DEFAULTS.toolTimeoutSeconds) * 1000;
   let browserLeftMs = (config.tools?.browserBudgetSeconds ?? DEFAULTS.browserBudgetSeconds) * 1000;
@@ -559,7 +560,7 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
         text: lastError instanceof LocalModelBusy ? lastError.message : lastText,
         exitCode: 1,
         reason: failureReason,
-        ...(lastError instanceof LocalModelBusy && { error: lastError.message }),
+        error: lastError instanceof LocalModelBusy ? lastError.message : messageOf(lastError),
       });
     }
 
@@ -796,7 +797,11 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
       () => stop(queued ? 'model-busy' : 'first-chunk'),
       queued ? queue.remainingMs : Math.min(firstChunkMs, leftMs),
     );
-    let stepTimer = queued ? undefined : setTimeout(() => stop('step-timeout'), stepMs);
+    // Only an explicitly configured step limit ends a step (153b): the run and chat budgets
+    // bound a model call otherwise.
+    const stepLimited = config.limits?.stepSeconds !== undefined;
+    let stepTimer =
+      queued || !stepLimited ? undefined : setTimeout(() => stop('step-timeout'), stepMs);
     const requestModel =
       queued && typeof model.model === 'object'
         ? new Proxy(model.model, {
@@ -810,7 +815,7 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
                   queue.admitted(Date.now() - admissionStarted);
                   clearTimeout(watchdog);
                   watchdog = setTimeout(() => stop('first-chunk'), firstChunkMs);
-                  stepTimer = setTimeout(() => stop('step-timeout'), stepMs);
+                  if (stepLimited) stepTimer = setTimeout(() => stop('step-timeout'), stepMs);
                 }
                 return result;
               };
@@ -910,7 +915,7 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
     }
     if (why === 'model-busy') throw new LocalModelBusy();
     if (why) throw new StepAbort(why);
-    if (streamError && calls.length === 0 && !text) throw streamError;
+    if (streamError) throw streamError;
     return { text, calls, usage };
   }
 

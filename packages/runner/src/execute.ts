@@ -15,6 +15,7 @@ import { localRoute } from './local-ai';
 import { executeWebhook } from './webhook-runtime';
 import { externalResult } from './external-result';
 import type { Spend } from './spend';
+import { NativeResultReader } from './native-result';
 
 // Runs one task: the command the preset builds, or the operator's own in a shell, with the
 // task on stdin and its context in the environment. Everything the agent needs beyond the
@@ -71,7 +72,7 @@ export interface Outcome {
 const OUTPUT_LIMIT = 8000;
 const COMMAND_OUTPUT_LIMIT = 64 * 1024;
 const ERROR_LIMIT = 400;
-const HERMES_RESULT_LIMIT_BYTES = 128 * 1024;
+const RESULT_LIMIT_BYTES = 128 * 1024;
 // How much of what Hermes printed outside the protocol a failure keeps: its last lines.
 const HERMES_PRINTED_LIMIT = 1200;
 
@@ -507,6 +508,7 @@ async function executeLocal(
   let commandOutputTooLarge = false;
   const hermesResult =
     config.outputFormat === 'hermes-stream-json' ? new HermesResultReader(opts.onSessionId) : null;
+  const nativeResult = config.outputFormat === 'helena-jsonl' ? new NativeResultReader() : null;
   child.stdout.setEncoding('utf8');
   child.stderr.setEncoding('utf8');
   child.stdout.on('data', (chunk: string) => {
@@ -516,6 +518,7 @@ async function executeLocal(
     }
     stdout = tail(next, config.agent === 'command' ? COMMAND_OUTPUT_LIMIT : OUTPUT_LIMIT);
     hermesResult?.write(chunk);
+    nativeResult?.write(chunk);
     seen(chunk);
     task.hooks?.output?.(chunk);
     opts.onData?.(chunk);
@@ -551,14 +554,25 @@ async function executeLocal(
   }
 
   hermesResult?.end();
+  nativeResult?.end();
   if (commandOutputTooLarge) {
     return { status: 'failed', output: '', error: 'Command output exceeds 64 KiB' };
   }
   return finalOutcome(
     config,
     preset,
-    settle(code, signal, timedOut, stdout, stderr, executionTimeoutMs(config, task), hermesResult),
+    settle(
+      code,
+      signal,
+      timedOut,
+      stdout,
+      stderr,
+      executionTimeoutMs(config, task),
+      hermesResult,
+      nativeResult,
+    ),
     hermesResult,
+    nativeResult,
   );
 }
 
@@ -604,6 +618,7 @@ async function executeIsolated(
   let commandOutputTooLarge = false;
   const hermesResult =
     config.outputFormat === 'hermes-stream-json' ? new HermesResultReader(opts.onSessionId) : null;
+  const nativeResult = config.outputFormat === 'helena-jsonl' ? new NativeResultReader() : null;
   const out = new StringDecoder('utf8');
   const err = new StringDecoder('utf8');
   const onStdout = (text: string) => {
@@ -614,6 +629,7 @@ async function executeIsolated(
     }
     stdout = tail(next, config.agent === 'command' ? COMMAND_OUTPUT_LIMIT : OUTPUT_LIMIT);
     hermesResult?.write(text);
+    nativeResult?.write(text);
     seen(text);
     task.hooks?.output?.(text);
     opts.onData?.(text);
@@ -656,24 +672,35 @@ async function executeIsolated(
   }
   onStdout(out.end());
   hermesResult?.end();
+  nativeResult?.end();
   if (commandOutputTooLarge) {
     return { status: 'failed', output: '', error: 'Command output exceeds 64 KiB' };
   }
   return finalOutcome(
     config,
     preset,
-    settle(code, signal, timedOut, stdout, stderr, executionTimeoutMs(config, task), hermesResult),
+    settle(
+      code,
+      signal,
+      timedOut,
+      stdout,
+      stderr,
+      executionTimeoutMs(config, task),
+      hermesResult,
+      nativeResult,
+    ),
     hermesResult,
+    nativeResult,
   );
 }
 
-// What Hermes' result line adds to the outcome (the session's token totals, its id and its
-// tool calls), and why a preset's command failed.
+// Final protocol metadata and runtime failure classification.
 function finalOutcome(
   config: RunnerConfig,
   preset: CliCommand | undefined,
   settled: Outcome,
   hermesResult: HermesResultReader | null,
+  nativeResult: NativeResultReader | null,
 ): Outcome {
   const outcome = hermesResult
     ? {
@@ -683,11 +710,13 @@ function finalOutcome(
         ...(hermesResult.toolCalls > 0 && { toolCalls: hermesResult.toolCalls }),
       }
     : settled;
-  return preset ? withFailure(config, outcome, hermesResult?.result) : outcome;
+  return preset
+    ? withFailure(config, outcome, nativeResult?.result ?? hermesResult?.result)
+    : outcome;
 }
 
 // A failed command's reason, in the words of its runtime type (classifyFailure), with
-// Hermes' own verdict where its result line carried one.
+// the verdict from its final result line.
 export function withFailure(
   config: Pick<RunnerConfig, 'agent'>,
   outcome: Outcome,
@@ -711,11 +740,29 @@ function settle(
   stderr: string,
   timeoutMs: number,
   hermesResult: HermesResultReader | null,
+  nativeResult: NativeResultReader | null,
 ): Outcome {
-  const output = hermesResult?.result?.text ?? stdout.trim();
-  if (hermesResult?.result && Buffer.byteLength(output, 'utf8') > HERMES_RESULT_LIMIT_BYTES)
-    return { status: 'failed', output: '', error: 'Hermes final result exceeds 128 KiB' };
+  const output = nativeResult?.result?.text ?? hermesResult?.result?.text ?? stdout.trim();
+  if (
+    (nativeResult?.result || hermesResult?.result) &&
+    Buffer.byteLength(output, 'utf8') > RESULT_LIMIT_BYTES
+  )
+    return {
+      status: 'failed',
+      output: '',
+      error: `${nativeResult ? 'Native' : 'Hermes'} final result exceeds 128 KiB`,
+    };
   if (timedOut) return { status: 'failed', output, error: `Timed out after ${timeoutMs}ms` };
+  const native = nativeResult?.result;
+  if (code === 0 && nativeResult && !native)
+    return { status: 'failed', output: '', error: 'Native stream ended without a final result' };
+  if (native?.exitCode)
+    return {
+      status: 'failed',
+      output,
+      error:
+        native.error || native.reason || `Native runtime reported exit code ${native.exitCode}`,
+    };
   if (code === 0 && hermesResult && !hermesResult.result)
     return { status: 'failed', output: '', error: 'Hermes stream ended without a final result' };
   const result = hermesResult?.result;
