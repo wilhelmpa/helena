@@ -1,7 +1,13 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { ChatSummary } from '@/lib/api/endpoints/agentChat';
-import { agentOrderByRole, chatSections, foldedChats, mixesProjects } from './chatSections';
+import {
+  agentOrderByRole,
+  chatAgentTree,
+  chatSections,
+  foldedChats,
+  mixesProjects,
+} from './chatSections';
 
 const chat = (id: string, agent: number, pinned = false) =>
   ({
@@ -127,4 +133,60 @@ test('a group shows its first chats and folds the rest, unless opened or holding
   assert.equal(foldedChats(chats, 5, false, holds('2')).hidden, 2);
   // Short lists fold nothing.
   assert.equal(foldedChats(chats.slice(0, 3), 5, false, none).hidden, 0);
+});
+
+test('the chats of the agents form the organisation’s tree, without agents that have no chats', () => {
+  const sections = chatSections(list, [], [1, 2, 4]).agents;
+  const org = [
+    { id: 1, name: 'Ava', reportsToAgentId: null },
+    { id: 2, name: 'Koordinator', reportsToAgentId: 1 },
+    { id: 3, name: 'Ohne Chat', reportsToAgentId: 2 },
+    { id: 4, name: 'Spezialist', reportsToAgentId: 3 },
+  ];
+  const tree = chatAgentTree(sections, org, new Set([1, 2, 3, 4]));
+  assert.deepEqual(
+    tree.map((entry) => [entry.agent.id, entry.total]),
+    [
+      [1, 4],
+      [9, 1],
+    ],
+  );
+  const coordinator = tree[0]!.children[0]!;
+  assert.equal(coordinator.agent.id, 2);
+  // Agent 3 has no chats but holds agent 4, so it stays as the row between them.
+  assert.deepEqual(
+    coordinator.children.map((entry) => [entry.agent.id, entry.chats.length, entry.total]),
+    [[3, 0, 2]],
+  );
+});
+
+test('an agent the place does not offer ends the chain, so a project shows its own branch', () => {
+  const sections = chatSections(list, [], [2, 4]).agents;
+  const org = [
+    { id: 1, name: 'Ava', reportsToAgentId: null },
+    { id: 2, name: 'Koordinator', reportsToAgentId: 1 },
+    { id: 4, name: 'Spezialist', reportsToAgentId: 2 },
+  ];
+  const tree = chatAgentTree(sections, org, new Set([2, 4]));
+  assert.deepEqual(
+    tree.map((entry) => entry.agent.id),
+    [2, 1, 9],
+  );
+  assert.deepEqual(
+    tree[0]!.children.map((entry) => entry.agent.id),
+    [4],
+  );
+});
+
+test('a cycle in reportsTo does not loop', () => {
+  const sections = chatSections([chat('a', 1), chat('b', 2)], [], []).agents;
+  const org = [
+    { id: 1, name: 'A', reportsToAgentId: 2 },
+    { id: 2, name: 'B', reportsToAgentId: 1 },
+  ];
+  const tree = chatAgentTree(sections, org, new Set([1, 2]));
+  assert.equal(
+    tree.reduce((sum, entry) => sum + entry.total, 0),
+    2,
+  );
 });

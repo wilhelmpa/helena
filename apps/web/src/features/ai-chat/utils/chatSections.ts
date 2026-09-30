@@ -91,3 +91,70 @@ export function foldedChats(
   const shown = showAll ? chats : chats.slice(0, limit);
   return { shown, hidden: chats.length - shown.length };
 }
+
+// One agent of the chat list's tree (owner, O109): its own chats, the agents reporting to it
+// that have chats (or lead to one), and the number of chats of the whole branch.
+export interface ChatAgentNode {
+  agent: { id: number; name: string };
+  chats: ChatSummary[];
+  children: ChatAgentNode[];
+  total: number;
+}
+
+// The chat list as the organisation chart: the home agent on top, the coordinators below it,
+// each with its specialists (reportsTo). An agent without chats is left out — unless a report
+// of it has some, then it stays as the row that holds them. `known` names the agents the place
+// offers (the ones that may head a branch); one it does not know ends the chain, so a project
+// shows only its own branch. Agents outside every chain keep the order they came in.
+export function chatAgentTree(
+  sections: ChatAgentSection[],
+  organization: { id: number; name: string; reportsToAgentId: number | null }[],
+  known: ReadonlySet<number>,
+): ChatAgentNode[] {
+  const info = new Map(organization.map((agent) => [agent.id, agent]));
+  const nodes = new Map<number, ChatAgentNode>();
+  const order: number[] = [];
+  const node = (id: number, name: string): ChatAgentNode => {
+    let entry = nodes.get(id);
+    if (!entry) {
+      entry = { agent: { id, name }, chats: [], children: [], total: 0 };
+      nodes.set(id, entry);
+      order.push(id);
+    }
+    return entry;
+  };
+  for (const section of sections) node(section.agent.id, section.agent.name).chats = section.chats;
+  const parentOf = (id: number): number | null => {
+    const parent = info.get(id)?.reportsToAgentId ?? null;
+    return parent != null && parent !== id && known.has(parent) ? parent : null;
+  };
+  // The ancestors that lead to a chat join the tree (a cycle in reportsTo ends the walk).
+  for (const section of sections) {
+    const seen = new Set<number>([section.agent.id]);
+    for (let id = parentOf(section.agent.id); id != null && !seen.has(id); id = parentOf(id)) {
+      seen.add(id);
+      node(id, info.get(id)?.name ?? String(id));
+    }
+  }
+  const roots: ChatAgentNode[] = [];
+  for (const id of order) {
+    const entry = nodes.get(id)!;
+    let parent = parentOf(id);
+    // Never hang a node under its own descendant: a cycle is cut at the first agent.
+    for (let cursor = parent, hops = 0; cursor != null; cursor = parentOf(cursor)) {
+      if (cursor === id || ++hops > order.length) {
+        parent = null;
+        break;
+      }
+    }
+    const holder = parent == null ? undefined : nodes.get(parent);
+    if (holder) holder.children.push(entry);
+    else roots.push(entry);
+  }
+  const count = (entry: ChatAgentNode): number => {
+    entry.total = entry.chats.length + entry.children.reduce((sum, child) => sum + count(child), 0);
+    return entry.total;
+  };
+  roots.forEach(count);
+  return roots;
+}
