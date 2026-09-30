@@ -188,6 +188,7 @@ export async function classifyMessage(
   messageId: number,
   actorUserId: string | null,
   scopeProjectId?: number,
+  signal?: AbortSignal,
 ): Promise<ClassificationView | null> {
   const [message] = await db
     .select({ message: mailMessage, thread: mailThread, account: mailAccount })
@@ -226,6 +227,7 @@ export async function classifyMessage(
     questions: mailQuestions(projects, message.thread.projectId),
     subject: `mail:${messageId}`,
     projectId: message.thread.projectId,
+    signal,
   });
   if (outcome.status === 'off') return null;
   const answers = Object.fromEntries(
@@ -592,7 +594,7 @@ export async function runProjectTriage(
       checkTriageCancellation(signal);
       results.push(
         await triageMessageResult(project.key, message, () =>
-          classifyMessage(project.teamId, scoped, message.id, team.actorUserId, project.id),
+          classifyMessage(project.teamId, scoped, message.id, team.actorUserId, project.id, signal),
         ),
       );
     }

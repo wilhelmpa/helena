@@ -14,6 +14,7 @@ import {
   runProjectTriage,
 } from './classify';
 import './config';
+import { recordRoutineTriage } from './routine';
 
 // The mail classifier in the inbox (docs/helena-decisions/decisions.md §5): what it decided
 // for a thread, the owner's corrections, the suggestions the owner accepts, and "Einordnen"
@@ -69,8 +70,16 @@ export const mailTriageRoutes = new Elysia({
   .use(guards)
   .post(
     '/projects/:projectKey/mail-triage/run',
-    ({ project, body, request }) =>
-      runProjectTriage(project, body.maxMessages ?? 5, request.signal),
+    async ({ project, body, request, user }) => {
+      const result = await runProjectTriage(project, body.maxMessages ?? 5, request.signal);
+      await recordRoutineTriage(
+        project.id,
+        requireUser(user).id,
+        request.headers.get('x-helena-run'),
+        result,
+      );
+      return result;
+    },
     {
       permission: ['mail', 'edit'],
       body: triageBatchBody,

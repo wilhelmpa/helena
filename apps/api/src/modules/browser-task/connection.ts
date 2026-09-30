@@ -47,6 +47,7 @@ export interface DecisionConnection {
   // keySource 'local-ai': the model server of Helena's local AI whose address and key it uses.
   modelServer: string | null;
   localAiClassId?: string;
+  priority?: 'normal' | 'realtime';
 }
 
 export interface SystemOneReply {
@@ -362,6 +363,7 @@ function openAiServer(
   const fetcher = guardedFetch(privateHosts(connection, address.baseUrl));
   return {
     model: address.model || connection.model,
+    ...(isLocalHalogenUrl(address.baseUrl) ? { concurrency: 1 } : {}),
     ...(address.tokenIds && { tokenIds: address.tokenIds }),
     async post(path, body, signal) {
       const res = await fetcher(priorityProxyBaseUrl(systemOneUrl(address.baseUrl, path)), {
@@ -369,7 +371,7 @@ function openAiServer(
         headers: {
           'content-type': 'application/json',
           ...(isLocalHalogenUrl(address.baseUrl)
-            ? { 'x-volition-halogen-priority': 'realtime' }
+            ? { 'x-volition-halogen-priority': connection.priority ?? 'realtime' }
             : {}),
           ...(address.key ? { authorization: `Bearer ${address.key}` } : {}),
         },

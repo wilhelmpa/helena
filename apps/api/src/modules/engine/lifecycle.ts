@@ -9,6 +9,7 @@ import { bumpControlPlaneRevision } from '#modules/sync/service';
 import type { PipelineDefinition } from '#modules/pipelines/definition';
 import { clip, loadRun, runInfo, setRunStatus, stepRow, writeStep } from './run-context';
 import { stepType } from './registry';
+import { finishRoutineTriage } from '#modules/mail-triage/routine';
 import type { RunInfo, StepDefinition, StepExecution } from './sdk';
 
 // The run's own records the interpreter writes around its steps: beginning a run
@@ -163,6 +164,7 @@ async function reportTaskFailure(
   at: StepExecution | null,
   message: string,
 ): Promise<void> {
+  if (await finishRoutineTriage(runId, message)) return;
   const context = await loadRun(runId, false);
   if (!context.task || context.run.dryRun || !['agent_team', 'routine'].includes(context.run.kind))
     return;

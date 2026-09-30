@@ -1,10 +1,23 @@
 import { expect, test } from 'bun:test';
-import { runAgent } from '../agent';
+import { directTools, runAgent } from '../agent';
 import { MemorySink } from '../events';
 import { MemorySessionStore } from '../session';
 import { factoryOf, scriptedModel } from './fake-model';
 import type { HelenaApi } from '../helena-client';
 import type { AgentTool } from '../tools/types';
+
+test('mail triage is offered directly to the assistant without tool discovery', () => {
+  const triage: AgentTool = {
+    name: 'run_mail_triage',
+    description: 'Triage mail',
+    kind: 'normal',
+    readOnly: false,
+    inputSchema: { type: 'object' },
+    execute: async () => ({ text: 'Done.' }),
+  };
+  expect(directTools('assistent', [triage]).has(triage.name)).toBe(true);
+  expect(directTools('voll', [triage]).has(triage.name)).toBe(true);
+});
 
 test('profile core remains offered when the native selector returns a subset', async () => {
   const model = scriptedModel([{ text: 'Done.' }]);

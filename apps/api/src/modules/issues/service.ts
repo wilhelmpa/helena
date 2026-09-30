@@ -1503,7 +1503,7 @@ export async function enqueueDelegateRun(
   const agent = await getAssignTriggerAgent(after.projectId, delegate, actorId(actor));
   if (!agent) return;
   if (await startDelegatedAgentTeam(after.id, after.projectId, agent.id, actorId(actor))) return;
-  await enqueueAgentRun({
+  const runId = await enqueueAgentRun({
     agentId: agent.id,
     projectId: after.projectId,
     issueId: after.id,
@@ -1512,6 +1512,7 @@ export async function enqueueDelegateRun(
     delaySeconds: agent.delegationDelaySec,
     workClass: delegation?.workClass ?? null,
   });
+  await delegation?.onQueued?.(runId);
 }
 
 // What a delegation's run is: the kind of work it is for Lokale KI (a routine's task is
@@ -1519,6 +1520,7 @@ export async function enqueueDelegateRun(
 // project's agent team carries none: its stages name their own.
 export interface DelegationOptions {
   workClass?: string | null;
+  onQueued?: (runId: number) => Promise<void>;
 }
 
 // Deletes an issue and everything attached to it. Field options/values, labels,

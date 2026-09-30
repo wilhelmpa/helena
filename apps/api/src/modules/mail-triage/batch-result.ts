@@ -4,6 +4,7 @@ type ClassificationResult = {
   status: string;
   issueId: number | null;
   actions: { kind: string; receiptIds?: number[] }[];
+  error?: string | null;
 } | null;
 
 export function receiptSummary(ids: number[]) {
@@ -34,6 +35,7 @@ export async function triageMessageResult(
       status: result?.status ?? 'skipped',
       issueId: result?.issueId ?? null,
       actionFailed: result?.actions.some((action) => action.kind === 'skipped') ?? false,
+      ...(result?.error ? { error: result.error } : {}),
     };
   } catch {
     return {
@@ -42,6 +44,7 @@ export async function triageMessageResult(
       status: 'failed',
       issueId: null,
       actionFailed: true,
+      error: 'Classification failed before a result was stored.',
     };
   }
 }

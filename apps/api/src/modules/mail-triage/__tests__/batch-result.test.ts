@@ -38,7 +38,26 @@ test('a classification error retains the same readable source and failed status'
   const result = await triageMessageResult('VOL', message, async () => {
     throw new Error('synthetic classification failure');
   });
-  expect(result).toEqual({ ...source, status: 'failed', issueId: null, actionFailed: true });
+  expect(result).toEqual({
+    ...source,
+    status: 'failed',
+    issueId: null,
+    actionFailed: true,
+    error: 'Classification failed before a result was stored.',
+  });
+});
+
+test('a stored classification failure exposes its safe service error', async () => {
+  const result = await triageMessageResult('VOL', message, async () => ({
+    status: 'failed',
+    issueId: null,
+    actions: [],
+    error: 'The decision service answered HTTP 503.',
+  }));
+  expect(result).toMatchObject({
+    status: 'failed',
+    error: 'The decision service answered HTTP 503.',
+  });
 });
 
 test('skipped and action-failed outcomes preserve their existing semantics', async () => {
