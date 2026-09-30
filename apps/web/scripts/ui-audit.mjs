@@ -11,7 +11,8 @@
 //   edges        (O92, O104) the breadcrumb, the toolbar row of a phone and the first content
 //                of every page stand on one left edge, the header is 56px and the content starts
 //                the padding below it;
-//   overlays     (O102, O103) the chat panel, a task, an agent, a file and the settings modal are
+//   overlays     (O102, O103) the chat panel, a task, an agent, a file, a receipt (UI_AUDIT_RECEIPT=1)
+//                and the settings modal are
 //                opened and compared: head height, control order and size, distance to the
 //                window, inner distance, Esc; a pinned overlay takes its room from the page.
 // It needs a running Ava and a user; it writes a JSON report and prints what deviates.
@@ -366,7 +367,16 @@ async function overlayScenes(page, { phone }) {
       await page.goto(`${web}/project/${project}`, { waitUntil: 'load' });
       await settle(1200);
       await page.keyboard.press('Meta+,');
-    },
+    }, // Needs a receipt in the project (UI_AUDIT_RECEIPT=1): the receipt overlay.
+    ...(process.env.UI_AUDIT_RECEIPT
+      ? {
+          receipt: async () => {
+            await page.goto(`${web}/project/${project}/receipts`, { waitUntil: 'load' });
+            await settle(1500);
+            await page.locator('[data-row-button]').first().click();
+          },
+        }
+      : {}),
   };
   const scenes = {};
   for (const [name, action] of Object.entries(open)) {
