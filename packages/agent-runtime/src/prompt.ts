@@ -160,8 +160,12 @@ export function buildSystemPrompt(input: {
       ? [`## Context warnings\n${input.contextWarnings.join('\n')}`]
       : []),
     input.instructions?.trim() ?? '',
+    `Arbeitsordner: ${input.workdir}`,
+    ...input.serverInstructions.map(
+      (entry) => `## Hinweise zu ${entry.server}\n${cut(entry.text.trim(), 6000)}`,
+    ),
     input.runContext?.trim() ?? '',
-    `Arbeitsordner: ${input.workdir}\nHeute: ${now.toISOString().slice(0, 10)}`,
+    `Heute: ${now.toISOString().slice(0, 10)}`,
     memorySection(input.memory, input.query),
     skillIndex(
       input.skills,
@@ -171,9 +175,6 @@ export function buildSystemPrompt(input: {
       input.contextLimits?.skillDescription,
     ),
     input.workspaceState ?? '',
-    ...input.serverInstructions.map(
-      (entry) => `## Hinweise zu ${entry.server}\n${cut(entry.text.trim(), 6000)}`,
-    ),
   ];
   return sections.filter(Boolean).join('\n\n');
 }

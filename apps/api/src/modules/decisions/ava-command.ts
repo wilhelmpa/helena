@@ -88,9 +88,9 @@ export function avaCommandForRequest(request: Request, scope: Omit<Scope, 'chatM
       return exact[0]?.id === choice ? choice : null;
     };
     try {
-      if (!(await optimizationEnabled(scope, AVA_COMMAND_CLASS))) return null;
-      const first = await ask({ prompt }, AVA_QUESTIONS);
       const command = parseAvaCommand(prompt);
+      if (!command || !(await optimizationEnabled(scope, AVA_COMMAND_CLASS))) return null;
+      const first = await ask({ prompt }, AVA_QUESTIONS);
       if (
         !command ||
         first?.simple?.choice !== 'command' ||

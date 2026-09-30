@@ -242,7 +242,9 @@ export async function runAgent(input: AgentRunInput): Promise<LoopResult> {
       });
     }
     tools.push(...(input.extraTools ?? []));
-    const direct = directTools(profile, tools, config.tools?.core);
+    const direct = input.env?.VOLITION_VOICE === '1'
+      ? new Set(LOOP_TOOLS.filter((name) => tools.some((entry) => entry.name === name)))
+      : directTools(profile, tools, config.tools?.core);
     for (const hit of searchCatalog(
       tools
         .filter((entry) => !direct.has(entry.name))

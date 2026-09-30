@@ -18,11 +18,11 @@ export interface ProxyOptions {
   maintenancePath?: string;
 }
 
-type RequestClass = PriorityClass | 'voice-reply';
+type RequestClass = PriorityClass | 'voice-reply' | 'voice-agent';
 
 function priority(value: string | string[] | undefined): RequestClass {
   return value === 'interactive' || value === 'realtime' || value === 'background' ||
-    value === 'voice-reply' ? value : 'normal';
+    value === 'voice-reply' || value === 'voice-agent' ? value : 'normal';
 }
 
 function unavailable(response: ServerResponse, reason: 'busy' | 'backend_unavailable'): void {
@@ -90,7 +90,7 @@ export async function startPriorityProxy(options: ProxyOptions) {
   };
   if (options.healthCheck ?? options.hostPorts[0] !== 0) void probe();
 
-  const handler = (backendPort: number, fixedClass?: PriorityClass) =>
+  const handler = (backendPort: number, fixedClass?: RequestClass) =>
     async (incoming: IncomingMessage, outgoing: ServerResponse) => {
       if (!fixedClass && incoming.url === '/priority/status' && incoming.method === 'GET') {
         outgoing.setHeader('content-type', 'application/json');
@@ -108,7 +108,7 @@ export async function startPriorityProxy(options: ProxyOptions) {
         return;
       }
       const requestClass = fixedClass ?? priority(incoming.headers[PRIORITY_HEADER]);
-      const kind = requestClass === 'voice-reply' ? 'interactive' : requestClass;
+      const kind = requestClass === 'voice-reply' || requestClass === 'voice-agent' ? 'realtime' : requestClass;
       const scheduled = incoming.method === 'POST';
       const disconnected = new AbortController();
       outgoing.on('close', () => {
@@ -228,6 +228,7 @@ export async function startPriorityProxy(options: ProxyOptions) {
         ['normal', 'normal'],
         ['chat', 'interactive'],
         ['realtime', 'realtime'],
+        ['voice', 'voice-agent'],
         ['background', 'background'],
       ] as const) {
         const path = join(options.socketDir, `${name}-${suffix}.sock`);

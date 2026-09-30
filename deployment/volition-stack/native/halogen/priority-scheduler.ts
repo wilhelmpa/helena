@@ -2,7 +2,7 @@ import { DEFAULT_PRIORITY_CONFIG, type PriorityConfig } from '../../../../packag
 
 export type PriorityClass = 'interactive' | 'realtime' | 'normal' | 'background';
 const classes: PriorityClass[] = ['interactive', 'realtime', 'normal', 'background'];
-const rank: Record<PriorityClass, number> = { interactive: 3, realtime: 2, normal: 1, background: 0 };
+const rank: Record<PriorityClass, number> = { interactive: 2, realtime: 3, normal: 1, background: 0 };
 
 type Admission = 'admitted' | 'busy' | 'backend_unavailable' | 'aborted';
 
@@ -98,8 +98,10 @@ export class PriorityScheduler {
       background: this.config.maxBackground,
     };
     if (this.active[kind] >= cap[kind]) return false;
+    if (kind === 'realtime') return true;
+    if (this.total() - this.active.realtime >= this.config.maxConcurrent - 1) return false;
     if (kind === 'interactive') return true;
-    if (this.total() - this.active.interactive >=
+    if (this.total() - this.active.interactive - this.active.realtime >=
       this.config.maxConcurrent - this.config.reservedInteractive) return false;
     if (kind === 'background' &&
       (this.active.interactive + this.active.realtime > 0 ||
@@ -114,6 +116,8 @@ export class PriorityScheduler {
   private choose(): Waiting | undefined {
     const eligible = this.waiting.filter((item) => this.eligible(item.kind));
     eligible.sort((a, b) => {
+      if (a.kind === 'realtime' || b.kind === 'realtime')
+        return rank[b.kind] - rank[a.kind] || a.since - b.since;
       const score = (item: Waiting) => rank[item.kind] +
         Math.floor((this.now() - item.since) / this.config.agingMs) * (4 - rank[item.kind]);
       return score(b) - score(a) || a.since - b.since || this.waiting.indexOf(a) - this.waiting.indexOf(b);

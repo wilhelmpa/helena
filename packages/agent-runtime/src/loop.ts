@@ -472,7 +472,7 @@ export async function runLoop(input: LoopInput): Promise<LoopResult> {
         for (const name of offered) active.add(name);
       }
     }
-    for (const name of offered) {
+    for (const name of [...offered].sort()) {
       const entry = toolsByName.get(name)!;
       toolSet[name] = tool({
         description: entry.description,

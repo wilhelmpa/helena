@@ -353,3 +353,21 @@ describe('conversation controller with fake ear and speaker', () => {
     h.controller.stop();
   });
 });
+
+
+describe('dictated reply', () => {
+  it('reuses the speech queue for a bridge and streams the first sentence without starting a conversation', async () => {
+    const h = harness();
+    await h.ready();
+    h.controller.stop();
+    h.controller.prepareReply();
+    h.controller.followReply([]);
+    await new Promise((resolve) => setTimeout(resolve, 12));
+    assert.equal(h.sent.length, 0);
+    assert.ok(h.spoken.some((text) => /prüfe|schau|Frage/.test(text)));
+    h.controller.update([{ id: 'reply', role: 'assistant', text: 'Die Hauptstadt ist Paris.' }], true, 0);
+    await new Promise((resolve) => setTimeout(resolve, 8));
+    assert.ok(h.spoken.includes('Die Hauptstadt ist Paris.'));
+    h.controller.stop();
+  });
+});

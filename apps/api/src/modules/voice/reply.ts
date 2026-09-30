@@ -1,6 +1,8 @@
 import { eq } from 'drizzle-orm';
 import {
   db,
+  aiAgent,
+  listModelServers,
   getDisplayName,
   readModelServerKey,
   resolveLocalRoute,
@@ -16,7 +18,10 @@ import {
   type LocalAiChatRequest,
 } from '@helena/sdk';
 import { joinUrl } from '#modules/local-ai/eval-context';
-import { taskClass } from '#modules/local-ai/service';
+import { taskClass, effectiveModelNow } from '#modules/local-ai/service';
+import { LOCAL_DEFAULT, localDefaultModel, readMaintenance } from '#modules/local-ai/maintenance-state';
+import { parseLocalModelId } from '@helena/sdk';
+import { runtimeOfPolicy } from '#modules/model-availability/service';
 import {
   appendEvents,
   finishSpokenAnswer,
@@ -59,7 +64,18 @@ const TOTAL_MS = 20_000;
 // Written to the chat in steps like a runner's (packages/runner chat.ts).
 const FLUSH_MS = 120;
 
-async function route(): Promise<LocalRoute | null> {
+async function route(agentId: number): Promise<LocalRoute | null> {
+  if ((await readMaintenance())?.admissionPaused) return null;
+  const [agent] = await db.select({ runtimePolicy: aiAgent.runtimePolicy, model: aiAgent.model })
+    .from(aiAgent).where(eq(aiAgent.id, agentId));
+  if (agent && runtimeOfPolicy(agent.runtimePolicy) === 'helena') {
+    const modelId = await effectiveModelNow(agent.model === LOCAL_DEFAULT ? await localDefaultModel() : agent.model);
+    const parsed = parseLocalModelId(modelId);
+    if (!parsed || !modelId) return null;
+    const server = (await listModelServers()).find((entry) => entry.slug === parsed.slug);
+    if (!server) return null;
+    return { server, model: parsed.model, modelId, unit: 'gpu', mode: 'prefer' };
+  }
   const entry = taskClass(VOICE_REPLY_CLASS);
   if (!entry) return null;
   const result = await resolveLocalRoute({
@@ -239,7 +255,7 @@ async function person(
 }
 
 export async function answerSpokenQuestion(job: SpokenAnswerJob): Promise<void> {
-  const [local, settings] = await Promise.all([route(), readVoiceSettings()]);
+  const [local, settings] = await Promise.all([route(job.agentId), readVoiceSettings()]);
   if (!local || !(await takeHeldAnswer(job.agentId, job.messageId))) {
     await releaseHeldAnswer(job.agentId, job.messageId);
     return;
@@ -283,9 +299,9 @@ export async function answerSpokenQuestion(job: SpokenAnswerJob): Promise<void> 
 }
 
 registerSpokenAnswerer({
-  async available() {
+  async available(agentId) {
     const settings = await readVoiceSettings();
-    return settings.immediateResponse && (await route()) !== null;
+    return settings.immediateResponse && (await route(agentId)) !== null;
   },
   answer: (job) => answerSpokenQuestion(job),
 });

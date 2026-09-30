@@ -6,10 +6,10 @@ import type { LocalAiChatRequest } from '@helena/sdk';
 
 export const VOICE_REPLY_CLASS = 'voice-reply';
 
-const MAX_TOKENS = 200;
+const MAX_TOKENS = 128;
 // The turns of the conversation the model reads, and how much of each.
-const HISTORY_TURNS = 10;
-const TURN_CHARS = 1_200;
+const HISTORY_TURNS = 4;
+const TURN_CHARS = 500;
 // Text is held back until it is clearly an answer (a sentence, or this much): a model that
 // starts writing and then calls the hand-over has said nothing yet.
 const COMMIT_CHARS = 60;
@@ -44,8 +44,8 @@ export function voiceReplyRequest(input: VoiceReplyInput): LocalAiChatRequest {
     `You are ${input.agentName}, an assistant in ${input.displayName ?? 'Ava'}. You are talking with ${person} by ` +
       'voice: everything you write is read aloud at once.',
     'Answer yourself ONLY when this conversation and general knowledge are enough: a greeting, ' +
-      'small talk, whether you can hear them, thanks or goodbye, the time or the date (it is ' +
-      `${input.now}), a general-knowledge question, or repeating, shortening or explaining ` +
+      'small talk, whether you can hear them, thanks or goodbye, the time or the date given in the prompt, ' +
+      `a general-knowledge question, or repeating, shortening or explaining ` +
       'something already said in this conversation.',
     `For everything else call ${HAND_OVER_TOOL} at once, without writing anything first: ` +
       'anything about their tasks, projects, mails, calendar, files, notes, agents, servers ' +
@@ -65,6 +65,7 @@ export function voiceReplyRequest(input: VoiceReplyInput): LocalAiChatRequest {
     return `${speaker}: ${turn.text.replace(/\s+/g, ' ').trim().slice(0, TURN_CHARS)}`;
   });
   const prompt = [
+    `Current local date and time: ${input.now}`,
     ...(earlier.length ? ['The conversation so far:', ...earlier, ''] : []),
     `The person says now: ${input.question}`,
   ].join('\n');

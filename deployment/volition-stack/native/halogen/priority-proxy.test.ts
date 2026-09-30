@@ -20,7 +20,7 @@ test('chat uses the reserved slot and overtakes queued background work', async (
   const normal = await scheduler.acquire('normal');
   const order: string[] = [];
   const background = scheduler.acquire('background').then((release) => { order.push('background'); return release; });
-  const chat = scheduler.acquire('interactive').then((release) => { order.push('chat'); return release; });
+  const chat = scheduler.acquire('realtime').then((release) => { order.push('chat'); return release; });
   expect(await chat).toBeFunction();
   expect(order).toEqual(['chat']);
   normal!();
@@ -59,7 +59,7 @@ test('FIFO within a class, timeout, disconnect and config changes', async () => 
 test('aged background work gets a turn amid a chat burst', async () => {
   let now = 0;
   const scheduler = new PriorityScheduler(DEFAULT_PRIORITY_CONFIG, () => now);
-  const occupied = await Promise.all(Array.from({ length: 4 }, () => scheduler.acquire('interactive')));
+  const occupied = await Promise.all(Array.from({ length: 3 }, () => scheduler.acquire('interactive')));
   const background = scheduler.acquire('background');
   const chats = Array.from({ length: 5 }, () => scheduler.acquire('interactive'));
   now = 46_000;
@@ -305,6 +305,7 @@ test('chat and runs retain their token requests; voice reply and realtime are bo
     { kind: 'background', body: { model: 'fake' } },
     { kind: 'voice-reply', body: { model: 'fake', max_tokens: 10_000 } },
     { kind: 'realtime', body: { model: 'fake', max_completion_tokens: 10_000 } },
+    { kind: 'voice-agent', body: { model: 'fake', max_tokens: 10_000 } },
   ];
   for (const { kind, body } of cases) {
     const response = await fetch(url, { method: 'POST', body: JSON.stringify(body),
@@ -317,6 +318,7 @@ test('chat and runs retain their token requests; voice reply and realtime are bo
     cases[2]!.body,
     { model: 'fake', max_tokens: 512 },
     { model: 'fake', max_completion_tokens: 64 },
+    cases[5]!.body,
   ]);
   const status = await (await fetch(`http://127.0.0.1:${proxy.ports[0]}/priority/status`)).json();
   expect(status.maxTokensByClass).toEqual({
@@ -384,7 +386,7 @@ test('shared admission check fences queued requests before periodic refresh', as
   let paused = false;
   const scheduler = new PriorityScheduler({ ...DEFAULT_PRIORITY_CONFIG, maxConcurrent: 1 });
   scheduler.admissionCheck = () => paused;
-  const active = await scheduler.acquire('interactive');
+  const active = await scheduler.acquire('realtime');
   let admitted = false;
   const queued = scheduler.acquire('interactive').then((release) => { admitted = true; return release; });
   paused = true;
@@ -462,4 +464,22 @@ test('proxy distinguishes a full queue from an unhealthy backend', async () => {
   expect(down.headers.get('retry-after')).toBeNull();
   expect((await down.json()).error.code).toBe('backend_unavailable');
   held!();
+});
+
+
+test('voice has its own slot while three chats are running', async () => {
+  const scheduler = new PriorityScheduler();
+  const chats = await Promise.all(Array.from({ length: 3 }, () => scheduler.acquire('interactive')));
+  const voice = await scheduler.acquire('realtime');
+  try { expect(voice).toBeFunction(); } finally { voice?.(); chats.forEach((release) => release?.()); }
+});
+
+test('the fourth chat cannot occupy the voice reservation', async () => {
+  const scheduler = new PriorityScheduler();
+  const chats = await Promise.all(Array.from({ length: 3 }, () => scheduler.acquire('interactive')));
+  const abort = new AbortController();
+  const fourth = scheduler.acquire('interactive', abort.signal);
+  await tick();
+  try { expect(scheduler.status().queued.interactive).toBe(1); }
+  finally { abort.abort(); (await fourth)?.(); chats.forEach((release) => release?.()); }
 });
