@@ -9,7 +9,7 @@ import { EMPTY_FILTER_SET, applyFilters, isActiveFilterSet, type FilterSet } fro
 import type { WidgetConfig } from '@/utils/dashboardWidgets';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useActivityFeedQuery } from '../../services/analytics.service';
-import { Inline, Stack, Text } from '@/design-system';
+import { Inline, Stack, StatusDot, Text } from '@/design-system';
 
 // The actions that get their own verb phrase, as messages under
 // `dashboards.activityFeed.verbs`. Each phrase ends where the issue link follows,
@@ -112,7 +112,7 @@ export default function ActivityFeedWidget({
       <Stack as="ul" gap={2}>
         {items.map((a) => (
           <Inline as="li" gap={2} align="start" key={a.id} className="text-sm">
-            <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-muted-foreground/40" />
+            <StatusDot tone="quiet" bare className="mt-1.5" />
             <div className="min-w-0 flex-1">
               <span className="text-foreground/80">{actorName(a.actorName, t('automation'))}</span>{' '}
               <span className="text-muted-foreground">{verb(a.kind, a.action)}</span>{' '}

@@ -11,10 +11,9 @@ import { runtimeEnv } from '@/utils/runtimeEnv';
 import { useProjectProvisioningQuery } from '@/services/projects.service';
 import type { WorkspaceTool, WorkspaceToolId } from '@/utils/workspaceTools';
 import { workspaceTools } from '@/utils/workspaceTools';
-import { panelTool, useOfferedPanelTools, usePanelTools } from '@/extensions/panelTools';
+import { panelTool, usePanelTools } from '@/extensions/panelTools';
 import { usePanelToolLabel } from '@/extensions/pluginPanelTools';
 import { cn } from '@/lib/utils';
-import WorkspaceAreaHeader from './WorkspaceAreaHeader';
 import WorkspaceBrowserBar from './WorkspaceBrowserBar';
 import { useBrowserColorScheme } from './WorkspaceBrowserColorScheme';
 import WorkspaceBrowserLive from './WorkspaceBrowserLive';
@@ -22,7 +21,6 @@ import WorkspaceFrame from './WorkspaceFrame';
 import WorkspacePanelHeader from './WorkspacePanelHeader';
 import WorkspaceTabBar from './WorkspaceTabBar';
 import type { useWorkspaceTabs } from '@/hooks/useWorkspaceTabs';
-import WorkspaceToolPicker from './WorkspaceToolPicker';
 import WorkspaceUnavailable from './WorkspaceUnavailable';
 import { ChatDockCtx, type ChatDockState } from '@/context/chatDock';
 import { PanelToolCloseCtx } from '@/context/panelToolTab';
@@ -62,8 +60,6 @@ export default function WorkspacePanel({
   overlay,
   full,
   onToggleMode,
-  onPickTool,
-  onCloseArea,
   onClose,
   tabs,
   activeTool,
@@ -81,8 +77,6 @@ export default function WorkspacePanel({
   // The main tool takes the whole window ("Werkzeug groß").
   full: boolean;
   onToggleMode: () => void;
-  onPickTool: (areaId: string, tool: WorkspaceToolId) => void;
-  onCloseArea: (areaId: string) => void;
   onClose: () => void;
   tabs: ReturnType<typeof useWorkspaceTabs>;
   activeTool: string;
@@ -105,8 +99,6 @@ export default function WorkspacePanel({
   );
   // Every panel tool (extensions/panelTools.tsx): the built-ins and plugins' tools.
   const registered = usePanelTools();
-  // What the area's tool picker offers: without a tool this origin does not have.
-  const offered = useOfferedPanelTools();
   const labelOf = usePanelToolLabel();
   const labels = useMemo<Record<WorkspaceToolId, string>>(
     () => Object.fromEntries(registered.map((entry) => [entry.id, labelOf(entry)])),
@@ -313,16 +305,6 @@ export default function WorkspacePanel({
   const layer = overlay ? 'z-30' : undefined;
   const place = (area: PanelArea | undefined, row: '1' | '2' | '1 / -1') =>
     area ? { gridColumn: String(area.column), gridRow: row } : undefined;
-  const picker = (area: PanelArea) => (
-    <WorkspaceToolPicker
-      tools={offered}
-      current={area.tool}
-      shown={areas.map((entry) => entry.tool)}
-      labels={labels}
-      onPick={(tool) => onPickTool(area.id, tool)}
-    />
-  );
-
   return (
     <>
       {visible.map((entry) => (
@@ -342,63 +324,46 @@ export default function WorkspacePanel({
         />
       ))}
 
-      {visible.map((entry) =>
-        entry.area.main ? (
-          <div
-            key={`header:${entry.area.id}`}
-            data-panel-part="header"
-            data-panel-tool={entry.id}
-            className={cn('min-w-0', layer)}
-            style={place(entry.area, '1')}
-          >
-            <WorkspaceTabBar
-              tabs={tabs}
-              activeTool={activeTool}
-              browserBase={browserBase}
-              layoutId={layoutId}
-              onSelectTool={onSelectTab}
-              onCloseTab={onCloseTab}
-              onChooseLayout={onChooseLayout}
-              onClose={onClose}
-              pinned={mode === 'push'}
-              onTogglePin={onToggleMode}
-            />
-            <WorkspacePanelHeader
-              title={advanced ? t('advanced') : entry.label}
-              advanced={advanced}
-              canExpandChat={entry.id === 'chat' && !!entryOf('chat').advancedUrl}
-              canToggleBrowserLossless={false}
-              browserLossless={browserPreferences.lossless}
-              externalUrl={entry.id === 'browser' || entry.content ? null : entry.url}
-              picker={null}
-              toolbar={entry.id === 'browser' ? browserBar : undefined}
-              slotRef={slotRef(entry.area.id)}
-              onToggleAdvanced={() => setAdvanced((current) => !current)}
-              onToggleBrowserLossless={browserPreferences.toggleLossless}
-              onReload={() =>
-                setFrameReloads((current) => ({
-                  ...current,
-                  [entry.key]: (current[entry.key] ?? 0) + 1,
-                }))
-              }
-            />
-          </div>
-        ) : (
-          <div
-            key={`header:${entry.area.id}`}
-            className={cn('min-w-0', layer)}
-            style={place(entry.area, '1')}
-          >
-            <WorkspaceAreaHeader
-              title={entry.label}
-              picker={picker(entry.area)}
-              toolbar={entry.id === 'browser' ? browserBar : undefined}
-              slotRef={slotRef(entry.area.id)}
-              onClose={() => onCloseArea(entry.area.id)}
-            />
-          </div>
-        ),
-      )}
+      {visible.map((entry) => (
+        <div
+          key={`header:${entry.area.id}`}
+          data-panel-part="header"
+          data-panel-tool={entry.id}
+          className={cn('min-w-0', layer)}
+          style={place(entry.area, '1')}
+        >
+          <WorkspaceTabBar
+            tabs={tabs}
+            activeTool={activeTool}
+            browserBase={browserBase}
+            layoutId={layoutId}
+            onSelectTool={onSelectTab}
+            onCloseTab={onCloseTab}
+            onChooseLayout={onChooseLayout}
+            onClose={onClose}
+            pinned={mode === 'push'}
+            onTogglePin={onToggleMode}
+          />
+          <WorkspacePanelHeader
+            title={advanced ? t('advanced') : entry.label}
+            advanced={advanced}
+            canExpandChat={entry.id === 'chat' && !!entryOf('chat').advancedUrl}
+            canToggleBrowserLossless={false}
+            browserLossless={browserPreferences.lossless}
+            externalUrl={entry.id === 'browser' || entry.content ? null : entry.url}
+            toolbar={entry.id === 'browser' ? browserBar : undefined}
+            slotRef={slotRef(entry.area.id)}
+            onToggleAdvanced={() => setAdvanced((current) => !current)}
+            onToggleBrowserLossless={browserPreferences.toggleLossless}
+            onReload={() =>
+              setFrameReloads((current) => ({
+                ...current,
+                [entry.key]: (current[entry.key] ?? 0) + 1,
+              }))
+            }
+          />
+        </div>
+      ))}
 
       {frames.map((frame) => {
         const area = areaOfFrame.get(frame.key);

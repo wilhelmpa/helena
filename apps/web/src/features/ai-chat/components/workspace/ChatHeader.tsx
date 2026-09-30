@@ -210,7 +210,7 @@ export default function ChatHeader({
   }
 
   return (
-    <WorkspaceHeader className="h-10 gap-1 border-sidebar-border bg-transparent px-2">
+    <WorkspaceHeader className="h-11 gap-1 border-sidebar-border bg-transparent px-2">
       <button
         type="button"
         onClick={() => threadId && setRenaming(true)}

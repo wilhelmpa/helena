@@ -1,14 +1,8 @@
 'use client';
 
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet';
+import { Overlay } from '@/design-system';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { useLocale, useTranslations } from 'next-intl';
+import { useTranslations } from 'next-intl';
 import type { Frontmatter } from '../utils/noteFrontmatter';
 import DocumentBacklinks from './DocumentBacklinks';
 import DocumentProperties from './DocumentProperties';
@@ -31,7 +25,6 @@ export default function DocumentEditorInspector({
   onOpenChange: (open: boolean) => void;
 }) {
   const t = useTranslations('documents');
-  const locale = useLocale();
   const isMobile = useIsMobile();
 
   if (!open) return null;
@@ -50,18 +43,14 @@ export default function DocumentEditorInspector({
 
   if (isMobile) {
     return (
-      <Sheet open onOpenChange={onOpenChange}>
-        <SheetContent
-          side={locale === 'ar' ? 'left' : 'right'}
-          className="w-[min(94vw,380px)] gap-0 sm:max-w-[380px]"
-        >
-          <SheetHeader className="shrink-0 border-b pe-12">
-            <SheetTitle>{t('details')}</SheetTitle>
-            <SheetDescription className="sr-only">{t('detailsDescription')}</SheetDescription>
-          </SheetHeader>
-          {panel}
-        </SheetContent>
-      </Sheet>
+      <Overlay
+        label={t('details')}
+        tabs={[{ id: 'details', label: t('details') }]}
+        onClose={() => onOpenChange(false)}
+        bodyClassName="is-flush"
+      >
+        {panel}
+      </Overlay>
     );
   }
 

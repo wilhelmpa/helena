@@ -249,7 +249,6 @@
     "tools": "Tools",
     "pickTool": "{tool} · change tool",
     "swap": "swap",
-    "closeArea": "Close area",
     "back": "Back",
     "backHint": "Back to the previous layout",
     "full": "Tool full size",
@@ -302,5 +301,6 @@
   "settingsProjectAccess": "Manage access",
   "sidebarHelenaKnowledge": "{appName}",
   "sidebarTrash": "Trash",
-  "sidebarChats": "Chats"
+  "sidebarChats": "Chats",
+  "sidebarResize": "Sidebar width (drag, arrow keys, double-click for default)"
 }

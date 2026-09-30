@@ -1,5 +1,4 @@
 'use client';
-/* eslint-disable better-tailwindcss/no-restricted-classes -- Der freigegebene Wissen-Entwurf verlangt diese Schriftgrößen (Titel 44 px, Text 15 px). */
 
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
@@ -8,15 +7,12 @@ import type { Editor } from '@tiptap/react';
 import { FileCode2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { toast } from 'sonner';
-import { MenuItem, Page } from '@/design-system';
+import { Card, MenuItem, MonoLabel, Page, Pill, Text } from '@/design-system';
 import FileViewerContent from '@/components/common/files/FileViewerContent';
 import type { ViewerFile } from '@/components/common/files/FileViewer';
 import WebLinkScope from '@/components/common/WebLinkScope';
 import { useRelativeTime } from '@/context/relativeTimeContext';
 import { getFileReferences, type FileItem, type FileScope } from '@/lib/api/endpoints/projectFiles';
-import { MonoLabel } from '@/components/helena/DashboardPrimitives';
-import ResizableSidePanel from '@/components/helena/ResizableSidePanel';
-import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { filesScopeKey } from '@/services/files.service';
 import {
   useBacklinksQuery,
@@ -56,15 +52,15 @@ export function MarkdownBody({
   const query = useVaultNoteQuery(path);
   if (query.isPending)
     return (
-      <p role="status" className="text-sm text-muted-foreground">
+      <Text as="p" role="status" tone="muted">
         {t('loadingDoc')}
-      </p>
+      </Text>
     );
   if (!query.data)
     return (
-      <p role="alert" className="text-sm text-destructive">
+      <Text as="p" role="alert" tone="danger">
         {t('loadError')}
-      </p>
+      </Text>
     );
   return (
     <MarkdownEditor
@@ -236,7 +232,6 @@ export default function ProjectKnowledgeViewer({
       : vaultNotePath(linkedPath);
   };
   const projectKey = scope.kind === 'project' ? scope.projectKey : null;
-  const wide = useMediaQuery('(min-width: 1024px)');
   // The path is the page's breadcrumb (O16); the file's actions sit on the right of the
   // header like every page's.
   const menu = (
@@ -257,11 +252,8 @@ export default function ProjectKnowledgeViewer({
     />
   );
   const head: ReactNode = (
-    <>
-      <h1
-        className="mb-3 text-[44px] leading-[1.06] font-[520] tracking-[-.055em] break-words text-foreground max-sm:text-[34px]"
-        dir="auto"
-      >
+    <header className="ds-doc-head">
+      <h2 className="ds-doc-title" dir="auto">
         {datedTitle ? (
           <>
             {datedTitle[1]}
@@ -271,9 +263,9 @@ export default function ProjectKnowledgeViewer({
         ) : (
           title
         )}
-      </h1>
-      <div className="flex flex-wrap items-center gap-2.5 text-xs text-muted-foreground">
-        <span className="size-[7px] rounded-full bg-brand" />
+      </h2>
+      <div className="ds-doc-meta">
+        <span className="ds-doc-dot" />
         {item.origin && item.origin !== 'manual' && <OriginBadge origin={item.origin} />}
         <span>
           {[
@@ -284,105 +276,85 @@ export default function ProjectKnowledgeViewer({
             .filter(Boolean)
             .join(' · ')}
         </span>
-        <span className="grow" />
+        <span className="ds-doc-meta-fill" />
         {tags.map((tag) => (
-          <span
-            key={tag}
-            className="rounded-full bg-muted px-2.5 py-[3px] text-xs text-foreground/80"
-          >
-            {`#${tag}`}
-          </span>
+          <Pill key={tag}>{`#${tag}`}</Pill>
         ))}
       </div>
-    </>
+    </header>
   );
   const details = (
     <>
-      <section className="flex flex-col gap-2">
-        <MonoLabel>{k('backlinks')}</MonoLabel>
+      <Card title={<MonoLabel>{k('backlinks')}</MonoLabel>}>
         {backlinks.data?.length ? (
           backlinks.data.map((link) => (
             <button
               type="button"
               key={link.path}
               onClick={() => void openBacklink(backlinkHref(link.path))}
-              className="block w-full rounded-lg bg-card px-3 py-2.5 text-start text-xs text-foreground/85 hover:bg-muted"
+              className="ds-doc-backlink"
             >
               {link.title}
             </button>
           ))
         ) : (
-          <p className="text-xs text-muted-foreground">{k('noBacklinks')}</p>
+          <Text as="p" size="xs" tone="muted">
+            {k('noBacklinks')}
+          </Text>
         )}
-      </section>
-      <section className="flex flex-col gap-2">
-        <MonoLabel>{k('history')}</MonoLabel>
+      </Card>
+      <Card title={<MonoLabel>{k('history')}</MonoLabel>}>
         {history.data?.length ? (
           history.data.slice(0, 5).map((revision) => (
-            <p key={revision.commit} className="text-xs leading-[1.7] text-muted-foreground">
+            <Text as="p" size="xs" tone="muted" key={revision.commit}>
               {`${relativeTime(revision.committedAt)} · ${revision.authorName}: ${revision.message}`}
-            </p>
+            </Text>
           ))
         ) : (
-          <p className="text-xs text-muted-foreground">{k('noHistory')}</p>
+          <Text as="p" size="xs" tone="muted">
+            {k('noHistory')}
+          </Text>
         )}
-      </section>
+      </Card>
     </>
   );
   return (
-    <Page variant="bleed" actions={menu}>
+    <Page variant="default" actions={menu}>
       <WebLinkScope projectKey={projectKey}>
-        <div
-          data-file-preview
-          data-project-knowledge
-          className="flex min-h-0 min-w-0 flex-1 overflow-hidden bg-background text-foreground"
-        >
-          <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto px-9 ps-16 pt-[26px] pb-6 max-lg:ps-9 max-md:px-5 max-sm:px-4">
-            <article className="w-full max-w-[740px] min-w-0">
-              {head}
-              <div
-                className={`${styles.prose} mt-[30px] text-[15px] leading-[1.75] text-foreground/90`}
-              >
-                {markdown ? (
-                  source ? (
-                    // A file the formatted editor cannot keep opens in the source editor,
-                    // without a note about it (owner, O15).
-                    <VaultTextEditor
-                      scope={scope}
-                      path={path}
-                      canEdit={canEdit}
-                      onDirty={reportDirty}
-                      vaultPath={canonical}
-                      beforeNavigate={() => true}
-                      sourceOnly
-                    />
-                  ) : (
-                    <MarkdownBody
-                      path={canonical}
-                      editable={canEdit}
-                      onDirty={reportDirty}
-                      onSaveReady={onSaveReady}
-                      onLossless={onLossless}
-                    />
-                  )
+        <div data-file-preview data-project-knowledge className="ds-doc-page">
+          <article className="ds-doc-card">
+            {head}
+            <div className={`${styles.prose} ds-doc-body`}>
+              {markdown ? (
+                source ? (
+                  // A file the formatted editor cannot keep opens in the source editor,
+                  // without a note about it (owner, O15).
+                  <VaultTextEditor
+                    scope={scope}
+                    path={path}
+                    canEdit={canEdit}
+                    onDirty={reportDirty}
+                    vaultPath={canonical}
+                    beforeNavigate={() => true}
+                    sourceOnly
+                  />
                 ) : (
-                  <FileViewerContent file={file} />
-                )}
-              </div>
-            </article>
-            {!wide && (
-              <aside className="mt-10 flex max-w-[740px] flex-col gap-[22px] border-t border-border pt-6">
-                {details}
-              </aside>
-            )}
-          </div>
-          {wide && (
-            <ResizableSidePanel label={k('details')} reserve={520}>
-              <div className="flex min-h-0 flex-1 flex-col gap-[22px] overflow-y-auto ps-6 pe-9 pt-[84px] pb-6">
-                {details}
-              </div>
-            </ResizableSidePanel>
-          )}
+                  <MarkdownBody
+                    path={canonical}
+                    editable={canEdit}
+                    onDirty={reportDirty}
+                    onSaveReady={onSaveReady}
+                    onLossless={onLossless}
+                  />
+                )
+              ) : (
+                <FileViewerContent file={file} />
+              )}
+            </div>
+          </article>
+          <aside className="ds-doc-aside" aria-label={k('details')}>
+            {details}
+          </aside>
         </div>
       </WebLinkScope>
     </Page>

@@ -20,7 +20,9 @@ import { agentDisplayName } from '../../utils/agentChip';
 import { chatHref } from '../../utils/chatHref';
 import {
   agentOrderByRole,
+  chatAgentTree,
   chatSections,
+  type ChatAgentNode,
   foldedChats,
   mixesProjects,
 } from '../../utils/chatSections';
@@ -146,6 +148,17 @@ export default function SidebarChats({
     () => chatSections(chats, term ? [] : chatFolders.folders, agentOrder),
     [chats, term, chatFolders.folders, agentOrder],
   );
+  // The agents as the organisation chart has them (owner, O109): the home agent, its
+  // coordinators, their specialists; a project shows only its own branch.
+  const agentTree = useMemo(
+    () =>
+      chatAgentTree(
+        sections.agents,
+        organization.data?.agents ?? [],
+        new Set(agents.map((agent) => agent.id)),
+      ),
+    [sections.agents, organization.data, agents],
+  );
   const agentName = (id: number, fallback: string) => {
     const agent = agents.find((entry) => entry.id === id);
     return agent ? agentDisplayName(agent, appName) : fallback;
@@ -229,6 +242,34 @@ export default function SidebarChats({
     </TreeItem>
   );
 
+  // One agent and its branch: its own chats, then the agents reporting to it.
+  const agentGroup = (node: ChatAgentNode, index: number, top: boolean): ReactNode => {
+    const { agent } = node;
+    const own = node.chats;
+    const inBranch = (list: ChatAgentNode): ChatSummary[] => [
+      ...list.chats,
+      ...list.children.flatMap(inBranch),
+    ];
+    const name = agentName(agent.id, agent.name);
+    return (
+      <TreeItem
+        key={`agent:${agent.id}`}
+        label={name}
+        mark={<Avatar name={agent.name} className="size-4" aria-hidden />}
+        count={node.total}
+        actions={
+          <SidebarChatNewInAgent projectKey={projectKey} agentId={agent.id} name={name} hoverOnly />
+        }
+        storageKey={storage(`agent:${agent.id}`)}
+        defaultOpen={top && index === 0 && sections.pinned.length === 0}
+        containsActive={holdsActive(inBranch(node))}
+      >
+        {own.length > 0 && rows(`agent:${agent.id}`, own, mixes(own))}
+        {node.children.map((child) => agentGroup(child, 0, false))}
+      </TreeItem>
+    );
+  };
+
   // Every group is folded, except the pinned chats — or, without any, the first agent — and
   // the one holding the open chat: the list is an overview first.
   const groupList = (
@@ -244,20 +285,7 @@ export default function SidebarChats({
           actions: <SidebarChatFolderMenu folderId={folder.id} name={folder.name} />,
         }),
       )}
-      {sections.agents.map(({ agent, chats: own }, index) =>
-        group(`agent:${agent.id}`, agentName(agent.id, agent.name), own, {
-          mark: <Avatar name={agent.name} className="size-4" aria-hidden />,
-          open: index === 0 && sections.pinned.length === 0,
-          actions: (
-            <SidebarChatNewInAgent
-              projectKey={projectKey}
-              agentId={agent.id}
-              name={agentName(agent.id, agent.name)}
-              hoverOnly
-            />
-          ),
-        }),
-      )}
+      {agentTree.map((node, index) => agentGroup(node, index, true))}
     </>
   );
 

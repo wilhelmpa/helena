@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, Search } from 'lucide-react';
+import { SearchField } from '@/design-system';
 import { useTranslations } from 'next-intl';
 import type { MemberKind } from '@/lib/api/endpoints/members';
 import { useSearchTerm } from '@/hooks/useSearchTerm';
@@ -10,7 +11,6 @@ import { usePermissionCatalogQuery, useTeamRoleOptionsQuery } from '@/services/r
 import ListSkeleton from '@/components/common/skeleton/ListSkeleton';
 import { EmptyState } from '@/components/common/page/EmptyState';
 import RowAction from '@/components/common/RowAction';
-import SearchInput from '@/components/common/SearchInput';
 import { Button } from '@/components/ui/button';
 import {
   Select,
@@ -82,10 +82,12 @@ export default function TeamProjectMembers({
       </div>
 
       <div className="flex items-center gap-2">
-        <SearchInput
+        <SearchField
+          icon={<Search aria-hidden="true" size={14} />}
           value={search}
-          onChange={setSearch}
+          onChange={(event) => setSearch(event.target.value)}
           placeholder={t('searchMembers')}
+          aria-label={t('searchMembers')}
           className="min-w-0 flex-1"
         />
         <Select value={kind} onValueChange={(value) => setKind(value as MemberKind)}>

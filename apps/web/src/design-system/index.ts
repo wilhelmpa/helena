@@ -53,6 +53,7 @@ export { ActionMenu, Tip } from './components/ActionMenu';
 export { NameList } from './components/NameList';
 export type { ActionMenuItem } from './components/ActionMenu';
 export { List, ListGroup, ListRow } from './components/List';
+export { ListBox } from './components/ListBox';
 export { Table, Th, Tr, Td } from './components/Table';
 export { MatrixCell, MatrixCellButton, MatrixNote, MatrixBar } from './components/Matrix';
 export type { MatrixMark } from './components/Matrix';
@@ -67,7 +68,8 @@ export {
 } from './components/DetailView';
 export { SettingsGroup, SettingsRow } from './components/SettingsGroup';
 export * from './components/Menu';
-export { PageHeader, PageToolbarRow, PageBody } from './layout/Page';
+export { PageHeader, PageBody } from './layout/Page';
+export type { Crumb } from './layout/Page';
 export { Page } from './layout/PageTemplate';
 export { LocalChrome } from './layout/LocalChrome';
 export type { PageVariant } from './layout/PageTemplate';
@@ -85,12 +87,12 @@ export {
 } from './layout/PageToolbar';
 export type { PageTab, PageAction, PageSelectOption } from './layout/PageToolbar';
 export { default as Dialog, useModalFullscreen } from '@/components/common/overlay/Modal';
-export type { Crumb } from './layout/Page';
 export { SidePanel } from './layout/SidePanel';
 export { Overlay } from './layout/Overlay';
+export { OverlayHead } from './layout/OverlayHead';
 export { OverlayControls } from './components/OverlayControls';
 export type { OverlayControlsLabels } from './components/OverlayControls';
-export type { OverlayTab } from './layout/Overlay';
+export type { OverlayTab } from './layout/OverlayHead';
 export {
   useSidePanelWidth,
   SidePanelResizeHandle,

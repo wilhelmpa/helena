@@ -25,6 +25,8 @@ export function toolbarViolations(source: string): ToolbarViolation[] {
   const add = (rule: string, index: number) => found.push({ rule, line: lineOf(index) });
   for (const match of source.matchAll(/type=["']search["']/g))
     add('a search field of its own: use PageSearch (toolbar) or SearchField', match.index);
+  for (const match of source.matchAll(/\bSearchInput\b/g))
+    add('a search box of its own: use SearchField (content) or PageSearch (toolbar)', match.index);
   for (const match of source.matchAll(/["'`\s]ds-pill-button\b/g))
     add('a filter pill of its own: use PageFilterMenu, FilterBar or PageTabs', match.index);
   // What stands between <PageToolbar> and </PageToolbar>.

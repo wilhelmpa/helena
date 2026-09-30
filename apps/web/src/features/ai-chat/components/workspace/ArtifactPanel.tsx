@@ -2,13 +2,10 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { Check, Code2, Copy, Eye, Save, X } from 'lucide-react';
+import { Check, Copy, Save } from 'lucide-react';
 import { toast } from 'sonner';
 import { useMutation } from '@tanstack/react-query';
-import { WorkspaceHeader } from '@/components/layout/WorkspaceHeader';
-import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { Segmented } from '@/design-system';
+import { ActionMenu, Overlay, OverlayHead } from '@/design-system';
 import { copyText } from '@/utils/clipboard';
 import { createTextFile } from '@/lib/api/endpoints/projectFiles';
 import { chatUploadScope } from '../../hooks/useVaultUpload';
@@ -27,7 +24,7 @@ export interface ArtifactPanelProps {
 // The artifact panel: a code view with syntax highlighting and copy, and a live
 // preview in a sandboxed iframe with no access to the app's origin (see
 // utils/artifacts.ts — allow-scripts, no allow-same-origin, and a strict CSP). A
-// sibling column wide enough, a Sheet overlay below it, so opening one never pushes
+// sibling column wide enough (with the same head as every overlay), the one overlay below it, so opening one never pushes
 // the conversation to an unreadable width.
 export default function ArtifactPanel({
   artifact,
@@ -53,84 +50,73 @@ export default function ArtifactPanel({
 
   if (!artifact || !open) return null;
 
-  const body = (
-    <>
-      <WorkspaceHeader className="justify-between gap-2 px-3">
-        <div className="flex items-center gap-2 overflow-hidden">
-          <span className="truncate text-sm font-medium">{t('artifact.title')}</span>
-          <span className="shrink-0 rounded-sm bg-muted px-1.5 py-0.5 text-xs text-muted-foreground uppercase">
-            {artifact.language}
-          </span>
-        </div>
-        <div className="flex shrink-0 items-center gap-1">
-          <Segmented<'code' | 'preview'>
-            label={t('artifact.title')}
-            value={tab}
-            onChange={setTab}
-            options={[
-              {
-                value: 'preview',
-                icon: <Eye aria-hidden="true" />,
-                label: <span className="sr-only">{t('artifact.preview')}</span>,
-                title: t('artifact.preview'),
-              },
-              {
-                value: 'code',
-                icon: <Code2 aria-hidden="true" />,
-                label: <span className="sr-only">{t('artifact.code')}</span>,
-                title: t('artifact.code'),
-              },
-            ]}
-          />
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={async () => {
-              await copyText(artifact.code);
-              setCopied(true);
-              toast.success(tCommon('copied'));
-              setTimeout(() => setCopied(false), 1500);
-            }}
-            aria-label={tCommon('copy')}
-          >
-            {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            disabled={save.isPending}
-            onClick={() => save.mutate()}
-            aria-label={t('artifact.save')}
-          >
-            <Save className="size-4" />
-          </Button>
-          <Button variant="ghost" size="icon" onClick={onClose} aria-label={t('artifact.toggle')}>
-            <X className="size-4" />
-          </Button>
-        </div>
-      </WorkspaceHeader>
-      <div className="min-h-0 flex-1">
-        {tab === 'preview' ? (
-          <ArtifactPreviewFrame artifact={artifact} />
-        ) : (
-          <ArtifactCodeView artifact={artifact} />
-        )}
-      </div>
-    </>
+  const tabs = [
+    { id: 'preview', label: t('artifact.preview') },
+    { id: 'code', label: t('artifact.code') },
+  ];
+  const actions = (
+    <ActionMenu
+      label={tCommon('more')}
+      items={[
+        {
+          id: 'copy',
+          label: copied ? tCommon('copied') : tCommon('copy'),
+          icon: copied ? <Check /> : <Copy />,
+          onSelect: async () => {
+            await copyText(artifact.code);
+            setCopied(true);
+            toast.success(tCommon('copied'));
+            setTimeout(() => setCopied(false), 1500);
+          },
+        },
+        {
+          id: 'save',
+          label: t('artifact.save'),
+          icon: <Save />,
+          disabled: save.isPending,
+          onSelect: () => save.mutate(),
+        },
+      ]}
+    />
   );
+  const body = (
+    <div className="min-h-0 flex-1">
+      {tab === 'preview' ? (
+        <ArtifactPreviewFrame artifact={artifact} />
+      ) : (
+        <ArtifactCodeView artifact={artifact} />
+      )}
+    </div>
+  );
+  const title = `${t('artifact.title')} · ${artifact.language.toUpperCase()}`;
 
   if (overlay) {
     return (
-      <Sheet open={open} onOpenChange={(next) => !next && onClose()}>
-        <SheetContent side="right" className="flex w-full flex-col gap-0 p-0 sm:max-w-xl">
-          <SheetHeader className="sr-only">
-            <SheetTitle>{t('artifact.title')}</SheetTitle>
-          </SheetHeader>
-          {body}
-        </SheetContent>
-      </Sheet>
+      <Overlay
+        label={title}
+        tabs={tabs}
+        activeTab={tab}
+        onTab={(id) => setTab(id as 'code' | 'preview')}
+        actions={actions}
+        onClose={onClose}
+        bodyClassName="is-flush"
+      >
+        {body}
+      </Overlay>
     );
   }
 
-  return <div className="flex w-[min(42vw,640px)] shrink-0 flex-col border-s">{body}</div>;
+  return (
+    <div className="flex w-[min(42vw,640px)] shrink-0 flex-col border-s">
+      <OverlayHead
+        label={title}
+        tabs={tabs}
+        activeTab={tab}
+        onTab={(id) => setTab(id as 'code' | 'preview')}
+        actions={actions}
+        controls={{ onClose, labels: { close: t('artifact.toggle') } }}
+      />
+      {body}
+    </div>
+  );
 }

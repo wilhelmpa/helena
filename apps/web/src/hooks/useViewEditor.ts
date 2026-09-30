@@ -39,7 +39,11 @@ function loadView(): WorkItemsView {
   // there is no localStorage there, so fall back to the default layout.
   if (typeof window === 'undefined') return 'kanban';
   const raw = localStorage.getItem(VIEW_KEY);
-  return raw === 'kanban' || raw === 'table' || raw === 'timeline' || raw === 'calendar'
+  return raw === 'kanban' ||
+    raw === 'list' ||
+    raw === 'table' ||
+    raw === 'timeline' ||
+    raw === 'calendar'
     ? raw
     : 'kanban';
 }

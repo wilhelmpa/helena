@@ -370,6 +370,7 @@ export default function KnowledgeListView({
       <KnowledgeFrame
         crumbs={crumbs}
         title={title}
+        boxed={!pending && shown.length > 0}
         search={
           <KnowledgeSearch
             value={query}

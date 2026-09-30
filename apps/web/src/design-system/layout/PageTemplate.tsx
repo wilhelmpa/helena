@@ -22,8 +22,10 @@ import { usePageChrome } from './pageChrome';
 //           'fill'     padded, the child fills the height and scrolls itself (board,
 //                      org chart, a split view)
 //           'bleed'    no padding, fills (canvas, terminal, code, an embedded app)
+//           'split'    like bleed for a list and its detail (inbox, mail): the list starts at the
+//                      sidebar's edge and the detail reaches the window's (owner 29.09., O74)
 //           'reading'  scrolls, text centred at most 760px (a document)
-export type PageVariant = 'default' | 'fill' | 'bleed' | 'reading';
+export type PageVariant = 'default' | 'fill' | 'bleed' | 'split' | 'reading';
 
 // A page shown inside another page (a section of Helena's settings is an older page of
 // its own; the agent dialog shows pages): the outer one owns the frame, the inner one

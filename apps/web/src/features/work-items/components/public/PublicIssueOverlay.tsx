@@ -3,13 +3,13 @@
 import { useQuery } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import { getSharedViewIssue } from '@/lib/api/endpoints/share';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Overlay } from '@/design-system';
 import IssueDetailSkeleton from '@/features/issue/components/detail/IssueDetailSkeleton';
 import ReadOnlyIssueDetail from '@/features/issue/components/detail/ReadOnlyIssueDetail';
 
 // The read-only issue detail opened from a shared board card. It fetches the issue
 // under the board's own share token (the API checks the issue belongs to the shared
-// view's project) and renders it in a dialog. Composing the issue feature's
+// view's project) and renders it in the one overlay, large at first. Composing the issue feature's
 // read-only detail is the allowed work-items → issue direction.
 export default function PublicIssueOverlay({
   token,
@@ -36,24 +36,26 @@ export default function PublicIssueOverlay({
     retry: false,
   });
 
+  if (issueId == null) return null;
   return (
-    <Dialog open={issueId != null} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="fixed inset-0 top-0 left-0 h-screen w-screen max-w-none translate-x-0 translate-y-0 gap-0 overflow-y-auto rounded-none border-0 p-0">
-        <DialogHeader className="sr-only">
-          <DialogTitle>{t('issueTitle')}</DialogTitle>
-        </DialogHeader>
-        {query.isLoading && (
-          <div className="px-8 py-2">
-            <IssueDetailSkeleton />
-          </div>
-        )}
-        {(query.isError || (!query.isLoading && !query.data)) && (
-          <p className="p-8 text-sm text-muted-foreground">{t('issueUnavailable')}</p>
-        )}
-        {query.data && (
-          <ReadOnlyIssueDetail bundle={query.data} extended={extended} onOpenIssue={onOpenIssue} />
-        )}
-      </DialogContent>
-    </Dialog>
+    <Overlay
+      label={t('issueTitle')}
+      tabs={[{ id: 'issue', label: t('issueTitle') }]}
+      onClose={onClose}
+      startFull
+      bodyClassName="is-flush"
+    >
+      {query.isLoading && (
+        <div className="px-8 py-2">
+          <IssueDetailSkeleton />
+        </div>
+      )}
+      {(query.isError || (!query.isLoading && !query.data)) && (
+        <p className="p-8 text-sm text-muted-foreground">{t('issueUnavailable')}</p>
+      )}
+      {query.data && (
+        <ReadOnlyIssueDetail bundle={query.data} extended={extended} onOpenIssue={onOpenIssue} />
+      )}
+    </Overlay>
   );
 }

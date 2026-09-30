@@ -47,8 +47,11 @@ export function useAccountPreferencesQuery() {
 
 // The preferences to render with: the saved ones once loaded, the defaults before.
 // Callers never deal with an undefined value.
+// The header is one bar on every page (owner 30.09., O104): the old choice "classic" is not
+// offered any more, whatever an earlier session stored.
 export function useAccountPreferences(): AccountPreferences {
-  return useAccountPreferencesQuery().data ?? PREFERENCE_DEFAULTS;
+  const stored = useAccountPreferencesQuery().data ?? PREFERENCE_DEFAULTS;
+  return stored.headerLayout === 'single' ? stored : { ...stored, headerLayout: 'single' };
 }
 
 export function useUpdateAccountPreferences() {

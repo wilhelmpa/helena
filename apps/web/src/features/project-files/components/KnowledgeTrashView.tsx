@@ -53,6 +53,7 @@ export default function KnowledgeTrashView({
   return (
     <KnowledgeFrame
       title={title}
+      boxed={!trash.isPending && !trash.isError && items.length > 0}
       search={<KnowledgeSearch value={query} onChange={setQuery} placeholder={t('search')} />}
     >
       {!trash.isPending && items.length > 0 && (

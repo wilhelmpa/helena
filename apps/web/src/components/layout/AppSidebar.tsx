@@ -20,6 +20,7 @@ import HelenaMark from '@/components/brand/HelenaMark';
 import { useLogoHref } from '@/features/ai-chat/hooks/useMainChat';
 import SidebarAccountRow from '@/components/brand/SidebarAccountRow';
 import { Tip } from '@/design-system';
+import SidebarResizeGrip from './SidebarResizeGrip';
 import SidebarProjectSwitcher from './SidebarProjectSwitcher';
 import { SidebarHomeTree, SidebarProjectTree } from './SidebarTreeNav';
 import { useDisplayName } from '@/context/displayName';
@@ -42,6 +43,7 @@ export default function AppSidebar({
   onSelectTool,
   activeTool,
   rail,
+  resizable,
   onToggleRail,
   onNavigate,
 }: {
@@ -56,6 +58,8 @@ export default function AppSidebar({
   onSelectTool: (tool: WorkspaceToolId) => void;
   activeTool: WorkspaceToolId | null;
   rail: boolean;
+  // The full sidebar of a wide window: its width can be dragged (owner, O110).
+  resizable: boolean;
   onToggleRail: () => void;
   // A tool was picked (closes the overlay sidebar on a narrow window; a followed link
   // closes it through the new page).
@@ -170,6 +174,7 @@ export default function AppSidebar({
         ))}
       </div>
       <SidebarAccountRow />
+      {resizable && <SidebarResizeGrip userId={session?.user.id} />}
     </nav>
   );
 }

@@ -2,9 +2,8 @@
 
 import { ChevronLeft } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { Button } from '@/components/ui/button';
 import { issuePath } from '@/utils/paths';
-import { Inline, OverlayControls, Text } from '@/design-system';
+import { Button, OverlayHead } from '@/design-system';
 
 export default function InboxDetailHeader({
   projectKey,
@@ -22,21 +21,21 @@ export default function InboxDetailHeader({
   const openLabel = tIssue('openAsPage');
 
   return (
-    <Inline gap={2} padX={4} className="h-11 shrink-0 border-b xl:px-10">
-      {isMobile && (
-        <Button variant="ghost" size="sm" className="-ms-2 gap-1.5" onClick={onBack}>
-          <ChevronLeft aria-hidden="true" className="size-4 rtl:rotate-180" />
-          {t('backToList')}
-        </Button>
-      )}
-      <Text as="span" size="xs" tone="muted" className="min-w-0 flex-1 truncate">
-        {projectKey}-{issueSeq}
-      </Text>
-      <OverlayControls
-        openPageHref={issuePath(projectKey, issueSeq)}
-        labels={{ openPage: openLabel }}
-        size="small"
-      />
-    </Inline>
+    <OverlayHead
+      label={`${projectKey}-${issueSeq}`}
+      tabs={[{ id: 'issue', label: `${projectKey}-${issueSeq}` }]}
+      lead={
+        isMobile ? (
+          <Button
+            icon={<ChevronLeft className="rtl:rotate-180" />}
+            variant="ghost"
+            onClick={onBack}
+          >
+            {t('backToList')}
+          </Button>
+        ) : undefined
+      }
+      controls={{ openPageHref: issuePath(projectKey, issueSeq), labels: { openPage: openLabel } }}
+    />
   );
 }

@@ -53,7 +53,6 @@
   "downloadConflictCopy": "Download copy",
   "deleteConflictCopy": "Delete conflict copy",
   "details": "Note details",
-  "detailsDescription": "The properties of this note and the notes that link to it.",
   "openDetails": "Show details",
   "closeDetails": "Hide details",
   "properties": "Properties",

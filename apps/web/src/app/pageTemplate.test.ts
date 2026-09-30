@@ -116,4 +116,46 @@ describe('page template', () => {
     }
     assert.deepEqual(missing, [], `pages without the page template:\n${missing.join('\n')}`);
   });
+
+  // The variant is one of the template's (PageTemplate.tsx): a page does not invent its own.
+  it('every <Page variant> is one of the template variants', () => {
+    const VARIANTS = new Set(['default', 'fill', 'bleed', 'split', 'reading']);
+    const wrong: string[] = [];
+    const walk = (dir: string) => {
+      for (const name of readdirSync(dir)) {
+        const path = join(dir, name);
+        if (statSync(path).isDirectory()) walk(path);
+        else if (/\.tsx$/.test(name) && !/\.test\.tsx$/.test(name))
+          for (const match of readFileSync(path, 'utf8').matchAll(
+            /<Page\b[^>]*?\bvariant="(\w+)"/g,
+          ))
+            if (!VARIANTS.has(match[1]!)) wrong.push(`${relative(srcDir, path)}: ${match[1]}`);
+      }
+    };
+    walk(srcDir);
+    assert.deepEqual(wrong, []);
+  });
+
+  // A list with its detail (the inbox, the mail) runs to the window's edge: the `split` variant,
+  // not a page that pulls itself out of the padding (owner 29.09., O74; O92).
+  it('the inbox pages are split pages', () => {
+    for (const file of ['features/inbox/InboxPage.tsx', 'features/inbox/OwnerInboxPage.tsx'])
+      assert.match(readFileSync(join(srcDir, file), 'utf8'), /<Page variant="split"/, file);
+  });
+
+  // No page frees itself from the padding by negative margins around its content.
+  it('no page pulls itself out of the page padding with negative margins', () => {
+    const wrong: string[] = [];
+    const walk = (dir: string) => {
+      for (const name of readdirSync(dir)) {
+        const path = join(dir, name);
+        if (statSync(path).isDirectory()) walk(path);
+        else if (/Page\.tsx$/.test(name) && !/\.test\.tsx$/.test(name))
+          if (/<Page\b[\s\S]*?className="[^"]*-m[xt]-\d/.test(readFileSync(path, 'utf8')))
+            wrong.push(relative(srcDir, path));
+      }
+    };
+    walk(join(srcDir, 'features'));
+    assert.deepEqual(wrong, []);
+  });
 });

@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { useRelativeTime } from '@/context/relativeTimeContext';
 import type { LiveControlState } from '@/utils/browserLive';
 import { Button } from '@/components/ui/button';
+import { StatusDot } from '@/design-system';
 
 // Who controls the project browser (design §5), over the top of the live view: an agent by
 // name and since when, with "Übernehmen"; the owner, with "Zurückgeben". Nothing while the
@@ -35,11 +36,7 @@ export default function WorkspaceBrowserControl({
             : 'pointer-events-none absolute start-2 top-2 flex h-7 items-center gap-1.5 rounded-md bg-background/85 px-2 text-xs text-muted-foreground shadow-sm'
         }
       >
-        {inline ? (
-          <span className="size-1.5 rounded-full bg-status-running" />
-        ) : (
-          <Bot className="size-3.5" />
-        )}
+        {inline ? <StatusDot tone="working" bare /> : <Bot className="size-3.5" />}
         {inline
           ? `${control.agentName ?? t('controlledByAgentGeneric')} steuert`
           : t('controlAgent')}
@@ -58,7 +55,7 @@ export default function WorkspaceBrowserControl({
     >
       {control.by === 'agent' ? (
         inline ? (
-          <span className="size-1.5 shrink-0 rounded-full bg-status-running" />
+          <StatusDot tone="working" bare />
         ) : (
           <Bot className="size-3.5 shrink-0" />
         )

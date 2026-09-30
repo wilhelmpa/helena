@@ -172,9 +172,15 @@
   --row-table: 40px;
   --control-h: 32px;
   --sidebar-w: 248px;
+  --sidebar-w-min: 200px;
+  --sidebar-w-max: 480px;
   --sidebar-rail-w: 56px;
   --page-header-h: 56px;
   --page-toolbar-h: 44px;
+  /* Every overlay, panel and modal (owner 30.09., O102): the same head, the same inner distance. */
+  --overlay-head-h: 56px;
+  --overlay-pad: var(--space-5);
+  --subbar-h: 44px;
   --page-pad-top: 24px;
   --page-pad-x: 32px;
   --page-pad-bottom: 48px;

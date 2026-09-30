@@ -122,12 +122,6 @@
     },
     "language": "Langue",
     "languageDescription": "La langue de l'interface, de vos e-mails et du bot Telegram.",
-    "headerLayout": "Disposition de l'en-tête",
-    "headerLayoutDescription": "En une ligne fusionne l'en-tête et les onglets de vue, et déplace la langue, le thème et le compte dans la barre latérale. Classique garde l'en-tête et les onglets de vue sur deux lignes, avec ces réglages dans l'en-tête.",
-    "headerLayoutOptions": {
-      "single": "Une ligne",
-      "classic": "Classique (deux lignes)"
-    },
     "timezone": "Fuseau horaire",
     "timezoneDescription": "Choisissez le fuseau dans lequel vous travaillez.",
     "timezonePlaceholder": "Sélectionnez un fuseau horaire",

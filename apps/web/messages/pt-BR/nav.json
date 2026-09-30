@@ -249,7 +249,6 @@
     "tools": "Ferramentas",
     "pickTool": "{tool} · trocar ferramenta",
     "swap": "trocar",
-    "closeArea": "Fechar área",
     "back": "Voltar",
     "backHint": "Voltar ao layout anterior",
     "full": "Ferramenta em tela cheia",
@@ -302,5 +301,6 @@
   "settingsProjectAccess": "Gerenciar acessos",
   "sidebarHelenaKnowledge": "{appName}",
   "sidebarTrash": "Lixeira",
-  "sidebarChats": "Chats"
+  "sidebarChats": "Chats",
+  "sidebarResize": "Largura da barra lateral (arrastar, setas, clique duplo = padrão)"
 }

@@ -249,7 +249,6 @@
     "tools": "Herramientas",
     "pickTool": "{tool} · cambiar herramienta",
     "swap": "intercambiar",
-    "closeArea": "Cerrar área",
     "back": "Volver",
     "backHint": "Volver al diseño anterior",
     "full": "Herramienta a pantalla completa",
@@ -302,5 +301,6 @@
   "settingsProjectAccess": "Gestionar accesos",
   "sidebarHelenaKnowledge": "{appName}",
   "sidebarTrash": "Papelera",
-  "sidebarChats": "Chats"
+  "sidebarChats": "Chats",
+  "sidebarResize": "Ancho de la barra lateral (arrastrar, flechas, doble clic = estándar)"
 }

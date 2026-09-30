@@ -1,8 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import { useLocale, useTranslations } from 'next-intl';
-import { useSyncExternalStore, type ReactNode } from 'react';
+import { useTranslations } from 'next-intl';
+import type { ReactNode } from 'react';
+import { Activity } from 'lucide-react';
+import { PageActions } from '@/design-system';
 import {
   useHomeActiveActivity,
   HOME_ACTIVE_STATUSES,
@@ -22,50 +24,27 @@ import { startCards } from '@/features/home/utils/startCards';
 import { openSystemDetails } from '@/features/home/dashboard/systemDetails';
 import styles from './HomeChatLanding.module.css';
 
-const subscribe = () => () => {};
 // The start cards show only what cannot be hidden (problems and decisions).
 const NOTHING_HIDDEN: ReadonlySet<string> = new Set();
 
-function useHomeDate() {
-  const locale = useLocale();
-  return useSyncExternalStore(
-    subscribe,
-    () =>
-      new Intl.DateTimeFormat(locale, { weekday: 'long', day: 'numeric', month: 'long' }).format(
-        new Date(),
-      ),
-    () => null,
-  );
-}
-
-export function HomeChatMasthead() {
+// Who is working right now: the one action of the Home chat page's header bar (owner 30.09.,
+// O104: the page has the standard bar like every page, no bar of its own).
+export function HomeChatWorking() {
   const t = useTranslations('homeChat');
-  const today = useHomeDate();
-  const appName = useDisplayName();
   const activity = useHomeActiveActivity();
   const active = (activity.data?.items ?? []).filter(
     (entry) => HOME_ACTIVE_STATUSES.has(entry.status) && entry.agent,
   );
   const working = new Set(active.map((entry) => entry.agent!.id)).size;
-
   return (
-    <div className={styles.masthead}>
-      <div className={styles.location}>
-        <strong>{appName.toLocaleUpperCase()}</strong>
-        <span>·</span>
-        <span>{today?.toLocaleUpperCase() ?? ''}</span>
-      </div>
-      <div className={styles.mastheadRight}>
-        <Link
-          href={runningActivityHref(active, null)}
-          className={styles.working}
-          title={t('workingOpen')}
-        >
-          <span className={working ? styles.pulse : styles.quietDot} />
-          {t('working', { count: working })}
-        </Link>
-      </div>
-    </div>
+    <PageActions
+      primary={{
+        id: 'working',
+        label: t('working', { count: working }),
+        icon: Activity,
+        href: runningActivityHref(active, null),
+      }}
+    />
   );
 }
 

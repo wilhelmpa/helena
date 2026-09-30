@@ -9,7 +9,8 @@
   align-items: center;
   justify-content: center;
   gap: var(--space-2);
-  border-radius: var(--radius-pill);
+  /* 8px like every control (owner 29.09.); the pill shape is for chips and filters only. */
+  border-radius: var(--radius-field);
   padding: 0 var(--space-3);
   font-size: 13px;
   font-weight: 500;
@@ -373,6 +374,16 @@
 .ds-status-dot[data-tone='error'] {
   background: var(--danger);
 }
+.ds-status-dot[data-tone='unread'] {
+  background: var(--accent);
+}
+.ds-status-dot[data-tone='quiet'] {
+  background: var(--text-3);
+  opacity: 0.6;
+}
+.ds-status-dot[data-bare] {
+  margin-inline-start: 0;
+}
 @keyframes ds-pulse {
   50% {
     opacity: 0.45;
@@ -700,18 +711,15 @@
 }
 
 /* ── Settings ────────────────────────────────────────────────────────────── */
+/* One settings group (owner 30.09.: every group looks the same - SettingsGroup and the older
+   SettingsSection/SettingsCard): its title and one sentence over ONE box that holds its rows. */
 .ds-settings-group {
   display: flex;
   flex-direction: column;
-  border-radius: var(--radius-card);
-  background: var(--surface-1);
-  box-shadow: var(--shadow-card);
+  gap: var(--space-3);
 }
 .ds-settings-group + .ds-settings-group {
   margin-top: var(--space-5);
-}
-.ds-settings-group-head {
-  padding: var(--space-4) var(--space-4) var(--space-2);
 }
 .ds-settings-group-head h3 {
   color: var(--text);
@@ -726,7 +734,11 @@
 .ds-settings-rows {
   display: flex;
   flex-direction: column;
+  overflow: hidden;
   container-type: inline-size;
+  border-radius: var(--radius-card);
+  background: var(--surface-1);
+  box-shadow: var(--shadow-card);
 }
 .ds-settings-row {
   display: flex;
@@ -790,8 +802,9 @@
   flex-direction: column;
   align-items: stretch;
 }
-.ds-settings-group > .ds-more {
-  padding: 0 var(--space-4) var(--space-3);
+.ds-settings-rows > .ds-more {
+  border-top: 1px solid var(--line);
+  padding: var(--space-2) var(--space-4) var(--space-3);
 }
 /* Narrow — a phone, or a settings group in a narrow overlay: the control goes below. */
 @container (max-width: 440px) {
@@ -1154,7 +1167,6 @@
 .ds-issue-list {
   height: 100%;
   overflow-y: auto;
-  padding: 16px var(--page-pad-x) var(--page-pad-bottom);
 }
 .ds-issue-list-group + .ds-issue-list-group {
   margin-top: 12px;
@@ -1182,11 +1194,25 @@
   color: var(--text-3);
 }
 /* A group's tasks in one framed box, like the table (owner, 28.09., O43/O45). */
-.ds-issue-list-box {
+.ds-issue-list-box,
+.ds-list-box,
+.ds-doc-card {
   overflow: hidden;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-card);
   background: var(--surface-1);
+  box-shadow: var(--shadow-card);
+}
+/* A box whose rows have a hover fill of their own keeps a little air to its edge. */
+.ds-list-box[data-padded] {
+  padding: var(--space-2);
+}
+/* The rows of a Wissen/Belege list in their box: a little air to the box's edge. */
+.ds-list-box > .ds-column-heads {
+  padding-top: var(--space-3);
+  padding-bottom: var(--space-1);
+}
+.ds-list-box > .ds-knowledge-rows {
+  padding: var(--space-2);
 }
 /* One row in fixed columns: key · title (+ other properties) · status · priority · due ·
    labels and people. The fixed ones keep their width when empty, so nothing jumps. */
@@ -2031,9 +2057,18 @@ a.ds-run-card:hover {
 .ds-settings-section {
   display: flex;
   width: 100%;
-  max-width: 880px;
   flex-direction: column;
   gap: var(--space-3);
+}
+/* The body of a settings group (SettingsCard): the card of every box (owner 30.09.). */
+.ds-settings-card {
+  overflow: hidden;
+  border-radius: var(--radius-card);
+  background: var(--surface-1);
+  box-shadow: var(--shadow-card);
+}
+.ds-settings-card.divide-y > * + * {
+  border-color: var(--line);
 }
 .ds-settings-section-head {
   display: flex;
@@ -2043,12 +2078,12 @@ a.ds-run-card:hover {
 }
 .ds-settings-section-head h3 {
   color: var(--text);
-  font-size: 14px;
-  font-weight: 560;
+  font-size: 13px;
+  font-weight: 520;
 }
 .ds-settings-section-head p {
   margin-top: 2px;
-  color: var(--text-3);
+  color: var(--text-2);
   font-size: 12px;
 }
 .ds-settings-section-body {
@@ -2107,21 +2142,20 @@ a.ds-run-card:hover {
   }
 }
 
-/* Aufgaben → Tabelle: a card in the page gutter. */
+/* Aufgaben → Tabelle: a card on the page's own padding (the page template pads, the view adds
+   no gutter of its own - owner 30.09., O107). */
 .ds-work-table {
   height: 100%;
   overflow: auto;
-  padding: var(--space-4) var(--page-pad-x);
 }
 .ds-work-table-card {
   overflow: clip;
-  border: 1px solid var(--line);
   border-radius: var(--radius-card);
   background: var(--surface-1);
+  box-shadow: var(--shadow-card);
 }
 .ds-work-calendar {
   gap: var(--space-4);
-  padding: var(--space-4) var(--page-pad-x);
 }
 
 /* A department's budgets in its settings card. */
@@ -2205,7 +2239,7 @@ a.ds-run-card:hover {
 
 /* Ziele (features/initiatives): the goals of a project as one framed list. */
 .ds-goal-list-pad {
-  padding: 0 var(--page-pad-x) var(--page-pad-bottom);
+  min-width: 0;
 }
 .ds-goal-list {
   overflow: hidden;
@@ -2661,6 +2695,8 @@ a.ds-run-card:hover {
    and the toolbar (owner, 30.09., O91). */
 .ds-board {
   margin-inline: calc(var(--space-3) * -1);
+  /* The same at the top: the heading of the columns starts the page's padding below the bar. */
+  margin-top: calc(var(--space-3) * -1);
 }
 /* Wide enough for a title on one or two lines (owner, 28.09.: narrow cards, titles
    breaking). On a phone a column is 82% of the screen, so the next one shows at the edge
@@ -2831,11 +2867,6 @@ a.ds-run-card:hover {
    heading the size of a task's title, the text the size of a task's description. */
 .ds-overlay-body.ds-knowledge-preview .ds-knowledge-preview-body {
   padding: 0;
-}
-/* The file overlay's inner distance is small (owner 29.09., O75): the file sits close to the
-   edge, one surface, no second frame around preview or text. */
-.ds-overlay-body.ds-knowledge-preview {
-  padding: var(--space-3) var(--space-3) var(--space-4);
 }
 .ds-knowledge-preview .md-content {
   font-size: 15px;
@@ -3079,7 +3110,7 @@ a.ds-run-card:hover {
 }
 /* Team › Liste: the pool under the toolbar, the width of the page. */
 .ds-team-pool {
-  padding-top: var(--space-2);
+  padding: var(--space-2);
 }
 
 /* Where a project setting stands against Ava's default (InheritedMark, Auftrag 117). */
@@ -3473,4 +3504,80 @@ a.ds-run-card:hover {
   line-height: 1.6;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
+}
+
+/* A document on its page (Wissen, owner 30.09., O107/O108): in ONE box like every main surface,
+   on the same edges as the header - the title, its line, the editor - and its links and
+   history in cards beside it (under it on a narrow page). */
+.ds-doc-page {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  align-items: start;
+  gap: var(--space-4);
+}
+.ds-doc-card {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--overlay-pad);
+  overflow: visible;
+}
+.ds-doc-head {
+  display: flex;
+  flex-direction: column;
+}
+.ds-doc-title {
+  color: var(--text);
+  font-size: 24px;
+  font-weight: 520;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+.ds-doc-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  color: var(--text-3);
+  font-size: 12px;
+}
+.ds-doc-meta-fill {
+  flex: 1;
+}
+.ds-doc-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+.ds-doc-body {
+  min-width: 0;
+  color: var(--text-2);
+}
+.ds-doc-aside {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+.ds-doc-backlink {
+  display: block;
+  width: 100%;
+  border-radius: var(--radius-field);
+  padding: var(--space-2) var(--space-3);
+  color: var(--text-2);
+  font-size: 12px;
+  text-align: start;
+}
+.ds-doc-backlink:hover {
+  background: var(--surface-2);
+  color: var(--text);
+}
+@media (max-width: 1099px) {
+  .ds-doc-page {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }

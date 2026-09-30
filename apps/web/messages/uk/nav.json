@@ -249,7 +249,6 @@
     "tools": "Інструменти",
     "pickTool": "{tool} · змінити інструмент",
     "swap": "поміняти",
-    "closeArea": "Закрити область",
     "back": "Назад",
     "backHint": "Повернутися до попереднього макета",
     "full": "Інструмент на весь екран",
@@ -302,5 +301,6 @@
   "settingsProjectAccess": "Керування доступами",
   "sidebarHelenaKnowledge": "{appName}",
   "sidebarTrash": "Кошик",
-  "sidebarChats": "Чати"
+  "sidebarChats": "Чати",
+  "sidebarResize": "Ширина бічної панелі (перетягнути, стрілки, подвійний клік — за замовчуванням)"
 }
