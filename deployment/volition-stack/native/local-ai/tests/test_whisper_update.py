@@ -210,7 +210,7 @@ class PreparePackageTest(unittest.TestCase):
         self.processes = processes
         path_glob = Path.glob
         self.stack.enter_context(patch.object(update.Path, 'glob', autospec=True,
-            side_effect=lambda path, pattern: path_glob(processes if path == Path('/proc') else path, pattern)))
+            side_effect=lambda path, pattern, **options: path_glob(processes if path == Path('/proc') else path, pattern, **options)))
         self.destination = root / 'voice/whisper-1.9.4'
         self.destination.parent.mkdir()
         self.state = root / 'state'
