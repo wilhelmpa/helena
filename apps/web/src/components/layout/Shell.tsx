@@ -341,7 +341,7 @@ export default function Shell({
         ? (dashboards.find((dashboard) => dashboard.id === dashboardId)?.name ?? null)
         : (views.find((view) => view.id === route.activeViewId)?.name ?? null),
   });
-  const headingText = [heading.title, ...heading.crumbs.map((crumb) => crumb.label).reverse()];
+  const headingText = [heading.title, ...heading.trail.map((item) => item.label).reverse()];
   const titleKey = headingText.join('\u0000');
   useEffect(() => {
     const previous = document.title;
@@ -397,10 +397,10 @@ export default function Shell({
               <main className="ds-main">
                 {!headerHidden && (
                   <PageHeader
-                    crumbs={heading.crumbs}
                     title={heading.title}
-                    accent={heading.accent}
                     actionsRef={setHeaderSlot}
+                    barRef={setPageBarSlot}
+                    bar={<ShellHeaderExtra store={headerExtra} bare />}
                     lead={
                       <button
                         type="button"
@@ -412,11 +412,6 @@ export default function Shell({
                       </button>
                     }
                   />
-                )}
-                {headerLayout === 'single' && (
-                  <div ref={setPageBarSlot} data-slot="app-page-bar" className="ds-page-toolbar">
-                    <ShellHeaderExtra store={headerExtra} bare />
-                  </div>
                 )}
 
                 <EmergencyStopBanner />

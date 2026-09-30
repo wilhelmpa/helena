@@ -67,7 +67,7 @@ export {
 } from './components/DetailView';
 export { SettingsGroup, SettingsRow } from './components/SettingsGroup';
 export * from './components/Menu';
-export { PageHeader, PageToolbarRow, PageBody } from './layout/Page';
+export { PageHeader, PageBody } from './layout/Page';
 export { Page } from './layout/PageTemplate';
 export { LocalChrome } from './layout/LocalChrome';
 export type { PageVariant } from './layout/PageTemplate';
@@ -85,7 +85,6 @@ export {
 } from './layout/PageToolbar';
 export type { PageTab, PageAction, PageSelectOption } from './layout/PageToolbar';
 export { default as Dialog, useModalFullscreen } from '@/components/common/overlay/Modal';
-export type { Crumb } from './layout/Page';
 export { SidePanel } from './layout/SidePanel';
 export { Overlay } from './layout/Overlay';
 export { OverlayControls } from './components/OverlayControls';

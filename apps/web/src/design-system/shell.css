@@ -554,32 +554,9 @@
 .ds-page-heading {
   display: flex;
   min-width: 0;
-  flex: 1;
+  /* The name keeps its room; the controls after it give way first, then the name. */
+  flex: 0 1 auto;
   align-items: baseline;
-  gap: 10px;
-}
-.ds-page-crumbs {
-  display: flex;
-  min-width: 0;
-  flex-shrink: 1;
-  align-items: baseline;
-  gap: 0;
-  overflow: hidden;
-  color: var(--ds-crumb, var(--accent));
-  font-family: var(--font-mono);
-  font-size: 10px;
-  font-weight: 500;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  white-space: nowrap;
-}
-.ds-page-crumbs a:hover {
-  color: var(--text);
-}
-.ds-page-crumb-slash {
-  padding-inline-start: 10px;
-  color: var(--text-3);
-  letter-spacing: 0;
 }
 .ds-page-title {
   min-width: 0;
@@ -608,20 +585,43 @@
     display: flex;
     margin-inline-start: -8px;
   }
+  /* A phone: the name and the main action stay in the 56px bar, the page's controls fold
+     under them into a 44px row of the same bar. */
+  .ds-page-header {
+    height: auto;
+    min-height: var(--page-header-h);
+    flex-wrap: wrap;
+    row-gap: 0;
+  }
+  .ds-page-header .ds-page-heading {
+    height: var(--page-header-h);
+    flex: 1 1 0;
+    align-items: center;
+  }
+  .ds-page-header .ds-page-actions {
+    height: var(--page-header-h);
+  }
+  .ds-page-header .ds-page-bar {
+    order: 3;
+    height: var(--page-toolbar-h);
+    flex: 1 0 100%;
+    padding-bottom: var(--space-1);
+  }
 }
-.ds-page-toolbar {
+/* The page's controls, in the ONE header bar right after the name (owner 30.09., O104).
+   Empty (a page without toolbar) it takes no room and no gap. */
+.ds-page-bar {
   position: relative;
   display: flex;
-  height: var(--page-toolbar-h);
-  flex: none;
+  min-width: 0;
+  flex: 1 1 0;
   align-items: center;
   gap: var(--space-2);
-  padding: 0 var(--page-pad-x);
 }
-.ds-page-toolbar:empty,
-.ds-page-toolbar:not(:has(> :not(:empty))),
-/* Only dividers left (a page put its spacer, nothing else): no row. */
-.ds-page-toolbar:not(:has(button, input, select, textarea, a, [role], label)) {
+.ds-page-bar:empty,
+.ds-page-bar:not(:has(> :not(:empty))),
+/* Only dividers left (a page put its spacer, nothing else): no bar. */
+.ds-page-bar:not(:has(button, input, select, textarea, a, [role], label)) {
   display: none;
 }
 .ds-page-body {
@@ -1072,10 +1072,6 @@
   color: var(--accent);
   font-weight: 500;
 }
-.ds-page-crumb-sep {
-  padding: 0 6px;
-  letter-spacing: 0;
-}
 
 /* Controls of the page toolbar and header (PageToolbar): one 32px control look. */
 .ds-page-toolbar-row {
@@ -1340,12 +1336,6 @@
 .ds-panel-tab-select:only-child {
   padding-inline-end: 10px;
 }
-/* A phone shows only the page's title in its header (the menu opens the tree). */
-@media (max-width: 600px) {
-  .ds-page-crumbs {
-    display: none;
-  }
-}
 /* A department on the ring is a React Flow node of type "group", which the library
    frames as a square box of its own: the circle is the whole node. */
 .react-flow__node-group:has(> div > .organization-ring-group),
@@ -1577,7 +1567,7 @@
   .ds-page-content[data-panel='docked'] > :not(.ds-side-panel) {
     margin-inline-end: calc(var(--helena-side-panel-width, 480px) + var(--space-3));
   }
-  .ds-main:has(> .ds-page-content[data-panel='docked']) > :is(.ds-page-header, .ds-page-toolbar) {
+  .ds-main:has(> .ds-page-content[data-panel='docked']) > .ds-page-header {
     margin-inline-end: calc(var(--helena-side-panel-width, 480px) + var(--space-3));
   }
 }

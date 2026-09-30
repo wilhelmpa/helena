@@ -3,7 +3,6 @@
 import { projectSettingsPages } from '@/features/settings/projectSettingsPages';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import type { Crumb } from '@/design-system';
 import type { ShellRoute } from '@/hooks/useShellRoute';
 import { useSettingsSectionText } from '@/hooks/useSectionLabels';
 import { SETTINGS_SECTIONS } from '@/utils/settingsSections';
@@ -17,9 +16,12 @@ import {
   settingsPath,
 } from '@/utils/paths';
 import { describeFolder, type FixedFolderKey } from '@/utils/knowledgeFolders';
-import { projectColor } from '@/utils/projectColor';
 
-export type ShellHeading = { crumbs: Crumb[]; title: string; accent: string };
+// Where the page sits, for the window's title only (`Aufgaben · volition.one · Ava`): the page
+// shows no breadcrumb (owner 30.09., O104), its name in the header is `title`.
+export type HeadingTrailItem = { label: string; href?: string };
+export type ShellHeading = { trail: HeadingTrailItem[]; title: string };
+type Crumb = HeadingTrailItem;
 
 // The folders above an open folder or file of Wissen, each a link, and the title: the file
 // (by its name without extension) or the folder. `fixed` translates a project's fixed
@@ -96,9 +98,8 @@ export function useShellHeading({
       const root = search.get('root');
       if (!root && !search.get('project'))
         return {
-          crumbs: [{ label: home, href: '/' }, ...(search.get('kind') ? [knowledge] : [])],
+          trail: [{ label: home, href: '/' }, ...(search.get('kind') ? [knowledge] : [])],
           title: search.get('kind') === 'files' ? t('sidebarFiles') : t('sidebarKnowledge'),
-          accent: projectColor(null),
         };
       const place =
         root === 'private' || root === 'templates' || root === 'home'
@@ -109,25 +110,22 @@ export function useShellHeading({
       );
       if (search.get('trash') === '1')
         return {
-          crumbs: [{ label: home, href: '/' }, knowledge, place],
+          trail: [{ label: home, href: '/' }, knowledge, place],
           title: t('sidebarTrash'),
-          accent: projectColor(null),
         };
       return {
-        crumbs: [
+        trail: [
           { label: home, href: '/' },
           knowledge,
           ...(trail.title ? [place] : []),
           ...trail.crumbs,
         ],
         title: trail.title ?? place.label,
-        accent: projectColor(null),
       };
     }
     return {
-      crumbs: [{ label: home, href: '/' }, ...(area && area !== title ? [{ label: area }] : [])],
+      trail: [{ label: home, href: '/' }, ...(area && area !== title ? [{ label: area }] : [])],
       title,
-      accent: projectColor(null),
     };
   }
 
@@ -136,12 +134,11 @@ export function useShellHeading({
     label: projectName ?? t('project'),
     href: key ? dashboardsPath(key) : undefined,
   };
-  const accent = projectColor(key);
   const known = (slug: string) => SETTINGS_SECTIONS.some((section) => section.slug === slug);
   const { sub, section, aiTeamSection } = route;
 
   const area = (label: string, href?: string) => [project, { label, href }];
-  const heading = (crumbs: Crumb[], title: string): ShellHeading => ({ crumbs, title, accent });
+  const heading = (trail: Crumb[], title: string): ShellHeading => ({ trail, title });
 
   if (!key) return heading([], t('workItems'));
   if (route.routeIssueSeq != null)
