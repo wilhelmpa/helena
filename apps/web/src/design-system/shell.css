@@ -512,7 +512,7 @@
   .ds-app .ds-sidebar {
     position: fixed;
     inset: 0 auto 0 0;
-    z-index: 70;
+    z-index: var(--z-drawer);
     width: min(var(--sidebar-w), 86vw);
     transform: translateX(-102%);
     visibility: hidden;
@@ -529,7 +529,7 @@
   .ds-app[data-sidebar-open='true'] .ds-sidebar-scrim {
     position: fixed;
     inset: 0;
-    z-index: 69;
+    z-index: var(--z-drawer-scrim);
     display: block;
     background: var(--scrim);
   }
@@ -1010,14 +1010,14 @@
   .ds-app[data-sidebar='rail'][data-sidebar-open='true'] .ds-sidebar {
     position: fixed;
     inset: 0 auto 0 0;
-    z-index: 70;
+    z-index: var(--z-drawer);
     width: var(--sidebar-w);
     box-shadow: var(--shadow-panel);
   }
   .ds-app[data-sidebar='rail'][data-sidebar-open='true'] .ds-sidebar-scrim {
     position: fixed;
     inset: 0;
-    z-index: 69;
+    z-index: var(--z-drawer-scrim);
     display: block;
     background: var(--scrim);
   }
@@ -1213,7 +1213,7 @@
 /* The one overlay (design-system/layout/Overlay.tsx): above the tool panel. */
 .ds-side-panel.ds-overlay,
 .ds-side-panel.ds-issue-overlay {
-  z-index: 55;
+  z-index: var(--z-overlay);
 }
 .ds-overlay-body,
 .ds-issue-overlay-body {

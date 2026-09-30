@@ -4,7 +4,7 @@
 .ds-modal-layer {
   position: fixed;
   inset: 0;
-  z-index: 100;
+  z-index: var(--z-modal);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -297,7 +297,7 @@ body[data-modal-open='true']
     [data-slot='sheet-overlay'],
     [data-slot='dialog-overlay']
   ) {
-  z-index: 120;
+  z-index: var(--z-modal-menu);
 }
 body[data-modal-open='true']
   :is(
@@ -305,10 +305,10 @@ body[data-modal-open='true']
     [data-slot='sheet-content'],
     [data-slot='alert-dialog-content']
   ) {
-  z-index: 121;
+  z-index: var(--z-modal-dialog);
 }
 body[data-modal-open='true'] [data-radix-popper-content-wrapper] {
-  z-index: 120 !important;
+  z-index: var(--z-modal-menu) !important;
 }
 
 .ds-agent-dialog-head {
@@ -810,11 +810,11 @@ body[data-modal-open='true'] [data-radix-popper-content-wrapper] {
   [data-slot='tooltip-content'],
   [data-slot='hover-card-content']
 ) {
-  z-index: 75;
+  z-index: var(--z-menu);
 }
 :is([data-slot='dialog-overlay'], [data-slot='sheet-overlay'], [data-slot='alert-dialog-overlay']) {
-  z-index: 80;
+  z-index: var(--z-dialog-scrim);
 }
 :is([data-slot='dialog-content'], [data-slot='sheet-content'], [data-slot='alert-dialog-content']) {
-  z-index: 81;
+  z-index: var(--z-dialog);
 }
