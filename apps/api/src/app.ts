@@ -164,6 +164,7 @@ export const app = new Elysia()
             description: 'Stored integration credentials (LLM keys and tool creds)',
           },
           { name: 'Agent Skills', description: 'Skill library given to internal agents' },
+          { name: 'Catalog', description: 'Curated skills and MCP packages' },
           {
             name: 'Agent Runner',
             description: "Run queue an external agent's runner drains with the agent's API key",

@@ -4,6 +4,7 @@ import { cliRuntimesSource } from './cli-runtimes';
 import { helenaSource } from './helena';
 import { hermesSource } from './hermes';
 import { hostToolsSource } from './host-tools';
+import { catalogUpdateSource } from './catalog';
 
 // The built-in update sources, registered through the plugin host like a plugin's
 // (internal plugin `helena.updates`, modules/plugins/builtin.ts).
@@ -16,6 +17,7 @@ export const BUILTIN_UPDATE_SOURCES: UpdateSource[] = [
   aptSource,
   hostToolsSource,
   helenaSource,
+  catalogUpdateSource,
 ];
 
 export const updatesPlugin: HelenaPlugin = {

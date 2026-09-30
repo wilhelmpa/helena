@@ -2125,5 +2125,77 @@
     "/views/:viewId/favorite",
     "UI-only",
     "Persönlicher Browser- oder Ansichtsstatus ohne eigenständige Agentenaktion."
+  ],
+  [
+    "GET",
+    "/teams/:teamId/catalog/sources",
+    "UI-only",
+    "Kuratierte Quellen werden im Owner-Katalog angezeigt, nicht als Agentenwerkzeug."
+  ],
+  [
+    "POST",
+    "/teams/:teamId/catalog/sources",
+    "admin",
+    "Nur Team-Owner dürfen den vertrauenswürdigen Quellenkreis erweitern."
+  ],
+  [
+    "DELETE",
+    "/teams/:teamId/catalog/sources/:sourceId",
+    "admin",
+    "Nur Team-Owner dürfen kuratierte Quellen aus dem Katalog entfernen."
+  ],
+  [
+    "POST",
+    "/teams/:teamId/catalog/sources/:sourceId/refresh",
+    "admin",
+    "Netzwerkabfrage einer Owner-kuratierten Quelle ist kein Agentenwerkzeug."
+  ],
+  [
+    "GET",
+    "/teams/:teamId/catalog/items",
+    "UI-only",
+    "Katalogsuche dient der Owner-Auswahl; Agenten können nur einen Eintrag vorschlagen."
+  ],
+  [
+    "GET",
+    "/teams/:teamId/catalog/items/:itemId",
+    "UI-only",
+    "Vollständige Quellenvorschau mit Skripten ist für die Owner-Prüfung bestimmt."
+  ],
+  [
+    "POST",
+    "/teams/:teamId/catalog/items/:itemId/inspect",
+    "admin",
+    "Nur Team-Owner stoßen die verbindliche Quellen- und Paketprüfung an."
+  ],
+  [
+    "GET",
+    "/teams/:teamId/catalog/items/:itemId/diff",
+    "UI-only",
+    "Versionenvergleich gehört zur Owner-Freigabe im Katalog."
+  ],
+  [
+    "POST",
+    "/teams/:teamId/catalog/items/:itemId/adopt",
+    "admin",
+    "Übernahme und Grants von Fremdcode erfordern einen Team-Owner."
+  ],
+  [
+    "POST",
+    "/teams/:teamId/catalog/items/:itemId/rollback",
+    "admin",
+    "Rücknahme einer Fremdcode-Version erfordert einen Team-Owner."
+  ],
+  [
+    "GET",
+    "/teams/:teamId/catalog/proposals",
+    "admin",
+    "Vorschlagsliste enthält Owner-Entscheidungen und ist kein Agentenwerkzeug."
+  ],
+  [
+    "POST",
+    "/teams/:teamId/catalog/proposals/:proposalId/decision",
+    "admin",
+    "Nur Team-Owner dürfen einen Skill-Vorschlag entscheiden und übernehmen."
   ]
 ]

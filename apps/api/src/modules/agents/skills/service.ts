@@ -226,6 +226,44 @@ export async function createSkillFromFiles(
   }
 }
 
+// A catalog update keeps the same skill id, so agent links and department grants
+// survive. New objects are written first; the row switches to their prefix once all
+// writes have succeeded. Old objects are removed only after that switch.
+export async function replaceSkillFromFiles(
+  id: number,
+  teamId: number,
+  input: Pick<NewSkillFromFilesInput, 'markdown' | 'refs'>,
+): Promise<void> {
+  const existing = await getSkillRow(id, teamId);
+  const prefix = `skills/team/${teamId}/${crypto.randomUUID()}`;
+  const written: string[] = [];
+  const files: SkillRef[] = [];
+  try {
+    const mdKey = skillMdKey(prefix);
+    await putObject(mdKey, Buffer.from(input.markdown, 'utf8'), 'text/markdown');
+    written.push(mdKey);
+    for (const ref of input.refs) {
+      const rel = sanitizeRefPath(ref.path);
+      if (!rel) continue;
+      const s3Key = `${prefix}/${rel}`;
+      await putObject(s3Key, ref.bytes, ref.contentType);
+      written.push(s3Key);
+      files.push({ path: rel, s3Key, size: ref.bytes.length });
+    }
+    await db
+      .update(agentSkill)
+      .set({ s3Prefix: prefix, files })
+      .where(and(eq(agentSkill.id, id), eq(agentSkill.teamId, teamId)));
+  } catch (error) {
+    await deleteObjects(written);
+    throw error;
+  }
+  await deleteObjects([
+    skillMdKey(existing.s3Prefix),
+    ...(existing.files as SkillRef[]).map((file) => file.s3Key),
+  ]).catch(() => {});
+}
+
 export interface SkillPatch {
   name?: string;
   description?: string;

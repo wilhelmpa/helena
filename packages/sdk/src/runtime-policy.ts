@@ -44,6 +44,7 @@ export type RuntimeMcpValue = { name: string; value: string } | { name: string; 
 
 export interface RuntimeMcpServer {
   name: string;
+  catalogManaged?: boolean;
   transport: 'stdio' | 'http' | 'sse';
   command: string | null;
   args: string[];

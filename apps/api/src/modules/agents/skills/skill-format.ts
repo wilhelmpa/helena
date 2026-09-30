@@ -186,7 +186,11 @@ async function resolveCommitSha(loc: GithubSkillLocation): Promise<string> {
     const url = `https://github.com/${loc.owner}/${loc.repo}/commits/${encodePath(ref)}.atom`;
     let res: Response;
     try {
-      res = await fetch(url, { headers: { 'User-Agent': 'itsaplan' } });
+      res = await fetch(url, {
+        redirect: 'error',
+        signal: AbortSignal.timeout(10000),
+        headers: { 'User-Agent': 'volition' },
+      });
     } catch {
       throw new HttpError(502, 'Failed to reach GitHub');
     }
@@ -195,7 +199,11 @@ async function resolveCommitSha(loc: GithubSkillLocation): Promise<string> {
       continue;
     }
     if (!res.ok) throw new HttpError(502, `GitHub returned ${res.status}`);
-    const match = /\/commit\/([0-9a-f]{40})/i.exec(await res.text());
+    if (Number(res.headers.get('content-length') ?? 0) > 512 * 1024)
+      throw new HttpError(413, 'GitHub feed is too large');
+    const body = await res.text();
+    if (body.length > 512 * 1024) throw new HttpError(413, 'GitHub feed is too large');
+    const match = /\/commit\/([0-9a-f]{40})/i.exec(body);
     if (match) return match[1];
     notFound = true;
   }
@@ -211,14 +219,22 @@ async function fetchTree(loc: GithubSkillLocation): Promise<RepoTree> {
   const url = `${JSDELIVR_DATA}/${loc.owner}/${loc.repo}@${sha}?structure=flat`;
   let res: Response;
   try {
-    res = await fetch(url, { headers: { 'User-Agent': 'itsaplan' } });
+    res = await fetch(url, {
+      redirect: 'error',
+      signal: AbortSignal.timeout(10000),
+      headers: { 'User-Agent': 'volition' },
+    });
   } catch {
     throw new HttpError(502, 'Failed to reach jsDelivr');
   }
   if (res.status === 403) throw new HttpError(400, 'This GitHub repository is too large to import');
   if (res.status === 404) throw new HttpError(404, 'GitHub repository or branch not found');
   if (!res.ok) throw new HttpError(502, `jsDelivr returned ${res.status}`);
-  const data = (await res.json()) as { files?: { name: string; size?: number }[] };
+  if (Number(res.headers.get('content-length') ?? 0) > 5 * 1024 * 1024)
+    throw new HttpError(413, 'Repository listing is too large');
+  const body = await res.text();
+  if (body.length > 5 * 1024 * 1024) throw new HttpError(413, 'Repository listing is too large');
+  const data = JSON.parse(body) as { files?: { name: string; size?: number }[] };
   const files = (data.files ?? []).map((f) => ({
     path: f.name.replace(/^\//, ''),
     size: f.size ?? 0,
@@ -231,12 +247,16 @@ async function fetchFile(loc: GithubSkillLocation, ref: string, path: string): P
   const url = `${JSDELIVR_CDN}/${loc.owner}/${loc.repo}@${encodeURIComponent(ref)}/${encodePath(path)}`;
   let res: Response;
   try {
-    res = await fetch(url, { redirect: 'follow' });
+    res = await fetch(url, { redirect: 'error', signal: AbortSignal.timeout(10000) });
   } catch {
     throw new HttpError(502, 'Failed to fetch a skill file');
   }
   if (!res.ok) throw new HttpError(502, `jsDelivr returned ${res.status} for a skill file`);
-  return Buffer.from(await res.arrayBuffer());
+  if (Number(res.headers.get('content-length') ?? 0) > MAX_SKILL_BYTES)
+    throw new HttpError(413, 'Skill file is too large');
+  const bytes = Buffer.from(await res.arrayBuffer());
+  if (bytes.length > MAX_SKILL_BYTES) throw new HttpError(413, 'Skill file is too large');
+  return bytes;
 }
 
 export interface ImportedRef {
@@ -248,6 +268,84 @@ export interface ImportedRef {
 export interface ImportedSkill {
   markdown: string;
   refs: ImportedRef[];
+}
+
+// Complete bounded snapshot for the curated catalog. The normal import intentionally
+// drops scripts; inspection must see them before an owner can accept a skill.
+export async function inspectGithubSkill(url: string): Promise<{
+  pin: string;
+  repository: string;
+  files: { path: string; bytes: Buffer }[];
+}> {
+  const loc = parseGithubSkillUrl(url);
+  const tree = await fetchTree(loc);
+  const prefix = loc.subpath ? `${loc.subpath}/` : '';
+  const selected = tree.files.filter(
+    (file) =>
+      file.path.startsWith(prefix) &&
+      (file.path === `${prefix}SKILL.md` ||
+        !tree.files.some(
+          (other) =>
+            other.path.endsWith('/SKILL.md') &&
+            other.path !== `${prefix}SKILL.md` &&
+            file.path.startsWith(other.path.slice(0, -'SKILL.md'.length)),
+        )),
+  );
+  const license = tree.files.find((file) =>
+    /^(LICENSE|LICENCE)(\.[A-Za-z0-9-]+)?$/i.test(file.path),
+  );
+  if (license && !selected.some((file) => file.path === license.path)) selected.push(license);
+  if (!selected.some((file) => file.path === `${prefix}SKILL.md`)) {
+    throw new HttpError(400, 'No SKILL.md found in that GitHub folder');
+  }
+  if (
+    selected.length > 100 ||
+    selected.some((file) => file.size > MAX_SKILL_BYTES) ||
+    selected.reduce((sum, file) => sum + file.size, 0) > MAX_IMPORT_BYTES
+  ) {
+    throw new HttpError(413, 'Skill snapshot is too large to inspect');
+  }
+  const files = await Promise.all(
+    selected.map(async (file) => {
+      const bytes = await fetchFile(loc, tree.ref, file.path);
+      if (bytes.length > MAX_SKILL_BYTES) throw new HttpError(413, 'Skill file is too large');
+      return {
+        path: file.path.startsWith(prefix) ? file.path.slice(prefix.length) : file.path,
+        bytes,
+      };
+    }),
+  );
+  if (files.reduce((sum, file) => sum + file.bytes.length, 0) > MAX_IMPORT_BYTES) {
+    throw new HttpError(413, 'Skill snapshot is too large to inspect');
+  }
+  return { pin: tree.ref, repository: `${loc.owner}/${loc.repo}`, files };
+}
+
+export async function inspectGithubRepository(url: string): Promise<{
+  pin: string;
+  repository: string;
+  files: { path: string; bytes: Buffer }[];
+}> {
+  const loc = parseGithubSkillUrl(url);
+  if (loc.subpath) throw new HttpError(400, 'A catalog MCP source must be a repository');
+  const tree = await fetchTree(loc);
+  if (
+    tree.files.length > 500 ||
+    tree.files.some((file) => file.size > MAX_SKILL_BYTES) ||
+    tree.files.reduce((sum, file) => sum + file.size, 0) > MAX_IMPORT_BYTES
+  ) {
+    throw new HttpError(413, 'MCP repository is too large to inspect');
+  }
+  const files = await Promise.all(
+    tree.files.map(async (file) => ({
+      path: file.path,
+      bytes: await fetchFile(loc, tree.ref, file.path),
+    })),
+  );
+  if (files.reduce((sum, file) => sum + file.bytes.length, 0) > MAX_IMPORT_BYTES) {
+    throw new HttpError(413, 'MCP repository is too large to inspect');
+  }
+  return { pin: tree.ref, repository: `${loc.owner}/${loc.repo}`, files };
 }
 
 // Imports a skill from a public GitHub folder: the SKILL.md plus every markdown

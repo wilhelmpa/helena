@@ -2148,6 +2148,8 @@ export const agentMcpServer = pgTable(
     // and "Hermes-eigener Browser (alt)", the pre-gateway fallback). A team cannot edit or
     // delete these rows; only whether they are on for an agent (agent_mcp_server_link).
     builtin: boolean('builtin').notNull().default(false),
+    // A catalog package is allowed to start only through the isolated runner.
+    catalogManaged: boolean('catalog_managed').notNull().default(false),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [

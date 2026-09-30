@@ -615,6 +615,9 @@ export function managedConfigOf(
   runtimeServers: string[];
   deniedToolsets: string[];
 } {
+  if (snapshot.mcpServers?.some((server) => server.catalogManaged) && !isolationEnabled()) {
+    throw new Error('Catalog MCP servers require agent isolation');
+  }
   const collected = collectProfile(context);
   const shared = [
     ...new Set([...(context.hermes?.mcpServers ?? []), ...(options.sharedMcpServers ?? [])]),

@@ -89,6 +89,22 @@ const docs: RuntimeMcpServer = {
   headers: [{ name: 'Authorization', secret: 8 }],
 };
 
+it('rejects catalog MCP servers when the runner has no agent isolation', async () => {
+  const previous = process.env.AGENT_ISOLATION;
+  delete process.env.AGENT_ISOLATION;
+  try {
+    const { materializer } = await fixture();
+    await expect(
+      materializer.apply(
+        withServers('catalog-unisolated', [{ ...jevBrowser, catalogManaged: true }]),
+      ),
+    ).rejects.toThrow('Catalog MCP servers require agent isolation');
+  } finally {
+    if (previous === undefined) delete process.env.AGENT_ISOLATION;
+    else process.env.AGENT_ISOLATION = previous;
+  }
+});
+
 function withServers(
   revision: string,
   mcpServers: RuntimeMcpServer[],
