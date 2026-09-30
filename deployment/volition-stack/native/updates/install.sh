@@ -39,6 +39,7 @@ copy_programs() {
   run install -m 0755 -o root -g root "$here/helena-update" /usr/local/libexec/helena-update
   run install -m 0644 -o root -g root "$here/host_tools.py" /usr/local/libexec/host_tools.py
   run install -m 0644 -o root -g root "$here/host-tool-session-smoke.mjs" /usr/local/libexec/
+  run install -m 0644 -o root -g root "$here/runtime-smoke.mjs" /usr/local/libexec/
   run install -m 0644 -o root -g root "$here/../terminal/wetty-local-command.mjs" /usr/local/libexec/
   run install -d -m 0755 -o root -g root /usr/local/lib/helena-whisper-update
   for module in whisper_update.py whisper_acceptance.py whisper_ui.py; do

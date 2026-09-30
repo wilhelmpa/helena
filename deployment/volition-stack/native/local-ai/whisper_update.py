@@ -23,12 +23,12 @@ import uuid
 
 VERSION = '1.9.4'
 COMMIT = '927cfce34f31707e17f2bff35c349632fb9e2c3a'
-OLD = '/opt/helena-ai/voice/whisper-1.8.4/whisper-server'
-DEST = Path('/opt/helena-ai/voice/whisper-1.9.4')
+OLD = '/opt/helena-ai/voice/whisper-1.8.4-cpu/whisper-server'
+DEST = Path('/opt/helena-ai/voice/whisper-1.9.4-cpu')
 NEW = str(DEST / 'whisper-server')
 ROCM = Path('/opt/helena-ai/rocm-10.0.0')
 SDK = ROCM / 'lib/python3.13/site-packages/_rocm_sdk_devel'
-STATE = Path('/var/lib/helena-whisper-update/1.9.4')
+STATE = Path('/var/lib/helena-whisper-update/1.9.4-cpu')
 CACHE = Path('/var/cache/helena-ai/whisper-update-1.9.4')
 BUILD_ROOT = Path('/var/lib')
 STT = 'helena-voice-stt.service'
@@ -38,8 +38,8 @@ CANDIDATE = 'helena-whisper-check-1-9-4.service'
 PRIVATE_UNIT = Path('/run/systemd/system') / CANDIDATE
 MODELS = Path('/var/lib/helena-voice/models')
 VOICES = Path('/var/lib/helena-voice/voices')
-LIVE_PORT = 13306
-CHECK_PORT = 13316
+LIVE_PORT = 14306
+CHECK_PORT = 14316
 ENV = {'PATH': '/usr/sbin:/usr/bin:/sbin:/bin', 'HOME': '/nonexistent',
        'LANG': 'C.UTF-8', 'GIT_CONFIG_NOSYSTEM': '1',
        'GIT_CONFIG_GLOBAL': '/dev/null', 'GIT_NO_REPLACE_OBJECTS': '1',
@@ -126,8 +126,11 @@ def properties(unit):
 def exec_args(unit_bytes, expected):
     text = unit_bytes.decode('utf-8')
     lines = re.sub(r'\\\n[ \t]*', ' ', text).splitlines()
+    health_hook = ('ExecStartPost=+/usr/bin/curl --fail --silent --output /dev/null --retry 240 '
+                   '--retry-connrefused --retry-delay 1 --max-time 2 '
+                   f'http://127.0.0.1:{LIVE_PORT}/v1/health')
     require(not any(re.match(r'\s*(ExecStartPre|ExecStartPost|ExecStop|ExecStopPost|EnvironmentFile)\s*=', line)
-                    for line in lines), 'Unit lifecycle hooks require review')
+                    and line != health_hook for line in lines), 'Unit lifecycle hooks require review')
     starts = [line[len('ExecStart='):] for line in lines if line.startswith('ExecStart=')]
     require(len(starts) == 1, 'Expected exactly one ExecStart')
     require('$' not in starts[0] and '%' not in starts[0], 'Dynamic ExecStart rejected')
@@ -160,6 +163,8 @@ def private_unit_bytes(before):
             'Existing service type/namespace configuration requires review')
     data = replace_executable(before, OLD, NEW)
     data = data.replace(f'--port {LIVE_PORT}'.encode(), f'--port {CHECK_PORT}'.encode())
+    data = data.replace(f'http://127.0.0.1:{LIVE_PORT}/v1/health'.encode(),
+                        f'http://127.0.0.1:{CHECK_PORT}/v1/health'.encode())
     return data.replace(b'[Service]\n', b'[Service]\nType=exec\nPrivateNetwork=yes\n', 1)
 
 
@@ -202,32 +207,29 @@ def idle():
 
 
 def cmake_args(source, build):
-    return [str(ROCM / 'bin/cmake'), '-S', str(source), '-B', str(build), '-G', 'Ninja',
+    return ['/usr/bin/cmake', '-S', str(source), '-B', str(build), '-G', 'Ninja',
             '-DCMAKE_BUILD_TYPE=Release', '-DBUILD_SHARED_LIBS=OFF', '-DGGML_STATIC=OFF',
-            '-DGGML_HIP=ON', '-DAMDGPU_TARGETS=gfx1151', '-DCMAKE_HIP_ARCHITECTURES=gfx1151',
+            '-DGGML_HIP=OFF', '-DGGML_CUDA=OFF', '-DGGML_VULKAN=OFF',
             '-DGGML_NATIVE=OFF', '-DGGML_CCACHE=OFF',
             '-DWHISPER_BUILD_TESTS=OFF', '-DWHISPER_BUILD_SERVER=ON',
             '-DWHISPER_SDL2=OFF', '-DWHISPER_CURL=OFF',
             '-DFETCHCONTENT_FULLY_DISCONNECTED=ON', '-DFETCHCONTENT_UPDATES_DISCONNECTED=ON',
             f'-DCMAKE_MAKE_PROGRAM={ROCM}/bin/ninja',
-            f'-DCMAKE_C_COMPILER={SDK}/lib/llvm/bin/clang',
-            f'-DCMAKE_CXX_COMPILER={SDK}/lib/llvm/bin/clang++',
-            f'-DCMAKE_HIP_COMPILER={SDK}/lib/llvm/bin/clang++',
-            f'-DCMAKE_PREFIX_PATH={SDK}', f'-DCMAKE_BUILD_RPATH={SDK}/lib']
+            '-DCMAKE_C_COMPILER=/usr/bin/gcc', '-DCMAKE_CXX_COMPILER=/usr/bin/g++']
 
 
 def build_command(source, name):
     build = BUILD_ROOT / name
     script = shlex.join(cmake_args(source, build)) + '\n' + shlex.join([
-        str(ROCM / 'bin/cmake'), '--build', str(build), '--parallel', '2',
+        '/usr/bin/cmake', '--build', str(build), '--parallel', '2',
         '--target', 'whisper-server', 'whisper-cli'])
     props = ['DynamicUser=yes', f'StateDirectory={name}', 'StateDirectoryMode=0700',
              'PrivateNetwork=yes', 'PrivateDevices=yes', 'NoNewPrivileges=yes',
              'ProtectSystem=strict', 'ProtectHome=yes', 'PrivateTmp=yes',
              'ProtectKernelTunables=yes', 'ProtectKernelModules=yes',
-             'ProtectControlGroups=yes', 'RestrictSUIDSGID=yes', 'MemoryHigh=12G',
-             'MemoryMax=16G', 'CPUWeight=20', 'CPUQuota=200%', 'TasksMax=64', 'RuntimeMaxSec=5400',
-             f'Environment=PATH={ROCM}/bin:/usr/bin:/bin HIP_PATH={SDK} ROCM_PATH={SDK}']
+             'ProtectControlGroups=yes', 'RestrictSUIDSGID=yes', 'MemoryHigh=5G',
+             'MemoryMax=8G', 'CPUWeight=20', 'CPUQuota=200%', 'TasksMax=64', 'RuntimeMaxSec=5400',
+             f'Environment=PATH={ROCM}/bin:/usr/bin:/bin']
     command = ['systemd-run', '--quiet', '--wait', '--pipe', '--collect', f'--unit={name}']
     for prop in props:
         command += ['-p', prop]
@@ -293,8 +295,7 @@ def prepare(repository):
     if DEST.exists():
         return prepared()
     secure(DEST.parent, directory=True)
-    for path in (ROCM / 'bin/cmake', ROCM / 'bin/ninja', SDK / 'lib/llvm/bin/clang',
-                 SDK / 'lib/llvm/bin/clang++'):
+    for path in (Path('/usr/bin/cmake'), ROCM / 'bin/ninja', Path('/usr/bin/gcc'), Path('/usr/bin/g++')):
         # The installed SDK legitimately uses compiler symlinks; check their resolved files.
         secure(path.resolve())
     archive = source_archive(repository)
@@ -308,6 +309,13 @@ def prepare(repository):
     save(STATE / 'build-attempt.json', {'commit': COMMIT, 'source': str(source),
                                       'buildUnit': name, 'startedAt': time.time()})
     try:
+        for path in Path('/proc').glob('[0-9]*/cmdline'):
+            try:
+                arguments = path.read_bytes().split(b'\0')
+            except OSError:
+                continue
+            require(not any(os.path.basename(argument) == b'full-test.sh' for argument in arguments),
+                    'full-test.sh läuft; CPU-Build nach dem Vollgate starten')
         run(build_command(source, name), timeout=5500, log=STATE / 'build.log')
     finally:
         if properties(f'{name}.service').get('ActiveState') in ('active', 'activating', 'deactivating'):
@@ -325,9 +333,8 @@ def prepare(repository):
         headers = run(['readelf', '-h', str(stage / filename)])
         require('Advanced Micro Devices X86-64' in headers, 'Unexpected ELF architecture')
         dynamic = run(['readelf', '-d', str(stage / filename)])
-        require(str(SDK / 'lib') in dynamic, 'Missing ROCm library path')
-        require('libamdhip64' in dynamic and 'librocblas' in dynamic and 'libhipblas' in dynamic,
-                'Expected HIP/rocBLAS/hipBLAS dependencies')
+        require(not any(library in dynamic for library in ('libamdhip64', 'librocblas', 'libhipblas', 'libcuda', 'libvulkan')),
+                'CPU build unexpectedly depends on GPU libraries')
         require(not re.search(r'Shared library: \[lib(?:whisper|ggml)[^]]*\]', dynamic),
                 'Unexpected shared project library')
     record = {'version': VERSION, 'commit': COMMIT, 'sourceArchiveSha256': digest(archive),

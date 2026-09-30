@@ -472,14 +472,15 @@ class HostToolsTest(unittest.TestCase):
         ])
 
     def test_npm_build_uses_memory_limited_scope_with_private_home(self):
-        with mock.patch.object(h.os, "geteuid", return_value=0), mock.patch.object(
+        with mock.patch.object(h, "build_preflight"), mock.patch.object(
+                h.os, "geteuid", return_value=0), mock.patch.object(
                 h.os, "chown"), mock.patch.object(
                 h.subprocess, "run", return_value=mock.Mock(returncode=0, stdout="")) as execute:
             h.command(["/usr/bin/node", "npm-cli.js", "ci"], user="nobody", limited=True)
         command = execute.call_args.args[0]
         self.assertEqual(command[:2], ["systemd-run", "--scope"])
-        self.assertIn("MemoryHigh=12G", command)
-        self.assertIn("MemoryMax=16G", command)
+        self.assertIn("MemoryHigh=5G", command)
+        self.assertIn("MemoryMax=8G", command)
         self.assertIn("CPUWeight=20", command)
         self.assertIn("/usr/sbin/runuser", command)
 
@@ -504,6 +505,16 @@ class HostToolsTest(unittest.TestCase):
         smoke.assert_called_once_with("code-server", binary)
         self.assertFalse((tree / ".config").exists())
         self.assertEqual(sorted(p.name for p in tree.iterdir()), ["bin"])
+
+    def test_already_installed_version_requires_a_real_session_smoke(self):
+        with mock.patch.object(h.Path, "is_file", return_value=True), mock.patch.object(
+                h, "command", return_value="3.3.5"), mock.patch.object(
+                h, "affected_units", return_value=[]), mock.patch.object(h, "service_smoke"), mock.patch.object(
+                h, "session_smoke", side_effect=[h.ToolError("login prompt"), None]) as smoke:
+            with self.assertRaisesRegex(h.ToolError, "login prompt"):
+                h.apply(self.config, "wetty", "3.3.5", self.log)
+            self.assertEqual(h.apply(self.config, "wetty", "3.3.5", self.log)["smoke"], "passed")
+        self.assertEqual(smoke.call_count, 2)
 
     def test_private_home_preserves_controlled_npm_cache_and_drops_owner_env(self):
         homes = []

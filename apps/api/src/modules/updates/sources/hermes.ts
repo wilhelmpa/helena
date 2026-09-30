@@ -54,8 +54,12 @@ export function toCandidate(state: StoredState | null, error: string | null): Up
     security: false,
     sourceUrl: REPOSITORY,
     notesUrl: `${REPOSITORY}/compare/${current.commit.slice(0, 12)}...${latest.commit.slice(0, 12)}`,
-    applicable: behind && !error,
-    detail: `${commits.length} commits · ${localPatches.length} local${state.offline ? ' · cached Git refs' : ''}`,
+    applicable: behind && !error && state.check.modelSmokeConfigured === true,
+    detail:
+      `${commits.length} commits · ${localPatches.length} local${state.offline ? ' · cached Git refs' : ''}` +
+      (state.check.modelSmokeConfigured === true
+        ? ''
+        : ' · Für den automatischen Rollback fehlt der konfigurierte Modell-Rauchtest im Hermes-Helfer.'),
     error,
     data: { target: latest.commit, checkedAt: state.checkedAt },
   };
@@ -106,6 +110,7 @@ export const hermesSource: UpdateSource = {
   async apply(request, context) {
     const checked = await checkHermesUpdate(context.userId);
     if (
+      checked.check.modelSmokeConfigured !== true ||
       checked.check.latest.commit !== request.candidate.data?.target ||
       checked.check.latestIsAncestor === true ||
       checked.check.commits.length === 0

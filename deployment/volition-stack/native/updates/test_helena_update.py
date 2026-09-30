@@ -49,6 +49,10 @@ class FakeSystem:
     def __call__(self, args, **kwargs):
         self.commands.append(list(args))
         if args[:2] == ["apt-get", "-s"]:
+            if 'install' in args:
+                wanted = set(args[args.index('install') + 1:])
+                return completed(args, '\n'.join(line for line in self.simulation.splitlines()
+                    if line.startswith('Inst ') and line.split()[1] in wanted))
             return completed(args, self.simulation)
         if args[:2] == ["apt-get", "update"]:
             return completed(args, "Hit:1 http://deb.debian.org/debian trixie InRelease")
@@ -60,6 +64,11 @@ class FakeSystem:
                                            "openssl": "3.5.1-1+deb13u1",
                                            "libssl3t64": "3.5.1-1+deb13u1"}.get(name, "new")
             return completed(args, "Setting up openssl ...")
+        if args[:3] == ['apt-get', 'install', '--allow-downgrades']:
+            for argument in args:
+                if argument.startswith('/cache/') and argument.endswith('.deb'):
+                    self.versions[Path(argument).stem] = '3.5.1-1'
+            return completed(args, 'Originalpakete wiederhergestellt')
         if args[0] == "dpkg-query" and any("${source:Package}" in arg for arg in args):
             return completed(args, SOURCES)
         if args[0] == "dpkg-query":
@@ -85,6 +94,10 @@ class HelperTest(unittest.TestCase):
         queue = mock.patch.object(helper.host_tools, "quiet_queue", return_value=contextlib.nullcontext())
         queue.start()
         self.addCleanup(queue.stop)
+        rollback = mock.patch.object(helper, 'apt_rollback_packages',
+                                     side_effect=lambda config, versions: {name: f'/cache/{name}.deb' for name in versions})
+        rollback.start()
+        self.addCleanup(rollback.stop)
 
     def tearDown(self) -> None:
         self.tmp.cleanup()
@@ -223,14 +236,41 @@ class WhisperInventoryTest(unittest.TestCase):
 
 
 class ResourceScopeTest(unittest.TestCase):
+    def test_full_gate_and_memory_pressure_block_updates(self):
+        with tempfile.TemporaryDirectory() as root:
+            root = Path(root)
+            (root / '1').mkdir()
+            pressure = root / 'memory'
+            pressure.write_text('some avg10=0.00\nfull avg10=0.00\n')
+            command = root / '1/cmdline'
+            command.write_bytes(b'/bin/bash\0/home/test/agent-work/full-test.sh\0hub/test\0')
+            with self.assertRaisesRegex(helper.host_tools.ToolError, 'full-test.sh'):
+                helper.host_tools.build_preflight(root, pressure)
+            command.write_bytes(b'/usr/bin/other\0')
+            pressure.write_text('some avg10=6.00\nfull avg10=2.00\n')
+            with self.assertRaisesRegex(helper.host_tools.ToolError, 'Speicherdruck'):
+                helper.host_tools.build_preflight(root, pressure)
+            pressure.write_text('some avg10=0.00\nfull avg10=0.00\n')
+            helper.host_tools.build_preflight(root, pressure)
+
+    def test_command_failure_exposes_the_diagnostic_without_credentials(self):
+        output = '--pty/--pipe is not compatible in timer or --scope mode.\nAuthorization: Bearer test-only-secret'
+        with mock.patch.object(helper.subprocess, 'run', return_value=completed([], output, 1)):
+            with self.assertRaisesRegex(helper.UpdateError, 'not compatible') as failed:
+                helper.run(helper.Log(), ['systemd-run'])
+        self.assertNotIn('test-only-secret', str(failed.exception))
+
     def test_heavy_install_uses_systemd_scope(self):
-        with mock.patch.object(helper.os, "geteuid", return_value=0), mock.patch.object(
+        with mock.patch.object(helper.host_tools, "build_preflight"), mock.patch.object(
+                helper.os, "geteuid", return_value=0), mock.patch.object(
                 helper.subprocess, "run", return_value=completed([], "ok")) as execute:
             helper.run(helper.Log(), ["apt-get", "install", "--only-upgrade", "openssl"], limited=True)
         command = execute.call_args.args[0]
         self.assertEqual(command[:2], ["systemd-run", "--scope"])
-        for prop in ("MemoryHigh=12G", "MemoryMax=16G", "CPUWeight=20"):
+        for prop in ("MemoryHigh=5G", "MemoryMax=8G", "CPUWeight=20"):
             self.assertIn(prop, command)
+        self.assertNotIn('--pipe', command)
+        self.assertNotIn('--wait', command)
         self.assertEqual(command[-4:], ["apt-get", "install", "--only-upgrade", "openssl"])
 
 
@@ -266,6 +306,37 @@ class AptRefreshTest(HelperTest):
 
 
 class AptTest(HelperTest):
+    def setUp(self):
+        super().setUp()
+        rollback = mock.patch.object(helper, 'apt_rollback_packages',
+                                     side_effect=lambda config, versions: {name: f'/cache/{name}.deb' for name in versions})
+        rollback.start()
+        self.addCleanup(rollback.stop)
+        smoke = mock.patch.object(helper, 'apt_smoke')
+        self.smoke = smoke.start()
+        self.addCleanup(smoke.stop)
+
+    def test_missing_rollback_archive_refuses_installation(self):
+        with mock.patch.object(helper, 'apt_rollback_packages', return_value={}):
+            answer = helper.perform(self.config, {'action': 'apt', 'packages': ['openssl']})
+        self.assertFalse(answer['ok'])
+        self.assertIn('Originalpakete', answer['error'])
+        self.assertFalse(any(command[:2] == ['apt-get', 'install'] for command in self.fake.commands))
+
+    def test_failed_service_smoke_restores_packages_and_rechecks_services(self):
+        self.smoke.side_effect = [helper.UpdateError('Dienst antwortet nicht'), None]
+        answer = helper.perform(self.config, {'action': 'apt', 'packages': ['openssl']})
+        self.assertFalse(answer['ok'])
+        self.assertEqual(self.fake.versions['openssl'], '3.5.1-1')
+        self.assertEqual(self.smoke.call_count, 2)
+        self.assertIn('Dienst antwortet nicht', answer['error'])
+
+    def test_rollback_service_failure_is_reported(self):
+        self.smoke.side_effect = helper.UpdateError('Dienst antwortet nicht')
+        answer = helper.perform(self.config, {'action': 'apt', 'packages': ['openssl']})
+        self.assertFalse(answer['ok'])
+        self.assertIn('Rollback-Rauchtest fehlgeschlagen', answer['error'])
+
     def test_busy_queue_refuses_before_package_install(self):
         with mock.patch.object(helper.host_tools, "quiet_queue", side_effect=helper.host_tools.ToolError("busy queue")):
             answer = helper.perform(self.config, {"action": "apt", "packages": ["openssl"]})
@@ -349,6 +420,14 @@ class RuntimeTest(unittest.TestCase):
         path.write_text(json.dumps({"spool": str(root / "spool"),
                                     "runtimesInstaller": str(self.installer), "tools": {}}))
         self.config = helper.load_config(path)
+        self.state.write_text('{"codex":{"current":"1.0.0","intact":true}}')
+        self.smoke = mock.patch.object(helper, 'runtime_smoke', create=True)
+        self.smoke_mock = self.smoke.start()
+        self.smoke_mock.return_value = {'smoke': 'passed', 'model': 'gpt-6.1-sol'}
+        self.addCleanup(self.smoke.stop)
+        preflight = mock.patch.object(helper, 'runtime_preflight', create=True)
+        preflight.start()
+        self.addCleanup(preflight.stop)
         quiet = mock.patch.object(helper.host_tools, 'quiet_queue', return_value=contextlib.nullcontext())
         quiet.start()
         self.addCleanup(quiet.stop)
@@ -377,7 +456,7 @@ class RuntimeTest(unittest.TestCase):
                                                   "version": "0.158.0"})
         self.assertFalse(answer['ok'])
         self.assertIn('busy queue', answer['error'])
-        self.assertFalse(self.state.exists())
+        self.assertEqual(json.loads(self.state.read_text())['codex']['current'], '1.0.0')
 
     def test_failed_installed_check_restores_previous_version(self):
         self.state.write_text('{"codex":{"current":"1.0.0","intact":true}}')
@@ -391,7 +470,7 @@ class RuntimeTest(unittest.TestCase):
             answer = helper.perform(self.config, {"action": "cli-runtime", "runtime": "codex",
                                                    "version": "0.158.0"})
         self.assertFalse(answer['ok'])
-        self.assertIn('previous version restored', answer['error'])
+        self.assertIn('vorherige Version wiederhergestellt', answer['error'])
         self.assertEqual(json.loads(self.state.read_text())['codex']['current'], '1.0.0')
 
     def test_refuses_unknown_runtimes_and_versions(self):
@@ -399,7 +478,29 @@ class RuntimeTest(unittest.TestCase):
             answer = helper.perform(self.config, {"action": "cli-runtime", "runtime": runtime,
                                                   "version": version})
             self.assertFalse(answer["ok"], (runtime, version))
-        self.assertFalse(self.state.exists())
+
+    def test_model_failure_rolls_back_and_tests_the_restored_runtime(self):
+        self.smoke_mock.side_effect = [helper.UpdateError('Modell nicht unterstützt'), None]
+        answer = helper.perform(self.config, {'action': 'cli-runtime', 'runtime': 'codex',
+                                              'version': '0.159.2'})
+        self.assertFalse(answer['ok'])
+        self.assertIn('Modell nicht unterstützt', answer['error'])
+        self.assertEqual(json.loads(self.state.read_text())['codex']['current'], '1.0.0')
+        self.assertEqual(self.smoke_mock.call_count, 2)
+
+    def test_rollback_model_failure_is_never_done(self):
+        self.smoke_mock.side_effect = helper.UpdateError('Modell nicht unterstützt')
+        answer = helper.perform(self.config, {'action': 'cli-runtime', 'runtime': 'codex',
+                                              'version': '0.159.2'})
+        self.assertFalse(answer['ok'])
+        self.assertIn('Rollback-Rauchtest', answer['error'])
+
+    def test_no_update_without_an_intact_rollback_version(self):
+        self.state.write_text('{}')
+        answer = helper.perform(self.config, {'action': 'cli-runtime', 'runtime': 'codex',
+                                              'version': '0.159.2'})
+        self.assertFalse(answer['ok'])
+        self.assertEqual(json.loads(self.state.read_text()), {})
 
 
 class SpoolTest(HelperTest):

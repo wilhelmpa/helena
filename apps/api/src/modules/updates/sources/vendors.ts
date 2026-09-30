@@ -80,6 +80,7 @@ export interface HostInventory {
     refreshedAt?: string | null;
     refreshAttemptedAt?: string | null;
     refreshError?: string | null;
+    rollbackReady?: string[];
     os?: string | null;
     debianVersion?: string | null;
     packages?: {
@@ -93,6 +94,8 @@ export interface HostInventory {
     }[];
   };
   runtimes?: Record<string, { current?: string | null; pinned?: string | null } | undefined>;
+  runtimeApply?: string[];
+  runtimePreflightErrors?: Record<string, string>;
   tools?: Record<string, string | null | undefined>;
   hostToolApply?: string[];
   system?: { rebootRequired?: boolean; failedUnits?: string[] };

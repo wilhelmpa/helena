@@ -1,5 +1,14 @@
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'bun:test';
-import { mkdir, mkdtemp, readdir, readFile, rm, unlink, writeFile } from 'node:fs/promises';
+import {
+  mkdir,
+  mkdtemp,
+  readdir,
+  readFile,
+  rm,
+  symlink,
+  unlink,
+  writeFile,
+} from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
@@ -52,6 +61,7 @@ const INVENTORY = {
     refreshedAt: '2026-09-26T21:49:30+00:00',
     refreshAttemptedAt: '2026-09-26T21:49:29+00:00',
     refreshError: null,
+    rollbackReady: ['libssl3t64', 'openssl', 'tzdata'],
     packages: [
       {
         source: 'openssl',
@@ -77,6 +87,7 @@ const INVENTORY = {
     'claude-agent-acp': { current: '0.81.1' },
     'codex-acp': { current: '1.13.1' },
   },
+  runtimeApply: ['claude', 'codex', 'claude-agent-acp', 'codex-acp'],
   tools: {
     bun: '1.4.2',
     node: '24.21.0',
@@ -230,7 +241,7 @@ function helperAnswers(request: Record<string, unknown>): Record<string, unknown
       state: 'done',
       ok: true,
       log: `${request.runtime as string} upgraded`,
-      result: { runtime: request.runtime, from: '0.81.1', to: request.version },
+      result: { runtime: request.runtime, from: '0.81.1', to: request.version, smoke: 'passed' },
     };
   }
   if (request.action === 'apt') {
@@ -238,7 +249,11 @@ function helperAnswers(request: Record<string, unknown>): Record<string, unknown
       state: 'done',
       ok: true,
       log: 'Setting up openssl',
-      result: { upgraded: request.packages, rollback: 'apt-get install openssl=3.5.1-1' },
+      result: {
+        upgraded: request.packages,
+        rollback: 'apt-get install openssl=3.5.1-1',
+        smoke: 'passed',
+      },
     };
   }
   return { state: 'failed', ok: false, error: 'unknown action' };
@@ -258,6 +273,7 @@ beforeAll(async () => {
   backups = await mkdtemp(join(process.env.TMPDIR ?? tmpdir(), 'helena-update-backups-'));
   process.env.HELENA_UPDATE_BACKUP_DIR = backups;
   process.env.HELENA_RUNTIME_PREFIX = join(backups, 'no-runtimes');
+  process.env.VOLITION_HOST_TOOLS_PREFIX = join(backups, 'host-tools');
 });
 
 afterAll(async () => {
@@ -271,6 +287,7 @@ beforeEach(async () => {
   await mkdir(join(spool, 'status'));
   process.env.HELENA_UPDATE_SPOOL = spool;
   helperRequests.length = 0;
+  await rm(process.env.VOLITION_HOST_TOOLS_PREFIX!, { recursive: true, force: true });
   osvQueries.length = 0;
   fakeVendors();
 });
@@ -398,6 +415,32 @@ async function rows() {
 }
 
 describe('update center: checking', () => {
+  it('repairs an operator rollback from the current link without a vendor fetch', async () => {
+    const { api } = await owner();
+    startFakeHelper(helperAnswers);
+    await runUpdateCheck({ only: 'host-tools' });
+    await stopFakeHelper();
+    const parent = join(process.env.VOLITION_HOST_TOOLS_PREFIX!, 'wetty');
+    await mkdir(join(parent, '3.2.0'), { recursive: true });
+    await writeFile(
+      join(parent, '3.2.0', '.helena-installed.json'),
+      JSON.stringify({ tool: 'wetty', version: '3.2.0' }),
+    );
+    await symlink('3.2.0', join(parent, 'current'));
+    setUpdateFetch(async () => {
+      throw new Error('vendor offline');
+    });
+    for (let read = 0; read < 2; read++) {
+      const state = await api.god['update-center'].get();
+      expect(state.status).toBe(200);
+      expect(state.data!.items.find((item) => item.component === 'wetty')).toMatchObject({
+        installed: '3.2.0',
+        available: '3.2.2',
+        updateAvailable: true,
+      });
+    }
+  });
+
   it('is the Administrator’s alone', async () => {
     const { api } = await owner();
     const member = authedApi((await signUpTestUser({ name: 'Member' })).cookie);
@@ -1094,6 +1137,25 @@ describe('update center: summaries', () => {
 });
 
 describe('update center: applying', () => {
+  it('rejects an ok status without a passed model smoke', async () => {
+    const { api } = await owner();
+    startFakeHelper((request) =>
+      request.action === 'cli-runtime'
+        ? { state: 'done', ok: true, result: { runtime: request.runtime, smoke: 'failed' } }
+        : helperAnswers(request),
+    );
+    await runUpdateCheck();
+    const item = (await rows()).find((row) => row.component === 'claude-agent-acp')!;
+    const started = await api.god['update-center'].items({ itemId: item.id }).apply.post({});
+    expect(started.status).toBe(201);
+    const actionId = started.data!.id;
+    const finished = await waitFor(async () => {
+      const response = await api.god['update-center'].actions({ actionId }).get();
+      return response.data?.state === 'failed' ? response.data : null;
+    });
+    expect(finished.error).toContain('Rauchtest');
+  });
+
   it('hands a CLI runtime update to the helper and follows it to its end', async () => {
     const { api } = await owner();
     let installed = '0.81.1';
@@ -1332,7 +1394,11 @@ describe('update center: applying', () => {
           },
         };
       if (request.action === 'host-tool')
-        return { state: 'done', ok: true, result: { tool: 'uv', from: '0.12.17', to: '0.12.19' } };
+        return {
+          state: 'done',
+          ok: true,
+          result: { tool: 'uv', from: '0.12.17', to: '0.12.19', smoke: 'passed' },
+        };
       return helperAnswers(request);
     });
     await runUpdateCheck({ only: 'host-tools' });
@@ -1418,6 +1484,7 @@ describe('update center: Hermes', () => {
       latest: ref('0.21.5', 'e'.repeat(40)),
       latestIsAncestor: true,
       commits: [{ commit: 'e'.repeat(40), date: '2026-09-24', subject: 'stale release note' }],
+      modelSmokeConfigured: true,
       localPatches: [],
     }));
     await checking;
@@ -1443,6 +1510,7 @@ describe('update center: Hermes', () => {
       current: { commit: 'd'.repeat(40), describe: 'dev-d8304d38', version: '0.0.0' },
       latest: { commit: 'e'.repeat(40), describe: 'dev-f05a3ca9', version: '0.0.0' },
       commits: [{ commit: 'e'.repeat(40), date: '2026-09-25', subject: 'dev' }],
+      modelSmokeConfigured: true,
       localPatches: [],
     }));
     await stale;
@@ -1453,6 +1521,7 @@ describe('update center: Hermes', () => {
       current: { commit: 'f'.repeat(40), describe: 'v2026.9.24-1-gf2718ab352', version: '0.0.0' },
       latest: { commit: 'a'.repeat(40), describe: 'v2026.9.24', version: '0.0.0' },
       commits: [],
+      modelSmokeConfigured: true,
       localPatches: [{ commit: 'f'.repeat(40), date: '2026-09-26', subject: 'local patch' }],
     }));
     expect(request).toEqual({ op: 'runtime.update', action: 'check', offline: true });
@@ -1473,82 +1542,107 @@ describe('update center: Hermes', () => {
       current: { commit: 'f'.repeat(40), describe: 'v2026.9.24-1-gf2718ab352', version: '0.0.0' },
       latest: { commit: 'a'.repeat(40), describe: 'v2026.9.24', version: '0.0.0' },
       commits: [],
+      modelSmokeConfigured: true,
       localPatches: [],
     }));
     expect(onlineRequest).toEqual({ op: 'runtime.update', action: 'check' });
     await scheduled;
   });
 
-  it('checks through the runner, and updates as the owner who clicked', async () => {
-    const { user, api } = await owner();
-    const { agent, runner } = await hermesAgent(api);
-    // The runner is online now, so the Hermes check goes to it.
-    await db
-      .update(aiAgent)
-      .set({
-        runtimeState: { adapter: 'hermes', capabilities: ['update'] },
-        lastSeenAt: new Date(),
-      })
-      .where(eq(aiAgent.id, agent.id));
-    startFakeHelper(helperAnswers);
-    const checking = runUpdateCheck({ only: 'hermes', manual: true });
-    await answerNext(runner, () => ({
-      current: ref('0.21.4', 'a'.repeat(40)),
-      latest: ref('0.22.0', 'b'.repeat(40)),
-      commits: [{ commit: 'b'.repeat(40), date: '2026-09-28', subject: 'release 0.22.0' }],
-      localPatches: [{ commit: 'c'.repeat(40), date: '2026-09-24', subject: 'local patch' }],
-    }));
-    await checking;
-    const hermes = (await rows()).find((row) => row.source === 'hermes')!;
-    expect(hermes).toMatchObject({
-      installed: '0.21.4 (aaaaaaaa)',
-      available: '0.22.0 (bbbbbbbb)',
-      updateAvailable: true,
-      applicable: true,
-      detail: '1 commits · 1 local',
-    });
+  it.each([true, false])(
+    'updates through the owner and runner with model proof=%s',
+    async (proved) => {
+      const { user, api } = await owner();
+      const { agent, runner } = await hermesAgent(api);
+      // The runner is online now, so the Hermes check goes to it.
+      await db
+        .update(aiAgent)
+        .set({
+          runtimeState: { adapter: 'hermes', capabilities: ['update'] },
+          lastSeenAt: new Date(),
+        })
+        .where(eq(aiAgent.id, agent.id));
+      startFakeHelper(helperAnswers);
+      const checking = runUpdateCheck({ only: 'hermes', manual: true });
+      await answerNext(runner, () => ({
+        current: ref('0.21.4', 'a'.repeat(40)),
+        latest: ref('0.22.0', 'b'.repeat(40)),
+        commits: [{ commit: 'b'.repeat(40), date: '2026-09-28', subject: 'release 0.22.0' }],
+        modelSmokeConfigured: true,
+        localPatches: [{ commit: 'c'.repeat(40), date: '2026-09-24', subject: 'local patch' }],
+      }));
+      await checking;
+      const hermes = (await rows()).find((row) => row.source === 'hermes')!;
+      expect(hermes).toMatchObject({
+        installed: '0.21.4 (aaaaaaaa)',
+        available: '0.22.0 (bbbbbbbb)',
+        updateAvailable: true,
+        applicable: true,
+        detail: '1 commits · 1 local',
+      });
 
-    const applying = applyUpdate(user.userId, hermes.id);
-    const fresh = await answerNext(runner, () => ({
-      current: ref('0.21.4', 'a'.repeat(40)),
-      latest: ref('0.22.0', 'b'.repeat(40)),
-      commits: [{ commit: 'b'.repeat(40), date: '2026-09-28', subject: 'release 0.22.0' }],
-      localPatches: [{ commit: 'c'.repeat(40), date: '2026-09-24', subject: 'local patch' }],
-    }));
-    expect(fresh).toEqual({ op: 'runtime.update', action: 'check' });
-    const apply = await answerNext(runner, () => ({ id: 'helper-1', state: 'started' }));
-    expect(apply).toEqual({ op: 'runtime.update', action: 'apply', target: 'b'.repeat(40) });
-    const actionId = await applying;
+      const applying = applyUpdate(user.userId, hermes.id);
+      const fresh = await answerNext(runner, () => ({
+        current: ref('0.21.4', 'a'.repeat(40)),
+        latest: ref('0.22.0', 'b'.repeat(40)),
+        commits: [{ commit: 'b'.repeat(40), date: '2026-09-28', subject: 'release 0.22.0' }],
+        modelSmokeConfigured: true,
+        localPatches: [{ commit: 'c'.repeat(40), date: '2026-09-24', subject: 'local patch' }],
+      }));
+      expect(fresh).toEqual({ op: 'runtime.update', action: 'check' });
+      const apply = await answerNext(runner, () => ({ id: 'helper-1', state: 'started' }));
+      expect(apply).toEqual({ op: 'runtime.update', action: 'apply', target: 'b'.repeat(40) });
+      const actionId = await applying;
 
-    const following = followActions();
-    await answerNext(runner, () => ({
-      id: 'helper-1',
-      state: 'done',
-      ok: true,
-      log: '$ git fetch',
-    }));
-    // Then Hermes is asked again what is installed now.
-    await answerNext(runner, () => ({
-      current: ref('0.22.0', 'b'.repeat(40)),
-      latest: ref('0.22.0', 'b'.repeat(40)),
-      commits: [],
-      localPatches: [],
-    }));
-    await following;
-    await waitFor(async () => {
-      const row = (await rows()).find((entry) => entry.source === 'hermes');
-      return row?.updateAvailable === false ? row : null;
-    });
-    const [action] = await db
-      .select()
-      .from(helenaUpdateAction)
-      .where(eq(helenaUpdateAction.id, actionId));
-    expect(action).toMatchObject({
-      state: 'done',
-      log: '$ git fetch',
-      fromVersion: '0.21.4 (aaaaaaaa)',
-    });
-  });
+      const following = followActions();
+      await answerNext(runner, () => ({
+        id: 'helper-1',
+        state: 'done',
+        ok: true,
+        log: '$ git fetch',
+        result: proved ? { modelSmoke: 'passed' } : {},
+      }));
+      if (!proved) {
+        await answerNext(runner, () => ({
+          current: ref('0.21.4', 'a'.repeat(40)),
+          latest: ref('0.22.0', 'b'.repeat(40)),
+          commits: [{ commit: 'b'.repeat(40), date: '2026-09-28', subject: 'release 0.22.0' }],
+          modelSmokeConfigured: true,
+          localPatches: [],
+        }));
+        await following;
+        const [action] = await db
+          .select()
+          .from(helenaUpdateAction)
+          .where(eq(helenaUpdateAction.id, actionId));
+        expect(action).toMatchObject({ state: 'failed' });
+        expect(action?.error).toContain('keinen bestandenen Modell-Rauchtest');
+        return;
+      }
+      // Then Hermes is asked again what is installed now.
+      await answerNext(runner, () => ({
+        current: ref('0.22.0', 'b'.repeat(40)),
+        latest: ref('0.22.0', 'b'.repeat(40)),
+        commits: [],
+        modelSmokeConfigured: true,
+        localPatches: [],
+      }));
+      await following;
+      await waitFor(async () => {
+        const row = (await rows()).find((entry) => entry.source === 'hermes');
+        return row?.updateAvailable === false ? row : null;
+      });
+      const [action] = await db
+        .select()
+        .from(helenaUpdateAction)
+        .where(eq(helenaUpdateAction.id, actionId));
+      expect(action).toMatchObject({
+        state: 'done',
+        log: '$ git fetch',
+        fromVersion: '0.21.4 (aaaaaaaa)',
+      });
+    },
+  );
 });
 
 describe('update center: stuck updates', () => {

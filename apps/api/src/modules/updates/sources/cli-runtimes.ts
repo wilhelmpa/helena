@@ -116,14 +116,20 @@ async function checkOne(context: UpdateCheckContext, info: RuntimeInfo): Promise
     updateAvailable && info.npm && installed
       ? await osvAffected(context, info.npm, installed)
       : false;
-  const helper = (await hostInventory(context)) !== null;
+  const inventory = await hostInventory(context);
+  const applicable =
+    installed !== null && (inventory?.runtimeApply?.includes(info.runtime) ?? false);
   return {
     ...base,
     installed,
     available,
     updateAvailable,
     security,
-    applicable: helper && installed !== null,
+    applicable,
+    detail: applicable
+      ? null
+      : (inventory?.runtimePreflightErrors?.[info.runtime] ??
+        'Runtime-Rauchtest ist noch nicht konfiguriert; Update-Helfer aktualisieren und ein bestehendes Dienstprofil zuordnen.'),
     hint: installed === null ? { i18n: 'updates.hints.notInstalled' } : null,
     error,
   };
@@ -133,10 +139,22 @@ export async function helperProgress(ref: string): Promise<UpdateProgress> {
   const status = await readHelperStatus(ref);
   if (!status) return { state: 'running' };
   if (status.state === 'running') return { state: 'running', log: status.log ?? null };
+  const requiresSmoke =
+    status.action === 'cli-runtime' || status.action === 'host-tool' || status.action === 'apt';
+  const speechPassed =
+    status.action !== 'whisper-ui' ||
+    (status.result?.speechVerified === true && status.result?.phase === 'active');
+  const passed =
+    status.state === 'done' &&
+    status.ok === true &&
+    speechPassed &&
+    (!requiresSmoke || status.result?.smoke === 'passed');
   return {
-    state: status.ok ? 'done' : 'failed',
+    state: passed ? 'done' : 'failed',
     log: status.log ?? null,
-    error: status.ok ? null : `Update fehlgeschlagen: ${status.error ?? 'Ursache unbekannt'}`,
+    error: passed
+      ? null
+      : `Update fehlgeschlagen: ${status.error ?? (requiresSmoke ? 'Der Helfer hat keinen bestandenen Rauchtest bestätigt.' : 'Ursache unbekannt')}`,
     result: status.result ?? null,
   };
 }

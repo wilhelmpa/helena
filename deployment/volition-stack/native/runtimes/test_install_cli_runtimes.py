@@ -52,6 +52,12 @@ for path, entry in lock['packages'].items():
         os.makedirs(os.path.dirname(file), exist_ok=True)
         with open(file, 'w') as handle:
             handle.write("#!/usr/bin/env node\\nconsole.log('codex-cli %s');\\n" % entry['version'])
+if os.path.isdir('node_modules/@agentclientprotocol/codex-acp'):
+    os.makedirs('node_modules/@openai/codex/bin', exist_ok=True)
+    json.dump({'version':'0.159.1'}, open('node_modules/@openai/codex/package.json','w'))
+    with open('node_modules/@openai/codex/bin/codex.js','w') as handle:
+        handle.write("#!/usr/bin/env node\\n" + ("process.exit(3);\\n" if '--omit=optional' in sys.argv else "console.log('codex-cli 0.159.1');\\n"))
+    os.chmod('node_modules/@openai/codex/bin/codex.js', 0o755)
 open('npm-args', 'w').write(' '.join(sys.argv[1:]))
 """
 
@@ -165,7 +171,7 @@ class InstallTest(unittest.TestCase):
                 },
                 'codex-acp': {
                     'version': '1.13.1', 'source': 'npm', 'lock': 'npm/codex-acp',
-                    'omitOptional': True, 'acp': True,
+                    'omitOptional': False, 'acp': True,
                     'links': {'codex-acp': 'node_modules/@agentclientprotocol/codex-acp/dist/index.js'},
                 },
             },
@@ -209,9 +215,9 @@ class InstallTest(unittest.TestCase):
         codex = subprocess.run([str(self.bin / 'codex')], capture_output=True, text=True,
                                env={'PATH': f'{os.path.dirname(NODE)}:/usr/bin:/bin'})
         self.assertEqual(codex.stdout.strip(), 'codex-cli 0.156.1')
-        # npm ran without scripts; the adapter without its optional platform binaries.
+        # Codex and its adapter require the native optional platform package.
         self.assertIn('--ignore-scripts', (self.prefix / 'codex/0.156.1/npm-args').read_text())
-        self.assertIn('--omit=optional', (self.prefix / 'codex-acp/1.13.1/npm-args').read_text())
+        self.assertNotIn('--omit=optional', (self.prefix / 'codex-acp/1.13.1/npm-args').read_text())
         self.assertNotIn('--omit=optional', (self.prefix / 'codex/0.156.1/npm-args').read_text())
         # Nothing is writable by others, and no staging is left behind.
         self.assertEqual((self.prefix / 'claude/2.1.281').stat().st_mode & 0o022, 0)
@@ -323,6 +329,16 @@ class InstallTest(unittest.TestCase):
         restored = json.loads(self.run_script('status', '--json').stdout)['codex']
         self.assertEqual(restored['pinned'], '0.156.1')
         self.assertTrue(restored['intact'])
+
+    def test_adapter_without_its_native_codex_fails_before_switch(self):
+        path = self.pins / 'runtimes.json'
+        pins = json.loads(path.read_text())
+        pins['runtimes']['codex-acp']['omitOptional'] = True
+        path.write_text(json.dumps(pins))
+        result = self.run_script('install', '--only', 'codex-acp', check=False)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn('bundled Codex', result.stderr)
+        self.assertFalse((self.prefix / 'codex-acp/current').exists())
 
     def test_upgrade_refuses_what_is_not_newer_or_not_a_version(self):
         self.run_script('install', '--only', 'codex')

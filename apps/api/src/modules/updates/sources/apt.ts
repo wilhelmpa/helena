@@ -73,6 +73,16 @@ export const aptSource: UpdateSource = {
     const candidates = (inventory.apt.packages ?? [])
       .map((entry) => toCandidate(entry))
       .filter((entry): entry is UpdateCandidate => entry !== null);
+    for (const candidate of candidates) {
+      const packages = candidate.data?.packages as string[];
+      candidate.applicable = packages.every(
+        (name) => inventory.apt?.rollbackReady?.includes(name) === true,
+      );
+      if (!candidate.applicable)
+        candidate.detail =
+          'Originalpakete für den automatischen Rollback fehlen im lokalen APT-Paketcache. Betroffene Pakete: ' +
+          packages.join(', ');
+    }
     // The packages Helena's own services run on are listed even when they are current.
     for (const [component, name] of WATCHED) {
       const installed = inventory.tools?.[component];

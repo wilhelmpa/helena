@@ -169,13 +169,14 @@ def voice_lock(database):
 
 
 def status():
-    result = {'version': operator.VERSION, 'ready': False, 'code': 'preparation-required'}
+    result = {'version': operator.VERSION, 'backend': 'cpu', 'ready': False, 'code': 'preparation-required'}
     try:
         # This never creates files, runs speech checks, or acquires a maintenance window.
         grant, _ = readiness()
         result.update(ready=True, code='ready', expiresAt=grant['expiresAt'])
     except NotReady as error:
         result['code'] = error.code
+        result['reason'] = str(error)
     except (OSError, RuntimeError, ValueError, KeyError, subprocess.TimeoutExpired):
         pass
     return result

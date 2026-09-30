@@ -64,6 +64,7 @@ class HelperTest(unittest.TestCase):
             "localBranch": "volition/main",
             "install": ["sh", "-c", "echo new > {venv}/marker"],
             "smoke": ["sh", "-c", "grep -o '[0-9.]*' {source}/pyproject.toml"],
+            "modelSmoke": ["sh", "-c", "printf VOLITION_UPDATE_OK"],
         }
 
     def tearDown(self) -> None:
@@ -160,6 +161,31 @@ class HelperTest(unittest.TestCase):
         self.assertEqual(sh("git", "rev-parse", "--abbrev-ref", "HEAD", cwd=self.source).strip(),
                          "volition/main")
         self.assertIn("0.22.0", answer["result"]["smoke"])
+        self.assertEqual(answer["result"]["modelSmoke"], "passed")
+
+    def test_missing_model_smoke_refuses_before_mutation(self):
+        before = self.head()
+        answer = helper.run(self.config_with(modelSmoke=None), "apply", "latest")
+        self.assertFalse(answer["ok"])
+        self.assertIn("Hermes-Vorprüfung", answer["error"])
+        self.assertEqual(self.head(), before)
+        self.assertEqual((self.venv / "marker").read_text(), "old")
+        self.assertNotIn(" fetch ", answer["log"])
+
+    def test_model_failure_restores_the_previous_runtime_and_tests_it(self):
+        before = self.head()
+        script = "grep -q '0.21.4' {source}/pyproject.toml && printf VOLITION_UPDATE_OK"
+        answer = helper.run(self.config_with(modelSmoke=["sh", "-c", script]), "apply", "latest")
+        self.assertFalse(answer["ok"])
+        self.assertIn("previous version restored", answer["error"])
+        self.assertEqual(self.head(), before)
+        self.assertEqual((self.venv / "marker").read_text(), "old")
+        self.assertEqual(answer["log"].count("$ sh -c grep -q '0.21.4'"), 2)
+
+    def test_failed_rollback_model_smoke_requires_recovery(self):
+        answer = helper.run(self.config_with(modelSmoke=["sh", "-c", "exit 3"]), "apply", "latest")
+        self.assertFalse(answer["ok"])
+        self.assertIn("Rollback-Rauchtest fehlgeschlagen", answer["error"])
 
     def test_a_local_branch_held_by_another_worktree_leaves_the_checkout_detached(self):
         sh("git", "checkout", "-q", "--detach", cwd=self.source)

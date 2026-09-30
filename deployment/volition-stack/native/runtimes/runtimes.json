@@ -46,7 +46,7 @@
       "version": "1.13.1",
       "source": "npm",
       "lock": "npm/codex-acp",
-      "omitOptional": true,
+      "omitOptional": false,
       "acp": true,
       "links": {
         "codex-acp": "node_modules/@agentclientprotocol/codex-acp/dist/index.js"

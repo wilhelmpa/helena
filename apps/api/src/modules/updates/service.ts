@@ -32,6 +32,7 @@ import { HttpError, iso, pgErrorCode } from '#shared/lib';
 import { events, host } from '#shared/helena';
 import { systemHealth } from '#modules/god/system-health';
 import { readChatCatalog } from '#modules/agents/chat/service';
+import { installedCorrection } from './installed';
 import {
   DigestRefused,
   digestModelAvailable,
@@ -922,6 +923,22 @@ export async function listUpdateItems(
 ): Promise<UpdateItemView[]> {
   settings ??= await getUpdateSettings();
   const rows = await db.select().from(helenaUpdate);
+  await Promise.all(
+    rows.map(async (row) => {
+      const correction = await installedCorrection(row);
+      if (!correction) return;
+      await db
+        .update(helenaUpdate)
+        .set(correction)
+        .where(
+          and(
+            eq(helenaUpdate.id, row.id),
+            sql`${helenaUpdate.installed} IS NOT DISTINCT FROM ${row.installed}`,
+          ),
+        );
+      Object.assign(row, correction);
+    }),
+  );
   const modelAvailable = await digestModelAvailable();
   const [job] = await db
     .select()
