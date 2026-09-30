@@ -339,6 +339,7 @@ export async function searchCatalog(
     source: source.locator,
     path: item.path,
     latestPin: revision?.pin ?? null,
+    license: revision?.license ?? null,
     installedPin: install ? (installedPins.get(install.revisionId) ?? null) : null,
     installed: Boolean(install),
     findings: (revision?.findings as Finding[] | undefined)?.length ?? null,
