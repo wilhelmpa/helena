@@ -61,6 +61,9 @@ export const PAGE_PRIMARY_CLASS = 'ds-page-primary';
 // one piece at a time folds — the search into an icon, the secondary actions into the
 // "…" menu, the primary action to its icon, the tabs into a dropdown.
 const LEVELS = 4;
+// The most actions a page's bar shows as buttons of their own before the rest folds into "…".
+const MAX_INLINE_ACTIONS = 7;
+const LABELLED_ACTIONS = 3;
 type Room = {
   tabs: boolean;
   primaryLabel: boolean;
@@ -432,34 +435,53 @@ export function PageActions({
   const room = useContext(RoomCtx);
   const inToolbar = useContext(ToolbarScopeCtx);
   const actionsSlot = useShellHeaderActionsSlot();
-  const visibleAction = primary
-    ? null
-    : room.actions
-      ? actions.find((action) => !action.menuOnly)
-      : null;
-  const inRow = visibleAction ? [visibleAction] : [];
+  // The controls of a page stand in its bar, not behind a menu (owner 30.09.: "die Steuerungen
+  // nicht hinter ein Submenü verstecken"): with the room for them, every action is an icon button
+  // (up to MAX_INLINE_ACTIONS; a lone extra action next to the primary one keeps its label below).
+  // Short of room, or with more than that, they fold into the "…" menu as before.
+  const inlineAll = room.actions && actions.length >= 2 && actions.length <= MAX_INLINE_ACTIONS;
+  const visibleAction =
+    inlineAll || primary ? null : room.actions ? actions.find((action) => !action.menuOnly) : null;
+  const inRow = inlineAll ? actions : visibleAction ? [visibleAction] : [];
+  // A few actions carry their names (while the row has room for words); more are icons.
+  const labelled = room.primaryLabel && inRow.length > 0 && inRow.length <= LABELLED_ACTIONS;
   // Rare actions of this page; never a way into the settings (they live in the sidebar).
-  const rest: PageAction[] = actions.filter((action) => action !== visibleAction);
+  const rest: PageAction[] = inlineAll ? [] : actions.filter((action) => action !== visibleAction);
   // A "…" menu with a single entry is not a menu (owner, O36): that entry is a secondary
   // button with its label (its icon alone where the row has no room).
   const single = rest.length === 1 ? rest[0]! : null;
   const inMenu: PageAction[] = single ? [] : rest;
   const controls = (
     <div className="flex shrink-0 items-center gap-0.5">
-      {inRow.map((action) => (
-        <Tooltip key={action.id}>
-          <TooltipTrigger asChild>
-            <ActionControl
-              action={action}
-              aria-pressed={action.active}
-              className={cn('w-8 justify-center px-0', action.active && PAGE_CONTROL_ACTIVE_CLASS)}
-            >
-              <action.icon aria-hidden="true" />
-            </ActionControl>
-          </TooltipTrigger>
-          <TooltipContent>{action.label}</TooltipContent>
-        </Tooltip>
-      ))}
+      {inRow.map((action) =>
+        labelled ? (
+          <ActionControl
+            key={action.id}
+            action={action}
+            aria-pressed={action.active}
+            className={cn(action.active && PAGE_CONTROL_ACTIVE_CLASS)}
+          >
+            <action.icon aria-hidden="true" />
+            <span>{action.label}</span>
+          </ActionControl>
+        ) : (
+          <Tooltip key={action.id}>
+            <TooltipTrigger asChild>
+              <ActionControl
+                action={action}
+                aria-pressed={action.active}
+                className={cn(
+                  'w-8 justify-center px-0',
+                  action.active && PAGE_CONTROL_ACTIVE_CLASS,
+                )}
+              >
+                <action.icon aria-hidden="true" />
+              </ActionControl>
+            </TooltipTrigger>
+            <TooltipContent>{action.label}</TooltipContent>
+          </Tooltip>
+        ),
+      )}
       {single ? (
         room.actions ? (
           <ActionControl

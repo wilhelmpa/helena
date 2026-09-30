@@ -3002,6 +3002,9 @@ a.ds-run-card:hover {
 /* A doc in the overlay reads like a task in it (Auftrag 117): the same edge, its first
    heading the size of a task's title, the text the size of a task's description. */
 .ds-overlay-body.ds-knowledge-preview .ds-knowledge-preview-body {
+  /* At least the whole body: a PDF, an image or a table fills the overlay down to its bottom edge
+     (the overlay's body is a block, so `flex: 1` alone does not reach it; owner 30.09.). */
+  min-height: 100%;
   padding: 0;
 }
 .ds-knowledge-preview .md-content {
@@ -3049,6 +3052,11 @@ a.ds-run-card:hover {
   border: 0;
   border-radius: var(--radius-lg);
   background: var(--surface-2);
+}
+/* In an overlay the PDF takes exactly the room that is left, down to the bottom edge of the
+   overlay (not a fixed share of the window that overflows or stops short; owner 30.09.). */
+.ds-overlay-body .ds-file-embed {
+  min-height: 320px;
 }
 .ds-file-image {
   display: flex;

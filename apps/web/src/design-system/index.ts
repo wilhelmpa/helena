@@ -109,7 +109,7 @@ export {
   SIDE_PANEL_DEFAULT_WIDTH,
 } from './layout/sidePanelWidth';
 export { Modal, ModalNavItem, ModalNavGroup } from './layout/Modal';
-export { PageChromeCtx, usePageChrome } from './layout/pageChrome';
+export { PAGE_HEADING_VISIBLE, PageChromeCtx, usePageChrome } from './layout/pageChrome';
 export type { PageChrome } from './layout/pageChrome';
 export type { ModalTab } from './layout/Modal';
 export { pickActive, matchScore } from './nav/activeMatch';

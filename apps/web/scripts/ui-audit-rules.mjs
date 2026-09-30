@@ -25,12 +25,14 @@ export function edgeFindings(results) {
       out.push(`${tag}: ${e.headers} Kopfleisten statt einer`);
     if (e.stray) out.push(`${tag}: eine zweite Werkzeugzeile unter der Kopfleiste`);
     // The header itself: its first thing starts on the page's padding.
-    if (differs(e.crumb, e.pad.x))
+    // `crumb` is null where the bar has nothing to start with (heading switched off, no controls).
+    const headStart = e.crumb ?? e.pad.x;
+    if (differs(headStart, e.pad.x))
       out.push(`${tag}: Kopfzeile beginnt bei ${e.crumb} px statt ${e.pad.x} px`);
     if (e.headerHeight != null && !e.phone && differs(e.headerHeight, e.pad.header))
       out.push(`${tag}: Kopfzeile ${e.headerHeight} px hoch statt ${e.pad.header} px`);
     // On a phone the controls fold under the breadcrumb: the same left edge.
-    if (e.bar != null && differs(e.bar, e.crumb))
+    if (e.bar != null && e.crumb != null && differs(e.bar, e.crumb))
       out.push(`${tag}: Werkzeugzeile beginnt bei ${e.bar} px, Kopfzeile bei ${e.crumb} px`);
     // A split page (list and detail) starts at the sidebar's edge: no padding in front of it.
     if (e.variant === 'split' && e.content != null && e.content > TOLERANCE)
@@ -38,9 +40,9 @@ export function edgeFindings(results) {
         `${tag}: Split-Liste beginnt bei ${e.content} px statt an der Kante der Seitenleiste`,
       );
     if (EDGE_EXEMPT.has(e.variant) || e.content == null) continue;
-    if (differs(e.content, e.crumb))
+    if (differs(e.content, headStart))
       out.push(
-        `${tag}: Inhalt beginnt bei ${e.content} px, Kopfzeile bei ${e.crumb} px${e.contentAt ? ` (${e.contentAt})` : ''}`,
+        `${tag}: Inhalt beginnt bei ${e.content} px, Kopfzeile bei ${headStart} px${e.contentAt ? ` (${e.contentAt})` : ''}`,
       );
     // A line of text or a small symbol sits a few pixels inside its box: the gap has a wider
     // tolerance than the edges (a page that starts 7px low is still found).

@@ -32,6 +32,15 @@ describe('edge rules', () => {
     assert.match(found[0], /Inhalt beginnt bei 44 px, Kopfzeile bei 32 px/);
   });
 
+  it('uses the padding as the header edge where the bar has nothing to start with', () => {
+    // The breadcrumb and title are switched off and the bar has no controls: the content still
+    // has to start on the page's padding.
+    assert.deepEqual(rules.edgeFindings(at(edges({ crumb: null }))), []);
+    const found = rules.edgeFindings(at(edges({ crumb: null, content: 44 })));
+    assert.equal(found.length, 1);
+    assert.match(found[0], /Inhalt beginnt bei 44 px, Kopfzeile bei 32 px/);
+  });
+
   it('finds another gap under the header and another header height', () => {
     assert.equal(rules.edgeFindings(at(edges({ gap: 38 }))).length, 1);
     assert.equal(rules.edgeFindings(at(edges({ headerHeight: 48 }))).length, 1);
