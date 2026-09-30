@@ -7,8 +7,10 @@ import type {
   MatrixColumn,
   MatrixCellValue,
   MatrixDecision,
+  MatrixSchema,
   MatrixValues,
 } from '@/lib/api/endpoints/modelMatrix';
+import { BUILT_IN_SCHEMAS } from './columns';
 import { escalationOff, escalationTriggers, readEscalation } from './escalation';
 import { modelLabel } from './modelLabels';
 
@@ -45,6 +47,13 @@ export function useMatrixLabels(names?: ReadonlyMap<string, string>) {
       label: t(`decision.backends.${value.backend}`),
       detail: t('decision.from', { percent: Math.round(value.threshold * 100) }),
     });
+    // A thinking level in words; a model's own word (not one of ours) is said as it is.
+    const reasoning = (level: string | null | undefined) =>
+      level == null
+        ? t('reasoning.default')
+        : t.has(`reasoning.${level}` as never)
+          ? t(`reasoning.${level}` as never)
+          : level.charAt(0).toUpperCase() + level.slice(1);
     const value = (column: MatrixColumn, raw: unknown): string => {
       switch (column) {
         case 'runtime':
@@ -52,7 +61,7 @@ export function useMatrixLabels(names?: ReadonlyMap<string, string>) {
         case 'model':
           return model(raw as string);
         case 'reasoning':
-          return t(`reasoning.${raw as MatrixValues['reasoning']}`);
+          return reasoning(raw as MatrixValues['reasoning']);
         case 'escalation':
           return escalation(raw);
         case 'browser':
@@ -72,8 +81,15 @@ export function useMatrixLabels(names?: ReadonlyMap<string, string>) {
         : column === 'decision'
           ? decisionParts(raw as MatrixDecision)
           : { label: value(column, raw) };
+    // The sentence under a schema's name: ours for the built-in ones, the owner's own words else.
+    const schemaText = (schema: MatrixSchema) =>
+      BUILT_IN_SCHEMAS.includes(schema.id)
+        ? t(`schemas.${schema.id}` as never)
+        : schema.description.trim() || t('schemaEditor.noDescription');
     return {
       parts,
+      reasoning,
+      schemaText,
       t,
       model,
       decision,

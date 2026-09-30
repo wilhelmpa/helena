@@ -8,6 +8,7 @@ import {
   Button,
   EmptyState,
   Inline,
+  ListBox,
   MatrixBar,
   Notice,
   PillButton,
@@ -32,6 +33,7 @@ import {
   useModelCatalog,
   useModelMatrix,
   usePreviewMatrix,
+  useSchemaCatalog,
 } from '../services/modelMatrix.service';
 import { COLUMN_ORDER, modelsOfRuntime } from '../utils/columns';
 import { useMatrixLabels } from '../utils/labels';
@@ -52,6 +54,7 @@ import { ChangePreviewDialog, type PreviewState } from './ChangePreviewDialog';
 import { ClassMatrix } from './ClassMatrix';
 import { ColumnCell } from './ColumnCell';
 import { MatrixHeader } from './MatrixHeader';
+import { SchemaSection } from './SchemaSection';
 
 type Plan = { kind: 'apply' | 'undo'; steps: Omit<MatrixPatch, 'expectedRevision'>[] };
 
@@ -65,6 +68,8 @@ export default function ModelMatrixPage({ teamId }: { teamId: number }) {
   const organization = useOrganizationQuery(teamId).data;
   const matrix = matrixQuery.data;
   const catalog = useModelCatalog(teamId, matrix?.agents[0]?.id);
+  // What a schema's roles may use, as the server checks it.
+  const schemaCatalog = useSchemaCatalog();
   // The catalog of the pickers, plus every model the schemas and agents already use, so a
   // picker offers something even where the catalog could not be read.
   const models = useMemo(() => {
@@ -182,10 +187,11 @@ export default function ModelMatrixPage({ teamId }: { teamId: number }) {
   }, []);
 
   const header = matrix && {
+    // Choosing the schema that is active already, or the one chosen before, takes the choice back.
     onSchema: (id: string) =>
       setPending((current) => ({
         ...current,
-        active: id === matrix.active ? undefined : id,
+        active: id === matrix.active || id === current.active ? undefined : id,
         profile: undefined,
       })),
     onProfile: (id: string) =>
@@ -314,10 +320,21 @@ export default function ModelMatrixPage({ teamId }: { teamId: number }) {
         project={project ? { id: project.id, name: project.name } : null}
         labels={labels}
         onProfile={header.onProfile}
-        onSchema={header.onSchema}
         onProjectSchema={header.onProjectSchema}
         onUndo={openUndo}
         undoSteps={matrix.undo.depth}
+      />
+
+      <SchemaSection
+        matrix={matrix}
+        pending={pending}
+        setPending={setPending}
+        catalog={schemaCatalog.data?.catalog ?? []}
+        catalogFailed={schemaCatalog.isError}
+        labels={labels}
+        projectName={(id) => projects.find((entry) => entry.id === id)?.name ?? String(id)}
+        onActivate={header.onSchema}
+        onReload={reload}
       />
 
       <Section
@@ -399,18 +416,20 @@ export default function ModelMatrixPage({ teamId }: { teamId: number }) {
           {matrix.agents.length === 0 ? (
             <EmptyState title={t('agents.emptyTitle')}>{t('agents.empty')}</EmptyState>
           ) : (
-            <AgentMatrix
-              matrix={matrix}
-              agents={organization?.agents ?? []}
-              pending={pending}
-              selected={selected}
-              models={models}
-              labels={labels}
-              onSelect={select}
-              onCell={stage}
-              onReset={reset}
-              onRole={setRole}
-            />
+            <ListBox padded className="ds-matrix-box">
+              <AgentMatrix
+                matrix={matrix}
+                agents={organization?.agents ?? []}
+                pending={pending}
+                selected={selected}
+                models={models}
+                labels={labels}
+                onSelect={select}
+                onCell={stage}
+                onReset={reset}
+                onRole={setRole}
+              />
+            </ListBox>
           )}
 
           {!isEmpty(pending) && (

@@ -3275,6 +3275,12 @@ a.ds-run-card:hover {
   flex: none;
   color: var(--text-3);
 }
+.ds-matrix-value {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  padding: 2px var(--space-2);
+}
 .ds-matrix-role {
   padding: 0;
   border: 0;
@@ -3408,6 +3414,15 @@ a.ds-run-card:hover {
 }
 .ds-matrix-group-row:hover .ds-td {
   background: transparent;
+}
+/* On a narrow screen the rows are cards of their own, so the box around them gives way. */
+@media (max-width: 900px) {
+  .ds-list-box.ds-matrix-box {
+    overflow: visible;
+    padding: 0;
+    background: transparent;
+    box-shadow: none;
+  }
 }
 @media (max-width: 900px) {
   .ds-table:not([data-stack='off']) .ds-tr.ds-matrix-group-row {

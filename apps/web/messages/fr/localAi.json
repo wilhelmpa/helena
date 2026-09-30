@@ -428,7 +428,8 @@
       "own": "Réglage propre de cet agent",
       "staged": "Modifié, pas encore appliqué",
       "schema": "Hérite du schéma « {schema} »",
-      "project": "Hérite du schéma du projet « {schema} »"
+      "project": "Hérite du schéma du projet « {schema} »",
+      "inSchema": "Valeur de ce schéma"
     },
     "columns": {
       "runtime": "Runtime",
@@ -451,7 +452,8 @@
       "low": "Faible",
       "medium": "Moyen",
       "high": "Élevé",
-      "xhigh": "Très élevé"
+      "xhigh": "Très élevé",
+      "default": "Valeur par défaut du modèle"
     },
     "browser": {
       "standard": "Standard",
@@ -584,6 +586,10 @@
         "schema": "schéma",
         "project": "projet",
         "own": "propre"
+      },
+      "retained": {
+        "title": "{count, plural, one {# agent conserve ses propres réglages} other {# agents conservent leurs propres réglages}}",
+        "text": "L’agent a défini lui-même ces valeurs. Elles ne changent pas, même si le schéma indique autre chose."
       }
     },
     "conflict": {
@@ -615,10 +621,12 @@
       "switchDevices": "Changer d’appareils",
       "switchFailed": "Échec du basculement",
       "switchFailedText": "Le dernier basculement s’est terminé par une erreur. Vous pouvez le reprendre ou l’annuler dans les réglages de l’IA locale.",
-      "schema": "Schéma",
+      "schema": "Schéma actif",
       "projectSchema": "Schéma pour {project}",
       "projectInherits": "Suit le schéma actif",
-      "inherit": "Comme le schéma actif"
+      "inherit": "Comme le schéma actif",
+      "schemaHint": "Aucun schéma trouvé",
+      "profileLocked": "Le profil local d’un schéma fourni ne peut pas être modifié. Copiez le schéma pour choisir un autre profil."
     },
     "profiles": {
       "local-halogen": "GPU seul avec Flash, NPU désactivé",
@@ -688,7 +696,13 @@
       "npuDecision": "Le NPU n’a pas réussi l’évaluation du décideur.",
       "unknown": "Un agent, un projet ou un schéma n’existe plus. Rechargez la page.",
       "invalid": "Une valeur n’est pas autorisée. Vérifiez les réglages des cellules modifiées.",
-      "rejected": "Le serveur a refusé la modification. Rien n’a été modifié."
+      "rejected": "Le serveur a refusé la modification. Rien n’a été modifié.",
+      "reasoning": "Le niveau de réflexion choisi ne convient pas au modèle.",
+      "modelUnavailable": "Un modèle choisi n’est pas disponible pour cet environnement d’exécution.",
+      "needsGeneral": "Le schéma a besoin du rôle « Général » avant de pouvoir devenir actif.",
+      "inUse": "Le schéma est encore utilisé.",
+      "builtIn": "Les schémas fournis ne peuvent pas être modifiés. Copiez d’abord le schéma.",
+      "role": "Un rôle du schéma est incomplet. Rechargez la page et réessayez."
     },
     "columnsShort": {
       "runtime": "Runtime",
@@ -698,6 +712,75 @@
       "browser": "Navigateur",
       "decision": "Décideur",
       "device": "Appareil"
+    },
+    "discard": "Annuler",
+    "schemaEditor": {
+      "title": "Schémas",
+      "description": "Un schéma décide de l’environnement d’exécution, du modèle et du niveau de réflexion de chaque rôle. Les schémas fournis sont protégés, mais vous pouvez les copier.",
+      "new": "Nouveau schéma",
+      "noDescription": "Aucune description",
+      "roleCount": "{count, plural, one {# rôle} other {# rôles}}",
+      "activate": "Activer",
+      "activateUndo": "Annuler l’activation",
+      "view": "Voir les rôles",
+      "editRoles": "Modifier les rôles",
+      "badge": {
+        "active": "Actif",
+        "activating": "Sera activé",
+        "builtIn": "Fourni",
+        "custom": "Personnalisé",
+        "projects": "{count, plural, one {# projet} other {# projets}}"
+      },
+      "menu": {
+        "label": "Actions pour {name}",
+        "copy": "Copier",
+        "edit": "Renommer et décrire",
+        "delete": "Supprimer",
+        "deleteInUse": "Supprimer (utilisé)"
+      },
+      "dialog": {
+        "createTitle": "Nouveau schéma",
+        "copyTitle": "Copier « {name} »",
+        "editTitle": "Renommer et décrire le schéma",
+        "copyNote": "La copie reprend tous les rôles de « {name} » et peut ensuite être modifiée librement.",
+        "emptyNote": "Le nouveau schéma est vide. Vous ajoutez les rôles ensuite ; il faut au moins « Général » pour l’activer.",
+        "name": "Nom",
+        "namePlaceholder": "p. ex. Mon mélange",
+        "description": "Description",
+        "descriptionHint": "Une phrase sur le cas où ce schéma convient.",
+        "copyName": "{name} (copie)",
+        "create": "Créer",
+        "save": "Enregistrer",
+        "cancel": "Annuler",
+        "failed": "Le schéma n’a pas pu être enregistré"
+      },
+      "delete": {
+        "title": "Supprimer « {name} » ?",
+        "text": "Le schéma est supprimé. Aucun agent ni projet ne l’utilise actuellement, donc rien ne change pour personne.",
+        "confirm": "Supprimer",
+        "failed": "Le schéma n’a pas pu être supprimé. Il est actif ou attribué à un projet."
+      },
+      "toast": {
+        "created": "Schéma créé",
+        "updated": "Schéma enregistré",
+        "deleted": "Schéma supprimé"
+      },
+      "roles": {
+        "title": "Rôles dans « {name} »",
+        "builtIn": "Ce schéma est fourni et protégé. Créez une copie pour modifier les rôles.",
+        "custom": "Cliquez sur une valeur pour la modifier. Les changements ne sont appliqués qu’après l’aperçu.",
+        "copyToEdit": "Créer une copie à modifier",
+        "add": "Ajouter un rôle",
+        "emptyTitle": "Aucun rôle pour l’instant",
+        "emptyText": "Ajoutez d’abord le rôle « Général ». Il s’applique à tous les agents dont le schéma ne nomme pas le rôle.",
+        "needsGeneral": "Le rôle « Général » manque",
+        "needsGeneralText": "Sans lui, le schéma ne peut pas être activé.",
+        "new": "Nouveau",
+        "changed": "Modifié",
+        "discard": "Annuler",
+        "catalogFailed": "Les choix n’ont pas pu être chargés",
+        "catalogFailedText": "Sans la liste des modèles disponibles, les valeurs ne peuvent pas être modifiées. Rechargez la page."
+      }
     }
   }
 }

@@ -21,7 +21,9 @@ export const MATRIX_COLUMNS: MatrixColumn[] = [
 export type CellSource = 'schema' | 'project' | 'own';
 
 export type MatrixRuntime = 'helena' | 'claude' | 'codex' | 'hermes' | 'command' | 'webhook';
-export type MatrixReasoning = 'low' | 'medium' | 'high' | 'xhigh';
+// The thinking level a model offers ("low" … "xhigh", or a model's own word); null: no explicit
+// level, the model's default.
+export type MatrixReasoning = string;
 export type MatrixBrowser = 'standard' | 'jev' | 'combined';
 export type MatrixDevice = 'gpu' | 'npu' | 'cloud' | 'cpu';
 export type MatrixDecisionBackend = 'jev' | 'gpu' | 'npu' | 'jev-local' | 'local-jev';
@@ -40,7 +42,7 @@ export type MatrixEscalation = Record<string, unknown>;
 export interface MatrixValues {
   runtime: MatrixRuntime;
   model: string;
-  reasoning: MatrixReasoning;
+  reasoning: MatrixReasoning | null;
   escalation: MatrixEscalation;
   browser: MatrixBrowser;
   decision: MatrixDecision;
@@ -76,6 +78,8 @@ export interface MatrixClass {
 }
 
 export interface MatrixSchema {
+  // Set by the server: a built-in schema cannot be changed, only copied.
+  builtIn?: boolean;
   id: string;
   name: string;
   description: string;
@@ -130,13 +134,22 @@ export interface MatrixPatch {
   active?: string;
   projects?: { projectId: number; schemaId: string | null }[];
   agents?: AgentChange[];
+  // Custom schemas written whole (without `builtIn`): one, or several in one batch.
   schema?: MatrixSchema;
+  schemas?: MatrixSchema[];
   undo?: boolean;
 }
 export interface MatrixPreview {
   revision: number;
   nextRevision: number;
   affectedAgents: number;
+  // Agents that keep a setting of their own under the schema they follow after the change.
+  retainedOverrides?: {
+    agentId: number;
+    username: string;
+    schemaId: string;
+    columns: MatrixColumn[];
+  }[];
   changes: {
     agentId: number;
     username: string;
@@ -158,4 +171,55 @@ export const applyModelMatrix = (patch: MatrixPatch) =>
   request<MatrixPreview>('/god/model-schemas/apply', {
     method: 'POST',
     body: JSON.stringify(patch),
+  });
+
+// One model of the catalog the schemas may use: what a role's model and thinking level are
+// checked against on the server, per runtime.
+export interface SchemaCatalogModel {
+  id: string;
+  name: string;
+  runtime: string;
+  reasoning: boolean;
+  thinkingLevels: string[];
+  thinkingDefault: string | null;
+  local?: boolean;
+  listed?: boolean;
+}
+export interface SchemaList {
+  revision: number;
+  active: string;
+  schemas: MatrixSchema[];
+  roles: string[];
+  columns: string[];
+  catalog: SchemaCatalogModel[];
+}
+export const getModelSchemas = () => request<SchemaList>('/god/model-schemas');
+
+export interface SchemaResult {
+  revision: number;
+  active: string;
+  schema: MatrixSchema;
+}
+// Creating a schema, renaming or describing it and deleting it are written at once (they
+// change no agent); the values of its roles go through preview and apply like every other
+// change. Every write names the revision it was made against; another one answers 409.
+export const createModelSchema = (body: {
+  expectedRevision: number;
+  id: string;
+  name: string;
+  description?: string;
+  copyFrom?: string;
+}) => request<SchemaResult>('/god/model-schemas', { method: 'POST', body: JSON.stringify(body) });
+export const updateModelSchema = (
+  schemaId: string,
+  body: { expectedRevision: number; name?: string; description?: string },
+) =>
+  request<SchemaResult>(`/god/model-schemas/${schemaId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(body),
+  });
+export const deleteModelSchema = (schemaId: string, expectedRevision: number) =>
+  request<{ revision: number; deleted: string }>(`/god/model-schemas/${schemaId}`, {
+    method: 'DELETE',
+    body: JSON.stringify({ expectedRevision }),
   });

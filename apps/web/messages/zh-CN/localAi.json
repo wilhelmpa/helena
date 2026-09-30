@@ -428,7 +428,8 @@
       "own": "此智能体的自有设置",
       "staged": "已更改，尚未应用",
       "schema": "继承自方案“{schema}”",
-      "project": "继承自项目方案“{schema}”"
+      "project": "继承自项目方案“{schema}”",
+      "inSchema": "此方案的值"
     },
     "columns": {
       "runtime": "运行时",
@@ -451,7 +452,8 @@
       "low": "低",
       "medium": "中",
       "high": "高",
-      "xhigh": "极高"
+      "xhigh": "极高",
+      "default": "模型默认值"
     },
     "browser": {
       "standard": "标准",
@@ -584,6 +586,10 @@
         "schema": "方案",
         "project": "项目",
         "own": "自有"
+      },
+      "retained": {
+        "title": "{count, plural, other {# 个智能体保留自有设置}}",
+        "text": "这些值由智能体自行设定。即使方案另有规定，它们也不会改变。"
       }
     },
     "conflict": {
@@ -615,10 +621,12 @@
       "switchDevices": "切换设备",
       "switchFailed": "切换失败",
       "switchFailedText": "上一次切换以错误结束。你可以在本地 AI 设置中继续或回退。",
-      "schema": "方案",
+      "schema": "当前方案",
       "projectSchema": "{project} 的方案",
       "projectInherits": "跟随当前方案",
-      "inherit": "与当前方案相同"
+      "inherit": "与当前方案相同",
+      "schemaHint": "未找到方案",
+      "profileLocked": "内置方案的本地配置无法更改。复制该方案即可选择其他配置。"
     },
     "profiles": {
       "local-halogen": "仅 GPU 运行 Flash，NPU 关闭",
@@ -688,7 +696,13 @@
       "npuDecision": "NPU 未通过决策器评估。",
       "unknown": "某个智能体、项目或方案已不存在。请重新加载页面。",
       "invalid": "某个值不被允许。请检查已更改单元格的设置。",
-      "rejected": "服务器拒绝了此更改，未做任何更改。"
+      "rejected": "服务器拒绝了此更改，未做任何更改。",
+      "reasoning": "所选推理深度不适用于该模型。",
+      "modelUnavailable": "所选模型无法用于此运行时。",
+      "needsGeneral": "方案需要“通用”角色才能启用。",
+      "inUse": "该方案仍在使用中。",
+      "builtIn": "内置方案无法更改。请先复制该方案。",
+      "role": "方案中的某个角色不完整。请刷新页面后重试。"
     },
     "columnsShort": {
       "runtime": "运行时",
@@ -698,6 +712,75 @@
       "browser": "浏览器",
       "decision": "决策器",
       "device": "设备"
+    },
+    "discard": "放弃",
+    "schemaEditor": {
+      "title": "方案",
+      "description": "方案决定每个角色使用的运行时、模型和推理深度。内置方案受保护，但可以复制。",
+      "new": "新建方案",
+      "noDescription": "无描述",
+      "roleCount": "{count, plural, other {# 个角色}}",
+      "activate": "启用",
+      "activateUndo": "撤销启用",
+      "view": "查看角色",
+      "editRoles": "编辑角色",
+      "badge": {
+        "active": "当前",
+        "activating": "将被启用",
+        "builtIn": "内置",
+        "custom": "自定义",
+        "projects": "{count, plural, other {# 个项目}}"
+      },
+      "menu": {
+        "label": "{name} 的操作",
+        "copy": "复制",
+        "edit": "重命名并描述",
+        "delete": "删除",
+        "deleteInUse": "删除（使用中）"
+      },
+      "dialog": {
+        "createTitle": "新建方案",
+        "copyTitle": "复制“{name}”",
+        "editTitle": "重命名并描述方案",
+        "copyNote": "副本会沿用“{name}”的所有角色，之后可以自由修改。",
+        "emptyNote": "新方案是空的。之后再添加角色；启用时至少需要“通用”。",
+        "name": "名称",
+        "namePlaceholder": "例如：我的组合",
+        "description": "描述",
+        "descriptionHint": "用一句话说明何时适合使用此方案。",
+        "copyName": "{name}（副本）",
+        "create": "创建",
+        "save": "保存",
+        "cancel": "取消",
+        "failed": "无法保存方案"
+      },
+      "delete": {
+        "title": "删除“{name}”？",
+        "text": "方案将被移除。目前没有智能体或项目使用它，因此不会对任何人造成影响。",
+        "confirm": "删除",
+        "failed": "无法删除方案。它正在启用中，或已分配给某个项目。"
+      },
+      "toast": {
+        "created": "方案已创建",
+        "updated": "方案已保存",
+        "deleted": "方案已删除"
+      },
+      "roles": {
+        "title": "“{name}”中的角色",
+        "builtIn": "此方案为内置方案，受保护。请创建副本来更改角色。",
+        "custom": "点击某个值即可更改。更改需在预览后才会应用。",
+        "copyToEdit": "创建副本以编辑",
+        "add": "添加角色",
+        "emptyTitle": "还没有角色",
+        "emptyText": "请先添加“通用”角色。它适用于方案中没有单独列出角色的所有智能体。",
+        "needsGeneral": "缺少“通用”角色",
+        "needsGeneralText": "没有它，方案无法启用。",
+        "new": "新增",
+        "changed": "已更改",
+        "discard": "放弃",
+        "catalogFailed": "无法加载可选项",
+        "catalogFailedText": "没有可用模型列表就无法更改这些值。请刷新页面。"
+      }
     }
   }
 }

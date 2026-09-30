@@ -72,3 +72,6 @@ export function modelsOfRuntime<T extends { id: string }>(
   if (runtime === 'codex') return all.filter((entry) => /^gpt-/.test(entry.id));
   return all.filter((entry) => !isLocal(entry.id));
 }
+
+// The schemas that ship with the app, in the order they are listed; custom ones follow.
+export const BUILT_IN_SCHEMAS = ['nur-lokal', 'gemischt', 'nur-codex', 'nur-claude'];

@@ -428,7 +428,8 @@
       "own": "Eigene Einstellung dieses Agenten",
       "staged": "Geändert, noch nicht übernommen",
       "schema": "Erbt vom Schema „{schema}“",
-      "project": "Erbt vom Projekt-Schema „{schema}“"
+      "project": "Erbt vom Projekt-Schema „{schema}“",
+      "inSchema": "Wert dieses Schemas"
     },
     "columns": {
       "runtime": "Laufzeit",
@@ -451,7 +452,8 @@
       "low": "Niedrig",
       "medium": "Mittel",
       "high": "Hoch",
-      "xhigh": "Sehr hoch"
+      "xhigh": "Sehr hoch",
+      "default": "Standard des Modells"
     },
     "browser": {
       "standard": "Standard",
@@ -584,6 +586,10 @@
         "schema": "Schema",
         "project": "Projekt",
         "own": "eigen"
+      },
+      "retained": {
+        "title": "{count, plural, one {# Agent behält eigene Einstellungen} other {# Agenten behalten eigene Einstellungen}}",
+        "text": "Diese Werte hat der Agent selbst gesetzt. Sie ändern sich nicht, auch wenn das Schema etwas anderes sagt."
       }
     },
     "conflict": {
@@ -615,10 +621,12 @@
       "switchDevices": "Geräte umschalten",
       "switchFailed": "Umschaltung fehlgeschlagen",
       "switchFailedText": "Die letzte Umschaltung ist mit einem Fehler beendet. In den Einstellungen für Lokale KI kannst du sie fortsetzen oder zurücknehmen.",
-      "schema": "Schema",
+      "schema": "Aktives Schema",
       "projectSchema": "Schema für {project}",
       "projectInherits": "Folgt dem aktiven Schema",
-      "inherit": "Wie das aktive Schema"
+      "inherit": "Wie das aktive Schema",
+      "schemaHint": "Kein Schema gefunden",
+      "profileLocked": "Das lokale Profil eines mitgelieferten Schemas lässt sich nicht ändern. Kopiere das Schema, um ein anderes Profil zu wählen."
     },
     "profiles": {
       "local-halogen": "Nur GPU mit Flash, NPU aus",
@@ -688,7 +696,13 @@
       "npuDecision": "Die NPU hat die Entscheider-Auswertung nicht bestanden.",
       "unknown": "Ein Agent, Projekt oder Schema gibt es nicht mehr. Lade die Seite neu.",
       "invalid": "Ein Wert ist nicht zulässig. Prüfe die Einstellungen der geänderten Zellen.",
-      "rejected": "Der Server hat die Änderung abgelehnt. Es wurde nichts geändert."
+      "rejected": "Der Server hat die Änderung abgelehnt. Es wurde nichts geändert.",
+      "reasoning": "Die gewählte Denktiefe passt nicht zum Modell.",
+      "modelUnavailable": "Ein gewähltes Modell steht für diese Laufzeit nicht zur Verfügung.",
+      "needsGeneral": "Das Schema braucht die Rolle „Allgemein“, bevor es aktiv werden kann.",
+      "inUse": "Das Schema ist noch in Benutzung.",
+      "builtIn": "Mitgelieferte Schemata lassen sich nicht ändern. Kopiere das Schema zuerst.",
+      "role": "Eine Rolle des Schemas ist unvollständig. Lade die Seite neu und versuche es noch einmal."
     },
     "columnsShort": {
       "runtime": "Laufzeit",
@@ -698,6 +712,75 @@
       "browser": "Browser",
       "decision": "Entscheider",
       "device": "Gerät"
+    },
+    "discard": "Verwerfen",
+    "schemaEditor": {
+      "title": "Schemata",
+      "description": "Ein Schema legt fest, welche Laufzeit, welches Modell und welche Denktiefe jede Rolle bekommt. Mitgelieferte Schemata sind geschützt, lassen sich aber kopieren.",
+      "new": "Neues Schema",
+      "noDescription": "Keine Beschreibung",
+      "roleCount": "{count, plural, one {# Rolle} other {# Rollen}}",
+      "activate": "Aktivieren",
+      "activateUndo": "Aktivierung zurücknehmen",
+      "view": "Rollen ansehen",
+      "editRoles": "Rollen bearbeiten",
+      "badge": {
+        "active": "Aktiv",
+        "activating": "Wird aktiviert",
+        "builtIn": "Mitgeliefert",
+        "custom": "Eigenes",
+        "projects": "{count, plural, one {# Projekt} other {# Projekte}}"
+      },
+      "menu": {
+        "label": "Aktionen für {name}",
+        "copy": "Kopieren",
+        "edit": "Umbenennen und beschreiben",
+        "delete": "Löschen",
+        "deleteInUse": "Löschen (in Benutzung)"
+      },
+      "dialog": {
+        "createTitle": "Neues Schema",
+        "copyTitle": "„{name}“ kopieren",
+        "editTitle": "Schema umbenennen und beschreiben",
+        "copyNote": "Die Kopie übernimmt alle Rollen von „{name}“ und lässt sich danach frei ändern.",
+        "emptyNote": "Das neue Schema ist leer. Die Rollen legst du danach an; mindestens „Allgemein“ braucht es zum Aktivieren.",
+        "name": "Name",
+        "namePlaceholder": "z. B. Mein Mix",
+        "description": "Beschreibung",
+        "descriptionHint": "Ein Satz dazu, wann dieses Schema passt.",
+        "copyName": "{name} (Kopie)",
+        "create": "Anlegen",
+        "save": "Speichern",
+        "cancel": "Abbrechen",
+        "failed": "Das Schema konnte nicht gespeichert werden"
+      },
+      "delete": {
+        "title": "„{name}“ löschen?",
+        "text": "Das Schema wird entfernt. Kein Agent und kein Projekt folgt ihm gerade, deshalb ändert sich für niemanden etwas.",
+        "confirm": "Löschen",
+        "failed": "Das Schema konnte nicht gelöscht werden. Es ist aktiv oder einem Projekt zugewiesen."
+      },
+      "toast": {
+        "created": "Schema angelegt",
+        "updated": "Schema gespeichert",
+        "deleted": "Schema gelöscht"
+      },
+      "roles": {
+        "title": "Rollen in „{name}“",
+        "builtIn": "Dieses Schema ist mitgeliefert und geschützt. Lege eine Kopie an, um Rollen zu ändern.",
+        "custom": "Ein Klick auf einen Wert ändert ihn. Übernommen wird erst nach der Vorschau.",
+        "copyToEdit": "Kopie zum Bearbeiten anlegen",
+        "add": "Rolle hinzufügen",
+        "emptyTitle": "Noch keine Rollen",
+        "emptyText": "Lege zuerst die Rolle „Allgemein“ an. Sie gilt für alle Agenten, deren Rolle das Schema nicht einzeln nennt.",
+        "needsGeneral": "Die Rolle „Allgemein“ fehlt",
+        "needsGeneralText": "Ohne sie lässt sich das Schema nicht aktivieren.",
+        "new": "Neu",
+        "changed": "Geändert",
+        "discard": "Verwerfen",
+        "catalogFailed": "Die Auswahl konnte nicht geladen werden",
+        "catalogFailedText": "Ohne die Liste der verfügbaren Modelle lassen sich die Werte nicht ändern. Lade die Seite neu."
+      }
     }
   }
 }

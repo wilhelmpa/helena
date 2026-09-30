@@ -6,6 +6,7 @@ import {
   ButtonLink,
   Inline,
   Notice,
+  Pill,
   PillButton,
   PopoverPick,
   Segmented,
@@ -15,20 +16,19 @@ import {
 } from '@/design-system';
 import type { ModelMatrix } from '@/lib/api/endpoints/modelMatrix';
 import { helenaSettingsPath } from '@/features/settings/settingsModalCatalog';
+import { BUILT_IN_SCHEMAS } from '../utils/columns';
 import type { MatrixLabels } from '../utils/labels';
 import { targetSchemaId, type Pending } from '../utils/pending';
 
-const BUILT_IN = ['nur-lokal', 'gemischt', 'nur-codex', 'nur-claude'];
-
-// The head of the page: which local profile and which schema the agents work under, and the
-// state of the switch between profiles. A choice here is staged like every other change.
+// The head of the page: which local profile the agents work under, which schema they follow,
+// and the state of the switch between profiles. A choice here is staged like every other
+// change; the schemas themselves are the cards below.
 export function MatrixHeader({
   matrix,
   pending,
   project,
   labels,
   onProfile,
-  onSchema,
   onProjectSchema,
   onUndo,
   undoSteps,
@@ -39,7 +39,6 @@ export function MatrixHeader({
   project: { id: number; name: string } | null;
   labels: MatrixLabels;
   onProfile: (id: string) => void;
-  onSchema: (id: string) => void;
   onProjectSchema: (schemaId: string | null) => void;
   onUndo: () => void;
   // How many applies the server can take back (0: none).
@@ -49,9 +48,11 @@ export function MatrixHeader({
   const schemaId = targetSchemaId(matrix, pending);
   const schema = matrix.schemas[schemaId];
   const profileId = pending.profile ?? schema?.profile;
+  // The server does not write the profile of a schema that ships with the app.
+  const profileLocked = schema?.builtIn === true;
   const schemas = Object.values(matrix.schemas).sort((a, b) => {
-    const ia = BUILT_IN.indexOf(a.id);
-    const ib = BUILT_IN.indexOf(b.id);
+    const ia = BUILT_IN_SCHEMAS.indexOf(a.id);
+    const ib = BUILT_IN_SCHEMAS.indexOf(b.id);
     return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib) || a.name.localeCompare(b.name);
   });
   const operation = matrix.local.maintenance?.operation ?? null;
@@ -78,20 +79,29 @@ export function MatrixHeader({
         })),
       ]
     : [];
-  const schemaDescription = (id: string) =>
-    BUILT_IN.includes(id) ? t(`schemas.${id}` as never) : (matrix.schemas[id]?.description ?? '');
+  const profile = matrix.profiles.find((entry) => entry.id === profileId);
   return (
     <SettingsGroup title={t('header.title')} description={t('header.description')}>
       <SettingsRow
         label={t('header.profile')}
-        description={profileId ? t(`profiles.${profileId}` as never) : undefined}
+        description={
+          profileLocked
+            ? t('header.profileLocked')
+            : profileId
+              ? t(`profiles.${profileId}` as never)
+              : undefined
+        }
       >
-        <Segmented
-          label={t('header.profile')}
-          value={profileId ?? ''}
-          options={matrix.profiles.map((entry) => ({ value: entry.id, label: entry.name }))}
-          onChange={onProfile}
-        />
+        {profileLocked ? (
+          <Pill>{profile?.name ?? profileId}</Pill>
+        ) : (
+          <Segmented
+            label={t('header.profile')}
+            value={profileId ?? ''}
+            options={matrix.profiles.map((entry) => ({ value: entry.id, label: entry.name }))}
+            onChange={onProfile}
+          />
+        )}
       </SettingsRow>
       <SettingsRow
         label={t('header.status')}
@@ -118,27 +128,20 @@ export function MatrixHeader({
       )}
       <SettingsRow
         label={t('header.schema')}
-        description={schemaDescription(schemaId)}
-        stacked={schemas.length > 4}
+        description={
+          schema ? `${schema.name} · ${labels.schemaText(schema)}` : t('header.schemaHint')
+        }
       >
-        <Inline gap={2} wrap>
-          <Segmented
-            label={t('header.schema')}
-            value={schemaId}
-            options={schemas.map((entry) => ({ value: entry.id, label: entry.name }))}
-            onChange={onSchema}
-          />
-          <Button
-            variant="ghost"
-            size="small"
-            icon={<RotateCcw size={14} />}
-            disabled={undoSteps === 0}
-            title={undoSteps === 0 ? t('undo.none') : t('undo.tooltip', { depth: undoSteps })}
-            onClick={onUndo}
-          >
-            {t('undo.button')}
-          </Button>
-        </Inline>
+        <Button
+          variant="ghost"
+          size="small"
+          icon={<RotateCcw size={14} />}
+          disabled={undoSteps === 0}
+          title={undoSteps === 0 ? t('undo.none') : t('undo.tooltip', { depth: undoSteps })}
+          onClick={onUndo}
+        >
+          {t('undo.button')}
+        </Button>
       </SettingsRow>
       {project && (
         <SettingsRow

@@ -4,6 +4,7 @@ import { LoaderCircle } from 'lucide-react';
 import { Button, Dialog, Inline, Notice, Stack, Text } from '@/design-system';
 import type { MatrixColumn, MatrixPreview } from '@/lib/api/endpoints/modelMatrix';
 import type { MatrixLabels } from '../utils/labels';
+import { previewErrorKey } from '../utils/previewErrors';
 
 export type PreviewState =
   | { status: 'loading' }
@@ -53,6 +54,9 @@ export function ChangePreviewDialog({
         });
       }
   const source = (value: string) => t(`preview.source.${value}` as never);
+  // Agents that keep a setting of their own under the schema they follow: what they do not
+  // take over. The last check has the state after all the steps.
+  const retained = state.status === 'ready' ? (state.previews.at(-1)?.retainedOverrides ?? []) : [];
   return (
     <Dialog title={title} onClose={onClose} wide>
       <Stack gap={4}>
@@ -78,7 +82,7 @@ export function ChangePreviewDialog({
         )}
         {state.status === 'error' && (
           <Notice tone="danger" title={t('preview.failed')}>
-            {friendlyError(state.message, t)}
+            {t(previewErrorKey(state.message))}
           </Notice>
         )}
         {state.status === 'ready' && (
@@ -114,6 +118,24 @@ export function ChangePreviewDialog({
                 ))}
               </div>
             )}
+            {retained.length > 0 && (
+              <Stack gap={2}>
+                <Text weight="medium">
+                  {t('preview.retained.title', { count: retained.length })}
+                </Text>
+                <Text tone="muted">{t('preview.retained.text')}</Text>
+                <div className="ds-matrix-preview">
+                  {retained.map((entry) => (
+                    <div key={entry.agentId} className="ds-matrix-preview-agent">
+                      <Text weight="medium">{names.get(entry.agentId) ?? entry.username}</Text>
+                      <Text tone="muted">
+                        {entry.columns.map((column) => t(`columns.${column}`)).join(' · ')}
+                      </Text>
+                    </div>
+                  ))}
+                </div>
+              </Stack>
+            )}
           </>
         )}
         <Inline gap={2} justify="end">
@@ -132,14 +154,4 @@ export function ChangePreviewDialog({
       </Stack>
     </Dialog>
   );
-}
-
-// The server answers in English; the reasons a change is refused that a person can act on
-// are said in plain words, the rest as a general sentence.
-function friendlyError(message: string, t: MatrixLabels['t']): string {
-  if (/npu class .* needs a passed eval/i.test(message)) return t('errors.npuClass');
-  if (/npu decision eval/i.test(message)) return t('errors.npuDecision');
-  if (/unknown agent|unknown project|unknown schema/i.test(message)) return t('errors.unknown');
-  if (/^invalid /i.test(message)) return t('errors.invalid');
-  return t('errors.rejected');
 }

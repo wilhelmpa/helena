@@ -428,7 +428,8 @@
       "own": "Configuração própria deste agente",
       "staged": "Alterado, ainda não aplicado",
       "schema": "Herda do esquema “{schema}”",
-      "project": "Herda do esquema do projeto “{schema}”"
+      "project": "Herda do esquema do projeto “{schema}”",
+      "inSchema": "Valor deste esquema"
     },
     "columns": {
       "runtime": "Runtime",
@@ -451,7 +452,8 @@
       "low": "Baixo",
       "medium": "Médio",
       "high": "Alto",
-      "xhigh": "Muito alto"
+      "xhigh": "Muito alto",
+      "default": "Padrão do modelo"
     },
     "browser": {
       "standard": "Padrão",
@@ -584,6 +586,10 @@
         "schema": "esquema",
         "project": "projeto",
         "own": "próprio"
+      },
+      "retained": {
+        "title": "{count, plural, one {# agente mantém as próprias configurações} other {# agentes mantêm as próprias configurações}}",
+        "text": "O próprio agente definiu estes valores. Eles não mudam, mesmo que o esquema diga outra coisa."
       }
     },
     "conflict": {
@@ -615,10 +621,12 @@
       "switchDevices": "Alternar dispositivos",
       "switchFailed": "Falha ao alternar",
       "switchFailedText": "A última alternância terminou com erro. Você pode retomá-la ou revertê-la nas configurações de IA local.",
-      "schema": "Esquema",
+      "schema": "Esquema ativo",
       "projectSchema": "Esquema para {project}",
       "projectInherits": "Segue o esquema ativo",
-      "inherit": "Como o esquema ativo"
+      "inherit": "Como o esquema ativo",
+      "schemaHint": "Nenhum esquema encontrado",
+      "profileLocked": "O perfil local de um esquema incluído não pode ser alterado. Copie o esquema para escolher outro perfil."
     },
     "profiles": {
       "local-halogen": "Só GPU com Flash, NPU desligada",
@@ -688,7 +696,13 @@
       "npuDecision": "A NPU não passou na avaliação do decisor.",
       "unknown": "Um agente, projeto ou esquema não existe mais. Recarregue a página.",
       "invalid": "Um valor não é permitido. Verifique as configurações das células alteradas.",
-      "rejected": "O servidor recusou a alteração. Nada foi alterado."
+      "rejected": "O servidor recusou a alteração. Nada foi alterado.",
+      "reasoning": "A profundidade de raciocínio escolhida não combina com o modelo.",
+      "modelUnavailable": "Um modelo escolhido não está disponível para este ambiente de execução.",
+      "needsGeneral": "O esquema precisa da função “Geral” antes de poder ser ativado.",
+      "inUse": "O esquema ainda está em uso.",
+      "builtIn": "Esquemas incluídos não podem ser alterados. Copie o esquema primeiro.",
+      "role": "Uma função do esquema está incompleta. Recarregue a página e tente de novo."
     },
     "columnsShort": {
       "runtime": "Runtime",
@@ -698,6 +712,75 @@
       "browser": "Navegador",
       "decision": "Decisor",
       "device": "Dispositivo"
+    },
+    "discard": "Descartar",
+    "schemaEditor": {
+      "title": "Esquemas",
+      "description": "Um esquema define qual ambiente de execução, modelo e profundidade de raciocínio cada função recebe. Esquemas incluídos são protegidos, mas podem ser copiados.",
+      "new": "Novo esquema",
+      "noDescription": "Sem descrição",
+      "roleCount": "{count, plural, one {# função} other {# funções}}",
+      "activate": "Ativar",
+      "activateUndo": "Desfazer ativação",
+      "view": "Ver funções",
+      "editRoles": "Editar funções",
+      "badge": {
+        "active": "Ativo",
+        "activating": "Será ativado",
+        "builtIn": "Incluído",
+        "custom": "Próprio",
+        "projects": "{count, plural, one {# projeto} other {# projetos}}"
+      },
+      "menu": {
+        "label": "Ações para {name}",
+        "copy": "Copiar",
+        "edit": "Renomear e descrever",
+        "delete": "Excluir",
+        "deleteInUse": "Excluir (em uso)"
+      },
+      "dialog": {
+        "createTitle": "Novo esquema",
+        "copyTitle": "Copiar “{name}”",
+        "editTitle": "Renomear e descrever o esquema",
+        "copyNote": "A cópia leva todas as funções de “{name}” e depois pode ser alterada livremente.",
+        "emptyNote": "O novo esquema está vazio. Você adiciona as funções depois; para ativá-lo é preciso ao menos “Geral”.",
+        "name": "Nome",
+        "namePlaceholder": "p. ex. Minha mistura",
+        "description": "Descrição",
+        "descriptionHint": "Uma frase sobre quando este esquema é adequado.",
+        "copyName": "{name} (cópia)",
+        "create": "Criar",
+        "save": "Salvar",
+        "cancel": "Cancelar",
+        "failed": "Não foi possível salvar o esquema"
+      },
+      "delete": {
+        "title": "Excluir “{name}”?",
+        "text": "O esquema é removido. Nenhum agente nem projeto o segue agora, então nada muda para ninguém.",
+        "confirm": "Excluir",
+        "failed": "Não foi possível excluir o esquema. Ele está ativo ou atribuído a um projeto."
+      },
+      "toast": {
+        "created": "Esquema criado",
+        "updated": "Esquema salvo",
+        "deleted": "Esquema excluído"
+      },
+      "roles": {
+        "title": "Funções em “{name}”",
+        "builtIn": "Este esquema é incluído e protegido. Crie uma cópia para alterar as funções.",
+        "custom": "Clique em um valor para alterá-lo. As mudanças só são aplicadas após a pré-visualização.",
+        "copyToEdit": "Criar uma cópia para editar",
+        "add": "Adicionar função",
+        "emptyTitle": "Ainda não há funções",
+        "emptyText": "Adicione primeiro a função “Geral”. Ela vale para todos os agentes cuja função o esquema não nomeia.",
+        "needsGeneral": "Falta a função “Geral”",
+        "needsGeneralText": "Sem ela, o esquema não pode ser ativado.",
+        "new": "Nova",
+        "changed": "Alterada",
+        "discard": "Descartar",
+        "catalogFailed": "Não foi possível carregar as opções",
+        "catalogFailedText": "Sem a lista de modelos disponíveis, os valores não podem ser alterados. Recarregue a página."
+      }
     }
   }
 }
