@@ -16,7 +16,7 @@ export default function WorkflowApprovalList({ projectKey }: { projectKey?: stri
 
   return (
     <section className="space-y-3">
-      <SectionLabel className="-mb-1">{t('workflows')}</SectionLabel>
+      <SectionLabel>{t('workflows')}</SectionLabel>
       {approvals.map((approval) => (
         <PipelineApprovalCard
           key={`${approval.runId}:${approval.stepId}:${approval.iteration}`}

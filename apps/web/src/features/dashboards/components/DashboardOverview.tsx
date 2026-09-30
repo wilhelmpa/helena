@@ -19,7 +19,7 @@ import { runningActivityHref } from '@/features/agent-activity/utils/runningLink
 import { formatDurationShort } from '@/utils/dates';
 import { useAgentStatus } from '@/utils/helenaStatus';
 import Orb from '@/components/helena/Orb';
-import { Card, MonoLabel, MonoMeta, Tile } from '@/components/helena/DashboardPrimitives';
+import { Card, MonoMeta, Tile } from '@/components/helena/DashboardPrimitives';
 import { Stack, Text } from '@/design-system';
 
 const OPEN = new Set(['backlog', 'unstarted', 'started']);
@@ -62,11 +62,7 @@ function OverviewCard({
   children: React.ReactNode;
 }) {
   return (
-    <Card className="flex min-h-48 flex-col gap-3 p-5">
-      <div className="flex items-center justify-between">
-        <MonoLabel>{label}</MonoLabel>
-        <MonoMeta>{count}</MonoMeta>
-      </div>
+    <Card eyebrow={label} actions={<MonoMeta>{count}</MonoMeta>} className="min-h-48">
       <Stack gap={2}>{children}</Stack>
     </Card>
   );

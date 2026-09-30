@@ -14,7 +14,7 @@ export default function RuntimeProposalList({ status }: { status: 'pending' | 'd
   if (proposals.length === 0) return null;
   return (
     <section className="space-y-3">
-      <SectionLabel className="-mb-1">{t('section')}</SectionLabel>
+      <SectionLabel>{t('section')}</SectionLabel>
       {proposals.map((proposal) => (
         <ProposalCard key={proposal.id} proposal={proposal} />
       ))}

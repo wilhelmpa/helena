@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
 import { Activity } from 'lucide-react';
-import { PageActions } from '@/design-system';
+import { Card, PageActions } from '@/design-system';
 import {
   useHomeActiveActivity,
   HOME_ACTIVE_STATUSES,
@@ -71,10 +71,16 @@ export function HomeChatActivityCards() {
   return (
     <div className={styles.cards} aria-label={t('recent')}>
       {cards.length === 0 && !activity.isPending ? (
-        <Link href={globalAgentActivityPath()} className={styles.emptyCard}>
+        <Card
+          as={Link}
+          href={globalAgentActivityPath()}
+          interactive
+          gap={2}
+          className={styles.emptyCard}
+        >
           {t('empty')}
           <span>{t('activity')}</span>
-        </Link>
+        </Card>
       ) : (
         cards.map((card) => {
           if (card.kind === 'needs') {
@@ -95,25 +101,42 @@ export function HomeChatActivityCards() {
             const href =
               entry.href ?? (entry.onSelect === openSystemDetails ? '/dashboard?system=1' : null);
             return href ? (
-              <Link key={entry.key} href={href} className={styles.card}>
+              <Card
+                as={Link}
+                key={entry.key}
+                href={href}
+                interactive
+                gap={2}
+                className={styles.card}
+              >
                 {body}
-              </Link>
+              </Card>
             ) : (
-              <button
+              <Card
+                as="button"
                 key={entry.key}
                 type="button"
+                interactive
+                gap={2}
                 className={styles.card}
                 onClick={entry.onSelect}
               >
                 {body}
-              </button>
+              </Card>
             );
           }
           const { entry } = card;
           const active = card.kind === 'running';
           const accent = projectColor(entry.project?.key ?? 'VOL');
           return (
-            <Link key={entry.id} href={activityHref(entry)} className={styles.card}>
+            <Card
+              as={Link}
+              key={entry.id}
+              href={activityHref(entry)}
+              interactive
+              gap={2}
+              className={styles.card}
+            >
               <span className={styles.cardTag} style={{ color: accent }}>
                 <span className={styles.cardDot} style={{ backgroundColor: accent }} />
                 {entry.project?.key ?? appName.toLocaleUpperCase()}
@@ -125,7 +148,7 @@ export function HomeChatActivityCards() {
                 {entry.agent?.name ?? tActivity(`kinds.${entry.kind}`)} ·{' '}
                 {active ? t('recent') : `${t('finished')} ${formatDurationShort(entry.at)}`}
               </span>
-            </Link>
+            </Card>
           );
         })
       )}

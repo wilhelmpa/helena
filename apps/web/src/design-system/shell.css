@@ -1448,10 +1448,22 @@
   margin-top: var(--space-1);
 }
 /* A used-up budget or a throttled agent: a clear border, no glow (owner, O71). */
-.organization-ring-group[data-throttled='true'],
-.organization-card[data-throttled='true'] {
+.organization-hover-card {
+  display: none;
+}
+@media (hover: hover) {
+  .organization-hover-card {
+    display: flex;
+  }
+}
+.organization-ring-group[data-throttled='true'] {
   border-color: var(--status-throttled) !important;
   border-width: 2px !important;
+}
+.organization-card[data-throttled='true'] {
+  box-shadow:
+    0 0 0 2px var(--status-throttled),
+    var(--shadow-card);
 }
 
 /* ── Team › Kreis (components/common/organization, owner 29.09., O71) ──────────────

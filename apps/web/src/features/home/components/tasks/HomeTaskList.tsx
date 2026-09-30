@@ -1,11 +1,10 @@
 import { useTranslations } from 'next-intl';
-import { SectionLabel } from '@/components/common/page/RowList';
 import type { CrossProjectIssue } from '@/lib/api/endpoints/issues';
 import { STATE_TYPES } from '@/utils/fieldOptions';
 import { byKey } from '@/utils/messageKey';
 import HomeTaskRow from '../HomeTaskRow';
 import type { HomeTaskGrouping } from './HomeTasksToolbar';
-import { Box, Stack, Text } from '@/design-system';
+import { GroupHead, ListBox, Stack } from '@/design-system';
 
 interface TaskGroup {
   key: string;
@@ -50,23 +49,15 @@ export default function HomeTaskList({
 }) {
   const stateLabel = byKey(useTranslations('display.stateTypes'));
   return (
-    <Stack gap={3}>
+    <Stack gap={4}>
       {groupTasks(issues, grouping, stateLabel).map((group) => (
         <section key={group.key}>
-          <SectionLabel
-            trailing={
-              <Text as="span" size="xs" className="font-mono tabular-nums">
-                {group.issues.length}
-              </Text>
-            }
-          >
-            {group.name}
-          </SectionLabel>
-          <Box pad={1} className="rounded-md border bg-card">
+          <GroupHead count={group.issues.length}>{group.name}</GroupHead>
+          <ListBox padded>
             {group.issues.map((issue) => (
               <HomeTaskRow key={issue.id} issue={issue} />
             ))}
-          </Box>
+          </ListBox>
         </section>
       ))}
     </Stack>
