@@ -11,6 +11,17 @@ const kind = t.Union([
   t.Literal('app'),
 ]);
 
+export const ModelNotice = t.Object({
+  repository: t.Nullable(t.String()),
+  revision: t.Nullable(t.String()),
+  sizeBytes: t.Nullable(t.Number()),
+  license: t.Nullable(t.String()),
+  date: t.Nullable(t.String()),
+  fits: t.Boolean(),
+  reason: t.Nullable(t.String()),
+  baseline: t.Nullable(t.String()),
+});
+
 export const UpdateItem = t.Object({
   id: t.Number(),
   source: t.String({ description: 'The update source: `hermes`, `cli-runtimes`, `apt`, …' }),
@@ -46,6 +57,7 @@ export const UpdateItem = t.Object({
   applicable: t.Boolean({ description: 'Helena can apply it (a helper does the work)' }),
   hint: t.Nullable(localized),
   detail: t.Nullable(t.String()),
+  modelNotice: t.Optional(t.Nullable(ModelNotice)),
   error: t.Nullable(t.String()),
   availableSince: t.Nullable(t.String({ format: 'date-time' })),
   checkedAt: t.String({ format: 'date-time' }),
@@ -133,6 +145,7 @@ export const UpdateCenterResponse = t.Object({
     }),
   ),
   items: t.Array(UpdateItem),
+  newModels: t.Array(UpdateItem),
   actions: t.Array(UpdateAction),
   settings: UpdateSettings,
   digest: t.Object({

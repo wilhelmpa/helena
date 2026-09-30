@@ -155,6 +155,21 @@ class InventoryTest(HelperTest):
 
 
 class WhisperInventoryTest(unittest.TestCase):
+    def test_model_files_return_only_selected_model_names(self):
+        command = ('{ path=/opt/helena-ai/voice/tts-server; argv[]=/opt/helena-ai/voice/tts-server '
+                   '--model /var/lib/helena-voice/models/qwen-talker-1.7b-base-Q8_0.gguf '
+                   '--codec /var/lib/helena-voice/models/qwen-tokenizer-12hz-Q8_0.gguf '
+                   '--api-key test-only-value; }')
+        with mock.patch.object(helper, 'run', return_value=completed([], command)) as run:
+            self.assertEqual(helper.model_files('helena-voice-tts.service'), [
+                'qwen-talker-1.7b-base-Q8_0.gguf', 'qwen-tokenizer-12hz-Q8_0.gguf'])
+        self.assertEqual(run.call_args.args[1], ['systemctl', 'show', 'helena-voice-tts.service',
+                                              '--property=ExecStart', '--value'])
+
+    def test_unavailable_model_files_are_unknown(self):
+        with mock.patch.object(helper, 'run', side_effect=OSError('unavailable')):
+            self.assertEqual(helper.model_files('helena-embed.service'), [])
+
     def status(self, fields, executable=None):
         with mock.patch.object(helper, "run", return_value=completed([], fields)) as run, mock.patch.object(
                 helper.os, "readlink", return_value=executable) as readlink:

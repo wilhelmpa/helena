@@ -1,4 +1,7 @@
 import { createHash } from 'node:crypto';
+import { Value } from '@sinclair/typebox/value';
+import { ModelNotice } from './model';
+import type { ModelNotice as ModelNoticeView } from '#modules/local-ai/model-watch';
 import {
   createEvent,
   consoleLogger,
@@ -300,6 +303,7 @@ export async function digestTargets(): Promise<DigestTarget[]> {
   const modelAvailable = await digestModelAvailable();
   const byTarget = new Map<string, Row[]>();
   for (const row of rows) {
+    if (row.component.startsWith('watch:') && row.source === 'local-ai') continue;
     const id =
       row.groupKey && row.updateAvailable
         ? `${row.source}\0${row.groupKey}`
@@ -848,6 +852,7 @@ export interface UpdateItemView {
   applicable: boolean;
   hint: LocalizedText | null;
   detail: string | null;
+  modelNotice: ModelNoticeView | null;
   error: string | null;
   availableSince: string | null;
   checkedAt: string;
@@ -943,8 +948,12 @@ export async function listUpdateItems(
   const labels = new Map(sources().map(({ source }) => [source.id, source]));
   return rows
     .map((row): UpdateItemView => {
+      const modelObservation = row.source === 'local-ai' && row.component.startsWith('watch:');
       const current =
-        row.summaryFor === keyOf(row) && row.summary !== null && modelAvailable(row.summaryModel);
+        !modelObservation &&
+        row.summaryFor === keyOf(row) &&
+        row.summary !== null &&
+        modelAvailable(row.summaryModel);
       const autoAllowed =
         current &&
         row.applicable &&
@@ -970,9 +979,14 @@ export async function listUpdateItems(
         highlights: current ? (row.highlights ?? []) : [],
         summaryCurrent: current,
         summaryPending:
-          (row.summaryRunFor === keyOf(row) &&
+          !modelObservation &&
+          ((row.summaryRunFor === keyOf(row) &&
             (row.summaryRunId === null || pending.has(row.summaryRunId))) ||
-          (!current && settings.summarize && row.updateAvailable && !row.summaryError && checking),
+            (!current &&
+              settings.summarize &&
+              row.updateAvailable &&
+              !row.summaryError &&
+              checking)),
         summaryModel: current ? row.summaryModel : null,
         summaryRunId: row.summaryRunId,
         summaryError: row.summaryError,
@@ -983,6 +997,10 @@ export async function listUpdateItems(
         applicable: row.applicable,
         hint: row.hint,
         detail: row.detail,
+        modelNotice:
+          modelObservation && Value.Check(ModelNotice, row.data?.modelNotice)
+            ? (row.data!.modelNotice as ModelNoticeView)
+            : null,
         error: row.error,
         availableSince: row.availableSince ? iso(row.availableSince) : null,
         checkedAt: iso(row.checkedAt),
@@ -1029,7 +1047,13 @@ export async function updateCenterState() {
     checkState(),
     getUpdateSettings(),
   ]);
-  const withUpdate = items.filter((item) => item.updateAvailable);
+  const updates = items.filter(
+    (item) => !item.component.startsWith('watch:') || item.source !== 'local-ai',
+  );
+  const newModels = items.filter(
+    (item) => item.modelNotice && (item.updateAvailable || !item.modelNotice.fits),
+  );
+  const withUpdate = updates.filter((item) => item.updateAvailable);
   return {
     checkedAt: state.checkedAt,
     helper: { installed: await helperInstalled(), error: state.inventoryError },
@@ -1047,7 +1071,8 @@ export async function updateCenterState() {
       checkedAt: state.sources[source.id]?.checkedAt ?? null,
       error: state.sources[source.id]?.error ?? null,
     })),
-    items,
+    items: updates,
+    newModels,
     actions,
     settings,
     digest: await digestView(settings),

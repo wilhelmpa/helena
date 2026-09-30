@@ -1,4 +1,9 @@
-import { listModelServers, readModelServerKey, type ModelServerRow } from '@repo/db';
+import {
+  listModelServers,
+  readLocalAiPolicy,
+  readModelServerKey,
+  type ModelServerRow,
+} from '@repo/db';
 import type {
   HostCapability,
   HostHealthItem,
@@ -45,32 +50,9 @@ function newer(a: string | null, b: string | null): boolean {
   return false;
 }
 
-// A model family name split around its version: `Qwen3.6-35B-A3B-GGUF` is `Qwen` 3.6
-// `-35B-A3B-GGUF`. Null for a name without one.
-export function familyOf(repoName: string): { head: string; version: string; tail: string } | null {
-  const match = /^([A-Za-z][A-Za-z-]*?)-?(\d+(?:\.\d+)?)(-.+)?$/.exec(repoName);
-  if (!match) return null;
-  return { head: match[1]!, version: match[2]!, tail: match[3] ?? '' };
-}
-
-// A newer release of the same family by the same publisher (Qwen3.6-35B-A3B → Qwen3.7-35B-A3B),
-// from the Hugging Face model list.
-export function newerInFamily(repo: string, candidates: string[]): string | null {
-  const [author, name] = repo.split('/');
-  if (!author || !name) return null;
-  const family = familyOf(name);
-  if (!family) return null;
-  let best: { id: string; version: string } | null = null;
-  for (const id of candidates) {
-    const [otherAuthor, otherName] = id.split('/');
-    if (otherAuthor !== author || !otherName) continue;
-    const other = familyOf(otherName);
-    if (!other || other.head !== family.head || other.tail !== family.tail) continue;
-    if (!newer(other.version, family.version)) continue;
-    if (!best || newer(other.version, best.version)) best = { id, version: other.version };
-  }
-  return best?.id ?? null;
-}
+export { familyOf, newerInFamily } from './model-watch';
+import { checkWatchedModels } from './model-watch';
+import { configuredModelWatch } from './model-watch-config';
 
 // ── Halogen ────────────────────────────────────────────────────────────────────────────
 
@@ -153,13 +135,6 @@ export async function halogenCandidate(
 
 // ── The update source ──────────────────────────────────────────────────────────────────
 
-interface HfModel {
-  id?: string;
-  sha?: string;
-  lastModified?: string;
-  createdAt?: string;
-}
-
 async function serverFacts(server: ModelServerRow) {
   const key = await readModelServerKey(server);
   const context = serverContext(server, key, 5_000);
@@ -218,7 +193,8 @@ export const localAiUpdateSource: UpdateSource = {
     );
   },
   async check(context: UpdateCheckContext): Promise<UpdateCandidate[]> {
-    const servers = (await listModelServers()).filter((server) => server.enabled);
+    const configuredServers = await listModelServers();
+    const servers = configuredServers.filter((server) => server.enabled);
     const whisper = await whisperUpdateCandidate(context);
     const candidates: UpdateCandidate[] = whisper ? [whisper] : [];
     const release = async (repository: string) => {
@@ -285,6 +261,19 @@ export const localAiUpdateSource: UpdateSource = {
         hint: HINT,
       });
     }
+    const policy = await readLocalAiPolicy();
+    const watches = await configuredModelWatch(
+      configuredServers,
+      Object.values(policy.classes).flatMap((entry) => (entry.model ? [entry.model] : [])),
+      inventory,
+    );
+    for (const server of configuredServers.filter((entry) => entry.kind === 'lemonade')) {
+      for (const model of server.models.filter((entry) => entry.downloaded === true)) {
+        const watch = watches.find((entry) => entry.repo === model.checkpoint?.split(':')[0]);
+        if (watch) watch.revision = (await installedRevision(server, model.id)) ?? watch.revision;
+      }
+    }
+    candidates.push(...(await checkWatchedModels(watches, context)));
     if (servers.length === 0) return candidates;
     for (const server of servers.filter((entry) => entry.kind === 'halogen'))
       candidates.push(await halogenCandidate(server, context));
@@ -322,54 +311,6 @@ export const localAiUpdateSource: UpdateSource = {
           applicable: false,
           hint: HINT,
         });
-    }
-    for (const server of servers.filter((entry) => entry.kind === 'lemonade')) {
-      for (const model of server.models) {
-        const repo = model.checkpoint?.split(':')[0];
-        if (!repo || model.downloaded !== true) continue;
-        try {
-          const info = await context.fetchJson<HfModel>(
-            `https://huggingface.co/api/models/${repo}`,
-          );
-          const installed = await installedRevision(server, model.id);
-          const author = repo.split('/')[0]!;
-          const head = familyOf(repo.split('/')[1] ?? '')?.head;
-          const list = head
-            ? await context.fetchJson<HfModel[]>(
-                `https://huggingface.co/api/models?author=${encodeURIComponent(author)}&search=${encodeURIComponent(head)}&sort=lastModified&direction=-1&limit=50`,
-              )
-            : [];
-          const family = newerInFamily(
-            repo,
-            list.map((entry) => entry.id ?? ''),
-          );
-          const revision = info.sha ?? null;
-          candidates.push({
-            component: `model:${model.id}`,
-            name: model.name,
-            installed: installed ? installed.slice(0, 12) : null,
-            available: revision ? revision.slice(0, 12) : null,
-            updateAvailable: Boolean(installed && revision && installed !== revision),
-            security: false,
-            sourceUrl: `https://huggingface.co/${repo}`,
-            group: 'local-ai-models',
-            applicable: false,
-            hint: HINT,
-            detail: family ? `newer family model: ${family}` : null,
-          });
-        } catch (error) {
-          candidates.push({
-            component: `model:${model.id}`,
-            name: model.name,
-            installed: null,
-            available: null,
-            updateAvailable: false,
-            security: false,
-            applicable: false,
-            error: String(error).slice(0, 200),
-          });
-        }
-      }
     }
     return candidates;
   },
