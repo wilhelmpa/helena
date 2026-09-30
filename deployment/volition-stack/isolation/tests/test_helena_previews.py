@@ -534,7 +534,9 @@ http.server.HTTPServer(('127.0.0.1', port), Page).serve_forever()
                     str(manager.directory({'slug': 'vol', 'port': port}) / 'http.sock'))
                 writer.write(b'GET / HTTP/1.1\r\nHost: localhost\r\n\r\n')
                 await writer.drain()
-                page = await asyncio.wait_for(reader.read(1024), 3)
+                # The synthetic dev server answers HTTP/1.0 and closes, so read to the end: a
+                # single read can return the headers before the body arrives.
+                page = await asyncio.wait_for(reader.read(), 3)
                 self.assertIn(b'Astro synthetic preview', page)
                 writer.close()
                 await writer.wait_closed()
