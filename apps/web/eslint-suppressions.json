@@ -1290,11 +1290,6 @@
       "count": 1
     }
   },
-  "src/features/devices/components/DevicesNotice.tsx": {
-    "better-tailwindcss/no-restricted-classes": {
-      "count": 6
-    }
-  },
   "src/features/devices/components/DevicesPendingList.tsx": {
     "better-tailwindcss/no-restricted-classes": {
       "count": 7
@@ -2965,12 +2960,12 @@
   },
   "src/features/organization/components/OrganizationOrchestrationPolicy.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 10
+      "count": 6
     }
   },
   "src/features/organization/components/OrganizationOrchestrationTeam.tsx": {
     "better-tailwindcss/no-restricted-classes": {
-      "count": 10
+      "count": 4
     }
   },
   "src/features/organization/components/OrganizationOrchestrationUsage.tsx": {
