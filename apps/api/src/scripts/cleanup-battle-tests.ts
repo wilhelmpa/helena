@@ -1,4 +1,5 @@
 import postgres from 'postgres';
+import { closeDatabase } from '@repo/db';
 import { lstat, readdir, readFile } from 'node:fs/promises';
 import {
   absoluteVaultPath,
@@ -147,7 +148,7 @@ export async function cleanupBattleTests(
         else log(`Skipped changed skill ${skill.id}`);
       }
       for (const skill of plan.nativeSkills) await nativeSkillAction(12, skill.id, null);
-      const currentFiles = new Set(await battleFiles());
+      const currentFiles = new Set(plan.files.length ? await battleFiles() : []);
       for (const relative of plan.files) {
         if (!currentFiles.has(relative)) {
           log(`Skipped changed file ${relative}`);
@@ -167,5 +168,9 @@ export async function cleanupBattleTests(
 if (import.meta.main) {
   if (process.argv.slice(2).some((arg) => arg !== '--apply'))
     throw new Error('Usage: cleanup-battle-tests.ts [--apply]');
-  await cleanupBattleTests({ apply: process.argv.includes('--apply') });
+  try {
+    await cleanupBattleTests({ apply: process.argv.includes('--apply') });
+  } finally {
+    await closeDatabase();
+  }
 }
