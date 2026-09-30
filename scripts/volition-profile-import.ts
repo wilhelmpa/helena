@@ -1,6 +1,7 @@
 import { Database } from 'bun:sqlite';
 import { lstat, readdir, readFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
+import { runVolitionScript } from './volition-script-runtime';
 
 type Message = {
   id: number;
@@ -190,31 +191,46 @@ export async function readProfile(mapping: Mapping) {
 }
 
 if (import.meta.main) {
-  const args = process.argv.slice(2);
-  const manifestPath = args.find((arg) => !arg.startsWith('--'));
-  if (!manifestPath || args.some((arg) => arg.startsWith('--') && arg !== '--apply'))
-    throw new Error('Usage: bun scripts/volition-profile-import.ts mapping.json [--apply]');
-  const url = process.env.VOLITION_IMPORT_URL;
-  const key = process.env.VOLITION_IMPORT_API_KEY;
-  if (!url || !key)
-    throw new Error(
-      'Set VOLITION_IMPORT_URL and VOLITION_IMPORT_API_KEY for an authorized team manager',
-    );
-  const manifest = JSON.parse(await safeFile(resolve(manifestPath))) as Mapping[];
-  for (const mapping of manifest) {
-    const bundle = await readProfile(mapping);
-    const response = await fetch(
-      `${url.replace(/\/+$/, '')}/teams/${mapping.teamId}/ai-agents/${mapping.agentId}/profile-import`,
-      {
-        method: 'POST',
-        redirect: 'error',
-        headers: { 'content-type': 'application/json', 'x-api-key': key },
-        body: JSON.stringify({ ...bundle, apply: args.includes('--apply') }),
-        signal: AbortSignal.timeout(120000),
-      },
-    );
-    if (!response.ok)
-      throw new Error(`Import refused for agent ${mapping.agentId}: HTTP ${response.status}`);
-    console.log(JSON.stringify({ agentId: mapping.agentId, result: await response.json() }));
-  }
+  await runVolitionScript(
+    'volition-profile-import',
+    process.argv.includes('--apply'),
+    async ({ progress }) => {
+      const args = process.argv.slice(2);
+      const manifestPath = args.find((arg) => !arg.startsWith('--'));
+      if (
+        !manifestPath ||
+        args.filter((arg) => !arg.startsWith('--')).length !== 1 ||
+        args.some((arg) => arg.startsWith('--') && arg !== '--apply')
+      )
+        throw new Error('Usage: bun scripts/volition-profile-import.ts mapping.json [--apply]');
+      const url = process.env.VOLITION_IMPORT_URL;
+      const key = process.env.VOLITION_IMPORT_API_KEY;
+      if (!url || !key)
+        throw new Error(
+          'Set VOLITION_IMPORT_URL and VOLITION_IMPORT_API_KEY for an authorized team manager',
+        );
+      progress('Reading mapping manifest.');
+      const manifest = JSON.parse(await safeFile(resolve(manifestPath))) as Mapping[];
+      for (const mapping of manifest) {
+        progress(`Reading profile for agent ${mapping.agentId}.`);
+        const bundle = await readProfile(mapping);
+        progress(
+          `Calling profile-import API for agent ${mapping.agentId} (${args.includes('--apply') ? 'apply' : 'dry-run'}).`,
+        );
+        const response = await fetch(
+          `${url.replace(/\/+$/, '')}/teams/${mapping.teamId}/ai-agents/${mapping.agentId}/profile-import`,
+          {
+            method: 'POST',
+            redirect: 'error',
+            headers: { 'content-type': 'application/json', 'x-api-key': key },
+            body: JSON.stringify({ ...bundle, apply: args.includes('--apply') }),
+            signal: AbortSignal.timeout(120000),
+          },
+        );
+        if (!response.ok)
+          throw new Error(`Import refused for agent ${mapping.agentId}: HTTP ${response.status}`);
+        console.log(JSON.stringify({ agentId: mapping.agentId, result: await response.json() }));
+      }
+    },
+  );
 }
