@@ -64,8 +64,14 @@ export async function planProfiles(profilesRoot: string): Promise<Mapping[]> {
       if (link.agentId !== agent.id || !link.sessionId) continue;
       const existing = sessions[link.sessionId] ?? {};
       const next = 'runId' in link ? { runId: link.runId } : { threadId: link.threadId };
+      // A run resumed after an approval or a restart continues its Hermes session, so one
+      // session can belong to several runs of the same agent: it belongs to the run that
+      // started it, the earliest.
+      if (existing.runId && 'runId' in next) {
+        sessions[link.sessionId] = { ...existing, runId: Math.min(existing.runId, next.runId) };
+        continue;
+      }
       if (
-        (existing.runId && 'runId' in next && existing.runId !== next.runId) ||
         (existing.threadId && 'threadId' in next && existing.threadId !== next.threadId) ||
         (existing.runId && 'threadId' in next) ||
         (existing.threadId && 'runId' in next)

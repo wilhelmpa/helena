@@ -204,6 +204,33 @@ databaseTest(
 );
 
 databaseTest(
+  'plan gives a session continued by resumed runs to its first run, but refuses a run on a chat session',
+  async () => {
+    await sql`insert into agent_run(id,agent_id,project_id,prompt,status,session_id) values(1452,145,145,'Resumed','success','run-fixture'),(1451,145,145,'Resumed','success','run-fixture') on conflict do nothing`;
+    try {
+      const path = join(directory, 'plan-resumed', 'mapping.json');
+      const result = await cli(['--plan', path, '--profiles-root', join(directory, 'profiles')]);
+      expect(result.code).toBe(0);
+      const rows = (await Bun.file(path).json()) as Mapping[];
+      expect(rows.find((row) => row.agentId === 145)?.sessions).toEqual(mapping.sessions);
+      await sql`insert into agent_run(id,agent_id,project_id,prompt,status,session_id) values(1453,145,145,'Crossed','success','private-fixture') on conflict do nothing`;
+      const crossed = await cli([
+        '--plan',
+        join(directory, 'plan-crossed', 'mapping.json'),
+        '--profiles-root',
+        join(directory, 'profiles'),
+      ]);
+      expect(crossed.code).toBe(1);
+      expect(crossed.stderr + crossed.stdout).toContain(
+        'Ambiguous session ownership for agent 145',
+      );
+    } finally {
+      await sql`delete from agent_run where id in (1451,1452,1453)`;
+    }
+  },
+);
+
+databaseTest(
   'local dry-run, apply, unchanged retry and conflict preserve atomic import and system audit',
   async () => {
     const path = join(directory, 'snapshot', 'mapping.json');
