@@ -20,6 +20,10 @@ export function edgeFindings(results) {
     const e = r.edges;
     if (!e || e.none) continue;
     const tag = `${r.theme}/${r.width} ${r.route}`;
+    // One bar per page, no second toolbar row (O104).
+    if (e.headers != null && e.headers !== 1)
+      out.push(`${tag}: ${e.headers} Kopfleisten statt einer`);
+    if (e.stray) out.push(`${tag}: eine zweite Werkzeugzeile unter der Kopfleiste`);
     // The header itself: its first thing starts on the page's padding.
     if (differs(e.crumb, e.pad.x))
       out.push(`${tag}: Kopfzeile beginnt bei ${e.crumb} px statt ${e.pad.x} px`);
@@ -71,8 +75,9 @@ export function overlayFindings(scenes, { theme, width }) {
       out.push(`${tag}: Knöpfe in der Reihenfolge ${order.join(' · ')}`);
     if (order.at(-1) !== 'close') out.push(`${tag}: „Schließen“ steht nicht am Ende`);
     for (const c of s.controls) {
-      if (differs(c.w, 32) || differs(c.h, 32))
-        out.push(`${tag}: Knopf ${c.c} ist ${c.w}×${c.h} px statt 32×32 px`);
+      const size = s.expected.control ?? 32;
+      if (differs(c.w, size) || differs(c.h, size))
+        out.push(`${tag}: Knopf ${c.c} ist ${c.w}×${c.h} px statt ${size}×${size} px`);
       if (c.icon != null && Math.abs(c.icon - 16) > 0.5)
         out.push(`${tag}: Symbol von ${c.c} ist ${c.icon} px statt 16 px`);
     }

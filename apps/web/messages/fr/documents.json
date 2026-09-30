@@ -53,7 +53,6 @@
   "downloadConflictCopy": "Télécharger la copie",
   "deleteConflictCopy": "Supprimer la copie en conflit",
   "details": "Détails de la note",
-  "detailsDescription": "Les propriétés de cette note et les notes qui renvoient vers elle.",
   "openDetails": "Afficher les détails",
   "closeDetails": "Masquer les détails",
   "properties": "Propriétés",

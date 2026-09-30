@@ -48,6 +48,12 @@ describe('edge rules', () => {
     assert.match(found[0], /Werkzeugzeile/);
   });
 
+  it('wants one bar and no second toolbar row', () => {
+    assert.deepEqual(rules.edgeFindings(at(edges({ headers: 1, stray: 0 }))), []);
+    assert.equal(rules.edgeFindings(at(edges({ headers: 2 }))).length, 1);
+    assert.equal(rules.edgeFindings(at(edges({ stray: 1 }))).length, 1);
+  });
+
   it('leaves a split or canvas page its own edge, and wants a split list on the sidebar edge', () => {
     assert.deepEqual(rules.edgeFindings(at(edges({ variant: 'bleed', content: 0, gap: 0 }))), []);
     assert.deepEqual(rules.edgeFindings(at(edges({ variant: 'split', content: 0, gap: 0 }))), []);

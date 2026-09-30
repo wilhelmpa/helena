@@ -633,6 +633,8 @@
   flex: none;
   align-items: center;
   gap: var(--space-2);
+  /* At the bar's right end, also when the page has no controls of its own in front of it. */
+  margin-inline-start: auto;
 }
 .ds-page-actions:empty {
   display: none;
@@ -641,9 +643,11 @@
   display: none;
 }
 @media (max-width: 899px) {
+  /* The menu button is 40px wide around a 16px symbol: pulled out by the 12px around it, the
+     symbol stands on the page's left edge like the bar under it and the content (O104). */
   .ds-page-menu-button {
     display: flex;
-    margin-inline-start: -8px;
+    margin-inline-start: -12px;
   }
   /* A phone: the name and the main action stay in the 56px bar, the page's controls fold
      under them into a 44px row of the same bar. */

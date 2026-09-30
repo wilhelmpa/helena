@@ -222,7 +222,10 @@ function measureEdges() {
       continue;
     const box = element.getBoundingClientRect();
     if (box.width < 4 || box.height < 4 || box.top < top - 1 || box.top > top + 120) continue;
-    if (box.left < mainBox.left - 1 || box.width > mainBox.width - 8) continue;
+    // A full-width wrapper is no content; a card wider than the page (a table that scrolls
+    // sideways) that starts inside it is.
+    if (box.left < mainBox.left - 1) continue;
+    if (box.width > mainBox.width - 8 && box.left <= mainBox.left + 1) continue;
     const style = getComputedStyle(element);
     if (style.visibility === 'hidden' || style.display === 'none' || style.opacity === '0')
       continue;
@@ -252,6 +255,11 @@ function measureEdges() {
   const px = (name, fallback) => parseFloat(rootStyle.getPropertyValue(name)) || fallback;
   return {
     variant: document.querySelector('.ds-page')?.getAttribute('data-page') ?? null,
+    headers: document.querySelectorAll('.ds-page-header').length,
+    // A second toolbar row or a path line under the bar (O104): none may be left.
+    stray: document.querySelectorAll(
+      '.ds-main > .ds-page-toolbar, .ds-page-crumbs ~ .ds-page-crumbs',
+    ).length,
     phone,
     crumb: round(first.getBoundingClientRect().left - mainBox.left),
     bar: barFirst ? round(barFirst.getBoundingClientRect().left - mainBox.left) : null,
@@ -319,7 +327,13 @@ async function overlayScenes(page, { phone }) {
           : null,
         rightGap: Math.round(innerWidth - own.x - own.w),
         topGap: own.y,
-        expected: { headHeight: 56, bodyPad: '24px 24px 24px 24px', radius: '16px' },
+        expected: {
+          headHeight: 56,
+          bodyPad: '24px 24px 24px 24px',
+          radius: '16px',
+          // A touch screen gets the finger's 40px, a pointer 32px.
+          control: matchMedia('(pointer: coarse)').matches ? 40 : 32,
+        },
       };
     });
   const settle = (ms = 900) => page.waitForTimeout(ms);
@@ -332,11 +346,16 @@ async function overlayScenes(page, { phone }) {
     task: async () => {
       await page.goto(`${web}/project/${project}`, { waitUntil: 'load' });
       await settle(1500);
-      await page.locator('.board-card-title').first().click();
+      await page
+        .locator('.board-card-title')
+        .first()
+        .evaluate((element) => element.click());
     },
     agent: async () => {
       if (!process.env.UI_AUDIT_AGENT) throw new Error('UI_AUDIT_AGENT fehlt');
-      await page.goto(`${web}/?agentSheet=${process.env.UI_AUDIT_AGENT}`, { waitUntil: 'load' });
+      await page.goto(`${web}/?agentSheet=${process.env.UI_AUDIT_AGENT}`, {
+        waitUntil: 'domcontentloaded',
+      });
     },
     file: async () => {
       await page.goto(`${web}/project/${project}/files?path=Docs`, { waitUntil: 'load' });
@@ -375,7 +394,10 @@ async function overlayScenes(page, { phone }) {
         // Pinned: the main area gets as narrow as the overlay is wide, and the overlay stays
         // on the next page; unpinned, the room is back.
         if (!phone) {
-          await page.locator('.board-card-title').first().click();
+          await page
+            .locator('.board-card-title')
+            .first()
+            .evaluate((element) => element.click());
           await settle(900);
           const mainOf = () =>
             page.evaluate(() => {
@@ -445,7 +467,8 @@ export function findings(results) {
   for (const group of Object.values(Object.groupBy(results, (r) => `${r.theme}/${r.width}`))) {
     const pageColor = mode(group.map((r) => r.page?.color).filter(Boolean));
     // The template's padding holds for the padded variants; 'bleed' has none by design.
-    const padded = (r) => r.spacing && r.spacing.variant !== 'bleed';
+    const padded = (r) =>
+      r.spacing && r.spacing.variant !== 'bleed' && r.spacing.variant !== 'split';
     const padLeft = mode(group.filter(padded).map((r) => r.spacing.padLeft));
     const padTop = mode(group.filter(padded).map((r) => r.spacing.padTop));
     for (const r of group) {

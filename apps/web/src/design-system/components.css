@@ -1202,6 +1202,10 @@
   background: var(--surface-1);
   box-shadow: var(--shadow-card);
 }
+/* A box whose rows have a hover fill of their own keeps a little air to its edge. */
+.ds-list-box[data-padded] {
+  padding: var(--space-2);
+}
 /* The rows of a Wissen/Belege list in their box: a little air to the box's edge. */
 .ds-list-box > .ds-column-heads {
   padding-top: var(--space-3);

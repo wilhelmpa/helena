@@ -38,15 +38,12 @@ export function HomeChatWorking() {
   const working = new Set(active.map((entry) => entry.agent!.id)).size;
   return (
     <PageActions
-      actions={[
-        {
-          id: 'working',
-          label: t('working', { count: working }),
-          icon: Activity,
-          href: runningActivityHref(active, null),
-          active: working > 0,
-        },
-      ]}
+      primary={{
+        id: 'working',
+        label: t('working', { count: working }),
+        icon: Activity,
+        href: runningActivityHref(active, null),
+      }}
     />
   );
 }

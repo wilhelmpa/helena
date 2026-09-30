@@ -24,7 +24,7 @@ export function TableColumnHeader({
   const t = useTranslations('workItems');
   return (
     <div
-      className="board-column-heading sticky top-0 z-10 grid min-h-11 items-center gap-3 border-b bg-background px-4 text-muted-foreground"
+      className="board-column-heading sticky top-0 z-10 grid min-h-11 items-center gap-3 border-b bg-card px-4 text-muted-foreground"
       style={{ gridTemplateColumns: gridTemplate, minWidth }}
     >
       <span className="relative flex min-w-0 items-center">
