@@ -16,6 +16,7 @@ const DIGEST_POLL_MS = 20_000;
 
 export async function runUpdatesJob(context: SystemJobContext): Promise<void> {
   await context.step('check', () => runUpdateCheck({ manual: context.trigger === 'manual' }));
+  await context.step('digest:collect-previous', () => collectDigests());
   await context.step('digest:queue', () => queueDigests());
   let open = await context.step('digest:collect', () => collectDigests());
   for (let round = 0; open > 0 && round * DIGEST_POLL_MS < DIGEST_WAIT_MS; round++) {
