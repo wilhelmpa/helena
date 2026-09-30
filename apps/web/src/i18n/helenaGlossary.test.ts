@@ -19,7 +19,6 @@ function strings(value: unknown, path: string): [string, string][] {
 
 const germanExceptions: Record<string, string> = {
   'nav.inbox': 'Mail inbox, not the owner action collection.',
-  'nav.workspace.inbox': 'Mail tool inbox.',
   'nav.approvals': 'Legacy approval history route.',
   'inbox.title': 'Mail inbox page.',
   'inbox.backToList': 'Mail inbox navigation.',

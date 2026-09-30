@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, it } from 'node:test';
 import { act } from 'react';
 import type { Root } from 'react-dom/client';
 import { JSDOM } from 'jsdom';
-import { Tree, TreeItem } from './Tree';
+import { Tree, TreeAction, TreeItem, TreeMoreButton, TreeSearch } from './Tree';
 
 const replacedGlobals = [
   'window',
@@ -92,5 +92,59 @@ describe('a group of exactly one link (owner, O89)', () => {
       </TreeItem>,
     );
     assert.equal(document.querySelector('.ds-tree-chevron'), null);
+  });
+});
+
+describe('row actions and the search field of an area (owner, O100)', () => {
+  it('a hover-only action carries the class that leaves it out on a touch screen', () => {
+    render(
+      <TreeItem
+        label="Gruppe"
+        actions={
+          <>
+            <TreeAction label="Nur mit Maus" hoverOnly onClick={() => {}}>
+              +
+            </TreeAction>
+            <TreeAction label="Immer" onClick={() => {}}>
+              +
+            </TreeAction>
+          </>
+        }
+      />,
+    );
+    const only = document.querySelector('[aria-label="Nur mit Maus"]');
+    const always = document.querySelector('[aria-label="Immer"]');
+    assert.ok(only?.classList.contains('ds-tree-action-hover'));
+    assert.ok(always?.classList.contains('ds-tree-action'));
+    assert.ok(!always?.classList.contains('ds-tree-action-hover'));
+  });
+
+  it('the "…" button is a row action with its label', () => {
+    render(<TreeItem label="Bereich" actions={<TreeMoreButton label="Optionen" />} />);
+    const button = document.querySelector('button[aria-label="Optionen"]');
+    assert.ok(button?.classList.contains('ds-tree-action'));
+    assert.equal(button?.getAttribute('title'), 'Optionen');
+  });
+
+  it('a search field that opens on request takes the cursor and Escape closes it', () => {
+    let closed = 0;
+    render(
+      <TreeSearch
+        value=""
+        onChange={() => {}}
+        label="Suchen"
+        focusOnOpen
+        onEscape={() => closed++}
+      />,
+    );
+    const input = document.querySelector<HTMLInputElement>('input[type="search"]');
+    assert.ok(input);
+    assert.equal(document.activeElement, input);
+    act(() => {
+      input.dispatchEvent(
+        new dom.window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }),
+      );
+    });
+    assert.equal(closed, 1);
   });
 });

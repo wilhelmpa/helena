@@ -9,7 +9,7 @@ import {
   type ResolveInput,
 } from './workspaceLayout';
 
-const TOOLS = ['chat', 'terminal', 'code', 'browser', 'mail', 'inbox', 'connections'];
+const TOOLS = ['chat', 'terminal', 'code', 'browser', 'mail'];
 
 function layout(id: string): WorkspaceLayout {
   const found = workspaceLayout(id);
@@ -33,6 +33,17 @@ function resolve(id: string, input: Partial<ResolveInput> = {}) {
 
 const shape = (resolved: ReturnType<typeof resolve>) =>
   resolved.areas.map((area) => `${area.id}:${area.tool ?? 'page'}${area.fill ? '*' : ''}`);
+
+describe('a tool the panel no longer has (owner O106)', () => {
+  it('a saved pick of the second area falls back to a tool that exists, never to an empty area', () => {
+    for (const gone of ['inbox', 'connections']) {
+      const resolved = resolve('two-tools', { areaTools: { second: gone } });
+      const second = resolved.areas.find((area) => area.id === 'second');
+      assert.ok(second?.tool && TOOLS.includes(second.tool), gone);
+      assert.notEqual(second?.tool, resolved.mainTool);
+    }
+  });
+});
 
 describe('resolveWorkspaceLayout', () => {
   it('offers a 50/50 page and tool layout without losing the existing layouts', () => {

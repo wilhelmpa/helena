@@ -8,8 +8,8 @@ import { Page } from '@/design-system';
 export default function HomePage() {
   const t = useTranslations('nav');
   return (
-    <Shell globalHome globalTitle={t('sidebarAllProjects')} autoOpenGlobalChat={false}>
-      <Page title={t('sidebarAllProjects')}>
+    <Shell globalHome globalTitle={t('dashboards')} autoOpenGlobalChat={false}>
+      <Page title={t('dashboards')}>
         <HomeDashboard />
       </Page>
     </Shell>

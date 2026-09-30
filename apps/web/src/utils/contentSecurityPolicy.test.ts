@@ -9,8 +9,6 @@ const envNames = [
   'TERMINAL_URL',
   'CODE_URL',
   'BROWSER_URL',
-  'INBOX_URL',
-  'CONNECTIONS_URL',
 ] as const;
 let originalValues: Record<string, string | undefined>;
 

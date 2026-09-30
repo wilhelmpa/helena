@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { contextAgents, newChatScopeKey } from './contextAgents';
+import { contextAgents, mainAgentOf, mainChatLocation, newChatScopeKey } from './contextAgents';
 
 const agent = (
   id: number,
@@ -57,5 +57,48 @@ describe('chat agents by context', () => {
     assert.equal(newChatScopeKey('team:1', agent(5, 'x', ['A', 'B'])), 'team:1');
     assert.equal(newChatScopeKey('VOL', coordinator), 'VOL');
     assert.equal(newChatScopeKey('team:1', null), 'team:1');
+  });
+});
+
+describe('the main agent of a place (owner, O105)', () => {
+  it('is the coordinator in a project and Ava in Home, whatever order the agents arrive in', () => {
+    const shuffled = [vol, research, coordinator, home];
+    assert.equal(mainAgentOf(contextAgents(shuffled, 'TRADE', 'trade-coordinator'))?.id, 3);
+    assert.equal(mainAgentOf(contextAgents(shuffled, null, ''))?.id, 1);
+  });
+
+  it('is Ava in a project that has no coordinator of its own', () => {
+    assert.equal(mainAgentOf(contextAgents([home, vol], 'NEW', 'new-coordinator'))?.id, 1);
+  });
+
+  it('is nobody where no agent exists', () => {
+    assert.equal(mainAgentOf([]), null);
+  });
+});
+
+describe('the chat the logo and the orb open (owner, O99/O105)', () => {
+  it('keeps the conversation that is open with the main agent', () => {
+    assert.deepEqual(mainChatLocation(3, { agentId: 3, threadId: 'chat:3:a' }), {
+      agentId: 3,
+      threadId: 'chat:3:a',
+    });
+  });
+
+  it('never opens another agent’s chat: a new chat with the main agent instead', () => {
+    assert.deepEqual(mainChatLocation(3, { agentId: 4, threadId: 'chat:4:b' }), {
+      agentId: 3,
+      threadId: null,
+    });
+    assert.deepEqual(mainChatLocation(3, { agentId: null, threadId: null }), {
+      agentId: 3,
+      threadId: null,
+    });
+  });
+
+  it('stays a new chat with the main agent when that is what was open', () => {
+    assert.deepEqual(mainChatLocation(3, { agentId: 3, threadId: null }), {
+      agentId: 3,
+      threadId: null,
+    });
   });
 });

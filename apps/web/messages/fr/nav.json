@@ -80,8 +80,6 @@
     "browser": "Navigateur",
     "browserLossless": "Diffusion sans perte (PNG)",
     "files": "Fichiers",
-    "inbox": "Boîte de réception",
-    "connections": "Connexions",
     "advanced": "Avancé",
     "openExternal": "Ouvrir {tool} dans un nouvel onglet",
     "unavailable": "{tool} n’est pas configuré",

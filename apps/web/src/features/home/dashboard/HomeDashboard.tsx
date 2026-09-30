@@ -1,11 +1,11 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { SlidersHorizontal } from 'lucide-react';
+import { FolderKanban, LayoutGrid, SlidersHorizontal } from 'lucide-react';
 import { Fragment, useEffect, useState, type ReactNode } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { openSystemDetails } from './systemDetails';
-import { PageActions, PageToolbar } from '@/components/layout/PageToolbar';
+import { PageActions, PageTabs, PageToolbar } from '@/components/layout/PageToolbar';
 import type { DashboardWidget } from '@/extensions/dashboardWidgets';
 import { usePluginDashboardWidgets } from '@/extensions/pluginDashboardWidgets';
 import '@/extensions/homeWidgets';
@@ -16,6 +16,8 @@ import WidgetView, { WidgetPlaceholder } from './WidgetView';
 import { sectionBlocks, type Arranged } from './layout';
 import { HomeDashboardProvider, useHomeDashboard, useHomeDashboardValue } from './useHomeDashboard';
 import { Grid, Text } from '@/design-system';
+import ProjectsSection from './sections/ProjectsSection';
+import { homeDashboardPath, homeDashboardView, type HomeDashboardView } from './views';
 
 // A pair block of half-width sections: two per row on a wide screen, in the reader's order,
 // and the two of a row equally tall (owner 29.09.: "Karten im Dashboard alle gleich hoch");
@@ -71,6 +73,7 @@ function Sections({
 // (extensions/dashboardWidgets); the reader hides and orders them in "Anpassen".
 export default function HomeDashboard() {
   const t = useTranslations('home');
+  const tNav = useTranslations('nav');
   const today = useToday();
   const [customizing, setCustomizing] = useState(false);
   usePluginDashboardWidgets();
@@ -82,6 +85,8 @@ export default function HomeDashboard() {
   const router = useRouter();
   const pathname = usePathname();
   const wantsSystem = params.get('system') === '1';
+  // Two views of the one dashboard (owner, O98): the overview, and every project as a tile.
+  const view = homeDashboardView(params.get('view'));
   useEffect(() => {
     if (!wantsSystem || !owner) return;
     openSystemDetails();
@@ -95,44 +100,70 @@ export default function HomeDashboard() {
   return (
     <HomeDashboardProvider value={context}>
       <PageToolbar>
-        <Text as="span" size="xs" tone="muted" className="h-4 truncate px-1">
-          {today}
-        </Text>
-        <PageActions
-          actions={[
+        <PageTabs<HomeDashboardView>
+          label={tNav('dashboards')}
+          value={view}
+          items={[
             {
-              id: 'customize',
-              label: t('customize.title'),
-              icon: SlidersHorizontal,
-              onClick: () => setCustomizing(true),
-              disabled: !ready,
+              value: 'overview',
+              label: tNav('overview'),
+              icon: LayoutGrid,
+              href: homeDashboardPath('overview'),
+            },
+            {
+              value: 'projects',
+              label: tNav('sidebarAllProjects'),
+              icon: FolderKanban,
+              href: homeDashboardPath('projects'),
             },
           ]}
         />
+        <Text as="span" size="xs" tone="muted" className="h-4 truncate px-1">
+          {today}
+        </Text>
+        {view === 'overview' && (
+          <PageActions
+            actions={[
+              {
+                id: 'customize',
+                label: t('customize.title'),
+                icon: SlidersHorizontal,
+                onClick: () => setCustomizing(true),
+                disabled: !ready,
+              },
+            ]}
+          />
+        )}
       </PageToolbar>
       {/* The page's header names it (Helena / Alle Projekte); the body starts with figures. */}
-      <div className="ds-dashboard-body @container">
-        {/* The figure row: the tiles share one row while they fit, then wrap evenly; two
+      {view === 'projects' ? (
+        <div className="ds-dashboard-body @container">
+          <ProjectsSection />
+        </div>
+      ) : (
+        <div className="ds-dashboard-body @container">
+          {/* The figure row: the tiles share one row while they fit, then wrap evenly; two
             columns on a phone. */}
-        <Grid min="fit" gap={3}>
-          {figures
-            .filter((entry) => entry.visible)
-            .map((entry) => (
-              // A figure widget renders its tiles straight into the row: one widget may
-              // bring several (the plan limits, one per subscription) or none.
-              <Fragment key={entry.widget.id}>
-                {entry.widget.id === 'system' ? (
-                  <div id="system" className="min-w-0 scroll-mt-4">
-                    {render(entry.widget)}
-                  </div>
-                ) : (
-                  render(entry.widget)
-                )}
-              </Fragment>
-            ))}
-        </Grid>
-        <Sections sections={sections} render={render} />
-      </div>
+          <Grid min="fit" gap={3}>
+            {figures
+              .filter((entry) => entry.visible)
+              .map((entry) => (
+                // A figure widget renders its tiles straight into the row: one widget may
+                // bring several (the plan limits, one per subscription) or none.
+                <Fragment key={entry.widget.id}>
+                  {entry.widget.id === 'system' ? (
+                    <div id="system" className="min-w-0 scroll-mt-4">
+                      {render(entry.widget)}
+                    </div>
+                  ) : (
+                    render(entry.widget)
+                  )}
+                </Fragment>
+              ))}
+          </Grid>
+          <Sections sections={sections} render={render} />
+        </div>
+      )}
       <CustomizeDialog
         open={customizing}
         onOpenChange={setCustomizing}

@@ -16,8 +16,6 @@ const config: WorkspaceRuntimeEnv = {
   codeUrl: 'https://plan.example.com/workspace/code/',
   projectWorkspacePaths: { VERV: '/workspace/verve' },
   browserUrl: 'https://browser.example.com/',
-  inboxUrl: 'https://inbox.example.com/',
-  connectionsUrl: '',
 };
 
 describe('workspaceTools', () => {
@@ -201,7 +199,6 @@ describe('workspaceTools', () => {
     assert.deepEqual(workspaceFrameOrigins(config), [
       'https://plan.example.com',
       'https://browser.example.com',
-      'https://inbox.example.com',
     ]);
   });
 

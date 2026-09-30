@@ -18,13 +18,7 @@ import { useConnectionAction, useConnectionsQuery } from './services/connections
 // that hold the accounts instead; it never shows an empty page.
 // In the access center the area's tabs lead the header row (`leading`), and the accounts
 // sit in those tabs, so only the devices page gets a link.
-export default function ConnectionsContent({
-  embedded = false,
-  leading,
-}: {
-  embedded?: boolean;
-  leading?: ReactNode;
-}) {
+export default function ConnectionsContent({ leading }: { leading?: ReactNode }) {
   const t = useTranslations('connections');
   const connections = useConnectionsQuery();
   const action = useConnectionAction();
@@ -84,26 +78,6 @@ export default function ConnectionsContent({
       ))}
     </div>
   );
-
-  if (embedded) {
-    return (
-      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-3">
-        {canCheck ? (
-          <Button
-            size="sm"
-            variant="outline"
-            className="self-end"
-            disabled={action.isPending}
-            onClick={checkAll}
-          >
-            <RefreshCw />
-            {t('actions.checkAll')}
-          </Button>
-        ) : null}
-        {body}
-      </div>
-    );
-  }
 
   return (
     <SectionPageView title={t('title')} wide>

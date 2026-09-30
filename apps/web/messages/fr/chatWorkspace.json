@@ -37,7 +37,6 @@
     "deleteAllTitle": "Supprimer toutes les discussions ?",
     "deleteAllBody": "Les discussions de cette liste vont à la corbeille, où elles peuvent être restaurées. Une discussion en cours de réponse reste.",
     "emptyTrash": "Vider la corbeille",
-    "emptyTrashTitle": "Vider la corbeille ?",
     "emptyTrashBody": "Les discussions de la corbeille sont supprimées définitivement avec tous leurs messages.",
     "trashedAll": "{count, plural, =0 {Aucune discussion déplacée} one {Une discussion dans la corbeille} other {# discussions dans la corbeille}}",
     "purgedAll": "{count, plural, =0 {La corbeille était vide} one {Une discussion supprimée définitivement} other {# discussions supprimées définitivement}}",
@@ -50,7 +49,12 @@
       "actions": "Dossier « {name} »",
       "empty": "Vide : déplacez des chats ici depuis leur menu."
     },
-    "newChatWith": "Nouveau chat avec {name}"
+    "newChatWith": "Nouveau chat avec {name}",
+    "more": "{count} de plus",
+    "showChats": "Afficher les chats",
+    "showArchived": "Afficher les archives",
+    "showTrash": "Afficher la corbeille",
+    "emptyTrashCount": "{count, plural, =0 {La corbeille est vide} one {Supprimer définitivement une discussion ?} other {Supprimer définitivement # discussions ?}}"
   },
   "empty": {
     "noAgentsTitle": "Aucun agent pour discuter",

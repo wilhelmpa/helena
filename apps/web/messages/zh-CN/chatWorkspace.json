@@ -37,7 +37,6 @@
     "deleteAllTitle": "删除所有聊天？",
     "deleteAllBody": "此列表中的聊天将移至回收站，可在那里恢复。仍在回答的聊天会保留。",
     "emptyTrash": "清空回收站",
-    "emptyTrashTitle": "清空回收站？",
     "emptyTrashBody": "回收站中的聊天及其所有消息将被永久删除。",
     "trashedAll": "{count, plural, =0 {未移动聊天} other {# 个聊天已移至回收站}}",
     "purgedAll": "{count, plural, =0 {回收站为空} other {已永久删除 # 个聊天}}",
@@ -50,7 +49,12 @@
       "actions": "文件夹“{name}”",
       "empty": "空的：通过聊天的菜单把聊天移到这里。"
     },
-    "newChatWith": "与 {name} 开始新聊天"
+    "newChatWith": "与 {name} 开始新聊天",
+    "more": "另外 {count} 个",
+    "showChats": "显示聊天",
+    "showArchived": "显示归档",
+    "showTrash": "显示回收站",
+    "emptyTrashCount": "{count, plural, =0 {回收站为空} other {永久删除 # 个聊天？}}"
   },
   "empty": {
     "noAgentsTitle": "没有可以对话的智能体",

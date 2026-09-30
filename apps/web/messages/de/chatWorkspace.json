@@ -37,7 +37,6 @@
     "deleteAllTitle": "Alle Chats löschen?",
     "deleteAllBody": "Die Chats dieser Liste kommen in den Papierkorb und lassen sich dort wiederherstellen. Ein Chat, in dem gerade geantwortet wird, bleibt.",
     "emptyTrash": "Papierkorb leeren",
-    "emptyTrashTitle": "Papierkorb leeren?",
     "emptyTrashBody": "Die Chats im Papierkorb werden mit allen Nachrichten endgültig gelöscht.",
     "trashedAll": "{count, plural, =0 {Keine Chats verschoben} one {Ein Chat im Papierkorb} other {# Chats im Papierkorb}}",
     "purgedAll": "{count, plural, =0 {Der Papierkorb war leer} one {Ein Chat endgültig gelöscht} other {# Chats endgültig gelöscht}}",
@@ -50,7 +49,12 @@
       "actions": "Ordner „{name}“",
       "empty": "Leer: Chats über ihr Menü hierher verschieben."
     },
-    "newChatWith": "Neuer Chat mit {name}"
+    "newChatWith": "Neuer Chat mit {name}",
+    "more": "Weitere {count}",
+    "showChats": "Chats anzeigen",
+    "showArchived": "Archiv anzeigen",
+    "showTrash": "Papierkorb anzeigen",
+    "emptyTrashCount": "{count, plural, =0 {Der Papierkorb ist leer} one {Einen Chat endgültig löschen?} other {# Chats endgültig löschen?}}"
   },
   "empty": {
     "noAgentsTitle": "Kein Agent für einen Chat",

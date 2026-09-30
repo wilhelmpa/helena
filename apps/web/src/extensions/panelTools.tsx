@@ -4,19 +4,15 @@ import { useMemo, useSyncExternalStore, type ComponentType } from 'react';
 import {
   Code2,
   Globe2,
-  Inbox,
   Mail,
   MessageSquare,
   NotebookPen,
-  PlugZap,
   Puzzle,
   Terminal,
   type LucideIcon,
 } from 'lucide-react';
 import { DynamicIcon, type IconName } from 'lucide-react/dynamic';
 import { Registry, type LocalizedText } from '@helena/sdk/web';
-import InboxWorkspace from '@/features/inbox/InboxWorkspace';
-import ConnectionsWorkspace from '@/features/connections/ConnectionsWorkspace';
 import MailComposeWorkspace from '@/features/mail/MailComposeWorkspace';
 import NativeChatWorkspace from '@/features/ai-chat/components/panel/NativeChatWorkspace';
 import TerminalWorkspace from '@/features/owner-terminal/TerminalWorkspace';
@@ -109,8 +105,6 @@ for (const tool of [
   ),
   builtin('browser', Globe2, 40, { kind: 'workspace' }, { inHeader: true }),
   builtin('mail', Mail, 50, component(MailComposeWorkspace), { inHeader: true }),
-  builtin('inbox', Inbox, 60, component(InboxWorkspace)),
-  builtin('connections', PlugZap, 70, component(ConnectionsWorkspace)),
 ]) {
   panelTools.register(tool, PANEL_PLUGIN_ID);
 }

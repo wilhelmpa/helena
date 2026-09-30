@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { ChatSummary } from '@/lib/api/endpoints/agentChat';
-import { agentOrderByRole, chatSections } from './chatSections';
+import { agentOrderByRole, chatSections, foldedChats, mixesProjects } from './chatSections';
 
 const chat = (id: string, agent: number, pinned = false) =>
   ({
@@ -89,4 +89,42 @@ test('the agents are ordered home agent, coordinators, then the rest (each as th
     ),
     [1, 7, 4, 9],
   );
+});
+
+const inProject = (id: string, key: string | null) =>
+  ({
+    id,
+    agent: { id: 1, name: 'A', username: 'a' },
+    project: key ? { key } : null,
+  }) as ChatSummary;
+
+test('a project chip is only needed where the list mixes projects (owner, O100)', () => {
+  const one = [inProject('a', 'VOL'), inProject('b', 'VOL')];
+  const mixed = [inProject('a', 'VOL'), inProject('b', 'VERVE')];
+  const withHome = [inProject('a', 'VOL'), inProject('b', null)];
+  assert.equal(mixesProjects(one, false), false);
+  assert.equal(mixesProjects(mixed, false), true);
+  assert.equal(mixesProjects(withHome, false), true);
+  // A project's own sidebar never names its project.
+  assert.equal(mixesProjects(mixed, true), false);
+  assert.equal(mixesProjects([], false), false);
+});
+
+test('a group shows its first chats and folds the rest, unless opened or holding the open chat', () => {
+  const chats = ['1', '2', '3', '4', '5', '6', '7'].map((id) => inProject(id, null));
+  const holds = (id: string) => (list: ChatSummary[]) => list.some((c) => c.id === id);
+  const none = holds('nope');
+  assert.deepEqual(foldedChats(chats, 5, false, none).hidden, 2);
+  assert.deepEqual(
+    foldedChats(chats, 5, false, none).shown.map((c) => c.id),
+    ['1', '2', '3', '4', '5'],
+  );
+  // Opened by the reader: everything.
+  assert.equal(foldedChats(chats, 5, true, none).hidden, 0);
+  // The open chat is a folded one: it must not disappear.
+  assert.equal(foldedChats(chats, 5, false, holds('7')).hidden, 0);
+  // The open chat is among the first ones: the fold stays.
+  assert.equal(foldedChats(chats, 5, false, holds('2')).hidden, 2);
+  // Short lists fold nothing.
+  assert.equal(foldedChats(chats.slice(0, 3), 5, false, none).hidden, 0);
 });

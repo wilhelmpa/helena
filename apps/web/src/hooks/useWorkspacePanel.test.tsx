@@ -58,14 +58,14 @@ test('explicitly closed tools stay closed when Home remounts, while tool and lay
   try {
     act(() => test.root().render(<Probe defaultOpen />));
     assert.equal(panel.open, true);
-    act(() => panel.openTool('inbox'));
+    act(() => panel.openTool('browser'));
     act(() => panel.toggleMode());
     act(() => panel.setOpen(false));
     test.unmount();
     test.remount();
     act(() => test.root().render(<Probe defaultOpen />));
     assert.equal(panel.open, false);
-    assert.equal(panel.activeTool, 'inbox');
+    assert.equal(panel.activeTool, 'browser');
     assert.equal(panel.mode, 'push');
   } finally {
     test.cleanup();
@@ -152,5 +152,25 @@ test('the selected tool is restored separately for each project', () => {
     assert.equal(panel.activeTool, 'browser');
   } finally {
     t.cleanup();
+  }
+});
+
+test('a panel saved on a tool that no longer exists (Posteingang, Verbindungen) opens on the chat', () => {
+  for (const gone of ['inbox', 'connections']) {
+    const t = setup();
+    try {
+      localStorage.setItem('workspace:panel:open', 'open');
+      localStorage.setItem('workspace:panel:tool', gone);
+      localStorage.setItem('workspace:panel:tool:home', gone);
+      localStorage.setItem('workspace:panel:tool:VOL', gone);
+      act(() => t.root().render(<Probe />));
+      assert.equal(panel.activeTool, 'chat', gone);
+      assert.equal(panel.open, true, gone);
+      // A project's own saved tool falls back the same way.
+      act(() => t.root().render(<Probe projectKey="VOL" />));
+      assert.equal(panel.activeTool, 'chat', `${gone} in a project`);
+    } finally {
+      t.cleanup();
+    }
   }
 });

@@ -81,8 +81,6 @@
     "browser": "Browser",
     "browserLossless": "Verlustfreie Übertragung (PNG)",
     "files": "Dateien",
-    "inbox": "Posteingang",
-    "connections": "Verbindungen",
     "advanced": "Erweitert",
     "openExternal": "{tool} in neuem Tab öffnen",
     "unavailable": "{tool} ist nicht konfiguriert",

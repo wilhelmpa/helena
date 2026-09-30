@@ -11,7 +11,7 @@ describe('panel tools', () => {
     const tools = panelTools.list().sort((a, b) => a.order - b.order);
     assert.deepEqual(
       tools.map((tool) => tool.id),
-      ['chat', 'terminal', 'code', 'notes', 'browser', 'mail', 'inbox', 'connections'],
+      ['chat', 'terminal', 'code', 'notes', 'browser', 'mail'],
     );
     assert.deepEqual(
       tools.filter((tool) => tool.inHeader).map((tool) => tool.id),
